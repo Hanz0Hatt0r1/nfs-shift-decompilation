@@ -7,8 +7,11 @@ The native SVWT ABI is source-backed as row-major D3D *row-vector* convention
 transpose.
 
 Selection is fail-closed on the exact canonical BMW body MEB path and SHA from
-SHIFT.BMWGoldenAssetManifest/1. This is a resource/VHF bind transform only; it
-does not consume BODY physics pose or claim a dynamic vehicle transform.
+SHIFT.BMWGoldenAssetManifest/1. Phase 656 additionally records and requires the
+exact VHF source resource identity (admitted archive SHA-256, unique entry index
+and path, decoded payload SHA-256) that produced the hierarchy transform. This
+is a resource/VHF bind transform only; it does not consume BODY physics pose or
+claim a dynamic vehicle transform.
 """
 from __future__ import annotations
 
@@ -21,6 +24,7 @@ from typing import Any, Mapping, Sequence
 
 from bmw_vulkan_bundle import TARGET_MEB
 from render_command import validate_render_command
+from shift_importer import BFF
 from vhf_scene_preview import build_vhf_scene
 
 FORMAT = "SHIFT.BMWVHFBodyWorldTransform/1"
@@ -45,6 +49,14 @@ def _sha_json(value: Any) -> str:
     ).hexdigest()
 
 
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def _load(value: str | Path | Mapping[str, Any]) -> dict[str, Any]:
     if isinstance(value, Mapping):
         return deepcopy(dict(value))
@@ -52,6 +64,85 @@ def _load(value: str | Path | Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError(f"expected JSON object: {value}")
     return payload
+
+
+def _safe_int(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _vhf_source_identity(
+    bff_path: str | Path,
+    vhf_resource: str,
+) -> dict[str, Any]:
+    """Prove one exact decoded VHF resource inside the selected primary BFF."""
+    archive_path = Path(bff_path).resolve()
+    target = _norm(vhf_resource)
+    if not target:
+        raise ValueError("VHF resource path is empty")
+
+    with BFF(archive_path) as bff:
+        hits = [entry for entry in bff.entries if _norm(entry.path) == target]
+        if len(hits) != 1:
+            raise ValueError(
+                "expected exactly one canonical BMW VHF source resource by exact path; "
+                f"found {len(hits)}"
+            )
+        entry = hits[0]
+        decoded = bff.extract_entry(entry, type2="lzx")
+        return {
+            "archive": archive_path.name,
+            "archive_sha256": _sha256_file(archive_path),
+            "entry_index": int(entry.index),
+            "path": entry.path,
+            "decoded_sha256": hashlib.sha256(decoded).hexdigest(),
+            "decoded_size": len(decoded),
+        }
+
+
+def _validate_vhf_source_identity(
+    source: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Validate the exact source identity carried by a Phase 656 transform."""
+    raw = source.get("vhf_entry")
+    if not isinstance(raw, Mapping):
+        raise ValueError("VHF source provenance is missing")
+
+    archive = str(raw.get("archive") or "")
+    archive_sha = str(raw.get("archive_sha256") or "").lower()
+    entry_index = _safe_int(raw.get("entry_index"))
+    path = str(raw.get("path") or "")
+    decoded_sha = str(raw.get("decoded_sha256") or "").lower()
+    decoded_size = _safe_int(raw.get("decoded_size"))
+    expected_resource = _norm(source.get("vhf_resource"))
+
+    if not archive:
+        raise ValueError("VHF source archive provenance is missing")
+    if len(archive_sha) != 64:
+        raise ValueError("VHF source archive SHA-256 is missing")
+    if entry_index is None or entry_index < 0:
+        raise ValueError("VHF source entry index is invalid")
+    if not _norm(path) or _norm(path) != expected_resource:
+        raise ValueError("VHF source logical path disagrees with transform source")
+    if len(decoded_sha) != 64:
+        raise ValueError("VHF source decoded SHA-256 is missing")
+    if decoded_size is None or decoded_size <= 0:
+        raise ValueError("VHF source decoded size is invalid")
+    if str(source.get("archive") or "") != archive:
+        raise ValueError("VHF source archive disagrees with transform source")
+
+    return {
+        "archive": archive,
+        "archive_sha256": archive_sha,
+        "entry_index": entry_index,
+        "path": path,
+        "decoded_sha256": decoded_sha,
+        "decoded_size": decoded_size,
+    }
 
 
 def _finite_matrix16(value: Any, label: str) -> list[float]:
@@ -115,6 +206,7 @@ def build_bmw_vhf_body_world_transform(
     if len(expected_sha) != 64:
         raise ValueError("golden BMW body MEB SHA-256 is missing")
 
+    vhf_identity = _vhf_source_identity(bff_path, vhf_resource)
     scene = build_vhf_scene(
         bff_path,
         vhf_resource,
@@ -143,23 +235,27 @@ def build_bmw_vhf_body_world_transform(
     d3d_matrix = _transpose4(vhf_matrix)
     _require_row_affine(d3d_matrix)
 
+    source = {
+        "archive": Path(bff_path).name,
+        "vhf_resource": vhf_resource,
+        "vhf_entry": vhf_identity,
+        "scene_format": scene.get("format"),
+        "node_name": part.get("name"),
+        "matrix_number": part.get("matrix_number"),
+        "mesh_resource": part.get("resource"),
+        "mesh_sha256": part.get("resource_sha256"),
+        "golden_resource": identity.get("resource"),
+        "golden_resource_sha256": identity.get("resource_sha256"),
+    }
+    _validate_vhf_source_identity(source)
+
     return {
         "format": FORMAT,
         "version": 1,
         "status": "ready",
         "ready": True,
         "blocking_reasons": [],
-        "source": {
-            "archive": Path(bff_path).name,
-            "vhf_resource": vhf_resource,
-            "scene_format": scene.get("format"),
-            "node_name": part.get("name"),
-            "matrix_number": part.get("matrix_number"),
-            "mesh_resource": part.get("resource"),
-            "mesh_sha256": part.get("resource_sha256"),
-            "golden_resource": identity.get("resource"),
-            "golden_resource_sha256": identity.get("resource_sha256"),
-        },
+        "source": source,
         "vhf_world_matrix": vhf_matrix,
         "world_matrix": d3d_matrix,
         "world_matrix_sha256": _sha_json(d3d_matrix),
@@ -171,6 +267,10 @@ def build_bmw_vhf_body_world_transform(
         },
         "boundary": {
             "canonical_body_meb_identity_proven": True,
+            "vhf_source_resource_identity_proven": True,
+            "vhf_source_archive_sha256_required": True,
+            "vhf_source_entry_index_required": True,
+            "vhf_source_decoded_sha256_required": True,
             "vhf_object_transform_proven": True,
             "body_physics_pose_consumed": False,
             "phase700_runtime_pose_handoff_consumed": False,
@@ -195,6 +295,9 @@ def apply_bmw_vhf_body_world_transform(
 
     mesh_identity = payload.get("mesh_identity") or {}
     source = transform.get("source") or {}
+    if not isinstance(source, Mapping):
+        raise ValueError("VHF transform source provenance is missing")
+    _validate_vhf_source_identity(source)
     if _norm(mesh_identity.get("resource")) != _norm(TARGET_MEB):
         raise ValueError("BMW material set does not identify canonical body MEB")
     if _norm(source.get("mesh_resource")) != _norm(mesh_identity.get("resource")):
@@ -239,6 +342,7 @@ def apply_bmw_vhf_body_world_transform(
         "material_slice_set_abi_preserved": True,
         "render_command_world_matrix_from_vhf": True,
         "canonical_body_meb_identity_revalidated": True,
+        "vhf_source_resource_identity_required": True,
         "phase700_runtime_pose_handoff_consumed": False,
         "dynamic_vehicle_world_transform_claimed": False,
         "body_local_to_meb_object_bind_proven": False,
