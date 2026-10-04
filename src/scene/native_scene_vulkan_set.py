@@ -306,6 +306,21 @@ def _texture_map_for_submesh(
         if raw is None:
             blockers.append(f"texture:s{register}:raw-payload-missing")
             continue
+        manifest_decoded_sha256 = str(
+            row.get("decoded_sha256") or ""
+        ).lower()
+        raw_sha256 = _sha_file(raw)
+        if manifest_decoded_sha256:
+            if manifest_decoded_sha256 != expected_sha256:
+                blockers.append(
+                    f"texture:s{register}:ir-decoded-sha256-mismatch"
+                )
+                continue
+            if raw_sha256 != manifest_decoded_sha256:
+                blockers.append(
+                    f"texture:s{register}:raw-payload-sha256-mismatch"
+                )
+                continue
         try:
             image = decode_dds(raw.read_bytes())
         except (OSError, ValueError, TypeError) as exc:
@@ -330,8 +345,14 @@ def _texture_map_for_submesh(
             "identity_sha256_match": (
                 str(row.get("sha256") or "").lower() == expected_sha256
             ),
+            "decoded_sha256": row.get("decoded_sha256"),
             "raw": row.get("raw"),
-            "raw_sha256": _sha_file(raw),
+            "raw_sha256": raw_sha256,
+            "raw_identity_sha256_match": (
+                raw_sha256 == manifest_decoded_sha256
+                if manifest_decoded_sha256
+                else None
+            ),
         })
 
     return decoded, list(dict.fromkeys(blockers)), sources
@@ -777,6 +798,8 @@ def build_native_scene_vulkan_set(
             "scene_hashes_revalidated": True,
             "material_2d_dds_resolved_from_ir": True,
             "material_2d_dds_render_resource_sha256_revalidated": True,
+            "material_2d_dds_explicit_decoded_sha256_revalidated": True,
+            "material_2d_dds_raw_payload_sha256_revalidated_when_explicit": True,
             "world_transform_serialized": True,
             "world_transform_executed": False,
             "explicit_external_sampler2d_snapshots_admitted": True,
