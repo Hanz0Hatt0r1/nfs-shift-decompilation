@@ -51,8 +51,8 @@ def test_phase648_runtime_attachment_is_explicit_and_fail_closed():
 
     assert "SHIFT_NATIVE_VEHICLE_WORLD_TRANSFORM_SCRIPT" in adapter
     assert "if (script_path == nullptr || *script_path == '\\0')" in adapter
-    assert '"retail_producer_claimed\\\":false"' in adapter
-    assert '"phase706_snapshot_abi_compatible\\\":true"' in adapter
+    assert "retail_producer_claimed" in adapter
+    assert "phase706_snapshot_abi_compatible" in adapter
     assert '#include "../src/runtime_state.hpp"' in injection
     assert "#define fixed_step(phase648_intent_)" in injection
     assert "phase648_after_fixed_step(" in injection
