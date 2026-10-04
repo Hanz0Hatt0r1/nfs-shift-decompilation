@@ -1,175 +1,134 @@
-# Phase 703 — BMW chassis BODY selection continuity gate
+# Phase 703 — global vehicle BODY-owner selection handoff
 
 ## Playable-slice blocker reduced
 
-Process 1 PR #1188 proves the retail BMW main/chassis BODY structurally:
+The original Phase 703 gated BMW chassis BODY 0 on historical
+`*record+0x340 -> vehicle solver base` equality. Process 1 PR #1196 supersedes
+that model with `SHIFT.GlobalVehicleBodyOwnerIdentity/1`, composing the proven
+global outer receiver, the `FUN_00765470 -> FUN_007b2270` BODY-owner receiver
+provenance, and the structurally proven BMW chassis BODY 0.
+
+This rewrite removes the obsolete pointer-equality proof boundary and consumes
+the composed Process 1 handoff directly. No original `SHIFT.exe` execution and
+no new runtime capture are used.
+
+## Native contract
 
 ```text
-main_chassis_BODY_selected = true
-main_chassis_BODY_index = 0
+SHIFT.NativeGlobalVehicleBodyOwnerSelection/1
 ```
 
-Process 2 Phase 702 already carries that identity together with the exact wheel
-and spindle BODY indices.  Phase 698/700 can already select and export a
-persistent BODY pose once `VehicleBodyIdentitySelection.selection_proven` is
-true.
-
-The only remaining identity edge on that path is still:
+Implementation:
 
 ```text
-*record + 0x340 update child
-  -> FUN_007615c0 vehicle solver base
+native_runtime/include/shift_global_vehicle_body_owner_selection.hpp
+native_runtime/src/global_vehicle_body_owner_selection.cpp
 ```
 
-Process 1 has not yet proved this pointer continuity.  Phase 703 removes the
-manual bridge around that single blocker without pretending it is solved.
-
-## Contract
+The native handoff mirrors only the fields required by Phase 698/700:
 
 ```text
-SHIFT.NativeBMWChassisBodySelectionGate/1
+outer_receiver_to_BODY_owner_continuity_proven
+vehicle_BODY_selection_ready
+selected_BODY_index
+phase698_positive_selection_admissible
+phase700_runtime_handoff_admissible
+phase703_update_child_equality_gate_required
+phase703_gate_rewrite_ready
 ```
 
-Native implementation:
+All positive readiness flags must move together. The obsolete update-child gate
+must remain false. A blocked handoff may not preclaim a BODY index. A positive
+handoff is accepted only for the proven retail BMW chassis `BODY 0`, then emits
+the existing Phase 698 `VehicleBodyIdentitySelection` ABI and reuses the Phase
+700 runtime handoff.
+
+## Current retail state remains fail-closed
+
+Process 1 #1196 records that the repository still lacks the targeted retail
+`SHIFT.GhidraFunctionInstructions/2` export for `FUN_00765470`; therefore its
+composed identity is not yet positive for retail execution.
+
+Current state remains:
 
 ```text
-native_runtime/include/shift_bmw_chassis_body_selection_gate.hpp
-native_runtime/src/bmw_chassis_body_selection_gate.cpp
+outer_receiver_to_BODY_owner_continuity_proven = false
+vehicle_BODY_selection_ready = false
+selected_BODY_index = null
+phase698_positive_selection_admissible = false
+phase700_runtime_handoff_admissible = false
+phase703_update_child_equality_gate_required = false
 ```
 
-The gate consumes:
+Phase 703 rejects this before Phase 700 reads runtime pose state. Synthetic
+all-positive fixtures exist only to regress the future transport and are not
+retail proof.
+
+## End-to-end transport prepared
 
 ```text
-canonical Phase 702 BMW topology
-+ ProvenUpdateChildVehicleSolverBaseContinuity
-```
-
-and only when `continuity.proven == true` emits:
-
-```text
-VehicleBodyIdentitySelection {
-    selection_proven = true,
-    body_index = 0,
-}
-```
-
-That output is the existing Phase 698 selector input, so no second pose-selection
-ABI is introduced.
-
-## Current fail-closed frontier
-
-The canonical Phase 702 topology still records:
-
-```text
-update_child_to_vehicle_solver_base_continuity_proven = false
-vehicle_body_selection_ready = false
-```
-
-Phase 703 requires those current upstream values to remain unchanged.  A topology
-that self-promotes either value is rejected as drift.  The missing positive proof
-must arrive through the separate typed continuity input.
-
-Therefore the current repository does **not** emit a positive retail BMW chassis
-selection through Phase 703.
-
-The native/Python regressions use `continuity.proven=true` only as a synthetic
-future-proof transport test.  They explicitly record that this is not retail
-proof.
-
-## End-to-end positive transport already prepared
-
-With synthetic positive continuity, the native regression executes the complete
-already-implemented handoff:
-
-```text
-Phase 702 canonical BMW topology
--> Phase 703 continuity gate
+SHIFT.GlobalVehicleBodyOwnerIdentity/1
+-> Phase 703 validation
 -> Phase 698 VehicleBodyIdentitySelection(BODY 0)
 -> Phase 700 NativeRuntimeState persistent pose handoff
 -> SelectedVehicleBodyPose(BODY 0)
 ```
 
-It verifies that BODY 0 origin/basis are read unchanged and that no persistent
-runtime state or counters are mutated by the read-only selection/handoff path.
+The native regression verifies BODY 0 origin/basis are read unchanged and that
+BODY bytes, snapshot generation and explicit-update count are not mutated.
 
-Thus a future positive Process 1 continuity proof requires replacing only the
-proof input; it does not require redesigning the native pose path.
+## Process 3 Phase 645/646 sync
 
-## Rear axle remains separate
+Phase 645 proves the canonical BMW VHF vehicle-root/body-MEB static bind
+transform and exact VHF column-vector -> SVWT row-vector conversion. Phase 646
+then adds the native dynamic vehicle transform transport core plus authoritative
+`source_group=vehicle` draw-group targeting.
 
-The exact SDF identity of the semantic `vehicle+0x2e00 rear_axle` field is still
-unknown.  Phase 702 keeps that as a fail-closed input to the existing
-`FUN_00757d2c` relation-state dispatcher.
-
-Process 1 PR #1188 proves that rear-axle identity is not required to select the
-central chassis BODY.  Phase 703 therefore does not couple the two blockers.
-
-## Process 3 Phase 644 sync
-
-Process 3 PR #1191 / Phase 644 now provides a one-command source-backed
-Silverstone + canonical BMW scene bootstrap and preserves durable renderer-side
-vehicle identity.  It deliberately does not consume Phase 700 persistent BODY
-pose or claim a dynamic vehicle transform.
-
-This means the cross-process chain is now prepared on both sides:
+Neither phase invents the missing dynamic physics composition. After a positive
+retail BODY-owner identity, the remaining cross-process blocker is narrowly:
 
 ```text
-physics side:
-  proven chassis BODY 0
-  -> [continuity blocker]
-  -> Phase 698/700 pose
-
-renderer side:
-  retail corpus
-  -> Phase 644 playable scene bootstrap
-  -> durable BMW renderer subgroup identity
+persistent BODY0 pose frame
+-> exact BODY0/VHF bind-frame composition
+-> Phase 646 dynamic transform transport
+-> vehicle draw-group SVWT update
 ```
 
-Phase 703 does not cross the remaining transform-convention gap.
+Renderer object rediscovery and transport plumbing are no longer blockers.
 
 ## Preserved negative boundaries
 
-Phase 703 does not claim or implement:
+Phase 703 does not claim:
 
-- `*record+0x340 -> FUN_007615c0` continuity;
-- automatic `fixed_step()` scheduling of the deep vehicle update;
-- a BODY origin/basis -> SVWT/world-matrix convention;
-- per-frame mutation of the Phase 644 BMW renderer subgroup;
-- camera follow;
+- positive retail `FUN_00765470` BODY-owner receiver proof;
+- `*record+0x340 == 0x00c13700`;
 - a retail `rear_axle` BODY index;
-- new runtime capture or original-game execution.
+- BODY0 pose -> VHF/SVWT composition;
+- camera follow;
+- automatic deep-physics `fixed_step()` scheduling.
 
 ## Regression coverage
 
-Python:
+Python `src/physics/global_vehicle_body_owner_selection_runtime.py` and
+`tests/test_global_vehicle_body_owner_selection_runtime.py` check blocked retail
+admission, transactional readiness flags, BODY-index preclaim rejection,
+obsolete-gate rejection and exact BODY 0 synthetic transport.
 
-```text
-src/physics/bmw_chassis_body_selection_gate_runtime.py
-tests/test_bmw_chassis_body_selection_gate_runtime.py
-```
-
-verifies exact canonical topology, current continuity rejection, synthetic BODY 0
-selection, and topology self-promotion rejection.
-
-Native:
-
-```text
-shift_runtime_bmw_chassis_body_selection_gate_check
-```
-
-verifies the same gate and then feeds the synthetic positive result into the real
-Phase 700 `NativeRuntimeState` handoff.
+Native `shift_runtime_global_vehicle_body_owner_selection_check` verifies the
+blocked handoff is rejected before Phase 700 runtime reads and exercises a
+synthetic positive Process 1 handoff through the real Phase 700 runtime path.
 
 ## Next blocker
 
-The next useful Process 1 proof is singular:
+Immediate upstream work remains:
 
 ```text
-*record + 0x340
--> active update child
--> FUN_007615c0 vehicle solver base
+retail FUN_00765470 instruction export
+-> prove entry ECX reaches FUN_007b2270 as BODY-array owner ECX
+-> positive SHIFT.GlobalVehicleBodyOwnerIdentity/1
+-> Phase 703/698/700 retail BODY0 pose
 ```
 
-Once that is positive, Phase 703 can admit the retail BODY 0 selection and Phase
-700 can expose its persistent pose.  The next cross-process blocker after that is
-then the exact BODY origin/basis -> renderer SVWT/world-transform convention.
+After that, Process 2 should consume the BODY0 pose into the exact Phase 645
+bind-frame composition required by Phase 646 rather than revisiting update-child
+identity.
