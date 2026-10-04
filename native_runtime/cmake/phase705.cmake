@@ -16,3 +16,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_bmw_vehicle_world_matrix_runtime_handoff
     COMMAND shift_runtime_bmw_vehicle_world_matrix_runtime_handoff_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase706.cmake)

@@ -1,0 +1,87 @@
+name: native-physics-phase706
+
+on:
+  push:
+    paths:
+      - 'src/physics/persistent_bmw_vehicle_world_transform_runtime.py'
+      - 'tests/test_persistent_bmw_vehicle_world_transform_runtime.py'
+      - 'native_runtime/include/shift_persistent_bmw_vehicle_world_transform.hpp'
+      - 'native_runtime/src/persistent_bmw_vehicle_world_transform.cpp'
+      - 'native_runtime/tests/persistent_bmw_vehicle_world_transform_check.cpp'
+      - 'native_runtime/cmake/phase705.cmake'
+      - 'native_runtime/cmake/phase706.cmake'
+      - 'docs/PHASE706_PERSISTENT_BMW_VEHICLE_WORLD_TRANSFORM.md'
+      - '.github/workflows/native-physics-phase706.yml'
+  pull_request:
+    paths:
+      - 'src/physics/persistent_bmw_vehicle_world_transform_runtime.py'
+      - 'tests/test_persistent_bmw_vehicle_world_transform_runtime.py'
+      - 'native_runtime/include/shift_persistent_bmw_vehicle_world_transform.hpp'
+      - 'native_runtime/src/persistent_bmw_vehicle_world_transform.cpp'
+      - 'native_runtime/tests/persistent_bmw_vehicle_world_transform_check.cpp'
+      - 'native_runtime/cmake/phase705.cmake'
+      - 'native_runtime/cmake/phase706.cmake'
+      - 'docs/PHASE706_PERSISTENT_BMW_VEHICLE_WORLD_TRANSFORM.md'
+      - '.github/workflows/native-physics-phase706.yml'
+
+jobs:
+  persistent-bmw-vehicle-world-transform:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run Phase 706 Python oracle
+        run: >-
+          PYTHONPATH=src/physics python3 -m pytest -q
+          tests/test_persistent_bmw_vehicle_world_transform_runtime.py
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 705 and 706 native regressions
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_bmw_vehicle_world_matrix_runtime_handoff_check
+          shift_runtime_persistent_bmw_vehicle_world_transform_check
+
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_bmw_vehicle_world_matrix_runtime_handoff|shift_runtime_persistent_bmw_vehicle_world_transform)$'
+
+      - name: Verify Phase 706 report
+        run: |
+          mkdir -p out/native-physics-phase706
+          native_runtime/build/shift_runtime_persistent_bmw_vehicle_world_transform_check \
+            > out/native-physics-phase706/persistent_bmw_vehicle_world_transform.json
+          grep -q '"format":"SHIFT.PersistentBMWVehicleWorldTransform/1"' \
+            out/native-physics-phase706/persistent_bmw_vehicle_world_transform.json
+          grep -q '"phase":706' \
+            out/native-physics-phase706/persistent_bmw_vehicle_world_transform.json
+          grep -q '"transactional_commit":true' \
+            out/native-physics-phase706/persistent_bmw_vehicle_world_transform.json
+          grep -q '"source_pose_provenance_retained":true' \
+            out/native-physics-phase706/persistent_bmw_vehicle_world_transform.json
+          grep -q '"stale_snapshot_generation_rejected":true' \
+            out/native-physics-phase706/persistent_bmw_vehicle_world_transform.json
+          grep -q '"stale_explicit_update_count_rejected":true' \
+            out/native-physics-phase706/persistent_bmw_vehicle_world_transform.json
+          grep -q '"reinitialize_with_reused_generation_rejected":true' \
+            out/native-physics-phase706/persistent_bmw_vehicle_world_transform.json
+          grep -q '"phase705_handoff_reused":true' \
+            out/native-physics-phase706/persistent_bmw_vehicle_world_transform.json
+          grep -q '"current_retail_identity_ready":false' \
+            out/native-physics-phase706/persistent_bmw_vehicle_world_transform.json
+          grep -q '"current_retail_body0_bind_ready":false' \
+            out/native-physics-phase706/persistent_bmw_vehicle_world_transform.json
+          grep -q '"automatic_fixed_step_commit":false' \
+            out/native-physics-phase706/persistent_bmw_vehicle_world_transform.json
+          grep -q '"renderer_mutation_enabled":false' \
+            out/native-physics-phase706/persistent_bmw_vehicle_world_transform.json
+          grep -q '"camera_follow_enabled":false' \
+            out/native-physics-phase706/persistent_bmw_vehicle_world_transform.json
