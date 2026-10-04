@@ -14,6 +14,7 @@ from typing import Any, Mapping
 FORMAT = "SHIFT.OfflineNativeVerticalSliceProfilePrepare/1"
 REQUIREMENTS_FORMAT = "SHIFT.OfflineNativeRuntimeRequirements/1"
 PROFILE_FORMAT = "SHIFT.NativeVerticalSliceProfile/1"
+RETAIL_ARCHIVE_ADMISSION_FORMAT = "SHIFT.RetailArchiveIdentityAdmission/1"
 
 PROFILE_INPUTS = (
     "scene_set",
@@ -86,6 +87,29 @@ def build_vertical_slice_profile_prepare(
 
     if not root.is_dir():
         blockers.append(f"workspace-root:not-directory:{root}")
+
+    retail_identity_required = (
+        requirements.get("retail_archive_identity_required") is True
+    )
+    retail_identity_relative: Path | None = None
+    retail_track = str(requirements.get("track") or "").strip()
+    retail_vehicle = str(requirements.get("vehicle") or "").strip()
+    if retail_identity_required:
+        if requirements.get("retail_archive_identity_ready") is not True:
+            blockers.append("retail-archive-identity:not-ready")
+        if not retail_track:
+            blockers.append("retail-archive-identity:track-missing")
+        if not retail_vehicle:
+            blockers.append("retail-archive-identity:vehicle-missing")
+        relative, error = _resolve_under_workspace(
+            root,
+            requirements.get("retail_archive_identity_admission"),
+            label="retail-archive-identity-admission",
+        )
+        if error:
+            blockers.append(error)
+        else:
+            retail_identity_relative = relative
 
     for name in PROFILE_INPUTS:
         row = rows.get(name)
@@ -180,6 +204,13 @@ def build_vertical_slice_profile_prepare(
             **profile_inputs,
             "persist_post_solve_body_state": True,
         }
+        if retail_identity_required:
+            assert retail_identity_relative is not None
+            profile["track"] = retail_track
+            profile["vehicle"] = retail_vehicle
+            profile["retail_archive_identity_admission"] = (
+                retail_identity_relative.as_posix()
+            )
         if input_script_relative is not None:
             profile["input_script"] = input_script_relative
             if frames is not None:
@@ -206,6 +237,16 @@ def build_vertical_slice_profile_prepare(
             "requirements_artifact_identity_is_authoritative": True,
             "validated_explicit_requirement_stays_explicit": True,
             "explicit_override_of_proven_artifact_allowed": False,
+            "retail_archive_identity_required": retail_identity_required,
+            "retail_archive_identity_admission_format": (
+                RETAIL_ARCHIVE_ADMISSION_FORMAT
+            ),
+            "retail_archive_identity_propagated": (
+                retail_identity_required
+                and retail_identity_relative is not None
+                and requirements.get("retail_archive_identity_ready") is True
+            ),
+            "retail_archive_identity_revalidated_by_profile_builder": False,
             "missing_evidence_synthesized": False,
             "path_outside_workspace_allowed": False,
             "input_mode_invented": False,
