@@ -26,6 +26,14 @@ struct Fun0076d100AnchorCallbacks {
 using Fun0076d100AnchorProvider =
     std::function<Fun0076d100AnchorCallbacks(std::size_t pass_index)>;
 
+// Executes after the complete FUN_0076d100 required anchor sequence for one
+// pass, and before the corresponding FUN_00765470 half-step consumes BODY
+// bytes. Existing callers omit it and preserve the pre-Phase-707 behavior.
+using Fun0076d100PostAnchorBodyStateMutator =
+    std::function<void(
+        std::size_t pass_index,
+        std::vector<std::uint8_t>& current_body_bytes)>;
+
 struct Fun00765470MachineHalfStepInput {
     Fun00763570MachineInput machine{};
     PreparedGeneratedBodyConstraintFrame source{};
@@ -59,6 +67,7 @@ Fun00770e80ComposedAnchorChainResult execute_fun_00770e80_composed_anchor_chain(
     const std::vector<std::uint8_t>& initial_body_bytes,
     const Fun0076d100AnchorProvider& physics_pass_provider,
     const Fun00765470MachineHalfStepProvider& half_step_provider,
-    const Fun007b8810PostHalfStepCallback& post_half_step);
+    const Fun007b8810PostHalfStepCallback& post_half_step,
+    const Fun0076d100PostAnchorBodyStateMutator& post_anchor_body_mutator = {});
 
 }  // namespace shift::runtime::physics
