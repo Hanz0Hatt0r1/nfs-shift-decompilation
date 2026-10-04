@@ -22,7 +22,8 @@ execute_fun_00770e80_scalar_provider_anchor_chain(
     const std::vector<std::uint8_t>& initial_body_bytes,
     const Fun0076d100AnchorProvider& physics_pass_provider,
     const Fun00765470MachineScalarHalfStepProvider& half_step_provider,
-    const Fun007b8810PostHalfStepCallback& post_half_step) {
+    const Fun007b8810PostHalfStepCallback& post_half_step,
+    const Fun0076d100PostAnchorBodyStateMutator& post_anchor_body_mutator) {
     if (!half_step_provider) {
         throw std::invalid_argument(
             "FUN_00770e80 scalar-provider chain requires half-step provider");
@@ -100,7 +101,8 @@ execute_fun_00770e80_scalar_provider_anchor_chain(
             adapted.tolerance = typed.tolerance;
             return adapted;
         },
-        post_half_step);
+        post_half_step,
+        post_anchor_body_mutator);
 
     for (std::size_t pass_index = 0u;
          pass_index < kFun00770e80PassCount;
