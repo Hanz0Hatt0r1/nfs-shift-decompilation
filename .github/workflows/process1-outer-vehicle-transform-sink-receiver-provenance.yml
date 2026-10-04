@@ -1,0 +1,38 @@
+name: Process 1 outer Vehicle sink receiver provenance
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_outer_vehicle_transform_sink_receiver_provenance.py'
+      - 'tests/test_ghidra_outer_vehicle_transform_sink_receiver_provenance.py'
+      - 'tools/ghidra/build_outer_vehicle_vhf_root_relation_frontier.py'
+      - 'tools/ghidra/analyze_bmw_body0_bind_callsite_register_provenance.py'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_TRANSFORM_SINK_RECEIVER_PROVENANCE.md'
+      - '.github/workflows/process1-outer-vehicle-transform-sink-receiver-provenance.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_outer_vehicle_transform_sink_receiver_provenance.py'
+      - 'tests/test_ghidra_outer_vehicle_transform_sink_receiver_provenance.py'
+      - 'tools/ghidra/build_outer_vehicle_vhf_root_relation_frontier.py'
+      - 'tools/ghidra/analyze_bmw_body0_bind_callsite_register_provenance.py'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_TRANSFORM_SINK_RECEIVER_PROVENANCE.md'
+      - '.github/workflows/process1-outer-vehicle-transform-sink-receiver-provenance.yml'
+
+jobs:
+  receiver-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run outer Vehicle sink receiver regressions
+        run: python -m pytest -q tests/test_ghidra_outer_vehicle_transform_sink_receiver_provenance.py
+      - name: Preserve shared all-path receiver/register engine regressions
+        run: >-
+          python -m pytest -q
+          tests/test_ghidra_bmw_sdf_vehicle_assembly_receiver_provenance.py
+          tests/test_ghidra_bmw_body0_bind_callsite_register_provenance.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/analyze_outer_vehicle_transform_sink_receiver_provenance.py --help >/dev/null
