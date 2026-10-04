@@ -17,3 +17,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_bmw_body0_vhf_world_matrix_composition
     COMMAND shift_runtime_bmw_body0_vhf_world_matrix_composition_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase705.cmake)
