@@ -20,7 +20,7 @@ def test_phase699_freezes_exact_deep_chain_external_provider_set() -> None:
     report = build_frontier()
     assert report["format"] == FORMAT
     assert report["phase"] == 699
-    assert report["refresh_after_phase"] == 703
+    assert report["refresh_after_phase"] == 706
     assert report["external_provider_count"] == 9
     assert report["implement_now"] == []
     assert report["runtime_only_blocked"] == []
@@ -93,25 +93,47 @@ def test_phase699_tracks_fun_00765470_receiver_proof_separately_from_refresh_pro
     assert len(provider["process1_requested_proof"]) == 3
 
 
-def test_phase699_consumes_phase645_646_renderer_side_without_claiming_body_frame_mapping() -> None:
+def test_phase699_consumes_phase704_706_transform_chain_without_inventing_retail_bind_witness() -> None:
     report = build_frontier()
     closed = {row["boundary"]: row for row in report["closed_boundaries"]}
+
+    formula = closed["BODY0/VHF bind-frame composition contract"]
+    assert "PR #1199" in formula["proof"]
+    assert formula["BODY0_bind_frame_proven"] is False
+
+    bind_frontier = closed["BODY0 bind initialization static frontier"]
+    assert "PR #1200" in bind_frontier["proof"]
+    assert bind_frontier["BODY0_bind_matrix_proven"] is False
+
+    assert closed["native BODY0/VHF world-matrix composition"]["phase"] == 704
+    assert closed["NativeRuntimeState -> BMW vehicle world-matrix handoff"]["phase"] == 705
+    persistent = closed["persistent BMW vehicle world transform"]
+    assert persistent["phase"] == 706
+    assert persistent["proof"] == "SHIFT.PersistentBMWVehicleWorldTransform/1"
+    assert persistent["current_retail_world_matrix_ready"] is False
+    assert persistent["renderer_mutation_enabled"] is False
+
     assert closed["canonical BMW VHF static bind transform"]["phase"] == 645
     assert closed["dynamic vehicle world-transform transport core"]["phase"] == 646
     assert "live_vulkan_wiring_pending" in closed["dynamic vehicle world-transform transport core"]["state"]
 
     joins = {row["id"]: row for row in report["cross_chain_joins"]}
     transform = joins["body_pose_to_renderer_world_transform"]
-    assert transform["state"] == "bind_frame_composition_blocked_transport_core_ready"
-    assert any("Phase 645" in evidence for evidence in transform["evidence"])
+    assert transform["state"] == "composition_handoff_and_persistence_ready_retail_bind_witness_pending"
+    assert any("PR #1199" in evidence for evidence in transform["evidence"])
+    assert any("PR #1200" in evidence for evidence in transform["evidence"])
+    assert any("Phase 704" in evidence for evidence in transform["evidence"])
+    assert any("Phase 705" in evidence for evidence in transform["evidence"])
+    assert any("Phase 706" in evidence for evidence in transform["evidence"])
     assert any("Phase 646" in evidence for evidence in transform["evidence"])
     assert transform["blockers"] == [
-        "persistent BODY0 pose frame -> Phase 645 VHF vehicle-root/body-MEB bind-frame composition is not proven",
+        "positive SHIFT.BMWBody0BindFrameProof/1 with source-backed BODY0 bind matrix is not committed",
     ]
     assert "live Vulkan buffer wiring" in transform["additional_dependency"]
+    assert "do not synthesize the BODY0 bind matrix" in transform["policy"]
 
 
-def test_phase699_closed_boundaries_reflect_phase700_703_without_promoting_retail_identity() -> None:
+def test_phase699_closed_boundaries_reflect_phase700_706_without_promoting_retail_identity() -> None:
     closed = {row["boundary"]: row for row in build_frontier()["closed_boundaries"]}
     assert closed["NativeRuntimeState -> selected BODY pose handoff"]["phase"] == 700
     composed = closed["global vehicle/BODY-owner identity composition contract"]
@@ -123,6 +145,9 @@ def test_phase699_closed_boundaries_reflect_phase700_703_without_promoting_retai
     assert phase703["phase"] == 703
     assert phase703["proof"] == "SHIFT.NativeGlobalVehicleBodyOwnerSelection/1"
     assert phase703["retail_identity_ready"] is False
+    assert closed["native BODY0/VHF world-matrix composition"]["current_retail_world_matrix_ready"] is False
+    assert closed["NativeRuntimeState -> BMW vehicle world-matrix handoff"]["current_retail_world_matrix_ready"] is False
+    assert closed["persistent BMW vehicle world transform"]["current_retail_world_matrix_ready"] is False
 
 
 def test_phase699_keeps_known_unsafe_promotions_forbidden() -> None:
@@ -140,6 +165,8 @@ def test_phase699_keeps_known_unsafe_promotions_forbidden() -> None:
     assert guards["body_pose_to_vehicle_transform_promotion_allowed"] is False
     assert guards["phase645_static_bind_transform_is_dynamic_pose"] is False
     assert guards["phase646_transport_core_is_body_frame_proof"] is False
+    assert guards["phase704_composition_contract_is_retail_bind_proof"] is False
+    assert guards["phase706_persistent_transform_is_renderer_mutation"] is False
     assert guards["original_game_execution_required"] is False
     assert guards["new_runtime_capture_required"] is False
 
