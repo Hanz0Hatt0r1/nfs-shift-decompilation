@@ -58,11 +58,12 @@ def test_phase713_failed_environment_admission_remains_retryable():
     )
     disabled_commit = body.index("environment_checked = true;", raw_enabled)
     first_required_path = body.index("required_environment_path(")
-    configure = body.index("configure(")
+    configure_call = body.index("\n        configure(", first_required_path)
 
     # Only the explicit disabled path may latch the environment check before
-    # source loading. Enabled admission must stay retryable until configure().
-    assert raw_enabled < disabled_commit < first_required_path < configure
+    # source loading. Enabled admission must stay retryable until the real
+    # configure() call after all required source paths have loaded.
+    assert raw_enabled < disabled_commit < first_required_path < configure_call
     prefix = body[:raw_enabled]
     assert "environment_checked = true;" not in prefix
     assert 'std::string(raw_enabled) == "0"' in body
