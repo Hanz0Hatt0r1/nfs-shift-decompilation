@@ -1,0 +1,30 @@
+name: process-1-bmw-body0-bind-init-frontier
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/build_bmw_body0_bind_initialization_frontier.py'
+      - 'tests/test_ghidra_bmw_body0_bind_initialization_frontier.py'
+      - 'docs/PROCESS_1_BMW_BODY0_BIND_INITIALIZATION_FRONTIER.md'
+      - '.github/workflows/process-1-bmw-body0-bind-init-frontier.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/build_bmw_body0_bind_initialization_frontier.py'
+      - 'tests/test_ghidra_bmw_body0_bind_initialization_frontier.py'
+      - 'docs/PROCESS_1_BMW_BODY0_BIND_INITIALIZATION_FRONTIER.md'
+      - '.github/workflows/process-1-bmw-body0-bind-init-frontier.yml'
+
+jobs:
+  bind-initialization-frontier:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pytest
+        run: python -m pip install pytest
+      - name: Run focused frontier regressions
+        run: python -m pytest -q tests/test_ghidra_bmw_body0_bind_initialization_frontier.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/build_bmw_body0_bind_initialization_frontier.py --help >/dev/null
