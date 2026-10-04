@@ -64,6 +64,49 @@ The later Phase 644 playable scene bootstrap applies the same policy to the BMW
 primary/cockpit archives plus `RENDER.bff` before material/Vulkan scene
 composition.
 
+### Persistent typed physics resource paths
+
+The unified `SHIFT.OfflineRuntimeBootstrap/1` passes its existing
+`SHIFT.TypedResourceClosure/1` into the native-vehicle resource stage. The
+existing `SHIFT.VehiclePhysicsResourceManifest/1` is enriched in place; no new
+coordination report or resource identity is introduced.
+
+For each selected CDF/EDF/GDF/SDF/TBF/BBF entry, a persistent decoded path is
+admitted only after all of the following match exactly:
+
+```text
+resource_id
++ normalized retail path
++ manifest decoded SHA-256
++ typed-closure decoded SHA-256
++ typed-closure identity_match = true
++ current materialized file SHA-256
+```
+
+The admitted entry then exposes:
+
+```text
+materialized_path
+materialized_sha256
+materialization_source = SHIFT.TypedResourceClosure/1
+```
+
+A missing file, hash drift, duplicate resource ID, path mismatch, or typed
+closure ambiguity blocks native vehicle resource readiness. Basename fallback,
+archive order, first duplicate, and resource similarity are not used.
+
+For the selected BMW target the unified runtime bootstrap additionally surfaces
+the already-admitted SDF file as:
+
+```text
+artifacts.vehicle_sdf
+```
+
+This is a resource handoff only. It makes the exact decoded retail SDF available
+to Process 1/2 without another extraction command, but it does **not** claim
+BODY0 identity, BODY bind semantics, SDF-model -> VHF frame relation, provider
+identity, scheduling, or vehicle-world-transform readiness.
+
 ## Commands
 
 Inventory only:
@@ -160,7 +203,10 @@ The resource pipeline writes:
 
 The one-command `offline_runtime_bootstrap` additionally writes
 `retail_archive_identity_admission.json`; its readiness is now a required input
-to both static native scene and native vehicle admission.
+to both static native scene and native vehicle admission. In that unified path,
+`native-vehicle/vehicle_physics_resource_manifest.json` also carries the exact
+persistent decoded paths described above, and `runtime_bootstrap.json` exposes
+`artifacts.vehicle_sdf` when the exact selected SDF was admitted.
 
 See `docs/OFFLINE_NATIVE_RESOURCE_HANDOFF.md` for downstream join contracts and
 non-claims.

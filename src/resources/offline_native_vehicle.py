@@ -31,6 +31,9 @@ from offline_native_resource_handoff import (
     build_bmw_m3_runtime_compat_manifest,
     build_vehicle_physics_resource_manifest,
 )
+from typed_physics_resource_materialization import (
+    attach_typed_physics_materializations,
+)
 
 FORMAT = "SHIFT.OfflineNativeVehicleBuild/1"
 
@@ -69,10 +72,13 @@ def build_native_vehicle(
     bootstrap: Mapping[str, Any],
     physics_bundle: Mapping[str, Any],
     *,
+    typed_closure: Mapping[str, Any] | None = None,
     participant_observation: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the strongest vehicle resource artifact supported by current proof."""
     generic = build_vehicle_physics_resource_manifest(catalog, bootstrap, physics_bundle)
+    if typed_closure is not None:
+        generic = attach_typed_physics_materializations(generic, typed_closure)
     compatibility = build_bmw_m3_runtime_compat_manifest(generic)
     participant_boundary = build_native_physics_participant_boundary()
 
@@ -157,6 +163,19 @@ def build_native_vehicle(
     else:
         status = "resource-ready-runtime-physics-blocked"
 
+    materialized_physics_resources: dict[str, dict[str, Any]] = {}
+    generic_entries = generic.get("entries") or {}
+    if isinstance(generic_entries, Mapping):
+        for kind, raw in generic_entries.items():
+            if not isinstance(raw, Mapping) or not raw.get("materialized_path"):
+                continue
+            materialized_physics_resources[str(kind)] = {
+                "resource_id": raw.get("resource_id"),
+                "path": raw.get("path"),
+                "materialized_path": raw.get("materialized_path"),
+                "sha256": raw.get("materialized_sha256"),
+            }
+
     return {
         "format": FORMAT,
         "version": 1,
@@ -172,6 +191,7 @@ def build_native_vehicle(
         "blocking_reasons": blockers,
         "runtime_gate_blocking_reasons": runtime_gate_blockers,
         "vehicle_physics_manifest": generic,
+        "materialized_physics_resources": materialized_physics_resources,
         "participant_boundary": participant_boundary,
         "participant_runtime_evidence": participant_runtime_evidence,
         "native_physics_compatibility": compatibility,
@@ -180,11 +200,16 @@ def build_native_vehicle(
             "participant_structural_boundary_format": PARTICIPANT_BOUNDARY_FORMAT,
             "participant_runtime_evidence_format": PARTICIPANT_RUNTIME_EVIDENCE_FORMAT,
             "current_runtime_physics_manifest_format": BMW_COMPAT_FORMAT,
+            "typed_resource_closure_evaluated": typed_closure is not None,
+            "typed_physics_materializations_ready": (
+                generic.get("materialized_resources_ready") is True
+            ),
             "non_bmw_runtime_compatibility_invented": False,
             "participant_structural_boundary_evaluated": True,
             "participant_runtime_identity_evaluated": participant_runtime_identity_evaluated,
             "participant_runtime_observation_used": participant_observation is not None,
             "participant_instance_invented": False,
+            "body_semantics_claimed_by_materialization_handoff": False,
             "input_binding_evaluated": False,
             "fixed_step_schedule_evaluated": False,
             "runtime_execution_claimed": False,
@@ -200,9 +225,15 @@ def build_native_vehicle_files(
     physics_bundle_path: str | Path,
     output_dir: str | Path,
     *,
+    typed_closure_path: str | Path | None = None,
     participant_observation_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Build and persist generic plus runtime-compatible vehicle artifacts."""
+    typed_closure = (
+        _load(typed_closure_path)
+        if typed_closure_path is not None
+        else None
+    )
     observation: dict[str, Any] | None = None
     observation_load_error: str | None = None
     observation_path = (
@@ -222,6 +253,7 @@ def build_native_vehicle_files(
         _load(catalog_path),
         _load(bootstrap_path),
         _load(physics_bundle_path),
+        typed_closure=typed_closure,
         participant_observation=observation,
     )
 
