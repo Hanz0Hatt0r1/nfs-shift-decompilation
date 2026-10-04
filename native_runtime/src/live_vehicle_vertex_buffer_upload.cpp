@@ -41,11 +41,13 @@ LiveVehicleVertexBufferUploadResult upload_live_vehicle_vertex_buffers(
             "Phase 647 draw groups, immutable geometry and Vulkan targets must have identical counts");
     }
 
-    const std::vector<std::size_t> indices =
-        vehicle_draw_indices(draw_groups);
-    if (indices.empty()) {
+    std::vector<std::size_t> indices;
+    try {
+        indices = vehicle_draw_indices(draw_groups);
+    } catch (const std::runtime_error& error) {
         throw std::invalid_argument(
-            "Phase 647 scene contains no authoritative vehicle draws");
+            std::string("Phase 647 invalid authoritative draw groups: ") +
+            error.what());
     }
 
     // Phase 646 owns matrix validation and semantic geometry transformation.
