@@ -8,7 +8,10 @@ stage and rebuilds the runtime requirements/profile against that composite scene
 
 Phase 653 additionally accepts a ready Phase 650 capture-result bundle and uses
 the existing Phase 652 exact feedback resolver to derive the canonical sibling
-raw capture/root. The full renderer re-attribution chain remains unchanged.
+raw capture/root. Phase 655 can also resolve one canonical
+``SHIFT.PEImageEvidence/1`` from the existing renderer report bundle when no
+explicit PE selector is supplied. The full renderer re-attribution chain remains
+unchanged.
 
 The historical track-only bootstrap remains unchanged. This command is the
 playable-specific orchestration path and therefore owns scene-set production;
@@ -38,6 +41,9 @@ from bootstrap_native_vertical_slice_from_capture_result import (
 from native_playable_scene_bootstrap import build_native_playable_scene_bootstrap
 from offline_runtime_requirements import build_runtime_requirements
 from offline_vertical_slice_profile import build_vertical_slice_profile_prepare
+from resolve_playable_renderer_pe_evidence import (
+    resolve_renderer_pe_evidence_from_bundles,
+)
 from run_native_vertical_slice import ProfileError, build_launch_plan
 from runtime_input_validation import validate_explicit_runtime_inputs
 
@@ -155,6 +161,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     capture_feedback: Mapping[str, Any] | None = None
+    pe_bundle_resolution: Mapping[str, Any] | None = None
     base_values = list(values)
     if args.renderer_capture_result:
         if args.renderer_capture_jsonl or args.renderer_capture_root:
@@ -187,9 +194,34 @@ def main(argv: list[str] | None = None) -> int:
     if not args.renderer_capture_jsonl:
         parser.error(
             "playable scene composition requires renderer evidence through "
-            "either --renderer-capture-result or --renderer-capture-jsonl, "
-            "plus its PE evidence selector"
+            "either --renderer-capture-result or --renderer-capture-jsonl"
         )
+
+    if not args.renderer_pe_evidence and not args.renderer_pe_image:
+        if not args.renderer_bundle:
+            parser.error(
+                "playable renderer evidence requires either an explicit "
+                "--renderer-pe-evidence/--renderer-pe-image selector or a "
+                "--renderer-bundle containing one exact SHIFT.PEImageEvidence/1"
+            )
+        try:
+            pe_bundle_resolution = resolve_renderer_pe_evidence_from_bundles(
+                list(args.renderer_bundle),
+                output_dir=(
+                    Path(args.output).expanduser().resolve()
+                    / "renderer-evidence"
+                    / "bundle-pe-input"
+                ),
+                max_json_bytes=args.renderer_max_json_bytes,
+            )
+        except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+            parser.error(
+                "renderer bundle PE evidence is not exactly resolvable: "
+                f"{type(exc).__name__}:{exc}"
+            )
+        pe_path = str(pe_bundle_resolution["path"])
+        base_values.extend(["--renderer-pe-evidence", pe_path])
+        args.renderer_pe_evidence = pe_path
 
     # A launch plan produced before Phase 644 would point at the track-only scene.
     # Defer launcher validation until the composite scene/profile is rebuilt.
@@ -214,6 +246,12 @@ def main(argv: list[str] | None = None) -> int:
         artifacts["renderer_capture_result"] = str(
             Path(args.renderer_capture_result).expanduser().resolve()
         )
+    if pe_bundle_resolution is not None:
+        stages["renderer_pe_bundle_resolution"] = dict(pe_bundle_resolution)
+        artifacts["renderer_pe_evidence"] = pe_bundle_resolution.get("path")
+        artifacts["renderer_pe_bundle_index"] = pe_bundle_resolution.get(
+            "bundle_index"
+        )
 
     boundary.update({
         "playable_linux_scene_composition_requested": True,
@@ -221,6 +259,13 @@ def main(argv: list[str] | None = None) -> int:
         "manual_vehicle_material_slice_handoff_required": False,
         "manual_vehicle_bff_path_handoff_required": False,
         "manual_renderer_capture_path_handoff_required": False,
+        "manual_renderer_pe_path_handoff_required_when_bundle_has_exact_pe": False,
+        "renderer_pe_bundle_resolution_used": pe_bundle_resolution is not None,
+        "renderer_pe_bundle_selection_uses_embedded_format_and_canonical_json_sha256": (
+            pe_bundle_resolution is not None
+        ),
+        "renderer_pe_bundle_filename_is_selection_authority": False,
+        "renderer_pe_bundle_archive_order_is_selection_authority": False,
         "phase652_capture_feedback_consumed": capture_feedback is not None,
         "renderer_capture_result_is_render_admission": False,
         "track_only_profile_is_playable_profile": False,
