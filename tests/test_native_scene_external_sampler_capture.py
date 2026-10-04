@@ -552,7 +552,7 @@ def test_capture_adapter_requires_observed_texture2d_creation(tmp_path):
     )
 
 
-def test_capture_adapter_remaps_windows_path_by_unique_basename(
+def test_capture_adapter_relocates_windows_path_by_launcher_layout(
     tmp_path,
 ):
     ppm = tmp_path / "textures" / "shadow.ppm"
@@ -570,7 +570,7 @@ def test_capture_adapter_remaps_windows_path_by_unique_basename(
         "provenance"
     ]
     assert provenance["path_resolution"] == (
-        "capture-root-unique-basename"
+        "capture-launcher-textures-relative"
     )
     assert provenance["resolved_snapshot_path"].endswith(
         "textures/shadow.ppm"
