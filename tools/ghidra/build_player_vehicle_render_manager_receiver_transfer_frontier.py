@@ -175,9 +175,15 @@ def _seed_from_read(
     if not isinstance(before, dict):
         raise ValueError(f"{function}:{address}: exact rank READ instruction unreachable")
     after = _alias._register_engine._transfer(instruction, before)
-    pcode = _accesses._validate_pcode(instruction.get("pcode"), address)
+
+    raw_pcode = instruction.get("pcode")
+    _accesses._validate_pcode(raw_pcode, address)
+    if not isinstance(raw_pcode, list):
+        raise ValueError(f"{address}: pcode must be a list")
     load_outputs: list[str] = []
-    for op in pcode:
+    for op in raw_pcode:
+        if not isinstance(op, Mapping):
+            raise ValueError(f"{address}: pcode operation must be an object")
         if str(op.get("opcode") or "").upper() != "LOAD":
             continue
         output = op.get("output")
