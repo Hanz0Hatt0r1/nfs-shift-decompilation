@@ -1,0 +1,54 @@
+name: Process 1 BMW offset33b native session selector
+
+on:
+  push:
+    paths:
+      - 'tools/bind_bmw_offset33b_native_session_selector.py'
+      - 'evidence/bmw_offset33b_selector_complete_numeric.json'
+      - 'evidence/bmw_offset33b_native_silverstone_session.json'
+      - 'tests/test_bind_bmw_offset33b_native_session_selector.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_NATIVE_SESSION_SELECTOR.md'
+      - '.github/workflows/process1-bmw-offset33b-native-session-selector.yml'
+  pull_request:
+    paths:
+      - 'tools/bind_bmw_offset33b_native_session_selector.py'
+      - 'evidence/bmw_offset33b_selector_complete_numeric.json'
+      - 'evidence/bmw_offset33b_native_silverstone_session.json'
+      - 'tests/test_bind_bmw_offset33b_native_session_selector.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_NATIVE_SESSION_SELECTOR.md'
+      - '.github/workflows/process1-bmw-offset33b-native-session-selector.yml'
+
+jobs:
+  selector-binding:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run selector binding regressions
+        run: |
+          python -m pip install --disable-pip-version-check pytest
+          python -m pytest -q tests/test_bind_bmw_offset33b_native_session_selector.py
+      - name: Rebuild committed Silverstone selector artifact
+        run: |
+          tmp=$(mktemp)
+          python3 tools/bind_bmw_offset33b_native_session_selector.py \
+            evidence/bmw_offset33b_selector_complete_numeric.json \
+            --physics-mode normal \
+            --player-difficulty 1 \
+            --session-target Silverstone+BMW_M3_E36 \
+            --json-out "$tmp"
+          python3 - "$tmp" evidence/bmw_offset33b_native_silverstone_session.json <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          left = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+          right = json.loads(Path(sys.argv[2]).read_text(encoding='utf-8'))
+          if left != right:
+              raise SystemExit('committed Silverstone selector artifact drift')
+          PY
+      - name: Validate JSON artifacts
+        run: |
+          python -m json.tool evidence/bmw_offset33b_selector_complete_numeric.json >/dev/null
+          python -m json.tool evidence/bmw_offset33b_native_silverstone_session.json >/dev/null
