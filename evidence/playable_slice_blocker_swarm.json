@@ -1,0 +1,62 @@
+{
+  "format": "SHIFT.PlayableSliceBlockerSwarm/1",
+  "status": "active",
+  "blocker": "outer Vehicle-root -> exact canonical BMW VHF HIERARCHY root relation is the shortest semantic blocker and must not leave Process 2 or Process 3 idle",
+  "primary_owner": "Process 1",
+  "final_semantic_authority": "Process 1",
+  "current_frontier": {
+    "input_contracts": [
+      "SHIFT.BMWVehicleRenderModelResourceJoin/1",
+      "SHIFT.OuterVehicleRenderSnapshotAffineBridge/1",
+      "SHIFT.OuterVehicleRenderRootDeltaProvenance/1"
+    ],
+    "canonical_resource": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
+    "unresolved_relation": "outer Vehicle-root -> exact BMW VHF HIERARCHY root identity or fixed affine delta"
+  },
+  "shards": [
+    {
+      "process": "Process 1",
+      "role": "proof-owner",
+      "task": "close executable/value provenance and adjudicate the exact outer Vehicle-root -> BMW VHF root relation",
+      "may_publish_final_semantic_proof": true,
+      "output": "positive relation contract or narrower fail-closed frontier"
+    },
+    {
+      "process": "Process 2",
+      "role": "runtime-consumer-assist",
+      "task": "prepare and test the strict consumer/adaptor for the next positive relation stage, keep final admission fail-closed, and build only blocker-specific analysis/validation tooling requested by Process 1 when runtime-owned work is exhausted",
+      "may_publish_final_semantic_proof": false,
+      "forbidden": [
+        "guess the affine relation",
+        "promote candidate matrices into production",
+        "duplicate Process 1 semantic adjudication"
+      ],
+      "output": "ready consumer/tooling that shortens latency from relation proof to runtime admission"
+    },
+    {
+      "process": "Process 3",
+      "role": "resource-evidence-assist",
+      "task": "extract exact canonical BMW VHF HIERARCHY root/frame facts from retail resources and publish a resource-only contract for Process 1",
+      "may_publish_final_semantic_proof": false,
+      "forbidden": [
+        "infer executable ownership from resource structure",
+        "use visual similarity as frame proof",
+        "claim dynamic pose semantics"
+      ],
+      "output": "SHIFT.BMWVHFHierarchyRootResourceSemantics/1 or a narrower resource frontier"
+    }
+  ],
+  "fallback_policy": {
+    "downstream_process_may_idle": false,
+    "when_owned_queue_exhausted": "join the current shortest blocker swarm on a non-overlapping shard",
+    "duplicate_semantic_question_allowed": false,
+    "cross_process_assist_must_have_named_consumer": true,
+    "unsupported_gate_promotion_allowed": false
+  },
+  "handoff_order": [
+    "Process 3 resource-only root/frame facts -> Process 1",
+    "Process 1 executable/value relation proof -> Process 2 staged consumer",
+    "Process 1 final SHIFT.BMWBody0BindFrameProof/1 -> Process 2 final runtime admission",
+    "Process 2 fresh vehicle world transform -> Process 3 live Vulkan/camera consumers"
+  ]
+}

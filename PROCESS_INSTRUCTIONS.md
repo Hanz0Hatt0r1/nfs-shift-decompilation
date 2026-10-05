@@ -2,13 +2,21 @@
 
 The canonical coordination rules for Process 1, Process 2 and Process 3 are:
 
-[`docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V3.md`](docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V3.md)
+[`docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V4.md`](docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V4.md)
+
+The no-idle fallback for the current shortest blocker is canonical and maintained in:
+
+[`docs/PLAYABLE_SLICE_BLOCKER_SWARM.md`](docs/PLAYABLE_SLICE_BLOCKER_SWARM.md)
+
+Machine-readable swarm assignment:
+
+[`evidence/playable_slice_blocker_swarm.json`](evidence/playable_slice_blocker_swarm.json)
 
 Copy/paste prompts for three concurrent workers are maintained in:
 
-[`docs/PLAYABLE_SLICE_PARALLEL_PROCESS_PROMPTS.md`](docs/PLAYABLE_SLICE_PARALLEL_PROCESS_PROMPTS.md)
+[`docs/PLAYABLE_SLICE_PARALLEL_PROCESS_PROMPTS_V4.md`](docs/PLAYABLE_SLICE_PARALLEL_PROCESS_PROMPTS_V4.md)
 
-Every process must read the canonical document before selecting a new substantial task and re-check current `main` whenever a blocker is closed, ownership moves between processes, a cross-process handoff is merged, or the playable-slice graph changes.
+Every process must read the canonical documents before selecting a new substantial task and re-check current `main` whenever a blocker is closed, ownership moves between processes, a cross-process handoff is merged, or the playable-slice graph changes.
 
 The mandatory pre-task question is:
 
@@ -24,7 +32,25 @@ PROCESS 2  native physics/runtime consumption of positive handoffs
 PROCESS 3  exact resources / scene / Vulkan consumption of live transforms
 ```
 
-Do not duplicate the same unresolved semantic question in multiple processes. Downstream processes may advance in parallel only by consuming already-positive handoffs, building the immediate fail-closed consumer seam for the next handoff, or fixing a regression on the current playable-slice path.
+Cross-process handoffs are staged. Process 1 must publish independently useful positive sub-contracts as soon as they are proven; Process 2 must consume each positive stage immediately instead of waiting for a larger final proof. Missing final semantic values remain fail-closed and must never be guessed.
+
+For the current BODY0 bind path, Process 2 must read:
+
+[`evidence/process2_bmw_body0_bind_frame_staged_handoff.json`](evidence/process2_bmw_body0_bind_frame_staged_handoff.json)
+
+before declaring itself blocked on `SHIFT.BMWBody0BindFrameProof/1`.
+
+A process whose owned runnable queue is exhausted must not simply idle behind Process 1. It joins the current shortest blocker swarm on the non-overlapping shard assigned in `SHIFT.PlayableSliceBlockerSwarm/1`:
+
+```text
+Process 1  final semantic proof owner
+Process 2  runtime-consumer/tooling assist
+Process 3  exact resource/VHF hierarchy evidence assist
+```
+
+The semantic owner does not change. Assist processes may publish narrow supporting contracts, but may not duplicate semantic adjudication, guess missing values, or promote unsupported gates.
+
+Do not duplicate the same unresolved semantic question in multiple processes. Downstream processes may advance in parallel by consuming positive handoffs, building the immediate fail-closed consumer seam for the next handoff, internalizing another already-positive current-chain producer/owner handoff, fixing a regression on the current playable-slice path, or executing their assigned blocker-swarm shard.
 
 Individual processes should normally avoid editing the canonical coordination files. The coordinator owns those files so parallel PRs do not conflict on documentation unrelated to their blocker.
 

@@ -1,11 +1,13 @@
 {
   "format": "SHIFT.Process2BMWBody0BindFrameProofPacket/1",
   "status": "ready-gate",
-  "blocker": "Process 2 P2.1 consume positive SHIFT.BMWBody0BindFrameProof/1 as a machine-readable native artifact",
+  "blocker": "Final Process 2 retail transform admission consumes positive SHIFT.BMWBody0BindFrameProof/1; earlier positive bind-path stages are consumed through SHIFT.Process2BMWBody0BindFrameStagedHandoff/1 without opening this final gate",
   "input": {
     "required_contract": "SHIFT.BMWBody0BindFrameProof/1",
     "required_status": "ready",
     "required_evidence_state": "proven-static",
+    "staged_handoff_contract": "SHIFT.Process2BMWBody0BindFrameStagedHandoff/1",
+    "partial_handoff_consumption_required": true,
     "current_positive_handoff_present": false
   },
   "output": {
@@ -27,11 +29,12 @@
   "limits": [
     "does not derive or synthesize a BODY0 bind matrix",
     "cannot packetize a blocked, inferred, runtime-capture-dependent, or identity-assumed proof",
+    "does not require Process 2 to idle while earlier positive bind-path stages exist",
     "does not schedule retail physics",
     "does not publish a Phase 706 transform without a real positive Process 1 proof"
   ],
   "ownership": {
     "current_blocker_owner": "Process 1",
-    "process2_state": "artifact-loader-ready-awaiting-positive-proof"
+    "process2_state": "staged-handoff-active-final-artifact-loader-ready-awaiting-positive-proof"
   }
 }

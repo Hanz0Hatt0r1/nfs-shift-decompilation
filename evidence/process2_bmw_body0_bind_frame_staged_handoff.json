@@ -1,0 +1,106 @@
+{
+  "format": "SHIFT.Process2BMWBody0BindFrameStagedHandoff/1",
+  "status": "ready-gate",
+  "blocker": "Process 2 must consume positive bind-path evidence incrementally instead of idling until the final SHIFT.BMWBody0BindFrameProof/1 artifact exists",
+  "policy": {
+    "consume_positive_stages_immediately": true,
+    "final_runtime_admission_stays_fail_closed": true,
+    "missing_semantic_value_may_be_guessed": false,
+    "host_1_60_may_satisfy_retail_cadence": false
+  },
+  "stages": [
+    {
+      "id": "retail_body0_identity",
+      "contract": "SHIFT.GlobalVehicleBodyOwnerIdentity/1",
+      "state": "positive-consumed",
+      "consumer": "Phase 707/703/698/700 retail BODY0 selection",
+      "unlocks": [
+        "retail BMW chassis BODY index 0 selection",
+        "persistent BODY0 pose transport"
+      ]
+    },
+    {
+      "id": "body0_vhf_composition_formula",
+      "contract": "SHIFT.BMWBody0VHFBindFrameFrontier/1",
+      "state": "positive-consumed",
+      "consumer": "SHIFT.NativeBMWBody0VHFWorldMatrixComposition/1",
+      "unlocks": [
+        "fixed row-vector composition order vhf_bind * inverse(body0_bind) * body0_runtime",
+        "fail-closed native composition seam"
+      ]
+    },
+    {
+      "id": "exact_bmw_vhf_resource_identity",
+      "contract": "SHIFT.BMWVehicleRenderModelResourceJoin/1",
+      "state": "positive-available",
+      "consumer": "exact frame subject for Process 1 and Process 2 handoff validation",
+      "unlocks": [
+        "canonical vehicles/bmw_m3_e36/bmw_m3_e36.vhf target identity"
+      ]
+    },
+    {
+      "id": "outer_vehicle_render_snapshot_affine_bridge",
+      "contract": "SHIFT.OuterVehicleRenderSnapshotAffineBridge/1",
+      "state": "positive-available",
+      "consumer": "staged bind-path provenance",
+      "unlocks": [
+        "outer Vehicle slot identity continuity",
+        "symbolic P_snapshot = P_outer + R_outer * delta_local relation",
+        "bounded FUN_00795d60 producer for outerVehicle +0x19c/+0x1a0/+0x1a4"
+      ]
+    },
+    {
+      "id": "outer_vehicle_to_exact_vhf_root_relation",
+      "contract": "future positive Process 1 relation proof",
+      "state": "blocked",
+      "consumer": "final BODY0 bind composition",
+      "requires": [
+        "prove identity or exact fixed affine delta between outer Vehicle root and canonical BMW VHF HIERARCHY root"
+      ]
+    },
+    {
+      "id": "final_body0_bind_frame_proof",
+      "contract": "SHIFT.BMWBody0BindFrameProof/1",
+      "state": "blocked",
+      "consumer": "SHIFT.NativeBMWBody0BindFrameProofPacket/1 and production runtime admission",
+      "requires": [
+        "positive outer Vehicle root -> exact BMW VHF root relation",
+        "concrete numeric BODY0-local -> VHF vehicle-root composition"
+      ]
+    }
+  ],
+  "process2_parallel_work": [
+    {
+      "id": "consume_new_positive_stages",
+      "state": "runnable",
+      "rule": "update typed consumers/frontiers as soon as a stage is positive; do not wait for the final packet"
+    },
+    {
+      "id": "external_provider_and_control_frontier",
+      "state": "runnable",
+      "rule": "internalize any already-positive producer/owner handoff on the current vehicle chain while Process 1 closes the frame relation"
+    },
+    {
+      "id": "scheduler_consumer_seam",
+      "state": "ready",
+      "contract": "SHIFT.Process2RuntimeSchedulerAuthority/1",
+      "rule": "keep RetailEvidence separate from HostDevelopment; never reuse host 1/60 as retail proof"
+    },
+    {
+      "id": "persistent_transform_freshness",
+      "state": "ready-keep-green",
+      "rule": "keep BODY0 selection, persistent state, generation freshness, world-transform publication and Vulkan handoff regressions green"
+    },
+    {
+      "id": "retail_vehicle_world_transform_admission",
+      "state": "blocked",
+      "rule": "only this final semantic admission waits for positive SHIFT.BMWBody0BindFrameProof/1"
+    }
+  ],
+  "ownership": {
+    "process1": "prove and publish each semantic stage as soon as it is positive",
+    "process2": "consume positive stages immediately and continue independent current-chain work without promoting blocked semantics",
+    "final_frame_relation_owner": "Process 1",
+    "final_runtime_admission_owner": "Process 2"
+  }
+}
