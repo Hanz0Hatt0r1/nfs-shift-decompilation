@@ -1,0 +1,29 @@
+name: Process 1 ranked function instruction runner
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/run_ranked_function_instructions.py'
+      - 'tests/test_ghidra_ranked_function_instruction_runner.py'
+      - 'docs/PROCESS_1_RANKED_FUNCTION_INSTRUCTION_EXPORT.md'
+      - '.github/workflows/process1-ranked-function-instruction-runner.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/run_ranked_function_instructions.py'
+      - 'tests/test_ghidra_ranked_function_instruction_runner.py'
+      - 'docs/PROCESS_1_RANKED_FUNCTION_INSTRUCTION_EXPORT.md'
+      - '.github/workflows/process1-ranked-function-instruction-runner.yml'
+
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run ranked-export wrapper regressions
+        run: python -m pytest -q tests/test_ghidra_ranked_function_instruction_runner.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/run_ranked_function_instructions.py --help >/dev/null
