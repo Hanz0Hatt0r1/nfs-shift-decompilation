@@ -49,6 +49,17 @@ Silverstone session used these values. `Player Difficulty=1` is within the exact
 retail domain proven by the selector-family pass, and `normal` selects the
 source-backed `CGHeight Scale` branch rather than `Drift CGHeight Scale`.
 
+The final #1276 selector-family proof also statically joins the staged
+`RaceModeInfo` selectors into the globals consumed by the CG calculation:
+
+```text
+RaceModeInfo+0x0e -> DAT_00c1286e   # normal/drift scale selector
+RaceModeInfo+0x6c -> DAT_00c128cc   # Player Difficulty
+```
+
+The binder still does not infer a live retail value for either field; it validates
+the native policy against those source-backed semantics.
+
 The binder refuses any mode outside `{normal, drift}` and any difficulty outside
 `{0,1,2}`. It requires the upstream family to contain all six unique selector
 pairs and requires each selected BODY0 translation to remain exactly the negative
@@ -56,14 +67,14 @@ of `offset33b` in the already-proven D3D row-vector identity-rotation matrix.
 
 ## Selected BMW numeric bind
 
-The selected #1275 family row is:
+The selected final #1276 family row is:
 
 ```text
 target_CG = (0, 0.168, -0.081)
 
 offset33b =
 (0,
- -0.0214366883116883116883116883116883...,
+ +0.00495608558108558108558108558108558...,
  +0.0114708624708624708624708624708625...)
 ```
 
@@ -72,7 +83,7 @@ Therefore:
 ```text
 BODY0 -> outer Vehicle translation =
 (0,
- +0.0214366883116883116883116883116883...,
+ -0.00495608558108558108558108558108558...,
  -0.0114708624708624708624708624708625...)
 ```
 
@@ -82,7 +93,7 @@ and the singular matrix is:
 [1 0 0 0]
 [0 1 0 0]
 [0 0 1 0]
-[0 +0.0214366883116883... -0.0114708624708625... 1]
+[0 -0.00495608558108558... -0.0114708624708625... 1]
 ```
 
 The new handoff may therefore set:
