@@ -23,3 +23,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_retail_global_vehicle_body_owner_identity
     COMMAND shift_runtime_retail_global_vehicle_body_owner_identity_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase714.cmake)
