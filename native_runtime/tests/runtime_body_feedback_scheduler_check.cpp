@@ -213,15 +213,42 @@ int main() {
         shift::runtime::NativeRuntimeState state{};
         configure_feedback_state(state);
 
+        // Phase 714 lineage regression: make the admitted persistent state
+        // intentionally distinct from the immutable prepared projection seed.
+        // The all-reset solver fixture yields a zero solved vector, so each
+        // successful step must preserve this exact committed accumulator value.
+        // If the second step silently re-seeds from projection.bodies instead of
+        // consuming the first step's committed output, this value reverts.
+        state.body_feedback.bodies[0].angular[0] += 9.0;
+        const double admitted_seed = state.body_feedback.bodies[0].angular[0];
+        if (admitted_seed == state.body_feedback.projection.bodies[0].angular[0]) {
+            throw std::runtime_error(
+                "Phase 714 test seed did not diverge from prepared projection");
+        }
+
         shift::runtime::VehicleControlIntent input{};
         input.throttle = true;
         state.fixed_step(input);
+        const double first_committed = state.body_feedback.bodies[0].angular[0];
+        if (first_committed != admitted_seed ||
+            state.body_feedback.step_count != 1 ||
+            state.body_feedback.body_state_generation != 1 ||
+            state.body_feedback.last_input_body_state_generation != 0) {
+            throw std::runtime_error(
+                "first BODY feedback step did not commit generation zero input");
+        }
+
         input.throttle = false;
         input.steer_right = true;
         state.fixed_step(input);
 
         if (!state.body_feedback.enabled ||
             state.body_feedback.step_count != 2 ||
+            state.body_feedback.body_state_generation != 2 ||
+            state.body_feedback.last_input_body_state_generation != 1 ||
+            state.body_feedback.bodies[0].angular[0] != first_committed ||
+            state.body_feedback.bodies[0].angular[0] ==
+                state.body_feedback.projection.bodies[0].angular[0] ||
             state.physics.fixed_step != 2 ||
             state.physics.throttle_steps != 1 ||
             state.physics.steer_right_steps != 1 ||
@@ -230,7 +257,7 @@ int main() {
             state.body_feedback.last_reset_node_count != 6 ||
             state.body_feedback.max_matrix_anchor_error != 0.0) {
             throw std::runtime_error(
-                "runtime BODY feedback scheduler did not execute every fixed step");
+                "runtime BODY feedback scheduler did not preserve cross-tick state lineage");
         }
 
         shift::runtime::NativeRuntimeState bad{};
@@ -254,6 +281,27 @@ int main() {
                 "runtime BODY feedback scheduler accepted workspace mismatch");
         }
 
+        // Phase 714: stale BODY lineage is rejected by the pre-mutation runtime
+        // boundary. Camera/physics state must therefore remain untouched.
+        shift::runtime::NativeRuntimeState stale{};
+        configure_feedback_state(stale);
+        stale.body_feedback.body_state_generation = 1;
+        bool stale_rejected = false;
+        try {
+            stale.fixed_step({});
+        } catch (const std::runtime_error&) {
+            stale_rejected = true;
+        }
+        if (!stale_rejected ||
+            stale.body_feedback.step_count != 0 ||
+            stale.body_feedback.body_state_generation != 1 ||
+            stale.physics.fixed_step != 0 ||
+            stale.camera.snapshot_count != 0 ||
+            stale.camera.native_update_count != 0) {
+            throw std::runtime_error(
+                "stale BODY feedback generation was not rejected before mutation");
+        }
+
         // Phase 713: a failure after the camera swap and PhysicsTickBoundary
         // mutation must not commit a partial native tick.
         shift::runtime::NativeRuntimeState transactional{};
@@ -275,9 +323,11 @@ int main() {
             transactional.camera.update_in_progress ||
             transactional.camera.snapshot_count != 0 ||
             transactional.camera.native_update_count != 0 ||
-            transactional.body_feedback.step_count != 0) {
+            transactional.body_feedback.step_count != 0 ||
+            transactional.body_feedback.body_state_generation != 0 ||
+            transactional.body_feedback.last_input_body_state_generation != 0) {
             throw std::runtime_error(
-                "failed native fixed step committed partial camera/physics state");
+                "failed native fixed step committed partial camera/physics/BODY lineage state");
         }
 
         // Failed environment admission must remain retryable. In particular,
@@ -303,6 +353,7 @@ int main() {
         if (!environment_rejected ||
             retryable.body_feedback.environment_checked ||
             retryable.body_feedback.enabled ||
+            retryable.body_feedback.body_state_generation != 0 ||
             retryable.physics.fixed_step != 0 ||
             retryable.camera.snapshot_count != 0) {
             throw std::runtime_error(
@@ -314,7 +365,12 @@ int main() {
             << "\"ready\":true,"
             << "\"transactional_fixed_step\":true,"
             << "\"environment_retry_safe\":true,"
+            << "\"continuous_body_state_lineage_ready\":true,"
             << "\"steps\":" << state.body_feedback.step_count << ","
+            << "\"body_state_generation\":"
+            << state.body_feedback.body_state_generation << ","
+            << "\"last_input_body_state_generation\":"
+            << state.body_feedback.last_input_body_state_generation << ","
             << "\"body_count\":" << state.body_feedback.body_count << ","
             << "\"scalar_count\":" << state.body_feedback.scalar_count << ","
             << "\"max_matrix_anchor_error\":"

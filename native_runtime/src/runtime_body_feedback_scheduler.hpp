@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -21,6 +22,12 @@ struct BodyFeedbackScheduler {
     bool environment_checked = false;
     bool enabled = false;
     std::uint64_t step_count = 0;
+    // Native lineage counters only. Generation zero is the admitted seed state;
+    // every successful feedback step consumes the currently committed generation
+    // and commits exactly one successor generation. This does not claim retail
+    // scheduling cadence or BODY pose integration.
+    std::uint64_t body_state_generation = 0;
+    std::uint64_t last_input_body_state_generation = 0;
     std::size_t body_count = 0;
     std::size_t scalar_count = 0;
     std::size_t last_reset_call_count = 0;
@@ -73,6 +80,8 @@ struct BodyFeedbackScheduler {
         body_count = contract.body_count;
         scalar_count = source.scalar_count;
         step_count = 0;
+        body_state_generation = 0;
+        last_input_body_state_generation = 0;
         last_reset_call_count = 0;
         last_reset_node_count = 0;
         max_matrix_anchor_error = 0.0;
@@ -145,9 +154,14 @@ struct BodyFeedbackScheduler {
                 "native BODY feedback requires ready participant identity");
         }
         if (body_count != runtime_body_count ||
-            scalar_count != runtime_scalar_count) {
+            scalar_count != runtime_scalar_count ||
+            bodies.size() != body_count) {
             throw std::runtime_error(
                 "native BODY feedback scheduler/runtime workspace mismatch");
+        }
+        if (body_state_generation != step_count) {
+            throw std::runtime_error(
+                "native BODY feedback persistent state generation is stale");
         }
     }
 
@@ -155,6 +169,17 @@ struct BodyFeedbackScheduler {
         if (!enabled) {
             return;
         }
+        if (body_state_generation != step_count) {
+            throw std::runtime_error(
+                "native BODY feedback persistent state generation is stale");
+        }
+        if (body_state_generation ==
+            std::numeric_limits<std::uint64_t>::max()) {
+            throw std::runtime_error(
+                "native BODY feedback persistent state generation overflow");
+        }
+
+        const std::uint64_t input_generation = body_state_generation;
         const auto result = physics::execute_body_state_feedback_step(
             source,
             relations,
@@ -162,6 +187,10 @@ struct BodyFeedbackScheduler {
             solver_topology,
             projection,
             bodies);
+
+        // Commit only after the complete solver/post-solve result exists. The
+        // next call receives this exact bodies vector as its current_bodies
+        // argument and must observe the successor generation.
         bodies = result.bodies;
         last_generated_rhs = result.generated_rhs;
         last_solved_vector = result.solved_vector;
@@ -170,7 +199,9 @@ struct BodyFeedbackScheduler {
         max_matrix_anchor_error = std::max(
             max_matrix_anchor_error,
             result.max_matrix_anchor_error);
-        ++step_count;
+        last_input_body_state_generation = input_generation;
+        body_state_generation = input_generation + 1u;
+        step_count = body_state_generation;
     }
 };
 
