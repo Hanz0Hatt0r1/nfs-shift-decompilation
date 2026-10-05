@@ -1,0 +1,4 @@
+0-5 s idle
+5-10 s throttle
+10-15 s steer left/right with light throttle
+15-20 s controls released
