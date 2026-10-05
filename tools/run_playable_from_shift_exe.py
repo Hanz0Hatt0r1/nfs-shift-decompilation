@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import NamedTuple, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
+PROGRESS_SITE_DIR = ROOT / "tools" / "resource_progress_site"
 
 TRACK_DEFAULT = "Silverstone_Era3_GrandPrix"
 VEHICLE_DEFAULT = "BMW_M3_E36"
@@ -230,6 +231,14 @@ def _run(command: list[str], *, cwd: Path) -> int:
     # Preserve child output as a live diagnostic stream even when stdout is not
     # attached to an interactive terminal.
     environment["PYTHONUNBUFFERED"] = "1"
+    if stage == "playable-bootstrap":
+        existing_pythonpath = environment.get("PYTHONPATH", "")
+        environment["PYTHONPATH"] = os.pathsep.join(
+            value
+            for value in (str(PROGRESS_SITE_DIR), existing_pythonpath)
+            if value
+        )
+        environment["SHIFT_RESOURCE_PROGRESS"] = "1"
 
     print(f"[shift-launch] stage={stage} event=start cwd={cwd}", flush=True)
     print(f"[shift-launch] stage={stage} command={shlex.join(command)}", flush=True)
@@ -331,6 +340,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             "child_python_unbuffered": True,
             "bootstrap_heartbeat_seconds": BOOTSTRAP_HEARTBEAT_SECONDS,
             "runtime_heartbeat_seconds": RUNTIME_HEARTBEAT_SECONDS,
+            "resource_archive_progress": True,
+            "resource_entry_progress_interval": 250,
         },
     }, ensure_ascii=False, indent=2, sort_keys=True), flush=True)
 

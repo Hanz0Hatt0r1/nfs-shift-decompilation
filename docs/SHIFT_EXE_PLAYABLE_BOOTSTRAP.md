@@ -68,8 +68,45 @@ The installed-game path intentionally still passes the complete discovered
 `Pakfiles` tree to the existing bootstrap. Large retail installs can therefore
 spend a long time inside catalog/resource analysis.
 
-The wrapper keeps child stdout/stderr attached to the terminal and forces child
-Python into unbuffered mode. It also prints explicit lifecycle records:
+The launcher now activates `tools/resource_progress_site/sitecustomize.py` only
+for the playable-bootstrap child. The instrumentation wraps the existing BFF
+reader and orchestration calls; it does not replace a parser, alter archive
+selection, or change an admission decision.
+
+A normal catalog pass now reports real archive completion counts:
+
+```text
+[resource-progress] event=hooks-installed entry_interval=250
+[resource-progress] phase=resource-catalog event=discovering-archives
+[resource-progress] phase=resource-catalog event=start archives_total=412
+[resource-progress] phase=resource-catalog archive=1/412 status=open done=0/412 percent=0.0 name=BOOTFLOW.bff
+[resource-progress] phase=resource-catalog archive=1/412 status=header entries=843 name=BOOTFLOW.bff
+[resource-progress] phase=resource-catalog archive=1/412 entry=250/843 entry_percent=29.7 name=BOOTFLOW.bff
+[resource-progress] phase=resource-catalog archive=1/412 entry=500/843 entry_percent=59.3 name=BOOTFLOW.bff
+[resource-progress] phase=resource-catalog archive=1/412 entry=843/843 entry_percent=100.0 name=BOOTFLOW.bff
+[resource-progress] phase=resource-catalog archive=1/412 status=done done=1/412 processed=1/412 percent=0.2 name=BOOTFLOW.bff
+```
+
+`done=X/Y` is incremented only when that BFF context finishes successfully in the
+current phase. Reopening the same archive later in the same resource-pipeline
+phase does not inflate the count. A constructor/context failure is reported as
+`status=failed` and contributes to `processed`, not `done`.
+
+The resource entry counter is emitted for the first entry, every 250 entries, and
+the final entry, so one large BFF cannot make the archive-level counter appear
+frozen.
+
+The later scene-IR pass starts a fresh archive counter:
+
+```text
+[resource-progress] phase=scene-ir event=start archives_total=412
+...
+[resource-progress] phase=scene-ir archive=412/412 status=done done=412/412 processed=412/412 percent=100.0 name=...
+[resource-progress] phase=scene-ir event=complete processed=412/412 done=412 failed=0
+```
+
+The existing subprocess lifecycle heartbeat remains enabled as an independent
+liveness signal:
 
 ```text
 [shift-launch] stage=playable-bootstrap event=start ...
@@ -82,8 +119,9 @@ The bootstrap heartbeat is emitted every 10 seconds. After the native runtime is
 launched, the same wrapper emits a lower-frequency 60-second heartbeat so a
 long-running interactive session does not flood the terminal.
 
-A heartbeat proves only that the delegated process is still alive; it is not a
-semantic progress percentage and does not weaken any fail-closed evidence gate.
+Neither the archive percentage nor the heartbeat is a semantic readiness
+percentage. They expose execution progress only and do not weaken any fail-closed
+evidence gate.
 
 ## Current command
 
