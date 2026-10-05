@@ -144,7 +144,8 @@ int main() {
         std::cout
             << "{\"format\":\""
             << kNativeBmwOffset33bRaceModeSelectorFormat << "\","
-            << "\"source_contract\":\"SHIFT.BMWOffset33bSelectorCompleteNumeric/1\","
+            << "\"phase\":711,"
+            << "\"process1_contract\":\"SHIFT.BMWOffset33bSelectorCompleteNumeric/1\","
             << "\"player_difficulty_domain\":[0,1,2],"
             << "\"selector_combinations\":6,"
             << "\"unique_translations\":3,"
@@ -152,6 +153,7 @@ int main() {
             << "\"difficulty_3_rejected\":true,"
             << "\"body0_to_outer_vehicle_ready_when_selector_bound\":true,"
             << "\"outer_vehicle_to_vhf_ready\":false,"
+            << "\"body0_bind_frame_proof_ready\":false,"
             << "\"vehicle_world_transform_ready\":false}\n";
         return 0;
     } catch (const std::exception& exc) {
