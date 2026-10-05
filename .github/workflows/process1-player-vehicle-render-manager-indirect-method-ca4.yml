@@ -1,0 +1,35 @@
+name: Process 1 player vehicle render-manager indirect method ca4
+
+on:
+  pull_request:
+    paths:
+      - 'tools/ghidra/ShiftInstructionSliceExporter.java'
+      - 'tools/ghidra/run_shift_instruction_slices.sh'
+      - 'tools/ghidra/analyze_player_vehicle_render_manager_indirect_method_ca4_access.py'
+      - 'tests/test_ghidra_player_vehicle_render_manager_indirect_method_ca4_access.py'
+      - 'docs/PROCESS_1_PLAYER_VEHICLE_RENDER_MANAGER_INDIRECT_METHOD_CA4_ACCESS.md'
+      - '.github/workflows/process1-player-vehicle-render-manager-indirect-method-ca4.yml'
+  push:
+    paths:
+      - 'tools/ghidra/ShiftInstructionSliceExporter.java'
+      - 'tools/ghidra/run_shift_instruction_slices.sh'
+      - 'tools/ghidra/analyze_player_vehicle_render_manager_indirect_method_ca4_access.py'
+      - 'tests/test_ghidra_player_vehicle_render_manager_indirect_method_ca4_access.py'
+      - 'docs/PROCESS_1_PLAYER_VEHICLE_RENDER_MANAGER_INDIRECT_METHOD_CA4_ACCESS.md'
+      - '.github/workflows/process1-player-vehicle-render-manager-indirect-method-ca4.yml'
+
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - name: Run indirect method ca4 regressions
+        run: python -m pytest -q tests/test_ghidra_player_vehicle_render_manager_indirect_method_ca4_access.py
+      - name: Verify Python CLI surface
+        run: python tools/ghidra/analyze_player_vehicle_render_manager_indirect_method_ca4_access.py --help
+      - name: Verify slice runner syntax
+        run: bash -n tools/ghidra/run_shift_instruction_slices.sh
