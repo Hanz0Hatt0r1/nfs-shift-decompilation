@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Prove physical candidate-global -> +0xca4 runtime receiver continuity.
 
-This pass consumes SHIFT.PlayerVehicleRenderManagerGlobalXrefRank/1 plus the
-bounded SHIFT.GhidraFunctionInstructions/2 export selected by that ranker. It
-uses the existing all-path IA-32 register provenance engine and structured
-Ghidra p-code to answer one narrow question: does a selected function load the
-candidate global's pointer value and then use that exact physical value as the
-base of a +0xca4 memory access?
+This pass consumes either the current root-pose-aware render-manager rank or the
+older compatible global-xref rank plus the bounded
+SHIFT.GhidraFunctionInstructions/2 export selected by that ranker. It uses the
+existing all-path IA-32 register provenance engine and structured Ghidra p-code
+to answer one narrow question: does a selected function load the candidate
+global's pointer value and then use that exact physical value as the base of a
++0xca4 memory access?
 
 Matching that physical access against the independently proven constructor
 layout establishes only a global-value -> layout-field alias. It does not prove
@@ -32,6 +33,8 @@ import analyze_register_relative_accesses as _accesses
 
 FORMAT = "SHIFT.PlayerVehicleRenderablesRuntimeAlias/1"
 RANK_FORMAT = "SHIFT.PlayerVehicleRenderManagerGlobalXrefRank/1"
+ROOT_POSE_RANK_FORMAT = "SHIFT.PlayerVehicleRenderManagerRootPoseXrefRank/1"
+RANK_FORMATS = frozenset((RANK_FORMAT, ROOT_POSE_RANK_FORMAT))
 INSTRUCTION_FORMAT = "SHIFT.GhidraFunctionInstructions/2"
 PROGRAM = "SHIFT.exe"
 PE_MD5 = "705af8b420e5eb1e3834ac43d5533c6b"
@@ -74,13 +77,24 @@ def _addr(value: Any, *, field: str = "address") -> str:
 
 def _load_rank(path: Path) -> tuple[dict[str, Any], str, list[str]]:
     rank = _load_json(path)
-    if rank.get("format") != RANK_FORMAT or rank.get("ready") is not True:
-        raise ValueError(f"{path}: expected ready {RANK_FORMAT}")
+    rank_format = rank.get("format")
+    if rank_format not in RANK_FORMATS or rank.get("ready") is not True:
+        expected = " or ".join(sorted(RANK_FORMATS))
+        raise ValueError(f"{path}: expected ready {expected}")
     retail = rank.get("retail")
     if not isinstance(retail, Mapping):
         raise ValueError("rank retail identity missing")
     if retail.get("program") != PROGRAM or str(retail.get("md5") or "").lower() != PE_MD5:
         raise ValueError("rank retail identity drift")
+
+    if rank_format == ROOT_POSE_RANK_FORMAT:
+        handoff = rank.get("handoff")
+        if not isinstance(handoff, Mapping):
+            raise ValueError("root-pose rank handoff missing")
+        if handoff.get("root_pose_positive_anchor_ranking_ready") is not True:
+            raise ValueError("root-pose rank positive-anchor gate is not ready")
+        if handoff.get("collision_wheel_LOD_anchor_removed_from_positive_render_score") is not True:
+            raise ValueError("root-pose rank collision-negative-control gate is not ready")
 
     candidate = rank.get("candidate_global")
     if not isinstance(candidate, Mapping):
@@ -195,6 +209,7 @@ def _field_access_candidates(instruction_export: Path) -> list[dict[str, Any]]:
 
 def analyze(rank_path: Path, instruction_export: Path) -> dict[str, Any]:
     rank, global_address, selected = _load_rank(rank_path)
+    rank_format = str(rank["format"])
     rows = _load_instruction_rows(instruction_export, selected)
     field_accesses = _field_access_candidates(instruction_export)
 
@@ -306,6 +321,10 @@ def analyze(rank_path: Path, instruction_export: Path) -> dict[str, Any]:
         ),
         "ready": ready,
         "retail": {"program": PROGRAM, "md5": PE_MD5},
+        "input_rank": {
+            "format": rank_format,
+            "root_pose_aware_rank": rank_format == ROOT_POSE_RANK_FORMAT,
+        },
         "candidate_global": {
             "address": global_address,
             "runtime_manager_class_identity_proven": False,
