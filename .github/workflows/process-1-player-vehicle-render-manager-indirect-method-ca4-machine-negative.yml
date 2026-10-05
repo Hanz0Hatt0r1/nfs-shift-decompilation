@@ -1,0 +1,84 @@
+name: Process 1 indirect manager +0xca4 machine negative
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_player_vehicle_render_manager_indirect_method_ca4_machine_negative.py'
+      - 'tools/ghidra/analyze_player_vehicle_render_manager_indirect_method_ca4_access.py'
+      - 'tools/ghidra/analyze_player_vehicle_render_manager_method_ca4_access.py'
+      - 'tools/ghidra/analyze_player_vehicle_render_manager_indirect_dispatch.py'
+      - 'src/graphics/d3d9/d3d9_pe_evidence.py'
+      - 'tests/test_ghidra_player_vehicle_render_manager_indirect_method_ca4_machine_negative.py'
+      - 'evidence/player_vehicle_render_manager_indirect_method_ca4_machine_negative.json'
+      - 'docs/PROCESS_1_PLAYER_VEHICLE_RENDER_MANAGER_INDIRECT_METHOD_CA4_MACHINE_NEGATIVE.md'
+      - '.github/workflows/process-1-player-vehicle-render-manager-indirect-method-ca4-machine-negative.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_player_vehicle_render_manager_indirect_method_ca4_machine_negative.py'
+      - 'tools/ghidra/analyze_player_vehicle_render_manager_indirect_method_ca4_access.py'
+      - 'tools/ghidra/analyze_player_vehicle_render_manager_method_ca4_access.py'
+      - 'tools/ghidra/analyze_player_vehicle_render_manager_indirect_dispatch.py'
+      - 'src/graphics/d3d9/d3d9_pe_evidence.py'
+      - 'tests/test_ghidra_player_vehicle_render_manager_indirect_method_ca4_machine_negative.py'
+      - 'evidence/player_vehicle_render_manager_indirect_method_ca4_machine_negative.json'
+      - 'docs/PROCESS_1_PLAYER_VEHICLE_RENDER_MANAGER_INDIRECT_METHOD_CA4_MACHINE_NEGATIVE.md'
+      - '.github/workflows/process-1-player-vehicle-render-manager-indirect-method-ca4-machine-negative.yml'
+
+jobs:
+  prove-negative:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test dependency
+        run: python -m pip install --upgrade pytest
+
+      - name: Run focused regression
+        env:
+          PYTHONPATH: src/graphics/d3d9:tools/ghidra
+        run: >-
+          python -m pytest -q
+          tests/test_ghidra_player_vehicle_render_manager_indirect_method_ca4_machine_negative.py
+
+      - name: Verify committed retail decision proof
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          p = json.loads(Path('evidence/player_vehicle_render_manager_indirect_method_ca4_machine_negative.json').read_text())
+          assert p['format'] == 'SHIFT.PlayerVehicleRenderManagerIndirectMethodCa4MachineNegative/1'
+          assert p['status'] == 'proven'
+          assert p['ready'] is True
+          assert p['evidence_state'] == 'proven-static-negative'
+          assert p['retail']['md5'] == '705af8b420e5eb1e3834ac43d5533c6b'
+          assert p['retail']['sha256'] == 'eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1'
+          assert p['subject']['resolved_indirect_target_set'] == ['0x0045f620', '0x0045f630']
+          assert p['analysis']['target_count'] == 2
+          assert p['analysis']['cfg_complete_target_count'] == 2
+          assert p['analysis']['ca4_access_count'] == 0
+          assert p['analysis']['observed_ecx_relative_offsets'] == [0xdac]
+          assert [t['body_hex'] for t in p['analysis']['targets']] == [
+              '8b81ac0d0000c3',
+              '558bec8b45088981ac0d00005dc20400',
+          ]
+          assert all(t['section'] == '.text' for t in p['analysis']['targets'])
+          assert all(t['branch_or_call_count'] == 0 for t in p['analysis']['targets'])
+          assert all(t['terminal_return'] is True for t in p['analysis']['targets'])
+          assert all(t['cfg_complete_for_negative_closure'] is True for t in p['analysis']['targets'])
+          assert p['claim']['indirect_manager_method_ca4_branch_negative'] is True
+          assert p['handoff']['direct_manager_method_ca4_branch_negative'] is True
+          assert p['handoff']['indirect_manager_method_ca4_branch_negative'] is True
+          assert p['handoff']['manager_method_ca4_hypothesis_closed'] is True
+          assert p['handoff']['player_vehicle_renderables_field_runtime_access_ready'] is False
+          assert p['handoff']['bmw_body0_bind_frame_proof_ready'] is False
+          assert p['handoff']['next_frontier']['functions'] == [
+              '0x007b3670', '0x007bba90', '0x007bbb10', '0x007bbb60'
+          ]
+          assert p['handoff']['next_frontier']['neighbors_added'] is False
+          PY
