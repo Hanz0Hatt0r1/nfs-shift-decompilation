@@ -1,0 +1,31 @@
+name: process1-bmw-body0-runtime-probe
+
+on:
+  push:
+    paths:
+      - 'tools/shift_live_dump/capture_bmw_body0.py'
+      - 'tools/shift_live_dump/capture_bmw_body0.sh'
+      - 'tools/shift_live_dump/test_capture_bmw_body0.py'
+      - 'tools/shift_live_dump/test_capture_bmw_body0.sh'
+      - 'evidence/process1_bmw_body0_targeted_runtime_probe.json'
+      - '.github/workflows/process1-bmw-body0-runtime-probe.yml'
+  pull_request:
+    paths:
+      - 'tools/shift_live_dump/capture_bmw_body0.py'
+      - 'tools/shift_live_dump/capture_bmw_body0.sh'
+      - 'tools/shift_live_dump/test_capture_bmw_body0.py'
+      - 'tools/shift_live_dump/test_capture_bmw_body0.sh'
+      - 'evidence/process1_bmw_body0_targeted_runtime_probe.json'
+      - '.github/workflows/process1-bmw-body0-runtime-probe.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test BMW BODY0 targeted runtime probe
+        run: bash tools/shift_live_dump/test_capture_bmw_body0.sh
+      - name: Compile collector
+        run: python3 -m py_compile tools/shift_live_dump/capture_bmw_body0.py
+      - name: Validate evidence contract
+        run: python3 -m json.tool evidence/process1_bmw_body0_targeted_runtime_probe.json >/dev/null
