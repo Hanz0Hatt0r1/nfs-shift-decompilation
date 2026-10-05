@@ -19,7 +19,7 @@ constexpr std::array<double, 3> kBmwAuxiliaryWeightedCom{
     0.0043352601156069364161849710982658959537572254335260,
 };
 
-// Player Difficulty is source-backed as the reflected domain (0-2).  The
+// Player Difficulty is source-backed as the reflected domain (0-2). The
 // fourth PhysicsTweaker array lane is deliberately not admitted here.
 constexpr std::array<double, 3> kNormalCgHeightScale{
     0.6,
@@ -83,6 +83,24 @@ select_bmw_body0_outer_vehicle_bind(
     out.body0_local_to_outer_vehicle_root =
         translation_matrix(out.body0_to_outer_vehicle_translation);
     return out;
+}
+
+BmwOffset33bRaceModeSelector
+native_silverstone_bmw_offset33b_selector() {
+    // SHIFT.BMWOffset33bNativeSessionSelection/1:
+    // target=Silverstone+BMW_M3_E36, physics_mode=normal,
+    // Player Difficulty=1. This is native vertical-slice policy.
+    return BmwOffset33bRaceModeSelector{
+        true,
+        false,
+        1u,
+    };
+}
+
+BmwBody0OuterVehicleBindSelection
+select_native_silverstone_bmw_body0_outer_vehicle_bind() {
+    return select_bmw_body0_outer_vehicle_bind(
+        native_silverstone_bmw_offset33b_selector());
 }
 
 }  // namespace shift::runtime::physics
