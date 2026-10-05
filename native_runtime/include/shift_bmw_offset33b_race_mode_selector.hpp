@@ -13,8 +13,8 @@ inline constexpr const char* kNativeBmwOffset33bRaceModeSelectorFormat =
 // Source-backed selector shape carried by retail ChangeRaceMode state:
 //   RaceModeInfo+0x0e -> normal/drift CGHeight-scale selector
 //   RaceModeInfo+0x6c -> Player Difficulty (0-2)
-// No default is inferred here.  `ready` must be set by a producer that owns
-// those session semantics.
+// No retail live-session default is inferred here. `ready` must be set by a
+// producer or by an explicitly admitted native-session policy.
 struct BmwOffset33bRaceModeSelector {
     bool ready = false;
     bool use_drift_cgheight_scale = false;
@@ -32,12 +32,22 @@ struct BmwBody0OuterVehicleBindSelection {
         body0_local_to_outer_vehicle_root{};
 };
 
-// Consume the selector-complete Process 1 BMW family.  This is intentionally
-// only BODY0-local -> outer Vehicle.  It does not claim outer Vehicle -> VHF
+// Consume the selector-complete Process 1 BMW family. This is intentionally
+// only BODY0-local -> outer Vehicle. It does not claim outer Vehicle -> VHF
 // vehicle-root identity and therefore cannot by itself manufacture a
 // ProvenBmwBody0BindFrame.
 BmwBody0OuterVehicleBindSelection
 select_bmw_body0_outer_vehicle_bind(
     const BmwOffset33bRaceModeSelector& selector);
+
+// Process 1 SHIFT.BMWOffset33bNativeSessionSelection/1 owns the first playable
+// Linux slice policy: Silverstone + BMW_M3_E36, normal CGHeight-scale branch,
+// Player Difficulty 1. This is project-owned native policy, not a claim about a
+// captured retail live session.
+BmwOffset33bRaceModeSelector
+native_silverstone_bmw_offset33b_selector();
+
+BmwBody0OuterVehicleBindSelection
+select_native_silverstone_bmw_body0_outer_vehicle_bind();
 
 }  // namespace shift::runtime::physics
