@@ -2,16 +2,21 @@
 
 ## Playable-slice blocker reduced
 
-Two current Process 1 frontiers already emit finite instruction worklists:
+The current Process 1 blocker is the source-backed owner/frame join from the
+outer Vehicle root into the canonical BMW VHF vehicle-root / assembly frame.
+Three bounded frontiers already emit exact instruction worklists for that join:
 
-- `SHIFT.PlayerVehicleRenderManagerGlobalXrefRank/1` reduces candidate
-  render-manager global xrefs;
+- `SHIFT.PlayerVehicleRenderManagerRootPoseXrefRank/1` is the current preferred
+  render-manager ranking surface and points at the independently frozen SMS
+  root-pose/world-affine lane;
+- `SHIFT.PlayerVehicleRenderManagerGlobalXrefRank/1` is the older compatible
+  render-manager rank artifact;
 - `SHIFT.VehicleRenderRootPoseTransportFrontier/1` bounds the independent SMS
-  root-pose/world-affine transport path.
+  root-pose/world-affine transport path directly.
 
-The remaining orchestration risk was manually copying either list into
-`run_shift_function_instructions.sh`. That is unnecessary scope-drift in an
-otherwise exact static proof.
+The remaining orchestration risk was manually copying one of those exact lists
+into `run_shift_function_instructions.sh`. That is unnecessary scope drift in an
+otherwise bounded static proof.
 
 `tools/ghidra/run_ranked_function_instructions.py` removes that manual step. The
 input artifact is authoritative and the wrapper forwards **exactly** its selected
@@ -19,15 +24,28 @@ function list to the existing targeted Ghidra exporter.
 
 ## Supported artifacts
 
-### Render-manager xref rank
+### Current render-manager root-pose rank
+
+```text
+SHIFT.PlayerVehicleRenderManagerRootPoseXrefRank/1
+  -> ranking.selected_instruction_export_functions
+```
+
+This is the preferred rank input for the current blocker. Its positive anchors
+are the SMS participant/render-hierarchy/world-affine path; the wheel-collision
+`FUN_007a3d60` lane is not used as a positive render signal.
+
+### Legacy-compatible render-manager xref rank
 
 ```text
 SHIFT.PlayerVehicleRenderManagerGlobalXrefRank/1
   -> ranking.selected_instruction_export_functions
 ```
 
-The wrapper also enforces the rank artifact's
-`selected_instruction_export_limit` when present.
+Both rank formats are hash/identity validated and enforce their
+`selected_instruction_export_limit` when present. Supporting the older format is
+compatibility only; it does not restore the obsolete collision-biased ranking as
+the preferred frontier.
 
 ### SMS root-pose transport frontier
 
@@ -52,20 +70,30 @@ The wrapper fails before Ghidra when:
 
 It never adds neighboring functions, callers, callees, or guessed targets.
 
-## Render-manager command
+## Current render-manager command
+
+Build the current root-pose-aware rank with the exact `DAT_00bc185c` reference
+artifact, then export only its selected functions:
 
 ```bash
 cd /home/pes/nfs-shift-decompilation
 
+python tools/ghidra/rank_player_vehicle_render_manager_root_pose_refs.py \
+  out/shift_ghidra_database \
+  out/player_vehicle_render_manager_global_refs.jsonl \
+  --json-out out/player_vehicle_render_manager_root_pose_rank.json
+
 GHIDRA_HOME=/opt/ghidra \
 python tools/ghidra/run_ranked_function_instructions.py \
-  out/player_vehicle_render_manager_global_xref_rank.json \
+  out/player_vehicle_render_manager_root_pose_rank.json \
   /home/pes/ghidra_projects/shift \
   shift \
-  out/player_vehicle_render_manager_selected_instructions.jsonl
+  out/player_vehicle_render_manager_root_pose_instructions.jsonl
 ```
 
-The result feeds `analyze_player_vehicle_renderables_runtime_alias.py`.
+That instruction artifact is the bounded input for the next physical
+pointer/value-provenance join from a selected render-manager user into the SMS
+root-pose owner.
 
 ## SMS root-pose command
 
@@ -77,7 +105,7 @@ python tools/ghidra/build_vehicle_render_root_pose_transport_frontier.py \
   --json-out out/vehicle_render_root_pose_transport_frontier.json
 ```
 
-Then export its exact ten-function worklist without copying addresses by hand:
+Then export its exact worklist without copying addresses by hand:
 
 ```bash
 GHIDRA_HOME=/opt/ghidra \
@@ -88,12 +116,23 @@ python tools/ghidra/run_ranked_function_instructions.py \
   out/vehicle_render_root_pose_transport_instructions.jsonl
 ```
 
-Use `--dry-run` with either artifact to print the normalized exact function list
-and shell command without starting Ghidra.
+Use `--dry-run` with any supported artifact to print the normalized exact
+function list and shell command without starting Ghidra.
 
-## Boundary
+## Boundary and handoff
 
 This wrapper is orchestration only. It does not promote ranking, callgraph
 frontiers, instruction-export membership, or successful Ghidra execution to
-pointer/class/frame identity. All world-transform gates remain controlled by the
-downstream instruction-level proof artifacts.
+pointer/class/frame identity. In particular it keeps:
+
+```text
+render_manager_owner_to_SMS_root_pose_owner_join_ready = false
+outer_vehicle_root_to_VHF_vehicle_root_ready           = false
+BODY0_bind_frame_proof_ready                            = false
+vehicle_world_transform_ready                           = false
+```
+
+The immediate consumer is the next Process 1 instruction-level owner/provenance
+proof. Once that proof joins the concrete SMS/GraphicsEngine hierarchy owner to
+the canonical BMW VHF root, the result feeds the final
+`SHIFT.BMWBody0BindFrameProof/1` handoff to Process 2.
