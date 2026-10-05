@@ -19,6 +19,7 @@ RANK_FORMAT = "SHIFT.PlayerVehicleRenderManagerGlobalXrefRank/1"
 ROOT_POSE_RANK_FORMAT = "SHIFT.PlayerVehicleRenderManagerRootPoseXrefRank/1"
 ROOT_POSE_FORMAT = "SHIFT.VehicleRenderRootPoseTransportFrontier/1"
 OUTER_VHF_ROOT_FORMAT = "SHIFT.OuterVehicleVHFRootRelationFrontier/1"
+DESCRIPTOR_PHYSICS_RENDER_FORMAT = "SHIFT.VehicleDescriptorPhysicsRenderOwnerFrontier/1"
 INSTRUCTION_FORMAT = "SHIFT.GhidraFunctionInstructions/2"
 PROGRAM = "SHIFT.exe"
 PE_MD5 = "705af8b420e5eb1e3834ac43d5533c6b"
@@ -70,7 +71,25 @@ def _extract_frontier_worklist(
     if worklist.get("format") != INSTRUCTION_FORMAT:
         raise ValueError(f"{label} worklist instruction format drift")
     raw = worklist.get("functions")
-    return raw if isinstance(raw, list) else [], None, label
+    limit = worklist.get("max_functions")
+    declared_limit = limit if isinstance(limit, int) and limit > 0 else None
+    return raw if isinstance(raw, list) else [], declared_limit, label
+
+
+def _extract_descriptor_frontier_worklist(
+    payload: Mapping[str, Any], *, label: str
+) -> tuple[list[Any], int | None, str]:
+    retail = payload.get("retail")
+    worklist = payload.get("targeted_instruction_worklist")
+    if not isinstance(retail, Mapping) or not isinstance(worklist, Mapping):
+        raise ValueError(f"{label} sections missing")
+    _validate_retail(retail.get("program"), retail.get("md5"), label)
+    if worklist.get("format") != INSTRUCTION_FORMAT:
+        raise ValueError(f"{label} worklist instruction format drift")
+    raw = worklist.get("functions")
+    limit = worklist.get("max_functions")
+    declared_limit = limit if isinstance(limit, int) and limit > 0 else None
+    return raw if isinstance(raw, list) else [], declared_limit, label
 
 
 def _extract_worklist(payload: Mapping[str, Any]) -> tuple[list[Any], int | None, str]:
@@ -87,10 +106,15 @@ def _extract_worklist(payload: Mapping[str, Any]) -> tuple[list[Any], int | None
     if fmt == OUTER_VHF_ROOT_FORMAT:
         return _extract_frontier_worklist(payload, label="outer-Vehicle/VHF-root frontier")
 
+    if fmt == DESCRIPTOR_PHYSICS_RENDER_FORMAT:
+        return _extract_descriptor_frontier_worklist(
+            payload, label="VehicleDetails physics/render owner frontier"
+        )
+
     raise ValueError(
         "unsupported worklist artifact format "
         f"{fmt!r}; expected {RANK_FORMAT}, {ROOT_POSE_RANK_FORMAT}, {ROOT_POSE_FORMAT}, "
-        f"or {OUTER_VHF_ROOT_FORMAT}"
+        f"{OUTER_VHF_ROOT_FORMAT}, or {DESCRIPTOR_PHYSICS_RENDER_FORMAT}"
     )
 
 
