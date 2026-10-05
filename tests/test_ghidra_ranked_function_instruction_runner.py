@@ -19,14 +19,22 @@ def _write(path: Path, payload):
     return path
 
 
-def _rank(path: Path, selected, *, ready=True, md5=None, declared_limit=None):
+def _rank(
+    path: Path,
+    selected,
+    *,
+    ready=True,
+    md5=None,
+    declared_limit=None,
+    artifact_format=None,
+):
     ranking = {"selected_instruction_export_functions": selected}
     if declared_limit is not None:
         ranking["selected_instruction_export_limit"] = declared_limit
     return _write(
         path,
         {
-            "format": m.RANK_FORMAT,
+            "format": artifact_format or m.RANK_FORMAT,
             "ready": ready,
             "retail": {"program": m.PROGRAM, "md5": md5 or m.PE_MD5},
             "ranking": ranking,
@@ -77,6 +85,29 @@ def test_builds_exact_runner_command_from_rank_selected_worklist(tmp_path):
         "0x00420000",
         "0x00430000",
     ]
+
+
+def test_builds_exact_runner_command_from_current_root_pose_rank(tmp_path):
+    artifact = _rank(
+        tmp_path / "root_pose_rank.json",
+        ["FUN_004848bc", "0x00480700", "004a8c20"],
+        declared_limit=24,
+        artifact_format=m.ROOT_POSE_RANK_FORMAT,
+    )
+    runner = tmp_path / "runner.sh"
+    command, selected = m.build_command(
+        artifact,
+        Path("/home/pes/ghidra_projects/shift"),
+        "shift",
+        Path("out/root_pose_rank.jsonl"),
+        runner=runner,
+    )
+    assert selected == ["0x004848bc", "0x00480700", "0x004a8c20"]
+    assert command[-3:] == selected
+    payload, loaded, source_kind = m._load_worklist(artifact, max_functions=64)
+    assert payload["format"] == m.ROOT_POSE_RANK_FORMAT
+    assert loaded == selected
+    assert source_kind == "root-pose rank"
 
 
 def test_builds_exact_runner_command_from_root_pose_frontier(tmp_path):
@@ -131,6 +162,7 @@ def test_rejects_worklist_above_rank_declared_limit(tmp_path):
         tmp_path / "rank.json",
         ["0x00410000", "0x00420000"],
         declared_limit=1,
+        artifact_format=m.ROOT_POSE_RANK_FORMAT,
     )
     with pytest.raises(ValueError, match="declared export limit"):
         m.build_command(artifact, Path("/project"), "shift", Path("out.jsonl"))
