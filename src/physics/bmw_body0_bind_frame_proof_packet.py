@@ -30,13 +30,6 @@ MAX_SOURCE_TARGETS = 128
 MAX_SOURCE_TARGET_BYTES = 4096
 
 
-def _load(path: Path) -> dict[str, Any]:
-    value = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(value, dict):
-        raise ValueError("BODY0 bind proof must be a JSON object")
-    return value
-
-
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
@@ -52,6 +45,23 @@ def _int(value: Any, label: str) -> int:
     raise ValueError(f"{label} must be an integer")
 
 
+def _det3(matrix: Sequence[float]) -> float:
+    a, b, c = matrix[0], matrix[1], matrix[2]
+    d, e, f = matrix[4], matrix[5], matrix[6]
+    g, h, i = matrix[8], matrix[9], matrix[10]
+    return a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g)
+
+
+def _validate_affine(matrix: Sequence[float], label: str) -> None:
+    if any(abs(matrix[index]) > 1.0e-6 for index in (3, 7, 11)):
+        raise ValueError(f"{label} is not D3D row-vector affine")
+    if abs(matrix[15] - 1.0) > 1.0e-6:
+        raise ValueError(f"{label} homogeneous component is not one")
+    determinant = _det3(matrix)
+    if not math.isfinite(determinant) or abs(determinant) <= 1.0e-12:
+        raise ValueError(f"{label} linear block is singular")
+
+
 def _finite_matrix(value: Any) -> list[float]:
     if (
         not isinstance(value, Sequence)
@@ -59,25 +69,27 @@ def _finite_matrix(value: Any) -> list[float]:
         or len(value) != 16
     ):
         raise ValueError("BODY0 bind matrix must contain exactly 16 scalars")
-    out: list[float] = []
+    source: list[float] = []
     for item in value:
         if isinstance(item, bool) or not isinstance(item, (int, float)):
             raise ValueError("BODY0 bind matrix contains a non-numeric value")
         number = float(item)
         if not math.isfinite(number):
             raise ValueError("BODY0 bind matrix contains a non-finite value")
-        out.append(number)
-    if any(abs(out[index]) > 1.0e-6 for index in (3, 7, 11)):
-        raise ValueError("BODY0 bind matrix is not D3D row-vector affine")
-    if abs(out[15] - 1.0) > 1.0e-6:
-        raise ValueError("BODY0 bind matrix homogeneous component is not one")
-    a, b, c = out[0], out[1], out[2]
-    d, e, f = out[4], out[5], out[6]
-    g, h, i = out[8], out[9], out[10]
-    determinant = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g)
-    if not math.isfinite(determinant) or abs(determinant) <= 1.0e-12:
-        raise ValueError("BODY0 bind matrix linear block is singular")
-    return out
+        source.append(number)
+    _validate_affine(source, "BODY0 bind matrix")
+
+    narrowed: list[float] = []
+    for number in source:
+        try:
+            value32 = struct.unpack("<f", struct.pack("<f", number))[0]
+        except OverflowError as exc:
+            raise ValueError("BODY0 bind matrix exceeds float32 packet domain") from exc
+        if not math.isfinite(value32):
+            raise ValueError("BODY0 bind matrix narrows to non-finite float32")
+        narrowed.append(value32)
+    _validate_affine(narrowed, "float32 BODY0 bind matrix")
+    return narrowed
 
 
 def validate_positive_proof(value: Mapping[str, Any]) -> tuple[list[float], list[str]]:
