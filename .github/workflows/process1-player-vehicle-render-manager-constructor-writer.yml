@@ -1,0 +1,29 @@
+name: Process 1 player vehicle render-manager constructor writer proof
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_player_vehicle_render_manager_constructor_writer.py'
+      - 'tests/test_ghidra_player_vehicle_render_manager_constructor_writer.py'
+      - 'docs/PROCESS_1_PLAYER_VEHICLE_RENDER_MANAGER_CONSTRUCTOR_WRITER_PROOF.md'
+      - '.github/workflows/process1-player-vehicle-render-manager-constructor-writer.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_player_vehicle_render_manager_constructor_writer.py'
+      - 'tests/test_ghidra_player_vehicle_render_manager_constructor_writer.py'
+      - 'docs/PROCESS_1_PLAYER_VEHICLE_RENDER_MANAGER_CONSTRUCTOR_WRITER_PROOF.md'
+      - '.github/workflows/process1-player-vehicle-render-manager-constructor-writer.yml'
+
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run constructor-writer proof regressions
+        run: python -m pytest -q tests/test_ghidra_player_vehicle_render_manager_constructor_writer.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/analyze_player_vehicle_render_manager_constructor_writer.py --help >/dev/null
