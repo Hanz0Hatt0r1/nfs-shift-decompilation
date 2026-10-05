@@ -1,0 +1,40 @@
+{
+  "format": "SHIFT.Process2BMWBody0BindFrameAdmission/1",
+  "status": "ready-gate",
+  "blocker": "Process 2 P2.1 consume positive SHIFT.BMWBody0BindFrameProof/1",
+  "input": {
+    "required_contract": "SHIFT.BMWBody0BindFrameProof/1",
+    "required_status": "ready",
+    "required_evidence_state": "proven-static",
+    "required_body_index": 0,
+    "required_body_name": "body",
+    "required_frame_relation": "BODY0-local-to-VHF-vehicle-root",
+    "required_matrix_convention": "row-major D3D row-vector affine",
+    "current_positive_handoff_present": false
+  },
+  "output": {
+    "native_contract": "SHIFT.NativeBMWBody0BindFrameAdmission/1",
+    "typed_admission_bridge_ready": true,
+    "static_source_targets_required": true,
+    "identity_matrix_assumption_allowed": false,
+    "original_game_execution_dependency_allowed": false,
+    "new_runtime_capture_dependency_allowed": false,
+    "retail_world_transform_admitted": false
+  },
+  "consumer": [
+    "compose_bmw_body0_pose_to_vehicle_world_matrix",
+    "build_bmw_vehicle_world_matrix_runtime_handoff",
+    "persistent_bmw_vehicle_world_transform",
+    "Process 3 live Vulkan vehicle transform upload"
+  ],
+  "limits": [
+    "does not synthesize a BODY0 bind matrix",
+    "does not reinterpret BODY accumulator lanes as pose",
+    "does not schedule FUN_00770e80",
+    "does not claim the current retail vehicle world transform is ready"
+  ],
+  "ownership": {
+    "current_blocker_owner": "Process 1",
+    "process2_state": "blocked-awaiting-positive-proof"
+  }
+}
