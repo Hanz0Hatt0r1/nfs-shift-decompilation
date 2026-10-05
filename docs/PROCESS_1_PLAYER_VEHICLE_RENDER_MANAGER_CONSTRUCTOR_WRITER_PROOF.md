@@ -83,6 +83,13 @@ The existing source-backed anchor for `FUN_0045ef50` remains:
 0x0045f1bf  MOV [ESI+0xca4],EAX
 ```
 
+Ghidra may render a plain immediate address without leading zeroes, for example
+`0xab55a4` instead of the frozen canonical spelling `0x00ab55a4`.  The analyzer
+therefore compares only plain `0x...` immediate operands numerically.  Register,
+memory, field-layout and control-flow operands remain structurally fail-closed;
+this normalization cannot turn `[0xbc185c]` into `[0x00bc185c]` or otherwise
+hide a receiver/layout drift.
+
 The new proof does not assume a C++ constructor ABI from convention alone.  It
 runs the established finite all-path IA-32 register-provenance engine over the
 full `FUN_0045ef50` instruction export and admits class identity only if every

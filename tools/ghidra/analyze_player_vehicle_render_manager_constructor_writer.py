@@ -79,6 +79,7 @@ _MEMORY_CA4_RE = re.compile(
     r"^\s*(?:dword\s+ptr\s+)?\[\s*esi\s*\+\s*0x0*ca4\s*\]\s*$",
     re.IGNORECASE,
 )
+_PLAIN_HEX_OPERAND_RE = re.compile(r"^\s*0x([0-9a-f]+)\s*$", re.IGNORECASE)
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -219,6 +220,17 @@ def _operands(instruction: Mapping[str, Any]) -> list[str]:
     return values
 
 
+def _operand_equivalent(actual: str, expected: str) -> bool:
+    """Treat only plain hex immediates as numeric; keep structural operands exact."""
+    if actual.strip().upper() == expected.strip().upper():
+        return True
+    actual_match = _PLAIN_HEX_OPERAND_RE.fullmatch(actual)
+    expected_match = _PLAIN_HEX_OPERAND_RE.fullmatch(expected)
+    if actual_match is None or expected_match is None:
+        return False
+    return int(actual_match.group(1), 16) == int(expected_match.group(1), 16)
+
+
 def _require_instruction(
     by_address: Mapping[str, dict[str, Any]],
     address: str,
@@ -231,7 +243,10 @@ def _require_instruction(
     if str(instruction.get("mnemonic") or "").upper() != mnemonic.upper():
         raise ValueError(f"{address}: expected {mnemonic}")
     actual = _operands(instruction)
-    if operands is not None and [value.upper() for value in actual] != [value.upper() for value in operands]:
+    if operands is not None and (
+        len(actual) != len(operands)
+        or not all(_operand_equivalent(left, right) for left, right in zip(actual, operands))
+    ):
         raise ValueError(f"{address}: operand drift: {actual!r}")
     return instruction
 
