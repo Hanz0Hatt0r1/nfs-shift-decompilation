@@ -2,18 +2,16 @@
 """Prove physical candidate-global -> +0xca4 runtime receiver continuity.
 
 This pass consumes SHIFT.PlayerVehicleRenderManagerGlobalXrefRank/1 plus the
-bounded SHIFT.GhidraFunctionInstructions/2 export selected by that ranker.  It
+bounded SHIFT.GhidraFunctionInstructions/2 export selected by that ranker. It
 uses the existing all-path IA-32 register provenance engine and structured
-Ghidra p-code to answer one narrow question:
+Ghidra p-code to answer one narrow question: does a selected function load the
+candidate global's pointer value and then use that exact physical value as the
+base of a +0xca4 memory access?
 
-    does a selected function load the candidate global's pointer value and then
-    use that exact physical value as the base of a +0xca4 memory access?
-
-The +0xca4 layout anchor comes from the independent constructor proof where
-FUN_0045ef50 stores the allocation labelled mPlayerVehicleRenderables at
-receiver+0xca4.  Matching the physical runtime access proves only a global-value
--> layout-field alias.  It does not prove the global's class identity, element
-identity, VHF hierarchy identity, or frame equality.
+Matching that physical access against the independently proven constructor
+layout establishes only a global-value -> layout-field alias. It does not prove
+the global's class identity, element identity, VHF hierarchy identity, or frame
+equality.
 """
 from __future__ import annotations
 
@@ -38,9 +36,9 @@ INSTRUCTION_FORMAT = "SHIFT.GhidraFunctionInstructions/2"
 PROGRAM = "SHIFT.exe"
 PE_MD5 = "705af8b420e5eb1e3834ac43d5533c6b"
 FIELD_OFFSET = 0xCA4
-
 _TRACKED = tuple(_register_engine._TRACKED)
-_GLOBAL_ADDRESS_RE = re.compile(r"(?:0x|DAT_)?0*([0-9a-f]{6,8})", re.IGNORECASE)
+_ADDRESS_TOKEN_RE = re.compile(r"(?:0x|dat_)([0-9a-f]+)", re.IGNORECASE)
+_BARE_MEMORY_ADDRESS_RE = re.compile(r"\[0*([0-9a-f]{6,8})\]", re.IGNORECASE)
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -123,7 +121,9 @@ def _load_instruction_rows(path: Path, selected: list[str]) -> dict[str, dict[st
     if set(rows) != set(selected):
         missing = sorted(set(selected) - set(rows), key=lambda value: int(value, 16))
         extra = sorted(set(rows) - set(selected), key=lambda value: int(value, 16))
-        raise ValueError(f"instruction target set disagrees with rank worklist; missing={missing}, extra={extra}")
+        raise ValueError(
+            f"instruction target set disagrees with rank worklist; missing={missing}, extra={extra}"
+        )
     return rows
 
 
@@ -157,16 +157,24 @@ def _normalize_origin_text(value: str) -> str:
 
 
 def _origin_mentions_global(origin: str, global_address: str) -> bool:
+    """Compare Ghidra absolute/DAT renderings numerically, ignoring zero padding."""
     if not origin.startswith("memory:"):
         return False
     normalized = _normalize_origin_text(origin)
-    numeric = global_address[2:].lower()
-    # Ghidra operand renderings may use an absolute address or DAT_ symbol.
-    return (
-        f"0x{numeric}" in normalized
-        or f"dat_{numeric}" in normalized
-        or f"[{numeric}]" in normalized
-    )
+    expected = int(global_address, 16)
+    for match in _ADDRESS_TOKEN_RE.finditer(normalized):
+        try:
+            if int(match.group(1), 16) == expected:
+                return True
+        except ValueError:
+            continue
+    for match in _BARE_MEMORY_ADDRESS_RE.finditer(normalized):
+        try:
+            if int(match.group(1), 16) == expected:
+                return True
+        except ValueError:
+            continue
+    return False
 
 
 def _instruction_by_address(row: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
@@ -178,12 +186,11 @@ def _instruction_by_address(row: Mapping[str, Any]) -> dict[str, dict[str, Any]]
 
 def _field_access_candidates(instruction_export: Path) -> list[dict[str, Any]]:
     report = _accesses.analyze_register_relative_accesses(instruction_export)
-    result = []
-    for access in report.get("accesses") or []:
-        if int(access.get("displacement", -1)) != FIELD_OFFSET:
-            continue
-        result.append(access)
-    return result
+    return [
+        access
+        for access in report.get("accesses") or []
+        if int(access.get("displacement", -1)) == FIELD_OFFSET
+    ]
 
 
 def analyze(rank_path: Path, instruction_export: Path) -> dict[str, Any]:
@@ -265,17 +272,26 @@ def analyze(rank_path: Path, instruction_export: Path) -> dict[str, Any]:
             {
                 "id": "candidate-global-render-manager-class-identity-unproven",
                 "evidence_state": "unknown",
-                "required_evidence": "join the globally sourced receiver to the constructor/vtable class identity independently of field-offset coincidence",
+                "required_evidence": (
+                    "join the globally sourced receiver to the constructor/vtable class identity "
+                    "independently of field-offset coincidence"
+                ),
             },
             {
                 "id": "ca4-field-value-to-car-body-visual-owner-transfer-unproven",
                 "evidence_state": "unknown",
-                "required_evidence": "trace the value loaded from globally sourced receiver+0xca4 into the proven HDVehicle/car-body/visual owner lane",
+                "required_evidence": (
+                    "trace the value loaded from globally sourced receiver+0xca4 into the proven "
+                    "HDVehicle/car-body/visual owner lane"
+                ),
             },
             {
                 "id": "outer-vehicle-root-to-VHF-vehicle-root-frame-relation-unproven",
                 "evidence_state": "unknown",
-                "required_evidence": "join the proven player-renderable owner to canonical BMW VHF hierarchy/root identity or fixed affine relation",
+                "required_evidence": (
+                    "join the proven player-renderable owner to canonical BMW VHF hierarchy/root "
+                    "identity or fixed affine relation"
+                ),
             },
         ]
     )
@@ -283,7 +299,11 @@ def analyze(rank_path: Path, instruction_export: Path) -> dict[str, Any]:
     return {
         "format": FORMAT,
         "version": 1,
-        "status": "candidate-global-ca4-runtime-alias-ready" if ready else "candidate-global-ca4-runtime-alias-blocked",
+        "status": (
+            "candidate-global-ca4-runtime-alias-ready"
+            if ready
+            else "candidate-global-ca4-runtime-alias-blocked"
+        ),
         "ready": ready,
         "retail": {"program": PROGRAM, "md5": PE_MD5},
         "candidate_global": {
@@ -301,7 +321,9 @@ def analyze(rank_path: Path, instruction_export: Path) -> dict[str, Any]:
             "selected_function_count": len(selected),
             "pcode_backed_ca4_access_count": len(analyses),
             "exact_candidate_global_value_alias_count": len(proven_aliases),
-            "exact_alias_with_bounded_vehicle_callgraph_proximity_count": len(proven_with_vehicle_proximity),
+            "exact_alias_with_bounded_vehicle_callgraph_proximity_count": len(
+                proven_with_vehicle_proximity
+            ),
             "field_accesses": analyses,
         },
         "handoff": {
