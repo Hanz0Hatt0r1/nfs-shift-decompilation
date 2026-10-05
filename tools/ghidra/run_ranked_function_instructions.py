@@ -18,6 +18,7 @@ from typing import Any, Mapping, Sequence
 RANK_FORMAT = "SHIFT.PlayerVehicleRenderManagerGlobalXrefRank/1"
 ROOT_POSE_RANK_FORMAT = "SHIFT.PlayerVehicleRenderManagerRootPoseXrefRank/1"
 ROOT_POSE_FORMAT = "SHIFT.VehicleRenderRootPoseTransportFrontier/1"
+OUTER_VHF_ROOT_FORMAT = "SHIFT.OuterVehicleVHFRootRelationFrontier/1"
 INSTRUCTION_FORMAT = "SHIFT.GhidraFunctionInstructions/2"
 PROGRAM = "SHIFT.exe"
 PE_MD5 = "705af8b420e5eb1e3834ac43d5533c6b"
@@ -58,6 +59,20 @@ def _extract_rank_worklist(
     return raw if isinstance(raw, list) else [], declared_limit, label
 
 
+def _extract_frontier_worklist(
+    payload: Mapping[str, Any], *, label: str
+) -> tuple[list[Any], int | None, str]:
+    retail = payload.get("retail")
+    worklist = payload.get("targeted_instruction_worklist")
+    if not isinstance(retail, Mapping) or not isinstance(worklist, Mapping):
+        raise ValueError(f"{label} sections missing")
+    _validate_retail(retail.get("program_name"), retail.get("executable_md5"), label)
+    if worklist.get("format") != INSTRUCTION_FORMAT:
+        raise ValueError(f"{label} worklist instruction format drift")
+    raw = worklist.get("functions")
+    return raw if isinstance(raw, list) else [], None, label
+
+
 def _extract_worklist(payload: Mapping[str, Any]) -> tuple[list[Any], int | None, str]:
     fmt = payload.get("format")
     if fmt == RANK_FORMAT:
@@ -67,19 +82,15 @@ def _extract_worklist(payload: Mapping[str, Any]) -> tuple[list[Any], int | None
         return _extract_rank_worklist(payload, label="root-pose rank")
 
     if fmt == ROOT_POSE_FORMAT:
-        retail = payload.get("retail")
-        worklist = payload.get("targeted_instruction_worklist")
-        if not isinstance(retail, Mapping) or not isinstance(worklist, Mapping):
-            raise ValueError("root-pose frontier sections missing")
-        _validate_retail(retail.get("program_name"), retail.get("executable_md5"), "root-pose frontier")
-        if worklist.get("format") != INSTRUCTION_FORMAT:
-            raise ValueError("root-pose worklist instruction format drift")
-        raw = worklist.get("functions")
-        return raw if isinstance(raw, list) else [], None, "root-pose frontier"
+        return _extract_frontier_worklist(payload, label="root-pose frontier")
+
+    if fmt == OUTER_VHF_ROOT_FORMAT:
+        return _extract_frontier_worklist(payload, label="outer-Vehicle/VHF-root frontier")
 
     raise ValueError(
         "unsupported worklist artifact format "
-        f"{fmt!r}; expected {RANK_FORMAT}, {ROOT_POSE_RANK_FORMAT}, or {ROOT_POSE_FORMAT}"
+        f"{fmt!r}; expected {RANK_FORMAT}, {ROOT_POSE_RANK_FORMAT}, {ROOT_POSE_FORMAT}, "
+        f"or {OUTER_VHF_ROOT_FORMAT}"
     )
 
 
