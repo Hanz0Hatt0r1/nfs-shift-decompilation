@@ -5,7 +5,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from vulkan_bundle_interface_gate import validate_vulkan_bundle_interface
 from vulkan_bundle_spirv import compile_vulkan_bundle
@@ -23,6 +23,140 @@ def _load(path: Path) -> dict[str, Any]:
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _safe_relative(value: str) -> bool:
+    path = Path(value)
+    return bool(value) and not path.is_absolute() and ".." not in path.parts
+
+
+def _valid_sha256(value: Any) -> str | None:
+    text = str(value or "").strip().lower()
+    if len(text) != 64:
+        return None
+    try:
+        int(text, 16)
+    except ValueError:
+        return None
+    return text
+
+
+def _artifact_pair(
+    root: Path,
+    *,
+    label: str,
+    path_value: Any,
+    sha_value: Any,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    relative = str(path_value or "").strip()
+    blockers: list[str] = []
+    if not _safe_relative(relative):
+        return None, [f"vulkan-draw-prepare:artifact:{label}:path-unsafe"]
+    expected = _valid_sha256(sha_value)
+    if expected is None:
+        return None, [f"vulkan-draw-prepare:artifact:{label}:sha256-invalid"]
+    path = root / relative
+    if not path.is_file():
+        return None, [f"vulkan-draw-prepare:artifact:{label}:missing"]
+    try:
+        actual = _sha256(path)
+    except OSError as error:
+        blockers.append(
+            f"vulkan-draw-prepare:artifact:{label}:read-failed:"
+            + type(error).__name__
+        )
+        return None, blockers
+    if actual != expected:
+        blockers.append(
+            f"vulkan-draw-prepare:artifact:{label}:sha256-mismatch"
+        )
+    return {
+        "label": label,
+        "path": relative,
+        "expected_sha256": expected,
+        "actual_sha256": actual,
+        "sha256_match": actual == expected,
+    }, blockers
+
+
+def _manifest_artifact_integrity(
+    root: Path,
+    manifest: Mapping[str, Any],
+) -> tuple[dict[str, Any], list[str]]:
+    artifacts = manifest.get("artifacts")
+    if not isinstance(artifacts, Mapping):
+        return {
+            "ready": False,
+            "verified_count": 0,
+            "artifacts": [],
+        }, ["vulkan-draw-prepare:artifact-manifest-invalid"]
+
+    blockers: list[str] = []
+    verified: list[dict[str, Any]] = []
+
+    def verify(
+        label: str,
+        row: Mapping[str, Any],
+        *,
+        path_key: str = "path",
+        sha_key: str = "sha256",
+    ) -> None:
+        has_path = row.get(path_key) not in {None, ""}
+        has_sha = row.get(sha_key) not in {None, ""}
+        if not has_path and not has_sha:
+            return
+        if not has_path or not has_sha:
+            blockers.append(
+                f"vulkan-draw-prepare:artifact:{label}:identity-incomplete"
+            )
+            return
+        report, reasons = _artifact_pair(
+            root,
+            label=label,
+            path_value=row.get(path_key),
+            sha_value=row.get(sha_key),
+        )
+        blockers.extend(reasons)
+        if report is not None:
+            verified.append(report)
+
+    for name, raw in artifacts.items():
+        label = str(name)
+        if raw is None:
+            continue
+        if isinstance(raw, Mapping):
+            verify(label, raw)
+            if (
+                "metadata_path" in raw
+                or "metadata_sha256" in raw
+            ):
+                verify(
+                    label + ".metadata",
+                    raw,
+                    path_key="metadata_path",
+                    sha_key="metadata_sha256",
+                )
+            continue
+        if isinstance(raw, list):
+            for index, item in enumerate(raw):
+                item_label = f"{label}[{index}]"
+                if not isinstance(item, Mapping):
+                    blockers.append(
+                        f"vulkan-draw-prepare:artifact:{item_label}:invalid-row"
+                    )
+                    continue
+                verify(item_label, item)
+            continue
+        blockers.append(
+            f"vulkan-draw-prepare:artifact:{label}:invalid-row"
+        )
+
+    blockers = list(dict.fromkeys(blockers))
+    return {
+        "ready": not blockers,
+        "verified_count": len(verified),
+        "artifacts": verified,
+    }, blockers
 
 
 def _ready_gate(root: Path, name: str, format_name: str) -> tuple[dict[str, Any] | None, list[str]]:
@@ -82,6 +216,18 @@ def prepare_vulkan_draw_bundle(
                 for reason in manifest.get("blocking_reasons")
                 or ["not-ready"]
             )
+
+    artifact_integrity: dict[str, Any] = {
+        "ready": False,
+        "verified_count": 0,
+        "artifacts": [],
+    }
+    if manifest is not None:
+        artifact_integrity, artifact_blockers = _manifest_artifact_integrity(
+            root,
+            manifest,
+        )
+        blockers.extend(artifact_blockers)
 
     native_gate, native_blockers = _ready_gate(
         root,
@@ -229,6 +375,7 @@ def prepare_vulkan_draw_bundle(
         "source_manifest_sha256": (
             _sha256(manifest_path) if manifest_path.is_file() else None
         ),
+        "manifest_artifact_integrity": artifact_integrity,
         "native_submission_gate_ready": (
             native_gate is not None and not native_blockers
         ),
@@ -241,6 +388,10 @@ def prepare_vulkan_draw_bundle(
         "artifacts": artifacts,
         "boundary": {
             "atomic_bundle_prepared": ready,
+            "manifest_declared_artifacts_sha256_revalidated": (
+                artifact_integrity.get("ready") is True
+            ),
+            "artifact_integrity_checked_before_compile": True,
             "world_transform_execution_supported": (
                 transform_report is not None
                 or (
