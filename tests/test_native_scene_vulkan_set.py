@@ -73,6 +73,10 @@ def _dxt1_dds():
     )
 
 
+def _dds_sha():
+    return hashlib.sha256(_dxt1_dds()).hexdigest()
+
+
 def _runtime_provenance(resource_sha):
     return {
         "format": "SHIFT.RuntimeProvenDraw/1",
@@ -294,7 +298,7 @@ def _bridge(
         resources["textures"] = [{
             "id": "tex_test",
             "path": "tracks/silverstone/diffuse.dds",
-            "sha256": _sha("d"),
+            "sha256": _dds_sha(),
             "gpu_ready": True,
             "blocking_reasons": [],
         }]
@@ -381,7 +385,7 @@ def _write_ir(tmp_path, *, textured=False):
             "archive": "Silverstone_Era3_GrandPrix.bff",
             "path": "tracks/silverstone/diffuse.dds",
             "raw": "raw/diffuse.dds",
-            "sha256": _sha("d"),
+            "sha256": hashlib.sha256(dds).hexdigest(),
         })
     (root / "manifest.json").write_text(
         json.dumps(manifest),
@@ -563,6 +567,8 @@ def test_native_scene_vulkan_set_builds_ordered_runtime_proven_child(
     child = report["draws"][0]
     assert child["draw_order"] == 0
     assert child["ready"] is True
+    assert child["resource_raw_identity_sha256_match"] is True
+    assert child["resource_raw_sha256"] == child["resource"]["sha256"]
     assert child["bundle"]["format"] == "SHIFT.VulkanDrawBundle/1"
     assert child["bundle"]["runtime_provenance_gate_ready"] is True
     assert child["bundle"]["manifest_sha256"]
@@ -578,6 +584,7 @@ def test_native_scene_vulkan_set_builds_ordered_runtime_proven_child(
         tmp_path / "vulkan-set/bundle_set.paths"
     ).read_text().strip() == "draw_0000"
     assert report["boundary"]["bundle_paths_relative_to_set_root"] is True
+    assert report["boundary"]["ir_raw_payload_sha256_revalidated_before_decode"] is True
 
     assert report["native_scene_submission"]["ready"] is False
     assert (
@@ -608,7 +615,61 @@ def test_native_scene_vulkan_set_resolves_material_dds_from_ir(tmp_path):
     assert child["texture_sources"][0]["path"] == (
         "tracks/silverstone/diffuse.dds"
     )
+    assert child["texture_sources"][0]["raw_identity_sha256_match"] is True
+    assert child["texture_sources"][0]["raw_sha256"] == _dds_sha()
     assert (tmp_path / "vulkan-set/draw_0000/textures.svtp").is_file()
+
+
+def test_native_scene_vulkan_set_rejects_tampered_imb_raw_payload(tmp_path):
+    root, scene, bridge = _scene_and_bridge(tmp_path)
+    raw = root / "raw/object.imb"
+    raw.write_bytes(raw.read_bytes() + b"tampered")
+
+    report = build_native_scene_vulkan_set(
+        scene,
+        bridge,
+        root,
+        tmp_path / "vulkan-set",
+    )
+
+    assert report["ready"] is False
+    assert report["ready_draw_count"] == 0
+    child = report["draws"][0]
+    assert child["resource_raw_identity_sha256_match"] is False
+    assert (
+        "imb-resource:raw-payload-sha256-mismatch"
+        in child["blocking_reasons"]
+    )
+    assert (
+        "draw-0:imb-resource:raw-payload-sha256-mismatch"
+        in report["blocking_reasons"]
+    )
+
+
+def test_native_scene_vulkan_set_rejects_tampered_dds_raw_payload(tmp_path):
+    root, scene, bridge = _scene_and_bridge(tmp_path, textured=True)
+    raw = root / "raw/diffuse.dds"
+    raw.write_bytes(raw.read_bytes() + b"tampered")
+
+    report = build_native_scene_vulkan_set(
+        scene,
+        bridge,
+        root,
+        tmp_path / "vulkan-set",
+    )
+
+    assert report["ready"] is False
+    assert report["ready_draw_count"] == 0
+    child = report["draws"][0]
+    assert child["texture_sources"] == []
+    assert (
+        "texture:s1:raw-payload-sha256-mismatch"
+        in child["blocking_reasons"]
+    )
+    assert (
+        "draw-0:texture:s1:raw-payload-sha256-mismatch"
+        in report["blocking_reasons"]
+    )
 
 
 def test_native_scene_vulkan_set_rejects_tampered_scene_hash(tmp_path):

@@ -125,6 +125,30 @@ def _raw_path(root: Path, row: Mapping[str, Any]) -> Path | None:
     return path if path.is_file() else None
 
 
+def _read_verified_raw_payload(
+    root: Path,
+    row: Mapping[str, Any],
+) -> tuple[Path | None, bytes | None, str | None, str | None]:
+    """Read one IR payload only when its bytes still match manifest identity."""
+    raw = _raw_path(root, row)
+    if raw is None:
+        return None, None, None, "raw-payload-missing"
+
+    expected = str(row.get("sha256") or "").strip().lower()
+    if len(expected) != 64 or any(ch not in "0123456789abcdef" for ch in expected):
+        return raw, None, None, "manifest-sha256-invalid"
+
+    try:
+        payload = raw.read_bytes()
+    except OSError as exc:
+        return raw, None, None, f"raw-payload-read-failed:{type(exc).__name__}"
+
+    actual = hashlib.sha256(payload).hexdigest()
+    if actual != expected:
+        return raw, None, actual, "raw-payload-sha256-mismatch"
+    return raw, payload, actual, None
+
+
 def _shader_identity(submesh: Mapping[str, Any]) -> dict[str, Any]:
     shader = submesh.get("shader") or {}
     permutation = shader.get("permutation_identity") or {}
@@ -302,12 +326,16 @@ def _texture_map_for_submesh(
                     f"texture:s{register}:ir-resource-{error or 'not-found'}"
                 )
             continue
-        raw = _raw_path(root, row)
-        if raw is None:
-            blockers.append(f"texture:s{register}:raw-payload-missing")
+        raw, payload, raw_sha256, payload_error = _read_verified_raw_payload(
+            root,
+            row,
+        )
+        if payload_error is not None:
+            blockers.append(f"texture:s{register}:{payload_error}")
             continue
+        assert raw is not None and payload is not None and raw_sha256 is not None
         try:
-            image = decode_dds(raw.read_bytes())
+            image = decode_dds(payload)
         except (OSError, ValueError, TypeError) as exc:
             blockers.append(
                 f"texture:s{register}:decode-failed:{type(exc).__name__}"
@@ -331,7 +359,10 @@ def _texture_map_for_submesh(
                 str(row.get("sha256") or "").lower() == expected_sha256
             ),
             "raw": row.get("raw"),
-            "raw_sha256": _sha_file(raw),
+            "raw_sha256": raw_sha256,
+            "raw_identity_sha256_match": (
+                raw_sha256 == str(row.get("sha256") or "").lower()
+            ),
         })
 
     return decoded, list(dict.fromkeys(blockers)), sources
@@ -500,6 +531,7 @@ def build_native_scene_vulkan_set(
 
         resource = draw.get("resource") or {}
         resource_row = None
+        resource_raw_sha256 = None
         if not child_blockers:
             resource_row, error = _exact_row(
                 rows,
@@ -514,14 +546,15 @@ def build_native_scene_vulkan_set(
 
         neutral = None
         if resource_row is not None:
-            raw = _raw_path(root, resource_row)
-            if raw is None:
-                child_blockers.append("imb-resource:raw-payload-missing")
+            raw, payload, resource_raw_sha256, payload_error = (
+                _read_verified_raw_payload(root, resource_row)
+            )
+            if payload_error is not None:
+                child_blockers.append("imb-resource:" + payload_error)
             else:
+                assert raw is not None and payload is not None
                 try:
-                    neutral = build_imb_neutral_geometry(
-                        raw.read_bytes()
-                    )
+                    neutral = build_imb_neutral_geometry(payload)
                 except (OSError, ValueError, TypeError) as exc:
                     child_blockers.append(
                         "imb-resource:neutral-decode-failed:"
@@ -672,6 +705,12 @@ def build_native_scene_vulkan_set(
                 (draw.get("hashes") or {}).get("draw_identity_sha256")
             ),
             "resource": dict(resource) if isinstance(resource, Mapping) else {},
+            "resource_raw_sha256": resource_raw_sha256,
+            "resource_raw_identity_sha256_match": (
+                resource_raw_sha256 is not None
+                and resource_raw_sha256
+                == str((resource_row or {}).get("sha256") or "").lower()
+            ),
             "texture_sources": texture_sources,
             "external_texture_sources": external_texture_sources,
             "external_cube_source": external_cube_source,
@@ -773,10 +812,13 @@ def build_native_scene_vulkan_set(
             "draw_order_preserved": True,
             "bundle_paths_relative_to_set_root": True,
             "exact_imb_resource_revalidated": True,
+            "imb_ir_raw_payload_sha256_revalidated": True,
             "exact_primitive_range_revalidated": True,
             "scene_hashes_revalidated": True,
             "material_2d_dds_resolved_from_ir": True,
             "material_2d_dds_render_resource_sha256_revalidated": True,
+            "material_2d_dds_ir_raw_payload_sha256_revalidated": True,
+            "ir_raw_payload_sha256_revalidated_before_decode": True,
             "world_transform_serialized": True,
             "world_transform_executed": False,
             "explicit_external_sampler2d_snapshots_admitted": True,

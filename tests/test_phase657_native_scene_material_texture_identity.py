@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import struct
 from pathlib import Path
@@ -24,6 +25,10 @@ def _dxt1_dds() -> bytes:
         + struct.pack("<31I", *values)
         + struct.pack("<HHI", 0xF800, 0x07E0, 0)
     )
+
+
+def _dds_sha() -> str:
+    return hashlib.sha256(_dxt1_dds()).hexdigest()
 
 
 def _root(tmp_path: Path) -> Path:
@@ -69,12 +74,13 @@ def _row(*, archive: str, sha256: str) -> dict:
 
 def test_phase657_accepts_exact_render_resource_path_and_sha(tmp_path: Path):
     root = _root(tmp_path)
-    rows = [_row(archive="Silverstone_Era3_GrandPrix.bff", sha256=_sha("d"))]
+    expected = _dds_sha()
+    rows = [_row(archive="Silverstone_Era3_GrandPrix.bff", sha256=expected)]
 
     decoded, blockers, sources = _texture_map_for_submesh(
         root=root,
         rows=rows,
-        render_binding=_binding(_sha("d")),
+        render_binding=_binding(expected),
         submesh=_submesh(),
         prefer_archive="Silverstone_Era3_GrandPrix.bff",
     )
@@ -82,14 +88,14 @@ def test_phase657_accepts_exact_render_resource_path_and_sha(tmp_path: Path):
     assert blockers == []
     assert set(decoded) == {1}
     assert len(sources) == 1
-    assert sources[0]["sha256"] == _sha("d")
-    assert sources[0]["expected_sha256"] == _sha("d")
+    assert sources[0]["sha256"] == expected
+    assert sources[0]["expected_sha256"] == expected
     assert sources[0]["identity_sha256_match"] is True
 
 
 def test_phase657_rejects_path_match_with_different_ir_sha(tmp_path: Path):
     root = _root(tmp_path)
-    rows = [_row(archive="Silverstone_Era3_GrandPrix.bff", sha256=_sha("d"))]
+    rows = [_row(archive="Silverstone_Era3_GrandPrix.bff", sha256=_dds_sha())]
 
     decoded, blockers, sources = _texture_map_for_submesh(
         root=root,
@@ -106,7 +112,7 @@ def test_phase657_rejects_path_match_with_different_ir_sha(tmp_path: Path):
 
 def test_phase657_rejects_renderer_texture_without_exact_sha(tmp_path: Path):
     root = _root(tmp_path)
-    rows = [_row(archive="Silverstone_Era3_GrandPrix.bff", sha256=_sha("d"))]
+    rows = [_row(archive="Silverstone_Era3_GrandPrix.bff", sha256=_dds_sha())]
 
     decoded, blockers, sources = _texture_map_for_submesh(
         root=root,
@@ -123,15 +129,16 @@ def test_phase657_rejects_renderer_texture_without_exact_sha(tmp_path: Path):
 
 def test_phase657_fallback_keeps_exact_sha_identity_across_archives(tmp_path: Path):
     root = _root(tmp_path)
+    expected = _dds_sha()
     rows = [
-        _row(archive="Silverstone_Era3_GrandPrix.bff", sha256=_sha("x")),
-        _row(archive="RENDER.bff", sha256=_sha("d")),
+        _row(archive="Silverstone_Era3_GrandPrix.bff", sha256=_sha("a")),
+        _row(archive="RENDER.bff", sha256=expected),
     ]
 
     decoded, blockers, sources = _texture_map_for_submesh(
         root=root,
         rows=rows,
-        render_binding=_binding(_sha("d")),
+        render_binding=_binding(expected),
         submesh=_submesh(),
         prefer_archive="Silverstone_Era3_GrandPrix.bff",
     )
@@ -139,5 +146,5 @@ def test_phase657_fallback_keeps_exact_sha_identity_across_archives(tmp_path: Pa
     assert blockers == []
     assert set(decoded) == {1}
     assert sources[0]["archive"] == "RENDER.bff"
-    assert sources[0]["sha256"] == _sha("d")
-    assert sources[0]["expected_sha256"] == _sha("d")
+    assert sources[0]["sha256"] == expected
+    assert sources[0]["expected_sha256"] == expected
