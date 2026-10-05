@@ -1,0 +1,29 @@
+name: Process 1 player vehicle render-manager method ca4 access
+
+on:
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_player_vehicle_render_manager_method_ca4_access.py'
+      - 'tests/test_ghidra_player_vehicle_render_manager_method_ca4_access.py'
+      - 'docs/PROCESS_1_PLAYER_VEHICLE_RENDER_MANAGER_METHOD_CA4_ACCESS.md'
+      - '.github/workflows/process1-player-vehicle-render-manager-method-ca4-access.yml'
+  push:
+    paths:
+      - 'tools/ghidra/analyze_player_vehicle_render_manager_method_ca4_access.py'
+      - 'tests/test_ghidra_player_vehicle_render_manager_method_ca4_access.py'
+      - 'docs/PROCESS_1_PLAYER_VEHICLE_RENDER_MANAGER_METHOD_CA4_ACCESS.md'
+      - '.github/workflows/process1-player-vehicle-render-manager-method-ca4-access.yml'
+
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - name: Run manager-method +0xca4 regressions
+        run: python -m pytest -q tests/test_ghidra_player_vehicle_render_manager_method_ca4_access.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/analyze_player_vehicle_render_manager_method_ca4_access.py --help
