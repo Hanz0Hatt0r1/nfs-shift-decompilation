@@ -6,17 +6,11 @@ all existing resource, renderer-evidence, runtime-input and profile behavior. It
 then inserts the Phase 644 corpus -> BMW material -> Phase 643 composite-scene
 stage and rebuilds the runtime requirements/profile against that composite scene.
 
-Phase 653 additionally accepts a ready Phase 650 capture-result bundle and uses
-the existing Phase 652 exact feedback resolver to derive the canonical sibling
-raw capture/root. Phase 655 can also resolve one canonical
-``SHIFT.PEImageEvidence/1`` from the existing renderer report bundle when no
-explicit PE selector is supplied. The full renderer re-attribution chain remains
-unchanged.
-
-The historical track-only bootstrap remains unchanged. This command is the
-playable-specific orchestration path and therefore owns scene-set production;
-passing --scene-set is rejected rather than silently replacing the generated
-track+vehicle scene.
+The production playable path also consumes the positive Process 1
+``SHIFT.BMWVehicleRenderModelResourceJoin/1`` contract before BMW VHF scene
+composition. The contract is repository evidence, not a basename hint: exact
+primary archive/resource identity is revalidated downstream and cockpit
+substitution remains fail-closed.
 """
 from __future__ import annotations
 
@@ -38,6 +32,9 @@ from bootstrap_native_vertical_slice import main as base_main
 from bootstrap_native_vertical_slice_from_capture_result import (
     resolve_capture_feedback_input,
 )
+from bmw_vehicle_render_model_resource_join import (
+    load_bmw_vehicle_render_model_resource_join,
+)
 from native_playable_scene_bootstrap import build_native_playable_scene_bootstrap
 from offline_runtime_requirements import build_runtime_requirements
 from offline_vertical_slice_profile import build_vertical_slice_profile_prepare
@@ -46,6 +43,10 @@ from resolve_playable_renderer_pe_evidence import (
 )
 from run_native_vertical_slice import ProfileError, build_launch_plan
 from runtime_input_validation import validate_explicit_runtime_inputs
+
+BMW_RENDER_MODEL_JOIN = (
+    ROOT / "evidence" / "process1_bmw_vehicle_render_model_resource_join.json"
+)
 
 
 def _write(path: Path, value: Mapping[str, Any]) -> None:
@@ -143,6 +144,10 @@ def _blocked_status(report: Mapping[str, Any]) -> str:
     return "playable-scene-blocked"
 
 
+def _load_production_bmw_render_model_join() -> dict[str, Any]:
+    return load_bmw_vehicle_render_model_resource_join(BMW_RENDER_MODEL_JOIN)
+
+
 def main(argv: list[str] | None = None) -> int:
     values = list(sys.argv[1:] if argv is None else argv)
     parser = build_base_parser()
@@ -186,8 +191,6 @@ def main(argv: list[str] | None = None) -> int:
             "--renderer-capture-root",
             str(capture_feedback["capture_root"]),
         ])
-        # Keep the parsed playable-layer values aligned with the exact inputs
-        # that the lower-level bootstrap will consume.
         args.renderer_capture_jsonl = str(capture_feedback["capture_jsonl"])
         args.renderer_capture_root = str(capture_feedback["capture_root"])
 
@@ -223,8 +226,6 @@ def main(argv: list[str] | None = None) -> int:
         base_values.extend(["--renderer-pe-evidence", pe_path])
         args.renderer_pe_evidence = pe_path
 
-    # A launch plan produced before Phase 644 would point at the track-only scene.
-    # Defer launcher validation until the composite scene/profile is rebuilt.
     base_argv = _without_flag(base_values, "--validate-launch-plan")
     base_main(base_argv)
 
@@ -253,11 +254,34 @@ def main(argv: list[str] | None = None) -> int:
             "bundle_index"
         )
 
+    render_model_join: Mapping[str, Any] | None = None
+    try:
+        render_model_join = _load_production_bmw_render_model_join()
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        blockers.append(
+            "playable-scene:bmw-render-model-resource-join-invalid:"
+            f"{type(exc).__name__}:{exc}"
+        )
+        stages["bmw_vehicle_render_model_resource_join"] = None
+        artifacts["bmw_vehicle_render_model_resource_join"] = str(
+            BMW_RENDER_MODEL_JOIN
+        )
+    else:
+        stages["bmw_vehicle_render_model_resource_join"] = dict(render_model_join)
+        artifacts["bmw_vehicle_render_model_resource_join"] = str(
+            BMW_RENDER_MODEL_JOIN
+        )
+
     boundary.update({
         "playable_linux_scene_composition_requested": True,
         "playable_linux_scene_uses_same_resource_corpus": True,
         "manual_vehicle_material_slice_handoff_required": False,
         "manual_vehicle_bff_path_handoff_required": False,
+        "bmw_vehicle_render_model_resource_join_required": True,
+        "bmw_vehicle_render_model_resource_join_consumed": render_model_join is not None,
+        "bmw_primary_vhf_exact_path_required": True,
+        "bmw_primary_vhf_basename_fallback_allowed": False,
+        "bmw_cockpit_vhf_substitution_allowed": False,
         "manual_renderer_capture_path_handoff_required": False,
         "manual_renderer_pe_path_handoff_required_when_bundle_has_exact_pe": False,
         "renderer_pe_bundle_resolution_used": pe_bundle_resolution is not None,
@@ -278,6 +302,8 @@ def main(argv: list[str] | None = None) -> int:
     playable: Mapping[str, Any] | None = None
     if track_scene is None:
         blockers.append("playable-scene:renderer-native-track-scene-not-ready")
+    elif render_model_join is None:
+        blockers.append("playable-scene:bmw-render-model-resource-join-not-ready")
     else:
         try:
             playable = build_native_playable_scene_bootstrap(
@@ -286,6 +312,7 @@ def main(argv: list[str] | None = None) -> int:
                 out / "playable-scene",
                 vehicle=args.vehicle,
                 validator=args.renderer_validator,
+                vehicle_render_model_join=render_model_join,
             )
         except Exception as exc:
             blockers.append(

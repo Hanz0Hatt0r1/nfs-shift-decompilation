@@ -9,9 +9,11 @@ transpose.
 Selection is fail-closed on the exact canonical BMW body MEB path and SHA from
 SHIFT.BMWGoldenAssetManifest/1. Phase 656 additionally records and requires the
 exact VHF source resource identity (admitted archive SHA-256, unique entry index
-and path, decoded payload SHA-256) that produced the hierarchy transform. This
-is a resource/VHF bind transform only; it does not consume BODY physics pose or
-claim a dynamic vehicle transform.
+and path, decoded payload SHA-256) that produced the hierarchy transform. When
+Process 3 supplies ``SHIFT.BMWVehicleRenderModelResourceJoin/1``, the observed
+VHF identity must equal that already-positive Process 1 contract before the
+transform is admitted. This is a resource/VHF bind transform only; it does not
+consume BODY physics pose or claim a dynamic vehicle transform.
 """
 from __future__ import annotations
 
@@ -22,6 +24,11 @@ import math
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from bmw_vehicle_render_model_resource_join import (
+    CANONICAL_VHF,
+    load_bmw_vehicle_render_model_resource_join,
+    validate_vhf_identity_against_render_model_join,
+)
 from bmw_vulkan_bundle import TARGET_MEB
 from render_command import validate_render_command
 from shift_importer import BFF
@@ -30,7 +37,7 @@ from vhf_scene_preview import build_vhf_scene
 FORMAT = "SHIFT.BMWVHFBodyWorldTransform/1"
 SOURCE_SET_FORMAT = "SHIFT.BMWMaterialSliceSet/1"
 GOLDEN_FORMAT = "SHIFT.BMWGoldenAssetManifest/1"
-DEFAULT_VHF = "vehicles/bmw_m3_e36/bmw_m3_e36.vhf"
+DEFAULT_VHF = CANONICAL_VHF
 DEFAULT_BODY_NODE = "BMW_M3_E36_KIT00_BODY_LODA"
 
 
@@ -193,6 +200,7 @@ def build_bmw_vhf_body_world_transform(
     *,
     vhf_resource: str = DEFAULT_VHF,
     body_node: str = DEFAULT_BODY_NODE,
+    vehicle_render_model_join: str | Path | Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Select the exact VHF body object and convert its world matrix to SVWT form."""
     golden = _load(golden_manifest)
@@ -206,7 +214,26 @@ def build_bmw_vhf_body_world_transform(
     if len(expected_sha) != 64:
         raise ValueError("golden BMW body MEB SHA-256 is missing")
 
+    join_proof: Mapping[str, Any] | None = None
+    if vehicle_render_model_join is not None:
+        join_proof = load_bmw_vehicle_render_model_resource_join(vehicle_render_model_join)
+        joined_vhf = str(
+            (join_proof.get("canonical_bmw_vhf_resource") or {}).get("resolved_path")
+            or ""
+        )
+        if _norm(vhf_resource) != _norm(joined_vhf):
+            raise ValueError(
+                "requested BMW VHF resource disagrees with Process 1 render-model join"
+            )
+
     vhf_identity = _vhf_source_identity(bff_path, vhf_resource)
+    join_validation: Mapping[str, Any] | None = None
+    if join_proof is not None:
+        join_validation = validate_vhf_identity_against_render_model_join(
+            vhf_identity,
+            join_proof,
+        )
+
     scene = build_vhf_scene(
         bff_path,
         vhf_resource,
@@ -239,6 +266,9 @@ def build_bmw_vhf_body_world_transform(
         "archive": Path(bff_path).name,
         "vhf_resource": vhf_resource,
         "vhf_entry": vhf_identity,
+        "vehicle_render_model_resource_join": (
+            dict(join_validation) if isinstance(join_validation, Mapping) else None
+        ),
         "scene_format": scene.get("format"),
         "node_name": part.get("name"),
         "matrix_number": part.get("matrix_number"),
@@ -271,6 +301,9 @@ def build_bmw_vhf_body_world_transform(
             "vhf_source_archive_sha256_required": True,
             "vhf_source_entry_index_required": True,
             "vhf_source_decoded_sha256_required": True,
+            "bmw_vehicle_render_model_resource_join_consumed": join_proof is not None,
+            "basename_fallback_allowed_for_primary_vhf": False,
+            "cockpit_vhf_substitution_allowed": False,
             "vhf_object_transform_proven": True,
             "body_physics_pose_consumed": False,
             "phase700_runtime_pose_handoff_consumed": False,

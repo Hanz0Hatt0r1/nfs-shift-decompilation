@@ -9,9 +9,13 @@ material-slice set before Phase 643. Phase 654 revalidates every MEB/BMT/FX/DDS
 resource actually selected by Phase 533 against the exact admitted retail
 archives before the playable scene may consume that material admission.
 
-Archive basenames are discovery hints only.  The current playable target requires
-source-backed retail SHA-256 identity and exactly one matching corpus occurrence;
-archive order and byte-identical duplicate collapse are never selection authority.
+When the production playable bootstrap supplies the positive
+``SHIFT.BMWVehicleRenderModelResourceJoin/1`` handoff, this stage derives the
+primary VHF path from that contract and requires the VHF transform producer to
+revalidate the exact archive/path/entry/decoded-payload identity. Archive
+basenames are discovery hints only. The current playable target requires
+source-backed retail identity; archive order and byte-identical duplicate
+collapse are never selection authority.
 """
 from __future__ import annotations
 
@@ -27,6 +31,9 @@ from bmw_body_material_admission import (
 )
 from bmw_playable_render_resource_identity import (
     build_bmw_playable_render_resource_identity_gate,
+)
+from bmw_vehicle_render_model_resource_join import (
+    load_bmw_vehicle_render_model_resource_join,
 )
 from bmw_vhf_body_world_transform import (
     apply_bmw_vhf_body_world_transform,
@@ -85,6 +92,7 @@ def _blocked(
     admission: Mapping[str, Any] | None = None,
     vhf_transform: Mapping[str, Any] | None = None,
     composition: Mapping[str, Any] | None = None,
+    vehicle_render_model_join: Mapping[str, Any] | None = None,
     persist: bool = True,
 ) -> dict[str, Any]:
     result = {
@@ -98,6 +106,11 @@ def _blocked(
         "blocking_reasons": list(dict.fromkeys(str(reason) for reason in blockers)),
         "archive_sources": dict(archive_sources or {}),
         "stages": {
+            "vehicle_render_model_resource_join": (
+                dict(vehicle_render_model_join)
+                if isinstance(vehicle_render_model_join, Mapping)
+                else None
+            ),
             "vehicle_material_admission": (
                 dict(admission) if isinstance(admission, Mapping) else None
             ),
@@ -124,6 +137,12 @@ def _blocked(
             "archive_order_is_selection_authority": False,
             "manual_vehicle_material_slice_handoff_required": False,
             "manual_vehicle_bff_path_handoff_required": False,
+            "bmw_vehicle_render_model_resource_join_required": (
+                vehicle_render_model_join is not None
+            ),
+            "bmw_vehicle_render_model_resource_join_consumed": False,
+            "primary_vhf_basename_fallback_allowed": False,
+            "cockpit_vhf_substitution_allowed": False,
             "phase654_exact_vehicle_render_resource_identity_required": True,
             "phase654_exact_vehicle_render_resource_identity_consumed": False,
             "phase643_composite_scene_consumed": False,
@@ -195,6 +214,7 @@ def build_native_playable_scene_bootstrap(
     golden_manifest: str | Path | None = None,
     environment_cube_dds: str | Path | None = None,
     validator: str | None = None,
+    vehicle_render_model_join: str | Path | Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Materialize canonical BMW render evidence and build the Phase 643 scene."""
     track_root = Path(track_scene_set).resolve()
@@ -222,6 +242,23 @@ def build_native_playable_scene_bootstrap(
             output_dir=out,
             blockers=[f"playable-scene-bootstrap:unsupported-vehicle:{vehicle}"],
         )
+
+    render_model_join: Mapping[str, Any] | None = None
+    if vehicle_render_model_join is not None:
+        try:
+            render_model_join = load_bmw_vehicle_render_model_resource_join(
+                vehicle_render_model_join
+            )
+        except Exception as exc:
+            return _blocked(
+                vehicle=vehicle,
+                track_scene_set=track_root,
+                output_dir=out,
+                blockers=[
+                    "playable-scene-bootstrap:bmw-render-model-resource-join-invalid:"
+                    f"{type(exc).__name__}:{exc}"
+                ],
+            )
 
     admission_dir = out / "vehicle-material-admission"
     scene_dir = out / "native-playable-scene"
@@ -260,6 +297,7 @@ def build_native_playable_scene_bootstrap(
                     output_dir=out,
                     blockers=blockers,
                     archive_sources=archive_sources,
+                    vehicle_render_model_join=render_model_join,
                 )
 
             primary = selected["primary"].path
@@ -297,10 +335,25 @@ def build_native_playable_scene_bootstrap(
             transformed_payload: Mapping[str, Any] | None = None
             if not blockers:
                 try:
-                    vhf_transform = build_bmw_vhf_body_world_transform(
-                        primary,
-                        golden,
-                    )
+                    if render_model_join is None:
+                        vhf_transform = build_bmw_vhf_body_world_transform(
+                            primary,
+                            golden,
+                        )
+                    else:
+                        canonical_vhf = str(
+                            (
+                                render_model_join.get("canonical_bmw_vhf_resource")
+                                or {}
+                            ).get("resolved_path")
+                            or ""
+                        )
+                        vhf_transform = build_bmw_vhf_body_world_transform(
+                            primary,
+                            golden,
+                            vhf_resource=canonical_vhf,
+                            vehicle_render_model_join=render_model_join,
+                        )
                     _write(vhf_transform_path, vhf_transform)
                     transformed_payload = apply_bmw_vhf_body_world_transform(
                         source_slice_set,
@@ -368,6 +421,7 @@ def build_native_playable_scene_bootstrap(
             admission=admission,
             vhf_transform=vhf_transform,
             composition=composition,
+            vehicle_render_model_join=render_model_join,
         )
 
     result = {
@@ -381,6 +435,11 @@ def build_native_playable_scene_bootstrap(
         "blocking_reasons": [],
         "archive_sources": archive_sources,
         "stages": {
+            "vehicle_render_model_resource_join": (
+                dict(render_model_join)
+                if isinstance(render_model_join, Mapping)
+                else None
+            ),
             "vehicle_material_admission": dict(admission),
             "vehicle_vhf_body_world_transform": dict(vhf_transform),
             "scene_composition": dict(composition),
@@ -401,6 +460,14 @@ def build_native_playable_scene_bootstrap(
             "archive_order_is_selection_authority": False,
             "manual_vehicle_material_slice_handoff_required": False,
             "manual_vehicle_bff_path_handoff_required": False,
+            "bmw_vehicle_render_model_resource_join_required": (
+                render_model_join is not None
+            ),
+            "bmw_vehicle_render_model_resource_join_consumed": (
+                render_model_join is not None
+            ),
+            "primary_vhf_basename_fallback_allowed": False,
+            "cockpit_vhf_substitution_allowed": False,
             "phase533_complete_body_admission_required": True,
             "phase654_exact_vehicle_render_resource_identity_required": True,
             "phase654_exact_vehicle_render_resource_identity_consumed": True,
