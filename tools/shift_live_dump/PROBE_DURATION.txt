@@ -1,0 +1,1 @@
+20 seconds; 50 ms host-side sample interval; bounded to 300 seconds maximum
