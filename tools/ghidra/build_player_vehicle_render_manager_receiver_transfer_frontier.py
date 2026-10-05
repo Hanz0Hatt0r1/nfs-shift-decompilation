@@ -5,9 +5,9 @@ This pass starts only after
 SHIFT.PlayerVehicleRenderManagerGlobalConstructorIdentity/1 has made
 DAT_00bc185c class identity positive. It consumes the exhaustive root-pose-aware
 xref rank plus the exact instruction export selected by that rank, seeds a
-unique taint token at every exact READ of DAT_00bc185c whose p-code proves a
-tracked register receives the global value, and follows that same physical
-pointer through the local CFG.
+unique taint token at every exact READ of DAT_00bc185c whose structured p-code
+proves a tracked register receives the global value, and follows that same
+physical pointer through the local CFG.
 
 Only first-hop receiver transfers are emitted. Direct CALL targets reached with
 the exact manager pointer in ECX/EDX become a finite targeted-instruction
@@ -41,6 +41,45 @@ PE_MD5 = _alias.PE_MD5
 CANDIDATE_GLOBAL = "0x00bc185c"
 DEFAULT_MAX_DIRECT_TARGETS = 64
 _TRACKED = tuple(_alias._TRACKED)
+_CALLER_SAVED = ("EAX", "ECX", "EDX")
+_REGISTER_WIDTH = 4
+# Ghidra x86 register-space layout used by ShiftFunctionInstructionExporter.
+_REGISTER_BY_OFFSET = {
+    0x00: "EAX",
+    0x04: "ECX",
+    0x08: "EDX",
+    0x0C: "EBX",
+    0x14: "EBP",
+    0x18: "ESI",
+    0x1C: "EDI",
+}
+_MODELED_SINGLE_DESTINATION = frozenset(
+    {
+        "MOV",
+        "MOVZX",
+        "MOVSX",
+        "MOVSXD",
+        "LEA",
+        "XOR",
+        "ADD",
+        "SUB",
+        "ADC",
+        "SBB",
+        "AND",
+        "OR",
+        "IMUL",
+        "SHL",
+        "SHR",
+        "SAR",
+        "ROL",
+        "ROR",
+        "INC",
+        "DEC",
+        "NEG",
+        "NOT",
+        "POP",
+    }
+)
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -160,6 +199,147 @@ def _single_marker(values: Any, marker: str) -> bool:
     return isinstance(values, frozenset) and values == frozenset((marker,))
 
 
+def _varnode_key(value: Any) -> tuple[str, int, int] | None:
+    if not isinstance(value, Mapping):
+        return None
+    space = value.get("space")
+    offset = value.get("offset")
+    size = value.get("size")
+    if not isinstance(space, str) or not isinstance(size, int) or size <= 0:
+        return None
+    try:
+        numeric_offset = int(str(offset), 0)
+    except (TypeError, ValueError):
+        return None
+    return space.lower(), numeric_offset, size
+
+
+def _register_from_varnode(value: Any) -> str | None:
+    if not isinstance(value, Mapping) or value.get("register") is not True:
+        return None
+    # Older synthetic fixtures used canonical names in text. Retail exporter
+    # uses Varnode.toString(), so the structured register-space tuple is the
+    # authoritative fallback.
+    text = str(value.get("text") or "").strip().upper()
+    if text in _TRACKED:
+        return text
+    key = _varnode_key(value)
+    if key is None:
+        return None
+    space, offset, size = key
+    if space != "register" or size != _REGISTER_WIDTH:
+        return None
+    return _REGISTER_BY_OFFSET.get(offset)
+
+
+def _pcode_load_register_outputs(raw_pcode: Any, address: str) -> list[str]:
+    _accesses._validate_pcode(raw_pcode, address)
+    if not isinstance(raw_pcode, list):
+        raise ValueError(f"{address}: pcode must be a list")
+    tainted: set[tuple[str, int, int]] = set()
+    outputs: list[str] = []
+    for index, op in enumerate(raw_pcode):
+        if not isinstance(op, Mapping):
+            raise ValueError(f"{address}:{index}: pcode operation must be an object")
+        opcode = str(op.get("opcode") or "").upper()
+        output = op.get("output")
+        output_key = _varnode_key(output)
+        if opcode == "LOAD":
+            if output_key is not None:
+                tainted.add(output_key)
+            register = _register_from_varnode(output)
+            if register in _TRACKED:
+                outputs.append(register)
+            continue
+        if opcode != "COPY":
+            continue
+        inputs = op.get("inputs")
+        if not isinstance(inputs, list) or len(inputs) != 1:
+            continue
+        input_key = _varnode_key(inputs[0])
+        if input_key is None or input_key not in tainted or output_key is None:
+            continue
+        tainted.add(output_key)
+        register = _register_from_varnode(output)
+        if register in _TRACKED:
+            outputs.append(register)
+    return sorted(set(outputs))
+
+
+def _modeled_register_outputs(instruction: Mapping[str, Any]) -> set[str]:
+    mnemonic = str(instruction.get("mnemonic") or "").upper()
+    operands = instruction.get("operands")
+    if not isinstance(operands, list) or any(not isinstance(value, str) for value in operands):
+        return set()
+    modeled: set[str] = set()
+    if mnemonic in _MODELED_SINGLE_DESTINATION and operands:
+        register = _alias._register_engine._register(operands[0])
+        if register in _TRACKED:
+            modeled.add(register)
+    elif mnemonic == "XCHG" and len(operands) >= 2:
+        for operand in operands[:2]:
+            register = _alias._register_engine._register(operand)
+            if register in _TRACKED:
+                modeled.add(register)
+    if mnemonic == "CALL":
+        modeled.update(_CALLER_SAVED)
+    return modeled
+
+
+def _structured_register_outputs(instruction: Mapping[str, Any]) -> set[str]:
+    result: set[str] = set()
+    pcode = instruction.get("pcode")
+    if not isinstance(pcode, list):
+        return result
+    for op in pcode:
+        if not isinstance(op, Mapping):
+            continue
+        register = _register_from_varnode(op.get("output"))
+        if register in _TRACKED:
+            result.add(register)
+    return result
+
+
+def _safe_transfer(
+    instruction: Mapping[str, Any],
+    incoming: Mapping[str, frozenset[str]],
+) -> dict[str, frozenset[str]]:
+    state = _alias._register_engine._transfer(dict(instruction), dict(incoming))
+    address = _alias._addr(instruction.get("address"), field="instruction.address")
+    modeled = _modeled_register_outputs(instruction)
+    for register in _structured_register_outputs(instruction):
+        if register not in modeled:
+            state[register] = _alias._register_engine._unknown(
+                register, address, "unmodelled-structured-pcode-write"
+            )
+    return state
+
+
+def _incoming_states(instructions: list[dict[str, Any]]) -> dict[str, Any]:
+    by_address = {
+        _alias._addr(instruction.get("address"), field="instruction.address"): instruction
+        for instruction in instructions
+    }
+    address_set = set(by_address)
+    entry = _alias._addr(instructions[0].get("address"), field="function entry")
+    incoming: dict[str, Any] = {entry: _alias._register_engine._initial_state()}
+    queue: deque[str] = deque((entry,))
+    iterations = 0
+    max_iterations = max(64, len(instructions) * 64)
+    while queue:
+        address = queue.popleft()
+        iterations += 1
+        if iterations > max_iterations:
+            raise ValueError(f"{entry}: register provenance did not converge")
+        after = _safe_transfer(by_address[address], incoming[address])
+        for successor in _alias._register_engine._successors(by_address[address], address_set):
+            merged, changed = _alias._register_engine._merge(incoming.get(successor), after)
+            if changed:
+                incoming[successor] = merged
+                queue.append(successor)
+    return incoming
+
+
 def _seed_from_read(
     read: Mapping[str, Any],
     row: Mapping[str, Any],
@@ -174,26 +354,11 @@ def _seed_from_read(
     before = incoming_states.get(address)
     if not isinstance(before, dict):
         raise ValueError(f"{function}:{address}: exact rank READ instruction unreachable")
-    after = _alias._register_engine._transfer(instruction, before)
+    after = _safe_transfer(instruction, before)
 
-    raw_pcode = instruction.get("pcode")
-    _accesses._validate_pcode(raw_pcode, address)
-    if not isinstance(raw_pcode, list):
-        raise ValueError(f"{address}: pcode must be a list")
-    load_outputs: list[str] = []
-    for op in raw_pcode:
-        if not isinstance(op, Mapping):
-            raise ValueError(f"{address}: pcode operation must be an object")
-        if str(op.get("opcode") or "").upper() != "LOAD":
-            continue
-        output = op.get("output")
-        if not isinstance(output, Mapping) or output.get("register") is not True:
-            continue
-        register = str(output.get("text") or "").strip().upper()
-        if register in _TRACKED:
-            load_outputs.append(register)
+    load_outputs = _pcode_load_register_outputs(instruction.get("pcode"), address)
     candidates: list[tuple[str, list[str]]] = []
-    for register in sorted(set(load_outputs)):
+    for register in load_outputs:
         origins = _alias._register_engine._sorted_origins(after[register])
         before_origins = _alias._register_engine._sorted_origins(before[register])
         if len(origins) != 1 or before_origins == origins:
@@ -214,6 +379,7 @@ def _seed_from_read(
         "global_origins_after_read": origins,
         "marker": marker,
         "pcode_backed_global_load": True,
+        "pcode_register_resolution": "structured-register-space-or-canonical-name",
     }
 
 
@@ -348,7 +514,7 @@ def _trace_seed(
         instruction = by_address[address]
         sinks.extend(_call_sinks(function, marker, instruction, state))
         sinks.extend(_other_sinks(function, marker, instruction, state))
-        after = _alias._register_engine._transfer(instruction, state)
+        after = _safe_transfer(instruction, state)
         for successor in _alias._register_engine._successors(instruction, address_set):
             if successor == seed_address:
                 continue
@@ -373,7 +539,7 @@ def build_frontier(
     rows = _alias._load_instruction_rows(instruction_export, selected)
     reads = _reference_reads(rank, selected)
     states = {
-        function: _alias._incoming_states(row["instructions"])
+        function: _incoming_states(row["instructions"])
         for function, row in rows.items()
     }
     seeds: list[dict[str, Any]] = []
@@ -552,6 +718,8 @@ def build_frontier(
             "direct_call_target_promoted_to_ca4_owner": False,
             "indirect_call_promoted_to_resolved_method": False,
             "frame_identity_claimed": False,
+            "structured_register_varnodes_resolved_by_space_offset": True,
+            "unmodelled_structured_pcode_writes_fail_closed": True,
         },
     }
 
