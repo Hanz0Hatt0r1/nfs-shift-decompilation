@@ -68,10 +68,11 @@ else
 fi
 if [[ $HEADLESS_STATUS -ne 0 ]]; then exit "$HEADLESS_STATUS"; fi
 
-python3 - "$OUT_FILE" "${TARGETS[@]}" <<'PY'
+python3 - "$OUT_FILE" "$PROGRAM_NAME" "${TARGETS[@]}" <<'PY'
 import json, pathlib, sys
 path = pathlib.Path(sys.argv[1])
-expected = [arg.split(':', 1)[0].lower() for arg in sys.argv[2:]]
+program = sys.argv[2]
+expected = [arg.split(':', 1)[0].lower() for arg in sys.argv[3:]]
 rows = [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines() if line.strip()]
 if len(rows) != len(expected):
     raise SystemExit(f"error: expected {len(expected)} slice rows, got {len(rows)}")
@@ -79,8 +80,8 @@ seen = []
 for row in rows:
     if row.get('format') != 'SHIFT.GhidraInstructionSlice/1':
         raise SystemExit('error: instruction-slice format drift')
-    if row.get('program') != 'SHIFT.exe' and row.get('program') != sys.argv[0]:
-        pass
+    if row.get('program') != program:
+        raise SystemExit(f"error: program identity drift: {row.get('program')!r} != {program!r}")
     start = str(row.get('start') or '').lower()
     seen.append(start)
     if row.get('exact_instruction_at_start') is not True:
