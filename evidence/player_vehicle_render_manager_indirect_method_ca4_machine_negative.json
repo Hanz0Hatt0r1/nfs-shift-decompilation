@@ -1,0 +1,173 @@
+{
+  "format": "SHIFT.PlayerVehicleRenderManagerIndirectMethodCa4MachineNegative/1",
+  "version": 1,
+  "status": "proven",
+  "ready": true,
+  "evidence_state": "proven-static-negative",
+  "blocker": "remaining resolved-indirect manager +0xca4 candidate branch inside SHIFT.BMWBody0BindFrameProof/1",
+  "retail": {
+    "program": "SHIFT.exe",
+    "md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "image_base": "0x00400000",
+    "machine": "0x014c"
+  },
+  "subject": {
+    "resolved_indirect_target_set": [
+      "0x0045f620",
+      "0x0045f630"
+    ],
+    "field_hypothesis_offset": 3236,
+    "field_hypothesis_offset_hex": "+0xca4"
+  },
+  "analysis": {
+    "target_count": 2,
+    "cfg_complete_target_count": 2,
+    "ca4_access_count": 0,
+    "observed_ecx_relative_offsets": [3500],
+    "observed_ecx_relative_offsets_hex": ["+0xdac"],
+    "targets": [
+      {
+        "entry": "0x0045f620",
+        "section": ".text",
+        "file_offset": 387616,
+        "body_hex": "8b81ac0d0000c3",
+        "body_size": 7,
+        "decoded_instructions": [
+          {
+            "address": "0x0045f620",
+            "mnemonic": "MOV",
+            "operands": ["EAX", "dword ptr [ECX + 0xdac]"]
+          },
+          {
+            "address": "0x0045f626",
+            "mnemonic": "RET",
+            "operands": []
+          }
+        ],
+        "memory_accesses": [
+          {
+            "instruction": "0x0045f620",
+            "kind": "read",
+            "base_register": "ECX",
+            "displacement": 3500,
+            "displacement_hex": "+0xdac"
+          }
+        ],
+        "ecx_relative_access_count": 1,
+        "ca4_access_count": 0,
+        "ca4_access_found": false,
+        "branch_or_call_count": 0,
+        "terminal_return": true,
+        "cfg_complete_for_negative_closure": true
+      },
+      {
+        "entry": "0x0045f630",
+        "section": ".text",
+        "file_offset": 387632,
+        "body_hex": "558bec8b45088981ac0d00005dc20400",
+        "body_size": 16,
+        "decoded_instructions": [
+          {
+            "address": "0x0045f630",
+            "mnemonic": "PUSH",
+            "operands": ["EBP"]
+          },
+          {
+            "address": "0x0045f631",
+            "mnemonic": "MOV",
+            "operands": ["EBP", "ESP"]
+          },
+          {
+            "address": "0x0045f633",
+            "mnemonic": "MOV",
+            "operands": ["EAX", "dword ptr [EBP + 0x8]"]
+          },
+          {
+            "address": "0x0045f636",
+            "mnemonic": "MOV",
+            "operands": ["dword ptr [ECX + 0xdac]", "EAX"]
+          },
+          {
+            "address": "0x0045f63c",
+            "mnemonic": "POP",
+            "operands": ["EBP"]
+          },
+          {
+            "address": "0x0045f63d",
+            "mnemonic": "RET",
+            "operands": ["0x4"]
+          }
+        ],
+        "memory_accesses": [
+          {
+            "instruction": "0x0045f633",
+            "kind": "read",
+            "base_register": "EBP",
+            "displacement": 8,
+            "displacement_hex": "+0x8"
+          },
+          {
+            "instruction": "0x0045f636",
+            "kind": "write",
+            "base_register": "ECX",
+            "displacement": 3500,
+            "displacement_hex": "+0xdac"
+          }
+        ],
+        "ecx_relative_access_count": 1,
+        "ca4_access_count": 0,
+        "ca4_access_found": false,
+        "branch_or_call_count": 0,
+        "terminal_return": true,
+        "cfg_complete_for_negative_closure": true
+      }
+    ]
+  },
+  "claim": {
+    "indirect_manager_method_ca4_branch_negative": true,
+    "all_resolved_targets_cfg_complete": true,
+    "all_resolved_targets_branch_free": true,
+    "only_observed_ecx_relative_offset_is_dac": true
+  },
+  "inputs": {
+    "direct_manager_method_ca4": {
+      "format": "SHIFT.PlayerVehicleRenderManagerMethodCa4Access/1",
+      "ready": false,
+      "targeted_direct_callee_count": 17
+    },
+    "indirect_dispatch": {
+      "format": "SHIFT.PlayerVehicleRenderManagerIndirectDispatch/1",
+      "ready": true,
+      "resolved_target_set": [
+        "0x0045f620",
+        "0x0045f630"
+      ]
+    },
+    "retail_machine_body": "SHIFT.PlayerVehicleRenderManagerIndirectMethodCa4MachineNegative/1"
+  },
+  "handoff": {
+    "direct_manager_method_ca4_branch_negative": true,
+    "indirect_manager_method_ca4_branch_negative": true,
+    "manager_method_ca4_hypothesis_closed": true,
+    "player_vehicle_renderables_field_runtime_access_ready": false,
+    "bmw_body0_bind_frame_proof_ready": false,
+    "next_frontier": {
+      "kind": "canonical-body0-construction-bind-provenance",
+      "functions": [
+        "0x007b3670",
+        "0x007bba90",
+        "0x007bbb10",
+        "0x007bbb60"
+      ],
+      "neighbors_added": false
+    }
+  },
+  "consumer": "Process 1 P1.1 must leave the manager +0xca4 hypothesis and continue the canonical BODY0 construction/bind provenance lane",
+  "limits": [
+    "does not prove mPlayerVehicleRenderables ownership or a VHF root/frame",
+    "does not prove SHIFT.BMWBody0BindFrameProof/1",
+    "does not infer scheduler, physics producer, camera, or vehicle world-transform semantics",
+    "applies only to the exact two targets resolved by SHIFT.PlayerVehicleRenderManagerIndirectDispatch/1"
+  ]
+}
