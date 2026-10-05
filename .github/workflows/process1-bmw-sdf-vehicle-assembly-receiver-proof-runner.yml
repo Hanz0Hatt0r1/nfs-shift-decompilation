@@ -1,0 +1,37 @@
+name: Process 1 BMW SDF vehicle assembly receiver runner
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/run_bmw_sdf_vehicle_assembly_receiver_proof.py'
+      - 'tools/ghidra/analyze_bmw_sdf_vehicle_assembly_receiver_provenance.py'
+      - 'tools/ghidra/run_shift_function_instructions.sh'
+      - 'tests/test_ghidra_run_bmw_sdf_vehicle_assembly_receiver_proof.py'
+      - 'tests/test_ghidra_bmw_sdf_vehicle_assembly_receiver_provenance.py'
+      - 'docs/PROCESS_1_BMW_SDF_VEHICLE_ASSEMBLY_RECEIVER_PROOF_RUNNER.md'
+      - '.github/workflows/process1-bmw-sdf-vehicle-assembly-receiver-proof-runner.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/run_bmw_sdf_vehicle_assembly_receiver_proof.py'
+      - 'tools/ghidra/analyze_bmw_sdf_vehicle_assembly_receiver_provenance.py'
+      - 'tools/ghidra/run_shift_function_instructions.sh'
+      - 'tests/test_ghidra_run_bmw_sdf_vehicle_assembly_receiver_proof.py'
+      - 'tests/test_ghidra_bmw_sdf_vehicle_assembly_receiver_provenance.py'
+      - 'docs/PROCESS_1_BMW_SDF_VEHICLE_ASSEMBLY_RECEIVER_PROOF_RUNNER.md'
+      - '.github/workflows/process1-bmw-sdf-vehicle-assembly-receiver-proof-runner.yml'
+
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run one-command receiver runner regressions
+        run: python -m pytest -q tests/test_ghidra_run_bmw_sdf_vehicle_assembly_receiver_proof.py
+      - name: Preserve receiver analyzer regressions
+        run: python -m pytest -q tests/test_ghidra_bmw_sdf_vehicle_assembly_receiver_provenance.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/run_bmw_sdf_vehicle_assembly_receiver_proof.py --help >/dev/null
