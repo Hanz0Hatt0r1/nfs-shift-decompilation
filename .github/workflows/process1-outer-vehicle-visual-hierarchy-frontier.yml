@@ -1,0 +1,29 @@
+name: Process 1 outer Vehicle visual hierarchy frontier
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_outer_vehicle_visual_hierarchy_frontier.py'
+      - 'tests/test_ghidra_outer_vehicle_visual_hierarchy_frontier.py'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_VISUAL_HIERARCHY_FRONTIER.md'
+      - '.github/workflows/process1-outer-vehicle-visual-hierarchy-frontier.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_outer_vehicle_visual_hierarchy_frontier.py'
+      - 'tests/test_ghidra_outer_vehicle_visual_hierarchy_frontier.py'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_VISUAL_HIERARCHY_FRONTIER.md'
+      - '.github/workflows/process1-outer-vehicle-visual-hierarchy-frontier.yml'
+
+jobs:
+  visual-hierarchy-frontier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run visual hierarchy frontier regressions
+        run: python -m pytest -q tests/test_ghidra_outer_vehicle_visual_hierarchy_frontier.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/analyze_outer_vehicle_visual_hierarchy_frontier.py --help >/dev/null
