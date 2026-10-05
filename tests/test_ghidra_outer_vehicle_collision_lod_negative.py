@@ -100,7 +100,11 @@ def test_retires_wheel_lod_branch_without_promoting_vhf(tmp_path):
     assert report["negative_classification"]["FUN_007a3d60_is_admissible_VHF_root_candidate"] is False
     assert report["handoff"]["outer_vehicle_root_to_VHF_vehicle_root_ready"] is False
     assert report["handoff"]["BODY0_bind_frame_proof_ready"] is False
-    assert report["handoff"]["next_frontier"] == "SHIFT.VehicleRenderRootPoseTransportFrontier/1"
+    assert report["handoff"]["next_frontier"] == "canonical-body0-construction-bind-provenance"
+    assert report["handoff"]["next_frontier_functions"] == [
+        "0x007b3670", "0x007bba90", "0x007bbb10", "0x007bbb60"
+    ]
+    assert report["blockers"][0]["id"] == "SDF-model-to-VHF-vehicle-root-frame-relation-unproven"
 
 
 def test_rejects_collision_format_string_drift(tmp_path):
