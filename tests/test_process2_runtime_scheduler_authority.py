@@ -13,7 +13,8 @@ def test_runtime_scheduler_authority_is_explicit_and_fail_closed():
     assert "enum class RuntimeSchedulerAuthority" in policy
     assert "HostDevelopment" in policy
     assert "RetailEvidence" in policy
-    assert "kHostDevelopmentFixedDt = 1.0 / 60.0" in policy
+    assert "kNativeContinuousFixedDt = 1.0 / 60.0" in policy
+    assert "kHostDevelopmentFixedDt = kNativeContinuousFixedDt" in policy
     assert "retail_cadence_admitted = false" in policy
     assert "uses_host_development_scheduler" in policy
     assert "uses_admitted_retail_scheduler" in policy
