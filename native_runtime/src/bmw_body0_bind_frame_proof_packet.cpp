@@ -160,10 +160,12 @@ LoadedBmwBody0BindFrameProofPacket load_bmw_body0_bind_frame_proof_packet(
     proof.new_runtime_capture_used = false;
     proof.body0_local_to_vhf_vehicle_root_row_matrix = matrix;
 
+    const auto admitted = admit_bmw_body0_bind_frame_proof(proof);
+
     LoadedBmwBody0BindFrameProofPacket result{};
     result.version = header.version;
     result.source_targets = std::move(targets);
-    result.admitted = admit_bmw_body0_bind_frame_proof(proof);
+    result.admitted = admitted;
     return result;
 }
 
