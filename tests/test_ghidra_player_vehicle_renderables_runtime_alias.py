@@ -64,7 +64,7 @@ def _function_row(address: str, instructions):
     }
 
 
-def _rank(path: Path, selected=None):
+def _rank(path: Path, selected=None, *, artifact_format=None, root_pose_gates=True):
     selected = ["0x00410000"] if selected is None else selected
     functions = []
     for index, function in enumerate(selected):
@@ -74,22 +74,26 @@ def _rank(path: Path, selected=None):
                 "minimum_vehicle_anchor_distance": 1 if index == 0 else None,
             }
         )
-    return _write_json(
-        path,
-        {
-            "format": m.RANK_FORMAT,
-            "ready": True,
-            "retail": {"program": m.PROGRAM, "md5": m.PE_MD5},
-            "candidate_global": {
-                "address": "0x00bc185c",
-                "runtime_manager_instance_identity_proven": False,
-            },
-            "ranking": {
-                "selected_instruction_export_functions": selected,
-                "functions": functions,
-            },
+    fmt = artifact_format or m.RANK_FORMAT
+    payload = {
+        "format": fmt,
+        "ready": True,
+        "retail": {"program": m.PROGRAM, "md5": m.PE_MD5},
+        "candidate_global": {
+            "address": "0x00bc185c",
+            "runtime_manager_instance_identity_proven": False,
         },
-    )
+        "ranking": {
+            "selected_instruction_export_functions": selected,
+            "functions": functions,
+        },
+    }
+    if fmt == m.ROOT_POSE_RANK_FORMAT:
+        payload["handoff"] = {
+            "root_pose_positive_anchor_ranking_ready": root_pose_gates,
+            "collision_wheel_LOD_anchor_removed_from_positive_render_score": root_pose_gates,
+        }
+    return _write_json(path, payload)
 
 
 def _positive_instructions(path: Path):
@@ -132,6 +136,10 @@ def test_proves_exact_global_value_as_ca4_field_base_without_class_identity(tmp_
 
     assert report["format"] == m.FORMAT
     assert report["ready"] is True
+    assert report["input_rank"] == {
+        "format": m.RANK_FORMAT,
+        "root_pose_aware_rank": False,
+    }
     assert report["analysis"]["pcode_backed_ca4_access_count"] == 1
     assert report["analysis"]["exact_candidate_global_value_alias_count"] == 1
     assert report["analysis"]["exact_alias_with_bounded_vehicle_callgraph_proximity_count"] == 1
@@ -150,6 +158,32 @@ def test_proves_exact_global_value_as_ca4_field_base_without_class_identity(tmp_
     assert report["handoff"]["player_vehicle_renderables_owner_join_ready"] is False
     assert report["handoff"]["outer_vehicle_root_to_VHF_vehicle_root_ready"] is False
     assert report["handoff"]["vehicle_world_transform_ready"] is False
+
+
+def test_accepts_current_root_pose_rank_for_same_physical_alias_proof(tmp_path):
+    rank = _rank(
+        tmp_path / "rank.json",
+        artifact_format=m.ROOT_POSE_RANK_FORMAT,
+    )
+    instructions = _positive_instructions(tmp_path / "instructions.jsonl")
+    report = m.analyze(rank, instructions)
+    assert report["ready"] is True
+    assert report["input_rank"] == {
+        "format": m.ROOT_POSE_RANK_FORMAT,
+        "root_pose_aware_rank": True,
+    }
+    assert report["analysis"]["exact_candidate_global_value_alias_count"] == 1
+
+
+def test_rejects_root_pose_rank_without_current_positive_anchor_gates(tmp_path):
+    rank = _rank(
+        tmp_path / "rank.json",
+        artifact_format=m.ROOT_POSE_RANK_FORMAT,
+        root_pose_gates=False,
+    )
+    instructions = _positive_instructions(tmp_path / "instructions.jsonl")
+    with pytest.raises(ValueError, match="positive-anchor gate"):
+        m.analyze(rank, instructions)
 
 
 def test_accepts_DAT_symbol_rendering_for_global_origin(tmp_path):
