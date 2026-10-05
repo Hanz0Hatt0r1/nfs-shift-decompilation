@@ -2,6 +2,7 @@
 
 #include "shift_bmw_body0_bind_frame_proof_packet.hpp"
 
+#include <cstddef>
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
