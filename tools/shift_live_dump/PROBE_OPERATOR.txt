@@ -1,0 +1,1 @@
+Run: bash tools/shift_live_dump/capture_bmw_body0.sh
