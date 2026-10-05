@@ -1,0 +1,28 @@
+name: Process 1 outer Vehicle car-body PhysX owner negative
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/classify_outer_vehicle_car_body_physx_owner.py'
+      - 'tests/test_ghidra_outer_vehicle_car_body_physx_owner_negative.py'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_CAR_BODY_PHYSX_OWNER_NEGATIVE.md'
+      - '.github/workflows/process1-outer-vehicle-car-body-physx-owner-negative.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/classify_outer_vehicle_car_body_physx_owner.py'
+      - 'tests/test_ghidra_outer_vehicle_car_body_physx_owner_negative.py'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_CAR_BODY_PHYSX_OWNER_NEGATIVE.md'
+      - '.github/workflows/process1-outer-vehicle-car-body-physx-owner-negative.yml'
+
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run focused regressions
+        run: python -m pytest -q tests/test_ghidra_outer_vehicle_car_body_physx_owner_negative.py
+      - name: Check CLI surface
+        run: python tools/ghidra/classify_outer_vehicle_car_body_physx_owner.py --help
