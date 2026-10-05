@@ -1,0 +1,37 @@
+name: Process 2 BMW offset33b runtime selector
+
+on:
+  push:
+    paths:
+      - 'src/runtime/bmw_offset33b_runtime_selector.py'
+      - 'tests/test_bmw_offset33b_runtime_selector.py'
+      - 'evidence/bmw_offset33b_selector_complete_numeric.json'
+      - 'docs/PROCESS_2_BMW_OFFSET33B_RUNTIME_SELECTOR_BINDING.md'
+      - '.github/workflows/process2-bmw-offset33b-runtime-selector.yml'
+  pull_request:
+    paths:
+      - 'src/runtime/bmw_offset33b_runtime_selector.py'
+      - 'tests/test_bmw_offset33b_runtime_selector.py'
+      - 'evidence/bmw_offset33b_selector_complete_numeric.json'
+      - 'docs/PROCESS_2_BMW_OFFSET33B_RUNTIME_SELECTOR_BINDING.md'
+      - '.github/workflows/process2-bmw-offset33b-runtime-selector.yml'
+
+jobs:
+  runtime-selector:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run runtime-selector regressions
+        run: |
+          python -m pip install --disable-pip-version-check pytest
+          python -m pytest -q tests/test_bmw_offset33b_runtime_selector.py
+      - name: Exercise CLI binding
+        run: |
+          python src/runtime/bmw_offset33b_runtime_selector.py \
+            evidence/bmw_offset33b_selector_complete_numeric.json \
+            --player-difficulty 1 --normal \
+            --json-out /tmp/bmw-offset33b-session.json
+          python -m json.tool /tmp/bmw-offset33b-session.json >/dev/null
