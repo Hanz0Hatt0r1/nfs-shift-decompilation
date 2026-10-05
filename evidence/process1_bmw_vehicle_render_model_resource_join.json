@@ -1,0 +1,79 @@
+{
+  "format": "SHIFT.BMWVehicleRenderModelResourceJoin/1",
+  "version": 1,
+  "status": "bmw-vehicle-render-model-resource-proven",
+  "ready": true,
+  "retail": {
+    "program": "SHIFT.exe",
+    "md5": "705af8b420e5eb1e3834ac43d5533c6b"
+  },
+  "input_owner_proof": {
+    "format": "SHIFT.VehicleRenderHierarchyResourceOwnerJoin/1",
+    "source_commit": "4fcb9e2223592928d5e8a0d2f578f269b195bdc3",
+    "vehicle_render_hierarchy_owner_ready": true,
+    "vehicle_render_model_property_name": "Vehicle Render Model",
+    "vehicle_render_model_property_field": "+0x54"
+  },
+  "selected_vehicle_descriptor": {
+    "vehicle_name": "BMW_M3_E36",
+    "descriptor_path": "vehicles/bmw_m3_e36/bmw_m3_e36.crd",
+    "descriptor_copy_count": 3,
+    "descriptor_decoded_sha256": "9dd97be4767c2d96782801a4555ac0581b4cff65432635a11d456b39cf35352b",
+    "copies": [
+      {
+        "archive": "VehiclesGlobal.bff",
+        "archive_sha256": "b186ae466e6cccb964c813c6f60bc060a4a8646c261f89270ef86e3ff5cdf953",
+        "entry_index": 32
+      },
+      {
+        "archive": "VehiclesPersistent.bff",
+        "archive_sha256": "0d66170bdc1298d6dd2469ca011bfb9c6787b49666203635a702333e76b3b4ef",
+        "entry_index": 27
+      },
+      {
+        "archive": "BMW_M3_E36.bff",
+        "archive_sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+        "entry_index": 1121
+      }
+    ],
+    "property_name": "Vehicle Render Model",
+    "property_value": "BMW_M3_E36.vhf",
+    "selected_BMW_vehicle_render_model_value_ready": true
+  },
+  "canonical_bmw_vhf_resource": {
+    "resolved_path": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
+    "archive": "BMW_M3_E36.bff",
+    "archive_sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+    "entry_index": 1083,
+    "compression_type": 2,
+    "compressed_size": 4914,
+    "uncompressed_size": 88599,
+    "decoded_sha256": "e08887d17d9e34e703a385260f41017fc19acbebc3405614b375e81766b4bd51",
+    "root_tag": "CAR",
+    "root_name": "BMW_M3_E36",
+    "root_node_type": "HIERARCHY",
+    "canonical_BMW_VHF_resource_join_ready": true
+  },
+  "negative_disambiguation": {
+    "BMW_M3_E36_Cockpit.bff_sha256": "a9bc1b3c0dfb21408913089d565fa2ffc80f2fb2c4a408ab9aef101d012f15be",
+    "cockpit_vhf_path": "vehicles/bmw_m3_e36/bmw_m3_e36_cockpit.vhf",
+    "cockpit_does_not_match_selected_vehicle_render_model": true
+  },
+  "handoff": {
+    "vehicle_render_hierarchy_owner_ready": true,
+    "selected_BMW_vehicle_render_model_value_ready": true,
+    "canonical_BMW_VHF_resource_join_ready": true,
+    "outer_vehicle_root_to_VHF_vehicle_root_ready": false,
+    "BODY0_bind_frame_proof_ready": false,
+    "vehicle_world_transform_ready": false,
+    "next_frontier": "join the proven outer/root-pose transport to the exact BMW_M3_E36 VHF HIERARCHY root without inferring frame equivalence from resource identity alone"
+  },
+  "scope": {
+    "runtime_capture_required": false,
+    "descriptor_value_invented": false,
+    "basename_only_fallback_used": false,
+    "archive_order_fallback_used": false,
+    "outer_vehicle_to_vhf_frame_relation_claimed": false,
+    "body0_bind_frame_claimed": false
+  }
+}

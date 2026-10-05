@@ -1,0 +1,29 @@
+name: process1-bmw-render-model-resource-join
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/build_bmw_vehicle_render_model_resource_join.py'
+      - 'tests/test_bmw_vehicle_render_model_resource_join.py'
+      - 'evidence/process1_bmw_vehicle_render_model_resource_join.json'
+      - '.github/workflows/process1-bmw-render-model-resource-join.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/build_bmw_vehicle_render_model_resource_join.py'
+      - 'tests/test_bmw_vehicle_render_model_resource_join.py'
+      - 'evidence/process1_bmw_vehicle_render_model_resource_join.json'
+      - '.github/workflows/process1-bmw-render-model-resource-join.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install focused test dependency
+        run: python -m pip install pytest
+      - name: Test BMW render-model resource join
+        run: python -m pytest -q tests/test_bmw_vehicle_render_model_resource_join.py
+      - name: Compile analyzer
+        run: python -m py_compile tools/ghidra/build_bmw_vehicle_render_model_resource_join.py
+      - name: Validate checked retail evidence
+        run: python -m json.tool evidence/process1_bmw_vehicle_render_model_resource_join.json >/dev/null
