@@ -1,0 +1,29 @@
+name: Process 1 player vehicle renderables runtime alias
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_player_vehicle_renderables_runtime_alias.py'
+      - 'tests/test_ghidra_player_vehicle_renderables_runtime_alias.py'
+      - 'docs/PROCESS_1_PLAYER_VEHICLE_RENDERABLES_RUNTIME_ALIAS.md'
+      - '.github/workflows/process1-player-vehicle-renderables-runtime-alias.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_player_vehicle_renderables_runtime_alias.py'
+      - 'tests/test_ghidra_player_vehicle_renderables_runtime_alias.py'
+      - 'docs/PROCESS_1_PLAYER_VEHICLE_RENDERABLES_RUNTIME_ALIAS.md'
+      - '.github/workflows/process1-player-vehicle-renderables-runtime-alias.yml'
+
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run runtime alias regressions
+        run: python -m pytest -q tests/test_ghidra_player_vehicle_renderables_runtime_alias.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/analyze_player_vehicle_renderables_runtime_alias.py --help >/dev/null
