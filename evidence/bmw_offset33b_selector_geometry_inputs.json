@@ -1,0 +1,118 @@
+{
+  "format": "SHIFT.BMWOffset33bSelectorGeometryInputs/1",
+  "version": 1,
+  "status": "selector-geometry-inputs-ready",
+  "ready": true,
+  "sources": {
+    "vehicle_vdf": {
+      "archive": {
+        "filename": "PHYSICSPERSISTENT.bff",
+        "sha256": "18b62954c54e1b7e791c8a0e808480b4ddc41ffbbb08f1babb5bd52f2587761f"
+      },
+      "entry": {
+        "index": 40,
+        "path": "vehicles/physics/vehicles/bmw_m3_e36.vdf",
+        "compression_type": 2,
+        "compressed_size": 654,
+        "uncompressed_size": 3431,
+        "decoded_sha256": "f4c925bc6799439a12906d0aed9b73e22052cb46f7fbd4ea6f48409b9776a082"
+      }
+    },
+    "physics_tweaker": {
+      "archive": {
+        "filename": "PHYSICSBOOTFLOW.bff",
+        "sha256": "f4205984343987d7879fcd65f6b2527848a6fd16e9830d6ccca70b7e5db4254a"
+      },
+      "entry": {
+        "index": 49,
+        "path": "vehicles/physics/physicstweaker.xml",
+        "compression_type": 2,
+        "compressed_size": 2452,
+        "uncompressed_size": 21762,
+        "decoded_sha256": "6cdd05f0512d367c8ce240cb13dd22fe10fb3e21da95185ea8f79e1ca67ca62f"
+      }
+    },
+    "street_1_tire": {
+      "archive": {
+        "filename": "PHYSICSBOOTFLOW.bff",
+        "sha256": "f4205984343987d7879fcd65f6b2527848a6fd16e9830d6ccca70b7e5db4254a"
+      },
+      "entry": {
+        "index": 8,
+        "path": "vehicles/physics/tyres/street_1.hdt",
+        "compression_type": 2,
+        "compressed_size": 2596,
+        "uncompressed_size": 9764,
+        "decoded_sha256": "93277c754fb0f6ed76d683acd89c261d8d18b7bcf26ffbd76c5bf50846eb9df3"
+      }
+    },
+    "bmw_cdf": {
+      "path": "vehicles/physics/chassis/bmw_m3_e36.cdf",
+      "decoded_sha256": "bbee83f0d2fdcbfc2bbd62ddb2a10bf6fed71bb1b4fa78f303a4730d038b970d"
+    }
+  },
+  "vdf": {
+    "name": "BMW M3 E36",
+    "vehicle_chassis": "BMW_M3_E36",
+    "vehicle_suspension": "Aarm_MultiLink",
+    "vehicle_tyres": "Street_1",
+    "vehicle_drift_tyres": "Street_1_Drift",
+    "wheel_offsets": {
+      "fl": [0.711, 0.31, -1.35],
+      "fr": [-0.711, 0.31, -1.35],
+      "rl": [0.7225, 0.31, 1.35],
+      "rr": [-0.7225, 0.31, 1.35]
+    },
+    "wheel_dimensions": {
+      "fl": [0.225, 0.62],
+      "fr": [0.225, 0.62],
+      "rl": [0.225, 0.62],
+      "rr": [0.225, 0.62]
+    }
+  },
+  "cdf_selector_inputs": {
+    "CGHeight": 0.28,
+    "CGRightRange": [0.5, 0.0, 0],
+    "CGRightSetting": 0,
+    "CGRearRange": [0.47, 0.0, 0],
+    "CGRearSetting": 0,
+    "front_RideHeightRange": [0.1, -0.005, 6],
+    "front_RideHeightSetting": 0,
+    "rear_RideHeightRange": [0.11, -0.005, 6],
+    "rear_RideHeightSetting": 0
+  },
+  "physics_tweaker": {
+    "CGHeight Scale": [0.6, 0.6, 0.75, 0.825],
+    "Drift CGHeight Scale": [0.25, 0.25, 0.25, 0.67]
+  },
+  "selector_contract": {
+    "player_difficulty_property": "Player Difficulty (0-2)",
+    "valid_player_difficulty": [0, 1, 2],
+    "default_player_difficulty": 1,
+    "difficulty_source_offset_hex": "0x10f4",
+    "race_mode_info_difficulty_offset_hex": "0x6c",
+    "race_mode_info_drift_scale_selector_offset_hex": "0x0e",
+    "normal_scale_property": "CGHeight Scale",
+    "drift_scale_property": "Drift CGHeight Scale",
+    "array_index_3_is_valid_player_difficulty": false
+  },
+  "retail_layout": {
+    "VDF.Wheel FL Offset": "record+0x34",
+    "VDF.Wheel FR Offset": "record+0x40",
+    "VDF.Wheel RL Offset": "record+0x4c",
+    "VDF.Wheel RR Offset": "record+0x58",
+    "VDF.Wheel FL Dimensions": "record+0x64",
+    "VDF.Wheel FR Dimensions": "record+0x6c",
+    "VDF.Wheel RL Dimensions": "record+0x74",
+    "VDF.Wheel RR Dimensions": "record+0x7c",
+    "VehicleLoadData.derived_CGHeight": "load_data+0x338"
+  },
+  "scope": {
+    "raw_retail_archives_committed": false,
+    "raw_VDF_CDF_HDT_or_physicstweaker_committed": false,
+    "player_difficulty_index_3_admitted": false,
+    "single_profile_default_assumed_for_numeric_family": false,
+    "outer_vehicle_to_VHF_frame_relation_claimed": false,
+    "vehicle_world_transform_ready": false
+  }
+}
