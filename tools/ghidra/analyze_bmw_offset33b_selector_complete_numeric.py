@@ -40,15 +40,20 @@ TARGETS = {
     "0x00492250": ("FUN_00492250", 705, "__thiscall", "2e8b1580fbdda1242168ea3fc35a67657771f54c26c7bddf890f9495f1c0fdee"),
     "0x00492520": ("FUN_00492520", 247, "__thiscall", "3e976a0cb7f19144082816f872e3897626e220a20f68d4ce5ce9e5261589880f"),
     "0x00498b80": ("FUN_00498b80", 413, "__fastcall", "2068489d7f9aa5a6cac13870ec42efe8f844315ba8d143688ae3c377d620016f"),
+    "0x00703f10": ("FUN_00703f10", 2268, "__stdcall", "eaf605926a6da4b27c2c358286f33fe720f6d4e49a78026b376dafc9ac0cda75"),
     "0x0070e1c0": ("FUN_0070e1c0", 73, "__fastcall", "a67813ca15bfc96a3e79f353432bef5ed6436040915ddce5aaa01e2dcc900470"),
     "0x00711210": ("FUN_00711210", 1142, "__fastcall", "3b0e2145ff980d30214560071f02bc96b67f8ffc1671c25a7fa94e1d9009d31a"),
     "0x00714560": ("FUN_00714560", 348, "__thiscall", "0fdfd115ce435f07172048099c7c8ae063842de2dcad60bfb06ca40cbba49fd4"),
+    "0x00714ed0": ("FUN_00714ed0", 468, "__fastcall", "47bbffc6f5d332609171baba59e0c8f5fc44a1bff680c2ba22247110bdd72ee8"),
+    "0x00747b90": ("FUN_00747b90", 36, "__fastcall", "fda8fcb2b4d9c692033d047f34517b0b63f7f13bbcc9d63f59b57d3f6719b2cd"),
+    "0x00749a60": ("FUN_00749a60", 9574, "__stdcall", "6430fcc5bf682b1ebf36f4806bd54c89e9838b2417c35081f32e60b6f55edcc7"),
     "0x00753590": ("FUN_00753590", 36, "__fastcall", "6ee202414e407b405a0710dacf80832588ad4b26b428be86d3e6587663b7ec5d"),
     "0x007535f0": ("FUN_007535f0", 34, "__fastcall", "d0f3c242b7cf073c0bbd41c0c10b5009ccde7712670f7a8a2b0467b84f51dd80"),
     "0x0076b280": ("FUN_0076b280", 7796, "__thiscall", "9563b40c06bcc7442aabd3308eefa62e1b9f7d0bb9afe752ddf0dc068e0cd7f6"),
     "0x007a6be0": ("FUN_007a6be0", 192, "__fastcall", "a3adb9a0fe8e67b3c0a4b7f091c32e5665304a8a4a695f5337d1bf2d7ab34712"),
     "0x007bef40": ("FUN_007bef40", 197, "__stdcall", "650cd59bb8b0ad5257a445cd9f03cffe3aeba8e07ed8c0cdbacb38f6ffb9c263"),
     "0x007bfbe0": ("FUN_007bfbe0", 1381, "__thiscall", "9b5b44a1685b5bf2c1a6b681a3864109a443cca18ce9c3445ebb1516a9a0c7b8"),
+    "0x007c5a20": ("FUN_007c5a20", 154, "__fastcall", "9d90835cda9d35e4138e5b5b00d0625952e62d096e7c5eda08e3664f416d0f27"),
     "0x00d3b190": ("FUN_00d3b190", 45, "__thiscall", "14a5001e7a917fd8dfe0d8f6ecddd2b321468185b41b9c2b8fef4c2666d6aa0a"),
 }
 
@@ -58,6 +63,11 @@ REQUIRED_DIRECT_EDGES = {
     ("0x00492520", "0x00492539", "0x00492250"),
     ("0x00492250", "0x004924d7", "0x0048dd90"),
     ("0x00711210", "0x007114b3", "0x00714560"),
+    ("0x0076b280", "0x0076b9fb", "0x00747b90"),
+    ("0x0076b280", "0x0076ba11", "0x007535f0"),
+    ("0x0076b280", "0x0076ba29", "0x00753590"),
+    ("0x0076b280", "0x0076ba41", "0x00747b90"),
+    ("0x007bfbe0", "0x007bfcff", "0x007c5a20"),
     ("0x007bfbe0", "0x007bfd0a", "0x007a6be0"),
     ("0x007bfbe0", "0x007bfd32", "0x007bef40"),
 }
@@ -66,6 +76,16 @@ EXPECTED_STRINGS = {
     "Player Difficulty (0-2)": ("0x00aae8f8", "0x00421e00", "0x00423e8a"),
     "MWL::PhysicsEvent_ChangeRaceMode::AddVehicleChange": ("0x00b041e8", "0x0070b880", "0x0070b8a6"),
     "MWL::Core::PhysicsParticipantManager::ChangeRaceMode": ("0x00b04708", "0x00714560", "0x007145b4"),
+    "Wheel FL Offset": ("0x00b03cf4", "0x00703f10", "0x0070418e"),
+    "Wheel FL Dimensions": ("0x00b03ce0", "0x00703f10", "0x007041dd"),
+    "Wheel FR Offset": ("0x00b03cd0", "0x00703f10", "0x00704239"),
+    "Wheel FR Dimensions": ("0x00b03cbc", "0x00703f10", "0x00704285"),
+    "Wheel RL Offset": ("0x00b03cac", "0x00703f10", "0x007042de"),
+    "Wheel RL Dimensions": ("0x00b03c98", "0x00703f10", "0x0070432d"),
+    "Wheel RR Offset": ("0x00b03c88", "0x00703f10", "0x00704386"),
+    "Wheel RR Dimensions": ("0x00b03c74", "0x00703f10", "0x007043d5"),
+    "CGHeight Scale": ("0x00b07c9c", "0x00749a60", "0x0074b572"),
+    "Drift CGHeight Scale": ("0x00b07c84", "0x00749a60", "0x0074b5d5"),
 }
 
 EXPECTED_GEOMETRY = {
@@ -278,6 +298,11 @@ def _validate_resource_inputs(path: Path) -> tuple[dict[str, Any], dict[str, Dec
         raise ValueError("BMW CDF/SDF inputs missing")
     if cdf.get("decoded_sha256") != EXPECTED_GEOMETRY["cdf_sha"]:
         raise ValueError("resource-input CDF identity disagrees with geometry contract")
+    mapping = report.get("fun_0076b280_load_data_mapping")
+    if not isinstance(mapping, Mapping):
+        raise ValueError("FUN_0076b280 load-data mapping missing")
+    if mapping.get("derived_load_data_offsets_not_promoted_from_resource_name") != [824]:
+        raise ValueError("derived VehicleLoadData+0x338 frontier drift")
     values = cdf.get("values")
     bodies = sdf.get("bodies")
     if not isinstance(values, Mapping) or not isinstance(bodies, list):
@@ -337,7 +362,6 @@ def _selected_range(spec: list[Decimal], setting: int, label: str) -> Decimal:
     base, step, count = spec
     if count != count.to_integral_value() or int(count) < 0:
         raise ValueError(f"{label}: invalid count")
-    # Retail CDF fixed-value range records use count=0 with setting=0.
     if int(count) == 0:
         if setting != 0:
             raise ValueError(f"{label}: fixed range requires setting 0")
@@ -379,7 +403,7 @@ def analyze(
     geometry = _validate_geometry(geometry_inputs_path)
     resources, body_masses = _validate_resource_inputs(resource_inputs_path)
     additional = _validate_additional_mass(additional_mass_path)
-    reference_y = _validate_reference_y(reference_y_path)
+    _validate_reference_y(reference_y_path)
 
     cdf_values = resources["cdf"]["values"]
     vdf = geometry["vdf"]
@@ -418,8 +442,8 @@ def analyze(
     for corner in ("fl", "fr", "rl", "rr"):
         point = list(wheel_offsets[corner])
         ride = front_ride if corner in {"fl", "fr"} else rear_ride
-        half_tire_width = wheel_dimensions[corner][0] / Decimal(2)
-        point[1] = vehicle_reference_y - graphical_offset_y - ride + half_tire_width
+        half_second_wheel_dimension = wheel_dimensions[corner][1] / Decimal(2)
+        point[1] = vehicle_reference_y - graphical_offset_y - ride + half_second_wheel_dimension
         corrected[corner] = point
 
     pair_masses: dict[str, Decimal] = {}
@@ -443,7 +467,9 @@ def analyze(
     fuel_motion = _vec(cdf_values["FuelTankMotion"], 2, "FuelTankMotion")
     if fuel_motion[0] == 0:
         raise ValueError("FuelTankMotion spring term is zero")
-    fuel_point = [rear_midpoint[axis] + fuel_pos[axis] for axis in range(3)]
+    fuel_anchor = list(rear_midpoint)
+    fuel_anchor[1] = vehicle_reference_y - graphical_offset_y
+    fuel_point = [fuel_anchor[axis] + fuel_pos[axis] for axis in range(3)]
     fuel_point[1] -= Decimal("9.81") / fuel_motion[0]
     auxiliary_mass += effective_fuel_mass
     for axis in range(3):
@@ -540,15 +566,23 @@ def analyze(
             "default_difficulty": (
                 "FUN_0041a730 writes profile/options +0x10f4 = 1; FUN_00d3b190 is the setter"
             ),
+            "selector_staging": (
+                "FUN_00714560 copies packet RaceModeInfo+0x00..0x7b into manager staging +0x3b4; "
+                "FUN_00714ed0 copies the same 0x7c-byte staging block into DAT_00c12860. "
+                "Therefore RaceModeInfo+0x0e -> DAT_00c1286e and +0x6c -> DAT_00c128cc."
+            ),
             "drift_scale_selector": (
                 "FUN_00492250 writes RaceModeInfo+0x0e for its reviewed race-mode branch; "
-                "FUN_00714560 copies the RaceModeInfo block into the retail physics selector block; "
-                "FUN_007bfbe0 chooses CGHeight Scale vs Drift CGHeight Scale from that selector"
+                "FUN_007bfbe0 chooses CGHeight Scale vs Drift CGHeight Scale from "
+                "DAT_00c1286e and indexes the selected Vec4f with DAT_00c128cc"
             ),
             "difficulty_domain": valid_difficulties,
             "profile_default_is_required_for_family": False,
         },
         "bootstrap_geometry": {
+            "wheel_dimension_component_used": 1,
+            "wheel_dimension_component_operation": "second VDF Wheel * Dimensions component / 2",
+            "fuel_anchor_y_overwritten_with_vehicle_reference_y_before_FuelTankPos": True,
             "corrected_wheel_points": {
                 corner: _as_float(corrected[corner]) for corner in ("fl", "fr", "rl", "rr")
             },
@@ -601,6 +635,8 @@ def analyze(
         "scope": {
             "single_profile_default_assumed": False,
             "player_difficulty_index_3_admitted": False,
+            "VDF_dimensions_component_0_used_for_corner_y": False,
+            "rear_midpoint_y_retained_for_fuel_anchor": False,
             "raw_retail_resource_bytes_committed": False,
             "BODY0_to_outer_vehicle_rotation_identity_reused_from_existing_symbolic_proof": True,
             "outer_vehicle_to_VHF_identity_assumed": False,
