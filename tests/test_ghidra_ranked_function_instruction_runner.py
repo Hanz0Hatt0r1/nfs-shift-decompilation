@@ -90,6 +90,30 @@ def _outer_vhf(path: Path, selected, *, ready=True, md5=None, worklist_format=No
     )
 
 
+def _descriptor_frontier(
+    path: Path,
+    selected,
+    *,
+    ready=True,
+    md5=None,
+    worklist_format=None,
+    declared_limit=8,
+):
+    return _write(
+        path,
+        {
+            "format": m.DESCRIPTOR_PHYSICS_RENDER_FORMAT,
+            "ready": ready,
+            "retail": {"program": m.PROGRAM, "md5": md5 or m.PE_MD5},
+            "targeted_instruction_worklist": {
+                "format": worklist_format or m.INSTRUCTION_FORMAT,
+                "functions": selected,
+                "max_functions": declared_limit,
+            },
+        },
+    )
+
+
 def test_builds_exact_runner_command_from_rank_selected_worklist(tmp_path):
     artifact = _rank(
         tmp_path / "rank.json",
@@ -196,6 +220,28 @@ def test_builds_exact_runner_command_from_outer_vehicle_vhf_frontier(tmp_path):
     assert source_kind == "outer-Vehicle/VHF-root frontier"
 
 
+def test_builds_exact_runner_command_from_descriptor_physics_render_frontier(tmp_path):
+    expected = ["0x0074da70", "0x00798df0"]
+    artifact = _descriptor_frontier(
+        tmp_path / "descriptor_frontier.json",
+        ["FUN_0074da70", "0x00798df0"],
+    )
+    runner = tmp_path / "runner.sh"
+    command, selected = m.build_command(
+        artifact,
+        Path("/home/pes/ghidra_projects/shift"),
+        "shift",
+        Path("out/vehicle_descriptor_physics_render_init_callers.jsonl"),
+        runner=runner,
+    )
+    assert selected == expected
+    assert command[-2:] == expected
+    payload, loaded, source_kind = m._load_worklist(artifact, max_functions=64)
+    assert payload["format"] == m.DESCRIPTOR_PHYSICS_RENDER_FORMAT
+    assert loaded == expected
+    assert source_kind == "VehicleDetails physics/render owner frontier"
+
+
 def test_dry_run_does_not_require_ghidra_home_or_execute(tmp_path, monkeypatch, capsys):
     artifact = _root_pose(tmp_path / "frontier.json", ["0x00410000"])
     monkeypatch.delenv("GHIDRA_HOME", raising=False)
@@ -236,6 +282,16 @@ def test_rejects_worklist_above_rank_declared_limit(tmp_path):
         m.build_command(artifact, Path("/project"), "shift", Path("out.jsonl"))
 
 
+def test_rejects_descriptor_frontier_above_declared_limit(tmp_path):
+    artifact = _descriptor_frontier(
+        tmp_path / "descriptor_frontier.json",
+        ["0x00410000", "0x00420000"],
+        declared_limit=1,
+    )
+    with pytest.raises(ValueError, match="declared export limit"):
+        m.build_command(artifact, Path("/project"), "shift", Path("out.jsonl"))
+
+
 def test_rejects_wrong_retail_identity(tmp_path):
     artifact = _root_pose(tmp_path / "frontier.json", ["0x00410000"], md5="0" * 32)
     with pytest.raises(ValueError, match="retail identity drift"):
@@ -246,6 +302,16 @@ def test_rejects_outer_vehicle_vhf_wrong_retail_identity(tmp_path):
     artifact = _outer_vhf(
         tmp_path / "outer_vhf_frontier.json",
         ["FUN_0074ddc3"],
+        md5="0" * 32,
+    )
+    with pytest.raises(ValueError, match="retail identity drift"):
+        m.build_command(artifact, Path("/project"), "shift", Path("out.jsonl"))
+
+
+def test_rejects_descriptor_frontier_wrong_retail_identity(tmp_path):
+    artifact = _descriptor_frontier(
+        tmp_path / "descriptor_frontier.json",
+        ["0x0074da70"],
         md5="0" * 32,
     )
     with pytest.raises(ValueError, match="retail identity drift"):
@@ -272,6 +338,16 @@ def test_rejects_outer_vehicle_vhf_instruction_format_drift(tmp_path):
     artifact = _outer_vhf(
         tmp_path / "outer_vhf_frontier.json",
         ["FUN_0074ddc3"],
+        worklist_format="SHIFT.Other/1",
+    )
+    with pytest.raises(ValueError, match="instruction format drift"):
+        m.build_command(artifact, Path("/project"), "shift", Path("out.jsonl"))
+
+
+def test_rejects_descriptor_frontier_instruction_format_drift(tmp_path):
+    artifact = _descriptor_frontier(
+        tmp_path / "descriptor_frontier.json",
+        ["0x0074da70"],
         worklist_format="SHIFT.Other/1",
     )
     with pytest.raises(ValueError, match="instruction format drift"):
