@@ -39,6 +39,19 @@
       ]
     },
     {
+      "id": "exact_bmw_vhf_hierarchy_root_frame",
+      "contract": "SHIFT.BMWVHFHierarchyRootFrame/1",
+      "state": "positive-available",
+      "source": "merged Process 1 PR #1323",
+      "consumer": "outer Vehicle/VHF relation-stage validation and production scene-frame consistency",
+      "unlocks": [
+        "exact canonical HIERARCHY Root node identity",
+        "exact MatrixNumber and MATRIX parent chain",
+        "exact local and resolved world affine matrices",
+        "exact row-vector transpose used by the existing VHF scene path"
+      ]
+    },
+    {
       "id": "outer_vehicle_render_snapshot_affine_bridge",
       "contract": "SHIFT.OuterVehicleRenderSnapshotAffineBridge/1",
       "state": "positive-available",
@@ -55,6 +68,7 @@
       "state": "blocked",
       "consumer": "final BODY0 bind composition",
       "requires": [
+        "join SHIFT.OuterVehicleRenderRootDeltaProvenance/1 with SHIFT.BMWVHFHierarchyRootFrame/1",
         "prove identity or exact fixed affine delta between outer Vehicle root and canonical BMW VHF HIERARCHY root"
       ]
     },
@@ -74,6 +88,12 @@
       "id": "consume_new_positive_stages",
       "state": "runnable",
       "rule": "update typed consumers/frontiers as soon as a stage is positive; do not wait for the final packet"
+    },
+    {
+      "id": "consume_exact_vhf_root_frame_stage",
+      "state": "runnable",
+      "contract": "SHIFT.BMWVHFHierarchyRootFrame/1",
+      "rule": "wire exact root-frame identity/matrix metadata into the strict relation-stage validator without claiming the unresolved outer Vehicle relation"
     },
     {
       "id": "external_provider_and_control_frontier",
