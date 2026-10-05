@@ -8,21 +8,46 @@
 
 namespace shift::runtime {
 
-inline constexpr double kNativeContinuousFixedDt = 1.0 / 60.0;
+// Current continuous pacing is a host-development mechanism only.  It is not a
+// recovered retail scheduler/cadence and must never become one by implication.
+inline constexpr double kHostDevelopmentFixedDt = 1.0 / 60.0;
+// Compatibility name retained for existing non-retail callers/tests.
+inline constexpr double kNativeContinuousFixedDt = kHostDevelopmentFixedDt;
+
+enum class RuntimeSchedulerAuthority {
+    HostDevelopment,
+    RetailEvidence,
+};
 
 struct RuntimeLoopPolicy {
     bool continuous = false;
     bool frame_limit_enabled = true;
     int frame_limit = 120;
     bool continuous_wall_clock_pacing = false;
-    double fixed_tick_seconds = kNativeContinuousFixedDt;
+    double fixed_tick_seconds = kHostDevelopmentFixedDt;
+    RuntimeSchedulerAuthority scheduler_authority =
+        RuntimeSchedulerAuthority::HostDevelopment;
+    bool retail_cadence_admitted = false;
 
     mutable bool tick_clock_started = false;
     mutable std::chrono::steady_clock::time_point next_tick{};
 
+    bool uses_host_development_scheduler() const noexcept {
+        return scheduler_authority == RuntimeSchedulerAuthority::HostDevelopment;
+    }
+
+    bool uses_admitted_retail_scheduler() const noexcept {
+        return scheduler_authority == RuntimeSchedulerAuthority::RetailEvidence &&
+               retail_cadence_admitted;
+    }
+
     void pace_continuous_tick() const {
         if (!continuous || !continuous_wall_clock_pacing) {
             return;
+        }
+        if (!uses_host_development_scheduler() || retail_cadence_admitted) {
+            throw std::logic_error(
+                "host 1/60 pacing cannot satisfy retail scheduler/cadence authority");
         }
         if (!(fixed_tick_seconds > 0.0)) {
             throw std::logic_error("continuous runtime fixed tick must be positive");
@@ -47,7 +72,7 @@ struct RuntimeLoopPolicy {
         }
         // Preserve every native tick.  If rendering is late, do not invent a
         // retail catch-up/drop policy: subsequent iterations run without sleep
-        // until this host-only schedule catches up.
+        // until this explicitly host-only schedule catches up.
         next_tick += tick;
     }
 
@@ -90,18 +115,29 @@ inline RuntimeLoopPolicy make_runtime_loop_policy(
             throw std::invalid_argument(
                 "--frames must equal native input script step count");
         }
-        return RuntimeLoopPolicy{false, true, script_frames};
+        RuntimeLoopPolicy policy{false, true, script_frames};
+        policy.scheduler_authority = RuntimeSchedulerAuthority::HostDevelopment;
+        policy.retail_cadence_admitted = false;
+        return policy;
     }
 
     if (continuous) {
         // An explicit --frames value is an optional regression/safety cap only.
         // Without it, X11 quit/destroy events are the sole normal session end.
+        // This factory intentionally produces host-development scheduling only;
+        // a future positive retail cadence handoff must select RetailEvidence
+        // explicitly and must disable this wall-clock pacer rather than inherit it.
         RuntimeLoopPolicy policy{true, frames_explicit, requested_frames};
         policy.continuous_wall_clock_pacing = true;
+        policy.scheduler_authority = RuntimeSchedulerAuthority::HostDevelopment;
+        policy.retail_cadence_admitted = false;
         return policy;
     }
 
-    return RuntimeLoopPolicy{false, true, requested_frames};
+    RuntimeLoopPolicy policy{false, true, requested_frames};
+    policy.scheduler_authority = RuntimeSchedulerAuthority::HostDevelopment;
+    policy.retail_cadence_admitted = false;
+    return policy;
 }
 
 }  // namespace shift::runtime
