@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
-from types import SimpleNamespace
 
 
 def _load_cli():
@@ -149,3 +148,45 @@ def test_bootstrap_only_does_not_launch(monkeypatch, tmp_path):
 
     assert rc == 0
     assert len(calls) == 1
+
+
+def test_run_emits_heartbeat_and_unbuffers_child(monkeypatch, tmp_path, capsys):
+    cli = _load_cli()
+    captured = {}
+
+    class FakeProcess:
+        pid = 4242
+
+        def __init__(self):
+            self.wait_count = 0
+
+        def wait(self, timeout=None):
+            self.wait_count += 1
+            if self.wait_count == 1:
+                raise cli.subprocess.TimeoutExpired(cmd=["python3"], timeout=timeout)
+            return 0
+
+    process = FakeProcess()
+
+    def fake_popen(command, *, cwd, env):
+        captured["command"] = list(command)
+        captured["cwd"] = Path(cwd)
+        captured["env"] = dict(env)
+        return process
+
+    ticks = iter((100.0, 112.0, 113.0))
+    monkeypatch.setattr(cli.subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(cli.time, "monotonic", lambda: next(ticks))
+
+    rc = cli._run(
+        ["python3", str(tmp_path / "bootstrap_playable_linux_slice.py")],
+        cwd=tmp_path,
+    )
+
+    assert rc == 0
+    assert captured["env"]["PYTHONUNBUFFERED"] == "1"
+    output = capsys.readouterr().out
+    assert "stage=playable-bootstrap event=start" in output
+    assert "stage=playable-bootstrap event=spawn pid=4242" in output
+    assert "stage=playable-bootstrap event=heartbeat pid=4242 elapsed=12.0s status=running" in output
+    assert "stage=playable-bootstrap event=exit pid=4242 elapsed=13.0s returncode=0" in output
