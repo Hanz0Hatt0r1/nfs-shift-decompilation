@@ -15,8 +15,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
+
+_SCRIPT_DIR = Path(__file__).resolve().parent
+if str(_SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPT_DIR))
 
 import build_vehicle_render_root_pose_transport_frontier as _pose
 import rank_player_vehicle_render_manager_global_refs as _base
