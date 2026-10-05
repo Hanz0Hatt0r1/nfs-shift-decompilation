@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <stdexcept>
 
 namespace shift::runtime {
 
@@ -341,22 +342,24 @@ struct NativeRuntimeState {
             physics.participant_identity_join_proven);
 
         // fixed_step() is a native transaction across the state that this
-        // shell mutates directly. BODY feedback computes its result before
-        // committing scheduler state, so only the lightweight camera/physics
-        // boundaries need explicit rollback if that downstream step rejects.
+        // shell mutates directly. A busy imported CameraManager guard cannot
+        // be completed source-consistently by this native scheduler, so it
+        // must block the whole tick before physics/BODY mutation rather than
+        // letting camera state freeze while simulation advances.
         const CameraBufferRuntime camera_before = camera;
         const PhysicsTickBoundary physics_before = physics;
 
         try {
             const bool camera_update_started =
                 begin_camera_update();
+            if (!camera_update_started) {
+                throw std::runtime_error(
+                    "native fixed step requires an available camera update buffer");
+            }
 
             physics.tick(input);
             body_feedback.fixed_step();
-
-            if (camera_update_started) {
-                complete_camera_update();
-            }
+            complete_camera_update();
         } catch (...) {
             camera = camera_before;
             physics = physics_before;
