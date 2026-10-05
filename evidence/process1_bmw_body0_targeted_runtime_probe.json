@@ -1,0 +1,23 @@
+{
+  "format": "SHIFT.Process1BMWBody0TargetedRuntimeProbe/1",
+  "status": "infrastructure-ready",
+  "blocker": "SHIFT.BMWBody0BindFrameProof/1",
+  "input": {
+    "retail_binary": "SHIFT.exe",
+    "required_session": "Silverstone + target retail BMW",
+    "capture_format": "SHIFT.BMWBody0TargetedRuntimeCapture/1"
+  },
+  "output": {
+    "entrypoint": "tools/shift_live_dump/capture_bmw_body0.sh",
+    "metadata": "capture_metadata.json",
+    "maps": "maps.txt",
+    "samples": "samples.jsonl"
+  },
+  "consumer": "Process 1 BODY0 bind-frame provenance analysis, then Process 2 BODY0 admission",
+  "limits": [
+    "capture is raw observation only",
+    "numeric coincidence is not provenance",
+    "host sample interval is not retail scheduler ownership",
+    "positive SHIFT.BMWBody0BindFrameProof/1 requires a separate static/runtime provenance join"
+  ]
+}
