@@ -1,0 +1,27 @@
+name: Process 1 outer Vehicle render snapshot affine bridge
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_outer_vehicle_render_snapshot_affine_bridge.py'
+      - 'tests/test_ghidra_outer_vehicle_render_snapshot_affine_bridge.py'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_RENDER_SNAPSHOT_AFFINE_BRIDGE.md'
+      - '.github/workflows/process1-outer-vehicle-render-snapshot-affine-bridge.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_outer_vehicle_render_snapshot_affine_bridge.py'
+      - 'tests/test_ghidra_outer_vehicle_render_snapshot_affine_bridge.py'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_RENDER_SNAPSHOT_AFFINE_BRIDGE.md'
+      - '.github/workflows/process1-outer-vehicle-render-snapshot-affine-bridge.yml'
+
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - run: python -m pytest -q tests/test_ghidra_outer_vehicle_render_snapshot_affine_bridge.py
+      - run: python tools/ghidra/analyze_outer_vehicle_render_snapshot_affine_bridge.py --help

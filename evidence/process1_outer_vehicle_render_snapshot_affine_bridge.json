@@ -1,0 +1,89 @@
+{
+  "blockers": [
+    {
+      "id": "render-root-local-delta-to-canonical-vhf-root",
+      "required_evidence": "join outer Vehicle +0x19c/+0x1a0/+0x1a4 setup-produced local delta to the canonical BMW VHF hierarchy vehicle-root frame"
+    },
+    {
+      "id": "orientation-roundtrip-semantic-equivalence",
+      "required_evidence": "only if exact numeric identity is required: prove normalization/matrix->quaternion->matrix preserves the admitted outer orientation under the retail invariants; current proof needs only common-source provenance"
+    }
+  ],
+  "format": "SHIFT.OuterVehicleRenderSnapshotAffineBridge/1",
+  "handoff": {
+    "BODY0_bind_frame_proof_ready": false,
+    "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": false,
+    "outer_vehicle_render_snapshot_slot_identity_ready": true,
+    "outer_vehicle_root_to_VHF_fixed_affine_delta_ready": false,
+    "outer_vehicle_root_to_VHF_vehicle_root_ready": false,
+    "outer_vehicle_to_render_root_symbolic_affine_ready": true,
+    "render_root_translation_delta_producer_bounded": true,
+    "vehicle_world_transform_ready": false
+  },
+  "machine_witnesses": [
+    {"address": "0x0047f9fb", "bytes": "8b86fc00000068ff3f0000508d8e10010000"},
+    {"address": "0x0070dcdb", "bytes": "8b15200bc10069c0a01f000003c280784c0074e2518bc8e809feffff"},
+    {"address": "0x0070db03", "bytes": "8b81501f0000568db1700d00008b4d0883e00169c0f008000003c6"},
+    {"address": "0x00721ea3", "bytes": "8b45088981082600005081c140030000e8e81a0600"},
+    {"address": "0x007839a3", "bytes": "8b45088981480800005d"}
+  ],
+  "next_proof": {
+    "do_not_reopen": [
+      "car-body+0x34 PhysX owner",
+      "car-body+0x534 collision LOD owner",
+      "render-manager+0xca4 negative branches"
+    ],
+    "new_runtime_capture_required": false,
+    "target": "FUN_00795d60 local delta producer -> canonical BMW VHF root / HIERARCHY owner"
+  },
+  "outer_transform": {
+    "local_delta_has_concrete_setup_producer": true,
+    "local_delta_is_runtime_pose_source": false,
+    "orientation_matrix_offsets": ["+0x178", "+0x17c", "+0x180", "+0x184", "+0x188", "+0x18c", "+0x190", "+0x194", "+0x198"],
+    "orientation_parameter_offsets": ["+0x16c", "+0x170", "+0x174"],
+    "position_offsets": ["+0x160", "+0x164", "+0x168"],
+    "render_root_local_delta_offsets": ["+0x19c", "+0x1a0", "+0x1a4"]
+  },
+  "ready": true,
+  "render_participant_relation": {
+    "derived_rotation_matrix": "participant+0x1028",
+    "node_local_FUN_004ae150_promoted_to_root_setter": false,
+    "render_snapshot": "participant+0xa00",
+    "root_quaternion": "participant+0xa00..+0xa0c",
+    "root_translation": ["participant+0xa10", "participant+0xa14", "participant+0xa18"],
+    "source_snapshot": "participant+0x110",
+    "vehicle_render_model": "participant+0x1340",
+    "world_affine_consumed_by": "FUN_004a8c20",
+    "world_affine_translation_slots": [12, 13, 14]
+  },
+  "retail": {
+    "md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "program": "SHIFT.exe",
+    "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "slot_identity": {
+    "active_snapshot_base": "+0xd70",
+    "active_snapshot_selector": "+0x1f50 & 1",
+    "active_snapshot_stride": "0x8f0",
+    "manager_global": "0x00c109e0",
+    "outer_vehicle_record_offset": "+0x340",
+    "outer_vehicle_slot_backpointer_offset": "+0x848",
+    "participant_snapshot_destination": "+0x110",
+    "participant_vehicle_index_staging": ["+0x100", "+0xfc"],
+    "physical_slot_producer_consumer_bridge_ready": true,
+    "slot_array_global": "0x00c10b20",
+    "slot_array_offset_from_manager": "0x140",
+    "slot_stride": "0x1fa0"
+  },
+  "snapshot_relation": {
+    "independent_rotation_source_present": false,
+    "reader_buffer": "slot + 0xd70 + (selector & 1) * 0x8f0",
+    "retail_scheduler_cadence_claimed": false,
+    "rotation_source": "R_outer (+0x178..+0x198) -> normalize -> matrix_to_quaternion -> snapshot quaternion",
+    "translation_formula": "P_snapshot = P_outer + R_outer * delta_local",
+    "writer_buffer": "slot + 0xd70 + ((selector - 1) & 1) * 0x8f0",
+    "writer_increments_selector_after_publish": true
+  },
+  "status": "outer-render-snapshot-affine-bridge-proven-vhf-delta-join-pending",
+  "version": 1
+}
