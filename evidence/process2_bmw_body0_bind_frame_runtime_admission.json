@@ -1,0 +1,36 @@
+{
+  "format": "SHIFT.Process2BMWBody0BindFrameRuntimeAdmission/1",
+  "status": "ready-gate",
+  "blocker": "Process 2 P2.1 consume a positive BMW BODY0 bind/frame proof on the production shift_runtime path",
+  "input": {
+    "required_packet_contract": "SHIFT.NativeBMWBody0BindFrameProofPacket/1",
+    "environment": "SHIFT_NATIVE_BMW_BODY0_BIND_PROOF_PACKET",
+    "current_positive_handoff_present": false
+  },
+  "output": {
+    "native_contract": "SHIFT.NativeBMWBody0BindFrameRuntimeAdmission/1",
+    "production_fixed_step_hook_ready": true,
+    "admission_runs_before_native_fixed_step": true,
+    "absent_packet_is_inert": true,
+    "configured_invalid_packet_fails_closed": true,
+    "admitted_packet_path_is_immutable": true,
+    "admitted_bind_frame_retained_for_downstream": true,
+    "retail_scheduler_claimed": false,
+    "vehicle_world_transform_committed": false
+  },
+  "consumer": [
+    "future Process 2 P2.2 retail cadence/scheduler integration",
+    "commit_bmw_vehicle_world_transform",
+    "publish_persistent_bmw_vehicle_world_transform_for_render"
+  ],
+  "limits": [
+    "does not make SHIFT.BMWBody0BindFrameProof/1 positive",
+    "does not schedule FUN_00770e80",
+    "does not commit a Phase 706 vehicle world transform",
+    "does not mutate Vulkan vehicle buffers"
+  ],
+  "ownership": {
+    "current_blocker_owner": "Process 1",
+    "process2_state": "production-admission-ready-awaiting-positive-proof"
+  }
+}
