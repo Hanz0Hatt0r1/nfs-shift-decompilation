@@ -1,40 +1,47 @@
-# Process 2 — BMW `offset33b` race-mode selector consumption
+# Process 2 — consume the native Silverstone BMW `offset33b` selection
 
-## Playable-slice blocker reduced
+## Playable-slice blocker removed
 
-Process 1 now provides a selector-complete first-bootstrap BMW bind family:
+Process 1 provides two consecutive contracts:
 
 ```text
 SHIFT.BMWOffset33bSelectorCompleteNumeric/1
+    -> all six admitted retail selector combinations
+
+SHIFT.BMWOffset33bNativeSessionSelection/1
+    -> explicit first playable Linux slice policy
 ```
 
-It proves all admissible combinations of:
+The second contract deliberately chooses the target native session:
 
 ```text
-RaceModeInfo+0x0e  normal/drift CGHeight-scale selector
-RaceModeInfo+0x6c  Player Difficulty (0-2)
+session target    = Silverstone + BMW_M3_E36
+physics mode      = normal
+Player Difficulty = 1
 ```
 
-and reduces six selector combinations to three exact
-`BODY0-local -> outer Vehicle` translations.
+This is project-owned native vertical-slice policy. It is not an inference that
+a captured retail Silverstone session used those values.
 
-Process 2 previously had no native ABI for consuming that family.  Phase 711
-adds:
+PR #1277 stopped at a JSON Process 1 -> Process 2 handoff and explicitly did not
+change the C++ runtime ABI. Phase 711 is the native consumer of that handoff.
+
+Native contract:
 
 ```text
 SHIFT.NativeBMWOffset33bRaceModeSelector/1
 ```
 
-implemented by:
+Implementation:
 
 ```text
 native_runtime/include/shift_bmw_offset33b_race_mode_selector.hpp
 native_runtime/src/bmw_offset33b_race_mode_selector.cpp
 ```
 
-## Fail-closed selector
+## Generic fail-closed selector
 
-The native selector is explicit:
+The reusable selector shape is:
 
 ```cpp
 BmwOffset33bRaceModeSelector {
@@ -44,14 +51,11 @@ BmwOffset33bRaceModeSelector {
 }
 ```
 
-No profile or race-mode default is synthesized.  `ready=false` is rejected and
-Player Difficulty outside the source-backed domain `0..2` is rejected.  In
-particular the fourth lane present in the PhysicsTweaker Vec4 is not admitted as
-a Player Difficulty value.
+`ready=false` is rejected and Player Difficulty outside the source-backed
+reflected domain `0..2` is rejected. The fourth lane present in the
+PhysicsTweaker Vec4 is not admitted as a Player Difficulty value.
 
-## Numeric selection
-
-The implementation consumes the exact Process 1 arithmetic:
+The generic consumer evaluates the corrected Process 1 arithmetic:
 
 ```text
 auxiliary_weighted_COM =
@@ -70,39 +74,81 @@ offset33b = (auxiliary_weighted_COM - target_CG) * mass_ratio
 BODY0_to_outer.translation = -offset33b
 ```
 
-The admitted scales are:
+The admitted scale rows remain:
 
 ```text
-normal difficulty 0/1 = 0.60
-normal difficulty 2   = 0.75
+normal difficulty 0/1   = 0.60
+normal difficulty 2     = 0.75
 drift difficulty 0/1/2 = 0.25
 ```
 
-The resulting three native row-vector translation matrices match
+All six combinations reproduce the three exact matrices from
 `SHIFT.BMWOffset33bSelectorCompleteNumeric/1`.
+
+## Native Silverstone policy consumption
+
+Phase 711 also exposes:
+
+```cpp
+native_silverstone_bmw_offset33b_selector()
+select_native_silverstone_bmw_body0_outer_vehicle_bind()
+```
+
+These functions consume, rather than rediscover, the policy admitted by
+`SHIFT.BMWOffset33bNativeSessionSelection/1`:
+
+```text
+ready                         = true
+use_drift_cgheight_scale      = false
+player_difficulty             = 1
+```
+
+The selected result is therefore:
+
+```text
+BODY0 -> outer Vehicle translation =
+(0,
+ -0.004956085581085581085581085581085581...,
+ -0.011470862470862470862470862470862471...)
+```
+
+with D3D/SVWT row-vector matrix:
+
+```text
+[1 0 0 0]
+[0 1 0 0]
+[0 0 1 0]
+[0 -0.00495608558108558... -0.0114708624708625... 1]
+```
+
+For the first playable native session, Process 2 may now treat the numeric
+`BODY0-local -> outer Vehicle root` matrix as ready.
 
 ## Ownership boundary
 
-This phase intentionally returns only:
+This phase intentionally stops at:
 
 ```text
 BODY0-local -> outer Vehicle root
 ```
 
-It does **not** construct `ProvenBmwBody0BindFrame`, because the independent
-Process 1 relation remains unresolved:
+It does **not** construct `ProvenBmwBody0BindFrame`. The independent remaining
+Process 1 relation is still unresolved:
 
 ```text
 outer Vehicle root -> VHF vehicle root / assembly frame
 ```
 
-Therefore this phase does not claim:
+Therefore all of these remain false:
 
 ```text
-outer_vehicle_root_to_VHF_vehicle_root_ready = true
-BODY0_bind_frame_proof_ready = true
-vehicle_world_transform_ready = true
+outer_vehicle_root_to_VHF_vehicle_root_ready = false
+BODY0_bind_frame_proof_ready                  = false
+vehicle_world_transform_ready                 = false
 ```
+
+No outer-Vehicle/VHF identity is inferred from matching offsets or from the
+native session policy.
 
 ## Regression
 
@@ -114,17 +160,26 @@ ctest --test-dir out/native-runtime \
   -R shift_runtime_bmw_offset33b_race_mode_selector --output-on-failure
 ```
 
-The check covers all six admitted selector combinations, verifies the three
-unique translations, and rejects both an unbound selector and Player Difficulty
-`3`.
+The check:
+
+- covers all six admitted selector combinations and all three unique matrices;
+- rejects `ready=false`;
+- rejects Player Difficulty `3`;
+- verifies the native Silverstone selector is exactly normal + difficulty `1`;
+- verifies that the selected native matrix equals the corrected Process 1 row;
+- keeps the outer-Vehicle/VHF and final world-transform gates closed.
 
 ## Next blocker
 
-Two independent joins remain:
+Selector/mass/VDF ambiguity is no longer a blocker for the first playable slice.
+The transform-semantic blocker is now exactly:
 
-1. a native producer must supply the live/source-backed ChangeRaceMode selector
-   pair to this API;
-2. Process 1 must prove `outer Vehicle root -> VHF vehicle root`.
+```text
+outer Vehicle root
+    ->
+canonical BMW VHF vehicle-root / assembly frame
+```
 
-The selector family no longer needs to be recomputed or guessed by downstream
-physics/render code.
+Once that relation is proven, the existing Phase 704-707 persistent BODY0
+world-transform path can consume the completed bind frame without another
+selector or `offset33b` reconstruction phase.
