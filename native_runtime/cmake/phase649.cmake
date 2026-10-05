@@ -23,3 +23,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_persistent_vehicle_vulkan_upload
     COMMAND shift_runtime_persistent_vehicle_vulkan_upload_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase715.cmake)

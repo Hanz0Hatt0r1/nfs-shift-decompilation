@@ -1,0 +1,77 @@
+name: process-3-phase715-persistent-runtime-wiring
+
+on:
+  push:
+    paths:
+      - '.github/workflows/process-3-phase715-persistent-runtime-wiring.yml'
+      - 'native_runtime/include/shift_phase715_persistent_vehicle_runtime_wiring.hpp'
+      - 'native_runtime/include/shift_phase648_runtime_injection.hpp'
+      - 'native_runtime/tests/persistent_vehicle_runtime_wiring_check.cpp'
+      - 'native_runtime/cmake/phase649.cmake'
+      - 'native_runtime/cmake/phase715.cmake'
+      - 'tests/test_phase715_persistent_vehicle_runtime_wiring.py'
+      - 'docs/PHASE715_PERSISTENT_VEHICLE_RUNTIME_WIRING.md'
+  pull_request:
+    paths:
+      - '.github/workflows/process-3-phase715-persistent-runtime-wiring.yml'
+      - 'native_runtime/include/shift_phase715_persistent_vehicle_runtime_wiring.hpp'
+      - 'native_runtime/include/shift_phase648_runtime_injection.hpp'
+      - 'native_runtime/tests/persistent_vehicle_runtime_wiring_check.cpp'
+      - 'native_runtime/cmake/phase649.cmake'
+      - 'native_runtime/cmake/phase715.cmake'
+      - 'tests/test_phase715_persistent_vehicle_runtime_wiring.py'
+      - 'docs/PHASE715_PERSISTENT_VEHICLE_RUNTIME_WIRING.md'
+  workflow_dispatch:
+
+jobs:
+  persistent-runtime-wiring:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Vulkan and test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake g++ ninja-build libvulkan-dev glslang-tools mesa-vulkan-drivers \
+            vulkan-tools libxcb1-dev
+          python -m pip install pytest
+
+      - name: Show Vulkan devices
+        run: vulkaninfo --summary
+
+      - name: Run Phase 715 source-contract regressions
+        run: |
+          python -m pytest -q \
+            tests/test_phase715_persistent_vehicle_runtime_wiring.py \
+            tests/test_phase649_persistent_vehicle_vulkan_upload.py
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -G Ninja -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build real shift_runtime and Phase 715 regression
+        run: |
+          cmake --build native_runtime/build --parallel \
+            --target shift_runtime shift_runtime_persistent_vehicle_runtime_wiring_check
+
+      - name: Execute Phase 715 real Vulkan wiring regression
+        run: |
+          native_runtime/build/shift_runtime_persistent_vehicle_runtime_wiring_check \
+            | tee /tmp/phase715.json
+          grep -q '"format":"SHIFT.PersistentVehicleRuntimeWiring/1"' /tmp/phase715.json
+          grep -q '"phase":715' /tmp/phase715.json
+          grep -q '"inert_before_publish":true' /tmp/phase715.json
+          grep -q '"persistent_generation_uploaded":true' /tmp/phase715.json
+          grep -q '"unrefreshed_generation_rejected":true' /tmp/phase715.json
+          grep -q '"phase706_freshness_preserved":true' /tmp/phase715.json
+          grep -q '"script_conflict_rejected_before_gpu":true' /tmp/phase715.json
+          grep -q '"track_buffers_untouched":true' /tmp/phase715.json
+          grep -q '"test_motion_script_required":false' /tmp/phase715.json
+          grep -q '"retail_transform_producer_claimed":false' /tmp/phase715.json
+
+      - name: CTest Phase 715 registration
+        run: ctest --test-dir native_runtime/build --output-on-failure -R '^shift_runtime_persistent_vehicle_runtime_wiring$'
