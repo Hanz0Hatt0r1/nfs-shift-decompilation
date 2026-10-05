@@ -10,11 +10,13 @@ EVIDENCE = ROOT / "evidence/process2_bmw_body0_bind_frame_runtime_admission.json
 def test_production_fixed_step_admits_optional_positive_packet_before_tick() -> None:
     injection = INJECTION.read_text(encoding="utf-8")
     assert '#include "shift_bmw_body0_bind_frame_runtime_admission.hpp"' in injection
-    admission_call = "::shift::runtime::physics::admit_bmw_body0_bind_frame_from_environment_once();"
-    tick_call = "fixed_step(phase648_intent_);"
+    admission_call = "::shift::runtime::physics::admit_bmw_body0_bind_frame_from_environment_once(),"
+    assert "#define fixed_step(phase648_intent_)" in injection
+    assert "fixed_step((" in injection
     assert admission_call in injection
-    assert tick_call in injection
-    assert injection.index(admission_call) < injection.index(tick_call)
+    assert "(phase648_intent_)));" in injection
+    assert injection.index("fixed_step((") < injection.index(admission_call)
+    assert injection.index(admission_call) < injection.index("(phase648_intent_)));" )
 
 
 def test_runtime_admission_is_fail_closed_and_does_not_claim_scheduler_or_transform() -> None:
