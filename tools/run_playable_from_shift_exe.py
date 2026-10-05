@@ -4,7 +4,7 @@
 The launcher treats SHIFT.exe as the retail-install anchor, finds the nearest
 ancestor containing Pakfiles, verifies the exact archive names required by the
 current Silverstone + BMW milestone, then delegates to the existing fail-closed
-playable bootstrap.  Archive SHA-256 admission and all renderer/runtime evidence
+playable bootstrap. Archive SHA-256 admission and all renderer/runtime evidence
 checks remain owned by the downstream bootstrap; this wrapper only removes
 manual game-file path enumeration.
 """
@@ -14,9 +14,8 @@ import argparse
 import json
 import subprocess
 import sys
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
+from typing import NamedTuple, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -35,8 +34,7 @@ class InstallDiscoveryError(ValueError):
     """Raised when SHIFT.exe cannot be joined to one usable retail Pakfiles tree."""
 
 
-@dataclass(frozen=True)
-class ShiftInstall:
+class ShiftInstall(NamedTuple):
     shift_exe: Path
     game_root: Path
     pakfiles: Path
@@ -56,7 +54,7 @@ def _direct_child_casefold(parent: Path, name: str) -> Path | None:
 
 
 def _find_game_root(shift_exe: Path) -> tuple[Path, Path]:
-    # Typical retail installs place SHIFT.exe directly beside Pakfiles.  Some
+    # Typical retail installs place SHIFT.exe directly beside Pakfiles. Some
     # repacks/wrappers place the executable one directory lower, so walk a small
     # bounded parent chain instead of assuming one fixed layout.
     for root in list(shift_exe.parents)[:6]:
