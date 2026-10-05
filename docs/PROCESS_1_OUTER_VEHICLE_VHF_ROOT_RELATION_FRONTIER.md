@@ -107,6 +107,23 @@ The instruction pass must answer, fail-closed:
    loads the canonical BMW VHF vehicle root; otherwise follow only that exact
    owner-producing edge.
 
+The generic bounded instruction runner accepts this frontier directly and must
+forward exactly the seven functions above:
+
+```bash
+GHIDRA_HOME=/opt/ghidra \
+python tools/ghidra/run_ranked_function_instructions.py \
+  out/outer_vehicle_vhf_root_relation_frontier.json \
+  /home/pes/ghidra_projects/shift \
+  shift \
+  out/outer_vehicle_vhf_root_relation_instructions.jsonl
+```
+
+Use `--dry-run` first when validating a newly regenerated frontier. The wrapper
+checks the retail executable identity, the `SHIFT.GhidraFunctionInstructions/2`
+worklist format, duplicates, emptiness and the global safety cap before invoking
+Ghidra. It does not add callgraph neighbours.
+
 ## Deliberate non-claims
 
 This frontier keeps all of these false:
