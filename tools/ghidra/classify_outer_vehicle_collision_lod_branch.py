@@ -176,13 +176,16 @@ def analyze(database_root: Path, upstream_path: Path) -> dict[str, Any]:
             "outer_vehicle_root_to_VHF_vehicle_root_ready": False,
             "BODY0_bind_frame_proof_ready": False,
             "vehicle_world_transform_ready": False,
-            "next_frontier": "SHIFT.VehicleRenderRootPoseTransportFrontier/1",
+            "next_frontier": "canonical-body0-construction-bind-provenance",
+            "next_frontier_functions": [
+                "0x007b3670", "0x007bba90", "0x007bbb10", "0x007bbb60"
+            ],
         },
         "blockers": [
             {
-                "id": "outer-vehicle-root-to-VHF-vehicle-root-frame-relation-unproven",
+                "id": "SDF-model-to-VHF-vehicle-root-frame-relation-unproven",
                 "evidence_state": "unknown",
-                "required_evidence": "join an independently identified SMS/RenderHierarchy runtime owner/root pose to the canonical BMW VHF assembly/root frame",
+                "required_evidence": "continue the canonical BODY0 construction/bind provenance and prove the source-backed SDF/HighDetailVehicle assembly-frame relation to the canonical BMW VHF vehicle-root; do not infer it from wheel LOD or render-manager proximity",
             }
         ],
         "scope": {
