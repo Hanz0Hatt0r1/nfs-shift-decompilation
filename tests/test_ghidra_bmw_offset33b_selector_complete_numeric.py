@@ -97,6 +97,9 @@ def _resource_inputs(tmp_path: Path) -> Path:
             },
         },
         "sdf": {"bodies": bodies},
+        "fun_0076b280_load_data_mapping": {
+            "derived_load_data_offsets_not_promoted_from_resource_name": [824],
+        },
     })
 
 
@@ -152,16 +155,21 @@ def test_selector_complete_family_proves_three_unique_translations(tmp_path):
 
     geometry = report["bootstrap_geometry"]
     assert geometry["corrected_wheel_points"]["fl"] == pytest.approx(
-        [0.711, 0.0125, -1.35]
+        [0.711, 0.21, -1.35]
     )
     assert geometry["corrected_wheel_points"]["rl"] == pytest.approx(
-        [0.7225, 0.0025, 1.35]
+        [0.7225, 0.20, 1.35]
     )
     assert geometry["auxiliary_mass"] == pytest.approx(173.0)
     assert geometry["BODY0_mass"] == pytest.approx(1287.0)
     assert geometry["mass_ratio"] == pytest.approx(173.0 / 1287.0)
+    assert geometry["wheel_dimension_component_used"] == 1
+    assert geometry["fuel_anchor_y_overwritten_with_vehicle_reference_y_before_FuelTankPos"] is True
+    assert geometry["fuel_point"] == pytest.approx(
+        [0.0, 0.18248214285714286, 0.75]
+    )
     assert geometry["auxiliary_weighted_COM"] == pytest.approx(
-        [0.0, 0.008525908340214699, 0.004335260115606936]
+        [0.0, 0.20486983897605285, 0.004335260115606936]
     )
     assert geometry["target_CG_x"] == pytest.approx(0.0)
     assert geometry["target_CG_z"] == pytest.approx(-0.081)
@@ -186,13 +194,13 @@ def test_selector_complete_family_proves_three_unique_translations(tmp_path):
         and row["player_difficulty"] == 2
     )
     assert normal_1["BODY0_to_outer_vehicle_root_translation"] == pytest.approx(
-        [0.0, 0.02143668831168831, -0.011470862470862471]
+        [0.0, -0.004956085581085581, -0.011470862470862471]
     )
     assert normal_2["BODY0_to_outer_vehicle_root_translation"] == pytest.approx(
-        [0.0, 0.02708237595737596, -0.011470862470862471]
+        [0.0, 0.0006896020646020646, -0.011470862470862471]
     )
     assert drift_2["BODY0_to_outer_vehicle_root_translation"] == pytest.approx(
-        [0.0, 0.008263417138417138, -0.011470862470862471]
+        [0.0, -0.018129356754356754, -0.011470862470862471]
     )
 
     handoff = report["handoff"]
@@ -205,6 +213,8 @@ def test_selector_complete_family_proves_three_unique_translations(tmp_path):
     assert handoff["outer_vehicle_root_to_VHF_vehicle_root_ready"] is False
     assert handoff["BODY0_bind_frame_proof_ready"] is False
     assert handoff["vehicle_world_transform_ready"] is False
+    assert report["scope"]["VDF_dimensions_component_0_used_for_corner_y"] is False
+    assert report["scope"]["rear_midpoint_y_retained_for_fuel_anchor"] is False
 
 
 def test_rejects_player_difficulty_index_three(tmp_path):
