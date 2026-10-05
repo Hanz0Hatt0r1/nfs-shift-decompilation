@@ -1,0 +1,139 @@
+{
+  "format": "SHIFT.BMWOffset33bNumericBootstrapInputs/1",
+  "version": 1,
+  "ready": true,
+  "retail": {
+    "program_name": "SHIFT.exe",
+    "executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "functions": [
+      {"address":"0x0076b280","name":"FUN_0076b280","mnemonic_sha256":"9563b40c06bcc7442aabd3308eefa62e1b9f7d0bb9afe752ddf0dc068e0cd7f6","role":"offset33b algebra"},
+      {"address":"0x007bf0e0","name":"FUN_007bf0e0","mnemonic_sha256":"51d7f506d0fac2043e40379dfea8da9d214647941897182f1822e9eef4d7a76f","role":"per-wheel setup lowering"},
+      {"address":"0x007bfbe0","name":"FUN_007bfbe0","mnemonic_sha256":"9b5b44a1685b5bf2c1a6b681a3864109a443cca18ce9c3445ebb1516a9a0c7b8","role":"general CG setup lowering"},
+      {"address":"0x007c19c0","name":"FUN_007c19c0","mnemonic_sha256":"6fdac41ffc3eafa1e12bb5ad6ca6abbaa5008103f1a5d6e1fd6d7afe12025be6","role":"suspension defaults"},
+      {"address":"0x00703f10","name":"FUN_00703f10","mnemonic_sha256":"eaf605926a6da4b27c2c358286f33fe720f6d4e49a78026b376dafc9ac0cda75","role":"VDF reflection layout"},
+      {"address":"0x00749a60","name":"FUN_00749a60","mnemonic_sha256":"6430fcc5bf682b1ebf36f4806bd54c89e9838b2417c35081f32e60b6f55edcc7","role":"PhysicsTweaker reflection layout"}
+    ]
+  },
+  "vehicles_global": {
+    "filename": "VehiclesGlobal.bff",
+    "archive_sha256": "b186ae466e6cccb964c813c6f60bc060a4a8646c261f89270ef86e3ff5cdf953",
+    "vdf": {
+      "path": "vehicles/physics/vehicles/bmw_m3_e36.vdf",
+      "entry_index": 283,
+      "compression_type": 2,
+      "compressed_size": 654,
+      "uncompressed_size": 3431,
+      "decoded_sha256": "f4c925bc6799439a12906d0aed9b73e22052cb46f7fbd4ea6f48409b9776a082",
+      "reflection_offsets": {
+        "Wheel FL Offset": "0x34",
+        "Wheel FR Offset": "0x40",
+        "Wheel RL Offset": "0x4c",
+        "Wheel RR Offset": "0x58",
+        "Wheel FL Dimensions": "0x64",
+        "Wheel FR Dimensions": "0x6c",
+        "Wheel RL Dimensions": "0x74",
+        "Wheel RR Dimensions": "0x7c"
+      },
+      "wheel_offsets_vec3f": {
+        "FL": [0.711, 0.31, -1.35],
+        "FR": [-0.711, 0.31, -1.35],
+        "RL": [0.7225, 0.31, 1.35],
+        "RR": [-0.7225, 0.31, 1.35]
+      },
+      "wheel_dimensions_vec2f": {
+        "FL": [0.225, 0.62],
+        "FR": [0.225, 0.62],
+        "RL": [0.225, 0.62],
+        "RR": [0.225, 0.62]
+      }
+    },
+    "physics_tweaker": {
+      "path": "vehicles/physics/physicstweaker.xml",
+      "entry_index": 355,
+      "compression_type": 2,
+      "compressed_size": 2452,
+      "uncompressed_size": 21762,
+      "decoded_sha256": "6cdd05f0512d367c8ce240cb13dd22fe10fb3e21da95185ea8f79e1ca67ca62f",
+      "reflection_object_base": "0x00c12c40",
+      "reflection_offsets": {
+        "CGHeight Scale": "0x4f0",
+        "Drift CGHeight Scale": "0x500"
+      },
+      "runtime_addresses": {
+        "CGHeight Scale": "0x00c13130",
+        "Drift CGHeight Scale": "0x00c13140"
+      },
+      "difficulty_order": ["Novice", "Normal", "Experienced", "Pro"],
+      "cg_height_scale_vec4f": [0.6, 0.6, 0.75, 0.825],
+      "drift_cg_height_scale_vec4f": [0.25, 0.25, 0.25, 0.67]
+    }
+  },
+  "bmw_cdf": {
+    "decoded_sha256": "bbee83f0d2fdcbfc2bbd62ddb2a10bf6fed71bb1b4fa78f303a4730d038b970d",
+    "general": {
+      "Mass": 1460.0,
+      "Symmetric": 1,
+      "CGHeight": 0.280,
+      "CGRightRange": [0.50, 0.0, 0.0],
+      "CGRightSetting": 0.0,
+      "CGRearRange": [0.47, 0.0, 0.0],
+      "CGRearSetting": 0.0,
+      "GraphicalOffset": [0.0, 0.0, 0.0],
+      "FuelTankPos": [0.0, 0.2, -0.6]
+    },
+    "wheel_ride_height": {
+      "FL": {"range": [0.100, -0.005, 6.0], "setting": 0.0},
+      "FR": {"range": [0.100, -0.005, 6.0], "setting": 0.0},
+      "RL": {"range": [0.110, -0.005, 6.0], "setting": 0.0},
+      "RR": {"range": [0.110, -0.005, 6.0], "setting": 0.0}
+    },
+    "suspension_overrides_absent": [
+      "FrontWheelTrack",
+      "RearWheelTrack",
+      "LeftWheelBase",
+      "RightWheelBase"
+    ],
+    "suspension_constructor_defaults": {
+      "FrontWheelTrack": 0.0,
+      "RearWheelTrack": 0.0,
+      "LeftWheelBase": 0.0,
+      "RightWheelBase": 0.0
+    }
+  },
+  "bootstrap": {
+    "source_contracts": [
+      "SHIFT.BMWOffset33bBootstrapMassRatio/1",
+      "SHIFT.BMWOffset33bActualAdditionalMassBootstrapZero/1",
+      "SHIFT.BMWOffset33bVehicleReferenceYBootstrapZero/1"
+    ],
+    "corner_runtime_masses": {"FL":43.0,"FR":43.0,"RL":43.0,"RR":43.0},
+    "fuel_tank_runtime_mass": 1.0,
+    "auxiliary_mass": 173.0,
+    "BODY0_mass": 1287.0,
+    "additional_mass": 0.0,
+    "vehicle_reference_y": 0.0,
+    "rear_axle_present": false,
+    "driver_head_in_auxiliary_COM": false
+  },
+  "semantics": {
+    "vdf_offsets_are_float32": true,
+    "vdf_dimensions_are_float32": true,
+    "cg_height_is_tuneable_float32": true,
+    "cg_rear_range_is_tuneable_float32": true,
+    "physics_tweaker_scales_are_float32": true,
+    "ride_height_range_is_float64": true,
+    "fuel_tank_pos_is_float64": true,
+    "wheel_radius_is_second_VDF_dimension_times_half": true,
+    "ride_height_selected_index_is_zero": true,
+    "track_wheelbase_overrides_apply_only_when_nonzero": true,
+    "offset33b_relation": "(auxiliary_weighted_COM - target_CG) * (173 / 1287)",
+    "BODY0_to_outer_vehicle_translation": "-offset33b"
+  },
+  "scope": {
+    "raw_retail_files_committed": false,
+    "difficulty_or_drift_mode_guessed": false,
+    "mode_domain_is_complete": true,
+    "outer_vehicle_root_to_VHF_vehicle_root_assumed": false,
+    "vehicle_world_transform_claimed": false
+  }
+}
