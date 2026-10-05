@@ -3,11 +3,16 @@
 ## Blocker reduced
 
 The current shortest playable-slice blocker remains `SHIFT.BMWBody0BindFrameProof/1`.
-After the render-manager `+0xca4` direct and indirect method branches were closed
-negatively, the remaining transform question is the source-backed relation from
-the outer Vehicle/car-body runtime domain to the canonical BMW VHF vehicle-root.
+The canonical P1.1 lane is the BODY0 construction/bind provenance chain:
 
-One live candidate branch still polluted that search:
+```text
+FUN_007b3670
+  -> FUN_007bba90
+  -> FUN_007bbb10
+  -> FUN_007bbb60
+```
+
+A previously explored parallel branch still polluted the outer Vehicle/VHF search:
 
 ```text
 HDVehicle
@@ -18,9 +23,10 @@ HDVehicle
   -> thunk_FUN_00d5bf10
 ```
 
-Wheel LOD names are not sufficient render/VHF evidence.  The saved retail Ghidra
-database contains stronger, directly contradictory domain anchors in the same
-function.
+Wheel LOD names are not sufficient render/VHF evidence. The saved retail Ghidra
+database contains stronger collision/material domain anchors in the same function.
+This phase retires only that false candidate; it does not change the canonical
+construction-side ownership of the blocker.
 
 The new contract is:
 
@@ -62,7 +68,7 @@ FUN_007a3d60  0x007a402a -> thunk_FUN_00d5bf10
 
 The combination of a collision-convex format string, rubber-tyre material name,
 all four wheel LOD names and the concrete helper call is sufficient to classify
-this lane as collision/material wheel-object construction evidence.  It is not
+this lane as collision/material wheel-object construction evidence. It is not
 admissible as a positive RenderHierarchy/VHF identity anchor merely because the
 wheel LOD names are also visual-looking names.
 
@@ -71,8 +77,8 @@ wheel LOD names are also visual-looking names.
 A ready report proves only:
 
 ```text
-FUN_007a3d60_is_admissible_VHF_root_candidate = false
-wheel_lod_name_proximity_is_render_identity    = false
+FUN_007a3d60_is_admissible_VHF_root_candidate  = false
+wheel_lod_name_proximity_is_render_identity     = false
 branch_removed_from_outer_vehicle_to_VHF_search = true
 ```
 
@@ -86,21 +92,33 @@ all car-body +0x534 behavior is collision-only
 
 The physical branch above is retired; the global frame blocker remains open.
 
-## Next frontier
+## Canonical next frontier
 
-The next admissible P1.1 work is the already-independent
-`SHIFT.VehicleRenderRootPoseTransportFrontier/1`, which contains positive
-SMS/RenderHierarchy-side anchors such as participant render tick, hierarchy
-node-local update, world-affine consumer and vehicle render-model world-point
-consumer.
-
-The required join is now narrower:
+The concurrent retail machine-byte closure of the render-manager `+0xca4` lane
+returns P1.1 to the canonical BODY0 construction/bind provenance path. Therefore
+this negative classifier hands control back to:
 
 ```text
-independently identified SMS/RenderHierarchy runtime owner/root pose
-  -> canonical BMW VHF vehicle-root/assembly frame
+FUN_007b3670
+  -> FUN_007bba90
+  -> FUN_007bbb10
+  -> FUN_007bbb60
+```
+
+The construction target and BODY0 `pos/ori` continuity are already positive.
+The remaining semantic join is the static frame relation:
+
+```text
+SDF model / HighDetailVehicle assembly construction frame
+  -> canonical BMW VHF vehicle-root / assembly frame
   -> SHIFT.BMWBody0BindFrameProof/1
 ```
+
+`SHIFT.BMWSDFVehicleAssemblyReceiverProvenance/1` is the bounded ownership bridge
+already present for the next step. The independent
+`SHIFT.VehicleRenderRootPoseTransportFrontier/1` remains reusable evidence, but
+is not promoted to the primary frontier merely because this collision branch was
+retired.
 
 Do not reopen the closed player-render-manager `+0xca4` branches and do not use
 `FUN_007a3d60` wheel-name proximity as positive render evidence again.
