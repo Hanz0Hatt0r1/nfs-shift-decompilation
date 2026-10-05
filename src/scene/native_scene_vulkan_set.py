@@ -29,7 +29,7 @@ from native_scene_external_sampler_snapshots import (
     resolve_draw_external_sampler2d_snapshots,
     validate_external_sampler_snapshot_contract,
 )
-from texture_reference import CUBE_FORMAT, FORMAT as TEXTURE_FORMAT, decode_dds
+from texture_reference import FORMAT as TEXTURE_FORMAT, decode_dds
 from vulkan_draw_bundle import build_vulkan_draw_bundle
 
 FORMAT = "SHIFT.NativeSceneVulkanSet/1"
@@ -450,35 +450,21 @@ def build_native_scene_vulkan_set(
                 cube_snapshot_contract.get("blocking_reasons") or []
             )
         )
-    if (
-        environment_cube_dds is not None
-        and int(cube_snapshot_contract.get("snapshot_count") or 0) > 0
-    ):
-        blockers.append(
-            "environment-cube:global-dds-conflicts-with-scene-snapshots"
-        )
+    if environment_cube_dds is not None:
+        if int(cube_snapshot_contract.get("snapshot_count") or 0) > 0:
+            blockers.append(
+                "environment-cube:global-dds-conflicts-with-scene-snapshots"
+            )
+        else:
+            blockers.append(
+                "environment-cube:global-dds-not-runtime-proven-for-scene"
+            )
     if scene_bundle.get("ready") is not True:
         blockers.append("native-scene-bundle:not-ready")
     if scene_bridge.get("ready") is not True:
         blockers.append("scene-bridge:not-ready")
     if render_binding.get("format") != "SHIFT.RenderBinding/1":
         blockers.append("render-binding:invalid-format")
-
-    environment_cube = None
-    if environment_cube_dds is not None:
-        try:
-            environment_cube = decode_dds(
-                Path(environment_cube_dds).read_bytes()
-            )
-        except (OSError, ValueError, TypeError) as exc:
-            blockers.append(
-                "environment-cube:decode-failed:"
-                + type(exc).__name__
-            )
-        else:
-            if environment_cube.get("format") != CUBE_FORMAT:
-                blockers.append("environment-cube:not-cubemap")
-                environment_cube = None
 
     child_rows: list[dict[str, Any]] = []
     draw_rows = sorted(
@@ -618,18 +604,12 @@ def build_native_scene_vulkan_set(
             )
             child_blockers.extend(cube_snapshot_blockers)
 
-        selected_environment_cube = (
-            external_cube
-            if external_cube is not None
-            else environment_cube
-        )
+        selected_environment_cube = external_cube
         external_blockers: list[str] = []
         if submesh is not None:
             external_blockers = _external_sampler_blockers(
                 submesh,
-                environment_cube_ready=(
-                    selected_environment_cube is not None
-                ),
+                environment_cube_ready=(external_cube is not None),
                 external_2d_ready=set(external_textures),
             )
             native_blockers.extend(
@@ -823,6 +803,8 @@ def build_native_scene_vulkan_set(
             "world_transform_executed": False,
             "explicit_external_sampler2d_snapshots_admitted": True,
             "explicit_external_samplercube_s3_snapshots_admitted": True,
+            "scene_external_samplercube_requires_runtime_snapshot": True,
+            "global_environment_cube_dds_is_scene_runtime_authority": False,
             "external_samplercube_register_policy": "s3-only",
             "unresolved_external_samplers_promoted": False,
             "next_stage": (

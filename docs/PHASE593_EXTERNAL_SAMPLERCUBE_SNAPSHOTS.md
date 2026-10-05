@@ -94,15 +94,23 @@ The existing native cube descriptor ABI is unchanged.
 
 ## Global DDS compatibility
 
-The historical explicit `--environment-cube-dds` path remains available.
+Phase 593 originally retained the historical explicit
+`--environment-cube-dds` scene-builder path and rejected only the case where it
+was supplied together with a scene-bound cube snapshot.
 
-A scene-bound cube snapshot and a global environment cube DDS may **not** be
-supplied in the same scene-set build. The builder fails closed with:
+**Phase 659 supersedes that compatibility rule.** A manually selected global DDS
+is no longer runtime authority for `SHIFT.NativeSceneVulkanSet/1`, even when no
+Phase 593 snapshot is present. The CLI argument remains accepted only so older
+invocations fail with an explicit provenance diagnostic:
+
+`environment-cube:global-dds-not-runtime-proven-for-scene`.
+
+Supplying both a global DDS and an exact scene snapshot still fails closed with:
 
 `environment-cube:global-dds-conflicts-with-scene-snapshots`.
 
-This prevents a runtime-captured scene resource from being silently replaced by
-a manually supplied global cube.
+BMW material/environment DDS support remains separate in the BMW DDS bridge and
+is not removed by Phase 659.
 
 ## CLI
 
