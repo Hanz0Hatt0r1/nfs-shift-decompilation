@@ -1,0 +1,37 @@
+{
+  "format": "SHIFT.Process2BMWBody0BindFrameProofPacket/1",
+  "status": "ready-gate",
+  "blocker": "Process 2 P2.1 consume positive SHIFT.BMWBody0BindFrameProof/1 as a machine-readable native artifact",
+  "input": {
+    "required_contract": "SHIFT.BMWBody0BindFrameProof/1",
+    "required_status": "ready",
+    "required_evidence_state": "proven-static",
+    "current_positive_handoff_present": false
+  },
+  "output": {
+    "packet_contract": "SHIFT.NativeBMWBody0BindFrameProofPacket/1",
+    "packet_magic": "BBFP",
+    "packet_version": 1,
+    "positive_only_builder_ready": true,
+    "native_packet_loader_ready": true,
+    "strict_native_admission_reused": true,
+    "source_targets_preserved": true,
+    "retail_world_transform_admitted": false
+  },
+  "consumer": [
+    "admit_bmw_body0_bind_frame_proof",
+    "compose_bmw_body0_pose_to_vehicle_world_matrix",
+    "build_bmw_vehicle_world_matrix_runtime_handoff",
+    "persistent_bmw_vehicle_world_transform"
+  ],
+  "limits": [
+    "does not derive or synthesize a BODY0 bind matrix",
+    "cannot packetize a blocked, inferred, runtime-capture-dependent, or identity-assumed proof",
+    "does not schedule retail physics",
+    "does not publish a Phase 706 transform without a real positive Process 1 proof"
+  ],
+  "ownership": {
+    "current_blocker_owner": "Process 1",
+    "process2_state": "artifact-loader-ready-awaiting-positive-proof"
+  }
+}
