@@ -1,0 +1,40 @@
+name: Process 1 VehicleDetails physics/render owner frontier
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_vehicle_descriptor_physics_render_owner_frontier.py'
+      - 'tools/ghidra/run_ranked_function_instructions.py'
+      - 'tests/test_ghidra_vehicle_descriptor_physics_render_owner_frontier.py'
+      - 'tests/test_ghidra_ranked_function_instruction_runner.py'
+      - 'docs/PROCESS_1_VEHICLE_DESCRIPTOR_PHYSICS_RENDER_OWNER_FRONTIER.md'
+      - 'docs/PROCESS_1_RANKED_FUNCTION_INSTRUCTION_EXPORT.md'
+      - '.github/workflows/process1-vehicle-descriptor-physics-render-owner-frontier.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_vehicle_descriptor_physics_render_owner_frontier.py'
+      - 'tools/ghidra/run_ranked_function_instructions.py'
+      - 'tests/test_ghidra_vehicle_descriptor_physics_render_owner_frontier.py'
+      - 'tests/test_ghidra_ranked_function_instruction_runner.py'
+      - 'docs/PROCESS_1_VEHICLE_DESCRIPTOR_PHYSICS_RENDER_OWNER_FRONTIER.md'
+      - 'docs/PROCESS_1_RANKED_FUNCTION_INSTRUCTION_EXPORT.md'
+      - '.github/workflows/process1-vehicle-descriptor-physics-render-owner-frontier.yml'
+
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run VehicleDetails physics/render frontier regressions
+        run: |
+          python -m pytest -q \
+            tests/test_ghidra_vehicle_descriptor_physics_render_owner_frontier.py \
+            tests/test_ghidra_ranked_function_instruction_runner.py
+      - name: Verify CLI surfaces
+        run: |
+          python tools/ghidra/analyze_vehicle_descriptor_physics_render_owner_frontier.py --help >/dev/null
+          python tools/ghidra/run_ranked_function_instructions.py --help >/dev/null
