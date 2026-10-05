@@ -1,11 +1,13 @@
 #include "shift_bmw_body0_bind_frame_proof_packet.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <vector>
