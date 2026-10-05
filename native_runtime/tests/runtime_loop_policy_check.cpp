@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 int main() {
+    using shift::runtime::RuntimeSchedulerAuthority;
     using shift::runtime::make_runtime_loop_policy;
 
     const auto bounded =
@@ -12,6 +13,9 @@ int main() {
     if (bounded.continuous || !bounded.frame_limit_enabled ||
         bounded.continuous_wall_clock_pacing ||
         bounded.frame_limit != 120 ||
+        !bounded.uses_host_development_scheduler() ||
+        bounded.retail_cadence_admitted ||
+        bounded.uses_admitted_retail_scheduler() ||
         !bounded.should_continue(false, 119) ||
         bounded.should_continue(false, 120)) {
         std::cerr << "bounded loop policy mismatch\n";
@@ -22,7 +26,11 @@ int main() {
         make_runtime_loop_policy(true, false, 120, false, 0);
     if (!continuous.continuous || continuous.frame_limit_enabled ||
         !continuous.continuous_wall_clock_pacing ||
+        continuous.fixed_tick_seconds != shift::runtime::kHostDevelopmentFixedDt ||
         continuous.fixed_tick_seconds != shift::runtime::kNativeContinuousFixedDt ||
+        !continuous.uses_host_development_scheduler() ||
+        continuous.retail_cadence_admitted ||
+        continuous.uses_admitted_retail_scheduler() ||
         !continuous.should_continue(false, 0) ||
         !continuous.should_continue(false, 2000000000) ||
         continuous.should_continue(true, 0)) {
@@ -35,6 +43,8 @@ int main() {
     if (!capped.continuous || !capped.frame_limit_enabled ||
         !capped.continuous_wall_clock_pacing ||
         capped.frame_limit != 3 ||
+        !capped.uses_host_development_scheduler() ||
+        capped.retail_cadence_admitted ||
         !capped.should_continue(false, 2) ||
         capped.should_continue(false, 3)) {
         std::cerr << "continuous safety-cap policy mismatch\n";
@@ -58,11 +68,30 @@ int main() {
         return 1;
     }
 
+    auto forbidden_retail_fallback =
+        make_runtime_loop_policy(true, false, 120, false, 0);
+    forbidden_retail_fallback.scheduler_authority =
+        RuntimeSchedulerAuthority::RetailEvidence;
+    forbidden_retail_fallback.retail_cadence_admitted = true;
+    bool rejected_retail_host_fallback = false;
+    try {
+        (void)forbidden_retail_fallback.should_continue(false, 0);
+    } catch (const std::logic_error&) {
+        rejected_retail_host_fallback = true;
+    }
+    if (!rejected_retail_host_fallback) {
+        std::cerr << "retail cadence silently fell back to host 1/60 pacing\n";
+        return 1;
+    }
+
     const auto scripted =
         make_runtime_loop_policy(false, false, 120, true, 5);
     if (scripted.continuous || !scripted.frame_limit_enabled ||
         scripted.continuous_wall_clock_pacing ||
-        scripted.frame_limit != 5) {
+        scripted.frame_limit != 5 ||
+        !scripted.uses_host_development_scheduler() ||
+        scripted.retail_cadence_admitted ||
+        scripted.uses_admitted_retail_scheduler()) {
         std::cerr << "scripted loop policy mismatch\n";
         return 1;
     }
@@ -94,8 +123,11 @@ int main() {
         << "\"bounded\":true,\"continuous\":true,"
         << "\"continuous_safety_cap\":true,"
         << "\"steady_clock_pacing\":true,"
+        << "\"scheduler_authority\":\"host-development\","
+        << "\"retail_cadence_claimed\":false,"
+        << "\"retail_host_fallback_rejected\":true,"
         << "\"fixed_tick_seconds\":"
-        << shift::runtime::kNativeContinuousFixedDt << ","
+        << shift::runtime::kHostDevelopmentFixedDt << ","
         << "\"script_fail_closed\":true}\n";
     return 0;
 }

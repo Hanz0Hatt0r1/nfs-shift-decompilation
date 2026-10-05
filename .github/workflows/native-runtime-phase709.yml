@@ -11,7 +11,10 @@ on:
       - 'tools/run_native_vertical_slice.py'
       - 'tests/test_run_native_vertical_slice.py'
       - 'tests/test_native_runtime_contract.py'
+      - 'tests/test_process2_runtime_scheduler_authority.py'
+      - 'evidence/process2_runtime_scheduler_authority.json'
       - 'docs/PHASE709_CONTINUOUS_NATIVE_RUNTIME_LOOP.md'
+      - 'docs/PHASE716_EXPLICIT_RUNTIME_SCHEDULER_AUTHORITY.md'
       - '.github/workflows/native-runtime-phase709.yml'
   pull_request:
     paths:
@@ -22,7 +25,10 @@ on:
       - 'tools/run_native_vertical_slice.py'
       - 'tests/test_run_native_vertical_slice.py'
       - 'tests/test_native_runtime_contract.py'
+      - 'tests/test_process2_runtime_scheduler_authority.py'
+      - 'evidence/process2_runtime_scheduler_authority.json'
       - 'docs/PHASE709_CONTINUOUS_NATIVE_RUNTIME_LOOP.md'
+      - 'docs/PHASE716_EXPLICIT_RUNTIME_SCHEDULER_AUTHORITY.md'
       - '.github/workflows/native-runtime-phase709.yml'
 
 jobs:
@@ -41,4 +47,4 @@ jobs:
       - name: CTest loop policy
         run: ctest --test-dir native_runtime/build --output-on-failure -R '^shift_runtime_loop_policy$'
       - name: Python contracts
-        run: python3 -m pytest -q tests/test_run_native_vertical_slice.py tests/test_native_runtime_contract.py
+        run: python3 -m pytest -q tests/test_run_native_vertical_slice.py tests/test_native_runtime_contract.py tests/test_process2_runtime_scheduler_authority.py
