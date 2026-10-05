@@ -1,0 +1,1 @@
+Do not weaken ptrace/Yama policy merely to satisfy optional region reads.
