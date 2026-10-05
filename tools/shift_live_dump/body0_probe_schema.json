@@ -1,0 +1,5 @@
+{
+  "format": "SHIFT.BMWBody0TargetedRuntimeCapture/1",
+  "required_files": ["capture_metadata.json", "maps.txt", "samples.jsonl"],
+  "semantic_policy": "raw-observation-only"
+}
