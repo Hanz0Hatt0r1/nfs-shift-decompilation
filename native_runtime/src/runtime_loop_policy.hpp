@@ -8,11 +8,10 @@
 
 namespace shift::runtime {
 
-// Current continuous pacing is a host-development mechanism only.  It is not a
-// recovered retail scheduler/cadence and must never become one by implication.
-inline constexpr double kHostDevelopmentFixedDt = 1.0 / 60.0;
-// Compatibility name retained for existing non-retail callers/tests.
-inline constexpr double kNativeContinuousFixedDt = kHostDevelopmentFixedDt;
+// Compatibility/source contract retained from Phase 710.  The value is host
+// development pacing only; it is not a recovered retail scheduler/cadence.
+inline constexpr double kNativeContinuousFixedDt = 1.0 / 60.0;
+inline constexpr double kHostDevelopmentFixedDt = kNativeContinuousFixedDt;
 
 enum class RuntimeSchedulerAuthority {
     HostDevelopment,
@@ -115,10 +114,7 @@ inline RuntimeLoopPolicy make_runtime_loop_policy(
             throw std::invalid_argument(
                 "--frames must equal native input script step count");
         }
-        RuntimeLoopPolicy policy{false, true, script_frames};
-        policy.scheduler_authority = RuntimeSchedulerAuthority::HostDevelopment;
-        policy.retail_cadence_admitted = false;
-        return policy;
+        return RuntimeLoopPolicy{false, true, script_frames};
     }
 
     if (continuous) {
@@ -134,10 +130,7 @@ inline RuntimeLoopPolicy make_runtime_loop_policy(
         return policy;
     }
 
-    RuntimeLoopPolicy policy{false, true, requested_frames};
-    policy.scheduler_authority = RuntimeSchedulerAuthority::HostDevelopment;
-    policy.retail_cadence_admitted = false;
-    return policy;
+    return RuntimeLoopPolicy{false, true, requested_frames};
 }
 
 }  // namespace shift::runtime
