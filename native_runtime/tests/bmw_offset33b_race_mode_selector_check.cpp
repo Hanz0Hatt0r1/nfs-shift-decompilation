@@ -121,6 +121,27 @@ int main() {
                 normal1.body0_to_outer_vehicle_translation,
             "normal difficulty 2 must retain its distinct proven bind");
 
+        const auto silverstone_selector =
+            native_silverstone_bmw_offset33b_selector();
+        require(silverstone_selector.ready,
+                "native Silverstone BMW selector is not ready");
+        require(!silverstone_selector.use_drift_cgheight_scale,
+                "native Silverstone BMW selector drifted from normal policy");
+        require(silverstone_selector.player_difficulty == 1u,
+                "native Silverstone BMW Player Difficulty drifted from 1");
+
+        const auto silverstone =
+            select_native_silverstone_bmw_body0_outer_vehicle_bind();
+        require(
+            silverstone.body0_to_outer_vehicle_translation ==
+                normal1.body0_to_outer_vehicle_translation,
+            "native Silverstone policy did not consume the admitted normal/difficulty-1 row");
+        require_matrix_translation(
+            silverstone,
+            0.0,
+            -0.004956085581085581085581085581085581,
+            kZ);
+
         bool unready_rejected = false;
         try {
             (void)select_bmw_body0_outer_vehicle_bind(
@@ -146,12 +167,15 @@ int main() {
             << kNativeBmwOffset33bRaceModeSelectorFormat << "\","
             << "\"phase\":711,"
             << "\"process1_contract\":\"SHIFT.BMWOffset33bSelectorCompleteNumeric/1\","
+            << "\"process1_session_contract\":\"SHIFT.BMWOffset33bNativeSessionSelection/1\","
             << "\"player_difficulty_domain\":[0,1,2],"
             << "\"selector_combinations\":6,"
             << "\"unique_translations\":3,"
-            << "\"selector_required\":true,"
             << "\"difficulty_3_rejected\":true,"
-            << "\"body0_to_outer_vehicle_ready_when_selector_bound\":true,"
+            << "\"native_silverstone_policy_bound\":true,"
+            << "\"native_silverstone_mode\":\"normal\","
+            << "\"native_silverstone_player_difficulty\":1,"
+            << "\"body0_to_outer_vehicle_numeric_matrix_ready\":true,"
             << "\"outer_vehicle_to_vhf_ready\":false,"
             << "\"body0_bind_frame_proof_ready\":false,"
             << "\"vehicle_world_transform_ready\":false}\n";
