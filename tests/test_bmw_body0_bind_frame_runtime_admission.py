@@ -24,8 +24,8 @@ def test_runtime_admission_is_fail_closed_and_does_not_claim_scheduler_or_transf
     assert "load_bmw_body0_bind_frame_proof_packet(path)" in header
     assert "BODY0 bind proof packet path changed after runtime admission" in header
     assert "BODY0 bind proof packet environment disappeared after admission" in header
-    assert '\"retail_scheduler_claimed\":false' in header
-    assert '\"vehicle_world_transform_committed\":false' in header
+    assert r'\"retail_scheduler_claimed\":false' in header
+    assert r'\"vehicle_world_transform_committed\":false' in header
     assert "commit_bmw_vehicle_world_transform(" not in header
     assert "publish_persistent_bmw_vehicle_world_transform_for_render(" not in header
 
