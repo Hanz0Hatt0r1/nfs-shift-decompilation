@@ -1,0 +1,1 @@
+raw observation only; no BODY0 identity claim; no bind-owner claim; no retail cadence claim; no control semantics claim
