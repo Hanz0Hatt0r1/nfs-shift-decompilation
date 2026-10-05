@@ -17,6 +17,13 @@ target_link_libraries(shift_runtime_bmw_body0_bind_frame_proof_packet_check PRIV
 target_compile_options(shift_runtime_bmw_body0_bind_frame_proof_packet_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_bmw_body0_bind_frame_runtime_admission_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/bmw_body0_bind_frame_runtime_admission_check.cpp)
+target_link_libraries(shift_runtime_bmw_body0_bind_frame_runtime_admission_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_bmw_body0_bind_frame_runtime_admission_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 add_executable(shift_runtime_bmw_body0_vhf_world_matrix_composition_check
   ${CMAKE_CURRENT_SOURCE_DIR}/tests/bmw_body0_vhf_world_matrix_composition_check.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/vehicle_world_transform_transport.cpp)
@@ -35,6 +42,9 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_bmw_body0_bind_frame_proof_packet
     COMMAND shift_runtime_bmw_body0_bind_frame_proof_packet_check)
+  add_test(
+    NAME shift_runtime_bmw_body0_bind_frame_runtime_admission
+    COMMAND shift_runtime_bmw_body0_bind_frame_runtime_admission_check)
   add_test(
     NAME shift_runtime_bmw_body0_vhf_world_matrix_composition
     COMMAND shift_runtime_bmw_body0_vhf_world_matrix_composition_check)
