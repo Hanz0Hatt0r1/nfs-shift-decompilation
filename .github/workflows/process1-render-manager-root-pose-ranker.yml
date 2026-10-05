@@ -1,0 +1,35 @@
+name: Process 1 render-manager root-pose xref ranker
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/rank_player_vehicle_render_manager_root_pose_refs.py'
+      - 'tests/test_ghidra_player_vehicle_render_manager_root_pose_ranker.py'
+      - 'tools/ghidra/rank_player_vehicle_render_manager_global_refs.py'
+      - 'tools/ghidra/build_vehicle_render_root_pose_transport_frontier.py'
+      - 'docs/PROCESS_1_RENDER_MANAGER_ROOT_POSE_XREF_RANKER.md'
+      - '.github/workflows/process1-render-manager-root-pose-ranker.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/rank_player_vehicle_render_manager_root_pose_refs.py'
+      - 'tests/test_ghidra_player_vehicle_render_manager_root_pose_ranker.py'
+      - 'tools/ghidra/rank_player_vehicle_render_manager_global_refs.py'
+      - 'tools/ghidra/build_vehicle_render_root_pose_transport_frontier.py'
+      - 'docs/PROCESS_1_RENDER_MANAGER_ROOT_POSE_XREF_RANKER.md'
+      - '.github/workflows/process1-render-manager-root-pose-ranker.yml'
+
+jobs:
+  ranker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run root-pose ranker regressions
+        run: python -m pytest -q tests/test_ghidra_player_vehicle_render_manager_root_pose_ranker.py
+      - name: Preserve original xref ranker regressions
+        run: python -m pytest -q tests/test_ghidra_player_vehicle_render_manager_global_xref_ranker.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/rank_player_vehicle_render_manager_root_pose_refs.py --help >/dev/null
