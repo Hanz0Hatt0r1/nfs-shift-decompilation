@@ -2,24 +2,30 @@
 
 ## Playable-slice blocker reduced
 
-The remaining transform-semantic blocker is still the missing exact join:
+The current P1.1 transform-semantic blocker remains the missing exact join:
 
 ```text
-outer Vehicle / car-body visual owner
+outer Vehicle / car-body owner
   -> player vehicle renderable owner
+  -> SMS root-pose / RenderHierarchy owner
   -> canonical BMW VHF vehicle-root / assembly frame
 ```
 
-The previous two Process 1 stages make the next evidence finite:
+The existing constructor proof establishes:
 
-- `FUN_0045ef50` independently proves the constructor layout relation
-  `render-manager receiver + 0xca4 = allocation labelled mPlayerVehicleRenderables`;
-- `SHIFT.PlayerVehicleRenderManagerGlobalXrefRank/1` reduces the candidate
-  `DAT_00bc185c` users to a bounded targeted instruction-export worklist.
+```text
+FUN_0045ef50 receiver + 0xca4
+  = allocation labelled mPlayerVehicleRenderables
+```
 
-The missing mechanical step was proving whether the **value loaded from that
-candidate global** is actually used as the base of a runtime `+0xca4` access.
-This phase automates exactly that step.
+The current discovery surface is now
+`SHIFT.PlayerVehicleRenderManagerRootPoseXrefRank/1`, which ranks exact
+`DAT_00bc185c` users toward the independently frozen SMS root-pose/world-affine
+anchors and explicitly removes the wheel-collision lane from positive render
+scoring.
+
+This phase proves only whether the **value loaded from that candidate global**
+is physically used as the base of a runtime `+0xca4` access.
 
 ## Contract
 
@@ -29,14 +35,27 @@ This phase automates exactly that step.
 SHIFT.PlayerVehicleRenderablesRuntimeAlias/1
 ```
 
-Inputs:
+Accepted rank inputs:
 
-1. a ready `SHIFT.PlayerVehicleRenderManagerGlobalXrefRank/1` artifact;
-2. one `SHIFT.GhidraFunctionInstructions/2` file containing exactly the
-   functions selected by `selected_instruction_export_functions`.
+```text
+preferred: SHIFT.PlayerVehicleRenderManagerRootPoseXrefRank/1
+compatible: SHIFT.PlayerVehicleRenderManagerGlobalXrefRank/1
+```
 
-The analyzer requires structured Ghidra p-code for the field access and reuses
-the established finite all-path IA-32 register-provenance engine.
+Both must be ready, match the retail SHIFT.exe identity, expose one exact
+candidate global and an exact non-empty
+`ranking.selected_instruction_export_functions` list. For the preferred
+root-pose rank, the analyzer additionally requires:
+
+```text
+root_pose_positive_anchor_ranking_ready = true
+collision_wheel_LOD_anchor_removed_from_positive_render_score = true
+```
+
+The second input is one `SHIFT.GhidraFunctionInstructions/2` file containing
+**exactly** the functions selected by that rank artifact. The analyzer requires
+structured Ghidra p-code for the field access and reuses the established finite
+all-path IA-32 register-provenance engine.
 
 ## Positive proof condition
 
@@ -58,33 +77,21 @@ MOV EAX,dword ptr [ESI + 0xca4]
 
 or the equivalent Ghidra `DAT_00bc185c` rendering.
 
-The pass does **not** assume that a caller-saved register survives calls. For
-example:
-
-```text
-MOV ECX,[DAT_00bc185c]
-CALL something
-MOV EAX,[ECX+0xca4]
-```
-
-is rejected as an exact alias unless independent machine flow restores the
-candidate-global value into `ECX`.
+Caller-saved register values remain invalidated across calls. A global load
+before an unrelated call does not survive by assumption.
 
 ## What a positive result proves
 
-A positive result promotes only these physical facts:
+A positive result promotes only:
 
 ```text
 candidate_global_to_ca4_runtime_field_base_alias_ready = true
 player_vehicle_renderables_field_runtime_access_ready   = true
 ```
 
-Combined with the independent constructor anchor, this establishes a concrete
-runtime use of the same `+0xca4` layout slot by a receiver value loaded from the
-candidate global.
-
-It deliberately does **not** prove that offset coincidence alone makes the
-candidate global an instance of the constructor's class.
+The output also records the exact input rank format and whether that rank is the
+current root-pose-aware surface. This is provenance metadata only; the rank
+format itself is not pointer identity.
 
 ## Deliberate non-claims
 
@@ -104,26 +111,28 @@ The analyzer does not promote:
 - callgraph proximity to pointer identity;
 - a `+0xca4` field value to BMW VHF root identity;
 - a collection member to a coordinate frame;
-- a decompiler parameter name to ABI truth.
+- the current root-pose ranking score to a physical owner relation.
 
-## End-to-end commands after the global xref export
+## Current end-to-end command
 
-First rank the candidate global users:
+Build the preferred rank and export its exact bounded worklist:
 
 ```bash
-python tools/ghidra/rank_player_vehicle_render_manager_global_refs.py \
+python tools/ghidra/rank_player_vehicle_render_manager_root_pose_refs.py \
   out/shift_ghidra_database \
   out/player_vehicle_render_manager_global_refs.jsonl \
-  --json-out out/player_vehicle_render_manager_global_xref_rank.json
-```
+  --json-out out/player_vehicle_render_manager_root_pose_rank.json
 
-Read `selected_instruction_export_functions` from that artifact and export those
-functions with `run_shift_function_instructions.sh`. Then run:
+GHIDRA_HOME=/opt/ghidra \
+python tools/ghidra/run_ranked_function_instructions.py \
+  out/player_vehicle_render_manager_root_pose_rank.json \
+  /home/pes/ghidra_projects/shift \
+  shift \
+  out/player_vehicle_render_manager_root_pose_instructions.jsonl
 
-```bash
 python tools/ghidra/analyze_player_vehicle_renderables_runtime_alias.py \
-  out/player_vehicle_render_manager_global_xref_rank.json \
-  out/player_vehicle_render_manager_selected_instructions.jsonl \
+  out/player_vehicle_render_manager_root_pose_rank.json \
+  out/player_vehicle_render_manager_root_pose_instructions.jsonl \
   --json-out out/player_vehicle_renderables_runtime_alias.json
 ```
 
@@ -132,13 +141,14 @@ No retail game execution or new runtime capture is required.
 ## Required next join
 
 If the physical global -> `+0xca4` alias is positive, the next bounded question
-becomes:
+is:
 
 ```text
 value loaded from globally sourced receiver +0xca4
-  -> exact HDVehicle / car-body / visual-owner pointer transfer?
+  -> physical SMS root-pose / external RenderHierarchy owner transfer?
 ```
 
-Only that pointer/value transfer can promote the two render-side frontiers to the
-same runtime owner. VHF hierarchy/root identity or a fixed affine relation is a
-separate proof after that.
+That transfer, not rank proximity, is the next owner proof. Only after the
+external hierarchy owner is joined to the canonical BMW VHF root can Process 1
+materialize the final frame relation and emit a positive
+`SHIFT.BMWBody0BindFrameProof/1` for Process 2.
