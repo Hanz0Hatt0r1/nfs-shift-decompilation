@@ -62,6 +62,29 @@ or:
 When neither is supplied, the wrapper looks for `shift_d3d9_capture.jsonl` in the
 current working directory and then in the repository root.
 
+## Live progress logging
+
+The installed-game path intentionally still passes the complete discovered
+`Pakfiles` tree to the existing bootstrap. Large retail installs can therefore
+spend a long time inside catalog/resource analysis.
+
+The wrapper keeps child stdout/stderr attached to the terminal and forces child
+Python into unbuffered mode. It also prints explicit lifecycle records:
+
+```text
+[shift-launch] stage=playable-bootstrap event=start ...
+[shift-launch] stage=playable-bootstrap event=spawn pid=12345 heartbeat=10s
+[shift-launch] stage=playable-bootstrap event=heartbeat pid=12345 elapsed=10.0s status=running
+[shift-launch] stage=playable-bootstrap event=exit pid=12345 elapsed=... returncode=0
+```
+
+The bootstrap heartbeat is emitted every 10 seconds. After the native runtime is
+launched, the same wrapper emits a lower-frequency 60-second heartbeat so a
+long-running interactive session does not flood the terminal.
+
+A heartbeat proves only that the delegated process is still alive; it is not a
+semantic progress percentage and does not weaken any fail-closed evidence gate.
+
 ## Current command
 
 From the repository root:

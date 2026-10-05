@@ -12,8 +12,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shlex
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import NamedTuple, Sequence
 
@@ -21,6 +24,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 TRACK_DEFAULT = "Silverstone_Era3_GrandPrix"
 VEHICLE_DEFAULT = "BMW_M3_E36"
+BOOTSTRAP_HEARTBEAT_SECONDS = 10.0
+RUNTIME_HEARTBEAT_SECONDS = 60.0
 REQUIRED_ARCHIVE_NAMES = (
     "Silverstone_Era3_GrandPrix.bff",
     "Silverstone_Era3_GrandPrix_Physics.bff",
@@ -210,9 +215,67 @@ def _capture_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
     return values
 
 
+def _command_stage(command: Sequence[str]) -> tuple[str, float]:
+    script = Path(command[1]).name if len(command) > 1 else Path(command[0]).name
+    if script == "bootstrap_playable_linux_slice.py":
+        return "playable-bootstrap", BOOTSTRAP_HEARTBEAT_SECONDS
+    if script == "run_native_vertical_slice.py":
+        return "native-runtime", RUNTIME_HEARTBEAT_SECONDS
+    return script or "subprocess", BOOTSTRAP_HEARTBEAT_SECONDS
+
+
 def _run(command: list[str], *, cwd: Path) -> int:
-    completed = subprocess.run(command, cwd=cwd, check=False)
-    return int(completed.returncode)
+    stage, heartbeat_seconds = _command_stage(command)
+    environment = os.environ.copy()
+    # Preserve child output as a live diagnostic stream even when stdout is not
+    # attached to an interactive terminal.
+    environment["PYTHONUNBUFFERED"] = "1"
+
+    print(f"[shift-launch] stage={stage} event=start cwd={cwd}", flush=True)
+    print(f"[shift-launch] stage={stage} command={shlex.join(command)}", flush=True)
+    started = time.monotonic()
+    process = subprocess.Popen(command, cwd=cwd, env=environment)
+    print(
+        f"[shift-launch] stage={stage} event=spawn pid={process.pid} "
+        f"heartbeat={heartbeat_seconds:.0f}s",
+        flush=True,
+    )
+
+    try:
+        while True:
+            try:
+                returncode = process.wait(timeout=heartbeat_seconds)
+                break
+            except subprocess.TimeoutExpired:
+                elapsed = time.monotonic() - started
+                print(
+                    f"[shift-launch] stage={stage} event=heartbeat pid={process.pid} "
+                    f"elapsed={elapsed:.1f}s status=running",
+                    flush=True,
+                )
+    except KeyboardInterrupt:
+        elapsed = time.monotonic() - started
+        print(
+            f"[shift-launch] stage={stage} event=interrupt pid={process.pid} "
+            f"elapsed={elapsed:.1f}s",
+            file=sys.stderr,
+            flush=True,
+        )
+        process.terminate()
+        try:
+            process.wait(timeout=5.0)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+        return 130
+
+    elapsed = time.monotonic() - started
+    print(
+        f"[shift-launch] stage={stage} event=exit pid={process.pid} "
+        f"elapsed={elapsed:.1f}s returncode={returncode}",
+        flush=True,
+    )
+    return int(returncode)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -264,7 +327,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             name: str(path) for name, path in install.required_archives.items()
         },
         "output": str(output),
-    }, ensure_ascii=False, indent=2, sort_keys=True))
+        "logging": {
+            "child_python_unbuffered": True,
+            "bootstrap_heartbeat_seconds": BOOTSTRAP_HEARTBEAT_SECONDS,
+            "runtime_heartbeat_seconds": RUNTIME_HEARTBEAT_SECONDS,
+        },
+    }, ensure_ascii=False, indent=2, sort_keys=True), flush=True)
 
     rc = _run(bootstrap, cwd=workspace_root)
     if rc != 0:
@@ -278,7 +346,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 2
     if args.bootstrap_only:
-        print(f"profile: {profile}")
+        print(f"profile: {profile}", flush=True)
         return 0
 
     launch = [
