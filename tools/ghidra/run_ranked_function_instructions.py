@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 RANK_FORMAT = "SHIFT.PlayerVehicleRenderManagerGlobalXrefRank/1"
+ROOT_POSE_RANK_FORMAT = "SHIFT.PlayerVehicleRenderManagerRootPoseXrefRank/1"
 ROOT_POSE_FORMAT = "SHIFT.VehicleRenderRootPoseTransportFrontier/1"
 INSTRUCTION_FORMAT = "SHIFT.GhidraFunctionInstructions/2"
 PROGRAM = "SHIFT.exe"
@@ -43,18 +44,27 @@ def _validate_retail(program: Any, md5: Any, label: str) -> None:
         raise ValueError(f"{label} retail identity drift")
 
 
+def _extract_rank_worklist(
+    payload: Mapping[str, Any], *, label: str
+) -> tuple[list[Any], int | None, str]:
+    retail = payload.get("retail")
+    ranking = payload.get("ranking")
+    if not isinstance(retail, Mapping) or not isinstance(ranking, Mapping):
+        raise ValueError(f"{label} artifact sections missing")
+    _validate_retail(retail.get("program"), retail.get("md5"), label)
+    raw = ranking.get("selected_instruction_export_functions")
+    limit = ranking.get("selected_instruction_export_limit")
+    declared_limit = limit if isinstance(limit, int) and limit > 0 else None
+    return raw if isinstance(raw, list) else [], declared_limit, label
+
+
 def _extract_worklist(payload: Mapping[str, Any]) -> tuple[list[Any], int | None, str]:
     fmt = payload.get("format")
     if fmt == RANK_FORMAT:
-        retail = payload.get("retail")
-        ranking = payload.get("ranking")
-        if not isinstance(retail, Mapping) or not isinstance(ranking, Mapping):
-            raise ValueError("rank artifact sections missing")
-        _validate_retail(retail.get("program"), retail.get("md5"), "rank")
-        raw = ranking.get("selected_instruction_export_functions")
-        limit = ranking.get("selected_instruction_export_limit")
-        declared_limit = limit if isinstance(limit, int) and limit > 0 else None
-        return raw if isinstance(raw, list) else [], declared_limit, "rank"
+        return _extract_rank_worklist(payload, label="rank")
+
+    if fmt == ROOT_POSE_RANK_FORMAT:
+        return _extract_rank_worklist(payload, label="root-pose rank")
 
     if fmt == ROOT_POSE_FORMAT:
         retail = payload.get("retail")
@@ -68,7 +78,8 @@ def _extract_worklist(payload: Mapping[str, Any]) -> tuple[list[Any], int | None
         return raw if isinstance(raw, list) else [], None, "root-pose frontier"
 
     raise ValueError(
-        f"unsupported worklist artifact format {fmt!r}; expected {RANK_FORMAT} or {ROOT_POSE_FORMAT}"
+        "unsupported worklist artifact format "
+        f"{fmt!r}; expected {RANK_FORMAT}, {ROOT_POSE_RANK_FORMAT}, or {ROOT_POSE_FORMAT}"
     )
 
 
