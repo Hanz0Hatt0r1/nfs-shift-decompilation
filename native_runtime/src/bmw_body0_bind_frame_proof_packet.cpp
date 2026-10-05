@@ -1,5 +1,6 @@
 #include "shift_bmw_body0_bind_frame_proof_packet.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
