@@ -1,0 +1,36 @@
+name: Process 1 BMW offset33b selector-complete numeric
+
+on:
+  push:
+    paths:
+      - 'evidence/bmw_offset33b_selector_geometry_inputs.json'
+      - 'evidence/bmw_offset33b_selector_complete_numeric.json'
+      - 'tools/ghidra/analyze_bmw_offset33b_selector_complete_numeric.py'
+      - 'tests/test_ghidra_bmw_offset33b_selector_complete_numeric.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_SELECTOR_COMPLETE_NUMERIC.md'
+      - '.github/workflows/process1-bmw-offset33b-selector-complete-numeric.yml'
+  pull_request:
+    paths:
+      - 'evidence/bmw_offset33b_selector_geometry_inputs.json'
+      - 'evidence/bmw_offset33b_selector_complete_numeric.json'
+      - 'tools/ghidra/analyze_bmw_offset33b_selector_complete_numeric.py'
+      - 'tests/test_ghidra_bmw_offset33b_selector_complete_numeric.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_SELECTOR_COMPLETE_NUMERIC.md'
+      - '.github/workflows/process1-bmw-offset33b-selector-complete-numeric.yml'
+
+jobs:
+  selector-complete-numeric:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run selector-complete numeric regressions
+        run: |
+          python -m pip install --disable-pip-version-check pytest
+          python -m pytest -q tests/test_ghidra_bmw_offset33b_selector_complete_numeric.py
+      - name: Validate committed JSON contracts
+        run: |
+          python -m json.tool evidence/bmw_offset33b_selector_geometry_inputs.json >/dev/null
+          python -m json.tool evidence/bmw_offset33b_selector_complete_numeric.json >/dev/null
