@@ -1,6 +1,6 @@
 # Parallel process prompts — playable Linux slice v4
 
-These prompts implement the staged-handoff rules in `docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V4.md`.
+These prompts implement the staged-handoff rules in `docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V4.md` and the no-idle blocker-swarm rule in `docs/PLAYABLE_SLICE_BLOCKER_SWARM.md`.
 
 ## PROCESS 1
 
@@ -15,6 +15,8 @@ These prompts implement the staged-handoff rules in `docs/PLAYABLE_SLICE_PROCESS
 Перед шагом прочитай актуальные:
 - PROCESS_INSTRUCTIONS.md
 - docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V4.md
+- docs/PLAYABLE_SLICE_BLOCKER_SWARM.md
+- evidence/playable_slice_blocker_swarm.json
 - последние proof/frontier artifacts на main
 
 Текущий shortest blocker:
@@ -38,14 +40,17 @@ car-body +0x34/+0x534, render-manager +0xca4, resolved-direct FUN_007b7840 const
 ВАЖНО: не удерживай полезный positive sub-proof до завершения большого финального proof.
 Как только independently useful stage стал positive, сразу публикуй versioned machine-readable handoff SHIFT.<Name>/1 с provenance, limits и consumer. PROCESS 2 должен получить его немедленно.
 
+Ты остаёшься единственным владельцем final semantic proof. PROCESS 2 и PROCESS 3 могут помогать текущему blocker только на непересекающихся shards из SHIFT.PlayableSliceBlockerSwarm/1. Потребляй их narrow supporting contracts, но сам выполняй final semantic adjudication.
+
 Текущая очередь:
 1) закрыть FUN_00795d60 delta -> canonical BMW VHF root semantics;
-2) сразу опубликовать exact outer Vehicle-root -> BMW VHF-root relation;
-3) затем собрать SHIFT.BMWBody0BindFrameProof/1;
-4) retail scheduler/cadence;
-5) deepest missing physics producers;
-6) input -> drivetrain/wheel/control producer mapping;
-7) camera-follow source/timing.
+2) потребить resource-only VHF root/frame facts от PROCESS 3, когда они появятся;
+3) сразу опубликовать exact outer Vehicle-root -> BMW VHF-root relation;
+4) затем собрать SHIFT.BMWBody0BindFrameProof/1;
+5) retail scheduler/cadence;
+6) deepest missing physics producers;
+7) input -> drivetrain/wheel/control producer mapping;
+8) camera-follow source/timing.
 
 Не делай broad renderer RE, coverage work, speculative taxonomy или runtime capture до доказанной необходимости.
 
@@ -66,6 +71,8 @@ Self-merge после зелёного CI, проверки свежего main 
 Перед шагом прочитай:
 - PROCESS_INSTRUCTIONS.md
 - docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V4.md
+- docs/PLAYABLE_SLICE_BLOCKER_SWARM.md
+- evidence/playable_slice_blocker_swarm.json
 - evidence/process2_bmw_body0_bind_frame_staged_handoff.json
 - latest Process 1 handoffs на main
 - current provider/frontier contracts в src/physics
@@ -91,7 +98,17 @@ D) keep final bind packet/runtime admission seam ready and fail-closed;
 E) keep SHIFT.Process2RuntimeSchedulerAuthority/1 explicit; HostDevelopment 1/60 никогда не равен RetailEvidence;
 F) keep BODY0 selection -> persistent state -> freshness -> world-transform publication -> Vulkan handoff regressions green.
 
-Если нового bind stage нет, переключайся на already-positive producer/control handoff current chain. Не придумывай solver infrastructure ради занятости.
+NO-IDLE FALLBACK:
+если A-F исчерпаны и нет нового positive handoff, НЕ останавливайся. Перейди в runtime-consumer-assist shard из SHIFT.PlayableSliceBlockerSwarm/1:
+- подготовь/проверь strict typed consumer/adaptor для следующего outer Vehicle -> BMW VHF relation contract;
+- добавляй только blocker-specific validators/packet adapters/regressions, которые сокращают путь от proof до runtime admission;
+- по запросу P1 можешь строить reusable analysis/validation tooling, но не публиковать semantic truth.
+
+Запрещено в assist mode:
+- guess affine relation;
+- promote candidate matrices into production;
+- duplicate P1 semantic adjudication;
+- добавлять unrelated solver infrastructure ради занятости.
 
 После final bind proof:
 consume exact artifact -> admit packet -> retail BODY0 world transform -> retail cadence -> proven controls/producers -> fresh transform each admitted tick -> camera/render.
@@ -113,6 +130,8 @@ Self-merge после зелёного CI и re-read main.
 Перед шагом прочитай:
 - PROCESS_INSTRUCTIONS.md
 - docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V4.md
+- docs/PLAYABLE_SLICE_BLOCKER_SWARM.md
+- evidence/playable_slice_blocker_swarm.json
 - latest Process 1 resource handoffs
 - latest Process 2 live-transform/freshness contracts
 
@@ -129,6 +148,19 @@ C) keep Silverstone + BMW Vulkan path continuously runnable from retail resource
 D) accept only Process 2 freshness-gated matrices; reject stale/test-only core motion;
 E) fix only resource/render regressions blocking the slice.
 
+NO-IDLE FALLBACK:
+если A-E исчерпаны и authentic transform всё ещё ждёт P1/P2, НЕ останавливайся. Перейди в resource-evidence-assist shard текущего blocker:
+- исследуй только exact canonical `vehicles/bmw_m3_e36/bmw_m3_e36.vhf`;
+- извлеки exact HIERARCHY root identity, MatrixNumber, parentage, stored root/local transform fields и explicit frame/resource metadata;
+- оформи narrow resource-only contract `SHIFT.BMWVHFHierarchyRootResourceSemantics/1` либо ещё более узкий frontier;
+- передай этот artifact PROCESS 1 для final executable/resource join.
+
+Запрещено в assist mode:
+- infer executable ownership из resource hierarchy;
+- visual similarity как proof;
+- считать static VHF transform dynamic vehicle pose;
+- самому публиковать outer Vehicle -> VHF semantic relation.
+
 Не скрывай отсутствие physics motion render-side animation. Camera ownership/timing остаётся Process 1 evidence -> Process 2 runtime -> Process 3 consumer.
 
 PR: BLOCKER / INPUT / OUTPUT / CONSUMER / GATES_CHANGED / LIMITS / TESTS / NEXT_OWNER.
@@ -138,3 +170,5 @@ Self-merge после зелёного CI и re-read main.
 ## Synchronization rule
 
 After every merged cross-process handoff all processes re-read `main`. A process that was waiting on a larger final proof must first check whether a new positive stage now exists and consume it before declaring itself blocked.
+
+If its owned queue is exhausted, it must join the current shortest blocker swarm on its assigned non-overlapping shard instead of idling. Process 1 remains the final semantic authority.
