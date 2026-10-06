@@ -1,0 +1,255 @@
+{
+  "bootstrap_provenance": {
+    "absolute_reference_sites": {
+      "0x00c16ab0": [
+        {
+          "pattern_va": "0x0078ef28",
+          "section": ".text"
+        },
+        {
+          "pattern_va": "0x00796424",
+          "section": ".text"
+        }
+      ],
+      "0x00c16ab8": [
+        {
+          "pattern_va": "0x00796430",
+          "section": ".text"
+        }
+      ],
+      "0x00c16ac0": [
+        {
+          "pattern_va": "0x0079643c",
+          "section": ".text"
+        }
+      ],
+      "0x00c19db9": [
+        {
+          "pattern_va": "0x0074bfd2",
+          "section": ".text"
+        },
+        {
+          "pattern_va": "0x0074bfe7",
+          "section": ".text"
+        }
+      ]
+    },
+    "constructor_old_delta": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "image_initial_origin_vector": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "origin_vector_unique_reviewed_direct_writer": "FUN_0078ef00",
+    "origin_writer_absolute_function_pointer_refs": [],
+    "origin_writer_direct_callers": [
+      "FUN_0074bfd0",
+      "FUN_00794a30",
+      "FUN_0079b2d0"
+    ],
+    "origin_writer_reached_before_selected_delta_store": false,
+    "pe_zero_fill": {
+      "globals": [
+        {
+          "address": "0x00c16ab0",
+          "image_loader_zero_fill": true,
+          "section": ".data",
+          "section_offset": "0x95ab0",
+          "section_raw_size": "0x3b600",
+          "section_virtual_size": "0x167040"
+        },
+        {
+          "address": "0x00c16ab8",
+          "image_loader_zero_fill": true,
+          "section": ".data",
+          "section_offset": "0x95ab8",
+          "section_raw_size": "0x3b600",
+          "section_virtual_size": "0x167040"
+        },
+        {
+          "address": "0x00c16ac0",
+          "image_loader_zero_fill": true,
+          "section": ".data",
+          "section_offset": "0x95ac0",
+          "section_raw_size": "0x3b600",
+          "section_virtual_size": "0x167040"
+        },
+        {
+          "address": "0x00c19db9",
+          "image_loader_zero_fill": true,
+          "section": ".data",
+          "section_offset": "0x98db9",
+          "section_raw_size": "0x3b600",
+          "section_virtual_size": "0x167040"
+        }
+      ],
+      "image_base": "0x00400000"
+    },
+    "primary_role_formula_evaluation": "old_delta - initial_origin",
+    "selected_prefix": "first native primary-player PhysicsParticipant::Restart -> FUN_00797fd0(role=0) -> Vehicle::InitVehicle -> FUN_00795d60",
+    "source_proof": {
+      "origin_writer": "FUN_0078ef00 -> FUN_007afd20(..., &DAT_00c16ab0, ...)",
+      "origin_writer_in_restart_to_initvehicle_prefix": false,
+      "primary_role_delta_formula": [
+        "new +0x19c = old +0x19c - DAT_00c16ab0",
+        "new +0x1a0 = old +0x1a0 - DAT_00c16ab8",
+        "new +0x1a4 = old +0x1a4 - DAT_00c16ac0"
+      ],
+      "restart_role_code_source": "PhysicsParticipant spawn config +0x10",
+      "restart_zero_role_designates_primary_participant": true,
+      "vehicle_constructor_delta_zero_offsets": [
+        "+0x19c",
+        "+0x1a0",
+        "+0x1a4"
+      ],
+      "vehicle_role_code_field": "+0x234"
+    }
+  },
+  "format": "SHIFT.BMWPrimaryPlayerFirstBootstrapRenderRootDelta/1",
+  "handoff": {
+    "BMW_primary_player_first_bootstrap_render_root_delta_numeric_ready": true,
+    "BODY0_bind_frame_proof_ready": false,
+    "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": false,
+    "consumer": "single-process S2 numeric outer->VHF evaluator, then S3 SHIFT.BMWBody0BindFrameProof/1",
+    "outer_vehicle_root_to_VHF_fixed_affine_delta_ready": true,
+    "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": false,
+    "outer_vehicle_root_to_VHF_vehicle_root_ready": true,
+    "vehicle_world_transform_ready": false
+  },
+  "inputs": {
+    "native_session_selector": "SHIFT.BMWOffset33bNativeSessionSelection/1",
+    "outer_vehicle_vhf_relation": "SHIFT.OuterVehicleBMWVHFRootRelation/1",
+    "retail_program": "SHIFT.exe"
+  },
+  "limits": {
+    "BODY0_bind_frame_claimed": false,
+    "VHF_root_numeric_matrix_consumed": false,
+    "delta_zero_claimed_for_non_primary_vehicle": false,
+    "delta_zero_claimed_for_restart_or_mode_switch": false,
+    "first_primary_player_bootstrap_only": true,
+    "native_role_policy_is_retail_live_session_observation": false,
+    "origin_vector_assumed_zero_after_first_origin_update": false,
+    "original_game_executed": false,
+    "outer_vehicle_VHF_numeric_matrix_claimed": false,
+    "runtime_capture_used": false
+  },
+  "native_bootstrap_policy": {
+    "first_vehicle_bootstrap": true,
+    "physics_participant_spawn_config_plus_0x10": 0,
+    "retail_live_session_role_observed": false,
+    "role": "primary-player",
+    "source": "explicit-native-vertical-slice-policy",
+    "validated_against_retail_restart_role_semantics": true
+  },
+  "next_blocker": {
+    "id": "BMW-outer-VHF-numeric-relation-evaluation",
+    "required": "consume the exact positive BMW VHF HIERARCHY Root row-vector matrix and delta_local=(0,0,0), evaluate SHIFT.OuterVehicleBMWVHFRootRelation/1 numerically, then compose the already-positive selected BMW BODY0->outer matrix"
+  },
+  "ready": true,
+  "retail": {
+    "decompiler_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "function_fingerprints": {
+      "0x0074ddc3": {
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "1b8f7a6602190fdd97b5a3d410495c8ff92b3a8b854a703459427b1ff548e4a6",
+        "name": "FUN_0074ddc3",
+        "size": 957
+      },
+      "0x0074e760": {
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "ee0a3baf733559a20dd134f43707056898cf73dd31be7d15a51922e1c02260b4",
+        "name": "FUN_0074e760",
+        "size": 101
+      },
+      "0x0078ef00": {
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "f981daa8164768121875faef1a053d93a6f78e6a3901a73aa32904b875ddb8e1",
+        "name": "FUN_0078ef00",
+        "size": 1538
+      },
+      "0x00795d60": {
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "c587cae5d3d8f99afed40fe0c059c8c60bc9cc45d9ee644f5e90e2e1f5a8eb14",
+        "name": "FUN_00795d60",
+        "size": 8797
+      },
+      "0x00797fd0": {
+        "calling_convention": "__thiscall",
+        "mnemonic_sha256": "b8f3cb6525e0742e2afefd31ca51dd050a9d869444526ce03df41067ecb3eeb8",
+        "name": "FUN_00797fd0",
+        "size": 612
+      },
+      "0x00798df0": {
+        "calling_convention": "__thiscall",
+        "mnemonic_sha256": "88904019443d1ea4edaf5a3ef40dd5abfe9e28109ab0b1f09296388f36026e16",
+        "name": "FUN_00798df0",
+        "size": 1581
+      },
+      "0x0079bfd0": {
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "06e730897a4a85d93a5f33765fd15b0c52708fb2c864c290804024b109a3d950",
+        "name": "FUN_0079bfd0",
+        "size": 445
+      }
+    },
+    "incoming_direct_calls": {
+      "0x0078ef00": [
+        {
+          "from_function": "0x0074bfd0",
+          "instruction": "0x0074c05b"
+        },
+        {
+          "from_function": "0x00794a30",
+          "instruction": "0x00794a81"
+        },
+        {
+          "from_function": "0x0079b2d0",
+          "instruction": "0x0079b323"
+        }
+      ],
+      "0x00795d60": [
+        {
+          "from_function": "0x00798df0",
+          "instruction": "0x007990ed"
+        }
+      ],
+      "0x00798df0": [
+        {
+          "from_function": "0x0074ddc3",
+          "instruction": "0x0074de12"
+        }
+      ],
+      "0x0079bfd0": [
+        {
+          "from_function": "0x0079c1c0",
+          "instruction": "0x0079c1e1"
+        }
+      ]
+    },
+    "md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "program": "SHIFT.exe"
+  },
+  "selected_numeric": {
+    "delta_local": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "delta_local_offsets": [
+      "+0x19c",
+      "+0x1a0",
+      "+0x1a4"
+    ],
+    "producer": "FUN_00795d60",
+    "scope": "first explicit native primary-player vehicle bootstrap before any origin-update path"
+  },
+  "semantic_authority": "single process",
+  "session_target": "Silverstone+BMW_M3_E36",
+  "status": "bmw-primary-player-first-bootstrap-render-root-delta-proven",
+  "vehicle": "BMW_M3_E36",
+  "version": 1
+}
