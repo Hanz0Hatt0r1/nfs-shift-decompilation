@@ -26,6 +26,9 @@ def test_staged_bind_handoff_keeps_final_runtime_gate_closed() -> None:
     assert stages["retail_body0_identity"]["state"] == "positive-consumed"
     assert stages["body0_vhf_composition_formula"]["state"] == "positive-consumed"
     assert stages["exact_bmw_vhf_resource_identity"]["state"] == "positive-available"
+    assert stages["exact_bmw_vhf_hierarchy_root_frame"]["state"] == "positive-available"
+    assert stages["exact_bmw_vhf_hierarchy_root_frame"]["contract"] == "SHIFT.BMWVHFHierarchyRootFrame/1"
+    assert "PR #1323" in stages["exact_bmw_vhf_hierarchy_root_frame"]["source"]
     assert stages["outer_vehicle_render_snapshot_affine_bridge"]["state"] == "positive-available"
     assert stages["outer_vehicle_to_exact_vhf_root_relation"]["state"] == "blocked"
     assert stages["final_body0_bind_frame_proof"]["state"] == "blocked"
@@ -40,6 +43,8 @@ def test_process2_has_parallel_work_without_promoting_bind_semantics() -> None:
     work = {row["id"]: row for row in payload["process2_parallel_work"]}
 
     assert work["consume_new_positive_stages"]["state"] == "runnable"
+    assert work["consume_exact_vhf_root_frame_stage"]["state"] == "runnable"
+    assert work["consume_exact_vhf_root_frame_stage"]["contract"] == "SHIFT.BMWVHFHierarchyRootFrame/1"
     assert work["external_provider_and_control_frontier"]["state"] == "runnable"
     assert work["scheduler_consumer_seam"]["state"] == "ready"
     assert work["persistent_transform_freshness"]["state"] == "ready-keep-green"
@@ -65,28 +70,33 @@ def test_final_packet_explicitly_consumes_staged_policy() -> None:
     assert "staged-handoff-active" in packet["ownership"]["process2_state"]
 
 
-def test_blocker_swarm_assigns_non_overlapping_no_idle_shards() -> None:
+def test_blocker_swarm_retargets_after_positive_vhf_root_frame() -> None:
     swarm = json.loads(SWARM.read_text(encoding="utf-8"))
 
     assert swarm["format"] == "SHIFT.PlayableSliceBlockerSwarm/1"
     assert swarm["status"] == "active"
     assert swarm["primary_owner"] == "Process 1"
     assert swarm["final_semantic_authority"] == "Process 1"
+    assert "SHIFT.BMWVHFHierarchyRootFrame/1" in swarm["current_frontier"]["input_contracts"]
+    assert any("PR #1323" in row for row in swarm["current_frontier"]["newly_positive"])
     assert swarm["fallback_policy"]["downstream_process_may_idle"] is False
     assert swarm["fallback_policy"]["duplicate_semantic_question_allowed"] is False
     assert swarm["fallback_policy"]["unsupported_gate_promotion_allowed"] is False
+    assert swarm["fallback_policy"]["superseded_shards_must_be_retargeted_after_upstream_merge"] is True
 
     shards = {row["process"]: row for row in swarm["shards"]}
     assert shards["Process 1"]["role"] == "proof-owner"
     assert shards["Process 1"]["may_publish_final_semantic_proof"] is True
+    assert "BMWVHFHierarchyRootFrame/1" in shards["Process 1"]["task"]
     assert shards["Process 2"]["role"] == "runtime-consumer-assist"
     assert shards["Process 2"]["may_publish_final_semantic_proof"] is False
-    assert shards["Process 3"]["role"] == "resource-evidence-assist"
+    assert "BMWVHFHierarchyRootFrame/1" in shards["Process 2"]["task"]
+    assert shards["Process 3"]["role"] == "resource-runtime-frame-assist"
     assert shards["Process 3"]["may_publish_final_semantic_proof"] is False
-    assert "SHIFT.BMWVHFHierarchyRootResourceSemantics/1" in shards["Process 3"]["output"]
+    assert "SHIFT.BMWVHFRootFrameSceneConsumer/1" in shards["Process 3"]["output"]
 
 
-def test_v4_is_canonical_and_prompts_forbid_downstream_idle() -> None:
+def test_v4_is_canonical_and_prompts_retarget_superseded_shard() -> None:
     process = PROCESS.read_text(encoding="utf-8")
     canonical = CANONICAL.read_text(encoding="utf-8")
     swarm_doc = SWARM_DOC.read_text(encoding="utf-8")
@@ -99,10 +109,11 @@ def test_v4_is_canonical_and_prompts_forbid_downstream_idle() -> None:
     assert "process2_bmw_body0_bind_frame_staged_handoff.json" in process
     assert "staged cross-process handoffs" in canonical.lower()
     assert "missing final bind proof != Process 2 globally idle" in canonical
-    assert "blocker swarm" in swarm_doc.lower()
-    assert "downstream process has no runnable positive handoff" in swarm_doc
+    assert "SHIFT.BMWVHFHierarchyRootFrame/1" in swarm_doc
+    assert "resource-root extraction shard is already complete" in swarm_doc
+    assert "SHIFT.BMWVHFRootFrameSceneConsumer/1" in swarm_doc
     assert "НЕ означает, что PROCESS 2 глобально простаивает" in prompts
-    assert "NO-IDLE FALLBACK" in prompts
-    assert "resource-evidence-assist shard" in prompts
-    assert "runtime-consumer-assist shard" in prompts
+    assert "SHIFT.BMWVHFHierarchyRootFrame/1 positive via merged PR #1323" in prompts
+    assert "старый shard «извлечь exact HIERARCHY root frame» УЖЕ ЗАКРЫТ PR #1323" in prompts
+    assert "resource-runtime-frame-assist shard" in prompts
     assert "Не угадывай missing matrix/affine relation" in prompts

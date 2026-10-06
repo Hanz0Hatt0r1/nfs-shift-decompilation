@@ -20,8 +20,8 @@ These prompts implement the staged-handoff rules in `docs/PLAYABLE_SLICE_PROCESS
 - последние proof/frontier artifacts на main
 
 Текущий shortest blocker:
-FUN_00795d60-produced outerVehicle render-root delta
--> exact canonical BMW_M3_E36.vhf HIERARCHY root semantics
+SHIFT.OuterVehicleRenderRootDeltaProvenance/1
++ SHIFT.BMWVHFHierarchyRootFrame/1 [POSITIVE, merged PR #1323]
 -> exact outer Vehicle-root -> VHF-root relation
 -> numeric BODY0-local -> VHF-root composition
 -> SHIFT.BMWBody0BindFrameProof/1.
@@ -29,6 +29,7 @@ FUN_00795d60-produced outerVehicle render-root delta
 Уже positive и не исследуются повторно:
 - SHIFT.VehicleRenderHierarchyResourceOwnerJoin/1
 - SHIFT.BMWVehicleRenderModelResourceJoin/1
+- SHIFT.BMWVHFHierarchyRootFrame/1
 - SHIFT.OuterVehicleRenderSnapshotAffineBridge/1
 - BMW primary VHF = vehicles/bmw_m3_e36/bmw_m3_e36.vhf
 - retail BMW chassis BODY index 0 identity
@@ -43,8 +44,8 @@ car-body +0x34/+0x534, render-manager +0xca4, resolved-direct FUN_007b7840 const
 Ты остаёшься единственным владельцем final semantic proof. PROCESS 2 и PROCESS 3 могут помогать текущему blocker только на непересекающихся shards из SHIFT.PlayableSliceBlockerSwarm/1. Потребляй их narrow supporting contracts, но сам выполняй final semantic adjudication.
 
 Текущая очередь:
-1) закрыть FUN_00795d60 delta -> canonical BMW VHF root semantics;
-2) потребить resource-only VHF root/frame facts от PROCESS 3, когда они появятся;
+1) join exact FUN_00795d60 value roots с positive SHIFT.BMWVHFHierarchyRootFrame/1;
+2) доказать outer Vehicle-root == VHF root ИЛИ exact fixed affine delta;
 3) сразу опубликовать exact outer Vehicle-root -> BMW VHF-root relation;
 4) затем собрать SHIFT.BMWBody0BindFrameProof/1;
 5) retail scheduler/cadence;
@@ -52,6 +53,7 @@ car-body +0x34/+0x534, render-manager +0xca4, resolved-direct FUN_007b7840 const
 7) input -> drivetrain/wheel/control producer mapping;
 8) camera-follow source/timing.
 
+Не проси PROCESS 3 повторно извлекать BMW VHF root frame: этот shard уже закрыт PR #1323.
 Не делай broad renderer RE, coverage work, speculative taxonomy или runtime capture до доказанной необходимости.
 
 PR: BLOCKER / INPUT / OUTPUT / CONSUMER / GATES_CHANGED / LIMITS / TESTS / NEXT_OWNER.
@@ -84,22 +86,27 @@ Self-merge после зелёного CI, проверки свежего main 
 - retail BODY0 identity: positive-consumed
 - BODY0/VHF composition formula: positive-consumed
 - exact BMW VHF identity: positive-available
+- exact BMW VHF HIERARCHY root frame: positive-available via SHIFT.BMWVHFHierarchyRootFrame/1
 - outer Vehicle render-snapshot affine bridge: positive-available
 - outer Vehicle -> exact VHF root relation: blocked
 - final bind proof: blocked
+
+ПРИОРИТЕТ СЕЙЧАС:
+consume SHIFT.BMWVHFHierarchyRootFrame/1 в strict relation-stage validator/adaptor. Проверяй exact root identity, MatrixNumber, parent-chain и row-vector matrix metadata, но НЕ заявляй unresolved outer Vehicle relation.
 
 Финальный production admission остаётся fail-closed. Не угадывай missing matrix/affine relation и не делай valid=true до positive final proof.
 
 Пока Process 1 закрывает relation:
 A) consume every newly-positive bind-path stage immediately;
-B) audit external-provider/frontier contracts against latest merged proofs;
-C) internalize highest-priority already-positive producer/owner handoff on the current vehicle chain;
-D) keep final bind packet/runtime admission seam ready and fail-closed;
-E) keep SHIFT.Process2RuntimeSchedulerAuthority/1 explicit; HostDevelopment 1/60 никогда не равен RetailEvidence;
-F) keep BODY0 selection -> persistent state -> freshness -> world-transform publication -> Vulkan handoff regressions green.
+B) consume exact BMW VHF hierarchy-root frame stage сейчас;
+C) audit external-provider/frontier contracts against latest merged proofs;
+D) internalize highest-priority already-positive producer/owner handoff on the current vehicle chain;
+E) keep final bind packet/runtime admission seam ready and fail-closed;
+F) keep SHIFT.Process2RuntimeSchedulerAuthority/1 explicit; HostDevelopment 1/60 никогда не равен RetailEvidence;
+G) keep BODY0 selection -> persistent state -> freshness -> world-transform publication -> Vulkan handoff regressions green.
 
 NO-IDLE FALLBACK:
-если A-F исчерпаны и нет нового positive handoff, НЕ останавливайся. Перейди в runtime-consumer-assist shard из SHIFT.PlayableSliceBlockerSwarm/1:
+если A-G исчерпаны и нет нового positive handoff, НЕ останавливайся. Перейди в runtime-consumer-assist shard из SHIFT.PlayableSliceBlockerSwarm/1:
 - подготовь/проверь strict typed consumer/adaptor для следующего outer Vehicle -> BMW VHF relation contract;
 - добавляй только blocker-specific validators/packet adapters/regressions, которые сокращают путь от proof до runtime admission;
 - по запросу P1 можешь строить reusable analysis/validation tooling, но не публиковать semantic truth.
@@ -137,29 +144,33 @@ Self-merge после зелёного CI и re-read main.
 
 Current positive state:
 - SHIFT.BMWVehicleRenderModelResourceJoin/1 positive
+- SHIFT.BMWVHFHierarchyRootFrame/1 positive via merged PR #1323
 - primary VHF exactly vehicles/bmw_m3_e36/bmw_m3_e36.vhf
 - Silverstone/Vulkan infrastructure positive
 - freshness-gated live transform sink ready
 
 Queue:
 A) keep exact BMW resource-driven bootstrap wired;
-B) reject basename/cockpit substitution;
-C) keep Silverstone + BMW Vulkan path continuously runnable from retail resources;
-D) accept only Process 2 freshness-gated matrices; reject stale/test-only core motion;
-E) fix only resource/render regressions blocking the slice.
+B) consume SHIFT.BMWVHFHierarchyRootFrame/1 in production BMW scene path;
+C) prove exact root-frame preservation through VHF parser -> scene/bootstrap transform -> runtime/Vulkan vehicle object frame;
+D) reject basename/cockpit substitution;
+E) keep Silverstone + BMW Vulkan path continuously runnable from retail resources;
+F) accept only Process 2 freshness-gated matrices; reject stale/test-only core motion;
+G) fix only resource/render regressions blocking the slice.
 
 NO-IDLE FALLBACK:
-если A-E исчерпаны и authentic transform всё ещё ждёт P1/P2, НЕ останавливайся. Перейди в resource-evidence-assist shard текущего blocker:
-- исследуй только exact canonical `vehicles/bmw_m3_e36/bmw_m3_e36.vhf`;
-- извлеки exact HIERARCHY root identity, MatrixNumber, parentage, stored root/local transform fields и explicit frame/resource metadata;
-- оформи narrow resource-only contract `SHIFT.BMWVHFHierarchyRootResourceSemantics/1` либо ещё более узкий frontier;
-- передай этот artifact PROCESS 1 для final executable/resource join.
+старый shard «извлечь exact HIERARCHY root frame» УЖЕ ЗАКРЫТ PR #1323 — не повторяй его.
+Если A-G исчерпаны и authentic transform всё ещё ждёт P1/P2, НЕ останавливайся. Перейди в resource-runtime-frame-assist shard:
+- проверь, что production scene path использует тот же exact root frame/matrix convention, что SHIFT.BMWVHFHierarchyRootFrame/1;
+- оформи `SHIFT.BMWVHFRootFrameSceneConsumer/1` либо более узкий fail-closed frontier;
+- если этот consumer уже полностью positive, разбирай только resource-backed terminal roots, явно раскрытые текущим Process 1 value slice.
 
 Запрещено в assist mode:
 - infer executable ownership из resource hierarchy;
 - visual similarity как proof;
 - считать static VHF transform dynamic vehicle pose;
-- самому публиковать outer Vehicle -> VHF semantic relation.
+- самому публиковать outer Vehicle -> VHF semantic relation;
+- делать broad resource audit без named consumer.
 
 Не скрывай отсутствие physics motion render-side animation. Camera ownership/timing остаётся Process 1 evidence -> Process 2 runtime -> Process 3 consumer.
 
@@ -171,4 +182,4 @@ Self-merge после зелёного CI и re-read main.
 
 After every merged cross-process handoff all processes re-read `main`. A process that was waiting on a larger final proof must first check whether a new positive stage now exists and consume it before declaring itself blocked.
 
-If its owned queue is exhausted, it must join the current shortest blocker swarm on its assigned non-overlapping shard instead of idling. Process 1 remains the final semantic authority.
+If an assigned shard was superseded by an upstream merge, retarget immediately. If the owned queue is exhausted, join the current shortest blocker swarm on the assigned non-overlapping shard instead of idling. Process 1 remains the final semantic authority.
