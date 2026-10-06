@@ -1,13 +1,14 @@
 {
   "format": "SHIFT.SelectedSessionPhysicsTweakerRateFrontier/1",
   "version": 1,
-  "status": "blocked-awaiting-exact-decoded-resource-payload",
-  "ready": false,
-  "blocker": "selected-session-physics-tweaker-rate-admission",
+  "status": "selected-session-rate-admitted",
+  "ready": true,
+  "blocker": "retail-inner-substep-execution-admission",
   "consumer": "RetailOuterSchedulerContract::admit_loaded_inner_rate(rate_hz)",
   "positive_inputs": [
     "SHIFT.RetailOuterUpdateCadence/1",
-    "SHIFT.BMWOffset33bSelectorGeometryInputs/1"
+    "SHIFT.BMWOffset33bSelectorGeometryInputs/1",
+    "SHIFT.SelectedSessionPhysicsTweakerRate/1"
   ],
   "supporting_observations": [
     "SHIFT.PhysicsTweakerExtractionManifestObservation/1"
@@ -33,14 +34,14 @@
     "extracted_tree_adapter": "tools/materialize_s5_selected_physics_tweaker_from_extraction.py",
     "extracted_zip_adapter": "tools/materialize_s5_selected_physics_tweaker_from_extraction_zip.py",
     "positive_format": "SHIFT.SelectedSessionPhysicsTweakerRate/1",
+    "positive_artifact": "evidence/s5_selected_physics_tweaker_rate.json",
+    "native_handoff": "native_runtime/src/materialized_selected_session_physics_tweaker_rate.hpp",
     "property_name": "tick rate",
     "requirements": [
       "decoded payload hash matches the already hash-locked retail entry",
       "exactly one prop named tick rate exists",
       "data value is finite, positive, integral and fits recovered uint16 load",
-      "positive SHIFT.RetailOuterUpdateCadence/1 still requires loaded PhysicsTweaker value",
-      "extracted-tree adapter also requires observed offset 0x31800, exact xmem/lzx:1frame(s) method, CRC field 0xa0f8c093 and status ok before decoded-hash admission",
-      "extracted-ZIP adapter rejects unsafe paths, duplicate manifests, cross-root XML substitution and decoded-member size drift before delegating to the extracted-tree and canonical decoded-hash gates"
+      "positive SHIFT.RetailOuterUpdateCadence/1 still requires loaded PhysicsTweaker value"
     ],
     "positive_artifact_scope": "admits the exact loaded numeric rate only; native persistent BODY inner-substep execution remains a separate consumer gate"
   },
@@ -48,18 +49,21 @@
     "constructor_default_rate_hz": 180,
     "constructor_default_is_selected_session_value": false,
     "exact_resource_identity_known": true,
-    "type2_extraction_manifest_observed": true,
-    "type2_extraction_manifest_entry_metadata_matches": true,
-    "type2_extraction_manifest_exact_identity_gate_ready": true,
-    "exact_decoded_xml_bytes_available_to_current_materializer": false
+    "exact_archive_sha256_verified_this_run": true,
+    "exact_decoded_xml_sha256_verified_this_run": true,
+    "exact_decoded_xml_bytes_available_to_current_materializer": true,
+    "unique_loaded_tick_rate_proven": true,
+    "selected_session_rate_hz": 180,
+    "selected_session_inner_substep_seconds": 0.005555555555555556
   },
   "handoff": {
-    "loaded_inner_physics_rate_admitted": false,
+    "loaded_inner_physics_rate_admitted": true,
     "retail_inner_substep_execution_admitted": false,
-    "next_exact_action": "provide either the extracted tree+manifest or the extracted-tree ZIP to the corresponding adapter, verify decoded SHA-256, then parse the unique tick rate property"
+    "next_exact_action": "admit the materialized exact PC 180 Hz handoff into RetailOuterSchedulerContract and execute the existing accumulator-driven persistent BODY inner batch at 1/180 s"
   },
   "limits": {
     "constructor_default_180_may_close_blocker": false,
+    "constructor_default_equal_to_loaded_value_only_after_resource_proof": true,
     "community_default_value_may_close_blocker": false,
     "modded_360_or_720_value_may_close_blocker": false,
     "manifest_crc_may_replace_decoded_sha256": false,

@@ -1,3 +1,4 @@
+#include "materialized_selected_session_physics_tweaker_rate.hpp"
 #include "selected_session_physics_tweaker_rate_handoff.hpp"
 
 #include <cmath>
@@ -24,9 +25,8 @@ RetailOuterSchedulerContract make_scheduler() {
 }
 
 SelectedSessionPhysicsTweakerRateHandoff make_fixture_handoff() {
-    // 360 Hz is a regression fixture only. It is not promoted as the retail
-    // selected-session rate; production admission remains blocked on the exact
-    // attached PC PhysicsTweaker payload.
+    // 360 Hz remains a regression fixture only. The retail selected-session
+    // value is now materialized separately from the exact hash-verified PC BFF.
     SelectedSessionPhysicsTweakerRateHandoff handoff{};
     handoff.format = kSelectedSessionPhysicsTweakerRateFormat;
     handoff.ready = true;
@@ -157,6 +157,21 @@ int main() {
                 !unverified_extracted_scheduler.loaded_inner_rate_admitted,
             "extracted-manifest handoff bypassed decoded SHA verification");
 
+        auto pc_scheduler = make_scheduler();
+        const double pc_rate = admit_selected_session_physics_tweaker_rate(
+            pc_scheduler,
+            kMaterializedSelectedSessionPhysicsTweakerRateHandoff);
+        require(
+            pc_scheduler.loaded_inner_rate_admitted && pc_rate == 180.0,
+            "materialized exact PC selected-session rate was not admitted");
+        require(
+            std::abs(pc_scheduler.inner_substep_seconds() - (1.0 / 180.0)) < 1e-15,
+            "materialized exact PC rate did not drive 1/180 scheduler dt");
+        require(
+            !kMaterializedSelectedSessionPhysicsTweakerRateHandoff
+                 .retail_inner_substep_execution_admitted,
+            "materialized rate handoff prematurely claimed inner execution");
+
         std::cout
             << "{\"format\":\"SHIFT.SelectedSessionPhysicsTweakerRateNativeHandoffRegression/1\","
             << "\"ready\":true,"
@@ -167,7 +182,10 @@ int main() {
             << "\"manifest_only_mode_rejected\":true,"
             << "\"forbidden_substitutes_rejected\":true,"
             << "\"fixture_rate_hz\":360,"
-            << "\"fixture_is_retail_selected_session_rate\":false}\n";
+            << "\"fixture_is_retail_selected_session_rate\":false,"
+            << "\"materialized_pc_rate_hz\":180,"
+            << "\"materialized_pc_rate_admitted\":true,"
+            << "\"inner_execution_admitted\":false}\n";
         return 0;
     } catch (const std::exception& exc) {
         std::cerr << exc.what() << '\n';

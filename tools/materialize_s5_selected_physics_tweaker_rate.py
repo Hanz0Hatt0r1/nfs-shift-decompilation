@@ -2,12 +2,15 @@
 """Materialize the selected-session PhysicsTweaker tick rate fail-closed.
 
 The tool accepts either the exact retail PHYSICSBOOTFLOW.bff or already-decoded
-entry bytes.  It never substitutes the cPhysicsManager constructor default.
+entry bytes. It never substitutes the cPhysicsManager constructor default.
 Admission requires the decoded payload SHA-256 already pinned by
-SHIFT.BMWOffset33bSelectorGeometryInputs/1 and a unique positive integral
-`<prop name="tick rate" data="..."/>` value.
+SHIFT.BMWOffset33bSelectorGeometryInputs/1 and exactly one positive integral
+loaded `<prop name="tick rate" data="..."/>` value. Retail PhysicsTweaker XML
+also carries a separate `<prop name="tick rate" type="U16"/>` declaration; when
+a declaration is present it is validated independently and is never counted as
+a second loaded value.
 
-Optionally it emits a typed native C++ handoff header.  That header is generated
+Optionally it emits a typed native C++ handoff header. That header is generated
 only after the same hash/resource/XML validation has succeeded, so the native
 scheduler never needs a manually copied rate literal.
 """
@@ -34,6 +37,7 @@ GEOMETRY_FORMAT = "SHIFT.BMWOffset33bSelectorGeometryInputs/1"
 CADENCE_FORMAT = "SHIFT.RetailOuterUpdateCadence/1"
 EXPECTED_RESOURCE_PATH = "vehicles/physics/physicstweaker.xml"
 PROPERTY_NAME = "tick rate"
+PROPERTY_TYPE = "U16"
 NATIVE_HANDOFF_VARIABLE = "kMaterializedSelectedSessionPhysicsTweakerRateHandoff"
 
 
@@ -129,19 +133,51 @@ def _parse_tick_rate(decoded: bytes, expected_sha256: str) -> int:
     except ET.ParseError as exc:
         raise ValueError(f"PhysicsTweaker XML parse failed: {exc}") from exc
 
-    matches = [
+    named = [
         element
         for element in root.iter()
         if element.tag == "prop" and element.get("name") == PROPERTY_NAME
     ]
-    if len(matches) != 1:
+    declarations = [
+        element
+        for element in named
+        if element.get("type") is not None and not (element.get("data") or "").strip()
+    ]
+    loaded = [
+        element
+        for element in named
+        if (element.get("data") or "").strip()
+    ]
+    malformed = [
+        element
+        for element in named
+        if element not in declarations and element not in loaded
+    ]
+
+    if malformed:
         raise ValueError(
-            f"expected exactly one PhysicsTweaker {PROPERTY_NAME!r} property; "
-            f"found {len(matches)}"
+            "PhysicsTweaker tick rate property has neither a declaration type nor a loaded data value"
         )
-    token = matches[0].get("data")
-    if token is None or not token.strip():
-        raise ValueError("PhysicsTweaker tick rate data attribute missing")
+    if declarations:
+        if len(declarations) != 1:
+            raise ValueError(
+                "expected at most one PhysicsTweaker tick rate declaration; "
+                f"found {len(declarations)}"
+            )
+        declaration_type = (declarations[0].get("type") or "").strip()
+        if declaration_type != PROPERTY_TYPE:
+            raise ValueError(
+                "PhysicsTweaker tick rate declaration type mismatch: "
+                f"expected {PROPERTY_TYPE!r}, got {declaration_type!r}"
+            )
+    if len(loaded) != 1:
+        raise ValueError(
+            "expected exactly one PhysicsTweaker tick rate loaded data value; "
+            f"found {len(loaded)}"
+        )
+
+    token = loaded[0].get("data")
+    assert token is not None
     try:
         value = Decimal(token.strip())
     except InvalidOperation as exc:

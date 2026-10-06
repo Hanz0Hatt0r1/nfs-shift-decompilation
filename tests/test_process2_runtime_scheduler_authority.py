@@ -63,9 +63,8 @@ def test_runtime_scheduler_authority_has_strict_outer_retail_seam():
     assert "does not connect dispatch admission to a render frame" in session_source
     assert "No constructor/default rate or host 1/60 fallback exists" in session_source
 
-    # Constructor-default 180 Hz may exist in evidence, but it must never be
-    # encoded as an admitted runtime inner rate. Avoid a raw substring check:
-    # the exact recovered 1/30 constant itself contains the digits "180".
+    # The generic runtime seam must not hardcode 180 Hz. The exact selected-session
+    # value lives only in the hash-verified materialized handoff.
     for forbidden in (
         "kRetailInnerRateHz = 180",
         "kRetailLoadedInnerRateHz = 180",
@@ -84,7 +83,7 @@ def test_runtime_scheduler_authority_has_strict_outer_retail_seam():
     )
 
 
-def test_process2_scheduler_authority_consumes_outer_proof_but_blocks_inner_rate():
+def test_process2_scheduler_authority_consumes_exact_pc_rate_but_blocks_execution():
     packet = json.loads(
         (ROOT / "evidence/process2_runtime_scheduler_authority.json").read_text(
             encoding="utf-8"
@@ -92,11 +91,17 @@ def test_process2_scheduler_authority_consumes_outer_proof_but_blocks_inner_rate
     )
 
     assert packet["format"] == "SHIFT.Process2RuntimeSchedulerAuthority/1"
-    assert packet["status"] == "outer-retail-seam-ready-inner-rate-blocked"
+    assert packet["status"] == "outer-retail-seam-ready-inner-rate-admitted-execution-pending"
     assert packet["input"]["retail_scheduler_cadence_handoff_present"] is True
     assert packet["input"]["retail_scheduler_cadence_handoff"] == "SHIFT.RetailOuterUpdateCadence/1"
     assert packet["input"]["selected_rate_materializer_contract"] == (
         "SHIFT.SelectedSessionPhysicsTweakerRate/1"
+    )
+    assert packet["input"]["selected_rate_positive_artifact"] == (
+        "evidence/s5_selected_physics_tweaker_rate.json"
+    )
+    assert packet["input"]["selected_rate_materialized_native_handoff"] == (
+        "native_runtime/src/materialized_selected_session_physics_tweaker_rate.hpp"
     )
     assert packet["input"]["selected_rate_typed_native_handoff_ready"] is True
     assert packet["input"]["outer_nominal_frequency_hz"] == 30.0
@@ -109,7 +114,9 @@ def test_process2_scheduler_authority_consumes_outer_proof_but_blocks_inner_rate
         "accumulator - substep_count / rate"
     )
     assert packet["input"]["loaded_rate_shape"] == "positive integral uint16"
-    assert packet["input"]["loaded_inner_rate_present"] is False
+    assert packet["input"]["loaded_inner_rate_present"] is True
+    assert packet["input"]["loaded_inner_rate_hz"] == 180
+    assert packet["input"]["loaded_inner_substep_seconds"] == 1 / 180
 
     output = packet["output"]
     assert output["scheduler_authority_explicit"] is True
@@ -122,6 +129,7 @@ def test_process2_scheduler_authority_consumes_outer_proof_but_blocks_inner_rate
     assert output["selected_rate_materializer_can_emit_typed_native_handoff"] is True
     assert output["selected_rate_native_handoff_exact_resource_identity_locked"] is True
     assert output["selected_rate_native_handoff_forbidden_substitutes_rejected"] is True
+    assert output["selected_rate_exact_pc_value_materialized"] is True
     assert output["retail_inner_substep_count_commit_seam_ready"] is True
     assert output["retail_inner_substep_provider_batch_bridge_ready"] is True
     assert output["provider_batch_uses_recovered_inner_substep_seconds"] is True
@@ -129,12 +137,13 @@ def test_process2_scheduler_authority_consumes_outer_proof_but_blocks_inner_rate
     assert output["retail_outer_dispatch_provider_transaction_ready"] is True
     assert output["retail_outer_dispatch_pre_admission_rollback_ready"] is True
     assert output["signed_accumulator_residual_preserved"] is True
-    assert output["loaded_inner_rate_admitted"] is False
+    assert output["loaded_inner_rate_admitted"] is True
     assert output["inner_substep_execution_admitted"] is False
     assert output["render_loop_equated_to_outer_dispatch"] is False
 
     consumers = packet["consumer"]
-    assert any("--native-handoff-out" in consumer for consumer in consumers)
+    assert "evidence/s5_selected_physics_tweaker_rate.json" in consumers
+    assert "native_runtime/src/materialized_selected_session_physics_tweaker_rate.hpp" in consumers
     assert any(
         "admit_selected_session_physics_tweaker_rate" in consumer
         for consumer in consumers
@@ -149,12 +158,14 @@ def test_process2_scheduler_authority_consumes_outer_proof_but_blocks_inner_rate
     )
 
     limits = packet["limits"]
+    assert any("does not infer 180 Hz" in limit for limit in limits)
     assert any("does not auto-schedule" in limit for limit in limits)
     assert any("does not promote Phase 701" in limit for limit in limits)
 
     ownership = packet["ownership"]
     assert ownership["retail_outer_cadence_blocker_owner"] == "Process 1 positive"
-    assert ownership["loaded_inner_rate_blocker_owner"] == "resource/static join"
+    assert ownership["loaded_inner_rate_blocker_owner"] == "resource/static join positive"
+    assert ownership["inner_substep_execution_blocker_owner"] == "native runtime consumption"
     assert ownership["process2_state"] == (
-        "typed-selected-rate-handoff-and-atomic-retail-dispatch-bridge-ready-awaiting-exact-pc-rate"
+        "exact-pc-rate-materialized-awaiting-production-inner-batch-consumption"
     )
