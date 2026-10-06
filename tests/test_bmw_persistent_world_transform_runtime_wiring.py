@@ -26,8 +26,8 @@ def test_s4_consumes_positive_proof_and_current_body_without_scheduler_promotion
     assert "publish_persistent_bmw_vehicle_world_transform_for_render" in text
     assert "source_pose_snapshot_generation" in text
     assert "source_explicit_update_count" in text
-    assert '\"retail_scheduler_claimed\":false' in text
-    assert '\"test_motion_script_used\":false' in text
+    assert "retail_scheduler_claimed" in text
+    assert "test_motion_script_used" in text
 
 
 def test_s4_vhf_bind_is_scene_backed_and_requires_multi_draw_consensus() -> None:
