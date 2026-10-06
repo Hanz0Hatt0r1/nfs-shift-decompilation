@@ -2,9 +2,11 @@
   "adjudication": {
     "FUN_0070fe90_return_aliases_source_backed_cPhysicsManager_instance": true,
     "active_controller_list_reaches_manager_timing_gate": true,
+    "cPhysicsManager_initializer_slot_plus_0x04_reaches_30hz_configuration": true,
     "cPhysicsManager_registered_in_active_controller_list": true,
     "default_manager_dispatch_reaches_source_backed_cPhysicsManager_slot_plus_0x18": true,
     "inner_fixed_step_1_over_rate_proven": true,
+    "one_steady_scheduler_invocation_per_default_manager_dispatch_proven": true,
     "physics_rate_field_domain_and_reciprocal_proven": true,
     "retail_cadence_admitted": true,
     "retail_outer_manager_nominal_frequency_30hz_proven": true,
@@ -60,6 +62,7 @@
     "enabled_field_offset": "0xdc",
     "enabled_value": 1,
     "initializer": "FUN_00710a70",
+    "initializer_bound_to_cPhysicsManager_vtable": true,
     "mode_field_offset": "0xf8",
     "mode_value": 0,
     "nominal_hz_and_ms_gate_are_distinct": true,
@@ -171,13 +174,22 @@
       "FUN_00710a70": 703680,
       "FUN_007117e0": 704543,
       "FUN_00712450": 705128,
+      "FUN_00712890": 705426,
       "FUN_00713050": 705910,
+      "FUN_00714a10": 707183,
+      "FUN_00715240": 707624,
       "FUN_00715380": 707679,
       "FUN_007155e0": 707770,
       "FUN_007155e9": 707779,
       "FUN_00d36000": 1435307
     },
-    "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+    "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "vtable_anchors": {
+      "alternate_slot_plus_0x1c": "FUN_0070ffb0",
+      "initializer_slot_plus_0x04": "FUN_00710a70",
+      "scheduler_slot_plus_0x18": "FUN_00711b50",
+      "vtable": "0x00b04524"
+    }
   },
   "ready": true,
   "runtime_handoff": {
@@ -187,7 +199,8 @@
     "outer_schedule": {
       "default_mode_required": true,
       "gate_period_ms": 33,
-      "nominal_frequency_hz": 30.0
+      "nominal_frequency_hz": 30.0,
+      "steady_scheduler_invocations_per_dispatch": 1
     },
     "retail_cadence_admitted": true,
     "scheduler_authority": "RetailEvidence",
@@ -213,6 +226,16 @@
     "producer": "FUN_00710780",
     "producer_to_FUN_00715380_param1_proven": true,
     "state_dispatch_field_offset": "0x13c"
+  },
+  "scheduler_multiplicity": {
+    "multi_call_flag": "DAT_00c104a4",
+    "multi_call_flag_initial_storage": "PE zero-fill",
+    "normal_calls_to_FUN_007155e0_per_FUN_0070f940": 1,
+    "scheduler_object_initial_state": 1,
+    "source_visible_writers": 0,
+    "startup_state_transition": "1 -> 2 -> 3",
+    "steady_active_state": 3,
+    "steady_state_scheduler_invocations_per_manager_dispatch": 1
   },
   "status": "retail-cadence-admitted",
   "version": 1
