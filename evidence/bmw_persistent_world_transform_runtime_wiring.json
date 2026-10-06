@@ -1,0 +1,86 @@
+{
+  "format": "SHIFT.BMWPersistentWorldTransformRuntimeWiring/1",
+  "version": 1,
+  "status": "production-post-step-persistent-world-transform-wiring-ready",
+  "ready": true,
+  "BLOCKER": "S4 BMW-persistent-world-transform-admission",
+  "INPUT": {
+    "body0_bind_proof": "SHIFT.BMWBody0BindFrameProof/1",
+    "body0_bind_packet": "SHIFT.NativeBMWBody0BindFrameProofPacket/1",
+    "body0_bind_runtime_admission": "SHIFT.NativeBMWBody0BindFrameRuntimeAdmission/1",
+    "retail_body_owner_identity": "SHIFT.NativeRetailGlobalVehicleBodyOwnerIdentity/1",
+    "persistent_world_transform": "SHIFT.PersistentBMWVehicleWorldTransform/1",
+    "renderer_consumer": "SHIFT.PersistentVehicleRuntimeWiring/1",
+    "scene_static_bind_source": "prepared vehicle-child SHIFT.VulkanWorldTransformPacket/1"
+  },
+  "OUTPUT": {
+    "runtime_wiring": "SHIFT.BMWPersistentWorldTransformRuntimeWiring/1",
+    "fixed_step_order": [
+      "admit positive BBFP before fixed_step argument evaluation completes",
+      "execute native_state.fixed_step(intent)",
+      "resolve authoritative prepared BMW vehicle-child SVWT bind with all vehicle draws in consensus",
+      "commit_retail_bmw_vehicle_world_transform from current BODY0 pose",
+      "publish_persistent_bmw_vehicle_world_transform_for_render",
+      "phase715_after_fixed_step freshness-gated Vulkan upload",
+      "phase648_after_fixed_step test-script regression hook last"
+    ],
+    "vehicle_world_transform_ready": true
+  },
+  "CONSUMER": "S5 retail outer-update scheduler/cadence ownership and admission",
+  "provenance": {
+    "body0_bind_is_positive_only": true,
+    "body_index": 0,
+    "body0_pose_freshness_fields": [
+      "body_pose_snapshot_generation",
+      "explicit_update_count",
+      "source_origin",
+      "source_basis"
+    ],
+    "static_vhf_bind": {
+      "source": "native scene vehicle child world_transform.svwt",
+      "packet_format": "SHIFT.VulkanWorldTransformPacket/1",
+      "magic": "SVWT",
+      "version": 1,
+      "convention": 1,
+      "matrix_bytes": 64,
+      "all_vehicle_draws_must_match_exactly": true,
+      "arbitrary_vehicle_draw_selection_allowed": false
+    },
+    "persistent_commit": {
+      "function": "commit_retail_bmw_vehicle_world_transform",
+      "publication": "publish_persistent_bmw_vehicle_world_transform_for_render",
+      "same_fixed_step_continuation_before_phase715": true
+    }
+  },
+  "GATES_CHANGED": {
+    "vehicle_world_transform_ready": true,
+    "retail_cadence_admitted": false,
+    "retail_control_chain_complete": false,
+    "retail_camera_follow_ready": false
+  },
+  "LIMITS": {
+    "retail_scheduler_or_cadence_proven": false,
+    "host_fixed_step_frequency_is_retail_evidence": false,
+    "input_control_chain_completed": false,
+    "camera_follow_completed": false,
+    "original_game_executed": false,
+    "new_runtime_capture_used": false,
+    "test_motion_script_required": false,
+    "static_scene_transform_relabelled_as_dynamic_pose": false,
+    "vehicle_world_transform_sample_claimed_from_retail_capture": false,
+    "production_capability_not_full_slice_execution": true
+  },
+  "TESTS": {
+    "native": [
+      "prepared multi-submesh vehicle SVWT consensus accepted",
+      "disagreeing vehicle-child matrices rejected",
+      "SVWT ABI drift rejected",
+      "scene with no vehicle draw rejected",
+      "no positive BBFP admission remains inert",
+      "positive BBFP + current BODY0 commits generation 1 and retains freshness provenance",
+      "published transform remains readable as current"
+    ],
+    "source_order": "admission < fixed-step completion < S4 commit/publish < Phase715 < Phase648 regression hook"
+  },
+  "NEXT_STEP": "prove and consume retail outer-update scheduler/cadence ownership without treating host 1/60 or loop frequency as retail evidence"
+}
