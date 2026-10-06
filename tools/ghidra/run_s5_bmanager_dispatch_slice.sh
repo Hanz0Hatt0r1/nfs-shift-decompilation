@@ -7,10 +7,11 @@ Usage:
   GHIDRA_HOME=/path/to/ghidra ./tools/ghidra/run_s5_bmanager_dispatch_slice.sh \
     <project-dir> <project-name> <program-name> <functions-jsonl> <output-dir>
 
-Exports only the narrow BManager/cPhysicsManager S5 dispatch-registration slice
-from an already analyzed SHIFT.exe project, then builds a fail-closed frontier.
-The functions-jsonl argument must be the matching retail Ghidra export used for
-ABI validation. No game/runtime execution is performed.
+Exports the corrected narrow BManager/cPhysicsManager registration + active
+controller-list + timing-gate + default +0x18 dispatch slice from an already
+analyzed retail SHIFT.exe project, then builds a fail-closed frontier. The
+functions-jsonl argument must be the matching retail Ghidra ABI export.
+No game/runtime execution is performed.
 EOF
 }
 
@@ -40,11 +41,11 @@ INSTRUCTIONS="$OUT_DIR/s5_bmanager_dispatch_instructions.jsonl"
 FRONTIER="$OUT_DIR/s5_bmanager_dispatch_frontier.json"
 
 TARGETS=(
-  FUN_00647b70
-  FUN_00647c60
-  FUN_00647cf0
-  FUN_00647da0
-  FUN_0065bb50
+  FUN_00647d80
+  FUN_00647ef0
+  FUN_0065b8b0
+  FUN_006626a0
+  FUN_00662880
   FUN_00d36000
   FUN_006485b0
   FUN_00662600
@@ -64,5 +65,5 @@ python3 "$SCRIPT_DIR/analyze_s5_bmanager_dispatch_slice.py" \
   "$REPO_ROOT/evidence/physics_manager_scheduler_entry_owner.json" \
   --json-out "$FRONTIER"
 
-echo "S5 targeted instruction slice: $INSTRUCTIONS"
+echo "S5 corrected BManager instruction slice: $INSTRUCTIONS"
 echo "S5 BManager dispatch frontier: $FRONTIER"
