@@ -62,6 +62,23 @@ jobs:
         run: cmake -S native_capture -B native_capture/build -A Win32
       - name: Build D3D9 capture producer
         run: cmake --build native_capture/build --config Release
+      - name: Verify selected-session rate sampler self-test
+        shell: pwsh
+        run: |
+          $sampler = Resolve-Path "native_capture/build/Release/shift_selected_session_rate_snapshot.exe"
+          $snapshot = Join-Path $env:RUNNER_TEMP "selected_session_rate_snapshot.json"
+          & $sampler --self-test --stable-samples 3 --output $snapshot
+          if ($LASTEXITCODE -ne 0) {
+            throw "selected-session rate sampler self-test failed with exit code $LASTEXITCODE"
+          }
+          $report = Get-Content -Raw $snapshot | ConvertFrom-Json
+          if ($report.format -ne "SHIFT.SelectedSessionPhysicsTweakerRateSnapshot/1" -or
+              -not $report.ready -or -not $report.self_test -or
+              $report.selected_session.loaded_tick_rate_hz -ne 240 -or
+              $report.adjudication.retail_inner_substep_execution_admitted) {
+            $report | ConvertTo-Json -Depth 8 | Write-Host
+            throw "selected-session rate sampler self-test contract mismatch"
+          }
       - name: Verify D3D9 proxy has no VC runtime dependency
         shell: pwsh
         run: |
@@ -143,4 +160,5 @@ jobs:
           path: |
             native_capture/build/Release/d3d9.dll
             native_capture/build/Release/shift_d3d9_proxy_smoke.exe
+            native_capture/build/Release/shift_selected_session_rate_snapshot.exe
           if-no-files-found: error
