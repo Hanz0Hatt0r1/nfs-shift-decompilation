@@ -1,10 +1,10 @@
 """Current Process 2 audit overlay for the native vehicle provider frontier.
 
-The Phase 699/708 frontier is intentionally retained as historical coordination
-state.  This module overlays only proof states that have changed on the current
-Silverstone + BMW bind/world-transform chain.  It does not reinterpret any of
-the nine physics-provider semantics and therefore cannot turn a provider into
-``implement_now`` merely because the bind path advanced.
+The Phase 699/708 frontier is retained as coordination history. This module
+overlays proof states that have changed on the current Silverstone + BMW chain.
+It does not reinterpret any of the nine physics-provider semantics and therefore
+cannot turn a provider into ``implement_now`` merely because bind, render or
+scheduler infrastructure advanced.
 """
 from __future__ import annotations
 
@@ -43,11 +43,12 @@ def _require(condition: bool, message: str) -> None:
 def build_current_frontier() -> dict[str, Any]:
     """Return the current fail-closed provider/frontier audit.
 
-    The overlay consumes only already-merged proof milestones.  The remaining
+    The overlay consumes only already-merged proof milestones. The remaining
     transform blocker is narrowed to the exact outer Vehicle -> canonical BMW
     VHF root relation and the final positive bind proof derived from it.
     Physics-provider rows stay unchanged until a provider-specific producer or
-    ownership proof is positive.
+    ownership proof is positive. The S5 retail outer cadence is positive, while
+    the selected-session PhysicsTweaker inner rate remains independently blocked.
     """
 
     legacy = build_legacy_frontier()
@@ -68,10 +69,15 @@ def build_current_frontier() -> dict[str, Any]:
     report["upstream_frontier"] = LEGACY_FORMAT
     report["refresh_after_phase"] = 716
     report["refresh_label"] = "Process 2 Phase 717 current-chain proof audit"
+    report["scheduler_refresh"] = (
+        "S5 positive retail outer cadence + atomic explicit dispatch; "
+        "selected-session inner rate remains blocked"
+    )
     report["deepest_native_chain"] = (
         "persistent retail BODY0 state -> fail-closed BODY0/VHF composition -> "
         "transactional fresh vehicle world-transform publication -> Process 3 live Vulkan sink; "
-        "exact outer Vehicle/VHF root relation remains the transform-semantic blocker"
+        "S5 provides positive RetailEvidence outer cadence and atomic explicit dispatch, while "
+        "exact selected-session inner rate and outer Vehicle/VHF root relation remain independent blockers"
     )
 
     joins = {row["id"]: row for row in report["cross_chain_joins"]}
@@ -97,12 +103,13 @@ def build_current_frontier() -> dict[str, Any]:
                 "positive SHIFT.BMWBody0BindFrameProof/1 derived from that relation is not committed",
             ],
             "additional_dependency": (
-                "none on renderer transport; retail scheduler/cadence is a separate explicit authority gate "
-                "under SHIFT.Process2RuntimeSchedulerAuthority/1"
+                "none on renderer transport or retail outer cadence; S5 already admits RetailEvidence outer cadence, "
+                "while the selected-session PhysicsTweaker inner rate remains a separate resource/static gate"
             ),
             "policy": (
                 "consume the next positive outer Vehicle/VHF relation immediately; do not reopen BODY0 construction/resource/session proofs, "
-                "guess an affine relation, promote an identity-valued VHF root matrix, bypass final bind admission, or reuse host 1/60 as retail cadence"
+                "guess an affine relation, promote an identity-valued VHF root matrix, bypass final bind admission, "
+                "reuse host 1/60 as retail cadence, or substitute constructor-default 180 Hz for the selected-session rate"
             ),
         }
     )
@@ -129,7 +136,7 @@ def build_current_frontier() -> dict[str, Any]:
         "provider_inventory_changed": False,
         "newly_positive_provider_or_owner_handoff_internalizable": False,
         "reason": (
-            "latest merged positive proofs advance BODY0/bind/render-frame identity and transport, "
+            "latest merged positive proofs advance BODY0/bind/render-frame identity, transport and retail outer scheduling, "
             "but do not close any remaining provider-specific producer/ownership blocker"
         ),
         "fun_007682c0_runtime_body0_mutation_internalized": True,
@@ -141,7 +148,11 @@ def build_current_frontier() -> dict[str, Any]:
     report["scheduler_authority"] = {
         "contract": SCHEDULER_FORMAT,
         "authority_explicit": True,
-        "retail_cadence_admitted": False,
+        "retail_cadence_admitted": True,
+        "retail_outer_dispatch_transaction_ready": True,
+        "loaded_inner_rate_admitted": False,
+        "inner_substep_execution_admitted": False,
+        "render_loop_equated_to_outer_dispatch": False,
         "host_development_1_60_is_retail_evidence": False,
     }
 
@@ -159,6 +170,11 @@ def build_current_frontier() -> dict[str, Any]:
             "body0_bind_frame_proof_ready": False,
             "retail_vehicle_world_transform_ready": False,
             "scheduler_authority_explicit": True,
+            "retail_outer_cadence_ready": True,
+            "retail_outer_dispatch_transaction_ready": True,
+            "loaded_inner_rate_admitted": False,
+            "inner_substep_execution_admitted": False,
+            "render_loop_equated_to_outer_dispatch": False,
             "host_1_60_is_retail_evidence": False,
         }
     )
@@ -187,6 +203,11 @@ def contract() -> dict[str, Any]:
         "BODY0_bind_frame_proof_ready": False,
         "retail_vehicle_world_transform_ready": False,
         "scheduler_authority_contract": SCHEDULER_FORMAT,
+        "retail_outer_cadence_admitted": True,
+        "retail_outer_dispatch_transaction_ready": True,
+        "loaded_inner_rate_admitted": False,
+        "inner_substep_execution_admitted": False,
+        "render_loop_equated_to_outer_dispatch": False,
         "host_1_60_is_retail_evidence": False,
     }
 
