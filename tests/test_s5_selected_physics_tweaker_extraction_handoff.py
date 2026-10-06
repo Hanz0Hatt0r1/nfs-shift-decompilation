@@ -91,6 +91,7 @@ def test_resolves_successful_type2_manifest_entry_exactly(tmp_path: Path):
     assert metadata == {
         "entry_index": 49,
         "entry_path": "vehicles/physics/physicstweaker.xml",
+        "offset": "0x31800",
         "compression_type": 2,
         "compressed_size": 2452,
         "uncompressed_size": 21762,
@@ -112,19 +113,37 @@ def test_rejects_manifest_metadata_drift_before_decoded_hash_admission(
         MODULE.resolve_extracted_entry(root, manifest, _identity())
 
 
-def test_rejects_non_ok_or_non_lzx_extraction_manifest(tmp_path: Path):
+def test_rejects_non_ok_extraction_manifest(tmp_path: Path):
     root = tmp_path / "extracted"
     _write_extracted_entry(root)
+    manifest = tmp_path / "failed.csv"
+    _write_manifest(manifest, [_manifest_row(status="error")])
 
-    failed_manifest = tmp_path / "failed.csv"
-    _write_manifest(failed_manifest, [_manifest_row(status="error")])
     with pytest.raises(ValueError, match="status is not ok"):
-        MODULE.resolve_extracted_entry(root, failed_manifest, _identity())
+        MODULE.resolve_extracted_entry(root, manifest, _identity())
 
-    wrong_method_manifest = tmp_path / "wrong-method.csv"
-    _write_manifest(wrong_method_manifest, [_manifest_row(method="zlib")])
-    with pytest.raises(ValueError, match="not XMem/LZX"):
-        MODULE.resolve_extracted_entry(root, wrong_method_manifest, _identity())
+
+@pytest.mark.parametrize(
+    ("override", "message"),
+    [
+        ({"offset": "0x31801"}, "offset drift"),
+        ({"method": "xmem/lzx:2frame(s)"}, "method drift"),
+        ({"method": "zlib"}, "method drift"),
+        ({"crc_field": "0xa0f8c094"}, "CRC field drift"),
+    ],
+)
+def test_rejects_exact_extraction_identity_drift_before_hash_admission(
+    tmp_path: Path,
+    override: dict[str, object],
+    message: str,
+):
+    root = tmp_path / "extracted"
+    _write_extracted_entry(root)
+    manifest = tmp_path / "drift.csv"
+    _write_manifest(manifest, [_manifest_row(**override)])
+
+    with pytest.raises(ValueError, match=message):
+        MODULE.resolve_extracted_entry(root, manifest, _identity())
 
 
 def test_extraction_adapter_delegates_final_hash_and_rate_admission_to_canonical_tool(
@@ -177,12 +196,17 @@ def test_extraction_adapter_delegates_final_hash_and_rate_admission_to_canonical
     assert verification["archive_sha256_verified_this_run"] is False
     assert verification["extraction_manifest_verified_this_run"] is True
     assert verification["extraction_manifest_entry"]["entry_index"] == 49
+    assert verification["extraction_manifest_entry"]["offset"] == "0x31800"
+    assert verification["extraction_manifest_entry"]["method"] == "xmem/lzx:1frame(s)"
     assert verification["extraction_manifest_entry"]["crc_field"] == "0xa0f8c093"
 
 
 def test_adapter_source_cannot_promote_manifest_metadata_without_decoded_hash():
     source = TOOL.read_text(encoding="utf-8")
     assert "decoded XML bytes still have to pass the canonical hash" in source
+    assert "EXPECTED_OFFSET = 0x31800" in source
+    assert 'EXPECTED_METHOD = "xmem/lzx:1frame(s)"' in source
+    assert "EXPECTED_CRC_FIELD = 0xA0F8C093" in source
     assert "materialize(" in source
     assert "decoded_entry_path=decoded_path" in source
     assert "rate_hz = 180" not in source
