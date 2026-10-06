@@ -1,0 +1,93 @@
+{
+  "format": "SHIFT.PhysicsManagerSchedulerEntryOwner/1",
+  "version": 1,
+  "ready": true,
+  "status": "ready",
+  "evidence_state": "proven-static",
+  "owner": "MWL::Core::cPhysicsManager",
+  "scheduler_entry": {
+    "vtable_symbol": "PTR_FUN_00b04524",
+    "vtable_address": "0x00b04524",
+    "slot_offset": 24,
+    "slot_address": "0x00b0453c",
+    "target": "FUN_00711b50",
+    "target_address": "0x00711b50",
+    "neighbor_release_slot_offset": 28,
+    "neighbor_release_slot_address": "0x00b04540",
+    "neighbor_release_target": "FUN_0070ffb0",
+    "owner_proven": true
+  },
+  "direct_scheduler_chain": {
+    "verified": true,
+    "path": [
+      "0x00711b50",
+      "0x007119c0",
+      "0x007117e0",
+      "0x0070f940",
+      "0x007155e0",
+      "0x0048ed52",
+      "0x007155e9",
+      "0x00715380",
+      "0x00713050"
+    ],
+    "call_instructions": [
+      "0x00711b76",
+      "0x00711a6c",
+      "0x0071196b",
+      "0x0070f95b",
+      "0x0070f977",
+      "0x0070f993",
+      "0x0070f9af",
+      "0x007155e3",
+      "0x0048ed58",
+      "0x00715602",
+      "0x00715434"
+    ],
+    "four_way_0x0070f940_to_0x007155e0_multiplicity_proven": true,
+    "terminates_at_existing_outer_update_scheduler_boundary": true
+  },
+  "provenance": {
+    "retail_program": "SHIFT.exe",
+    "retail_pe_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "source_manager_contract": "SHIFT.PhysicsManagerRuntime/1",
+    "source_header": "Source/Manager/cPhysicsManager.hpp",
+    "source_named_object": "Physics Manager",
+    "source_backed_vtable_symbol": "PTR_FUN_00b04524",
+    "raw_static_table_entries": {
+      "0x00b0453c": "0x00711b50",
+      "0x00b04540": "0x0070ffb0"
+    },
+    "function_fingerprints": {
+      "FUN_00711b50": "d4fdc3eb2a9e34f05e756d927bfe2177a0ba416173a54d84ff516a0fed0029d8",
+      "FUN_007119c0": "59d4eb983ba1644078fed51800755cdceebf6fc7dacda6390cd587319e176dc2",
+      "FUN_007117e0": "499d7057f793b98ea406aa8d4e7df827f138763d2624a5dd48a29290deca576f"
+    },
+    "static_inputs": [
+      "binary.json",
+      "functions.jsonl",
+      "callgraph.jsonl",
+      "static_tables.jsonl",
+      "globals.jsonl",
+      "src/physics/physics_system_runtime.py"
+    ],
+    "builder": "tools/ghidra/build_retail_outer_update_scheduler_frontier.py"
+  },
+  "handoff": {
+    "physics_manager_scheduler_entry_owner_proven": true,
+    "exact_direct_chain_to_FUN_00713050_proven": true,
+    "indirect_controller_dispatch_proven": false,
+    "scheduler_entry_elapsed_or_accumulator_input_proven": false,
+    "retail_cadence_admitted": false,
+    "consumer": "S5 retail outer-update scheduler/cadence proof: prove BManager/controller indirect invocation of cPhysicsManager +0x18 and the elapsed/accumulator producer feeding the scheduler"
+  },
+  "limits": {
+    "slot_semantic_name_tick_assumed": false,
+    "indirect_invocation_callsite_claimed": false,
+    "manager_receiver_alias_at_invocation_claimed": false,
+    "entry_invocation_cadence_claimed": false,
+    "host_1_60_promoted": false,
+    "rendered_frame_equivalence_claimed": false,
+    "runtime_capture_used": false,
+    "original_game_executed": false
+  }
+}
