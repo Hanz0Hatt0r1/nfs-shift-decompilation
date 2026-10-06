@@ -28,6 +28,8 @@ cPhysicsManager +0x390 = rate/30
 cPhysicsManager +0x394 = 30/rate
 ```
 
+`FUN_007117e0` may later adapt `+0x388`. Therefore the value loaded from `DAT_00c130d2` and the current manager rate are deliberately separate evidence domains.
+
 The exact pinned retail executable remains:
 
 ```text
@@ -46,17 +48,16 @@ SizeOfImage 0x00995000
 shift_selected_session_rate_snapshot.exe
 ```
 
-It waits for `SHIFT.exe` (or accepts `--pid`) and emits `SHIFT.SelectedSessionPhysicsTweakerRateSnapshot/1` only after all of these are simultaneously true for multiple stable samples:
+It waits for `SHIFT.exe` (or accepts `--pid`) and emits `SHIFT.SelectedSessionPhysicsTweakerRateSnapshot/1` after the loaded rate is stable for multiple samples and all loaded-rate identity prerequisites are positive:
 
 - pinned PE header identity matches;
 - the `PhysicsTweaker.xml` load call anchor matches the relocated retail image;
 - the `DAT_00c130d2 -> FUN_0070f170` apply-call anchor matches;
 - the source-backed `cPhysicsManager` vtable matches;
 - manager `+0x2ab == 1` (set after `PhysicsTweaker.xml` returns);
-- `DAT_00c130d2 > 0`;
-- `cPhysicsManager +0x388 > 0`;
-- `DAT_00c130d2 == cPhysicsManager +0x388`;
-- `+0x38c/+0x390/+0x394` satisfy `1/rate`, `rate/30`, and `30/rate`.
+- `DAT_00c130d2 > 0`.
+
+The same samples also record current `cPhysicsManager +0x388/+0x38c/+0x390/+0x394` and report whether the manager currently equals the loaded value and whether the reciprocal relationships are coherent. Those observations do **not** gate proof of what `PhysicsTweaker.xml` loaded, because the manager rate may subsequently be adapted.
 
 A post-load observed `180` is valid runtime evidence. The tool does **not** admit `180` merely because it is the constructor default.
 
@@ -70,7 +71,7 @@ shift_selected_session_rate_snapshot.exe `
   --output selected_session_physics_tweaker_rate.json
 ```
 
-`--self-test` is CI-only. Its JSON explicitly has `ready=false`, `admission_eligible=false`, and cannot be promoted.
+`--self-test` is CI-only. It deliberately uses `loaded=240` and `current-manager=210` to prove that loaded-rate admission is independent from the later adaptive manager-rate policy. The raw self-test may report `ready=true`, but the exact-binary adjudicator always rejects `self_test=true`, so it can never become retail evidence.
 
 ## Exact-binary adjudication
 
@@ -84,9 +85,21 @@ python tools/build_selected_session_physics_tweaker_rate.py \
   --json-out out/selected_session_physics_tweaker_rate_admission.json
 ```
 
-The adjudicator recomputes the exact retail executable size, MD5, and SHA-256 and joins the snapshot to `SHIFT.RetailOuterUpdateCadence/1`. It rejects self-tests, identity drift, manager/global divergence, malformed rate relationships, or any attempt to use the constructor default as static admission evidence.
+The adjudicator recomputes the exact retail executable size, MD5, and SHA-256 and joins the snapshot to `SHIFT.RetailOuterUpdateCadence/1`. It rejects self-tests, identity drift, an unstable/non-positive loaded value, missing post-load evidence, or any attempt to use the constructor default as static admission evidence.
 
-A positive result is `SHIFT.SelectedSessionPhysicsTweakerRate/1`.
+A current manager/global mismatch does not erase the loaded-rate proof. Instead it produces the next blocker:
+
+```text
+current-manager-rate-scheduling-policy
+```
+
+If the manager equals the loaded value and its reciprocal domain is coherent at observation time, the next blocker becomes:
+
+```text
+inner-substep-runtime-consumption
+```
+
+A positive loaded-rate result is `SHIFT.SelectedSessionPhysicsTweakerRate/1`; it still does not admit inner execution by itself.
 
 ## Gates
 
@@ -107,4 +120,4 @@ retail_inner_substep_execution_admitted = false
 
 ## NEXT_STEP
 
-Run the sampler against the pinned retail `SHIFT.exe` through the selected Silverstone/BMW session, adjudicate the resulting snapshot, then feed only the admitted numeric rate into `RetailOuterSchedulerContract::admit_loaded_inner_rate`. Do not map rendered frames directly to outer updates and do not substitute host `1/60` or constructor-default `180`.
+Run the sampler against the pinned retail `SHIFT.exe` through the selected Silverstone/BMW session and adjudicate the resulting snapshot. Then resolve whichever blocker the observation selects: adaptive current-manager rate scheduling if `+0x388` diverges, otherwise inner-substep runtime consumption. Do not map rendered frames directly to outer updates and do not substitute host `1/60`, the outer `33 ms` gate, or constructor-default `180`.
