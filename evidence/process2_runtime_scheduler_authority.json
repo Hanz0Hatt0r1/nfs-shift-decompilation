@@ -33,6 +33,8 @@
     "retail_inner_substep_provider_batch_bridge_ready": true,
     "provider_batch_uses_recovered_inner_substep_seconds": true,
     "provider_batch_internal_state_rollback_ready": true,
+    "retail_outer_dispatch_provider_transaction_ready": true,
+    "retail_outer_dispatch_pre_admission_rollback_ready": true,
     "signed_accumulator_residual_preserved": true,
     "loaded_inner_rate_admitted": false,
     "inner_substep_execution_admitted": false,
@@ -46,6 +48,7 @@
     "RetailOuterSchedulerContract::ready_inner_substep_count()",
     "RetailOuterSchedulerContract::commit_ready_inner_substeps(count)",
     "NativeVehicleProviderSession::execute_ready_retail_inner_batch(runtime, scheduler)",
+    "NativeVehicleProviderSession::execute_retail_outer_dispatch(runtime, scheduler)",
     "production shift_runtime outer-update scheduling"
   ],
   "limits": [
@@ -58,12 +61,14 @@
     "does not mark persistent BODY execution admitted merely because the provider batch bridge is executable with an explicit regression fixture rate",
     "does not claim external provider side effects are reversible when a provider throws",
     "does not claim one rendered frame equals one retail outer update",
+    "does not auto-schedule the atomic retail outer dispatch from the host/render loop",
+    "does not promote Phase 701 regression provider fixtures into production provider semantics",
     "does not invent retail catch-up/drop behavior",
     "does not clamp a recovered signed post-batch accumulator residual to zero"
   ],
   "ownership": {
     "retail_outer_cadence_blocker_owner": "Process 1 positive",
     "loaded_inner_rate_blocker_owner": "resource/static join",
-    "process2_state": "typed-selected-rate-handoff-and-provider-batch-bridge-ready-awaiting-exact-pc-rate"
+    "process2_state": "typed-selected-rate-handoff-and-atomic-retail-dispatch-bridge-ready-awaiting-exact-pc-rate"
   }
 }
