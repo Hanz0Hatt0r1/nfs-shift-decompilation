@@ -4,20 +4,26 @@ on:
   push:
     paths:
       - 'tools/ghidra/analyze_fun_007682c0_destination_receiver_provenance.py'
+      - 'tools/ghidra/analyze_fun_007682c0_owner_field_base_provenance.py'
       - 'tests/test_ghidra_fun_007682c0_destination_receiver_provenance.py'
+      - 'tests/test_ghidra_fun_007682c0_owner_field_base_provenance.py'
       - 'tools/ghidra/analyze_bmw_body0_bind_callsite_register_provenance.py'
       - 'evidence/global_vehicle_body_owner_identity_retail.json'
       - 'src/physics/native_vehicle_external_provider_frontier.py'
       - 'docs/PROCESS_1_FUN_007682C0_DESTINATION_RECEIVER_FRONTIER.md'
+      - 'docs/PROCESS_1_FUN_007682C0_OWNER_FIELD_BASE_PROVENANCE.md'
       - '.github/workflows/process1-fun007682c0-destination-receiver.yml'
   pull_request:
     paths:
       - 'tools/ghidra/analyze_fun_007682c0_destination_receiver_provenance.py'
+      - 'tools/ghidra/analyze_fun_007682c0_owner_field_base_provenance.py'
       - 'tests/test_ghidra_fun_007682c0_destination_receiver_provenance.py'
+      - 'tests/test_ghidra_fun_007682c0_owner_field_base_provenance.py'
       - 'tools/ghidra/analyze_bmw_body0_bind_callsite_register_provenance.py'
       - 'evidence/global_vehicle_body_owner_identity_retail.json'
       - 'src/physics/native_vehicle_external_provider_frontier.py'
       - 'docs/PROCESS_1_FUN_007682C0_DESTINATION_RECEIVER_FRONTIER.md'
+      - 'docs/PROCESS_1_FUN_007682C0_OWNER_FIELD_BASE_PROVENANCE.md'
       - '.github/workflows/process1-fun007682c0-destination-receiver.yml'
 
 jobs:
@@ -32,5 +38,6 @@ jobs:
       - run: >-
           python -m pytest -q
           tests/test_ghidra_fun_007682c0_destination_receiver_provenance.py
+          tests/test_ghidra_fun_007682c0_owner_field_base_provenance.py
           tests/test_ghidra_bmw_sdf_vehicle_assembly_receiver_provenance.py
           tests/test_ghidra_bmw_body0_bind_callsite_register_provenance.py
