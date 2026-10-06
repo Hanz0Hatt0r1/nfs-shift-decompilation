@@ -392,6 +392,11 @@ void write_report(
             "cannot open output JSON: " + options.output);
     }
 
+    // Synthetic validation must never produce an artifact that looks like
+    // retail evidence. Keep this invariant inside the writer so a future
+    // caller cannot accidentally mark a self-test admission-eligible.
+    const bool effective_admission_eligible =
+        admission_eligible && !self_test;
     const bool stable_loaded_rate =
         stable_count >= options.stable_samples &&
         first.loaded_rate_hz == last.loaded_rate_hz;
@@ -401,9 +406,9 @@ void write_report(
            << "  \"format\": \"SHIFT.SelectedSessionPhysicsTweakerRateSnapshot/1\",\n"
            << "  \"status\": " << json_quote(status) << ",\n"
            << "  \"ready\": "
-           << (admission_eligible ? "true" : "false") << ",\n"
+           << (effective_admission_eligible ? "true" : "false") << ",\n"
            << "  \"admission_eligible\": "
-           << (admission_eligible ? "true" : "false") << ",\n"
+           << (effective_admission_eligible ? "true" : "false") << ",\n"
            << "  \"self_test\": "
            << (self_test ? "true" : "false") << ",\n"
            << "  \"error\": "
@@ -479,7 +484,7 @@ void write_report(
                    ? "true" : "false")
            << ",\n"
            << "    \"selected_session_loaded_rate_observed_after_PhysicsTweaker_load\": "
-           << (admission_eligible ? "true" : "false") << ",\n"
+           << (effective_admission_eligible ? "true" : "false") << ",\n"
            << "    \"current_manager_rate_matches_loaded_at_observation\": "
            << (last.loaded_equals_manager_rate ? "true" : "false")
            << ",\n"
