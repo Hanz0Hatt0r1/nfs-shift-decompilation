@@ -1,18 +1,19 @@
 #include "runtime_loop_policy.hpp"
 
 #include <chrono>
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 
 int main() {
     using shift::runtime::RuntimeSchedulerAuthority;
+    using shift::runtime::make_retail_outer_scheduler_contract;
     using shift::runtime::make_runtime_loop_policy;
 
     const auto bounded =
         make_runtime_loop_policy(false, false, 120, false, 0);
     if (bounded.continuous || !bounded.frame_limit_enabled ||
-        bounded.continuous_wall_clock_pacing ||
-        bounded.frame_limit != 120 ||
+        bounded.continuous_wall_clock_pacing || bounded.frame_limit != 120 ||
         !bounded.uses_host_development_scheduler() ||
         bounded.retail_cadence_admitted ||
         bounded.uses_admitted_retail_scheduler() ||
@@ -41,12 +42,10 @@ int main() {
     const auto capped =
         make_runtime_loop_policy(true, true, 3, false, 0);
     if (!capped.continuous || !capped.frame_limit_enabled ||
-        !capped.continuous_wall_clock_pacing ||
-        capped.frame_limit != 3 ||
+        !capped.continuous_wall_clock_pacing || capped.frame_limit != 3 ||
         !capped.uses_host_development_scheduler() ||
         capped.retail_cadence_admitted ||
-        !capped.should_continue(false, 2) ||
-        capped.should_continue(false, 3)) {
+        !capped.should_continue(false, 2) || capped.should_continue(false, 3)) {
         std::cerr << "continuous safety-cap policy mismatch\n";
         return 1;
     }
@@ -84,11 +83,73 @@ int main() {
         return 1;
     }
 
+    auto retail_outer = make_retail_outer_scheduler_contract(
+        true,
+        shift::runtime::kRetailOuterNominalFrequencyHz,
+        shift::runtime::kRetailOuterGatePeriodMs,
+        shift::runtime::kRetailNormalOuterIncrementSeconds,
+        shift::runtime::kRetailSteadySchedulerInvocationsPerDispatch);
+    if (!retail_outer.uses_admitted_retail_outer_scheduler() ||
+        retail_outer.inner_rate_ready()) {
+        std::cerr << "retail outer authority admission mismatch\n";
+        return 1;
+    }
+
+    bool rejected_missing_loaded_rate = false;
+    try {
+        (void)retail_outer.inner_substep_seconds();
+    } catch (const std::logic_error&) {
+        rejected_missing_loaded_rate = true;
+    }
+    if (!rejected_missing_loaded_rate) {
+        std::cerr << "constructor/default rate leaked into loaded inner rate\n";
+        return 1;
+    }
+
+    retail_outer.admit_outer_dispatch();
+    if (std::abs(
+            retail_outer.pending_accumulator_seconds -
+            shift::runtime::kRetailNormalOuterIncrementSeconds) > 1e-12) {
+        std::cerr << "retail outer accumulator contribution mismatch\n";
+        return 1;
+    }
+
+    // Deliberately use an arbitrary explicit loaded rate rather than the retail
+    // constructor default. The seam must not infer a selected-session rate.
+    retail_outer.admit_loaded_inner_rate(240.0);
+    if (!retail_outer.inner_rate_ready() ||
+        std::abs(retail_outer.inner_substep_seconds() - (1.0 / 240.0)) > 1e-12) {
+        std::cerr << "loaded retail inner-rate admission mismatch\n";
+        return 1;
+    }
+
+    auto expect_bad_outer = [](bool ready, double hz, int gate_ms,
+                               double increment, int multiplicity) {
+        try {
+            (void)make_retail_outer_scheduler_contract(
+                ready, hz, gate_ms, increment, multiplicity);
+        } catch (const std::invalid_argument&) {
+            return true;
+        }
+        return false;
+    };
+    if (!expect_bad_outer(false, 30.0, 33,
+                          shift::runtime::kRetailNormalOuterIncrementSeconds, 1) ||
+        !expect_bad_outer(true, 60.0, 33,
+                          shift::runtime::kRetailNormalOuterIncrementSeconds, 1) ||
+        !expect_bad_outer(true, 30.0, 10,
+                          shift::runtime::kRetailNormalOuterIncrementSeconds, 1) ||
+        !expect_bad_outer(true, 30.0, 33, 1.0 / 60.0, 1) ||
+        !expect_bad_outer(true, 30.0, 33,
+                          shift::runtime::kRetailNormalOuterIncrementSeconds, 4)) {
+        std::cerr << "retail outer handoff accepted unsupported timing semantics\n";
+        return 1;
+    }
+
     const auto scripted =
         make_runtime_loop_policy(false, false, 120, true, 5);
     if (scripted.continuous || !scripted.frame_limit_enabled ||
-        scripted.continuous_wall_clock_pacing ||
-        scripted.frame_limit != 5 ||
+        scripted.continuous_wall_clock_pacing || scripted.frame_limit != 5 ||
         !scripted.uses_host_development_scheduler() ||
         scripted.retail_cadence_admitted ||
         scripted.uses_admitted_retail_scheduler()) {
@@ -119,14 +180,16 @@ int main() {
     }
 
     std::cout
-        << "{\"format\":\"SHIFT.NativeRuntimeLoopPolicyRegression/1\","
+        << "{\"format\":\"SHIFT.NativeRuntimeLoopPolicyRegression/2\","
         << "\"bounded\":true,\"continuous\":true,"
         << "\"continuous_safety_cap\":true,"
         << "\"steady_clock_pacing\":true,"
-        << "\"scheduler_authority\":\"host-development\","
-        << "\"retail_cadence_claimed\":false,"
+        << "\"host_scheduler_authority\":\"host-development\","
+        << "\"retail_outer_authority_seam\":true,"
+        << "\"retail_outer_cadence_admitted\":true,"
+        << "\"loaded_inner_rate_required\":true,"
         << "\"retail_host_fallback_rejected\":true,"
-        << "\"fixed_tick_seconds\":"
+        << "\"host_fixed_tick_seconds\":"
         << shift::runtime::kHostDevelopmentFixedDt << ","
         << "\"script_fail_closed\":true}\n";
     return 0;
