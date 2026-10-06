@@ -1,4 +1,0 @@
-S5 scheduler accumulator value-provenance scope:
-- exact existing three-function instruction export only
-- prove local FUN_00715380 Stack[0x4]:4 dependency to unique this+0x348 STORE
-- do not promote equality, physical units, FUN_007155e9 producer semantics, rendered-frame equivalence, or retail cadence
