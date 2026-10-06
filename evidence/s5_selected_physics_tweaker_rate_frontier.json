@@ -36,7 +36,8 @@
       "decoded payload hash matches the already hash-locked retail entry",
       "exactly one prop named tick rate exists",
       "data value is finite, positive, integral and fits recovered uint16 load",
-      "positive SHIFT.RetailOuterUpdateCadence/1 still requires loaded PhysicsTweaker value"
+      "positive SHIFT.RetailOuterUpdateCadence/1 still requires loaded PhysicsTweaker value",
+      "extracted-tree adapter also requires observed offset 0x31800, exact xmem/lzx:1frame(s) method, CRC field 0xa0f8c093 and status ok before decoded-hash admission"
     ],
     "positive_artifact_scope": "admits the exact loaded numeric rate only; native persistent BODY inner-substep execution remains a separate consumer gate"
   },
@@ -46,6 +47,7 @@
     "exact_resource_identity_known": true,
     "type2_extraction_manifest_observed": true,
     "type2_extraction_manifest_entry_metadata_matches": true,
+    "type2_extraction_manifest_exact_identity_gate_ready": true,
     "exact_decoded_xml_bytes_available_to_current_materializer": false
   },
   "handoff": {
