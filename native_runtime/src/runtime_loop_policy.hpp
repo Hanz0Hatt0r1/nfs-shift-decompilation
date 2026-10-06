@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
@@ -63,6 +64,19 @@ struct RetailOuterSchedulerContract {
             throw std::logic_error(
                 "retail outer dispatch multiplicity is not the proven steady value");
         }
+        if (!std::isfinite(pending_accumulator_seconds) ||
+            pending_accumulator_seconds < 0.0) {
+            throw std::logic_error(
+                "retail outer accumulator is not a finite non-negative value");
+        }
+        if (!std::isfinite(normal_outer_increment_seconds) ||
+            !(normal_outer_increment_seconds > 0.0) ||
+            pending_accumulator_seconds >
+                std::numeric_limits<double>::max() -
+                    normal_outer_increment_seconds) {
+            throw std::overflow_error(
+                "retail outer accumulator cannot accept another dispatch");
+        }
         pending_accumulator_seconds += normal_outer_increment_seconds;
     }
 
@@ -71,9 +85,13 @@ struct RetailOuterSchedulerContract {
             throw std::logic_error(
                 "inner rate cannot be admitted before retail outer authority");
         }
-        if (!std::isfinite(rate_hz) || !(rate_hz > 0.0)) {
+        // The recovered PhysicsTweaker loader stores this property through a
+        // uint16 field.  Mirror the selected-session materializer contract here
+        // so a fractional/oversized synthetic value cannot cross the native seam.
+        if (!std::isfinite(rate_hz) || !(rate_hz > 0.0) ||
+            rate_hz != std::floor(rate_hz) || rate_hz > 65535.0) {
             throw std::invalid_argument(
-                "loaded retail inner rate must be finite and positive");
+                "loaded retail inner rate must be a positive integral uint16 value");
         }
         loaded_inner_rate_hz = rate_hz;
         loaded_inner_rate_admitted = true;
@@ -85,6 +103,67 @@ struct RetailOuterSchedulerContract {
                 "loaded PhysicsTweaker tick rate is required before inner substeps");
         }
         return 1.0 / loaded_inner_rate_hz;
+    }
+
+    double inner_accumulator_tolerance_seconds() const {
+        const double scale = std::max(
+            1.0,
+            std::max(
+                std::abs(pending_accumulator_seconds),
+                std::abs(inner_substep_seconds())));
+        return 64.0 * std::numeric_limits<double>::epsilon() * scale;
+    }
+
+    bool has_ready_inner_substep() const {
+        if (!inner_rate_ready()) {
+            throw std::logic_error(
+                "loaded PhysicsTweaker tick rate is required before inner substeps");
+        }
+        if (!std::isfinite(pending_accumulator_seconds) ||
+            pending_accumulator_seconds < 0.0) {
+            throw std::logic_error(
+                "retail inner accumulator is not a finite non-negative value");
+        }
+        return pending_accumulator_seconds +
+                   inner_accumulator_tolerance_seconds() >=
+               inner_substep_seconds();
+    }
+
+    template <typename StepFn>
+    std::size_t drain_ready_inner_substeps(StepFn&& step_fn) {
+        if (!inner_rate_ready()) {
+            throw std::logic_error(
+                "loaded PhysicsTweaker tick rate is required before inner substeps");
+        }
+
+        std::size_t executed = 0;
+        while (has_ready_inner_substep()) {
+            if (executed == std::numeric_limits<std::size_t>::max()) {
+                throw std::overflow_error(
+                    "retail inner substep execution count overflow");
+            }
+
+            const double substep_seconds = inner_substep_seconds();
+            const double tolerance = inner_accumulator_tolerance_seconds();
+            double next_pending =
+                pending_accumulator_seconds - substep_seconds;
+            if (next_pending < 0.0) {
+                if (-next_pending > tolerance) {
+                    throw std::logic_error(
+                        "retail inner substep would over-consume the accumulator");
+                }
+                next_pending = 0.0;
+            }
+
+            // Commit accumulator consumption only after the consumer accepted
+            // the exact 1/rate step.  A throwing physics step therefore leaves
+            // scheduler time pending for a deterministic retry instead of
+            // silently dropping a selected-session substep.
+            step_fn(substep_seconds);
+            pending_accumulator_seconds = next_pending;
+            ++executed;
+        }
+        return executed;
     }
 };
 
