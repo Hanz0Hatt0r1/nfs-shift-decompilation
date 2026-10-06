@@ -20,6 +20,10 @@ def test_current_audit_preserves_provider_inventory_and_admission() -> None:
     assert report["upstream_frontier"] == legacy.FORMAT
     assert report["refresh_after_phase"] == 716
     assert report["refresh_label"] == "Process 2 Phase 717 current-chain proof audit"
+    assert report["scheduler_refresh"] == (
+        "S5 positive retail outer cadence + atomic explicit dispatch; "
+        "selected-session inner rate remains blocked"
+    )
     assert report["external_provider_count"] == old["external_provider_count"] == 9
     assert [row["id"] for row in report["providers"]] == [
         row["id"] for row in old["providers"]
@@ -73,7 +77,10 @@ def test_transform_join_now_points_only_at_live_relation_and_final_proof() -> No
     assert "source-backed BODY0 pointer, bind origin and bind basis semantics is not committed" not in " ".join(
         transform["blockers"]
     )
-    assert "retail scheduler/cadence is a separate explicit authority gate" in transform[
+    assert "none on renderer transport or retail outer cadence" in transform[
+        "additional_dependency"
+    ]
+    assert "selected-session PhysicsTweaker inner rate" in transform[
         "additional_dependency"
     ]
 
@@ -91,17 +98,26 @@ def test_provider_audit_does_not_confuse_runtime_body0_choice_with_source_truth(
     assert "exact BODY pointer/record" in delta["blockers"][0]
 
 
-def test_current_audit_keeps_scheduler_and_final_transform_fail_closed() -> None:
+def test_current_audit_admits_outer_scheduler_but_keeps_rate_and_transform_fail_closed() -> None:
     report = current.build_current_frontier()
     scheduler = report["scheduler_authority"]
     guards = report["guards"]
 
     assert scheduler["contract"] == current.SCHEDULER_FORMAT
     assert scheduler["authority_explicit"] is True
-    assert scheduler["retail_cadence_admitted"] is False
+    assert scheduler["retail_cadence_admitted"] is True
+    assert scheduler["retail_outer_dispatch_transaction_ready"] is True
+    assert scheduler["loaded_inner_rate_admitted"] is False
+    assert scheduler["inner_substep_execution_admitted"] is False
+    assert scheduler["render_loop_equated_to_outer_dispatch"] is False
     assert scheduler["host_development_1_60_is_retail_evidence"] is False
 
     assert guards["scheduler_authority_explicit"] is True
+    assert guards["retail_outer_cadence_ready"] is True
+    assert guards["retail_outer_dispatch_transaction_ready"] is True
+    assert guards["loaded_inner_rate_admitted"] is False
+    assert guards["inner_substep_execution_admitted"] is False
+    assert guards["render_loop_equated_to_outer_dispatch"] is False
     assert guards["host_1_60_is_retail_evidence"] is False
     assert guards["outer_vehicle_to_vhf_root_relation_ready"] is False
     assert guards["body0_bind_frame_proof_ready"] is False
@@ -113,4 +129,9 @@ def test_current_audit_keeps_scheduler_and_final_transform_fail_closed() -> None
     assert contract["BODY0_bind_frame_proof_ready"] is False
     assert contract["retail_vehicle_world_transform_ready"] is False
     assert contract["scheduler_authority_contract"] == current.SCHEDULER_FORMAT
+    assert contract["retail_outer_cadence_admitted"] is True
+    assert contract["retail_outer_dispatch_transaction_ready"] is True
+    assert contract["loaded_inner_rate_admitted"] is False
+    assert contract["inner_substep_execution_admitted"] is False
+    assert contract["render_loop_equated_to_outer_dispatch"] is False
     assert contract["host_1_60_is_retail_evidence"] is False
