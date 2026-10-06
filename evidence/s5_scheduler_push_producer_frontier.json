@@ -1,0 +1,53 @@
+{
+  "format": "SHIFT.SchedulerPushProducerFrontier/1",
+  "version": 1,
+  "status": "frontier",
+  "ready": false,
+  "blocker": "retail-outer-update-scheduler-cadence-admission",
+  "scope": "FUN_007155e9 exact pushed value feeding direct call 0x00715602 -> FUN_00715380",
+  "positive_inputs": [
+    "SHIFT.PhysicsManagerSchedulerEntryOwner/1",
+    "SHIFT.SchedulerAccumulatorProducerFrontier/1",
+    "SHIFT.SchedulerAccumulatorValueProvenance/1"
+  ],
+  "frozen_abi": {
+    "caller": "FUN_007155e9",
+    "caller_address": "0x007155e9",
+    "caller_calling_convention": "__fastcall",
+    "caller_explicit_parameters": [
+      {
+        "name": "param_1",
+        "type": "LONG *",
+        "storage": "ECX:4"
+      }
+    ],
+    "callee": "FUN_00715380",
+    "callee_address": "0x00715380",
+    "callee_calling_convention": "__thiscall",
+    "callee_explicit_float_parameter_storage": "Stack[0x4]:4",
+    "direct_call_instruction": "0x00715602"
+  },
+  "proven_so_far": {
+    "direct_call_FUN_007155e9_to_FUN_00715380": true,
+    "callee_param1_locally_feeds_unique_this_plus_0x348_store": true,
+    "FUN_00713050_reads_this_plus_0x348_as_scheduler_accumulator": true,
+    "caller_has_no_explicit_float_argument_at_function_entry": true
+  },
+  "next_exact_question": {
+    "question": "Which local machine value producer feeds the PUSH/stack argument consumed as FUN_00715380 Stack[0x4]:4 at call 0x00715602?",
+    "required_evidence": "targeted SHIFT.GhidraFunctionInstructions/2 instruction+pcode slice for FUN_007155e9, with backward value provenance from the call argument to a finite local root",
+    "promotion_condition": "the argument root is proven without crossing unresolved CALL/CALLIND/control barriers and can be joined to the proven BManager/Physics Manager scheduler path"
+  },
+  "limits": {
+    "pushed_value_producer_known": false,
+    "physical_units_known": false,
+    "elapsed_seconds_semantics_proven": false,
+    "one_invocation_equals_one_rendered_frame": false,
+    "retail_cadence_admitted": false,
+    "host_1_60_is_retail_evidence": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  },
+  "consumer": "S5 exact retail scheduler/cadence admission proof",
+  "next_step": "analyze the exact call-argument producer inside FUN_007155e9 and join it to the BManager/Physics Manager scheduler path before assigning time units or cadence semantics"
+}
