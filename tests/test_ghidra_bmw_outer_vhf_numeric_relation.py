@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,13 @@ SPEC = importlib.util.spec_from_file_location("bmw_outer_vhf_numeric", TOOL)
 assert SPEC is not None and SPEC.loader is not None
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
+
+IDENTITY = [
+    1.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
+]
 
 
 def _semantic() -> dict:
@@ -130,3 +138,38 @@ def test_singular_root_matrix_is_rejected() -> None:
     ])
     with pytest.raises(ValueError, match="singular"):
         MODULE.evaluate(_semantic(), _delta(), root)
+
+
+def test_committed_exact_retail_root_packet_and_s2_relation_are_positive() -> None:
+    root_packet = json.loads(
+        (ROOT / "evidence" / "bmw_vhf_hierarchy_root_frame.json").read_text(encoding="utf-8")
+    )
+    relation = json.loads(
+        (ROOT / "evidence" / "bmw_outer_vhf_numeric_relation.json").read_text(encoding="utf-8")
+    )
+
+    assert root_packet["format"] == MODULE.ROOT_FORMAT
+    assert root_packet["ready"] is True
+    assert root_packet["source"]["archive"] == "BMW_M3_E36.bff"
+    assert root_packet["source"]["archive_sha256"] == "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70"
+    assert root_packet["source"]["entry_index"] == 1083
+    assert root_packet["source"]["decoded_sha256"] == MODULE.DECODED_SHA256
+    assert root_packet["source"]["decoded_size"] == 88599
+    assert root_packet["vehicle_root_frame"]["matrix_parent_chain_ids"] == ["0"]
+    assert root_packet["vehicle_root_frame"]["local_offset_xyz"] == [0.0, 0.0, 0.0]
+    assert root_packet["vehicle_root_frame"]["local_orientation_xyzw"] == [0.0, 0.0, 0.0, 1.0]
+    assert root_packet["vehicle_root_frame"]["world_matrix_row_vector"] == IDENTITY
+    assert root_packet["vehicle_root_frame"]["world_matrix_is_identity"] is True
+
+    assert relation["format"] == MODULE.FORMAT
+    assert relation["ready"] is True
+    assert relation["numeric"]["delta_local"] == [0.0, 0.0, 0.0]
+    assert relation["numeric"]["M_vhf_root_to_model"] == IDENTITY
+    assert relation["numeric"]["M_vhf_root_to_outer"] == IDENTITY
+    assert relation["numeric"]["M_outer_to_vhf_root"] == IDENTITY
+    assert relation["numeric"]["numeric_matrix_is_identity"] is True
+    assert relation["limits"]["identity_semantics_inferred_from_numeric_identity"] is False
+    assert relation["handoff"]["outer_vehicle_root_to_VHF_relation_numeric_matrix_ready"] is True
+    assert relation["handoff"]["BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready"] is False
+    assert relation["handoff"]["BODY0_bind_frame_proof_ready"] is False
+    assert relation["handoff"]["vehicle_world_transform_ready"] is False
