@@ -30,15 +30,18 @@ def test_single_process_execution_contract_is_active_and_current() -> None:
     assert payload["current_frontier"]["retail_outer_cadence_admitted"] is True
     assert payload["current_frontier"]["retail_outer_authority_seam_ready"] is True
     assert payload["current_frontier"]["selected_session_physics_tweaker_rate_frontier_contract"] == "SHIFT.SelectedSessionPhysicsTweakerRateFrontier/1"
-    assert payload["current_frontier"]["selected_session_physics_tweaker_rate_frontier_ready"] is False
+    assert payload["current_frontier"]["selected_session_physics_tweaker_rate_frontier_ready"] is True
+    assert payload["current_frontier"]["selected_session_physics_tweaker_rate_contract"] == "SHIFT.SelectedSessionPhysicsTweakerRate/1"
+    assert payload["current_frontier"]["selected_session_physics_tweaker_rate_ready"] is True
+    assert payload["current_frontier"]["selected_session_physics_tweaker_rate_hz"] == 180
     assert payload["current_frontier"]["selected_session_physics_tweaker_archive"] == "PHYSICSBOOTFLOW.bff"
     assert payload["current_frontier"]["selected_session_physics_tweaker_archive_sha256"] == "f4205984343987d7879fcd65f6b2527848a6fd16e9830d6ccca70b7e5db4254a"
     assert payload["current_frontier"]["selected_session_physics_tweaker_entry"] == "vehicles/physics/physicstweaker.xml"
     assert payload["current_frontier"]["selected_session_physics_tweaker_decoded_sha256"] == "6cdd05f0512d367c8ce240cb13dd22fe10fb3e21da95185ea8f79e1ca67ca62f"
-    assert payload["current_frontier"]["current_blocker_id"] == "selected-session-physics-tweaker-rate-admission"
-    assert "PhysicsTweaker" in payload["current_frontier"]["current_blocker"]
+    assert payload["current_frontier"]["current_blocker_id"] == "retail-inner-substep-execution-admission"
     assert "180" in payload["current_frontier"]["current_blocker"]
-    assert "hash-locked" in payload["current_frontier"]["current_blocker"]
+    assert "1/180" in payload["current_frontier"]["current_blocker"]
+    assert "hash-verified" in payload["current_frontier"]["current_blocker"]
     assert payload["current_frontier"]["runtime_capture_required"] is False
 
 
@@ -56,12 +59,12 @@ def test_single_process_queue_orders_world_transform_before_scheduler_control_ca
     assert queue[3]["state"] == "positive"
     assert "world-transform" in queue[3]["task"]
     assert queue[4]["state"] == "current"
-    assert "PhysicsTweaker" in queue[4]["task"]
-    assert "hash-locked" in queue[4]["task"]
+    assert "180 Hz" in queue[4]["task"]
+    assert "1/180" in queue[4]["task"]
     assert "camera-follow" in queue[7]["task"]
 
 
-def test_single_process_outer_cadence_is_positive_but_inner_rate_remains_closed() -> None:
+def test_single_process_inner_rate_is_positive_but_execution_remains_closed() -> None:
     payload = json.loads(EXECUTION.read_text(encoding="utf-8"))
     positives = payload["positive_gates"]
     gates = payload["false_gates"]
@@ -72,11 +75,12 @@ def test_single_process_outer_cadence_is_positive_but_inner_rate_remains_closed(
     assert positives["vehicle_world_transform_ready"] is True
     assert positives["retail_outer_cadence_admitted"] is True
     assert positives["retail_outer_authority_seam_ready"] is True
-    assert gates["loaded_inner_physics_rate_admitted"] is False
+    assert positives["loaded_inner_physics_rate_admitted"] is True
     assert gates["retail_inner_substep_execution_admitted"] is False
     assert gates["retail_control_chain_complete"] is False
     assert gates["retail_camera_follow_ready"] is False
     assert "hash-locked selected-session PhysicsTweaker rate materialization infrastructure" in payload["positive_checkpoints"]
+    assert "SHIFT.SelectedSessionPhysicsTweakerRate/1 exact PC selected-session rate 180 Hz" in payload["positive_checkpoints"]
     assert payload["internal_checkpoint_policy"]["cross_process_handoffs_exist"] is False
     assert payload["internal_checkpoint_policy"]["positive_contracts_consumed_immediately"] is True
     assert payload["internal_checkpoint_policy"]["unsupported_gate_promotion_allowed"] is False
