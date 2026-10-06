@@ -8,7 +8,8 @@ Usage:
     <project-dir> <project-name> <program-name> <output-dir>
 
 Exports only the remaining S5 scheduler-accumulator producer slice from an
-already analyzed retail SHIFT.exe project, then builds a fail-closed static
+already analyzed retail SHIFT.exe project, then builds the fail-closed writer
+surface, local accumulator value provenance and upper pushed-value producer
 frontier. No original-game/runtime execution or capture is performed.
 EOF
 }
@@ -31,6 +32,8 @@ mkdir -p -- "$OUT_DIR"
 OUT_DIR=$(cd -- "$OUT_DIR" && pwd)
 INSTRUCTIONS="$OUT_DIR/s5_scheduler_accumulator_instructions.jsonl"
 FRONTIER="$OUT_DIR/s5_scheduler_accumulator_frontier.json"
+VALUE_PROVENANCE="$OUT_DIR/s5_scheduler_accumulator_value_provenance.json"
+ARGUMENT_PRODUCER="$OUT_DIR/s5_scheduler_timing_argument_producer.json"
 
 TARGETS=(
   FUN_007155e9
@@ -51,5 +54,18 @@ python3 "$SCRIPT_DIR/analyze_s5_scheduler_accumulator_slice.py" \
   "$REPO_ROOT/evidence/physics_manager_scheduler_entry_owner.json" \
   --json-out "$FRONTIER"
 
+python3 "$SCRIPT_DIR/analyze_s5_scheduler_accumulator_value_provenance.py" \
+  "$INSTRUCTIONS" \
+  "$FRONTIER" \
+  --json-out "$VALUE_PROVENANCE"
+
+python3 "$SCRIPT_DIR/analyze_s5_scheduler_timing_argument_producer.py" \
+  "$INSTRUCTIONS" \
+  "$FRONTIER" \
+  "$VALUE_PROVENANCE" \
+  --json-out "$ARGUMENT_PRODUCER"
+
 echo "S5 targeted accumulator instruction slice: $INSTRUCTIONS"
 echo "S5 scheduler accumulator frontier: $FRONTIER"
+echo "S5 scheduler accumulator value provenance: $VALUE_PROVENANCE"
+echo "S5 scheduler timing argument producer frontier: $ARGUMENT_PRODUCER"
