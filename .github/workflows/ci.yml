@@ -74,10 +74,15 @@ jobs:
           $report = Get-Content -Raw $snapshot | ConvertFrom-Json
           if ($report.format -ne "SHIFT.SelectedSessionPhysicsTweakerRateSnapshot/1" -or
               $report.status -ne "self-test-passed" -or
-              $report.ready -or $report.admission_eligible -or
+              -not $report.ready -or -not $report.admission_eligible -or
               -not $report.self_test -or
+              -not $report.retail_identity.identity_ready -or
               $report.selected_session.loaded_tick_rate_hz -ne 240 -or
-              $report.adjudication.selected_session_loaded_rate_observed_after_PhysicsTweaker_load -or
+              $report.current_manager.rate_hz -ne 210 -or
+              $report.current_manager.equals_loaded_tick_rate -or
+              -not $report.current_manager.relationships_valid -or
+              -not $report.adjudication.selected_session_loaded_rate_observed_after_PhysicsTweaker_load -or
+              $report.adjudication.current_manager_rate_matches_loaded_at_observation -or
               $report.adjudication.retail_inner_substep_execution_admitted) {
             $report | ConvertTo-Json -Depth 8 | Write-Host
             throw "selected-session rate sampler self-test contract mismatch"
