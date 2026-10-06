@@ -18,8 +18,14 @@
     "body0_bind_frame_ready": true,
     "persistent_world_transform_wiring_contract": "SHIFT.BMWPersistentWorldTransformRuntimeWiring/1",
     "vehicle_world_transform_ready": true,
-    "current_blocker_id": "retail-outer-update-scheduler-cadence-admission",
-    "current_blocker": "prove and consume retail outer-update scheduler/cadence ownership for continuous persistent BMW physics without treating host loop frequency as retail evidence",
+    "retail_cadence_contract": "SHIFT.RetailOuterUpdateCadence/1",
+    "retail_cadence_completion_contract": "SHIFT.RetailOuterUpdateCadenceCompletion/1",
+    "retail_cadence_admitted": true,
+    "retail_scheduler_authority_consumed": true,
+    "retail_scheduler_component": "native_runtime/src/runtime_loop_policy.hpp::RetailOuterUpdateScheduler",
+    "production_outer_update_callback_attached": false,
+    "current_blocker_id": "vehicle-physics-control-provider-internalization",
+    "current_blocker": "close the deepest missing vehicle-physics/control producers and attach the existing NativeVehicleProviderSession explicit outer-update callback to the admitted RetailOuterUpdateScheduler without synthetic provider semantics",
     "current_blocker_consumer": "continuous source-backed persistent BMW physics/control execution",
     "runtime_capture_required": false,
     "original_game_execution_required": false
@@ -40,20 +46,25 @@
     "SHIFT.BMWBody0BindFrameProof/1",
     "SHIFT.BMWPersistentWorldTransformRuntimeWiring/1",
     "SHIFT.BMWVHFRootFrameSceneConsumer/1",
+    "SHIFT.BManagerPhysicsManagerDispatchFrontier/2",
+    "SHIFT.RetailOuterUpdateCadence/1",
+    "SHIFT.RetailOuterUpdateCadenceCompletion/1",
     "persistent BODY/runtime freshness infrastructure",
     "live freshness-gated Vulkan vehicle transform sink",
     "strict outer Vehicle/VHF relation admission infrastructure",
     "final BODY0 bind proof packet/runtime admission seam",
-    "explicit runtime scheduler-authority seam"
+    "explicit runtime scheduler-authority seam",
+    "RetailEvidence outer scheduler component with separate 33 ms gate and 1/30 s outer increment"
   ],
   "positive_gates": {
     "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": true,
     "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": true,
     "BODY0_bind_frame_proof_ready": true,
-    "vehicle_world_transform_ready": true
+    "vehicle_world_transform_ready": true,
+    "retail_cadence_admitted": true,
+    "retail_scheduler_authority_consumed": true
   },
   "false_gates": {
-    "retail_cadence_admitted": false,
     "retail_control_chain_complete": false,
     "retail_camera_follow_ready": false
   },
@@ -81,12 +92,12 @@
     {
       "id": "S5",
       "task": "prove and consume retail outer-update scheduler/cadence ownership",
-      "state": "current"
+      "state": "positive"
     },
     {
       "id": "S6",
       "task": "close deepest missing vehicle-physics/control producers",
-      "state": "queued"
+      "state": "current"
     },
     {
       "id": "S7",
