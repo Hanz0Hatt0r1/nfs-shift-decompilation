@@ -1,57 +1,69 @@
-# Process coordination instructions
+# Playable slice coordination instructions
 
-The canonical coordination rules for Process 1, Process 2 and Process 3 are:
+The project now uses **one active development process** for the first playable Linux vertical slice.
 
-[`docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V4.md`](docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V4.md)
+Canonical rules:
 
-The no-idle fallback for the current shortest blocker is canonical and maintained in:
+[`docs/PLAYABLE_SLICE_SINGLE_PROCESS_INSTRUCTIONS_V5.md`](docs/PLAYABLE_SLICE_SINGLE_PROCESS_INSTRUCTIONS_V5.md)
 
-[`docs/PLAYABLE_SLICE_BLOCKER_SWARM.md`](docs/PLAYABLE_SLICE_BLOCKER_SWARM.md)
+Single-process copy/paste prompt:
 
-Machine-readable swarm assignment:
+[`docs/PLAYABLE_SLICE_SINGLE_PROCESS_PROMPT_V5.md`](docs/PLAYABLE_SLICE_SINGLE_PROCESS_PROMPT_V5.md)
 
-[`evidence/playable_slice_blocker_swarm.json`](evidence/playable_slice_blocker_swarm.json)
+Machine-readable execution state:
 
-Copy/paste prompts for three concurrent workers are maintained in:
-
-[`docs/PLAYABLE_SLICE_PARALLEL_PROCESS_PROMPTS_V4.md`](docs/PLAYABLE_SLICE_PARALLEL_PROCESS_PROMPTS_V4.md)
-
-Every process must read the canonical documents before selecting a new substantial task and re-check current `main` whenever a blocker is closed, ownership moves between processes, a cross-process handoff is merged, or the playable-slice graph changes.
+[`evidence/playable_slice_single_process_execution.json`](evidence/playable_slice_single_process_execution.json)
 
 The mandatory pre-task question is:
 
-> **Which concrete blocker of the first playable Linux vertical slice does this work remove?**
+> **Какой конкретный blocker первого playable Linux vertical slice снимает эта работа?**
 
-If proposed work neither shortens the blocker graph nor creates infrastructure immediately required by the next blocker, defer it.
+If proposed work neither shortens the current blocker nor creates immediately-required reusable infrastructure for that blocker, defer it.
 
-Parallel ownership is strict:
-
-```text
-PROCESS 1  retail semantic proof / ABI / provenance / producer / scheduling
-PROCESS 2  native physics/runtime consumption of positive handoffs
-PROCESS 3  exact resources / scene / Vulkan consumption of live transforms
-```
-
-Cross-process handoffs are staged. Process 1 must publish independently useful positive sub-contracts as soon as they are proven; Process 2 must consume each positive stage immediately instead of waiting for a larger final proof. Missing final semantic values remain fail-closed and must never be guessed.
-
-For the current BODY0 bind path, Process 2 must read:
-
-[`evidence/process2_bmw_body0_bind_frame_staged_handoff.json`](evidence/process2_bmw_body0_bind_frame_staged_handoff.json)
-
-before declaring itself blocked on `SHIFT.BMWBody0BindFrameProof/1`.
-
-A process whose owned runnable queue is exhausted must not simply idle behind Process 1. It joins the current shortest blocker swarm on the non-overlapping shard assigned in `SHIFT.PlayableSliceBlockerSwarm/1`:
+Active execution chain:
 
 ```text
-Process 1  final semantic proof owner
-Process 2  runtime-consumer/tooling assist
-Process 3  exact resource/VHF hierarchy evidence assist
+static proof / ABI / provenance / scheduling
+        -> native physics/runtime
+        -> persistent vehicle + fresh world transform
+        -> resources / scene / camera / Vulkan
+        -> playable Linux slice
 ```
 
-The semantic owner does not change. Assist processes may publish narrow supporting contracts, but may not duplicate semantic adjudication, guess missing values, or promote unsupported gates.
+There are no active Process 1 / Process 2 / Process 3 ownership lanes and no blocker swarm. Positive contracts are internal checkpoints and must be consumed immediately by the same process.
 
-Do not duplicate the same unresolved semantic question in multiple processes. Downstream processes may advance in parallel by consuming positive handoffs, building the immediate fail-closed consumer seam for the next handoff, internalizing another already-positive current-chain producer/owner handoff, fixing a regression on the current playable-slice path, or executing their assigned blocker-swarm shard.
+Historical files/contracts containing `Process1`, `Process2`, `Process3`, `process1`, `process2`, or `process3` keep their names for compatibility and evidence traceability only. They do not create active worker ownership or a requirement to wait for another process.
 
-Individual processes should normally avoid editing the canonical coordination files. The coordinator owns those files so parallel PRs do not conflict on documentation unrelated to their blocker.
+Current shortest blocker after merged PR #1331:
 
-Blocker-relevant PRs do not require manual confirmation after every step: they may be merged once focused tests/CI pass, the current `main` has been rechecked, no unsupported semantic gate was promoted, and no newer cross-process handoff is overwritten.
+```text
+SHIFT.OuterVehicleBMWVHFRootRelation/1       [semantic relation POSITIVE]
+        -> materialize selected BMW Vehicle::InitVehicle/FUN_00795d60
+           outerVehicle +0x19c/+0x1a0/+0x1a4 values
+        -> finite M_outer_to_vhf_root
+        -> SHIFT.BMWBody0BindFrameProof/1
+        -> persistent fresh BMW world transform
+```
+
+Use branch prefix:
+
+```text
+slice/<blocker>
+```
+
+Every blocker-relevant PR uses:
+
+```text
+BLOCKER:
+INPUT:
+OUTPUT:
+CONSUMER:
+GATES_CHANGED:
+LIMITS:
+TESTS:
+NEXT_STEP:
+```
+
+Before merge, re-read current `main`. Self-merge after required tests/CI pass, no conflicts remain, no unsupported semantic gate is promoted, and no newer proof state is overwritten. After merge, continue with the next shortest blocker.
+
+The former v4 three-process instructions, parallel prompts, and blocker-swarm files are retired historical coordination records and must not be used to select new work.
