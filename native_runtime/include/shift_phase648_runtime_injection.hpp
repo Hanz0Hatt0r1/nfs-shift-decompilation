@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "shift_bmw_body0_bind_frame_runtime_admission.hpp"
+#include "shift_bmw_persistent_world_transform_runtime_wiring.hpp"
 #include "shift_phase648_runtime_vehicle_vulkan_wiring.hpp"
 #include "shift_phase715_persistent_vehicle_runtime_wiring.hpp"
 
@@ -16,18 +17,22 @@
 // the original member invocation must remain the first replacement token. The
 // comma expression in its argument admits an optional positive BODY0 bind-frame
 // packet before argument evaluation completes and therefore before fixed_step is
-// entered. Absence remains inert while Process 1 owns the semantic blocker; an
-// invalid configured packet fails closed before the tick.
+// entered. Absence remains inert; an invalid configured packet fails closed
+// before the tick.
 //
-// Phase 715 then gives an already-published Phase 706 persistent state the
-// production-facing renderer sink. If no persistent state was published, it is
-// inert and the established Phase 648 explicit transform-script regression hook
-// remains unchanged. Phase 715 runs first so dual producer selection fails before
-// the Phase 648 script can mutate Vulkan memory.
+// After the physics tick, S4 consumes that admitted static BODY0 bind proof plus
+// the current persistent BODY0 snapshot.  It resolves the already-prepared BMW
+// vehicle child SVWT as the static VHF bind, commits a freshness-bound Phase 706
+// world transform, and publishes it to Phase 715.  Phase 715 therefore receives
+// the new commit in the same fixed-step continuation before any Vulkan vehicle
+// upload.  The Phase 648 explicit transform-script regression hook stays last;
+// dual producer selection remains fail-closed in Phase 715.
 #define fixed_step(phase648_intent_) \
     fixed_step(( \
         ::shift::runtime::physics::admit_bmw_body0_bind_frame_from_environment_once(), \
         (phase648_intent_))); \
+    ::shift::runtime::physics::commit_and_publish_admitted_bmw_world_transform_after_fixed_step( \
+        native_state, args.scene_set, scene_set_mode, material_geometry.size()); \
     ::shift::runtime::render::phase715_after_fixed_step( \
         runtime, material_geometry, args.scene_set, scene_set_mode, \
         native_state, simulation_steps); \
