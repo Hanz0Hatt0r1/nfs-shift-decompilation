@@ -1,12 +1,13 @@
 {
   "format": "SHIFT.BMWOuterVHFNumericRelationFrontier/1",
   "version": 1,
-  "status": "blocked-missing-exact-vhf-root-frame-artifact",
-  "ready": false,
+  "status": "resolved-by-retained-exact-retail-vhf-root-frame",
+  "ready": true,
   "blocker": {
     "id": "BMW-outer-VHF-numeric-relation-evaluation",
     "queue_step": "S2",
-    "required_output": "finite M_outer_to_vhf_root for the selected first native Silverstone+BMW_M3_E36 primary-player bootstrap"
+    "required_output": "finite M_outer_to_vhf_root for the selected first native Silverstone+BMW_M3_E36 primary-player bootstrap",
+    "resolved": true
   },
   "positive_inputs": {
     "semantic_relation": {
@@ -21,28 +22,25 @@
       "delta_local": [0.0, 0.0, 0.0],
       "producer": "FUN_00795d60"
     },
-    "root_frame_builder": {
+    "retained_root_frame": {
       "format": "SHIFT.BMWVHFHierarchyRootFrame/1",
-      "path": "tools/ghidra/build_bmw_vhf_hierarchy_root_frame.py",
-      "builder_ready": true
-    }
-  },
-  "missing_exact_input": {
-    "contract": "SHIFT.BMWVHFHierarchyRootFrame/1",
-    "required_status": "canonical-bmw-vhf-hierarchy-root-frame-proven",
-    "required_subject": {
-      "canonical_vhf": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
-      "decoded_sha256": "e08887d17d9e34e703a385260f41017fc19acbebc3405614b375e81766b4bd51",
-      "root_node_path": "CAR[BMW_M3_E36]/NODE[HIERARCHY:Root]",
-      "matrix_number": "0"
-    },
-    "required_numeric_field": "vehicle_root_frame.world_matrix_row_vector",
-    "accepted_static_recovery_source": {
+      "path": "evidence/bmw_vhf_hierarchy_root_frame_retail.json",
+      "ready": true,
       "archive": "BMW_M3_E36.bff",
       "archive_sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
-      "builder": "tools/ghidra/build_bmw_vhf_hierarchy_root_frame.py"
-    },
-    "repository_state": "PR #1323 committed the builder/tests/docs but not a generated exact retail root-frame JSON or raw BMW_M3_E36.bff"
+      "entry_index": 1083,
+      "decoded_sha256": "e08887d17d9e34e703a385260f41017fc19acbebc3405614b375e81766b4bd51",
+      "matrix_number": "0",
+      "matrix_parent_chain_ids": ["0"],
+      "world_matrix_row_vector": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0],
+      "identity_is_source_backed_by_explicit_matrix_record": true
+    }
+  },
+  "positive_output": {
+    "format": "SHIFT.BMWOuterVHFNumericRelation/1",
+    "path": "evidence/bmw_outer_vhf_numeric_relation.json",
+    "ready": true,
+    "M_outer_to_vhf_root": [1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0]
   },
   "consumer_infrastructure": {
     "evaluator": "tools/ghidra/evaluate_bmw_outer_vhf_numeric_relation.py",
@@ -55,7 +53,7 @@
     "outer_vehicle_root_to_VHF_vehicle_root_ready": true,
     "outer_vehicle_root_to_VHF_fixed_affine_delta_ready": true,
     "first_bootstrap_delta_numeric_ready": true,
-    "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": false,
+    "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": true,
     "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": false,
     "BODY0_bind_frame_proof_ready": false,
     "vehicle_world_transform_ready": false
@@ -63,10 +61,11 @@
   "limits": {
     "synthetic_test_fixture_is_evidence": false,
     "matrix_number_zero_implies_identity": false,
+    "identity_semantics_inferred_from_numeric_identity": false,
     "anonymous_runtime_draw_matrix_is_resource_provenance": false,
     "runtime_capture_required": false,
     "original_game_execution_required": false,
-    "numeric_gate_promoted_without_exact_root_matrix": false
+    "raw_retail_resource_committed": false
   },
-  "next_step": "supply or recover the exact generated SHIFT.BMWVHFHierarchyRootFrame/1 artifact, or the exact BMW_M3_E36.bff archive, then run the fail-closed S2 evaluator and immediately compose S3 SHIFT.BMWBody0BindFrameProof/1"
+  "next_step": "compose the already-positive selected-session BODY0->outer numeric matrix with SHIFT.BMWOuterVHFNumericRelation/1 and publish SHIFT.BMWBody0BindFrameProof/1"
 }
