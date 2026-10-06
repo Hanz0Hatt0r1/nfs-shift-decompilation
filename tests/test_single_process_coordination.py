@@ -26,8 +26,12 @@ def test_single_process_execution_contract_is_active_and_current() -> None:
     assert payload["current_frontier"]["body0_bind_frame_ready"] is True
     assert payload["current_frontier"]["persistent_world_transform_wiring_contract"] == "SHIFT.BMWPersistentWorldTransformRuntimeWiring/1"
     assert payload["current_frontier"]["vehicle_world_transform_ready"] is True
-    assert payload["current_frontier"]["current_blocker_id"] == "retail-outer-update-scheduler-cadence-admission"
-    assert "scheduler/cadence" in payload["current_frontier"]["current_blocker"]
+    assert payload["current_frontier"]["retail_outer_cadence_contract"] == "SHIFT.RetailOuterUpdateCadence/1"
+    assert payload["current_frontier"]["retail_outer_cadence_admitted"] is True
+    assert payload["current_frontier"]["retail_outer_authority_seam_ready"] is True
+    assert payload["current_frontier"]["current_blocker_id"] == "selected-session-physics-tweaker-rate-admission"
+    assert "PhysicsTweaker" in payload["current_frontier"]["current_blocker"]
+    assert "180" in payload["current_frontier"]["current_blocker"]
     assert payload["current_frontier"]["runtime_capture_required"] is False
 
 
@@ -45,11 +49,11 @@ def test_single_process_queue_orders_world_transform_before_scheduler_control_ca
     assert queue[3]["state"] == "positive"
     assert "world-transform" in queue[3]["task"]
     assert queue[4]["state"] == "current"
-    assert "scheduler/cadence" in queue[4]["task"]
+    assert "PhysicsTweaker" in queue[4]["task"]
     assert "camera-follow" in queue[7]["task"]
 
 
-def test_single_process_opens_only_retail_cadence_after_s4() -> None:
+def test_single_process_outer_cadence_is_positive_but_inner_rate_remains_closed() -> None:
     payload = json.loads(EXECUTION.read_text(encoding="utf-8"))
     positives = payload["positive_gates"]
     gates = payload["false_gates"]
@@ -58,11 +62,10 @@ def test_single_process_opens_only_retail_cadence_after_s4() -> None:
     assert positives["BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready"] is True
     assert positives["BODY0_bind_frame_proof_ready"] is True
     assert positives["vehicle_world_transform_ready"] is True
-    assert "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready" not in gates
-    assert "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready" not in gates
-    assert "BODY0_bind_frame_proof_ready" not in gates
-    assert "vehicle_world_transform_ready" not in gates
-    assert gates["retail_cadence_admitted"] is False
+    assert positives["retail_outer_cadence_admitted"] is True
+    assert positives["retail_outer_authority_seam_ready"] is True
+    assert gates["loaded_inner_physics_rate_admitted"] is False
+    assert gates["retail_inner_substep_execution_admitted"] is False
     assert gates["retail_control_chain_complete"] is False
     assert gates["retail_camera_follow_ready"] is False
     assert payload["internal_checkpoint_policy"]["cross_process_handoffs_exist"] is False
