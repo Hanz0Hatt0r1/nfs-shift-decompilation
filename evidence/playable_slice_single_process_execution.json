@@ -10,9 +10,12 @@
     "semantic_relation_contract": "SHIFT.OuterVehicleBMWVHFRootRelation/1",
     "semantic_relation_ready": true,
     "semantic_relation_kind": "setup-fixed-affine",
-    "current_blocker_id": "BMW-render-root-delta-numeric-materialization",
-    "current_blocker": "materialize exact selected-BMW Vehicle::InitVehicle/FUN_00795d60 values for outerVehicle+0x19c/+0x1a0/+0x1a4 from exact setup inputs",
-    "current_blocker_consumer": "finite M_outer_to_vhf_root -> SHIFT.BMWBody0BindFrameProof/1",
+    "selected_bmw_delta_contract": "SHIFT.BMWPrimaryPlayerFirstBootstrapRenderRootDelta/1",
+    "selected_bmw_delta_numeric_ready": true,
+    "selected_bmw_delta_scope": "first explicit native primary-player vehicle bootstrap before any origin-update path",
+    "current_blocker_id": "BMW-outer-VHF-numeric-relation-evaluation",
+    "current_blocker": "consume the exact positive BMW VHF HIERARCHY Root row-vector matrix and selected first-bootstrap delta_local=(0,0,0), then evaluate finite M_outer_to_vhf_root with provenance",
+    "current_blocker_consumer": "SHIFT.BMWBody0BindFrameProof/1",
     "runtime_capture_required": false,
     "original_game_execution_required": false
   },
@@ -27,6 +30,7 @@
     "SHIFT.OuterVehicleRenderRootDeltaProvenance/1",
     "SHIFT.VehicleRenderModelRootAffineDomainJoin/1",
     "SHIFT.OuterVehicleBMWVHFRootRelation/1",
+    "SHIFT.BMWPrimaryPlayerFirstBootstrapRenderRootDelta/1",
     "SHIFT.BMWVHFRootFrameSceneConsumer/1",
     "persistent BODY/runtime freshness infrastructure",
     "live freshness-gated Vulkan vehicle transform sink",
@@ -44,51 +48,15 @@
     "retail_camera_follow_ready": false
   },
   "queue": [
-    {
-      "id": "S1",
-      "task": "materialize exact selected-BMW FUN_00795d60 delta_local values from Vehicle::InitVehicle inputs",
-      "state": "current"
-    },
-    {
-      "id": "S2",
-      "task": "evaluate and prove finite M_outer_to_vhf_root with provenance",
-      "state": "blocked-on-S1"
-    },
-    {
-      "id": "S3",
-      "task": "compose BODY0-to-outer with outer-to-VHF and publish positive SHIFT.BMWBody0BindFrameProof/1",
-      "state": "blocked-on-S2"
-    },
-    {
-      "id": "S4",
-      "task": "consume exact bind proof in native admission/persistent world-transform path and publish fresh current BMW transform",
-      "state": "blocked-on-S3"
-    },
-    {
-      "id": "S5",
-      "task": "prove and consume retail outer-update scheduler/cadence ownership",
-      "state": "queued"
-    },
-    {
-      "id": "S6",
-      "task": "close deepest missing vehicle-physics/control producers",
-      "state": "queued"
-    },
-    {
-      "id": "S7",
-      "task": "close input-to-drivetrain/wheel/control mapping and execute continuously",
-      "state": "queued"
-    },
-    {
-      "id": "S8",
-      "task": "prove and consume retail camera-follow source/timing",
-      "state": "queued"
-    },
-    {
-      "id": "S9",
-      "task": "run exact Silverstone + BMW continuous Vulkan slice without test-only core motion",
-      "state": "queued"
-    }
+    {"id": "S1", "task": "materialize exact selected-BMW FUN_00795d60 delta_local values from Vehicle::InitVehicle inputs", "state": "positive"},
+    {"id": "S2", "task": "evaluate and prove finite M_outer_to_vhf_root with provenance", "state": "current"},
+    {"id": "S3", "task": "compose BODY0-to-outer with outer-to-VHF and publish positive SHIFT.BMWBody0BindFrameProof/1", "state": "blocked-on-S2"},
+    {"id": "S4", "task": "consume exact bind proof in native admission/persistent world-transform path and publish fresh current BMW transform", "state": "blocked-on-S3"},
+    {"id": "S5", "task": "prove and consume retail outer-update scheduler/cadence ownership", "state": "queued"},
+    {"id": "S6", "task": "close deepest missing vehicle-physics/control producers", "state": "queued"},
+    {"id": "S7", "task": "close input-to-drivetrain/wheel/control mapping and execute continuously", "state": "queued"},
+    {"id": "S8", "task": "prove/consume retail camera-follow source and timing", "state": "queued"},
+    {"id": "S9", "task": "run exact Silverstone + BMW continuous Vulkan slice without test-only core motion", "state": "queued"}
   ],
   "internal_checkpoint_policy": {
     "cross_process_handoffs_exist": false,
