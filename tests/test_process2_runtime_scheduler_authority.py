@@ -22,7 +22,20 @@ def test_runtime_scheduler_authority_has_strict_outer_retail_seam():
     assert "kRetailSteadySchedulerInvocationsPerDispatch = 1" in policy
     assert "make_retail_outer_scheduler_contract" in policy
     assert "loaded PhysicsTweaker tick rate is required before inner substeps" in policy
-    assert "180" not in policy
+
+    # Constructor-default 180 Hz may exist in evidence, but it must never be
+    # encoded as an admitted runtime inner rate. Avoid a raw substring check:
+    # the exact recovered 1/30 constant itself contains the digits "180".
+    for forbidden in (
+        "kRetailInnerRateHz = 180",
+        "kRetailLoadedInnerRateHz = 180",
+        "loaded_inner_rate_hz = 180",
+        "admit_loaded_inner_rate(180",
+        "admit_loaded_inner_rate(180.0",
+    ):
+        assert forbidden not in policy
+    assert "constructor default is intentionally not encoded here" in policy
+
     assert (
         "host 1/60 pacing cannot satisfy retail scheduler/cadence authority"
         in policy
