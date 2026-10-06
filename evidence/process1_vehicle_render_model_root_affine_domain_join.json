@@ -1,0 +1,101 @@
+{
+  "format": "SHIFT.VehicleRenderModelRootAffineDomainJoin/1",
+  "function_witnesses": [
+    {
+      "address": "0x00483c50",
+      "calling_convention": "__fastcall",
+      "mnemonic_sha256": "027711efda8a35e59698871f082ec871beba0fef72a5d36860cd474c096ce051",
+      "name": "FUN_00483c50",
+      "size": 2766
+    },
+    {
+      "address": "0x00480700",
+      "calling_convention": "__fastcall",
+      "mnemonic_sha256": "f516ada7168e7af185891058c2e3405389a715a4933cc64acb624502f06f9f6d",
+      "name": "FUN_00480700",
+      "size": 92
+    },
+    {
+      "address": "0x004a8c20",
+      "calling_convention": "__fastcall",
+      "mnemonic_sha256": "1bdaa8f843f668bc4bec2d58d23a62c20efd23c737b78795f687a1cf67e72ece",
+      "name": "FUN_004a8c20",
+      "size": 198
+    }
+  ],
+  "handoff": {
+    "BODY0_bind_frame_proof_ready": false,
+    "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": false,
+    "canonical_BMW_VHF_hierarchy_root_frame_required_next": true,
+    "canonical_BMW_VHF_resource_join_ready": true,
+    "consumer": "Process 1 exact BMW VHF HIERARCHY Root composition",
+    "outer_vehicle_root_to_VHF_fixed_affine_delta_ready": false,
+    "outer_vehicle_root_to_VHF_vehicle_root_ready": false,
+    "outer_vehicle_to_render_root_symbolic_affine_ready": true,
+    "vehicle_render_model_root_affine_domain_join_ready": true,
+    "vehicle_world_transform_ready": false
+  },
+  "inputs": {
+    "affine_bridge": {
+      "format": "SHIFT.OuterVehicleRenderSnapshotAffineBridge/1",
+      "local_delta_offsets": ["+0x19c", "+0x1a0", "+0x1a4"],
+      "participant_render_model": "participant+0x1340",
+      "participant_root_rotation": "participant+0x1028",
+      "participant_root_translation": ["participant+0xa10", "participant+0xa14", "participant+0xa18"],
+      "translation_formula": "P_snapshot = P_outer + R_outer * delta_local"
+    },
+    "resource_join": {
+      "canonical_vhf": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
+      "decoded_sha256": "e08887d17d9e34e703a385260f41017fc19acbebc3405614b375e81766b4bd51",
+      "format": "SHIFT.BMWVehicleRenderModelResourceJoin/1",
+      "vehicle_name": "BMW_M3_E36",
+      "vehicle_render_model_property_field": "+0x54",
+      "vehicle_render_model_value": "BMW_M3_E36.vhf"
+    }
+  },
+  "limits": {
+    "FUN_004ae150_promoted_to_root_setter": false,
+    "hierarchy_root_matrix_applied_or_composed_here": false,
+    "identity_vhf_root_matrix_used_as_frame_identity": false,
+    "numeric_outer_to_vhf_matrix_claimed": false,
+    "original_game_executed": false,
+    "participant_root_affine_equated_to_hierarchy_root_frame": false,
+    "runtime_capture_required": false
+  },
+  "participant_domain": {
+    "canonical_bmw_vhf": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
+    "canonical_bmw_vhf_decoded_sha256": "e08887d17d9e34e703a385260f41017fc19acbebc3405614b375e81766b4bd51",
+    "model_identity_forward": "vehicle render model +0x174 -> FUN_00693940",
+    "model_local_point_validity": "vehicle render model +0x8f0, 17 byte flags",
+    "model_local_points": "vehicle render model +0x918, 17 entries x 4 floats",
+    "root_world_affine_layout": "row-major D3D row-vector affine; translation slots 12/13/14",
+    "root_world_rotation_matrix": "participant+0x1028",
+    "root_world_translation": ["participant+0xa10", "participant+0xa14", "participant+0xa18"],
+    "vehicle_render_model_owner": "participant+0x1340",
+    "vehicle_render_model_source": "selected descriptor +0x54 / Vehicle Render Model"
+  },
+  "proof": {
+    "descriptor_vehicle_render_model_materialized_at_participant_plus_0x1340": true,
+    "participant_root_affine_passed_to_same_render_model_owner": true,
+    "render_model_local_points_transformed_by_participant_root_affine": true,
+    "row_vector_translation_slots_consumed": [12, 13, 14],
+    "semantic_statement": "participant root affine is the local-to-world affine for coordinates owned by the same materialized Vehicle Render Model domain selected as canonical BMW VHF",
+    "vehicle_render_model_root_affine_domain_join_ready": true
+  },
+  "provenance": {
+    "affine_bridge_contract": "SHIFT.OuterVehicleRenderSnapshotAffineBridge/1",
+    "original_game_executed": false,
+    "resource_join_contract": "SHIFT.BMWVehicleRenderModelResourceJoin/1",
+    "retail_function_fingerprints_validated": ["0x00483c50", "0x00480700", "0x004a8c20"],
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "runtime_capture_used": false
+  },
+  "ready": true,
+  "retail": {
+    "md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "program": "SHIFT.exe",
+    "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "status": "vehicle-render-model-root-affine-domain-proven",
+  "version": 1
+}
