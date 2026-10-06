@@ -10,6 +10,7 @@
 namespace shift::runtime {
 
 struct NativeRuntimeState;
+struct RetailOuterSchedulerContract;
 
 inline constexpr const char* kNativeVehicleProviderSessionFormat =
     "SHIFT.NativeVehicleProviderSession/1";
@@ -69,6 +70,16 @@ struct NativeVehicleProviderSessionResult {
     NativeVehicleProviderSessionTelemetry telemetry{};
 };
 
+struct NativeVehicleRetailInnerBatchResult {
+    std::size_t recovered_substep_count = 0u;
+    double inner_substep_seconds = 0.0;
+    std::uint64_t session_step_count_before = 0u;
+    std::uint64_t session_step_count_after = 0u;
+    std::uint64_t explicit_update_count_before = 0u;
+    std::uint64_t explicit_update_count_after = 0u;
+    bool scheduler_accumulator_committed = false;
+};
+
 class NativeVehicleProviderSession {
 public:
     explicit NativeVehicleProviderSession(
@@ -77,6 +88,10 @@ public:
     NativeVehicleProviderSessionResult execute_explicit_step(
         NativeRuntimeState& runtime,
         double outer_timestep);
+
+    NativeVehicleRetailInnerBatchResult execute_ready_retail_inner_batch(
+        NativeRuntimeState& runtime,
+        RetailOuterSchedulerContract& scheduler);
 
     std::uint64_t step_count() const { return step_count_; }
     const NativeVehicleProviderSessionTelemetry& last_telemetry() const {
