@@ -21,6 +21,9 @@ EXPECTED_ANCHORS = {
     "post_physics_tweaker_load_flag_offset": "0x2ab",
     "physics_tweaker_tick_rate_rva": "0x008130d2",
     "manager_rate_offset": "0x388",
+    "manager_reciprocal_offset": "0x38c",
+    "manager_rate_over_30_offset": "0x390",
+    "manager_thirty_over_rate_offset": "0x394",
 }
 
 
@@ -60,16 +63,35 @@ def build(
 
     if snapshot.get("format") != SNAPSHOT_FORMAT:
         raise ValueError(f"snapshot must be {SNAPSHOT_FORMAT}")
-    if snapshot.get("ready") is not True or snapshot.get("self_test") is not False:
+    if snapshot.get("ready") is not True or snapshot.get("admission_eligible") is not True:
+        raise ValueError("snapshot must be admission-eligible")
+    if snapshot.get("self_test") is not False:
         raise ValueError("snapshot must be a positive non-self-test runtime observation")
     if snapshot.get("anchors") != EXPECTED_ANCHORS:
         raise ValueError("snapshot retail RVA/offset anchors drifted")
+
+    runtime_identity = snapshot.get("retail_identity")
+    if not isinstance(runtime_identity, dict):
+        raise ValueError("snapshot runtime retail identity missing")
+    for key in (
+        "pe_headers_match",
+        "physics_tweaker_load_anchor_matches",
+        "loaded_rate_apply_anchor_matches",
+        "identity_ready",
+    ):
+        if runtime_identity.get(key) is not True:
+            raise ValueError(f"snapshot runtime retail identity is not positive: {key}")
+    if runtime_identity.get("cryptographic_hash_recomputed_at_runtime") is not False:
+        raise ValueError("unexpected runtime cryptographic identity claim")
+    if runtime_identity.get("pinned_pe_sha256") != RETAIL_EXE_SHA256:
+        raise ValueError("snapshot runtime identity is not pinned to the expected retail SHA-256")
 
     selected = snapshot.get("selected_session")
     manager = snapshot.get("current_manager")
     adjudication = snapshot.get("adjudication")
     if not isinstance(selected, dict) or not isinstance(manager, dict) or not isinstance(adjudication, dict):
         raise ValueError("snapshot sections missing")
+
     loaded_rate = selected.get("loaded_tick_rate_hz")
     if not isinstance(loaded_rate, int) or isinstance(loaded_rate, bool) or loaded_rate <= 0:
         raise ValueError("selected-session loaded tick rate is invalid")
@@ -79,12 +101,25 @@ def build(
         raise ValueError("snapshot cPhysicsManager vtable identity is not positive")
     if selected.get("stable_loaded_rate") is not True or selected.get("stable_sample_count", 0) <= 0:
         raise ValueError("selected-session loaded rate is not stable over the observation window")
+
+    current_rate = manager.get("rate_hz")
+    if not isinstance(current_rate, int) or isinstance(current_rate, bool) or current_rate <= 0:
+        raise ValueError("current manager rate is invalid")
     if manager.get("relationships_valid") is not True:
         raise ValueError("current manager +0x388 reciprocal domain is not coherent")
+    if manager.get("equals_loaded_tick_rate") is not True or current_rate != loaded_rate:
+        raise ValueError("loaded PhysicsTweaker rate was not applied exactly to current cPhysicsManager")
+
+    if adjudication.get("physics_tweaker_xml_load_completed_before_observation") is not True:
+        raise ValueError("snapshot does not prove PhysicsTweaker.xml load completion")
+    if adjudication.get("loaded_global_applied_to_cphysics_manager") is not True:
+        raise ValueError("snapshot does not prove loaded-global application to cPhysicsManager")
     if adjudication.get("selected_session_loaded_rate_observed_after_PhysicsTweaker_load") is not True:
         raise ValueError("snapshot does not positively adjudicate post-load observation")
     if adjudication.get("constructor_default_180_used_as_admission_basis") is not False:
         raise ValueError("constructor default was used as an admission basis")
+    if adjudication.get("current_manager_rate_is_assumed_constant") is not False:
+        raise ValueError("snapshot incorrectly assumes the manager rate is permanently constant")
     if adjudication.get("retail_inner_substep_execution_admitted") is not False:
         raise ValueError("raw snapshot must not pre-admit inner substep execution")
 
@@ -109,10 +144,6 @@ def build(
     if sha256 != expected_sha256:
         raise ValueError(f"retail executable SHA-256 mismatch: expected {expected_sha256}, got {sha256}")
 
-    current_rate = manager.get("rate_hz")
-    if not isinstance(current_rate, int) or isinstance(current_rate, bool) or current_rate <= 0:
-        raise ValueError("current manager rate is invalid")
-
     return {
         "format": OUTPUT_FORMAT,
         "version": 1,
@@ -124,6 +155,7 @@ def build(
             "md5": md5,
             "sha256": sha256,
             "exact_match": True,
+            "runtime_pe_and_machine_anchors_match": True,
         },
         "static_join": {
             "cadence_format": CADENCE_FORMAT,
@@ -136,11 +168,12 @@ def build(
             "loaded_tick_rate_hz": loaded_rate,
             "observation_sample_count": selected["stable_sample_count"],
             "observed_after_physics_tweaker_load": True,
+            "applied_to_current_manager": True,
             "constructor_default_180_is_not_admission_basis": True,
         },
         "current_manager_observation": {
             "rate_hz": current_rate,
-            "equals_loaded_tick_rate": manager.get("equals_loaded_tick_rate") is True,
+            "equals_loaded_tick_rate": True,
             "relationships_valid": True,
         },
         "adjudication": {
@@ -155,11 +188,7 @@ def build(
             "constructor_default_180_promoted_without_runtime_observation": False,
             "rendered_frame_equivalence_claimed": False,
         },
-        "next_blocker": (
-            "current-manager-rate-scheduling-policy"
-            if manager.get("equals_loaded_tick_rate") is not True
-            else "inner-substep-runtime-consumption"
-        ),
+        "next_blocker": "inner-substep-runtime-consumption",
     }
 
 
