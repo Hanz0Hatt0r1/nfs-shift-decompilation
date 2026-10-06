@@ -1,0 +1,67 @@
+{
+  "format": "SHIFT.PhysicsManagerRateAccessorFrontier/1",
+  "version": 1,
+  "status": "frontier",
+  "base_commit": "79b31ae57c9bf59d9cc97cea2a2f07e014581243",
+  "blocker": "S5 retail outer-update scheduler/cadence ownership",
+  "consumer": "SHIFT.PhysicsManagerRateAccessorAlias/1 retail instruction proof",
+  "gates_changed": [],
+  "retail_cadence_admitted": false,
+  "source_expression": {
+    "consumer": "FUN_00713050",
+    "accessor_callsite": "0x0071307c",
+    "expression": "*(int *)(FUN_0070fe90() + 0x388)",
+    "reciprocal_used": "1.0 / rate_source",
+    "source_contract": "SHIFT.OuterUpdateCallsiteStatic/1"
+  },
+  "verified_direct_topology": [
+    {"from": "FUN_00713050", "instruction": "0x0071307c", "to": "FUN_0070fe90"},
+    {"from": "FUN_0070fe90", "instruction": "0x0070fe93", "to": "FUN_0041903c"},
+    {"from": "FUN_0041903c", "instruction": "0x00419042", "to": "FUN_0070fe99"},
+    {"from": "FUN_0070fe99", "instruction": "0x0070fec7", "to": "FUN_0070fae0"}
+  ],
+  "constructor_join": {
+    "function": "FUN_0070fae0",
+    "function_address": "0x0070fae0",
+    "function_fingerprint": "072f0f9df5e4b00b2ff7cdbf991923afacaa82bcdac508310f3eb0a3e5941859",
+    "source_backed_contract": "SHIFT.PhysicsManagerRuntime/1",
+    "named_object": "Physics Manager",
+    "vtable": "PTR_FUN_00b04524"
+  },
+  "adjudication": {
+    "rate_expression_to_accessor_callsite_proven": true,
+    "accessor_initializer_chain_verified": true,
+    "initializer_reaches_source_backed_physics_manager_constructor": true,
+    "FUN_0070fe90_return_aliases_cPhysicsManager_instance": false,
+    "plus_0x388_is_cPhysicsManager_field": false,
+    "plus_0x388_semantic_name_frequency": false,
+    "plus_0x388_value_or_units_proven": false,
+    "fixed_timestep_semantics_proven": false
+  },
+  "exact_missing_machine_edge": {
+    "id": "physics-manager-accessor-return-alias",
+    "required": "instruction-level proof that the return at FUN_00713050:0x0071307c aliases the cPhysicsManager singleton constructed by FUN_0070fae0 and directly bases the +0x388 load",
+    "proven": false
+  },
+  "available_consumer_infrastructure": {
+    "analyzer": "tools/ghidra/analyze_s5_physics_manager_rate_accessor.py",
+    "runner": "tools/ghidra/run_s5_physics_manager_rate_accessor_slice.sh",
+    "format": "SHIFT.PhysicsManagerRateAccessorAlias/1",
+    "exact_targets": [
+      "FUN_00713050",
+      "FUN_0070fe90",
+      "FUN_0041903c",
+      "FUN_0070fe99",
+      "FUN_0070fae0"
+    ],
+    "retail_result_published": false
+  },
+  "limits": {
+    "offset_adjacency_used_as_field_identity": false,
+    "frequency_name_promoted": false,
+    "host_1_60_promoted": false,
+    "rendered_frame_equivalence_claimed": false,
+    "runtime_capture_used": false
+  },
+  "next_action": "Run the five-function targeted instruction slice. If the accessor alias and +0x388 receiver prove, next enumerate exact +0x388 writers and backward-slice their values to physical units."
+}
