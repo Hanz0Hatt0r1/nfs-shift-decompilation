@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """Build the positive retail outer-update cadence handoff from pinned retail source + PE.
 
-This builder intentionally joins two independent static views of the same retail
-SHIFT.exe: the pinned full Ghidra decompile and exact raw PE instruction/constant
-windows. It proves the default BManager registration/dispatch path, manager gate,
-scheduler argument, cPhysicsManager rate-field algebra and inner fixed-step
-semantics. It never executes the game and never promotes host 1/60 or the
-BManager worker's 10 ms poll sleep to retail physics cadence.
+This builder joins the pinned full Ghidra decompile with exact raw PE bytes. It
+proves the source-backed cPhysicsManager identity, default BManager dispatch,
+30 Hz manager initialization, scheduler multiplicity/state, scheduler argument,
+and inner fixed-step accumulator algebra. It never executes the game and never
+promotes host 1/60 or the worker's 10 ms poll sleep to retail physics cadence.
 """
 from __future__ import annotations
 
@@ -29,9 +28,10 @@ FUNCS = (
     "FUN_0065bd70", "FUN_0065bf80", "FUN_00647d80", "FUN_00d36000",
     "FUN_006485b0", "FUN_00662600", "FUN_006626a0", "FUN_0065b8b0",
     "FUN_00647ef0", "FUN_00662880", "FUN_00710a70", "FUN_00647860",
-    "FUN_0070f170", "FUN_00710780", "FUN_007117e0", "FUN_0070f940",
-    "FUN_007155e0", "FUN_0048ed52", "FUN_007155e9", "FUN_00715380",
-    "FUN_00712450", "FUN_00713050",
+    "FUN_0070f170", "FUN_00714a10", "FUN_00715240", "FUN_00712890",
+    "FUN_00710780", "FUN_007117e0", "FUN_0070f940", "FUN_007155e0",
+    "FUN_0048ed52", "FUN_007155e9", "FUN_00715380", "FUN_00712450",
+    "FUN_00713050",
 )
 
 
@@ -131,6 +131,13 @@ class PE:
                 f"{label}: bytes drift at 0x{address:08x}: "
                 f"expected {expected.hex()}, got {actual.hex()}"
             )
+
+    def is_zero_fill(self, address: int, size: int = 1) -> bool:
+        rva = address - self.image_base
+        for _, section_va, virtual_size, _, raw_size in self.sections:
+            if section_va <= rva and rva + size <= section_va + virtual_size:
+                return rva >= section_va + raw_size
+        return False
 
     def f32(self, address: int) -> float:
         return struct.unpack("<f", self.va(address, 4))[0]
@@ -234,6 +241,12 @@ def build(source_path: Path, pe_path: Path, owner_path: Path) -> dict[str, Any]:
         ["FUN_006626a0((int)param_1);", "FUN_00649780(10,1);", "cVar4 = (char)param_1[4];"],
     )
 
+    # Bind the 30 Hz initializer and +0x18 scheduler to this exact vtable.
+    pe.require(0x00B04524, "60fe7000", "cPhysicsManager-vtable-slot0")
+    pe.require(0x00B04528, "700a7100", "cPhysicsManager-vtable-slot1-initializer")
+    pe.require(0x00B0453C, "501b7100", "cPhysicsManager-vtable-slot6-scheduler")
+    pe.require(0x00B04540, "b0ff7000", "cPhysicsManager-vtable-slot7-alternate")
+
     # Per-manager cadence configuration and timing gate.
     require("FUN_00710a70", bodies["FUN_00710a70"], "FUN_00647860((int)param_1,0,30.0);")
     for fragment in (
@@ -267,6 +280,18 @@ def build(source_path: Path, pe_path: Path, owner_path: Path) -> dict[str, Any]:
     ):
         require("FUN_0070f170", bodies["FUN_0070f170"], fragment)
 
+    # Multiplicity/state proof: DAT_00c104a4 has one declaration + one read,
+    # resides in zero-filled PE storage, and therefore selects the one-call path.
+    if source.count("DAT_00c104a4") != 2:
+        raise ValueError("DAT_00c104a4 reference-count drift in pinned source")
+    if not pe.is_zero_fill(0x00C104A4, 1):
+        raise ValueError("DAT_00c104a4 is no longer zero-filled PE storage")
+    require("FUN_0070f940", bodies["FUN_0070f940"], "if (DAT_00c104a4 != '\\0')")
+    require("FUN_0070f940", bodies["FUN_0070f940"], "FUN_007155e0((LONG *)&DAT_00c109e0);")
+    require("FUN_00714a10", bodies["FUN_00714a10"], "param_1[0x4f] = 1;")
+    require("FUN_00715240", bodies["FUN_00715240"], "param_1[0x4f] = 2;")
+    require("FUN_00712890", bodies["FUN_00712890"], "*(undefined4 *)(param_1 + 0x13c) = 3;")
+
     # Scheduler argument and fixed-step accumulator semantics.
     require("FUN_00710780", bodies["FUN_00710780"], "local_8 = 1.0;")
     require(
@@ -299,7 +324,7 @@ def build(source_path: Path, pe_path: Path, owner_path: Path) -> dict[str, Any]:
     ):
         require("FUN_00713050", bodies["FUN_00713050"], fragment)
 
-    # Exact retail PE byte anchors close decompiler calling-convention gaps.
+    # Exact PE byte anchors close decompiler calling-convention gaps.
     signatures = {
         "bmanager_dispatch_selector": (
             0x00647D80,
@@ -373,6 +398,12 @@ def build(source_path: Path, pe_path: Path, owner_path: Path) -> dict[str, Any]:
                 label: {"address": f"0x{address:08x}", "bytes": hex_bytes}
                 for label, (address, hex_bytes) in signatures.items()
             },
+            "vtable_anchors": {
+                "vtable": "0x00b04524",
+                "initializer_slot_plus_0x04": "FUN_00710a70",
+                "scheduler_slot_plus_0x18": "FUN_00711b50",
+                "alternate_slot_plus_0x1c": "FUN_0070ffb0",
+            },
         },
         "owner_handoff": {
             "format": OWNER_FORMAT,
@@ -403,6 +434,7 @@ def build(source_path: Path, pe_path: Path, owner_path: Path) -> dict[str, Any]:
         },
         "outer_manager_cadence": {
             "initializer": "FUN_00710a70",
+            "initializer_bound_to_cPhysicsManager_vtable": True,
             "configuration_function": "FUN_00647860",
             "configured_frequency_hz": 30.0,
             "period_expression": "ROUND(1000.0 / 30.0)",
@@ -429,6 +461,16 @@ def build(source_path: Path, pe_path: Path, owner_path: Path) -> dict[str, Any]:
             ],
             "rate_domain_proven": True,
             "final_numeric_rate_not_frozen": True,
+        },
+        "scheduler_multiplicity": {
+            "multi_call_flag": "DAT_00c104a4",
+            "multi_call_flag_initial_storage": "PE zero-fill",
+            "source_visible_writers": 0,
+            "normal_calls_to_FUN_007155e0_per_FUN_0070f940": 1,
+            "scheduler_object_initial_state": 1,
+            "startup_state_transition": "1 -> 2 -> 3",
+            "steady_active_state": 3,
+            "steady_state_scheduler_invocations_per_manager_dispatch": 1,
         },
         "scheduler_argument": {
             "producer": "FUN_00710780",
@@ -461,8 +503,10 @@ def build(source_path: Path, pe_path: Path, owner_path: Path) -> dict[str, Any]:
             "cPhysicsManager_registered_in_active_controller_list": True,
             "active_controller_list_reaches_manager_timing_gate": True,
             "default_manager_dispatch_reaches_source_backed_cPhysicsManager_slot_plus_0x18": True,
+            "cPhysicsManager_initializer_slot_plus_0x04_reaches_30hz_configuration": True,
             "retail_outer_manager_nominal_frequency_30hz_proven": True,
             "retail_outer_manager_quantized_gate_33ms_proven": True,
+            "one_steady_scheduler_invocation_per_default_manager_dispatch_proven": True,
             "scheduler_argument_value_proven": True,
             "physics_rate_field_domain_and_reciprocal_proven": True,
             "inner_fixed_step_1_over_rate_proven": True,
@@ -475,6 +519,7 @@ def build(source_path: Path, pe_path: Path, owner_path: Path) -> dict[str, Any]:
                 "nominal_frequency_hz": 30.0,
                 "gate_period_ms": gate_ms,
                 "default_mode_required": True,
+                "steady_scheduler_invocations_per_dispatch": 1,
             },
             "simulation_quantum": {
                 "normal_outer_increment_seconds": one_thirtieth,
