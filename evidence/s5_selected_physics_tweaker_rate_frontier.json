@@ -24,12 +24,14 @@
     "accepted_materialization_inputs": [
       "exact PHYSICSBOOTFLOW.bff with matching archive SHA-256 and entry metadata",
       "exact decoded physicstweaker.xml bytes with matching decoded SHA-256",
-      "extracted PHYSICSBOOTFLOW tree plus _bff_manifest.csv with exact entry metadata; decoded SHA-256 remains mandatory"
+      "extracted PHYSICSBOOTFLOW tree plus _bff_manifest.csv with exact entry metadata; decoded SHA-256 remains mandatory",
+      "extracted-tree ZIP containing exactly one _bff_manifest.csv and the matching physicstweaker.xml under the same root; the adapter reduces it to the extracted-tree path and decoded SHA-256 remains mandatory"
     ]
   },
   "materializer": {
     "tool": "tools/materialize_s5_selected_physics_tweaker_rate.py",
     "extracted_tree_adapter": "tools/materialize_s5_selected_physics_tweaker_from_extraction.py",
+    "extracted_zip_adapter": "tools/materialize_s5_selected_physics_tweaker_from_extraction_zip.py",
     "positive_format": "SHIFT.SelectedSessionPhysicsTweakerRate/1",
     "property_name": "tick rate",
     "requirements": [
@@ -37,7 +39,8 @@
       "exactly one prop named tick rate exists",
       "data value is finite, positive, integral and fits recovered uint16 load",
       "positive SHIFT.RetailOuterUpdateCadence/1 still requires loaded PhysicsTweaker value",
-      "extracted-tree adapter also requires observed offset 0x31800, exact xmem/lzx:1frame(s) method, CRC field 0xa0f8c093 and status ok before decoded-hash admission"
+      "extracted-tree adapter also requires observed offset 0x31800, exact xmem/lzx:1frame(s) method, CRC field 0xa0f8c093 and status ok before decoded-hash admission",
+      "extracted-ZIP adapter rejects unsafe paths, duplicate manifests, cross-root XML substitution and decoded-member size drift before delegating to the extracted-tree and canonical decoded-hash gates"
     ],
     "positive_artifact_scope": "admits the exact loaded numeric rate only; native persistent BODY inner-substep execution remains a separate consumer gate"
   },
@@ -53,7 +56,7 @@
   "handoff": {
     "loaded_inner_physics_rate_admitted": false,
     "retail_inner_substep_execution_admitted": false,
-    "next_exact_action": "provide the extracted vehicles/physics/physicstweaker.xml bytes alongside the observed manifest, verify decoded SHA-256, then parse the unique tick rate property"
+    "next_exact_action": "provide either the extracted tree+manifest or the extracted-tree ZIP to the corresponding adapter, verify decoded SHA-256, then parse the unique tick rate property"
   },
   "limits": {
     "constructor_default_180_may_close_blocker": false,
@@ -61,6 +64,7 @@
     "modded_360_or_720_value_may_close_blocker": false,
     "manifest_crc_may_replace_decoded_sha256": false,
     "manifest_success_alone_may_close_blocker": false,
+    "zip_layout_or_filename_may_replace_decoded_sha256": false,
     "host_1_60_may_close_blocker": false,
     "worker_poll_10ms_may_close_blocker": false,
     "missing_resource_value_may_be_guessed": false,
