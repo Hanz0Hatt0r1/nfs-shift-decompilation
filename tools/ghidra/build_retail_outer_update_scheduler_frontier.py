@@ -2,7 +2,7 @@
 """Prove the retail Physics Manager scheduler entry without guessing cadence.
 
 This stage joins the source-backed Physics Manager contract to raw SHIFT.exe
-Ghidra exports.  It deliberately stops before claiming retail cadence: the
+Ghidra exports. It deliberately stops before claiming retail cadence: the
 manager vtable +0x18 entry and the exact direct chain down to FUN_00713050 can
 be proven statically, while the external indirect invocation of that virtual
 entry and the elapsed/accumulator value feeding the schedule still require an
@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 FORMAT = "SHIFT.RetailOuterUpdateSchedulerFrontier/1"
+BINARY_FORMAT = "SHIFT.GhidraEvidenceDatabase/1"
 PE_MD5 = "705af8b420e5eb1e3834ac43d5533c6b"
 MANAGER_FORMAT = "SHIFT.PhysicsManagerRuntime/1"
 MANAGER_VTABLE_SYMBOL = "PTR_FUN_00b04524"
@@ -28,19 +29,32 @@ MANAGER_ACCESSOR = 0x0070FE90
 MANAGER_GET_ASSET_DATABASE = 0x00710870
 
 EXPECTED_FUNCTIONS: dict[int, tuple[str, str]] = {
-    0x00711B50: ("FUN_00711b50", "d4fdc3eb2a9e34f05e756d927bfe2177a0ba416173a54d84ff516a0fed0029d8"),
-    0x007119C0: ("FUN_007119c0", "59d4eb983ba1644078fed51800755cdceebf6fc7dacda6390cd587319e176dc2"),
-    0x007117E0: ("FUN_007117e0", "499d7057f793b98ea406aa8d4e7df827f138763d2624a5dd48a29290deca576f"),
+    0x00711B50: (
+        "FUN_00711b50",
+        "d4fdc3eb2a9e34f05e756d927bfe2177a0ba416173a54d84ff516a0fed0029d8",
+    ),
+    0x007119C0: (
+        "FUN_007119c0",
+        "59d4eb983ba1644078fed51800755cdceebf6fc7dacda6390cd587319e176dc2",
+    ),
+    0x007117E0: (
+        "FUN_007117e0",
+        "499d7057f793b98ea406aa8d4e7df827f138763d2624a5dd48a29290deca576f",
+    ),
 }
 
 # Exact direct bridge from the manager virtual entry to the already-audited
-# upper outer-update scheduler boundary.  Four calls in FUN_0070f940 are kept
+# upper outer-update scheduler boundary. Four calls in FUN_0070f940 are kept
 # distinct because call multiplicity is part of the static topology.
 EXPECTED_EDGES: tuple[tuple[int, int, tuple[int, ...]], ...] = (
     (0x00711B50, 0x007119C0, (0x00711B76,)),
     (0x007119C0, 0x007117E0, (0x00711A6C,)),
     (0x007117E0, 0x0070F940, (0x0071196B,)),
-    (0x0070F940, 0x007155E0, (0x0070F95B, 0x0070F977, 0x0070F993, 0x0070F9AF)),
+    (
+        0x0070F940,
+        0x007155E0,
+        (0x0070F95B, 0x0070F977, 0x0070F993, 0x0070F9AF),
+    ),
     (0x007155E0, 0x0048ED52, (0x007155E3,)),
     (0x0048ED52, 0x007155E9, (0x0048ED58,)),
     (0x007155E9, 0x00715380, (0x00715602,)),
@@ -57,7 +71,7 @@ def _norm(value: Any) -> int | None:
     if token.startswith("fun_"):
         token = token[4:]
     try:
-        return int(token, 16) if token.startswith("0x") else int(token, 16)
+        return int(token, 16)
     except ValueError:
         return None
 
@@ -86,27 +100,48 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 
 def _binary_identity(binary: dict[str, Any]) -> dict[str, Any]:
-    md5 = str(binary.get("md5") or binary.get("MD5") or "").lower()
+    if binary.get("format") != BINARY_FORMAT:
+        raise ValueError(f"retail binary export must be {BINARY_FORMAT}")
+    if binary.get("program_name") != "SHIFT.exe":
+        raise ValueError("retail binary export program_name drift")
+    if binary.get("executable_format") != "Portable Executable (PE)":
+        raise ValueError("retail binary export executable format drift")
+    if binary.get("pointer_size") != 4:
+        raise ValueError("retail binary export pointer size drift")
+    md5 = str(binary.get("executable_md5") or "").lower()
     if md5 != PE_MD5:
-        raise ValueError(f"retail PE MD5 drift: expected {PE_MD5}, got {md5 or '<missing>'}")
-    return {"md5": md5, "verified": True}
+        raise ValueError(
+            f"retail PE MD5 drift: expected {PE_MD5}, got {md5 or '<missing>'}"
+        )
+    return {
+        "format": BINARY_FORMAT,
+        "program_name": "SHIFT.exe",
+        "executable_format": "Portable Executable (PE)",
+        "pointer_size": 4,
+        "executable_md5": md5,
+        "verified": True,
+    }
 
 
 def _validate_runtime_contract(source: str) -> dict[str, Any]:
     required = (
         f'MANAGER_FORMAT = "{MANAGER_FORMAT}"',
         f'MANAGER_VTABLE = "{MANAGER_VTABLE_SYMBOL}"',
-        '"constructor": "FUN_0070fae0"',
-        '"shutdown": "FUN_0070f580"',
+        "Source/Manager/cPhysicsManager.hpp",
+        '"functions": ["FUN_0070fae0", "FUN_0070f580"]',
+        '"named_object": "Physics Manager"',
     )
     missing = [token for token in required if token not in source]
     if missing:
-        raise ValueError("Physics Manager runtime contract drift: " + ", ".join(missing))
+        raise ValueError(
+            "Physics Manager runtime contract drift: " + ", ".join(missing)
+        )
     return {
         "format": MANAGER_FORMAT,
         "manager_vtable_symbol": MANAGER_VTABLE_SYMBOL,
-        "constructor": "FUN_0070fae0",
-        "shutdown": "FUN_0070f580",
+        "source_header": "Source/Manager/cPhysicsManager.hpp",
+        "source_backed_functions": ["FUN_0070fae0", "FUN_0070f580"],
+        "named_object": "Physics Manager",
         "verified": True,
     }
 
@@ -114,11 +149,17 @@ def _validate_runtime_contract(source: str) -> dict[str, Any]:
 def _static_pointer(rows: Iterable[dict[str, Any]], address: int) -> int:
     matches = [row for row in rows if _norm(row.get("address")) == address]
     if len(matches) != 1:
-        raise ValueError(f"static table address {_hex(address)} expected once; found {len(matches)}")
+        raise ValueError(
+            f"static table address {_hex(address)} expected once; found {len(matches)}"
+        )
     row = matches[0]
+    if row.get("block") != ".rdata" or row.get("length") != 4:
+        raise ValueError(f"static pointer {_hex(address)} ABI drift")
     raw_hex = row.get("raw_hex")
     if not isinstance(raw_hex, str) or len(raw_hex) != 8:
-        raise ValueError(f"static pointer {_hex(address)} is not one 32-bit raw value")
+        raise ValueError(
+            f"static pointer {_hex(address)} is not one 32-bit raw value"
+        )
     try:
         raw = bytes.fromhex(raw_hex)
     except ValueError as exc:
@@ -126,8 +167,13 @@ def _static_pointer(rows: Iterable[dict[str, Any]], address: int) -> int:
     return int.from_bytes(raw, "little")
 
 
-def _validate_vtable(static_rows: list[dict[str, Any]], global_rows: list[dict[str, Any]]) -> dict[str, Any]:
-    symbols = [row for row in global_rows if _norm(row.get("address")) == MANAGER_VTABLE]
+def _validate_vtable(
+    static_rows: list[dict[str, Any]],
+    global_rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    symbols = [
+        row for row in global_rows if _norm(row.get("address")) == MANAGER_VTABLE
+    ]
     if len(symbols) != 1 or symbols[0].get("name") != MANAGER_VTABLE_SYMBOL:
         raise ValueError("source-backed Physics Manager vtable symbol drift")
 
@@ -137,13 +183,13 @@ def _validate_vtable(static_rows: list[dict[str, Any]], global_rows: list[dict[s
     release_target = _static_pointer(static_rows, release_slot)
     if scheduler_target != MANAGER_SCHEDULER_ENTRY:
         raise ValueError(
-            f"Physics Manager +0x18 target drift: expected {_hex(MANAGER_SCHEDULER_ENTRY)}, "
-            f"got {_hex(scheduler_target)}"
+            f"Physics Manager +0x18 target drift: expected "
+            f"{_hex(MANAGER_SCHEDULER_ENTRY)}, got {_hex(scheduler_target)}"
         )
     if release_target != MANAGER_RELEASE_ENTRY:
         raise ValueError(
-            f"Physics Manager +0x1c release target drift: expected {_hex(MANAGER_RELEASE_ENTRY)}, "
-            f"got {_hex(release_target)}"
+            f"Physics Manager +0x1c release target drift: expected "
+            f"{_hex(MANAGER_RELEASE_ENTRY)}, got {_hex(release_target)}"
         )
     return {
         "vtable": _hex(MANAGER_VTABLE),
@@ -158,7 +204,9 @@ def _validate_vtable(static_rows: list[dict[str, Any]], global_rows: list[dict[s
     }
 
 
-def _function_index(rows: list[dict[str, Any]]) -> dict[int, dict[str, Any]]:
+def _function_index(
+    rows: list[dict[str, Any]],
+) -> dict[int, dict[str, Any]]:
     result: dict[int, dict[str, Any]] = {}
     for row in rows:
         address = _norm(row.get("address"))
@@ -170,7 +218,9 @@ def _function_index(rows: list[dict[str, Any]]) -> dict[int, dict[str, Any]]:
     return result
 
 
-def _validate_function_fingerprints(functions: dict[int, dict[str, Any]]) -> list[dict[str, Any]]:
+def _validate_function_fingerprints(
+    functions: dict[int, dict[str, Any]],
+) -> list[dict[str, Any]]:
     result: list[dict[str, Any]] = []
     for address, (name, digest) in EXPECTED_FUNCTIONS.items():
         row = functions.get(address)
@@ -179,60 +229,79 @@ def _validate_function_fingerprints(functions: dict[int, dict[str, Any]]) -> lis
         if row.get("name") != name:
             raise ValueError(f"scheduler function name drift at {_hex(address)}")
         if row.get("mnemonic_sha256") != digest:
-            raise ValueError(f"scheduler function mnemonic hash drift at {_hex(address)}")
-        result.append({
-            "address": _hex(address),
-            "name": name,
-            "mnemonic_sha256": digest,
-            "verified": True,
-        })
+            raise ValueError(
+                f"scheduler function mnemonic hash drift at {_hex(address)}"
+            )
+        result.append(
+            {
+                "address": _hex(address),
+                "name": name,
+                "mnemonic_sha256": digest,
+                "verified": True,
+            }
+        )
     return result
 
 
-def _edge_rows(callgraph: list[dict[str, Any]], source: int, target: int) -> list[dict[str, Any]]:
+def _edge_rows(
+    callgraph: list[dict[str, Any]], source: int, target: int
+) -> list[dict[str, Any]]:
     return [
-        row for row in callgraph
+        row
+        for row in callgraph
         if _norm(row.get("from_function")) == source
         and _norm(row.get("to")) == target
         and row.get("indirect") is False
     ]
 
 
-def _validate_direct_chain(callgraph: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _validate_direct_chain(
+    callgraph: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     result: list[dict[str, Any]] = []
     for source, target, expected_calls in EXPECTED_EDGES:
         rows = _edge_rows(callgraph, source, target)
         instructions = sorted(
-            value for value in (_norm(row.get("instruction")) for row in rows)
+            value
+            for value in (_norm(row.get("instruction")) for row in rows)
             if value is not None
         )
         if tuple(instructions) != expected_calls:
             raise ValueError(
                 f"direct scheduler edge {_hex(source)} -> {_hex(target)} drift: "
-                f"expected {[ _hex(x) for x in expected_calls ]}, "
-                f"got {[ _hex(x) for x in instructions ]}"
+                f"expected {[_hex(x) for x in expected_calls]}, "
+                f"got {[_hex(x) for x in instructions]}"
             )
-        result.append({
-            "from": _hex(source),
-            "to": _hex(target),
-            "call_instructions": [_hex(value) for value in instructions],
-            "direct": True,
-            "verified": True,
-        })
+        result.append(
+            {
+                "from": _hex(source),
+                "to": _hex(target),
+                "call_instructions": [_hex(value) for value in instructions],
+                "direct": True,
+                "verified": True,
+            }
+        )
     return result
 
 
-def _direct_incoming(callgraph: list[dict[str, Any]], target: int) -> list[dict[str, Any]]:
+def _direct_incoming(
+    callgraph: list[dict[str, Any]], target: int
+) -> list[dict[str, Any]]:
     return [
-        row for row in callgraph
+        row
+        for row in callgraph
         if _norm(row.get("to")) == target and row.get("indirect") is False
     ]
 
 
-def _validate_accessor_anchor(callgraph: list[dict[str, Any]]) -> dict[str, Any]:
+def _validate_accessor_anchor(
+    callgraph: list[dict[str, Any]],
+) -> dict[str, Any]:
     rows = _edge_rows(callgraph, MANAGER_GET_ASSET_DATABASE, MANAGER_ACCESSOR)
     if len(rows) != 1 or _norm(rows[0].get("instruction")) != 0x00710871:
-        raise ValueError("cPhysicsManager GetAssetDatabase -> manager accessor anchor drift")
+        raise ValueError(
+            "cPhysicsManager GetAssetDatabase -> manager accessor anchor drift"
+        )
     return {
         "method_anchor": _hex(MANAGER_GET_ASSET_DATABASE),
         "manager_accessor": _hex(MANAGER_ACCESSOR),
@@ -266,8 +335,8 @@ def build_frontier(
     direct_incoming = _direct_incoming(callgraph, MANAGER_SCHEDULER_ENTRY)
     if direct_incoming:
         raise ValueError(
-            "Physics Manager +0x18 scheduler entry unexpectedly acquired a direct caller; "
-            "indirect-dispatch frontier must be re-audited"
+            "Physics Manager +0x18 scheduler entry unexpectedly acquired a direct "
+            "caller; indirect-dispatch frontier must be re-audited"
         )
 
     return {
@@ -283,8 +352,14 @@ def build_frontier(
         "direct_scheduler_chain": {
             "verified": True,
             "path": [
-                "0x00711b50", "0x007119c0", "0x007117e0", "0x0070f940",
-                "0x007155e0", "0x0048ed52", "0x007155e9", "0x00715380",
+                "0x00711b50",
+                "0x007119c0",
+                "0x007117e0",
+                "0x0070f940",
+                "0x007155e0",
+                "0x0048ed52",
+                "0x007155e9",
+                "0x00715380",
                 "0x00713050",
             ],
             "edges": direct_chain,
@@ -308,14 +383,18 @@ def build_frontier(
         ],
         "next_static_targets": {
             "instruction_export_addresses": [
-                "0x00711b50", "0x007119c0", "0x007117e0",
+                "0x00711b50",
+                "0x007119c0",
+                "0x007117e0",
             ],
             "reference_targets": [
-                "0x00b04524", "0x00b0453c",
+                "0x00b04524",
+                "0x00b0453c",
             ],
             "question": (
-                "prove the exact indirect caller/receiver of cPhysicsManager vtable +0x18 "
-                "and trace the entry value that feeds the accumulator-driven FUN_00713050 schedule"
+                "prove the exact indirect caller/receiver of cPhysicsManager vtable "
+                "+0x18 and trace the entry value that feeds the accumulator-driven "
+                "FUN_00713050 schedule"
             ),
         },
         "limits": {
