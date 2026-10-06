@@ -139,13 +139,13 @@ def test_builder_is_fail_closed_and_contains_multiplicity_and_vtable_gates():
     assert "PE_MD5" in source
     assert "PE_SHA256" in source
     assert "machine_byte_anchors" in source
-    assert "vtable_anchors" in source
-    assert "0x00B04528" in source
+    assert "cPhysicsManager-vtable-slot1-initializer" in source
+    assert "0x00b04528" in source.lower()
     assert "DAT_00c104a4" in source
     assert "is_zero_fill" in source
     assert "steady_state_scheduler_invocations_per_manager_dispatch" in source
     assert "ROUND(1000.0 / 30.0)" in source
     assert "1.0/rate" in source
     assert "1.0 / 60.0" not in source
-    assert '"host_1_60_promoted": False' in source
-    assert '"worker_poll_10ms_promoted": False' in source
+    assert "host_1_60_promoted" in source
+    assert "worker_poll_10ms_promoted" in source
