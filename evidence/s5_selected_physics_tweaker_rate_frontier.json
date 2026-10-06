@@ -1,13 +1,16 @@
 {
   "format": "SHIFT.SelectedSessionPhysicsTweakerRateFrontier/1",
   "version": 1,
-  "status": "blocked-awaiting-exact-resource-payload",
+  "status": "blocked-awaiting-exact-decoded-resource-payload",
   "ready": false,
   "blocker": "selected-session-physics-tweaker-rate-admission",
   "consumer": "RetailOuterSchedulerContract::admit_loaded_inner_rate(rate_hz)",
   "positive_inputs": [
     "SHIFT.RetailOuterUpdateCadence/1",
     "SHIFT.BMWOffset33bSelectorGeometryInputs/1"
+  ],
+  "supporting_observations": [
+    "SHIFT.PhysicsTweakerExtractionManifestObservation/1"
   ],
   "required_resource": {
     "archive_filename": "PHYSICSBOOTFLOW.bff",
@@ -20,11 +23,13 @@
     "decoded_sha256": "6cdd05f0512d367c8ce240cb13dd22fe10fb3e21da95185ea8f79e1ca67ca62f",
     "accepted_materialization_inputs": [
       "exact PHYSICSBOOTFLOW.bff with matching archive SHA-256 and entry metadata",
-      "exact decoded physicstweaker.xml bytes with matching decoded SHA-256"
+      "exact decoded physicstweaker.xml bytes with matching decoded SHA-256",
+      "extracted PHYSICSBOOTFLOW tree plus _bff_manifest.csv with exact entry metadata; decoded SHA-256 remains mandatory"
     ]
   },
   "materializer": {
     "tool": "tools/materialize_s5_selected_physics_tweaker_rate.py",
+    "extracted_tree_adapter": "tools/materialize_s5_selected_physics_tweaker_from_extraction.py",
     "positive_format": "SHIFT.SelectedSessionPhysicsTweakerRate/1",
     "property_name": "tick rate",
     "requirements": [
@@ -39,17 +44,21 @@
     "constructor_default_rate_hz": 180,
     "constructor_default_is_selected_session_value": false,
     "exact_resource_identity_known": true,
-    "exact_resource_payload_available_in_current_project_uploads": false
+    "type2_extraction_manifest_observed": true,
+    "type2_extraction_manifest_entry_metadata_matches": true,
+    "exact_decoded_xml_bytes_available_to_current_materializer": false
   },
   "handoff": {
     "loaded_inner_physics_rate_admitted": false,
     "retail_inner_substep_execution_admitted": false,
-    "next_exact_action": "materialize the hash-locked entry 49 payload and parse its unique tick rate property"
+    "next_exact_action": "provide the extracted vehicles/physics/physicstweaker.xml bytes alongside the observed manifest, verify decoded SHA-256, then parse the unique tick rate property"
   },
   "limits": {
     "constructor_default_180_may_close_blocker": false,
     "community_default_value_may_close_blocker": false,
     "modded_360_or_720_value_may_close_blocker": false,
+    "manifest_crc_may_replace_decoded_sha256": false,
+    "manifest_success_alone_may_close_blocker": false,
     "host_1_60_may_close_blocker": false,
     "worker_poll_10ms_may_close_blocker": false,
     "missing_resource_value_may_be_guessed": false,
