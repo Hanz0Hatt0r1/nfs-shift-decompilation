@@ -1,68 +1,17 @@
 {
   "format": "SHIFT.PlayableSliceBlockerSwarm/1",
-  "status": "active",
-  "blocker": "outer Vehicle-root -> exact canonical BMW VHF HIERARCHY root relation is the shortest semantic blocker and must not leave Process 2 or Process 3 idle",
-  "primary_owner": "Process 1",
-  "final_semantic_authority": "Process 1",
-  "current_frontier": {
-    "input_contracts": [
-      "SHIFT.BMWVehicleRenderModelResourceJoin/1",
-      "SHIFT.BMWVHFHierarchyRootFrame/1",
-      "SHIFT.OuterVehicleRenderSnapshotAffineBridge/1",
-      "SHIFT.OuterVehicleRenderRootDeltaProvenance/1"
-    ],
-    "newly_positive": [
-      "SHIFT.BMWVHFHierarchyRootFrame/1 via merged PR #1323"
-    ],
-    "canonical_resource": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
-    "unresolved_relation": "outer Vehicle-root -> exact BMW VHF HIERARCHY root identity or fixed affine delta"
-  },
-  "shards": [
-    {
-      "process": "Process 1",
-      "role": "proof-owner",
-      "task": "join exact SHIFT.OuterVehicleRenderRootDeltaProvenance/1 / FUN_00795d60 value provenance with positive SHIFT.BMWVHFHierarchyRootFrame/1 and adjudicate identity versus fixed affine delta",
-      "may_publish_final_semantic_proof": true,
-      "output": "positive outer Vehicle/VHF relation contract or narrower fail-closed frontier"
-    },
-    {
-      "process": "Process 2",
-      "role": "runtime-consumer-assist",
-      "task": "consume SHIFT.BMWVHFHierarchyRootFrame/1 immediately in the strict relation-stage validator/adaptor, keep final admission fail-closed, and build only blocker-specific validation tooling when runtime-owned work is exhausted",
-      "may_publish_final_semantic_proof": false,
-      "forbidden": [
-        "guess the affine relation",
-        "promote candidate matrices into production",
-        "duplicate Process 1 semantic adjudication"
-      ],
-      "output": "root-frame-aware relation-stage consumer/tooling ready for the next Process 1 relation handoff"
-    },
-    {
-      "process": "Process 3",
-      "role": "resource-runtime-frame-assist",
-      "task": "consume SHIFT.BMWVHFHierarchyRootFrame/1 in the production BMW scene path and prove exact preservation of the canonical VHF root frame through parser/scene/runtime transform boundaries; if already closed, resolve only resource-backed terminal roots explicitly requested by the current Process 1 value slice",
-      "may_publish_final_semantic_proof": false,
-      "forbidden": [
-        "infer executable ownership from resource structure",
-        "use visual similarity as frame proof",
-        "claim static VHF transform is dynamic vehicle pose",
-        "publish the outer Vehicle/VHF semantic relation"
-      ],
-      "output": "SHIFT.BMWVHFRootFrameSceneConsumer/1 or a narrower blocker-specific resource/runtime-frame frontier"
-    }
-  ],
-  "fallback_policy": {
-    "downstream_process_may_idle": false,
-    "when_owned_queue_exhausted": "join the current shortest blocker swarm on a non-overlapping shard",
-    "duplicate_semantic_question_allowed": false,
-    "cross_process_assist_must_have_named_consumer": true,
-    "unsupported_gate_promotion_allowed": false,
-    "superseded_shards_must_be_retargeted_after_upstream_merge": true
-  },
-  "handoff_order": [
-    "SHIFT.BMWVHFHierarchyRootFrame/1 -> Process 2 staged relation validator + Process 3 production scene-frame consumer",
-    "Process 1 exact outer Vehicle/VHF relation proof -> Process 2 staged consumer",
-    "Process 1 final SHIFT.BMWBody0BindFrameProof/1 -> Process 2 final runtime admission",
-    "Process 2 fresh vehicle world transform -> Process 3 live Vulkan/camera consumers"
-  ]
+  "status": "retired",
+  "active": false,
+  "retired_reason": "project execution model changed from three parallel processes to one active process",
+  "superseded_by": "SHIFT.PlayableSliceSingleProcessExecution/1",
+  "superseded_by_path": "evidence/playable_slice_single_process_execution.json",
+  "legacy_role": "historical coordination evidence only",
+  "active_worker_count": 1,
+  "parallel_shards_active": false,
+  "cross_process_handoffs_active": false,
+  "limits": {
+    "may_select_new_work": false,
+    "may_define_semantic_ownership": false,
+    "may_require_process_2_or_3_waiting": false
+  }
 }
