@@ -1,13 +1,17 @@
 {
-  "format": "SHIFT.RetailSchedulerAccumulatorProducerFrontier/1",
+  "format": "SHIFT.SchedulerAccumulatorCallerValueProducerFrontier/1",
   "status": "frontier",
-  "base_commit": "e4dff67054770a4496fcf664b646180648e6becc",
+  "base_commit": "c0741101b9ecdec944048714f3a892fd9db5c580",
   "blocker": "S5 retail outer-update scheduler/cadence ownership",
-  "consumer": "remaining S5 dispatch-plus-timer proof",
+  "consumer": "remaining S5 caller-value producer plus dispatch/rate proof",
   "gates_changed": [],
   "retail_cadence_admitted": false,
+  "upstream_positive": [
+    "SHIFT.PhysicsManagerSchedulerEntryOwner/1",
+    "SHIFT.SchedulerAccumulatorProducerFrontier/1",
+    "SHIFT.SchedulerAccumulatorValueProvenance/1"
+  ],
   "anchors": {
-    "physics_manager_scheduler_entry_owner": "SHIFT.PhysicsManagerSchedulerEntryOwner/1",
     "upper_caller": "0x007155e9",
     "scheduler_owner": "0x00715380",
     "batch_scheduler": "0x00713050",
@@ -15,14 +19,26 @@
     "scheduler_accumulator_offset": "0x348",
     "scheduler_rate_offset": "0x388"
   },
-  "verified_facts": [
+  "proven_facts": [
     {
-      "fact": "FUN_00715380 is a __thiscall function with signature undefined4 FUN_00715380(void * this, float param_1).",
-      "source": "functions.jsonl",
-      "evidence_state": "verified"
+      "fact": "cPhysicsManager scheduler-entry ownership and the direct chain down to FUN_00713050 are already positive.",
+      "source": "SHIFT.PhysicsManagerSchedulerEntryOwner/1",
+      "evidence_state": "proven"
     },
     {
-      "fact": "FUN_007155e9 is a __fastcall function with only one explicit parameter in ECX and has no float stack parameter in the exported ABI signature.",
+      "fact": "FUN_00715380 has exactly one proven this+0x348 writer surface in the targeted scheduler slice.",
+      "source": "SHIFT.SchedulerAccumulatorProducerFrontier/1",
+      "evidence_state": "proven"
+    },
+    {
+      "fact": "The machine value stored to this+0x348 has a structured local data dependency on FUN_00715380 explicit float param_1 at Stack[0x4]:4.",
+      "source": "SHIFT.SchedulerAccumulatorValueProvenance/1 (merged PR #1351)",
+      "evidence_state": "proven"
+    }
+  ],
+  "verified_facts": [
+    {
+      "fact": "FUN_007155e9 is a __fastcall function with only one explicit parameter in ECX and no exported float stack parameter.",
       "source": "functions.jsonl",
       "evidence_state": "verified"
     },
@@ -32,37 +48,34 @@
       "evidence_state": "verified"
     },
     {
-      "fact": "FUN_00713050 consumes the source-visible scheduler accumulator at this+0x348 together with the integer rate at manager+0x388 when deriving the update count.",
+      "fact": "FUN_00713050 consumes this+0x348 together with the integer rate at manager+0x388 when deriving the simulation update count.",
       "source": "evidence/outer_update_callsite_static.md and tools/ghidra/build_outer_update_callsite_contract.py",
       "evidence_state": "verified"
-    },
-    {
-      "fact": "The previously published Physics Manager ownership handoff fixes cPhysicsManager vtable slot +0x18 as the scheduler entry feeding the direct chain down to FUN_00713050.",
-      "source": "SHIFT.PhysicsManagerSchedulerEntryOwner/1",
-      "evidence_state": "proven"
     }
   ],
   "narrowing": {
-    "result": "The float passed to FUN_00715380 must be established inside FUN_007155e9 or from state loaded inside that function; it is not an explicit caller-supplied float ABI parameter to FUN_007155e9.",
-    "promotion": "verified ABI narrowing only",
+    "closed_edge": "FUN_00715380 param_1 -> this+0x348 local value dependency",
+    "next_value_edge": "FUN_007155e9 exact value feeding FUN_00715380 Stack[0x4]:4 at call 0x00715602",
+    "reason": "FUN_007155e9 has no explicit float ABI parameter, so the call argument producer must be established from its own instruction/p-code slice or state loaded there.",
     "does_not_prove": [
-      "the numeric value of the float argument",
-      "that the float is elapsed frame time",
-      "that FUN_00715380 writes this+0x348 from param_1",
+      "the producer identity of the value fed at 0x00715602",
+      "that the value has seconds as physical units",
       "controller runtime dispatch to cPhysicsManager slot +0x18",
+      "retail rate-source semantics for +0x388",
+      "one scheduler invocation per rendered frame",
       "retail cadence equivalence to host 1/60"
     ]
   },
   "remaining_blockers": [
     {
-      "id": "upper-caller-float-value-provenance",
-      "target": "FUN_007155e9 -> FUN_00715380 @ 0x00715602",
-      "required_evidence": "targeted SHIFT.GhidraFunctionInstructions/2 instruction/p-code slice proving the value pushed/stored for FUN_00715380 param_1"
+      "id": "upper-caller-pushed-value-producer",
+      "target": "FUN_007155e9 -> FUN_00715380 Stack[0x4]:4 @ 0x00715602",
+      "required_evidence": "backward instruction/p-code provenance from the exact call argument to its local/global producer inside FUN_007155e9"
     },
     {
-      "id": "accumulator-write-provenance",
-      "target": "FUN_00715380 this+0x348",
-      "required_evidence": "exact write/read-modify-write provenance and relation, if any, to param_1"
+      "id": "physical-time-unit-semantics",
+      "target": "producer feeding FUN_00715380 param_1 / this+0x348",
+      "required_evidence": "independent static provenance sufficient to assign timing units/meaning without assuming host dt"
     },
     {
       "id": "controller-runtime-dispatch",
@@ -71,15 +84,15 @@
     },
     {
       "id": "retail-rate-source",
-      "target": "rate used at +0x388",
-      "required_evidence": "producer/ownership proof sufficient to admit retail cadence semantics"
+      "target": "rate used at manager+0x388",
+      "required_evidence": "producer/ownership proof sufficient to admit the retail substep rate"
     }
   ],
   "rejected_promotions": [
     "Do not infer one update per rendered frame.",
-    "Do not equate the scheduler accumulator to host wall-clock dt without value provenance.",
-    "Do not treat adjacency or ABI shape as semantic Tick identity.",
+    "Do not equate the scheduler accumulator to host wall-clock dt from the local param1 dependency alone.",
+    "Do not treat BManager lifecycle adjacency as proof of controller Tick dispatch.",
     "Do not reopen closed BODY integration writer work below FUN_00770e80."
   ],
-  "next_action": "Export only FUN_007155e9 and FUN_00715380 with the existing targeted instruction/p-code runner, then run a fail-closed value/field provenance join."
+  "next_action": "Consume the existing three-function targeted scheduler slice and prove the exact value producer feeding FUN_00715380 Stack[0x4]:4 at callsite 0x00715602; publish that independently if positive."
 }
