@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 
 int main() {
@@ -106,6 +107,18 @@ int main() {
         return 1;
     }
 
+    bool rejected_missing_rate_drain = false;
+    try {
+        (void)retail_outer.drain_ready_inner_substeps(
+            [](double) {});
+    } catch (const std::logic_error&) {
+        rejected_missing_rate_drain = true;
+    }
+    if (!rejected_missing_rate_drain) {
+        std::cerr << "inner substep drain ran without loaded rate evidence\n";
+        return 1;
+    }
+
     retail_outer.admit_outer_dispatch();
     if (std::abs(
             retail_outer.pending_accumulator_seconds -
@@ -120,6 +133,107 @@ int main() {
     if (!retail_outer.inner_rate_ready() ||
         std::abs(retail_outer.inner_substep_seconds() - (1.0 / 240.0)) > 1e-12) {
         std::cerr << "loaded retail inner-rate admission mismatch\n";
+        return 1;
+    }
+
+    std::size_t drained_callbacks = 0;
+    double drained_dt = 0.0;
+    const std::size_t drained = retail_outer.drain_ready_inner_substeps(
+        [&](double dt) {
+            ++drained_callbacks;
+            drained_dt = dt;
+        });
+    const double expected_240_pending =
+        shift::runtime::kRetailNormalOuterIncrementSeconds -
+        8.0 * (1.0 / 240.0);
+    if (drained != 8 || drained_callbacks != 8 ||
+        std::abs(drained_dt - (1.0 / 240.0)) > 1e-12 ||
+        std::abs(
+            retail_outer.pending_accumulator_seconds -
+            expected_240_pending) > 1e-12 ||
+        retail_outer.pending_accumulator_seconds < 0.0 ||
+        retail_outer.has_ready_inner_substep()) {
+        std::cerr << "retail inner substep drain mismatch\n";
+        return 1;
+    }
+
+    // A failed physics consumer must not silently consume scheduler time.  This
+    // preserves the exact selected-session step for deterministic retry.
+    auto retry_outer = make_retail_outer_scheduler_contract(
+        true,
+        shift::runtime::kRetailOuterNominalFrequencyHz,
+        shift::runtime::kRetailOuterGatePeriodMs,
+        shift::runtime::kRetailNormalOuterIncrementSeconds,
+        shift::runtime::kRetailSteadySchedulerInvocationsPerDispatch);
+    retry_outer.admit_loaded_inner_rate(240.0);
+    retry_outer.admit_outer_dispatch();
+    const double retry_pending_before = retry_outer.pending_accumulator_seconds;
+    bool callback_failure_observed = false;
+    try {
+        (void)retry_outer.drain_ready_inner_substeps(
+            [](double) {
+                throw std::runtime_error("synthetic inner physics rejection");
+            });
+    } catch (const std::runtime_error&) {
+        callback_failure_observed = true;
+    }
+    if (!callback_failure_observed ||
+        retry_outer.pending_accumulator_seconds != retry_pending_before) {
+        std::cerr << "failed inner physics step consumed retail scheduler time\n";
+        return 1;
+    }
+
+    // Exercise a non-divisible arbitrary rate.  Three admitted 1/30-ish outer
+    // increments must preserve the fractional remainder and yield 20 exact
+    // 1/200 inner substeps rather than rounding each outer dispatch separately.
+    auto fractional_outer = make_retail_outer_scheduler_contract(
+        true,
+        shift::runtime::kRetailOuterNominalFrequencyHz,
+        shift::runtime::kRetailOuterGatePeriodMs,
+        shift::runtime::kRetailNormalOuterIncrementSeconds,
+        shift::runtime::kRetailSteadySchedulerInvocationsPerDispatch);
+    fractional_outer.admit_loaded_inner_rate(200.0);
+    std::size_t fractional_steps = 0;
+    for (int outer = 0; outer < 3; ++outer) {
+        fractional_outer.admit_outer_dispatch();
+        fractional_steps += fractional_outer.drain_ready_inner_substeps(
+            [](double dt) {
+                if (std::abs(dt - 0.005) > 1e-12) {
+                    throw std::runtime_error(
+                        "fractional-cadence inner dt mismatch");
+                }
+            });
+    }
+    if (fractional_steps != 20 ||
+        fractional_outer.pending_accumulator_seconds < 0.0 ||
+        fractional_outer.pending_accumulator_seconds >=
+            fractional_outer.inner_substep_seconds() +
+                fractional_outer.inner_accumulator_tolerance_seconds()) {
+        std::cerr << "fractional retail inner cadence was not preserved\n";
+        return 1;
+    }
+
+    auto expect_bad_rate = [](double rate_hz) {
+        auto contract = make_retail_outer_scheduler_contract(
+            true,
+            shift::runtime::kRetailOuterNominalFrequencyHz,
+            shift::runtime::kRetailOuterGatePeriodMs,
+            shift::runtime::kRetailNormalOuterIncrementSeconds,
+            shift::runtime::kRetailSteadySchedulerInvocationsPerDispatch);
+        try {
+            contract.admit_loaded_inner_rate(rate_hz);
+        } catch (const std::invalid_argument&) {
+            return true;
+        }
+        return false;
+    };
+    if (!expect_bad_rate(0.0) ||
+        !expect_bad_rate(-1.0) ||
+        !expect_bad_rate(240.5) ||
+        !expect_bad_rate(65536.0) ||
+        !expect_bad_rate(std::numeric_limits<double>::infinity()) ||
+        !expect_bad_rate(std::numeric_limits<double>::quiet_NaN())) {
+        std::cerr << "native inner-rate seam accepted a value outside recovered uint16 semantics\n";
         return 1;
     }
 
@@ -188,6 +302,9 @@ int main() {
         << "\"retail_outer_authority_seam\":true,"
         << "\"retail_outer_cadence_admitted\":true,"
         << "\"loaded_inner_rate_required\":true,"
+        << "\"retail_inner_substep_drain\":true,"
+        << "\"retail_inner_retry_preserves_accumulator\":true,"
+        << "\"fractional_inner_cadence_preserved\":true,"
         << "\"retail_host_fallback_rejected\":true,"
         << "\"host_fixed_tick_seconds\":"
         << shift::runtime::kHostDevelopmentFixedDt << ","
