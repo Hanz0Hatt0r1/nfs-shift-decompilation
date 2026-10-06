@@ -10,7 +10,9 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOL = ROOT / "tools/build_selected_session_physics_tweaker_rate.py"
-SPEC = importlib.util.spec_from_file_location("build_selected_session_physics_tweaker_rate", TOOL)
+SPEC = importlib.util.spec_from_file_location(
+    "build_selected_session_physics_tweaker_rate", TOOL
+)
 assert SPEC is not None and SPEC.loader is not None
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
@@ -21,7 +23,13 @@ def _write_json(path: Path, value: dict) -> Path:
     return path
 
 
-def _snapshot(*, self_test: bool = False, loaded: int = 240, current: int = 240) -> dict:
+def _snapshot(
+    *,
+    self_test: bool = False,
+    loaded: int = 240,
+    current: int = 240,
+    relationships_valid: bool = True,
+) -> dict:
     equal = current == loaded
     return {
         "format": MODULE.SNAPSHOT_FORMAT,
@@ -46,13 +54,14 @@ def _snapshot(*, self_test: bool = False, loaded: int = 240, current: int = 240)
         },
         "current_manager": {
             "rate_hz": current,
-            "relationships_valid": True,
+            "relationships_valid": relationships_valid,
             "equals_loaded_tick_rate": equal,
         },
         "adjudication": {
             "physics_tweaker_xml_load_completed_before_observation": True,
-            "loaded_global_applied_to_cphysics_manager": equal,
-            "selected_session_loaded_rate_observed_after_PhysicsTweaker_load": equal,
+            "loaded_global_applied_to_cphysics_manager_at_initialization": True,
+            "selected_session_loaded_rate_observed_after_PhysicsTweaker_load": True,
+            "current_manager_rate_matches_loaded_at_observation": equal,
             "constructor_default_180_used_as_admission_basis": False,
             "current_manager_rate_is_assumed_constant": False,
             "retail_inner_substep_execution_admitted": False,
@@ -76,10 +85,20 @@ def _cadence() -> dict:
     }
 
 
-def _fixture(tmp_path: Path, *, loaded: int = 240, current: int = 240):
+def _fixture(
+    tmp_path: Path,
+    *,
+    loaded: int = 240,
+    current: int = 240,
+    relationships_valid: bool = True,
+):
     snapshot = _write_json(
         tmp_path / "snapshot.json",
-        _snapshot(loaded=loaded, current=current),
+        _snapshot(
+            loaded=loaded,
+            current=current,
+            relationships_valid=relationships_valid,
+        ),
     )
     cadence = _write_json(tmp_path / "cadence.json", _cadence())
     binary = tmp_path / "SHIFT.exe"
@@ -95,9 +114,9 @@ def _fixture(tmp_path: Path, *, loaded: int = 240, current: int = 240):
     )
 
 
-def test_positive_snapshot_promotes_only_loaded_session_rate(tmp_path):
-    snapshot, binary, cadence, size, md5, sha256 = _fixture(tmp_path)
-    report = MODULE.build(
+def _build(fixture):
+    snapshot, binary, cadence, size, md5, sha256 = fixture
+    return MODULE.build(
         snapshot,
         binary,
         cadence,
@@ -106,29 +125,40 @@ def test_positive_snapshot_promotes_only_loaded_session_rate(tmp_path):
         expected_sha256=sha256,
     )
 
+
+def test_positive_snapshot_promotes_only_loaded_session_rate(tmp_path):
+    report = _build(_fixture(tmp_path))
+
     assert report["format"] == "SHIFT.SelectedSessionPhysicsTweakerRate/1"
     assert report["ready"] is True
     assert report["selected_session"]["loaded_tick_rate_hz"] == 240
-    assert report["selected_session"]["applied_to_current_manager"] is True
     assert report["retail_identity"]["exact_match"] is True
     assert report["retail_identity"]["runtime_pe_and_machine_anchors_match"] is True
+    assert report["current_manager_observation"]["admission_dependency"] is False
     assert report["adjudication"]["selected_session_loaded_rate_admitted"] is True
     assert report["adjudication"]["dynamic_manager_rate_policy_proven"] is False
     assert report["adjudication"]["retail_inner_substep_execution_admitted"] is False
     assert report["next_blocker"] == "inner-substep-runtime-consumption"
 
 
-def test_manager_divergence_fails_closed(tmp_path):
-    snapshot, binary, cadence, size, md5, sha256 = _fixture(tmp_path, current=210)
-    with pytest.raises(ValueError, match="applied exactly"):
-        MODULE.build(
-            snapshot,
-            binary,
-            cadence,
-            expected_size=size,
-            expected_md5=md5,
-            expected_sha256=sha256,
-        )
+def test_manager_divergence_is_promoted_as_loaded_rate_but_retained_as_next_blocker(tmp_path):
+    report = _build(_fixture(tmp_path, current=210))
+
+    assert report["ready"] is True
+    assert report["selected_session"]["loaded_tick_rate_hz"] == 240
+    assert report["current_manager_observation"]["rate_hz"] == 210
+    assert report["current_manager_observation"]["equals_loaded_tick_rate"] is False
+    assert report["next_blocker"] == "current-manager-rate-scheduling-policy"
+
+
+def test_incoherent_manager_observation_does_not_erase_loaded_rate(tmp_path):
+    report = _build(
+        _fixture(tmp_path, current=210, relationships_valid=False)
+    )
+    assert report["ready"] is True
+    assert report["selected_session"]["loaded_tick_rate_hz"] == 240
+    assert report["current_manager_observation"]["relationships_valid"] is False
+    assert report["next_blocker"] == "current-manager-rate-observation-coherence"
 
 
 def test_runtime_identity_must_be_positive(tmp_path):
@@ -165,7 +195,7 @@ def test_self_test_snapshot_cannot_be_promoted(tmp_path):
 
 
 def test_binary_identity_mismatch_fails_closed(tmp_path):
-    snapshot, binary, cadence, size, md5, sha256 = _fixture(tmp_path)
+    snapshot, binary, cadence, size, _, sha256 = _fixture(tmp_path)
     with pytest.raises(ValueError, match="MD5 mismatch"):
         MODULE.build(
             snapshot,
@@ -178,22 +208,15 @@ def test_binary_identity_mismatch_fails_closed(tmp_path):
 
 
 def test_observed_post_load_180_is_valid_but_not_static_default_evidence(tmp_path):
-    snapshot, binary, cadence, size, md5, sha256 = _fixture(
-        tmp_path,
-        loaded=180,
-        current=180,
-    )
-    report = MODULE.build(
-        snapshot,
-        binary,
-        cadence,
-        expected_size=size,
-        expected_md5=md5,
-        expected_sha256=sha256,
-    )
+    report = _build(_fixture(tmp_path, loaded=180, current=180))
     assert report["ready"] is True
     assert report["selected_session"]["loaded_tick_rate_hz"] == 180
-    assert report["selected_session"]["constructor_default_180_is_not_admission_basis"] is True
+    assert (
+        report["selected_session"][
+            "constructor_default_180_is_not_admission_basis"
+        ]
+        is True
+    )
 
 
 def test_constructor_default_claim_is_rejected(tmp_path):
