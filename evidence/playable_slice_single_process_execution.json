@@ -22,14 +22,18 @@
     "retail_outer_cadence_admitted": true,
     "retail_outer_authority_seam_ready": true,
     "selected_session_physics_tweaker_rate_frontier_contract": "SHIFT.SelectedSessionPhysicsTweakerRateFrontier/1",
-    "selected_session_physics_tweaker_rate_frontier_ready": false,
+    "selected_session_physics_tweaker_rate_frontier_ready": true,
+    "selected_session_physics_tweaker_rate_contract": "SHIFT.SelectedSessionPhysicsTweakerRate/1",
+    "selected_session_physics_tweaker_rate_ready": true,
+    "selected_session_physics_tweaker_rate_hz": 180,
+    "selected_session_inner_substep_seconds": 0.005555555555555556,
     "selected_session_physics_tweaker_archive": "PHYSICSBOOTFLOW.bff",
     "selected_session_physics_tweaker_archive_sha256": "f4205984343987d7879fcd65f6b2527848a6fd16e9830d6ccca70b7e5db4254a",
     "selected_session_physics_tweaker_entry": "vehicles/physics/physicstweaker.xml",
     "selected_session_physics_tweaker_decoded_sha256": "6cdd05f0512d367c8ce240cb13dd22fe10fb3e21da95185ea8f79e1ca67ca62f",
-    "current_blocker_id": "selected-session-physics-tweaker-rate-admission",
-    "current_blocker": "materialize the already hash-locked selected-session PhysicsTweaker XML, prove its unique loaded tick rate, and feed that exact numeric rate into the strict RetailEvidence outer-scheduler seam before dispatching persistent BMW inner physics substeps; constructor default 180 Hz is not sufficient evidence",
-    "current_blocker_consumer": "RetailEvidence outer scheduler -> exact loaded 1/rate inner persistent BODY fixed-step execution",
+    "current_blocker_id": "retail-inner-substep-execution-admission",
+    "current_blocker": "consume the exact hash-verified PC selected-session PhysicsTweaker rate of 180 Hz through the materialized native handoff and existing atomic RetailEvidence outer-dispatch path, then execute persistent BMW BODY inner substeps at exact 1/180 s without equating host/render 1/60 to retail scheduling",
+    "current_blocker_consumer": "materialized exact PC rate -> RetailEvidence outer scheduler -> exact 1/180 persistent BODY inner fixed-step execution",
     "runtime_capture_required": false,
     "original_game_execution_required": false
   },
@@ -56,7 +60,8 @@
     "explicit runtime scheduler-authority seam",
     "SHIFT.RetailOuterUpdateCadence/1",
     "strict native RetailOuterSchedulerContract",
-    "hash-locked selected-session PhysicsTweaker rate materialization infrastructure"
+    "hash-locked selected-session PhysicsTweaker rate materialization infrastructure",
+    "SHIFT.SelectedSessionPhysicsTweakerRate/1 exact PC selected-session rate 180 Hz"
   ],
   "positive_gates": {
     "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": true,
@@ -64,10 +69,10 @@
     "BODY0_bind_frame_proof_ready": true,
     "vehicle_world_transform_ready": true,
     "retail_outer_cadence_admitted": true,
-    "retail_outer_authority_seam_ready": true
+    "retail_outer_authority_seam_ready": true,
+    "loaded_inner_physics_rate_admitted": true
   },
   "false_gates": {
-    "loaded_inner_physics_rate_admitted": false,
     "retail_inner_substep_execution_admitted": false,
     "retail_control_chain_complete": false,
     "retail_camera_follow_ready": false
@@ -95,7 +100,7 @@
     },
     {
       "id": "S5",
-      "task": "consume proven retail outer scheduler/cadence, materialize the hash-locked selected-session PhysicsTweaker tick rate, then consume its exact 1/rate inner persistent BODY substeps",
+      "task": "consume the exact hash-verified selected-session PhysicsTweaker rate of 180 Hz as 1/180 s persistent BODY inner substeps through the atomic retail outer-dispatch path",
       "state": "current"
     },
     {
