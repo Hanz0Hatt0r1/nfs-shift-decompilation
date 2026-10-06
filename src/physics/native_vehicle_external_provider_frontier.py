@@ -1,10 +1,11 @@
 """Machine-readable frontier for external providers in the deepest native vehicle chain.
 
 Phase 699 is coordination infrastructure, not a physics implementation. This
-Phase 708 refresh consumes Process 1 PRs #1208 and #1210, Process 2 Phase 707,
-and Process 3 Phases 647-649. It removes already-closed BODY-owner identity and
-renderer-transport blockers without promoting any still-unproven physics
-producer, BODY0 bind witness, or retail cadence owner.
+refresh consumes Process 1 PRs #1208 and #1210, Process 2 Phase 707, Process 3
+Phases 647-649, and the positive S5 retail outer-cadence / atomic-dispatch
+handoff. It removes already-closed BODY-owner, renderer-transport and outer
+cadence-owner blockers without promoting any still-unproven physics producer,
+BODY0 bind witness, or selected-session inner rate.
 """
 from __future__ import annotations
 
@@ -329,14 +330,17 @@ def build_frontier() -> dict[str, Any]:
     joins = [
         {
             "id": "outer_update_cadence_owner",
-            "state": "static_frontier_available",
-            "process2_action": REQUEST_PROCESS1,
-            "blockers": [
-                "source gate is narrowed but exact committed retail machine-callsite mapping remains evidence-gated",
-                "dynamic execution multiplicity is not proven",
-                "runtime cadence owner is not proven",
+            "state": "retail_proven_and_consumed",
+            "process2_action": "closed",
+            "evidence": [
+                "SHIFT.RetailOuterUpdateCadence/1 proves MWL::Core::cPhysicsManager default-mode scheduler ownership",
+                "retail outer manager nominal frequency is 30 Hz with a distinct quantized 33 ms timing gate",
+                "steady active state proves one scheduler invocation per default manager dispatch",
+                "normal admitted outer accumulator contribution is 0.03333333507180214 seconds",
+                "NativeVehicleProviderSession::execute_retail_outer_dispatch atomically consumes one already-admitted retail dispatch without coupling it to a render frame or host 1/60 tick",
             ],
-            "policy": "explicit outer update only; fixed_step auto-schedule forbidden",
+            "blockers": [],
+            "policy": "reuse RetailEvidence cadence and the atomic explicit-dispatch seam; keep selected-session inner rate fail-closed and do not equate host/render frames to retail dispatches or invent catch-up/drop behavior",
         },
         {
             "id": "body_to_vehicle_identity",
@@ -392,8 +396,9 @@ def build_frontier() -> dict[str, Any]:
         "version": 1,
         "phase": 699,
         "refresh_after_phase": 707,
-        "refresh_label": "Process 2 Phase 708 coordination refresh",
-        "deepest_native_chain": "Phase 697 persistent FUN_00770e80 outer-update path wrapped by Phase 701 persistent provider session; Phase 707 supplies retail BODY0 identity, Phase 706 persists admitted world transforms, and Process 3 Phase 649 is the live freshness-gated Vulkan sink",
+        "refresh_label": "Process 2 Phase 708 coordination refresh + S5 retail cadence closure",
+        "retail_cadence_refresh": "SHIFT.RetailOuterUpdateCadence/1 + atomic retail outer-dispatch transaction",
+        "deepest_native_chain": "Phase 697 persistent FUN_00770e80 outer-update path wrapped by Phase 701 persistent provider session; S5 supplies positive RetailEvidence outer cadence plus an atomic explicit retail-dispatch transaction, Phase 707 supplies retail BODY0 identity, Phase 706 persists admitted world transforms, and Process 3 Phase 649 is the live freshness-gated Vulkan sink",
         "external_provider_count": len(providers),
         "providers": providers,
         "action_counts": action_counts,
@@ -408,6 +413,11 @@ def build_frontier() -> dict[str, Any]:
             "participant_admission_preserved": True,
             "missing_provider_fails_closed": True,
             "fixed_step_auto_schedule_allowed": False,
+            "retail_outer_cadence_ready": True,
+            "retail_outer_scheduler_authority": "RetailEvidence",
+            "retail_outer_dispatch_transaction_ready": True,
+            "selected_session_inner_rate_ready": False,
+            "render_loop_equated_to_outer_dispatch": False,
             "host_sqrt_substitution_allowed": False,
             "host_sin_substitution_allowed": False,
             "host_cos_substitution_allowed": False,
