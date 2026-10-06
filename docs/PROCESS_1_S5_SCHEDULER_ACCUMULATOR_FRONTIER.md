@@ -1,76 +1,84 @@
-# S5 scheduler accumulator producer frontier
+# S5 scheduler caller-value producer frontier
 
-This checkpoint exists to preserve Process 1 progress on the current playable-slice blocker without promoting incomplete cadence semantics.
+This checkpoint preserves the current Process 1 progress on the playable-slice S5 blocker without promoting incomplete cadence semantics.
 
 ## BLOCKER
 
 `S5 retail outer-update scheduler/cadence ownership`.
 
-The already-published `SHIFT.PhysicsManagerSchedulerEntryOwner/1` proves the Physics Manager-owned scheduler-entry chain down to `FUN_00713050`. The remaining work is to prove the controller runtime dispatch and the producer semantics of the accumulator/rate inputs used by the batch scheduler.
+Current `main` now includes merged PR #1351, which proves the local machine-value dependency:
+
+```text
+FUN_00715380 explicit float param_1 (Stack[0x4]:4)
+    -> unique this+0x348 STORE value dependency
+```
+
+Therefore this checkpoint no longer treats the local accumulator write as open. The shortest remaining value-provenance edge is upstream at `FUN_007155e9`.
 
 ## INPUT
 
-Current `main` at checkpoint creation:
+Current `main` consumed by this revision:
 
 ```text
-e4dff67054770a4496fcf664b646180648e6becc
+c0741101b9ecdec944048714f3a892fd9db5c580
 ```
 
-Static exports and committed contracts used:
+Positive upstream contracts:
+
+- `SHIFT.PhysicsManagerSchedulerEntryOwner/1`;
+- `SHIFT.SchedulerAccumulatorProducerFrontier/1`;
+- `SHIFT.SchedulerAccumulatorValueProvenance/1`.
+
+Additional static exports:
 
 - `functions.jsonl`;
 - `callgraph.jsonl`;
-- `evidence/outer_update_callsite_static.md`;
-- `tools/ghidra/build_outer_update_callsite_contract.py`;
-- `SHIFT.PhysicsManagerSchedulerEntryOwner/1`.
+- `evidence/outer_update_callsite_static.md`.
 
 ## OUTPUT
 
-Machine-readable frontier:
+Machine-readable saved frontier:
 
 ```text
 evidence/retail_scheduler_accumulator_producer_frontier.json
-SHIFT.RetailSchedulerAccumulatorProducerFrontier/1
+SHIFT.SchedulerAccumulatorCallerValueProducerFrontier/1
 ```
 
 This is a **frontier**, not a positive retail-cadence handoff.
 
-## Current verified narrowing
-
-The exported ABI says:
+## Current proven/verified graph
 
 ```text
-FUN_00715380(void * this, float param_1)     __thiscall
-FUN_007155e9(LONG * param_1)                 __fastcall / ECX only
+cPhysicsManager scheduler entry
+    -> ...
+    -> FUN_00713050
+         reads this+0x348
+         reads manager+0x388 rate
+
+FUN_007155e9
+    -> 0x00715602 FUN_00715380(this, float param_1)
+                        |
+                        v
+                 this+0x348 STORE
 ```
 
-The static callgraph fixes:
+PR #1351 proves only the lower local dependency `param_1 -> this+0x348`. It explicitly leaves the caller-side producer semantics open.
 
-```text
-0x00715602  FUN_007155e9 -> FUN_00715380
-```
-
-Therefore the float argument consumed by `FUN_00715380` is established inside `FUN_007155e9` or loaded there from state; it is not an explicit float argument supplied to `FUN_007155e9` through its exported ABI.
-
-Separately, the existing outer-update static contract verifies that `FUN_00713050` consumes:
-
-```text
-this + 0x348   source-visible scheduler accumulator
-manager +0x388 integer rate used to derive the substep count
-```
-
-This does **not** yet prove that `FUN_00715380::param_1` is elapsed time, that it writes `this+0x348`, or that the controller invokes the Physics Manager scheduler exactly once per rendered frame.
+The exported ABI for `FUN_007155e9` has only its ECX parameter and no explicit float stack parameter. Therefore the float supplied at `0x00715602` must be established from instructions/state inside `FUN_007155e9`; the exact producer remains to be proven.
 
 ## CONSUMER
 
-The consumer is the remaining S5 cadence proof. It should consume this frontier plus the targeted `SHIFT.GhidraFunctionInstructions/2` slice for only:
+Remaining S5 cadence proof.
+
+Shortest next static proof:
 
 ```text
-0x007155e9
-0x00715380
+FUN_007155e9
+  exact argument feeding call 0x00715602
+      <- backward value producer
 ```
 
-and the already-merged BManager dispatch slice infrastructure from PR #1349.
+The existing targeted scheduler instruction slice already contains `FUN_007155e9`, `FUN_00715380`, and `FUN_00713050`; no broad export is required.
 
 ## GATES_CHANGED
 
@@ -80,27 +88,27 @@ None.
 retail_cadence_admitted = false
 ```
 
-must remain false at this stage.
+must remain false.
 
 ## LIMITS
 
-Do not promote any of the following without exact instruction/p-code provenance:
+Still not proven:
 
-- `FUN_00715380::param_1 == elapsed frame time`;
-- `param_1 -> this+0x348`;
-- `this+0x348 == host dt`;
-- one Physics Manager scheduler invocation per rendered frame;
-- host `1/60` as retail cadence;
-- BManager lifecycle adjacency as proof of Tick slot semantics.
+- exact producer identity of the float argument at `0x00715602`;
+- physical time units/meaning of that value;
+- controller runtime indirect dispatch to `cPhysicsManager` vtable slot `+0x18`;
+- retail rate-source semantics for manager `+0x388`;
+- one invocation per rendered frame;
+- host `1/60` equivalence.
 
-Do not reopen the already-closed BODY integration writer path below `FUN_00770e80`.
+Do not reopen the closed BODY integration writer path below `FUN_00770e80`.
 
 ## TESTS
 
-`tests/test_retail_scheduler_accumulator_producer_frontier.py` regression-locks the fail-closed status and the exact remaining blockers.
+`tests/test_retail_scheduler_accumulator_producer_frontier.py` regression-locks the fail-closed state and verifies that the already-closed local `param_1 -> +0x348` edge is no longer listed as a blocker.
 
 ## NEXT_OWNER
 
 Current sequential critical-path process / Process 1 compatibility owner.
 
-Next action: use the existing targeted Ghidra instruction/p-code runner on `FUN_007155e9` and `FUN_00715380`, then prove the stack value reaching `0x00715602` and the exact write/read-modify-write provenance of `this+0x348`.
+Next action: backward-slice the exact value fed to `FUN_00715380` at `0x00715602` inside `FUN_007155e9`. If that producer becomes independently positive, publish a versioned handoff immediately before continuing controller/rate semantics.
