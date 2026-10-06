@@ -1,0 +1,80 @@
+{
+  "format": "SHIFT.PhysicsManagerRateAccessorFrontier/1",
+  "version": 1,
+  "status": "frontier",
+  "base_commit": "c0741101b9ecdec944048714f3a892fd9db5c580",
+  "blocker": "S5 retail outer-update scheduler/cadence ownership",
+  "consumer": "retail +0x388 rate-source ownership/value proof",
+  "gates_changed": [],
+  "retail_cadence_admitted": false,
+  "source_expression": {
+    "consumer": "FUN_00713050",
+    "accessor_callsite": "0x0071307c",
+    "expression": "*(int *)(FUN_0070fe90() + 0x388)",
+    "reciprocal_used": "1.0 / rate_source",
+    "source_contract": "SHIFT.OuterUpdateCallsiteStatic/1"
+  },
+  "verified_direct_topology": [
+    {
+      "from": "FUN_00713050",
+      "instruction": "0x0071307c",
+      "to": "FUN_0070fe90"
+    },
+    {
+      "from": "FUN_0070fe90",
+      "instruction": "0x0070fe93",
+      "to": "FUN_0041903c"
+    },
+    {
+      "from": "FUN_0041903c",
+      "instruction": "0x00419042",
+      "to": "FUN_0070fe99"
+    },
+    {
+      "from": "FUN_0070fe99",
+      "instruction": "0x0070fec7",
+      "to": "FUN_0070fae0"
+    }
+  ],
+  "constructor_join": {
+    "function": "FUN_0070fae0",
+    "function_address": "0x0070fae0",
+    "function_fingerprint": "072f0f9df5e4b00b2ff7cdbf991923afacaa82bcdac508310f3eb0a3e5941859",
+    "source_backed_contract": "SHIFT.PhysicsManagerRuntime/1",
+    "named_object": "Physics Manager",
+    "vtable": "PTR_FUN_00b04524",
+    "base_constructor": "FUN_00647a10",
+    "nearby_constructor_visible_fields": [
+      "0x370",
+      "0x374",
+      "0x378",
+      "0x37c",
+      "0x380",
+      "0x384"
+    ]
+  },
+  "adjudication": {
+    "rate_expression_to_accessor_callsite_proven": true,
+    "accessor_initializer_chain_verified": true,
+    "initializer_reaches_source_backed_physics_manager_constructor": true,
+    "FUN_0070fe90_return_aliases_cPhysicsManager_instance": false,
+    "plus_0x388_is_cPhysicsManager_field": false,
+    "plus_0x388_semantic_name_frequency": false,
+    "plus_0x388_value_or_units_proven": false,
+    "fixed_timestep_semantics_proven": false
+  },
+  "exact_missing_machine_edge": {
+    "id": "physics-manager-accessor-return-alias",
+    "required": "instruction/p-code proof that the value returned from FUN_0070fe90 at 0x0071307c aliases the cPhysicsManager instance constructed by FUN_0070fae0, followed by exact +0x388 writer/value provenance",
+    "why_static_call_adjacency_is_insufficient": "The short singleton/initializer call chain fixes a bounded target but does not by itself prove return-value identity across the wrappers."
+  },
+  "limits": {
+    "offset_adjacency_used_as_field_identity": false,
+    "nearby_0x370_to_0x384_fields_used_to_promote_0x388": false,
+    "frequency_name_promoted": false,
+    "host_1_60_promoted": false,
+    "rendered_frame_equivalence_claimed": false,
+    "runtime_capture_used": false
+  },
+  "next_action": "Include FUN_00713050, FUN_0070fe90, FUN_0041903c, FUN_0070fe99 and FUN_0070fae0 in the next available targeted instruction/p-code slice; first prove the accessor return alias, then enumerate exact +0x388 writers/producers."
+}
