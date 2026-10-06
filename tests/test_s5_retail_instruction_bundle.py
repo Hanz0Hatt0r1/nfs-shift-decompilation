@@ -42,7 +42,7 @@ def _write(path: Path, names) -> None:
     )
 
 
-def test_exact_union_splits_back_to_existing_analyzer_surfaces(tmp_path):
+def test_exact_union_splits_back_to_corrected_analyzer_surfaces(tmp_path):
     bundle = tmp_path / "bundle.jsonl"
     _write(bundle, MODULE.BUNDLE_TARGETS)
 
@@ -58,6 +58,9 @@ def test_exact_union_splits_back_to_existing_analyzer_surfaces(tmp_path):
     assert report["subsets"]["scheduler"]["target_count"] == 3
     assert report["subsets"]["rate_accessor"]["target_count"] == 5
     assert report["subsets"]["bmanager"]["target_count"] == 9
+    assert report["corrections"]["bmanager_subset_uses_correct_default_dispatcher_FUN_00647d80"] is True
+    assert report["corrections"]["FUN_00647da0_plus_0x18_assumption_retired"] is True
+    assert report["corrections"]["FUN_0070fe90_return_as_FUN_006485b0_stack_argument_retired"] is True
     assert report["proof_scope"]["retail_machine_semantics_promoted"] is False
     assert report["proof_scope"]["retail_cadence_admitted"] is False
     assert report["proof_scope"]["host_fixed_step_substitution_allowed"] is False
@@ -102,6 +105,15 @@ def test_runner_exports_union_once_and_reuses_exact_subsets():
 
     for target in MODULE.BUNDLE_TARGETS:
         assert source.count(target) == 1
+
+    for retired in (
+        "FUN_00647b70",
+        "FUN_00647c60",
+        "FUN_00647cf0",
+        "FUN_00647da0",
+        "FUN_0065bb50",
+    ):
+        assert retired not in source
 
     assert "shift_d3d9_capture" not in source.lower()
     assert "wine" not in source.lower()
