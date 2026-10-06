@@ -21,7 +21,7 @@
     {
       "process": "Process 1",
       "role": "proof-owner",
-      "task": "join exact FUN_00795d60 value provenance with the now-positive canonical BMW VHF HIERARCHY root frame and adjudicate identity versus fixed affine delta",
+      "task": "join exact SHIFT.OuterVehicleRenderRootDeltaProvenance/1 / FUN_00795d60 value provenance with positive SHIFT.BMWVHFHierarchyRootFrame/1 and adjudicate identity versus fixed affine delta",
       "may_publish_final_semantic_proof": true,
       "output": "positive outer Vehicle/VHF relation contract or narrower fail-closed frontier"
     },
