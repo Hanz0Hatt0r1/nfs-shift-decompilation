@@ -1,0 +1,73 @@
+{
+  "format": "SHIFT.RetailSchedulerTimingArgumentABIFrontier/1",
+  "status": "positive",
+  "blocker": "S5 retail outer-update scheduler/cadence ownership",
+  "claim": "The float argument consumed by FUN_00715380 at the direct callsite 0x00715602 is not an ABI formal parameter of FUN_007155e9. Current static ABI evidence therefore narrows its producer to value construction or state/global loading performed inside FUN_007155e9 before that call; no upstream formal timing argument is admitted.",
+  "provenance": {
+    "functions_export": {
+      "source": "functions.jsonl",
+      "FUN_007155e9": {
+        "address": "0x007155e9",
+        "calling_convention": "__fastcall",
+        "signature": "uint FUN_007155e9(LONG * param_1)",
+        "parameters": [
+          {
+            "name": "param_1",
+            "type": "LONG *",
+            "storage": "ECX:4"
+          }
+        ]
+      },
+      "FUN_00715380": {
+        "address": "0x00715380",
+        "calling_convention": "__thiscall",
+        "signature": "undefined4 FUN_00715380(void * this, float param_1)",
+        "parameters": [
+          {
+            "name": "this",
+            "type": "void *",
+            "storage": "ECX:4 (auto)"
+          },
+          {
+            "name": "param_1",
+            "type": "float",
+            "storage": "Stack[0x4]:4"
+          }
+        ]
+      }
+    },
+    "callgraph_export": {
+      "source": "callgraph.jsonl",
+      "edge": {
+        "from": "FUN_007155e9",
+        "instruction": "0x00715602",
+        "to": "FUN_00715380",
+        "indirect": false
+      }
+    }
+  },
+  "adjudication": {
+    "direct_call_FUN_007155e9_to_FUN_00715380": true,
+    "FUN_00715380_requires_float_stack_argument": true,
+    "FUN_007155e9_has_formal_stack_timing_argument": false,
+    "upstream_formal_timing_argument_proven": false,
+    "timing_value_exact_machine_producer_proven": false,
+    "timing_units_proven": false,
+    "retail_cadence_admitted": false
+  },
+  "next_exact_targets": [
+    "FUN_007155e9 instruction/p-code slice around 0x00715602 to prove the float value source",
+    "FUN_00715380 instruction/p-code slice to prove whether param_1 accumulates into this+0x348 and on which paths",
+    "join the resulting value root to the already-frozen FUN_00713050 accumulator/rate expression"
+  ],
+  "consumer": "S5 scheduler accumulator producer proof, then retail cadence admission",
+  "gates_changed": [],
+  "limits": {
+    "decompiler_signature_treated_as_physical_units": false,
+    "call_adjacency_treated_as_scheduler_semantics": false,
+    "host_1_60_promoted": false,
+    "rendered_frame_equivalence_promoted": false,
+    "exact_float_value_source_claimed": false,
+    "retail_cadence_admitted": false
+  }
+}
