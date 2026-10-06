@@ -1,0 +1,114 @@
+{
+  "BLOCKER": "SHIFT.BMWBody0BindFrameProof/1: outer Vehicle-root -> exact BMW VHF vehicle-root relation",
+  "CONSUMER": "SHIFT.BMWOuterVHFNumericRelation/1 exact numeric outer Vehicle -> VHF evaluation",
+  "INPUT": {
+    "canonical_vhf": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
+    "resource_join": "SHIFT.BMWVehicleRenderModelResourceJoin/1"
+  },
+  "OUTPUT": "exact canonical BMW VHF HIERARCHY Root node, MatrixNumber, source parent chain, and resolved affine matrices",
+  "format": "SHIFT.BMWVHFHierarchyRootFrame/1",
+  "handoff": {
+    "BODY0_bind_frame_proof_ready": false,
+    "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": false,
+    "canonical_BMW_VHF_hierarchy_root_frame_ready": true,
+    "canonical_BMW_VHF_hierarchy_root_matrix_ready": true,
+    "outer_vehicle_root_to_VHF_fixed_affine_delta_ready": false,
+    "outer_vehicle_root_to_VHF_vehicle_root_ready": false,
+    "vehicle_world_transform_ready": false,
+    "next_frontier": "consume this exact numeric root packet with the already-positive semantic outer/VHF relation and selected first-bootstrap FUN_00795d60 delta"
+  },
+  "limits": {
+    "BODY0_bind_frame_claimed": false,
+    "callgraph_adjacency_is_ownership": false,
+    "dynamic_outer_vehicle_pose_consumed": false,
+    "equal_numeric_values_are_provenance": false,
+    "original_game_executed": false,
+    "resource_identity_is_frame_identity": false,
+    "root_identity_matrix_implies_outer_vehicle_identity": false,
+    "runtime_capture_required": false,
+    "visual_similarity_is_frame_identity": false
+  },
+  "provenance": {
+    "canonical_BMW_VHF_resource_identity_revalidated": true,
+    "decoded_payload_sha256_matches_resource_join": true,
+    "exact_root_MATRIX_record_ready": true,
+    "exact_root_MatrixNumber_ready": true,
+    "exact_root_affine_matrix_ready": true,
+    "exact_root_node_name_ready": true,
+    "exact_root_parent_chain_ready": true,
+    "unique_direct_HIERARCHY_root_ready": true,
+    "vehicle_render_hierarchy_resource_owner_join_ready": true
+  },
+  "ready": true,
+  "source": {
+    "archive": "BMW_M3_E36.bff",
+    "archive_path": "BMW_M3_E36.bff",
+    "archive_sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+    "archive_sha256_verified": true,
+    "decoded_sha256": "e08887d17d9e34e703a385260f41017fc19acbebc3405614b375e81766b4bd51",
+    "decoded_size": 88599,
+    "entry_index": 1083,
+    "entry_index_verified": true,
+    "resolved_path": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
+    "resource_join_format": "SHIFT.BMWVehicleRenderModelResourceJoin/1"
+  },
+  "status": "canonical-bmw-vhf-hierarchy-root-frame-proven",
+  "vehicle_root_frame": {
+    "car_name": "BMW_M3_E36",
+    "car_tag": "CAR",
+    "convention": {
+      "composition": "world = parent_world * local",
+      "row_vector_conversion": "exact 4x4 transpose",
+      "source": "VHF row-major column-vector hierarchy"
+    },
+    "local_matrix_column_vector": [
+      1.0, 0.0, 0.0, 0.0,
+      0.0, 1.0, 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0
+    ],
+    "local_matrix_is_identity": true,
+    "local_matrix_row_vector": [
+      1.0, 0.0, 0.0, 0.0,
+      0.0, 1.0, 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0
+    ],
+    "local_offset_xyz": [0.0, 0.0, 0.0],
+    "local_orientation_xyzw": [0.0, 0.0, 0.0, 1.0],
+    "matrix_number": "0",
+    "matrix_parent_chain": [
+      {
+        "local_matrix_column_vector": [
+          1.0, 0.0, 0.0, 0.0,
+          0.0, 1.0, 0.0, 0.0,
+          0.0, 0.0, 1.0, 0.0,
+          0.0, 0.0, 0.0, 1.0
+        ],
+        "matrix_id": "0",
+        "offset_xyz": [0.0, 0.0, 0.0],
+        "orientation_xyzw": [0.0, 0.0, 0.0, 1.0],
+        "parent": null
+      }
+    ],
+    "matrix_parent_chain_ids": ["0"],
+    "matrix_record_present": true,
+    "node_name": "Root",
+    "node_path": "CAR[BMW_M3_E36]/NODE[HIERARCHY:Root]",
+    "node_type": "HIERARCHY",
+    "world_matrix_column_vector": [
+      1.0, 0.0, 0.0, 0.0,
+      0.0, 1.0, 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0
+    ],
+    "world_matrix_is_identity": true,
+    "world_matrix_row_vector": [
+      1.0, 0.0, 0.0, 0.0,
+      0.0, 1.0, 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0
+    ]
+  },
+  "version": 1
+}

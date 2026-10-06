@@ -10,9 +10,13 @@
     "semantic_relation_contract": "SHIFT.OuterVehicleBMWVHFRootRelation/1",
     "semantic_relation_ready": true,
     "semantic_relation_kind": "setup-fixed-affine",
-    "current_blocker_id": "BMW-render-root-delta-numeric-materialization",
-    "current_blocker": "materialize exact selected-BMW Vehicle::InitVehicle/FUN_00795d60 values for outerVehicle+0x19c/+0x1a0/+0x1a4 from exact setup inputs",
-    "current_blocker_consumer": "finite M_outer_to_vhf_root -> SHIFT.BMWBody0BindFrameProof/1",
+    "selected_bmw_delta_contract": "SHIFT.BMWPrimaryPlayerFirstBootstrapRenderRootDelta/1",
+    "selected_bmw_delta_numeric_ready": true,
+    "outer_vhf_numeric_relation_contract": "SHIFT.BMWOuterVHFNumericRelation/1",
+    "outer_vhf_numeric_relation_ready": true,
+    "current_blocker_id": "BMW-BODY0-bind-frame-composition",
+    "current_blocker": "compose the selected BMW BODY0->outer numeric matrix with exact selected first-bootstrap outer->VHF numeric relation and publish SHIFT.BMWBody0BindFrameProof/1",
+    "current_blocker_consumer": "fresh persistent BMW world transform",
     "runtime_capture_required": false,
     "original_game_execution_required": false
   },
@@ -27,6 +31,8 @@
     "SHIFT.OuterVehicleRenderRootDeltaProvenance/1",
     "SHIFT.VehicleRenderModelRootAffineDomainJoin/1",
     "SHIFT.OuterVehicleBMWVHFRootRelation/1",
+    "SHIFT.BMWPrimaryPlayerFirstBootstrapRenderRootDelta/1",
+    "SHIFT.BMWOuterVHFNumericRelation/1",
     "SHIFT.BMWVHFRootFrameSceneConsumer/1",
     "persistent BODY/runtime freshness infrastructure",
     "live freshness-gated Vulkan vehicle transform sink",
@@ -34,8 +40,10 @@
     "final BODY0 bind proof packet/runtime admission seam",
     "explicit runtime scheduler-authority seam"
   ],
+  "positive_gates": {
+    "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": true
+  },
   "false_gates": {
-    "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": false,
     "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": false,
     "BODY0_bind_frame_proof_ready": false,
     "vehicle_world_transform_ready": false,
@@ -47,17 +55,17 @@
     {
       "id": "S1",
       "task": "materialize exact selected-BMW FUN_00795d60 delta_local values from Vehicle::InitVehicle inputs",
-      "state": "current"
+      "state": "positive"
     },
     {
       "id": "S2",
       "task": "evaluate and prove finite M_outer_to_vhf_root with provenance",
-      "state": "blocked-on-S1"
+      "state": "positive"
     },
     {
       "id": "S3",
       "task": "compose BODY0-to-outer with outer-to-VHF and publish positive SHIFT.BMWBody0BindFrameProof/1",
-      "state": "blocked-on-S2"
+      "state": "current"
     },
     {
       "id": "S4",
@@ -81,7 +89,7 @@
     },
     {
       "id": "S8",
-      "task": "prove and consume retail camera-follow source/timing",
+      "task": "prove/consume retail camera-follow source and timing",
       "state": "queued"
     },
     {
