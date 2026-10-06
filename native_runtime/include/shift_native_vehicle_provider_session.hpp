@@ -93,6 +93,10 @@ public:
         NativeRuntimeState& runtime,
         RetailOuterSchedulerContract& scheduler);
 
+    NativeVehicleRetailInnerBatchResult execute_retail_outer_dispatch(
+        NativeRuntimeState& runtime,
+        RetailOuterSchedulerContract& scheduler);
+
     std::uint64_t step_count() const { return step_count_; }
     const NativeVehicleProviderSessionTelemetry& last_telemetry() const {
         return last_telemetry_;
