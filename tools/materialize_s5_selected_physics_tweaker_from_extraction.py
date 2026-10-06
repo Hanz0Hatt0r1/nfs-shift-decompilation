@@ -3,7 +3,7 @@
 
 This adapter consumes the manifest schema emitted by the standalone BFF extractor
 used for PHYSICSBOOTFLOW.bff and then delegates semantic/hash admission to the
-canonical selected-session rate materializer.  Manifest metadata can prove that
+canonical selected-session rate materializer. Manifest metadata can prove that
 the expected entry was extracted, but it never substitutes for the pinned decoded
 SHA-256: the decoded XML bytes still have to pass the canonical hash and unique
 `tick rate` checks before a positive handoff can be emitted.
@@ -30,7 +30,12 @@ from materialize_s5_selected_physics_tweaker_rate import (  # noqa: E402
     render_native_handoff_header,
 )
 
-EXPECTED_METHOD_PREFIX = "xmem/lzx:"
+# Exact values observed in the supplied successful PHYSICSBOOTFLOW extraction
+# manifest for the already hash-locked entry 49. These are supporting extraction
+# identity checks only; none of them replace the canonical decoded SHA-256 gate.
+EXPECTED_OFFSET = 0x31800
+EXPECTED_METHOD = "xmem/lzx:1frame(s)"
+EXPECTED_CRC_FIELD = 0xA0F8C093
 
 
 def _normalize_resource_path(value: str) -> str:
@@ -118,12 +123,28 @@ def resolve_extracted_entry(
         raise ValueError(
             f"PhysicsTweaker extraction manifest status is not ok: {status!r}"
         )
-    method = (row.get("method") or "").strip().lower()
-    if not method.startswith(EXPECTED_METHOD_PREFIX):
+
+    offset = _manifest_int(row, "offset")
+    if offset != EXPECTED_OFFSET:
         raise ValueError(
-            "PhysicsTweaker extraction manifest method is not XMem/LZX: "
-            f"{method!r}"
+            "PhysicsTweaker extraction manifest offset drift: "
+            f"expected 0x{EXPECTED_OFFSET:x}, got 0x{offset:x}"
         )
+
+    method = (row.get("method") or "").strip().lower()
+    if method != EXPECTED_METHOD:
+        raise ValueError(
+            "PhysicsTweaker extraction manifest method drift: "
+            f"expected {EXPECTED_METHOD!r}, got {method!r}"
+        )
+
+    crc_field = _manifest_int(row, "crc_field")
+    if crc_field != EXPECTED_CRC_FIELD:
+        raise ValueError(
+            "PhysicsTweaker extraction manifest CRC field drift: "
+            f"expected 0x{EXPECTED_CRC_FIELD:08x}, got 0x{crc_field:08x}"
+        )
+
     extension = (row.get("extension_field") or "").strip().lower()
     if extension and extension != "xml":
         raise ValueError(
@@ -141,12 +162,13 @@ def resolve_extracted_entry(
     return decoded_path, {
         "entry_index": expected_index,
         "entry_path": expected_path,
+        "offset": f"0x{offset:x}",
         "compression_type": expected_type,
         "compressed_size": expected_compressed_size,
         "uncompressed_size": expected_uncompressed_size,
         "method": method,
         "status": status,
-        "crc_field": (row.get("crc_field") or "").strip().lower(),
+        "crc_field": f"0x{crc_field:08x}",
     }
 
 
