@@ -62,10 +62,38 @@ jobs:
         run: cmake -S native_capture -B native_capture/build -A Win32
       - name: Build D3D9 capture producer
         run: cmake --build native_capture/build --config Release
-      - name: Verify D3D9 proxy has no VC runtime dependency
+      - name: Verify selected-session rate sampler self-test
         shell: pwsh
         run: |
-          $dll = Resolve-Path "native_capture/build/Release/d3d9.dll"
+          $sampler = Resolve-Path "native_capture/build/Release/shift_selected_session_rate_snapshot.exe"
+          $snapshot = Join-Path $env:RUNNER_TEMP "selected_session_rate_snapshot.json"
+          & $sampler --self-test --stable-samples 3 --output $snapshot
+          if ($LASTEXITCODE -ne 0) {
+            throw "selected-session rate sampler self-test failed with exit code $LASTEXITCODE"
+          }
+          $report = Get-Content -Raw $snapshot | ConvertFrom-Json
+          if ($report.format -ne "SHIFT.SelectedSessionPhysicsTweakerRateSnapshot/1" -or
+              $report.status -ne "self-test-passed" -or
+              $report.ready -or $report.admission_eligible -or
+              -not $report.self_test -or
+              -not $report.retail_identity.identity_ready -or
+              $report.selected_session.loaded_tick_rate_hz -ne 240 -or
+              $report.current_manager.rate_hz -ne 210 -or
+              $report.current_manager.equals_loaded_tick_rate -or
+              -not $report.current_manager.relationships_valid -or
+              $report.adjudication.selected_session_loaded_rate_observed_after_PhysicsTweaker_load -or
+              $report.adjudication.current_manager_rate_matches_loaded_at_observation -or
+              $report.adjudication.retail_inner_substep_execution_admitted) {
+            $report | ConvertTo-Json -Depth 8 | Write-Host
+            throw "selected-session rate sampler self-test contract mismatch"
+          }
+      - name: Verify capture tools have no VC runtime dependency
+        shell: pwsh
+        run: |
+          $targets = @(
+            (Resolve-Path "native_capture/build/Release/d3d9.dll"),
+            (Resolve-Path "native_capture/build/Release/shift_selected_session_rate_snapshot.exe")
+          )
           $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio/Installer/vswhere.exe"
           $vs = & $vswhere -latest -products * -property installationPath
           if (-not $vs) {
@@ -77,12 +105,14 @@ jobs:
           if (-not $dumpbin) {
             throw "dumpbin.exe was not found"
           }
-          $dependents = & $dumpbin.FullName /nologo /dependents $dll
           $forbidden = @("MSVCP", "VCRUNTIME", "api-ms-win-crt")
-          foreach ($prefix in $forbidden) {
-            if ($dependents -match [regex]::Escape($prefix)) {
-              $dependents | Write-Host
-              throw "D3D9 proxy unexpectedly depends on $prefix"
+          foreach ($target in $targets) {
+            $dependents = & $dumpbin.FullName /nologo /dependents $target
+            foreach ($prefix in $forbidden) {
+              if ($dependents -match [regex]::Escape($prefix)) {
+                $dependents | Write-Host
+                throw "$target unexpectedly depends on $prefix"
+              }
             }
           }
       - name: Verify D3D9 exports and passthrough forwarding
@@ -143,4 +173,5 @@ jobs:
           path: |
             native_capture/build/Release/d3d9.dll
             native_capture/build/Release/shift_d3d9_proxy_smoke.exe
+            native_capture/build/Release/shift_selected_session_rate_snapshot.exe
           if-no-files-found: error
