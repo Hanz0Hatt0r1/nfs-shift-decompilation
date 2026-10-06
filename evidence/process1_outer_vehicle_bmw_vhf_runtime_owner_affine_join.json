@@ -1,0 +1,91 @@
+{
+  "BLOCKER": "SHIFT.BMWBody0BindFrameProof/1: outer Vehicle-root -> exact BMW VHF HIERARCHY root relation",
+  "CONSUMER": "Process 1 final outer Vehicle-root -> BMW VHF HIERARCHY-root identity/fixed-affine adjudication using Process 3 resource-local root semantics",
+  "INPUT": [
+    "SHIFT.OuterVehicleRenderSnapshotAffineBridge/1",
+    "SHIFT.VehicleRenderHierarchyResourceOwnerJoin/1",
+    "SHIFT.BMWVehicleRenderModelResourceJoin/1"
+  ],
+  "OUTPUT": "exact executable-side outer Vehicle render affine -> canonical BMW VHF runtime render-model owner join",
+  "claim": {
+    "canonical_bmw_vhf_runtime_render_model_owner": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
+    "outer_vehicle_affine_reaches_exact_bmw_vhf_runtime_owner": true,
+    "outer_vehicle_rotation_to_runtime_render_owner_provenance": "common source R_outer through normalize -> matrix_to_quaternion -> participant root quaternion -> participant+0x1028 derived matrix",
+    "outer_vehicle_translation_to_runtime_render_owner_formula": "P_runtime_owner = P_outer + R_outer * delta_local",
+    "resource_local_vhf_hierarchy_root_affine_applied_or_identity": false
+  },
+  "format": "SHIFT.OuterVehicleBMWVHFRuntimeOwnerAffineJoin/1",
+  "handoff": {
+    "BODY0_bind_frame_proof_ready": false,
+    "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": false,
+    "canonical_BMW_VHF_resource_local_root_semantics_required": true,
+    "canonical_BMW_VHF_runtime_affine_carrier_ready": true,
+    "next_frontier": "consume Process 3 exact canonical BMW VHF HIERARCHY Root local/frame semantics; compose it with this proven runtime affine carrier and adjudicate identity or exact fixed affine delta",
+    "outer_vehicle_affine_to_canonical_BMW_VHF_runtime_owner_ready": true,
+    "outer_vehicle_root_to_VHF_fixed_affine_delta_ready": false,
+    "outer_vehicle_root_to_VHF_vehicle_root_ready": false,
+    "vehicle_world_transform_ready": false
+  },
+  "limits": {
+    "FUN_004ae150_promoted_to_root_setter": false,
+    "callgraph_adjacency_is_ownership": false,
+    "equal_numeric_values_are_provenance": false,
+    "identity_valued_resource_matrix_implies_dynamic_identity": false,
+    "orientation_roundtrip_bitwise_identity_claimed": false,
+    "original_game_executed": false,
+    "resource_identity_implies_frame_identity": false,
+    "runtime_capture_required": false,
+    "runtime_render_model_owner_equals_hierarchy_root_node": false,
+    "visual_similarity_is_frame_identity": false
+  },
+  "ready": true,
+  "retail": {
+    "decompiler_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "program": "SHIFT.exe"
+  },
+  "same_participant_executable_join": {
+    "callgraph_adjacency_used_as_owner_proof": false,
+    "render_model_owner": "participant+0x1340",
+    "root_rotation_source": "participant+0x1028",
+    "root_translation_source": [
+      "participant+0xa10",
+      "participant+0xa14",
+      "participant+0xa18"
+    ],
+    "same_participant_affine_and_render_model_owner_ready": true,
+    "selected_runtime_render_model_resource": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
+    "world_affine_consumer": "FUN_004a8c20",
+    "world_affine_translation_slots": [
+      12,
+      13,
+      14
+    ]
+  },
+  "status": "outer-render-affine-to-canonical-bmw-vhf-runtime-owner-proven-resource-local-root-pending",
+  "upstream": {
+    "affine_bridge": {
+      "format": "SHIFT.OuterVehicleRenderSnapshotAffineBridge/1",
+      "physical_slot_producer_consumer_bridge_ready": true,
+      "status": "outer-render-snapshot-affine-bridge-proven-vhf-delta-join-pending",
+      "translation_formula": "P_snapshot = P_outer + R_outer * delta_local",
+      "vehicle_render_model_field": "participant+0x1340",
+      "world_affine_consumer": "FUN_004a8c20"
+    },
+    "bmw_resource_join": {
+      "canonical_vhf": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
+      "decoded_sha256": "e08887d17d9e34e703a385260f41017fc19acbebc3405614b375e81766b4bd51",
+      "format": "SHIFT.BMWVehicleRenderModelResourceJoin/1",
+      "selected_vehicle_render_model": "BMW_M3_E36.vhf",
+      "vehicle_name": "BMW_M3_E36"
+    },
+    "render_hierarchy_owner": {
+      "format": "SHIFT.VehicleRenderHierarchyResourceOwnerJoin/1",
+      "source_commit": "4fcb9e2223592928d5e8a0d2f578f269b195bdc3",
+      "vehicle_render_hierarchy_owner_ready": true,
+      "vehicle_render_model_property_field": "+0x54",
+      "vehicle_render_model_property_name": "Vehicle Render Model"
+    }
+  },
+  "version": 1
+}
