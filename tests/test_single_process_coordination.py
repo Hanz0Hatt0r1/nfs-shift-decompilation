@@ -22,12 +22,14 @@ def test_single_process_execution_contract_is_active_and_current() -> None:
     assert payload["current_frontier"]["selected_bmw_delta_numeric_ready"] is True
     assert payload["current_frontier"]["outer_vhf_numeric_relation_contract"] == "SHIFT.BMWOuterVHFNumericRelation/1"
     assert payload["current_frontier"]["outer_vhf_numeric_relation_ready"] is True
-    assert payload["current_frontier"]["current_blocker_id"] == "BMW-BODY0-bind-frame-composition"
-    assert "SHIFT.BMWBody0BindFrameProof/1" in payload["current_frontier"]["current_blocker"]
+    assert payload["current_frontier"]["body0_bind_frame_contract"] == "SHIFT.BMWBody0BindFrameProof/1"
+    assert payload["current_frontier"]["body0_bind_frame_ready"] is True
+    assert payload["current_frontier"]["current_blocker_id"] == "BMW-persistent-world-transform-admission"
+    assert "fresh persistent BMW world transform" in payload["current_frontier"]["current_blocker"]
     assert payload["current_frontier"]["runtime_capture_required"] is False
 
 
-def test_single_process_queue_orders_bind_before_scheduler_control_camera() -> None:
+def test_single_process_queue_orders_world_transform_before_scheduler_control_camera() -> None:
     payload = json.loads(EXECUTION.read_text(encoding="utf-8"))
     queue = payload["queue"]
 
@@ -36,22 +38,25 @@ def test_single_process_queue_orders_bind_before_scheduler_control_camera() -> N
     assert "delta_local" in queue[0]["task"]
     assert queue[1]["state"] == "positive"
     assert "M_outer_to_vhf_root" in queue[1]["task"]
-    assert queue[2]["state"] == "current"
+    assert queue[2]["state"] == "positive"
     assert "SHIFT.BMWBody0BindFrameProof/1" in queue[2]["task"]
-    assert queue[3]["state"] == "blocked-on-S3"
+    assert queue[3]["state"] == "current"
+    assert "world-transform" in queue[3]["task"]
     assert "scheduler/cadence" in queue[4]["task"]
     assert "camera-follow" in queue[7]["task"]
 
 
-def test_single_process_keeps_post_s2_semantic_gates_fail_closed() -> None:
+def test_single_process_opens_only_world_transform_after_s3() -> None:
     payload = json.loads(EXECUTION.read_text(encoding="utf-8"))
     positives = payload["positive_gates"]
     gates = payload["false_gates"]
 
     assert positives["outer_vehicle_root_to_VHF_relation_numeric_matrix_ready"] is True
+    assert positives["BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready"] is True
+    assert positives["BODY0_bind_frame_proof_ready"] is True
     assert "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready" not in gates
-    assert gates["BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready"] is False
-    assert gates["BODY0_bind_frame_proof_ready"] is False
+    assert "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready" not in gates
+    assert "BODY0_bind_frame_proof_ready" not in gates
     assert gates["vehicle_world_transform_ready"] is False
     assert gates["retail_cadence_admitted"] is False
     assert payload["internal_checkpoint_policy"]["cross_process_handoffs_exist"] is False
