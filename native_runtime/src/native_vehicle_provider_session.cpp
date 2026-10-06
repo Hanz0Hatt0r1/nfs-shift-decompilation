@@ -175,4 +175,26 @@ NativeVehicleProviderSession::execute_ready_retail_inner_batch(
     return result;
 }
 
+NativeVehicleRetailInnerBatchResult
+NativeVehicleProviderSession::execute_retail_outer_dispatch(
+    NativeRuntimeState& runtime,
+    RetailOuterSchedulerContract& scheduler) {
+    require_complete_bundle(providers_);
+
+    // This method represents one already-admitted retail outer-manager dispatch.
+    // It deliberately does not connect dispatch admission to a render frame or
+    // host 1/60 tick. The caller must supply the recovered retail scheduling
+    // event. Keep the normal +1/30 accumulator contribution atomic with the
+    // recovered persistent BODY inner batch: if the loaded rate is missing or a
+    // deep provider rejects, the scheduler returns to its pre-dispatch state.
+    const RetailOuterSchedulerContract scheduler_before_dispatch = scheduler;
+    try {
+        scheduler.admit_outer_dispatch();
+        return execute_ready_retail_inner_batch(runtime, scheduler);
+    } catch (...) {
+        scheduler = scheduler_before_dispatch;
+        throw;
+    }
+}
+
 }  // namespace shift::runtime
