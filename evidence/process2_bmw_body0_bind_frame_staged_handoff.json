@@ -32,8 +32,8 @@
     {
       "id": "exact_bmw_vhf_resource_identity",
       "contract": "SHIFT.BMWVehicleRenderModelResourceJoin/1",
-      "state": "positive-available",
-      "consumer": "exact frame subject for Process 1 and Process 2 handoff validation",
+      "state": "positive-consumed",
+      "consumer": "SHIFT.Process2BMWVHFHierarchyRootFrameStage/1 exact canonical resource subject validation",
       "unlocks": [
         "canonical vehicles/bmw_m3_e36/bmw_m3_e36.vhf target identity"
       ]
@@ -41,14 +41,15 @@
     {
       "id": "exact_bmw_vhf_hierarchy_root_frame",
       "contract": "SHIFT.BMWVHFHierarchyRootFrame/1",
-      "state": "positive-available",
+      "state": "positive-consumed",
       "source": "merged Process 1 PR #1323",
-      "consumer": "outer Vehicle/VHF relation-stage validation and production scene-frame consistency",
+      "consumer": "SHIFT.Process2BMWVHFHierarchyRootFrameStage/1 strict relation-stage validator/adaptor",
       "unlocks": [
         "exact canonical HIERARCHY Root node identity",
         "exact MatrixNumber and MATRIX parent chain",
         "exact local and resolved world affine matrices",
-        "exact row-vector transpose used by the existing VHF scene path"
+        "exact row-vector transpose used by the existing VHF scene path",
+        "typed Process 2 root-frame stage ready for the future outer Vehicle/VHF relation proof"
       ]
     },
     {
@@ -91,9 +92,10 @@
     },
     {
       "id": "consume_exact_vhf_root_frame_stage",
-      "state": "runnable",
+      "state": "ready-consumed",
       "contract": "SHIFT.BMWVHFHierarchyRootFrame/1",
-      "rule": "wire exact root-frame identity/matrix metadata into the strict relation-stage validator without claiming the unresolved outer Vehicle relation"
+      "output_contract": "SHIFT.Process2BMWVHFHierarchyRootFrameStage/1",
+      "rule": "strictly validate exact resource/root identity, MatrixNumber, parent-chain and row-vector metadata while keeping the unresolved outer Vehicle relation and final runtime admission false"
     },
     {
       "id": "external_provider_and_control_frontier",
