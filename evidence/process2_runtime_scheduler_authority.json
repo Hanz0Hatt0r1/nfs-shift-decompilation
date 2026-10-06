@@ -1,34 +1,46 @@
 {
   "format": "SHIFT.Process2RuntimeSchedulerAuthority/1",
-  "status": "ready-gate",
-  "blocker": "Process 2 P2.D must not silently substitute host 1/60 pacing for retail outer-update scheduler/cadence",
+  "status": "outer-retail-seam-ready-inner-rate-blocked",
+  "blocker": "Consume the positive retail outer scheduler without substituting host 1/60 or guessing the selected-session PhysicsTweaker tick rate.",
   "input": {
-    "current_runtime_policy": "SHIFT.NativeRuntimeLoopPolicyRegression/1",
+    "current_runtime_policy": "SHIFT.NativeRuntimeLoopPolicyRegression/2",
     "host_continuous_tick_seconds": 0.016666666666666666,
-    "retail_scheduler_cadence_handoff_present": false
+    "retail_scheduler_cadence_handoff_present": true,
+    "retail_scheduler_cadence_handoff": "SHIFT.RetailOuterUpdateCadence/1",
+    "outer_nominal_frequency_hz": 30.0,
+    "outer_gate_period_ms": 33,
+    "normal_outer_accumulator_increment_seconds": 0.03333333507180214,
+    "steady_scheduler_invocations_per_dispatch": 1,
+    "loaded_inner_rate_present": false
   },
   "output": {
     "scheduler_authority_explicit": true,
     "host_scheduler_authority": "HostDevelopment",
-    "future_retail_scheduler_authority": "RetailEvidence",
+    "retail_outer_scheduler_authority": "RetailEvidence",
     "host_1_60_is_retail_cadence": false,
     "retail_host_fallback_rejected": true,
-    "retail_cadence_admitted": false
+    "retail_outer_authority_seam_ready": true,
+    "retail_outer_cadence_admitted": true,
+    "loaded_inner_rate_admitted": false,
+    "inner_substep_execution_admitted": false,
+    "render_loop_equated_to_outer_dispatch": false
   },
   "consumer": [
-    "future positive Process 1 retail scheduler/cadence handoff consumer",
-    "native_runtime/src/runtime_loop_policy.hpp",
+    "native_runtime/src/runtime_loop_policy.hpp::RetailOuterSchedulerContract",
+    "future selected-session PhysicsTweaker tick-rate handoff",
     "production shift_runtime outer-update scheduling"
   ],
   "limits": [
-    "does not prove retail scheduler ownership",
-    "does not prove retail update multiplicity or cadence",
-    "does not define or guess the schema of the future Process 1 cadence artifact",
-    "does not make host 1/60 pacing retail-admissible",
-    "does not change BODY0 bind-frame or vehicle world-transform gates"
+    "does not use host 1/60 as retail cadence",
+    "does not use the BManager 10 ms worker poll as physics cadence",
+    "does not promote the PhysicsTweaker constructor default 180 Hz to the loaded selected-session rate",
+    "does not execute an inner NativeRuntimeState::fixed_step until a loaded rate is admitted",
+    "does not claim one rendered frame equals one retail outer update",
+    "does not invent retail catch-up/drop behavior"
   ],
   "ownership": {
-    "current_retail_cadence_blocker_owner": "Process 1",
-    "process2_state": "explicit-authority-seam-ready-awaiting-positive-cadence-proof"
+    "retail_outer_cadence_blocker_owner": "Process 1 positive",
+    "loaded_inner_rate_blocker_owner": "resource/static join",
+    "process2_state": "strict-retail-outer-authority-seam-ready-awaiting-loaded-inner-rate"
   }
 }
