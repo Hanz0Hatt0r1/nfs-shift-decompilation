@@ -352,6 +352,130 @@ int main() {
                 failing_scheduler.ready_inner_substep_count() == 2u,
             "retail batch bridge retained a scheduler commit after rejection");
 
+        // Atomic retail outer-dispatch bridge. Missing-rate rejection must also
+        // roll back the normal outer accumulator contribution, not merely avoid
+        // BODY execution.
+        NativeRuntimeState missing_dispatch_runtime{};
+        configure_runtime(missing_dispatch_runtime, initial_body_bytes);
+        std::vector<std::string> missing_dispatch_events;
+        NativeVehicleProviderSession missing_dispatch_session(make_bundle(
+            missing_dispatch_events,
+            source,
+            relations,
+            reset_state,
+            solver_topology,
+            projection,
+            machine_input,
+            fixture_inner_dt * 0.5));
+        auto missing_dispatch_scheduler = make_retail_scheduler();
+        const double missing_dispatch_accumulator_before =
+            missing_dispatch_scheduler.pending_accumulator_seconds;
+        bool missing_dispatch_rate_rejected = false;
+        try {
+            (void)missing_dispatch_session.execute_retail_outer_dispatch(
+                missing_dispatch_runtime, missing_dispatch_scheduler);
+        } catch (const std::logic_error&) {
+            missing_dispatch_rate_rejected = true;
+        }
+        require(
+            missing_dispatch_rate_rejected &&
+                missing_dispatch_events.empty() &&
+                missing_dispatch_session.step_count() == 0u &&
+                missing_dispatch_runtime.outer_update.explicit_update_count == 0u &&
+                missing_dispatch_runtime.outer_update.body_bytes == initial_body_bytes &&
+                std::abs(
+                    missing_dispatch_scheduler.pending_accumulator_seconds -
+                    missing_dispatch_accumulator_before) < 1e-15,
+            "retail outer dispatch retained state after missing-rate rejection");
+
+        // With an explicitly admitted fixture rate the wrapper owns the outer
+        // accumulator contribution and then delegates the exact recovered batch.
+        NativeRuntimeState dispatch_runtime{};
+        configure_runtime(dispatch_runtime, initial_body_bytes);
+        std::vector<std::string> dispatch_events;
+        NativeVehicleProviderSession dispatch_session(make_bundle(
+            dispatch_events,
+            source,
+            relations,
+            reset_state,
+            solver_topology,
+            projection,
+            machine_input,
+            fixture_inner_dt * 0.5));
+        auto dispatch_scheduler = make_retail_scheduler();
+        dispatch_scheduler.admit_loaded_inner_rate(fixture_rate_hz);
+        const auto dispatch_batch = dispatch_session.execute_retail_outer_dispatch(
+            dispatch_runtime, dispatch_scheduler);
+        require(
+            dispatch_batch.recovered_substep_count == 2u &&
+                std::abs(dispatch_batch.inner_substep_seconds - fixture_inner_dt) < 1e-15 &&
+                dispatch_batch.session_step_count_before == 0u &&
+                dispatch_batch.session_step_count_after == 2u &&
+                dispatch_batch.explicit_update_count_before == 0u &&
+                dispatch_batch.explicit_update_count_after == 2u &&
+                dispatch_batch.scheduler_accumulator_committed &&
+                dispatch_session.step_count() == 2u &&
+                dispatch_runtime.outer_update.explicit_update_count == 2u &&
+                dispatch_runtime.outer_update.body_pose_snapshot_generation == 2u &&
+                dispatch_runtime.outer_update.body_bytes != initial_body_bytes &&
+                std::abs(
+                    dispatch_scheduler.pending_accumulator_seconds -
+                    (kRetailNormalOuterIncrementSeconds -
+                     2.0 / fixture_rate_hz)) < 1e-15,
+            "retail outer dispatch did not execute/commit exact recovered batch");
+
+        // A deep provider rejection through the wrapper restores the scheduler
+        // to the state before the outer contribution was admitted.
+        NativeRuntimeState failing_dispatch_runtime{};
+        configure_runtime(failing_dispatch_runtime, initial_body_bytes);
+        std::vector<std::string> failing_dispatch_events;
+        auto failing_dispatch_bundle = make_bundle(
+            failing_dispatch_events,
+            source,
+            relations,
+            reset_state,
+            solver_topology,
+            projection,
+            machine_input,
+            fixture_inner_dt * 0.5);
+        std::size_t failing_dispatch_post_half_step_calls = 0u;
+        failing_dispatch_bundle.post_half_step =
+            [&failing_dispatch_events,
+             &failing_dispatch_post_half_step_calls](std::size_t pass) {
+                failing_dispatch_events.push_back(
+                    "post-half:" + std::to_string(pass));
+                ++failing_dispatch_post_half_step_calls;
+                if (failing_dispatch_post_half_step_calls == 3u) {
+                    throw std::runtime_error(
+                        "intentional retail outer dispatch rejection");
+                }
+            };
+        NativeVehicleProviderSession failing_dispatch_session(
+            std::move(failing_dispatch_bundle));
+        auto failing_dispatch_scheduler = make_retail_scheduler();
+        failing_dispatch_scheduler.admit_loaded_inner_rate(fixture_rate_hz);
+        const double failing_dispatch_accumulator_before =
+            failing_dispatch_scheduler.pending_accumulator_seconds;
+
+        bool deep_dispatch_rejected = false;
+        try {
+            (void)failing_dispatch_session.execute_retail_outer_dispatch(
+                failing_dispatch_runtime, failing_dispatch_scheduler);
+        } catch (const std::runtime_error&) {
+            deep_dispatch_rejected = true;
+        }
+        require(deep_dispatch_rejected && !failing_dispatch_events.empty(),
+                "retail outer dispatch did not surface deep provider rejection");
+        require(
+            failing_dispatch_session.step_count() == 0u &&
+                failing_dispatch_runtime.outer_update.explicit_update_count == 0u &&
+                failing_dispatch_runtime.outer_update.body_pose_snapshot_generation == 0u &&
+                failing_dispatch_runtime.outer_update.body_bytes == initial_body_bytes &&
+                std::abs(
+                    failing_dispatch_scheduler.pending_accumulator_seconds -
+                    failing_dispatch_accumulator_before) < 1e-15,
+            "retail outer dispatch retained partial scheduler/BODY/session state");
+
         std::cout
             << "{\"format\":\"" << kNativeVehicleProviderSessionFormat << "\","
             << "\"ready\":true,"
@@ -364,6 +488,8 @@ int main() {
             << "\"retail_inner_batch_bridge_ready\":true,"
             << "\"retail_inner_batch_uses_scheduler_dt\":true,"
             << "\"retail_inner_batch_internal_rollback\":true,"
+            << "\"retail_outer_dispatch_transaction_ready\":true,"
+            << "\"retail_outer_dispatch_full_rollback\":true,"
             << "\"selected_session_rate_promoted\":false,"
             << "\"provider_semantics_promoted\":false,"
             << "\"vehicle_body_identity_proven\":false,"
