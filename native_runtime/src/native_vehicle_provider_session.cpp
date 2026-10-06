@@ -1,5 +1,6 @@
 #include "shift_native_vehicle_provider_session.hpp"
 
+#include "runtime_loop_policy.hpp"
 #include "runtime_state.hpp"
 
 #include <stdexcept>
@@ -123,6 +124,54 @@ NativeVehicleProviderSession::execute_explicit_step(
     result.joined = std::move(joined);
     result.session_step_count = step_count_;
     result.telemetry = last_telemetry_;
+    return result;
+}
+
+NativeVehicleRetailInnerBatchResult
+NativeVehicleProviderSession::execute_ready_retail_inner_batch(
+    NativeRuntimeState& runtime,
+    RetailOuterSchedulerContract& scheduler) {
+    require_complete_bundle(providers_);
+
+    // Both calls fail closed until the selected-session PhysicsTweaker rate has
+    // been admitted. No constructor/default rate or host 1/60 fallback exists
+    // on this path.
+    const std::size_t recovered_substep_count =
+        scheduler.ready_inner_substep_count();
+    const double inner_substep_seconds = scheduler.inner_substep_seconds();
+
+    NativeVehicleRetailInnerBatchResult result{};
+    result.recovered_substep_count = recovered_substep_count;
+    result.inner_substep_seconds = inner_substep_seconds;
+    result.session_step_count_before = step_count_;
+    result.explicit_update_count_before = runtime.outer_update.explicit_update_count;
+
+    // Keep persistent BODY/session/scheduler state coherent if any deep provider
+    // rejects during the recovered batch. External provider side effects are not
+    // reversible; a throwing provider still aborts the batch and no scheduler
+    // accumulator commit is retained.
+    const RetailOuterSchedulerContract scheduler_before = scheduler;
+    const ExplicitOuterUpdateRuntimeState outer_update_before = runtime.outer_update;
+    const std::uint64_t step_count_before = step_count_;
+    const NativeVehicleProviderSessionTelemetry telemetry_before = last_telemetry_;
+
+    try {
+        for (std::size_t index = 0u; index < recovered_substep_count; ++index) {
+            (void)index;
+            (void)execute_explicit_step(runtime, inner_substep_seconds);
+        }
+        scheduler.commit_ready_inner_substeps(recovered_substep_count);
+    } catch (...) {
+        scheduler = scheduler_before;
+        runtime.outer_update = outer_update_before;
+        step_count_ = step_count_before;
+        last_telemetry_ = telemetry_before;
+        throw;
+    }
+
+    result.session_step_count_after = step_count_;
+    result.explicit_update_count_after = runtime.outer_update.explicit_update_count;
+    result.scheduler_accumulator_committed = true;
     return result;
 }
 
