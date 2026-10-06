@@ -10,9 +10,22 @@
     "semantic_relation_contract": "SHIFT.OuterVehicleBMWVHFRootRelation/1",
     "semantic_relation_ready": true,
     "semantic_relation_kind": "setup-fixed-affine",
-    "current_blocker_id": "BMW-render-root-delta-numeric-materialization",
-    "current_blocker": "materialize exact selected-BMW Vehicle::InitVehicle/FUN_00795d60 values for outerVehicle+0x19c/+0x1a0/+0x1a4 from exact setup inputs",
-    "current_blocker_consumer": "finite M_outer_to_vhf_root -> SHIFT.BMWBody0BindFrameProof/1",
+    "delta_contract": "SHIFT.BMWPrimaryPlayerFirstBootstrapRenderRootDelta/1",
+    "delta_numeric_ready": true,
+    "delta_local": [0.0, 0.0, 0.0],
+    "current_blocker_id": "BMW-outer-VHF-numeric-relation-evaluation",
+    "current_blocker": "recover the exact retail SHIFT.BMWVHFHierarchyRootFrame/1 vehicle_root_frame.world_matrix_row_vector (or exact BMW_M3_E36.bff needed to regenerate it) and evaluate finite M_outer_to_vhf_root",
+    "current_blocker_consumer": "SHIFT.BMWOuterVHFNumericRelation/1 -> SHIFT.BMWBody0BindFrameProof/1",
+    "current_blocker_frontier": "SHIFT.BMWOuterVHFNumericRelationFrontier/1",
+    "current_blocker_evaluator": "tools/ghidra/evaluate_bmw_outer_vhf_numeric_relation.py",
+    "missing_static_input": {
+      "contract": "SHIFT.BMWVHFHierarchyRootFrame/1",
+      "field": "vehicle_root_frame.world_matrix_row_vector",
+      "canonical_vhf": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
+      "decoded_sha256": "e08887d17d9e34e703a385260f41017fc19acbebc3405614b375e81766b4bd51",
+      "alternative_archive": "BMW_M3_E36.bff",
+      "alternative_archive_sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70"
+    },
     "runtime_capture_required": false,
     "original_game_execution_required": false
   },
@@ -20,13 +33,15 @@
     "retail BMW chassis BODY 0 identity",
     "BMW BODY0 resource/local-to-SDF bind facts",
     "selected-session BODY0-to-outer Vehicle numeric relation",
-    "SHIFT.BMWBody0VHFBindFrameFrontier/1",
+    "SHIFT.BMWBody0VHFBindFrameFrontier/1 composition formula",
     "SHIFT.BMWVehicleRenderModelResourceJoin/1",
-    "SHIFT.BMWVHFHierarchyRootFrame/1",
+    "SHIFT.BMWVHFHierarchyRootFrame/1 semantic/root-frame proof infrastructure",
     "SHIFT.OuterVehicleRenderSnapshotAffineBridge/1",
     "SHIFT.OuterVehicleRenderRootDeltaProvenance/1",
     "SHIFT.VehicleRenderModelRootAffineDomainJoin/1",
     "SHIFT.OuterVehicleBMWVHFRootRelation/1",
+    "SHIFT.BMWPrimaryPlayerFirstBootstrapRenderRootDelta/1",
+    "S2 fail-closed SHIFT.BMWOuterVHFNumericRelation/1 evaluator/frontier infrastructure",
     "SHIFT.BMWVHFRootFrameSceneConsumer/1",
     "persistent BODY/runtime freshness infrastructure",
     "live freshness-gated Vulkan vehicle transform sink",
@@ -47,12 +62,12 @@
     {
       "id": "S1",
       "task": "materialize exact selected-BMW FUN_00795d60 delta_local values from Vehicle::InitVehicle inputs",
-      "state": "current"
+      "state": "complete"
     },
     {
       "id": "S2",
       "task": "evaluate and prove finite M_outer_to_vhf_root with provenance",
-      "state": "blocked-on-S1"
+      "state": "current"
     },
     {
       "id": "S3",
@@ -81,7 +96,7 @@
     },
     {
       "id": "S8",
-      "task": "prove and consume retail camera-follow source/timing",
+      "task": "prove/consume retail camera-follow source and timing",
       "state": "queued"
     },
     {
