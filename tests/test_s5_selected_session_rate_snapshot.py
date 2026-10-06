@@ -61,13 +61,16 @@ def test_snapshot_never_promotes_constructor_default_or_inner_execution():
     assert "sample.loaded_rate_hz = 180" not in source
 
 
-def test_self_test_proves_separation_but_cannot_be_final_handoff():
+def test_self_test_proves_separation_but_is_never_admission_eligible():
     source = SOURCE.read_text(encoding="utf-8")
 
     assert "self-test-passed" in source
     assert "if (options.self_test) return run_self_test(options);" in source
     assert "sample.loaded_rate_ready" in source
     assert "!sample.loaded_equals_manager_rate" in source
+    assert "effective_admission_eligible" in source
+    assert "admission_eligible && !self_test" in source
+    assert "Synthetic validation must never produce an artifact" in source
 
 
 def test_snapshot_is_a_separate_win32_target():
