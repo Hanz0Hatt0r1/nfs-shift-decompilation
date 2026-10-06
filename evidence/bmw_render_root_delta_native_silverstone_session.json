@@ -1,0 +1,212 @@
+{
+  "BLOCKER": "BMW-render-root-delta-numeric-materialization",
+  "CONSUMER": "S2 finite M_outer_to_vhf_root evaluation, then S3 SHIFT.BMWBody0BindFrameProof/1",
+  "INPUT": {
+    "ghidra_database": "SHIFT.GhidraEvidenceDatabase/1",
+    "native_policy": {
+      "fresh_process_bootstrap": true,
+      "restart_role_index": 0,
+      "retail_live_session_default_inferred": false,
+      "source": "explicit-native-vertical-slice-policy"
+    },
+    "retail_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_program": "SHIFT.exe",
+    "session_target": "Silverstone+BMW_M3_E36"
+  },
+  "NEXT_STEP": "consume exact BMW VHF root matrix and evaluate finite M_outer_to_vhf_root under SHIFT.OuterVehicleBMWVHFRootRelation/1",
+  "OUTPUT": "exact selected-session numeric outerVehicle +0x19c/+0x1a0/+0x1a4",
+  "delta_local": {
+    "branch": "outerVehicle+0x234 == 0",
+    "formula": "constructor_zero_delta - process-start-zero global render-origin triple",
+    "offsets": [
+      "+0x19c",
+      "+0x1a0",
+      "+0x1a4"
+    ],
+    "producer": "FUN_00795d60",
+    "role_index": 0,
+    "values_xyz": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "format": "SHIFT.BMWRenderRootDeltaNativeSession/1",
+  "handoff": {
+    "BODY0_bind_frame_proof_ready": false,
+    "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": false,
+    "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": false,
+    "selected_BMW_render_root_delta_numeric_ready": true,
+    "vehicle_world_transform_ready": false
+  },
+  "limits": {
+    "geometry_branch_values_used": false,
+    "native_policy_is_retail_session_observation": false,
+    "nonzero_restart_role_proven_numeric": false,
+    "original_game_executed": false,
+    "outer_to_vhf_numeric_matrix_preclaimed": false,
+    "restart_after_runtime_global_origin_updates_proven": false,
+    "retail_live_session_role_default_inferred": false,
+    "runtime_capture_used": false,
+    "scope_is_fresh_process_first_primary_participant": true
+  },
+  "provenance": {
+    "callgraph": {
+      "global_writer": "0x0078ef00",
+      "global_writer_direct_callers": [
+        "0x0074bfd0",
+        "0x00794a30",
+        "0x0079b2d0"
+      ],
+      "pre_InitVehicle_chain_contains_global_writer": false,
+      "required_edges_ready": true
+    },
+    "functions": {
+      "FUN_0041cbd6": {
+        "address": "0x0041cbd6",
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "eca43ac3f961bbe0811d2c3ea872a468a21834465ccb2a65e4280980c27ee16a",
+        "size": 13
+      },
+      "FUN_007125e0": {
+        "address": "0x007125e0",
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "d0d7c65693b7f3ef34ea399789518ef8c2aee61543bfe0473ddad54f4333adf0",
+        "size": 185
+      },
+      "FUN_00715240": {
+        "address": "0x00715240",
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "3fd2dd8c13015fa5e6e0e7e9927e093b1eb7538869da1bac90ab282b3c726afe",
+        "size": 308
+      },
+      "FUN_0072ed20": {
+        "address": "0x0072ed20",
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "d6eb0ccddc64f5df669ab82e905efdfb9484f70d4201110e8eb35148f19908ff",
+        "size": 1161
+      },
+      "FUN_0074ddb0": {
+        "address": "0x0074ddb0",
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "bc9744e48161533bacc2815fa9ea9b95e475153aabc6c6d8fc796d9709df7e81",
+        "size": 18
+      },
+      "FUN_0074ddc3": {
+        "address": "0x0074ddc3",
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "1b8f7a6602190fdd97b5a3d410495c8ff92b3a8b854a703459427b1ff548e4a6",
+        "size": 957
+      },
+      "FUN_0074e1a0": {
+        "address": "0x0074e1a0",
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "1d8bc5a41a02dc21368f0be8e6ff7a482dd5d11bfe0607b54d0cea1ca3e9f003",
+        "size": 411
+      },
+      "FUN_0078ef00": {
+        "address": "0x0078ef00",
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "f981daa8164768121875faef1a053d93a6f78e6a3901a73aa32904b875ddb8e1",
+        "size": 1538
+      },
+      "FUN_00795d60": {
+        "address": "0x00795d60",
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "c587cae5d3d8f99afed40fe0c059c8c60bc9cc45d9ee644f5e90e2e1f5a8eb14",
+        "size": 8797
+      },
+      "FUN_00797fd0": {
+        "address": "0x00797fd0",
+        "calling_convention": "__thiscall",
+        "mnemonic_sha256": "b8f3cb6525e0742e2afefd31ca51dd050a9d869444526ce03df41067ecb3eeb8",
+        "size": 612
+      },
+      "FUN_00798df0": {
+        "address": "0x00798df0",
+        "calling_convention": "__thiscall",
+        "mnemonic_sha256": "88904019443d1ea4edaf5a3ef40dd5abfe9e28109ab0b1f09296388f36026e16",
+        "size": 1581
+      },
+      "FUN_0079bfd0": {
+        "address": "0x0079bfd0",
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "06e730897a4a85d93a5f33765fd15b0c52708fb2c864c290804024b109a3d950",
+        "size": 445
+      },
+      "FUN_0079c1c0": {
+        "address": "0x0079c1c0",
+        "calling_convention": "__fastcall",
+        "mnemonic_sha256": "6759f1781d58bf38b72e2fa45ab24fc12bccf46bde95d90c4c57e2a0d600c39c",
+        "size": 497
+      }
+    },
+    "ordering": [
+      "FUN_007125e0 owner allocation/construction",
+      "FUN_0072ed20 -> FUN_0079c1c0 -> FUN_0079bfd0 zeros delta",
+      "FUN_0074e1a0 -> FUN_0074ddb0 -> FUN_0041cbd6 -> FUN_0074ddc3 Restart",
+      "FUN_00797fd0 stores explicit role 0 at Vehicle+0x234 and promotes primary slot",
+      "FUN_00798df0 Vehicle::InitVehicle -> FUN_00795d60",
+      "FUN_00795d60 primary-role override evaluates 0 - 0 for all three components"
+    ],
+    "pe_image": {
+      "image_base": "0x00400000",
+      "md5": "705af8b420e5eb1e3834ac43d5533c6b",
+      "zero_fill_globals": [
+        {
+          "address": "0x00c16ab0",
+          "initial_value": 0.0,
+          "offset_within_section": 613040,
+          "provenance": "PE loader zero-fill beyond SizeOfRawData and within VirtualSize",
+          "raw_size": 243200,
+          "section": ".data",
+          "section_rva": "0x781000",
+          "virtual_size": 1470528
+        },
+        {
+          "address": "0x00c16ab8",
+          "initial_value": 0.0,
+          "offset_within_section": 613048,
+          "provenance": "PE loader zero-fill beyond SizeOfRawData and within VirtualSize",
+          "raw_size": 243200,
+          "section": ".data",
+          "section_rva": "0x781000",
+          "virtual_size": 1470528
+        },
+        {
+          "address": "0x00c16ac0",
+          "initial_value": 0.0,
+          "offset_within_section": 613056,
+          "provenance": "PE loader zero-fill beyond SizeOfRawData and within VirtualSize",
+          "raw_size": 243200,
+          "section": ".data",
+          "section_rva": "0x781000",
+          "virtual_size": 1470528
+        }
+      ]
+    },
+    "source_witness": {
+      "constructor_zero_offsets": [
+        "+0x19c",
+        "+0x1a0",
+        "+0x1a4"
+      ],
+      "fresh_construct_before_restart": true,
+      "primary_override_formula": [
+        "delta.x = old_delta.x - DAT_00c16ab0",
+        "delta.y = old_delta.y - DAT_00c16ab8",
+        "delta.z = old_delta.z - DAT_00c16ac0"
+      ],
+      "restart_role_source": "RestartInfo+0x10",
+      "role_storage_offset": "+0x234",
+      "role_zero_promotes_primary_slot": "DAT_00c10b30/DAT_00c10b34"
+    }
+  },
+  "ready": true,
+  "status": "selected-bmw-fresh-primary-render-root-delta-materialized",
+  "subject": {
+    "session_target": "Silverstone+BMW_M3_E36",
+    "vehicle": "BMW_M3_E36"
+  },
+  "version": 1
+}
