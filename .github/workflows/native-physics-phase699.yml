@@ -13,7 +13,12 @@ on:
       - 'native_runtime/include/shift_fun_00770e80_two_half_step_schedule.hpp'
       - 'native_runtime/include/shift_retail_global_vehicle_body_owner_identity.hpp'
       - 'native_runtime/include/shift_persistent_vehicle_vulkan_upload.hpp'
+      - 'native_runtime/include/shift_native_vehicle_provider_session.hpp'
+      - 'native_runtime/src/native_vehicle_provider_session.cpp'
+      - 'native_runtime/src/runtime_loop_policy.hpp'
       - 'evidence/global_vehicle_body_owner_identity_retail.json'
+      - 'evidence/s5_retail_outer_update_cadence.json'
+      - 'evidence/process2_runtime_scheduler_authority.json'
       - 'docs/PROCESS_1_BMW_BODY0_BIND_POSE_WRITER_ABI.md'
       - '.github/workflows/native-physics-phase699.yml'
   pull_request:
@@ -28,7 +33,12 @@ on:
       - 'native_runtime/include/shift_fun_00770e80_two_half_step_schedule.hpp'
       - 'native_runtime/include/shift_retail_global_vehicle_body_owner_identity.hpp'
       - 'native_runtime/include/shift_persistent_vehicle_vulkan_upload.hpp'
+      - 'native_runtime/include/shift_native_vehicle_provider_session.hpp'
+      - 'native_runtime/src/native_vehicle_provider_session.cpp'
+      - 'native_runtime/src/runtime_loop_policy.hpp'
       - 'evidence/global_vehicle_body_owner_identity_retail.json'
+      - 'evidence/s5_retail_outer_update_cadence.json'
+      - 'evidence/process2_runtime_scheduler_authority.json'
       - 'docs/PROCESS_1_BMW_BODY0_BIND_POSE_WRITER_ABI.md'
       - '.github/workflows/native-physics-phase699.yml'
 
@@ -53,7 +63,7 @@ jobs:
           python3 tools/build_native_vehicle_external_provider_frontier.py \
             out/native-physics-phase699/native_vehicle_external_provider_frontier.json
 
-      - name: Verify Phase 708 fail-closed provider inventory
+      - name: Verify fail-closed provider inventory and S5 cadence closure
         run: |
           python3 - <<'PY'
           import json
@@ -64,13 +74,18 @@ jobs:
           assert report['format'] == 'SHIFT.NativeVehicleExternalProviderFrontier/1'
           assert report['phase'] == 699
           assert report['refresh_after_phase'] == 707
-          assert report['refresh_label'] == 'Process 2 Phase 708 coordination refresh'
+          assert report['refresh_label'] == \
+              'Process 2 Phase 708 coordination refresh + S5 retail cadence closure'
           assert report['external_provider_count'] == 9
           assert report['implement_now'] == []
           assert len(report['process1_handoff_requests']) == 9
           assert report['runtime_only_blocked'] == []
 
           joins = {row['id']: row for row in report['cross_chain_joins']}
+          assert joins['outer_update_cadence_owner']['state'] == \
+              'retail_proven_and_consumed'
+          assert joins['outer_update_cadence_owner']['process2_action'] == 'closed'
+          assert joins['outer_update_cadence_owner']['blockers'] == []
           assert joins['body_to_vehicle_identity']['state'] == 'retail_proven_and_consumed'
           assert joins['body_to_vehicle_identity']['process2_action'] == 'closed'
           assert joins['body_to_vehicle_identity']['blockers'] == []
@@ -88,6 +103,11 @@ jobs:
           assert guards['two_half_steps_preserved'] is True
           assert guards['persistent_body_state_preserved'] is True
           assert guards['fixed_step_auto_schedule_allowed'] is False
+          assert guards['retail_outer_cadence_ready'] is True
+          assert guards['retail_outer_scheduler_authority'] == 'RetailEvidence'
+          assert guards['retail_outer_dispatch_transaction_ready'] is True
+          assert guards['selected_session_inner_rate_ready'] is False
+          assert guards['render_loop_equated_to_outer_dispatch'] is False
           assert guards['host_sqrt_substitution_allowed'] is False
           assert guards['host_sin_substitution_allowed'] is False
           assert guards['host_cos_substitution_allowed'] is False
