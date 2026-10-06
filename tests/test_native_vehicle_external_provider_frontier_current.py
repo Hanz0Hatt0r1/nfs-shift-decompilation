@@ -22,7 +22,7 @@ def test_current_audit_preserves_provider_inventory_and_admission() -> None:
     assert report["refresh_label"] == "Process 2 Phase 717 current-chain proof audit"
     assert report["scheduler_refresh"] == (
         "S5 positive retail outer cadence + atomic explicit dispatch + exact "
-        "selected-session 180 Hz rate; persistent inner execution remains blocked"
+        "selected-session 180 Hz rate + exact persistent 1/180 inner execution"
     )
     assert "positive exact outer->VHF numeric relation" in report["transform_refresh"]
     assert report["external_provider_count"] == old["external_provider_count"] == 9
@@ -50,7 +50,6 @@ def test_current_audit_consumes_positive_transform_chain() -> None:
     assert path["canonical_BMW_VHF_hierarchy_root_frame_ready"] is True
     assert path["process2_exact_vhf_root_frame_stage_consumed"] is True
     assert path["process2_exact_vhf_root_frame_stage_contract"] == current.ROOT_STAGE_FORMAT
-
     assert path["outer_vehicle_root_to_VHF_numeric_contract"] == current.OUTER_VHF_NUMERIC_FORMAT
     assert path["outer_vehicle_root_to_VHF_vehicle_root_ready"] is True
     assert path["outer_vehicle_root_to_VHF_fixed_affine_delta_ready"] is True
@@ -60,7 +59,7 @@ def test_current_audit_consumes_positive_transform_chain() -> None:
     assert path["vehicle_world_transform_ready"] is True
 
 
-def test_transform_join_is_closed_by_positive_bind_and_runtime_wiring() -> None:
+def test_transform_join_is_closed_by_positive_bind_runtime_and_timing() -> None:
     transform = _joins(current.build_current_frontier())["body_pose_to_renderer_world_transform"]
 
     assert transform["state"] == "retail_proven_and_consumed"
@@ -71,16 +70,16 @@ def test_transform_join_is_closed_by_positive_bind_and_runtime_wiring() -> None:
     assert current.BIND_PROOF_FORMAT in joined
     assert current.WORLD_TRANSFORM_WIRING_FORMAT in joined
     assert "freshness-gated" in joined
-    assert "none for BODY0 -> vehicle world-transform transport" in transform[
+    assert "none for BODY0 -> vehicle world-transform transport or selected-session timing" in transform[
         "additional_dependency"
     ]
-    assert "selected-session 180 Hz handoff" in transform[
+    assert "provider-specific producer/ownership provenance" in transform[
         "additional_dependency"
     ]
-    assert "do not reopen already-proven transform" in transform["policy"]
+    assert "do not reopen already-proven transform/timing work" in transform["policy"]
 
 
-def test_provider_audit_does_not_confuse_runtime_body0_choice_with_source_truth() -> None:
+def test_provider_audit_does_not_confuse_timing_with_provider_semantics() -> None:
     report = current.build_current_frontier()
     audit = report["provider_audit"]
     delta = _providers(report)["fun_007682c0_delta_consumer"]
@@ -91,22 +90,26 @@ def test_provider_audit_does_not_confuse_runtime_body0_choice_with_source_truth(
     assert delta["process2_action"] == legacy.REQUEST_PROCESS1
     assert delta["blockers"]
     assert "exact BODY pointer/record" in delta["blockers"][0]
+    assert report["implement_now"] == []
 
 
-def test_current_audit_admits_transform_outer_scheduler_and_exact_rate_but_keeps_execution_closed() -> None:
+def test_current_audit_admits_exact_inner_execution_but_keeps_provider_rows_closed() -> None:
     report = current.build_current_frontier()
     scheduler = report["scheduler_authority"]
     guards = report["guards"]
 
     assert scheduler["contract"] == current.SCHEDULER_FORMAT
     assert scheduler["selected_rate_contract"] == current.SELECTED_RATE_FORMAT
+    assert scheduler["selected_execution_contract"] == current.SELECTED_EXECUTION_FORMAT
     assert scheduler["authority_explicit"] is True
     assert scheduler["retail_cadence_admitted"] is True
     assert scheduler["retail_outer_dispatch_transaction_ready"] is True
     assert scheduler["loaded_inner_rate_admitted"] is True
     assert scheduler["selected_session_rate_hz"] == 180
     assert scheduler["inner_substep_seconds"] == 1 / 180
-    assert scheduler["inner_substep_execution_admitted"] is False
+    assert scheduler["selected_session_normal_outer_substeps"] == 6
+    assert scheduler["inner_substep_execution_admitted"] is True
+    assert scheduler["provider_semantics_promoted"] is False
     assert scheduler["render_loop_equated_to_outer_dispatch"] is False
     assert scheduler["host_development_1_60_is_retail_evidence"] is False
 
@@ -114,7 +117,8 @@ def test_current_audit_admits_transform_outer_scheduler_and_exact_rate_but_keeps
     assert guards["retail_outer_cadence_ready"] is True
     assert guards["retail_outer_dispatch_transaction_ready"] is True
     assert guards["loaded_inner_rate_admitted"] is True
-    assert guards["inner_substep_execution_admitted"] is False
+    assert guards["inner_substep_execution_admitted"] is True
+    assert guards["provider_semantics_promoted"] is False
     assert guards["render_loop_equated_to_outer_dispatch"] is False
     assert guards["host_1_60_is_retail_evidence"] is False
     assert guards["outer_vehicle_to_vhf_root_relation_ready"] is True
@@ -131,10 +135,13 @@ def test_current_audit_admits_transform_outer_scheduler_and_exact_rate_but_keeps
     assert contract["persistent_world_transform_wiring_contract"] == current.WORLD_TRANSFORM_WIRING_FORMAT
     assert contract["scheduler_authority_contract"] == current.SCHEDULER_FORMAT
     assert contract["selected_rate_contract"] == current.SELECTED_RATE_FORMAT
+    assert contract["selected_execution_contract"] == current.SELECTED_EXECUTION_FORMAT
     assert contract["retail_outer_cadence_admitted"] is True
     assert contract["retail_outer_dispatch_transaction_ready"] is True
     assert contract["loaded_inner_rate_admitted"] is True
     assert contract["selected_session_rate_hz"] == 180
-    assert contract["inner_substep_execution_admitted"] is False
+    assert contract["selected_session_normal_outer_substeps"] == 6
+    assert contract["inner_substep_execution_admitted"] is True
+    assert contract["provider_semantics_promoted"] is False
     assert contract["render_loop_equated_to_outer_dispatch"] is False
     assert contract["host_1_60_is_retail_evidence"] is False

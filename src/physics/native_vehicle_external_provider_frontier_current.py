@@ -25,7 +25,9 @@ OUTER_VHF_NUMERIC_FORMAT = "SHIFT.BMWOuterVHFNumericRelation/1"
 BIND_PROOF_FORMAT = "SHIFT.BMWBody0BindFrameProof/1"
 WORLD_TRANSFORM_WIRING_FORMAT = "SHIFT.BMWPersistentWorldTransformRuntimeWiring/1"
 SELECTED_RATE_FORMAT = "SHIFT.SelectedSessionPhysicsTweakerRate/1"
+SELECTED_EXECUTION_FORMAT = "SHIFT.SelectedSessionRetailVehicleExecution/1"
 SELECTED_RATE_HZ = 180
+SELECTED_NORMAL_OUTER_SUBSTEPS = 6
 
 _EXPECTED_PROVIDER_IDS = (
     "fun_00765c40_complete_anchor",
@@ -50,11 +52,10 @@ def build_current_frontier() -> dict[str, Any]:
 
     The overlay consumes only already-merged proof milestones. The BODY0 ->
     canonical BMW VHF relation, bind proof and freshness-gated persistent world
-    transform are positive. Physics-provider rows stay unchanged until a
-    provider-specific producer or ownership proof is positive. S5 now has both
-    positive retail outer cadence and the exact hash-verified selected-session
-    PhysicsTweaker rate (180 Hz); production persistent inner execution remains
-    the separate active scheduler gate.
+    transform are positive. S5 retail outer cadence, the exact hash-verified
+    selected-session PhysicsTweaker rate (180 Hz), and the persistent 1/180 BODY
+    inner-batch timing path are also positive. Provider rows stay unchanged until
+    provider-specific producer or ownership proofs become positive.
     """
 
     legacy = build_legacy_frontier()
@@ -77,7 +78,7 @@ def build_current_frontier() -> dict[str, Any]:
     report["refresh_label"] = "Process 2 Phase 717 current-chain proof audit"
     report["scheduler_refresh"] = (
         "S5 positive retail outer cadence + atomic explicit dispatch + exact "
-        "selected-session 180 Hz rate; persistent inner execution remains blocked"
+        "selected-session 180 Hz rate + exact persistent 1/180 inner execution"
     )
     report["transform_refresh"] = (
         "positive exact outer->VHF numeric relation + positive BODY0 bind proof + "
@@ -87,8 +88,8 @@ def build_current_frontier() -> dict[str, Any]:
         "persistent retail BODY0 state -> positive BODY0/VHF bind proof -> "
         "freshness-gated persistent BMW vehicle world-transform publication -> "
         "Process 3 live Vulkan sink; S5 provides positive RetailEvidence outer cadence, "
-        "atomic explicit dispatch and the exact resource-proven selected-session 180 Hz "
-        "inner rate, while production inner-batch execution and nine provider-specific "
+        "atomic explicit dispatch, exact resource-proven selected-session 180 Hz rate, "
+        "and exact persistent 1/180 inner execution, while the nine provider-specific "
         "producer/ownership rows remain blocked"
     )
 
@@ -106,11 +107,11 @@ def build_current_frontier() -> dict[str, Any]:
             ],
             "blockers": [],
             "additional_dependency": (
-                "none for BODY0 -> vehicle world-transform transport; the current shortest independent gate is consuming the exact selected-session 180 Hz handoff in the persistent inner batch"
+                "none for BODY0 -> vehicle world-transform transport or selected-session timing; the current shortest independent gate is provider-specific producer/ownership provenance"
             ),
             "policy": (
-                "reuse the positive numeric relation, bind proof and persistent freshness-gated runtime wiring; "
-                "do not reopen already-proven transform identity/composition work, and do not substitute host 1/60 for the exact resource-proven selected-session 180 Hz rate"
+                "reuse the positive numeric relation, bind proof, persistent freshness-gated runtime wiring and exact selected-session timing; "
+                "do not reopen already-proven transform/timing work, do not substitute host 1/60, and do not promote fixture provider callbacks into retail semantics"
             ),
         }
     )
@@ -140,7 +141,7 @@ def build_current_frontier() -> dict[str, Any]:
         "provider_inventory_changed": False,
         "newly_positive_provider_or_owner_handoff_internalizable": False,
         "reason": (
-            "merged positive proofs close the BODY0/VHF bind, persistent world-transform transport and retail scheduling/rate gates, "
+            "merged positive proofs close the BODY0/VHF bind, persistent world-transform transport, retail scheduling/rate and exact inner-execution timing gates, "
             "but do not close any remaining provider-specific producer/ownership blocker"
         ),
         "fun_007682c0_runtime_body0_mutation_internalized": True,
@@ -152,13 +153,16 @@ def build_current_frontier() -> dict[str, Any]:
     report["scheduler_authority"] = {
         "contract": SCHEDULER_FORMAT,
         "selected_rate_contract": SELECTED_RATE_FORMAT,
+        "selected_execution_contract": SELECTED_EXECUTION_FORMAT,
         "authority_explicit": True,
         "retail_cadence_admitted": True,
         "retail_outer_dispatch_transaction_ready": True,
         "loaded_inner_rate_admitted": True,
         "selected_session_rate_hz": SELECTED_RATE_HZ,
         "inner_substep_seconds": 1.0 / SELECTED_RATE_HZ,
-        "inner_substep_execution_admitted": False,
+        "selected_session_normal_outer_substeps": SELECTED_NORMAL_OUTER_SUBSTEPS,
+        "inner_substep_execution_admitted": True,
+        "provider_semantics_promoted": False,
         "render_loop_equated_to_outer_dispatch": False,
         "host_development_1_60_is_retail_evidence": False,
     }
@@ -180,7 +184,8 @@ def build_current_frontier() -> dict[str, Any]:
             "retail_outer_cadence_ready": True,
             "retail_outer_dispatch_transaction_ready": True,
             "loaded_inner_rate_admitted": True,
-            "inner_substep_execution_admitted": False,
+            "inner_substep_execution_admitted": True,
+            "provider_semantics_promoted": False,
             "render_loop_equated_to_outer_dispatch": False,
             "host_1_60_is_retail_evidence": False,
         }
@@ -214,11 +219,14 @@ def contract() -> dict[str, Any]:
         "persistent_world_transform_wiring_contract": WORLD_TRANSFORM_WIRING_FORMAT,
         "scheduler_authority_contract": SCHEDULER_FORMAT,
         "selected_rate_contract": SELECTED_RATE_FORMAT,
+        "selected_execution_contract": SELECTED_EXECUTION_FORMAT,
         "retail_outer_cadence_admitted": True,
         "retail_outer_dispatch_transaction_ready": True,
         "loaded_inner_rate_admitted": True,
         "selected_session_rate_hz": SELECTED_RATE_HZ,
-        "inner_substep_execution_admitted": False,
+        "selected_session_normal_outer_substeps": SELECTED_NORMAL_OUTER_SUBSTEPS,
+        "inner_substep_execution_admitted": True,
+        "provider_semantics_promoted": False,
         "render_loop_equated_to_outer_dispatch": False,
         "host_1_60_is_retail_evidence": False,
     }
@@ -232,7 +240,9 @@ __all__ = [
     "BIND_PROOF_FORMAT",
     "WORLD_TRANSFORM_WIRING_FORMAT",
     "SELECTED_RATE_FORMAT",
+    "SELECTED_EXECUTION_FORMAT",
     "SELECTED_RATE_HZ",
+    "SELECTED_NORMAL_OUTER_SUBSTEPS",
     "build_current_frontier",
     "contract",
 ]

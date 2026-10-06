@@ -1,0 +1,46 @@
+{
+  "format": "SHIFT.SelectedSessionRetailVehicleExecution/1",
+  "version": 1,
+  "status": "selected-session-retail-inner-execution-ready",
+  "ready": true,
+  "inputs": {
+    "retail_outer_cadence": "SHIFT.RetailOuterUpdateCadence/1",
+    "selected_session_rate": "SHIFT.SelectedSessionPhysicsTweakerRate/1",
+    "materialized_rate_handoff": "native_runtime/src/materialized_selected_session_physics_tweaker_rate.hpp",
+    "execution_seam": "native_runtime/src/selected_session_retail_vehicle_execution.hpp",
+    "persistent_body_transaction": "NativeVehicleProviderSession::execute_retail_outer_dispatch"
+  },
+  "selected_session": {
+    "rate_hz": 180,
+    "inner_substep_seconds": 0.005555555555555556,
+    "normal_outer_increment_seconds": 0.03333333507180214,
+    "normal_outer_substep_count": 6,
+    "substep_count_expression": "TRUNC(rate * accumulator + 0.5)",
+    "post_batch_accumulator_expression": "accumulator - substep_count / rate"
+  },
+  "native_regression": {
+    "target": "shift_runtime_selected_session_retail_vehicle_execution_check",
+    "first_dispatch_substeps": 6,
+    "second_dispatch_substeps": 6,
+    "two_dispatch_persistent_steps": 12,
+    "persistent_body_state_evolves": true,
+    "scheduler_residual_persists_across_dispatches": true,
+    "atomic_scheduler_body_rollback_reused": true
+  },
+  "handoff": {
+    "loaded_inner_physics_rate_admitted": true,
+    "retail_inner_substep_execution_admitted": true,
+    "retail_control_chain_complete": false,
+    "retail_camera_follow_ready": false,
+    "next_blocker": "missing-vehicle-physics-control-producer-provenance"
+  },
+  "limits": {
+    "provider_semantics_promoted": false,
+    "fixture_provider_callbacks_are_retail_semantics": false,
+    "render_frame_equivalence_claimed": false,
+    "host_1_60_used_as_retail_timing": false,
+    "outer_dispatch_auto_scheduled_from_render_loop": false,
+    "control_mapping_complete": false,
+    "camera_follow_complete": false
+  }
+}
