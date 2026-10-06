@@ -9,8 +9,8 @@ Usage:
 
 Exports only the remaining S5 scheduler-accumulator producer slice from an
 already analyzed retail SHIFT.exe project, then builds the fail-closed writer
-surface and local value-provenance reports. No original-game/runtime execution
-or capture is performed.
+surface, local accumulator value-provenance report, and exact upper PUSH-value
+producer report. No original-game/runtime execution or capture is performed.
 EOF
 }
 
@@ -33,6 +33,7 @@ OUT_DIR=$(cd -- "$OUT_DIR" && pwd)
 INSTRUCTIONS="$OUT_DIR/s5_scheduler_accumulator_instructions.jsonl"
 FRONTIER="$OUT_DIR/s5_scheduler_accumulator_frontier.json"
 VALUE_PROVENANCE="$OUT_DIR/s5_scheduler_accumulator_value_provenance.json"
+PUSH_PRODUCER="$OUT_DIR/s5_scheduler_push_producer_value_provenance.json"
 
 TARGETS=(
   FUN_007155e9
@@ -58,6 +59,13 @@ python3 "$SCRIPT_DIR/analyze_s5_scheduler_accumulator_value_provenance.py" \
   "$FRONTIER" \
   --json-out "$VALUE_PROVENANCE"
 
+python3 "$SCRIPT_DIR/analyze_s5_scheduler_push_producer.py" \
+  "$INSTRUCTIONS" \
+  "$FRONTIER" \
+  "$VALUE_PROVENANCE" \
+  --json-out "$PUSH_PRODUCER"
+
 echo "S5 targeted accumulator instruction slice: $INSTRUCTIONS"
 echo "S5 scheduler accumulator frontier: $FRONTIER"
 echo "S5 scheduler accumulator value provenance: $VALUE_PROVENANCE"
+echo "S5 scheduler PUSH producer value provenance: $PUSH_PRODUCER"
