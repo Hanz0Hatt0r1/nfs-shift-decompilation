@@ -6,6 +6,10 @@ entry bytes.  It never substitutes the cPhysicsManager constructor default.
 Admission requires the decoded payload SHA-256 already pinned by
 SHIFT.BMWOffset33bSelectorGeometryInputs/1 and a unique positive integral
 `<prop name="tick rate" data="..."/>` value.
+
+Optionally it emits a typed native C++ handoff header.  That header is generated
+only after the same hash/resource/XML validation has succeeded, so the native
+scheduler never needs a manually copied rate literal.
 """
 from __future__ import annotations
 
@@ -30,6 +34,7 @@ GEOMETRY_FORMAT = "SHIFT.BMWOffset33bSelectorGeometryInputs/1"
 CADENCE_FORMAT = "SHIFT.RetailOuterUpdateCadence/1"
 EXPECTED_RESOURCE_PATH = "vehicles/physics/physicstweaker.xml"
 PROPERTY_NAME = "tick rate"
+NATIVE_HANDOFF_VARIABLE = "kMaterializedSelectedSessionPhysicsTweakerRateHandoff"
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -268,6 +273,130 @@ def materialize(
     }
 
 
+def _cpp_string(value: Any) -> str:
+    return json.dumps(str(value))
+
+
+def _cpp_bool(value: Any, field: str) -> str:
+    if value is True:
+        return "true"
+    if value is False:
+        return "false"
+    raise ValueError(f"native handoff field {field} is not boolean")
+
+
+def render_native_handoff_header(report: dict[str, Any]) -> str:
+    """Render a typed C++ handoff from an already validated materializer report."""
+    if report.get("format") != FORMAT or report.get("ready") is not True:
+        raise ValueError("positive selected-session PhysicsTweaker report required")
+    if report.get("status") != "selected-session-physics-tweaker-rate-ready":
+        raise ValueError("selected-session PhysicsTweaker report status mismatch")
+
+    identity = report.get("resource_identity")
+    verification = report.get("verification")
+    selected = report.get("selected_session_rate")
+    cadence = report.get("cadence_join")
+    handoff = report.get("handoff")
+    limits = report.get("limits")
+    for name, value in (
+        ("resource_identity", identity),
+        ("verification", verification),
+        ("selected_session_rate", selected),
+        ("cadence_join", cadence),
+        ("handoff", handoff),
+        ("limits", limits),
+    ):
+        if not isinstance(value, dict):
+            raise ValueError(f"selected-session report section missing: {name}")
+
+    assert isinstance(identity, dict)
+    archive = identity.get("archive")
+    entry = identity.get("entry")
+    if not isinstance(archive, dict) or not isinstance(entry, dict):
+        raise ValueError("selected-session report resource identity is incomplete")
+
+    assert isinstance(selected, dict)
+    rate_hz = selected.get("rate_hz")
+    if not isinstance(rate_hz, int) or isinstance(rate_hz, bool) or not 1 <= rate_hz <= 0xFFFF:
+        raise ValueError("selected-session report rate_hz is outside recovered uint16 domain")
+
+    assert isinstance(verification, dict)
+    assert isinstance(cadence, dict)
+    assert isinstance(handoff, dict)
+    assert isinstance(limits, dict)
+
+    fields = [
+        f"        {_cpp_string(report['format'])},",
+        "        true,",
+        f"        {_cpp_string(report['status'])},",
+        f"        {_cpp_string(archive.get('filename'))},",
+        f"        {_cpp_string(archive.get('sha256'))},",
+        f"        {int(entry.get('index'))}u,",
+        f"        {_cpp_string(entry.get('path'))},",
+        f"        {int(entry.get('compression_type'))}u,",
+        f"        {int(entry.get('compressed_size'))}u,",
+        f"        {int(entry.get('uncompressed_size'))}u,",
+        f"        {_cpp_string(entry.get('decoded_sha256'))},",
+        f"        {_cpp_string(verification.get('mode'))},",
+        "        " + _cpp_bool(
+            verification.get("archive_sha256_verified_this_run"),
+            "archive_sha256_verified_this_run",
+        ) + ",",
+        "        " + _cpp_bool(
+            verification.get("decoded_sha256_verified_this_run"),
+            "decoded_sha256_verified_this_run",
+        ) + ",",
+        f"        {_cpp_string(selected.get('property'))},",
+        f"        {rate_hz}u,",
+        f"        {_cpp_string(selected.get('runtime_rate_global'))},",
+        f"        {_cpp_string(selected.get('cPhysicsManager_rate_offset'))},",
+        "        " + _cpp_bool(
+            cadence.get("outer_scheduler_cadence_admitted"),
+            "outer_scheduler_cadence_admitted",
+        ) + ",",
+        "        " + _cpp_bool(
+            cadence.get("inner_fixed_step_1_over_rate_proven"),
+            "inner_fixed_step_1_over_rate_proven",
+        ) + ",",
+        "        " + _cpp_bool(
+            handoff.get("loaded_inner_physics_rate_admitted"),
+            "loaded_inner_physics_rate_admitted",
+        ) + ",",
+        "        " + _cpp_bool(
+            handoff.get("retail_inner_substep_execution_admitted"),
+            "retail_inner_substep_execution_admitted",
+        ) + ",",
+        "        " + _cpp_bool(
+            limits.get("constructor_default_180_used_as_selected_session_value"),
+            "constructor_default_180_used_as_selected_session_value",
+        ) + ",",
+        "        " + _cpp_bool(
+            limits.get("community_or_modded_value_used"),
+            "community_or_modded_value_used",
+        ) + ",",
+        "        " + _cpp_bool(
+            limits.get("host_1_60_used_as_inner_rate"),
+            "host_1_60_used_as_inner_rate",
+        ) + ",",
+        "        " + _cpp_bool(
+            limits.get("worker_poll_10ms_used_as_inner_rate"),
+            "worker_poll_10ms_used_as_inner_rate",
+        ),
+    ]
+
+    return (
+        "#pragma once\n\n"
+        "#include \"selected_session_physics_tweaker_rate_handoff.hpp\"\n\n"
+        "namespace shift::runtime {\n\n"
+        "// Generated only after PhysicsTweaker resource/hash/XML validation.\n"
+        "inline constexpr SelectedSessionPhysicsTweakerRateHandoff\n"
+        f"    {NATIVE_HANDOFF_VARIABLE}{{\n"
+        + "\n".join(fields)
+        + "\n    };\n\n"
+        "}  // namespace shift::runtime\n"
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -284,6 +413,11 @@ def main() -> int:
     source.add_argument("--archive", type=Path)
     source.add_argument("--decoded-entry", type=Path)
     parser.add_argument("--json-out", type=Path)
+    parser.add_argument(
+        "--native-handoff-out",
+        type=Path,
+        help="write a typed C++ selected-rate handoff after successful validation",
+    )
     args = parser.parse_args()
 
     report = materialize(
@@ -296,8 +430,14 @@ def main() -> int:
     if args.json_out:
         args.json_out.parent.mkdir(parents=True, exist_ok=True)
         args.json_out.write_text(rendered, encoding="utf-8")
-    else:
+    elif not args.native_handoff_out:
         print(rendered, end="")
+
+    if args.native_handoff_out:
+        args.native_handoff_out.parent.mkdir(parents=True, exist_ok=True)
+        args.native_handoff_out.write_text(
+            render_native_handoff_header(report), encoding="utf-8"
+        )
     return 0
 
 
