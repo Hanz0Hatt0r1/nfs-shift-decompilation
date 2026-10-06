@@ -1,14 +1,11 @@
 #include "runtime_loop_policy.hpp"
 
 #include <chrono>
-#include <cmath>
 #include <iostream>
 #include <stdexcept>
 
 int main() {
-    using shift::runtime::RetailOuterUpdateScheduler;
     using shift::runtime::RuntimeSchedulerAuthority;
-    using shift::runtime::make_retail_outer_update_scheduler;
     using shift::runtime::make_runtime_loop_policy;
 
     const auto bounded =
@@ -87,61 +84,6 @@ int main() {
         return 1;
     }
 
-    // S5 retail consumer: 33 ms gate and 1/30 s outer callback quantum are
-    // distinct. The first poll only seeds the gate; subsequent polls release at
-    // most one outer update each. A late caller can catch up on later polls
-    // without silently dropping admitted updates.
-    auto retail = make_retail_outer_update_scheduler();
-    if (!retail.uses_admitted_retail_scheduler() ||
-        retail.scheduler_authority != RuntimeSchedulerAuthority::RetailEvidence ||
-        !retail.retail_cadence_admitted ||
-        shift::runtime::kRetailOuterGatePeriodMilliseconds != 33 ||
-        shift::runtime::kRetailOuterNominalFrequencyHz != 30.0 ||
-        std::abs(
-            shift::runtime::kRetailOuterNormalIncrementSeconds - (1.0 / 30.0)) >
-            1e-15) {
-        std::cerr << "retail outer scheduler contract mismatch\n";
-        return 1;
-    }
-
-    const auto epoch = RetailOuterUpdateScheduler::Clock::time_point{};
-    int retail_callbacks = 0;
-    double last_outer_increment = 0.0;
-    auto outer_callback = [&](double outer_increment) {
-        ++retail_callbacks;
-        last_outer_increment = outer_increment;
-    };
-    if (retail.poll(epoch, outer_callback) ||
-        retail.poll(epoch + std::chrono::milliseconds(32), outer_callback) ||
-        !retail.poll(epoch + std::chrono::milliseconds(33), outer_callback) ||
-        retail_callbacks != 1 ||
-        std::abs(last_outer_increment - (1.0 / 30.0)) > 1e-15 ||
-        retail.dispatch_count != 1) {
-        std::cerr << "retail outer scheduler first gate mismatch\n";
-        return 1;
-    }
-    if (!retail.poll(epoch + std::chrono::milliseconds(100), outer_callback) ||
-        retail_callbacks != 2 || retail.dispatch_count != 2 ||
-        !retail.poll(epoch + std::chrono::milliseconds(100), outer_callback) ||
-        retail_callbacks != 3 || retail.dispatch_count != 3 ||
-        retail.poll(epoch + std::chrono::milliseconds(100), outer_callback)) {
-        std::cerr << "retail outer scheduler catch-up/multiplicity mismatch\n";
-        return 1;
-    }
-
-    auto rejected_retail = make_retail_outer_update_scheduler();
-    rejected_retail.scheduler_authority = RuntimeSchedulerAuthority::HostDevelopment;
-    bool rejected_non_retail_authority = false;
-    try {
-        (void)rejected_retail.poll(epoch, outer_callback);
-    } catch (const std::logic_error&) {
-        rejected_non_retail_authority = true;
-    }
-    if (!rejected_non_retail_authority) {
-        std::cerr << "retail outer scheduler accepted non-retail authority\n";
-        return 1;
-    }
-
     const auto scripted =
         make_runtime_loop_policy(false, false, 120, true, 5);
     if (scripted.continuous || !scripted.frame_limit_enabled ||
@@ -181,12 +123,8 @@ int main() {
         << "\"bounded\":true,\"continuous\":true,"
         << "\"continuous_safety_cap\":true,"
         << "\"steady_clock_pacing\":true,"
-        << "\"host_scheduler_authority\":\"host-development\","
-        << "\"retail_outer_scheduler_ready\":true,"
-        << "\"retail_scheduler_authority\":\"retail-evidence\","
-        << "\"retail_gate_period_ms\":33,"
-        << "\"retail_outer_increment_seconds\":"
-        << shift::runtime::kRetailOuterNormalIncrementSeconds << ","
+        << "\"scheduler_authority\":\"host-development\","
+        << "\"retail_cadence_claimed\":false,"
         << "\"retail_host_fallback_rejected\":true,"
         << "\"fixed_tick_seconds\":"
         << shift::runtime::kHostDevelopmentFixedDt << ","
