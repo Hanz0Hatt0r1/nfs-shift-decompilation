@@ -1,0 +1,72 @@
+{
+  "format": "SHIFT.BMWOuterVHFNumericRelationFrontier/1",
+  "version": 1,
+  "status": "blocked-missing-exact-vhf-root-frame-artifact",
+  "ready": false,
+  "blocker": {
+    "id": "BMW-outer-VHF-numeric-relation-evaluation",
+    "queue_step": "S2",
+    "required_output": "finite M_outer_to_vhf_root for the selected first native Silverstone+BMW_M3_E36 primary-player bootstrap"
+  },
+  "positive_inputs": {
+    "semantic_relation": {
+      "format": "SHIFT.OuterVehicleBMWVHFRootRelation/1",
+      "ready": true,
+      "kind": "fixed_affine",
+      "formula": "M_outer_to_vhf_root = inverse(M_vhf_root_to_model * T(delta_local))"
+    },
+    "first_bootstrap_delta": {
+      "format": "SHIFT.BMWPrimaryPlayerFirstBootstrapRenderRootDelta/1",
+      "ready": true,
+      "delta_local": [0.0, 0.0, 0.0],
+      "producer": "FUN_00795d60"
+    },
+    "root_frame_builder": {
+      "format": "SHIFT.BMWVHFHierarchyRootFrame/1",
+      "path": "tools/ghidra/build_bmw_vhf_hierarchy_root_frame.py",
+      "builder_ready": true
+    }
+  },
+  "missing_exact_input": {
+    "contract": "SHIFT.BMWVHFHierarchyRootFrame/1",
+    "required_status": "canonical-bmw-vhf-hierarchy-root-frame-proven",
+    "required_subject": {
+      "canonical_vhf": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
+      "decoded_sha256": "e08887d17d9e34e703a385260f41017fc19acbebc3405614b375e81766b4bd51",
+      "root_node_path": "CAR[BMW_M3_E36]/NODE[HIERARCHY:Root]",
+      "matrix_number": "0"
+    },
+    "required_numeric_field": "vehicle_root_frame.world_matrix_row_vector",
+    "accepted_static_recovery_source": {
+      "archive": "BMW_M3_E36.bff",
+      "archive_sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+      "builder": "tools/ghidra/build_bmw_vhf_hierarchy_root_frame.py"
+    },
+    "repository_state": "PR #1323 committed the builder/tests/docs but not a generated exact retail root-frame JSON or raw BMW_M3_E36.bff"
+  },
+  "consumer_infrastructure": {
+    "evaluator": "tools/ghidra/evaluate_bmw_outer_vhf_numeric_relation.py",
+    "output_format": "SHIFT.BMWOuterVHFNumericRelation/1",
+    "fail_closed": true,
+    "synthetic_root_matrix_allowed": false,
+    "identity_inferred_from_matrix_number_zero": false
+  },
+  "handoff": {
+    "outer_vehicle_root_to_VHF_vehicle_root_ready": true,
+    "outer_vehicle_root_to_VHF_fixed_affine_delta_ready": true,
+    "first_bootstrap_delta_numeric_ready": true,
+    "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": false,
+    "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": false,
+    "BODY0_bind_frame_proof_ready": false,
+    "vehicle_world_transform_ready": false
+  },
+  "limits": {
+    "synthetic_test_fixture_is_evidence": false,
+    "matrix_number_zero_implies_identity": false,
+    "anonymous_runtime_draw_matrix_is_resource_provenance": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false,
+    "numeric_gate_promoted_without_exact_root_matrix": false
+  },
+  "next_step": "supply or recover the exact generated SHIFT.BMWVHFHierarchyRootFrame/1 artifact, or the exact BMW_M3_E36.bff archive, then run the fail-closed S2 evaluator and immediately compose S3 SHIFT.BMWBody0BindFrameProof/1"
+}
