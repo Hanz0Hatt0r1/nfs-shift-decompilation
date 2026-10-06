@@ -110,10 +110,17 @@ inline double admit_selected_session_physics_tweaker_rate(
         handoff.verification_mode, "exact-retail-bff");
     const bool exact_decoded_entry = selected_rate_handoff_string_equals(
         handoff.verification_mode, "exact-decoded-entry");
-    if (!exact_retail_bff && !exact_decoded_entry) {
+    const bool exact_extracted_entry_manifest = selected_rate_handoff_string_equals(
+        handoff.verification_mode, "exact-extracted-entry-manifest");
+    if (!exact_retail_bff &&
+        !exact_decoded_entry &&
+        !exact_extracted_entry_manifest) {
         throw std::invalid_argument(
             "selected-session PhysicsTweaker verification mode is unsupported");
     }
+    // All admitted paths are cryptographically anchored by the decoded payload.
+    // The extracted-tree adapter additionally verifies the exact entry metadata
+    // from the successful Type-2 extraction manifest before it emits this mode.
     if (!handoff.decoded_sha256_verified_this_run) {
         throw std::invalid_argument(
             "selected-session PhysicsTweaker decoded SHA-256 was not verified");
