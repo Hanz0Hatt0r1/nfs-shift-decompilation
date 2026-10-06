@@ -2,13 +2,13 @@
   "adjudication": {
     "FUN_0070fe90_return_aliases_source_backed_cPhysicsManager_instance": true,
     "active_controller_list_reaches_manager_timing_gate": true,
-    "cPhysicsManager_initializer_slot_plus_0x04_reaches_30hz_configuration": true,
     "cPhysicsManager_registered_in_active_controller_list": true,
     "default_manager_dispatch_reaches_source_backed_cPhysicsManager_slot_plus_0x18": true,
+    "final_inner_rate_requires_loaded_PhysicsTweaker_value": true,
     "inner_fixed_step_1_over_rate_proven": true,
     "one_steady_scheduler_invocation_per_default_manager_dispatch_proven": true,
+    "outer_scheduler_cadence_admitted": true,
     "physics_rate_field_domain_and_reciprocal_proven": true,
-    "retail_cadence_admitted": true,
     "retail_outer_manager_nominal_frequency_30hz_proven": true,
     "retail_outer_manager_quantized_gate_33ms_proven": true,
     "scheduler_argument_value_proven": true
@@ -49,6 +49,7 @@
   "format": "SHIFT.RetailOuterUpdateCadence/1",
   "limits": {
     "alternate_BManager_mode_admitted": false,
+    "constructor_default_180_promoted_to_loaded_session_rate": false,
     "final_numeric_physics_rate_guessed": false,
     "host_1_60_promoted": false,
     "original_game_executed": false,
@@ -62,7 +63,6 @@
     "enabled_field_offset": "0xdc",
     "enabled_value": 1,
     "initializer": "FUN_00710a70",
-    "initializer_bound_to_cPhysicsManager_vtable": true,
     "mode_field_offset": "0xf8",
     "mode_value": 0,
     "nominal_hz_and_ms_gate_are_distinct": true,
@@ -73,13 +73,18 @@
   },
   "owner_handoff": {
     "format": "SHIFT.PhysicsManagerSchedulerEntryOwner/1",
+    "initializer_slot_offset": "0x04",
+    "initializer_target": "FUN_00710a70",
     "owner": "MWL::Core::cPhysicsManager",
     "slot_offset": 24,
     "target": "FUN_00711b50",
-    "verified": true
+    "verified": true,
+    "vtable_address": "0x00b04524"
   },
   "physics_rate_field": {
+    "constructor_default_rate_hz": 180,
     "final_numeric_rate_not_frozen": true,
+    "physics_tweaker_xml_load_observed": true,
     "rate_domain_proven": true,
     "rate_offset": "0x388",
     "rate_over_30_offset": "0x390",
@@ -90,63 +95,31 @@
       "+0x390 = rate/30",
       "+0x394 = 30/rate"
     ],
+    "runtime_rate_global": "DAT_00c130d2",
+    "runtime_rate_global_is_tweaker_field_alias": true,
     "thirty_over_rate_offset": "0x394",
+    "tick_rate_tweaker_base": "DAT_00c12c40",
+    "tick_rate_tweaker_offset": "0x492",
     "writer": "FUN_0070f170"
   },
   "provenance": {
     "machine_byte_anchors": {
-      "accumulator_update": {
-        "address": "0x00712453",
-        "bytes": "d94508d9c0dc8140030000dd9940030000dc0de845b000dc8148030000dd9948030000"
-      },
-      "active_controller_list_consumer": {
-        "address": "0x006626a6",
-        "bytes": "8bf183be98000000065775108d465850e8c598ffff8bc8e8ee91ffff"
-      },
-      "bmanager_dispatch_selector": {
-        "address": "0x00647d80",
-        "bytes": "568bf1e8f841010080b829050000008b068bce5e74058b501cffe28b5018ffe2"
-      },
-      "controller_list_insert": {
-        "address": "0x00662605",
-        "bytes": "8bda85db744c56578d7958"
-      },
-      "controller_resolve_and_core_add": {
-        "address": "0x006485b5",
-        "bytes": "8bf9807f3400750832c05f5e5dc20400518b4d088bc48908e8ae3901008bc8e8673201008bf085f674de8bcee80acb000084c074198bcee81fcb000084c0750e89b750010000b0015f5e5dc204008bd78bcee8f49f0100"
-      },
-      "manager_list_to_timing_gate": {
-        "address": "0x0065b8e0",
-        "bytes": "8b4e0c80793400741b80793500741580792900740fc6814002000001e8efc5feff"
-      },
-      "rate_read_and_substep_reciprocal": {
-        "address": "0x0071307c",
-        "bytes": "e80fceffffdb8088030000d97dfa33c90fb745fadd55d8d9c00d000c0000dc8e480300008945f4dc05209aaa00d96df4df7df08b7df085ff897df4d96dfa894df8dd86600100000f8640010000d9e853def2"
-      },
-      "rate_scale_to_f940": {
-        "address": "0x00711951",
-        "bytes": "e82aeeffffd95dfc51dd05400bc1008bcedd5df0d945fcd91c24e8d0dfffff"
-      },
-      "registration_accessor_call": {
-        "address": "0x00d3604b",
-        "bytes": "8b0e8bc48908e83a9e9dff"
-      },
-      "registration_return_to_this": {
-        "address": "0x00d36068",
-        "bytes": "8bc8e8412591ff"
-      },
-      "scheduler_push_to_715380": {
-        "address": "0x007155f6",
-        "bytes": "83e8017522d9450851d91c24e879fdffff"
-      },
-      "state_dispatch_to_scheduler": {
-        "address": "0x0048ed52",
-        "bytes": "8b813c010000e98c682800"
-      },
-      "timing_gate_to_dispatch": {
-        "address": "0x00647fa2",
-        "bytes": "8b86e8000000dd9ec80000008bce8986d8000000e885feffff8bcee8befdffff"
-      }
+      "accumulator_update": {"address": "0x00712453", "bytes": "d94508d9c0dc8140030000dd9940030000dc0de845b000dc8148030000dd9948030000"},
+      "active_controller_list_consumer": {"address": "0x006626a6", "bytes": "8bf183be98000000065775108d465850e8c598ffff8bc8e8ee91ffff"},
+      "bmanager_dispatch_selector": {"address": "0x00647d80", "bytes": "568bf1e8f841010080b829050000008b068bce5e74058b501cffe28b5018ffe2"},
+      "controller_list_insert": {"address": "0x00662605", "bytes": "8bda85db744c56578d7958"},
+      "controller_resolve_and_core_add": {"address": "0x006485b5", "bytes": "8bf9807f3400750832c05f5e5dc20400518b4d088bc48908e8ae3901008bc8e8673201008bf085f674de8bcee80acb000084c074198bcee81fcb000084c0750e89b750010000b0015f5e5dc204008bd78bcee8f49f0100"},
+      "loaded_tick_rate_to_physics_manager": {"address": "0x00710c12", "bytes": "0fb705d230c100508bcee84fe5ffff"},
+      "manager_list_to_timing_gate": {"address": "0x0065b8e0", "bytes": "8b4e0c80793400741b80793500741580792900740fc6814002000001e8efc5feff"},
+      "physics_tweaker_default_tick_rate_180": {"address": "0x00748919", "bytes": "889e91040000d99e9804000066c78692040000b400898e94040000"},
+      "physics_tweaker_load_then_rate_apply": {"address": "0x00710b06", "bytes": "b9402cc100e8f0c80300"},
+      "rate_read_and_substep_reciprocal": {"address": "0x0071307c", "bytes": "e80fceffffdb8088030000d97dfa33c90fb745fadd55d8d9c00d000c0000dc8e480300008945f4dc05209aaa00d96df4df7df08b7df085ff897df4d96dfa894df8dd86600100000f8640010000d9e853def2"},
+      "rate_scale_to_f940": {"address": "0x00711951", "bytes": "e82aeeffffd95dfc51dd05400bc1008bcedd5df0d945fcd91c24e8d0dfffff"},
+      "registration_accessor_call": {"address": "0x00d3604b", "bytes": "8b0e8bc48908e83a9e9dff"},
+      "registration_return_to_this": {"address": "0x00d36068", "bytes": "8bc8e8412591ff"},
+      "scheduler_push_to_715380": {"address": "0x007155f6", "bytes": "83e8017522d9450851d91c24e879fdffff"},
+      "state_dispatch_to_scheduler": {"address": "0x0048ed52", "bytes": "8b813c010000e98c682800"},
+      "timing_gate_to_dispatch": {"address": "0x00647fa2", "bytes": "8b86e8000000dd9ec80000008bce8986d8000000e885feffff8bcee8befdffff"}
     },
     "retail_pe_md5": "705af8b420e5eb1e3834ac43d5533c6b",
     "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
@@ -181,44 +154,32 @@
       "FUN_00715380": 707679,
       "FUN_007155e0": 707770,
       "FUN_007155e9": 707779,
+      "FUN_00748280": 740802,
+      "FUN_00749a60": 741781,
+      "FUN_0074d400": 743957,
       "FUN_00d36000": 1435307
     },
-    "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
-    "vtable_anchors": {
-      "alternate_slot_plus_0x1c": "FUN_0070ffb0",
-      "initializer_slot_plus_0x04": "FUN_00710a70",
-      "scheduler_slot_plus_0x18": "FUN_00711b50",
-      "vtable": "0x00b04524"
-    }
+    "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
   },
   "ready": true,
   "runtime_handoff": {
     "consumer": "native runtime explicit retail scheduler authority seam",
     "must_not_substitute_host_1_60": true,
     "must_not_treat_worker_poll_10ms_as_physics_cadence": true,
-    "outer_schedule": {
-      "default_mode_required": true,
-      "gate_period_ms": 33,
-      "nominal_frequency_hz": 30.0,
-      "steady_scheduler_invocations_per_dispatch": 1
-    },
-    "retail_cadence_admitted": true,
+    "outer_schedule": {"default_mode_required": true, "gate_period_ms": 33, "nominal_frequency_hz": 30.0},
+    "retail_outer_cadence_admitted": true,
     "scheduler_authority": "RetailEvidence",
     "simulation_quantum": {
+      "constructor_default_rate_hz": 180,
+      "constructor_default_substeps_per_normal_outer_increment": 6,
       "inner_substep_seconds": "1/rate_source",
-      "normal_outer_increment_seconds": 0.03333333507180214
+      "normal_outer_increment_seconds": 0.03333333507180214,
+      "session_rate_requires_loaded_PhysicsTweaker_value": true
     }
   },
   "scheduler_argument": {
     "active_scheduler_state_value": 3,
-    "machine_forwarding_path": [
-      "FUN_007117e0",
-      "FUN_0070f940",
-      "FUN_007155e0",
-      "FUN_0048ed52",
-      "FUN_007155e9",
-      "FUN_00715380"
-    ],
+    "machine_forwarding_path": ["FUN_007117e0", "FUN_0070f940", "FUN_007155e0", "FUN_0048ed52", "FUN_007155e9", "FUN_00715380"],
     "mode_2_scale_expression": "30.0/rate",
     "mode_3_scale": 0.5,
     "normal_mode_scale": 1.0,
@@ -233,10 +194,10 @@
     "normal_calls_to_FUN_007155e0_per_FUN_0070f940": 1,
     "scheduler_object_initial_state": 1,
     "source_visible_writers": 0,
-    "startup_state_transition": "1 -> 2 -> 3",
+    "state_transition_surface": ["1 -> 2", "2 -> 3 under active-init condition"],
     "steady_active_state": 3,
     "steady_state_scheduler_invocations_per_manager_dispatch": 1
   },
-  "status": "retail-cadence-admitted",
+  "status": "retail-outer-cadence-admitted",
   "version": 1
 }
