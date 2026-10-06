@@ -26,6 +26,7 @@ inline constexpr int kRetailOuterGatePeriodMs = 33;
 inline constexpr double kRetailNormalOuterIncrementSeconds =
     0.03333333507180214;
 inline constexpr int kRetailSteadySchedulerInvocationsPerDispatch = 1;
+inline constexpr double kRetailLoadedInnerRateMaxHz = 65535.0;
 
 struct RetailOuterSchedulerContract {
     RuntimeSchedulerAuthority scheduler_authority =
@@ -51,7 +52,9 @@ struct RetailOuterSchedulerContract {
         return uses_admitted_retail_outer_scheduler() &&
                loaded_inner_rate_admitted &&
                std::isfinite(loaded_inner_rate_hz) &&
-               loaded_inner_rate_hz > 0.0;
+               loaded_inner_rate_hz > 0.0 &&
+               loaded_inner_rate_hz <= kRetailLoadedInnerRateMaxHz &&
+               std::trunc(loaded_inner_rate_hz) == loaded_inner_rate_hz;
     }
 
     void admit_outer_dispatch() {
@@ -64,6 +67,9 @@ struct RetailOuterSchedulerContract {
                 "retail outer dispatch multiplicity is not the proven steady value");
         }
         pending_accumulator_seconds += normal_outer_increment_seconds;
+        if (!std::isfinite(pending_accumulator_seconds)) {
+            throw std::overflow_error("retail outer accumulator became non-finite");
+        }
     }
 
     void admit_loaded_inner_rate(double rate_hz) {
@@ -71,9 +77,11 @@ struct RetailOuterSchedulerContract {
             throw std::logic_error(
                 "inner rate cannot be admitted before retail outer authority");
         }
-        if (!std::isfinite(rate_hz) || !(rate_hz > 0.0)) {
+        if (!std::isfinite(rate_hz) || !(rate_hz > 0.0) ||
+            rate_hz > kRetailLoadedInnerRateMaxHz ||
+            std::trunc(rate_hz) != rate_hz) {
             throw std::invalid_argument(
-                "loaded retail inner rate must be finite and positive");
+                "loaded retail inner rate must be a positive uint16-shaped integer");
         }
         loaded_inner_rate_hz = rate_hz;
         loaded_inner_rate_admitted = true;
@@ -85,6 +93,52 @@ struct RetailOuterSchedulerContract {
                 "loaded PhysicsTweaker tick rate is required before inner substeps");
         }
         return 1.0 / loaded_inner_rate_hz;
+    }
+
+    std::size_t ready_inner_substep_count() const {
+        if (!inner_rate_ready()) {
+            throw std::logic_error(
+                "loaded PhysicsTweaker tick rate is required before inner substep count");
+        }
+        if (!std::isfinite(pending_accumulator_seconds)) {
+            throw std::logic_error("retail inner accumulator must remain finite");
+        }
+
+        // FUN_00713050 temporarily switches the x87 control word to truncate,
+        // evaluates rate * accumulator + 0.5, then FISTPs the result.  Preserve
+        // that recovered machine rule rather than substituting host frame math.
+        const double scaled = loaded_inner_rate_hz * pending_accumulator_seconds;
+        if (!std::isfinite(scaled)) {
+            throw std::overflow_error("retail inner substep count overflow");
+        }
+        const double recovered_count = std::trunc(scaled + 0.5);
+        if (!std::isfinite(recovered_count) || recovered_count < 0.0 ||
+            recovered_count >
+                static_cast<double>(std::numeric_limits<std::size_t>::max())) {
+            throw std::overflow_error("retail inner substep count is out of range");
+        }
+        return static_cast<std::size_t>(recovered_count);
+    }
+
+    void commit_ready_inner_substeps(std::size_t completed_substeps) {
+        const std::size_t expected_substeps = ready_inner_substep_count();
+        if (completed_substeps != expected_substeps) {
+            throw std::invalid_argument(
+                "retail inner substep commit must match the recovered batch count");
+        }
+
+        const double consumed_seconds =
+            static_cast<double>(completed_substeps) / loaded_inner_rate_hz;
+        const double remaining_seconds =
+            pending_accumulator_seconds - consumed_seconds;
+        if (!std::isfinite(remaining_seconds)) {
+            throw std::overflow_error("retail inner accumulator commit became non-finite");
+        }
+
+        // A negative residual is valid: recovered nearest-step selection is
+        // implemented as truncate(rate * accumulator + 0.5), then the exact
+        // batch duration is subtracted.  Do not clamp that residual to zero.
+        pending_accumulator_seconds = remaining_seconds;
     }
 };
 

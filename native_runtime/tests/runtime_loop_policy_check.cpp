@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 
 int main() {
@@ -101,7 +102,14 @@ int main() {
     } catch (const std::logic_error&) {
         rejected_missing_loaded_rate = true;
     }
-    if (!rejected_missing_loaded_rate) {
+    bool rejected_missing_loaded_rate_count = false;
+    try {
+        (void)retail_outer.ready_inner_substep_count();
+    } catch (const std::logic_error&) {
+        rejected_missing_loaded_rate_count = true;
+    }
+    if (!rejected_missing_loaded_rate ||
+        !rejected_missing_loaded_rate_count) {
         std::cerr << "constructor/default rate leaked into loaded inner rate\n";
         return 1;
     }
@@ -120,6 +128,84 @@ int main() {
     if (!retail_outer.inner_rate_ready() ||
         std::abs(retail_outer.inner_substep_seconds() - (1.0 / 240.0)) > 1e-12) {
         std::cerr << "loaded retail inner-rate admission mismatch\n";
+        return 1;
+    }
+    if (retail_outer.ready_inner_substep_count() != 8) {
+        std::cerr << "recovered retail inner substep count mismatch\n";
+        return 1;
+    }
+
+    const double expected_first_residual =
+        shift::runtime::kRetailNormalOuterIncrementSeconds - (8.0 / 240.0);
+    retail_outer.commit_ready_inner_substeps(8);
+    if (std::abs(
+            retail_outer.pending_accumulator_seconds -
+            expected_first_residual) > 1e-15 ||
+        retail_outer.ready_inner_substep_count() != 0) {
+        std::cerr << "retail inner substep commit mismatch\n";
+        return 1;
+    }
+
+    retail_outer.admit_outer_dispatch();
+    const std::size_t second_batch = retail_outer.ready_inner_substep_count();
+    bool rejected_partial_batch_commit = false;
+    try {
+        retail_outer.commit_ready_inner_substeps(second_batch + 1);
+    } catch (const std::invalid_argument&) {
+        rejected_partial_batch_commit = true;
+    }
+    if (!rejected_partial_batch_commit) {
+        std::cerr << "retail inner scheduler accepted a non-recovered batch count\n";
+        return 1;
+    }
+    retail_outer.commit_ready_inner_substeps(second_batch);
+
+    // A non-30-divisible explicit rate exercises the recovered nearest-step
+    // rule and proves that a negative accumulator residual must be preserved.
+    auto signed_residual = make_retail_outer_scheduler_contract(
+        true,
+        shift::runtime::kRetailOuterNominalFrequencyHz,
+        shift::runtime::kRetailOuterGatePeriodMs,
+        shift::runtime::kRetailNormalOuterIncrementSeconds,
+        shift::runtime::kRetailSteadySchedulerInvocationsPerDispatch);
+    signed_residual.admit_loaded_inner_rate(50.0);
+    signed_residual.admit_outer_dispatch();
+    if (signed_residual.ready_inner_substep_count() != 2) {
+        std::cerr << "retail nearest-step batch rule mismatch\n";
+        return 1;
+    }
+    signed_residual.commit_ready_inner_substeps(2);
+    if (!(signed_residual.pending_accumulator_seconds < 0.0) ||
+        signed_residual.ready_inner_substep_count() != 0) {
+        std::cerr << "retail signed accumulator residual was clamped or miscounted\n";
+        return 1;
+    }
+    signed_residual.admit_outer_dispatch();
+    if (signed_residual.ready_inner_substep_count() != 1) {
+        std::cerr << "retail signed residual did not feed the next outer dispatch\n";
+        return 1;
+    }
+
+    auto expect_bad_rate = [](double rate_hz) {
+        auto scheduler = make_retail_outer_scheduler_contract(
+            true,
+            shift::runtime::kRetailOuterNominalFrequencyHz,
+            shift::runtime::kRetailOuterGatePeriodMs,
+            shift::runtime::kRetailNormalOuterIncrementSeconds,
+            shift::runtime::kRetailSteadySchedulerInvocationsPerDispatch);
+        try {
+            scheduler.admit_loaded_inner_rate(rate_hz);
+        } catch (const std::invalid_argument&) {
+            return true;
+        }
+        return false;
+    };
+    if (!expect_bad_rate(0.0) ||
+        !expect_bad_rate(-1.0) ||
+        !expect_bad_rate(240.5) ||
+        !expect_bad_rate(65536.0) ||
+        !expect_bad_rate(std::numeric_limits<double>::infinity())) {
+        std::cerr << "loaded retail inner rate accepted unsupported uint16 semantics\n";
         return 1;
     }
 
@@ -188,6 +274,8 @@ int main() {
         << "\"retail_outer_authority_seam\":true,"
         << "\"retail_outer_cadence_admitted\":true,"
         << "\"loaded_inner_rate_required\":true,"
+        << "\"retail_inner_substep_batch_semantics\":true,"
+        << "\"retail_signed_accumulator_residual\":true,"
         << "\"retail_host_fallback_rejected\":true,"
         << "\"host_fixed_tick_seconds\":"
         << shift::runtime::kHostDevelopmentFixedDt << ","
