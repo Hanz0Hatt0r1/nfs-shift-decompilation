@@ -18,8 +18,12 @@ def test_single_process_execution_contract_is_active_and_current() -> None:
     assert payload["current_frontier"]["semantic_relation_contract"] == "SHIFT.OuterVehicleBMWVHFRootRelation/1"
     assert payload["current_frontier"]["semantic_relation_ready"] is True
     assert payload["current_frontier"]["semantic_relation_kind"] == "setup-fixed-affine"
-    assert payload["current_frontier"]["current_blocker_id"] == "BMW-render-root-delta-numeric-materialization"
-    assert "+0x19c" in payload["current_frontier"]["current_blocker"]
+    assert payload["current_frontier"]["selected_bmw_delta_contract"] == "SHIFT.BMWPrimaryPlayerFirstBootstrapRenderRootDelta/1"
+    assert payload["current_frontier"]["selected_bmw_delta_numeric_ready"] is True
+    assert payload["current_frontier"]["outer_vhf_numeric_relation_contract"] == "SHIFT.BMWOuterVHFNumericRelation/1"
+    assert payload["current_frontier"]["outer_vhf_numeric_relation_ready"] is True
+    assert payload["current_frontier"]["current_blocker_id"] == "BMW-BODY0-bind-frame-composition"
+    assert "SHIFT.BMWBody0BindFrameProof/1" in payload["current_frontier"]["current_blocker"]
     assert payload["current_frontier"]["runtime_capture_required"] is False
 
 
@@ -28,21 +32,24 @@ def test_single_process_queue_orders_bind_before_scheduler_control_camera() -> N
     queue = payload["queue"]
 
     assert [row["id"] for row in queue] == ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9"]
-    assert queue[0]["state"] == "current"
+    assert queue[0]["state"] == "positive"
     assert "delta_local" in queue[0]["task"]
-    assert queue[1]["state"] == "blocked-on-S1"
-    assert queue[2]["state"] == "blocked-on-S2"
+    assert queue[1]["state"] == "positive"
+    assert "M_outer_to_vhf_root" in queue[1]["task"]
+    assert queue[2]["state"] == "current"
     assert "SHIFT.BMWBody0BindFrameProof/1" in queue[2]["task"]
     assert queue[3]["state"] == "blocked-on-S3"
     assert "scheduler/cadence" in queue[4]["task"]
     assert "camera-follow" in queue[7]["task"]
 
 
-def test_single_process_keeps_final_semantic_gates_fail_closed() -> None:
+def test_single_process_keeps_post_s2_semantic_gates_fail_closed() -> None:
     payload = json.loads(EXECUTION.read_text(encoding="utf-8"))
+    positives = payload["positive_gates"]
     gates = payload["false_gates"]
 
-    assert gates["outer_vehicle_root_to_VHF_relation_numeric_matrix_ready"] is False
+    assert positives["outer_vehicle_root_to_VHF_relation_numeric_matrix_ready"] is True
+    assert "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready" not in gates
     assert gates["BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready"] is False
     assert gates["BODY0_bind_frame_proof_ready"] is False
     assert gates["vehicle_world_transform_ready"] is False
