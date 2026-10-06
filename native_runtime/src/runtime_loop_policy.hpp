@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <cmath>
 #include <cstddef>
 #include <limits>
 #include <stdexcept>
@@ -17,6 +18,110 @@ enum class RuntimeSchedulerAuthority {
     HostDevelopment,
     RetailEvidence,
 };
+
+// Positive S5 outer-scheduler evidence is deliberately distinct from both the
+// host-development loop clock and the resource-loaded inner physics rate.
+inline constexpr double kRetailOuterNominalFrequencyHz = 30.0;
+inline constexpr int kRetailOuterGatePeriodMs = 33;
+inline constexpr double kRetailNormalOuterIncrementSeconds =
+    0.03333333507180214;
+inline constexpr int kRetailSteadySchedulerInvocationsPerDispatch = 1;
+
+struct RetailOuterSchedulerContract {
+    RuntimeSchedulerAuthority scheduler_authority =
+        RuntimeSchedulerAuthority::HostDevelopment;
+    bool retail_outer_cadence_admitted = false;
+    double nominal_frequency_hz = 0.0;
+    int gate_period_ms = 0;
+    double normal_outer_increment_seconds = 0.0;
+    int steady_scheduler_invocations_per_dispatch = 0;
+
+    // This value may only come from a selected-session loaded-rate proof.  The
+    // PhysicsTweaker constructor default is intentionally not encoded here.
+    bool loaded_inner_rate_admitted = false;
+    double loaded_inner_rate_hz = 0.0;
+    double pending_accumulator_seconds = 0.0;
+
+    bool uses_admitted_retail_outer_scheduler() const noexcept {
+        return scheduler_authority == RuntimeSchedulerAuthority::RetailEvidence &&
+               retail_outer_cadence_admitted;
+    }
+
+    bool inner_rate_ready() const noexcept {
+        return uses_admitted_retail_outer_scheduler() &&
+               loaded_inner_rate_admitted &&
+               std::isfinite(loaded_inner_rate_hz) &&
+               loaded_inner_rate_hz > 0.0;
+    }
+
+    void admit_outer_dispatch() {
+        if (!uses_admitted_retail_outer_scheduler()) {
+            throw std::logic_error(
+                "retail outer dispatch requires admitted RetailEvidence authority");
+        }
+        if (steady_scheduler_invocations_per_dispatch != 1) {
+            throw std::logic_error(
+                "retail outer dispatch multiplicity is not the proven steady value");
+        }
+        pending_accumulator_seconds += normal_outer_increment_seconds;
+    }
+
+    void admit_loaded_inner_rate(double rate_hz) {
+        if (!uses_admitted_retail_outer_scheduler()) {
+            throw std::logic_error(
+                "inner rate cannot be admitted before retail outer authority");
+        }
+        if (!std::isfinite(rate_hz) || !(rate_hz > 0.0)) {
+            throw std::invalid_argument(
+                "loaded retail inner rate must be finite and positive");
+        }
+        loaded_inner_rate_hz = rate_hz;
+        loaded_inner_rate_admitted = true;
+    }
+
+    double inner_substep_seconds() const {
+        if (!inner_rate_ready()) {
+            throw std::logic_error(
+                "loaded PhysicsTweaker tick rate is required before inner substeps");
+        }
+        return 1.0 / loaded_inner_rate_hz;
+    }
+};
+
+inline RetailOuterSchedulerContract make_retail_outer_scheduler_contract(
+    bool evidence_ready,
+    double nominal_frequency_hz,
+    int gate_period_ms,
+    double normal_outer_increment_seconds,
+    int steady_scheduler_invocations_per_dispatch) {
+
+    constexpr double kFrequencyTolerance = 1e-12;
+    constexpr double kIncrementTolerance = 1e-12;
+    if (!evidence_ready ||
+        !std::isfinite(nominal_frequency_hz) ||
+        std::abs(nominal_frequency_hz - kRetailOuterNominalFrequencyHz) >
+            kFrequencyTolerance ||
+        gate_period_ms != kRetailOuterGatePeriodMs ||
+        !std::isfinite(normal_outer_increment_seconds) ||
+        std::abs(
+            normal_outer_increment_seconds -
+            kRetailNormalOuterIncrementSeconds) > kIncrementTolerance ||
+        steady_scheduler_invocations_per_dispatch !=
+            kRetailSteadySchedulerInvocationsPerDispatch) {
+        throw std::invalid_argument(
+            "retail outer scheduler handoff does not match the proven S5 contract");
+    }
+
+    RetailOuterSchedulerContract contract{};
+    contract.scheduler_authority = RuntimeSchedulerAuthority::RetailEvidence;
+    contract.retail_outer_cadence_admitted = true;
+    contract.nominal_frequency_hz = nominal_frequency_hz;
+    contract.gate_period_ms = gate_period_ms;
+    contract.normal_outer_increment_seconds = normal_outer_increment_seconds;
+    contract.steady_scheduler_invocations_per_dispatch =
+        steady_scheduler_invocations_per_dispatch;
+    return contract;
+}
 
 struct RuntimeLoopPolicy {
     bool continuous = false;
@@ -121,8 +226,8 @@ inline RuntimeLoopPolicy make_runtime_loop_policy(
         // An explicit --frames value is an optional regression/safety cap only.
         // Without it, X11 quit/destroy events are the sole normal session end.
         // This factory intentionally produces host-development scheduling only;
-        // a future positive retail cadence handoff must select RetailEvidence
-        // explicitly and must disable this wall-clock pacer rather than inherit it.
+        // a positive retail cadence handoff is consumed separately through
+        // RetailOuterSchedulerContract and must not inherit this wall-clock pacer.
         RuntimeLoopPolicy policy{true, frames_explicit, requested_frames};
         policy.continuous_wall_clock_pacing = true;
         policy.scheduler_authority = RuntimeSchedulerAuthority::HostDevelopment;

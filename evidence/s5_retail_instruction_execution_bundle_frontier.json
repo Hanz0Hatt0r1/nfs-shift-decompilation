@@ -1,0 +1,90 @@
+{
+  "format": "SHIFT.S5RetailInstructionExecutionBundleFrontier/1",
+  "version": 1,
+  "status": "execution-infrastructure-retained-cadence-closed-by-pinned-source-pe",
+  "ready": true,
+  "blocker": "retail-outer-update-scheduler-cadence-admission",
+  "consumer": "optional exact Ghidra instruction cross-check after positive SHIFT.RetailOuterUpdateCadence/1",
+  "base_commit": "c9b1d497f81eea421697042a84224cb3ca5a995a",
+  "execution_infrastructure": {
+    "runner": "tools/ghidra/run_s5_retail_instruction_bundle.sh",
+    "splitter": "tools/ghidra/split_s5_retail_instruction_bundle.py",
+    "bundle_format": "SHIFT.GhidraFunctionInstructions/2",
+    "bundle_target_count": 15,
+    "single_export_invocation": true,
+    "retail_result_published": true,
+    "retail_result_contract": "SHIFT.RetailOuterUpdateCadence/1",
+    "retail_result_source": "pinned SHIFT.exe.c plus exact SHIFT.exe PE byte windows"
+  },
+  "exact_union_targets": [
+    "FUN_007155e9",
+    "FUN_00715380",
+    "FUN_00713050",
+    "FUN_0070fe90",
+    "FUN_0041903c",
+    "FUN_0070fe99",
+    "FUN_0070fae0",
+    "FUN_00647d80",
+    "FUN_00647ef0",
+    "FUN_0065b8b0",
+    "FUN_006626a0",
+    "FUN_00662880",
+    "FUN_00d36000",
+    "FUN_006485b0",
+    "FUN_00662600"
+  ],
+  "exact_subsets": {
+    "scheduler": {
+      "target_count": 3,
+      "targets": ["FUN_007155e9", "FUN_00715380", "FUN_00713050"],
+      "consumer_chain": [
+        "SHIFT.SchedulerAccumulatorProducerFrontier/1",
+        "SHIFT.SchedulerAccumulatorValueProvenance/1",
+        "SHIFT.SchedulerPushProducerValueProvenance/1"
+      ]
+    },
+    "rate_accessor": {
+      "target_count": 5,
+      "targets": ["FUN_00713050", "FUN_0070fe90", "FUN_0041903c", "FUN_0070fe99", "FUN_0070fae0"],
+      "consumer_chain": ["SHIFT.PhysicsManagerRateAccessorAlias/1"]
+    },
+    "bmanager": {
+      "target_count": 9,
+      "targets": [
+        "FUN_00647d80",
+        "FUN_00647ef0",
+        "FUN_0065b8b0",
+        "FUN_006626a0",
+        "FUN_00662880",
+        "FUN_00d36000",
+        "FUN_006485b0",
+        "FUN_00662600",
+        "FUN_0070fe90"
+      ],
+      "consumer_chain": ["SHIFT.BManagerPhysicsManagerDispatchFrontier/2"]
+    }
+  },
+  "corrections": {
+    "FUN_00647da0_plus_0x18_assumption_retired": true,
+    "correct_default_dispatcher": "FUN_00647d80",
+    "FUN_0070fe90_return_as_controller_api_stack_argument_retired": true,
+    "correct_controller_api_manager_receiver": "ECX/this"
+  },
+  "remaining_execution_requirement": null,
+  "gates": {
+    "scheduler_push_machine_root_published": true,
+    "physics_manager_rate_accessor_alias_published": true,
+    "bmanager_slot_plus_0x18_dispatch_published": true,
+    "plus_0x388_value_units_proven": true,
+    "retail_cadence_admitted": true
+  },
+  "limits": {
+    "synthetic_tests_are_retail_evidence": false,
+    "callgraph_adjacency_substitutes_for_instruction_operand": false,
+    "host_1_60_is_retail_evidence": false,
+    "worker_poll_10ms_is_physics_cadence": false,
+    "runtime_capture_used": false,
+    "original_game_executed": false
+  },
+  "next_step": "consume SHIFT.RetailOuterUpdateCadence/1 in the native explicit RetailEvidence scheduler-authority seam; the one-shot Ghidra bundle remains an optional exact cross-check"
+}

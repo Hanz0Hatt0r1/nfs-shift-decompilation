@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Analyze the narrow S5 BManager/cPhysicsManager dispatch-registration slice.
+"""Prove the corrected BManager -> cPhysicsManager default dispatch topology.
 
-This analyzer is intentionally fail-closed.  It can prove only what is visible
-in a targeted SHIFT.GhidraFunctionInstructions/2 export plus exact ABI metadata
-and the already-positive SHIFT.PhysicsManagerSchedulerEntryOwner/1 handoff.
-It does not infer a Tick slot from address ordering and it never promotes host
-pacing to retail cadence.
+The analyzer is deliberately narrow. It consumes an exact nine-function
+SHIFT.GhidraFunctionInstructions/2 slice and the already-positive
+SHIFT.PhysicsManagerSchedulerEntryOwner/1 handoff. It proves registration into
+the active Controller list, list iteration through the per-manager timing gate,
+and the default BManager mode dispatch through the source-backed +0x18 slot.
+It does not promote the worker 10 ms poll sleep or any host timer to retail
+physics cadence.
 """
 from __future__ import annotations
 
@@ -15,37 +17,20 @@ import re
 from pathlib import Path
 from typing import Any
 
-FORMAT = "SHIFT.BManagerPhysicsManagerDispatchFrontier/1"
+FORMAT = "SHIFT.BManagerPhysicsManagerDispatchFrontier/2"
 INSTRUCTION_FORMAT = "SHIFT.GhidraFunctionInstructions/2"
 OWNER_FORMAT = "SHIFT.PhysicsManagerSchedulerEntryOwner/1"
-
 TARGETS = {
-    0x00647B70: "FUN_00647b70",  # Activate semantic anchor
-    0x00647C60: "FUN_00647c60",  # Disable semantic anchor
-    0x00647CF0: "FUN_00647cf0",  # Restart semantic anchor
-    0x00647DA0: "FUN_00647da0",  # unresolved lifecycle wrapper
-    0x0065BB50: "FUN_0065bb50",  # controller helper -> 00647da0
-    0x00D36000: "FUN_00d36000",  # Controller #1/#2 registration candidate
-    0x006485B0: "FUN_006485b0",  # BManager controller API
-    0x00662600: "FUN_00662600",  # duplicate-check/core add path
-    0x0070FE90: "FUN_0070fe90",  # Physics Manager accessor
+    0x00647D80: "FUN_00647d80",
+    0x00647EF0: "FUN_00647ef0",
+    0x0065B8B0: "FUN_0065b8b0",
+    0x006626A0: "FUN_006626a0",
+    0x00662880: "FUN_00662880",
+    0x00D36000: "FUN_00d36000",
+    0x006485B0: "FUN_006485b0",
+    0x00662600: "FUN_00662600",
+    0x0070FE90: "FUN_0070fe90",
 }
-
-LIFECYCLE_CALLS = {
-    0x00647B70: 0x00647C0C,
-    0x00647C60: 0x00647C87,
-    0x00647CF0: 0x00647D47,
-    0x00647DA0: 0x00647E23,
-}
-CONTROLLER_HELPER_CALL = 0x0065BB96
-CONTROLLER_HELPER_TARGET = 0x00647DA0
-REGISTRATION_CALLER = 0x00D36000
-PHYSICS_MANAGER_ACCESSOR = 0x0070FE90
-CONTROLLER_API = 0x006485B0
-CONTROLLER_CORE = 0x00662600
-CONTROLLER_CORE_CALL = 0x00648607
-
-_SLOT_RE = re.compile(r"\[\s*([A-Za-z][A-Za-z0-9]*)\s*(?:\+\s*(0x[0-9a-fA-F]+|[0-9]+|[0-9a-fA-F]+h))?\s*\]")
 
 
 def _norm(value: Any) -> int | None:
@@ -66,6 +51,10 @@ def _norm(value: Any) -> int | None:
 
 def _hex(value: int) -> str:
     return f"0x{value:08x}"
+
+
+def _compact(value: Any) -> str:
+    return re.sub(r"\s+", "", str(value)).lower()
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -95,16 +84,16 @@ def _instruction_rows(path: Path) -> dict[int, dict[str, Any]]:
         if row.get("found") is not True:
             raise ValueError(f"{path}: unresolved targeted function {row.get('requested')}")
         function = row.get("function")
-        if not isinstance(function, dict):
-            raise ValueError(f"{path}: function metadata missing")
-        address = _norm(function.get("address"))
+        address = _norm(function.get("address") if isinstance(function, dict) else None)
         if address is None:
-            raise ValueError(f"{path}: invalid function address")
+            raise ValueError(f"{path}: invalid function row")
         instructions = row.get("instructions")
         if not isinstance(instructions, list) or not instructions:
             raise ValueError(f"{_hex(address)}: instruction list missing")
         if row.get("instruction_count") != len(instructions):
             raise ValueError(f"{_hex(address)}: instruction_count mismatch")
+        if address in result:
+            raise ValueError(f"{_hex(address)}: duplicate target")
         result[address] = row
     if set(result) != set(TARGETS):
         missing = sorted(set(TARGETS) - set(result))
@@ -129,58 +118,41 @@ def _function_db(path: Path) -> dict[int, dict[str, Any]]:
     return result
 
 
-def _instructions(row: dict[str, Any]) -> list[dict[str, Any]]:
-    return row["instructions"]
-
-
 def _find_instruction(row: dict[str, Any], address: int) -> dict[str, Any]:
-    matches = [item for item in _instructions(row) if _norm(item.get("address")) == address]
+    matches = [
+        item for item in row["instructions"]
+        if _norm(item.get("address")) == address
+    ]
     if len(matches) != 1:
-        raise ValueError(f"{_hex(address)}: expected one machine instruction, found {len(matches)}")
+        raise ValueError(
+            f"{_hex(address)}: expected one machine instruction, found {len(matches)}"
+        )
     return matches[0]
 
 
-def _pcode_opcodes(instruction: dict[str, Any]) -> list[str]:
-    pcode = instruction.get("pcode")
-    if not isinstance(pcode, list):
-        raise ValueError(f"{instruction.get('address')}: pcode missing")
-    result: list[str] = []
-    for operation in pcode:
-        if not isinstance(operation, dict) or not isinstance(operation.get("opcode"), str):
-            raise ValueError(f"{instruction.get('address')}: malformed pcode")
-        result.append(operation["opcode"].upper())
-    return result
-
-
-def _slot_operand(instruction: dict[str, Any]) -> dict[str, Any]:
-    mnemonic = str(instruction.get("mnemonic") or "").upper()
-    if mnemonic != "CALL":
-        raise ValueError(f"{instruction.get('address')}: expected CALL, got {mnemonic or '<missing>'}")
-    if "CALLIND" not in _pcode_opcodes(instruction):
-        raise ValueError(f"{instruction.get('address')}: expected p-code CALLIND")
-    operands = instruction.get("operands")
-    if not isinstance(operands, list) or len(operands) != 1 or not isinstance(operands[0], str):
-        raise ValueError(f"{instruction.get('address')}: expected one textual CALL operand")
-    operand = operands[0]
-    match = _SLOT_RE.search(operand)
-    if match is None:
-        return {"operand": operand, "base_register": None, "displacement": None, "parsed": False}
-    displacement_token = match.group(2)
-    displacement = 0
-    if displacement_token:
-        token = displacement_token.lower()
-        if token.endswith("h"):
-            displacement = int(token[:-1], 16)
-        elif token.startswith("0x"):
-            displacement = int(token, 16)
-        else:
-            displacement = int(token, 10)
-    return {
-        "operand": operand,
-        "base_register": match.group(1).upper(),
-        "displacement": displacement,
-        "parsed": True,
-    }
+def _expect(
+    row: dict[str, Any],
+    address: int,
+    mnemonic: str,
+    *operands: str,
+) -> dict[str, Any]:
+    instruction = _find_instruction(row, address)
+    actual_mnemonic = str(instruction.get("mnemonic") or "").upper()
+    if actual_mnemonic != mnemonic.upper():
+        raise ValueError(
+            f"{_hex(address)}: expected {mnemonic}, got {actual_mnemonic or '<missing>'}"
+        )
+    actual_operands = instruction.get("operands")
+    if not isinstance(actual_operands, list):
+        raise ValueError(f"{_hex(address)}: operands missing")
+    if operands and [_compact(value) for value in actual_operands] != [
+        _compact(value) for value in operands
+    ]:
+        raise ValueError(
+            f"{_hex(address)}: operand drift: expected {list(operands)!r}, "
+            f"got {actual_operands!r}"
+        )
+    return instruction
 
 
 def _flow_targets(instruction: dict[str, Any]) -> set[int]:
@@ -198,242 +170,241 @@ def _flow_targets(instruction: dict[str, Any]) -> set[int]:
     return targets
 
 
-def _direct_calls(row: dict[str, Any], target: int) -> list[tuple[int, int]]:
-    result: list[tuple[int, int]] = []
-    for index, instruction in enumerate(_instructions(row)):
-        if str(instruction.get("mnemonic") or "").upper() != "CALL":
-            continue
-        if "CALLIND" in _pcode_opcodes(instruction):
-            continue
-        if target in _flow_targets(instruction):
-            address = _norm(instruction.get("address"))
-            if address is not None:
-                result.append((index, address))
-    return result
+def _direct_call(row: dict[str, Any], address: int, target: int) -> None:
+    instruction = _expect(row, address, "CALL")
+    if target not in _flow_targets(instruction):
+        raise ValueError(
+            f"{_hex(address)}: direct call target drift; expected {_hex(target)}"
+        )
 
 
-def _writes_eax(instruction: dict[str, Any]) -> bool:
-    mnemonic = str(instruction.get("mnemonic") or "").upper()
-    if mnemonic in {"CALL", "RET", "PUSH", "CMP", "TEST", "JMP"} or mnemonic.startswith("J"):
-        return mnemonic == "CALL"
-    operands = instruction.get("operands")
-    if not isinstance(operands, list) or not operands or not isinstance(operands[0], str):
-        return False
-    first = operands[0].strip().upper()
-    return first in {"EAX", "AX", "AL", "AH"}
-
-
-def _accessor_returns_eax(row: dict[str, Any]) -> dict[str, Any]:
-    instructions = _instructions(row)
-    ret_seen = any(str(item.get("mnemonic") or "").upper().startswith("RET") for item in instructions)
-    eax_write = any(_writes_eax(item) and str(item.get("mnemonic") or "").upper() != "CALL" for item in instructions)
-    return {
-        "ret_observed": ret_seen,
-        "eax_definition_observed": eax_write,
-        "return_register_surface_proven": ret_seen and eax_write,
-    }
-
-
-def _nearest_accessor_to_api_transfer(row: dict[str, Any]) -> dict[str, Any]:
-    instructions = _instructions(row)
-    accessor_calls = _direct_calls(row, PHYSICS_MANAGER_ACCESSOR)
-    api_calls = _direct_calls(row, CONTROLLER_API)
-    candidates: list[dict[str, Any]] = []
-    for api_index, api_address in api_calls:
-        preceding = [(idx, addr) for idx, addr in accessor_calls if idx < api_index]
-        if not preceding:
-            continue
-        accessor_index, accessor_address = preceding[-1]
-        window = instructions[accessor_index + 1 : api_index]
-        push_positions = [
-            i for i, item in enumerate(window)
-            if str(item.get("mnemonic") or "").upper() == "PUSH"
-            and isinstance(item.get("operands"), list)
-            and item["operands"]
-            and str(item["operands"][0]).strip().upper() == "EAX"
-        ]
-        if not push_positions:
-            candidates.append({
-                "accessor_call": _hex(accessor_address),
-                "controller_api_call": _hex(api_address),
-                "push_eax_observed": False,
-                "eax_unclobbered_before_push": False,
-                "proven": False,
-            })
-            continue
-        push_pos = push_positions[-1]
-        before_push = window[:push_pos]
-        unclobbered = not any(_writes_eax(item) for item in before_push)
-        candidates.append({
-            "accessor_call": _hex(accessor_address),
-            "controller_api_call": _hex(api_address),
-            "push_eax_observed": True,
-            "eax_unclobbered_before_push": unclobbered,
-            "intervening_instruction_count": len(window),
-            "proven": unclobbered,
-        })
-    proven = [item for item in candidates if item["proven"]]
-    return {
-        "candidate_pairs": candidates,
-        "proven_pairs": proven,
-        "accessor_return_passed_as_stack_argument_to_controller_api": bool(proven),
-    }
-
-
-def _validate_abi(functions: dict[int, dict[str, Any]]) -> dict[str, Any]:
-    accessor = functions.get(PHYSICS_MANAGER_ACCESSOR)
-    api = functions.get(CONTROLLER_API)
-    core = functions.get(CONTROLLER_CORE)
-    if accessor is None or api is None or core is None:
+def _validate_abi(functions: dict[int, dict[str, Any]]) -> dict[str, str]:
+    api = functions.get(0x006485B0)
+    core = functions.get(0x00662600)
+    iterator = functions.get(0x0065B8B0)
+    if api is None or core is None or iterator is None:
         raise ValueError("required ABI rows missing from functions.jsonl")
-    if accessor.get("calling_convention") != "__stdcall" or accessor.get("parameters") != []:
-        raise ValueError("FUN_0070fe90 ABI drift")
+
     params = api.get("parameters")
-    if api.get("calling_convention") != "__thiscall" or not isinstance(params, list) or len(params) != 2:
+    if (
+        api.get("calling_convention") != "__thiscall"
+        or not isinstance(params, list)
+        or len(params) != 2
+        or params[0].get("storage") != "ECX:4 (auto)"
+        or params[1].get("storage") != "Stack[0x4]:4"
+    ):
         raise ValueError("FUN_006485b0 ABI drift")
-    if params[0].get("storage") != "ECX:4 (auto)" or params[1].get("storage") != "Stack[0x4]:4":
-        raise ValueError("FUN_006485b0 physical parameter storage drift")
-    core_params = core.get("parameters")
-    if core.get("calling_convention") != "__fastcall" or not isinstance(core_params, list) or len(core_params) != 2:
+
+    params = core.get("parameters")
+    if (
+        core.get("calling_convention") != "__fastcall"
+        or not isinstance(params, list)
+        or len(params) != 2
+        or params[0].get("storage") != "ECX:4"
+        or params[1].get("storage") != "EDX:4"
+    ):
         raise ValueError("FUN_00662600 ABI drift")
+
+    params = iterator.get("parameters")
+    if (
+        iterator.get("calling_convention") != "__stdcall"
+        or not isinstance(params, list)
+        or len(params) != 1
+        or params[0].get("storage") != "Stack[0x4]:4"
+    ):
+        raise ValueError("FUN_0065b8b0 ABI drift")
+
     return {
-        "physics_manager_accessor": {
-            "address": _hex(PHYSICS_MANAGER_ACCESSOR),
-            "calling_convention": accessor["calling_convention"],
-            "parameter_count": 0,
-            "verified": True,
-        },
-        "controller_api": {
-            "address": _hex(CONTROLLER_API),
-            "calling_convention": api["calling_convention"],
-            "this_storage": params[0]["storage"],
-            "manager_argument_storage": params[1]["storage"],
-            "verified": True,
-        },
-        "controller_core": {
-            "address": _hex(CONTROLLER_CORE),
-            "calling_convention": core["calling_convention"],
-            "verified": True,
-        },
+        "FUN_006485b0": "__thiscall ECX=this(manager), Stack[0x4]=controller id",
+        "FUN_00662600": "__fastcall ECX=controller, EDX=manager",
+        "FUN_0065b8b0": "__stdcall Stack[0x4]=manager list",
     }
 
 
-def analyze(export: Path, functions_path: Path, owner_path: Path) -> dict[str, Any]:
+def analyze(
+    export: Path,
+    functions_path: Path,
+    owner_path: Path,
+) -> dict[str, Any]:
     rows = _instruction_rows(export)
-    functions = _function_db(functions_path)
+    abi = _validate_abi(_function_db(functions_path))
     owner = _read_json(owner_path)
     if owner.get("format") != OWNER_FORMAT or owner.get("ready") is not True:
         raise ValueError(f"owner handoff must be positive {OWNER_FORMAT}")
     scheduler = owner.get("scheduler_entry")
-    if not isinstance(scheduler, dict) or scheduler.get("owner_proven") is not True:
-        raise ValueError("owner handoff scheduler entry is not proven")
-    owner_slot = scheduler.get("slot_offset")
-    if not isinstance(owner_slot, int):
-        raise ValueError("owner handoff slot_offset missing")
+    if (
+        not isinstance(scheduler, dict)
+        or scheduler.get("owner_proven") is not True
+        or scheduler.get("slot_offset") != 0x18
+        or scheduler.get("target_address") != "0x00711b50"
+    ):
+        raise ValueError("owner +0x18 scheduler slot drift")
 
-    abi = _validate_abi(functions)
+    # FUN_0070fe90 return becomes FUN_006485b0 ECX/this. The controller id
+    # remains the stack argument. This explicitly rejects the old PUSH-EAX model.
+    _direct_call(rows[0x00D36000], 0x00D36051, 0x0070FE90)
+    _expect(rows[0x00D36000], 0x00D36068, "MOV", "ECX", "EAX")
+    _direct_call(rows[0x00D36000], 0x00D3606A, 0x006485B0)
 
-    lifecycle: dict[str, Any] = {}
-    for function, callsite in LIFECYCLE_CALLS.items():
-        instruction = _find_instruction(rows[function], callsite)
-        lifecycle[TARGETS[function]] = {
-            "function": _hex(function),
-            "callsite": _hex(callsite),
-            **_slot_operand(instruction),
-        }
+    # Controller API caches manager=this in EDI, resolves controller into ESI,
+    # then enters the fastcall core as ECX=controller, EDX=manager.
+    _expect(rows[0x006485B0], 0x006485B5, "MOV", "EDI", "ECX")
+    _direct_call(rows[0x006485B0], 0x006485D4, 0x0065B840)
+    _expect(rows[0x006485B0], 0x006485D9, "MOV", "ESI", "EAX")
+    _expect(rows[0x006485B0], 0x00648603, "MOV", "EDX", "EDI")
+    _expect(rows[0x006485B0], 0x00648605, "MOV", "ECX", "ESI")
+    _direct_call(rows[0x006485B0], 0x00648607, 0x00662600)
 
-    candidate = lifecycle[TARGETS[0x00647DA0]]
-    candidate_slot_matches_owner = (
-        candidate["parsed"] is True and candidate["displacement"] == owner_slot
+    # Core add uses controller+0x58 and retains manager at node+0xc.
+    _expect(rows[0x00662600], 0x00662605, "MOV", "EBX", "EDX")
+    _expect(rows[0x00662600], 0x0066260D, "LEA", "EDI", "[ECX + 0x58]")
+    _expect(
+        rows[0x00662600],
+        0x00662630,
+        "CMP",
+        "EBX",
+        "dword ptr [ESI + 0xc]",
     )
+    _expect(rows[0x00662600], 0x0066264C, "MOV", "EDX", "EBX")
+    _expect(rows[0x00662600], 0x0066264E, "MOV", "ECX", "EDI")
+    _direct_call(rows[0x00662600], 0x00662650, 0x004F5E60)
 
-    helper_call = _find_instruction(rows[0x0065BB50], CONTROLLER_HELPER_CALL)
-    helper_calls_candidate = CONTROLLER_HELPER_TARGET in _flow_targets(helper_call)
-
-    accessor_surface = _accessor_returns_eax(rows[PHYSICS_MANAGER_ACCESSOR])
-    registration_transfer = _nearest_accessor_to_api_transfer(rows[REGISTRATION_CALLER])
-
-    core_call = _find_instruction(rows[CONTROLLER_API], CONTROLLER_CORE_CALL)
-    controller_api_reaches_core = CONTROLLER_CORE in _flow_targets(core_call)
-
-    dispatch_registration_ready = (
-        candidate_slot_matches_owner
-        and helper_calls_candidate
-        and accessor_surface["return_register_surface_proven"]
-        and registration_transfer["accessor_return_passed_as_stack_argument_to_controller_api"]
-        and controller_api_reaches_core
+    # Active Controller state 6 consumes exactly the same +0x58 list.
+    _expect(
+        rows[0x006626A0],
+        0x006626A8,
+        "CMP",
+        "dword ptr [ESI + 0x98]",
+        "0x6",
     )
+    _expect(rows[0x006626A0], 0x006626B2, "LEA", "EAX", "[ESI + 0x58]")
+    _expect(rows[0x006626A0], 0x006626B5, "PUSH", "EAX")
+    _direct_call(rows[0x006626A0], 0x006626BD, 0x0065B8B0)
 
-    blockers: list[str] = []
-    if not candidate_slot_matches_owner:
-        blockers.append("FUN_00647da0-indirect-call-not-proven-to-use-cPhysicsManager-owner-slot-plus-0x18")
-    if not helper_calls_candidate:
-        blockers.append("controller-helper-to-FUN_00647da0-edge-not-proven-in-targeted-export")
-    if not accessor_surface["return_register_surface_proven"]:
-        blockers.append("physics-manager-accessor-return-register-surface-not-proven")
-    if not registration_transfer["accessor_return_passed_as_stack_argument_to_controller_api"]:
-        blockers.append("physics-manager-accessor-return-to-controller-api-manager-argument-not-proven")
-    if not controller_api_reaches_core:
-        blockers.append("controller-api-to-BManager-core-add-path-not-proven")
-    blockers.append("scheduler-entry-elapsed-or-accumulator-producer-not-proven")
+    # Iterator recovers the stored manager at node+0xc and calls timing gate.
+    _expect(
+        rows[0x0065B8B0],
+        0x0065B8E0,
+        "MOV",
+        "ECX",
+        "dword ptr [ESI + 0xc]",
+    )
+    _direct_call(rows[0x0065B8B0], 0x0065B8FC, 0x00647EF0)
+
+    # Timing gate consumes +0xe8 period and reaches the corrected selector.
+    _expect(
+        rows[0x00647EF0],
+        0x00647FA2,
+        "MOV",
+        "EAX",
+        "dword ptr [ESI + 0xe8]",
+    )
+    _direct_call(rows[0x00647EF0], 0x00647FBD, 0x00647D80)
+
+    # Correct selector: nonzero global +0x529 -> +0x1c;
+    # default zero -> source-backed scheduler slot +0x18.
+    _expect(
+        rows[0x00647D80],
+        0x00647D88,
+        "CMP",
+        "byte ptr [EAX + 0x529]",
+        "0x0",
+    )
+    _expect(
+        rows[0x00647D80],
+        0x00647D96,
+        "MOV",
+        "EDX",
+        "dword ptr [EAX + 0x1c]",
+    )
+    _expect(rows[0x00647D80], 0x00647D99, "JMP", "EDX")
+    _expect(
+        rows[0x00647D80],
+        0x00647D9B,
+        "MOV",
+        "EDX",
+        "dword ptr [EAX + 0x18]",
+    )
+    _expect(rows[0x00647D80], 0x00647D9E, "JMP", "EDX")
+
+    # Worker loop repeats, but 10 ms is a poll sleep, not physics cadence.
+    _direct_call(rows[0x00662880], 0x006629FC, 0x006626A0)
+    _expect(rows[0x00662880], 0x00662A76, "MOV", "DL", "0x1")
+    _expect(rows[0x00662880], 0x00662A7E, "MOV", "ECX", "0xa")
+    _direct_call(rows[0x00662880], 0x00662A83, 0x00649780)
+    loop = _find_instruction(rows[0x00662880], 0x00662A8C)
+    if str(loop.get("mnemonic") or "").upper() not in {"JZ", "JE"}:
+        raise ValueError("FUN_00662880 worker back-edge mnemonic drift")
+    if 0x006628E8 not in _flow_targets(loop):
+        raise ValueError("FUN_00662880 worker back-edge target drift")
 
     return {
         "format": FORMAT,
-        "version": 1,
-        "status": "dispatch-registration-ready" if dispatch_registration_ready else "blocked-dispatch-registration-proof",
-        "ready": dispatch_registration_ready,
+        "version": 2,
+        "status": "dispatch-registration-ready",
+        "ready": True,
         "input_format": INSTRUCTION_FORMAT,
+        "abi": abi,
         "owner_handoff": {
             "format": OWNER_FORMAT,
-            "slot_offset": owner_slot,
-            "target": scheduler.get("target"),
+            "slot_offset": 0x18,
+            "target": "FUN_00711b50",
             "verified": True,
         },
-        "abi": abi,
-        "lifecycle_indirect_calls": lifecycle,
-        "slot_join": {
-            "FUN_00647da0_matches_source_backed_cPhysicsManager_slot": candidate_slot_matches_owner,
-            "matched_slot_offset": owner_slot if candidate_slot_matches_owner else None,
-            "semantic_name_tick_promoted": False,
-        },
-        "controller_dispatch": {
-            "helper": "FUN_0065bb50",
-            "callsite": _hex(CONTROLLER_HELPER_CALL),
-            "calls_FUN_00647da0": helper_calls_candidate,
-        },
-        "physics_manager_registration": {
-            "caller": "FUN_00d36000",
+        "registration": {
+            "accessor_callsite": "0x00d36051",
             "accessor": "FUN_0070fe90",
+            "controller_api_callsite": "0x00d3606a",
             "controller_api": "FUN_006485b0",
+            "accessor_return_becomes_controller_api_this_ECX": True,
+            "accessor_return_is_stack_argument": False,
             "controller_core": "FUN_00662600",
-            "accessor_surface": accessor_surface,
-            "value_transfer": registration_transfer,
-            "controller_api_reaches_core": controller_api_reaches_core,
-            "registration_api_argument_proven": (
-                accessor_surface["return_register_surface_proven"]
-                and registration_transfer["accessor_return_passed_as_stack_argument_to_controller_api"]
-                and controller_api_reaches_core
-            ),
+            "controller_list_offset": "0x58",
+            "manager_node_value_offset": "0x0c",
+            "proven": True,
+        },
+        "active_dispatch": {
+            "controller_state_value": 6,
+            "controller_list_offset": "0x58",
+            "iterator": "FUN_0065b8b0",
+            "timing_gate": "FUN_00647ef0",
+            "period_field_offset": "0xe8",
+            "selector": "FUN_00647d80",
+            "mode_flag_offset": "0x529",
+            "default_mode_flag_value": 0,
+            "default_slot_offset": "0x18",
+            "alternate_slot_offset": "0x1c",
+            "default_slot_matches_source_backed_cPhysicsManager_owner_slot": True,
+            "proven": True,
+        },
+        "worker_loop": {
+            "function": "FUN_00662880",
+            "active_dispatch_callsite": "0x006629fc",
+            "poll_sleep_ms": 10,
+            "back_edge": "0x00662a8c -> 0x006628e8",
+            "repeating": True,
+            "poll_sleep_promoted_to_physics_cadence": False,
         },
         "handoff": {
-            "bmanager_controller_to_owner_slot_plus_0x18_proven": candidate_slot_matches_owner and helper_calls_candidate,
-            "physics_manager_registration_api_argument_proven": (
-                accessor_surface["return_register_surface_proven"]
-                and registration_transfer["accessor_return_passed_as_stack_argument_to_controller_api"]
-                and controller_api_reaches_core
-            ),
-            "dispatch_registration_ready": dispatch_registration_ready,
-            "scheduler_entry_elapsed_or_accumulator_input_proven": False,
+            "bmanager_controller_to_cPhysicsManager_slot_plus_0x18_proven": True,
+            "dispatch_registration_ready": True,
             "retail_cadence_admitted": False,
-            "consumer": "S5 timer/accumulator provenance into the already-proven cPhysicsManager scheduler entry",
+            "consumer": "SHIFT.RetailOuterUpdateCadence/1",
         },
-        "blocking_reasons": blockers,
+        "blocking_reasons": [
+            "manager-period-units-and-scheduler-argument-producer-are-outside-this-nine-function-slice"
+        ],
+        "corrections": {
+            "FUN_00647da0_plus_0x18_rejected": True,
+            "FUN_00647da0_actual_indirect_slot": "0x20",
+            "correct_default_dispatcher": "FUN_00647d80",
+            "FUN_0070fe90_return_as_stack_argument_rejected": True,
+            "correct_FUN_006485b0_receiver": "ECX/this",
+        },
         "limits": {
-            "FUN_00647da0_called_tick_from_address_order": False,
-            "diagnostic_frequency_promoted_to_cadence": False,
+            "worker_poll_10ms_promoted": False,
             "host_1_60_promoted": False,
             "rendered_frame_equivalence_claimed": False,
-            "scheduler_timer_or_accumulator_value_guessed": False,
             "runtime_capture_used": False,
             "original_game_executed": False,
         },
@@ -447,7 +418,6 @@ def main() -> int:
     parser.add_argument("owner_handoff", type=Path)
     parser.add_argument("--json-out", type=Path)
     args = parser.parse_args()
-
     report = analyze(args.instruction_export, args.functions, args.owner_handoff)
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if args.json_out:

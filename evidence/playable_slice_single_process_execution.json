@@ -18,9 +18,12 @@
     "body0_bind_frame_ready": true,
     "persistent_world_transform_wiring_contract": "SHIFT.BMWPersistentWorldTransformRuntimeWiring/1",
     "vehicle_world_transform_ready": true,
-    "current_blocker_id": "retail-outer-update-scheduler-cadence-admission",
-    "current_blocker": "prove and consume retail outer-update scheduler/cadence ownership for continuous persistent BMW physics without treating host loop frequency as retail evidence",
-    "current_blocker_consumer": "continuous source-backed persistent BMW physics/control execution",
+    "retail_outer_cadence_contract": "SHIFT.RetailOuterUpdateCadence/1",
+    "retail_outer_cadence_admitted": true,
+    "retail_outer_authority_seam_ready": true,
+    "current_blocker_id": "selected-session-physics-tweaker-rate-admission",
+    "current_blocker": "prove the selected-session loaded PhysicsTweaker tick rate and feed it into the strict RetailEvidence outer-scheduler seam before dispatching persistent BMW inner physics substeps; constructor default 180 Hz is not sufficient evidence because PhysicsTweaker.xml may override it",
+    "current_blocker_consumer": "RetailEvidence outer scheduler -> loaded 1/rate inner persistent BODY fixed-step execution",
     "runtime_capture_required": false,
     "original_game_execution_required": false
   },
@@ -44,16 +47,21 @@
     "live freshness-gated Vulkan vehicle transform sink",
     "strict outer Vehicle/VHF relation admission infrastructure",
     "final BODY0 bind proof packet/runtime admission seam",
-    "explicit runtime scheduler-authority seam"
+    "explicit runtime scheduler-authority seam",
+    "SHIFT.RetailOuterUpdateCadence/1",
+    "strict native RetailOuterSchedulerContract"
   ],
   "positive_gates": {
     "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": true,
     "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": true,
     "BODY0_bind_frame_proof_ready": true,
-    "vehicle_world_transform_ready": true
+    "vehicle_world_transform_ready": true,
+    "retail_outer_cadence_admitted": true,
+    "retail_outer_authority_seam_ready": true
   },
   "false_gates": {
-    "retail_cadence_admitted": false,
+    "loaded_inner_physics_rate_admitted": false,
+    "retail_inner_substep_execution_admitted": false,
     "retail_control_chain_complete": false,
     "retail_camera_follow_ready": false
   },
@@ -80,7 +88,7 @@
     },
     {
       "id": "S5",
-      "task": "prove and consume retail outer-update scheduler/cadence ownership",
+      "task": "consume proven retail outer scheduler/cadence and prove the selected-session loaded PhysicsTweaker tick rate before inner persistent BODY substeps",
       "state": "current"
     },
     {
