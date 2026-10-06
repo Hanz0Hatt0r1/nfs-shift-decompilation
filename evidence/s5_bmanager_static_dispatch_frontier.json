@@ -1,12 +1,11 @@
 {
-  "format": "SHIFT.BManagerStaticDispatchFrontier/1",
-  "version": 1,
-  "status": "frontier",
-  "base_commit": "79b31ae57c9bf59d9cc97cea2a2f07e014581243",
+  "format": "SHIFT.BManagerStaticDispatchFrontier/2",
+  "version": 2,
+  "status": "superseded-by-corrected-retail-dispatch-proof",
+  "ready": true,
   "blocker": "S5 retail outer-update scheduler/cadence ownership",
-  "consumer": "SHIFT.BManagerPhysicsManagerDispatchFrontier/1 retail instruction proof",
-  "gates_changed": [],
-  "retail_cadence_admitted": false,
+  "consumer": "SHIFT.BManagerPhysicsManagerDispatchFrontier/2 and SHIFT.RetailOuterUpdateCadence/1",
+  "retail_cadence_admitted": true,
   "upstream_positive": {
     "format": "SHIFT.PhysicsManagerSchedulerEntryOwner/1",
     "owner": "MWL::Core::cPhysicsManager",
@@ -15,64 +14,59 @@
     "slot_address": "0x00b0453c",
     "target": "FUN_00711b50"
   },
-  "verified_static_topology": [
-    {
-      "fact": "FUN_0065bb50 directly calls FUN_00647da0 at 0x0065bb96.",
-      "source": "callgraph.jsonl"
-    },
-    {
-      "fact": "FUN_00647da0 has one unresolved indirect call at 0x00647e23 in the current callgraph export.",
-      "source": "callgraph.jsonl"
-    },
-    {
-      "fact": "FUN_006485b0 directly calls FUN_00662600 at 0x00648607.",
-      "source": "callgraph.jsonl"
-    },
-    {
-      "fact": "FUN_006485b0 is __thiscall and its manager candidate argument is physically Stack[0x4]:4.",
-      "source": "functions.jsonl"
-    },
-    {
-      "fact": "FUN_00d36000 is bounded to the Controller #1/#2 registration subsystem and directly calls both FUN_0070fe90 and FUN_006485b0.",
-      "source": "factories.jsonl, strings_xrefs.jsonl and callgraph.jsonl"
-    }
-  ],
-  "exact_missing_machine_edges": [
-    {
-      "id": "lifecycle-indirect-slot-operand",
-      "function": "FUN_00647da0",
-      "callsite": "0x00647e23",
-      "required": "instruction operand plus CALLIND p-code proving displacement equals the source-backed cPhysicsManager slot +0x18",
-      "proven": false
-    },
-    {
-      "id": "physics-manager-accessor-registration-transfer",
-      "function": "FUN_00d36000",
-      "required": "instruction-level proof that the return from FUN_0070fe90 is passed as FUN_006485b0 Stack[0x4]:4 without an intervening EAX clobber",
-      "proven": false
-    }
+  "corrections": {
+    "old_FUN_00647da0_plus_0x18_candidate_rejected": true,
+    "FUN_00647da0_actual_indirect_slot": "0x20",
+    "correct_default_dispatcher": "FUN_00647d80",
+    "correct_default_dispatch_slot": "0x18",
+    "alternate_dispatch_slot": "0x1c",
+    "default_mode_flag": "BManager +0x529 == 0",
+    "old_FUN_0070fe90_return_as_FUN_006485b0_stack_argument_rejected": true,
+    "correct_FUN_006485b0_manager_receiver": "ECX/this",
+    "FUN_006485b0_stack_argument": "controller id"
+  },
+  "corrected_static_topology": [
+    "FUN_0070fe90() -> source-backed DAT_00c104e0 cPhysicsManager singleton",
+    "FUN_00d36000 moves accessor return into ECX before FUN_006485b0",
+    "FUN_006485b0 resolves controller and calls FUN_00662600 with ECX=controller, EDX=manager",
+    "FUN_00662600 stores manager in controller +0x58 list node +0x0c",
+    "FUN_006626a0 consumes controller +0x58 list when state == 6",
+    "FUN_0065b8b0 reads node +0x0c manager and calls FUN_00647ef0",
+    "FUN_00647ef0 consumes manager +0xe8 timing period and calls FUN_00647d80 when due",
+    "FUN_00647d80 selects +0x18 in default BManager mode and +0x1c in alternate mode"
   ],
   "available_consumer_infrastructure": {
     "analyzer": "tools/ghidra/analyze_s5_bmanager_dispatch_slice.py",
     "runner": "tools/ghidra/run_s5_bmanager_dispatch_slice.sh",
-    "format": "SHIFT.BManagerPhysicsManagerDispatchFrontier/1",
-    "retail_result_published": false
+    "format": "SHIFT.BManagerPhysicsManagerDispatchFrontier/2",
+    "exact_targets": [
+      "FUN_00647d80",
+      "FUN_00647ef0",
+      "FUN_0065b8b0",
+      "FUN_006626a0",
+      "FUN_00662880",
+      "FUN_00d36000",
+      "FUN_006485b0",
+      "FUN_00662600",
+      "FUN_0070fe90"
+    ],
+    "retail_result_published": true,
+    "positive_retail_cadence_contract": "SHIFT.RetailOuterUpdateCadence/1"
   },
   "adjudication": {
-    "controller_helper_to_lifecycle_candidate_verified": true,
-    "controller_api_to_core_add_path_verified": true,
-    "controller_registration_subsystem_membership_verified": true,
-    "candidate_indirect_operand_matches_cPhysicsManager_slot_plus_0x18": false,
-    "physics_manager_accessor_return_is_registration_argument": false,
-    "bmanager_controller_to_cPhysicsManager_slot_plus_0x18_proven": false
+    "cPhysicsManager_registration_to_controller_list_verified": true,
+    "active_controller_list_to_timing_gate_verified": true,
+    "default_dispatch_operand_matches_cPhysicsManager_slot_plus_0x18": true,
+    "physics_manager_accessor_return_is_controller_api_this": true,
+    "bmanager_controller_to_cPhysicsManager_slot_plus_0x18_proven": true,
+    "retail_cadence_admitted_by_positive_consumer_contract": true
   },
   "limits": {
-    "FUN_00647da0_semantic_name_tick_promoted": false,
-    "address_order_used_as_slot_semantics": false,
-    "callgraph_adjacency_used_as_value_transfer": false,
+    "alternate_BManager_mode_admitted": false,
+    "worker_poll_10ms_promoted": false,
     "host_1_60_promoted": false,
     "runtime_capture_used": false,
     "original_game_executed": false
   },
-  "next_action": "Run the existing nine-function BManager targeted instruction slice and publish SHIFT.BManagerPhysicsManagerDispatchFrontier/1 only if both exact missing machine edges prove."
+  "next_action": "consume SHIFT.RetailOuterUpdateCadence/1 in the native explicit RetailEvidence scheduler-authority seam"
 }
