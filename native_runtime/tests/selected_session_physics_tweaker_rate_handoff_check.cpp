@@ -102,6 +102,9 @@ int main() {
                 handoff.retail_inner_substep_execution_admitted = true;
             },
             "selected-rate handoff accepted premature inner-execution claim");
+        require_rejected(
+            [](auto& handoff) { handoff.verification_mode = "manifest-only"; },
+            "selected-rate handoff accepted unsupported manifest-only mode");
 
         auto scheduler = make_scheduler();
         const auto handoff = make_fixture_handoff();
@@ -123,12 +126,45 @@ int main() {
         require(decoded_only_rate == 360.0,
                 "exact decoded-entry handoff was not admitted");
 
+        // This is the verification mode emitted by the extracted-tree adapter.
+        // The adapter does not claim that it verified the whole archive SHA in
+        // that run, but the native gate must still require the pinned decoded
+        // payload SHA before admitting the selected rate.
+        auto extracted_manifest_scheduler = make_scheduler();
+        auto extracted_manifest = make_fixture_handoff();
+        extracted_manifest.verification_mode = "exact-extracted-entry-manifest";
+        extracted_manifest.archive_sha256_verified_this_run = false;
+        const double extracted_manifest_rate =
+            admit_selected_session_physics_tweaker_rate(
+                extracted_manifest_scheduler, extracted_manifest);
+        require(
+            extracted_manifest_rate == 360.0 &&
+                extracted_manifest_scheduler.loaded_inner_rate_admitted,
+            "exact extracted-entry manifest handoff was not admitted");
+
+        auto unverified_extracted_scheduler = make_scheduler();
+        auto unverified_extracted = extracted_manifest;
+        unverified_extracted.decoded_sha256_verified_this_run = false;
+        bool unverified_extracted_rejected = false;
+        try {
+            (void)admit_selected_session_physics_tweaker_rate(
+                unverified_extracted_scheduler, unverified_extracted);
+        } catch (const std::invalid_argument&) {
+            unverified_extracted_rejected = true;
+        }
+        require(
+            unverified_extracted_rejected &&
+                !unverified_extracted_scheduler.loaded_inner_rate_admitted,
+            "extracted-manifest handoff bypassed decoded SHA verification");
+
         std::cout
             << "{\"format\":\"SHIFT.SelectedSessionPhysicsTweakerRateNativeHandoffRegression/1\","
             << "\"ready\":true,"
             << "\"typed_handoff_admission_ready\":true,"
             << "\"exact_resource_identity_locked\":true,"
             << "\"decoded_hash_required\":true,"
+            << "\"extracted_manifest_mode_admitted_after_decoded_hash\":true,"
+            << "\"manifest_only_mode_rejected\":true,"
             << "\"forbidden_substitutes_rejected\":true,"
             << "\"fixture_rate_hz\":360,"
             << "\"fixture_is_retail_selected_session_rate\":false}\n";
