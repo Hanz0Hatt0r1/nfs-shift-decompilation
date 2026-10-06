@@ -1,0 +1,59 @@
+{
+  "format": "SHIFT.SelectedSessionPhysicsTweakerRateFrontier/1",
+  "version": 1,
+  "status": "blocked-awaiting-exact-resource-payload",
+  "ready": false,
+  "blocker": "selected-session-physics-tweaker-rate-admission",
+  "consumer": "RetailOuterSchedulerContract::admit_loaded_inner_rate(rate_hz)",
+  "positive_inputs": [
+    "SHIFT.RetailOuterUpdateCadence/1",
+    "SHIFT.BMWOffset33bSelectorGeometryInputs/1"
+  ],
+  "required_resource": {
+    "archive_filename": "PHYSICSBOOTFLOW.bff",
+    "archive_sha256": "f4205984343987d7879fcd65f6b2527848a6fd16e9830d6ccca70b7e5db4254a",
+    "entry_index": 49,
+    "entry_path": "vehicles/physics/physicstweaker.xml",
+    "compression_type": 2,
+    "compressed_size": 2452,
+    "uncompressed_size": 21762,
+    "decoded_sha256": "6cdd05f0512d367c8ce240cb13dd22fe10fb3e21da95185ea8f79e1ca67ca62f",
+    "accepted_materialization_inputs": [
+      "exact PHYSICSBOOTFLOW.bff with matching archive SHA-256 and entry metadata",
+      "exact decoded physicstweaker.xml bytes with matching decoded SHA-256"
+    ]
+  },
+  "materializer": {
+    "tool": "tools/materialize_s5_selected_physics_tweaker_rate.py",
+    "positive_format": "SHIFT.SelectedSessionPhysicsTweakerRate/1",
+    "property_name": "tick rate",
+    "requirements": [
+      "decoded payload hash matches the already hash-locked retail entry",
+      "exactly one prop named tick rate exists",
+      "data value is finite, positive, integral and fits recovered uint16 load",
+      "positive SHIFT.RetailOuterUpdateCadence/1 still requires loaded PhysicsTweaker value"
+    ],
+    "positive_artifact_scope": "admits the exact loaded numeric rate only; native persistent BODY inner-substep execution remains a separate consumer gate"
+  },
+  "available_evidence": {
+    "constructor_default_rate_hz": 180,
+    "constructor_default_is_selected_session_value": false,
+    "exact_resource_identity_known": true,
+    "exact_resource_payload_available_in_current_project_uploads": false
+  },
+  "handoff": {
+    "loaded_inner_physics_rate_admitted": false,
+    "retail_inner_substep_execution_admitted": false,
+    "next_exact_action": "materialize the hash-locked entry 49 payload and parse its unique tick rate property"
+  },
+  "limits": {
+    "constructor_default_180_may_close_blocker": false,
+    "community_default_value_may_close_blocker": false,
+    "modded_360_or_720_value_may_close_blocker": false,
+    "host_1_60_may_close_blocker": false,
+    "worker_poll_10ms_may_close_blocker": false,
+    "missing_resource_value_may_be_guessed": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  }
+}
