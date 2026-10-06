@@ -21,7 +21,12 @@ def test_phase708_keeps_exact_deep_chain_external_provider_set() -> None:
     assert report["format"] == FORMAT
     assert report["phase"] == 699
     assert report["refresh_after_phase"] == 707
-    assert report["refresh_label"] == "Process 2 Phase 708 coordination refresh"
+    assert report["refresh_label"] == (
+        "Process 2 Phase 708 coordination refresh + S5 retail cadence closure"
+    )
+    assert report["retail_cadence_refresh"] == (
+        "SHIFT.RetailOuterUpdateCadence/1 + atomic retail outer-dispatch transaction"
+    )
     assert report["external_provider_count"] == 9
     assert report["implement_now"] == []
     assert report["runtime_only_blocked"] == []
@@ -161,6 +166,29 @@ def test_phase708_marks_renderer_transport_647_649_closed() -> None:
     assert persistent["stale_transform_rejected_before_gpu_access"] is True
 
 
+def test_s5_closes_outer_cadence_owner_without_opening_rate_or_host_schedule() -> None:
+    report = build_frontier()
+    joins = {row["id"]: row for row in report["cross_chain_joins"]}
+    cadence = joins["outer_update_cadence_owner"]
+    assert cadence["state"] == "retail_proven_and_consumed"
+    assert cadence["process2_action"] == "closed"
+    assert cadence["blockers"] == []
+    assert any("SHIFT.RetailOuterUpdateCadence/1" in value for value in cadence["evidence"])
+    assert any("30 Hz" in value and "33 ms" in value for value in cadence["evidence"])
+    assert any("one scheduler invocation" in value for value in cadence["evidence"])
+    assert any("execute_retail_outer_dispatch" in value for value in cadence["evidence"])
+    assert "selected-session inner rate fail-closed" in cadence["policy"]
+    assert "do not equate host/render frames" in cadence["policy"]
+
+    guards = report["guards"]
+    assert guards["retail_outer_cadence_ready"] is True
+    assert guards["retail_outer_scheduler_authority"] == "RetailEvidence"
+    assert guards["retail_outer_dispatch_transaction_ready"] is True
+    assert guards["selected_session_inner_rate_ready"] is False
+    assert guards["render_loop_equated_to_outer_dispatch"] is False
+    assert guards["fixed_step_auto_schedule_allowed"] is False
+
+
 def test_phase708_keeps_transform_and_machine_promotions_fail_closed() -> None:
     report = build_frontier()
     guards = report["guards"]
@@ -187,7 +215,7 @@ def test_phase708_keeps_transform_and_machine_promotions_fail_closed() -> None:
     assert guards["new_runtime_capture_required"] is False
 
     joins = {row["id"]: row for row in report["cross_chain_joins"]}
-    assert joins["outer_update_cadence_owner"]["process2_action"] == REQUEST_PROCESS1
+    assert joins["outer_update_cadence_owner"]["process2_action"] == "closed"
     assert joins["body_to_vehicle_identity"]["process2_action"] == "closed"
     assert joins["body_pose_to_renderer_world_transform"]["process2_action"] == REQUEST_PROCESS1
     assert joins["retail_resource_to_initial_body_state"]["process2_action"] == REQUEST_PROCESS1
