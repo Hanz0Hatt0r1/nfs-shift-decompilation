@@ -7,10 +7,10 @@ Usage:
   GHIDRA_HOME=/path/to/ghidra ./tools/ghidra/run_s5_retail_instruction_bundle.sh \
     <project-dir> <project-name> <program-name> <functions-jsonl> <output-dir>
 
-Exports the exact union of all still-required S5 retail instruction targets once,
-then splits that export into the exact 3/5/9-function surfaces consumed by the
-existing scheduler, rate-accessor, and BManager analyzers.  This performs static
-analysis only; it does not execute the retail game or use runtime capture.
+Exports the exact union of all S5 targeted retail instruction surfaces once,
+then splits that export into exact 3/5/9-function inputs for the existing
+scheduler, rate-accessor and corrected BManager analyzers. Static analysis only;
+it does not execute the retail game or use runtime capture.
 EOF
 }
 
@@ -47,9 +47,8 @@ SCHEDULER_PUSH="$OUT_DIR/s5_scheduler_push_producer_value_provenance.json"
 RATE_ALIAS="$OUT_DIR/s5_physics_manager_rate_accessor_alias.json"
 BMANAGER_FRONTIER="$OUT_DIR/s5_bmanager_dispatch_frontier.json"
 
-# Exact stable union of the three existing analyzers' target sets.  Ordering is
-# intentional: scheduler first, then rate-only additions, then BManager-only
-# additions. The splitter independently rejects any missing/extra target.
+# Stable exact union: scheduler first, rate-only additions second, then the
+# corrected BManager registration/list/timing/default-dispatch additions.
 TARGETS=(
   FUN_007155e9
   FUN_00715380
@@ -58,11 +57,11 @@ TARGETS=(
   FUN_0041903c
   FUN_0070fe99
   FUN_0070fae0
-  FUN_00647b70
-  FUN_00647c60
-  FUN_00647cf0
-  FUN_00647da0
-  FUN_0065bb50
+  FUN_00647d80
+  FUN_00647ef0
+  FUN_0065b8b0
+  FUN_006626a0
+  FUN_00662880
   FUN_00d36000
   FUN_006485b0
   FUN_00662600
@@ -113,4 +112,4 @@ echo "S5 retail instruction bundle: $BUNDLE"
 echo "S5 exact bundle manifest: $OUT_DIR/s5_retail_instruction_bundle_manifest.json"
 echo "S5 scheduler PUSH producer: $SCHEDULER_PUSH"
 echo "S5 Physics Manager rate-accessor alias: $RATE_ALIAS"
-echo "S5 BManager dispatch frontier: $BMANAGER_FRONTIER"
+echo "S5 corrected BManager dispatch frontier: $BMANAGER_FRONTIER"
