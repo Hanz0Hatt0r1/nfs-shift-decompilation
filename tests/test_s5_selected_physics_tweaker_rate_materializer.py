@@ -56,18 +56,46 @@ def test_tick_rate_parser_accepts_unique_positive_integral_property():
     assert MODULE._parse_tick_rate(decoded, _sha(decoded)) == 360
 
 
+def test_tick_rate_parser_accepts_retail_u16_declaration_plus_unique_loaded_value():
+    decoded = (
+        b'<root><prop name="tick rate" type="U16" />'
+        b'<prop name="tick rate" data="180" /></root>'
+    )
+    assert MODULE._parse_tick_rate(decoded, _sha(decoded)) == 180
+
+
 def test_tick_rate_parser_rejects_hash_mismatch_before_semantic_admission():
     decoded = b'<root><prop name="tick rate" data="180" /></root>'
     with pytest.raises(ValueError, match="SHA-256 mismatch"):
         MODULE._parse_tick_rate(decoded, "0" * 64)
 
 
-def test_tick_rate_parser_rejects_duplicate_property():
+def test_tick_rate_parser_rejects_duplicate_loaded_value():
     decoded = (
-        b'<root><prop name="tick rate" data="180" />'
+        b'<root><prop name="tick rate" type="U16" />'
+        b'<prop name="tick rate" data="180" />'
         b'<prop name="tick rate" data="360" /></root>'
     )
-    with pytest.raises(ValueError, match="exactly one"):
+    with pytest.raises(ValueError, match="exactly one.*loaded data value"):
+        MODULE._parse_tick_rate(decoded, _sha(decoded))
+
+
+def test_tick_rate_parser_rejects_wrong_declaration_type():
+    decoded = (
+        b'<root><prop name="tick rate" type="U32" />'
+        b'<prop name="tick rate" data="180" /></root>'
+    )
+    with pytest.raises(ValueError, match="declaration type mismatch"):
+        MODULE._parse_tick_rate(decoded, _sha(decoded))
+
+
+def test_tick_rate_parser_rejects_duplicate_declaration():
+    decoded = (
+        b'<root><prop name="tick rate" type="U16" />'
+        b'<prop name="tick rate" type="U16" />'
+        b'<prop name="tick rate" data="180" /></root>'
+    )
+    with pytest.raises(ValueError, match="at most one.*declaration"):
         MODULE._parse_tick_rate(decoded, _sha(decoded))
 
 
@@ -95,7 +123,10 @@ def test_materializer_rejects_non_exact_decoded_entry(tmp_path: Path):
 def test_positive_rate_materialization_does_not_admit_runtime_execution(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    decoded_bytes = b'<root><prop name="tick rate" data="360" /></root>'
+    decoded_bytes = (
+        b'<root><prop name="tick rate" type="U16" />'
+        b'<prop name="tick rate" data="360" /></root>'
+    )
     decoded = tmp_path / "physicstweaker.xml"
     decoded.write_bytes(decoded_bytes)
 
@@ -141,7 +172,8 @@ def test_materializer_source_never_substitutes_constructor_default_for_loaded_va
     source = TOOL.read_text(encoding="utf-8")
     assert "constructor default" in source
     assert 'PROPERTY_NAME = "tick rate"' in source
-    assert "expected exactly one PhysicsTweaker" in source
+    assert 'PROPERTY_TYPE = "U16"' in source
+    assert "expected exactly one PhysicsTweaker tick rate loaded data value" in source
     assert "decoded_sha256_verified_this_run" in source
     assert "RetailOuterSchedulerContract::admit_loaded_inner_rate(rate_hz)" in source
     assert '"constructor_default_180_used_as_selected_session_value": False' in source
@@ -150,22 +182,24 @@ def test_materializer_source_never_substitutes_constructor_default_for_loaded_va
     assert "loaded_inner_rate_hz = 180" not in source
 
 
-def test_frontier_remains_negative_until_exact_payload_is_materialized():
+def test_frontier_records_exact_pc_rate_and_keeps_execution_separate():
     frontier = json.loads(
         (ROOT / "evidence/s5_selected_physics_tweaker_rate_frontier.json").read_text(
             encoding="utf-8"
         )
     )
     assert frontier["format"] == "SHIFT.SelectedSessionPhysicsTweakerRateFrontier/1"
-    assert frontier["ready"] is False
-    assert frontier["blocker"] == "selected-session-physics-tweaker-rate-admission"
+    assert frontier["ready"] is True
+    assert frontier["blocker"] == "retail-inner-substep-execution-admission"
     assert frontier["required_resource"]["archive_sha256"] == (
         "f4205984343987d7879fcd65f6b2527848a6fd16e9830d6ccca70b7e5db4254a"
     )
     assert frontier["required_resource"]["decoded_sha256"] == (
         "6cdd05f0512d367c8ce240cb13dd22fe10fb3e21da95185ea8f79e1ca67ca62f"
     )
-    assert frontier["handoff"]["loaded_inner_physics_rate_admitted"] is False
+    assert frontier["available_evidence"]["selected_session_rate_hz"] == 180
+    assert frontier["handoff"]["loaded_inner_physics_rate_admitted"] is True
     assert frontier["handoff"]["retail_inner_substep_execution_admitted"] is False
     assert frontier["limits"]["constructor_default_180_may_close_blocker"] is False
+    assert frontier["limits"]["constructor_default_equal_to_loaded_value_only_after_resource_proof"] is True
     assert frontier["limits"]["community_default_value_may_close_blocker"] is False
