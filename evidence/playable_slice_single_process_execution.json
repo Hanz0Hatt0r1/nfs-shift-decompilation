@@ -16,9 +16,11 @@
     "outer_vhf_numeric_relation_ready": true,
     "body0_bind_frame_contract": "SHIFT.BMWBody0BindFrameProof/1",
     "body0_bind_frame_ready": true,
-    "current_blocker_id": "BMW-persistent-world-transform-admission",
-    "current_blocker": "consume the exact positive BMW BODY0 bind proof through existing BBFP/runtime admission and publish a fresh persistent BMW world transform",
-    "current_blocker_consumer": "freshness-gated production scene/Vulkan vehicle transform path",
+    "persistent_world_transform_wiring_contract": "SHIFT.BMWPersistentWorldTransformRuntimeWiring/1",
+    "vehicle_world_transform_ready": true,
+    "current_blocker_id": "retail-outer-update-scheduler-cadence-admission",
+    "current_blocker": "prove and consume retail outer-update scheduler/cadence ownership for continuous persistent BMW physics without treating host loop frequency as retail evidence",
+    "current_blocker_consumer": "continuous source-backed persistent BMW physics/control execution",
     "runtime_capture_required": false,
     "original_game_execution_required": false
   },
@@ -36,6 +38,7 @@
     "SHIFT.BMWPrimaryPlayerFirstBootstrapRenderRootDelta/1",
     "SHIFT.BMWOuterVHFNumericRelation/1",
     "SHIFT.BMWBody0BindFrameProof/1",
+    "SHIFT.BMWPersistentWorldTransformRuntimeWiring/1",
     "SHIFT.BMWVHFRootFrameSceneConsumer/1",
     "persistent BODY/runtime freshness infrastructure",
     "live freshness-gated Vulkan vehicle transform sink",
@@ -46,10 +49,10 @@
   "positive_gates": {
     "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": true,
     "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": true,
-    "BODY0_bind_frame_proof_ready": true
+    "BODY0_bind_frame_proof_ready": true,
+    "vehicle_world_transform_ready": true
   },
   "false_gates": {
-    "vehicle_world_transform_ready": false,
     "retail_cadence_admitted": false,
     "retail_control_chain_complete": false,
     "retail_camera_follow_ready": false
@@ -73,12 +76,12 @@
     {
       "id": "S4",
       "task": "consume exact bind proof in native admission/persistent world-transform path and publish fresh current BMW transform",
-      "state": "current"
+      "state": "positive"
     },
     {
       "id": "S5",
       "task": "prove and consume retail outer-update scheduler/cadence ownership",
-      "state": "queued"
+      "state": "current"
     },
     {
       "id": "S6",
