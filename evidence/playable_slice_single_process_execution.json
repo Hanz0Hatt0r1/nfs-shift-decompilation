@@ -21,11 +21,16 @@
     "retail_outer_cadence_contract": "SHIFT.RetailOuterUpdateCadence/1",
     "retail_outer_cadence_admitted": true,
     "retail_outer_authority_seam_ready": true,
+    "selected_session_rate_snapshot_contract": "SHIFT.SelectedSessionPhysicsTweakerRateSnapshot/1",
+    "selected_session_rate_snapshot_tool_ready": true,
+    "selected_session_rate_adjudicator_contract": "SHIFT.SelectedSessionPhysicsTweakerRate/1",
+    "selected_session_rate_adjudicator_ready": true,
+    "selected_session_rate_observation_present": false,
     "current_blocker_id": "selected-session-physics-tweaker-rate-admission",
-    "current_blocker": "prove the selected-session loaded PhysicsTweaker tick rate and feed it into the strict RetailEvidence outer-scheduler seam before dispatching persistent BMW inner physics substeps; constructor default 180 Hz is not sufficient evidence because PhysicsTweaker.xml may override it",
+    "current_blocker": "capture and adjudicate the selected-session loaded PhysicsTweaker tick rate from the pinned retail executable, proving that DAT_00c130d2 was applied to cPhysicsManager +0x388 after PhysicsTweaker.xml load; constructor default 180 Hz alone is not sufficient evidence",
     "current_blocker_consumer": "RetailEvidence outer scheduler -> loaded 1/rate inner persistent BODY fixed-step execution",
-    "runtime_capture_required": false,
-    "original_game_execution_required": false
+    "runtime_capture_required": true,
+    "original_game_execution_required": true
   },
   "positive_checkpoints": [
     "retail BMW chassis BODY 0 identity",
@@ -49,7 +54,9 @@
     "final BODY0 bind proof packet/runtime admission seam",
     "explicit runtime scheduler-authority seam",
     "SHIFT.RetailOuterUpdateCadence/1",
-    "strict native RetailOuterSchedulerContract"
+    "strict native RetailOuterSchedulerContract",
+    "selected-session PhysicsTweaker rate snapshot producer",
+    "exact-retail-binary selected-session rate adjudicator"
   ],
   "positive_gates": {
     "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": true,
@@ -57,9 +64,12 @@
     "BODY0_bind_frame_proof_ready": true,
     "vehicle_world_transform_ready": true,
     "retail_outer_cadence_admitted": true,
-    "retail_outer_authority_seam_ready": true
+    "retail_outer_authority_seam_ready": true,
+    "selected_session_rate_snapshot_tool_ready": true,
+    "selected_session_rate_adjudicator_ready": true
   },
   "false_gates": {
+    "selected_session_rate_observation_present": false,
     "loaded_inner_physics_rate_admitted": false,
     "retail_inner_substep_execution_admitted": false,
     "retail_control_chain_complete": false,
@@ -88,7 +98,7 @@
     },
     {
       "id": "S5",
-      "task": "consume proven retail outer scheduler/cadence and prove the selected-session loaded PhysicsTweaker tick rate before inner persistent BODY substeps",
+      "task": "capture/adjudicate the selected-session loaded PhysicsTweaker tick rate, then consume the admitted loaded 1/rate inner fixed-step boundary without substituting constructor default 180",
       "state": "current"
     },
     {
