@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Promote one runtime rate snapshot only against the pinned retail binary/cadence proof."""
+"""Promote a selected-session loaded rate against pinned retail identity/proof."""
 from __future__ import annotations
 
 import argparse
@@ -21,9 +21,6 @@ EXPECTED_ANCHORS = {
     "post_physics_tweaker_load_flag_offset": "0x2ab",
     "physics_tweaker_tick_rate_rva": "0x008130d2",
     "manager_rate_offset": "0x388",
-    "manager_reciprocal_offset": "0x38c",
-    "manager_rate_over_30_offset": "0x390",
-    "manager_thirty_over_rate_offset": "0x394",
 }
 
 
@@ -103,17 +100,18 @@ def build(
         raise ValueError("selected-session loaded rate is not stable over the observation window")
 
     current_rate = manager.get("rate_hz")
-    if not isinstance(current_rate, int) or isinstance(current_rate, bool) or current_rate <= 0:
-        raise ValueError("current manager rate is invalid")
-    if manager.get("relationships_valid") is not True:
-        raise ValueError("current manager +0x388 reciprocal domain is not coherent")
-    if manager.get("equals_loaded_tick_rate") is not True or current_rate != loaded_rate:
-        raise ValueError("loaded PhysicsTweaker rate was not applied exactly to current cPhysicsManager")
+    if not isinstance(current_rate, int) or isinstance(current_rate, bool):
+        raise ValueError("current manager rate observation is malformed")
+    relationships_valid = manager.get("relationships_valid") is True
+    equals_loaded = (
+        manager.get("equals_loaded_tick_rate") is True
+        and current_rate == loaded_rate
+    )
 
     if adjudication.get("physics_tweaker_xml_load_completed_before_observation") is not True:
         raise ValueError("snapshot does not prove PhysicsTweaker.xml load completion")
-    if adjudication.get("loaded_global_applied_to_cphysics_manager") is not True:
-        raise ValueError("snapshot does not prove loaded-global application to cPhysicsManager")
+    if adjudication.get("loaded_global_applied_to_cphysics_manager_at_initialization") is not True:
+        raise ValueError("snapshot lost the static loaded-global application anchor")
     if adjudication.get("selected_session_loaded_rate_observed_after_PhysicsTweaker_load") is not True:
         raise ValueError("snapshot does not positively adjudicate post-load observation")
     if adjudication.get("constructor_default_180_used_as_admission_basis") is not False:
@@ -128,12 +126,21 @@ def build(
     provenance = cadence.get("provenance")
     if not isinstance(provenance, dict):
         raise ValueError("cadence provenance missing")
-    if provenance.get("retail_pe_md5") != RETAIL_EXE_MD5 or provenance.get("retail_pe_sha256") != RETAIL_EXE_SHA256:
+    if (
+        provenance.get("retail_pe_md5") != RETAIL_EXE_MD5
+        or provenance.get("retail_pe_sha256") != RETAIL_EXE_SHA256
+    ):
         raise ValueError("cadence proof is not pinned to the expected retail executable")
     rate_static = cadence.get("physics_rate_field")
-    if not isinstance(rate_static, dict) or rate_static.get("runtime_rate_global") != "DAT_00c130d2":
+    if (
+        not isinstance(rate_static, dict)
+        or rate_static.get("runtime_rate_global") != "DAT_00c130d2"
+    ):
         raise ValueError("cadence proof no longer identifies DAT_00c130d2 as the loaded rate alias")
-    if rate_static.get("rate_offset") != "0x388" or rate_static.get("final_numeric_rate_not_frozen") is not True:
+    if (
+        rate_static.get("rate_offset") != "0x388"
+        or rate_static.get("final_numeric_rate_not_frozen") is not True
+    ):
         raise ValueError("cadence rate-domain boundary drifted")
 
     size, md5, sha256 = _digest(retail_exe)
@@ -143,6 +150,13 @@ def build(
         raise ValueError(f"retail executable MD5 mismatch: expected {expected_md5}, got {md5}")
     if sha256 != expected_sha256:
         raise ValueError(f"retail executable SHA-256 mismatch: expected {expected_sha256}, got {sha256}")
+
+    if current_rate <= 0 or not relationships_valid:
+        next_blocker = "current-manager-rate-observation-coherence"
+    elif not equals_loaded:
+        next_blocker = "current-manager-rate-scheduling-policy"
+    else:
+        next_blocker = "inner-substep-runtime-consumption"
 
     return {
         "format": OUTPUT_FORMAT,
@@ -163,18 +177,19 @@ def build(
             "manager_rate_offset": "0x388",
             "inner_substep_expression": "1/rate",
             "outer_cadence_remains_separate": True,
+            "loaded_global_applied_to_manager_at_initialization": True,
         },
         "selected_session": {
             "loaded_tick_rate_hz": loaded_rate,
             "observation_sample_count": selected["stable_sample_count"],
             "observed_after_physics_tweaker_load": True,
-            "applied_to_current_manager": True,
             "constructor_default_180_is_not_admission_basis": True,
         },
         "current_manager_observation": {
             "rate_hz": current_rate,
-            "equals_loaded_tick_rate": True,
-            "relationships_valid": True,
+            "equals_loaded_tick_rate": equals_loaded,
+            "relationships_valid": relationships_valid,
+            "admission_dependency": False,
         },
         "adjudication": {
             "selected_session_loaded_rate_admitted": True,
@@ -188,7 +203,7 @@ def build(
             "constructor_default_180_promoted_without_runtime_observation": False,
             "rendered_frame_equivalence_claimed": False,
         },
-        "next_blocker": "inner-substep-runtime-consumption",
+        "next_blocker": next_blocker,
     }
 
 
@@ -206,7 +221,10 @@ def main() -> int:
 
     report = build(args.snapshot, args.retail_exe, args.cadence)
     args.json_out.parent.mkdir(parents=True, exist_ok=True)
-    args.json_out.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    args.json_out.write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0
 
