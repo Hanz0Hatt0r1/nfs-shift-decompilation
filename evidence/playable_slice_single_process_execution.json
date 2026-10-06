@@ -31,9 +31,12 @@
     "selected_session_physics_tweaker_archive_sha256": "f4205984343987d7879fcd65f6b2527848a6fd16e9830d6ccca70b7e5db4254a",
     "selected_session_physics_tweaker_entry": "vehicles/physics/physicstweaker.xml",
     "selected_session_physics_tweaker_decoded_sha256": "6cdd05f0512d367c8ce240cb13dd22fe10fb3e21da95185ea8f79e1ca67ca62f",
-    "current_blocker_id": "retail-inner-substep-execution-admission",
-    "current_blocker": "consume the exact hash-verified PC selected-session PhysicsTweaker rate of 180 Hz through the materialized native handoff and existing atomic RetailEvidence outer-dispatch path, then execute persistent BMW BODY inner substeps at exact 1/180 s without equating host/render 1/60 to retail scheduling",
-    "current_blocker_consumer": "materialized exact PC rate -> RetailEvidence outer scheduler -> exact 1/180 persistent BODY inner fixed-step execution",
+    "selected_session_retail_execution_contract": "SHIFT.SelectedSessionRetailVehicleExecution/1",
+    "selected_session_retail_execution_ready": true,
+    "selected_session_normal_outer_substeps": 6,
+    "current_blocker_id": "missing-vehicle-physics-control-producer-provenance",
+    "current_blocker": "close the deepest missing source-backed vehicle-physics/control producer or owner boundary required by the nine-provider NativeVehicleProviderSession path; do not promote Phase 701 fixture callbacks into retail semantics",
+    "current_blocker_consumer": "positive producer/owner contract -> NativeVehicleExternalProviderBundle -> exact selected-session retail execution seam",
     "runtime_capture_required": false,
     "original_game_execution_required": false
   },
@@ -61,7 +64,8 @@
     "SHIFT.RetailOuterUpdateCadence/1",
     "strict native RetailOuterSchedulerContract",
     "hash-locked selected-session PhysicsTweaker rate materialization infrastructure",
-    "SHIFT.SelectedSessionPhysicsTweakerRate/1 exact PC selected-session rate 180 Hz"
+    "SHIFT.SelectedSessionPhysicsTweakerRate/1 exact PC selected-session rate 180 Hz",
+    "SHIFT.SelectedSessionRetailVehicleExecution/1 exact 1/180 persistent BODY inner execution"
   ],
   "positive_gates": {
     "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": true,
@@ -70,10 +74,11 @@
     "vehicle_world_transform_ready": true,
     "retail_outer_cadence_admitted": true,
     "retail_outer_authority_seam_ready": true,
-    "loaded_inner_physics_rate_admitted": true
+    "loaded_inner_physics_rate_admitted": true,
+    "retail_inner_substep_execution_admitted": true
   },
   "false_gates": {
-    "retail_inner_substep_execution_admitted": false,
+    "retail_provider_control_producers_complete": false,
     "retail_control_chain_complete": false,
     "retail_camera_follow_ready": false
   },
@@ -101,12 +106,12 @@
     {
       "id": "S5",
       "task": "consume the exact hash-verified selected-session PhysicsTweaker rate of 180 Hz as 1/180 s persistent BODY inner substeps through the atomic retail outer-dispatch path",
-      "state": "current"
+      "state": "positive"
     },
     {
       "id": "S6",
       "task": "close deepest missing vehicle-physics/control producers",
-      "state": "queued"
+      "state": "current"
     },
     {
       "id": "S7",
