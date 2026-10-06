@@ -19,6 +19,7 @@ using namespace shift::runtime;
 using namespace shift::runtime::physics;
 using namespace shift::runtime::test_fixture;
 using shift::runtime::physics::bmw_persistent_world_transform_runtime_detail::SvwtHeader;
+using shift::runtime::physics::bmw_persistent_world_transform_runtime_detail::resolve_authoritative_vehicle_vhf_bind;
 using shift::runtime::render::VehicleWorldMatrix;
 
 void require(bool condition, const char* message) {
