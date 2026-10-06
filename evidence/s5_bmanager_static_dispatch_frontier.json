@@ -1,0 +1,95 @@
+{
+  "format": "SHIFT.BManagerStaticDispatchFrontier/1",
+  "version": 1,
+  "status": "frontier",
+  "base_commit": "c0741101b9ecdec944048714f3a892fd9db5c580",
+  "blocker": "S5 retail outer-update scheduler/cadence ownership",
+  "consumer": "SHIFT.BManagerPhysicsManagerDispatchFrontier/1 retail instruction proof",
+  "gates_changed": [],
+  "retail_cadence_admitted": false,
+  "upstream_positive": {
+    "format": "SHIFT.PhysicsManagerSchedulerEntryOwner/1",
+    "owner": "MWL::Core::cPhysicsManager",
+    "vtable_address": "0x00b04524",
+    "slot_offset": "0x18",
+    "slot_address": "0x00b0453c",
+    "target": "FUN_00711b50"
+  },
+  "verified_static_topology": [
+    {
+      "fact": "FUN_0065bb50 directly calls FUN_00647da0 at 0x0065bb96.",
+      "source": "callgraph.jsonl"
+    },
+    {
+      "fact": "FUN_00647da0 has one unresolved indirect call at 0x00647e23 in the current callgraph export.",
+      "source": "callgraph.jsonl"
+    },
+    {
+      "fact": "FUN_006485b0 directly calls FUN_00662600 at 0x00648607.",
+      "source": "callgraph.jsonl"
+    },
+    {
+      "fact": "FUN_006485b0 is __thiscall and its manager candidate argument is physically Stack[0x4]:4.",
+      "source": "functions.jsonl"
+    },
+    {
+      "fact": "FUN_00d36000 contains Controller #1, Controller #2 and Disable_Multi-thread_Particles string anchors and directly calls both FUN_0070fe90 and FUN_006485b0.",
+      "source": "factories.jsonl, strings_xrefs.jsonl and callgraph.jsonl"
+    },
+    {
+      "fact": "FUN_00d36000 has retail mnemonic fingerprint 067607efe5d246129febaab0e14f4a81df0c09e937505ff2dfa3362b23d5c0dd.",
+      "source": "functions.jsonl"
+    }
+  ],
+  "exact_missing_machine_edges": [
+    {
+      "id": "lifecycle-indirect-slot-operand",
+      "function": "FUN_00647da0",
+      "callsite": "0x00647e23",
+      "required": "instruction operand plus CALLIND p-code proving displacement equals the source-backed cPhysicsManager slot +0x18",
+      "current_exports": "callgraph records indirect=true but does not preserve the operand/displacement",
+      "proven": false
+    },
+    {
+      "id": "physics-manager-accessor-registration-transfer",
+      "function": "FUN_00d36000",
+      "required": "instruction-level proof that the return from FUN_0070fe90 remains in EAX and is pushed/passed as FUN_006485b0 Stack[0x4]:4 manager argument without intervening clobber",
+      "current_exports": "direct-call/string adjacency is visible, register transfer is not",
+      "proven": false
+    }
+  ],
+  "available_consumer_infrastructure": {
+    "analyzer": "tools/ghidra/analyze_s5_bmanager_dispatch_slice.py",
+    "format": "SHIFT.BManagerPhysicsManagerDispatchFrontier/1",
+    "exact_targets": [
+      "FUN_00647b70",
+      "FUN_00647c60",
+      "FUN_00647cf0",
+      "FUN_00647da0",
+      "FUN_0065bb50",
+      "FUN_00d36000",
+      "FUN_006485b0",
+      "FUN_00662600",
+      "FUN_0070fe90"
+    ],
+    "retail_result_published": false
+  },
+  "adjudication": {
+    "controller_helper_to_lifecycle_candidate_verified": true,
+    "controller_api_to_core_add_path_verified": true,
+    "controller_registration_subsystem_membership_verified": true,
+    "candidate_indirect_operand_matches_cPhysicsManager_slot_plus_0x18": false,
+    "physics_manager_accessor_return_is_registration_argument": false,
+    "bmanager_controller_to_cPhysicsManager_slot_plus_0x18_proven": false,
+    "reason": "Function/callgraph/string exports establish bounded topology but cannot substitute for the two exact instruction-level value/operand edges."
+  },
+  "limits": {
+    "FUN_00647da0_semantic_name_tick_promoted": false,
+    "address_order_used_as_slot_semantics": false,
+    "callgraph_adjacency_used_as_value_transfer": false,
+    "host_1_60_promoted": false,
+    "runtime_capture_used": false,
+    "original_game_executed": false
+  },
+  "next_action": "Obtain the existing targeted SHIFT.GhidraFunctionInstructions/2 slice for the nine BManager functions and run analyze_s5_bmanager_dispatch_slice.py. Publish a positive dispatch-registration handoff immediately if both missing machine edges prove."
+}
