@@ -5,15 +5,16 @@ usage() {
   cat <<'EOF'
 Usage:
   GHIDRA_HOME=/path/to/ghidra ./tools/ghidra/run_s5_bmanager_dispatch_slice.sh \
-    <project-dir> <project-name> <program-name> <output-dir>
+    <project-dir> <project-name> <program-name> <functions-jsonl> <output-dir>
 
 Exports only the narrow BManager/cPhysicsManager S5 dispatch-registration slice
 from an already analyzed SHIFT.exe project, then builds a fail-closed frontier.
-No game/runtime execution is performed.
+The functions-jsonl argument must be the matching retail Ghidra export used for
+ABI validation. No game/runtime execution is performed.
 EOF
 }
 
-if [[ $# -ne 4 ]]; then
+if [[ $# -ne 5 ]]; then
   usage >&2
   exit 2
 fi
@@ -23,9 +24,15 @@ fi
 PROJECT_DIR=$1
 PROJECT_NAME=$2
 PROGRAM_NAME=$3
-OUT_DIR=$4
+FUNCTIONS_JSONL=$4
+OUT_DIR=$5
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT=$(cd -- "$SCRIPT_DIR/../.." && pwd)
+
+if [[ ! -f "$FUNCTIONS_JSONL" ]]; then
+  echo "error: functions.jsonl not found: $FUNCTIONS_JSONL" >&2
+  exit 2
+fi
 
 mkdir -p -- "$OUT_DIR"
 OUT_DIR=$(cd -- "$OUT_DIR" && pwd)
@@ -53,7 +60,7 @@ TARGETS=(
 
 python3 "$SCRIPT_DIR/analyze_s5_bmanager_dispatch_slice.py" \
   "$INSTRUCTIONS" \
-  "$REPO_ROOT/functions.jsonl" \
+  "$FUNCTIONS_JSONL" \
   "$REPO_ROOT/evidence/physics_manager_scheduler_entry_owner.json" \
   --json-out "$FRONTIER"
 
