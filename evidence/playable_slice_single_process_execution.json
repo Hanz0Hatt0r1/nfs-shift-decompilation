@@ -14,9 +14,11 @@
     "selected_bmw_delta_numeric_ready": true,
     "outer_vhf_numeric_relation_contract": "SHIFT.BMWOuterVHFNumericRelation/1",
     "outer_vhf_numeric_relation_ready": true,
-    "current_blocker_id": "BMW-BODY0-bind-frame-composition",
-    "current_blocker": "compose the selected BMW BODY0->outer numeric matrix with exact selected first-bootstrap outer->VHF numeric relation and publish SHIFT.BMWBody0BindFrameProof/1",
-    "current_blocker_consumer": "fresh persistent BMW world transform",
+    "body0_bind_frame_contract": "SHIFT.BMWBody0BindFrameProof/1",
+    "body0_bind_frame_ready": true,
+    "current_blocker_id": "BMW-persistent-world-transform-admission",
+    "current_blocker": "consume the exact positive BMW BODY0 bind proof through existing BBFP/runtime admission and publish a fresh persistent BMW world transform",
+    "current_blocker_consumer": "freshness-gated production scene/Vulkan vehicle transform path",
     "runtime_capture_required": false,
     "original_game_execution_required": false
   },
@@ -33,6 +35,7 @@
     "SHIFT.OuterVehicleBMWVHFRootRelation/1",
     "SHIFT.BMWPrimaryPlayerFirstBootstrapRenderRootDelta/1",
     "SHIFT.BMWOuterVHFNumericRelation/1",
+    "SHIFT.BMWBody0BindFrameProof/1",
     "SHIFT.BMWVHFRootFrameSceneConsumer/1",
     "persistent BODY/runtime freshness infrastructure",
     "live freshness-gated Vulkan vehicle transform sink",
@@ -41,11 +44,11 @@
     "explicit runtime scheduler-authority seam"
   ],
   "positive_gates": {
-    "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": true
+    "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": true,
+    "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": true,
+    "BODY0_bind_frame_proof_ready": true
   },
   "false_gates": {
-    "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": false,
-    "BODY0_bind_frame_proof_ready": false,
     "vehicle_world_transform_ready": false,
     "retail_cadence_admitted": false,
     "retail_control_chain_complete": false,
@@ -65,12 +68,12 @@
     {
       "id": "S3",
       "task": "compose BODY0-to-outer with outer-to-VHF and publish positive SHIFT.BMWBody0BindFrameProof/1",
-      "state": "current"
+      "state": "positive"
     },
     {
       "id": "S4",
       "task": "consume exact bind proof in native admission/persistent world-transform path and publish fresh current BMW transform",
-      "state": "blocked-on-S3"
+      "state": "current"
     },
     {
       "id": "S5",
