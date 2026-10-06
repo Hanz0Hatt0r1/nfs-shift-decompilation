@@ -12,14 +12,18 @@ archives before the playable scene may consume that material admission.
 When the production playable bootstrap supplies the positive
 ``SHIFT.BMWVehicleRenderModelResourceJoin/1`` handoff, this stage derives the
 primary VHF path from that contract and requires the VHF transform producer to
-revalidate the exact archive/path/entry/decoded-payload identity. Archive
-basenames are discovery hints only. The current playable target requires
-source-backed retail identity; archive order and byte-identical duplicate
-collapse are never selection authority.
+revalidate the exact archive/path/entry/decoded-payload identity. The same
+production path also consumes ``SHIFT.BMWVHFHierarchyRootFrame/1`` and requires
+``SHIFT.BMWVHFRootFrameSceneConsumer/1`` to prove exact Root-frame ancestry and
+SVWT preservation before the scene is ready. Archive basenames are discovery
+hints only. The current playable target requires source-backed retail identity;
+archive order and byte-identical duplicate collapse are never selection
+authority.
 """
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -39,6 +43,10 @@ from bmw_vhf_body_world_transform import (
     apply_bmw_vhf_body_world_transform,
     build_bmw_vhf_body_world_transform,
 )
+from bmw_vhf_root_frame_scene_consumer import (
+    build_bmw_vhf_root_frame_scene_consumer,
+    finalize_bmw_vhf_root_frame_scene_consumer,
+)
 from native_playable_scene_vulkan_set import build_native_playable_scene_vulkan_set
 from offline_resource_pipeline import MaterializedArchive, materialize_bff_inputs
 from retail_archive_identity import (
@@ -50,6 +58,7 @@ from retail_archive_identity import (
 
 FORMAT = "SHIFT.NativePlayableSceneBootstrap/1"
 TARGET_VEHICLE = "BMW_M3_E36"
+ROOT_FRAME_ENV = "SHIFT_BMW_VHF_HIERARCHY_ROOT_FRAME"
 
 
 def _required_identity(identity: RetailArchiveIdentity | None, label: str) -> RetailArchiveIdentity:
@@ -91,6 +100,7 @@ def _blocked(
     archive_sources: Mapping[str, Any] | None = None,
     admission: Mapping[str, Any] | None = None,
     vhf_transform: Mapping[str, Any] | None = None,
+    root_frame_scene_consumer: Mapping[str, Any] | None = None,
     composition: Mapping[str, Any] | None = None,
     vehicle_render_model_join: Mapping[str, Any] | None = None,
     persist: bool = True,
@@ -117,6 +127,11 @@ def _blocked(
             "vehicle_vhf_body_world_transform": (
                 dict(vhf_transform) if isinstance(vhf_transform, Mapping) else None
             ),
+            "vehicle_vhf_root_frame_scene_consumer": (
+                dict(root_frame_scene_consumer)
+                if isinstance(root_frame_scene_consumer, Mapping)
+                else None
+            ),
             "scene_composition": (
                 dict(composition) if isinstance(composition, Mapping) else None
             ),
@@ -126,6 +141,7 @@ def _blocked(
             "vehicle_material_slice_set": None,
             "vehicle_material_slice_set_with_vhf_transform": None,
             "vehicle_vhf_body_world_transform": None,
+            "vehicle_vhf_root_frame_scene_consumer": None,
             "scene_set_dir": None,
             "scene_composition": None,
         },
@@ -141,6 +157,11 @@ def _blocked(
                 vehicle_render_model_join is not None
             ),
             "bmw_vehicle_render_model_resource_join_consumed": False,
+            "bmw_vhf_hierarchy_root_frame_required": (
+                vehicle_render_model_join is not None
+            ),
+            "bmw_vhf_hierarchy_root_frame_consumed": False,
+            "bmw_vhf_root_frame_scene_consumer_ready": False,
             "primary_vhf_basename_fallback_allowed": False,
             "cockpit_vhf_substitution_allowed": False,
             "phase654_exact_vehicle_render_resource_identity_required": True,
@@ -215,6 +236,7 @@ def build_native_playable_scene_bootstrap(
     environment_cube_dds: str | Path | None = None,
     validator: str | None = None,
     vehicle_render_model_join: str | Path | Mapping[str, Any] | None = None,
+    vhf_hierarchy_root_frame: str | Path | Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Materialize canonical BMW render evidence and build the Phase 643 scene."""
     track_root = Path(track_scene_set).resolve()
@@ -260,6 +282,23 @@ def build_native_playable_scene_bootstrap(
                 ],
             )
 
+    root_frame_input = vhf_hierarchy_root_frame
+    if root_frame_input is None:
+        env_value = str(os.environ.get(ROOT_FRAME_ENV) or "").strip()
+        if env_value:
+            root_frame_input = env_value
+    if render_model_join is not None and root_frame_input is None:
+        return _blocked(
+            vehicle=vehicle,
+            track_scene_set=track_root,
+            output_dir=out,
+            blockers=[
+                "playable-scene-bootstrap:bmw-vhf-hierarchy-root-frame-handoff-missing:"
+                + ROOT_FRAME_ENV
+            ],
+            vehicle_render_model_join=render_model_join,
+        )
+
     admission_dir = out / "vehicle-material-admission"
     scene_dir = out / "native-playable-scene"
     golden = (
@@ -269,10 +308,12 @@ def build_native_playable_scene_bootstrap(
     )
     transformed_slice_set = out / "vehicle-material-slice-set-with-vhf-transform.json"
     vhf_transform_path = out / "vehicle-vhf-body-world-transform.json"
+    root_consumer_path = out / "vehicle-vhf-root-frame-scene-consumer.json"
 
     archive_sources: dict[str, Any] = {}
     admission: Mapping[str, Any] | None = None
     vhf_transform: Mapping[str, Any] | None = None
+    root_consumer: Mapping[str, Any] | None = None
     composition: Mapping[str, Any] | None = None
     blockers: list[str] = []
 
@@ -354,6 +395,13 @@ def build_native_playable_scene_bootstrap(
                             vhf_resource=canonical_vhf,
                             vehicle_render_model_join=render_model_join,
                         )
+                        root_consumer = build_bmw_vhf_root_frame_scene_consumer(
+                            primary,
+                            root_frame_input,
+                            vhf_transform,
+                        )
+                        if root_consumer.get("parser_bootstrap_ready") is not True:
+                            raise ValueError("BMW VHF root-frame parser/bootstrap consumer is not ready")
                     _write(vhf_transform_path, vhf_transform)
                     transformed_payload = apply_bmw_vhf_body_world_transform(
                         source_slice_set,
@@ -388,6 +436,25 @@ def build_native_playable_scene_bootstrap(
                             + str(reason)
                             for reason in composition.get("blocking_reasons") or ["not-ready"]
                         )
+                    elif root_consumer is not None:
+                        try:
+                            root_consumer = finalize_bmw_vhf_root_frame_scene_consumer(
+                                root_consumer,
+                                scene_dir,
+                            )
+                            _write(root_consumer_path, root_consumer)
+                        except Exception as exc:
+                            blockers.append(
+                                "playable-scene-bootstrap:bmw-vhf-root-frame-scene-consumer-failed:"
+                                f"{type(exc).__name__}:{exc}"
+                            )
+                        else:
+                            if root_consumer.get("ready") is not True:
+                                blockers.extend(
+                                    "playable-scene-bootstrap:bmw-vhf-root-frame-scene-consumer:"
+                                    + str(reason)
+                                    for reason in root_consumer.get("blocking_reasons") or ["not-ready"]
+                                )
     except Exception as exc:
         blockers.append(
             "playable-scene-bootstrap:corpus-materialization-failed:"
@@ -400,6 +467,13 @@ def build_native_playable_scene_bootstrap(
         if isinstance(admission, Mapping)
         else None
     )
+    root_consumer_ready = (
+        render_model_join is None
+        or (
+            isinstance(root_consumer, Mapping)
+            and root_consumer.get("ready") is True
+        )
+    )
     ready = (
         not blockers
         and isinstance(admission, Mapping)
@@ -408,6 +482,7 @@ def build_native_playable_scene_bootstrap(
         and exact_resource_gate.get("ready") is True
         and isinstance(vhf_transform, Mapping)
         and vhf_transform.get("ready") is True
+        and root_consumer_ready
         and isinstance(composition, Mapping)
         and composition.get("ready") is True
     )
@@ -420,6 +495,7 @@ def build_native_playable_scene_bootstrap(
             archive_sources=archive_sources,
             admission=admission,
             vhf_transform=vhf_transform,
+            root_frame_scene_consumer=root_consumer,
             composition=composition,
             vehicle_render_model_join=render_model_join,
         )
@@ -442,6 +518,11 @@ def build_native_playable_scene_bootstrap(
             ),
             "vehicle_material_admission": dict(admission),
             "vehicle_vhf_body_world_transform": dict(vhf_transform),
+            "vehicle_vhf_root_frame_scene_consumer": (
+                dict(root_consumer)
+                if isinstance(root_consumer, Mapping)
+                else None
+            ),
             "scene_composition": dict(composition),
         },
         "artifacts": {
@@ -449,6 +530,9 @@ def build_native_playable_scene_bootstrap(
             "vehicle_material_slice_set": str(admission_dir / "material_slice_set.json"),
             "vehicle_material_slice_set_with_vhf_transform": str(transformed_slice_set),
             "vehicle_vhf_body_world_transform": str(vhf_transform_path),
+            "vehicle_vhf_root_frame_scene_consumer": (
+                str(root_consumer_path) if root_consumer is not None else None
+            ),
             "scene_set_dir": str(scene_dir),
             "scene_composition": str(scene_dir / "playable_scene_composition.json"),
         },
@@ -466,6 +550,15 @@ def build_native_playable_scene_bootstrap(
             "bmw_vehicle_render_model_resource_join_consumed": (
                 render_model_join is not None
             ),
+            "bmw_vhf_hierarchy_root_frame_required": (
+                render_model_join is not None
+            ),
+            "bmw_vhf_hierarchy_root_frame_consumed": (
+                root_consumer is not None
+            ),
+            "bmw_vhf_root_frame_scene_consumer_ready": (
+                root_consumer is not None and root_consumer.get("ready") is True
+            ),
             "primary_vhf_basename_fallback_allowed": False,
             "cockpit_vhf_substitution_allowed": False,
             "phase533_complete_body_admission_required": True,
@@ -477,6 +570,7 @@ def build_native_playable_scene_bootstrap(
             "track_and_vehicle_share_one_native_scene_set": True,
             "persistent_BODY_pose_consumed": False,
             "phase700_runtime_pose_handoff_consumed": False,
+            "process2_freshness_gated_live_transform_required": True,
             "dynamic_vehicle_world_transform_claimed": False,
         },
     }
