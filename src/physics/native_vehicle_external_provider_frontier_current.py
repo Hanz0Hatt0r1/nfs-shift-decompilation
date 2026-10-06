@@ -21,6 +21,9 @@ from .native_vehicle_external_provider_frontier import (
 FORMAT = "SHIFT.NativeVehicleExternalProviderFrontierCurrent/1"
 SCHEDULER_FORMAT = "SHIFT.Process2RuntimeSchedulerAuthority/1"
 ROOT_STAGE_FORMAT = "SHIFT.Process2BMWVHFHierarchyRootFrameStage/1"
+OUTER_VHF_NUMERIC_FORMAT = "SHIFT.BMWOuterVHFNumericRelation/1"
+BIND_PROOF_FORMAT = "SHIFT.BMWBody0BindFrameProof/1"
+WORLD_TRANSFORM_WIRING_FORMAT = "SHIFT.BMWPersistentWorldTransformRuntimeWiring/1"
 
 _EXPECTED_PROVIDER_IDS = (
     "fun_00765c40_complete_anchor",
@@ -43,12 +46,12 @@ def _require(condition: bool, message: str) -> None:
 def build_current_frontier() -> dict[str, Any]:
     """Return the current fail-closed provider/frontier audit.
 
-    The overlay consumes only already-merged proof milestones. The remaining
-    transform blocker is narrowed to the exact outer Vehicle -> canonical BMW
-    VHF root relation and the final positive bind proof derived from it.
-    Physics-provider rows stay unchanged until a provider-specific producer or
-    ownership proof is positive. The S5 retail outer cadence is positive, while
-    the selected-session PhysicsTweaker inner rate remains independently blocked.
+    The overlay consumes only already-merged proof milestones. The BODY0 ->
+    canonical BMW VHF relation, bind proof and freshness-gated persistent world
+    transform are positive. Physics-provider rows stay unchanged until a
+    provider-specific producer or ownership proof is positive. The S5 retail
+    outer cadence is positive, while the selected-session PhysicsTweaker inner
+    rate remains independently blocked.
     """
 
     legacy = build_legacy_frontier()
@@ -73,43 +76,37 @@ def build_current_frontier() -> dict[str, Any]:
         "S5 positive retail outer cadence + atomic explicit dispatch; "
         "selected-session inner rate remains blocked"
     )
+    report["transform_refresh"] = (
+        "positive exact outer->VHF numeric relation + positive BODY0 bind proof + "
+        "freshness-gated persistent BMW world-transform runtime wiring"
+    )
     report["deepest_native_chain"] = (
-        "persistent retail BODY0 state -> fail-closed BODY0/VHF composition -> "
-        "transactional fresh vehicle world-transform publication -> Process 3 live Vulkan sink; "
-        "S5 provides positive RetailEvidence outer cadence and atomic explicit dispatch, while "
-        "exact selected-session inner rate and outer Vehicle/VHF root relation remain independent blockers"
+        "persistent retail BODY0 state -> positive BODY0/VHF bind proof -> "
+        "freshness-gated persistent BMW vehicle world-transform publication -> "
+        "Process 3 live Vulkan sink; S5 provides positive RetailEvidence outer cadence "
+        "and atomic explicit dispatch, while the exact selected-session PhysicsTweaker "
+        "inner rate and nine provider-specific producer/ownership rows remain blocked"
     )
 
     joins = {row["id"]: row for row in report["cross_chain_joins"]}
     transform = joins["body_pose_to_renderer_world_transform"]
     transform.update(
         {
-            "state": "renderer_sink_ready_outer_vehicle_vhf_relation_pending",
-            "process2_action": REQUEST_PROCESS1,
+            "state": "retail_proven_and_consumed",
+            "process2_action": "closed",
             "evidence": [
-                "Process 1 PR #1265 proves the BMW construction origin/basis writer target is persistent chassis BODY0 via SHIFT.BMWBody0ConstructionTargetIdentity/1",
-                "Process 1 PR #1268 admits exact BMW BODY0 resource values and exact BODY0-local -> SDF-model bind pose",
-                "Process 1 PR #1277 binds the target Silverstone+BMW session and makes BODY0 -> outer Vehicle root numeric relation positive via SHIFT.BMWOffset33bNativeSessionSelection/1",
-                "Process 1 PR #1315 proves canonical vehicles/bmw_m3_e36/bmw_m3_e36.vhf identity via SHIFT.BMWVehicleRenderModelResourceJoin/1",
-                "Process 1 PR #1317 proves the outer Vehicle -> render snapshot affine bridge",
-                "Process 1 PR #1322 provides exact FUN_00795d60 render-root delta value provenance",
-                "Process 1 PR #1323 proves the exact canonical BMW VHF HIERARCHY Root frame, MatrixNumber, parent chain and affine matrices",
-                "Process 2 PR #1326 consumes that exact VHF root frame through SHIFT.Process2BMWVHFHierarchyRootFrameStage/1",
-                "Phases 704-706 keep composition, runtime handoff and transactional freshness fail-closed until final bind proof",
-                "Process 3 Phase 649 keeps the live Vulkan sink freshness-gated",
+                "SHIFT.BMWOuterVHFNumericRelation/1 is ready for Silverstone+BMW_M3_E36 with exact delta_local=(0,0,0), finite invertible outer Vehicle -> canonical BMW VHF matrix and no runtime capture",
+                "SHIFT.BMWBody0BindFrameProof/1 is ready/proven-static and publishes the exact BODY0-local -> VHF-vehicle-root row matrix for chassis BODY0",
+                "SHIFT.BMWPersistentWorldTransformRuntimeWiring/1 is ready and commits/publishes a fresh current BMW vehicle world transform from current BODY0 pose after each admitted fixed step",
+                "Process 3 Phase 649 remains the freshness-gated live Vulkan consumer",
             ],
-            "blockers": [
-                "positive source-backed outer Vehicle root -> exact canonical BMW VHF HIERARCHY root identity/fixed-affine relation is not committed",
-                "positive SHIFT.BMWBody0BindFrameProof/1 derived from that relation is not committed",
-            ],
+            "blockers": [],
             "additional_dependency": (
-                "none on renderer transport or retail outer cadence; S5 already admits RetailEvidence outer cadence, "
-                "while the selected-session PhysicsTweaker inner rate remains a separate resource/static gate"
+                "none for BODY0 -> vehicle world-transform transport; the current shortest independent gate is the exact selected-session PhysicsTweaker inner rate"
             ),
             "policy": (
-                "consume the next positive outer Vehicle/VHF relation immediately; do not reopen BODY0 construction/resource/session proofs, "
-                "guess an affine relation, promote an identity-valued VHF root matrix, bypass final bind admission, "
-                "reuse host 1/60 as retail cadence, or substitute constructor-default 180 Hz for the selected-session rate"
+                "reuse the positive numeric relation, bind proof and persistent freshness-gated runtime wiring; "
+                "do not reopen already-proven transform identity/composition work, and do not substitute host 1/60 or constructor-default 180 Hz for the selected-session inner rate"
             ),
         }
     )
@@ -125,10 +122,13 @@ def build_current_frontier() -> dict[str, Any]:
         "canonical_BMW_VHF_hierarchy_root_frame_ready": True,
         "process2_exact_vhf_root_frame_stage_consumed": True,
         "process2_exact_vhf_root_frame_stage_contract": ROOT_STAGE_FORMAT,
-        "outer_vehicle_root_to_VHF_vehicle_root_ready": False,
-        "outer_vehicle_root_to_VHF_fixed_affine_delta_ready": False,
-        "BODY0_bind_frame_proof_ready": False,
-        "vehicle_world_transform_ready": False,
+        "outer_vehicle_root_to_VHF_numeric_contract": OUTER_VHF_NUMERIC_FORMAT,
+        "outer_vehicle_root_to_VHF_vehicle_root_ready": True,
+        "outer_vehicle_root_to_VHF_fixed_affine_delta_ready": True,
+        "BODY0_bind_frame_contract": BIND_PROOF_FORMAT,
+        "BODY0_bind_frame_proof_ready": True,
+        "persistent_world_transform_wiring_contract": WORLD_TRANSFORM_WIRING_FORMAT,
+        "vehicle_world_transform_ready": True,
     }
 
     report["provider_audit"] = {
@@ -136,7 +136,7 @@ def build_current_frontier() -> dict[str, Any]:
         "provider_inventory_changed": False,
         "newly_positive_provider_or_owner_handoff_internalizable": False,
         "reason": (
-            "latest merged positive proofs advance BODY0/bind/render-frame identity, transport and retail outer scheduling, "
+            "merged positive proofs close the BODY0/VHF bind, persistent world-transform transport and retail outer scheduling, "
             "but do not close any remaining provider-specific producer/ownership blocker"
         ),
         "fun_007682c0_runtime_body0_mutation_internalized": True,
@@ -166,9 +166,9 @@ def build_current_frontier() -> dict[str, Any]:
             "outer_vehicle_render_root_delta_value_roots_ready": True,
             "canonical_bmw_vhf_hierarchy_root_frame_ready": True,
             "process2_exact_vhf_root_frame_stage_consumed": True,
-            "outer_vehicle_to_vhf_root_relation_ready": False,
-            "body0_bind_frame_proof_ready": False,
-            "retail_vehicle_world_transform_ready": False,
+            "outer_vehicle_to_vhf_root_relation_ready": True,
+            "body0_bind_frame_proof_ready": True,
+            "retail_vehicle_world_transform_ready": True,
             "scheduler_authority_explicit": True,
             "retail_outer_cadence_ready": True,
             "retail_outer_dispatch_transaction_ready": True,
@@ -199,9 +199,12 @@ def contract() -> dict[str, Any]:
             "newly_positive_provider_or_owner_handoff_internalizable"
         ],
         "current_transform_state": transform["state"],
-        "outer_vehicle_to_vhf_root_relation_ready": False,
-        "BODY0_bind_frame_proof_ready": False,
-        "retail_vehicle_world_transform_ready": False,
+        "outer_vehicle_to_vhf_root_relation_ready": True,
+        "BODY0_bind_frame_proof_ready": True,
+        "retail_vehicle_world_transform_ready": True,
+        "outer_vehicle_to_vhf_root_contract": OUTER_VHF_NUMERIC_FORMAT,
+        "BODY0_bind_frame_contract": BIND_PROOF_FORMAT,
+        "persistent_world_transform_wiring_contract": WORLD_TRANSFORM_WIRING_FORMAT,
         "scheduler_authority_contract": SCHEDULER_FORMAT,
         "retail_outer_cadence_admitted": True,
         "retail_outer_dispatch_transaction_ready": True,
@@ -212,4 +215,13 @@ def contract() -> dict[str, Any]:
     }
 
 
-__all__ = ["FORMAT", "SCHEDULER_FORMAT", "ROOT_STAGE_FORMAT", "build_current_frontier", "contract"]
+__all__ = [
+    "FORMAT",
+    "SCHEDULER_FORMAT",
+    "ROOT_STAGE_FORMAT",
+    "OUTER_VHF_NUMERIC_FORMAT",
+    "BIND_PROOF_FORMAT",
+    "WORLD_TRANSFORM_WIRING_FORMAT",
+    "build_current_frontier",
+    "contract",
+]
