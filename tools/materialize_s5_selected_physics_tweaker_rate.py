@@ -230,7 +230,7 @@ def materialize(
     return {
         "format": FORMAT,
         "version": 1,
-        "status": "selected-session-physics-tweaker-rate-admitted",
+        "status": "selected-session-physics-tweaker-rate-ready",
         "ready": True,
         "resource_identity": identity,
         "verification": verification,
@@ -252,8 +252,9 @@ def materialize(
         },
         "handoff": {
             "loaded_inner_physics_rate_admitted": True,
-            "retail_inner_substep_execution_admitted": True,
+            "retail_inner_substep_execution_admitted": False,
             "consumer": "RetailOuterSchedulerContract::admit_loaded_inner_rate(rate_hz)",
+            "next_step": "consume the exact rate in the native retail scheduler and execute accumulator-driven persistent BODY inner substeps",
         },
         "limits": {
             "constructor_default_180_used_as_selected_session_value": False,
