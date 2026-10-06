@@ -1,17 +1,17 @@
 # Need for Speed: SHIFT — decompilation and native Linux runtime
 
-Evidence-driven reconstruction of *Need for Speed: SHIFT* with one practical milestone: a native offline Linux/Vulkan playable slice using original retail resources.
+Evidence-driven reconstruction of *Need for Speed: SHIFT* with one practical milestone: a native offline Linux/Vulkan playable slice driven by original retail resources.
 
-This repository is no longer just an extractor, renderer experiment, or collection of reverse-engineering notes. It contains a connected resource pipeline, Silverstone scene reconstruction, native Vulkan execution, continuous runtime state, source-backed vehicle-physics infrastructure, persistent BMW BODY state, a proven BMW render/physics frame bridge, and a freshness-gated vehicle world-transform path.
+The repository already contains a connected resource pipeline, Silverstone scene reconstruction, native Vulkan execution, continuous runtime state, source-backed vehicle-physics infrastructure, persistent BMW BODY state, a proven BMW render/physics frame bridge, and a freshness-gated vehicle world-transform path.
 
-The project is **not yet a complete playable native build**. The remaining blockers are now concentrated in the retail inner physics rate, missing vehicle/control producers, input-to-drivetrain mapping, and camera-follow timing.
+It is **not yet a complete playable native build**. Current development is deliberately organized around the shortest blocker graph to the first playable Linux vertical slice.
 
-## Playable Linux slice target
+## Milestone
 
 ```text
 Silverstone
 +
-real retail BMW
+real retail vehicle
 +
 resource-driven bootstrap
 +
@@ -19,7 +19,7 @@ input
 +
 continuous persistent physics
 +
-fresh vehicle world transform
+vehicle world transform
 +
 camera
 +
@@ -28,28 +28,68 @@ Vulkan rendering
 native playable Linux vertical slice
 ```
 
-The active execution chain is:
+The project is not trying to decompile every `SHIFT.exe` function before this milestone. Work that does not shorten the active blocker graph, produce evidence required by the next edge, or create immediately reusable infrastructure for that edge is deferred.
+
+## Three-process execution model
+
+All development is coordinated as one dependency chain:
 
 ```text
-static proof / ABI / provenance / scheduling
-        -> native physics/runtime execution
-        -> persistent vehicle + fresh world transform
-        -> resources / scene / camera / Vulkan
-        -> playable Linux slice
+PROCESS 1
+static proof / ABI / producer / scheduling
+        |
+        v
+PROCESS 2
+native physics/runtime execution
+        |
+        +-------------------------+
+        |                         |
+        v                         v
+persistent vehicle          PROCESS 3
+                            resources / scene / render
+        |                         |
+        +------------+------------+
+                     v
+            playable Linux slice
 ```
 
-Canonical coordination state:
+Canonical three-process coordination documents:
 
-- [`PROCESS_INSTRUCTIONS.md`](PROCESS_INSTRUCTIONS.md)
-- [`docs/PLAYABLE_SLICE_SINGLE_PROCESS_INSTRUCTIONS_V5.md`](docs/PLAYABLE_SLICE_SINGLE_PROCESS_INSTRUCTIONS_V5.md)
-- [`docs/PLAYABLE_SLICE_SINGLE_PROCESS_PROMPT_V5.md`](docs/PLAYABLE_SLICE_SINGLE_PROCESS_PROMPT_V5.md)
-- [`evidence/playable_slice_single_process_execution.json`](evidence/playable_slice_single_process_execution.json)
+- [`docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V3.md`](docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V3.md)
+- [`docs/PLAYABLE_SLICE_PARALLEL_PROCESS_PROMPTS.md`](docs/PLAYABLE_SLICE_PARALLEL_PROCESS_PROMPTS.md)
 
-Historical files and contracts containing `Process1`, `Process2`, or `Process3` are retained for evidence/ABI traceability only. Active work follows the single current blocker graph.
+Before every substantial task, answer:
+
+> **Какой конкретный blocker первого playable Linux vertical slice снимает эта работа?**
+
+Every blocker-sized task should identify:
+
+```text
+BLOCKER   concrete blocked edge being shortened
+INPUT     exact evidence/contract already available
+OUTPUT    exact proof/contract/runtime capability produced
+CONSUMER  exact downstream process/path that consumes it
+```
+
+If the consumer cannot be named, the task is normally out of scope.
+
+### Process ownership
+
+**PROCESS 1 — static proof / ABI / producer / scheduling**
+
+Owns retail semantic proof, ABI/value provenance, owner/producer identity, scheduler/cadence proof, control-producer mapping and camera source/timing proof. It emits narrow source-backed contracts for downstream consumers.
+
+**PROCESS 2 — native physics/runtime execution**
+
+Consumes positive Process 1 contracts, implements the corresponding native runtime behavior, maintains persistent physics state and freshness, and publishes the current vehicle world transform through fail-closed admission gates.
+
+**PROCESS 3 — resources / scene / render**
+
+Owns exact retail resource admission, Silverstone/BMW bootstrap composition, Vulkan execution, consumption of fresh Process 2 transforms, and visible slice regressions. It must not hide missing physics semantics with render-side animation or guessed assets.
 
 ## Current readiness
 
-The important distinction is now between **infrastructure already running natively** and **retail-semantic gates that are still closed**.
+The important distinction is between infrastructure already running natively and retail-semantic gates that are still closed.
 
 | Area | State | Notes |
 | --- | --- | --- |
@@ -61,18 +101,18 @@ The important distinction is now between **infrastructure already running native
 | BMW BODY0 bind frame | **Positive** | `SHIFT.BMWBody0BindFrameProof/1` |
 | Fresh persistent BMW world transform | **Positive** | `SHIFT.BMWPersistentWorldTransformRuntimeWiring/1`; production path is freshness-gated |
 | Retail outer scheduler/cadence | **Positive and consumed** | `SHIFT.RetailOuterUpdateCadence/1` plus strict native outer-scheduler authority seam |
-| Selected-session loaded inner physics rate | **Blocked — current blocker** | Exact hash-locked `PhysicsTweaker` payload still has to be materialized and its unique `tick rate` admitted |
+| Selected-session loaded inner physics rate | **Blocked — current shortest blocker** | Exact hash-locked `PhysicsTweaker` payload must be materialized and its unique `tick rate` admitted |
 | Retail inner BODY substep execution | Blocked | Must consume the exact selected-session loaded `1/rate`; host pacing or constructor defaults cannot substitute |
-| Retail vehicle/control producer chain | Incomplete | Deep producer/owner handoffs still need to be closed source-first |
+| Retail vehicle/control producer chain | Incomplete | Deep producer/owner handoffs still need source-backed closure |
 | Input -> drivetrain/wheel/control mapping | Incomplete | Live input exists, but full retail control consumption is not yet admitted |
 | Retail camera follow | Incomplete | Camera transport exists; authoritative source/timing must follow the fresh admitted vehicle transform |
 | End-to-end playable Linux slice | **Not yet** | Final integration remains gated by the items above |
 
-## Current blocker: selected-session PhysicsTweaker rate
+## Current blocker: selected-session `PhysicsTweaker` rate
 
-S1 through S4 of the playable-slice queue are closed. Retail outer cadence is also proven and consumed. The shortest blocker is now the exact **loaded inner physics tick rate** for the selected retail session.
+The BMW frame bridge, BODY0 bind, persistent world-transform wiring and retail outer cadence are already positive. The shortest remaining blocker is the exact **loaded inner physics tick rate** for the selected retail session.
 
-The resource identity is already locked:
+The resource identity is locked:
 
 ```text
 archive:       PHYSICSBOOTFLOW.bff
@@ -85,15 +125,15 @@ decoded SHA256:
   6cdd05f0512d367c8ce240cb13dd22fe10fb3e21da95185ea8f79e1ca67ca62f
 ```
 
-The dedicated materializer is already implemented:
+Dedicated materializer:
 
 ```text
 tools/materialize_s5_selected_physics_tweaker_rate.py
 ```
 
-It admits a rate only when the decoded payload hash matches and exactly one valid `tick rate` property is present.
+The rate is admitted only when the decoded payload hash matches and exactly one valid `tick rate` property is present.
 
-The constructor default of **180 Hz is not enough evidence** for the selected session because `PhysicsTweaker.xml` may override it. Likewise, host `1/60`, worker polling intervals, community defaults, or modded values cannot satisfy this gate.
+The constructor default of **180 Hz is not sufficient evidence** for the selected session because `PhysicsTweaker.xml` may override it. Host `1/60`, worker polling intervals, community defaults, or modded values cannot satisfy this gate.
 
 Current machine-readable frontier:
 
@@ -113,33 +153,72 @@ retail_camera_follow_ready                              = false
 
 No original-game execution or runtime capture is currently required for this blocker; it is a resource-materialization/admission problem.
 
-## Critical path
+## Active blocker graph
 
 ```text
-S1  selected BMW first-bootstrap delta_local                 [POSITIVE]
+PROCESS 1
+selected-session PhysicsTweaker tick-rate proof/admission
         |
-S2  exact finite M_outer_to_vhf_root                         [POSITIVE]
+        v
+PROCESS 2
+exact 1/rate persistent BODY inner substeps
         |
-S3  SHIFT.BMWBody0BindFrameProof/1                           [POSITIVE]
+        v
+PROCESS 1
+missing vehicle-physics/control producer provenance
         |
-S4  fresh persistent BMW world transform                     [POSITIVE]
+        v
+PROCESS 2
+native producer/control consumption
         |
-S5  retail outer cadence + exact loaded PhysicsTweaker rate  [CURRENT]
+        v
+PROCESS 1
+input -> drivetrain/wheel/control mapping
         |
-    exact 1/rate persistent BODY inner substeps
+        v
+PROCESS 2
+continuous admitted control execution
         |
-S6  deepest missing vehicle-physics/control producers        [QUEUED]
+        v
+PROCESS 1
+retail camera-follow source + timing
         |
-S7  input -> drivetrain / wheel / control chain               [QUEUED]
-        |
-S8  retail camera-follow source + timing                      [QUEUED]
-        |
-S9  Silverstone + BMW + persistent physics + camera + Vulkan [QUEUED]
-        |
-    native playable Linux slice
+        +-----------------------------+
+        |                             |
+        v                             v
+PROCESS 2                        PROCESS 3
+fresh current vehicle           Silverstone + exact BMW
+transform/camera feed           resource/bootstrap/Vulkan
+        |                             |
+        +--------------+--------------+
+                       v
+             native playable Linux slice
 ```
 
-Work that does not shorten this chain, or build reusable infrastructure immediately required by the next blocked edge, should be deferred.
+### Immediate queues
+
+```text
+PROCESS 1
+P1.1  admit exact selected-session PhysicsTweaker rate
+P1.2  close deepest missing vehicle-physics/control producers
+P1.3  close input -> drivetrain/wheel/control producer mapping
+P1.4  prove retail camera-follow source and timing
+
+PROCESS 2
+P2.1  keep rate/scheduler consumers fail-closed
+P2.2  consume admitted inner rate as exact persistent substep timing
+P2.3  internalize positive producer/control handoffs
+P2.4  publish a fresh current vehicle transform every admitted tick
+P2.5  feed the admitted current transform into camera integration
+
+PROCESS 3
+P3.1  keep exact Silverstone + BMW resource bootstrap runnable
+P3.2  preserve exact BMW VHF identity without basename fallback
+P3.3  consume freshness-gated Process 2 vehicle transforms
+P3.4  keep the Vulkan slice green and fix only slice-blocking render/resource regressions
+```
+
+A downstream process may build the immediate fail-closed consumer seam for the next expected handoff, but it may not guess an unresolved upstream semantic value just to stay busy.
 
 ## What already works
 
@@ -176,9 +255,9 @@ SGB
   -> Vulkan execution
 ```
 
-The Silverstone Era3 dependency surface is structurally reconstructed far enough for the current vertical-slice path. Scene placement, neutral geometry and native submission are implemented. Unsupported shader/resource choices remain explicit blockers rather than being guessed.
+The Silverstone Era3 dependency surface is structurally reconstructed far enough for the current vertical-slice path. Unsupported shader/resource choices remain explicit blockers rather than being guessed.
 
-The BMW scene path also consumes the exact canonical render model:
+The BMW scene path consumes the exact canonical render model:
 
 ```text
 vehicles/bmw_m3_e36/bmw_m3_e36.vhf
@@ -207,7 +286,7 @@ Positive contracts include:
 - `SHIFT.BMWPersistentWorldTransformRuntimeWiring/1`;
 - `SHIFT.BMWVHFRootFrameSceneConsumer/1`.
 
-For the first explicit native primary-player bootstrap, the selected setup delta is proven as:
+For the first explicit native primary-player bootstrap:
 
 ```text
 delta_local = outerVehicle[+0x19c,+0x1a0,+0x1a4]
@@ -218,11 +297,11 @@ lifetime    = Vehicle::InitVehicle setup state
 role        = primary-player / Vehicle+0x234 == 0
 ```
 
-That proof is intentionally narrow and is not generalized to other roles, restart states or origin transitions without evidence.
+That proof is deliberately narrow and is not generalized to other roles, restart states, or origin transitions without evidence.
 
 ### Native Vulkan renderer
 
-The renderer provides:
+Implemented renderer infrastructure includes:
 
 - XCB window creation;
 - Vulkan instance/device/surface/swapchain setup;
@@ -233,14 +312,14 @@ The renderer provides:
 - constant-buffer transport;
 - 2D textures and supported cube resources;
 - per-draw cull/depth/blend state for the proven material subset;
-- Vulkan validation-oriented regression paths;
+- validation-oriented regression paths;
 - freshness-gated persistent vehicle transform upload.
 
-The renderer transport is no longer the main blocker for authentic vehicle motion. The current gating work is upstream in retail physics/control scheduling semantics.
+The renderer transport is no longer the main blocker for authentic vehicle motion. Current gating work is upstream in retail physics/control semantics.
 
 ### Vehicle physics
 
-The native source-backed path contains substantial pre-PhysX / SDF numerical runtime infrastructure:
+The native source-backed path already contains substantial pre-PhysX / SDF numerical runtime infrastructure:
 
 ```text
 CDF + EDF + GDF + SDF
@@ -269,7 +348,7 @@ Implemented pieces include:
 - strict scheduler-authority admission seams;
 - persistent BMW world-transform publication.
 
-This is still **not a complete retail vehicle frame**. The selected loaded inner rate, remaining producers and the control chain must still be admitted before the native loop can claim retail-consistent continuous vehicle execution.
+This is still **not a complete retail vehicle frame**. The selected loaded inner rate, remaining producers and control chain must be admitted before the native loop can claim retail-consistent continuous vehicle execution.
 
 ### Input and camera
 
@@ -302,7 +381,7 @@ resource-backed scene
   -> Vulkan frame submission
 ```
 
-`--continuous` uses host wall-clock pacing. That host pacing is an execution policy, not retail scheduler evidence. Retail outer cadence is now independently proven; retail inner substep timing remains gated on the exact loaded `PhysicsTweaker` rate.
+`--continuous` uses host wall-clock pacing. Host pacing is an execution policy, not retail scheduler evidence. Retail outer cadence is independently proven; retail inner substep timing remains gated on the exact loaded `PhysicsTweaker` rate.
 
 ## Evidence policy
 
@@ -333,6 +412,12 @@ unsupported
 blocked
 ```
 
+Cross-process handoffs should be versioned machine-readable contracts when practical:
+
+```text
+SHIFT.<Name>/1
+```
+
 ## Ghidra evidence database
 
 Static analysis is exported into machine-readable evidence instead of remaining only inside an interactive Ghidra project. The database contains functions, callgraph edges, strings/xrefs, globals, static data, switch candidates, factory candidates, constructors and vtable candidates.
@@ -349,6 +434,8 @@ GHIDRA_HOME=/opt/ghidra \
 ```
 
 Targeted instruction/p-code exports are used when a blocker needs exact register/value/store provenance instead of broad decompiler output.
+
+The current exported database for `SHIFT.exe` is built around a 32-bit x86 PE and contains machine-readable functions, call edges, strings, candidate vtables/constructors, globals, static tables, switches and factory candidates.
 
 ## Runtime evidence
 
@@ -459,17 +546,21 @@ The first playable slice intentionally does not require:
 
 Those are outside the current blocker graph. Android remains deferred until the desktop/native runtime boundary is stable.
 
-## Definition of the milestone
+## Definition of the first playable slice
 
-The first playable Linux slice is reached when authentic retail resources can start one continuous native session in which:
+The milestone is reached only when one continuous native session satisfies all of the following:
 
-- Silverstone is loaded through the resource pipeline;
-- the exact retail BMW render model is instantiated;
-- input reaches the admitted retail control path;
-- persistent physics executes with proven outer cadence and exact loaded inner rate;
-- BODY0 continuously produces a fresh admitted vehicle world transform;
-- the camera follows that current transform with source-consistent timing;
-- Vulkan continuously renders the changing scene and vehicle;
-- no test-only motion script or unsupported semantic guess is required for the core loop.
+```text
+[ ] authentic Silverstone resources loaded
+[ ] real retail BMW instantiated from exact resources
+[ ] user input reaches source-backed control producers
+[ ] physics executes continuously with persistent state
+[ ] retail outer cadence and selected-session inner rate are admitted
+[ ] BODY0 continuously produces a fresh admitted vehicle world transform
+[ ] camera follows the proven current vehicle source/timing
+[ ] Vulkan renders Silverstone + BMW continuously
+[ ] no test-only transform script drives core vehicle motion
+[ ] no unsupported semantic guess is required for the core loop
+```
 
-Until those conditions are true, the project should be described as an **advanced decompilation/reconstruction with a functioning native Linux runtime skeleton and multiple closed vehicle/render integration proofs**, not as a finished native port.
+Until every item is true, the repository should be described as an **advanced decompilation/reconstruction with a functioning native Linux runtime skeleton and multiple closed vehicle/render integration proofs**, not as a finished native port.
