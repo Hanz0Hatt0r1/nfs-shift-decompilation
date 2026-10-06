@@ -92,6 +92,51 @@ def test_materializer_rejects_non_exact_decoded_entry(tmp_path: Path):
         )
 
 
+def test_positive_rate_materialization_does_not_admit_runtime_execution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    decoded_bytes = b'<root><prop name="tick rate" data="360" /></root>'
+    decoded = tmp_path / "physicstweaker.xml"
+    decoded.write_bytes(decoded_bytes)
+
+    identity = {
+        "archive": {
+            "filename": "PHYSICSBOOTFLOW.bff",
+            "sha256": "a" * 64,
+        },
+        "entry": {
+            "index": 49,
+            "path": "vehicles/physics/physicstweaker.xml",
+            "compression_type": 2,
+            "compressed_size": 1,
+            "uncompressed_size": len(decoded_bytes),
+            "decoded_sha256": _sha(decoded_bytes),
+        },
+    }
+    cadence = {
+        "fixed_step_accumulator": {
+            "normal_outer_increment_seconds": 0.03333333507180214,
+        }
+    }
+    monkeypatch.setattr(MODULE, "_resource_identity", lambda _path: identity)
+    monkeypatch.setattr(MODULE, "_validate_cadence", lambda _path: cadence)
+
+    report = MODULE.materialize(
+        tmp_path / "geometry.json",
+        tmp_path / "cadence.json",
+        decoded_entry_path=decoded,
+    )
+
+    assert report["ready"] is True
+    assert report["status"] == "selected-session-physics-tweaker-rate-ready"
+    assert report["selected_session_rate"]["rate_hz"] == 360
+    assert report["selected_session_rate"]["inner_substep_seconds"] == pytest.approx(1 / 360)
+    assert report["handoff"]["loaded_inner_physics_rate_admitted"] is True
+    assert report["handoff"]["retail_inner_substep_execution_admitted"] is False
+    assert "RetailOuterSchedulerContract::admit_loaded_inner_rate" in report["handoff"]["consumer"]
+    assert "persistent BODY inner substeps" in report["handoff"]["next_step"]
+
+
 def test_materializer_source_never_substitutes_constructor_default_for_loaded_value():
     source = TOOL.read_text(encoding="utf-8")
     assert "constructor default" in source
@@ -100,6 +145,7 @@ def test_materializer_source_never_substitutes_constructor_default_for_loaded_va
     assert "decoded_sha256_verified_this_run" in source
     assert "RetailOuterSchedulerContract::admit_loaded_inner_rate(rate_hz)" in source
     assert '"constructor_default_180_used_as_selected_session_value": False' in source
+    assert '"retail_inner_substep_execution_admitted": False' in source
     assert "rate_hz = 180" not in source
     assert "loaded_inner_rate_hz = 180" not in source
 
