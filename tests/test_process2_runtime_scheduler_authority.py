@@ -12,6 +12,9 @@ def test_runtime_scheduler_authority_has_strict_outer_retail_seam():
     selected_rate_handoff = (
         ROOT / "native_runtime/src/selected_session_physics_tweaker_rate_handoff.hpp"
     ).read_text(encoding="utf-8")
+    selected_execution = (
+        ROOT / "native_runtime/src/selected_session_retail_vehicle_execution.hpp"
+    ).read_text(encoding="utf-8")
     session_header = (
         ROOT / "native_runtime/include/shift_native_vehicle_provider_session.hpp"
     ).read_text(encoding="utf-8")
@@ -47,6 +50,13 @@ def test_runtime_scheduler_authority_has_strict_outer_retail_seam():
     assert "scheduler.admit_loaded_inner_rate" in selected_rate_handoff
     assert "forbidden substitute" in selected_rate_handoff
 
+    assert "SelectedSessionRetailVehicleExecution" in selected_execution
+    assert "kMaterializedSelectedSessionPhysicsTweakerRateHandoff" in selected_execution
+    assert "make_retail_outer_scheduler_contract" in selected_execution
+    assert "admit_selected_session_physics_tweaker_rate" in selected_execution
+    assert "execute_retail_outer_dispatch" in selected_execution
+    assert "rendered frame or host 1/60 tick" in selected_execution
+
     assert "NativeVehicleRetailInnerBatchResult" in session_header
     assert "execute_ready_retail_inner_batch" in session_header
     assert "execute_retail_outer_dispatch" in session_header
@@ -63,8 +73,8 @@ def test_runtime_scheduler_authority_has_strict_outer_retail_seam():
     assert "does not connect dispatch admission to a render frame" in session_source
     assert "No constructor/default rate or host 1/60 fallback exists" in session_source
 
-    # The generic runtime seam must not hardcode 180 Hz. The exact selected-session
-    # value lives only in the hash-verified materialized handoff.
+    # Generic scheduler/session code must not hardcode 180 Hz. The numeric value
+    # remains confined to the hash-verified generated materialized handoff.
     for forbidden in (
         "kRetailInnerRateHz = 180",
         "kRetailLoadedInnerRateHz = 180",
@@ -74,49 +84,45 @@ def test_runtime_scheduler_authority_has_strict_outer_retail_seam():
     ):
         assert forbidden not in policy
         assert forbidden not in selected_rate_handoff
+        assert forbidden not in selected_execution
         assert forbidden not in session_source
     assert "constructor default is intentionally not encoded here" in policy
-
-    assert (
-        "host 1/60 pacing cannot satisfy retail scheduler/cadence authority"
-        in policy
-    )
+    assert "host 1/60 pacing cannot satisfy retail scheduler/cadence authority" in policy
 
 
-def test_process2_scheduler_authority_consumes_exact_pc_rate_but_blocks_execution():
+def test_process2_scheduler_authority_consumes_exact_pc_rate_and_executes_inner_batch():
     packet = json.loads(
         (ROOT / "evidence/process2_runtime_scheduler_authority.json").read_text(
             encoding="utf-8"
         )
     )
+    execution = json.loads(
+        (ROOT / "evidence/s5_selected_session_retail_vehicle_execution.json").read_text(
+            encoding="utf-8"
+        )
+    )
 
     assert packet["format"] == "SHIFT.Process2RuntimeSchedulerAuthority/1"
-    assert packet["status"] == "outer-retail-seam-ready-inner-rate-admitted-execution-pending"
+    assert packet["status"] == "retail-outer-and-exact-inner-execution-admitted"
     assert packet["input"]["retail_scheduler_cadence_handoff_present"] is True
     assert packet["input"]["retail_scheduler_cadence_handoff"] == "SHIFT.RetailOuterUpdateCadence/1"
-    assert packet["input"]["selected_rate_materializer_contract"] == (
-        "SHIFT.SelectedSessionPhysicsTweakerRate/1"
-    )
-    assert packet["input"]["selected_rate_positive_artifact"] == (
-        "evidence/s5_selected_physics_tweaker_rate.json"
-    )
-    assert packet["input"]["selected_rate_materialized_native_handoff"] == (
-        "native_runtime/src/materialized_selected_session_physics_tweaker_rate.hpp"
-    )
+    assert packet["input"]["selected_rate_materializer_contract"] == "SHIFT.SelectedSessionPhysicsTweakerRate/1"
+    assert packet["input"]["selected_rate_positive_artifact"] == "evidence/s5_selected_physics_tweaker_rate.json"
+    assert packet["input"]["selected_rate_materialized_native_handoff"] == "native_runtime/src/materialized_selected_session_physics_tweaker_rate.hpp"
     assert packet["input"]["selected_rate_typed_native_handoff_ready"] is True
+    assert packet["input"]["selected_session_execution_contract"] == "SHIFT.SelectedSessionRetailVehicleExecution/1"
+    assert packet["input"]["selected_session_execution_artifact"] == "evidence/s5_selected_session_retail_vehicle_execution.json"
+    assert packet["input"]["selected_session_execution_seam"] == "native_runtime/src/selected_session_retail_vehicle_execution.hpp"
     assert packet["input"]["outer_nominal_frequency_hz"] == 30.0
     assert packet["input"]["outer_gate_period_ms"] == 33
     assert packet["input"]["steady_scheduler_invocations_per_dispatch"] == 1
-    assert packet["input"]["recovered_inner_substep_count_expression"] == (
-        "TRUNC(rate * accumulator + 0.5)"
-    )
-    assert packet["input"]["recovered_post_batch_accumulator_expression"] == (
-        "accumulator - substep_count / rate"
-    )
+    assert packet["input"]["recovered_inner_substep_count_expression"] == "TRUNC(rate * accumulator + 0.5)"
+    assert packet["input"]["recovered_post_batch_accumulator_expression"] == "accumulator - substep_count / rate"
     assert packet["input"]["loaded_rate_shape"] == "positive integral uint16"
     assert packet["input"]["loaded_inner_rate_present"] is True
     assert packet["input"]["loaded_inner_rate_hz"] == 180
     assert packet["input"]["loaded_inner_substep_seconds"] == 1 / 180
+    assert packet["input"]["normal_outer_substep_count"] == 6
 
     output = packet["output"]
     assert output["scheduler_authority_explicit"] is True
@@ -136,26 +142,33 @@ def test_process2_scheduler_authority_consumes_exact_pc_rate_but_blocks_executio
     assert output["provider_batch_internal_state_rollback_ready"] is True
     assert output["retail_outer_dispatch_provider_transaction_ready"] is True
     assert output["retail_outer_dispatch_pre_admission_rollback_ready"] is True
+    assert output["selected_session_execution_seam_ready"] is True
+    assert output["selected_session_normal_outer_substeps"] == 6
+    assert output["selected_session_two_dispatch_persistent_steps"] == 12
     assert output["signed_accumulator_residual_preserved"] is True
     assert output["loaded_inner_rate_admitted"] is True
-    assert output["inner_substep_execution_admitted"] is False
+    assert output["inner_substep_execution_admitted"] is True
+    assert output["provider_semantics_promoted"] is False
     assert output["render_loop_equated_to_outer_dispatch"] is False
+
+    assert execution["format"] == "SHIFT.SelectedSessionRetailVehicleExecution/1"
+    assert execution["ready"] is True
+    assert execution["selected_session"]["rate_hz"] == 180
+    assert execution["selected_session"]["normal_outer_substep_count"] == 6
+    assert execution["native_regression"]["two_dispatch_persistent_steps"] == 12
+    assert execution["handoff"]["retail_inner_substep_execution_admitted"] is True
+    assert execution["handoff"]["retail_control_chain_complete"] is False
+    assert execution["limits"]["provider_semantics_promoted"] is False
+    assert execution["limits"]["render_frame_equivalence_claimed"] is False
+    assert execution["limits"]["host_1_60_used_as_retail_timing"] is False
 
     consumers = packet["consumer"]
     assert "evidence/s5_selected_physics_tweaker_rate.json" in consumers
-    assert "native_runtime/src/materialized_selected_session_physics_tweaker_rate.hpp" in consumers
-    assert any(
-        "admit_selected_session_physics_tweaker_rate" in consumer
-        for consumer in consumers
-    )
-    assert any(
-        "execute_ready_retail_inner_batch" in consumer
-        for consumer in consumers
-    )
-    assert any(
-        "execute_retail_outer_dispatch" in consumer
-        for consumer in consumers
-    )
+    assert "evidence/s5_selected_session_retail_vehicle_execution.json" in consumers
+    assert any("admit_selected_session_physics_tweaker_rate" in consumer for consumer in consumers)
+    assert any("SelectedSessionRetailVehicleExecution" in consumer for consumer in consumers)
+    assert any("execute_ready_retail_inner_batch" in consumer for consumer in consumers)
+    assert any("execute_retail_outer_dispatch" in consumer for consumer in consumers)
 
     limits = packet["limits"]
     assert any("does not infer 180 Hz" in limit for limit in limits)
@@ -165,7 +178,6 @@ def test_process2_scheduler_authority_consumes_exact_pc_rate_but_blocks_executio
     ownership = packet["ownership"]
     assert ownership["retail_outer_cadence_blocker_owner"] == "Process 1 positive"
     assert ownership["loaded_inner_rate_blocker_owner"] == "resource/static join positive"
-    assert ownership["inner_substep_execution_blocker_owner"] == "native runtime consumption"
-    assert ownership["process2_state"] == (
-        "exact-pc-rate-materialized-awaiting-production-inner-batch-consumption"
-    )
+    assert ownership["inner_substep_execution_blocker_owner"] == "native runtime positive"
+    assert ownership["next_blocker_owner"] == "static producer/ownership proof"
+    assert ownership["process2_state"] == "exact-pc-rate-consumed-through-persistent-inner-batch"
