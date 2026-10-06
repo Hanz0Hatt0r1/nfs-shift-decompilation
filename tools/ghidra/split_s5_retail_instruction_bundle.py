@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Validate and split the one-shot S5 retail instruction export.
 
-The combined export is execution infrastructure only.  It is split back into the
-exact target sets required by the existing fail-closed analyzers so that no
-analyzer silently accepts a broader machine surface.
+The combined export is execution infrastructure only. It is split back into the
+exact target sets required by the fail-closed analyzers so no analyzer silently
+accepts a broader machine surface. The BManager subset is the corrected
+registration/list/timing/default-dispatch topology; the superseded lifecycle
+wrapper assumptions are intentionally absent.
 """
 from __future__ import annotations
 
@@ -29,11 +31,11 @@ RATE_ACCESSOR = (
     "FUN_0070fae0",
 )
 BMANAGER = (
-    "FUN_00647b70",
-    "FUN_00647c60",
-    "FUN_00647cf0",
-    "FUN_00647da0",
-    "FUN_0065bb50",
+    "FUN_00647d80",
+    "FUN_00647ef0",
+    "FUN_0065b8b0",
+    "FUN_006626a0",
+    "FUN_00662880",
     "FUN_00d36000",
     "FUN_006485b0",
     "FUN_00662600",
@@ -120,6 +122,11 @@ def split(bundle: Path, output_dir: Path) -> dict[str, Any]:
             "sha256": hashlib.sha256(bundle_bytes).hexdigest(),
         },
         "subsets": subset_reports,
+        "corrections": {
+            "bmanager_subset_uses_correct_default_dispatcher_FUN_00647d80": True,
+            "FUN_00647da0_plus_0x18_assumption_retired": True,
+            "FUN_0070fe90_return_as_FUN_006485b0_stack_argument_retired": True,
+        },
         "proof_scope": {
             "retail_machine_semantics_promoted": False,
             "retail_cadence_admitted": False,
