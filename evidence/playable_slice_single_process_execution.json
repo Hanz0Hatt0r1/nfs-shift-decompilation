@@ -1,0 +1,117 @@
+{
+  "format": "SHIFT.PlayableSliceSingleProcessExecution/1",
+  "version": 1,
+  "status": "active",
+  "execution_model": "single-process",
+  "legacy_parallel_coordination_retired": true,
+  "milestone": "Silverstone + real retail BMW + resource-driven bootstrap + input + continuous persistent physics + fresh vehicle world transform + camera + Vulkan rendering -> native playable Linux vertical slice",
+  "mandatory_blocker_question": "Какой конкретный blocker первого playable Linux vertical slice снимает эта работа?",
+  "current_frontier": {
+    "semantic_relation_contract": "SHIFT.OuterVehicleBMWVHFRootRelation/1",
+    "semantic_relation_ready": true,
+    "semantic_relation_kind": "setup-fixed-affine",
+    "current_blocker_id": "BMW-render-root-delta-numeric-materialization",
+    "current_blocker": "materialize exact selected-BMW Vehicle::InitVehicle/FUN_00795d60 values for outerVehicle+0x19c/+0x1a0/+0x1a4 from exact setup inputs",
+    "current_blocker_consumer": "finite M_outer_to_vhf_root -> SHIFT.BMWBody0BindFrameProof/1",
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  },
+  "positive_checkpoints": [
+    "retail BMW chassis BODY 0 identity",
+    "BMW BODY0 resource/local-to-SDF bind facts",
+    "selected-session BODY0-to-outer Vehicle numeric relation",
+    "SHIFT.BMWBody0VHFBindFrameFrontier/1",
+    "SHIFT.BMWVehicleRenderModelResourceJoin/1",
+    "SHIFT.BMWVHFHierarchyRootFrame/1",
+    "SHIFT.OuterVehicleRenderSnapshotAffineBridge/1",
+    "SHIFT.OuterVehicleRenderRootDeltaProvenance/1",
+    "SHIFT.VehicleRenderModelRootAffineDomainJoin/1",
+    "SHIFT.OuterVehicleBMWVHFRootRelation/1",
+    "SHIFT.BMWVHFRootFrameSceneConsumer/1",
+    "persistent BODY/runtime freshness infrastructure",
+    "live freshness-gated Vulkan vehicle transform sink",
+    "strict outer Vehicle/VHF relation admission infrastructure",
+    "final BODY0 bind proof packet/runtime admission seam",
+    "explicit runtime scheduler-authority seam"
+  ],
+  "false_gates": {
+    "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": false,
+    "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": false,
+    "BODY0_bind_frame_proof_ready": false,
+    "vehicle_world_transform_ready": false,
+    "retail_cadence_admitted": false,
+    "retail_control_chain_complete": false,
+    "retail_camera_follow_ready": false
+  },
+  "queue": [
+    {
+      "id": "S1",
+      "task": "materialize exact selected-BMW FUN_00795d60 delta_local values from Vehicle::InitVehicle inputs",
+      "state": "current"
+    },
+    {
+      "id": "S2",
+      "task": "evaluate and prove finite M_outer_to_vhf_root with provenance",
+      "state": "blocked-on-S1"
+    },
+    {
+      "id": "S3",
+      "task": "compose BODY0-to-outer with outer-to-VHF and publish positive SHIFT.BMWBody0BindFrameProof/1",
+      "state": "blocked-on-S2"
+    },
+    {
+      "id": "S4",
+      "task": "consume exact bind proof in native admission/persistent world-transform path and publish fresh current BMW transform",
+      "state": "blocked-on-S3"
+    },
+    {
+      "id": "S5",
+      "task": "prove and consume retail outer-update scheduler/cadence ownership",
+      "state": "queued"
+    },
+    {
+      "id": "S6",
+      "task": "close deepest missing vehicle-physics/control producers",
+      "state": "queued"
+    },
+    {
+      "id": "S7",
+      "task": "close input-to-drivetrain/wheel/control mapping and execute continuously",
+      "state": "queued"
+    },
+    {
+      "id": "S8",
+      "task": "prove and consume retail camera-follow source/timing",
+      "state": "queued"
+    },
+    {
+      "id": "S9",
+      "task": "run exact Silverstone + BMW continuous Vulkan slice without test-only core motion",
+      "state": "queued"
+    }
+  ],
+  "internal_checkpoint_policy": {
+    "cross_process_handoffs_exist": false,
+    "positive_contracts_consumed_immediately": true,
+    "historical_process_named_contracts_may_remain_for_compatibility": true,
+    "historical_process_named_contracts_define_active_ownership": false,
+    "unsupported_gate_promotion_allowed": false,
+    "host_1_60_may_satisfy_retail_cadence": false,
+    "missing_numeric_values_may_be_guessed": false
+  },
+  "work_selection": {
+    "primary": "current shortest blocker",
+    "fallback_1": "immediate fail-closed consumer seam required by current blocker",
+    "fallback_2": "blocker-specific reusable analyzer/validator",
+    "fallback_3": "narrower fail-closed frontier identifying exact missing evidence",
+    "unrelated_subsystem_work_allowed": false
+  },
+  "branch_prefix": "slice/",
+  "pr_next_field": "NEXT_STEP",
+  "supersedes": [
+    "docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V4.md",
+    "docs/PLAYABLE_SLICE_PARALLEL_PROCESS_PROMPTS_V4.md",
+    "docs/PLAYABLE_SLICE_BLOCKER_SWARM.md",
+    "SHIFT.PlayableSliceBlockerSwarm/1 as active coordination"
+  ]
+}

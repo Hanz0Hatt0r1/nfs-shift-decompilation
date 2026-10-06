@@ -1,7 +1,11 @@
 {
   "format": "SHIFT.Process2BMWBody0BindFrameStagedHandoff/1",
   "status": "ready-gate",
-  "blocker": "Process 2 must consume positive bind-path evidence incrementally instead of idling until the final SHIFT.BMWBody0BindFrameProof/1 artifact exists",
+  "coordination_status": "legacy-compatibility-checkpoint",
+  "active_execution_model": "single-process",
+  "active_execution_contract": "SHIFT.PlayableSliceSingleProcessExecution/1",
+  "legacy_process_labels_define_active_ownership": false,
+  "blocker": "single process must materialize the selected BMW setup delta and finite outer-to-VHF matrix before final SHIFT.BMWBody0BindFrameProof/1 admission",
   "policy": {
     "consume_positive_stages_immediately": true,
     "final_runtime_admission_stays_fail_closed": true,
@@ -13,64 +17,43 @@
       "id": "retail_body0_identity",
       "contract": "SHIFT.GlobalVehicleBodyOwnerIdentity/1",
       "state": "positive-consumed",
-      "consumer": "Phase 707/703/698/700 retail BODY0 selection",
-      "unlocks": [
-        "retail BMW chassis BODY index 0 selection",
-        "persistent BODY0 pose transport"
-      ]
+      "consumer": "Phase 707/703/698/700 retail BODY0 selection"
     },
     {
       "id": "body0_vhf_composition_formula",
       "contract": "SHIFT.BMWBody0VHFBindFrameFrontier/1",
       "state": "positive-consumed",
-      "consumer": "SHIFT.NativeBMWBody0VHFWorldMatrixComposition/1",
-      "unlocks": [
-        "fixed row-vector composition order vhf_bind * inverse(body0_bind) * body0_runtime",
-        "fail-closed native composition seam"
-      ]
+      "consumer": "SHIFT.NativeBMWBody0VHFWorldMatrixComposition/1"
     },
     {
       "id": "exact_bmw_vhf_resource_identity",
       "contract": "SHIFT.BMWVehicleRenderModelResourceJoin/1",
       "state": "positive-consumed",
-      "consumer": "SHIFT.Process2BMWVHFHierarchyRootFrameStage/1 exact canonical resource subject validation",
-      "unlocks": [
-        "canonical vehicles/bmw_m3_e36/bmw_m3_e36.vhf target identity"
-      ]
+      "consumer": "exact canonical BMW render-model identity"
     },
     {
       "id": "exact_bmw_vhf_hierarchy_root_frame",
       "contract": "SHIFT.BMWVHFHierarchyRootFrame/1",
       "state": "positive-consumed",
-      "source": "merged Process 1 PR #1323",
-      "consumer": "SHIFT.Process2BMWVHFHierarchyRootFrameStage/1 strict relation-stage validator/adaptor",
-      "unlocks": [
-        "exact canonical HIERARCHY Root node identity",
-        "exact MatrixNumber and MATRIX parent chain",
-        "exact local and resolved world affine matrices",
-        "exact row-vector transpose used by the existing VHF scene path",
-        "typed Process 2 root-frame stage ready for the future outer Vehicle/VHF relation proof"
-      ]
+      "source": "merged PR #1323",
+      "consumer": "exact canonical BMW VHF root-frame checkpoint"
     },
     {
       "id": "outer_vehicle_render_snapshot_affine_bridge",
       "contract": "SHIFT.OuterVehicleRenderSnapshotAffineBridge/1",
-      "state": "positive-available",
-      "consumer": "staged bind-path provenance",
-      "unlocks": [
-        "outer Vehicle slot identity continuity",
-        "symbolic P_snapshot = P_outer + R_outer * delta_local relation",
-        "bounded FUN_00795d60 producer for outerVehicle +0x19c/+0x1a0/+0x1a4"
-      ]
+      "state": "positive-consumed",
+      "consumer": "SHIFT.OuterVehicleBMWVHFRootRelation/1"
     },
     {
       "id": "outer_vehicle_to_exact_vhf_root_relation",
-      "contract": "future positive Process 1 relation proof",
-      "state": "blocked",
-      "consumer": "final BODY0 bind composition",
+      "contract": "SHIFT.OuterVehicleBMWVHFRootRelation/1",
+      "state": "positive-semantic-numeric-pending",
+      "source": "merged PR #1331",
+      "relation_kind": "setup-fixed-affine",
+      "consumer": "selected-BMW numeric relation materialization then final BODY0 bind composition",
       "requires": [
-        "join SHIFT.OuterVehicleRenderRootDeltaProvenance/1 with SHIFT.BMWVHFHierarchyRootFrame/1",
-        "prove identity or exact fixed affine delta between outer Vehicle root and canonical BMW VHF HIERARCHY root"
+        "materialize exact Vehicle::InitVehicle/FUN_00795d60 values for outerVehicle+0x19c/+0x1a0/+0x1a4",
+        "evaluate finite M_outer_to_vhf_root from the already-proven fixed-affine formula"
       ]
     },
     {
@@ -79,28 +62,22 @@
       "state": "blocked",
       "consumer": "SHIFT.NativeBMWBody0BindFrameProofPacket/1 and production runtime admission",
       "requires": [
-        "positive outer Vehicle root -> exact BMW VHF root relation",
+        "finite provenance-bearing outer Vehicle -> BMW VHF root matrix",
         "concrete numeric BODY0-local -> VHF vehicle-root composition"
       ]
     }
   ],
-  "process2_parallel_work": [
+  "legacy_process2_parallel_work": [
     {
-      "id": "consume_new_positive_stages",
-      "state": "runnable",
-      "rule": "update typed consumers/frontiers as soon as a stage is positive; do not wait for the final packet"
-    },
-    {
-      "id": "consume_exact_vhf_root_frame_stage",
+      "id": "consume_outer_vhf_semantic_relation",
       "state": "ready-consumed",
-      "contract": "SHIFT.BMWVHFHierarchyRootFrame/1",
-      "output_contract": "SHIFT.Process2BMWVHFHierarchyRootFrameStage/1",
-      "rule": "strictly validate exact resource/root identity, MatrixNumber, parent-chain and row-vector metadata while keeping the unresolved outer Vehicle relation and final runtime admission false"
+      "contract": "SHIFT.OuterVehicleBMWVHFRootRelation/1",
+      "rule": "semantic fixed-affine relation is positive; do not re-prove identity-vs-affine"
     },
     {
-      "id": "external_provider_and_control_frontier",
-      "state": "runnable",
-      "rule": "internalize any already-positive producer/owner handoff on the current vehicle chain while Process 1 closes the frame relation"
+      "id": "materialize_outer_vhf_numeric_relation",
+      "state": "current",
+      "rule": "materialize exact selected-BMW setup delta and finite relation matrix with provenance"
     },
     {
       "id": "scheduler_consumer_seam",
@@ -116,13 +93,14 @@
     {
       "id": "retail_vehicle_world_transform_admission",
       "state": "blocked",
-      "rule": "only this final semantic admission waits for positive SHIFT.BMWBody0BindFrameProof/1"
+      "rule": "final semantic admission waits for positive SHIFT.BMWBody0BindFrameProof/1"
     }
   ],
   "ownership": {
-    "process1": "prove and publish each semantic stage as soon as it is positive",
-    "process2": "consume positive stages immediately and continue independent current-chain work without promoting blocked semantics",
-    "final_frame_relation_owner": "Process 1",
-    "final_runtime_admission_owner": "Process 2"
+    "active_owner": "single playable-slice process",
+    "historical_process1_role": "semantic proof producer",
+    "historical_process2_role": "runtime consumer",
+    "historical_roles_are_active_workers": false,
+    "final_runtime_admission_remains_fail_closed": true
   }
 }
