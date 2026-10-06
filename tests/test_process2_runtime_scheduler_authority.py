@@ -20,8 +20,15 @@ def test_runtime_scheduler_authority_has_strict_outer_retail_seam():
     assert "kRetailOuterGatePeriodMs = 33" in policy
     assert "kRetailNormalOuterIncrementSeconds" in policy
     assert "kRetailSteadySchedulerInvocationsPerDispatch = 1" in policy
+    assert "kRetailLoadedInnerRateMaxHz = 65535.0" in policy
     assert "make_retail_outer_scheduler_contract" in policy
     assert "loaded PhysicsTweaker tick rate is required before inner substeps" in policy
+    assert "ready_inner_substep_count" in policy
+    assert "std::trunc(scaled + 0.5)" in policy
+    assert "commit_ready_inner_substeps" in policy
+    assert "pending_accumulator_seconds - consumed_seconds" in policy
+    assert "Do not clamp that residual to zero" in policy
+    assert "positive uint16-shaped integer" in policy
 
     # Constructor-default 180 Hz may exist in evidence, but it must never be
     # encoded as an admitted runtime inner rate. Avoid a raw substring check:
@@ -56,6 +63,13 @@ def test_process2_scheduler_authority_consumes_outer_proof_but_blocks_inner_rate
     assert packet["input"]["outer_nominal_frequency_hz"] == 30.0
     assert packet["input"]["outer_gate_period_ms"] == 33
     assert packet["input"]["steady_scheduler_invocations_per_dispatch"] == 1
+    assert packet["input"]["recovered_inner_substep_count_expression"] == (
+        "TRUNC(rate * accumulator + 0.5)"
+    )
+    assert packet["input"]["recovered_post_batch_accumulator_expression"] == (
+        "accumulator - substep_count / rate"
+    )
+    assert packet["input"]["loaded_rate_shape"] == "positive integral uint16"
     assert packet["input"]["loaded_inner_rate_present"] is False
 
     output = packet["output"]
@@ -66,6 +80,8 @@ def test_process2_scheduler_authority_consumes_outer_proof_but_blocks_inner_rate
     assert output["retail_host_fallback_rejected"] is True
     assert output["retail_outer_authority_seam_ready"] is True
     assert output["retail_outer_cadence_admitted"] is True
+    assert output["retail_inner_substep_count_commit_seam_ready"] is True
+    assert output["signed_accumulator_residual_preserved"] is True
     assert output["loaded_inner_rate_admitted"] is False
     assert output["inner_substep_execution_admitted"] is False
     assert output["render_loop_equated_to_outer_dispatch"] is False
@@ -74,5 +90,5 @@ def test_process2_scheduler_authority_consumes_outer_proof_but_blocks_inner_rate
     assert ownership["retail_outer_cadence_blocker_owner"] == "Process 1 positive"
     assert ownership["loaded_inner_rate_blocker_owner"] == "resource/static join"
     assert ownership["process2_state"] == (
-        "strict-retail-outer-authority-seam-ready-awaiting-loaded-inner-rate"
+        "strict-retail-outer-authority-and-inner-batch-seam-ready-awaiting-loaded-inner-rate"
     )
