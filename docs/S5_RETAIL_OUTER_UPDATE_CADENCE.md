@@ -27,9 +27,11 @@ No original-game execution or runtime capture is used.
 
 `evidence/s5_retail_outer_update_cadence.json` publishes
 `SHIFT.RetailOuterUpdateCadence/1` with the **outer scheduler cadence admitted**
-for default BManager mode (`+0x529 == 0`). The contract deliberately does not
-freeze the loaded session's inner physics rate until `PhysicsTweaker.xml` is
-available or an equivalent source-backed loaded value is proved.
+for default BManager mode (`+0x529 == 0`).
+
+`evidence/s5_retail_outer_update_cadence_completion.json` publishes
+`SHIFT.RetailOuterUpdateCadenceCompletion/1`, closing the same-owner vtable,
+steady scheduler multiplicity, and PhysicsTweaker rate-source obligations.
 
 The corrected registration/dispatch chain is:
 
@@ -95,9 +97,9 @@ FUN_00647860(manager, 0, 30.0)
 period_ms = ROUND(1000.0 / 30.0) = 33
 ```
 
-at manager offset `+0xe8`. `FUN_00647ef0` consumes this period field and retains
-sub-period carry. Thus the retail BManager gate has a nominal 30 Hz
-configuration with a quantized 33 ms millisecond gate.
+at manager offset `+0xe8`. `FUN_00647ef0` consumes this period field. Thus the
+retail BManager gate has a nominal 30 Hz configuration with a quantized 33 ms
+millisecond gate.
 
 ### 3. Normal scheduler accumulator contribution
 
@@ -125,49 +127,49 @@ approximately `1/30 s` to the accumulator.
 those substeps at `1/rate`, and subtracts `substep_count/rate` from the
 accumulator.
 
-The PhysicsTweaker constructor `FUN_00748280` sets field `+0x492` to `0xb4`
-(180). The property registrar names that exact offset `"tick rate"`. The loaded
-PhysicsTweaker object is `DAT_00c12c40`, and:
+The PhysicsTweaker constructor sets field `+0x492` to `180`. The property
+registrar names that offset `"tick rate"`, and `PhysicsTweaker.xml` is loaded
+before `DAT_00c130d2` is passed to `FUN_0070f170`. Therefore `180` is a proven
+constructor default, not a frozen loaded-session rate.
+
+## NATIVE CONSUMER
+
+`native_runtime/src/runtime_loop_policy.hpp` now keeps the two authorities
+separate:
 
 ```text
-DAT_00c12c40 + 0x492 == DAT_00c130d2
+HostDevelopment -> existing host 1/60 continuous pacing only
+RetailEvidence  -> RetailOuterUpdateScheduler
 ```
 
-`FUN_00710a70` loads `PhysicsTweaker.xml` into that object before passing
-`DAT_00c130d2` to `FUN_0070f170`. Therefore **180 Hz is a proven constructor
-default**, giving six `1/180 s` substeps for a normal `1/30 s` increment before
-resource override, but it is not promoted to the final loaded session rate.
-
-## CONSUMER
-
-The direct consumer is the explicit runtime scheduler-authority seam introduced
-by Phase 716. It may select `RuntimeSchedulerAuthority::RetailEvidence` for the
-outer scheduler from this positive handoff and must not inherit host-development
-`1/60` pacing.
-
-The native consumer must preserve the distinction between:
+`RetailOuterUpdateScheduler` preserves the recovered split:
 
 ```text
-10 ms worker poll
-33 ms quantized manager dispatch gate
-~1/30 s normal scheduler accumulator contribution
-1/rate inner physics substep
+33 ms outer manager gate
+1/30 s normal outer callback contribution
 ```
 
-It must also keep the loaded inner rate fail-closed until the selected-session
-PhysicsTweaker value is available. The constructor default `180` is not a license
-to ignore a resource override.
+It does not reinterpret `NativeRuntimeState::fixed_step()` as a retail outer
+update and does not attach any of the nine still-external vehicle providers.
+A late poll releases at most one outer update and advances the deadline by one
+gate, so subsequent polls may catch up without silently dropping admitted
+updates.
+
+Machine-readable runtime authority:
+
+```text
+SHIFT.Process2RuntimeSchedulerAuthority/1
+status = retail-authority-consumed
+```
 
 ## GATES CHANGED
 
 ```text
 outer_scheduler_cadence_admitted = true
-scheduler_authority = RetailEvidence (outer scheduler)
-cPhysicsManager default +0x18 dispatch = proven
-one steady scheduler invocation per default dispatch = proven
-+0x388 rate domain / reciprocal = proven
-inner fixed-step 1/rate semantics = proven
-loaded session numeric rate = not frozen
+retail_cadence_admitted = true
+retail scheduler authority consumed = true
+S5 queue state = positive
+S6 queue state = current
 ```
 
 ## LIMITS
@@ -178,27 +180,12 @@ loaded session numeric rate = not frozen
 - One rendered frame is not equated with one retail physics update.
 - Worker 10 ms sleep is not physics cadence.
 - Host `1/60` pacing is not retail cadence.
-- Constructor-default 180 Hz is not promoted to the loaded session rate because
-  `PhysicsTweaker.xml` may override it.
+- Constructor-default 180 Hz is not promoted to the loaded session rate.
+- The nine vehicle provider boundaries remain S6 work.
 - No original-game execution or runtime capture is required.
-
-## REPRODUCTION
-
-```bash
-python3 tools/ghidra/build_s5_retail_outer_update_cadence.py \
-  /path/to/SHIFT.exe.c \
-  /path/to/SHIFT.exe \
-  evidence/physics_manager_scheduler_entry_owner.json \
-  --json-out evidence/s5_retail_outer_update_cadence.json
-```
-
-The builder rejects source hash drift, PE hash drift, owner/vtable drift,
-zero-fill/multiplicity drift, function-fragment drift, exact byte-window drift,
-or retail constant drift.
 
 ## NEXT STEP
 
-Consume the admitted **outer** scheduler authority in native runtime without
-mapping one render-loop iteration directly to one inner physics step. Resolve the
-selected-session PhysicsTweaker `tick rate`, then drive the existing persistent
-BODY fixed-step boundary from the proven accumulator/substep rule.
+S6: close the deepest missing vehicle-physics/control producers, then attach the
+existing `NativeVehicleProviderSession` explicit outer-update callback to the
+admitted `RetailOuterUpdateScheduler` without synthetic provider semantics.
