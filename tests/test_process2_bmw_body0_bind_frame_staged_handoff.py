@@ -25,9 +25,11 @@ def test_staged_bind_handoff_keeps_final_runtime_gate_closed() -> None:
     stages = {row["id"]: row for row in payload["stages"]}
     assert stages["retail_body0_identity"]["state"] == "positive-consumed"
     assert stages["body0_vhf_composition_formula"]["state"] == "positive-consumed"
-    assert stages["exact_bmw_vhf_resource_identity"]["state"] == "positive-available"
-    assert stages["exact_bmw_vhf_hierarchy_root_frame"]["state"] == "positive-available"
+    assert stages["exact_bmw_vhf_resource_identity"]["state"] == "positive-consumed"
+    assert "SHIFT.Process2BMWVHFHierarchyRootFrameStage/1" in stages["exact_bmw_vhf_resource_identity"]["consumer"]
+    assert stages["exact_bmw_vhf_hierarchy_root_frame"]["state"] == "positive-consumed"
     assert stages["exact_bmw_vhf_hierarchy_root_frame"]["contract"] == "SHIFT.BMWVHFHierarchyRootFrame/1"
+    assert stages["exact_bmw_vhf_hierarchy_root_frame"]["consumer"].startswith("SHIFT.Process2BMWVHFHierarchyRootFrameStage/1")
     assert "PR #1323" in stages["exact_bmw_vhf_hierarchy_root_frame"]["source"]
     assert stages["outer_vehicle_render_snapshot_affine_bridge"]["state"] == "positive-available"
     assert stages["outer_vehicle_to_exact_vhf_root_relation"]["state"] == "blocked"
@@ -43,8 +45,9 @@ def test_process2_has_parallel_work_without_promoting_bind_semantics() -> None:
     work = {row["id"]: row for row in payload["process2_parallel_work"]}
 
     assert work["consume_new_positive_stages"]["state"] == "runnable"
-    assert work["consume_exact_vhf_root_frame_stage"]["state"] == "runnable"
+    assert work["consume_exact_vhf_root_frame_stage"]["state"] == "ready-consumed"
     assert work["consume_exact_vhf_root_frame_stage"]["contract"] == "SHIFT.BMWVHFHierarchyRootFrame/1"
+    assert work["consume_exact_vhf_root_frame_stage"]["output_contract"] == "SHIFT.Process2BMWVHFHierarchyRootFrameStage/1"
     assert work["external_provider_and_control_frontier"]["state"] == "runnable"
     assert work["scheduler_consumer_seam"]["state"] == "ready"
     assert work["persistent_transform_freshness"]["state"] == "ready-keep-green"
