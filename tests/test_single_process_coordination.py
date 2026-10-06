@@ -29,10 +29,16 @@ def test_single_process_execution_contract_is_active_and_current() -> None:
     assert payload["current_frontier"]["retail_outer_cadence_contract"] == "SHIFT.RetailOuterUpdateCadence/1"
     assert payload["current_frontier"]["retail_outer_cadence_admitted"] is True
     assert payload["current_frontier"]["retail_outer_authority_seam_ready"] is True
+    assert payload["current_frontier"]["selected_session_rate_snapshot_contract"] == "SHIFT.SelectedSessionPhysicsTweakerRateSnapshot/1"
+    assert payload["current_frontier"]["selected_session_rate_snapshot_tool_ready"] is True
+    assert payload["current_frontier"]["selected_session_rate_adjudicator_contract"] == "SHIFT.SelectedSessionPhysicsTweakerRate/1"
+    assert payload["current_frontier"]["selected_session_rate_adjudicator_ready"] is True
+    assert payload["current_frontier"]["selected_session_rate_observation_present"] is False
     assert payload["current_frontier"]["current_blocker_id"] == "selected-session-physics-tweaker-rate-admission"
     assert "PhysicsTweaker" in payload["current_frontier"]["current_blocker"]
     assert "180" in payload["current_frontier"]["current_blocker"]
-    assert payload["current_frontier"]["runtime_capture_required"] is False
+    assert payload["current_frontier"]["runtime_capture_required"] is True
+    assert payload["current_frontier"]["original_game_execution_required"] is True
 
 
 def test_single_process_queue_orders_world_transform_before_scheduler_control_camera() -> None:
@@ -64,6 +70,9 @@ def test_single_process_outer_cadence_is_positive_but_inner_rate_remains_closed(
     assert positives["vehicle_world_transform_ready"] is True
     assert positives["retail_outer_cadence_admitted"] is True
     assert positives["retail_outer_authority_seam_ready"] is True
+    assert positives["selected_session_rate_snapshot_tool_ready"] is True
+    assert positives["selected_session_rate_adjudicator_ready"] is True
+    assert gates["selected_session_rate_observation_present"] is False
     assert gates["loaded_inner_physics_rate_admitted"] is False
     assert gates["retail_inner_substep_execution_admitted"] is False
     assert gates["retail_control_chain_complete"] is False
