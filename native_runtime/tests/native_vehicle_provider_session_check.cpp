@@ -1,6 +1,8 @@
 #include "fun_00770e80_outer_update_fixture.hpp"
+#include "runtime_loop_policy.hpp"
 #include "shift_native_vehicle_provider_session.hpp"
 
+#include <cmath>
 #include <cstddef>
 #include <iostream>
 #include <stdexcept>
@@ -27,7 +29,8 @@ NativeVehicleExternalProviderBundle make_bundle(
     const PreparedConstraintRelationResetFrame& reset_state,
     const PreparedBuiltinSolverFrame& solver_topology,
     const PreparedPostSolveBodyProjection& projection,
-    const Fun00763570MachineInput& machine_input) {
+    const Fun00763570MachineInput& machine_input,
+    double expected_half_timestep) {
     NativeVehicleExternalProviderBundle bundle{};
     bundle.contact_factor = [&events](std::size_t pass) {
         events.push_back("contact-factor:" + std::to_string(pass));
@@ -80,11 +83,12 @@ NativeVehicleExternalProviderBundle make_bundle(
          &reset_state,
          &solver_topology,
          &projection,
-         &machine_input](
+         &machine_input,
+         expected_half_timestep](
             std::size_t pass,
             double half_timestep,
             const std::vector<std::uint8_t>&) {
-            if (half_timestep != 0.25) {
+            if (std::abs(half_timestep - expected_half_timestep) > 1e-15) {
                 throw std::runtime_error("Phase 701 half timestep mismatch");
             }
             events.push_back("half-refresh:" + std::to_string(pass));
@@ -101,6 +105,27 @@ NativeVehicleExternalProviderBundle make_bundle(
         events.push_back("post-half:" + std::to_string(pass));
     };
     return bundle;
+}
+
+void configure_runtime(
+    NativeRuntimeState& runtime,
+    const std::vector<std::uint8_t>& initial_body_bytes) {
+    runtime.physics.workspace.configure(2u, 1u, 1u);
+    runtime.physics.participant_contract_ready = true;
+    runtime.physics.participant_registry_ready = true;
+    runtime.physics.selector_context_separate = true;
+    runtime.physics.participant_ready = true;
+    runtime.physics.participant_identity_join_proven = true;
+    runtime.initialize_explicit_outer_update_body_state(initial_body_bytes);
+}
+
+RetailOuterSchedulerContract make_retail_scheduler() {
+    return make_retail_outer_scheduler_contract(
+        true,
+        kRetailOuterNominalFrequencyHz,
+        kRetailOuterGatePeriodMs,
+        kRetailNormalOuterIncrementSeconds,
+        kRetailSteadySchedulerInvocationsPerDispatch);
 }
 
 }  // namespace
@@ -124,7 +149,8 @@ int main() {
             reset_state,
             solver_topology,
             projection,
-            machine_input);
+            machine_input,
+            outer_timestep * 0.5);
         incomplete.contact_response = {};
         bool incomplete_rejected = false;
         try {
@@ -137,13 +163,7 @@ int main() {
                 "Phase 701 incomplete bundle did not fail before side effects");
 
         NativeRuntimeState runtime{};
-        runtime.physics.workspace.configure(2u, 1u, 1u);
-        runtime.physics.participant_contract_ready = true;
-        runtime.physics.participant_registry_ready = true;
-        runtime.physics.selector_context_separate = true;
-        runtime.physics.participant_ready = true;
-        runtime.physics.participant_identity_join_proven = true;
-        runtime.initialize_explicit_outer_update_body_state(initial_body_bytes);
+        configure_runtime(runtime, initial_body_bytes);
 
         std::vector<std::string> events;
         NativeVehicleProviderSession session(make_bundle(
@@ -153,7 +173,8 @@ int main() {
             reset_state,
             solver_topology,
             projection,
-            machine_input));
+            machine_input,
+            outer_timestep * 0.5));
 
         const auto first = session.execute_explicit_step(runtime, outer_timestep);
         require(first.session_step_count == 1u && session.step_count() == 1u,
@@ -220,6 +241,117 @@ int main() {
         require(runtime.physics.fixed_step == 0u,
                 "Phase 701 leaked deep outer update into fixed_step scheduling");
 
+        // Retail batch bridge: use an arbitrary explicit rate only as a
+        // regression fixture. This is not the selected-session retail rate.
+        constexpr double fixture_rate_hz = 60.0;
+        constexpr double fixture_inner_dt = 1.0 / fixture_rate_hz;
+
+        NativeRuntimeState retail_runtime{};
+        configure_runtime(retail_runtime, initial_body_bytes);
+        std::vector<std::string> retail_events;
+        NativeVehicleProviderSession retail_session(make_bundle(
+            retail_events,
+            source,
+            relations,
+            reset_state,
+            solver_topology,
+            projection,
+            machine_input,
+            fixture_inner_dt * 0.5));
+        auto retail_scheduler = make_retail_scheduler();
+
+        bool missing_rate_rejected = false;
+        try {
+            (void)retail_session.execute_ready_retail_inner_batch(
+                retail_runtime, retail_scheduler);
+        } catch (const std::logic_error&) {
+            missing_rate_rejected = true;
+        }
+        require(missing_rate_rejected && retail_events.empty() &&
+                    retail_session.step_count() == 0u &&
+                    retail_runtime.outer_update.explicit_update_count == 0u &&
+                    retail_runtime.outer_update.body_bytes == initial_body_bytes,
+                "retail batch bridge executed before loaded-rate admission");
+
+        retail_scheduler.admit_loaded_inner_rate(fixture_rate_hz);
+        retail_scheduler.admit_outer_dispatch();
+        require(retail_scheduler.ready_inner_substep_count() == 2u,
+                "retail batch bridge fixture count mismatch");
+
+        const auto retail_batch =
+            retail_session.execute_ready_retail_inner_batch(
+                retail_runtime, retail_scheduler);
+        require(retail_batch.recovered_substep_count == 2u &&
+                    std::abs(retail_batch.inner_substep_seconds - fixture_inner_dt) < 1e-15 &&
+                    retail_batch.session_step_count_before == 0u &&
+                    retail_batch.session_step_count_after == 2u &&
+                    retail_batch.explicit_update_count_before == 0u &&
+                    retail_batch.explicit_update_count_after == 2u &&
+                    retail_batch.scheduler_accumulator_committed,
+                "retail batch bridge result mismatch");
+        require(retail_session.step_count() == 2u &&
+                    retail_runtime.outer_update.explicit_update_count == 2u &&
+                    retail_runtime.outer_update.body_pose_snapshot_generation == 2u &&
+                    retail_runtime.outer_update.body_bytes != initial_body_bytes,
+                "retail batch bridge did not persist recovered BODY substeps");
+        require(
+            std::abs(
+                retail_scheduler.pending_accumulator_seconds -
+                (kRetailNormalOuterIncrementSeconds - 2.0 / fixture_rate_hz)) < 1e-15,
+            "retail batch bridge did not commit recovered scheduler duration");
+
+        // A deep provider rejection after one completed substep must restore
+        // persistent BODY/session/scheduler state. Provider-side external
+        // effects are intentionally not claimed reversible.
+        NativeRuntimeState failing_runtime{};
+        configure_runtime(failing_runtime, initial_body_bytes);
+        std::vector<std::string> failing_events;
+        auto failing_bundle = make_bundle(
+            failing_events,
+            source,
+            relations,
+            reset_state,
+            solver_topology,
+            projection,
+            machine_input,
+            fixture_inner_dt * 0.5);
+        std::size_t failing_post_half_step_calls = 0u;
+        failing_bundle.post_half_step =
+            [&failing_events, &failing_post_half_step_calls](std::size_t pass) {
+                failing_events.push_back("post-half:" + std::to_string(pass));
+                ++failing_post_half_step_calls;
+                if (failing_post_half_step_calls == 3u) {
+                    throw std::runtime_error("intentional retail batch rejection");
+                }
+            };
+        NativeVehicleProviderSession failing_session(std::move(failing_bundle));
+        auto failing_scheduler = make_retail_scheduler();
+        failing_scheduler.admit_loaded_inner_rate(fixture_rate_hz);
+        failing_scheduler.admit_outer_dispatch();
+        const double failing_accumulator_before =
+            failing_scheduler.pending_accumulator_seconds;
+
+        bool deep_batch_rejected = false;
+        try {
+            (void)failing_session.execute_ready_retail_inner_batch(
+                failing_runtime, failing_scheduler);
+        } catch (const std::runtime_error&) {
+            deep_batch_rejected = true;
+        }
+        require(deep_batch_rejected && !failing_events.empty(),
+                "retail batch bridge did not surface deep provider rejection");
+        require(failing_session.step_count() == 0u &&
+                    failing_runtime.outer_update.explicit_update_count == 0u &&
+                    failing_runtime.outer_update.body_pose_snapshot_generation == 0u &&
+                    failing_runtime.outer_update.body_bytes == initial_body_bytes,
+                "retail batch bridge retained partial persistent BODY/session state");
+        require(
+            std::abs(
+                failing_scheduler.pending_accumulator_seconds -
+                failing_accumulator_before) < 1e-15 &&
+                failing_scheduler.ready_inner_substep_count() == 2u,
+            "retail batch bridge retained a scheduler commit after rejection");
+
         std::cout
             << "{\"format\":\"" << kNativeVehicleProviderSessionFormat << "\","
             << "\"ready\":true,"
@@ -229,6 +361,10 @@ int main() {
             << "\"persistent_body_state_reused\":true,"
             << "\"provider_admission_before_execution\":true,"
             << "\"participant_gate_before_provider_side_effects\":true,"
+            << "\"retail_inner_batch_bridge_ready\":true,"
+            << "\"retail_inner_batch_uses_scheduler_dt\":true,"
+            << "\"retail_inner_batch_internal_rollback\":true,"
+            << "\"selected_session_rate_promoted\":false,"
             << "\"provider_semantics_promoted\":false,"
             << "\"vehicle_body_identity_proven\":false,"
             << "\"vehicle_world_transform_proven\":false,"
