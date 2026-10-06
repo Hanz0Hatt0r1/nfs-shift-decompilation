@@ -49,12 +49,18 @@ def test_runtime_scheduler_authority_has_strict_outer_retail_seam():
 
     assert "NativeVehicleRetailInnerBatchResult" in session_header
     assert "execute_ready_retail_inner_batch" in session_header
+    assert "execute_retail_outer_dispatch" in session_header
     assert "scheduler.ready_inner_substep_count()" in session_source
     assert "scheduler.inner_substep_seconds()" in session_source
     assert "execute_explicit_step(runtime, inner_substep_seconds)" in session_source
     assert "scheduler.commit_ready_inner_substeps(recovered_substep_count)" in session_source
+    assert "scheduler.admit_outer_dispatch()" in session_source
+    assert "execute_ready_retail_inner_batch(runtime, scheduler)" in session_source
+    assert "scheduler_before_dispatch" in session_source
     assert "runtime.outer_update = outer_update_before" in session_source
     assert "scheduler = scheduler_before" in session_source
+    assert "scheduler = scheduler_before_dispatch" in session_source
+    assert "does not connect dispatch admission to a render frame" in session_source
     assert "No constructor/default rate or host 1/60 fallback exists" in session_source
 
     # Constructor-default 180 Hz may exist in evidence, but it must never be
@@ -120,6 +126,8 @@ def test_process2_scheduler_authority_consumes_outer_proof_but_blocks_inner_rate
     assert output["retail_inner_substep_provider_batch_bridge_ready"] is True
     assert output["provider_batch_uses_recovered_inner_substep_seconds"] is True
     assert output["provider_batch_internal_state_rollback_ready"] is True
+    assert output["retail_outer_dispatch_provider_transaction_ready"] is True
+    assert output["retail_outer_dispatch_pre_admission_rollback_ready"] is True
     assert output["signed_accumulator_residual_preserved"] is True
     assert output["loaded_inner_rate_admitted"] is False
     assert output["inner_substep_execution_admitted"] is False
@@ -135,10 +143,18 @@ def test_process2_scheduler_authority_consumes_outer_proof_but_blocks_inner_rate
         "execute_ready_retail_inner_batch" in consumer
         for consumer in consumers
     )
+    assert any(
+        "execute_retail_outer_dispatch" in consumer
+        for consumer in consumers
+    )
+
+    limits = packet["limits"]
+    assert any("does not auto-schedule" in limit for limit in limits)
+    assert any("does not promote Phase 701" in limit for limit in limits)
 
     ownership = packet["ownership"]
     assert ownership["retail_outer_cadence_blocker_owner"] == "Process 1 positive"
     assert ownership["loaded_inner_rate_blocker_owner"] == "resource/static join"
     assert ownership["process2_state"] == (
-        "typed-selected-rate-handoff-and-provider-batch-bridge-ready-awaiting-exact-pc-rate"
+        "typed-selected-rate-handoff-and-atomic-retail-dispatch-bridge-ready-awaiting-exact-pc-rate"
     )
