@@ -94,7 +94,7 @@ def _select_bound_members(
         prefix = manifest_normalized.rsplit("/", 1)[0] + "/"
     else:
         prefix = ""
-    expected_member = prefix + expected_rel
+    expected_member = (prefix + expected_rel).lower()
 
     decoded = [
         (info, normalized)
