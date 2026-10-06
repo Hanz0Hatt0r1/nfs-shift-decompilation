@@ -32,13 +32,12 @@
       "exactly one prop named tick rate exists",
       "data value is finite, positive, integral and fits recovered uint16 load",
       "positive SHIFT.RetailOuterUpdateCadence/1 still requires loaded PhysicsTweaker value"
-    ]
+    ],
+    "positive_artifact_scope": "admits the exact loaded numeric rate only; native persistent BODY inner-substep execution remains a separate consumer gate"
   },
   "available_evidence": {
     "constructor_default_rate_hz": 180,
     "constructor_default_is_selected_session_value": false,
-    "public_modding_reports_default_180": true,
-    "public_modding_reports_are_hash_locked_retail_evidence": false,
     "exact_resource_identity_known": true,
     "exact_resource_payload_available_in_current_project_uploads": false
   },
