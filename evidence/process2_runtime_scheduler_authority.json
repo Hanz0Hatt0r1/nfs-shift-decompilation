@@ -1,13 +1,15 @@
 {
   "format": "SHIFT.Process2RuntimeSchedulerAuthority/1",
-  "status": "outer-retail-seam-ready-inner-rate-blocked",
-  "blocker": "Consume the positive retail outer scheduler without substituting host 1/60 or guessing the selected-session PhysicsTweaker tick rate.",
+  "status": "outer-retail-seam-ready-inner-rate-admitted-execution-pending",
+  "blocker": "Consume the exact materialized PC selected-session 180 Hz PhysicsTweaker rate through the existing atomic retail outer-dispatch/persistent BODY inner-batch path without substituting host 1/60.",
   "input": {
     "current_runtime_policy": "SHIFT.NativeRuntimeLoopPolicyRegression/2",
     "host_continuous_tick_seconds": 0.016666666666666666,
     "retail_scheduler_cadence_handoff_present": true,
     "retail_scheduler_cadence_handoff": "SHIFT.RetailOuterUpdateCadence/1",
     "selected_rate_materializer_contract": "SHIFT.SelectedSessionPhysicsTweakerRate/1",
+    "selected_rate_positive_artifact": "evidence/s5_selected_physics_tweaker_rate.json",
+    "selected_rate_materialized_native_handoff": "native_runtime/src/materialized_selected_session_physics_tweaker_rate.hpp",
     "selected_rate_typed_native_handoff_ready": true,
     "outer_nominal_frequency_hz": 30.0,
     "outer_gate_period_ms": 33,
@@ -16,7 +18,9 @@
     "recovered_inner_substep_count_expression": "TRUNC(rate * accumulator + 0.5)",
     "recovered_post_batch_accumulator_expression": "accumulator - substep_count / rate",
     "loaded_rate_shape": "positive integral uint16",
-    "loaded_inner_rate_present": false
+    "loaded_inner_rate_present": true,
+    "loaded_inner_rate_hz": 180,
+    "loaded_inner_substep_seconds": 0.005555555555555556
   },
   "output": {
     "scheduler_authority_explicit": true,
@@ -29,6 +33,7 @@
     "selected_rate_materializer_can_emit_typed_native_handoff": true,
     "selected_rate_native_handoff_exact_resource_identity_locked": true,
     "selected_rate_native_handoff_forbidden_substitutes_rejected": true,
+    "selected_rate_exact_pc_value_materialized": true,
     "retail_inner_substep_count_commit_seam_ready": true,
     "retail_inner_substep_provider_batch_bridge_ready": true,
     "provider_batch_uses_recovered_inner_substep_seconds": true,
@@ -36,12 +41,13 @@
     "retail_outer_dispatch_provider_transaction_ready": true,
     "retail_outer_dispatch_pre_admission_rollback_ready": true,
     "signed_accumulator_residual_preserved": true,
-    "loaded_inner_rate_admitted": false,
+    "loaded_inner_rate_admitted": true,
     "inner_substep_execution_admitted": false,
     "render_loop_equated_to_outer_dispatch": false
   },
   "consumer": [
-    "tools/materialize_s5_selected_physics_tweaker_rate.py --native-handoff-out",
+    "evidence/s5_selected_physics_tweaker_rate.json",
+    "native_runtime/src/materialized_selected_session_physics_tweaker_rate.hpp",
     "native_runtime/src/selected_session_physics_tweaker_rate_handoff.hpp::admit_selected_session_physics_tweaker_rate",
     "native_runtime/src/runtime_loop_policy.hpp::RetailOuterSchedulerContract",
     "RetailOuterSchedulerContract::admit_loaded_inner_rate(rate_hz)",
@@ -54,11 +60,9 @@
   "limits": [
     "does not use host 1/60 as retail cadence",
     "does not use the BManager 10 ms worker poll as physics cadence",
-    "does not promote the PhysicsTweaker constructor default 180 Hz to the loaded selected-session rate",
+    "does not infer 180 Hz from the constructor default; the equal loaded value is admitted only because the exact PC archive and decoded payload hashes were verified",
     "does not promote a regression fixture rate to the selected-session value",
-    "does not mark loaded_inner_rate_admitted true until the exact PC payload is materialized",
-    "does not execute a retail provider batch until a loaded rate is admitted",
-    "does not mark persistent BODY execution admitted merely because the provider batch bridge is executable with an explicit regression fixture rate",
+    "does not mark inner_substep_execution_admitted true until the production path actually consumes the materialized handoff and persistent BODY batch",
     "does not claim external provider side effects are reversible when a provider throws",
     "does not claim one rendered frame equals one retail outer update",
     "does not auto-schedule the atomic retail outer dispatch from the host/render loop",
@@ -68,7 +72,8 @@
   ],
   "ownership": {
     "retail_outer_cadence_blocker_owner": "Process 1 positive",
-    "loaded_inner_rate_blocker_owner": "resource/static join",
-    "process2_state": "typed-selected-rate-handoff-and-atomic-retail-dispatch-bridge-ready-awaiting-exact-pc-rate"
+    "loaded_inner_rate_blocker_owner": "resource/static join positive",
+    "inner_substep_execution_blocker_owner": "native runtime consumption",
+    "process2_state": "exact-pc-rate-materialized-awaiting-production-inner-batch-consumption"
   }
 }
