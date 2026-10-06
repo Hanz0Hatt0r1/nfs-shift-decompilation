@@ -21,9 +21,15 @@
     "retail_outer_cadence_contract": "SHIFT.RetailOuterUpdateCadence/1",
     "retail_outer_cadence_admitted": true,
     "retail_outer_authority_seam_ready": true,
+    "selected_session_physics_tweaker_rate_frontier_contract": "SHIFT.SelectedSessionPhysicsTweakerRateFrontier/1",
+    "selected_session_physics_tweaker_rate_frontier_ready": false,
+    "selected_session_physics_tweaker_archive": "PHYSICSBOOTFLOW.bff",
+    "selected_session_physics_tweaker_archive_sha256": "f4205984343987d7879fcd65f6b2527848a6fd16e9830d6ccca70b7e5db4254a",
+    "selected_session_physics_tweaker_entry": "vehicles/physics/physicstweaker.xml",
+    "selected_session_physics_tweaker_decoded_sha256": "6cdd05f0512d367c8ce240cb13dd22fe10fb3e21da95185ea8f79e1ca67ca62f",
     "current_blocker_id": "selected-session-physics-tweaker-rate-admission",
-    "current_blocker": "prove the selected-session loaded PhysicsTweaker tick rate and feed it into the strict RetailEvidence outer-scheduler seam before dispatching persistent BMW inner physics substeps; constructor default 180 Hz is not sufficient evidence because PhysicsTweaker.xml may override it",
-    "current_blocker_consumer": "RetailEvidence outer scheduler -> loaded 1/rate inner persistent BODY fixed-step execution",
+    "current_blocker": "materialize the already hash-locked selected-session PhysicsTweaker XML, prove its unique loaded tick rate, and feed that exact numeric rate into the strict RetailEvidence outer-scheduler seam before dispatching persistent BMW inner physics substeps; constructor default 180 Hz is not sufficient evidence",
+    "current_blocker_consumer": "RetailEvidence outer scheduler -> exact loaded 1/rate inner persistent BODY fixed-step execution",
     "runtime_capture_required": false,
     "original_game_execution_required": false
   },
@@ -49,7 +55,8 @@
     "final BODY0 bind proof packet/runtime admission seam",
     "explicit runtime scheduler-authority seam",
     "SHIFT.RetailOuterUpdateCadence/1",
-    "strict native RetailOuterSchedulerContract"
+    "strict native RetailOuterSchedulerContract",
+    "hash-locked selected-session PhysicsTweaker rate materialization infrastructure"
   ],
   "positive_gates": {
     "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": true,
@@ -88,7 +95,7 @@
     },
     {
       "id": "S5",
-      "task": "consume proven retail outer scheduler/cadence and prove the selected-session loaded PhysicsTweaker tick rate before inner persistent BODY substeps",
+      "task": "consume proven retail outer scheduler/cadence, materialize the hash-locked selected-session PhysicsTweaker tick rate, then consume its exact 1/rate inner persistent BODY substeps",
       "state": "current"
     },
     {
