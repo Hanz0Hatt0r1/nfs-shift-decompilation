@@ -1,0 +1,152 @@
+{
+  "accessor_receiver_join": {
+    "accessor_call": "0x00714571",
+    "accessor_return_to_writer_receiver_proven": true,
+    "address": "0x00714560",
+    "decompiler_accessors_then_writer": true,
+    "function": "FUN_00714560",
+    "mnemonic_sha256": "0fdfd115ce435f07172048099c7c8ae063842de2dcad60bfb06ca40cbba49fd4",
+    "receiver_transfer": "0x00714576 MOV ECX,EAX",
+    "writer_call": "0x00714578"
+  },
+  "adjudication": {
+    "FUN_0070f170_is_cPhysicsManager_plus_0x388_writer": true,
+    "constructor_initializes_plus_0x388_to_180": true,
+    "normal_outer_quantum_proven": false,
+    "plus_0x388_physical_units_proven": false,
+    "plus_0x388_semantic_role_is_integer_step_rate_candidate": true,
+    "plus_0x388_stored_value_is_writer_integer_param1": true,
+    "retail_cadence_admitted": false,
+    "retail_fixed_step_quantum_proven": false,
+    "writer_derives_reciprocal_and_rate_over_30_fields": true
+  },
+  "blocking_reasons": [
+    "rate-field-physical-time-units-not-yet-joined",
+    "normal-outer-update-quantum-to-accumulator-not-yet-joined",
+    "retail-fixed-step-cadence-equation-not-yet-published"
+  ],
+  "constructor_receiver_join": {
+    "address": "0x0070fae0",
+    "cPhysicsManager_receiver_to_writer_proven": true,
+    "decompiler_same_receiver_call": "FUN_0070f170(param_1,0xb4)",
+    "function": "FUN_0070fae0",
+    "initial_value": 180,
+    "initial_value_push": "0x0070fc3d",
+    "mnemonic_sha256": "072f0f9df5e4b00b2ff7cdbf991923afacaa82bcdac508310f3eb0a3e5941859",
+    "source_backed_vtable_installed_on_ESI": "0x0070fb13",
+    "source_receiver_saved_to_ESI": "0x0070fafd",
+    "vtable": "0x00b04524",
+    "writer_call": "0x0070fc68",
+    "writer_receiver_restored_from_ESI": "0x0070fc60"
+  },
+  "decompiler_crosscheck": {
+    "accessor_return_flows_to_writer_receiver": true,
+    "constructor_calls_writer_with_180": true,
+    "writer_contract_verified": true
+  },
+  "direct_callers": [
+    {
+      "from_function": "0x0070fae0",
+      "from_name": "FUN_0070fae0",
+      "instruction": "0x0070fc68",
+      "to": "0x0070f170"
+    },
+    {
+      "from_function": "0x00710a70",
+      "from_name": "FUN_00710a70",
+      "instruction": "0x00710c1c",
+      "to": "0x0070f170"
+    },
+    {
+      "from_function": "0x007117e0",
+      "from_name": "FUN_007117e0",
+      "instruction": "0x00711813",
+      "to": "0x0070f170"
+    },
+    {
+      "from_function": "0x007119c0",
+      "from_name": "FUN_007119c0",
+      "instruction": "0x00711b37",
+      "to": "0x0070f170"
+    },
+    {
+      "from_function": "0x00714560",
+      "from_name": "FUN_00714560",
+      "instruction": "0x00714578",
+      "to": "0x0070f170"
+    }
+  ],
+  "format": "SHIFT.PhysicsManagerRateWriterProvenance/1",
+  "limits": {
+    "field_named_frequency_from_offset_only": false,
+    "host_1_60_promoted": false,
+    "original_game_executed": false,
+    "rendered_frame_equivalence_assumed": false,
+    "runtime_capture_used": false,
+    "seconds_unit_assumed": false
+  },
+  "machine_fragments": {
+    "accessor_mutator_call_accessor": {"address": "0x00714571", "bytes": "e81ab9ffff", "verified": true},
+    "accessor_mutator_call_writer": {"address": "0x00714578", "bytes": "e8f3abffff", "verified": true},
+    "accessor_mutator_push_rate": {"address": "0x0071456e", "bytes": "50", "verified": true},
+    "accessor_mutator_receiver_from_accessor": {"address": "0x00714576", "bytes": "8bc8", "verified": true},
+    "constructor_call_writer": {"address": "0x0070fc68", "bytes": "e803f5ffff", "verified": true},
+    "constructor_install_manager_vtable": {"address": "0x0070fb13", "bytes": "c7062445b000", "verified": true},
+    "constructor_push_initial_rate_180": {"address": "0x0070fc3d", "bytes": "68b4000000", "verified": true},
+    "constructor_restore_receiver_for_writer": {"address": "0x0070fc60", "bytes": "8bce", "verified": true},
+    "constructor_save_receiver": {"address": "0x0070fafd", "bytes": "8bf1", "verified": true},
+    "writer_divide_by_30": {"address": "0x0070f197", "bytes": "dc350020ab00", "verified": true},
+    "writer_param_float_load": {"address": "0x0070f173", "bytes": "db4508", "verified": true},
+    "writer_param_integer_load": {"address": "0x0070f176", "bytes": "8b4508", "verified": true},
+    "writer_plus_0x388_store": {"address": "0x0070f179", "bytes": "898188030000", "verified": true},
+    "writer_plus_0x38c_reciprocal_store": {"address": "0x0070f18f", "bytes": "d9998c030000", "verified": true},
+    "writer_plus_0x390_rate_over_30_store": {"address": "0x0070f1a3", "bytes": "d99190030000", "verified": true},
+    "writer_plus_0x394_reciprocal_store": {"address": "0x0070f1ab", "bytes": "d99994030000", "verified": true},
+    "writer_reciprocal_rate_over_30": {"address": "0x0070f1a9", "bytes": "def9", "verified": true},
+    "writer_ret_stack4": {"address": "0x0070f1b2", "bytes": "c20400", "verified": true}
+  },
+  "next_exact_question": "join this proven integer rate=180 to FUN_00712450 accumulator scaling, FUN_00710780 normal outer input, and FUN_00713050 rate*accumulator / 1.0/rate loop to derive the exact retail substep cadence before changing native runtime timing",
+  "ready": true,
+  "retail_image": {
+    "image_base": "0x00400000",
+    "md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "program": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "source_backed_object_join": {
+    "format": "SHIFT.PhysicsManagerSchedulerEntryOwner/1",
+    "owner": "MWL::Core::cPhysicsManager",
+    "source_manager_contract": "SHIFT.PhysicsManagerRuntime/1",
+    "verified": true,
+    "vtable": "0x00b04524"
+  },
+  "status": "cPhysicsManager-plus-0x388-writer-and-initial-value-proven",
+  "writer": {
+    "address": "0x0070f170",
+    "calling_convention": "__thiscall",
+    "derived_fields": {
+      "constant_30_address": "0x00ab2000",
+      "constant_30_value": 30.0,
+      "machine_relationships_proven": true,
+      "plus_0x38c": "1.0 / float(param_1)",
+      "plus_0x390": "float(param_1) / 30.0",
+      "plus_0x394": "1.0 / (float(param_1) / 30.0)"
+    },
+    "direct_integer_value_dependency": {
+      "displacement": 904,
+      "displacement_hex": "0x388",
+      "proven": true,
+      "receiver": "ECX",
+      "source": "Stack[0x4]:4 param_1",
+      "source_load_instruction": "0x0070f176",
+      "store_instruction": "0x0070f179"
+    },
+    "function": "FUN_0070f170",
+    "mnemonic_sha256": "1256ccf2a09a822d5160f1389b6b9bf580159cb20bc6fc4cce105fda5c50ce90",
+    "parameters": [
+      {"name": "this", "storage": "ECX:4 (auto)", "type": "void *"},
+      {"name": "param_1", "storage": "Stack[0x4]:4", "type": "int"}
+    ],
+    "raw_function_sha256": "4c29b7b6f7d37b36b1e96a50ce6a988ec8fbee58e4e9192d3b3b775d43159cae"
+  }
+}
