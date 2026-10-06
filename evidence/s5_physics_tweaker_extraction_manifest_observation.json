@@ -1,0 +1,48 @@
+{
+  "format": "SHIFT.PhysicsTweakerExtractionManifestObservation/1",
+  "version": 1,
+  "status": "supporting-extraction-observation-only",
+  "ready": false,
+  "blocker": "selected-session-physics-tweaker-rate-admission",
+  "source": {
+    "artifact": "_bff_manifest.csv",
+    "producer": "standalone BFF v3 extractor with Type-2 XMem/LZX support",
+    "archive_name": "PHYSICSBOOTFLOW.bff"
+  },
+  "observed_entry": {
+    "index": 49,
+    "path": "vehicles/physics/physicstweaker.xml",
+    "offset": "0x31800",
+    "compression_type": 2,
+    "compressed_size": 2452,
+    "uncompressed_size": 21762,
+    "method": "xmem/lzx:1frame(s)",
+    "crc_field": "0xa0f8c093",
+    "extension_field": "xml",
+    "status": "ok"
+  },
+  "join_to_hash_locked_frontier": {
+    "entry_index_matches": true,
+    "entry_path_matches": true,
+    "compression_type_matches": true,
+    "compressed_size_matches": true,
+    "uncompressed_size_matches": true,
+    "type2_decode_reported_successful": true
+  },
+  "consumer": "tools/materialize_s5_selected_physics_tweaker_from_extraction.py",
+  "remaining_gate": {
+    "exact_decoded_xml_bytes_required": true,
+    "decoded_sha256_required": "6cdd05f0512d367c8ce240cb13dd22fe10fb3e21da95185ea8f79e1ca67ca62f",
+    "unique_tick_rate_property_required": true,
+    "archive_sha256_verified_by_manifest": false,
+    "decoded_sha256_verified_by_manifest": false,
+    "selected_session_rate_admitted": false,
+    "retail_inner_substep_execution_admitted": false
+  },
+  "limits": {
+    "manifest_crc_promoted_to_sha256_identity": false,
+    "constructor_default_180_promoted": false,
+    "community_or_modded_tick_rate_promoted": false,
+    "manifest_success_alone_closes_blocker": false
+  }
+}
