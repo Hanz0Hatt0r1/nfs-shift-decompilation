@@ -38,14 +38,16 @@ def test_single_process_execution_contract_is_active_and_current() -> None:
     assert payload["current_frontier"]["selected_session_physics_tweaker_archive_sha256"] == "f4205984343987d7879fcd65f6b2527848a6fd16e9830d6ccca70b7e5db4254a"
     assert payload["current_frontier"]["selected_session_physics_tweaker_entry"] == "vehicles/physics/physicstweaker.xml"
     assert payload["current_frontier"]["selected_session_physics_tweaker_decoded_sha256"] == "6cdd05f0512d367c8ce240cb13dd22fe10fb3e21da95185ea8f79e1ca67ca62f"
-    assert payload["current_frontier"]["current_blocker_id"] == "retail-inner-substep-execution-admission"
-    assert "180" in payload["current_frontier"]["current_blocker"]
-    assert "1/180" in payload["current_frontier"]["current_blocker"]
-    assert "hash-verified" in payload["current_frontier"]["current_blocker"]
+    assert payload["current_frontier"]["selected_session_retail_execution_contract"] == "SHIFT.SelectedSessionRetailVehicleExecution/1"
+    assert payload["current_frontier"]["selected_session_retail_execution_ready"] is True
+    assert payload["current_frontier"]["selected_session_normal_outer_substeps"] == 6
+    assert payload["current_frontier"]["current_blocker_id"] == "missing-vehicle-physics-control-producer-provenance"
+    assert "producer" in payload["current_frontier"]["current_blocker"]
+    assert "fixture callbacks" in payload["current_frontier"]["current_blocker"]
     assert payload["current_frontier"]["runtime_capture_required"] is False
 
 
-def test_single_process_queue_orders_world_transform_before_scheduler_control_camera() -> None:
+def test_single_process_queue_advances_from_timing_to_provider_producers() -> None:
     payload = json.loads(EXECUTION.read_text(encoding="utf-8"))
     queue = payload["queue"]
 
@@ -58,13 +60,15 @@ def test_single_process_queue_orders_world_transform_before_scheduler_control_ca
     assert "SHIFT.BMWBody0BindFrameProof/1" in queue[2]["task"]
     assert queue[3]["state"] == "positive"
     assert "world-transform" in queue[3]["task"]
-    assert queue[4]["state"] == "current"
+    assert queue[4]["state"] == "positive"
     assert "180 Hz" in queue[4]["task"]
     assert "1/180" in queue[4]["task"]
+    assert queue[5]["state"] == "current"
+    assert "producers" in queue[5]["task"]
     assert "camera-follow" in queue[7]["task"]
 
 
-def test_single_process_inner_rate_is_positive_but_execution_remains_closed() -> None:
+def test_single_process_exact_inner_execution_is_positive_but_provider_control_remains_closed() -> None:
     payload = json.loads(EXECUTION.read_text(encoding="utf-8"))
     positives = payload["positive_gates"]
     gates = payload["false_gates"]
@@ -76,11 +80,13 @@ def test_single_process_inner_rate_is_positive_but_execution_remains_closed() ->
     assert positives["retail_outer_cadence_admitted"] is True
     assert positives["retail_outer_authority_seam_ready"] is True
     assert positives["loaded_inner_physics_rate_admitted"] is True
-    assert gates["retail_inner_substep_execution_admitted"] is False
+    assert positives["retail_inner_substep_execution_admitted"] is True
+    assert gates["retail_provider_control_producers_complete"] is False
     assert gates["retail_control_chain_complete"] is False
     assert gates["retail_camera_follow_ready"] is False
     assert "hash-locked selected-session PhysicsTweaker rate materialization infrastructure" in payload["positive_checkpoints"]
     assert "SHIFT.SelectedSessionPhysicsTweakerRate/1 exact PC selected-session rate 180 Hz" in payload["positive_checkpoints"]
+    assert "SHIFT.SelectedSessionRetailVehicleExecution/1 exact 1/180 persistent BODY inner execution" in payload["positive_checkpoints"]
     assert payload["internal_checkpoint_policy"]["cross_process_handoffs_exist"] is False
     assert payload["internal_checkpoint_policy"]["positive_contracts_consumed_immediately"] is True
     assert payload["internal_checkpoint_policy"]["unsupported_gate_promotion_allowed"] is False
