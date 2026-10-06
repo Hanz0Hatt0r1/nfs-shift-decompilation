@@ -1,0 +1,80 @@
+{
+  "format": "SHIFT.BMWBody0BindFrameProof/1",
+  "version": 1,
+  "ready": true,
+  "status": "ready",
+  "evidence_state": "proven-static",
+  "body_index": 0,
+  "body_name": "body",
+  "frame_relation": "BODY0-local-to-VHF-vehicle-root",
+  "matrix_convention": "row-major D3D row-vector affine",
+  "body0_local_to_vhf_vehicle_root_row_matrix": [
+    1.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, -0.004956085581085581, -0.01147086247086247, 1.0
+  ],
+  "numeric": {
+    "BODY0_to_outer_vehicle_root_row_matrix": [
+      1.0, 0.0, 0.0, 0.0,
+      0.0, 1.0, 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, -0.004956085581085581, -0.01147086247086247, 1.0
+    ],
+    "outer_vehicle_root_to_VHF_row_matrix": [
+      1.0, 0.0, 0.0, 0.0,
+      0.0, 1.0, 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0
+    ],
+    "BODY0_to_VHF_vehicle_root_row_matrix": [
+      1.0, 0.0, 0.0, 0.0,
+      0.0, 1.0, 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, -0.004956085581085581, -0.01147086247086247, 1.0
+    ],
+    "BODY0_to_outer_translation": [0.0, -0.004956085581085581, -0.01147086247086247],
+    "offset33b": [0.0, 0.004956085581085581, 0.01147086247086247],
+    "composition_formula": "M_BODY0_to_vhf_root = M_BODY0_to_outer * M_outer_to_vhf_root",
+    "composition_order_proven": true
+  },
+  "provenance": {
+    "source_targets": [
+      "FUN_00747b90",
+      "FUN_0075bbd0",
+      "FUN_007615c0",
+      "FUN_007633b0",
+      "FUN_0076b280",
+      "FUN_0076df50",
+      "FUN_007927c0",
+      "FUN_007b5ac0"
+    ],
+    "symbolic_BODY0_outer_contract": "SHIFT.BMWBody0VehicleRootBindRelation/1",
+    "selected_BODY0_outer_contract": "SHIFT.BMWOffset33bNativeSessionSelection/1",
+    "outer_VHF_numeric_contract": "SHIFT.BMWOuterVHFNumericRelation/1",
+    "canonical_vhf": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
+    "decoded_vhf_sha256": "e08887d17d9e34e703a385260f41017fc19acbebc3405614b375e81766b4bd51",
+    "row_vector_relation_chain": [
+      "q_outer = q_BODY0 * M_BODY0_to_outer",
+      "q_vhf = q_outer * M_outer_to_vhf_root",
+      "M_BODY0_to_vhf_root = M_BODY0_to_outer * M_outer_to_vhf_root"
+    ],
+    "numeric_equality_to_BODY0_outer_is_consequence_of_independent_outer_VHF_identity_matrix": true
+  },
+  "handoff": {
+    "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready": true,
+    "BODY0_bind_frame_proof_ready": true,
+    "vehicle_world_transform_ready": false,
+    "consumer": "SHIFT.NativeBMWBody0BindFrameProofPacket/1 -> S4 persistent fresh BMW world transform"
+  },
+  "scope": {
+    "identity_matrix_assumed": false,
+    "outer_VHF_semantic_identity_inferred": false,
+    "first_primary_player_bootstrap_relation_scope_preserved": true,
+    "selected_native_policy_is_retail_live_session_observation": false,
+    "original_game_executed": false,
+    "new_runtime_capture_used": false,
+    "vehicle_world_transform_claimed": false,
+    "retail_scheduler_cadence_claimed": false
+  }
+}
