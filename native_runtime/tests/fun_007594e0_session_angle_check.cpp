@@ -62,11 +62,7 @@ int main() {
             return make_contact_outer_input();
         };
         bundle.motion_read_setup.caller_gate_open = false;
-        bundle.motion_read_input = [](std::size_t) {
-            // Gate, steering and load terms do not exist at this late boundary.
-            // Keep setup closed so this regression isolates angle timing.
-            return Fun007682c0ExternalMachineInput{};
-        };
+        bundle.race_mode = RaceModePlayerDifficulty{true, 1};
         bundle.scalar_provider_factory = [](std::size_t) {
             return [](std::size_t,
                       const ConstraintRefreshFrame3f&,
@@ -103,20 +99,16 @@ int main() {
         NativeVehicleProviderSession session(std::move(bundle));
         const auto result = session.execute_explicit_step(runtime, 0.5);
 
-        // The fixture starts BODY0 with identity basis and velocity (4,5,6).
-        // FUN_007594e0 therefore produces atan2(-4,-6), spilled to f32.
         constexpr std::uint32_t kExpectedSteeringBits = 0xc0236e05u;
         require(result.joined.motion_read_input_present[0] &&
                     result.joined.motion_read_input_present[1],
                 "FUN_007594e0 session inputs were not captured for both passes");
         require(
             f32_bits(result.joined.motion_read_inputs[0].steering) ==
-                kExpectedSteeringBits,
-            "FUN_007594e0 pass-0 session steering mismatch");
-        require(
-            f32_bits(result.joined.motion_read_inputs[1].steering) ==
-                kExpectedSteeringBits,
-            "FUN_007594e0 pass-1 session steering mismatch");
+                    kExpectedSteeringBits &&
+                f32_bits(result.joined.motion_read_inputs[1].steering) ==
+                    kExpectedSteeringBits,
+            "FUN_007594e0 session steering mismatch");
         require(
             result.joined.motion_read_inputs[0].steering ==
                 result.joined.motion_read_inputs[1].steering,
@@ -130,6 +122,9 @@ int main() {
         require(!result.joined.motion_read_inputs[0].caller_gate_open &&
                     !result.joined.motion_read_inputs[1].caller_gate_open,
                 "FUN_007560c0 setup gate changed between passes");
+        require(result.joined.motion_read_inputs[0].angle_mode == 1 &&
+                    result.joined.motion_read_inputs[1].angle_mode == 1,
+                "RaceModeInfo Player Difficulty changed between passes");
 
         std::cout
             << "{\"format\":\"SHIFT.NativeFun007594e0SessionAngle/1\","
@@ -137,6 +132,7 @@ int main() {
             << "\"external_gate_field_present\":false,"
             << "\"external_steering_field_present\":false,"
             << "\"external_load_term_fields_present\":false,"
+            << "\"external_angle_mode_provider_present\":false,"
             << "\"derived_before_pass0\":true,"
             << "\"same_value_used_by_both_passes\":true}\n";
         return 0;
