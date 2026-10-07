@@ -87,7 +87,9 @@ int main() {
 
         ContactOuterSessionInput production{};
         production.surface_probe_node = &production_node;
-        production.projected_scalar = 1.0;
+        // This Phase 731 fixture predates the later FUN_00759c90 caller join.
+        production.compatibility_projected_scalar_present = true;
+        production.compatibility_projected_scalar = 1.0;
         const auto production_resolved = compose_fun_007675f0_external_input(
             production,
             3.0,
@@ -98,6 +100,8 @@ int main() {
                      "production payload altered setup-owned filter cap");
         require(!production_resolved.compatibility_body_owned_scalars_present,
                 "production payload unexpectedly carried compatibility body-owned scalars");
+        require(production_resolved.compatibility_projected_scalar_present,
+                "historical projected scalar was not marked compatibility-only");
 
         std::cout
             << "{\"format\":\"" << kFun007675f0DistanceFilterCapOwnershipFormat << "\","
