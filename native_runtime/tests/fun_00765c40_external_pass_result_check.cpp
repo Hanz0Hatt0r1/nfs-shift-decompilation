@@ -14,6 +14,21 @@ void require(bool condition, const char* message) {
     }
 }
 
+CollisionQueryOutput make_hit_output(
+    const Fun00765c40QueryInputBoundary& input,
+    std::uint64_t returned_handle) {
+    const auto record = build_fun_00765c40_query_record(input);
+    CollisionSurfaceRecord surface{};
+    surface.address_token = returned_handle;
+    surface.query_point = record.query_position;
+    surface.normal = {0.0, 1.0, 0.0};
+    surface.contact_height = input.world_position[1] - 0.05;
+    surface.triangle_a = {0.0, 0.0, 0.0};
+    surface.triangle_b = {1.0, 0.0, 0.0};
+    surface.triangle_c = {0.0, 0.0, 1.0};
+    return apply_fun_007b0710_collision_query_result(record, surface);
+}
+
 }  // namespace
 
 int main() {
@@ -30,21 +45,37 @@ int main() {
         query_input.cached_handle = input.cached_handle;
         query_input.miss_fallback = *selected_fallback;
 
+        const auto query_output = make_hit_output(query_input, 5678u);
         const Fun00765c40ExternalPassResult valid{
             Fun00765c40LoadTerms{10.0, 20.0, 30.0, 40.0},
             query_input,
-            5678u};
+            5678u,
+            query_output};
         validate_fun_00765c40_external_pass_result(input, valid);
         require(valid.load_terms[0] == 10.0 && valid.load_terms[3] == 40.0,
                 "FUN_00765c40 external pass result changed typed load terms");
         require(valid.returned_cache_handle == 5678u,
                 "FUN_00765c40 external pass result lost returned cache handle");
+        require(valid.query_output.has_value() && valid.query_output->hit &&
+                    valid.query_output->returned_handle == 5678u,
+                "FUN_00765c40 external pass result lost collision output");
         const auto record = build_fun_00765c40_query_record(valid.query_input);
         require(record.query_position[0] == 10.0 &&
                     record.query_position[1] == 20.15 &&
                     record.query_position[2] == 30.0 &&
                     record.cache_handle == 1234u,
                 "FUN_00765c40 external pass result did not preserve query input");
+
+        bool missing_output_rejected = false;
+        try {
+            Fun00765c40ExternalPassResult invalid = valid;
+            invalid.query_output.reset();
+            validate_fun_00765c40_external_pass_result(input, invalid);
+        } catch (const std::invalid_argument&) {
+            missing_output_rejected = true;
+        }
+        require(missing_output_rejected,
+                "selected BMW provider hid FUN_007b0710 output");
 
         bool cache_mismatch_rejected = false;
         try {
@@ -79,6 +110,17 @@ int main() {
         require(fallback_mismatch_rejected,
                 "FUN_00765c40 residual provider accepted wrong selected +0x38e8 fallback");
 
+        bool returned_handle_mismatch_rejected = false;
+        try {
+            Fun00765c40ExternalPassResult invalid = valid;
+            invalid.returned_cache_handle = 9999u;
+            validate_fun_00765c40_external_pass_result(input, invalid);
+        } catch (const std::invalid_argument&) {
+            returned_handle_mismatch_rejected = true;
+        }
+        require(returned_handle_mismatch_rejected,
+                "FUN_00765c40 accepted cache write different from collision output");
+
         bool nonfinite_load_rejected = false;
         try {
             Fun00765c40ExternalPassResult invalid = valid;
@@ -106,6 +148,8 @@ int main() {
         generic_input.cached_handle = std::nullopt;
         Fun00765c40ExternalPassResult generic_result = valid;
         generic_result.query_input.cached_handle = std::nullopt;
+        generic_result.query_output.reset();
+        generic_result.returned_cache_handle = 5678u;
         validate_fun_00765c40_external_pass_result(generic_input, generic_result);
 
         std::cout
@@ -113,6 +157,7 @@ int main() {
             << "\"ready\":true,"
             << "\"load_term_count\":4,"
             << "\"query_input_boundary_typed\":true,"
+            << "\"selected_collision_output_required\":true,"
             << "\"native_cache_input_required\":true,"
             << "\"selected_world_position_pre_call_required\":true,"
             << "\"selected_bmw_fallback_pre_call_required\":true,"
