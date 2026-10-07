@@ -48,6 +48,7 @@ struct NativeVehicleExternalProviderBundle {
     // HDVehicle+0x4068 is derived from current BODY0 once before both passes by
     // native FUN_007594e0 machine-angle production. HDVehicle+0x4084/+0x408c
     // are session-owned persistent derived state refreshed after both passes.
+    // Selected BMW HDVehicle+0x4054 is setup-fixed and session-owned too.
     NativeVehicleMotionReadInputProvider motion_read_input{};
     NativeVehicleScalarProviderFactory scalar_provider_factory{};
     NativeVehicleHalfStepRefreshProvider half_step_refresh{};
@@ -101,6 +102,7 @@ public:
         RetailOuterSchedulerContract& scheduler);
 
     std::uint64_t step_count() const { return step_count_; }
+    float response_field_4054() const { return response_field_4054_; }
     const NativeVehicleProviderSessionTelemetry& last_telemetry() const {
         return last_telemetry_;
     }
@@ -111,6 +113,7 @@ public:
 
 private:
     NativeVehicleExternalProviderBundle providers_{};
+    float response_field_4054_ = 0.0f;
     physics::Fun007682c0DerivedProjectionState motion_read_projection_state_{};
     std::uint64_t step_count_ = 0u;
     NativeVehicleProviderSessionTelemetry last_telemetry_{};
