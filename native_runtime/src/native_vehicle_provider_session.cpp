@@ -99,7 +99,6 @@ NativeVehicleProviderSession::execute_explicit_step(
             "native vehicle provider session requires positive finite outer timestep");
     }
 
-    // Validate before reading BODY0 or invoking any provider side effects.
     runtime.outer_update.validate_runtime_boundary(
         runtime.physics.workspace.body_count,
         runtime.physics.workspace.ready,
@@ -110,15 +109,12 @@ NativeVehicleProviderSession::execute_explicit_step(
     const auto distance_setup_before = providers_.contact_outer_distance_setup;
     const auto filter_cap_setup_before = providers_.contact_outer_filter_cap_setup;
     const double distance_state_before = contact_outer_distance_state_;
+    const auto query_cache_before = fun_00765c40_query_cache_handle_;
     const double velocity_x_before =
         read_f64_le(outer_update_before.body_bytes, kBody0VelocityX);
     const double velocity_z_before =
         read_f64_le(outer_update_before.body_bytes, kBody0VelocityZ);
 
-    // PC FUN_00770e80 calls FUN_0076f970 before either FUN_0076d100 pass.
-    // FUN_0076f970 stores FUN_007594e0's f32 result to HDVehicle+0x4068 once,
-    // and both current passes consume that same steering value. Compute it from
-    // the current persistent BODY0 before any pass/provider side effects.
     const auto machine_angle = physics::execute_fun_007594e0_machine_angle(
         outer_update_before.body_bytes);
     const float steering = machine_angle.steering;
@@ -127,13 +123,16 @@ NativeVehicleProviderSession::execute_explicit_step(
     std::array<physics::Fun00765c40QueryInputBoundary, kNativeVehiclePhysicsPassCount>
         query_inputs{};
     std::array<bool, kNativeVehiclePhysicsPassCount> query_input_present{};
+    std::array<std::optional<std::uint64_t>, kNativeVehiclePhysicsPassCount>
+        returned_cache_handles{};
 
     physics::Fun0076d100MotionReadMachineInputProvider pass_provider =
         [this,
          &telemetry,
          steering,
          &query_inputs,
-         &query_input_present](std::size_t pass_index) {
+         &query_input_present,
+         &returned_cache_handles](std::size_t pass_index) {
             if (pass_index >= kNativeVehiclePhysicsPassCount) {
                 throw std::logic_error(
                     "native vehicle provider session pass index exceeds recovered two-pass contract");
@@ -169,28 +168,39 @@ NativeVehicleProviderSession::execute_explicit_step(
                  load_state,
                  world_position_state,
                  &query_inputs,
-                 &query_input_present] {
-                    ++telemetry.fun_00765c40_call_count;
-                    auto result = providers_.fun_00765c40(pass_index);
-                    // Phase739 internalizes only the selected BMW query
-                    // world-position producer. Historical generic fixtures do
-                    // not masquerade as the 11-BODY BMW domain and therefore
-                    // retain their explicit compatibility world position.
+                 &query_input_present,
+                 &returned_cache_handles] {
+                    physics::Fun00765c40ExternalPassInput external_input{};
+                    external_input.cached_handle = fun_00765c40_query_cache_handle_;
                     if (world_position_state->selected_bmw_domain) {
                         if (!world_position_state->ready) {
                             throw std::logic_error(
                                 "FUN_00765c40 selected BMW provider invoked before world-position ownership bridge");
                         }
-                        result.query_input.world_position =
+                        external_input.world_position =
                             world_position_state->world_position;
                     }
-                    // Load terms, cache handle, miss fallback, collision-provider
-                    // behavior and residual side effects remain on the external
-                    // FUN_00765c40 boundary.
-                    physics::validate_fun_00765c40_external_pass_result(result);
+
+                    ++telemetry.fun_00765c40_call_count;
+                    const auto result =
+                        providers_.fun_00765c40(pass_index, external_input);
+                    physics::validate_fun_00765c40_external_pass_result(
+                        external_input,
+                        result);
+
                     query_inputs[pass_index] = result.query_input;
                     query_input_present[pass_index] = true;
                     ++telemetry.fun_00765c40_query_input_capture_count;
+
+                    // Retail FUN_00765c40 writes FUN_007b0710's returned pointer
+                    // to HDVehicle+0x38dc immediately after the query. Commit it
+                    // before any later pass anchor so pass 1 sees pass 0's value.
+                    fun_00765c40_query_cache_handle_ =
+                        result.returned_cache_handle;
+                    returned_cache_handles[pass_index] =
+                        result.returned_cache_handle;
+                    ++telemetry.fun_00765c40_cache_commit_count;
+
                     load_state->terms = result.load_terms;
                     load_state->ready = true;
                 };
@@ -211,9 +221,6 @@ NativeVehicleProviderSession::execute_explicit_step(
                     ++telemetry.contact_outer_input_call_count;
                     const auto session_input = providers_.contact_outer_input(pass_index);
 
-                    // New production callers must provide the one-time +0x4080
-                    // seed explicitly. Historical fixtures converted from the
-                    // old complete input may seed it exactly once.
                     if (!providers_.contact_outer_distance_setup.ready) {
                         if (!session_input.compatibility_previous_distance_seed_present) {
                             throw std::logic_error(
@@ -228,11 +235,6 @@ NativeVehicleProviderSession::execute_explicit_step(
                             providers_.contact_outer_distance_setup.previous_distance_state;
                     }
 
-                    // PC retail reads this+0xa0 inside FUN_007675f0 rather than
-                    // accepting it from the per-pass caller. Keep its unknown
-                    // initializer explicit once, then reuse the same setup state
-                    // for both passes and later steps. Legacy fixtures may seed
-                    // their former per-pass field exactly once for compatibility.
                     if (!providers_.contact_outer_filter_cap_setup.ready) {
                         if (!session_input.compatibility_distance_filter_cap_seed_present) {
                             throw std::logic_error(
@@ -329,6 +331,7 @@ NativeVehicleProviderSession::execute_explicit_step(
         providers_.contact_outer_distance_setup = distance_setup_before;
         providers_.contact_outer_filter_cap_setup = filter_cap_setup_before;
         contact_outer_distance_state_ = distance_state_before;
+        fun_00765c40_query_cache_handle_ = query_cache_before;
         throw;
     }
 
@@ -349,6 +352,7 @@ NativeVehicleProviderSession::execute_explicit_step(
         providers_.contact_outer_distance_setup = distance_setup_before;
         providers_.contact_outer_filter_cap_setup = filter_cap_setup_before;
         contact_outer_distance_state_ = distance_state_before;
+        fun_00765c40_query_cache_handle_ = query_cache_before;
         throw;
     }
 
@@ -365,6 +369,7 @@ NativeVehicleProviderSession::execute_explicit_step(
     result.joined = std::move(joined);
     result.fun_00765c40_query_inputs = query_inputs;
     result.fun_00765c40_query_input_present = query_input_present;
+    result.fun_00765c40_returned_cache_handles = returned_cache_handles;
     result.session_step_count = step_count_;
     result.telemetry = last_telemetry_;
     return result;
@@ -376,9 +381,6 @@ NativeVehicleProviderSession::execute_ready_retail_inner_batch(
     RetailOuterSchedulerContract& scheduler) {
     require_complete_bundle(providers_);
 
-    // Both calls fail closed until the selected-session PhysicsTweaker rate has
-    // been admitted. No constructor/default rate or host 1/60 fallback exists
-    // on this path.
     const std::size_t recovered_substep_count =
         scheduler.ready_inner_substep_count();
     const double inner_substep_seconds = scheduler.inner_substep_seconds();
@@ -396,6 +398,7 @@ NativeVehicleProviderSession::execute_ready_retail_inner_batch(
     const auto distance_setup_before = providers_.contact_outer_distance_setup;
     const auto filter_cap_setup_before = providers_.contact_outer_filter_cap_setup;
     const double distance_state_before = contact_outer_distance_state_;
+    const auto query_cache_before = fun_00765c40_query_cache_handle_;
     const std::uint64_t step_count_before = step_count_;
     const NativeVehicleProviderSessionTelemetry telemetry_before = last_telemetry_;
 
@@ -412,6 +415,7 @@ NativeVehicleProviderSession::execute_ready_retail_inner_batch(
         providers_.contact_outer_distance_setup = distance_setup_before;
         providers_.contact_outer_filter_cap_setup = filter_cap_setup_before;
         contact_outer_distance_state_ = distance_state_before;
+        fun_00765c40_query_cache_handle_ = query_cache_before;
         step_count_ = step_count_before;
         last_telemetry_ = telemetry_before;
         throw;
@@ -429,9 +433,6 @@ NativeVehicleProviderSession::execute_retail_outer_dispatch(
     RetailOuterSchedulerContract& scheduler) {
     require_complete_bundle(providers_);
 
-    // This method represents one already-admitted retail outer-manager dispatch.
-    // It deliberately does not connect dispatch admission to a render frame or
-    // host 1/60 tick; the caller supplies the recovered retail scheduling event.
     const RetailOuterSchedulerContract scheduler_before_dispatch = scheduler;
     try {
         scheduler.admit_outer_dispatch();
