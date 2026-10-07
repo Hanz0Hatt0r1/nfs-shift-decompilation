@@ -1,0 +1,102 @@
+{
+  "format": "SHIFT.Fun007675f0SurfaceProbeJoin/1",
+  "version": 1,
+  "status": "source-backed-native-join",
+  "ready": true,
+  "pc_retail": {
+    "program": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "caller": "FUN_007675f0",
+    "caller_address": "0x007675f0",
+    "probe": "FUN_00759210",
+    "probe_address": "0x00759210",
+    "node_pointer_input": {
+      "instruction": "0x0076760c: mov edx,[ebx+0x8]",
+      "producer_proven": false,
+      "semantic_name_promoted": false
+    },
+    "body_query_position": {
+      "body_pointer_instruction": "0x00767612: mov eax,[esi+0x33a0]",
+      "body_owner": "HDVehicle+0x33a0 / selected chassis BODY0",
+      "source_offsets": ["BODY0+0x00", "BODY0+0x08", "BODY0+0x10"],
+      "source_storage": "f64",
+      "caller_spill_storage": "f32",
+      "spill_span": "0x00767618..0x00767636"
+    },
+    "probe_call": {
+      "query_point_register": "ecx",
+      "node_register": "edx",
+      "out_point_argument": "stack -> ebp-0xcc",
+      "out_scalar_argument": "stack -> ebp-0x7c",
+      "call_instruction": "0x00767643: call 0x00759210"
+    },
+    "delta_join": {
+      "helper": "0x004a7870",
+      "call_instruction": "0x00767658: call 0x004a7870",
+      "left": "FUN_00759210 returned point",
+      "right": "f32-spilled BODY0 query point",
+      "operation": "float32 lane-wise left - right",
+      "output": "planar_delta",
+      "xz_consumed_for_distance": true
+    },
+    "scalar_join": {
+      "probe_output": "ebp-0x7c",
+      "consumer_load_instruction": "0x0076793a: fld DWORD PTR [ebp-0x7c]",
+      "native_field": "surface_scalar",
+      "same_probe_call_as_planar_delta": true
+    },
+    "probe_contract_already_native": "SHIFT.NativeSurfaceProbe/1"
+  },
+  "xbox360_retail_crosscheck": {
+    "program": "default.xex",
+    "region": "Europe",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "extracted_pe_sha256": "23844dbba0cf72bc11512821b90008ea5d2b06ee886d921f416ca6caae43a628",
+    "caller_counterpart": "0x8259a9f0",
+    "probe_counterpart": "0x8258ffb8",
+    "body_f64_to_f32_span": "0x8259aa20..0x8259aa40",
+    "probe_call_instruction": "0x8259aa44: bl 0x8258ffb8",
+    "out_point_stack_offset": 152,
+    "out_scalar_stack_offset": 104,
+    "delta_xz_span": "0x8259aa48..0x8259aa64",
+    "scalar_consumer_instruction": "0x8259ac38: lfs 3,104(1)",
+    "node_offsets_match_pc_probe_contract": true,
+    "cross_platform_support_only": true,
+    "authoritative_for_pc_layout": false
+  },
+  "native_handoff": {
+    "production_session_payload": "ContactOuterSessionInput",
+    "production_surface_probe_node_field": "surface_probe_node",
+    "planar_delta_production_field_present": false,
+    "surface_scalar_production_field_present": false,
+    "body_query_position_owner": "current persistent BODY0 per recovered pass",
+    "body_query_position_function": "derive_fun_007675f0_body0_probe_query_position",
+    "probe_join_function": "execute_fun_007675f0_surface_probe_join",
+    "probe_resolution_function": "resolve_fun_007675f0_surface_probe_outputs",
+    "historical_derived_outputs_compatibility_only": true,
+    "node_pointer_producer_proven": false
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "contact_outer_production_field_count_before": 6,
+    "contact_outer_production_field_count_after": 5,
+    "derived_fields_internalized": ["planar_delta", "surface_scalar"],
+    "new_earlier_boundary": "surface_probe_node",
+    "remaining_production_fun_007675f0_fields": [
+      "surface_probe_node",
+      "base_scalar",
+      "projected_scalar",
+      "alignment_scalar",
+      "param_3"
+    ],
+    "node_semantics_invented": false,
+    "node_producer_invented": false,
+    "physical_units_promoted": false
+  },
+  "next_blocker": {
+    "preferred": "identify the source owner/producer and per-pass freshness of the node pointer supplied to FUN_007675f0/FUN_00759210",
+    "alternative": "prove ownership of base_scalar/projected_scalar/alignment_scalar/param_3 without semantic guessing"
+  }
+}
