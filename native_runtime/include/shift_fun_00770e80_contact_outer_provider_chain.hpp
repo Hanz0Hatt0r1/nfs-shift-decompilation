@@ -21,6 +21,10 @@ struct Fun0076d100ContactOuterProviderCallbacks {
     Fun0076d100AnchorCallback wheel_update{};
     Fun0076d100AnchorCallback contact_response{};
     Fun007675f0ContactOuterInputProvider contact_outer_input_provider{};
+    // Optional upper-layer observer of the exact persistent BODY bytes visible
+    // immediately before this pass's anchor sequence. Phase739 uses this to
+    // derive FUN_00765c40 world_position before contact_factor executes.
+    Fun0076d100CurrentBodyObserver current_body_observer{};
     // Optional internal ownership hook. NativeVehicleProviderSession uses this
     // to commit FUN_007675f0's filtered distance result back to its persistent
     // HDVehicle+0x4080 state. Historical lower-chain fixtures may omit it.
