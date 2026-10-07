@@ -203,15 +203,27 @@ ContactOuterExternalInput compose_fun_007675f0_external_input(
         throw std::invalid_argument(
             "FUN_007675f0 production input requires surface-probe node boundary");
     }
+    if (!session_input.fun_00759c90_records_present &&
+        !session_input.compatibility_projected_scalar_present) {
+        throw std::invalid_argument(
+            "FUN_007675f0 production input requires FUN_00759c90 record boundary");
+    }
 
     ContactOuterExternalInput external{};
     external.previous_distance_state = previous_distance_state;
     external.distance_filter_cap = distance_filter_cap;
-    external.projected_scalar = session_input.projected_scalar;
     external.surface_probe_node = session_input.surface_probe_node;
+    external.fun_00759c90_records = session_input.fun_00759c90_records;
+    external.fun_00759c90_records_present =
+        session_input.fun_00759c90_records_present;
+    external.compatibility_projected_scalar_present =
+        session_input.compatibility_projected_scalar_present;
     external.compatibility_body_owned_scalars_present =
         session_input.compatibility_body_owned_scalars_present;
 
+    if (session_input.compatibility_projected_scalar_present) {
+        external.projected_scalar = session_input.compatibility_projected_scalar;
+    }
     if (session_input.compatibility_body_owned_scalars_present) {
         external.base_scalar = session_input.compatibility_base_scalar;
         external.alignment_scalar = session_input.compatibility_alignment_scalar;
