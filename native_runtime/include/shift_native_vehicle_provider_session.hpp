@@ -33,8 +33,6 @@ using NativeVehicleContactFactorProvider =
     std::function<physics::Fun00765c40LoadTerms(std::size_t pass_index)>;
 using NativeVehicleContactOuterInputProvider =
     std::function<physics::ContactOuterKernelInput(std::size_t pass_index)>;
-using NativeVehicleMotionReadInputProvider =
-    std::function<physics::Fun007682c0ExternalMachineInput(std::size_t pass_index)>;
 using NativeVehicleScalarProviderFactory =
     std::function<physics::Fun007afdd0ScalarProvider(std::size_t pass_index)>;
 using NativeVehicleHalfStepRefreshProvider =
@@ -57,10 +55,11 @@ struct NativeVehicleExternalProviderBundle {
     // remains explicit until the selected settings producer is proven.
     physics::Fun007560c0MotionReadGateSetup motion_read_setup{};
 
-    // DAT_00c128cc is the only remaining exact late PC field consumed by
-    // FUN_00769ef0/FUN_007682c0. Gate, steering, four load terms, selected-BMW
-    // +0x4054 and +0x4084/+0x408c are absent because earlier owners are proven.
-    NativeVehicleMotionReadInputProvider motion_read_input{};
+    // No late raw FUN_007682c0 provider remains for the selected native session.
+    // DAT_00c128cc now comes from the already-bound native Player Difficulty
+    // policy through SHIFT.BMWNativeSessionPlayerDifficulty/1. Gate, steering,
+    // four load terms, selected-BMW +0x4054 and +0x4084/+0x408c likewise come
+    // from earlier proven owners.
     NativeVehicleScalarProviderFactory scalar_provider_factory{};
     NativeVehicleHalfStepRefreshProvider half_step_refresh{};
     physics::Fun007b8810PostHalfStepCallback post_half_step{};
@@ -71,7 +70,6 @@ struct NativeVehicleProviderSessionTelemetry {
     std::size_t wheel_update_call_count = 0u;
     std::size_t contact_response_call_count = 0u;
     std::size_t contact_outer_input_call_count = 0u;
-    std::size_t motion_read_input_call_count = 0u;
     std::size_t motion_read_native_effect_call_count = 0u;
     std::size_t motion_read_delta_application_call_count = 0u;
     std::size_t scalar_provider_factory_call_count = 0u;
