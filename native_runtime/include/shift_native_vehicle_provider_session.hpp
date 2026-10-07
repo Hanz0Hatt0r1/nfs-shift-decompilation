@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <functional>
 #include <optional>
+#include <utility>
 #include <vector>
 
 namespace shift::runtime {
@@ -39,10 +40,62 @@ using NativeVehicleFun00765c40Provider =
     std::function<physics::Fun00765c40ExternalPassResult(
         std::size_t pass_index,
         const physics::Fun00765c40ExternalPassInput& input)>;
-using NativeVehicleContactResponseProvider =
-    std::function<void(
+
+class NativeVehicleContactResponseProvider {
+public:
+    NativeVehicleContactResponseProvider() = default;
+
+    NativeVehicleContactResponseProvider(
+        std::function<void(
+            std::size_t,
+            const physics::Fun00766510ExternalPassInput&)> provider)
+        : typed_(std::move(provider)) {}
+
+    NativeVehicleContactResponseProvider(
+        std::function<void(std::size_t)> compatibility_provider)
+        : compatibility_(std::move(compatibility_provider)) {}
+
+    NativeVehicleContactResponseProvider& operator=(
+        std::function<void(
+            std::size_t,
+            const physics::Fun00766510ExternalPassInput&)> provider) {
+        typed_ = std::move(provider);
+        compatibility_ = {};
+        return *this;
+    }
+
+    NativeVehicleContactResponseProvider& operator=(
+        std::function<void(std::size_t)> compatibility_provider) {
+        compatibility_ = std::move(compatibility_provider);
+        typed_ = {};
+        return *this;
+    }
+
+    explicit operator bool() const {
+        return static_cast<bool>(typed_) || static_cast<bool>(compatibility_);
+    }
+
+    void operator()(
         std::size_t pass_index,
-        const physics::Fun00766510ExternalPassInput& input)>;
+        const physics::Fun00766510ExternalPassInput& input) const {
+        if (typed_) {
+            typed_(pass_index, input);
+            return;
+        }
+        if (compatibility_) {
+            compatibility_(pass_index);
+            return;
+        }
+        throw std::bad_function_call();
+    }
+
+private:
+    std::function<void(
+        std::size_t,
+        const physics::Fun00766510ExternalPassInput&)> typed_{};
+    std::function<void(std::size_t)> compatibility_{};
+};
+
 using NativeVehicleContactOuterInputProvider =
     std::function<physics::ContactOuterSessionInput(std::size_t pass_index)>;
 using NativeVehicleScalarProviderFactory =
@@ -69,9 +122,9 @@ struct NativeVehicleExternalProviderBundle {
     // FUN_00766510 remains one residual external pass boundary. Phase745 changes
     // only its pre-call ownership: selected BMW execution receives the exact
     // same-pass Phase744 query-scalar handoff plus the Phase743 +0x38f0 primary
-    // application point. Generic historical fixtures receive an empty typed
-    // compatibility input. The remainder of FUN_00766510 is still external, so
-    // the active top-level provider count remains seven.
+    // application point. One-argument providers remain accepted only as generic
+    // historical compatibility fixtures. The remainder of FUN_00766510 is still
+    // external, so the active top-level provider count remains seven.
     NativeVehicleContactResponseProvider contact_response{};
 
     // FUN_007675f0 arithmetic remains native. The per-pass provider supplies
