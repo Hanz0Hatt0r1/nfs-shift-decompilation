@@ -80,7 +80,7 @@
     "source_lines": {
       "register_loop_subobject": 705956,
       "execute_queue": 705963,
-      "queue_stores_task_pointer": 1372921,
+      "queue_stores_task_pointer": 1372909,
       "fiber_calls_virtual_slot_4": 1372416
     },
     "machine_spans": {
