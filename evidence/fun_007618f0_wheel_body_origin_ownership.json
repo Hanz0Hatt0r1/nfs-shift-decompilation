@@ -1,0 +1,51 @@
+{
+  "format": "SHIFT.Fun007618f0WheelBodyOriginOwnershipEvidence/1",
+  "phase": 737,
+  "status": "source-backed-wheel-body-origin-inputs-native-remaining-source-external",
+  "pc_authority": {
+    "program": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "producer": "FUN_007618f0",
+    "upstream_phase728_contract": "SHIFT.Fun007618f0LocalSampleProducer/1"
+  },
+  "ownership_join": {
+    "phase634_proof": "named component geometry proves FL wheel BODY field at HDVehicle+0x820 and FR wheel BODY field at HDVehicle+0x12a0",
+    "phase702_proof": "selected BMW M3 E36 wheel BODY indices are FL=3 and FR=4 in the exact 11-BODY retail domain",
+    "body_record_contract": "SHIFT.NativeBodyRecordAdapter/1",
+    "body_record_stride": "0x170",
+    "body_origin_offsets": ["0x00", "0x08", "0x10"],
+    "phase728_inputs_closed": {
+      "hdvehicle_pointer_vec_0820": "current persistent BODY[3] origin",
+      "hdvehicle_pointer_vec_12a0": "current persistent BODY[4] origin"
+    },
+    "remaining_phase728_inputs": [
+      "second FUN_007618f0 source argument f64 at +0x338",
+      "second FUN_007618f0 source argument inline f64 vec3 at +0x918"
+    ]
+  },
+  "runtime_timing": {
+    "current_body_buffer_is_persistent": true,
+    "phase729_current_body_observer_available_per_fun_0076d100_pass": true,
+    "pass1_observes_post_first_half_step_body_state": true,
+    "phase737_wired_into_fun_00765c40_production_anchor": false,
+    "reason_not_wired": "the second FUN_007618f0 source argument ownership remains external, so replacing the complete FUN_00765c40 world-position provider would be premature"
+  },
+  "native_handoff": {
+    "header": "native_runtime/include/shift_fun_007618f0_wheel_body_origin_ownership.hpp",
+    "composer": "compose_fun_007618f0_input_from_current_bmw_wheel_bodies",
+    "selected_body_count": 11,
+    "wheel_body_indices": [3, 4],
+    "external_wheel_origin_vectors_required": false,
+    "top_level_external_provider_count": 7
+  },
+  "limits": [
+    "Phase737 does not identify the owner of the second FUN_007618f0 source argument.",
+    "Phase737 does not wire FUN_007618f0 into the complete FUN_00765c40 production anchor yet.",
+    "No physical semantic name or unit is assigned to source+0x338 or source+0x918.",
+    "The FL/FR names and BODY indices come from existing source-backed Phase634/702 topology contracts, not offset plausibility."
+  ],
+  "next_blocker": {
+    "preferred": "trace the exact owner and refresh timing of the second FUN_007618f0 source argument carrying +0x338 and +0x918, then compose Phase728+727 from current per-pass BODY state into FUN_00765c40 query world_position",
+    "alternate": "recover the FUN_00769ef0 node-cache active/null gate before wiring the Phase733 cache lookup provider"
+  }
+}
