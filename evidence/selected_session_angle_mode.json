@@ -1,0 +1,70 @@
+{
+  "format": "SHIFT.SelectedSessionAngleMode/1",
+  "version": 1,
+  "status": "selected-native-session-angle-mode-bound",
+  "ready": true,
+  "platform_authority": "PC retail semantics + explicit native session policy",
+  "selected_session": {
+    "upstream_contract": "SHIFT.BMWOffset33bNativeSessionSelection/1",
+    "artifact": "evidence/bmw_offset33b_native_silverstone_session.json",
+    "session_target": "Silverstone+BMW_M3_E36",
+    "physics_mode": "normal",
+    "player_difficulty": 1,
+    "selector_source": "explicit-native-vertical-slice-policy",
+    "validated_against_retail_selector_domain": true,
+    "retail_live_session_selector_inferred": false
+  },
+  "retail_semantics": {
+    "profile_source": "profile/options+0x10f4",
+    "race_mode_field": "RaceModeInfo+0x6c",
+    "global_field": "DAT_00c128cc",
+    "event_chain": [
+      "FUN_00498b80",
+      "FUN_0070e1c0 event 0x20",
+      "FUN_00492520",
+      "FUN_00492250",
+      "FUN_0048dd90",
+      "FUN_00711210 case 0x20",
+      "FUN_00714560",
+      "FUN_00714ed0"
+    ],
+    "staging_copy": "manager+0x3b4 0x7c-byte RaceModeInfo -> DAT_00c12860",
+    "staging_copy_machine_span": {
+      "start": "0x00714f7e",
+      "end_exclusive": "0x00714f8c",
+      "raw_byte_sha256": "c95afe1b680a83e8f7433b123c8492e27d0f86afdeab8ec6d1a40bd8ef6e9e0d"
+    },
+    "selected_offset_mapping": "RaceModeInfo+0x6c -> DAT_00c128cc"
+  },
+  "fun_007682c0": {
+    "mode_compare_machine_span": {
+      "start": "0x00768379",
+      "end_exclusive": "0x00768394",
+      "raw_byte_sha256": "07b08ea3ea6f1db6cfa6012c097fcab3e88ddab1c68675b1151e87329f642c0b"
+    },
+    "comparison": "unsigned DAT_00c128cc > 1 selects the >=2 limit; 0 or 1 selects the <=1 limit",
+    "valid_retail_domain": [0, 1, 2],
+    "selected_native_value": 1,
+    "selected_branch": "DAT_00c128cc <= 1",
+    "selected_angle_limit_radians_f32": 0.69813174
+  },
+  "native_consumption": {
+    "header": "native_runtime/include/shift_selected_session_angle_mode.hpp",
+    "helper": "selected_session_fun_007682c0_angle_mode",
+    "late_external_field_removed": "Fun007682c0ExternalMachineInput.angle_mode",
+    "external_override_allowed": false,
+    "kernel_field_retained_for_direct_machine_tests": true
+  },
+  "scope": {
+    "retail_live_session_difficulty_observed": false,
+    "retail_default_difficulty_inferred": false,
+    "native_vertical_slice_policy_reused": true,
+    "retail_selector_domain_and_storage_semantics_proven": true,
+    "HDVehicle_0xe0_caller_gate_internalized": false,
+    "provider_count_reduced": false,
+    "active_external_provider_count": 8,
+    "xbox_360_recomp_substituted_for_pc_authority": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  }
+}
