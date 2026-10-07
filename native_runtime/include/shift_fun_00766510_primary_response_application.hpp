@@ -4,17 +4,23 @@
 #include "shift_constraint_sample_refresh.hpp"
 #include "shift_wheel_contact_response.hpp"
 
+#include <array>
 #include <cstddef>
 
 namespace shift::runtime::physics {
 
 inline constexpr const char* kFun00766510PrimaryResponseApplicationFormat =
-    "SHIFT.Fun00766510PrimaryResponseApplication/1";
+    "SHIFT.Fun00766510PrimaryResponseApplication/2";
 inline constexpr std::size_t kFun00766510BodyPointerOffset = 0x33a0u;
 inline constexpr std::size_t kFun00766510BodyBasisOffset = 0xd4u;
 inline constexpr std::size_t kFun00766510ApplicationPointOffset = 0x38f0u;
 inline constexpr std::size_t kFun00766510ResponseTableOffset = 0x3950u;
 inline constexpr std::size_t kFun00766510ResponseGainOutputOffset = 0x39d0u;
+inline constexpr std::array<std::size_t, 3> kFun00766510CallerAccumulatorOffsets = {
+    0x40a0u,
+    0x40a8u,
+    0x40b0u,
+};
 inline constexpr std::size_t kFun00766510SelectedBmwBodyIndex = 0u;
 
 struct Fun00766510PrimaryResponseApplicationInput {
@@ -28,6 +34,14 @@ struct Fun00766510PrimaryResponseApplicationResult {
     WheelContactVector3d response_vector{};
     WheelContactVector3d transformed_response{};
     BodyAccumulatorState body_accumulator{};
+
+    // Immediately after retail FUN_007baa70, FUN_00766510 calls FUN_00753650
+    // with the same application point and transformed response and accumulates
+    // that cross-product into HDVehicle+0x40a0/+0x40a8/+0x40b0. The native
+    // FUN_007baa70 primitive already computes the identical angular delta, so
+    // expose that exact caller-visible delta instead of recomputing a second
+    // independently owned value.
+    BodyAccumulatorVector3d caller_accumulator_delta{};
 };
 
 inline Fun00766510PrimaryResponseApplicationResult
@@ -44,6 +58,11 @@ execute_fun_00766510_primary_response_application(
         result.body_accumulator,
         input.application_point,
         result.transformed_response);
+    for (std::size_t component = 0u; component < 3u; ++component) {
+        result.caller_accumulator_delta[component] =
+            result.body_accumulator.angular[component] -
+            input.body_accumulator.angular[component];
+    }
     return result;
 }
 
