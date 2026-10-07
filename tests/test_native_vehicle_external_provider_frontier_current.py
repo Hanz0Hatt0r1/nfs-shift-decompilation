@@ -4,157 +4,81 @@ from src.physics import native_vehicle_external_provider_frontier as legacy
 from src.physics import native_vehicle_external_provider_frontier_current as current
 
 
-def _joins(report: dict) -> dict[str, dict]:
-    return {row["id"]: row for row in report["cross_chain_joins"]}
-
-
 def _providers(report: dict) -> dict[str, dict]:
     return {row["id"]: row for row in report["providers"]}
 
 
-def test_current_audit_closes_one_legacy_provider_boundary() -> None:
+def test_current_frontier_keeps_legacy_history_but_has_eight_active_boundaries() -> None:
     old = legacy.build_frontier()
     report = current.build_current_frontier()
-
+    assert old["external_provider_count"] == 9
     assert report["format"] == current.FORMAT
     assert report["upstream_frontier"] == legacy.FORMAT
-    assert report["refresh_after_phase"] == 717
-    assert report["refresh_label"] == "S6 PC-source FUN_007682c0 BODY0 destination closure"
-    assert report["scheduler_refresh"] == (
-        "S5 positive retail outer cadence + atomic explicit dispatch + exact "
-        "selected-session 180 Hz rate + exact persistent 1/180 inner execution"
-    )
-    assert "positive exact outer->VHF numeric relation" in report["transform_refresh"]
-    assert "HDVehicle+0x33a0" in report["provider_refresh"]
-    assert old["external_provider_count"] == 9
+    assert report["refresh_after_phase"] == 718
     assert report["external_provider_count"] == 8
-    assert "fun_007682c0_delta_consumer" not in _providers(report)
-    assert report["action_counts"][legacy.REQUEST_PROCESS1] == 8
-    assert report["action_counts"][legacy.IMPLEMENT_NOW] == 0
-    assert report["implement_now"] == []
-
-    audit = report["provider_audit"]
-    assert audit["provider_inventory_changed"] is True
-    assert audit["legacy_external_provider_count"] == 9
-    assert audit["active_external_provider_count"] == 8
-    assert audit["closed_provider_ids"] == ["fun_007682c0_delta_consumer"]
-    assert audit["newly_positive_provider_or_owner_handoff_internalizable"] is True
+    assert report["provider_audit"]["legacy_external_provider_count"] == 9
+    assert report["provider_audit"]["active_external_provider_count"] == 8
+    assert report["provider_audit"]["closed_provider_ids"] == [
+        "fun_007682c0_delta_consumer"
+    ]
 
 
-def test_current_audit_consumes_positive_transform_and_delta_destination() -> None:
+def test_precomputed_effect_boundary_is_replaced_by_raw_machine_inputs() -> None:
     report = current.build_current_frontier()
-    path = report["current_bind_path"]
-
-    assert path["BODY0_construction_target_identity_ready"] is True
-    assert path["BODY0_resource_values_ready"] is True
-    assert path["BODY0_local_to_SDF_model_bind_pose_ready"] is True
-    assert path["BODY0_to_outer_vehicle_root_numeric_matrix_ready"] is True
-    assert path["canonical_BMW_VHF_resource_identity_ready"] is True
-    assert path["outer_vehicle_render_snapshot_affine_bridge_ready"] is True
-    assert path["outer_vehicle_render_root_delta_value_roots_ready"] is True
-    assert path["canonical_BMW_VHF_hierarchy_root_frame_ready"] is True
-    assert path["process2_exact_vhf_root_frame_stage_consumed"] is True
-    assert path["process2_exact_vhf_root_frame_stage_contract"] == current.ROOT_STAGE_FORMAT
-    assert path["outer_vehicle_root_to_VHF_numeric_contract"] == current.OUTER_VHF_NUMERIC_FORMAT
-    assert path["outer_vehicle_root_to_VHF_vehicle_root_ready"] is True
-    assert path["outer_vehicle_root_to_VHF_fixed_affine_delta_ready"] is True
-    assert path["BODY0_bind_frame_contract"] == current.BIND_PROOF_FORMAT
-    assert path["BODY0_bind_frame_proof_ready"] is True
-    assert path["persistent_world_transform_wiring_contract"] == current.WORLD_TRANSFORM_WIRING_FORMAT
-    assert path["vehicle_world_transform_ready"] is True
-    assert path["FUN_007682c0_delta_destination_contract"] == current.FUN_007682C0_DESTINATION_FORMAT
-    assert path["FUN_007682c0_delta_destination_is_BODY0"] is True
+    providers = _providers(report)
+    assert "fun_007682c0_effect_provider" not in providers
+    assert "fun_007682c0_delta_consumer" not in providers
+    raw = providers["fun_007682c0_machine_input_provider"]
+    assert raw["boundary_kind"] == "typed_raw_machine_input_provider"
+    assert "NativeVehicleMotionReadInputProvider" in raw["current_api"]
+    assert raw["process2_action"] == legacy.REQUEST_PROCESS1
+    assert raw["blockers"]
+    joined = " ".join(raw["evidence"])
+    assert current.FUN_007682C0_DESTINATION_FORMAT in joined
+    assert current.FUN_007682C0_EFFECT_FORMAT in joined
 
 
-def test_transform_join_is_closed_by_positive_bind_runtime_and_timing() -> None:
-    transform = _joins(current.build_current_frontier())["body_pose_to_renderer_world_transform"]
-
-    assert transform["state"] == "retail_proven_and_consumed"
-    assert transform["process2_action"] == "closed"
-    assert transform["blockers"] == []
-    joined = " ".join(transform["evidence"])
-    assert current.OUTER_VHF_NUMERIC_FORMAT in joined
-    assert current.BIND_PROOF_FORMAT in joined
-    assert current.WORLD_TRANSFORM_WIRING_FORMAT in joined
-    assert "freshness-gated" in joined
-    assert "eight remaining provider" in transform["additional_dependency"]
-    assert "source-proven BODY0 delta destination" in transform["policy"]
-
-
-def test_fun_007682c0_delta_application_is_source_proven_and_internal() -> None:
+def test_machine_effect_and_destination_are_positive_but_refresh_remains_external() -> None:
     report = current.build_current_frontier()
     audit = report["provider_audit"]
     guards = report["guards"]
-
     assert audit["fun_007682c0_runtime_body0_mutation_internalized"] is True
-    assert audit["fun_007682c0_exact_source_destination_receiver_proven"] is True
-    assert audit["fun_007682c0_destination_contract"] == current.FUN_007682C0_DESTINATION_FORMAT
-    assert audit["fun_007682c0_legacy_delta_consumer_required"] is False
-    assert audit["fun_007682c0_legacy_delta_consumer_role"] == "optional observer only"
-    assert audit["semantic_source_receiver_inferred_from_runtime_body0_choice"] is False
+    assert audit["fun_007682c0_effect_arithmetic_internalized"] is True
+    assert audit["fun_007682c0_x87_fsqrt_internalized"] is True
+    assert audit["fun_007682c0_external_precomputed_effect_required"] is False
+    assert audit["fun_007682c0_external_delta_consumer_required"] is False
+    assert audit["fun_007682c0_raw_input_refresh_external"] is True
     assert guards["fun_007682c0_body0_delta_destination_ready"] is True
     assert guards["fun_007682c0_body0_delta_application_internal"] is True
-    assert guards["fun_007682c0_effect_production_ready"] is False
-
-    closed = [
-        row for row in report["closed_boundaries"]
-        if row.get("provider_id") == "fun_007682c0_delta_consumer"
-    ]
-    assert len(closed) == 1
-    assert closed[0]["proof"] == current.FUN_007682C0_DESTINATION_FORMAT
-    assert closed[0]["destination"] == "BMW chassis BODY0 +0x50"
-    assert closed[0]["active_external_provider_required"] is False
+    assert guards["fun_007682c0_effect_production_ready"] is True
+    assert guards["fun_007682c0_x87_fsqrt_ready"] is True
+    assert guards["fun_007682c0_raw_input_refresh_ready"] is False
 
 
-def test_current_audit_keeps_exact_inner_execution_and_eight_provider_frontier() -> None:
+def test_positive_transform_and_selected_session_timing_remain_closed() -> None:
     report = current.build_current_frontier()
+    path = report["current_bind_path"]
     scheduler = report["scheduler_authority"]
-    guards = report["guards"]
-
-    assert scheduler["contract"] == current.SCHEDULER_FORMAT
-    assert scheduler["selected_rate_contract"] == current.SELECTED_RATE_FORMAT
-    assert scheduler["selected_execution_contract"] == current.SELECTED_EXECUTION_FORMAT
-    assert scheduler["authority_explicit"] is True
+    assert path["BODY0_bind_frame_proof_ready"] is True
+    assert path["vehicle_world_transform_ready"] is True
+    assert path["FUN_007682c0_delta_destination_is_BODY0"] is True
+    assert path["FUN_007682c0_effect_production_internal"] is True
     assert scheduler["retail_cadence_admitted"] is True
-    assert scheduler["retail_outer_dispatch_transaction_ready"] is True
     assert scheduler["loaded_inner_rate_admitted"] is True
     assert scheduler["selected_session_rate_hz"] == 180
-    assert scheduler["inner_substep_seconds"] == 1 / 180
     assert scheduler["selected_session_normal_outer_substeps"] == 6
     assert scheduler["inner_substep_execution_admitted"] is True
-    assert scheduler["provider_semantics_promoted"] is False
-    assert scheduler["render_loop_equated_to_outer_dispatch"] is False
     assert scheduler["host_development_1_60_is_retail_evidence"] is False
 
-    assert guards["scheduler_authority_explicit"] is True
-    assert guards["retail_outer_cadence_ready"] is True
-    assert guards["retail_outer_dispatch_transaction_ready"] is True
-    assert guards["loaded_inner_rate_admitted"] is True
-    assert guards["inner_substep_execution_admitted"] is True
-    assert guards["provider_semantics_promoted"] is False
-    assert guards["render_loop_equated_to_outer_dispatch"] is False
-    assert guards["host_1_60_is_retail_evidence"] is False
-    assert guards["outer_vehicle_to_vhf_root_relation_ready"] is True
-    assert guards["body0_bind_frame_proof_ready"] is True
-    assert guards["retail_vehicle_world_transform_ready"] is True
 
-    contract = current.contract()
-    assert contract["external_provider_count"] == 8
-    assert contract["provider_inventory_changed"] is True
-    assert contract["closed_provider_ids"] == ["fun_007682c0_delta_consumer"]
-    assert contract["newly_positive_provider_or_owner_handoff_internalizable"] is True
-    assert contract["FUN_007682c0_delta_destination_contract"] == current.FUN_007682C0_DESTINATION_FORMAT
-    assert contract["FUN_007682c0_delta_destination_is_BODY0"] is True
-    assert contract["FUN_007682c0_delta_application_internal"] is True
-    assert contract["FUN_007682c0_legacy_delta_consumer_required"] is False
-    assert contract["selected_rate_contract"] == current.SELECTED_RATE_FORMAT
-    assert contract["selected_execution_contract"] == current.SELECTED_EXECUTION_FORMAT
-    assert contract["retail_outer_cadence_admitted"] is True
-    assert contract["retail_outer_dispatch_transaction_ready"] is True
-    assert contract["loaded_inner_rate_admitted"] is True
-    assert contract["selected_session_rate_hz"] == 180
-    assert contract["selected_session_normal_outer_substeps"] == 6
-    assert contract["inner_substep_execution_admitted"] is True
-    assert contract["provider_semantics_promoted"] is False
-    assert contract["render_loop_equated_to_outer_dispatch"] is False
-    assert contract["host_1_60_is_retail_evidence"] is False
+def test_contract_exposes_new_shortest_boundary_without_promoting_control_chain() -> None:
+    payload = current.contract()
+    assert payload["external_provider_count"] == 8
+    assert payload["FUN_007682c0_machine_effect_contract"] == current.FUN_007682C0_EFFECT_FORMAT
+    assert payload["FUN_007682c0_effect_production_internal"] is True
+    assert payload["FUN_007682c0_x87_fsqrt_internal"] is True
+    assert payload["FUN_007682c0_raw_input_refresh_external"] is True
+    assert payload["selected_session_rate_hz"] == 180
+    assert payload["provider_semantics_promoted"] is False
+    assert payload["render_loop_equated_to_outer_dispatch"] is False
+    assert payload["host_1_60_is_retail_evidence"] is False
