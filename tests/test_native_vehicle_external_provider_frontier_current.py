@@ -14,7 +14,7 @@ def test_current_frontier_keeps_legacy_history_but_has_seven_active_boundaries()
     assert old["external_provider_count"] == 9
     assert report["format"] == current.FORMAT
     assert report["upstream_frontier"] == legacy.FORMAT
-    assert report["refresh_after_phase"] == 726
+    assert report["refresh_after_phase"] == 742
     assert report["external_provider_count"] == 7
     assert report["provider_audit"]["legacy_external_provider_count"] == 9
     assert report["provider_audit"]["active_external_provider_count"] == 7
@@ -24,30 +24,37 @@ def test_current_frontier_keeps_legacy_history_but_has_seven_active_boundaries()
     ]
     assert report["provider_audit"]["narrowed_provider_ids"] == {
         "fun_00765c40_complete_anchor": (
-            "exact external FUN_00765c40 pass result now exposes source-backed query input; "
-            "world-position producer/collision provider remain external"
+            "selected BMW query world position/cache/fallback and typed collision output are now "
+            "source-owned or exposed; collision-provider execution and residual pass side effects remain external"
         )
     }
 
 
-def test_fun_00765c40_remains_external_but_exposes_exact_query_input() -> None:
+def test_fun_00765c40_remains_external_but_selected_query_io_is_narrowed() -> None:
     report = current.build_current_frontier()
     provider = _providers(report)["fun_00765c40_complete_anchor"]
     assert provider["process2_action"] == legacy.REQUEST_PROCESS1
     assert provider["boundary_kind"] == (
-        "typed_external_pass_result_with_query_input_complete_anchor_external"
+        "typed_external_pass_result_with_selected_collision_output_complete_anchor_external"
     )
     assert "NativeVehicleFun00765c40Provider" in provider["current_api"]
+    assert "Fun00765c40ExternalPassInput/2" in provider["current_api"]
     assert "Fun00765c40ExternalPassResult" in provider["current_api"]
     assert "Fun00765c40LoadTerms" in provider["current_api"]
     assert "Fun00765c40QueryInputBoundary" in provider["current_api"]
+    assert "CollisionQueryOutput" in provider["current_api"]
     assert "NativeVehicleContactFactorProvider" not in provider["current_api"]
     joined = " ".join(provider["evidence"])
     assert current.FUN_00765C40_LOAD_TERMS_FORMAT in joined
     assert current.FUN_00765C40_EXTERNAL_PASS_RESULT_HISTORY_FORMAT in joined
     assert current.FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT in joined
     assert current.FUN_00765C40_QUERY_INPUT_FORMAT in joined
-    assert "Phase 726" in joined
+    assert current.FUN_00765C40_SELECTED_WORLD_POSITION_FORMAT in joined
+    assert current.FUN_00765C40_QUERY_CACHE_LIFETIME_FORMAT in joined
+    assert current.FUN_00765C40_SELECTED_FALLBACK_FORMAT in joined
+    assert current.FUN_00765C40_COLLISION_OUTPUT_HANDOFF_FORMAT in joined
+    assert current.FUN_00766510_QUERY_SCALAR_HANDOFF_FORMAT in joined
+    assert "Phase 742" not in joined or "CollisionQueryOutput" in joined
     assert provider["blockers"]
 
     audit = report["provider_audit"]
@@ -57,17 +64,28 @@ def test_fun_00765c40_remains_external_but_exposes_exact_query_input() -> None:
     assert audit["fun_00765c40_query_record_materialization_native"] is True
     assert audit["fun_00765c40_query_input_capture_count_per_explicit_step"] == 2
     assert audit["fun_00765c40_complete_anchor_external"] is True
-    assert audit["fun_00765c40_world_position_producer_internalized"] is False
+    assert audit["fun_00765c40_world_position_producer_internalized"] is True
     assert audit["fun_00765c40_world_position_coordinate_provenance_inferred"] is False
     assert audit["fun_00765c40_renderer_transform_reused_as_query_transform"] is False
+    assert audit["fun_00765c40_query_cache_state_internalized"] is True
+    assert audit["fun_00765c40_selected_fallback_internalized"] is True
+    assert audit["fun_00765c40_selected_collision_output_required"] is True
+    assert audit["fun_00765c40_collision_output_typed"] is True
     assert audit["fun_00765c40_collision_provider_internalized"] is False
+    assert audit["fun_00766510_query_scalar_handoff_native"] is True
+    assert audit["fun_00766510_query_scalar_handoff_session_wired"] is False
     assert guards["fun_00765c40_external_pass_result_ready"] is True
     assert guards["fun_00765c40_query_input_ready"] is True
     assert guards["fun_00765c40_query_input_capture_ready"] is True
     assert guards["fun_00765c40_query_record_materialization_native"] is True
-    assert guards["fun_00765c40_world_position_producer_ready"] is False
+    assert guards["fun_00765c40_world_position_producer_ready"] is True
+    assert guards["fun_00765c40_query_cache_state_ready"] is True
+    assert guards["fun_00765c40_selected_fallback_ready"] is True
+    assert guards["fun_00765c40_selected_collision_output_ready"] is True
     assert guards["fun_00765c40_collision_provider_ready"] is False
     assert guards["fun_00765c40_renderer_transform_is_query_producer"] is False
+    assert guards["fun_00766510_query_scalar_handoff_ready"] is True
+    assert guards["fun_00766510_query_scalar_handoff_session_wired"] is False
 
 
 def test_fun_007682c0_external_provider_is_fully_closed_for_selected_session() -> None:
@@ -137,10 +155,27 @@ def test_renderer_transform_stays_closed_and_separate_from_wheel_query_producer(
     assert path["FUN_00765c40_external_pass_result_contract"] == (
         current.FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT
     )
+    assert path["FUN_00765c40_external_pass_input_contract"] == (
+        current.FUN_00765C40_EXTERNAL_PASS_INPUT_FORMAT
+    )
     assert path["FUN_00765c40_query_input_contract"] == current.FUN_00765C40_QUERY_INPUT_FORMAT
     assert path["FUN_00765c40_query_input_capture_ready"] is True
     assert path["FUN_00765c40_query_record_materialization_native"] is True
-    assert path["FUN_00765c40_world_position_producer_internal"] is False
+    assert path["FUN_00765c40_selected_world_position_contract"] == (
+        current.FUN_00765C40_SELECTED_WORLD_POSITION_FORMAT
+    )
+    assert path["FUN_00765c40_world_position_producer_internal"] is True
+    assert path["FUN_00765c40_query_cache_state_internal"] is True
+    assert path["FUN_00765c40_selected_fallback_internal"] is True
+    assert path["FUN_00765c40_collision_output_handoff_contract"] == (
+        current.FUN_00765C40_COLLISION_OUTPUT_HANDOFF_FORMAT
+    )
+    assert path["FUN_00765c40_selected_collision_output_required"] is True
+    assert path["FUN_00766510_query_scalar_handoff_contract"] == (
+        current.FUN_00766510_QUERY_SCALAR_HANDOFF_FORMAT
+    )
+    assert path["FUN_00766510_query_scalar_handoff_native"] is True
+    assert path["FUN_00766510_query_scalar_handoff_session_wired"] is False
     assert path["FUN_00765c40_collision_provider_internal"] is False
     assert path["FUN_00765c40_renderer_transform_used_as_query_producer"] is False
     assert path["FUN_00765c40_session_boundary_exact"] is True
@@ -156,7 +191,7 @@ def test_renderer_transform_stays_closed_and_separate_from_wheel_query_producer(
     assert scheduler["host_development_1_60_is_retail_evidence"] is False
 
 
-def test_contract_exposes_query_input_narrowing_and_no_fun_007682c0_raw_fields() -> None:
+def test_contract_exposes_collision_output_narrowing_and_no_fun_007682c0_raw_fields() -> None:
     payload = current.contract()
     assert payload["external_provider_count"] == 7
     assert payload["closed_provider_ids"] == [
@@ -165,8 +200,8 @@ def test_contract_exposes_query_input_narrowing_and_no_fun_007682c0_raw_fields()
     ]
     assert payload["narrowed_provider_ids"] == {
         "fun_00765c40_complete_anchor": (
-            "exact external FUN_00765c40 pass result now exposes source-backed query input; "
-            "world-position producer/collision provider remain external"
+            "selected BMW query world position/cache/fallback and typed collision output are now "
+            "source-owned or exposed; collision-provider execution and residual pass side effects remain external"
         )
     }
     assert payload["FUN_00765c40_external_pass_result_history_contract"] == (
@@ -175,7 +210,16 @@ def test_contract_exposes_query_input_narrowing_and_no_fun_007682c0_raw_fields()
     assert payload["FUN_00765c40_external_pass_result_contract"] == (
         current.FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT
     )
+    assert payload["FUN_00765c40_external_pass_input_contract"] == (
+        current.FUN_00765C40_EXTERNAL_PASS_INPUT_FORMAT
+    )
     assert payload["FUN_00765c40_query_input_contract"] == current.FUN_00765C40_QUERY_INPUT_FORMAT
+    assert payload["FUN_00765c40_collision_output_handoff_contract"] == (
+        current.FUN_00765C40_COLLISION_OUTPUT_HANDOFF_FORMAT
+    )
+    assert payload["FUN_00766510_query_scalar_handoff_contract"] == (
+        current.FUN_00766510_QUERY_SCALAR_HANDOFF_FORMAT
+    )
     assert payload["FUN_00765c40_external_pass_result_ready"] is True
     assert payload["FUN_00765c40_query_input_ready"] is True
     assert payload["FUN_00765c40_query_input_capture_ready"] is True
@@ -183,10 +227,15 @@ def test_contract_exposes_query_input_narrowing_and_no_fun_007682c0_raw_fields()
     assert payload["FUN_00765c40_query_input_capture_count_per_explicit_step"] == 2
     assert payload["FUN_00765c40_session_contact_factor_alias_removed"] is True
     assert payload["FUN_00765c40_complete_anchor_external"] is True
-    assert payload["FUN_00765c40_world_position_producer_internal"] is False
+    assert payload["FUN_00765c40_world_position_producer_internal"] is True
     assert payload["FUN_00765c40_world_position_coordinate_provenance_inferred"] is False
     assert payload["FUN_00765c40_renderer_transform_reused_as_query_transform"] is False
+    assert payload["FUN_00765c40_query_cache_state_internal"] is True
+    assert payload["FUN_00765c40_selected_fallback_internal"] is True
+    assert payload["FUN_00765c40_selected_collision_output_required"] is True
     assert payload["FUN_00765c40_collision_provider_internal"] is False
+    assert payload["FUN_00766510_query_scalar_handoff_native"] is True
+    assert payload["FUN_00766510_query_scalar_handoff_session_wired"] is False
     assert payload["BMW_native_player_difficulty_contract"] == current.BMW_NATIVE_DIFFICULTY_FORMAT
     assert payload["DAT_00c128cc_selected_session_internal"] is True
     assert payload["selected_player_difficulty"] == 1
