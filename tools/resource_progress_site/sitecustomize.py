@@ -265,8 +265,8 @@ class _ProgressEntries:
 
     def __iter__(self):
         for index, entry in enumerate(self._entries, 1):
-            self._tracker.entry(self._token, index)
             yield entry
+            self._tracker.entry(self._token, index)
 
 
 def _progress_bff_type(original_bff: type, tracker: _ProgressTracker) -> type:
