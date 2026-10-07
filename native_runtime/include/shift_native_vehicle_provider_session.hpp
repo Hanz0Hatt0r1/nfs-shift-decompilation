@@ -4,6 +4,7 @@
 #include "shift_fun_00765c40_load_terms.hpp"
 #include "shift_fun_007682c0_projection_state.hpp"
 #include "shift_fun_00770e80_motion_read_machine_input_provider_chain.hpp"
+#include "shift_race_mode_player_difficulty.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -33,8 +34,6 @@ using NativeVehicleContactFactorProvider =
     std::function<physics::Fun00765c40LoadTerms(std::size_t pass_index)>;
 using NativeVehicleContactOuterInputProvider =
     std::function<physics::ContactOuterKernelInput(std::size_t pass_index)>;
-using NativeVehicleMotionReadInputProvider =
-    std::function<physics::Fun007682c0ExternalMachineInput(std::size_t pass_index)>;
 using NativeVehicleScalarProviderFactory =
     std::function<physics::Fun007afdd0ScalarProvider(std::size_t pass_index)>;
 using NativeVehicleHalfStepRefreshProvider =
@@ -53,14 +52,13 @@ struct NativeVehicleExternalProviderBundle {
     NativeVehicleContactOuterInputProvider contact_outer_input{};
 
     // FUN_007560c0 writes HDVehicle+0xe0 during vehicle setup. This is immutable
-    // session setup state, not a per-pass provider boundary. Its upstream value
-    // remains explicit until the selected settings producer is proven.
+    // session setup state, not a per-pass provider boundary.
     physics::Fun007560c0MotionReadGateSetup motion_read_setup{};
 
-    // DAT_00c128cc is the only remaining exact late PC field consumed by
-    // FUN_00769ef0/FUN_007682c0. Gate, steering, four load terms, selected-BMW
-    // +0x4054 and +0x4084/+0x408c are absent because earlier owners are proven.
-    NativeVehicleMotionReadInputProvider motion_read_input{};
+    // RaceModeInfo+0x6c is published to DAT_00c128cc by FUN_00714ed0. It is
+    // explicit session selector state and therefore also not a per-pass provider.
+    physics::RaceModePlayerDifficulty race_mode{};
+
     NativeVehicleScalarProviderFactory scalar_provider_factory{};
     NativeVehicleHalfStepRefreshProvider half_step_refresh{};
     physics::Fun007b8810PostHalfStepCallback post_half_step{};
@@ -71,7 +69,6 @@ struct NativeVehicleProviderSessionTelemetry {
     std::size_t wheel_update_call_count = 0u;
     std::size_t contact_response_call_count = 0u;
     std::size_t contact_outer_input_call_count = 0u;
-    std::size_t motion_read_input_call_count = 0u;
     std::size_t motion_read_native_effect_call_count = 0u;
     std::size_t motion_read_delta_application_call_count = 0u;
     std::size_t scalar_provider_factory_call_count = 0u;
