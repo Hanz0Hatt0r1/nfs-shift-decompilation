@@ -38,7 +38,7 @@ def test_phase726_evidence_reuses_only_proven_query_boundary() -> None:
     assert native["miss_scalar"] == "miss_fallback"
 
 
-def test_phase726_keeps_producer_and_collision_provider_external() -> None:
+def test_phase726_historical_scope_remains_immutable() -> None:
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     scope = payload["scope"]
     assert scope["world_position_producer_internalized"] is False
@@ -53,7 +53,7 @@ def test_phase726_keeps_producer_and_collision_provider_external() -> None:
     assert scope["boundary_narrowed"] is True
 
 
-def test_active_cpp_contract_captures_query_inputs_for_both_passes() -> None:
+def test_active_cpp_contract_feeds_owned_query_state_before_residual_pass() -> None:
     query_header = QUERY_HEADER.read_text(encoding="utf-8")
     result_header = RESULT_HEADER.read_text(encoding="utf-8")
     session_header = SESSION_HEADER.read_text(encoding="utf-8")
@@ -67,24 +67,30 @@ def test_active_cpp_contract_captures_query_inputs_for_both_passes() -> None:
     assert "input.world_position[1]" in query_header
     assert "input.miss_fallback" in query_header
 
-    assert "SHIFT.Fun00765c40ExternalPassResult/2" in result_header
+    assert "SHIFT.Fun00765c40ExternalPassResult/3" in result_header
+    assert "SHIFT.Fun00765c40ExternalPassInput/1" in result_header
     assert "Fun00765c40QueryInputBoundary query_input" in result_header
+    assert "returned_cache_handle" in result_header
 
     assert "kNativeVehiclePhysicsPassCount = 2u" in session_header
     assert "fun_00765c40_query_input_capture_count" in session_header
+    assert "fun_00765c40_cache_commit_count" in session_header
     assert "fun_00765c40_query_inputs" in session_header
-    assert "fun_00765c40_query_input_present" in session_header
+    assert "fun_00765c40_returned_cache_handles" in session_header
+    assert "fun_00765c40_query_cache_handle_" in session_header
 
-    provider_call = session_source.index("providers_.fun_00765c40(pass_index)")
+    request = session_source.index("external_input.cached_handle =")
+    provider_call = session_source.index("providers_.fun_00765c40(pass_index, external_input)")
     validation = session_source.index("validate_fun_00765c40_external_pass_result")
     snapshot = session_source.index("query_inputs[pass_index] = result.query_input")
-    present = session_source.index("query_input_present[pass_index] = true")
+    cache_commit = session_source.index("fun_00765c40_query_cache_handle_ =")
     load_terms = session_source.index("load_state->terms = result.load_terms")
-    assert provider_call < validation < snapshot < present < load_terms
+    assert request < provider_call < validation < snapshot < cache_commit < load_terms
 
 
-def test_phase726_active_session_does_not_consume_renderer_transform_as_query_producer() -> None:
+def test_active_session_does_not_consume_renderer_transform_as_query_producer() -> None:
     session_source = SESSION_SOURCE.read_text(encoding="utf-8")
     assert "vehicle_world_transform" not in session_source
     assert "VHF" not in session_source
     assert "BODY0/VHF" not in session_source
+    assert "execute_fun_00765c40_selected_bmw_world_position" in session_source

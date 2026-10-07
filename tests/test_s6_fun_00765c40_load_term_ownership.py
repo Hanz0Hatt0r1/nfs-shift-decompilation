@@ -99,7 +99,7 @@ def test_active_session_names_exact_fun_00765c40_boundary() -> None:
     assert "NativeVehicleContactFactorProvider" not in session_header
     assert "NativeVehicleMotionReadInputProvider" not in session_header
     assert "Fun00765c40PassLoadState" in session_source
-    provider_call = session_source.index("providers_.fun_00765c40(pass_index)")
+    provider_call = session_source.index("providers_.fun_00765c40(pass_index, external_input)")
     validate_call = session_source.index("validate_fun_00765c40_external_pass_result")
     load_store = session_source.index("load_state->terms = result.load_terms")
     ready_store = session_source.index("load_state->ready = true")
@@ -115,7 +115,6 @@ def test_phase722_historical_scope_remains_immutable() -> None:
     handoff = payload["native_handoff"]
     limits = payload["limits"]
 
-    # These are historical Phase 722 facts and intentionally keep the old API name.
     assert handoff["owner_boundary"] == "NativeVehicleExternalProviderBundle.contact_factor"
     assert handoff["new_provider_type"] == "NativeVehicleContactFactorProvider"
     assert handoff["payload_type"] == "Fun00765c40LoadTerms"

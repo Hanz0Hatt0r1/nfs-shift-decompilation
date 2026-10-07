@@ -20,3 +20,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00765c40_selected_bmw_world_position
     COMMAND shift_runtime_fun_00765c40_selected_bmw_world_position_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase740.cmake)

@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -28,7 +29,6 @@ Fun00765c40QueryInputBoundary make_query_input(std::size_t pass) {
         10.0 + static_cast<double>(pass),
         20.0 + static_cast<double>(pass),
         30.0 + static_cast<double>(pass)};
-    input.cached_handle = 1000u + static_cast<std::uint64_t>(pass);
     input.miss_fallback = 7.0 + static_cast<double>(pass);
     return input;
 }
@@ -43,12 +43,19 @@ NativeVehicleExternalProviderBundle make_bundle(
     const Fun00763570MachineInput& machine_input,
     double expected_half_timestep) {
     NativeVehicleExternalProviderBundle bundle{};
-    bundle.fun_00765c40 = [&events](std::size_t pass) {
-        events.push_back("fun-00765c40:" + std::to_string(pass));
-        return Fun00765c40ExternalPassResult{
-            Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0},
-            make_query_input(pass)};
-    };
+    bundle.fun_00765c40 =
+        [&events, next_handle = std::uint64_t{1000u}](
+            std::size_t pass,
+            const Fun00765c40ExternalPassInput& input) mutable {
+            events.push_back("fun-00765c40:" + std::to_string(pass));
+            auto query_input = make_query_input(pass);
+            query_input.cached_handle = input.cached_handle;
+            const std::uint64_t returned = next_handle++;
+            return Fun00765c40ExternalPassResult{
+                Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0},
+                query_input,
+                returned};
+        };
     bundle.wheel_update = [&events](std::size_t pass) {
         events.push_back("wheel-update:" + std::to_string(pass));
     };
@@ -179,6 +186,8 @@ int main() {
             projection,
             machine_input,
             outer_timestep * 0.5));
+        require(!session.fun_00765c40_query_cache_handle().has_value(),
+                "Phase 740 FUN_00765c40 cache did not start from retail zero seed");
 
         const auto first = session.execute_explicit_step(runtime, outer_timestep);
         require(first.session_step_count == 1u && session.step_count() == 1u,
@@ -187,6 +196,7 @@ int main() {
                 "Phase 701 first explicit update did not commit");
         require(first.telemetry.fun_00765c40_call_count == 2u &&
                     first.telemetry.fun_00765c40_query_input_capture_count == 2u &&
+                    first.telemetry.fun_00765c40_cache_commit_count == 2u &&
                     first.telemetry.wheel_update_call_count == 2u &&
                     first.telemetry.contact_response_call_count == 2u &&
                     first.telemetry.contact_outer_input_call_count == 2u &&
@@ -194,7 +204,7 @@ int main() {
                     first.telemetry.scalar_provider_factory_call_count == 2u &&
                     first.telemetry.half_step_refresh_call_count == 2u &&
                     first.telemetry.post_half_step_call_count == 2u,
-                "Phase 726 first seven-boundary telemetry mismatch");
+                "Phase 740 first seven-boundary telemetry mismatch");
         require(first.fun_00765c40_query_input_present[0] &&
                     first.fun_00765c40_query_input_present[1],
                 "Phase 726 query input snapshots missing");
@@ -203,9 +213,13 @@ int main() {
                     first.fun_00765c40_query_inputs[1].world_position ==
                     make_query_input(1u).world_position,
                 "Phase 726 per-pass world-position snapshots mismatch");
-        require(first.fun_00765c40_query_inputs[0].cached_handle == 1000u &&
-                    first.fun_00765c40_query_inputs[1].cached_handle == 1001u,
-                "Phase 726 per-pass cache-handle snapshots mismatch");
+        require(!first.fun_00765c40_query_inputs[0].cached_handle.has_value() &&
+                    first.fun_00765c40_query_inputs[1].cached_handle == 1000u,
+                "Phase 740 per-pass cache input lifetime mismatch");
+        require(first.fun_00765c40_returned_cache_handles[0] == 1000u &&
+                    first.fun_00765c40_returned_cache_handles[1] == 1001u &&
+                    session.fun_00765c40_query_cache_handle() == 1001u,
+                "Phase 740 returned cache handles did not commit in pass order");
         require(first.fun_00765c40_query_inputs[0].miss_fallback == 7.0 &&
                     first.fun_00765c40_query_inputs[1].miss_fallback == 8.0,
                 "Phase 726 per-pass +0x38e8 fallback snapshots mismatch");
@@ -214,8 +228,8 @@ int main() {
         require(captured_query.query_position[0] == 10.0 &&
                     std::abs(captured_query.query_position[1] - 20.15) < 1e-14 &&
                     captured_query.query_position[2] == 30.0 &&
-                    captured_query.cache_handle == 1000u,
-                "Phase 726 captured query input did not materialize retail record");
+                    !captured_query.cache_handle.has_value(),
+                "Phase 740 captured pass-0 query did not use zero cache seed");
 
         require(first.joined.motion_read_input_provider_call_count == 2u &&
                     first.joined.motion_read_native_effect_call_count == 2u &&
@@ -250,10 +264,17 @@ int main() {
                     runtime.outer_update.body_pose_snapshot_generation == 2u &&
                     runtime.outer_update.body_bytes != first_body_bytes,
                 "Phase 701 second persistent update mismatch");
+        require(second.fun_00765c40_query_inputs[0].cached_handle == 1001u &&
+                    second.fun_00765c40_query_inputs[1].cached_handle == 1002u &&
+                    second.fun_00765c40_returned_cache_handles[0] == 1002u &&
+                    second.fun_00765c40_returned_cache_handles[1] == 1003u &&
+                    session.fun_00765c40_query_cache_handle() == 1003u,
+                "Phase 740 query cache did not persist across explicit steps");
 
         const auto committed_body_bytes = runtime.outer_update.body_bytes;
         const auto committed_generation = runtime.outer_update.body_pose_snapshot_generation;
         const auto committed_telemetry = session.last_telemetry();
+        const auto committed_cache = session.fun_00765c40_query_cache_handle();
         runtime.physics.participant_ready = false;
         events.clear();
         bool participant_rejected = false;
@@ -268,9 +289,10 @@ int main() {
                     runtime.outer_update.explicit_update_count == 2u &&
                     runtime.outer_update.body_pose_snapshot_generation == committed_generation &&
                     runtime.outer_update.body_bytes == committed_body_bytes &&
+                    session.fun_00765c40_query_cache_handle() == committed_cache &&
                     session.last_telemetry().motion_read_native_effect_call_count ==
                         committed_telemetry.motion_read_native_effect_call_count,
-                "Phase 701 participant gate committed rejected state");
+                "Phase 740 participant gate committed rejected state");
         require(runtime.physics.fixed_step == 0u,
                 "Phase 701 leaked deep outer update into fixed_step scheduling");
 
@@ -298,8 +320,9 @@ int main() {
         } catch (const std::logic_error&) {
             missing_rate_rejected = true;
         }
-        require(missing_rate_rejected && retail_events.empty(),
-                "retail batch executed before loaded-rate admission");
+        require(missing_rate_rejected && retail_events.empty() &&
+                    !retail_session.fun_00765c40_query_cache_handle().has_value(),
+                "retail batch executed or cache mutated before loaded-rate admission");
 
         retail_scheduler.admit_loaded_inner_rate(fixture_rate_hz);
         retail_scheduler.admit_outer_dispatch();
@@ -309,8 +332,9 @@ int main() {
         require(batch.recovered_substep_count == 2u &&
                     batch.session_step_count_after == 2u &&
                     batch.explicit_update_count_after == 2u &&
-                    batch.scheduler_accumulator_committed,
-                "retail batch bridge did not commit recovered BODY substeps");
+                    batch.scheduler_accumulator_committed &&
+                    retail_session.fun_00765c40_query_cache_handle() == 1003u,
+                "retail batch bridge did not commit recovered BODY/cache substeps");
 
         std::cout
             << "{\"format\":\"" << kNativeVehicleProviderSessionFormat << "\","
@@ -322,7 +346,8 @@ int main() {
             << "\"fun_00765c40_load_terms_typed\":true,"
             << "\"fun_00765c40_external_pass_result_typed\":true,"
             << "\"fun_00765c40_query_input_captured\":true,"
-            << "\"fun_00765c40_query_position_producer_internalized\":false,"
+            << "\"fun_00765c40_query_cache_owned\":true,"
+            << "\"fun_00765c40_query_position_selected_bmw_internalized\":true,"
             << "\"fun_00765c40_collision_provider_internalized\":false,"
             << "\"contact_factor_session_alias_removed\":true,"
             << "\"selected_player_difficulty\":"
