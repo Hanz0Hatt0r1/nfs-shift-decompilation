@@ -14,12 +14,17 @@ inline constexpr const char* kNativeFun00770e80ContactOuterProviderChainFormat =
 
 using Fun007675f0ContactOuterInputProvider =
     std::function<ContactOuterExternalInput()>;
+using Fun007675f0DistanceStateCommit = std::function<void(double)>;
 
 struct Fun0076d100ContactOuterProviderCallbacks {
     Fun0076d100AnchorCallback contact_factor{};
     Fun0076d100AnchorCallback wheel_update{};
     Fun0076d100AnchorCallback contact_response{};
     Fun007675f0ContactOuterInputProvider contact_outer_input_provider{};
+    // Optional internal ownership hook. NativeVehicleProviderSession uses this
+    // to commit FUN_007675f0's filtered distance result back to its persistent
+    // HDVehicle+0x4080 state. Historical lower-chain fixtures may omit it.
+    Fun007675f0DistanceStateCommit contact_outer_distance_state_commit{};
     Fun0076d100AnchorCallback motion_read_gate{};
     Fun0076d100PostPassBodyMutator post_pass_body_mutator{};
 };
@@ -40,8 +45,11 @@ struct Fun00770e80ContactOuterProviderChainResult {
         contact_outer_input_provider_call_counts{};
     std::array<std::size_t, kFun00770e80PassCount>
         contact_outer_native_call_counts{};
+    std::array<std::size_t, kFun00770e80PassCount>
+        contact_outer_distance_state_commit_counts{};
     std::size_t contact_outer_input_provider_call_count = 0u;
     std::size_t contact_outer_native_call_count = 0u;
+    std::size_t contact_outer_distance_state_commit_count = 0u;
     std::size_t contact_outer_gate_open_count = 0u;
 };
 
