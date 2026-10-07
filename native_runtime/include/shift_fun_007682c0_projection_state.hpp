@@ -4,6 +4,7 @@
 #include "shift_fun_007560c0_motion_read_gate_setup.hpp"
 #include "shift_fun_00765c40_load_terms.hpp"
 #include "shift_fun_007682c0_machine_effect.hpp"
+#include "shift_race_mode_player_difficulty.hpp"
 
 #include <cmath>
 #include <cstdint>
@@ -14,22 +15,20 @@ namespace shift::runtime::physics {
 inline constexpr const char* kFun007682c0DerivedProjectionStateFormat =
     "SHIFT.Fun007682c0DerivedProjectionState/1";
 
-// The only remaining late PC field consumed by FUN_00769ef0/FUN_007682c0 is
-// DAT_00c128cc. HDVehicle+0xe0 is a FUN_007560c0 vehicle-setup snapshot,
-// HDVehicle+0x4068 is derived before both passes, the four wheel load terms are
-// outputs of FUN_00765c40 in each pass, selected-BMW +0x4054 is setup-derived,
-// and HDVehicle+0x4084/+0x408c are session-owned previous-outer state.
+// Phase 724 closes the final late external FUN_007682c0 field. DAT_00c128cc is
+// RaceModeInfo+0x6c / Player Difficulty and is now explicit session-owned state.
+// HDVehicle+0xe0 is a FUN_007560c0 vehicle-setup snapshot, HDVehicle+0x4068 is
+// derived before both passes, the four wheel load terms are outputs of
+// FUN_00765c40 in each pass, selected-BMW +0x4054 is setup-derived, and
+// HDVehicle+0x4084/+0x408c are session-owned previous-outer state.
+//
+// Retain an empty compatibility marker so historical fixtures/evidence that name
+// the old type continue to compile/read, but production composition accepts no
+// values from it and NativeVehicleExternalProviderBundle no longer exposes a
+// motion-read raw-input provider.
 struct Fun007682c0ExternalMachineInput {
-    std::int32_t angle_mode = 0;
-
     Fun007682c0ExternalMachineInput() = default;
-
-    // Compatibility conversion for fixture callers that still construct the
-    // wider machine-kernel input. Gate, steering, load terms, +0x4054 and
-    // projection fields are intentionally ignored because production receives
-    // them from earlier proven owners.
-    Fun007682c0ExternalMachineInput(const Fun007682c0MachineInput& legacy)
-        : angle_mode(legacy.angle_mode) {}
+    Fun007682c0ExternalMachineInput(const Fun007682c0MachineInput&) {}
 };
 
 struct Fun007682c0DerivedProjectionState {
@@ -38,12 +37,13 @@ struct Fun007682c0DerivedProjectionState {
 };
 
 inline Fun007682c0MachineInput compose_fun_007682c0_machine_input(
-    const Fun007682c0ExternalMachineInput& external,
     const Fun007560c0MotionReadGateSetup& setup_gate,
+    const RaceModePlayerDifficulty& race_mode,
     float steering,
     const Fun00765c40LoadTerms& load_terms,
     const Fun007682c0DerivedProjectionState& projection) {
     validate_fun_00765c40_load_terms(load_terms);
+    validate_race_mode_player_difficulty(race_mode);
 
     Fun007682c0MachineInput input{};
     input.caller_gate_open = setup_gate.caller_gate_open;
@@ -52,7 +52,7 @@ inline Fun007682c0MachineInput compose_fun_007682c0_machine_input(
     input.projection_field_x = projection.field_x;
     input.projection_field_z = projection.field_z;
     input.response_field_4054 = selected_bmw_m3_e36_response_field_4054();
-    input.angle_mode = external.angle_mode;
+    input.angle_mode = race_mode.player_difficulty;
     return input;
 }
 
