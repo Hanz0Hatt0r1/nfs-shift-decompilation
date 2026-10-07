@@ -1,0 +1,48 @@
+{
+  "format": "SHIFT.Fun007618f0SecondArgumentProvenanceFrontier/1",
+  "phase": 738,
+  "status": "tooling-ready-retail-report-pending",
+  "pc_authority": {
+    "program": "SHIFT.exe",
+    "retail_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "target_function": "FUN_007618f0",
+    "target_address": "0x007618f0",
+    "existing_source_contract": "SHIFT.Fun007618f0LocalSampleProducer/1"
+  },
+  "known_before_phase": {
+    "explicit_source_fields": ["source+0x338 f64", "source+0x918 f64 vec3"],
+    "wheel_body_pointer_inputs_closed_by_phase737": true,
+    "wheel_body_indices": {"FL": 3, "FR": 4},
+    "world_position_transform_native_ready": true,
+    "complete_FUN_00765c40_provider_still_external": true
+  },
+  "new_static_pipeline": {
+    "worklist_builder": "tools/ghidra/build_fun_007618f0_second_arg_worklist.py",
+    "provenance_analyzer": "tools/ghidra/analyze_fun_007618f0_second_arg_provenance.py",
+    "runner": "tools/ghidra/run_fun_007618f0_second_arg_provenance.sh",
+    "worklist_format": "SHIFT.Fun007618f0SecondArgumentWorklist/1",
+    "report_format": "SHIFT.Fun007618f0SecondArgumentProvenance/1",
+    "input_formats": ["ShiftEvidenceExporter callgraph.jsonl", "SHIFT.GhidraFunctionInstructions/2"],
+    "direct_callgraph_only": true,
+    "immediate_pre_call_PUSH_required": true,
+    "all_path_register_provenance_reused": "tools/ghidra/analyze_fun_00765470_body_owner_receiver.py"
+  },
+  "safety": {
+    "callgraph_membership_is_semantic_proof": false,
+    "physical_argument_origin_is_semantic_owner_proof": false,
+    "offset_0x338_or_0x918_used_to_guess_class": false,
+    "missing_or_non_immediate_PUSH_fails_closed": true,
+    "ambiguous_register_origin_fails_closed": true
+  },
+  "retail_result": {
+    "committed_positive_report_present": false,
+    "owner_join_ready": false,
+    "reason": "The repository does not yet contain the targeted caller instruction export generated from the user's analyzed PC retail Ghidra project."
+  },
+  "provider_frontier": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false
+  },
+  "next_positive_gate": "run the Phase738 pipeline on the analyzed retail SHIFT.exe project, then join any exact physical source origin to an independently proven storage/object owner before wiring Phase737->728->727 into FUN_00765c40"
+}
