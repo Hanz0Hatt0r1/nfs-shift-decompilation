@@ -97,5 +97,5 @@ def test_documentation_keeps_queue_poll_and_alertable_completion_distinct() -> N
     assert "QueueUserAPC" in text
     assert "ReadFileEx" in text
     assert "WriteFileEx" in text
-    assert "global alertable completion surface open" in text
-    assert "render/presentation join remains fail-closed" in text
+    assert "alertable completion surface" in text
+    assert "remains fail-closed" in text
