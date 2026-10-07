@@ -34,7 +34,7 @@ using NativeVehiclePassCallback = std::function<void(std::size_t pass_index)>;
 using NativeVehicleFun00765c40Provider =
     std::function<physics::Fun00765c40ExternalPassResult(std::size_t pass_index)>;
 using NativeVehicleContactOuterInputProvider =
-    std::function<physics::ContactOuterKernelInput(std::size_t pass_index)>;
+    std::function<physics::ContactOuterExternalInput(std::size_t pass_index)>;
 using NativeVehicleScalarProviderFactory =
     std::function<physics::Fun007afdd0ScalarProvider(std::size_t pass_index)>;
 using NativeVehicleHalfStepRefreshProvider =
@@ -54,6 +54,10 @@ struct NativeVehicleExternalProviderBundle {
     NativeVehicleFun00765c40Provider fun_00765c40{};
     NativeVehiclePassCallback wheel_update{};
     NativeVehiclePassCallback contact_response{};
+
+    // FUN_007675f0 arithmetic remains native. Its provider now supplies only the
+    // still-external non-BODY fields; speed_x/speed_z are read from the current
+    // persistent BODY0 +0x78/+0x88 immediately before each recovered pass.
     NativeVehicleContactOuterInputProvider contact_outer_input{};
 
     // FUN_007560c0 writes HDVehicle+0xe0 during vehicle setup. This is immutable
