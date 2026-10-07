@@ -87,7 +87,6 @@ int main() {
         production.base_scalar = 4.0;
         production.projected_scalar = 1.0;
         production.alignment_scalar = 0.5;
-        production.param_3 = 2.0;
         auto external = compose_fun_007675f0_external_input(
             production,
             3.0,
@@ -104,7 +103,6 @@ int main() {
         missing_node.base_scalar = 4.0;
         missing_node.projected_scalar = 1.0;
         missing_node.alignment_scalar = 0.5;
-        missing_node.param_3 = 2.0;
         bool missing_node_rejected = false;
         try {
             (void)compose_fun_007675f0_external_input(missing_node, 3.0, 1.0);
