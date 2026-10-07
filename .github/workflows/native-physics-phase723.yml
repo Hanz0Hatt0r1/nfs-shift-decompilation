@@ -85,5 +85,5 @@ jobs:
             out/native-physics-phase723/fun_007560c0_motion_read_gate_setup.json
           grep -q '"setup_gate_consumed":true' \
             out/native-physics-phase723/fun_007560c0_motion_read_gate_setup.json
-          grep -q '"angle_mode_remains_external":true' \
+          grep -q '"angle_mode_remains_external":false' \
             out/native-physics-phase723/fun_007560c0_motion_read_gate_setup.json
