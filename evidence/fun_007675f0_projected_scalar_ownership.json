@@ -1,0 +1,77 @@
+{
+  "format": "SHIFT.Fun007675f0ProjectedScalarOwnershipEvidence/1",
+  "phase": 736,
+  "pc_authority": {
+    "file": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "caller": "FUN_007675f0",
+    "caller_address": "0x007675f0",
+    "aggregate": "FUN_00759c90",
+    "aggregate_address": "0x00759c90",
+    "decompiler_file": "SHIFT.exe.c",
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "caller_projection_span": {
+      "start": "0x0076779f",
+      "end_exclusive": "0x007677e2",
+      "sha256": "35176a6a1a6f96546fa3da56aac56c585d4724da9aa5e32850cadbe001ee4aaf"
+    },
+    "aggregate_function_span": {
+      "start": "0x00759c90",
+      "end_exclusive": "0x00759dab",
+      "sha256": "a32046ea002f8e570a093148ba08ed242d1e47e2d810cc0ad7c916e0697e989a"
+    }
+  },
+  "aggregate_contract": {
+    "record_base": "HDVehicle+0x7f0",
+    "record_count": 3,
+    "pointer_increment_double_elements": "0x150",
+    "record_stride_bytes": "0xa80",
+    "per_record_fields": {
+      "scalar_a": "+0x00",
+      "vector_a": "+0xb0",
+      "scalar_b": "-0x08",
+      "vector_b": "+0x98",
+      "point_for_second_output_only": "+0xf8"
+    },
+    "first_output": "sum over three records of vector_a*scalar_a + vector_b*scalar_b",
+    "second_output": "cross accumulator retained by full Phase660 helper but not consumed by the projected-scalar caller join"
+  },
+  "caller_join": {
+    "aggregate_output_components_consumed": ["first_output.x", "first_output.z"],
+    "narrowing": [
+      "first_output.x f64 -> f32",
+      "first_output.z f64 -> f32",
+      "final projection -> f32"
+    ],
+    "formula": "f32(f32(first_output.x)*planar_direction.x + planar_direction.y*0.0 + f32(first_output.z)*planar_direction.z)",
+    "planar_direction": "existing FUN_007675f0 probe-derived X/Z direction with the source f32 normalization stages",
+    "timing": "after FUN_00759c90 returns and before the strict distance/speed gate"
+  },
+  "xbox_recomp_corroboration": {
+    "authoritative_for_pc": false,
+    "file": "nfs_shift_recomp.223.cpp",
+    "sha256": "5bb094f6125c6611f39ecd9fb759907004115c7ffc1d33d99173506479eba5dd",
+    "caller": "sub_825939F0",
+    "aggregate": "sub_825899C0",
+    "matching_structure": [
+      "three-record aggregate call precedes strict gate",
+      "first aggregate output X/Z are narrowed to f32",
+      "X/Z directional projection is formed before the gate"
+    ]
+  },
+  "native_handoff": {
+    "phase660_weighted_total": "execute_fun_00759c90_weighted_total",
+    "phase736_projector": "execute_fun_007675f0_projected_scalar",
+    "production_payload": "ContactOuterSessionInput",
+    "production_projected_scalar_field_present": false,
+    "production_fun_00759c90_record_set_present": true,
+    "compatibility_projected_scalar_preserved": true,
+    "top_level_external_provider_count": 7
+  },
+  "limits": [
+    "The three FUN_00759c90 record producers/storage refresh owners remain external.",
+    "No physical semantic name or unit is assigned to the records, weighted total, or projected scalar.",
+    "Xbox recomp is corroboration/navigation only and is not PC floating-point authority.",
+    "The second FUN_00759c90 output and later FUN_00753810/FUN_007ba9e0 provenance remain outside this slice."
+  ]
+}
