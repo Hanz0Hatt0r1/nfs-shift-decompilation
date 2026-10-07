@@ -61,12 +61,14 @@ def test_active_session_payload_exposes_node_not_derived_probe_outputs() -> None
     assert "const SurfaceProbeNode* surface_probe_node" in production_prefix
     assert "planar_delta" not in production_prefix
     assert "surface_scalar" not in production_prefix
-    assert "double projected_scalar" in production_prefix
-    # Later source-backed closures may remove fields that were still external at
-    # the immutable Phase 732 frontier. They must not reintroduce the probe outputs.
+    # Phase732's immutable evidence records projected_scalar as external at that
+    # time. The live session may be narrowed further by later source-backed joins.
+    assert "double projected_scalar" not in production_prefix
+    assert "Fun00759c90RecordSet fun_00759c90_records" in production_prefix
     assert "double base_scalar" not in production_prefix
     assert "double alignment_scalar" not in production_prefix
     assert "double param_3" not in production_prefix
+    assert "compatibility_projected_scalar" in session_struct
     assert "compatibility_base_scalar" in session_struct
     assert "compatibility_alignment_scalar" in session_struct
     assert "compatibility_param_3_present" in session_struct
