@@ -1,6 +1,7 @@
 #include "shift_native_vehicle_provider_session.hpp"
 
 #include "runtime_loop_policy.hpp"
+#include "runtime_motion_read_machine_input_state.hpp"
 #include "runtime_state.hpp"
 
 #include <stdexcept>
@@ -15,7 +16,7 @@ void require_complete_bundle(
         !providers.wheel_update ||
         !providers.contact_response ||
         !providers.contact_outer_input ||
-        !providers.motion_read_effect ||
+        !providers.motion_read_input ||
         !providers.scalar_provider_factory ||
         !providers.half_step_refresh ||
         !providers.post_half_step) {
@@ -40,9 +41,9 @@ NativeVehicleProviderSession::execute_explicit_step(
 
     NativeVehicleProviderSessionTelemetry telemetry{};
 
-    physics::Fun0076d100MotionReadEffectProvider pass_provider =
+    physics::Fun0076d100MotionReadMachineInputProvider pass_provider =
         [this, &telemetry](std::size_t pass_index) {
-            physics::Fun0076d100MotionReadEffectProviderCallbacks callbacks{};
+            physics::Fun0076d100MotionReadMachineInputProviderCallbacks callbacks{};
             callbacks.contact_factor = [this, &telemetry, pass_index] {
                 ++telemetry.contact_factor_call_count;
                 providers_.contact_factor(pass_index);
@@ -60,18 +61,11 @@ NativeVehicleProviderSession::execute_explicit_step(
                     ++telemetry.contact_outer_input_call_count;
                     return providers_.contact_outer_input(pass_index);
                 };
-            callbacks.motion_read_effect_provider =
+            callbacks.motion_read_input_provider =
                 [this, &telemetry, pass_index] {
-                    ++telemetry.motion_read_effect_call_count;
-                    return providers_.motion_read_effect(pass_index);
+                    ++telemetry.motion_read_input_call_count;
+                    return providers_.motion_read_input(pass_index);
                 };
-            if (providers_.motion_read_delta_consumer) {
-                callbacks.motion_read_delta_consumer =
-                    [this, &telemetry, pass_index](double delta) {
-                        ++telemetry.motion_read_delta_consumer_call_count;
-                        providers_.motion_read_delta_consumer(pass_index, delta);
-                    };
-            }
             return callbacks;
         };
 
@@ -111,12 +105,21 @@ NativeVehicleProviderSession::execute_explicit_step(
             providers_.post_half_step(pass_index);
         };
 
-    auto joined =
-        runtime.execute_explicit_outer_update_with_fun_007682c0_motion_read_effect_provider(
-            outer_timestep,
-            pass_provider,
-            half_step_provider,
-            post_half_step);
+    auto joined = execute_explicit_motion_read_machine_input_update(
+        runtime.outer_update,
+        runtime.physics.workspace.body_count,
+        runtime.physics.workspace.ready,
+        runtime.physics.participant_ready,
+        runtime.physics.participant_identity_join_proven,
+        outer_timestep,
+        pass_provider,
+        half_step_provider,
+        post_half_step);
+
+    telemetry.motion_read_native_effect_call_count =
+        joined.motion_read_native_effect_call_count;
+    telemetry.motion_read_delta_application_call_count =
+        joined.motion_read_delta_application_call_count;
 
     ++step_count_;
     last_telemetry_ = telemetry;
