@@ -53,8 +53,9 @@ int main() {
         configure_runtime(runtime, initial_body_bytes);
 
         NativeVehicleExternalProviderBundle bundle{};
-        bundle.contact_factor = [](std::size_t) {
-            return Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0};
+        bundle.fun_00765c40 = [](std::size_t) {
+            return Fun00765c40ExternalPassResult{
+                Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0}};
         };
         bundle.wheel_update = [](std::size_t) {};
         bundle.contact_response = [](std::size_t) {};
@@ -141,6 +142,7 @@ int main() {
             << "\"external_angle_mode_field_present\":false,"
             << "\"selected_player_difficulty\":"
             << kBmwNativeSilverstonePlayerDifficulty << ","
+            << "\"fun_00765c40_result_typed\":true,"
             << "\"derived_before_pass0\":true,"
             << "\"same_value_used_by_both_passes\":true}\n";
         return 0;

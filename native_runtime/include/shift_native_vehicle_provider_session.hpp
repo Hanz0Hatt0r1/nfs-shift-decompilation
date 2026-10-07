@@ -1,7 +1,7 @@
 #pragma once
 
 #include "shift_fun_007560c0_motion_read_gate_setup.hpp"
-#include "shift_fun_00765c40_load_terms.hpp"
+#include "shift_fun_00765c40_external_pass_result.hpp"
 #include "shift_fun_007682c0_projection_state.hpp"
 #include "shift_fun_00770e80_motion_read_machine_input_provider_chain.hpp"
 
@@ -29,8 +29,8 @@ struct NativeVehicleHalfStepRefreshInput {
 };
 
 using NativeVehiclePassCallback = std::function<void(std::size_t pass_index)>;
-using NativeVehicleContactFactorProvider =
-    std::function<physics::Fun00765c40LoadTerms(std::size_t pass_index)>;
+using NativeVehicleFun00765c40Provider =
+    std::function<physics::Fun00765c40ExternalPassResult(std::size_t pass_index)>;
 using NativeVehicleContactOuterInputProvider =
     std::function<physics::ContactOuterKernelInput(std::size_t pass_index)>;
 using NativeVehicleScalarProviderFactory =
@@ -42,10 +42,12 @@ using NativeVehicleHalfStepRefreshProvider =
         const std::vector<std::uint8_t>& current_body_bytes)>;
 
 struct NativeVehicleExternalProviderBundle {
-    // FUN_00765c40 remains an external contact-physics boundary, but its four
-    // per-wheel +0x738 load outputs are typed and owned here. They feed the
-    // later FUN_00769ef0/FUN_007682c0 read in the same pass.
-    NativeVehicleContactFactorProvider contact_factor{};
+    // FUN_00765c40 remains one external pass boundary. Do not call this a
+    // contact-factor provider: the nested FUN_00758ad0 factor arithmetic is
+    // already native, while collision/world-position production and additional
+    // FUN_00765c40 side effects remain unresolved. The typed return carries the
+    // four proven wheel+0x738 outputs needed by later FUN_00769ef0/FUN_007682c0.
+    NativeVehicleFun00765c40Provider fun_00765c40{};
     NativeVehiclePassCallback wheel_update{};
     NativeVehiclePassCallback contact_response{};
     NativeVehicleContactOuterInputProvider contact_outer_input{};
@@ -66,7 +68,7 @@ struct NativeVehicleExternalProviderBundle {
 };
 
 struct NativeVehicleProviderSessionTelemetry {
-    std::size_t contact_factor_call_count = 0u;
+    std::size_t fun_00765c40_call_count = 0u;
     std::size_t wheel_update_call_count = 0u;
     std::size_t contact_response_call_count = 0u;
     std::size_t contact_outer_input_call_count = 0u;

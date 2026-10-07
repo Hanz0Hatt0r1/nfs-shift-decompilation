@@ -25,7 +25,7 @@ struct Fun00765c40PassLoadState {
 
 void require_complete_bundle(
     const NativeVehicleExternalProviderBundle& providers) {
-    if (!providers.contact_factor ||
+    if (!providers.fun_00765c40 ||
         !providers.wheel_update ||
         !providers.contact_response ||
         !providers.contact_outer_input ||
@@ -110,16 +110,17 @@ NativeVehicleProviderSession::execute_explicit_step(
             physics::Fun0076d100MotionReadMachineInputProviderCallbacks callbacks{};
             auto load_state = std::make_shared<Fun00765c40PassLoadState>();
 
-            // The lower historical anchor interface is intentionally void. Keep
-            // that API stable while preserving the PC ownership: execute the
-            // complete external FUN_00765c40 boundary here, capture its four
-            // wheel+0x738 outputs, and make them available only to the later
-            // FUN_00769ef0/FUN_007682c0 input in this same pass.
+            // The lower historical anchor interface is intentionally named
+            // contact_factor and remains void for compatibility. At the session
+            // boundary, however, execute the exact external FUN_00765c40 pass,
+            // then retain only the four proven wheel+0x738 outputs needed by the
+            // later FUN_00769ef0/FUN_007682c0 read in this same pass.
             callbacks.contact_factor =
                 [this, &telemetry, pass_index, load_state] {
-                    ++telemetry.contact_factor_call_count;
-                    load_state->terms = providers_.contact_factor(pass_index);
-                    physics::validate_fun_00765c40_load_terms(load_state->terms);
+                    ++telemetry.fun_00765c40_call_count;
+                    const auto result = providers_.fun_00765c40(pass_index);
+                    physics::validate_fun_00765c40_external_pass_result(result);
+                    load_state->terms = result.load_terms;
                     load_state->ready = true;
                 };
             callbacks.wheel_update = [this, &telemetry, pass_index] {

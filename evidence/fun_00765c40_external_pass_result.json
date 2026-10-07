@@ -1,0 +1,44 @@
+{
+  "format": "SHIFT.Fun00765c40ExternalPassResult/1",
+  "version": 1,
+  "status": "active-session-boundary-narrowed",
+  "ready": true,
+  "upstream_load_term_contract": "SHIFT.Fun00765c40LoadTerms/1",
+  "session_api": {
+    "provider_type": "NativeVehicleFun00765c40Provider",
+    "bundle_field": "fun_00765c40",
+    "result_type": "Fun00765c40ExternalPassResult",
+    "result_field": "load_terms",
+    "refresh": "once per FUN_0076d100 pass before FUN_00758b50/FUN_00766510/FUN_00769ef0",
+    "legacy_lower_callback": "Fun0076d100MotionReadMachineInputProviderCallbacks.contact_factor",
+    "legacy_lower_callback_renamed": false,
+    "session_contact_factor_alias_removed": true
+  },
+  "proven_downstream_output": {
+    "wheel_offsets": ["0xb38", "0x15b8", "0x2038", "0x2ab8"],
+    "payload": "four f64 load terms",
+    "owner": "FUN_00765c40"
+  },
+  "already_native_subcomponents": {
+    "FUN_00758ad0_contact_factor": true,
+    "FUN_007b0710_collision_query_record": true,
+    "wheel_query_response_join": true
+  },
+  "remaining_external": {
+    "complete_FUN_00765c40_pass": true,
+    "wheel_world_position_producer": true,
+    "collision_provider_behavior": true,
+    "unproven_side_effects": true
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "boundary_narrowed": true,
+    "complete_FUN_00765c40_internalized": false,
+    "contact_factor_arithmetic_reexternalized": false,
+    "world_transform_inferred": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  }
+}
