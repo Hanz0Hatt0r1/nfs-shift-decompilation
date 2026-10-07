@@ -33,7 +33,7 @@ std::uint64_t read_u64_le(
     std::size_t offset) {
     if (offset > bytes.size() || bytes.size() - offset < sizeof(std::uint64_t)) {
         throw std::invalid_argument(
-            "FUN_007675f0 BODY0 motion read exceeds BODY buffer");
+            "FUN_007675f0 BODY0 read exceeds BODY buffer");
     }
     std::uint64_t value = 0u;
     for (std::size_t byte = 0u; byte < sizeof(value); ++byte) {
@@ -51,6 +51,15 @@ double read_f64_le(
     std::memcpy(&value, &bits, sizeof(value));
     require_finite_value(value, label);
     return value;
+}
+
+double spill_f64_to_f32(double value, const char* label) {
+    require_finite_value(value, label);
+    const float spilled = static_cast<float>(value);
+    if (!std::isfinite(spilled)) {
+        throw std::invalid_argument(std::string(label) + " f32 spill is non-finite");
+    }
+    return static_cast<double>(spilled);
 }
 
 double planar_length_xz(const ContactOuterVector3d& vector) {
@@ -84,24 +93,51 @@ double clamp_01(double value) {
 
 }  // namespace
 
-Fun007675f0BodyMotion derive_fun_007675f0_body0_motion(
+Fun007675f0BodyProbeState derive_fun_007675f0_body0_probe_state(
     const std::vector<std::uint8_t>& current_body_bytes) {
     if (current_body_bytes.empty() ||
         current_body_bytes.size() % kBodyRecordSize != 0u) {
         throw std::invalid_argument(
-            "FUN_007675f0 BODY motion requires exact 0x170-byte BODY records");
+            "FUN_007675f0 BODY state requires exact 0x170-byte BODY records");
     }
 
-    Fun007675f0BodyMotion motion{};
-    motion.speed_x = read_f64_le(
+    Fun007675f0BodyProbeState state{};
+    // PC FUN_007675f0 spills BODY0's f64 origin to three f32 locals before
+    // passing that point as ECX to FUN_00759210. Preserve that rounding boundary.
+    state.query_point = {
+        spill_f64_to_f32(
+            read_f64_le(
+                current_body_bytes,
+                kFun007675f0Body0PositionXOffset,
+                "FUN_007675f0 BODY0 position X"),
+            "FUN_007675f0 BODY0 position X"),
+        spill_f64_to_f32(
+            read_f64_le(
+                current_body_bytes,
+                kFun007675f0Body0PositionYOffset,
+                "FUN_007675f0 BODY0 position Y"),
+            "FUN_007675f0 BODY0 position Y"),
+        spill_f64_to_f32(
+            read_f64_le(
+                current_body_bytes,
+                kFun007675f0Body0PositionZOffset,
+                "FUN_007675f0 BODY0 position Z"),
+            "FUN_007675f0 BODY0 position Z"),
+    };
+    state.motion.speed_x = read_f64_le(
         current_body_bytes,
         kFun007675f0Body0SpeedXOffset,
         "FUN_007675f0 BODY0 speed X");
-    motion.speed_z = read_f64_le(
+    state.motion.speed_z = read_f64_le(
         current_body_bytes,
         kFun007675f0Body0SpeedZOffset,
         "FUN_007675f0 BODY0 speed Z");
-    return motion;
+    return state;
+}
+
+Fun007675f0BodyMotion derive_fun_007675f0_body0_motion(
+    const std::vector<std::uint8_t>& current_body_bytes) {
+    return derive_fun_007675f0_body0_probe_state(current_body_bytes).motion;
 }
 
 ContactOuterExternalInput compose_fun_007675f0_external_input(
@@ -116,15 +152,63 @@ ContactOuterExternalInput compose_fun_007675f0_external_input(
         "FUN_007675f0 distance filter cap setup state");
 
     ContactOuterExternalInput external{};
-    external.planar_delta = session_input.planar_delta;
     external.previous_distance_state = previous_distance_state;
     external.distance_filter_cap = distance_filter_cap;
-    external.surface_scalar = session_input.surface_scalar;
     external.base_scalar = session_input.base_scalar;
     external.projected_scalar = session_input.projected_scalar;
     external.alignment_scalar = session_input.alignment_scalar;
     external.param_3 = session_input.param_3;
+    external.surface_probe_node = session_input.surface_probe_node;
+
+    if (session_input.compatibility_planar_surface_present) {
+        external.planar_delta = session_input.compatibility_planar_delta;
+        external.surface_scalar = session_input.compatibility_surface_scalar;
+    }
     return external;
+}
+
+ContactOuterExternalInput resolve_fun_007675f0_surface_probe_input(
+    const ContactOuterExternalInput& external,
+    const Fun007675f0BodyProbeState& body_state) {
+    require_finite(body_state.query_point, "FUN_007675f0 BODY0 probe point");
+    require_finite_value(body_state.motion.speed_x, "FUN_007675f0 BODY0 speed X");
+    require_finite_value(body_state.motion.speed_z, "FUN_007675f0 BODY0 speed Z");
+
+    if (external.surface_probe_node == nullptr) {
+        // Historical lower-chain path: planar_delta/surface_scalar were already
+        // materialized by the caller before Phase 732.
+        require_finite(external.planar_delta, "FUN_007675f0 historical planar delta");
+        require_finite_value(
+            external.surface_scalar,
+            "FUN_007675f0 historical surface scalar");
+        return external;
+    }
+
+    const auto probe = execute_fun_00759210_surface_probe(
+        body_state.query_point,
+        *external.surface_probe_node);
+
+    ContactOuterExternalInput resolved = external;
+    // PC FUN_00759210 writes f32 outputs, then FUN_007675f0 subtracts the f32
+    // BODY query point through the exact vector-subtract helper at 0x004a7870.
+    const float query_x = static_cast<float>(body_state.query_point[0]);
+    const float query_y = static_cast<float>(body_state.query_point[1]);
+    const float query_z = static_cast<float>(body_state.query_point[2]);
+    const float probe_x = static_cast<float>(probe.point[0]);
+    const float probe_y = static_cast<float>(probe.point[1]);
+    const float probe_z = static_cast<float>(probe.point[2]);
+    resolved.planar_delta = {
+        static_cast<double>(static_cast<float>(probe_x - query_x)),
+        static_cast<double>(static_cast<float>(probe_y - query_y)),
+        static_cast<double>(static_cast<float>(probe_z - query_z)),
+    };
+    resolved.surface_scalar =
+        static_cast<double>(static_cast<float>(probe.scalar));
+    require_finite(resolved.planar_delta, "FUN_007675f0 surface-probe planar delta");
+    require_finite_value(
+        resolved.surface_scalar,
+        "FUN_007675f0 surface-probe scalar");
+    return resolved;
 }
 
 ContactOuterKernelInput compose_fun_007675f0_input(
@@ -221,8 +305,12 @@ ContactOuterKernelResult execute_fun_007675f0_outer_arithmetic(
         result.distance > kContactDistanceGateMinimum &&
         result.speed > kContactSpeedGateMinimum;
 
+    // Direct PC machine code at 0x00767937..0x00767949 reloads the value
+    // committed to HDVehicle+0x4080, not the raw planar distance, before forming
+    // the gap against FUN_00759210's returned scalar.
     result.gap =
-        result.distance - (input.surface_scalar - kContactGapOffset);
+        result.filtered_distance_state -
+        (input.surface_scalar - kContactGapOffset);
     if (result.gap <= 0.0) {
         result.gap_shape = 0.0;
     } else if (result.gap >= kContactGapScale) {
