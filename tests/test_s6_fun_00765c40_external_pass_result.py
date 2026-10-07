@@ -55,16 +55,21 @@ def test_phase725_does_not_reexternalize_native_subcomponents_or_infer_missing_s
     assert scope["world_transform_inferred"] is False
 
 
-def test_active_cpp_api_extends_phase725_result_with_phase726_query_input() -> None:
+def test_active_cpp_api_extends_historical_result_with_phase740_pre_call_input() -> None:
     result_header = RESULT_HEADER.read_text(encoding="utf-8")
     query_input_header = QUERY_INPUT_HEADER.read_text(encoding="utf-8")
     session_header = SESSION_HEADER.read_text(encoding="utf-8")
     session_source = SESSION_SOURCE.read_text(encoding="utf-8")
 
-    assert "SHIFT.Fun00765c40ExternalPassResult/2" in result_header
+    assert "SHIFT.Fun00765c40ExternalPassResult/3" in result_header
+    assert "SHIFT.Fun00765c40ExternalPassInput/1" in result_header
+    assert "struct Fun00765c40ExternalPassInput" in result_header
+    assert "std::optional<CollisionQueryVector3d> world_position" in result_header
+    assert "std::optional<std::uint64_t> cached_handle" in result_header
     assert "struct Fun00765c40ExternalPassResult" in result_header
     assert "Fun00765c40LoadTerms load_terms" in result_header
     assert "Fun00765c40QueryInputBoundary query_input" in result_header
+    assert "returned_cache_handle" in result_header
     assert "validate_fun_00765c40_external_pass_result" in result_header
 
     assert "SHIFT.Fun00765c40QueryInputBoundary/1" in query_input_header
@@ -75,15 +80,17 @@ def test_active_cpp_api_extends_phase725_result_with_phase726_query_input() -> N
     assert "project_fun_00765c40_query_input_scalar" in query_input_header
 
     assert "using NativeVehicleFun00765c40Provider" in session_header
+    assert "const physics::Fun00765c40ExternalPassInput& input" in session_header
     assert "NativeVehicleFun00765c40Provider fun_00765c40" in session_header
-    assert "fun_00765c40_query_inputs" in session_header
-    assert "fun_00765c40_query_input_present" in session_header
+    assert "fun_00765c40_query_cache_handle_" in session_header
+    assert "fun_00765c40_returned_cache_handles" in session_header
     assert "NativeVehicleContactFactorProvider" not in session_header
-    assert "NativeVehicleContactFactorProvider contact_factor" not in session_header
 
-    provider_call = session_source.index("providers_.fun_00765c40(pass_index)")
+    request = session_source.index("external_input.cached_handle =")
+    provider_call = session_source.index("providers_.fun_00765c40(pass_index, external_input)")
     validation = session_source.index("validate_fun_00765c40_external_pass_result")
     query_store = session_source.index("query_inputs[pass_index] = result.query_input")
+    cache_commit = session_source.index("fun_00765c40_query_cache_handle_ =")
     load_store = session_source.index("load_state->terms = result.load_terms")
-    assert provider_call < validation < query_store < load_store
+    assert request < provider_call < validation < query_store < cache_commit < load_store
     assert "providers_.contact_factor" not in session_source
