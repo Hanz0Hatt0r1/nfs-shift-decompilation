@@ -1,0 +1,43 @@
+{
+  "format": "SHIFT.BMWNativeSessionPlayerDifficulty/1",
+  "version": 1,
+  "status": "selected-native-session-player-difficulty-bound",
+  "ready": true,
+  "session_target": "Silverstone+BMW_M3_E36",
+  "selected_player_difficulty": 1,
+  "selected_value_source": "SHIFT.BMWOffset33bNativeSessionSelection/1 explicit-native-vertical-slice-policy",
+  "retail_domain_source": "SHIFT.BMWOffset33bSelectorGeometryInputs/1",
+  "retail_mapping": {
+    "source_field": "RaceModeInfo+0x6c",
+    "destination_global": "DAT_00c128cc",
+    "staging_copy": "FUN_00714ed0 copies the 0x7c-byte RaceModeInfo block into DAT_00c12860",
+    "consumer": "FUN_007682c0",
+    "consumer_semantics": "DAT_00c128cc < 2 selects the 40-degree limit; >= 2 selects the 55-degree limit"
+  },
+  "retail_profile_provenance": {
+    "property": "Player Difficulty (0-2)",
+    "valid_values": [0, 1, 2],
+    "profile_offset_hex": "0x10f4",
+    "initialization_value": 1,
+    "mutable_after_initialization": true,
+    "mutation_function": "FUN_00d3b190",
+    "initialization_value_used_as_selected_session_proof": false
+  },
+  "native_consumption": {
+    "header": "native_runtime/include/shift_bmw_native_session_player_difficulty.hpp",
+    "helper": "selected_bmw_native_session_player_difficulty",
+    "machine_input_field": "Fun007682c0MachineInput.angle_mode",
+    "external_late_field_removed": "DAT_00c128cc / Fun007682c0ExternalMachineInput.angle_mode",
+    "native_motion_read_provider_required": false
+  },
+  "scope": {
+    "native_policy_is_retail_live_session_observation": false,
+    "retail_default_inferred": false,
+    "retail_profile_mutation_ignored": false,
+    "selected_native_session_value_is_explicit": true,
+    "selected_value_validated_against_retail_domain": true,
+    "retail_global_semantics_source_backed": true,
+    "original_game_executed": false,
+    "runtime_capture_required": false
+  }
+}
