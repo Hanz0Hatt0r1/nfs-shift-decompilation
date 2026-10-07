@@ -13,6 +13,8 @@ PHASE742 = ROOT / "native_runtime/cmake/phase742.cmake"
 
 def test_phase742_evidence_freezes_exact_primary_application_only() -> None:
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
+    # Historical Phase742 proof remains immutable even though Phase746 extends
+    # the active helper result with the immediately-following caller delta.
     assert payload["format"] == "SHIFT.Fun00766510PrimaryResponseApplication/1"
     assert payload["ready"] is True
     assert payload["platform_authority"] == "PC retail primary"
@@ -45,19 +47,24 @@ def test_phase742_evidence_freezes_exact_primary_application_only() -> None:
     assert scope["contact_response_provider_removed"] is False
 
 
-def test_phase742_native_helper_reuses_existing_exact_primitives_in_source_order() -> None:
+def test_active_primary_helper_extends_phase742_with_phase746_caller_delta() -> None:
     text = HEADER.read_text(encoding="utf-8")
-    assert "SHIFT.Fun00766510PrimaryResponseApplication/1" in text
+    assert "SHIFT.Fun00766510PrimaryResponseApplication/2" in text
     assert "kFun00766510BodyPointerOffset = 0x33a0u" in text
     assert "kFun00766510BodyBasisOffset = 0xd4u" in text
     assert "kFun00766510ApplicationPointOffset = 0x38f0u" in text
     assert "kFun00766510ResponseTableOffset = 0x3950u" in text
+    assert "kFun00766510CallerAccumulatorOffsets" in text
+    assert "0x40a0u" in text and "0x40a8u" in text and "0x40b0u" in text
     assert "kFun00766510SelectedBmwBodyIndex = 0u" in text
     assert "input.response.response_vector" in text
 
     transform = text.index("transform_fun_007aefb0_refresh")
+    cross = text.index("execute_fun_00753650_cross_product")
     apply = text.index("apply_fun_007baa70_body_accumulator")
-    assert transform < apply
+    assert transform < cross < apply
+    assert "caller_accumulator_delta" in text
+    assert "body_accumulator.angular[component] -" not in text
     assert "transform_fun_00766510" not in text
     assert "apply_fun_00766510" not in text
 
