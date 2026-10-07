@@ -1,0 +1,71 @@
+{
+  "format": "SHIFT.Fun007682c0Body0DeltaDestination/1",
+  "version": 1,
+  "status": "retail-pc-source-destination-proven-and-consumed",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "source": {
+    "file": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "drive_source_used_for_reaudit": true,
+    "xbox_360_recomp_required_for_claim": false
+  },
+  "receiver_chain": [
+    {
+      "function": "FUN_00770e80",
+      "source_lines": [765666, 765669],
+      "fact": "both recovered physics passes call FUN_0076d100(this,param_3) with the same outer HDVehicle receiver"
+    },
+    {
+      "function": "FUN_0076d100",
+      "source_line": 763047,
+      "fact": "the recovered pass tail calls FUN_00769ef0(this)"
+    },
+    {
+      "function": "FUN_00769ef0",
+      "source_line": 761492,
+      "fact": "the gated tail calls FUN_007682c0(param_1,local_30,local_18) with its forwarded vehicle receiver"
+    }
+  ],
+  "destination": {
+    "function": "FUN_007682c0",
+    "pointer_load_source_line": 760240,
+    "pointer_load": "iVar1 = *(int *)((int)this + 0x33a0)",
+    "application_source_lines": [760242, 760243],
+    "application": "*(double *)(iVar1 + 0x50) = (double)((float)*(double *)(iVar1 + 0x50) + (float)(fVar3 * (float10)param_2))",
+    "vehicle_pointer_field": "HDVehicle+0x33a0",
+    "body_record_offset": "0x50",
+    "source_numeric_shape": "f64 current -> f32; f80/f32 product -> f32; f32 add; widen result to f64 store"
+  },
+  "identity_join": {
+    "contract": "SHIFT.BMWBody0VehicleRootBindRelation/1",
+    "global_HDVehicle": "0x00c13700",
+    "chassis_BODY_pointer_field": "HDVehicle+0x33a0",
+    "chassis_BODY_pointer_absolute": "0x00c16aa0",
+    "selected_chassis_BODY_index": 0,
+    "destination_is_retail_BMW_chassis_BODY0": true
+  },
+  "native_consumer": {
+    "body_writer": "apply_fun_007682c0_body0_accumulator_y_delta",
+    "ordering": "FUN_007682c0 effect -> internal BODY0 +0x50 application -> FUN_00765470 half-step",
+    "persistent_body_bytes_mutated_in_chain": true,
+    "legacy_delta_consumer_required": false,
+    "legacy_delta_consumer_role": "optional observer only"
+  },
+  "handoff": {
+    "FUN_007682c0_accumulator_destination_is_retail_BMW_BODY0": true,
+    "FUN_007682c0_delta_application_internalization_ready": true,
+    "FUN_007682c0_delta_consumer_external_provider_required": false,
+    "active_external_provider_count_after_consumption": 8
+  },
+  "limits": {
+    "FUN_007682c0_effect_production_internalized": false,
+    "FUN_007595d0_complete_input_production_proven": false,
+    "x87_magnitude_and_response_boundaries_proven": false,
+    "complete_FUN_007682c0_semantics_claimed": false,
+    "xbox_360_recomp_substituted_for_pc_authority": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  }
+}
