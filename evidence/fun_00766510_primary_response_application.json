@@ -1,0 +1,62 @@
+{
+  "format": "SHIFT.Fun00766510PrimaryResponseApplication/1",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "consumer_function": "FUN_00766510",
+    "decompiler_lines": [759686, 759695],
+    "machine_span": {
+      "start": "0x00766f9f",
+      "end_exclusive": "0x00767046",
+      "size": 167,
+      "raw_byte_sha256": "ea0d7c2fb2f33101808f9ad997867c724476fea62bc0ed60f6af0023471f1546"
+    }
+  },
+  "retail_sequence": [
+    "FUN_007551e0 writes local response_vector and auxiliary_response",
+    "FUN_007aefb0(BODY+0xd4, response_vector) produces transformed_response",
+    "FUN_007baa70(BODY, HDVehicle+0x38f0, transformed_response) applies the positive BODY accumulator update",
+    "FUN_00753650(caller_reference_vector, transformed_response) produces a cross-product delta",
+    "cross-product delta is accumulated into HDVehicle+0x40a0/+0x40a8/+0x40b0",
+    "FUN_007551e0 auxiliary_response is accumulated lane-wise into the caller-local auxiliary accumulator"
+  ],
+  "offsets": {
+    "primary_point_or_lever_arm": "HDVehicle+0x38f0/+0x38f8/+0x3900",
+    "primary_response_table": "HDVehicle+0x3950",
+    "caller_cross_accumulator": "HDVehicle+0x40a0/+0x40a8/+0x40b0",
+    "body_frame": "BODY+0xd4"
+  },
+  "native_reuse": {
+    "response_builder": "SHIFT.NativeWheelContactResponse/1 / FUN_007551e0",
+    "forward_transform": "transform_fun_007aefb0_refresh",
+    "body_accumulator": "SHIFT.NativeBodyAccumulatorPrimitives/1 / FUN_007baa70",
+    "cross_formula": "FUN_00753650 exact left cross right ordering"
+  },
+  "runtime_contract": {
+    "helper": "execute_fun_00766510_primary_response_application",
+    "input_ownership": "explicit; this phase does not invent caller-state producers",
+    "output": [
+      "transformed response vector",
+      "updated BODY accumulator",
+      "caller cross delta",
+      "updated +0x40a0-family caller accumulator",
+      "updated auxiliary accumulator"
+    ]
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "primary_response_vector_application_frozen": true,
+    "complete_FUN_00766510_internalized": false,
+    "contact_response_provider_removed": false,
+    "caller_state_producers_internalized": false,
+    "physical_semantics_invented": false
+  },
+  "remaining_blockers": [
+    "source-backed ownership/production of the primary FUN_00766510 caller state, including +0x38f0/+0x38f8/+0x3900 and the caller reference vector",
+    "remaining FUN_00766510 branches and final auxiliary accumulator application must be joined before removing the top-level contact_response provider"
+  ]
+}
