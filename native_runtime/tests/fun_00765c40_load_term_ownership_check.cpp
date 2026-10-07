@@ -34,15 +34,17 @@ int main() {
         legacy.response_field_4054 = -999.0f;
         legacy.projection_field_x = 88.0f;
         legacy.projection_field_z = -77.0f;
-        legacy.angle_mode = 2;
+        legacy.angle_mode = 0;
 
-        const Fun007682c0ExternalMachineInput late_external = legacy;
+        const Fun007682c0ExternalMachineInput compatibility = legacy;
+        (void)compatibility;
         const Fun007560c0MotionReadGateSetup setup_gate{true};
+        const RaceModePlayerDifficulty difficulty{true, 2};
         const Fun00765c40LoadTerms contact_loads{11.0, 22.0, 33.0, 44.0};
         const Fun007682c0DerivedProjectionState projection{};
         const auto composed = compose_fun_007682c0_machine_input(
-            late_external,
             setup_gate,
+            difficulty,
             0.5f,
             contact_loads,
             projection);
@@ -52,15 +54,15 @@ int main() {
         require(composed.load_terms != legacy.load_terms,
                 "legacy late-provider load terms leaked into production input");
         require(composed.angle_mode == 2 && composed.caller_gate_open,
-                "setup-owned gate or remaining late angle mode was not preserved");
+                "setup-owned gate or session-owned difficulty was not preserved");
 
         bool nonfinite_rejected = false;
         try {
             Fun00765c40LoadTerms invalid = contact_loads;
             invalid[0] = std::numeric_limits<double>::quiet_NaN();
             (void)compose_fun_007682c0_machine_input(
-                late_external,
                 setup_gate,
+                difficulty,
                 0.5f,
                 invalid,
                 projection);
