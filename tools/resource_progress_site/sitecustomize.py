@@ -151,7 +151,12 @@ class _ProgressTracker:
         state = self._phase
         if state is None:
             return None
-        path = Path(raw_path).resolve()
+        try:
+            path = Path(raw_path).resolve()
+        except Exception:
+            # Resolving a diagnostic identity must not run ahead of the real BFF
+            # constructor or replace its filesystem error with our own.
+            return None
         ordinal = state.ordinals.get(path)
         primary = ordinal is None
         if primary:
