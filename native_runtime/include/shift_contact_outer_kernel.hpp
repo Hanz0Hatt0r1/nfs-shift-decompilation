@@ -2,6 +2,7 @@
 
 #include "shift_fun_00765c40_load_terms.hpp"
 #include "shift_surface_probe.hpp"
+#include "shift_wheel_force_aggregate.hpp"
 
 #include <array>
 #include <cstdint>
@@ -23,6 +24,8 @@ inline constexpr const char* kFun007675f0Param3OwnershipFormat =
     "SHIFT.Fun007675f0Param3Ownership/1";
 inline constexpr const char* kFun007675f0BodyOwnedScalarOwnershipFormat =
     "SHIFT.Fun007675f0BodyOwnedScalarOwnership/1";
+inline constexpr const char* kFun007675f0ProjectedScalarOwnershipFormat =
+    "SHIFT.Fun007675f0ProjectedScalarOwnership/1";
 inline constexpr const char* kContactOuterKernelFunction = "FUN_007675f0";
 inline constexpr const char* kContactDistanceFilterFunction = "FUN_00783a30";
 
@@ -59,11 +62,10 @@ struct ContactOuterKernelInput {
     bool derive_body_owned_scalars = false;
 };
 
-// Historical/lower-chain payload. Derived planar_delta/surface_scalar, the two
-// BODY-owned scalar intermediates, and final param_3 stay here because standalone
-// fixtures predate the source-backed caller joins. Production session code only
-// supplies the surface-probe node and projected scalar; current BODY0 state is
-// observed inside the native pass.
+// Historical/lower-chain payload. Already-derived values stay here because
+// standalone fixtures predate the source-backed caller joins. Production session
+// code supplies the surface-probe node and the earlier FUN_00759c90 records;
+// projected_scalar is resolved natively inside the current BODY0 pass.
 struct ContactOuterExternalInput {
     ContactOuterVector3d planar_delta{};
     double previous_distance_state = 0.0;
@@ -74,6 +76,8 @@ struct ContactOuterExternalInput {
     double alignment_scalar = 0.0;
     double param_3 = 0.0;
     const SurfaceProbeNode* surface_probe_node = nullptr;
+    Fun00759c90RecordBoundary fun_00759c90_record_boundary{};
+    bool projected_scalar_resolved = false;
     Fun00765c40LoadTerms fun_00769ef0_param_3_load_terms{};
     bool fun_00769ef0_param_3_load_terms_present = false;
     double fun_007675f0_body_field_120 = 0.0;
@@ -91,19 +95,21 @@ struct ContactOuterExternalInput {
           projected_scalar(legacy.projected_scalar),
           alignment_scalar(legacy.alignment_scalar),
           param_3(legacy.param_3),
+          projected_scalar_resolved(true),
           compatibility_body_owned_scalars_present(true) {}
 };
 
 // Session-facing per-pass payload. Production no longer carries already-derived
-// planar_delta, surface_scalar, base_scalar, alignment_scalar, or param_3.
-// The two BODY-owned scalar intermediates are recovered inside FUN_007675f0 from
-// current BODY0 X/Z motion, BODY0+0x120, the probe-derived direction, and the
-// persistent filtered-distance state. projected_scalar remains external because
-// its upstream FUN_00759c90 record producer is not yet owned. Compatibility
-// fields preserve historical fixtures only.
+// planar_delta, surface_scalar, base_scalar, projected_scalar, alignment_scalar,
+// or param_3. It exposes the earlier source boundaries instead: surface_probe_node
+// plus the three raw FUN_00759c90 records. Current BODY0 position/motion and
+// BODY0+0x120 are observed inside the native pass. Compatibility fields preserve
+// historical fixtures only.
 struct ContactOuterSessionInput {
     const SurfaceProbeNode* surface_probe_node = nullptr;
-    double projected_scalar = 0.0;
+    Fun00759c90RecordBoundary fun_00759c90_record_boundary{};
+    bool compatibility_projected_scalar_present = false;
+    double compatibility_projected_scalar = 0.0;
     bool compatibility_surface_probe_outputs_present = false;
     ContactOuterVector3d compatibility_planar_delta{};
     double compatibility_surface_scalar = 0.0;
@@ -120,7 +126,8 @@ struct ContactOuterSessionInput {
     ContactOuterSessionInput() = default;
 
     ContactOuterSessionInput(const ContactOuterKernelInput& legacy)
-        : projected_scalar(legacy.projected_scalar),
+        : compatibility_projected_scalar_present(true),
+          compatibility_projected_scalar(legacy.projected_scalar),
           compatibility_surface_probe_outputs_present(true),
           compatibility_planar_delta(legacy.planar_delta),
           compatibility_surface_scalar(legacy.surface_scalar),
@@ -136,7 +143,10 @@ struct ContactOuterSessionInput {
 
     ContactOuterSessionInput(const ContactOuterExternalInput& legacy)
         : surface_probe_node(legacy.surface_probe_node),
-          projected_scalar(legacy.projected_scalar),
+          fun_00759c90_record_boundary(legacy.fun_00759c90_record_boundary),
+          compatibility_projected_scalar_present(
+              !legacy.fun_00759c90_record_boundary.ready),
+          compatibility_projected_scalar(legacy.projected_scalar),
           compatibility_surface_probe_outputs_present(
               legacy.surface_probe_node == nullptr),
           compatibility_planar_delta(legacy.planar_delta),
@@ -184,6 +194,9 @@ struct ContactOuterKernelResult {
 };
 
 Fun007675f0BodyMotion derive_fun_007675f0_body0_motion(
+    const std::vector<std::uint8_t>& current_body_bytes);
+
+ContactOuterVector3d derive_fun_007675f0_body0_position(
     const std::vector<std::uint8_t>& current_body_bytes);
 
 SurfaceProbeVector3d derive_fun_007675f0_body0_probe_query_position(
