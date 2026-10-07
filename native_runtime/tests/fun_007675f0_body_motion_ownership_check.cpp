@@ -20,7 +20,7 @@ void require(bool condition, const char* message) {
     }
 }
 
-void require_close(double actual, double expected, const char* message) {
+void require_near(double actual, double expected, const char* message) {
     if (!std::isfinite(actual) || std::abs(actual - expected) > 1e-12) {
         throw std::runtime_error(message);
     }
@@ -54,7 +54,7 @@ Fun00765470MachineScalarHalfStepInput make_half_step_input(
     return input;
 }
 
-Fun0076d100ContactOuterProvider make_pass_provider() {
+Fun0076d100ContactOuterProvider make_contact_outer_motion_pass_provider() {
     return [](std::size_t) {
         Fun0076d100ContactOuterProviderCallbacks callbacks{};
         callbacks.contact_factor = [] {};
@@ -85,10 +85,10 @@ int main() {
 
         const auto initial_motion =
             derive_fun_007675f0_body0_motion(initial_body_bytes);
-        require_close(initial_motion.speed_x, 4.0,
-                      "FUN_007675f0 BODY0 +0x78 decode mismatch");
-        require_close(initial_motion.speed_z, 6.0,
-                      "FUN_007675f0 BODY0 +0x88 decode mismatch");
+        require_near(initial_motion.speed_x, 4.0,
+                     "FUN_007675f0 BODY0 +0x78 decode mismatch");
+        require_near(initial_motion.speed_z, 6.0,
+                     "FUN_007675f0 BODY0 +0x88 decode mismatch");
 
         ContactOuterKernelInput legacy = make_contact_outer_input();
         legacy.speed_x = 123.0;
@@ -97,14 +97,14 @@ int main() {
         const auto composed = compose_fun_007675f0_input(
             external,
             Fun007675f0BodyMotion{3.0, 4.0});
-        require_close(composed.speed_x, 3.0,
-                      "legacy external speed X overrode BODY motion");
-        require_close(composed.speed_z, 4.0,
-                      "legacy external speed Z overrode BODY motion");
+        require_near(composed.speed_x, 3.0,
+                     "legacy external speed X overrode BODY motion");
+        require_near(composed.speed_z, 4.0,
+                     "legacy external speed Z overrode BODY motion");
         const auto composed_result =
             execute_fun_007675f0_outer_arithmetic(composed);
-        require_close(composed_result.speed, 5.0,
-                      "composed FUN_007675f0 speed did not use BODY motion");
+        require_near(composed_result.speed, 5.0,
+                     "composed FUN_007675f0 speed did not use BODY motion");
 
         bool malformed_rejected = false;
         try {
@@ -134,7 +134,7 @@ int main() {
         const auto chained = execute_fun_00770e80_contact_outer_provider_chain(
             outer_timestep,
             initial_body_bytes,
-            make_pass_provider(),
+            make_contact_outer_motion_pass_provider(),
             [&](std::size_t,
                 double,
                 const std::vector<std::uint8_t>&) {
@@ -153,11 +153,11 @@ int main() {
                 "per-pass FUN_007675f0 BODY motion snapshots missing");
         require(chained.joined.joined.current_body_observer_call_count == 2u,
                 "current BODY observer did not run once per physics pass");
-        require_close(chained.body_motion_inputs[0].speed_x, 4.0,
-                      "pass 0 did not consume initial BODY0 +0x78");
-        require_close(chained.body_motion_inputs[0].speed_z, 6.0,
-                      "pass 0 did not consume initial BODY0 +0x88");
-        require_close(
+        require_near(chained.body_motion_inputs[0].speed_x, 4.0,
+                     "pass 0 did not consume initial BODY0 +0x78");
+        require_near(chained.body_motion_inputs[0].speed_z, 6.0,
+                     "pass 0 did not consume initial BODY0 +0x88");
+        require_near(
             chained.contact_outer_results[0].speed,
             std::hypot(4.0, 6.0),
             "pass 0 FUN_007675f0 speed used external sentinel values");
@@ -167,11 +167,11 @@ int main() {
                 .joined.half_step.feedback_integration.body_bytes;
         const auto expected_pass1_motion =
             derive_fun_007675f0_body0_motion(after_first_half);
-        require_close(
+        require_near(
             chained.body_motion_inputs[1].speed_x,
             expected_pass1_motion.speed_x,
             "pass 1 did not refresh BODY0 +0x78 after first half-step");
-        require_close(
+        require_near(
             chained.body_motion_inputs[1].speed_z,
             expected_pass1_motion.speed_z,
             "pass 1 did not refresh BODY0 +0x88 after first half-step");
