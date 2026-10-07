@@ -171,6 +171,54 @@ Fun007675f0SurfaceProbeJoinResult execute_fun_007675f0_surface_probe_join(
     return result;
 }
 
+double execute_fun_007675f0_projected_scalar(
+    const Fun00759c90RecordSet& records,
+    const ContactOuterVector3d& planar_delta) {
+    require_finite(planar_delta, "FUN_007675f0 projected-scalar planar delta");
+
+    // PC 0x0076765d..0x0076769f builds the direction through explicit f32
+    // stores. Repeat that staging here rather than reusing the broader double
+    // telemetry direction from the Phase 662 kernel.
+    const float delta_x = fun_007675f0_source_f32(
+        planar_delta[0], "FUN_007675f0 projected delta X invalid");
+    const float delta_z = fun_007675f0_source_f32(
+        planar_delta[2], "FUN_007675f0 projected delta Z invalid");
+    const float distance_sq = fun_007675f0_source_f32(
+        static_cast<double>(delta_x) * delta_x + 0.0 +
+            static_cast<double>(delta_z) * delta_z,
+        "FUN_007675f0 projected direction magnitude overflow");
+    const float distance = fun_007675f0_source_sqrt_f32(
+        distance_sq,
+        "FUN_007675f0 projected direction magnitude invalid");
+    if (distance == 0.0f) {
+        throw std::invalid_argument(
+            "FUN_007675f0 projected scalar requires non-zero planar distance");
+    }
+    const float inverse = fun_007675f0_source_f32(
+        1.0 / static_cast<double>(distance),
+        "FUN_007675f0 projected direction reciprocal overflow");
+    const float direction_x = fun_007675f0_source_f32(
+        static_cast<double>(inverse) * delta_x,
+        "FUN_007675f0 projected direction X overflow");
+    const float direction_z = fun_007675f0_source_f32(
+        static_cast<double>(inverse) * delta_z,
+        "FUN_007675f0 projected direction Z overflow");
+
+    const auto total = execute_fun_00759c90_weighted_total(records);
+    const float total_x = fun_007675f0_source_f32(
+        total[0], "FUN_00759c90 total X does not narrow to source f32");
+    const float total_z = fun_007675f0_source_f32(
+        total[2], "FUN_00759c90 total Z does not narrow to source f32");
+
+    // PC 0x007677c6..0x007677df evaluates X*dirX + dirY*0.0 + Z*dirZ
+    // on x87 and spills only the final value to f32. Products of f32 operands
+    // are exact in binary64, so this source order preserves the visible boundary.
+    return static_cast<double>(fun_007675f0_source_f32(
+        static_cast<double>(total_x) * direction_x + 0.0 +
+            static_cast<double>(total_z) * direction_z,
+        "FUN_007675f0 projected scalar overflow"));
+}
+
 ContactOuterExternalInput resolve_fun_007675f0_surface_probe_outputs(
     const ContactOuterExternalInput& external,
     const SurfaceProbeVector3d& body_query_position) {
@@ -207,11 +255,16 @@ ContactOuterExternalInput compose_fun_007675f0_external_input(
     ContactOuterExternalInput external{};
     external.previous_distance_state = previous_distance_state;
     external.distance_filter_cap = distance_filter_cap;
-    external.projected_scalar = session_input.projected_scalar;
     external.surface_probe_node = session_input.surface_probe_node;
+    external.fun_00759c90_records = session_input.fun_00759c90_records;
+    external.compatibility_projected_scalar_present =
+        session_input.compatibility_projected_scalar_present;
     external.compatibility_body_owned_scalars_present =
         session_input.compatibility_body_owned_scalars_present;
 
+    if (session_input.compatibility_projected_scalar_present) {
+        external.projected_scalar = session_input.compatibility_projected_scalar;
+    }
     if (session_input.compatibility_body_owned_scalars_present) {
         external.base_scalar = session_input.compatibility_base_scalar;
         external.alignment_scalar = session_input.compatibility_alignment_scalar;
@@ -244,6 +297,9 @@ ContactOuterKernelInput compose_fun_007675f0_input(
     input.projected_scalar = external.projected_scalar;
     input.alignment_scalar = external.alignment_scalar;
     input.param_3 = external.param_3;
+    input.fun_00759c90_records = external.fun_00759c90_records;
+    input.derive_projected_scalar =
+        !external.compatibility_projected_scalar_present;
     input.derive_body_owned_scalars =
         !external.compatibility_body_owned_scalars_present;
     if (input.derive_body_owned_scalars) {
@@ -292,9 +348,11 @@ ContactOuterKernelResult execute_fun_007675f0_outer_arithmetic(
     require_finite_value(input.speed_x, "FUN_007675f0 speed X");
     require_finite_value(input.speed_z, "FUN_007675f0 speed Z");
     require_finite_value(input.surface_scalar, "FUN_007675f0 surface scalar");
-    require_finite_value(
-        input.projected_scalar,
-        "FUN_007675f0 projected scalar");
+    if (!input.derive_projected_scalar) {
+        require_finite_value(
+            input.projected_scalar,
+            "FUN_007675f0 compatibility projected scalar");
+    }
     require_finite_value(input.param_3, "FUN_007675f0 param_3");
     if (input.derive_body_owned_scalars) {
         require_finite_value(
@@ -331,6 +389,15 @@ ContactOuterKernelResult execute_fun_007675f0_outer_arithmetic(
         (result.speed - kContactSpeedFactorOffset) /
         kContactSpeedFactorScale);
 
+    if (input.derive_projected_scalar) {
+        result.projected_scalar = execute_fun_007675f0_projected_scalar(
+            input.fun_00759c90_records,
+            input.planar_delta);
+        result.projected_scalar_derived = true;
+    } else {
+        result.projected_scalar = input.projected_scalar;
+    }
+
     result.gate_open =
         result.distance < kContactDistanceLimit &&
         result.distance > kContactDistanceGateMinimum &&
@@ -346,7 +413,6 @@ ContactOuterKernelResult execute_fun_007675f0_outer_arithmetic(
         result.gap_shape = result.gap / kContactGapScale;
     }
 
-    result.projected_scalar = input.projected_scalar;
     if (input.derive_body_owned_scalars) {
         // PC FUN_007675f0 derives both values only inside the strict
         // distance/speed gate. Do not manufacture them on a closed path.
