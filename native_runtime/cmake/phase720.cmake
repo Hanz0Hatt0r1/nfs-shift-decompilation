@@ -40,3 +40,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_007594e0_session_angle
     COMMAND shift_runtime_fun_007594e0_session_angle_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase721.cmake)
