@@ -293,7 +293,10 @@ int main() {
             << "\"provider_admission_before_execution\":true,"
             << "\"participant_gate_before_provider_side_effects\":true,"
             << "\"retail_inner_batch_bridge_ready\":true,"
+            << "\"selected_session_rate_promoted\":false,"
             << "\"provider_semantics_promoted\":false,"
+            << "\"vehicle_body_identity_proven\":false,"
+            << "\"vehicle_world_transform_proven\":false,"
             << "\"fixed_step_auto_schedule\":false,"
             << "\"deep_outer_update_executable_schedule_enabled\":false}\n";
         return 0;
