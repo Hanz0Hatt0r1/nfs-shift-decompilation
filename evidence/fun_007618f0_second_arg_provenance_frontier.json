@@ -1,0 +1,82 @@
+{
+  "format": "SHIFT.Fun007618f0SecondArgumentProvenanceFrontier/1",
+  "phase": 738,
+  "status": "source-owner-and-selected-numeric-inputs-proven",
+  "pc_authority": {
+    "program": "SHIFT.exe",
+    "retail_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "target_function": "FUN_007618f0",
+    "target_address": "0x007618f0",
+    "existing_source_contract": "SHIFT.Fun007618f0LocalSampleProducer/1",
+    "positive_owner_contract": "SHIFT.Fun007618f0VehicleLoadDataOwnership/1",
+    "selected_resource_contract": "SHIFT.BMWM3E36Fun007618f0ResourceInputs/1",
+    "selected_native_contract": "SHIFT.Fun007618f0SelectedBMWSource/1"
+  },
+  "known_before_phase": {
+    "explicit_source_fields": ["source+0x338 f64", "source+0x918 f64 vec3"],
+    "wheel_body_pointer_inputs_closed_by_phase737": true,
+    "wheel_body_indices": {"FL": 3, "FR": 4},
+    "world_position_transform_native_ready": true,
+    "complete_FUN_00765c40_provider_still_external": true
+  },
+  "positive_source_result": {
+    "FUN_007618f0_direct_source_caller": "FUN_0076df50",
+    "param_1": "HDVehicle+0x4330",
+    "param_2": "*(HDVehicle+0x66b4)",
+    "param_2_owner": "VehicleLoadData",
+    "VehicleLoadData_allocation_size": "0x3848",
+    "VehicleLoadData_constructor": "FUN_007c3170",
+    "derived_cg_height_field": "VehicleLoadData+0x338",
+    "derived_cg_height_selected_f64_bits": "0x3fc5810634bc6a80",
+    "front_wing_center_field": "VehicleLoadData+0x918/+0x920/+0x928",
+    "front_wing_center_parser_property": "FWCenter",
+    "front_wing_center_selected_value": [0.0, -0.1, -0.5],
+    "owner_join_ready": true,
+    "selected_numeric_inputs_ready": true
+  },
+  "machine_corroboration": {
+    "callsite": "0x0076e27f",
+    "sequence": "mov ecx,[esi+0x66b4]; push ecx; push ebx; mov ecx,esi; call FUN_007618f0",
+    "right_to_left_stack_order": {
+      "nearest_push": "param_1",
+      "second_nearest_push": "param_2"
+    },
+    "former_immediate_push_assumption_corrected": true,
+    "derived_cg_height_machine_span_sha256": "f8407f1438292d1f65540f702b32591ec1169cbc33f4994523c4961bd1bfe69e",
+    "derived_cg_height_post_multiply_f32_spill": false
+  },
+  "static_pipeline": {
+    "worklist_builder": "tools/ghidra/build_fun_007618f0_second_arg_worklist.py",
+    "provenance_analyzer": "tools/ghidra/analyze_fun_007618f0_second_arg_provenance.py",
+    "runner": "tools/ghidra/run_fun_007618f0_second_arg_provenance.sh",
+    "worklist_format": "SHIFT.Fun007618f0SecondArgumentWorklist/1",
+    "report_format": "SHIFT.Fun007618f0SecondArgumentProvenance/1",
+    "input_formats": ["ShiftEvidenceExporter callgraph.jsonl", "SHIFT.GhidraFunctionInstructions/2"],
+    "direct_callgraph_only": true,
+    "explicit_argument_count": 2,
+    "two_pre_call_PUSHes_required": true,
+    "all_path_register_provenance_reused": "tools/ghidra/analyze_fun_00765470_body_owner_receiver.py",
+    "role": "optional machine cross-check; positive semantic owner and selected values no longer depend on generating this report"
+  },
+  "safety": {
+    "callgraph_membership_is_semantic_proof": false,
+    "physical_argument_origin_is_semantic_owner_proof": false,
+    "offset_0x338_or_0x918_used_to_guess_class": false,
+    "VehicleLoadData_identity_comes_from_allocation_and_source_callsite": true,
+    "constructor_zero_promoted_to_selected_FWCenter_value": false,
+    "naive_f32_product_then_widen_used": false,
+    "ambiguous_register_origin_fails_closed": true
+  },
+  "numeric_gate": {
+    "selected_BMW_M3_E36_FWCenter_proven": true,
+    "selected_derived_CGHeight_f64_bits_proven": true,
+    "selected_source_input_boundary_closed": true
+  },
+  "provider_frontier": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "reason": "input ownership/value closure does not by itself replace the complete per-pass FUN_00765c40 collision-provider/residual-side-effect boundary"
+  },
+  "next_positive_gate": "compose Phase737 current BODY3/BODY4 origins + SHIFT.Fun007618f0SelectedBMWSource/1 through Phase728 and Phase727 at each FUN_00765c40 pass, preserving pass-1 post-half-step BODY state"
+}

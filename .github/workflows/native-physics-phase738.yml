@@ -1,0 +1,105 @@
+name: native-physics-phase738
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/build_fun_007618f0_second_arg_worklist.py'
+      - 'tools/ghidra/analyze_fun_007618f0_second_arg_provenance.py'
+      - 'tools/ghidra/run_fun_007618f0_second_arg_provenance.sh'
+      - 'tests/test_s6_fun_007618f0_second_arg_provenance.py'
+      - 'evidence/fun_007618f0_second_arg_provenance_frontier.json'
+      - 'evidence/fun_007618f0_vehicle_load_data_ownership.json'
+      - 'evidence/bmw_m3_e36_fun_007618f0_resource_inputs.json'
+      - 'evidence/phase738_next_blocker.md'
+      - 'docs/PHASE738_FUN_007618F0_SECOND_ARGUMENT_PROVENANCE.md'
+      - 'docs/PHASE738_SCOPE.md'
+      - 'native_runtime/include/shift_fun_007618f0_selected_bmw_source.hpp'
+      - 'native_runtime/tests/fun_007618f0_selected_bmw_source_check.cpp'
+      - 'native_runtime/cmake/phase737.cmake'
+      - 'native_runtime/cmake/phase738.cmake'
+      - '.github/workflows/native-physics-phase738.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/build_fun_007618f0_second_arg_worklist.py'
+      - 'tools/ghidra/analyze_fun_007618f0_second_arg_provenance.py'
+      - 'tools/ghidra/run_fun_007618f0_second_arg_provenance.sh'
+      - 'tests/test_s6_fun_007618f0_second_arg_provenance.py'
+      - 'evidence/fun_007618f0_second_arg_provenance_frontier.json'
+      - 'evidence/fun_007618f0_vehicle_load_data_ownership.json'
+      - 'evidence/bmw_m3_e36_fun_007618f0_resource_inputs.json'
+      - 'evidence/phase738_next_blocker.md'
+      - 'docs/PHASE738_FUN_007618F0_SECOND_ARGUMENT_PROVENANCE.md'
+      - 'docs/PHASE738_SCOPE.md'
+      - 'native_runtime/include/shift_fun_007618f0_selected_bmw_source.hpp'
+      - 'native_runtime/tests/fun_007618f0_selected_bmw_source_check.cpp'
+      - 'native_runtime/cmake/phase737.cmake'
+      - 'native_runtime/cmake/phase738.cmake'
+      - '.github/workflows/native-physics-phase738.yml'
+
+jobs:
+  fun-007618f0-second-arg-provenance:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run focused Phase 738 regressions
+        run: >-
+          python3 -m pytest -q
+          tests/test_s6_fun_007618f0_second_arg_provenance.py
+          tests/test_s6_fun_007618f0_wheel_body_origin_ownership.py
+          tests/test_s6_fun_007618f0_local_sample_producer.py
+
+      - name: Validate optional Ghidra runner shell syntax
+        run: bash -n tools/ghidra/run_fun_007618f0_second_arg_provenance.sh
+
+      - name: Validate positive evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          frontier = json.loads(Path('evidence/fun_007618f0_second_arg_provenance_frontier.json').read_text())
+          owner = json.loads(Path('evidence/fun_007618f0_vehicle_load_data_ownership.json').read_text())
+          resource = json.loads(Path('evidence/bmw_m3_e36_fun_007618f0_resource_inputs.json').read_text())
+          assert frontier['format'] == 'SHIFT.Fun007618f0SecondArgumentProvenanceFrontier/1'
+          assert frontier['positive_source_result']['param_2_owner'] == 'VehicleLoadData'
+          assert frontier['positive_source_result']['owner_join_ready'] is True
+          assert owner['scope']['VehicleLoadData_owner_proven'] is True
+          assert owner['scope']['selected_BMW_FWCenter_numeric_value_proven'] is True
+          assert owner['scope']['selected_derived_CGHeight_bit_pattern_proven'] is True
+          assert owner['derived_cg_height_join']['selected_derived_f64_bits'] == '0x3fc5810634bc6a80'
+          assert resource['resource_values']['FWCenter']['numeric_xyz'] == [0.0, -0.1, -0.5]
+          assert frontier['provider_frontier']['external_provider_count_after'] == 7
+          assert frontier['safety']['physical_argument_origin_is_semantic_owner_proof'] is False
+          PY
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 738 and dependent regressions
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_fun_007618f0_selected_bmw_source_check
+          shift_runtime_fun_007618f0_wheel_body_origin_ownership_check
+          shift_runtime_fun_007618f0_local_sample_producer_check
+
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_fun_007618f0_selected_bmw_source|shift_runtime_fun_007618f0_wheel_body_origin_ownership|shift_runtime_fun_007618f0_local_sample_producer)$'
+
+      - name: Verify Phase 738 native report
+        run: |
+          mkdir -p out/native-physics-phase738
+          native_runtime/build/shift_runtime_fun_007618f0_selected_bmw_source_check \
+            > out/native-physics-phase738/fun_007618f0_selected_bmw_source.json
+          grep -q '"format":"SHIFT.Fun007618f0SelectedBMWSource/1"' \
+            out/native-physics-phase738/fun_007618f0_selected_bmw_source.json
+          grep -q '"derived_cg_height_bits":"0x3fc5810634bc6a80"' \
+            out/native-physics-phase738/fun_007618f0_selected_bmw_source.json
+          grep -q '"fwcenter":\[0.0,-0.1,-0.5\]' \
+            out/native-physics-phase738/fun_007618f0_selected_bmw_source.json

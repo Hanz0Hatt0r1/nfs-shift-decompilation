@@ -1,0 +1,137 @@
+{
+  "format": "SHIFT.Fun007618f0VehicleLoadDataOwnership/1",
+  "phase": 738,
+  "status": "pc-source-machine-and-selected-resource-inputs-proven",
+  "pc_authority": {
+    "executable": "SHIFT.exe",
+    "md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "decompiler": "SHIFT.exe.c",
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "source_owner": {
+    "owner": "HDVehicle",
+    "HDVehicle_pointer_offset": "0x66b4",
+    "allocation_size": "0x3848",
+    "constructor": "FUN_007c3170",
+    "allocation_failure_text": "Failed to allocate a vehicle load data buffer",
+    "allocation_source_line": 763691,
+    "allocation_machine_span": {
+      "start": "0x0076dfa6",
+      "end_exclusive": "0x0076dfe0",
+      "sha256": "d9c852fff318bb09157e5bca652c5861b8ed43ddae229e2bc161089952d2a8ad"
+    }
+  },
+  "callsite": {
+    "only_source_visible_direct_caller": "FUN_0076df50",
+    "source_line": 763780,
+    "address": "0x0076e27f",
+    "receiver": "HDVehicle this",
+    "param_1": "HDVehicle+0x4330",
+    "param_2": "*(HDVehicle+0x66b4)",
+    "source_expression": "FUN_007618f0(this,(int)(this+0x4330),*(void **)(this+0x66b4))",
+    "machine_sequence": [
+      "0x0076e275 mov ecx,[esi+0x66b4]",
+      "0x0076e27b push ecx  ; param_2",
+      "0x0076e27c push ebx  ; param_1, ebx=this+0x4330",
+      "0x0076e27d mov ecx,esi  ; this",
+      "0x0076e27f call 0x007618f0"
+    ],
+    "machine_span": {
+      "start": "0x0076e275",
+      "end_exclusive": "0x0076e284",
+      "sha256": "e6e953ab0ea9f65c9cfb759d76887ed3852e7a2b415458b54ffba206ed6d12a9"
+    },
+    "setup_block_origin": {
+      "machine_instruction": "0x0076e1c1 lea ebx,[esi+0x4330]",
+      "shared_with_immediately_preceding_FUN_0076b280_call": true
+    }
+  },
+  "consumer_fields": {
+    "derived_cg_height": "VehicleLoadData+0x338",
+    "derived_cg_height_source_line": 756888,
+    "front_wing_center": [
+      "VehicleLoadData+0x918",
+      "VehicleLoadData+0x920",
+      "VehicleLoadData+0x928"
+    ],
+    "front_wing_center_source_line": 757124,
+    "front_wing_subrecord_offset": "0x6a0",
+    "front_wing_center_subrecord_offset": "0x278",
+    "front_wing_center_absolute_offset_identity": "0x6a0 + 0x278 = 0x918",
+    "front_wing_center_parser_function": "FUN_007c0a20",
+    "front_wing_center_parser_property": "FWCenter",
+    "front_wing_center_parser_destinations": ["subrecord+0x278", "subrecord+0x280", "subrecord+0x288"],
+    "front_wing_center_constructor": "FUN_007c08a0",
+    "constructor_initializes_front_wing_center_to_zero": true,
+    "constructor_zero_is_selected_BMW_value_claimed": false
+  },
+  "selected_bmw_resource_inputs": {
+    "contract": "SHIFT.BMWM3E36Fun007618f0ResourceInputs/1",
+    "archive_sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+    "cdf_path": "vehicles\\physics\\chassis\\bmw_m3_e36.cdf",
+    "cdf_decoded_sha256": "bbee83f0d2fdcbfc2bbd62ddb2a10bf6fed71bb1b4fa78f303a4730d038b970d",
+    "CGHeight_decimal": "0.280",
+    "FWCenter_decimal_xyz": ["0.00", "-0.100", "-0.50"],
+    "FWCenter_f64_bits": ["0x0000000000000000", "0xbfb999999999999a", "0xbfe0000000000000"]
+  },
+  "derived_cg_height_join": {
+    "producer": "FUN_007bfbe0",
+    "producer_receiver": "VehicleLoadData+0x8",
+    "producer_store": "receiver+0x330 = VehicleLoadData+0x338",
+    "normal_drift_selector": "DAT_00c1286e",
+    "difficulty_selector": "DAT_00c128cc",
+    "upstream_process1_contract": "SHIFT.BMWOffset33bSelectorCompleteNumeric/1",
+    "selected_session_contract": "SHIFT.BMWOffset33bNativeSessionSelection/1",
+    "selected_session": "Silverstone+BMW_M3_E36",
+    "selected_physics_mode": "normal",
+    "selected_player_difficulty": 1,
+    "selected_CGHeight_f32_bits": "0x3e8f5c29",
+    "selected_normal_scale_f32_bits": "0x3f19999a",
+    "machine_sequence": [
+      "0x007bff14 call FUN_007a6be0",
+      "0x007bff19 fstp dword [ebp-0x4]",
+      "0x007bff1c fld dword [ebp-0x4]",
+      "0x007bff2b fmul dword [DAT_00c13130 + difficulty*4]",
+      "0x007bff54 fstp qword [VehicleLoadData+0x338]"
+    ],
+    "machine_span": {
+      "start": "0x007bff05",
+      "end_exclusive": "0x007bff5a",
+      "sha256": "f8407f1438292d1f65540f702b32591ec1169cbc33f4994523c4961bd1bfe69e"
+    },
+    "no_post_multiply_f32_spill": true,
+    "selected_derived_f64_bits": "0x3fc5810634bc6a80",
+    "selected_derived_value": 0.16800000739097598,
+    "incorrect_f32_product_then_widen_bits": "0x3fc5810640000000",
+    "incorrect_f32_product_then_widen_value": 0.1680000126361847,
+    "precision_reason": "the product of two binary32 values has at most 48 significant bits, so x87 multiplication is exact and the direct qword store preserves that exact product"
+  },
+  "phase728_join": {
+    "existing_contract": "SHIFT.Fun007618f0LocalSampleProducer/1",
+    "selected_source_contract": "SHIFT.Fun007618f0SelectedBMWSource/1",
+    "source_scalar_0338_owner_now_known": true,
+    "source_scalar_0338_selected_value_ready": true,
+    "source_vec_0918_owner_now_known": true,
+    "source_vec_0918_parser_property_now_known": true,
+    "selected_BMW_FWCenter_numeric_value_ready": true,
+    "wheel_body_origins_already_owned_by_phase737": true
+  },
+  "scope": {
+    "VehicleLoadData_owner_proven": true,
+    "FUN_007618f0_param_2_owner_proven": true,
+    "consumer_field_offsets_proven": true,
+    "front_wing_center_property_name_source_backed": true,
+    "selected_BMW_FWCenter_numeric_value_proven": true,
+    "selected_derived_CGHeight_bit_pattern_proven": true,
+    "constructor_default_promoted_to_selected_value": false,
+    "complete_FUN_00765c40_internalized": false
+  },
+  "provider_frontier": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "reason": "all Phase728 local-sample inputs are now selected-session source-backed, but the complete FUN_00765c40 collision-provider/residual-side-effect boundary remains external until the per-pass world-position wiring is composed and validated"
+  },
+  "next_blocker": "compose Phase737 wheel BODY origins + SHIFT.Fun007618f0SelectedBMWSource/1 through Phase728 and Phase727 at each FUN_00765c40 pass, preserving pass-1 post-half-step BODY state; keep collision-provider/residual side effects external"
+}
