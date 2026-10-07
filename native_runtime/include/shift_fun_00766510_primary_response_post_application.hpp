@@ -79,27 +79,28 @@ inline BodyAccumulatorVector3d fun_00753650_pc_x87_cross(
     BodyAccumulatorVector3d output{};
 
     // Exact PC FUN_00753650 order, 0x00753650..0x0075368c. Each component
-    // keeps both products in x87 until FSUBP, then performs one f64 store.
+    // keeps both products in x87 until opcode DE E9, then performs one f64
+    // store. The literal opcode avoids GNU AT&T mnemonic direction ambiguity.
     asm volatile(
         "fldl %[rz]\n\t"
         "fmull %[ly]\n\t"
         "fldl %[lz]\n\t"
         "fmull %[ry]\n\t"
-        "fsubp %%st, %%st(1)\n\t"
+        ".byte 0xde, 0xe9\n\t"
         "fstpl %[ox]\n\t"
 
         "fldl %[lz]\n\t"
         "fmull %[rx]\n\t"
         "fldl %[rz]\n\t"
         "fmull %[lx]\n\t"
-        "fsubp %%st, %%st(1)\n\t"
+        ".byte 0xde, 0xe9\n\t"
         "fstpl %[oy]\n\t"
 
         "fldl %[ry]\n\t"
         "fmull %[lx]\n\t"
         "fldl %[rx]\n\t"
         "fmull %[ly]\n\t"
-        "fsubp %%st, %%st(1)\n\t"
+        ".byte 0xde, 0xe9\n\t"
         "fstpl %[oz]\n\t"
         : [ox] "=m"(output[0]),
           [oy] "=m"(output[1]),
