@@ -31,7 +31,9 @@ FUN_007682C0_PROJECTION_FORMAT = "SHIFT.Fun007682c0DerivedProjectionState/1"
 FUN_007594E0_ANGLE_FORMAT = "SHIFT.Fun007594e0MachineAngle/1"
 BMW_RESPONSE_4054_FORMAT = "SHIFT.BMWM3E36ResponseField4054/1"
 FUN_00765C40_LOAD_TERMS_FORMAT = "SHIFT.Fun00765c40LoadTerms/1"
-FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT = "SHIFT.Fun00765c40ExternalPassResult/1"
+FUN_00765C40_EXTERNAL_PASS_RESULT_HISTORY_FORMAT = "SHIFT.Fun00765c40ExternalPassResult/1"
+FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT = "SHIFT.Fun00765c40ExternalPassResult/2"
+FUN_00765C40_QUERY_INPUT_FORMAT = "SHIFT.Fun00765c40QueryInputBoundary/1"
 FUN_007560C0_GATE_SETUP_FORMAT = "SHIFT.Fun007560c0MotionReadGateSetup/1"
 BMW_NATIVE_DIFFICULTY_FORMAT = "SHIFT.BMWNativeSessionPlayerDifficulty/1"
 SELECTED_RATE_HZ = 180
@@ -71,10 +73,11 @@ def _build_active_providers(legacy_providers: list[dict[str, Any]]) -> list[dict
         {
             "current_api": (
                 "NativeVehicleFun00765c40Provider / "
-                "Fun00765c40ExternalPassResult{Fun00765c40LoadTerms}"
+                "Fun00765c40ExternalPassResult{Fun00765c40LoadTerms, "
+                "Fun00765c40QueryInputBoundary}"
             ),
-            "boundary_kind": "typed_external_pass_result_complete_anchor_external",
-            "evidence_state": "complete_anchor_external_exact_session_result_contract",
+            "boundary_kind": "typed_external_pass_result_with_query_input_complete_anchor_external",
+            "evidence_state": "complete_anchor_external_exact_query_input_and_result_contract",
         }
     )
     fun_00765c40["evidence"].extend(
@@ -82,12 +85,15 @@ def _build_active_providers(legacy_providers: list[dict[str, Any]]) -> list[dict
             "SHIFT.Fun00765c40LoadTerms/1 proves the four HDVehicle load terms are wheel+0x738 outputs owned by FUN_00765c40",
             "Phase 722 preserves complete FUN_00765c40 as external while typing its per-pass four-value output for the later FUN_00769ef0 read",
             "Phase 724 removes the former late FUN_007682c0 raw-input provider without moving FUN_00765c40 residual contact/collision work",
-            "SHIFT.Fun00765c40ExternalPassResult/1 names the active session boundary as the complete external FUN_00765c40 pass, not as FUN_00758ad0 contact-factor arithmetic",
-            "Phase 725 leaves world-position production, collision-provider behavior and unproven FUN_00765c40 side effects external while exposing only the proven load-term result downstream",
+            "SHIFT.Fun00765c40ExternalPassResult/1 historically names the session boundary as the complete external FUN_00765c40 pass rather than FUN_00758ad0 contact-factor arithmetic",
+            "Phase 725 leaves world-position production, collision-provider behavior and unproven FUN_00765c40 side effects external while exposing the proven load-term result downstream",
+            "SHIFT.Fun00765c40QueryInputBoundary/1 freezes the source-backed world-position/cache-handle/+0x38e8 values consumed at the FUN_00765c40 -> FUN_007b0710 query boundary",
+            "SHIFT.Fun00765c40ExternalPassResult/2 requires each external pass result to expose both typed load terms and the exact query input it consumed",
+            "Phase 726 captures both per-pass query-input snapshots while explicitly leaving the upstream world-position producer and collision-provider implementation external",
         ]
     )
     fun_00765c40["process1_requested_proof"].append(
-        "recover exact FUN_00765c40 world-position producer and collision-provider joins before further internalization"
+        "trace the exact producer/coordinate provenance of FUN_00765c40 world_position and separately prove collision-provider ownership before further internalization"
     )
 
     _require(len(active) == 7, "current provider count drift")
@@ -116,29 +122,34 @@ def build_current_frontier() -> dict[str, Any]:
             "format": FORMAT,
             "version": 1,
             "upstream_frontier": LEGACY_FORMAT,
-            "refresh_after_phase": 725,
-            "refresh_label": "S6 exact residual FUN_00765c40 external-pass contract",
+            "refresh_after_phase": 726,
+            "refresh_label": "S6 source-backed FUN_00765c40 collision-query input boundary",
             "scheduler_refresh": (
                 "S5 positive retail outer cadence + atomic explicit dispatch + exact "
                 "selected-session 180 Hz rate + exact persistent 1/180 inner execution"
             ),
             "transform_refresh": (
                 "positive exact outer->VHF numeric relation + positive BODY0 bind proof + "
-                "freshness-gated persistent BMW world-transform runtime wiring"
+                "freshness-gated persistent BMW world-transform runtime wiring; this renderer "
+                "transform remains intentionally separate from the unresolved wheel-query producer"
             ),
             "provider_refresh": (
-                "Phase 724 leaves no late raw FUN_007682c0 provider. Phase 725 narrows the session-facing "
-                "FUN_00765c40 API to NativeVehicleFun00765c40Provider returning the exact proven "
-                "Fun00765c40ExternalPassResult; unresolved world-position/collision semantics remain inside "
-                "that external pass and are not mislabeled as FUN_00758ad0 contact-factor arithmetic"
+                "Phase 724 leaves no late raw FUN_007682c0 provider. Phase 725 names the complete "
+                "external FUN_00765c40 pass exactly. Phase 726 now types and captures the source-backed "
+                "world-position/cache-handle/+0x38e8 input consumed before native FUN_007b0710 query-record "
+                "materialization. The producer/coordinate provenance of world_position and the collision "
+                "provider remain external rather than being inferred from the renderer BODY0/VHF path"
             ),
             "deepest_native_chain": (
-                "external complete FUN_00765c40 pass -> typed Fun00765c40ExternalPassResult/load terms -> "
-                "session-owned FUN_007560c0 gate setup + selected native Player Difficulty + current-BODY0 "
-                "derived FUN_007594e0 steering + selected-BMW setup +0x4054 + previous-outer projection state -> "
-                "native PC machine effect -> persistent BMW BODY0 +0x50 application -> half-step BODY integration -> "
-                "post-outer BODY0 velocity delta/timestep projection refresh -> positive BODY0/VHF bind -> fresh BMW "
-                "world transform -> live Vulkan sink; seven top-level provider/ownership boundaries remain external"
+                "external FUN_00765c40 world-position/collision provider -> typed "
+                "Fun00765c40QueryInputBoundary + native FUN_007b0710 query-record materialization -> "
+                "external complete FUN_00765c40 side effects -> typed load terms -> session-owned "
+                "FUN_007560c0 gate setup + selected native Player Difficulty + current-BODY0 derived "
+                "FUN_007594e0 steering + selected-BMW setup +0x4054 + previous-outer projection state -> "
+                "native PC machine effect -> persistent BMW BODY0 +0x50 application -> half-step BODY "
+                "integration -> post-outer BODY0 velocity delta/timestep projection refresh -> positive "
+                "BODY0/VHF bind -> fresh BMW world transform -> live Vulkan sink; seven top-level "
+                "provider/ownership boundaries remain external"
             ),
             "providers": active,
             "external_provider_count": len(active),
@@ -243,9 +254,10 @@ def build_current_frontier() -> dict[str, Any]:
             ],
             "blockers": [],
             "additional_dependency": (
-                "none for transform/timing transport or FUN_007682c0 late raw input; continue with residual complete external providers"
+                "none for renderer transform/timing transport; FUN_00765c40 wheel-query position provenance "
+                "is a separate unresolved producer and must not be sourced from this renderer join"
             ),
-            "policy": "do not reopen positive transform/timing work or substitute host 1/60",
+            "policy": "do not reopen positive transform/timing work or substitute renderer transforms for wheel-query evidence",
         }
     )
 
@@ -276,7 +288,14 @@ def build_current_frontier() -> dict[str, Any]:
         "BMW_response_4054_internal": True,
         "FUN_00765c40_load_terms_contract": FUN_00765C40_LOAD_TERMS_FORMAT,
         "FUN_00765c40_load_term_ownership_ready": True,
+        "FUN_00765c40_external_pass_result_history_contract": FUN_00765C40_EXTERNAL_PASS_RESULT_HISTORY_FORMAT,
         "FUN_00765c40_external_pass_result_contract": FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT,
+        "FUN_00765c40_query_input_contract": FUN_00765C40_QUERY_INPUT_FORMAT,
+        "FUN_00765c40_query_input_capture_ready": True,
+        "FUN_00765c40_query_record_materialization_native": True,
+        "FUN_00765c40_world_position_producer_internal": False,
+        "FUN_00765c40_collision_provider_internal": False,
+        "FUN_00765c40_renderer_transform_used_as_query_producer": False,
         "FUN_00765c40_session_boundary_exact": True,
         "FUN_007560c0_gate_setup_contract": FUN_007560C0_GATE_SETUP_FORMAT,
         "FUN_007560c0_gate_setup_owned": True,
@@ -292,7 +311,10 @@ def build_current_frontier() -> dict[str, Any]:
         "provider_inventory_changed": True,
         "closed_provider_ids": [_CLOSED_DELTA_ID, _CLOSED_EFFECT_ID],
         "narrowed_provider_ids": {
-            _FUN_00765C40_ID: "exact external FUN_00765c40 pass result; contact-factor alias removed"
+            _FUN_00765C40_ID: (
+                "exact external FUN_00765c40 pass result now exposes source-backed query input; "
+                "world-position producer/collision provider remain external"
+            )
         },
         "newly_positive_provider_or_owner_handoff_internalizable": True,
         "fun_007682c0_destination_contract": FUN_007682C0_DESTINATION_FORMAT,
@@ -301,7 +323,9 @@ def build_current_frontier() -> dict[str, Any]:
         "fun_007594e0_machine_angle_contract": FUN_007594E0_ANGLE_FORMAT,
         "bmw_response_4054_contract": BMW_RESPONSE_4054_FORMAT,
         "fun_00765c40_load_terms_contract": FUN_00765C40_LOAD_TERMS_FORMAT,
+        "fun_00765c40_external_pass_result_history_contract": FUN_00765C40_EXTERNAL_PASS_RESULT_HISTORY_FORMAT,
         "fun_00765c40_external_pass_result_contract": FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT,
+        "fun_00765c40_query_input_contract": FUN_00765C40_QUERY_INPUT_FORMAT,
         "fun_007560c0_gate_setup_contract": FUN_007560C0_GATE_SETUP_FORMAT,
         "bmw_native_player_difficulty_contract": BMW_NATIVE_DIFFICULTY_FORMAT,
         "fun_007682c0_runtime_body0_mutation_internalized": True,
@@ -315,9 +339,14 @@ def build_current_frontier() -> dict[str, Any]:
         "fun_007682c0_response_4054_internalized": True,
         "fun_00765c40_load_term_ownership_proven": True,
         "fun_00765c40_load_terms_typed_output": True,
+        "fun_00765c40_query_input_capture_ready": True,
+        "fun_00765c40_query_record_materialization_native": True,
+        "fun_00765c40_query_input_capture_count_per_explicit_step": 2,
         "fun_00765c40_complete_anchor_external": True,
         "fun_00765c40_session_contact_factor_alias_removed": True,
         "fun_00765c40_world_position_producer_internalized": False,
+        "fun_00765c40_world_position_coordinate_provenance_inferred": False,
+        "fun_00765c40_renderer_transform_reused_as_query_transform": False,
         "fun_00765c40_collision_provider_internalized": False,
         "fun_007560c0_gate_setup_ownership_proven": True,
         "fun_007560c0_selected_gate_value_native": False,
@@ -376,10 +405,14 @@ def build_current_frontier() -> dict[str, Any]:
             "fun_007682c0_response_4054_external": False,
             "fun_00765c40_load_term_ownership_ready": True,
             "fun_00765c40_external_pass_result_ready": True,
+            "fun_00765c40_query_input_ready": True,
+            "fun_00765c40_query_input_capture_ready": True,
+            "fun_00765c40_query_record_materialization_native": True,
             "fun_007682c0_load_terms_external": False,
             "fun_00765c40_complete_anchor_external": True,
             "fun_00765c40_world_position_producer_ready": False,
             "fun_00765c40_collision_provider_ready": False,
+            "fun_00765c40_renderer_transform_is_query_producer": False,
             "fun_007560c0_gate_setup_ownership_ready": True,
             "fun_007682c0_gate_external_per_pass": False,
             "fun_007560c0_selected_gate_value_native": False,
@@ -412,7 +445,9 @@ def contract() -> dict[str, Any]:
         "FUN_007594e0_machine_angle_contract": FUN_007594E0_ANGLE_FORMAT,
         "BMW_response_4054_contract": BMW_RESPONSE_4054_FORMAT,
         "FUN_00765c40_load_terms_contract": FUN_00765C40_LOAD_TERMS_FORMAT,
+        "FUN_00765c40_external_pass_result_history_contract": FUN_00765C40_EXTERNAL_PASS_RESULT_HISTORY_FORMAT,
         "FUN_00765c40_external_pass_result_contract": FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT,
+        "FUN_00765c40_query_input_contract": FUN_00765C40_QUERY_INPUT_FORMAT,
         "FUN_007560c0_gate_setup_contract": FUN_007560C0_GATE_SETUP_FORMAT,
         "BMW_native_player_difficulty_contract": BMW_NATIVE_DIFFICULTY_FORMAT,
         "FUN_007682c0_delta_destination_is_BODY0": True,
@@ -428,9 +463,15 @@ def contract() -> dict[str, Any]:
         "FUN_00765c40_load_term_ownership_ready": True,
         "FUN_00765c40_load_terms_typed_output": True,
         "FUN_00765c40_external_pass_result_ready": True,
+        "FUN_00765c40_query_input_ready": True,
+        "FUN_00765c40_query_input_capture_ready": True,
+        "FUN_00765c40_query_record_materialization_native": True,
+        "FUN_00765c40_query_input_capture_count_per_explicit_step": 2,
         "FUN_00765c40_session_contact_factor_alias_removed": True,
         "FUN_00765c40_complete_anchor_external": True,
         "FUN_00765c40_world_position_producer_internal": False,
+        "FUN_00765c40_world_position_coordinate_provenance_inferred": False,
+        "FUN_00765c40_renderer_transform_reused_as_query_transform": False,
         "FUN_00765c40_collision_provider_internal": False,
         "FUN_007682c0_external_load_terms_required": False,
         "FUN_007560c0_gate_setup_owned": True,
@@ -474,7 +515,9 @@ __all__ = [
     "FUN_007594E0_ANGLE_FORMAT",
     "BMW_RESPONSE_4054_FORMAT",
     "FUN_00765C40_LOAD_TERMS_FORMAT",
+    "FUN_00765C40_EXTERNAL_PASS_RESULT_HISTORY_FORMAT",
     "FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT",
+    "FUN_00765C40_QUERY_INPUT_FORMAT",
     "FUN_007560C0_GATE_SETUP_FORMAT",
     "BMW_NATIVE_DIFFICULTY_FORMAT",
     "SELECTED_RATE_HZ",
