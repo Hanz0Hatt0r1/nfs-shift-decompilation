@@ -1,0 +1,93 @@
+name: native-physics-phase745
+
+on:
+  push:
+    paths:
+      - 'native_runtime/include/shift_fun_00766510_external_pass_input.hpp'
+      - 'native_runtime/include/shift_native_vehicle_provider_session.hpp'
+      - 'native_runtime/src/native_vehicle_provider_session.cpp'
+      - 'native_runtime/tests/fun_00766510_session_handoff_check.cpp'
+      - 'native_runtime/tests/fun_007594e0_session_angle_check.cpp'
+      - 'native_runtime/tests/native_vehicle_provider_session_check.cpp'
+      - 'native_runtime/tests/selected_session_retail_vehicle_execution_check.cpp'
+      - 'native_runtime/cmake/phase744.cmake'
+      - 'native_runtime/cmake/phase745.cmake'
+      - 'tests/test_s6_fun_00766510_session_handoff.py'
+      - 'evidence/fun_00766510_session_handoff.json'
+      - 'evidence/phase745_next_blocker.md'
+      - 'docs/PHASE745_FUN_00766510_SESSION_HANDOFF.md'
+      - 'docs/PHASE745_SCOPE.md'
+      - '.github/workflows/native-physics-phase745.yml'
+  pull_request:
+    paths:
+      - 'native_runtime/include/shift_fun_00766510_external_pass_input.hpp'
+      - 'native_runtime/include/shift_native_vehicle_provider_session.hpp'
+      - 'native_runtime/src/native_vehicle_provider_session.cpp'
+      - 'native_runtime/tests/fun_00766510_session_handoff_check.cpp'
+      - 'native_runtime/tests/fun_007594e0_session_angle_check.cpp'
+      - 'native_runtime/tests/native_vehicle_provider_session_check.cpp'
+      - 'native_runtime/tests/selected_session_retail_vehicle_execution_check.cpp'
+      - 'native_runtime/cmake/phase744.cmake'
+      - 'native_runtime/cmake/phase745.cmake'
+      - 'tests/test_s6_fun_00766510_session_handoff.py'
+      - 'evidence/fun_00766510_session_handoff.json'
+      - 'evidence/phase745_next_blocker.md'
+      - 'docs/PHASE745_FUN_00766510_SESSION_HANDOFF.md'
+      - 'docs/PHASE745_SCOPE.md'
+      - '.github/workflows/native-physics-phase745.yml'
+
+jobs:
+  contact-response-session-handoff:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run focused Phase 745 Python regression
+        run: python3 -m pytest -q tests/test_s6_fun_00766510_session_handoff.py
+
+      - name: Validate Phase 745 evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          e = json.loads(Path('evidence/fun_00766510_session_handoff.json').read_text())
+          assert e['format'] == 'SHIFT.Fun00766510SessionHandoff/1'
+          assert e['ready'] is True
+          assert e['runtime_join']['typed_input_built_before_wheel_update'] is True
+          assert e['runtime_join']['typed_input_consumed_only_at_contact_response_anchor'] is True
+          assert e['scope']['external_provider_count_after'] == 7
+          assert e['scope']['contact_response_provider_removed'] is False
+          PY
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 745 and session compatibility checks
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_fun_00766510_session_handoff_check
+          shift_runtime_native_vehicle_provider_session_check
+          shift_runtime_fun_007594e0_session_angle_check
+          shift_runtime_selected_session_retail_vehicle_execution_check
+
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_fun_00766510_session_handoff|shift_runtime_native_vehicle_provider_session|shift_runtime_fun_007594e0_session_angle|shift_runtime_selected_session_retail_vehicle_execution)$'
+
+      - name: Verify Phase 745 native report
+        run: |
+          mkdir -p out/native-physics-phase745
+          native_runtime/build/shift_runtime_fun_00766510_session_handoff_check \
+            > out/native-physics-phase745/fun_00766510_session_handoff.json
+          grep -q '"format":"SHIFT.Fun00766510ExternalPassInput/1"' \
+            out/native-physics-phase745/fun_00766510_session_handoff.json
+          grep -q '"selected_query_handoff_owned":true' \
+            out/native-physics-phase745/fun_00766510_session_handoff.json
+          grep -q '"provider_removed":false' \
+            out/native-physics-phase745/fun_00766510_session_handoff.json
