@@ -20,3 +20,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_007675f0_body_owned_scalars
     COMMAND shift_runtime_fun_007675f0_body_owned_scalars_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase736.cmake)

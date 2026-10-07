@@ -24,6 +24,26 @@ void require_finite_value(double value, const char* label) {
     }
 }
 
+void require_weighted_record_fields(const WheelForceAggregateRecord& record) {
+    require_finite_value(record.scalar_at_base, "FUN_00759c90 record scalar +0x00");
+    require_finite(record.vector_a, "FUN_00759c90 record vector +0xb0");
+    require_finite_value(record.scalar_at_minus_8, "FUN_00759c90 record scalar -0x08");
+    require_finite(record.vector_b, "FUN_00759c90 record vector +0x98");
+}
+
+WheelForceAggregateVector3d weighted_record_vector(
+    const WheelForceAggregateRecord& record) {
+    require_weighted_record_fields(record);
+    WheelForceAggregateVector3d summed{};
+    for (std::size_t component = 0; component < summed.size(); ++component) {
+        summed[component] =
+            record.vector_a[component] * record.scalar_at_base +
+            record.vector_b[component] * record.scalar_at_minus_8;
+    }
+    require_finite(summed, "FUN_00759c90 weighted record vector");
+    return summed;
+}
+
 WheelForceAggregateVector3d cross(
     const WheelForceAggregateVector3d& left,
     const WheelForceAggregateVector3d& right) {
@@ -36,6 +56,19 @@ WheelForceAggregateVector3d cross(
 }
 
 }  // namespace
+
+WheelForceAggregateVector3d execute_fun_00759c90_weighted_total(
+    const std::array<WheelForceAggregateRecord, kWheelForceAggregateRecordCount>& records) {
+    WheelForceAggregateVector3d total{};
+    for (const auto& record : records) {
+        const auto summed = weighted_record_vector(record);
+        for (std::size_t component = 0; component < total.size(); ++component) {
+            total[component] += summed[component];
+        }
+    }
+    require_finite(total, "FUN_00759c90 total vector");
+    return total;
+}
 
 WheelForceAggregateResult execute_fun_00759c90_wheel_force_aggregate(
     const std::array<WheelForceAggregateRecord, kWheelForceAggregateRecordCount>& records,
@@ -51,29 +84,21 @@ WheelForceAggregateResult execute_fun_00759c90_wheel_force_aggregate(
     }
 
     WheelForceAggregateResult result{};
-    for (const auto& record : records) {
-        require_finite_value(record.scalar_at_base, "FUN_00759c90 record scalar +0x00");
-        require_finite(record.vector_a, "FUN_00759c90 record vector +0xb0");
-        require_finite_value(record.scalar_at_minus_8, "FUN_00759c90 record scalar -0x08");
-        require_finite(record.vector_b, "FUN_00759c90 record vector +0x98");
-        require_finite(record.point, "FUN_00759c90 record point +0xf8");
+    result.total = execute_fun_00759c90_weighted_total(records);
 
-        WheelForceAggregateVector3d summed{};
+    for (const auto& record : records) {
+        const auto summed = weighted_record_vector(record);
+        require_finite(record.point, "FUN_00759c90 record point +0xf8");
         WheelForceAggregateVector3d relative{};
-        for (std::size_t component = 0; component < 3u; ++component) {
-            summed[component] =
-                record.vector_a[component] * record.scalar_at_base +
-                record.vector_b[component] * record.scalar_at_minus_8;
+        for (std::size_t component = 0; component < relative.size(); ++component) {
             relative[component] = record.point[component] - body_position[component];
-            result.total[component] += summed[component];
         }
         const auto cross_value = cross(relative, summed);
-        for (std::size_t component = 0; component < 3u; ++component) {
+        for (std::size_t component = 0; component < result.cross_total.size(); ++component) {
             result.cross_total[component] += cross_value[component];
         }
     }
 
-    require_finite(result.total, "FUN_00759c90 total vector");
     require_finite(result.cross_total, "FUN_00759c90 cross total");
     result.transformed_total =
         transform_fun_007af0a0_refresh(body_frame, result.total);
