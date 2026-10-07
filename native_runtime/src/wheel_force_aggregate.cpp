@@ -37,20 +37,13 @@ WheelForceAggregateVector3d cross(
 
 }  // namespace
 
-WheelForceAggregateResult execute_fun_00759c90_wheel_force_aggregate(
+Fun00759c90AggregateResult execute_fun_00759c90_three_record_aggregate(
     const std::array<WheelForceAggregateRecord, kWheelForceAggregateRecordCount>& records,
-    const WheelForceAggregateVector3d& body_position,
-    const ConstraintRefreshFrame3f& body_frame,
-    double body_field_0x120) {
+    const WheelForceAggregateVector3d& body_position) {
 
     require_finite(body_position, "FUN_00759c90 BODY position");
-    require_finite(body_frame, "FUN_00759c90 BODY frame");
-    require_finite_value(body_field_0x120, "FUN_00759c90 BODY +0x120");
-    if (body_field_0x120 == 0.0) {
-        throw std::invalid_argument("FUN_00759c90 BODY +0x120 must be non-zero");
-    }
 
-    WheelForceAggregateResult result{};
+    Fun00759c90AggregateResult result{};
     for (const auto& record : records) {
         require_finite_value(record.scalar_at_base, "FUN_00759c90 record scalar +0x00");
         require_finite(record.vector_a, "FUN_00759c90 record vector +0xb0");
@@ -75,10 +68,37 @@ WheelForceAggregateResult execute_fun_00759c90_wheel_force_aggregate(
 
     require_finite(result.total, "FUN_00759c90 total vector");
     require_finite(result.cross_total, "FUN_00759c90 cross total");
+    return result;
+}
+
+WheelForceAggregateResult execute_fun_00759c90_wheel_force_aggregate(
+    const std::array<WheelForceAggregateRecord, kWheelForceAggregateRecordCount>& records,
+    const WheelForceAggregateVector3d& body_position,
+    const ConstraintRefreshFrame3f& body_frame,
+    double body_field_0x120) {
+
+    // Preserve the Phase 660 public wrapper for old fixtures while making the
+    // exact retail FUN_00759c90 output boundary explicit above.
+    require_finite(body_frame, "legacy FUN_00759c90 composite BODY frame");
+    require_finite_value(body_field_0x120, "legacy FUN_00759c90 composite BODY +0x120");
+    if (body_field_0x120 == 0.0) {
+        throw std::invalid_argument(
+            "legacy FUN_00759c90 composite BODY +0x120 must be non-zero");
+    }
+
+    const auto exact = execute_fun_00759c90_three_record_aggregate(
+        records,
+        body_position);
+
+    WheelForceAggregateResult result{};
+    result.total = exact.total;
+    result.cross_total = exact.cross_total;
     result.transformed_total =
         transform_fun_007af0a0_refresh(body_frame, result.total);
     result.scalar_output = result.transformed_total[0] / body_field_0x120;
-    require_finite_value(result.scalar_output, "FUN_00759c90 scalar output");
+    require_finite_value(
+        result.scalar_output,
+        "legacy FUN_00759c90 composite scalar output");
     return result;
 }
 
