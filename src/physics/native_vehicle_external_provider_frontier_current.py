@@ -32,8 +32,14 @@ FUN_007594E0_ANGLE_FORMAT = "SHIFT.Fun007594e0MachineAngle/1"
 BMW_RESPONSE_4054_FORMAT = "SHIFT.BMWM3E36ResponseField4054/1"
 FUN_00765C40_LOAD_TERMS_FORMAT = "SHIFT.Fun00765c40LoadTerms/1"
 FUN_00765C40_EXTERNAL_PASS_RESULT_HISTORY_FORMAT = "SHIFT.Fun00765c40ExternalPassResult/1"
-FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT = "SHIFT.Fun00765c40ExternalPassResult/2"
+FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT = "SHIFT.Fun00765c40ExternalPassResult/4"
+FUN_00765C40_EXTERNAL_PASS_INPUT_FORMAT = "SHIFT.Fun00765c40ExternalPassInput/2"
 FUN_00765C40_QUERY_INPUT_FORMAT = "SHIFT.Fun00765c40QueryInputBoundary/1"
+FUN_00765C40_SELECTED_WORLD_POSITION_FORMAT = "SHIFT.Fun00765c40SelectedBMWWorldPosition/1"
+FUN_00765C40_QUERY_CACHE_LIFETIME_FORMAT = "SHIFT.Fun00765c40QueryCacheLifetime/1"
+FUN_00765C40_SELECTED_FALLBACK_FORMAT = "SHIFT.Fun00765c40SelectedBMWQueryFallback/1"
+FUN_00765C40_COLLISION_OUTPUT_HANDOFF_FORMAT = "SHIFT.Fun00765c40CollisionOutputHandoff/1"
+FUN_00766510_QUERY_SCALAR_HANDOFF_FORMAT = "SHIFT.Fun00766510QueryScalarHandoff/1"
 FUN_007560C0_GATE_SETUP_FORMAT = "SHIFT.Fun007560c0MotionReadGateSetup/1"
 BMW_NATIVE_DIFFICULTY_FORMAT = "SHIFT.BMWNativeSessionPlayerDifficulty/1"
 SELECTED_RATE_HZ = 180
@@ -72,12 +78,19 @@ def _build_active_providers(legacy_providers: list[dict[str, Any]]) -> list[dict
     fun_00765c40.update(
         {
             "current_api": (
-                "NativeVehicleFun00765c40Provider / "
+                "NativeVehicleFun00765c40Provider / Fun00765c40ExternalPassInput/2 -> "
                 "Fun00765c40ExternalPassResult{Fun00765c40LoadTerms, "
-                "Fun00765c40QueryInputBoundary}"
+                "Fun00765c40QueryInputBoundary, returned_cache_handle, "
+                "selected optional CollisionQueryOutput}"
             ),
-            "boundary_kind": "typed_external_pass_result_with_query_input_complete_anchor_external",
-            "evidence_state": "complete_anchor_external_exact_query_input_and_result_contract",
+            "boundary_kind": (
+                "typed_external_pass_result_with_selected_collision_output_"
+                "complete_anchor_external"
+            ),
+            "evidence_state": (
+                "selected_world_position_cache_fallback_and_collision_output_typed_"
+                "collision_provider_and_residual_side_effects_external"
+            ),
         }
     )
     fun_00765c40["evidence"].extend(
@@ -88,12 +101,17 @@ def _build_active_providers(legacy_providers: list[dict[str, Any]]) -> list[dict
             "SHIFT.Fun00765c40ExternalPassResult/1 historically names the session boundary as the complete external FUN_00765c40 pass rather than FUN_00758ad0 contact-factor arithmetic",
             "Phase 725 leaves world-position production, collision-provider behavior and unproven FUN_00765c40 side effects external while exposing the proven load-term result downstream",
             "SHIFT.Fun00765c40QueryInputBoundary/1 freezes the source-backed world-position/cache-handle/+0x38e8 values consumed at the FUN_00765c40 -> FUN_007b0710 query boundary",
-            "SHIFT.Fun00765c40ExternalPassResult/2 requires each external pass result to expose both typed load terms and the exact query input it consumed",
-            "Phase 726 captures both per-pass query-input snapshots while explicitly leaving the upstream world-position producer and collision-provider implementation external",
+            "Phase 726 captures both per-pass query-input snapshots while explicitly leaving the then-unproven world-position producer and collision-provider implementation external",
+            f"{FUN_00765C40_SELECTED_WORLD_POSITION_FORMAT} closes the selected BMW per-pass query world-position producer independently of the renderer BODY0/VHF transform",
+            f"{FUN_00765C40_QUERY_CACHE_LIFETIME_FORMAT} makes HDVehicle+0x38dc persistent session-owned query-cache state",
+            f"{FUN_00765C40_SELECTED_FALLBACK_FORMAT} binds selected BMW HDVehicle+0x38e8 to the exact FWMaxHeight setup value before the residual provider runs",
+            f"{FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT} requires the selected BMW residual result to expose its typed FUN_007b0710 CollisionQueryOutput and ties returned_cache_handle to that output",
+            f"{FUN_00765C40_COLLISION_OUTPUT_HANDOFF_FORMAT} validates hit/miss/cache-output structure without internalizing the world/collision provider",
+            f"{FUN_00766510_QUERY_SCALAR_HANDOFF_FORMAT} natively projects the exposed output to +0x38e0 and reproduces the first FUN_00766510 [0,+0x38e8] clamp; session wiring is deferred to the next slice",
         ]
     )
     fun_00765c40["process1_requested_proof"].append(
-        "trace the exact producer/coordinate provenance of FUN_00765c40 world_position and separately prove collision-provider ownership before further internalization"
+        "trace the collision-provider implementation below FUN_007b0710 and any remaining source-visible FUN_00765c40 side effects; selected BMW query input/output ownership is already typed"
     )
 
     _require(len(active) == 7, "current provider count drift")
@@ -122,34 +140,32 @@ def build_current_frontier() -> dict[str, Any]:
             "format": FORMAT,
             "version": 1,
             "upstream_frontier": LEGACY_FORMAT,
-            "refresh_after_phase": 726,
-            "refresh_label": "S6 source-backed FUN_00765c40 collision-query input boundary",
+            "refresh_after_phase": 742,
+            "refresh_label": "S6 selected FUN_00765c40 collision-output handoff",
             "scheduler_refresh": (
                 "S5 positive retail outer cadence + atomic explicit dispatch + exact "
                 "selected-session 180 Hz rate + exact persistent 1/180 inner execution"
             ),
             "transform_refresh": (
-                "positive exact outer->VHF numeric relation + positive BODY0 bind proof + "
-                "freshness-gated persistent BMW world-transform runtime wiring; this renderer "
-                "transform remains intentionally separate from the unresolved wheel-query producer"
+                "positive renderer outer->VHF/BODY0 transport remains closed; Phase739 separately "
+                "closes the selected BMW FUN_00765c40 query world-position producer from current "
+                "persistent BODY state, so renderer transforms are still not reused as query proof"
             ),
             "provider_refresh": (
-                "Phase 724 leaves no late raw FUN_007682c0 provider. Phase 725 names the complete "
-                "external FUN_00765c40 pass exactly. Phase 726 now types and captures the source-backed "
-                "world-position/cache-handle/+0x38e8 input consumed before native FUN_007b0710 query-record "
-                "materialization. The producer/coordinate provenance of world_position and the collision "
-                "provider remain external rather than being inferred from the renderer BODY0/VHF path"
+                "Phases 739-741 move selected BMW query world position, +0x38dc cache lifetime and "
+                "+0x38e8 setup fallback ahead of the residual FUN_00765c40 provider. Phase742 advances "
+                "the result to /4 and requires the selected path to expose typed FUN_007b0710 hit/miss/"
+                "contact-height/cache-output state. The collision/world provider execution and remaining "
+                "FUN_00765c40 side effects stay external; provider count therefore remains seven"
             ),
             "deepest_native_chain": (
-                "external FUN_00765c40 world-position/collision provider -> typed "
-                "Fun00765c40QueryInputBoundary + native FUN_007b0710 query-record materialization -> "
-                "external complete FUN_00765c40 side effects -> typed load terms -> session-owned "
-                "FUN_007560c0 gate setup + selected native Player Difficulty + current-BODY0 derived "
-                "FUN_007594e0 steering + selected-BMW setup +0x4054 + previous-outer projection state -> "
-                "native PC machine effect -> persistent BMW BODY0 +0x50 application -> half-step BODY "
-                "integration -> post-outer BODY0 velocity delta/timestep projection refresh -> positive "
-                "BODY0/VHF bind -> fresh BMW world transform -> live Vulkan sink; seven top-level "
-                "provider/ownership boundaries remain external"
+                "current selected BMW BODY state -> native FUN_007618f0 local sample -> native query "
+                "world position -> session-owned +0x38dc cache + exact selected +0x38e8 fallback -> "
+                "external collision/world lookup under residual FUN_00765c40 -> typed FUN_007b0710 "
+                "CollisionQueryOutput -> native-ready +0x38e0/[0,+0x38e8] handoff (not yet session-wired) -> "
+                "external remainder of FUN_00766510; typed load terms continue into native FUN_007675f0/"
+                "FUN_007682c0 paths -> half-step BODY integration -> persistent BMW BODY state -> live "
+                "renderer path; seven top-level provider/ownership boundaries remain external"
             ),
             "providers": active,
             "external_provider_count": len(active),
@@ -237,6 +253,25 @@ def build_current_frontier() -> dict[str, Any]:
                 "retail_default_used_as_proof": False,
                 "active_late_motion_read_provider_required": False,
             },
+            {
+                "boundary": "selected BMW FUN_00765c40 query world_position",
+                "state": "retail_pc_body_domain_and_transform_chain_native",
+                "proof": FUN_00765C40_SELECTED_WORLD_POSITION_FORMAT,
+                "active_external_provider_required": False,
+                "renderer_transform_used_as_proof": False,
+            },
+            {
+                "boundary": "HDVehicle+0x38dc FUN_00765c40 query cache lifetime",
+                "state": "retail_pc_persistent_session_state_native",
+                "proof": FUN_00765C40_QUERY_CACHE_LIFETIME_FORMAT,
+                "active_external_provider_required": False,
+            },
+            {
+                "boundary": "selected BMW HDVehicle+0x38e8 query fallback setup value",
+                "state": "retail_pc_resource_and_setup_value_native",
+                "proof": FUN_00765C40_SELECTED_FALLBACK_FORMAT,
+                "active_external_provider_required": False,
+            },
         ]
     )
 
@@ -254,8 +289,8 @@ def build_current_frontier() -> dict[str, Any]:
             ],
             "blockers": [],
             "additional_dependency": (
-                "none for renderer transform/timing transport; FUN_00765c40 wheel-query position provenance "
-                "is a separate unresolved producer and must not be sourced from this renderer join"
+                "none for renderer transform/timing transport; the selected FUN_00765c40 query producer "
+                "is now independently proven by Phase739 and remains a separate data path"
             ),
             "policy": "do not reopen positive transform/timing work or substitute renderer transforms for wheel-query evidence",
         }
@@ -290,10 +325,21 @@ def build_current_frontier() -> dict[str, Any]:
         "FUN_00765c40_load_term_ownership_ready": True,
         "FUN_00765c40_external_pass_result_history_contract": FUN_00765C40_EXTERNAL_PASS_RESULT_HISTORY_FORMAT,
         "FUN_00765c40_external_pass_result_contract": FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT,
+        "FUN_00765c40_external_pass_input_contract": FUN_00765C40_EXTERNAL_PASS_INPUT_FORMAT,
         "FUN_00765c40_query_input_contract": FUN_00765C40_QUERY_INPUT_FORMAT,
         "FUN_00765c40_query_input_capture_ready": True,
         "FUN_00765c40_query_record_materialization_native": True,
-        "FUN_00765c40_world_position_producer_internal": False,
+        "FUN_00765c40_selected_world_position_contract": FUN_00765C40_SELECTED_WORLD_POSITION_FORMAT,
+        "FUN_00765c40_world_position_producer_internal": True,
+        "FUN_00765c40_query_cache_lifetime_contract": FUN_00765C40_QUERY_CACHE_LIFETIME_FORMAT,
+        "FUN_00765c40_query_cache_state_internal": True,
+        "FUN_00765c40_selected_fallback_contract": FUN_00765C40_SELECTED_FALLBACK_FORMAT,
+        "FUN_00765c40_selected_fallback_internal": True,
+        "FUN_00765c40_collision_output_handoff_contract": FUN_00765C40_COLLISION_OUTPUT_HANDOFF_FORMAT,
+        "FUN_00765c40_selected_collision_output_required": True,
+        "FUN_00766510_query_scalar_handoff_contract": FUN_00766510_QUERY_SCALAR_HANDOFF_FORMAT,
+        "FUN_00766510_query_scalar_handoff_native": True,
+        "FUN_00766510_query_scalar_handoff_session_wired": False,
         "FUN_00765c40_collision_provider_internal": False,
         "FUN_00765c40_renderer_transform_used_as_query_producer": False,
         "FUN_00765c40_session_boundary_exact": True,
@@ -312,8 +358,8 @@ def build_current_frontier() -> dict[str, Any]:
         "closed_provider_ids": [_CLOSED_DELTA_ID, _CLOSED_EFFECT_ID],
         "narrowed_provider_ids": {
             _FUN_00765C40_ID: (
-                "exact external FUN_00765c40 pass result now exposes source-backed query input; "
-                "world-position producer/collision provider remain external"
+                "selected BMW query world position/cache/fallback and typed collision output are now "
+                "source-owned or exposed; collision-provider execution and residual pass side effects remain external"
             )
         },
         "newly_positive_provider_or_owner_handoff_internalizable": True,
@@ -325,7 +371,10 @@ def build_current_frontier() -> dict[str, Any]:
         "fun_00765c40_load_terms_contract": FUN_00765C40_LOAD_TERMS_FORMAT,
         "fun_00765c40_external_pass_result_history_contract": FUN_00765C40_EXTERNAL_PASS_RESULT_HISTORY_FORMAT,
         "fun_00765c40_external_pass_result_contract": FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT,
+        "fun_00765c40_external_pass_input_contract": FUN_00765C40_EXTERNAL_PASS_INPUT_FORMAT,
         "fun_00765c40_query_input_contract": FUN_00765C40_QUERY_INPUT_FORMAT,
+        "fun_00765c40_collision_output_handoff_contract": FUN_00765C40_COLLISION_OUTPUT_HANDOFF_FORMAT,
+        "fun_00766510_query_scalar_handoff_contract": FUN_00766510_QUERY_SCALAR_HANDOFF_FORMAT,
         "fun_007560c0_gate_setup_contract": FUN_007560C0_GATE_SETUP_FORMAT,
         "bmw_native_player_difficulty_contract": BMW_NATIVE_DIFFICULTY_FORMAT,
         "fun_007682c0_runtime_body0_mutation_internalized": True,
@@ -344,10 +393,16 @@ def build_current_frontier() -> dict[str, Any]:
         "fun_00765c40_query_input_capture_count_per_explicit_step": 2,
         "fun_00765c40_complete_anchor_external": True,
         "fun_00765c40_session_contact_factor_alias_removed": True,
-        "fun_00765c40_world_position_producer_internalized": False,
+        "fun_00765c40_world_position_producer_internalized": True,
         "fun_00765c40_world_position_coordinate_provenance_inferred": False,
         "fun_00765c40_renderer_transform_reused_as_query_transform": False,
+        "fun_00765c40_query_cache_state_internalized": True,
+        "fun_00765c40_selected_fallback_internalized": True,
+        "fun_00765c40_selected_collision_output_required": True,
+        "fun_00765c40_collision_output_typed": True,
         "fun_00765c40_collision_provider_internalized": False,
+        "fun_00766510_query_scalar_handoff_native": True,
+        "fun_00766510_query_scalar_handoff_session_wired": False,
         "fun_007560c0_gate_setup_ownership_proven": True,
         "fun_007560c0_selected_gate_value_native": False,
         "dat_00c128cc_retail_mapping_proven": True,
@@ -410,9 +465,14 @@ def build_current_frontier() -> dict[str, Any]:
             "fun_00765c40_query_record_materialization_native": True,
             "fun_007682c0_load_terms_external": False,
             "fun_00765c40_complete_anchor_external": True,
-            "fun_00765c40_world_position_producer_ready": False,
+            "fun_00765c40_world_position_producer_ready": True,
+            "fun_00765c40_query_cache_state_ready": True,
+            "fun_00765c40_selected_fallback_ready": True,
+            "fun_00765c40_selected_collision_output_ready": True,
             "fun_00765c40_collision_provider_ready": False,
             "fun_00765c40_renderer_transform_is_query_producer": False,
+            "fun_00766510_query_scalar_handoff_ready": True,
+            "fun_00766510_query_scalar_handoff_session_wired": False,
             "fun_007560c0_gate_setup_ownership_ready": True,
             "fun_007682c0_gate_external_per_pass": False,
             "fun_007560c0_selected_gate_value_native": False,
@@ -447,7 +507,10 @@ def contract() -> dict[str, Any]:
         "FUN_00765c40_load_terms_contract": FUN_00765C40_LOAD_TERMS_FORMAT,
         "FUN_00765c40_external_pass_result_history_contract": FUN_00765C40_EXTERNAL_PASS_RESULT_HISTORY_FORMAT,
         "FUN_00765c40_external_pass_result_contract": FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT,
+        "FUN_00765c40_external_pass_input_contract": FUN_00765C40_EXTERNAL_PASS_INPUT_FORMAT,
         "FUN_00765c40_query_input_contract": FUN_00765C40_QUERY_INPUT_FORMAT,
+        "FUN_00765c40_collision_output_handoff_contract": FUN_00765C40_COLLISION_OUTPUT_HANDOFF_FORMAT,
+        "FUN_00766510_query_scalar_handoff_contract": FUN_00766510_QUERY_SCALAR_HANDOFF_FORMAT,
         "FUN_007560c0_gate_setup_contract": FUN_007560C0_GATE_SETUP_FORMAT,
         "BMW_native_player_difficulty_contract": BMW_NATIVE_DIFFICULTY_FORMAT,
         "FUN_007682c0_delta_destination_is_BODY0": True,
@@ -469,10 +532,15 @@ def contract() -> dict[str, Any]:
         "FUN_00765c40_query_input_capture_count_per_explicit_step": 2,
         "FUN_00765c40_session_contact_factor_alias_removed": True,
         "FUN_00765c40_complete_anchor_external": True,
-        "FUN_00765c40_world_position_producer_internal": False,
+        "FUN_00765c40_world_position_producer_internal": True,
         "FUN_00765c40_world_position_coordinate_provenance_inferred": False,
         "FUN_00765c40_renderer_transform_reused_as_query_transform": False,
+        "FUN_00765c40_query_cache_state_internal": True,
+        "FUN_00765c40_selected_fallback_internal": True,
+        "FUN_00765c40_selected_collision_output_required": True,
         "FUN_00765c40_collision_provider_internal": False,
+        "FUN_00766510_query_scalar_handoff_native": True,
+        "FUN_00766510_query_scalar_handoff_session_wired": False,
         "FUN_007682c0_external_load_terms_required": False,
         "FUN_007560c0_gate_setup_owned": True,
         "FUN_007560c0_selected_gate_value_native": False,
@@ -517,7 +585,13 @@ __all__ = [
     "FUN_00765C40_LOAD_TERMS_FORMAT",
     "FUN_00765C40_EXTERNAL_PASS_RESULT_HISTORY_FORMAT",
     "FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT",
+    "FUN_00765C40_EXTERNAL_PASS_INPUT_FORMAT",
     "FUN_00765C40_QUERY_INPUT_FORMAT",
+    "FUN_00765C40_SELECTED_WORLD_POSITION_FORMAT",
+    "FUN_00765C40_QUERY_CACHE_LIFETIME_FORMAT",
+    "FUN_00765C40_SELECTED_FALLBACK_FORMAT",
+    "FUN_00765C40_COLLISION_OUTPUT_HANDOFF_FORMAT",
+    "FUN_00766510_QUERY_SCALAR_HANDOFF_FORMAT",
     "FUN_007560C0_GATE_SETUP_FORMAT",
     "BMW_NATIVE_DIFFICULTY_FORMAT",
     "SELECTED_RATE_HZ",
