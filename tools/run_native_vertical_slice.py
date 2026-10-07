@@ -3,8 +3,9 @@
 
 The runner does not invent retail semantics. It composes already-proven
 native_runtime inputs into one fail-closed launch contract. A Process D offline
-resource pipeline may replace only the explicit scene-set and physics-manifest
-paths; camera, participant and BODY-feedback evidence remain mandatory.
+resource pipeline may replace the explicit scene-set and physics-manifest paths,
+and may transport already-proven participant runtime identity evidence. Camera
+and BODY-feedback evidence remain mandatory profile inputs.
 """
 from __future__ import annotations
 
@@ -23,10 +24,11 @@ PLAN_FORMAT = "SHIFT.NativeVerticalSliceLaunchPlan/1"
 PIPELINE_FORMAT = "SHIFT.OfflineResourcePipelineRun/1"
 RESOURCE_HANDOFF_FORMAT = "SHIFT.OfflineNativeResourceHandoff/1"
 RETAIL_ARCHIVE_ADMISSION_FORMAT = "SHIFT.RetailArchiveIdentityAdmission/1"
+PARTICIPANT_FORMAT = "SHIFT.NativePhysicsParticipantRuntimeEvidence/1"
 JSON_INPUTS: dict[str, tuple[str, bool]] = {
     "camera_state": ("SHIFT.NativeCameraStateBridge/1", True),
     "physics_manifest": ("SHIFT.BMWM3VehiclePhysicsResourceManifest/1", False),
-    "participant_boundary": ("SHIFT.NativePhysicsParticipantRuntimeEvidence/1", True),
+    "participant_boundary": (PARTICIPANT_FORMAT, True),
 }
 
 BINARY_INPUTS: dict[str, tuple[bytes, str]] = {
@@ -234,6 +236,32 @@ def _sha256_file(path: Path) -> str:
         raise ProfileError(f"resource pipeline artifact not found: {path}") from exc
 
 
+def _validated_artifact_path(
+    *,
+    workspace_root: Path,
+    expected_path: Path,
+    artifact: Mapping[str, Any],
+    label: str,
+) -> Path:
+    recorded = _resolve_recorded_member(
+        workspace_root,
+        artifact.get("path"),
+        label=f"{label} artifact path",
+    )
+    if recorded != expected_path.resolve():
+        raise ProfileError(f"{label} artifact path disagrees with pipeline layout")
+    expected_sha = str(artifact.get("sha256") or "").strip().lower()
+    if len(expected_sha) != 64:
+        raise ProfileError(f"{label} artifact SHA-256 is missing or invalid")
+    try:
+        int(expected_sha, 16)
+    except ValueError as exc:
+        raise ProfileError(f"{label} artifact SHA-256 is invalid") from exc
+    if _sha256_file(expected_path) != expected_sha:
+        raise ProfileError(f"{label} artifact SHA-256 mismatch")
+    return expected_path
+
+
 def _resolve_resource_pipeline_inputs(
     workspace_root: Path,
     raw: Any,
@@ -278,44 +306,86 @@ def _resolve_resource_pipeline_inputs(
         label="resource pipeline runtime-proven scene set",
     )
 
-    physics_manifest = pipeline_root / "native-handoff" / "native_physics_manifest.json"
     artifacts = handoff.get("artifacts") or {}
     if not isinstance(artifacts, Mapping):
         raise ProfileError("native resource handoff artifacts must be an object")
+
+    physics_manifest = pipeline_root / "native-handoff" / "native_physics_manifest.json"
     physics_artifact = artifacts.get("native_physics_manifest")
     if not isinstance(physics_artifact, Mapping):
         raise ProfileError("native resource handoff has no native physics manifest artifact")
-    recorded_physics = _resolve_recorded_member(
-        workspace_root,
-        physics_artifact.get("path"),
-        label="native physics manifest artifact path",
+    _validated_artifact_path(
+        workspace_root=workspace_root,
+        expected_path=physics_manifest,
+        artifact=physics_artifact,
+        label="native physics manifest",
     )
-    if recorded_physics != physics_manifest.resolve():
-        raise ProfileError("native physics manifest artifact path disagrees with pipeline layout")
-    expected_sha = str(physics_artifact.get("sha256") or "").strip().lower()
-    if len(expected_sha) != 64:
-        raise ProfileError("native physics manifest artifact SHA-256 is missing or invalid")
-    try:
-        int(expected_sha, 16)
-    except ValueError as exc:
-        raise ProfileError("native physics manifest artifact SHA-256 is invalid") from exc
-    if _sha256_file(physics_manifest) != expected_sha:
-        raise ProfileError("native physics manifest artifact SHA-256 mismatch")
 
-    return (
-        {
-            "resource_pipeline": pipeline_root,
-            "scene_set": scene_set,
-            "physics_manifest": physics_manifest,
-        },
-        {
-            "format": pipeline["format"],
-            "handoff_format": handoff["format"],
-            "ready": True,
-            "scene_source": "runtime-proven-process-d-input",
-            "physics_source": "exact-process-d-native-compatibility-manifest",
-        },
-    )
+    resolved: dict[str, Path] = {
+        "resource_pipeline": pipeline_root,
+        "scene_set": scene_set,
+        "physics_manifest": physics_manifest,
+    }
+    check: dict[str, Any] = {
+        "format": pipeline["format"],
+        "handoff_format": handoff["format"],
+        "ready": True,
+        "scene_source": "runtime-proven-process-d-input",
+        "physics_source": "exact-process-d-native-compatibility-manifest",
+        "participant_source": "explicit-profile-runtime-evidence",
+        "participant_runtime_identity_ready": False,
+    }
+
+    pipeline_participant_ready = pipeline.get("participant_runtime_identity_ready") is True
+    handoff_participant_ready = handoff.get("participant_runtime_identity_ready") is True
+    if pipeline_participant_ready != handoff_participant_ready:
+        raise ProfileError(
+            "resource pipeline participant readiness disagrees with native handoff"
+        )
+
+    participant_artifact = artifacts.get("participant_runtime_evidence")
+    if participant_artifact is None:
+        if handoff_participant_ready:
+            raise ProfileError(
+                "native resource handoff marks participant identity ready without artifact"
+            )
+    else:
+        if not isinstance(participant_artifact, Mapping):
+            raise ProfileError("participant runtime evidence artifact record is invalid")
+        if not handoff_participant_ready:
+            raise ProfileError(
+                "native resource handoff participant artifact is present but identity is not ready"
+            )
+        participant_path = (
+            pipeline_root
+            / "native-handoff"
+            / "native_physics_participant_runtime_evidence.json"
+        )
+        _validated_artifact_path(
+            workspace_root=workspace_root,
+            expected_path=participant_path,
+            artifact=participant_artifact,
+            label="participant runtime evidence",
+        )
+        participant_value = _require_json_contract(
+            participant_path,
+            expected_format=PARTICIPANT_FORMAT,
+            require_ready=True,
+            label="participant runtime evidence",
+        )
+        if participant_value.get("registry_selector_identity_join_proven") is not True:
+            raise ProfileError(
+                "participant runtime evidence has no proven registry/selector identity join"
+            )
+        if participant_value.get("participant_instance_ready") is not True:
+            raise ProfileError(
+                "participant runtime evidence has no ready participant instance"
+            )
+        resolved["participant_boundary"] = participant_path
+        check["participant_source"] = "exact-native-handoff-runtime-evidence"
+        check["participant_runtime_identity_ready"] = True
+
+    return resolved, check
 
 
 def _validate_input_script(path: Path) -> int:
@@ -385,6 +455,7 @@ def build_launch_plan(
 
     resource_pipeline_raw = profile.get("resource_pipeline")
     use_resource_pipeline = resource_pipeline_raw not in (None, "")
+    participant_from_resource_pipeline = False
     if use_resource_pipeline:
         if profile.get("scene_set") not in (None, ""):
             raise ProfileError(
@@ -398,6 +469,13 @@ def build_launch_plan(
             workspace_root,
             resource_pipeline_raw,
         )
+        if "participant_boundary" in pipeline_paths:
+            if profile.get("participant_boundary") not in (None, ""):
+                raise ProfileError(
+                    "resource_pipeline participant artifact cannot be combined with "
+                    "explicit participant_boundary"
+                )
+            participant_from_resource_pipeline = True
         resolved.update(pipeline_paths)
         checks["resource_pipeline"] = pipeline_check
     else:
@@ -563,7 +641,11 @@ def build_launch_plan(
             "dynamic_body_feedback_scheduler_admitted": True,
             "legacy_solver_replay_cli_disabled": True,
             "scene_and_physics_from_resource_pipeline": use_resource_pipeline,
+            "participant_runtime_evidence_from_resource_pipeline": (
+                participant_from_resource_pipeline
+            ),
             "resource_pipeline_replaces_runtime_evidence": False,
+            "camera_or_body_feedback_from_resource_pipeline": False,
             "retail_archive_identity_revalidated": (
                 retail_identity_check is not None
             ),
