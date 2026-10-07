@@ -43,7 +43,7 @@ def test_machine_effect_contract_freezes_x87_and_raw_input_boundaries() -> None:
     assert raw["angle_mode"] == "DAT_00c128cc i32"
 
 
-def test_active_native_path_consumes_raw_inputs_not_precomputed_effect() -> None:
+def test_active_native_path_no_longer_accepts_late_raw_input_provider() -> None:
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     native = payload["native_consumption"]
     assert native["external_precomputed_effect_accepted_by_active_session"] is False
@@ -55,9 +55,10 @@ def test_active_native_path_consumes_raw_inputs_not_precomputed_effect() -> None
     session = SESSION.read_text(encoding="utf-8")
     chain = CHAIN.read_text(encoding="utf-8")
     kernel = KERNEL.read_text(encoding="utf-8")
-    assert "NativeVehicleMotionReadInputProvider motion_read_input" in header
-    assert "NativeVehicleMotionReadEffectProvider" not in header
-    assert "providers_.motion_read_input(pass_index)" in session
+    assert "NativeVehicleMotionReadInputProvider" not in header
+    assert "motion_read_input{}" not in header
+    assert "providers_.motion_read_input" not in session
+    assert "providers_.race_mode" in session
     assert "execute_explicit_motion_read_machine_input_update" in session
     assert "execute_fun_007682c0_machine_effect" in chain
     assert "apply_fun_007682c0_body0_accumulator_y_delta" in chain
@@ -65,7 +66,7 @@ def test_active_native_path_consumes_raw_inputs_not_precomputed_effect() -> None
     assert "std::sqrt(" not in kernel
 
 
-def test_only_raw_input_refresh_remains_for_this_boundary() -> None:
+def test_original_machine_effect_artifact_remains_historical_evidence() -> None:
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     handoff = payload["handoff"]
     blockers = payload["remaining_blockers"]
