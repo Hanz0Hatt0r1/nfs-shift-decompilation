@@ -34,17 +34,19 @@ int main() {
         legacy.projection_field_x = 123.0f;
         legacy.projection_field_z = -456.0f;
         legacy.response_field_4054 = 7.0f;
-        legacy.angle_mode = 2;
+        legacy.angle_mode = 0;
 
-        const Fun007682c0ExternalMachineInput external = legacy;
+        const Fun007682c0ExternalMachineInput compatibility = legacy;
+        (void)compatibility;
         const Fun007560c0MotionReadGateSetup setup_open{true};
         const Fun007560c0MotionReadGateSetup setup_closed{false};
+        const RaceModePlayerDifficulty difficulty{true, 2};
         const Fun007682c0DerivedProjectionState initial{};
         constexpr float derived_steering = -1.25f;
         const Fun00765c40LoadTerms derived_load_terms{11.0, 22.0, 33.0, 44.0};
         const auto composed = compose_fun_007682c0_machine_input(
-            external,
             setup_open,
+            difficulty,
             derived_steering,
             derived_load_terms,
             initial);
@@ -55,7 +57,9 @@ int main() {
         require(composed.load_terms == derived_load_terms &&
                     composed.load_terms != legacy.load_terms &&
                     composed.angle_mode == 2,
-                "FUN_00765c40 load-term ownership was not consumed");
+                "session-owned Player Difficulty or load-term ownership was not consumed");
+        require(composed.angle_mode != legacy.angle_mode,
+                "legacy DAT_00c128cc value leaked into production composition");
         require(f32_bits(composed.response_field_4054) ==
                     kBmwM3E36ResponseField4054Bits &&
                     composed.response_field_4054 != legacy.response_field_4054,
@@ -64,11 +68,9 @@ int main() {
                     composed.projection_field_z == 0.0f,
                 "legacy projection fields leaked into production composition");
 
-        // The late compatibility conversion must not retain the legacy gate.
-        // Closing setup must win even though the wide legacy input was open.
         const auto closed = compose_fun_007682c0_machine_input(
-            external,
             setup_closed,
+            difficulty,
             derived_steering,
             derived_load_terms,
             initial);
@@ -95,8 +97,8 @@ int main() {
                 "PC projection-state f32 store checkpoint mismatch");
 
         const auto second_input = compose_fun_007682c0_machine_input(
-            external,
             setup_open,
+            difficulty,
             derived_steering,
             derived_load_terms,
             rounded);
@@ -107,8 +109,8 @@ int main() {
                 "derived steering changed while composing next input");
         require(second_input.load_terms == derived_load_terms,
                 "typed FUN_00765c40 load terms changed between compositions");
-        require(second_input.caller_gate_open,
-                "FUN_007560c0 setup gate changed between compositions");
+        require(second_input.caller_gate_open && second_input.angle_mode == 2,
+                "session setup selectors changed between compositions");
         require(f32_bits(second_input.response_field_4054) ==
                     kBmwM3E36ResponseField4054Bits,
                 "selected BMW setup response changed between compositions");
@@ -118,8 +120,8 @@ int main() {
             Fun00765c40LoadTerms invalid = derived_load_terms;
             invalid[2] = std::numeric_limits<double>::infinity();
             (void)compose_fun_007682c0_machine_input(
-                external,
                 setup_open,
+                difficulty,
                 derived_steering,
                 invalid,
                 initial);
@@ -128,6 +130,34 @@ int main() {
         }
         require(nonfinite_load_rejected,
                 "non-finite FUN_00765c40 load term failed open");
+
+        bool missing_difficulty_rejected = false;
+        try {
+            (void)compose_fun_007682c0_machine_input(
+                setup_open,
+                RaceModePlayerDifficulty{},
+                derived_steering,
+                derived_load_terms,
+                initial);
+        } catch (const std::invalid_argument&) {
+            missing_difficulty_rejected = true;
+        }
+        require(missing_difficulty_rejected,
+                "unbound RaceModeInfo Player Difficulty failed open");
+
+        bool invalid_difficulty_rejected = false;
+        try {
+            (void)compose_fun_007682c0_machine_input(
+                setup_open,
+                RaceModePlayerDifficulty{true, 3},
+                derived_steering,
+                derived_load_terms,
+                initial);
+        } catch (const std::invalid_argument&) {
+            invalid_difficulty_rejected = true;
+        }
+        require(invalid_difficulty_rejected,
+                "out-of-domain RaceModeInfo Player Difficulty failed open");
 
         bool zero_dt_rejected = false;
         try {
@@ -154,13 +184,10 @@ int main() {
             << "{\"format\":\"" << kFun007682c0DerivedProjectionStateFormat << "\","
             << "\"ready\":true,"
             << "\"initial_fields_zero\":true,"
-            << "\"legacy_gate_provider_value_ignored\":true,"
             << "\"fun_007560c0_setup_gate_consumed\":true,"
-            << "\"legacy_steering_provider_value_ignored\":true,"
-            << "\"legacy_load_term_provider_values_ignored\":true,"
+            << "\"race_mode_player_difficulty_consumed\":true,"
+            << "\"late_angle_mode_provider_removed\":true,"
             << "\"fun_00765c40_load_terms_consumed\":true,"
-            << "\"legacy_response_4054_provider_value_ignored\":true,"
-            << "\"legacy_projection_provider_values_ignored\":true,"
             << "\"post_outer_delta_over_dt\":true,"
             << "\"f32_store_checkpoint\":true}\n";
         return 0;
