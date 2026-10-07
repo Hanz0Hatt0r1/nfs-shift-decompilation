@@ -25,7 +25,7 @@ Fun007682c0MachineInput make_motion_input() {
     Fun007682c0MachineInput input{};
     input.caller_gate_open = true;
     input.steering = 1.2f;
-    input.load_terms = {3000.0, 3000.0, 3000.0, 3000.0};
+    input.load_terms = {-101.0, -102.0, -103.0, -104.0};
     input.projection_field_x = 2.0f;
     input.projection_field_z = 1.0f;
     input.response_field_4054 = 2.0f;
@@ -45,6 +45,7 @@ NativeVehicleExternalProviderBundle make_bundle(
     NativeVehicleExternalProviderBundle bundle{};
     bundle.contact_factor = [&events](std::size_t pass) {
         events.push_back("contact-factor:" + std::to_string(pass));
+        return Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0};
     };
     bundle.wheel_update = [&events](std::size_t pass) {
         events.push_back("wheel-update:" + std::to_string(pass));
@@ -182,6 +183,8 @@ int main() {
         require(session.last_telemetry().motion_read_input_call_count == 2u &&
                     session.last_telemetry().motion_read_native_effect_call_count == 2u,
                 "selected-session active motion-read telemetry mismatch");
+        require(first.recovered_substep_count > 0u,
+                "selected-session load-term path was not exercised");
 
         const double expected_first_residual =
             kRetailNormalOuterIncrementSeconds - 6.0 / 180.0;
@@ -221,6 +224,7 @@ int main() {
             << "\"inner_substep_seconds\":" << (1.0 / 180.0) << ","
             << "\"normal_outer_substeps\":6,"
             << "\"two_dispatch_persistent_steps\":12,"
+            << "\"fun_00765c40_load_terms_typed\":true,"
             << "\"motion_read_effect_arithmetic_internal\":true,"
             << "\"retail_inner_substep_execution_admitted\":true,"
             << "\"provider_semantics_promoted\":false,"
