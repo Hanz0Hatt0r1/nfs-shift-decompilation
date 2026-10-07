@@ -350,6 +350,9 @@ NativeVehicleProviderSession::execute_retail_outer_dispatch(
     RetailOuterSchedulerContract& scheduler) {
     require_complete_bundle(providers_);
 
+    // This method represents one already-admitted retail outer-manager dispatch.
+    // It deliberately does not connect dispatch admission to a render frame or
+    // host 1/60 tick; the caller supplies the recovered retail scheduling event.
     const RetailOuterSchedulerContract scheduler_before_dispatch = scheduler;
     try {
         scheduler.admit_outer_dispatch();
