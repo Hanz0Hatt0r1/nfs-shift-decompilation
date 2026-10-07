@@ -32,9 +32,10 @@ NativeVehicleExternalProviderBundle make_bundle(
     const Fun00763570MachineInput& machine_input,
     double expected_half_timestep) {
     NativeVehicleExternalProviderBundle bundle{};
-    bundle.contact_factor = [&events](std::size_t pass) {
-        events.push_back("contact-factor:" + std::to_string(pass));
-        return Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0};
+    bundle.fun_00765c40 = [&events](std::size_t pass) {
+        events.push_back("fun-00765c40:" + std::to_string(pass));
+        return Fun00765c40ExternalPassResult{
+            Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0}};
     };
     bundle.wheel_update = [&events](std::size_t pass) {
         events.push_back("wheel-update:" + std::to_string(pass));
@@ -143,7 +144,7 @@ int main() {
             projection,
             machine_input,
             outer_timestep * 0.5);
-        incomplete.contact_response = {};
+        incomplete.fun_00765c40 = {};
         bool incomplete_rejected = false;
         try {
             NativeVehicleProviderSession bad(std::move(incomplete));
@@ -152,7 +153,7 @@ int main() {
             incomplete_rejected = true;
         }
         require(incomplete_rejected && constructor_events.empty(),
-                "Phase 724 incomplete seven-boundary bundle failed open");
+                "Phase 725 incomplete FUN_00765c40 boundary failed open");
 
         NativeRuntimeState runtime{};
         configure_runtime(runtime, initial_body_bytes);
@@ -172,7 +173,7 @@ int main() {
                 "Phase 701 first session step count mismatch");
         require(runtime.outer_update.explicit_update_count == 1u,
                 "Phase 701 first explicit update did not commit");
-        require(first.telemetry.contact_factor_call_count == 2u &&
+        require(first.telemetry.fun_00765c40_call_count == 2u &&
                     first.telemetry.wheel_update_call_count == 2u &&
                     first.telemetry.contact_response_call_count == 2u &&
                     first.telemetry.contact_outer_input_call_count == 2u &&
@@ -180,7 +181,7 @@ int main() {
                     first.telemetry.scalar_provider_factory_call_count == 2u &&
                     first.telemetry.half_step_refresh_call_count == 2u &&
                     first.telemetry.post_half_step_call_count == 2u,
-                "Phase 724 first seven-boundary telemetry mismatch");
+                "Phase 725 first seven-boundary telemetry mismatch");
         require(first.joined.motion_read_input_provider_call_count == 2u &&
                     first.joined.motion_read_native_effect_call_count == 2u &&
                     first.joined.joined.contact_outer_native_call_count == 2u &&
@@ -284,6 +285,8 @@ int main() {
             << "\"active_external_provider_count\":7,"
             << "\"fun_007560c0_gate_setup_owned\":true,"
             << "\"fun_00765c40_load_terms_typed\":true,"
+            << "\"fun_00765c40_external_pass_result_typed\":true,"
+            << "\"contact_factor_session_alias_removed\":true,"
             << "\"selected_player_difficulty\":"
             << kBmwNativeSilverstonePlayerDifficulty << ","
             << "\"motion_read_raw_input_provider\":false,"
