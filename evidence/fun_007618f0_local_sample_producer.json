@@ -1,0 +1,85 @@
+{
+  "format": "SHIFT.Fun007618f0LocalSampleProducer/1",
+  "version": 1,
+  "status": "retail-pc-local-sample-formula-proven-native-ready",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "source": {
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "writer_function": "FUN_007618f0",
+    "output": "HDVehicle+0x3938/+0x3940/+0x3948 f64 vec3"
+  },
+  "machine_spans": [
+    {
+      "role": "FUN_007618f0 entry saves HDVehicle this pointer",
+      "start": "0x007618f0",
+      "end_exclusive": "0x00761939",
+      "raw_byte_sha256": "87c8427b3d324842f94c703c01a10c34320936118a53067e1afcd5c25ed21a5b"
+    },
+    {
+      "role": "FUN_007618f0 restores HDVehicle and second source argument",
+      "start": "0x00762180",
+      "end_exclusive": "0x00762196",
+      "raw_byte_sha256": "c2baabcf13cc4a79c2138ee06d2d8ab002deb049419c93e4638572bac1ce2b76"
+    },
+    {
+      "role": "pointer vec add, 0.5 scale, and Y override",
+      "start": "0x00762196",
+      "end_exclusive": "0x00762223",
+      "raw_byte_sha256": "78e59440901206946cfce162e739b29d13cc33ea9061a84ee3e398af055bcf88"
+    },
+    {
+      "role": "FUN_007535f0 f64 vec3 scalar multiply",
+      "start": "0x007535f0",
+      "end_exclusive": "0x00753612",
+      "raw_byte_sha256": "f99de4e31545a94fc20a3b4e7771569a19d5d6536faa08e04440079f8b380321"
+    },
+    {
+      "role": "final source+0x918 add and HDVehicle+0x3938 stores",
+      "start": "0x00762a8c",
+      "end_exclusive": "0x00762acb",
+      "raw_byte_sha256": "3c4b74dedbf14f6a6be5b91b732a49fbffed11d2d0ac67af68b3111b3cfb2a5d"
+    }
+  ],
+  "constant": {
+    "address": "0x00aa9a20",
+    "f64_value": 0.5,
+    "raw_le_hex": "000000000000e03f"
+  },
+  "input_contract": {
+    "hdvehicle_pointer_vec_0820": "f64 vec3 read through the pointer stored at HDVehicle+0x820",
+    "hdvehicle_pointer_vec_12a0": "f64 vec3 read through the pointer stored at HDVehicle+0x12a0",
+    "source_scalar_0338": "f64 read from the second FUN_007618f0 source argument +0x338",
+    "source_vec_0918": "inline f64 vec3 at the second FUN_007618f0 source argument +0x918"
+  },
+  "formula": {
+    "pointer_sum": "store_f64(vec_0820 + vec_12a0) component-wise via FUN_00753590",
+    "pointer_midpoint": "store_f64(pointer_sum * 0.5) component-wise via FUN_007535f0",
+    "local_base_x": "pointer_midpoint.x",
+    "local_base_y": "-source_scalar_0338",
+    "local_base_z": "pointer_midpoint.z",
+    "local_sample_3938": "store_f64(local_base + source_vec_0918) component-wise via FUN_00753590",
+    "midpoint_y_not_used_in_local_base": true
+  },
+  "native_consumption": {
+    "header": "native_runtime/include/shift_fun_007618f0_local_sample_producer.hpp",
+    "source": "native_runtime/src/fun_007618f0_local_sample_producer.cpp",
+    "entry": "execute_fun_007618f0_local_sample_producer",
+    "source_core_native": true,
+    "active_session_joined": false
+  },
+  "scope": {
+    "input_storage_owners_joined": false,
+    "pointer_target_lifetimes_proven": false,
+    "second_source_argument_semantic_name_claimed": false,
+    "HDVehicle_0x3938_formula_internalized": true,
+    "per_pass_BODY0_snapshot_joined": false,
+    "collision_provider_internalized": false,
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  }
+}
