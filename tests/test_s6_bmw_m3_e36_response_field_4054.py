@@ -42,13 +42,12 @@ def test_selected_bmw_vdf_to_pc_setup_writer_join_is_exact() -> None:
     assert any(row["raw_byte_sha256"] == "4298a38f967bfb2315f38989f6b05e1aa4837d0b781098b486b0771bdb3eee07" for row in spans.values())
 
 
-def test_production_external_input_can_no_longer_override_4054() -> None:
+def test_production_composition_owns_4054_without_raw_override() -> None:
     projection = PROJECTION.read_text(encoding="utf-8")
     helper_h = HELPER_H.read_text(encoding="utf-8")
     helper_cpp = HELPER_CPP.read_text(encoding="utf-8")
 
-    external_struct = projection.split("struct Fun007682c0ExternalMachineInput", 1)[1].split("};", 1)[0]
-    assert "response_field_4054" not in external_struct
+    assert "Fun007682c0ExternalMachineInput" not in projection
     assert "selected_bmw_m3_e36_response_field_4054()" in projection
     assert "input.response_field_4054" in projection
     assert "kBmwM3E36ResponseField4054Bits = 0x402ccccdu" in helper_h
@@ -56,7 +55,7 @@ def test_production_external_input_can_no_longer_override_4054() -> None:
     assert "std::fabs(difference)" in helper_cpp
 
 
-def test_scope_keeps_remaining_raw_fields_fail_closed() -> None:
+def test_scope_keeps_phase721_historical_limits_immutable() -> None:
     proof = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     limits = proof["limits"]
     assert limits["caller_gate_0xe0_internalized"] is False
