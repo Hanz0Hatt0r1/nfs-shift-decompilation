@@ -1,0 +1,92 @@
+name: native-physics-phase729
+
+on:
+  push:
+    paths:
+      - 'evidence/fun_007675f0_body_motion_ownership.json'
+      - 'docs/PHASE729_FUN_007675F0_BODY_MOTION_OWNERSHIP.md'
+      - 'native_runtime/include/shift_contact_outer_kernel.hpp'
+      - 'native_runtime/include/shift_fun_00770e80_composed_anchor_chain.hpp'
+      - 'native_runtime/include/shift_fun_00770e80_contact_outer_provider_chain.hpp'
+      - 'native_runtime/include/shift_native_vehicle_provider_session.hpp'
+      - 'native_runtime/src/contact_outer_kernel.cpp'
+      - 'native_runtime/src/fun_00770e80_composed_anchor_chain.cpp'
+      - 'native_runtime/src/fun_00770e80_contact_outer_provider_chain.cpp'
+      - 'native_runtime/tests/fun_007675f0_body_motion_ownership_check.cpp'
+      - 'native_runtime/tests/fun_00770e80_contact_outer_provider_chain_check.cpp'
+      - 'native_runtime/tests/native_vehicle_provider_session_check.cpp'
+      - 'native_runtime/cmake/phase728.cmake'
+      - 'native_runtime/cmake/phase729.cmake'
+      - 'src/physics/native_vehicle_external_provider_frontier_current.py'
+      - 'tests/test_s6_fun_007675f0_body_motion_ownership.py'
+      - 'tests/test_native_vehicle_external_provider_frontier_current.py'
+      - '.github/workflows/native-physics-phase729.yml'
+  pull_request:
+    paths:
+      - 'evidence/fun_007675f0_body_motion_ownership.json'
+      - 'docs/PHASE729_FUN_007675F0_BODY_MOTION_OWNERSHIP.md'
+      - 'native_runtime/include/shift_contact_outer_kernel.hpp'
+      - 'native_runtime/include/shift_fun_00770e80_composed_anchor_chain.hpp'
+      - 'native_runtime/include/shift_fun_00770e80_contact_outer_provider_chain.hpp'
+      - 'native_runtime/include/shift_native_vehicle_provider_session.hpp'
+      - 'native_runtime/src/contact_outer_kernel.cpp'
+      - 'native_runtime/src/fun_00770e80_composed_anchor_chain.cpp'
+      - 'native_runtime/src/fun_00770e80_contact_outer_provider_chain.cpp'
+      - 'native_runtime/tests/fun_007675f0_body_motion_ownership_check.cpp'
+      - 'native_runtime/tests/fun_00770e80_contact_outer_provider_chain_check.cpp'
+      - 'native_runtime/tests/native_vehicle_provider_session_check.cpp'
+      - 'native_runtime/cmake/phase728.cmake'
+      - 'native_runtime/cmake/phase729.cmake'
+      - 'src/physics/native_vehicle_external_provider_frontier_current.py'
+      - 'tests/test_s6_fun_007675f0_body_motion_ownership.py'
+      - 'tests/test_native_vehicle_external_provider_frontier_current.py'
+      - '.github/workflows/native-physics-phase729.yml'
+
+jobs:
+  fun-007675f0-body-motion-ownership:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run Phase 729 proof regressions
+        run: >-
+          python3 -m pytest -q
+          tests/test_s6_fun_007675f0_body_motion_ownership.py
+          tests/test_native_vehicle_external_provider_frontier_current.py
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 729 and dependent regressions
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_fun_007675f0_body_motion_ownership_check
+          shift_runtime_fun_00770e80_contact_outer_provider_chain_check
+          shift_runtime_native_vehicle_provider_session_check
+          shift_runtime_selected_session_retail_vehicle_execution_check
+          shift_runtime_fun_00765c40_world_position_transform_check
+          shift_runtime_fun_007618f0_local_sample_producer_check
+
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_fun_007675f0_body_motion_ownership|shift_runtime_fun_00770e80_contact_outer_provider_chain|shift_runtime_native_vehicle_provider_session|shift_runtime_selected_session_retail_vehicle_execution|shift_runtime_fun_00765c40_world_position_transform|shift_runtime_fun_007618f0_local_sample_producer)$'
+
+      - name: Verify Phase 729 report
+        run: |
+          mkdir -p out/native-physics-phase729
+          native_runtime/build/shift_runtime_fun_007675f0_body_motion_ownership_check \
+            > out/native-physics-phase729/fun_007675f0_body_motion_ownership.json
+          grep -q '"format":"SHIFT.Fun007675f0BodyMotionOwnership/1"' \
+            out/native-physics-phase729/fun_007675f0_body_motion_ownership.json
+          grep -q '"external_speed_fields_removed":true' \
+            out/native-physics-phase729/fun_007675f0_body_motion_ownership.json
+          grep -q '"pass1_reads_post_half_step_body":true' \
+            out/native-physics-phase729/fun_007675f0_body_motion_ownership.json
+          grep -q '"external_provider_count_reduced":false' \
+            out/native-physics-phase729/fun_007675f0_body_motion_ownership.json

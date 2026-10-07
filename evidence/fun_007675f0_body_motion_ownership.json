@@ -1,0 +1,63 @@
+{
+  "format": "SHIFT.Fun007675f0BodyMotionOwnership/1",
+  "version": 1,
+  "status": "body0-motion-owned-per-pass",
+  "ready": true,
+  "source": {
+    "program": "SHIFT.exe",
+    "consumer": "FUN_007675f0",
+    "consumer_source_line": 759784,
+    "consumer_contract": "SHIFT.NativeContactOuterKernel/1",
+    "persistent_writer_contract": "SHIFT.BodyFrameIntegrationStatic/1",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "body_motion": {
+    "owner": "current persistent BMW chassis BODY0 record",
+    "speed_x_offset": "0x78",
+    "speed_z_offset": "0x88",
+    "storage_type": "f64",
+    "physical_name_promoted": false,
+    "external_provider_fields_required": false
+  },
+  "pass_refresh": {
+    "pass_count": 2,
+    "pass_0": "read current BODY0 immediately before first FUN_0076d100 anchor sequence",
+    "between_passes": "FUN_00765470 half-step commits updated persistent BODY bytes",
+    "pass_1": "read current BODY0 immediately before second FUN_0076d100 anchor sequence",
+    "stale_outer_snapshot_allowed": false,
+    "observer_runs_before_anchor_sequence": true
+  },
+  "external_contact_outer_input": {
+    "remaining_field_count": 8,
+    "fields": [
+      "planar_delta",
+      "previous_distance_state",
+      "distance_filter_cap",
+      "surface_scalar",
+      "base_scalar",
+      "projected_scalar",
+      "alignment_scalar",
+      "param_3"
+    ],
+    "removed_fields": ["speed_x", "speed_z"],
+    "complete_FUN_007675f0_input_internalized": false
+  },
+  "native_consumption": {
+    "provider_type": "NativeVehicleContactOuterInputProvider",
+    "provider_payload": "ContactOuterExternalInput",
+    "body_motion_type": "Fun007675f0BodyMotion",
+    "derive_helper": "derive_fun_007675f0_body0_motion",
+    "compose_helper": "compose_fun_007675f0_input",
+    "legacy_kernel_input_compatibility_conversion_ignores_speed_fields": true
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "boundary_narrowed": true,
+    "renderer_transform_reused": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  }
+}
