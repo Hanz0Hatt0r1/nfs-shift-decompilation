@@ -235,7 +235,11 @@ def _progress_bff_type(original_bff: type, tracker: _ProgressTracker) -> type:
             return _ProgressEntries(self._inner.entries, tracker, self._token)
 
         def __enter__(self):
-            self._inner.__enter__()
+            try:
+                self._inner.__enter__()
+            except Exception as exc:
+                tracker.archive_failed(self._token, type(exc).__name__)
+                raise
             return self
 
         def __exit__(self, exc_type, exc, tb):
@@ -252,9 +256,12 @@ def _progress_bff_type(original_bff: type, tracker: _ProgressTracker) -> type:
 
         def close(self):
             try:
-                return self._inner.close()
-            finally:
-                tracker.archive_done(self._token)
+                result = self._inner.close()
+            except Exception as exc:
+                tracker.archive_failed(self._token, type(exc).__name__)
+                raise
+            tracker.archive_done(self._token)
+            return result
 
         def __getattr__(self, name: str) -> Any:
             return getattr(self._inner, name)
