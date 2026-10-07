@@ -21,3 +21,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00766510_primary_response_application
     COMMAND shift_runtime_fun_00766510_primary_response_application_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase743.cmake)
