@@ -4,11 +4,17 @@
 #include "runtime_motion_read_machine_input_state.hpp"
 #include "runtime_state.hpp"
 
+#include <cmath>
+#include <cstdint>
+#include <cstring>
 #include <stdexcept>
 #include <utility>
 
 namespace shift::runtime {
 namespace {
+
+constexpr std::size_t kBody0VelocityX = 0x78u;
+constexpr std::size_t kBody0VelocityZ = 0x88u;
 
 void require_complete_bundle(
     const NativeVehicleExternalProviderBundle& providers) {
@@ -25,6 +31,33 @@ void require_complete_bundle(
     }
 }
 
+std::uint64_t read_u64_le(
+    const std::vector<std::uint8_t>& bytes,
+    std::size_t offset) {
+    if (offset > bytes.size() || bytes.size() - offset < sizeof(std::uint64_t)) {
+        throw std::runtime_error(
+            "native vehicle provider session BODY0 velocity read out of range");
+    }
+    std::uint64_t value = 0u;
+    for (std::size_t byte = 0u; byte < sizeof(value); ++byte) {
+        value |= static_cast<std::uint64_t>(bytes[offset + byte]) << (byte * 8u);
+    }
+    return value;
+}
+
+double read_f64_le(
+    const std::vector<std::uint8_t>& bytes,
+    std::size_t offset) {
+    const std::uint64_t bits = read_u64_le(bytes, offset);
+    double value = 0.0;
+    std::memcpy(&value, &bits, sizeof(value));
+    if (!std::isfinite(value)) {
+        throw std::runtime_error(
+            "native vehicle provider session BODY0 velocity is non-finite");
+    }
+    return value;
+}
+
 }  // namespace
 
 NativeVehicleProviderSession::NativeVehicleProviderSession(
@@ -38,6 +71,23 @@ NativeVehicleProviderSession::execute_explicit_step(
     NativeRuntimeState& runtime,
     double outer_timestep) {
     require_complete_bundle(providers_);
+    if (!std::isfinite(outer_timestep) || outer_timestep <= 0.0) {
+        throw std::invalid_argument(
+            "native vehicle provider session requires positive finite outer timestep");
+    }
+
+    // Validate before reading BODY0 or invoking any provider side effects.
+    runtime.outer_update.validate_runtime_boundary(
+        runtime.physics.workspace.body_count,
+        runtime.physics.workspace.ready,
+        runtime.physics.participant_ready,
+        runtime.physics.participant_identity_join_proven);
+
+    const ExplicitOuterUpdateRuntimeState outer_update_before = runtime.outer_update;
+    const double velocity_x_before =
+        read_f64_le(outer_update_before.body_bytes, kBody0VelocityX);
+    const double velocity_z_before =
+        read_f64_le(outer_update_before.body_bytes, kBody0VelocityZ);
 
     NativeVehicleProviderSessionTelemetry telemetry{};
 
@@ -64,7 +114,10 @@ NativeVehicleProviderSession::execute_explicit_step(
             callbacks.motion_read_input_provider =
                 [this, &telemetry, pass_index] {
                     ++telemetry.motion_read_input_call_count;
-                    return providers_.motion_read_input(pass_index);
+                    const auto external = providers_.motion_read_input(pass_index);
+                    return physics::compose_fun_007682c0_machine_input(
+                        external,
+                        motion_read_projection_state_);
                 };
             return callbacks;
         };
@@ -116,11 +169,34 @@ NativeVehicleProviderSession::execute_explicit_step(
         half_step_provider,
         post_half_step);
 
+    // PC FUN_00770e80 refreshes HDVehicle+0x4084/+0x408c only after both
+    // FUN_0076d100/FUN_00765470 pass pairs. Compute the next persistent values
+    // from the committed BODY0 velocity, but keep both passes on the old state.
+    physics::Fun007682c0DerivedProjectionState next_projection{};
+    try {
+        const double velocity_x_after =
+            read_f64_le(runtime.outer_update.body_bytes, kBody0VelocityX);
+        const double velocity_z_after =
+            read_f64_le(runtime.outer_update.body_bytes, kBody0VelocityZ);
+        next_projection = physics::derive_fun_007682c0_projection_state(
+            velocity_x_before,
+            velocity_z_before,
+            velocity_x_after,
+            velocity_z_after,
+            outer_timestep);
+    } catch (...) {
+        // The derived fields are part of the same persistent vehicle-state
+        // transaction as BODY0. Never retain a BODY commit without them.
+        runtime.outer_update = outer_update_before;
+        throw;
+    }
+
     telemetry.motion_read_native_effect_call_count =
         joined.motion_read_native_effect_call_count;
     telemetry.motion_read_delta_application_call_count =
         joined.motion_read_delta_application_call_count;
 
+    motion_read_projection_state_ = next_projection;
     ++step_count_;
     last_telemetry_ = telemetry;
 
@@ -150,12 +226,13 @@ NativeVehicleProviderSession::execute_ready_retail_inner_batch(
     result.session_step_count_before = step_count_;
     result.explicit_update_count_before = runtime.outer_update.explicit_update_count;
 
-    // Keep persistent BODY/session/scheduler state coherent if any deep provider
-    // rejects during the recovered batch. External provider side effects are not
-    // reversible; a throwing provider still aborts the batch and no scheduler
-    // accumulator commit is retained.
+    // Keep persistent BODY/session/scheduler/projection state coherent if any
+    // deep provider rejects during the recovered batch. External provider side
+    // effects are not reversible; a throwing provider still aborts the batch.
     const RetailOuterSchedulerContract scheduler_before = scheduler;
     const ExplicitOuterUpdateRuntimeState outer_update_before = runtime.outer_update;
+    const physics::Fun007682c0DerivedProjectionState projection_before =
+        motion_read_projection_state_;
     const std::uint64_t step_count_before = step_count_;
     const NativeVehicleProviderSessionTelemetry telemetry_before = last_telemetry_;
 
@@ -168,6 +245,7 @@ NativeVehicleProviderSession::execute_ready_retail_inner_batch(
     } catch (...) {
         scheduler = scheduler_before;
         runtime.outer_update = outer_update_before;
+        motion_read_projection_state_ = projection_before;
         step_count_ = step_count_before;
         last_telemetry_ = telemetry_before;
         throw;
