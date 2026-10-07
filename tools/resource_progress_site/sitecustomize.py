@@ -21,6 +21,17 @@ SRC = ROOT / "src"
 ENTRY_PROGRESS_INTERVAL = 250
 
 
+def _emit(message: str, *, stream: Any | None = None) -> None:
+    """Write one diagnostic line without allowing output failures to affect work."""
+    target = sys.stdout if stream is None else stream
+    try:
+        print(message, file=target, flush=True)
+    except Exception:
+        # Progress output is diagnostic-only. Closed pipes, detached streams, or
+        # custom writers must never alter bootstrap/resource semantics.
+        pass
+
+
 def _install_repo_paths() -> None:
     if SRC.is_dir():
         paths = [SRC]
@@ -102,19 +113,15 @@ class _ProgressTracker:
 
     @contextmanager
     def phase(self, name: str, inputs: Sequence[str | Path]) -> Iterator[None]:
-        print(
-            f"[resource-progress] phase={name} event=discovering-archives",
-            flush=True,
-        )
+        _emit(f"[resource-progress] phase={name} event=discovering-archives")
         previous = self._phase
         try:
             total = _count_bff_inputs(inputs)
         except Exception as exc:
-            print(
+            _emit(
                 f"[resource-progress] phase={name} event=count-unavailable "
                 f"type={type(exc).__name__} error={exc}",
-                file=sys.stderr,
-                flush=True,
+                stream=sys.stderr,
             )
             # Progress reporting is diagnostic-only. If archive discovery cannot
             # be counted safely, disable this phase's tracking and let the
@@ -128,19 +135,15 @@ class _ProgressTracker:
 
         state = _PhaseState(name=name, total=total)
         self._phase = state
-        print(
-            f"[resource-progress] phase={name} event=start archives_total={total}",
-            flush=True,
-        )
+        _emit(f"[resource-progress] phase={name} event=start archives_total={total}")
         try:
             yield
         finally:
             processed = state.done + state.failed
-            print(
+            _emit(
                 f"[resource-progress] phase={name} event=complete "
                 f"processed={processed}/{state.total} done={state.done} "
-                f"failed={state.failed}",
-                flush=True,
+                f"failed={state.failed}"
             )
             self._phase = previous
 
@@ -155,11 +158,10 @@ class _ProgressTracker:
             ordinal = len(state.ordinals) + 1
             state.ordinals[path] = ordinal
             percent = (ordinal - 1) * 100.0 / state.total if state.total else 100.0
-            print(
+            _emit(
                 f"[resource-progress] phase={state.name} archive={ordinal}/{state.total} "
                 f"status=open done={state.done}/{state.total} percent={percent:.1f} "
-                f"name={path.name}",
-                flush=True,
+                f"name={path.name}"
             )
         return _ArchiveToken(
             state=state,
@@ -172,11 +174,10 @@ class _ProgressTracker:
         if token is None or not token.primary:
             return
         token.entry_total = max(0, int(entry_total))
-        print(
+        _emit(
             f"[resource-progress] phase={token.state.name} "
             f"archive={token.ordinal}/{token.state.total} status=header "
-            f"entries={token.entry_total} name={token.path.name}",
-            flush=True,
+            f"entries={token.entry_total} name={token.path.name}"
         )
 
     def entry(self, token: _ArchiveToken | None, index: int) -> None:
@@ -194,12 +195,11 @@ class _ProgressTracker:
             return
         token.entry_highwater = index
         percent = index * 100.0 / token.entry_total
-        print(
+        _emit(
             f"[resource-progress] phase={token.state.name} "
             f"archive={token.ordinal}/{token.state.total} "
             f"entry={index}/{token.entry_total} entry_percent={percent:.1f} "
-            f"name={token.path.name}",
-            flush=True,
+            f"name={token.path.name}"
         )
 
     def archive_failed(self, token: _ArchiveToken | None, error: str) -> None:
@@ -215,12 +215,11 @@ class _ProgressTracker:
         token.state.outcomes[token.path] = "failed"
         processed = token.state.done + token.state.failed
         percent = processed * 100.0 / token.state.total if token.state.total else 100.0
-        print(
+        _emit(
             f"[resource-progress] phase={token.state.name} "
             f"archive={token.ordinal}/{token.state.total} status=failed "
             f"processed={processed}/{token.state.total} percent={percent:.1f} "
-            f"name={token.path.name} error={error}",
-            flush=True,
+            f"name={token.path.name} error={error}"
         )
 
     def archive_done(self, token: _ArchiveToken | None) -> None:
@@ -233,13 +232,12 @@ class _ProgressTracker:
         token.state.outcomes[token.path] = "done"
         processed = token.state.done + token.state.failed
         percent = processed * 100.0 / token.state.total if token.state.total else 100.0
-        print(
+        _emit(
             f"[resource-progress] phase={token.state.name} "
             f"archive={token.ordinal}/{token.state.total} status=done "
             f"done={token.state.done}/{token.state.total} "
             f"processed={processed}/{token.state.total} percent={percent:.1f} "
-            f"name={token.path.name}",
-            flush=True,
+            f"name={token.path.name}"
         )
 
 
@@ -357,10 +355,9 @@ def _install_progress_hooks() -> None:
     runtime_bootstrap.run_offline_pipeline = run_offline_pipeline_with_progress
     runtime_bootstrap.build_scene_ir = build_scene_ir_with_progress
     runtime_bootstrap._shift_resource_progress_installed = True
-    print(
+    _emit(
         f"[resource-progress] event=hooks-installed "
-        f"entry_interval={ENTRY_PROGRESS_INTERVAL}",
-        flush=True,
+        f"entry_interval={ENTRY_PROGRESS_INTERVAL}"
     )
 
 
@@ -370,9 +367,8 @@ if os.environ.get("SHIFT_RESOURCE_PROGRESS", "").strip().lower() in {
     try:
         _install_progress_hooks()
     except Exception as exc:  # diagnostics must never weaken/block the bootstrap
-        print(
+        _emit(
             f"[resource-progress] event=hook-error type={type(exc).__name__} "
             f"error={exc}",
-            file=sys.stderr,
-            flush=True,
+            stream=sys.stderr,
         )
