@@ -4,7 +4,8 @@
 
 target_sources(shift_runtime_physics PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/fun_007682c0_machine_effect.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/fun_00770e80_motion_read_machine_input_provider_chain.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/fun_00770e80_motion_read_machine_input_provider_chain.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/runtime_motion_read_machine_input_state.cpp)
 
 add_executable(shift_runtime_fun_007682c0_machine_effect_check
   ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_007682c0_machine_effect_check.cpp)
