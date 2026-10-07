@@ -26,7 +26,13 @@ struct Fun00765c40PassLoadState {
 
 struct Fun00765c40PassWorldPositionState {
     physics::CollisionQueryVector3d world_position{};
+    physics::BodyAccumulatorVector3d primary_application_point{};
     bool selected_bmw_domain = false;
+    bool ready = false;
+};
+
+struct Fun00766510PassInputState {
+    physics::Fun00766510ExternalPassInput input{};
     bool ready = false;
 };
 
@@ -142,14 +148,18 @@ NativeVehicleProviderSession::execute_explicit_step(
             auto load_state = std::make_shared<Fun00765c40PassLoadState>();
             auto world_position_state =
                 std::make_shared<Fun00765c40PassWorldPositionState>();
+            auto contact_response_state =
+                std::make_shared<Fun00766510PassInputState>();
 
             callbacks.current_body_observer =
-                [world_position_state](
+                [world_position_state, contact_response_state](
                     const std::vector<std::uint8_t>& current_body_bytes) {
                     world_position_state->selected_bmw_domain =
                         physics::fun_00765c40_selected_bmw_body_domain(
                             current_body_bytes);
                     world_position_state->ready = false;
+                    contact_response_state->ready = false;
+                    contact_response_state->input = {};
                     if (!world_position_state->selected_bmw_domain) {
                         return;
                     }
@@ -158,6 +168,9 @@ NativeVehicleProviderSession::execute_explicit_step(
                             current_body_bytes);
                     world_position_state->world_position =
                         composed.world_transform.world_position;
+                    world_position_state->primary_application_point =
+                        physics::fun_00766510_selected_bmw_primary_application_point(
+                            composed);
                     world_position_state->ready = true;
                 };
 
@@ -167,6 +180,7 @@ NativeVehicleProviderSession::execute_explicit_step(
                  pass_index,
                  load_state,
                  world_position_state,
+                 contact_response_state,
                  &query_inputs,
                  &query_input_present,
                  &returned_cache_handles] {
@@ -201,6 +215,24 @@ NativeVehicleProviderSession::execute_explicit_step(
                         result.returned_cache_handle;
                     ++telemetry.fun_00765c40_cache_commit_count;
 
+                    // Phase745 prepares, but does not execute, the still-external
+                    // FUN_00766510 remainder at the source-visible boundary.
+                    contact_response_state->input = {};
+                    if (world_position_state->selected_bmw_domain) {
+                        if (!result.query_output.has_value()) {
+                            throw std::logic_error(
+                                "selected BMW FUN_00766510 handoff missing FUN_007b0710 output");
+                        }
+                        contact_response_state->input =
+                            physics::build_fun_00766510_selected_bmw_external_pass_input(
+                                result.query_input,
+                                *result.query_output,
+                                world_position_state->primary_application_point);
+                    }
+                    physics::validate_fun_00766510_external_pass_input(
+                        contact_response_state->input);
+                    contact_response_state->ready = true;
+
                     load_state->terms = result.load_terms;
                     load_state->ready = true;
                 };
@@ -208,10 +240,19 @@ NativeVehicleProviderSession::execute_explicit_step(
                 ++telemetry.wheel_update_call_count;
                 providers_.wheel_update(pass_index);
             };
-            callbacks.contact_response = [this, &telemetry, pass_index] {
-                ++telemetry.contact_response_call_count;
-                providers_.contact_response(pass_index);
-            };
+            callbacks.contact_response =
+                [this, &telemetry, pass_index, contact_response_state] {
+                    if (!contact_response_state->ready) {
+                        throw std::logic_error(
+                            "FUN_00766510 residual provider invoked before typed Phase745 handoff");
+                    }
+                    physics::validate_fun_00766510_external_pass_input(
+                        contact_response_state->input);
+                    ++telemetry.contact_response_call_count;
+                    providers_.contact_response(
+                        pass_index,
+                        contact_response_state->input);
+                };
             callbacks.contact_outer_input_provider =
                 [this, &telemetry, pass_index, load_state] {
                     if (!load_state->ready) {
