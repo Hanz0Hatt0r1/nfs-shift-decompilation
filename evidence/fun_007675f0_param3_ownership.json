@@ -32,7 +32,7 @@
     "zero_constant": {
       "address": "0x00aadd68",
       "f64_bits": "0x0000000000000000",
-      "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83df"
+      "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
     },
     "scale_constant": {
       "address": "0x00b09148",
