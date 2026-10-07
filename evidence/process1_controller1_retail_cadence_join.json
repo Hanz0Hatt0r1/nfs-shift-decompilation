@@ -1,0 +1,86 @@
+{
+  "format": "SHIFT.Process1Controller1RetailCadenceJoin/1",
+  "ready": true,
+  "inputs": {
+    "controller_owner": {
+      "path": "evidence/process1_physics_manager_controller_owner.json",
+      "format": "SHIFT.Process1PhysicsManagerControllerOwner/1"
+    },
+    "controller_pacing": {
+      "path": "evidence/process1_controller1_alertable_pacing.json",
+      "format": "SHIFT.Process1Controller1AlertablePacing/1"
+    },
+    "retail_outer_cadence": {
+      "path": "evidence/s5_retail_outer_update_cadence.json",
+      "format": "SHIFT.RetailOuterUpdateCadence/1"
+    },
+    "native_policy": "native_runtime/src/runtime_loop_policy.hpp"
+  },
+  "identity_join": {
+    "controller_name": "Controller #1",
+    "controller_worker": "FUN_00662880",
+    "manager_scheduler": "FUN_00647ef0",
+    "physics_manager_vtable": "0x00b04524",
+    "physics_manager_default_update_slot_offset": "0x18",
+    "physics_manager_default_update_target": "FUN_00711b50",
+    "controller_owner_matches_pacing": true,
+    "controller_owner_matches_retail_cadence": true,
+    "default_manager_dispatch_identity_matches": true
+  },
+  "timing_domains": {
+    "controller_worker": {
+      "mechanism": "SleepEx(10, TRUE)",
+      "requested_timeout_ms": 10,
+      "exact_frequency_hz_proven": false,
+      "is_physics_cadence": false,
+      "is_render_cadence": false
+    },
+    "physics_manager": {
+      "authority_contract": "SHIFT.RetailOuterUpdateCadence/1",
+      "nominal_frequency_hz": 30.0,
+      "quantized_gate_ms": 33,
+      "normal_outer_increment_seconds": 0.03333333507180214,
+      "steady_scheduler_invocations_per_default_dispatch": 1,
+      "scheduler_authority": "RetailEvidence",
+      "rendered_frame_equivalence_claimed": false
+    },
+    "host_development": {
+      "fixed_tick_seconds": "1/60",
+      "may_satisfy_retail_scheduler_authority": false
+    }
+  },
+  "runtime_join": {
+    "native_contract": "RetailOuterSchedulerContract",
+    "nominal_frequency_hz": 30.0,
+    "gate_period_ms": 33,
+    "normal_outer_increment_seconds": 0.03333333507180214,
+    "steady_scheduler_invocations_per_dispatch": 1,
+    "authority": "RetailEvidence",
+    "source_of_30hz_and_33ms": "SHIFT.RetailOuterUpdateCadence/1",
+    "source_of_controller_thread_pacing": "SHIFT.Process1Controller1AlertablePacing/1",
+    "source_of_manager_lifecycle_owner": "SHIFT.Process1PhysicsManagerControllerOwner/1",
+    "controller_sleep_used_as_runtime_frequency_source": false,
+    "host_1_60_used_as_retail_frequency_source": false
+  },
+  "promotion": {
+    "controller_thread_lifecycle_to_manager_owner_joined": true,
+    "manager_owner_to_existing_retail_cadence_joined": true,
+    "existing_s5_cadence_reused_without_reproof": true,
+    "runtime_retail_scheduler_authority_matches_existing_s5_evidence": true,
+    "controller_10ms_equals_100hz_proven": false,
+    "controller_cadence_equals_physics_cadence_proven": false,
+    "physics_cadence_equals_render_cadence_proven": false,
+    "one_physics_update_per_rendered_frame_proven": false
+  },
+  "limits": {
+    "new_machine_code_claims_added": false,
+    "xbox_recomp_required": false,
+    "render_frame_cadence_proven": false,
+    "exact_controller_wakeup_frequency_proven": false,
+    "exact_wall_clock_30hz_proven": false
+  },
+  "next_blocker": {
+    "process": 1,
+    "description": "trace the producer/consumer surface for Controller #1 alertable wake and queued messages and determine whether any proven render/presentation path reaches that surface; do not infer a render-phase join from the 10 ms timeout or the independent 30 Hz Physics Manager contract"
+  }
+}
