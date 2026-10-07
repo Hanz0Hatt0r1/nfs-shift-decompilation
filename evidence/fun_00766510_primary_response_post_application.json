@@ -1,0 +1,79 @@
+{
+  "format": "SHIFT.Fun00766510PrimaryResponsePostApplication/1",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "pc_source": {
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "function": "FUN_00766510",
+    "source_line_start": 759689,
+    "source_line_end": 759695,
+    "source_sequence": [
+      "FUN_00753650(local_1a0, &local_108, local_120)",
+      "HDVehicle+0x40a0 += local_1a0[0]",
+      "HDVehicle+0x40a8 += local_1a0[1]",
+      "HDVehicle+0x40b0 += local_1a0[2]",
+      "local_c0 += local_78",
+      "local_b8 += local_70",
+      "local_b0 += local_68"
+    ],
+    "caller_reference_earlier_producer": "FUN_007aefb0(BODY+0xd4, HDVehicle+0x3b08, local_108)",
+    "caller_reference_owner_internalized_by_this_phase": false,
+    "incoming_auxiliary_accumulator_owner_internalized_by_this_phase": false
+  },
+  "pc_machine": {
+    "post_application_span": {
+      "start": "0x00766fd6",
+      "end_exclusive": "0x00767046",
+      "raw_byte_sha256": "300ede8cca6353c0ccc96993161d299a67e337b5482c4ae40025e163069c07d7"
+    },
+    "fun_00753650_span": {
+      "start": "0x00753650",
+      "end_exclusive": "0x0075368c",
+      "raw_byte_sha256": "01a753b9668434bc769f1c9304931f0067e502e26f93097275e4c1b3469202ab"
+    },
+    "fun_00753650_x87_control_word": "0x027f",
+    "fun_00753650_subtract_opcode": "de e9",
+    "fun_00753650_store_precision": "f64 after each x87 cross component"
+  },
+  "native_composition": {
+    "phase742_input": "transformed_response / local_120",
+    "cross_helper": "detail::fun_00753650_pc_x87_cross",
+    "cross_order": "caller_reference_vector cross transformed_response",
+    "caller_cross_accumulator_offsets": ["0x40a0", "0x40a8", "0x40b0"],
+    "auxiliary_response_source": "current FUN_007551e0 auxiliary output local_78/local_70/local_68",
+    "auxiliary_accumulator": "incoming local_c0/local_b8/local_b0",
+    "helper": "execute_fun_00766510_primary_response_post_application"
+  },
+  "xbox_crosscheck": {
+    "role": "independent corroboration only; not PC precision authority",
+    "recomp_partition": "nfs_shift_recomp.220.cpp",
+    "observed_topology": [
+      "r30 = HDVehicle+16544 / 0x40a0 triplet",
+      "cross-like fmul/fmsub sequence follows the primary BODY application",
+      "cross result is added into the r30 triplet",
+      "current response auxiliary lanes are added into the local accumulated lanes"
+    ],
+    "pc_x87_precision_inferred_from_xbox": false
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "primary_response_post_application_internalized": true,
+    "complete_FUN_00766510_internalized": false,
+    "contact_response_provider_removed": false,
+    "caller_reference_owner_closed": false,
+    "incoming_auxiliary_accumulator_owner_closed": false,
+    "physical_semantics_invented": false
+  },
+  "next_blocker": {
+    "targets": [
+      "owner and refresh timing of HDVehicle+0x3b08 caller-reference source",
+      "ownership of HDVehicle+0x38f0/+0x38f8/+0x3900 primary application triplet",
+      "ownership of +0x3908/+0x3910/+0x3918/+0x3950 response configuration",
+      "earlier +0x3b20 response branch that seeds local auxiliary accumulation",
+      "later response branch and final accumulated auxiliary application"
+    ],
+    "provider_count_policy": "do not reduce seven until complete FUN_00766510 callback can be removed"
+  }
+}
