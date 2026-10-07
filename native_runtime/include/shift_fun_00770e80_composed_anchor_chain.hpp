@@ -17,6 +17,8 @@ inline constexpr const char* kNativeFun00770e80ComposedAnchorChainFormat =
 
 using Fun0076d100PostPassBodyMutator =
     std::function<void(std::vector<std::uint8_t>& current_body_bytes)>;
+using Fun0076d100CurrentBodyObserver =
+    std::function<void(const std::vector<std::uint8_t>& current_body_bytes)>;
 
 struct Fun0076d100AnchorCallbacks {
     Fun0076d100AnchorCallback contact_factor;
@@ -24,6 +26,10 @@ struct Fun0076d100AnchorCallbacks {
     Fun0076d100AnchorCallback contact_response;
     Fun0076d100AnchorCallback contact_outer;
     Fun0076d100AnchorCallback motion_read_gate;
+    // Optional ownership bridge executed immediately before this pass's anchor
+    // sequence. It observes the authoritative BODY buffer after the previous
+    // half-step, so pass 1 cannot accidentally reuse pass-0 BODY motion.
+    Fun0076d100CurrentBodyObserver current_body_observer{};
     Fun0076d100PostPassBodyMutator post_pass_body_mutator{};
 };
 
@@ -55,6 +61,7 @@ struct Fun00770e80ComposedAnchorChainResult {
         half_steps{};
     std::vector<std::uint8_t> final_body_bytes;
     std::size_t physics_pass_provider_call_count = 0u;
+    std::size_t current_body_observer_call_count = 0u;
     std::size_t post_pass_body_mutator_call_count = 0u;
     std::size_t half_step_provider_call_count = 0u;
 };
