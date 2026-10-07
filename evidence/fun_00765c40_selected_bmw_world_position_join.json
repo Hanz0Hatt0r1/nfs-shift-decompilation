@@ -1,0 +1,49 @@
+{
+  "format": "SHIFT.Fun00765c40SelectedBMWWorldPosition/1",
+  "version": 1,
+  "phase": 739,
+  "status": "selected-bmw-per-pass-world-position-native",
+  "ready": true,
+  "selected_session": "Silverstone+BMW_M3_E36",
+  "selected_body_domain": {
+    "body_count": 11,
+    "record_stride": "0x170",
+    "exact_domain_required": true,
+    "generic_fixture_fallback_to_external_world_position": true
+  },
+  "composition": {
+    "phase737": "current persistent BMW BODY3/BODY4 origins",
+    "phase738": "SHIFT.Fun007618f0SelectedBMWSource/1 VehicleLoadData +0x338/+0x918 inputs",
+    "phase728": "SHIFT.Fun007618f0LocalSampleProducer/1 -> HDVehicle+0x3938 local sample",
+    "phase727": "SHIFT.Fun00765c40WorldPositionTransform/1 -> BODY0 basis/origin world position",
+    "result": "Fun00765c40QueryInputBoundary.world_position"
+  },
+  "runtime_order": {
+    "observer": "Fun0076d100CurrentBodyObserver",
+    "observer_runs_before_anchor_sequence": true,
+    "pass0_reads_initial_persistent_body": true,
+    "pass1_reads_post_pass0_half_step_body": true,
+    "selected_world_position_overwrites_external_provider_world_position_before_validation": true
+  },
+  "external_fun_00765c40_remaining": {
+    "load_terms": true,
+    "cached_handle": true,
+    "miss_fallback": true,
+    "collision_provider_behavior": true,
+    "residual_side_effects": true,
+    "world_position_selected_bmw": false
+  },
+  "provider_frontier": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "reason": "Phase739 narrows one field of the complete FUN_00765c40 pass result but does not remove the remaining pass boundary"
+  },
+  "safety": {
+    "renderer_VHF_transform_substituted": false,
+    "non_BMW_body_domain_promoted_to_selected_session": false,
+    "pass1_reuses_outer_step_snapshot": false,
+    "collision_provider_internalized_without_proof": false
+  },
+  "next_blocker": "separate the remaining FUN_00765c40 load-term/cache/fallback/collision-side-effect ownership so the complete seven-field pass provider can be narrowed or removed without guessing collision-provider semantics"
+}

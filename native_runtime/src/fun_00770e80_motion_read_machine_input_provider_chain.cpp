@@ -76,6 +76,8 @@ execute_fun_00770e80_motion_read_machine_input_provider_chain(
                 std::move(typed.contact_outer_input_provider);
             adapted.contact_outer_distance_state_commit =
                 std::move(typed.contact_outer_distance_state_commit);
+            adapted.current_body_observer =
+                std::move(typed.current_body_observer);
 
             auto input_provider = std::move(typed.motion_read_input_provider);
             adapted.motion_read_gate =

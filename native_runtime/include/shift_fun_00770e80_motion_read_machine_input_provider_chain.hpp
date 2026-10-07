@@ -24,6 +24,11 @@ struct Fun0076d100MotionReadMachineInputProviderCallbacks {
     Fun007675f0ContactOuterInputProvider contact_outer_input_provider{};
     Fun007675f0DistanceStateCommit contact_outer_distance_state_commit{};
     Fun007682c0MachineInputProvider motion_read_input_provider{};
+    // Optional ownership bridge propagated to the already-proven per-pass
+    // current_body_observer. Production uses it to derive FUN_00765c40's
+    // world_position from the authoritative persistent BODY state before this
+    // pass's first anchor executes.
+    Fun0076d100CurrentBodyObserver current_body_observer{};
 };
 
 using Fun0076d100MotionReadMachineInputProvider =

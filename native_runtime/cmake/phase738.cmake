@@ -20,3 +20,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_007618f0_selected_bmw_source
     COMMAND shift_runtime_fun_007618f0_selected_bmw_source_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase739.cmake)

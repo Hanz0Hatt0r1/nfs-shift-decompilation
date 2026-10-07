@@ -4,6 +4,7 @@
 #include "runtime_motion_read_machine_input_state.hpp"
 #include "runtime_state.hpp"
 #include "shift_fun_007594e0_machine_angle.hpp"
+#include "shift_fun_00765c40_selected_bmw_world_position.hpp"
 
 #include <cmath>
 #include <cstdint>
@@ -20,6 +21,12 @@ constexpr std::size_t kBody0VelocityZ = 0x88u;
 
 struct Fun00765c40PassLoadState {
     physics::Fun00765c40LoadTerms terms{};
+    bool ready = false;
+};
+
+struct Fun00765c40PassWorldPositionState {
+    physics::CollisionQueryVector3d world_position{};
+    bool selected_bmw_domain = false;
     bool ready = false;
 };
 
@@ -134,16 +141,52 @@ NativeVehicleProviderSession::execute_explicit_step(
 
             physics::Fun0076d100MotionReadMachineInputProviderCallbacks callbacks{};
             auto load_state = std::make_shared<Fun00765c40PassLoadState>();
+            auto world_position_state =
+                std::make_shared<Fun00765c40PassWorldPositionState>();
+
+            callbacks.current_body_observer =
+                [world_position_state](
+                    const std::vector<std::uint8_t>& current_body_bytes) {
+                    world_position_state->selected_bmw_domain =
+                        physics::fun_00765c40_selected_bmw_body_domain(
+                            current_body_bytes);
+                    world_position_state->ready = false;
+                    if (!world_position_state->selected_bmw_domain) {
+                        return;
+                    }
+                    const auto composed =
+                        physics::execute_fun_00765c40_selected_bmw_world_position(
+                            current_body_bytes);
+                    world_position_state->world_position =
+                        composed.world_transform.world_position;
+                    world_position_state->ready = true;
+                };
 
             callbacks.contact_factor =
                 [this,
                  &telemetry,
                  pass_index,
                  load_state,
+                 world_position_state,
                  &query_inputs,
                  &query_input_present] {
                     ++telemetry.fun_00765c40_call_count;
-                    const auto result = providers_.fun_00765c40(pass_index);
+                    auto result = providers_.fun_00765c40(pass_index);
+                    // Phase739 internalizes only the selected BMW query
+                    // world-position producer. Historical generic fixtures do
+                    // not masquerade as the 11-BODY BMW domain and therefore
+                    // retain their explicit compatibility world position.
+                    if (world_position_state->selected_bmw_domain) {
+                        if (!world_position_state->ready) {
+                            throw std::logic_error(
+                                "FUN_00765c40 selected BMW provider invoked before world-position ownership bridge");
+                        }
+                        result.query_input.world_position =
+                            world_position_state->world_position;
+                    }
+                    // Load terms, cache handle, miss fallback, collision-provider
+                    // behavior and residual side effects remain on the external
+                    // FUN_00765c40 boundary.
                     physics::validate_fun_00765c40_external_pass_result(result);
                     query_inputs[pass_index] = result.query_input;
                     query_input_present[pass_index] = true;
