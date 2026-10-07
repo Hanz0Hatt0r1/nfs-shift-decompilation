@@ -48,7 +48,6 @@ def test_phase735_evidence_freezes_pc_authority_and_xbox_corroboration() -> None
 def test_phase735_production_payload_drops_base_and_alignment_scalars() -> None:
     header = HEADER.read_text(encoding="utf-8")
     session = _session_struct(header)
-    assert "double projected_scalar" in session
     assert "const SurfaceProbeNode* surface_probe_node" in session
     assert "double base_scalar" not in session
     assert "double alignment_scalar" not in session
@@ -56,6 +55,8 @@ def test_phase735_production_payload_drops_base_and_alignment_scalars() -> None:
     assert "compatibility_alignment_scalar" in session
     assert "compatibility_body_owned_scalars_present" in session
 
+    # Phase735 evidence is immutable history: at that phase projected_scalar was
+    # still a production field. Later phases may narrow the live session further.
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     handoff = payload["native_handoff"]
     assert handoff["production_base_scalar_field_present"] is False
@@ -88,7 +89,7 @@ def test_phase735_derivation_reuses_current_body_and_filtered_distance() -> None
     assert "state->body_field_120" in chain
 
 
-def test_phase735_keeps_projected_scalar_as_next_explicit_blocker() -> None:
+def test_phase735_records_projected_scalar_as_that_phase_next_blocker() -> None:
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     provenance = payload["pc_recovered_provenance"]
     assert provenance["remaining_external_scalar"] == "projected_scalar"
