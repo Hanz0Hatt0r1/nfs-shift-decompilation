@@ -66,12 +66,13 @@ def test_native_runtime_strips_inherited_resource_progress_site(monkeypatch, tmp
 
     monkeypatch.setattr(cli.subprocess, "Popen", fake_popen)
     monkeypatch.setenv("SHIFT_RESOURCE_PROGRESS", "1")
+    relative_progress_site = cli.os.path.relpath(cli.PROGRESS_SITE_DIR, tmp_path)
     monkeypatch.setenv(
         "PYTHONPATH",
         cli.os.pathsep.join([
             "before",
             "",
-            str(cli.PROGRESS_SITE_DIR),
+            relative_progress_site,
             "after",
         ]),
     )
