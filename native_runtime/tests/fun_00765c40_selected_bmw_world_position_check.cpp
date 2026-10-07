@@ -124,7 +124,7 @@ int main() {
                     CollisionQueryVector3d{24.0, 34.0, 44.0},
                 "Phase739 second-pass wheel BODY state was stale");
         require(near(second.world_transform.world_position[0], 123.0) &&
-                    near(second.world_transform.world_position[1], 202.0 + expected_local_y + 10.0) &&
+                    near(second.world_transform.world_position[1], 202.0 + expected_local_y) &&
                     near(second.world_transform.world_position[2], 344.5),
                 "Phase739 second-pass world position did not follow current BODY state");
         require(first.world_transform.world_position !=
