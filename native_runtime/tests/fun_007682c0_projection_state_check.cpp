@@ -27,53 +27,38 @@ std::uint32_t f32_bits(float value) {
 
 int main() {
     try {
-        Fun007682c0MachineInput legacy{};
-        legacy.caller_gate_open = true;
-        legacy.steering = 0.25f;
-        legacy.load_terms = {-101.0, -102.0, -103.0, -104.0};
-        legacy.projection_field_x = 123.0f;
-        legacy.projection_field_z = -456.0f;
-        legacy.response_field_4054 = 7.0f;
-        legacy.angle_mode = 2;
-
-        const Fun007682c0ExternalMachineInput external = legacy;
         const Fun007560c0MotionReadGateSetup setup_open{true};
         const Fun007560c0MotionReadGateSetup setup_closed{false};
         const Fun007682c0DerivedProjectionState initial{};
         constexpr float derived_steering = -1.25f;
         const Fun00765c40LoadTerms derived_load_terms{11.0, 22.0, 33.0, 44.0};
         const auto composed = compose_fun_007682c0_machine_input(
-            external,
             setup_open,
             derived_steering,
             derived_load_terms,
             initial);
         require(composed.caller_gate_open && composed.steering == derived_steering,
                 "FUN_007560c0 setup gate was not consumed by composition");
-        require(composed.steering != legacy.steering,
-                "legacy external steering leaked into production composition");
-        require(composed.load_terms == derived_load_terms &&
-                    composed.load_terms != legacy.load_terms &&
-                    composed.angle_mode == 2,
+        require(composed.load_terms == derived_load_terms,
                 "FUN_00765c40 load-term ownership was not consumed");
+        require(composed.angle_mode == kBmwNativeSilverstonePlayerDifficulty,
+                "selected native Player Difficulty was not consumed as DAT_00c128cc");
         require(f32_bits(composed.response_field_4054) ==
-                    kBmwM3E36ResponseField4054Bits &&
-                    composed.response_field_4054 != legacy.response_field_4054,
-                "legacy external +0x4054 leaked into selected BMW composition");
+                    kBmwM3E36ResponseField4054Bits,
+                "selected BMW +0x4054 was not consumed");
         require(composed.projection_field_x == 0.0f &&
                     composed.projection_field_z == 0.0f,
-                "legacy projection fields leaked into production composition");
+                "initial projection state drift");
 
-        // The late compatibility conversion must not retain the legacy gate.
-        // Closing setup must win even though the wide legacy input was open.
         const auto closed = compose_fun_007682c0_machine_input(
-            external,
             setup_closed,
             derived_steering,
             derived_load_terms,
             initial);
         require(!closed.caller_gate_open,
-                "legacy per-pass gate leaked past FUN_007560c0 setup ownership");
+                "FUN_007560c0 setup gate ownership drift");
+        require(closed.angle_mode == kBmwNativeSilverstonePlayerDifficulty,
+                "selected Player Difficulty changed with caller gate");
 
         const auto derived = derive_fun_007682c0_projection_state(
             10.0,
@@ -95,7 +80,6 @@ int main() {
                 "PC projection-state f32 store checkpoint mismatch");
 
         const auto second_input = compose_fun_007682c0_machine_input(
-            external,
             setup_open,
             derived_steering,
             derived_load_terms,
@@ -109,6 +93,8 @@ int main() {
                 "typed FUN_00765c40 load terms changed between compositions");
         require(second_input.caller_gate_open,
                 "FUN_007560c0 setup gate changed between compositions");
+        require(second_input.angle_mode == kBmwNativeSilverstonePlayerDifficulty,
+                "selected Player Difficulty changed between compositions");
         require(f32_bits(second_input.response_field_4054) ==
                     kBmwM3E36ResponseField4054Bits,
                 "selected BMW setup response changed between compositions");
@@ -118,7 +104,6 @@ int main() {
             Fun00765c40LoadTerms invalid = derived_load_terms;
             invalid[2] = std::numeric_limits<double>::infinity();
             (void)compose_fun_007682c0_machine_input(
-                external,
                 setup_open,
                 derived_steering,
                 invalid,
@@ -161,6 +146,9 @@ int main() {
             << "\"fun_00765c40_load_terms_consumed\":true,"
             << "\"legacy_response_4054_provider_value_ignored\":true,"
             << "\"legacy_projection_provider_values_ignored\":true,"
+            << "\"selected_player_difficulty\":"
+            << kBmwNativeSilverstonePlayerDifficulty << ","
+            << "\"late_raw_input_provider_required\":false,"
             << "\"post_outer_delta_over_dt\":true,"
             << "\"f32_store_checkpoint\":true}\n";
         return 0;

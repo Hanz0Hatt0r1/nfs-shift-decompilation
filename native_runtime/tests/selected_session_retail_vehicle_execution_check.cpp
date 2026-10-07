@@ -21,18 +21,6 @@ void require(bool condition, const char* message) {
     }
 }
 
-Fun007682c0MachineInput make_motion_input() {
-    Fun007682c0MachineInput input{};
-    input.caller_gate_open = true;  // legacy sentinel: ignored by late provider conversion
-    input.steering = 1.2f;
-    input.load_terms = {-101.0, -102.0, -103.0, -104.0};
-    input.projection_field_x = 2.0f;
-    input.projection_field_z = 1.0f;
-    input.response_field_4054 = 2.0f;
-    input.angle_mode = 2;
-    return input;
-}
-
 NativeVehicleExternalProviderBundle make_bundle(
     std::vector<std::string>& events,
     const PreparedGeneratedBodyConstraintFrame& source,
@@ -58,10 +46,6 @@ NativeVehicleExternalProviderBundle make_bundle(
         return make_contact_outer_input();
     };
     bundle.motion_read_setup.caller_gate_open = true;
-    bundle.motion_read_input = [&events](std::size_t pass) {
-        events.push_back("motion-input:" + std::to_string(pass));
-        return make_motion_input();
-    };
     bundle.scalar_provider_factory = [&events](std::size_t pass) {
         events.push_back("scalar-factory:" + std::to_string(pass));
         return [&events, pass](
@@ -151,6 +135,8 @@ int main() {
             "selected-session execution reciprocal drift");
         require(execution.scheduler().pending_accumulator_seconds == 0.0,
                 "selected-session scheduler did not start with an empty accumulator");
+        require(selected_bmw_native_session_player_difficulty() == 1,
+                "selected-session Player Difficulty drift");
 
         NativeRuntimeState runtime{};
         configure_runtime(runtime, initial_body_bytes);
@@ -181,8 +167,7 @@ int main() {
                     runtime.outer_update.body_pose_snapshot_generation == 6u &&
                     runtime.outer_update.body_bytes != initial_body_bytes,
                 "selected-session first retail dispatch did not persist BODY state");
-        require(session.last_telemetry().motion_read_input_call_count == 2u &&
-                    session.last_telemetry().motion_read_native_effect_call_count == 2u,
+        require(session.last_telemetry().motion_read_native_effect_call_count == 2u,
                 "selected-session active motion-read telemetry mismatch");
         require(first.recovered_substep_count > 0u,
                 "selected-session load-term path was not exercised");
@@ -222,11 +207,14 @@ int main() {
             << "{\"format\":\"" << kSelectedSessionRetailVehicleExecutionFormat << "\","
             << "\"ready\":true,"
             << "\"selected_session_rate_hz\":180,"
+            << "\"selected_player_difficulty\":"
+            << kBmwNativeSilverstonePlayerDifficulty << ","
             << "\"inner_substep_seconds\":" << (1.0 / 180.0) << ","
             << "\"normal_outer_substeps\":6,"
             << "\"two_dispatch_persistent_steps\":12,"
             << "\"fun_007560c0_gate_setup_owned\":true,"
             << "\"fun_00765c40_load_terms_typed\":true,"
+            << "\"motion_read_raw_input_provider\":false,"
             << "\"motion_read_effect_arithmetic_internal\":true,"
             << "\"retail_inner_substep_execution_admitted\":true,"
             << "\"provider_semantics_promoted\":false,"

@@ -40,25 +40,24 @@ def test_pc_projection_state_evidence_freezes_outer_update_order() -> None:
     assert order["refresh_occurs_after_both_passes"] is True
 
 
-def test_native_session_removes_projection_pair_from_external_provider() -> None:
+def test_native_session_keeps_projection_state_without_late_raw_provider() -> None:
     projection_header = PROJECTION_HEADER.read_text(encoding="utf-8")
     session_header = SESSION_HEADER.read_text(encoding="utf-8")
     session_source = SESSION_SOURCE.read_text(encoding="utf-8")
 
-    external_struct = projection_header.split(
-        "struct Fun007682c0ExternalMachineInput", 1
-    )[1].split("struct Fun007682c0DerivedProjectionState", 1)[0]
-    assert "projection_field_x" not in external_struct
-    assert "projection_field_z" not in external_struct
+    assert "Fun007682c0ExternalMachineInput" not in projection_header
     assert "Fun007682c0DerivedProjectionState" in projection_header
     assert "compose_fun_007682c0_machine_input" in projection_header
     assert "derive_fun_007682c0_projection_state" in projection_header
+    assert "selected_bmw_native_session_player_difficulty()" in projection_header
 
-    assert "Fun007682c0ExternalMachineInput" in session_header
+    assert "NativeVehicleMotionReadInputProvider" not in session_header
+    assert "motion_read_input{}" not in session_header
     assert "motion_read_projection_state_" in session_header
     assert "motion_read_projection_state() const" in session_header
 
     assert "compose_fun_007682c0_machine_input" in session_source
+    assert "providers_.motion_read_input" not in session_source
     assert "motion_read_projection_state_" in session_source
     assert "derive_fun_007682c0_projection_state" in session_source
     assert "velocity_x_before" in session_source
@@ -67,7 +66,7 @@ def test_native_session_removes_projection_pair_from_external_provider() -> None
     assert "motion_read_projection_state_ = projection_before" in session_source
 
 
-def test_projection_state_handoff_narrows_but_does_not_invent_provider_closure() -> None:
+def test_projection_state_handoff_historical_scope_remains_intact() -> None:
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     handoff = payload["handoff"]
     scope = payload["scope"]

@@ -72,7 +72,7 @@ def test_pc_load_term_ownership_is_hash_locked_and_ordered() -> None:
     assert order["load_terms_available_before_FUN_00769ef0"] is True
 
 
-def test_native_api_moves_load_terms_to_fun_00765c40_owner() -> None:
+def test_native_api_keeps_load_terms_at_fun_00765c40_owner_without_raw_provider() -> None:
     load_header = LOAD_HEADER.read_text(encoding="utf-8")
     projection = PROJECTION_HEADER.read_text(encoding="utf-8")
     session_header = SESSION_HEADER.read_text(encoding="utf-8")
@@ -83,28 +83,26 @@ def test_native_api_moves_load_terms_to_fun_00765c40_owner() -> None:
     for offset in ("0xb38u", "0x15b8u", "0x2038u", "0x2ab8u"):
         assert offset in load_header
 
-    external_struct = projection.split(
-        "struct Fun007682c0ExternalMachineInput", 1
-    )[1].split("};", 1)[0]
-    assert "load_terms" not in external_struct
+    assert "Fun007682c0ExternalMachineInput" not in projection
     compose = projection.split("compose_fun_007682c0_machine_input", 1)[1]
     assert "const Fun00765c40LoadTerms& load_terms" in compose
     assert "input.load_terms = load_terms" in compose
 
     assert "using NativeVehicleContactFactorProvider" in session_header
     assert "NativeVehicleContactFactorProvider contact_factor" in session_header
+    assert "NativeVehicleMotionReadInputProvider" not in session_header
     assert "Fun00765c40PassLoadState" in session_source
     contact_store = session_source.index(
         "load_state->terms = providers_.contact_factor(pass_index)"
     )
     ready_store = session_source.index("load_state->ready = true")
-    late_read = session_source.index("providers_.motion_read_input(pass_index)")
     compose_call = session_source.index("compose_fun_007682c0_machine_input")
-    assert contact_store < ready_store < late_read < compose_call
+    assert contact_store < ready_store < compose_call
+    assert "providers_.motion_read_input" not in session_source
     assert "if (!load_state->ready)" in session_source
 
 
-def test_phase722_narrows_ownership_without_claiming_contact_solver_closure() -> None:
+def test_phase722_historical_scope_remains_immutable() -> None:
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     handoff = payload["native_handoff"]
     limits = payload["limits"]

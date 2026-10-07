@@ -9,6 +9,7 @@ KERNEL = ROOT / "native_runtime/src/fun_007682c0_machine_effect.cpp"
 CHAIN = ROOT / "native_runtime/src/fun_00770e80_motion_read_machine_input_provider_chain.cpp"
 SESSION = ROOT / "native_runtime/src/native_vehicle_provider_session.cpp"
 HEADER = ROOT / "native_runtime/include/shift_native_vehicle_provider_session.hpp"
+PROJECTION = ROOT / "native_runtime/include/shift_fun_007682c0_projection_state.hpp"
 
 
 def test_machine_effect_contract_is_pc_authoritative_and_ready() -> None:
@@ -43,7 +44,7 @@ def test_machine_effect_contract_freezes_x87_and_raw_input_boundaries() -> None:
     assert raw["angle_mode"] == "DAT_00c128cc i32"
 
 
-def test_active_native_path_consumes_raw_inputs_not_precomputed_effect() -> None:
+def test_active_native_path_has_internal_machine_input_composition() -> None:
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     native = payload["native_consumption"]
     assert native["external_precomputed_effect_accepted_by_active_session"] is False
@@ -53,11 +54,13 @@ def test_active_native_path_consumes_raw_inputs_not_precomputed_effect() -> None
 
     header = HEADER.read_text(encoding="utf-8")
     session = SESSION.read_text(encoding="utf-8")
+    projection = PROJECTION.read_text(encoding="utf-8")
     chain = CHAIN.read_text(encoding="utf-8")
     kernel = KERNEL.read_text(encoding="utf-8")
-    assert "NativeVehicleMotionReadInputProvider motion_read_input" in header
+    assert "NativeVehicleMotionReadInputProvider" not in header
     assert "NativeVehicleMotionReadEffectProvider" not in header
-    assert "providers_.motion_read_input(pass_index)" in session
+    assert "providers_.motion_read_input" not in session
+    assert "selected_bmw_native_session_player_difficulty()" in projection
     assert "execute_explicit_motion_read_machine_input_update" in session
     assert "execute_fun_007682c0_machine_effect" in chain
     assert "apply_fun_007682c0_body0_accumulator_y_delta" in chain
@@ -65,7 +68,7 @@ def test_active_native_path_consumes_raw_inputs_not_precomputed_effect() -> None
     assert "std::sqrt(" not in kernel
 
 
-def test_only_raw_input_refresh_remains_for_this_boundary() -> None:
+def test_phase719_historical_raw_input_blocker_is_preserved_as_history() -> None:
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     handoff = payload["handoff"]
     blockers = payload["remaining_blockers"]

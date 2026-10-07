@@ -38,28 +38,27 @@ def test_pc_setup_gate_evidence_is_hash_locked() -> None:
     )
 
 
-def test_gate_is_setup_owned_not_late_provider_owned() -> None:
+def test_gate_is_setup_owned_and_no_late_provider_struct_remains() -> None:
     setup_header = SETUP_HEADER.read_text(encoding="utf-8")
     projection = PROJECTION_HEADER.read_text(encoding="utf-8")
     session_header = SESSION_HEADER.read_text(encoding="utf-8")
     session_source = SESSION_SOURCE.read_text(encoding="utf-8")
 
-    external_struct = projection.split(
-        "struct Fun007682c0ExternalMachineInput", 1
-    )[1].split("struct Fun007682c0DerivedProjectionState", 1)[0]
-    assert "caller_gate_open" not in external_struct
-    assert "std::int32_t angle_mode" in external_struct
+    assert "Fun007682c0ExternalMachineInput" not in projection
     assert "Fun007560c0MotionReadGateSetup" in setup_header
     assert "bool caller_gate_open" in setup_header
     assert "Fun007560c0MotionReadGateSetup& setup_gate" in projection
     assert "input.caller_gate_open = setup_gate.caller_gate_open" in projection
+    assert "selected_bmw_native_session_player_difficulty()" in projection
 
     assert "Fun007560c0MotionReadGateSetup motion_read_setup" in session_header
+    assert "NativeVehicleMotionReadInputProvider" not in session_header
     assert "motion_read_setup" in session_source
     assert "providers_.motion_read_setup" in session_source
+    assert "providers_.motion_read_input" not in session_source
 
 
-def test_scope_keeps_selected_value_and_angle_mode_fail_closed() -> None:
+def test_phase723_scope_keeps_selected_gate_value_fail_closed() -> None:
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     handoff = payload["native_handoff"]
     limits = payload["limits"]
