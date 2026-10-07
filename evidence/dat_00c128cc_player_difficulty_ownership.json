@@ -1,0 +1,79 @@
+{
+  "format": "SHIFT.DAT00c128ccPlayerDifficultyOwnership/1",
+  "version": 1,
+  "status": "retail-pc-race-mode-owner-proven-selected-session-bound",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "retail_program": {
+    "name": "SHIFT.exe",
+    "pe_md5": "705af8b420e5eb1e3834ac43d5533c6b"
+  },
+  "semantic_identity": {
+    "global": "DAT_00c128cc",
+    "race_mode_field": "RaceModeInfo+0x6c",
+    "profile_source": "profile/options+0x10f4",
+    "reflection_name": "Player Difficulty (0-2)",
+    "valid_domain": [0, 1, 2]
+  },
+  "pc_owner_chain": {
+    "profile_default_writer": {
+      "function": "FUN_0041a730",
+      "address": "0x0041a730",
+      "function_size": 130,
+      "function_sha256": "cebe6331fa7e089c4f43934fe520319c51c238cd9acfe9ca0fa791e1fbd61a42",
+      "fact": "initializes profile/options+0x10f4 to 1; not used as a universal live-session assumption"
+    },
+    "profile_setter": {
+      "function": "FUN_00d3b190",
+      "address": "0x00d3b190",
+      "function_size": 45,
+      "function_sha256": "14a5001e7a917fd8dfe0d8f6ecddd2b321468185b41b9c2b8fef4c2666d6aa0a"
+    },
+    "race_mode_builder": {
+      "function": "FUN_0048dd90",
+      "address": "0x0048dd90",
+      "function_size": 62,
+      "function_sha256": "4a0aaf95eb0b63161f35042c7164fd3b6c62ffce2c793671eb52cd9c252ccffb",
+      "fact": "writes Player Difficulty into RaceModeInfo+0x6c"
+    },
+    "change_race_mode_consumer": {
+      "function": "FUN_00714560",
+      "address": "0x00714560",
+      "function_size": 348,
+      "function_sha256": "0fdfd115ce435f07172048099c7c8ae063842de2dcad60bfb06ca40cbba49fd4",
+      "fact": "copies 31 dwords (0x7c bytes) of RaceModeInfo into PhysicsParticipantManager staging +0x3b4"
+    },
+    "global_snapshot_publisher": {
+      "function": "FUN_00714ed0",
+      "address": "0x00714ed0",
+      "function_size": 468,
+      "function_sha256": "47bbffc6f5d332609171baba59e0c8f5fc44a1bff680c2ba22247110bdd72ee8",
+      "fact": "copies the same 0x7c-byte staging snapshot to DAT_00c12860; +0x6c maps exactly to DAT_00c128cc"
+    }
+  },
+  "selected_native_session": {
+    "contract": "SHIFT.BMWOffset33bNativeSessionSelection/1",
+    "artifact": "evidence/bmw_offset33b_native_silverstone_session.json",
+    "session_target": "Silverstone+BMW_M3_E36",
+    "player_difficulty": 1,
+    "source": "explicit-native-vertical-slice-policy",
+    "validated_against_retail_selector_domain": true,
+    "retail_live_session_selector_inferred": false
+  },
+  "native_handoff": {
+    "type": "RaceModePlayerDifficulty",
+    "materialized_symbol": "kMaterializedSelectedSessionPlayerDifficulty",
+    "late_FUN_007682c0_provider_required": false,
+    "session_selector_required": true,
+    "active_external_provider_count_before": 8,
+    "active_external_provider_count_after": 7
+  },
+  "scope": {
+    "DAT_00c128cc_is_immutable_process_global": false,
+    "profile_default_assumed_for_all_retail_sessions": false,
+    "selected_native_policy_claimed_as_retail_observation": false,
+    "xbox_360_recomp_substituted_for_pc_authority": false,
+    "original_game_execution_required": false,
+    "runtime_capture_required": false
+  }
+}
