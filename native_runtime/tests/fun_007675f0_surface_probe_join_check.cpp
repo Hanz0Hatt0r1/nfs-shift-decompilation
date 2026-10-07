@@ -84,9 +84,7 @@ int main() {
 
         ContactOuterSessionInput production{};
         production.surface_probe_node = &node;
-        production.base_scalar = 4.0;
         production.projected_scalar = 1.0;
-        production.alignment_scalar = 0.5;
         auto external = compose_fun_007675f0_external_input(
             production,
             3.0,
@@ -100,9 +98,7 @@ int main() {
                      "production surface scalar was not derived from probe");
 
         ContactOuterSessionInput missing_node{};
-        missing_node.base_scalar = 4.0;
         missing_node.projected_scalar = 1.0;
-        missing_node.alignment_scalar = 0.5;
         bool missing_node_rejected = false;
         try {
             (void)compose_fun_007675f0_external_input(missing_node, 3.0, 1.0);

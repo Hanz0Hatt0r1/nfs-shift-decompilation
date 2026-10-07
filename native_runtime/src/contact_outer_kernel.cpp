@@ -1,6 +1,7 @@
 #include "shift_contact_outer_kernel.hpp"
 
 #include "shift_body_record_adapter.hpp"
+#include "shift_fun_007675f0_body_owned_scalars.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -206,11 +207,15 @@ ContactOuterExternalInput compose_fun_007675f0_external_input(
     ContactOuterExternalInput external{};
     external.previous_distance_state = previous_distance_state;
     external.distance_filter_cap = distance_filter_cap;
-    external.base_scalar = session_input.base_scalar;
     external.projected_scalar = session_input.projected_scalar;
-    external.alignment_scalar = session_input.alignment_scalar;
     external.surface_probe_node = session_input.surface_probe_node;
+    external.compatibility_body_owned_scalars_present =
+        session_input.compatibility_body_owned_scalars_present;
 
+    if (session_input.compatibility_body_owned_scalars_present) {
+        external.base_scalar = session_input.compatibility_base_scalar;
+        external.alignment_scalar = session_input.compatibility_alignment_scalar;
+    }
     if (session_input.compatibility_surface_probe_outputs_present &&
         session_input.surface_probe_node == nullptr) {
         external.planar_delta = session_input.compatibility_planar_delta;
@@ -239,6 +244,15 @@ ContactOuterKernelInput compose_fun_007675f0_input(
     input.projected_scalar = external.projected_scalar;
     input.alignment_scalar = external.alignment_scalar;
     input.param_3 = external.param_3;
+    input.derive_body_owned_scalars =
+        !external.compatibility_body_owned_scalars_present;
+    if (input.derive_body_owned_scalars) {
+        if (!external.fun_007675f0_body_field_120_present) {
+            throw std::invalid_argument(
+                "FUN_007675f0 production body-owned scalars require current BODY0+0x120");
+        }
+        input.body_field_120 = external.fun_007675f0_body_field_120;
+    }
     return input;
 }
 
@@ -278,14 +292,20 @@ ContactOuterKernelResult execute_fun_007675f0_outer_arithmetic(
     require_finite_value(input.speed_x, "FUN_007675f0 speed X");
     require_finite_value(input.speed_z, "FUN_007675f0 speed Z");
     require_finite_value(input.surface_scalar, "FUN_007675f0 surface scalar");
-    require_finite_value(input.base_scalar, "FUN_007675f0 base scalar");
     require_finite_value(
         input.projected_scalar,
         "FUN_007675f0 projected scalar");
-    require_finite_value(
-        input.alignment_scalar,
-        "FUN_007675f0 alignment scalar");
     require_finite_value(input.param_3, "FUN_007675f0 param_3");
+    if (input.derive_body_owned_scalars) {
+        require_finite_value(
+            input.body_field_120,
+            "FUN_007675f0 BODY0+0x120");
+    } else {
+        require_finite_value(input.base_scalar, "FUN_007675f0 base scalar");
+        require_finite_value(
+            input.alignment_scalar,
+            "FUN_007675f0 alignment scalar");
+    }
 
     ContactOuterKernelResult result{};
     result.distance = planar_length_xz(input.planar_delta);
@@ -326,12 +346,32 @@ ContactOuterKernelResult execute_fun_007675f0_outer_arithmetic(
         result.gap_shape = result.gap / kContactGapScale;
     }
 
+    result.projected_scalar = input.projected_scalar;
+    if (input.derive_body_owned_scalars) {
+        // PC FUN_007675f0 derives both values only inside the strict
+        // distance/speed gate. Do not manufacture them on a closed path.
+        if (result.gate_open) {
+            const auto derived = execute_fun_007675f0_body_owned_scalars(
+                input.planar_delta,
+                Fun007675f0BodyMotion{input.speed_x, input.speed_z},
+                result.filtered_distance_state,
+                input.body_field_120);
+            result.base_scalar = static_cast<double>(derived.base_scalar);
+            result.alignment_scalar =
+                static_cast<double>(derived.alignment_scalar);
+            result.body_owned_scalars_derived = true;
+        }
+    } else {
+        result.base_scalar = input.base_scalar;
+        result.alignment_scalar = input.alignment_scalar;
+    }
+
     result.force_scalar =
-        (input.base_scalar * kContactForceMultiplier -
-         input.projected_scalar) *
+        (result.base_scalar * kContactForceMultiplier -
+         result.projected_scalar) *
         (2.0 - result.gap_shape) *
         result.gap_shape *
-        input.alignment_scalar *
+        result.alignment_scalar *
         result.speed_factor;
     require_finite_value(result.force_scalar, "FUN_007675f0 force scalar");
 

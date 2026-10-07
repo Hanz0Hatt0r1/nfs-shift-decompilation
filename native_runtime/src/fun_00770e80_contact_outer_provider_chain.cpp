@@ -80,9 +80,9 @@ execute_fun_00770e80_contact_outer_provider_chain(
                 std::move(typed.post_pass_body_mutator);
 
             // Current BODY0 is published before any per-pass anchor. Besides the
-            // already-owned motion/query position, FUN_00769ef0 also reads BODY0
-            // +0x120 before calling FUN_007675f0. Capture the same pass-local
-            // persistent value so pass 1 observes pass 0's half-step result.
+            // already-owned motion/query position, FUN_00769ef0 and FUN_007675f0
+            // both consume BODY0+0x120. Capture one pass-local persistent value
+            // so pass 1 observes pass 0's half-step result.
             adapted.current_body_observer =
                 [state](const std::vector<std::uint8_t>& current_body_bytes) {
                     state->body_motion =
@@ -127,6 +127,13 @@ execute_fun_00770e80_contact_outer_provider_chain(
                                 external.fun_00769ef0_param_3_load_terms,
                                 state->body_field_120).param_3);
                     }
+
+                    // The same current BODY0+0x120 value also participates in
+                    // FUN_007675f0's source-derived base scalar. Legacy fixtures
+                    // keep explicit base/alignment values through their flag.
+                    external.fun_007675f0_body_field_120 =
+                        state->body_field_120;
+                    external.fun_007675f0_body_field_120_present = true;
 
                     const ContactOuterKernelInput input =
                         compose_fun_007675f0_input(external, state->body_motion);

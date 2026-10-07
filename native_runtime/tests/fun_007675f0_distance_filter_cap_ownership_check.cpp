@@ -87,9 +87,7 @@ int main() {
 
         ContactOuterSessionInput production{};
         production.surface_probe_node = &production_node;
-        production.base_scalar = 4.0;
         production.projected_scalar = 1.0;
-        production.alignment_scalar = 0.5;
         const auto production_resolved = compose_fun_007675f0_external_input(
             production,
             3.0,
@@ -98,6 +96,8 @@ int main() {
                 "Phase 732 node boundary did not preserve Phase 731 production input");
         require_near(production_resolved.distance_filter_cap, 7.25,
                      "production payload altered setup-owned filter cap");
+        require(!production_resolved.compatibility_body_owned_scalars_present,
+                "production payload unexpectedly carried compatibility body-owned scalars");
 
         std::cout
             << "{\"format\":\"" << kFun007675f0DistanceFilterCapOwnershipFormat << "\","
