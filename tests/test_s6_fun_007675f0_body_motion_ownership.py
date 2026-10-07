@@ -51,7 +51,14 @@ def test_external_contact_outer_contract_excludes_body_motion() -> None:
     provider_header = PROVIDER_HEADER.read_text(encoding="utf-8")
     session_header = SESSION_HEADER.read_text(encoding="utf-8")
     assert "std::function<ContactOuterExternalInput()>" in provider_header
-    assert "std::function<physics::ContactOuterExternalInput(std::size_t pass_index)>" in session_header
+    # Phase 730 narrows the production session payload again, but must preserve
+    # the Phase 729 invariant that BODY motion never re-enters the provider.
+    assert "std::function<physics::ContactOuterSessionInput(std::size_t pass_index)>" in session_header
+    session_struct = header.split("struct ContactOuterSessionInput", 1)[1].split(
+        "struct Fun007675f0BodyMotion", 1
+    )[0]
+    assert "double speed_x" not in session_struct
+    assert "double speed_z" not in session_struct
 
 
 def test_each_pass_reads_current_persistent_body_before_contact_outer() -> None:
