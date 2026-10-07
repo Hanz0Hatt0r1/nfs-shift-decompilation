@@ -1,0 +1,92 @@
+name: native-physics-phase746
+
+on:
+  push:
+    paths:
+      - 'native_runtime/include/shift_body_accumulator_primitives.hpp'
+      - 'native_runtime/src/body_accumulator_primitives.cpp'
+      - 'native_runtime/include/shift_fun_00766510_primary_response_application.hpp'
+      - 'native_runtime/tests/fun_00766510_primary_response_application_check.cpp'
+      - 'native_runtime/cmake/phase745.cmake'
+      - 'native_runtime/cmake/phase746.cmake'
+      - 'tests/test_s6_fun_00766510_primary_response_application.py'
+      - 'tests/test_s6_fun_00766510_primary_caller_accumulator.py'
+      - 'evidence/fun_00766510_primary_caller_accumulator.json'
+      - 'evidence/phase746_next_blocker.md'
+      - 'docs/PHASE746_FUN_00766510_PRIMARY_CALLER_ACCUMULATOR.md'
+      - 'docs/PHASE746_SCOPE.md'
+      - '.github/workflows/native-physics-phase742.yml'
+      - '.github/workflows/native-physics-phase746.yml'
+  pull_request:
+    paths:
+      - 'native_runtime/include/shift_body_accumulator_primitives.hpp'
+      - 'native_runtime/src/body_accumulator_primitives.cpp'
+      - 'native_runtime/include/shift_fun_00766510_primary_response_application.hpp'
+      - 'native_runtime/tests/fun_00766510_primary_response_application_check.cpp'
+      - 'native_runtime/cmake/phase745.cmake'
+      - 'native_runtime/cmake/phase746.cmake'
+      - 'tests/test_s6_fun_00766510_primary_response_application.py'
+      - 'tests/test_s6_fun_00766510_primary_caller_accumulator.py'
+      - 'evidence/fun_00766510_primary_caller_accumulator.json'
+      - 'evidence/phase746_next_blocker.md'
+      - 'docs/PHASE746_FUN_00766510_PRIMARY_CALLER_ACCUMULATOR.md'
+      - 'docs/PHASE746_SCOPE.md'
+      - '.github/workflows/native-physics-phase742.yml'
+      - '.github/workflows/native-physics-phase746.yml'
+
+jobs:
+  primary-caller-accumulator:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run focused Phase 746 regressions
+        run: >-
+          python3 -m pytest -q
+          tests/test_s6_fun_00766510_primary_response_application.py
+          tests/test_s6_fun_00766510_primary_caller_accumulator.py
+
+      - name: Validate Phase 746 evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          e = json.loads(Path('evidence/fun_00766510_primary_caller_accumulator.json').read_text())
+          assert e['format'] == 'SHIFT.Fun00766510PrimaryCallerAccumulator/1'
+          assert e['ready'] is True
+          assert e['source']['cross_and_caller_store_span']['raw_byte_sha256'] == '5813de173dee954d843b69c1b0bf9491863f1094b858509bdf0f03d01183be2a'
+          assert e['native_contract']['delta_is_recomputed_from_body_difference'] is False
+          assert e['scope']['external_provider_count_after'] == 7
+          assert e['scope']['contact_response_provider_removed'] is False
+          PY
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 746 and accumulator dependencies
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_fun_00766510_primary_response_application_check
+          shift_runtime_body_accumulator_primitives_check
+
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_fun_00766510_primary_response_application|shift_runtime_body_accumulator_primitives)$'
+
+      - name: Verify Phase 746 native report
+        run: |
+          mkdir -p out/native-physics-phase746
+          native_runtime/build/shift_runtime_fun_00766510_primary_response_application_check \
+            > out/native-physics-phase746/fun_00766510_primary_response_application.json
+          grep -q '"format":"SHIFT.Fun00766510PrimaryResponseApplication/2"' \
+            out/native-physics-phase746/fun_00766510_primary_response_application.json
+          grep -q '"caller_accumulator_delta_native":true' \
+            out/native-physics-phase746/fun_00766510_primary_response_application.json
+          grep -q '"contact_response_provider_removed":false' \
+            out/native-physics-phase746/fun_00766510_primary_response_application.json
