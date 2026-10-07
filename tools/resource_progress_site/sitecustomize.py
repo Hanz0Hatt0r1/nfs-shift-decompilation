@@ -138,13 +138,22 @@ class _ProgressTracker:
         _emit(f"[resource-progress] phase={name} event=start archives_total={total}")
         try:
             yield
-        finally:
+        except Exception as exc:
+            processed = state.done + state.failed
+            _emit(
+                f"[resource-progress] phase={name} event=failed "
+                f"processed={processed}/{state.total} done={state.done} "
+                f"failed={state.failed} type={type(exc).__name__}"
+            )
+            raise
+        else:
             processed = state.done + state.failed
             _emit(
                 f"[resource-progress] phase={name} event=complete "
                 f"processed={processed}/{state.total} done={state.done} "
                 f"failed={state.failed}"
             )
+        finally:
             self._phase = previous
 
     def archive_open(self, raw_path: str | Path) -> _ArchiveToken | None:
