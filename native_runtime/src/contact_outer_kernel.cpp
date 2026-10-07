@@ -104,6 +104,25 @@ Fun007675f0BodyMotion derive_fun_007675f0_body0_motion(
     return motion;
 }
 
+ContactOuterExternalInput compose_fun_007675f0_external_input(
+    const ContactOuterSessionInput& session_input,
+    double previous_distance_state) {
+    require_finite_value(
+        previous_distance_state,
+        "FUN_007675f0 previous distance state");
+
+    ContactOuterExternalInput external{};
+    external.planar_delta = session_input.planar_delta;
+    external.previous_distance_state = previous_distance_state;
+    external.distance_filter_cap = session_input.distance_filter_cap;
+    external.surface_scalar = session_input.surface_scalar;
+    external.base_scalar = session_input.base_scalar;
+    external.projected_scalar = session_input.projected_scalar;
+    external.alignment_scalar = session_input.alignment_scalar;
+    external.param_3 = session_input.param_3;
+    return external;
+}
+
 ContactOuterKernelInput compose_fun_007675f0_input(
     const ContactOuterExternalInput& external,
     const Fun007675f0BodyMotion& motion) {
