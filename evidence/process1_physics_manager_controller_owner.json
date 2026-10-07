@@ -1,0 +1,222 @@
+{
+  "format": "SHIFT.Process1PhysicsManagerControllerOwner/1",
+  "ready": true,
+  "source": {
+    "authority": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "image_base": "0x00400000",
+    "pointer_size": 4,
+    "xbox_recomp_required": false
+  },
+  "physics_manager": {
+    "singleton_getter": "FUN_0070fe90",
+    "singleton_initializer": "FUN_0070fe99",
+    "singleton_object": "DAT_00c104e0",
+    "constructor": "FUN_0070fae0",
+    "registered_name": "Physics Manager",
+    "vtable": "0x00b04524",
+    "update_slot_offset": "0x18",
+    "update_slot_cell": "0x00b0453c",
+    "update_target": "FUN_00711b50",
+    "source_lines": {
+      "constructor": 702790,
+      "vtable_assignment": 702805,
+      "name_registration": 702826,
+      "singleton_initializer": 702954,
+      "singleton_construct": 702968
+    },
+    "machine_spans": {
+      "constructor_vtable_and_name": {
+        "start": "0x0070fb13",
+        "end_exclusive": "0x0070fbaa",
+        "sha256": "c9c942bf10520703ef4e554c3d5b18dea01fff16e289ea41c4e3ec5284fbb85b"
+      },
+      "update_slot_pointer": {
+        "start": "0x00b0453c",
+        "end_exclusive": "0x00b04540",
+        "sha256": "934b96a464cfc0f2bd606065dc0721d407659ffc0add2c8f4796f55d1fa992e0"
+      }
+    }
+  },
+  "controller_registration": {
+    "startup_function": "thunk_FUN_00d36000",
+    "controller_name": "Controller #1",
+    "controller_lookup_or_create": "FUN_006339b0",
+    "manager_attach": "FUN_006485b0",
+    "controller_handle_parent_offset": "0x12b0",
+    "manager_controller_owner_offset": "0x14c",
+    "source_lines": {
+      "controller_name": 17499,
+      "controller_lookup_or_create": 17502,
+      "physics_manager_getter": 17506,
+      "physics_manager_attach": 17507,
+      "manager_attach_definition": 526383,
+      "manager_list_insert": 526407,
+      "manager_owner_store": 526413
+    },
+    "machine_spans": {
+      "controller1_to_physics_attach": {
+        "start": "0x00d36006",
+        "end_exclusive": "0x00d3606f",
+        "sha256": "e8d6f2f17e32b9fc652912d7a264e901b1d04e48024a9349c65f26e795caef2f"
+      },
+      "manager_attach_function": {
+        "start": "0x006485b0",
+        "end_exclusive": "0x00648636",
+        "sha256": "b19a37aaa0a0bed13a6acfcfd52d63e1acd8322171d9412de6c3df4939e0b49c"
+      }
+    }
+  },
+  "auto_update_configuration": {
+    "config_function": "FUN_00648890",
+    "physics_manager_callsite_function": "FUN_0040e630",
+    "call_arguments": {
+      "enabled_param2": 1,
+      "config_0x158_param3": 6,
+      "config_0x15c_param4": 0
+    },
+    "writes": {
+      "manager_plus_0x34": 1,
+      "manager_plus_0x35": "param2",
+      "manager_plus_0x158": "param3",
+      "manager_plus_0x15c": "param4"
+    },
+    "plus_0x34_debug_label": "Auto Update",
+    "config_value_6_semantic_frequency_proven": false,
+    "source_lines": {
+      "physics_manager_getter": 17745,
+      "physics_manager_configure": 17746,
+      "auto_update_label": 545954
+    },
+    "machine_spans": {
+      "physics_manager_config_call": {
+        "start": "0x0040e77f",
+        "end_exclusive": "0x0040e791",
+        "sha256": "0a15e5ef195222eadc6f1d9d234024bbd4dcb83ec9d861c63283c2fe17d455e8"
+      },
+      "manager_config_function": {
+        "start": "0x00648890",
+        "end_exclusive": "0x006488cc",
+        "sha256": "86f024a2c0eefbdb195e8d834c7677a19dfc8653743a3bef3729f0c37df24e10"
+      }
+    }
+  },
+  "controller_worker": {
+    "controller_vtable": "0x00af0568",
+    "worker_slot_offset": "0x4",
+    "worker_target": "FUN_00662880",
+    "thread_entry": "FUN_00649b10",
+    "controller_dispatch": "FUN_006626a0",
+    "manager_list_offset": "0x58",
+    "active_controller_state_offset": "0x98",
+    "active_controller_state_value": 6,
+    "manager_list_runner": "FUN_0065b8b0",
+    "manager_scheduler": "FUN_00647ef0",
+    "source_lines": {
+      "thread_worker_virtual_call": 528002,
+      "worker_definition": 552813,
+      "worker_calls_controller_dispatch": 552899,
+      "state6_gate": 552718,
+      "manager_list_call": 552721,
+      "manager_list_runner_definition": 546249,
+      "manager_scheduler_call": 546269
+    },
+    "machine_spans": {
+      "controller_vtable_first_two_slots": {
+        "start": "0x00af0568",
+        "end_exclusive": "0x00af0570",
+        "sha256": "7db221ec08b723c5696e0d9b837f93629422de639cc9456b4e77c6df4678f007"
+      },
+      "thread_worker_virtual_call": {
+        "start": "0x00649c60",
+        "end_exclusive": "0x00649c70",
+        "sha256": "d0d3b6f56b7669281383f1a4dbe193a3ca3b233d5130e3743fedcc6b0307a450"
+      },
+      "worker_to_controller_dispatch": {
+        "start": "0x006629ef",
+        "end_exclusive": "0x00662a01",
+        "sha256": "0e5bdd715cf137f26575c2c0b192683fcaf13114329729c4b21ad574e4e15ebd"
+      },
+      "state6_to_manager_list": {
+        "start": "0x006626a8",
+        "end_exclusive": "0x006626c2",
+        "sha256": "ee4dda4277e3a2f2ae7973406ae4fa0530a878508f680589ced310520b9eb8a0"
+      },
+      "manager_list_to_scheduler": {
+        "start": "0x0065b8e0",
+        "end_exclusive": "0x0065b904",
+        "sha256": "2dd599373af18cf47593965283f34b04d456ee95d9904c09e77cddaf80ff60e9"
+      }
+    }
+  },
+  "manager_scheduler": {
+    "function": "FUN_00647ef0",
+    "slot_dispatch": "FUN_00647d80",
+    "default_virtual_slot_offset": "0x18",
+    "alternate_virtual_slot_offset": "0x1c",
+    "alternate_slot_flag_source": "FUN_0065bf80()+0x529",
+    "may_dispatch_multiple_updates_per_invocation": true,
+    "render_frame_cadence_proven": false,
+    "exact_external_wakeup_frequency_proven": false,
+    "source_lines": {
+      "scheduler_definition": 526081,
+      "default_direct_dispatch": 526139,
+      "fixed_or_accumulator_loop_dispatch": 526233,
+      "slot_dispatch_definition": 525985,
+      "default_slot_dispatch": 525999
+    },
+    "machine_spans": {
+      "slot_dispatch": {
+        "start": "0x00647d80",
+        "end_exclusive": "0x00647da0",
+        "sha256": "a3fcaf6ea972f5f3e62f44cbaaedb0a694c08dc2966585165078bfbb84d21f71"
+      },
+      "representative_scheduler_to_dispatch_call": {
+        "start": "0x00647fb6",
+        "end_exclusive": "0x00647fc2",
+        "sha256": "b9641eec4065f468a4c4ef3bf3696f4052ec4fc52e6da125e6765055a6ce4fac"
+      }
+    }
+  },
+  "promoted_owner_path": [
+    "startup thunk_FUN_00d36000",
+    "FUN_006339b0(\"Controller #1\")",
+    "FUN_0070fe90 -> Physics Manager",
+    "FUN_006485b0 -> Controller #1 manager list",
+    "FUN_00649b10 -> controller vtable[+0x4]",
+    "FUN_00662880",
+    "FUN_006626a0 [controller+0x98 == 6]",
+    "FUN_0065b8b0(controller+0x58)",
+    "FUN_00647ef0(Physics Manager)",
+    "FUN_00647d80 -> manager vtable[+0x18]",
+    "FUN_00711b50",
+    "FUN_007119c0",
+    "FUN_007117e0",
+    "FUN_0070f940",
+    "FUN_007155e0 -> FUN_0048ed52 -> FUN_007155e9 case 3",
+    "FUN_00715380",
+    "FUN_00713050",
+    "SHIFT.Process1Fun0079b2d0VirtualDispatch/1",
+    "FUN_0079b2d0",
+    "FUN_00770e80"
+  ],
+  "promotion": {
+    "physics_manager_controller_owner_proven": true,
+    "physics_manager_name_proven": true,
+    "controller_name_proven": true,
+    "manager_auto_update_configuration_proven": true,
+    "manager_update_virtual_slot_proven": true,
+    "controller_state_gate_proven": true,
+    "manager_list_iteration_proven": true,
+    "render_frame_cadence_proven": false,
+    "one_manager_update_per_render_frame_proven": false,
+    "exact_controller_wakeup_frequency_proven": false,
+    "config_value_6_is_frequency_proven": false
+  },
+  "next_blocker": {
+    "process": 1,
+    "description": "prove the external wake/synchronization cadence of Controller #1 and its relation, if any, to rendered frames without collapsing the manager scheduler accumulator into a frame cadence claim"
+  }
+}
