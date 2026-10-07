@@ -12,8 +12,10 @@ struct ContactOuterPassState {
     std::size_t native_call_count = 0u;
     std::size_t distance_state_commit_count = 0u;
     bool body_motion_present = false;
+    bool body_probe_position_present = false;
     bool result_present = false;
     Fun007675f0BodyMotion body_motion{};
+    SurfaceProbeVector3d body_probe_position{};
     ContactOuterKernelResult result{};
 };
 
@@ -73,14 +75,18 @@ execute_fun_00770e80_contact_outer_provider_chain(
             adapted.post_pass_body_mutator =
                 std::move(typed.post_pass_body_mutator);
 
-            // PC FUN_007675f0 consumes BODY +0x78/+0x88 in the current pass.
-            // Observe the persistent BODY buffer immediately before the anchor
-            // sequence so pass 1 sees the result of pass 0's half-step.
+            // PC FUN_007675f0 consumes current BODY0 position for FUN_00759210
+            // and BODY0 +0x78/+0x88 for its speed gate. Observe both immediately
+            // before the anchor sequence so pass 1 sees pass 0's half-step BODY.
             adapted.current_body_observer =
                 [state](const std::vector<std::uint8_t>& current_body_bytes) {
                     state->body_motion =
                         derive_fun_007675f0_body0_motion(current_body_bytes);
+                    state->body_probe_position =
+                        derive_fun_007675f0_body0_probe_query_position(
+                            current_body_bytes);
                     state->body_motion_present = true;
+                    state->body_probe_position_present = true;
                 };
 
             auto contact_outer_input_provider =
@@ -91,13 +97,17 @@ execute_fun_00770e80_contact_outer_provider_chain(
                 [state,
                  contact_outer_input_provider = std::move(contact_outer_input_provider),
                  distance_state_commit = std::move(distance_state_commit)]() mutable {
-                    if (!state->body_motion_present) {
+                    if (!state->body_motion_present ||
+                        !state->body_probe_position_present) {
                         throw std::logic_error(
-                            "FUN_007675f0 executed before current BODY0 motion ownership bridge");
+                            "FUN_007675f0 executed before current BODY0 ownership bridge");
                     }
                     ++state->input_provider_call_count;
-                    const ContactOuterExternalInput external =
+                    ContactOuterExternalInput external =
                         contact_outer_input_provider();
+                    external = resolve_fun_007675f0_surface_probe_outputs(
+                        external,
+                        state->body_probe_position);
                     const ContactOuterKernelInput input =
                         compose_fun_007675f0_input(external, state->body_motion);
                     state->result =
@@ -105,10 +115,6 @@ execute_fun_00770e80_contact_outer_provider_chain(
                     ++state->native_call_count;
                     state->result_present = true;
 
-                    // PC FUN_007675f0 stores the filtered/clamped value back to
-                    // HDVehicle+0x4080 before the pass continues. Session-owned
-                    // state therefore advances here, so pass 1 observes pass 0's
-                    // result rather than another external refresh.
                     if (distance_state_commit) {
                         distance_state_commit(state->result.filtered_distance_state);
                         ++state->distance_state_commit_count;
@@ -125,6 +131,7 @@ execute_fun_00770e80_contact_outer_provider_chain(
         const auto& state = states[pass_index];
         if (!state ||
             !state->body_motion_present ||
+            !state->body_probe_position_present ||
             state->input_provider_call_count != 1u ||
             state->native_call_count != 1u ||
             !state->result_present) {
