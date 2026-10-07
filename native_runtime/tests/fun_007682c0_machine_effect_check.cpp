@@ -37,6 +37,18 @@ double read_f64(const std::vector<std::uint8_t>& bytes, std::size_t offset) {
     return value;
 }
 
+float f32_from_bits(std::uint32_t bits) {
+    float value = 0.0f;
+    std::memcpy(&value, &bits, sizeof(value));
+    return value;
+}
+
+std::uint32_t f32_bits(float value) {
+    std::uint32_t bits = 0u;
+    std::memcpy(&bits, &value, sizeof(bits));
+    return bits;
+}
+
 std::vector<std::uint8_t> make_body(double vx, double vy, double vz) {
     std::vector<std::uint8_t> bytes(kBodyRecordSize, 0u);
     write_f64(bytes, 0x20u, 0.1);
@@ -107,6 +119,48 @@ int main() {
         require(std::isfinite(result.effect.accumulator_y_delta) &&
                     result.effect.accumulator_y_delta > 0.0,
                 "native FUN_007682c0 delta was not produced");
+
+        // FUN_0075ada0 uses a strict |projection| > 0.001f test. Equality must
+        // keep the geometry valid but select the FLT_MAX/zero-reciprocal path.
+        auto threshold_body = make_body(6.0, 0.0, 0.0);
+        auto threshold_input = input;
+        threshold_input.projection_field_x = 0.0f;
+        threshold_input.projection_field_z = f32_from_bits(0x3a83126fu);
+        const auto threshold_result =
+            execute_fun_007682c0_machine_effect(threshold_input, threshold_body);
+        require(threshold_result.planar_geometry_valid &&
+                    threshold_result.reciprocal_like == 0.0f,
+                "FUN_0075ada0 projection equality did not take near-zero path");
+
+        // This vector distinguishes the two PC FUN_007595d0 f32 term spills
+        // from a single f64 sum followed by one f32 spill. The exact PC result
+        // is 0x492fbfb1; the collapsed form would produce 0x492fbfb0.
+        auto rounding_body = make_body(6.5, 0.0, 0.0);
+        write_f64(rounding_body, 0x20u, -500.0);
+        write_f64(rounding_body, 0x120u, 100000.0);
+        auto rounding_input = input;
+        rounding_input.steering = 1.0f;
+        rounding_input.load_terms = {1000000.0, 1000000.0, 1000000.0, 1000000.0};
+        rounding_input.projection_field_x = 0.0f;
+        rounding_input.projection_field_z = 65.0f;
+        rounding_input.response_field_4054 = 1.0f;
+        rounding_input.angle_mode = 2;
+        const auto rounding_result =
+            execute_fun_007682c0_machine_effect(rounding_input, rounding_body);
+        require(rounding_result.speed_factor == f32_from_bits(0x3dcccccdu),
+                "FUN_007682c0 0.1 speed-factor checkpoint mismatch");
+        require(rounding_result.reciprocal_like == -10.0f,
+                "FUN_0075ada0 rounding-vector reciprocal mismatch");
+        require(f32_bits(rounding_result.response) == 0x492fbfb1u,
+                "FUN_007595d0 independent f32 response-term spills regressed");
+
+        auto signed_zero_input = rounding_input;
+        signed_zero_input.response_field_4054 = -1.0f;
+        const auto signed_zero_result =
+            execute_fun_007682c0_machine_effect(signed_zero_input, rounding_body);
+        require(signed_zero_result.response == 0.0f &&
+                    std::signbit(signed_zero_result.response),
+                "FUN_007595d0 signed-zero return checkpoint regressed");
 
         auto closed_input = input;
         closed_input.caller_gate_open = false;
@@ -188,6 +242,9 @@ int main() {
             << "\"retail_x87_fsqrt\":true,"
             << "\"retail_x87_control_word_0x027f\":true,"
             << "\"host_std_sqrt_used\":false,"
+            << "\"planar_projection_equal_0_001_near_zero\":true,"
+            << "\"response_independent_f32_term_spills\":true,"
+            << "\"response_signed_zero_preserved\":true,"
             << "\"body0_inputs_internal\":true,"
             << "\"effect_arithmetic_internal\":true,"
             << "\"body0_delta_before_half_step\":true}\n";
