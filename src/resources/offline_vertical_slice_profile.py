@@ -28,6 +28,12 @@ PROFILE_INPUTS = (
     "post_solve_projection",
 )
 
+RESOURCE_PIPELINE_INPUTS = (
+    "scene_set",
+    "physics_manifest",
+    "participant_boundary",
+)
+
 
 def _requirements_by_name(requirements: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
     return {
@@ -67,6 +73,7 @@ def build_vertical_slice_profile_prepare(
     workspace_root: str | Path,
     profile_path: str | Path,
     explicit_inputs: Mapping[str, str | Path | None] | None = None,
+    resource_pipeline: str | Path | None = None,
     input_script: str | Path | None = None,
     interactive: bool = False,
     keyboard: bool = False,
@@ -87,6 +94,23 @@ def build_vertical_slice_profile_prepare(
 
     if not root.is_dir():
         blockers.append(f"workspace-root:not-directory:{root}")
+
+    resource_pipeline_requested = bool(str(resource_pipeline or "").strip())
+    resource_pipeline_relative: Path | None = None
+    if resource_pipeline_requested:
+        relative, error = _resolve_under_workspace(
+            root,
+            resource_pipeline,
+            label="resource-pipeline",
+            expect_dir=True,
+        )
+        if error:
+            blockers.append(error)
+        else:
+            resource_pipeline_relative = relative
+        for name in RESOURCE_PIPELINE_INPUTS:
+            if str(explicit.get(name) or "").strip():
+                blockers.append(f"{name}:explicit-conflicts-with-resource-pipeline")
 
     retail_identity_required = (
         requirements.get("retail_archive_identity_required") is True
@@ -115,6 +139,12 @@ def build_vertical_slice_profile_prepare(
         row = rows.get(name)
         if row is None:
             blockers.append(f"requirements:missing-row:{name}")
+            continue
+
+        if resource_pipeline_requested and name in RESOURCE_PIPELINE_INPUTS:
+            # The launcher validates the canonical scene/physics/participant
+            # members and hashes inside resource_pipeline. Do not duplicate a
+            # second profile path or relabel directory presence as evidence.
             continue
 
         # A validated explicit input is READY for diagnostics but is still an
@@ -204,6 +234,8 @@ def build_vertical_slice_profile_prepare(
             **profile_inputs,
             "persist_post_solve_body_state": True,
         }
+        if resource_pipeline_relative is not None:
+            profile["resource_pipeline"] = resource_pipeline_relative.as_posix()
         if retail_identity_required:
             assert retail_identity_relative is not None
             profile["track"] = retail_track
@@ -230,6 +262,11 @@ def build_vertical_slice_profile_prepare(
         "vehicle": requirements.get("vehicle"),
         "workspace_root": str(root),
         "profile_path": str(profile_path),
+        "resource_pipeline": (
+            resource_pipeline_relative.as_posix()
+            if resource_pipeline_relative is not None
+            else None
+        ),
         "auto_filled_inputs": auto_filled,
         "explicit_filled_inputs": explicit_filled,
         "blocking_reasons": blockers,
@@ -237,6 +274,18 @@ def build_vertical_slice_profile_prepare(
             "requirements_artifact_identity_is_authoritative": True,
             "validated_explicit_requirement_stays_explicit": True,
             "explicit_override_of_proven_artifact_allowed": False,
+            "resource_pipeline_profile_source_requested": resource_pipeline_requested,
+            "resource_pipeline_profile_source_resolved": (
+                resource_pipeline_relative is not None
+            ),
+            "resource_pipeline_supplies_scene_physics_participant": (
+                resource_pipeline_relative is not None
+            ),
+            "resource_pipeline_explicit_overlap_allowed": False,
+            "resource_pipeline_path_presence_is_runtime_evidence": False,
+            "resource_pipeline_deferred_to_launcher_validation": (
+                resource_pipeline_relative is not None
+            ),
             "retail_archive_identity_required": retail_identity_required,
             "retail_archive_identity_admission_format": (
                 RETAIL_ARCHIVE_ADMISSION_FORMAT
@@ -251,6 +300,7 @@ def build_vertical_slice_profile_prepare(
             "path_outside_workspace_allowed": False,
             "input_mode_invented": False,
             "camera_or_body_feedback_generated": False,
+            "camera_or_body_feedback_from_resource_pipeline": False,
             "static_scene_promoted_to_runtime_scene": False,
             "launcher_validation_performed": False,
             "launcher_validation_still_required": True,
