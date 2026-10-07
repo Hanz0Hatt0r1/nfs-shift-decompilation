@@ -1,0 +1,124 @@
+{
+  "format": "SHIFT.Fun00765c40LoadTerms/1",
+  "version": 1,
+  "status": "retail-pc-load-term-ownership-proven-and-typed-handoff-ready",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "source": {
+    "decompiler_file": "SHIFT.exe.c",
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "wheel_layout": {
+    "array_base": "HDVehicle+0x400",
+    "count": 4,
+    "stride": "0xa80",
+    "per_wheel_load_field": "+0x738 f64",
+    "hdvehicle_offsets": [
+      "0xb38",
+      "0x15b8",
+      "0x2038",
+      "0x2ab8"
+    ],
+    "identity": "HDVehicle+0x400+i*0xa80+0x738"
+  },
+  "construction_and_job_registration": {
+    "wheel_array_constructor_machine_span": {
+      "start": "0x0076b15a",
+      "end_exclusive": "0x0076b17e",
+      "raw_byte_sha256": "562dad4f26444d7ea1e78c8e8a5696d99f4e15ec805348b462768588981c1b80",
+      "facts": [
+        "construct four elements",
+        "element size 0xa80",
+        "array base HDVehicle+0x400",
+        "element constructor FUN_0076b060"
+      ]
+    },
+    "wheel_constructor_vtable_machine_span": {
+      "start": "0x0076b060",
+      "end_exclusive": "0x0076b0a8",
+      "raw_byte_sha256": "c632989647d85ed40526d7b2a8f46f0a06ec1f7d1e9919e033ec728695078098",
+      "vtable": "PTR_FUN_00b09a68"
+    },
+    "vtable_first_two_entries": {
+      "address": "0x00b09a68",
+      "raw_byte_sha256": "a0a7ee6292a11c8c7e582fc654bda7bd4663b43b730a9e848ce8f8d6bb089dff",
+      "entries": [
+        "0x0076b100",
+        "0x0075cfb0"
+      ],
+      "job_virtual_slot_plus_4": "0x0075cfb0"
+    },
+    "registration_source_lines": [763868, 763877, 763878, 763879, 763880, 763881],
+    "registration_machine_span": {
+      "start": "0x0076e4b4",
+      "end_exclusive": "0x0076e513",
+      "raw_byte_sha256": "b5e2cca8b47984afd0132ede72d829644646c13e839e39541b36e6a64852bd2a",
+      "queue": "HDVehicle+0x6730"
+    },
+    "scheduler_virtual_dispatch_source_line": 1372416,
+    "scheduler_virtual_dispatch_machine_span": {
+      "start": "0x00a62710",
+      "end_exclusive": "0x00a62735",
+      "raw_byte_sha256": "da532461abd479e4d7b6d3bfd50d42f1836f15c27d8b4994b8e682a51c776554",
+      "dispatch": "(**(code **)(*job_object + 4))(arg0,arg1)"
+    }
+  },
+  "wheel_job_writes": {
+    "entry": "0x0075cfb0",
+    "entry_zero_and_initialization_span": {
+      "start": "0x0075cfb0",
+      "end_exclusive": "0x0075d03b",
+      "raw_byte_sha256": "e6b7338dce366057c26f610d7ab9c01f5c816113ac2d1cf4ad13699c66ee528d",
+      "visible_load_store": "0x0075d001 FST qword [ESI+0x738]"
+    },
+    "runtime_load_store_span": {
+      "start": "0x0075ff00",
+      "end_exclusive": "0x0075ff55",
+      "raw_byte_sha256": "2dc553aa0c28f4317ab2978d18cca6c465a0a700cb14633440f54784754a046b",
+      "visible_stores": [
+        "0x0075ff25 FST qword [ESI+0x738]",
+        "0x0075ff3e FSTP qword [ESI+0x738]"
+      ]
+    }
+  },
+  "pass_order": {
+    "FUN_00765c40_source_lines": [759183, 759188, 759190, 759198, 759211, 759213, 759216, 759219, 759222],
+    "queue_executes_before_load_term_reads": true,
+    "queue_executes_four_registered_wheel_objects": true,
+    "FUN_00765c40_machine_span": {
+      "start": "0x00765ed4",
+      "end_exclusive": "0x00765f8d",
+      "raw_byte_sha256": "e667e132f5185960e299fdd089e66af9dd65e7773dc970c8f47ee2893c411a4c"
+    },
+    "FUN_0076d100_source_lines": [763001, 763002, 763003, 763047],
+    "order": [
+      "FUN_00765c40",
+      "FUN_00758b50",
+      "FUN_00766510",
+      "FUN_00769ef0"
+    ],
+    "load_terms_available_before_FUN_00769ef0": true
+  },
+  "native_handoff": {
+    "owner_boundary": "NativeVehicleExternalProviderBundle.contact_factor",
+    "new_provider_type": "NativeVehicleContactFactorProvider",
+    "payload_type": "Fun00765c40LoadTerms",
+    "motion_read_provider_must_not_supply_load_terms": true,
+    "refresh": "once per FUN_0076d100 pass, immediately after FUN_00765c40 external boundary execution",
+    "active_external_provider_count": 8,
+    "provider_count_reduced": false,
+    "ownership_narrowed": true
+  },
+  "limits": {
+    "complete_FUN_00765c40_internalized": false,
+    "wheel_contact_formula_internalized": false,
+    "collision_provider_internalized": false,
+    "HDVehicle_0xe0_internalized": false,
+    "DAT_00c128cc_internalized": false,
+    "xbox_360_recomp_substituted_for_pc_authority": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  }
+}

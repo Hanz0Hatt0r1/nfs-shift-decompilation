@@ -1,9 +1,9 @@
 #pragma once
 
 #include "shift_bmw_m3_e36_response_field_4054.hpp"
+#include "shift_fun_00765c40_load_terms.hpp"
 #include "shift_fun_007682c0_machine_effect.hpp"
 
-#include <array>
 #include <cmath>
 #include <cstdint>
 #include <stdexcept>
@@ -17,21 +17,22 @@ inline constexpr const char* kFun007682c0DerivedProjectionStateFormat =
 // HDVehicle+0x4068 is deliberately absent: PC FUN_0076f970 refreshes it via
 // FUN_007594e0 before FUN_00770e80's two physics passes. HDVehicle+0x4054 is
 // setup-fixed for the selected BMW and is derived natively from its hash-locked
-// CarPhysicsDetails wheel offsets. Likewise HDVehicle+0x4084/+0x408c are
-// session-owned derived state refreshed only after both half-step pairs.
+// CarPhysicsDetails wheel offsets. The four wheel load terms are deliberately
+// absent too: PC FUN_00765c40 owns their per-pass refresh before FUN_00769ef0.
+// HDVehicle+0x4084/+0x408c remain session-owned derived state refreshed only
+// after both half-step pairs.
 struct Fun007682c0ExternalMachineInput {
     bool caller_gate_open = false;
-    std::array<double, 4> load_terms{};
     std::int32_t angle_mode = 0;
 
     Fun007682c0ExternalMachineInput() = default;
 
     // Compatibility conversion for fixture callers that still construct the
-    // wider machine-kernel input. Steering, +0x4054 and projection fields are
-    // intentionally ignored because production derives them internally.
+    // wider machine-kernel input. Steering, load terms, +0x4054 and projection
+    // fields are intentionally ignored because production derives or receives
+    // them from their earlier proven retail owners.
     Fun007682c0ExternalMachineInput(const Fun007682c0MachineInput& legacy)
         : caller_gate_open(legacy.caller_gate_open),
-          load_terms(legacy.load_terms),
           angle_mode(legacy.angle_mode) {}
 };
 
@@ -43,11 +44,14 @@ struct Fun007682c0DerivedProjectionState {
 inline Fun007682c0MachineInput compose_fun_007682c0_machine_input(
     const Fun007682c0ExternalMachineInput& external,
     float steering,
+    const Fun00765c40LoadTerms& load_terms,
     const Fun007682c0DerivedProjectionState& projection) {
+    validate_fun_00765c40_load_terms(load_terms);
+
     Fun007682c0MachineInput input{};
     input.caller_gate_open = external.caller_gate_open;
     input.steering = steering;
-    input.load_terms = external.load_terms;
+    input.load_terms = load_terms;
     input.projection_field_x = projection.field_x;
     input.projection_field_z = projection.field_z;
     input.response_field_4054 = selected_bmw_m3_e36_response_field_4054();

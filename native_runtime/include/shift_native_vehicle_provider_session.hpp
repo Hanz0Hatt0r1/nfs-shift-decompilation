@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shift_fun_00765c40_load_terms.hpp"
 #include "shift_fun_007682c0_projection_state.hpp"
 #include "shift_fun_00770e80_motion_read_machine_input_provider_chain.hpp"
 
@@ -27,6 +28,8 @@ struct NativeVehicleHalfStepRefreshInput {
 };
 
 using NativeVehiclePassCallback = std::function<void(std::size_t pass_index)>;
+using NativeVehicleContactFactorProvider =
+    std::function<physics::Fun00765c40LoadTerms(std::size_t pass_index)>;
 using NativeVehicleContactOuterInputProvider =
     std::function<physics::ContactOuterKernelInput(std::size_t pass_index)>;
 using NativeVehicleMotionReadInputProvider =
@@ -40,14 +43,16 @@ using NativeVehicleHalfStepRefreshProvider =
         const std::vector<std::uint8_t>& current_body_bytes)>;
 
 struct NativeVehicleExternalProviderBundle {
-    NativeVehiclePassCallback contact_factor{};
+    // FUN_00765c40 remains an external contact-physics boundary, but its four
+    // per-wheel +0x738 load outputs are now typed and owned here. They feed the
+    // later FUN_00769ef0/FUN_007682c0 read in the same pass.
+    NativeVehicleContactFactorProvider contact_factor{};
     NativeVehiclePassCallback wheel_update{};
     NativeVehiclePassCallback contact_response{};
     NativeVehicleContactOuterInputProvider contact_outer_input{};
-    // Remaining exact external PC fields consumed by FUN_00769ef0/FUN_007682c0.
-    // HDVehicle+0x4068 is derived from current BODY0 once before both passes by
-    // native FUN_007594e0 machine-angle production. HDVehicle+0x4084/+0x408c
-    // are session-owned persistent derived state refreshed after both passes.
+    // Remaining exact late PC fields consumed by FUN_00769ef0/FUN_007682c0.
+    // Steering, four load terms, selected-BMW +0x4054 and +0x4084/+0x408c are
+    // deliberately absent because their earlier retail owners are recovered.
     NativeVehicleMotionReadInputProvider motion_read_input{};
     NativeVehicleScalarProviderFactory scalar_provider_factory{};
     NativeVehicleHalfStepRefreshProvider half_step_refresh{};

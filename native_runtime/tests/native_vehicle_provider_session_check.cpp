@@ -26,7 +26,7 @@ Fun007682c0MachineInput make_motion_input() {
     Fun007682c0MachineInput input{};
     input.caller_gate_open = true;
     input.steering = 1.2f;
-    input.load_terms = {3000.0, 3000.0, 3000.0, 3000.0};
+    input.load_terms = {-101.0, -102.0, -103.0, -104.0};
     input.projection_field_x = 2.0f;
     input.projection_field_z = 1.0f;
     input.response_field_4054 = 2.0f;
@@ -46,6 +46,7 @@ NativeVehicleExternalProviderBundle make_bundle(
     NativeVehicleExternalProviderBundle bundle{};
     bundle.contact_factor = [&events](std::size_t pass) {
         events.push_back("contact-factor:" + std::to_string(pass));
+        return Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0};
     };
     bundle.wheel_update = [&events](std::size_t pass) {
         events.push_back("wheel-update:" + std::to_string(pass));
@@ -204,6 +205,11 @@ int main() {
         require(runtime.outer_update.last_motion_read_effect_provider_call_count == 2u &&
                     runtime.outer_update.last_motion_read_delta_consumer_call_count == 0u,
                 "Phase 701 historical runtime telemetry compatibility mismatch");
+        const Fun00765c40LoadTerms expected_load_terms{
+            3000.0, 3000.0, 3000.0, 3000.0};
+        require(first.joined.motion_read_inputs[0].load_terms == expected_load_terms &&
+                    first.joined.motion_read_inputs[1].load_terms == expected_load_terms,
+                "Phase 722 FUN_00765c40 load-term handoff mismatch");
 
         const auto first_body_bytes = runtime.outer_update.body_bytes;
         require(first_body_bytes != initial_body_bytes,
@@ -284,6 +290,7 @@ int main() {
             << "\"phase697_persistent_outer_path_reused\":true,"
             << "\"phase699_external_provider_count\":9,"
             << "\"active_external_provider_count\":8,"
+            << "\"fun_00765c40_load_terms_typed\":true,"
             << "\"motion_read_raw_input_provider\":true,"
             << "\"motion_read_effect_arithmetic_internal\":true,"
             << "\"session_step_count\":" << session.step_count() << ","
