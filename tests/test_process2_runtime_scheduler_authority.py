@@ -70,8 +70,19 @@ def test_runtime_scheduler_authority_has_strict_outer_retail_seam():
     assert "runtime.outer_update = outer_update_before" in session_source
     assert "scheduler = scheduler_before" in session_source
     assert "scheduler = scheduler_before_dispatch" in session_source
-    assert "does not connect dispatch admission to a render frame" in session_source
-    assert "No constructor/default rate or host 1/60 fallback exists" in session_source
+
+    # Verify the retail dispatch seam by code shape rather than by relying on
+    # explanatory comments in the implementation. Dispatch admission may only
+    # enter the recovered retail inner-batch path; it must not call a renderer
+    # or inject the host development fixed timestep.
+    dispatch_body = session_source.split(
+        "NativeVehicleProviderSession::execute_retail_outer_dispatch", 1
+    )[1]
+    assert "scheduler.admit_outer_dispatch()" in dispatch_body
+    assert "execute_ready_retail_inner_batch(runtime, scheduler)" in dispatch_body
+    assert "render" not in dispatch_body.lower()
+    assert "kNativeContinuousFixedDt" not in session_source
+    assert "kHostDevelopmentFixedDt" not in session_source
 
     # Generic scheduler/session code must not hardcode 180 Hz. The numeric value
     # remains confined to the hash-verified generated materialized handoff.
