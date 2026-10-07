@@ -1,0 +1,77 @@
+{
+  "format": "SHIFT.Fun00766510PrimaryResponseApplication/1",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "pc_source": {
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "function": "FUN_00766510",
+    "response_builder_source_line": 759686,
+    "response_transform_source_line": 759687,
+    "response_application_source_line": 759688,
+    "source_sequence": [
+      "FUN_007551e0(HDVehicle+0x3950, ..., local_1b8, ...)",
+      "FUN_007aefb0((*(HDVehicle+0x33a0))+0xd4, local_1b8, local_120)",
+      "FUN_007baa70(*(HDVehicle+0x33a0), HDVehicle+0x38f0, local_120)"
+    ]
+  },
+  "pc_machine": {
+    "builder_through_application_span": {
+      "start": "0x00766f9f",
+      "end_exclusive": "0x00766fd6",
+      "raw_byte_sha256": "cc9944a9c145e66a5db6bc6f4fc5aadb8d4d9a245f6e740a8aac3bd256a5bbde"
+    },
+    "transform_and_application_span": {
+      "start": "0x00766fb2",
+      "end_exclusive": "0x00766fd6",
+      "raw_byte_sha256": "db2e2358db25f5cc7a6d869e2a346fc40b0562702c79a32ea4245b4d4ea7dc57"
+    },
+    "application_point_provenance": "0x00766e8a lea edi,[esi+0x38f0]",
+    "body_pointer_load": "[esi+0x33a0]",
+    "body_basis_add": "BODY+0xd4"
+  },
+  "ownership": {
+    "receiver": "HDVehicle",
+    "body_pointer": "HDVehicle+0x33a0",
+    "selected_bmw_identity": "BMW chassis BODY = BODY0",
+    "selected_bmw_body_index": 0,
+    "response_table": "HDVehicle+0x3950",
+    "application_point": "HDVehicle+0x38f0",
+    "response_gain_output": "HDVehicle+0x39d0"
+  },
+  "native_composition": {
+    "response_vector_source": "WheelContactResponse.response_vector / existing FUN_007551e0 native result",
+    "transform": "transform_fun_007aefb0_refresh",
+    "transform_status": "existing machine-backed x87 implementation",
+    "accumulator_application": "apply_fun_007baa70_body_accumulator",
+    "application_status": "existing native BODY accumulator primitive",
+    "new_helper": "execute_fun_00766510_primary_response_application"
+  },
+  "xbox_crosscheck": {
+    "role": "independent corroboration only; not PC authority",
+    "recomp_partition": "nfs_shift_recomp.220.cpp",
+    "observed_topology": [
+      "response builder receives r31+0x3950",
+      "BODY pointer loaded from r31+0x33a0",
+      "BODY+0xd4 transform executes on response output",
+      "application point is r31+0x38f0",
+      "BODY accumulator application receives the same BODY pointer and transformed response"
+    ],
+    "pc_precision_inferred_from_xbox": false
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "primary_response_application_internalized": true,
+    "complete_FUN_00766510_internalized": false,
+    "contact_response_provider_removed": false,
+    "generic_physical_semantics_invented": false
+  },
+  "remaining_FUN_00766510_work": [
+    "prove selected/runtime ownership of HDVehicle+0x38f0 application point",
+    "prove selected/runtime ownership of +0x3908/+0x3910/+0x3918/+0x3950 response configuration",
+    "close the earlier +0x3b20 primary response branch and optional +0x3bc8/+0x3cxx branch",
+    "join the already-native two-record FUN_00758fc0 auxiliary pair to persistent BODY state and exact caller scheduling",
+    "preserve source-visible diagnostic/state writes including +0x40a0/+0x40a8/+0x40b0 and later conditional writes"
+  ]
+}
