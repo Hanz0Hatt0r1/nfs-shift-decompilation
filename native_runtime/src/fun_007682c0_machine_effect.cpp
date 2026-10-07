@@ -191,7 +191,9 @@ PlanarGeometry execute_fun_0075ada0_machine_shape(
     const float projection = retail_f32_spill(add64(projected_x, projected_z));
     const float absolute_projection =
         retail_f32_spill(std::fabs(static_cast<double>(projection)));
-    if (absolute_projection < f32_from_bits(0x3a83126fu)) { // 0.001f
+    // PC FUN_0075ada0 takes the radius path only for |projection| > 0.001f;
+    // equality follows the FLT_MAX/zero-reciprocal near-zero path.
+    if (absolute_projection <= f32_from_bits(0x3a83126fu)) { // 0.001f
         result.reciprocal_like = 0.0f;
         return result;
     }
@@ -249,18 +251,23 @@ float execute_fun_007595d0_machine_shape(
                   static_cast<double>(f32_from_bits(0x3e99999au)))); // 0.3f
     }
 
-    const double term_a = mul64(
+    // PC FUN_007595d0 explicitly casts both response terms to float before
+    // adding them. Preserve both independent f32 spill/reload checkpoints.
+    const float term_a = retail_f32_spill(mul64(
         mul64(
             mul64(static_cast<double>(base), static_cast<double>(response_gain)),
             static_cast<double>(negative_speed_factor)),
-        static_cast<double>(signed_delta));
-    const double term_b = mul64(
+        static_cast<double>(signed_delta)));
+    const float term_b = retail_f32_spill(mul64(
         mul64(static_cast<double>(base), static_cast<double>(negative_speed_factor)),
-        static_cast<double>(angle_delta));
-    const float combined = retail_f32_spill(add64(term_a, term_b));
+        static_cast<double>(angle_delta)));
+    const float combined = retail_f32_spill(add64(
+        static_cast<double>(term_a),
+        static_cast<double>(term_b)));
 
     if (combined >= 0.0f) {
-        return 0.0f;
+        // Source returns fVar4 * +0.0f here; preserve the resulting signed zero.
+        return std::copysign(0.0f, -sign);
     }
     return retail_f32_spill(
         mul64(-static_cast<double>(sign), static_cast<double>(combined)));
