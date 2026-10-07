@@ -92,6 +92,7 @@ NativeVehicleProviderSession::execute_explicit_step(
             "native vehicle provider session requires positive finite outer timestep");
     }
 
+    // Validate before reading BODY0 or invoking any provider side effects.
     runtime.outer_update.validate_runtime_boundary(
         runtime.physics.workspace.body_count,
         runtime.physics.workspace.ready,
@@ -107,6 +108,10 @@ NativeVehicleProviderSession::execute_explicit_step(
     const double velocity_z_before =
         read_f64_le(outer_update_before.body_bytes, kBody0VelocityZ);
 
+    // PC FUN_00770e80 calls FUN_0076f970 before either FUN_0076d100 pass.
+    // FUN_0076f970 stores FUN_007594e0's f32 result to HDVehicle+0x4068 once,
+    // and both current passes consume that same steering value. Compute it from
+    // the current persistent BODY0 before any pass/provider side effects.
     const auto machine_angle = physics::execute_fun_007594e0_machine_angle(
         outer_update_before.body_bytes);
     const float steering = machine_angle.steering;
@@ -163,6 +168,9 @@ NativeVehicleProviderSession::execute_explicit_step(
                     ++telemetry.contact_outer_input_call_count;
                     const auto session_input = providers_.contact_outer_input(pass_index);
 
+                    // New production callers must provide the one-time +0x4080
+                    // seed explicitly. Historical fixtures converted from the
+                    // old complete input may seed it exactly once.
                     if (!providers_.contact_outer_distance_setup.ready) {
                         if (!session_input.compatibility_previous_distance_seed_present) {
                             throw std::logic_error(
@@ -177,6 +185,11 @@ NativeVehicleProviderSession::execute_explicit_step(
                             providers_.contact_outer_distance_setup.previous_distance_state;
                     }
 
+                    // PC retail reads this+0xa0 inside FUN_007675f0 rather than
+                    // accepting it from the per-pass caller. Keep its unknown
+                    // initializer explicit once, then reuse the same setup state
+                    // for both passes and later steps. Legacy fixtures may seed
+                    // their former per-pass field exactly once for compatibility.
                     if (!providers_.contact_outer_filter_cap_setup.ready) {
                         if (!session_input.compatibility_distance_filter_cap_seed_present) {
                             throw std::logic_error(
@@ -320,6 +333,9 @@ NativeVehicleProviderSession::execute_ready_retail_inner_batch(
     RetailOuterSchedulerContract& scheduler) {
     require_complete_bundle(providers_);
 
+    // Both calls fail closed until the selected-session PhysicsTweaker rate has
+    // been admitted. No constructor/default rate or host 1/60 fallback exists
+    // on this path.
     const std::size_t recovered_substep_count =
         scheduler.ready_inner_substep_count();
     const double inner_substep_seconds = scheduler.inner_substep_seconds();
@@ -370,6 +386,9 @@ NativeVehicleProviderSession::execute_retail_outer_dispatch(
     RetailOuterSchedulerContract& scheduler) {
     require_complete_bundle(providers_);
 
+    // This method represents one already-admitted retail outer-manager dispatch.
+    // It deliberately does not connect dispatch admission to a render frame or
+    // host 1/60 tick; the caller supplies the recovered retail scheduling event.
     const RetailOuterSchedulerContract scheduler_before_dispatch = scheduler;
     try {
         scheduler.admit_outer_dispatch();
