@@ -31,9 +31,10 @@ NativeVehicleExternalProviderBundle make_bundle(
     const Fun00763570MachineInput& machine_input,
     double expected_half_timestep) {
     NativeVehicleExternalProviderBundle bundle{};
-    bundle.contact_factor = [&events](std::size_t pass) {
-        events.push_back("contact-factor:" + std::to_string(pass));
-        return Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0};
+    bundle.fun_00765c40 = [&events](std::size_t pass) {
+        events.push_back("fun-00765c40:" + std::to_string(pass));
+        return Fun00765c40ExternalPassResult{
+            Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0}};
     };
     bundle.wheel_update = [&events](std::size_t pass) {
         events.push_back("wheel-update:" + std::to_string(pass));
@@ -169,6 +170,8 @@ int main() {
                 "selected-session first retail dispatch did not persist BODY state");
         require(session.last_telemetry().motion_read_native_effect_call_count == 2u,
                 "selected-session active motion-read telemetry mismatch");
+        require(session.last_telemetry().fun_00765c40_call_count == 2u,
+                "selected-session FUN_00765c40 pass telemetry mismatch");
         require(first.recovered_substep_count > 0u,
                 "selected-session load-term path was not exercised");
 
@@ -214,6 +217,7 @@ int main() {
             << "\"two_dispatch_persistent_steps\":12,"
             << "\"fun_007560c0_gate_setup_owned\":true,"
             << "\"fun_00765c40_load_terms_typed\":true,"
+            << "\"fun_00765c40_external_pass_result_typed\":true,"
             << "\"motion_read_raw_input_provider\":false,"
             << "\"motion_read_effect_arithmetic_internal\":true,"
             << "\"retail_inner_substep_execution_admitted\":true,"
