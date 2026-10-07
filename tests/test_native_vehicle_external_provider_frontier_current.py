@@ -14,7 +14,7 @@ def test_current_frontier_keeps_legacy_history_but_has_eight_active_boundaries()
     assert old["external_provider_count"] == 9
     assert report["format"] == current.FORMAT
     assert report["upstream_frontier"] == legacy.FORMAT
-    assert report["refresh_after_phase"] == 719
+    assert report["refresh_after_phase"] == 720
     assert report["external_provider_count"] == 8
     assert report["provider_audit"]["legacy_external_provider_count"] == 9
     assert report["provider_audit"]["active_external_provider_count"] == 8
@@ -38,14 +38,15 @@ def test_precomputed_effect_boundary_is_replaced_by_narrowed_raw_machine_inputs(
     assert current.FUN_007682C0_DESTINATION_FORMAT in joined
     assert current.FUN_007682C0_EFFECT_FORMAT in joined
     assert current.FUN_007682C0_PROJECTION_FORMAT in joined
+    assert current.FUN_007594E0_ANGLE_FORMAT in joined
     blockers = " ".join(raw["blockers"])
     assert "+0x4084" not in blockers
     assert "+0x408c" not in blockers
-    assert "+0x4068" in blockers
+    assert "+0x4068" not in blockers
     assert "+0x4054" in blockers
 
 
-def test_machine_effect_destination_and_projection_are_positive_but_refresh_remains_external() -> None:
+def test_machine_effect_projection_and_steering_are_positive_but_refresh_remains_external() -> None:
     report = current.build_current_frontier()
     audit = report["provider_audit"]
     guards = report["guards"]
@@ -54,13 +55,16 @@ def test_machine_effect_destination_and_projection_are_positive_but_refresh_rema
     assert audit["fun_007682c0_x87_fsqrt_internalized"] is True
     assert audit["fun_007682c0_projection_fields_internalized"] is True
     assert audit["fun_007682c0_projection_refresh_after_both_passes"] is True
+    assert audit["fun_007594e0_body0_basis_angle_internalized"] is True
+    assert audit["fun_007594e0_x87_fpatan_internalized"] is True
+    assert audit["fun_007594e0_refresh_before_both_passes"] is True
     assert audit["fun_007682c0_external_precomputed_effect_required"] is False
     assert audit["fun_007682c0_external_delta_consumer_required"] is False
     assert audit["fun_007682c0_external_projection_fields_required"] is False
+    assert audit["fun_007682c0_external_steering_required"] is False
     assert audit["fun_007682c0_raw_input_refresh_external"] is True
     assert audit["remaining_fun_007682c0_external_fields"] == [
         "HDVehicle+0xe0",
-        "HDVehicle+0x4068",
         "HDVehicle+0xb38",
         "HDVehicle+0x15b8",
         "HDVehicle+0x2038",
@@ -74,6 +78,8 @@ def test_machine_effect_destination_and_projection_are_positive_but_refresh_rema
     assert guards["fun_007682c0_x87_fsqrt_ready"] is True
     assert guards["fun_007682c0_projection_state_ready"] is True
     assert guards["fun_007682c0_projection_fields_external"] is False
+    assert guards["fun_007594e0_machine_angle_ready"] is True
+    assert guards["fun_007682c0_steering_external"] is False
     assert guards["fun_007682c0_raw_input_refresh_ready"] is False
 
 
@@ -87,6 +93,8 @@ def test_positive_transform_and_selected_session_timing_remain_closed() -> None:
     assert path["FUN_007682c0_effect_production_internal"] is True
     assert path["FUN_007682c0_projection_state_internal"] is True
     assert path["FUN_007682c0_projection_state_contract"] == current.FUN_007682C0_PROJECTION_FORMAT
+    assert path["FUN_007594e0_steering_internal"] is True
+    assert path["FUN_007594e0_machine_angle_contract"] == current.FUN_007594E0_ANGLE_FORMAT
     assert scheduler["retail_cadence_admitted"] is True
     assert scheduler["loaded_inner_rate_admitted"] is True
     assert scheduler["selected_session_rate_hz"] == 180
@@ -100,10 +108,13 @@ def test_contract_exposes_narrowed_boundary_without_promoting_control_chain() ->
     assert payload["external_provider_count"] == 8
     assert payload["FUN_007682c0_machine_effect_contract"] == current.FUN_007682C0_EFFECT_FORMAT
     assert payload["FUN_007682c0_projection_state_contract"] == current.FUN_007682C0_PROJECTION_FORMAT
+    assert payload["FUN_007594e0_machine_angle_contract"] == current.FUN_007594E0_ANGLE_FORMAT
     assert payload["FUN_007682c0_effect_production_internal"] is True
     assert payload["FUN_007682c0_x87_fsqrt_internal"] is True
     assert payload["FUN_007682c0_projection_state_internal"] is True
     assert payload["FUN_007682c0_external_projection_fields_required"] is False
+    assert payload["FUN_007594e0_steering_internal"] is True
+    assert payload["FUN_007682c0_external_steering_required"] is False
     assert payload["FUN_007682c0_raw_input_refresh_external"] is True
     assert payload["selected_session_rate_hz"] == 180
     assert payload["provider_semantics_promoted"] is False
