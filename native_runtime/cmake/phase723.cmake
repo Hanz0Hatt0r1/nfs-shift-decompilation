@@ -19,3 +19,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_007560c0_motion_read_gate_setup
     COMMAND shift_runtime_fun_007560c0_motion_read_gate_setup_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase724.cmake)
