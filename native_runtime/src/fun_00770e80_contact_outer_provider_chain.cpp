@@ -10,6 +10,7 @@ namespace {
 struct ContactOuterPassState {
     std::size_t input_provider_call_count = 0u;
     std::size_t native_call_count = 0u;
+    std::size_t distance_state_commit_count = 0u;
     bool body_motion_present = false;
     bool result_present = false;
     Fun007675f0BodyMotion body_motion{};
@@ -84,9 +85,12 @@ execute_fun_00770e80_contact_outer_provider_chain(
 
             auto contact_outer_input_provider =
                 std::move(typed.contact_outer_input_provider);
+            auto distance_state_commit =
+                std::move(typed.contact_outer_distance_state_commit);
             adapted.contact_outer =
-                [state, contact_outer_input_provider =
-                    std::move(contact_outer_input_provider)]() mutable {
+                [state,
+                 contact_outer_input_provider = std::move(contact_outer_input_provider),
+                 distance_state_commit = std::move(distance_state_commit)]() mutable {
                     if (!state->body_motion_present) {
                         throw std::logic_error(
                             "FUN_007675f0 executed before current BODY0 motion ownership bridge");
@@ -100,6 +104,15 @@ execute_fun_00770e80_contact_outer_provider_chain(
                         execute_fun_007675f0_outer_arithmetic(input);
                     ++state->native_call_count;
                     state->result_present = true;
+
+                    // PC FUN_007675f0 stores the filtered/clamped value back to
+                    // HDVehicle+0x4080 before the pass continues. Session-owned
+                    // state therefore advances here, so pass 1 observes pass 0's
+                    // result rather than another external refresh.
+                    if (distance_state_commit) {
+                        distance_state_commit(state->result.filtered_distance_state);
+                        ++state->distance_state_commit_count;
+                    }
                 };
             return adapted;
         },
@@ -126,9 +139,13 @@ execute_fun_00770e80_contact_outer_provider_chain(
             state->input_provider_call_count;
         result.contact_outer_native_call_counts[pass_index] =
             state->native_call_count;
+        result.contact_outer_distance_state_commit_counts[pass_index] =
+            state->distance_state_commit_count;
         result.contact_outer_input_provider_call_count +=
             state->input_provider_call_count;
         result.contact_outer_native_call_count += state->native_call_count;
+        result.contact_outer_distance_state_commit_count +=
+            state->distance_state_commit_count;
         if (state->result.gate_open) {
             ++result.contact_outer_gate_open_count;
         }

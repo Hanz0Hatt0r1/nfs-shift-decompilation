@@ -10,6 +10,8 @@ inline constexpr const char* kNativeContactOuterKernelFormat =
     "SHIFT.NativeContactOuterKernel/1";
 inline constexpr const char* kFun007675f0BodyMotionOwnershipFormat =
     "SHIFT.Fun007675f0BodyMotionOwnership/1";
+inline constexpr const char* kFun007675f0DistanceStateOwnershipFormat =
+    "SHIFT.Fun007675f0DistanceStateOwnership/1";
 inline constexpr const char* kContactOuterKernelFunction = "FUN_007675f0";
 inline constexpr const char* kContactDistanceFilterFunction = "FUN_00783a30";
 
@@ -41,9 +43,10 @@ struct ContactOuterKernelInput {
     double param_3 = 0.0;
 };
 
-// External fields still not owned by the native session. BODY0 motion is
-// deliberately absent: PC FUN_007675f0 reads BODY +0x78/+0x88, and the
-// persistent BODY record is already the native authoritative state at each pass.
+// Historical/lower-chain external payload. BODY0 motion is already absent, but
+// previous_distance_state is retained here because lower standalone Phase 693
+// fixtures predate the session-owned HDVehicle+0x4080 state. Production session
+// code resolves this field from its persistent state before entering the chain.
 struct ContactOuterExternalInput {
     ContactOuterVector3d planar_delta{};
     double previous_distance_state = 0.0;
@@ -57,7 +60,7 @@ struct ContactOuterExternalInput {
     ContactOuterExternalInput() = default;
 
     // Compatibility conversion for older fixtures. Legacy speed fields are
-    // intentionally ignored because production now reads current BODY0 motion.
+    // intentionally ignored because production reads current BODY0 motion.
     ContactOuterExternalInput(const ContactOuterKernelInput& legacy)
         : planar_delta(legacy.planar_delta),
           previous_distance_state(legacy.previous_distance_state),
@@ -67,6 +70,46 @@ struct ContactOuterExternalInput {
           projected_scalar(legacy.projected_scalar),
           alignment_scalar(legacy.alignment_scalar),
           param_3(legacy.param_3) {}
+};
+
+// Session-facing per-pass payload. Both BODY motion and HDVehicle+0x4080 are
+// absent from the production fields: the session owns those persistent values.
+// The compatibility seed exists only so historical fixtures that return the old
+// complete input can initialize the one-time state without being rewritten.
+struct ContactOuterSessionInput {
+    ContactOuterVector3d planar_delta{};
+    double distance_filter_cap = 0.0;
+    double surface_scalar = 0.0;
+    double base_scalar = 0.0;
+    double projected_scalar = 0.0;
+    double alignment_scalar = 0.0;
+    double param_3 = 0.0;
+    bool compatibility_previous_distance_seed_present = false;
+    double compatibility_previous_distance_seed = 0.0;
+
+    ContactOuterSessionInput() = default;
+
+    ContactOuterSessionInput(const ContactOuterKernelInput& legacy)
+        : planar_delta(legacy.planar_delta),
+          distance_filter_cap(legacy.distance_filter_cap),
+          surface_scalar(legacy.surface_scalar),
+          base_scalar(legacy.base_scalar),
+          projected_scalar(legacy.projected_scalar),
+          alignment_scalar(legacy.alignment_scalar),
+          param_3(legacy.param_3),
+          compatibility_previous_distance_seed_present(true),
+          compatibility_previous_distance_seed(legacy.previous_distance_state) {}
+
+    ContactOuterSessionInput(const ContactOuterExternalInput& legacy)
+        : planar_delta(legacy.planar_delta),
+          distance_filter_cap(legacy.distance_filter_cap),
+          surface_scalar(legacy.surface_scalar),
+          base_scalar(legacy.base_scalar),
+          projected_scalar(legacy.projected_scalar),
+          alignment_scalar(legacy.alignment_scalar),
+          param_3(legacy.param_3),
+          compatibility_previous_distance_seed_present(true),
+          compatibility_previous_distance_seed(legacy.previous_distance_state) {}
 };
 
 struct Fun007675f0BodyMotion {
@@ -90,6 +133,10 @@ struct ContactOuterKernelResult {
 
 Fun007675f0BodyMotion derive_fun_007675f0_body0_motion(
     const std::vector<std::uint8_t>& current_body_bytes);
+
+ContactOuterExternalInput compose_fun_007675f0_external_input(
+    const ContactOuterSessionInput& session_input,
+    double previous_distance_state);
 
 ContactOuterKernelInput compose_fun_007675f0_input(
     const ContactOuterExternalInput& external,

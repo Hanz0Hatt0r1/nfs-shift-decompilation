@@ -70,6 +70,12 @@ NativeVehicleProviderSession::NativeVehicleProviderSession(
     NativeVehicleExternalProviderBundle providers)
     : providers_(std::move(providers)) {
     require_complete_bundle(providers_);
+    if (providers_.contact_outer_distance_setup.ready) {
+        physics::validate_fun_007675f0_distance_state_setup(
+            providers_.contact_outer_distance_setup);
+        contact_outer_distance_state_ =
+            providers_.contact_outer_distance_setup.previous_distance_state;
+    }
 }
 
 NativeVehicleProviderSessionResult
@@ -90,6 +96,8 @@ NativeVehicleProviderSession::execute_explicit_step(
         runtime.physics.participant_identity_join_proven);
 
     const ExplicitOuterUpdateRuntimeState outer_update_before = runtime.outer_update;
+    const auto distance_setup_before = providers_.contact_outer_distance_setup;
+    const double distance_state_before = contact_outer_distance_state_;
     const double velocity_x_before =
         read_f64_le(outer_update_before.body_bytes, kBody0VelocityX);
     const double velocity_z_before =
@@ -122,12 +130,6 @@ NativeVehicleProviderSession::execute_explicit_step(
             physics::Fun0076d100MotionReadMachineInputProviderCallbacks callbacks{};
             auto load_state = std::make_shared<Fun00765c40PassLoadState>();
 
-            // The lower historical anchor interface is intentionally named
-            // contact_factor and remains void for compatibility. At the session
-            // boundary, execute the exact external FUN_00765c40 pass, validate
-            // and capture its source-backed collision-query input, then retain
-            // the four proven wheel+0x738 outputs needed by the later
-            // FUN_00769ef0/FUN_007682c0 read in this same pass.
             callbacks.contact_factor =
                 [this,
                  &telemetry,
@@ -155,7 +157,38 @@ NativeVehicleProviderSession::execute_explicit_step(
             callbacks.contact_outer_input_provider =
                 [this, &telemetry, pass_index] {
                     ++telemetry.contact_outer_input_call_count;
-                    return providers_.contact_outer_input(pass_index);
+                    const auto session_input = providers_.contact_outer_input(pass_index);
+
+                    // New production callers must provide the one-time setup
+                    // seed explicitly. Historical fixtures converted from the
+                    // old complete input may seed it exactly once through the
+                    // compatibility-only field; no per-pass refresh survives.
+                    if (!providers_.contact_outer_distance_setup.ready) {
+                        if (!session_input.compatibility_previous_distance_seed_present) {
+                            throw std::logic_error(
+                                "FUN_007675f0 distance state used before explicit setup seed");
+                        }
+                        providers_.contact_outer_distance_setup.ready = true;
+                        providers_.contact_outer_distance_setup.previous_distance_state =
+                            session_input.compatibility_previous_distance_seed;
+                        physics::validate_fun_007675f0_distance_state_setup(
+                            providers_.contact_outer_distance_setup);
+                        contact_outer_distance_state_ =
+                            providers_.contact_outer_distance_setup.previous_distance_state;
+                    }
+
+                    return physics::compose_fun_007675f0_external_input(
+                        session_input,
+                        contact_outer_distance_state_);
+                };
+            callbacks.contact_outer_distance_state_commit =
+                [this, &telemetry](double next_state) {
+                    if (!std::isfinite(next_state)) {
+                        throw std::invalid_argument(
+                            "FUN_007675f0 distance state commit must be finite");
+                    }
+                    contact_outer_distance_state_ = next_state;
+                    ++telemetry.contact_outer_distance_state_commit_count;
                 };
             callbacks.motion_read_input_provider =
                 [this, steering, load_state] {
@@ -208,20 +241,24 @@ NativeVehicleProviderSession::execute_explicit_step(
             providers_.post_half_step(pass_index);
         };
 
-    auto joined = execute_explicit_motion_read_machine_input_update(
-        runtime.outer_update,
-        runtime.physics.workspace.body_count,
-        runtime.physics.workspace.ready,
-        runtime.physics.participant_ready,
-        runtime.physics.participant_identity_join_proven,
-        outer_timestep,
-        pass_provider,
-        half_step_provider,
-        post_half_step);
+    physics::Fun00770e80MotionReadMachineInputProviderChainResult joined{};
+    try {
+        joined = execute_explicit_motion_read_machine_input_update(
+            runtime.outer_update,
+            runtime.physics.workspace.body_count,
+            runtime.physics.workspace.ready,
+            runtime.physics.participant_ready,
+            runtime.physics.participant_identity_join_proven,
+            outer_timestep,
+            pass_provider,
+            half_step_provider,
+            post_half_step);
+    } catch (...) {
+        providers_.contact_outer_distance_setup = distance_setup_before;
+        contact_outer_distance_state_ = distance_state_before;
+        throw;
+    }
 
-    // PC FUN_00770e80 refreshes HDVehicle+0x4084/+0x408c only after both
-    // FUN_0076d100/FUN_00765470 pass pairs. Compute the next persistent values
-    // from the committed BODY0 velocity, but keep both passes on the old state.
     physics::Fun007682c0DerivedProjectionState next_projection{};
     try {
         const double velocity_x_after =
@@ -235,9 +272,9 @@ NativeVehicleProviderSession::execute_explicit_step(
             velocity_z_after,
             outer_timestep);
     } catch (...) {
-        // The derived fields are part of the same persistent vehicle-state
-        // transaction as BODY0. Never retain a BODY commit without them.
         runtime.outer_update = outer_update_before;
+        providers_.contact_outer_distance_setup = distance_setup_before;
+        contact_outer_distance_state_ = distance_state_before;
         throw;
     }
 
@@ -278,13 +315,12 @@ NativeVehicleProviderSession::execute_ready_retail_inner_batch(
     result.session_step_count_before = step_count_;
     result.explicit_update_count_before = runtime.outer_update.explicit_update_count;
 
-    // Keep persistent BODY/session/scheduler/projection state coherent if any
-    // deep provider rejects during the recovered batch. External provider side
-    // effects are not reversible; a throwing provider still aborts the batch.
     const RetailOuterSchedulerContract scheduler_before = scheduler;
     const ExplicitOuterUpdateRuntimeState outer_update_before = runtime.outer_update;
     const physics::Fun007682c0DerivedProjectionState projection_before =
         motion_read_projection_state_;
+    const auto distance_setup_before = providers_.contact_outer_distance_setup;
+    const double distance_state_before = contact_outer_distance_state_;
     const std::uint64_t step_count_before = step_count_;
     const NativeVehicleProviderSessionTelemetry telemetry_before = last_telemetry_;
 
@@ -298,6 +334,8 @@ NativeVehicleProviderSession::execute_ready_retail_inner_batch(
         scheduler = scheduler_before;
         runtime.outer_update = outer_update_before;
         motion_read_projection_state_ = projection_before;
+        providers_.contact_outer_distance_setup = distance_setup_before;
+        contact_outer_distance_state_ = distance_state_before;
         step_count_ = step_count_before;
         last_telemetry_ = telemetry_before;
         throw;
@@ -317,10 +355,7 @@ NativeVehicleProviderSession::execute_retail_outer_dispatch(
 
     // This method represents one already-admitted retail outer-manager dispatch.
     // It deliberately does not connect dispatch admission to a render frame or
-    // host 1/60 tick. The caller must supply the recovered retail scheduling
-    // event. Keep the normal +1/30 accumulator contribution atomic with the
-    // recovered persistent BODY inner batch: if the loaded rate is missing or a
-    // deep provider rejects, the scheduler returns to its pre-dispatch state.
+    // host 1/60 tick; the caller supplies the recovered retail scheduling event.
     const RetailOuterSchedulerContract scheduler_before_dispatch = scheduler;
     try {
         scheduler.admit_outer_dispatch();

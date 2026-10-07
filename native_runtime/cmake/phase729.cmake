@@ -21,3 +21,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_007675f0_body_motion_ownership
     COMMAND shift_runtime_fun_007675f0_body_motion_ownership_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase730.cmake)

@@ -2,6 +2,7 @@
 
 #include "shift_fun_007560c0_motion_read_gate_setup.hpp"
 #include "shift_fun_00765c40_external_pass_result.hpp"
+#include "shift_fun_007675f0_distance_state_setup.hpp"
 #include "shift_fun_007682c0_projection_state.hpp"
 #include "shift_fun_00770e80_motion_read_machine_input_provider_chain.hpp"
 
@@ -34,7 +35,7 @@ using NativeVehiclePassCallback = std::function<void(std::size_t pass_index)>;
 using NativeVehicleFun00765c40Provider =
     std::function<physics::Fun00765c40ExternalPassResult(std::size_t pass_index)>;
 using NativeVehicleContactOuterInputProvider =
-    std::function<physics::ContactOuterExternalInput(std::size_t pass_index)>;
+    std::function<physics::ContactOuterSessionInput(std::size_t pass_index)>;
 using NativeVehicleScalarProviderFactory =
     std::function<physics::Fun007afdd0ScalarProvider(std::size_t pass_index)>;
 using NativeVehicleHalfStepRefreshProvider =
@@ -55,10 +56,11 @@ struct NativeVehicleExternalProviderBundle {
     NativeVehiclePassCallback wheel_update{};
     NativeVehiclePassCallback contact_response{};
 
-    // FUN_007675f0 arithmetic remains native. Its provider now supplies only the
-    // still-external non-BODY fields; speed_x/speed_z are read from the current
-    // persistent BODY0 +0x78/+0x88 immediately before each recovered pass.
+    // FUN_007675f0 arithmetic remains native. The per-pass provider supplies
+    // only the still-external caller fields. BODY0 +0x78/+0x88 and the previous
+    // HDVehicle+0x4080 distance state are session-owned persistent values.
     NativeVehicleContactOuterInputProvider contact_outer_input{};
+    physics::Fun007675f0DistanceStateSetup contact_outer_distance_setup{};
 
     // FUN_007560c0 writes HDVehicle+0xe0 during vehicle setup. This is immutable
     // session setup state, not a per-pass provider boundary. Its upstream value
@@ -81,6 +83,7 @@ struct NativeVehicleProviderSessionTelemetry {
     std::size_t wheel_update_call_count = 0u;
     std::size_t contact_response_call_count = 0u;
     std::size_t contact_outer_input_call_count = 0u;
+    std::size_t contact_outer_distance_state_commit_count = 0u;
     std::size_t motion_read_native_effect_call_count = 0u;
     std::size_t motion_read_delta_application_call_count = 0u;
     std::size_t scalar_provider_factory_call_count = 0u;
@@ -133,10 +136,14 @@ public:
     motion_read_projection_state() const {
         return motion_read_projection_state_;
     }
+    double contact_outer_distance_state() const {
+        return contact_outer_distance_state_;
+    }
 
 private:
     NativeVehicleExternalProviderBundle providers_{};
     physics::Fun007682c0DerivedProjectionState motion_read_projection_state_{};
+    double contact_outer_distance_state_ = 0.0;
     std::uint64_t step_count_ = 0u;
     NativeVehicleProviderSessionTelemetry last_telemetry_{};
 };

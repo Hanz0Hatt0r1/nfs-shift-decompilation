@@ -1,0 +1,63 @@
+{
+  "format": "SHIFT.Fun007675f0DistanceStateOwnership/1",
+  "version": 1,
+  "status": "persistent-session-state-owned",
+  "ready": true,
+  "source": {
+    "program": "SHIFT.exe",
+    "source_file": "SHIFT.exe.c",
+    "function": "FUN_007675f0",
+    "source_line": 759784,
+    "upstream_contract": "SHIFT.PhysicsHelper675F0Runtime/1"
+  },
+  "retail_state": {
+    "owner": "HDVehicle",
+    "offset": "0x4080",
+    "read_role": "previous value passed to FUN_00783a30",
+    "write_when_distance_le_200": "FUN_00783a30(previous, distance, distance_filter_cap, 0.5)",
+    "write_when_distance_gt_200": 200.0,
+    "refresh": "once per FUN_007675f0 execution",
+    "pass_1_consumes_pass_0_result": true
+  },
+  "setup_seed": {
+    "contract": "SHIFT.Fun007675f0DistanceStateSetup/1",
+    "upstream_initializer_proven": false,
+    "selected_value_promoted": false,
+    "required_for_new_production_callers": true,
+    "legacy_fixture_conversion_may_seed_once": true,
+    "legacy_seed_is_retail_evidence": false
+  },
+  "native_handoff": {
+    "session_provider_payload": "ContactOuterSessionInput",
+    "production_per_pass_field_previous_distance_state_present": false,
+    "compatibility_previous_distance_seed_present": true,
+    "persistent_owner": "NativeVehicleProviderSession.contact_outer_distance_state_",
+    "commit_hook": "Fun007675f0DistanceStateCommit",
+    "commit_source": "ContactOuterKernelResult.filtered_distance_state",
+    "commit_count_per_explicit_step": 2
+  },
+  "transaction": {
+    "explicit_step_rollback": true,
+    "retail_inner_batch_rollback": true,
+    "body_and_distance_state_commit_atomically": true
+  },
+  "remaining_external_fun_007675f0_fields": [
+    "planar_delta",
+    "distance_filter_cap",
+    "surface_scalar",
+    "base_scalar",
+    "projected_scalar",
+    "alignment_scalar",
+    "param_3"
+  ],
+  "remaining_external_field_count": 7,
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "boundary_narrowed": true,
+    "physical_semantic_name_promoted": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  }
+}
