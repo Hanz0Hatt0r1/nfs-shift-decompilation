@@ -20,3 +20,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00765c40_selected_bmw_query_fallback
     COMMAND shift_runtime_fun_00765c40_selected_bmw_query_fallback_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase742.cmake)
