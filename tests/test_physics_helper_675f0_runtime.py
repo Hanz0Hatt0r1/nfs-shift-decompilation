@@ -22,14 +22,18 @@ def test_contact_gate_is_strict():
     assert not contact_gate(10.0,1.0)
     assert not contact_gate(200.0,2.0)
 
-def test_force_shape_and_submission_scales():
-    shape=gap_factor(7.0,5.0)
-    assert shape==pytest.approx(1.0)
-    force=contact_force_scalar(10.0,2.0,0.5,3.0,0.25)
+def test_force_shape_uses_filtered_state_and_submission_scales():
+    # The direct PC instruction stream reloads HDVehicle+0x4080 before the gap.
+    # Use values where raw distance would produce a different shape.
+    shape=gap_factor(4.75,5.0)
+    assert shape==pytest.approx(0.5)
+    force=contact_force_scalar(10.0,2.0,shape,3.0,0.25)
     assert force==pytest.approx((15.0-2.0)*1.5*0.5*3.0*0.25)
     assert submission_scales(force,2.0)==pytest.approx((force*2.0,force*2.0*-0.05))
 
 def test_contract_freezes_boundaries():
     c=build_contract()
     assert c["gate"]=="distance < 200 && distance > 5 && speed > 1"
+    assert c["force_scalar"]["gap"]=="filtered_distance_state - (surface_scalar - 1.5)"
+    assert "0x00767937" in c["force_scalar"]["machine_correction"]
     assert c["submission"]["consumer"]=="FUN_007ba9e0"
