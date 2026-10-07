@@ -28,6 +28,12 @@ struct WheelForceAggregateResult {
     double scalar_output = 0.0;
 };
 
+// Caller-visible first output of FUN_00759c90. The retail function always
+// computes both output vectors, but FUN_007675f0 only consumes X/Z from this
+// weighted-vector total before its strict distance/speed gate.
+WheelForceAggregateVector3d execute_fun_00759c90_weighted_total(
+    const std::array<WheelForceAggregateRecord, kWheelForceAggregateRecordCount>& records);
+
 WheelForceAggregateResult execute_fun_00759c90_wheel_force_aggregate(
     const std::array<WheelForceAggregateRecord, kWheelForceAggregateRecordCount>& records,
     const WheelForceAggregateVector3d& body_position,
