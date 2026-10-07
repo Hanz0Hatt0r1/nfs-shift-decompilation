@@ -76,7 +76,7 @@ def build_contract():
         "source": {"file": SOURCE_FILE, "line": SOURCE_LINE},
         "distance": {
             "construction": "sqrt(dx^2 + dz^2)", "limit": 200.0,
-            "state_update": "FUN_00783a30(previous, distance, body_field+0xa0, 0.5) when distance <= 200; else 200",
+            "state_update": "FUN_00783a30(previous, distance, f32(HDVehicle+0xa0), 0.5) when distance <= 200; else 200",
         },
         "speed": {
             "components": ["body + 0x78","body + 0x88"],
