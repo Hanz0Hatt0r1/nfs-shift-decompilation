@@ -1,7 +1,7 @@
 #include "shift_fun_007618f0_selected_bmw_source.hpp"
 
-#include <bit>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <stdexcept>
 
@@ -13,6 +13,18 @@ void require(bool condition, const char* message) {
     if (!condition) {
         throw std::runtime_error(message);
     }
+}
+
+float float_from_bits(std::uint32_t bits) {
+    float value = 0.0f;
+    std::memcpy(&value, &bits, sizeof(value));
+    return value;
+}
+
+std::uint64_t double_bits(double value) {
+    std::uint64_t bits = 0u;
+    std::memcpy(&bits, &value, sizeof(bits));
+    return bits;
 }
 
 }  // namespace
@@ -31,25 +43,24 @@ int main() {
                     kIncorrectF32ProductThenWidenF64Bits,
                 "retail x87 path collapsed to host f32-product path");
 
-        const float cg_height = std::bit_cast<float>(kBmwM3E36CgHeightF32Bits);
-        const float scale = std::bit_cast<float>(kSelectedNormalCgHeightScaleF32Bits);
+        const float cg_height = float_from_bits(kBmwM3E36CgHeightF32Bits);
+        const float scale = float_from_bits(kSelectedNormalCgHeightScaleF32Bits);
         const double source_order_product =
             static_cast<double>(cg_height) * static_cast<double>(scale);
-        require(std::bit_cast<std::uint64_t>(source_order_product) ==
-                    kSelectedDerivedCgHeightF64Bits,
+        require(double_bits(source_order_product) == kSelectedDerivedCgHeightF64Bits,
                 "binary32 operand product does not match retail qword store");
 
         const auto selected = selected_bmw_m3_e36_fun_007618f0_source();
-        require(std::bit_cast<std::uint64_t>(selected.source_scalar_0338) ==
+        require(double_bits(selected.source_scalar_0338) ==
                     kSelectedDerivedCgHeightF64Bits,
                 "selected +0x338 source scalar drift");
-        require(std::bit_cast<std::uint64_t>(selected.source_vec_0918[0]) ==
+        require(double_bits(selected.source_vec_0918[0]) ==
                     kBmwM3E36FwCenterXF64Bits,
                 "selected FWCenter X drift");
-        require(std::bit_cast<std::uint64_t>(selected.source_vec_0918[1]) ==
+        require(double_bits(selected.source_vec_0918[1]) ==
                     kBmwM3E36FwCenterYF64Bits,
                 "selected FWCenter Y drift");
-        require(std::bit_cast<std::uint64_t>(selected.source_vec_0918[2]) ==
+        require(double_bits(selected.source_vec_0918[2]) ==
                     kBmwM3E36FwCenterZF64Bits,
                 "selected FWCenter Z drift");
 
