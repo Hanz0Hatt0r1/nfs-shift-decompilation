@@ -71,7 +71,11 @@ int main() {
                 2000u + static_cast<std::uint64_t>(pass)};
         };
         bundle.wheel_update = [](std::size_t) {};
-        bundle.contact_response = [](std::size_t) {};
+        bundle.contact_response = [](
+            std::size_t,
+            const Fun00766510ExternalPassInput& input) {
+            validate_fun_00766510_external_pass_input(input);
+        };
         bundle.contact_outer_input = [](std::size_t) {
             return make_contact_outer_input();
         };
