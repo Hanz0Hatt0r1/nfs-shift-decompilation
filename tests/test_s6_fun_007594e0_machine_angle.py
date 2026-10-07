@@ -79,7 +79,10 @@ def test_session_derives_one_steering_value_before_both_passes() -> None:
     assert machine_call < pass_provider < compose_call
     assert "providers_.motion_read_input" not in session
     assert "const float steering = machine_angle.steering" in session
-    assert "[this, &telemetry, steering]" in session
+
+    capture_end = session.index("(std::size_t pass_index)", pass_provider)
+    pass_capture = session[pass_provider:capture_end]
+    assert "steering" in pass_capture
 
     steering_arg = session.index("steering,", compose_call)
     load_arg = session.index("load_state->terms,", compose_call)

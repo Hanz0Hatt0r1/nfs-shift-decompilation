@@ -104,22 +104,43 @@ NativeVehicleProviderSession::execute_explicit_step(
     const float steering = machine_angle.steering;
 
     NativeVehicleProviderSessionTelemetry telemetry{};
+    std::array<physics::Fun00765c40QueryInputBoundary, kNativeVehiclePhysicsPassCount>
+        query_inputs{};
+    std::array<bool, kNativeVehiclePhysicsPassCount> query_input_present{};
 
     physics::Fun0076d100MotionReadMachineInputProvider pass_provider =
-        [this, &telemetry, steering](std::size_t pass_index) {
+        [this,
+         &telemetry,
+         steering,
+         &query_inputs,
+         &query_input_present](std::size_t pass_index) {
+            if (pass_index >= kNativeVehiclePhysicsPassCount) {
+                throw std::logic_error(
+                    "native vehicle provider session pass index exceeds recovered two-pass contract");
+            }
+
             physics::Fun0076d100MotionReadMachineInputProviderCallbacks callbacks{};
             auto load_state = std::make_shared<Fun00765c40PassLoadState>();
 
             // The lower historical anchor interface is intentionally named
             // contact_factor and remains void for compatibility. At the session
-            // boundary, however, execute the exact external FUN_00765c40 pass,
-            // then retain only the four proven wheel+0x738 outputs needed by the
-            // later FUN_00769ef0/FUN_007682c0 read in this same pass.
+            // boundary, execute the exact external FUN_00765c40 pass, validate
+            // and capture its source-backed collision-query input, then retain
+            // the four proven wheel+0x738 outputs needed by the later
+            // FUN_00769ef0/FUN_007682c0 read in this same pass.
             callbacks.contact_factor =
-                [this, &telemetry, pass_index, load_state] {
+                [this,
+                 &telemetry,
+                 pass_index,
+                 load_state,
+                 &query_inputs,
+                 &query_input_present] {
                     ++telemetry.fun_00765c40_call_count;
                     const auto result = providers_.fun_00765c40(pass_index);
                     physics::validate_fun_00765c40_external_pass_result(result);
+                    query_inputs[pass_index] = result.query_input;
+                    query_input_present[pass_index] = true;
+                    ++telemetry.fun_00765c40_query_input_capture_count;
                     load_state->terms = result.load_terms;
                     load_state->ready = true;
                 };
@@ -231,6 +252,8 @@ NativeVehicleProviderSession::execute_explicit_step(
 
     NativeVehicleProviderSessionResult result{};
     result.joined = std::move(joined);
+    result.fun_00765c40_query_inputs = query_inputs;
+    result.fun_00765c40_query_input_present = query_input_present;
     result.session_step_count = step_count_;
     result.telemetry = last_telemetry_;
     return result;

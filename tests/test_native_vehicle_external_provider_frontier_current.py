@@ -14,7 +14,7 @@ def test_current_frontier_keeps_legacy_history_but_has_seven_active_boundaries()
     assert old["external_provider_count"] == 9
     assert report["format"] == current.FORMAT
     assert report["upstream_frontier"] == legacy.FORMAT
-    assert report["refresh_after_phase"] == 725
+    assert report["refresh_after_phase"] == 726
     assert report["external_provider_count"] == 7
     assert report["provider_audit"]["legacy_external_provider_count"] == 9
     assert report["provider_audit"]["active_external_provider_count"] == 7
@@ -24,35 +24,50 @@ def test_current_frontier_keeps_legacy_history_but_has_seven_active_boundaries()
     ]
     assert report["provider_audit"]["narrowed_provider_ids"] == {
         "fun_00765c40_complete_anchor": (
-            "exact external FUN_00765c40 pass result; contact-factor alias removed"
+            "exact external FUN_00765c40 pass result now exposes source-backed query input; "
+            "world-position producer/collision provider remain external"
         )
     }
 
 
-def test_fun_00765c40_remains_external_with_exact_typed_pass_result() -> None:
+def test_fun_00765c40_remains_external_but_exposes_exact_query_input() -> None:
     report = current.build_current_frontier()
     provider = _providers(report)["fun_00765c40_complete_anchor"]
     assert provider["process2_action"] == legacy.REQUEST_PROCESS1
-    assert provider["boundary_kind"] == "typed_external_pass_result_complete_anchor_external"
+    assert provider["boundary_kind"] == (
+        "typed_external_pass_result_with_query_input_complete_anchor_external"
+    )
     assert "NativeVehicleFun00765c40Provider" in provider["current_api"]
     assert "Fun00765c40ExternalPassResult" in provider["current_api"]
     assert "Fun00765c40LoadTerms" in provider["current_api"]
+    assert "Fun00765c40QueryInputBoundary" in provider["current_api"]
     assert "NativeVehicleContactFactorProvider" not in provider["current_api"]
     joined = " ".join(provider["evidence"])
     assert current.FUN_00765C40_LOAD_TERMS_FORMAT in joined
+    assert current.FUN_00765C40_EXTERNAL_PASS_RESULT_HISTORY_FORMAT in joined
     assert current.FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT in joined
-    assert "Phase 725" in joined
+    assert current.FUN_00765C40_QUERY_INPUT_FORMAT in joined
+    assert "Phase 726" in joined
     assert provider["blockers"]
 
     audit = report["provider_audit"]
     guards = report["guards"]
     assert audit["fun_00765c40_session_contact_factor_alias_removed"] is True
+    assert audit["fun_00765c40_query_input_capture_ready"] is True
+    assert audit["fun_00765c40_query_record_materialization_native"] is True
+    assert audit["fun_00765c40_query_input_capture_count_per_explicit_step"] == 2
     assert audit["fun_00765c40_complete_anchor_external"] is True
     assert audit["fun_00765c40_world_position_producer_internalized"] is False
+    assert audit["fun_00765c40_world_position_coordinate_provenance_inferred"] is False
+    assert audit["fun_00765c40_renderer_transform_reused_as_query_transform"] is False
     assert audit["fun_00765c40_collision_provider_internalized"] is False
     assert guards["fun_00765c40_external_pass_result_ready"] is True
+    assert guards["fun_00765c40_query_input_ready"] is True
+    assert guards["fun_00765c40_query_input_capture_ready"] is True
+    assert guards["fun_00765c40_query_record_materialization_native"] is True
     assert guards["fun_00765c40_world_position_producer_ready"] is False
     assert guards["fun_00765c40_collision_provider_ready"] is False
+    assert guards["fun_00765c40_renderer_transform_is_query_producer"] is False
 
 
 def test_fun_007682c0_external_provider_is_fully_closed_for_selected_session() -> None:
@@ -104,7 +119,7 @@ def test_dat_00c128cc_closed_boundary_keeps_native_policy_distinct_from_retail_d
     assert closed["active_late_motion_read_provider_required"] is False
 
 
-def test_positive_transform_and_selected_session_timing_remain_closed() -> None:
+def test_renderer_transform_stays_closed_and_separate_from_wheel_query_producer() -> None:
     report = current.build_current_frontier()
     path = report["current_bind_path"]
     scheduler = report["scheduler_authority"]
@@ -116,7 +131,18 @@ def test_positive_transform_and_selected_session_timing_remain_closed() -> None:
     assert path["FUN_007594e0_steering_internal"] is True
     assert path["BMW_response_4054_internal"] is True
     assert path["FUN_00765c40_load_term_ownership_ready"] is True
-    assert path["FUN_00765c40_external_pass_result_contract"] == current.FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT
+    assert path["FUN_00765c40_external_pass_result_history_contract"] == (
+        current.FUN_00765C40_EXTERNAL_PASS_RESULT_HISTORY_FORMAT
+    )
+    assert path["FUN_00765c40_external_pass_result_contract"] == (
+        current.FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT
+    )
+    assert path["FUN_00765c40_query_input_contract"] == current.FUN_00765C40_QUERY_INPUT_FORMAT
+    assert path["FUN_00765c40_query_input_capture_ready"] is True
+    assert path["FUN_00765c40_query_record_materialization_native"] is True
+    assert path["FUN_00765c40_world_position_producer_internal"] is False
+    assert path["FUN_00765c40_collision_provider_internal"] is False
+    assert path["FUN_00765c40_renderer_transform_used_as_query_producer"] is False
     assert path["FUN_00765c40_session_boundary_exact"] is True
     assert path["FUN_007560c0_gate_setup_owned"] is True
     assert path["BMW_native_player_difficulty_contract"] == current.BMW_NATIVE_DIFFICULTY_FORMAT
@@ -130,7 +156,7 @@ def test_positive_transform_and_selected_session_timing_remain_closed() -> None:
     assert scheduler["host_development_1_60_is_retail_evidence"] is False
 
 
-def test_contract_exposes_exact_fun_00765c40_residual_and_no_fun_007682c0_raw_fields() -> None:
+def test_contract_exposes_query_input_narrowing_and_no_fun_007682c0_raw_fields() -> None:
     payload = current.contract()
     assert payload["external_provider_count"] == 7
     assert payload["closed_provider_ids"] == [
@@ -139,14 +165,27 @@ def test_contract_exposes_exact_fun_00765c40_residual_and_no_fun_007682c0_raw_fi
     ]
     assert payload["narrowed_provider_ids"] == {
         "fun_00765c40_complete_anchor": (
-            "exact external FUN_00765c40 pass result; contact-factor alias removed"
+            "exact external FUN_00765c40 pass result now exposes source-backed query input; "
+            "world-position producer/collision provider remain external"
         )
     }
-    assert payload["FUN_00765c40_external_pass_result_contract"] == current.FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT
+    assert payload["FUN_00765c40_external_pass_result_history_contract"] == (
+        current.FUN_00765C40_EXTERNAL_PASS_RESULT_HISTORY_FORMAT
+    )
+    assert payload["FUN_00765c40_external_pass_result_contract"] == (
+        current.FUN_00765C40_EXTERNAL_PASS_RESULT_FORMAT
+    )
+    assert payload["FUN_00765c40_query_input_contract"] == current.FUN_00765C40_QUERY_INPUT_FORMAT
     assert payload["FUN_00765c40_external_pass_result_ready"] is True
+    assert payload["FUN_00765c40_query_input_ready"] is True
+    assert payload["FUN_00765c40_query_input_capture_ready"] is True
+    assert payload["FUN_00765c40_query_record_materialization_native"] is True
+    assert payload["FUN_00765c40_query_input_capture_count_per_explicit_step"] == 2
     assert payload["FUN_00765c40_session_contact_factor_alias_removed"] is True
     assert payload["FUN_00765c40_complete_anchor_external"] is True
     assert payload["FUN_00765c40_world_position_producer_internal"] is False
+    assert payload["FUN_00765c40_world_position_coordinate_provenance_inferred"] is False
+    assert payload["FUN_00765c40_renderer_transform_reused_as_query_transform"] is False
     assert payload["FUN_00765c40_collision_provider_internal"] is False
     assert payload["BMW_native_player_difficulty_contract"] == current.BMW_NATIVE_DIFFICULTY_FORMAT
     assert payload["DAT_00c128cc_selected_session_internal"] is True

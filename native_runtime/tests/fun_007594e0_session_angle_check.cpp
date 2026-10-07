@@ -53,9 +53,17 @@ int main() {
         configure_runtime(runtime, initial_body_bytes);
 
         NativeVehicleExternalProviderBundle bundle{};
-        bundle.fun_00765c40 = [](std::size_t) {
+        bundle.fun_00765c40 = [](std::size_t pass) {
+            Fun00765c40QueryInputBoundary query_input{};
+            query_input.world_position = {
+                static_cast<double>(pass),
+                1.0 + static_cast<double>(pass),
+                2.0 + static_cast<double>(pass)};
+            query_input.cached_handle = 2000u + static_cast<std::uint64_t>(pass);
+            query_input.miss_fallback = 5.0;
             return Fun00765c40ExternalPassResult{
-                Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0}};
+                Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0},
+                query_input};
         };
         bundle.wheel_update = [](std::size_t) {};
         bundle.contact_response = [](std::size_t) {};
@@ -105,6 +113,12 @@ int main() {
         require(result.joined.motion_read_input_present[0] &&
                     result.joined.motion_read_input_present[1],
                 "FUN_007594e0 session inputs were not captured for both passes");
+        require(result.fun_00765c40_query_input_present[0] &&
+                    result.fun_00765c40_query_input_present[1],
+                "FUN_00765c40 query inputs were not captured for both passes");
+        require(result.fun_00765c40_query_inputs[0].cached_handle == 2000u &&
+                    result.fun_00765c40_query_inputs[1].cached_handle == 2001u,
+                "FUN_00765c40 query cache-handle snapshots changed between passes");
         require(
             f32_bits(result.joined.motion_read_inputs[0].steering) ==
                 kExpectedSteeringBits,
@@ -143,6 +157,7 @@ int main() {
             << "\"selected_player_difficulty\":"
             << kBmwNativeSilverstonePlayerDifficulty << ","
             << "\"fun_00765c40_result_typed\":true,"
+            << "\"fun_00765c40_query_input_captured\":true,"
             << "\"derived_before_pass0\":true,"
             << "\"same_value_used_by_both_passes\":true}\n";
         return 0;

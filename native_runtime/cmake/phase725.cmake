@@ -20,3 +20,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00765c40_external_pass_result
     COMMAND shift_runtime_fun_00765c40_external_pass_result_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase726.cmake)
