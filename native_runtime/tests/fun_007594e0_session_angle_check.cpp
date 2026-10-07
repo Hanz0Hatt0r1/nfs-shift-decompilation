@@ -61,12 +61,11 @@ int main() {
         bundle.contact_outer_input = [](std::size_t) {
             return make_contact_outer_input();
         };
+        bundle.motion_read_setup.caller_gate_open = false;
         bundle.motion_read_input = [](std::size_t) {
-            // Steering and load terms do not exist at this late boundary. Keep
-            // the caller gate closed so this regression isolates angle timing.
-            Fun007682c0ExternalMachineInput input{};
-            input.caller_gate_open = false;
-            return input;
+            // Gate, steering and load terms do not exist at this late boundary.
+            // Keep setup closed so this regression isolates angle timing.
+            return Fun007682c0ExternalMachineInput{};
         };
         bundle.scalar_provider_factory = [](std::size_t) {
             return [](std::size_t,
@@ -128,10 +127,14 @@ int main() {
             result.joined.motion_read_inputs[1].load_terms ==
                 Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0},
             "FUN_00765c40 typed load terms were not consumed by both passes");
+        require(!result.joined.motion_read_inputs[0].caller_gate_open &&
+                    !result.joined.motion_read_inputs[1].caller_gate_open,
+                "FUN_007560c0 setup gate changed between passes");
 
         std::cout
             << "{\"format\":\"SHIFT.NativeFun007594e0SessionAngle/1\","
             << "\"ready\":true,"
+            << "\"external_gate_field_present\":false,"
             << "\"external_steering_field_present\":false,"
             << "\"external_load_term_fields_present\":false,"
             << "\"derived_before_pass0\":true,"
