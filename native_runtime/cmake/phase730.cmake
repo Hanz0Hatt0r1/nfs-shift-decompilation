@@ -20,3 +20,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_007675f0_distance_state_ownership
     COMMAND shift_runtime_fun_007675f0_distance_state_ownership_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase731.cmake)
