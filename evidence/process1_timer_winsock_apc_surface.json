@@ -1,0 +1,95 @@
+{
+  "format": "SHIFT.Process1TimerWinsockApcSurface/1",
+  "ready": true,
+  "source": {
+    "authority": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "xbox_recomp_required": false
+  },
+  "timer_completion_surface": {
+    "api": "SetWaitableTimer",
+    "physical_machine_callsite_count": 2,
+    "ghidra_source_rendered_call_count": 3,
+    "completion_routine_nonnull_callsite_count": 0,
+    "completion_argument_nonnull_callsite_count": 0,
+    "callsites": [
+      {
+        "owner": "FUN_009983fe",
+        "subsystem": "FMOD record thread setup",
+        "pfnCompletionRoutine": "NULL",
+        "lpArgToCompletionRoutine": "NULL",
+        "fResume": false,
+        "source_line": 1209771
+      },
+      {
+        "owner": "FUN_00998936",
+        "subsystem": "FMOD WASAPI output setup",
+        "pfnCompletionRoutine": "NULL",
+        "lpArgToCompletionRoutine": "NULL",
+        "fResume": false,
+        "source_line": 1210321
+      }
+    ],
+    "note": "Ghidra renders the FUN_009983fe machine callsite twice along an overlapping stack-recovery path; the pinned machine image contains one physical import call there"
+  },
+  "winsock_completion_surface": {
+    "owner_recv": "FUN_005fdc90",
+    "owner_ioctl": "FUN_005ff390",
+    "wsarecv_completion_routine": "NULL",
+    "wsarecvfrom_completion_routine": "NULL (machine ABI ninth argument)",
+    "wsaioctl_overlapped": "NULL",
+    "wsaioctl_completion_routine": "NULL",
+    "source_lines": {
+      "recv_function": 456084,
+      "wsarecvfrom": 456105,
+      "wsarecv": 456109,
+      "ioctl_function": 457094,
+      "wsaioctl": 457124
+    }
+  },
+  "direct_manual_apc_tokens": {
+    "QueueUserAPC": 0,
+    "NtQueueApcThread": 0,
+    "ZwQueueApcThread": 0
+  },
+  "adjudication": {
+    "source_visible_waitable_timer_completion_can_apc_controller1": false,
+    "source_visible_winsock_completion_can_apc_controller1": false,
+    "timer_and_winsock_completion_callbacks_are_not_controller1_wake_sources": true,
+    "readfileex_writefileex_surface_adjudicated_here": false,
+    "indirect_or_native_apc_sources_ruled_out": false,
+    "render_or_present_phase_lock_proven": false
+  },
+  "machine_spans": {
+    "winsock_recv_completion_null": {
+      "start": "0x005fdc98",
+      "end_exclusive": "0x005fdd26",
+      "size": 142,
+      "sha256": "5eaa9132ff21897e6d6ee6c59b3195acf654a4646ad91e25b22a0be792376704"
+    },
+    "wsaioctl_overlapped_and_completion_null": {
+      "start": "0x005ff443",
+      "end_exclusive": "0x005ff473",
+      "size": 48,
+      "sha256": "8ce632ff7491eda26149922a41f554df18bf56973326019ff4c16f9affa65f93"
+    },
+    "fmod_record_timer_completion_null": {
+      "start": "0x0099880f",
+      "end_exclusive": "0x00998831",
+      "size": 34,
+      "sha256": "a0a0e4ead543d84609f384412cfd8a83e828715255357d9db0794caacb972cc4"
+    },
+    "fmod_output_timer_completion_null": {
+      "start": "0x00998df7",
+      "end_exclusive": "0x00998e19",
+      "size": 34,
+      "sha256": "931ce092f2f87cc190ab97aa57cea7dd34fb7b53abb69826464738902519e702"
+    }
+  },
+  "next_blocker": {
+    "process": 1,
+    "description": "join the separately recovered ReadFileEx/WriteFileEx APC owner to the remaining Controller #1 manager indirect-call surface; timer and Winsock completion-routine APCs are now negative in the pinned PC retail build"
+  }
+}
