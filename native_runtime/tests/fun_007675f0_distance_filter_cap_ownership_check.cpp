@@ -79,9 +79,14 @@ int main() {
         require_near(resolved.distance_filter_cap, 7.25,
                      "setup-owned filter cap did not override legacy per-pass seed");
 
+        SurfaceProbeNode production_node{};
+        production_node.point = {0.0, 0.0, 0.0};
+        production_node.normal = {0.0, 1.0, 0.0};
+        production_node.distance = 1.0;
+        production_node.radius = 1.0;
+
         ContactOuterSessionInput production{};
-        production.planar_delta = {10.0, 0.0, 0.0};
-        production.surface_scalar = 10.0;
+        production.surface_probe_node = &production_node;
         production.base_scalar = 4.0;
         production.projected_scalar = 1.0;
         production.alignment_scalar = 0.5;
@@ -90,8 +95,10 @@ int main() {
             production,
             3.0,
             setup.distance_filter_cap);
+        require(production_resolved.surface_probe_node == &production_node,
+                "Phase 732 node boundary did not preserve Phase 731 production input");
         require_near(production_resolved.distance_filter_cap, 7.25,
-                     "production per-pass payload altered setup-owned filter cap");
+                     "production payload altered setup-owned filter cap");
 
         std::cout
             << "{\"format\":\"" << kFun007675f0DistanceFilterCapOwnershipFormat << "\","
