@@ -1,0 +1,1 @@
+Phase 723 changes ownership only: `HDVehicle+0xe0` is vehicle-setup state from `FUN_007560c0`, not a late per-pass motion-read input. The selected setup value is not derived in this phase. `DAT_00c128cc` remains external and is the next exact ownership target.

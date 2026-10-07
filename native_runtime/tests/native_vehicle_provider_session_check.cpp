@@ -24,7 +24,7 @@ void require(bool condition, const char* message) {
 
 Fun007682c0MachineInput make_motion_input() {
     Fun007682c0MachineInput input{};
-    input.caller_gate_open = true;
+    input.caller_gate_open = true;  // legacy sentinel ignored by late input conversion
     input.steering = 1.2f;
     input.load_terms = {-101.0, -102.0, -103.0, -104.0};
     input.projection_field_x = 2.0f;
@@ -58,6 +58,7 @@ NativeVehicleExternalProviderBundle make_bundle(
         events.push_back("contact-input:" + std::to_string(pass));
         return make_contact_outer_input();
     };
+    bundle.motion_read_setup.caller_gate_open = true;
     bundle.motion_read_input = [&events](std::size_t pass) {
         events.push_back("motion-input:" + std::to_string(pass));
         return make_motion_input();
@@ -210,6 +211,9 @@ int main() {
         require(first.joined.motion_read_inputs[0].load_terms == expected_load_terms &&
                     first.joined.motion_read_inputs[1].load_terms == expected_load_terms,
                 "Phase 722 FUN_00765c40 load-term handoff mismatch");
+        require(first.joined.motion_read_inputs[0].caller_gate_open &&
+                    first.joined.motion_read_inputs[1].caller_gate_open,
+                "Phase 723 FUN_007560c0 setup gate was not reused by both passes");
 
         const auto first_body_bytes = runtime.outer_update.body_bytes;
         require(first_body_bytes != initial_body_bytes,
@@ -290,6 +294,7 @@ int main() {
             << "\"phase697_persistent_outer_path_reused\":true,"
             << "\"phase699_external_provider_count\":9,"
             << "\"active_external_provider_count\":8,"
+            << "\"fun_007560c0_gate_setup_owned\":true,"
             << "\"fun_00765c40_load_terms_typed\":true,"
             << "\"motion_read_raw_input_provider\":true,"
             << "\"motion_read_effect_arithmetic_internal\":true,"

@@ -37,16 +37,19 @@ int main() {
         legacy.angle_mode = 2;
 
         const Fun007682c0ExternalMachineInput external = legacy;
+        const Fun007560c0MotionReadGateSetup setup_open{true};
+        const Fun007560c0MotionReadGateSetup setup_closed{false};
         const Fun007682c0DerivedProjectionState initial{};
         constexpr float derived_steering = -1.25f;
         const Fun00765c40LoadTerms derived_load_terms{11.0, 22.0, 33.0, 44.0};
         const auto composed = compose_fun_007682c0_machine_input(
             external,
+            setup_open,
             derived_steering,
             derived_load_terms,
             initial);
         require(composed.caller_gate_open && composed.steering == derived_steering,
-                "derived steering was not consumed by production composition");
+                "FUN_007560c0 setup gate was not consumed by composition");
         require(composed.steering != legacy.steering,
                 "legacy external steering leaked into production composition");
         require(composed.load_terms == derived_load_terms &&
@@ -60,6 +63,17 @@ int main() {
         require(composed.projection_field_x == 0.0f &&
                     composed.projection_field_z == 0.0f,
                 "legacy projection fields leaked into production composition");
+
+        // The late compatibility conversion must not retain the legacy gate.
+        // Closing setup must win even though the wide legacy input was open.
+        const auto closed = compose_fun_007682c0_machine_input(
+            external,
+            setup_closed,
+            derived_steering,
+            derived_load_terms,
+            initial);
+        require(!closed.caller_gate_open,
+                "legacy per-pass gate leaked past FUN_007560c0 setup ownership");
 
         const auto derived = derive_fun_007682c0_projection_state(
             10.0,
@@ -82,6 +96,7 @@ int main() {
 
         const auto second_input = compose_fun_007682c0_machine_input(
             external,
+            setup_open,
             derived_steering,
             derived_load_terms,
             rounded);
@@ -92,6 +107,8 @@ int main() {
                 "derived steering changed while composing next input");
         require(second_input.load_terms == derived_load_terms,
                 "typed FUN_00765c40 load terms changed between compositions");
+        require(second_input.caller_gate_open,
+                "FUN_007560c0 setup gate changed between compositions");
         require(f32_bits(second_input.response_field_4054) ==
                     kBmwM3E36ResponseField4054Bits,
                 "selected BMW setup response changed between compositions");
@@ -102,6 +119,7 @@ int main() {
             invalid[2] = std::numeric_limits<double>::infinity();
             (void)compose_fun_007682c0_machine_input(
                 external,
+                setup_open,
                 derived_steering,
                 invalid,
                 initial);
@@ -136,6 +154,8 @@ int main() {
             << "{\"format\":\"" << kFun007682c0DerivedProjectionStateFormat << "\","
             << "\"ready\":true,"
             << "\"initial_fields_zero\":true,"
+            << "\"legacy_gate_provider_value_ignored\":true,"
+            << "\"fun_007560c0_setup_gate_consumed\":true,"
             << "\"legacy_steering_provider_value_ignored\":true,"
             << "\"legacy_load_term_provider_values_ignored\":true,"
             << "\"fun_00765c40_load_terms_consumed\":true,"

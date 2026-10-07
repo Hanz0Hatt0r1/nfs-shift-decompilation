@@ -1,0 +1,1 @@
+Phase 723 deliberately leaves `DAT_00c128cc` as the only late `FUN_007682c0` raw input field. Its exact selected-session settings ownership/mutation path is the next S6 blocker; the PC initialization default alone is not sufficient evidence for the selected runtime value.

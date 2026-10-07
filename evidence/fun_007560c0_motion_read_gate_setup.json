@@ -1,0 +1,80 @@
+{
+  "format": "SHIFT.Fun007560c0MotionReadGateSetup/1",
+  "version": 1,
+  "status": "retail-pc-hdvehicle-0xe0-setup-ownership-proven",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "source": {
+    "decompiler_file": "SHIFT.exe.c",
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "setup_writer": {
+    "function": "FUN_007560c0",
+    "field": "HDVehicle+0xe0 byte",
+    "setup_call": "FUN_0076df50 -> FUN_007560c0(this)",
+    "setup_call_machine_span": {
+      "start": "0x0076e286",
+      "end_exclusive": "0x0076e28b",
+      "raw_byte_sha256": "77c8f47343e25ecb4d867397346092533ad49e3b024f08527d16123771a2fd22"
+    },
+    "table_derived_store_span": {
+      "start": "0x007562ae",
+      "end_exclusive": "0x007562d4",
+      "raw_byte_sha256": "a16b138c0c49e920477882ee6b1a9921cc80f28acc49dd6c21886f36a96d5a00",
+      "store": "0x007562ce mov BYTE PTR [ecx+0xe0],al"
+    },
+    "vehicle_override_store_span": {
+      "start": "0x00756358",
+      "end_exclusive": "0x0075636e",
+      "raw_byte_sha256": "45b36e0f76117c958aac13ac2b79de6a7880214943ba99ace954055ead6f1962",
+      "source": "HDVehicle+0x41c4 byte override",
+      "store": "0x00756368 mov BYTE PTR [ecx+0xe0],al"
+    },
+    "disabled_zero_store_span": {
+      "start": "0x0075638b",
+      "end_exclusive": "0x007563ac",
+      "raw_byte_sha256": "86f904aae08a05624c3fd5df0f86afca538e5eead82dd4aeff424c2e10d6af14",
+      "store": "0x007563a6 mov BYTE PTR [ecx+0xe0],0x0"
+    }
+  },
+  "late_consumer": {
+    "function": "FUN_00769ef0",
+    "machine_span": {
+      "start": "0x00769f0c",
+      "end_exclusive": "0x00769f31",
+      "raw_byte_sha256": "17635fa58a0dc3fa049a33525d4516d607ddd344900d39ff7f2411182c030b8a"
+    },
+    "read": "0x00769f17 cmp BYTE PTR [esi+0xe0],0x0",
+    "refreshes_field": false,
+    "consumes_setup_snapshot": true
+  },
+  "settings_defaults": {
+    "machine_span": {
+      "start": "0x00a8a52b",
+      "end_exclusive": "0x00a8a55e",
+      "raw_byte_sha256": "e9504292c50c687f8543594b675585dfd42068172037dd630fd033a8d9bb66cf"
+    },
+    "DAT_00c128cc_default": 0,
+    "DAT_00c1286e_default": 0,
+    "selected_runtime_values_proven_equal_to_defaults": false
+  },
+  "native_handoff": {
+    "payload_type": "Fun007560c0MotionReadGateSetup",
+    "session_owned_setup_state": true,
+    "late_motion_read_provider_must_not_supply_gate": true,
+    "refresh": "vehicle setup, reused by both physics passes and all inner substeps until vehicle setup changes",
+    "active_external_provider_count": 8,
+    "provider_count_reduced": false,
+    "ownership_narrowed": true
+  },
+  "limits": {
+    "selected_setup_gate_value_derived_natively": false,
+    "DAT_00c128cc_internalized": false,
+    "upstream_settings_mutation_path_complete": false,
+    "xbox_360_recomp_substituted_for_pc_authority": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  }
+}

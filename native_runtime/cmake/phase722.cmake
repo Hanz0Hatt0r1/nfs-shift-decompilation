@@ -20,3 +20,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00765c40_load_term_ownership
     COMMAND shift_runtime_fun_00765c40_load_term_ownership_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase723.cmake)

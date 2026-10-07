@@ -31,6 +31,7 @@ FUN_007682C0_PROJECTION_FORMAT = "SHIFT.Fun007682c0DerivedProjectionState/1"
 FUN_007594E0_ANGLE_FORMAT = "SHIFT.Fun007594e0MachineAngle/1"
 BMW_RESPONSE_4054_FORMAT = "SHIFT.BMWM3E36ResponseField4054/1"
 FUN_00765C40_LOAD_TERMS_FORMAT = "SHIFT.Fun00765c40LoadTerms/1"
+FUN_007560C0_GATE_SETUP_FORMAT = "SHIFT.Fun007560c0MotionReadGateSetup/1"
 SELECTED_RATE_HZ = 180
 SELECTED_NORMAL_OUTER_SUBSTEPS = 6
 
@@ -88,7 +89,7 @@ def _build_active_providers(legacy_providers: list[dict[str, Any]]) -> list[dict
             "retail_boundary": "FUN_00769ef0/FUN_007682c0 remaining raw machine-input refresh",
             "current_api": "NativeVehicleMotionReadInputProvider / Fun007682c0ExternalMachineInput",
             "boundary_kind": "typed_raw_machine_input_provider",
-            "evidence_state": "effect_projection_steering_response_and_load_ownership_closed_remaining_raw_refresh_external",
+            "evidence_state": "only_dat_00c128cc_remains_late_external",
             "process2_action": REQUEST_PROCESS1,
             "evidence": [
                 "SHIFT.Fun007682c0Body0DeltaDestination/1 proves the persistent BMW BODY0 +0x50 destination",
@@ -97,17 +98,18 @@ def _build_active_providers(legacy_providers: list[dict[str, Any]]) -> list[dict
                 "SHIFT.Fun007594e0MachineAngle/1 proves HDVehicle+0x4068 is the f32 FUN_007594e0 BODY0 machine angle produced once before both current passes",
                 "SHIFT.BMWM3E36ResponseField4054/1 proves selected-BMW HDVehicle+0x4054 is setup-fixed and derives it from hash-locked VDF wheel offsets",
                 "SHIFT.Fun00765c40LoadTerms/1 proves +0xb38/+0x15b8/+0x2038/+0x2ab8 are four wheel+0x738 outputs refreshed by the earlier FUN_00765c40 boundary",
+                "SHIFT.Fun007560c0MotionReadGateSetup/1 proves HDVehicle+0xe0 is written during vehicle setup and later consumed as a stored snapshot by FUN_00769ef0",
                 "Phase 720 removes +0x4068 from the external session provider and reproduces the PC CRT/x87 FPATAN finite path without std::atan2",
                 "Phase 721 removes +0x4054 from the late provider for the selected BMW M3 E36",
                 "Phase 722 removes the four load terms from the late provider and consumes typed per-pass FUN_00765c40 outputs instead",
+                "Phase 723 removes +0xe0 from the per-pass late provider and stores its still-explicit selected value as session setup state",
             ],
             "blockers": [
-                "the exact producer/refresh ownership of HDVehicle+0xe0 remains external",
-                "the producer/refresh ownership of DAT_00c128cc remains external",
+                "the selected-session producer/mutation ownership of DAT_00c128cc remains external",
             ],
             "process1_requested_proof": [
-                "map HDVehicle+0xe0 and DAT_00c128cc to their exact retail writers/producers",
-                "prove whether each remaining value is setup-fixed, refreshed once per outer update, refreshed per pass, or follows another exact boundary",
+                "map DAT_00c128cc to its exact selected-session settings owner and every relevant mutation path",
+                "prove the value consumed by FUN_007682c0 without substituting the initialization default",
             ],
         }
     )
@@ -137,8 +139,8 @@ def build_current_frontier() -> dict[str, Any]:
             "format": FORMAT,
             "version": 1,
             "upstream_frontier": LEGACY_FORMAT,
-            "refresh_after_phase": 722,
-            "refresh_label": "S6 selected-BMW +0x4054 closure and FUN_00765c40 load-term ownership handoff",
+            "refresh_after_phase": 723,
+            "refresh_label": "S6 FUN_007560c0 HDVehicle+0xe0 vehicle-setup ownership handoff",
             "scheduler_refresh": (
                 "S5 positive retail outer cadence + atomic explicit dispatch + exact "
                 "selected-session 180 Hz rate + exact persistent 1/180 inner execution"
@@ -149,17 +151,17 @@ def build_current_frontier() -> dict[str, Any]:
             ),
             "provider_refresh": (
                 "PC machine code closes FUN_007682c0 effect arithmetic, previous-outer projection state, "
-                "pre-pass steering, and selected-BMW setup +0x4054; Phase 722 additionally proves the four "
-                "wheel load terms belong to the earlier still-external FUN_00765c40 boundary and types that "
-                "per-pass output; only HDVehicle+0xe0 and DAT_00c128cc remain at the late raw-input boundary"
+                "pre-pass steering, selected-BMW setup +0x4054 and FUN_00765c40 four-wheel load ownership; "
+                "Phase 723 additionally proves HDVehicle+0xe0 is a FUN_007560c0 vehicle-setup snapshot rather "
+                "than a per-pass raw input; only DAT_00c128cc remains at the late raw-input boundary"
             ),
             "deepest_native_chain": (
-                "external FUN_00765c40 contact work + typed four-wheel load output -> remaining late gate/mode "
-                "fields + current-BODY0 derived FUN_007594e0 steering + selected-BMW setup +0x4054 + previous-outer "
-                "projection state -> native PC machine effect -> persistent BMW BODY0 +0x50 application -> "
-                "half-step BODY integration -> post-outer BODY0 velocity delta/timestep projection refresh -> "
-                "positive BODY0/VHF bind -> fresh BMW world transform -> live Vulkan sink; eight top-level "
-                "provider/ownership boundaries remain external"
+                "external FUN_00765c40 contact work + typed four-wheel load output -> session-owned FUN_007560c0 "
+                "gate setup + remaining DAT_00c128cc mode + current-BODY0 derived FUN_007594e0 steering + "
+                "selected-BMW setup +0x4054 + previous-outer projection state -> native PC machine effect -> "
+                "persistent BMW BODY0 +0x50 application -> half-step BODY integration -> post-outer BODY0 "
+                "velocity delta/timestep projection refresh -> positive BODY0/VHF bind -> fresh BMW world "
+                "transform -> live Vulkan sink; eight top-level provider/ownership boundaries remain external"
             ),
             "providers": active,
             "external_provider_count": len(active),
@@ -228,6 +230,15 @@ def build_current_frontier() -> dict[str, Any]:
                 "active_FUN_00765c40_provider_required": True,
                 "refresh_boundary": "once per FUN_0076d100 pass before FUN_00769ef0",
             },
+            {
+                "boundary": "HDVehicle+0xe0 FUN_007682c0 caller gate",
+                "state": "retail_pc_vehicle_setup_ownership_proven_selected_value_explicit",
+                "proof": FUN_007560C0_GATE_SETUP_FORMAT,
+                "active_late_motion_read_provider_required": False,
+                "session_setup_state_required": True,
+                "selected_setup_value_derived_natively": False,
+                "refresh_boundary": "FUN_007560c0 during vehicle setup",
+            },
         ]
     )
 
@@ -245,7 +256,7 @@ def build_current_frontier() -> dict[str, Any]:
             ],
             "blockers": [],
             "additional_dependency": (
-                "none for transform/timing transport; the current shortest gate is the two remaining late vehicle-physics fields"
+                "none for transform/timing transport; the current shortest late-input gate is DAT_00c128cc ownership"
             ),
             "policy": "do not reopen positive transform/timing work or substitute host 1/60",
         }
@@ -278,6 +289,8 @@ def build_current_frontier() -> dict[str, Any]:
         "BMW_response_4054_internal": True,
         "FUN_00765c40_load_terms_contract": FUN_00765C40_LOAD_TERMS_FORMAT,
         "FUN_00765c40_load_term_ownership_ready": True,
+        "FUN_007560c0_gate_setup_contract": FUN_007560C0_GATE_SETUP_FORMAT,
+        "FUN_007560c0_gate_setup_owned": True,
     }
 
     report["provider_audit"] = {
@@ -286,9 +299,7 @@ def build_current_frontier() -> dict[str, Any]:
         "active_external_provider_count": len(active),
         "provider_inventory_changed": True,
         "closed_provider_ids": [_CLOSED_DELTA_ID],
-        "narrowed_provider_ids": {
-            _OLD_EFFECT_ID: _NEW_RAW_INPUT_ID,
-        },
+        "narrowed_provider_ids": {_OLD_EFFECT_ID: _NEW_RAW_INPUT_ID},
         "newly_positive_provider_or_owner_handoff_internalizable": True,
         "fun_007682c0_destination_contract": FUN_007682C0_DESTINATION_FORMAT,
         "fun_007682c0_machine_effect_contract": FUN_007682C0_EFFECT_FORMAT,
@@ -296,6 +307,7 @@ def build_current_frontier() -> dict[str, Any]:
         "fun_007594e0_machine_angle_contract": FUN_007594E0_ANGLE_FORMAT,
         "bmw_response_4054_contract": BMW_RESPONSE_4054_FORMAT,
         "fun_00765c40_load_terms_contract": FUN_00765C40_LOAD_TERMS_FORMAT,
+        "fun_007560c0_gate_setup_contract": FUN_007560C0_GATE_SETUP_FORMAT,
         "fun_007682c0_runtime_body0_mutation_internalized": True,
         "fun_007682c0_effect_arithmetic_internalized": True,
         "fun_007682c0_x87_fsqrt_internalized": True,
@@ -308,17 +320,17 @@ def build_current_frontier() -> dict[str, Any]:
         "fun_00765c40_load_term_ownership_proven": True,
         "fun_00765c40_load_terms_typed_output": True,
         "fun_00765c40_complete_anchor_external": True,
+        "fun_007560c0_gate_setup_ownership_proven": True,
+        "fun_007560c0_selected_gate_value_native": False,
         "fun_007682c0_external_precomputed_effect_required": False,
         "fun_007682c0_external_delta_consumer_required": False,
         "fun_007682c0_external_projection_fields_required": False,
         "fun_007682c0_external_steering_required": False,
         "fun_007682c0_external_response_4054_required": False,
         "fun_007682c0_external_load_terms_required": False,
+        "fun_007682c0_external_gate_required_per_pass": False,
         "fun_007682c0_raw_input_refresh_external": True,
-        "remaining_fun_007682c0_external_fields": [
-            "HDVehicle+0xe0",
-            "DAT_00c128cc",
-        ],
+        "remaining_fun_007682c0_external_fields": ["DAT_00c128cc"],
         "implement_now": [],
     }
 
@@ -362,6 +374,9 @@ def build_current_frontier() -> dict[str, Any]:
             "fun_00765c40_load_term_ownership_ready": True,
             "fun_007682c0_load_terms_external": False,
             "fun_00765c40_complete_anchor_external": True,
+            "fun_007560c0_gate_setup_ownership_ready": True,
+            "fun_007682c0_gate_external_per_pass": False,
+            "fun_007560c0_selected_gate_value_native": False,
             "fun_007682c0_raw_input_refresh_ready": False,
             "provider_semantics_promoted": False,
             "render_loop_equated_to_outer_dispatch": False,
@@ -390,6 +405,7 @@ def contract() -> dict[str, Any]:
         "FUN_007594e0_machine_angle_contract": FUN_007594E0_ANGLE_FORMAT,
         "BMW_response_4054_contract": BMW_RESPONSE_4054_FORMAT,
         "FUN_00765c40_load_terms_contract": FUN_00765C40_LOAD_TERMS_FORMAT,
+        "FUN_007560c0_gate_setup_contract": FUN_007560C0_GATE_SETUP_FORMAT,
         "FUN_007682c0_delta_destination_is_BODY0": True,
         "FUN_007682c0_delta_application_internal": True,
         "FUN_007682c0_effect_production_internal": True,
@@ -404,7 +420,10 @@ def contract() -> dict[str, Any]:
         "FUN_00765c40_load_terms_typed_output": True,
         "FUN_00765c40_complete_anchor_external": True,
         "FUN_007682c0_external_load_terms_required": False,
-        "remaining_FUN_007682c0_external_fields": ["HDVehicle+0xe0", "DAT_00c128cc"],
+        "FUN_007560c0_gate_setup_owned": True,
+        "FUN_007560c0_selected_gate_value_native": False,
+        "FUN_007682c0_external_gate_required_per_pass": False,
+        "remaining_FUN_007682c0_external_fields": ["DAT_00c128cc"],
         "FUN_007682c0_raw_input_refresh_external": True,
         "outer_vehicle_to_vhf_root_relation_ready": True,
         "BODY0_bind_frame_proof_ready": True,
@@ -439,6 +458,7 @@ __all__ = [
     "FUN_007594E0_ANGLE_FORMAT",
     "BMW_RESPONSE_4054_FORMAT",
     "FUN_00765C40_LOAD_TERMS_FORMAT",
+    "FUN_007560C0_GATE_SETUP_FORMAT",
     "SELECTED_RATE_HZ",
     "SELECTED_NORMAL_OUTER_SUBSTEPS",
     "build_current_frontier",

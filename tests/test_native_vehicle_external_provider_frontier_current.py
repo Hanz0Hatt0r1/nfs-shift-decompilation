@@ -14,7 +14,7 @@ def test_current_frontier_keeps_legacy_history_but_has_eight_active_boundaries()
     assert old["external_provider_count"] == 9
     assert report["format"] == current.FORMAT
     assert report["upstream_frontier"] == legacy.FORMAT
-    assert report["refresh_after_phase"] == 722
+    assert report["refresh_after_phase"] == 723
     assert report["external_provider_count"] == 8
     assert report["provider_audit"]["legacy_external_provider_count"] == 9
     assert report["provider_audit"]["active_external_provider_count"] == 8
@@ -35,7 +35,7 @@ def test_fun_00765c40_remains_external_but_now_owns_typed_load_terms() -> None:
     assert contact["blockers"]
 
 
-def test_precomputed_effect_boundary_is_replaced_by_narrowed_raw_machine_inputs() -> None:
+def test_precomputed_effect_boundary_is_replaced_by_single_late_mode_input() -> None:
     report = current.build_current_frontier()
     providers = _providers(report)
     assert "fun_007682c0_effect_provider" not in providers
@@ -53,6 +53,7 @@ def test_precomputed_effect_boundary_is_replaced_by_narrowed_raw_machine_inputs(
     assert current.FUN_007594E0_ANGLE_FORMAT in joined
     assert current.BMW_RESPONSE_4054_FORMAT in joined
     assert current.FUN_00765C40_LOAD_TERMS_FORMAT in joined
+    assert current.FUN_007560C0_GATE_SETUP_FORMAT in joined
     blockers = " ".join(raw["blockers"])
     for closed in (
         "+0x4084",
@@ -63,13 +64,13 @@ def test_precomputed_effect_boundary_is_replaced_by_narrowed_raw_machine_inputs(
         "+0x15b8",
         "+0x2038",
         "+0x2ab8",
+        "+0xe0",
     ):
         assert closed not in blockers
-    assert "+0xe0" in blockers
     assert "DAT_00c128cc" in blockers
 
 
-def test_effect_inputs_are_narrowed_to_gate_and_angle_mode() -> None:
+def test_effect_inputs_are_narrowed_to_angle_mode_only() -> None:
     report = current.build_current_frontier()
     audit = report["provider_audit"]
     guards = report["guards"]
@@ -85,17 +86,17 @@ def test_effect_inputs_are_narrowed_to_gate_and_angle_mode() -> None:
     assert audit["fun_00765c40_load_term_ownership_proven"] is True
     assert audit["fun_00765c40_load_terms_typed_output"] is True
     assert audit["fun_00765c40_complete_anchor_external"] is True
+    assert audit["fun_007560c0_gate_setup_ownership_proven"] is True
+    assert audit["fun_007560c0_selected_gate_value_native"] is False
     assert audit["fun_007682c0_external_precomputed_effect_required"] is False
     assert audit["fun_007682c0_external_delta_consumer_required"] is False
     assert audit["fun_007682c0_external_projection_fields_required"] is False
     assert audit["fun_007682c0_external_steering_required"] is False
     assert audit["fun_007682c0_external_response_4054_required"] is False
     assert audit["fun_007682c0_external_load_terms_required"] is False
+    assert audit["fun_007682c0_external_gate_required_per_pass"] is False
     assert audit["fun_007682c0_raw_input_refresh_external"] is True
-    assert audit["remaining_fun_007682c0_external_fields"] == [
-        "HDVehicle+0xe0",
-        "DAT_00c128cc",
-    ]
+    assert audit["remaining_fun_007682c0_external_fields"] == ["DAT_00c128cc"]
     assert guards["fun_007682c0_body0_delta_destination_ready"] is True
     assert guards["fun_007682c0_body0_delta_application_internal"] is True
     assert guards["fun_007682c0_effect_production_ready"] is True
@@ -109,6 +110,9 @@ def test_effect_inputs_are_narrowed_to_gate_and_angle_mode() -> None:
     assert guards["fun_00765c40_load_term_ownership_ready"] is True
     assert guards["fun_007682c0_load_terms_external"] is False
     assert guards["fun_00765c40_complete_anchor_external"] is True
+    assert guards["fun_007560c0_gate_setup_ownership_ready"] is True
+    assert guards["fun_007682c0_gate_external_per_pass"] is False
+    assert guards["fun_007560c0_selected_gate_value_native"] is False
     assert guards["fun_007682c0_raw_input_refresh_ready"] is False
 
 
@@ -128,6 +132,8 @@ def test_positive_transform_and_selected_session_timing_remain_closed() -> None:
     assert path["BMW_response_4054_internal"] is True
     assert path["FUN_00765c40_load_terms_contract"] == current.FUN_00765C40_LOAD_TERMS_FORMAT
     assert path["FUN_00765c40_load_term_ownership_ready"] is True
+    assert path["FUN_007560c0_gate_setup_contract"] == current.FUN_007560C0_GATE_SETUP_FORMAT
+    assert path["FUN_007560c0_gate_setup_owned"] is True
     assert scheduler["retail_cadence_admitted"] is True
     assert scheduler["loaded_inner_rate_admitted"] is True
     assert scheduler["selected_session_rate_hz"] == 180
@@ -136,7 +142,7 @@ def test_positive_transform_and_selected_session_timing_remain_closed() -> None:
     assert scheduler["host_development_1_60_is_retail_evidence"] is False
 
 
-def test_contract_exposes_narrowed_boundary_without_promoting_contact_solver() -> None:
+def test_contract_exposes_single_late_field_without_promoting_setup_value() -> None:
     payload = current.contract()
     assert payload["external_provider_count"] == 8
     assert payload["FUN_007682c0_machine_effect_contract"] == current.FUN_007682C0_EFFECT_FORMAT
@@ -144,6 +150,7 @@ def test_contract_exposes_narrowed_boundary_without_promoting_contact_solver() -
     assert payload["FUN_007594e0_machine_angle_contract"] == current.FUN_007594E0_ANGLE_FORMAT
     assert payload["BMW_response_4054_contract"] == current.BMW_RESPONSE_4054_FORMAT
     assert payload["FUN_00765c40_load_terms_contract"] == current.FUN_00765C40_LOAD_TERMS_FORMAT
+    assert payload["FUN_007560c0_gate_setup_contract"] == current.FUN_007560C0_GATE_SETUP_FORMAT
     assert payload["FUN_007682c0_effect_production_internal"] is True
     assert payload["FUN_007682c0_x87_fsqrt_internal"] is True
     assert payload["FUN_007682c0_projection_state_internal"] is True
@@ -156,10 +163,10 @@ def test_contract_exposes_narrowed_boundary_without_promoting_contact_solver() -
     assert payload["FUN_00765c40_load_terms_typed_output"] is True
     assert payload["FUN_00765c40_complete_anchor_external"] is True
     assert payload["FUN_007682c0_external_load_terms_required"] is False
-    assert payload["remaining_FUN_007682c0_external_fields"] == [
-        "HDVehicle+0xe0",
-        "DAT_00c128cc",
-    ]
+    assert payload["FUN_007560c0_gate_setup_owned"] is True
+    assert payload["FUN_007560c0_selected_gate_value_native"] is False
+    assert payload["FUN_007682c0_external_gate_required_per_pass"] is False
+    assert payload["remaining_FUN_007682c0_external_fields"] == ["DAT_00c128cc"]
     assert payload["FUN_007682c0_raw_input_refresh_external"] is True
     assert payload["selected_session_rate_hz"] == 180
     assert payload["provider_semantics_promoted"] is False
