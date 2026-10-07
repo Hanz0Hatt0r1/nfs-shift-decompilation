@@ -22,6 +22,19 @@ def _load_module():
     return module
 
 
+def test_emit_swallows_stream_failures():
+    mod = _load_module()
+
+    class BrokenStream:
+        def write(self, value):
+            raise OSError("stream closed")
+
+        def flush(self):
+            raise OSError("stream closed")
+
+    mod._emit("diagnostic", stream=BrokenStream())
+
+
 def test_count_bff_inputs_matches_directory_file_and_zip(tmp_path):
     mod = _load_module()
     corpus = tmp_path / "Pakfiles"
