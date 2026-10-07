@@ -1,0 +1,89 @@
+name: native-physics-phase743
+
+on:
+  push:
+    paths:
+      - 'native_runtime/include/shift_fun_00766510_primary_response_application.hpp'
+      - 'native_runtime/include/shift_fun_00766510_primary_response_post_application.hpp'
+      - 'native_runtime/tests/fun_00766510_primary_response_application_check.cpp'
+      - 'native_runtime/tests/fun_00766510_primary_response_post_application_check.cpp'
+      - 'native_runtime/cmake/phase742.cmake'
+      - 'native_runtime/cmake/phase743.cmake'
+      - 'tests/test_s6_fun_00766510_primary_response_post_application.py'
+      - 'evidence/fun_00766510_primary_response_post_application.json'
+      - 'evidence/phase743_next_blocker.md'
+      - 'docs/PHASE743_FUN_00766510_PRIMARY_RESPONSE_POST_APPLICATION.md'
+      - 'docs/PHASE743_SCOPE.md'
+      - '.github/workflows/native-physics-phase743.yml'
+  pull_request:
+    paths:
+      - 'native_runtime/include/shift_fun_00766510_primary_response_application.hpp'
+      - 'native_runtime/include/shift_fun_00766510_primary_response_post_application.hpp'
+      - 'native_runtime/tests/fun_00766510_primary_response_application_check.cpp'
+      - 'native_runtime/tests/fun_00766510_primary_response_post_application_check.cpp'
+      - 'native_runtime/cmake/phase742.cmake'
+      - 'native_runtime/cmake/phase743.cmake'
+      - 'tests/test_s6_fun_00766510_primary_response_post_application.py'
+      - 'evidence/fun_00766510_primary_response_post_application.json'
+      - 'evidence/phase743_next_blocker.md'
+      - 'docs/PHASE743_FUN_00766510_PRIMARY_RESPONSE_POST_APPLICATION.md'
+      - 'docs/PHASE743_SCOPE.md'
+      - '.github/workflows/native-physics-phase743.yml'
+
+jobs:
+  primary-response-post-application:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run Phase 743 proof regression
+        run: python3 -m pytest -q tests/test_s6_fun_00766510_primary_response_post_application.py
+
+      - name: Validate Phase 743 evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          e = json.loads(Path('evidence/fun_00766510_primary_response_post_application.json').read_text())
+          assert e['format'] == 'SHIFT.Fun00766510PrimaryResponsePostApplication/1'
+          assert e['ready'] is True
+          assert e['pc_machine']['post_application_span']['raw_byte_sha256'] == '300ede8cca6353c0ccc96993161d299a67e337b5482c4ae40025e163069c07d7'
+          assert e['pc_machine']['fun_00753650_span']['raw_byte_sha256'] == '01a753b9668434bc769f1c9304931f0067e502e26f93097275e4c1b3469202ab'
+          assert e['pc_machine']['fun_00753650_subtract_opcode'] == 'de e9'
+          assert e['scope']['complete_FUN_00766510_internalized'] is False
+          assert e['scope']['external_provider_count_after'] == 7
+          PY
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 743 and dependent response checks
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_fun_00766510_primary_response_post_application_check
+          shift_runtime_fun_00766510_primary_response_application_check
+          shift_runtime_wheel_contact_response_check
+
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_fun_00766510_primary_response_post_application|shift_runtime_fun_00766510_primary_response_application|shift_runtime_wheel_contact_response)$'
+
+      - name: Verify Phase 743 native report
+        run: |
+          mkdir -p out/native-physics-phase743
+          native_runtime/build/shift_runtime_fun_00766510_primary_response_post_application_check \
+            > out/native-physics-phase743/fun_00766510_primary_response_post_application.json
+          grep -q '"format":"SHIFT.Fun00766510PrimaryResponsePostApplication/1"' \
+            out/native-physics-phase743/fun_00766510_primary_response_post_application.json
+          grep -q '"fun_00753650_subtract_opcode":"de e9"' \
+            out/native-physics-phase743/fun_00766510_primary_response_post_application.json
+          grep -q '"contact_response_provider_removed":false' \
+            out/native-physics-phase743/fun_00766510_primary_response_post_application.json
+          grep -q '"external_provider_count":7' \
+            out/native-physics-phase743/fun_00766510_primary_response_post_application.json
