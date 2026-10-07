@@ -65,6 +65,7 @@ def build_offline_vertical_slice_bootstrap(
     vehicle: str,
     workspace_root: str | Path,
     explicit_runtime_inputs: Mapping[str, str | Path | None] | None = None,
+    resource_pipeline: str | Path | None = None,
     input_script: str | Path | None = None,
     interactive: bool = False,
     keyboard: bool = False,
@@ -84,6 +85,7 @@ def build_offline_vertical_slice_bootstrap(
     report_path = out / "vertical_slice_bootstrap.json"
     workspace = Path(workspace_root).resolve()
     explicit = dict(explicit_runtime_inputs or {})
+    resource_pipeline_requested = bool(str(resource_pipeline or "").strip())
 
     runtime_bootstrap = build_offline_runtime_bootstrap(
         inputs,
@@ -115,6 +117,7 @@ def build_offline_vertical_slice_bootstrap(
             workspace_root=workspace,
             profile_path=profile_path,
             explicit_inputs=explicit,
+            resource_pipeline=resource_pipeline,
             input_script=input_script,
             interactive=interactive,
             keyboard=keyboard,
@@ -175,6 +178,7 @@ def build_offline_vertical_slice_bootstrap(
         "launch_plan_ready": False,
         "track": track,
         "vehicle": vehicle,
+        "resource_pipeline": profile_prepare.get("resource_pipeline"),
         "blocking_reasons": blockers,
         "stages": {
             "runtime_bootstrap": runtime_bootstrap,
@@ -189,6 +193,12 @@ def build_offline_vertical_slice_bootstrap(
             "runtime_requirements_reused": True,
             "explicit_runtime_inputs_launcher_validated_before_requirement_admission": True,
             "validated_input_path_presence_is_proof": False,
+            "resource_pipeline_profile_source_requested": resource_pipeline_requested,
+            "resource_pipeline_profile_source_validation_deferred_to_launcher": (
+                resource_pipeline_requested
+            ),
+            "resource_pipeline_bypasses_offline_bootstrap": False,
+            "resource_pipeline_replaces_camera_or_body_feedback": False,
             "missing_runtime_evidence_synthesized": False,
             "explicit_runtime_artifact_substitution_for_offline_failure": False,
             "launcher_validation_performed": False,

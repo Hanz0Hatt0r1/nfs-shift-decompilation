@@ -21,6 +21,7 @@ def test_phase740_evidence_freezes_only_cache_lifetime() -> None:
     assert payload["caller_state"]["offset"] == "HDVehicle+0x38dc"
     assert payload["caller_state"]["setup_seed"] == 0
     runtime = payload["runtime_join"]
+    # Historical Phase740 contract remains immutable.
     assert runtime["external_input_format"] == "SHIFT.Fun00765c40ExternalPassInput/1"
     assert runtime["external_result_format"] == "SHIFT.Fun00765c40ExternalPassResult/3"
     assert runtime["provider_receives_native_cached_handle_before_execution"] is True
@@ -38,13 +39,13 @@ def test_phase740_evidence_freezes_only_cache_lifetime() -> None:
     assert scope["miss_fallback_0x38e8_internalized"] is False
 
 
-def test_phase740_active_api_moves_cache_to_precall_input() -> None:
+def test_phase740_cache_ownership_survives_phase741_input_extension() -> None:
     result_header = RESULT_HEADER.read_text(encoding="utf-8")
     session_header = SESSION_HEADER.read_text(encoding="utf-8")
     session_source = SESSION_SOURCE.read_text(encoding="utf-8")
 
     assert "SHIFT.Fun00765c40ExternalPassResult/3" in result_header
-    assert "SHIFT.Fun00765c40ExternalPassInput/1" in result_header
+    assert "SHIFT.Fun00765c40ExternalPassInput/2" in result_header
     assert "struct Fun00765c40ExternalPassInput" in result_header
     assert "std::optional<std::uint64_t> cached_handle" in result_header
     assert "std::optional<std::uint64_t> returned_cache_handle" in result_header

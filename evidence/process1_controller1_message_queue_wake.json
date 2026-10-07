@@ -1,0 +1,142 @@
+{
+  "format": "SHIFT.Process1Controller1MessageQueueWake/1",
+  "ready": true,
+  "source": {
+    "authority": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "xbox_recomp_required": false
+  },
+  "joins": {
+    "controller_pacing_contract": "SHIFT.Process1Controller1AlertablePacing/1",
+    "retail_cadence_join_contract": "SHIFT.Process1Controller1RetailCadenceJoin/1",
+    "controller_name": "Controller #1",
+    "worker": "FUN_00662880"
+  },
+  "thread_queue_initialization": {
+    "thread_entry": "FUN_00649b10",
+    "queue_initializer": "FUN_0064ff40",
+    "queue_mode_expression": "controller+0x50 ? 3 : 1",
+    "mode_1_event_bit_set": false,
+    "mode_3_event_bit_set": true,
+    "event_bit_mask": "0x8",
+    "event_create_helper": "FUN_0064f570",
+    "event_name": "MsgQueue Event",
+    "controller1_exact_queue_mode_proven": false,
+    "source_lines": {
+      "thread_queue_mode_select": 527974,
+      "thread_queue_initialize": 527981,
+      "queue_initializer_definition": 534501,
+      "queue_mode_bits": 534530,
+      "queue_event_create_gate": 534544
+    },
+    "machine_span": {
+      "start": "0x00649bb8",
+      "end_exclusive": "0x00649be7",
+      "sha256": "9b66d228cfb0b8bf6d19550ce14a2f1bfe3d7863d34a0394c6a27a61fde78cdd"
+    },
+    "queue_mode_event_span": {
+      "start": "0x0064fff2",
+      "end_exclusive": "0x006500b5",
+      "sha256": "c84fb0171f3fbe17c61d04f24dbd98b55703728700c89909efaa010df2943657"
+    }
+  },
+  "message_enqueue": {
+    "controller_enqueue": "FUN_00662ee0",
+    "queue_enqueue": "FUN_00650350",
+    "conditional_event_signal": "FUN_0064f530",
+    "event_signal_api": "SetEvent",
+    "signals_only_when_queue_event_bit_0x8_set": true,
+    "source_lines": {
+      "controller_enqueue_definition": 553255,
+      "controller_enqueue_to_queue": 553264,
+      "queue_enqueue_definition": 534707,
+      "queue_event_signal_gate": 534713,
+      "set_event_wrapper_definition": 533732
+    },
+    "machine_spans": {
+      "controller_enqueue_wrapper": {
+        "start": "0x00662ee0",
+        "end_exclusive": "0x00662f16",
+        "sha256": "834a112d58d05fe2735c9e81203f83631c8909dcebac7330ba878363b279ebc9"
+      },
+      "queue_enqueue_and_conditional_signal": {
+        "start": "0x00650350",
+        "end_exclusive": "0x00650390",
+        "sha256": "d39d7703a15729b257e63364d3bee55caec7fbdb4d326143dfae62182ba87725"
+      },
+      "set_event_wrapper": {
+        "start": "0x0064f530",
+        "end_exclusive": "0x0064f539",
+        "sha256": "c598b75ecfe1675dea489a36329101a462517bf1fc22661fe1b861b81e40187a"
+      }
+    }
+  },
+  "message_dequeue_and_worker_order": {
+    "thread_dequeue_wrapper": "FUN_006550a0",
+    "queue_dequeue": "FUN_006500e0",
+    "queue_event_wait_helper": "FUN_0064f540",
+    "queue_event_wait_helper_api": "WaitForSingleObjectEx",
+    "worker_calls_queue_event_wait_helper": false,
+    "worker_poll_order": [
+      "FUN_006550a0 / FUN_006500e0 drain queued messages",
+      "FUN_006626a0 manager dispatch when enabled",
+      "SleepEx(10, TRUE)",
+      "stop-byte recheck and loop"
+    ],
+    "source_lines": {
+      "worker_first_dequeue": 552863,
+      "worker_repeat_dequeue": 552894,
+      "worker_manager_dispatch": 552899,
+      "worker_sleep": 552928,
+      "queue_dequeue_definition": 534556,
+      "queue_event_wait_helper_definition": 533743
+    },
+    "machine_spans": {
+      "queue_dequeue": {
+        "start": "0x006500e0",
+        "end_exclusive": "0x00650195",
+        "sha256": "ed8e406e5d699e39d9fd4c8d79a41f23ce951800e9fab8cd6d712f02e6f3eb6c"
+      },
+      "worker_poll_dispatch_sleep": {
+        "start": "0x00662943",
+        "end_exclusive": "0x00662a92",
+        "sha256": "2f25250574c39efb47a552b394057ba50f3f9289977527a7e4c7e5303ec69805"
+      }
+    }
+  },
+  "wake_adjudication": {
+    "message_enqueue_wakes_controller1_worker_proven": false,
+    "queue_event_phase_locks_controller1_worker_proven": false,
+    "queue_event_is_waited_by_controller1_worker_proven": false,
+    "message_arrival_interrupts_sleep_ex_proven": false,
+    "message_queue_is_polled_by_controller1_worker_proven": true,
+    "worker_alertable_sleep_remains_independent_of_queue_event_proven": true,
+    "render_or_present_message_producer_join_proven": false
+  },
+  "apc_surface": {
+    "queue_user_apc_source_token_hits": 0,
+    "absence_of_queue_user_apc_token_proves_no_apc": false,
+    "read_file_ex_present": true,
+    "write_file_ex_present": true,
+    "read_file_ex_completion_routine": "lpCompletionRoutine_006553e0",
+    "write_file_ex_completion_routine": "lpCompletionRoutine_00655410",
+    "controller1_owns_these_async_io_operations_proven": false,
+    "set_waitable_timer_present": true,
+    "observed_fmod_waitable_timer_completion_routine_is_null": true,
+    "controller1_apc_producer_proven": false
+  },
+  "promotion": {
+    "controller1_message_queue_polling_proven": true,
+    "conditional_message_queue_event_signal_proven": true,
+    "controller1_worker_waits_on_message_event_proven": false,
+    "message_enqueue_is_controller1_wake_source_proven": false,
+    "controller1_apc_wake_source_proven": false,
+    "render_phase_lock_proven": false
+  },
+  "next_blocker": {
+    "process": 1,
+    "description": "trace ownership of alertable APC-capable operations (especially ReadFileEx/WriteFileEx completion paths) to determine whether Controller #1 can initiate or receive such completions; separately search render/presentation callgraphs for any proven path to Controller #1 queue/APC producers"
+  }
+}
