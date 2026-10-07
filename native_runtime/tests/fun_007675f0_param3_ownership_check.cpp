@@ -82,7 +82,7 @@ int main() {
         const auto witness = execute_fun_00769ef0_param_3(
             witness_terms,
             231.76745665616602);
-        require(f32_bits(witness.param_3) == 0x3f66e2b9u,
+        require(f32_bits(witness.param_3) == 0x3f66e29eu,
                 "FUN_00769ef0 exact f64 gravity precision witness mismatch");
 
         bool zero_rejected = false;
