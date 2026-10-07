@@ -73,7 +73,9 @@ struct ContactOuterExternalInput {
 };
 
 // Session-facing per-pass payload. Both BODY motion and HDVehicle+0x4080 are
-// deliberately absent: the session owns those proven persistent values.
+// absent from the production fields: the session owns those persistent values.
+// The compatibility seed exists only so historical fixtures that return the old
+// complete input can initialize the one-time state without being rewritten.
 struct ContactOuterSessionInput {
     ContactOuterVector3d planar_delta{};
     double distance_filter_cap = 0.0;
@@ -82,6 +84,8 @@ struct ContactOuterSessionInput {
     double projected_scalar = 0.0;
     double alignment_scalar = 0.0;
     double param_3 = 0.0;
+    bool compatibility_previous_distance_seed_present = false;
+    double compatibility_previous_distance_seed = 0.0;
 
     ContactOuterSessionInput() = default;
 
@@ -92,7 +96,9 @@ struct ContactOuterSessionInput {
           base_scalar(legacy.base_scalar),
           projected_scalar(legacy.projected_scalar),
           alignment_scalar(legacy.alignment_scalar),
-          param_3(legacy.param_3) {}
+          param_3(legacy.param_3),
+          compatibility_previous_distance_seed_present(true),
+          compatibility_previous_distance_seed(legacy.previous_distance_state) {}
 
     ContactOuterSessionInput(const ContactOuterExternalInput& legacy)
         : planar_delta(legacy.planar_delta),
@@ -101,7 +107,9 @@ struct ContactOuterSessionInput {
           base_scalar(legacy.base_scalar),
           projected_scalar(legacy.projected_scalar),
           alignment_scalar(legacy.alignment_scalar),
-          param_3(legacy.param_3) {}
+          param_3(legacy.param_3),
+          compatibility_previous_distance_seed_present(true),
+          compatibility_previous_distance_seed(legacy.previous_distance_state) {}
 };
 
 struct Fun007675f0BodyMotion {
