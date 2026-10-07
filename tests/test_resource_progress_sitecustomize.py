@@ -116,6 +116,43 @@ def test_duplicate_reopen_in_same_phase_does_not_inflate_total(tmp_path, capsys)
     assert "event=complete processed=1/1 done=1 failed=0" in output
 
 
+def test_reopen_failure_downgrades_prior_done_outcome(tmp_path, capsys):
+    mod = _load_module()
+    source = tmp_path / "A.bff"
+    source.write_bytes(b"fixture")
+
+    class FlakyBFF:
+        attempts = 0
+
+        def __init__(self, path):
+            type(self).attempts += 1
+            if type(self).attempts == 2:
+                raise RuntimeError("reopen failed")
+            self.path = Path(path)
+            self.entries = [1]
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    tracker = mod._ProgressTracker(entry_interval=1)
+    ProgressBFF = mod._progress_bff_type(FlakyBFF, tracker)
+
+    with tracker.phase("resource-catalog", [source]):
+        with ProgressBFF(source) as first:
+            list(first.entries)
+        with pytest.raises(RuntimeError, match="reopen failed"):
+            ProgressBFF(source)
+
+    output = capsys.readouterr().out
+    assert output.count("status=done done=1/1") == 1
+    assert "status=failed" in output
+    assert "error=RuntimeError" in output
+    assert "event=complete processed=1/1 done=0 failed=1" in output
+
+
 def test_progress_bff_reports_enter_failure_as_failed(tmp_path, capsys):
     mod = _load_module()
     source = tmp_path / "A.bff"
