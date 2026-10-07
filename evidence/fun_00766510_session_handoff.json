@@ -1,0 +1,62 @@
+{
+  "format": "SHIFT.Fun00766510SessionHandoff/1",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "dependencies": {
+    "collision_output": "SHIFT.Fun00765c40ExternalPassResult/4",
+    "query_scalar_handoff": "SHIFT.Fun00766510QueryScalarHandoff/1",
+    "application_point_owner": "SHIFT.Fun00766510SelectedBMWApplicationPoint/1",
+    "selected_query_fallback": "SHIFT.Fun00765c40SelectedBMWQueryFallback/1",
+    "selected_world_position": "SHIFT.Fun00765c40SelectedBMWWorldPosition/1"
+  },
+  "runtime_join": {
+    "input_format": "SHIFT.Fun00766510ExternalPassInput/1",
+    "selected_bmw_domain_requires": [
+      "same-pass FUN_007b0710 CollisionQueryOutput from residual FUN_00765c40",
+      "native HDVehicle+0x38e0 hit/miss projection",
+      "same selected HDVehicle+0x38e8 value as miss fallback and upper clamp",
+      "native first clamp to [0,+0x38e8]",
+      "same-pass HDVehicle+0x38f0 primary application point owned by Phase743"
+    ],
+    "anchor_order": [
+      "current BODY observer",
+      "FUN_00765c40 residual provider",
+      "cache/output handoff commit",
+      "FUN_00758b50 wheel_update",
+      "FUN_00766510 residual contact_response"
+    ],
+    "typed_input_built_before_wheel_update": true,
+    "typed_input_consumed_only_at_contact_response_anchor": true,
+    "generic_two_body_compatibility_input_empty": true,
+    "one_argument_historical_callback_compatibility_preserved": true
+  },
+  "selected_path": {
+    "collision_output_hidden_by_provider": false,
+    "query_scalar_recomputed_by_provider": false,
+    "query_limit_reprovided_by_provider": false,
+    "application_point_reprovided_by_provider": false
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "contact_response_provider_removed": false,
+    "complete_FUN_00766510_internalized": false,
+    "collision_world_provider_internalized": false,
+    "primary_response_application_already_native": true,
+    "auxiliary_pair_already_native_but_not_session_scheduled": true,
+    "physical_semantics_invented": false
+  },
+  "remaining_FUN_00766510_remainder": [
+    "caller/configuration fields not yet owned by the selected session",
+    "HDVehicle+0x40a0/+0x40a8/+0x40b0 accumulation/state path",
+    "source-visible conditional branches around the primary response",
+    "scheduling/input ownership of the already-native two-record auxiliary pair",
+    "other diagnostic/state writes still inside the residual callback"
+  ],
+  "next_blocker": {
+    "target": "prove enough residual FUN_00766510 state/input ownership to remove NativeVehicleContactResponseProvider",
+    "provider_count_goal_after_complete_removal": 6,
+    "do_not_reduce_count_before_complete_callback_removal": true
+  }
+}
