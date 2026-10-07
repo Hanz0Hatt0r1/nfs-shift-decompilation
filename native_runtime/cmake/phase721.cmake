@@ -22,3 +22,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_bmw_m3_e36_response_field_4054
     COMMAND shift_runtime_bmw_m3_e36_response_field_4054_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase722.cmake)
