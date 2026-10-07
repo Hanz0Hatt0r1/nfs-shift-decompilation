@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shift_bmw_m3_e36_response_field_4054.hpp"
+#include "shift_bmw_native_session_player_difficulty.hpp"
 #include "shift_fun_007560c0_motion_read_gate_setup.hpp"
 #include "shift_fun_00765c40_load_terms.hpp"
 #include "shift_fun_007682c0_machine_effect.hpp"
@@ -14,31 +15,19 @@ namespace shift::runtime::physics {
 inline constexpr const char* kFun007682c0DerivedProjectionStateFormat =
     "SHIFT.Fun007682c0DerivedProjectionState/1";
 
-// The only remaining late PC field consumed by FUN_00769ef0/FUN_007682c0 is
-// DAT_00c128cc. HDVehicle+0xe0 is a FUN_007560c0 vehicle-setup snapshot,
-// HDVehicle+0x4068 is derived before both passes, the four wheel load terms are
-// outputs of FUN_00765c40 in each pass, selected-BMW +0x4054 is setup-derived,
-// and HDVehicle+0x4084/+0x408c are session-owned previous-outer state.
-struct Fun007682c0ExternalMachineInput {
-    std::int32_t angle_mode = 0;
-
-    Fun007682c0ExternalMachineInput() = default;
-
-    // Compatibility conversion for fixture callers that still construct the
-    // wider machine-kernel input. Gate, steering, load terms, +0x4054 and
-    // projection fields are intentionally ignored because production receives
-    // them from earlier proven owners.
-    Fun007682c0ExternalMachineInput(const Fun007682c0MachineInput& legacy)
-        : angle_mode(legacy.angle_mode) {}
-};
-
+// No raw late PC field remains at the selected native-session boundary.
+// HDVehicle+0xe0 is a FUN_007560c0 vehicle-setup snapshot, HDVehicle+0x4068 is
+// derived before both passes, the four wheel load terms are outputs of
+// FUN_00765c40 in each pass, selected-BMW +0x4054 is setup-derived,
+// HDVehicle+0x4084/+0x408c are session-owned previous-outer state, and
+// DAT_00c128cc is the selected native Player Difficulty value validated against
+// the retail RaceModeInfo+0x6c -> DAT_00c128cc mapping.
 struct Fun007682c0DerivedProjectionState {
     float field_x = 0.0f;
     float field_z = 0.0f;
 };
 
 inline Fun007682c0MachineInput compose_fun_007682c0_machine_input(
-    const Fun007682c0ExternalMachineInput& external,
     const Fun007560c0MotionReadGateSetup& setup_gate,
     float steering,
     const Fun00765c40LoadTerms& load_terms,
@@ -52,7 +41,7 @@ inline Fun007682c0MachineInput compose_fun_007682c0_machine_input(
     input.projection_field_x = projection.field_x;
     input.projection_field_z = projection.field_z;
     input.response_field_4054 = selected_bmw_m3_e36_response_field_4054();
-    input.angle_mode = external.angle_mode;
+    input.angle_mode = selected_bmw_native_session_player_difficulty();
     return input;
 }
 
