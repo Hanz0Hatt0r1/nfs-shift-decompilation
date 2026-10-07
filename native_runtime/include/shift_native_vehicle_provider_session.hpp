@@ -53,8 +53,10 @@ struct NativeVehicleExternalProviderBundle {
     // HDVehicle+0x38dc ownership into NativeVehicleProviderSession: the provider
     // receives the prior cache handle before executing and must return the next
     // handle written by FUN_00765c40. For the selected BMW domain the request
-    // also carries the Phase739 native world position before collision lookup.
-    // +0x38e8 fallback, collision-provider behavior, load terms and residual
+    // also carries the Phase739 native world position. Phase741 binds the exact
+    // selected BMW +0x38e8 setup fallback from FRONTWING.FWMaxHeight through
+    // that same pre-call request. Generic historical fixtures retain explicit
+    // compatibility values. Collision-provider behavior, load terms and residual
     // side effects remain external.
     NativeVehicleFun00765c40Provider fun_00765c40{};
     NativeVehiclePassCallback wheel_update{};

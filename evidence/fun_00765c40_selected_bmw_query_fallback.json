@@ -1,0 +1,99 @@
+{
+  "format": "SHIFT.Fun00765c40SelectedBMWQueryFallback/1",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "setup_function": "FUN_00756bb0",
+    "setup_source_line": 751499,
+    "parser_function": "FUN_007c0a20",
+    "parser_source_line": 821939,
+    "evaluator_function": "FUN_007a6be0",
+    "evaluator_source_line": 803876,
+    "setup_machine_span": {
+      "start": "0x00756c40",
+      "end_exclusive": "0x00756c7c",
+      "raw_byte_sha256": "b144e5ff3a8eb7d73f627fbbebc20b362cf1155398d6a48cac3c74eb65da9960"
+    },
+    "cache_and_fallback_machine_span": {
+      "start": "0x00756c52",
+      "end_exclusive": "0x00756c7c",
+      "raw_byte_sha256": "0488c8ed9fa6e59fef727dff85d3164321db82fac2e776b4929e14d6757c5901"
+    }
+  },
+  "retail_setup": {
+    "cache_seed": "HDVehicle+0x38dc = 0",
+    "front_wing_record": "setup param_2+0x6a0",
+    "fw_max_height_base": "setup param_2+0x6a4",
+    "fw_max_height_evaluated_f32": "setup param_2+0x6a8",
+    "caller_fallback_f64": "HDVehicle+0x38e8",
+    "operation_order": [
+      "FUN_007a6be0(param_2+0x6a4)",
+      "explicit f32 spill",
+      "store f32 to param_2+0x6a8",
+      "widen same f32 to f64",
+      "store f64 to HDVehicle+0x38e8"
+    ]
+  },
+  "resource": {
+    "selected_vehicle": "BMW M3 E36",
+    "cdf": "vehicles\\physics\\chassis\\bmw_m3_e36.cdf",
+    "cdf_sha256": "bbee83f0d2fdcbfc2bbd62ddb2a10bf6fed71bb1b4fa78f303a4730d038b970d",
+    "section": "FRONTWING",
+    "field": "FWMaxHeight",
+    "text_value": "0.10",
+    "ordinary_text_parser": "FUN_007a75a0 sscanf %f path writes the scalar base",
+    "f32_bits": "0x3dcccccd",
+    "f32_value": 0.10000000149011612,
+    "widened_f64_bits": "0x3fb99999a0000000"
+  },
+  "evaluator": {
+    "constructor_initial_modifier_pointer": "null",
+    "normal_selected_cdf_scalar_modifier_chain_present": false,
+    "formula": "base * multiplier + additive",
+    "no_modifier_multiplier": 1.0,
+    "no_modifier_additive": 0.0,
+    "selected_result": "exact parsed FWMaxHeight f32"
+  },
+  "runtime_join": {
+    "external_input_format": "SHIFT.Fun00765c40ExternalPassInput/2",
+    "external_result_format": "SHIFT.Fun00765c40ExternalPassResult/3",
+    "selected_bmw_identity_tag": "native pre-call world_position is present only on the Phase739 selected BMW path",
+    "selected_bmw_fallback_available_before_provider": true,
+    "provider_query_witness_must_match_native_fallback": true,
+    "generic_historical_fixture_compatibility_preserved": true
+  },
+  "shared_state": {
+    "FUN_00765c40_miss_fallback_read": true,
+    "FUN_00766510_upper_clamp_bound_read": true,
+    "same_HDVehicle_offset": "0x38e8",
+    "contact_response_provider_internalized_by_this_phase": false
+  },
+  "xbox_crosscheck": {
+    "role": "independent corroboration only; not PC authority",
+    "recomp_partition": "nfs_shift_recomp.118.cpp",
+    "setup_sequence": [
+      "stw 0 -> HDVehicle+14556 / 0x38dc",
+      "evaluator called with setup+1700 / 0x6a4",
+      "stfs result -> setup+1704 / 0x6a8",
+      "stfd result -> HDVehicle+14568 / 0x38e8"
+    ],
+    "pc_precision_not_inferred_from_xbox": true
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "boundary_narrowed": true,
+    "selected_bmw_miss_fallback_provider_authority_removed": true,
+    "collision_provider_internalized": false,
+    "load_terms_external": true,
+    "generic_vehicle_value_generalized": false,
+    "physical_semantics_invented": false
+  },
+  "next_blocker": {
+    "target": "residual FUN_00765c40 collision-provider behavior and remaining side effects/load-term production",
+    "note": "+0x38e8 remains shared setup state for FUN_00766510; this phase only closes its selected-BMW query-input ownership"
+  }
+}

@@ -21,11 +21,14 @@ int main() {
         Fun00765c40ExternalPassInput input{};
         input.world_position = CollisionQueryVector3d{10.0, 20.0, 30.0};
         input.cached_handle = 1234u;
+        const auto selected_fallback = input.selected_bmw_miss_fallback();
+        require(selected_fallback.has_value(),
+                "selected BMW request did not expose native +0x38e8 fallback");
 
         Fun00765c40QueryInputBoundary query_input{};
         query_input.world_position = *input.world_position;
         query_input.cached_handle = input.cached_handle;
-        query_input.miss_fallback = 7.0;
+        query_input.miss_fallback = *selected_fallback;
 
         const Fun00765c40ExternalPassResult valid{
             Fun00765c40LoadTerms{10.0, 20.0, 30.0, 40.0},
@@ -65,6 +68,17 @@ int main() {
         require(world_position_mismatch_rejected,
                 "FUN_00765c40 residual provider accepted wrong selected world position");
 
+        bool fallback_mismatch_rejected = false;
+        try {
+            Fun00765c40ExternalPassResult invalid = valid;
+            invalid.query_input.miss_fallback = 7.0;
+            validate_fun_00765c40_external_pass_result(input, invalid);
+        } catch (const std::invalid_argument&) {
+            fallback_mismatch_rejected = true;
+        }
+        require(fallback_mismatch_rejected,
+                "FUN_00765c40 residual provider accepted wrong selected +0x38e8 fallback");
+
         bool nonfinite_load_rejected = false;
         try {
             Fun00765c40ExternalPassResult invalid = valid;
@@ -101,6 +115,7 @@ int main() {
             << "\"query_input_boundary_typed\":true,"
             << "\"native_cache_input_required\":true,"
             << "\"selected_world_position_pre_call_required\":true,"
+            << "\"selected_bmw_fallback_pre_call_required\":true,"
             << "\"returned_cache_handle_typed\":true,"
             << "\"complete_fun_00765c40_internalized\":false,"
             << "\"collision_provider_internalized\":false}\n";
