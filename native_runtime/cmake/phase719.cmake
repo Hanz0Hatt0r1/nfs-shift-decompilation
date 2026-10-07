@@ -20,3 +20,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_007682c0_projection_state
     COMMAND shift_runtime_fun_007682c0_projection_state_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase720.cmake)
