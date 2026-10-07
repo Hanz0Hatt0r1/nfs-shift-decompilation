@@ -50,7 +50,7 @@ def test_bootstrap_subprocess_enables_resource_progress_site(monkeypatch, tmp_pa
     assert env["PYTHONPATH"].split(cli.os.pathsep)[0] == str(cli.PROGRESS_SITE_DIR)
 
 
-def test_native_runtime_does_not_install_resource_progress_site(monkeypatch, tmp_path):
+def test_native_runtime_strips_inherited_resource_progress_site(monkeypatch, tmp_path):
     cli = _load_cli()
     captured = {}
 
@@ -65,7 +65,16 @@ def test_native_runtime_does_not_install_resource_progress_site(monkeypatch, tmp
         return FakeProcess()
 
     monkeypatch.setattr(cli.subprocess, "Popen", fake_popen)
-    monkeypatch.delenv("SHIFT_RESOURCE_PROGRESS", raising=False)
+    monkeypatch.setenv("SHIFT_RESOURCE_PROGRESS", "1")
+    monkeypatch.setenv(
+        "PYTHONPATH",
+        cli.os.pathsep.join([
+            "before",
+            "",
+            str(cli.PROGRESS_SITE_DIR),
+            "after",
+        ]),
+    )
 
     rc = cli._run(
         [
@@ -76,4 +85,7 @@ def test_native_runtime_does_not_install_resource_progress_site(monkeypatch, tmp
     )
 
     assert rc == 0
-    assert "SHIFT_RESOURCE_PROGRESS" not in captured["env"]
+    env = captured["env"]
+    assert env["PYTHONUNBUFFERED"] == "1"
+    assert "SHIFT_RESOURCE_PROGRESS" not in env
+    assert env["PYTHONPATH"].split(cli.os.pathsep) == ["before", "", "after"]
