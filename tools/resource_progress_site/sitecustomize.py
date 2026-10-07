@@ -39,24 +39,38 @@ def _install_repo_paths() -> None:
 
 
 def _count_bff_inputs(inputs: Sequence[str | Path]) -> int:
-    """Count archives exactly as the current input materializer discovers them."""
+    """Count archive identities the progress tracker can observe."""
     total = 0
+    seen_paths: set[Path] = set()
+
+    def count_path(path: Path) -> None:
+        nonlocal total
+        resolved = path.resolve()
+        if resolved in seen_paths:
+            return
+        seen_paths.add(resolved)
+        total += 1
+
     for raw in inputs:
         source = Path(raw)
         if source.is_dir():
-            total += sum(1 for path in source.rglob("*.bff") if path.is_file())
+            for path in source.rglob("*.bff"):
+                if path.is_file():
+                    count_path(path)
             continue
         if source.suffix.lower() == ".bff":
             if source.is_file():
-                total += 1
+                count_path(source)
             continue
         if source.suffix.lower() == ".zip" and source.is_file():
             with zipfile.ZipFile(source) as archive:
-                total += sum(
-                    1
+                # One materialization of a ZIP writes repeated member names to
+                # the same temporary path, which the tracker observes once.
+                total += len({
+                    name
                     for name in archive.namelist()
                     if name.lower().endswith(".bff") and not name.endswith("/")
-                )
+                })
     return total
 
 
