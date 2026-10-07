@@ -1,0 +1,101 @@
+name: native-physics-phase744
+
+on:
+  push:
+    paths:
+      - 'native_runtime/include/shift_fun_00765c40_external_pass_result.hpp'
+      - 'native_runtime/include/shift_fun_00766510_query_scalar_handoff.hpp'
+      - 'native_runtime/tests/fun_00765c40_collision_output_handoff_check.cpp'
+      - 'native_runtime/tests/fun_00765c40_external_pass_result_check.cpp'
+      - 'native_runtime/tests/fun_00765c40_selected_bmw_query_fallback_check.cpp'
+      - 'native_runtime/cmake/phase743.cmake'
+      - 'native_runtime/cmake/phase744.cmake'
+      - 'tests/test_s6_fun_00765c40_collision_output_handoff.py'
+      - 'tests/test_s6_fun_00765c40_external_pass_result.py'
+      - 'tests/test_s6_fun_00765c40_query_input_boundary.py'
+      - 'tests/test_s6_fun_00765c40_query_cache_lifetime.py'
+      - 'evidence/fun_00765c40_collision_output_handoff.json'
+      - 'evidence/phase744_next_blocker.md'
+      - 'docs/PHASE744_FUN_00765C40_COLLISION_OUTPUT_HANDOFF.md'
+      - 'docs/PHASE744_SCOPE.md'
+      - '.github/workflows/native-physics-phase744.yml'
+  pull_request:
+    paths:
+      - 'native_runtime/include/shift_fun_00765c40_external_pass_result.hpp'
+      - 'native_runtime/include/shift_fun_00766510_query_scalar_handoff.hpp'
+      - 'native_runtime/tests/fun_00765c40_collision_output_handoff_check.cpp'
+      - 'native_runtime/tests/fun_00765c40_external_pass_result_check.cpp'
+      - 'native_runtime/tests/fun_00765c40_selected_bmw_query_fallback_check.cpp'
+      - 'native_runtime/cmake/phase743.cmake'
+      - 'native_runtime/cmake/phase744.cmake'
+      - 'tests/test_s6_fun_00765c40_collision_output_handoff.py'
+      - 'tests/test_s6_fun_00765c40_external_pass_result.py'
+      - 'tests/test_s6_fun_00765c40_query_input_boundary.py'
+      - 'tests/test_s6_fun_00765c40_query_cache_lifetime.py'
+      - 'evidence/fun_00765c40_collision_output_handoff.json'
+      - 'evidence/phase744_next_blocker.md'
+      - 'docs/PHASE744_FUN_00765C40_COLLISION_OUTPUT_HANDOFF.md'
+      - 'docs/PHASE744_SCOPE.md'
+      - '.github/workflows/native-physics-phase744.yml'
+
+jobs:
+  collision-output-handoff:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+      - name: Run focused Phase 744 regressions
+        run: >-
+          python3 -m pytest -q
+          tests/test_s6_fun_00765c40_collision_output_handoff.py
+          tests/test_s6_fun_00765c40_external_pass_result.py
+          tests/test_s6_fun_00765c40_query_input_boundary.py
+          tests/test_s6_fun_00765c40_query_cache_lifetime.py
+      - name: Validate Phase 744 evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          e = json.loads(Path('evidence/fun_00765c40_collision_output_handoff.json').read_text())
+          assert e['format'] == 'SHIFT.Fun00765c40CollisionOutputHandoff/1'
+          assert e['ready'] is True
+          assert e['contracts']['external_result'] == 'SHIFT.Fun00765c40ExternalPassResult/4'
+          assert e['selected_bmw_result_rule']['collision_output_required'] is True
+          assert e['native_scalar_handoff']['implemented'] is True
+          assert e['native_scalar_handoff']['session_wired'] is False
+          assert e['dependencies']['phase742_primary_response_application_internalized'] is True
+          assert e['dependencies']['phase743_application_point_source_owner_closed'] is True
+          assert e['next_blocker']['phase'] == 745
+          assert e['scope']['external_provider_count_after'] == 7
+          PY
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+      - name: Build Phase 742-744 contact checks
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_fun_00766510_primary_response_application_check
+          shift_runtime_fun_00766510_selected_bmw_application_point_check
+          shift_runtime_fun_00765c40_collision_output_handoff_check
+          shift_runtime_fun_00765c40_external_pass_result_check
+          shift_runtime_fun_00765c40_selected_bmw_query_fallback_check
+          shift_runtime_fun_00765c40_query_cache_lifetime_check
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_fun_00766510_primary_response_application|shift_runtime_fun_00766510_selected_bmw_application_point|shift_runtime_fun_00765c40_collision_output_handoff|shift_runtime_fun_00765c40_external_pass_result|shift_runtime_fun_00765c40_selected_bmw_query_fallback|shift_runtime_fun_00765c40_query_cache_lifetime)$'
+      - name: Verify Phase 744 native report
+        run: |
+          mkdir -p out/native-physics-phase744
+          native_runtime/build/shift_runtime_fun_00765c40_collision_output_handoff_check \
+            > out/native-physics-phase744/fun_00765c40_collision_output_handoff.json
+          grep -q '"format":"SHIFT.Fun00765c40CollisionOutputHandoff/1"' \
+            out/native-physics-phase744/fun_00765c40_collision_output_handoff.json
+          grep -q '"external_result_format":"SHIFT.Fun00765c40ExternalPassResult/4"' \
+            out/native-physics-phase744/fun_00765c40_collision_output_handoff.json
+          grep -q '"selected_collision_output_required":true' \
+            out/native-physics-phase744/fun_00765c40_collision_output_handoff.json
+          grep -q '"upper_lower_clamp_native":true' \
+            out/native-physics-phase744/fun_00765c40_collision_output_handoff.json
