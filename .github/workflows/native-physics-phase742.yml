@@ -1,0 +1,82 @@
+name: native-physics-phase742
+
+on:
+  push:
+    paths:
+      - 'native_runtime/include/shift_fun_00766510_primary_response_application.hpp'
+      - 'native_runtime/tests/fun_00766510_primary_response_application_check.cpp'
+      - 'native_runtime/cmake/phase741.cmake'
+      - 'native_runtime/cmake/phase742.cmake'
+      - 'tests/test_s6_fun_00766510_primary_response_application.py'
+      - 'evidence/fun_00766510_primary_response_application.json'
+      - 'evidence/phase742_next_blocker.md'
+      - 'docs/PHASE742_FUN_00766510_PRIMARY_RESPONSE_APPLICATION.md'
+      - 'docs/PHASE742_SCOPE.md'
+      - '.github/workflows/native-physics-phase742.yml'
+  pull_request:
+    paths:
+      - 'native_runtime/include/shift_fun_00766510_primary_response_application.hpp'
+      - 'native_runtime/tests/fun_00766510_primary_response_application_check.cpp'
+      - 'native_runtime/cmake/phase741.cmake'
+      - 'native_runtime/cmake/phase742.cmake'
+      - 'tests/test_s6_fun_00766510_primary_response_application.py'
+      - 'evidence/fun_00766510_primary_response_application.json'
+      - 'evidence/phase742_next_blocker.md'
+      - 'docs/PHASE742_FUN_00766510_PRIMARY_RESPONSE_APPLICATION.md'
+      - 'docs/PHASE742_SCOPE.md'
+      - '.github/workflows/native-physics-phase742.yml'
+
+jobs:
+  primary-response-application:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run focused Phase 742 proof regression
+        run: python3 -m pytest -q tests/test_s6_fun_00766510_primary_response_application.py
+
+      - name: Validate Phase 742 evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          e = json.loads(Path('evidence/fun_00766510_primary_response_application.json').read_text())
+          assert e['format'] == 'SHIFT.Fun00766510PrimaryResponseApplication/1'
+          assert e['ready'] is True
+          assert e['source']['machine_span']['raw_byte_sha256'] == 'ea0d7c2fb2f33101808f9ad997867c724476fea62bc0ed60f6af0023471f1546'
+          assert e['scope']['external_provider_count_after'] == 7
+          assert e['scope']['primary_response_vector_application_frozen'] is True
+          assert e['scope']['contact_response_provider_removed'] is False
+          PY
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 742 regression
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_fun_00766510_primary_response_application_check
+
+      - name: Run focused CTest regression
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^shift_runtime_fun_00766510_primary_response_application$'
+
+      - name: Verify Phase 742 native report
+        run: |
+          mkdir -p out/native-physics-phase742
+          native_runtime/build/shift_runtime_fun_00766510_primary_response_application_check \
+            > out/native-physics-phase742/fun_00766510_primary_response_application.json
+          grep -q '"format":"SHIFT.Fun00766510PrimaryResponseApplication/1"' \
+            out/native-physics-phase742/fun_00766510_primary_response_application.json
+          grep -q '"fun_007aefb0_transform":true' \
+            out/native-physics-phase742/fun_00766510_primary_response_application.json
+          grep -q '"fun_007baa70_application":true' \
+            out/native-physics-phase742/fun_00766510_primary_response_application.json
+          grep -q '"contact_response_provider_removed":false' \
+            out/native-physics-phase742/fun_00766510_primary_response_application.json
