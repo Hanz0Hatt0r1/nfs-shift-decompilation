@@ -1,0 +1,134 @@
+{
+  "format": "SHIFT.Process1Controller1ApcFileIoSurface/1",
+  "ready": true,
+  "source": {
+    "authority": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "xbox_recomp_required": false
+  },
+  "controller1": {
+    "constructor": "FUN_006624a0",
+    "base_constructor": "FUN_006551b0",
+    "vtable": "0x00af0568",
+    "worker": "FUN_00662880",
+    "worker_direct_async_file_tokens_present": false,
+    "source_lines": {
+      "constructor": 552568,
+      "worker": 552813,
+      "enqueue_wrapper": 553255
+    },
+    "vtable_prefix": [
+      "0x00662580",
+      "0x00662880",
+      "0x006625b0",
+      "0x00654ff0",
+      "0x00655040",
+      "0x00655080",
+      "0x006623f0",
+      "0x008f3df0",
+      "0x00655050",
+      "0x00655060",
+      "0x00655070"
+    ]
+  },
+  "async_file_apc": {
+    "base_constructor": "FUN_00652260",
+    "base_vtable": "0x00aef430",
+    "read_completion": "lpCompletionRoutine_006553e0",
+    "write_completion": "lpCompletionRoutine_00655410",
+    "read_continuation": "FUN_00652710",
+    "write_continuation": "FUN_006529f0",
+    "completion_owner_expression": "*(void **)(OVERLAPPED + 0x10)",
+    "readfileex_call_count": 2,
+    "writefileex_call_count": 2,
+    "source_lines": {
+      "base_constructor": 537720,
+      "read_completion": 540474,
+      "write_completion": 540491
+    },
+    "vtable_prefix": [
+      "0x006536d0",
+      "0x005aa830",
+      "0x005aa830",
+      "0x005aa830",
+      "0x005aa830",
+      "0x005aa830",
+      "0x005aa830",
+      "0x005aa830",
+      "0x008542a0",
+      "0x00457cc0",
+      "0x005aa830",
+      "0x005aa830",
+      "0x005aa830",
+      "0x005aa830",
+      "0x005aa830",
+      "0x005aa830"
+    ]
+  },
+  "queue_surface": {
+    "controller_enqueue": "FUN_00662ee0",
+    "queue_enqueue": "FUN_00650350",
+    "direct_controller_enqueue_callsite_count": 1,
+    "only_direct_controller_enqueue_caller": "FUN_006499e8",
+    "only_direct_call_context": "thread shutdown/teardown enumeration, followed by 100 ms wait",
+    "render_or_present_direct_controller_enqueue_caller_proven": false
+  },
+  "adjudication": {
+    "controller1_and_async_file_object_families_distinct": true,
+    "controller1_worker_directly_initiates_readfileex_proven": false,
+    "controller1_worker_directly_initiates_writefileex_proven": false,
+    "file_completion_directly_targets_controller1_proven": false,
+    "file_completion_returns_to_overlapped_owner_object_proven": true,
+    "direct_render_or_present_to_controller_enqueue_proven": false,
+    "indirect_controller1_apc_initiator_alias_ruled_out": false,
+    "generic_queue_alias_from_render_ruled_out": false
+  },
+  "machine_spans": {
+    "async_file_base_vtable_store": {
+      "start": "0x0065226f",
+      "end_exclusive": "0x00652275",
+      "sha256": "1ee392d6a29f08faaf9326c24d1f188cee4cc4df14c18b5fb6abb3ed451c4861"
+    },
+    "controller_ctor_base_and_vtable_store": {
+      "start": "0x006624a5",
+      "end_exclusive": "0x006624b5",
+      "sha256": "0f974fb7c7156e0966bf947d9d76f49b0814cc23c29344c42bac1c2e36a9ebda"
+    },
+    "read_completion_routine": {
+      "start": "0x006553e0",
+      "end_exclusive": "0x00655403",
+      "sha256": "1c45703b9acea9563b4ac7515762b01ed1778bffec545607cf5577ecf891d97b"
+    },
+    "write_completion_routine": {
+      "start": "0x00655410",
+      "end_exclusive": "0x00655433",
+      "sha256": "55a55c175c1191be6ba25f8b71a855220ebcb4f4c59726e77d4de305a75dc272"
+    },
+    "shutdown_direct_controller_enqueue_call": {
+      "start": "0x00649a20",
+      "end_exclusive": "0x00649a3e",
+      "sha256": "91a70e233ed4ed1b6b4ba732a8d10b9548103273999738b9d32a52506ac29934"
+    },
+    "controller_enqueue_wrapper": {
+      "start": "0x00662ee0",
+      "end_exclusive": "0x00662f16",
+      "sha256": "834a112d58d05fe2735c9e81203f83631c8909dcebac7330ba878363b279ebc9"
+    },
+    "controller_vtable_prefix": {
+      "start": "0x00af0568",
+      "end_exclusive": "0x00af0594",
+      "sha256": "ac88f516ec848fafc7040188e41583344cae6656e3276c3e302a5613d00e9040"
+    },
+    "async_file_vtable_prefix": {
+      "start": "0x00aef430",
+      "end_exclusive": "0x00aef470",
+      "sha256": "0a7f5438c4b486e9e2d9566788a515e03b67f81c8f017005cc4a297b4fa94c44"
+    }
+  },
+  "next_blocker": {
+    "process": 1,
+    "description": "trace indirect call/alias ownership from Controller #1 manager updates into the generic async-file initiators and search render/presentation producers for aliases of Controller #1 queue+0x5c; direct file-APC and direct enqueue paths are now negative"
+  }
+}
