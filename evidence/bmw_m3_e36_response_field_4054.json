@@ -1,0 +1,103 @@
+{
+  "format": "SHIFT.BMWM3E36ResponseField4054/1",
+  "version": 1,
+  "status": "retail-pc-setup-response-proven-and-native-consumed",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "retail": {
+    "program_name": "SHIFT.exe",
+    "executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "machine_spans": [
+    {
+      "function": "FUN_00703f10 Wheel FL Offset reflection registration",
+      "start": "0x0070417c",
+      "end": "0x007041bb",
+      "raw_byte_sha256": "8989952a105bf348dcab1289fa3c5c375e98378d96d796f1a2da002b0ee20aa9",
+      "role": "register VDF Wheel FL Offset at CarPhysicsDetails record+0x34"
+    },
+    {
+      "function": "FUN_00703f10 Wheel RL Offset reflection registration",
+      "start": "0x007042d9",
+      "end": "0x0070430a",
+      "raw_byte_sha256": "06f97c52059f60c7f7d745397ee64aba2b5546eab06c515ff715c92b7098d802",
+      "role": "register VDF Wheel RL Offset at CarPhysicsDetails record+0x4c"
+    },
+    {
+      "function": "FUN_007047f0 selected CarPhysicsDetails copy",
+      "start": "0x007047f0",
+      "end": "0x007049d0",
+      "raw_byte_sha256": "901d47e93a92ab8910ab9717dcc66321c04df9e6428851b0613b0b68c3d2a92c",
+      "role": "copy selected record including +0x34..+0x80 into participant setup state"
+    },
+    {
+      "function": "FUN_0076b280 wheel-offset load and setup writer path",
+      "start": "0x0076b2f1",
+      "end": "0x0076b3cb",
+      "raw_byte_sha256": "68c1c35f20dd8d3621732c46455634f0520f5a14ffdffc8f5cc33f55ef969860",
+      "role": "load four VDF wheel offsets through DAT_00c133b4 and derive HDVehicle setup geometry"
+    },
+    {
+      "function": "FUN_0076b280 HDVehicle+0x4054 writer",
+      "start": "0x0076b3bf",
+      "end": "0x0076b3cb",
+      "raw_byte_sha256": "074120516d59c1d7cb786d4bc830a4e7b0ea9d7c13930595ed02e5747e4a2e36",
+      "role": "x87 subtract, FABS, f32 store to HDVehicle+0x4054"
+    }
+  ],
+  "selected_bmw_resource": {
+    "archive": "PHYSICSPERSISTENT.bff",
+    "archive_sha256": "18b62954c54e1b7e791c8a0e808480b4ddc41ffbbb08f1babb5bd52f2587761f",
+    "entry_index": 40,
+    "path": "vehicles/physics/vehicles/bmw_m3_e36.vdf",
+    "decoded_sha256": "f4c925bc6799439a12906d0aed9b73e22052cb46f7fbd4ea6f48409b9776a082",
+    "upstream_geometry_contract": "SHIFT.BMWOffset33bSelectorGeometryInputs/1",
+    "wheel_fl_offset": [0.711, 0.31, -1.35],
+    "wheel_rl_offset": [0.7225, 0.31, 1.35]
+  },
+  "retail_layout": {
+    "Wheel_FL_Offset": "CarPhysicsDetails+0x34 Vec3f",
+    "Wheel_FL_Offset_Z": "CarPhysicsDetails+0x3c f32",
+    "Wheel_RL_Offset": "CarPhysicsDetails+0x4c Vec3f",
+    "Wheel_RL_Offset_Z": "CarPhysicsDetails+0x54 f32",
+    "selected_record_owner": "DAT_00c133b4",
+    "destination": "HDVehicle+0x4054 f32"
+  },
+  "formula": {
+    "expression": "f32(abs(f64(FL.z) - f64(RL.z))) via retail x87",
+    "wheel_fl_z_f32_bits": "0xbfaccccd",
+    "wheel_rl_z_f32_bits": "0x3faccccd",
+    "response_field_4054_f32_bits": "0x402ccccd",
+    "response_field_4054_value": 2.700000047683716,
+    "x87_control_word": "0x027f"
+  },
+  "ownership": {
+    "producer": "FUN_0076b280",
+    "setup_caller": "FUN_0076df50",
+    "setup_fixed": true,
+    "per_pass_refresh": false,
+    "per_outer_refresh": false,
+    "external_motion_read_provider_required": false
+  },
+  "native_consumption": {
+    "producer": "derive_bmw_m3_e36_response_field_4054",
+    "owner": "NativeVehicleProviderSession",
+    "computed_once_at_session_construction": true,
+    "same_value_composed_into_both_passes": true,
+    "Fun007682c0ExternalMachineInput_field_required": false
+  },
+  "remaining_raw_input_blockers": [
+    "HDVehicle+0xe0 caller gate producer/refresh",
+    "HDVehicle+0xb38/+0x15b8/+0x2038/+0x2ab8 load-term producers/refresh",
+    "DAT_00c128cc angle-mode producer/ownership"
+  ],
+  "scope": {
+    "selected_vehicle": "BMW M3 E36",
+    "generic_all_vehicle_setup_claimed": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false,
+    "complete_FUN_0076df50_semantics_claimed": false,
+    "complete_FUN_0076b280_semantics_claimed": false
+  }
+}
