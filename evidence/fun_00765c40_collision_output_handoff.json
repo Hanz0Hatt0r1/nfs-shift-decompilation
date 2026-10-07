@@ -1,0 +1,80 @@
+{
+  "format": "SHIFT.Fun00765c40CollisionOutputHandoff/1",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "caller_function": "FUN_00765c40",
+    "collision_query_function": "FUN_007b0710",
+    "caller_query_source_line": 759173,
+    "consumer_function": "FUN_00766510"
+  },
+  "retail_order": [
+    "FUN_00765c40 builds the seven-double FUN_007b0710 query record from the caller world position and +0x38dc cache state",
+    "FUN_007b0710 returns hit/miss state, contact height when present, normal and returned cache handle",
+    "FUN_00765c40 writes the returned handle to HDVehicle+0x38dc",
+    "hit: HDVehicle+0x38e0 = original_world_y - returned_contact_height",
+    "miss: HDVehicle+0x38e0 = HDVehicle+0x38e8",
+    "FUN_00766510 clamps HDVehicle+0x38e0 to [0, HDVehicle+0x38e8] before later response arithmetic"
+  ],
+  "contracts": {
+    "collision_query": "SHIFT.NativeCollisionQueryContract/1",
+    "query_input": "SHIFT.Fun00765c40QueryInputBoundary/1",
+    "external_input": "SHIFT.Fun00765c40ExternalPassInput/2",
+    "external_result": "SHIFT.Fun00765c40ExternalPassResult/4",
+    "query_scalar_handoff": "SHIFT.Fun00766510QueryScalarHandoff/1",
+    "primary_response_application": "SHIFT.Fun00766510PrimaryResponseApplication/1"
+  },
+  "selected_bmw_result_rule": {
+    "identity": "Fun00765c40ExternalPassInput.world_position is present on the Phase739 selected BMW BODY domain",
+    "collision_output_required": true,
+    "collision_output_fields": [
+      "hit",
+      "normal",
+      "contact_height",
+      "returned_handle",
+      "reused_cache",
+      "query_record"
+    ],
+    "query_record_must_match_input": true,
+    "returned_cache_handle_must_equal_query_output_returned_handle": true,
+    "generic_historical_fixture_output_optional": true
+  },
+  "native_scalar_handoff": {
+    "implemented": true,
+    "session_wired": false,
+    "query_scalar_offset": "HDVehicle+0x38e0",
+    "query_limit_offset": "HDVehicle+0x38e8",
+    "hit_formula": "world_position[1] - query_output.contact_height",
+    "miss_formula": "query_input.miss_fallback",
+    "clamp": "inclusive [0, query_input.miss_fallback]",
+    "reuses_existing_native_helpers": [
+      "project_fun_00765c40_query_input_scalar",
+      "clamp_fun_00766510_query_scalar"
+    ]
+  },
+  "phase742_dependency": {
+    "primary_response_application_internalized": true,
+    "complete_FUN_00766510_internalized": false,
+    "contact_response_provider_removed": false
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "boundary_narrowed": true,
+    "selected_collision_output_hidden_inside_provider": false,
+    "collision_provider_internalized": false,
+    "complete_FUN_00765c40_internalized": false,
+    "FUN_00766510_contact_response_internalized": false,
+    "session_query_scalar_handoff_wired": false,
+    "generic_fixture_compatibility_preserved": true,
+    "physical_semantics_invented": false
+  },
+  "next_blocker": {
+    "phase": 744,
+    "target": "thread the selected per-pass CollisionQueryOutput through NativeVehicleProviderSession and pass the native +0x38e0/+0x38e8 clamp handoff into the still-external FUN_00766510 contact-response boundary",
+    "do_not_claim": "full FUN_00766510 internalization; Phase742 closes the primary BODY application only, while caller configuration, diagnostics, auxiliary scheduling and additional conditional branches remain separate evidence targets"
+  }
+}
