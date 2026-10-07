@@ -120,6 +120,7 @@ NativeVehicleProviderSession::execute_explicit_step(
         [this,
          &telemetry,
          steering,
+         outer_timestep,
          &query_inputs,
          &query_input_present](std::size_t pass_index) {
             if (pass_index >= kNativeVehiclePhysicsPassCount) {
@@ -155,7 +156,7 @@ NativeVehicleProviderSession::execute_explicit_step(
                 providers_.contact_response(pass_index);
             };
             callbacks.contact_outer_input_provider =
-                [this, &telemetry, pass_index] {
+                [this, &telemetry, pass_index, outer_timestep] {
                     ++telemetry.contact_outer_input_call_count;
                     const auto session_input = providers_.contact_outer_input(pass_index);
 
@@ -177,9 +178,15 @@ NativeVehicleProviderSession::execute_explicit_step(
                             providers_.contact_outer_distance_setup.previous_distance_state;
                     }
 
+                    // PC FUN_00770e80 stores param_2 at HDVehicle+0xa0 before
+                    // both passes and uses that same f64 value for each 0.5x
+                    // half-step. The native outer_timestep is the existing
+                    // representation of that channel, so no per-pass provider
+                    // field is permitted here.
                     return physics::compose_fun_007675f0_external_input(
                         session_input,
-                        contact_outer_distance_state_);
+                        contact_outer_distance_state_,
+                        outer_timestep);
                 };
             callbacks.contact_outer_distance_state_commit =
                 [this, &telemetry](double next_state) {
