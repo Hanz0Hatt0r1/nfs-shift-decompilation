@@ -29,13 +29,13 @@ void require_complete_bundle(
         !providers.wheel_update ||
         !providers.contact_response ||
         !providers.contact_outer_input ||
-        !providers.motion_read_input ||
         !providers.scalar_provider_factory ||
         !providers.half_step_refresh ||
         !providers.post_half_step) {
         throw std::invalid_argument(
-            "native vehicle provider session requires all eight active external provider boundaries");
+            "native vehicle provider session requires all seven active external provider boundaries");
     }
+    physics::validate_race_mode_player_difficulty(providers.race_mode);
 }
 
 std::uint64_t read_u64_le(
@@ -137,16 +137,17 @@ NativeVehicleProviderSession::execute_explicit_step(
                     return providers_.contact_outer_input(pass_index);
                 };
             callbacks.motion_read_input_provider =
-                [this, &telemetry, pass_index, steering, load_state] {
+                [this, steering, load_state] {
                     if (!load_state->ready) {
                         throw std::logic_error(
                             "FUN_007682c0 machine input consumed before FUN_00765c40 load terms");
                     }
-                    ++telemetry.motion_read_input_call_count;
-                    const auto external = providers_.motion_read_input(pass_index);
+                    // This callback is now internal composition only. All
+                    // FUN_007682c0 fields come from proven setup/session/native
+                    // owners; no external late raw-input provider is invoked.
                     return physics::compose_fun_007682c0_machine_input(
-                        external,
                         providers_.motion_read_setup,
+                        providers_.race_mode,
                         steering,
                         load_state->terms,
                         motion_read_projection_state_);
