@@ -2,6 +2,7 @@
 
 #include "shift_fun_007560c0_motion_read_gate_setup.hpp"
 #include "shift_fun_00765c40_external_pass_result.hpp"
+#include "shift_fun_00766510_external_pass_input.hpp"
 #include "shift_fun_007675f0_distance_filter_cap_setup.hpp"
 #include "shift_fun_007675f0_distance_state_setup.hpp"
 #include "shift_fun_007682c0_projection_state.hpp"
@@ -38,6 +39,10 @@ using NativeVehicleFun00765c40Provider =
     std::function<physics::Fun00765c40ExternalPassResult(
         std::size_t pass_index,
         const physics::Fun00765c40ExternalPassInput& input)>;
+using NativeVehicleContactResponseProvider =
+    std::function<void(
+        std::size_t pass_index,
+        const physics::Fun00766510ExternalPassInput& input)>;
 using NativeVehicleContactOuterInputProvider =
     std::function<physics::ContactOuterSessionInput(std::size_t pass_index)>;
 using NativeVehicleScalarProviderFactory =
@@ -55,12 +60,19 @@ struct NativeVehicleExternalProviderBundle {
     // handle written by FUN_00765c40. For the selected BMW domain the request
     // also carries the Phase739 native world position. Phase741 binds the exact
     // selected BMW +0x38e8 setup fallback from FRONTWING.FWMaxHeight through
-    // that same pre-call request. Generic historical fixtures retain explicit
-    // compatibility values. Collision-provider behavior, load terms and residual
-    // side effects remain external.
+    // that same pre-call request. Phase744 additionally exposes the selected
+    // FUN_007b0710 CollisionQueryOutput. Collision-provider behavior, load terms
+    // and residual side effects remain external.
     NativeVehicleFun00765c40Provider fun_00765c40{};
     NativeVehiclePassCallback wheel_update{};
-    NativeVehiclePassCallback contact_response{};
+
+    // FUN_00766510 remains one residual external pass boundary. Phase745 changes
+    // only its pre-call ownership: selected BMW execution receives the exact
+    // same-pass Phase744 query-scalar handoff plus the Phase743 +0x38f0 primary
+    // application point. Generic historical fixtures receive an empty typed
+    // compatibility input. The remainder of FUN_00766510 is still external, so
+    // the active top-level provider count remains seven.
+    NativeVehicleContactResponseProvider contact_response{};
 
     // FUN_007675f0 arithmetic remains native. The per-pass provider supplies
     // only still-external caller fields. BODY0 +0x78/+0x88 and HDVehicle+0x4080
