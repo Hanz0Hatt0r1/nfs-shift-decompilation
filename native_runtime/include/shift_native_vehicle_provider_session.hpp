@@ -2,6 +2,7 @@
 
 #include "shift_fun_007560c0_motion_read_gate_setup.hpp"
 #include "shift_fun_00765c40_external_pass_result.hpp"
+#include "shift_fun_007675f0_distance_filter_cap_setup.hpp"
 #include "shift_fun_007675f0_distance_state_setup.hpp"
 #include "shift_fun_007682c0_projection_state.hpp"
 #include "shift_fun_00770e80_motion_read_machine_input_provider_chain.hpp"
@@ -57,10 +58,12 @@ struct NativeVehicleExternalProviderBundle {
     NativeVehiclePassCallback contact_response{};
 
     // FUN_007675f0 arithmetic remains native. The per-pass provider supplies
-    // only the still-external caller fields. BODY0 +0x78/+0x88 and the previous
-    // HDVehicle+0x4080 distance state are session-owned persistent values.
+    // only still-external caller fields. BODY0 +0x78/+0x88 and HDVehicle+0x4080
+    // are persistent native state; HDVehicle+0xa0 is immutable session setup.
+    // Its upstream initializer is still explicit until separately proven.
     NativeVehicleContactOuterInputProvider contact_outer_input{};
     physics::Fun007675f0DistanceStateSetup contact_outer_distance_setup{};
+    physics::Fun007675f0DistanceFilterCapSetup contact_outer_distance_filter_cap_setup{};
 
     // FUN_007560c0 writes HDVehicle+0xe0 during vehicle setup. This is immutable
     // session setup state, not a per-pass provider boundary. Its upstream value
@@ -138,6 +141,9 @@ public:
     }
     double contact_outer_distance_state() const {
         return contact_outer_distance_state_;
+    }
+    double contact_outer_distance_filter_cap() const {
+        return providers_.contact_outer_distance_filter_cap_setup.distance_filter_cap;
     }
 
 private:
