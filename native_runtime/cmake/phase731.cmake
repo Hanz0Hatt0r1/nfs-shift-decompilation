@@ -22,3 +22,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_007675f0_distance_filter_cap_ownership
     COMMAND shift_runtime_fun_007675f0_distance_filter_cap_ownership_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase732.cmake)
