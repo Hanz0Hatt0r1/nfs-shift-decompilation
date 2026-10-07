@@ -1,7 +1,7 @@
 {
   "format": "SHIFT.Fun007618f0VehicleLoadDataOwnership/1",
   "phase": 738,
-  "status": "pc-source-and-machine-owner-proven",
+  "status": "pc-source-machine-and-selected-resource-inputs-proven",
   "pc_authority": {
     "executable": "SHIFT.exe",
     "md5": "705af8b420e5eb1e3834ac43d5533c6b",
@@ -66,6 +66,15 @@
     "constructor_initializes_front_wing_center_to_zero": true,
     "constructor_zero_is_selected_BMW_value_claimed": false
   },
+  "selected_bmw_resource_inputs": {
+    "contract": "SHIFT.BMWM3E36Fun007618f0ResourceInputs/1",
+    "archive_sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+    "cdf_path": "vehicles\\physics\\chassis\\bmw_m3_e36.cdf",
+    "cdf_decoded_sha256": "bbee83f0d2fdcbfc2bbd62ddb2a10bf6fed71bb1b4fa78f303a4730d038b970d",
+    "CGHeight_decimal": "0.280",
+    "FWCenter_decimal_xyz": ["0.00", "-0.100", "-0.50"],
+    "FWCenter_f64_bits": ["0x0000000000000000", "0xbfb999999999999a", "0xbfe0000000000000"]
+  },
   "derived_cg_height_join": {
     "producer": "FUN_007bfbe0",
     "producer_receiver": "VehicleLoadData+0x8",
@@ -77,15 +86,35 @@
     "selected_session": "Silverstone+BMW_M3_E36",
     "selected_physics_mode": "normal",
     "selected_player_difficulty": 1,
-    "selected_numeric_family_target_CG_y": 0.168,
-    "bit_exact_f32_multiply_then_f64_widening_materialized_here": false
+    "selected_CGHeight_f32_bits": "0x3e8f5c29",
+    "selected_normal_scale_f32_bits": "0x3f19999a",
+    "machine_sequence": [
+      "0x007bff14 call FUN_007a6be0",
+      "0x007bff19 fstp dword [ebp-0x4]",
+      "0x007bff1c fld dword [ebp-0x4]",
+      "0x007bff2b fmul dword [DAT_00c13130 + difficulty*4]",
+      "0x007bff54 fstp qword [VehicleLoadData+0x338]"
+    ],
+    "machine_span": {
+      "start": "0x007bff05",
+      "end_exclusive": "0x007bff5a",
+      "sha256": "f8407f1438292d1f65540f702b32591ec1169cbc33f4994523c4961bd1bfe69e"
+    },
+    "no_post_multiply_f32_spill": true,
+    "selected_derived_f64_bits": "0x3fc5810634bc6a80",
+    "selected_derived_value": 0.16800000739097598,
+    "incorrect_f32_product_then_widen_bits": "0x3fc5810640000000",
+    "incorrect_f32_product_then_widen_value": 0.1680000126361847,
+    "precision_reason": "the product of two binary32 values has at most 48 significant bits, so x87 multiplication is exact and the direct qword store preserves that exact product"
   },
   "phase728_join": {
     "existing_contract": "SHIFT.Fun007618f0LocalSampleProducer/1",
+    "selected_source_contract": "SHIFT.Fun007618f0SelectedBMWSource/1",
     "source_scalar_0338_owner_now_known": true,
+    "source_scalar_0338_selected_value_ready": true,
     "source_vec_0918_owner_now_known": true,
     "source_vec_0918_parser_property_now_known": true,
-    "selected_BMW_FWCenter_numeric_value_ready": false,
+    "selected_BMW_FWCenter_numeric_value_ready": true,
     "wheel_body_origins_already_owned_by_phase737": true
   },
   "scope": {
@@ -93,7 +122,8 @@
     "FUN_007618f0_param_2_owner_proven": true,
     "consumer_field_offsets_proven": true,
     "front_wing_center_property_name_source_backed": true,
-    "selected_BMW_FWCenter_numeric_value_proven": false,
+    "selected_BMW_FWCenter_numeric_value_proven": true,
+    "selected_derived_CGHeight_bit_pattern_proven": true,
     "constructor_default_promoted_to_selected_value": false,
     "complete_FUN_00765c40_internalized": false
   },
@@ -101,7 +131,7 @@
     "external_provider_count_before": 7,
     "external_provider_count_after": 7,
     "provider_count_reduced": false,
-    "reason": "complete FUN_00765c40 collision-provider/side-effect boundary remains external, and selected BMW FWCenter numeric input is not yet frozen"
+    "reason": "all Phase728 local-sample inputs are now selected-session source-backed, but the complete FUN_00765c40 collision-provider/residual-side-effect boundary remains external until the per-pass world-position wiring is composed and validated"
   },
-  "next_blocker": "extract/prove selected BMW_M3_E36 CDF FWCenter, then compose Phase737 wheel BODY origins + VehicleLoadData fields through Phase728 and Phase727 into the FUN_00765c40 query world-position producer"
+  "next_blocker": "compose Phase737 wheel BODY origins + SHIFT.Fun007618f0SelectedBMWSource/1 through Phase728 and Phase727 at each FUN_00765c40 pass, preserving pass-1 post-half-step BODY state; keep collision-provider/residual side effects external"
 }
