@@ -39,18 +39,21 @@ int main() {
         const Fun007682c0ExternalMachineInput external = legacy;
         const Fun007682c0DerivedProjectionState initial{};
         constexpr float derived_steering = -1.25f;
+        constexpr float setup_response_4054 = 2.7f;
         const auto composed = compose_fun_007682c0_machine_input(
             external,
             derived_steering,
+            setup_response_4054,
             initial);
         require(composed.caller_gate_open && composed.steering == derived_steering,
                 "derived steering was not consumed by production composition");
         require(composed.steering != legacy.steering,
                 "legacy external steering leaked into production composition");
         require(composed.load_terms == legacy.load_terms &&
-                    composed.response_field_4054 == 7.0f &&
+                    composed.response_field_4054 == setup_response_4054 &&
+                    composed.response_field_4054 != legacy.response_field_4054 &&
                     composed.angle_mode == 2,
-                "external machine input payload mismatch");
+                "internal/setup machine input payload mismatch");
         require(composed.projection_field_x == 0.0f &&
                     composed.projection_field_z == 0.0f,
                 "legacy projection fields leaked into production composition");
@@ -77,12 +80,14 @@ int main() {
         const auto second_input = compose_fun_007682c0_machine_input(
             external,
             derived_steering,
+            setup_response_4054,
             rounded);
         require(f32_bits(second_input.projection_field_x) == 0x3eaaaaabu &&
                     f32_bits(second_input.projection_field_z) == 0xbeaaaaabu,
                 "derived projection state was not consumed by next input");
-        require(second_input.steering == derived_steering,
-                "derived steering changed while composing next input");
+        require(second_input.steering == derived_steering &&
+                    second_input.response_field_4054 == setup_response_4054,
+                "internal steering/setup response changed while composing next input");
 
         bool zero_dt_rejected = false;
         try {
@@ -111,6 +116,8 @@ int main() {
             << "\"initial_fields_zero\":true,"
             << "\"legacy_steering_provider_value_ignored\":true,"
             << "\"legacy_projection_provider_values_ignored\":true,"
+            << "\"legacy_response_4054_provider_value_ignored\":true,"
+            << "\"setup_response_4054_consumed\":true,"
             << "\"post_outer_delta_over_dt\":true,"
             << "\"f32_store_checkpoint\":true}\n";
         return 0;
