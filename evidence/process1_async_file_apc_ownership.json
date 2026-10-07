@@ -1,0 +1,183 @@
+{
+  "format": "SHIFT.Process1AsyncFileApcOwnership/1",
+  "ready": true,
+  "source": {
+    "authority": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_executable_size": 8801792,
+    "xbox_recomp_required": false,
+    "drive_artifact_name": "SHIFT.exe"
+  },
+  "joins": {
+    "previous_contract": "SHIFT.Process1Controller1MessageQueueWake/1",
+    "controller1_worker": "FUN_00662880",
+    "controller1_thread_name": "Controller #1",
+    "async_file_thread_name": "Base File: Async Thread",
+    "async_file_worker": "0x00667240",
+    "workers_are_distinct": true
+  },
+  "async_file_thread": {
+    "thread_start_wrapper": "0x0065f0a0",
+    "generic_thread_create": "0x00649cb0",
+    "generic_thread_entry": "0x00649b10",
+    "thread_name_va": "0x00aeff74",
+    "worker_vtable": "0x00af386c",
+    "worker_vtable_slot_4": "0x00667240",
+    "vtable_worker_pointer_occurrences": [
+      "0x00af3870"
+    ],
+    "worker_direct_call_occurrences": 0,
+    "worker_dispatch_is_virtual": true,
+    "machine_spans": {
+      "thread_start": {
+        "start": "0x0065f0a0",
+        "end_exclusive": "0x0065f0e7",
+        "sha256": "8ef3c1de07f96e6be0a611003fc9e973f71a528678515f0f956cdbe79a51fa62"
+      },
+      "thread_virtual_worker_dispatch": {
+        "start": "0x00649c60",
+        "end_exclusive": "0x00649c83",
+        "sha256": "66ea451ea643112cd2691e8764c2ce1907e636431cd49c8cf7f2c9202962d9b4"
+      },
+      "thread_name_data": {
+        "start": "0x00aeff74",
+        "end_exclusive": "0x00aeff8c",
+        "sha256": "86b11ae477059d159bee6726b9fb1eaf4815d0c8b34d36df729c4f0cac050f2d"
+      },
+      "vtable_head": {
+        "start": "0x00af386c",
+        "end_exclusive": "0x00af3884",
+        "sha256": "2e85e38911cabd1248674c7848bb03fe4b612d0fb06570b80b592b4a75e5054d"
+      }
+    }
+  },
+  "operation_dispatch": {
+    "worker": "0x00667240",
+    "dispatch_table": "0x00b890f0",
+    "dispatch_entries": [
+      {
+        "operation": 2,
+        "handler": "0x00655ab0"
+      },
+      {
+        "operation": 3,
+        "handler": "0x00655ab0"
+      },
+      {
+        "operation": 4,
+        "handler": "0x00655c80"
+      },
+      {
+        "operation": 6,
+        "handler": "0x00655c80"
+      },
+      {
+        "operation": 5,
+        "handler": "0x00655c80"
+      }
+    ],
+    "handler_00655ab0_absolute_pointer_occurrences": [
+      "0x00b890f4",
+      "0x00b890fc"
+    ],
+    "handler_00655c80_absolute_pointer_occurrences": [
+      "0x00b89104",
+      "0x00b8910c",
+      "0x00b89114"
+    ],
+    "handler_direct_call_or_jump_occurrences": 0,
+    "dispatch_helper": "0x006671b0",
+    "dispatch_helper_indirect_call": "call DWORD PTR [ebp+0x0c]",
+    "worker_dispatch_callsite": "0x006674ec",
+    "machine_spans": {
+      "dispatch_table_data": {
+        "start": "0x00b890f0",
+        "end_exclusive": "0x00b89118",
+        "sha256": "8b8b880209e902240062ce3e6b5f663cb80d2601a1cd437c7f7bd1e83d0ec2a4"
+      },
+      "dispatch_helper": {
+        "start": "0x006671b0",
+        "end_exclusive": "0x006671e5",
+        "sha256": "17f6ecbad73436f12c39ebfd29a7f3e9dadab1427fed422fcc47e70294d09c5f"
+      },
+      "worker_dispatch_and_alertable_sleep": {
+        "start": "0x00667470",
+        "end_exclusive": "0x00667503",
+        "sha256": "541de1fe69988de6e7c41dacac838593138b3627fe7fe7cdb9f7b393c4e7b5c4"
+      }
+    }
+  },
+  "async_file_calls": {
+    "read_file_ex_iat": "0x00aa6240",
+    "write_file_ex_iat": "0x00aa6234",
+    "read_file_ex_call_sites": [
+      "0x006558d5",
+      "0x00655c15"
+    ],
+    "write_file_ex_call_sites": [
+      "0x006559df",
+      "0x00655dca"
+    ],
+    "read_completion_routine": "0x006553e0",
+    "write_completion_routine": "0x00655410",
+    "all_direct_read_file_ex_callsites_accounted_for": true,
+    "all_direct_write_file_ex_callsites_accounted_for": true,
+    "machine_spans": {
+      "read_call_1": {
+        "start": "0x006558be",
+        "end_exclusive": "0x006558e4",
+        "sha256": "c8fae4949a3d9d6a5fec70c4cc939fa6cfa48709c73c12c52bc723d1b1544c72"
+      },
+      "write_call_1": {
+        "start": "0x006559bc",
+        "end_exclusive": "0x006559ef",
+        "sha256": "3a9ad12af11448a597ba4011ad20b74107a3bebf0a6705f693ac295993535ef3"
+      },
+      "read_call_2": {
+        "start": "0x00655bed",
+        "end_exclusive": "0x00655c27",
+        "sha256": "ee754aa6f2deaf1318829694de1124968e6cebcde5618cd04656932d78092d77"
+      },
+      "write_call_2": {
+        "start": "0x00655d92",
+        "end_exclusive": "0x00655ddd",
+        "sha256": "c4223dae28af7ef9af3136c7f6873a229263d519a8087064136a4f76909f36e2"
+      },
+      "read_completion": {
+        "start": "0x006553e0",
+        "end_exclusive": "0x00655403",
+        "sha256": "1c45703b9acea9563b4ac7515762b01ed1778bffec545607cf5577ecf891d97b"
+      },
+      "write_completion": {
+        "start": "0x00655410",
+        "end_exclusive": "0x00655433",
+        "sha256": "55a55c175c1191be6ba25f8b71a855220ebcb4f4c59726e77d4de305a75dc272"
+      }
+    }
+  },
+  "alertable_wait": {
+    "sleep_ex_iat": "0x00aa6274",
+    "sleep_ex_wrapper": "0x00649780",
+    "async_worker_passes_alertable_true": true,
+    "async_worker_sleep_wrapper_callsite": "0x006674f8",
+    "controller1_sleep_call_is_a_separate_worker_path": true,
+    "machine_span": {
+      "start": "0x00649780",
+      "end_exclusive": "0x0064978c",
+      "sha256": "260451a7ed8644869aebf1085cde645cf66e9be0397021c69457405e77d760a5"
+    }
+  },
+  "adjudication": {
+    "identified_read_write_file_ex_surface_owned_by_base_file_async_thread_proven": true,
+    "identified_read_write_file_ex_surface_owned_by_controller1_proven": false,
+    "identified_file_completion_apc_path_is_controller1_wake_source_proven": false,
+    "controller1_message_queue_wake_result_changed": false,
+    "all_possible_apc_paths_into_controller1_excluded": false,
+    "render_or_present_phase_lock_proven": false
+  },
+  "next_blocker": {
+    "process": 1,
+    "description": "search remaining APC-capable mechanisms outside the Base File async worker and trace render/presentation producers for a concrete path to Controller #1 message enqueue or another Controller #1-owned alertable completion source"
+  }
+}
