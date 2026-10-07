@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-"""Recover the physical explicit argument passed to PC FUN_007618f0.
+"""Recover both physical explicit arguments passed to PC FUN_007618f0.
 
-The target is a thiscall-style routine whose HDVehicle receiver is carried in
-ECX and whose remaining source object is an explicit stack argument.  This
-analyzer deliberately proves only the physical value pushed immediately before
-each direct FUN_007618f0 callsite.  It does not assign a semantic class/name to
-that object merely from offsets +0x338/+0x918.
+PC source and machine code show a thiscall receiver in ECX plus two explicit
+stack arguments:
 
-A callsite is promoted only when the instruction immediately preceding CALL is
-an unambiguous single PUSH.  Register PUSH operands are resolved with the
-existing finite all-path IA-32 register-provenance engine.  Anything less exact
-stays unresolved rather than guessing stack history.
+    FUN_007618f0(this, param_1, param_2)
+
+On IA-32 the caller pushes them right-to-left.  The nearest pre-call PUSH is
+therefore param_1; the earlier PUSH is param_2.  Phase 738 cares about param_2,
+the VehicleLoadData source object consumed at +0x338 and +0x918.
+
+This analyzer is machine corroboration only.  It reports physical PUSH origins
+without assigning semantic ownership; the positive VehicleLoadData identity is
+established independently from the source allocation/callsite chain.
 """
 from __future__ import annotations
 
@@ -32,6 +34,8 @@ WORKLIST_FORMAT = "SHIFT.Fun007618f0SecondArgumentWorklist/1"
 INSTRUCTION_FORMAT = "SHIFT.GhidraFunctionInstructions/2"
 TARGET = "0x007618f0"
 TARGET_NAME = "FUN_007618f0"
+ARGUMENT_COUNT = 2
+BACKWARD_WINDOW = 8
 
 
 def _address(value: Any, *, field: str) -> str:
@@ -173,6 +177,46 @@ def _flags(origins: list[str]) -> dict[str, Any]:
     }
 
 
+def _collect_argument_pushes(
+    instructions: list[dict[str, Any]],
+    call_index: int,
+    incoming: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Collect the two nearest pre-call PUSHes, nearest first.
+
+    The real retail sequence contains an ECX receiver MOV between the nearest
+    PUSH and CALL, so requiring immediate adjacency is incorrect.  We bound the
+    lexical search and stop at an earlier CALL or stack-adjust instruction.
+    """
+    pushes: list[dict[str, Any]] = []
+    lower = max(-1, call_index - BACKWARD_WINDOW - 1)
+    for index in range(call_index - 1, lower, -1):
+        insn = instructions[index]
+        mnemonic = str(insn.get("mnemonic") or "").upper()
+        if mnemonic == "CALL":
+            break
+        if mnemonic in {"RET", "RETN", "IRET", "LEAVE"}:
+            break
+        operands = insn.get("operands")
+        if mnemonic == "PUSH" and isinstance(operands, list) and len(operands) == 1 and isinstance(operands[0], str):
+            address = _address(insn.get("address"), field="argument push address")
+            state = incoming.get(address)
+            if state is None:
+                raise ValueError(f"argument PUSH {address} is unreachable")
+            origins = _origins_for_push_operand(operands[0], state, address)
+            pushes.append(
+                {
+                    "push": address,
+                    "operand": operands[0],
+                    "origins": origins,
+                    "flags": _flags(origins),
+                }
+            )
+            if len(pushes) == ARGUMENT_COUNT:
+                return pushes
+    return pushes
+
+
 def analyze(worklist: dict[str, Any], instruction_rows: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
     required_callers = sorted(
         {str(row["caller"]) for row in worklist["direct_calls"]}, key=lambda value: int(value, 0)
@@ -204,44 +248,31 @@ def analyze(worklist: dict[str, Any], instruction_rows: dict[str, list[dict[str,
         if call_state is None:
             raise ValueError(f"{caller}: callsite {callsite} is unreachable in exported CFG")
         receiver_origins = sorted(str(value) for value in call_state["ECX"])
+        pushes = _collect_argument_pushes(instructions, index, incoming)
 
-        row: dict[str, Any] = {
-            "caller": caller,
-            "caller_name": call.get("caller_name"),
-            "callsite": callsite,
-            "receiver_register": "ECX",
-            "receiver_origins": receiver_origins,
-            "receiver_flags": _flags(receiver_origins),
-            "explicit_argument_push_ready": False,
-            "explicit_argument_push": None,
-            "explicit_argument_operand": None,
-            "explicit_argument_origins": [],
-            "explicit_argument_flags": _flags([]),
-            "semantic_owner_claimed": False,
-        }
-        if index > 0:
-            push = instructions[index - 1]
-            push_address = _address(push.get("address"), field="push.address")
-            operands = push.get("operands")
-            if str(push.get("mnemonic") or "").upper() == "PUSH" and isinstance(operands, list) and len(operands) == 1 and isinstance(operands[0], str):
-                push_state = incoming.get(push_address)
-                if push_state is None:
-                    raise ValueError(f"{caller}: argument PUSH {push_address} unreachable")
-                origins = _origins_for_push_operand(operands[0], push_state, push_address)
-                row.update(
-                    {
-                        "explicit_argument_push_ready": True,
-                        "explicit_argument_push": push_address,
-                        "explicit_argument_operand": operands[0],
-                        "explicit_argument_origins": origins,
-                        "explicit_argument_flags": _flags(origins),
-                    }
-                )
-        results.append(row)
+        # PUSH order is right-to-left.  Nearest is param_1; second-nearest is param_2.
+        param_1 = pushes[0] if len(pushes) >= 1 else None
+        param_2 = pushes[1] if len(pushes) >= 2 else None
+        results.append(
+            {
+                "caller": caller,
+                "caller_name": call.get("caller_name"),
+                "callsite": callsite,
+                "receiver_register": "ECX",
+                "receiver_origins": receiver_origins,
+                "receiver_flags": _flags(receiver_origins),
+                "explicit_argument_push_count": len(pushes),
+                "param_1": param_1,
+                "param_2": param_2,
+                "param_2_is_vehicle_load_data_claimed_by_machine_analyzer": False,
+            }
+        )
 
-    physically_resolved = bool(results) and all(
-        row["explicit_argument_push_ready"]
-        and row["explicit_argument_flags"]["exact_single_physical_origin"]
+    arguments_ready = bool(results) and all(
+        row["param_1"] is not None
+        and row["param_2"] is not None
+        and row["param_1"]["flags"]["exact_single_physical_origin"]
+        and row["param_2"]["flags"]["exact_single_physical_origin"]
         for row in results
     )
     return {
@@ -249,14 +280,15 @@ def analyze(worklist: dict[str, Any], instruction_rows: dict[str, list[dict[str,
         "version": 1,
         "target": TARGET,
         "target_name": TARGET_NAME,
+        "explicit_argument_count": ARGUMENT_COUNT,
         "direct_call_count": len(results),
         "callsites": results,
-        "all_callsites_immediate_push_ready": bool(results)
-        and all(row["explicit_argument_push_ready"] for row in results),
-        "all_callsites_argument_physically_resolved": physically_resolved,
+        "all_callsites_two_argument_pushes_ready": bool(results)
+        and all(row["explicit_argument_push_count"] == ARGUMENT_COUNT for row in results),
+        "all_callsites_arguments_physically_resolved": arguments_ready,
         "semantic_owner_claimed": False,
-        "ready_for_semantic_owner_join": physically_resolved,
-        "policy": "physical callsite argument provenance only; +0x338/+0x918 semantic owner requires an independent object/storage join",
+        "ready_for_source_owner_crosscheck": arguments_ready,
+        "policy": "machine corroboration of both explicit stack arguments; VehicleLoadData identity comes from independent allocation/source-call evidence",
     }
 
 
