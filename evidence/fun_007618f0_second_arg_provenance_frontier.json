@@ -1,14 +1,16 @@
 {
   "format": "SHIFT.Fun007618f0SecondArgumentProvenanceFrontier/1",
   "phase": 738,
-  "status": "source-owner-proven-machine-corroboration-tooling-ready",
+  "status": "source-owner-and-selected-numeric-inputs-proven",
   "pc_authority": {
     "program": "SHIFT.exe",
     "retail_md5": "705af8b420e5eb1e3834ac43d5533c6b",
     "target_function": "FUN_007618f0",
     "target_address": "0x007618f0",
     "existing_source_contract": "SHIFT.Fun007618f0LocalSampleProducer/1",
-    "positive_owner_contract": "SHIFT.Fun007618f0VehicleLoadDataOwnership/1"
+    "positive_owner_contract": "SHIFT.Fun007618f0VehicleLoadDataOwnership/1",
+    "selected_resource_contract": "SHIFT.BMWM3E36Fun007618f0ResourceInputs/1",
+    "selected_native_contract": "SHIFT.Fun007618f0SelectedBMWSource/1"
   },
   "known_before_phase": {
     "explicit_source_fields": ["source+0x338 f64", "source+0x918 f64 vec3"],
@@ -25,9 +27,12 @@
     "VehicleLoadData_allocation_size": "0x3848",
     "VehicleLoadData_constructor": "FUN_007c3170",
     "derived_cg_height_field": "VehicleLoadData+0x338",
+    "derived_cg_height_selected_f64_bits": "0x3fc5810634bc6a80",
     "front_wing_center_field": "VehicleLoadData+0x918/+0x920/+0x928",
     "front_wing_center_parser_property": "FWCenter",
-    "owner_join_ready": true
+    "front_wing_center_selected_value": [0.0, -0.1, -0.5],
+    "owner_join_ready": true,
+    "selected_numeric_inputs_ready": true
   },
   "machine_corroboration": {
     "callsite": "0x0076e27f",
@@ -36,7 +41,9 @@
       "nearest_push": "param_1",
       "second_nearest_push": "param_2"
     },
-    "former_immediate_push_assumption_corrected": true
+    "former_immediate_push_assumption_corrected": true,
+    "derived_cg_height_machine_span_sha256": "f8407f1438292d1f65540f702b32591ec1169cbc33f4994523c4961bd1bfe69e",
+    "derived_cg_height_post_multiply_f32_spill": false
   },
   "static_pipeline": {
     "worklist_builder": "tools/ghidra/build_fun_007618f0_second_arg_worklist.py",
@@ -49,7 +56,7 @@
     "explicit_argument_count": 2,
     "two_pre_call_PUSHes_required": true,
     "all_path_register_provenance_reused": "tools/ghidra/analyze_fun_00765470_body_owner_receiver.py",
-    "role": "optional machine cross-check; positive semantic owner no longer depends on generating this report"
+    "role": "optional machine cross-check; positive semantic owner and selected values no longer depend on generating this report"
   },
   "safety": {
     "callgraph_membership_is_semantic_proof": false,
@@ -57,19 +64,19 @@
     "offset_0x338_or_0x918_used_to_guess_class": false,
     "VehicleLoadData_identity_comes_from_allocation_and_source_callsite": true,
     "constructor_zero_promoted_to_selected_FWCenter_value": false,
+    "naive_f32_product_then_widen_used": false,
     "ambiguous_register_origin_fails_closed": true
   },
-  "remaining_numeric_gate": {
-    "field": "VehicleLoadData+0x918/+0x920/+0x928",
-    "source_property": "FWCenter",
-    "selected_BMW_M3_E36_value_proven": false,
-    "derived_cg_height_selected_family_available": true,
-    "bit_exact_derived_cg_height_runtime_materialization_deferred": true
+  "numeric_gate": {
+    "selected_BMW_M3_E36_FWCenter_proven": true,
+    "selected_derived_CGHeight_f64_bits_proven": true,
+    "selected_source_input_boundary_closed": true
   },
   "provider_frontier": {
     "external_provider_count_before": 7,
     "external_provider_count_after": 7,
-    "provider_count_reduced": false
+    "provider_count_reduced": false,
+    "reason": "input ownership/value closure does not by itself replace the complete per-pass FUN_00765c40 collision-provider/residual-side-effect boundary"
   },
-  "next_positive_gate": "extract/prove BMW_M3_E36 FWCenter and then compose Phase737->Phase728->Phase727 into the FUN_00765c40 query world-position producer"
+  "next_positive_gate": "compose Phase737 current BODY3/BODY4 origins + SHIFT.Fun007618f0SelectedBMWSource/1 through Phase728 and Phase727 at each FUN_00765c40 pass, preserving pass-1 post-half-step BODY state"
 }
