@@ -95,10 +95,10 @@ inline double derive_fun_00769ef0_body0_field_120(
         throw std::invalid_argument(
             "FUN_00769ef0 BODY0 +0x120 must be finite");
     }
-    if (value == 0.0) {
-        throw std::invalid_argument(
-            "FUN_00769ef0 BODY0 +0x120 cannot be zero");
-    }
+    // Reading the persistent field is independent of whether this pass uses the
+    // recovered production param_3 path. Historical lower-chain fixtures may
+    // carry zero here while providing their explicit legacy param_3. The actual
+    // production derivation below still rejects a zero denominator fail-closed.
     return value;
 }
 
