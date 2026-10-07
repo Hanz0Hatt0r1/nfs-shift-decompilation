@@ -20,3 +20,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_007618f0_wheel_body_origin_ownership
     COMMAND shift_runtime_fun_007618f0_wheel_body_origin_ownership_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase738.cmake)
