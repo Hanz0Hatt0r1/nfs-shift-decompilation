@@ -1,0 +1,66 @@
+{
+  "format": "SHIFT.Fun007675f0DistanceFilterCapOwnership/1",
+  "version": 1,
+  "ready": true,
+  "pc_retail": {
+    "program": "SHIFT.exe",
+    "source_file": "SHIFT.exe.c",
+    "function": "FUN_007675f0",
+    "source_line": 759784,
+    "owner": "HDVehicle",
+    "offset": "0xa0",
+    "consumer": "FUN_00783a30",
+    "role": "distance_filter_cap",
+    "existing_oracle": "SHIFT.PhysicsHelper675F0Runtime/1",
+    "existing_oracle_expression": "FUN_00783a30(previous, distance, body_field+0xa0, 0.5)",
+    "production_per_pass_provider_field": false
+  },
+  "xbox360_retail_crosscheck": {
+    "program": "default.xex",
+    "region": "Europe",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "extracted_pe_sha256": "23844dbba0cf72bc11512821b90008ea5d2b06ee886d921f416ca6caae43a628",
+    "inner_pe_image_base": "0x82000000",
+    "architecture": "PowerPC 64-bit big-endian Xbox 360 PE",
+    "fun_007675f0_analog_start": "0x8259a9f0",
+    "distance_state_offset": "HDVehicle+0x4080",
+    "distance_filter_cap_offset": "HDVehicle+0xa0",
+    "cap_load_instruction": "0x8259aaa8: lfd 0, 160(31)",
+    "cap_round_instruction": "0x8259aab0: frsp 3, 0",
+    "filter_call_instruction": "0x8259aab8: bl 0x825b7e10",
+    "filter_writeback_instruction": "0x8259aabc: stfs 1, 16512(31)",
+    "body_motion_crosscheck": [
+      "BODY0+0x78",
+      "BODY0+0x88"
+    ],
+    "cross_platform_support_only": true,
+    "used_to_infer_pc_initializer_or_value": false
+  },
+  "native_handoff": {
+    "setup_contract": "SHIFT.Fun007675f0DistanceFilterCapSetup/1",
+    "session_provider_payload": "ContactOuterSessionInput",
+    "historical_lower_payload": "ContactOuterExternalInput",
+    "production_per_pass_field_distance_filter_cap_present": false,
+    "compatibility_seed_present": true,
+    "compatibility_seed_is_retail_evidence": false,
+    "upstream_initializer_proven": false,
+    "selected_session_value_promoted": false
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "contact_outer_external_field_count_before": 7,
+    "contact_outer_external_field_count_after": 6,
+    "remaining_external_fun_007675f0_fields": [
+      "planar_delta",
+      "surface_scalar",
+      "base_scalar",
+      "projected_scalar",
+      "alignment_scalar",
+      "param_3"
+    ],
+    "distance_filter_arithmetic_changed": false,
+    "physical_semantics_promoted": false
+  }
+}
