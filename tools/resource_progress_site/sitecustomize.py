@@ -90,8 +90,26 @@ class _ProgressTracker:
             f"[resource-progress] phase={name} event=discovering-archives",
             flush=True,
         )
-        total = _count_bff_inputs(inputs)
         previous = self._phase
+        try:
+            total = _count_bff_inputs(inputs)
+        except Exception as exc:
+            print(
+                f"[resource-progress] phase={name} event=count-unavailable "
+                f"type={type(exc).__name__} error={exc}",
+                file=sys.stderr,
+                flush=True,
+            )
+            # Progress reporting is diagnostic-only. If archive discovery cannot
+            # be counted safely, disable this phase's tracking and let the
+            # wrapped operation execute with its original error semantics.
+            self._phase = None
+            try:
+                yield
+            finally:
+                self._phase = previous
+            return
+
         state = _PhaseState(name=name, total=total)
         self._phase = state
         print(
