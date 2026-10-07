@@ -64,7 +64,11 @@ def test_active_session_payload_exposes_node_not_derived_probe_outputs() -> None
     assert "double base_scalar" in production_prefix
     assert "double projected_scalar" in production_prefix
     assert "double alignment_scalar" in production_prefix
-    assert "double param_3" in production_prefix
+    # Phase 734 supersedes only the active payload; Phase 732 evidence remains
+    # immutable history recording param_3 as external at that earlier frontier.
+    assert "double param_3" not in production_prefix
+    assert "compatibility_param_3_present" in session_struct
+    assert "compatibility_param_3" in session_struct
 
     assert "compatibility_planar_delta" in session_struct
     assert "compatibility_surface_scalar" in session_struct
