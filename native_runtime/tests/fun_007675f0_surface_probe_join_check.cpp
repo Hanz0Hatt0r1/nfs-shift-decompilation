@@ -84,7 +84,10 @@ int main() {
 
         ContactOuterSessionInput production{};
         production.surface_probe_node = &node;
-        production.projected_scalar = 1.0;
+        // Phase 732 predates the FUN_00759c90 caller join. Keep only that later
+        // scalar on its explicit compatibility lane while testing the node join.
+        production.compatibility_projected_scalar_present = true;
+        production.compatibility_projected_scalar = 1.0;
         auto external = compose_fun_007675f0_external_input(
             production,
             3.0,
@@ -98,7 +101,8 @@ int main() {
                      "production surface scalar was not derived from probe");
 
         ContactOuterSessionInput missing_node{};
-        missing_node.projected_scalar = 1.0;
+        missing_node.compatibility_projected_scalar_present = true;
+        missing_node.compatibility_projected_scalar = 1.0;
         bool missing_node_rejected = false;
         try {
             (void)compose_fun_007675f0_external_input(missing_node, 3.0, 1.0);
