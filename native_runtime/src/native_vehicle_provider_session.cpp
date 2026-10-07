@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <stdexcept>
 #include <utility>
 
@@ -16,6 +17,11 @@ namespace {
 
 constexpr std::size_t kBody0VelocityX = 0x78u;
 constexpr std::size_t kBody0VelocityZ = 0x88u;
+
+struct Fun00765c40PassLoadState {
+    physics::Fun00765c40LoadTerms terms{};
+    bool ready = false;
+};
 
 void require_complete_bundle(
     const NativeVehicleExternalProviderBundle& providers) {
@@ -103,10 +109,20 @@ NativeVehicleProviderSession::execute_explicit_step(
     physics::Fun0076d100MotionReadMachineInputProvider pass_provider =
         [this, &telemetry, steering](std::size_t pass_index) {
             physics::Fun0076d100MotionReadMachineInputProviderCallbacks callbacks{};
-            callbacks.contact_factor = [this, &telemetry, pass_index] {
-                ++telemetry.contact_factor_call_count;
-                providers_.contact_factor(pass_index);
-            };
+            auto load_state = std::make_shared<Fun00765c40PassLoadState>();
+
+            // The lower historical anchor interface is intentionally void. Keep
+            // that API stable while preserving the PC ownership: execute the
+            // complete external FUN_00765c40 boundary here, capture its four
+            // wheel+0x738 outputs, and make them available only to the later
+            // FUN_00769ef0/FUN_007682c0 input in this same pass.
+            callbacks.contact_factor =
+                [this, &telemetry, pass_index, load_state] {
+                    ++telemetry.contact_factor_call_count;
+                    load_state->terms = providers_.contact_factor(pass_index);
+                    physics::validate_fun_00765c40_load_terms(load_state->terms);
+                    load_state->ready = true;
+                };
             callbacks.wheel_update = [this, &telemetry, pass_index] {
                 ++telemetry.wheel_update_call_count;
                 providers_.wheel_update(pass_index);
@@ -121,12 +137,17 @@ NativeVehicleProviderSession::execute_explicit_step(
                     return providers_.contact_outer_input(pass_index);
                 };
             callbacks.motion_read_input_provider =
-                [this, &telemetry, pass_index, steering] {
+                [this, &telemetry, pass_index, steering, load_state] {
+                    if (!load_state->ready) {
+                        throw std::logic_error(
+                            "FUN_007682c0 machine input consumed before FUN_00765c40 load terms");
+                    }
                     ++telemetry.motion_read_input_call_count;
                     const auto external = providers_.motion_read_input(pass_index);
                     return physics::compose_fun_007682c0_machine_input(
                         external,
                         steering,
+                        load_state->terms,
                         motion_read_projection_state_);
                 };
             return callbacks;
