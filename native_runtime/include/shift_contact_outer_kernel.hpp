@@ -12,6 +12,8 @@ inline constexpr const char* kFun007675f0BodyMotionOwnershipFormat =
     "SHIFT.Fun007675f0BodyMotionOwnership/1";
 inline constexpr const char* kFun007675f0DistanceStateOwnershipFormat =
     "SHIFT.Fun007675f0DistanceStateOwnership/1";
+inline constexpr const char* kFun007675f0DistanceFilterCapOwnershipFormat =
+    "SHIFT.Fun007675f0DistanceFilterCapOwnership/1";
 inline constexpr const char* kContactOuterKernelFunction = "FUN_007675f0";
 inline constexpr const char* kContactDistanceFilterFunction = "FUN_00783a30";
 
@@ -44,9 +46,9 @@ struct ContactOuterKernelInput {
 };
 
 // Historical/lower-chain external payload. BODY0 motion is already absent, but
-// previous_distance_state is retained here because lower standalone Phase 693
-// fixtures predate the session-owned HDVehicle+0x4080 state. Production session
-// code resolves this field from its persistent state before entering the chain.
+// previous_distance_state and distance_filter_cap remain here because lower
+// standalone fixtures predate session ownership/setup narrowing. Production
+// session code resolves both fields before entering the historical chain.
 struct ContactOuterExternalInput {
     ContactOuterVector3d planar_delta{};
     double previous_distance_state = 0.0;
@@ -72,13 +74,12 @@ struct ContactOuterExternalInput {
           param_3(legacy.param_3) {}
 };
 
-// Session-facing per-pass payload. Both BODY motion and HDVehicle+0x4080 are
-// absent from the production fields: the session owns those persistent values.
-// The compatibility seed exists only so historical fixtures that return the old
-// complete input can initialize the one-time state without being rewritten.
+// Session-facing per-pass payload. BODY motion, HDVehicle+0x4080 and the
+// FUN_007675f0 this+0xa0 distance-filter cap are absent from production fields.
+// Compatibility seeds exist only so historical fixtures returning the old
+// complete input can initialize one-time setup/session state without rewrite.
 struct ContactOuterSessionInput {
     ContactOuterVector3d planar_delta{};
-    double distance_filter_cap = 0.0;
     double surface_scalar = 0.0;
     double base_scalar = 0.0;
     double projected_scalar = 0.0;
@@ -86,30 +87,34 @@ struct ContactOuterSessionInput {
     double param_3 = 0.0;
     bool compatibility_previous_distance_seed_present = false;
     double compatibility_previous_distance_seed = 0.0;
+    bool compatibility_distance_filter_cap_seed_present = false;
+    double compatibility_distance_filter_cap_seed = 0.0;
 
     ContactOuterSessionInput() = default;
 
     ContactOuterSessionInput(const ContactOuterKernelInput& legacy)
         : planar_delta(legacy.planar_delta),
-          distance_filter_cap(legacy.distance_filter_cap),
           surface_scalar(legacy.surface_scalar),
           base_scalar(legacy.base_scalar),
           projected_scalar(legacy.projected_scalar),
           alignment_scalar(legacy.alignment_scalar),
           param_3(legacy.param_3),
           compatibility_previous_distance_seed_present(true),
-          compatibility_previous_distance_seed(legacy.previous_distance_state) {}
+          compatibility_previous_distance_seed(legacy.previous_distance_state),
+          compatibility_distance_filter_cap_seed_present(true),
+          compatibility_distance_filter_cap_seed(legacy.distance_filter_cap) {}
 
     ContactOuterSessionInput(const ContactOuterExternalInput& legacy)
         : planar_delta(legacy.planar_delta),
-          distance_filter_cap(legacy.distance_filter_cap),
           surface_scalar(legacy.surface_scalar),
           base_scalar(legacy.base_scalar),
           projected_scalar(legacy.projected_scalar),
           alignment_scalar(legacy.alignment_scalar),
           param_3(legacy.param_3),
           compatibility_previous_distance_seed_present(true),
-          compatibility_previous_distance_seed(legacy.previous_distance_state) {}
+          compatibility_previous_distance_seed(legacy.previous_distance_state),
+          compatibility_distance_filter_cap_seed_present(true),
+          compatibility_distance_filter_cap_seed(legacy.distance_filter_cap) {}
 };
 
 struct Fun007675f0BodyMotion {
@@ -136,7 +141,8 @@ Fun007675f0BodyMotion derive_fun_007675f0_body0_motion(
 
 ContactOuterExternalInput compose_fun_007675f0_external_input(
     const ContactOuterSessionInput& session_input,
-    double previous_distance_state);
+    double previous_distance_state,
+    double distance_filter_cap);
 
 ContactOuterKernelInput compose_fun_007675f0_input(
     const ContactOuterExternalInput& external,
