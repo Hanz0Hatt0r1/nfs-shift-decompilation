@@ -76,6 +76,10 @@ NativeVehicleProviderSession::NativeVehicleProviderSession(
         contact_outer_distance_state_ =
             providers_.contact_outer_distance_setup.previous_distance_state;
     }
+    if (providers_.contact_outer_distance_filter_cap_setup.ready) {
+        physics::validate_fun_007675f0_distance_filter_cap_setup(
+            providers_.contact_outer_distance_filter_cap_setup);
+    }
 }
 
 NativeVehicleProviderSessionResult
@@ -97,6 +101,8 @@ NativeVehicleProviderSession::execute_explicit_step(
 
     const ExplicitOuterUpdateRuntimeState outer_update_before = runtime.outer_update;
     const auto distance_setup_before = providers_.contact_outer_distance_setup;
+    const auto distance_filter_cap_setup_before =
+        providers_.contact_outer_distance_filter_cap_setup;
     const double distance_state_before = contact_outer_distance_state_;
     const double velocity_x_before =
         read_f64_le(outer_update_before.body_bytes, kBody0VelocityX);
@@ -159,10 +165,10 @@ NativeVehicleProviderSession::execute_explicit_step(
                     ++telemetry.contact_outer_input_call_count;
                     const auto session_input = providers_.contact_outer_input(pass_index);
 
-                    // New production callers must provide the one-time setup
-                    // seed explicitly. Historical fixtures converted from the
-                    // old complete input may seed it exactly once through the
-                    // compatibility-only field; no per-pass refresh survives.
+                    // New production callers must provide one-time setup values
+                    // explicitly. Historical fixtures converted from the old
+                    // complete input may seed each value exactly once through
+                    // compatibility-only fields; no per-pass refresh survives.
                     if (!providers_.contact_outer_distance_setup.ready) {
                         if (!session_input.compatibility_previous_distance_seed_present) {
                             throw std::logic_error(
@@ -177,9 +183,22 @@ NativeVehicleProviderSession::execute_explicit_step(
                             providers_.contact_outer_distance_setup.previous_distance_state;
                     }
 
+                    if (!providers_.contact_outer_distance_filter_cap_setup.ready) {
+                        if (!session_input.compatibility_distance_filter_cap_seed_present) {
+                            throw std::logic_error(
+                                "FUN_007675f0 distance filter cap used before explicit setup seed");
+                        }
+                        providers_.contact_outer_distance_filter_cap_setup.ready = true;
+                        providers_.contact_outer_distance_filter_cap_setup.distance_filter_cap =
+                            session_input.compatibility_distance_filter_cap_seed;
+                        physics::validate_fun_007675f0_distance_filter_cap_setup(
+                            providers_.contact_outer_distance_filter_cap_setup);
+                    }
+
                     return physics::compose_fun_007675f0_external_input(
                         session_input,
-                        contact_outer_distance_state_);
+                        contact_outer_distance_state_,
+                        providers_.contact_outer_distance_filter_cap_setup.distance_filter_cap);
                 };
             callbacks.contact_outer_distance_state_commit =
                 [this, &telemetry](double next_state) {
@@ -255,6 +274,8 @@ NativeVehicleProviderSession::execute_explicit_step(
             post_half_step);
     } catch (...) {
         providers_.contact_outer_distance_setup = distance_setup_before;
+        providers_.contact_outer_distance_filter_cap_setup =
+            distance_filter_cap_setup_before;
         contact_outer_distance_state_ = distance_state_before;
         throw;
     }
@@ -274,6 +295,8 @@ NativeVehicleProviderSession::execute_explicit_step(
     } catch (...) {
         runtime.outer_update = outer_update_before;
         providers_.contact_outer_distance_setup = distance_setup_before;
+        providers_.contact_outer_distance_filter_cap_setup =
+            distance_filter_cap_setup_before;
         contact_outer_distance_state_ = distance_state_before;
         throw;
     }
@@ -320,6 +343,8 @@ NativeVehicleProviderSession::execute_ready_retail_inner_batch(
     const physics::Fun007682c0DerivedProjectionState projection_before =
         motion_read_projection_state_;
     const auto distance_setup_before = providers_.contact_outer_distance_setup;
+    const auto distance_filter_cap_setup_before =
+        providers_.contact_outer_distance_filter_cap_setup;
     const double distance_state_before = contact_outer_distance_state_;
     const std::uint64_t step_count_before = step_count_;
     const NativeVehicleProviderSessionTelemetry telemetry_before = last_telemetry_;
@@ -335,6 +360,8 @@ NativeVehicleProviderSession::execute_ready_retail_inner_batch(
         runtime.outer_update = outer_update_before;
         motion_read_projection_state_ = projection_before;
         providers_.contact_outer_distance_setup = distance_setup_before;
+        providers_.contact_outer_distance_filter_cap_setup =
+            distance_filter_cap_setup_before;
         contact_outer_distance_state_ = distance_state_before;
         step_count_ = step_count_before;
         last_telemetry_ = telemetry_before;
