@@ -13,7 +13,7 @@ inline constexpr const char* kNativeFun00770e80ContactOuterProviderChainFormat =
     "SHIFT.NativeFun00770e80ContactOuterProviderChain/1";
 
 using Fun007675f0ContactOuterInputProvider =
-    std::function<ContactOuterKernelInput()>;
+    std::function<ContactOuterExternalInput()>;
 
 struct Fun0076d100ContactOuterProviderCallbacks {
     Fun0076d100AnchorCallback contact_factor{};
@@ -32,7 +32,10 @@ struct Fun00770e80ContactOuterProviderChainResult {
     Fun00770e80ScalarProviderAnchorChainResult joined{};
     std::array<ContactOuterKernelResult, kFun00770e80PassCount>
         contact_outer_results{};
+    std::array<Fun007675f0BodyMotion, kFun00770e80PassCount>
+        body_motion_inputs{};
     std::array<bool, kFun00770e80PassCount> contact_outer_result_present{};
+    std::array<bool, kFun00770e80PassCount> body_motion_input_present{};
     std::array<std::size_t, kFun00770e80PassCount>
         contact_outer_input_provider_call_counts{};
     std::array<std::size_t, kFun00770e80PassCount>

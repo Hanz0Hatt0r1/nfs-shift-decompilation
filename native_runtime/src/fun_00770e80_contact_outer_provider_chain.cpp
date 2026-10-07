@@ -10,7 +10,9 @@ namespace {
 struct ContactOuterPassState {
     std::size_t input_provider_call_count = 0u;
     std::size_t native_call_count = 0u;
+    bool body_motion_present = false;
     bool result_present = false;
+    Fun007675f0BodyMotion body_motion{};
     ContactOuterKernelResult result{};
 };
 
@@ -70,14 +72,30 @@ execute_fun_00770e80_contact_outer_provider_chain(
             adapted.post_pass_body_mutator =
                 std::move(typed.post_pass_body_mutator);
 
+            // PC FUN_007675f0 consumes BODY +0x78/+0x88 in the current pass.
+            // Observe the persistent BODY buffer immediately before the anchor
+            // sequence so pass 1 sees the result of pass 0's half-step.
+            adapted.current_body_observer =
+                [state](const std::vector<std::uint8_t>& current_body_bytes) {
+                    state->body_motion =
+                        derive_fun_007675f0_body0_motion(current_body_bytes);
+                    state->body_motion_present = true;
+                };
+
             auto contact_outer_input_provider =
                 std::move(typed.contact_outer_input_provider);
             adapted.contact_outer =
                 [state, contact_outer_input_provider =
                     std::move(contact_outer_input_provider)]() mutable {
+                    if (!state->body_motion_present) {
+                        throw std::logic_error(
+                            "FUN_007675f0 executed before current BODY0 motion ownership bridge");
+                    }
                     ++state->input_provider_call_count;
-                    const ContactOuterKernelInput input =
+                    const ContactOuterExternalInput external =
                         contact_outer_input_provider();
+                    const ContactOuterKernelInput input =
+                        compose_fun_007675f0_input(external, state->body_motion);
                     state->result =
                         execute_fun_007675f0_outer_arithmetic(input);
                     ++state->native_call_count;
@@ -93,6 +111,7 @@ execute_fun_00770e80_contact_outer_provider_chain(
          ++pass_index) {
         const auto& state = states[pass_index];
         if (!state ||
+            !state->body_motion_present ||
             state->input_provider_call_count != 1u ||
             state->native_call_count != 1u ||
             !state->result_present) {
@@ -100,7 +119,9 @@ execute_fun_00770e80_contact_outer_provider_chain(
                 "FUN_007675f0 typed provider/native execution cardinality mismatch");
         }
         result.contact_outer_results[pass_index] = state->result;
+        result.body_motion_inputs[pass_index] = state->body_motion;
         result.contact_outer_result_present[pass_index] = true;
+        result.body_motion_input_present[pass_index] = true;
         result.contact_outer_input_provider_call_counts[pass_index] =
             state->input_provider_call_count;
         result.contact_outer_native_call_counts[pass_index] =

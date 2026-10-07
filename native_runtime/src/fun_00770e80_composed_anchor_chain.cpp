@@ -37,6 +37,15 @@ Fun00770e80ComposedAnchorChainResult execute_fun_00770e80_composed_anchor_chain(
             }
             const auto callbacks = physics_pass_provider(pass_index);
             ++result.physics_pass_provider_call_count;
+
+            // Publish the exact persistent BODY state visible to this pass before
+            // any FUN_0076d100 anchor runs. Pass 1 therefore observes the BODY
+            // bytes produced by pass 0's FUN_00765470 half-step.
+            if (callbacks.current_body_observer) {
+                callbacks.current_body_observer(result.final_body_bytes);
+                ++result.current_body_observer_call_count;
+            }
+
             result.physics_passes[pass_index] =
                 execute_fun_0076d100_required_anchor_sequence(
                     callbacks.contact_factor,
