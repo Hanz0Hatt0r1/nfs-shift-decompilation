@@ -1,5 +1,6 @@
 #include "shift_fun_00770e80_contact_outer_provider_chain.hpp"
 
+#include "shift_fun_007675f0_projected_scalar.hpp"
 #include "shift_fun_00769ef0_param3.hpp"
 
 #include <memory>
@@ -15,10 +16,12 @@ struct ContactOuterPassState {
     std::size_t distance_state_commit_count = 0u;
     bool body_motion_present = false;
     bool body_probe_position_present = false;
+    bool body_aggregate_position_present = false;
     bool body_field_120_present = false;
     bool result_present = false;
     Fun007675f0BodyMotion body_motion{};
     SurfaceProbeVector3d body_probe_position{};
+    WheelForceAggregateVector3d body_aggregate_position{};
     double body_field_120 = 0.0;
     ContactOuterKernelResult result{};
 };
@@ -79,10 +82,10 @@ execute_fun_00770e80_contact_outer_provider_chain(
             adapted.post_pass_body_mutator =
                 std::move(typed.post_pass_body_mutator);
 
-            // Current BODY0 is published before any per-pass anchor. Besides the
-            // already-owned motion/query position, FUN_00769ef0 and FUN_007675f0
-            // both consume BODY0+0x120. Capture one pass-local persistent value
-            // so pass 1 observes pass 0's half-step result.
+            // Current BODY0 is published before every per-pass anchor. Keep both
+            // the source f32 probe-query position and exact f64 BODY origin: the
+            // former feeds FUN_00759210 while the latter feeds FUN_00759c90's
+            // second output reduction. Pass 1 observes pass 0 half-step state.
             adapted.current_body_observer =
                 [state](const std::vector<std::uint8_t>& current_body_bytes) {
                     state->body_motion =
@@ -90,10 +93,13 @@ execute_fun_00770e80_contact_outer_provider_chain(
                     state->body_probe_position =
                         derive_fun_007675f0_body0_probe_query_position(
                             current_body_bytes);
+                    state->body_aggregate_position =
+                        derive_fun_00759c90_body0_position(current_body_bytes);
                     state->body_field_120 =
                         derive_fun_00769ef0_body0_field_120(current_body_bytes);
                     state->body_motion_present = true;
                     state->body_probe_position_present = true;
+                    state->body_aggregate_position_present = true;
                     state->body_field_120_present = true;
                 };
 
@@ -107,9 +113,10 @@ execute_fun_00770e80_contact_outer_provider_chain(
                  distance_state_commit = std::move(distance_state_commit)]() mutable {
                     if (!state->body_motion_present ||
                         !state->body_probe_position_present ||
+                        !state->body_aggregate_position_present ||
                         !state->body_field_120_present) {
                         throw std::logic_error(
-                            "FUN_007675f0 executed before current BODY0 motion ownership bridge");
+                            "FUN_007675f0 executed before current BODY0 ownership bridge");
                     }
                     ++state->input_provider_call_count;
                     ContactOuterExternalInput external =
@@ -117,6 +124,18 @@ execute_fun_00770e80_contact_outer_provider_chain(
                     external = resolve_fun_007675f0_surface_probe_outputs(
                         external,
                         state->body_probe_position);
+
+                    // PC FUN_007675f0 calls FUN_00759c90 before its strict
+                    // distance/speed gate, spills the returned total X/Z to f32,
+                    // and projects them onto the already-normalized probe delta.
+                    // Historical fixtures retain their explicit scalar instead.
+                    if (external.fun_00759c90_records_present) {
+                        external.projected_scalar = static_cast<double>(
+                            execute_fun_007675f0_projected_scalar_join(
+                                external.fun_00759c90_records,
+                                state->body_aggregate_position,
+                                external.planar_delta).projected_scalar);
+                    }
 
                     // Production receives the exact earlier FUN_00765c40 terms.
                     // Historical lower-chain fixtures omit them and retain their
@@ -128,7 +147,7 @@ execute_fun_00770e80_contact_outer_provider_chain(
                                 state->body_field_120).param_3);
                     }
 
-                    // The same current BODY0+0x120 value also participates in
+                    // The same current BODY0+0x120 value participates in
                     // FUN_007675f0's source-derived base scalar. Legacy fixtures
                     // keep explicit base/alignment values through their flag.
                     external.fun_007675f0_body_field_120 =
@@ -159,6 +178,7 @@ execute_fun_00770e80_contact_outer_provider_chain(
         if (!state ||
             !state->body_motion_present ||
             !state->body_probe_position_present ||
+            !state->body_aggregate_position_present ||
             !state->body_field_120_present ||
             state->input_provider_call_count != 1u ||
             state->native_call_count != 1u ||
