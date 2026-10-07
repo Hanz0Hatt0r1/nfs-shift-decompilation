@@ -26,6 +26,11 @@
     "record_count": 3,
     "pointer_increment_double_elements": "0x150",
     "record_stride_bytes": "0xa80",
+    "record_stride_derivation": "0x150 double elements * 8 bytes = 0xa80 bytes",
+    "native_constants": {
+      "first_record_offset": "kFun00759c90FirstRecordOffset == 0x7f0",
+      "record_stride_bytes": "kFun00759c90RecordStrideBytes == 0xa80"
+    },
     "per_record_fields": {
       "scalar_a": "+0x00",
       "vector_a": "+0xb0",
@@ -45,7 +50,14 @@
     ],
     "formula": "f32(f32(first_output.x)*planar_direction.x + planar_direction.y*0.0 + f32(first_output.z)*planar_direction.z)",
     "planar_direction": "existing FUN_007675f0 probe-derived X/Z direction with the source f32 normalization stages",
-    "timing": "after FUN_00759c90 returns and before the strict distance/speed gate"
+    "timing": "after FUN_00759c90 returns and before the strict distance/speed gate",
+    "precision_witness": {
+      "first_output": [-0.4847484798108193, 0.0, 17707.45002995104],
+      "planar_delta": [2.147281910352325, 0.0, 0.055313743475557536],
+      "source_order_f32_bits": "0x43e3c0c7",
+      "naive_all_double_then_f32_bits": "0x43e3c0c8",
+      "purpose": "distinguish the PC caller's visible f32 staging from a numerically close all-double implementation"
+    }
   },
   "xbox_recomp_corroboration": {
     "authoritative_for_pc": false,
@@ -72,6 +84,7 @@
     "The three FUN_00759c90 record producers/storage refresh owners remain external.",
     "No physical semantic name or unit is assigned to the records, weighted total, or projected scalar.",
     "Xbox recomp is corroboration/navigation only and is not PC floating-point authority.",
-    "The second FUN_00759c90 output and later FUN_00753810/FUN_007ba9e0 provenance remain outside this slice."
+    "The second FUN_00759c90 output and later FUN_00753810/FUN_007ba9e0 provenance remain outside this slice.",
+    "Phase736 consumes only the caller-relevant first output; historical Phase660 transformed_total/scalar_output are not evidence for this projection join."
   ]
 }
