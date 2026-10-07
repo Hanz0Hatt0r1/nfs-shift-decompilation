@@ -73,6 +73,12 @@ int main() {
             "distance state mismatch",
             max_error);
         require_close(
+            result.gap,
+            result.filtered_distance_state - (base_input().surface_scalar - kContactGapOffset),
+            1e-12,
+            "filtered-state gap mismatch",
+            max_error);
+        require_close(
             result.speed,
             kContactSpeedFactorOffset + kContactSpeedFactorScale,
             1e-12,
@@ -95,7 +101,15 @@ int main() {
 
         auto partial = base_input();
         partial.planar_delta = {7.0, 99.0, 0.0};
-        partial.surface_scalar = 7.25;
+        const double partial_filtered =
+            execute_fun_00783a30_distance_filter(
+                partial.previous_distance_state,
+                7.0,
+                partial.distance_filter_cap,
+                kContactDistanceFilterResponse);
+        // Choose the source scalar so the machine-correct filtered-state gap is
+        // exactly 1.25. Raw distance is deliberately different here.
+        partial.surface_scalar = partial_filtered + 0.25;
         partial.speed_x =
             kContactSpeedFactorOffset + 0.25 * kContactSpeedFactorScale;
         const auto partial_result =
@@ -186,6 +200,7 @@ int main() {
             << "\"outer_arithmetic_proven\":true,"
             << "\"strict_gate_proven\":true,"
             << "\"distance_filter_proven\":true,"
+            << "\"gap_uses_filtered_state\":true,"
             << "\"paired_submission_scales_proven\":true,"
             << "\"body_point_submission_vectors_proven\":false,"
             << "\"runtime_scheduling_proven\":false,"
