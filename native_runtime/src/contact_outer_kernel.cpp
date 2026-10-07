@@ -1,7 +1,10 @@
 #include "shift_contact_outer_kernel.hpp"
 
+#include "shift_body_record_adapter.hpp"
+
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <stdexcept>
 #include <string>
 
@@ -23,6 +26,31 @@ void require_finite_value(double value, const char* label) {
         throw std::invalid_argument(
             std::string(label) + " must be finite");
     }
+}
+
+std::uint64_t read_u64_le(
+    const std::vector<std::uint8_t>& bytes,
+    std::size_t offset) {
+    if (offset > bytes.size() || bytes.size() - offset < sizeof(std::uint64_t)) {
+        throw std::invalid_argument(
+            "FUN_007675f0 BODY0 motion read exceeds BODY buffer");
+    }
+    std::uint64_t value = 0u;
+    for (std::size_t byte = 0u; byte < sizeof(value); ++byte) {
+        value |= static_cast<std::uint64_t>(bytes[offset + byte]) << (byte * 8u);
+    }
+    return value;
+}
+
+double read_f64_le(
+    const std::vector<std::uint8_t>& bytes,
+    std::size_t offset,
+    const char* label) {
+    const std::uint64_t bits = read_u64_le(bytes, offset);
+    double value = 0.0;
+    std::memcpy(&value, &bits, sizeof(value));
+    require_finite_value(value, label);
+    return value;
 }
 
 double planar_length_xz(const ContactOuterVector3d& vector) {
@@ -55,6 +83,46 @@ double clamp_01(double value) {
 }
 
 }  // namespace
+
+Fun007675f0BodyMotion derive_fun_007675f0_body0_motion(
+    const std::vector<std::uint8_t>& current_body_bytes) {
+    if (current_body_bytes.empty() ||
+        current_body_bytes.size() % kBodyRecordSize != 0u) {
+        throw std::invalid_argument(
+            "FUN_007675f0 BODY motion requires exact 0x170-byte BODY records");
+    }
+
+    Fun007675f0BodyMotion motion{};
+    motion.speed_x = read_f64_le(
+        current_body_bytes,
+        kFun007675f0Body0SpeedXOffset,
+        "FUN_007675f0 BODY0 speed X");
+    motion.speed_z = read_f64_le(
+        current_body_bytes,
+        kFun007675f0Body0SpeedZOffset,
+        "FUN_007675f0 BODY0 speed Z");
+    return motion;
+}
+
+ContactOuterKernelInput compose_fun_007675f0_input(
+    const ContactOuterExternalInput& external,
+    const Fun007675f0BodyMotion& motion) {
+    require_finite_value(motion.speed_x, "FUN_007675f0 BODY0 speed X");
+    require_finite_value(motion.speed_z, "FUN_007675f0 BODY0 speed Z");
+
+    ContactOuterKernelInput input{};
+    input.planar_delta = external.planar_delta;
+    input.previous_distance_state = external.previous_distance_state;
+    input.distance_filter_cap = external.distance_filter_cap;
+    input.speed_x = motion.speed_x;
+    input.speed_z = motion.speed_z;
+    input.surface_scalar = external.surface_scalar;
+    input.base_scalar = external.base_scalar;
+    input.projected_scalar = external.projected_scalar;
+    input.alignment_scalar = external.alignment_scalar;
+    input.param_3 = external.param_3;
+    return input;
+}
 
 double execute_fun_00783a30_distance_filter(
     double previous,
