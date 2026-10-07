@@ -2,7 +2,6 @@
 
 #include "shift_fun_007560c0_motion_read_gate_setup.hpp"
 #include "shift_fun_00765c40_external_pass_result.hpp"
-#include "shift_fun_00766510_query_scalar_handoff.hpp"
 #include "shift_fun_007675f0_distance_filter_cap_setup.hpp"
 #include "shift_fun_007675f0_distance_state_setup.hpp"
 #include "shift_fun_007682c0_projection_state.hpp"
@@ -39,10 +38,6 @@ using NativeVehicleFun00765c40Provider =
     std::function<physics::Fun00765c40ExternalPassResult(
         std::size_t pass_index,
         const physics::Fun00765c40ExternalPassInput& input)>;
-using NativeVehicleContactResponseProvider =
-    std::function<void(
-        std::size_t pass_index,
-        const physics::Fun00766510QueryScalarHandoff& input)>;
 using NativeVehicleContactOuterInputProvider =
     std::function<physics::ContactOuterSessionInput(std::size_t pass_index)>;
 using NativeVehicleScalarProviderFactory =
@@ -54,19 +49,18 @@ using NativeVehicleHalfStepRefreshProvider =
         const std::vector<std::uint8_t>& current_body_bytes)>;
 
 struct NativeVehicleExternalProviderBundle {
-    // FUN_00765c40 remains one residual external pass boundary. Phase742 makes
-    // FUN_007b0710's typed CollisionQueryOutput explicit, so the caller-visible
-    // +0x38e0 scalar can be projected natively before FUN_00766510. Cache,
-    // selected-BMW world position and selected +0x38e8 setup value remain
-    // source-owned by the native session as established by Phases739-741.
+    // FUN_00765c40 remains one residual external pass boundary. Phase740 moves
+    // HDVehicle+0x38dc ownership into NativeVehicleProviderSession: the provider
+    // receives the prior cache handle before executing and must return the next
+    // handle written by FUN_00765c40. For the selected BMW domain the request
+    // also carries the Phase739 native world position. Phase741 binds the exact
+    // selected BMW +0x38e8 setup fallback from FRONTWING.FWMaxHeight through
+    // that same pre-call request. Generic historical fixtures retain explicit
+    // compatibility values. Collision-provider behavior, load terms and residual
+    // side effects remain external.
     NativeVehicleFun00765c40Provider fun_00765c40{};
     NativeVehiclePassCallback wheel_update{};
-
-    // FUN_00766510 is still one external boundary, but it no longer owns the
-    // query-result projection or initial [0,+0x38e8] clamp. The provider receives
-    // those source-backed values as a typed pre-call handoff. Remaining response
-    // configuration, BODY application and optional branches stay external.
-    NativeVehicleContactResponseProvider contact_response{};
+    NativeVehiclePassCallback contact_response{};
 
     // FUN_007675f0 arithmetic remains native. The per-pass provider supplies
     // only still-external caller fields. BODY0 +0x78/+0x88 and HDVehicle+0x4080
@@ -94,11 +88,9 @@ struct NativeVehicleExternalProviderBundle {
 struct NativeVehicleProviderSessionTelemetry {
     std::size_t fun_00765c40_call_count = 0u;
     std::size_t fun_00765c40_query_input_capture_count = 0u;
-    std::size_t fun_00765c40_collision_output_capture_count = 0u;
     std::size_t fun_00765c40_cache_commit_count = 0u;
     std::size_t wheel_update_call_count = 0u;
     std::size_t contact_response_call_count = 0u;
-    std::size_t contact_response_query_scalar_handoff_count = 0u;
     std::size_t contact_outer_input_call_count = 0u;
     std::size_t contact_outer_distance_state_commit_count = 0u;
     std::size_t motion_read_native_effect_call_count = 0u;
@@ -114,16 +106,8 @@ struct NativeVehicleProviderSessionResult {
         fun_00765c40_query_inputs{};
     std::array<bool, kNativeVehiclePhysicsPassCount>
         fun_00765c40_query_input_present{};
-    std::array<physics::CollisionQueryOutput, kNativeVehiclePhysicsPassCount>
-        fun_00765c40_query_outputs{};
-    std::array<bool, kNativeVehiclePhysicsPassCount>
-        fun_00765c40_query_output_present{};
     std::array<std::optional<std::uint64_t>, kNativeVehiclePhysicsPassCount>
         fun_00765c40_returned_cache_handles{};
-    std::array<physics::Fun00766510QueryScalarHandoff, kNativeVehiclePhysicsPassCount>
-        fun_00766510_query_scalar_handoffs{};
-    std::array<bool, kNativeVehiclePhysicsPassCount>
-        fun_00766510_query_scalar_handoff_present{};
     std::uint64_t session_step_count = 0u;
     NativeVehicleProviderSessionTelemetry telemetry{};
 };
@@ -177,6 +161,9 @@ private:
     NativeVehicleExternalProviderBundle providers_{};
     physics::Fun007682c0DerivedProjectionState motion_read_projection_state_{};
     double contact_outer_distance_state_ = 0.0;
+    // PC FUN_00756bb0 seeds HDVehicle+0x38dc = 0. nullopt is the native typed
+    // representation of that no-handle state. Every residual FUN_00765c40 pass
+    // consumes this value and commits its returned handle for the next pass.
     std::optional<std::uint64_t> fun_00765c40_query_cache_handle_{};
     std::uint64_t step_count_ = 0u;
     NativeVehicleProviderSessionTelemetry last_telemetry_{};
