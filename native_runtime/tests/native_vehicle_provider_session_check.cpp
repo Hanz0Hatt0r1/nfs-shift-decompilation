@@ -22,6 +22,17 @@ void require(bool condition, const char* message) {
     }
 }
 
+Fun00765c40QueryInputBoundary make_query_input(std::size_t pass) {
+    Fun00765c40QueryInputBoundary input{};
+    input.world_position = {
+        10.0 + static_cast<double>(pass),
+        20.0 + static_cast<double>(pass),
+        30.0 + static_cast<double>(pass)};
+    input.cached_handle = 1000u + static_cast<std::uint64_t>(pass);
+    input.miss_fallback = 7.0 + static_cast<double>(pass);
+    return input;
+}
+
 NativeVehicleExternalProviderBundle make_bundle(
     std::vector<std::string>& events,
     const PreparedGeneratedBodyConstraintFrame& source,
@@ -35,7 +46,8 @@ NativeVehicleExternalProviderBundle make_bundle(
     bundle.fun_00765c40 = [&events](std::size_t pass) {
         events.push_back("fun-00765c40:" + std::to_string(pass));
         return Fun00765c40ExternalPassResult{
-            Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0}};
+            Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0},
+            make_query_input(pass)};
     };
     bundle.wheel_update = [&events](std::size_t pass) {
         events.push_back("wheel-update:" + std::to_string(pass));
@@ -174,6 +186,7 @@ int main() {
         require(runtime.outer_update.explicit_update_count == 1u,
                 "Phase 701 first explicit update did not commit");
         require(first.telemetry.fun_00765c40_call_count == 2u &&
+                    first.telemetry.fun_00765c40_query_input_capture_count == 2u &&
                     first.telemetry.wheel_update_call_count == 2u &&
                     first.telemetry.contact_response_call_count == 2u &&
                     first.telemetry.contact_outer_input_call_count == 2u &&
@@ -181,7 +194,29 @@ int main() {
                     first.telemetry.scalar_provider_factory_call_count == 2u &&
                     first.telemetry.half_step_refresh_call_count == 2u &&
                     first.telemetry.post_half_step_call_count == 2u,
-                "Phase 725 first seven-boundary telemetry mismatch");
+                "Phase 726 first seven-boundary telemetry mismatch");
+        require(first.fun_00765c40_query_input_present[0] &&
+                    first.fun_00765c40_query_input_present[1],
+                "Phase 726 query input snapshots missing");
+        require(first.fun_00765c40_query_inputs[0].world_position ==
+                    make_query_input(0u).world_position &&
+                    first.fun_00765c40_query_inputs[1].world_position ==
+                    make_query_input(1u).world_position,
+                "Phase 726 per-pass world-position snapshots mismatch");
+        require(first.fun_00765c40_query_inputs[0].cached_handle == 1000u &&
+                    first.fun_00765c40_query_inputs[1].cached_handle == 1001u,
+                "Phase 726 per-pass cache-handle snapshots mismatch");
+        require(first.fun_00765c40_query_inputs[0].miss_fallback == 7.0 &&
+                    first.fun_00765c40_query_inputs[1].miss_fallback == 8.0,
+                "Phase 726 per-pass +0x38e8 fallback snapshots mismatch");
+        const auto captured_query = build_fun_00765c40_query_record(
+            first.fun_00765c40_query_inputs[0]);
+        require(captured_query.query_position[0] == 10.0 &&
+                    std::abs(captured_query.query_position[1] - 20.15) < 1e-14 &&
+                    captured_query.query_position[2] == 30.0 &&
+                    captured_query.cache_handle == 1000u,
+                "Phase 726 captured query input did not materialize retail record");
+
         require(first.joined.motion_read_input_provider_call_count == 2u &&
                     first.joined.motion_read_native_effect_call_count == 2u &&
                     first.joined.joined.contact_outer_native_call_count == 2u &&
@@ -286,6 +321,9 @@ int main() {
             << "\"fun_007560c0_gate_setup_owned\":true,"
             << "\"fun_00765c40_load_terms_typed\":true,"
             << "\"fun_00765c40_external_pass_result_typed\":true,"
+            << "\"fun_00765c40_query_input_captured\":true,"
+            << "\"fun_00765c40_query_position_producer_internalized\":false,"
+            << "\"fun_00765c40_collision_provider_internalized\":false,"
             << "\"contact_factor_session_alias_removed\":true,"
             << "\"selected_player_difficulty\":"
             << kBmwNativeSilverstonePlayerDifficulty << ","
