@@ -39,10 +39,13 @@ def test_single_process_execution_contract_is_active_and_current() -> None:
     assert frontier["fun_007682c0_machine_effect_contract"] == "SHIFT.Fun007682c0MachineEffectProduction/1"
     assert frontier["fun_007682c0_effect_production_internal"] is True
     assert frontier["fun_007682c0_x87_fsqrt_internal"] is True
+    assert frontier["fun_007682c0_projection_state_contract"] == "SHIFT.Fun007682c0DerivedProjectionState/1"
+    assert frontier["fun_007682c0_projection_state_internal"] is True
+    assert frontier["fun_007682c0_external_projection_fields_required"] is False
     assert frontier["active_external_provider_count"] == 8
-    assert frontier["current_blocker_id"] == "fun-007682c0-raw-input-producer-refresh"
-    assert "raw HDVehicle/DAT inputs" in frontier["current_blocker"]
-    assert "effect arithmetic" in frontier["current_blocker"]
+    assert frontier["current_blocker_id"] == "fun-007682c0-remaining-raw-input-producer-refresh"
+    assert "remaining FUN_007682c0 raw fields" in frontier["current_blocker"]
+    assert "+0x4084/+0x408c are already native" in frontier["current_blocker"]
     assert frontier["pc_build_is_primary_authority"] is True
     assert frontier["xbox_360_recomp_may_corroborate_or_accelerate_search"] is True
     assert frontier["runtime_capture_required"] is False
@@ -65,12 +68,12 @@ def test_single_process_queue_advances_inside_s6_provider_producers() -> None:
     assert "180 Hz" in queue[4]["task"]
     assert "1/180" in queue[4]["task"]
     assert queue[5]["state"] == "current"
-    assert "destination and effect arithmetic are positive" in queue[5]["task"]
-    assert "raw HDVehicle/DAT input producer refresh" in queue[5]["task"]
+    assert "derived +0x4084/+0x408c projection state are positive" in queue[5]["task"]
+    assert "remaining raw HDVehicle/DAT producers" in queue[5]["task"]
     assert "camera-follow" in queue[7]["task"]
 
 
-def test_single_process_machine_effect_is_positive_but_raw_refresh_and_control_remain_closed() -> None:
+def test_single_process_projection_state_is_positive_but_remaining_refresh_and_control_are_closed() -> None:
     payload = json.loads(EXECUTION.read_text(encoding="utf-8"))
     positives = payload["positive_gates"]
     gates = payload["false_gates"]
@@ -86,11 +89,13 @@ def test_single_process_machine_effect_is_positive_but_raw_refresh_and_control_r
     assert positives["fun_007682c0_body0_delta_application_internal"] is True
     assert positives["fun_007682c0_effect_production_internal"] is True
     assert positives["fun_007682c0_x87_fsqrt_internal"] is True
-    assert gates["fun_007682c0_raw_input_refresh_internal"] is False
+    assert positives["fun_007682c0_projection_state_internal"] is True
+    assert gates["fun_007682c0_remaining_raw_input_refresh_internal"] is False
     assert gates["retail_provider_control_producers_complete"] is False
     assert gates["retail_control_chain_complete"] is False
     assert gates["retail_camera_follow_ready"] is False
     assert "SHIFT.Fun007682c0MachineEffectProduction/1 exact PC machine effect arithmetic with x87 FSQRT and no host sqrt substitution" in payload["positive_checkpoints"]
+    assert "SHIFT.Fun007682c0DerivedProjectionState/1 exact PC previous-outer HDVehicle+0x4084/+0x408c state derived from BODY0 velocity delta/outer timestep" in payload["positive_checkpoints"]
     assert payload["internal_checkpoint_policy"]["cross_process_handoffs_exist"] is False
     assert payload["internal_checkpoint_policy"]["positive_contracts_consumed_immediately"] is True
     assert payload["internal_checkpoint_policy"]["unsupported_gate_promotion_allowed"] is False
