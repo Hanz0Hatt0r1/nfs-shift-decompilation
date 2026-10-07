@@ -22,18 +22,6 @@ void require(bool condition, const char* message) {
     }
 }
 
-Fun007682c0MachineInput make_motion_input() {
-    Fun007682c0MachineInput input{};
-    input.caller_gate_open = true;  // legacy sentinel ignored by late input conversion
-    input.steering = 1.2f;
-    input.load_terms = {-101.0, -102.0, -103.0, -104.0};
-    input.projection_field_x = 2.0f;
-    input.projection_field_z = 1.0f;
-    input.response_field_4054 = 2.0f;
-    input.angle_mode = 2;
-    return input;
-}
-
 NativeVehicleExternalProviderBundle make_bundle(
     std::vector<std::string>& events,
     const PreparedGeneratedBodyConstraintFrame& source,
@@ -59,10 +47,6 @@ NativeVehicleExternalProviderBundle make_bundle(
         return make_contact_outer_input();
     };
     bundle.motion_read_setup.caller_gate_open = true;
-    bundle.motion_read_input = [&events](std::size_t pass) {
-        events.push_back("motion-input:" + std::to_string(pass));
-        return make_motion_input();
-    };
     bundle.scalar_provider_factory = [&events](std::size_t pass) {
         events.push_back("scalar-factory:" + std::to_string(pass));
         return [&events, pass](
@@ -159,7 +143,7 @@ int main() {
             projection,
             machine_input,
             outer_timestep * 0.5);
-        incomplete.motion_read_input = {};
+        incomplete.contact_response = {};
         bool incomplete_rejected = false;
         try {
             NativeVehicleProviderSession bad(std::move(incomplete));
@@ -168,7 +152,7 @@ int main() {
             incomplete_rejected = true;
         }
         require(incomplete_rejected && constructor_events.empty(),
-                "Phase 701 incomplete raw-input bundle failed open");
+                "Phase 724 incomplete seven-boundary bundle failed open");
 
         NativeRuntimeState runtime{};
         configure_runtime(runtime, initial_body_bytes);
@@ -192,12 +176,11 @@ int main() {
                     first.telemetry.wheel_update_call_count == 2u &&
                     first.telemetry.contact_response_call_count == 2u &&
                     first.telemetry.contact_outer_input_call_count == 2u &&
-                    first.telemetry.motion_read_input_call_count == 2u &&
                     first.telemetry.motion_read_native_effect_call_count == 2u &&
                     first.telemetry.scalar_provider_factory_call_count == 2u &&
                     first.telemetry.half_step_refresh_call_count == 2u &&
                     first.telemetry.post_half_step_call_count == 2u,
-                "Phase 701 first eight-boundary telemetry mismatch");
+                "Phase 724 first seven-boundary telemetry mismatch");
         require(first.joined.motion_read_input_provider_call_count == 2u &&
                     first.joined.motion_read_native_effect_call_count == 2u &&
                     first.joined.joined.contact_outer_native_call_count == 2u &&
@@ -214,6 +197,11 @@ int main() {
         require(first.joined.motion_read_inputs[0].caller_gate_open &&
                     first.joined.motion_read_inputs[1].caller_gate_open,
                 "Phase 723 FUN_007560c0 setup gate was not reused by both passes");
+        require(first.joined.motion_read_inputs[0].angle_mode ==
+                    kBmwNativeSilverstonePlayerDifficulty &&
+                    first.joined.motion_read_inputs[1].angle_mode ==
+                    kBmwNativeSilverstonePlayerDifficulty,
+                "Phase 724 selected Player Difficulty was not reused by both passes");
 
         const auto first_body_bytes = runtime.outer_update.body_bytes;
         require(first_body_bytes != initial_body_bytes,
@@ -244,8 +232,8 @@ int main() {
                     runtime.outer_update.explicit_update_count == 2u &&
                     runtime.outer_update.body_pose_snapshot_generation == committed_generation &&
                     runtime.outer_update.body_bytes == committed_body_bytes &&
-                    session.last_telemetry().motion_read_input_call_count ==
-                        committed_telemetry.motion_read_input_call_count,
+                    session.last_telemetry().motion_read_native_effect_call_count ==
+                        committed_telemetry.motion_read_native_effect_call_count,
                 "Phase 701 participant gate committed rejected state");
         require(runtime.physics.fixed_step == 0u,
                 "Phase 701 leaked deep outer update into fixed_step scheduling");
@@ -293,20 +281,19 @@ int main() {
             << "\"ready\":true,"
             << "\"phase697_persistent_outer_path_reused\":true,"
             << "\"phase699_external_provider_count\":9,"
-            << "\"active_external_provider_count\":8,"
+            << "\"active_external_provider_count\":7,"
             << "\"fun_007560c0_gate_setup_owned\":true,"
             << "\"fun_00765c40_load_terms_typed\":true,"
-            << "\"motion_read_raw_input_provider\":true,"
+            << "\"selected_player_difficulty\":"
+            << kBmwNativeSilverstonePlayerDifficulty << ","
+            << "\"motion_read_raw_input_provider\":false,"
             << "\"motion_read_effect_arithmetic_internal\":true,"
             << "\"session_step_count\":" << session.step_count() << ","
             << "\"persistent_body_state_reused\":true,"
             << "\"provider_admission_before_execution\":true,"
             << "\"participant_gate_before_provider_side_effects\":true,"
             << "\"retail_inner_batch_bridge_ready\":true,"
-            << "\"selected_session_rate_promoted\":false,"
             << "\"provider_semantics_promoted\":false,"
-            << "\"vehicle_body_identity_proven\":false,"
-            << "\"vehicle_world_transform_proven\":false,"
             << "\"fixed_step_auto_schedule\":false,"
             << "\"deep_outer_update_executable_schedule_enabled\":false}\n";
         return 0;
