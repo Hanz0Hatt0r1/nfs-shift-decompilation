@@ -1,0 +1,101 @@
+{
+  "format": "SHIFT.Process1Controller1ManagerApcReachability/1",
+  "ready": true,
+  "source": {
+    "authority": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "xbox_recomp_required": false
+  },
+  "controller1_manager_attachments": {
+    "startup_function": "thunk_FUN_00d36000",
+    "attach_function": "FUN_006485b0",
+    "direct_attached_manager_count": 3,
+    "managers": [
+      "Physics Manager",
+      "Camera Manager",
+      "CameraScriptManager"
+    ],
+    "controller2_managers_excluded": [
+      "FUN_008695a0()",
+      "FUN_006984f0()"
+    ]
+  },
+  "default_update_slots": {
+    "Physics Manager": {
+      "vtable": "0x00b04524",
+      "slot_0x18_target": "0x00711b50",
+      "normalized_source_root": "FUN_00711b50"
+    },
+    "Camera Manager": {
+      "vtable": "0x00b157d8",
+      "slot_0x18_target": "0x0080c990",
+      "normalized_source_root": "FUN_0080c920",
+      "slot_target_is_jump_thunk": true
+    },
+    "CameraScriptManager": {
+      "vtable": "0x00ac5670",
+      "slot_0x18_target": "0x0050b5d0",
+      "normalized_source_root": "FUN_0050b5d0"
+    }
+  },
+  "direct_named_call_closure": {
+    "FUN_00711b50": {
+      "root": "FUN_00711b50",
+      "reachable_named_function_count": 2896,
+      "known_async_file_target_hits": [],
+      "read_write_file_ex_body_hits": []
+    },
+    "FUN_0080c920": {
+      "root": "FUN_0080c920",
+      "reachable_named_function_count": 428,
+      "known_async_file_target_hits": [],
+      "read_write_file_ex_body_hits": []
+    },
+    "FUN_0050b5d0": {
+      "root": "FUN_0050b5d0",
+      "reachable_named_function_count": 452,
+      "known_async_file_target_hits": [],
+      "read_write_file_ex_body_hits": []
+    }
+  },
+  "adjudication": {
+    "all_three_controller1_default_manager_updates_checked": true,
+    "direct_named_path_to_known_async_file_initiators_proven": false,
+    "direct_named_path_to_readfileex_or_writefileex_proven": false,
+    "indirect_virtual_or_function_pointer_path_ruled_out": false,
+    "render_frame_equivalence_proven": false
+  },
+  "machine_spans": {
+    "controller1_three_manager_attach_block": {
+      "start": "0x00d3604a",
+      "end_exclusive": "0x00d360da",
+      "sha256": "41fc5d4aa0d621d1b1f32af54087c85729b6647af7377c06d35fedea9620b2e2"
+    },
+    "physics_manager_vtable_prefix": {
+      "start": "0x00b04524",
+      "end_exclusive": "0x00b04544",
+      "sha256": "293d9126240759ea921c9b79c0447bfcfdac61f0f37a9b57b5fd6659ec16b429"
+    },
+    "camera_manager_vtable_prefix": {
+      "start": "0x00b157d8",
+      "end_exclusive": "0x00b157f8",
+      "sha256": "4d750ec25258427105a8e998620e277f456b2c116d766936f68a3242bd9a19d8"
+    },
+    "camera_script_manager_vtable_prefix": {
+      "start": "0x00ac5670",
+      "end_exclusive": "0x00ac5690",
+      "sha256": "b41f45822227cc60999bf05de7e0e382e245ccd8d2fecd89866f8202ecb5d3d1"
+    },
+    "camera_manager_update_thunk": {
+      "start": "0x0080c990",
+      "end_exclusive": "0x0080c995",
+      "sha256": "9cc93e53ab12b3dbfb32b000cab1c98e0ee480a32b4bab6d5ca0d7d06b1590bc"
+    }
+  },
+  "next_blocker": {
+    "process": 1,
+    "description": "resolve indirect/virtual callsites in the three Controller #1 manager update closures and prove whether any can alias the async-file worker/file objects; separately trace generic queue producers by queue-object identity rather than API name"
+  }
+}
