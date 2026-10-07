@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <vector>
 
 namespace shift::runtime {
@@ -34,7 +35,9 @@ struct NativeVehicleHalfStepRefreshInput {
 
 using NativeVehiclePassCallback = std::function<void(std::size_t pass_index)>;
 using NativeVehicleFun00765c40Provider =
-    std::function<physics::Fun00765c40ExternalPassResult(std::size_t pass_index)>;
+    std::function<physics::Fun00765c40ExternalPassResult(
+        std::size_t pass_index,
+        const physics::Fun00765c40ExternalPassInput& input)>;
 using NativeVehicleContactOuterInputProvider =
     std::function<physics::ContactOuterSessionInput(std::size_t pass_index)>;
 using NativeVehicleScalarProviderFactory =
@@ -46,13 +49,13 @@ using NativeVehicleHalfStepRefreshProvider =
         const std::vector<std::uint8_t>& current_body_bytes)>;
 
 struct NativeVehicleExternalProviderBundle {
-    // FUN_00765c40 remains one external pass boundary. Do not call this a
-    // contact-factor provider: the nested FUN_00758ad0 factor arithmetic is
-    // already native. The external pass now has to expose the source-backed
-    // FUN_007b0710 query input it consumed (world position, prior cache handle,
-    // +0x38e8 miss fallback) together with the four proven wheel+0x738 outputs.
-    // The upstream transform producing world_position and the collision-provider
-    // implementation remain unresolved and external.
+    // FUN_00765c40 remains one residual external pass boundary. Phase740 moves
+    // HDVehicle+0x38dc ownership into NativeVehicleProviderSession: the provider
+    // receives the prior cache handle before executing and must return the next
+    // handle written by FUN_00765c40. For the selected BMW domain the request
+    // also carries the Phase739 native world position before collision lookup.
+    // +0x38e8 fallback, collision-provider behavior, load terms and residual
+    // side effects remain external.
     NativeVehicleFun00765c40Provider fun_00765c40{};
     NativeVehiclePassCallback wheel_update{};
     NativeVehiclePassCallback contact_response{};
@@ -83,6 +86,7 @@ struct NativeVehicleExternalProviderBundle {
 struct NativeVehicleProviderSessionTelemetry {
     std::size_t fun_00765c40_call_count = 0u;
     std::size_t fun_00765c40_query_input_capture_count = 0u;
+    std::size_t fun_00765c40_cache_commit_count = 0u;
     std::size_t wheel_update_call_count = 0u;
     std::size_t contact_response_call_count = 0u;
     std::size_t contact_outer_input_call_count = 0u;
@@ -100,6 +104,8 @@ struct NativeVehicleProviderSessionResult {
         fun_00765c40_query_inputs{};
     std::array<bool, kNativeVehiclePhysicsPassCount>
         fun_00765c40_query_input_present{};
+    std::array<std::optional<std::uint64_t>, kNativeVehiclePhysicsPassCount>
+        fun_00765c40_returned_cache_handles{};
     std::uint64_t session_step_count = 0u;
     NativeVehicleProviderSessionTelemetry telemetry{};
 };
@@ -145,11 +151,18 @@ public:
     double contact_outer_distance_filter_cap() const {
         return providers_.contact_outer_filter_cap_setup.distance_filter_cap;
     }
+    std::optional<std::uint64_t> fun_00765c40_query_cache_handle() const {
+        return fun_00765c40_query_cache_handle_;
+    }
 
 private:
     NativeVehicleExternalProviderBundle providers_{};
     physics::Fun007682c0DerivedProjectionState motion_read_projection_state_{};
     double contact_outer_distance_state_ = 0.0;
+    // PC FUN_00756bb0 seeds HDVehicle+0x38dc = 0. nullopt is the native typed
+    // representation of that no-handle state. Every residual FUN_00765c40 pass
+    // consumes this value and commits its returned handle for the next pass.
+    std::optional<std::uint64_t> fun_00765c40_query_cache_handle_{};
     std::uint64_t step_count_ = 0u;
     NativeVehicleProviderSessionTelemetry last_telemetry_{};
 };
