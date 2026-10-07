@@ -79,12 +79,21 @@ execute_fun_00770e80_contact_outer_provider_chain(
             adapted.post_pass_body_mutator =
                 std::move(typed.post_pass_body_mutator);
 
+            auto upstream_body_observer =
+                std::move(typed.current_body_observer);
+
             // Current BODY0 is published before any per-pass anchor. Besides the
             // already-owned motion/query position, FUN_00769ef0 and FUN_007675f0
-            // both consume BODY0+0x120. Capture one pass-local persistent value
-            // so pass 1 observes pass 0's half-step result.
+            // both consume BODY0+0x120. Compose any upstream owner with this
+            // pass-local bridge so every consumer sees the exact same BODY bytes;
+            // pass 1 therefore observes pass 0's half-step result.
             adapted.current_body_observer =
-                [state](const std::vector<std::uint8_t>& current_body_bytes) {
+                [state,
+                 upstream_body_observer = std::move(upstream_body_observer)](
+                    const std::vector<std::uint8_t>& current_body_bytes) mutable {
+                    if (upstream_body_observer) {
+                        upstream_body_observer(current_body_bytes);
+                    }
                     state->body_motion =
                         derive_fun_007675f0_body0_motion(current_body_bytes);
                     state->body_probe_position =
