@@ -1,0 +1,108 @@
+{
+  "format": "SHIFT.Fun007675f0Param3Ownership/1",
+  "version": 1,
+  "status": "native-derived-from-earlier-pass-state",
+  "ready": true,
+  "source": {
+    "program": "SHIFT.exe",
+    "executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "producer": "FUN_00769ef0",
+    "consumer": "FUN_007675f0"
+  },
+  "machine_evidence": {
+    "producer_span": {
+      "start": "0x00769f44",
+      "end_exclusive": "0x00769fa5",
+      "sha256": "bc51cb790747aeb9eed889678a7b72e508c0e9991c6854820493a46fe2d87a22",
+      "meaning": "sum four HDVehicle load terms, divide by BODY0+0x120 times 9.81, spill quotient to f32, clamp to [0,1]"
+    },
+    "call_span": {
+      "start": "0x0076a1b4",
+      "end_exclusive": "0x0076a1cc",
+      "sha256": "8158017874872b7e9e0081b19dbaef498aae92521bbeb67fd635e149c200f090",
+      "meaning": "pass cached node plus two scalar stack arguments to FUN_007675f0; the clamped load ratio is the third stack argument"
+    },
+    "consumer_span": {
+      "start": "0x00767a54",
+      "end_exclusive": "0x00767a66",
+      "sha256": "0a1f66073dedfa1b95222d46cdc99d413c39528ca0119c66a649102b12e3236d",
+      "meaning": "FUN_007675f0 multiplies the visible force scalar by stack argument +0x10"
+    },
+    "zero_constant": {
+      "address": "0x00aadd68",
+      "f64_bits": "0x0000000000000000",
+      "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83df"
+    },
+    "scale_constant": {
+      "address": "0x00b09148",
+      "value": 9.81,
+      "f64_bits": "0x40239eb851eb851f",
+      "sha256": "3043fd6ddec9a67a13d1e668dee87697720daf8c3fe8a217d15e3b86b1f12501"
+    }
+  },
+  "retail_formula": {
+    "load_terms": [
+      "HDVehicle+0xb38",
+      "HDVehicle+0x15b8",
+      "HDVehicle+0x2038",
+      "HDVehicle+0x2ab8"
+    ],
+    "body_pointer": "HDVehicle+0x33a0",
+    "body_field": "BODY0+0x120",
+    "load_sum_order": "(((term0 + 0.0) + term1) + term2) + term3",
+    "quotient": "load_sum / (BODY0+0x120 * 9.81)",
+    "store_boundary": "quotient is stored to f32 before clamp",
+    "clamp": "[0,1]",
+    "consumer_argument": "FUN_007675f0 third stack argument / [ebx+0x10]"
+  },
+  "ownership": {
+    "load_terms_owner": "existing typed FUN_00765c40 external pass result",
+    "body_field_owner": "current persistent BODY0 record",
+    "refresh_timing": "once per recovered FUN_0076d100 pass after FUN_00765c40 load-term production and before FUN_007675f0 arithmetic",
+    "pass1_reads_post_half_step_body": true,
+    "new_top_level_provider_required": false
+  },
+  "native_handoff": {
+    "deriver": "execute_fun_00769ef0_param_3",
+    "body_reader": "derive_fun_00769ef0_body0_field_120",
+    "production_payload": "ContactOuterSessionInput",
+    "production_param_3_field_present": false,
+    "compatibility_param_3_seed_present": true,
+    "load_terms_bridge": "ContactOuterExternalInput.fun_00769ef0_param_3_load_terms",
+    "provider_chain_materialization": "execute_fun_00770e80_contact_outer_provider_chain"
+  },
+  "precision_policy": {
+    "exact_f64_constant_bits_preserved": true,
+    "source_f64_operation_order_preserved": true,
+    "f32_spill_before_clamp_preserved": true,
+    "full_unbounded_x87_exponent_range_claimed": false,
+    "physical_semantic_name_promoted": false
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "production_contact_outer_fields_before": 5,
+    "production_contact_outer_fields_after": 4,
+    "remaining_production_fields": [
+      "surface_probe_node",
+      "base_scalar",
+      "projected_scalar",
+      "alignment_scalar"
+    ],
+    "remaining_unresolved_scalar_fields": [
+      "base_scalar",
+      "projected_scalar",
+      "alignment_scalar"
+    ]
+  },
+  "next_blocker": {
+    "preferred": "recover the exact mapping from already-native FUN_00759c90 and nearby caller intermediates into base_scalar, projected_scalar and alignment_scalar",
+    "parallel": "wire the Phase 733 HDVehicle+0x120 node cache through the source-backed FUN_00769ef0 null/parent/child active-path gates",
+    "do_not_guess": [
+      "physical meaning or units of BODY0+0x120",
+      "physical names for the three remaining scalar intermediates"
+    ]
+  }
+}
