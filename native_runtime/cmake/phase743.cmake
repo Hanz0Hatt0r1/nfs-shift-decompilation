@@ -20,3 +20,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00766510_selected_bmw_application_point
     COMMAND shift_runtime_fun_00766510_selected_bmw_application_point_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase744.cmake)
