@@ -1,0 +1,85 @@
+{
+  "format": "SHIFT.Fun00765c40WorldPositionTransform/1",
+  "version": 1,
+  "status": "retail-pc-machine-transform-proven-native-ready",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "source": {
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "fun_00765c40_entry": "0x00765c40",
+    "query_call": "0x00765e86",
+    "query_function": "0x007b0710"
+  },
+  "machine_spans": [
+    {
+      "role": "FUN_00765c40 two-stage world-position producer call site",
+      "start": "0x00765df2",
+      "end_exclusive": "0x00765e25",
+      "raw_byte_sha256": "b040d039c8913e6c9f332159ee20dc393f6454a564f9da2f955c45be6fda5015"
+    },
+    {
+      "role": "FUN_007aefb0 BODY0 basis times local f64 vec3",
+      "start": "0x007aefb0",
+      "end_exclusive": "0x007af003",
+      "raw_byte_sha256": "76c52235cce08d3ec131d43e1b62cda623ac8528944e44f902846a0a71b14f29"
+    },
+    {
+      "role": "FUN_00753590 f64 vec3 addition",
+      "start": "0x00753590",
+      "end_exclusive": "0x007535b4",
+      "raw_byte_sha256": "29ad42134f1176109058b222289fc03a1654034956d44d7f5dafadd20e1aa8e6"
+    },
+    {
+      "role": "FUN_007618f0 local sample write to HDVehicle+0x3938",
+      "start": "0x00762a8c",
+      "end_exclusive": "0x00762acb",
+      "raw_byte_sha256": "3c4b74dedbf14f6a6be5b91b732a49fbffed11d2d0ac67af68b3111b3cfb2a5d"
+    }
+  ],
+  "retail_dataflow": {
+    "body_pointer": "HDVehicle+0x33a0 (selected BMW chassis BODY0)",
+    "body_origin": ["BODY0+0x00 f64", "BODY0+0x08 f64", "BODY0+0x10 f64"],
+    "body_basis": "BODY0+0xd4..+0xf4, 9 contiguous f32 values",
+    "local_sample": "HDVehicle+0x3938/+0x3940/+0x3948 f64 vec3",
+    "rotated_scratch": "HDVehicle+0x38f0/+0x38f8/+0x3900 f64 vec3",
+    "rotation_helper": "FUN_007aefb0",
+    "origin_add_helper": "FUN_00753590",
+    "world_position_formula": "BODY0.origin + BODY0.basis * HDVehicle.local_sample_0x3938",
+    "query_consumption": "the resulting f64 vec3 is copied into the FUN_007b0710 query record before +0.15 Y bias"
+  },
+  "matrix_instruction_order": {
+    "row0": "(m01*y + m00*x) + m02*z",
+    "row1": "(m10*x + m11*y) + m12*z",
+    "row2": "(m20*x + m21*y) + m22*z",
+    "row_store": "each rotated component is stored to f64 before origin addition",
+    "origin_add": "each stored rotated f64 component is added to the matching BODY0 origin f64 component"
+  },
+  "local_sample_producer": {
+    "writer_function": "FUN_007618f0",
+    "writer_store_span": "0x00762a8c..0x00762acb",
+    "writer_shape": "FUN_00753590 adds an unresolved local-base vec3 to a resource/config vec3 at the writer's +0x918 source, then stores the f64 result to HDVehicle+0x3938/+0x3940/+0x3948",
+    "complete_semantics_internalized": false
+  },
+  "native_consumption": {
+    "header": "native_runtime/include/shift_fun_00765c40_world_position_transform.hpp",
+    "source": "native_runtime/src/fun_00765c40_world_position_transform.cpp",
+    "entry": "execute_fun_00765c40_world_position_transform",
+    "body_layout_reused": "SHIFT.NativeBodyRecordAdapter/1",
+    "final_transform_native": true,
+    "active_session_joined": false
+  },
+  "scope": {
+    "renderer_BODY0_VHF_transform_used": false,
+    "final_world_position_transform_internalized": true,
+    "HDVehicle_0x3938_local_sample_producer_internalized": false,
+    "FUN_007618f0_complete_semantics_claimed": false,
+    "per_pass_BODY0_snapshot_joined_to_FUN_00765c40": false,
+    "collision_provider_internalized": false,
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  }
+}
