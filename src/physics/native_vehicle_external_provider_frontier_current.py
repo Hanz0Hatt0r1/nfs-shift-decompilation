@@ -26,6 +26,8 @@ WORLD_TRANSFORM_WIRING_FORMAT = "SHIFT.BMWPersistentWorldTransformRuntimeWiring/
 SELECTED_RATE_FORMAT = "SHIFT.SelectedSessionPhysicsTweakerRate/1"
 SELECTED_EXECUTION_FORMAT = "SHIFT.SelectedSessionRetailVehicleExecution/1"
 FUN_007682C0_DESTINATION_FORMAT = "SHIFT.Fun007682c0Body0DeltaDestination/1"
+FUN_007682C0_EFFECT_FRONTIER_FORMAT = "SHIFT.Fun007682c0EffectInputMachineFrontier/1"
+FUN_007682C0_MACHINE_MAGNITUDE_FORMAT = "SHIFT.Fun007682c0MachineMagnitude/1"
 SELECTED_RATE_HZ = 180
 SELECTED_NORMAL_OUTER_SUBSTEPS = 6
 
@@ -41,6 +43,7 @@ _EXPECTED_LEGACY_PROVIDER_IDS = (
     "fun_00765470_half_step_refresh_bundle",
 )
 _CLOSED_PROVIDER_ID = "fun_007682c0_delta_consumer"
+_EFFECT_PROVIDER_ID = "fun_007682c0_effect_provider"
 
 
 def _require(condition: bool, message: str) -> None:
@@ -73,12 +76,33 @@ def build_current_frontier() -> dict[str, Any]:
     ]
     _require(len(active_providers) == 8, "current provider count drift")
 
+    effect_provider = next(
+        row for row in active_providers if row.get("id") == _EFFECT_PROVIDER_ID
+    )
+    effect_provider["evidence_state"] = "source_inputs_and_machine_magnitude_positive"
+    effect_provider["evidence"] = list(effect_provider.get("evidence", [])) + [
+        "SHIFT.Fun007682c0Body0DeltaDestination/1 closes the BODY0 +0x50 application destination",
+        "SHIFT.Fun007682c0EffectInputMachineFrontier/1 maps all visible PC caller/body/vehicle scalar inputs",
+        "SHIFT.Fun007682c0MachineMagnitude/1 implements the PC x87 3D and planar magnitude paths under retail CW 0x027f without std::sqrt",
+    ]
+    effect_provider["blockers"] = [
+        "FUN_007595d0 exact x87/f32 response machine parity remains unproven",
+        "runtime wiring for the source-proven HDVehicle scalar fields +0x4068/+0x4054/+0x4084/+0x408c and load-factor numerator fields remains external",
+    ]
+    effect_provider["process1_requested_proof"] = [
+        "freeze and implement every remaining FUN_007595d0 x87/f32 store-reload checkpoint through its return value",
+        "wire the already source-proven HDVehicle scalar producers into the typed effect path without assigning unsupported physical names",
+    ]
+    effect_provider["additional_dependency"] = (
+        "none for magnitude sqrt ownership: __CIsqrt positive path is proven as FSQRT under retail x87 CW 0x027f; the remaining machine blocker is FUN_007595d0 response parity"
+    )
+
     report = deepcopy(legacy)
     report["format"] = FORMAT
     report["version"] = 1
     report["upstream_frontier"] = LEGACY_FORMAT
-    report["refresh_after_phase"] = 717
-    report["refresh_label"] = "S6 PC-source FUN_007682c0 BODY0 destination closure"
+    report["refresh_after_phase"] = 718
+    report["refresh_label"] = "S6 PC effect inputs + x87 magnitude frontier"
     report["scheduler_refresh"] = (
         "S5 positive retail outer cadence + atomic explicit dispatch + exact "
         "selected-session 180 Hz rate + exact persistent 1/180 inner execution"
@@ -88,16 +112,10 @@ def build_current_frontier() -> dict[str, Any]:
         "freshness-gated persistent BMW world-transform runtime wiring"
     )
     report["provider_refresh"] = (
-        "PC SHIFT.exe.c proves FUN_007682c0 loads HDVehicle+0x33a0 and applies "
-        "its visible scalar to that chassis BODY record at +0x50; the existing "
-        "BMW identity proof joins HDVehicle+0x33a0 to chassis BODY0"
+        "PC SHIFT.exe.c plus retail machine code now close FUN_007682c0 visible input provenance and both x87 magnitude paths; FUN_007595d0 response parity and runtime wiring of the proven vehicle scalar fields remain the exact effect-provider blockers"
     )
     report["deepest_native_chain"] = (
-        "persistent retail BODY0 state -> source-proven FUN_007682c0 BODY0 +0x50 "
-        "application -> half-step BODY integration -> positive BODY0/VHF bind proof -> "
-        "freshness-gated BMW world-transform publication -> live Vulkan sink; S5 "
-        "provides exact 180 Hz/1-180 execution while eight remaining provider "
-        "producer/ownership boundaries stay external"
+        "persistent retail BODY0 state -> source-proven FUN_007682c0 input fields -> native PC x87 magnitude checkpoints -> external FUN_007595d0 response remainder -> internal BODY0 +0x50 application -> half-step BODY integration -> fresh BMW world transform -> live Vulkan sink; eight active provider boundaries remain"
     )
 
     report["providers"] = active_providers
@@ -143,10 +161,10 @@ def build_current_frontier() -> dict[str, Any]:
             ],
             "blockers": [],
             "additional_dependency": (
-                "none for BODY0 -> vehicle world-transform transport or selected-session timing; the current shortest independent gate is one of the eight remaining provider producer/ownership boundaries"
+                "none for BODY0 -> vehicle world-transform transport or selected-session timing; current S6 work remains inside the eight provider producer/ownership boundaries"
             ),
             "policy": (
-                "reuse the positive transform/timing proofs and source-proven BODY0 delta destination; do not reopen them, substitute host 1/60, or promote fixture provider callbacks into retail semantics"
+                "reuse positive transform/timing/destination/magnitude proofs; do not reopen them, substitute host 1/60 or std::sqrt, or promote fixture provider callbacks into retail semantics"
             ),
         }
     )
@@ -171,6 +189,11 @@ def build_current_frontier() -> dict[str, Any]:
         "vehicle_world_transform_ready": True,
         "FUN_007682c0_delta_destination_contract": FUN_007682C0_DESTINATION_FORMAT,
         "FUN_007682c0_delta_destination_is_BODY0": True,
+        "FUN_007682c0_effect_frontier_contract": FUN_007682C0_EFFECT_FRONTIER_FORMAT,
+        "FUN_007682c0_source_input_provenance_ready": True,
+        "FUN_007682c0_machine_magnitude_contract": FUN_007682C0_MACHINE_MAGNITUDE_FORMAT,
+        "FUN_007682c0_machine_magnitude_ready": True,
+        "FUN_007595d0_machine_response_parity_ready": False,
     }
 
     report["provider_audit"] = {
@@ -181,13 +204,22 @@ def build_current_frontier() -> dict[str, Any]:
         "closed_provider_ids": [_CLOSED_PROVIDER_ID],
         "newly_positive_provider_or_owner_handoff_internalizable": True,
         "reason": (
-            "PC retail source proves the formerly external FUN_007682c0 +0x50 destination through HDVehicle+0x33a0; the existing BMW identity contract proves that field is the chassis BODY pointer, and the native chain now applies the delta to persistent BODY0 before each following half-step"
+            "the BODY0 delta destination is already internal; this refresh additionally consumes exact PC source input provenance and native x87 magnitude checkpoints while leaving the response-producing provider fail-closed"
         ),
         "fun_007682c0_runtime_body0_mutation_internalized": True,
         "fun_007682c0_exact_source_destination_receiver_proven": True,
         "fun_007682c0_destination_contract": FUN_007682C0_DESTINATION_FORMAT,
         "fun_007682c0_legacy_delta_consumer_required": False,
         "fun_007682c0_legacy_delta_consumer_role": "optional observer only",
+        "fun_007682c0_effect_frontier_contract": FUN_007682C0_EFFECT_FRONTIER_FORMAT,
+        "fun_007682c0_source_input_provenance_ready": True,
+        "fun_007682c0_machine_magnitude_contract": FUN_007682C0_MACHINE_MAGNITUDE_FORMAT,
+        "fun_007682c0_machine_magnitude_ready": True,
+        "fun_0075ada0_machine_planar_magnitude_ready": True,
+        "fun_007595d0_source_inputs_ready": True,
+        "fun_007595d0_machine_response_parity_ready": False,
+        "fun_007682c0_effect_production_ready": False,
+        "host_std_sqrt_used_for_retail_path": False,
         "semantic_source_receiver_inferred_from_runtime_body0_choice": False,
         "implement_now": [],
     }
@@ -229,7 +261,13 @@ def build_current_frontier() -> dict[str, Any]:
             "inner_substep_execution_admitted": True,
             "fun_007682c0_body0_delta_destination_ready": True,
             "fun_007682c0_body0_delta_application_internal": True,
+            "fun_007682c0_source_input_provenance_ready": True,
+            "fun_007682c0_machine_magnitude_ready": True,
+            "fun_0075ada0_machine_planar_magnitude_ready": True,
+            "fun_007595d0_source_inputs_ready": True,
+            "fun_007595d0_machine_response_parity_ready": False,
             "fun_007682c0_effect_production_ready": False,
+            "host_std_sqrt_used_for_retail_path": False,
             "provider_semantics_promoted": False,
             "render_loop_equated_to_outer_dispatch": False,
             "host_1_60_is_retail_evidence": False,
@@ -268,6 +306,13 @@ def contract() -> dict[str, Any]:
         "FUN_007682c0_delta_destination_is_BODY0": True,
         "FUN_007682c0_delta_application_internal": True,
         "FUN_007682c0_legacy_delta_consumer_required": False,
+        "FUN_007682c0_effect_frontier_contract": FUN_007682C0_EFFECT_FRONTIER_FORMAT,
+        "FUN_007682c0_source_input_provenance_ready": True,
+        "FUN_007682c0_machine_magnitude_contract": FUN_007682C0_MACHINE_MAGNITUDE_FORMAT,
+        "FUN_007682c0_machine_magnitude_ready": True,
+        "FUN_007595d0_source_inputs_ready": True,
+        "FUN_007595d0_machine_response_parity_ready": False,
+        "FUN_007682c0_effect_production_ready": False,
         "scheduler_authority_contract": SCHEDULER_FORMAT,
         "selected_rate_contract": SELECTED_RATE_FORMAT,
         "selected_execution_contract": SELECTED_EXECUTION_FORMAT,
@@ -293,6 +338,8 @@ __all__ = [
     "SELECTED_RATE_FORMAT",
     "SELECTED_EXECUTION_FORMAT",
     "FUN_007682C0_DESTINATION_FORMAT",
+    "FUN_007682C0_EFFECT_FRONTIER_FORMAT",
+    "FUN_007682C0_MACHINE_MAGNITUDE_FORMAT",
     "SELECTED_RATE_HZ",
     "SELECTED_NORMAL_OUTER_SUBSTEPS",
     "build_current_frontier",

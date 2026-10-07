@@ -12,26 +12,38 @@ def _providers(report: dict) -> dict[str, dict]:
     return {row["id"]: row for row in report["providers"]}
 
 
-def test_current_audit_closes_one_legacy_provider_boundary() -> None:
+def test_current_audit_closes_one_legacy_provider_and_narrows_effect_boundary() -> None:
     old = legacy.build_frontier()
     report = current.build_current_frontier()
 
     assert report["format"] == current.FORMAT
     assert report["upstream_frontier"] == legacy.FORMAT
-    assert report["refresh_after_phase"] == 717
-    assert report["refresh_label"] == "S6 PC-source FUN_007682c0 BODY0 destination closure"
+    assert report["refresh_after_phase"] == 718
+    assert report["refresh_label"] == "S6 PC effect inputs + x87 magnitude frontier"
     assert report["scheduler_refresh"] == (
         "S5 positive retail outer cadence + atomic explicit dispatch + exact "
         "selected-session 180 Hz rate + exact persistent 1/180 inner execution"
     )
     assert "positive exact outer->VHF numeric relation" in report["transform_refresh"]
-    assert "HDVehicle+0x33a0" in report["provider_refresh"]
+    assert "x87 magnitude" in report["provider_refresh"]
+    assert "FUN_007595d0 response parity" in report["provider_refresh"]
     assert old["external_provider_count"] == 9
     assert report["external_provider_count"] == 8
-    assert "fun_007682c0_delta_consumer" not in _providers(report)
+    providers = _providers(report)
+    assert "fun_007682c0_delta_consumer" not in providers
     assert report["action_counts"][legacy.REQUEST_PROCESS1] == 8
     assert report["action_counts"][legacy.IMPLEMENT_NOW] == 0
     assert report["implement_now"] == []
+
+    effect = providers["fun_007682c0_effect_provider"]
+    assert effect["evidence_state"] == "source_inputs_and_machine_magnitude_positive"
+    assert any(current.FUN_007682C0_EFFECT_FRONTIER_FORMAT in row for row in effect["evidence"])
+    assert any(current.FUN_007682C0_MACHINE_MAGNITUDE_FORMAT in row for row in effect["evidence"])
+    assert effect["blockers"] == [
+        "FUN_007595d0 exact x87/f32 response machine parity remains unproven",
+        "runtime wiring for the source-proven HDVehicle scalar fields +0x4068/+0x4054/+0x4084/+0x408c and load-factor numerator fields remains external",
+    ]
+    assert "std::sqrt" not in effect["additional_dependency"]
 
     audit = report["provider_audit"]
     assert audit["provider_inventory_changed"] is True
@@ -41,7 +53,7 @@ def test_current_audit_closes_one_legacy_provider_boundary() -> None:
     assert audit["newly_positive_provider_or_owner_handoff_internalizable"] is True
 
 
-def test_current_audit_consumes_positive_transform_and_delta_destination() -> None:
+def test_current_audit_consumes_transform_destination_inputs_and_magnitude() -> None:
     report = current.build_current_frontier()
     path = report["current_bind_path"]
 
@@ -64,9 +76,14 @@ def test_current_audit_consumes_positive_transform_and_delta_destination() -> No
     assert path["vehicle_world_transform_ready"] is True
     assert path["FUN_007682c0_delta_destination_contract"] == current.FUN_007682C0_DESTINATION_FORMAT
     assert path["FUN_007682c0_delta_destination_is_BODY0"] is True
+    assert path["FUN_007682c0_effect_frontier_contract"] == current.FUN_007682C0_EFFECT_FRONTIER_FORMAT
+    assert path["FUN_007682c0_source_input_provenance_ready"] is True
+    assert path["FUN_007682c0_machine_magnitude_contract"] == current.FUN_007682C0_MACHINE_MAGNITUDE_FORMAT
+    assert path["FUN_007682c0_machine_magnitude_ready"] is True
+    assert path["FUN_007595d0_machine_response_parity_ready"] is False
 
 
-def test_transform_join_is_closed_by_positive_bind_runtime_and_timing() -> None:
+def test_transform_join_stays_closed_while_s6_moves_inside_provider_boundary() -> None:
     transform = _joins(current.build_current_frontier())["body_pose_to_renderer_world_transform"]
 
     assert transform["state"] == "retail_proven_and_consumed"
@@ -77,11 +94,11 @@ def test_transform_join_is_closed_by_positive_bind_runtime_and_timing() -> None:
     assert current.BIND_PROOF_FORMAT in joined
     assert current.WORLD_TRANSFORM_WIRING_FORMAT in joined
     assert "freshness-gated" in joined
-    assert "eight remaining provider" in transform["additional_dependency"]
-    assert "source-proven BODY0 delta destination" in transform["policy"]
+    assert "eight provider" in transform["additional_dependency"]
+    assert "std::sqrt" in transform["policy"]
 
 
-def test_fun_007682c0_delta_application_is_source_proven_and_internal() -> None:
+def test_fun_007682c0_delta_and_magnitude_are_positive_but_response_remains_closed() -> None:
     report = current.build_current_frontier()
     audit = report["provider_audit"]
     guards = report["guards"]
@@ -90,11 +107,25 @@ def test_fun_007682c0_delta_application_is_source_proven_and_internal() -> None:
     assert audit["fun_007682c0_exact_source_destination_receiver_proven"] is True
     assert audit["fun_007682c0_destination_contract"] == current.FUN_007682C0_DESTINATION_FORMAT
     assert audit["fun_007682c0_legacy_delta_consumer_required"] is False
-    assert audit["fun_007682c0_legacy_delta_consumer_role"] == "optional observer only"
-    assert audit["semantic_source_receiver_inferred_from_runtime_body0_choice"] is False
+    assert audit["fun_007682c0_effect_frontier_contract"] == current.FUN_007682C0_EFFECT_FRONTIER_FORMAT
+    assert audit["fun_007682c0_source_input_provenance_ready"] is True
+    assert audit["fun_007682c0_machine_magnitude_contract"] == current.FUN_007682C0_MACHINE_MAGNITUDE_FORMAT
+    assert audit["fun_007682c0_machine_magnitude_ready"] is True
+    assert audit["fun_0075ada0_machine_planar_magnitude_ready"] is True
+    assert audit["fun_007595d0_source_inputs_ready"] is True
+    assert audit["fun_007595d0_machine_response_parity_ready"] is False
+    assert audit["fun_007682c0_effect_production_ready"] is False
+    assert audit["host_std_sqrt_used_for_retail_path"] is False
+
     assert guards["fun_007682c0_body0_delta_destination_ready"] is True
     assert guards["fun_007682c0_body0_delta_application_internal"] is True
+    assert guards["fun_007682c0_source_input_provenance_ready"] is True
+    assert guards["fun_007682c0_machine_magnitude_ready"] is True
+    assert guards["fun_0075ada0_machine_planar_magnitude_ready"] is True
+    assert guards["fun_007595d0_source_inputs_ready"] is True
+    assert guards["fun_007595d0_machine_response_parity_ready"] is False
     assert guards["fun_007682c0_effect_production_ready"] is False
+    assert guards["host_std_sqrt_used_for_retail_path"] is False
 
     closed = [
         row for row in report["closed_boundaries"]
@@ -147,6 +178,13 @@ def test_current_audit_keeps_exact_inner_execution_and_eight_provider_frontier()
     assert contract["FUN_007682c0_delta_destination_is_BODY0"] is True
     assert contract["FUN_007682c0_delta_application_internal"] is True
     assert contract["FUN_007682c0_legacy_delta_consumer_required"] is False
+    assert contract["FUN_007682c0_effect_frontier_contract"] == current.FUN_007682C0_EFFECT_FRONTIER_FORMAT
+    assert contract["FUN_007682c0_source_input_provenance_ready"] is True
+    assert contract["FUN_007682c0_machine_magnitude_contract"] == current.FUN_007682C0_MACHINE_MAGNITUDE_FORMAT
+    assert contract["FUN_007682c0_machine_magnitude_ready"] is True
+    assert contract["FUN_007595d0_source_inputs_ready"] is True
+    assert contract["FUN_007595d0_machine_response_parity_ready"] is False
+    assert contract["FUN_007682c0_effect_production_ready"] is False
     assert contract["selected_rate_contract"] == current.SELECTED_RATE_FORMAT
     assert contract["selected_execution_contract"] == current.SELECTED_EXECUTION_FORMAT
     assert contract["retail_outer_cadence_admitted"] is True

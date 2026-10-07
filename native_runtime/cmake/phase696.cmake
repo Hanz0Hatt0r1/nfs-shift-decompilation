@@ -1,5 +1,6 @@
 target_sources(shift_runtime_physics PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/fun_00770e80_motion_read_effect_provider_chain.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/fun_00770e80_motion_read_effect_provider_chain.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/fun_007682c0_machine_magnitude.cpp)
 
 add_executable(shift_runtime_fun_00770e80_motion_read_effect_provider_chain_check
   ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00770e80_motion_read_effect_provider_chain_check.cpp)
@@ -10,10 +11,22 @@ target_link_libraries(shift_runtime_fun_00770e80_motion_read_effect_provider_cha
 target_compile_options(shift_runtime_fun_00770e80_motion_read_effect_provider_chain_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_fun_007682c0_machine_magnitude_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_007682c0_machine_magnitude_check.cpp)
+target_include_directories(shift_runtime_fun_007682c0_machine_magnitude_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_link_libraries(shift_runtime_fun_007682c0_machine_magnitude_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_fun_007682c0_machine_magnitude_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_fun_00770e80_motion_read_effect_provider_chain
     COMMAND shift_runtime_fun_00770e80_motion_read_effect_provider_chain_check)
+  add_test(
+    NAME shift_runtime_fun_007682c0_machine_magnitude
+    COMMAND shift_runtime_fun_007682c0_machine_magnitude_check)
 endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/phase697.cmake)

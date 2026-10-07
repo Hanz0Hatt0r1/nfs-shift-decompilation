@@ -37,10 +37,19 @@
     "fun_007682c0_delta_destination_contract": "SHIFT.Fun007682c0Body0DeltaDestination/1",
     "fun_007682c0_delta_destination_ready": true,
     "fun_007682c0_delta_application_internal": true,
+    "fun_007682c0_effect_frontier_contract": "SHIFT.Fun007682c0EffectInputMachineFrontier/1",
+    "fun_007682c0_effect_input_frontier_ready": true,
+    "fun_007682c0_source_input_provenance_ready": true,
+    "fun_007682c0_machine_magnitude_contract": "SHIFT.Fun007682c0MachineMagnitude/1",
+    "fun_007682c0_machine_magnitude_ready": true,
+    "fun_0075ada0_machine_planar_magnitude_ready": true,
+    "fun_007595d0_source_inputs_ready": true,
+    "fun_007595d0_machine_response_parity_ready": false,
+    "fun_007682c0_effect_production_ready": false,
     "active_external_provider_count": 8,
-    "current_blocker_id": "fun-007682c0-effect-production-provenance",
-    "current_blocker": "close the next adjacent source/machine-backed FUN_007682c0 effect producer boundary: recover exact magnitude/x87 and complete FUN_007595d0 input production while preserving PC retail semantics; eight external provider boundaries remain",
-    "current_blocker_consumer": "positive FUN_007682c0 effect producer contract -> NativeVehicleExternalProviderBundle.motion_read_effect -> internal BODY0 +0x50 application -> exact selected-session retail execution",
+    "current_blocker_id": "fun-007595d0-response-machine-parity",
+    "current_blocker": "implement the remaining PC retail FUN_007595d0 x87/f32 response checkpoints through its return value and wire the already-proven HDVehicle scalar sources (+0x4068/+0x4054/+0x4084/+0x408c plus the four load-factor numerator fields) into the typed FUN_007682c0 effect path; eight external provider boundaries remain",
+    "current_blocker_consumer": "PC FUN_007595d0 response parity + proven vehicle scalar wiring -> complete FUN_007682c0 typed effect producer -> internal BODY0 +0x50 application -> exact selected-session retail execution",
     "runtime_capture_required": false,
     "original_game_execution_required": false,
     "pc_build_is_primary_authority": true,
@@ -72,7 +81,9 @@
     "hash-locked selected-session PhysicsTweaker rate materialization infrastructure",
     "SHIFT.SelectedSessionPhysicsTweakerRate/1 exact PC selected-session rate 180 Hz",
     "SHIFT.SelectedSessionRetailVehicleExecution/1 exact 1/180 persistent BODY inner execution",
-    "SHIFT.Fun007682c0Body0DeltaDestination/1 exact PC source destination and internal BODY0 +0x50 application"
+    "SHIFT.Fun007682c0Body0DeltaDestination/1 exact PC source destination and internal BODY0 +0x50 application",
+    "SHIFT.Fun007682c0EffectInputMachineFrontier/1 exact PC effect/caller input provenance",
+    "SHIFT.Fun007682c0MachineMagnitude/1 PC x87 3D/planar magnitude and speed-factor checkpoints under retail control word 0x027f"
   ],
   "positive_gates": {
     "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": true,
@@ -84,9 +95,15 @@
     "loaded_inner_physics_rate_admitted": true,
     "retail_inner_substep_execution_admitted": true,
     "fun_007682c0_body0_delta_destination_ready": true,
-    "fun_007682c0_body0_delta_application_internal": true
+    "fun_007682c0_body0_delta_application_internal": true,
+    "fun_007682c0_source_input_provenance_ready": true,
+    "fun_007682c0_machine_magnitude_ready": true,
+    "fun_0075ada0_machine_planar_magnitude_ready": true,
+    "fun_007595d0_source_inputs_ready": true
   },
   "false_gates": {
+    "fun_007595d0_machine_response_parity_ready": false,
+    "fun_007682c0_effect_production_ready": false,
     "retail_provider_control_producers_complete": false,
     "retail_control_chain_complete": false,
     "retail_camera_follow_ready": false
@@ -119,7 +136,7 @@
     },
     {
       "id": "S6",
-      "task": "close deepest missing vehicle-physics/control producers; FUN_007682c0 BODY0 +0x50 destination is positive, next close FUN_007682c0 effect production and then the remaining seven provider boundaries",
+      "task": "close deepest missing vehicle-physics/control producers; FUN_007682c0 BODY0 destination, source inputs and PC x87 magnitude paths are positive; next implement FUN_007595d0 response machine parity and wire proven vehicle scalars, then continue through the remaining provider boundaries",
       "state": "current"
     },
     {
@@ -146,6 +163,7 @@
     "unsupported_gate_promotion_allowed": false,
     "host_1_60_may_satisfy_retail_cadence": false,
     "missing_numeric_values_may_be_guessed": false,
+    "host_std_sqrt_may_replace_pc_x87_path": false,
     "pc_build_primary_authority": true,
     "xbox_360_recomp_may_replace_pc_proof": false
   },
