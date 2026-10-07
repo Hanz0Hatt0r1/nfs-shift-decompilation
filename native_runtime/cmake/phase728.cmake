@@ -23,3 +23,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_007618f0_local_sample_producer
     COMMAND shift_runtime_fun_007618f0_local_sample_producer_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase729.cmake)
