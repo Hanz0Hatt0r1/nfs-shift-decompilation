@@ -225,6 +225,35 @@ def _command_stage(command: Sequence[str]) -> tuple[str, float]:
     return script or "subprocess", BOOTSTRAP_HEARTBEAT_SECONDS
 
 
+def _strip_resource_progress_env(
+    environment: dict[str, str],
+    *,
+    cwd: Path,
+) -> dict[str, str]:
+    """Remove bootstrap-only progress hooks from a non-bootstrap child environment."""
+    result = dict(environment)
+    result.pop("SHIFT_RESOURCE_PROGRESS", None)
+    existing_pythonpath = result.get("PYTHONPATH")
+    if existing_pythonpath is None:
+        return result
+
+    child_cwd = os.path.realpath(os.fspath(cwd))
+    progress_site = os.path.normcase(os.path.realpath(os.fspath(PROGRESS_SITE_DIR)))
+
+    def child_location(value: str) -> str:
+        expanded = os.path.expanduser(value)
+        if not os.path.isabs(expanded):
+            expanded = os.path.join(child_cwd, expanded)
+        return os.path.normcase(os.path.realpath(expanded))
+
+    result["PYTHONPATH"] = os.pathsep.join(
+        value
+        for value in existing_pythonpath.split(os.pathsep)
+        if not value or child_location(value) != progress_site
+    )
+    return result
+
+
 def _run(command: list[str], *, cwd: Path) -> int:
     stage, heartbeat_seconds = _command_stage(command)
     environment = os.environ.copy()
@@ -239,6 +268,8 @@ def _run(command: list[str], *, cwd: Path) -> int:
             if value
         )
         environment["SHIFT_RESOURCE_PROGRESS"] = "1"
+    else:
+        environment = _strip_resource_progress_env(environment, cwd=cwd)
 
     print(f"[shift-launch] stage={stage} event=start cwd={cwd}", flush=True)
     print(f"[shift-launch] stage={stage} command={shlex.join(command)}", flush=True)
