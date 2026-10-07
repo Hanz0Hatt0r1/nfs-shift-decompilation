@@ -54,8 +54,9 @@ def speed_factor(speed_x: float, speed_z: float) -> tuple[float,float]:
 def contact_gate(distance: float, speed: float) -> bool:
     return distance < DISTANCE_LIMIT and distance > DISTANCE_GATE_MIN and speed > SPEED_GATE_MIN
 
-def gap_factor(distance: float, surface_scalar: float) -> float:
-    gap = distance-(surface_scalar-GAP_OFFSET)
+def gap_factor(filtered_distance_state: float, surface_scalar: float) -> float:
+    """Machine-correct gap: use committed +0x4080 state, not raw distance."""
+    gap = filtered_distance_state-(surface_scalar-GAP_OFFSET)
     if gap <= 0.0: return 0.0
     if gap >= GAP_SCALE: return 1.0
     return gap/GAP_SCALE
@@ -85,7 +86,8 @@ def build_contract():
         },
         "gate": "distance < 200 && distance > 5 && speed > 1",
         "force_scalar": {
-            "gap": "distance - (surface_scalar - 1.5)",
+            "gap": "filtered_distance_state - (surface_scalar - 1.5)",
+            "machine_correction": "PC 0x00767937 reloads the value stored at HDVehicle+0x4080 before gap formation",
             "shape": "gap >= 2.5 ? 1 : gap / 2.5",
             "formula": "(base_scalar*1.5 - projected_scalar) * (2-shape) * shape * alignment * speed_factor",
         },
@@ -93,8 +95,8 @@ def build_contract():
                       "consumer": "FUN_007ba9e0", "calls": 2},
         "unresolved": [
             "semantic names and physical units of body/node fields",
-            "internal semantics of FUN_00759210/FUN_00759c90/FUN_007551e0/FUN_00755340 in this caller",
-            "caller-side x87/decompiler reconstruction details outside explicit arithmetic stages",
+            "FUN_00759210 node refresh/provider implementation behind HDVehicle+0x120",
+            "internal semantics of FUN_00759c90/FUN_007551e0/FUN_00755340 in this caller",
         ],
     }
 
