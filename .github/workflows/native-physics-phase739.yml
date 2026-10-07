@@ -1,0 +1,101 @@
+name: native-physics-phase739
+
+on:
+  push:
+    paths:
+      - 'native_runtime/include/shift_fun_00765c40_selected_bmw_world_position.hpp'
+      - 'native_runtime/include/shift_fun_00770e80_motion_read_machine_input_provider_chain.hpp'
+      - 'native_runtime/include/shift_fun_00770e80_contact_outer_provider_chain.hpp'
+      - 'native_runtime/src/fun_00770e80_motion_read_machine_input_provider_chain.cpp'
+      - 'native_runtime/src/fun_00770e80_contact_outer_provider_chain.cpp'
+      - 'native_runtime/src/native_vehicle_provider_session.cpp'
+      - 'native_runtime/tests/fun_00765c40_selected_bmw_world_position_check.cpp'
+      - 'native_runtime/tests/native_vehicle_provider_session_check.cpp'
+      - 'native_runtime/cmake/phase738.cmake'
+      - 'native_runtime/cmake/phase739.cmake'
+      - 'tests/test_s6_fun_00765c40_selected_bmw_world_position.py'
+      - 'evidence/fun_00765c40_selected_bmw_world_position_join.json'
+      - 'evidence/phase739_next_blocker.md'
+      - 'docs/PHASE739_FUN_00765C40_SELECTED_BMW_WORLD_POSITION.md'
+      - 'docs/PHASE739_SCOPE.md'
+      - '.github/workflows/native-physics-phase739.yml'
+  pull_request:
+    paths:
+      - 'native_runtime/include/shift_fun_00765c40_selected_bmw_world_position.hpp'
+      - 'native_runtime/include/shift_fun_00770e80_motion_read_machine_input_provider_chain.hpp'
+      - 'native_runtime/include/shift_fun_00770e80_contact_outer_provider_chain.hpp'
+      - 'native_runtime/src/fun_00770e80_motion_read_machine_input_provider_chain.cpp'
+      - 'native_runtime/src/fun_00770e80_contact_outer_provider_chain.cpp'
+      - 'native_runtime/src/native_vehicle_provider_session.cpp'
+      - 'native_runtime/tests/fun_00765c40_selected_bmw_world_position_check.cpp'
+      - 'native_runtime/tests/native_vehicle_provider_session_check.cpp'
+      - 'native_runtime/cmake/phase738.cmake'
+      - 'native_runtime/cmake/phase739.cmake'
+      - 'tests/test_s6_fun_00765c40_selected_bmw_world_position.py'
+      - 'evidence/fun_00765c40_selected_bmw_world_position_join.json'
+      - 'evidence/phase739_next_blocker.md'
+      - 'docs/PHASE739_FUN_00765C40_SELECTED_BMW_WORLD_POSITION.md'
+      - 'docs/PHASE739_SCOPE.md'
+      - '.github/workflows/native-physics-phase739.yml'
+
+jobs:
+  selected-bmw-world-position:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run focused Phase 739 regressions
+        run: >-
+          python3 -m pytest -q
+          tests/test_s6_fun_00765c40_selected_bmw_world_position.py
+          tests/test_s6_fun_007618f0_second_arg_provenance.py
+          tests/test_s6_fun_007618f0_wheel_body_origin_ownership.py
+          tests/test_s6_fun_007618f0_local_sample_producer.py
+          tests/test_s6_fun_00765c40_world_position_transform.py
+
+      - name: Validate Phase 739 evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          e = json.loads(Path('evidence/fun_00765c40_selected_bmw_world_position_join.json').read_text())
+          assert e['format'] == 'SHIFT.Fun00765c40SelectedBMWWorldPosition/1'
+          assert e['ready'] is True
+          assert e['selected_body_domain']['body_count'] == 11
+          assert e['runtime_order']['pass1_reads_post_pass0_half_step_body'] is True
+          assert e['external_fun_00765c40_remaining']['world_position_selected_bmw'] is False
+          assert e['provider_frontier']['external_provider_count_after'] == 7
+          assert e['provider_frontier']['provider_count_reduced'] is False
+          PY
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 739 and affected provider regressions
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_fun_00765c40_selected_bmw_world_position_check
+          shift_runtime_fun_00770e80_contact_outer_provider_chain_check
+          shift_runtime_native_vehicle_provider_session_check
+
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_fun_00765c40_selected_bmw_world_position|shift_runtime_fun_00770e80_contact_outer_provider_chain|shift_runtime_native_vehicle_provider_session)$'
+
+      - name: Verify Phase 739 native report
+        run: |
+          mkdir -p out/native-physics-phase739
+          native_runtime/build/shift_runtime_fun_00765c40_selected_bmw_world_position_check \
+            > out/native-physics-phase739/fun_00765c40_selected_bmw_world_position.json
+          grep -q '"format":"SHIFT.Fun00765c40SelectedBMWWorldPosition/1"' \
+            out/native-physics-phase739/fun_00765c40_selected_bmw_world_position.json
+          grep -q '"selected_body_count":11' \
+            out/native-physics-phase739/fun_00765c40_selected_bmw_world_position.json
+          grep -q '"pass_local_body_state":true' \
+            out/native-physics-phase739/fun_00765c40_selected_bmw_world_position.json
