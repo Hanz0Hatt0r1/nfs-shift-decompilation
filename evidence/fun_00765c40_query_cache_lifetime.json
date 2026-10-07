@@ -1,0 +1,59 @@
+{
+  "format": "SHIFT.Fun00765c40QueryCacheLifetime/1",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "existing_phase370_evidence": "evidence/collision_query_runtime_phase370.json",
+    "existing_phase370_doc": "docs/PHASE370_COLLISION_QUERY_RUNTIME.md",
+    "existing_phase666_doc": "docs/PHASE666_NATIVE_COLLISION_QUERY_CONTRACT.md"
+  },
+  "caller_state": {
+    "offset": "HDVehicle+0x38dc",
+    "setup_seed": 0,
+    "native_representation": "std::optional<uint64_t>; nullopt represents the source zero seed",
+    "read_boundary": "before FUN_00765c40 -> FUN_007b0710 query",
+    "write_boundary": "FUN_00765c40 immediately stores the handle returned by FUN_007b0710",
+    "next_consumer": "the next FUN_00765c40 query, including pass 1 after pass 0 and later explicit steps"
+  },
+  "existing_proof_reused": {
+    "collision_query_record_native": true,
+    "query_cache_slot_offset": "0x30",
+    "caller_handle_offset": "0x38dc",
+    "phase370_claim": "FUN_00765c40 stores the returned query handle at +0x38dc",
+    "phase666_claim": "the returned handle belongs to caller state +0x38dc"
+  },
+  "runtime_join": {
+    "external_input_format": "SHIFT.Fun00765c40ExternalPassInput/1",
+    "external_result_format": "SHIFT.Fun00765c40ExternalPassResult/3",
+    "provider_receives_native_cached_handle_before_execution": true,
+    "selected_bmw_world_position_also_passed_before_execution": true,
+    "provider_returns_returned_cache_handle": true,
+    "session_commits_returned_handle_before_later_pass_anchors": true,
+    "pass1_consumes_pass0_returned_handle": true,
+    "later_explicit_step_consumes_previous_step_final_handle": true,
+    "transactional_rollback": true
+  },
+  "xbox_crosscheck": {
+    "role": "independent corroboration only; not PC authority",
+    "caller_handle_offset": "HDVehicle+0x38dc",
+    "observed_lifetime": "setup zero -> query consumes prior handle -> caller stores returned handle",
+    "pc_offsets_not_inferred_from_xbox": true
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "boundary_narrowed": true,
+    "collision_provider_internalized": false,
+    "returned_handle_semantics_named": false,
+    "miss_fallback_0x38e8_internalized": false,
+    "load_terms_external": true,
+    "unproven_side_effects_external": true
+  },
+  "next_blocker": {
+    "target": "HDVehicle+0x38e8 miss fallback setup ownership",
+    "requirement": "prove its setup producer/value and lifetime before removing it from the residual per-pass query witness"
+  }
+}
