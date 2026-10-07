@@ -67,6 +67,8 @@ execute_fun_00770e80_contact_outer_provider_chain(
             adapted.wheel_update = std::move(typed.wheel_update);
             adapted.contact_response = std::move(typed.contact_response);
             adapted.motion_read_gate = std::move(typed.motion_read_gate);
+            adapted.post_pass_body_mutator =
+                std::move(typed.post_pass_body_mutator);
 
             auto contact_outer_input_provider =
                 std::move(typed.contact_outer_input_provider);
