@@ -1,4 +1,5 @@
 #include "fun_00770e80_outer_update_fixture.hpp"
+#include "shift_body_record_adapter.hpp"
 
 #include <array>
 #include <cstdint>
@@ -122,6 +123,7 @@ int main() {
 
         const auto first = run_outer(0u);
         if (first.motion_read_effect_provider_call_count != 2u ||
+            first.motion_read_delta_application_call_count != 2u ||
             first.motion_read_delta_consumer_call_count != 2u ||
             first.motion_read_gate_open_count != 2u ||
             first.joined.contact_outer_input_provider_call_count != 2u ||
@@ -142,8 +144,13 @@ int main() {
             runtime.outer_update.last_physics_pass_provider_call_count != 2u) {
             throw std::runtime_error("Phase 697 first runtime telemetry mismatch");
         }
-        if (first_half_inputs[0] != initial_body_bytes) {
-            throw std::runtime_error("Phase 697 first persistent input mismatch");
+
+        auto expected_first_half_input = initial_body_bytes;
+        apply_fun_007682c0_body0_accumulator_y_delta(
+            expected_first_half_input, -2.5);
+        if (first_half_inputs[0] != expected_first_half_input) {
+            throw std::runtime_error(
+                "Phase 697 first half-step did not receive source-ordered BODY0 delta application");
         }
 
         const auto first_persistent = first.joined.joined.joined.final_body_bytes;
@@ -154,11 +161,15 @@ int main() {
         }
 
         const auto second = run_outer(1u);
-        if (first_half_inputs[1] != first_persistent) {
+        auto expected_second_first_half_input = first_persistent;
+        apply_fun_007682c0_body0_accumulator_y_delta(
+            expected_second_first_half_input, -2.5);
+        if (first_half_inputs[1] != expected_second_first_half_input) {
             throw std::runtime_error(
-                "Phase 697 second update did not receive first persistent BODY bytes");
+                "Phase 697 second update did not apply pass-tail BODY0 delta before half-step");
         }
         if (second.motion_read_effect_provider_call_count != 2u ||
+            second.motion_read_delta_application_call_count != 2u ||
             second.motion_read_delta_consumer_call_count != 2u ||
             second.joined.contact_outer_native_call_count != 2u ||
             second.joined.joined.scalar_provider_call_count != 4u ||
@@ -251,6 +262,8 @@ int main() {
             << runtime.outer_update.body_pose_snapshot_generation << ","
             << "\"motion_read_effect_provider_call_count\":"
             << second.motion_read_effect_provider_call_count << ","
+            << "\"motion_read_delta_application_call_count\":"
+            << second.motion_read_delta_application_call_count << ","
             << "\"motion_read_delta_consumer_call_count\":"
             << second.motion_read_delta_consumer_call_count << ","
             << "\"persistent_body_bytes_carried_between_explicit_updates\":true,"
@@ -258,7 +271,8 @@ int main() {
             << "\"participant_gate_before_provider_side_effects\":true,"
             << "\"phase696_motion_read_chain_reused\":true,"
             << "\"fixed_step_auto_schedule\":false,"
-            << "\"motion_read_body_identity_application_external\":true,"
+            << "\"motion_read_body_identity_application_external\":false,"
+            << "\"motion_read_body0_delta_application_internal\":true,"
             << "\"motion_read_machine_scalar_production_external\":true,"
             << "\"host_sqrt_substitution_allowed\":false}\n";
         return 0;
