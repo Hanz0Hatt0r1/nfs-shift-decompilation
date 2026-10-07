@@ -57,12 +57,13 @@ def test_formula_keeps_retail_basis_gate_x87_and_signed_zero_semantics() -> None
     assert "basis[2]" in source and "basis[8]" in source
 
 
-def test_active_external_machine_input_cannot_supply_steering_anymore() -> None:
+def test_production_composition_has_no_external_steering_or_mode_struct() -> None:
     projection = PROJECTION.read_text(encoding="utf-8")
-    struct_text = projection.split("struct Fun007682c0ExternalMachineInput", 1)[1].split("};", 1)[0]
-    assert "float steering" not in struct_text
-    assert "float steering" in projection.split("compose_fun_007682c0_machine_input", 1)[1]
-    assert "legacy.steering" not in struct_text
+    assert "Fun007682c0ExternalMachineInput" not in projection
+    compose = projection.split("compose_fun_007682c0_machine_input", 1)[1]
+    assert "float steering" in compose
+    assert "input.steering = steering" in compose
+    assert "selected_bmw_native_session_player_difficulty()" in compose
 
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     assert payload["native_consumption"]["external_steering_field_required"] is False
@@ -74,16 +75,16 @@ def test_session_derives_one_steering_value_before_both_passes() -> None:
     session = SESSION.read_text(encoding="utf-8")
     machine_call = session.index("execute_fun_007594e0_machine_angle")
     pass_provider = session.index("Fun0076d100MotionReadMachineInputProvider pass_provider")
-    external_provider_call = session.index("providers_.motion_read_input(pass_index)")
-    assert machine_call < pass_provider < external_provider_call
+    compose_call = session.index("compose_fun_007682c0_machine_input")
+    assert machine_call < pass_provider < compose_call
+    assert "providers_.motion_read_input" not in session
     assert "const float steering = machine_angle.steering" in session
     assert "[this, &telemetry, steering]" in session
 
-    compose = session.index("compose_fun_007682c0_machine_input")
-    steering_arg = session.index("steering,", compose)
-    load_arg = session.index("load_state->terms,", compose)
-    projection_arg = session.index("motion_read_projection_state_", compose)
-    assert compose < steering_arg < load_arg < projection_arg
+    steering_arg = session.index("steering,", compose_call)
+    load_arg = session.index("load_state->terms,", compose_call)
+    projection_arg = session.index("motion_read_projection_state_", compose_call)
+    assert compose_call < steering_arg < load_arg < projection_arg
 
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     timing = payload["timing"]
