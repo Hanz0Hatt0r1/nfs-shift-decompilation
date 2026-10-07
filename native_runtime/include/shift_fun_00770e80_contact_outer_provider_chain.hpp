@@ -21,6 +21,7 @@ struct Fun0076d100ContactOuterProviderCallbacks {
     Fun0076d100AnchorCallback contact_response{};
     Fun007675f0ContactOuterInputProvider contact_outer_input_provider{};
     Fun0076d100AnchorCallback motion_read_gate{};
+    Fun0076d100PostPassBodyMutator post_pass_body_mutator{};
 };
 
 using Fun0076d100ContactOuterProvider =
