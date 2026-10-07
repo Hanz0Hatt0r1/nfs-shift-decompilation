@@ -22,6 +22,7 @@ struct Fun0076d100MotionReadMachineInputProviderCallbacks {
     Fun0076d100AnchorCallback wheel_update{};
     Fun0076d100AnchorCallback contact_response{};
     Fun007675f0ContactOuterInputProvider contact_outer_input_provider{};
+    Fun0076d100CurrentBodyObserver current_body_observer{};
     Fun007675f0DistanceStateCommit contact_outer_distance_state_commit{};
     Fun007682c0MachineInputProvider motion_read_input_provider{};
 };
