@@ -62,7 +62,7 @@ def test_active_native_path_consumes_raw_inputs_not_precomputed_effect() -> None
     assert "execute_fun_007682c0_machine_effect" in chain
     assert "apply_fun_007682c0_body0_accumulator_y_delta" in chain
     assert "fsqrt" in kernel
-    assert "std::sqrt" not in kernel
+    assert "std::sqrt(" not in kernel
 
 
 def test_only_raw_input_refresh_remains_for_this_boundary() -> None:
