@@ -57,8 +57,9 @@ struct NativeVehicleExternalProviderBundle {
     NativeVehiclePassCallback contact_response{};
 
     // FUN_007675f0 arithmetic remains native. The per-pass provider supplies
-    // only the still-external caller fields. BODY0 +0x78/+0x88 and the previous
-    // HDVehicle+0x4080 distance state are session-owned persistent values.
+    // only the still-external caller fields. BODY0 +0x78/+0x88, persistent
+    // HDVehicle+0x4080, and FUN_00770e80 param_2 / HDVehicle+0xa0 are owned by
+    // existing native state/schedule inputs rather than this provider.
     NativeVehicleContactOuterInputProvider contact_outer_input{};
     physics::Fun007675f0DistanceStateSetup contact_outer_distance_setup{};
 

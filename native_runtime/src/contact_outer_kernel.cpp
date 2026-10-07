@@ -106,15 +106,28 @@ Fun007675f0BodyMotion derive_fun_007675f0_body0_motion(
 
 ContactOuterExternalInput compose_fun_007675f0_external_input(
     const ContactOuterSessionInput& session_input,
-    double previous_distance_state) {
+    double previous_distance_state,
+    double outer_channel_b) {
     require_finite_value(
         previous_distance_state,
         "FUN_007675f0 previous distance state");
+    require_finite_value(
+        outer_channel_b,
+        "FUN_007675f0 FUN_00770e80 channel B");
+
+    // PC 0x007676d8 loads HDVehicle+0xa0 as f64 and immediately FSTPs it to
+    // f32 before forwarding that value to FUN_00783a30. Preserve that store /
+    // reload narrowing here instead of feeding the host f64 directly.
+    const float narrowed_channel_b = static_cast<float>(outer_channel_b);
+    if (!std::isfinite(narrowed_channel_b)) {
+        throw std::invalid_argument(
+            "FUN_007675f0 narrowed FUN_00770e80 channel B must be finite");
+    }
 
     ContactOuterExternalInput external{};
     external.planar_delta = session_input.planar_delta;
     external.previous_distance_state = previous_distance_state;
-    external.distance_filter_cap = session_input.distance_filter_cap;
+    external.distance_filter_cap = static_cast<double>(narrowed_channel_b);
     external.surface_scalar = session_input.surface_scalar;
     external.base_scalar = session_input.base_scalar;
     external.projected_scalar = session_input.projected_scalar;

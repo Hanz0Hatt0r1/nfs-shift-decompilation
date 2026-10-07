@@ -1,0 +1,77 @@
+{
+  "format": "SHIFT.Fun007675f0OuterChannelBOwnership/1",
+  "version": 1,
+  "ready": true,
+  "source": {
+    "program": "SHIFT.exe",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "outer_channel_b": {
+    "producer_function": "FUN_00770e80",
+    "parameter": "param_2",
+    "receiver": "HDVehicle",
+    "receiver_offset": "0xa0",
+    "store_address": "0x00770ea5",
+    "stored_type": "f64",
+    "shared_by_both_physics_passes": true,
+    "native_owner": "execute_explicit_step outer_timestep",
+    "physical_name_promoted": false
+  },
+  "half_step_join": {
+    "pass_0": "FUN_0076d100 then load HDVehicle+0xa0, multiply by 0.5, call FUN_00765470",
+    "pass_1": "FUN_0076d100 then load HDVehicle+0xa0, multiply by 0.5, call FUN_00765470",
+    "half_step_scale": 0.5,
+    "same_outer_channel_b_value": true
+  },
+  "contact_filter_join": {
+    "consumer_function": "FUN_007675f0",
+    "load_address": "0x007676d8",
+    "load": "f64 HDVehicle+0xa0",
+    "narrowing": "f64 -> f32 store/reload before FUN_00783a30",
+    "distance_state_offset": "0x4080",
+    "filter_function": "FUN_00783a30",
+    "body_pointer_offset": "0x33a0",
+    "body_offset_claimed": false
+  },
+  "machine_windows": {
+    "channel_b_store": {
+      "start": "0x00770e96",
+      "end": "0x00770eab",
+      "bytes": "dd431081ecb000000056578bf16a01dd9ea0000000",
+      "sha256": "02258d99aeb92b270f9a97c58e5e5efec24eaf374d404ea870839a830d8b2f8b"
+    },
+    "pass_0_half_step": {
+      "start": "0x00770f8f",
+      "end": "0x00770fb1",
+      "bytes": "e86cc1ffffdd86a00000008d4df8dc0d209aaa005183ec088bcedd1c24e8bf44ffff",
+      "sha256": "09793781aa74143abcf0376cbc3c8b12669d1064756b7e1a6b037bba82fbea78"
+    },
+    "pass_1_half_step": {
+      "start": "0x00770fbf",
+      "end": "0x00770fe1",
+      "bytes": "e83cc1ffffdd86a0000000dc0d209aaa008d55f85283ec088bcedd1c24e88f44ffff",
+      "sha256": "16e879be33bf2b5cf5a1ed27fe012b066cc14d634fc2378d8b893cd04ab5c1c1"
+    },
+    "contact_cap_filter": {
+      "start": "0x007676d8",
+      "end": "0x00767706",
+      "bytes": "dd86a0000000d95dfcd945fcd95c2408d95c2404d98680400000d91c24e836c301008b86a0330000d99e80400000",
+      "sha256": "86d760f77bb7b03966dec598c9bb44d4a99a87ebf2326ce4cc6eb219d76bc90d"
+    }
+  },
+  "provider_narrowing": {
+    "removed_field": "distance_filter_cap",
+    "production_session_remaining_field_count": 6,
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false
+  },
+  "scope": {
+    "selected_session_rate_reinterpreted": false,
+    "new_provider_boundary_added": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  }
+}
