@@ -25,3 +25,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_007682c0_machine_effect
     COMMAND shift_runtime_fun_007682c0_machine_effect_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase719.cmake)
