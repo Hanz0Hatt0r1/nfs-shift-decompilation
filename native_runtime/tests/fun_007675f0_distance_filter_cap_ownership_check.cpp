@@ -80,8 +80,6 @@ int main() {
                      "setup-owned filter cap did not override legacy per-pass seed");
 
         ContactOuterSessionInput production{};
-        production.planar_delta = {10.0, 0.0, 0.0};
-        production.surface_scalar = 10.0;
         production.base_scalar = 4.0;
         production.projected_scalar = 1.0;
         production.alignment_scalar = 0.5;
