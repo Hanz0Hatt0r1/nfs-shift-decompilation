@@ -18,6 +18,7 @@ from typing import Any, Iterator, Sequence
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
+TOOLS = ROOT / "tools"
 ENTRY_PROGRESS_INTERVAL = 250
 
 
@@ -33,6 +34,13 @@ def _emit(message: str, *, stream: Any | None = None) -> None:
 
 
 def _install_repo_paths() -> None:
+    # Mirror bootstrap_playable_linux_slice -> bootstrap_native_vertical_slice:
+    # establish ROOT/TOOLS first, then place SRC and its flat-import directories
+    # ahead of them. Diagnostics must not change repository module precedence.
+    for path in (TOOLS, ROOT):
+        value = str(path)
+        if value not in sys.path:
+            sys.path.insert(0, value)
     if SRC.is_dir():
         paths = [SRC]
         paths.extend(sorted(
@@ -43,10 +51,6 @@ def _install_repo_paths() -> None:
             value = str(path)
             if value not in sys.path:
                 sys.path.insert(0, value)
-    for path in (ROOT, ROOT / "tools"):
-        value = str(path)
-        if value not in sys.path:
-            sys.path.insert(0, value)
 
 
 def _count_bff_inputs(inputs: Sequence[str | Path]) -> int:
