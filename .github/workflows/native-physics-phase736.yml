@@ -1,0 +1,87 @@
+name: native-physics-phase736
+
+on:
+  push:
+    paths:
+      - 'evidence/fun_007675f0_projected_scalar_ownership.json'
+      - 'evidence/phase736_next_blocker.md'
+      - 'docs/PHASE736_FUN_007675F0_PROJECTED_SCALAR_OWNERSHIP.md'
+      - 'docs/PHASE736_SCOPE.md'
+      - 'native_runtime/include/shift_contact_outer_kernel.hpp'
+      - 'native_runtime/include/shift_wheel_force_aggregate.hpp'
+      - 'native_runtime/src/contact_outer_kernel.cpp'
+      - 'native_runtime/src/wheel_force_aggregate.cpp'
+      - 'native_runtime/tests/fun_007675f0_projected_scalar_ownership_check.cpp'
+      - 'native_runtime/tests/fun_007675f0_surface_probe_join_check.cpp'
+      - 'native_runtime/cmake/phase735.cmake'
+      - 'native_runtime/cmake/phase736.cmake'
+      - 'tests/test_s6_fun_007675f0_projected_scalar_ownership.py'
+      - '.github/workflows/native-physics-phase736.yml'
+  pull_request:
+    paths:
+      - 'evidence/fun_007675f0_projected_scalar_ownership.json'
+      - 'evidence/phase736_next_blocker.md'
+      - 'docs/PHASE736_FUN_007675F0_PROJECTED_SCALAR_OWNERSHIP.md'
+      - 'docs/PHASE736_SCOPE.md'
+      - 'native_runtime/include/shift_contact_outer_kernel.hpp'
+      - 'native_runtime/include/shift_wheel_force_aggregate.hpp'
+      - 'native_runtime/src/contact_outer_kernel.cpp'
+      - 'native_runtime/src/wheel_force_aggregate.cpp'
+      - 'native_runtime/tests/fun_007675f0_projected_scalar_ownership_check.cpp'
+      - 'native_runtime/tests/fun_007675f0_surface_probe_join_check.cpp'
+      - 'native_runtime/cmake/phase735.cmake'
+      - 'native_runtime/cmake/phase736.cmake'
+      - 'tests/test_s6_fun_007675f0_projected_scalar_ownership.py'
+      - '.github/workflows/native-physics-phase736.yml'
+
+jobs:
+  fun-007675f0-projected-scalar-ownership:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run Phase 736 proof regressions
+        run: >-
+          python3 -m pytest -q
+          tests/test_s6_fun_007675f0_projected_scalar_ownership.py
+          tests/test_s6_fun_007675f0_body_owned_scalars.py
+          tests/test_s6_fun_007675f0_param3_ownership.py
+          tests/test_s6_fun_007675f0_surface_probe_join.py
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 736 and dependent regressions
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_fun_007675f0_projected_scalar_ownership_check
+          shift_runtime_fun_007675f0_body_owned_scalars_check
+          shift_runtime_fun_007675f0_param3_ownership_check
+          shift_runtime_fun_007675f0_surface_probe_join_check
+          shift_runtime_wheel_force_aggregate_check
+          shift_runtime_fun_00770e80_contact_outer_provider_chain_check
+          shift_runtime_native_vehicle_provider_session_check
+
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_fun_007675f0_projected_scalar_ownership|shift_runtime_fun_007675f0_body_owned_scalars|shift_runtime_fun_007675f0_param3_ownership|shift_runtime_fun_007675f0_surface_probe_join|shift_runtime_wheel_force_aggregate|shift_runtime_fun_00770e80_contact_outer_provider_chain|shift_runtime_native_vehicle_provider_session)$'
+
+      - name: Verify Phase 736 report
+        run: |
+          mkdir -p out/native-physics-phase736
+          native_runtime/build/shift_runtime_fun_007675f0_projected_scalar_ownership_check \
+            > out/native-physics-phase736/fun_007675f0_projected_scalar_ownership.json
+          grep -q '"format":"SHIFT.Fun007675f0ProjectedScalarOwnership/1"' \
+            out/native-physics-phase736/fun_007675f0_projected_scalar_ownership.json
+          grep -q '"aggregate":"FUN_00759c90"' \
+            out/native-physics-phase736/fun_007675f0_projected_scalar_ownership.json
+          grep -q '"projected_scalar_internal":true' \
+            out/native-physics-phase736/fun_007675f0_projected_scalar_ownership.json
+          grep -q '"production_record_boundary":true' \
+            out/native-physics-phase736/fun_007675f0_projected_scalar_ownership.json
