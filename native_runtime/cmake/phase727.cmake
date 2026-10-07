@@ -24,3 +24,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00765c40_world_position_transform
     COMMAND shift_runtime_fun_00765c40_world_position_transform_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase728.cmake)
