@@ -5,6 +5,7 @@
 #include "shift_fun_007682c0_projection_state.hpp"
 #include "shift_fun_00770e80_motion_read_machine_input_provider_chain.hpp"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -17,6 +18,7 @@ struct RetailOuterSchedulerContract;
 
 inline constexpr const char* kNativeVehicleProviderSessionFormat =
     "SHIFT.NativeVehicleProviderSession/1";
+inline constexpr std::size_t kNativeVehiclePhysicsPassCount = 2u;
 
 struct NativeVehicleHalfStepRefreshInput {
     physics::Fun00763570MachineInput machine{};
@@ -44,9 +46,11 @@ using NativeVehicleHalfStepRefreshProvider =
 struct NativeVehicleExternalProviderBundle {
     // FUN_00765c40 remains one external pass boundary. Do not call this a
     // contact-factor provider: the nested FUN_00758ad0 factor arithmetic is
-    // already native, while collision/world-position production and additional
-    // FUN_00765c40 side effects remain unresolved. The typed return carries the
-    // four proven wheel+0x738 outputs needed by later FUN_00769ef0/FUN_007682c0.
+    // already native. The external pass now has to expose the source-backed
+    // FUN_007b0710 query input it consumed (world position, prior cache handle,
+    // +0x38e8 miss fallback) together with the four proven wheel+0x738 outputs.
+    // The upstream transform producing world_position and the collision-provider
+    // implementation remain unresolved and external.
     NativeVehicleFun00765c40Provider fun_00765c40{};
     NativeVehiclePassCallback wheel_update{};
     NativeVehiclePassCallback contact_response{};
@@ -69,6 +73,7 @@ struct NativeVehicleExternalProviderBundle {
 
 struct NativeVehicleProviderSessionTelemetry {
     std::size_t fun_00765c40_call_count = 0u;
+    std::size_t fun_00765c40_query_input_capture_count = 0u;
     std::size_t wheel_update_call_count = 0u;
     std::size_t contact_response_call_count = 0u;
     std::size_t contact_outer_input_call_count = 0u;
@@ -81,6 +86,10 @@ struct NativeVehicleProviderSessionTelemetry {
 
 struct NativeVehicleProviderSessionResult {
     physics::Fun00770e80MotionReadMachineInputProviderChainResult joined{};
+    std::array<physics::Fun00765c40QueryInputBoundary, kNativeVehiclePhysicsPassCount>
+        fun_00765c40_query_inputs{};
+    std::array<bool, kNativeVehiclePhysicsPassCount>
+        fun_00765c40_query_input_present{};
     std::uint64_t session_step_count = 0u;
     NativeVehicleProviderSessionTelemetry telemetry{};
 };
