@@ -274,6 +274,23 @@ def _augment_all_report_with_native_handoff(
     return combined
 
 
+def _record_selected_target(
+    report: dict,
+    *,
+    track: str,
+    vehicle: str,
+) -> dict:
+    """Persist requested target labels without treating names as identity proof."""
+    combined = dict(report)
+    combined["track"] = str(track)
+    combined["vehicle"] = str(vehicle)
+    boundary = dict(report.get("boundary") or {})
+    boundary["selected_target_labels_recorded"] = True
+    boundary["selected_target_labels_are_retail_identity_proof"] = False
+    combined["boundary"] = boundary
+    return combined
+
+
 def cmd_all(args: argparse.Namespace) -> int:
     out = Path(args.output)
     report = run_offline_pipeline(
@@ -282,6 +299,11 @@ def cmd_all(args: argparse.Namespace) -> int:
         track=args.track,
         vehicle=args.vehicle,
         decode_limit_per_archive=args.decode_limit_per_archive,
+    )
+    report = _record_selected_target(
+        report,
+        track=args.track,
+        vehicle=args.vehicle,
     )
     validation = build_bootstrap_corpus_validation_files(
         out / "resource_catalog.json",

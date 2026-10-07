@@ -50,6 +50,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--workspace-root", required=True)
     parser.add_argument("-o", "--output", required=True, help="profile JSON path")
     parser.add_argument("--report", help="prepare-report JSON path")
+    parser.add_argument(
+        "--resource-pipeline",
+        help=(
+            "workspace-local SHIFT offline resource pipeline directory; when set, "
+            "scene_set, physics_manifest and participant_boundary are resolved "
+            "and fully validated later by the native launcher"
+        ),
+    )
     for option in (
         "scene-set",
         "camera-state",
@@ -116,6 +124,7 @@ def main(argv: list[str] | None = None) -> int:
         workspace_root=args.workspace_root,
         profile_path=profile_path,
         explicit_inputs=explicit,
+        resource_pipeline=args.resource_pipeline,
         input_script=args.input_script,
         interactive=args.interactive,
         keyboard=args.keyboard,
@@ -171,6 +180,7 @@ def main(argv: list[str] | None = None) -> int:
         "status": report["status"],
         "ready": report["ready"],
         "profile_ready": report["profile_ready"],
+        "resource_pipeline": report.get("resource_pipeline"),
         "launcher_validation_requested": report["launcher_validation_requested"],
         "launcher_validation_ready": report["launcher_validation_ready"],
         "auto_filled_inputs": report["auto_filled_inputs"],

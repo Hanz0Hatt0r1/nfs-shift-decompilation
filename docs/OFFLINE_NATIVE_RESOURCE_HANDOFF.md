@@ -1,19 +1,19 @@
 # Offline native resource handoff
 
-Process D has a fail-closed bridge from the offline BFF catalog/bootstrap to the
-native runtime's existing render and physics resource inputs.  It can also carry
-an already-proven participant runtime-identity artifact without creating or
-inferring that evidence itself.
+Process D now has a fail-closed bridge from the offline BFF catalog/bootstrap to
+the native runtime's existing render and physics resource inputs.
 
 Implemented in:
 
 - `src/resources/offline_native_resource_handoff.py`;
 - `src/resources/offline_native_participant_handoff.py`;
-- `tools/shift_resource_pipeline.py native-handoff` / `all`;
+- `tools/shift_resource_pipeline.py native-handoff`;
 - `tools/run_native_vertical_slice.py` resource-pipeline profile mode.
 
-The bridge does **not** create runtime evidence and does not replace any renderer,
-physics, participant, camera, BODY-feedback, or retail-identity provenance gate.
+The bridge does **not** create runtime evidence and does not replace any renderer
+provenance gate. Existing participant runtime evidence may be transported through
+the handoff as a separate readiness axis, but it is never inferred from static
+resources.
 
 ## Physics side
 
@@ -57,44 +57,20 @@ SHA-256 matches the actual `bundle_set_manifest.json` bytes.
 Therefore static BFF presence cannot promote an unproven scene draw, shader
 permutation, instance, transform or external sampler into the native scene.
 
-## Participant runtime-identity transport
+## Participant runtime evidence transport
 
-The handoff may optionally receive an existing
-`SHIFT.NativePhysicsParticipantRuntimeEvidence/1` through
-`--participant-runtime-evidence`.
+A ready existing `SHIFT.NativePhysicsParticipantRuntimeEvidence/1` can be supplied
+with `--participant-runtime-evidence`. The pipeline copies the exact bytes into
+the native handoff, records source/copy SHA-256, and requires:
 
-The transport accepts the artifact only when all existing participant-evidence
-readiness fields are already proven:
+- `ready=true`;
+- `registry_selector_identity_join_proven=true`;
+- `participant_instance_ready=true`.
 
-- `format == SHIFT.NativePhysicsParticipantRuntimeEvidence/1`;
-- `version == 1`;
-- `ready == true`;
-- `registry_selector_identity_join_proven == true`;
-- `participant_instance_ready == true`;
-- no participant blocking reasons are present.
-
-Accepted bytes are copied unchanged to:
-
-```text
-native-handoff/native_physics_participant_runtime_evidence.json
-```
-
-The handoff records both source and copied SHA-256 and requires byte equality.
-An invalid retry removes a stale copied artifact instead of leaving an earlier
-ready file behind.
-
-Participant readiness remains a separate axis:
-
-```text
-participant_runtime_identity_evaluated
-participant_runtime_identity_ready
-participant_runtime_identity_blocking_reasons
-```
-
-It does not change `resource_inputs_ready` or the existing scene/physics handoff
-`ready` result. `--require-participant-runtime-identity` changes only the command
-exit gate. The transport never creates a participant observation, does not
-reinterpret the pointer token, and does not dereference it.
+This is transport only. Invalid or missing participant evidence does not change
+`resource_inputs_ready`; `participant_runtime_identity_ready` remains a separate
+runtime-evidence axis. `--require-participant-runtime-identity` can make the CLI
+return non-zero unless that transported axis is ready.
 
 ## Commands
 
@@ -132,10 +108,9 @@ Outputs include:
 - `native_physics_manifest.json` — current BMW native-runtime compatibility
   manifest, only when the exact BMW gate is satisfied;
 - `scene_catalog_join.json` — runtime-proven scene IMB ↔ offline catalog join;
-- optional `native_physics_participant_runtime_evidence.json` — exact bytes of an
-  already-ready participant runtime-evidence input;
-- `native_resource_handoff.json` — combined resource-input admission plus the
-  separate participant-runtime-identity transport state.
+- `native_resource_handoff.json` — combined resource-input admission state;
+- `native_physics_participant_runtime_evidence.json` — byte-exact transported
+  participant evidence when a ready source is supplied.
 
 If `--scene-set` is omitted, the handoff remains blocked with
 `scene-set:runtime-proven-input-required`. This is intentional: the offline
@@ -144,19 +119,14 @@ scene provenance chain.
 
 ## Vertical-slice profile integration
 
-A ready Process D output can replace the duplicated scene and physics paths in
-`SHIFT.NativeVerticalSliceProfile/1`. When the native handoff also contains a
-ready transported participant artifact, the profile may omit
-`participant_boundary` as well:
+A ready resource-pipeline output can now replace the three duplicated
+resource-bound paths in a prepared `SHIFT.NativeVerticalSliceProfile/1`:
 
 ```json
 {
   "format": "SHIFT.NativeVerticalSliceProfile/1",
   "version": 1,
   "workspace_root": ".",
-  "track": "Silverstone_Era3_GrandPrix",
-  "vehicle": "BMW_M3_E36",
-  "retail_archive_identity_admission": "out/retail_archive_identity_admission.json",
   "resource_pipeline": "out/offline-pipeline",
   "camera_state": "out/native-camera-state.json",
   "solver_frame": "out/native-solver-frame/solver_frame.sbfr",
@@ -169,8 +139,13 @@ ready transported participant artifact, the profile may omit
 }
 ```
 
-When `resource_pipeline` is present, explicit `scene_set` and `physics_manifest`
-must be omitted. The runner requires:
+When profile preparation uses `resource_pipeline`, `scene_set`,
+`physics_manifest`, and `participant_boundary` are omitted so the pipeline has a
+single authority for those resource-bound inputs. The profile builder validates
+only that the pipeline directory is workspace-local and exists; full handoff
+validation remains deferred to `tools/run_native_vertical_slice.py`.
+
+The runner requires:
 
 - `pipeline_run.json` to be `SHIFT.OfflineResourcePipelineRun/1` with
   `native_resource_handoff_ready=true`;
@@ -180,57 +155,38 @@ must be omitted. The runner requires:
 - the generated native physics manifest path and SHA-256 to match the handoff
   artifact record;
 - the scene set itself to contain the canonical `bundle_set_manifest.json` plus
-  a ready `bundle_set_prepare.json`.
+  a ready `bundle_set_prepare.json`;
+- when participant evidence is transported, its canonical handoff path and
+  SHA-256 to match, its format to be
+  `SHIFT.NativePhysicsParticipantRuntimeEvidence/1`, and its identity/instance
+  readiness gates to remain positive;
+- for targeted profiles, the handoff scene/vehicle target labels to match the
+  profile `track`/`vehicle` identity.
 
-When a participant artifact is present, the runner additionally requires:
+Camera state and all BODY feedback packets remain mandatory profile inputs and
+keep their existing validation gates. Resource-pipeline mode does not create or
+replace them.
 
-- pipeline and handoff participant readiness to agree;
-- the artifact to use the canonical native-handoff path;
-- the recorded artifact SHA-256 to match the actual bytes;
-- the artifact to remain a ready
-  `SHIFT.NativePhysicsParticipantRuntimeEvidence/1` with the registry/selector
-  identity join and participant instance still ready.
-
-A pipeline-supplied participant artifact cannot be combined with an explicit
-profile `participant_boundary`; the ambiguity is rejected. If the resource
-pipeline has no participant artifact, the legacy explicit `participant_boundary`
-remains mandatory.
-
-Camera state and all BODY-feedback packets remain mandatory profile inputs and
-keep their existing validation gates. Resource-pipeline mode does not synthesize
-or replace them.
-
-### Target identity binding
-
-For target-labelled profiles, the runner also binds the resource pipeline back to
-the requested target instead of accepting any independently ready handoff:
-
-- `scene_catalog_join.track` must equal the profile `track`;
-- `vehicle_physics_manifest.vehicle` must equal the profile `vehicle`.
-
-When the profile carries the Phase 711
-`SHIFT.RetailArchiveIdentityAdmission/1`, those labels are the same labels that
-were already revalidated against that admission immediately before pipeline
-resolution. The launcher does not recompute retail archive hashes or duplicate
-the Process 3 archive-occurrence algorithm.
-
-Legacy/manual profiles without target labels remain compatible and do not gain a
-new retail-identity requirement merely by using resource-pipeline mode.
+For compatibility, a manually authored resource-pipeline profile may still use
+an explicit `participant_boundary` only when the selected handoff does not carry
+a participant runtime-evidence artifact. If the pipeline already supplies that
+artifact, an explicit participant path is rejected as ambiguous. The profile
+preparation path intentionally uses the stricter single-authority form shown
+above.
 
 The vertical-slice runner still supports the legacy explicit `scene_set`,
-`physics_manifest`, and participant evidence paths when `resource_pipeline` is
-absent.
+`physics_manifest`, and `participant_boundary` profile fields when
+`resource_pipeline` is absent.
 
 ## Non-claims
 
 `SHIFT.OfflineNativeResourceHandoff/1` means only that the native render/physics
-**resource inputs** have been joined to exact original-resource identities. If a
-participant artifact is transported, it additionally means those already-proven
-participant evidence bytes were preserved and admitted under their existing
-runtime-evidence contract. It does not claim:
+**resource inputs** have been joined to exact original-resource identities. Its
+base `ready` / `resource_inputs_ready` state does not itself claim:
 
 - camera-state readiness;
-- creation of participant runtime identity from static resources;
+- participant runtime identity readiness (even when that evidence is transported
+  as a separate ready axis);
 - BODY feedback packet readiness;
 - provider-present scheduling;
 - full native runtime execution readiness;

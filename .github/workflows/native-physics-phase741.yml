@@ -1,0 +1,98 @@
+name: native-physics-phase741
+
+on:
+  push:
+    paths:
+      - 'native_runtime/include/shift_fun_00765c40_selected_bmw_query_fallback.hpp'
+      - 'native_runtime/include/shift_fun_00765c40_external_pass_result.hpp'
+      - 'native_runtime/tests/fun_00765c40_selected_bmw_query_fallback_check.cpp'
+      - 'native_runtime/tests/fun_00765c40_external_pass_result_check.cpp'
+      - 'native_runtime/cmake/phase740.cmake'
+      - 'native_runtime/cmake/phase741.cmake'
+      - 'tests/test_s6_fun_00765c40_selected_bmw_query_fallback.py'
+      - 'tests/test_s6_fun_00765c40_external_pass_result.py'
+      - 'tests/test_s6_fun_00765c40_query_input_boundary.py'
+      - 'tests/test_s6_fun_00765c40_query_cache_lifetime.py'
+      - 'evidence/fun_00765c40_selected_bmw_query_fallback.json'
+      - 'evidence/phase741_next_blocker.md'
+      - 'docs/PHASE741_FUN_00765C40_SELECTED_BMW_QUERY_FALLBACK.md'
+      - 'docs/PHASE741_SCOPE.md'
+      - '.github/workflows/native-physics-phase741.yml'
+  pull_request:
+    paths:
+      - 'native_runtime/include/shift_fun_00765c40_selected_bmw_query_fallback.hpp'
+      - 'native_runtime/include/shift_fun_00765c40_external_pass_result.hpp'
+      - 'native_runtime/tests/fun_00765c40_selected_bmw_query_fallback_check.cpp'
+      - 'native_runtime/tests/fun_00765c40_external_pass_result_check.cpp'
+      - 'native_runtime/cmake/phase740.cmake'
+      - 'native_runtime/cmake/phase741.cmake'
+      - 'tests/test_s6_fun_00765c40_selected_bmw_query_fallback.py'
+      - 'tests/test_s6_fun_00765c40_external_pass_result.py'
+      - 'tests/test_s6_fun_00765c40_query_input_boundary.py'
+      - 'tests/test_s6_fun_00765c40_query_cache_lifetime.py'
+      - 'evidence/fun_00765c40_selected_bmw_query_fallback.json'
+      - 'evidence/phase741_next_blocker.md'
+      - 'docs/PHASE741_FUN_00765C40_SELECTED_BMW_QUERY_FALLBACK.md'
+      - 'docs/PHASE741_SCOPE.md'
+      - '.github/workflows/native-physics-phase741.yml'
+
+jobs:
+  selected-bmw-query-fallback:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run focused Phase 741 regressions
+        run: >-
+          python3 -m pytest -q
+          tests/test_s6_fun_00765c40_selected_bmw_query_fallback.py
+          tests/test_s6_fun_00765c40_external_pass_result.py
+          tests/test_s6_fun_00765c40_query_input_boundary.py
+          tests/test_s6_fun_00765c40_query_cache_lifetime.py
+
+      - name: Validate Phase 741 evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          e = json.loads(Path('evidence/fun_00765c40_selected_bmw_query_fallback.json').read_text())
+          assert e['format'] == 'SHIFT.Fun00765c40SelectedBMWQueryFallback/1'
+          assert e['ready'] is True
+          assert e['resource']['f32_bits'] == '0x3dcccccd'
+          assert e['resource']['widened_f64_bits'] == '0x3fb99999a0000000'
+          assert e['runtime_join']['selected_bmw_fallback_available_before_provider'] is True
+          assert e['scope']['external_provider_count_after'] == 7
+          assert e['scope']['collision_provider_internalized'] is False
+          PY
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 741 and compatibility regressions
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_fun_00765c40_selected_bmw_query_fallback_check
+          shift_runtime_fun_00765c40_external_pass_result_check
+          shift_runtime_fun_00765c40_query_cache_lifetime_check
+
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_fun_00765c40_selected_bmw_query_fallback|shift_runtime_fun_00765c40_external_pass_result|shift_runtime_fun_00765c40_query_cache_lifetime)$'
+
+      - name: Verify Phase 741 native report
+        run: |
+          mkdir -p out/native-physics-phase741
+          native_runtime/build/shift_runtime_fun_00765c40_selected_bmw_query_fallback_check \
+            > out/native-physics-phase741/fun_00765c40_selected_bmw_query_fallback.json
+          grep -q '"format":"SHIFT.Fun00765c40SelectedBMWQueryFallback/1"' \
+            out/native-physics-phase741/fun_00765c40_selected_bmw_query_fallback.json
+          grep -q '"fw_max_height_f32_bits":"0x3dcccccd"' \
+            out/native-physics-phase741/fun_00765c40_selected_bmw_query_fallback.json
+          grep -q '"fallback_f64_bits":"0x3fb99999a0000000"' \
+            out/native-physics-phase741/fun_00765c40_selected_bmw_query_fallback.json

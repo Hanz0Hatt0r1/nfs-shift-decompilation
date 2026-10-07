@@ -20,3 +20,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00765c40_query_cache_lifetime
     COMMAND shift_runtime_fun_00765c40_query_cache_lifetime_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase741.cmake)
