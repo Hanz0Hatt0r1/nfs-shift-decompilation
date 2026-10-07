@@ -16,12 +16,11 @@ void require_complete_bundle(
         !providers.contact_response ||
         !providers.contact_outer_input ||
         !providers.motion_read_effect ||
-        !providers.motion_read_delta_consumer ||
         !providers.scalar_provider_factory ||
         !providers.half_step_refresh ||
         !providers.post_half_step) {
         throw std::invalid_argument(
-            "native vehicle provider session requires all nine Phase 699 provider boundaries");
+            "native vehicle provider session requires all eight active external provider boundaries");
     }
 }
 
@@ -66,11 +65,13 @@ NativeVehicleProviderSession::execute_explicit_step(
                     ++telemetry.motion_read_effect_call_count;
                     return providers_.motion_read_effect(pass_index);
                 };
-            callbacks.motion_read_delta_consumer =
-                [this, &telemetry, pass_index](double delta) {
-                    ++telemetry.motion_read_delta_consumer_call_count;
-                    providers_.motion_read_delta_consumer(pass_index, delta);
-                };
+            if (providers_.motion_read_delta_consumer) {
+                callbacks.motion_read_delta_consumer =
+                    [this, &telemetry, pass_index](double delta) {
+                        ++telemetry.motion_read_delta_consumer_call_count;
+                        providers_.motion_read_delta_consumer(pass_index, delta);
+                    };
+            }
             return callbacks;
         };
 
