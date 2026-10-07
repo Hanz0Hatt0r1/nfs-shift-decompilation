@@ -35,12 +35,10 @@ struct Fun00766510PrimaryResponseApplicationResult {
     WheelContactVector3d transformed_response{};
     BodyAccumulatorState body_accumulator{};
 
-    // Immediately after retail FUN_007baa70, FUN_00766510 calls FUN_00753650
-    // with the same application point and transformed response and accumulates
-    // that cross-product into HDVehicle+0x40a0/+0x40a8/+0x40b0. The native
-    // FUN_007baa70 primitive already computes the identical angular delta, so
-    // expose that exact caller-visible delta instead of recomputing a second
-    // independently owned value.
+    // Retail immediately calls FUN_00753650 with the same application point
+    // and transformed response, then accumulates that returned vector into
+    // HDVehicle+0x40a0/+0x40a8/+0x40b0. Keep the source call explicit instead
+    // of reconstructing the value from a later BODY accumulator difference.
     BodyAccumulatorVector3d caller_accumulator_delta{};
 };
 
@@ -53,16 +51,14 @@ execute_fun_00766510_primary_response_application(
     result.transformed_response = transform_fun_007aefb0_refresh(
         input.body_frame,
         result.response_vector);
+    result.caller_accumulator_delta = execute_fun_00753650_cross_product(
+        input.application_point,
+        result.transformed_response);
     result.body_accumulator = input.body_accumulator;
     apply_fun_007baa70_body_accumulator(
         result.body_accumulator,
         input.application_point,
         result.transformed_response);
-    for (std::size_t component = 0u; component < 3u; ++component) {
-        result.caller_accumulator_delta[component] =
-            result.body_accumulator.angular[component] -
-            input.body_accumulator.angular[component];
-    }
     return result;
 }
 
