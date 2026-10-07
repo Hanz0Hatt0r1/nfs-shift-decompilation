@@ -17,9 +17,11 @@ PC retail is authoritative. Xbox recomp is used only to accelerate and independe
 
 The exact caller span `0x0076779f..0x007677e2` is hash-locked in the Phase736 evidence.
 
+A precision witness now protects the visible narrowing order, not merely a numerically close result. With first-output lanes `(-0.4847484798108193, 0, 17707.45002995104)` and planar delta `(2.147281910352325, 0, 0.055313743475557536)`, the source-staged path stores f32 bits `0x43e3c0c7`; an all-double projection rounded only at the end produces `0x43e3c0c8`.
+
 ## FUN_00759c90 first output
 
-Retail `FUN_00759c90` iterates exactly three records beginning at `HDVehicle+0x7f0`. Ghidra expresses the loop step as `pdVar3 += 0x150` on a `double*`, which is a byte stride of `0xa80`.
+Retail `FUN_00759c90` iterates exactly three records beginning at `HDVehicle+0x7f0`. Ghidra expresses the loop step as `pdVar3 += 0x150` on a `double*`, which is a byte stride of `0xa80` (`0x150 * 8`). Phase736 locks both `0x7f0` and `0xa80` as native constants so the pointer-unit distinction cannot regress.
 
 For each record the first output accumulates:
 
@@ -29,6 +31,8 @@ vector(+0xb0) * scalar(+0x00)
 ```
 
 The record point at `+0xf8` contributes only to the function's second output. Phase736 therefore exposes `execute_fun_00759c90_weighted_total()` as the exact caller-relevant first-output reduction and reuses it from the existing full Phase660 aggregate implementation.
+
+The Phase736 join deliberately does not depend on the historical Phase660 `transformed_total` or `scalar_output` convenience outputs. They remain compatibility/history surface and are not evidence for the `FUN_007675f0` projection join.
 
 ## Native production boundary
 
