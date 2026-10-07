@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -27,7 +28,6 @@ Fun00765c40QueryInputBoundary make_query_input(std::size_t pass) {
         100.0 + static_cast<double>(pass),
         200.0 + static_cast<double>(pass),
         300.0 + static_cast<double>(pass)};
-    input.cached_handle = 4000u + static_cast<std::uint64_t>(pass);
     input.miss_fallback = 9.0 + static_cast<double>(pass);
     return input;
 }
@@ -42,12 +42,19 @@ NativeVehicleExternalProviderBundle make_bundle(
     const Fun00763570MachineInput& machine_input,
     double expected_half_timestep) {
     NativeVehicleExternalProviderBundle bundle{};
-    bundle.fun_00765c40 = [&events](std::size_t pass) {
-        events.push_back("fun-00765c40:" + std::to_string(pass));
-        return Fun00765c40ExternalPassResult{
-            Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0},
-            make_query_input(pass)};
-    };
+    bundle.fun_00765c40 =
+        [&events, next_handle = std::uint64_t{4000u}](
+            std::size_t pass,
+            const Fun00765c40ExternalPassInput& input) mutable {
+            events.push_back("fun-00765c40:" + std::to_string(pass));
+            auto query_input = make_query_input(pass);
+            query_input.cached_handle = input.cached_handle;
+            const std::uint64_t returned = next_handle++;
+            return Fun00765c40ExternalPassResult{
+                Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0},
+                query_input,
+                returned};
+        };
     bundle.wheel_update = [&events](std::size_t pass) {
         events.push_back("wheel-update:" + std::to_string(pass));
     };
@@ -163,6 +170,8 @@ int main() {
             projection,
             machine_input,
             (1.0 / 180.0) * 0.5));
+        require(!session.fun_00765c40_query_cache_handle().has_value(),
+                "selected-session cache did not start at retail zero seed");
 
         const auto first = execution.execute_outer_dispatch(session, runtime);
         require(first.recovered_substep_count == 6u,
@@ -183,8 +192,11 @@ int main() {
         require(session.last_telemetry().motion_read_native_effect_call_count == 2u,
                 "selected-session active motion-read telemetry mismatch");
         require(session.last_telemetry().fun_00765c40_call_count == 2u &&
-                    session.last_telemetry().fun_00765c40_query_input_capture_count == 2u,
-                "selected-session FUN_00765c40 query-input telemetry mismatch");
+                    session.last_telemetry().fun_00765c40_query_input_capture_count == 2u &&
+                    session.last_telemetry().fun_00765c40_cache_commit_count == 2u,
+                "selected-session FUN_00765c40 query-input/cache telemetry mismatch");
+        require(session.fun_00765c40_query_cache_handle() == 4011u,
+                "selected-session first dispatch did not persist query cache across six substeps");
         require(first.recovered_substep_count > 0u,
                 "selected-session load-term path was not exercised");
 
@@ -210,8 +222,11 @@ int main() {
                     runtime.outer_update.body_pose_snapshot_generation == 12u &&
                     runtime.outer_update.body_bytes != first_body_bytes,
                 "selected-session second retail dispatch did not evolve persistent BODY state");
-        require(session.last_telemetry().fun_00765c40_query_input_capture_count == 2u,
-                "selected-session second dispatch lost per-step query snapshots");
+        require(session.last_telemetry().fun_00765c40_query_input_capture_count == 2u &&
+                    session.last_telemetry().fun_00765c40_cache_commit_count == 2u,
+                "selected-session second dispatch lost per-step query/cache snapshots");
+        require(session.fun_00765c40_query_cache_handle() == 4023u,
+                "selected-session second dispatch did not continue persistent query cache");
 
         const double expected_second_residual =
             2.0 * kRetailNormalOuterIncrementSeconds - 12.0 / 180.0;
@@ -234,7 +249,7 @@ int main() {
             << "\"fun_00765c40_load_terms_typed\":true,"
             << "\"fun_00765c40_external_pass_result_typed\":true,"
             << "\"fun_00765c40_query_input_captured\":true,"
-            << "\"fun_00765c40_world_position_producer_internalized\":false,"
+            << "\"fun_00765c40_query_cache_owned\":true,"
             << "\"fun_00765c40_collision_provider_internalized\":false,"
             << "\"motion_read_raw_input_provider\":false,"
             << "\"motion_read_effect_arithmetic_internal\":true,"
