@@ -10,6 +10,9 @@ BMW_BIND = ROOT / "evidence/bmw_body0_vehicle_root_bind_relation.json"
 BODY_ADAPTER_HEADER = ROOT / "native_runtime/include/shift_body_record_adapter.hpp"
 BODY_ADAPTER_SOURCE = ROOT / "native_runtime/src/body_record_adapter.cpp"
 MOTION_SOURCE = ROOT / "native_runtime/src/fun_00770e80_motion_read_effect_provider_chain.cpp"
+MACHINE_MOTION_SOURCE = (
+    ROOT / "native_runtime/src/fun_00770e80_motion_read_machine_input_provider_chain.cpp"
+)
 SESSION_SOURCE = ROOT / "native_runtime/src/native_vehicle_provider_session.cpp"
 
 
@@ -48,7 +51,8 @@ def test_native_chain_consumes_body0_destination_without_external_consumer() -> 
     proof = json.loads(PROOF.read_text(encoding="utf-8"))
     header = BODY_ADAPTER_HEADER.read_text(encoding="utf-8")
     adapter = BODY_ADAPTER_SOURCE.read_text(encoding="utf-8")
-    motion = MOTION_SOURCE.read_text(encoding="utf-8")
+    legacy_motion = MOTION_SOURCE.read_text(encoding="utf-8")
+    machine_motion = MACHINE_MOTION_SOURCE.read_text(encoding="utf-8")
     session = SESSION_SOURCE.read_text(encoding="utf-8")
 
     assert proof["handoff"]["FUN_007682c0_delta_application_internalization_ready"] is True
@@ -62,21 +66,36 @@ def test_native_chain_consumes_body0_destination_without_external_consumer() -> 
     assert "const float next_f32 = current_f32 + delta_f32" in adapter
     assert "write_f64_le(record, offset, static_cast<double>(next_f32))" in adapter
 
-    assert "adapted.post_pass_body_mutator" in motion
-    assert "apply_fun_007682c0_body0_accumulator_y_delta" in motion
-    assert "if (delta_consumer)" in motion
-    assert "all active physics-pass providers" in motion
+    # The Phase 713 effect-provider adapter remains as compatibility/history and
+    # may still expose an optional observer, but it is no longer the production
+    # NativeVehicleProviderSession path after Phase 718.
+    assert "adapted.post_pass_body_mutator" in legacy_motion
+    assert "apply_fun_007682c0_body0_accumulator_y_delta" in legacy_motion
+    assert "if (delta_consumer)" in legacy_motion
+    assert "all active physics-pass providers" in legacy_motion
+
+    # Production now computes the effect from raw PC machine inputs and performs
+    # the same internal BODY0 write directly. No external delta consumer or
+    # compatibility observer participates in correctness.
+    assert "execute_fun_007682c0_machine_effect" in machine_motion
+    assert "apply_fun_007682c0_body0_accumulator_y_delta" in machine_motion
+    assert "motion_read_delta_consumer" not in machine_motion
 
     assert "all eight active external provider boundaries" in session
     required_prefix = session.split("NativeVehicleProviderSession::NativeVehicleProviderSession", 1)[0]
     assert "!providers.motion_read_delta_consumer" not in required_prefix
-    assert "if (providers_.motion_read_delta_consumer)" in session
+    assert "motion_read_delta_consumer" not in session
+    assert "providers_.motion_read_input" in session
+    assert "execute_explicit_motion_read_machine_input_update" in session
 
 
-def test_proof_keeps_effect_production_and_complete_semantics_fail_closed() -> None:
+def test_original_destination_proof_remains_historical_and_fail_closed() -> None:
     proof = json.loads(PROOF.read_text(encoding="utf-8"))
     limits = proof["limits"]
 
+    # These are claims of the original destination-only proof packet. Later S6
+    # phases may close them in separate contracts; do not rewrite this evidence
+    # artifact retroactively.
     assert limits["FUN_007682c0_effect_production_internalized"] is False
     assert limits["FUN_007595d0_complete_input_production_proven"] is False
     assert limits["x87_magnitude_and_response_boundaries_proven"] is False
