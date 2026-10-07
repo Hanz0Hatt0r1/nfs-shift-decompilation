@@ -1,0 +1,76 @@
+{
+  "format": "SHIFT.Process1Controller1QueueObjectIdentity/1",
+  "ready": true,
+  "source": {
+    "authority": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "generic_enqueue": {
+    "function": "FUN_00650350",
+    "direct_caller_count": 8,
+    "direct_callers": [
+      "FUN_0057e5b0",
+      "FUN_0057e820",
+      "FUN_006333f0",
+      "FUN_00649b10",
+      "FUN_006503d0",
+      "FUN_00655220",
+      "FUN_00662ee0",
+      "FUN_006880c0"
+    ]
+  },
+  "explicit_controller_queue_identity": {
+    "queue_field": "+0x5c",
+    "callers": ["FUN_00649b10", "FUN_00662ee0"],
+    "thread_entry_self_seed": "FUN_00649b10",
+    "external_wrapper": "FUN_00662ee0",
+    "external_wrapper_only_direct_caller": "FUN_006499e8",
+    "external_wrapper_only_direct_context": "thread teardown/shutdown"
+  },
+  "generic_alias_frontier": {
+    "callers_without_explicit_controller_queue_identity": [
+      "FUN_0057e5b0",
+      "FUN_0057e820",
+      "FUN_006333f0",
+      "FUN_006503d0",
+      "FUN_00655220",
+      "FUN_006880c0"
+    ],
+    "generic_pointer_alias_to_controller1_ruled_out": false
+  },
+  "adjudication": {
+    "source_visible_explicit_controller_queue_producers_classified": true,
+    "thread_entry_self_seed_is_external_wake_source": false,
+    "direct_non_teardown_external_controller_enqueue_producer_proven": false,
+    "render_or_present_direct_controller_queue_producer_proven": false,
+    "generic_queue_pointer_aliases_ruled_out": false
+  },
+  "machine_spans": {
+    "thread_entry_self_enqueue": {
+      "start": "0x00649c30",
+      "end_exclusive": "0x00649c42",
+      "sha256": "e4d9e0432975b009e3a41b75210cb17bbd3a663ed9079b60a684ac8362938aed"
+    },
+    "controller_enqueue_wrapper": {
+      "start": "0x00662ee0",
+      "end_exclusive": "0x00662f16",
+      "sha256": "834a112d58d05fe2735c9e81203f83631c8909dcebac7330ba878363b279ebc9"
+    },
+    "generic_queue_enqueue": {
+      "start": "0x00650350",
+      "end_exclusive": "0x00650390",
+      "sha256": "d39d7703a15729b257e63364d3bee55caec7fbdb4d326143dfae62182ba87725"
+    },
+    "teardown_direct_controller_enqueue": {
+      "start": "0x00649a20",
+      "end_exclusive": "0x00649a3e",
+      "sha256": "91a70e233ed4ed1b6b4ba732a8d10b9548103273999738b9d32a52506ac29934"
+    }
+  },
+  "next_blocker": {
+    "process": 1,
+    "description": "resolve whether any of the six generic queue-pointer callers can alias Controller #1 queue+0x5c, prioritizing render/presentation reachable producers"
+  }
+}
