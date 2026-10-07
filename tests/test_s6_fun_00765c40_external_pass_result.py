@@ -55,13 +55,13 @@ def test_phase725_does_not_reexternalize_native_subcomponents_or_infer_missing_s
     assert scope["world_transform_inferred"] is False
 
 
-def test_active_cpp_api_extends_historical_result_with_phase741_selected_setup() -> None:
+def test_active_cpp_api_extends_historical_result_with_phase742_collision_output() -> None:
     result_header = RESULT_HEADER.read_text(encoding="utf-8")
     query_input_header = QUERY_INPUT_HEADER.read_text(encoding="utf-8")
     session_header = SESSION_HEADER.read_text(encoding="utf-8")
     session_source = SESSION_SOURCE.read_text(encoding="utf-8")
 
-    assert "SHIFT.Fun00765c40ExternalPassResult/3" in result_header
+    assert "SHIFT.Fun00765c40ExternalPassResult/4" in result_header
     assert "SHIFT.Fun00765c40ExternalPassInput/2" in result_header
     assert "struct Fun00765c40ExternalPassInput" in result_header
     assert "std::optional<CollisionQueryVector3d> world_position" in result_header
@@ -70,8 +70,11 @@ def test_active_cpp_api_extends_historical_result_with_phase741_selected_setup()
     assert "struct Fun00765c40ExternalPassResult" in result_header
     assert "Fun00765c40LoadTerms load_terms" in result_header
     assert "Fun00765c40QueryInputBoundary query_input" in result_header
-    assert "returned_cache_handle" in result_header
-    assert "validate_fun_00765c40_external_pass_result" in result_header
+    assert "std::optional<std::uint64_t> returned_cache_handle" in result_header
+    assert "std::optional<CollisionQueryOutput> query_output" in result_header
+    assert "validate_fun_00765c40_collision_output_handoff" in result_header
+    assert "selected BMW provider hid FUN_007b0710 collision output" in result_header
+    assert "returned cache handle disagrees with FUN_007b0710 output" in result_header
 
     assert "SHIFT.Fun00765c40QueryInputBoundary/1" in query_input_header
     assert "CollisionQueryVector3d world_position" in query_input_header
@@ -80,6 +83,8 @@ def test_active_cpp_api_extends_historical_result_with_phase741_selected_setup()
     assert "build_fun_00765c40_query_record" in query_input_header
     assert "project_fun_00765c40_query_input_scalar" in query_input_header
 
+    # Phase742 types the residual result only; Phase743 will wire its collision
+    # output into the session/contact-response handoff. Existing ordering remains.
     assert "using NativeVehicleFun00765c40Provider" in session_header
     assert "const physics::Fun00765c40ExternalPassInput& input" in session_header
     assert "NativeVehicleFun00765c40Provider fun_00765c40" in session_header
