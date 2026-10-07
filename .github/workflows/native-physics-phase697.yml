@@ -7,6 +7,13 @@ on:
       - 'src/physics/fun_00770e80_motion_read_runtime_state.py'
       - 'tests/test_fun_00770e80_motion_read_effect_provider_chain_runtime.py'
       - 'tests/test_fun_00770e80_motion_read_runtime_state.py'
+      - 'evidence/fun_007682c0_body0_delta_destination.json'
+      - 'native_runtime/include/shift_body_record_adapter.hpp'
+      - 'native_runtime/src/body_record_adapter.cpp'
+      - 'native_runtime/include/shift_fun_00770e80_composed_anchor_chain.hpp'
+      - 'native_runtime/src/fun_00770e80_composed_anchor_chain.cpp'
+      - 'native_runtime/include/shift_fun_00770e80_motion_read_effect_provider_chain.hpp'
+      - 'native_runtime/src/fun_00770e80_motion_read_effect_provider_chain.cpp'
       - 'native_runtime/src/runtime_explicit_outer_update_state.hpp'
       - 'native_runtime/src/runtime_state.hpp'
       - 'native_runtime/tests/fun_00770e80_motion_read_runtime_state_check.cpp'
@@ -20,6 +27,13 @@ on:
       - 'src/physics/fun_00770e80_motion_read_runtime_state.py'
       - 'tests/test_fun_00770e80_motion_read_effect_provider_chain_runtime.py'
       - 'tests/test_fun_00770e80_motion_read_runtime_state.py'
+      - 'evidence/fun_007682c0_body0_delta_destination.json'
+      - 'native_runtime/include/shift_body_record_adapter.hpp'
+      - 'native_runtime/src/body_record_adapter.cpp'
+      - 'native_runtime/include/shift_fun_00770e80_composed_anchor_chain.hpp'
+      - 'native_runtime/src/fun_00770e80_composed_anchor_chain.cpp'
+      - 'native_runtime/include/shift_fun_00770e80_motion_read_effect_provider_chain.hpp'
+      - 'native_runtime/src/fun_00770e80_motion_read_effect_provider_chain.cpp'
       - 'native_runtime/src/runtime_explicit_outer_update_state.hpp'
       - 'native_runtime/src/runtime_state.hpp'
       - 'native_runtime/tests/fun_00770e80_motion_read_runtime_state_check.cpp'
@@ -72,6 +86,8 @@ jobs:
             out/native-physics-phase697/fun_007682c0_motion_read_runtime_state.json
           grep -q '"body_pose_snapshot_generation":2' \
             out/native-physics-phase697/fun_007682c0_motion_read_runtime_state.json
+          grep -q '"motion_read_delta_application_call_count":2' \
+            out/native-physics-phase697/fun_007682c0_motion_read_runtime_state.json
           grep -q '"persistent_body_bytes_carried_between_explicit_updates":true' \
             out/native-physics-phase697/fun_007682c0_motion_read_runtime_state.json
           grep -q '"persistent_pose_snapshots_committed":true' \
@@ -80,7 +96,9 @@ jobs:
             out/native-physics-phase697/fun_007682c0_motion_read_runtime_state.json
           grep -q '"fixed_step_auto_schedule":false' \
             out/native-physics-phase697/fun_007682c0_motion_read_runtime_state.json
-          grep -q '"motion_read_body_identity_application_external":true' \
+          grep -q '"motion_read_body_identity_application_external":false' \
+            out/native-physics-phase697/fun_007682c0_motion_read_runtime_state.json
+          grep -q '"motion_read_body0_delta_application_internal":true' \
             out/native-physics-phase697/fun_007682c0_motion_read_runtime_state.json
           grep -q '"motion_read_machine_scalar_production_external":true' \
             out/native-physics-phase697/fun_007682c0_motion_read_runtime_state.json
