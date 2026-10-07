@@ -1,0 +1,98 @@
+{
+  "format": "SHIFT.Fun007675f0SurfaceProbeJoin/1",
+  "version": 1,
+  "status": "pc-retail-source-backed",
+  "ready": true,
+  "source": {
+    "program": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "fun_007675f0": "0x007675f0",
+    "fun_00759210": "0x00759210",
+    "vector_subtract_helper": "0x004a7870"
+  },
+  "caller_mapping": {
+    "fun_007675f0_query_setup_span": "0x0076760c..0x00767643",
+    "node_pointer_source": "FUN_007675f0 first stack argument",
+    "query_point_source": "chassis BODY origin +0x00/+0x08/+0x10 spilled f64->f32",
+    "fun_00759210_call": "0x00767643",
+    "fun_00759210_calling_convention": {
+      "ecx": "query point f32[3]",
+      "edx": "surface-probe node pointer",
+      "stack_arg_1": "output point f32[3]",
+      "stack_arg_2": "output scalar f32"
+    },
+    "post_probe_subtract_call_span": "0x00767648..0x0076765d",
+    "planar_delta": "FUN_00759210 output point - BODY query point",
+    "surface_scalar": "FUN_00759210 output scalar"
+  },
+  "node_ownership": {
+    "owner": "HDVehicle+0x120",
+    "fun_0076d100_load": "0x0076a0c9",
+    "fun_007675f0_call": "0x0076a1c7",
+    "refresh_provider": "FUN_00717cd0",
+    "refresh_provider_call": "0x0076a09c",
+    "refresh_provider_context": "ECX=0x00c10f68",
+    "writeback_to_hdvehicle_0x120": "0x0076a0a1",
+    "body_origin_snapshot_offsets": ["HDVehicle+0x128", "HDVehicle+0x130", "HDVehicle+0x138"],
+    "refresh_provider_internalized": false,
+    "refresh_semantics_named": false
+  },
+  "gap_machine_correction": {
+    "distance_filter_call": "0x007676f5",
+    "filtered_state_write_hdvehicle_0x4080": "0x00767700",
+    "filtered_state_reload_span": "0x00767706..0x0076770c",
+    "gap_use_span": "0x00767937..0x00767949",
+    "gap_offset_constant_address": "0x00ab4d18",
+    "gap_offset_constant": 1.5,
+    "correct_formula": "filtered_distance_state - (surface_scalar - 1.5)",
+    "historical_phase379_text_used_raw_distance": true,
+    "active_runtime_corrected": true
+  },
+  "xbox360_corroboration": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "outer_counterpart": "0x8259a9f0",
+    "surface_probe_counterpart": "0x8258ffb8",
+    "policy": "corroboration only; PC retail machine code is authoritative"
+  },
+  "native_handoff": {
+    "surface_probe_contract": "SHIFT.NativeSurfaceProbe/1",
+    "session_provider_payload": "ContactOuterSessionInput",
+    "production_surface_probe_node_present": true,
+    "production_planar_delta_field_present": false,
+    "production_surface_scalar_field_present": false,
+    "historical_compatibility_planar_surface_present": true,
+    "body_query_point_derived_from_current_BODY0": true,
+    "surface_probe_executed_natively": true
+  },
+  "remaining_external_fun_007675f0_fields": [
+    "surface_probe_node",
+    "base_scalar",
+    "projected_scalar",
+    "alignment_scalar",
+    "param_3"
+  ],
+  "remaining_external_field_count": 5,
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "boundary_narrowed": true,
+    "fun_00717cd0_internalized": false,
+    "node_refresh_semantics_invented": false,
+    "physical_semantic_names_promoted": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  },
+  "next_blocker": {
+    "preferred": "prove FUN_00717cd0 / HDVehicle+0x120 refresh-provider ownership and freshness contract",
+    "alternative": "map remaining base/projected/alignment/param_3 source owners",
+    "do_not_guess": [
+      "FUN_00717cd0 physical semantics",
+      "surface-probe node class name",
+      "base_scalar physical meaning",
+      "projected_scalar physical meaning",
+      "alignment_scalar physical meaning",
+      "param_3 physical meaning"
+    ]
+  }
+}
