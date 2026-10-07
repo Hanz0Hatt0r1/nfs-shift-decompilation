@@ -1,0 +1,90 @@
+{
+  "format": "SHIFT.Fun007675f0BodyOwnedScalarOwnershipEvidence/1",
+  "phase": 735,
+  "pc_authority": {
+    "file": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "function": "FUN_007675f0",
+    "address": "0x007675f0",
+    "decompiler_file": "SHIFT.exe.c",
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "decompiler_line": 759784,
+    "machine_spans": [
+      {
+        "start": "0x007677e2",
+        "end_exclusive": "0x0076791f",
+        "sha256": "82c0223f82e946c02948f997e46e1b9f729d43249cf1818c880a21e1b0bf9664",
+        "role": "strict outer gate, normalized BODY0 X/Z motion, perpendicular construction/sign alignment, transverse-motion square, filtered-distance divide, BODY0+0x120 multiply"
+      },
+      {
+        "start": "0x00767982",
+        "end_exclusive": "0x007679a5",
+        "sha256": "6379cb20ec87e8add53d4801303378b9d929e2fe35f8ed8f3ef061b518625065",
+        "role": "aligned perpendicular dot probe-derived planar direction used by the visible force expression"
+      }
+    ],
+    "full_function_span": {
+      "start": "0x007675f0",
+      "end_exclusive": "0x00767b24",
+      "sha256": "9ec5cb148d22f62360b4ea5d04b60c09ad599e3dfdd7c12986e94f1c5e0466e1"
+    }
+  },
+  "pc_recovered_provenance": {
+    "body_pointer": "HDVehicle+0x33a0",
+    "body_motion_offsets": ["BODY0+0x78", "BODY0+0x88"],
+    "body_scalar_offset": "BODY0+0x120",
+    "persistent_filtered_distance_offset": "HDVehicle+0x4080",
+    "planar_direction_source": "FUN_00759210 returned point minus f32-narrowed current BODY0 position, then X/Z normalization",
+    "alignment_scalar": "normalize(cross(normalized BODY0 planar motion, [0,1,0])); flip sign when its dot with planar direction is negative; then dot with planar direction",
+    "base_scalar": "square(dot(cross([0,1,0], planar_direction), BODY0 planar motion)) / filtered_distance_state * f32(BODY0+0x120)",
+    "derivation_gate": "distance < 200 && distance > 5 && planar BODY0 speed > 1",
+    "remaining_external_scalar": "projected_scalar",
+    "projected_scalar_note": "comes from the earlier FUN_00759c90 aggregate path and is deliberately not internalized by Phase 735"
+  },
+  "xbox_recomp_corroboration": {
+    "authoritative_for_pc": false,
+    "file": "nfs_shift_recomp.223.cpp",
+    "sha256": "5bb094f6125c6611f39ecd9fb759907004115c7ffc1d33d99173506479eba5dd",
+    "function": "sub_825939F0",
+    "address": "0x825939f0",
+    "matching_offsets": {
+      "vehicle_body_pointer": 13216,
+      "vehicle_filtered_distance": 16512,
+      "body_motion_x": 120,
+      "body_motion_z": 136,
+      "body_scalar": 288
+    },
+    "matching_hex_offsets": {
+      "vehicle_body_pointer": "0x33a0",
+      "vehicle_filtered_distance": "0x4080",
+      "body_motion_x": "0x78",
+      "body_motion_z": "0x88",
+      "body_scalar": "0x120"
+    },
+    "matching_structure": [
+      "f32 X/Z planar normalization",
+      "strict distance/speed gate",
+      "normalized BODY0 planar motion",
+      "perpendicular vector sign alignment",
+      "transverse-motion square divided by filtered distance and multiplied by BODY0+0x120"
+    ],
+    "correction": "The previously inspected sub_8259A978 is an initializer-neighbor function and is not used as the FUN_007675f0 counterpart."
+  },
+  "native_handoff": {
+    "production_payload": "ContactOuterSessionInput",
+    "production_base_scalar_field_present": false,
+    "production_alignment_scalar_field_present": false,
+    "production_projected_scalar_field_present": true,
+    "compatibility_base_alignment_fields_preserved": true,
+    "deriver": "execute_fun_007675f0_body_owned_scalars",
+    "current_body_observer_reused": true,
+    "body_field_120_observation_reused_from_phase734": true,
+    "top_level_external_provider_count": 7
+  },
+  "limits": [
+    "No physical semantic name or unit is assigned to either recovered scalar.",
+    "Phase 735 does not internalize projected_scalar or the FUN_00759c90 record producer.",
+    "Phase 735 does not claim the Xbox recomp floating-point implementation is authoritative for PC x87 behavior.",
+    "Existing broader FUN_007675f0 inner-condition and FUN_007ba9e0 submission-vector closure remains outside this slice."
+  ]
+}
