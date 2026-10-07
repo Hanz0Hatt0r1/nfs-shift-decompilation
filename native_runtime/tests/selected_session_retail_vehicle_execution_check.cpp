@@ -21,6 +21,18 @@ void require(bool condition, const char* message) {
     }
 }
 
+Fun007682c0MachineInput make_motion_input() {
+    Fun007682c0MachineInput input{};
+    input.caller_gate_open = true;
+    input.steering = 1.2f;
+    input.load_terms = {3000.0, 3000.0, 3000.0, 3000.0};
+    input.projection_field_x = 2.0f;
+    input.projection_field_z = 1.0f;
+    input.response_field_4054 = 2.0f;
+    input.angle_mode = 2;
+    return input;
+}
+
 NativeVehicleExternalProviderBundle make_bundle(
     std::vector<std::string>& events,
     const PreparedGeneratedBodyConstraintFrame& source,
@@ -44,17 +56,10 @@ NativeVehicleExternalProviderBundle make_bundle(
         events.push_back("contact-input:" + std::to_string(pass));
         return make_contact_outer_input();
     };
-    bundle.motion_read_effect = [&events](std::size_t pass) {
-        events.push_back("motion-effect:" + std::to_string(pass));
-        return Fun007682c0AccumulatorEffect{true, -2.5};
+    bundle.motion_read_input = [&events](std::size_t pass) {
+        events.push_back("motion-input:" + std::to_string(pass));
+        return make_motion_input();
     };
-    bundle.motion_read_delta_consumer =
-        [&events](std::size_t pass, double delta) {
-            if (delta != -2.5) {
-                throw std::runtime_error("selected-session motion delta mismatch");
-            }
-            events.push_back("motion-delta:" + std::to_string(pass));
-        };
     bundle.scalar_provider_factory = [&events](std::size_t pass) {
         events.push_back("scalar-factory:" + std::to_string(pass));
         return [&events, pass](
@@ -129,7 +134,8 @@ int main() {
         const auto solver_topology = make_solver_topology(source, relations);
         const auto reset_state = make_reset_state();
         const auto machine_input = make_machine_input();
-        const auto initial_body_bytes = make_raw_bodies(projection.bodies);
+        auto initial_body_bytes = make_raw_bodies(projection.bodies);
+        put_f64(initial_body_bytes, 0x120u, 1000.0);
 
         SelectedSessionRetailVehicleExecution execution{};
         require(execution.scheduler().uses_admitted_retail_outer_scheduler(),
@@ -173,6 +179,9 @@ int main() {
                     runtime.outer_update.body_pose_snapshot_generation == 6u &&
                     runtime.outer_update.body_bytes != initial_body_bytes,
                 "selected-session first retail dispatch did not persist BODY state");
+        require(session.last_telemetry().motion_read_input_call_count == 2u &&
+                    session.last_telemetry().motion_read_native_effect_call_count == 2u,
+                "selected-session active motion-read telemetry mismatch");
 
         const double expected_first_residual =
             kRetailNormalOuterIncrementSeconds - 6.0 / 180.0;
@@ -212,6 +221,7 @@ int main() {
             << "\"inner_substep_seconds\":" << (1.0 / 180.0) << ","
             << "\"normal_outer_substeps\":6,"
             << "\"two_dispatch_persistent_steps\":12,"
+            << "\"motion_read_effect_arithmetic_internal\":true,"
             << "\"retail_inner_substep_execution_admitted\":true,"
             << "\"provider_semantics_promoted\":false,"
             << "\"render_frame_equivalence_claimed\":false,"
