@@ -302,6 +302,9 @@ NativeVehicleProviderSession::execute_ready_retail_inner_batch(
     RetailOuterSchedulerContract& scheduler) {
     require_complete_bundle(providers_);
 
+    // Both calls fail closed until the selected-session PhysicsTweaker rate has
+    // been admitted. No constructor/default rate or host 1/60 fallback exists
+    // on this path.
     const std::size_t recovered_substep_count =
         scheduler.ready_inner_substep_count();
     const double inner_substep_seconds = scheduler.inner_substep_seconds();
