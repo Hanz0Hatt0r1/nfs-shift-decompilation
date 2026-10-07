@@ -1,0 +1,59 @@
+{
+  "format": "SHIFT.Xbox360Fun007675f0Crosscheck/1",
+  "version": 1,
+  "status": "cross-platform-corroboration",
+  "ready": true,
+  "source": {
+    "title": "Need for Speed SHIFT (Europe) Xbox 360",
+    "container": "default.xex",
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "media_id": "60DAC9C5",
+    "region": "PAL",
+    "xex_load_address": "0x82000000",
+    "extracted_pe_sha256": "23844dbba0cf72bc11512821b90008ea5d2b06ee886d921f416ca6caae43a628",
+    "architecture": "PowerPC64 big-endian"
+  },
+  "counterpart": {
+    "pc_function": "FUN_007675f0",
+    "xbox_function_start": "0x8259a9f0",
+    "confidence": "high",
+    "matching_features": [
+      "same HDVehicle +0x4080 persistent distance-state read/write topology",
+      "same chassis BODY pointer role and BODY +0x78/+0x88 planar speed lanes",
+      "same planar-distance and speed-factor gating shape",
+      "same low-pass call position before +0x4080 writeback"
+    ]
+  },
+  "distance_filter_cap": {
+    "xbox_object_register": "r31",
+    "xbox_load": "lfd 0,160(r31)",
+    "xbox_offset_hex": "0xa0",
+    "xbox_lowpass_call": "0x825b7e10",
+    "pc_recovered_expression": "FUN_00783a30(previous, distance, body_field+0xa0, 0.5)",
+    "same_object_as_0x4080_state": true,
+    "ownership_observation": "the +0xa0 value is read from the same FUN_007675f0 object that owns +0x4080; it is not supplied as a per-pass call argument",
+    "upstream_initializer_proven": false,
+    "selected_value_proven": false
+  },
+  "body_motion": {
+    "chassis_body_pointer_offset": "0x33a0",
+    "speed_x_offset": "BODY+0x78",
+    "speed_z_offset": "BODY+0x88"
+  },
+  "collision_chain_corroboration": {
+    "xbox_fun_00765c40_counterpart_region": "0x825997c8..0x82599a30",
+    "local_sample_offset": "HDVehicle+0x3938",
+    "body_basis_offset": "BODY+0xd4",
+    "body_origin_offsets": ["BODY+0x00", "BODY+0x08", "BODY+0x10"],
+    "collision_query_call": "0x825ebd48",
+    "caller_handle_offset": "HDVehicle+0x38dc",
+    "caller_scalar_offset": "HDVehicle+0x38e0",
+    "caller_fallback_offset": "HDVehicle+0x38e8",
+    "note": "independently corroborates the PC Phase 727/728 wheel-query world-position chain"
+  },
+  "policy": {
+    "cross_platform_evidence_is_not_used_to_override_pc_offsets": true,
+    "pc_retail_source_remains_authoritative_for_native_contract": true,
+    "physical_semantic_names_promoted": false
+  }
+}

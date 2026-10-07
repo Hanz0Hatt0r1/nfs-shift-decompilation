@@ -1,0 +1,76 @@
+{
+  "format": "SHIFT.Fun007675f0DistanceFilterCapOwnership/1",
+  "version": 1,
+  "status": "session-setup-owned",
+  "ready": true,
+  "source": {
+    "program": "SHIFT.exe",
+    "source_file": "SHIFT.exe.c",
+    "function": "FUN_007675f0",
+    "source_line": 759784,
+    "upstream_contract": "SHIFT.PhysicsHelper675F0Runtime/1",
+    "pc_recovered_expression": "FUN_00783a30(previous, distance, body_field+0xa0, 0.5)"
+  },
+  "retail_state": {
+    "owner": "FUN_007675f0 this/HDVehicle object",
+    "offset": "0xa0",
+    "read_role": "distance-filter cap argument passed to FUN_00783a30",
+    "per_pass_call_argument": false,
+    "in_function_writer_proven": false,
+    "upstream_initializer_proven": false,
+    "selected_value_promoted": false
+  },
+  "xbox360_corroboration": {
+    "contract": "SHIFT.Xbox360Fun007675f0Crosscheck/1",
+    "counterpart_start": "0x8259a9f0",
+    "load": "lfd 0,160(r31)",
+    "offset": "0xa0",
+    "lowpass_call": "0x825b7e10",
+    "same_object_as_0x4080_state": true,
+    "authoritative_for_pc_offsets": false
+  },
+  "setup_seed": {
+    "contract": "SHIFT.Fun007675f0DistanceFilterCapSetup/1",
+    "required_for_new_production_callers": true,
+    "upstream_initializer_proven": false,
+    "selected_value_promoted": false,
+    "legacy_per_pass_value_may_seed_once": true,
+    "legacy_seed_is_retail_evidence": false
+  },
+  "native_handoff": {
+    "session_provider_payload": "ContactOuterSessionInput",
+    "production_per_pass_field_distance_filter_cap_present": false,
+    "compatibility_distance_filter_cap_seed_present": true,
+    "setup_owner": "NativeVehicleExternalProviderBundle.contact_outer_filter_cap_setup",
+    "compose_function": "compose_fun_007675f0_external_input",
+    "lower_historical_payload_keeps_field": true
+  },
+  "remaining_external_fun_007675f0_fields": [
+    "planar_delta",
+    "surface_scalar",
+    "base_scalar",
+    "projected_scalar",
+    "alignment_scalar",
+    "param_3"
+  ],
+  "remaining_external_field_count": 6,
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "boundary_narrowed": true,
+    "selected_filter_cap_value_invented": false,
+    "upstream_initializer_invented": false,
+    "physical_semantic_name_promoted": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  },
+  "next_blocker": {
+    "preferred": "prove the source owner/producer of planar_delta, including the FUN_00759210 return-point path seen in PC retail and independently mirrored by Xbox 360 0x8258ffb8",
+    "do_not_guess": [
+      "FUN_00759210 physical semantics",
+      "surface/base/projected/alignment scalar physical names",
+      "param_3 semantic name"
+    ]
+  }
+}
