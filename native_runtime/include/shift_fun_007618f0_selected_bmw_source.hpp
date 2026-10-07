@@ -2,8 +2,8 @@
 
 #include "shift_collision_query_contract.hpp"
 
-#include <bit>
 #include <cstdint>
+#include <cstring>
 
 namespace shift::runtime::physics {
 
@@ -44,6 +44,12 @@ inline constexpr std::uint64_t kBmwM3E36FwCenterXF64Bits = 0x0000000000000000ull
 inline constexpr std::uint64_t kBmwM3E36FwCenterYF64Bits = 0xbfb999999999999aull;
 inline constexpr std::uint64_t kBmwM3E36FwCenterZF64Bits = 0xbfe0000000000000ull;
 
+inline double fun_007618f0_double_from_bits(std::uint64_t bits) {
+    double value = 0.0;
+    std::memcpy(&value, &bits, sizeof(value));
+    return value;
+}
+
 struct Fun007618f0SelectedBmwSource {
     double source_scalar_0338 = 0.0;
     CollisionQueryVector3d source_vec_0918{};
@@ -52,11 +58,11 @@ struct Fun007618f0SelectedBmwSource {
 inline Fun007618f0SelectedBmwSource selected_bmw_m3_e36_fun_007618f0_source() {
     Fun007618f0SelectedBmwSource result{};
     result.source_scalar_0338 =
-        std::bit_cast<double>(kSelectedDerivedCgHeightF64Bits);
+        fun_007618f0_double_from_bits(kSelectedDerivedCgHeightF64Bits);
     result.source_vec_0918 = {
-        std::bit_cast<double>(kBmwM3E36FwCenterXF64Bits),
-        std::bit_cast<double>(kBmwM3E36FwCenterYF64Bits),
-        std::bit_cast<double>(kBmwM3E36FwCenterZF64Bits),
+        fun_007618f0_double_from_bits(kBmwM3E36FwCenterXF64Bits),
+        fun_007618f0_double_from_bits(kBmwM3E36FwCenterYF64Bits),
+        fun_007618f0_double_from_bits(kBmwM3E36FwCenterZF64Bits),
     };
     return result;
 }
