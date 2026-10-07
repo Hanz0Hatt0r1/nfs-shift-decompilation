@@ -55,17 +55,18 @@ def test_phase725_does_not_reexternalize_native_subcomponents_or_infer_missing_s
     assert scope["world_transform_inferred"] is False
 
 
-def test_active_cpp_api_extends_historical_result_with_phase740_pre_call_input() -> None:
+def test_active_cpp_api_extends_historical_result_with_phase741_selected_setup() -> None:
     result_header = RESULT_HEADER.read_text(encoding="utf-8")
     query_input_header = QUERY_INPUT_HEADER.read_text(encoding="utf-8")
     session_header = SESSION_HEADER.read_text(encoding="utf-8")
     session_source = SESSION_SOURCE.read_text(encoding="utf-8")
 
     assert "SHIFT.Fun00765c40ExternalPassResult/3" in result_header
-    assert "SHIFT.Fun00765c40ExternalPassInput/1" in result_header
+    assert "SHIFT.Fun00765c40ExternalPassInput/2" in result_header
     assert "struct Fun00765c40ExternalPassInput" in result_header
     assert "std::optional<CollisionQueryVector3d> world_position" in result_header
     assert "std::optional<std::uint64_t> cached_handle" in result_header
+    assert "selected_bmw_miss_fallback" in result_header
     assert "struct Fun00765c40ExternalPassResult" in result_header
     assert "Fun00765c40LoadTerms load_terms" in result_header
     assert "Fun00765c40QueryInputBoundary query_input" in result_header
