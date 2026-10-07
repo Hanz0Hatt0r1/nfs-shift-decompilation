@@ -1,0 +1,115 @@
+{
+  "format": "SHIFT.Fun007594e0MachineAngle/1",
+  "version": 1,
+  "status": "retail-pc-machine-angle-proven-and-native-consumed",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "retail": {
+    "program_name": "SHIFT.exe",
+    "executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_authority": "SHIFT.exe",
+    "xbox_360_recomp_required_for_claim": false
+  },
+  "machine_spans": [
+    {
+      "function": "FUN_007594e0",
+      "start": "0x007594e0",
+      "end": "0x00759550",
+      "raw_byte_sha256": "a3b85095f536be8f707ad1f5431e28912cd5b492748b5776234fd8d5ba6c9088",
+      "role": "BODY0 velocity-to-local planar angle producer"
+    },
+    {
+      "function": "FUN_0076f970 writer site",
+      "start": "0x007703b2",
+      "end": "0x007703bd",
+      "raw_byte_sha256": "f0952defd5357bdbcdb0985f287e3031012e6477da2b0b6adb18952108613816",
+      "role": "call FUN_007594e0 then fstp f32 to HDVehicle+0x4068"
+    },
+    {
+      "function": "FUN_00770e80 early caller site",
+      "start": "0x00770ea3",
+      "end": "0x00770eb0",
+      "raw_byte_sha256": "8b74279675a0814b1989e5c4735ceab5561dc98be88b81ff5b09f973834c0fb5",
+      "role": "invoke FUN_0076f970 before either physics pass"
+    },
+    {
+      "function": "CRT atan2 wrapper",
+      "start": "0x0090285a",
+      "end": "0x00902864",
+      "raw_byte_sha256": "96c23c96ebf8f28ba12e3b9a7a103a8374dd4b0ebf952e3c206d8aab6c9c828c",
+      "role": "dispatch to CRT atan2 implementation"
+    },
+    {
+      "function": "CRT atan2 finite normal path",
+      "start": "0x00910750",
+      "end": "0x0091078c",
+      "raw_byte_sha256": "5e2ce07cb2bdf3f80ce831dff7b2ad965af8022dd59c434c0fb7bd68be411c4f",
+      "role": "absolute-value reduction, x87 FPATAN, pi quadrant correction and sign restoration"
+    }
+  ],
+  "body_inputs": {
+    "velocity": [
+      "BODY0+0x78 f64",
+      "BODY0+0x80 f64",
+      "BODY0+0x88 f64"
+    ],
+    "basis": "BODY0+0xd4..+0xf4 nine f32 values"
+  },
+  "machine_formula": {
+    "local_x": "basis[3]*vy + basis[0]*vx + basis[6]*vz",
+    "local_z": "basis[2]*vx + basis[5]*vy + basis[8]*vz",
+    "planar_squared": "local_z*local_z + local_x*local_x",
+    "gate": "strict planar_squared > 0.1 f64",
+    "closed_gate_result": "+0.0f",
+    "open_gate_result": "f32(CRT_x87_atan2(-local_x, -local_z))",
+    "retail_x87_control_word": "0x027f",
+    "x87_instruction": "FPATAN",
+    "signed_zero_quadrants_preserved": true,
+    "host_std_atan2_substitution_allowed": false
+  },
+  "timing": {
+    "writer": "FUN_0076f970",
+    "consumer_outer": "FUN_00770e80",
+    "writer_executes_before_pass_0": true,
+    "writer_executes_before_pass_1": true,
+    "one_f32_value_shared_by_both_passes": true,
+    "storage": "HDVehicle+0x4068 f32"
+  },
+  "bit_checkpoints": [
+    {
+      "case": "identity basis, velocity (3,0,4)",
+      "f32_bits": "0xc01fe0bb"
+    },
+    {
+      "case": "identity basis, velocity (0,0,1), signed-zero numerator quadrant",
+      "f32_bits": "0xc0490fdb"
+    },
+    {
+      "case": "identity basis, fixture velocity (4,5,6)",
+      "f32_bits": "0xc0236e05"
+    }
+  ],
+  "native_consumption": {
+    "kernel": "execute_fun_007594e0_machine_angle",
+    "active_session": "NativeVehicleProviderSession::execute_explicit_step",
+    "computed_from_current_persistent_BODY0": true,
+    "computed_before_external_pass_callbacks": true,
+    "same_value_composed_into_both_passes": true,
+    "external_steering_field_required": false,
+    "host_std_atan2_used": false
+  },
+  "remaining_raw_input_blockers": [
+    "HDVehicle+0xe0 caller gate producer/refresh",
+    "HDVehicle+0xb38/+0x15b8/+0x2038/+0x2ab8 load-term producers/refresh",
+    "HDVehicle+0x4054 response-field producer/refresh",
+    "DAT_00c128cc angle-mode producer/ownership"
+  ],
+  "scope": {
+    "runtime_capture_required": false,
+    "original_game_execution_required": false,
+    "xbox_360_recomp_substituted_for_pc_authority": false,
+    "complete_FUN_0076f970_semantics_claimed": false,
+    "complete_vehicle_control_chain_claimed": false
+  }
+}
