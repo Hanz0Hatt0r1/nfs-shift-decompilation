@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shift_bmw_m3_e36_response_field_4054.hpp"
 #include "shift_fun_007682c0_machine_effect.hpp"
 
 #include <array>
@@ -42,7 +43,6 @@ struct Fun007682c0DerivedProjectionState {
 inline Fun007682c0MachineInput compose_fun_007682c0_machine_input(
     const Fun007682c0ExternalMachineInput& external,
     float steering,
-    float response_field_4054,
     const Fun007682c0DerivedProjectionState& projection) {
     Fun007682c0MachineInput input{};
     input.caller_gate_open = external.caller_gate_open;
@@ -50,7 +50,7 @@ inline Fun007682c0MachineInput compose_fun_007682c0_machine_input(
     input.load_terms = external.load_terms;
     input.projection_field_x = projection.field_x;
     input.projection_field_z = projection.field_z;
-    input.response_field_4054 = response_field_4054;
+    input.response_field_4054 = selected_bmw_m3_e36_response_field_4054();
     input.angle_mode = external.angle_mode;
     return input;
 }
