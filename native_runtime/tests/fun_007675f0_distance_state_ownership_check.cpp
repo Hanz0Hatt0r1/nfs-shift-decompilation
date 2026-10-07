@@ -114,8 +114,9 @@ int main() {
                 callbacks.contact_response = [] {};
                 callbacks.contact_outer_input_provider = [&] {
                     ContactOuterSessionInput per_pass{};
-                    per_pass.planar_delta = {10.0, 0.0, 0.0};
-                    per_pass.surface_scalar = 10.0;
+                    per_pass.compatibility_planar_surface_present = true;
+                    per_pass.compatibility_planar_delta = {10.0, 0.0, 0.0};
+                    per_pass.compatibility_surface_scalar = 10.0;
                     per_pass.base_scalar = 4.0;
                     per_pass.projected_scalar = 1.0;
                     per_pass.alignment_scalar = 0.5;
