@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BUILDER_PATH = ROOT / "tools/ghidra/build_fun_007618f0_second_arg_worklist.py"
 ANALYZER_PATH = ROOT / "tools/ghidra/analyze_fun_007618f0_second_arg_provenance.py"
 OWNERSHIP = ROOT / "evidence/fun_007618f0_vehicle_load_data_ownership.json"
+RESOURCE = ROOT / "evidence/bmw_m3_e36_fun_007618f0_resource_inputs.json"
 
 
 def _load(path: Path, name: str):
@@ -189,5 +190,24 @@ def test_positive_source_machine_owner_evidence() -> None:
     ]
     assert payload["consumer_fields"]["front_wing_center_parser_property"] == "FWCenter"
     assert payload["scope"]["VehicleLoadData_owner_proven"] is True
-    assert payload["scope"]["selected_BMW_FWCenter_numeric_value_proven"] is False
+    assert payload["scope"]["selected_BMW_FWCenter_numeric_value_proven"] is True
+    assert payload["scope"]["selected_derived_CGHeight_bit_pattern_proven"] is True
+    assert payload["derived_cg_height_join"]["selected_derived_f64_bits"] == "0x3fc5810634bc6a80"
+    assert payload["selected_bmw_resource_inputs"]["FWCenter_f64_bits"] == [
+        "0x0000000000000000",
+        "0xbfb999999999999a",
+        "0xbfe0000000000000",
+    ]
     assert payload["provider_frontier"]["external_provider_count_after"] == 7
+
+
+def test_exact_bmw_resource_evidence() -> None:
+    payload = json.loads(RESOURCE.read_text(encoding="utf-8"))
+    assert payload["format"] == "SHIFT.BMWM3E36Fun007618f0ResourceInputs/1"
+    assert payload["archive"]["sha256"] == "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70"
+    assert payload["cdf_member"]["decoded_sha256"] == "bbee83f0d2fdcbfc2bbd62ddb2a10bf6fed71bb1b4fa78f303a4730d038b970d"
+    assert payload["resource_values"]["CGHeight"]["decimal"] == "0.280"
+    assert payload["resource_values"]["FWCenter"]["numeric_xyz"] == [0.0, -0.1, -0.5]
+    assert payload["derived_CGHeight_machine_join"]["selected_derived_f64_bits"] == "0x3fc5810634bc6a80"
+    assert payload["derived_CGHeight_machine_join"]["post_multiply_f32_spill"] is False
+    assert payload["scope"]["selected_derived_CGHeight_bit_pattern_proven_here"] is True
