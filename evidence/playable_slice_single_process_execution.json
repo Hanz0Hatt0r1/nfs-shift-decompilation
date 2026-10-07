@@ -40,10 +40,13 @@
     "fun_007682c0_machine_effect_contract": "SHIFT.Fun007682c0MachineEffectProduction/1",
     "fun_007682c0_effect_production_internal": true,
     "fun_007682c0_x87_fsqrt_internal": true,
+    "fun_007682c0_projection_state_contract": "SHIFT.Fun007682c0DerivedProjectionState/1",
+    "fun_007682c0_projection_state_internal": true,
+    "fun_007682c0_external_projection_fields_required": false,
     "active_external_provider_count": 8,
-    "current_blocker_id": "fun-007682c0-raw-input-producer-refresh",
-    "current_blocker": "bind or internalize exact runtime producers and refresh timing for FUN_007682c0 raw HDVehicle/DAT inputs across both physics passes; effect arithmetic, x87 FSQRT and BODY0 +0x50 application are already native",
-    "current_blocker_consumer": "raw retail field producer/refresh contract -> NativeVehicleExternalProviderBundle.motion_read_input -> native FUN_007682c0 machine effect -> internal BODY0 +0x50 application -> exact selected-session retail execution",
+    "current_blocker_id": "fun-007682c0-remaining-raw-input-producer-refresh",
+    "current_blocker": "bind or internalize exact runtime producers and refresh timing for remaining FUN_007682c0 raw fields HDVehicle+0xe0/+0x4068/+0xb38/+0x15b8/+0x2038/+0x2ab8/+0x4054 and DAT_00c128cc; +0x4084/+0x408c are already native previous-outer derived state",
+    "current_blocker_consumer": "remaining raw retail field producer/refresh contract -> NativeVehicleExternalProviderBundle.motion_read_input -> native FUN_007682c0 machine effect with persistent derived projection state -> internal BODY0 +0x50 application -> exact selected-session retail execution",
     "runtime_capture_required": false,
     "original_game_execution_required": false,
     "pc_build_is_primary_authority": true,
@@ -76,7 +79,8 @@
     "SHIFT.SelectedSessionPhysicsTweakerRate/1 exact PC selected-session rate 180 Hz",
     "SHIFT.SelectedSessionRetailVehicleExecution/1 exact 1/180 persistent BODY inner execution",
     "SHIFT.Fun007682c0Body0DeltaDestination/1 exact PC source destination and internal BODY0 +0x50 application",
-    "SHIFT.Fun007682c0MachineEffectProduction/1 exact PC machine effect arithmetic with x87 FSQRT and no host sqrt substitution"
+    "SHIFT.Fun007682c0MachineEffectProduction/1 exact PC machine effect arithmetic with x87 FSQRT and no host sqrt substitution",
+    "SHIFT.Fun007682c0DerivedProjectionState/1 exact PC previous-outer HDVehicle+0x4084/+0x408c state derived from BODY0 velocity delta/outer timestep"
   ],
   "positive_gates": {
     "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": true,
@@ -90,10 +94,11 @@
     "fun_007682c0_body0_delta_destination_ready": true,
     "fun_007682c0_body0_delta_application_internal": true,
     "fun_007682c0_effect_production_internal": true,
-    "fun_007682c0_x87_fsqrt_internal": true
+    "fun_007682c0_x87_fsqrt_internal": true,
+    "fun_007682c0_projection_state_internal": true
   },
   "false_gates": {
-    "fun_007682c0_raw_input_refresh_internal": false,
+    "fun_007682c0_remaining_raw_input_refresh_internal": false,
     "retail_provider_control_producers_complete": false,
     "retail_control_chain_complete": false,
     "retail_camera_follow_ready": false
@@ -126,7 +131,7 @@
     },
     {
       "id": "S6",
-      "task": "close deepest missing vehicle-physics/control producers; FUN_007682c0 destination and effect arithmetic are positive, next close its raw HDVehicle/DAT input producer refresh and then the remaining provider boundaries",
+      "task": "close deepest missing vehicle-physics/control producers; FUN_007682c0 destination, machine effect and derived +0x4084/+0x408c projection state are positive, next close the remaining raw HDVehicle/DAT producers and then the remaining provider boundaries",
       "state": "current"
     },
     {

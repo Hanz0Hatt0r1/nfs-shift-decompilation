@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shift_fun_007682c0_projection_state.hpp"
 #include "shift_fun_00770e80_motion_read_machine_input_provider_chain.hpp"
 
 #include <cstddef>
@@ -29,7 +30,7 @@ using NativeVehiclePassCallback = std::function<void(std::size_t pass_index)>;
 using NativeVehicleContactOuterInputProvider =
     std::function<physics::ContactOuterKernelInput(std::size_t pass_index)>;
 using NativeVehicleMotionReadInputProvider =
-    std::function<physics::Fun007682c0MachineInput(std::size_t pass_index)>;
+    std::function<physics::Fun007682c0ExternalMachineInput(std::size_t pass_index)>;
 using NativeVehicleScalarProviderFactory =
     std::function<physics::Fun007afdd0ScalarProvider(std::size_t pass_index)>;
 using NativeVehicleHalfStepRefreshProvider =
@@ -43,8 +44,8 @@ struct NativeVehicleExternalProviderBundle {
     NativeVehiclePassCallback wheel_update{};
     NativeVehiclePassCallback contact_response{};
     NativeVehicleContactOuterInputProvider contact_outer_input{};
-    // Exact raw PC retail fields consumed by FUN_00769ef0/FUN_007682c0.
-    // Effect/gate/delta production is native and no longer externally supplied.
+    // Exact external PC fields consumed by FUN_00769ef0/FUN_007682c0. The
+    // derived HDVehicle+0x4084/+0x408c pair is session-owned persistent state.
     NativeVehicleMotionReadInputProvider motion_read_input{};
     NativeVehicleScalarProviderFactory scalar_provider_factory{};
     NativeVehicleHalfStepRefreshProvider half_step_refresh{};
@@ -101,9 +102,14 @@ public:
     const NativeVehicleProviderSessionTelemetry& last_telemetry() const {
         return last_telemetry_;
     }
+    const physics::Fun007682c0DerivedProjectionState&
+    motion_read_projection_state() const {
+        return motion_read_projection_state_;
+    }
 
 private:
     NativeVehicleExternalProviderBundle providers_{};
+    physics::Fun007682c0DerivedProjectionState motion_read_projection_state_{};
     std::uint64_t step_count_ = 0u;
     NativeVehicleProviderSessionTelemetry last_telemetry_{};
 };

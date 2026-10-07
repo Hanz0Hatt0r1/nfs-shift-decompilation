@@ -1,6 +1,6 @@
 """Current single-process audit for the deepest native vehicle provider frontier.
 
-The Phase 699 nine-provider table remains immutable coordination history.  This
+The Phase 699 nine-provider table remains immutable coordination history. This
 module consumes later positive proofs and describes the executable frontier used
 by the current Silverstone + BMW slice.
 """
@@ -27,6 +27,7 @@ SELECTED_RATE_FORMAT = "SHIFT.SelectedSessionPhysicsTweakerRate/1"
 SELECTED_EXECUTION_FORMAT = "SHIFT.SelectedSessionRetailVehicleExecution/1"
 FUN_007682C0_DESTINATION_FORMAT = "SHIFT.Fun007682c0Body0DeltaDestination/1"
 FUN_007682C0_EFFECT_FORMAT = "SHIFT.Fun007682c0MachineEffectProduction/1"
+FUN_007682C0_PROJECTION_FORMAT = "SHIFT.Fun007682c0DerivedProjectionState/1"
 SELECTED_RATE_HZ = 180
 SELECTED_NORMAL_OUTER_SUBSTEPS = 6
 
@@ -61,23 +62,24 @@ def _build_active_providers(legacy_providers: list[dict[str, Any]]) -> list[dict
     effect.update(
         {
             "id": _NEW_RAW_INPUT_ID,
-            "retail_boundary": "FUN_00769ef0/FUN_007682c0 raw machine-input refresh",
-            "current_api": "NativeVehicleMotionReadInputProvider / Fun007682c0MachineInputProvider",
+            "retail_boundary": "FUN_00769ef0/FUN_007682c0 remaining raw machine-input refresh",
+            "current_api": "NativeVehicleMotionReadInputProvider / Fun007682c0ExternalMachineInput",
             "boundary_kind": "typed_raw_machine_input_provider",
-            "evidence_state": "machine_effect_native_raw_refresh_external",
+            "evidence_state": "machine_effect_and_derived_projection_native_remaining_raw_refresh_external",
             "process2_action": REQUEST_PROCESS1,
             "evidence": [
                 "SHIFT.Fun007682c0Body0DeltaDestination/1 proves the persistent BMW BODY0 +0x50 destination",
                 "SHIFT.Fun007682c0MachineEffectProduction/1 freezes PC FUN_00769ef0/FUN_007682c0/FUN_0075ada0/FUN_007595d0 arithmetic and the x87 FSQRT boundary",
-                "Phase 718 computes gate/delta natively from current persistent BODY0 plus typed raw HDVehicle/DAT fields",
+                "SHIFT.Fun007682c0DerivedProjectionState/1 proves HDVehicle+0x4084/+0x408c are previous-outer derived state refreshed only after both current passes",
+                "Phase 719 removes +0x4084/+0x408c from the external session provider and persists the exact BODY0 velocity delta/outer-timestep result",
             ],
             "blockers": [
-                "runtime producers and exact refresh timing for HDVehicle+0xe0/+0x4068/+0xb38/+0x15b8/+0x2038/+0x2ab8/+0x4084/+0x408c/+0x4054 remain external",
+                "runtime producers and exact refresh timing for HDVehicle+0xe0/+0x4068/+0xb38/+0x15b8/+0x2038/+0x2ab8/+0x4054 remain external",
                 "the producer/refresh ownership of DAT_00c128cc remains external",
             ],
             "process1_requested_proof": [
-                "map every raw machine-input field to its exact retail writer/producer",
-                "prove which values refresh before pass 0, pass 1, both, or another exact boundary",
+                "map every remaining raw machine-input field to its exact retail writer/producer",
+                "prove which remaining values are setup-fixed, refresh once per outer update, refresh per pass, or follow another exact boundary",
             ],
         }
     )
@@ -107,8 +109,8 @@ def build_current_frontier() -> dict[str, Any]:
             "format": FORMAT,
             "version": 1,
             "upstream_frontier": LEGACY_FORMAT,
-            "refresh_after_phase": 718,
-            "refresh_label": "S6 PC-machine FUN_007682c0 effect-production closure",
+            "refresh_after_phase": 719,
+            "refresh_label": "S6 PC-derived FUN_007682c0 projection-state closure",
             "scheduler_refresh": (
                 "S5 positive retail outer cadence + atomic explicit dispatch + exact "
                 "selected-session 180 Hz rate + exact persistent 1/180 inner execution"
@@ -118,14 +120,15 @@ def build_current_frontier() -> dict[str, Any]:
                 "freshness-gated persistent BMW world-transform runtime wiring"
             ),
             "provider_refresh": (
-                "PC machine code closes FUN_007682c0 effect arithmetic, including x87 FSQRT, "
-                "FUN_0075ada0 geometry and FUN_007595d0 response; the active external boundary "
-                "is now only raw HDVehicle/DAT input production/refresh"
+                "PC machine code closes FUN_007682c0 effect arithmetic and PC FUN_00770e80 closes "
+                "HDVehicle+0x4084/+0x408c as previous-outer derived BODY0 velocity state; the active "
+                "external boundary now contains only the remaining raw HDVehicle/DAT producers"
             ),
             "deepest_native_chain": (
-                "typed raw FUN_007682c0 retail fields -> native PC machine effect -> persistent "
-                "BMW BODY0 +0x50 application -> half-step BODY integration -> positive BODY0/VHF "
-                "bind -> fresh BMW world transform -> live Vulkan sink; eight producer/ownership "
+                "typed remaining raw FUN_007682c0 fields + previous-outer derived projection state -> "
+                "native PC machine effect -> persistent BMW BODY0 +0x50 application -> half-step BODY "
+                "integration -> post-outer BODY0 velocity delta/timestep projection refresh -> positive "
+                "BODY0/VHF bind -> fresh BMW world transform -> live Vulkan sink; eight provider/ownership "
                 "boundaries remain external"
             ),
             "providers": active,
@@ -137,7 +140,9 @@ def build_current_frontier() -> dict[str, Any]:
         REQUEST_PROCESS1: sum(row["process2_action"] == REQUEST_PROCESS1 for row in active),
         RUNTIME_ONLY_BLOCKED: sum(row["process2_action"] == RUNTIME_ONLY_BLOCKED for row in active),
     }
-    report["implement_now"] = [row["id"] for row in active if row["process2_action"] == IMPLEMENT_NOW]
+    report["implement_now"] = [
+        row["id"] for row in active if row["process2_action"] == IMPLEMENT_NOW
+    ]
     report["process1_handoff_requests"] = [
         row["id"] for row in active if row["process2_action"] == REQUEST_PROCESS1
     ]
@@ -164,6 +169,13 @@ def build_current_frontier() -> dict[str, Any]:
                 "replacement_external_boundary": _NEW_RAW_INPUT_ID,
                 "active_precomputed_effect_provider_required": False,
             },
+            {
+                "boundary": "HDVehicle+0x4084/+0x408c FUN_007682c0 projection inputs",
+                "state": "retail_pc_derived_persistent_state_native",
+                "proof": FUN_007682C0_PROJECTION_FORMAT,
+                "active_external_provider_required": False,
+                "refresh_boundary": "after both FUN_0076d100/FUN_00765470 pass pairs",
+            },
         ]
     )
 
@@ -181,7 +193,7 @@ def build_current_frontier() -> dict[str, Any]:
             ],
             "blockers": [],
             "additional_dependency": (
-                "none for transform/timing transport; the current shortest gate is raw vehicle-physics producer refresh"
+                "none for transform/timing transport; the current shortest gate is remaining raw vehicle-physics producer refresh"
             ),
             "policy": "do not reopen positive transform/timing work or substitute host 1/60",
         }
@@ -206,6 +218,8 @@ def build_current_frontier() -> dict[str, Any]:
         "FUN_007682c0_delta_destination_is_BODY0": True,
         "FUN_007682c0_machine_effect_contract": FUN_007682C0_EFFECT_FORMAT,
         "FUN_007682c0_effect_production_internal": True,
+        "FUN_007682c0_projection_state_contract": FUN_007682C0_PROJECTION_FORMAT,
+        "FUN_007682c0_projection_state_internal": True,
     }
 
     report["provider_audit"] = {
@@ -220,12 +234,26 @@ def build_current_frontier() -> dict[str, Any]:
         "newly_positive_provider_or_owner_handoff_internalizable": True,
         "fun_007682c0_destination_contract": FUN_007682C0_DESTINATION_FORMAT,
         "fun_007682c0_machine_effect_contract": FUN_007682C0_EFFECT_FORMAT,
+        "fun_007682c0_projection_state_contract": FUN_007682C0_PROJECTION_FORMAT,
         "fun_007682c0_runtime_body0_mutation_internalized": True,
         "fun_007682c0_effect_arithmetic_internalized": True,
         "fun_007682c0_x87_fsqrt_internalized": True,
+        "fun_007682c0_projection_fields_internalized": True,
+        "fun_007682c0_projection_refresh_after_both_passes": True,
         "fun_007682c0_external_precomputed_effect_required": False,
         "fun_007682c0_external_delta_consumer_required": False,
+        "fun_007682c0_external_projection_fields_required": False,
         "fun_007682c0_raw_input_refresh_external": True,
+        "remaining_fun_007682c0_external_fields": [
+            "HDVehicle+0xe0",
+            "HDVehicle+0x4068",
+            "HDVehicle+0xb38",
+            "HDVehicle+0x15b8",
+            "HDVehicle+0x2038",
+            "HDVehicle+0x2ab8",
+            "HDVehicle+0x4054",
+            "DAT_00c128cc",
+        ],
         "implement_now": [],
     }
 
@@ -260,6 +288,8 @@ def build_current_frontier() -> dict[str, Any]:
             "fun_007682c0_body0_delta_application_internal": True,
             "fun_007682c0_effect_production_ready": True,
             "fun_007682c0_x87_fsqrt_ready": True,
+            "fun_007682c0_projection_state_ready": True,
+            "fun_007682c0_projection_fields_external": False,
             "fun_007682c0_raw_input_refresh_ready": False,
             "provider_semantics_promoted": False,
             "render_loop_equated_to_outer_dispatch": False,
@@ -284,10 +314,13 @@ def contract() -> dict[str, Any]:
         "narrowed_provider_ids": report["provider_audit"]["narrowed_provider_ids"],
         "FUN_007682c0_delta_destination_contract": FUN_007682C0_DESTINATION_FORMAT,
         "FUN_007682c0_machine_effect_contract": FUN_007682C0_EFFECT_FORMAT,
+        "FUN_007682c0_projection_state_contract": FUN_007682C0_PROJECTION_FORMAT,
         "FUN_007682c0_delta_destination_is_BODY0": True,
         "FUN_007682c0_delta_application_internal": True,
         "FUN_007682c0_effect_production_internal": True,
         "FUN_007682c0_x87_fsqrt_internal": True,
+        "FUN_007682c0_projection_state_internal": True,
+        "FUN_007682c0_external_projection_fields_required": False,
         "FUN_007682c0_raw_input_refresh_external": True,
         "outer_vehicle_to_vhf_root_relation_ready": True,
         "BODY0_bind_frame_proof_ready": True,
@@ -318,6 +351,7 @@ __all__ = [
     "SELECTED_EXECUTION_FORMAT",
     "FUN_007682C0_DESTINATION_FORMAT",
     "FUN_007682C0_EFFECT_FORMAT",
+    "FUN_007682C0_PROJECTION_FORMAT",
     "SELECTED_RATE_HZ",
     "SELECTED_NORMAL_OUTER_SUBSTEPS",
     "build_current_frontier",

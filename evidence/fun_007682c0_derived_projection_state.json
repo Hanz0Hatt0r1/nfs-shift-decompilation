@@ -1,0 +1,82 @@
+{
+  "format": "SHIFT.Fun007682c0DerivedProjectionState/1",
+  "version": 1,
+  "status": "retail-pc-source-proven-and-native-consumed",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "source": {
+    "file": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "xbox_360_recomp_required_for_claim": false
+  },
+  "fields": {
+    "x": "HDVehicle+0x4084 f32",
+    "z": "HDVehicle+0x408c f32",
+    "initial_value": 0.0,
+    "initialization_lines": [763803, 763805],
+    "external_provider_required_after_consumption": false
+  },
+  "outer_update_order": {
+    "function": "FUN_00770e80",
+    "start_line": 765608,
+    "timestep_store_line": 765639,
+    "body0_velocity_snapshot_lines": [765659, 765660, 765661, 765662],
+    "pass_0_lines": [765666, 765667, 765668],
+    "pass_1_lines": [765669, 765670, 765671],
+    "velocity_delta_line": 765673,
+    "delta_over_timestep_line": 765674,
+    "field_store_lines": [765675, 765677],
+    "both_passes_use_previous_outer_state": true,
+    "refresh_occurs_after_both_passes": true
+  },
+  "helpers": {
+    "FUN_00747b90": {
+      "source_lines": [740543, 740546, 740547, 740548],
+      "operation": "out = current - pre_outer_snapshot in f64"
+    },
+    "FUN_007535f0": {
+      "source_lines": [749299, 749302, 749303, 749304],
+      "operation": "out = delta * (1.0 / outer_timestep) in f64"
+    }
+  },
+  "numeric_shape": {
+    "velocity_source": "BMW chassis BODY0 +0x78/+0x88 f64",
+    "formula_x": "f32((BODY0_vx_after - BODY0_vx_before) * (1.0 / outer_timestep))",
+    "formula_z": "f32((BODY0_vz_after - BODY0_vz_before) * (1.0 / outer_timestep))",
+    "storage": "f32",
+    "positive_finite_outer_timestep_required_by_native_consumer": true
+  },
+  "native_consumption": {
+    "external_input_type": "Fun007682c0ExternalMachineInput",
+    "persistent_state_type": "Fun007682c0DerivedProjectionState",
+    "composition": "compose_fun_007682c0_machine_input",
+    "session_owner": "NativeVehicleProviderSession",
+    "initial_state_zero": true,
+    "projection_fields_absent_from_external_input": true,
+    "same_state_consumed_by_both_current_passes": true,
+    "next_state_committed_only_after_complete_outer_update": true,
+    "retail_batch_rollback_restores_projection_state": true
+  },
+  "handoff": {
+    "HDVehicle_0x4084_internalized": true,
+    "HDVehicle_0x408c_internalized": true,
+    "active_external_provider_count": 8,
+    "provider_count_decremented": false,
+    "raw_input_boundary_narrowed": true
+  },
+  "remaining_raw_input_blockers": [
+    "HDVehicle+0xe0 caller gate writer/refresh ownership",
+    "HDVehicle+0x4068 producer FUN_007594e0/FUN_0076f970 input/control provenance",
+    "HDVehicle+0xb38/+0x15b8/+0x2038/+0x2ab8 setup-produced load terms",
+    "HDVehicle+0x4054 setup-produced response field",
+    "DAT_00c128cc producer/ownership"
+  ],
+  "scope": {
+    "runtime_capture_required": false,
+    "original_game_execution_required": false,
+    "xbox_360_recomp_substituted_for_pc_authority": false,
+    "complete_raw_input_producer_refresh_claimed": false,
+    "complete_vehicle_control_chain_claimed": false
+  }
+}
