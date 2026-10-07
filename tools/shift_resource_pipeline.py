@@ -25,6 +25,9 @@ if str(ROOT) not in sys.path:
 from offline_bootstrap_corpus_validation import (
     build_bootstrap_corpus_validation_files,
 )
+from offline_native_participant_handoff import (
+    attach_participant_runtime_evidence_files,
+)
 from offline_resource_pipeline import (
     build_bootstrap_manifest,
     build_catalog,
@@ -129,6 +132,21 @@ def cmd_bootstrap(args: argparse.Namespace) -> int:
     return 0 if bootstrap["ready"] else 2
 
 
+def _attach_participant_if_requested(
+    report: dict,
+    *,
+    output_dir: str | Path,
+    participant_runtime_evidence: str | Path | None,
+) -> dict:
+    if participant_runtime_evidence is None:
+        return report
+    return attach_participant_runtime_evidence_files(
+        Path(output_dir) / "native_resource_handoff.json",
+        participant_runtime_evidence,
+        output_dir,
+    )
+
+
 def cmd_native_handoff(args: argparse.Namespace) -> int:
     report = build_native_resource_handoff_files(
         args.catalog,
@@ -137,15 +155,37 @@ def cmd_native_handoff(args: argparse.Namespace) -> int:
         args.output,
         scene_set_dir=args.scene_set,
     )
+    participant_source = getattr(args, "participant_runtime_evidence", None)
+    report = _attach_participant_if_requested(
+        report,
+        output_dir=args.output,
+        participant_runtime_evidence=participant_source,
+    )
     print(json.dumps({
         "format": report["format"],
         "status": report["status"],
         "ready": report["ready"],
         "resource_inputs_ready": report["resource_inputs_ready"],
+        "participant_runtime_identity_evaluated": report.get(
+            "participant_runtime_identity_evaluated", False
+        ),
+        "participant_runtime_identity_ready": report.get(
+            "participant_runtime_identity_ready", False
+        ),
+        "participant_runtime_identity_blocking_reasons": report.get(
+            "participant_runtime_identity_blocking_reasons", []
+        ),
         "blocking_reasons": report["blocking_reasons"],
         "artifacts": report.get("artifacts") or {},
     }, ensure_ascii=False, indent=2))
-    return 0 if report["ready"] else 2
+    if not report["ready"]:
+        return 2
+    if (
+        getattr(args, "require_participant_runtime_identity", False)
+        and report.get("participant_runtime_identity_ready") is not True
+    ):
+        return 2
+    return 0
 
 
 def _augment_all_report_with_corpus_validation(
@@ -184,6 +224,7 @@ def _augment_all_report_with_native_handoff(
     output_dir: str | Path,
     *,
     scene_set_dir: str | Path | None = None,
+    participant_runtime_evidence: str | Path | None = None,
 ) -> dict:
     """Persist one-command resource/handoff status without claiming runtime readiness."""
     out = Path(output_dir)
@@ -193,9 +234,23 @@ def _augment_all_report_with_native_handoff(
     combined["native_resource_handoff_blocking_reasons"] = list(
         handoff.get("blocking_reasons") or []
     )
+    combined["participant_runtime_identity_evaluated"] = handoff.get(
+        "participant_runtime_identity_evaluated"
+    ) is True
+    combined["participant_runtime_identity_ready"] = handoff.get(
+        "participant_runtime_identity_ready"
+    ) is True
+    combined["participant_runtime_identity_blocking_reasons"] = list(
+        handoff.get("participant_runtime_identity_blocking_reasons") or []
+    )
     inputs = dict(report.get("inputs") or {})
     inputs["runtime_proven_scene_set"] = (
         str(Path(scene_set_dir).resolve()) if scene_set_dir is not None else None
+    )
+    inputs["participant_runtime_evidence_source"] = (
+        str(Path(participant_runtime_evidence).resolve())
+        if participant_runtime_evidence is not None
+        else None
     )
     combined["inputs"] = inputs
     artifacts = dict(report.get("artifacts") or {})
@@ -210,6 +265,10 @@ def _augment_all_report_with_native_handoff(
     boundary["native_resource_handoff_automated"] = True
     boundary["native_resource_handoff_is_runtime_execution"] = False
     boundary["runtime_proven_scene_set_recorded"] = scene_set_dir is not None
+    boundary["participant_runtime_evidence_transport_automated"] = (
+        participant_runtime_evidence is not None
+    )
+    boundary["participant_runtime_evidence_transport_is_runtime_execution"] = False
     combined["boundary"] = boundary
     _write_json(out / "pipeline_run.json", combined)
     return combined
@@ -241,18 +300,45 @@ def cmd_all(args: argparse.Namespace) -> int:
         out / "native-handoff",
         scene_set_dir=args.scene_set,
     )
+    participant_source = getattr(args, "participant_runtime_evidence", None)
+    handoff = _attach_participant_if_requested(
+        handoff,
+        output_dir=out / "native-handoff",
+        participant_runtime_evidence=participant_source,
+    )
     report = _augment_all_report_with_native_handoff(
         report,
         handoff,
         out,
         scene_set_dir=args.scene_set,
+        participant_runtime_evidence=participant_source,
     )
     print(json.dumps(report, ensure_ascii=False, indent=2))
     if not report["resource_bootstrap_ready"]:
         return 2
     if args.require_native_resource_handoff and not report["native_resource_handoff_ready"]:
         return 2
+    if (
+        getattr(args, "require_participant_runtime_identity", False)
+        and not report["participant_runtime_identity_ready"]
+    ):
+        return 2
     return 0
+
+
+def _add_participant_runtime_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--participant-runtime-evidence",
+        help=(
+            "optional ready SHIFT.NativePhysicsParticipantRuntimeEvidence/1; "
+            "copied byte-for-byte into the native handoff and bound by SHA-256"
+        ),
+    )
+    parser.add_argument(
+        "--require-participant-runtime-identity",
+        action="store_true",
+        help="return non-zero unless transported participant runtime identity is ready",
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -287,7 +373,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     load_vehicle_cmd.add_argument("catalog", help="SHIFT.OfflineResourceCatalog/1 JSON")
     load_vehicle_cmd.add_argument("graph", help="SHIFT.OfflineResourceDependencyGraph/1 JSON")
-    load_vehicle_cmd.add_argument("--vehicle", required=True, help="archive stem, e.g. BMW_M3_E36")
+    load_vehicle_cmd.add_argument("--vehicle", required=True, help="archive stem, e.g. Ford_Mustang_2010")
     load_vehicle_cmd.add_argument("-o", "--output", required=True, help="SHIFT.OfflineVehicleLoad/1 output")
     load_vehicle_cmd.set_defaults(fn=cmd_load_vehicle)
 
@@ -318,6 +404,7 @@ def build_parser() -> argparse.ArgumentParser:
             "when omitted the render side remains explicitly blocked"
         ),
     )
+    _add_participant_runtime_args(native_handoff)
     native_handoff.set_defaults(fn=cmd_native_handoff)
 
     all_cmd = sub.add_parser(
@@ -335,6 +422,7 @@ def build_parser() -> argparse.ArgumentParser:
             "never synthesized from static resources"
         ),
     )
+    _add_participant_runtime_args(all_cmd)
     all_cmd.add_argument(
         "--require-native-resource-handoff",
         action="store_true",
