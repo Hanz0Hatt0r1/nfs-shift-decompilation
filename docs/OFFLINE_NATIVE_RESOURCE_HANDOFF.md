@@ -6,11 +6,14 @@ the native runtime's existing render and physics resource inputs.
 Implemented in:
 
 - `src/resources/offline_native_resource_handoff.py`;
+- `src/resources/offline_native_participant_handoff.py`;
 - `tools/shift_resource_pipeline.py native-handoff`;
 - `tools/run_native_vertical_slice.py` resource-pipeline profile mode.
 
 The bridge does **not** create runtime evidence and does not replace any renderer
-provenance gate.
+provenance gate. Existing participant runtime evidence may be transported through
+the handoff as a separate readiness axis, but it is never inferred from static
+resources.
 
 ## Physics side
 
@@ -54,6 +57,21 @@ SHA-256 matches the actual `bundle_set_manifest.json` bytes.
 Therefore static BFF presence cannot promote an unproven scene draw, shader
 permutation, instance, transform or external sampler into the native scene.
 
+## Participant runtime evidence transport
+
+A ready existing `SHIFT.NativePhysicsParticipantRuntimeEvidence/1` can be supplied
+with `--participant-runtime-evidence`. The pipeline copies the exact bytes into
+the native handoff, records source/copy SHA-256, and requires:
+
+- `ready=true`;
+- `registry_selector_identity_join_proven=true`;
+- `participant_instance_ready=true`.
+
+This is transport only. Invalid or missing participant evidence does not change
+`resource_inputs_ready`; `participant_runtime_identity_ready` remains a separate
+runtime-evidence axis. `--require-participant-runtime-identity` can make the CLI
+return non-zero unless that transported axis is ready.
+
 ## Commands
 
 After `tools/shift_resource_pipeline.py all` has produced the resource outputs,
@@ -65,6 +83,8 @@ python tools/shift_resource_pipeline.py native-handoff \
   out/offline-pipeline/scene_vehicle_bootstrap.json \
   out/offline-pipeline/vehicle_physics_bundle_report.json \
   --scene-set out/native-scene-vulkan \
+  --participant-runtime-evidence out/native_physics_participant_runtime_evidence.json \
+  --require-participant-runtime-identity \
   -o out/offline-pipeline/native-handoff
 ```
 
@@ -77,7 +97,9 @@ python tools/shift_resource_pipeline.py all \
   --track Silverstone_Era3_GrandPrix \
   --vehicle BMW_M3_E36 \
   --scene-set out/native-scene-vulkan \
-  --require-native-resource-handoff
+  --participant-runtime-evidence out/native_physics_participant_runtime_evidence.json \
+  --require-native-resource-handoff \
+  --require-participant-runtime-identity
 ```
 
 Outputs include:
@@ -86,7 +108,9 @@ Outputs include:
 - `native_physics_manifest.json` — current BMW native-runtime compatibility
   manifest, only when the exact BMW gate is satisfied;
 - `scene_catalog_join.json` — runtime-proven scene IMB ↔ offline catalog join;
-- `native_resource_handoff.json` — combined resource-input admission state.
+- `native_resource_handoff.json` — combined resource-input admission state;
+- `native_physics_participant_runtime_evidence.json` — byte-exact transported
+  participant evidence when a ready source is supplied.
 
 If `--scene-set` is omitted, the handoff remains blocked with
 `scene-set:runtime-proven-input-required`. This is intentional: the offline
@@ -95,8 +119,8 @@ scene provenance chain.
 
 ## Vertical-slice profile integration
 
-A ready Process D output can now replace the two manually duplicated resource
-paths in `SHIFT.NativeVerticalSliceProfile/1`:
+A ready resource-pipeline output can now replace the three duplicated
+resource-bound paths in a prepared `SHIFT.NativeVerticalSliceProfile/1`:
 
 ```json
 {
@@ -105,7 +129,6 @@ paths in `SHIFT.NativeVerticalSliceProfile/1`:
   "workspace_root": ".",
   "resource_pipeline": "out/offline-pipeline",
   "camera_state": "out/native-camera-state.json",
-  "participant_boundary": "out/native_physics_participant_runtime_evidence.json",
   "solver_frame": "out/native-solver-frame/solver_frame.sbfr",
   "generated_body_constraint_frame": "out/native-generated/generated_body_constraints.gbcf",
   "constraint_sample_relation_frame": "out/native-generated/constraint_sample_relations.csrf",
@@ -116,8 +139,13 @@ paths in `SHIFT.NativeVerticalSliceProfile/1`:
 }
 ```
 
-When `resource_pipeline` is present, `scene_set` and `physics_manifest` must be
-omitted. The runner requires:
+When profile preparation uses `resource_pipeline`, `scene_set`,
+`physics_manifest`, and `participant_boundary` are omitted so the pipeline has a
+single authority for those resource-bound inputs. The profile builder validates
+only that the pipeline directory is workspace-local and exists; full handoff
+validation remains deferred to `tools/run_native_vertical_slice.py`.
+
+The runner requires:
 
 - `pipeline_run.json` to be `SHIFT.OfflineResourcePipelineRun/1` with
   `native_resource_handoff_ready=true`;
@@ -127,24 +155,38 @@ omitted. The runner requires:
 - the generated native physics manifest path and SHA-256 to match the handoff
   artifact record;
 - the scene set itself to contain the canonical `bundle_set_manifest.json` plus
-  a ready `bundle_set_prepare.json`.
+  a ready `bundle_set_prepare.json`;
+- when participant evidence is transported, its canonical handoff path and
+  SHA-256 to match, its format to be
+  `SHIFT.NativePhysicsParticipantRuntimeEvidence/1`, and its identity/instance
+  readiness gates to remain positive;
+- for targeted profiles, the handoff scene/vehicle target labels to match the
+  profile `track`/`vehicle` identity.
 
-This mode replaces **only** `scene_set` and `physics_manifest`. Camera state,
-participant runtime identity and all BODY feedback packets remain mandatory
-profile inputs and keep their existing validation gates. Supplying both
-`resource_pipeline` and either explicit resource path is rejected as ambiguous.
+Camera state and all BODY feedback packets remain mandatory profile inputs and
+keep their existing validation gates. Resource-pipeline mode does not create or
+replace them.
 
-The vertical-slice runner still supports the legacy explicit `scene_set` and
-`physics_manifest` profile fields when `resource_pipeline` is absent.
+For compatibility, a manually authored resource-pipeline profile may still use
+an explicit `participant_boundary` only when the selected handoff does not carry
+a participant runtime-evidence artifact. If the pipeline already supplies that
+artifact, an explicit participant path is rejected as ambiguous. The profile
+preparation path intentionally uses the stricter single-authority form shown
+above.
+
+The vertical-slice runner still supports the legacy explicit `scene_set`,
+`physics_manifest`, and `participant_boundary` profile fields when
+`resource_pipeline` is absent.
 
 ## Non-claims
 
 `SHIFT.OfflineNativeResourceHandoff/1` means only that the native render/physics
-**resource inputs** have been joined to exact original-resource identities. It
-does not claim:
+**resource inputs** have been joined to exact original-resource identities. Its
+base `ready` / `resource_inputs_ready` state does not itself claim:
 
 - camera-state readiness;
-- participant runtime identity;
+- participant runtime identity readiness (even when that evidence is transported
+  as a separate ready axis);
 - BODY feedback packet readiness;
 - provider-present scheduling;
 - full native runtime execution readiness;
