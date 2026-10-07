@@ -1,0 +1,78 @@
+name: native-physics-phase737
+
+on:
+  push:
+    paths:
+      - 'evidence/fun_007618f0_wheel_body_origin_ownership.json'
+      - 'evidence/phase737_next_blocker.md'
+      - 'docs/PHASE737_FUN_007618F0_WHEEL_BODY_ORIGIN_OWNERSHIP.md'
+      - 'docs/PHASE737_SCOPE.md'
+      - 'native_runtime/include/shift_fun_007618f0_wheel_body_origin_ownership.hpp'
+      - 'native_runtime/include/shift_fun_007618f0_local_sample_producer.hpp'
+      - 'native_runtime/include/shift_bmw_wheel_spindle_body_topology.hpp'
+      - 'native_runtime/include/shift_body_record_adapter.hpp'
+      - 'native_runtime/tests/fun_007618f0_wheel_body_origin_ownership_check.cpp'
+      - 'native_runtime/cmake/phase736.cmake'
+      - 'native_runtime/cmake/phase737.cmake'
+      - 'tests/test_s6_fun_007618f0_wheel_body_origin_ownership.py'
+      - '.github/workflows/native-physics-phase737.yml'
+  pull_request:
+    paths:
+      - 'evidence/fun_007618f0_wheel_body_origin_ownership.json'
+      - 'evidence/phase737_next_blocker.md'
+      - 'docs/PHASE737_FUN_007618F0_WHEEL_BODY_ORIGIN_OWNERSHIP.md'
+      - 'docs/PHASE737_SCOPE.md'
+      - 'native_runtime/include/shift_fun_007618f0_wheel_body_origin_ownership.hpp'
+      - 'native_runtime/include/shift_fun_007618f0_local_sample_producer.hpp'
+      - 'native_runtime/include/shift_bmw_wheel_spindle_body_topology.hpp'
+      - 'native_runtime/include/shift_body_record_adapter.hpp'
+      - 'native_runtime/tests/fun_007618f0_wheel_body_origin_ownership_check.cpp'
+      - 'native_runtime/cmake/phase736.cmake'
+      - 'native_runtime/cmake/phase737.cmake'
+      - 'tests/test_s6_fun_007618f0_wheel_body_origin_ownership.py'
+      - '.github/workflows/native-physics-phase737.yml'
+
+jobs:
+  fun-007618f0-wheel-body-origin-ownership:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run Phase 737 proof regressions
+        run: >-
+          python3 -m pytest -q
+          tests/test_s6_fun_007618f0_wheel_body_origin_ownership.py
+          tests/test_s6_fun_007618f0_local_sample_producer.py
+          tests/test_bmw_wheel_spindle_body_topology_runtime.py
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 737 and dependent regressions
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_fun_007618f0_wheel_body_origin_ownership_check
+          shift_runtime_fun_007618f0_local_sample_producer_check
+          shift_runtime_bmw_wheel_spindle_body_topology_check
+
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_fun_007618f0_wheel_body_origin_ownership|shift_runtime_fun_007618f0_local_sample_producer|shift_runtime_bmw_wheel_spindle_body_topology)$'
+
+      - name: Verify Phase 737 report
+        run: |
+          mkdir -p out/native-physics-phase737
+          native_runtime/build/shift_runtime_fun_007618f0_wheel_body_origin_ownership_check \
+            > out/native-physics-phase737/fun_007618f0_wheel_body_origin_ownership.json
+          grep -q '"format":"SHIFT.Fun007618f0WheelBodyOriginOwnership/1"' \
+            out/native-physics-phase737/fun_007618f0_wheel_body_origin_ownership.json
+          grep -q '"wheel_body_indices":\[3,4\]' \
+            out/native-physics-phase737/fun_007618f0_wheel_body_origin_ownership.json
+          grep -q '"external_wheel_origin_vectors_remaining":false' \
+            out/native-physics-phase737/fun_007618f0_wheel_body_origin_ownership.json
