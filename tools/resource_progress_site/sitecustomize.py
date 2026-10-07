@@ -78,7 +78,8 @@ def _count_bff_inputs(inputs: Sequence[str | Path]) -> int:
 class _PhaseState:
     name: str
     total: int
-    seen: set[Path] = field(default_factory=set)
+    ordinals: dict[Path, int] = field(default_factory=dict)
+    outcomes: dict[Path, str] = field(default_factory=dict)
     done: int = 0
     failed: int = 0
 
@@ -88,6 +89,7 @@ class _ArchiveToken:
     state: _PhaseState
     ordinal: int
     path: Path
+    primary: bool
     entry_total: int = 0
     entry_highwater: int = 0
     closed: bool = False
@@ -147,22 +149,27 @@ class _ProgressTracker:
         if state is None:
             return None
         path = Path(raw_path).resolve()
-        if path in state.seen:
-            return None
-        state.seen.add(path)
-        ordinal = len(state.seen)
-        token = _ArchiveToken(state=state, ordinal=ordinal, path=path)
-        percent = (ordinal - 1) * 100.0 / state.total if state.total else 100.0
-        print(
-            f"[resource-progress] phase={state.name} archive={ordinal}/{state.total} "
-            f"status=open done={state.done}/{state.total} percent={percent:.1f} "
-            f"name={path.name}",
-            flush=True,
+        ordinal = state.ordinals.get(path)
+        primary = ordinal is None
+        if primary:
+            ordinal = len(state.ordinals) + 1
+            state.ordinals[path] = ordinal
+            percent = (ordinal - 1) * 100.0 / state.total if state.total else 100.0
+            print(
+                f"[resource-progress] phase={state.name} archive={ordinal}/{state.total} "
+                f"status=open done={state.done}/{state.total} percent={percent:.1f} "
+                f"name={path.name}",
+                flush=True,
+            )
+        return _ArchiveToken(
+            state=state,
+            ordinal=ordinal,
+            path=path,
+            primary=primary,
         )
-        return token
 
     def archive_header(self, token: _ArchiveToken | None, entry_total: int) -> None:
-        if token is None:
+        if token is None or not token.primary:
             return
         token.entry_total = max(0, int(entry_total))
         print(
@@ -173,7 +180,7 @@ class _ProgressTracker:
         )
 
     def entry(self, token: _ArchiveToken | None, index: int) -> None:
-        if token is None or token.entry_total <= 0:
+        if token is None or not token.primary or token.entry_total <= 0:
             return
         index = int(index)
         if index <= token.entry_highwater:
@@ -199,7 +206,13 @@ class _ProgressTracker:
         if token is None or token.closed:
             return
         token.closed = True
+        previous = token.state.outcomes.get(token.path)
+        if previous == "failed":
+            return
+        if previous == "done":
+            token.state.done -= 1
         token.state.failed += 1
+        token.state.outcomes[token.path] = "failed"
         processed = token.state.done + token.state.failed
         percent = processed * 100.0 / token.state.total if token.state.total else 100.0
         print(
@@ -214,7 +227,10 @@ class _ProgressTracker:
         if token is None or token.closed:
             return
         token.closed = True
+        if token.path in token.state.outcomes:
+            return
         token.state.done += 1
+        token.state.outcomes[token.path] = "done"
         processed = token.state.done + token.state.failed
         percent = processed * 100.0 / token.state.total if token.state.total else 100.0
         print(
