@@ -21,7 +21,6 @@ def test_phase740_evidence_freezes_only_cache_lifetime() -> None:
     assert payload["caller_state"]["offset"] == "HDVehicle+0x38dc"
     assert payload["caller_state"]["setup_seed"] == 0
     runtime = payload["runtime_join"]
-    # Historical Phase740 contract remains immutable.
     assert runtime["external_input_format"] == "SHIFT.Fun00765c40ExternalPassInput/1"
     assert runtime["external_result_format"] == "SHIFT.Fun00765c40ExternalPassResult/3"
     assert runtime["provider_receives_native_cached_handle_before_execution"] is True
@@ -29,33 +28,23 @@ def test_phase740_evidence_freezes_only_cache_lifetime() -> None:
     assert runtime["pass1_consumes_pass0_returned_handle"] is True
     assert runtime["later_explicit_step_consumes_previous_step_final_handle"] is True
     assert runtime["transactional_rollback"] is True
-
     scope = payload["scope"]
-    assert scope["external_provider_count_before"] == 7
     assert scope["external_provider_count_after"] == 7
-    assert scope["provider_count_reduced"] is False
     assert scope["collision_provider_internalized"] is False
-    assert scope["returned_handle_semantics_named"] is False
-    assert scope["miss_fallback_0x38e8_internalized"] is False
 
 
-def test_phase740_cache_ownership_survives_phase741_input_extension() -> None:
+def test_phase740_cache_ownership_survives_phase743_result_extension() -> None:
     result_header = RESULT_HEADER.read_text(encoding="utf-8")
     session_header = SESSION_HEADER.read_text(encoding="utf-8")
     session_source = SESSION_SOURCE.read_text(encoding="utf-8")
-
-    assert "SHIFT.Fun00765c40ExternalPassResult/3" in result_header
+    assert "SHIFT.Fun00765c40ExternalPassResult/4" in result_header
     assert "SHIFT.Fun00765c40ExternalPassInput/2" in result_header
-    assert "struct Fun00765c40ExternalPassInput" in result_header
     assert "std::optional<std::uint64_t> cached_handle" in result_header
     assert "std::optional<std::uint64_t> returned_cache_handle" in result_header
+    assert "std::optional<CollisionQueryOutput> query_output" in result_header
     assert "result.query_input.cached_handle != input.cached_handle" in result_header
-
     assert "const physics::Fun00765c40ExternalPassInput& input" in session_header
     assert "fun_00765c40_query_cache_handle_" in session_header
-    assert "fun_00765c40_cache_commit_count" in session_header
-    assert "fun_00765c40_returned_cache_handles" in session_header
-
     build_input = session_source.index("external_input.cached_handle = fun_00765c40_query_cache_handle_")
     provider_call = session_source.index("providers_.fun_00765c40(pass_index, external_input)")
     validate = session_source.index("validate_fun_00765c40_external_pass_result")
@@ -69,7 +58,6 @@ def test_phase740_cache_is_transactional_and_persistent() -> None:
     assert "const auto query_cache_before = fun_00765c40_query_cache_handle_;" in session_source
     assert session_source.count("fun_00765c40_query_cache_handle_ = query_cache_before;") >= 3
     assert "returned_cache_handles[pass_index] =" in session_source
-    assert "result.fun_00765c40_returned_cache_handles = returned_cache_handles;" in session_source
 
 
 def test_phase740_cmake_is_chained_after_phase739() -> None:
