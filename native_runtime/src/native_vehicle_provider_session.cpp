@@ -70,6 +70,10 @@ NativeVehicleProviderSession::NativeVehicleProviderSession(
     NativeVehicleExternalProviderBundle providers)
     : providers_(std::move(providers)) {
     require_complete_bundle(providers_);
+    physics::validate_fun_007675f0_distance_state_setup(
+        providers_.contact_outer_distance_setup);
+    contact_outer_distance_state_ =
+        providers_.contact_outer_distance_setup.previous_distance_state;
 }
 
 NativeVehicleProviderSessionResult
@@ -90,6 +94,7 @@ NativeVehicleProviderSession::execute_explicit_step(
         runtime.physics.participant_identity_join_proven);
 
     const ExplicitOuterUpdateRuntimeState outer_update_before = runtime.outer_update;
+    const double distance_state_before = contact_outer_distance_state_;
     const double velocity_x_before =
         read_f64_le(outer_update_before.body_bytes, kBody0VelocityX);
     const double velocity_z_before =
@@ -155,7 +160,19 @@ NativeVehicleProviderSession::execute_explicit_step(
             callbacks.contact_outer_input_provider =
                 [this, &telemetry, pass_index] {
                     ++telemetry.contact_outer_input_call_count;
-                    return providers_.contact_outer_input(pass_index);
+                    const auto session_input = providers_.contact_outer_input(pass_index);
+                    return physics::compose_fun_007675f0_external_input(
+                        session_input,
+                        contact_outer_distance_state_);
+                };
+            callbacks.contact_outer_distance_state_commit =
+                [this, &telemetry](double next_state) {
+                    if (!std::isfinite(next_state)) {
+                        throw std::invalid_argument(
+                            "FUN_007675f0 distance state commit must be finite");
+                    }
+                    contact_outer_distance_state_ = next_state;
+                    ++telemetry.contact_outer_distance_state_commit_count;
                 };
             callbacks.motion_read_input_provider =
                 [this, steering, load_state] {
@@ -208,16 +225,22 @@ NativeVehicleProviderSession::execute_explicit_step(
             providers_.post_half_step(pass_index);
         };
 
-    auto joined = execute_explicit_motion_read_machine_input_update(
-        runtime.outer_update,
-        runtime.physics.workspace.body_count,
-        runtime.physics.workspace.ready,
-        runtime.physics.participant_ready,
-        runtime.physics.participant_identity_join_proven,
-        outer_timestep,
-        pass_provider,
-        half_step_provider,
-        post_half_step);
+    physics::Fun00770e80MotionReadMachineInputProviderChainResult joined{};
+    try {
+        joined = execute_explicit_motion_read_machine_input_update(
+            runtime.outer_update,
+            runtime.physics.workspace.body_count,
+            runtime.physics.workspace.ready,
+            runtime.physics.participant_ready,
+            runtime.physics.participant_identity_join_proven,
+            outer_timestep,
+            pass_provider,
+            half_step_provider,
+            post_half_step);
+    } catch (...) {
+        contact_outer_distance_state_ = distance_state_before;
+        throw;
+    }
 
     // PC FUN_00770e80 refreshes HDVehicle+0x4084/+0x408c only after both
     // FUN_0076d100/FUN_00765470 pass pairs. Compute the next persistent values
@@ -235,9 +258,10 @@ NativeVehicleProviderSession::execute_explicit_step(
             velocity_z_after,
             outer_timestep);
     } catch (...) {
-        // The derived fields are part of the same persistent vehicle-state
-        // transaction as BODY0. Never retain a BODY commit without them.
+        // The derived fields and HDVehicle+0x4080 state are part of the same
+        // persistent vehicle transaction as BODY0. Never retain a partial commit.
         runtime.outer_update = outer_update_before;
+        contact_outer_distance_state_ = distance_state_before;
         throw;
     }
 
@@ -278,13 +302,14 @@ NativeVehicleProviderSession::execute_ready_retail_inner_batch(
     result.session_step_count_before = step_count_;
     result.explicit_update_count_before = runtime.outer_update.explicit_update_count;
 
-    // Keep persistent BODY/session/scheduler/projection state coherent if any
-    // deep provider rejects during the recovered batch. External provider side
-    // effects are not reversible; a throwing provider still aborts the batch.
+    // Keep persistent BODY/session/scheduler/projection/distance state coherent
+    // if any deep provider rejects during the recovered batch. External provider
+    // side effects are not reversible; a throwing provider still aborts the batch.
     const RetailOuterSchedulerContract scheduler_before = scheduler;
     const ExplicitOuterUpdateRuntimeState outer_update_before = runtime.outer_update;
     const physics::Fun007682c0DerivedProjectionState projection_before =
         motion_read_projection_state_;
+    const double distance_state_before = contact_outer_distance_state_;
     const std::uint64_t step_count_before = step_count_;
     const NativeVehicleProviderSessionTelemetry telemetry_before = last_telemetry_;
 
@@ -298,6 +323,7 @@ NativeVehicleProviderSession::execute_ready_retail_inner_batch(
         scheduler = scheduler_before;
         runtime.outer_update = outer_update_before;
         motion_read_projection_state_ = projection_before;
+        contact_outer_distance_state_ = distance_state_before;
         step_count_ = step_count_before;
         last_telemetry_ = telemetry_before;
         throw;
