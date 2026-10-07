@@ -166,3 +166,28 @@ def test_progress_bff_reports_close_failure_as_failed(tmp_path, capsys):
     assert "error=OSError" in output
     assert "status=done" not in output
     assert "event=complete processed=1/1 done=0 failed=1" in output
+
+
+def test_archive_count_failure_does_not_block_wrapped_work_or_leak_phase(tmp_path, capsys):
+    mod = _load_module()
+    outer_source = tmp_path / "Outer.bff"
+    outer_source.write_bytes(b"fixture")
+    broken_zip = tmp_path / "broken.zip"
+    broken_zip.write_bytes(b"not a zip archive")
+    tracker = mod._ProgressTracker(entry_interval=1)
+
+    with tracker.phase("outer", [outer_source]):
+        outer_state = tracker._phase
+        assert outer_state is not None
+        ran = False
+        with tracker.phase("inner", [broken_zip]):
+            ran = True
+            assert tracker._phase is None
+        assert ran
+        assert tracker._phase is outer_state
+
+    captured = capsys.readouterr()
+    assert "phase=inner event=count-unavailable" in captured.err
+    assert "type=BadZipFile" in captured.err
+    assert "phase=inner event=start" not in captured.out
+    assert "phase=outer event=complete" in captured.out
