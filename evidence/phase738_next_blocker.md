@@ -1,21 +1,20 @@
 # Phase 738 next blocker
 
-Phase 738 prepares the exact PC-retail proof pipeline for the last unresolved `FUN_007618f0` input object: the explicit source whose fields `+0x338` and `+0x918` feed the already-native Phase728 local-sample formula.
+Phase 738 closes the last unresolved inputs of the Phase 728 `FUN_007618f0` local-sample formula for the selected Silverstone + BMW M3 E36 session:
 
-The next positive step is to run:
+- Phase737 supplies current FL/FR wheel BODY origins from persistent BODY3/BODY4;
+- `FUN_007618f0 param_2` is proven as `VehicleLoadData*` from `HDVehicle+0x66b4`;
+- selected `VehicleLoadData+0x338` is frozen with exact f64 bits `0x3fc5810634bc6a80` from the PC f32-input/x87/direct-f64-store path;
+- selected `VehicleLoadData+0x918/+0x920/+0x928` is exact BMW CDF `FWCenter=(0.00,-0.100,-0.50)`.
 
-```text
-run_fun_007618f0_second_arg_provenance.sh
-```
+The next precise Process 2 slice is the composed per-pass world-position join:
 
-against the analyzed retail `SHIFT.exe` Ghidra project and the matching full static evidence export.
+1. observe the current persistent BODY array at the `FUN_00765c40` anchor for each recovered pass;
+2. derive the Phase737 wheel-origin inputs from BODY3/BODY4 at that exact point;
+3. combine them with `SHIFT.Fun007618f0SelectedBMWSource/1` through the existing Phase728 local-sample producer;
+4. transform that local sample through the existing Phase727 current BODY0 origin/basis transform;
+5. compare/store the resulting world position as the typed `Fun00765c40QueryInputBoundary.world_position` consumed by native `FUN_007b0710` query-record materialization;
+6. prove pass 1 observes the BODY records after the first `FUN_00765470` half-step rather than the outer-step snapshot;
+7. leave collision-provider implementation and any other residual `FUN_00765c40` side effects external unless separately source-backed.
 
-After that report exists:
-
-1. require every direct callsite to resolve the immediate explicit PUSH to one exact physical origin;
-2. join that origin to an independently proven storage/object owner without using `+0x338/+0x918` shape as semantic evidence;
-3. prove its refresh timing relative to each recovered `FUN_00765c40` pass;
-4. if positive, compose Phase737 wheel BODY origins + the recovered source object through Phase728 local-sample production and Phase727 BODY0 world transform;
-5. replace the external `FUN_00765c40` query `world_position` input only after the complete per-pass timing join is source-backed.
-
-Until then the active top-level external-provider count remains seven.
+Phase738 itself keeps the active top-level external-provider count at seven. A provider-count reduction is allowed only if the composed Phase739 join proves that no remaining work requires the existing complete `FUN_00765c40` provider boundary.
