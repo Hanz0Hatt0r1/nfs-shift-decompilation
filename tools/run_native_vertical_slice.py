@@ -262,9 +262,71 @@ def _validated_artifact_path(
     return expected_path
 
 
+def _validate_resource_pipeline_target(
+    handoff: Mapping[str, Any],
+    *,
+    expected_track: str | None,
+    expected_vehicle: str | None,
+) -> dict[str, Any]:
+    """Bind a resource handoff to profile target labels when those labels exist."""
+    scene_join = handoff.get("scene_catalog_join")
+    physics_join = handoff.get("vehicle_physics_manifest")
+    if expected_track:
+        if not isinstance(scene_join, Mapping):
+            raise ProfileError(
+                "native resource handoff has no scene catalog join for profile track"
+            )
+        actual_track = str(scene_join.get("track") or "").strip()
+        if not actual_track:
+            raise ProfileError("native resource handoff scene target track is missing")
+        if actual_track != expected_track:
+            raise ProfileError(
+                "resource pipeline track does not match profile target: "
+                f"expected {expected_track}, got {actual_track}"
+            )
+    else:
+        actual_track = (
+            str(scene_join.get("track") or "").strip()
+            if isinstance(scene_join, Mapping)
+            else ""
+        )
+
+    if expected_vehicle:
+        if not isinstance(physics_join, Mapping):
+            raise ProfileError(
+                "native resource handoff has no vehicle physics manifest for profile vehicle"
+            )
+        actual_vehicle = str(physics_join.get("vehicle") or "").strip()
+        if not actual_vehicle:
+            raise ProfileError("native resource handoff vehicle target is missing")
+        if actual_vehicle != expected_vehicle:
+            raise ProfileError(
+                "resource pipeline vehicle does not match profile target: "
+                f"expected {expected_vehicle}, got {actual_vehicle}"
+            )
+    else:
+        actual_vehicle = (
+            str(physics_join.get("vehicle") or "").strip()
+            if isinstance(physics_join, Mapping)
+            else ""
+        )
+
+    return {
+        "checked": bool(expected_track or expected_vehicle),
+        "track": actual_track or None,
+        "vehicle": actual_vehicle or None,
+        "expected_track": expected_track,
+        "expected_vehicle": expected_vehicle,
+        "ready": True,
+    }
+
+
 def _resolve_resource_pipeline_inputs(
     workspace_root: Path,
     raw: Any,
+    *,
+    expected_track: str | None = None,
+    expected_vehicle: str | None = None,
 ) -> tuple[dict[str, Path], dict[str, Any]]:
     pipeline_root = _resolve_member(
         workspace_root,
@@ -296,6 +358,12 @@ def _resolve_resource_pipeline_inputs(
     )
     if handoff.get("resource_inputs_ready") is not True:
         raise ProfileError("native resource handoff resource inputs are not ready")
+
+    target_check = _validate_resource_pipeline_target(
+        handoff,
+        expected_track=expected_track,
+        expected_vehicle=expected_vehicle,
+    )
 
     inputs = pipeline.get("inputs") or {}
     if not isinstance(inputs, Mapping):
@@ -334,6 +402,7 @@ def _resolve_resource_pipeline_inputs(
         "physics_source": "exact-process-d-native-compatibility-manifest",
         "participant_source": "explicit-profile-runtime-evidence",
         "participant_runtime_identity_ready": False,
+        "target_identity": target_check,
     }
 
     pipeline_participant_ready = pipeline.get("participant_runtime_identity_ready") is True
@@ -453,6 +522,12 @@ def build_launch_plan(
     if retail_identity_check is not None:
         checks["retail_archive_identity_admission"] = retail_identity_check
 
+    profile_track = str(profile.get("track") or "").strip() or None
+    profile_vehicle = str(profile.get("vehicle") or "").strip() or None
+    if retail_identity_check is not None:
+        profile_track = str(retail_identity_check["track"])
+        profile_vehicle = str(retail_identity_check["vehicle"])
+
     resource_pipeline_raw = profile.get("resource_pipeline")
     use_resource_pipeline = resource_pipeline_raw not in (None, "")
     participant_from_resource_pipeline = False
@@ -468,6 +543,8 @@ def build_launch_plan(
         pipeline_paths, pipeline_check = _resolve_resource_pipeline_inputs(
             workspace_root,
             resource_pipeline_raw,
+            expected_track=profile_track,
+            expected_vehicle=profile_vehicle,
         )
         if "participant_boundary" in pipeline_paths:
             if profile.get("participant_boundary") not in (None, ""):
@@ -641,6 +718,9 @@ def build_launch_plan(
             "dynamic_body_feedback_scheduler_admitted": True,
             "legacy_solver_replay_cli_disabled": True,
             "scene_and_physics_from_resource_pipeline": use_resource_pipeline,
+            "resource_pipeline_target_identity_checked": (
+                use_resource_pipeline and bool(profile_track or profile_vehicle)
+            ),
             "participant_runtime_evidence_from_resource_pipeline": (
                 participant_from_resource_pipeline
             ),
