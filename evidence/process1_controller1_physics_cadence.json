@@ -24,7 +24,7 @@
     "nominal_100hz_claim_forbidden": true,
     "render_frame_wakeup_relation_proven": false,
     "reason_not_fixed_frequency": [
-      "SleepEx timeout is a minimum wait request rather than a period contract",
+      "SleepEx provides an alertable timeout boundary rather than a fixed period contract",
       "alertable SleepEx may return early for queued APC completion",
       "controller work performed before the sleep contributes variable elapsed time"
     ],
