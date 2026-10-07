@@ -1,0 +1,143 @@
+{
+  "format": "SHIFT.Process1Fun0079b2d0VirtualDispatch/1",
+  "ready": true,
+  "source": {
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "image_base": "0x00400000",
+    "pointer_size": 4,
+    "authority": "PC retail 1.02"
+  },
+  "object_provenance": {
+    "parent_constructor": "FUN_0072ed20",
+    "parent_allocation_size": "0x2b90",
+    "subobject_offset": "0x340",
+    "subobject_constructor": "FUN_0079c1c0",
+    "subobject_destructor": "FUN_0079b1d0",
+    "parent_constructor_machine_span": {
+      "start": "0x0072ed48",
+      "end_exclusive": "0x0072ed5c",
+      "sha256": "51b27814cec2a52aaf58891cf2c6772a7568effa38759f72a9ff97bde507951b"
+    },
+    "source_lines": {
+      "parent_constructs_subobject": 725012,
+      "parent_destroys_subobject": 725196,
+      "final_constructor_assigns_vtable": 795560,
+      "final_destructor_assigns_vtable": 794895
+    }
+  },
+  "vtable": {
+    "address": "0x00b0b744",
+    "slot_size": 4,
+    "slot_count_proven": 2,
+    "slots": [
+      {
+        "slot": 0,
+        "offset": "0x0",
+        "target": "0x0079bee0",
+        "role": "deleting-destructor-like",
+        "role_evidence": "FUN_0079bee0 calls FUN_0079b1d0 and conditionally frees this"
+      },
+      {
+        "slot": 1,
+        "offset": "0x4",
+        "target": "0x0079b2d0",
+        "role": "virtual update implementation"
+      }
+    ],
+    "table_machine_span": {
+      "start": "0x00b0b744",
+      "end_exclusive": "0x00b0b74c",
+      "sha256": "ce9191514ac44fe254f65909f3918f3d6b7b5a474dfeeb54bc51036b9f16a00e"
+    },
+    "target_pointer_occurrence_count_in_executable": 1,
+    "target_pointer_cell": "0x00b0b748",
+    "target_pointer_cell_equals_vtable_plus_4": true,
+    "constructor_store": {
+      "instruction": "0x0079c203",
+      "span_end_exclusive": "0x0079c209",
+      "sha256": "ccd62dfc71559499eb70f4d838ccaf6220bf02bf47cc353b8e2c0371e4370f12"
+    },
+    "destructor_store": {
+      "instruction": "0x0079b1f2",
+      "span_end_exclusive": "0x0079b1f8",
+      "sha256": "ccd62dfc71559499eb70f4d838ccaf6220bf02bf47cc353b8e2c0371e4370f12"
+    },
+    "base_slot_4_state": {
+      "base_vtable": "0x00b66cfc",
+      "intermediate_vtable": "0x00b0b7b8",
+      "slot_4_target": "0x00900e65",
+      "final_override_target": "0x0079b2d0"
+    }
+  },
+  "queue_dispatch": {
+    "producer": "FUN_00713050",
+    "queue_register": "FUN_00a62f60",
+    "queue_execute": "FUN_00a62940",
+    "fiber_entry": "lpStartAddress_00a62710",
+    "registration_semantics": "FUN_00713050 registers parent->subobject(+0x340) in its task queue on the final update branch",
+    "source_lines": {
+      "register_loop_subobject": 705956,
+      "execute_queue": 705963,
+      "queue_stores_task_pointer": 1372921,
+      "fiber_calls_virtual_slot_4": 1372416
+    },
+    "machine_spans": {
+      "register_selected_subobject": {
+        "start": "0x00713117",
+        "end_exclusive": "0x00713127",
+        "sha256": "fc3dd7b83436825c0089c2b3eea5a29a40d7d16dcf95b45cccd72847cbe88a8c"
+      },
+      "register_loop_subobject": {
+        "start": "0x007131ba",
+        "end_exclusive": "0x007131d1",
+        "sha256": "7b65d020c20a5ad3f1c1e88fa9bb4aa2b7af97f36373c30573c48c9564d94a34"
+      },
+      "execute_queue": {
+        "start": "0x007131e5",
+        "end_exclusive": "0x007131f2",
+        "sha256": "6e3ea4c8155fa8fd109c0cfcec01d24f03635adf2137363d6cb54adb35e71016"
+      },
+      "queue_task_pointer_store": {
+        "start": "0x00a62f9d",
+        "end_exclusive": "0x00a62fc2",
+        "sha256": "ee304e2e353101249bf91f9f756461a47332f56e9e8f0312af1bf05a65751b66"
+      },
+      "fiber_task_pack_and_create": {
+        "start": "0x00a62a03",
+        "end_exclusive": "0x00a62a49",
+        "sha256": "d6f3db2b085fd4660c68f8f4b79c908bcb8029f293747dbbe532ebd542b3e474"
+      },
+      "fiber_virtual_slot_4_call": {
+        "start": "0x00a62718",
+        "end_exclusive": "0x00a6272e",
+        "sha256": "1b663770eda4394194ef84e8f42de8ee9a52d548e83042be17e2bc5d293090c0",
+        "call_instruction": "0x00a6272c"
+      }
+    }
+  },
+  "dispatch_path": [
+    "FUN_00713050",
+    "FUN_00a62f60",
+    "FUN_00a62940",
+    "lpStartAddress_00a62710",
+    "vtable[+0x4]",
+    "FUN_0079b2d0",
+    "FUN_00770e80"
+  ],
+  "promotion": {
+    "virtual_dispatch_edge_proven": true,
+    "FUN_0079b2d0_dispatch_ownerless": false,
+    "subobject_identity_continuity_proven": true,
+    "queue_registration_continuity_proven": true,
+    "higher_level_class_semantic_name_proven": false,
+    "render_frame_cadence_proven": false,
+    "input_control_owner_proven": false
+  },
+  "next_blocker": {
+    "process": 1,
+    "description": "promote the queue invocation lifecycle above FUN_00713050/FUN_00715380 to an exact scheduler/cadence owner without equating fiber execution with rendered-frame cadence",
+    "alternate_branch_indirect_dispatch_proven": true
+  }
+}
