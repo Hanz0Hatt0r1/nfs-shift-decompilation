@@ -21,11 +21,17 @@ struct Fun00765c40SelectedBmwWorldPositionResult {
     Fun00765c40WorldPositionTransformResult world_transform{};
 };
 
+inline bool fun_00765c40_selected_bmw_body_domain(
+    const std::vector<std::uint8_t>& current_body_bytes) {
+    return current_body_bytes.size() ==
+        kBmwM3E36RetailBodyCount * kBodyRecordSize;
+}
+
 inline BodyRecordBytes fun_00765c40_selected_bmw_body0_record(
     const std::vector<std::uint8_t>& current_body_bytes) {
-    if (current_body_bytes.size() < kBodyRecordSize) {
+    if (!fun_00765c40_selected_bmw_body_domain(current_body_bytes)) {
         throw std::invalid_argument(
-            "FUN_00765c40 selected BMW world-position join requires BODY0");
+            "FUN_00765c40 selected BMW world-position join requires exact retail BODY domain");
     }
     BodyRecordBytes body0{};
     std::copy_n(current_body_bytes.begin(), kBodyRecordSize, body0.begin());
@@ -43,6 +49,11 @@ inline BodyRecordBytes fun_00765c40_selected_bmw_body0_record(
 inline Fun00765c40SelectedBmwWorldPositionResult
 execute_fun_00765c40_selected_bmw_world_position(
     const std::vector<std::uint8_t>& current_body_bytes) {
+    if (!fun_00765c40_selected_bmw_body_domain(current_body_bytes)) {
+        throw std::invalid_argument(
+            "FUN_00765c40 selected BMW world-position join rejected non-BMW BODY domain");
+    }
+
     const auto selected_source = selected_bmw_m3_e36_fun_007618f0_source();
 
     Fun007618f0RemainingSourceInput remaining{};
