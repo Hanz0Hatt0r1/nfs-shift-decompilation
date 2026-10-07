@@ -204,6 +204,44 @@ BodyRecordBytes apply_fun_007bab70_result_to_body_record(
     return record;
 }
 
+void apply_fun_007682c0_body0_accumulator_y_delta(
+    std::vector<std::uint8_t>& body_bytes,
+    double accumulator_y_delta) {
+    if (!std::isfinite(accumulator_y_delta)) {
+        throw std::invalid_argument(
+            "FUN_007682c0 BODY0 accumulator delta must be finite");
+    }
+    if (body_bytes.size() < kBodyRecordSize ||
+        body_bytes.size() % kBodyRecordSize != 0u) {
+        throw std::invalid_argument(
+            "FUN_007682c0 BODY0 accumulator writer requires exact BODY records");
+    }
+
+    auto record = copy_record_from_buffer(body_bytes, 0u);
+    const std::size_t offset = body_record_offset::kAccumulatorA[1];
+    const double current = read_f64_le(record, offset);
+    if (!std::isfinite(current)) {
+        throw std::invalid_argument(
+            "FUN_007682c0 BODY0 accumulator +0x50 contains non-finite value");
+    }
+
+    // Exact source shape at PC SHIFT.exe.c:760242-760243:
+    //   (double)((float)*(double *)(body + 0x50) + (float)delta)
+    // Preserve both f32 narrowings and the f32 add before storing as f64.
+    const float current_f32 = static_cast<float>(current);
+    const float delta_f32 = static_cast<float>(accumulator_y_delta);
+    const float next_f32 = current_f32 + delta_f32;
+    if (!std::isfinite(static_cast<double>(current_f32)) ||
+        !std::isfinite(static_cast<double>(delta_f32)) ||
+        !std::isfinite(static_cast<double>(next_f32))) {
+        throw std::invalid_argument(
+            "FUN_007682c0 BODY0 accumulator f32 application overflowed");
+    }
+
+    write_f64_le(record, offset, static_cast<double>(next_f32));
+    copy_record_to_buffer(body_bytes, 0u, record);
+}
+
 std::vector<std::uint8_t> execute_fun_007b2270_body_buffer_with_basis_callback(
     const std::vector<std::uint8_t>& body_bytes,
     std::size_t body_count,
