@@ -20,3 +20,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00765c40_query_input_boundary
     COMMAND shift_runtime_fun_00765c40_query_input_boundary_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase727.cmake)
