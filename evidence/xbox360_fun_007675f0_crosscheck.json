@@ -30,6 +30,7 @@
     "xbox_offset_hex": "0xa0",
     "xbox_lowpass_call": "0x825b7e10",
     "pc_recovered_expression": "FUN_00783a30(previous, distance, body_field+0xa0, 0.5)",
+    "same_object_as_0x4080_state": true,
     "ownership_observation": "the +0xa0 value is read from the same FUN_007675f0 object that owns +0x4080; it is not supplied as a per-pass call argument",
     "upstream_initializer_proven": false,
     "selected_value_proven": false
