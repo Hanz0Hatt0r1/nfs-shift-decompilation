@@ -49,27 +49,26 @@ int main() {
         const auto reset_state = make_reset_state();
         const auto machine_input = make_machine_input();
         auto initial_body_bytes = make_raw_bodies(projection.bodies);
-        // The generic raw-BODY fixture intentionally fills untyped bytes with a
-        // marker pattern. Phase 734 now consumes BODY0+0x120 in production, so
-        // make this session fixture source-valid instead of interpreting the
-        // marker bytes as an extreme finite f64 denominator.
         put_f64(initial_body_bytes, kFun00769ef0Body0Field120Offset, 1.0);
 
         NativeRuntimeState runtime{};
         configure_runtime(runtime, initial_body_bytes);
 
         NativeVehicleExternalProviderBundle bundle{};
-        bundle.fun_00765c40 = [](std::size_t pass) {
+        bundle.fun_00765c40 = [](
+            std::size_t pass,
+            const Fun00765c40ExternalPassInput& input) {
             Fun00765c40QueryInputBoundary query_input{};
             query_input.world_position = {
                 static_cast<double>(pass),
                 1.0 + static_cast<double>(pass),
                 2.0 + static_cast<double>(pass)};
-            query_input.cached_handle = 2000u + static_cast<std::uint64_t>(pass);
+            query_input.cached_handle = input.cached_handle;
             query_input.miss_fallback = 5.0;
             return Fun00765c40ExternalPassResult{
                 Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0},
-                query_input};
+                query_input,
+                2000u + static_cast<std::uint64_t>(pass)};
         };
         bundle.wheel_update = [](std::size_t) {};
         bundle.contact_response = [](std::size_t) {};
@@ -113,8 +112,6 @@ int main() {
         NativeVehicleProviderSession session(std::move(bundle));
         const auto result = session.execute_explicit_step(runtime, 0.5);
 
-        // The fixture starts BODY0 with identity basis and velocity (4,5,6).
-        // FUN_007594e0 therefore produces atan2(-4,-6), spilled to f32.
         constexpr std::uint32_t kExpectedSteeringBits = 0xc0236e05u;
         require(result.joined.motion_read_input_present[0] &&
                     result.joined.motion_read_input_present[1],
@@ -122,9 +119,13 @@ int main() {
         require(result.fun_00765c40_query_input_present[0] &&
                     result.fun_00765c40_query_input_present[1],
                 "FUN_00765c40 query inputs were not captured for both passes");
-        require(result.fun_00765c40_query_inputs[0].cached_handle == 2000u &&
-                    result.fun_00765c40_query_inputs[1].cached_handle == 2001u,
-                "FUN_00765c40 query cache-handle snapshots changed between passes");
+        require(!result.fun_00765c40_query_inputs[0].cached_handle.has_value() &&
+                    result.fun_00765c40_query_inputs[1].cached_handle == 2000u,
+                "FUN_00765c40 persistent query cache input did not advance between passes");
+        require(result.fun_00765c40_returned_cache_handles[0] == 2000u &&
+                    result.fun_00765c40_returned_cache_handles[1] == 2001u &&
+                    session.fun_00765c40_query_cache_handle() == 2001u,
+                "FUN_00765c40 returned query cache state did not commit");
         require(
             f32_bits(result.joined.motion_read_inputs[0].steering) ==
                 kExpectedSteeringBits,
@@ -163,7 +164,7 @@ int main() {
             << "\"selected_player_difficulty\":"
             << kBmwNativeSilverstonePlayerDifficulty << ","
             << "\"fun_00765c40_result_typed\":true,"
-            << "\"fun_00765c40_query_input_captured\":true,"
+            << "\"fun_00765c40_cache_owned\":true,"
             << "\"derived_before_pass0\":true,"
             << "\"same_value_used_by_both_passes\":true}\n";
         return 0;
