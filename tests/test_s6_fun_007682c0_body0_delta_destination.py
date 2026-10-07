@@ -66,26 +66,22 @@ def test_native_chain_consumes_body0_destination_without_external_consumer() -> 
     assert "const float next_f32 = current_f32 + delta_f32" in adapter
     assert "write_f64_le(record, offset, static_cast<double>(next_f32))" in adapter
 
-    # The Phase 713 effect-provider adapter remains as compatibility/history and
-    # may still expose an optional observer, but it is no longer the production
-    # NativeVehicleProviderSession path after Phase 718.
+    # Historical Phase 713 compatibility adapter remains available, while the
+    # selected production session applies the native machine effect directly.
     assert "adapted.post_pass_body_mutator" in legacy_motion
     assert "apply_fun_007682c0_body0_accumulator_y_delta" in legacy_motion
     assert "if (delta_consumer)" in legacy_motion
     assert "all active physics-pass providers" in legacy_motion
 
-    # Production now computes the effect from raw PC machine inputs and performs
-    # the same internal BODY0 write directly. No external delta consumer or
-    # compatibility observer participates in correctness.
     assert "execute_fun_007682c0_machine_effect" in machine_motion
     assert "apply_fun_007682c0_body0_accumulator_y_delta" in machine_motion
     assert "motion_read_delta_consumer" not in machine_motion
 
-    assert "all eight active external provider boundaries" in session
+    assert "all seven active external provider boundaries" in session
     required_prefix = session.split("NativeVehicleProviderSession::NativeVehicleProviderSession", 1)[0]
     assert "!providers.motion_read_delta_consumer" not in required_prefix
     assert "motion_read_delta_consumer" not in session
-    assert "providers_.motion_read_input" in session
+    assert "providers_.motion_read_input" not in session
     assert "execute_explicit_motion_read_machine_input_update" in session
 
 
@@ -93,9 +89,6 @@ def test_original_destination_proof_remains_historical_and_fail_closed() -> None
     proof = json.loads(PROOF.read_text(encoding="utf-8"))
     limits = proof["limits"]
 
-    # These are claims of the original destination-only proof packet. Later S6
-    # phases may close them in separate contracts; do not rewrite this evidence
-    # artifact retroactively.
     assert limits["FUN_007682c0_effect_production_internalized"] is False
     assert limits["FUN_007595d0_complete_input_production_proven"] is False
     assert limits["x87_magnitude_and_response_boundaries_proven"] is False
