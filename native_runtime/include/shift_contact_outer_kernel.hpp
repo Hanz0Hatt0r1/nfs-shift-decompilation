@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shift_fun_00765c40_load_terms.hpp"
 #include "shift_surface_probe.hpp"
 
 #include <array>
@@ -18,6 +19,8 @@ inline constexpr const char* kFun007675f0DistanceFilterCapOwnershipFormat =
     "SHIFT.Fun007675f0DistanceFilterCapOwnership/1";
 inline constexpr const char* kFun007675f0SurfaceProbeJoinFormat =
     "SHIFT.Fun007675f0SurfaceProbeJoin/1";
+inline constexpr const char* kFun007675f0Param3OwnershipFormat =
+    "SHIFT.Fun007675f0Param3Ownership/1";
 inline constexpr const char* kContactOuterKernelFunction = "FUN_007675f0";
 inline constexpr const char* kContactDistanceFilterFunction = "FUN_00783a30";
 
@@ -52,10 +55,11 @@ struct ContactOuterKernelInput {
     double param_3 = 0.0;
 };
 
-// Historical/lower-chain payload. Derived planar_delta/surface_scalar stay here
-// because lower standalone fixtures predate the source-backed FUN_00759210 join.
-// Production session code supplies surface_probe_node instead and resolves both
-// derived values from current BODY0 position inside the native pass.
+// Historical/lower-chain payload. Derived planar_delta/surface_scalar and the
+// final param_3 scalar stay here because standalone fixtures predate the
+// source-backed caller joins. Production session code supplies the surface-probe
+// node and injects the earlier FUN_00765c40 load terms; current BODY0 +0x120 is
+// observed inside the native pass before param_3 is materialized.
 struct ContactOuterExternalInput {
     ContactOuterVector3d planar_delta{};
     double previous_distance_state = 0.0;
@@ -66,6 +70,8 @@ struct ContactOuterExternalInput {
     double alignment_scalar = 0.0;
     double param_3 = 0.0;
     const SurfaceProbeNode* surface_probe_node = nullptr;
+    Fun00765c40LoadTerms fun_00769ef0_param_3_load_terms{};
+    bool fun_00769ef0_param_3_load_terms_present = false;
 
     ContactOuterExternalInput() = default;
 
@@ -80,20 +86,20 @@ struct ContactOuterExternalInput {
           param_3(legacy.param_3) {}
 };
 
-// Session-facing per-pass payload. PC retail proves planar_delta and
-// surface_scalar are outputs of FUN_00759210 queried from current BODY0 position
-// and the caller-supplied node pointer. Production therefore carries that node
-// pointer instead of the two already-derived values. Compatibility outputs only
-// preserve historical fixtures; they are not part of the production frontier.
+// Session-facing per-pass payload. Production no longer carries already-derived
+// planar_delta, surface_scalar, or param_3. param_3 is produced by FUN_00769ef0
+// from the earlier typed FUN_00765c40 load terms and current BODY0 +0x120.
+// Compatibility fields preserve historical fixtures only.
 struct ContactOuterSessionInput {
     const SurfaceProbeNode* surface_probe_node = nullptr;
     double base_scalar = 0.0;
     double projected_scalar = 0.0;
     double alignment_scalar = 0.0;
-    double param_3 = 0.0;
     bool compatibility_surface_probe_outputs_present = false;
     ContactOuterVector3d compatibility_planar_delta{};
     double compatibility_surface_scalar = 0.0;
+    bool compatibility_param_3_present = false;
+    double compatibility_param_3 = 0.0;
     bool compatibility_previous_distance_seed_present = false;
     double compatibility_previous_distance_seed = 0.0;
     bool compatibility_distance_filter_cap_seed_present = false;
@@ -105,10 +111,11 @@ struct ContactOuterSessionInput {
         : base_scalar(legacy.base_scalar),
           projected_scalar(legacy.projected_scalar),
           alignment_scalar(legacy.alignment_scalar),
-          param_3(legacy.param_3),
           compatibility_surface_probe_outputs_present(true),
           compatibility_planar_delta(legacy.planar_delta),
           compatibility_surface_scalar(legacy.surface_scalar),
+          compatibility_param_3_present(true),
+          compatibility_param_3(legacy.param_3),
           compatibility_previous_distance_seed_present(true),
           compatibility_previous_distance_seed(legacy.previous_distance_state),
           compatibility_distance_filter_cap_seed_present(true),
@@ -119,11 +126,13 @@ struct ContactOuterSessionInput {
           base_scalar(legacy.base_scalar),
           projected_scalar(legacy.projected_scalar),
           alignment_scalar(legacy.alignment_scalar),
-          param_3(legacy.param_3),
           compatibility_surface_probe_outputs_present(
               legacy.surface_probe_node == nullptr),
           compatibility_planar_delta(legacy.planar_delta),
           compatibility_surface_scalar(legacy.surface_scalar),
+          compatibility_param_3_present(
+              !legacy.fun_00769ef0_param_3_load_terms_present),
+          compatibility_param_3(legacy.param_3),
           compatibility_previous_distance_seed_present(true),
           compatibility_previous_distance_seed(legacy.previous_distance_state),
           compatibility_distance_filter_cap_seed_present(true),
