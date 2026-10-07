@@ -20,6 +20,8 @@ struct Fun007682c0AccumulatorEffect {
 
 using Fun007682c0EffectProvider =
     std::function<Fun007682c0AccumulatorEffect()>;
+// Compatibility/observability hook only. The source-backed BODY0 +0x50 write is
+// internal to this chain and does not depend on this callback being present.
 using Fun007682c0AccumulatorDeltaConsumer =
     std::function<void(double accumulator_y_delta)>;
 
@@ -45,8 +47,11 @@ struct Fun00770e80MotionReadEffectProviderChainResult {
     std::array<std::size_t, kFun00770e80PassCount>
         motion_read_effect_provider_call_counts{};
     std::array<std::size_t, kFun00770e80PassCount>
+        motion_read_delta_application_call_counts{};
+    std::array<std::size_t, kFun00770e80PassCount>
         motion_read_delta_consumer_call_counts{};
     std::size_t motion_read_effect_provider_call_count = 0u;
+    std::size_t motion_read_delta_application_call_count = 0u;
     std::size_t motion_read_delta_consumer_call_count = 0u;
     std::size_t motion_read_gate_open_count = 0u;
 };
