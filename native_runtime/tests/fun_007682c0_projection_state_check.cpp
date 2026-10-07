@@ -50,9 +50,12 @@ int main() {
         require(composed.steering != legacy.steering,
                 "legacy external steering leaked into production composition");
         require(composed.load_terms == derived_load_terms &&
-                    composed.load_terms != legacy.load_terms &&
-                    composed.angle_mode == 2,
+                    composed.load_terms != legacy.load_terms,
                 "FUN_00765c40 load-term ownership was not consumed");
+        require(composed.angle_mode == kSelectedSessionPlayerDifficulty &&
+                    composed.angle_mode == 1 &&
+                    composed.angle_mode != legacy.angle_mode,
+                "legacy external angle mode leaked into selected-session composition");
         require(f32_bits(composed.response_field_4054) ==
                     kBmwM3E36ResponseField4054Bits &&
                     composed.response_field_4054 != legacy.response_field_4054,
@@ -92,6 +95,8 @@ int main() {
                 "derived steering changed while composing next input");
         require(second_input.load_terms == derived_load_terms,
                 "typed FUN_00765c40 load terms changed between compositions");
+        require(second_input.angle_mode == kSelectedSessionPlayerDifficulty,
+                "selected-session angle mode changed between compositions");
         require(f32_bits(second_input.response_field_4054) ==
                     kBmwM3E36ResponseField4054Bits,
                 "selected BMW setup response changed between compositions");
@@ -140,6 +145,8 @@ int main() {
             << "\"legacy_load_term_provider_values_ignored\":true,"
             << "\"fun_00765c40_load_terms_consumed\":true,"
             << "\"legacy_response_4054_provider_value_ignored\":true,"
+            << "\"legacy_angle_mode_provider_value_ignored\":true,"
+            << "\"selected_session_angle_mode\":1,"
             << "\"legacy_projection_provider_values_ignored\":true,"
             << "\"post_outer_delta_over_dt\":true,"
             << "\"f32_store_checkpoint\":true}\n";
