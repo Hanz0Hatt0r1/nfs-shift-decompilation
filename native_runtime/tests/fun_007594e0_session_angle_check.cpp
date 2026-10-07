@@ -53,15 +53,17 @@ int main() {
         configure_runtime(runtime, initial_body_bytes);
 
         NativeVehicleExternalProviderBundle bundle{};
-        bundle.contact_factor = [](std::size_t) {};
+        bundle.contact_factor = [](std::size_t) {
+            return Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0};
+        };
         bundle.wheel_update = [](std::size_t) {};
         bundle.contact_response = [](std::size_t) {};
         bundle.contact_outer_input = [](std::size_t) {
             return make_contact_outer_input();
         };
         bundle.motion_read_input = [](std::size_t) {
-            // No steering field exists at this boundary. Keep the caller gate
-            // closed so this regression isolates producer timing/composition.
+            // Steering and load terms do not exist at this late boundary. Keep
+            // the caller gate closed so this regression isolates angle timing.
             Fun007682c0ExternalMachineInput input{};
             input.caller_gate_open = false;
             return input;
@@ -120,11 +122,18 @@ int main() {
             result.joined.motion_read_inputs[0].steering ==
                 result.joined.motion_read_inputs[1].steering,
             "FUN_007594e0 steering refreshed between the two retail passes");
+        require(
+            result.joined.motion_read_inputs[0].load_terms ==
+                Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0} &&
+            result.joined.motion_read_inputs[1].load_terms ==
+                Fun00765c40LoadTerms{3000.0, 3000.0, 3000.0, 3000.0},
+            "FUN_00765c40 typed load terms were not consumed by both passes");
 
         std::cout
             << "{\"format\":\"SHIFT.NativeFun007594e0SessionAngle/1\","
             << "\"ready\":true,"
             << "\"external_steering_field_present\":false,"
+            << "\"external_load_term_fields_present\":false,"
             << "\"derived_before_pass0\":true,"
             << "\"same_value_used_by_both_passes\":true}\n";
         return 0;
