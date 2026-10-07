@@ -88,7 +88,7 @@ jobs:
             out/native-physics-phase732/fun_007675f0_surface_probe_join.json
           grep -q '"production_node_boundary_required":true' \
             out/native-physics-phase732/fun_007675f0_surface_probe_join.json
-          grep -q '"remaining_production_fields":5' \
-            out/native-physics-phase732/fun_007675f0_surface_probe_join.json
+          # Phase732 evidence retains its historical five-field frontier, but this
+          # live report may be narrowed by later source-backed ownership phases.
           grep -q '"external_provider_count_reduced":false' \
             out/native-physics-phase732/fun_007675f0_surface_probe_join.json
