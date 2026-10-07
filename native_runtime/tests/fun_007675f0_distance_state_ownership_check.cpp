@@ -114,14 +114,15 @@ int main() {
                 callbacks.contact_response = [] {};
                 callbacks.contact_outer_input_provider = [&] {
                     ContactOuterSessionInput per_pass{};
-                    per_pass.base_scalar = 4.0;
                     per_pass.projected_scalar = 1.0;
-                    per_pass.alignment_scalar = 0.5;
+                    per_pass.compatibility_body_owned_scalars_present = true;
+                    per_pass.compatibility_base_scalar = 4.0;
+                    per_pass.compatibility_alignment_scalar = 0.5;
                     per_pass.compatibility_param_3_present = true;
                     per_pass.compatibility_param_3 = 2.0;
-                    // Phase 730 predates the source-backed FUN_00759210 join;
-                    // keep its synthetic planar/surface values explicitly in
-                    // the compatibility-only fixture lane.
+                    // Phase 730 predates the source-backed FUN_00759210 join and
+                    // Phase 735 BODY-owned scalar recovery; keep its synthetic
+                    // values explicitly in compatibility-only fixture lanes.
                     per_pass.compatibility_surface_probe_outputs_present = true;
                     per_pass.compatibility_planar_delta = {10.0, 0.0, 0.0};
                     per_pass.compatibility_surface_scalar = 10.0;
