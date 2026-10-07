@@ -38,9 +38,15 @@ int main() {
 
         const Fun007682c0ExternalMachineInput external = legacy;
         const Fun007682c0DerivedProjectionState initial{};
-        const auto composed = compose_fun_007682c0_machine_input(external, initial);
-        require(composed.caller_gate_open && composed.steering == 0.25f,
-                "external machine input lost non-projection fields");
+        constexpr float derived_steering = -1.25f;
+        const auto composed = compose_fun_007682c0_machine_input(
+            external,
+            derived_steering,
+            initial);
+        require(composed.caller_gate_open && composed.steering == derived_steering,
+                "derived steering was not consumed by production composition");
+        require(composed.steering != legacy.steering,
+                "legacy external steering leaked into production composition");
         require(composed.load_terms == legacy.load_terms &&
                     composed.response_field_4054 == 7.0f &&
                     composed.angle_mode == 2,
@@ -68,10 +74,15 @@ int main() {
                     f32_bits(rounded.field_z) == 0xbeaaaaabu,
                 "PC projection-state f32 store checkpoint mismatch");
 
-        const auto second_input = compose_fun_007682c0_machine_input(external, rounded);
+        const auto second_input = compose_fun_007682c0_machine_input(
+            external,
+            derived_steering,
+            rounded);
         require(f32_bits(second_input.projection_field_x) == 0x3eaaaaabu &&
                     f32_bits(second_input.projection_field_z) == 0xbeaaaaabu,
                 "derived projection state was not consumed by next input");
+        require(second_input.steering == derived_steering,
+                "derived steering changed while composing next input");
 
         bool zero_dt_rejected = false;
         try {
@@ -98,6 +109,7 @@ int main() {
             << "{\"format\":\"" << kFun007682c0DerivedProjectionStateFormat << "\","
             << "\"ready\":true,"
             << "\"initial_fields_zero\":true,"
+            << "\"legacy_steering_provider_value_ignored\":true,"
             << "\"legacy_projection_provider_values_ignored\":true,"
             << "\"post_outer_delta_over_dt\":true,"
             << "\"f32_store_checkpoint\":true}\n";

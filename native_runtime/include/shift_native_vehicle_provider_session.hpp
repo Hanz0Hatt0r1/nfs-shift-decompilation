@@ -44,8 +44,10 @@ struct NativeVehicleExternalProviderBundle {
     NativeVehiclePassCallback wheel_update{};
     NativeVehiclePassCallback contact_response{};
     NativeVehicleContactOuterInputProvider contact_outer_input{};
-    // Exact external PC fields consumed by FUN_00769ef0/FUN_007682c0. The
-    // derived HDVehicle+0x4084/+0x408c pair is session-owned persistent state.
+    // Remaining exact external PC fields consumed by FUN_00769ef0/FUN_007682c0.
+    // HDVehicle+0x4068 is derived from current BODY0 once before both passes by
+    // native FUN_007594e0 machine-angle production. HDVehicle+0x4084/+0x408c
+    // are session-owned persistent derived state refreshed after both passes.
     NativeVehicleMotionReadInputProvider motion_read_input{};
     NativeVehicleScalarProviderFactory scalar_provider_factory{};
     NativeVehicleHalfStepRefreshProvider half_step_refresh{};

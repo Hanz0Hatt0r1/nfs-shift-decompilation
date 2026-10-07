@@ -28,6 +28,7 @@ SELECTED_EXECUTION_FORMAT = "SHIFT.SelectedSessionRetailVehicleExecution/1"
 FUN_007682C0_DESTINATION_FORMAT = "SHIFT.Fun007682c0Body0DeltaDestination/1"
 FUN_007682C0_EFFECT_FORMAT = "SHIFT.Fun007682c0MachineEffectProduction/1"
 FUN_007682C0_PROJECTION_FORMAT = "SHIFT.Fun007682c0DerivedProjectionState/1"
+FUN_007594E0_ANGLE_FORMAT = "SHIFT.Fun007594e0MachineAngle/1"
 SELECTED_RATE_HZ = 180
 SELECTED_NORMAL_OUTER_SUBSTEPS = 6
 
@@ -65,16 +66,17 @@ def _build_active_providers(legacy_providers: list[dict[str, Any]]) -> list[dict
             "retail_boundary": "FUN_00769ef0/FUN_007682c0 remaining raw machine-input refresh",
             "current_api": "NativeVehicleMotionReadInputProvider / Fun007682c0ExternalMachineInput",
             "boundary_kind": "typed_raw_machine_input_provider",
-            "evidence_state": "machine_effect_and_derived_projection_native_remaining_raw_refresh_external",
+            "evidence_state": "machine_effect_projection_and_steering_native_remaining_raw_refresh_external",
             "process2_action": REQUEST_PROCESS1,
             "evidence": [
                 "SHIFT.Fun007682c0Body0DeltaDestination/1 proves the persistent BMW BODY0 +0x50 destination",
                 "SHIFT.Fun007682c0MachineEffectProduction/1 freezes PC FUN_00769ef0/FUN_007682c0/FUN_0075ada0/FUN_007595d0 arithmetic and the x87 FSQRT boundary",
                 "SHIFT.Fun007682c0DerivedProjectionState/1 proves HDVehicle+0x4084/+0x408c are previous-outer derived state refreshed only after both current passes",
-                "Phase 719 removes +0x4084/+0x408c from the external session provider and persists the exact BODY0 velocity delta/outer-timestep result",
+                "SHIFT.Fun007594e0MachineAngle/1 proves HDVehicle+0x4068 is the f32 FUN_007594e0 BODY0 machine angle produced once before both current passes",
+                "Phase 720 removes +0x4068 from the external session provider and reproduces the PC CRT/x87 FPATAN finite path without std::atan2",
             ],
             "blockers": [
-                "runtime producers and exact refresh timing for HDVehicle+0xe0/+0x4068/+0xb38/+0x15b8/+0x2038/+0x2ab8/+0x4054 remain external",
+                "runtime producers and exact refresh timing for HDVehicle+0xe0/+0xb38/+0x15b8/+0x2038/+0x2ab8/+0x4054 remain external",
                 "the producer/refresh ownership of DAT_00c128cc remains external",
             ],
             "process1_requested_proof": [
@@ -109,8 +111,8 @@ def build_current_frontier() -> dict[str, Any]:
             "format": FORMAT,
             "version": 1,
             "upstream_frontier": LEGACY_FORMAT,
-            "refresh_after_phase": 719,
-            "refresh_label": "S6 PC-derived FUN_007682c0 projection-state closure",
+            "refresh_after_phase": 720,
+            "refresh_label": "S6 PC-derived FUN_007594e0 steering machine-angle closure",
             "scheduler_refresh": (
                 "S5 positive retail outer cadence + atomic explicit dispatch + exact "
                 "selected-session 180 Hz rate + exact persistent 1/180 inner execution"
@@ -120,16 +122,17 @@ def build_current_frontier() -> dict[str, Any]:
                 "freshness-gated persistent BMW world-transform runtime wiring"
             ),
             "provider_refresh": (
-                "PC machine code closes FUN_007682c0 effect arithmetic and PC FUN_00770e80 closes "
-                "HDVehicle+0x4084/+0x408c as previous-outer derived BODY0 velocity state; the active "
-                "external boundary now contains only the remaining raw HDVehicle/DAT producers"
+                "PC machine code closes FUN_007682c0 effect arithmetic, FUN_00770e80 closes "
+                "HDVehicle+0x4084/+0x408c as previous-outer derived BODY0 velocity state, and "
+                "FUN_0076f970/FUN_007594e0 closes HDVehicle+0x4068 as a pre-pass BODY0 machine angle; "
+                "the active external boundary now contains only the remaining raw HDVehicle/DAT producers"
             ),
             "deepest_native_chain": (
-                "typed remaining raw FUN_007682c0 fields + previous-outer derived projection state -> "
-                "native PC machine effect -> persistent BMW BODY0 +0x50 application -> half-step BODY "
-                "integration -> post-outer BODY0 velocity delta/timestep projection refresh -> positive "
-                "BODY0/VHF bind -> fresh BMW world transform -> live Vulkan sink; eight provider/ownership "
-                "boundaries remain external"
+                "typed remaining raw FUN_007682c0 fields + current-BODY0 derived FUN_007594e0 steering + "
+                "previous-outer derived projection state -> native PC machine effect -> persistent BMW "
+                "BODY0 +0x50 application -> half-step BODY integration -> post-outer BODY0 velocity "
+                "delta/timestep projection refresh -> positive BODY0/VHF bind -> fresh BMW world transform "
+                "-> live Vulkan sink; eight provider/ownership boundaries remain external"
             ),
             "providers": active,
             "external_provider_count": len(active),
@@ -176,6 +179,13 @@ def build_current_frontier() -> dict[str, Any]:
                 "active_external_provider_required": False,
                 "refresh_boundary": "after both FUN_0076d100/FUN_00765470 pass pairs",
             },
+            {
+                "boundary": "HDVehicle+0x4068 FUN_007682c0 steering input",
+                "state": "retail_pc_body0_machine_angle_native",
+                "proof": FUN_007594E0_ANGLE_FORMAT,
+                "active_external_provider_required": False,
+                "refresh_boundary": "FUN_0076f970 before both FUN_0076d100 physics passes",
+            },
         ]
     )
 
@@ -220,6 +230,8 @@ def build_current_frontier() -> dict[str, Any]:
         "FUN_007682c0_effect_production_internal": True,
         "FUN_007682c0_projection_state_contract": FUN_007682C0_PROJECTION_FORMAT,
         "FUN_007682c0_projection_state_internal": True,
+        "FUN_007594e0_machine_angle_contract": FUN_007594E0_ANGLE_FORMAT,
+        "FUN_007594e0_steering_internal": True,
     }
 
     report["provider_audit"] = {
@@ -235,18 +247,22 @@ def build_current_frontier() -> dict[str, Any]:
         "fun_007682c0_destination_contract": FUN_007682C0_DESTINATION_FORMAT,
         "fun_007682c0_machine_effect_contract": FUN_007682C0_EFFECT_FORMAT,
         "fun_007682c0_projection_state_contract": FUN_007682C0_PROJECTION_FORMAT,
+        "fun_007594e0_machine_angle_contract": FUN_007594E0_ANGLE_FORMAT,
         "fun_007682c0_runtime_body0_mutation_internalized": True,
         "fun_007682c0_effect_arithmetic_internalized": True,
         "fun_007682c0_x87_fsqrt_internalized": True,
         "fun_007682c0_projection_fields_internalized": True,
         "fun_007682c0_projection_refresh_after_both_passes": True,
+        "fun_007594e0_body0_basis_angle_internalized": True,
+        "fun_007594e0_x87_fpatan_internalized": True,
+        "fun_007594e0_refresh_before_both_passes": True,
         "fun_007682c0_external_precomputed_effect_required": False,
         "fun_007682c0_external_delta_consumer_required": False,
         "fun_007682c0_external_projection_fields_required": False,
+        "fun_007682c0_external_steering_required": False,
         "fun_007682c0_raw_input_refresh_external": True,
         "remaining_fun_007682c0_external_fields": [
             "HDVehicle+0xe0",
-            "HDVehicle+0x4068",
             "HDVehicle+0xb38",
             "HDVehicle+0x15b8",
             "HDVehicle+0x2038",
@@ -290,6 +306,8 @@ def build_current_frontier() -> dict[str, Any]:
             "fun_007682c0_x87_fsqrt_ready": True,
             "fun_007682c0_projection_state_ready": True,
             "fun_007682c0_projection_fields_external": False,
+            "fun_007594e0_machine_angle_ready": True,
+            "fun_007682c0_steering_external": False,
             "fun_007682c0_raw_input_refresh_ready": False,
             "provider_semantics_promoted": False,
             "render_loop_equated_to_outer_dispatch": False,
@@ -315,12 +333,15 @@ def contract() -> dict[str, Any]:
         "FUN_007682c0_delta_destination_contract": FUN_007682C0_DESTINATION_FORMAT,
         "FUN_007682c0_machine_effect_contract": FUN_007682C0_EFFECT_FORMAT,
         "FUN_007682c0_projection_state_contract": FUN_007682C0_PROJECTION_FORMAT,
+        "FUN_007594e0_machine_angle_contract": FUN_007594E0_ANGLE_FORMAT,
         "FUN_007682c0_delta_destination_is_BODY0": True,
         "FUN_007682c0_delta_application_internal": True,
         "FUN_007682c0_effect_production_internal": True,
         "FUN_007682c0_x87_fsqrt_internal": True,
         "FUN_007682c0_projection_state_internal": True,
         "FUN_007682c0_external_projection_fields_required": False,
+        "FUN_007594e0_steering_internal": True,
+        "FUN_007682c0_external_steering_required": False,
         "FUN_007682c0_raw_input_refresh_external": True,
         "outer_vehicle_to_vhf_root_relation_ready": True,
         "BODY0_bind_frame_proof_ready": True,
@@ -352,6 +373,7 @@ __all__ = [
     "FUN_007682C0_DESTINATION_FORMAT",
     "FUN_007682C0_EFFECT_FORMAT",
     "FUN_007682C0_PROJECTION_FORMAT",
+    "FUN_007594E0_ANGLE_FORMAT",
     "SELECTED_RATE_HZ",
     "SELECTED_NORMAL_OUTER_SUBSTEPS",
     "build_current_frontier",

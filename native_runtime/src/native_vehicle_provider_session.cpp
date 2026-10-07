@@ -3,6 +3,7 @@
 #include "runtime_loop_policy.hpp"
 #include "runtime_motion_read_machine_input_state.hpp"
 #include "runtime_state.hpp"
+#include "shift_fun_007594e0_machine_angle.hpp"
 
 #include <cmath>
 #include <cstdint>
@@ -89,10 +90,18 @@ NativeVehicleProviderSession::execute_explicit_step(
     const double velocity_z_before =
         read_f64_le(outer_update_before.body_bytes, kBody0VelocityZ);
 
+    // PC FUN_00770e80 calls FUN_0076f970 before either FUN_0076d100 pass.
+    // FUN_0076f970 stores FUN_007594e0's f32 result to HDVehicle+0x4068 once,
+    // and both current passes consume that same steering value. Compute it from
+    // the current persistent BODY0 before any pass/provider side effects.
+    const auto machine_angle = physics::execute_fun_007594e0_machine_angle(
+        outer_update_before.body_bytes);
+    const float steering = machine_angle.steering;
+
     NativeVehicleProviderSessionTelemetry telemetry{};
 
     physics::Fun0076d100MotionReadMachineInputProvider pass_provider =
-        [this, &telemetry](std::size_t pass_index) {
+        [this, &telemetry, steering](std::size_t pass_index) {
             physics::Fun0076d100MotionReadMachineInputProviderCallbacks callbacks{};
             callbacks.contact_factor = [this, &telemetry, pass_index] {
                 ++telemetry.contact_factor_call_count;
@@ -112,11 +121,12 @@ NativeVehicleProviderSession::execute_explicit_step(
                     return providers_.contact_outer_input(pass_index);
                 };
             callbacks.motion_read_input_provider =
-                [this, &telemetry, pass_index] {
+                [this, &telemetry, pass_index, steering] {
                     ++telemetry.motion_read_input_call_count;
                     const auto external = providers_.motion_read_input(pass_index);
                     return physics::compose_fun_007682c0_machine_input(
                         external,
+                        steering,
                         motion_read_projection_state_);
                 };
             return callbacks;
