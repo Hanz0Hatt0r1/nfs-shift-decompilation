@@ -37,7 +37,14 @@ def test_count_bff_inputs_matches_directory_file_and_zip(tmp_path):
         archive.writestr("Dir/readme.txt", b"x")
         archive.writestr("Dir/B.BFF", b"b")
 
-    assert mod._count_bff_inputs([corpus, single, bundle]) == 5
+    assert mod._count_bff_inputs([
+        corpus,
+        single,
+        bundle,
+        single,
+        corpus,
+        corpus / "Tracks" / "Track.bff",
+    ]) == 5
 
 
 def test_progress_bff_reports_archive_and_entry_completion(tmp_path, capsys):
@@ -98,7 +105,7 @@ def test_duplicate_reopen_in_same_phase_does_not_inflate_total(tmp_path, capsys)
     tracker = mod._ProgressTracker(entry_interval=1)
     ProgressBFF = mod._progress_bff_type(FakeBFF, tracker)
 
-    with tracker.phase("resource-catalog", [source]):
+    with tracker.phase("resource-catalog", [source, source]):
         with ProgressBFF(source) as first:
             list(first.entries)
         with ProgressBFF(source) as reopened:
