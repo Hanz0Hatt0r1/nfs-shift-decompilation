@@ -3,6 +3,7 @@
 #include "runtime_loop_policy.hpp"
 #include "runtime_motion_read_machine_input_state.hpp"
 #include "runtime_state.hpp"
+#include "shift_bmw_m3_e36_response_field_4054.hpp"
 #include "shift_fun_007594e0_machine_angle.hpp"
 
 #include <cmath>
@@ -63,7 +64,9 @@ double read_f64_le(
 
 NativeVehicleProviderSession::NativeVehicleProviderSession(
     NativeVehicleExternalProviderBundle providers)
-    : providers_(std::move(providers)) {
+    : providers_(std::move(providers)),
+      response_field_4054_(
+          physics::derive_bmw_m3_e36_response_field_4054().value) {
     require_complete_bundle(providers_);
 }
 
@@ -127,6 +130,7 @@ NativeVehicleProviderSession::execute_explicit_step(
                     return physics::compose_fun_007682c0_machine_input(
                         external,
                         steering,
+                        response_field_4054_,
                         motion_read_projection_state_);
                 };
             return callbacks;
