@@ -44,6 +44,15 @@ Fun00770e80ComposedAnchorChainResult execute_fun_00770e80_composed_anchor_chain(
                     callbacks.contact_response,
                     callbacks.contact_outer,
                     callbacks.motion_read_gate);
+
+            // Source ordering: the FUN_007682c0 +0x50 side effect belongs to the
+            // pass tail and must be visible to the immediately following
+            // FUN_00765470 half-step integration. Keep that mutation on the
+            // same persistent BODY byte vector rather than an external shadow.
+            if (callbacks.post_pass_body_mutator) {
+                callbacks.post_pass_body_mutator(result.final_body_bytes);
+                ++result.post_pass_body_mutator_call_count;
+            }
         },
         [&](std::size_t pass_index, double half_timestep) {
             if (pass_index >= kFun00770e80PassCount) {

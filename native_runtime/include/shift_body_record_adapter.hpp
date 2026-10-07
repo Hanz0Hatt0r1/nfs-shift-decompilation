@@ -47,6 +47,15 @@ BodyRecordBytes apply_fun_007bab70_result_to_body_record(
     const BodyRecordBytes& original,
     const BodyFrameIntegrationResult& result);
 
+// Source-backed FUN_007682c0 application boundary. The PC retail source loads
+// HDVehicle+0x33a0, which the BMW identity proof names as the chassis BODY
+// pointer, and applies the visible scalar delta to BODY0 +0x50. The source
+// performs an f32 read/add/store round-trip before widening back to f64; retain
+// that narrowing here instead of substituting a host f64 add.
+void apply_fun_007682c0_body0_accumulator_y_delta(
+    std::vector<std::uint8_t>& body_bytes,
+    double accumulator_y_delta);
+
 std::vector<std::uint8_t> execute_fun_007b2270_body_buffer_with_basis_callback(
     const std::vector<std::uint8_t>& body_bytes,
     std::size_t body_count,

@@ -1,5 +1,7 @@
 #include "shift_fun_00770e80_motion_read_effect_provider_chain.hpp"
 
+#include "shift_body_record_adapter.hpp"
+
 #include <cmath>
 #include <memory>
 #include <stdexcept>
@@ -10,6 +12,7 @@ namespace {
 
 struct MotionReadPassState {
     std::size_t effect_provider_call_count = 0u;
+    std::size_t delta_application_call_count = 0u;
     std::size_t delta_consumer_call_count = 0u;
     bool effect_present = false;
     Fun007682c0AccumulatorEffect effect{};
@@ -21,10 +24,9 @@ void require_complete_pass_callbacks(
         !callbacks.wheel_update ||
         !callbacks.contact_response ||
         !callbacks.contact_outer_input_provider ||
-        !callbacks.motion_read_effect_provider ||
-        !callbacks.motion_read_delta_consumer) {
+        !callbacks.motion_read_effect_provider) {
         throw std::invalid_argument(
-            "FUN_00770e80 motion-read effect chain requires all physics-pass boundaries");
+            "FUN_00770e80 motion-read effect chain requires all active physics-pass providers");
     }
 }
 
@@ -85,16 +87,36 @@ execute_fun_00770e80_motion_read_effect_provider_chain(
             auto effect_provider = std::move(typed.motion_read_effect_provider);
             auto delta_consumer = std::move(typed.motion_read_delta_consumer);
             adapted.motion_read_gate =
-                [state,
-                 effect_provider = std::move(effect_provider),
-                 delta_consumer = std::move(delta_consumer)]() mutable {
+                [state, effect_provider = std::move(effect_provider)]() mutable {
                     ++state->effect_provider_call_count;
                     const Fun007682c0AccumulatorEffect effect = effect_provider();
                     validate_effect(effect);
                     state->effect = effect;
                     state->effect_present = true;
-                    if (effect.gate_open) {
-                        delta_consumer(effect.accumulator_y_delta);
+                };
+            adapted.post_pass_body_mutator =
+                [state, delta_consumer = std::move(delta_consumer)](
+                    std::vector<std::uint8_t>& current_body_bytes) mutable {
+                    if (!state->effect_present) {
+                        throw std::logic_error(
+                            "FUN_007682c0 BODY mutation executed before typed effect");
+                    }
+                    if (!state->effect.gate_open) {
+                        return;
+                    }
+
+                    // PC retail source: receiver is HDVehicle, destination is
+                    // *(HDVehicle+0x33a0)+0x50. The already-proven BMW identity
+                    // join maps HDVehicle+0x33a0 to the chassis BODY/BODY0.
+                    apply_fun_007682c0_body0_accumulator_y_delta(
+                        current_body_bytes,
+                        state->effect.accumulator_y_delta);
+                    ++state->delta_application_call_count;
+
+                    // Legacy observer only; correctness no longer depends on an
+                    // external consumer applying the retail BODY write.
+                    if (delta_consumer) {
+                        delta_consumer(state->effect.accumulator_y_delta);
                         ++state->delta_consumer_call_count;
                     }
                 };
@@ -113,21 +135,29 @@ execute_fun_00770e80_motion_read_effect_provider_chain(
             throw std::logic_error(
                 "FUN_007682c0 typed effect provider cardinality mismatch");
         }
-        const std::size_t expected_consumers =
+        const std::size_t expected_applications =
             state->effect.gate_open ? 1u : 0u;
-        if (state->delta_consumer_call_count != expected_consumers) {
+        if (state->delta_application_call_count != expected_applications) {
             throw std::logic_error(
-                "FUN_007682c0 typed delta consumer cardinality mismatch");
+                "FUN_007682c0 internal BODY0 delta application cardinality mismatch");
+        }
+        if (state->delta_consumer_call_count > expected_applications) {
+            throw std::logic_error(
+                "FUN_007682c0 compatibility observer cardinality mismatch");
         }
 
         result.motion_read_effects[pass_index] = state->effect;
         result.motion_read_effect_present[pass_index] = true;
         result.motion_read_effect_provider_call_counts[pass_index] =
             state->effect_provider_call_count;
+        result.motion_read_delta_application_call_counts[pass_index] =
+            state->delta_application_call_count;
         result.motion_read_delta_consumer_call_counts[pass_index] =
             state->delta_consumer_call_count;
         result.motion_read_effect_provider_call_count +=
             state->effect_provider_call_count;
+        result.motion_read_delta_application_call_count +=
+            state->delta_application_call_count;
         result.motion_read_delta_consumer_call_count +=
             state->delta_consumer_call_count;
         if (state->effect.gate_open) {

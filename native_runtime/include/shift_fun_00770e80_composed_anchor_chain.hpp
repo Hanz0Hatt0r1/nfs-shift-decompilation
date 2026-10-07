@@ -15,12 +15,16 @@ namespace shift::runtime::physics {
 inline constexpr const char* kNativeFun00770e80ComposedAnchorChainFormat =
     "SHIFT.NativeFun00770e80ComposedAnchorChain/1";
 
+using Fun0076d100PostPassBodyMutator =
+    std::function<void(std::vector<std::uint8_t>& current_body_bytes)>;
+
 struct Fun0076d100AnchorCallbacks {
     Fun0076d100AnchorCallback contact_factor;
     Fun0076d100AnchorCallback wheel_update;
     Fun0076d100AnchorCallback contact_response;
     Fun0076d100AnchorCallback contact_outer;
     Fun0076d100AnchorCallback motion_read_gate;
+    Fun0076d100PostPassBodyMutator post_pass_body_mutator{};
 };
 
 using Fun0076d100AnchorProvider =
@@ -51,6 +55,7 @@ struct Fun00770e80ComposedAnchorChainResult {
         half_steps{};
     std::vector<std::uint8_t> final_body_bytes;
     std::size_t physics_pass_provider_call_count = 0u;
+    std::size_t post_pass_body_mutator_call_count = 0u;
     std::size_t half_step_provider_call_count = 0u;
 };
 
