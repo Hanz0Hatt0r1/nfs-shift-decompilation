@@ -67,9 +67,10 @@ def test_active_cpp_contract_feeds_owned_query_state_before_residual_pass() -> N
     assert "input.world_position[1]" in query_header
     assert "input.miss_fallback" in query_header
 
-    assert "SHIFT.Fun00765c40ExternalPassResult/3" in result_header
+    assert "SHIFT.Fun00765c40ExternalPassResult/4" in result_header
     assert "SHIFT.Fun00765c40ExternalPassInput/2" in result_header
     assert "Fun00765c40QueryInputBoundary query_input" in result_header
+    assert "std::optional<CollisionQueryOutput> query_output" in result_header
     assert "selected_bmw_miss_fallback" in result_header
     assert "returned_cache_handle" in result_header
 
