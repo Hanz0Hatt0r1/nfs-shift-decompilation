@@ -1,0 +1,88 @@
+{
+  "format": "SHIFT.BMWM3E36ResponseField4054/1",
+  "version": 1,
+  "status": "retail-pc-selected-bmw-setup-field-proven-and-native-consumed",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "selected_vehicle": "BMW M3 E36",
+  "resource": {
+    "archive": "VehiclesGlobal.bff",
+    "archive_sha256": "b186ae466e6cccb964c813c6f60bc060a4a8646c261f89270ef86e3ff5cdf953",
+    "entry_index": 283,
+    "entry_path": "vehicles/physics/vehicles/bmw_m3_e36.vdf",
+    "entry_offset": "0xa9800",
+    "compressed_size": 654,
+    "decoded_size": 3431,
+    "compression": "xmem/lzx:1frame(s)",
+    "crc_field": "0x5be39b1a",
+    "decoded_sha256": "f4c925bc6799439a12906d0aed9b73e22052cb46f7fbd4ea6f48409b9776a082",
+    "car_physics_details": {
+      "Wheel FL Offset": "0.711;0.31;-1.35",
+      "Wheel FR Offset": "-0.711;0.31;-1.35",
+      "Wheel RL Offset": "0.7225;0.31;1.35",
+      "Wheel RR Offset": "-0.7225;0.31;1.35"
+    },
+    "wheel_fl_z_f32_bits": "0xbfaccccd",
+    "wheel_rl_z_f32_bits": "0x3faccccd"
+  },
+  "pc_runtime_join": {
+    "source_file": "SHIFT.exe.c",
+    "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "selected_details_pointer": "DAT_00c133b4 = vehicle_details_base + 0x1f80",
+    "selected_details_source_line": 744331,
+    "wheel_tuple_fields": "DAT_00c133b4+0x34..+0x60 are four XYZ wheel-offset triples",
+    "writer_function": "FUN_0076b280",
+    "writer_source_line": 762154,
+    "writer_expression": "HDVehicle+0x4054 = f32(abs(wheel_FL_z - wheel_RL_z))",
+    "setup_call_source_line": 763779,
+    "setup_call": "FUN_0076b280(this, setup_context, vehicle_details)",
+    "writer_is_setup_only": true
+  },
+  "machine_spans": [
+    {
+      "start": "0x0076b2f1",
+      "end_exclusive": "0x0076b32e",
+      "raw_byte_sha256": "4a066a9b9e6f5841b73b743a6293c710a6f1a03efb29377d3033949cdeea5fd1",
+      "role": "load four f32 wheel-offset triples from DAT_00c133b4+0x34..+0x60 and widen to x87/f64 locals"
+    },
+    {
+      "start": "0x0076b3bf",
+      "end_exclusive": "0x0076b3cb",
+      "raw_byte_sha256": "074120516d59c1d7cb786d4bc830a4e7b0ea9d7c13930595ed02e5747e4a2e36",
+      "role": "x87 subtract, FABS and f32 store to HDVehicle+0x4054"
+    },
+    {
+      "start": "0x0076e266",
+      "end_exclusive": "0x0076e275",
+      "raw_byte_sha256": "4298a38f967bfb2315f38989f6b05e1aa4837d0b781098b486b0771bdb3eee07",
+      "role": "vehicle setup call site for FUN_0076b280"
+    }
+  ],
+  "derived_value": {
+    "formula": "f32(abs(f64(f32(-1.35)) - f64(f32(+1.35))))",
+    "value": 2.700000047683716,
+    "f32_bits": "0x402ccccd",
+    "HDVehicle_field": "+0x4054",
+    "refresh_semantics": "vehicle setup fixed"
+  },
+  "native_consumption": {
+    "helper": "selected_bmw_m3_e36_response_field_4054",
+    "composition": "compose_fun_007682c0_machine_input",
+    "external_field_removed": "Fun007682c0ExternalMachineInput.response_field_4054",
+    "external_override_allowed": false,
+    "kernel_field_retained_for_direct_machine_tests": true
+  },
+  "limits": {
+    "caller_gate_0xe0_internalized": false,
+    "four_load_terms_internalized": false,
+    "angle_mode_DAT_00c128cc_internalized": false,
+    "provider_count_reduced": false,
+    "active_external_provider_count": 8,
+    "sdf_wheelbase_substituted_for_vdf_setup_value": false,
+    "xbox_360_recomp_substituted_for_pc_authority": false,
+    "runtime_capture_required": false,
+    "original_game_execution_required": false
+  }
+}

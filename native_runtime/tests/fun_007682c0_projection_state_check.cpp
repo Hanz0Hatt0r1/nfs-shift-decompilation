@@ -47,10 +47,12 @@ int main() {
                 "derived steering was not consumed by production composition");
         require(composed.steering != legacy.steering,
                 "legacy external steering leaked into production composition");
-        require(composed.load_terms == legacy.load_terms &&
-                    composed.response_field_4054 == 7.0f &&
-                    composed.angle_mode == 2,
+        require(composed.load_terms == legacy.load_terms && composed.angle_mode == 2,
                 "external machine input payload mismatch");
+        require(f32_bits(composed.response_field_4054) ==
+                    kBmwM3E36ResponseField4054Bits &&
+                    composed.response_field_4054 != legacy.response_field_4054,
+                "legacy external +0x4054 leaked into selected BMW composition");
         require(composed.projection_field_x == 0.0f &&
                     composed.projection_field_z == 0.0f,
                 "legacy projection fields leaked into production composition");
@@ -83,6 +85,9 @@ int main() {
                 "derived projection state was not consumed by next input");
         require(second_input.steering == derived_steering,
                 "derived steering changed while composing next input");
+        require(f32_bits(second_input.response_field_4054) ==
+                    kBmwM3E36ResponseField4054Bits,
+                "selected BMW setup response changed between compositions");
 
         bool zero_dt_rejected = false;
         try {
@@ -110,6 +115,7 @@ int main() {
             << "\"ready\":true,"
             << "\"initial_fields_zero\":true,"
             << "\"legacy_steering_provider_value_ignored\":true,"
+            << "\"legacy_response_4054_provider_value_ignored\":true,"
             << "\"legacy_projection_provider_values_ignored\":true,"
             << "\"post_outer_delta_over_dt\":true,"
             << "\"f32_store_checkpoint\":true}\n";
