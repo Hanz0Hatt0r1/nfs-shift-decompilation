@@ -1,0 +1,50 @@
+name: native-physics-phase738
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/build_fun_007618f0_second_arg_worklist.py'
+      - 'tools/ghidra/analyze_fun_007618f0_second_arg_provenance.py'
+      - 'tools/ghidra/run_fun_007618f0_second_arg_provenance.sh'
+      - 'tests/test_s6_fun_007618f0_second_arg_provenance.py'
+      - 'evidence/fun_007618f0_second_arg_provenance_frontier.json'
+      - 'evidence/phase738_next_blocker.md'
+      - 'docs/PHASE738_FUN_007618F0_SECOND_ARGUMENT_PROVENANCE.md'
+      - 'docs/PHASE738_SCOPE.md'
+      - '.github/workflows/native-physics-phase738.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/build_fun_007618f0_second_arg_worklist.py'
+      - 'tools/ghidra/analyze_fun_007618f0_second_arg_provenance.py'
+      - 'tools/ghidra/run_fun_007618f0_second_arg_provenance.sh'
+      - 'tests/test_s6_fun_007618f0_second_arg_provenance.py'
+      - 'evidence/fun_007618f0_second_arg_provenance_frontier.json'
+      - 'evidence/phase738_next_blocker.md'
+      - 'docs/PHASE738_FUN_007618F0_SECOND_ARGUMENT_PROVENANCE.md'
+      - 'docs/PHASE738_SCOPE.md'
+      - '.github/workflows/native-physics-phase738.yml'
+
+jobs:
+  fun-007618f0-second-arg-provenance:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run focused Phase 738 regressions
+        run: python3 -m pytest -q tests/test_s6_fun_007618f0_second_arg_provenance.py
+
+      - name: Validate runner shell syntax
+        run: bash -n tools/ghidra/run_fun_007618f0_second_arg_provenance.sh
+
+      - name: Validate frontier policy
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('evidence/fun_007618f0_second_arg_provenance_frontier.json').read_text())
+          assert payload['format'] == 'SHIFT.Fun007618f0SecondArgumentProvenanceFrontier/1'
+          assert payload['retail_result']['committed_positive_report_present'] is False
+          assert payload['retail_result']['owner_join_ready'] is False
+          assert payload['provider_frontier']['external_provider_count_after'] == 7
+          assert payload['safety']['physical_argument_origin_is_semantic_owner_proof'] is False
+          PY
