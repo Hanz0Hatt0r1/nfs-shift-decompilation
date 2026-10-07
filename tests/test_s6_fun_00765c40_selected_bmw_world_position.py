@@ -21,6 +21,8 @@ def test_phase739_evidence_closes_only_selected_bmw_world_position() -> None:
     assert evidence["runtime_order"]["pass1_reads_post_pass0_half_step_body"] is True
     assert evidence["external_fun_00765c40_remaining"]["world_position_selected_bmw"] is False
     assert evidence["external_fun_00765c40_remaining"]["load_terms"] is True
+    # Historical Phase739 evidence remains immutable: cache ownership was still
+    # external at that phase and is narrowed only by Phase740.
     assert evidence["external_fun_00765c40_remaining"]["cached_handle"] is True
     assert evidence["external_fun_00765c40_remaining"]["miss_fallback"] is True
     assert evidence["provider_frontier"]["external_provider_count_after"] == 7
@@ -69,15 +71,18 @@ def test_phase739_reuses_pre_anchor_current_body_observer_order() -> None:
     assert "upstream_body_observer(current_body_bytes)" in contact_source
 
 
-def test_phase739_selected_session_overwrites_only_world_position() -> None:
+def test_phase739_selected_world_position_now_enters_residual_provider_pre_call() -> None:
     session = _read("native_runtime/src/native_vehicle_provider_session.cpp")
     assert "fun_00765c40_selected_bmw_body_domain" in session
     assert "execute_fun_00765c40_selected_bmw_world_position" in session
-    assert "result.query_input.world_position =" in session
+    assert "external_input.world_position =" in session
     assert "world_position_state->world_position" in session
-    assert "providers_.fun_00765c40(pass_index)" in session
+    assert "providers_.fun_00765c40(pass_index, external_input)" in session
+    assert "result.query_input.world_position =" not in session
+    assert session.index("external_input.world_position =") < session.index(
+        "providers_.fun_00765c40(pass_index, external_input)"
+    )
     assert "result.load_terms" in session
-    assert "generic fixtures" in session
 
 
 def test_phase739_native_regression_and_cmake_are_wired() -> None:
