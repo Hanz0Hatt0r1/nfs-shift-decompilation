@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shift_fun_007560c0_motion_read_gate_setup.hpp"
 #include "shift_fun_00765c40_load_terms.hpp"
 #include "shift_fun_007682c0_projection_state.hpp"
 #include "shift_fun_00770e80_motion_read_machine_input_provider_chain.hpp"
@@ -44,15 +45,21 @@ using NativeVehicleHalfStepRefreshProvider =
 
 struct NativeVehicleExternalProviderBundle {
     // FUN_00765c40 remains an external contact-physics boundary, but its four
-    // per-wheel +0x738 load outputs are now typed and owned here. They feed the
+    // per-wheel +0x738 load outputs are typed and owned here. They feed the
     // later FUN_00769ef0/FUN_007682c0 read in the same pass.
     NativeVehicleContactFactorProvider contact_factor{};
     NativeVehiclePassCallback wheel_update{};
     NativeVehiclePassCallback contact_response{};
     NativeVehicleContactOuterInputProvider contact_outer_input{};
-    // Remaining exact late PC fields consumed by FUN_00769ef0/FUN_007682c0.
-    // Steering, four load terms, selected-BMW +0x4054 and +0x4084/+0x408c are
-    // deliberately absent because their earlier retail owners are recovered.
+
+    // FUN_007560c0 writes HDVehicle+0xe0 during vehicle setup. This is immutable
+    // session setup state, not a per-pass provider boundary. Its upstream value
+    // remains explicit until the selected settings producer is proven.
+    physics::Fun007560c0MotionReadGateSetup motion_read_setup{};
+
+    // DAT_00c128cc is the only remaining exact late PC field consumed by
+    // FUN_00769ef0/FUN_007682c0. Gate, steering, four load terms, selected-BMW
+    // +0x4054 and +0x4084/+0x408c are absent because earlier owners are proven.
     NativeVehicleMotionReadInputProvider motion_read_input{};
     NativeVehicleScalarProviderFactory scalar_provider_factory{};
     NativeVehicleHalfStepRefreshProvider half_step_refresh{};
