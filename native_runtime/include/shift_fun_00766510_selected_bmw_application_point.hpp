@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shift_body_accumulator_primitives.hpp"
 #include "shift_fun_00765c40_selected_bmw_world_position.hpp"
 
 #include <cstddef>
