@@ -78,7 +78,12 @@ def test_session_derives_one_steering_value_before_both_passes() -> None:
     assert machine_call < pass_provider < external_provider_call
     assert "const float steering = machine_angle.steering" in session
     assert "[this, &telemetry, steering]" in session
-    assert "external,\n                        steering,\n                        motion_read_projection_state_" in session
+
+    compose = session.index("compose_fun_007682c0_machine_input")
+    steering_arg = session.index("steering,", compose)
+    load_arg = session.index("load_state->terms,", compose)
+    projection_arg = session.index("motion_read_projection_state_", compose)
+    assert compose < steering_arg < load_arg < projection_arg
 
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     timing = payload["timing"]
