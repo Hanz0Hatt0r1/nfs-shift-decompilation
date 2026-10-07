@@ -87,7 +87,10 @@ int main() {
         require(session_input.compatibility_previous_distance_seed_present &&
                     session_input.compatibility_previous_distance_seed == 91.0,
                 "legacy compatibility seed was not preserved exactly");
-        const auto resolved = compose_fun_007675f0_external_input(session_input, 2.0);
+        const auto resolved = compose_fun_007675f0_external_input(
+            session_input,
+            2.0,
+            legacy.distance_filter_cap);
         require_near(resolved.previous_distance_state, 2.0,
                      "session-owned state did not override legacy seed");
 
@@ -114,7 +117,6 @@ int main() {
                 callbacks.contact_outer_input_provider = [&] {
                     ContactOuterSessionInput per_pass{};
                     per_pass.planar_delta = {10.0, 0.0, 0.0};
-                    per_pass.distance_filter_cap = 1.0;
                     per_pass.surface_scalar = 10.0;
                     per_pass.base_scalar = 4.0;
                     per_pass.projected_scalar = 1.0;
@@ -123,7 +125,8 @@ int main() {
                     consumed_previous.push_back(persistent_state);
                     return compose_fun_007675f0_external_input(
                         per_pass,
-                        persistent_state);
+                        persistent_state,
+                        1.0);
                 };
                 callbacks.contact_outer_distance_state_commit = [&](double next) {
                     persistent_state = next;
