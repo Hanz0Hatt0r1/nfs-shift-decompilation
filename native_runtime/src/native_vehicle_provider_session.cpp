@@ -146,6 +146,7 @@ NativeVehicleProviderSession::execute_explicit_step(
                     const auto external = providers_.motion_read_input(pass_index);
                     return physics::compose_fun_007682c0_machine_input(
                         external,
+                        providers_.motion_read_setup,
                         steering,
                         load_state->terms,
                         motion_read_projection_state_);
