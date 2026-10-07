@@ -99,8 +99,11 @@ execute_fun_00770e80_contact_outer_provider_chain(
                  distance_state_commit = std::move(distance_state_commit)]() mutable {
                     if (!state->body_motion_present ||
                         !state->body_probe_position_present) {
+                        // Preserve the Phase 729 diagnostic token consumed by
+                        // historical ownership regressions. Phase 732 extends
+                        // the same guard to require the BODY0 probe position.
                         throw std::logic_error(
-                            "FUN_007675f0 executed before current BODY0 ownership bridge");
+                            "FUN_007675f0 executed before current BODY0 motion ownership bridge");
                     }
                     ++state->input_provider_call_count;
                     ContactOuterExternalInput external =
