@@ -5,6 +5,8 @@ import sys
 import zipfile
 from pathlib import Path
 
+import pytest
+
 
 def _load_module():
     root = Path(__file__).resolve().parents[1]
@@ -105,3 +107,62 @@ def test_duplicate_reopen_in_same_phase_does_not_inflate_total(tmp_path, capsys)
     output = capsys.readouterr().out
     assert output.count("status=done done=1/1") == 1
     assert "event=complete processed=1/1 done=1 failed=0" in output
+
+
+def test_progress_bff_reports_enter_failure_as_failed(tmp_path, capsys):
+    mod = _load_module()
+    source = tmp_path / "A.bff"
+    source.write_bytes(b"fixture")
+
+    class FakeBFF:
+        def __init__(self, path):
+            self.path = Path(path)
+            self.entries = []
+
+        def __enter__(self):
+            raise RuntimeError("enter failed")
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    tracker = mod._ProgressTracker(entry_interval=1)
+    ProgressBFF = mod._progress_bff_type(FakeBFF, tracker)
+
+    with tracker.phase("resource-catalog", [source]):
+        with pytest.raises(RuntimeError, match="enter failed"):
+            with ProgressBFF(source):
+                pass
+
+    output = capsys.readouterr().out
+    assert "status=failed" in output
+    assert "error=RuntimeError" in output
+    assert "status=done" not in output
+    assert "event=complete processed=1/1 done=0 failed=1" in output
+
+
+def test_progress_bff_reports_close_failure_as_failed(tmp_path, capsys):
+    mod = _load_module()
+    source = tmp_path / "A.bff"
+    source.write_bytes(b"fixture")
+
+    class FakeBFF:
+        def __init__(self, path):
+            self.path = Path(path)
+            self.entries = []
+
+        def close(self):
+            raise OSError("close failed")
+
+    tracker = mod._ProgressTracker(entry_interval=1)
+    ProgressBFF = mod._progress_bff_type(FakeBFF, tracker)
+
+    with tracker.phase("resource-catalog", [source]):
+        archive = ProgressBFF(source)
+        with pytest.raises(OSError, match="close failed"):
+            archive.close()
+
+    output = capsys.readouterr().out
+    assert "status=failed" in output
+    assert "error=OSError" in output
+    assert "status=done" not in output
+    assert "event=complete processed=1/1 done=0 failed=1" in output
