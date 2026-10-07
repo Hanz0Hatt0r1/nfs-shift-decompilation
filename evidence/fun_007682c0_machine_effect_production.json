@@ -1,0 +1,128 @@
+{
+  "format": "SHIFT.Fun007682c0MachineEffectProduction/1",
+  "version": 1,
+  "status": "retail-pc-machine-effect-proven-and-native-consumed",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "retail": {
+    "program_name": "SHIFT.exe",
+    "executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "source_file": "SHIFT.exe.c",
+    "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "xbox_360_recomp_required_for_claim": false
+  },
+  "machine_spans": [
+    {
+      "function": "FUN_00769ef0",
+      "start": "0x00769ef0",
+      "end": "0x0076a1f6",
+      "raw_byte_sha256": "882839f3a01e34e923e4b32b3e71d0f5d9c417109df0899769e90a165d114ebb",
+      "role": "caller gate and FUN_007682c0 raw-input preparation"
+    },
+    {
+      "function": "FUN_007682c0",
+      "start": "0x007682c0",
+      "end": "0x0076840f",
+      "raw_byte_sha256": "7ef6c0cb7fdca913bbc7e4a3128c56f5a69cd4d4b300323bdc1ade0825897acc",
+      "role": "3D speed gate, response join and BODY0 accumulator application"
+    },
+    {
+      "function": "FUN_0075ada0",
+      "start": "0x0075ada0",
+      "end": "0x0075af1a",
+      "raw_byte_sha256": "9707bfe6102f613bb81f98c7cc6af9a1707802173b54b0eb089447fabeab546d",
+      "role": "planar speed/direction/radius/reciprocal geometry"
+    },
+    {
+      "function": "FUN_007595d0",
+      "start": "0x007595d0",
+      "end": "0x00759776",
+      "raw_byte_sha256": "d4f37ef53f91fc5db2f882973de53befcf8904b438f2585680d223acaa117f1c",
+      "role": "steering/rate response scalar"
+    },
+    {
+      "function": "retail_sqrt_helper",
+      "start": "0x00900d30",
+      "end": "0x00900de0",
+      "raw_byte_sha256": "c18e873187c9e4da9b887cc02fbcfd29582b7cd78b74b93a53f94fb3d4de246e",
+      "role": "x87 FSQRT helper"
+    }
+  ],
+  "x87": {
+    "sqrt_helper": "0x00900d30",
+    "fsqrt_instruction": "0x00900d6c",
+    "retail_control_word": "0x027f",
+    "precision_control": "double-precision/53-bit",
+    "rounding": "nearest",
+    "initial_3d_speed": "f64 square/sum -> x87 FSQRT -> f32 spill",
+    "planar_speed": "BODY0 f64 vx/vz -> f32 spills -> f32 squared-sum spill -> x87 FSQRT -> f32 spill",
+    "host_std_sqrt_substitution_allowed": false
+  },
+  "raw_inputs": {
+    "caller_gate": "HDVehicle+0xe0 != 0",
+    "steering": "HDVehicle+0x4068 f32",
+    "load_terms_qword": [
+      "HDVehicle+0xb38",
+      "HDVehicle+0x15b8",
+      "HDVehicle+0x2038",
+      "HDVehicle+0x2ab8"
+    ],
+    "caller_scale": "clamp_f32(sum(load_terms) / (BODY0+0x120 * 9.8100004196167), 0, 1)",
+    "projection_field_x": "HDVehicle+0x4084 f32",
+    "projection_field_z": "HDVehicle+0x408c f32",
+    "response_field_4054": "HDVehicle+0x4054 f32",
+    "angle_mode": "DAT_00c128cc i32",
+    "body0_cross_y": "BODY0+0x20 f64 -> f32 spill",
+    "body0_velocity": ["BODY0+0x78 f64", "BODY0+0x80 f64", "BODY0+0x88 f64"],
+    "body0_scalar_120": "BODY0+0x120 f64 -> f32 spill where consumed by FUN_007595d0"
+  },
+  "constants": {
+    "speed_gate_f32": 5.0,
+    "speed_offset_f64": 5.0,
+    "speed_range_f64": 15.0,
+    "planar_speed_gate_f32": 4.0,
+    "projection_epsilon_f32": 0.0010000000474974513,
+    "radius_fallback_f32": 3.4028234663852886e+38,
+    "angle_limit_mode_lt_2_f32": 0.6981317400932312,
+    "angle_limit_mode_ge_2_f32": 0.9599311351776123,
+    "response_angle_f32": 0.5235987901687622,
+    "gravity_f64": 9.8100004196167,
+    "response_scale_f64": 1.2999999523162842,
+    "half_f64": 0.5,
+    "positive_response_gain_f64": 0.30000001192092896,
+    "negative_response_gain_f32": 5.0
+  },
+  "native_consumption": {
+    "effect_kernel": "execute_fun_007682c0_machine_effect",
+    "outer_chain": "execute_fun_00770e80_motion_read_machine_input_provider_chain",
+    "persistent_state_adapter": "execute_explicit_motion_read_machine_input_update",
+    "active_session_boundary": "NativeVehicleExternalProviderBundle.motion_read_input",
+    "external_precomputed_effect_accepted_by_active_session": false,
+    "external_delta_consumer_accepted_by_active_session": false,
+    "effect_arithmetic_internal": true,
+    "body0_delta_application_internal": true,
+    "ordering": "raw input capture at FUN_007682c0 anchor -> native machine effect on current persistent BODY0 -> BODY0 +0x50 application -> FUN_00765470 half-step"
+  },
+  "handoff": {
+    "FUN_007682c0_effect_production_internalized": true,
+    "FUN_007595d0_response_arithmetic_internalized": true,
+    "FUN_0075ada0_geometry_internalized": true,
+    "x87_fsqrt_boundary_internalized": true,
+    "active_external_provider_count": 8,
+    "replacement_external_boundary": "FUN_007682c0 raw HDVehicle/DAT input refresh provider"
+  },
+  "remaining_blockers": [
+    {
+      "id": "fun-007682c0-raw-input-producer-refresh",
+      "required": "internalize or bind exact runtime producers/refresh timing for HDVehicle+0xe0/+0x4068/+0xb38/+0x15b8/+0x2038/+0x2ab8/+0x4084/+0x408c/+0x4054 and DAT_00c128cc across both physics passes"
+    }
+  ],
+  "scope": {
+    "runtime_capture_required": false,
+    "original_game_execution_required": false,
+    "xbox_360_recomp_substituted_for_pc_authority": false,
+    "complete_FUN_0076d100_semantics_claimed": false,
+    "complete_vehicle_control_chain_claimed": false
+  }
+}
