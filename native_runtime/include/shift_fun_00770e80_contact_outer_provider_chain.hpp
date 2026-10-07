@@ -26,6 +26,10 @@ struct Fun0076d100ContactOuterProviderCallbacks {
     // HDVehicle+0x4080 state. Historical lower-chain fixtures may omit it.
     Fun007675f0DistanceStateCommit contact_outer_distance_state_commit{};
     Fun0076d100AnchorCallback motion_read_gate{};
+    // Optional pass-local observer composed with this chain's existing BODY0
+    // ownership bridge. It receives the exact same authoritative BODY bytes
+    // immediately before any pass anchor runs.
+    Fun0076d100CurrentBodyObserver current_body_observer{};
     Fun0076d100PostPassBodyMutator post_pass_body_mutator{};
 };
 
