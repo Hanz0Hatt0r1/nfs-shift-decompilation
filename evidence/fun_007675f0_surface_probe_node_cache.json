@@ -1,0 +1,110 @@
+{
+  "format": "SHIFT.Fun007675f0SurfaceProbeNodeCache/1",
+  "version": 1,
+  "status": "source-backed-cache-policy-native-lookup-external",
+  "ready": true,
+  "source": {
+    "program": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "caller": "FUN_00769ef0",
+    "caller_start": "0x00769ef0",
+    "consumer": "FUN_007675f0",
+    "consumer_start": "0x007675f0",
+    "probe": "FUN_00759210",
+    "lookup": "FUN_00717cd0"
+  },
+  "caller_join": {
+    "only_direct_call_to_FUN_007675f0": "0x0076a1c7",
+    "cached_node_load": "mov edi,[esi+0x120] at 0x0076a0c9",
+    "argument_handoff": "push edi at 0x0076a1c6",
+    "consumer_argument_forward": "mov edx,[ebx+0x8] at 0x0076760c",
+    "probe_receives_edx_as_node": "FUN_00759210 stores edx in esi at 0x00759217",
+    "interpretation": "[ebx+0x8] is FUN_007675f0 stack argument 1, not an object-field +0x8 dereference"
+  },
+  "retail_state": {
+    "node_owner": "HDVehicle",
+    "node_offset": "0x120",
+    "last_body_position_offsets": ["0x128", "0x130", "0x138"],
+    "last_body_position_type": "f64 xyz",
+    "initial_node_value": null,
+    "initial_node_store": "mov dword ptr [esi+0x120],0 at 0x00763496",
+    "initial_last_position_value_required": false
+  },
+  "refresh_policy": {
+    "previous_node_read": "HDVehicle+0x120",
+    "current_position": "chassis BODY0 +0/+8/+0x10 f64",
+    "distance": "squared 3D f64 displacement from HDVehicle+0x128/+0x130/+0x138",
+    "threshold_constant": 0.01,
+    "threshold_address": "0x00b09180",
+    "comparison": "refresh iff cached node is null OR squared displacement > 0.01",
+    "strict": true,
+    "query_to_lookup": "current BODY0 position narrowed to f32 xyz before FUN_00717cd0",
+    "lookup_previous_node_argument": "current HDVehicle+0x120 cached pointer",
+    "lookup_return_store": "mov [esi+0x120],eax at 0x0076a0a1",
+    "last_position_commit": "copy exact BODY0 f64 xyz to +0x128/+0x130/+0x138 after every lookup call",
+    "null_lookup_result_still_commits_last_position": true,
+    "null_lookup_result_forces_next_lookup": true
+  },
+  "machine_spans": {
+    "initial_null_store": {
+      "start": "0x00763496",
+      "end_exclusive": "0x007634a0",
+      "sha256": "de80b36bed29776616c009c0abe76601e1307616daf37eb9cff54c9a39723e76"
+    },
+    "cache_read_and_threshold": {
+      "start": "0x0076a066",
+      "end_exclusive": "0x0076a090",
+      "sha256": "d1b6ae07d28e252c3052439021aca99b156fda78c14608f9ceddcc93b281b222"
+    },
+    "lookup_refresh_and_commit": {
+      "start": "0x0076a090",
+      "end_exclusive": "0x0076a0c9",
+      "sha256": "27baa0aff6297df0c93c8c3f560b68488225f9e67d3bf96d2b8d604ed2ab7913"
+    },
+    "FUN_007675f0_call": {
+      "start": "0x0076a1b4",
+      "end_exclusive": "0x0076a1cc",
+      "sha256": "8158017874872b7e9e0081b19dbaef498aae92521bbeb67fd635e149c200f090"
+    },
+    "consumer_argument_to_probe": {
+      "start": "0x0076760c",
+      "end_exclusive": "0x00767648",
+      "sha256": "cbed8328d98af36c84aa468075045b78445144e2c1f0577c461c7847ed1c1479"
+    },
+    "threshold_constant": {
+      "address": "0x00b09180",
+      "bytes_le": "7c14ae47e17a843f",
+      "f64": 0.010000000000000002,
+      "sha256": "e563d3f39c6f51ac0a5a149f4fc6ff180c02a95e443f4d4ea0625ab589fa8260"
+    }
+  },
+  "native_handoff": {
+    "contract": "SHIFT.Fun007675f0SurfaceProbeNodeCache/1",
+    "header": "native_runtime/include/shift_fun_007675f0_surface_probe_node_cache.hpp",
+    "lookup_provider": "Fun00717cd0SurfaceProbeNodeLookupProvider",
+    "lookup_provider_inputs": ["f32-narrowed current BODY0 xyz", "previous cached node pointer"],
+    "cache_policy_native": true,
+    "lookup_behavior_native": false,
+    "wired_into_NativeVehicleProviderSession": false
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "surface_probe_node_direct_per_pass_boundary_removed": false,
+    "cache_policy_recovered": true,
+    "FUN_00717cd0_semantics_named": false,
+    "world_node_graph_internalized": false,
+    "xbox_evidence_required": false
+  },
+  "next_blocker": {
+    "preferred": "wire the source-backed cache policy into the selected native session through an exact FUN_00717cd0 lookup-provider boundary while preserving the FUN_00769ef0 active-path/null-node gate",
+    "alternate": "recover one of base_scalar/projected_scalar/alignment_scalar/param_3 from FUN_007675f0 caller/source without assigning physical semantics",
+    "do_not_guess": [
+      "FUN_00717cd0 physical semantic name",
+      "global object at 0x00c10f68 semantic identity",
+      "node graph ownership outside the proven +0x120 cache",
+      "remaining scalar physical units"
+    ]
+  }
+}
