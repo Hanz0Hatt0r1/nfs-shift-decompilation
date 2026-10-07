@@ -1,0 +1,67 @@
+{
+  "format": "SHIFT.BMWM3E36Fun007618f0ResourceInputs/1",
+  "phase": 738,
+  "status": "retail-resource-values-proven",
+  "archive": {
+    "drive_title": "BMW_M3_E36.bff",
+    "size": 18934688,
+    "sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+    "bff_version": 3,
+    "encryption_mode": 0,
+    "member_count": 1122
+  },
+  "cdf_member": {
+    "path": "vehicles\\physics\\chassis\\bmw_m3_e36.cdf",
+    "entry_index": 1088,
+    "offset": 17793024,
+    "compressed_size": 5358,
+    "uncompressed_size": 24817,
+    "compression_type": 2,
+    "compression": "XMem/LZX",
+    "compressed_sha256": "22fe40a8996a423a6d2db5726329b9a6fa81c38bf144f8ac2e788f7ad2de1543",
+    "decoded_sha256": "bbee83f0d2fdcbfc2bbd62ddb2a10bf6fed71bb1b4fa78f303a4730d038b970d"
+  },
+  "resource_values": {
+    "CGHeight": {
+      "cdf_line": 17,
+      "source_text": "CGHeight=0.280",
+      "decimal": "0.280"
+    },
+    "FWCenter": {
+      "section": "FRONTWING",
+      "cdf_line": 66,
+      "source_text": "FWCenter=(0.00, -0.100, -0.50)",
+      "decimal_xyz": ["0.00", "-0.100", "-0.50"],
+      "numeric_xyz": [0.0, -0.1, -0.5]
+    }
+  },
+  "source_parser_join": {
+    "vehicle_load_data_constructor": "FUN_007c3170",
+    "front_wing_subrecord_offset": "0x6a0",
+    "front_wing_parser": "FUN_007c0a20",
+    "front_wing_property": "FWCenter",
+    "front_wing_destinations_relative": ["0x278", "0x280", "0x288"],
+    "front_wing_destinations_absolute": ["0x918", "0x920", "0x928"],
+    "absolute_identity": "VehicleLoadData+0x6a0 + subrecord+0x278 = VehicleLoadData+0x918"
+  },
+  "phase728_join": {
+    "local_sample_contract": "SHIFT.Fun007618f0LocalSampleProducer/1",
+    "source_vec_0918_selected_BMW_value": [0.0, -0.1, -0.5],
+    "source_vec_0918_selected_BMW_value_ready": true,
+    "source_scalar_0338_CDF_base_value": "0.280",
+    "source_scalar_0338_is_raw_CGHeight": false,
+    "source_scalar_0338_requires_FUN_007bfbe0_selector_scale": true
+  },
+  "precision_policy": {
+    "FWCenter_parser_storage_is_f64_vector": true,
+    "CGHeight_selected_derived_value_not_replaced_with_decimal_double_0_168": true,
+    "reason": "FUN_007bfbe0 explicitly performs f32 CGHeight evaluation, f32 scale multiplication, then widens the f32 result to f64 at VehicleLoadData+0x338"
+  },
+  "scope": {
+    "selected_BMW_FWCenter_numeric_value_proven": true,
+    "selected_BMW_CGHeight_resource_value_proven": true,
+    "selected_derived_CGHeight_bit_pattern_proven_here": false,
+    "raw_archive_committed": false,
+    "raw_cdf_committed": false
+  }
+}
