@@ -15,13 +15,6 @@ inline constexpr const char* kFun00765c40ExternalPassResultFormat =
 inline constexpr const char* kFun00765c40ExternalPassInputFormat =
     "SHIFT.Fun00765c40ExternalPassInput/2";
 
-// Native-owned inputs supplied before the residual FUN_00765c40 pass executes.
-// cached_handle is always session-owned. world_position is present only on the
-// selected BMW path closed by Phase739. Its presence is also the selected-session
-// identity tag for Phase741: selected_bmw_miss_fallback() then exposes the exact
-// source-backed FUN_00756bb0 setup value derived from FRONTWING.FWMaxHeight.
-// Generic historical fixtures leave world_position absent and keep their former
-// compatibility fallback in the audit witness rather than masquerading as BMW.
 struct Fun00765c40ExternalPassInput {
     std::optional<CollisionQueryVector3d> world_position{};
     std::optional<std::uint64_t> cached_handle{};
@@ -34,15 +27,16 @@ struct Fun00765c40ExternalPassInput {
     }
 };
 
-// Residual external pass result. Phase742 makes the already-native
-// FUN_007b0710 output explicit instead of letting the complete pass hide it.
-// returned_cache_handle is retained as the source-visible HDVehicle+0x38dc write
-// witness and must equal query_output.returned_handle.
+// Phase742 appends the typed FUN_007b0710 output without changing the historical
+// aggregate order of the first three fields. Generic 2-BODY fixtures may leave
+// query_output absent. The selected BMW path (identified by its native pre-call
+// world_position) must expose it, so production can no longer hide collision
+// hit/miss/contact-height/cache-output state inside the residual provider.
 struct Fun00765c40ExternalPassResult {
     Fun00765c40LoadTerms load_terms{};
     Fun00765c40QueryInputBoundary query_input{};
-    CollisionQueryOutput query_output{};
     std::optional<std::uint64_t> returned_cache_handle{};
+    std::optional<CollisionQueryOutput> query_output{};
 };
 
 inline void validate_fun_00765c40_collision_output_handoff(
@@ -120,12 +114,18 @@ inline void validate_fun_00765c40_external_pass_result(
             "FUN_00765c40 residual provider did not consume native-owned selected BMW +0x38e8 fallback");
     }
 
-    validate_fun_00765c40_collision_output_handoff(
-        result.query_input,
-        result.query_output);
-    if (result.returned_cache_handle != result.query_output.returned_handle) {
+    if (input.world_position.has_value() && !result.query_output.has_value()) {
         throw std::invalid_argument(
-            "FUN_00765c40 returned cache handle disagrees with FUN_007b0710 output");
+            "FUN_00765c40 selected BMW provider hid FUN_007b0710 collision output");
+    }
+    if (result.query_output.has_value()) {
+        validate_fun_00765c40_collision_output_handoff(
+            result.query_input,
+            *result.query_output);
+        if (result.returned_cache_handle != result.query_output->returned_handle) {
+            throw std::invalid_argument(
+                "FUN_00765c40 returned cache handle disagrees with FUN_007b0710 output");
+        }
     }
 }
 
