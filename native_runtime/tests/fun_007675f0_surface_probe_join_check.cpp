@@ -84,7 +84,6 @@ int main() {
 
         ContactOuterSessionInput production{};
         production.surface_probe_node = &node;
-        production.projected_scalar = 1.0;
         auto external = compose_fun_007675f0_external_input(
             production,
             3.0,
@@ -98,7 +97,6 @@ int main() {
                      "production surface scalar was not derived from probe");
 
         ContactOuterSessionInput missing_node{};
-        missing_node.projected_scalar = 1.0;
         bool missing_node_rejected = false;
         try {
             (void)compose_fun_007675f0_external_input(missing_node, 3.0, 1.0);
@@ -130,6 +128,10 @@ int main() {
                      "legacy planar delta compatibility drift");
         require_near(compatibility_external.surface_scalar, 7.0, 0.0,
                      "legacy surface scalar compatibility drift");
+        require(compatibility_external.compatibility_projected_scalar_present,
+                "legacy projected scalar compatibility flag was lost");
+        require_near(compatibility_external.projected_scalar, 1.0, 0.0,
+                     "legacy projected scalar compatibility drift");
 
         std::cout
             << "{\"format\":\"" << kFun007675f0SurfaceProbeJoinFormat << "\","
@@ -140,7 +142,6 @@ int main() {
             << "\"planar_delta_internal\":true,"
             << "\"surface_scalar_internal\":true,"
             << "\"production_node_boundary_required\":true,"
-            << "\"remaining_production_fields\":5,"
             << "\"external_provider_count_reduced\":false}\n";
         return 0;
     } catch (const std::exception& exc) {
