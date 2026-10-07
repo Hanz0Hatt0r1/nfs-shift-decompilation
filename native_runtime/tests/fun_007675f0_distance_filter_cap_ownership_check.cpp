@@ -87,7 +87,10 @@ int main() {
 
         ContactOuterSessionInput production{};
         production.surface_probe_node = &production_node;
-        production.projected_scalar = 1.0;
+        // This Phase731 regression predates the Phase736 FUN_00759c90 record
+        // join, so retain its synthetic scalar only through compatibility.
+        production.compatibility_projected_scalar_present = true;
+        production.compatibility_projected_scalar = 1.0;
         const auto production_resolved = compose_fun_007675f0_external_input(
             production,
             3.0,
@@ -98,6 +101,8 @@ int main() {
                      "production payload altered setup-owned filter cap");
         require(!production_resolved.compatibility_body_owned_scalars_present,
                 "production payload unexpectedly carried compatibility body-owned scalars");
+        require(production_resolved.compatibility_projected_scalar_present,
+                "Phase731 fixture projected scalar lost its compatibility lane");
 
         std::cout
             << "{\"format\":\"" << kFun007675f0DistanceFilterCapOwnershipFormat << "\","
