@@ -1,0 +1,50 @@
+{
+  "format": "SHIFT.Process1Controller1ApcSourceInventory/1",
+  "ready": true,
+  "source": {
+    "authority": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "imported_completion_apc_surface": {
+    "imports": {
+      "SetWaitableTimer": "0x00aa6108",
+      "WriteFileEx": "0x00aa6234",
+      "ReadFileEx": "0x00aa6240",
+      "WSARecvFrom": "0x00aa64e8",
+      "WSARecv": "0x00aa64ec",
+      "WSAIoctl": "0x00aa6524"
+    },
+    "direct_apc_injection_imports_present": []
+  },
+  "ownership_join": {
+    "ReadFileEx": "Base File: Async Thread",
+    "WriteFileEx": "Base File: Async Thread",
+    "SetWaitableTimer": "completion routine NULL at both physical callsites",
+    "WSARecv": "completion routine NULL",
+    "WSARecvFrom": "completion routine NULL",
+    "WSAIoctl": "lpOverlapped NULL and completion routine NULL"
+  },
+  "controller1": {
+    "worker": "FUN_00662880",
+    "alertable_sleep": "SleepEx(10, TRUE)",
+    "concrete_imported_completion_source_joined_to_controller1": false,
+    "direct_named_manager_path_to_readfileex_or_writefileex": false
+  },
+  "adjudication": {
+    "known_imported_completion_apc_sources_accounted_for": true,
+    "known_imported_completion_apc_source_targets_controller1_proven": false,
+    "controller1_alertable_sleep_has_concrete_recovered_apc_wake_source_proven": false,
+    "indirect_or_native_apc_injection_ruled_out": false,
+    "render_or_present_phase_lock_proven": false
+  },
+  "prerequisites": {
+    "async_file": "SHIFT.Process1AsyncFileApcOwnership/1",
+    "timer_winsock": "SHIFT.Process1TimerWinsockApcSurface/1",
+    "manager_reachability": "SHIFT.Process1Controller1ManagerApcReachability/1"
+  },
+  "next_blocker": {
+    "process": 1,
+    "description": "resolve indirect/native APC injection or prove none is joined to Controller #1; in parallel classify generic queue producers by Controller #1 queue-object identity"
+  }
+}
