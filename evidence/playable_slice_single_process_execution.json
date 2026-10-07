@@ -34,11 +34,17 @@
     "selected_session_retail_execution_contract": "SHIFT.SelectedSessionRetailVehicleExecution/1",
     "selected_session_retail_execution_ready": true,
     "selected_session_normal_outer_substeps": 6,
-    "current_blocker_id": "missing-vehicle-physics-control-producer-provenance",
-    "current_blocker": "close the deepest missing source-backed vehicle-physics/control producer or owner boundary required by the nine-provider NativeVehicleProviderSession path; do not promote Phase 701 fixture callbacks into retail semantics",
-    "current_blocker_consumer": "positive producer/owner contract -> NativeVehicleExternalProviderBundle -> exact selected-session retail execution seam",
+    "fun_007682c0_delta_destination_contract": "SHIFT.Fun007682c0Body0DeltaDestination/1",
+    "fun_007682c0_delta_destination_ready": true,
+    "fun_007682c0_delta_application_internal": true,
+    "active_external_provider_count": 8,
+    "current_blocker_id": "fun-007682c0-effect-production-provenance",
+    "current_blocker": "close the next adjacent source/machine-backed FUN_007682c0 effect producer boundary: recover exact magnitude/x87 and complete FUN_007595d0 input production while preserving PC retail semantics; eight external provider boundaries remain",
+    "current_blocker_consumer": "positive FUN_007682c0 effect producer contract -> NativeVehicleExternalProviderBundle.motion_read_effect -> internal BODY0 +0x50 application -> exact selected-session retail execution",
     "runtime_capture_required": false,
-    "original_game_execution_required": false
+    "original_game_execution_required": false,
+    "pc_build_is_primary_authority": true,
+    "xbox_360_recomp_may_corroborate_or_accelerate_search": true
   },
   "positive_checkpoints": [
     "retail BMW chassis BODY 0 identity",
@@ -65,7 +71,8 @@
     "strict native RetailOuterSchedulerContract",
     "hash-locked selected-session PhysicsTweaker rate materialization infrastructure",
     "SHIFT.SelectedSessionPhysicsTweakerRate/1 exact PC selected-session rate 180 Hz",
-    "SHIFT.SelectedSessionRetailVehicleExecution/1 exact 1/180 persistent BODY inner execution"
+    "SHIFT.SelectedSessionRetailVehicleExecution/1 exact 1/180 persistent BODY inner execution",
+    "SHIFT.Fun007682c0Body0DeltaDestination/1 exact PC source destination and internal BODY0 +0x50 application"
   ],
   "positive_gates": {
     "outer_vehicle_root_to_VHF_relation_numeric_matrix_ready": true,
@@ -75,7 +82,9 @@
     "retail_outer_cadence_admitted": true,
     "retail_outer_authority_seam_ready": true,
     "loaded_inner_physics_rate_admitted": true,
-    "retail_inner_substep_execution_admitted": true
+    "retail_inner_substep_execution_admitted": true,
+    "fun_007682c0_body0_delta_destination_ready": true,
+    "fun_007682c0_body0_delta_application_internal": true
   },
   "false_gates": {
     "retail_provider_control_producers_complete": false,
@@ -110,7 +119,7 @@
     },
     {
       "id": "S6",
-      "task": "close deepest missing vehicle-physics/control producers",
+      "task": "close deepest missing vehicle-physics/control producers; FUN_007682c0 BODY0 +0x50 destination is positive, next close FUN_007682c0 effect production and then the remaining seven provider boundaries",
       "state": "current"
     },
     {
@@ -136,7 +145,9 @@
     "historical_process_named_contracts_define_active_ownership": false,
     "unsupported_gate_promotion_allowed": false,
     "host_1_60_may_satisfy_retail_cadence": false,
-    "missing_numeric_values_may_be_guessed": false
+    "missing_numeric_values_may_be_guessed": false,
+    "pc_build_primary_authority": true,
+    "xbox_360_recomp_may_replace_pc_proof": false
   },
   "work_selection": {
     "primary": "current shortest blocker",
