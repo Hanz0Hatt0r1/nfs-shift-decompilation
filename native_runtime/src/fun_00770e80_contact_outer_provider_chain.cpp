@@ -1,5 +1,7 @@
 #include "shift_fun_00770e80_contact_outer_provider_chain.hpp"
 
+#include "shift_fun_00769ef0_param3.hpp"
+
 #include <memory>
 #include <stdexcept>
 #include <utility>
@@ -13,9 +15,11 @@ struct ContactOuterPassState {
     std::size_t distance_state_commit_count = 0u;
     bool body_motion_present = false;
     bool body_probe_position_present = false;
+    bool body_field_120_present = false;
     bool result_present = false;
     Fun007675f0BodyMotion body_motion{};
     SurfaceProbeVector3d body_probe_position{};
+    double body_field_120 = 0.0;
     ContactOuterKernelResult result{};
 };
 
@@ -75,9 +79,10 @@ execute_fun_00770e80_contact_outer_provider_chain(
             adapted.post_pass_body_mutator =
                 std::move(typed.post_pass_body_mutator);
 
-            // PC FUN_007675f0 consumes current BODY0 position for FUN_00759210
-            // and BODY0 +0x78/+0x88 for its speed gate. Observe both immediately
-            // before the anchor sequence so pass 1 sees pass 0's half-step BODY.
+            // Current BODY0 is published before any per-pass anchor. Besides the
+            // already-owned motion/query position, FUN_00769ef0 also reads BODY0
+            // +0x120 before calling FUN_007675f0. Capture the same pass-local
+            // persistent value so pass 1 observes pass 0's half-step result.
             adapted.current_body_observer =
                 [state](const std::vector<std::uint8_t>& current_body_bytes) {
                     state->body_motion =
@@ -85,8 +90,11 @@ execute_fun_00770e80_contact_outer_provider_chain(
                     state->body_probe_position =
                         derive_fun_007675f0_body0_probe_query_position(
                             current_body_bytes);
+                    state->body_field_120 =
+                        derive_fun_00769ef0_body0_field_120(current_body_bytes);
                     state->body_motion_present = true;
                     state->body_probe_position_present = true;
+                    state->body_field_120_present = true;
                 };
 
             auto contact_outer_input_provider =
@@ -98,10 +106,8 @@ execute_fun_00770e80_contact_outer_provider_chain(
                  contact_outer_input_provider = std::move(contact_outer_input_provider),
                  distance_state_commit = std::move(distance_state_commit)]() mutable {
                     if (!state->body_motion_present ||
-                        !state->body_probe_position_present) {
-                        // Preserve the Phase 729 diagnostic token consumed by
-                        // historical ownership regressions. Phase 732 extends
-                        // the same guard to require the BODY0 probe position.
+                        !state->body_probe_position_present ||
+                        !state->body_field_120_present) {
                         throw std::logic_error(
                             "FUN_007675f0 executed before current BODY0 motion ownership bridge");
                     }
@@ -111,6 +117,17 @@ execute_fun_00770e80_contact_outer_provider_chain(
                     external = resolve_fun_007675f0_surface_probe_outputs(
                         external,
                         state->body_probe_position);
+
+                    // Production receives the exact earlier FUN_00765c40 terms.
+                    // Historical lower-chain fixtures omit them and retain their
+                    // explicit legacy param_3 value.
+                    if (external.fun_00769ef0_param_3_load_terms_present) {
+                        external.param_3 = static_cast<double>(
+                            execute_fun_00769ef0_param_3(
+                                external.fun_00769ef0_param_3_load_terms,
+                                state->body_field_120).param_3);
+                    }
+
                     const ContactOuterKernelInput input =
                         compose_fun_007675f0_input(external, state->body_motion);
                     state->result =
@@ -135,6 +152,7 @@ execute_fun_00770e80_contact_outer_provider_chain(
         if (!state ||
             !state->body_motion_present ||
             !state->body_probe_position_present ||
+            !state->body_field_120_present ||
             state->input_provider_call_count != 1u ||
             state->native_call_count != 1u ||
             !state->result_present) {

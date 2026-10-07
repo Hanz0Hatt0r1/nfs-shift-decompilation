@@ -1,4 +1,5 @@
 #include "fun_00770e80_outer_update_fixture.hpp"
+#include "shift_fun_00769ef0_param3.hpp"
 #include "shift_native_vehicle_provider_session.hpp"
 
 #include <cstdint>
@@ -47,7 +48,12 @@ int main() {
         const auto solver_topology = make_solver_topology(source, relations);
         const auto reset_state = make_reset_state();
         const auto machine_input = make_machine_input();
-        const auto initial_body_bytes = make_raw_bodies(projection.bodies);
+        auto initial_body_bytes = make_raw_bodies(projection.bodies);
+        // The generic raw-BODY fixture intentionally fills untyped bytes with a
+        // marker pattern. Phase 734 now consumes BODY0+0x120 in production, so
+        // make this session fixture source-valid instead of interpreting the
+        // marker bytes as an extreme finite f64 denominator.
+        put_f64(initial_body_bytes, kFun00769ef0Body0Field120Offset, 1.0);
 
         NativeRuntimeState runtime{};
         configure_runtime(runtime, initial_body_bytes);

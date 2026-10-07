@@ -117,7 +117,8 @@ int main() {
                     per_pass.base_scalar = 4.0;
                     per_pass.projected_scalar = 1.0;
                     per_pass.alignment_scalar = 0.5;
-                    per_pass.param_3 = 2.0;
+                    per_pass.compatibility_param_3_present = true;
+                    per_pass.compatibility_param_3 = 2.0;
                     // Phase 730 predates the source-backed FUN_00759210 join;
                     // keep its synthetic planar/surface values explicitly in
                     // the compatibility-only fixture lane.

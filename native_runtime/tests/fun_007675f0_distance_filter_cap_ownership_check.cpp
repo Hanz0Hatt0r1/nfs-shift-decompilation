@@ -90,7 +90,6 @@ int main() {
         production.base_scalar = 4.0;
         production.projected_scalar = 1.0;
         production.alignment_scalar = 0.5;
-        production.param_3 = 2.0;
         const auto production_resolved = compose_fun_007675f0_external_input(
             production,
             3.0,

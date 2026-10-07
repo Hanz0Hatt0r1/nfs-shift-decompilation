@@ -122,9 +122,6 @@ SurfaceProbeVector3d derive_fun_007675f0_body0_probe_query_position(
             "FUN_007675f0 BODY probe position requires exact 0x170-byte BODY records");
     }
 
-    // PC FUN_007675f0 loads BODY0 +0/+8/+0x10 as f64 and explicitly spills
-    // each coordinate to f32 before passing it to FUN_00759210. Xbox retail
-    // mirrors the same f64 -> f32 conversion before its corresponding call.
     return {
         spill_f32(
             read_f64_le(
@@ -158,8 +155,6 @@ Fun007675f0SurfaceProbeJoinResult execute_fun_007675f0_surface_probe_join(
     result.body_query_position = body_query_position;
     result.probe = execute_fun_00759210_surface_probe(body_query_position, node);
 
-    // FUN_00759210 writes both outputs through float32 storage. FUN_007675f0
-    // then subtracts the float32 BODY query point from the returned point.
     for (std::size_t axis = 0u; axis < result.planar_delta.size(); ++axis) {
         const float returned = static_cast<float>(result.probe.point[axis]);
         const float body = static_cast<float>(body_query_position[axis]);
@@ -179,7 +174,6 @@ ContactOuterExternalInput resolve_fun_007675f0_surface_probe_outputs(
     const ContactOuterExternalInput& external,
     const SurfaceProbeVector3d& body_query_position) {
     if (external.surface_probe_node == nullptr) {
-        // Historical lower-chain inputs already contain the two derived values.
         return external;
     }
 
@@ -215,13 +209,15 @@ ContactOuterExternalInput compose_fun_007675f0_external_input(
     external.base_scalar = session_input.base_scalar;
     external.projected_scalar = session_input.projected_scalar;
     external.alignment_scalar = session_input.alignment_scalar;
-    external.param_3 = session_input.param_3;
     external.surface_probe_node = session_input.surface_probe_node;
 
     if (session_input.compatibility_surface_probe_outputs_present &&
         session_input.surface_probe_node == nullptr) {
         external.planar_delta = session_input.compatibility_planar_delta;
         external.surface_scalar = session_input.compatibility_surface_scalar;
+    }
+    if (session_input.compatibility_param_3_present) {
+        external.param_3 = session_input.compatibility_param_3;
     }
     return external;
 }

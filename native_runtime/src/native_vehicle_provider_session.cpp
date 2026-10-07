@@ -160,7 +160,11 @@ NativeVehicleProviderSession::execute_explicit_step(
                 providers_.contact_response(pass_index);
             };
             callbacks.contact_outer_input_provider =
-                [this, &telemetry, pass_index] {
+                [this, &telemetry, pass_index, load_state] {
+                    if (!load_state->ready) {
+                        throw std::logic_error(
+                            "FUN_007675f0 param_3 requested before FUN_00765c40 load terms");
+                    }
                     ++telemetry.contact_outer_input_call_count;
                     const auto session_input = providers_.contact_outer_input(pass_index);
 
@@ -198,10 +202,13 @@ NativeVehicleProviderSession::execute_explicit_step(
                             providers_.contact_outer_filter_cap_setup);
                     }
 
-                    return physics::compose_fun_007675f0_external_input(
+                    auto external = physics::compose_fun_007675f0_external_input(
                         session_input,
                         contact_outer_distance_state_,
                         providers_.contact_outer_filter_cap_setup.distance_filter_cap);
+                    external.fun_00769ef0_param_3_load_terms = load_state->terms;
+                    external.fun_00769ef0_param_3_load_terms_present = true;
+                    return external;
                 };
             callbacks.contact_outer_distance_state_commit =
                 [this, &telemetry](double next_state) {
