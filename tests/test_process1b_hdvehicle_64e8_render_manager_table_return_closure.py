@@ -37,7 +37,7 @@ def test_exact_four_dispatches_ignore_conditional_eax_residue():
     assert surface["function"] == "FUN_006f28c0"
     assert surface["mnemonic_sha256"] == "0dd380adcd034da39100d2bc4206b80b986d7c4e4003f81cd7a4857627b7357f"
     calls = surface["calls"]
-    assert [(c["callsite"], c["slot_offset"], c["target"]) for c in calls] == [
+    assert [(c["callsite"].split()[0], c["slot_offset"], c["target"]) for c in calls] == [
         ("0x006f2933", "+0xe4", "FUN_004b73c0"),
         ("0x006f29aa", "+0xe4", "FUN_004b73c0"),
         ("0x006f2a35", "+0xe0", "FUN_004b7350"),
