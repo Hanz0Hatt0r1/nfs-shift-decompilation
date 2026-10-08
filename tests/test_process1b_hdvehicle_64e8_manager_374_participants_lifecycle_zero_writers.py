@@ -63,6 +63,6 @@ def test_coordination_advances_participants_surface_to_zero_only():
     assert node["status"] == "participants-lifecycle-zero-writers-proven-other-indirect-open"
     assert node["manager_plus_0x20_lifecycle_target_reaches_0x374"] is True
     assert node["manager_plus_0x20_lifecycle_target_writes_zero_only"] is True
-    assert "FUN_004871f0" in node["participants_lifecycle_zero_writers"]
-    assert "FUN_00488970" in node["participants_lifecycle_zero_writers"]
+    assert any(item.startswith("FUN_004871f0 ") for item in node["participants_lifecycle_zero_writers"])
+    assert any(item.startswith("FUN_00488970 ") for item in node["participants_lifecycle_zero_writers"])
     assert "computed" in node["next"].lower()
