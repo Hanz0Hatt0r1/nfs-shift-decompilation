@@ -1,0 +1,82 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374BulkCopyCameraRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact callsite ownership joined to an existing source-order CCameraView runtime boundary"
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8Manager374BulkCopyParticipantRejection/1",
+    "SHIFT.HDVehicle64e8ManagerDirectSetterFrontier/1",
+    "SHIFT.CameraViewUpdatePipelineRuntime/1"
+  ],
+  "navigation": {
+    "ghidra_callsite": {
+      "caller": "FUN_0081d2b0",
+      "callsite": "0x0081d335",
+      "callee": "FUN_00481e20",
+      "kind": "direct"
+    },
+    "ghidra_vtable_candidate": {
+      "address": "0x00b16408",
+      "slot_count": 7,
+      "slot": 6,
+      "target": "FUN_0081d2b0",
+      "admissibility": "navigation-only"
+    }
+  },
+  "camera_view_owner": {
+    "function": "FUN_0081d2b0",
+    "existing_runtime_format": "SHIFT.CameraViewUpdatePipelineRuntime/1",
+    "existing_runtime_domain": "CCameraView per-frame update",
+    "existing_runtime_copy": {
+      "action": "FUN_00481e20",
+      "target": "+0x2d0",
+      "source": "service object for +0xc0"
+    },
+    "existing_runtime_evidence_fields": {
+      "camera_manager": "+0x44",
+      "motion_target": "+0x2d0",
+      "velocity_state": "+0x2e0..+0x2f4"
+    }
+  },
+  "manager_domain": {
+    "manager_getter": "FUN_00489ad0",
+    "manager_singleton_address": "0x00bc9fc0",
+    "manager_constructor": "FUN_00488dc0",
+    "manager_vtable": "0x00ab9190",
+    "manager_vtable_target_count": 17,
+    "fun_0081d2b0_is_manager_vtable_target": false
+  },
+  "bulk_copy_surface": {
+    "function": "FUN_00481e20",
+    "literal_store": "0x004826a6 fstp dword [ESI+0x374]",
+    "rejected_direct_destinations": [
+      "FUN_0070dcc0 direct-call surface -> stack-local destinations",
+      "0x004848f5 -> SMS participant+0xa00 render snapshot",
+      "0x0081d335 -> CCameraView+0x2d0 motion-target state"
+    ],
+    "remaining_direct_embedded_subobject_callsites": [],
+    "direct_bulk_copy_literal_writer_surface_complete": true
+  },
+  "adjudication": {
+    "callsite_0x0081d335_rejected_as_manager_root": true,
+    "fun_00481e20_direct_bulk_copy_surface_closed": true,
+    "manager_374_literal_writer_surface_complete": true,
+    "helper_alias_or_non_vtable_indirect_setter_still_possible": true,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The Ghidra vtable candidate is navigation evidence only; the rejection relies on the already-existing source-order CCameraView boundary plus the separately proven manager singleton/vtable domain.",
+    "Closing the direct FUN_00481e20 bulk-copy surface does not reject escaped aliases, helper-mediated stores, non-vtable function pointers, computed offsets, or other indirect mutations of manager+0x374.",
+    "No new camera-follow semantics are claimed; Process 1D retains ownership of P1.4.",
+    "No HDVehicle/control identity is inferred from numeric offsets."
+  ],
+  "next_step": "Continue P1.3.manager374 through helper-mediated, escaped-alias and non-vtable indirect mutations of the exact FUN_00489ad0 singleton. Do not repeat the now-closed direct FUN_00481e20 bulk-copy literal-writer surface unless new evidence expands its caller set."
+}
