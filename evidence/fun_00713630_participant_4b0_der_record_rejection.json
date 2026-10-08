@@ -1,0 +1,61 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0DerRecordRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "pc_decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630Participant4b0NestedCopyRejection/1"
+  ],
+  "candidate": {
+    "site": "0x00607f22",
+    "function": "FUN_006075f0",
+    "operation": "store uint32 length at receiver+0x4b0",
+    "selected_physics_participant_writer": false
+  },
+  "receiver_record": {
+    "function_signature": "FUN_006075f0(undefined1 *param_1,int param_2,size_t param_3)",
+    "initialization": "memset(param_1,0,0x5e0)",
+    "candidate_field": "param_1+0x4b0 = blob length",
+    "candidate_payload": "memcpy(param_1+0x4b4, source, length)",
+    "second_blob_length": "param_1+0x5b4",
+    "second_blob_payload": "param_1+0x5b8",
+    "digest_length": "param_1+0x5c8",
+    "digest_payload": "param_1+0x5cc"
+  },
+  "caller_join": {
+    "source_caller": "FUN_00608720",
+    "call_expression": "FUN_006075f0((undefined1 *)(iVar2 + 0x410),(int)(in_EAX + 6),uVar3)",
+    "receiver_is_nested_at_outer_offset": "0x410",
+    "candidate_storage_in_outer": "outer+0x8c0",
+    "payload_storage_in_outer": "outer+0x8c4",
+    "independent_consumer": "FUN_006087c0 reads outer+0x8c0 length and outer+0x8c4 payload"
+  },
+  "source_fingerprints": {
+    "fun_006075f0_lines": "463907+",
+    "fun_006075f0_sha256": "6401ea922e4bbb7666b1fc09e4c1d9ae25fdc444ef3b7cfbb62eef4b4c54e684",
+    "fun_00608720_sha256": "46cb13f19c76a38862096fb923e869fa6fa1006475de51e6253557b87028e69f",
+    "fun_006087c0_sha256": "6efe7b55700bb6d66f2538939f3a158cdec532c98879849ff8b6174f2ca6c84c"
+  },
+  "adjudication": {
+    "candidate_receiver_domain_closed": true,
+    "candidate_is_nested_der_record": true,
+    "candidate_is_selected_physics_participant": false,
+    "direct_displacement_site_rejected": true,
+    "remaining_unjoined_direct_site_count": 1,
+    "selected_participant_runtime_plus_0x4b0_writer_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The DER/ASN.1 label is descriptive only; rejection depends on the exact nested receiver join and field/payload geometry.",
+    "This closes only 0x00607f22. The remaining direct site 0x0076019f and computed/alias/indirect/residual-bulk paths remain open."
+  ],
+  "next_step": "Adjudicate the final direct-displacement site 0x0076019f by exact enclosing-function and receiver provenance."
+}
