@@ -1,0 +1,76 @@
+{
+  "format": "SHIFT.Fun00713630UpstreamDirectSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "ghidra_role": "navigation-only"
+  },
+  "cadence_chain": {
+    "caller": "FUN_00715380",
+    "caller_callsite": "0x0071557d",
+    "cadence_function": "FUN_007144a0",
+    "cadence_counter": "receiver+0x158",
+    "condition": "signed remainder by 3 equals zero",
+    "writer_callsite": "0x007144bd",
+    "writer": "FUN_00713630",
+    "receiver_preserved": true,
+    "machine_span_sha256": "ccc913a887e5478077e87f26b1eb2395f1f2fbb4ed9988963e28352a6ffab298"
+  },
+  "writer_inputs": {
+    "participant_array": "receiver+0x140",
+    "participant_count": "receiver+0x144",
+    "participant_stride": "0x1fa0",
+    "active_byte": "+0x4e",
+    "sample_history_base": "+0x2b10",
+    "participant_scalar": "+0x4b0",
+    "participant_scalar_read": "0x007136e4 fld dword [edx+0x4b0]"
+  },
+  "config_globals": [
+    {"address":"0x00c12ee0","reader":"0x007129c6","literal_occurrences_in_image":1,"direct_literal_writer_found":false},
+    {"address":"0x00c12ee4","reader":"0x007129e3","literal_occurrences_in_image":1,"direct_literal_writer_found":false},
+    {"address":"0x00c12ee8","reader":"0x00712a24","literal_occurrences_in_image":1,"direct_literal_writer_found":false},
+    {"address":"0x00c12eec","reader":"0x0071369d","literal_occurrences_in_image":1,"direct_literal_writer_found":false},
+    {"address":"0x00c12ef0","reader":"0x00713680","literal_occurrences_in_image":1,"direct_literal_writer_found":false},
+    {"address":"0x00c12ef4","reader":"0x00713693","literal_occurrences_in_image":1,"direct_literal_writer_found":false},
+    {"address":"0x00c12f04","reader":"0x007136d5","literal_occurrences_in_image":1,"direct_literal_writer_found":false}
+  ],
+  "sample_history_writer": {
+    "function": "FUN_00727870",
+    "machine_sha256": "65af14d835dacb7e67de9a59f3768a73b4c3af6db58cf1c8d456c2e514683bf2",
+    "direct_callers": [
+      {"function":"FUN_0073e360","callsite":"0x0073f293","receiver":"ECX=EBX"},
+      {"function":"FUN_007473b0","callsite":"0x0074752c","receiver":"ECX=ESI"}
+    ],
+    "direct_caller_count": 2,
+    "positive_lane_shift": "+0x2b10/+0x2b14/+0x2b18 -> +0x2b1c/+0x2b20/+0x2b24 -> +0x2b28/+0x2b2c/+0x2b30",
+    "new_sample_destination": "+0x2b10/+0x2b14/+0x2b18",
+    "selected_participant_root_join_complete": false
+  },
+  "participant_scalar_candidate": {
+    "candidate_function": "FUN_00748280",
+    "candidate_store": "0x00748956 fstp dword [esi+0x4b0]",
+    "source_global": "0x00b078d4",
+    "machine_span_sha256": "3a093cb90c6132d30cfc0b21169a78b7d0489210be4ee2214fcf3a75f27e06eb",
+    "same_object_identity_as_FUN_00713630_participant_proven": false
+  },
+  "adjudication": {
+    "cadence_machine_chain_closed": true,
+    "seven_direct_literal_read_sites_closed": true,
+    "config_global_owner_or_alias_writer_closed": false,
+    "sample_writer_direct_call_surface_closed": true,
+    "sample_writer_selected_participant_scheduling_closed": false,
+    "participant_plus_0x4b0_owner_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Absence of direct literal stores does not exclude computed-address, alias, loader, relocation, or bulk materialization of the config globals.",
+    "The +0x4b0 candidate is not promoted by numeric offset equality; exact object identity is still required.",
+    "The two direct FUN_00727870 callsites bound the direct surface but do not yet prove selected-session participant ownership."
+  ],
+  "next_step": "Root both FUN_00727870 receiver paths to the selected participant domain; resolve computed/alias materialization of the seven config globals; join or reject FUN_00748280+0x4b0 against the participant consumed by FUN_00713630."
+}
