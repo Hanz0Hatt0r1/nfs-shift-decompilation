@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -93,6 +94,9 @@ def test_exact_ready_frontier_admits_continuous_silverstone_bmw_target(tmp_path)
     assert report["track"] == "Silverstone_Era3_GrandPrix"
     assert report["vehicle"] == "BMW_M3_E36"
     assert report["mode"] == "interactive-continuous"
+    assert report["coordination_sha256"] == hashlib.sha256(coordination.read_bytes()).hexdigest()
+    assert report["boundary"]["coordination_bytes_bound_to_preflight"] is True
+    assert report["boundary"]["coordination_must_remain_stable_before_runtime"] is True
     assert forwarded == _argv(tmp_path)
 
 
@@ -151,8 +155,35 @@ def test_ready_preflight_delegates_to_production_execution_wrapper(tmp_path, mon
     assert captured["args"] == _argv(tmp_path)
     assert report["preflight"]["ready"] is True
     assert report["execution"]["status"] == "completed"
+    assert report["boundary"]["coordination_stability_checked_before_runtime"] is True
     assert report["boundary"]["test_only_core_vehicle_transform_allowed"] is False
     assert report["boundary"]["retail_game_loop_claimed"] is False
+
+
+def test_coordination_mutation_after_preflight_blocks_runtime(tmp_path, monkeypatch):
+    coordination = _coordination(
+        tmp_path / "coordination.json",
+        control=True,
+        camera=True,
+    )
+    original_build = MODULE.build_final_smoke_preflight
+
+    def mutating_build(*args, **kwargs):
+        report, forwarded = original_build(*args, **kwargs)
+        _coordination(coordination, control=False, camera=True)
+        return report, forwarded
+
+    monkeypatch.setattr(MODULE, "build_final_smoke_preflight", mutating_build)
+    monkeypatch.setattr(
+        MODULE.execution,
+        "execute_playable_pipeline_slice",
+        lambda args: pytest.fail("runtime must not be invoked after coordination mutation"),
+    )
+    with pytest.raises(MODULE.FinalSmokeError, match="coordination changed after final smoke preflight"):
+        MODULE.execute_final_smoke(
+            _argv(tmp_path),
+            coordination_path=coordination,
+        )
 
 
 def test_blocked_preflight_never_invokes_runtime_execution(tmp_path, monkeypatch):
