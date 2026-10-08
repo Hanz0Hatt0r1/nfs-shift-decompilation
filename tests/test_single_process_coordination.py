@@ -27,6 +27,8 @@ def test_three_process_execution_contract_is_active_and_current() -> None:
     assert frontier["vehicle_world_transform_ready"] is True
     assert frontier["retail_inner_substep_execution_admitted"] is True
     assert frontier["fun_00765c40_selected_collision_output_typed"] is True
+    assert frontier["fun_00765c40_p1_ownership_complete"] is True
+    assert frontier["fun_00765c40_p2_4_handoff_ready"] is True
     assert frontier["fun_00766510_primary_response_application_native"] is True
     assert frontier["fun_00766510_application_point_owner_ready"] is True
     assert frontier["fun_00766510_primary_caller_accumulator_delta_native"] is True
@@ -62,13 +64,20 @@ def test_process_queues_are_separate_and_dependency_routed() -> None:
     assert p1["queue"][0]["state"] == "current"
     assert p1["queue"][0]["contract"] == "SHIFT.Fun00766510ResidualOwnershipFrontier/1"
     assert "all four direct FUN_00753650" in p1["queue"][0]["task"]
+    assert p1["queue"][1]["state"] == "complete"
+    assert p1["queue"][1]["contract"] == "SHIFT.Fun00765c40ResidualOwnershipFrontier/1"
+    assert "0x00c133ac/vtable+0x1c0" in p1["queue"][1]["task"]
     assert p2["queue"][0]["state"] == "complete"
     assert p2["queue"][1]["state"] == "complete"
     assert p2["queue"][2]["state"] == "current-blocked-on-process-1"
     assert "Phase749" in p2["queue"][2]["task"]
+    assert p2["queue"][3]["state"] == "ready-to-consume"
+    assert "P1.2" in p2["queue"][3]["depends_on"]
+    assert "0x00c133ac/vtable+0x1c0" in p2["queue"][3]["task"]
     assert p3["queue"][0]["state"] == "current"
     assert "P1.1" in p2["queue"][2]["depends_on"]
     assert p1["queue"][0]["consumer"] == "Process 2 P2.3"
+    assert p1["queue"][1]["consumer"] == "Process 2 P2.4"
 
 
 def test_provider_frontier_targets_first_real_boundary_reduction() -> None:

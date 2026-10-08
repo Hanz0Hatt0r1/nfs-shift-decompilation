@@ -16,6 +16,8 @@
     "retail_outer_cadence_admitted": true,
     "retail_inner_substep_execution_admitted": true,
     "fun_00765c40_selected_collision_output_typed": true,
+    "fun_00765c40_p1_ownership_complete": true,
+    "fun_00765c40_p2_4_handoff_ready": true,
     "fun_00766510_primary_response_application_native": true,
     "fun_00766510_application_point_owner_ready": true,
     "fun_00766510_primary_caller_accumulator_delta_native": true,
@@ -46,8 +48,9 @@
         },
         {
           "id": "P1.2",
-          "state": "ready-parallel",
-          "task": "Identify/prove collision-provider object/call below FUN_007b0710, four wheel +0x738 load-term ownership, and remaining FUN_00765c40 side effects",
+          "state": "complete",
+          "task": "Completed PC-retail ownership proof for FUN_00765c40: query ABI, +0x738 load terms, direct writes, all callee-mediated object side effects, and explicit lower 0x00c133ac/vtable+0x1c0 scene-query boundary are closed for Process 2 consumption.",
+          "contract": "SHIFT.Fun00765c40ResidualOwnershipFrontier/1",
           "consumer": "Process 2 P2.4"
         },
         {
@@ -88,8 +91,8 @@
         },
         {
           "id": "P2.4",
-          "state": "blocked-on-process-1",
-          "task": "Consume P1.2 collision/load-term proofs and narrow/remove residual FUN_00765c40 without guessed collision semantics",
+          "state": "ready-to-consume",
+          "task": "Consume completed P1.2 FUN_00765c40 ownership handoff and internalize the residual pass in exact retail order while preserving 0x00c133ac/vtable+0x1c0 as an explicit typed external scene-query boundary. Change provider count only when the runtime boundary is actually removed.",
           "depends_on": ["P1.2"]
         },
         {
