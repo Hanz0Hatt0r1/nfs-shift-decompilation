@@ -27,6 +27,10 @@ def test_p2_4_overlay_currentizes_fun_00765c40_without_rewriting_history() -> No
     assert fun["provider_removed"] is False
     assert fun["external_pass_result_contract"] == "SHIFT.Fun00765c40ExternalPassResult/5"
     assert fun["historical_collision_output_result_contract"] == "SHIFT.Fun00765c40ExternalPassResult/4"
+    assert fun["composed_residual_executor_contract"] == "SHIFT.Fun00765c40ComposedResidualExecutor/2"
+    assert fun["historical_composed_residual_executor_contract"] == "SHIFT.Fun00765c40ComposedResidualExecutor/1"
+    assert fun["composed_persistent_interpolation_native"] is True
+    assert fun["composed_legacy_interpolation_result_authoritative"] is False
     assert fun["residual_producer_handoff_contract"] == "SHIFT.Fun00765c40ResidualProducerHandoff/2"
     assert fun["historical_residual_producer_handoff_contract"] == "SHIFT.Fun00765c40ResidualProducerHandoff/1"
     assert fun["residual_producer_promotion_gate_contract"] == "SHIFT.Fun00765c40ResidualProducerPromotionGate/1"
@@ -95,6 +99,9 @@ def test_overlay_matches_active_runtime_contracts() -> None:
     assert '"qword_argument_source": "HDVehicle+0x98"' in wheel_state_evidence
     assert "std::uint64_t wheel_state_source_bits = 0u" in composed_header
     assert "fun_00765c40_residual_producer_family_is_present" in composed_header
+    assert "execute_fun_007584f0_interpolation_native" in composed_header
+    assert "persistent_write_interpolation_arguments" in composed_header
+    assert "inputs.persistent_write.interpolation_result" not in composed_header
     assert "materialize_fun_00765c40_session_query_snapshot" in session_source
     assert "query_inputs[pass_index] = session_query_input" in session_source
     assert "fun_00765c40_residual_producer_handoffs" in session_header
@@ -105,6 +112,7 @@ def test_overlay_matches_active_runtime_contracts() -> None:
     assert "execute_fun_00765c40_composed_residual_pass" not in session_source
     assert "apply_proven_fun_00765c40_residual_producer_handoff" not in session_source
     assert p2_4.COMPOSED_RESIDUAL_EXECUTOR_FORMAT in composed
+    assert p2_4.COMPOSED_RESIDUAL_EXECUTOR_FORMAT in composed_header
     assert '"complete_FUN_00765c40_internalized": false' in composed
     assert '"external_provider_count_after": 7' in composed
 
@@ -114,6 +122,10 @@ def test_contract_is_fail_closed_on_remaining_producers() -> None:
     assert payload["external_provider_count"] == 7
     assert payload["external_pass_result_contract"] == "SHIFT.Fun00765c40ExternalPassResult/5"
     assert payload["historical_collision_output_result_contract"] == "SHIFT.Fun00765c40ExternalPassResult/4"
+    assert payload["composed_residual_executor_contract"] == "SHIFT.Fun00765c40ComposedResidualExecutor/2"
+    assert payload["historical_composed_residual_executor_contract"] == "SHIFT.Fun00765c40ComposedResidualExecutor/1"
+    assert payload["composed_persistent_interpolation_native"] is True
+    assert payload["composed_legacy_interpolation_result_authoritative"] is False
     assert payload["residual_producer_handoff_contract"] == "SHIFT.Fun00765c40ResidualProducerHandoff/2"
     assert payload["historical_residual_producer_handoff_contract"] == "SHIFT.Fun00765c40ResidualProducerHandoff/1"
     assert payload["residual_producer_promotion_gate_contract"] == "SHIFT.Fun00765c40ResidualProducerPromotionGate/1"

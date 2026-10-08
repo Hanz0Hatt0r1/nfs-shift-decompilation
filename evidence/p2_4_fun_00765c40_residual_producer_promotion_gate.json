@@ -4,7 +4,7 @@
   "lane": "Process 2 / P2-runtime",
   "dependencies": {
     "producer_handoff": "SHIFT.Fun00765c40ResidualProducerHandoff/2",
-    "composed_executor": "SHIFT.Fun00765c40ComposedResidualExecutor/1"
+    "composed_executor": "SHIFT.Fun00765c40ComposedResidualExecutor/2"
   },
   "proof_mask": {
     "family_count": 8,
@@ -33,5 +33,5 @@
     "complete_FUN_00765c40_internalized": false,
     "top_level_provider_removed": false
   },
-  "next_step": "When Process 1 closes one producer/owner proof, set only that proof bit and compare the captured /2 family with independent native reconstruction before any session wiring."
+  "next_step": "When one producer/owner family is completely source-backed, set only that proof bit and compare the captured /2 family with independent native reconstruction before any session wiring."
 }

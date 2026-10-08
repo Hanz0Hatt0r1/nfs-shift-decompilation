@@ -14,7 +14,7 @@ def test_promotion_gate_evidence_is_fail_closed() -> None:
     assert payload["format"] == "SHIFT.Fun00765c40ResidualProducerPromotionGate/1"
     assert payload["ready"] is True
     assert payload["dependencies"]["producer_handoff"] == "SHIFT.Fun00765c40ResidualProducerHandoff/2"
-    assert payload["dependencies"]["composed_executor"] == "SHIFT.Fun00765c40ComposedResidualExecutor/1"
+    assert payload["dependencies"]["composed_executor"] == "SHIFT.Fun00765c40ComposedResidualExecutor/2"
     mask = payload["proof_mask"]
     assert mask["family_count"] == 8
     assert mask["default"] == "all false"

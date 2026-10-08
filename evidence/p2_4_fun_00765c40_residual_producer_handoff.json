@@ -2,7 +2,7 @@
   "format": "SHIFT.Fun00765c40ResidualProducerHandoff/2",
   "ready": true,
   "extends_historical_format": "SHIFT.Fun00765c40ResidualProducerHandoff/1",
-  "consumer": "SHIFT.Fun00765c40ComposedResidualExecutor/1",
+  "consumer": "SHIFT.Fun00765c40ComposedResidualExecutor/2",
   "payload_family_count": 8,
   "payload_families": [
     "wheel_plane",
@@ -41,5 +41,5 @@
     "complete_FUN_00765c40_internalized": false,
     "external_provider_count_after": 7
   },
-  "next_step": "Promote individual producer families as Process 1 proves them. Use /2 explicit presence so a proven family can feed the composed executor without default-overwriting unresolved families."
+  "next_step": "Promote individual producer families as Process 1 proves them. Use /2 explicit presence so a proven family can feed the active composed executor without default-overwriting unresolved families."
 }

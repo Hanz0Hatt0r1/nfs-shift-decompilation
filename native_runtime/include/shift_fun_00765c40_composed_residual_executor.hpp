@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shift_fun_007584f0_interpolation_call_seam.hpp"
 #include "shift_fun_007584f0_persistent_write_stage.hpp"
 #include "shift_fun_00765c40_bounded_state_tail.hpp"
 #include "shift_fun_00765c40_contact_array_sweep_stage.hpp"
@@ -22,7 +23,7 @@
 namespace shift::runtime::physics {
 
 inline constexpr const char* kFun00765c40ComposedResidualExecutorFormat =
-    "SHIFT.Fun00765c40ComposedResidualExecutor/1";
+    "SHIFT.Fun00765c40ComposedResidualExecutor/2";
 
 struct Fun00765c40ComposedResidualInputs {
     Fun00765c40WheelPlaneRefreshComputedInputs wheel_plane{};
@@ -31,7 +32,13 @@ struct Fun00765c40ComposedResidualInputs {
     std::uint64_t wheel_state_source_bits = 0u;
     Fun00765c40WheelJobQueueExecutor execute_wheel_job_queue{};
     Fun00765c40LoadTermReader read_load_term{};
+    // Only positive_branch_values remain externally produced here. The legacy
+    // interpolation_result member is retained inside Fun007584f0ComputedInputs
+    // for compatibility with the /2 producer handoff, but the composed path
+    // deliberately ignores it and reconstructs +0x3420 from the proven native
+    // FUN_00783a30 formula below.
     Fun007584f0ComputedInputs persistent_write{};
+    Fun007584f0InterpolationArguments persistent_write_interpolation_arguments{};
     Fun00765c40WheelPairComputedInputs wheel_pair{};
     Fun00765c40ContactArrayComputedInputs contact_array{};
     BodyAccumulatorState initial_body{};
@@ -45,6 +52,10 @@ struct Fun00765c40ComposedResidualInputs {
 // lower scene-query behavior and persistent initial BODY accumulator remain
 // with the caller. Historical /1 handoffs have no explicit presence mode and
 // therefore continue to copy all eight families exactly as before.
+//
+// For PersistentWrite, the copied interpolation_result is compatibility data
+// only. execute_fun_00765c40_composed_residual_pass() does not consume it; the
+// native FUN_00783a30 path owns the +0x3420 scalar computation.
 inline Fun00765c40ComposedResidualInputs
 apply_fun_00765c40_residual_producer_handoff(
     Fun00765c40ComposedResidualInputs inputs,
@@ -91,6 +102,7 @@ struct Fun00765c40ComposedResidualResult {
     std::array<Fun00765c40WheelStateAssignment, kFun00765c40WheelCount>
         wheel_state_assignments{};
     Fun00765c40WheelJobSchedulingResult wheel_job{};
+    Fun007584f0InterpolationCallResult persistent_write_interpolation{};
     Fun007584f0PersistentWriteState persistent_write{};
     std::uint32_t positive_load_count = 0u;
     Fun00765c40WheelPairRefreshState wheel_pair{};
@@ -120,7 +132,17 @@ execute_fun_00765c40_composed_residual_pass(
         result.wheel_state_assignments[wheel] = materialize_fun_00752fa0_wheel_state_assignment(wheel, inputs.wheel_state_source_bits);
     }
     result.wheel_job = execute_fun_00765c40_wheel_job_scheduling(inputs.execute_wheel_job_queue, inputs.read_load_term);
-    result.persistent_write = materialize_fun_007584f0_persistent_write_stage(result.wheel_job.load_terms, inputs.persistent_write);
+
+    result.persistent_write_interpolation =
+        execute_fun_007584f0_interpolation_native(
+            inputs.persistent_write_interpolation_arguments);
+    Fun007584f0ComputedInputs persistent_write_inputs = inputs.persistent_write;
+    persistent_write_inputs.interpolation_result =
+        result.persistent_write_interpolation.value;
+    result.persistent_write = materialize_fun_007584f0_persistent_write_stage(
+        result.wheel_job.load_terms,
+        persistent_write_inputs);
+
     result.positive_load_count = fun_00765c40_positive_load_term_count(result.wheel_job.load_terms);
     result.wheel_pair = materialize_fun_00765c40_wheel_pair_refresh_stage(inputs.wheel_pair);
     result.contact_array = materialize_fun_00765c40_contact_array_sweep_stage(inputs.contact_array);

@@ -11,7 +11,10 @@
     "selected_world_position_contract": "SHIFT.Fun00765c40SelectedBMWWorldPosition/1",
     "selected_query_fallback_contract": "SHIFT.Fun00765c40SelectedBMWQueryFallback/1",
     "collision_output_handoff_contract": "SHIFT.Fun00765c40CollisionOutputHandoff/1",
-    "composed_residual_executor_contract": "SHIFT.Fun00765c40ComposedResidualExecutor/1",
+    "composed_residual_executor_contract": "SHIFT.Fun00765c40ComposedResidualExecutor/2",
+    "historical_composed_residual_executor_contract": "SHIFT.Fun00765c40ComposedResidualExecutor/1",
+    "composed_persistent_interpolation_native": true,
+    "composed_legacy_interpolation_result_authoritative": false,
     "residual_producer_handoff_contract": "SHIFT.Fun00765c40ResidualProducerHandoff/2",
     "historical_residual_producer_handoff_contract": "SHIFT.Fun00765c40ResidualProducerHandoff/1",
     "residual_producer_promotion_gate_contract": "SHIFT.Fun00765c40ResidualProducerPromotionGate/1",
@@ -78,5 +81,5 @@
     "wheel_job_commit_surface_treated_as_formula_proof": false,
     "fun_007584f0_interpolation_seam_treated_as_family_complete": false
   },
-  "next_step": "Recover the two positive-load qword producers in FUN_007584f0; the 0x00783a30 scalar formula is now native-owned but the family remains incomplete."
+  "next_step": "Recover the two positive-load qword producers in FUN_007584f0. The composed executor no longer consumes the legacy external interpolation_result scalar."
 }

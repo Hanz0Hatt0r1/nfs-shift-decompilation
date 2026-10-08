@@ -14,7 +14,7 @@ def test_handoff_v2_preserves_v1_and_adds_selective_family_presence() -> None:
     assert payload["format"] == "SHIFT.Fun00765c40ResidualProducerHandoff/2"
     assert payload["extends_historical_format"] == "SHIFT.Fun00765c40ResidualProducerHandoff/1"
     assert payload["ready"] is True
-    assert payload["consumer"] == "SHIFT.Fun00765c40ComposedResidualExecutor/1"
+    assert payload["consumer"] == "SHIFT.Fun00765c40ComposedResidualExecutor/2"
     assert payload["payload_family_count"] == 8
     assert payload["payload_families"] == [
         "wheel_plane",
@@ -52,6 +52,7 @@ def test_handoff_header_and_composed_bridge_select_only_present_families() -> No
     composed = COMPOSED.read_text(encoding="utf-8")
     assert "SHIFT.Fun00765c40ResidualProducerHandoff/2" in header
     assert "SHIFT.Fun00765c40ResidualProducerHandoff/1" in header
+    assert "SHIFT.Fun00765c40ComposedResidualExecutor/2" in composed
     assert "kFun00765c40ResidualProducerHandoffFamilyCount = 8u" in header
     assert "enum class Fun00765c40ResidualProducerFamily" in header
     assert "bool family_presence_explicit = false" in header

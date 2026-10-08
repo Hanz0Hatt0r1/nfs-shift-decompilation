@@ -19,7 +19,8 @@ SESSION_QUERY_SNAPSHOT_FORMAT = "SHIFT.Fun00765c40SessionQuerySnapshot/1"
 SELECTED_WORLD_POSITION_FORMAT = "SHIFT.Fun00765c40SelectedBMWWorldPosition/1"
 SELECTED_QUERY_FALLBACK_FORMAT = "SHIFT.Fun00765c40SelectedBMWQueryFallback/1"
 COLLISION_OUTPUT_HANDOFF_FORMAT = "SHIFT.Fun00765c40CollisionOutputHandoff/1"
-COMPOSED_RESIDUAL_EXECUTOR_FORMAT = "SHIFT.Fun00765c40ComposedResidualExecutor/1"
+COMPOSED_RESIDUAL_EXECUTOR_FORMAT = "SHIFT.Fun00765c40ComposedResidualExecutor/2"
+HISTORICAL_COMPOSED_RESIDUAL_EXECUTOR_FORMAT = "SHIFT.Fun00765c40ComposedResidualExecutor/1"
 RESIDUAL_PRODUCER_HANDOFF_FORMAT = "SHIFT.Fun00765c40ResidualProducerHandoff/2"
 HISTORICAL_RESIDUAL_PRODUCER_HANDOFF_FORMAT = "SHIFT.Fun00765c40ResidualProducerHandoff/1"
 RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT = "SHIFT.Fun00765c40ResidualProducerPromotionGate/1"
@@ -82,6 +83,9 @@ def build_current_frontier() -> dict[str, Any]:
             "selected_query_fallback_contract": SELECTED_QUERY_FALLBACK_FORMAT,
             "collision_output_handoff_contract": COLLISION_OUTPUT_HANDOFF_FORMAT,
             "composed_residual_executor_contract": COMPOSED_RESIDUAL_EXECUTOR_FORMAT,
+            "historical_composed_residual_executor_contract": HISTORICAL_COMPOSED_RESIDUAL_EXECUTOR_FORMAT,
+            "composed_persistent_interpolation_native": True,
+            "composed_legacy_interpolation_result_authoritative": False,
             "residual_producer_handoff_contract": RESIDUAL_PRODUCER_HANDOFF_FORMAT,
             "historical_residual_producer_handoff_contract": HISTORICAL_RESIDUAL_PRODUCER_HANDOFF_FORMAT,
             "residual_producer_promotion_gate_contract": RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT,
@@ -155,6 +159,15 @@ def contract() -> dict[str, Any]:
         "session_query_snapshot_contract": fun["session_query_snapshot_contract"],
         "collision_output_handoff_contract": fun["collision_output_handoff_contract"],
         "composed_residual_executor_contract": fun["composed_residual_executor_contract"],
+        "historical_composed_residual_executor_contract": fun[
+            "historical_composed_residual_executor_contract"
+        ],
+        "composed_persistent_interpolation_native": fun[
+            "composed_persistent_interpolation_native"
+        ],
+        "composed_legacy_interpolation_result_authoritative": fun[
+            "composed_legacy_interpolation_result_authoritative"
+        ],
         "residual_producer_handoff_contract": fun["residual_producer_handoff_contract"],
         "historical_residual_producer_handoff_contract": fun[
             "historical_residual_producer_handoff_contract"
@@ -247,6 +260,7 @@ __all__ = [
     "SELECTED_QUERY_FALLBACK_FORMAT",
     "COLLISION_OUTPUT_HANDOFF_FORMAT",
     "COMPOSED_RESIDUAL_EXECUTOR_FORMAT",
+    "HISTORICAL_COMPOSED_RESIDUAL_EXECUTOR_FORMAT",
     "RESIDUAL_PRODUCER_HANDOFF_FORMAT",
     "HISTORICAL_RESIDUAL_PRODUCER_HANDOFF_FORMAT",
     "RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT",
