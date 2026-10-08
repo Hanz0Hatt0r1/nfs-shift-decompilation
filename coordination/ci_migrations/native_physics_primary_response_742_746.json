@@ -1,0 +1,48 @@
+{
+  "format": "SHIFT.CIWorkflowMigration/1",
+  "version": 1,
+  "status": "ready",
+  "stable_workflow": ".github/workflows/native-physics-primary-response.yml",
+  "superseded_workflows": [
+    {
+      "path": ".github/workflows/native-physics-phase742.yml",
+      "blob_sha": "126dbce4d4d4e8eff5f8dfb745759506ff79a8b0"
+    },
+    {
+      "path": ".github/workflows/native-physics-phase746.yml",
+      "blob_sha": "b5dc3452e7ae3f3fcaab1a580de14643eabc1a2e"
+    }
+  ],
+  "coverage_policy": "superset",
+  "parity": {
+    "python_tests": [
+      "tests/test_s6_fun_00766510_primary_response_application.py",
+      "tests/test_s6_fun_00766510_primary_caller_accumulator.py"
+    ],
+    "evidence_formats": [
+      "SHIFT.Fun00766510PrimaryResponseApplication/1",
+      "SHIFT.Fun00766510PrimaryCallerAccumulator/1"
+    ],
+    "native_targets": [
+      "shift_runtime_fun_00766510_primary_response_application_check",
+      "shift_runtime_wheel_contact_response_check",
+      "shift_runtime_aux_contact_pair_check",
+      "shift_runtime_body_accumulator_primitives_check"
+    ],
+    "ctest_names": [
+      "shift_runtime_fun_00766510_primary_response_application",
+      "shift_runtime_wheel_contact_response",
+      "shift_runtime_aux_contact_pair",
+      "shift_runtime_body_accumulator_primitives"
+    ],
+    "native_reports": [
+      "SHIFT.Fun00766510PrimaryResponseApplication/2"
+    ]
+  },
+  "trigger_policy": {
+    "mode": "union",
+    "meaning": "Any production/test/evidence/doc path that previously triggered Phase 742 or Phase 746 now runs the full primary-response plus caller-accumulator regression family."
+  },
+  "semantic_gate_changes": false,
+  "provider_count_changes": false
+}
