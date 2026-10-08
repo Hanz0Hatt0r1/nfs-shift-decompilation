@@ -1,7 +1,7 @@
 {
   "format": "SHIFT.DecompBlockerGraph/1",
   "version": 1,
-  "updated_from_main": "775fb2843861ee29e87d77e56b6b363279d2f737",
+  "updated_from_main": "cfb672216212fbdec779088d80ee61884e6c8064",
   "rules": {
     "pc_retail_semantic_authority": true,
     "numeric_offset_equality_is_identity": false,
@@ -15,7 +15,8 @@
       "title": "FUN_00766510/contact_response producer closure",
       "status": "in_progress",
       "consumer": "Process 2 P2.3",
-      "next": "Close remaining upstream input/scheduling/residual tail provenance before provider replacement."
+      "closed": ["P1.1c auxiliary scheduling/final transformed-vector/guarded tail"],
+      "next": "Close P1.1a FUN_00713630 upstream runtime config globals, sample-history scheduling, and participant+0x4b0 ownership; then publish final Process 1 handoff."
     },
     {
       "id": "P1.3",
@@ -23,74 +24,17 @@
       "title": "retail control/input producer provenance",
       "status": "in_progress",
       "children": [
-        {
-          "id": "P1.3.slot0",
-          "target": "HDVehicle+0x938",
-          "status": "alias-callee-bulk-copy",
-          "next": "Trace exact selected-root alias/callee/bulk-copy writers."
-        },
-        {
-          "id": "P1.3.slot1",
-          "target": "HDVehicle+0x13b8",
-          "status": "alias-callee-bulk-copy",
-          "next": "Trace exact selected-root alias/callee/bulk-copy writers."
-        },
-        {
-          "id": "P1.3.slot2",
-          "target": "HDVehicle+0x1e38",
-          "status": "partial-producer-proven",
-          "next": "Resolve selected HDVehicle+0x64e8 non-sentinel provenance and manager collection insertion identity."
-        },
-        {
-          "id": "P1.3.slot3",
-          "target": "HDVehicle+0x28b8",
-          "status": "alias-callee-bulk-copy",
-          "next": "Trace exact selected-root alias/callee/bulk-copy writers."
-        },
-        {
-          "id": "P1.3.manager374",
-          "target": "FUN_00489ad0()+0x374 value == HDVehicle+0x4330",
-          "status": "two-literal-writers-rejected-bulk-copy-open",
-          "rejected_literal_writers": ["FUN_0051efa0", "FUN_005dec70"],
-          "rejected_bulk_copy_alias": "FUN_0070dcc0 direct-call surface forwards only stack-local destinations into FUN_00481e20",
-          "remaining_literal_writer": "FUN_00481e20",
-          "next": "Close parent provenance for FUN_00481e20 destinations at 0x004848f5 (parent+0xa00) and 0x0081d335 (parent+0x2d0); continue helper-mediated/indirect manager-root mutations."
-        },
-        {
-          "id": "P1.3.manager2a0",
-          "target": "FUN_00489ad0()+0x2a0 collection entry == HDVehicle+0x4330",
-          "status": "selection-relation-proven-registration-open",
-          "rejected_candidate": "0x00469b1d -> FUN_0057f620 mutates 0x00bbdbe0+0x2a0, not manager+0x2a0",
-          "proven_relation": "FUN_0045da80 stores 0 or manager+0x2a0[index] into manager+0x378",
-          "next": "Trace exact registration/producer mutations for the true manager+0x2a0 collection and sibling manager+0x374 selection ownership."
-        }
+        {"id":"P1.3.slot0","target":"HDVehicle+0x938","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
+        {"id":"P1.3.slot1","target":"HDVehicle+0x13b8","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
+        {"id":"P1.3.slot2","target":"HDVehicle+0x1e38","status":"partial-producer-proven","next":"Resolve selected HDVehicle+0x64e8 non-sentinel provenance and manager collection insertion identity."},
+        {"id":"P1.3.slot3","target":"HDVehicle+0x28b8","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
+        {"id":"P1.3.manager374","target":"FUN_00489ad0()+0x374 value == HDVehicle+0x4330","status":"two-literal-writers-rejected-bulk-copy-open","rejected_literal_writers":["FUN_0051efa0","FUN_005dec70"],"rejected_bulk_copy_alias":"FUN_0070dcc0 direct-call surface forwards only stack-local destinations into FUN_00481e20","remaining_literal_writer":"FUN_00481e20","next":"Close parent provenance for FUN_00481e20 destinations at 0x004848f5 (parent+0xa00) and 0x0081d335 (parent+0x2d0); continue helper-mediated/indirect manager-root mutations."},
+        {"id":"P1.3.manager2a0","target":"FUN_00489ad0()+0x2a0 collection entry == HDVehicle+0x4330","status":"selection-relation-proven-registration-open","rejected_candidate":"0x00469b1d -> FUN_0057f620 mutates 0x00bbdbe0+0x2a0, not manager+0x2a0","proven_relation":"FUN_0045da80 stores 0 or manager+0x2a0[index] into manager+0x378","next":"Trace exact registration/producer mutations for the true manager+0x2a0 collection and sibling manager+0x374 selection ownership."}
       ]
     },
-    {
-      "id": "P1.4",
-      "owner": "Process 1D",
-      "title": "camera follow provenance",
-      "status": "queued"
-    },
-    {
-      "id": "P2.3",
-      "owner": "Process 2",
-      "title": "native contact_response replacement",
-      "status": "blocked",
-      "blocked_by": ["P1.1"],
-      "provider_reduction_on_completion": "7 -> 6"
-    },
-    {
-      "id": "P2.4",
-      "owner": "Process 2",
-      "title": "consume P1.2 vehicle writer ownership",
-      "status": "ready"
-    },
-    {
-      "id": "P3",
-      "owner": "Process 3",
-      "title": "resources/scene/render/bootstrap",
-      "status": "parallel"
-    }
+    {"id":"P1.4","owner":"Process 1D","title":"camera follow provenance","status":"queued"},
+    {"id":"P2.3","owner":"Process 2","title":"native contact_response replacement","status":"blocked","blocked_by":["P1.1"],"provider_reduction_on_completion":"7 -> 6"},
+    {"id":"P2.4","owner":"Process 2","title":"consume P1.2 vehicle writer ownership","status":"ready"},
+    {"id":"P3","owner":"Process 3","title":"resources/scene/render/bootstrap","status":"parallel"}
   ]
 }
