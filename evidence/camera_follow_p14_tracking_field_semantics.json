@@ -1,0 +1,80 @@
+{
+  "format": "SHIFT.CameraFollowP14TrackingFieldSemantics/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact PC-retail machine-code field registration and compare flow"
+  },
+  "reflection": {
+    "tracking_data_table": "DAT_00b8ded8",
+    "target": {
+      "name_string": "Target",
+      "name_va": "0x00ac80ec",
+      "field_offset": "0x78",
+      "machine": [
+        "0x00815892 push 0x00ac80ec ('Target')",
+        "0x008158a5 push 0x78",
+        "0x008158ab push 0x0d",
+        "0x008158b2 call FUN_0063a280"
+      ]
+    },
+    "overrided_by": {
+      "name_string": "OverridedBy",
+      "name_va": "0x00b15e2c",
+      "field_offset": "0xd4",
+      "machine": [
+        "0x00815d69 push 0x00b15e2c ('OverridedBy')",
+        "0x00815d7c push 0xd4",
+        "0x00815d85 push 0x00",
+        "0x00815d8c call FUN_0063a280"
+      ]
+    }
+  },
+  "override_resolution": {
+    "function": "FUN_0081f070",
+    "runtime_override_field": "TrackingCamera byte +0xd4",
+    "candidate_name_field": "candidate byte +0x60",
+    "machine": [
+      "0x0081f0f0 compare RTTI node with 0x00c25fb8",
+      "0x0081f10d lea ecx,[candidate+0x60]",
+      "0x0081f110 add edx,0xd4",
+      "0x0081f116 call FUN_00408210",
+      "0x0081f14d call FUN_00812970 on match"
+    ],
+    "generic_precursor": [
+      "0x00812ac3 read this+0xd4",
+      "0x00812af3 lea ecx,[candidate+0x60]",
+      "0x00812af6 add edx,0xd4",
+      "0x00812afc call FUN_00408210",
+      "0x00812b4a call FUN_00812970 on match"
+    ],
+    "comparison_function": {
+      "function": "FUN_00408210",
+      "classification": "null-terminated byte-string equality",
+      "machine_anchor": "0x00408234 loads candidate byte and 0x00408236 compares against other string byte"
+    },
+    "attachment": "FUN_00812970 stores matched candidate at TrackingCamera byte +0xe8"
+  },
+  "tracking_camera_type": {
+    "rtti_marker": "0x00c25fb8",
+    "factory": "FUN_00823990",
+    "machine": [
+      "0x00823a2d cmp ecx,0x00c25fb8",
+      "0x00823a35 push 0x150",
+      "0x00823a55 call FUN_0081f990"
+    ]
+  },
+  "adjudication": {
+    "plus_0xd4_is_target": false,
+    "plus_0xd4_is_overrided_by": true,
+    "plus_0x78_is_reflection_target_field": true,
+    "fun_0081f070_is_player_vehicle_target_resolution": false,
+    "fun_0081f070_is_tracking_camera_override_resolution": true,
+    "selected_player_target_identity_complete": false,
+    "native_camera_follow_ready": false,
+    "external_provider_count": 7
+  },
+  "next": "Trace the actual CTrackingCamData Target field at byte +0x78 through FUN_008140c0/FUN_00814180/FUN_00814210 and the CameraManager+0x574 target service. Prove or reject its join to the selected player/BMW manager+0x2a0 entry."
+}
