@@ -1,0 +1,78 @@
+{
+  "format": "SHIFT.Slot2VehicleLoadDataWedgeRangeRuntimeWriter/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "direct PE32 receiver/argument/parser-destination flow"
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun007530e0Slot2SourceProducer/1",
+    "SHIFT.Slot2VehicleLoadData3a0_3a8BootstrapZero/1"
+  ],
+  "owner_chain": {
+    "outer_function": "FUN_007c3b00",
+    "outer_receiver": "VehicleLoadData",
+    "outer_receiver_copy": "0x007c3b21 ESI = ECX",
+    "loader_receiver_setup": "0x007c4009 ECX = ESI+0x8 = VehicleLoadData+0x8",
+    "loader_call": "0x007c400c call FUN_007be420",
+    "loader_function": "FUN_007be420",
+    "loader_receiver_copy": "0x007be43f ESI = ECX = VehicleLoadData+0x8"
+  },
+  "wedge_range_load": {
+    "retail_key_address": "0x00b0ec24",
+    "retail_key": "WedgeRange",
+    "setup": [
+      "0x007be8ab push 0",
+      "0x007be8ad ECX = nested+0x3a8; push ECX",
+      "0x007be8b4 EDX = nested+0x3a0; push EDX",
+      "0x007be8bb EAX = nested+0x398; push EAX",
+      "0x007be8c2 push WedgeRange",
+      "0x007be8c7 ECX = loader/parser receiver",
+      "0x007be8c9 call FUN_007a6a90"
+    ],
+    "normalized_destinations": [
+      "nested+0x398 = VehicleLoadData+0x3a0",
+      "nested+0x3a0 = VehicleLoadData+0x3a8",
+      "nested+0x3a8 = VehicleLoadData+0x3b0"
+    ]
+  },
+  "parser_boundary": {
+    "function": "FUN_007a6a90",
+    "key_lookup": "0x007a6a9a call FUN_007a6320(key)",
+    "three_destination_branch": "arg_5 is null while arg_4 is non-null",
+    "format_address": "0x00b0c584",
+    "format_literal": "(%lf,%lf,%lf)",
+    "backend_call": "0x007a6b31 call FUN_00901423 with source buffer, format, and three destination pointers",
+    "destination_order": [
+      "VehicleLoadData+0x3a0",
+      "VehicleLoadData+0x3a8",
+      "VehicleLoadData+0x3b0"
+    ],
+    "resource_values_materialized_here": false
+  },
+  "slot2_join": {
+    "source_fields": [
+      "VehicleLoadData+0x3a0",
+      "VehicleLoadData+0x3a8"
+    ],
+    "downstream_fields": [
+      "HDVehicle+0x5238",
+      "HDVehicle+0x5240"
+    ],
+    "post_construction_writer_owner_proven": true,
+    "exact_loaded_numeric_values_proven": false,
+    "control_semantics_proven": false
+  },
+  "adjudication": {
+    "vld_3a0_post_construction_writer_proven": true,
+    "vld_3a8_post_construction_writer_proven": true,
+    "wedge_range_resource_load_proven": true,
+    "resource_value_source_fully_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Trace the resource/parser source backing the selected WedgeRange load only if needed for numeric/control provenance; independently continue the first non-sentinel selected HDVehicle+0x64e8 writer. Do not assign WedgeRange lanes to throttle/brake/steering semantics."
+}
