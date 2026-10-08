@@ -1,0 +1,39 @@
+{
+  "format": "SHIFT.Fun00765c40WheelJobScheduling/1",
+  "ready": true,
+  "authority": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "load_term_ownership": "SHIFT.Fun00765c40LoadTerms/1",
+    "residual_order": "SHIFT.Fun00765c40ResidualPassContract/1"
+  },
+  "retail_surface": {
+    "queue": "HDVehicle+0x6730",
+    "registered_wheel_object_count": 4,
+    "wheel_job_virtual_slot": "+0x04",
+    "wheel_job_entry": "0x0075cfb0",
+    "wheel_array_base": "HDVehicle+0x400",
+    "wheel_stride": "0x0a80",
+    "load_field": "+0x738 f64",
+    "load_offsets": ["+0x0b38", "+0x15b8", "+0x2038", "+0x2ab8"],
+    "queue_executes_before_load_term_reads": true,
+    "wheel_job_formula_internalized": false,
+    "scheduler_argument_semantics_proven": false
+  },
+  "native_consumption": {
+    "header": "native_runtime/include/shift_fun_00765c40_wheel_job_scheduling.hpp",
+    "queue_executor_is_explicit_boundary": true,
+    "load_term_reader_is_explicit_boundary": true,
+    "queue_called_exactly_once": true,
+    "four_load_terms_read_after_queue": true,
+    "load_terms_validated_finite": true,
+    "wheel_job_formula_internalized": false
+  },
+  "scope": {
+    "p2_4_wheel_job_scheduling_seam_internalized": true,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_FUN_00765c40_provider_removed": false,
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Recover or natively replace FUN_0075cfb0 producer arithmetic, then compose all residual stages into one end-to-end FUN_00765c40 execution path before provider removal."
+}
