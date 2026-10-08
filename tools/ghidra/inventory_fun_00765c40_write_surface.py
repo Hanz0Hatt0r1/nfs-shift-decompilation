@@ -28,7 +28,13 @@ def _find_definition(lines: list[str]) -> int:
         if not match:
             continue
         prefix = match.group("prefix").strip()
-        if not prefix or prefix.endswith(("=", ",", "(", "+", "-", "*", "/")):
+        if (
+            not prefix
+            or prefix.endswith(("=", ",", "(", "+", "-", "*", "/"))
+            or "{" in prefix
+            or "}" in prefix
+            or ";" in prefix
+        ):
             continue
         lookahead = "\n".join(lines[index : min(index + 8, len(lines))])
         before_brace = lookahead.split("{", 1)[0]
