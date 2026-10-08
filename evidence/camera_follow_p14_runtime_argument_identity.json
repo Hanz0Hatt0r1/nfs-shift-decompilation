@@ -1,0 +1,59 @@
+{
+  "format": "SHIFT.CameraFollowP14RuntimeArgumentIdentity/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact retail machine-code value flow",
+    "sqlite_index_is_semantic_proof": false
+  },
+  "target": {
+    "activation": "FUN_0080e0d0",
+    "activation_callsite": "0x0080e236",
+    "caller": "FUN_0080e1b0",
+    "source_lane": "CameraManager + 0x1ca0 + current_index * 0x460",
+    "source_virtual_call_offset": "0x90"
+  },
+  "callgraph_bound": {
+    "direct_retail_callers_of_FUN_0080e0d0": 1,
+    "only_direct_caller": "FUN_0080e1b0",
+    "only_direct_callsite": "0x0080e236"
+  },
+  "machine_value_flow": [
+    "0x0080e200: ecx = CameraManager+0x2564",
+    "0x0080e207: call FUN_0080b8e0",
+    "0x0080e20c..0x0080e216: virtual lookup using requested camera id in EDI",
+    "0x0080e218: EBX = returned selected camera object",
+    "0x0080e222..0x0080e229: FUN_004b71f0(EBX, 0x00c25fb8)",
+    "0x004b71f0..0x004b7229: helper walks the object's type chain and returns original ESI unchanged on match, zero on failure",
+    "0x0080e235: push EAX (matched object == EBX) as FUN_0080e0d0 param_1",
+    "0x0080e230: push EDI as FUN_0080e0d0 param_2",
+    "0x0080e236: call FUN_0080e0d0",
+    "0x0080e109: EDX = FUN_0080e0d0 param_1",
+    "0x0080e10c: push EDX",
+    "0x0080e10d: call source.vtable+0x90(runtime_argument)"
+  ],
+  "adjudication": {
+    "mode2_runtime_argument_identity_resolved": true,
+    "runtime_argument_identity": "selected camera object accepted by type-chain descriptor 0x00c25fb8",
+    "runtime_argument_is_selected_retail_vehicle": false,
+    "runtime_argument_is_vehicle_world_matrix": false,
+    "runtime_argument_is_camera_object": true,
+    "phase651_request_1_closed": true,
+    "phase651_request_1_result": "vehicle identity rejected",
+    "native_camera_follow_ready": false,
+    "external_provider_count": 7
+  },
+  "remaining_p14_frontier": [
+    "prove the concrete mode-2 source object/vtable and resolve +0x90 and +0x64",
+    "trace vehicle/current-pose dependency inside the resolved mode-2 source logic",
+    "prove retail vehicle-update -> camera-source update ordering/freshness"
+  ],
+  "boundary": {
+    "tracking_source_promoted_to_player_vehicle_follow": false,
+    "source_vtable_invented": false,
+    "vehicle_pose_dependency_inferred_from_name_or_layout": false,
+    "update_order_inferred": false
+  }
+}
