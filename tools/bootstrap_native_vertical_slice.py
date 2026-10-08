@@ -79,6 +79,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--root-consensus")
     parser.add_argument("--runtime-shader-admission")
     parser.add_argument("--participant-observation")
+    parser.add_argument("--resource-pipeline")
     for option in (
         "scene-set",
         "camera-state",
@@ -279,6 +280,21 @@ def main(argv: list[str] | None = None) -> int:
     if args.decode_limit_per_archive < 0:
         parser.error("--decode-limit-per-archive must be non-negative")
     renderer_requested = _validate_renderer_args(parser, args)
+    resource_pipeline_requested = bool(str(args.resource_pipeline or "").strip())
+    if resource_pipeline_requested:
+        overlaps = [
+            option
+            for option, value in (
+                ("--scene-set", args.scene_set),
+                ("--physics-manifest", args.physics_manifest),
+                ("--participant-boundary", args.participant_boundary),
+            )
+            if value not in (None, "")
+        ]
+        if overlaps:
+            parser.error(
+                "--resource-pipeline cannot be combined with " + ", ".join(overlaps)
+            )
     renderer_capture_root = None
     if args.renderer_capture_jsonl:
         renderer_capture_root = (
@@ -305,6 +321,7 @@ def main(argv: list[str] | None = None) -> int:
         vehicle=args.vehicle,
         workspace_root=args.workspace_root,
         explicit_runtime_inputs=explicit,
+        resource_pipeline=args.resource_pipeline,
         input_script=args.input_script,
         interactive=args.interactive,
         keyboard=args.keyboard,
@@ -338,6 +355,11 @@ def main(argv: list[str] | None = None) -> int:
     boundary["phase642_capture_plan_materialization_enabled"] = renderer_requested
     boundary["generic_renderer_recapture_inferred"] = False
     boundary["renderer_capture_execution_claimed"] = False
+    boundary["resource_pipeline_selected"] = resource_pipeline_requested
+    boundary["resource_pipeline_has_scene_authority"] = resource_pipeline_requested
+    boundary["renderer_scene_handoff_suppressed_by_resource_pipeline"] = (
+        renderer_requested and resource_pipeline_requested
+    )
     report["boundary"] = boundary
 
     artifacts = dict(report.get("artifacts") or {})
@@ -401,7 +423,11 @@ def main(argv: list[str] | None = None) -> int:
                 ],
             }
 
-    scene_handoff_requested = renderer_requested and not bool(args.scene_set)
+    scene_handoff_requested = (
+        renderer_requested
+        and not bool(args.scene_set)
+        and not resource_pipeline_requested
+    )
     scene_handoff_report: Mapping[str, Any] | None = None
     scene_handoff_ready = not scene_handoff_requested
     if renderer_ready and scene_handoff_requested:
@@ -608,6 +634,7 @@ def main(argv: list[str] | None = None) -> int:
         "status": report["status"],
         "ready": report["ready"],
         "offline_bootstrap_ready": report["offline_bootstrap_ready"],
+        "resource_pipeline": report.get("resource_pipeline"),
         "renderer_evidence_requested": report["renderer_evidence_requested"],
         "renderer_evidence_ready": report["renderer_evidence_ready"],
         "renderer_native_scene_requested": report["renderer_native_scene_requested"],
