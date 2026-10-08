@@ -46,7 +46,17 @@
     "direct_caller_count": 2,
     "positive_lane_shift": "+0x2b10/+0x2b14/+0x2b18 -> +0x2b1c/+0x2b20/+0x2b24 -> +0x2b28/+0x2b2c/+0x2b30",
     "new_sample_destination": "+0x2b10/+0x2b14/+0x2b18",
-    "selected_participant_root_join_complete": false
+    "selected_participant_paths": [
+      {
+        "path": "FUN_00715380 -> FUN_00713340 -> participant from receiver+0x140 -> FUN_007473b0 -> FUN_00727870",
+        "joins": ["0x0071556f call FUN_00713340 with ECX=ESI", "0x007134ab load participant-array base", "0x007134b1 dereference participant", "0x007134b4 call FUN_007473b0", "0x0074752a mov ECX,ESI", "0x0074752c call FUN_00727870"]
+      },
+      {
+        "path": "same FUN_007473b0 participant -> FUN_00742010 -> FUN_0073e360 -> FUN_00727870",
+        "joins": ["0x007476ac mov ECX,ESI", "0x007476ae call FUN_00742010", "0x0074201e mov EBX,ECX", "0x00742bbe mov ECX,EBX", "0x00742bc0 call FUN_0073e360", "0x0073e36a mov EBX,ECX", "0x0073f291 mov ECX,EBX", "0x0073f293 call FUN_00727870"]
+      }
+    ],
+    "selected_participant_root_join_complete": true
   },
   "participant_scalar_candidate": {
     "candidate_function": "FUN_00748280",
@@ -60,7 +70,7 @@
     "seven_direct_literal_read_sites_closed": true,
     "config_global_owner_or_alias_writer_closed": false,
     "sample_writer_direct_call_surface_closed": true,
-    "sample_writer_selected_participant_scheduling_closed": false,
+    "sample_writer_selected_participant_scheduling_closed": true,
     "participant_plus_0x4b0_owner_closed": false,
     "p1_1a_complete": false,
     "p1_1_complete": false,
@@ -69,8 +79,7 @@
   },
   "limits": [
     "Absence of direct literal stores does not exclude computed-address, alias, loader, relocation, or bulk materialization of the config globals.",
-    "The +0x4b0 candidate is not promoted by numeric offset equality; exact object identity is still required.",
-    "The two direct FUN_00727870 callsites bound the direct surface but do not yet prove selected-session participant ownership."
+    "The +0x4b0 candidate is not promoted by numeric offset equality; exact object identity is still required."
   ],
-  "next_step": "Root both FUN_00727870 receiver paths to the selected participant domain; resolve computed/alias materialization of the seven config globals; join or reject FUN_00748280+0x4b0 against the participant consumed by FUN_00713630."
+  "next_step": "Resolve computed/alias materialization of the seven config globals and join or reject FUN_00748280+0x4b0 against the participant consumed by FUN_00713630."
 }
