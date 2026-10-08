@@ -1,0 +1,103 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0SubobjectAliasFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "pc_decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630Participant4b0Frontier/1",
+    "SHIFT.Fun00713630PhysicsTweakerMaterialization/1"
+  ],
+  "selected_participant_construction": {
+    "wrapper_array": "manager+0x140",
+    "wrapper_stride": "0x1fa0",
+    "wrapper_record_pointer_slot": "record[0]",
+    "allocation_and_store_function": "FUN_007125e0",
+    "allocation_size": "0x2b90",
+    "participant_constructor": "FUN_0072ed20",
+    "actual_participant_store": "0x0071263e mov [esi],eax",
+    "exact_pointer_is_later_dereferenced_by_fun_00713630": true
+  },
+  "participant_subobject": {
+    "offset": "0x340",
+    "constructor": "FUN_0079c1c0",
+    "constructor_callsite": "0x0072ed57",
+    "final_vtable": "0x00b0b744",
+    "participant_plus_0x4b0_equals_subobject_plus_0x170": true,
+    "known_direct_read": "0x007928d1 fld dword [esi+0x170] in FUN_007927c0",
+    "constructor_machine_span": {
+      "start": "0x0072ed38",
+      "end_exclusive": "0x0072ed5c",
+      "sha256": "9a2bd50fcbce77b097220107f501d7962b290952b6cedbb67e74af3b09887c69"
+    },
+    "read_machine_span": {
+      "start": "0x007928c8",
+      "end_exclusive": "0x007928e3",
+      "sha256": "f5dbb9305fc5da276eecbb0627aabaced12ad76dea172c609604cdca02e613e1"
+    }
+  },
+  "checked_selected_surface": {
+    "subobject_constructors_checked": ["FUN_0079bfd0", "FUN_0079c1c0"],
+    "selected_load_or_update_methods_checked": [
+      "FUN_00797fd0", "FUN_00798df0", "FUN_007927c0", "FUN_00792920",
+      "FUN_007839f0", "FUN_00793a80", "FUN_007949b0", "FUN_007ac2f0",
+      "FUN_007877a0", "FUN_0079baa0", "FUN_00799ff0", "FUN_00795630", "FUN_0079a6e0"
+    ],
+    "direct_subobject_plus_0x170_store_found": false,
+    "computed_alias_bulk_indirect_paths_excluded": false
+  },
+  "rejected_alias_candidates": [
+    {
+      "candidate": "FUN_00747c30 +0x170 store at 0x00747f04",
+      "reason": "sole static-constructor root loads ECX=0x00c12910 before the call; receiver is not participant+0x340",
+      "selected_participant_writer": false,
+      "root_machine_span": {
+        "start": "0x00a8a6d0",
+        "end_exclusive": "0x00a8a6da",
+        "sha256": "06787cd2f504259a8decdd43fb5740f6f8f733bad669a7663fcc4bed03a81962"
+      }
+    },
+    {
+      "candidate": "FUN_007215b0 +0x170 store at 0x00721779",
+      "reason": "FUN_0072ed20 passes ECX=participant+0x2294, so callee+0x170 maps to participant+0x2404",
+      "selected_participant_writer": false,
+      "receiver_machine_span": {
+        "start": "0x0072edc8",
+        "end_exclusive": "0x0072eddc",
+        "sha256": "56921b3a2d8714f35546ff9c82b0247178a9e643fe9700b745d6c22095c0cbb4"
+      }
+    }
+  ],
+  "reflection_candidate_rejection": {
+    "function": "FUN_0072a2d0",
+    "registry_receiver": "DAT_00b8d1b4",
+    "registry_reference_count": 192,
+    "fun_0072a2d0_fun_0063a280_registration_count": 189,
+    "observed_offset_0x170_registration": "0x0072c3b3 pushes 0x170 before FUN_0063a280",
+    "name_argument": "Add Pressure - Steer From Wall",
+    "name_address": "0x00b06630",
+    "selected_participant_subobject_identity_joined": false,
+    "rejected_as_writer_proof": true,
+    "reason": "shared property-registry receiver plus equal numeric offset is insufficient to prove object-instance identity with participant+0x340/vtable 0x00b0b744"
+  },
+  "adjudication": {
+    "participant_plus_0x4b0_to_subobject_plus_0x170_identity_closed": true,
+    "listed_false_alias_candidates_rejected": true,
+    "generic_reflection_0x170_candidate_rejected_as_identity_proof": true,
+    "selected_participant_runtime_plus_0x4b0_writer_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This contract narrows identity and rejects false +0x170 candidates; it does not prove the actual runtime producer.",
+    "Computed-address, escaped-alias, indirect-dispatch and bulk-copy materialization remain open.",
+    "The 14 unresolved direct-displacement +0x4b0 sites in SHIFT.Fun00713630Participant4b0Frontier/1 remain subject to exact receiver-identity adjudication."
+  ],
+  "next_step": "Join or reject the remaining direct-displacement sites and then inspect only computed-address, escaped-alias, indirect-dispatch or bulk-copy paths rooted to participant+0x340."
+}
