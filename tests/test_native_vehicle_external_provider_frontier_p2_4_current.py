@@ -29,7 +29,8 @@ def test_p2_4_overlay_currentizes_fun_00765c40_without_rewriting_history() -> No
     assert fun["historical_collision_output_result_contract"] == "SHIFT.Fun00765c40ExternalPassResult/4"
     assert fun["residual_producer_handoff_contract"] == "SHIFT.Fun00765c40ResidualProducerHandoff/2"
     assert fun["historical_residual_producer_handoff_contract"] == "SHIFT.Fun00765c40ResidualProducerHandoff/1"
-    assert fun["residual_producer_promotion_gate_contract"] == "SHIFT.Fun00765c40ResidualProducerPromotionGate/1"
+    assert fun["residual_producer_promotion_gate_contract"] == "SHIFT.Fun00765c40ResidualProducerPromotionGate/2"
+    assert fun["historical_residual_producer_promotion_gate_contract"] == "SHIFT.Fun00765c40ResidualProducerPromotionGate/1"
     assert fun["residual_producer_handoff_present"] is True
     assert fun["residual_producer_handoff_threaded_through_provider_result"] is True
     assert fun["residual_producer_handoff_threaded_through_session_result"] is True
@@ -40,6 +41,8 @@ def test_p2_4_overlay_currentizes_fun_00765c40_without_rewriting_history() -> No
     assert fun["residual_producer_promotion_gate_session_wired"] is False
     assert fun["residual_producer_promotion_authorized_family_count"] == 0
     assert fun["residual_producer_presence_counts_as_proof"] is False
+    assert fun["residual_producer_promotion_requires_named_contract"] is True
+    assert fun["residual_producer_promotion_anonymous_boolean_allowed"] is False
     assert fun["selected_world_position_native"] is True
     assert fun["selected_query_fallback_native"] is True
     assert fun["selected_query_input_native"] is True
@@ -64,6 +67,8 @@ def test_p2_4_overlay_currentizes_fun_00765c40_without_rewriting_history() -> No
     assert report["guards"]["absent_producer_family_default_overwrite_allowed"] is False
     assert report["guards"]["producer_presence_treated_as_independent_proof"] is False
     assert report["guards"]["producer_promotion_without_proof_allowed"] is False
+    assert report["guards"]["anonymous_producer_proof_authorization_allowed"] is False
+    assert report["guards"]["empty_producer_proof_contract_allowed"] is False
 
 
 def test_overlay_matches_active_runtime_contracts() -> None:
@@ -83,10 +88,12 @@ def test_overlay_matches_active_runtime_contracts() -> None:
     assert p2_4.RESIDUAL_PRODUCER_HANDOFF_FORMAT in handoff_header
     assert p2_4.HISTORICAL_RESIDUAL_PRODUCER_HANDOFF_FORMAT in handoff_header
     assert p2_4.RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT in promotion_header
+    assert p2_4.HISTORICAL_RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT in promotion_header
     assert "family_presence_explicit = false" in handoff_header
     assert "family_present{}" in handoff_header
-    assert "independently_proven{}" in promotion_header
-    assert "present without independent proof authorization" in promotion_header
+    assert "proof_contract_ids{}" in promotion_header
+    assert "proof contract id must be non-empty" in promotion_header
+    assert "present without named independent proof contract" in promotion_header
     assert "std::optional<CollisionQueryOutput> query_output" in result_header
     assert "std::optional<Fun00765c40ResidualProducerHandoff> residual_producer_handoff" in result_header
     assert p2_4.NATIVE_SELECTED_QUERY_INPUT_FORMAT in native_query_evidence
@@ -116,7 +123,8 @@ def test_contract_is_fail_closed_on_remaining_producers() -> None:
     assert payload["historical_collision_output_result_contract"] == "SHIFT.Fun00765c40ExternalPassResult/4"
     assert payload["residual_producer_handoff_contract"] == "SHIFT.Fun00765c40ResidualProducerHandoff/2"
     assert payload["historical_residual_producer_handoff_contract"] == "SHIFT.Fun00765c40ResidualProducerHandoff/1"
-    assert payload["residual_producer_promotion_gate_contract"] == "SHIFT.Fun00765c40ResidualProducerPromotionGate/1"
+    assert payload["residual_producer_promotion_gate_contract"] == "SHIFT.Fun00765c40ResidualProducerPromotionGate/2"
+    assert payload["historical_residual_producer_promotion_gate_contract"] == "SHIFT.Fun00765c40ResidualProducerPromotionGate/1"
     assert payload["residual_producer_handoff_threaded_through_provider_result"] is True
     assert payload["residual_producer_handoff_threaded_through_session_result"] is True
     assert payload["residual_producer_handoff_authoritative"] is False
@@ -126,6 +134,8 @@ def test_contract_is_fail_closed_on_remaining_producers() -> None:
     assert payload["residual_producer_promotion_gate_session_wired"] is False
     assert payload["residual_producer_promotion_authorized_family_count"] == 0
     assert payload["residual_producer_presence_counts_as_proof"] is False
+    assert payload["residual_producer_promotion_requires_named_contract"] is True
+    assert payload["residual_producer_promotion_anonymous_boolean_allowed"] is False
     assert payload["provider_returned_selected_query_input_authoritative"] is False
     assert payload["wheel_state_source_address"] == "HDVehicle+0x98"
     assert payload["wheel_state_source_address_proven"] is True
