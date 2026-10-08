@@ -1,0 +1,71 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0TbcCompoundRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "pc_decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630Participant4b0Frontier/1",
+    "SHIFT.Fun00713630Participant4b0FlacRecordRejection/1"
+  ],
+  "candidate": {
+    "site": "0x007a2006",
+    "function": "FUN_007a1fc0",
+    "operation": "mov dword ptr [ESI+0x4b0],EDI",
+    "value_at_site": 0,
+    "selected_physics_participant_writer": false,
+    "machine_span": {
+      "start": "0x007a1fc0",
+      "end_exclusive": "0x007a2030",
+      "sha256": "04891e7d3b5866252c414e211dd697a6dc516d3c137d790ab3b68a09fd733374"
+    }
+  },
+  "compound_array_root": {
+    "owner_function": "FUN_007a32a0",
+    "source_path": ".\\Source\\Vehicle\\tire_manager.cpp",
+    "source_line": "0x503",
+    "open_failure_text": "Could not open TBC file: %s\\n",
+    "section_marker": "[COMPOUND]",
+    "compound_count_field": "owner+0x0c",
+    "array_pointer_field": "owner+0x10",
+    "element_stride": "0x610",
+    "vector_constructor": "FUN_007a1fc0",
+    "vector_destructor": "FUN_007a3090",
+    "allocation_expression": "count*0x610 + 4",
+    "machine_span": {
+      "start": "0x007a344c",
+      "end_exclusive": "0x007a34ad",
+      "sha256": "329198889a3c0400b6811438c6afa97ce56fc0ee43c744ae93c62a36b98116cf"
+    },
+    "decompiler_source_span": {
+      "lines": "800803-800910",
+      "sha256": "5ae5a7dbe9a62c1185efa47ec39dc6e415e910fe69ee09159e13c7dfc7b808b7"
+    }
+  },
+  "constructor_source_span": {
+    "lines": "799981-800050",
+    "sha256": "4e1183ae4f636f3064c60289471025c9ff3654a310d3dc5e2eb09f78e313734d"
+  },
+  "adjudication": {
+    "candidate_receiver_domain_closed": true,
+    "candidate_is_tbc_compound_record": true,
+    "candidate_is_selected_physics_participant": false,
+    "direct_displacement_site_rejected": true,
+    "remaining_unjoined_direct_site_count": 7,
+    "selected_participant_runtime_plus_0x4b0_writer_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The TBC/compound semantic label is admitted only after the exact vector-constructor root joins FUN_007a1fc0 to the 0x610-stride owner+0x10 array.",
+    "The numeric +0x4b0 offset is not treated as an identity join to PhysicsParticipant.",
+    "Remaining direct and computed/alias/indirect writer paths stay open."
+  ],
+  "next_step": "Adjudicate the remaining 7 direct-displacement +0x4b0 writer sites by exact receiver provenance."
+}
