@@ -22,20 +22,11 @@ The second target is an embedded child at parent `+0xfe8`:
 0x007c3215 call 0x007c19c0
 ```
 
-Inside those children, the literal stores are:
-
-```text
-0x007c0fa0 mov [esi+0x374],ebx
-0x007c1ace mov [esi+0x374],eax
-```
-
-Both functions capture their entry receiver in `ESI`.
+Inside those children, the literal stores are `0x007c0fa0` and `0x007c1ace`; both callees capture entry ECX in ESI.
 
 ## Parent ownership
 
-The machine entry surface to `FUN_007c3170` contains two runtime allocation paths and one fixed-global path.
-
-The runtime paths allocate a fresh `0x3848`-byte parent object before the constructor call:
+The complete known machine entry surface to `FUN_007c3170` is two fresh `0x3848` allocations and one fixed-global parent:
 
 ```text
 0x0076dfb4 call 0x008868d0
@@ -45,19 +36,15 @@ The runtime paths allocate a fresh `0x3848`-byte parent object before the constr
 0x00798e60 call 0x008868d0
 0x00798e72 mov ecx,eax
 0x00798e74 call 0x007c3170
-```
 
-The static path passes exact parent `0x00c1c568`:
-
-```text
 0x00a8ca60 mov ecx,0x00c1c568
 0x00a8ca65 call 0x007c3170
 ```
 
-Therefore the fixed child addresses are `0x00c1c570` and `0x00c1d550`, not Participants Manager singleton `0x00bc9fc0`. The fresh heap parents likewise do not alias the already-mapped static singleton.
+The fixed children are `0x00c1c570` and `0x00c1d550`, distinct from Participants Manager singleton `0x00bc9fc0`; fresh heap children likewise do not alias that mapped static singleton.
 
 ## Adjudication
 
-Both literal `+0x374` sites are closed-negative as Participants Manager writes. With the upstream nine-site vptr batch, the remaining literal receiver-provenance worklist shrinks from 11 to 9 sites.
+Both literal `+0x374` sites are closed-negative as Participants Manager writes. With the upstream ten-site vptr/owner batch, the remaining literal receiver-provenance worklist shrinks from 10 to 8 sites.
 
-This does not close computed-address stores or the final manager+0x374 -> HDVehicle+0x4330 identity join. `0x004b86cf`, P1.3 and provider removal remain fail-closed; provider count remains 7.
+Computed-address stores and the final manager+0x374 -> HDVehicle+0x4330 identity join remain open. `0x004b86cf`, P1.3 and provider removal remain fail-closed; provider count remains 7.
