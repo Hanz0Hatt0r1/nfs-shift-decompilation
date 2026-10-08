@@ -1,0 +1,91 @@
+{
+  "format": "SHIFT.DecompBlockerGraph/1",
+  "version": 1,
+  "updated_from_main": "a7642806ee9c689535384c43d1dd8dbdfe1d5f3f",
+  "rules": {
+    "pc_retail_semantic_authority": true,
+    "numeric_offset_equality_is_identity": false,
+    "external_provider_count": 7,
+    "semantic_promotion_requires_exact_provenance": true
+  },
+  "workstreams": [
+    {
+      "id": "P1.1",
+      "owner": "Process 1A",
+      "title": "FUN_00766510/contact_response producer closure",
+      "status": "in_progress",
+      "consumer": "Process 2 P2.3",
+      "next": "Close remaining upstream input/scheduling/residual tail provenance before provider replacement."
+    },
+    {
+      "id": "P1.3",
+      "owner": "Process 1B",
+      "title": "retail control/input producer provenance",
+      "status": "in_progress",
+      "children": [
+        {
+          "id": "P1.3.slot0",
+          "target": "HDVehicle+0x938",
+          "status": "alias-callee-bulk-copy",
+          "next": "Trace exact selected-root alias/callee/bulk-copy writers."
+        },
+        {
+          "id": "P1.3.slot1",
+          "target": "HDVehicle+0x13b8",
+          "status": "alias-callee-bulk-copy",
+          "next": "Trace exact selected-root alias/callee/bulk-copy writers."
+        },
+        {
+          "id": "P1.3.slot2",
+          "target": "HDVehicle+0x1e38",
+          "status": "partial-producer-proven",
+          "next": "Resolve selected HDVehicle+0x64e8 non-sentinel provenance and manager collection insertion identity."
+        },
+        {
+          "id": "P1.3.slot3",
+          "target": "HDVehicle+0x28b8",
+          "status": "alias-callee-bulk-copy",
+          "next": "Trace exact selected-root alias/callee/bulk-copy writers."
+        },
+        {
+          "id": "P1.3.manager374",
+          "target": "FUN_00489ad0()+0x374 value == HDVehicle+0x4330",
+          "status": "helper-alias-indirect-only",
+          "next": "Trace helper-mediated, escaped-alias and non-vtable indirect mutations."
+        },
+        {
+          "id": "P1.3.manager2a0",
+          "target": "FUN_00489ad0()+0x2a0 collection entry == HDVehicle+0x4330",
+          "status": "mutation-edge-found",
+          "next": "Expand 0x00469b1d -> FUN_0057f620 arguments and stored element identity."
+        }
+      ]
+    },
+    {
+      "id": "P1.4",
+      "owner": "Process 1D",
+      "title": "camera follow provenance",
+      "status": "queued"
+    },
+    {
+      "id": "P2.3",
+      "owner": "Process 2",
+      "title": "native contact_response replacement",
+      "status": "blocked",
+      "blocked_by": ["P1.1"],
+      "provider_reduction_on_completion": "7 -> 6"
+    },
+    {
+      "id": "P2.4",
+      "owner": "Process 2",
+      "title": "consume P1.2 vehicle writer ownership",
+      "status": "ready"
+    },
+    {
+      "id": "P3",
+      "owner": "Process 3",
+      "title": "resources/scene/render/bootstrap",
+      "status": "parallel"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+name: evidence-fast
+
+on:
+  pull_request:
+    paths:
+      - 'evidence/**'
+      - 'docs/**'
+      - 'coordination/**'
+      - 'tools/ghidra/**'
+      - 'tools/research/**'
+      - 'tests/test_process1_*.py'
+      - 'tests/test_development_acceleration_tools.py'
+      - '.github/workflows/evidence-fast.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: evidence-fast-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evidence-fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Validate JSON evidence and coordination files
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for root in (Path('evidence'), Path('coordination')):
+              if not root.exists():
+                  continue
+              for path in sorted(root.rglob('*.json')):
+                  with path.open('r', encoding='utf-8') as fh:
+                      json.load(fh)
+                  print(path)
+          PY
+      - name: Run acceleration regressions
+        run: python -m pytest -q tests/test_development_acceleration_tools.py tests/test_blocker_graph_shape.py
+      - name: Run changed Process 1 tests when present
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            exit 0
+          fi
+          git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+          mapfile -t tests < <(git diff --name-only "origin/${{ github.base_ref }}...HEAD" | grep '^tests/test_process1_.*\.py$' || true)
+          if [ ${#tests[@]} -gt 0 ]; then
+            python -m pytest -q "${tests[@]}"
+          fi
