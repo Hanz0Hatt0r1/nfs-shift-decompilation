@@ -2,16 +2,16 @@
 
 Evidence-driven reconstruction of *Need for Speed: SHIFT* with one practical milestone: a native offline Linux/Vulkan playable slice driven by original retail resources.
 
-The repository already contains a connected resource pipeline, Silverstone scene reconstruction, native Vulkan execution, continuous runtime state, source-backed vehicle-physics infrastructure, persistent BMW BODY state, a proven BMW render/physics frame bridge, and a freshness-gated vehicle world-transform path.
+The repository already contains a connected retail-resource pipeline, Silverstone scene reconstruction, native Vulkan execution, a continuous runtime shell, persistent BMW physics state, exact selected-session scheduler timing, a proven BMW render/physics frame bridge, and freshness-gated vehicle world-transform publication.
 
-It is **not yet a complete playable native build**. Current development is deliberately organized around the shortest blocker graph to the first playable Linux vertical slice.
+It is **not yet a complete playable native build**. Current work is concentrated on the shortest remaining retail-semantic path needed to close the first Silverstone + BMW vertical slice.
 
 ## Milestone
 
 ```text
 Silverstone
 +
-real retail vehicle
+real retail BMW M3 E36
 +
 resource-driven bootstrap
 +
@@ -19,7 +19,7 @@ input
 +
 continuous persistent physics
 +
-vehicle world transform
+fresh vehicle world transform
 +
 camera
 +
@@ -28,197 +28,151 @@ Vulkan rendering
 native playable Linux vertical slice
 ```
 
-The project is not trying to decompile every `SHIFT.exe` function before this milestone. Work that does not shorten the active blocker graph, produce evidence required by the next edge, or create immediately reusable infrastructure for that edge is deferred.
+The project is not trying to decompile every `SHIFT.exe` function before this milestone. Work that does not shorten the active blocker, produce evidence required by the next edge, or create immediately reusable infrastructure for that edge is deferred.
 
-## Three-process execution model
+## Active development model
 
-All development is coordinated as one dependency chain:
+The first playable slice now uses **one active development process**.
 
 ```text
-PROCESS 1
-static proof / ABI / producer / scheduling
-        |
-        v
-PROCESS 2
-native physics/runtime execution
-        |
-        +-------------------------+
-        |                         |
-        v                         v
-persistent vehicle          PROCESS 3
-                            resources / scene / render
-        |                         |
-        +------------+------------+
-                     v
-            playable Linux slice
+static proof / ABI / provenance / scheduling
+        -> native physics/runtime
+        -> persistent vehicle + fresh world transform
+        -> resources / scene / camera / Vulkan
+        -> playable Linux slice
 ```
 
-Canonical three-process coordination documents:
+Canonical coordination files:
 
-- [`docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V3.md`](docs/PLAYABLE_SLICE_PROCESS_INSTRUCTIONS_V3.md)
-- [`docs/PLAYABLE_SLICE_PARALLEL_PROCESS_PROMPTS.md`](docs/PLAYABLE_SLICE_PARALLEL_PROCESS_PROMPTS.md)
+- [`PROCESS_INSTRUCTIONS.md`](PROCESS_INSTRUCTIONS.md)
+- [`docs/PLAYABLE_SLICE_SINGLE_PROCESS_INSTRUCTIONS_V5.md`](docs/PLAYABLE_SLICE_SINGLE_PROCESS_INSTRUCTIONS_V5.md)
+- [`docs/PLAYABLE_SLICE_SINGLE_PROCESS_PROMPT_V5.md`](docs/PLAYABLE_SLICE_SINGLE_PROCESS_PROMPT_V5.md)
+- [`evidence/playable_slice_single_process_execution.json`](evidence/playable_slice_single_process_execution.json)
 
-Before every substantial task, answer:
+The old Process 1 / Process 2 / Process 3 lanes are historical compatibility/evidence names only; they no longer define active ownership.
+
+Before substantial work, answer:
 
 > **Какой конкретный blocker первого playable Linux vertical slice снимает эта работа?**
 
-Every blocker-sized task should identify:
+## Current status
 
-```text
-BLOCKER   concrete blocked edge being shortened
-INPUT     exact evidence/contract already available
-OUTPUT    exact proof/contract/runtime capability produced
-CONSUMER  exact downstream process/path that consumes it
-```
-
-If the consumer cannot be named, the task is normally out of scope.
-
-### Process ownership
-
-**PROCESS 1 — static proof / ABI / producer / scheduling**
-
-Owns retail semantic proof, ABI/value provenance, owner/producer identity, scheduler/cadence proof, control-producer mapping and camera source/timing proof. It emits narrow source-backed contracts for downstream consumers.
-
-**PROCESS 2 — native physics/runtime execution**
-
-Consumes positive Process 1 contracts, implements the corresponding native runtime behavior, maintains persistent physics state and freshness, and publishes the current vehicle world transform through fail-closed admission gates.
-
-**PROCESS 3 — resources / scene / render**
-
-Owns exact retail resource admission, Silverstone/BMW bootstrap composition, Vulkan execution, consumption of fresh Process 2 transforms, and visible slice regressions. It must not hide missing physics semantics with render-side animation or guessed assets.
-
-## Current readiness
-
-The important distinction is between infrastructure already running natively and retail-semantic gates that are still closed.
+Current `main` frontier: **Phase 743**.
 
 | Area | State | Notes |
 | --- | --- | --- |
 | Retail resource extraction / typed parsing | Ready for current slice | BFF Type 0/1/2 and X12d=2 supported; Type 3 still needs an external Oodle-compatible runtime |
-| Silverstone scene reconstruction | Ready enough for slice integration | Scene placement, geometry, material/shader admission and native scene submission exist; ambiguous render semantics remain fail-closed |
-| Native XCB/Vulkan runtime | Ready | Window, device/swapchain, indexed draws, scene submission, shaders, textures, state transport and validation-oriented paths are implemented |
-| Continuous native session | Ready | Persistent runtime state, live input transport, camera state, physics state and Vulkan submission run in one session |
-| BMW outer Vehicle -> VHF numeric relation | **Positive** | `SHIFT.BMWOuterVHFNumericRelation/1` |
-| BMW BODY0 bind frame | **Positive** | `SHIFT.BMWBody0BindFrameProof/1` |
-| Fresh persistent BMW world transform | **Positive** | `SHIFT.BMWPersistentWorldTransformRuntimeWiring/1`; production path is freshness-gated |
-| Retail outer scheduler/cadence | **Positive and consumed** | `SHIFT.RetailOuterUpdateCadence/1` plus strict native outer-scheduler authority seam |
-| Selected-session loaded inner physics rate | **Blocked — current shortest blocker** | Exact hash-locked `PhysicsTweaker` payload must be materialized and its unique `tick rate` admitted |
-| Retail inner BODY substep execution | Blocked | Must consume the exact selected-session loaded `1/rate`; host pacing or constructor defaults cannot substitute |
-| Retail vehicle/control producer chain | Incomplete | Deep producer/owner handoffs still need source-backed closure |
-| Input -> drivetrain/wheel/control mapping | Incomplete | Live input exists, but full retail control consumption is not yet admitted |
-| Retail camera follow | Incomplete | Camera transport exists; authoritative source/timing must follow the fresh admitted vehicle transform |
-| End-to-end playable Linux slice | **Not yet** | Final integration remains gated by the items above |
+| Silverstone scene reconstruction | Ready enough for slice integration | Scene placement, geometry, material/shader admission and native scene submission exist |
+| Native XCB/Vulkan runtime | Ready | Window, device/swapchain, indexed draws, scene submission, shaders, textures and state transport are implemented |
+| Continuous native session | Ready as infrastructure | Persistent runtime state, input transport, camera state, physics state and Vulkan submission coexist in one session |
+| BMW BODY0 identity / bind frame | **Positive** | Retail BMW chassis BODY0 and BODY0-to-render-root bridge are proven |
+| Fresh BMW world transform | **Positive** | Persistent BODY0 state can publish a freshness-gated BMW world transform |
+| Retail outer scheduler/cadence | **Positive and consumed** | Native scheduler authority seam is active |
+| Selected-session inner physics rate | **Positive and consumed** | Exact PC retail `PhysicsTweaker` rate is **180 Hz** |
+| Retail inner BODY execution | **Positive** | Exact **1/180 s** persistent inner substeps are admitted; normal outer update resolves to six recovered substeps |
+| `FUN_007682c0` BODY0 delta/effect path | **Largely native** | BODY0 destination, machine effect, x87 FSQRT, derived projection state and steering angle path are internalized |
+| `FUN_00765c40` collision/query pass | **Partially native** | World position, query-cache lifetime and selected miss fallback are native-owned; collision lookup/load terms/residual side effects remain external |
+| `FUN_00766510` contact response | **Partially native** | Primary response application is native; Phase 743 proves the selected BMW application-point owner |
+| External top-level vehicle providers | **7 remain** | The count must fall only when complete callbacks can be removed without dropping source-visible behavior |
+| Input -> drivetrain/wheel/control mapping | Incomplete | Live input exists, but full retail control producer/consumer mapping is not closed |
+| Retail camera follow | Incomplete | Camera transport exists; authoritative follow source/timing is still open |
+| End-to-end playable Linux slice | **Not yet** | Core physics/control and final integration blockers remain |
 
-## Current blocker: selected-session `PhysicsTweaker` rate
+## What Phase 743 closes
 
-The BMW frame bridge, BODY0 bind, persistent world-transform wiring and retail outer cadence are already positive. The shortest remaining blocker is the exact **loaded inner physics tick rate** for the selected retail session.
-
-The resource identity is locked:
-
-```text
-archive:       PHYSICSBOOTFLOW.bff
-entry index:   49
-entry path:    vehicles/physics/physicstweaker.xml
-compression:   Type 2
-archive SHA256:
-  f4205984343987d7879fcd65f6b2527848a6fd16e9830d6ccca70b7e5db4254a
-decoded SHA256:
-  6cdd05f0512d367c8ce240cb13dd22fe10fb3e21da95185ea8f79e1ca67ca62f
-```
-
-Dedicated materializer:
+The selected BMW application-point source for the primary `FUN_00766510` response path is now proven.
 
 ```text
-tools/materialize_s5_selected_physics_tweaker_rate.py
+HDVehicle+0x38f0/+0x38f8/+0x3900
+    = Phase 727 BODY0-basis transform result
+    = Fun00765c40WorldPositionTransformResult.body_rotated_local
 ```
 
-The rate is admitted only when the decoded payload hash matches and exactly one valid `tick rate` property is present.
+The same stored vector is later consumed by `FUN_00766510` as the point argument to the already-native primary response application.
 
-The constructor default of **180 Hz is not sufficient evidence** for the selected session because `PhysicsTweaker.xml` may override it. Host `1/60`, worker polling intervals, community defaults, or modded values cannot satisfy this gate.
+This is deliberately distinct from the origin-added collision `world_position` used by the `FUN_00765c40` query.
 
-Current machine-readable frontier:
+Phase 743 does **not** remove the `contact_response` provider. The active top-level provider count remains seven.
+
+See:
+
+- [`docs/PHASE743_SCOPE.md`](docs/PHASE743_SCOPE.md)
+- [`evidence/phase743_next_blocker.md`](evidence/phase743_next_blocker.md)
+
+## Current shortest blocker
+
+The next bounded integration edge is the handoff from the residual `FUN_00765c40` collision result into the remaining `FUN_00766510` / `contact_response` path.
+
+Required chain:
 
 ```text
-outer_vehicle_root_to_VHF_relation_numeric_matrix_ready = true
-BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready    = true
-BODY0_bind_frame_proof_ready                            = true
-vehicle_world_transform_ready                           = true
-retail_outer_cadence_admitted                           = true
-retail_outer_authority_seam_ready                       = true
-
-loaded_inner_physics_rate_admitted                      = false   <- CURRENT
-retail_inner_substep_execution_admitted                 = false
-retail_control_chain_complete                           = false
-retail_camera_follow_ready                              = false
+same-pass FUN_00765c40 collision/query result
+        +
+native HDVehicle+0x38e0 hit/miss state
+        +
+selected HDVehicle+0x38e8 fallback / clamp bound
+        +
+Phase 743 HDVehicle+0x38f0 application point
+        v
+typed FUN_00766510 response input
+        v
+native primary response application
+        v
+remaining contact-response state / auxiliary branches / writes
 ```
 
-No original-game execution or runtime capture is currently required for this blocker; it is a resource-materialization/admission problem.
-
-## Active blocker graph
+After that handoff, remaining response configuration owners include:
 
 ```text
-PROCESS 1
-selected-session PhysicsTweaker tick-rate proof/admission
-        |
-        v
-PROCESS 2
-exact 1/rate persistent BODY inner substeps
-        |
-        v
-PROCESS 1
-missing vehicle-physics/control producer provenance
-        |
-        v
-PROCESS 2
-native producer/control consumption
-        |
-        v
-PROCESS 1
-input -> drivetrain/wheel/control mapping
-        |
-        v
-PROCESS 2
-continuous admitted control execution
-        |
-        v
-PROCESS 1
-retail camera-follow source + timing
-        |
-        +-----------------------------+
-        |                             |
-        v                             v
-PROCESS 2                        PROCESS 3
-fresh current vehicle           Silverstone + exact BMW
-transform/camera feed           resource/bootstrap/Vulkan
-        |                             |
-        +--------------+--------------+
-                       v
-             native playable Linux slice
+HDVehicle+0x3908
+HDVehicle+0x3910
+HDVehicle+0x3918
+HDVehicle+0x3950
 ```
 
-### Immediate queues
+The `contact_response` callback can only be removed after the earlier/optional branches, auxiliary calls and source-visible state/diagnostic writes are also preserved.
+
+## Active work not yet on `main`
+
+The following work is ahead of Phase 743 and should not be treated as merged until it lands:
+
+- **Phase 744 / PR #1441** — expose typed selected-BMW `CollisionQueryOutput` from the residual `FUN_00765c40` boundary and derive the `FUN_00766510` query scalar handoff.
+- **Phase 745 / PR #1445** — thread same-pass collision output, `+0x38e0/+0x38e8` state and the Phase 743 application point into the residual contact-response callback.
+- **Phase 746 / PR #1447** — expose the primary `FUN_00766510` caller accumulator delta after `FUN_007baa70` using the recovered `FUN_00753650` cross-product path.
+- Process 3 integration PRs are also building a provenance-gated resource-pipeline -> playable-scene -> profile -> launcher path for a one-command vertical-slice bootstrap.
+
+These changes are important because they convert the old broad boundary
 
 ```text
-PROCESS 1
-P1.1  admit exact selected-session PhysicsTweaker rate
-P1.2  close deepest missing vehicle-physics/control producers
-P1.3  close input -> drivetrain/wheel/control producer mapping
-P1.4  prove retail camera-follow source and timing
-
-PROCESS 2
-P2.1  keep rate/scheduler consumers fail-closed
-P2.2  consume admitted inner rate as exact persistent substep timing
-P2.3  internalize positive producer/control handoffs
-P2.4  publish a fresh current vehicle transform every admitted tick
-P2.5  feed the admitted current transform into camera integration
-
-PROCESS 3
-P3.1  keep exact Silverstone + BMW resource bootstrap runnable
-P3.2  preserve exact BMW VHF identity without basename fallback
-P3.3  consume freshness-gated Process 2 vehicle transforms
-P3.4  keep the Vulkan slice green and fix only slice-blocking render/resource regressions
+FUN_00765c40 -> opaque external data -> FUN_00766510
 ```
 
-A downstream process may build the immediate fail-closed consumer seam for the next expected handoff, but it may not guess an unresolved upstream semantic value just to stay busy.
+into a progressively typed/native path:
+
+```text
+native query inputs
+  -> typed collision output
+  -> native clamp/config
+  -> native response transform
+  -> native application point
+  -> native accumulator pieces
+```
+
+## Remaining external vehicle boundaries
+
+The persistent `NativeVehicleProviderSession` still has seven top-level external boundaries:
+
+```text
+1. FUN_00765c40 residual collision/query pass
+2. FUN_00758b50 wheel update
+3. FUN_00766510 residual contact response
+4. FUN_007675f0 remaining caller-input provider
+5. FUN_007afdd0 scalar-provider factory
+6. FUN_00765470 half-step refresh provider
+7. FUN_007b8810 post-half-step provider
+```
+
+This number is a useful architectural metric. A provider is not removed merely because one field became native; it falls only when the full externally required behavior has been split, proven and consumed internally.
 
 ## What already works
 
@@ -240,7 +194,7 @@ python shift_importer.py --help
 
 BFF-specific tooling is documented in [`BFF_TOOLS.md`](BFF_TOOLS.md).
 
-### Silverstone / scene path
+### Silverstone and BMW scene path
 
 ```text
 SGB
@@ -255,67 +209,28 @@ SGB
   -> Vulkan execution
 ```
 
-The Silverstone Era3 dependency surface is structurally reconstructed far enough for the current vertical-slice path. Unsupported shader/resource choices remain explicit blockers rather than being guessed.
-
-The BMW scene path consumes the exact canonical render model:
+The selected BMW render path uses the exact retail model:
 
 ```text
 vehicles/bmw_m3_e36/bmw_m3_e36.vhf
 ```
 
-Static VHF object-frame transport is kept separate from dynamic vehicle pose.
+Static VHF object-frame transport remains separate from dynamic vehicle pose.
 
-### BMW frame and world-transform proof
+### BMW frame and persistent transform
 
-The earlier render/physics frame blocker is closed.
-
-Positive contracts include:
+Closed pieces include:
 
 - retail BMW chassis BODY index `0` identity;
 - BODY0 resource/local -> SDF bind facts;
 - selected-session BODY0 -> outer Vehicle numeric relation;
-- `SHIFT.BMWVehicleRenderModelResourceJoin/1`;
-- `SHIFT.BMWVHFHierarchyRootFrame/1`;
-- `SHIFT.OuterVehicleRenderSnapshotAffineBridge/1`;
-- `SHIFT.OuterVehicleRenderRootDeltaProvenance/1`;
-- `SHIFT.VehicleRenderModelRootAffineDomainJoin/1`;
-- `SHIFT.OuterVehicleBMWVHFRootRelation/1`;
-- `SHIFT.BMWPrimaryPlayerFirstBootstrapRenderRootDelta/1`;
-- `SHIFT.BMWOuterVHFNumericRelation/1`;
+- outer Vehicle -> BMW VHF root relation;
 - `SHIFT.BMWBody0BindFrameProof/1`;
+- persistent BODY freshness tracking;
 - `SHIFT.BMWPersistentWorldTransformRuntimeWiring/1`;
-- `SHIFT.BMWVHFRootFrameSceneConsumer/1`.
+- Vulkan-side freshness-gated vehicle transform consumption.
 
-For the first explicit native primary-player bootstrap:
-
-```text
-delta_local = outerVehicle[+0x19c,+0x1a0,+0x1a4]
-            = (0, 0, 0)
-
-producer    = FUN_00795d60
-lifetime    = Vehicle::InitVehicle setup state
-role        = primary-player / Vehicle+0x234 == 0
-```
-
-That proof is deliberately narrow and is not generalized to other roles, restart states, or origin transitions without evidence.
-
-### Native Vulkan renderer
-
-Implemented renderer infrastructure includes:
-
-- XCB window creation;
-- Vulkan instance/device/surface/swapchain setup;
-- indexed multi-draw submission;
-- neutral scene-set execution;
-- semantic-aware affine transforms;
-- SPIR-V shader loading;
-- constant-buffer transport;
-- 2D textures and supported cube resources;
-- per-draw cull/depth/blend state for the proven material subset;
-- validation-oriented regression paths;
-- freshness-gated persistent vehicle transform upload.
-
-The renderer transport is no longer the main blocker for authentic vehicle motion. Current gating work is upstream in retail physics/control semantics.
+The renderer transport is no longer the main blocker for authentic vehicle motion.
 
 ### Vehicle physics
 
@@ -335,132 +250,60 @@ CDF + EDF + GDF + SDF
 
 Implemented pieces include:
 
-- BODY accumulator helpers;
-- JOINT/HINGE/BAR projection and matrix-coupling kernels;
 - generated BODY constraint/matrix assembly;
-- builtin diagonal reset and sparse solve execution;
+- JOINT/HINGE/BAR projection and coupling kernels;
+- builtin diagonal reset and sparse solve;
 - post-solve BODY projection;
-- BODY point transforms;
+- BODY point transforms and accumulator helpers;
 - wheel/contact response arithmetic;
-- auxiliary contact-response chaining;
-- source-backed wheel-force aggregation;
-- persistent BODY pose storage and generation/freshness checks;
-- strict scheduler-authority admission seams;
-- persistent BMW world-transform publication.
+- persistent BMW BODY state and freshness;
+- exact selected-session 180 Hz inner timing;
+- exact 1/180 s persistent inner execution;
+- source-backed BODY0 delta destination and application;
+- native `FUN_007682c0` machine effect with x87 behavior preserved;
+- native derived projection state;
+- native `FUN_007594e0` steering/machine-angle path;
+- native pieces of `FUN_00765c40` query-state ownership;
+- native primary `FUN_00766510` response application.
 
-This is still **not a complete retail vehicle frame**. The selected loaded inner rate, remaining producers and control chain must be admitted before the native loop can claim retail-consistent continuous vehicle execution.
+This is still **not a complete retail vehicle frame**. Remaining producer/refresh ownership, residual collision/contact callbacks, control production and camera timing must be closed before the project can claim a playable retail-consistent loop.
 
 ### Input and camera
 
 Already implemented:
 
 - live X11 keyboard control intent;
-- deterministic scripted input for regression tests;
-- recovered CameraManager state transport;
+- deterministic scripted input for regressions;
+- CameraManager state transport;
 - guarded camera double-buffer updates;
-- camera state carried inside the continuous native session.
+- camera state carried in the continuous native session.
 
 Still missing:
 
-- exact retail input/control producer mapping into drivetrain/wheel state;
-- continuous consumption of that proven control chain;
+- exact retail input -> drivetrain/wheel/control producer mapping;
+- continuous execution of the fully proven control chain;
 - authoritative camera-follow source and timing tied to the current admitted vehicle transform.
 
 ### Continuous runtime
 
-The Linux runtime is already an integrated persistent execution shell rather than a one-frame renderer test:
+The Linux runtime is an integrated persistent execution shell rather than a one-frame renderer test:
 
 ```text
 resource-backed scene
   + native runtime state
   + input
   + camera state
-  + physics packets/state
-  + persistent BMW state
+  + persistent BMW physics state
+  + exact selected-session inner timing
   -> continuous native session
   -> Vulkan frame submission
 ```
 
-`--continuous` uses host wall-clock pacing. Host pacing is an execution policy, not retail scheduler evidence. Retail outer cadence is independently proven; retail inner substep timing remains gated on the exact loaded `PhysicsTweaker` rate.
-
-## Evidence policy
-
-The repository deliberately stays fail-closed.
-
-- Static executable evidence, runtime observations and resource identity remain separate until explicitly joined.
-- Callgraph proximity is not ownership.
-- Equal numeric values are not provenance.
-- Visual similarity is not resource identity.
-- Identity-valued matrices do not prove identity semantics.
-- Static VHF transforms are not dynamic vehicle pose.
-- Missing proof remains a blocker instead of being guessed.
-- Runtime-owned renderer resources are not silently synthesized.
-- Native execution requires explicit provenance/admission gates.
-- Host pacing cannot stand in for retail scheduler evidence.
-- Fixtures and test scripts cannot satisfy retail-semantic gates.
-- A native implementation is not automatically treated as recovered retail behavior.
-
-Common evidence states:
-
-```text
-proven
-verified
-inferred
-ambiguous
-unknown
-unsupported
-blocked
-```
-
-Cross-process handoffs should be versioned machine-readable contracts when practical:
-
-```text
-SHIFT.<Name>/1
-```
-
-## Ghidra evidence database
-
-Static analysis is exported into machine-readable evidence instead of remaining only inside an interactive Ghidra project. The database contains functions, callgraph edges, strings/xrefs, globals, static data, switch candidates, factory candidates, constructors and vtable candidates.
-
-Typical export:
-
-```bash
-GHIDRA_HOME=/opt/ghidra \
-./tools/ghidra/run_shift_export.sh \
-  /path/to/ghidra_projects/shift \
-  shift \
-  SHIFT.exe \
-  out/shift_ghidra_database
-```
-
-Targeted instruction/p-code exports are used when a blocker needs exact register/value/store provenance instead of broad decompiler output.
-
-The current exported database for `SHIFT.exe` is built around a 32-bit x86 PE and contains machine-readable functions, call edges, strings, candidate vtables/constructors, globals, static tables, switches and factory candidates.
-
-## Runtime evidence
-
-Static analysis cannot uniquely recover every runtime identity. The repository therefore also contains bounded retail capture/audit paths.
-
-### D3D9 capture
-
-`native_capture/` and `src/graphics/d3d9/` cover:
-
-- tied FXO permutations;
-- draw-local texture/resource identity;
-- Silverstone IMB draw attribution;
-- runtime transforms;
-- same-instance shader/resource proof;
-- renderer-owned resources.
-
-### Physics/runtime capture
-
-`tools/` contains bounded runtime probes, evidence packaging and verification helpers for provider behavior that cannot be recovered uniquely from static code.
-
-Runtime capture should only be requested when the exact current blocker cannot be closed from static/resource evidence.
+Host wall-clock pacing remains an execution policy and is not used as a substitute for recovered retail scheduler evidence.
 
 ## Native vertical-slice launcher
 
-The integration runner consumes one profile instead of a long manually assembled command line:
+The integration runner consumes a profile instead of a long manually assembled command line:
 
 ```bash
 python3 tools/run_native_vertical_slice.py \
@@ -476,13 +319,46 @@ python3 tools/run_native_vertical_slice.py \
   out/vertical_slice/profile.json
 ```
 
-A valid launch profile confirms structural/runtime contracts; it does not by itself prove gameplay semantics.
+A valid launch profile proves structural/runtime admission only; it does not by itself prove gameplay-semantic completeness.
+
+## Evidence policy
+
+The repository deliberately stays fail-closed.
+
+- PC retail is the primary semantic authority.
+- Xbox 360 recompilation may be used as independent navigation/corroboration, not as a replacement for PC proof.
+- Static executable evidence, runtime observations and resource identity remain separate until explicitly joined.
+- Callgraph proximity is not ownership.
+- Equal numeric values are not provenance.
+- Visual similarity is not resource identity.
+- Static VHF transforms are not dynamic vehicle pose.
+- Missing proof remains a blocker instead of being guessed.
+- Host pacing cannot stand in for retail scheduler evidence.
+- Fixtures and test scripts cannot satisfy retail-semantic gates.
+- A native implementation is not automatically treated as recovered retail behavior.
+
+Cross-process historical contracts remain useful evidence artifacts, but active development now consumes positive contracts immediately in the single-process blocker chain.
+
+## Ghidra and runtime evidence
+
+Static analysis is exported into machine-readable evidence instead of remaining only inside an interactive Ghidra project. Targeted instruction/p-code exports are used when a blocker needs exact register/value/store provenance.
+
+Typical export:
+
+```bash
+GHIDRA_HOME=/opt/ghidra \
+./tools/ghidra/run_shift_export.sh \
+  /path/to/ghidra_projects/shift \
+  shift \
+  SHIFT.exe \
+  out/shift_ghidra_database
+```
+
+`native_capture/`, `src/graphics/d3d9/` and bounded physics/runtime probes cover runtime evidence that cannot be recovered uniquely from static code. Runtime capture is requested only when the current blocker cannot be closed from static/resource evidence.
 
 ## Build and test
 
 ### Python
-
-Python 3.9+ is required by the repository bootstrap script.
 
 ```bash
 ./install_requirements.sh
@@ -513,7 +389,7 @@ cmake -S native_vulkan -B native_vulkan/build -DCMAKE_BUILD_TYPE=Release
 cmake --build native_vulkan/build --parallel
 ```
 
-CI exercises software Vulkan/lavapipe paths, shader compilation/reflection, validation checks, scene/material submission, runtime contracts and focused native-physics regressions.
+CI exercises software Vulkan/lavapipe paths, shader compilation/reflection, scene/material submission, runtime contracts and focused native-physics regressions.
 
 ## Repository layout
 
@@ -544,23 +420,25 @@ The first playable slice intentionally does not require:
 - Bink/video playback;
 - Android support.
 
-Those are outside the current blocker graph. Android remains deferred until the desktop/native runtime boundary is stable.
+Android remains deferred until the desktop/native runtime boundary is stable.
 
 ## Definition of the first playable slice
 
 The milestone is reached only when one continuous native session satisfies all of the following:
 
 ```text
-[ ] authentic Silverstone resources loaded
-[ ] real retail BMW instantiated from exact resources
-[ ] user input reaches source-backed control producers
-[ ] physics executes continuously with persistent state
-[ ] retail outer cadence and selected-session inner rate are admitted
-[ ] BODY0 continuously produces a fresh admitted vehicle world transform
+[x] authentic Silverstone resource pipeline exists
+[x] exact retail BMW render/physics identity is established
+[x] persistent BMW BODY state exists
+[x] retail outer cadence is admitted
+[x] selected-session 180 Hz inner rate is admitted
+[x] exact 1/180 s persistent inner execution exists
+[x] BODY0 can publish a fresh admitted vehicle world transform
+[ ] residual vehicle provider callbacks needed by the core loop are eliminated or reduced to proven resource/runtime inputs
+[ ] user input reaches the complete source-backed drivetrain/wheel/control chain
 [ ] camera follows the proven current vehicle source/timing
-[ ] Vulkan renders Silverstone + BMW continuously
-[ ] no test-only transform script drives core vehicle motion
+[ ] Silverstone + BMW runs continuously without test-only core motion
 [ ] no unsupported semantic guess is required for the core loop
 ```
 
-Until every item is true, the repository should be described as an **advanced decompilation/reconstruction with a functioning native Linux runtime skeleton and multiple closed vehicle/render integration proofs**, not as a finished native port.
+Until every required item is true, the repository should be described as an **advanced decompilation/reconstruction with a functioning native Linux runtime and a partially internalized retail vehicle-physics loop**, not as a finished native port.
