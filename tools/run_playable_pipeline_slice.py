@@ -128,15 +128,30 @@ def execute_playable_pipeline_slice(
         env=launch_environment,
         check=False,
     )
+    try:
+        runtime_sha256_after = _sha256(runtime_path)
+    except OSError:
+        runtime_sha256_after = None
+    runtime_binary_stable = runtime_sha256_after == runtime_sha256
+    execution_ready = completed.returncode == 0 and runtime_binary_stable
+    if not runtime_binary_stable:
+        status = "runtime-binary-changed"
+    elif completed.returncode == 0:
+        status = "completed"
+    else:
+        status = "runtime-failed"
+
     receipt_path = (output_dir / "execution_result.json").resolve()
     result = {
         "format": FORMAT,
         "version": 1,
-        "status": "completed" if completed.returncode == 0 else "runtime-failed",
-        "ready": completed.returncode == 0,
+        "status": status,
+        "ready": execution_ready,
         "runtime_returncode": completed.returncode,
         "runtime_executable": str(runtime_path),
         "runtime_executable_sha256": runtime_sha256,
+        "runtime_executable_sha256_after": runtime_sha256_after,
+        "runtime_executable_stable": runtime_binary_stable,
         "bootstrap_report": str(report_path),
         "bootstrap_report_sha256": _sha256(report_path),
         "launch_plan": str(plan_path),
@@ -152,9 +167,11 @@ def execute_playable_pipeline_slice(
             "bootstrap_report_hash_recorded": True,
             "launch_plan_hash_recorded": True,
             "runtime_executable_hash_recorded_before_execution": True,
+            "runtime_executable_rehashed_after_execution": True,
+            "runtime_executable_stable_across_execution": runtime_binary_stable,
             "resource_pipeline_physics_or_participant_replaced": False,
             "runtime_execution_attempted": True,
-            "runtime_success_claimed": completed.returncode == 0,
+            "runtime_success_claimed": execution_ready,
             "retail_game_loop_claimed": False,
         },
     }
