@@ -1,0 +1,71 @@
+{
+  "format": "SHIFT.Fun00755950RemainingSlotDirectWriterFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "full-PE direct-store inventory plus receiver/base normalization"
+  },
+  "consumer_contract": "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1",
+  "targets": {
+    "slot0": "HDVehicle+0x938",
+    "slot1": "HDVehicle+0x13b8",
+    "slot3": "HDVehicle+0x28b8"
+  },
+  "slot0": {
+    "direct_literal_candidates": [
+      {
+        "function": "FUN_00791020",
+        "stores": ["0x007910f8", "0x0079113e"],
+        "adjudication": "rejected",
+        "reason": "receiver is embedded Vehicle = actual_participant+0x340, not selected HDVehicle",
+        "contract": "SHIFT.Fun00791020EmbeddedVehicleOwnership/1"
+      },
+      {
+        "function": "FUN_007572f0",
+        "store": "0x007576b0 fstp f32 [EDI+0x938]",
+        "base_flow": [
+          "0x007572fe EDI = entry ECX",
+          "0x0075733c EAX = slot_index * 0xa80",
+          "0x00757348 EDI = EAX + entry_ECX + 0x400"
+        ],
+        "normalized_destination": "entry_root+0xd38+slot_index*0xa80",
+        "same_as_entry_root_plus_0x938": false,
+        "adjudication": "rejected-as-root-slot0-writer"
+      }
+    ],
+    "remaining_direct_literal_root_candidate": false,
+    "next_writer_class": "alias/callee/bulk-copy"
+  },
+  "slot1": {
+    "target_width": "qword/f64 consumed by FUN_00755950",
+    "direct_qword_literal_candidate": {
+      "function": "FUN_007c3b00",
+      "store": "0x007c4984 fstp qword [ESI+0x13b8]",
+      "receiver_proof": "0x007c3b21 ESI = ECX = VehicleLoadData",
+      "normalized_destination": "VehicleLoadData+0x13b8",
+      "same_as_selected_hdvehicle_plus_0x13b8": false,
+      "adjudication": "rejected-as-root-slot1-writer"
+    },
+    "other_literal_stores": "present only as width/object-mismatched dword/pointer candidates and not promoted",
+    "remaining_direct_qword_root_candidate": false,
+    "next_writer_class": "alias/callee/bulk-copy"
+  },
+  "slot3": {
+    "target_width": "qword/f64 consumed by FUN_00755950",
+    "full_pe_direct_literal_store_count": 0,
+    "remaining_direct_literal_root_candidate": false,
+    "next_writer_class": "alias/callee/bulk-copy"
+  },
+  "adjudication": {
+    "slot0_direct_literal_surface_exhausted": true,
+    "slot1_direct_qword_literal_surface_exhausted": true,
+    "slot3_direct_literal_surface_exhausted": true,
+    "remaining_slots_require_alias_or_callee_provenance": true,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Search alias/callee/bulk-copy writers for selected HDVehicle+0x938/+0x13b8/+0x28b8. Require exact selected-root base provenance and write width before promotion; do not resurrect numeric-offset collisions."
+}
