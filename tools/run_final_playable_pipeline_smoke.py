@@ -28,6 +28,7 @@ REQUIRED_FRONTIER_GATES = (
     "retail_inner_substep_execution_admitted",
     "retail_control_chain_complete",
     "retail_camera_follow_ready",
+    "process_2_camera_feed_ready",
 )
 
 
@@ -127,6 +128,7 @@ def build_final_smoke_preflight(
             "retail_cadence_required": True,
             "retail_control_chain_required": True,
             "retail_camera_follow_required": True,
+            "process_2_runtime_camera_feed_required": True,
             "coordination_bytes_bound_to_preflight": True,
             "coordination_must_remain_stable_before_runtime": True,
             "missing_upstream_gate_may_be_guessed": False,
