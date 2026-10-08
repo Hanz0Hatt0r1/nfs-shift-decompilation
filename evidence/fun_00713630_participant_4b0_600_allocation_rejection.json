@@ -1,0 +1,62 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0Allocation600Rejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630Participant4b0Frontier/1",
+    "SHIFT.Fun00713630Participant4b0SubobjectAliasFrontier/1",
+    "SHIFT.Fun00713630Participant4b0VehicleLoadDataConstructorRejection/1",
+    "SHIFT.Fun00713630Participant4b0FixedSingletonByteRejections/1"
+  ],
+  "candidate": {
+    "site": "0x004dbf73",
+    "function": "FUN_004dbdb0",
+    "operation": "fst dword ptr [ESI+0x4b0]",
+    "selected_physics_participant_writer": false
+  },
+  "direct_call_surface": {
+    "direct_call_count": 1,
+    "caller": "FUN_00549c00",
+    "callsite": "0x00549c56",
+    "receiver_setup": "0x00549c43 push 0x600; 0x00549c48 call FUN_008868c0; 0x00549c54 mov ECX,EAX; 0x00549c56 call FUN_004dbdb0",
+    "allocation_size": "0x600",
+    "constructed_pointer_store": "0x00549c61 [caller+0x10]=EAX",
+    "selected_participant_allocation_size": "0x2b90",
+    "same_object_identity": false,
+    "machine_span": {
+      "start": "0x00549c43",
+      "end_exclusive": "0x00549c64",
+      "sha256": "e36377c3fb241d8db09c4ac220978273810d39233ebb6d27396af223a2ec25d2"
+    }
+  },
+  "constructor": {
+    "function": "FUN_004dbdb0",
+    "receiver_capture": "0x004dbdb1 ESI=ECX",
+    "initializes_subobjects": ["receiver+0x50", "receiver+0x200", "receiver+0x240", "receiver+0x300"],
+    "machine_head_sha256": "153d262a6345057366e84d5328f0f0aab360b5be3d42ba1db15db68b5f9983fe",
+    "writer_window_sha256": "393f67c90a99248ceb83b86392070350b25c755340aa353f15e61870ba6080da"
+  },
+  "adjudication": {
+    "candidate_receiver_identity_closed": true,
+    "candidate_is_0x600_allocation": true,
+    "candidate_is_selected_physics_participant": false,
+    "direct_displacement_site_rejected": true,
+    "remaining_unjoined_direct_site_count": 10,
+    "selected_participant_runtime_plus_0x4b0_writer_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Allocation-size mismatch is used together with the exact sole direct constructor root, not as a generic semantic classifier.",
+    "This contract rejects only site 0x004dbf73.",
+    "Computed-address, escaped-alias, indirect-dispatch and bulk-copy writer surfaces remain open."
+  ],
+  "next_step": "Adjudicate the remaining 10 direct-displacement +0x4b0 writer sites by exact receiver provenance."
+}
