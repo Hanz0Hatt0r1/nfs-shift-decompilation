@@ -1,0 +1,61 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager2a0Fun00469ab0Frontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "ghidra_database_format": "SHIFT.GhidraEvidenceDatabase/1",
+    "evidence_kind": "retail machine-code join plus whole-export direct-call/vtable/literal-pointer exclusion"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8ManagerDirectSetterFrontier/1",
+  "candidate": {
+    "function": "FUN_00469ab0",
+    "address": "0x00469ab0",
+    "calling_convention": "__thiscall",
+    "mnemonic_sha256": "8dc359445a0f62486e22be866469df2563f1852963cc0e1cb4e6c2637a8fcc03",
+    "candidate_subobject": "receiver+0x2a0",
+    "mutation_callsite": "0x00469b1d",
+    "mutation_target": "FUN_0057f620 / thunk_FUN_0041808e"
+  },
+  "machine_join": {
+    "receiver_capture": "0x00469abc MOV ESI,ECX",
+    "subobject_address": "0x00469b17 LEA ECX,[ESI+0x2a0]",
+    "call": "0x00469b1d CALL 0x0057f620",
+    "callee_thunk": "0x0057f620 JMP 0x0041808e",
+    "callee_body_entry": "0x0057f626",
+    "callee_receiver_fields_observed": ["+0x38", "+0x3c", "+0x40", "+0x114"],
+    "callee_mutates_receiver_state": true
+  },
+  "whole_export_exclusions": {
+    "direct_inbound_calls_to_fun00469ab0": 0,
+    "present_in_2533_vtable_candidates": false,
+    "literal_little_endian_0x00469ab0_occurrences_in_retail_image": 0,
+    "address_taken_registration_proven": false
+  },
+  "adjacent_function_disambiguation": {
+    "function": "FUN_00469c00",
+    "address": "0x00469c00",
+    "vtable": "0x00ab6154",
+    "vtable_slot": 0,
+    "constructor_like_allocation": "FUN_004f11d0 allocates 0x10 bytes and stores 0x00ab6154 at object+0",
+    "implication": "The adjacent function belongs to a separately evidenced small vtable object; code adjacency does not establish FUN_00469ab0 receiver identity."
+  },
+  "adjudication": {
+    "fun00469ab0_mutates_receiver_plus_0x2a0": true,
+    "fun00469ab0_receiver_is_singleton_manager": false,
+    "manager_plus_0x2a0_join_complete": false,
+    "manager_plus_0x374_join_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Zero direct inbound calls does not prove the function is unreachable; computed indirect dispatch remains possible.",
+    "Absence from heuristic vtable candidates is not a proof that no custom function-pointer table can reference the function.",
+    "No literal 0x00469ab0 pointer bytes were found in the retail image, but computed registration or transformed pointers remain possible.",
+    "Matching +0x2a0 offsets do not establish object-root identity."
+  ],
+  "next_step": "Search computed/registration dispatch that can reach FUN_00469ab0, or independently prove a caller/root alias to FUN_00489ad0 singleton manager. Do not treat the 0x00469b1d mutation as manager+0x2a0 until that root join exists."
+}
