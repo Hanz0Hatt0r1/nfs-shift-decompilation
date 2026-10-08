@@ -40,21 +40,47 @@ struct Fun00765c40ComposedResidualInputs {
     Fun00765c40OptionalBodyAccumulatorSweepInput optional_body_sweep{};
 };
 
-// Copy only the unresolved pure-data producer payload families. Native-owned
-// BODY/query/cache state, the wheel-job execution seam, lower scene-query
-// behavior and the persistent initial BODY accumulator remain with the caller.
+// Copy only unresolved pure-data producer families declared present by the
+// handoff. Native-owned BODY/query/cache state, the wheel-job execution seam,
+// lower scene-query behavior and persistent initial BODY accumulator remain
+// with the caller. Historical /1 handoffs have no explicit presence mode and
+// therefore continue to copy all eight families exactly as before.
 inline Fun00765c40ComposedResidualInputs
 apply_fun_00765c40_residual_producer_handoff(
     Fun00765c40ComposedResidualInputs inputs,
     const Fun00765c40ResidualProducerHandoff& handoff) {
-    inputs.wheel_plane = handoff.wheel_plane;
-    inputs.wheel_state_source_bits = handoff.wheel_state_source_bits;
-    inputs.persistent_write = handoff.persistent_write;
-    inputs.wheel_pair = handoff.wheel_pair;
-    inputs.contact_array = handoff.contact_array;
-    inputs.contact_body_entries = handoff.contact_body_entries;
-    inputs.bounded_state_tail = handoff.bounded_state_tail;
-    inputs.optional_body_sweep = handoff.optional_body_sweep;
+    if (fun_00765c40_residual_producer_family_is_present(
+            handoff, Fun00765c40ResidualProducerFamily::WheelPlane)) {
+        inputs.wheel_plane = handoff.wheel_plane;
+    }
+    if (fun_00765c40_residual_producer_family_is_present(
+            handoff, Fun00765c40ResidualProducerFamily::WheelStateSource)) {
+        inputs.wheel_state_source_bits = handoff.wheel_state_source_bits;
+    }
+    if (fun_00765c40_residual_producer_family_is_present(
+            handoff, Fun00765c40ResidualProducerFamily::PersistentWrite)) {
+        inputs.persistent_write = handoff.persistent_write;
+    }
+    if (fun_00765c40_residual_producer_family_is_present(
+            handoff, Fun00765c40ResidualProducerFamily::WheelPair)) {
+        inputs.wheel_pair = handoff.wheel_pair;
+    }
+    if (fun_00765c40_residual_producer_family_is_present(
+            handoff, Fun00765c40ResidualProducerFamily::ContactArray)) {
+        inputs.contact_array = handoff.contact_array;
+    }
+    if (fun_00765c40_residual_producer_family_is_present(
+            handoff, Fun00765c40ResidualProducerFamily::ContactBody)) {
+        inputs.contact_body_entries = handoff.contact_body_entries;
+    }
+    if (fun_00765c40_residual_producer_family_is_present(
+            handoff, Fun00765c40ResidualProducerFamily::BoundedStateTail)) {
+        inputs.bounded_state_tail = handoff.bounded_state_tail;
+    }
+    if (fun_00765c40_residual_producer_family_is_present(
+            handoff, Fun00765c40ResidualProducerFamily::OptionalBodySweep)) {
+        inputs.optional_body_sweep = handoff.optional_body_sweep;
+    }
     return inputs;
 }
 
