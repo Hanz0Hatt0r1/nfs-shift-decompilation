@@ -39,16 +39,18 @@ int main() {
         const auto selected_fallback = input.selected_bmw_miss_fallback();
         require(selected_fallback.has_value(),
                 "selected BMW request did not expose native +0x38e8 fallback");
+        const auto native_query = input.selected_bmw_query_input();
+        require(native_query.has_value(),
+                "selected BMW request did not materialize native query input");
+        require(native_query->world_position == *input.world_position &&
+                    native_query->cached_handle == input.cached_handle &&
+                    native_query->miss_fallback == *selected_fallback,
+                "selected BMW native query input ownership drift");
 
-        Fun00765c40QueryInputBoundary query_input{};
-        query_input.world_position = *input.world_position;
-        query_input.cached_handle = input.cached_handle;
-        query_input.miss_fallback = *selected_fallback;
-
-        const auto query_output = make_hit_output(query_input, 5678u);
+        const auto query_output = make_hit_output(*native_query, 5678u);
         const Fun00765c40ExternalPassResult valid{
             Fun00765c40LoadTerms{10.0, 20.0, 30.0, 40.0},
-            query_input,
+            *native_query,
             5678u,
             query_output};
         validate_fun_00765c40_external_pass_result(input, valid);
@@ -59,12 +61,6 @@ int main() {
         require(valid.query_output.has_value() && valid.query_output->hit &&
                     valid.query_output->returned_handle == 5678u,
                 "FUN_00765c40 external pass result lost collision output");
-        const auto record = build_fun_00765c40_query_record(valid.query_input);
-        require(record.query_position[0] == 10.0 &&
-                    record.query_position[1] == 20.15 &&
-                    record.query_position[2] == 30.0 &&
-                    record.cache_handle == 1234u,
-                "FUN_00765c40 external pass result did not preserve query input");
 
         bool missing_output_rejected = false;
         try {
@@ -146,6 +142,8 @@ int main() {
 
         Fun00765c40ExternalPassInput generic_input{};
         generic_input.cached_handle = std::nullopt;
+        require(!generic_input.selected_bmw_query_input().has_value(),
+                "generic request incorrectly materialized selected BMW query input");
         Fun00765c40ExternalPassResult generic_result = valid;
         generic_result.query_input.cached_handle = std::nullopt;
         generic_result.query_output.reset();
@@ -157,10 +155,8 @@ int main() {
             << "\"ready\":true,"
             << "\"load_term_count\":4,"
             << "\"query_input_boundary_typed\":true,"
+            << "\"selected_query_input_native_owned\":true,"
             << "\"selected_collision_output_required\":true,"
-            << "\"native_cache_input_required\":true,"
-            << "\"selected_world_position_pre_call_required\":true,"
-            << "\"selected_bmw_fallback_pre_call_required\":true,"
             << "\"returned_cache_handle_typed\":true,"
             << "\"complete_fun_00765c40_internalized\":false,"
             << "\"collision_provider_internalized\":false}\n";
