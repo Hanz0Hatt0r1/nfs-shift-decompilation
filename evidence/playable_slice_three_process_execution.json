@@ -1,0 +1,167 @@
+{
+  "format": "SHIFT.PlayableSliceThreeProcessExecution/1",
+  "version": 1,
+  "status": "active",
+  "execution_model": "three-process-parallel",
+  "updated": "2026-10-08",
+  "milestone": "Silverstone + exact retail BMW M3 E36 + resource-driven bootstrap + input + continuous persistent physics + fresh vehicle world transform + camera + Vulkan rendering -> native playable Linux vertical slice",
+  "main_frontier": {
+    "phase": 744,
+    "active_external_provider_count": 7,
+    "selected_session_rate_hz": 180,
+    "selected_session_inner_substep_seconds": 0.005555555555555556,
+    "selected_session_normal_outer_substeps": 6,
+    "body0_bind_frame_ready": true,
+    "vehicle_world_transform_ready": true,
+    "retail_outer_cadence_admitted": true,
+    "retail_inner_substep_execution_admitted": true,
+    "fun_00765c40_selected_collision_output_typed": true,
+    "fun_00766510_primary_response_application_native": true,
+    "fun_00766510_application_point_owner_ready": true,
+    "retail_control_chain_complete": false,
+    "retail_camera_follow_ready": false,
+    "playable_slice_complete": false
+  },
+  "processes": {
+    "process_1": {
+      "owner": "retail proof / ABI / producer / timing",
+      "branch_prefix": "process-1/",
+      "queue": [
+        {
+          "id": "P1.1",
+          "state": "current",
+          "task": "Close remaining FUN_00766510 configuration ownership for HDVehicle+0x3908/+0x3910/+0x3918/+0x3950 plus earlier +0x3b20, optional +0x3bc8/+0x3cxx, auxiliary and state/diagnostic writes required before contact_response removal",
+          "consumer": "Process 2 P2.3"
+        },
+        {
+          "id": "P1.2",
+          "state": "ready-parallel",
+          "task": "Identify/prove collision-provider object/call below FUN_007b0710, four wheel +0x738 load-term ownership, and remaining FUN_00765c40 side effects",
+          "consumer": "Process 2 P2.4"
+        },
+        {
+          "id": "P1.3",
+          "state": "ready-parallel",
+          "task": "Finish retail input -> drivetrain/wheel/control producer provenance and Controller #1 timing/wake constraints required by that chain",
+          "consumer": "Process 2 P2.6"
+        },
+        {
+          "id": "P1.4",
+          "state": "queued",
+          "task": "Prove retail camera-follow source and timing against the admitted current vehicle transform",
+          "consumer": "Process 2 camera feed and Process 3 P3.5"
+        }
+      ]
+    },
+    "process_2": {
+      "owner": "native physics / runtime execution",
+      "branch_prefix": "process-2/",
+      "queue": [
+        {
+          "id": "P2.1",
+          "state": "current",
+          "task": "Consume merged Phase744 selected CollisionQueryOutput and finish Phase745 same-pass FUN_00766510 session handoff",
+          "depends_on": ["Phase744 merged"]
+        },
+        {
+          "id": "P2.2",
+          "state": "stacked-ready",
+          "task": "Complete Phase746 primary FUN_00766510 caller accumulator delta with exact FUN_00753650 cross-product/store behavior",
+          "depends_on": ["P2.1"]
+        },
+        {
+          "id": "P2.3",
+          "state": "blocked-on-process-1",
+          "task": "Consume P1.1 proofs and internalize complete required FUN_00766510/contact_response behavior; reduce provider count 7 -> 6",
+          "depends_on": ["P1.1", "P2.2"]
+        },
+        {
+          "id": "P2.4",
+          "state": "blocked-on-process-1",
+          "task": "Consume P1.2 collision/load-term proofs and narrow/remove residual FUN_00765c40 without guessed collision semantics",
+          "depends_on": ["P1.2"]
+        },
+        {
+          "id": "P2.5",
+          "state": "queued",
+          "task": "Replace remaining providers in dependency order: wheel_update -> FUN_007675f0 inputs -> FUN_007afdd0 scalar factory -> FUN_00765470 half-step refresh -> FUN_007b8810 post-half-step"
+        },
+        {
+          "id": "P2.6",
+          "state": "blocked-on-process-1",
+          "task": "Consume proven retail control chain continuously while preserving persistent BODY state and fresh world-transform publication",
+          "depends_on": ["P1.3"]
+        }
+      ]
+    },
+    "process_3": {
+      "owner": "resources / scene / renderer / playable bootstrap",
+      "branch_prefix": "process-3/",
+      "queue": [
+        {
+          "id": "P3.1",
+          "state": "current",
+          "task": "Land and maintain provenance-gated resource-pipeline -> playable-scene join",
+          "tracking": "PR #1431 lineage"
+        },
+        {
+          "id": "P3.2",
+          "state": "stacked-ready",
+          "task": "Land and maintain playable pipeline launcher and profile preparation",
+          "tracking": "PR #1442/#1443 lineage",
+          "depends_on": ["P3.1"]
+        },
+        {
+          "id": "P3.3",
+          "state": "stacked-ready",
+          "task": "Land and maintain one-command playable resource-pipeline bootstrap",
+          "tracking": "PR #1444 lineage",
+          "depends_on": ["P3.2"]
+        },
+        {
+          "id": "P3.4",
+          "state": "continuous",
+          "task": "Preserve exact Silverstone + BMW resource identity, participant authority and Vulkan slice regressions"
+        },
+        {
+          "id": "P3.5",
+          "state": "blocked-on-handoff",
+          "task": "Consume Process 2 fresh vehicle transform and later Process 1/2 camera source/timing feed for continuous camera + Vulkan presentation",
+          "depends_on": ["P1.4", "Process 2 camera feed"]
+        },
+        {
+          "id": "P3.6",
+          "state": "queued",
+          "task": "Run final exact resource-driven Silverstone + BMW continuous smoke path with no test-only core vehicle transform",
+          "depends_on": ["P3.3", "P2 provider/control closure", "P3.5"]
+        }
+      ]
+    }
+  },
+  "handoff_rules": {
+    "process_1_to_2": "versioned proof/value/timing contract only",
+    "process_2_to_3": "fresh admitted runtime state/transform/camera feed only",
+    "process_3_to_1_or_2": "exact resource/bootstrap provenance only",
+    "guess_missing_semantics": false,
+    "render_side_motion_may_replace_physics": false,
+    "xbox_recomp_may_replace_pc_proof": false
+  },
+  "provider_frontier": {
+    "count": 7,
+    "first_reduction_target": "FUN_00766510/contact_response",
+    "target_after_first_reduction": 6,
+    "boundaries": [
+      "FUN_00765c40 residual collision/query pass",
+      "FUN_00758b50 wheel update",
+      "FUN_00766510 residual contact response",
+      "FUN_007675f0 remaining caller-input provider",
+      "FUN_007afdd0 scalar-provider factory",
+      "FUN_00765470 half-step refresh provider",
+      "FUN_007b8810 post-half-step provider"
+    ]
+  },
+  "supersedes": {
+    "contract": "SHIFT.PlayableSliceSingleProcessExecution/1",
+    "path": "evidence/playable_slice_single_process_execution.json"
+  }
+}
