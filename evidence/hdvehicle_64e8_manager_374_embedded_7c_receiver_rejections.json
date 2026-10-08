@@ -11,7 +11,7 @@
   "upstream": {
     "literal_inventory_format": "SHIFT.HDVehicle64e8Manager374LiteralStoreInventory/1",
     "vptr_rejection_format": "SHIFT.HDVehicle64e8Manager374VptrReceiverRejections/1",
-    "actionable_before_this_contract": 11,
+    "actionable_before_this_contract": 10,
     "participants_manager_singleton": "0x00bc9fc0",
     "participants_manager_vptr": "0x00ab916c"
   },
@@ -70,8 +70,8 @@
   ],
   "adjudication": {
     "new_sites_closed_negative": 2,
-    "literal_receiver_worklist_before": 11,
-    "literal_receiver_worklist_after": 9,
+    "literal_receiver_worklist_before": 10,
+    "literal_receiver_worklist_after": 8,
     "embedded_7c_receivers_can_be_participants_manager": false,
     "computed_address_writer_surface_complete": false,
     "manager_374_join_to_hdvehicle_4330_complete": false,
@@ -85,5 +85,5 @@
     "The static parent path uses exact parent 0x00c1c568, yielding child addresses 0x00c1c570 and 0x00c1d550, both distinct from 0x00bc9fc0.",
     "No identity is inferred from the shared +0x374 numeric displacement."
   ],
-  "next_step": "Continue the remaining 9 literal +0x374 receiver sites by exact child/copy/owner provenance, then widen to computed-address writers."
+  "next_step": "Continue the remaining 8 literal +0x374 receiver sites by exact child/copy/owner provenance, then widen to computed-address writers."
 }
