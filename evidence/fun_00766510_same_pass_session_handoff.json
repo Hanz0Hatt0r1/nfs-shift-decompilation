@@ -1,0 +1,43 @@
+{
+  "format": "SHIFT.Fun00766510SamePassSessionHandoff/1",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "upstream_proofs": [
+    "SHIFT.Fun00765c40CollisionOutputHandoff/1",
+    "SHIFT.Fun00766510QueryScalarHandoff/1",
+    "SHIFT.Fun00766510SelectedBMWApplicationPoint/1"
+  ],
+  "anchor_order": [
+    "FUN_00765c40",
+    "FUN_00758b50",
+    "FUN_00766510",
+    "FUN_00769ef0"
+  ],
+  "session_join": {
+    "provider_input": "SHIFT.Fun00766510ExternalPassInput/1",
+    "selected_bmw_domain_tag": "Phase739 selected 11-BODY world-position owner is active",
+    "query_output_source": "same-pass Fun00765c40ExternalPassResult.query_output",
+    "query_scalar_handoff": "execute_fun_00765c40_to_00766510_query_scalar_handoff",
+    "application_point_source": "Phase743 alias of Phase727 body_rotated_local / HDVehicle+0x38f0",
+    "contact_response_called_after_wheel_update": true,
+    "contact_response_receives_same_pass_handoff": true,
+    "selected_missing_query_output_fail_closed": true,
+    "selected_missing_application_point_fail_closed": true,
+    "generic_fixture_compatibility": "pass-only callback adapter retains historical 2-BODY fixtures"
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "contact_response_provider_removed": false,
+    "complete_FUN_00766510_internalized": false,
+    "collision_world_lookup_internalized": false,
+    "caller_accumulator_delta_internalized": false,
+    "physical_semantics_invented": false
+  },
+  "next_blocker": {
+    "phase": 746,
+    "target": "native primary caller-accumulator delta after FUN_00766510 BODY application",
+    "source_sequence": "FUN_00753650(application_point, transformed_response) followed by HDVehicle+0x40a0/+0x40a8/+0x40b0 accumulation"
+  }
+}
