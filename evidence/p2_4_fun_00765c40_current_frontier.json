@@ -12,11 +12,14 @@
     "selected_query_fallback_contract": "SHIFT.Fun00765c40SelectedBMWQueryFallback/1",
     "collision_output_handoff_contract": "SHIFT.Fun00765c40CollisionOutputHandoff/1",
     "composed_residual_executor_contract": "SHIFT.Fun00765c40ComposedResidualExecutor/1",
-    "residual_producer_handoff_contract": "SHIFT.Fun00765c40ResidualProducerHandoff/1",
+    "residual_producer_handoff_contract": "SHIFT.Fun00765c40ResidualProducerHandoff/2",
+    "historical_residual_producer_handoff_contract": "SHIFT.Fun00765c40ResidualProducerHandoff/1",
     "residual_producer_handoff_present": true,
     "residual_producer_handoff_threaded_through_provider_result": true,
     "residual_producer_handoff_threaded_through_session_result": true,
     "residual_producer_handoff_authoritative": false,
+    "residual_producer_handoff_selective_families": true,
+    "residual_producer_handoff_legacy_all_families_compatible": true,
     "wheel_state_machine_proof_contract": "SHIFT.Fun00752fa0WheelStateMachineProof/1",
     "wheel_state_source_address": "HDVehicle+0x98",
     "wheel_state_source_address_proven": true,
@@ -52,7 +55,8 @@
     "lower_collision_semantics_invented": false,
     "unproven_producer_formula_invented": false,
     "wheel_state_source_owner_inferred_from_address": false,
-    "producer_handoff_treated_as_native_computation": false
+    "producer_handoff_treated_as_native_computation": false,
+    "absent_producer_family_default_overwrite_allowed": false
   },
-  "next_step": "Use captured /5 producer witnesses only as diagnostics until selected-provider source-backed production and the remaining producer/owner proofs authorize composed-executor consumption."
+  "next_step": "Promote individual /2 producer families only as source-backed proofs land; absent families must preserve existing composed inputs and remain fail-closed."
 }

@@ -1,6 +1,7 @@
 {
-  "format": "SHIFT.Fun00765c40ResidualProducerHandoff/1",
+  "format": "SHIFT.Fun00765c40ResidualProducerHandoff/2",
   "ready": true,
+  "extends_historical_format": "SHIFT.Fun00765c40ResidualProducerHandoff/1",
   "consumer": "SHIFT.Fun00765c40ComposedResidualExecutor/1",
   "payload_family_count": 8,
   "payload_families": [
@@ -13,6 +14,14 @@
     "bounded_state_tail",
     "optional_body_sweep"
   ],
+  "v2_presence": {
+    "field": "family_present[8]",
+    "explicit_mode_field": "family_presence_explicit",
+    "historical_v1_behavior_when_explicit_mode_false": "all eight families present",
+    "explicit_mode_behavior": "only marked families overlay composed inputs",
+    "absent_family_overwrites_base_input": false,
+    "known_invariant_validation_scoped_to_present_families": true
+  },
   "preserved_outside_handoff": {
     "current_BODY_bytes": "native-owned",
     "selected_world_position": "native-owned",
@@ -26,10 +35,11 @@
   "claims": {
     "producer_formulas_internalized": false,
     "payload_semantics_invented": false,
-    "top_level_provider_result_extended": false,
+    "top_level_provider_result_extended": true,
+    "session_capture_present": true,
     "top_level_provider_removed": false,
     "complete_FUN_00765c40_internalized": false,
     "external_provider_count_after": 7
   },
-  "next_step": "Thread this pure-data handoff through the top-level FUN_00765c40 result/session boundary, then require it only when the selected provider can supply source-backed values; keep wheel-job execution and lower scene-query behavior external until independently closed."
+  "next_step": "Promote individual producer families as Process 1 proves them. Use /2 explicit presence so a proven family can feed the composed executor without default-overwriting unresolved families."
 }

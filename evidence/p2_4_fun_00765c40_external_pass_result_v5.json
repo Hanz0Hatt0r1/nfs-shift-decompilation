@@ -4,11 +4,13 @@
   "extends_historical_result": "SHIFT.Fun00765c40ExternalPassResult/4",
   "appended_field": {
     "name": "residual_producer_handoff",
-    "type": "optional<SHIFT.Fun00765c40ResidualProducerHandoff/1>",
+    "type": "optional<SHIFT.Fun00765c40ResidualProducerHandoff/2>",
+    "historical_handoff_format": "SHIFT.Fun00765c40ResidualProducerHandoff/1",
     "trailing": true,
     "authoritative": false,
     "required_on_selected_bmw": false,
-    "required_on_generic_fixtures": false
+    "required_on_generic_fixtures": false,
+    "selective_family_presence": true
   },
   "historical_prefix_preserved": [
     "load_terms",
@@ -20,6 +22,7 @@
     "enabled_when_witness_present": true,
     "validator": "validate_fun_00765c40_residual_producer_handoff_known_invariants",
     "proven_finite_payload": "Fun007584f0ComputedInputs",
+    "validation_scoped_to_present_family": true,
     "opaque_qword_payloads_reinterpreted": false,
     "unproven_body_vector_ranges_added": false
   },
@@ -37,5 +40,5 @@
     "top_level_provider_removed": false,
     "external_provider_count_after": 7
   },
-  "next_step": "Recover source-backed production or ownership for one of the nine remaining producer/owner blockers; captured witnesses remain diagnostic until independently proven."
+  "next_step": "Promote individual /2 producer families as source-backed proofs land; absent families remain untouched and non-authoritative."
 }
