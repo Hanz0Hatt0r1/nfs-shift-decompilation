@@ -19,6 +19,7 @@ SELECTED_WORLD_POSITION_FORMAT = "SHIFT.Fun00765c40SelectedBMWWorldPosition/1"
 SELECTED_QUERY_FALLBACK_FORMAT = "SHIFT.Fun00765c40SelectedBMWQueryFallback/1"
 COLLISION_OUTPUT_HANDOFF_FORMAT = "SHIFT.Fun00765c40CollisionOutputHandoff/1"
 COMPOSED_RESIDUAL_EXECUTOR_FORMAT = "SHIFT.Fun00765c40ComposedResidualExecutor/1"
+RESIDUAL_PRODUCER_HANDOFF_FORMAT = "SHIFT.Fun00765c40ResidualProducerHandoff/1"
 WHEEL_STATE_MACHINE_PROOF_FORMAT = "SHIFT.Fun00752fa0WheelStateMachineProof/1"
 
 REMAINING_EXPLICIT_PRODUCERS = (
@@ -75,6 +76,9 @@ def build_current_frontier() -> dict[str, Any]:
             "selected_query_fallback_contract": SELECTED_QUERY_FALLBACK_FORMAT,
             "collision_output_handoff_contract": COLLISION_OUTPUT_HANDOFF_FORMAT,
             "composed_residual_executor_contract": COMPOSED_RESIDUAL_EXECUTOR_FORMAT,
+            "residual_producer_handoff_contract": RESIDUAL_PRODUCER_HANDOFF_FORMAT,
+            "residual_producer_handoff_present": True,
+            "residual_producer_handoff_threaded_through_provider_result": False,
             "wheel_state_machine_proof_contract": WHEEL_STATE_MACHINE_PROOF_FORMAT,
             "wheel_state_source_address": "HDVehicle+0x98",
             "wheel_state_source_address_proven": True,
@@ -98,6 +102,7 @@ def build_current_frontier() -> dict[str, Any]:
             "lower_collision_semantics_invented": False,
             "unproven_producer_formula_invented": False,
             "wheel_state_source_owner_inferred_from_address": False,
+            "producer_handoff_treated_as_native_computation": False,
         },
     }
 
@@ -114,6 +119,11 @@ def contract() -> dict[str, Any]:
         "session_query_snapshot_contract": fun["session_query_snapshot_contract"],
         "collision_output_handoff_contract": fun["collision_output_handoff_contract"],
         "composed_residual_executor_contract": fun["composed_residual_executor_contract"],
+        "residual_producer_handoff_contract": fun["residual_producer_handoff_contract"],
+        "residual_producer_handoff_present": fun["residual_producer_handoff_present"],
+        "residual_producer_handoff_threaded_through_provider_result": fun[
+            "residual_producer_handoff_threaded_through_provider_result"
+        ],
         "wheel_state_machine_proof_contract": fun["wheel_state_machine_proof_contract"],
         "wheel_state_source_address": fun["wheel_state_source_address"],
         "wheel_state_source_address_proven": fun["wheel_state_source_address_proven"],
@@ -144,6 +154,7 @@ __all__ = [
     "SELECTED_QUERY_FALLBACK_FORMAT",
     "COLLISION_OUTPUT_HANDOFF_FORMAT",
     "COMPOSED_RESIDUAL_EXECUTOR_FORMAT",
+    "RESIDUAL_PRODUCER_HANDOFF_FORMAT",
     "WHEEL_STATE_MACHINE_PROOF_FORMAT",
     "REMAINING_EXPLICIT_PRODUCERS",
     "build_current_frontier",
