@@ -14,7 +14,8 @@
     "composed_residual_executor_contract": "SHIFT.Fun00765c40ComposedResidualExecutor/1",
     "residual_producer_handoff_contract": "SHIFT.Fun00765c40ResidualProducerHandoff/2",
     "historical_residual_producer_handoff_contract": "SHIFT.Fun00765c40ResidualProducerHandoff/1",
-    "residual_producer_promotion_gate_contract": "SHIFT.Fun00765c40ResidualProducerPromotionGate/1",
+    "residual_producer_promotion_gate_contract": "SHIFT.Fun00765c40ResidualProducerPromotionGate/2",
+    "historical_residual_producer_promotion_gate_contract": "SHIFT.Fun00765c40ResidualProducerPromotionGate/1",
     "residual_producer_handoff_present": true,
     "residual_producer_handoff_threaded_through_provider_result": true,
     "residual_producer_handoff_threaded_through_session_result": true,
@@ -25,6 +26,8 @@
     "residual_producer_promotion_gate_session_wired": false,
     "residual_producer_promotion_authorized_family_count": 0,
     "residual_producer_presence_counts_as_proof": false,
+    "residual_producer_promotion_requires_named_contract": true,
+    "residual_producer_promotion_anonymous_boolean_allowed": false,
     "wheel_state_machine_proof_contract": "SHIFT.Fun00752fa0WheelStateMachineProof/1",
     "wheel_state_source_address": "HDVehicle+0x98",
     "wheel_state_source_address_proven": true,
@@ -63,7 +66,9 @@
     "producer_handoff_treated_as_native_computation": false,
     "absent_producer_family_default_overwrite_allowed": false,
     "producer_presence_treated_as_independent_proof": false,
-    "producer_promotion_without_proof_allowed": false
+    "producer_promotion_without_proof_allowed": false,
+    "anonymous_producer_proof_authorization_allowed": false,
+    "empty_producer_proof_contract_allowed": false
   },
-  "next_step": "As source-backed proofs land, authorize only the matching /2 family through SHIFT.Fun00765c40ResidualProducerPromotionGate/1; no family is currently authorized for session promotion."
+  "next_step": "As source-backed proofs land, bind only the matching /2 family to its exact proof contract id through SHIFT.Fun00765c40ResidualProducerPromotionGate/2; no family is currently authorized for session promotion."
 }
