@@ -40,11 +40,17 @@ def test_provider_count_is_canonical_and_consistent():
     assert execution["main_frontier"]["active_external_provider_count"] == execution["provider_frontier"]["count"]
 
 
-def test_p2_has_parallel_ready_work_while_p23_is_blocked():
+def test_completed_p11_releases_p23_without_decrementing_provider_count():
     execution = json.loads(EXECUTION.read_text(encoding="utf-8"))
     queues = _queues(execution)
-    assert "blocked" in queues["P2.3"]["state"]
+    frontier = execution["main_frontier"]
+    assert queues["P1.1"]["state"] == "complete"
+    assert frontier["fun_00766510_p1_complete"] is True
+    assert queues["P2.3"]["state"] == "ready-to-consume"
     assert queues["P2.4"]["state"] == "ready-to-consume"
+    assert execution["provider_frontier"]["count"] == 7
+    assert frontier["active_external_provider_count"] == 7
+    assert execution["provider_frontier"]["target_after_first_reduction"] == 6
 
 
 def test_final_smoke_cannot_bypass_control_or_camera():
