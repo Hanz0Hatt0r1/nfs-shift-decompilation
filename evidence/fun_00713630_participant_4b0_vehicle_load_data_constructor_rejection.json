@@ -1,0 +1,85 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0VehicleLoadDataConstructorRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_index_role": "navigation-only"
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630Participant4b0Frontier/1",
+    "SHIFT.Fun00713630Participant4b0SubobjectAliasFrontier/1",
+    "SHIFT.Fun007530e0Slot2VehicleLoadData4c8Producer/1"
+  ],
+  "candidate": {
+    "site": "0x007c0fe2",
+    "function": "FUN_007c0db0",
+    "operation": "mov dword ptr [ESI+0x4b0], EBX",
+    "value_at_site": "0",
+    "candidate_width": "u32",
+    "selected_physics_participant_writer": false
+  },
+  "constructor_bridge": {
+    "function": "FUN_007c3170",
+    "receiver_capture": "0x007c318a ESI=ECX",
+    "nested_receiver": "0x007c31a3 lea ECX,[ESI+0x8]",
+    "callsite": "0x007c31aa call FUN_007c0db0",
+    "meaning": "FUN_007c0db0 receives the +0x8 subobject of the separately allocated 0x3848 object, so its +0x4b0 store maps to allocation+0x4b8, not participant+0x4b0",
+    "machine_span": {
+      "start": "0x007c3170",
+      "end_exclusive": "0x007c31af",
+      "sha256": "683d58203d5326775ec1e9e9ffa6f732876017e663780e0934f8822cef0b6db4"
+    }
+  },
+  "allocation_roots": [
+    {
+      "function": "FUN_0076df50",
+      "allocation_size": "0x3848",
+      "allocation_callsite": "0x0076dfb4 call FUN_008868d0",
+      "constructor_callsite": "0x0076dfcc call FUN_007c3170 with ECX=allocation",
+      "owner_store": "0x0076dfda [HDVehicle+0x66b4]=constructed object",
+      "machine_span": {
+        "start": "0x0076dfa6",
+        "end_exclusive": "0x0076dfe0",
+        "sha256": "d9c852fff318bb09157e5bca652c5861b8ed43ddae229e2bc161089952d2a8ad"
+      }
+    },
+    {
+      "function": "FUN_00798df0",
+      "allocation_size": "0x3848",
+      "allocation_callsite": "0x00798e60 call FUN_008868d0",
+      "constructor_callsite": "0x00798e74 call FUN_007c3170 with ECX=allocation",
+      "owner_store": "0x00798e85 [selected subobject+0x1d00]=constructed object",
+      "machine_span": {
+        "start": "0x00798e52",
+        "end_exclusive": "0x00798e8b",
+        "sha256": "1e0ffded528ce797e0e9af6ed51df428a8aaf7827c7b0cd522eb71334ccd9826"
+      }
+    }
+  ],
+  "writer_span": {
+    "start": "0x007c0fd0",
+    "end_exclusive": "0x007c0fee",
+    "sha256": "d788cc142fe72a6f2817739d1cdb2a0bad95145a63e792909b11e872fb267df7"
+  },
+  "adjudication": {
+    "candidate_receiver_identity_closed": true,
+    "candidate_is_vehicle_load_data_family": true,
+    "candidate_is_selected_physics_participant": false,
+    "direct_displacement_site_rejected": true,
+    "remaining_unjoined_direct_site_count": 13,
+    "selected_participant_runtime_plus_0x4b0_writer_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This contract rejects only the 0x007c0fe2 direct-displacement writer site.",
+    "It does not claim all FUN_007c0db0-compatible layouts are VehicleLoadData outside the two exact 0x3848 constructor roots.",
+    "Computed-address, escaped-alias, indirect-dispatch and bulk-copy writers remain open."
+  ],
+  "next_step": "Adjudicate the remaining 13 direct-displacement +0x4b0 sites by exact receiver provenance, prioritizing constructor/static-init roots before computed/alias surfaces."
+}
