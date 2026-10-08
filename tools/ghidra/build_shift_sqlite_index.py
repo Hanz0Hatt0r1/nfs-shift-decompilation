@@ -57,12 +57,17 @@ def create_schema(db: sqlite3.Connection) -> None:
         CREATE TABLE calls(
             caller TEXT,
             callee TEXT,
+            caller_address TEXT,
+            callee_address TEXT,
             callsite TEXT,
             kind TEXT,
+            indirect INTEGER NOT NULL DEFAULT 0,
             raw_json TEXT NOT NULL
         );
         CREATE INDEX calls_caller_idx ON calls(caller);
         CREATE INDEX calls_callee_idx ON calls(callee);
+        CREATE INDEX calls_caller_address_idx ON calls(caller_address);
+        CREATE INDEX calls_callee_address_idx ON calls(callee_address);
         CREATE INDEX calls_callsite_idx ON calls(callsite);
         CREATE TABLE strings(
             value TEXT,
@@ -98,7 +103,7 @@ def insert_functions(db: sqlite3.Connection, path: Path) -> int:
                 as_text(pick(rec, "name", "function")),
                 as_text(pick(rec, "end", "end_address")),
                 as_text(pick(rec, "signature")),
-                as_text(pick(rec, "mnemonic_fingerprint", "fingerprint")),
+                as_text(pick(rec, "mnemonic_fingerprint", "fingerprint", "mnemonic_sha256")),
                 json.dumps(rec, sort_keys=True, ensure_ascii=False),
             ),
         )
@@ -109,13 +114,32 @@ def insert_functions(db: sqlite3.Connection, path: Path) -> int:
 def insert_calls(db: sqlite3.Connection, path: Path) -> int:
     count = 0
     for rec in read_jsonl(path):
+        # Exporter-native records use from_function/from_name and to/to_name.
+        # Keep caller/callee as human-queryable names while preserving exact
+        # addresses in dedicated columns. Older hand-written fixtures using
+        # caller/callee continue to work unchanged.
+        caller_address = as_text(pick(rec, "from_function", "caller_address", "source_address"))
+        callee_address = as_text(pick(rec, "to", "callee_address", "target_address"))
+        caller = as_text(
+            pick(rec, "from_name", "caller_name", "caller", "source_name", default=caller_address)
+        )
+        callee = as_text(
+            pick(rec, "to_name", "callee_name", "callee", "target_name", default=callee_address)
+        )
+        if not caller_address and caller.startswith("0x"):
+            caller_address = caller
+        if not callee_address and callee.startswith("0x"):
+            callee_address = callee
         db.execute(
-            "INSERT INTO calls VALUES(?,?,?,?,?)",
+            "INSERT INTO calls VALUES(?,?,?,?,?,?,?,?)",
             (
-                as_text(pick(rec, "caller", "from_function", "source_function")),
-                as_text(pick(rec, "callee", "to_function", "target_function")),
+                caller,
+                callee,
+                caller_address,
+                callee_address,
                 as_text(pick(rec, "callsite", "address", "instruction")),
-                as_text(pick(rec, "kind", "call_kind", default="direct")),
+                as_text(pick(rec, "kind", "call_kind", default="indirect" if rec.get("indirect") else "direct")),
+                1 if rec.get("indirect") else 0,
                 json.dumps(rec, sort_keys=True, ensure_ascii=False),
             ),
         )
@@ -184,8 +208,8 @@ def build(export_dir: Path, output: Path) -> dict:
             "strings": insert_strings(db, inputs["strings"]),
             "globals": insert_globals(db, inputs["globals"]),
         }
-        db.execute("INSERT INTO metadata VALUES(?,?)", ("format", "SHIFT.GhidraSQLiteIndex/1"))
-        db.execute("INSERT INTO metadata VALUES(?,?)", ("schema_version", "1"))
+        db.execute("INSERT INTO metadata VALUES(?,?)", ("format", "SHIFT.GhidraSQLiteIndex/2"))
+        db.execute("INSERT INTO metadata VALUES(?,?)", ("schema_version", "2"))
         db.execute("INSERT INTO metadata VALUES(?,?)", ("source_dir", str(export_dir)))
         db.commit()
     finally:
@@ -199,7 +223,7 @@ def main() -> int:
     parser.add_argument("output", type=Path)
     args = parser.parse_args()
     counts = build(args.export_dir, args.output)
-    print(json.dumps({"format": "SHIFT.GhidraSQLiteIndex/1", "counts": counts}, sort_keys=True))
+    print(json.dumps({"format": "SHIFT.GhidraSQLiteIndex/2", "counts": counts}, sort_keys=True))
     return 0
 
 
