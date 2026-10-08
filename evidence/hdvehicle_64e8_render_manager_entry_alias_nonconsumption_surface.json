@@ -1,0 +1,127 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerEntryAliasNonConsumptionSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_sqlite_role": "navigation-and-fingerprint-only"
+  },
+  "upstream_contracts": [
+    "SHIFT.PlayerVehicleRenderManagerReceiverTransferFrontier/2",
+    "SHIFT.HDVehicle64e8RenderManagerMachineCfgCallBoundaryReconciliation/1",
+    "SHIFT.HDVehicle64e8RenderManagerByAddressLocalAliasClosure/1",
+    "SHIFT.HDVehicle64e8RenderManagerForwardedReceiverClosure/1",
+    "SHIFT.HDVehicle64e8RenderManagerFieldBaseDerivedReceiverClosure/1"
+  ],
+  "exact_outer_root": "0x00bc185c",
+  "targets": [
+    {
+      "target": "0x00449630",
+      "function": "FUN_00449630",
+      "entry_alias_register": "EDX",
+      "exact_root_callsites": ["0x004be25d", "0x004bf71b", "0x004c06e6"],
+      "first_alias_kill": "0x00449639 mov edx,[ebp+0x0c]",
+      "alias_read_before_kill": false,
+      "exact_root_persisted_or_returned": false,
+      "mnemonic_sha256": "3adf1fa3e875da5525217c852e7eb2df1c62faa6a0f6a229505b5c6723f9208c"
+    },
+    {
+      "target": "0x00459140",
+      "function": "FUN_00459140",
+      "entry_alias_register": "ECX",
+      "exact_root_callsites": ["0x004d4c87"],
+      "route": [
+        "0x00459141 jmp 0x0045b51b",
+        "0x0045b51b mov esi,0x00bc8e30",
+        "0x0045b521 jmp 0x00459146",
+        "0x0045915b mov ecx,esi"
+      ],
+      "alias_read_before_kill": false,
+      "exact_root_persisted_or_returned": false,
+      "mnemonic_sha256": "e12aa77af8f77ad9dabeeca38355b2f7b1177c45265a8a89dfe4294fe49b2baf",
+      "route_helper_mnemonic_sha256": "16467efad1da3f07a151d7f1f78f6710ebd6711f60d7fb30690b958a1929bd2c"
+    },
+    {
+      "target": "0x0045abe0",
+      "function": "FUN_0045abe0",
+      "entry_alias_register": "ECX",
+      "exact_root_callsites": ["0x00498c55", "0x00499531"],
+      "first_nested_call": "0x0045abe0 call 0x00886980",
+      "nested_helper": {
+        "target": "0x00886980",
+        "body": ["0x00886980 mov eax,[0x00c29634]", "0x00886985 ret"],
+        "reads_entry_ecx": false,
+        "mnemonic_sha256": "e041bc8dec99de5758e5f6659a7c388f3bfcc288fc3292ada8e4b955a9cc9484"
+      },
+      "post_call_alias_kill": "0x0045abe5 lea ecx,[eax+0x78]",
+      "exact_root_persisted_or_returned": false,
+      "mnemonic_sha256": "5e7a74769c4c67ef216ba7208da46e0621cd4cddff723ab7df228f3598203bc7"
+    },
+    {
+      "target": "0x00468ed0",
+      "function": "FUN_00468ed0",
+      "entry_alias_register": "ECX",
+      "exact_root_callsites": ["0x004d6015"],
+      "all_path_kills_before_read": [
+        "initialization path: 0x00468ee9 mov ecx,0x00bbc600",
+        "already-initialized path: 0x00468f08 lea ecx,[ebp-0xa0]"
+      ],
+      "alias_read_before_kill": false,
+      "exact_root_persisted_or_returned": false,
+      "mnemonic_sha256": "d4c205e482eb0dccdf50f63366e9765ae6e49ff0608ac4ad9025050f7215bb8e"
+    },
+    {
+      "target": "0x00489ad0",
+      "function": "thunk_FUN_00444fcc",
+      "entry_alias_register": "ECX",
+      "exact_root_callsites": ["0x004989c6", "0x00498ac4"],
+      "thunk_body": ["0x00444fcc mov eax,1", "0x00444fd1 jmp 0x00489ad5"],
+      "entry_alias_read": false,
+      "replacement_ecx": "0x00489ae3 mov ecx,0x00bc9fc0",
+      "return_value": "0x00489afa mov eax,0x00bc9fc0",
+      "returned_pointer_is_exact_outer_root": false,
+      "returned_pointer_role": "Participants Manager singleton already proven independently",
+      "thunk_mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+      "body_mnemonic_sha256": "176a39ed845abe7a6fbe51c430190743abeda60e4c62b6f9c3b68280720750d4"
+    },
+    {
+      "target": "0x00493fb0",
+      "function": "thunk_FUN_004300ae",
+      "entry_alias_register": "ECX",
+      "exact_root_callsites": ["0x004d1a1f"],
+      "thunk_body": ["0x004300ae mov eax,1", "0x004300b3 jmp 0x00493fb5"],
+      "entry_alias_read": false,
+      "replacement_ecx": "0x00493fc3 mov ecx,0x00bcae00",
+      "return_value": "0x00493fda mov eax,0x00bcae00",
+      "returned_pointer_is_exact_outer_root": false,
+      "thunk_mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+      "body_mnemonic_sha256": "176a39ed845abe7a6fbe51c430190743abeda60e4c62b6f9c3b68280720750d4"
+    }
+  ],
+  "worklist": {
+    "bounded_direct_target_count_before_this_contract": 10,
+    "closed_target_count_this_contract": 6,
+    "bounded_direct_target_count_after_this_contract": 4,
+    "remaining_targets": ["0x0045bfc0", "0x0045cc50", "0x0045db50", "0x00462400"]
+  },
+  "adjudication": {
+    "six_entry_alias_paths_closed_negative": true,
+    "bounded_direct_target_opaque_surface_complete": false,
+    "opaque_callee_created_or_returned_alias_surface_complete": false,
+    "external_or_unknown_origin_alias_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This contract closes only the six listed bounded direct-target paths.",
+    "A nested CALL is not treated as harmless unless its machine body is itself bounded; FUN_00886980 is explicitly checked and does not read ECX.",
+    "Distinct singleton return values are not promoted to the exact outer render-manager root.",
+    "No identity is inferred from matching numeric offsets."
+  ],
+  "next_step": "Adjudicate the four remaining bounded direct targets 0x0045bfc0, 0x0045cc50, 0x0045db50 and 0x00462400, then continue external/unknown-origin and two-unknown-origin HDVehicle+0x4330 provenance."
+}
