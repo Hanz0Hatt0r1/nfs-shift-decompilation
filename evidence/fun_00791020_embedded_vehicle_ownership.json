@@ -1,0 +1,39 @@
+{
+  "format": "SHIFT.Fun00791020EmbeddedVehicleOwnership/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "upstream_contracts": [
+    "SHIFT.BMWOffset33bActualAdditionalMassBootstrapZero/1",
+    "SHIFT.Fun00791020HDVehicleRejection/1"
+  ],
+  "owner_join": {
+    "manager_record_initializer": "FUN_007125e0",
+    "manager_record_offset0": "actual PhysicsParticipant pointer",
+    "actual_participant_size": "0x2b90",
+    "actual_participant_constructor": "FUN_0072ed20",
+    "embedded_vehicle_offset": "0x340",
+    "fun_0074e1a0_setup_context": "actual_participant",
+    "fun_00799ff0_receiver": "actual_participant+0x340",
+    "fun_00791020_receiver": "embedded Vehicle"
+  },
+  "writer_surface": {
+    "function": "FUN_00791020",
+    "machine_write_sites": ["0x007910f8", "0x0079113e"],
+    "receiver_relative_offset": "0x938",
+    "normalized_storage": "embedded Vehicle+0x938",
+    "same_as_hdvehicle_plus_0x938": false
+  },
+  "adjudication": {
+    "fun_00791020_embedded_vehicle_receiver_proven": true,
+    "fun_00791020_vehicle_plus_0x938_writer_proven": true,
+    "fun_00791020_hdvehicle_plus_0x938_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Keep FUN_00791020 on the embedded-Vehicle lane and continue selected-HDVehicle absolute writer tracing independently."
+}
