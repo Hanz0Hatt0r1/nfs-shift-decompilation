@@ -41,12 +41,15 @@ def test_config_direct_literal_surface_is_bounded_but_not_promoted():
     assert p["adjudication"]["config_global_owner_or_alias_writer_closed"] is False
 
 
-def test_sample_history_writer_has_exact_two_direct_callers():
-    s = _payload()["sample_history_writer"]
+def test_sample_history_writer_has_exact_two_direct_callers_and_selected_root_join():
+    p = _payload()
+    s = p["sample_history_writer"]
     assert s["function"] == "FUN_00727870"
     assert s["direct_caller_count"] == 2
     assert [row["callsite"] for row in s["direct_callers"]] == ["0x0073f293", "0x0074752c"]
-    assert s["selected_participant_root_join_complete"] is False
+    assert s["selected_participant_root_join_complete"] is True
+    assert len(s["selected_participant_paths"]) == 2
+    assert p["adjudication"]["sample_writer_selected_participant_scheduling_closed"] is True
 
 
 def test_plus_4b0_candidate_stays_identity_fail_closed():
