@@ -27,7 +27,7 @@
           "proven_selection_relation":"exact manager getter receiver -> FUN_0054ed00(manager+0x2a0,index) -> successful FUN_00485290 state transition -> selected entry stored to manager+0x374 when post-load entry[0] == 0",
           "selection_writer_identity_to_hdvehicle_4330":false,
           "selection_writer_identity_rejection":"manager+0x2a0 entries are allocator-owned BArray storage after FUN_00486aa0 reset/repopulation; HDVehicle+0x4330 is fixed global 0x00c17a30",
-          "next":"Trace nested/computed/non-vtable mutations reachable from the Participants Manager lifecycle callbacks plus unrelated manager+0x374 aliases, and continue direct HDVehicle+0x64e8 non-sentinel provenance. The direct Participants lifecycle target stores are zero-only and the manager+0x2a0 route is rejected for HDVehicle identity."
+          "next":"FUN_004f5e60 registration is now resolved through the Participants Manager lifecycle direct callbacks: their literal manager+0x374 target stores are zero-only. Trace nested/computed/non-vtable mutations reachable from those callbacks plus unrelated manager aliases, and continue direct HDVehicle+0x64e8 non-sentinel provenance."
         },
         {
           "id":"P1.3.manager2a0","target":"FUN_00489ad0()+0x2a0 collection entry == HDVehicle+0x4330","status":"entry-identity-rejected-complete",
