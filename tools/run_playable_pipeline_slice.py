@@ -88,6 +88,23 @@ def _output_from_bootstrap_args(args: Sequence[str]) -> Path:
     return distinct[0]
 
 
+def _clear_stale_execution_receipt(output_dir: Path) -> bool:
+    receipt = output_dir / "execution_result.json"
+    if not receipt.exists() and not receipt.is_symlink():
+        return False
+    if receipt.is_dir() and not receipt.is_symlink():
+        raise ExecutionError(
+            f"stale execution receipt path is a directory: {receipt}"
+        )
+    try:
+        receipt.unlink()
+    except OSError as exc:
+        raise ExecutionError(
+            f"could not clear stale execution receipt: {receipt}: {exc}"
+        ) from exc
+    return True
+
+
 def _validated_execution_plan(output_dir: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     report_path = output_dir / "playable_pipeline_bootstrap.json"
     report = _load_json(report_path, label="playable pipeline bootstrap report")
@@ -129,6 +146,7 @@ def execute_playable_pipeline_slice(
 ) -> dict[str, Any]:
     args = list(bootstrap_args)
     output_dir = _output_from_bootstrap_args(args)
+    stale_receipt_removed = _clear_stale_execution_receipt(output_dir)
     if "--validate-launch-plan" not in args:
         args.append("--validate-launch-plan")
 
@@ -199,10 +217,12 @@ def execute_playable_pipeline_slice(
         "launch_plan_stable": plan_stable,
         "launch_artifacts_stable": launch_artifacts_stable,
         "execution_receipt": str(receipt_path),
+        "stale_execution_receipt_removed": stale_receipt_removed,
         "track": report.get("track"),
         "vehicle": report.get("vehicle"),
         "boundary": {
             "single_output_authority_required": True,
+            "stale_execution_receipt_cleared_before_attempt": True,
             "bootstrap_completed_before_runtime_execution": True,
             "provenance_validated_launch_plan_required": True,
             "launch_plan_argv_reconstructed": False,
