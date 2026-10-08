@@ -14,16 +14,20 @@ def test_result_v5_appends_optional_non_authoritative_producer_witness() -> None
     assert payload["extends_historical_result"] == "SHIFT.Fun00765c40ExternalPassResult/4"
     field = payload["appended_field"]
     assert field["name"] == "residual_producer_handoff"
+    assert field["type"] == "optional<SHIFT.Fun00765c40ResidualProducerHandoff/2>"
+    assert field["historical_handoff_format"] == "SHIFT.Fun00765c40ResidualProducerHandoff/1"
     assert field["trailing"] is True
     assert field["authoritative"] is False
     assert field["required_on_selected_bmw"] is False
     assert field["required_on_generic_fixtures"] is False
+    assert field["selective_family_presence"] is True
     assert payload["historical_prefix_preserved"] == [
         "load_terms", "query_input", "returned_cache_handle", "query_output"
     ]
     validation = payload["known_invariant_validation"]
     assert validation["enabled_when_witness_present"] is True
     assert validation["proven_finite_payload"] == "Fun007584f0ComputedInputs"
+    assert validation["validation_scoped_to_present_family"] is True
     assert validation["opaque_qword_payloads_reinterpreted"] is False
     assert validation["unproven_body_vector_ranges_added"] is False
     assert payload["ownership"]["producer_handoff_session_captured"] is True
@@ -32,7 +36,7 @@ def test_result_v5_appends_optional_non_authoritative_producer_witness() -> None
     assert payload["scope"]["external_provider_count_after"] == 7
 
 
-def test_active_header_preserves_v4_prefix_and_validates_only_known_witness_invariants() -> None:
+def test_active_header_preserves_v4_prefix_and_validates_only_present_known_invariants() -> None:
     text = HEADER.read_text(encoding="utf-8")
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert '"SHIFT.Fun00765c40ExternalPassResult/5"' in text
@@ -49,6 +53,11 @@ def test_active_header_preserves_v4_prefix_and_validates_only_known_witness_inva
     assert "Presence does not make these values native-owned" in text
     assert "if (result.residual_producer_handoff.has_value())" in text
     assert "validate_fun_00765c40_residual_producer_handoff_known_invariants" in text
+    assert '"SHIFT.Fun00765c40ResidualProducerHandoff/2"' in handoff
+    assert '"SHIFT.Fun00765c40ResidualProducerHandoff/1"' in handoff
+    assert "family_presence_explicit = false" in handoff
+    assert "family_present{}" in handoff
+    assert "Fun00765c40ResidualProducerFamily::PersistentWrite" in handoff
     assert "validate_fun_007584f0_computed_inputs(handoff.persistent_write)" in handoff
     assert "must not add guessed range/semantic constraints" in handoff
 
