@@ -1,0 +1,105 @@
+{
+  "format": "SHIFT.Fun007584f0MachineSideEffectProof/1",
+  "ready": true,
+  "purpose": "Close the last unresolved P1.2b callee by proving the complete persistent object-state write surface and classifying every nested call reachable inside PC-retail FUN_007584f0.",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "entry": "0x007584f0",
+    "end_exclusive": "0x00758803",
+    "machine_span_size": 787,
+    "machine_span_sha256": "252bade571ca266a620628da463c4cd3b3ca81333df0746d438cd95f77e2295f",
+    "caller": "FUN_00765c40",
+    "caller_site": "0x00765f2b",
+    "receiver_at_call": "ecx = HDVehicle"
+  },
+  "persistent_object_writes": [
+    {
+      "sites": ["0x00758731", "0x0075873b"],
+      "addressing": "[esi+0xd40] where esi = HDVehicle + index*0xa80",
+      "loop_indices": [0, 1],
+      "hdvehicle_offsets": ["+0x0d40", "+0x17c0"],
+      "width": "qword",
+      "branching": "computed qword on the positive-load branch, zero qword on the alternate branch",
+      "semantic_name_proven": false
+    },
+    {
+      "site": "0x007587f4",
+      "addressing": "[edi+0x3420] where edi = HDVehicle",
+      "hdvehicle_offset": "+0x3420",
+      "width": "float",
+      "producer": "return value of 0x00783a30 scalar interpolation helper",
+      "semantic_name_proven": false
+    }
+  ],
+  "nested_calls": [
+    {
+      "callee": "0x007aefb0",
+      "sites": ["0x00758537", "0x007585a2"],
+      "classification": "receiver-read-only transform, explicit stack-local output vec3",
+      "object_state_mutation": false,
+      "proof": "SHIFT.Fun00765c40CalleeClassificationJoin/1"
+    },
+    {
+      "callee": "0x007535f0",
+      "sites": ["0x007585da", "0x007585fb", "0x00758625", "0x0075863f", "0x0075865d", "0x007586a9", "0x007586dc"],
+      "classification": "f64 vec3 scalar-multiply store helper; destination receiver is a stack-local vec3 at every call in FUN_007584f0",
+      "object_state_mutation": false
+    },
+    {
+      "callee": "0x00753590",
+      "sites": ["0x00758608", "0x0075866a", "0x00758677"],
+      "classification": "f64 vec3 add store helper; destination receiver is a stack-local vec3 at every call in FUN_007584f0",
+      "object_state_mutation": false
+    },
+    {
+      "callee": "0x00753650",
+      "sites": ["0x0075868c", "0x007586f4"],
+      "classification": "f64 vec3 cross-product store helper; destination receiver is a stack-local vec3 at every call in FUN_007584f0",
+      "object_state_mutation": false
+    },
+    {
+      "callee": "0x00900b10",
+      "sites": ["0x0075856f"],
+      "classification": "x87 cosine wrapper consuming/returning floating-point value; no HDVehicle/BODY pointer is passed",
+      "object_state_mutation": false,
+      "process_fp_environment_may_be_touched_internally": true
+    },
+    {
+      "callee": "0x00900c40",
+      "sites": ["0x00758580"],
+      "classification": "x87 sine wrapper consuming/returning floating-point value; no HDVehicle/BODY pointer is passed",
+      "object_state_mutation": false,
+      "process_fp_environment_may_be_touched_internally": true
+    },
+    {
+      "callee": "0x00783a30",
+      "sites": ["0x007587ef"],
+      "classification": "scalar interpolation helper over four float arguments; returns scalar in x87 state and performs no external object write",
+      "object_state_mutation": false
+    }
+  ],
+  "read_only_external_state": {
+    "selected_body_pointer": "HDVehicle+0x33a0",
+    "selected_body_transform_base": "+0xd4",
+    "body_scalar_read": "+0x120",
+    "global_configuration_reads_present": true,
+    "global_configuration_writes_present": false
+  },
+  "adjudication": {
+    "persistent_object_write_surface_complete": true,
+    "nested_object_side_effect_surface_complete": true,
+    "remaining_unclassified_callees": [],
+    "p1_2b_complete": true,
+    "p1_2_complete": true,
+    "process_2_p2_4_handoff_ready": true,
+    "fun_00765c40_provider_removal_authorized_for_process_2": true,
+    "collision_scene_query_must_remain_explicit_typed_external_boundary": true,
+    "external_provider_count_before_process_2_consumption": 7
+  },
+  "limits": {
+    "physical_names_for_hdvehicle_0xd40_0x17c0_0x3420_not_claimed": true,
+    "x87_math_wrapper_process_environment_behavior_not_reimplemented_here": true,
+    "this_is_a_proof_handoff_not_process_2_runtime_removal": true
+  }
+}

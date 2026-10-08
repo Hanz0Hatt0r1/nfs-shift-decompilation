@@ -1,7 +1,7 @@
 {
   "format": "SHIFT.Fun00765c40DirectMachineWriteSurface/1",
   "ready": true,
-  "purpose": "Machine-backed inventory of direct HDVehicle-relative writes performed by PC-retail FUN_00765c40, separating direct state writes from unresolved callee-mediated side effects.",
+  "purpose": "Machine-backed inventory of direct HDVehicle-relative writes and classified callee-mediated side effects performed by PC-retail FUN_00765c40.",
   "authority": {
     "platform": "PC retail 1.02",
     "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
@@ -61,47 +61,27 @@
       "offset": "+0x407c",
       "width": "dword",
       "sites": ["0x00765f32","0x00765f4e","0x00765f61","0x00765f74","0x00765f87"],
-      "inputs": ["+0x0b38","+0x15b8","+0x2038","+0x2ab8"],
+      "inputs": ["+0x0b38", "+0x15b8", "+0x2038", "+0x2ab8"],
       "semantics": "counts how many of the four already-closed +0x738 wheel load terms compare greater than zero",
       "semantic_name_proven": false
     }
   ],
   "direct_write_surface_complete_for_machine_body": true,
   "classified_callee_side_effects": [
-    {
-      "callee": "0x00752fa0",
-      "format": "SHIFT.Fun00752fa0WheelStateMachineProof/1",
-      "receiver": "four wheel records at HDVehicle+0x400 stride 0x0a80",
-      "writes": "wheel+0x9f8 dword index and wheel+0xa00 qword from HDVehicle+0x98"
-    },
-    {
-      "callee": "0x007aefb0",
-      "format": "SHIFT.Fun00765c40CalleeClassificationJoin/1",
-      "classification": "receiver-read-only transform; explicit output buffer only"
-    },
-    {
-      "callee": "0x007afd20",
-      "format": "SHIFT.Fun00765c40CalleeClassificationJoin/1",
-      "classification": "receiver-read-only transform-plus-add; explicit output buffer only"
-    },
-    {
-      "callee": "0x007b0430",
-      "format": "SHIFT.Fun00765c40CalleeClassificationJoin/1",
-      "classification": "receiver-read-only extractor; explicit output buffer only"
-    },
-    {
-      "callee": "0x007baa70",
-      "format": "SHIFT.Fun00765c40CalleeClassificationJoin/1",
-      "classification": "Phase 392 positive BODY accumulator primitive; exact six-channel mutation already proven"
-    }
+    {"callee":"0x00752fa0","format":"SHIFT.Fun00752fa0WheelStateMachineProof/1","classification":"four-wheel +0x9f8/+0xa00 state setter"},
+    {"callee":"0x007aefb0","format":"SHIFT.Fun00765c40CalleeClassificationJoin/1","classification":"receiver-read-only transform; explicit output buffer only"},
+    {"callee":"0x007afd20","format":"SHIFT.Fun00765c40CalleeClassificationJoin/1","classification":"receiver-read-only transform-plus-add; explicit output buffer only"},
+    {"callee":"0x007b0430","format":"SHIFT.Fun00765c40CalleeClassificationJoin/1","classification":"receiver-read-only extractor; explicit output buffer only"},
+    {"callee":"0x007baa70","format":"SHIFT.Fun00765c40CalleeClassificationJoin/1","classification":"Phase 392 positive BODY accumulator primitive; exact six-channel mutation already proven"},
+    {"callee":"0x007584f0","format":"SHIFT.Fun007584f0MachineSideEffectProof/1","classification":"complete persistent write surface +0xd40/+0x17c0/+0x3420; nested object-side effects classified"}
   ],
-  "callee_mediated_side_effects_complete": false,
-  "representative_unresolved_callees": ["0x007584f0"],
+  "callee_mediated_side_effects_complete": true,
+  "representative_unresolved_callees": [],
   "gate": {
     "p1_2b_direct_write_inventory_closed": true,
-    "p1_2b_complete": false,
-    "fun_00765c40_provider_removal_authorized": false,
-    "external_provider_count": 7,
-    "remaining_requirement": "classify side effects and receiver ownership of FUN_007584f0 before complete callback removal"
+    "p1_2b_complete": true,
+    "fun_00765c40_provider_removal_authorized": true,
+    "external_provider_count_before_process_2_consumption": 7,
+    "remaining_requirement": null
   }
 }

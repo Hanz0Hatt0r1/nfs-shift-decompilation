@@ -56,21 +56,25 @@ def test_load_positive_count_joins_closed_load_terms() -> None:
     assert "counts how many" in row["semantics"]
 
 
-def test_gate_remains_fail_closed_for_callee_side_effects() -> None:
+def test_callee_side_effect_frontier_is_complete() -> None:
     payload = _load()
     assert payload["direct_write_surface_complete_for_machine_body"] is True
-    assert payload["callee_mediated_side_effects_complete"] is False
+    assert payload["callee_mediated_side_effects_complete"] is True
     classified = {row["callee"] for row in payload["classified_callee_side_effects"]}
-    assert {"0x00752fa0", "0x007aefb0", "0x007afd20", "0x007b0430", "0x007baa70"} <= classified
-    assert payload["representative_unresolved_callees"] == ["0x007584f0"]
+    assert {
+        "0x00752fa0", "0x007aefb0", "0x007afd20", "0x007b0430",
+        "0x007baa70", "0x007584f0",
+    } <= classified
+    assert payload["representative_unresolved_callees"] == []
     gate = payload["gate"]
     assert gate["p1_2b_direct_write_inventory_closed"] is True
-    assert gate["p1_2b_complete"] is False
-    assert gate["fun_00765c40_provider_removal_authorized"] is False
-    assert gate["external_provider_count"] == 7
+    assert gate["p1_2b_complete"] is True
+    assert gate["fun_00765c40_provider_removal_authorized"] is True
+    assert gate["external_provider_count_before_process_2_consumption"] == 7
+    assert gate["remaining_requirement"] is None
 
 
-def test_documentation_preserves_direct_vs_callee_boundary() -> None:
+def test_documentation_preserves_direct_write_inventory() -> None:
     text = DOC.read_text(encoding="utf-8")
     for token in (
         "P1.2b",
@@ -81,8 +85,6 @@ def test_documentation_preserves_direct_vs_callee_boundary() -> None:
         "+0x3670",
         "+0x3678",
         "+0x407c",
-        "callee-mediated side effects",
-        "external-provider count: **7**",
         "NEXT_STEP",
     ):
         assert token in text

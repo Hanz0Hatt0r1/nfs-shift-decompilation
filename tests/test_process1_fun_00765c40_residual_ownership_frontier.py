@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FRONTIER = ROOT / "evidence/fun_00765c40_residual_ownership_frontier.json"
 PROOF = ROOT / "evidence/fun_0074f560_collision_provider_machine_proof.json"
+FINAL = ROOT / "evidence/fun_007584f0_machine_side_effect_proof.json"
 DOC = ROOT / "docs/PROCESS_1_FUN_00765C40_RESIDUAL_OWNERSHIP_FRONTIER.md"
 
 
@@ -27,29 +28,43 @@ def test_provider_boundary_is_closed_without_inventing_class_identity() -> None:
     assert proof["provider_dispatch"]["physx_class_name_proven"] is False
 
 
-def test_only_p1_2b_remains() -> None:
+def test_p1_2_is_complete_and_handoff_moves_to_process_2() -> None:
     frontier = _load(FRONTIER)
-    residual = frontier["remaining_process_1_proof"]
-    assert [row["id"] for row in residual] == ["P1.2b"]
-    assert "remaining source-visible FUN_00765c40 side effects" in residual[0]["target"]
+    final = _load(FINAL)
+    assert final["format"] == "SHIFT.Fun007584f0MachineSideEffectProof/1"
+    assert final["ready"] is True
+    assert frontier["remaining_process_1_proof"] == []
+
+    side = frontier["side_effect_surface"]
+    assert side["direct_machine_writes_closed"] is True
+    assert side["callee_mediated_object_side_effects_closed"] is True
+    assert side["unclassified_callees"] == []
+    assert side["last_closed_callee"] == "FUN_007584f0"
+    assert side["last_callee_persistent_hdvehicle_writes"] == ["+0xd40", "+0x17c0", "+0x3420"]
 
     gate = frontier["completion_gate"]
     assert gate["p1_2a_complete"] is True
-    assert gate["p1_2b_complete"] is False
-    assert gate["p1_2_complete"] is False
-    assert gate["fun_00765c40_provider_removal_authorized"] is False
-    assert gate["external_provider_count"] == 7
+    assert gate["p1_2b_complete"] is True
+    assert gate["p1_2_complete"] is True
+    assert gate["fun_00765c40_provider_removal_authorized"] is True
+    assert gate["process_2_p2_4_handoff_ready"] is True
+    assert gate["external_provider_count_before_process_2_consumption"] == 7
+    assert frontier["next_owner"] == "Process 2 P2.4"
 
 
-def test_documentation_keeps_provider_external_and_p1_2b_fail_closed() -> None:
+def test_documentation_closes_p1_2_but_keeps_lower_provider_external() -> None:
     text = DOC.read_text(encoding="utf-8")
     for token in (
         "P1.2a: **closed**",
-        "P1.2b: **open**",
+        "P1.2b: **closed**",
+        "P1.2 complete: **true**",
         "0x00c133ac",
         "+0x1c0",
-        "explicit typed provider",
-        "guessed track query",
-        "provider removal authorized: **false**",
+        "+0xd40",
+        "+0x17c0",
+        "+0x3420",
+        "provider removal authorized for Process 2: **true**",
+        "external-provider count before Process 2 consumption: **7**",
+        "NEXT_STEP",
     ):
         assert token in text

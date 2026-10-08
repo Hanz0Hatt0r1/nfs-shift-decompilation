@@ -48,18 +48,27 @@ def test_fun_007baa70_joins_existing_body_accumulator_contract() -> None:
     assert "linear += v" in phase
 
 
-def test_only_fun_007584f0_remains_unresolved() -> None:
+def test_historical_join_hands_off_fun_007584f0_then_current_frontier_closes_it() -> None:
     join = _load(JOIN)
+    # This contract intentionally preserves the intermediate adjudication at the
+    # point where FUN_007584f0 was the sole remaining callee.
     assert join["adjudication"]["remaining_potentially_mutating_callees"] == ["0x007584f0"]
     assert join["adjudication"]["p1_2b_complete"] is False
     assert join["adjudication"]["fun_00765c40_provider_removal_authorized"] is False
     assert join["adjudication"]["external_provider_count"] == 7
 
+    # The aggregate frontier advances as later positive proof lands.
     frontier = _load(FRONTIER)
-    assert frontier["representative_unresolved_callees"] == ["0x007584f0"]
+    assert frontier["representative_unresolved_callees"] == []
     classified = {row["callee"] for row in frontier["classified_callee_side_effects"]}
-    assert {"0x00752fa0", "0x007aefb0", "0x007afd20", "0x007b0430", "0x007baa70"} <= classified
-    assert frontier["callee_mediated_side_effects_complete"] is False
+    assert {
+        "0x00752fa0", "0x007aefb0", "0x007afd20", "0x007b0430",
+        "0x007baa70", "0x007584f0",
+    } <= classified
+    assert frontier["callee_mediated_side_effects_complete"] is True
+    assert frontier["gate"]["p1_2b_complete"] is True
+    assert frontier["gate"]["fun_00765c40_provider_removal_authorized"] is True
+    assert frontier["gate"]["external_provider_count_before_process_2_consumption"] == 7
 
 
 def test_documentation_is_fail_closed() -> None:
