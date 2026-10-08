@@ -1,0 +1,95 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerFieldBaseDerivedReceiverClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "decompiler_role": "navigation-only"
+  },
+  "upstream": {
+    "receiver_transfer_format": "SHIFT.PlayerVehicleRenderManagerReceiverTransferFrontier/2",
+    "bounded_direct_target_count": 17
+  },
+  "closed_paths": [
+    {
+      "direct_target": "0x00441fd0",
+      "tail_target": "0x00476cf0",
+      "exact_root_entry_register": "ECX",
+      "root_preservation": "0x00476cf8 mov esi,ecx",
+      "exact_root_uses": [
+        "[root+index+0x1598] byte test/store",
+        "[root+index*4+0x15f4] comparison",
+        "[root+index*4+0x1548] child-pointer load"
+      ],
+      "downstream_call": "0x00476d35 call 0x007eddc0",
+      "downstream_receiver": "child loaded from [root+index*4+0x1548], not exact root",
+      "exact_root_memory_store_found": false,
+      "exact_root_return_found": false,
+      "exact_root_reforward_found": false,
+      "return_shape": "AL boolean 0/1",
+      "thunk_mnemonic_sha256": "c1e0a25129eda7044c8955ec8db3e5422f6751d7ad1eea710d3d4e1b81b8d472",
+      "body_mnemonic_sha256": "05b6b2c5c3fa32296c3b1a47ae31f4bfe56b8e8d7461814c0c53266ed5f76523"
+    },
+    {
+      "direct_target": "0x0045e110",
+      "exact_root_entry_register": "ECX",
+      "root_preservation": "0x0045e111 mov esi,ecx",
+      "exact_root_uses": [
+        "root+0x2b0 state comparison / derived receiver",
+        "load child receiver from [root+0xc4c]"
+      ],
+      "direct_helper": "0x0045e123 call 0x00493fb0 does not receive exact root after call-clobber semantics",
+      "tail_dispatch": "0x0045e13d load ecx=[esi+0xc4c]; 0x0045e14a jmp [child_vtable+0x18]",
+      "tail_dispatch_receiver": "child [root+0xc4c], not exact root",
+      "exact_root_memory_store_found": false,
+      "exact_root_return_found": false,
+      "exact_root_reforward_found": false,
+      "body_mnemonic_sha256": "9092557ba20a815bf6bb732f7f9b0a79578593b072b73b86de68dc475344abf9"
+    },
+    {
+      "direct_target": "0x00467e20",
+      "tail_target": "0x00427610",
+      "exact_root_entry_register": "ECX",
+      "outer_body_root_preservation": "0x00427611 mov esi,ecx",
+      "root_forward_to_helper": "0x00427613 call 0x00465860 with ECX exact root",
+      "helper_stack_save": "0x0046586e mov [ebp-0x10],ecx",
+      "helper_exact_root_reload_sites": ["0x00465e20", "0x00465f4f"],
+      "helper_reload_derivations": [
+        "0x00465e20 load root; 0x00465e23 add 0x780; only root+0x780 is forwarded",
+        "0x00465f4f load root; 0x00465f54 add 0x2b0; only root+0x2b0 is forwarded"
+      ],
+      "root_plus_0x780_call": "0x00465e30 call 0x0045ecf0",
+      "root_plus_0x2b0_call": "0x00465f5a call 0x0045b1e0",
+      "helper_exact_root_nonstack_store_found": false,
+      "helper_exact_root_return_found": false,
+      "helper_exact_root_reforward_found": false,
+      "outer_body_post_helper_uses": "root+0x2b0 only; returns AL boolean",
+      "thunk_mnemonic_sha256": "209d66b776344df79b5fdc258d020a0c6f319fc2f5ccc458b4ebb0461ab185c9",
+      "outer_body_mnemonic_sha256": "debdba62097d2e33dec307b1bf7297dddbd5ef74106df852cc008188bfd7560c",
+      "helper_body_mnemonic_sha256": "2ea39d1ecd5dbf145247f2cbe10cf7a2f1fa10a3d918bb9263872c1c67a3b1cb"
+    }
+  ],
+  "adjudication": {
+    "closed_path_count": 3,
+    "these_fieldbase_or_derived_receiver_paths_closed_negative": true,
+    "exact_outer_root_persisted_by_these_paths": false,
+    "exact_outer_root_returned_by_these_paths": false,
+    "exact_outer_root_forwarded_beyond_classified_boundaries": false,
+    "opaque_callee_created_or_returned_alias_surface_complete": false,
+    "external_or_unknown_origin_alias_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Derived child/subobject receivers are not promoted back to the exact outer root.",
+    "The stack save in FUN_00465860 is local-only; this contract proves only the two exact-root reloads before deriving +0x780 and +0x2b0.",
+    "This is not a complete closure of the 17-target opaque-callee surface.",
+    "No identity is inferred from matching numeric offsets."
+  ],
+  "next_step": "Continue the remaining bounded direct-target opaque-callee worklist, then external/unknown-origin and two-unknown-origin HDVehicle+0x4330 provenance."
+}
