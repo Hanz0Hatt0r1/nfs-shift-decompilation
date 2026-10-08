@@ -93,7 +93,7 @@ jobs:
             > out/native-physics-phase744/fun_00765c40_collision_output_handoff.json
           grep -q '"format":"SHIFT.Fun00765c40CollisionOutputHandoff/1"' \
             out/native-physics-phase744/fun_00765c40_collision_output_handoff.json
-          grep -q '"external_result_format":"SHIFT.Fun00765c40ExternalPassResult/4"' \
+          grep -q '"external_result_format":"SHIFT.Fun00765c40ExternalPassResult/5"' \
             out/native-physics-phase744/fun_00765c40_collision_output_handoff.json
           grep -q '"selected_collision_output_required":true' \
             out/native-physics-phase744/fun_00765c40_collision_output_handoff.json
