@@ -6,6 +6,7 @@
 #include "shift_fun_00765c40_contact_body_accumulation.hpp"
 #include "shift_fun_00765c40_optional_body_accumulator_sweep.hpp"
 #include "shift_fun_00765c40_residual_pass_contract.hpp"
+#include "shift_fun_00765c40_selected_bmw_query_fallback.hpp"
 #include "shift_fun_00765c40_selected_bmw_world_position.hpp"
 #include "shift_fun_00765c40_wheel_job_scheduling.hpp"
 #include "shift_fun_00765c40_wheel_pair_refresh_stage.hpp"
@@ -26,7 +27,6 @@ struct Fun00765c40ComposedResidualInputs {
     Fun00765c40WheelPlaneRefreshComputedInputs wheel_plane{};
     std::vector<std::uint8_t> current_body_bytes{};
     std::optional<std::uint64_t> cached_query_handle{};
-    double query_miss_fallback = 0.0;
     std::uint64_t wheel_state_source_bits = 0u;
     Fun00765c40WheelJobQueueExecutor execute_wheel_job_queue{};
     Fun00765c40LoadTermReader read_load_term{};
@@ -68,7 +68,7 @@ execute_fun_00765c40_composed_residual_pass(
     Fun00765c40SceneQueryBoundary query_boundary{};
     query_boundary.query_input.world_position = result.selected_world_position.world_transform.world_position;
     query_boundary.query_input.cached_handle = inputs.cached_query_handle;
-    query_boundary.query_input.miss_fallback = inputs.query_miss_fallback;
+    query_boundary.query_input.miss_fallback = selected_bmw_m3_e36_fun_00765c40_query_fallback();
     result.query_commit = execute_fun_00765c40_scene_query_stage(query_boundary, scene_query_provider);
 
     for (std::size_t wheel = 0; wheel < kFun00765c40WheelCount; ++wheel) {
