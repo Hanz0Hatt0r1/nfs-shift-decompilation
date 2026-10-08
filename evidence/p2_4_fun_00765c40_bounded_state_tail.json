@@ -1,0 +1,32 @@
+{
+  "format": "SHIFT.Fun00765c40BoundedStateTail/1",
+  "ready": true,
+  "authority": {
+    "ownership_handoff": "SHIFT.Fun00765c40ResidualOwnershipFrontier/1",
+    "direct_write_surface": "SHIFT.Fun00765c40DirectMachineWriteSurface/1",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "retail_write_surface": [
+    {"offset":"+0x3660","site":"0x007661ac","width":"byte","proven_value":1},
+    {"offset":"+0x3668","site":"0x00766381","width":"qword","proven_value":null},
+    {"offset":"+0x3670","site":"0x0076638a","width":"qword","proven_value":null},
+    {"offset":"+0x3678","site":"0x0076639b","width":"dword","proven_value":null}
+  ],
+  "native_consumption": {
+    "header": "native_runtime/include/shift_fun_00765c40_bounded_state_tail.hpp",
+    "write_block_executed_is_explicit_input": true,
+    "skipped_branch_produces_no_commit": true,
+    "offset_0x3660_literal_one_internalized": true,
+    "computed_payloads_preserved_bit_for_bit": true,
+    "branch_predicate_internalized": false,
+    "physical_semantic_names_assigned": false
+  },
+  "scope": {
+    "p2_4_bounded_state_tail_write_surface_internalized": true,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_FUN_00765c40_provider_removed": false,
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Continue into the optional BODY accumulator sweep and remaining computation dependencies; do not infer the bounded-tail branch predicate until exact retail proof exists."
+}
