@@ -1,0 +1,35 @@
+{
+  "format": "SHIFT.HDVehicle64e8ConstantAssistedIndexed4330SynthesisClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {"platform":"PC retail 1.02","retail_executable_sha256":"eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1","machine_transfer_adjudicates":true},
+  "scan": {
+    "scope":"whole retail .text; straight-line symbolic propagation of one unknown affine origin plus proven constants; reset at call/jump/ret and unrecognized writes",
+    "tracked_operations":["mov reg,reg|imm","add/sub reg,reg|imm when representable as one-origin affine expression","lea with base/index/scale/disp when all but at most one origin are constant","inc/dec"],
+    "symbolic_transition_count":181901,
+    "register_or_index_assisted_transition_count":152,
+    "base_plus_0x4330_production_count":5,
+    "hidden_constant_assisted_indexed_production_count":0,
+    "productions":[
+      {"site":"0x00768c16","function":"FUN_00768a4d","steps":1},
+      {"site":"0x00769551","function":"FUN_00769520","steps":1},
+      {"site":"0x0076b241","function":"FUN_0076b130","steps":1},
+      {"site":"0x0076e1c1","function":"FUN_0076df50","steps":1},
+      {"site":"0x00a70642","function":"Unwind@00a7063f","steps":1}
+    ]
+  },
+  "upstream_contracts":["SHIFT.HDVehicle64e8WholeText4330MaterializationOccurrenceClosure/1","SHIFT.HDVehicle64e8StraightLine4330OffsetSynthesisClosure/1"],
+  "adjudication": {
+    "straight_line_constant_assisted_indexed_4330_synthesis_complete":true,
+    "hidden_constant_assisted_indexed_4330_materializer_count":0,
+    "two_unknown_origin_or_cross_control_flow_synthesis_complete":false,
+    "opaque_or_external_4330_alias_surface_complete":false,
+    "global_runtime_derived_4330_alias_surface_complete":false,
+    "manager_374_join_to_hdvehicle_4330_complete":false,
+    "last_literal_0x004b86cf_rejected":false,
+    "p1_3_control_producer_complete":false,
+    "external_provider_count":7
+  },
+  "limits":["Two independent unknown pointer origins are not algebraically equated.","Cross-control-flow phi-style equivalence and opaque helper returns remain open.","Every positive production is already independently bounded."],
+  "next_step":"Bound cross-control-flow/opaque HDVehicle+0x4330 provenance or reacquire the exhaustive v2 render-manager export for memory-escape replay; keep manager+0x374 join fail-closed."
+}
