@@ -41,6 +41,8 @@ def test_three_process_execution_contract_is_active_and_current() -> None:
     assert frontier["fun_00766510_direct_caller_accumulator_surface_ready"] is True
     assert frontier["fun_00766510_p1_residual_frontier_ready"] is True
     assert frontier["fun_00766510_p1_complete"] is False
+    assert frontier["controller1_direct_control_timing_surface_ready"] is True
+    assert frontier["controller1_control_timing_complete"] is False
     assert frontier["retail_control_chain_complete"] is False
     assert frontier["retail_camera_follow_ready"] is False
 
@@ -67,6 +69,10 @@ def test_process_queues_are_separate_and_dependency_routed() -> None:
     assert p1["queue"][1]["state"] == "complete"
     assert p1["queue"][1]["contract"] == "SHIFT.Fun00765c40ResidualOwnershipFrontier/1"
     assert "0x00c133ac/vtable+0x1c0" in p1["queue"][1]["task"]
+    assert p1["queue"][2]["state"] == "ready-parallel"
+    assert p1["queue"][2]["contract"] == "SHIFT.Process1Controller1ControlTimingFrontier/1"
+    assert "indirect/native APC injection" in p1["queue"][2]["task"]
+    assert "Render-frame phase locking is not a prerequisite" in p1["queue"][2]["task"]
     assert p2["queue"][0]["state"] == "complete"
     assert p2["queue"][1]["state"] == "complete"
     assert p2["queue"][2]["state"] == "current-blocked-on-process-1"
@@ -78,6 +84,7 @@ def test_process_queues_are_separate_and_dependency_routed() -> None:
     assert "P1.1" in p2["queue"][2]["depends_on"]
     assert p1["queue"][0]["consumer"] == "Process 2 P2.3"
     assert p1["queue"][1]["consumer"] == "Process 2 P2.4"
+    assert p1["queue"][2]["consumer"] == "Process 2 P2.6"
 
 
 def test_provider_frontier_targets_first_real_boundary_reduction() -> None:
