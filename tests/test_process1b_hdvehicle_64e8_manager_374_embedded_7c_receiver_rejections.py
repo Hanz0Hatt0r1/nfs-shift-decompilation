@@ -34,12 +34,13 @@ def test_two_literal_sites_are_not_participants_manager_receivers():
     assert all(r["receiver_equals_participants_manager"] is False for r in rows)
 
 
-def test_worklist_reduces_14_to_12_and_gates_stay_fail_closed():
+def test_worklist_reduces_11_to_9_and_gates_stay_fail_closed():
     data = load_evidence()
     adj = data["adjudication"]
+    assert data["upstream"]["actionable_before_this_contract"] == 11
     assert adj["new_sites_closed_negative"] == 2
-    assert adj["literal_receiver_worklist_before"] == 14
-    assert adj["literal_receiver_worklist_after"] == 12
+    assert adj["literal_receiver_worklist_before"] == 11
+    assert adj["literal_receiver_worklist_after"] == 9
     assert adj["embedded_7c_receivers_can_be_participants_manager"] is False
     assert adj["computed_address_writer_surface_complete"] is False
     assert adj["manager_374_join_to_hdvehicle_4330_complete"] is False
