@@ -22,7 +22,8 @@ COLLISION_OUTPUT_HANDOFF_FORMAT = "SHIFT.Fun00765c40CollisionOutputHandoff/1"
 COMPOSED_RESIDUAL_EXECUTOR_FORMAT = "SHIFT.Fun00765c40ComposedResidualExecutor/1"
 RESIDUAL_PRODUCER_HANDOFF_FORMAT = "SHIFT.Fun00765c40ResidualProducerHandoff/2"
 HISTORICAL_RESIDUAL_PRODUCER_HANDOFF_FORMAT = "SHIFT.Fun00765c40ResidualProducerHandoff/1"
-RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT = "SHIFT.Fun00765c40ResidualProducerPromotionGate/1"
+RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT = "SHIFT.Fun00765c40ResidualProducerPromotionGate/2"
+HISTORICAL_RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT = "SHIFT.Fun00765c40ResidualProducerPromotionGate/1"
 WHEEL_STATE_MACHINE_PROOF_FORMAT = "SHIFT.Fun00752fa0WheelStateMachineProof/1"
 
 REMAINING_EXPLICIT_PRODUCERS = (
@@ -83,6 +84,7 @@ def build_current_frontier() -> dict[str, Any]:
             "residual_producer_handoff_contract": RESIDUAL_PRODUCER_HANDOFF_FORMAT,
             "historical_residual_producer_handoff_contract": HISTORICAL_RESIDUAL_PRODUCER_HANDOFF_FORMAT,
             "residual_producer_promotion_gate_contract": RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT,
+            "historical_residual_producer_promotion_gate_contract": HISTORICAL_RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT,
             "residual_producer_handoff_present": True,
             "residual_producer_handoff_threaded_through_provider_result": True,
             "residual_producer_handoff_threaded_through_session_result": True,
@@ -93,6 +95,8 @@ def build_current_frontier() -> dict[str, Any]:
             "residual_producer_promotion_gate_session_wired": False,
             "residual_producer_promotion_authorized_family_count": 0,
             "residual_producer_presence_counts_as_proof": False,
+            "residual_producer_promotion_requires_named_contract": True,
+            "residual_producer_promotion_anonymous_boolean_allowed": False,
             "wheel_state_machine_proof_contract": WHEEL_STATE_MACHINE_PROOF_FORMAT,
             "wheel_state_source_address": "HDVehicle+0x98",
             "wheel_state_source_address_proven": True,
@@ -121,6 +125,8 @@ def build_current_frontier() -> dict[str, Any]:
             "absent_producer_family_default_overwrite_allowed": False,
             "producer_presence_treated_as_independent_proof": False,
             "producer_promotion_without_proof_allowed": False,
+            "anonymous_producer_proof_authorization_allowed": False,
+            "empty_producer_proof_contract_allowed": False,
         },
     }
 
@@ -146,6 +152,9 @@ def contract() -> dict[str, Any]:
         ],
         "residual_producer_promotion_gate_contract": fun[
             "residual_producer_promotion_gate_contract"
+        ],
+        "historical_residual_producer_promotion_gate_contract": fun[
+            "historical_residual_producer_promotion_gate_contract"
         ],
         "residual_producer_handoff_present": fun["residual_producer_handoff_present"],
         "residual_producer_handoff_threaded_through_provider_result": fun[
@@ -174,6 +183,12 @@ def contract() -> dict[str, Any]:
         ],
         "residual_producer_presence_counts_as_proof": fun[
             "residual_producer_presence_counts_as_proof"
+        ],
+        "residual_producer_promotion_requires_named_contract": fun[
+            "residual_producer_promotion_requires_named_contract"
+        ],
+        "residual_producer_promotion_anonymous_boolean_allowed": fun[
+            "residual_producer_promotion_anonymous_boolean_allowed"
         ],
         "wheel_state_machine_proof_contract": fun["wheel_state_machine_proof_contract"],
         "wheel_state_source_address": fun["wheel_state_source_address"],
@@ -209,6 +224,7 @@ __all__ = [
     "RESIDUAL_PRODUCER_HANDOFF_FORMAT",
     "HISTORICAL_RESIDUAL_PRODUCER_HANDOFF_FORMAT",
     "RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT",
+    "HISTORICAL_RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT",
     "WHEEL_STATE_MACHINE_PROOF_FORMAT",
     "REMAINING_EXPLICIT_PRODUCERS",
     "build_current_frontier",
