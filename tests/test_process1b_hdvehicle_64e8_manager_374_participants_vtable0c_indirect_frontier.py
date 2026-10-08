@@ -37,12 +37,23 @@ def test_manager_438_constructor_and_virtual_target_are_exact():
     assert m["resolved_target_mnemonic_sha256"] == "66b835ea6ec200f10df83381dc390405e280b2641de9ac2287263b7b952b9fb5"
 
 
-def test_resolved_target_direct_body_does_not_recover_parent_or_store_374():
+def test_manager_438_same_receiver_descendants_close_negative_but_foreign_callback_stays_open():
     b = _payload()["resolved_target_body"]
     assert b["parent_recovery_from_manager_438_observed"] is False
     assert b["direct_manager_plus_0x374_store_observed"] is False
     assert b["same_receiver_direct_callee"] == "FUN_007d8e00"
-    assert b["same_receiver_deeper_surface_complete"] is False
+    assert b["same_receiver_deeper_surface_complete"] is True
+    rows = b["same_receiver_descendants"]
+    assert [row["function"] for row in rows] == ["FUN_007d8e00", "FUN_007d8dd0"]
+    assert rows[0]["mnemonic_sha256"] == "fe663bbb51f10a8028da36281311fda7b3612305255d2b6bbaae384b83860d7c"
+    assert rows[1]["mnemonic_sha256"] == "e5ad375a194da45719cc05250eda8040ce17e03a90e9b669dac3406af73b6c44"
+    assert b["same_receiver_descendants_parent_recovery_observed"] is False
+    assert b["same_receiver_descendants_manager_plus_0x374_store_observed"] is False
+    cb = b["open_foreign_receiver_callback"]
+    assert cb["callsite"] == "0x007da486"
+    assert cb["virtual_slot"] == "+0x108"
+    assert cb["manager_438_passed_as_stack_argument"] is True
+    assert cb["target_resolved"] is False
 
 
 def test_direct_root_side_path_does_not_forward_ecx_semantically():
@@ -54,13 +65,14 @@ def test_direct_root_side_path_does_not_forward_ecx_semantically():
     assert "does not consume incoming ECX" in d["reason"]
 
 
-def test_adjudication_stays_fail_closed_for_deeper_and_heap_surfaces():
+def test_adjudication_stays_fail_closed_for_foreign_and_heap_surfaces():
     a = _payload()["adjudication"]
     assert a["participants_vtable_0x0c_indirect_receiver_inventory_complete"] is True
     assert a["manager_438_indirect_target_resolved"] is True
     assert a["manager_438_resolved_target_direct_body_reaches_manager_374"] is False
     assert a["direct_root_side_path_direct_body_reaches_manager_374"] is False
-    assert a["manager_438_deeper_same_receiver_surface_complete"] is False
+    assert a["manager_438_deeper_same_receiver_surface_complete"] is True
+    assert a["manager_438_foreign_receiver_callback_surface_complete"] is False
     assert a["heap_helper_indirect_target_surface_complete"] is False
     assert a["manager_374_join_to_hdvehicle_4330_complete"] is False
     assert a["exact_hdvehicle_64e8_non_sentinel_writer_proven"] is False
