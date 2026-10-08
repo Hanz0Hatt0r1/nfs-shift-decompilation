@@ -15,15 +15,14 @@
     "participants_manager_vptr": "0x00ab916c",
     "inherited_negative_site_excluded_here": "0x005ded7e"
   },
-  "rejections": [
+  "same_body_vptr_rejections": [
     {
       "site": "0x0074874b",
       "function": "FUN_00748280",
       "base_register": "ESI",
       "receiver_capture": "0x0074829d mov esi,ecx",
       "same_receiver_vptr_store": "0x007482b2 mov [esi],0x00b07938",
-      "vptr": "0x00b07938",
-      "vptr_is_participants_manager": false
+      "vptr": "0x00b07938"
     },
     {
       "site": "0x008169c3",
@@ -35,8 +34,7 @@
         "0x00816810 mov [esi],0x00aaa9a0",
         "0x00816825 mov [esi],0x00b16158"
       ],
-      "last_explicit_vptr_before_target_store": "0x00b16158",
-      "all_explicit_vptrs_are_not_participants_manager": true
+      "last_explicit_vptr_before_target_store": "0x00b16158"
     },
     {
       "site": "0x00833972",
@@ -47,8 +45,7 @@
         "0x00833773 mov [ebx],0x00b18bc8",
         "0x0083378a mov [ebx],0x00b190a8"
       ],
-      "last_explicit_vptr_before_target_store": "0x00b190a8",
-      "all_explicit_vptrs_are_not_participants_manager": true
+      "last_explicit_vptr_before_target_store": "0x00b190a8"
     },
     {
       "site": "0x00844343",
@@ -56,8 +53,7 @@
       "base_register": "ESI",
       "receiver_capture": "0x00844321 mov esi,ecx",
       "same_receiver_vptr_store": "0x0084432b mov [esi],0x00b190a8",
-      "vptr": "0x00b190a8",
-      "vptr_is_participants_manager": false
+      "vptr": "0x00b190a8"
     },
     {
       "site": "0x00844b67",
@@ -65,8 +61,7 @@
       "base_register": "ESI",
       "receiver_capture": "0x00844a28 mov esi,ecx",
       "same_receiver_vptr_store": "0x00844a3a mov [esi],0x00b190a8",
-      "vptr": "0x00b190a8",
-      "vptr_is_participants_manager": false
+      "vptr": "0x00b190a8"
     },
     {
       "site": "0x00d7f104",
@@ -74,14 +69,26 @@
       "base_register": "ESI",
       "receiver_capture": "0x00d7f041 mov esi,ecx",
       "same_receiver_vptr_store": "0x00d7f057 mov [esi],0x00ac1fc4",
-      "vptr": "0x00ac1fc4",
-      "vptr_is_participants_manager": false
+      "vptr": "0x00ac1fc4"
     }
   ],
+  "unique_vtable_dispatch_rejection": {
+    "function": "FUN_008446a0",
+    "target_sites": ["0x008446cb", "0x008446e3", "0x008446f8"],
+    "receiver_capture": "0x008446a9 mov esi,ecx",
+    "whole_pe_function_pointer_occurrence_count": 1,
+    "unique_function_pointer_location": "0x00b19144",
+    "owning_vtable": "0x00b190a8",
+    "vtable_slot_offset": "+0x9c",
+    "direct_callsite_count": 0,
+    "owning_vtable_is_participants_manager": false
+  },
   "adjudication": {
-    "rejected_site_count": 6,
-    "remaining_literal_store_site_count": 14,
-    "rejections_use_exact_same_receiver_vptr_identity": true,
+    "rejected_site_count": 9,
+    "remaining_literal_store_site_count": 11,
+    "same_body_vptr_rejected_site_count": 6,
+    "unique_vtable_dispatch_rejected_site_count": 3,
+    "rejections_use_exact_receiver_vptr_identity": true,
     "numeric_plus_0x374_equality_used_as_identity": false,
     "remaining_literal_store_receiver_provenance_complete": false,
     "computed_address_manager_374_writer_surface_complete": false,
@@ -91,10 +98,11 @@
     "external_provider_count": 7
   },
   "limits": [
-    "0x005ded7e is intentionally absent because the corrected upstream inventory already inherits its separate exact allocation-size rejection.",
-    "A site is rejected here only when the exact register used as the +0x374 destination base is the same receiver captured from entry ECX and that receiver is explicitly assigned a non-Participants-Manager vptr in the same machine body before the target write.",
-    "This contract does not classify the other 14 literal +0x374 stores and does not cover computed-address +0x374 writes.",
+    "0x005ded7e is intentionally absent because corrected upstream inventory already inherits its separate exact allocation-size rejection.",
+    "The six same-body sites are rejected only when the exact +0x374 base register is the entry receiver and that same receiver receives a non-Participants-Manager vptr before the target write.",
+    "FUN_008446a0 is rejected separately because its machine address has exactly one whole-PE function-pointer occurrence, at vtable 0x00b190a8+0x9c, there are no direct callsites, and the function captures ECX as the receiver used for all three target stores.",
+    "This contract does not classify the other 11 literal +0x374 stores and does not cover computed-address +0x374 writes.",
     "Vptr inequality is used as exact object-identity evidence; offset coincidence is not used."
   ],
-  "next_step": "Classify the remaining 14 literal +0x374 stores by exact receiver provenance, prioritizing child-base and constructor/copy families; then widen to computed-address forms only if needed."
+  "next_step": "Classify the remaining 11 literal +0x374 stores by exact receiver/owner provenance, prioritizing embedded child receivers and copied-structure owners; then widen to computed-address forms only if needed."
 }
