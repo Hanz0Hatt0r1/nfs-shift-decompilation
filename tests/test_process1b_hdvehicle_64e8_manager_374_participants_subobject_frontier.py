@@ -47,7 +47,7 @@ def test_direct_helper_writes_do_not_reach_manager_374():
     assert d["any_direct_write_reaches_manager_374"] is False
 
 
-def test_escape_is_retained_fail_closed():
+def test_original_escape_contract_remains_bounded_and_fail_closed():
     p = _payload()
     e = p["escaped_alias_registration"]
     assert e["proven"] is True
@@ -61,11 +61,14 @@ def test_escape_is_retained_fail_closed():
     assert a["external_provider_count"] == 7
 
 
-def test_coordination_points_to_escaped_alias_consumers():
+def test_coordination_preserves_escape_while_advancing_direct_lifecycle_surface():
     graph = json.loads(COORD.read_text(encoding="utf-8"))
     p13 = next(row for row in graph["workstreams"] if row["id"] == "P1.3")
     node = next(row for row in p13["children"] if row["id"] == "P1.3.manager374")
-    assert node["status"] == "participants-subobject-direct-writes-rejected-escaped-alias-open"
+    assert node["status"] == "participants-lifecycle-zero-writers-proven-other-indirect-open"
     assert node["manager_plus_0x20_direct_helper_surface_complete"] is True
     assert node["manager_plus_0x20_escaped_alias_open"] is True
-    assert "FUN_004f5e60" in node["next"]
+    assert node["manager_plus_0x20_lifecycle_target_reaches_0x374"] is True
+    assert node["manager_plus_0x20_lifecycle_target_writes_zero_only"] is True
+    assert node["participants_lifecycle_direct_target_surface_complete"] is True
+    assert node["participants_lifecycle_nested_callee_surface_complete"] is False
