@@ -1,16 +1,14 @@
-# Process 1 — reject two residual literal `+0x374` writers
+# Process 1 — reject residual literal `+0x374` writer domains
 
-The remaining global literal `+0x374` store inventory contained three non-constructor function bodies worth adjudicating after the direct manager-root/vtable surfaces were exhausted. Two are now rejected as writers of `FUN_00489ad0()` singleton `manager+0x374` by exact receiver provenance.
+The residual global literal `+0x374` store inventory contained three non-constructor function bodies after the direct manager-root/vtable surfaces were exhausted. Two are rejected outright as writers of `FUN_00489ad0()` singleton `manager+0x374`, and one major forwarded alias of the third is now rejected.
 
 ## `FUN_0051efa0`
-
-Its store is:
 
 ```text
 0x0051effd mov [ESI+0x374],EAX
 ```
 
-The receiver chain is exact:
+Exact receiver chain:
 
 ```text
 0x004567a3 call FUN_00518de0
@@ -22,19 +20,15 @@ The receiver chain is exact:
 0x0051f92b call FUN_0051efa0
 ```
 
-`FUN_0051f8f0` preserves its receiver in `ESI`, so the `+0x374` store belongs to `0x00be1680`, not manager singleton `0x00bc9fc0`.
-
-No semantic name is assigned to `0x00be1680`.
+The writer receiver is `0x00be1680`, not manager singleton `0x00bc9fc0`. No semantic name is assigned to that object.
 
 ## `FUN_005dec70`
-
-Its store is:
 
 ```text
 0x005ded7e mov [ESI+0x374],EBP
 ```
 
-The only direct constructor path allocates exactly `0x37c` bytes:
+Its direct constructor path allocates exactly `0x37c` bytes:
 
 ```text
 0x005df730 push 0x37c
@@ -44,13 +38,11 @@ The only direct constructor path allocates exactly `0x37c` bytes:
 0x005df748 call FUN_005dec70
 ```
 
-This cannot be the manager object. The proven manager constructor `FUN_00488dc0` writes `manager+0x37c`, so the manager requires valid storage through at least offset `+0x37f`. A freshly allocated `0x37c`-byte object ends at `+0x37b`.
+This is not the manager object: the proven manager constructor writes `manager+0x37c`, requiring valid storage through at least `+0x37f`, while a `0x37c`-byte object ends at `+0x37b`.
 
-Again, no class identity is inferred.
+## `FUN_00481e20` bulk-copy path
 
-## Remaining literal writer
-
-`FUN_00481e20` remains open. It performs a large field-by-field copy and includes:
+The copy includes:
 
 ```text
 0x004826a0 fld  dword [EDI+0x374]
@@ -61,7 +53,26 @@ Again, no class identity is inferred.
 0x004826be fstp dword [ESI+0x37c]
 ```
 
-Two direct callsites clearly target embedded subobjects, but the `FUN_0070dccf -> FUN_0070db00` path forwards a destination argument into `FUN_00481e20`; that alias must be rooted before this last candidate can be rejected.
+The previously open forwarded path is now bounded:
+
+```text
+FUN_0070dcc0
+ -> trampoline 0x0047af96
+ -> FUN_0070dccf
+ -> FUN_0070db00
+ -> FUN_00481e20
+```
+
+The Ghidra direct-call surface of `FUN_0070dcc0` has 21 callsites. Every one forms incoming `ECX` with `LEA [EBP-negative]`, i.e. stack-local storage. `FUN_0070dcc0` preserves that receiver through the trampoline split; `FUN_0070dccf` forwards it to `FUN_0070db00`, which reloads it into `ECX` before calling `FUN_00481e20`. Therefore this direct-call surface cannot target fixed manager singleton `0x00bc9fc0`.
+
+`FUN_00481e20` still has two direct embedded-subobject destinations that remain open:
+
+```text
+0x004848f5  ECX = parent + 0xa00
+0x0081d335  ECX = parent + 0x2d0
+```
+
+Their parent provenance must be closed before the entire bulk-copy literal-writer surface can be rejected.
 
 ## Gates
 
