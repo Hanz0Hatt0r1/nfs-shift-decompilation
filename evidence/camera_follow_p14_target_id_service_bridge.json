@@ -1,0 +1,76 @@
+{
+  "format": "SHIFT.CameraFollowP14TargetIdServiceBridge/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact machine-code service wiring, vtable, constructor defaults, and target-ID lookup"
+  },
+  "camera_data_layout": {
+    "constructor": "FUN_00813180",
+    "target_id": {"offset": "0x74", "default": -1, "reflected": false},
+    "target_selector": {"offset": "0x78", "default": 6, "reflected_name": "Target"},
+    "lookat_id": {"offset": "0x7c", "default": -1, "reflected": false},
+    "lookat_selector": {"offset": "0x80", "default": 6, "reflected_name": "LookAt"},
+    "adjudication": "Target/LookAt reflected fields are selectors passed separately from hidden manager-entry IDs"
+  },
+  "service_wiring": {
+    "install_function": "FUN_0040d6a0",
+    "manager_field": "CameraManager+0x574",
+    "installed_interface": "DAT_00bc185c+4",
+    "interface_vtable": "0x00ab55f0",
+    "vtable_slots": {
+      "+0x08": "FUN_0045d940",
+      "+0x0c": "FUN_0045d980",
+      "+0x14": "FUN_0045d9c0",
+      "+0x1c": "FUN_0045da00",
+      "+0x2c": "FUN_00459b80"
+    }
+  },
+  "target_transform_dispatch": {
+    "camera_helper": "FUN_00812d20",
+    "service_method": "+0x08 = FUN_0045d940",
+    "target_id_sources": ["active camera data +0x74", "active camera data +0x7c"],
+    "selector_sources": ["active camera data +0x78 ('Target')", "active camera data +0x80 ('LookAt')"],
+    "manager_lookup": {
+      "function": "FUN_0045d940",
+      "machine": [
+        "0x0045d943 call FUN_00489ad0",
+        "0x0045d948 mov edx,[ebp+0x0c] (target id)",
+        "0x0045d94b cmp edx,[eax+0x2c4]",
+        "0x0045d953 lea ecx,[eax+0x2a0]",
+        "0x0045d959 call FUN_0054ed00",
+        "0x0045d969 load selector from [ebp+0x08]",
+        "0x0045d970 call FUN_00481420 on the resolved collection entry"
+      ]
+    }
+  },
+  "name_to_target_id": {
+    "service_method": "+0x2c = FUN_00459b80",
+    "player_literals": ["player", "teammate"],
+    "player_result_path": "FUN_00489ad0()->+0x374->+0x100",
+    "machine": [
+      "0x00459ba8 push 'player'",
+      "0x00459bae call __stricmp",
+      "0x00459bba call FUN_00489ad0",
+      "0x00459bbf mov eax,[eax+0x374]",
+      "0x00459bc9 mov eax,[eax+0x100]",
+      "0x00459be2 push 'teammate'",
+      "0x00459be8 call __stricmp"
+    ],
+    "other_forms": ["numeric text", "last", "service vtable +0x30 fallback"]
+  },
+  "adjudication": {
+    "target_plus_0x78_is_manager_entry_id": false,
+    "target_plus_0x78_is_service_selector": true,
+    "runtime_plus_0x74_is_target_manager_lookup_id": true,
+    "runtime_plus_0x7c_is_lookat_manager_lookup_id": true,
+    "literal_player_resolves_to_current_player_manager_id": true,
+    "active_playable_camera_plus_0x74_proven_from_literal_player_resolver": false,
+    "selected_player_target_identity_complete": false,
+    "native_camera_follow_ready": false,
+    "external_provider_count": 7
+  },
+  "next": "Trace the producer of active playable TrackingCamera data +0x74 (and +0x7c where used) and prove whether it is populated from FUN_00459b80('player'/'teammate') or another exact target-ID source."
+}
