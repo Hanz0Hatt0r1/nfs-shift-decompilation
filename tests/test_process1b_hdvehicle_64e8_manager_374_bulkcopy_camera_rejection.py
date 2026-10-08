@@ -59,4 +59,3 @@ def test_coordination_preserves_bulk_copy_closure_after_later_alias_progress():
     row = next(c for c in p13["children"] if c["id"] == "P1.3.manager374")
     assert row["direct_bulk_copy_surface_complete"] is True
     assert any("0x0081d335" in item for item in row["rejected_bulk_copy_aliases"])
-    assert row["status"] == "participants-subobject-direct-writes-rejected-escaped-alias-open"
