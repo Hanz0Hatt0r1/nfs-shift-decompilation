@@ -1,0 +1,69 @@
+{
+  "format": "SHIFT.Slot2VehicleLoadData3a0_3a8BootstrapZero/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "direct PE32 constructor receiver normalization and x87 value flow"
+  },
+  "targets": [
+    "VehicleLoadData+0x3a0",
+    "VehicleLoadData+0x3a8"
+  ],
+  "constructor_chain": {
+    "vehicle_load_data_constructor": "FUN_007c3170",
+    "nested_receiver_setup": "0x007c31a3 ECX = VehicleLoadData+0x8",
+    "nested_constructor_call": "0x007c31aa call FUN_007c0db0",
+    "nested_constructor": "FUN_007c0db0",
+    "normalized_stores": [
+      {
+        "instruction": "0x007c11fa",
+        "nested_store": "qword [ESI+0x398]",
+        "root_store": "VehicleLoadData+0x3a0",
+        "bootstrap_value": 0.0
+      },
+      {
+        "instruction": "0x007c1200",
+        "nested_store": "qword [ESI+0x3a0]",
+        "root_store": "VehicleLoadData+0x3a8",
+        "bootstrap_value": 0.0
+      }
+    ]
+  },
+  "x87_zero_proof": {
+    "zero_seeds": [
+      "0x007c1087 fldz",
+      "0x007c108f fldz"
+    ],
+    "loop": "0x007c1160/0x007c116e paired FXCH ST(3) over 12 iterations preserves the zero stack lanes",
+    "post_loop": "0x007c1175 pops the temporary top value; balanced FLD/FSTP constant pairs leave the retained zero lanes intact",
+    "final_selection": [
+      "0x007c11ea FXCH ST(1)",
+      "0x007c11f8 FXCH ST(2)"
+    ],
+    "store_top_value": 0.0,
+    "same_top_value_for_both_target_stores": true
+  },
+  "slot2_join": {
+    "consumer_contract": "SHIFT.Fun007530e0Slot2SourceProducer/1",
+    "transfers": [
+      "VehicleLoadData+0x3a0 -> HDVehicle+0x5238",
+      "VehicleLoadData+0x3a8 -> HDVehicle+0x5240"
+    ],
+    "fresh_hdvehicle_5238_value": 0.0,
+    "fresh_hdvehicle_5240_value": 0.0,
+    "runtime_overwrite_proven": false
+  },
+  "adjudication": {
+    "vld_3a0_bootstrap_writer_proven": true,
+    "vld_3a8_bootstrap_writer_proven": true,
+    "vld_3a0_bootstrap_zero_proven": true,
+    "vld_3a8_bootstrap_zero_proven": true,
+    "runtime_value_producers_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Trace post-construction writers of VehicleLoadData+0x3a0/+0x3a8 and the selected HDVehicle+0x64e8 non-sentinel writer. Do not treat bootstrap zeros as runtime constants."
+}
