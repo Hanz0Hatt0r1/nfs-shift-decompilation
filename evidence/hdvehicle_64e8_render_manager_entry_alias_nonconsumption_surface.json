@@ -71,43 +71,38 @@
       "alias_read_before_kill": false,
       "exact_root_persisted_or_returned": false,
       "mnemonic_sha256": "d4c205e482eb0dccdf50f63366e9765ae6e49ff0608ac4ad9025050f7215bb8e"
-    },
+    }
+  ],
+  "reopened_getter_residue_targets": [
     {
       "target": "0x00489ad0",
-      "function": "thunk_FUN_00444fcc",
-      "entry_alias_register": "ECX",
+      "exact_root_entry_register": "ECX",
       "exact_root_callsites": ["0x004989c6", "0x00498ac4"],
-      "thunk_body": ["0x00444fcc mov eax,1", "0x00444fd1 jmp 0x00489ad5"],
-      "entry_alias_read": false,
-      "replacement_ecx": "0x00489ae3 mov ecx,0x00bc9fc0",
-      "return_value": "0x00489afa mov eax,0x00bc9fc0",
-      "returned_pointer_is_exact_outer_root": false,
-      "returned_pointer_role": "Participants Manager singleton already proven independently",
-      "thunk_mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
-      "body_mnemonic_sha256": "176a39ed845abe7a6fbe51c430190743abeda60e4c62b6f9c3b68280720750d4"
+      "reason": "already-initialized hot path can return EAX=0x00bc9fc0 without overwriting incoming ECX, so caller-visible exact-root ECX residue must be adjudicated post-call"
     },
     {
       "target": "0x00493fb0",
-      "function": "thunk_FUN_004300ae",
-      "entry_alias_register": "ECX",
+      "exact_root_entry_register": "ECX",
       "exact_root_callsites": ["0x004d1a1f"],
-      "thunk_body": ["0x004300ae mov eax,1", "0x004300b3 jmp 0x00493fb5"],
-      "entry_alias_read": false,
-      "replacement_ecx": "0x00493fc3 mov ecx,0x00bcae00",
-      "return_value": "0x00493fda mov eax,0x00bcae00",
-      "returned_pointer_is_exact_outer_root": false,
-      "thunk_mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
-      "body_mnemonic_sha256": "176a39ed845abe7a6fbe51c430190743abeda60e4c62b6f9c3b68280720750d4"
+      "reason": "already-initialized hot path can return EAX=0x00bcae00 without overwriting incoming ECX, so caller-visible exact-root ECX residue must be adjudicated post-call"
     }
   ],
   "worklist": {
     "bounded_direct_target_count_before_this_contract": 10,
-    "closed_target_count_this_contract": 6,
-    "bounded_direct_target_count_after_this_contract": 4,
-    "remaining_targets": ["0x0045bfc0", "0x0045cc50", "0x0045db50", "0x00462400"]
+    "closed_target_count_this_contract": 4,
+    "bounded_direct_target_count_after_this_contract": 6,
+    "remaining_targets": [
+      "0x0045bfc0",
+      "0x0045cc50",
+      "0x0045db50",
+      "0x00462400",
+      "0x00489ad0",
+      "0x00493fb0"
+    ]
   },
   "adjudication": {
-    "six_entry_alias_paths_closed_negative": true,
+    "four_entry_alias_paths_closed_negative": true,
+    "getter_residue_targets_closed_negative": false,
     "bounded_direct_target_opaque_surface_complete": false,
     "opaque_callee_created_or_returned_alias_surface_complete": false,
     "external_or_unknown_origin_alias_surface_complete": false,
@@ -118,10 +113,10 @@
     "external_provider_count": 7
   },
   "limits": [
-    "This contract closes only the six listed bounded direct-target paths.",
+    "This corrected contract closes only the four listed bounded direct-target paths.",
+    "A getter returning a distinct pointer in EAX does not prove caller ECX was destroyed; 0x00489ad0 and 0x00493fb0 remain open until post-call ECX residue is bounded.",
     "A nested CALL is not treated as harmless unless its machine body is itself bounded; FUN_00886980 is explicitly checked and does not read ECX.",
-    "Distinct singleton return values are not promoted to the exact outer render-manager root.",
     "No identity is inferred from matching numeric offsets."
   ],
-  "next_step": "Adjudicate the four remaining bounded direct targets 0x0045bfc0, 0x0045cc50, 0x0045db50 and 0x00462400, then continue external/unknown-origin and two-unknown-origin HDVehicle+0x4330 provenance."
+  "next_step": "Close the four remaining non-getter direct targets through the 15/17 contract, then pin the complete exact-root caller/post-call ECX residue surface for 0x00489ad0 and 0x00493fb0."
 }
