@@ -57,8 +57,8 @@ def test_native_regression_covers_selective_and_legacy_promotion() -> None:
         "set_fun_00765c40_residual_producer_family_proven",
     ):
         assert witness in source
-    assert "external_provider_count_after\":7" in source
-    assert "complete_fun_00765c40_internalized\":false" in source
+    assert '\\"external_provider_count_after\\":7' in source
+    assert '\\"complete_fun_00765c40_internalized\\":false' in source
 
 
 def test_stable_p2_4_cmake_and_docs_keep_session_unwired() -> None:
