@@ -40,12 +40,13 @@ def test_join_advances_but_hdvehicle_identity_remains_fail_closed():
     assert j["external_provider_count"] == 7
 
 
-def test_coordination_consumes_selection_writer_proof_without_closing_escaped_aliases():
+def test_coordination_preserves_selection_writer_through_population_proof():
     graph = json.loads(COORD.read_text(encoding="utf-8"))
     p13 = next(row for row in graph["workstreams"] if row["id"] == "P1.3")
     m374 = next(row for row in p13["children"] if row["id"] == "P1.3.manager374")
     m2a0 = next(row for row in p13["children"] if row["id"] == "P1.3.manager2a0")
     assert m374["proven_nonzero_writer"] == "thunk_FUN_00d60660"
     assert m374["manager_plus_0x20_escaped_alias_open"] is True
-    assert m2a0["status"] == "selection-writer-proven-registration-identity-open"
+    assert m2a0["status"] == "population-producer-proven-entry-identity-open"
     assert "thunk_FUN_00d60660" in m2a0["proven_relation"]
+    assert m2a0["insertion_producer_complete"] is True
