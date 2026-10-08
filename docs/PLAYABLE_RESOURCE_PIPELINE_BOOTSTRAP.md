@@ -55,8 +55,11 @@ The command fails closed through these stages:
 2. validate resource-pipeline scene, physics, participant evidence, and target identity;
 3. build the ordinary offline vertical-slice bootstrap without replacing pipeline scene/physics/participant authority;
 4. compose the Phase 643 track + BMW playable scene using the pipeline's exact source scene;
-5. prepare a playable resource-pipeline profile while keeping camera/BODY inputs explicit;
-6. when requested, rebuild the resource-pipeline-to-composite provenance join from current files and validate the native launch plan.
+5. rebuild `SHIFT.ResourcePipelinePlayableSceneJoin/1` from current files and require its source-path/source-SHA/composite-SHA checks to pass;
+6. prepare a playable resource-pipeline profile while keeping camera/BODY inputs explicit;
+7. when requested, build the native launch plan; the playable launcher independently recomputes the same provenance join before replacing the pipeline source scene with the composite scene.
+
+`profile-ready` therefore already means the composite scene passed the explicit resource-pipeline provenance join. `--validate-launch-plan` adds a second independent revalidation at launcher-plan construction time.
 
 The final playable launcher submits the derived composite scene only after the provenance join proves it was derived from the pipeline source scene. Physics and participant evidence continue to come from the pipeline handoff.
 
@@ -66,14 +69,14 @@ The output directory can contain:
 
 - `playable_pipeline_bootstrap.json` — orchestration report;
 - `playable-scene/playable_scene_bootstrap.json` — playable scene bootstrap/provenance input;
-- `vertical_slice_profile.json` — generated native runtime profile when profile preparation succeeds;
+- `vertical_slice_profile.json` — generated native runtime profile only after the playable provenance join succeeds;
 - `launch_plan.json` — generated only when `--validate-launch-plan` succeeds.
 
-The top-level report status is:
+The top-level report records `playable_scene_provenance_ready` separately from profile and launch-plan readiness. Its status is:
 
-- `blocked` — an admission, materialization, composition, profile, or launch-plan gate failed;
-- `profile-ready` — the profile is ready and launch-plan validation was not requested;
-- `launch-plan-ready` — the profile and provenance-gated launch plan are ready.
+- `blocked` — an admission, materialization, composition, provenance, profile, or launch-plan gate failed;
+- `profile-ready` — the composite provenance join and profile are ready, and launch-plan validation was not requested;
+- `launch-plan-ready` — provenance, profile, and the independently revalidated launch plan are ready.
 
 Exit code is `0` only when the requested readiness level is reached; otherwise it is `2`.
 
@@ -98,4 +101,4 @@ This bootstrap does not claim:
 - renderer-resource identity beyond the existing admitted Process 3/renderer contracts;
 - that mere path presence is provenance.
 
-The final composite-scene authority comes from `SHIFT.ResourcePipelinePlayableSceneJoin/1`, which rechecks the source scene path, source manifest SHA-256, Phase 643 source record, and composite manifest SHA-256 from the current filesystem state.
+The final composite-scene authority comes from `SHIFT.ResourcePipelinePlayableSceneJoin/1`, which rechecks the source scene path, source manifest SHA-256, Phase 643 source record, and composite manifest SHA-256 from the current filesystem state. The bootstrap requires this join before profile readiness, and the playable launcher recomputes it again before launch-plan readiness.
