@@ -1,0 +1,90 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374DelayedStackAliasSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact retail machine transfer; Ghidra SQLite used for navigation/fingerprints only"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374GetterLocalAliasSurface/1",
+  "surface": {
+    "pattern": "FUN_00489ad0 result copied to GPR, then persisted to stack-local and reloaded later",
+    "candidate_count": 4,
+    "functions": [
+      {
+        "function": "FUN_00492520",
+        "address": "0x00492520",
+        "size": 247,
+        "mnemonic_sha256": "3e976a0cb7f19144082816f872e3897626e220a20f68d4ce5ce9e5261589880f",
+        "getter_callsite": "0x00492591",
+        "alias_register": "edi",
+        "stack_local_store": "0x004925a2 [ebp-0x8]",
+        "manager_root_accesses": ["+0x2d4", "+0x2c4", "+0x2a0"],
+        "root_forwarded_to_callee": false,
+        "root_written_through": false,
+        "target_plus_0x374_write": false
+      },
+      {
+        "function": "FUN_00496680",
+        "address": "0x00496680",
+        "size": 261,
+        "mnemonic_sha256": "f35ef1abc5d1b53fa3143b6822d6edc3574b638c7b6a973208a66b511c213688",
+        "getter_callsite": "0x004966c3",
+        "alias_register": "esi",
+        "stack_local_store": "0x004966d4 [ebp-0x4]",
+        "manager_root_accesses": ["+0x2d4", "+0x2c4", "+0x2a0"],
+        "root_forwarded_to_callee": false,
+        "root_written_through": false,
+        "target_plus_0x374_write": false
+      },
+      {
+        "function": "FUN_004bad20",
+        "address": "0x004bad20",
+        "size": 491,
+        "mnemonic_sha256": "491fef6b73071f8e12f6832dfdc75b1e05ec0e1cd7ed7063cf0243f25b261b3b",
+        "getter_callsite": "0x004bad36",
+        "alias_register": "esi",
+        "stack_local_store": "0x004bad3d [ebp-0x14]",
+        "manager_root_accesses": ["+0x2fc", "+0x2d4", "+0x2c4", "+0x2a0", "+0x2d8"],
+        "participant_entry_writes": ["entry+0x219c", "entry+0x21a0"],
+        "participant_entry_writes_are_manager_root_writes": false,
+        "root_forwarded_to_callee": false,
+        "root_written_through": false,
+        "target_plus_0x374_write": false
+      },
+      {
+        "function": "FUN_0051df70",
+        "address": "0x0051df70",
+        "size": 137,
+        "mnemonic_sha256": "c5ed4dda9191849d2d970d378dfe7636fee76f2edea2cebca4c74edb07e3ed11",
+        "getter_callsite": "0x0051df7a",
+        "alias_register": "edx",
+        "stack_local_store": "0x0051df8d [ebp-0x4]",
+        "manager_root_accesses": ["+0x2d4", "+0x2c4", "+0x2a0"],
+        "temporary_edx_repurpose": "loop index before FUN_0054ed00; manager root reloaded after calls",
+        "root_forwarded_to_callee": false,
+        "root_written_through": false,
+        "target_plus_0x374_write": false
+      }
+    ]
+  },
+  "adjudication": {
+    "delayed_register_to_stack_alias_count": 4,
+    "surface_complete_for_this_pattern": true,
+    "surface_can_write_manager_plus_0x374": false,
+    "object_field_or_global_storage_of_manager_root_complete": false,
+    "unrelated_manager_root_reconstruction_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only delayed GPR-to-stack persistence of the exact FUN_00489ad0 result.",
+    "Participant-entry writes reached after manager+0x2a0/+0x2d8 lookup are not promoted back to manager-root writes.",
+    "Object-field/global storage, unrelated manager-root reconstruction, and escaped HDVehicle+0x4330 aliases remain open.",
+    "No identity is inferred from matching offsets."
+  ],
+  "next_step": "Search object-field/global persistence of exact manager-root aliases and unrelated manager-root reconstruction; continue escaped/non-root-derived HDVehicle+0x4330 aliases."
+}
