@@ -13,6 +13,8 @@
 #include <cstdint>
 #include <functional>
 #include <optional>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace shift::runtime {
@@ -39,10 +41,62 @@ using NativeVehicleFun00765c40Provider =
     std::function<physics::Fun00765c40ExternalPassResult(
         std::size_t pass_index,
         const physics::Fun00765c40ExternalPassInput& input)>;
-using NativeVehicleContactResponseProvider =
-    std::function<void(
+
+class NativeVehicleContactResponseProvider {
+public:
+    NativeVehicleContactResponseProvider() = default;
+
+    template <typename Fn,
+              typename = std::enable_if_t<!std::is_same_v<
+                  std::decay_t<Fn>, NativeVehicleContactResponseProvider>>>
+    NativeVehicleContactResponseProvider(Fn&& fn) {
+        assign(std::forward<Fn>(fn));
+    }
+
+    template <typename Fn>
+    NativeVehicleContactResponseProvider& operator=(Fn&& fn) {
+        assign(std::forward<Fn>(fn));
+        return *this;
+    }
+
+    explicit operator bool() const { return static_cast<bool>(callback_); }
+
+    void operator()(
         std::size_t pass_index,
-        const physics::Fun00766510ExternalPassInput& input)>;
+        const physics::Fun00766510ExternalPassInput& input) const {
+        if (!callback_) {
+            throw std::bad_function_call();
+        }
+        callback_(pass_index, input);
+    }
+
+private:
+    template <typename Fn>
+    void assign(Fn&& fn) {
+        using Decayed = std::decay_t<Fn>;
+        if constexpr (std::is_invocable_v<
+                          Decayed&,
+                          std::size_t,
+                          const physics::Fun00766510ExternalPassInput&>) {
+            callback_ = std::forward<Fn>(fn);
+        } else if constexpr (std::is_invocable_v<Decayed&, std::size_t>) {
+            callback_ = [legacy = std::forward<Fn>(fn)](
+                            std::size_t pass_index,
+                            const physics::Fun00766510ExternalPassInput&) mutable {
+                legacy(pass_index);
+            };
+        } else {
+            static_assert(
+                std::is_invocable_v<Decayed&, std::size_t>,
+                "contact response provider must accept pass or pass+typed input");
+        }
+    }
+
+    std::function<void(
+        std::size_t,
+        const physics::Fun00766510ExternalPassInput&)> callback_{};
+};
+
 using NativeVehicleContactOuterInputProvider =
     std::function<physics::ContactOuterSessionInput(std::size_t pass_index)>;
 using NativeVehicleScalarProviderFactory =
@@ -60,7 +114,8 @@ struct NativeVehicleExternalProviderBundle {
     // FUN_00766510 remains a residual external boundary. Phase745 no longer
     // lets it hide the selected same-pass query result or the already-native
     // HDVehicle+0x38f0 application point: both arrive through a typed input.
-    // Generic historical fixtures may receive an empty compatibility input.
+    // The wrapper accepts historical pass-only callbacks for fixture compatibility,
+    // but production session dispatch always uses the typed two-argument form.
     NativeVehicleContactResponseProvider contact_response{};
 
     NativeVehicleContactOuterInputProvider contact_outer_input{};
