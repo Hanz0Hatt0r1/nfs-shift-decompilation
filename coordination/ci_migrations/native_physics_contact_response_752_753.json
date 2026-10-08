@@ -1,0 +1,47 @@
+{
+  "format": "SHIFT.CIWorkflowMigration/1",
+  "version": 1,
+  "status": "ready",
+  "stable_workflow": ".github/workflows/native-physics-contact-response.yml",
+  "superseded_workflows": [
+    {
+      "path": ".github/workflows/native-physics-phase752.yml",
+      "blob_sha": "519dcfe354030e0f9c2188057e891cf6a589f4b0"
+    },
+    {
+      "path": ".github/workflows/native-physics-phase753.yml",
+      "blob_sha": "8a49dfa12cf3bd54eeff4e8c03cb63d976a18a3a"
+    }
+  ],
+  "coverage_policy": "superset",
+  "parity": {
+    "python_tests": [
+      "tests/test_s6_fun_00766510_response_config.py",
+      "tests/test_s6_fun_00766510_direct_accumulator_surface.py"
+    ],
+    "evidence_formats": [
+      "SHIFT.Fun00766510ResponseConfig/1",
+      "SHIFT.Fun00766510DirectAccumulatorSurface/1"
+    ],
+    "native_targets": [
+      "shift_runtime_fun_00766510_optional_response_branch_check",
+      "shift_runtime_fun_00766510_response_config_check",
+      "shift_runtime_fun_00766510_direct_accumulator_surface_check"
+    ],
+    "ctest_names": [
+      "shift_runtime_fun_00766510_optional_response_branch",
+      "shift_runtime_fun_00766510_response_config",
+      "shift_runtime_fun_00766510_direct_accumulator_surface"
+    ],
+    "native_reports": [
+      "SHIFT.Fun00766510ResponseConfig/1",
+      "SHIFT.Fun00766510DirectAccumulatorSurface/1"
+    ]
+  },
+  "trigger_policy": {
+    "mode": "union",
+    "meaning": "Any path that previously triggered either Phase 752 or Phase 753 now runs the complete consolidated contact-response regression set. Coverage is intentionally a superset, not a reduction."
+  },
+  "semantic_gate_changes": false,
+  "provider_count_changes": false
+}
