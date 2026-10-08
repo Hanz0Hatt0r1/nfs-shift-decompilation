@@ -1,0 +1,107 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0Vehicle170Producer/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "pc_decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630UpstreamDirectSurface/1",
+    "SHIFT.Fun00713630PhysicsTweakerMaterialization/1",
+    "SHIFT.Fun00713630Participant4b0SubobjectAliasFrontier/1",
+    "SHIFT.Fun00713630Participant4b0FinalDirectVtableRejection/1",
+    "SHIFT.Fun00766510ResidualTailClosure/1"
+  ],
+  "stale_alias_frontier_correction": {
+    "contract": "SHIFT.Fun00713630Participant4b0SubobjectAliasFrontier/1",
+    "superseded_field": "checked_selected_surface.direct_subobject_plus_0x170_store_found",
+    "old_value": false,
+    "correct_value": true,
+    "reason": "authoritative source and retail machine code show FUN_007927c0 writes receiver+0x170 at 0x007927ee"
+  },
+  "selected_participant_identity": {
+    "manager_participant_array": "manager+0x140",
+    "manager_participant_stride": "0x1fa0",
+    "record_pointer_slot": "record[0]",
+    "actual_participant_allocation_size": "0x2b90",
+    "participant_constructor": "FUN_0072ed20",
+    "embedded_vehicle_offset": "0x340",
+    "embedded_vehicle_constructor": "FUN_0079c1c0",
+    "identity_equation": "selected_participant+0x4b0 == embedded_vehicle+0x170"
+  },
+  "producer": {
+    "function": "FUN_007927c0",
+    "receiver_type": "selected participant embedded Vehicle subobject",
+    "source_assignment": "*(undefined4 *)((int)this + 0x170) = param_2[1]",
+    "machine_assignment": "0x007927ee fstp dword ptr [EAX+0x4] after EAX=ESI+0x16c",
+    "effective_destination": "receiver+0x170",
+    "participant_effective_destination": "selected_participant+0x4b0",
+    "source_lines": "789888-789936",
+    "source_sha256": "2312ca71cc46091c33bc05b53f07642e514b1b7688ca7801cca67ff6b4c410ef",
+    "machine_span": {
+      "start": "0x007927da",
+      "end_exclusive": "0x007927fd",
+      "sha256": "a59b1d9832ca88d61521d66eebad9ce64f1dda0361c0e359bea86cd7961d6469"
+    }
+  },
+  "same_manager_selected_receiver_join": {
+    "function": "FUN_00713340",
+    "role": "runtime loop over the same manager+0x140, stride-0x1fa0 participant records used by FUN_00713630",
+    "source_expression": "FUN_007927c0((void *)(*piVar1 + 0x340), &local_14, &local_20, '\\x01')",
+    "source_lines": "706072-706159",
+    "source_sha256": "b9ab67375c69afef403cc68bf07de7775a47cda737b6bc016a0e056d1cf3e835",
+    "machine_join": [
+      "0x00713389 load manager+0x140 participant array",
+      "0x00713395 ECX = array + index",
+      "0x007133d3 ECX = record[0] actual participant",
+      "0x007133d5 ECX += 0x340 embedded Vehicle",
+      "0x007133db call FUN_007927c0"
+    ],
+    "machine_span": {
+      "start": "0x00713389",
+      "end_exclusive": "0x007133e0",
+      "sha256": "c152c879f5e44deaca237cb9379a01a3fd8eac0d5ecc1cc5e7b807293a4c97c7"
+    },
+    "same_manager_cadence_join": "SHIFT.Fun00713630UpstreamDirectSurface/1 proves FUN_00715380 calls FUN_00713340 and FUN_007144a0/FUN_00713630 with the same preserved manager receiver"
+  },
+  "dynamic_runtime_materialization": {
+    "callsite": "0x00710563",
+    "receiver_path": "DAT_00c10b20 + index*0x1fa0 -> record[0] -> +0x340",
+    "value_path": "runtime message payload +0x1c passed as param_2, so producer +0x170 receives payload word +0x20",
+    "source_lines": "703251-703270",
+    "source_sha256": "8f6828d7aef87a6de1b6739705b4b44829ee440c9000fffc47baa27222eb8157",
+    "machine_span": {
+      "start": "0x0071054a",
+      "end_exclusive": "0x00710568",
+      "sha256": "0c203f8e0bec8b28a61c8e664f4a4a63acbb495797cd4056ff314ea358e696d7"
+    },
+    "proves_not_setup_constant": true
+  },
+  "p1_1a_join": {
+    "config_global_owner_or_alias_writer_closed": true,
+    "config_source_contract": "SHIFT.Fun00713630PhysicsTweakerMaterialization/1",
+    "sample_writer_selected_participant_scheduling_closed": true,
+    "sample_source_contract": "SHIFT.Fun00713630UpstreamDirectSurface/1",
+    "participant_plus_0x4b0_owner_closed": true,
+    "participant_plus_0x4b0_runtime_producer": "FUN_007927c0 via selected_participant+0x340 receiver and +0x170 store",
+    "dynamic_lane_preserved": true
+  },
+  "adjudication": {
+    "selected_participant_runtime_plus_0x4b0_writer_closed": true,
+    "p1_1a_complete": true,
+    "p1_1c_complete": true,
+    "p1_1_complete": false,
+    "explicit_process1_handoff_still_required": true,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This contract closes P1.1a ownership; it does not itself authorize provider removal.",
+    "An explicit Process 1 handoff is still required by SHIFT.Fun00766510ResidualOwnershipFrontier/1 before Process 2 may reduce provider count 7 -> 6.",
+    "The old alias-frontier false negative is superseded only for the direct Vehicle+0x170 writer finding; its participant/subobject identity proof remains upstream authority."
+  ],
+  "next_step": "Publish the explicit final Process 1 P1.1 handoff joining P1.1a=true with the already closed P1.1c tail and preserving exact retail order for Process 2."
+}
