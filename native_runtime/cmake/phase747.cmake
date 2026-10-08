@@ -21,3 +21,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00766510_shared_reference_vector
     COMMAND shift_runtime_fun_00766510_shared_reference_vector_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase748.cmake)
