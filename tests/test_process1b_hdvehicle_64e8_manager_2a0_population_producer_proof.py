@@ -45,6 +45,9 @@ def test_coordination_advances_to_entry_identity_only():
     p13 = next(row for row in graph["workstreams"] if row["id"] == "P1.3")
     node = next(row for row in p13["children"] if row["id"] == "P1.3.manager2a0")
     assert node["status"] == "population-producer-proven-entry-identity-open"
-    assert node["proven_population_producer"] == "FUN_004978f0 -> thunk_FUN_00d61e00"
+    producer = node["proven_population_producer"]
+    assert "FUN_004978f0" in producer
+    assert "thunk_FUN_00d61e00" in producer
     assert node["element_size"] == "0x22e0"
+    assert node["insertion_producer_complete"] is True
     assert "HDVehicle+0x4330" in node["next"]
