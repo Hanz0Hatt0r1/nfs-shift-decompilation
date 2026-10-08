@@ -41,13 +41,16 @@ def test_default_frontier_keeps_native_follow_blocked_but_freezes_resolved_mode2
     assert candidate["source_constructor"] == "FUN_0081fac0"
     assert candidate["source_vtable"] == "0x00b16788"
     assert candidate["preapply_vfunc_target"] == "FUN_0081f7c0"
+    assert candidate["per_frame_vfunc_target"] == "FUN_008216a0"
     assert candidate["common_apply_vfunc_target"] == "FUN_00820a50"
     assert report["vehicle_world_matrix_handoff"]["evaluated"] is False
     assert "camera-follow:retail-vehicle-world-matrix-handoff-not-supplied" in report["blocking_reasons"]
     assert "camera-follow:mode2-runtime-argument-vehicle-identity-unproven" not in report["blocking_reasons"]
     assert "camera-follow:mode2-source-vtable-identity-unproven" not in report["blocking_reasons"]
+    assert "camera-follow:retail-update-order-unproven" not in report["blocking_reasons"]
     assert "camera-follow:mode2-vehicle-pose-dependency-unproven" in report["blocking_reasons"]
     assert report["native_admission"]["may_serialize_opaque_word0_as_native_pointer"] is False
+    assert report["native_admission"]["retail_physics_before_camera_order_proven"] is True
     assert report["boundary"]["camera_source_pointer_invented"] is False
     assert report["boundary"]["camera_source_vtable_invented"] is False
     assert report["boundary"]["camera_math_inferred"] is False
@@ -76,11 +79,12 @@ def test_future_positive_world_matrix_does_not_bypass_remaining_camera_proof() -
     assert report["process2_action"] == REQUEST_PROCESS1
     assert report["native_admission"]["may_bind_vehicle_transform_to_camera_source"] is False
     assert report["native_admission"]["may_schedule_camera_after_vehicle_update"] is False
+    assert report["native_admission"]["retail_physics_before_camera_order_proven"] is True
     assert report["proof_state"]["mode2_runtime_argument_identity_resolved"] is True
     assert report["proof_state"]["mode2_runtime_argument_is_selected_retail_vehicle"] is False
     assert report["proof_state"]["mode2_source_vtable_identity_ready"] is True
     assert report["proof_state"]["mode2_vehicle_pose_dependency_ready"] is False
-    assert report["proof_state"]["camera_follow_update_order_ready"] is False
+    assert report["proof_state"]["camera_follow_update_order_ready"] is True
 
 
 def test_frontier_freezes_all_known_camera_source_lanes() -> None:
@@ -98,6 +102,11 @@ def test_frontier_freezes_all_known_camera_source_lanes() -> None:
         "argument": "selected camera object",
     }
     assert lanes[2]["internal_setter_virtual_call"]["target"] == "FUN_006bbf70"
+    assert lanes[2]["per_frame_virtual_call"] == {
+        "offset": 0x60,
+        "target": "FUN_008216a0",
+        "ordering": "after cPhysicsManager scheduler work",
+    }
     assert lanes[2]["common_apply_virtual_call"] == {
         "offset": 0x64,
         "target": "FUN_00820a50",
@@ -106,11 +115,12 @@ def test_frontier_freezes_all_known_camera_source_lanes() -> None:
     assert lanes[2]["runtime_argument_identity_resolved"] is True
     assert lanes[2]["runtime_argument_is_selected_retail_vehicle"] is False
     assert lanes[2]["source_vtable_identity_proven"] is True
+    assert lanes[2]["retail_update_order_proven"] is True
     assert lanes[3]["source"] == "active_buffer+0x17a0"
     assert lanes[4]["activation"] == "FUN_0080d520"
 
 
-def test_frontier_marks_first_two_process1_requests_resolved() -> None:
+def test_frontier_marks_requests_1_2_4_resolved_and_request_3_explicitly_blocked() -> None:
     report = build_camera_follow_source_frontier()
     rows = {row["id"]: row for row in report["process1_requested_proof"]}
     assert set(rows) == {
@@ -123,8 +133,11 @@ def test_frontier_marks_first_two_process1_requests_resolved() -> None:
     assert "selected camera object" in rows["mode2_runtime_argument_identity"]["result"]
     assert rows["mode2_source_vtable_identity"]["status"] == "resolved"
     assert "0x00b16788" in rows["mode2_source_vtable_identity"]["result"]
-    assert rows["mode2_vehicle_pose_dependency"]["status"] == "open"
-    assert rows["camera_follow_update_order"]["status"] == "open"
+    assert rows["mode2_vehicle_pose_dependency"]["status"] == "blocked-by-p1.3-manager2a0-entry-identity"
+    assert "manager+0x2a0" in rows["mode2_vehicle_pose_dependency"]["target"]
+    assert rows["camera_follow_update_order"]["status"] == "resolved"
+    assert "FUN_0070f940" in rows["camera_follow_update_order"]["result"]
+    assert "FUN_008216a0" in rows["camera_follow_update_order"]["result"]
     assert report["boundary"]["mode2_tracking_label_promoted_to_player_vehicle_follow_proof"] is False
     assert report["boundary"]["retail_update_cadence_inferred_from_native_fixed_step"] is False
 
@@ -143,3 +156,4 @@ def test_report_is_json_serializable() -> None:
     encoded = json.dumps(report, sort_keys=True)
     assert "SHIFT.CameraFollowSourceFrontier/1" in encoded
     assert "0x00b16788" in encoded
+    assert "FUN_008216a0" in encoded
