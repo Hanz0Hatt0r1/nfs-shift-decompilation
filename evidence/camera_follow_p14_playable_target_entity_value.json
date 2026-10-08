@@ -1,0 +1,94 @@
+{
+  "format": "SHIFT.CameraFollowP14PlayableTargetEntityValue/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "resource_archive": "IGPHASEACTIVATE.bff",
+    "resource_archive_sha256": "6b2875e2a1ff0fe6c30c8ef6999d1e301808dae028800755cf11d3ccd557caee",
+    "evidence_kind": "shipped retail resource value joined to exact PC-retail machine-code dispatch"
+  },
+  "resource": {
+    "path": "scripts/postracenis/default.xml",
+    "sha256": "aeab2e475efc106ae2caf397985c5e4600c8788d9f626654fb6294969cf2a3c5",
+    "camera_event": {
+      "class": "CCameraEvent",
+      "name": "Cinematic cam",
+      "camera_type": "TrackCam",
+      "camera_name": "",
+      "camera_anchor": "Player",
+      "camera_anchor_relative_track_position": 0,
+      "target": "Player",
+      "relative_track_position": 0,
+      "local_target": "None",
+      "source_lines": [779, 790]
+    }
+  },
+  "ccameraevent_layout": {
+    "constructor": "FUN_006f77a0",
+    "vtable": "0x00b01420",
+    "reflection": "FUN_006f7930",
+    "camera_type": "+0x14",
+    "camera_name": "+0x18",
+    "camera_anchor": "+0x1c",
+    "camera_anchor_relative_track_position": "+0x20",
+    "camera_local_anchor": "+0x24",
+    "target": "+0x28",
+    "relative_track_position": "+0x2c",
+    "local_target": "+0x30",
+    "derived_camera_type": "+0x34",
+    "constructor_default_camera_anchor": "Player",
+    "constructor_default_target": "Player"
+  },
+  "event_dispatch": {
+    "event_vtable_slot": "+0x4c = FUN_006f7770",
+    "payload": "CCameraEvent+0x14",
+    "service_global": "DAT_00c0f7f4",
+    "service_object_constructor": "FUN_004b7250",
+    "service_vtable": "0x00abec20",
+    "service_slot": "+0x128 = FUN_004b9670",
+    "camera_type_1_handler": "FUN_004b9350"
+  },
+  "player_id_resolution": {
+    "trackcam_anchor_input": "payload+0x08 = CCameraEvent+0x1c Camera Anchor = 'Player'",
+    "trackcam_target_input": "payload+0x14 = CCameraEvent+0x28 Target = 'Player'",
+    "resolver_dispatch": "+0x14 = FUN_004b6f20",
+    "resolver_trampoline": "FUN_004b72c0",
+    "camera_manager_service": "CameraManager+0x574",
+    "camera_manager_slot": "+0x2c = FUN_00459b80",
+    "player_result": "FUN_00489ad0()->+0x374->+0x100",
+    "case_insensitive_literal_match": true
+  },
+  "activation": {
+    "trackcam_blank_camera_name_branch": {
+      "machine_span": "FUN_004b9350@0x004b9456..0x004b9476",
+      "resolved_anchor_id_register": "EBX",
+      "call": "FUN_0080be50(CameraManager, player_id, player_id, FUN_00811a20(...), 0)",
+      "next": "FUN_0080be50 -> FUN_0080e1b0"
+    },
+    "named_camera_branch": {
+      "machine_span": "FUN_004b9350@0x004b93fb..0x004b9434",
+      "call": "FUN_0080e1b0(camera_lane, resolved_anchor_id, resolved_target_id, camera_object_id)",
+      "target_fallback": "if Target resolver returns -1, target ID falls back to anchor ID"
+    },
+    "mode2_join": "FUN_0080e1b0 preserves param_1 as the target ID and, when the selected camera object is TrackingCamera, publishes it through FUN_0080d500/FUN_0080ce80 to lane+0x26a4 and active data+0x74"
+  },
+  "adjudication": {
+    "shipped_playable_trackcam_event_uses_player_anchor": true,
+    "shipped_playable_trackcam_event_uses_player_target": true,
+    "trackcam_player_string_resolves_to_current_player_manager_id": true,
+    "trackcam_activation_param1_is_current_player_manager_id": true,
+    "mode2_selected_player_target_identity_complete_on_trackcam_to_tracking_transition": true,
+    "phase651_request_3_selected_vehicle_identity_complete": true,
+    "phase651_request_3_complete": true,
+    "native_camera_follow_ready": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The proof is for the shipped playable TrackCam event path and the admitted TrackCam-to-FUN_0080e1b0 transition; it does not assert that every CCameraEvent type uses Target in the same way.",
+    "LastPlayerCam type 2 has a distinct handler and is not used as the selected-player target proof.",
+    "Native camera follow remains gated by the current retail BODY0/world-matrix handoff and persistent transform transport contracts."
+  ],
+  "next": "Consume the now-complete request-3 selected-player identity together with the already-proven snapshot affine and update ordering. Do not promote native camera follow until the world-matrix/persistent-transform handoff contracts are positive."
+}

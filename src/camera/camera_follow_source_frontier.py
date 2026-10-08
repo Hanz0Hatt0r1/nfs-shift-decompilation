@@ -2,11 +2,11 @@
 
 PC-retail proofs close the mode-2 runtime argument, source-vtable identity,
 vehicle-snapshot affine dependency, target-service dispatch, active target-ID
-publication, target-entity string resolution, and default/steady
-physics-before-camera ordering. The remaining camera-side semantic join is the
-concrete value loaded into the playable camera event's reflected ``target
-entity`` field at +0x20. A literal ``player``/``teammate`` value would join the
-already-proven name resolver to the selected player/BMW manager entry.
+publication, playable selected-player target value, and default/steady
+physics-before-camera ordering. Camera-side Phase 651 request 3 is complete for
+the shipped TrackCam -> FUN_0080e1b0 path. Native admission remains fail-closed
+until the independent retail BODY0/world-matrix and persistent-transform
+handoff contracts are positive.
 """
 from __future__ import annotations
 
@@ -90,8 +90,8 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "tracking_override_path_rejected_as_vehicle_target": True,
             "active_target_id_producer_proven": True,
             "target_entity_activation_bridge_proven": True,
-            "playable_target_entity_value_proven": False,
-            "selected_player_target_identity_proven": False,
+            "playable_target_entity_value_proven": True,
+            "selected_player_target_identity_proven": True,
             "vehicle_transform_dependency_proven": True,
             "retail_update_order_proven": True,
         },
@@ -104,21 +104,20 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
         {"id": "mode2_source_vtable_identity", "target": "active_buffer+0x1ca0 source object", "status": "resolved", "result": "FUN_0081fac0 installs vtable 0x00b16788; +0x90=FUN_0081f7c0, +0x64=FUN_00820a50, +0x60=FUN_008216a0", "required_for_native_follow": False},
         {
             "id": "mode2_vehicle_pose_dependency",
-            "target": "playable camera event target entity +0x20 -> selected player/BMW manager+0x2a0 entry",
-            "status": "target-entity-to-active-target-id-proven-playable-target-entity-value-open",
-            "result": "FUN_0050a9c0 sends reflected event+0x20 'target entity' to CameraManager+0x574 vtable+0x2c=FUN_00459b80, then passes the returned manager-entry ID as FUN_0080e1b0 param_1; FUN_0080d500/FUN_0080ce80 publish that ID to lane+0x26a4 and active data+0x74",
-            "request": "prove the concrete playable event target entity value; literal 'player' or 'teammate' closes the selected-player join through the already-proven FUN_00459b80 resolver",
-            "required_for_native_follow": True,
+            "target": "shipped TrackCam Player target -> selected player/BMW manager+0x2a0 entry",
+            "status": "resolved",
+            "result": "IGPHASEACTIVATE.bff scripts/postracenis/default.xml carries Camera Anchor='Player' and Target='Player'; CCameraEvent -> FUN_004b9670 -> FUN_004b9350 -> FUN_004b6f20/FUN_004b72c0 -> CameraManager+0x574 vtable+0x2c=FUN_00459b80 resolves the current player manager ID; FUN_0080be50/FUN_0080e1b0 preserve it as activation param_1 and mode-2 active target ID",
+            "request": "resolved: consume SHIFT.CameraFollowP14PlayableTargetEntityValue/1; do not reopen selected-player target identity without contradictory retail evidence",
+            "required_for_native_follow": False,
         },
         {"id": "camera_follow_update_order", "target": "cPhysicsManager scheduler -> callback -> mode-2 source+0x60", "status": "resolved", "result": "admitted default/steady retail path runs FUN_0070f940/FUN_007155e0 physics before FUN_0070f890 callback -> FUN_00489f70 -> mode2 +0x60/FUN_008216a0", "required_for_native_follow": False},
     ]
 
-    selected_target_identity_ready = False
+    selected_target_identity_ready = True
     timing_ready = True
     native_follow_ready = selected_target_identity_ready and timing_ready and transform_state["ready_for_camera_source_join"]
 
-    blockers = ["camera-follow:playable-target-entity-value-to-selected-player-unproven"]
-    blockers.extend(transform_state["blocking_reasons"])
+    blockers = list(transform_state["blocking_reasons"])
     blockers = list(dict.fromkeys(blockers))
 
     return {
@@ -158,17 +157,17 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "mode2_override_path_rejected_as_vehicle_target": True,
             "mode2_active_target_id_producer_ready": True,
             "mode2_target_entity_activation_bridge_ready": True,
-            "mode2_playable_target_entity_value_ready": False,
-            "mode2_selected_player_target_identity_ready": False,
-            "mode2_vehicle_pose_dependency_ready": False,
+            "mode2_playable_target_entity_value_ready": True,
+            "mode2_selected_player_target_identity_ready": True,
+            "mode2_vehicle_pose_dependency_ready": True,
             "camera_follow_update_order_ready": True,
             "retail_vehicle_world_matrix_ready": transform_state["ready_for_camera_source_join"],
         },
         "process1_requested_proof": proof_requests,
         "blocking_reasons": blockers,
         "native_admission": {
-            "may_bind_vehicle_transform_to_camera_source": False,
-            "may_schedule_camera_after_vehicle_update": False,
+            "may_bind_vehicle_transform_to_camera_source": native_follow_ready,
+            "may_schedule_camera_after_vehicle_update": native_follow_ready,
             "retail_physics_before_camera_order_proven": True,
             "target_vehicle_snapshot_affine_proven": True,
             "tracking_data_target_selector_identified": True,
@@ -177,9 +176,10 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "tracking_override_path_rejected_as_vehicle_target": True,
             "active_target_id_producer_proven": True,
             "target_entity_activation_bridge_proven": True,
+            "playable_target_entity_value_proven": True,
+            "selected_player_target_identity_proven": True,
             "may_serialize_opaque_word0_as_native_pointer": False,
             "required_positive_contracts": [
-                "playable camera event target entity value -> FUN_00459b80 selected player/BMW ID",
                 WORLD_HANDOFF_FORMAT + " current retail world matrix",
                 PERSISTENT_TRANSFORM_FORMAT + " freshness-checked transport",
             ],
@@ -205,6 +205,13 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "camera_event_target_entity_field": "FUN_0050a030 0x30-byte event record; thunk_FUN_00d8cc00 reflects +0x20 as 'target entity'",
             "camera_event_target_entity_resolver": "FUN_0050a9c0@0x0050ad18..0x0050ad2c dispatches CameraManager+0x574 vtable+0x2c on event+0x20",
             "camera_event_target_id_activation": "FUN_0050a9c0@0x0050ade7..0x0050adf9 passes resolver result EBX as FUN_0080e1b0 param_1",
+            "playable_target_value_contract": "SHIFT.CameraFollowP14PlayableTargetEntityValue/1",
+            "playable_target_resource_archive": "IGPHASEACTIVATE.bff sha256 6b2875e2a1ff0fe6c30c8ef6999d1e301808dae028800755cf11d3ccd557caee",
+            "playable_target_resource": "scripts/postracenis/default.xml sha256 aeab2e475efc106ae2caf397985c5e4600c8788d9f626654fb6294969cf2a3c5",
+            "playable_trackcam_target": "Camera Anchor='Player'; Target='Player'",
+            "playable_trackcam_dispatch": "CCameraEvent+0x14 -> FUN_006f7770 -> service 0x00abec20+0x128=FUN_004b9670 -> FUN_004b9350",
+            "playable_trackcam_player_resolver": "FUN_004b9350 -> service+0x14=FUN_004b6f20 -> +0x10=FUN_004b72c0 -> CameraManager+0x574:+0x2c=FUN_00459b80('Player')",
+            "playable_trackcam_activation": "blank Camera Name branch -> FUN_0080be50(player_id,player_id,FUN_00811a20(...),0) -> FUN_0080e1b0",
             "manager_entry_is_HDVehicle_plus_0x4330": False,
             "entry_attached_runtime_field": "+0x1e80",
             "entry_attached_runtime_classification": "local target/offset runtime state, not world pose",
@@ -225,6 +232,7 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "tracking_target_selector_promoted_to_manager_entry_id": False,
             "literal_player_resolver_promoted_to_active_camera_target_without_producer_proof": False,
             "target_entity_field_meaning_promoted_to_player_value_without_value_proof": False,
+            "shipped_trackcam_player_value_generalized_to_all_camera_types": False,
             "manager_entry_promoted_to_HDVehicle_identity": False,
             "entry_attached_runtime_promoted_to_world_pose": False,
             "target_vehicle_snapshot_promoted_to_selected_player_without_target_id_proof": False,
