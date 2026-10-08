@@ -1,0 +1,67 @@
+{
+  "format": "SHIFT.Process1LobbyClientEmbeddedQueueOwner/1",
+  "ready": true,
+  "source": {
+    "authority": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "xbox_recomp_required": false
+  },
+  "owner": {
+    "diagnostic_name": "Plasma_Online",
+    "queue_name": "LobbyClient Output Message Queue",
+    "queue_offset": "+0x2180",
+    "derived_vtable": "0x00ad96d8",
+    "embedded_method_vtable_slot": "+0x2a0",
+    "embedded_method": "FUN_005a8b90"
+  },
+  "fun_006503d0": {
+    "direct_callsite_count": 3,
+    "previously_joined_callers": [
+      "FUN_0057e1c0",
+      "FUN_0057e2a0"
+    ],
+    "newly_joined_caller": "FUN_005a8b90",
+    "newly_joined_queue_expression": "this+0x2180",
+    "all_direct_callers_joined_to_lobby_client": true,
+    "controller1_queue_alias_ruled_out_for_direct_call_surface": true
+  },
+  "adjudication": {
+    "fun_006503d0_direct_surface_closed": true,
+    "fun_006333f0_controller1_alias_ruled_out": false,
+    "fun_006880c0_controller1_alias_ruled_out": false,
+    "indirect_or_native_apc_injection_ruled_out": false,
+    "render_or_present_phase_lock_proven": false
+  },
+  "machine_spans": {
+    "derived_vptr_store_and_tail_jump": {
+      "start": "0x0047f69c",
+      "end_exclusive": "0x0047f6a7",
+      "sha256": "a9cd9b2c902c1da64a66c2df14cb610361bb7122a3f0d7b6d83dba740b014374"
+    },
+    "lobby_queue_init_tail": {
+      "start": "0x005aa456",
+      "end_exclusive": "0x005aa470",
+      "sha256": "3b6764e649251bd9e4b6c3b316ac43a0307c66daf4b29451952f9c672587dc6d"
+    },
+    "embedded_method_vtable_slot": {
+      "start": "0x00ad9978",
+      "end_exclusive": "0x00ad997c",
+      "sha256": "dfa6af7ba7af45b4b47cae5fd1f057e7b7c5706888f06d7d4400dd1daab4cb0a"
+    },
+    "embedded_method_enqueue_call": {
+      "start": "0x005a8c13",
+      "end_exclusive": "0x005a8c23",
+      "sha256": "61bba07942841c730f075e49b7586ca69c547fe105bc0088750bb37ed4da5048"
+    }
+  },
+  "next_blocker": {
+    "process": 1,
+    "remaining_generic_queue_pointer_callers": [
+      "FUN_006333f0",
+      "FUN_006880c0"
+    ],
+    "description": "classify FUN_006333f0 and FUN_006880c0 by exact queue-object identity; keep indirect/native APC injection and render/presentation phase locking fail-closed"
+  }
+}
