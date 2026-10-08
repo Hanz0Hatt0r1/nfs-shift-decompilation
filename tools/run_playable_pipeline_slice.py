@@ -21,6 +21,7 @@ import bootstrap_playable_pipeline_slice as bootstrap
 FORMAT = "SHIFT.PlayableResourcePipelineExecution/1"
 BOOTSTRAP_FORMAT = "SHIFT.PlayableResourcePipelineBootstrap/1"
 PLAN_FORMAT = "SHIFT.NativeVerticalSliceLaunchPlan/1"
+TEST_ONLY_VEHICLE_TRANSFORM_ENV = "SHIFT_NATIVE_VEHICLE_WORLD_TRANSFORM_SCRIPT"
 
 
 class ExecutionError(ValueError):
@@ -105,6 +106,19 @@ def _clear_stale_execution_receipt(output_dir: Path) -> bool:
     return True
 
 
+def _reject_test_only_vehicle_motion_environment(
+    environment: Mapping[str, str],
+    *,
+    source: str,
+) -> None:
+    value = str(environment.get(TEST_ONLY_VEHICLE_TRANSFORM_ENV) or "").strip()
+    if value:
+        raise ExecutionError(
+            f"{source} contains test-only {TEST_ONLY_VEHICLE_TRANSFORM_ENV}; "
+            "playable resource-pipeline execution requires production persistent vehicle motion"
+        )
+
+
 def _validated_execution_plan(output_dir: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     report_path = output_dir / "playable_pipeline_bootstrap.json"
     report = _load_json(report_path, label="playable pipeline bootstrap report")
@@ -136,6 +150,10 @@ def _validated_execution_plan(output_dir: Path) -> tuple[dict[str, Any], dict[st
         for key, value in environment.items()
     ):
         raise ExecutionError("launch plan environment must be a string map")
+    _reject_test_only_vehicle_motion_environment(
+        environment,
+        source="validated launch-plan environment",
+    )
     return report, plan
 
 
@@ -147,6 +165,10 @@ def execute_playable_pipeline_slice(
     args = list(bootstrap_args)
     output_dir = _output_from_bootstrap_args(args)
     stale_receipt_removed = _clear_stale_execution_receipt(output_dir)
+    _reject_test_only_vehicle_motion_environment(
+        os.environ,
+        source="host environment",
+    )
     if "--validate-launch-plan" not in args:
         args.append("--validate-launch-plan")
 
@@ -223,6 +245,8 @@ def execute_playable_pipeline_slice(
         "boundary": {
             "single_output_authority_required": True,
             "stale_execution_receipt_cleared_before_attempt": True,
+            "test_only_vehicle_world_transform_script_allowed": False,
+            "production_persistent_vehicle_motion_required": True,
             "bootstrap_completed_before_runtime_execution": True,
             "provenance_validated_launch_plan_required": True,
             "launch_plan_argv_reconstructed": False,
