@@ -25,13 +25,20 @@ struct Fun00765c40ExternalPassInput {
         }
         return selected_bmw_m3_e36_fun_00765c40_query_fallback();
     }
+
+    std::optional<Fun00765c40QueryInputBoundary> selected_bmw_query_input() const {
+        if (!world_position.has_value()) {
+            return std::nullopt;
+        }
+        Fun00765c40QueryInputBoundary query{};
+        query.world_position = *world_position;
+        query.cached_handle = cached_handle;
+        query.miss_fallback = selected_bmw_m3_e36_fun_00765c40_query_fallback();
+        validate_fun_00765c40_query_input_boundary(query);
+        return query;
+    }
 };
 
-// Phase744 appends the typed FUN_007b0710 result without changing the historical
-// aggregate order of the first three fields. Generic historical fixtures may
-// leave query_output absent. The selected BMW path (identified by its native
-// pre-call world_position) must expose it, so production can no longer hide
-// collision hit/miss/contact-height/cache-output state inside the residual pass.
 struct Fun00765c40ExternalPassResult {
     Fun00765c40LoadTerms load_terms{};
     Fun00765c40QueryInputBoundary query_input{};
@@ -98,20 +105,17 @@ inline void validate_fun_00765c40_external_pass_result(
     validate_fun_00765c40_load_terms(result.load_terms);
     validate_fun_00765c40_query_input_boundary(result.query_input);
 
-    if (result.query_input.cached_handle != input.cached_handle) {
+    const auto native_selected_query = input.selected_bmw_query_input();
+    if (native_selected_query.has_value()) {
+        if (result.query_input.world_position != native_selected_query->world_position ||
+            result.query_input.cached_handle != native_selected_query->cached_handle ||
+            result.query_input.miss_fallback != native_selected_query->miss_fallback) {
+            throw std::invalid_argument(
+                "FUN_00765c40 residual provider changed native-owned selected query input");
+        }
+    } else if (result.query_input.cached_handle != input.cached_handle) {
         throw std::invalid_argument(
             "FUN_00765c40 residual provider did not consume native-owned cached handle");
-    }
-    if (input.world_position.has_value() &&
-        result.query_input.world_position != *input.world_position) {
-        throw std::invalid_argument(
-            "FUN_00765c40 residual provider did not consume native-owned selected BMW world position");
-    }
-    const auto selected_fallback = input.selected_bmw_miss_fallback();
-    if (selected_fallback.has_value() &&
-        result.query_input.miss_fallback != *selected_fallback) {
-        throw std::invalid_argument(
-            "FUN_00765c40 residual provider did not consume native-owned selected BMW +0x38e8 fallback");
     }
 
     if (input.world_position.has_value() && !result.query_output.has_value()) {
