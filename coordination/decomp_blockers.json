@@ -1,7 +1,7 @@
 {
   "format": "SHIFT.DecompBlockerGraph/1",
   "version": 1,
-  "updated_from_main": "20d6df1e470ab5e8028362b2285240fd2b32917c",
+  "updated_from_main": "89a8ebf808735b7e4b734312697c88d26a3f3e6d",
   "rules": {
     "pc_retail_semantic_authority": true,
     "numeric_offset_equality_is_identity": false,
@@ -56,9 +56,10 @@
         {
           "id": "P1.3.manager2a0",
           "target": "FUN_00489ad0()+0x2a0 collection entry == HDVehicle+0x4330",
-          "status": "candidate-rejected-remaining-paths-open",
+          "status": "selection-relation-proven-registration-open",
           "rejected_candidate": "0x00469b1d -> FUN_0057f620 mutates 0x00bbdbe0+0x2a0, not manager+0x2a0",
-          "next": "Trace the exact 0x0045daa3 manager+0x2a0 selection -> manager+0x378 store and remaining registration/mutation paths."
+          "proven_relation": "FUN_0045da80 stores 0 or manager+0x2a0[index] into manager+0x378",
+          "next": "Trace exact registration/producer mutations for the true manager+0x2a0 collection and sibling manager+0x374 selection ownership."
         }
       ]
     },

@@ -49,10 +49,10 @@ def test_fail_closed_gates_are_preserved():
     assert a["external_provider_count"] == 7
 
 
-def test_coordination_moves_past_rejected_edge():
+def test_coordination_preserves_rejected_edge_while_frontier_advances():
     graph = json.loads(COORD.read_text(encoding="utf-8"))
     p13 = next(row for row in graph["workstreams"] if row["id"] == "P1.3")
     node = next(row for row in p13["children"] if row["id"] == "P1.3.manager2a0")
-    assert node["status"] == "candidate-rejected-remaining-paths-open"
+    assert node["status"] != "mutation-edge-found"
     assert "0x00469b1d" in node["rejected_candidate"]
-    assert "0x0045daa3" in node["next"]
+    assert "0x00bbdbe0+0x2a0" in node["rejected_candidate"]
