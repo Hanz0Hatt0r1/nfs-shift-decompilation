@@ -33,7 +33,7 @@ bool near(double actual, double expected) { return std::abs(actual - expected) <
 int main() {
     try {
         Fun00765c40ComposedResidualInputs inputs{};
-        inputs.wheel_plane = {0x10u, 0x20u, 0x30u, 0x40u}; inputs.current_body_bytes = make_selected_bmw_body_bytes(); inputs.query_miss_fallback = 7.25; inputs.wheel_state_source_bits = 0x1122334455667788ull;
+        inputs.wheel_plane = {0x10u, 0x20u, 0x30u, 0x40u}; inputs.current_body_bytes = make_selected_bmw_body_bytes(); inputs.wheel_state_source_bits = 0x1122334455667788ull;
         bool queue_executed = false; std::size_t read_index = 0u; const Fun00765c40LoadTerms load_terms{1.0, -2.0, 3.5, 0.0};
         inputs.execute_wheel_job_queue = [&]() { queue_executed = true; };
         inputs.read_load_term = [&](std::size_t wheel) { require(queue_executed, "composed executor read load terms before queue execution"); require(wheel == read_index, "composed executor changed wheel load-term order"); ++read_index; return load_terms[wheel]; };
@@ -47,7 +47,7 @@ int main() {
         const auto result = execute_fun_00765c40_composed_residual_pass(inputs, [&](const Fun00765c40SceneQueryBoundary& boundary) { ++scene_query_calls; CollisionQueryOutput output{}; output.query_record = build_fun_00765c40_query_record(boundary.query_input); return output; });
         require(result.executed_stage_order == kFun00765c40ResidualStageOrder, "composed executor residual stage trace drift");
         require(result.wheel_plane.qword_bits == inputs.wheel_plane, "composed executor wheel-plane payload drift");
-        require(scene_query_calls == 1u && near(result.query_commit.projected_scalar, 7.25), "composed executor scene-query miss fallback drift");
+        require(scene_query_calls == 1u && near(result.query_commit.projected_scalar, selected_bmw_m3_e36_fun_00765c40_query_fallback()), "composed executor native scene-query miss fallback drift");
         require(read_index == 4u && result.wheel_job.load_terms == load_terms, "composed executor wheel-job seam drift");
         for (std::size_t wheel = 0u; wheel < kFun00765c40WheelCount; ++wheel) { require(result.wheel_state_assignments[wheel].index == wheel, "composed executor wheel-state index drift"); require(result.wheel_state_assignments[wheel].source_bits == inputs.wheel_state_source_bits, "composed executor wheel-state source drift"); }
         require(near(result.persistent_write.wheel_values[0], 10.0) && near(result.persistent_write.wheel_values[1], 0.0) && result.persistent_write.filtered_value == 4.0f, "composed executor FUN_007584f0 materialization drift");
@@ -60,7 +60,7 @@ int main() {
         require(near(result.optional_body_sweep.body.linear[1], 2.0) && near(result.optional_body_sweep.body.linear[2], 3.0) && near(result.optional_body_sweep.body.angular[2], 2.0) && near(result.optional_body_sweep.body.angular[0], 3.0), "composed executor BODY accumulation order drift");
         bool rejected_missing_scene_query = false; try { (void)execute_fun_00765c40_composed_residual_pass(inputs, {}); } catch (const std::invalid_argument&) { rejected_missing_scene_query = true; }
         require(rejected_missing_scene_query, "composed executor accepted missing scene-query boundary");
-        std::cout << "{\"format\":\"" << kFun00765c40ComposedResidualExecutorFormat << "\",\"ready\":true,\"stage_count\":11,\"scene_query_external\":true,\"top_level_provider_removed\":false}\n";
+        std::cout << "{\"format\":\"" << kFun00765c40ComposedResidualExecutorFormat << "\",\"ready\":true,\"stage_count\":11,\"scene_query_external\":true,\"query_fallback_native\":true,\"top_level_provider_removed\":false}\n";
         return 0;
     } catch (const std::exception& exc) { std::cerr << exc.what() << '\n'; return 1; }
 }

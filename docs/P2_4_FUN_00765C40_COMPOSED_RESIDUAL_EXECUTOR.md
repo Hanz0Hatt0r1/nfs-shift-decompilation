@@ -4,7 +4,7 @@
 
 This slice composes only already-proven native P2.4 stages in the exact order pinned by `SHIFT.Fun00765c40ResidualPassContract/1`.
 
-The selected BMW world position is produced from current BODY bytes. The lower collision implementation remains an explicit `0x00c133ac/+0x1c0` scene-query provider. Producer arithmetic that has not yet been reconstructed remains explicit in the composed input structure.
+The selected BMW world position is produced from current BODY bytes. The selected BMW query miss fallback is no longer an explicit composed input: the executor consumes the existing source-backed `SHIFT.Fun00765c40SelectedBMWQueryFallback/1` helper and preserves the retail f32-to-f64 widening exactly. The lower collision implementation remains an explicit `0x00c133ac/+0x1c0` scene-query provider. Producer arithmetic that has not yet been reconstructed remains explicit in the composed input structure.
 
 ## OUTPUT
 
@@ -18,6 +18,7 @@ The result exposes every materialized state family plus an exact eleven-entry st
 
 - one end-to-end native orchestration path now exists for the recovered residual pass;
 - selected world-position production is native;
+- selected BMW `+0x38e8` query fallback materialization is native and no longer caller-supplied to the composed executor;
 - scene-query invocation and cache/scalar commit are native around the explicit lower collision boundary;
 - wheel-state assignment, wheel-job ordering, positive-load count and all previously landed mutation surfaces are composed in one path;
 - unresolved producer arithmetic remains explicit and fail-closed;
