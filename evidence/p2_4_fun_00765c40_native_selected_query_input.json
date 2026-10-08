@@ -1,0 +1,27 @@
+{
+  "format": "SHIFT.Fun00765c40NativeSelectedQueryInput/1",
+  "ready": true,
+  "inputs": {
+    "world_position": "native selected BMW current-BODY world-position producer",
+    "cached_handle": "NativeVehicleProviderSession persistent FUN_00765c40 query cache",
+    "miss_fallback": "SHIFT.Fun00765c40SelectedBMWQueryFallback/1"
+  },
+  "native_contract": {
+    "materializer": "Fun00765c40ExternalPassInput.selected_bmw_query_input",
+    "selected_world_position_required": true,
+    "query_input_world_position_provider_owned": false,
+    "query_input_cached_handle_provider_owned": false,
+    "query_input_miss_fallback_provider_owned": false,
+    "provider_result_must_match_native_query_input": true,
+    "generic_non_selected_fixture_compatibility_preserved": true
+  },
+  "scope": {
+    "selected_query_input_native_owned": true,
+    "collision_query_output_external": true,
+    "load_terms_external": true,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_FUN_00765c40_provider_removed": false,
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7
+  }
+}
