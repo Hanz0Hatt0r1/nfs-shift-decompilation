@@ -21,3 +21,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00713630_reference_source
     COMMAND shift_runtime_fun_00713630_reference_source_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase749.cmake)

@@ -1,0 +1,81 @@
+name: native-physics-phase749
+
+on:
+  push:
+    paths:
+      - 'native_runtime/include/shift_fun_00766510_later_response_branch.hpp'
+      - 'native_runtime/tests/fun_00766510_later_response_branch_check.cpp'
+      - 'native_runtime/cmake/phase748.cmake'
+      - 'native_runtime/cmake/phase749.cmake'
+      - 'tests/test_s6_fun_00766510_later_response_branch.py'
+      - 'evidence/fun_00766510_later_response_native.json'
+      - 'docs/PHASE749_FUN_00766510_LATER_RESPONSE_BRANCH.md'
+      - 'docs/PHASE749_SCOPE.md'
+      - '.github/workflows/native-physics-phase749.yml'
+  pull_request:
+    paths:
+      - 'native_runtime/include/shift_fun_00766510_later_response_branch.hpp'
+      - 'native_runtime/tests/fun_00766510_later_response_branch_check.cpp'
+      - 'native_runtime/cmake/phase748.cmake'
+      - 'native_runtime/cmake/phase749.cmake'
+      - 'tests/test_s6_fun_00766510_later_response_branch.py'
+      - 'evidence/fun_00766510_later_response_native.json'
+      - 'docs/PHASE749_FUN_00766510_LATER_RESPONSE_BRANCH.md'
+      - 'docs/PHASE749_SCOPE.md'
+      - '.github/workflows/native-physics-phase749.yml'
+
+jobs:
+  later-response-state:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run Phase 749 Python regression
+        run: python3 -m pytest -q tests/test_s6_fun_00766510_later_response_branch.py
+
+      - name: Validate Phase 749 evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          e = json.loads(Path('evidence/fun_00766510_later_response_native.json').read_text())
+          assert e['format'] == 'SHIFT.Fun00766510LaterResponseBranch/1'
+          assert e['ready'] is True
+          assert e['native_contract']['table_entry_count'] == 6
+          assert e['runtime_materialization']['second_lane_rewritten_each_evaluation'] is True
+          assert e['persistent_refresh']['mutable_bases_preserved'] is True
+          assert e['scope']['p1_1b_consumed_by_process2'] is True
+          assert e['scope']['external_provider_count_after'] == 7
+          assert e['scope']['contact_response_provider_removed'] is False
+          PY
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 749 and Phase 748 regressions
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_fun_00766510_later_response_branch_check
+          shift_runtime_fun_00713630_reference_source_check
+
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_fun_00766510_later_response_branch|shift_runtime_fun_00713630_reference_source)$'
+
+      - name: Verify native report
+        run: |
+          mkdir -p out/native-physics-phase749
+          native_runtime/build/shift_runtime_fun_00766510_later_response_branch_check \
+            > out/native-physics-phase749/fun_00766510_later_response_branch.json
+          grep -q '"format":"SHIFT.Fun00766510LaterResponseBranch/1"' \
+            out/native-physics-phase749/fun_00766510_later_response_branch.json
+          grep -q '"table_entry_count":6' \
+            out/native-physics-phase749/fun_00766510_later_response_branch.json
+          grep -q '"contact_response_provider_removed":false' \
+            out/native-physics-phase749/fun_00766510_later_response_branch.json
