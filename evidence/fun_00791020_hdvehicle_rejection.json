@@ -1,0 +1,46 @@
+{
+  "format": "SHIFT.Fun00791020HDVehicleRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "direct PE32 machine-code allocation/receiver provenance"
+  },
+  "candidate": {
+    "function": "FUN_00791020",
+    "matching_numeric_write": "receiver+0x938",
+    "consumer_contract": "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1",
+    "consumer_absolute_slot0": "HDVehicle+0x938"
+  },
+  "machine_chain": {
+    "scheduler_callsite": "0x007152f3",
+    "scheduler_receiver": "array_base + queue_index*0x1fa0",
+    "initializer": "FUN_007125e0",
+    "allocation_size": "0x2b90",
+    "constructor": "FUN_0072ed20",
+    "pointer_store": "0x0071263e [element+0] = allocated_object",
+    "fun_0074e1a0_setup_context": "[element+0]",
+    "fun_00791020_receiver": "[element+0]+0x340"
+  },
+  "selected_hdvehicle_layout_witness": {
+    "existing_contract": "SHIFT.Fun007618f0VehicleLoadDataOwnership/1",
+    "proven_field": "HDVehicle+0x66b4",
+    "fresh_setup_allocation_size": "0x2b90",
+    "same_root_object_possible": false
+  },
+  "adjudication": {
+    "setup_context_fresh_allocation_proven": true,
+    "setup_context_is_selected_hdvehicle_rejected": true,
+    "fun_00791020_rejected_as_selected_hdvehicle_root_writer": true,
+    "numeric_offset_match_is_same_object_proof": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "No semantic class is assigned to the allocated 0x2b90 object or its +0x340 child.",
+    "The rejection concerns selected-HDVehicle root identity only."
+  ],
+  "next_step": "Search writers of selected HDVehicle+0x938/+0x13b8/+0x1e38/+0x28b8 and require independent selected-HDVehicle receiver/base proof before tracing values."
+}
