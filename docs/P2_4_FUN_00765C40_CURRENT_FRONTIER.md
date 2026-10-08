@@ -23,9 +23,10 @@ The active `Fun00765c40ExternalPassResult` contract is `/4`, not the historical 
 
 ## REMAINING PRODUCER FRONTIER
 
-The top-level provider cannot yet be removed because the composed executor still requires explicit source-computed producer values for:
+The top-level provider cannot yet be removed because the composed executor still requires explicit source-computed or source-owned values for:
 
 - wheel-plane arithmetic;
+- the qword source loaded from `HDVehicle+0x98` and copied by `FUN_00752fa0` into each wheel `+0xa00`;
 - `FUN_0075cfb0` wheel-job formula;
 - positive-branch / interpolation payloads used by `FUN_007584f0`;
 - wheel-pair producer arithmetic;
@@ -34,7 +35,9 @@ The top-level provider cannot yet be removed because the composed executor still
 - bounded state-tail predicate/payloads;
 - optional BODY sweep predicate/vectors.
 
-No formula in that list is promoted until source or machine evidence proves it.
+`SHIFT.Fun00752fa0WheelStateMachineProof/1` proves the address and exact copy destination for the `HDVehicle+0x98` qword. It does **not** prove a native owner or refresh lifetime for that source field, so the composed executor's `wheel_state_source_bits` remains a real explicit dependency rather than a native-owned value.
+
+No formula or owner in that list is promoted until source or machine evidence proves it.
 
 ## GATES
 
@@ -46,4 +49,4 @@ No formula in that list is promoted until source or machine evidence proves it.
 
 ## NEXT STEP
 
-Recover one remaining explicit producer formula from pinned PC-retail source or machine evidence and consume it in `SHIFT.Fun00765c40ComposedResidualExecutor/1`. Provider removal remains fail-closed until the explicit producer list is empty.
+Trace ownership/refresh lifetime for `HDVehicle+0x98`, or recover one remaining explicit producer formula from pinned PC-retail evidence, then consume it in `SHIFT.Fun00765c40ComposedResidualExecutor/1`. Provider removal remains fail-closed until the explicit producer list is empty.
