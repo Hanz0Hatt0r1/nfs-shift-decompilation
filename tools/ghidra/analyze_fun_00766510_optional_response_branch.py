@@ -11,6 +11,7 @@ PINNED_SOURCE_SHA256 = "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a
 
 ANCHORS = {
     "gate_setup": "*(undefined1 *)((int)this + 0x3bc8) = *(undefined1 *)(param_2 + 0xf10);",
+    "mutable_3bd0_source": "FUN_007a6be0((float *)(param_2 + 0xf14));",
     "mutable_3bd0_setup": "*(double *)((int)this + 0x3bd0) = (double)fVar1;",
     "setup_3bd8": "*(double *)((int)this + 0x3bd8) = (double)(float)fVar4;",
     "setup_3be0": "*(double *)((int)this + 0x3be0) = (double)(float)fVar4;",
@@ -65,6 +66,7 @@ def analyze(path: Path) -> dict:
         "setup_3be8", "setup_3bf0", "setup_3bf8", "setup_3c08", "setup_3c10",
         "setup_3c38", "curve_setup", "application_setup", "application_store",
     )}
+    setup["mutable_3bd0_source"] = one_in_range(lines, "mutable_3bd0_source", 751660, 751670)
     setup["setup_3c00"] = one_in_range(lines, "setup_3c00", 751660, 751696)
     setup["setup_3c30"] = one_in_range(lines, "setup_3c30", 751660, 751696)
 
@@ -126,6 +128,7 @@ def analyze(path: Path) -> dict:
         "persistent_mutable": {
             "HDVehicle+0x3bd0": {
                 "initial_source": "evaluated VehicleLoadData+0xf14",
+                "source_evaluation_line": setup["mutable_3bd0_source"],
                 "initial_line": setup["mutable_3bd0_setup"],
                 "mutation_surface": mutable_3bd0,
                 "setup_constant": False,

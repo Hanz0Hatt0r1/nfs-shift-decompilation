@@ -6,7 +6,7 @@
   "updated": "2026-10-08",
   "milestone": "Silverstone + exact retail BMW M3 E36 + resource-driven bootstrap + input + continuous persistent physics + fresh vehicle world transform + camera + Vulkan rendering -> native playable Linux vertical slice",
   "main_frontier": {
-    "phase": 744,
+    "phase": 747,
     "active_external_provider_count": 7,
     "selected_session_rate_hz": 180,
     "selected_session_inner_substep_seconds": 0.005555555555555556,
@@ -18,6 +18,12 @@
     "fun_00765c40_selected_collision_output_typed": true,
     "fun_00766510_primary_response_application_native": true,
     "fun_00766510_application_point_owner_ready": true,
+    "fun_00766510_primary_caller_accumulator_delta_native": true,
+    "fun_00766510_shared_reference_owner_ready": true,
+    "fun_00766510_early_branch_owner_ready": true,
+    "fun_00766510_optional_branch_owner_ready": true,
+    "fun_00766510_p1_residual_frontier_ready": true,
+    "fun_00766510_p1_complete": false,
     "retail_control_chain_complete": false,
     "retail_camera_follow_ready": false,
     "playable_slice_complete": false
@@ -30,7 +36,8 @@
         {
           "id": "P1.1",
           "state": "current",
-          "task": "Close remaining FUN_00766510 configuration ownership for HDVehicle+0x3908/+0x3910/+0x3918/+0x3950 plus earlier +0x3b20, optional +0x3bc8/+0x3cxx, auxiliary and state/diagnostic writes required before contact_response removal",
+          "task": "Close the residual FUN_00766510 proof frontier: trace FUN_00713630 dynamic X/Z generator inputs, prove the later +0x3a28/+0x3a40 direct response block, and exhaustively classify final +0x40a0/+0x40a8/+0x40b0 accumulator plus conditional state/diagnostic writes before contact_response removal",
+          "contract": "SHIFT.Fun00766510ResidualOwnershipFrontier/1",
           "consumer": "Process 2 P2.3"
         },
         {
@@ -59,20 +66,20 @@
       "queue": [
         {
           "id": "P2.1",
-          "state": "current",
-          "task": "Consume merged Phase744 selected CollisionQueryOutput and finish Phase745 same-pass FUN_00766510 session handoff",
+          "state": "complete",
+          "task": "Phase745 same-pass FUN_00766510 selected-session handoff",
           "depends_on": ["Phase744 merged"]
         },
         {
           "id": "P2.2",
-          "state": "stacked-ready",
-          "task": "Complete Phase746 primary FUN_00766510 caller accumulator delta with exact FUN_00753650 cross-product/store behavior",
+          "state": "complete",
+          "task": "Phase746 primary FUN_00766510 caller accumulator delta with exact FUN_00753650 cross-product/store behavior",
           "depends_on": ["P2.1"]
         },
         {
           "id": "P2.3",
-          "state": "blocked-on-process-1",
-          "task": "Consume P1.1 proofs and internalize complete required FUN_00766510/contact_response behavior; reduce provider count 7 -> 6",
+          "state": "current-blocked-on-process-1",
+          "task": "Consume P1.1 proofs plus merged Phase747 shared-reference ownership and internalize complete required FUN_00766510/contact_response behavior; reduce provider count 7 -> 6",
           "depends_on": ["P1.1", "P2.2"]
         },
         {

@@ -42,7 +42,7 @@ NEXT_STEP
 
 ## 2. Current shared frontier
 
-Current merged main frontier is **Phase 744**.
+Current merged main frontier is **Phase 747**.
 
 Already positive and not to be rediscovered:
 
@@ -57,8 +57,14 @@ normal outer update = 6 recovered inner substeps
 FUN_007682c0 BODY0 delta/effect path substantially internalized
 FUN_00765c40 selected world position/cache/fallback inputs internalized
 Phase744 typed selected CollisionQueryOutput + query-scalar handoff
+Phase745 same-pass selected FUN_00766510 session handoff
+Phase746 primary FUN_00766510 caller accumulator delta
+Phase747 shared FUN_00766510 reference-vector ownership/transform
 Phase742 primary FUN_00766510 response application
 Phase743 selected BMW application-point ownership
+Process 1 response-config ownership for +0x3908/+0x3910/+0x3918/+0x3950
+Process 1 earlier +0x3b20 response-branch ownership
+Process 1 optional +0x3bc8/+0x3cxx response-branch ownership
 ```
 
 The active top-level external vehicle-provider count is **7**. Do not reduce that number until an entire callback boundary can be removed without dropping source-visible behavior.
@@ -73,7 +79,7 @@ Primary responsibilities:
 
 - source/value/owner provenance;
 - function ABI and call ordering;
-- remaining `FUN_00766510` configuration owners and optional branches;
+- residual `FUN_00766510` producer/state/diagnostic ownership;
 - collision-provider identity and residual `FUN_00765c40` side effects;
 - input -> drivetrain/wheel/control producer mapping;
 - Controller #1 scheduling/wake/message provenance where it constrains control timing;
@@ -85,10 +91,12 @@ Process 1 must **not** implement speculative native behavior to keep moving. It 
 Current queue:
 
 ```text
-P1.1  close remaining FUN_00766510 configuration ownership:
-      HDVehicle+0x3908, +0x3910, +0x3918, +0x3950;
-      earlier +0x3b20 branch; optional +0x3bc8/+0x3cxx branch;
-      auxiliary/state/diagnostic writes needed before contact_response removal
+P1.1  close the residual FUN_00766510 proof frontier described by
+      SHIFT.Fun00766510ResidualOwnershipFrontier/1:
+      a) trace the upstream dynamic X/Z generator state consumed by FUN_00713630;
+      b) prove owner/config/source order for the later +0x3a28/+0x3a40 direct block;
+      c) exhaustively classify the final +0x40a0/+0x40a8/+0x40b0 accumulator
+         and remaining conditional state/diagnostic writes before contact_response removal
 
 P1.2  identify/prove collision-provider object/call below FUN_007b0710,
       four wheel +0x738 load-term ownership, and residual FUN_00765c40 side effects
@@ -99,6 +107,8 @@ P1.3  finish input -> drivetrain/wheel/control producer provenance and
 P1.4  prove retail camera-follow source and update timing against the admitted
       current vehicle transform
 ```
+
+The response-config block, earlier `+0x3b20` branch, and optional `+0x3bc8/+0x3cxx` branch are already positive inputs to P1.1 and must not be re-selected as new work.
 
 PC retail is authoritative. Xbox 360 recompilation may accelerate navigation or corroborate structure, but cannot replace PC proof.
 
@@ -119,14 +129,14 @@ Primary responsibilities:
 Current queue:
 
 ```text
-P2.1  consume merged Phase744 collision output and complete the already prepared
-      Phase745 same-pass FUN_00766510 session handoff
+P2.1  COMPLETE — Phase745 same-pass FUN_00766510 selected-session handoff
 
-P2.2  complete Phase746 primary caller-accumulator delta and preserve exact
-      FUN_00753650 cross-product/store behavior
+P2.2  COMPLETE — Phase746 primary FUN_00766510 caller-accumulator delta
+      with exact FUN_00753650 cross-product/store behavior
 
-P2.3  consume P1.1 configuration proofs and internalize the complete required
-      FUN_00766510/contact_response behavior; first target: provider count 7 -> 6
+P2.3  CURRENT/BLOCKED ON P1.1 — consume the residual Process 1 proof handoff,
+      preserve merged Phase747 shared-reference ownership, and internalize the
+      complete required FUN_00766510/contact_response behavior; target 7 -> 6
 
 P2.4  consume P1.2 collision/load-term proofs and narrow/remove residual
       FUN_00765c40 without inventing collision semantics
@@ -206,7 +216,7 @@ To keep three concurrent workers mergeable:
 - Process 1 primarily edits `tools/ghidra/`, `src/physics/` proof/analyzer files, `evidence/`, and focused docs/tests.
 - Process 2 primarily edits `native_runtime/`, native physics tests, and runtime-facing evidence/docs.
 - Process 3 primarily edits resource/scene/render/bootstrap tooling, `native_vulkan/`, renderer tests, and integration docs.
-- Avoid editing root coordination files from ordinary blocker PRs.
+- Avoid editing root coordination files from ordinary blocker PRs; coordination-only refreshes are allowed when merged frontier facts are stale.
 - Re-read `main` before starting and again before merging.
 - Retarget stacked PRs immediately when their base lands.
 - Do not overwrite newer evidence generated by another process.

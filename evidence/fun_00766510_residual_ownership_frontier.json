@@ -1,0 +1,93 @@
+{
+  "format": "SHIFT.Fun00766510ResidualOwnershipFrontier/1",
+  "ready": true,
+  "purpose": "Fail-closed Process 1 join of merged FUN_00766510 ownership evidence before contact_response removal",
+  "authority": {
+    "semantic_platform": "PC retail 1.02",
+    "pc_decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "new_machine_or_source_claims_in_this_join": false,
+    "xbox_recomp_may_replace_pc_proof": false
+  },
+  "closed_inputs": [
+    {
+      "format": "SHIFT.Fun00766510ResponseConfigOwnership/1",
+      "role": "HDVehicle+0x3908/+0x3910/+0x3918/+0x3950 owner and mutation provenance"
+    },
+    {
+      "format": "SHIFT.Fun00766510EarlyResponseBranchOwnership/1",
+      "role": "earlier +0x3b08/+0x3b20 branch setup, mutable lane and source order"
+    },
+    {
+      "format": "SHIFT.Fun00766510OptionalResponseBranchOwnership/1",
+      "role": "optional +0x3bc8/+0x3cxx branch setup, +0x3bd0 mutation and source order"
+    },
+    {
+      "format": "SHIFT.Fun00766510PrimaryResponseApplication/1",
+      "role": "primary +0x38f0/+0x3950 response transform and BODY application"
+    },
+    {
+      "format": "SHIFT.Fun00766510PrimaryResponseApplication/2",
+      "role": "primary caller FUN_00753650 accumulator delta"
+    },
+    {
+      "format": "SHIFT.Fun00766510SharedReferenceVector/1",
+      "role": "actual-participant +0x16b4/+0x16b8/+0x16bc owner, writer cadence and BODY-frame transform"
+    },
+    {
+      "format": "SHIFT.NativeAuxContactPair/1",
+      "role": "two FUN_00758fc0 records at +0x37d8/+0x3858 in exact caller order"
+    },
+    {
+      "format": "SHIFT.NativeAuxContactResponse/1",
+      "role": "complete per-record FUN_00758fc0 arithmetic and BODY accumulator application"
+    }
+  ],
+  "retail_accumulator_inventory": {
+    "state": "HDVehicle+0x40a0/+0x40a8/+0x40b0",
+    "initial_zeroing_known": true,
+    "known_contribution_classes": [
+      "earlier +0x3b08/+0x3b20 direct response block",
+      "optional +0x3c60 direct response block behind +0x3bc8/negative-local-Z gate",
+      "up to two FUN_00758fc0 auxiliary-record contributions",
+      "primary +0x38f0/+0x3950 direct response block",
+      "later +0x3a28/+0x3a40 direct response block",
+      "final transformed cumulative response vector"
+    ],
+    "primary_direct_delta_native": true,
+    "whole_accumulator_internalized": false
+  },
+  "remaining_process_1_proof": [
+    {
+      "id": "P1.1a",
+      "target": "FUN_00713630 dynamic writer inputs",
+      "reason": "Phase747 proves the writer/cadence but not the upstream dynamic X/Z generator state feeding actual-participant +0x16b4/+0x16bc",
+      "consumer": "early +0x3b20 branch and FUN_00758fc0 auxiliary pair"
+    },
+    {
+      "id": "P1.1b",
+      "target": "later +0x3a28/+0x3a40 direct response block",
+      "reason": "Phase746 inventory identifies the block but no positive owner/config/order contract currently closes it",
+      "consumer": "complete FUN_00766510 internalization"
+    },
+    {
+      "id": "P1.1c",
+      "target": "final cumulative response and residual state/diagnostic writes",
+      "reason": "The full +0x40a0/+0x40a8/+0x40b0 accumulator and later conditional writes still lack one exhaustive preservation contract",
+      "consumer": "Process 2 P2.3 provider removal"
+    }
+  ],
+  "completion_gate": {
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7,
+    "target_external_provider_count_after_process_2_consumption": 6,
+    "requirements": [
+      "close P1.1a producer/value provenance without freezing dynamic participant lanes as setup constants",
+      "close P1.1b owner/config/source-order provenance",
+      "classify every remaining caller-accumulator contribution and conditional state/diagnostic write",
+      "publish an explicit Process 1 handoff that Process 2 can preserve in exact retail order"
+    ]
+  },
+  "next_owner": "Process 1",
+  "next_step": "Trace the upstream dynamic X/Z generator state consumed by FUN_00713630, then continue P1.1b/P1.1c until the removal-ready handoff is positive."
+}
