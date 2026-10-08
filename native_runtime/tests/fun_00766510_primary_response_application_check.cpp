@@ -35,6 +35,9 @@ int main() {
                 "FUN_00766510 response table offset drift");
         require(kFun00766510ResponseGainOutputOffset == 0x39d0u,
                 "FUN_00766510 response gain output offset drift");
+        require(kFun00766510CallerAccumulatorOffsets ==
+                    std::array<std::size_t, 3>{0x40a0u, 0x40a8u, 0x40b0u},
+                "FUN_00766510 caller accumulator offsets drift");
         require(kFun00766510SelectedBmwBodyIndex == 0u,
                 "FUN_00766510 selected BMW BODY identity drift");
 
@@ -62,6 +65,14 @@ int main() {
                      "FUN_00766510 transformed response Y drift");
         require_near(result.transformed_response[2], -4.5,
                      "FUN_00766510 transformed response Z drift");
+
+        require_near(result.caller_accumulator_delta[0], -1.5,
+                     "FUN_00766510 caller accumulator X delta drift");
+        require_near(result.caller_accumulator_delta[1], 3.0,
+                     "FUN_00766510 caller accumulator Y delta drift");
+        require_near(result.caller_accumulator_delta[2], -1.5,
+                     "FUN_00766510 caller accumulator Z delta drift");
+
         require_near(result.body_accumulator.linear[0], -0.5,
                      "FUN_00766510 BODY linear X application drift");
         require_near(result.body_accumulator.linear[1], -1.0,
@@ -94,6 +105,7 @@ int main() {
             << "\"body_basis_offset\":\"0xd4\","
             << "\"application_point_offset\":\"0x38f0\","
             << "\"response_table_offset\":\"0x3950\","
+            << "\"caller_accumulator_delta_native\":true,"
             << "\"selected_bmw_body_index\":0,"
             << "\"contact_response_provider_removed\":false,"
             << "\"external_provider_count\":7}\n";
