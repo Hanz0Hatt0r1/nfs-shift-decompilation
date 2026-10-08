@@ -1,0 +1,43 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374ConstantMultiRegisterReconstructionSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_bytes_adjudicate": true,
+    "disassembly_role": "bounded constant-propagation inventory"
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8Manager374SimpleArithmeticReconstructionSurface/1",
+    "SHIFT.HDVehicle64e8Manager374StaticPointerOccurrenceSurface/1"
+  ],
+  "target": {
+    "manager_root": "0x00bc9fc0"
+  },
+  "scan": {
+    "tracked_registers": ["eax","ebx","ecx","edx","esi","edi","ebp"],
+    "recognized_operations": ["mov r32,imm32","mov r32,r32","add/sub r32,imm32","add/sub r32,r32","lea r32,[base+index*scale+disp]"],
+    "reset_on": ["call","jmp","ret","int3"],
+    "known_literal_production_count": 3,
+    "known_literal_sites": ["0x00489ae3","0x00489afa","0x00a9c5a0"],
+    "constant_arithmetic_transition_count": 834,
+    "non_literal_exact_root_production_count": 0
+  },
+  "adjudication": {
+    "constant_only_multi_register_reconstruction_surface_complete": true,
+    "constant_only_non_literal_manager_root_count": 0,
+    "surface_can_create_unrelated_manager_root": false,
+    "memory_load_or_opaque_runtime_reconstruction_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes constant-only straight-line synthesis across the recognized register and LEA operations.",
+    "It does not propagate values through memory loads, opaque helper returns, indirect calls, externally initialized storage, or unrecognized arithmetic/bitwise transforms.",
+    "No identity is inferred from offset equality."
+  ],
+  "next_step": "Trace memory-load/opaque-runtime-derived Participants Manager root reconstruction and continue remaining non-wrapper HDVehicle+0x4330 aliases."
+}
