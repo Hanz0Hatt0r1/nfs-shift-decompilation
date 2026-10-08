@@ -1,0 +1,14 @@
+{
+  "format": "SHIFT.Fun00765c40ComposedResidualExecutor/1",
+  "ready": true,
+  "authority": {
+    "residual_order": "SHIFT.Fun00765c40ResidualPassContract/1",
+    "p1_2_complete": true,
+    "lower_scene_query_boundary": "0x00c133ac/+0x1c0"
+  },
+  "native_stage_order": ["WheelPlaneStateRefresh","SelectedWorldPositionTransform","SceneQuery","QueryCacheAndScalarCommit","WheelStateIndexSourceCommit","WheelJobQueueExecution","Fun007584f0PersistentMutation","PositiveLoadCountCommit","WheelPairStateRefresh","ContactArraySweep","OptionalBodyAccumulatorSweep"],
+  "composed_substages": {"contact_array_sweep_includes_native_contact_body_accumulation": true,"bounded_state_tail_runs_after_contact_body_accumulation": true,"optional_body_sweep_runs_last": true},
+  "explicit_boundaries": {"scene_query_provider_external": true,"wheel_plane_producer_arithmetic_external": true,"wheel_job_formula_external": true,"fun_007584f0_computed_payloads_external": true,"wheel_pair_producer_arithmetic_external": true,"contact_array_producer_arithmetic_external": true,"contact_body_predicates_and_vectors_external": true,"bounded_state_tail_predicate_and_payloads_external": true,"optional_body_predicate_and_vectors_external": true},
+  "scope": {"end_to_end_native_orchestration_path_present": true,"complete_FUN_00765c40_internalized": false,"top_level_FUN_00765c40_provider_removed": false,"external_provider_count_before": 7,"external_provider_count_after": 7},
+  "next_step": "Replace remaining explicit producer inputs with source-backed native computations, then integrate this executor into NativeVehicleProviderSession and remove the top-level FUN_00765c40 callback only when no unresolved producer dependency remains."
+}
