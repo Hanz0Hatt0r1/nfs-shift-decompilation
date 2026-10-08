@@ -1,0 +1,43 @@
+{
+  "format": "SHIFT.HDVehicle64e8Large4330ConsumerPersistenceClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {"platform":"PC retail 1.02","retail_executable_sha256":"eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1","machine_transfer_adjudicates":true},
+  "upstream_contracts": ["SHIFT.HDVehicle64e8Affine4330MaterializationFrontier/1","SHIFT.HDVehicle64e8Affine4330ParserDescendantClosure/1","SHIFT.HDVehicle64e8RootDerived4330MaterializerPersistenceClosure/1"],
+  "large_consumers": [
+    {
+      "function":"FUN_0076b280","exact_receiver_parameter":"param_1 at original stack slot [EBX+0x8]","exact_param_reread_count":14,
+      "exact_pointer_forward_sites":["0x0076cb40 -> FUN_00769640","0x0076cb4c -> FUN_007567a0"],
+      "other_rereads_are_field_or_derived_accesses":true,"exact_pointer_memory_store":false,"exact_pointer_return":false
+    },
+    {
+      "function":"FUN_007618f0","exact_receiver_parameter":"param_1 at original stack slot [EBX+0x8]","exact_param_reread_count":11,
+      "exact_pointer_forward_sites":["0x00762a11 -> FUN_00756bb0","0x0076314b -> FUN_00771db0","0x00763173 -> FUN_00771e10"],
+      "other_rereads_are_field_or_derived_accesses":true,"exact_pointer_memory_store":false,"exact_pointer_return":false
+    }
+  ],
+  "forwarded_consumers": [
+    {"function":"FUN_00769640","exact_param_reread_count":1,"use":"computed receiver table read near +0xdc8/+0xddc","exact_pointer_store":false,"exact_pointer_return":false,"exact_pointer_forward":false},
+    {"function":"FUN_007567a0","exact_param_reread_count":1,"use":"field reads near +0x18b8/+0x18c0/+0x18cc","exact_pointer_store":false,"exact_pointer_return":false,"exact_pointer_forward":false},
+    {"function":"FUN_00756bb0","exact_param_reread_count":6,"use":"field reads only","exact_pointer_store":false,"exact_pointer_return":false,"exact_pointer_forward":false},
+    {"function":"FUN_00771db0","receiver_capture":"ESI=ECX","use":"field reads and derived +0x2128 helper","exact_pointer_store":false,"exact_pointer_return":false,"exact_pointer_forward":false},
+    {"function":"FUN_00771e10","receiver_capture":"ESI=ECX","use":"field reads and derived +0x2128 helper","exact_pointer_store":false,"exact_pointer_return":false,"exact_pointer_forward":false}
+  ],
+  "adjudication": {
+    "large_consumer_exact_param_reread_count":25,
+    "large_consumer_exact_pointer_forward_count":5,
+    "large_consumer_exact_pointer_store_count":0,
+    "large_consumer_exact_pointer_return_count":0,
+    "forwarded_consumer_exact_pointer_store_count":0,
+    "forwarded_consumer_exact_pointer_return_count":0,
+    "bounded_large_consumer_persistence_return_surface_complete":true,
+    "downstream_consumer_persistence_return_surface_complete":true,
+    "global_runtime_derived_4330_alias_surface_complete":false,
+    "manager_374_join_to_hdvehicle_4330_complete":false,
+    "last_literal_0x004b86cf_rejected":false,
+    "p1_3_control_producer_complete":false,
+    "external_provider_count":7
+  },
+  "limits": ["This closes pointer persistence/return for the exact large-consumer families reached from the proven root-derived affine materializer only.","Other runtime-derived/non-root-derived HDVehicle+0x4330 aliases remain open.","No identity is inferred from offset equality."],
+  "next_step":"Search other runtime-derived/non-root-derived HDVehicle+0x4330 aliases; separately replay the render-manager memory-escape analyzer when the exact exhaustive v2 export is reacquired."
+}
