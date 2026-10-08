@@ -1,0 +1,57 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374BulkCopyParticipantRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact reuse of merged participant/snapshot provenance to reject one FUN_00481e20 destination alias"
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8Manager374LiteralWriterRejections/1",
+    "SHIFT.OuterVehicleRenderSnapshotAffineBridge/1"
+  ],
+  "target": {
+    "manager_singleton_address": "0x00bc9fc0",
+    "manager_slot": "+0x374",
+    "remaining_bulk_copy_function": "FUN_00481e20",
+    "bulk_copy_store": "0x004826a6 fstp dword [ESI+0x374]"
+  },
+  "callsite": {
+    "address": "0x004848f5",
+    "caller": "FUN_004848bc",
+    "destination": "parent+0xa00",
+    "proven_parent_domain": "SMS participant",
+    "proven_destination_domain": "participant+0xa00 render snapshot",
+    "upstream_slot_identity": {
+      "participant_vehicle_index_staging": ["+0x100", "+0xfc"],
+      "selected_vehicle_slot_array": "0x00c10b20",
+      "selected_snapshot_source": "slot + 0xd70 + (selector & 1) * 0x8f0",
+      "participant_snapshot_destination": "+0x110",
+      "render_snapshot_destination": "+0xa00"
+    },
+    "manager_singleton_destination": "0x00bc9fc0",
+    "same_root_as_manager_singleton": false,
+    "rejected_as_manager_374_writer": true
+  },
+  "adjudication": {
+    "fun_00481e20_callsite_0x004848f5_rejected": true,
+    "remaining_direct_embedded_subobject_callsites": [
+      "0x0081d335 destination ECX=parent+0x2d0"
+    ],
+    "fun_00481e20_bulk_copy_still_open": true,
+    "manager_374_literal_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This proof rejects only the direct FUN_004848bc -> FUN_00481e20 destination rooted at participant+0xa00.",
+    "The remaining 0x0081d335 parent+0x2d0 destination is not classified here.",
+    "Numeric +0x374 equality is not object identity.",
+    "No semantic promotion from render-snapshot fields to control/input fields is made."
+  ],
+  "next_step": "Root the parent object at 0x0081d335 (destination parent+0x2d0). If it is not the manager singleton or an affine alias of it, the direct FUN_00481e20 bulk-copy literal writer surface can be closed before continuing helper-mediated/indirect manager-root mutations."
+}
