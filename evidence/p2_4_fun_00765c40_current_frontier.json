@@ -29,6 +29,12 @@
     "wheel_state_source_address": "HDVehicle+0x98",
     "wheel_state_source_address_proven": true,
     "wheel_state_source_owner_lifetime_native": false,
+    "wheel_job_load_store_surface_contract": "SHIFT.Fun0075cfb0LoadStoreSurface/1",
+    "wheel_job_load_store_surface_native": true,
+    "wheel_job_load_store_site_count": 3,
+    "wheel_job_load_store_payload_bit_preserved": true,
+    "wheel_job_formula_internalized": false,
+    "wheel_job_branch_predicates_internalized": false,
     "provider_returned_selected_query_input_authoritative": false,
     "selected_world_position_native": true,
     "selected_query_fallback_native": true,
@@ -63,7 +69,8 @@
     "producer_handoff_treated_as_native_computation": false,
     "absent_producer_family_default_overwrite_allowed": false,
     "producer_presence_treated_as_independent_proof": false,
-    "producer_promotion_without_proof_allowed": false
+    "producer_promotion_without_proof_allowed": false,
+    "wheel_job_commit_surface_treated_as_formula_proof": false
   },
-  "next_step": "As source-backed proofs land, authorize only the matching /2 family through SHIFT.Fun00765c40ResidualProducerPromotionGate/1; no family is currently authorized for session promotion."
+  "next_step": "Recover FUN_0075cfb0 branch predicates and source arithmetic feeding the three now-native +0x738 store sites; keep wheel_job_formula_FUN_0075cfb0 unresolved until independent equivalence is proven."
 }

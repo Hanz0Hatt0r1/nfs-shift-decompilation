@@ -24,6 +24,7 @@ RESIDUAL_PRODUCER_HANDOFF_FORMAT = "SHIFT.Fun00765c40ResidualProducerHandoff/2"
 HISTORICAL_RESIDUAL_PRODUCER_HANDOFF_FORMAT = "SHIFT.Fun00765c40ResidualProducerHandoff/1"
 RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT = "SHIFT.Fun00765c40ResidualProducerPromotionGate/1"
 WHEEL_STATE_MACHINE_PROOF_FORMAT = "SHIFT.Fun00752fa0WheelStateMachineProof/1"
+WHEEL_JOB_LOAD_STORE_SURFACE_FORMAT = "SHIFT.Fun0075cfb0LoadStoreSurface/1"
 
 REMAINING_EXPLICIT_PRODUCERS = (
     "wheel_plane_producer_arithmetic",
@@ -97,6 +98,12 @@ def build_current_frontier() -> dict[str, Any]:
             "wheel_state_source_address": "HDVehicle+0x98",
             "wheel_state_source_address_proven": True,
             "wheel_state_source_owner_lifetime_native": False,
+            "wheel_job_load_store_surface_contract": WHEEL_JOB_LOAD_STORE_SURFACE_FORMAT,
+            "wheel_job_load_store_surface_native": True,
+            "wheel_job_load_store_site_count": 3,
+            "wheel_job_load_store_payload_bit_preserved": True,
+            "wheel_job_formula_internalized": False,
+            "wheel_job_branch_predicates_internalized": False,
             "selected_world_position_native": True,
             "selected_query_fallback_native": True,
             "selected_query_input_native": True,
@@ -121,6 +128,7 @@ def build_current_frontier() -> dict[str, Any]:
             "absent_producer_family_default_overwrite_allowed": False,
             "producer_presence_treated_as_independent_proof": False,
             "producer_promotion_without_proof_allowed": False,
+            "wheel_job_commit_surface_treated_as_formula_proof": False,
         },
     }
 
@@ -181,6 +189,17 @@ def contract() -> dict[str, Any]:
         "wheel_state_source_owner_lifetime_native": fun[
             "wheel_state_source_owner_lifetime_native"
         ],
+        "wheel_job_load_store_surface_contract": fun[
+            "wheel_job_load_store_surface_contract"
+        ],
+        "wheel_job_load_store_surface_native": fun[
+            "wheel_job_load_store_surface_native"
+        ],
+        "wheel_job_load_store_site_count": fun["wheel_job_load_store_site_count"],
+        "wheel_job_formula_internalized": fun["wheel_job_formula_internalized"],
+        "wheel_job_branch_predicates_internalized": fun[
+            "wheel_job_branch_predicates_internalized"
+        ],
         "selected_world_position_native": fun["selected_world_position_native"],
         "selected_query_fallback_native": fun["selected_query_fallback_native"],
         "selected_query_input_native": fun["selected_query_input_native"],
@@ -210,6 +229,7 @@ __all__ = [
     "HISTORICAL_RESIDUAL_PRODUCER_HANDOFF_FORMAT",
     "RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT",
     "WHEEL_STATE_MACHINE_PROOF_FORMAT",
+    "WHEEL_JOB_LOAD_STORE_SURFACE_FORMAT",
     "REMAINING_EXPLICIT_PRODUCERS",
     "build_current_frontier",
     "contract",
