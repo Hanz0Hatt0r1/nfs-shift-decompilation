@@ -20,3 +20,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00765c40_collision_output_handoff
     COMMAND shift_runtime_fun_00765c40_collision_output_handoff_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase745.cmake)
