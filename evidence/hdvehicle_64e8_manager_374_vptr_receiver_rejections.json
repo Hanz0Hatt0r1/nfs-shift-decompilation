@@ -1,0 +1,106 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374VptrReceiverRejections/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "navigation_only_inputs": ["shift_ghidra.sqlite", "SHIFT.exe.c"]
+  },
+  "upstream": {
+    "literal_store_inventory_format": "SHIFT.HDVehicle64e8Manager374LiteralStoreInventory/1",
+    "remaining_site_count_before": 23,
+    "participants_manager_vptr": "0x00ab916c"
+  },
+  "rejections": [
+    {
+      "site": "0x005ded7e",
+      "function": "FUN_005dec70",
+      "base_register": "ESI",
+      "receiver_capture": "0x005dec77 mov esi,ecx",
+      "same_receiver_vptr_store": "0x005dec8a mov [esi],0x00adee38",
+      "vptr": "0x00adee38",
+      "vptr_is_participants_manager": false
+    },
+    {
+      "site": "0x0074874b",
+      "function": "FUN_00748280",
+      "base_register": "ESI",
+      "receiver_capture": "0x0074829d mov esi,ecx",
+      "same_receiver_vptr_store": "0x007482b2 mov [esi],0x00b07938",
+      "vptr": "0x00b07938",
+      "vptr_is_participants_manager": false
+    },
+    {
+      "site": "0x008169c3",
+      "function": "FUN_008167f0",
+      "base_register": "ESI",
+      "receiver_capture": "0x008167f8 mov esi,ecx",
+      "same_receiver_vptr_stores": [
+        "0x008167fa mov [esi],0x00b1e270",
+        "0x00816810 mov [esi],0x00aaa9a0",
+        "0x00816825 mov [esi],0x00b16158"
+      ],
+      "last_explicit_vptr_before_target_store": "0x00b16158",
+      "all_explicit_vptrs_are_not_participants_manager": true
+    },
+    {
+      "site": "0x00833972",
+      "function": "FUN_00833760",
+      "base_register": "EBX",
+      "receiver_capture": "0x0083376a mov ebx,ecx",
+      "same_receiver_vptr_stores": [
+        "0x00833773 mov [ebx],0x00b18bc8",
+        "0x0083378a mov [ebx],0x00b190a8"
+      ],
+      "last_explicit_vptr_before_target_store": "0x00b190a8",
+      "all_explicit_vptrs_are_not_participants_manager": true
+    },
+    {
+      "site": "0x00844343",
+      "function": "FUN_00844320",
+      "base_register": "ESI",
+      "receiver_capture": "0x00844321 mov esi,ecx",
+      "same_receiver_vptr_store": "0x0084432b mov [esi],0x00b190a8",
+      "vptr": "0x00b190a8",
+      "vptr_is_participants_manager": false
+    },
+    {
+      "site": "0x00844b67",
+      "function": "FUN_00844a20",
+      "base_register": "ESI",
+      "receiver_capture": "0x00844a28 mov esi,ecx",
+      "same_receiver_vptr_store": "0x00844a3a mov [esi],0x00b190a8",
+      "vptr": "0x00b190a8",
+      "vptr_is_participants_manager": false
+    },
+    {
+      "site": "0x00d7f104",
+      "function": "FUN_00d7f040",
+      "base_register": "ESI",
+      "receiver_capture": "0x00d7f041 mov esi,ecx",
+      "same_receiver_vptr_store": "0x00d7f057 mov [esi],0x00ac1fc4",
+      "vptr": "0x00ac1fc4",
+      "vptr_is_participants_manager": false
+    }
+  ],
+  "adjudication": {
+    "rejected_site_count": 7,
+    "remaining_literal_store_site_count": 16,
+    "rejections_use_exact_same_receiver_vptr_identity": true,
+    "numeric_plus_0x374_equality_used_as_identity": false,
+    "remaining_literal_store_receiver_provenance_complete": false,
+    "computed_address_manager_374_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "A site is rejected here only when the exact register used as the +0x374 destination base is the same receiver captured from entry ECX and that receiver is explicitly assigned a non-Participants-Manager vptr in the same machine body before the target write.",
+    "This contract does not classify the other 16 literal +0x374 stores and does not cover computed-address +0x374 writes.",
+    "Vptr inequality is used as exact object-identity evidence; offset coincidence is not used."
+  ],
+  "next_step": "Classify the remaining 16 literal +0x374 stores by exact receiver provenance, prioritizing child-base and constructor/copy families; then widen to computed-address forms only if needed."
+}
