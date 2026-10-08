@@ -34,7 +34,21 @@
     "direct_manager_plus_0x374_store_observed": false,
     "receiver_fields_used": ["+0x04", "+0x34"],
     "same_receiver_direct_callee": "FUN_007d8e00",
-    "same_receiver_deeper_surface_complete": false
+    "same_receiver_deeper_surface_complete": true,
+    "same_receiver_descendants": [
+      {"function":"FUN_007d8e00","mnemonic_sha256":"fe663bbb51f10a8028da36281311fda7b3612305255d2b6bbaae384b83860d7c","receiver_fields":["+0x34"],"direct_callees":["FUN_007d8dd0"]},
+      {"function":"FUN_007d8dd0","mnemonic_sha256":"e5ad375a194da45719cc05250eda8040ce17e03a90e9b669dac3406af73b6c44","direct_callees":[]}
+    ],
+    "same_receiver_descendants_parent_recovery_observed": false,
+    "same_receiver_descendants_manager_plus_0x374_store_observed": false,
+    "open_foreign_receiver_callback": {
+      "callsite":"0x007da486",
+      "receiver":"param_1 object",
+      "virtual_slot":"+0x108",
+      "manager_438_passed_as_stack_argument":true,
+      "target_resolved":false,
+      "reason_open":"foreign callback can observe the manager+0x438 pointer argument; exact target/back-reference semantics are not yet proven"
+    }
   },
   "direct_root_side_path": {
     "callsite": "0x0048ace6",
@@ -51,7 +65,8 @@
     "manager_438_indirect_target_resolved": true,
     "manager_438_resolved_target_direct_body_reaches_manager_374": false,
     "direct_root_side_path_direct_body_reaches_manager_374": false,
-    "manager_438_deeper_same_receiver_surface_complete": false,
+    "manager_438_deeper_same_receiver_surface_complete": true,
+    "manager_438_foreign_receiver_callback_surface_complete": false,
     "heap_helper_indirect_target_surface_complete": false,
     "manager_374_join_to_hdvehicle_4330_complete": false,
     "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
@@ -60,8 +75,9 @@
   },
   "limits": [
     "The three heap-helper virtual calls are not manager-derived receiver calls and remain outside the manager+0x374 affine identity question unless a separate back-reference is proven.",
-    "FUN_007da470 direct body is bounded, but its same-receiver descendant FUN_007d8e00 and later indirect descendants remain open.",
+    "The manager+0x438 same-receiver descendant chain through FUN_007d8e00/FUN_007d8dd0 is closed negative for parent recovery and +0x374 stores.",
+    "FUN_007da470 also calls a virtual +0x108 target on param_1 while passing manager+0x438 as an argument; that foreign-receiver callback remains open.",
     "No manager-root identity is assigned to manager+0x438 from numeric offset arithmetic alone; the constructor/vptr join is exact."
   ],
-  "next_step": "Trace same-receiver descendants of FUN_007da470 beginning at FUN_007d8e00 for any exact parent recovery from manager+0x438; separately classify heap-helper virtual-call objects for any proven manager back-reference."
+  "next_step": "Resolve the param_1 vtable +0x108 callback reaching FUN_007da470 and classify the three heap-helper +0xb4 virtual calls for any exact manager back-reference; continue non-literal HDVehicle+0x64e8 writer provenance."
 }
