@@ -1,0 +1,91 @@
+{
+  "adjudication": {
+    "application_vector_setup_owned": true,
+    "contact_response_provider_removable_now": false,
+    "gate_and_static_coefficients_setup_owned": true,
+    "optional_branch_owner_closed": true,
+    "plus_3bd0_requires_persistent_mutation_model": true,
+    "safe_to_freeze_whole_optional_block_as_setup_config": false
+  },
+  "format": "SHIFT.Fun00766510OptionalResponseBranchOwnership/1",
+  "limits": [
+    "No physical semantic names are assigned to the optional branch.",
+    "This contract does not yet prove all diagnostics/state outside this branch or every remaining FUN_00766510 tail operation.",
+    "Selected BMW numeric values are not synthesized."
+  ],
+  "next_owner": "Process 2 can consume the optional branch ownership; Process 1 continues residual FUN_00766510 state/diagnostic write audit before callback removal.",
+  "persistent_mutable": {
+    "HDVehicle+0x3bd0": {
+      "initial_line": 751664,
+      "initial_source": "evaluated VehicleLoadData+0xf14",
+      "mutation_surface": {
+        "FUN_00757fa0_increment": 752639,
+        "FUN_00758170_clamp": 752714,
+        "FUN_00769d60_reset_clamp": 761376,
+        "FUN_0076ed60_state_load": 764269
+      },
+      "setup_constant": false
+    }
+  },
+  "ready": true,
+  "runtime_branch": {
+    "application_vector_line": 759618,
+    "body_apply_line": 759619,
+    "caller_accumulator_line": 759621,
+    "curve_line": 759611,
+    "diagnostic_write_line": 759630,
+    "gate": "+0x3bc8 != 0 and local_50 < 0",
+    "gate_line": 759577,
+    "negative_result_required_for_body_apply": true,
+    "ordering": "gate -> coefficient polynomial/clamps -> +0x3c40 curve -> negative-only BODY scalar/vector apply -> caller accumulator -> optional diagnostics",
+    "scalar_apply_line": 759615
+  },
+  "setup_owned": {
+    "anchor_lines": {
+      "application_setup": 757136,
+      "application_store": 757137,
+      "curve_setup": 751694,
+      "gate_setup": 751660,
+      "mutable_3bd0_setup": 751664,
+      "setup_3bd8": 751668,
+      "setup_3be0": 751671,
+      "setup_3be8": 751672,
+      "setup_3bf0": 751673,
+      "setup_3bf8": 751674,
+      "setup_3c00": 751675,
+      "setup_3c08": 751676,
+      "setup_3c10": 751677,
+      "setup_3c30": 751690,
+      "setup_3c38": 751693
+    },
+    "application_vector_3c60": "FUN_00753590 from VehicleLoadData+0xfc0 into +0x3c60/+0x3c68/+0x3c70",
+    "coefficients": {
+      "+0x3bd8": "evaluated VehicleLoadData+0xf28",
+      "+0x3be0": "evaluated VehicleLoadData+0xf3c",
+      "+0x3be8": "VehicleLoadData+0xf80",
+      "+0x3bf0": "VehicleLoadData+0xf90",
+      "+0x3bf8": "VehicleLoadData+0xf60",
+      "+0x3c00": "VehicleLoadData+0xf68",
+      "+0x3c08": "VehicleLoadData+0xf70",
+      "+0x3c10": "VehicleLoadData+0xf88",
+      "+0x3c30": "VehicleLoadData+0xf98"
+    },
+    "curve_3c40": "FUN_00752f10 from VehicleLoadData+0xfa8/+0xfb0/+0xfb8",
+    "derived_shape": {
+      "+0x3c18": "VehicleLoadData+0xf78, clamped to zero when <= 0",
+      "+0x3c20/+0x3c28": "derived from +0x3c18 then scaled by VehicleLoadData+0xfa0",
+      "+0x3c38": "1 - VehicleLoadData+0xfa0"
+    },
+    "gate_3bc8": {
+      "line": 751660,
+      "source": "VehicleLoadData+0xf10"
+    }
+  },
+  "source": {
+    "authority": "PC retail 1.02",
+    "file": "SHIFT.exe.c",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "xbox_recomp_required": false
+  }
+}
