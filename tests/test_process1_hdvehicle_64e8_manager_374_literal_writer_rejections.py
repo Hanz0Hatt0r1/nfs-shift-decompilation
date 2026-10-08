@@ -40,7 +40,7 @@ def test_forwarded_stack_alias_surface_is_rejected():
     assert row["rejected_on_direct_call_surface"] is True
 
 
-def test_remaining_bulk_copy_stays_open_and_gates_fail_closed():
+def test_original_bulk_copy_contract_remains_bounded_and_fail_closed():
     p = _payload()
     assert p["remaining_candidate"]["function"] == "FUN_00481e20"
     assert p["remaining_candidate"]["status"] == "two-embedded-subobject-callers-open"
@@ -54,11 +54,10 @@ def test_remaining_bulk_copy_stays_open_and_gates_fail_closed():
     assert a["external_provider_count"] == 7
 
 
-def test_coordination_points_to_bulk_copy_alias_closure():
+def test_coordination_preserves_literal_rejections_after_later_closure():
     graph = json.loads(COORD.read_text(encoding="utf-8"))
     p13 = next(row for row in graph["workstreams"] if row["id"] == "P1.3")
     node = next(row for row in p13["children"] if row["id"] == "P1.3.manager374")
-    assert node["status"] == "two-literal-writers-rejected-bulk-copy-open"
-    assert "FUN_00481e20" in node["next"]
-    assert "0x004848f5" in node["next"]
-    assert "0x0081d335" in node["next"]
+    assert node["rejected_literal_writers"] == ["FUN_0051efa0", "FUN_005dec70"]
+    assert node["status"] == "direct-literal-bulkcopy-surface-closed-helper-alias-indirect-open"
+    assert node["direct_bulk_copy_surface_complete"] is True
