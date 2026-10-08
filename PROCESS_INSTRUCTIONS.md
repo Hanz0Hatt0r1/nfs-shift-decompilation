@@ -1,55 +1,128 @@
 # Playable slice coordination instructions
 
-The project now uses **one active development process** for the first playable Linux vertical slice.
+The project uses **three active parallel development processes** for the first playable Linux vertical slice.
 
 Canonical rules:
 
-[`docs/PLAYABLE_SLICE_SINGLE_PROCESS_INSTRUCTIONS_V5.md`](docs/PLAYABLE_SLICE_SINGLE_PROCESS_INSTRUCTIONS_V5.md)
+[`docs/PLAYABLE_SLICE_THREE_PROCESS_INSTRUCTIONS_V6.md`](docs/PLAYABLE_SLICE_THREE_PROCESS_INSTRUCTIONS_V6.md)
 
-Single-process copy/paste prompt:
+Copy/paste prompts:
 
-[`docs/PLAYABLE_SLICE_SINGLE_PROCESS_PROMPT_V5.md`](docs/PLAYABLE_SLICE_SINGLE_PROCESS_PROMPT_V5.md)
+[`docs/PLAYABLE_SLICE_THREE_PROCESS_PROMPTS_V6.md`](docs/PLAYABLE_SLICE_THREE_PROCESS_PROMPTS_V6.md)
 
 Machine-readable execution state:
 
-[`evidence/playable_slice_single_process_execution.json`](evidence/playable_slice_single_process_execution.json)
+[`evidence/playable_slice_three_process_execution.json`](evidence/playable_slice_three_process_execution.json)
 
 The mandatory pre-task question is:
 
 > **Какой конкретный blocker первого playable Linux vertical slice снимает эта работа?**
 
-If proposed work neither shortens the current blocker nor creates immediately-required reusable infrastructure for that blocker, defer it.
-
-Active execution chain:
+## Active ownership
 
 ```text
-static proof / ABI / provenance / scheduling
-        -> native physics/runtime
-        -> persistent vehicle + fresh world transform
-        -> resources / scene / camera / Vulkan
-        -> playable Linux slice
+PROCESS 1
+retail proof / ABI / producer / timing
+        |
+        v
+PROCESS 2
+native physics / runtime execution
+        |
+        v
+PROCESS 3
+resources / scene / renderer / playable bootstrap
+        |
+        v
+native playable Linux vertical slice
 ```
 
-There are no active Process 1 / Process 2 / Process 3 ownership lanes and no blocker swarm. Positive contracts are internal checkpoints and must be consumed immediately by the same process.
+The processes may advance in parallel on independent queue items. They exchange only explicit fail-closed contracts; unresolved semantic ownership is never transferred merely to keep another process busy.
 
-Historical files/contracts containing `Process1`, `Process2`, `Process3`, `process1`, `process2`, or `process3` keep their names for compatibility and evidence traceability only. They do not create active worker ownership or a requirement to wait for another process.
+### Process 1
 
-Current shortest blocker after merged PR #1331:
+Owns PC-retail proof, source/value provenance, function ABI/order, remaining collision/contact producer ownership, input/control provenance, Controller #1 timing where required by control execution, and retail camera-follow source/timing.
+
+Current priorities:
 
 ```text
-SHIFT.OuterVehicleBMWVHFRootRelation/1       [semantic relation POSITIVE]
-        -> materialize selected BMW Vehicle::InitVehicle/FUN_00795d60
-           outerVehicle +0x19c/+0x1a0/+0x1a4 values
-        -> finite M_outer_to_vhf_root
-        -> SHIFT.BMWBody0BindFrameProof/1
-        -> persistent fresh BMW world transform
+P1.1  remaining FUN_00766510 configuration/branch/state ownership
+P1.2  FUN_00765c40 collision-provider/load-term/residual ownership
+P1.3  input -> drivetrain/wheel/control producer chain
+P1.4  retail camera-follow source/timing
 ```
 
-Use branch prefix:
+### Process 2
+
+Owns native physics/runtime implementation and consumption of positive Process 1 contracts.
+
+Current priorities:
 
 ```text
-slice/<blocker>
+P2.1  Phase745 same-pass FUN_00766510 session handoff on merged Phase744
+P2.2  Phase746 caller accumulator delta
+P2.3  consume P1.1 and remove complete contact_response; target 7 -> 6 providers
+P2.4  consume P1.2 and narrow/remove residual FUN_00765c40
+P2.5  replace remaining provider boundaries in dependency order
+P2.6  consume proven control chain continuously
 ```
+
+### Process 3
+
+Owns exact retail resources, Silverstone/BMW scene composition, participant handoff, Vulkan, playable profile/launcher/bootstrap, and final visible integration.
+
+Current priorities:
+
+```text
+P3.1  resource-pipeline -> playable-scene provenance join (#1431 lineage)
+P3.2  playable pipeline launcher/profile (#1442/#1443 lineage)
+P3.3  one-command playable bootstrap (#1444 lineage)
+P3.4  preserve exact Silverstone/BMW resource + participant authority
+P3.5  consume fresh vehicle transform and later camera handoff
+P3.6  final continuous Silverstone + BMW smoke path
+```
+
+## Shared frontier
+
+Current merged main frontier when V6 was introduced: **Phase 744**.
+
+Already positive:
+
+```text
+BMW BODY0 identity and bind frame
+fresh persistent BMW world transform
+retail outer cadence
+selected-session inner rate = 180 Hz
+1/180 s persistent inner execution
+normal outer update = six recovered substeps
+selected FUN_00765c40 world position/cache/fallback ownership
+Phase744 typed CollisionQueryOutput/query scalar handoff
+Phase742 primary FUN_00766510 response application
+Phase743 selected BMW application-point owner
+```
+
+Active top-level external provider count:
+
+```text
+7
+```
+
+First architectural reduction target:
+
+```text
+FUN_00766510/contact_response removal -> 7 -> 6
+```
+
+## Branch and PR protocol
+
+Active branch prefixes:
+
+```text
+process-1/<blocker>
+process-2/<blocker>
+process-3/<blocker>
+```
+
+Existing `slice/...` stacked branches may finish normally.
 
 Every blocker-relevant PR uses:
 
@@ -61,9 +134,14 @@ CONSUMER:
 GATES_CHANGED:
 LIMITS:
 TESTS:
+NEXT_OWNER:
 NEXT_STEP:
 ```
 
-Before merge, re-read current `main`. Self-merge after required tests/CI pass, no conflicts remain, no unsupported semantic gate is promoted, and no newer proof state is overwritten. After merge, continue with the next shortest blocker.
+Before starting and before merge, re-read current `main`. Self-merge after required tests/CI pass, no conflicts remain, no unsupported semantic gate is promoted, and no newer proof state is overwritten.
 
-The former v4 three-process instructions, parallel prompts, and blocker-swarm files are retired historical coordination records and must not be used to select new work.
+## Authority
+
+PC retail remains the primary semantic authority. Xbox 360 recompilation may be used for navigation/corroboration but cannot replace PC proof.
+
+The v5 single-process coordination files remain historical records and must not be used to select new work.
