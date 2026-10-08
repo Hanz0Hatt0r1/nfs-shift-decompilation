@@ -1,0 +1,87 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374ParticipantsRegistryVtable/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact .rdata pointer-table bytes plus PC-retail decompiler value-flow for escaped manager+0x20 registry dispatch"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374ParticipantsSubobjectFrontier/1",
+  "participants_subobject": {
+    "manager_offset": "+0x20",
+    "label": "Participants Manager",
+    "vtable_address": "0x00ab916c",
+    "target_relative_offset_for_manager_374": "+0x354"
+  },
+  "vtable": {
+    "source": "Ghidra static_tables.jsonl .rdata raw bytes",
+    "entries": [
+      {"slot": 0, "entry": "0x00ab916c", "raw_hex": "90914800", "target": "0x00489190"},
+      {"slot": 1, "entry": "0x00ab9170", "raw_hex": "205a4800", "target": "FUN_00485a20"},
+      {"slot": 2, "entry": "0x00ab9174", "raw_hex": "f0714800", "target": "FUN_004871f0"},
+      {"slot": 3, "entry": "0x00ab9178", "raw_hex": "f0a74800", "target": "FUN_0048a7f0"},
+      {"slot": 4, "entry": "0x00ab917c", "raw_hex": "108a4800", "target": "FUN_00488a10"},
+      {"slot": 5, "entry": "0x00ab9180", "raw_hex": "70894800", "target": "FUN_00488970"},
+      {"slot": 6, "entry": "0x00ab9184", "raw_hex": "e0ad4800", "target": "FUN_0048ade0"},
+      {"slot": 7, "entry": "0x00ab9188", "raw_hex": "e0ae4800", "target": "FUN_0048aee0"},
+      {"slot": 8, "entry": "0x00ab918c", "raw_hex": "a0b94800", "target": "0x0048b9a0"}
+    ]
+  },
+  "registry_dispatch": {
+    "container": "FUN_0065bf80()+0x44",
+    "clear_paths": [
+      {
+        "path": "FUN_0065b990 -> FUN_00648640 -> vslot +0x8 -> FUN_004871f0",
+        "dispatcher_fingerprint": "2e140d5e2c5a115e6f27a23aa62c81ab998baa79e3ee537f213a0482c608d578",
+        "virtual_helper_fingerprint": "d7c6ef2f3257661762027f22d3e1c92b559f15a613d9a49410b80df9bd3ecb4a",
+        "target_fingerprint": "ccccbfa3b95c05bf2ad14ab5c0cd2de74ba4a43028766290080102267c53a24c",
+        "target_write": "subobject+0x354 = 0",
+        "normalized_write": "manager+0x374 = 0"
+      },
+      {
+        "path": "FUN_0065ba90/FUN_0065bbc0 -> FUN_00647c60 -> vslot +0x14 -> FUN_00488970",
+        "virtual_helper_fingerprint": "39713e8d45168200d5544f7b0bc84d291541bb9060ab5e21b90f6231528f120c",
+        "target_fingerprint": "f54977de6496857f5718937db0efd823ed6648b3cb8e479b02a40e3e35b89e70",
+        "target_write": "subobject+0x354 = 0",
+        "normalized_write": "manager+0x374 = 0"
+      }
+    ],
+    "other_resolved_vtable_targets": {
+      "FUN_00485a20": "also writes subobject+0x354 = 0 during initialization-style entry",
+      "FUN_0048a7f0": "no decompiler reference to subobject+0x354/+0x358",
+      "FUN_00488a10": "no decompiler reference to subobject+0x354/+0x358",
+      "FUN_0048ade0": "no decompiler reference to subobject+0x354/+0x358",
+      "FUN_0048aee0": "no decompiler reference to subobject+0x354/+0x358"
+    }
+  },
+  "separate_helper_candidate": {
+    "thunk": "thunk_FUN_00d60660",
+    "thunk_address": "0x00487240",
+    "body": "FUN_00d60660",
+    "body_address": "0x00d60660",
+    "direct_callers": ["FUN_00465860@0x00465bae", "FUN_00468ed0@0x004690b5"],
+    "receiver_at_both_callers": "FUN_00489ad0() manager root",
+    "decompiler_contains_manager_374_assignment": true,
+    "status": "machine-branch-proof-required-before-nonzero-writer-promotion",
+    "reason": "decompiler control flow around the assignment is internally suspicious and must not be promoted without exact instruction/value-flow proof"
+  },
+  "adjudication": {
+    "escaped_participants_alias_can_clear_manager_374": true,
+    "escaped_participants_alias_nonzero_manager_374_writer_proven": false,
+    "manager_374_clear_writer_proven": true,
+    "manager_374_selected_hdvehicle_writer_proven": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The raw .rdata entries prove the virtual target addresses; source-order decompiler output is used to classify their receiver-relative writes.",
+    "This contract proves clear-to-zero ownership, not selected-HDVehicle pointer publication.",
+    "Opaque vtable entries 0 and 8 are not assigned semantics here.",
+    "FUN_00d60660 is retained as a separate exact manager-root helper candidate but is not promoted from decompiler output alone."
+  ],
+  "next_step": "Obtain exact instruction/value-flow proof for thunk_FUN_00d60660/FUN_00d60660 around the manager+0x374 assignment on its two manager-root callers; determine whether the apparent assignment is reachable and whether its stored pointer is a selected manager+0x2a0 entry."
+}
