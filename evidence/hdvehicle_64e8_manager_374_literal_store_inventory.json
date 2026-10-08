@@ -1,0 +1,97 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374LiteralStoreInventory/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "decoder_role": "objdump only decodes authoritative SHIFT.exe bytes",
+    "ghidra_sqlite_role": "containing-function navigation and mnemonic fingerprints only"
+  },
+  "manager": {
+    "getter": "FUN_00489ad0",
+    "singleton": "0x00bc9fc0",
+    "target_offset": "+0x374"
+  },
+  "scope": {
+    "write_shape": "literal base-register displacement +0x374 where memory is the destination",
+    "whole_text_scan": true,
+    "computed_address_writes_included": false,
+    "numeric_offset_implies_manager_identity": false
+  },
+  "inventory": {
+    "literal_write_site_count": 25,
+    "containing_function_count": 21,
+    "sites": [
+      {"site":"0x004826a6","instruction":"fstp DWORD PTR [esi+0x374]","mnemonic":"fstp","operands":"dword ptr [esi+0x374]","function":"FUN_00481e20","function_address":"0x00481e20","function_size":2270,"function_mnemonic_sha256":"e9ad52b740a1d38484159319885256536e027e280f3cd230028352601d805263"},
+      {"site":"0x00488e33","instruction":"mov DWORD PTR [esi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebx","function":"FUN_00488dc0","function_address":"0x00488dc0","function_size":969,"function_mnemonic_sha256":"e13355f805e2a6500eae78b6dca3d4ed0812bc7f9c574b2401da1c08395f2001"},
+      {"site":"0x0051effd","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_0051efa0","function_address":"0x0051efa0","function_size":131,"function_mnemonic_sha256":"3fd2ce6a16d1857226479f57089b1cc7ce7fbfa9510da56f32fb7d47875cf7f8"},
+      {"site":"0x005ded7e","instruction":"mov DWORD PTR [esi+0x374],ebp","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebp","function":"FUN_005dec70","function_address":"0x005dec70","function_size":544,"function_mnemonic_sha256":"0fab6aff43dc6debcf8d126eabdd1245919eed76b5ab77de89cf71a66f6061f7"},
+      {"site":"0x0074874b","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_00748280","function_address":"0x00748280","function_size":1295,"function_mnemonic_sha256":"8c315c01413572ea634a87e99202f6dc47d4e77dccb1734b547ff58632f59e39"},
+      {"site":"0x007c0fa0","instruction":"mov DWORD PTR [esi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebx","function":"FUN_007c0db0","function_address":"0x007c0db0","function_size":1323,"function_mnemonic_sha256":"252393530f412eb9e9f5b354a2d23da5f12f7fd67afc3cc147f2d07374c58dcb"},
+      {"site":"0x007c1ace","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_007c19c0","function_address":"0x007c19c0","function_size":393,"function_mnemonic_sha256":"110ead3d34ce00243ae65ff88b654687484a9d3c05f65ce4d6a177ab9be10811"},
+      {"site":"0x008169c3","instruction":"mov DWORD PTR [esi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebx","function":"FUN_008167f0","function_address":"0x008167f0","function_size":609,"function_mnemonic_sha256":"a33b1554bda5e541f8a850f44840d536c9c02a121b275f6b447f49f61f571bd4"},
+      {"site":"0x00816c9c","instruction":"add DWORD PTR [ecx+0x374],0x1","mnemonic":"add","operands":"dword ptr [ecx+0x374],0x1","function":"FUN_00816c70","function_address":"0x00816c70","function_size":65,"function_mnemonic_sha256":"3179c99608619c64ec534e85b8dc95a05b2ae504a87fd1cc8daab9a5e2c58306"},
+      {"site":"0x00818157","instruction":"mov DWORD PTR [ebx+0x374],esi","mnemonic":"mov","operands":"dword ptr [ebx+0x374],esi","function":"FUN_00818000","function_address":"0x00818000","function_size":470,"function_mnemonic_sha256":"e873222cfbad12dc14178da0dcfeff2f4a75b89a68115d52b73ad5c52d8f038a"},
+      {"site":"0x00833972","instruction":"mov DWORD PTR [ebx+0x374],ecx","mnemonic":"mov","operands":"dword ptr [ebx+0x374],ecx","function":"FUN_00833760","function_address":"0x00833760","function_size":623,"function_mnemonic_sha256":"e0f31f1015c010a272d2c97c33a98b545324417df2b03eec88fb165084a12062"},
+      {"site":"0x00844343","instruction":"mov DWORD PTR [esi+0x374],0x0","mnemonic":"mov","operands":"dword ptr [esi+0x374],0x0","function":"FUN_00844320","function_address":"0x00844320","function_size":123,"function_mnemonic_sha256":"7cd97db9013865121358028b804ad11f4b503b47d888658cc0efc3dba460f1a7"},
+      {"site":"0x008446cb","instruction":"mov DWORD PTR [esi+0x374],0x0","mnemonic":"mov","operands":"dword ptr [esi+0x374],0x0","function":"FUN_008446a0","function_address":"0x008446a0","function_size":223,"function_mnemonic_sha256":"8058865223556938174270e2dfd4fb6342b657d0781c08ced6a178b248baf1de"},
+      {"site":"0x008446e3","instruction":"mov DWORD PTR [esi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebx","function":"FUN_008446a0","function_address":"0x008446a0","function_size":223,"function_mnemonic_sha256":"8058865223556938174270e2dfd4fb6342b657d0781c08ced6a178b248baf1de"},
+      {"site":"0x008446f8","instruction":"mov DWORD PTR [esi+0x374],0x0","mnemonic":"mov","operands":"dword ptr [esi+0x374],0x0","function":"FUN_008446a0","function_address":"0x008446a0","function_size":223,"function_mnemonic_sha256":"8058865223556938174270e2dfd4fb6342b657d0781c08ced6a178b248baf1de"},
+      {"site":"0x00844b67","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_00844a20","function_address":"0x00844a20","function_size":442,"function_mnemonic_sha256":"6efaf3f258dd0fd6ea59d0149921a381e582475068301817a651f2fdc0ad6908"},
+      {"site":"0x00865013","instruction":"fstp DWORD PTR [esi+0x374]","mnemonic":"fstp","operands":"dword ptr [esi+0x374]","function":"FUN_00864c10","function_address":"0x00864c10","function_size":1289,"function_mnemonic_sha256":"0e43f3123d31e3279c7a337a3e445f6632167dad7bf1e30fbfb14069a3c97e7f"},
+      {"site":"0x0097da09","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_0097d8c4","function_address":"0x0097d8c4","function_size":1072,"function_mnemonic_sha256":"34542aa4e24d43034aa025357420396ec105f90f73cf10ba90756d38621b6f3b"},
+      {"site":"0x0097daf8","instruction":"add DWORD PTR [esi+0x374],eax","mnemonic":"add","operands":"dword ptr [esi+0x374],eax","function":"FUN_0097d8c4","function_address":"0x0097d8c4","function_size":1072,"function_mnemonic_sha256":"34542aa4e24d43034aa025357420396ec105f90f73cf10ba90756d38621b6f3b"},
+      {"site":"0x0097dc63","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_0097d8c4","function_address":"0x0097d8c4","function_size":1072,"function_mnemonic_sha256":"34542aa4e24d43034aa025357420396ec105f90f73cf10ba90756d38621b6f3b"},
+      {"site":"0x0097ed06","instruction":"mov DWORD PTR [eax+0x374],ebx","mnemonic":"mov","operands":"dword ptr [eax+0x374],ebx","function":"FUN_0097eacc","function_address":"0x0097eacc","function_size":765,"function_mnemonic_sha256":"19f82d1715929795215728892b64cf5af6f8382876a59799965c7352090d8a0d"},
+      {"site":"0x00a38974","instruction":"mov DWORD PTR [esi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebx","function":"FUN_00a38959","function_address":"0x00a38959","function_size":62,"function_mnemonic_sha256":"b913bd18d2dce1411f2dc0a6f6c7d285aaf47ba48563ee7e1643764138923d77"},
+      {"site":"0x00a44ac5","instruction":"fstp DWORD PTR [ebx+0x374]","mnemonic":"fstp","operands":"dword ptr [ebx+0x374]","function":"FUN_00a44a50","function_address":"0x00a44a50","function_size":245,"function_mnemonic_sha256":"e24070c785a13f51b7d9483fa127e2cc16f060014113db8e4117160749c9a617"},
+      {"site":"0x00d606f3","instruction":"mov DWORD PTR [edi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [edi+0x374],ebx","function":"FUN_00d60660","function_address":"0x00d60660","function_size":223,"function_mnemonic_sha256":"3aa7b36b4aaad15c4eba5381b8c0b31997637ae25def1093706982eb0b774f23"},
+      {"site":"0x00d7f104","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_00d7f040","function_address":"0x00d7f040","function_size":339,"function_mnemonic_sha256":"d2f6d4c6b62a50f34bf094db1bb778dc2d2fc6bc05a3237b902ddf13fa2c017d"}
+    ]
+  },
+  "proven_manager_domain_sites": [
+    {
+      "site": "0x00488e33",
+      "function": "FUN_00488dc0",
+      "receiver_proof": "FUN_00489ad0 init path executes mov ecx,0x00bc9fc0 then calls FUN_00488dc0; callee executes mov esi,ecx",
+      "value_proof": "0x00488dca xor ebx,ebx precedes 0x00488e33 mov [esi+0x374],ebx",
+      "write": "manager+0x374 = 0",
+      "can_place_hdvehicle_plus_0x4330": false
+    },
+    {
+      "site": "0x00d606f3",
+      "function": "FUN_00d60660",
+      "receiver_proof": "merged exact manager-root direct-callee surface",
+      "value_proof": "selected manager+0x2a0 entry resolved under successful transition and entry[0]==0",
+      "write": "manager+0x374 = allocator-owned selected manager+0x2a0 entry",
+      "can_place_fixed_hdvehicle_plus_0x4330": false,
+      "upstream_contract": "SHIFT.HDVehicle64e8Manager374ExactRootDirectCalleeSurface/1"
+    }
+  ],
+  "remaining_receiver_provenance_worklist": {
+    "site_count": 23,
+    "function_count": 19,
+    "sites": ["0x004826a6","0x0051effd","0x005ded7e","0x0074874b","0x007c0fa0","0x007c1ace","0x008169c3","0x00816c9c","0x00818157","0x00833972","0x00844343","0x008446cb","0x008446e3","0x008446f8","0x00844b67","0x00865013","0x0097da09","0x0097daf8","0x0097dc63","0x0097ed06","0x00a38974","0x00a44ac5","0x00d7f104"],
+    "functions": ["FUN_00481e20","FUN_0051efa0","FUN_005dec70","FUN_00748280","FUN_007c0db0","FUN_007c19c0","FUN_008167f0","FUN_00816c70","FUN_00818000","FUN_00833760","FUN_00844320","FUN_008446a0","FUN_00844a20","FUN_00864c10","FUN_0097d8c4","FUN_0097eacc","FUN_00a38959","FUN_00a44a50","FUN_00d7f040"]
+  },
+  "adjudication": {
+    "literal_plus_0x374_write_inventory_complete": true,
+    "proven_manager_domain_literal_writer_count": 2,
+    "proven_manager_domain_literal_nonzero_writer_count": 1,
+    "remaining_literal_store_receiver_provenance_complete": false,
+    "computed_address_manager_374_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The 23 unclassified literal +0x374 stores are a receiver-provenance worklist, not rejected candidates.",
+    "This inventory does not include stores that compute +0x374 through prior LEA/add/sub/indexed arithmetic and then write through a zero or different displacement.",
+    "The Participants Manager subobject lifecycle stores at manager+0x20 +0x354 are covered by separate exact identity contracts and are not required to appear as literal root+0x374 instructions.",
+    "No identity is inferred from matching numeric offsets."
+  ],
+  "next_step": "Classify the 23 remaining literal +0x374 store sites by exact receiver ownership/provenance; then widen only if a computed-address manager+0x374 writer remains possible."
+}
