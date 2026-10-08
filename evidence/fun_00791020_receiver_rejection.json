@@ -1,0 +1,63 @@
+{
+  "format": "SHIFT.Fun00791020ReceiverRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "direct PE32 machine-code owner/receiver continuity"
+  },
+  "upstream_manager_record": {
+    "record_init_function": "FUN_007125e0",
+    "record_receiver": "manager_record",
+    "participant_pointer_store": "0x0071263e [manager_record+0x0] = constructed participant pointer",
+    "participant_constructor": "FUN_0072ed20",
+    "participant_child_constructor": "0x0072ed48 ECX = participant+0x340; call FUN_0079c1c0"
+  },
+  "selected_record_publication": {
+    "function": "FUN_0074ddb0",
+    "selected_record_store": "0x0074dde6 [0x00c10b34] = manager_record",
+    "store_condition": "[arg0+0x10] == 0",
+    "same_function_receiver_source": "ESI = entry ECX = manager_record"
+  },
+  "hdvehicle_owner_join": {
+    "hdvehicle_init_function": "FUN_0076df50",
+    "selected_record_load_before_call": "0x0074dabe ECX = [0x00c10b34]",
+    "hdvehicle_init_call": "0x0074dadf FUN_0076df50(this=0x00c13700, param_1=[0x00c10b34], param_2=0)",
+    "hdvehicle_record_store": "0x0076e157 [HDVehicle+0x3fe8] = param_1",
+    "existing_owner_contract": "SHIFT.Fun00766510SharedReferenceVector/1",
+    "existing_owner_expression": "actual_participant = *([HDVehicle+0x3fe8])"
+  },
+  "fun_00791020_receiver_resolution": {
+    "setup_function": "FUN_0074e1a0",
+    "setup_receiver": "manager_record",
+    "setup_record_dereference": "0x0074e2b6 ECX = [manager_record+0x0]",
+    "setup_child_adjust": "0x0074e2b8 ECX += 0x340",
+    "forwarder": "FUN_00799ff0",
+    "candidate_writer": "FUN_00791020",
+    "resolved_receiver": "actual_participant+0x340",
+    "candidate_write_offsets": ["receiver+0x938"],
+    "absolute_actual_participant_write_offset": "0xc78",
+    "selected_hdvehicle_receiver": false
+  },
+  "consumer_comparison": {
+    "consumer_contract": "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1",
+    "consumer_receiver": "HDVehicle+0x400+slot*0xa80",
+    "slot0_consumed_absolute_offset": "HDVehicle+0x938",
+    "fun_00791020_absolute_write": "actual_participant+0xc78",
+    "same_object_base": false,
+    "numeric_0x938_match_rejected": true,
+    "fun_00791020_is_slot0_writer": false
+  },
+  "adjudication": {
+    "manager_record_to_hdvehicle_plus_0x3fe8_join_complete": true,
+    "actual_participant_identity_complete": true,
+    "fun_00791020_receiver_is_actual_participant_plus_0x340": true,
+    "fun_00791020_receiver_is_selected_hdvehicle": false,
+    "fun_00791020_rejected_as_fun_00755950_slot0_writer": true,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Continue the absolute HDVehicle+0x938/+0x13b8/+0x1e38/+0x28b8 writer search. Require same-HDVehicle receiver/base proof before promoting any numeric-offset candidate."
+}
