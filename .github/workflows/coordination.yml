@@ -1,0 +1,42 @@
+name: coordination
+
+on:
+  pull_request:
+    paths:
+      - 'evidence/playable_slice_three_process_execution.json'
+      - 'coordination/**'
+      - 'tools/coordination/**'
+      - 'tests/test_coordination_source_of_truth.py'
+      - 'tests/test_blocker_graph_shape.py'
+      - '.github/pull_request_template.md'
+      - '.github/workflows/coordination.yml'
+  push:
+    branches: ['main']
+    paths:
+      - 'evidence/playable_slice_three_process_execution.json'
+      - 'coordination/**'
+      - 'tools/coordination/**'
+      - 'tests/test_coordination_source_of_truth.py'
+      - 'tests/test_blocker_graph_shape.py'
+      - '.github/workflows/coordination.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: coordination-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coordination:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Validate canonical execution state and generated status
+        run: python tools/coordination/render_playable_slice_status.py --check
+      - name: Run coordination regressions
+        run: python -m pytest -q tests/test_coordination_source_of_truth.py tests/test_blocker_graph_shape.py

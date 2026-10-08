@@ -1,0 +1,62 @@
+{
+  "format": "SHIFT.DevelopmentLaneRegistry/1",
+  "version": 1,
+  "status": "active",
+  "source_of_truth": "evidence/playable_slice_three_process_execution.json",
+  "rules": {
+    "live_status_must_come_from_source_of_truth": true,
+    "lane_registry_is_ownership_policy_not_status": true,
+    "one_canonical_pr_per_blocker": true,
+    "max_stacked_successors_per_blocker": 1,
+    "superseded_prs_close_after_evidence_transplant": true,
+    "merge_requires_fresh_main": true,
+    "new_phase_numbered_workflows": false
+  },
+  "lanes": [
+    {
+      "id": "P1A-contact",
+      "owner": "Process 1A",
+      "queue_ids": ["P1.1", "P1.2"],
+      "branch_prefixes": ["process-1a/", "process-1/"],
+      "owns": "contact/collision retail proof, producer ownership, ABI and exact ordering",
+      "touch_set": ["evidence/retail-proof", "docs/process-1", "tests/test_process1_*"],
+      "consumers": ["P2.3", "P2.4"]
+    },
+    {
+      "id": "P1B-control",
+      "owner": "Process 1B",
+      "queue_ids": ["P1.3"],
+      "branch_prefixes": ["process-1b/", "process-1/"],
+      "owns": "retail input -> drivetrain/wheel/control producer provenance",
+      "touch_set": ["evidence/control-proof", "docs/process-1", "tests/test_process1_*"],
+      "consumers": ["P2.6", "P1.4 when target identity is required"]
+    },
+    {
+      "id": "P1D-camera",
+      "owner": "Process 1D",
+      "queue_ids": ["P1.4"],
+      "branch_prefixes": ["process-1d/", "process-1/"],
+      "owns": "retail camera-follow source, target dependency, ordering and freshness",
+      "touch_set": ["evidence/camera-proof", "docs/process-1", "tests/test_process1_*"],
+      "consumers": ["Process 2 camera feed", "P3.5"]
+    },
+    {
+      "id": "P2-runtime",
+      "owner": "Process 2",
+      "queue_ids": ["P2.1", "P2.2", "P2.3", "P2.4", "P2.5", "P2.6"],
+      "branch_prefixes": ["process-2/"],
+      "owns": "native physics/runtime consumption of positive retail contracts",
+      "touch_set": ["native runtime", "physics runtime", "runtime tests"],
+      "consumers": ["P3.5", "P3.6"]
+    },
+    {
+      "id": "P3-integration",
+      "owner": "Process 3",
+      "queue_ids": ["P3.1", "P3.2", "P3.3", "P3.4", "P3.5", "P3.6"],
+      "branch_prefixes": ["process-3/"],
+      "owns": "resources, Silverstone/BMW scene, renderer, bootstrap and final smoke",
+      "touch_set": ["resource pipeline", "scene/render runtime", "playable bootstrap"],
+      "consumers": ["native playable Linux vertical slice"]
+    }
+  ]
+}
