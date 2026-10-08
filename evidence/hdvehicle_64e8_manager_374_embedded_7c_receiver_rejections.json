@@ -1,0 +1,89 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374Embedded7cReceiverRejections/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "decompiler_role": "navigation-only"
+  },
+  "upstream": {
+    "literal_inventory_format": "SHIFT.HDVehicle64e8Manager374LiteralStoreInventory/1",
+    "vptr_rejection_format": "SHIFT.HDVehicle64e8Manager374VptrReceiverRejections/1",
+    "actionable_before_this_contract": 14,
+    "participants_manager_singleton": "0x00bc9fc0",
+    "participants_manager_vptr": "0x00ab916c"
+  },
+  "parent_constructor": {
+    "function": "FUN_007c3170",
+    "entry": "0x007c3170",
+    "child_0_receiver": "0x007c31a3 lea ecx,[esi+0x8]",
+    "child_0_call": "0x007c31aa call 0x007c0db0",
+    "child_1_receiver": "0x007c320b lea ecx,[esi+0xfe8]",
+    "child_1_call": "0x007c3215 call 0x007c19c0",
+    "known_machine_entry_paths": [
+      {
+        "callsite": "0x0076dfcc",
+        "allocation_size": "0x3848",
+        "allocation": "0x0076dfb4 call 0x008868d0",
+        "receiver_transfer": "0x0076dfca mov ecx,eax",
+        "classification": "fresh heap parent object"
+      },
+      {
+        "callsite": "0x00798e74",
+        "allocation_size": "0x3848",
+        "allocation": "0x00798e60 call 0x008868d0",
+        "receiver_transfer": "0x00798e72 mov ecx,eax",
+        "classification": "fresh heap parent object"
+      },
+      {
+        "callsite": "0x00a8ca65",
+        "receiver_transfer": "0x00a8ca60 mov ecx,0x00c1c568",
+        "classification": "fixed global parent object"
+      }
+    ],
+    "known_machine_entry_path_count": 3
+  },
+  "rejections": [
+    {
+      "site": "0x007c0fa0",
+      "function": "FUN_007c0db0",
+      "function_mnemonic_sha256": "cdab4b268824fa7f423f738f22b1091e2dd45572e5132f9a5892a2d1fff25efd",
+      "receiver_capture": "0x007c0dcb mov esi,ecx",
+      "store": "0x007c0fa0 mov [esi+0x374],ebx",
+      "value": "zero (EBX cleared at 0x007c0dd6)",
+      "receiver_identity": "FUN_007c3170 parent+0x8",
+      "fixed_global_receiver_if_static_path": "0x00c1c570",
+      "receiver_equals_participants_manager": false
+    },
+    {
+      "site": "0x007c1ace",
+      "function": "FUN_007c19c0",
+      "function_mnemonic_sha256": "6fdac41ffc3eafa1e12bb5ad6ca6abbaa5008103f1a5d6e1fd6d7afe12025be6",
+      "receiver_capture": "0x007c19db mov esi,ecx",
+      "store": "0x007c1ace mov [esi+0x374],eax",
+      "receiver_identity": "FUN_007c3170 parent+0xfe8",
+      "fixed_global_receiver_if_static_path": "0x00c1d550",
+      "receiver_equals_participants_manager": false
+    }
+  ],
+  "adjudication": {
+    "new_sites_closed_negative": 2,
+    "literal_receiver_worklist_before": 14,
+    "literal_receiver_worklist_after": 12,
+    "embedded_7c_receivers_can_be_participants_manager": false,
+    "computed_address_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This contract is scoped to the two +0x374 stores inside FUN_007c0db0/FUN_007c19c0.",
+    "The two runtime parent paths allocate fresh 0x3848-byte heap objects; they are not aliases of the already-mapped static Participants Manager singleton.",
+    "The static parent path uses exact parent 0x00c1c568, yielding child addresses 0x00c1c570 and 0x00c1d550, both distinct from 0x00bc9fc0.",
+    "No identity is inferred from the shared +0x374 numeric displacement."
+  ],
+  "next_step": "Continue the remaining 12 literal +0x374 receiver sites by exact child/copy/owner provenance, then widen to computed-address writers."
+}
