@@ -1,0 +1,62 @@
+{
+  "format": "SHIFT.Process1Fun006880c0QueueProvenance/1",
+  "ready": true,
+  "source": {
+    "authority": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "xbox_recomp_required": false
+  },
+  "dataflow": {
+    "wrapper": "FUN_006880c0",
+    "single_source_visible_caller": "FUN_0066bab0",
+    "queue_pointer_expression": "embedded_state+0x8",
+    "initializer": "FUN_0066bb50",
+    "initializer_assignment": "embedded_state+0x8 = param_4",
+    "initializer_wrappers": [
+      "FUN_0066c980",
+      "FUN_0066cc00"
+    ],
+    "producer_chain": [
+      "FUN_0065ff90",
+      "FUN_0065f970",
+      "FUN_0065fa60"
+    ],
+    "api_wrappers": [
+      "FUN_00634ed0",
+      "FUN_00634f00",
+      "FUN_00634f50"
+    ],
+    "fixed_global_owner_proven": false,
+    "caller_supplied_operation_object": true
+  },
+  "adjudication": {
+    "fun_006880c0_fixed_queue_owner_claim_rejected": true,
+    "fun_006880c0_controller1_alias_ruled_out": false,
+    "fun_006333f0_controller1_alias_ruled_out": false,
+    "indirect_or_native_apc_injection_ruled_out": false,
+    "render_or_present_phase_lock_proven": false
+  },
+  "machine_spans": {
+    "caller_queue_load_and_call": {
+      "start": "0x0066bae7",
+      "end_exclusive": "0x0066baf5",
+      "sha256": "be717492d4a5f4c8c8d82dcb67332d6596c23e8523851e422b0fbbfe39aee57c"
+    },
+    "initializer_param4_store": {
+      "start": "0x0066bb59",
+      "end_exclusive": "0x0066bb6a",
+      "sha256": "110a99db72078d0d9860f9d5899543e1b7ae0daa96f88ef70e11df383dcf72b5"
+    },
+    "thin_wrapper": {
+      "start": "0x006880c0",
+      "end_exclusive": "0x006880db",
+      "sha256": "62843e0d0bd7c20e5fcf3cbc1b3f7a47a944e36c27e4334cdc724779bef95255"
+    }
+  },
+  "next_blocker": {
+    "process": 1,
+    "description": "classify the operation-object producer identities feeding FUN_00634ed0/FUN_00634f00/FUN_00634f50, plus FUN_006333f0; do not treat FUN_006880c0 as a fixed queue owner"
+  }
+}
