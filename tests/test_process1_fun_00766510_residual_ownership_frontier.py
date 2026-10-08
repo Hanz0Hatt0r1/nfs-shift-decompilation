@@ -24,7 +24,6 @@ def test_residual_frontier_joins_positive_process1_and_phase748_contracts() -> N
     assert frontier["format"] == "SHIFT.Fun00766510ResidualOwnershipFrontier/1"
     assert frontier["ready"] is True
     assert frontier["authority"]["semantic_platform"] == "PC retail 1.02"
-    assert frontier["authority"]["new_machine_or_source_claims_in_this_join"] is False
     assert frontier["authority"]["xbox_recomp_may_replace_pc_proof"] is False
 
     for path, fmt in (
@@ -47,11 +46,9 @@ def test_residual_frontier_joins_positive_process1_and_phase748_contracts() -> N
 def test_frontier_names_only_the_live_p1_1_residuals() -> None:
     frontier = _load(FRONTIER)
     residual = frontier["remaining_process_1_proof"]
-    assert [row["id"] for row in residual] == ["P1.1a", "P1.1c"]
+    assert [row["id"] for row in residual] == ["P1.1a"]
     assert residual[0]["target"] == "FUN_00713630 dynamic writer inputs"
     assert "Phase 748" in residual[0]["reason"]
-    assert residual[1]["target"] == "final cumulative response and residual state/diagnostic writes"
-    assert "All four direct FUN_00753650" in residual[1]["reason"]
 
     inventory = frontier["retail_accumulator_inventory"]
     assert inventory["state"] == "HDVehicle+0x40a0/+0x40a8/+0x40b0"
@@ -60,18 +57,23 @@ def test_frontier_names_only_the_live_p1_1_residuals() -> None:
     assert inventory["direct_FUN_00753650_site_count"] == 4
     assert inventory["direct_FUN_00753650_sites_accounted"] == 4
     assert inventory["direct_FUN_00753650_surface_closed"] is True
-    assert inventory["primary_direct_delta_native"] is True
-    assert inventory["whole_accumulator_internalized"] is False
+    assert inventory["auxiliary_schedule_closed"] is True
+    assert inventory["final_transformed_vector_add_closed"] is True
+    assert inventory["residual_tail_direct_state_surface_closed"] is True
+    assert inventory["p1_1c_complete"] is True
+    assert inventory["whole_accumulator_internalized_by_process2"] is False
 
 
 def test_provider_removal_remains_fail_closed() -> None:
     frontier = _load(FRONTIER)
     gate = frontier["completion_gate"]
+    assert gate["p1_1a_complete"] is False
+    assert gate["p1_1c_complete"] is True
     assert gate["p1_1_complete"] is False
     assert gate["contact_response_provider_removal_authorized"] is False
     assert gate["external_provider_count"] == 7
     assert gate["target_external_provider_count_after_process_2_consumption"] == 6
-    assert len(gate["requirements"]) == 3
+    assert len(gate["requirements"]) == 2
 
     text = DOC.read_text(encoding="utf-8")
     for token in (
@@ -81,7 +83,7 @@ def test_provider_removal_remains_fail_closed() -> None:
         "Phase 748",
         "four direct",
         "FUN_00758fc0",
-        "final transformed cumulative-response vector",
+        "final transformed cumulative response vector",
         "contact_response",
         "NEXT_STEP",
     ):
