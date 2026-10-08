@@ -14,6 +14,7 @@ def test_exact_vptr_rejection_inventory():
     assert data["ready"] is True
     up = data["upstream"]
     assert up["remaining_site_count_before"] == 20
+    assert up["manager_singleton_root"] == "0x00bc9fc0"
     assert up["manager_root_vptr"] == "0x00ab9190"
     assert up["participants_manager_subobject_vptr_at_manager_plus_0x20"] == "0x00ab916c"
     assert up["manager_constructor_vptr_proof"] == [
@@ -59,14 +60,29 @@ def test_owner_child_join_rejects_816c9c():
     ]
 
 
+def test_embedded_owner_domains_reject_two_sites():
+    row = load_evidence()["embedded_owner_address_rejections"]
+    assert row["owner_constructor"] == "FUN_007c3170"
+    assert row["owner_callsite_count"] == 3
+    assert [item["callsite"] for item in row["owner_call_domains"]] == [
+        "0x0076dfcc", "0x00798e74", "0x00a8ca65"
+    ]
+    assert row["fresh_allocation_receivers_are_new_objects_not_fixed_manager_singleton"] is True
+    targets = row["embedded_targets"]
+    assert [item["site"] for item in targets] == ["0x007c0fa0", "0x007c1ace"]
+    assert [item["receiver_relation"] for item in targets] == ["owner+0x8", "owner+0xfe8"]
+    assert all(item["equals_manager_singleton_root"] is False for item in targets)
+
+
 def test_worklist_reduces_without_promoting_identity_join():
     adj = load_evidence()["adjudication"]
-    assert adj["rejected_site_count"] == 10
-    assert adj["remaining_literal_store_site_count"] == 10
+    assert adj["rejected_site_count"] == 12
+    assert adj["remaining_literal_store_site_count"] == 8
     assert adj["same_body_vptr_rejected_site_count"] == 6
     assert adj["unique_vtable_dispatch_rejected_site_count"] == 3
     assert adj["owner_child_vptr_rejected_site_count"] == 1
-    assert adj["rejections_use_exact_receiver_or_owner_vptr_identity"] is True
+    assert adj["embedded_owner_address_rejected_site_count"] == 2
+    assert adj["rejections_use_exact_receiver_owner_or_address_identity"] is True
     assert adj["numeric_plus_0x374_equality_used_as_identity"] is False
     assert adj["remaining_literal_store_receiver_provenance_complete"] is False
     assert adj["computed_address_manager_374_writer_surface_complete"] is False
