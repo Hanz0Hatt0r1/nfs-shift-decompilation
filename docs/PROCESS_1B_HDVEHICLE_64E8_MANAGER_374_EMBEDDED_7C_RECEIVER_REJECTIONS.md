@@ -58,6 +58,6 @@ Therefore the fixed child addresses are `0x00c1c570` and `0x00c1d550`, not Parti
 
 ## Adjudication
 
-Both literal `+0x374` sites are closed-negative as Participants Manager writes. Assuming the upstream vptr batch lands first, the remaining literal receiver-provenance worklist shrinks from 14 to 12 sites.
+Both literal `+0x374` sites are closed-negative as Participants Manager writes. With the upstream nine-site vptr batch, the remaining literal receiver-provenance worklist shrinks from 11 to 9 sites.
 
 This does not close computed-address stores or the final manager+0x374 -> HDVehicle+0x4330 identity join. `0x004b86cf`, P1.3 and provider removal remain fail-closed; provider count remains 7.
