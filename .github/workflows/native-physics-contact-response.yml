@@ -16,8 +16,8 @@ on:
       - 'evidence/fun_00766510_direct_accumulator_surface_native.json'
       - 'docs/PHASE752_FUN_00766510_RESPONSE_CONFIG.md'
       - 'docs/PHASE753_FUN_00766510_DIRECT_ACCUMULATOR_SURFACE.md'
-      - 'coordination/ci_workflow_migrations.json'
-      - 'tests/test_ci_workflow_migrations.py'
+      - 'coordination/ci_migrations/native_physics_contact_response_752_753.json'
+      - 'tests/test_ci_workflow_migration_contact_response.py'
       - '.github/workflows/native-physics-contact-response.yml'
   pull_request:
     paths:
@@ -34,8 +34,8 @@ on:
       - 'evidence/fun_00766510_direct_accumulator_surface_native.json'
       - 'docs/PHASE752_FUN_00766510_RESPONSE_CONFIG.md'
       - 'docs/PHASE753_FUN_00766510_DIRECT_ACCUMULATOR_SURFACE.md'
-      - 'coordination/ci_workflow_migrations.json'
-      - 'tests/test_ci_workflow_migrations.py'
+      - 'coordination/ci_migrations/native_physics_contact_response_752_753.json'
+      - 'tests/test_ci_workflow_migration_contact_response.py'
       - '.github/workflows/native-physics-contact-response.yml'
   workflow_dispatch:
 
