@@ -4,7 +4,8 @@
   "upstream_frontier": "SHIFT.NativeVehicleExternalProviderFrontierCurrent/1",
   "external_provider_count": 7,
   "fun_00765c40": {
-    "external_pass_result_contract": "SHIFT.Fun00765c40ExternalPassResult/4",
+    "external_pass_result_contract": "SHIFT.Fun00765c40ExternalPassResult/5",
+    "historical_collision_output_result_contract": "SHIFT.Fun00765c40ExternalPassResult/4",
     "native_selected_query_input_contract": "SHIFT.Fun00765c40NativeSelectedQueryInput/1",
     "session_query_snapshot_contract": "SHIFT.Fun00765c40SessionQuerySnapshot/1",
     "selected_world_position_contract": "SHIFT.Fun00765c40SelectedBMWWorldPosition/1",
@@ -13,7 +14,9 @@
     "composed_residual_executor_contract": "SHIFT.Fun00765c40ComposedResidualExecutor/1",
     "residual_producer_handoff_contract": "SHIFT.Fun00765c40ResidualProducerHandoff/1",
     "residual_producer_handoff_present": true,
-    "residual_producer_handoff_threaded_through_provider_result": false,
+    "residual_producer_handoff_threaded_through_provider_result": true,
+    "residual_producer_handoff_threaded_through_session_result": false,
+    "residual_producer_handoff_authoritative": false,
     "wheel_state_machine_proof_contract": "SHIFT.Fun00752fa0WheelStateMachineProof/1",
     "wheel_state_source_address": "HDVehicle+0x98",
     "wheel_state_source_address_proven": true,
@@ -44,11 +47,12 @@
   ],
   "guards": {
     "historical_phase726_audit_mutated": false,
+    "historical_phase744_evidence_mutated": false,
     "external_provider_count_decremented": false,
     "lower_collision_semantics_invented": false,
     "unproven_producer_formula_invented": false,
     "wheel_state_source_owner_inferred_from_address": false,
     "producer_handoff_treated_as_native_computation": false
   },
-  "next_step": "Thread SHIFT.Fun00765c40ResidualProducerHandoff/1 through the top-level provider result as a typed witness without making it authoritative; keep all nine producer/owner blockers fail-closed."
+  "next_step": "Capture the optional /5 residual producer handoff in NativeVehicleProviderSession without making it authoritative, then connect it to the composed executor only after selected-provider source-backed production is available."
 }
