@@ -1,0 +1,58 @@
+{
+  "format": "SHIFT.Fun00791020HDVehicleRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "direct PE32 machine-code allocation/receiver provenance"
+  },
+  "target": {
+    "candidate_writer": "FUN_00791020",
+    "candidate_write_offset": "receiver+0x938",
+    "consumer_contract": "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1",
+    "consumer_hdvehicle_slot0_offset": "HDVehicle+0x938"
+  },
+  "setup_element_path": {
+    "scheduler_callsite": "0x007152f3",
+    "scheduler_receiver": "array_base + queue_index*0x1fa0",
+    "element_initializer": "FUN_007125e0",
+    "allocation_sequence": [
+      "0x0071260c push 0x20",
+      "0x0071260e push allocator_context",
+      "0x0071260f push 0x2b90",
+      "0x00712617 call allocation helper",
+      "0x0071262b call FUN_0072ed20 constructor",
+      "0x0071263e [element+0] = allocated_object"
+    ],
+    "allocated_object_size": "0x2b90",
+    "fun_0074e1a0_entry": "0x0074e1a0",
+    "fun_0074e1a0_setup_context": "[element+0]",
+    "fun_00791020_receiver": "[element+0]+0x340"
+  },
+  "hdvehicle_layout_witness": {
+    "existing_contract": "SHIFT.Fun007618f0VehicleLoadDataOwnership/1",
+    "proven_hdvehicle_field": "HDVehicle+0x66b4",
+    "required_root_extent_exceeds": "0x66b4",
+    "allocated_setup_object_size": "0x2b90",
+    "same_root_object_possible": false
+  },
+  "adjudication": {
+    "setup_context_is_fresh_allocated_object_proven": true,
+    "setup_context_allocation_size_0x2b90_proven": true,
+    "setup_context_is_selected_hdvehicle_proven": false,
+    "setup_context_is_selected_hdvehicle_rejected": true,
+    "fun_00791020_receiver_is_selected_hdvehicle_proven": false,
+    "fun_00791020_is_fun_00755950_hdvehicle_slot0_writer_proven": false,
+    "fun_00791020_rejected_as_hdvehicle_root_writer": true,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The allocated object's semantic class is intentionally unnamed.",
+    "This rejection is about selected-HDVehicle root identity, not about whether the allocated object participates elsewhere in vehicle simulation.",
+    "A matching numeric +0x938 offset remains insufficient without root-object identity."
+  ],
+  "next_step": "Continue the absolute HDVehicle +0x938/+0x13b8/+0x1e38/+0x28b8 writer search, prioritizing machine writes whose receiver is independently proven to be selected HDVehicle."
+}
