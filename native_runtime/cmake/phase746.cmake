@@ -5,3 +5,5 @@
 # The Phase742 primary-response executable is already defined earlier in the
 # chain and is intentionally reused: Phase746 extends that exact contract rather
 # than creating a second implementation of the response application.
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase747.cmake)
