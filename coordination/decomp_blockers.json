@@ -1,7 +1,7 @@
 {
   "format": "SHIFT.DecompBlockerGraph/1",
   "version": 1,
-  "updated_from_main": "20d6df1e470ab5e8028362b2285240fd2b32917c",
+  "updated_from_main": "89a8ebf808735b7e4b734312697c88d26a3f3e6d",
   "rules": {
     "pc_retail_semantic_authority": true,
     "numeric_offset_equality_is_identity": false,
@@ -56,9 +56,10 @@
         {
           "id": "P1.3.manager2a0",
           "target": "FUN_00489ad0()+0x2a0 collection entry == HDVehicle+0x4330",
-          "status": "candidate-rejected-remaining-paths-open",
+          "status": "selector-proven-insertion-open",
           "rejected_candidate": "0x00469b1d -> FUN_0057f620 mutates 0x00bbdbe0+0x2a0, not manager+0x2a0",
-          "next": "Trace the exact 0x0045daa3 manager+0x2a0 selection -> manager+0x378 store and remaining registration/mutation paths."
+          "selector_proof": "FUN_0045da80: FUN_00489ad0() root -> manager+0x2a0 -> FUN_0054ed00 -> manager+0x378",
+          "next": "Trace exact writers/mutators that populate FUN_00489ad0()+0x2a0, then join manager+0x378 selected entry to HDVehicle+0x4330 or reject the identity."
         }
       ]
     },
