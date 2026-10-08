@@ -1,0 +1,54 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager2a0PopulationProducerProof/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "Ghidra decompiler source relation from exact manager getter to collection clear/configure/population loop"
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8Manager378Selection/1",
+    "SHIFT.HDVehicle64e8Manager374SelectionWriterProof/1"
+  ],
+  "root_callsite": {
+    "caller": "FUN_004978f0",
+    "manager_getter": "thunk_FUN_00444fcc()",
+    "source_order": "iVar4 = thunk_FUN_00444fcc(); thunk_FUN_00d61e00(iVar4, extraout_DL, DAT_00bbc628)",
+    "count_source": "DAT_00bbc628"
+  },
+  "population_helper": {
+    "function": "thunk_FUN_00d61e00",
+    "collection": "manager+0x2a0",
+    "steps": [
+      "FUN_00486aa0(manager+0x2a0) clears/resets the collection",
+      "thunk_FUN_0049d0b0(manager+0x2a0, 0, 0x1f) configures the collection",
+      "loop param_3 times: thunk_FUN_00d61d10(manager+0x2a0, 1)"
+    ],
+    "append_helper": "thunk_FUN_00d61d10",
+    "element_size": "0x22e0",
+    "element_alignment": "0x20",
+    "element_initializer": "FUN_00481a10",
+    "population_count": "param_3 == DAT_00bbc628 at the proven root callsite"
+  },
+  "adjudication": {
+    "exact_manager_root_proven": true,
+    "manager_2a0_population_producer_proven": true,
+    "manager_2a0_population_count_source_proven": true,
+    "manager_2a0_element_layout_size_proven": true,
+    "manager_2a0_insertion_producer_complete": true,
+    "manager_2a0_entry_identity_to_hdvehicle_4330_proven": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "DAT_00bbc628 is retained as an exact count-source symbol; no semantic name is assigned here.",
+    "0x22e0 proves collection element layout extent for this population path, not HDVehicle identity.",
+    "The selected manager+0x2a0 entry still must be joined to HDVehicle+0x4330 or rejected by exact pointer provenance.",
+    "No provider boundary is removed by this structural producer proof alone."
+  ],
+  "next_step": "Trace the 0x22e0 entry object's construction/registration bridge to the selected HDVehicle outer object and prove or reject selected manager+0x2a0 entry == HDVehicle+0x4330."
+}
