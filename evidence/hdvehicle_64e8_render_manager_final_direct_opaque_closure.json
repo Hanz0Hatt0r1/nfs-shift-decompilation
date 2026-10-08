@@ -1,0 +1,168 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerFinalDirectOpaqueClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_sqlite_role": "navigation-and-fingerprint-only"
+  },
+  "upstream_contracts": [
+    "SHIFT.PlayerVehicleRenderManagerReceiverTransferFrontier/2",
+    "SHIFT.HDVehicle64e8RenderManagerByAddressLocalAliasClosure/1",
+    "SHIFT.HDVehicle64e8RenderManagerForwardedReceiverClosure/1",
+    "SHIFT.HDVehicle64e8RenderManagerFieldBaseDerivedReceiverClosure/1",
+    "SHIFT.HDVehicle64e8RenderManagerEntryAliasNonConsumptionSurface/1"
+  ],
+  "exact_outer_root": "0x00bc185c",
+  "targets": [
+    {
+      "target": "0x0045bfc0",
+      "function": "thunk_FUN_00d51560",
+      "entry_alias_register": "ECX",
+      "exact_root_callsites": ["0x004d19e6"],
+      "body": "FUN_00d51560",
+      "body_mnemonic_sha256": "709018ec1444523b288d84a19ad1fdc0c45e30b62abc216ced5077fe5d2326cf",
+      "root_capture": "0x00d51561 mov edi,ecx",
+      "nested_helper": {
+        "callsite": "0x00d51563",
+        "target": "FUN_00624930",
+        "reads_entry_ecx": false,
+        "return_value_role": "distinct singleton 0x00befbe0",
+        "mnemonic_sha256": "fe23ffec51a6b0f955a3544166fb1b96dbe0e25fcf3f497743ec547be51fd307"
+      },
+      "exact_root_uses_after_capture": [
+        "0x00d5157f cmp dword [edi+0x0c],0",
+        "0x00d515ec mov ecx,[edi+0x0c]"
+      ],
+      "exact_root_stored": false,
+      "exact_root_returned": false,
+      "exact_root_reforwarded": false
+    },
+    {
+      "target": "0x0045cc50",
+      "function": "thunk_FUN_00d517b0",
+      "entry_alias_register": "ECX",
+      "exact_root_callsites": ["0x004d3e2e", "0x004d43b9"],
+      "body": "FUN_00d517b0",
+      "body_mnemonic_sha256": "81f1c1a24138964b9a296bed76826fa633dfa6f8456d8c6a09965331659c2d94",
+      "root_capture": "0x00d517cd mov ebx,ecx",
+      "exact_root_register_use_count": 3,
+      "exact_root_register_uses": [
+        "0x00d51978 lea eax,[ebx+0x520]",
+        "0x00d5197e lea ecx,[ebx+0x780]",
+        "0x00d51984 lea edx,[ebx+0x9e0]"
+      ],
+      "derived_stack_local_stores": [
+        "0x00d5198a [ebp-0xac]=root+0x520",
+        "0x00d51990 [ebp-0xa8]=root+0x780",
+        "0x00d51996 [ebp-0xa4]=root+0x9e0"
+      ],
+      "derived_stack_local_read_count_after_store": 0,
+      "exact_root_stored": false,
+      "exact_root_returned": false,
+      "exact_root_reforwarded_as_argument": false
+    },
+    {
+      "target": "0x0045db50",
+      "function": "thunk_FUN_00d51bd0",
+      "entry_alias_register": "ECX",
+      "exact_root_callsites": ["0x004d1a3f"],
+      "body": "FUN_00d51bd0",
+      "body_mnemonic_sha256": "792f02ef84a1d2e9dcdae98efab8ed40432547e0cb36e2f12160e15e9b5a62be",
+      "stack_local_seed": "0x00d51bd3 push ecx -> [ebp-0x4] initially exact root",
+      "pointer_to_local_route": [
+        "0x00d51bd8 lea edx,[ebp-0x4]",
+        "0x004651a4 mov esi,edx",
+        "0x004651c8 mov edx,esi",
+        "0x004651cc call thunk_FUN_00d77800"
+      ],
+      "overwrite_before_read": "0x00d77868 mov dword [esi],0",
+      "pointer_to_local_read_before_overwrite": false,
+      "helper_mnemonic_sha256": "3f439b5ed6b3f61561e93ee19df9b4c5ab91db1635c640d428fcf4e54e5c02ab",
+      "post_helper_reload": "0x00d51bfe mov edi,[ebp-0x4]",
+      "post_helper_reload_can_be_original_exact_root": false,
+      "exact_root_returned": false
+    },
+    {
+      "target": "0x00462400",
+      "function": "FUN_00462400",
+      "entry_alias_register": "ECX",
+      "exact_root_callsite_count": 13,
+      "exact_root_callsites": [
+        "0x0040d00a", "0x0040d028", "0x0040d154", "0x0040d190",
+        "0x00498ea8", "0x00499194", "0x004d132f", "0x004d14e8",
+        "0x004d152b", "0x004d15b5", "0x00558aac", "0x005709c6",
+        "0x00570a00"
+      ],
+      "mnemonic_sha256": "3a5d5762a520260e8f628aa32c214b89c695b970748abb33e5b0d0f6494bf957",
+      "root_capture": "0x0046240a mov esi,ecx",
+      "direct_root_field_uses": [
+        "0x0046242a cmp byte [esi+0xd21],bl",
+        "0x0046243b mov byte [esi+0xd20],bl",
+        "0x00462450 mov byte [esi+0xd20],bl"
+      ],
+      "forward_target": "FUN_0045e6e0",
+      "forward_callsites": ["0x00462436", "0x0046244b"],
+      "forward_target_mnemonic_sha256": "add2125389c7a13e25cd791dbfaa74ff445c004271a2511e2c540708c967ce61",
+      "forward_target_root_capture": "0x0045e6e8 mov esi,ecx",
+      "nested_paths": [
+        {
+          "target": "FUN_00633980",
+          "callsite": "0x0045e6ea",
+          "reads_entry_ecx": false,
+          "replacement": "0x00633993 mov ecx,0x00bf9b29",
+          "mnemonic_sha256": "fe23ffec51a6b0f955a3544166fb1b96dbe0e25fcf3f497743ec547be51fd307"
+        },
+        {
+          "target": "FUN_0045abe0",
+          "callsite": "0x0045e6fe",
+          "status": "closed by SHIFT.HDVehicle64e8RenderManagerEntryAliasNonConsumptionSurface/1"
+        },
+        {
+          "target": "thunk_FUN_004300ae",
+          "callsite": "0x0045e70c",
+          "status": "closed by SHIFT.HDVehicle64e8RenderManagerEntryAliasNonConsumptionSurface/1"
+        },
+        {
+          "target": "FUN_0045abf0",
+          "callsite": "0x0045e71c",
+          "entry_ecx_read_before_replacement": false,
+          "first_nested_target": "FUN_00886980",
+          "first_nested_target_reads_ecx": false,
+          "ecx_replaced_at": "0x0045ac47 mov ecx,eax",
+          "mnemonic_sha256": "fbb963c0d4a081a999e9508bed924d5c4804415b0c488c8c016935ff4d994d8d"
+        }
+      ],
+      "exact_root_stored": false,
+      "exact_root_returned": false
+    }
+  ],
+  "worklist": {
+    "frozen_original_direct_target_count": 17,
+    "closed_before_this_contract": 13,
+    "closed_this_contract": 4,
+    "remaining_bounded_direct_targets": [],
+    "bounded_direct_target_surface_complete": true
+  },
+  "adjudication": {
+    "exact_outer_root_first_hop_direct_callee_surface_complete": true,
+    "bounded_direct_target_opaque_surface_complete": true,
+    "external_or_unknown_origin_alias_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_surface_complete": false,
+    "global_opaque_or_external_alias_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Completion is exact to the frozen 17-target direct receiver-transfer worklist; it is not a whole-program unknown-origin alias proof.",
+    "Callee-saved register residue is not promoted to an ABI receiver transfer without an explicit machine transfer.",
+    "Derived pointers are not promoted back to the exact outer root.",
+    "External initialization, unknown-memory reconstruction and two-unknown-origin HDVehicle+0x4330 aliases remain open.",
+    "No identity is inferred from numeric offset equality."
+  ],
+  "next_step": "Move Process 1B from the exhausted 17-target direct opaque surface to external/unknown-origin exact-root aliases and two-unknown-origin/cross-control-flow HDVehicle+0x4330 provenance; keep the manager+0x374 identity join and literal 0x004b86cf fail-closed."
+}
