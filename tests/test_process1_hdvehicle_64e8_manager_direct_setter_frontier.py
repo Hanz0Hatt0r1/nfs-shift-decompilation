@@ -18,9 +18,10 @@ def test_contract_and_target():
     assert p["target"]["identity_join_needed"] == "manager+0x374 value == HDVehicle+0x4330"
 
 
-def test_constructor_zero_is_pinned():
+def test_constructor_zero_and_vtable_are_pinned():
     c = _payload()["constructor"]
     assert c["function"] == "FUN_00488dc0"
+    assert c["manager_vtable_store"] == "manager[0] = 0x00ab9190"
     assert c["direct_slot_store"] == "0x00488e33 [manager+0x374] = 0"
     assert c["initial_slot_value"] == 0
 
@@ -49,12 +50,24 @@ def test_direct_manager_receiver_inventory_is_complete_and_has_no_setter():
     assert all(t["direct_store_to_plus_0x374"] is False for t in targets)
 
 
+def test_manager_virtual_surface_has_no_direct_setter():
+    v = _payload()["manager_virtual_surface"]
+    assert v["vtable_address"] == "0x00ab9190"
+    assert v["slot_count"] == 18
+    assert v["unique_target_count"] == 17
+    assert len(v["targets"]) == 17
+    assert v["duplicate_target"] == "FUN_00407e50 appears in two slots"
+    assert v["direct_store_to_plus_0x374_found"] is False
+
+
 def test_fail_closed_gate():
     a = _payload()["adjudication"]
     assert a["constructor_zero_proven"] is True
     assert a["direct_manager_receiver_method_setter_found"] is False
     assert a["direct_manager_receiver_method_setter_surface_exhausted"] is True
-    assert a["indirect_virtual_alias_setter_still_possible"] is True
+    assert a["manager_vtable_direct_setter_found"] is False
+    assert a["manager_vtable_direct_setter_surface_exhausted"] is True
+    assert a["helper_alias_or_non_vtable_indirect_setter_still_possible"] is True
     assert a["singleton_slot_join_to_hdvehicle_4330_complete"] is False
     assert a["exact_hdvehicle_64e8_non_sentinel_writer_proven"] is False
     assert a["retail_input_control_provenance_proven"] is False
