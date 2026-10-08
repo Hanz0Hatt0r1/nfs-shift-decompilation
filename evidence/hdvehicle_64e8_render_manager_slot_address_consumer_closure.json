@@ -1,0 +1,81 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerSlotAddressConsumerClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "decompiler_role": "navigation-only"
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8RenderManagerGlobalSlotAddressSurface/1",
+    "SHIFT.HDVehicle64e8RenderManagerPlus780ItemAliasClosure/1"
+  ],
+  "unique_slot_address_occurrence": {
+    "function": "FUN_004fb940",
+    "function_mnemonic_sha256": "8fe888736e9fc05d7b5a0bf9371e79374704fb21bd6c947565960f64fa00fea5",
+    "slot_address_literal": "0x004fb9af mov edi,0x00bc185c",
+    "immediate_dereference": "0x004fb9b5 mov edi,[edi]",
+    "derived_receiver": "0x004fb9b7 add edi,0x780",
+    "slot_address_stored_forwarded_or_returned_before_dereference": false,
+    "exact_outer_root_stored_forwarded_or_returned_before_derivation": false
+  },
+  "derived_path": {
+    "first_consumer": "0x004fb9c4 call 0x0048fc70 (FUN_0048fc70) with ECX=outer+0x780",
+    "second_consumer": "0x004fb9e1 prepares ECX=outer+0x780 for FUN_00493410",
+    "fun_0048fc70": {
+      "address": "0x0048fc70",
+      "mnemonic_sha256": "179e630e212cb09f6f4e9a247ccff3f9f66fb04d403fbf73caa7aa7620d553f3",
+      "captures_receiver": "0x0048fc79 mov edi,ecx",
+      "allocator_call": "0x0048fcba call FUN_00633290 with ECX=EDI",
+      "allocator_stores_same_derived_pointer": true,
+      "subtracts_0x780_or_recovers_outer_root": false
+    },
+    "fun_00493410": {
+      "address": "0x00493410",
+      "size": 257,
+      "mnemonic_sha256": "ee978a2a6048f26889faf4fe0a5f3a0e26b3f772f19ff6c17cf84e7ea6374113",
+      "recovers_item_pointer_via_FUN_00632fe0": true,
+      "same_receiver_helper": "FUN_006333f0",
+      "may_reenter_FUN_0048fc70_with_same_outer_plus_0x780_receiver": true,
+      "subtracts_0x780_or_recovers_outer_root": false
+    }
+  },
+  "shared_item_primitives": {
+    "FUN_00633290": {
+      "mnemonic_sha256": "6c836d9e3199500337f9f9a0fec3930107d7f6c6278b82a446aa78cb52c414ec",
+      "behavior": "stores incoming ECX at allocation-header+0x4 and returns payload+0x10",
+      "stored_pointer_is": "outer+0x780"
+    },
+    "FUN_00632fe0": {
+      "mnemonic_sha256": "655b2af1e88eb9d26ea2d3ac4bc7ef5ccdcab9d0c7c38d49bafc19732bb815aa",
+      "behavior": "recovers the same stored derived pointer from item-0x0c when permitted",
+      "recovers_exact_outer_root": false
+    },
+    "FUN_006333f0": {
+      "mnemonic_sha256": "7cd41181573587190b8b5d17236718a96242b0d676a2fba553936df4c2ef9a87",
+      "this_minus_0x780_reconstruction": false,
+      "exact_outer_root_store_or_return": false
+    }
+  },
+  "adjudication": {
+    "unique_slot_address_literal_consumer_surface_complete": true,
+    "slot_address_literal_escapes_before_dereference": false,
+    "resulting_outer_plus_0x780_path_reconstructs_exact_outer_root": false,
+    "slot_address_occurrence_adds_new_unknown_origin_exact_root_source": false,
+    "external_or_unknown_memory_exact_root_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only the single raw address-of-slot occurrence identified by SHIFT.HDVehicle64e8RenderManagerGlobalSlotAddressSurface/1.",
+    "The outer+0x780 derived pointer may be stored in runtime item metadata, but recovery yields the same derived pointer and never subtracts 0x780.",
+    "Unknown memory or externally supplied pointers not derived from this canonical slot remain open.",
+    "No identity is inferred from numeric offset equality."
+  ],
+  "next_step": "Continue external/unknown-memory exact-root provenance and cross-control-flow/two-unknown-origin HDVehicle+0x4330 synthesis."
+}

@@ -1,0 +1,44 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerConstructorExactThisEscapeClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "constructor": {
+    "entry": "0x0045ef50",
+    "exclusive_end": "0x0045f630",
+    "exact_this_capture": "0x0045ef59 mov esi,ecx",
+    "exact_this_register": "ESI",
+    "value_uses_of_exact_this": [
+      "0x0045ef57 push esi (callee-saved prologue before capture)",
+      "0x0045f5ea mov eax,esi (return this)"
+    ],
+    "memory_stores_with_exact_this_as_value_count": 0,
+    "helper_argument_transfers_of_exact_this_count": 0,
+    "mov_ecx_esi_count": 0,
+    "mov_edx_esi_count": 0,
+    "push_esi_after_capture_count": 0,
+    "returns_exact_this_in_eax": true
+  },
+  "adjudication": {
+    "constructor_creates_persistent_exact_root_copy": false,
+    "constructor_forwards_exact_root_to_opaque_helper": false,
+    "pre_global_store_constructor_escape_surface_closed_negative": true,
+    "external_or_unknown_origin_alias_copies_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Stores through [ESI+offset] initialize fields of the object and are not stores of the exact outer pointer value.",
+    "The prologue push of the incoming callee-saved ESI occurs before ECX is captured into ESI and therefore is not an exact-this escape.",
+    "Returning this in EAX is consumed by the initializer store to DAT_00bc185c and does not by itself establish another persistent alias.",
+    "This contract is bounded to the constructor machine range and does not close aliases created later by external/runtime systems."
+  ],
+  "next_step": "Continue external/unknown-origin alias-copy and independent reconstruction search after canonical slot and constructor creation paths are closed."
+}

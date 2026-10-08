@@ -1,0 +1,51 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerGlobalInitializerOwnership/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_sqlite_role": "navigation-only"
+  },
+  "target_global": "0x00bc185c",
+  "machine_inventory": {
+    "whole_image_store_to_target_global_count": 2,
+    "store_sites": [
+      "0x00d362ec mov [0x00bc185c],eax",
+      "0x00d362f3 mov [0x00bc185c],esi"
+    ],
+    "address_literal_materialization_site": "0x004fb9af mov edi,0x00bc185c",
+    "address_literal_is_pointer_to_global_slot_not_outer_root_value": true
+  },
+  "initializer_window": {
+    "zero_sentinel_setup": "0x00d36224 xor esi,esi",
+    "allocation_size_push": "0x00d362b9 push 0x46e0",
+    "allocator_call": "0x00d362be call 0x008868c0",
+    "allocation_failure_test": "0x00d362d3 cmp eax,esi; 0x00d362d5 je 0x00d362f3",
+    "constructor_receiver_copy": "0x00d362d7 mov ecx,eax",
+    "constructor_call": "0x00d362d9 call 0x0045ef50",
+    "success_store": "0x00d362ec mov [0x00bc185c],eax",
+    "failure_store": "0x00d362f3 mov [0x00bc185c],esi",
+    "allocator_navigation_name": "FUN_008868c0",
+    "constructor_navigation_name": "FUN_0045ef50"
+  },
+  "adjudication": {
+    "canonical_global_root_is_locally_allocated_and_constructed": true,
+    "canonical_global_root_external_initialization_found": false,
+    "target_global_store_surface_complete": true,
+    "external_or_unknown_origin_alias_copies_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes ownership of the canonical DAT_00bc185c slot itself; it does not prove that no external/runtime subsystem can hold or synthesize another copy of the same pointer value.",
+    "The 0x004fb9af literal is the address of the slot and is immediately dereferenced before outer+0x780 derivation; it is not a direct outer-root constant.",
+    "No semantic function name is assigned to the .secu initializer window because the navigation database does not expose a normal function boundary there.",
+    "No identity is inferred from numeric offset equality."
+  ],
+  "next_step": "Search for external/unknown-origin copies or reconstructions of the exact outer pointer independently of DAT_00bc185c slot initialization; continue two-unknown-origin HDVehicle+0x4330 provenance."
+}
