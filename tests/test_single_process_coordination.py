@@ -19,7 +19,7 @@ def test_three_process_execution_contract_is_active_and_current() -> None:
     assert payload["format"] == "SHIFT.PlayableSliceThreeProcessExecution/1"
     assert payload["status"] == "active"
     assert payload["execution_model"] == "three-process-parallel"
-    assert frontier["phase"] == 747
+    assert frontier["phase"] == 749
     assert frontier["active_external_provider_count"] == 7
     assert frontier["selected_session_rate_hz"] == 180
     assert frontier["selected_session_normal_outer_substeps"] == 6
@@ -31,8 +31,12 @@ def test_three_process_execution_contract_is_active_and_current() -> None:
     assert frontier["fun_00766510_application_point_owner_ready"] is True
     assert frontier["fun_00766510_primary_caller_accumulator_delta_native"] is True
     assert frontier["fun_00766510_shared_reference_owner_ready"] is True
+    assert frontier["fun_00713630_reference_source_native"] is True
     assert frontier["fun_00766510_early_branch_owner_ready"] is True
     assert frontier["fun_00766510_optional_branch_owner_ready"] is True
+    assert frontier["fun_00766510_later_branch_owner_ready"] is True
+    assert frontier["fun_00766510_later_branch_native"] is True
+    assert frontier["fun_00766510_direct_caller_accumulator_surface_ready"] is True
     assert frontier["fun_00766510_p1_residual_frontier_ready"] is True
     assert frontier["fun_00766510_p1_complete"] is False
     assert frontier["retail_control_chain_complete"] is False
@@ -57,9 +61,11 @@ def test_process_queues_are_separate_and_dependency_routed() -> None:
 
     assert p1["queue"][0]["state"] == "current"
     assert p1["queue"][0]["contract"] == "SHIFT.Fun00766510ResidualOwnershipFrontier/1"
+    assert "all four direct FUN_00753650" in p1["queue"][0]["task"]
     assert p2["queue"][0]["state"] == "complete"
     assert p2["queue"][1]["state"] == "complete"
     assert p2["queue"][2]["state"] == "current-blocked-on-process-1"
+    assert "Phase749" in p2["queue"][2]["task"]
     assert p3["queue"][0]["state"] == "current"
     assert "P1.1" in p2["queue"][2]["depends_on"]
     assert p1["queue"][0]["consumer"] == "Process 2 P2.3"
@@ -81,14 +87,20 @@ def test_v6_docs_define_non_overlapping_active_ownership() -> None:
     process = PROCESS.read_text(encoding="utf-8")
 
     assert "Status: **canonical coordination instructions**" in canonical
+    assert "Current merged main frontier is **Phase 749**" in canonical
+    assert "Phase748 FUN_00713630" in canonical
+    assert "Phase749 native later" in canonical
+    assert "direct FUN_00753650 caller-accumulator surface (4/4)" in canonical
     assert "PROCESS 1 — retail proof / ABI / producer / timing" in canonical
     assert "PROCESS 2 — native physics / runtime execution" in canonical
     assert "PROCESS 3 — resources / scene / renderer / playable bootstrap" in canonical
     assert "7 -> 6" in canonical
     assert "PROCESS 1 — retail proof / provenance / timing" in prompts
+    assert "Phase748" in prompts and "Phase749" in prompts
     assert "PROCESS 2 — native physics / runtime" in prompts
     assert "PROCESS 3 — resources / scene / render / playable bootstrap" in prompts
     assert "PLAYABLE_SLICE_THREE_PROCESS_INSTRUCTIONS_V6.md" in process
+    assert "Current merged main frontier: **Phase 749**" in process
     assert "playable_slice_three_process_execution.json" in process
     assert "process-1/<blocker>" in process
     assert "NEXT_OWNER:" in process
