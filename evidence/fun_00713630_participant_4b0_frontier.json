@@ -11,7 +11,8 @@
     "SHIFT.Fun00713630UpstreamDirectSurface/1",
     "SHIFT.Fun00713630PhysicsTweakerMaterialization/1",
     "SHIFT.Fun00791020EmbeddedVehicleOwnership/1",
-    "SHIFT.BMWOffset33bActualAdditionalMassBootstrapZero/1"
+    "SHIFT.BMWOffset33bActualAdditionalMassBootstrapZero/1",
+    "SHIFT.Fun007530e0Slot2VehicleLoadData4c8Producer/1"
   ],
   "selected_participant_identity": {
     "manager_record_stride": "0x1fa0",
@@ -45,6 +46,25 @@
     {"function":"FUN_00736f20","sites":["0x007379a6","0x007379c7","0x00737ad9","0x00737af9","0x00737b80","0x00737b9e","0x00737d01","0x00737d17"],"operation":"f32 reads participant+0x4b0"},
     {"function":"FUN_007473b0","sites":["0x007475f7","0x00747610"],"operation":"f32 reads participant+0x4b0"}
   ],
+  "vehicle_load_data_rejection": {
+    "writer_function": "FUN_007c3b00",
+    "writer_site": "0x007c48ae fst dword [ESI+0x4b0]",
+    "callee_receiver_prologue": "0x007c3b21 ESI = ECX",
+    "hdvehicle_calls": [
+      "0x0076e1d0 ECX=[HDVehicle+0x66b4]",
+      "0x0076e1f6 ECX=[HDVehicle+0x66b0]",
+      "0x0076e21a ECX=[HDVehicle+0x66b4]"
+    ],
+    "vehicle_init_allocation": "0x00798e58 push 0x3848; 0x00798e60 call FUN_008868d0; 0x00798e74 call FUN_007c3170; 0x00798e85 [this+0x1d00]=VehicleLoadData",
+    "vehicle_init_calls": [
+      "0x00798fce ECX=[this+0x1d00]",
+      "0x00798fff ECX=[this+0x1d00]",
+      "0x00799054 ECX=[this+0x1d00]"
+    ],
+    "existing_positive_identity": "VehicleLoadData = *(HDVehicle+0x66b4) in SHIFT.Fun007530e0Slot2VehicleLoadData4c8Producer/1",
+    "store_target_identity": "VehicleLoadData+0x4b0",
+    "selected_physics_participant_writer": false
+  },
   "retail_direct_displacement_store_surface": {
     "operand_pattern": "destination memory operand base-register + 0x4b0",
     "site_count": 16,
@@ -61,12 +81,13 @@
       {"site":"0x0076019f","function":null,"width":"f64"},
       {"site":"0x007a2006","function":"FUN_007a1fc0","width":"u32"},
       {"site":"0x007c0fe2","function":"FUN_007c0db0","width":"u32"},
-      {"site":"0x007c48ae","function":"FUN_007c3b00","width":"f32"},
+      {"site":"0x007c48ae","function":"FUN_007c3b00","width":"f32","identity":"VehicleLoadData+0x4b0","selected_participant_writer":false},
       {"site":"0x00832f46","function":"FUN_00832a80","width":"u32"},
       {"site":"0x0098e583","function":"FUN_0098e558","width":"u32-or"},
       {"site":"0x00991650","function":"FUN_00991540","width":"u32"}
     ],
-    "physics_tweaker_candidate_rejected": true,
+    "rejected_nonparticipant_sites": ["0x00748956 PhysicsTweaker", "0x007c48ae VehicleLoadData"],
+    "remaining_unjoined_direct_site_count": 14,
     "remaining_sites_joined_to_selected_participant": 0,
     "direct_displacement_surface_identity_complete": false,
     "computed_or_alias_writes_excluded": false
@@ -75,6 +96,8 @@
     "manager_record_to_actual_participant_identity_closed": true,
     "pre_constructor_zero_fill_value_closed": true,
     "constructor_direct_store_surface_closed": true,
+    "physics_tweaker_direct_candidate_rejected": true,
+    "vehicle_load_data_direct_candidate_rejected": true,
     "selected_participant_runtime_plus_0x4b0_writer_closed": false,
     "p1_1a_complete": false,
     "p1_1_complete": false,
@@ -87,5 +110,5 @@
     "The 16-site direct-displacement inventory is not an identity proof for any remaining site; numeric +0x4b0 equality is insufficient.",
     "Computed-address, bulk-copy and escaped-alias writers remain open."
   ],
-  "next_step": "Join or reject the 15 remaining direct-displacement +0x4b0 store sites against the exact 0x2b90 PhysicsParticipant root, then trace computed/alias writes if no direct site survives."
+  "next_step": "Join or reject the 14 remaining direct-displacement +0x4b0 store sites against the exact 0x2b90 PhysicsParticipant root, then trace computed/alias writes if no direct site survives."
 }
