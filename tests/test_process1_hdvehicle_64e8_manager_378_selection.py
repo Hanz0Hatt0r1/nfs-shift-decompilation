@@ -48,10 +48,13 @@ def test_vtable_candidate_is_navigation_only():
     assert g["vtable_semantic_promotion"] is False
 
 
-def test_coordination_advances_to_registration_surface():
+def test_coordination_advances_to_population_producer_entry_identity_surface():
     graph = json.loads(COORD.read_text(encoding="utf-8"))
     p13 = next(row for row in graph["workstreams"] if row["id"] == "P1.3")
     node = next(row for row in p13["children"] if row["id"] == "P1.3.manager2a0")
-    assert node["status"] == "selection-relation-proven-registration-open"
+    assert node["status"] == "population-producer-proven-entry-identity-open"
     assert "manager+0x378" in node["proven_relation"]
-    assert "registration" in node["next"].lower()
+    assert "thunk_FUN_00d60660" in node["proven_relation"]
+    assert node["insertion_producer_complete"] is True
+    assert node["element_size"] == "0x22e0"
+    assert "HDVehicle+0x4330" in node["next"]
