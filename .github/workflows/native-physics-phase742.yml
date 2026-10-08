@@ -40,7 +40,7 @@ jobs:
       - name: Run Phase 742 proof regression
         run: python3 -m pytest -q tests/test_s6_fun_00766510_primary_response_application.py
 
-      - name: Validate Phase 742 evidence
+      - name: Validate immutable Phase 742 evidence
         run: |
           python3 - <<'PY'
           import json
@@ -70,12 +70,14 @@ jobs:
           ctest --test-dir native_runtime/build --output-on-failure
           -R '^(shift_runtime_fun_00766510_primary_response_application|shift_runtime_wheel_contact_response|shift_runtime_aux_contact_pair)$'
 
-      - name: Verify Phase 742 native report
+      - name: Verify active primary-response native report
         run: |
           mkdir -p out/native-physics-phase742
           native_runtime/build/shift_runtime_fun_00766510_primary_response_application_check \
             > out/native-physics-phase742/fun_00766510_primary_response_application.json
-          grep -q '"format":"SHIFT.Fun00766510PrimaryResponseApplication/1"' \
+          grep -q '"format":"SHIFT.Fun00766510PrimaryResponseApplication/2"' \
+            out/native-physics-phase742/fun_00766510_primary_response_application.json
+          grep -q '"caller_accumulator_delta_native":true' \
             out/native-physics-phase742/fun_00766510_primary_response_application.json
           grep -q '"contact_response_provider_removed":false' \
             out/native-physics-phase742/fun_00766510_primary_response_application.json
