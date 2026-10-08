@@ -58,14 +58,23 @@ def test_phase745_session_builds_selected_input_before_residual_response() -> No
     assert "std::function<void(std::size_t)> compatibility_" in header
     assert "active top-level provider count remains seven" in header
 
+    # Scope each lookup to the previous source-visible anchor.  The helper name
+    # also appears in type/helper declarations above execute_explicit_step, so a
+    # global source.index() would test declaration order rather than runtime order.
     observer = source.index("callbacks.current_body_observer =")
-    app_point = source.index("fun_00766510_selected_bmw_primary_application_point")
-    fun_provider = source.index("providers_.fun_00765c40(pass_index, external_input)")
-    query_output = source.index("*result.query_output")
-    build_input = source.index("build_fun_00766510_selected_bmw_external_pass_input")
-    wheel_callback = source.index("callbacks.wheel_update =")
-    response_callback = source.index("callbacks.contact_response =")
-    response_provider = source.index("providers_.contact_response(")
+    app_point = source.index(
+        "world_position_state->primary_application_point =", observer
+    )
+    fun_provider = source.index(
+        "providers_.fun_00765c40(pass_index, external_input)", app_point
+    )
+    query_output = source.index("*result.query_output", fun_provider)
+    build_input = source.index(
+        "build_fun_00766510_selected_bmw_external_pass_input", query_output
+    )
+    wheel_callback = source.index("callbacks.wheel_update =", build_input)
+    response_callback = source.index("callbacks.contact_response =", wheel_callback)
+    response_provider = source.index("providers_.contact_response(", response_callback)
 
     assert observer < app_point < fun_provider < query_output < build_input
     assert build_input < wheel_callback < response_callback < response_provider
