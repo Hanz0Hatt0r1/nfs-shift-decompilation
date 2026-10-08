@@ -25,6 +25,7 @@ HISTORICAL_RESIDUAL_PRODUCER_HANDOFF_FORMAT = "SHIFT.Fun00765c40ResidualProducer
 RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT = "SHIFT.Fun00765c40ResidualProducerPromotionGate/1"
 WHEEL_STATE_MACHINE_PROOF_FORMAT = "SHIFT.Fun00752fa0WheelStateMachineProof/1"
 WHEEL_JOB_LOAD_STORE_SURFACE_FORMAT = "SHIFT.Fun0075cfb0LoadStoreSurface/1"
+FUN007584F0_INTERPOLATION_CALL_SEAM_FORMAT = "SHIFT.Fun007584f0InterpolationCallSeam/2"
 
 REMAINING_EXPLICIT_PRODUCERS = (
     "wheel_plane_producer_arithmetic",
@@ -104,6 +105,11 @@ def build_current_frontier() -> dict[str, Any]:
             "wheel_job_load_store_payload_bit_preserved": True,
             "wheel_job_formula_internalized": False,
             "wheel_job_branch_predicates_internalized": False,
+            "fun_007584f0_interpolation_call_seam_contract": FUN007584F0_INTERPOLATION_CALL_SEAM_FORMAT,
+            "fun_007584f0_interpolation_call_seam_native": True,
+            "fun_007584f0_interpolation_argument_count": 4,
+            "fun_007584f0_interpolation_helper_formula_internalized": True,
+            "fun_007584f0_positive_qword_producers_internalized": False,
             "selected_world_position_native": True,
             "selected_query_fallback_native": True,
             "selected_query_input_native": True,
@@ -129,6 +135,7 @@ def build_current_frontier() -> dict[str, Any]:
             "producer_presence_treated_as_independent_proof": False,
             "producer_promotion_without_proof_allowed": False,
             "wheel_job_commit_surface_treated_as_formula_proof": False,
+            "fun_007584f0_interpolation_seam_treated_as_family_complete": False,
         },
     }
 
@@ -200,6 +207,21 @@ def contract() -> dict[str, Any]:
         "wheel_job_branch_predicates_internalized": fun[
             "wheel_job_branch_predicates_internalized"
         ],
+        "fun_007584f0_interpolation_call_seam_contract": fun[
+            "fun_007584f0_interpolation_call_seam_contract"
+        ],
+        "fun_007584f0_interpolation_call_seam_native": fun[
+            "fun_007584f0_interpolation_call_seam_native"
+        ],
+        "fun_007584f0_interpolation_argument_count": fun[
+            "fun_007584f0_interpolation_argument_count"
+        ],
+        "fun_007584f0_interpolation_helper_formula_internalized": fun[
+            "fun_007584f0_interpolation_helper_formula_internalized"
+        ],
+        "fun_007584f0_positive_qword_producers_internalized": fun[
+            "fun_007584f0_positive_qword_producers_internalized"
+        ],
         "selected_world_position_native": fun["selected_world_position_native"],
         "selected_query_fallback_native": fun["selected_query_fallback_native"],
         "selected_query_input_native": fun["selected_query_input_native"],
@@ -230,6 +252,7 @@ __all__ = [
     "RESIDUAL_PRODUCER_PROMOTION_GATE_FORMAT",
     "WHEEL_STATE_MACHINE_PROOF_FORMAT",
     "WHEEL_JOB_LOAD_STORE_SURFACE_FORMAT",
+    "FUN007584F0_INTERPOLATION_CALL_SEAM_FORMAT",
     "REMAINING_EXPLICIT_PRODUCERS",
     "build_current_frontier",
     "contract",

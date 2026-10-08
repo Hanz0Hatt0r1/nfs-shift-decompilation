@@ -1,0 +1,41 @@
+{
+  "format": "SHIFT.Fun007584f0InterpolationCallSeam/2",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "source": {
+    "upstream_side_effect_contract": "SHIFT.Fun007584f0MachineSideEffectProof/1",
+    "upstream_formula_contract": "SHIFT.NativeContactOuterKernel/1",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "formula": "(arg1 - arg0) * (arg3 / (arg2 + arg3)) + arg0"
+  },
+  "retail_surface": {
+    "owner": "FUN_007584f0",
+    "helper": "0x00783a30",
+    "call_site": "0x007587ef",
+    "argument_count": 4,
+    "argument_width": "float",
+    "return_kind": "scalar x87 value",
+    "store_site": "0x007587f4",
+    "destination": "HDVehicle+0x3420",
+    "destination_width": "float"
+  },
+  "native_contract": {
+    "positional_arguments_preserved": true,
+    "native_helper": "execute_fun_00783a30_distance_filter",
+    "helper_called_once": true,
+    "return_narrowed_to_float_for_store": true,
+    "return_value_forwarded_to_persistent_write_stage": true
+  },
+  "limits": {
+    "interpolation_formula_internalized": true,
+    "argument_semantic_names_for_FUN_007584f0_call_proven": false,
+    "physical_name_for_HDVehicle_0x3420_proven": false,
+    "positive_load_qword_producers_internalized": false,
+    "FUN_007584f0_computed_payloads_complete": false,
+    "residual_producer_promotion_bit_set": false,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_provider_removed": false,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Recover the two positive-load qword producers for HDVehicle+0x0d40/+0x17c0 before promoting FUN_007584f0_computed_payloads."
+}
