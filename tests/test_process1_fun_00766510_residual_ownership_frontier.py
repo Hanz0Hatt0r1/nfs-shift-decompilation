@@ -8,6 +8,7 @@ FRONTIER = ROOT / "evidence/fun_00766510_residual_ownership_frontier.json"
 RESPONSE_CONFIG = ROOT / "evidence/fun_00766510_response_config_ownership.json"
 EARLY = ROOT / "evidence/fun_00766510_early_response_branch_ownership.json"
 OPTIONAL = ROOT / "evidence/fun_00766510_optional_response_branch_ownership.json"
+LATER = ROOT / "evidence/fun_00766510_later_response_branch_ownership.json"
 SHARED_REFERENCE = ROOT / "evidence/fun_00766510_shared_reference_vector.json"
 DOC = ROOT / "docs/PROCESS_1_FUN_00766510_RESIDUAL_OWNERSHIP_FRONTIER.md"
 
@@ -27,6 +28,7 @@ def test_residual_frontier_joins_positive_merged_process1_contracts() -> None:
     response = _load(RESPONSE_CONFIG)
     early = _load(EARLY)
     optional = _load(OPTIONAL)
+    later = _load(LATER)
     shared = _load(SHARED_REFERENCE)
     assert response["format"] == "SHIFT.Fun00766510ResponseConfigOwnership/1"
     assert response["ready"] is True
@@ -34,6 +36,8 @@ def test_residual_frontier_joins_positive_merged_process1_contracts() -> None:
     assert early["ready"] is True
     assert optional["format"] == "SHIFT.Fun00766510OptionalResponseBranchOwnership/1"
     assert optional["ready"] is True
+    assert later["format"] == "SHIFT.Fun00766510LaterResponseBranchOwnership/1"
+    assert later["ready"] is True
     assert shared["format"] == "SHIFT.Fun00766510SharedReferenceVector/1"
     assert shared["ready"] is True
 
@@ -41,10 +45,9 @@ def test_residual_frontier_joins_positive_merged_process1_contracts() -> None:
 def test_frontier_names_only_the_live_p1_1_residuals() -> None:
     frontier = _load(FRONTIER)
     residual = frontier["remaining_process_1_proof"]
-    assert [row["id"] for row in residual] == ["P1.1a", "P1.1b", "P1.1c"]
+    assert [row["id"] for row in residual] == ["P1.1a", "P1.1c"]
     assert residual[0]["target"] == "FUN_00713630 dynamic writer inputs"
-    assert residual[1]["target"] == "later +0x3a28/+0x3a40 direct response block"
-    assert residual[2]["target"] == "final cumulative response and residual state/diagnostic writes"
+    assert residual[1]["target"] == "final cumulative response and residual state/diagnostic writes"
 
     inventory = frontier["retail_accumulator_inventory"]
     assert inventory["state"] == "HDVehicle+0x40a0/+0x40a8/+0x40b0"
@@ -61,7 +64,7 @@ def test_provider_removal_remains_fail_closed() -> None:
     assert gate["contact_response_provider_removal_authorized"] is False
     assert gate["external_provider_count"] == 7
     assert gate["target_external_provider_count_after_process_2_consumption"] == 6
-    assert len(gate["requirements"]) == 4
+    assert len(gate["requirements"]) == 3
 
     text = DOC.read_text(encoding="utf-8")
     for token in (
