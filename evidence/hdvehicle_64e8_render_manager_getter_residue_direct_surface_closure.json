@@ -1,0 +1,130 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerGetterResidueDirectSurfaceClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "decompiler_role": "navigation-only"
+  },
+  "upstream": {
+    "receiver_transfer_format": "SHIFT.PlayerVehicleRenderManagerReceiverTransferFrontier/2",
+    "bounded_direct_target_count": 17,
+    "prior_closure_format": "SHIFT.HDVehicle64e8RenderManagerOpaqueDirectTargetClosure15of17/1",
+    "prior_cumulative_closed_count": 15,
+    "remaining_targets": ["0x00489ad0", "0x00493fb0"]
+  },
+  "independent_machine_receiver_replay": {
+    "exact_outer_global": "0x00bc185c",
+    "whole_text_exact_direct_load_seed_count": 112,
+    "tracks_direct_jcc_jmp_cfg": true,
+    "tracks_full_register_exact_alias_copies": true,
+    "call_clobbers_eax_ecx_edx_after_boundary": true,
+    "state_cap_hit_count": 0,
+    "target_0x00489ad0_receiver_like_callsite_count": 2,
+    "target_0x00493fb0_receiver_like_callsite_count": 1,
+    "getter_receiver_callsite_inventory_complete_for_this_replay": true
+  },
+  "targets": [
+    {
+      "target": "0x00489ad0",
+      "tail_entry": "0x00444fcc",
+      "returned_singleton": "0x00bc9fc0",
+      "returned_singleton_is_exact_outer_root": false,
+      "hot_path_may_physically_preserve_entry_ecx": true,
+      "initialization_path_clobbers_ecx": "0x00489ae3 mov ecx,0x00bc9fc0",
+      "callsites": [
+        {
+          "callsite": "0x004989c6",
+          "exact_root_registers_at_call": ["ECX"],
+          "post_call_uses_before_ecx_clobber": [
+            "0x004989cb load [eax+0x374]",
+            "0x004989d5 optional load [eax+0x100]",
+            "0x004989e6 push eax"
+          ],
+          "post_call_exact_root_ecx_read": false,
+          "ecx_clobber": "0x004989e7 mov ecx,esi",
+          "exact_root_persisted_forwarded_or_returned": false,
+          "post_window_mnemonic_sha256": "cd618a1b81f0e037f8c73702ea10fef80e2560510db606194b50a07196d9aec3"
+        },
+        {
+          "callsite": "0x00498ac4",
+          "exact_root_registers_at_call": ["ECX"],
+          "post_call_uses_before_ecx_clobber": [
+            "0x00498ac9 load [eax+0x374]",
+            "0x00498ad3 optional load [eax+0x100]",
+            "0x00498ae4 push eax"
+          ],
+          "post_call_exact_root_ecx_read": false,
+          "ecx_clobber": "0x00498ae5 mov ecx,esi",
+          "exact_root_persisted_forwarded_or_returned": false,
+          "post_window_mnemonic_sha256": "f0a756fa2aa6291a6142a52c9b1de9b5d5e82dbfe35b38952b309c2200906f2"
+        }
+      ],
+      "target_closed_negative": true,
+      "thunk_mnemonic_sha256": "decd1148158e86d83f7c71f657adcc8c0bf4cb3822c33b59661f1d713fabd830",
+      "tail_entry_mnemonic_sha256": "155065ec0af62339b20d601e47e3f0fc4a21b799cd48a4f77353a180ae547db4",
+      "singleton_body_mnemonic_sha256": "5ea063e119b579bfb3713b03f218a277a0ea238927bfc74a9b7b47b9976604bb"
+    },
+    {
+      "target": "0x00493fb0",
+      "tail_entry": "0x004300ae",
+      "returned_singleton": "0x00bcae00",
+      "returned_singleton_is_exact_outer_root": false,
+      "hot_path_may_physically_preserve_entry_ecx": true,
+      "initialization_path_clobbers_ecx": "0x00493fc3 mov ecx,0x00bcae00",
+      "callsites": [
+        {
+          "callsite": "0x004d1a1f",
+          "exact_root_registers_at_call": ["ECX"],
+          "first_post_call_operation": "0x004d1a24 cmp byte ptr [eax+0x1dbe],0",
+          "post_call_exact_root_ecx_read_before_branch": false,
+          "zero_branch": {
+            "branch": "0x004d1a2b je 0x004d1a3f",
+            "residual_ecx_reaches": "0x004d1a3f call 0x0045db50",
+            "consumer_contract": "SHIFT.HDVehicle64e8RenderManagerOpaqueDirectTargetClosure15of17/1",
+            "consumer_behavior": "0x0045db50 materializes ECX in an output local whose first helper dereference is zero-overwrite before any read",
+            "exact_root_escape": false
+          },
+          "nonzero_branch": {
+            "intermediate_call": "0x004d1a2d call 0x00427470",
+            "intermediate_getter_reads_entry_ecx": false,
+            "intermediate_getter_return": "0x00bc6160",
+            "residual_ecx_clobber": "0x004d1a32 mov ecx,eax",
+            "next_call": "0x004d1a34 call 0x009e6440",
+            "exact_root_escape": false
+          },
+          "exact_root_persisted_forwarded_or_returned": false,
+          "post_window_mnemonic_sha256": "56c0aacfe6b4a40e1a84c4e57814f7216413b67dad8465f5d8e9a20609f54368"
+        }
+      ],
+      "target_closed_negative": true,
+      "thunk_mnemonic_sha256": "98b2351325b78ca75da69025afe0c490eae9177a6e7bee4291b7099e7372882f",
+      "tail_entry_mnemonic_sha256": "adf31ab733cee2de890f0e7b02ef4685041468ae97544f414bace5221745bdbb",
+      "singleton_body_mnemonic_sha256": "1b754309a2e265d5aa77e4a5313263a926ef537351a5bf1ef9bc8030e8e9af33",
+      "intermediate_getter_mnemonic_sha256": "4ade83fdc9d83fae18941ba7094efaeb6c38a226478c791f75446154121b8990"
+    }
+  ],
+  "adjudication": {
+    "closed_target_count_this_contract": 2,
+    "cumulative_explicitly_closed_direct_target_count": 17,
+    "bounded_direct_target_count": 17,
+    "bounded_receiver_transfer_direct_target_opaque_surface_complete": true,
+    "remaining_bounded_direct_target_count": 0,
+    "global_opaque_callee_created_or_returned_alias_surface_complete": false,
+    "external_or_unknown_origin_alias_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "17/17 completion is scoped to the bounded direct target set emitted by SHIFT.PlayerVehicleRenderManagerReceiverTransferFrontier/2; it is not a global proof against external or unknown-origin aliases.",
+    "Hot-path physical ECX preservation is treated explicitly; no ABI assumption is used to erase residual root identity.",
+    "The zero branch after 0x00493fb0 depends on the same-PR 0x0045db50 overwrite-before-read closure.",
+    "No identity is inferred from matching numeric offsets."
+  ],
+  "next_step": "Move Process 1B to external/unknown-origin exact outer aliases and two-unknown-origin/cross-control-flow HDVehicle+0x4330 provenance; keep manager+0x374 join and literal 0x004b86cf fail-closed."
+}
