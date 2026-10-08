@@ -1,0 +1,49 @@
+{
+  "format": "SHIFT.CameraFollowP14Manager2a0Join/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact machine-code service wiring plus secondary-vtable decode"
+  },
+  "service_wiring": {
+    "camera_root": "FUN_0080bfb0()",
+    "camera_service_field": "+0x574",
+    "writer_callsite": "0x0040d84b",
+    "source_global": "DAT_00bc185c",
+    "source_adjustment": "+4",
+    "proven_value": "CameraManager+0x574 = DAT_00bc185c+4"
+  },
+  "render_manager_interface": {
+    "constructor": "FUN_0045ef50",
+    "primary_vtable": "0x00ab5644",
+    "plus_4_interface_vtable": "0x00ab55f0",
+    "camera_transform_slot_0x08": "FUN_0045d940",
+    "camera_metadata_slot_0x1c": "FUN_0045da00",
+    "camera_fallback_slot_0x28": "FUN_00459af0"
+  },
+  "manager_collection_join": {
+    "manager_getter": "FUN_00489ad0",
+    "collection": "manager+0x2a0",
+    "count_field": "manager+0x2c4",
+    "indexed_lookup": "FUN_0054ed00",
+    "transform_method": "FUN_0045d940 -> FUN_00481420(collection_entry, ...)",
+    "metadata_method": "FUN_0045da00 -> collection_entry+0x110 when entry+0x104 != 0"
+  },
+  "adjudication": {
+    "camera_target_service_root_identity_proven": true,
+    "camera_target_service_is_render_manager_plus_4_proven": true,
+    "camera_target_transform_uses_manager_2a0_entry_proven": true,
+    "camera_target_metadata_uses_manager_2a0_entry_proven": true,
+    "manager_2a0_entry_is_selected_bmw_vehicle_proven": false,
+    "manager_2a0_entry_pose_is_selected_BODY0_world_pose_proven": false,
+    "phase651_request_3_complete": false,
+    "native_camera_follow_ready": false,
+    "external_provider_count": 7
+  },
+  "blocked_by": [
+    "P1.3.manager2a0 exact registration/entry identity"
+  ],
+  "next": "Consume the positive P1.3.manager2a0 entry-identity contract, while independently tracing retail vehicle-update -> camera-update scheduling."
+}
