@@ -1,0 +1,52 @@
+{
+  "format": "SHIFT.Process1VehicleControlProducerFrontier/1",
+  "ready": true,
+  "purpose": "Separate the already-proven retail outer-update scheduler/value chain from the still-unproven player/control producer chain, so P1.3 does not misclassify scheduler channels as control inputs.",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "new_machine_or_source_claims_in_this_join": false
+  },
+  "scheduler_side_closed_chain": {
+    "path": ["FUN_00715380", "FUN_00713050", "FUN_00794a30", "FUN_00770e80"],
+    "outer_receiver": "DAT_00c13700",
+    "caller_channel_offsets": ["+0x1aa8", "+0x1ab0"],
+    "outer_receiver_offsets": ["+0x98", "+0xa0"],
+    "fun_00713050_scheduler_accumulator_offset": "+0x348",
+    "fun_00713050_channel_seed_offset": "+0x160",
+    "retail_outer_cadence_contract": "SHIFT.RetailOuterUpdateCadence/1",
+    "scheduler_push_machine_root_published": true,
+    "retail_cadence_admitted": true,
+    "player_control_semantics_proven_for_these_channels": false
+  },
+  "wheel_side_closed_structure": {
+    "physics_pass": "FUN_0076d100",
+    "wheel_update": "FUN_00758b50",
+    "pass_order_contains_wheel_update": true,
+    "wheel_count": 4,
+    "wheel_state_base": "+0x848",
+    "wheel_runtime_base": "+0x400",
+    "wheel_stride": "0xa80",
+    "source_contract": "SHIFT.WheelKinematicsSourceEvidence/1",
+    "native_structure_exists": true,
+    "complete_callsite_control_state_ownership_proven": false
+  },
+  "boundary_adjudication": {
+    "outer_update_scheduler_channels_may_be_named_player_input": false,
+    "native_VehicleControlIntent_is_retail_provenance": false,
+    "retail_input_to_drivetrain_value_transfer_proven": false,
+    "retail_input_to_wheel_state_value_transfer_proven": false,
+    "fun_00758b50_concrete_control_state_owner_proven": false,
+    "p1_3_control_producer_complete": false,
+    "retail_control_chain_complete": false,
+    "external_provider_count": 7
+  },
+  "next_exact_questions": [
+    "identify the retail input/control object and exact value producer(s) that feed vehicle or wheel state consumed before/during FUN_0076d100",
+    "prove the concrete receiver/value provenance at the FUN_00758b50 callsite instead of reusing scheduler-channel adjacency",
+    "join any recovered control value transfer to the selected retail BMW session without using native VehicleControlIntent as evidence"
+  ],
+  "next_owner": "Process 1",
+  "next_step": "Search upstream writers/readers of the FUN_00758b50-consumed wheel/vehicle state and trace them back to an exact retail input/control producer. Treat FUN_00715380/FUN_00713050/FUN_00794a30 scheduler channels as cadence/update evidence only unless an independent control-value transfer is proven."
+}
