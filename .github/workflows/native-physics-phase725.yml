@@ -94,7 +94,7 @@ jobs:
           mkdir -p out/native-physics-phase725
           native_runtime/build/shift_runtime_fun_00765c40_external_pass_result_check \
             > out/native-physics-phase725/fun_00765c40_external_pass_result.json
-          grep -q '"format":"SHIFT.Fun00765c40ExternalPassResult/4"' \
+          grep -q '"format":"SHIFT.Fun00765c40ExternalPassResult/5"' \
             out/native-physics-phase725/fun_00765c40_external_pass_result.json
           grep -q '"query_input_boundary_typed":true' \
             out/native-physics-phase725/fun_00765c40_external_pass_result.json
