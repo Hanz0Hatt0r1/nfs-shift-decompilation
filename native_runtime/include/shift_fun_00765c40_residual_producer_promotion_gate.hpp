@@ -6,40 +6,54 @@
 #include <array>
 #include <cstddef>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 
 namespace shift::runtime::physics {
 
 inline constexpr const char* kFun00765c40ResidualProducerPromotionGateFormat =
+    "SHIFT.Fun00765c40ResidualProducerPromotionGate/2";
+inline constexpr const char* kFun00765c40HistoricalResidualProducerPromotionGateFormat =
     "SHIFT.Fun00765c40ResidualProducerPromotionGate/1";
 
-// Structural authorization only. A true bit means the caller has independently
-// established source-backed ownership/equivalence for that family. This mask is
-// not itself evidence and defaults fail-closed to no authorized families.
+// Structural authorization only. A non-empty contract id means the caller has
+// independently established a source-backed ownership/equivalence contract for
+// that family and names the contract it consumed. The receipt is not itself
+// evidence; the named contract remains the authority. Empty ids fail closed.
 struct Fun00765c40ResidualProducerProofMask {
-    std::array<bool, kFun00765c40ResidualProducerHandoffFamilyCount>
-        independently_proven{};
+    std::array<std::string_view, kFun00765c40ResidualProducerHandoffFamilyCount>
+        proof_contract_ids{};
 };
 
 inline void set_fun_00765c40_residual_producer_family_proven(
     Fun00765c40ResidualProducerProofMask& proof,
     Fun00765c40ResidualProducerFamily family,
-    bool proven = true) {
+    std::string_view proof_contract_id) {
+    if (proof_contract_id.empty()) {
+        throw std::invalid_argument(
+            "FUN_00765c40 residual producer proof contract id must be non-empty");
+    }
     const std::size_t index = fun_00765c40_residual_producer_family_index(family);
-    if (index >= proof.independently_proven.size()) {
+    if (index >= proof.proof_contract_ids.size()) {
         throw std::out_of_range("FUN_00765c40 residual producer proof family index out of range");
     }
-    proof.independently_proven[index] = proven;
+    proof.proof_contract_ids[index] = proof_contract_id;
+}
+
+inline std::string_view fun_00765c40_residual_producer_family_proof_contract(
+    const Fun00765c40ResidualProducerProofMask& proof,
+    Fun00765c40ResidualProducerFamily family) {
+    const std::size_t index = fun_00765c40_residual_producer_family_index(family);
+    if (index >= proof.proof_contract_ids.size()) {
+        throw std::out_of_range("FUN_00765c40 residual producer proof family index out of range");
+    }
+    return proof.proof_contract_ids[index];
 }
 
 inline bool fun_00765c40_residual_producer_family_is_proven(
     const Fun00765c40ResidualProducerProofMask& proof,
     Fun00765c40ResidualProducerFamily family) {
-    const std::size_t index = fun_00765c40_residual_producer_family_index(family);
-    if (index >= proof.independently_proven.size()) {
-        throw std::out_of_range("FUN_00765c40 residual producer proof family index out of range");
-    }
-    return proof.independently_proven[index];
+    return !fun_00765c40_residual_producer_family_proof_contract(proof, family).empty();
 }
 
 inline void validate_fun_00765c40_residual_producer_promotion(
@@ -64,7 +78,7 @@ inline void validate_fun_00765c40_residual_producer_promotion(
         if (fun_00765c40_residual_producer_family_is_present(handoff, family) &&
             !fun_00765c40_residual_producer_family_is_proven(proof, family)) {
             throw std::invalid_argument(
-                "FUN_00765c40 residual producer family present without independent proof authorization");
+                "FUN_00765c40 residual producer family present without named independent proof contract");
         }
     }
 }
