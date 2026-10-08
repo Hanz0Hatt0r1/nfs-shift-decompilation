@@ -54,10 +54,10 @@ def test_original_bulk_copy_contract_remains_bounded_and_fail_closed():
     assert a["external_provider_count"] == 7
 
 
-def test_coordination_preserves_literal_rejections_after_later_closure():
+def test_coordination_preserves_literal_rejections_after_later_alias_progress():
     graph = json.loads(COORD.read_text(encoding="utf-8"))
     p13 = next(row for row in graph["workstreams"] if row["id"] == "P1.3")
     node = next(row for row in p13["children"] if row["id"] == "P1.3.manager374")
     assert node["rejected_literal_writers"] == ["FUN_0051efa0", "FUN_005dec70"]
-    assert node["status"] == "direct-literal-bulkcopy-surface-closed-helper-alias-indirect-open"
     assert node["direct_bulk_copy_surface_complete"] is True
+    assert node["status"] == "participants-subobject-direct-writes-rejected-escaped-alias-open"
