@@ -10,7 +10,7 @@ FORMAT = "SHIFT.Fun00766510LaterResponseBranchOwnership/1"
 PINNED_SOURCE_SHA256 = "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
 
 ANCHORS = {
-    "curve_setup": "FUN_00752f10((void *)((int)this + 0x3a08)",
+    "curve_setup": "FUN_00752f10((void *)((int)this + 0x3a08),*(undefined8 *)(param_2 + 0xa38),",
     "table_source": "local_14 = (float *)(param_2 + 0xa68);",
     "table_dest": "pdStack_1c = (double *)((int)this + 0x3a50);",
     "table_stride": "local_14 = local_14 + 0x12;",
