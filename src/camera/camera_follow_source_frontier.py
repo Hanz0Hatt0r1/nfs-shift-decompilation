@@ -2,9 +2,10 @@
 
 PC-retail proofs close the mode-2 runtime argument, source-vtable identity,
 vehicle-snapshot affine dependency, and default/steady physics-before-camera
-ordering. The remaining camera-side semantic join is target selection: the
-playable TrackingCamera target id must still be joined to the selected
-player/BMW manager entry.
+ordering. The remaining camera-side semantic join is target selection through
+the reflected CTrackingCamData Target field at byte +0x78.  The separate
+FUN_00812aa0/FUN_0081f070 byte +0xd4 path is OverridedBy camera-to-camera
+linkage and is explicitly rejected as player-vehicle target proof.
 """
 from __future__ import annotations
 
@@ -82,6 +83,8 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "source_vtable_identity_proven": True,
             "entry_attached_runtime_local_target_dependency_proven": True,
             "target_vehicle_snapshot_affine_dependency_proven": True,
+            "tracking_data_target_field_identified": True,
+            "tracking_override_path_rejected_as_vehicle_target": True,
             "selected_player_target_identity_proven": False,
             "vehicle_transform_dependency_proven": True,
             "retail_update_order_proven": True,
@@ -95,10 +98,10 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
         {"id": "mode2_source_vtable_identity", "target": "active_buffer+0x1ca0 source object", "status": "resolved", "result": "FUN_0081fac0 installs vtable 0x00b16788; +0x90=FUN_0081f7c0, +0x64=FUN_00820a50, +0x60=FUN_008216a0", "required_for_native_follow": False},
         {
             "id": "mode2_vehicle_pose_dependency",
-            "target": "TrackingCamera target_id -> selected player/BMW manager+0x2a0 entry",
-            "status": "vehicle-snapshot-affine-proven-selected-target-identity-open",
-            "result": "manager entry+0xfc is the numeric vehicle index; FUN_00481420 -> FUN_0070dcc0 resolves the exact indexed active vehicle render snapshot affine; entry+0x1e80 remains local target/offset state",
-            "request": "prove or reject that the playable mode-2 TrackingCamera target id selects the current player/BMW manager entry",
+            "target": "CTrackingCamData Target byte +0x78 -> selected player/BMW manager+0x2a0 entry",
+            "status": "vehicle-snapshot-affine-proven-target-field-identified-selected-target-identity-open",
+            "result": "manager entry+0xfc is the numeric vehicle index and FUN_00481420 -> FUN_0070dcc0 resolves its active vehicle render snapshot affine; CTrackingCamData reflection identifies Target at byte +0x78; byte +0xd4 is OverridedBy and FUN_0081f070 resolves another TrackingCamera, not a player vehicle target",
+            "request": "trace the actual Target byte +0x78 through FUN_008140c0/FUN_00814180/FUN_00814210 and CameraManager+0x574, then prove or reject its join to the current player/BMW manager entry",
             "required_for_native_follow": True,
         },
         {"id": "camera_follow_update_order", "target": "cPhysicsManager scheduler -> callback -> mode-2 source+0x60", "status": "resolved", "result": "admitted default/steady retail path runs FUN_0070f940/FUN_007155e0 physics before FUN_0070f890 callback -> FUN_00489f70 -> mode2 +0x60/FUN_008216a0", "required_for_native_follow": False},
@@ -108,7 +111,7 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
     timing_ready = True
     native_follow_ready = selected_target_identity_ready and timing_ready and transform_state["ready_for_camera_source_join"]
 
-    blockers = ["camera-follow:tracking-target-id-to-selected-player-bmw-entry-unproven"]
+    blockers = ["camera-follow:tracking-data-target-to-selected-player-bmw-entry-unproven"]
     blockers.extend(transform_state["blocking_reasons"])
     blockers = list(dict.fromkeys(blockers))
 
@@ -143,6 +146,8 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "mode2_source_vtable_identity_ready": True,
             "mode2_entry_attached_runtime_local_target_dependency_ready": True,
             "mode2_target_vehicle_snapshot_affine_dependency_ready": True,
+            "mode2_tracking_data_target_field_ready": True,
+            "mode2_override_path_rejected_as_vehicle_target": True,
             "mode2_selected_player_target_identity_ready": False,
             "mode2_vehicle_pose_dependency_ready": False,
             "camera_follow_update_order_ready": True,
@@ -155,9 +160,11 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "may_schedule_camera_after_vehicle_update": False,
             "retail_physics_before_camera_order_proven": True,
             "target_vehicle_snapshot_affine_proven": True,
+            "tracking_data_target_field_identified": True,
+            "tracking_override_path_rejected_as_vehicle_target": True,
             "may_serialize_opaque_word0_as_native_pointer": False,
             "required_positive_contracts": [
-                "playable TrackingCamera target_id -> selected player/BMW manager entry",
+                "CTrackingCamData Target byte +0x78 -> selected player/BMW manager entry",
                 WORLD_HANDOFF_FORMAT + " current retail world matrix",
                 PERSISTENT_TRANSFORM_FORMAT + " freshness-checked transport",
             ],
@@ -167,8 +174,11 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "mode2_activation_callsite": "FUN_0080e1b0@0x0080e236",
             "mode2_constructor": "FUN_0081fac0",
             "mode2_vtable": "0x00b16788",
+            "tracking_data_target_field": "CTrackingCamData byte +0x78 ('Target')",
+            "tracking_data_override_field": "CTrackingCamData byte +0xd4 ('OverridedBy')",
+            "tracking_override_resolution": "FUN_00812aa0/FUN_0081f070 compare TrackingCamera+0xd4 against candidate+0x60 and attach the matched TrackingCamera at +0xe8",
+            "tracking_override_not_vehicle_target_proof": True,
             "camera_target_service": "CameraManager+0x574 = DAT_00bc185c+4",
-            "camera_target_collection": "thunk_FUN_00444fcc()+0x2a0[target_id]",
             "manager_entry_is_HDVehicle_plus_0x4330": False,
             "entry_attached_runtime_field": "+0x1e80",
             "entry_attached_runtime_classification": "local target/offset runtime state, not world pose",
@@ -185,9 +195,11 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
         },
         "boundary": {
             "mode2_tracking_label_promoted_to_player_vehicle_follow_proof": False,
+            "tracking_override_linkage_promoted_to_vehicle_target_proof": False,
+            "tracking_target_field_promoted_to_selected_player_without_service_join": False,
             "manager_entry_promoted_to_HDVehicle_identity": False,
             "entry_attached_runtime_promoted_to_world_pose": False,
-            "target_vehicle_snapshot_promoted_to_selected_player_without_target_id_proof": False,
+            "target_vehicle_snapshot_promoted_to_selected_player_without_target_proof": False,
             "camera_source_pointer_invented": False,
             "camera_source_vtable_invented": False,
             "native_vehicle_world_matrix_substituted_for_retail_source": False,
