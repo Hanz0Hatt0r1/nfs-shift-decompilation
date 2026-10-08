@@ -1,0 +1,61 @@
+{
+  "format": "SHIFT.Fun00765c40CalleeClassificationJoin/1",
+  "ready": true,
+  "purpose": "Narrow the P1.2b callee-mediated side-effect frontier by classifying three output-only transform helpers and joining the already-proven FUN_007baa70 BODY accumulator primitive.",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_range": "FUN_00765c40 0x00765c40..0x0076650f",
+    "existing_positive_contract": "Phase 392 BODY accumulator impulse primitives"
+  },
+  "classified": [
+    {
+      "callee": "0x007aefb0",
+      "caller_sites": ["0x00765e0c", "0x007663f6"],
+      "classification": "receiver-read-only transform; writes only the explicit output vec3 qword buffer",
+      "receiver_layout_read": "3x3 float matrix at ecx+0x00..0x20",
+      "input": "explicit vec3 qword pointer",
+      "output": "explicit vec3 qword pointer",
+      "receiver_mutated": false,
+      "output_mutated": true
+    },
+    {
+      "callee": "0x007afd20",
+      "caller_sites": ["0x007660be"],
+      "classification": "receiver-read-only transform-plus-add helper; writes only the explicit destination vec3 qword buffer",
+      "nested_helper": "0x007aefb0",
+      "receiver_mutated": false,
+      "output_mutated": true
+    },
+    {
+      "callee": "0x007b0430",
+      "caller_sites": ["0x007661e5"],
+      "classification": "receiver-read-only vec3 extractor; copies ecx+0x10/+0x14/+0x18 floats to the explicit fifth-argument qword vec3 output buffer",
+      "receiver_mutated": false,
+      "output_mutated": true
+    },
+    {
+      "callee": "0x007baa70",
+      "caller_sites": ["0x00766365", "0x007664f2"],
+      "classification": "already-proven positive BODY accumulator primitive",
+      "receiver_provenance": "edi = [HDVehicle+0x33a0] selected BODY0",
+      "accumulator_offsets": ["+0x48", "+0x50", "+0x58", "+0x60", "+0x68", "+0x70"],
+      "exact_update": "linear += v; angular += r x v",
+      "existing_proof": "docs/PHASE392_BODY_IMPULSE_PRIMITIVES.md",
+      "receiver_mutated": true,
+      "side_effect_surface_closed": true
+    }
+  ],
+  "adjudication": {
+    "remove_from_unresolved": ["0x007aefb0", "0x007afd20", "0x007b0430", "0x007baa70"],
+    "remaining_potentially_mutating_callees": ["0x007584f0"],
+    "p1_2b_complete": false,
+    "fun_00765c40_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": {
+    "output_buffer_writes_are_not_treated_as_receiver_mutation": true,
+    "FUN_007584f0_not_classified_here": true,
+    "no_new_physical_semantics_inferred": true
+  }
+}
