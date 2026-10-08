@@ -75,7 +75,7 @@ def test_current_phase705_contract_still_keeps_bind_and_world_matrix_blocked() -
     assert state["current_retail_identity_ready"] is True
     assert state["current_retail_BODY0_bind_ready"] is False
     assert state["current_retail_world_matrix_ready"] is False
-    assert state["persistent_vulkan_transport_available"] is True
+    assert state["persistent_transport_available"] is True
     assert state["ready_for_camera_source_join"] is False
     assert "camera-follow:retail-BODY0-bind-not-ready" in report["blocking_reasons"]
     assert "camera-follow:retail-vehicle-world-matrix-not-ready" in report["blocking_reasons"]
