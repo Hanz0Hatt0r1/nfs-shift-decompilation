@@ -1,0 +1,54 @@
+{
+  "format": "SHIFT.Process1Controller1ControlTimingFrontier/1",
+  "ready": true,
+  "purpose": "Join the current PC-retail Controller #1 timing/wake proofs and reduce P1.3 timing work to the remaining indirect/native APC injection surface without conflating render-frame phase locking with control execution.",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "new_machine_or_source_claims_in_this_join": false
+  },
+  "inputs": [
+    "SHIFT.Process1Controller1AlertablePacing/1",
+    "SHIFT.Process1Controller1RetailCadenceJoin/1",
+    "SHIFT.Process1Controller1BManagerQueueWake/1",
+    "SHIFT.Process1AsyncFileApcOwnership/1",
+    "SHIFT.Process1TimerWinsockApcSurface/1",
+    "SHIFT.Process1Controller1ManagerApcReachability/1",
+    "SHIFT.Process1Controller1ApcSourceInventory/1",
+    "SHIFT.Process1Controller1QueueObjectIdentity/1",
+    "SHIFT.Process1Fun006333f0LayoutExclusion/1"
+  ],
+  "closed_surface": {
+    "controller1_worker": "FUN_00662880",
+    "worker_model": "poll queue -> manager dispatch -> SleepEx(10, TRUE) -> repeat",
+    "bmanager_messages": [3, 4, 5, 6, 7],
+    "normal_queue_init_argument": 1,
+    "normal_queue_flags_after_init": 7,
+    "msgqueue_event_bit": 8,
+    "normal_message_enqueue_interrupts_sleep_via_queue_event": false,
+    "known_readfileex_writefileex_owner": "Base File: Async Thread",
+    "known_readfileex_writefileex_targets_controller1": false,
+    "waitable_timer_completion_targets_controller1": false,
+    "winsock_completion_targets_controller1": false,
+    "direct_named_controller1_manager_path_to_readfileex_or_writefileex": false,
+    "known_imported_completion_source_targets_controller1": false,
+    "source_visible_generic_queue_alias_frontier_closed": true
+  },
+  "remaining_timing_frontier": {
+    "indirect_virtual_or_function_pointer_apc_path_ruled_out": false,
+    "indirect_or_native_apc_injection_ruled_out": false,
+    "render_or_present_phase_lock_proven": false,
+    "render_phase_lock_required_to_continue_p1_3_control_provenance": false,
+    "reason": "All recovered source-visible queue and imported completion mechanisms are classified. Exact early-return behavior of SleepEx still cannot be declared exhaustive until indirect/native APC injection is excluded or positively joined. Render cadence remains a separate presentation question rather than evidence for control producer ownership."
+  },
+  "adjudication": {
+    "controller1_direct_control_timing_surface_ready": true,
+    "controller1_control_timing_complete": false,
+    "p1_3_complete": false,
+    "retail_control_chain_complete": false,
+    "external_provider_count": 7
+  },
+  "next_owner": "Process 1",
+  "next_step": "Continue P1.3 on input -> drivetrain/wheel/control producer provenance in parallel with the single remaining Controller #1 timing question: indirect/native APC injection into the alertable worker. Do not require render-frame phase locking to prove the control producer chain."
+}
