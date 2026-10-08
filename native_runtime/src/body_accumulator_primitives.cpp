@@ -24,16 +24,6 @@ void require_finite_body(
     require_finite(body.linear, label);
 }
 
-BodyAccumulatorVector3d cross(
-    const BodyAccumulatorVector3d& left,
-    const BodyAccumulatorVector3d& right) {
-    return {
-        left[1] * right[2] - left[2] * right[1],
-        left[2] * right[0] - left[0] * right[2],
-        left[0] * right[1] - left[1] * right[0],
-    };
-}
-
 void apply_signed_accumulator(
     BodyAccumulatorState& body,
     const BodyAccumulatorVector3d& point_or_lever_arm,
@@ -46,7 +36,9 @@ void apply_signed_accumulator(
     require_finite(contribution, label);
 
     const auto angular_delta =
-        cross(point_or_lever_arm, contribution);
+        execute_fun_00753650_cross_product(
+            point_or_lever_arm,
+            contribution);
     for (std::size_t component = 0; component < 3u; ++component) {
         body.linear[component] += sign * contribution[component];
         body.angular[component] += sign * angular_delta[component];
@@ -55,6 +47,20 @@ void apply_signed_accumulator(
 }
 
 }  // namespace
+
+BodyAccumulatorVector3d execute_fun_00753650_cross_product(
+    const BodyAccumulatorVector3d& left,
+    const BodyAccumulatorVector3d& right) {
+    require_finite(left, "FUN_00753650 left vector");
+    require_finite(right, "FUN_00753650 right vector");
+    const BodyAccumulatorVector3d result = {
+        right[2] * left[1] - left[2] * right[1],
+        left[2] * right[0] - right[2] * left[0],
+        right[1] * left[0] - right[0] * left[1],
+    };
+    require_finite(result, "FUN_00753650 result");
+    return result;
+}
 
 void apply_fun_007baa70_body_accumulator(
     BodyAccumulatorState& body,
