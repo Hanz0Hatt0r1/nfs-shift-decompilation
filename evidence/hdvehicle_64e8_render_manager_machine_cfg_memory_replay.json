@@ -1,0 +1,62 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerMachineCfgMemoryReplay/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "decoder_role": "objdump is used only to decode authoritative SHIFT.exe bytes",
+    "ghidra_sqlite_role": "navigation-only"
+  },
+  "scope": {
+    "exact_outer_global": "0x00bc185c",
+    "seed_shape": "MOV full_gpr,[absolute 0x00bc185c]",
+    "seed_local_cfg_tracking": true,
+    "starts_after_each_exact_seed": true,
+    "follows_direct_jcc_and_jmp_edges": true,
+    "full_register_copy_preserves_identity": true,
+    "zero_displacement_lea_preserves_identity": true,
+    "partial_register_write_destroys_exact_identity": true,
+    "unknown_register_transform_destroys_exact_identity": true,
+    "call_clobbers_eax_ecx_edx": true,
+    "memory_store_shape": "MOV [memory], exact_outer_alias",
+    "follows_alias_into_called_function": false
+  },
+  "inventory": {
+    "whole_text_direct_exact_load_count": 112,
+    "seed_local_cfg_seed_count": 112,
+    "max_visited_states_per_seed": 380,
+    "seed_scan_cap": 20000,
+    "seed_scan_cap_hit_count": 0,
+    "call_boundary_count": 303,
+    "seed_with_call_boundary_count": 82,
+    "memory_store_count": 0,
+    "destination_kind_counts": {}
+  },
+  "boundary_crosscheck": {
+    "sqlite_mapped_seed_count": 91,
+    "sqlite_unmapped_boundary_gap_seed_count": 21,
+    "nominal_entry_reachable_mapped_seed_count": 88,
+    "nominal_entry_unreachable_mapped_seed_count": 3,
+    "seed_local_scan_includes_boundary_gap_and_nominally_unreachable_seeds": true
+  },
+  "adjudication": {
+    "direct_exact_global_cross_block_memory_persistence_closed_negative": true,
+    "exact_outer_alias_memory_store_found": false,
+    "opaque_callee_created_or_returned_alias_surface_complete": false,
+    "external_or_unknown_origin_alias_surface_complete": false,
+    "exhaustive_ghidra_v2_memory_escape_replay_replaced": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This machine replay independently closes persistent MOV memory stores reached from direct exact DAT_00bc185c loads; it does not claim to replace the pending exhaustive Ghidra-v2 analyzer replay.",
+    "Calls are boundaries: exact aliases are not propagated into opaque callees and caller-saved EAX/ECX/EDX are invalidated after a call.",
+    "Aliases created from unknown memory, opaque helper returns, external initialization, or two-unknown-origin dataflow remain open.",
+    "No identity is inferred from matching numeric offsets."
+  ],
+  "next_step": "Bound opaque callee-created/returned exact outer aliases and two-unknown-origin/cross-control-flow HDVehicle+0x4330 aliases; if the exact exhaustive Ghidra-v2 export is reacquired, run SHIFT.PlayerVehicleRenderManagerMemoryEscapeSurface/1 as an independent replay."
+}
