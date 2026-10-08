@@ -85,7 +85,11 @@ def test_execution_forces_launch_plan_validation_and_reuses_saved_plan(tmp_path,
     assert result["runtime_returncode"] == 0
     assert result["runtime_executable"] == str(runtime.resolve())
     assert result["runtime_executable_sha256"] == _sha(runtime)
+    assert result["runtime_executable_sha256_after"] == _sha(runtime)
+    assert result["runtime_executable_stable"] is True
     assert result["boundary"]["runtime_executable_hash_recorded_before_execution"] is True
+    assert result["boundary"]["runtime_executable_rehashed_after_execution"] is True
+    assert result["boundary"]["runtime_executable_stable_across_execution"] is True
     assert result["boundary"]["launch_plan_argv_reconstructed"] is False
     assert result["boundary"]["launch_plan_environment_reconstructed"] is False
     receipt = out / "execution_result.json"
@@ -168,6 +172,32 @@ def test_missing_runtime_executable_fails_before_runner(tmp_path, monkeypatch):
     assert not (out / "execution_result.json").exists()
 
 
+def test_runtime_binary_change_during_attempt_fails_closed_and_is_receipted(tmp_path, monkeypatch):
+    out = _ready_output(tmp_path)
+    runtime = out / "shift_runtime"
+    before = _sha(runtime)
+    monkeypatch.setattr(MODULE.bootstrap, "main", lambda args: 0)
+
+    def mutating_runner(*args, **kwargs):
+        runtime.write_bytes(b"mutated-runtime")
+        runtime.chmod(0o755)
+        return SimpleNamespace(returncode=0)
+
+    result = MODULE.execute_playable_pipeline_slice(
+        ["input.bff", "--output", str(out)],
+        runner=mutating_runner,
+    )
+    assert result["ready"] is False
+    assert result["status"] == "runtime-binary-changed"
+    assert result["runtime_returncode"] == 0
+    assert result["runtime_executable_sha256"] == before
+    assert result["runtime_executable_sha256_after"] == _sha(runtime)
+    assert result["runtime_executable_stable"] is False
+    assert result["boundary"]["runtime_success_claimed"] is False
+    stored = json.loads((out / "execution_result.json").read_text(encoding="utf-8"))
+    assert stored["runtime_executable_stable"] is False
+
+
 def test_runtime_nonzero_is_reported_and_receipted_without_success_claim(tmp_path, monkeypatch):
     out = _ready_output(tmp_path)
     monkeypatch.setattr(MODULE.bootstrap, "main", lambda args: 0)
@@ -178,6 +208,7 @@ def test_runtime_nonzero_is_reported_and_receipted_without_success_claim(tmp_pat
     assert result["ready"] is False
     assert result["status"] == "runtime-failed"
     assert result["runtime_returncode"] == 7
+    assert result["runtime_executable_stable"] is True
     assert result["boundary"]["runtime_success_claimed"] is False
     receipt = out / "execution_result.json"
     assert receipt.is_file()
