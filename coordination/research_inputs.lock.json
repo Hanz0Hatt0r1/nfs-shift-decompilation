@@ -1,0 +1,50 @@
+{
+  "format": "SHIFT.ResearchInputLock/1",
+  "version": 1,
+  "policy": {
+    "semantic_promotion_requires_hash_locked_authority": true,
+    "storage_location_is_not_semantic_authority": true,
+    "generated_navigation_indexes_are_non_authoritative": true,
+    "unknown_hash_must_not_be_invented": true
+  },
+  "locked_inputs": [
+    {
+      "logical_name": "SHIFT.exe",
+      "role": "PC retail 1.02 machine-code semantic authority",
+      "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+      "semantic_authority": true,
+      "committed_to_repository": false
+    },
+    {
+      "logical_name": "SHIFT.exe.c",
+      "role": "recovered/decompiler source navigation and corroboration",
+      "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+      "semantic_authority": false,
+      "machine_transfer_must_adjudicate": true,
+      "committed_to_repository": false
+    }
+  ],
+  "navigation_inputs": [
+    {
+      "logical_name": "shift_ghidra.sqlite",
+      "role": "generated Ghidra SQLite acceleration index",
+      "hash_locked": false,
+      "semantic_authority": false,
+      "reason": "No canonical SHA-256 is currently recorded in merged evidence. The index is reproducible from the underlying export and is navigation-only."
+    }
+  ],
+  "storage_hints": [
+    {
+      "provider": "Google Drive",
+      "name": "shift_ghidra_database",
+      "id": "1z2OuOAKrwK-Xga06-8AN-ldfE5B7Gllh",
+      "authoritative": false
+    },
+    {
+      "provider": "Google Drive",
+      "name": "ghidra",
+      "id": "1653pvBylWrYC7O0QwizMVf9VI0q3DeEp",
+      "authoritative": false
+    }
+  ]
+}
