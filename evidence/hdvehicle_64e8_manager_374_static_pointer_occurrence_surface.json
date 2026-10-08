@@ -1,0 +1,49 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374StaticPointerOccurrenceSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "whole-PE raw little-endian pointer occurrence scan with PE section mapping"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374DirectSingletonReferenceSurface/1",
+  "target": {
+    "manager_root": "0x00bc9fc0",
+    "little_endian_bytes": "c0 9f bc 00"
+  },
+  "pe": {
+    "image_base": "0x00400000",
+    "section_count": 6,
+    "sections": [".text", ".rdata", ".data", ".tls", ".rsrc", ".secu"]
+  },
+  "occurrences": {
+    "whole_file_count": 3,
+    "all_in_text": true,
+    "non_text_count": 0,
+    "sites": [
+      {"file_offset":"0x00088ee4","virtual_address":"0x00489ae4","instruction_start":"0x00489ae3","role":"singleton init immediate operand"},
+      {"file_offset":"0x00088efb","virtual_address":"0x00489afb","instruction_start":"0x00489afa","role":"getter return immediate operand"},
+      {"file_offset":"0x0069b9a1","virtual_address":"0x00a9c5a1","instruction_start":"0x00a9c5a0","role":"static cleanup thunk immediate operand"}
+    ],
+    "rdata_pointer_cell_count": 0,
+    "data_pointer_cell_count": 0,
+    "other_section_pointer_cell_count": 0
+  },
+  "adjudication": {
+    "static_exact_pointer_cell_surface_complete": true,
+    "static_exact_pointer_cell_count": 0,
+    "table_or_global_load_of_preinitialized_exact_manager_root_possible": false,
+    "runtime_computed_or_relocated_root_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This proves absence of a raw preinitialized 32-bit exact pointer cell for 0x00bc9fc0 outside the three known .text immediate operands.",
+    "It does not close a pointer synthesized at runtime, loaded from an externally initialized location, relocated from a different representation, or computed through multi-register/opaque dataflow.",
+    "No identity is inferred from offset equality."
+  ],
+  "next_step": "Trace runtime-derived/multi-register manager-root reconstruction; continue remaining non-wrapper HDVehicle+0x4330 aliases."
+}
