@@ -28,7 +28,7 @@ python3 tools/ghidra/build_static_semantic_index.py \
   --fail-on-mismatch
 ```
 
-## 2. Build the fast SQLite query index
+## 2. Build and query the fast SQLite index
 
 ```bash
 python3 tools/ghidra/build_shift_sqlite_index.py \
@@ -38,25 +38,43 @@ python3 tools/ghidra/build_shift_sqlite_index.py \
 
 The current format is `SHIFT.GhidraSQLiteIndex/2`. Rebuild an older database after pulling this version: v2 fixes exporter-native callgraph indexing and stores both symbolic names and exact addresses.
 
-Examples:
+Prefer the stable query CLI instead of hand-writing SQL:
+
+```bash
+python3 tools/ghidra/query_shift_sqlite.py out/shift_ghidra.sqlite \
+  callers FUN_00755950
+
+python3 tools/ghidra/query_shift_sqlite.py out/shift_ghidra.sqlite \
+  callees FUN_0076b280
+
+python3 tools/ghidra/query_shift_sqlite.py out/shift_ghidra.sqlite \
+  function 0x00469ab0
+
+python3 tools/ghidra/query_shift_sqlite.py out/shift_ghidra.sqlite \
+  callsite 0x00469b1d
+
+python3 tools/ghidra/query_shift_sqlite.py out/shift_ghidra.sqlite \
+  strings Wedge
+
+python3 tools/ghidra/query_shift_sqlite.py out/shift_ghidra.sqlite \
+  globals DAT_00bc9fc0
+```
+
+Function/call queries accept either exported symbolic names or exact addresses. Every command emits `SHIFT.GhidraSQLiteQuery/1` JSON, which makes results easy to feed into proof tooling or compare between processes. Use `--limit N` after the query value to cap large result sets.
+
+Raw SQL remains available when needed:
 
 ```bash
 sqlite3 out/shift_ghidra.sqlite \
   "select callsite,caller,caller_address from calls where callee='FUN_00755950';"
 
 sqlite3 out/shift_ghidra.sqlite \
-  "select caller,callee,callee_address,callsite from calls where caller='FUN_0076b280';"
-
-sqlite3 out/shift_ghidra.sqlite \
   "select caller,callee,callsite from calls where callee_address='0x0057f620';"
-
-sqlite3 out/shift_ghidra.sqlite \
-  "select value,address,containing_function from strings where value like '%Wedge%';"
 ```
 
 `caller` / `callee` are the exported symbolic names when available. `caller_address` / `callee_address` preserve the exact function addresses, and `indirect` records the exporter's indirect-call flag.
 
-The SQLite database is an operational index only. A matching row is not semantic proof.
+The SQLite database and query CLI are operational indexes only. A matching row is not semantic proof.
 
 ## 3. Start a new evidence slice without hand-writing boilerplate
 
@@ -100,7 +118,7 @@ Process 3  -> resources/scene/render/bootstrap
 After pulling a new branch:
 
 ```bash
-python3 -m pytest -q tests/test_development_acceleration_tools.py
+python3 -m pytest -q tests/test_development_acceleration_tools.py tests/test_shift_sqlite_query_cli.py
 python3 -m json.tool coordination/decomp_blockers.json >/dev/null
 ```
 
@@ -117,4 +135,4 @@ python3 -m pytest -q tests/test_process1_<proof>.py
 - Xbox evidence is navigation/corroboration only.
 - Do not invent class or physical/control semantics.
 - Provider count changes only when an actual runtime boundary is removed.
-- The SQLite index, blocker graph, and scaffold generator are workflow accelerators, not proof sources.
+- The SQLite index, blocker graph, scaffold generator, and query CLI are workflow accelerators, not proof sources.
