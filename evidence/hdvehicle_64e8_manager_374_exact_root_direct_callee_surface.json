@@ -1,0 +1,61 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374ExactRootDirectCalleeSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact retail machine transfer; Ghidra SQLite used for navigation/fingerprints only"
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8Manager374ParticipantsLifecycleZeroWriters/1",
+    "SHIFT.HDVehicle64e8Manager374ParticipantsActiveDispatchNestedFrontier/1",
+    "SHIFT.HDVehicle64e8Manager374RootDescendantFrontier/1",
+    "SHIFT.HDVehicle64e8Manager374ParticipantsVtable0cIndirectFrontier/1"
+  ],
+  "manager": {
+    "getter": "FUN_00489ad0",
+    "getter_address": "0x00489ad0",
+    "singleton_address": "0x00bc9fc0",
+    "target_offset": "+0x374"
+  },
+  "scope": {
+    "kind": "exact manager-root direct thiscall forwarding",
+    "definition": "getter return is transferred unchanged into ECX and directly dispatched before ECX is replaced",
+    "direct_callee_count": 9,
+    "escaped_storage_or_stack_argument_paths_complete": false
+  },
+  "direct_callees": [
+    {"entry":"thunk_FUN_00471ed0","entry_address":"0x00402400","target":"FUN_00471ed0","target_address":"0x00471ed0","size":39,"mnemonic_sha256":"f80ed61cd29e1919a0c454d09d8d233685ccd3f8d38cf8d95ee2e46a86928894","receiver_transition":"manager+0x2d8","direct_target_write":false},
+    {"entry":"thunk_FUN_0045b760","entry_address":"0x004042e0","target":"FUN_0045b760","target_address":"0x0045b760","size":37,"mnemonic_sha256":"83c887881ad443576bf43c36fb493ddc8226a7d3a6ff118f63c99ad4a92bf191","receiver_transition":"manager+0x2a0","direct_target_write":false},
+    {"entry":"thunk_FUN_00d60660","entry_address":"0x00487240","target":"FUN_00d60660","target_address":"0x00d60660","size":223,"mnemonic_sha256":"3aa7b36b4aaad15c4eba5381b8c0b31997637ae25def1093706982eb0b774f23","receiver_transition":"manager root retained until selected manager+0x2a0 entry is resolved","direct_target_write":true,"target_write_instruction":"0x00d606f3","write":"manager+0x374 = selected manager+0x2a0 entry","selection_guard":"successful FUN_00485290 transition and selected entry[0] == 0"},
+    {"entry":"thunk_FUN_005083b0","entry_address":"0x00488ad0","target":"FUN_005083b0","target_address":"0x005083b0","size":76,"mnemonic_sha256":"d14d765262794739ee8d43048f0a1f4b8fd0e0b71ce22101ca9da1e65b2e5556","receiver_transition":"manager+0x2a0","direct_target_write":false},
+    {"entry":"FUN_004892c0","entry_address":"0x004892c0","target":"FUN_004892c0","target_address":"0x004892c0","size":73,"mnemonic_sha256":"396c17362934ab5409dda44c97d63db096fa4d76d64e60793253cad6c806e311","receiver_transition":"manager+0x2d8","direct_target_write":false},
+    {"entry":"thunk_FUN_00d610c0","entry_address":"0x00489310","target":"FUN_00d610c0","target_address":"0x00d610c0","size":232,"mnemonic_sha256":"5179b20172367b4afe38710d15add64a58b1c27309435fa6325419619382b5e2","receiver_transition":"manager+0x2d8","direct_target_write":false},
+    {"entry":"thunk_FUN_00d61310","entry_address":"0x00489480","target":"FUN_00d61310","target_address":"0x00d61310","size":73,"mnemonic_sha256":"28bbc6d91309a329c923d5ebe5c08cf39b449db065fc6da2048d8a9f64f1e08c","receiver_transition":"manager+0x2d8","direct_target_write":false},
+    {"entry":"thunk_FUN_00d61e00","entry_address":"0x0048c070","target":"FUN_00d61e00","target_address":"0x00d61e00","size":102,"mnemonic_sha256":"3e07bad4cc198e762c1cec4c6a81c5cdcb7f7b34e68cd35cef81708b9c1a1cf6","receiver_transition":"manager+0x2d8 then manager+0x2a0","direct_target_write":false},
+    {"entry":"thunk_FUN_0040f290","entry_address":"0x004939e0","target":"FUN_0040f290","target_address":"0x0040f290","size":104,"mnemonic_sha256":"d6e6321e41d1785937925c7b1fb6e705dcdfeb96a35d50298b2abe8890855062","receiver_transition":"manager+0x2a0","direct_target_write":false}
+  ],
+  "adjudication": {
+    "exact_root_direct_callee_surface_complete": true,
+    "direct_callee_count": 9,
+    "direct_callees_writing_manager_374_count": 1,
+    "only_direct_nonzero_writer": "FUN_00d60660",
+    "only_direct_nonzero_writer_value_domain": "allocator-owned manager+0x2a0 selected entry",
+    "only_direct_nonzero_writer_can_equal_fixed_hdvehicle_plus_0x4330": false,
+    "direct_exact_root_surface_places_hdvehicle_plus_0x4330_into_manager_374": false,
+    "escaped_storage_paths_complete": false,
+    "stack_argument_alias_paths_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This contract closes only direct thiscall-style exact-root forwarding from the getter result into ECX.",
+    "It does not close cases where the exact manager root is stored, pushed as a stack argument, returned through another object, or reconstructed by an unrelated alias.",
+    "FUN_00d60660 remains the sole positive direct manager+0x374 writer in this surface, but its value is already proven to come from allocator-owned manager+0x2a0 storage rather than fixed HDVehicle+0x4330.",
+    "No identity is inferred from matching offsets."
+  ],
+  "next_step": "Trace getter-result storage/stack-argument escapes and unrelated manager-root reconstructions. Keep 0x004b86cf open until those paths are exhausted."
+}
