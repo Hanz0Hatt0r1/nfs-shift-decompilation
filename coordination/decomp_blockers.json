@@ -1,7 +1,7 @@
 {
   "format": "SHIFT.DecompBlockerGraph/1",
   "version": 1,
-  "updated_from_main": "8d6810110edc5b8d352cd30bb5ad62105803b50b",
+  "updated_from_main": "39a1f1b7bd90584b1fb884b2fd5fa74057b51940",
   "rules": {
     "pc_retail_semantic_authority": true,
     "numeric_offset_equality_is_identity": false,
@@ -16,9 +16,12 @@
       "status": "in_progress",
       "consumer": "Process 2 P2.3",
       "closed": [
-        "P1.1c auxiliary scheduling/final transformed-vector/guarded tail"
+        "P1.1c auxiliary scheduling/final transformed-vector/guarded tail",
+        "P1.1a cadence machine chain",
+        "P1.1a config direct-literal read/write surface",
+        "P1.1a FUN_00727870 direct caller surface"
       ],
-      "next": "Close P1.1a FUN_00713630 upstream runtime config globals, sample-history scheduling, and participant+0x4b0 ownership; then publish final Process 1 handoff."
+      "next": "Root both FUN_00727870 receiver paths to selected participant ownership; resolve computed/alias materialization of the seven FUN_00713630 config globals; join or reject FUN_00748280+0x4b0 by exact object provenance; then publish final Process 1 handoff."
     },
     {
       "id": "P1.3",
