@@ -1,0 +1,53 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0FmodChannelMusicRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "pc_decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630Participant4b0RemainingDirectWorklist/1"
+  ],
+  "candidate": {
+    "site": "0x0098e583",
+    "function": "FUN_0098e558",
+    "operation": "OR dword [this+0x4b0], 0x10",
+    "width": "u32-or",
+    "selected_physics_participant_writer": false
+  },
+  "receiver_domain": {
+    "subobject_offset": "0x48c",
+    "subobject_constructor_call": "FUN_0099dec0(this+0x48c)",
+    "subobject_base_vtable": "FMOD::ChannelReal::vftable",
+    "subobject_final_vtable": "FMOD::ChannelMusic::vftable",
+    "owner_backpointer_store": "[this+0x4dc] = this",
+    "meaning": "FUN_0098e558 initializes an embedded FMOD ChannelMusic object at receiver+0x48c and then sets receiver+0x4b0 bit 0x10; the receiver belongs to the FMOD audio object domain, not the selected PhysicsParticipant object graph."
+  },
+  "decompiler_proof": {
+    "candidate_function_lines": "1201281-1201302",
+    "candidate_function_sha256": "54fb51bda540bffc09e3cc689d67f0dc96f716481a4f6d80861d8fe1ec3d986a",
+    "channel_base_constructor": "FUN_0099dec0",
+    "channel_base_constructor_assignment": "*param_1 = FMOD::ChannelReal::vftable"
+  },
+  "adjudication": {
+    "candidate_receiver_domain_closed": true,
+    "candidate_is_fmod_audio_state": true,
+    "candidate_is_selected_physics_participant": false,
+    "direct_displacement_site_rejected": true,
+    "remaining_unjoined_direct_site_count": 6,
+    "selected_participant_runtime_plus_0x4b0_writer_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The FMOD semantic identity is admitted from explicit ChannelReal/ChannelMusic vtable construction inside the candidate receiver.",
+    "This contract rejects only direct site 0x0098e583 and does not classify the other six direct-displacement sites.",
+    "Computed-address, escaped-alias, indirect-dispatch and residual bulk-copy paths remain deferred until the direct frontier is exhausted."
+  ],
+  "next_step": "Adjudicate the remaining 6 direct-displacement +0x4b0 sites by exact receiver provenance."
+}
