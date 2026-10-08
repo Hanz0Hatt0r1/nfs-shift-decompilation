@@ -1,0 +1,75 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374LiteralWriterRejections/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact PC-retail receiver provenance for residual literal +0x374 writers"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8ManagerDirectSetterFrontier/1",
+  "target": {
+    "manager_singleton_address": "0x00bc9fc0",
+    "slot": "manager+0x374",
+    "remaining_literal_writer_functions_considered": [
+      "FUN_00481e20",
+      "FUN_0051efa0",
+      "FUN_005dec70"
+    ]
+  },
+  "rejections": [
+    {
+      "function": "FUN_0051efa0",
+      "store": "0x0051effd mov [ESI+0x374],EAX",
+      "receiver_chain": [
+        "0x004567a3 call FUN_00518de0",
+        "0x00518de0 mov EAX,0x00be1680; ret",
+        "0x004567a8 mov ECX,EAX",
+        "0x004567aa call FUN_0051f8f0",
+        "0x0051f92b call FUN_0051efa0 with ECX=ESI"
+      ],
+      "proven_receiver": "0x00be1680",
+      "manager_receiver": "0x00bc9fc0",
+      "same_receiver": false,
+      "rejected_as_manager_374_writer": true
+    },
+    {
+      "function": "FUN_005dec70",
+      "store": "0x005ded7e mov [ESI+0x374],EBP",
+      "receiver_chain": [
+        "0x005df730 push 0x37c",
+        "0x005df735 call allocator FUN_005862a0",
+        "0x005df746 mov ECX,EAX",
+        "0x005df748 call FUN_005dec70"
+      ],
+      "allocated_size": "0x37c",
+      "layout_contradiction": "FUN_00488dc0 manager constructor writes manager+0x37c, requiring storage through at least +0x37f; a fresh 0x37c-byte object ends at +0x37b",
+      "rejected_as_manager_374_writer": true
+    }
+  ],
+  "remaining_candidate": {
+    "function": "FUN_00481e20",
+    "store": "0x004826a6 fstp dword [ESI+0x374]",
+    "shape": "large field-by-field float copy including +0x374/+0x378/+0x37c",
+    "status": "open-alias-bulk-copy",
+    "reason_open": "One direct caller path supplies the destination through a forwarded argument; exact exclusion of manager identity is not yet complete."
+  },
+  "adjudication": {
+    "fun_0051efa0_rejected": true,
+    "fun_005dec70_rejected": true,
+    "fun_00481e20_bulk_copy_still_open": true,
+    "manager_374_literal_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Numeric +0x374 equality is not object identity.",
+    "No semantic class names are assigned to 0x00be1680 or the 0x37c-byte allocated object.",
+    "FUN_00481e20 remains deliberately open until every admissible destination alias is rooted or rejected.",
+    "This proof does not promote manager+0x374 to an HDVehicle/control meaning."
+  ],
+  "next_step": "Close the remaining FUN_00481e20 bulk-copy destination aliases, especially the FUN_0070dccf -> FUN_0070db00 forwarded-argument path; separately continue exact manager-root helper/indirect mutations."
+}
