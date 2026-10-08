@@ -1,8 +1,10 @@
 #include "shift_fun_00765c40_residual_producer_promotion_gate.hpp"
 
+#include <array>
 #include <cstdint>
 #include <iostream>
 #include <stdexcept>
+#include <string_view>
 
 namespace {
 using namespace shift::runtime::physics;
@@ -39,11 +41,32 @@ int main() {
             unproven_rejected = true;
         }
         require(unproven_rejected,
-                "present residual producer family passed without independent proof");
+                "present residual producer family passed without named independent proof");
 
+        bool empty_contract_rejected = false;
+        try {
+            set_fun_00765c40_residual_producer_family_proven(
+                proof,
+                Fun00765c40ResidualProducerFamily::WheelStateSource,
+                std::string_view{});
+        } catch (const std::invalid_argument&) {
+            empty_contract_rejected = true;
+        }
+        require(empty_contract_rejected,
+                "producer proof authorization accepted an empty contract id");
+
+        constexpr std::string_view kWheelStateTestProof =
+            "TEST.Fun00765c40WheelStateSourceProof/1";
         set_fun_00765c40_residual_producer_family_proven(
             proof,
-            Fun00765c40ResidualProducerFamily::WheelStateSource);
+            Fun00765c40ResidualProducerFamily::WheelStateSource,
+            kWheelStateTestProof);
+        require(
+            fun_00765c40_residual_producer_family_proof_contract(
+                proof,
+                Fun00765c40ResidualProducerFamily::WheelStateSource) ==
+                kWheelStateTestProof,
+            "producer proof receipt lost contract id");
         const auto promoted =
             apply_proven_fun_00765c40_residual_producer_handoff(
                 base, selective, proof);
@@ -70,10 +93,27 @@ int main() {
             partial_legacy_proof_rejected = true;
         }
         require(partial_legacy_proof_rejected,
-                "legacy all-family witness accepted partial proof mask");
+                "legacy all-family witness accepted partial proof receipts");
 
         Fun00765c40ResidualProducerProofMask all_proven{};
-        all_proven.independently_proven.fill(true);
+        constexpr std::array<Fun00765c40ResidualProducerFamily,
+                             kFun00765c40ResidualProducerHandoffFamilyCount>
+            families = {
+                Fun00765c40ResidualProducerFamily::WheelPlane,
+                Fun00765c40ResidualProducerFamily::WheelStateSource,
+                Fun00765c40ResidualProducerFamily::PersistentWrite,
+                Fun00765c40ResidualProducerFamily::WheelPair,
+                Fun00765c40ResidualProducerFamily::ContactArray,
+                Fun00765c40ResidualProducerFamily::ContactBody,
+                Fun00765c40ResidualProducerFamily::BoundedStateTail,
+                Fun00765c40ResidualProducerFamily::OptionalBodySweep,
+            };
+        for (const auto family : families) {
+            set_fun_00765c40_residual_producer_family_proven(
+                all_proven,
+                family,
+                "TEST.Fun00765c40ProducerProof/1");
+        }
         const auto legacy_promoted =
             apply_proven_fun_00765c40_residual_producer_handoff(
                 base, legacy, all_proven);
@@ -96,8 +136,12 @@ int main() {
             << "{\"format\":\""
             << kFun00765c40ResidualProducerPromotionGateFormat
             << "\",\"ready\":true,"
-               "\"default_proof_mask_fail_closed\":true,"
-               "\"present_family_requires_proof\":true,"
+               "\"historical_v1_format\":\""
+            << kFun00765c40HistoricalResidualProducerPromotionGateFormat
+            << "\",\"default_proof_mask_fail_closed\":true,"
+               "\"present_family_requires_named_proof\":true,"
+               "\"empty_proof_contract_rejected\":true,"
+               "\"proof_contract_receipt_preserved\":true,"
                "\"absent_family_preserved\":true,"
                "\"legacy_all_family_requires_all_proofs\":true,"
                "\"external_provider_count_after\":7,"
