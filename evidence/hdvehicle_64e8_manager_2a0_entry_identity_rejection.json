@@ -1,0 +1,58 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager2a0EntryIdentityRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact storage-root provenance: allocator-owned collection entries versus fixed global HDVehicle embedded subobject"
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8Manager2a0PopulationProducerProof/1",
+    "SHIFT.HDVehicle64e8Manager374SelectionWriterProof/1",
+    "SHIFT.BMWBody0VehicleRootBindRelation/1"
+  ],
+  "hdvehicle_storage": {
+    "global_root": "0x00c13700",
+    "target_subobject": "HDVehicle+0x4330",
+    "target_absolute": "0x00c17a30",
+    "equation": "0x00c13700 + 0x4330 = 0x00c17a30",
+    "initialization_call": "FUN_0076df50(this=&DAT_00c13700, ...)"
+  },
+  "manager_collection_storage": {
+    "collection": "manager+0x2a0",
+    "population_root": "FUN_004978f0 -> thunk_FUN_00d61e00",
+    "reset": "FUN_00486aa0 walks every existing collection chunk, destroys entries, frees each chunk through FUN_00886930, then zeros collection chunk pointers/count state",
+    "configuration": "thunk_FUN_0049d0b0 -> FUN_0062ffd0(element_size=0x22e0, alignment=0x20)",
+    "append": "thunk_FUN_00d61d10",
+    "first_chunk": "when collection chunk pointer is zero, FUN_0062f2d0 allocates a new chunk through FUN_00886900",
+    "entry_address": "thunk_FUN_00d61b90 returns chunk_data_base + element_size * slot_index",
+    "growth": "additional/full chunks are allocator-created; move/copy paths preserve entries inside newly allocated collection chunks",
+    "external_pointer_insertion": false
+  },
+  "selection_path": {
+    "selector": "thunk_FUN_00d60660",
+    "selected_entry": "FUN_0054ed00(manager+0x2a0, index)",
+    "selected_slot_write": "manager+0x374 = selected allocator-owned collection entry when post-load entry[0] == 0",
+    "selected_entry_can_be_hdvehicle_plus_4330": false
+  },
+  "adjudication": {
+    "manager_2a0_entry_equals_hdvehicle_4330_rejected": true,
+    "selection_writer_can_establish_manager_374_equals_hdvehicle_4330": false,
+    "manager_2a0_identity_frontier_complete": true,
+    "manager_374_global_identity_to_hdvehicle_4330_complete": false,
+    "reason_manager_374_stays_open": "other escaped-alias/computed/non-vtable writer surfaces remain possible independently of the rejected manager+0x2a0 selection writer",
+    "candidate_manager_374_plus_21b8_to_hdvehicle_64e8_promoted": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This proof rejects pointer identity for entries produced by the proven manager+0x2a0 population/selection path; it does not prove that manager+0x374 can never be assigned HDVehicle+0x4330 by another unresolved writer.",
+    "The equal 0x22e0 extent is layout corroboration only and is not used as the identity rejection by itself.",
+    "No gameplay class name is assigned to the manager+0x2a0 entry type.",
+    "The manager+0x20 escaped-alias frontier remains open and must be traced independently."
+  ],
+  "next_step": "Remove manager+0x2a0 selection as a candidate bridge to HDVehicle+0x64e8. Continue exact escaped-alias/computed/non-vtable manager+0x374 writer tracing; separately return to direct HDVehicle+0x64e8 writer provenance."
+}
