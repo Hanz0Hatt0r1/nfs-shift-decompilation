@@ -1,0 +1,64 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerMachineCfgCallBoundaryReconciliation/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8RenderManagerMachineCfgMemoryReplay/1",
+    "SHIFT.HDVehicle64e8Manager374VSlot0cDispatchClosure/1",
+    "SHIFT.PlayerVehicleRenderManagerReceiverTransferFrontier/2"
+  ],
+  "inventory": {
+    "call_boundary_observation_count": 303,
+    "unique_callsite_count": 302,
+    "callee_saved_only_unique_callsite_count": 207,
+    "caller_saved_exact_alias_unique_callsite_count": 95,
+    "caller_saved_direct_callsite_count": 92,
+    "caller_saved_indirect_callsite_count": 3,
+    "eax_only_unique_callsite_count": 41,
+    "ecx_or_edx_receiver_like_unique_callsite_count": 54,
+    "direct_ecx_or_edx_receiver_like_unique_callsite_count": 51
+  },
+  "indirect_calls": [
+    {
+      "callsite": "0x0056bcf2",
+      "exact_alias_registers": ["ecx", "esi"],
+      "dispatch_register": "edx",
+      "merged_vslot_offset": "+0x1c"
+    },
+    {
+      "callsite": "0x0056bd09",
+      "exact_alias_registers": ["ecx", "esi"],
+      "dispatch_register": "edx",
+      "merged_vslot_offset": "+0x20"
+    },
+    {
+      "callsite": "0x0056bd59",
+      "exact_alias_registers": ["ecx"],
+      "dispatch_register": "edx",
+      "merged_vslot_offset": "+0x1c"
+    }
+  ],
+  "adjudication": {
+    "machine_wide_new_indirect_exact_root_dispatch_found": false,
+    "all_machine_wide_indirect_exact_root_calls_match_merged_vslot_closure": true,
+    "target_vslot_plus_0x0c_reappears": false,
+    "direct_call_receiver_surface_reproved_here": false,
+    "opaque_callee_created_or_returned_alias_surface_complete": false,
+    "external_or_unknown_origin_alias_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The 92 direct callsites are not re-adjudicated by this contract; direct receiver transfer remains owned by the merged receiver-transfer/direct-callee contracts.",
+    "EAX-only presence is recorded as register residue and is not promoted to an ABI argument claim.",
+    "Opaque callees may still create or return aliases from unknown inputs; this contract only reconciles exact aliases already live at the call boundary."
+  ],
+  "next_step": "Focus Process 1B on opaque callee-created/returned and unknown-origin aliases rather than reopening exact-root first-hop indirect dispatch."
+}
