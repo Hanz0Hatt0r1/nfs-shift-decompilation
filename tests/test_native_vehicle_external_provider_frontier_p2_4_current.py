@@ -6,6 +6,8 @@ from src.physics import native_vehicle_external_provider_frontier_p2_4_current a
 
 ROOT = Path(__file__).resolve().parents[1]
 EXTERNAL_RESULT = ROOT / "native_runtime/include/shift_fun_00765c40_external_pass_result.hpp"
+NATIVE_QUERY_EVIDENCE = ROOT / "evidence/p2_4_fun_00765c40_native_selected_query_input.json"
+SESSION_QUERY_EVIDENCE = ROOT / "evidence/p2_4_fun_00765c40_session_query_snapshot.json"
 COMPOSED_EVIDENCE = ROOT / "evidence/p2_4_fun_00765c40_composed_residual_executor.json"
 SESSION_SOURCE = ROOT / "native_runtime/src/native_vehicle_provider_session.cpp"
 
@@ -36,13 +38,15 @@ def test_p2_4_overlay_currentizes_fun_00765c40_without_rewriting_history() -> No
 
 def test_overlay_matches_active_runtime_contracts() -> None:
     result_header = EXTERNAL_RESULT.read_text(encoding="utf-8")
+    native_query_evidence = NATIVE_QUERY_EVIDENCE.read_text(encoding="utf-8")
+    session_query_evidence = SESSION_QUERY_EVIDENCE.read_text(encoding="utf-8")
     session_source = SESSION_SOURCE.read_text(encoding="utf-8")
     composed = COMPOSED_EVIDENCE.read_text(encoding="utf-8")
 
     assert p2_4.EXTERNAL_PASS_RESULT_FORMAT in result_header
     assert "std::optional<CollisionQueryOutput> query_output" in result_header
-    assert p2_4.NATIVE_SELECTED_QUERY_INPUT_FORMAT in result_header
-    assert p2_4.SESSION_QUERY_SNAPSHOT_FORMAT in result_header
+    assert p2_4.NATIVE_SELECTED_QUERY_INPUT_FORMAT in native_query_evidence
+    assert p2_4.SESSION_QUERY_SNAPSHOT_FORMAT in session_query_evidence
     assert "materialize_fun_00765c40_session_query_snapshot" in session_source
     assert "query_inputs[pass_index] = session_query_input" in session_source
     assert p2_4.COMPOSED_RESIDUAL_EXECUTOR_FORMAT in composed
