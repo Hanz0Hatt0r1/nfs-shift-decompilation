@@ -15,7 +15,6 @@
     "allocation_and_store_function": "FUN_007125e0",
     "allocation_size": "0x2b90",
     "participant_constructor": "FUN_0072ed20",
-    "wrapper_record_zero_before_allocation": "0x0071262f mov [esi],eax after zero result path / constructor setup keeps record[0] explicit",
     "actual_participant_store": "0x0071263e mov [esi],eax",
     "machine_span": {"start":"0x007125e0","end_exclusive":"0x0071265e","sha256":"a82eca170826886527125d22242da2eb78171dd0cb0aa2ea2aa5db6bb344f2dc"},
     "exact_pointer_is_later_dereferenced_by_fun_00713630": true
@@ -38,7 +37,7 @@
       "FUN_007877a0", "FUN_0079baa0", "FUN_00799ff0", "FUN_00795630", "FUN_0079a6e0"
     ],
     "direct_subobject_plus_0x170_store_found": false,
-    "meaning": "The exact constructor and known selected load/update direct-call surface do not directly materialize subobject+0x170; alias/computed/reflection/bulk paths remain open."
+    "meaning": "The exact constructor and known selected load/update direct-call surface do not directly materialize subobject+0x170; alias/computed/bulk/indirect paths remain open."
   },
   "rejected_candidates": [
     {
@@ -65,18 +64,23 @@
       "selected_participant_writer": false
     }
   ],
-  "reflection_frontier": {
+  "reflection_candidate_rejection": {
     "function": "FUN_0072a2d0",
-    "descriptor_root": "0x00b8d1b4",
-    "observed_registration": "0x0072c3b3 pushes offset 0x170 before FUN_0063a280",
+    "registry_receiver": "DAT_00b8d1b4",
+    "registry_reference_count": 192,
+    "fun_0072a2d0_fun_0063a280_registration_count": 189,
+    "observed_offset_0x170_registration": "0x0072c3b3 pushes 0x170 before FUN_0063a280",
+    "name_argument": "Add Pressure - Steer From Wall",
+    "name_address": "0x00b06630",
+    "reason_rejected_as_identity_join": "The same registry receiver serves a large property table; this registration does not establish object-instance identity with participant+0x340 or vtable 0x00b0b744.",
     "selected_participant_subobject_identity_joined": false,
-    "status": "open",
-    "next": "Resolve which concrete object/layout descriptor 0x00b8d1b4 describes and whether its +0x170 registration is applied to participant+0x340; otherwise continue computed/alias writer search."
+    "rejected_as_writer_proof": true
   },
   "adjudication": {
     "selected_participant_root_construction_closed": true,
     "participant_plus_0x4b0_to_subobject_plus_0x170_identity_closed": true,
     "known_false_direct_candidates_rejected": true,
+    "generic_reflection_0x170_candidate_rejected_as_identity_proof": true,
     "known_constructor_and_selected_runtime_direct_surface_has_no_direct_store": true,
     "actual_selected_participant_plus_0x4b0_writer_closed": false,
     "p1_1a_complete": false,
@@ -85,9 +89,9 @@
     "external_provider_count": 7
   },
   "limits": [
-    "Absence of a direct +0x170 store in the checked exact surface does not exclude reflection, computed-offset, escaped-alias, indirect dispatch, or bulk-copy materialization.",
-    "The 0x00b8d1b4 reflection registration is not promoted to participant+0x340 identity without an exact object/layout join.",
+    "Absence of a direct +0x170 store in the checked exact surface does not exclude computed-offset, escaped-alias, indirect dispatch, or bulk-copy materialization.",
+    "The generic DAT_00b8d1b4 registration table is rejected only as an object-identity proof; the registration system may still participate indirectly in other loading paths.",
     "Provider reduction 7 -> 6 remains forbidden."
   ],
-  "next_step": "Join or reject the 0x00b8d1b4 offset-0x170 reflection descriptor against participant+0x340, then exhaust remaining computed/alias writers if needed."
+  "next_step": "Continue only computed-address, escaped-alias, indirect-dispatch, or bulk-copy writers that can be rooted to the exact participant+0x340 subobject."
 }
