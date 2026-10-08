@@ -24,7 +24,13 @@ def _write_json(path: Path, value: dict) -> None:
     path.write_text(json.dumps(value), encoding="utf-8")
 
 
-def _coordination(path: Path, *, control: bool, camera: bool) -> Path:
+def _coordination(
+    path: Path,
+    *,
+    control: bool,
+    camera: bool,
+    camera_feed: bool = True,
+) -> Path:
     _write_json(
         path,
         {
@@ -36,6 +42,7 @@ def _coordination(path: Path, *, control: bool, camera: bool) -> Path:
                 "retail_inner_substep_execution_admitted": True,
                 "retail_control_chain_complete": control,
                 "retail_camera_follow_ready": camera,
+                "process_2_camera_feed_ready": camera_feed,
             },
         },
     )
@@ -80,6 +87,22 @@ def test_current_upstream_control_and_camera_gates_block_final_smoke(tmp_path):
     assert report["boundary"]["missing_upstream_gate_may_be_guessed"] is False
 
 
+def test_retail_camera_semantics_without_runtime_feed_remain_blocked(tmp_path):
+    coordination = _coordination(
+        tmp_path / "coordination.json",
+        control=True,
+        camera=True,
+        camera_feed=False,
+    )
+    report, _ = MODULE.build_final_smoke_preflight(
+        _argv(tmp_path),
+        coordination_path=coordination,
+    )
+    assert report["ready"] is False
+    assert "coordination:process_2_camera_feed_ready:not-ready" in report["blocking_reasons"]
+    assert report["boundary"]["process_2_runtime_camera_feed_required"] is True
+
+
 def test_exact_ready_frontier_admits_continuous_silverstone_bmw_target(tmp_path):
     coordination = _coordination(
         tmp_path / "coordination.json",
@@ -97,6 +120,7 @@ def test_exact_ready_frontier_admits_continuous_silverstone_bmw_target(tmp_path)
     assert report["coordination_sha256"] == hashlib.sha256(coordination.read_bytes()).hexdigest()
     assert report["boundary"]["coordination_bytes_bound_to_preflight"] is True
     assert report["boundary"]["coordination_must_remain_stable_before_runtime"] is True
+    assert report["boundary"]["process_2_runtime_camera_feed_required"] is True
     assert forwarded == _argv(tmp_path)
 
 
