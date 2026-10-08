@@ -1,0 +1,122 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerPlus780ItemAliasClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_sqlite_role": "names/signatures/fingerprints only"
+  },
+  "root_derived_entry_paths": [
+    {
+      "function": "FUN_00498b80",
+      "root_load": "0x00498b89 mov edi,[0x00bc185c]",
+      "materialization": "0x00498b93 lea ecx,[edi+0x780]",
+      "callsite": "0x00498b9b call FUN_0070e1c0"
+    },
+    {
+      "function": "FUN_00499240",
+      "root_load": "0x004994c1 exact outer-root load retained in EBX",
+      "materialization": "0x004995bf lea ecx,[ebx+0x780]",
+      "callsite": "0x004995c5 call FUN_0070e1c0"
+    }
+  ],
+  "subobject_identity": {
+    "constructor": "FUN_0045ef50",
+    "constructor_call": "0x0045f0f8 call FUN_00633080 with ECX=outer+0x780",
+    "subobject_constructor": "FUN_00633080",
+    "subobject_constructor_size": 118,
+    "subobject_constructor_mnemonic_sha256": "d3a98c170f3412f8c32a0d01c54c6d82926952f90a4783674aef2ec56d62eccd",
+    "vptr_store": "0x0063308a [subobject]=0x00aebdbc",
+    "vtable": "0x00aebdbc",
+    "slot_plus_0x08_target": "0x008f3df0",
+    "slot_plus_0x08_target_name": "GetHashSize",
+    "slot_plus_0x08_target_body": "ret",
+    "subobject_span_used_by_helpers": "approximately +0x0..+0x25c"
+  },
+  "fun_0070e1c0_forwarding": {
+    "function": "FUN_0070e1c0",
+    "size": 73,
+    "mnemonic_sha256": "a67813ca15bfc96a3e79f353432bef5ed6436040915ddce5aaa01e2dcc900470",
+    "entry_stack_save": "0x0070e1c3 push ecx",
+    "stack_slot_overwrite": "0x0070e1cb [ebp-0x4]=0 before forwarded call",
+    "forward_call": "0x0070e1d2 call thunk_FUN_00d66440 with ECX still equal outer+0x780",
+    "returns_incoming_pointer": false,
+    "persistent_stack_alias_after_overwrite": false
+  },
+  "item_encapsulation": {
+    "thunk": "thunk_FUN_00d66440",
+    "thunk_address": "0x00495fb0",
+    "body": "FUN_00d66440",
+    "body_address": "0x00d66440",
+    "body_size": 216,
+    "body_mnemonic_sha256": "e60ef632da7b934570189a6b6e208d25f8b2034e96149d298eed1e52e608b692",
+    "allocator_helper": "FUN_00633290",
+    "allocator_helper_size": 116,
+    "allocator_helper_mnemonic_sha256": "6c836d9e3199500337f9f9a0fec3930107d7f6c6278b82a446aa78cb52c414ec",
+    "stored_derived_pointer": "FUN_00633290 stores incoming ECX at allocation-header+0x4 and returns payload+0x10",
+    "derived_pointer_relative_to_returned_item": "item-0x0c",
+    "recovery_helper": "FUN_00632fe0",
+    "recovery_helper_size": 16,
+    "recovery_helper_mnemonic_sha256": "655b2af1e88eb9d26ea2d3ac4bc7ef5ccdcab9d0c7c38d49bafc19732bb815aa",
+    "recovery_rule": "when the item flag permits, returns [item-0x0c], i.e. the same outer+0x780 derived pointer",
+    "reconstructs_exact_outer_root": false
+  },
+  "caller_consumption": {
+    "FUN_00498b80": {
+      "pre_finalize_consumer": "FUN_0070b880",
+      "pre_finalize_consumer_size": 100,
+      "pre_finalize_consumer_mnemonic_sha256": "83f2b3861e848de8b1afc7e867bddd6008899558f33443302dac97d20449cf15",
+      "pre_finalize_recovers_item_header_pointer": false,
+      "final_recovery": "0x00498cf4 call thunk_FUN_00632fe0",
+      "derived_receiver_consumer": "0x00498cfd call FUN_004987c0"
+    },
+    "FUN_00499240": {
+      "final_recovery": "0x004995de call thunk_FUN_00632fe0",
+      "derived_receiver_consumer": "0x004995e7 call FUN_004987c0"
+    }
+  },
+  "derived_receiver_consumer": {
+    "function": "FUN_004987c0",
+    "size": 257,
+    "mnemonic_sha256": "ee978a2a6048f26889faf4fe0a5f3a0e26b3f772f19ff6c17cf84e7ea6374113",
+    "this_minus_0x780_reconstruction": false,
+    "exact_outer_root_store_or_return": false,
+    "virtual_slot_plus_0x08_target_is_noop": true,
+    "recursive_item_build": "0x0049886c call thunk_FUN_00d66440 with the same outer+0x780 derived receiver",
+    "same_receiver_helper": "FUN_006333f0"
+  },
+  "same_receiver_helper_surface": {
+    "function": "FUN_006333f0",
+    "size": 335,
+    "mnemonic_sha256": "7cd41181573587190b8b5d17236718a96242b0d676a2fba553936df4c2ef9a87",
+    "this_minus_0x780_reconstruction": false,
+    "exact_outer_root_store_or_return": false,
+    "same_receiver_descendant": "FUN_0064fef0",
+    "descendant_size": 67,
+    "descendant_mnemonic_sha256": "c07c58f13f126366fd6cc47139d5157fbb779441dd55e1c8cf3dbd124b675e8c",
+    "descendant_receiver_offsets": ["+0x88", "+0x90"],
+    "descendant_this_minus_0x780_reconstruction": false
+  },
+  "adjudication": {
+    "outer_plus_0x780_root_derived_entry_surface_complete": true,
+    "runtime_item_encapsulation_surface_complete": true,
+    "outer_plus_0x780_reconstructs_exact_outer_root": false,
+    "outer_plus_0x780_alias_surface_closed_negative_for_exact_root_reconstruction": true,
+    "derived_subobject_alias_surface_complete": true,
+    "callee_created_or_external_exact_root_alias_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_alias_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The runtime item can persist the outer+0x780 derived pointer, but every recovery returns the same derived pointer, never outer root.",
+    "This closes only the two exact root-derived +0x780 entry paths proven by the cross-block replay.",
+    "Callee-created/external exact roots and two-unknown-origin HDVehicle+0x4330 aliases remain open.",
+    "No offset equality is used as identity."
+  ],
+  "next_step": "Continue callee-created/external exact-root aliases and two-unknown-origin/cross-control-flow HDVehicle+0x4330 provenance; keep manager+0x374 join fail-closed."
+}
