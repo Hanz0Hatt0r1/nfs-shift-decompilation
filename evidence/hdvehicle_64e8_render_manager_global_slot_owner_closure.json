@@ -1,0 +1,81 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerGlobalSlotOwnerClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_role": "navigation/fingerprint only"
+  },
+  "target": {
+    "canonical_global_slot": "0x00bc185c",
+    "canonical_outer_root_value": "[0x00bc185c]",
+    "constructed_object_size": "0x46e0",
+    "constructor": "0x0045ef50",
+    "allocator_wrapper": "0x008868c0"
+  },
+  "whole_text_reference_classification": {
+    "total_instruction_references_to_0x00bc185c": 115,
+    "direct_value_loads": 112,
+    "slot_address_literal_materializations": 1,
+    "slot_writes": 2,
+    "other_reference_classes": 0,
+    "slot_address_literal": {
+      "site": "0x004fb9af",
+      "instruction": "mov edi,0x00bc185c",
+      "next_value_load": "0x004fb9b5 mov edi,[edi]",
+      "classification": "address-of-global-slot followed by ordinary slot load; not an independent outer-root value producer"
+    }
+  },
+  "initializer_machine_window": {
+    "start": "0x00d362b9",
+    "end": "0x00d362fa",
+    "normalized_instruction_sha256": "52a65bf29f34f60a2c65dd5a161bc915393a3c3c27604b321775be7e29860a40",
+    "allocation": [
+      "0x00d362b9 push 0x46e0",
+      "0x00d362be call 0x008868c0"
+    ],
+    "success_path": [
+      "0x00d362d3 cmp eax,esi",
+      "0x00d362d5 je 0x00d362f3",
+      "0x00d362d7 mov ecx,eax",
+      "0x00d362d9 call 0x0045ef50",
+      "0x00d362ec mov [0x00bc185c],eax"
+    ],
+    "failure_path": [
+      "0x00d362f3 mov [0x00bc185c],esi"
+    ],
+    "success_value_provenance": "allocator return EAX -> constructor receiver ECX -> constructor return EAX -> canonical global slot",
+    "failure_value_provenance": "ESI sentinel"
+  },
+  "constructor_identity": {
+    "entry": "0x0045ef50",
+    "captures_receiver": "0x0045ef59 mov esi,ecx",
+    "primary_vptr_write": "0x0045ef78 mov [esi],0x00ab5644",
+    "secondary_vptr_write": "0x0045ef7e mov [esi+0x4],0x00ab55f0",
+    "tertiary_vptr_write": "0x0045ef85 mov [esi+0x8],0x00ab55e4",
+    "constructor_matches_merged_render_manager_identity": true
+  },
+  "adjudication": {
+    "canonical_global_slot_writer_surface_complete": true,
+    "canonical_global_slot_external_initialization_found": false,
+    "canonical_global_slot_unknown_origin_initialization_found": false,
+    "canonical_global_slot_success_value_is_locally_allocated_and_constructed": true,
+    "canonical_global_slot_failure_value_is_sentinel": true,
+    "bounded_direct_target_opaque_surface_complete": true,
+    "external_or_unknown_origin_copies_of_exact_root_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes ownership/initialization of the canonical global slot itself, not every possible later copy of the exact root value.",
+    "The one immediate 0x00bc185c materialization is the address of the global slot and is dereferenced before use as an object pointer.",
+    "No function name is invented for the secure initializer window at 0x00d362b9..0x00d362fa; machine addresses are authoritative.",
+    "No offset equality is promoted to object identity."
+  ],
+  "next_step": "Search for exact-root copies created from unknown memory/helper-return origins independently of the canonical slot; then continue two-unknown-origin/cross-control-flow HDVehicle+0x4330 provenance."
+}
