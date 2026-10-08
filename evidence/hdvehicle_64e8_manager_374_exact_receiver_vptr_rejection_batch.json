@@ -1,0 +1,181 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374ExactReceiverVptrRejectionBatch/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_sqlite_role": "function navigation and mnemonic fingerprints only",
+    "vtables_json_role": "navigation/cross-check only"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374LiteralStoreInventory/1",
+  "manager_identity": {
+    "singleton": "0x00bc9fc0",
+    "constructor": "FUN_00488dc0",
+    "root_vptr": "0x00ab9190"
+  },
+  "rejections": [
+    {
+      "site": "0x0074874b",
+      "function": "FUN_00748280",
+      "store": "mov [esi+0x374],eax",
+      "receiver_capture": "0x0074829d mov esi,ecx",
+      "exact_vptr_store": "0x007482b2 mov [esi],0x00b07938",
+      "receiver_vptr": "0x00b07938",
+      "manager_vptr": "0x00ab9190",
+      "vptr_equal": false,
+      "receiver_vptr_overwritten_before_store": false,
+      "function_size": 2247,
+      "function_mnemonic_sha256": "6eb579841dc27729011aeef7db976fe6e5296f65f014365e276d0058d0ceb650",
+      "rejected_as_manager_374_writer": true
+    },
+    {
+      "site": "0x008169c3",
+      "function": "FUN_008167f0",
+      "store": "mov [esi+0x374],ebx",
+      "receiver_capture": "0x008167f8 mov esi,ecx",
+      "vptr_sequence": [
+        "0x008167fa mov [esi],0x00b1e270",
+        "0x00816810 mov [esi],0x00aaa9a0",
+        "0x00816825 mov [esi],0x00b16158"
+      ],
+      "final_receiver_vptr": "0x00b16158",
+      "manager_vptr": "0x00ab9190",
+      "vptr_equal": false,
+      "final_vptr_overwritten_before_store": false,
+      "function_size": 901,
+      "function_mnemonic_sha256": "b4da6008545d1a924c7606bfa3f6cda96e9ff5bfe0bbbb519749e573ee6ffe26",
+      "rejected_as_manager_374_writer": true
+    },
+    {
+      "site": "0x00816c9c",
+      "function": "FUN_00816c70",
+      "store": "add [ecx+0x374],1",
+      "receiver_provenance": {
+        "owner_getter": "0x00572f14 call FUN_0080bfb0",
+        "child_getter": "0x00572f1b call FUN_0080b8f0",
+        "child_getter_body": "0x0080b8f0 mov eax,[ecx+0x56c]; ret",
+        "call_receiver": "0x00572f49 mov ecx,edi; 0x00572f4d call FUN_00816c70",
+        "owner_child_construction": [
+          "0x0080bb2c push 0x390",
+          "0x0080bb37 call allocator FUN_008868c0",
+          "0x0080bb45 call FUN_008167f0",
+          "0x0080bb4a mov [esi+0x56c],eax"
+        ]
+      },
+      "receiver_constructor": "FUN_008167f0",
+      "receiver_vptr": "0x00b16158",
+      "manager_vptr": "0x00ab9190",
+      "vptr_equal": false,
+      "function_size": 55,
+      "function_mnemonic_sha256": "80b8cce34234815775eb8d65660988faf726cb330a86a8c7b192b06381732069",
+      "rejected_as_manager_374_writer": true
+    },
+    {
+      "site": "0x00833972",
+      "function": "FUN_00833760",
+      "store": "mov [ebx+0x374],ecx",
+      "receiver_capture": "entry receiver saved in ebx",
+      "vptr_sequence": [
+        "0x00833773 mov [ebx],0x00b18bc8",
+        "0x0083378a mov [ebx],0x00b190a8"
+      ],
+      "final_receiver_vptr": "0x00b190a8",
+      "manager_vptr": "0x00ab9190",
+      "vptr_equal": false,
+      "function_size": 557,
+      "function_mnemonic_sha256": "ed2f1767bd3da9117f8529fbbc51de86c4a48f6f340225e4285ad96f9cb5ec94",
+      "rejected_as_manager_374_writer": true
+    },
+    {
+      "site": "0x00844343",
+      "function": "FUN_00844320",
+      "store": "mov [esi+0x374],0",
+      "receiver_capture": "0x00844322 mov esi,ecx",
+      "exact_vptr_store": "0x0084432b mov [esi],0x00b190a8",
+      "receiver_vptr": "0x00b190a8",
+      "manager_vptr": "0x00ab9190",
+      "vptr_equal": false,
+      "function_size": 61,
+      "function_mnemonic_sha256": "b198cd4e8c80e2d14984348ad9e8f43c0ecf7615afddf119742cbcf046f355c1",
+      "rejected_as_manager_374_writer": true
+    },
+    {
+      "site": "0x00844b67",
+      "function": "FUN_00844a20",
+      "store": "mov [esi+0x374],eax",
+      "receiver_capture": "0x00844a28 mov esi,ecx",
+      "exact_vptr_store": "0x00844a3a mov [esi],0x00b190a8",
+      "receiver_vptr": "0x00b190a8",
+      "manager_vptr": "0x00ab9190",
+      "vptr_equal": false,
+      "function_size": 366,
+      "function_mnemonic_sha256": "1ae4c3384cb932a4be044c0f1554dd5d686d73f9fc901bf60bfee38fa173f7e5",
+      "rejected_as_manager_374_writer": true
+    },
+    {
+      "site": "0x00d7f104",
+      "function": "FUN_00d7f040",
+      "store": "mov [esi+0x374],eax",
+      "receiver_capture": "0x00d7f041 mov esi,ecx",
+      "exact_vptr_store": "0x00d7f057 mov [esi],0x00ac1fc4",
+      "receiver_vptr": "0x00ac1fc4",
+      "manager_vptr": "0x00ab9190",
+      "vptr_equal": false,
+      "function_size": 376,
+      "function_mnemonic_sha256": "9a5def75b06e4d300a1ef6f90f8856c9599d053b53640bdc19f072569f801c12",
+      "rejected_as_manager_374_writer": true
+    }
+  ],
+  "worklist_transition": {
+    "incoming_site_count": 20,
+    "rejected_site_count": 7,
+    "remaining_site_count": 13,
+    "incoming_function_count": 16,
+    "rejected_function_count": 7,
+    "remaining_function_count": 9,
+    "remaining_sites": [
+      "0x007c0fa0",
+      "0x007c1ace",
+      "0x00818157",
+      "0x008446cb",
+      "0x008446e3",
+      "0x008446f8",
+      "0x00865013",
+      "0x0097da09",
+      "0x0097daf8",
+      "0x0097dc63",
+      "0x0097ed06",
+      "0x00a38974",
+      "0x00a44ac5"
+    ],
+    "remaining_functions": [
+      "FUN_007c0db0",
+      "FUN_007c19c0",
+      "FUN_00818000",
+      "FUN_008446a0",
+      "FUN_00864c10",
+      "FUN_0097d8c4",
+      "FUN_0097eacc",
+      "FUN_00a38959",
+      "FUN_00a44a50"
+    ]
+  },
+  "adjudication": {
+    "seven_exact_receiver_sites_rejected": true,
+    "remaining_literal_store_receiver_provenance_complete": false,
+    "computed_address_manager_374_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Each rejection requires an exact machine receiver/vptr or owner-to-child constructor join; semantic labels are not used as identity evidence.",
+    "A vptr mismatch rejects only the exact receiver instance at the listed store site; it does not classify unrelated +0x374 writers.",
+    "The 13 remaining literal sites are still a receiver-provenance worklist, not manager or non-manager claims.",
+    "Computed-address writers and the manager+0x374 to HDVehicle+0x4330 identity join remain open."
+  ],
+  "next_step": "Classify the 13 remaining literal +0x374 stores, beginning with the exact lighting-table receiver surface and the FMOD/runtime-object clusters; preserve the final literal 0x004b86cf fail-closed."
+}
