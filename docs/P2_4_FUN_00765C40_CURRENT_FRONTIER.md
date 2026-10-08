@@ -19,9 +19,9 @@ Current selected-BMW ownership is:
 - composed eleven-stage residual executor: present;
 - lower scene-query implementation at global `0x00c133ac`, vtable `+0x1c0`: still external.
 
-The active `Fun00765c40ExternalPassResult` contract is `/5`. It preserves the historical `/4` prefix and appends an optional, non-authoritative `SHIFT.Fun00765c40ResidualProducerHandoff/1`. Historical Phase744 evidence remains pinned to `/4` because it records the collision-output handoff milestone, not the current result version.
+The active `Fun00765c40ExternalPassResult` contract is `/5`. It preserves the historical `/4` prefix and appends an optional, non-authoritative `SHIFT.Fun00765c40ResidualProducerHandoff/2`. Historical Phase744 evidence remains pinned to `/4`, and the producer handoff preserves historical `/1` behavior when explicit family presence is disabled.
 
-The producer handoff is now threaded through both the provider result and `NativeVehicleProviderSessionResult`. The session captures one optional witness per recovered physics pass and exposes a capture-count telemetry field. The witness is still **not authoritative**, and its presence does not make any producer formula native-owned or permit automatic composed-executor consumption.
+The `/2` producer handoff is threaded through both the provider result and `NativeVehicleProviderSessionResult`. It adds `family_presence_explicit` plus `family_present[8]`, allowing a source-backed producer family to be promoted independently. In explicit mode, absent families preserve existing composed inputs rather than default-overwriting them. The witness remains **not authoritative** and session capture does not automatically invoke the composed executor.
 
 ## REMAINING PRODUCER FRONTIER
 
@@ -49,8 +49,11 @@ No formula or owner in that list is promoted until source or machine evidence pr
 - External provider count remains 7.
 - The lower collision provider is not renamed or semantically inferred.
 - The `/5` producer witness is optional and non-authoritative.
+- `/2` selective family presence changes transport granularity, not ownership.
+- Historical `/1` all-family behavior remains compatible.
+- An absent `/2` family cannot default-overwrite an unresolved composed input.
 - Session capture is local to one explicit step and adds no persistent session state.
 
 ## NEXT STEP
 
-Populate one or more captured witness fields from source-backed selected-provider production and compare them against an independently reconstructed native producer. Only a positively proven producer may then feed the composed executor. Provider removal remains fail-closed until the explicit producer list is empty.
+As Process 1 closes individual producer/owner proofs, mark only the corresponding `/2` family present and compare it against independent native reconstruction. A positively proven family may then feed the composed executor without overwriting unresolved siblings. Provider removal remains fail-closed until the explicit producer list is empty.
