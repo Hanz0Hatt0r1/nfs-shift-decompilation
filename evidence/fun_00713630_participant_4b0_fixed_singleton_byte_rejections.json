@@ -1,0 +1,73 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0FixedSingletonByteRejections/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630Participant4b0Frontier/1",
+    "SHIFT.Fun00713630Participant4b0SubobjectAliasFrontier/1",
+    "SHIFT.Fun00713630Participant4b0VehicleLoadDataConstructorRejection/1"
+  ],
+  "receiver_root": {
+    "getter": "FUN_00518de0",
+    "getter_machine": "0x00518de0 mov EAX,0x00be1680; 0x00518de5 ret",
+    "fixed_receiver": "0x00be1680",
+    "handoff": [
+      "0x004567a3 call FUN_00518de0",
+      "0x004567a8 mov ECX,EAX",
+      "0x004567aa call FUN_0051f8f0"
+    ],
+    "same_receiver_forwarding": [
+      "FUN_0051f8f0 captures ESI=ECX",
+      "0x0051f930 mov ECX,ESI",
+      "0x0051f932 call FUN_0051f8e0",
+      "FUN_0051f8e0 tail-dispatches unchanged ECX to FUN_0051f850 or FUN_0051f800"
+    ],
+    "selected_physics_participant_root": "manager record[0] -> separately allocated 0x2b90 PhysicsParticipant",
+    "same_object_identity": false,
+    "machine_spans": {
+      "getter_sha256": "a26109a4b6d9f0d733d810efe00fa5249945f59088bbe466906572c902db94d4",
+      "root_handoff_sha256": "fa3b5535f68a360e3f77bf15a9e26e910cbf1c97825c7e414661612e26770d75",
+      "dispatch_sha256": "f40c41c55caf51d90ffc677c3d99e49fcc9ab77b648ee3b0b240a7e6a93078b5"
+    }
+  },
+  "rejected_sites": [
+    {
+      "site": "0x0051f81c",
+      "function": "FUN_0051f800",
+      "operation": "mov byte ptr [ESI+0x4b0],AL",
+      "receiver": "0x00be1680",
+      "machine_span_sha256": "a51dcb70a0a9e5e2d2ce0266d6460d70ee5b39943ad1a3ddac9be687b5c5ad92",
+      "selected_physics_participant_writer": false
+    },
+    {
+      "site": "0x0051f8d2",
+      "function": "FUN_0051f850",
+      "operation": "mov byte ptr [ESI+0x4b0],0",
+      "receiver": "0x00be1680",
+      "machine_span_sha256": "aafe4ecd5dac3548843f5d6d8951d11b04ada83716b53fb2178ae956b857a1dc",
+      "selected_physics_participant_writer": false
+    }
+  ],
+  "adjudication": {
+    "fixed_singleton_receiver_identity_closed": true,
+    "site_0x0051f81c_rejected": true,
+    "site_0x0051f8d2_rejected": true,
+    "remaining_unjoined_direct_site_count": 11,
+    "selected_participant_runtime_plus_0x4b0_writer_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Byte width alone is not used as a rejection argument; exact receiver identity is the rejection basis.",
+    "This contract rejects only the two listed direct-displacement sites.",
+    "Computed-address, escaped-alias, indirect-dispatch and bulk-copy writers remain open."
+  ],
+  "next_step": "Adjudicate the remaining 11 direct-displacement +0x4b0 writer sites by exact receiver provenance."
+}
