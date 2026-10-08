@@ -134,7 +134,7 @@ def test_frontier_marks_requests_1_2_4_resolved_and_request_3_explicitly_blocked
     assert rows["mode2_source_vtable_identity"]["status"] == "resolved"
     assert "0x00b16788" in rows["mode2_source_vtable_identity"]["result"]
     assert rows["mode2_vehicle_pose_dependency"]["status"] == "blocked-by-p1.3-manager2a0-entry-identity"
-    assert "manager+0x2a0" in rows["mode2_vehicle_pose_dependency"]["target"]
+    assert "FUN_00489ad0()+0x2a0" in rows["mode2_vehicle_pose_dependency"]["target"]
     assert rows["camera_follow_update_order"]["status"] == "resolved"
     assert "FUN_0070f940" in rows["camera_follow_update_order"]["result"]
     assert "FUN_008216a0" in rows["camera_follow_update_order"]["result"]
