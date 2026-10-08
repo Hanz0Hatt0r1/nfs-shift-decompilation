@@ -6,6 +6,7 @@
 #include <array>
 #include <cstddef>
 #include <stdexcept>
+#include <utility>
 
 namespace shift::runtime::physics {
 
