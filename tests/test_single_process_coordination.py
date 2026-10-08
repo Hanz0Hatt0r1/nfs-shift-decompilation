@@ -109,7 +109,7 @@ def test_provider_frontier_targets_first_real_boundary_reduction() -> None:
     assert len(frontier["boundaries"]) == 7
 
 
-def test_v6_docs_define_non_overlapping_active_ownership() -> None:
+def test_v6_docs_remain_historical_background_while_root_routes_live_status() -> None:
     canonical = V6.read_text(encoding="utf-8")
     prompts = PROMPTS.read_text(encoding="utf-8")
     process = PROCESS.read_text(encoding="utf-8")
@@ -127,10 +127,17 @@ def test_v6_docs_define_non_overlapping_active_ownership() -> None:
     assert "Phase748" in prompts and "Phase749" in prompts
     assert "PROCESS 2 — native physics / runtime" in prompts
     assert "PROCESS 3 — resources / scene / render / playable bootstrap" in prompts
+
     assert "PLAYABLE_SLICE_THREE_PROCESS_INSTRUCTIONS_V6.md" in process
-    assert "Current merged main frontier: **Phase 749**" in process
     assert "playable_slice_three_process_execution.json" in process
-    assert "process-1/<blocker>" in process
+    assert "coordination/PLAYABLE_SLICE_STATUS.md" in process
+    assert "coordination/lane_ownership.json" in process
+    assert "P1A-contact" in process
+    assert "P1B-control" in process
+    assert "P1D-camera" in process
+    assert "P2-runtime" in process
+    assert "P3-integration" in process
+    assert "Current merged main frontier: **Phase 749**" not in process
     assert "NEXT_OWNER:" in process
 
 
