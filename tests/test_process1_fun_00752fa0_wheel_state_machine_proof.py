@@ -45,15 +45,17 @@ def test_caller_join_and_vehicle_offsets_are_exact() -> None:
     assert writes["per_wheel_offsets"] == ["+0x9f8 dword", "+0xa00 qword"]
 
 
-def test_frontier_moves_callee_from_unresolved_to_classified() -> None:
+def test_frontier_keeps_callee_classified_after_full_p1_2_closure() -> None:
     frontier = _load(FRONTIER)
     classified = frontier["classified_callee_side_effects"]
     assert any(row["callee"] == "0x00752fa0" for row in classified)
     assert "0x00752fa0" not in frontier["representative_unresolved_callees"]
-    assert frontier["callee_mediated_side_effects_complete"] is False
-    assert frontier["gate"]["p1_2b_complete"] is False
-    assert frontier["gate"]["fun_00765c40_provider_removal_authorized"] is False
-    assert frontier["gate"]["external_provider_count"] == 7
+    assert frontier["representative_unresolved_callees"] == []
+    assert frontier["callee_mediated_side_effects_complete"] is True
+    gate = frontier["gate"]
+    assert gate["p1_2b_complete"] is True
+    assert gate["fun_00765c40_provider_removal_authorized"] is True
+    assert gate["external_provider_count_before_process_2_consumption"] == 7
 
 
 def test_documentation_keeps_semantics_fail_closed() -> None:
