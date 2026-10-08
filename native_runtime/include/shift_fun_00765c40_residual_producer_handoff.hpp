@@ -39,6 +39,14 @@ struct Fun00765c40ResidualProducerHandoff {
 
 inline constexpr std::size_t kFun00765c40ResidualProducerHandoffFamilyCount = 8u;
 
+// Validate only invariants already owned by an underlying stage contract.
+// Most producer fields intentionally remain opaque bit patterns or unresolved
+// vectors, so this function must not add guessed range/semantic constraints.
+inline void validate_fun_00765c40_residual_producer_handoff_known_invariants(
+    const Fun00765c40ResidualProducerHandoff& handoff) {
+    validate_fun_007584f0_computed_inputs(handoff.persistent_write);
+}
+
 static_assert(kFun00765c40ResidualProducerHandoffFamilyCount == 8u);
 
 }  // namespace shift::runtime::physics

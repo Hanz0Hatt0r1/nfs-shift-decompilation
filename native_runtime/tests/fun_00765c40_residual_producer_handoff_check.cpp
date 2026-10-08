@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 
 namespace {
@@ -47,6 +48,8 @@ int main() {
         handoff.optional_body_sweep.entries[1].point_or_lever_arm = {7.0, 8.0, 9.0};
         handoff.optional_body_sweep.entries[1].contribution = {10.0, 11.0, 12.0};
 
+        validate_fun_00765c40_residual_producer_handoff_known_invariants(handoff);
+
         const auto bridged =
             apply_fun_00765c40_residual_producer_handoff(base, handoff);
 
@@ -88,12 +91,35 @@ int main() {
                     bridged.read_load_term(3u) == 4.0,
                 "producer handoff overwrote wheel-job execution seam");
 
+        bool nonfinite_persistent_rejected = false;
+        try {
+            auto invalid = handoff;
+            invalid.persistent_write.positive_branch_values[1] =
+                std::numeric_limits<double>::quiet_NaN();
+            validate_fun_00765c40_residual_producer_handoff_known_invariants(invalid);
+        } catch (const std::invalid_argument&) {
+            nonfinite_persistent_rejected = true;
+        }
+        require(nonfinite_persistent_rejected,
+                "producer handoff accepted non-finite proven FUN_007584f0 payload");
+
+        auto opaque_bits = handoff;
+        opaque_bits.wheel_state_source_bits = 0xffffffffffffffffull;
+        opaque_bits.contact_array.scalar_qword_bits[0] = 0x7ff8000000000000ull;
+        validate_fun_00765c40_residual_producer_handoff_known_invariants(opaque_bits);
+        require(opaque_bits.wheel_state_source_bits == 0xffffffffffffffffull &&
+                    opaque_bits.contact_array.scalar_qword_bits[0] ==
+                        0x7ff8000000000000ull,
+                "producer handoff validator reinterpreted opaque qword payloads");
+
         std::cout
             << "{\"format\":\""
             << kFun00765c40ResidualProducerHandoffFormat
             << "\",\"ready\":true,\"payload_families\":"
             << kFun00765c40ResidualProducerHandoffFamilyCount
-            << ",\"native_state_preserved\":true,"
+            << ",\"known_invariants_validated\":true,"
+               "\"opaque_bits_preserved\":true,"
+               "\"native_state_preserved\":true,"
                "\"wheel_job_execution_external\":true,"
                "\"scene_query_external\":true}\n";
         return 0;

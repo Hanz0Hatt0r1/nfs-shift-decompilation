@@ -105,9 +105,13 @@ inline void validate_fun_00765c40_external_pass_result(
         }
     }
 
-    // The /5 residual producer handoff is intentionally opaque here. Exact-width
-    // payload validation belongs to the individual stage contracts. Merely
-    // returning this witness cannot promote producer arithmetic to native-owned.
+    // Validate only invariants already proven by the individual stage contracts.
+    // Opaque qword payloads and unresolved BODY vectors intentionally remain
+    // unconstrained here; validation must not invent producer semantics.
+    if (result.residual_producer_handoff.has_value()) {
+        validate_fun_00765c40_residual_producer_handoff_known_invariants(
+            *result.residual_producer_handoff);
+    }
 }
 
 inline Fun00765c40QueryInputBoundary
