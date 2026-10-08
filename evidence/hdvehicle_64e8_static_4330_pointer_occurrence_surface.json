@@ -1,0 +1,47 @@
+{
+  "format": "SHIFT.HDVehicle64e8Static4330PointerOccurrenceSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "whole-PE raw little-endian exact pointer occurrence scan with PE section mapping"
+  },
+  "target": {
+    "hdvehicle_root": "0x00c13700",
+    "subobject_offset": "+0x4330",
+    "subobject_address": "0x00c17a30",
+    "little_endian_bytes": "30 7a c1 00"
+  },
+  "occurrences": {
+    "whole_file_count": 4,
+    "all_in_text": true,
+    "non_text_count": 0,
+    "sites": [
+      {"file_offset":"0x00301b16","virtual_address":"0x00702716","instruction_start":"0x00702715","instruction":"mov ecx,0xc17a30","role":"FUN_00702710 wrapper call receiver for FUN_00771e40"},
+      {"file_offset":"0x00301b4e","virtual_address":"0x0070274e","instruction_start":"0x0070274d","instruction":"mov ecx,0xc17a30","role":"FUN_00702720 wrapper call receiver for FUN_00771e40"},
+      {"file_offset":"0x00301b77","virtual_address":"0x00702777","instruction_start":"0x00702776","instruction":"mov ecx,0xc17a30","role":"FUN_00702770 wrapper call receiver for FUN_00772350"},
+      {"file_offset":"0x00301bad","virtual_address":"0x007027ad","instruction_start":"0x007027ac","instruction":"mov ecx,0xc17a30","role":"FUN_00702770 tail wrapper call receiver for FUN_00771e40"}
+    ],
+    "rdata_pointer_cell_count": 0,
+    "data_pointer_cell_count": 0,
+    "other_section_pointer_cell_count": 0
+  },
+  "adjudication": {
+    "static_exact_4330_pointer_cell_surface_complete": true,
+    "static_exact_4330_pointer_cell_count": 0,
+    "table_or_global_load_of_preinitialized_exact_4330_possible": false,
+    "all_raw_exact_pointer_occurrences_are_known_wrappers": true,
+    "global_non_literal_hdvehicle_64e8_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only preinitialized exact 32-bit pointer cells for HDVehicle+0x4330 in the shipped PE image.",
+    "The four raw occurrences are code immediates in the already-bounded wrapper block and are not additional aliases.",
+    "Runtime-derived, computed, copied, externally initialized, or differently represented aliases remain open."
+  ],
+  "next_step": "Trace runtime-derived/reconstructed HDVehicle+0x4330 aliases that do not originate from a static exact pointer cell; keep the manager+0x374 join fail-closed."
+}
