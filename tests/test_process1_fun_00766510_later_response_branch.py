@@ -90,7 +90,7 @@ def test_runtime_order_and_analyzer_anchors_are_pinned() -> None:
 
     text = ANALYZER.read_text(encoding="utf-8")
     for token in (
-        "param_2 + 0xa38",
+        "FUN_00752f10((void *)((int)this + 0x3a08)",
         "param_2 + 0xa68",
         "param_2 + 0x9f4",
         "param_2 + 0xc18",
