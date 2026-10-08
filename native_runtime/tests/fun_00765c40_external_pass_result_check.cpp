@@ -157,6 +157,9 @@ int main() {
             << "\"query_input_boundary_typed\":true,"
             << "\"selected_query_input_native_owned\":true,"
             << "\"selected_collision_output_required\":true,"
+            << "\"native_cache_input_required\":true,"
+            << "\"selected_world_position_pre_call_required\":true,"
+            << "\"selected_bmw_fallback_pre_call_required\":true,"
             << "\"returned_cache_handle_typed\":true,"
             << "\"complete_fun_00765c40_internalized\":false,"
             << "\"collision_provider_internalized\":false}\n";
