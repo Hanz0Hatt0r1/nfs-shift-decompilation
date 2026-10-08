@@ -1,0 +1,79 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374RootDescendantFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact retail machine transfer; Ghidra SQLite used for navigation/fingerprints only"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374ParticipantsActiveDispatchNestedFrontier/1",
+  "entry": {
+    "function": "FUN_00489b00",
+    "receiver": "exact manager root",
+    "manager_target_slot": "+0x374"
+  },
+  "direct_calls": {
+    "total": 19,
+    "exact_manager_root_receiver_calls": [
+      {
+        "callsite": "0x00489ba0",
+        "target_thunk": "0x00489310 thunk_FUN_00d610c0",
+        "resolved_target": "FUN_00d610c0",
+        "receiver": "manager root",
+        "target_mnemonic_sha256": "5179b20172367b4afe38710d15add64a58b1c27309435fa6325419619382b5e2"
+      }
+    ],
+    "manager_subobject_receivers": [
+      "FUN_00403cc0 receives manager+0x320",
+      "FUN_0052cce0 receives manager+0x340 or manager+0x2d8",
+      "FUN_0054ed00 receives manager+0x2a0"
+    ],
+    "non_manager_receivers": [
+      "FUN_00480470 receives selected participant/object",
+      "remaining helper/log/string calls receive locals, globals, or selected entry state"
+    ]
+  },
+  "resolved_root_descendant": {
+    "function": "FUN_00d610c0",
+    "root_to_subobject_transition": "lea edi,[ecx+0x2d8]",
+    "direct_manager_root_plus_0x374_store": false,
+    "manager_root_receiver_preserved_to_any_direct_callee": false,
+    "direct_callee_receiver_domains": [
+      "manager+0x2d8 iterator/container state",
+      "selected participant/object param_1",
+      "selected participant/object+0x4"
+    ],
+    "observed_direct_calls": [
+      "0x00d61102 FUN_0052cce0 on manager+0x2d8",
+      "0x00d61150 FUN_0052cce0 on manager+0x2d8",
+      "0x00d61174 FUN_004cb900 on manager+0x2d8",
+      "0x00d611a3 FUN_006b48e0 on object+0x4",
+      "0x00d611be thunk_FUN_00d5d520 on object",
+      "0x00d611ef FUN_007df230 on manager+0x2d8",
+      "0x00d6120a FUN_00473fd0 on object+0x4",
+      "0x00d61224 thunk_FUN_00d5d610 on object",
+      "0x00d61243 thunk_FUN_00d5d520 on object",
+      "0x00d6125b FUN_00484720 on object"
+    ]
+  },
+  "adjudication": {
+    "FUN_00489b00_exact_root_receiver_direct_descendant_count": 1,
+    "FUN_00489b00_exact_root_receiver_direct_descendant_reaches_manager_374": false,
+    "FUN_00d610c0_preserves_manager_root_to_descendants": false,
+    "active_dispatch_receiver_preserving_root_descendant_surface_complete": true,
+    "participants_vtable_plus_0x0c_indirect_surface_complete": false,
+    "unrelated_manager_alias_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only receiver-preserving direct descendants of FUN_00489b00 reachable from the Participants Manager active-dispatch path.",
+    "Calls on manager subobjects such as +0x2d8 are not promoted to root identity and require their own affine/escape proof before they could affect +0x374.",
+    "Participants Manager vtable +0x0c indirect dispatch and unrelated manager aliases remain open.",
+    "No HDVehicle identity is inferred from numeric offset coincidence."
+  ],
+  "next_step": "Trace the Participants Manager vtable +0x0c callback indirect dispatch targets and any escaped manager+0x2d8 aliases that can recover the manager root; continue non-literal HDVehicle+0x64e8 writer provenance."
+}

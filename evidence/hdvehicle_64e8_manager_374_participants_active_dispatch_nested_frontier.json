@@ -1,0 +1,59 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374ParticipantsActiveDispatchNestedFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact retail machine transfer; Ghidra SQLite used for navigation/fingerprints only"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374ParticipantsLifecycleZeroWriters/1",
+  "participants_manager": {
+    "manager_getter": "FUN_00489ad0",
+    "manager_singleton_address": "0x00bc9fc0",
+    "subobject_offset": "+0x20",
+    "vptr": "0x00ab916c",
+    "target_manager_slot": "+0x374",
+    "target_subobject_relative_offset": "+0x354"
+  },
+  "bmanager_dispatch": {
+    "selector": "FUN_00647d80",
+    "default_slot_offset": "+0x18",
+    "alternate_slot_offset": "+0x1c",
+    "default_target": "FUN_0048ade0",
+    "alternate_target": "FUN_0048aee0",
+    "targets": [
+      {"function":"FUN_0048ade0","mnemonic_sha256":"47701b60c5aa4c4fb3f900182be11cefe30fffbd1326987bb62cc3a239b539ea","size":254},
+      {"function":"FUN_0048aee0","mnemonic_sha256":"a87d922e4b44b5b03ef78a286beec1f0a4e7b236f0c5e0a705f8e8bc95064b7e","size":101}
+    ]
+  },
+  "root_forwarding": {
+    "only_exact_manager_root_forwarder_from_active_dispatch_callbacks": "FUN_00489b00",
+    "default_callsite": "0x0048adfb",
+    "alternate_callsite": "0x0048aeec",
+    "receiver_expression": "participants_subobject - 0x20 == manager root",
+    "forwarded_function_mnemonic_sha256": "94efca356ec792c61afe2610b40ce2f0e58cb5b230e50f5575689025d56039f5",
+    "forwarded_function_size": 497,
+    "direct_store_to_manager_plus_0x374": false
+  },
+  "adjudication": {
+    "active_dispatch_callbacks_direct_target_store_reaches_manager_374": false,
+    "active_dispatch_exact_root_forwarder_count": 1,
+    "active_dispatch_root_forwarder_direct_body_reaches_manager_374": false,
+    "active_dispatch_direct_nested_surface_complete": true,
+    "deeper_callees_of_FUN_00489b00_complete": false,
+    "other_participants_lifecycle_nested_callees_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only the directly resolved BManager active-dispatch callbacks at vtable +0x18/+0x1c and the one exact manager-root forwarder they invoke.",
+    "FUN_00489b00 descendants remain open for computed/alias writes unless separately proven negative.",
+    "The large lifecycle callback at vtable +0x0c contains indirect dispatches and remains outside this bounded slice.",
+    "No HDVehicle identity is inferred from matching affine offsets."
+  ],
+  "next_step": "Trace receiver-preserving descendants of FUN_00489b00 and the unresolved indirect calls reachable from Participants Manager vtable +0x0c. In parallel continue non-literal HDVehicle+0x64e8 alias/callee writer provenance."
+}
