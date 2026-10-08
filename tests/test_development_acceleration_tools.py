@@ -94,6 +94,65 @@ def test_sqlite_builder_indexes_core_export_layers(tmp_path):
         assert db.execute("SELECT name FROM functions WHERE address='0x1000'").fetchone()[0] == "FUN_00001000"
         assert db.execute("SELECT callee FROM calls WHERE caller='FUN_00001000'").fetchone()[0] == "FUN_00002000"
         assert db.execute("SELECT value FROM strings WHERE containing_function='FUN_00001000'").fetchone()[0] == "WedgeRange"
-        assert db.execute("SELECT value FROM metadata WHERE key='format'").fetchone()[0] == "SHIFT.GhidraSQLiteIndex/1"
+        assert db.execute("SELECT value FROM metadata WHERE key='format'").fetchone()[0] == "SHIFT.GhidraSQLiteIndex/2"
+    finally:
+        db.close()
+
+
+def test_sqlite_builder_indexes_exporter_native_callgraph_shape(tmp_path):
+    export = tmp_path / "export"
+    export.mkdir()
+    (export / "functions.jsonl").write_text(
+        "\n".join(
+            [
+                json.dumps({"address": "0x00469ab0", "name": "FUN_00469ab0", "mnemonic_sha256": "abc"}),
+                json.dumps({"address": "0x0057f620", "name": "thunk_FUN_0041808e"}),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (export / "callgraph.jsonl").write_text(
+        json.dumps(
+            {
+                "from_function": "0x00469ab0",
+                "from_name": "FUN_00469ab0",
+                "indirect": False,
+                "instruction": "0x00469b1d",
+                "to": "0x0057f620",
+                "to_name": "thunk_FUN_0041808e",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (export / "strings_xrefs.jsonl").write_text("", encoding="utf-8")
+    (export / "globals.jsonl").write_text("", encoding="utf-8")
+
+    module = _load(ROOT / "tools/ghidra/build_shift_sqlite_index.py", "shift_sqlite_index_native")
+    db_path = tmp_path / "shift.sqlite"
+    module.build(export, db_path)
+
+    db = sqlite3.connect(db_path)
+    try:
+        row = db.execute(
+            "SELECT caller,callee,caller_address,callee_address,callsite,kind,indirect FROM calls"
+        ).fetchone()
+        assert row == (
+            "FUN_00469ab0",
+            "thunk_FUN_0041808e",
+            "0x00469ab0",
+            "0x0057f620",
+            "0x00469b1d",
+            "direct",
+            0,
+        )
+        assert db.execute(
+            "SELECT callsite FROM calls WHERE callee='thunk_FUN_0041808e'"
+        ).fetchone()[0] == "0x00469b1d"
+        assert db.execute(
+            "SELECT callsite FROM calls WHERE callee_address='0x0057f620'"
+        ).fetchone()[0] == "0x00469b1d"
+        assert db.execute("SELECT mnemonic_fingerprint FROM functions WHERE address='0x00469ab0'").fetchone()[0] == "abc"
     finally:
         db.close()

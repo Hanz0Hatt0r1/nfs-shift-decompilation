@@ -36,18 +36,25 @@ python3 tools/ghidra/build_shift_sqlite_index.py \
   out/shift_ghidra.sqlite
 ```
 
+The current format is `SHIFT.GhidraSQLiteIndex/2`. Rebuild an older database after pulling this version: v2 fixes exporter-native callgraph indexing and stores both symbolic names and exact addresses.
+
 Examples:
 
 ```bash
 sqlite3 out/shift_ghidra.sqlite \
-  "select callsite,caller from calls where callee='FUN_00755950';"
+  "select callsite,caller,caller_address from calls where callee='FUN_00755950';"
 
 sqlite3 out/shift_ghidra.sqlite \
-  "select caller,callee,callsite from calls where caller='FUN_0076b280';"
+  "select caller,callee,callee_address,callsite from calls where caller='FUN_0076b280';"
+
+sqlite3 out/shift_ghidra.sqlite \
+  "select caller,callee,callsite from calls where callee_address='0x0057f620';"
 
 sqlite3 out/shift_ghidra.sqlite \
   "select value,address,containing_function from strings where value like '%Wedge%';"
 ```
+
+`caller` / `callee` are the exported symbolic names when available. `caller_address` / `callee_address` preserve the exact function addresses, and `indirect` records the exporter's indirect-call flag.
 
 The SQLite database is an operational index only. A matching row is not semantic proof.
 
