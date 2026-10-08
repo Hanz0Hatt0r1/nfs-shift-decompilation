@@ -42,7 +42,7 @@ NEXT_STEP
 
 ## 2. Current shared frontier
 
-Current merged main frontier is **Phase 747**.
+Current merged main frontier is **Phase 749**.
 
 Already positive and not to be rediscovered:
 
@@ -60,11 +60,15 @@ Phase744 typed selected CollisionQueryOutput + query-scalar handoff
 Phase745 same-pass selected FUN_00766510 session handoff
 Phase746 primary FUN_00766510 caller accumulator delta
 Phase747 shared FUN_00766510 reference-vector ownership/transform
+Phase748 FUN_00713630 dynamic reference-source arithmetic/cadence
+Phase749 native later +0x3a28/+0x3a40 response-state branch
 Phase742 primary FUN_00766510 response application
 Phase743 selected BMW application-point ownership
 Process 1 response-config ownership for +0x3908/+0x3910/+0x3918/+0x3950
 Process 1 earlier +0x3b20 response-branch ownership
 Process 1 optional +0x3bc8/+0x3cxx response-branch ownership
+Process 1 later +0x3a28/+0x3a40 response-branch ownership
+Process 1 direct FUN_00753650 caller-accumulator surface (4/4)
 ```
 
 The active top-level external vehicle-provider count is **7**. Do not reduce that number until an entire callback boundary can be removed without dropping source-visible behavior.
@@ -91,12 +95,13 @@ Process 1 must **not** implement speculative native behavior to keep moving. It 
 Current queue:
 
 ```text
-P1.1  close the residual FUN_00766510 proof frontier described by
+P1.1  close the reduced FUN_00766510 proof frontier described by
       SHIFT.Fun00766510ResidualOwnershipFrontier/1:
-      a) trace the upstream dynamic X/Z generator state consumed by FUN_00713630;
-      b) prove owner/config/source order for the later +0x3a28/+0x3a40 direct block;
-      c) exhaustively classify the final +0x40a0/+0x40a8/+0x40b0 accumulator
-         and remaining conditional state/diagnostic writes before contact_response removal
+      a) close remaining upstream runtime inputs behind merged Phase748 FUN_00713630;
+      c) source-lock exact FUN_00758fc0 caller scheduling, final transformed-vector
+         accumulation, and residual conditional state/diagnostic writes
+      CLOSED: later +0x3a28/+0x3a40 direct block owner/config/source order
+      CLOSED: all four direct FUN_00753650 caller-accumulator sites
 
 P1.2  identify/prove collision-provider object/call below FUN_007b0710,
       four wheel +0x738 load-term ownership, and residual FUN_00765c40 side effects
@@ -108,7 +113,7 @@ P1.4  prove retail camera-follow source and update timing against the admitted
       current vehicle transform
 ```
 
-The response-config block, earlier `+0x3b20` branch, and optional `+0x3bc8/+0x3cxx` branch are already positive inputs to P1.1 and must not be re-selected as new work.
+The response-config block, earlier `+0x3b20` branch, optional `+0x3bc8/+0x3cxx` branch, later `+0x3a28/+0x3a40` branch, and `SHIFT.Fun00766510DirectCallerAccumulatorSurface/1` are already positive inputs to P1.1 and must not be re-selected as new work.
 
 PC retail is authoritative. Xbox 360 recompilation may accelerate navigation or corroborate structure, but cannot replace PC proof.
 
@@ -134,8 +139,9 @@ P2.1  COMPLETE — Phase745 same-pass FUN_00766510 selected-session handoff
 P2.2  COMPLETE — Phase746 primary FUN_00766510 caller-accumulator delta
       with exact FUN_00753650 cross-product/store behavior
 
-P2.3  CURRENT/BLOCKED ON P1.1 — consume the residual Process 1 proof handoff,
-      preserve merged Phase747 shared-reference ownership, and internalize the
+P2.3  CURRENT/BLOCKED ON P1.1 — preserve merged Phase747 shared-reference,
+      Phase748 FUN_00713630 reference-source producer and Phase749 later-response
+      native branch; consume the remaining P1.1 handoff and internalize the
       complete required FUN_00766510/contact_response behavior; target 7 -> 6
 
 P2.4  consume P1.2 collision/load-term proofs and narrow/remove residual
@@ -171,21 +177,13 @@ Current queue:
 ```text
 P3.1  land/maintain the provenance-gated resource-pipeline -> playable-scene join
       (PR #1431 lineage)
-
 P3.2  land/maintain playable pipeline launcher + profile preparation
       (PR #1442/#1443 lineage)
-
 P3.3  land/maintain one-command playable resource-pipeline bootstrap
       (PR #1444 lineage)
-
-P3.4  preserve exact Silverstone + BMW resource identity and participant authority;
-      never substitute a guessed scene/resource for a blocked proof
-
-P3.5  consume P2 fresh vehicle transform and, once P1.4/P2 camera handoff is ready,
-      drive continuous camera + Vulkan presentation
-
-P3.6  add the final resource-driven Silverstone + BMW continuous smoke path with
-      no test-only core vehicle transform
+P3.4  preserve exact Silverstone + BMW resource identity and participant authority
+P3.5  consume P2 fresh vehicle transform and later P1.4/P2 camera handoff
+P3.6  add final resource-driven Silverstone + BMW continuous smoke path
 ```
 
 Process 3 must not hide missing P1/P2 semantics with render-side animation or test scripts.

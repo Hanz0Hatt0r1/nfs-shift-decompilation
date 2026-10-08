@@ -26,10 +26,11 @@ Use these prompts together with `PLAYABLE_SLICE_THREE_PROCESS_INSTRUCTIONS_V6.md
 
 Текущий приоритет:
 P1.1: use SHIFT.Fun00766510ResidualOwnershipFrontier/1 and close only the live residuals:
-      a) upstream dynamic X/Z generator state consumed by FUN_00713630;
-      b) later +0x3a28/+0x3a40 direct response block owner/config/order;
-      c) final +0x40a0/+0x40a8/+0x40b0 accumulator and conditional state/diagnostic writes.
-      Do NOT rediscover +0x3908/+0x3910/+0x3918/+0x3950, +0x3b20, or +0x3bc8/+0x3cxx: those are already positive.
+      a) remaining upstream runtime inputs behind the merged Phase748 FUN_00713630 producer;
+      c) exact FUN_00758fc0 caller scheduling, final transformed-vector accumulation, and residual conditional state/diagnostic tail.
+      CLOSED: later +0x3a28/+0x3a40 owner/config/order.
+      CLOSED: all four direct FUN_00753650 caller-accumulator sites.
+      Do NOT rediscover +0x3908/+0x3910/+0x3918/+0x3950, +0x3b20, +0x3bc8/+0x3cxx, or +0x3a28/+0x3a40: those are already positive.
 P1.2: collision provider + four +0x738 load terms + residual FUN_00765c40 side effects.
 P1.3: input/control producer chain and required Controller #1 timing.
 P1.4: camera-follow source/timing.
@@ -67,7 +68,7 @@ Branch: process-1/<blocker>.
 Текущий приоритет:
 P2.1: COMPLETE — Phase745 same-pass FUN_00766510 handoff.
 P2.2: COMPLETE — Phase746 primary caller accumulator delta.
-P2.3: CURRENT/BLOCKED ON P1.1 — consume remaining Process 1 contract, preserve merged Phase747 shared-reference ownership, and remove complete contact_response; target providers 7 -> 6.
+P2.3: CURRENT/BLOCKED ON P1.1 — preserve merged Phase747 shared-reference ownership, Phase748 FUN_00713630 reference-source producer and Phase749 later-response native branch; consume the remaining Process 1 contract and remove complete contact_response only after P1.1 closes; target providers 7 -> 6.
 P2.4: consume P1.2 and narrow/remove residual FUN_00765c40.
 P2.5: continue remaining providers in dependency order.
 P2.6: consume proven control chain continuously.
