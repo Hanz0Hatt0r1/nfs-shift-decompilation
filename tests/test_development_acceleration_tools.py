@@ -26,11 +26,12 @@ def test_blocker_graph_is_fail_closed_and_partitioned():
     assert streams["P1.3"]["owner"] == "Process 1B"
     children = {row["id"]: row for row in streams["P1.3"]["children"]}
     manager2a0 = children["P1.3.manager2a0"]
-    assert manager2a0["status"] == "population-producer-proven-entry-identity-open"
+    assert manager2a0["status"] == "entry-identity-rejected-complete"
     assert "0x00469b1d" in manager2a0["rejected_candidate"]
     assert "manager+0x378" in manager2a0["proven_relation"]
     assert manager2a0["insertion_producer_complete"] is True
     assert manager2a0["element_size"] == "0x22e0"
+    assert manager2a0["entry_identity_to_hdvehicle_4330"] is False
     assert streams["P2.3"]["blocked_by"] == ["P1.1"]
 
 
