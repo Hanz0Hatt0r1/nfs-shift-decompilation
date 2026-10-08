@@ -1,7 +1,7 @@
 {
   "format": "SHIFT.DecompBlockerGraph/1",
   "version": 1,
-  "updated_from_main": "39a1f1b7bd90584b1fb884b2fd5fa74057b51940",
+  "updated_from_main": "8d6810110edc5b8d352cd30bb5ad62105803b50b",
   "rules": {
     "pc_retail_semantic_authority": true,
     "numeric_offset_equality_is_identity": false,
@@ -16,12 +16,9 @@
       "status": "in_progress",
       "consumer": "Process 2 P2.3",
       "closed": [
-        "P1.1c auxiliary scheduling/final transformed-vector/guarded tail",
-        "P1.1a cadence machine chain",
-        "P1.1a config direct-literal read/write surface",
-        "P1.1a FUN_00727870 direct caller surface"
+        "P1.1c auxiliary scheduling/final transformed-vector/guarded tail"
       ],
-      "next": "Root both FUN_00727870 receiver paths to selected participant ownership; resolve computed/alias materialization of the seven FUN_00713630 config globals; join or reject FUN_00748280+0x4b0 by exact object provenance; then publish final Process 1 handoff."
+      "next": "Close P1.1a FUN_00713630 upstream runtime config globals, sample-history scheduling, and participant+0x4b0 ownership; then publish final Process 1 handoff."
     },
     {
       "id": "P1.3",
@@ -29,34 +26,14 @@
       "title": "retail control/input producer provenance",
       "status": "in_progress",
       "children": [
-        {
-          "id": "P1.3.slot0",
-          "target": "HDVehicle+0x938",
-          "status": "alias-callee-bulk-copy",
-          "next": "Trace exact selected-root alias/callee/bulk-copy writers."
-        },
-        {
-          "id": "P1.3.slot1",
-          "target": "HDVehicle+0x13b8",
-          "status": "alias-callee-bulk-copy",
-          "next": "Trace exact selected-root alias/callee/bulk-copy writers."
-        },
-        {
-          "id": "P1.3.slot2",
-          "target": "HDVehicle+0x1e38",
-          "status": "partial-producer-proven",
-          "next": "Resolve selected HDVehicle+0x64e8 non-sentinel provenance and manager collection insertion identity."
-        },
-        {
-          "id": "P1.3.slot3",
-          "target": "HDVehicle+0x28b8",
-          "status": "alias-callee-bulk-copy",
-          "next": "Trace exact selected-root alias/callee/bulk-copy writers."
-        },
+        {"id":"P1.3.slot0","target":"HDVehicle+0x938","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
+        {"id":"P1.3.slot1","target":"HDVehicle+0x13b8","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
+        {"id":"P1.3.slot2","target":"HDVehicle+0x1e38","status":"partial-producer-proven","next":"Resolve selected HDVehicle+0x64e8 non-sentinel provenance and manager collection insertion identity."},
+        {"id":"P1.3.slot3","target":"HDVehicle+0x28b8","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
         {
           "id": "P1.3.manager374",
           "target": "FUN_00489ad0()+0x374 value == HDVehicle+0x4330",
-          "status": "direct-literal-bulkcopy-surface-closed-helper-alias-indirect-open",
+          "status": "participants-subobject-direct-writes-rejected-escaped-alias-open",
           "rejected_literal_writers": ["FUN_0051efa0", "FUN_005dec70"],
           "rejected_bulk_copy_aliases": [
             "FUN_0070dcc0 direct-call surface forwards only stack-local destinations into FUN_00481e20",
@@ -65,7 +42,11 @@
           ],
           "remaining_literal_writer": null,
           "direct_bulk_copy_surface_complete": true,
-          "next": "Trace helper-mediated, escaped-alias, computed-offset and non-vtable indirect mutations of the exact FUN_00489ad0 singleton; do not repeat the closed direct FUN_00481e20 surface unless new caller evidence appears."
+          "manager_plus_0x20_label": "Participants Manager",
+          "manager_plus_0x20_direct_helper_surface_complete": true,
+          "manager_plus_0x20_direct_helper_reaches_0x374": false,
+          "manager_plus_0x20_escaped_alias_open": true,
+          "next": "Trace consumers/removers/dispatch of manager+0x20 aliases registered by FUN_00648730/FUN_00648890 through FUN_004f5e60 at FUN_0065bf80()+0x24 and +0x44; look for subobject+0x354 == manager+0x374 writes. Continue unrelated computed/non-vtable aliases independently."
         },
         {
           "id": "P1.3.manager2a0",
@@ -77,31 +58,9 @@
         }
       ]
     },
-    {
-      "id": "P1.4",
-      "owner": "Process 1D",
-      "title": "camera follow provenance",
-      "status": "queued"
-    },
-    {
-      "id": "P2.3",
-      "owner": "Process 2",
-      "title": "native contact_response replacement",
-      "status": "blocked",
-      "blocked_by": ["P1.1"],
-      "provider_reduction_on_completion": "7 -> 6"
-    },
-    {
-      "id": "P2.4",
-      "owner": "Process 2",
-      "title": "consume P1.2 vehicle writer ownership",
-      "status": "ready"
-    },
-    {
-      "id": "P3",
-      "owner": "Process 3",
-      "title": "resources/scene/render/bootstrap",
-      "status": "parallel"
-    }
+    {"id":"P1.4","owner":"Process 1D","title":"camera follow provenance","status":"queued"},
+    {"id":"P2.3","owner":"Process 2","title":"native contact_response replacement","status":"blocked","blocked_by":["P1.1"],"provider_reduction_on_completion":"7 -> 6"},
+    {"id":"P2.4","owner":"Process 2","title":"consume P1.2 vehicle writer ownership","status":"ready"},
+    {"id":"P3","owner":"Process 3","title":"resources/scene/render/bootstrap","status":"parallel"}
   ]
 }
