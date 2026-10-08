@@ -35,6 +35,11 @@
     "wheel_job_load_store_payload_bit_preserved": true,
     "wheel_job_formula_internalized": false,
     "wheel_job_branch_predicates_internalized": false,
+    "fun_007584f0_interpolation_call_seam_contract": "SHIFT.Fun007584f0InterpolationCallSeam/2",
+    "fun_007584f0_interpolation_call_seam_native": true,
+    "fun_007584f0_interpolation_argument_count": 4,
+    "fun_007584f0_interpolation_helper_formula_internalized": true,
+    "fun_007584f0_positive_qword_producers_internalized": false,
     "provider_returned_selected_query_input_authoritative": false,
     "selected_world_position_native": true,
     "selected_query_fallback_native": true,
@@ -70,7 +75,8 @@
     "absent_producer_family_default_overwrite_allowed": false,
     "producer_presence_treated_as_independent_proof": false,
     "producer_promotion_without_proof_allowed": false,
-    "wheel_job_commit_surface_treated_as_formula_proof": false
+    "wheel_job_commit_surface_treated_as_formula_proof": false,
+    "fun_007584f0_interpolation_seam_treated_as_family_complete": false
   },
-  "next_step": "Recover FUN_0075cfb0 branch predicates and source arithmetic feeding the three now-native +0x738 store sites; keep wheel_job_formula_FUN_0075cfb0 unresolved until independent equivalence is proven."
+  "next_step": "Recover the two positive-load qword producers in FUN_007584f0; the 0x00783a30 scalar formula is now native-owned but the family remains incomplete."
 }
