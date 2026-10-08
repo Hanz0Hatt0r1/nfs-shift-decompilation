@@ -1,0 +1,81 @@
+{
+  "format": "SHIFT.Process1Controller1WakeSurfaceFrontier/1",
+  "ready": true,
+  "source": {
+    "authority": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "xbox_recomp_required": false
+  },
+  "inputs": {
+    "pacing_contract": "SHIFT.Process1Controller1AlertablePacing/1",
+    "cadence_join_contract": "SHIFT.Process1Controller1RetailCadenceJoin/1"
+  },
+  "controller_queue": {
+    "base_controller_init": "FUN_006551b0",
+    "base_event_mode_flag_offset": "0x50",
+    "base_event_mode_flag_initial_value": 0,
+    "thread_entry": "FUN_00649b10",
+    "thread_entry_mode_when_flag_zero": 1,
+    "queue_constructor": "FUN_0064ff40",
+    "mode_1_queue_state_bits": "0x4",
+    "queue_event_bit": "0x8",
+    "mode_1_has_queue_event": false,
+    "enqueue_function": "FUN_00650350",
+    "enqueue_signals_event_only_when_bit_0x8": true,
+    "worker": "FUN_00662880",
+    "worker_dequeue": "FUN_006550a0",
+    "worker_dequeue_is_nonblocking_poll": true,
+    "worker_uses_queue_event_wait": false,
+    "ordinary_message_enqueue_is_controller1_wake_signal": false,
+    "source_lines": {
+      "base_controller_init": 540314,
+      "base_event_mode_flag_zero": 540334,
+      "thread_entry": 527933,
+      "queue_mode_selection": 527972,
+      "queue_constructor_call": 527981,
+      "queue_constructor": 534501,
+      "enqueue_function": 534707,
+      "enqueue_conditional_event_signal": 534713,
+      "worker": 552813,
+      "worker_first_dequeue": 552863,
+      "worker_second_dequeue": 552894,
+      "worker_alertable_sleep": 552928
+    }
+  },
+  "alertable_completion_surface": {
+    "sleep_wrapper": "FUN_00649780",
+    "sleep_api": "SleepEx",
+    "requested_timeout_ms": 10,
+    "alertable": true,
+    "source_visible_QueueUserAPC_call_count": 0,
+    "source_visible_ReadFileEx_call_count": 2,
+    "source_visible_WriteFileEx_call_count": 2,
+    "generic_read_completion_routine": "lpCompletionRoutine_006553e0",
+    "generic_write_completion_routine": "lpCompletionRoutine_00655410",
+    "controller1_worker_direct_ReadFileEx_calls": 0,
+    "controller1_worker_direct_WriteFileEx_calls": 0,
+    "all_indirect_alertable_completion_sources_excluded": false,
+    "reason_not_closed": "generic asynchronous file-I/O completion routines exist elsewhere in the pinned PC source, so absence of direct QueueUserAPC and direct worker async-I/O calls cannot prove that no deeper manager call can arm an alertable completion"
+  },
+  "render_presentation_join": {
+    "ordinary_controller_message_queue_is_frame_wake": false,
+    "direct_render_or_present_to_controller1_wake_proven": false,
+    "render_frame_phase_lock_proven": false,
+    "one_worker_iteration_per_rendered_frame_proven": false,
+    "one_physics_dispatch_per_rendered_frame_proven": false
+  },
+  "promotion": {
+    "controller1_message_queue_non_event_backed_on_proven_init_path": true,
+    "ordinary_message_enqueue_does_not_signal_controller1_queue_event": true,
+    "worker_queue_consumption_is_polling": true,
+    "controller1_sleep_remains_alertable": true,
+    "alertable_completion_surface_fully_closed": false,
+    "render_presentation_wake_join_proven": false
+  },
+  "next_blocker": {
+    "process": 1,
+    "description": "trace whether any ReadFileEx/WriteFileEx completion-capable path is reachable from Controller #1 manager work on the same worker thread, and independently trace any render/presentation producer into Controller #1 message submission; keep both joins false until exact call/value transfer is proven"
+  }
+}
