@@ -1,0 +1,76 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager2a0EntryIdentityRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact population element stride plus independently proven selected-record constructor ownership and source-order constructor extent"
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8Manager2a0PopulationProducerProof/1",
+    "SHIFT.HDVehicle64e8Manager374SelectionWriterProof/1",
+    "SHIFT.HDVehicle64e8BootstrapSentinel/1"
+  ],
+  "manager_collection_entry": {
+    "collection": "manager+0x2a0",
+    "population_helper": "thunk_FUN_00d61e00",
+    "append_helper": "thunk_FUN_00d61d10 -> FUN_00d61d10",
+    "container_configuration": "FUN_0062ffd0(collection, 0, 0x22e0, 0x20, 0x1f, 1)",
+    "element_stride": "0x22e0",
+    "element_alignment": "0x20",
+    "element_initializer": "FUN_00481a10",
+    "element_pointer_origin": "thunk_FUN_00d61b90 returns backing-store base + element_stride * element_index",
+    "selection": "FUN_0054ed00(manager+0x2a0,index) returns the same collection-entry pointer later published to manager+0x374"
+  },
+  "selected_hdvehicle_record": {
+    "record_base": "HDVehicle+0x4330",
+    "machine_constructor_call": "0x0076b241 ECX = HDVehicle+0x4330; 0x0076b247 call FUN_00772200",
+    "constructor": "FUN_00772200",
+    "source_order_high_writes": [
+      "record+0x2350 = 0.5f",
+      "record+0x2354 = 0.5f",
+      "record+0x2358 = 0.5f",
+      "record+0x235c = 0.5f",
+      "record+0x2360 = 0.5f"
+    ],
+    "minimum_constructor_extent_from_last_dword_write": "0x2364",
+    "independent_machine_owned_field": "record+0x21b8 is machine-proven bootstrap state through FUN_00772200 -> FUN_00458a80"
+  },
+  "layout_contradiction": {
+    "manager_entry_extent": "0x22e0",
+    "selected_record_minimum_extent": "0x2364",
+    "difference": "0x84",
+    "reason": "An exact pointer identity would require the selected-record constructor's dword write at +0x2360 to land 0x80 bytes beyond a manager collection element whose configured stride/extent is 0x22e0, overlapping storage outside that element.",
+    "identity_possible": false
+  },
+  "corroboration": {
+    "selected_vehicle_load_data_pointer": "HDVehicle+0x66b4",
+    "relative_address_from_record_base": "0x66b4 - 0x4330 = 0x2384",
+    "relative_address_exceeds_manager_entry_stride_by": "0xa4",
+    "role": "corroborative only; primary rejection uses the selected record's own FUN_00772200 constructor extent"
+  },
+  "consequences": {
+    "selected_manager_2a0_entry_equals_hdvehicle_4330": false,
+    "manager_374_value_equals_hdvehicle_4330": false,
+    "manager_domain_literal_values_1_2_3_4_are_selected_hdvehicle_64e8_writers": false,
+    "manager_domain_can_still_own_separate_vehicle_loading_records": true,
+    "selected_hdvehicle_64e8_post_constructor_non_sentinel_writer_still_open": true
+  },
+  "adjudication": {
+    "manager_2a0_entry_identity_to_hdvehicle_4330_rejected": true,
+    "manager_374_join_to_hdvehicle_4330_complete": true,
+    "manager_374_join_result": "rejected",
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This rejection does not assign a semantic class name to the 0x22e0 manager collection entry.",
+    "The 0x22e0 collection entry may still carry vehicle-loading/session data and may still influence the selected HDVehicle through other value-transfer paths; only exact pointer identity with HDVehicle+0x4330 is rejected.",
+    "The primary contradiction uses the selected record constructor's own receiver-relative writes rather than the separately owned HDVehicle+0x66b4 field.",
+    "No control-axis semantic meaning is inferred from this identity rejection."
+  ],
+  "next_step": "Remove the rejected manager+0x374/+0x2a0 identity route from the selected HDVehicle+0x64e8 writer frontier. Trace remaining alias/callee/computed writers of exact selected HDVehicle+0x64e8 directly; keep the proven manager collection as a separate vehicle-loading/session domain."
+}
