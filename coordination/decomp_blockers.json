@@ -1,7 +1,7 @@
 {
   "format": "SHIFT.DecompBlockerGraph/1",
   "version": 1,
-  "updated_from_main": "cfb672216212fbdec779088d80ee61884e6c8064",
+  "updated_from_main": "753525093e50a0222e75ab46fed0d1afa0c7bc5b",
   "rules": {
     "pc_retail_semantic_authority": true,
     "numeric_offset_equality_is_identity": false,
@@ -15,7 +15,10 @@
       "title": "FUN_00766510/contact_response producer closure",
       "status": "in_progress",
       "consumer": "Process 2 P2.3",
-      "next": "Close remaining upstream input/scheduling/residual tail provenance before provider replacement."
+      "closed": [
+        "P1.1c auxiliary scheduling/final transformed-vector/guarded tail"
+      ],
+      "next": "Close P1.1a FUN_00713630 upstream runtime config globals, sample-history scheduling, and participant+0x4b0 ownership; then publish final Process 1 handoff."
     },
     {
       "id": "P1.3",
