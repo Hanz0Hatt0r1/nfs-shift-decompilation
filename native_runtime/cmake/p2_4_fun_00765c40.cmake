@@ -4,64 +4,173 @@
 
 add_executable(shift_runtime_fun_00765c40_residual_pass_contract_check
   ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_residual_pass_contract_check.cpp)
-target_include_directories(shift_runtime_fun_00765c40_residual_pass_contract_check PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-target_link_libraries(shift_runtime_fun_00765c40_residual_pass_contract_check PRIVATE shift_runtime_physics)
-target_compile_options(shift_runtime_fun_00765c40_residual_pass_contract_check PRIVATE -Wall -Wextra -Wpedantic)
+target_include_directories(
+  shift_runtime_fun_00765c40_residual_pass_contract_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_link_libraries(
+  shift_runtime_fun_00765c40_residual_pass_contract_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(
+  shift_runtime_fun_00765c40_residual_pass_contract_check PRIVATE
+  -Wall -Wextra -Wpedantic)
 
-add_executable(shift_runtime_fun_007584f0_persistent_write_stage_check ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_007584f0_persistent_write_stage_check.cpp)
-target_include_directories(shift_runtime_fun_007584f0_persistent_write_stage_check PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-target_link_libraries(shift_runtime_fun_007584f0_persistent_write_stage_check PRIVATE shift_runtime_physics)
-target_compile_options(shift_runtime_fun_007584f0_persistent_write_stage_check PRIVATE -Wall -Wextra -Wpedantic)
+add_executable(shift_runtime_fun_007584f0_persistent_write_stage_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_007584f0_persistent_write_stage_check.cpp)
+target_include_directories(
+  shift_runtime_fun_007584f0_persistent_write_stage_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_link_libraries(
+  shift_runtime_fun_007584f0_persistent_write_stage_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(
+  shift_runtime_fun_007584f0_persistent_write_stage_check PRIVATE
+  -Wall -Wextra -Wpedantic)
 
-add_executable(shift_runtime_fun_00765c40_wheel_pair_refresh_stage_check ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_wheel_pair_refresh_stage_check.cpp)
-target_include_directories(shift_runtime_fun_00765c40_wheel_pair_refresh_stage_check PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-target_link_libraries(shift_runtime_fun_00765c40_wheel_pair_refresh_stage_check PRIVATE shift_runtime_physics)
-target_compile_options(shift_runtime_fun_00765c40_wheel_pair_refresh_stage_check PRIVATE -Wall -Wextra -Wpedantic)
+add_executable(shift_runtime_fun_00765c40_wheel_pair_refresh_stage_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_wheel_pair_refresh_stage_check.cpp)
+target_include_directories(
+  shift_runtime_fun_00765c40_wheel_pair_refresh_stage_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_link_libraries(
+  shift_runtime_fun_00765c40_wheel_pair_refresh_stage_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(
+  shift_runtime_fun_00765c40_wheel_pair_refresh_stage_check PRIVATE
+  -Wall -Wextra -Wpedantic)
 
-add_executable(shift_runtime_fun_00765c40_contact_array_sweep_stage_check ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_contact_array_sweep_stage_check.cpp)
-target_include_directories(shift_runtime_fun_00765c40_contact_array_sweep_stage_check PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-target_link_libraries(shift_runtime_fun_00765c40_contact_array_sweep_stage_check PRIVATE shift_runtime_physics)
-target_compile_options(shift_runtime_fun_00765c40_contact_array_sweep_stage_check PRIVATE -Wall -Wextra -Wpedantic)
+add_executable(shift_runtime_fun_00765c40_contact_array_sweep_stage_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_contact_array_sweep_stage_check.cpp)
+target_include_directories(
+  shift_runtime_fun_00765c40_contact_array_sweep_stage_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_link_libraries(
+  shift_runtime_fun_00765c40_contact_array_sweep_stage_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(
+  shift_runtime_fun_00765c40_contact_array_sweep_stage_check PRIVATE
+  -Wall -Wextra -Wpedantic)
 
-add_executable(shift_runtime_fun_00765c40_bounded_state_tail_check ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_bounded_state_tail_check.cpp)
-target_include_directories(shift_runtime_fun_00765c40_bounded_state_tail_check PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-target_link_libraries(shift_runtime_fun_00765c40_bounded_state_tail_check PRIVATE shift_runtime_physics)
-target_compile_options(shift_runtime_fun_00765c40_bounded_state_tail_check PRIVATE -Wall -Wextra -Wpedantic)
+add_executable(shift_runtime_fun_00765c40_bounded_state_tail_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_bounded_state_tail_check.cpp)
+target_include_directories(
+  shift_runtime_fun_00765c40_bounded_state_tail_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_link_libraries(
+  shift_runtime_fun_00765c40_bounded_state_tail_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(
+  shift_runtime_fun_00765c40_bounded_state_tail_check PRIVATE
+  -Wall -Wextra -Wpedantic)
 
-add_executable(shift_runtime_fun_00765c40_optional_body_accumulator_sweep_check ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_optional_body_accumulator_sweep_check.cpp)
-target_include_directories(shift_runtime_fun_00765c40_optional_body_accumulator_sweep_check PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-target_link_libraries(shift_runtime_fun_00765c40_optional_body_accumulator_sweep_check PRIVATE shift_runtime_physics)
-target_compile_options(shift_runtime_fun_00765c40_optional_body_accumulator_sweep_check PRIVATE -Wall -Wextra -Wpedantic)
+add_executable(shift_runtime_fun_00765c40_optional_body_accumulator_sweep_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_optional_body_accumulator_sweep_check.cpp)
+target_include_directories(
+  shift_runtime_fun_00765c40_optional_body_accumulator_sweep_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_link_libraries(
+  shift_runtime_fun_00765c40_optional_body_accumulator_sweep_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(
+  shift_runtime_fun_00765c40_optional_body_accumulator_sweep_check PRIVATE
+  -Wall -Wextra -Wpedantic)
 
-add_executable(shift_runtime_fun_00765c40_contact_body_accumulation_check ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_contact_body_accumulation_check.cpp)
-target_include_directories(shift_runtime_fun_00765c40_contact_body_accumulation_check PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-target_link_libraries(shift_runtime_fun_00765c40_contact_body_accumulation_check PRIVATE shift_runtime_physics)
-target_compile_options(shift_runtime_fun_00765c40_contact_body_accumulation_check PRIVATE -Wall -Wextra -Wpedantic)
+add_executable(shift_runtime_fun_00765c40_contact_body_accumulation_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_contact_body_accumulation_check.cpp)
+target_include_directories(
+  shift_runtime_fun_00765c40_contact_body_accumulation_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_link_libraries(
+  shift_runtime_fun_00765c40_contact_body_accumulation_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(
+  shift_runtime_fun_00765c40_contact_body_accumulation_check PRIVATE
+  -Wall -Wextra -Wpedantic)
 
-add_executable(shift_runtime_fun_00765c40_wheel_plane_refresh_stage_check ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_wheel_plane_refresh_stage_check.cpp)
-target_include_directories(shift_runtime_fun_00765c40_wheel_plane_refresh_stage_check PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-target_link_libraries(shift_runtime_fun_00765c40_wheel_plane_refresh_stage_check PRIVATE shift_runtime_physics)
-target_compile_options(shift_runtime_fun_00765c40_wheel_plane_refresh_stage_check PRIVATE -Wall -Wextra -Wpedantic)
+add_executable(shift_runtime_fun_00765c40_wheel_plane_refresh_stage_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_wheel_plane_refresh_stage_check.cpp)
+target_include_directories(
+  shift_runtime_fun_00765c40_wheel_plane_refresh_stage_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_link_libraries(
+  shift_runtime_fun_00765c40_wheel_plane_refresh_stage_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(
+  shift_runtime_fun_00765c40_wheel_plane_refresh_stage_check PRIVATE
+  -Wall -Wextra -Wpedantic)
 
-add_executable(shift_runtime_fun_00765c40_wheel_job_scheduling_check ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_wheel_job_scheduling_check.cpp)
-target_include_directories(shift_runtime_fun_00765c40_wheel_job_scheduling_check PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-target_link_libraries(shift_runtime_fun_00765c40_wheel_job_scheduling_check PRIVATE shift_runtime_physics)
-target_compile_options(shift_runtime_fun_00765c40_wheel_job_scheduling_check PRIVATE -Wall -Wextra -Wpedantic)
+add_executable(shift_runtime_fun_00765c40_wheel_job_scheduling_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_wheel_job_scheduling_check.cpp)
+target_include_directories(
+  shift_runtime_fun_00765c40_wheel_job_scheduling_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_link_libraries(
+  shift_runtime_fun_00765c40_wheel_job_scheduling_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(
+  shift_runtime_fun_00765c40_wheel_job_scheduling_check PRIVATE
+  -Wall -Wextra -Wpedantic)
 
-add_executable(shift_runtime_fun_00765c40_composed_residual_executor_check ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_composed_residual_executor_check.cpp)
-target_include_directories(shift_runtime_fun_00765c40_composed_residual_executor_check PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-target_link_libraries(shift_runtime_fun_00765c40_composed_residual_executor_check PRIVATE shift_runtime_physics)
-target_compile_options(shift_runtime_fun_00765c40_composed_residual_executor_check PRIVATE -Wall -Wextra -Wpedantic)
+add_executable(shift_runtime_fun_00765c40_composed_residual_executor_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_composed_residual_executor_check.cpp)
+target_include_directories(
+  shift_runtime_fun_00765c40_composed_residual_executor_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_link_libraries(
+  shift_runtime_fun_00765c40_composed_residual_executor_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(
+  shift_runtime_fun_00765c40_composed_residual_executor_check PRIVATE
+  -Wall -Wextra -Wpedantic)
 
 if(BUILD_TESTING)
-  add_test(NAME shift_runtime_fun_00765c40_residual_pass_contract COMMAND shift_runtime_fun_00765c40_residual_pass_contract_check)
-  add_test(NAME shift_runtime_fun_007584f0_persistent_write_stage COMMAND shift_runtime_fun_007584f0_persistent_write_stage_check)
-  add_test(NAME shift_runtime_fun_00765c40_wheel_pair_refresh_stage COMMAND shift_runtime_fun_00765c40_wheel_pair_refresh_stage_check)
-  add_test(NAME shift_runtime_fun_00765c40_contact_array_sweep_stage COMMAND shift_runtime_fun_00765c40_contact_array_sweep_stage_check)
-  add_test(NAME shift_runtime_fun_00765c40_bounded_state_tail COMMAND shift_runtime_fun_00765c40_bounded_state_tail_check)
-  add_test(NAME shift_runtime_fun_00765c40_optional_body_accumulator_sweep COMMAND shift_runtime_fun_00765c40_optional_body_accumulator_sweep_check)
-  add_test(NAME shift_runtime_fun_00765c40_contact_body_accumulation COMMAND shift_runtime_fun_00765c40_contact_body_accumulation_check)
-  add_test(NAME shift_runtime_fun_00765c40_wheel_plane_refresh_stage COMMAND shift_runtime_fun_00765c40_wheel_plane_refresh_stage_check)
-  add_test(NAME shift_runtime_fun_00765c40_wheel_job_scheduling COMMAND shift_runtime_fun_00765c40_wheel_job_scheduling_check)
-  add_test(NAME shift_runtime_fun_00765c40_composed_residual_executor COMMAND shift_runtime_fun_00765c40_composed_residual_executor_check)
+  add_test(
+    NAME shift_runtime_fun_00765c40_residual_pass_contract
+    COMMAND shift_runtime_fun_00765c40_residual_pass_contract_check)
+  add_test(
+    NAME shift_runtime_fun_007584f0_persistent_write_stage
+    COMMAND shift_runtime_fun_007584f0_persistent_write_stage_check)
+  add_test(
+    NAME shift_runtime_fun_00765c40_wheel_pair_refresh_stage
+    COMMAND shift_runtime_fun_00765c40_wheel_pair_refresh_stage_check)
+  add_test(
+    NAME shift_runtime_fun_00765c40_contact_array_sweep_stage
+    COMMAND shift_runtime_fun_00765c40_contact_array_sweep_stage_check)
+  add_test(
+    NAME shift_runtime_fun_00765c40_bounded_state_tail
+    COMMAND shift_runtime_fun_00765c40_bounded_state_tail_check)
+  add_test(
+    NAME shift_runtime_fun_00765c40_optional_body_accumulator_sweep
+    COMMAND shift_runtime_fun_00765c40_optional_body_accumulator_sweep_check)
+  add_test(
+    NAME shift_runtime_fun_00765c40_contact_body_accumulation
+    COMMAND shift_runtime_fun_00765c40_contact_body_accumulation_check)
+  add_test(
+    NAME shift_runtime_fun_00765c40_wheel_plane_refresh_stage
+    COMMAND shift_runtime_fun_00765c40_wheel_plane_refresh_stage_check)
+  add_test(
+    NAME shift_runtime_fun_00765c40_wheel_job_scheduling
+    COMMAND shift_runtime_fun_00765c40_wheel_job_scheduling_check)
+  add_test(
+    NAME shift_runtime_fun_00765c40_composed_residual_executor
+    COMMAND shift_runtime_fun_00765c40_composed_residual_executor_check)
 endif()
