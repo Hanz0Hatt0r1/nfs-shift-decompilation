@@ -1,0 +1,65 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374VSlot0cIndirectFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_sqlite_role": "navigation-only"
+  },
+  "outer_object": {
+    "allocation_function": "FUN_00d36210",
+    "allocation_size": "0x46e0",
+    "constructor": "FUN_0045ef50",
+    "constructor_callsite": "0x00d362d9",
+    "global_owner_store": "0x00d362ec [0x00bc185c]=constructed object",
+    "constructor_mnemonic_sha256": "6644a22ad5bd2c20d96f40b8f1e7d5193afdd8e9d40a60bf216814e2f43f60aa",
+    "allocation_function_mnemonic_sha256": "060b39e49bb0fa2283eb187fa6dd968518d6ef3dbf0c10386b868e9ef0051058"
+  },
+  "vslot": {
+    "vtable": "0x00ab5644",
+    "constructor_vptr_store": "0x0045ef78 [outer+0x0]=0x00ab5644",
+    "slot_offset": "+0x0c",
+    "slot_cell": "0x00ab5650",
+    "slot_target": "FUN_0045b130",
+    "slot_target_mnemonic_sha256": "a2aaa664005d48f921de6944292eff22b8df7a3b6dfe93a645bf400c1fbdce4d",
+    "slot_target_size": 96,
+    "whole_pe_target_address_occurrence_count": 1,
+    "whole_pe_target_address_occurrence_role": "single .rdata vtable cell at 0x00ab5650",
+    "direct_call_count": 0
+  },
+  "return_shape": {
+    "early_guard": "0x0045b133 cmp byte [receiver+0x46c1],0",
+    "early_return_branch": "0x0045b13a je 0x0045b18e",
+    "early_return_assigns_eax": false,
+    "manager_getter_calls": ["0x0045b162", "0x0045b181"],
+    "function_return": "0x0045b18f",
+    "manager_root_is_stable_function_return_contract": false
+  },
+  "direct_exact_root_dispatch_scan": {
+    "exact_outer_global": "0x00bc185c",
+    "pattern": "load exact outer root; load [outer] vptr; load [vptr+0x0c]; indirect call before provenance loss",
+    "matching_callsite_count": 0,
+    "surface_complete_for_direct_exact_global_root_pattern": true
+  },
+  "adjudication": {
+    "vslot_identity_closed": true,
+    "direct_calls_closed": true,
+    "direct_exact_global_root_dispatch_closed": true,
+    "stable_manager_root_return_contract": false,
+    "generic_or_interface_indirect_dispatch_complete": false,
+    "runtime_created_or_opaque_manager_root_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The absence of a stable EAX result does not by itself reject a conditional consumer that only executes a getter-reaching branch.",
+    "Generic/interface dispatch paths that receive the exact outer object or a proven alias remain open.",
+    "This contract bounds the surviving frontier; it does not claim global runtime manager-root reconstruction closure.",
+    "No identity is inferred from matching offsets."
+  ],
+  "next_step": "Trace generic/interface vtable+0x0c dispatches whose receiver is the exact outer object or a proven alias, and classify post-call EAX use before closing FUN_0045b130 as an alternate manager-root source."
+}
