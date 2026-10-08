@@ -1,0 +1,43 @@
+{
+  "format": "SHIFT.Fun007af040ColumnTransform/1",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "source": {
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "function": "FUN_007af040",
+    "definition_source_line": 810251,
+    "fun_00766510_call_source_line": 759615
+  },
+  "contract": {
+    "input_scalar_storage": "f64",
+    "explicit_scalar_narrowing": "f64 -> f32 before multiplication",
+    "matrix_storage": "3x3 f32",
+    "matrix_column_byte_offsets": ["0x04", "0x10", "0x1c"],
+    "output_storage": "three f64 lanes widened from three f32 products",
+    "formula": [
+      "f64(f32(matrix+0x04) * f32(scalar))",
+      "f64(f32(matrix+0x10) * f32(scalar))",
+      "f64(f32(matrix+0x1c) * f32(scalar))"
+    ]
+  },
+  "phase748_precision_witness": {
+    "input_scalar": 1.00000006,
+    "source_f32_product_bits": ["0x40490fdd", "0xc02df855", "0x3eaaaaac"]
+  },
+  "consumer": {
+    "function": "FUN_00766510",
+    "branch": "optional +0x3bc8/+0x3cxx block",
+    "source_expression": "FUN_007af040(BODY0+0xd4, local_50 * response_scalar * local_50, local_120)",
+    "complete_optional_branch_internalized": false
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "contact_response_provider_removed": false,
+    "FUN_007af040_internalized": true,
+    "optional_branch_config_internalized": false,
+    "physical_semantics_invented": false
+  }
+}
