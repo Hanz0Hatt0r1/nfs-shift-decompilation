@@ -1,0 +1,68 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374OwnerChild818157Rejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_role": "navigation/fingerprint only"
+  },
+  "upstream": {
+    "receiver_rejection_format": "SHIFT.HDVehicle64e8Manager374VptrReceiverRejections/1",
+    "literal_receiver_worklist_before": 8,
+    "owner_child_vptr": "0x00b16158",
+    "participants_manager_root_vptr": "0x00ab9190",
+    "participants_manager_subobject_vptr": "0x00ab916c"
+  },
+  "target": {
+    "site": "0x00818157",
+    "function": "FUN_00818000",
+    "function_mnemonic_sha256": "bdf034dc13276fada174c9e1f1240641c4d3d7d2623d0cb2118a67825139ec79",
+    "receiver_capture": "entry ECX -> EBX",
+    "store": "0x00818157 mov [ebx+0x374],esi",
+    "stored_value": "zero (ESI cleared at 0x00818142)"
+  },
+  "direct_call_surface": {
+    "callsite_count": 2,
+    "callsites": ["0x0081851f", "0x0081860f"],
+    "callers": ["FUN_008184e0", "FUN_008185d0"],
+    "caller_mnemonic_sha256": "94cd6e384578c40ef4cf843f5deaebf47050ff05f19945986177ff996b919f65"
+  },
+  "physical_receiver_preservation": {
+    "caller_entry_capture": [
+      "0x008184e1 mov esi,ecx",
+      "0x008185d1 mov esi,ecx"
+    ],
+    "intermediate_call": "FUN_00816570",
+    "intermediate_function_mnemonic_sha256": "366ed1780576939df9cceb671d050821ccb23be70dc5dd0f247a811b7a9057a7",
+    "nested_call": "0x008165c9 call FUN_00816550",
+    "nested_function_mnemonic_sha256": "452a398a40f0b8944f306a3649282fc58cddd6d11ca0abf5fce0ffa16a20ff8e",
+    "nested_behavior": "FUN_00816550 reads [eax+ecx+0xd4], returns EAX, and never writes ECX",
+    "intermediate_post_call_use": "0x008165d1 mov [ecx+0x37c],eax",
+    "proof": "ECX must physically remain the same receiver through FUN_00816570/FUN_00816550; both caller paths perform no ECX write after return before calling FUN_00818000"
+  },
+  "owner_identity": {
+    "source": "merged owner+0x56c lifecycle in SHIFT.HDVehicle64e8Manager374VptrReceiverRejections/1",
+    "chain": "0x390 allocation -> FUN_008167f0 -> vptr 0x00b16158 -> owner+0x56c -> FUN_0080b8f0 getter -> caller ECX",
+    "receiver_vptr": "0x00b16158",
+    "receiver_is_participants_manager_root": false,
+    "receiver_is_participants_manager_subobject": false
+  },
+  "adjudication": {
+    "site_closed_negative": true,
+    "literal_receiver_worklist_before": 8,
+    "literal_receiver_worklist_after": 7,
+    "computed_address_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "No ABI caller-saved assumption is used: ECX preservation is established from the concrete nested machine bodies.",
+    "This contract closes only 0x00818157; other remaining literal and computed-address +0x374 stores stay open.",
+    "Numeric +0x374 equality is not used as identity."
+  ],
+  "next_step": "Classify the remaining seven literal +0x374 sites by exact owner/caller provenance."
+}
