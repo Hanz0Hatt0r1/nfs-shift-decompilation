@@ -12,7 +12,7 @@ PC retail 1.02 `SHIFT.exe` is authoritative. `objdump` is only the decoder. `shi
 
 The whole `.text` scan contains exactly **25** literal `+0x374` write sites across **21** containing functions.
 
-Two sites already have exact Participants Manager receiver provenance:
+Two sites have exact Participants Manager receiver provenance:
 
 ### Constructor zero-init — `0x00488e33`
 
@@ -32,17 +32,11 @@ The singleton initialization path is:
 0x00488e33  mov [esi+0x374],ebx
 ```
 
-Therefore this writer is exactly:
-
-```text
-manager+0x374 = 0
-```
-
-It cannot place fixed `HDVehicle+0x4330` into the slot.
+Therefore this writer is exactly `manager+0x374 = 0`. It cannot place fixed `HDVehicle+0x4330` into the slot.
 
 ### Selection writer — `0x00d606f3`
 
-The already-merged exact-root direct-callee proof establishes `FUN_00d60660` as the sole direct nonzero writer in that surface:
+The merged exact-root direct-callee proof establishes:
 
 ```text
 manager+0x374 = selected manager+0x2a0 entry
@@ -50,11 +44,21 @@ manager+0x374 = selected manager+0x2a0 entry
 
 The selected entry belongs to allocator-owned `manager+0x2a0` storage and is not fixed `HDVehicle+0x4330`.
 
+## Inherited negative sites
+
+Three additional literal sites are already closed by merged receiver-provenance contracts and are not reopened by this inventory:
+
+- `0x004826a6` / `FUN_00481e20`: all direct destination surfaces are closed as stack-local, SMS participant `+0xa00` render snapshot, or `CCameraView+0x2d0` state;
+- `0x0051effd` / `FUN_0051efa0`: exact receiver `0x00be1680`, distinct from manager singleton `0x00bc9fc0`;
+- `0x005ded7e` / `FUN_005dec70`: fresh `0x37c` allocation is too small for the Participants Manager layout, whose constructor writes through `+0x37f`.
+
+These facts come from `SHIFT.HDVehicle64e8Manager374LiteralWriterRejections/1`, `SHIFT.HDVehicle64e8Manager374BulkCopyParticipantRejection/1`, and `SHIFT.HDVehicle64e8Manager374BulkCopyCameraRejection/1`.
+
 ## Remaining worklist
 
-The other **23** literal stores, across **19** functions, remain a receiver-provenance worklist. They are not rejected merely because their displacement is also `0x374`.
+After preserving those merged negatives, **20** literal stores across **16** functions remain a receiver-provenance worklist. They are not rejected merely because their displacement is also `0x374`.
 
-The exact sites are pinned in `SHIFT.HDVehicle64e8Manager374LiteralStoreInventory/1`.
+The exact ordered sites and containing-function fingerprints are pinned in `SHIFT.HDVehicle64e8Manager374LiteralStoreInventory/1`.
 
 ## Boundaries
 
