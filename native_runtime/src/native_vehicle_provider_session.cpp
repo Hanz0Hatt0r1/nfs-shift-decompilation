@@ -201,8 +201,12 @@ NativeVehicleProviderSession::execute_explicit_step(
                     physics::validate_fun_00765c40_external_pass_result(
                         external_input,
                         result);
+                    const auto session_query_input =
+                        physics::materialize_fun_00765c40_session_query_snapshot(
+                            external_input,
+                            result);
 
-                    query_inputs[pass_index] = result.query_input;
+                    query_inputs[pass_index] = session_query_input;
                     query_input_present[pass_index] = true;
                     ++telemetry.fun_00765c40_query_input_capture_count;
 
@@ -220,7 +224,7 @@ NativeVehicleProviderSession::execute_explicit_step(
                         }
                         contact_response_state->input =
                             physics::build_fun_00766510_selected_bmw_external_pass_input(
-                                result.query_input,
+                                session_query_input,
                                 *result.query_output,
                                 world_position_state->primary_application_point);
                     }

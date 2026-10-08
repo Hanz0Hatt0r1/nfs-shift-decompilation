@@ -11,12 +11,14 @@
   },
   "runtime_integration": {
     "selector_ready": true,
-    "NativeVehicleProviderSession_switched_to_selector": false
+    "NativeVehicleProviderSession_switched_to_selector": true,
+    "FUN_00766510_handoff_uses_session_snapshot": true,
+    "telemetry_query_snapshot_uses_session_snapshot": true
   },
   "scope": {
     "top_level_FUN_00765c40_provider_removed": false,
     "external_provider_count_before": 7,
     "external_provider_count_after": 7
   },
-  "next_step": "Switch NativeVehicleProviderSession query snapshot and FUN_00766510 handoff from result.query_input to materialize_fun_00765c40_session_query_snapshot without changing generic compatibility."
+  "next_step": "Continue narrowing the remaining FUN_00765c40 producer-owned load/wheel/contact arithmetic; remove the top-level callback only after every residual producer dependency has a positive native ownership contract."
 }
