@@ -16,13 +16,20 @@
     "returned_cache_handle",
     "query_output"
   ],
+  "known_invariant_validation": {
+    "enabled_when_witness_present": true,
+    "validator": "validate_fun_00765c40_residual_producer_handoff_known_invariants",
+    "proven_finite_payload": "Fun007584f0ComputedInputs",
+    "opaque_qword_payloads_reinterpreted": false,
+    "unproven_body_vector_ranges_added": false
+  },
   "ownership": {
     "selected_query_input_native": true,
     "query_cache_native": true,
     "selected_query_fallback_native": true,
     "collision_output_typed_external": true,
     "producer_handoff_native_computation": false,
-    "producer_handoff_session_captured": false,
+    "producer_handoff_session_captured": true,
     "lower_scene_query_external": true
   },
   "scope": {
@@ -30,5 +37,5 @@
     "top_level_provider_removed": false,
     "external_provider_count_after": 7
   },
-  "next_step": "Capture the optional residual_producer_handoff per pass in NativeVehicleProviderSession, still as a non-authoritative witness."
+  "next_step": "Recover source-backed production or ownership for one of the nine remaining producer/owner blockers; captured witnesses remain diagnostic until independently proven."
 }
