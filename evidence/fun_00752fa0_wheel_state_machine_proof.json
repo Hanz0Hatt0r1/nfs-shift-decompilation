@@ -1,0 +1,40 @@
+{
+  "format": "SHIFT.Fun00752fa0WheelStateMachineProof/1",
+  "ready": true,
+  "purpose": "Classify one previously unresolved FUN_00765c40 callee as a four-wheel state setter using direct PC-retail machine code.",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "callee_entry": "0x00752fa0",
+    "evidence_kind": "direct PE32 machine-code disassembly"
+  },
+  "callee_body": [
+    "0x00752fa3: mov eax,[ebp+0x8]",
+    "0x00752fa6: fld qword [ebp+0xc]",
+    "0x00752fa9: fstp qword [ecx+0xa00]",
+    "0x00752faf: mov dword [ecx+0x9f8],eax",
+    "0x00752fb6: ret 0xc"
+  ],
+  "caller_join": {
+    "caller": "FUN_00765c40",
+    "call_site": "0x00765ec1",
+    "receiver_first": "HDVehicle+0x400",
+    "receiver_count": 4,
+    "receiver_stride": "0x0a80",
+    "index_argument": "0..3",
+    "qword_argument_source": "HDVehicle+0x98"
+  },
+  "vehicle_relative_writes": {
+    "index_dword_offsets": ["+0x0df8","+0x1878","+0x22f8","+0x2d78"],
+    "qword_offsets": ["+0x0e00","+0x1880","+0x2300","+0x2d80"],
+    "per_wheel_offsets": ["+0x9f8 dword","+0xa00 qword"]
+  },
+  "semantic_name_proven": false,
+  "callee_side_effect_surface_closed": true,
+  "may_be_removed_from_unresolved_callee_frontier": true,
+  "gate": {
+    "p1_2b_complete": false,
+    "fun_00765c40_provider_removal_authorized": false,
+    "external_provider_count": 7
+  }
+}
