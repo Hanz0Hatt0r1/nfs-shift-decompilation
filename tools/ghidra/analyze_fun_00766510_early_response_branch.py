@@ -36,13 +36,37 @@ def one(lines: list[str], key: str) -> int:
     return found[0]
 
 
+def one_in_range(lines: list[str], key: str, start: int, end: int) -> int:
+    found = [i for i in hits(lines, ANCHORS[key]) if start <= i <= end]
+    if len(found) != 1:
+        raise SystemExit(
+            f"expected one {key} anchor in {start}..{end}, found {found}"
+        )
+    return found[0]
+
+
 def analyze(path: Path) -> dict:
     raw = path.read_bytes()
     sha = hashlib.sha256(raw).hexdigest()
     if sha != PINNED_SOURCE_SHA256:
         raise SystemExit(f"unexpected SHIFT.exe.c sha256: {sha}")
     lines = raw.decode("utf-8").splitlines()
-    anchor_lines = {key: one(lines, key) for key in ANCHORS}
+
+    anchor_lines = {
+        "clamp_setup": one(lines, "clamp_setup"),
+        "table_source": one(lines, "table_source"),
+        "table_dest": one(lines, "table_dest"),
+        "table_stride": one_in_range(lines, "table_stride", 751619, 751640),
+        "application_setup": one(lines, "application_setup"),
+        "application_x": one(lines, "application_x"),
+        "derived_3ae8_store": one(lines, "derived_3ae8_store"),
+        "runtime_last_lane": one(lines, "runtime_last_lane"),
+        "runtime_table_use": one(lines, "runtime_table_use"),
+        "runtime_application": one(lines, "runtime_application"),
+        "runtime_body_apply": one_in_range(lines, "runtime_body_apply", 759541, 759560),
+        "runtime_accum": one_in_range(lines, "runtime_accum", 759541, 759560),
+    }
+
     recompute_3ae8 = hits(lines, "FUN_00756b60(")
     if recompute_3ae8 != [751484, 751658, 752626, 752713, 761375]:
         raise SystemExit(f"unexpected FUN_00756b60 surface: {recompute_3ae8}")
@@ -59,7 +83,10 @@ def analyze(path: Path) -> dict:
         },
         "setup": {
             "function": "FUN_00756bb0 plus FUN_0076b280 application-vector setup",
-            "clamp_3b00": {"source": "VehicleLoadData+0xcc8", "line": anchor_lines["clamp_setup"]},
+            "clamp_3b00": {
+                "source": "VehicleLoadData+0xcc8",
+                "line": anchor_lines["clamp_setup"],
+            },
             "table_3b20": {
                 "count": 6,
                 "entry_stride": "0x18 bytes",
