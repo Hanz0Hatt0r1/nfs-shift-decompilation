@@ -16,13 +16,15 @@ To make that store the selected target, the pointer in `manager+0x374` must be p
 
 A full-retail direct-call receiver inventory found 44 calls, across 12 unique targets, where `ECX` at the callee is still the unmodified pointer returned by `FUN_00489ad0`. None of those 12 direct callee bodies contains a direct store to receiver `+0x374`.
 
-The constructor remains the only proven direct slot writer in this bounded surface:
+The constructor installs manager vtable `0x00ab9190`. Its 18 slots resolve to 17 unique code targets (one duplicate target), and none of those virtual targets directly stores receiver `+0x374` either.
+
+The constructor remains the only proven direct slot writer in these bounded surfaces:
 
 ```text
 0x00488e33  [manager+0x374] = 0
 ```
 
-This does **not** prove the slot remains null. Indirect calls, virtual dispatch, helper-mediated writes, pointer aliases, and bulk-copy/registration paths remain open.
+This does **not** prove the slot remains null. Helper-mediated writes, escaped aliases, non-vtable function pointers, and bulk-copy/registration paths remain open.
 
 ## Direct receiver target inventory
 
@@ -43,13 +45,47 @@ FUN_004939e0   1 call
 
 Calls where the getter result is adjusted before dispatch, for example calls on `manager+0x20`, are deliberately excluded because they are not direct manager-root receivers.
 
+## Manager virtual surface
+
+Constructor-installed vtable:
+
+```text
+0x00ab9190
+```
+
+The 18 slots resolve to 17 unique targets:
+
+```text
+FUN_00489aa0
+FUN_004891a0
+FUN_00407e50  (appears in two slots)
+FUN_006389b0
+FUN_00407e70
+FUN_005f1a20
+FUN_00638850
+FUN_006383c0
+FUN_006383d0
+FUN_008542a0
+FUN_00a251c0
+FUN_00638470
+FUN_00638490
+FUN_00638360
+FUN_00638900
+FUN_00638390
+FUN_006383e0
+```
+
+No target directly stores receiver `+0x374`.
+
 ## Gate
 
 ```text
 constructor zero of manager+0x374                   = proven
 direct manager-root receiver setter to +0x374      = not found
 direct manager-root receiver setter surface        = exhausted
-indirect / virtual / alias setter                   = open
+manager-vtable direct setter to +0x374              = not found
+manager-vtable direct setter surface                = exhausted
+helper / escaped-alias / non-vtable indirect setter = open
 manager+0x374 == HDVehicle+0x4330                   = open
 exact HDVehicle+0x64e8 non-sentinel writer          = false
 retail input/control provenance                     = false
@@ -61,4 +97,4 @@ No gameplay meaning is assigned to `manager+0x374`, `receiver+0x21b8`, or `HDVeh
 
 ## NEXT_STEP
 
-Trace indirect/virtual/helper mutations of `manager+0x374`. In parallel, trace insertion producers for the second manager domain (`manager+0x2a0`). Only promote the literal `+0x21b8` stores after exact pointer identity reaches `HDVehicle+0x4330`.
+Trace helper-mediated, escaped-alias, and non-vtable indirect mutations of `manager+0x374`. In parallel, trace insertion producers for the second manager domain (`manager+0x2a0`). Only promote the literal `+0x21b8` stores after exact pointer identity reaches `HDVehicle+0x4330`.
