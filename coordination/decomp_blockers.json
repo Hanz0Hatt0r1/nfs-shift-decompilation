@@ -1,7 +1,7 @@
 {
   "format": "SHIFT.DecompBlockerGraph/1",
   "version": 1,
-  "updated_from_main": "a7642806ee9c689535384c43d1dd8dbdfe1d5f3f",
+  "updated_from_main": "20d6df1e470ab5e8028362b2285240fd2b32917c",
   "rules": {
     "pc_retail_semantic_authority": true,
     "numeric_offset_equality_is_identity": false,
@@ -56,8 +56,9 @@
         {
           "id": "P1.3.manager2a0",
           "target": "FUN_00489ad0()+0x2a0 collection entry == HDVehicle+0x4330",
-          "status": "mutation-edge-found",
-          "next": "Expand 0x00469b1d -> FUN_0057f620 arguments and stored element identity."
+          "status": "candidate-rejected-remaining-paths-open",
+          "rejected_candidate": "0x00469b1d -> FUN_0057f620 mutates 0x00bbdbe0+0x2a0, not manager+0x2a0",
+          "next": "Trace the exact 0x0045daa3 manager+0x2a0 selection -> manager+0x378 store and remaining registration/mutation paths."
         }
       ]
     },

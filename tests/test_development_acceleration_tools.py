@@ -25,8 +25,10 @@ def test_blocker_graph_is_fail_closed_and_partitioned():
     streams = {row["id"]: row for row in p["workstreams"]}
     assert streams["P1.3"]["owner"] == "Process 1B"
     children = {row["id"]: row for row in streams["P1.3"]["children"]}
-    assert children["P1.3.manager2a0"]["status"] == "mutation-edge-found"
-    assert "FUN_0057f620" in children["P1.3.manager2a0"]["next"]
+    manager2a0 = children["P1.3.manager2a0"]
+    assert manager2a0["status"] == "candidate-rejected-remaining-paths-open"
+    assert "0x00469b1d" in manager2a0["rejected_candidate"]
+    assert "0x0045daa3" in manager2a0["next"]
     assert streams["P2.3"]["blocked_by"] == ["P1.1"]
 
 
