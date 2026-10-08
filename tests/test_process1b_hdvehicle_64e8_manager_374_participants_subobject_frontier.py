@@ -61,11 +61,10 @@ def test_escape_is_retained_fail_closed():
     assert a["external_provider_count"] == 7
 
 
-def test_coordination_points_to_escaped_alias_consumers():
+def test_coordination_preserves_subobject_frontier_after_later_progress():
     graph = json.loads(COORD.read_text(encoding="utf-8"))
     p13 = next(row for row in graph["workstreams"] if row["id"] == "P1.3")
     node = next(row for row in p13["children"] if row["id"] == "P1.3.manager374")
-    assert node["status"] == "participants-subobject-direct-writes-rejected-escaped-alias-open"
     assert node["manager_plus_0x20_direct_helper_surface_complete"] is True
     assert node["manager_plus_0x20_escaped_alias_open"] is True
-    assert "FUN_004f5e60" in node["next"]
+    assert node["manager_plus_0x20_label"] == "Participants Manager"
