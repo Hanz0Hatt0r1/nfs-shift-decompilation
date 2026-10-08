@@ -1,0 +1,36 @@
+{
+  "format": "SHIFT.Fun00765c40WheelPlaneRefreshStage/1",
+  "ready": true,
+  "authority": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "direct_write_surface": "SHIFT.Fun00765c40DirectMachineWriteSurface/1",
+    "residual_order": "SHIFT.Fun00765c40ResidualPassContract/1"
+  },
+  "retail_write_surface": {
+    "kind": "wheel_qword_loop_a",
+    "count": 4,
+    "base": "+0x0a70",
+    "stride": "0x0a80",
+    "offsets": ["+0x0a70", "+0x14f0", "+0x1f70", "+0x29f0"],
+    "sites": ["0x00765cf7/0x00765d46", "0x00765d9c/0x00765dd7"],
+    "width": "qword",
+    "semantic_name_proven": false,
+    "source_arithmetic_proven": false
+  },
+  "native_consumption": {
+    "header": "native_runtime/include/shift_fun_00765c40_wheel_plane_refresh_stage.hpp",
+    "four_qword_inputs_are_explicit": true,
+    "payloads_preserved_bit_for_bit": true,
+    "destination_geometry_native_owned": true,
+    "first_residual_stage_pinned": true,
+    "source_arithmetic_internalized": false
+  },
+  "scope": {
+    "p2_4_wheel_plane_refresh_write_stage_internalized": true,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_FUN_00765c40_provider_removed": false,
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Close the source computation feeding the four wheel-plane qwords and remaining wheel-job scheduling before top-level provider removal."
+}
