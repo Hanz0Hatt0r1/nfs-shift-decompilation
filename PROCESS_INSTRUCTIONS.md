@@ -46,15 +46,15 @@ Current priorities:
 
 ```text
 P1.1  residual FUN_00766510 frontier:
-      a) FUN_00713630 dynamic X/Z generator inputs
-      b) later +0x3a28/+0x3a40 direct response block
+      a) finish FUN_00713630 upstream dynamic-input provenance
       c) final +0x40a0/+0x40a8/+0x40b0 accumulator + conditional state/diagnostic writes
+      CLOSED: later +0x3a28/+0x3a40 direct response block ownership/order
 P1.2  FUN_00765c40 collision-provider/load-term/residual ownership
 P1.3  input -> drivetrain/wheel/control producer chain
 P1.4  retail camera-follow source/timing
 ```
 
-`SHIFT.Fun00766510ResidualOwnershipFrontier/1` is the current P1.1 selection contract. Response config, the earlier `+0x3b20` branch, and the optional `+0x3bc8/+0x3cxx` branch are already positive and must not be rediscovered.
+`SHIFT.Fun00766510ResidualOwnershipFrontier/1` is the current P1.1 selection contract. Response config, the earlier `+0x3b20` branch, optional `+0x3bc8/+0x3cxx` branch, and later `+0x3a28/+0x3a40` branch are already positive and must not be rediscovered.
 
 ### Process 2
 
@@ -109,6 +109,7 @@ Phase743 selected BMW application-point owner
 Process 1 response-config ownership
 Process 1 earlier +0x3b20 branch ownership
 Process 1 optional +0x3bc8/+0x3cxx branch ownership
+Process 1 later +0x3a28/+0x3a40 branch ownership
 ```
 
 Active top-level external provider count:
