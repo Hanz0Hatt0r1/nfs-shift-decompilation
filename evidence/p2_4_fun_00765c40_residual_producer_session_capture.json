@@ -4,21 +4,23 @@
   "lane": "Process 2 / P2-runtime",
   "dependencies": {
     "external_result": "SHIFT.Fun00765c40ExternalPassResult/5",
-    "producer_handoff": "SHIFT.Fun00765c40ResidualProducerHandoff/1",
+    "producer_handoff": "SHIFT.Fun00765c40ResidualProducerHandoff/2",
+    "historical_producer_handoff": "SHIFT.Fun00765c40ResidualProducerHandoff/1",
     "session": "SHIFT.NativeVehicleProviderSession/1"
   },
   "capture": {
     "pass_count": 2,
     "source_field": "Fun00765c40ExternalPassResult.residual_producer_handoff",
     "result_field": "NativeVehicleProviderSessionResult.fun_00765c40_residual_producer_handoffs",
-    "presence_rule": "copy only when source optional has_value()",
+    "presence_rule": "copy optional handoff exactly when source optional has_value(); preserve its per-family presence mask",
+    "selective_family_presence_preserved": true,
     "telemetry_field": "fun_00765c40_residual_producer_handoff_capture_count",
     "per_step_storage": "local to execute_explicit_step; discarded when the step throws",
     "persistent_session_state_added": false
   },
   "ordering": [
     "call top-level FUN_00765c40 provider",
-    "validate typed /5 result",
+    "validate typed /5 result and present /2 family invariants",
     "materialize native authoritative query snapshot",
     "commit query/cache snapshots",
     "capture optional residual producer witness when present",
@@ -29,6 +31,7 @@
     "witness_treated_as_native_computation": false,
     "composed_executor_invoked_by_session": false,
     "missing_witness_rejected": false,
+    "absent_family_promoted": false,
     "remaining_explicit_producer_count": 9
   },
   "boundaries": {
@@ -38,5 +41,5 @@
     "external_provider_count_after": 7,
     "complete_FUN_00765c40_internalized": false
   },
-  "next_step": "Obtain source-backed selected-provider production for one or more captured producer fields, then validate those witnesses against native reconstruction before allowing any composed-executor consumption."
+  "next_step": "Promote individual captured /2 families only after independent source-backed proof; absent families remain untouched and non-authoritative."
 }
