@@ -73,10 +73,9 @@ source-visible direct writer candidates enumerated = true
 alias-complete writer ownership proven             = false
 retail control semantics proven                    = false
 P1.3 control producer complete                     = false
-provider count remains                             = 7
 ```
 
-The existing native `VehicleControlIntent` boundary remains host-side only and is not used as retail evidence.
+The provider count remains **7**. The existing native `VehicleControlIntent` boundary remains host-side only and is not used as retail evidence.
 
 ## Run
 
