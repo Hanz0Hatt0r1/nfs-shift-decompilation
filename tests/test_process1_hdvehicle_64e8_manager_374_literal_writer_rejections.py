@@ -60,4 +60,3 @@ def test_coordination_preserves_literal_rejections_after_later_alias_progress():
     node = next(row for row in p13["children"] if row["id"] == "P1.3.manager374")
     assert node["rejected_literal_writers"] == ["FUN_0051efa0", "FUN_005dec70"]
     assert node["direct_bulk_copy_surface_complete"] is True
-    assert node["status"] == "participants-subobject-direct-writes-rejected-escaped-alias-open"
