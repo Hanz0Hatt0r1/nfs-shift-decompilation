@@ -1,0 +1,72 @@
+{
+  "format": "SHIFT.Fun007530e0Slot2VehicleLoadData4c8Producer/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "direct PE32 machine-code receiver/argument/value flow"
+  },
+  "upstream_contract": "SHIFT.Fun007530e0Slot2SourceProducer/1",
+  "target": {
+    "owner": "VehicleLoadData = *(HDVehicle+0x66b4)",
+    "field": "VehicleLoadData+0x4c8",
+    "width": "f64",
+    "role_in_slot2_chain": "source converted by FUN_00901310 into HDVehicle+0x524c"
+  },
+  "loader_function": {
+    "function": "FUN_007c3b00",
+    "entry": "0x007c3b00",
+    "receiver_prologue": "0x007c3b21 ESI = ECX",
+    "source_object_argument": "0x007c3b1e EDI = [EBP+0x10]",
+    "mode_argument": "[EBP+0x18]",
+    "mode4_branch": "0x007c3b57 compare mode with 4 -> 0x007c4845"
+  },
+  "selected_hdvehicle_callsite": {
+    "enclosing_function": "FUN_0076df50",
+    "call_instruction": "0x0076e21a",
+    "receiver_setup": "0x0076e20a ECX = [HDVehicle+0x66b4]",
+    "source_base_setup": "0x0076e1c1 EBX = HDVehicle+0x4330",
+    "stack_sequence": [
+      "0x0076e210 push 4",
+      "0x0076e212 EAX = auxiliary argument base+0x50",
+      "0x0076e215 push EAX",
+      "0x0076e216 push EBX = HDVehicle+0x4330",
+      "0x0076e217 push 0",
+      "0x0076e219 push [HDVehicle+0x66b0]",
+      "0x0076e21a call FUN_007c3b00"
+    ],
+    "callee_param_3": "HDVehicle+0x4330",
+    "callee_mode": 4,
+    "same_vehicle_load_data_receiver_proven": true
+  },
+  "value_transfer": {
+    "source_load": "0x007c48ba EAX = [EDI+0x21b8]",
+    "sentinel_check": "0x007c48c0 compare EAX with -1",
+    "conversion": "0x007c48c8 fild dword [EBP+0x0c]",
+    "store": "0x007c48cb fstp qword [ESI+0x4c8]",
+    "normalized_source": "HDVehicle+0x64e8",
+    "normalization": "0x4330 + 0x21b8 = 0x64e8",
+    "exact_transfer_when_source_not_minus_one": "VehicleLoadData+0x4c8 = f64(int32(HDVehicle+0x64e8))"
+  },
+  "constructor_context": {
+    "vehicle_load_data_constructor": "FUN_007c3170",
+    "constructor_callsite": "0x0076dfcc",
+    "allocation_size": "0x3848",
+    "embedded_default_constructor": "FUN_007c0db0 receives VehicleLoadData+0x8",
+    "note": "constructor/default writes are setup provenance only; the mode-4 FUN_007c3b00 write is the positive selected-HDVehicle value-transfer proof for +0x4c8"
+  },
+  "adjudication": {
+    "vehicle_load_data_4c8_writer_identified": true,
+    "same_vehicle_load_data_receiver_proven": true,
+    "selected_hdvehicle_source_owner_proven": true,
+    "exact_value_transfer_proven": true,
+    "hdvehicle_64e8_upstream_writer_proven": false,
+    "vehicle_load_data_3a0_upstream_writer_proven": false,
+    "vehicle_load_data_3a8_upstream_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Trace the PC-retail writer/value producer of HDVehicle+0x64e8 and independently close VehicleLoadData+0x3a0/+0x3a8. Do not assign throttle/brake/steering semantics without exact value-transfer proof."
+}
