@@ -11,6 +11,7 @@ SESSION_QUERY_EVIDENCE = ROOT / "evidence/p2_4_fun_00765c40_session_query_snapsh
 WHEEL_STATE_EVIDENCE = ROOT / "evidence/fun_00752fa0_wheel_state_machine_proof.json"
 COMPOSED_EVIDENCE = ROOT / "evidence/p2_4_fun_00765c40_composed_residual_executor.json"
 COMPOSED_HEADER = ROOT / "native_runtime/include/shift_fun_00765c40_composed_residual_executor.hpp"
+HANDOFF_HEADER = ROOT / "native_runtime/include/shift_fun_00765c40_residual_producer_handoff.hpp"
 SESSION_HEADER = ROOT / "native_runtime/include/shift_native_vehicle_provider_session.hpp"
 SESSION_SOURCE = ROOT / "native_runtime/src/native_vehicle_provider_session.cpp"
 
@@ -25,10 +26,14 @@ def test_p2_4_overlay_currentizes_fun_00765c40_without_rewriting_history() -> No
     assert fun["provider_removed"] is False
     assert fun["external_pass_result_contract"] == "SHIFT.Fun00765c40ExternalPassResult/5"
     assert fun["historical_collision_output_result_contract"] == "SHIFT.Fun00765c40ExternalPassResult/4"
+    assert fun["residual_producer_handoff_contract"] == "SHIFT.Fun00765c40ResidualProducerHandoff/2"
+    assert fun["historical_residual_producer_handoff_contract"] == "SHIFT.Fun00765c40ResidualProducerHandoff/1"
     assert fun["residual_producer_handoff_present"] is True
     assert fun["residual_producer_handoff_threaded_through_provider_result"] is True
     assert fun["residual_producer_handoff_threaded_through_session_result"] is True
     assert fun["residual_producer_handoff_authoritative"] is False
+    assert fun["residual_producer_handoff_selective_families"] is True
+    assert fun["residual_producer_handoff_legacy_all_families_compatible"] is True
     assert fun["selected_world_position_native"] is True
     assert fun["selected_query_fallback_native"] is True
     assert fun["selected_query_input_native"] is True
@@ -50,6 +55,7 @@ def test_p2_4_overlay_currentizes_fun_00765c40_without_rewriting_history() -> No
     assert report["guards"]["external_provider_count_decremented"] is False
     assert report["guards"]["wheel_state_source_owner_inferred_from_address"] is False
     assert report["guards"]["producer_handoff_treated_as_native_computation"] is False
+    assert report["guards"]["absent_producer_family_default_overwrite_allowed"] is False
 
 
 def test_overlay_matches_active_runtime_contracts() -> None:
@@ -61,9 +67,14 @@ def test_overlay_matches_active_runtime_contracts() -> None:
     session_source = SESSION_SOURCE.read_text(encoding="utf-8")
     composed = COMPOSED_EVIDENCE.read_text(encoding="utf-8")
     composed_header = COMPOSED_HEADER.read_text(encoding="utf-8")
+    handoff_header = HANDOFF_HEADER.read_text(encoding="utf-8")
 
     assert p2_4.EXTERNAL_PASS_RESULT_FORMAT in result_header
     assert p2_4.HISTORICAL_COLLISION_OUTPUT_RESULT_FORMAT in result_header
+    assert p2_4.RESIDUAL_PRODUCER_HANDOFF_FORMAT in handoff_header
+    assert p2_4.HISTORICAL_RESIDUAL_PRODUCER_HANDOFF_FORMAT in handoff_header
+    assert "family_presence_explicit = false" in handoff_header
+    assert "family_present{}" in handoff_header
     assert "std::optional<CollisionQueryOutput> query_output" in result_header
     assert "std::optional<Fun00765c40ResidualProducerHandoff> residual_producer_handoff" in result_header
     assert p2_4.NATIVE_SELECTED_QUERY_INPUT_FORMAT in native_query_evidence
@@ -71,7 +82,7 @@ def test_overlay_matches_active_runtime_contracts() -> None:
     assert p2_4.WHEEL_STATE_MACHINE_PROOF_FORMAT in wheel_state_evidence
     assert '"qword_argument_source": "HDVehicle+0x98"' in wheel_state_evidence
     assert "std::uint64_t wheel_state_source_bits = 0u" in composed_header
-    assert "inputs.wheel_state_source_bits" in composed_header
+    assert "fun_00765c40_residual_producer_family_is_present" in composed_header
     assert "materialize_fun_00765c40_session_query_snapshot" in session_source
     assert "query_inputs[pass_index] = session_query_input" in session_source
     assert "fun_00765c40_residual_producer_handoffs" in session_header
@@ -90,9 +101,13 @@ def test_contract_is_fail_closed_on_remaining_producers() -> None:
     assert payload["external_provider_count"] == 7
     assert payload["external_pass_result_contract"] == "SHIFT.Fun00765c40ExternalPassResult/5"
     assert payload["historical_collision_output_result_contract"] == "SHIFT.Fun00765c40ExternalPassResult/4"
+    assert payload["residual_producer_handoff_contract"] == "SHIFT.Fun00765c40ResidualProducerHandoff/2"
+    assert payload["historical_residual_producer_handoff_contract"] == "SHIFT.Fun00765c40ResidualProducerHandoff/1"
     assert payload["residual_producer_handoff_threaded_through_provider_result"] is True
     assert payload["residual_producer_handoff_threaded_through_session_result"] is True
     assert payload["residual_producer_handoff_authoritative"] is False
+    assert payload["residual_producer_handoff_selective_families"] is True
+    assert payload["residual_producer_handoff_legacy_all_families_compatible"] is True
     assert payload["provider_returned_selected_query_input_authoritative"] is False
     assert payload["wheel_state_source_address"] == "HDVehicle+0x98"
     assert payload["wheel_state_source_address_proven"] is True
