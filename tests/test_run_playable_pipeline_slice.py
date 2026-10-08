@@ -59,6 +59,8 @@ def _ready_output(tmp_path: Path) -> Path:
 def test_execution_forces_launch_plan_validation_and_reuses_saved_plan(tmp_path, monkeypatch):
     out = _ready_output(tmp_path)
     runtime = out / "shift_runtime"
+    report_path = out / "playable_pipeline_bootstrap.json"
+    plan_path = out / "launch_plan.json"
     captured: dict[str, object] = {}
 
     def fake_bootstrap(args):
@@ -87,20 +89,29 @@ def test_execution_forces_launch_plan_validation_and_reuses_saved_plan(tmp_path,
     assert result["runtime_executable_sha256"] == _sha(runtime)
     assert result["runtime_executable_sha256_after"] == _sha(runtime)
     assert result["runtime_executable_stable"] is True
-    assert result["boundary"]["runtime_executable_hash_recorded_before_execution"] is True
-    assert result["boundary"]["runtime_executable_rehashed_after_execution"] is True
-    assert result["boundary"]["runtime_executable_stable_across_execution"] is True
-    assert result["boundary"]["launch_plan_argv_reconstructed"] is False
-    assert result["boundary"]["launch_plan_environment_reconstructed"] is False
+    assert result["bootstrap_report_sha256"] == _sha(report_path)
+    assert result["bootstrap_report_sha256_after"] == _sha(report_path)
+    assert result["bootstrap_report_stable"] is True
+    assert result["launch_plan_sha256"] == _sha(plan_path)
+    assert result["launch_plan_sha256_after"] == _sha(plan_path)
+    assert result["launch_plan_stable"] is True
+    assert result["launch_artifacts_stable"] is True
+    boundary = result["boundary"]
+    assert boundary["runtime_executable_hash_recorded_before_execution"] is True
+    assert boundary["runtime_executable_rehashed_after_execution"] is True
+    assert boundary["runtime_executable_stable_across_execution"] is True
+    assert boundary["bootstrap_report_hash_recorded_before_execution"] is True
+    assert boundary["launch_plan_hash_recorded_before_execution"] is True
+    assert boundary["bootstrap_report_rehashed_after_execution"] is True
+    assert boundary["launch_plan_rehashed_after_execution"] is True
+    assert boundary["launch_artifacts_stable_across_execution"] is True
+    assert boundary["launch_plan_argv_reconstructed"] is False
+    assert boundary["launch_plan_environment_reconstructed"] is False
     receipt = out / "execution_result.json"
     assert receipt.is_file()
     stored = json.loads(receipt.read_text(encoding="utf-8"))
     assert stored == result
-    assert result["bootstrap_report_sha256"] == _sha(out / "playable_pipeline_bootstrap.json")
-    assert result["launch_plan_sha256"] == _sha(out / "launch_plan.json")
     assert result["execution_receipt"] == str(receipt.resolve())
-    assert result["boundary"]["bootstrap_report_hash_recorded"] is True
-    assert result["boundary"]["launch_plan_hash_recorded"] is True
 
 
 def test_bootstrap_failure_prevents_runtime_execution(tmp_path, monkeypatch):
@@ -172,6 +183,57 @@ def test_missing_runtime_executable_fails_before_runner(tmp_path, monkeypatch):
     assert not (out / "execution_result.json").exists()
 
 
+def test_launch_plan_change_during_attempt_fails_closed_and_is_receipted(tmp_path, monkeypatch):
+    out = _ready_output(tmp_path)
+    plan_path = out / "launch_plan.json"
+    before = _sha(plan_path)
+    monkeypatch.setattr(MODULE.bootstrap, "main", lambda args: 0)
+
+    def mutating_runner(*args, **kwargs):
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        plan["tampered"] = True
+        _write_json(plan_path, plan)
+        return SimpleNamespace(returncode=0)
+
+    result = MODULE.execute_playable_pipeline_slice(
+        ["input.bff", "--output", str(out)],
+        runner=mutating_runner,
+    )
+    assert result["ready"] is False
+    assert result["status"] == "launch-artifact-changed"
+    assert result["launch_plan_sha256"] == before
+    assert result["launch_plan_sha256_after"] == _sha(plan_path)
+    assert result["launch_plan_stable"] is False
+    assert result["launch_artifacts_stable"] is False
+    assert result["boundary"]["runtime_success_claimed"] is False
+    stored = json.loads((out / "execution_result.json").read_text(encoding="utf-8"))
+    assert stored["launch_plan_stable"] is False
+
+
+def test_bootstrap_report_change_during_attempt_fails_closed_and_is_receipted(tmp_path, monkeypatch):
+    out = _ready_output(tmp_path)
+    report_path = out / "playable_pipeline_bootstrap.json"
+    before = _sha(report_path)
+    monkeypatch.setattr(MODULE.bootstrap, "main", lambda args: 0)
+
+    def mutating_runner(*args, **kwargs):
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        report["tampered"] = True
+        _write_json(report_path, report)
+        return SimpleNamespace(returncode=0)
+
+    result = MODULE.execute_playable_pipeline_slice(
+        ["input.bff", "--output", str(out)],
+        runner=mutating_runner,
+    )
+    assert result["ready"] is False
+    assert result["status"] == "launch-artifact-changed"
+    assert result["bootstrap_report_sha256"] == before
+    assert result["bootstrap_report_sha256_after"] == _sha(report_path)
+    assert result["bootstrap_report_stable"] is False
+    assert result["launch_artifacts_stable"] is False
+
+
 def test_runtime_binary_change_during_attempt_fails_closed_and_is_receipted(tmp_path, monkeypatch):
     out = _ready_output(tmp_path)
     runtime = out / "shift_runtime"
@@ -209,6 +271,7 @@ def test_runtime_nonzero_is_reported_and_receipted_without_success_claim(tmp_pat
     assert result["status"] == "runtime-failed"
     assert result["runtime_returncode"] == 7
     assert result["runtime_executable_stable"] is True
+    assert result["launch_artifacts_stable"] is True
     assert result["boundary"]["runtime_success_claimed"] is False
     receipt = out / "execution_result.json"
     assert receipt.is_file()
