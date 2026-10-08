@@ -1,0 +1,67 @@
+{
+  "format": "SHIFT.Slot2VehicleLoadData4c8WedgeSettingBaseWriter/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "direct PE32 receiver/argument/parser-destination flow"
+  },
+  "owner_chain": {
+    "outer_function": "FUN_007c3b00",
+    "outer_receiver": "VehicleLoadData",
+    "outer_receiver_copy": "0x007c3b21 ESI = ECX",
+    "loader_receiver_setup": "0x007c4009 ECX = ESI+0x8 = VehicleLoadData+0x8",
+    "loader_call": "0x007c400c call FUN_007be420",
+    "loader_function": "FUN_007be420",
+    "loader_receiver_copy": "0x007be43f ESI = ECX = VehicleLoadData+0x8"
+  },
+  "wedge_setting_load": {
+    "retail_key_address": "0x00b0ec14",
+    "retail_key": "WedgeSetting",
+    "setup": [
+      "0x007be8ce push 0",
+      "0x007be8d0 push 0",
+      "0x007be8d2 push 0",
+      "0x007be8d4 ECX = nested+0x4c0; push ECX",
+      "0x007be8db push WedgeSetting",
+      "0x007be8e0 ECX = loader/parser receiver",
+      "0x007be8e2 call FUN_007a6a90"
+    ],
+    "normalized_destination": "nested+0x4c0 = VehicleLoadData+0x4c8"
+  },
+  "parser_boundary": {
+    "function": "FUN_007a6a90",
+    "single_destination_path": [
+      "arg_5 == 0",
+      "arg_4 == 0",
+      "arg_3 == 0",
+      "arg_2 = VehicleLoadData+0x4c8"
+    ],
+    "format_address": "0x00b0c570",
+    "format_literal": "(%lf)",
+    "backend_call": "0x007a6b8f call FUN_00901423 with source buffer, format, and VehicleLoadData+0x4c8 destination",
+    "successful_assignment_count_checked": 1,
+    "selected_numeric_value_proven": false
+  },
+  "override_relation": {
+    "existing_override_contract": "SHIFT.Fun007530e0Slot2VehicleLoadData4c8Producer/1",
+    "override_source": "HDVehicle+0x64e8",
+    "bootstrap_sentinel_contract": "SHIFT.HDVehicle64e8BootstrapSentinel/1",
+    "fresh_override_source_value": -1,
+    "fresh_override_skipped": true,
+    "runtime_non_sentinel_override_proven": false,
+    "ordering": "WedgeSetting base load occurs in FUN_007be420 before later mode-4 optional override in FUN_007c3b00"
+  },
+  "adjudication": {
+    "vld_4c8_base_resource_writer_proven": true,
+    "wedge_setting_resource_load_proven": true,
+    "fresh_mode4_override_skipped": true,
+    "runtime_non_sentinel_override_proven": false,
+    "selected_wedge_setting_numeric_value_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Determine whether the selected HDVehicle+0x64e8 ever leaves sentinel -1 before the relevant slot-2 transfer. If not, WedgeSetting remains the effective VLD+0x4c8 runtime source. Do not assign control-axis semantics from the resource key."
+}
