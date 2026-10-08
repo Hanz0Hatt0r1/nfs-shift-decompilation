@@ -1,0 +1,67 @@
+{
+  "format": "SHIFT.Fun00713630PhysicsTweakerMaterialization/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "pc_decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "machine_transfer_adjudicates": true
+  },
+  "object_root": {
+    "base": "DAT_00c12c40",
+    "base_address": "0x00c12c40",
+    "constructor": "FUN_00748280",
+    "fixed_receiver_callsite": "0x00a8a6f0 mov ecx,0x00c12c40; 0x00a8a6f5 call FUN_00748280",
+    "machine_span": {"start":"0x00a8a6f0","end_exclusive":"0x00a8a6fa","sha256":"9be7c4863f3e1a8980e5d29121dacdebc88a2f1466eb1452b3ff048732a7bf4e"},
+    "existing_source_backed_identity_contract": "SHIFT.RetailOuterUpdateCadenceCompletion/1",
+    "existing_contract_proves": ["Physics Tweaker", "PhysicsTweaker.xml", "tweaker_base=DAT_00c12c40"]
+  },
+  "fun_00713630_config_fields": [
+    {"absolute":"0x00c12ee0","offset":"0x2a0","default_store":"0x00748595"},
+    {"absolute":"0x00c12ee4","offset":"0x2a4","default_store":"0x007485a1"},
+    {"absolute":"0x00c12ee8","offset":"0x2a8","default_store":"0x007485ad"},
+    {"absolute":"0x00c12eec","offset":"0x2ac","default_store":"0x007485b9"},
+    {"absolute":"0x00c12ef0","offset":"0x2b0","default_store":"0x007485c5"},
+    {"absolute":"0x00c12ef4","offset":"0x2b4","default_store":"0x007485d1"},
+    {"absolute":"0x00c12f04","offset":"0x2c4","default_store":"0x00748601"}
+  ],
+  "default_materialization": {
+    "all_seven_written_by_fun_00748280_on_fixed_physics_tweaker_receiver": true,
+    "machine_span": {"start":"0x0074858f","end_exclusive":"0x00748607","sha256":"2b8fac1e576ca6f2c2ecfb17d89dd104f41e4d6c2ab2768115a5a953d48096e7"}
+  },
+  "runtime_registration": {
+    "function": "FUN_00749a60",
+    "registration_helper": "FUN_0063a280",
+    "field_offsets": ["0x2a0","0x2a4","0x2a8","0x2ac","0x2b0","0x2b4","0x2c4"],
+    "helper_callsites": ["0x0074a342","0x0074a399","0x0074a3f0","0x0074a447","0x0074a49e","0x0074a4f5","0x0074a651"],
+    "machine_span": {"start":"0x0074a306","end_exclusive":"0x0074a656","sha256":"4f0c42d6c002dc61c07a9ffe85844abe79e7bd0c200eceeffdd852ff17dd6e45"},
+    "existing_source_backed_load_path": "FUN_00710a70 -> FUN_0074d400(&DAT_00c12c40), with PhysicsTweaker.xml"
+  },
+  "plus_0x4b0_candidate_rejection": {
+    "candidate_store": "0x00748956 fstp dword [esi+0x4b0]",
+    "source": "DAT_00b078d4",
+    "receiver_at_function_entry": "fixed PhysicsTweaker object DAT_00c12c40",
+    "therefore_store_target": "DAT_00c12c40+0x4b0",
+    "direct_selected_participant_writer": false,
+    "machine_span": {"start":"0x00748950","end_exclusive":"0x0074895c","sha256":"b3c0a85cc2ae736aec9696cb6c7d64deba0445f1682379b65dfd8ca359fe7719"},
+    "numeric_offset_equality_used_as_identity": false
+  },
+  "adjudication": {
+    "seven_config_field_owner_closed": true,
+    "seven_config_default_materialization_closed": true,
+    "seven_config_runtime_registration_and_load_owner_closed": true,
+    "fun_00748280_plus_0x4b0_rejected_as_selected_participant_writer": true,
+    "actual_selected_participant_plus_0x4b0_writer_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This proves ownership/materialization of the seven FUN_00713630 configuration inputs, not their physical semantics.",
+    "The PhysicsTweaker +0x4b0 write is rejected only as a selected-participant writer; the actual participant +0x4b0 producer remains open.",
+    "Provider reduction 7 -> 6 remains forbidden until the actual participant +0x4b0 provenance closes and Process 1 publishes the final P1.1 handoff."
+  ],
+  "next_step": "Trace manager+0x140 record[0] construction to the 0x2b90 participant object and close the actual participant+0x4b0 writer surface."
+}
