@@ -1,0 +1,37 @@
+{
+  "format": "SHIFT.CameraFollowP14TargetDependencyFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact machine-code data dependency plus previously recovered camera target contracts"
+  },
+  "upstream": [
+    "SHIFT.CameraFollowP14RuntimeArgumentIdentity/1",
+    "SHIFT.CameraFollowP14SourceVtableIdentity/1",
+    "SHIFT.TrackingTargetLifecycleRuntime/1",
+    "SHIFT.TrackingTargetResolutionRuntime/1",
+    "SHIFT.TrackingCameraUpdateRuntime/1"
+  ],
+  "proven_chain": {
+    "activation_argument": "selected camera object, not selected retail vehicle",
+    "mode2_source_target_store": "FUN_0081f7c0 -> vtable+0x5c/FUN_006bbf70 -> source+0x64",
+    "active_target_resolver": "FUN_0081f2e0",
+    "tracking_target_acquisition": "FUN_0081f070 -> FUN_00812970 -> TrackingCamera+0xe8",
+    "target_position_query": "FUN_0081f330 -> FUN_008155f0",
+    "camera_update_consumer": "FUN_00821080"
+  },
+  "adjudication": {
+    "mode2_runtime_argument_is_vehicle": false,
+    "mode2_source_vtable_identity_proven": true,
+    "tracking_target_object_dependency_proven": true,
+    "tracking_target_is_selected_bmw_vehicle_proven": false,
+    "tracking_target_pose_is_BODY0_world_pose_proven": false,
+    "camera_follow_vehicle_pose_dependency_complete": false,
+    "camera_follow_update_order_complete": false,
+    "native_camera_follow_ready": false,
+    "external_provider_count": 7
+  },
+  "next": "Prove the identity/producer of the object accepted by FUN_0081f070 and stored at TrackingCamera+0xe8, then join its position/transform producer to the selected retail HDVehicle/BODY0 identity."
+}
