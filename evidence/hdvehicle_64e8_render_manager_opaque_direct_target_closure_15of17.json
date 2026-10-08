@@ -1,0 +1,146 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerOpaqueDirectTargetClosure15of17/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "decompiler_role": "navigation-only"
+  },
+  "upstream": {
+    "receiver_transfer_format": "SHIFT.PlayerVehicleRenderManagerReceiverTransferFrontier/2",
+    "bounded_direct_target_count": 17,
+    "already_explicitly_closed_direct_target_count": 7,
+    "already_closed_targets": [
+      "0x00441fd0",
+      "0x00458760",
+      "0x0045e110",
+      "0x0045f980",
+      "0x00462250",
+      "0x00467e20",
+      "0x004695e0"
+    ]
+  },
+  "closed_targets": [
+    {
+      "target": "0x00449630",
+      "exact_root_receiver_callsites": ["0x004be25d", "0x004bf71b", "0x004c06e6"],
+      "exact_root_register_at_callsites": "EDX",
+      "first_target_edx_definition": "0x00449639 mov edx,[ebp+0xc]",
+      "root_destroyed_before_forwarding": true,
+      "exact_root_store_return_or_forward": false
+    },
+    {
+      "target": "0x00459140",
+      "entry_root_consumed": false,
+      "entry_sequence": [
+        "0x00459140 push esi",
+        "0x00459141 jmp 0x0045b51b",
+        "0x0045b51b mov esi,0x00bc8e30",
+        "0x0045b521 jmp 0x00459146"
+      ],
+      "subsequent_state_root": "fixed global 0x00bc8e30",
+      "exact_root_store_return_or_forward": false
+    },
+    {
+      "target": "0x0045abe0",
+      "exact_root_entry_register": "ECX",
+      "first_call": "0x0045abe0 call 0x00886980",
+      "first_call_reads_entry_ecx": false,
+      "root_clobber_before_use": "0x0045abe5 lea ecx,[eax+0x78]",
+      "tail_transfer": "0x0045abe8 jmp 0x00458520",
+      "exact_root_store_return_or_forward": false,
+      "target_mnemonic_sha256": "becc1e7f77035eec7000749364b83bcbad174c8d8f3cb9e10686cfdce18f6aee"
+    },
+    {
+      "target": "0x0045bfc0",
+      "tail_target": "0x00d51560",
+      "exact_root_capture": "0x00d51561 mov edi,ecx",
+      "exact_root_uses": [
+        "0x00d5157f cmp dword ptr [edi+0xc],0",
+        "0x00d515ec mov ecx,dword ptr [edi+0xc]"
+      ],
+      "exact_root_store_found": false,
+      "exact_root_return_found": false,
+      "exact_root_reforward_found": false,
+      "note": "This leaf was already classified as the second hop of target 0x0045f980; this entry closes it as an independent direct target from the 17-target worklist."
+    },
+    {
+      "target": "0x0045cc50",
+      "tail_target": "0x00d517b0",
+      "exact_root_capture": "0x00d517cd mov ebx,ecx",
+      "exact_root_uses": [
+        "0x00d51978 lea eax,[ebx+0x520]",
+        "0x00d5197e lea ecx,[ebx+0x780]",
+        "0x00d51984 lea edx,[ebx+0x9e0]",
+        "0x00d51a74 mov byte ptr [ebx+0x19],0",
+        "0x00d51a80 shl ebx,0"
+      ],
+      "exact_root_store_found": false,
+      "exact_root_return_found": false,
+      "exact_root_reforward_found": false,
+      "derived_receivers_only": true
+    },
+    {
+      "target": "0x0045db50",
+      "tail_target": "0x00d51bd0",
+      "exact_root_local_materialization": "0x00d51bd3 push ecx -> [ebp-0x4]",
+      "address_of_local_transfer": "0x00d51bd8 lea edx,[ebp-0x4]",
+      "helper_chain": "0x0045b720 -> 0x004651a0 -> 0x004bb4f0 -> 0x00d77800",
+      "helper_output_slot_capture": "0x00d77817 mov esi,edx",
+      "first_output_slot_dereference": "0x00d77868 mov dword ptr [esi],0",
+      "output_slot_read_before_zero_overwrite": false,
+      "original_exact_root_observable_or_exported": false,
+      "target_thunk_mnemonic_sha256": "17b44b5fec3a91edcf4c9a53d2657b7b61ef4357f0a0c29266fe81da2c68a2b0",
+      "leaf_prefix_mnemonic_sha256": "fcf1ad7ca32f4b9421651e6d0576a95215d176b087cb82957a11afbaa9e2ff58"
+    },
+    {
+      "target": "0x00462400",
+      "exact_root_preservation": "0x0046240a mov esi,ecx",
+      "detour": "0x0046240c jmp 0x0041cad6; detour loads eax=0x00aaad40 and returns to 0x00462411 without consuming ESI",
+      "primary_helper": "0x00462436/0x0046244b call 0x0045e6e0 with ecx=esi",
+      "helper_root_capture": "0x0045e6e8 mov esi,ecx",
+      "singleton_probe": "0x0045e6ea call 0x00633980",
+      "singleton_probe_reads_entry_ecx": false,
+      "post_probe_root_clobber": "0x0045e6f1 mov ecx,eax",
+      "root_reforward_to_45abe0": "0x0045e6fc mov ecx,esi; 0x0045e6fe call 0x0045abe0",
+      "root_reforward_to_45abf0": "0x0045e71a mov ecx,esi; 0x0045e71c call 0x0045abf0",
+      "45abe0_closes_before_use": true,
+      "45abf0_reads_or_saves_entry_root_before_its_first_getter": false,
+      "final_dispatch_receiver": "0x0045e721 loads ecx from global [0x00c26058], not exact root",
+      "exact_root_store_return_or_unclassified_forward": false
+    },
+    {
+      "target": "0x00468ed0",
+      "exact_root_entry_register": "ECX",
+      "exact_root_receiver_callsite": "0x004d6015",
+      "entry_root_read_or_save_before_clobber": false,
+      "first_ecx_definition": "0x00468ee9 mov ecx,0x00bbc600",
+      "exact_root_store_return_or_forward": false,
+      "entry_prefix_mnemonic_sha256": "8e8f93dcfb4d2752982dc67f7c80c8652bf09a3e8e81db55c0b02cebf5375db4"
+    }
+  ],
+  "remaining_bounded_direct_targets": ["0x00489ad0", "0x00493fb0"],
+  "adjudication": {
+    "closed_target_count_this_contract": 8,
+    "cumulative_explicitly_closed_direct_target_count": 15,
+    "bounded_direct_target_count": 17,
+    "bounded_direct_target_surface_complete": false,
+    "remaining_bounded_direct_target_count": 2,
+    "opaque_callee_created_or_returned_alias_surface_complete": false,
+    "external_or_unknown_origin_alias_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The two getter-like targets 0x00489ad0 and 0x00493fb0 remain explicitly open until their complete exact-root caller/post-call residue inventory is pinned.",
+    "Derived child/subobject pointers and singleton getter results are not promoted back to exact outer-root identity.",
+    "This contract closes the named bounded direct targets only; it does not close external/unknown-origin aliases.",
+    "No identity is inferred from matching numeric offsets."
+  ],
+  "next_step": "Pin the complete exact-root receiver callsite and post-call ECX residue surface for 0x00489ad0 and 0x00493fb0, then close the 17-target bounded direct surface if negative."
+}
