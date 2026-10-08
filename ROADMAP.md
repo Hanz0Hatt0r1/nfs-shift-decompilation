@@ -1,250 +1,155 @@
 # SHIFT Decompilation Roadmap
 
-This document tracks the current execution order. Detailed historical work is preserved in `docs/PHASE*.md`.
+This roadmap describes **execution strategy**, not the volatile live frontier.
 
-## Current milestone: specialized-provider runtime capture
+Live phase, provider count, queue state, blocker burndown and parallel-ready work are generated from the canonical execution state:
 
-**Current mainline: Phase 646. Current development: Phase 647.**
+- [`coordination/PLAYABLE_SLICE_STATUS.md`](coordination/PLAYABLE_SLICE_STATUS.md)
+- [`evidence/playable_slice_three_process_execution.json`](evidence/playable_slice_three_process_execution.json)
 
+Detailed historical reconstruction work remains preserved in `docs/PHASE*.md`. Historical phase documents are evidence/history and must not be used to select new work.
 
+## Current milestone
 
-Phases 499–500 make the specialized-provider capture directory self-describing:
+The first target is a native Linux/Vulkan playable vertical slice:
 
-- pre/post snapshots are indexed by provider id and hit;
-- duplicate and missing stages are detected;
-- pre snapshots define structural readiness;
-- optional post snapshots enable reset→solve order analysis;
-- scalar-reset events can be scoped by frame index;
-- results are emitted as `SHIFT.SpecializedProviderCaptureBundleRuntime/1`;
-- the verification CLI returns 0 for ready evidence and 2 for blocked evidence.
+```text
+Silverstone
++
+exact retail BMW M3 E36 resources
++
+resource-driven bootstrap
++
+continuous persistent physics
++
+retail-backed input/control
++
+fresh vehicle world transform
++
+retail-backed camera follow
++
+Vulkan presentation
+=
+native playable Linux vertical slice
+```
 
-Exact retail/provider numeric parity remains open until a real runtime frame is captured.
+The project does not require every `SHIFT.exe` function to be reconstructed before this milestone. Work is selected by whether it removes a current blocker, supplies evidence required by the next dependency edge, or creates infrastructure immediately reusable by that edge.
 
-Phase 630 adds `SHIFT.NativeConstraintSampleRelationFramePacket/1` (`CSRF`) for the source-order JOINT/HINGE/BAR relation arrays. It joins exact positive/negative `(body_index, sample_index)` endpoints to GBCF, validates complete non-duplicated ownership, source-backed side flags (`+0x78 → 1`, `+0x80 → 0`) and common scalar identity, then executes the Phase 629 refresh into a copied GBCF. The phase explicitly separates top-level relation cardinality from BODY-owned endpoint-sample cardinality: every relation owns two samples. Fixed-step CSRF admission and the corresponding Phase 628 cardinality repair remain the next integration gate.
+## Execution order
 
-Phase 631 adds `--constraint-sample-relation-frame` to the native runtime. In CSRF mode startup validates 4/4/20 BMW relation cardinality against the workspace, derives 8/8/40 endpoint samples through the Phase 630 ownership join, and every admitted fixed step executes `FUN_007b3ed0 → FUN_007bc680 → FUN_007bb8d0 → FUN_007ba570` before the exact generated matrix/RHS→SBFR gate. The legacy Phase 628 GBCF-only scheduler fixture remains supported without being promoted to authentic endpoint cardinality. The next source-backed physics boundary is runtime reset-node selection for `FUN_007b2210` from relation state.
+### 1. Retail proof lanes
 
-Phase 632 adds `SHIFT.NativeConstraintRelationResetFramePacket/1` (CRRF) and ports the `FUN_007b3f40` selection boundary. Direct source audit corrects the state owner to `relation+0x70 & 1`; scalar bases still come from the positive BODY-owned sample reached through `relation+0x7c`, with reset widths JOINT=3, HINGE=2 and BAR=1. CRRF stores only source-order relation low bits, while GBCF+CSRF provide endpoint/scalar identity. The selector preserves the retail reset-call sequence without inventing full-domain coverage rules; its normalized reset set must exactly match `SBFR.reset_nodes` at startup and on every admitted fixed step before the unchanged `FUN_007b2210 → FUN_007b0f20` oracle executes. The next boundary is authentic per-frame BODY/raw-relation/reset-state production, followed by provider-present dispatch and persistent vehicle-state integration.
+`P1A-contact`, `P1B-control` and `P1D-camera` run independently where possible.
 
-Phase 633 ports the recovered set-only `FUN_00757d2c` mutation semantics for relation `+0x70` bit0 without inventing scheduler timing. The normalized native kernel uses the established CSRF BODY identity domain: one unordered BODY pair sets matching JOINT/HINGE relation bits, while one BODY endpoint sets every matching BAR relation bit. Existing set bits remain set and unmatched relations are unchanged. Raw executable disassembly additionally proves the 0..3 component-slot argument and the `0xA80` trampoline stride. The kernel is intentionally not wired into `shift_runtime`; the named FL/FR/RL/RR wheel/spindle and rear-axle BODY mapping is also statically proven; retail event identity/timing remains the next evidence boundary.
+They own:
 
-Phase 634 adds the named four-slot `FUN_00757d2c` dispatcher on top of that kernel. Slots 0..3 retain the proven FL/FR/RL/RR component blocks at `0x400 + slot*0xA80`; a caller-supplied spindle-presence state selects the exact source branch, with the null-spindle branch mutating JOINT/HINGE for `wheel ↔ rear_axle` and the present-spindle branch mutating BAR relations touching `spindle`. All named BODY identities remain CSRF indices and are fail-closed against the BODY domain. The dispatcher is still not scheduled by `shift_runtime`; the next evidence gate is a retail capture of slot trigger, spindle presence and call timing relative to the solver frame.
+- exact PC-retail ABI/value/producer provenance;
+- contact/collision residual ownership;
+- input -> drivetrain/wheel/control provenance;
+- camera target/source/timing provenance;
+- fail-closed negative proofs that permanently remove false candidates.
 
-Phase 635 extends the full retail GDB SDF probe with an observer at `FUN_00757d2c` (`0x00757d2c`). Raw entry state is normalized from `ECX=vehicle` and `EAX=slot*0xA80`, and `relation_state_mutation_events.jsonl` records the exact FL/FR/RL/RR slot, wheel/spindle/rear-axle BODY pointers, spindle-presence branch and caller return address. A shared monotonic `runtime_event_sequence` now anchors mutation, frame-entry, reset, builtin/provider solve and post-solve observations. The observer is full-mode only and does not connect the Phase 634 dispatcher to `shift_runtime`; an authentic retail capture plus offline correlation remains the next gate.
+They hand off only explicit versioned proof/value/timing contracts.
 
-Phase 636 closes the static caller set behind the Phase 635 return-address field. Raw executable disassembly contains exactly five direct `FUN_00757d20` calls: four fixed FL/FR/RL/RR setup calls in `FUN_0076ed60` and one slot-dynamic runtime-threshold call in `FUN_0079a050`. The probe helper classifies exact call/return addresses, source function and caller kind; fixed setup callers additionally require exact slot agreement. Unknown callers remain observable but are not call-site-ready. The next gate remains authentic capture plus fail-closed offline correlation against the existing runtime event timeline.
+### 2. Native runtime lane
 
-Phase 637 adds `SHIFT.ConstraintRelationStateMutationTimelineCorrelation/1`, an offline fail-closed join over the Phase 635 mutation stream and captured frame-entry/reset/builtin-or-provider-solve/post-solve anchors. It uses only the shared `runtime_event_sequence`, requires Phase 636 call-site readiness, validates exact frame-index/frame-entry sequence identity, rejects sequence collisions and preserves nearest before/after anchors without inferring gameplay semantics or native scheduler timing. The next evidence gate is an authentic full-mode retail capture that produces a ready correlation report.
+`P2-runtime` consumes only positive retail contracts.
 
-Phase 638 integrates that correlation into the explicit-PID full-mode launcher. After GDB returns, `tools/run_sdf_solver_probe.py` automatically emits `relation_state_mutation_timeline.json` and returns success only when both the GDB session and Phase 637 report are ready; provider-only mode intentionally skips the relation timeline. The GDB probe also imports `src/physics` explicitly, removing an embedded-Python dependency on root `sitecustomize.py`. The next gate remains the authentic retail capture itself, now with automatic fail-closed post-processing.
+Priority rules:
 
-Phase 639 adds `SHIFT.SDFRuntimeProbeEvidenceBundle/1`, a deterministic portable ZIP over only the full-mode capture evidence. Entries are sorted, stored with fixed metadata and individually SHA-256 hashed; `SHIFT.exe`, `attach.gdb`, launcher/preflight manifests and other host-local inputs are excluded. The full launcher creates `sdf_capture_evidence.zip` automatically after Phase 637 and reports its SHA-256. Package readiness and Phase 637 capture readiness remain separate, so packaging cannot promote blocked evidence. The next gate is still the authentic retail capture, but its complete evidence can now be transferred as one reproducible archive.
+- internalize complete boundaries in exact retail order;
+- preserve typed external seams when semantics are not yet closed;
+- reduce provider count only when a complete callback boundary is actually removed;
+- advance independent ready work while another P2 task is blocked instead of idling the lane.
 
-Phase 640 adds `SHIFT.SDFRuntimeProbeEvidenceBundleVerification/1`, an independent verifier for untrusted portable capture ZIPs. It checks safe paths, duplicate/extra/missing entries, manifest format/count, fixed ZIP metadata, per-file size/SHA-256 and exact readiness agreement with the embedded Phase 637 timeline. The full launcher self-verifies its newly built archive before success. The next gate remains authentic retail capture.
+### 3. Visible integration lane
 
-Phase 641 adds `SHIFT.SDFRuntimeProbeEvidenceBundleReplay/1`: after Phase 640 verification, the raw bundled evidence is safely materialized, Phase 637 is recomputed, and the result must exactly equal the embedded timeline. Phase 637 reports are now path-independent so replay is portable. Full launcher success requires this replay gate as well. The next gate remains authentic retail capture.
+`P3-integration` owns:
 
-Phase 642 adds optional bounded full-mode capture through `--capture-frames N`. The Nth `FUN_007b4110` post-solve snapshot becomes the terminal GDB stop; the generated command script then detaches and quits outside the breakpoint callback. Provider-only bounded capture is rejected, and partial mid-frame evidence remains blocked by the existing Phase 637–641 gates. The next gate remains authentic retail capture, now with a short-lived debugger option.
+- exact retail resource/bootstrap provenance;
+- Silverstone/BMW scene composition;
+- participant and transform handoff;
+- Vulkan rendering;
+- final fail-closed continuous smoke execution.
 
-Phase 643 adds explicit capture-session identity and stale-artifact hygiene. Launcher preparation generates a fresh 128-bit session id, removes only known generated evidence from a reused output directory after executable validation, passes the id to GDB and records exactly what was removed. Every GDB evidence payload is stamped with the same session id, while the GDB command independently refuses to start if stale generated evidence is present and resets per-session event/reset/frame state on reinstall. The evidence boundary is unchanged: authentic retail capture is still required before native relation-state scheduling.
+P3 may keep integration infrastructure healthy while upstream semantics remain blocked, but must not substitute guessed motion/control/camera behavior for unresolved retail gates.
 
-Standalone SDF probe import hotfix: `sdf_runtime_probe_pe_validation.py` explicitly bootstraps `src/graphics/d3d9` before importing `d3d9_pe_evidence`, and CI runs the validator plus the real launcher under `python -S` so root `sitecustomize.py` cannot hide missing import paths. Capture semantics are unchanged.
+## Primary readiness metrics
 
-Phase 644 makes that identity a fail-closed Phase 637 correlation gate. If any timeline-contributing record is session-stamped, every relation mutation plus frame-entry, builtin/provider solve, scalar-reset and post-solve anchor must carry the same valid 32-hex capture session id. Mixed, malformed or partially unstamped session-aware captures are blocked, while historical fully unstamped fixtures retain their legacy report shape. The next gate remains an authentic retail capture.
+Phase number is not the readiness metric.
 
-Phase 645 binds portable evidence to the same capture-session identity. The builder copies the Phase 643 launcher declaration into `evidence_manifest.json` without packaging the host-local probe manifest, requires every packaged JSON/JSONL evidence record to match it, and the Phase 640 verifier independently repeats that check from archive bytes. Rehashed mixed or stripped session records are blocked before replay; legacy fully unstamped bundles remain compatible. Authentic retail capture remains the integration gate.
+Track these values from the canonical status page:
 
-Phase 646 adds a lightweight `--relation-timeline-only` GDB mode for that authentic capture gate. It installs only relation mutation, frame-entry and post-solve ordering breakpoints; the post-solve hook records metadata only instead of reading the full RHS vector. It remains compatible with bounded `--capture-frames N`, session identity, timeline correlation, evidence packaging, verification and replay. This reduces Wine/GDB capture overhead without assigning any new runtime semantics.
+- active external vehicle-provider count;
+- complete/incomplete state of the current contact-response proof;
+- retail control-chain readiness;
+- retail camera-follow readiness;
+- final playable-smoke runnability;
+- playable-slice completion.
 
-Phase 599 connects the already-recovered CameraManager six-word snapshot and guarded double-buffer swap into `SHIFT.NativeRuntimeState/1`. The native fixed-step scheduler exercises that boundary and exposes telemetry, while retail camera timestamp frequency, suppression timing and controller semantics remain explicitly unassigned.
+The architectural provider count changes only when the full externally required behavior of a boundary has been proven and consumed internally.
 
+## Work-selection rule
 
-Phase 601 adds `SHIFT.NativeRuntimeInputScript/1`, a fail-closed deterministic per-fixed-step throttle/brake/steer source. The same `PhysicsTickBoundary::tick()` that receives live keyboard intent records script-driven activity counters in CI, without assigning retail gamepad curves, filters or vehicle-force semantics.
+Before substantial work, answer:
 
-Phase 602 adds `SHIFT.NativePhysicsParticipantBoundary/1`, joining the source-backed participant gate, `DAT_00c109e0` registry ABI, separate `DAT_00bbc600` selector context and IGPhaseVehicle writeback slots. Native runtime admits only this structural ABI; concrete participant/provider identity remains capture-gated.
+> **Какой конкретный blocker первого playable Linux vertical slice снимает эта работа?**
 
+If the answer is unclear, the task should normally be deferred.
 
-Phase 603 ports the source-backed builtin sparse numeric kernel `FUN_007b0f20` into native C++, with deterministic 3×3/4×4 parity and fail-closed graph/zero-pivot tests. It does not execute a complete BMW frame; matrix/RHS assembly, runtime diagonal-reset flags, provider-present dispatch and body-state application remain separate gates.
+Before starting and before merge:
 
+1. re-read fresh `main`;
+2. read `coordination/PLAYABLE_SLICE_STATUS.md`;
+3. respect lane ownership in `coordination/lane_ownership.json`;
+4. do not rediscover already-closed proof surfaces;
+5. preserve newer coordination/proof state when rebasing or transplanting work.
 
-Phase 604 ports the exact source-backed `FUN_007b2210` diagonal reset mutation into native C++. The reset operation is executable and parity-tested, but reset-node selection remains gated by the runtime `relation+0x70 & 1` evidence rather than inferred statically.
+## PR strategy
 
-Phase 605 keeps the PhysicsParticipantManager registry index and IGPhaseVehicle selector ordinal as separate runtime identity domains until an independent join is observed.
+One canonical PR should own one exact blocker surface, with at most one stacked successor.
 
-Phase 606 adds `SHIFT.NativeBuiltinSolverFrame/1`: an explicit provider-absent matrix/RHS/reset/graph packet, Python oracle and native loader/executor for the exact `FUN_007b2210 → FUN_007b0f20` sequence. It does not derive any of those runtime-only inputs.
+Exact negative proofs are useful progress when they permanently shrink the search space and are regression-tested.
 
-Phase 611 adds an explicit persistent BODY accumulator mode on top of the Phase 610 solve→post-solve chain. It carries only the six opaque FUN_007b4110 BODY channels between fixed steps, verifies the same prepared one-step delta on every step, and deliberately keeps persistent vehicle transform/motion state false.
+When a stronger PR supersedes another:
 
-Phase 612 ports the source-backed `FUN_007ba570` per-BODY additive solver-vector/matrix export to native C++ with deterministic multi-BODY accumulation parity. Contribution generation (`FUN_007bc680`/runtime sampled state) remains evidence-gated, so this is a pre-solve primitive rather than complete retail matrix/RHS assembly.
+1. preserve/transplant unique evidence;
+2. mark the old PR superseded;
+3. close it;
+4. continue from fresh `main`.
 
-Phase 613 wraps that primitive in `SHIFT.NativeBodySolverExportFrame/1`: explicit proof-gated per-BODY `+0x150/+0x154` contributions are replayed in exact BODY order into zero-initialized complete solver destinations and checked against a Python oracle. Contribution generation remains external evidence, and the result is not yet joined to the prepared builtin solver frame.
+Required PR fields and merge rules are defined in [`coordination/DEVELOPMENT_PROCESS_V2.md`](coordination/DEVELOPMENT_PROCESS_V2.md).
 
-Phase 614 adds an exact pre-reset SBEX→SBFR join: the complete FUN_007ba570 global vector must equal the prepared RHS and every N² matrix double must equal the prepared solver matrix before FUN_007b2210/FUN_007b0f20 execution is admitted. A valid but mismatched SBEX remains fail-closed. Phase 615 moves that verification into each admitted native fixed step through `--body-solver-export-frame`, so prepared SBFR execution is gated by supplied BODY export evidence before every reset/solve. Phase 616 ports the deterministic front of `FUN_007bc680`: exact residual construction, retail `FUN_007aefb0` float boundary and +0x90 linear scaling. Phase 617 ports the source-backed single-JOINT `FUN_007bac60` three-lane projection and corrects the older Python JOINT oracle so all cross/coupling terms use BODY +0x18/+0x20/+0x28 exactly. Phase 618 ports both branches of the source-backed `FUN_007bae40` HINGE two-lane projection, including its body-frame transform, cross correction, sign rule and bounded solver-vector write.
+## CI strategy
 
-## Immediate execution order
+Do not create another workflow for every phase.
 
-1. Python CI baseline after the `src` reorganization — complete; Phase 504 mainline CI is green; Phase 505 is the current source/control-flow extension.
-2. Capture a real provider frame with the SDF/runtime probe — preflight implemented; live capture remains the next evidence gate.
-3. Verify the provider bundle together with `scalar_reset_events.jsonl`.
-4. Cross-vehicle raw BFF payload parity and deduplicated FXO shader profiling — complete.
-5. Corpus-driven shader opcode gap analysis — complete.
-6. Cross-path content-addressed raw payload reuse audit — implemented as `SHIFT.BFFRawPayloadReuseAudit/1`.
-7. Propagate FXO/resource provenance into `RenderCommand/1` and add `SHIFT.NativeSubmissionGate/1` for native execution — complete, including persisted gate enforcement in Python/C++.
-8. Extend runtime BMW shader join/render contracts with explicit VS/PS/pair byte-hash differentials — implemented.
-9. Join provider dispatch/selector/execution/source-shape evidence into the capture handoff contract — implemented as `SHIFT.SpecializedProviderCaptureHandoffRuntime/1`.
-10. Compare retail packed-workspace/output mutations with the source-derived provider programs — implemented as `SHIFT.SpecializedProviderCaptureSourceMutationCorrelation/1`.
-11. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities — Phase 502 cross-contract validator and Phase 503 BFF-to-handoff orchestration are complete.
-12. Validate the runtime capture host before attempting GDB attachment — Phase 504 preflight implemented.
-13. Close the IGPhaseVehicle participant creation/load gate before runtime capture — Phase 505 implemented.
-14. Map the PhysicsParticipantManager event-0x20 ingestion path without overclaiming its join to the selector registry — Phase 506 implemented.
-15. Map the PhysicsParticipantManager participant slot allocation/registration/update bridge used by PhysicsParticipant.cpp — Phase 507 implemented.
-16. Resolve the IGPhaseVehicle selector object and keep its global identity separate from DAT_00c109e0 until a join is proven — Phase 508 implemented.
-17. Trace the selected participant pointer/ordinal through IGPhaseVehicle processing, reselection and vehicle-BFF writeback — Phase 509 implemented.
-18. Close the selector descriptor/candidate lifecycle: constructor defaults, +0x74 eligibility/exclusion state, +0x8c ordinal writeback, bounded batch reservation and distinct +0x1d post-load/process state — Phase 510 implemented.
-19. Close the IGPhaseVehicle completion/finalization boundary: per-container callbacks, guarded +0x160 cleanup, resource teardown and post-finalizer object callback ordering — Phase 511 implemented.
-20. Map selector descriptor population exactly: 16-entry capacity, 0x90 stride, packed token bitfields, source-to-descriptor string/block copies, +0x74 initialization and conditional +0x70 population — Phase 512 implemented.
-21. Close selector source-record admission scheduling: owner +0x4f0 mask, low-nibble routing key, descriptor-population handoff and reset/resynchronization paths — Phase 513 implemented.
-22. Validate the low-stop specialized-provider capture contract — Phase 515 implemented.
-23. Validate concrete AIW runtime edge coverage, stride and ambiguity without collapsing candidate mappings — Phase 516 implemented.
-24. Join recovered `Path.StartNode` pointers directly to `AIPolylinePath.array` and compare node counts/sequences — Phase 517 implemented.
-25. Decode proven FLAT direct-record object handle/index links — Phase 518 implemented.
-26. Map proven FLAT runtime index-table geometry — Phase 519 implemented.
-27. Map the SGB NODE runtime wrapper created by `FUN_006a4b40` — Phase 520 implemented.
-28. Record the source-backed SGB HIERARCHY serialized-child → runtime-element copy layout — Phase 521 implemented.
-29. Classify the concrete SGB OBJECT/HIERARCHY/DAMAGE runtime wrappers — Phase 522 implemented.
-30. Map the SGB SUMM runtime wrapper and exact source/runtime field copies — Phase 523 implemented.
-31. Stabilize and merge the offline Linux native runtime frame loop/material boundary — complete; `native_runtime/` is on main, depth-tested and covered by Linux Vulkan CI.
-32. Represent one multi-submesh RenderCommand as an ordered set of independently gated Vulkan bundles — Phase 524 implemented.
-33. Compile, reflect and interface-validate every ordered draw bundle before native admission — Phase 525 implemented.
-34. Execute the prepared draw set in one native render pass with per-draw pipelines, constants, descriptors, textures and geometry — Phase 526 implemented.
-35. Adapt complete BMW material slices into the multi-draw set with independent per-submesh DDS/resource provenance — Phase 527 implemented.
-36. Remove the paint-only BMW material-slice restriction and gate every selected primitive through a generic exact FXO/pair/permutation contract — Phase 528 implemented.
-37. Join independently ready BMW primitive slices into one canonical revalidated multi-submesh RenderCommand and feed it into the material/DDS multi-draw adapter — Phase 529 implemented.
-38. Propagate the retail BMT cull enum through RenderCommand and atomic bundle sidecars into both native Vulkan consumers — Phase 530 implemented.
-39. Recover stable real-BMT depth/alpha group and field IDs, enum indices, alpha-test normalization, and carry them through the neutral render IR without enabling unproven native state — Phase 531 implemented.
-40. Map proven retail depth/default/blend semantics into one fail-closed pipeline-state sidecar and execute them independently per draw in both native Vulkan consumers — Phase 532 implemented.
-41. Orchestrate all canonical BMW body primitives independently, preserve partial ready evidence, group exact shader permutations and feed the admitted subset into the existing multi-draw adapter — Phase 533 implemented.
-42. Collapse byte-identical duplicate BMW/Cockpit shader resources and scope retail FXO enumeration to the selected BMT shader family before permutation ranking — Phase 536 implemented.
-43. Execute the normalized retail BMW_M3_E36/Cockpit/RENDER corpus, collapse identical top-ranked bytecode identities and persist exact remaining blockers — Phase 537 implemented.
-44. Build a per-primitive runtime shader target set from every statically tied top-rank permutation/pair/hash without selecting one — Phase 538 implemented.
-45. Match the Phase 538 target set against exact MEB identity, indexed draw ranges and same-instance D3D9 shader hashes — Phase 539 implemented.
-46. Prefilter raw D3D9 JSONL by target shader byte hashes and canonical draw ranges before full runtime reconstruction — Phase 540 implemented.
-47. Apply archive content-identity deduplication to downstream retail material-slice BMT/MEB/FX/DDS lookup — Phase 541 implemented.
-48. Capture one real BMW M3 body frame with the existing D3D9 producer and close the concrete retail FXO permutation attribution.
-49. Close enabled alpha-test, bias and stencil only from additional source/runtime evidence.
-50. Expand the desktop reference renderer against real BMW material/shader permutations.
-51. Map the source-backed SGB OCCL Name/Resource/PositionTL/TR/BL/BR record into its 0x120 concrete runtime object and the header-bit1 wrapper/batch admission modes — Phase 534 implemented.
-52. Correct the PART binary layout and map its AABB, four child-partition ID/pointer slots, mask-driven tree insertion and one-based scene-wrapper references — Phase 535 implemented.
-53. Normalize production FLAT signed terminal spans and map the proven +0x38 direct-object / +0x3c runtime-index consumer lifecycle — Phase 542 implemented.
-54. Correct the production NODE/SUMM record to 0x1c metadata + inline payload, map LOD/HIERARCHY/OBJECT MATRIX/subobject recursion and keep DAMAGE on its alternate XML path — Phase 543 implemented.
-55. Mark common object byte +0x21 as source-unconsumed/corpus-zero and map the proven XML-only DAMAGE wrapper fields — Phase 544 implemented.
-56. Join FLAT leaf runtime indices to SUMM wrapper order and PART one-based child IDs to the NODE wrapper registry; record PART-to-FLAT runtime materialization — Phase 545 implemented.
-57. Map source-backed FLAT include/exclude masks, bounding spheres and tree-node AABBs while retaining leaf +0x20..+0x34 only as a corpus-verified bounds candidate — Phase 546 implemented.
-58. Normalize FLAT/SUMM and PART/NODE identity plus proven spatial geometry into fail-closed SHIFT.SGBScenePlacement/1 — Phase 547 implemented.
-59. Prove OBJECT resource-descriptor → render-instance admission plus explicit/MatrixNumber transform selection — Phase 548 implemented.
-60. Prove the direct FLAT `+0x20..+0x34` spatial-query consumer and promote the corpus candidate to source-backed leaf bounds — Phase 549 implemented.
-61. Reconstruct the static MultiMatrix layout/update, including explicit root overwrite, low-byte parent selection and local*parent-world composition — Phase 550 implemented.
-62. Prove constructor root state plus immediate/deferred SceneGraph 0x40-byte transform transport into LOD/HIERARCHY vfunc +0x2c — Phase 551 implemented.
-63. Join SGB placement wrappers to recursive OBJECT resource/world-transform handoffs with independent fail-closed admission — Phase 552 implemented.
-64. Feed admitted MEB scene instances into the existing generic RenderBinding pipeline without fabricating VHF nodes — Phase 553 implemented.
-65. Recover the retail SGB OBJECT resource factory: default MeshType/type 0, `.imb/.imx` promotion to MeshInst/type 7, and the type-7 render-instance branch — Phase 554 implemented.
-66. Map MeshInst inheritance/runtime layout, `.imx` XML versus `.imb` binary loaders, aligned 0x40-stride instance storage and category-10 lifecycle — Phase 555 implemented.
-67. Decode the source-backed IMB fixed mesh header, optional bone block and Type/Usage/Channel stream table while keeping the variable prefix explicit — Phase 556 implemented.
-68. Recover the packed IMB version/control/name prefix and auto-locate the fixed header/bone gate — Phase 557 implemented.
-    Phase 558 corrects descriptor/vertex block sequencing, preserves supported raw vertex streams and derives the primitive section offset.
-    Phase 559 adds optional source-backed v0.4 material/palette/index/bounds primitive records.
-69. Recover full IMB vertex+primitive payload consumption and implement neutral IMB/IMX scene adapters; independently recover/capture blocked SceneGraph transform-update history. Phase 560 implements the fail-closed neutral IMB geometry adapter over the proven v0.4 stream/primitive payload. Phase 561 connects admitted `.imb` MeshInst resources through that adapter into the generic material/shader/RenderBinding pipeline. Phase 562 production-validates all 427 Silverstone Era3 IMBs. Phase 563 closes all 428 IMB primitive MTX→same-archive BMT references across 84 unique logical materials. Phase 564 decodes all 239 archive-local BMT occurrences, closes 563/563 same-archive DDS references, then resolves all five exact global FX source paths in retail `RENDER.bff`; all 239 Silverstone materials are source-dependency-ready. Phase 565 closes the compiled FXO family inventory: 1,280 cache copies collapse to 368 unique decoded payloads with zero parse failures, while material-specific permutation attribution remains fail-closed. Phase 566 implements concrete IMB-primitive/BMT/vertex-layout-aware ranking through the existing material linker and emits explicit unique/ambiguous/heuristic/runtime-target states. Phase 567 executes that gate over all 428 Silverstone primitive bindings: all 428 are statically ambiguous, with zero heuristic/missing rows, and the tied surface collapses to 51 distinct permutation identities. Phase 568 converts every complete top-rank set into capture-oriented runtime hash targets: all 428 bindings are capture-ready, the global whitelist is 51 pixel-shader byte hashes, and each primitive needs only 5–15 hashes while exact pair attribution remains runtime-gated. Phase 569 applies that target set directly to raw D3D9 JSONL, preserving shader-object/device/draw provenance and emitting only candidate draws whose active shader bytes intersect the whitelist. Phase 570 carries exact archive-local IMB path + decoded SHA-256 and source-backed primitive first/index counts into the ranking/target contracts; all 428 Silverstone bindings are statically ready for same-instance matching. Phase 571 adds source Type/Usage/Channel declaration descriptors, preserves every static VS/PS candidate variant behind deduplicated prefilter hashes, and emits `SHIFT.IMBRuntimeResourceEvidenceSet/1` for the existing D3D9 runtime evidence path without claiming IMB/MEB equivalence. Phase 572 implements the fail-closed per-resource `SHIFT.IMBRuntimeShaderVariantMatch/1`: exact IMB path/SHA, declaration-proven same-instance draw, exact primitive range and a unique strong permutation/pair/VS+PS variant are all required; pixel-only hits remain prefilter evidence. Phase 573 adds `SHIFT.IMBRuntimeCapturePipeline/1`, routing Phase 569 shader hits by exact source draw ranges, reconstructing full D3D9 binding evidence only for candidate IMB resources, and immediately applying the Phase 572 matcher. Phase 574 adds `SHIFT.IMBRuntimeShaderAdmission/1`, revalidating attributed runtime rows against exact IMB binding/resource/draw identity and preserved static variants before authorizing a shader-selection identity; render admission remains false. Phase 575 propagates exact vertex-program offsets through ranking/target/match/admission, expands ambiguous VS ties into explicit candidates, and lets `material_linker` rebuild a complete `SHIFT.MaterialBinding/1` from a strong runtime admission without falling back to static ranking. Phase 576 joins those admissions back to exact SGB/IMB scene primitives by archive/path/SHA + primitive/draw/material/BMT/shader identity, reuses one resource-level admission across repeated scene instances, and forwards the resulting runtime-proven MaterialBinding into the existing StaticDraw/RenderCommand path. Phase 577 preserves that proof as `SHIFT.RuntimeProvenDraw/1` through StaticDraw and RenderCommand, with fail-closed validation against exact IMB identity, runtime-admission source and the actual command draw range. Phase 578 adds `SHIFT.NativeSceneBundle/1`, retaining only ready runtime-proven IMB draws in deterministic scene order with exact world/resource/draw/shader identity, deterministic hashes and explicit partial-coverage exclusions. Phase 579 adds neutral `SHIFT.VulkanDrawBundle/1`: it accepts neutral/IMB geometry, requires RuntimeProvenDraw by default, reuses the existing native submission + geometry/constants/textures/sampler/pipeline gates and explicitly preserves-but-does-not-execute the SGB world matrix. Phase 580 adds `SHIFT.NativeSceneVulkanSet/1`, revalidating every Phase 578 scene hash/identity, resolving exact IMB primitive geometry plus ordinary 2D DDS resources from IR, building ordered Vulkan child bundles and keeping world-transform/external-runtime-resource execution as explicit native submission blockers. Phase 581 adds `SHIFT.VulkanWorldTransformPacket/1` (`SVWT`), preserves the exact source-backed row-major D3D matrix bytes, proves their GLSL column-matrix interpretation and native C++ row-vector behavior, and emits one transform packet per scene child without assigning a retail shader register. Phase 582 consumes that sidecar in the native material executor for translation-only matrices, mutating only proven FLOAT3 POSITION0 before GPU upload. Phase 583 upgrades SVGP to binary version 3 with exact SHIFT property IDs in each native vertex attribute, updates all native readers with v1/v2 compatibility and removes the semantic-identity blocker. Phase 584 executes non-singular affine SVWT matrices in the native material path with affine POSITION, inverse-transpose NORMAL and normalized linear TANGENT/TANGENT2 transforms; singular matrices and legacy multi-attribute affine packets remain fail-closed. Phase 585 adds neutral `SHIFT.VulkanDrawBundlePrepare/1` + `SHIFT.NativeSceneVulkanSetPrepare/1`, compiles/reflects and interface-validates every ordered runtime-proven scene child, validates SVWT/hash/provenance gates, and fixes `bundle_set.paths` to be strictly set-root-relative without BMW relabeling. Phase 586 adds the neutral `native_runtime --scene-set` loader and Phase 587 makes its SVWT execution observable through bootstrap counters for total and general-affine transformed draws. Phase 588 adds an explicit fail-closed external `sampler2D` snapshot channel to SVTP/VulkanDrawBundle/DDS bridging without promoting unresolved scene resources. Phase 589 adds `SHIFT.NativeSceneExternalSamplerSnapshots/1` and admits an external `sampler2D` only when exact scene draw hash, IMB archive/path/SHA, primitive, register/type, texture hash and provenance all match; unresolved or mismatched resources remain fail-closed. Phase 590 carries only strong-attributed draw-local D3D9 texture observations out of the Phase 573 pipeline and converts one unambiguous observed `CreateTexture` + captured PPM into the exact Phase 589 contract. Phase 591 additionally retains strong-attributed draw-local VS constant state and resolves repeated world-space scene instances only when exact float32 4x4 constant windows uniquely match one SGB world matrix; no retail world-register semantic is assigned. Phase 592 adds source-backed IMX neutral geometry and renderer integration without conflating IMX with IMB/MEB. Phase 593 closes exact external `samplerCube` transport at the already-proven s3 boundary: six captured cube-face PPMs become one scene-bound `ReferenceCubeTexture/1`, are revalidated against exact draw/resource/primitive identity, and enter the existing Vulkan cube packet without generalizing cube registers. Phase 594 adds `SHIFT.SGBMultiMatrixRootSolve/1`: for a runtime-observed MatrixNumber slot world matrix it inverts only the source-backed root-connected local chain, solves the current root, and accepts it only when the existing MultiMatrix evaluator reproduces the observation. Phase 595 adds `SHIFT.SGBRuntimeObjectCandidateJoin/1`: exact runtime IMB archive/path/SHA is revalidated against IR and then narrows pre-admission SGB placement/wrapper/object candidates by logical resource path without using RenderBinding `binding_index`. Phase 596 adds `SHIFT.SGBMultiMatrixRootConsensus/1`: all contiguous strong-attributed VS constant windows are tested without assigning register semantics, and one exact MultiMatrix owner root (`wrapper + owner_path`) is authorized only when at least two distinct exact runtime resources with at least two distinct cumulative local chains independently solve to the same exact float32 root through the Phase 594 round-trip gate. Phase 597 applies only ready owner-scoped roots back into `SHIFT.SGBObjectRenderHandoffSet/1`, recomputing MatrixNumber world matrices through the existing evaluator before scene admission while preserving runtime-consensus provenance. Phase 598 adds `SHIFT.SGBMultiMatrixRuntimeCoverage/1`, orchestrating Phases 595–597 plus ordinary scene admission and measuring baseline/promoted numeric MatrixNumber rows plus newly admitted bindings on supplied runtime evidence. Phase 599 makes production-sized native proxy JSONL consumable directly by the IMB evidence path while preserving strict validation and canonical texture JSON. Phase 600 adds `SHIFT.D3D9RawCaptureAudit/1`, streaming capture/event capability coverage, Phase 568 hash overlap and explicit payload/snapshot/resource-identity blockers before attribution. Authentic Silverstone runtime capture content with the required identity/payload channels remains the external evidence gate; historical SceneGraph update sequence remains separate.
-70. Derive proven animation poses from the BAB runtime grammar.
-71. Port the stable native render/runtime boundary to Android.
-72. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
-73. Execute the recovered CameraManager six-word snapshot plus guarded double-buffer flip/copy inside the native fixed-step scheduler without claiming retail timing — Phase 599 implemented.
-74. Seed that live Phase 599 camera scheduler from fail-closed recovered CameraManager snapshot/swap evidence without transporting the opaque camera-source token — Phase 600 implemented as SHIFT.NativeCameraStateBridge/1 plus --camera-state.
-75. Make native vehicle-control input deterministic without inventing retail controller semantics — Phase 601 implemented as SHIFT.NativeRuntimeInputScript/1.
-76. Admit the source-backed participant registry/selector structural ABI into native state while preserving manager/selector separation and unresolved runtime participant identity — Phase 602 implemented as SHIFT.NativePhysicsParticipantBoundary/1.
-77. Port the exact source-backed builtin sparse solver kernel to native C++ and verify deterministic numerical parity independently of full-frame assembly — Phase 603 implemented for FUN_007b0f20.
-78. Port the exact builtin diagonal-reset mutation while keeping reset-node selection runtime-evidence-gated — Phase 604 implemented for FUN_007b2210.
-79. Preserve participant-manager registry identity and IGPhaseVehicle selector identity as separate native domains until an independent runtime join exists — Phase 605 implemented.
-80. Add a fail-closed prepared builtin solver-frame contract containing explicit provider-absent proof, matrix/RHS, reset nodes and exact sparse graph, then execute FUN_007b2210 → FUN_007b0f20 with Python/native oracle parity — Phase 606 implemented.
-81. Promote one concrete native participant only from independent manager-registry and IGPhaseVehicle selected-pointer runtime observations while retaining selector ordinal as a separate identity domain — Phase 607 implemented as SHIFT.NativePhysicsParticipantRuntimeEvidence/1.
-82. Execute an exact Phase 606 provider-absent solver frame on the native fixed-step scheduler only when Phase 607 participant evidence is ready and solver/workspace scalar cardinality matches — Phase 608 implemented.
-83. Port the exact source-backed `FUN_007b4110` JOINT/HINGE/BAR post-solve BODY projection to native C++ with an explicit proof-gated SBPS packet and Python/native oracle parity, independently of fixed-step integration — Phase 609 implemented.
-84. Join the actual Phase 608 native solver result into the Phase 609 `FUN_007b4110` projection on each fixed step, requiring participant/workspace cardinality and solved-vector identity before BODY projection — Phase 610 implemented.
-85. Port the complete source-backed `FUN_007bae40` HINGE projection to native C++, including zero/nonzero branches, exact transform/cross boundaries and bounded two-lane BODY solver-vector application — Phase 618 implemented.
-86. Port the complete source-backed `FUN_007bb090` BAR projection to native C++, including the inline three-component basis, weighted one-lane reduction, nonzero-side bias correction and bounded BODY solver-vector application — Phase 619 implemented.
-87. Port the source-backed `FUN_007bbb80` JOINT matrix block algebra to native C++, covering self, JOINT↔JOINT, JOINT↔HINGE and JOINT↔BAR blocks with exact lower-triangle orientation/sign policy — Phase 620 implemented.
-88. Port the source-backed HINGE/HINGE block algebra of `FUN_007bb250` to native C++, preserving the `FUN_007aefb0` float transform boundary, self lower-triangle writes and pair transpose/sign policy — Phase 621 implemented.\n89. Port the remaining source-backed HINGE↔BAR 2x1 block algebra of `FUN_007bb250`, preserving the same transform boundary and scalar-base orientation/sign policy — Phase 622 implemented.
-90. Port the complete source-backed `FUN_007bb6c0` BAR/BAR matrix coefficient algebra to native C++, including point×direction transform, self/pair coefficients, side sign and lower-triangle cell selection — Phase 623 implemented.\n91. Join the native Phase 616–623 primitives into a prepared per-BODY `FUN_007bc680` sample-array orchestrator, preserving JOINT→HINGE→BAR projection order and JOINT→HINGE→BAR matrix ownership without deriving `FUN_007b3ed0` samples — Phase 624 implemented.\n92. Materialize the Phase 624 lower-triangle matrix through the source-backed per-BODY `+0x154/+0x158/+0x15c` row-index storage contract, preserving prepared noncanonical row order and fail-closed span validation — Phase 625 implemented.
+Prefer stable workflow families plus:
 
-## Workstream status
+- pytest targets/markers;
+- CTest targets;
+- data-driven workflow matrices;
+- reusable subsystem gates.
 
-| Workstream | State | Exit condition |
-|---|---|---|
-| BFF/XMem-LZX | verified | broader uncommon-variant coverage |
-| Resource IR | active | remaining format-specific joins |
-| MEB / vertex ABI | strong static | more runtime same-instance proofs |
-| Material/shader linking | raw/reconstructed BMW matchers + retail material-slice dedup implemented | one authentic D3D9 BMW body capture |
-| Desktop renderer | active oracle | broader exact D3D9/material coverage |
-| Skinning | contract implemented | runtime pose production |
-| BAB animation | evidence-backed | resolve remaining semantic gaps |
-| SGB scene | placement + OBJECT/MultiMatrix + RenderBinding bridge + MeshInst runtime + source-backed IMB/IMX neutral geometry; Silverstone capture/matcher/admission, native scene execution, external sampler admission, Phase 594 root solve, Phase 595 candidate join, Phase 596 owner-scoped cross-resource root consensus and Phase 597 consensus→handoff application implemented | authentic Silverstone D3D9 capture content + renderer-owned resource types beyond sampler2D/samplerCube-s3 + runtime IMX same-instance proof + authentic Phase 598 production coverage numbers + historical SceneGraph update sequence |
-| Camera | source-backed manager/state primitives + native snapshot/double-buffer handoff | retail timing/controller/view-selection behavior and exact render integration |
-| Native input | live keyboard intent + deterministic fixed-step input-script path | gamepad/analog normalization and retail input filtering |
-| Vehicle physics | active; Phase 607 runtime participant promotion + Phase 608 fixed-step prepared builtin solver + Phase 609 native post-solve parity + Phase 610 solve→BODY projection + Phase 615 fixed-step SBEX→SBFR evidence gate + Phase 616 preprojection + Phase 617 JOINT + Phase 618 HINGE + Phase 619 BAR projection + Phases 620–623 JOINT/HINGE/BAR matrix block algebra + Phase 624 prepared BODY sample-array orchestration + Phase 625 exact prepared row-index/row-pointer storage + Phase 626 generated FUN_007bc680→FUN_007bb8d0→FUN_007ba570 builtin export join + Phase 627 contribution-free GBCF transport + Phase 628 per-fixed-step generated GBCF→SBFR equality gate + Phase 629 source-backed FUN_007b3ed0 refresh + Phase 630 CSRF ownership join + Phase 631 relation-aware fixed-step refresh/generation gate + Phase 632 relation-state-derived FUN_007b2210 reset selection implemented | authentic per-frame BODY/raw-relation/reset-state inputs, matrix-RHS observations, provider dispatch and persistent vehicle-state integration |
-| Builtin solver | source-backed + native FUN_007b0f20/FUN_007b2210/FUN_007b4110 + Phase 606/609 packets + Phase 610 fixed-step reset→solve→projection chain | authentic per-step matrix/RHS/reset/constraint-row evidence and persistent BODY integration |
-| Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
-| D3D9 capture | mature | more real same-instance evidence |
-| Track/path runtime correlation | active | `TrackDetails`/`TrackList` structural-load-selection core and waypoint queries/links are source-backed; exit still requires a complete/unambiguous AIW → runtime → concrete path graph capture |
-| Vulkan | active; BMW material multi-draw + source-backed cull/depth/blend + exact external sampler2D and samplerCube-s3 transport/admission | authentic capture content/resource types beyond proven 2D/cube-s3 channels, retail non-paint permutations, alpha-test/bias/stencil evidence |
-| Android | deferred | stable native renderer/runtime boundary |
+Historical phase-numbered workflows are migration debt. They may be consolidated only when old/new coverage parity is demonstrated; reducing YAML count must never weaken evidence, native, capture, Vulkan or smoke gates.
 
-## Canonical render path
+## Research-input reproducibility
 
-`BFF → IR → VHF/MEB/BMT/DDS → FX/FXO → RenderBinding/1 → DrawPacket/1 → StaticDraw/1 → RenderCommand/1`
+Large retail binaries, decompiler exports and machine-generated navigation databases remain outside Git.
 
-The reference renderer and Vulkan backend consume the same neutral command/data contract.
+Known authoritative input hashes and non-authoritative storage hints are recorded in:
 
-## Runtime evidence path
+- [`coordination/research_inputs.lock.json`](coordination/research_inputs.lock.json)
 
-`D3D9 producer → JSONL → draw-local snapshot → identity correlation → same-instance gate → parity`
+Rules:
 
-For large captures:
+- PC retail machine evidence adjudicates semantic claims;
+- an unknown hash is never invented;
+- generated Ghidra/SQLite navigation data does not become semantic authority by filename or location;
+- Google Drive IDs are storage/discovery hints only.
 
-`apitrace → unique BMW extraction → optional trim → payload proof`
+## Historical roadmap
 
-## Physics path
+The previous long phase-by-phase roadmap mixed live execution state with historical narrative and repeatedly drifted behind `main`. Its durable evidence is already preserved in the phase documents and evidence contracts under `docs/` and `evidence/`.
 
-`CDF/EDF/GDF/SDF → VehiclePhysicsAssetGraph/1 → participant gate → construction → solver frame → provider/builtin → post-solve`
-
-The provider branch is currently structurally reconstructed but numerically capture-gated.
-
-## First native vehicle-slice definition
-
-The first reproducible native slice requires:
-
-- exact resource identity;
-- deterministic material/shader selection;
-- validated RenderCommand;
-- deterministic reference output;
-- Vulkan execution of the same command;
-- explicit external renderer-global resources;
-- no runtime dependency on original BFF parsing.
-
-Physics equivalence is a separate workstream.
-
-
-Phase 647 changes the relation-mutation capture termination policy after an
-authentic 600-frame lightweight session produced 1200 contiguous anchors but no
-mutation. `--stop-after-relation-mutation` now stops at the first post-solve anchor after an authentic
-`FUN_00757d2c` event and can be paired with a large frame budget as a fallback.
-The next evidence run should arm the probe before vehicle/race setup rather than
-guessing a short runtime window.
-
-
-Phase 648 removes the remaining mid-session attach race from the
-relation-mutation evidence path. `--launch-under-winedbg` creates the validated
-retail `SHIFT.exe` behind WineDbg's GDB proxy and installs the existing probe
-before the first debugger `continue`. The launcher records startup provenance,
-requires a direct executable from the game directory, and preserves every
-Phase 637–647 fail-closed post-capture gate. The next authentic evidence run can
-therefore cover setup-time `FUN_00757d2c` without guessing a PID or attach
-window.
+Use those files to understand how a result was established; use the canonical status page to decide what should be done next.
