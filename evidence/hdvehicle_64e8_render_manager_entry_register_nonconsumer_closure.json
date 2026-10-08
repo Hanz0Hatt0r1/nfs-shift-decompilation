@@ -1,0 +1,88 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerEntryRegisterNonconsumerClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_role": "navigation-only"
+  },
+  "upstream": {
+    "direct_target_worklist_format": "SHIFT.PlayerVehicleRenderManagerReceiverTransferFrontier/2",
+    "bounded_direct_target_count": 17,
+    "previously_explicitly_closed_target_count": 7
+  },
+  "targets": [
+    {
+      "entry": "0x00459140",
+      "route": ["0x00459140", "0x0045b51b", "0x00459146"],
+      "machine_facts": [
+        "0x00459140 pushes ESI and jumps to 0x0045b51b without reading ECX or EDX",
+        "0x0045b51b replaces ESI with 0x00bc8e30 and jumps back to 0x00459146",
+        "0x0045915b overwrites ECX with ESI before the first ECX use on the reached path",
+        "entry EDX is not observed on the reached path before later independent initialization"
+      ],
+      "exact_outer_root_observed_from_entry_register": false,
+      "exact_outer_root_persisted_or_forwarded": false
+    },
+    {
+      "entry": "0x0045abe0",
+      "route": ["0x0045abe0", "0x00886980", "0x00458520"],
+      "machine_facts": [
+        "0x0045abe0 immediately calls 0x00886980 before any local read of entry ECX or EDX",
+        "0x00886980 is a two-instruction getter: MOV EAX,[0x00c29634]; RET and does not read ECX or EDX",
+        "0x0045abe5 derives ECX from the helper result EAX+0x78, replacing any entry ECX identity",
+        "the tail transfer therefore uses a helper-derived receiver, not the exact outer root"
+      ],
+      "exact_outer_root_observed_from_entry_register": false,
+      "exact_outer_root_persisted_or_forwarded": false
+    },
+    {
+      "entry": "0x00489ad0",
+      "route": ["0x00489ad0", "0x00444fcc", "0x00489ad5"],
+      "machine_facts": [
+        "the thunk body at 0x00444fcc writes EAX=1 and jumps to 0x00489ad5 without reading ECX or EDX",
+        "the singleton-init path overwrites ECX with 0x00bc9fc0 before its call",
+        "the return path writes EAX=0x00bc9fc0",
+        "0x00bc9fc0 is the distinct Participants Manager singleton root, not render-manager outer root 0x00bc185c"
+      ],
+      "exact_outer_root_observed_from_entry_register": false,
+      "returned_value": "0x00bc9fc0",
+      "returned_value_is_exact_outer_root": false
+    },
+    {
+      "entry": "0x00493fb0",
+      "route": ["0x00493fb0", "0x004300ae", "0x00493fb5"],
+      "machine_facts": [
+        "the thunk body at 0x004300ae writes EAX=1 and jumps to 0x00493fb5 without reading ECX or EDX",
+        "the singleton-init path overwrites ECX with 0x00bcae00 before its call",
+        "the return path writes EAX=0x00bcae00",
+        "0x00bcae00 is distinct from render-manager outer root 0x00bc185c"
+      ],
+      "exact_outer_root_observed_from_entry_register": false,
+      "returned_value": "0x00bcae00",
+      "returned_value_is_exact_outer_root": false
+    }
+  ],
+  "adjudication": {
+    "newly_closed_direct_target_count": 4,
+    "cumulative_explicitly_closed_direct_target_count": 11,
+    "remaining_bounded_direct_target_count": 6,
+    "these_targets_can_create_persist_or_return_exact_outer_root_from_entry_receiver": false,
+    "bounded_17_target_opaque_callee_surface_complete": false,
+    "external_or_unknown_origin_alias_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This contract closes only four entries in the bounded 17-target direct worklist.",
+    "No semantic identity is inferred from numeric offset equality.",
+    "The distinct singleton returns at 0x00489ad0 and 0x00493fb0 are not promoted to render-manager identity.",
+    "External initialization, unknown-origin aliases, and two-unknown-origin reconstruction remain open."
+  ],
+  "next_step": "Adjudicate the remaining six bounded direct targets, then continue external/unknown-origin and two-unknown-origin HDVehicle+0x4330 provenance."
+}
