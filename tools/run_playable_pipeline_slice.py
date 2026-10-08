@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import subprocess
@@ -36,6 +37,18 @@ def _load_json(path: Path, *, label: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ExecutionError(f"{label} must be a JSON object: {path}")
     return value
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _write_json(path: Path, value: Mapping[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(dict(value), ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
 
 def _output_from_bootstrap_args(args: Sequence[str]) -> Path:
@@ -99,6 +112,8 @@ def execute_playable_pipeline_slice(
         raise ExecutionError(f"playable pipeline bootstrap failed with exit code {bootstrap_exit}")
 
     report, plan = _validated_execution_plan(output_dir)
+    report_path = (output_dir / "playable_pipeline_bootstrap.json").resolve()
+    plan_path = (output_dir / "launch_plan.json").resolve()
     launch_environment = os.environ.copy()
     launch_environment.update(dict(plan["environment"]))
     completed = runner(
@@ -106,14 +121,18 @@ def execute_playable_pipeline_slice(
         env=launch_environment,
         check=False,
     )
-    return {
+    receipt_path = (output_dir / "execution_result.json").resolve()
+    result = {
         "format": FORMAT,
         "version": 1,
         "status": "completed" if completed.returncode == 0 else "runtime-failed",
         "ready": completed.returncode == 0,
         "runtime_returncode": completed.returncode,
-        "bootstrap_report": str((output_dir / "playable_pipeline_bootstrap.json").resolve()),
-        "launch_plan": str((output_dir / "launch_plan.json").resolve()),
+        "bootstrap_report": str(report_path),
+        "bootstrap_report_sha256": _sha256(report_path),
+        "launch_plan": str(plan_path),
+        "launch_plan_sha256": _sha256(plan_path),
+        "execution_receipt": str(receipt_path),
         "track": report.get("track"),
         "vehicle": report.get("vehicle"),
         "boundary": {
@@ -121,12 +140,16 @@ def execute_playable_pipeline_slice(
             "provenance_validated_launch_plan_required": True,
             "launch_plan_argv_reconstructed": False,
             "launch_plan_environment_reconstructed": False,
+            "bootstrap_report_hash_recorded": True,
+            "launch_plan_hash_recorded": True,
             "resource_pipeline_physics_or_participant_replaced": False,
             "runtime_execution_attempted": True,
             "runtime_success_claimed": completed.returncode == 0,
             "retail_game_loop_claimed": False,
         },
     }
+    _write_json(receipt_path, result)
+    return result
 
 
 def main(argv: Sequence[str] | None = None) -> int:

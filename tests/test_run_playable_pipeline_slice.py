@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -19,6 +20,10 @@ SPEC.loader.exec_module(MODULE)
 def _write_json(path: Path, value: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value), encoding="utf-8")
+
+
+def _sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _ready_output(tmp_path: Path) -> Path:
@@ -75,6 +80,15 @@ def test_execution_forces_launch_plan_validation_and_reuses_saved_plan(tmp_path,
     assert result["runtime_returncode"] == 0
     assert result["boundary"]["launch_plan_argv_reconstructed"] is False
     assert result["boundary"]["launch_plan_environment_reconstructed"] is False
+    receipt = out / "execution_result.json"
+    assert receipt.is_file()
+    stored = json.loads(receipt.read_text(encoding="utf-8"))
+    assert stored == result
+    assert result["bootstrap_report_sha256"] == _sha(out / "playable_pipeline_bootstrap.json")
+    assert result["launch_plan_sha256"] == _sha(out / "launch_plan.json")
+    assert result["execution_receipt"] == str(receipt.resolve())
+    assert result["boundary"]["bootstrap_report_hash_recorded"] is True
+    assert result["boundary"]["launch_plan_hash_recorded"] is True
 
 
 def test_bootstrap_failure_prevents_runtime_execution(tmp_path, monkeypatch):
@@ -92,6 +106,7 @@ def test_bootstrap_failure_prevents_runtime_execution(tmp_path, monkeypatch):
             runner=fake_runner,
         )
     assert calls["runtime"] == 0
+    assert not (out / "execution_result.json").exists()
 
 
 def test_missing_or_unready_launch_plan_fails_closed(tmp_path, monkeypatch):
@@ -112,6 +127,7 @@ def test_missing_or_unready_launch_plan_fails_closed(tmp_path, monkeypatch):
             ["input.bff", "--output", str(out)],
             runner=lambda *args, **kwargs: pytest.fail("runtime must not run"),
         )
+    assert not (out / "execution_result.json").exists()
 
 
 def test_launch_plan_path_substitution_fails_closed(tmp_path, monkeypatch):
@@ -129,9 +145,10 @@ def test_launch_plan_path_substitution_fails_closed(tmp_path, monkeypatch):
             ["input.bff", "--output", str(out)],
             runner=lambda *args, **kwargs: pytest.fail("runtime must not run"),
         )
+    assert not (out / "execution_result.json").exists()
 
 
-def test_runtime_nonzero_is_reported_without_success_claim(tmp_path, monkeypatch):
+def test_runtime_nonzero_is_reported_and_receipted_without_success_claim(tmp_path, monkeypatch):
     out = _ready_output(tmp_path)
     monkeypatch.setattr(MODULE.bootstrap, "main", lambda args: 0)
     result = MODULE.execute_playable_pipeline_slice(
@@ -142,3 +159,8 @@ def test_runtime_nonzero_is_reported_without_success_claim(tmp_path, monkeypatch
     assert result["status"] == "runtime-failed"
     assert result["runtime_returncode"] == 7
     assert result["boundary"]["runtime_success_claimed"] is False
+    receipt = out / "execution_result.json"
+    assert receipt.is_file()
+    stored = json.loads(receipt.read_text(encoding="utf-8"))
+    assert stored["runtime_returncode"] == 7
+    assert stored["ready"] is False
