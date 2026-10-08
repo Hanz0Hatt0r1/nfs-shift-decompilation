@@ -19,10 +19,13 @@
     "query_output_source": "same-pass Fun00765c40ExternalPassResult.query_output",
     "query_scalar_handoff": "execute_fun_00765c40_to_00766510_query_scalar_handoff",
     "application_point_source": "Phase743 alias of Phase727 body_rotated_local / HDVehicle+0x38f0",
+    "typed_input_built_before_wheel_update": true,
+    "typed_input_consumed_only_at_contact_response_anchor": true,
     "contact_response_called_after_wheel_update": true,
     "contact_response_receives_same_pass_handoff": true,
     "selected_missing_query_output_fail_closed": true,
     "selected_missing_application_point_fail_closed": true,
+    "generic_input_cannot_claim_selected_bmw_ownership": true,
     "generic_fixture_compatibility": "pass-only callback adapter retains historical 2-BODY fixtures"
   },
   "scope": {
