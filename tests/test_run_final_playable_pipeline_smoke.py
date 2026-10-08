@@ -156,6 +156,7 @@ def test_ready_preflight_delegates_to_production_execution_wrapper(tmp_path, mon
     assert report["preflight"]["ready"] is True
     assert report["execution"]["status"] == "completed"
     assert report["boundary"]["coordination_stability_checked_before_runtime"] is True
+    assert report["boundary"]["coordination_rehash_occurs_immediately_before_runtime_delegation"] is True
     assert report["boundary"]["test_only_core_vehicle_transform_allowed"] is False
     assert report["boundary"]["retail_game_loop_claimed"] is False
 
