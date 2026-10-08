@@ -1,0 +1,58 @@
+{
+  "format": "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "direct PE32 machine-code disassembly joined to existing PC-retail wheel topology and FUN_007618f0 receiver ownership"
+  },
+  "consumer": {
+    "caller": "FUN_00758b50",
+    "callee": "FUN_00755950",
+    "call_instruction": "0x00758d6b",
+    "wheel_runtime_this_expression": "HDVehicle+0x400+slot*0xa80",
+    "slot_domain": [0, 1, 2, 3],
+    "callee_entry_this_register": "ECX",
+    "callee_this_copy": {
+      "instruction": "0x00755956",
+      "operation": "EDX=ECX"
+    },
+    "read_instruction": "0x00755958",
+    "read_operand": "f64 [EDX+0x538]",
+    "normalized_hdvehicle_offset_expression": "0x938+slot*0xa80",
+    "slot_offsets": ["0x938", "0x13b8", "0x1e38", "0x28b8"],
+    "value_then_subtracts_explicit_relative_length": true
+  },
+  "false_candidate_exclusion": {
+    "function": "FUN_007618f0",
+    "receiver_proven_as": "HDVehicle",
+    "receiver_proof": "SHIFT.Fun007618f0VehicleLoadDataOwnership/1",
+    "loop_base_instruction": "0x00761933",
+    "loop_base_expression": "HDVehicle+0x748+slot*0xa80",
+    "candidate_write_instruction": "0x00761b67",
+    "candidate_write_operand": "f64 [ESI+0x538]",
+    "normalized_hdvehicle_offset_expression": "0xc80+slot*0xa80",
+    "slot_offsets": ["0xc80", "0x1700", "0x2180", "0x2c00"],
+    "matches_fun_00755950_consumed_slots": false,
+    "reason": "same literal subobject offset 0x538 is reached from different proven bases; absolute HDVehicle addresses differ by 0x348"
+  },
+  "machine_writer_candidates_needing_receiver_join": [
+    {
+      "function": "FUN_00791020",
+      "writes": ["f32 receiver+0x938"],
+      "write_instructions": ["0x007910f8", "0x0079113e"],
+      "direct_callers_seen_in_retail_machine": ["0x00799f7e", "0x00799ff3"],
+      "receiver_equals_selected_hdvehicle_proven": false
+    }
+  ],
+  "adjudication": {
+    "fun_00755950_absolute_consumed_slots_proven": true,
+    "fun_007618f0_literal_0x538_writer_is_same_field": false,
+    "exact_upstream_writer_owner_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Prove or reject receiver identity for FUN_00791020 and other absolute HDVehicle+0x938/+0x13b8/+0x1e38/+0x28b8 writers, then trace the selected writer value backward toward a PC-retail input/control producer without assigning semantics from offset proximity."
+}
