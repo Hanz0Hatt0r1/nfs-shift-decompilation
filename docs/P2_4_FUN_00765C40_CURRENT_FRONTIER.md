@@ -2,11 +2,11 @@
 
 ## BLOCKER
 
-The historical `SHIFT.NativeVehicleExternalProviderFrontierCurrent/1` audit is anchored at the Phase726 state. Later P2.4 work changed selected-query ownership, added a composed residual executor, and typed the remaining pure-data producer witness, so treating the Phase726 description as current now misstates the runtime boundary.
+The historical `SHIFT.NativeVehicleExternalProviderFrontierCurrent/1` audit is anchored at the Phase726 state. Later P2.4 work changed selected-query ownership, added a composed residual executor, typed the remaining pure-data producer witness, and separated producer presence from proof authorization.
 
 ## OUTPUT
 
-`SHIFT.NativeVehicleExternalProviderFrontierP2_4Current/1` overlays only the later positive P2.4 changes while leaving historical evidence untouched.
+`SHIFT.NativeVehicleExternalProviderFrontierP2_4Current/1` overlays only later positive P2.4 changes while leaving historical evidence untouched.
 
 Current selected-BMW ownership is:
 
@@ -14,14 +14,14 @@ Current selected-BMW ownership is:
 - selected `+0x38e8` miss fallback: native;
 - selected typed query input: native;
 - session query snapshot: native and authoritative;
-- provider-returned selected query input: validation witness only, not authoritative session state;
+- provider-returned selected query input: validation witness only;
 - collision output: typed through `SHIFT.Fun00765c40CollisionOutputHandoff/1`;
 - composed eleven-stage residual executor: present;
 - lower scene-query implementation at global `0x00c133ac`, vtable `+0x1c0`: still external.
 
-The active `Fun00765c40ExternalPassResult` contract is `/5`. It preserves the historical `/4` prefix and appends an optional, non-authoritative `SHIFT.Fun00765c40ResidualProducerHandoff/2`. Historical Phase744 evidence remains pinned to `/4`, and the producer handoff preserves historical `/1` behavior when explicit family presence is disabled.
+The active `Fun00765c40ExternalPassResult` contract is `/5`. It preserves the historical `/4` prefix and carries an optional, non-authoritative `SHIFT.Fun00765c40ResidualProducerHandoff/2`. The `/2` handoff preserves historical `/1` all-family behavior when explicit family presence is disabled.
 
-The `/2` producer handoff is threaded through both the provider result and `NativeVehicleProviderSessionResult`. It adds `family_presence_explicit` plus `family_present[8]`, allowing a source-backed producer family to be promoted independently. In explicit mode, absent families preserve existing composed inputs rather than default-overwriting them. The witness remains **not authoritative** and session capture does not automatically invoke the composed executor.
+`SHIFT.Fun00765c40ResidualProducerPromotionGate/1` now separates **presence** from **proof authorization**. A present family is not eligible for promotion unless the caller also supplies the matching independent-proof bit. The proof mask defaults to all false, is not itself evidence, and is not wired into the active session. Current authorized-family count is therefore zero.
 
 ## REMAINING PRODUCER FRONTIER
 
@@ -37,7 +37,7 @@ The top-level provider cannot yet be removed because the composed executor still
 - bounded state-tail predicate/payloads;
 - optional BODY sweep predicate/vectors.
 
-`SHIFT.Fun00752fa0WheelStateMachineProof/1` proves the address and exact copy destination for the `HDVehicle+0x98` qword. It does **not** prove a native owner or refresh lifetime for that source field, so the composed executor's `wheel_state_source_bits` remains a real explicit dependency rather than a native-owned value.
+`SHIFT.Fun00752fa0WheelStateMachineProof/1` proves the address and exact copy destination for the `HDVehicle+0x98` qword. It does **not** prove a native owner or refresh lifetime for that source field.
 
 No formula or owner in that list is promoted until source or machine evidence proves it.
 
@@ -47,13 +47,15 @@ No formula or owner in that list is promoted until source or machine evidence pr
 - Complete internalization remains false.
 - The top-level provider remains present.
 - External provider count remains 7.
-- The lower collision provider is not renamed or semantically inferred.
+- The lower collision provider remains external.
 - The `/5` producer witness is optional and non-authoritative.
-- `/2` selective family presence changes transport granularity, not ownership.
+- `/2` family presence changes transport granularity, not ownership.
 - Historical `/1` all-family behavior remains compatible.
 - An absent `/2` family cannot default-overwrite an unresolved composed input.
-- Session capture is local to one explicit step and adds no persistent session state.
+- A present family cannot pass the safe promotion gate without a distinct independent-proof bit.
+- No producer family currently has promotion authorization.
+- Session capture remains diagnostic and does not call the promotion gate or composed executor.
 
 ## NEXT STEP
 
-As Process 1 closes individual producer/owner proofs, mark only the corresponding `/2` family present and compare it against independent native reconstruction. A positively proven family may then feed the composed executor without overwriting unresolved siblings. Provider removal remains fail-closed until the explicit producer list is empty.
+As Process 1 closes an individual producer/owner proof, mark only the corresponding `/2` family present, set only its independent-proof bit, and compare the captured value against independent native reconstruction. Only then may that family pass through the proof-gated apply path. Provider removal remains fail-closed until the explicit producer list is empty.
