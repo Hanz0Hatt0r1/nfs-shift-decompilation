@@ -1,7 +1,7 @@
 {
   "format": "SHIFT.DecompBlockerGraph/1",
   "version": 1,
-  "updated_from_main": "bafb52809f0e4328f2b1815ef7a5cc0e85838afe",
+  "updated_from_main": "1d6cec946391d4df60b622101001b7e6cfc3ac13",
   "rules": {"pc_retail_semantic_authority":true,"numeric_offset_equality_is_identity":false,"external_provider_count":7,"semantic_promotion_requires_exact_provenance":true},
   "workstreams": [
     {"id":"P1.1","owner":"Process 1A","title":"FUN_00766510/contact_response producer closure","status":"in_progress","consumer":"Process 2 P2.3","closed":["P1.1c auxiliary scheduling/final transformed-vector/guarded tail"],"next":"Close P1.1a FUN_00713630 upstream runtime config globals, sample-history scheduling, and participant+0x4b0 ownership; then publish final Process 1 handoff."},
@@ -9,7 +9,7 @@
       "id":"P1.3","owner":"Process 1B","title":"retail control/input producer provenance","status":"in_progress","children":[
         {"id":"P1.3.slot0","target":"HDVehicle+0x938","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
         {"id":"P1.3.slot1","target":"HDVehicle+0x13b8","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
-        {"id":"P1.3.slot2","target":"HDVehicle+0x1e38","status":"partial-producer-proven","next":"Continue exact selected HDVehicle+0x64e8 non-sentinel writer provenance; the manager+0x2a0 selection bridge to HDVehicle+0x4330 is rejected."},
+        {"id":"P1.3.slot2","target":"HDVehicle+0x1e38","status":"partial-producer-proven","hdvehicle_64e8_literal_candidate_count":1,"hdvehicle_64e8_remaining_literal_candidate":"0x004b86cf via manager+0x374","hdvehicle_64e8_rejected_literal_candidates":["0x004bb205","0x004bca6b","0x00d775ee"],"next":"Resolve manager+0x374 identity for the last HDVehicle+0x64e8 literal candidate 0x004b86cf, while continuing alias/callee non-sentinel writer provenance."},
         {"id":"P1.3.slot3","target":"HDVehicle+0x28b8","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
         {
           "id":"P1.3.manager374","target":"FUN_00489ad0()+0x374 value == HDVehicle+0x4330","status":"participants-lifecycle-zero-writers-proven-other-indirect-open",
