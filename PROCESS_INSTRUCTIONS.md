@@ -45,11 +45,16 @@ Owns PC-retail proof, source/value provenance, function ABI/order, remaining col
 Current priorities:
 
 ```text
-P1.1  remaining FUN_00766510 configuration/branch/state ownership
+P1.1  residual FUN_00766510 frontier:
+      a) FUN_00713630 dynamic X/Z generator inputs
+      b) later +0x3a28/+0x3a40 direct response block
+      c) final +0x40a0/+0x40a8/+0x40b0 accumulator + conditional state/diagnostic writes
 P1.2  FUN_00765c40 collision-provider/load-term/residual ownership
 P1.3  input -> drivetrain/wheel/control producer chain
 P1.4  retail camera-follow source/timing
 ```
+
+`SHIFT.Fun00766510ResidualOwnershipFrontier/1` is the current P1.1 selection contract. Response config, the earlier `+0x3b20` branch, and the optional `+0x3bc8/+0x3cxx` branch are already positive and must not be rediscovered.
 
 ### Process 2
 
@@ -58,9 +63,9 @@ Owns native physics/runtime implementation and consumption of positive Process 1
 Current priorities:
 
 ```text
-P2.1  Phase745 same-pass FUN_00766510 session handoff on merged Phase744
-P2.2  Phase746 caller accumulator delta
-P2.3  consume P1.1 and remove complete contact_response; target 7 -> 6 providers
+P2.1  COMPLETE — Phase745 same-pass FUN_00766510 session handoff
+P2.2  COMPLETE — Phase746 primary caller accumulator delta
+P2.3  CURRENT/BLOCKED — consume remaining P1.1 and remove complete contact_response; target 7 -> 6 providers
 P2.4  consume P1.2 and narrow/remove residual FUN_00765c40
 P2.5  replace remaining provider boundaries in dependency order
 P2.6  consume proven control chain continuously
@@ -83,7 +88,7 @@ P3.6  final continuous Silverstone + BMW smoke path
 
 ## Shared frontier
 
-Current merged main frontier when V6 was introduced: **Phase 744**.
+Current merged main frontier: **Phase 747**.
 
 Already positive:
 
@@ -96,8 +101,14 @@ selected-session inner rate = 180 Hz
 normal outer update = six recovered substeps
 selected FUN_00765c40 world position/cache/fallback ownership
 Phase744 typed CollisionQueryOutput/query scalar handoff
+Phase745 selected same-pass FUN_00766510 session handoff
+Phase746 primary FUN_00766510 caller accumulator delta
+Phase747 shared reference-vector owner/transform
 Phase742 primary FUN_00766510 response application
 Phase743 selected BMW application-point owner
+Process 1 response-config ownership
+Process 1 earlier +0x3b20 branch ownership
+Process 1 optional +0x3bc8/+0x3cxx branch ownership
 ```
 
 Active top-level external provider count:
