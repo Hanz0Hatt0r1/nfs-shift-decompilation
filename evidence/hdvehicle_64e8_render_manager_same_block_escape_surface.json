@@ -1,0 +1,46 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerSameBlockEscapeSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374VSlot0cDispatchClosure/1",
+  "exact_outer_global": "0x00bc185c",
+  "scan": {
+    "scope": "whole .text direct loads of exact outer global; straight-line same-basic-block alias propagation until first call/branch/return",
+    "direct_load_count": 112,
+    "seed_register_counts": {
+      "eax": 43,
+      "ecx": 47,
+      "edx": 5,
+      "ebx": 4,
+      "esi": 10,
+      "edi": 3
+    },
+    "propagated_exact_copy_forms": ["mov reg,reg", "lea reg,[alias+0]"],
+    "escape_sinks_checked": ["push exact alias", "stack store exact alias", "object/global memory store exact alias"],
+    "push_escape_count": 0,
+    "stack_store_escape_count": 0,
+    "nonstack_memory_store_escape_count": 0,
+    "total_same_block_escape_count": 0
+  },
+  "adjudication": {
+    "same_basic_block_direct_load_escape_surface_complete": true,
+    "same_basic_block_direct_load_can_create_persistent_exact_outer_alias": false,
+    "cross_block_or_callee_created_alias_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only aliases created before the first control-flow/call boundary after a direct exact-global load.",
+    "Aliases created across branches, by callees, through returned pointers, or through interface/subobject reconstruction remain open.",
+    "Subobject derivations such as outer+4, outer+0x780, outer+0xc4c are not treated as exact outer aliases.",
+    "No identity is inferred from matching offsets."
+  ],
+  "next_step": "Trace cross-block/callee-created exact outer aliases and returned-pointer reconstruction; continue runtime-derived HDVehicle+0x4330 aliases."
+}
