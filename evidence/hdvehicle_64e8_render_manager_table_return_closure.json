@@ -1,0 +1,138 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerTableReturnedRootClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_sqlite_role": "navigation/fingerprints only"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8RenderManagerReturnedRootDirectCallerSurface/1",
+  "table_identity": {
+    "table_base": "0x00abec20",
+    "constructor": {
+      "function": "FUN_004b7250",
+      "address": "0x004b7250",
+      "size": 20,
+      "mnemonic_sha256": "ac4ff277d6e87ceee2f677e45fe5c0173bc3c3109202caf50af5cbd25f553ce2",
+      "table_install": "0x004b7254 [object+0x0]=0x00abec20"
+    },
+    "callbacks": [
+      {
+        "slot_offset": "+0xe0",
+        "cell": "0x00abed00",
+        "target": "FUN_004b7350",
+        "target_address": "0x004b7350",
+        "target_size": 112,
+        "target_mnemonic_sha256": "03e1436c00ae4b840044be4f4b33b450d0de3b1ab63570d1867bb7b136ce37e8"
+      },
+      {
+        "slot_offset": "+0xe4",
+        "cell": "0x00abed04",
+        "target": "FUN_004b73c0",
+        "target_address": "0x004b73c0",
+        "target_size": 31,
+        "target_mnemonic_sha256": "f8bbc24c7a45fa7b5301c6acf46217c7c31081840a9c0ed31c67d0459ad1a2cd"
+      }
+    ]
+  },
+  "ownership_and_registration": {
+    "allocation_owner": {
+      "function": "FUN_004c2cf0",
+      "address": "0x004c2cf0",
+      "size": 530,
+      "mnemonic_sha256": "377547dc834209af369794c4e6d4806fa9b9d5e82f6557e30cee92c036758fbf",
+      "allocation": "0x004c2eb1 push 0x10; 0x004c2eb3 call FUN_008868c0",
+      "constructor_call": "0x004c2ec1 call FUN_004b7250",
+      "owner_store": "0x004c2ecf [owner+0x118]=constructed table object"
+    },
+    "registration_path": {
+      "function": "FUN_004c65d0",
+      "address": "0x004c65d0",
+      "size": 2273,
+      "mnemonic_sha256": "e0ef15a4a8d6931c65194e9bb27a70bdc1701d80ec6342a44e6f25c6f7c1bf19",
+      "load": "0x004c65fb eax=[owner+0x118]",
+      "argument": "0x004c6601 push eax",
+      "service_getter": "0x004c6602 call thunk@0x006e8da0 -> 0x0047b24d",
+      "register_call": "0x004c6609 call FUN_006e8c80 with ECX=service and stack arg=table object"
+    },
+    "service_registration": {
+      "function": "FUN_006e8c80",
+      "address": "0x006e8c80",
+      "size": 42,
+      "mnemonic_sha256": "f6f139fd3a52e894894149341b1cc2f83374859da7c4626768e596314c212066",
+      "service_store": "0x006e8c87 [service+0x424]=table object",
+      "collection_insert": "0x006e8c8d push table object; 0x006e8c8e service+0x280; 0x006e8c94 call FUN_006e90a0",
+      "global_stores": [
+        "0x006e8c99 [0x00c0f808]=table object",
+        "0x006e8c9f [0x00c0f7f4]=table object"
+      ]
+    }
+  },
+  "dispatch_surface": {
+    "function": "FUN_006f28c0",
+    "address": "0x006f28c0",
+    "size": 465,
+    "mnemonic_sha256": "0dd380adcd034da39100d2bc4206b80b986d7c4e4003f81cd7a4857627b7357f",
+    "exact_registered_global": "0x00c0f808",
+    "calls": [
+      {
+        "slot_offset": "+0xe4",
+        "slot_load": "0x006f2929 edx=[table+0xe4]",
+        "callsite": "0x006f2933 call edx",
+        "target": "FUN_004b73c0",
+        "post_call": "0x006f2935 test bl,bl; no EAX consumer before later 0x006f294b call clobbers EAX",
+        "exact_eax_residue_consumed": false,
+        "exact_eax_residue_persisted": false
+      },
+      {
+        "slot_offset": "+0xe4",
+        "slot_load": "0x006f299a eax=[table+0xe4]",
+        "callsite": "0x006f29aa call eax",
+        "target": "FUN_004b73c0",
+        "post_call": "floating-point compares only; 0x006f29b4 fnstsw ax destroys exact 32-bit EAX before any integer EAX consumer",
+        "exact_eax_residue_consumed": false,
+        "exact_eax_residue_persisted": false
+      },
+      {
+        "slot_offset": "+0xe0",
+        "slot_load": "0x006f2a26 edx=[table+0xe0]",
+        "callsite": "0x006f2a35 call edx",
+        "target": "FUN_004b7350",
+        "post_call": "stores ESI to [EDI+0x3c] and branches; no EAX consumer before 0x006f2a86 movzx eax,[edi+0x38] overwrites EAX",
+        "exact_eax_residue_consumed": false,
+        "exact_eax_residue_persisted": false
+      },
+      {
+        "slot_offset": "+0xe0",
+        "slot_load": "0x006f2a6e eax=[table+0xe0]",
+        "callsite": "0x006f2a7c call eax",
+        "target": "FUN_004b7350",
+        "post_call": "0x006f2a81 call FUN_006310c0 clobbers EAX before 0x006f2a86 movzx eax,[edi+0x38]",
+        "exact_eax_residue_consumed": false,
+        "exact_eax_residue_persisted": false
+      }
+    ]
+  },
+  "adjudication": {
+    "table_object_identity_closed": true,
+    "registration_to_0x00c0f808_closed": true,
+    "slot_e0_dispatch_surface_complete": true,
+    "slot_e4_dispatch_surface_complete": true,
+    "table_only_returned_root_consumer_surface_complete": true,
+    "table_only_returned_root_can_persist_or_dispatch_exact_root": false,
+    "returned_root_consumer_surface_complete": true,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes the two remaining table-only conditional EAX-residue callbacks by exact table ownership, registration, and retail dispatch provenance.",
+    "It does not claim the callback ABI semantically returns a manager pointer; the result is incidental EAX residue on conditional paths.",
+    "The separate exhaustive CFG memory-store escape analyzer still requires its retail v2 input replay before cross-block stored aliases can be globally closed.",
+    "No identity is inferred from matching offsets."
+  ],
+  "next_step": "Reacquire or regenerate the exhaustive v2 instruction export and run SHIFT.PlayerVehicleRenderManagerMemoryEscapeSurface/1; continue downstream persistence/return analysis for exact HDVehicle+0x4330 aliases."
+}
