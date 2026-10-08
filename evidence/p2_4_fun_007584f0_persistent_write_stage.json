@@ -1,0 +1,38 @@
+{
+  "format": "SHIFT.Fun007584f0PersistentWriteStage/1",
+  "ready": true,
+  "authority": {
+    "machine_proof": "SHIFT.Fun007584f0MachineSideEffectProof/1",
+    "source_authority": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "machine_span_sha256": "252bade571ca266a620628da463c4cd3b3ca81333df0746d438cd95f77e2295f"
+  },
+  "persistent_writes": {
+    "wheel_values": {
+      "offsets": ["+0x0d40", "+0x17c0"],
+      "wheel_indices": [0, 1],
+      "stride": "0x0a80",
+      "branch": "write zero when matching +0x738 load <= 0; otherwise write source-computed qword"
+    },
+    "filtered_value": {
+      "offset": "+0x3420",
+      "width": "float",
+      "source": "source-computed return value of FUN_00783a30"
+    }
+  },
+  "native_contract": {
+    "branch_and_write_semantics_internalized": true,
+    "positive_branch_arithmetic_internalized": false,
+    "FUN_00783a30_arithmetic_internalized": false,
+    "source_computed_values_are_explicit_inputs": true
+  },
+  "scope": {
+    "FUN_007584f0_persistent_write_stage_internalized": true,
+    "complete_FUN_007584f0_internalized": false,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_FUN_00765c40_provider_removed": false,
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7
+  }
+}
