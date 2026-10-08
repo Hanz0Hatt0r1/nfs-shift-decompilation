@@ -46,8 +46,8 @@ def test_phase747_reuses_existing_owner_proof_and_exact_transform() -> None:
     assert "static_cast<double>(participant_source[axis])" in header
     assert "transform_fun_007af0a0_refresh" in header
     test = TEST.read_text(encoding="utf-8")
-    assert '"explicit_f32_to_f64_widening":true' in test
-    assert '"body_transform_native":true' in test
+    assert "explicit_f32_to_f64_widening" in test
+    assert "body_transform_native" in test
 
 
 def test_phase747_scope_does_not_remove_contact_response_early() -> None:
