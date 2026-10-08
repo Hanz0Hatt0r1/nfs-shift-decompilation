@@ -63,7 +63,8 @@ def test_active_cpp_api_extends_historical_result_with_phase744_collision_output
     request = session_source.index("external_input.cached_handle =")
     provider_call = session_source.index("providers_.fun_00765c40(pass_index, external_input)")
     validation = session_source.index("validate_fun_00765c40_external_pass_result")
-    query_store = session_source.index("query_inputs[pass_index] = result.query_input")
+    selector = session_source.index("materialize_fun_00765c40_session_query_snapshot")
+    query_store = session_source.index("query_inputs[pass_index] = session_query_input")
     cache_commit = session_source.index("fun_00765c40_query_cache_handle_ =")
     load_store = session_source.index("load_state->terms = result.load_terms")
-    assert request < provider_call < validation < query_store < cache_commit < load_store
+    assert request < provider_call < validation < selector < query_store < cache_commit < load_store

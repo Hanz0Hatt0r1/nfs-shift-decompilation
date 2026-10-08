@@ -62,10 +62,13 @@ def test_active_cpp_contract_feeds_owned_query_state_before_residual_pass() -> N
     request = session_source.index("external_input.cached_handle =")
     provider_call = session_source.index("providers_.fun_00765c40(pass_index, external_input)")
     validation = session_source.index("validate_fun_00765c40_external_pass_result")
-    snapshot = session_source.index("query_inputs[pass_index] = result.query_input")
+    selector = session_source.index("materialize_fun_00765c40_session_query_snapshot")
+    snapshot = session_source.index("query_inputs[pass_index] = session_query_input")
+    handoff = session_source.index("session_query_input,", snapshot)
     cache_commit = session_source.index("fun_00765c40_query_cache_handle_ =")
     load_terms = session_source.index("load_state->terms = result.load_terms")
-    assert request < provider_call < validation < snapshot < cache_commit < load_terms
+    assert request < provider_call < validation < selector < snapshot < cache_commit < handoff < load_terms
+    assert "query_inputs[pass_index] = result.query_input" not in session_source
 
 
 def test_active_session_does_not_consume_renderer_transform_as_query_producer() -> None:
