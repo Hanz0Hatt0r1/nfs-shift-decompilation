@@ -1,0 +1,45 @@
+{
+  "format": "SHIFT.HDVehicle64e8HDVehicleRootLiteralPersistenceSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "scope": {
+    "exact_hdvehicle_root": "0x00c13700",
+    "seed_shape": "MOV full_gpr,0x00c13700",
+    "seed_count": 69,
+    "same_block_tracking_until_first_call_jump_return_or_alias_kill": true,
+    "full_register_copy_preserves_exact_identity": true,
+    "zero_displacement_lea_preserves_exact_identity": true
+  },
+  "inventory": {
+    "raw_little_endian_occurrence_count": 71,
+    "literal_mov_seed_count": 69,
+    "direct_memory_numeric_occurrence_count": 2,
+    "seed_reaching_direct_call_boundary_count": 61,
+    "memory_store_of_exact_root_value_count": 0,
+    "push_exact_root_after_seed_count": 0,
+    "same_block_persistent_escape_count": 0
+  },
+  "adjudication": {
+    "literal_hdvehicle_root_same_block_persistence_closed_negative": true,
+    "literal_hdvehicle_root_persistent_memory_copy_found": false,
+    "literal_hdvehicle_root_stack_escape_found": false,
+    "callee_side_alias_creation_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Calls are boundaries: this contract does not claim what a callee may do with an exact root received in a register.",
+    "Direct jumps/conditional branches end this same-block slice; cross-block behavior remains owned by dedicated affine/parser/escaped-root contracts and future work.",
+    "The two non-MOV raw occurrences are numeric memory operands and are not promoted to pointer-value materializations.",
+    "No identity is inferred from numeric offset equality."
+  ],
+  "next_step": "Classify direct callees reached from the 61 literal-root call boundaries for persistent/returned aliases relevant to HDVehicle+0x4330; continue two-unknown-origin provenance."
+}
