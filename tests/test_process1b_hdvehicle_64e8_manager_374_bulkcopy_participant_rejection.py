@@ -49,4 +49,5 @@ def test_coordination_preserves_participant_rejection_after_later_frontier_advan
     row = next(c for c in p13["children"] if c["id"] == "P1.3.manager374")
     assert any("0x004848f5" in item for item in row["rejected_bulk_copy_aliases"])
     assert row["direct_bulk_copy_surface_complete"] is True
-    assert row["status"] == "participants-subobject-direct-writes-rejected-escaped-alias-open"
+    assert row["status"] == "participants-lifecycle-zero-writers-proven-other-indirect-open"
+    assert row["participants_lifecycle_direct_target_surface_complete"] is True
