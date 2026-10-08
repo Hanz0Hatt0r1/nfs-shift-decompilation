@@ -3,38 +3,80 @@ name: native-physics-contact-response
 on:
   push:
     paths:
+      - 'native_runtime/include/shift_fun_00766510_later_response_branch.hpp'
+      - 'native_runtime/include/shift_fun_00766510_early_response_branch.hpp'
+      - 'native_runtime/include/shift_fun_00766510_optional_response_branch.hpp'
       - 'native_runtime/include/shift_fun_00766510_response_config.hpp'
       - 'native_runtime/include/shift_fun_00766510_direct_accumulator_surface.hpp'
+      - 'native_runtime/tests/fun_00766510_later_response_branch_check.cpp'
+      - 'native_runtime/tests/fun_00766510_early_response_branch_check.cpp'
+      - 'native_runtime/tests/fun_00766510_optional_response_branch_check.cpp'
       - 'native_runtime/tests/fun_00766510_response_config_check.cpp'
       - 'native_runtime/tests/fun_00766510_direct_accumulator_surface_check.cpp'
+      - 'native_runtime/cmake/phase748.cmake'
+      - 'native_runtime/cmake/phase749.cmake'
+      - 'native_runtime/cmake/phase750.cmake'
       - 'native_runtime/cmake/phase751.cmake'
       - 'native_runtime/cmake/phase752.cmake'
       - 'native_runtime/cmake/phase753.cmake'
+      - 'tests/test_s6_fun_00766510_later_response_branch.py'
+      - 'tests/test_s6_fun_00766510_early_response_branch.py'
+      - 'tests/test_s6_fun_00766510_optional_response_branch.py'
       - 'tests/test_s6_fun_00766510_response_config.py'
       - 'tests/test_s6_fun_00766510_direct_accumulator_surface.py'
+      - 'evidence/fun_00766510_later_response_native.json'
+      - 'evidence/fun_00766510_early_response_native.json'
+      - 'evidence/fun_00766510_optional_response_native.json'
       - 'evidence/fun_00766510_response_config_native.json'
       - 'evidence/fun_00766510_direct_accumulator_surface_native.json'
+      - 'docs/PHASE749_FUN_00766510_LATER_RESPONSE_BRANCH.md'
+      - 'docs/PHASE749_SCOPE.md'
+      - 'docs/PHASE750_FUN_00766510_EARLY_RESPONSE_BRANCH.md'
+      - 'docs/PHASE751_FUN_00766510_OPTIONAL_RESPONSE_BRANCH.md'
       - 'docs/PHASE752_FUN_00766510_RESPONSE_CONFIG.md'
       - 'docs/PHASE753_FUN_00766510_DIRECT_ACCUMULATOR_SURFACE.md'
+      - 'coordination/ci_migrations/native_physics_contact_response_749_751.json'
       - 'coordination/ci_migrations/native_physics_contact_response_752_753.json'
+      - 'tests/test_ci_workflow_migration_contact_response_749_751.py'
       - 'tests/test_ci_workflow_migration_contact_response.py'
       - '.github/workflows/native-physics-contact-response.yml'
   pull_request:
     paths:
+      - 'native_runtime/include/shift_fun_00766510_later_response_branch.hpp'
+      - 'native_runtime/include/shift_fun_00766510_early_response_branch.hpp'
+      - 'native_runtime/include/shift_fun_00766510_optional_response_branch.hpp'
       - 'native_runtime/include/shift_fun_00766510_response_config.hpp'
       - 'native_runtime/include/shift_fun_00766510_direct_accumulator_surface.hpp'
+      - 'native_runtime/tests/fun_00766510_later_response_branch_check.cpp'
+      - 'native_runtime/tests/fun_00766510_early_response_branch_check.cpp'
+      - 'native_runtime/tests/fun_00766510_optional_response_branch_check.cpp'
       - 'native_runtime/tests/fun_00766510_response_config_check.cpp'
       - 'native_runtime/tests/fun_00766510_direct_accumulator_surface_check.cpp'
+      - 'native_runtime/cmake/phase748.cmake'
+      - 'native_runtime/cmake/phase749.cmake'
+      - 'native_runtime/cmake/phase750.cmake'
       - 'native_runtime/cmake/phase751.cmake'
       - 'native_runtime/cmake/phase752.cmake'
       - 'native_runtime/cmake/phase753.cmake'
+      - 'tests/test_s6_fun_00766510_later_response_branch.py'
+      - 'tests/test_s6_fun_00766510_early_response_branch.py'
+      - 'tests/test_s6_fun_00766510_optional_response_branch.py'
       - 'tests/test_s6_fun_00766510_response_config.py'
       - 'tests/test_s6_fun_00766510_direct_accumulator_surface.py'
+      - 'evidence/fun_00766510_later_response_native.json'
+      - 'evidence/fun_00766510_early_response_native.json'
+      - 'evidence/fun_00766510_optional_response_native.json'
       - 'evidence/fun_00766510_response_config_native.json'
       - 'evidence/fun_00766510_direct_accumulator_surface_native.json'
+      - 'docs/PHASE749_FUN_00766510_LATER_RESPONSE_BRANCH.md'
+      - 'docs/PHASE749_SCOPE.md'
+      - 'docs/PHASE750_FUN_00766510_EARLY_RESPONSE_BRANCH.md'
+      - 'docs/PHASE751_FUN_00766510_OPTIONAL_RESPONSE_BRANCH.md'
       - 'docs/PHASE752_FUN_00766510_RESPONSE_CONFIG.md'
       - 'docs/PHASE753_FUN_00766510_DIRECT_ACCUMULATOR_SURFACE.md'
+      - 'coordination/ci_migrations/native_physics_contact_response_749_751.json'
       - 'coordination/ci_migrations/native_physics_contact_response_752_753.json'
+      - 'tests/test_ci_workflow_migration_contact_response_749_751.py'
       - 'tests/test_ci_workflow_migration_contact_response.py'
       - '.github/workflows/native-physics-contact-response.yml'
   workflow_dispatch:
@@ -57,36 +99,63 @@ jobs:
       - name: Run contact-response Python regressions
         run: >-
           python3 -m pytest -q
+          tests/test_s6_fun_00766510_later_response_branch.py
+          tests/test_s6_fun_00766510_early_response_branch.py
+          tests/test_s6_fun_00766510_optional_response_branch.py
           tests/test_s6_fun_00766510_response_config.py
           tests/test_s6_fun_00766510_direct_accumulator_surface.py
 
-      - name: Validate response-config evidence
+      - name: Validate contact-response evidence
         run: |
           python3 - <<'PY'
           import json
           from pathlib import Path
-          e = json.loads(Path('evidence/fun_00766510_response_config_native.json').read_text())
-          assert e['format'] == 'SHIFT.Fun00766510ResponseConfig/1'
-          assert e['ready'] is True
-          assert e['native_contract']['table_entry_count'] == 6
-          assert e['persistent_refresh']['setup_constant'] is False
-          assert e['scope']['runtime_curve_scale_table_chain_internalized'] is False
-          assert e['scope']['external_provider_count_after'] == 7
-          assert e['scope']['contact_response_provider_removed'] is False
-          PY
 
-      - name: Validate direct-accumulator evidence
-        run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          e = json.loads(Path('evidence/fun_00766510_direct_accumulator_surface_native.json').read_text())
-          assert e['format'] == 'SHIFT.Fun00766510DirectAccumulatorSurface/1'
-          assert e['ready'] is True
-          assert e['accumulator']['direct_site_count'] == 4
-          assert e['native_contract']['four_sites_batched_or_reordered'] is False
-          assert e['scope']['whole_caller_accumulator_closed'] is False
-          assert e['scope']['external_provider_count_after'] == 7
+          later = json.loads(Path('evidence/fun_00766510_later_response_native.json').read_text())
+          assert later['format'] == 'SHIFT.Fun00766510LaterResponseBranch/1'
+          assert later['ready'] is True
+          assert later['native_contract']['table_entry_count'] == 6
+          assert later['runtime_materialization']['second_lane_rewritten_each_evaluation'] is True
+          assert later['persistent_refresh']['mutable_bases_preserved'] is True
+          assert later['scope']['p1_1b_consumed_by_process2'] is True
+          assert later['scope']['external_provider_count_after'] == 7
+          assert later['scope']['contact_response_provider_removed'] is False
+
+          early = json.loads(Path('evidence/fun_00766510_early_response_native.json').read_text())
+          assert early['format'] == 'SHIFT.Fun00766510EarlyResponseBranch/1'
+          assert early['ready'] is True
+          assert early['native_contract']['table_entry_count'] == 6
+          assert early['runtime_materialization']['third_lane_rewritten_each_evaluation'] is True
+          assert early['runtime_materialization']['clamp_algorithm_internalized'] is False
+          assert early['scope']['early_branch_state_consumed_by_process2'] is True
+          assert early['scope']['external_provider_count_after'] == 7
+          assert early['scope']['contact_response_provider_removed'] is False
+
+          optional = json.loads(Path('evidence/fun_00766510_optional_response_native.json').read_text())
+          assert optional['format'] == 'SHIFT.Fun00766510OptionalResponseBranch/1'
+          assert optional['ready'] is True
+          assert optional['persistent_mutable']['setup_constant'] is False
+          assert optional['persistent_mutable']['writer_arithmetic_internalized'] is False
+          assert optional['runtime_gate']['internalized'] is True
+          assert optional['scope']['external_provider_count_after'] == 7
+          assert optional['scope']['contact_response_provider_removed'] is False
+
+          response = json.loads(Path('evidence/fun_00766510_response_config_native.json').read_text())
+          assert response['format'] == 'SHIFT.Fun00766510ResponseConfig/1'
+          assert response['ready'] is True
+          assert response['native_contract']['table_entry_count'] == 6
+          assert response['persistent_refresh']['setup_constant'] is False
+          assert response['scope']['runtime_curve_scale_table_chain_internalized'] is False
+          assert response['scope']['external_provider_count_after'] == 7
+          assert response['scope']['contact_response_provider_removed'] is False
+
+          surface = json.loads(Path('evidence/fun_00766510_direct_accumulator_surface_native.json').read_text())
+          assert surface['format'] == 'SHIFT.Fun00766510DirectAccumulatorSurface/1'
+          assert surface['ready'] is True
+          assert surface['accumulator']['direct_site_count'] == 4
+          assert surface['native_contract']['four_sites_batched_or_reordered'] is False
+          assert surface['scope']['whole_caller_accumulator_closed'] is False
+          assert surface['scope']['external_provider_count_after'] == 7
           PY
 
       - name: Configure native runtime
@@ -95,18 +164,49 @@ jobs:
       - name: Build consolidated contact-response regressions
         run: >-
           cmake --build native_runtime/build --config Release --parallel
-          --target shift_runtime_fun_00766510_direct_accumulator_surface_check
-          shift_runtime_fun_00766510_response_config_check
+          --target shift_runtime_fun_00713630_reference_source_check
+          shift_runtime_fun_00766510_later_response_branch_check
+          shift_runtime_fun_00766510_early_response_branch_check
           shift_runtime_fun_00766510_optional_response_branch_check
+          shift_runtime_fun_00766510_response_config_check
+          shift_runtime_fun_00766510_direct_accumulator_surface_check
 
       - name: Run focused CTest regressions
         run: >-
           ctest --test-dir native_runtime/build --output-on-failure
-          -R '^(shift_runtime_fun_00766510_direct_accumulator_surface|shift_runtime_fun_00766510_response_config|shift_runtime_fun_00766510_optional_response_branch)$'
+          -R '^(shift_runtime_fun_00713630_reference_source|shift_runtime_fun_00766510_later_response_branch|shift_runtime_fun_00766510_early_response_branch|shift_runtime_fun_00766510_optional_response_branch|shift_runtime_fun_00766510_response_config|shift_runtime_fun_00766510_direct_accumulator_surface)$'
 
-      - name: Verify response-config native report
+      - name: Verify native reports
         run: |
           mkdir -p out/native-physics-contact-response
+
+          native_runtime/build/shift_runtime_fun_00766510_later_response_branch_check \
+            > out/native-physics-contact-response/fun_00766510_later_response_branch.json
+          grep -q '"format":"SHIFT.Fun00766510LaterResponseBranch/1"' \
+            out/native-physics-contact-response/fun_00766510_later_response_branch.json
+          grep -q '"table_entry_count":6' \
+            out/native-physics-contact-response/fun_00766510_later_response_branch.json
+          grep -q '"contact_response_provider_removed":false' \
+            out/native-physics-contact-response/fun_00766510_later_response_branch.json
+
+          native_runtime/build/shift_runtime_fun_00766510_early_response_branch_check \
+            > out/native-physics-contact-response/fun_00766510_early_response_branch.json
+          grep -q '"format":"SHIFT.Fun00766510EarlyResponseBranch/1"' \
+            out/native-physics-contact-response/fun_00766510_early_response_branch.json
+          grep -q '"table_entry_count":6' \
+            out/native-physics-contact-response/fun_00766510_early_response_branch.json
+          grep -q '"contact_response_provider_removed":false' \
+            out/native-physics-contact-response/fun_00766510_early_response_branch.json
+
+          native_runtime/build/shift_runtime_fun_00766510_optional_response_branch_check \
+            > out/native-physics-contact-response/fun_00766510_optional_response_branch.json
+          grep -q '"format":"SHIFT.Fun00766510OptionalResponseBranch/1"' \
+            out/native-physics-contact-response/fun_00766510_optional_response_branch.json
+          grep -q '"writer_arithmetic_internalized":false' \
+            out/native-physics-contact-response/fun_00766510_optional_response_branch.json
+          grep -q '"contact_response_provider_removed":false' \
+            out/native-physics-contact-response/fun_00766510_optional_response_branch.json
+
           native_runtime/build/shift_runtime_fun_00766510_response_config_check \
             > out/native-physics-contact-response/fun_00766510_response_config.json
           grep -q '"format":"SHIFT.Fun00766510ResponseConfig/1"' \
@@ -116,8 +216,6 @@ jobs:
           grep -q '"contact_response_provider_removed":false' \
             out/native-physics-contact-response/fun_00766510_response_config.json
 
-      - name: Verify direct-accumulator native report
-        run: |
           native_runtime/build/shift_runtime_fun_00766510_direct_accumulator_surface_check \
             > out/native-physics-contact-response/fun_00766510_direct_accumulator_surface.json
           grep -q '"format":"SHIFT.Fun00766510DirectAccumulatorSurface/1"' \
