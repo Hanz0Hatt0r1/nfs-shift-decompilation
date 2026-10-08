@@ -78,13 +78,17 @@ def analyze(path: Path) -> dict:
         "diagnostic_store": one(lines, "diagnostic_store"),
     }
 
+    clamp_mutators = hits(lines, "FUN_00753620((void *)((int)param_1 + 0x3bd0),")
+    if clamp_mutators != [752714, 761376]:
+        raise SystemExit(f"unexpected +0x3bd0 clamp/reset surface: {clamp_mutators}")
     mutable_3bd0 = {
-        "initial_setup": setup["mutable_3bd0_setup"],
-        "increment_mutator": one_in_range(lines, "mutable_3bd0_setup", 751660, 751665),
-        "FUN_00757fa0": hits(lines, "this_00 = (double *)((int)this + 0x3bd0);")[0],
-        "FUN_00758170": hits(lines, "FUN_00753620((void *)((int)param_1 + 0x3bd0),")[0],
-        "FUN_00769d60": hits(lines, "FUN_00753620((void *)((int)param_1 + 0x3bd0),")[1],
-        "FUN_0076ed60": hits(lines, "*(undefined8 *)((int)this + 0x3bd0) = *(undefined8 *)(param_1 + 0x28);")[0],
+        "FUN_00757fa0_increment": hits(lines, "this_00 = (double *)((int)this + 0x3bd0);")[0],
+        "FUN_00758170_clamp": clamp_mutators[0],
+        "FUN_00769d60_reset_clamp": clamp_mutators[1],
+        "FUN_0076ed60_state_load": hits(
+            lines,
+            "*(undefined8 *)((int)this + 0x3bd0) = *(undefined8 *)(param_1 + 0x28);",
+        )[0],
     }
 
     return {
