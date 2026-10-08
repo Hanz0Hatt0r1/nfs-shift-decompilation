@@ -41,7 +41,7 @@ a shutdown/teardown enumeration path that enqueues message `0` and then waits
 100 ms.
 
 No direct render/presentation -> `FUN_00662ee0` callsite is therefore proven.
-This is deliberately a **direct-call** statement only.
+This is deliberately a direct-call statement only.
 
 ## What is not proven
 
