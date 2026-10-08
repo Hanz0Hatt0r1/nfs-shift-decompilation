@@ -1,0 +1,71 @@
+{
+  "format": "SHIFT.Fun00766510SharedReferenceVector/1",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "source": {
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "hdvehicle_init_function": "FUN_0076df50",
+    "hdvehicle_owner_record_store_line": 763743,
+    "participant_vector_writer": "FUN_00713630",
+    "participant_vector_writer_lines": [706235, 706236, 706237],
+    "writer_scheduler": "FUN_007144a0",
+    "writer_scheduler_call_line": 706892,
+    "consumer_function": "FUN_00766510",
+    "consumer_source_line": 759523
+  },
+  "owner_chain": {
+    "hdvehicle_owner_record": "HDVehicle+0x3fe8",
+    "store": "FUN_0076df50 stores init param_1 at HDVehicle+0x3fe8",
+    "actual_participant": "*([HDVehicle+0x3fe8])",
+    "independent_owner_proof": "SHIFT.OuterVehicleChassisOwnerJoin/1",
+    "participant_source_offsets": ["0x16b4", "0x16b8", "0x16bc"],
+    "participant_source_storage": "three f32 lanes"
+  },
+  "writer": {
+    "function": "FUN_00713630",
+    "writes": [
+      "actual_participant+0x16b4 = f32 dynamic source X",
+      "actual_participant+0x16b8 = f32 0.0",
+      "actual_participant+0x16bc = f32 dynamic source Z"
+    ],
+    "scheduler": "FUN_007144a0 calls FUN_00713630 when manager state +0x158 modulo 3 equals zero",
+    "value_is_immutable_setup_constant": false
+  },
+  "consumer": {
+    "loads": [
+      "f32 actual_participant+0x16b4 -> f64",
+      "f32 actual_participant+0x16b8 -> f64",
+      "f32 actual_participant+0x16bc -> f64"
+    ],
+    "transform": "FUN_007af0a0(BODY0+0xd4, widened three-lane source)",
+    "output": "shared local_d8/local_d0/local_c8 reference vector",
+    "known_consumers": [
+      "early +0x3b20 response branch",
+      "auxiliary FUN_00758fc0 pair through caller reference vector"
+    ]
+  },
+  "native_contract": {
+    "format": "SHIFT.Fun00766510SharedReferenceVector/1",
+    "input_source": "three participant f32 lanes",
+    "f32_to_f64_boundary_explicit": true,
+    "transform_helper": "transform_fun_007af0a0_refresh",
+    "dynamic_participant_source_materialized_in_selected_session": false
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "contact_response_provider_removed": false,
+    "participant_source_owner_closed": true,
+    "shared_reference_transform_internalized": true,
+    "participant_dynamic_writer_value_internalized": false,
+    "early_response_branch_fully_scheduled": false,
+    "auxiliary_pair_fully_scheduled": false,
+    "physical_semantics_invented": false
+  },
+  "next_blocker": {
+    "target": "materialize the dynamic actual-participant +0x16b4/+0x16b8/+0x16bc source or provide its already-native upstream state before scheduling early/auxiliary FUN_00766510 paths",
+    "note": "do not freeze the vector as a selected setup constant; FUN_00713630 refreshes it under FUN_007144a0 scheduling"
+  }
+}
