@@ -1,0 +1,60 @@
+{
+  "format": "SHIFT.HDVehicle64e8EscapedRoot4330RuntimeSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact retail machine transfer; Ghidra SQLite navigation/fingerprints only"
+  },
+  "root_provenance": {
+    "wrappers": [
+      {"function":"FUN_00702720","address":"0x00702720","size":65,"mnemonic_sha256":"0204a373c1c3af3f326be7aeef80ce86a9584db2985cd5001085e1c8e2317039","root_instruction":"0x00702757 mov ecx,0x00c13700","handoff":"0x0070275c -> FUN_00768a30"},
+      {"function":"FUN_00702770","address":"0x00702770","size":83,"mnemonic_sha256":"e1140a55392c930c16953cf9d01a0a9f2044ab5f57207813fa6e103c040ba9b5","root_instruction":"0x007027b8 mov ecx,0x00c13700","handoff":"0x007027be -> FUN_00768a30"}
+    ],
+    "entry_thunk": {"function":"FUN_00768a30","address":"0x00768a30","size":29,"mnemonic_sha256":"6c358da05cc3dee220783199a1e8d976ad238bf400e389fd1bc0f4335798fccd"},
+    "body": {"function":"FUN_00768a4d","address":"0x00768a4d","size":1427,"mnemonic_sha256":"b9fd2052029a1f80068d00c9cb5353a5180af538a38a01699677761a54438763","receiver_capture":"0x00768a63 mov esi,ecx"},
+    "exact_hdvehicle_root": "0x00c13700"
+  },
+  "plus_0x4330_path": {
+    "materialization":"0x00768c16 lea ecx,[esi+0x4330]",
+    "callee":"FUN_00772570",
+    "callsite":"0x00768c1c",
+    "target_relative_offset":"+0x21b8",
+    "callee_evidence": {
+      "address":"0x00772570",
+      "size":128,
+      "mnemonic_sha256":"99268e9309b07eb265c80f557853493aad77c203f78dd06bc853d7d6e3b98b4b",
+      "direct_target_read":false,
+      "direct_target_write":false,
+      "only_same_receiver_callee":"FUN_00771db0"
+    },
+    "descendant": {
+      "function":"FUN_00771db0",
+      "address":"0x00771db0",
+      "size":87,
+      "mnemonic_sha256":"37a1584aa3c1f7136e8a1d9989220a0d9f3afafc36238f41284043f99bbaa63b",
+      "receiver_reads":["+0x1b4c","+0x1b40","+0x1b38"],
+      "derived_subobject":"+0x2128",
+      "target_plus_0x21b8_access":false,
+      "same_receiver_forwarding":false
+    }
+  },
+  "adjudication": {
+    "escaped_root_to_plus_0x4330_identity_proven": true,
+    "runtime_path_writes_plus_0x21b8": false,
+    "runtime_path_surface_complete": true,
+    "global_non_literal_hdvehicle_64e8_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes the exact escaped-root runtime path through FUN_00768a30/FUN_00768a4d only.",
+    "Compiler unwind cleanup at Unwind@00a7063f is not promoted to a runtime producer path.",
+    "Other escaped or reconstructed HDVehicle+0x4330 aliases remain open.",
+    "No identity is inferred from offset equality; root identity is pinned by the wrappers' literal 0x00c13700 load."
+  ],
+  "next_step": "Search remaining non-wrapper escaped/reconstructed HDVehicle+0x4330 aliases and continue unrelated manager-root reconstruction/object-field persistence."
+}
