@@ -1,0 +1,70 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerForwardedReceiverClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream": {
+    "receiver_transfer_format": "SHIFT.PlayerVehicleRenderManagerReceiverTransferFrontier/2",
+    "bounded_direct_target_count": 17
+  },
+  "closed_paths": [
+    {
+      "direct_target": "0x00458760",
+      "thunk_target": "0x00476af0",
+      "exact_root_entry_register": "ECX",
+      "entry_root_consumed": false,
+      "proof": [
+        "0x00458760 jmp 0x00476af0 preserves ECX",
+        "0x00476af0..0x00476b03 reads only stack arguments and globals before the first call",
+        "0x00476b04 call 0x00493fb0 occurs before any read/copy/store of entry ECX",
+        "0x00476b1a mov ecx,eax replaces ECX with the helper return"
+      ],
+      "exact_outer_root_forwarded_or_persisted": false,
+      "thunk_mnemonic_sha256": "709cfc4801a695c225264f389a8b448b0adf1c00296b77d3f5dc138c7f9658cf",
+      "body_mnemonic_sha256": "11fb3876bc0534f89a01e24b1c4c5e8e324ca1c278328a9bf18ff6fe90120b70"
+    },
+    {
+      "direct_target": "0x0045f980",
+      "thunk_target": "0x004785f0",
+      "exact_root_entry_register": "ECX",
+      "root_preservation": "0x004785f4 mov esi,ecx",
+      "caller_saved_root_destroy": "0x004785f6 mov cl,[ebp+0x8] destroys exact ECX identity while ESI retains it",
+      "root_reforward": "0x00478608 mov ecx,esi; 0x0047860a call 0x0045bfc0",
+      "leaf_thunk": "0x0045bfc0 -> 0x00d51560",
+      "leaf_root_capture": "0x00d51561 mov edi,ecx",
+      "leaf_exact_root_uses": [
+        "0x00d5157f cmp dword ptr [edi+0xc],0",
+        "0x00d515ec mov ecx,dword ptr [edi+0xc]"
+      ],
+      "leaf_exact_root_store_found": false,
+      "leaf_exact_root_return_found": false,
+      "leaf_exact_root_reforward_found": false,
+      "exact_outer_root_forwarded_beyond_leaf_or_persisted": false,
+      "thunk_mnemonic_sha256": "c2f29d1b15d81670e870311f1f2ef3fcf87330a3f13e73217a5ec7c2e20a7552",
+      "body_mnemonic_sha256": "1196560935882e31b070108d1877f860ea97caaa48eb1b4f76210bcfe4321bfc",
+      "leaf_thunk_mnemonic_sha256": "2406707a21ec8ec04488eafd0edc012a57503643b3e2f92ad8a7265b6a9a1ec1",
+      "leaf_body_mnemonic_sha256": "cedb45f59e143b6b106ff80e8fd6995c06449019025ae825c4cad948f3e1377a"
+    }
+  ],
+  "adjudication": {
+    "closed_path_count": 2,
+    "these_forwarded_receiver_paths_closed_negative": true,
+    "opaque_callee_created_or_returned_alias_surface_complete": false,
+    "external_or_unknown_origin_alias_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This contract closes only the two named direct-target forwarding paths.",
+    "A field loaded from root+0xc is a derived value and is not promoted to the exact outer root.",
+    "No identity is inferred from matching numeric offsets."
+  ],
+  "next_step": "Continue the remaining direct-target opaque-callee paths and then unknown-origin/two-unknown-origin alias provenance."
+}
