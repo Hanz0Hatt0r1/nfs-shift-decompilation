@@ -23,7 +23,7 @@ def test_unique_slot_address_is_immediately_dereferenced_and_derived():
 def test_derived_path_reuses_bounded_item_primitives():
     data = load_evidence()
     path = data["derived_path"]
-    assert "0x0048fc70" in path["first_consumer"]
+    assert "FUN_0048fc70" in path["first_consumer"]
     assert path["fun_0048fc70"]["allocator_stores_same_derived_pointer"] is True
     assert path["fun_0048fc70"]["subtracts_0x780_or_recovers_outer_root"] is False
     assert path["fun_00493410"]["recovers_item_pointer_via_FUN_00632fe0"] is True
