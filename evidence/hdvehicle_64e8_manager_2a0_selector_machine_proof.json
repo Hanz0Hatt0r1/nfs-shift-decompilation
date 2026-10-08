@@ -1,0 +1,54 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager2a0SelectorMachineProof/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "ghidra_database_format": "SHIFT.GhidraEvidenceDatabase/1",
+    "evidence_kind": "retail machine-code singleton-root selector proof plus Ghidra vtable corroboration"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager2a0CandidateRejection/1",
+  "function": {
+    "name": "FUN_0045da80",
+    "address": "0x0045da80",
+    "calling_convention": "__stdcall-compatible body with ret 0x8",
+    "vtable_candidate": "0x00ab563c",
+    "vtable_slot": 0
+  },
+  "machine_proof": {
+    "singleton_getter_call": "0x0045da84 CALL 0x00489ad0",
+    "singleton_capture": "0x0045da8c MOV ESI,EAX",
+    "index_parameter": "EDX = [EBP+0x0c]",
+    "bounds_compare": "0x0045da8e CMP EDX,[ESI+0x2c4]",
+    "out_of_range_zero": "0x0045da98 MOV [ESI+0x378],EAX after XOR EAX,EAX",
+    "collection_receiver": "0x0045daa3 LEA ECX,[ESI+0x2a0]",
+    "index_accessor_call": "0x0045daa9 CALL FUN_0054ed00",
+    "selected_entry_store": "0x0045daae MOV [ESI+0x378],EAX"
+  },
+  "collection_accessor": {
+    "function": "FUN_0054ed00",
+    "known_role": "read-only indexed entry address accessor",
+    "collection_fields": ["+0x0 stride", "+0x28 count", "+0x30 base"],
+    "mutation": false
+  },
+  "adjudication": {
+    "singleton_manager_root_proven": true,
+    "manager_plus_0x2a0_indexed_selection_proven": true,
+    "manager_plus_0x378_receives_selected_entry_or_zero": true,
+    "selected_entry_identity_is_hdvehicle_4330": false,
+    "manager_plus_0x2a0_insertion_producer_proven": false,
+    "manager_plus_0x374_join_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This proof establishes exact singleton-manager selection semantics only; it does not establish who inserts entries into manager+0x2a0.",
+    "manager+0x378 receives an entry address returned by FUN_0054ed00, but that address is not yet joined to HDVehicle+0x4330.",
+    "The heuristic vtable placement of FUN_0045da80 is corroborative and is not required for the singleton-root machine proof.",
+    "No control semantics are assigned to the selected entry without a value-transfer join to the selected HDVehicle root."
+  ],
+  "next_step": "Trace writers/mutators that populate the exact FUN_00489ad0()+0x2a0 collection, then join a selected collection entry to HDVehicle+0x4330 or reject that identity."
+}
