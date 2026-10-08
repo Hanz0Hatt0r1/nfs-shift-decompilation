@@ -22,7 +22,7 @@
     "exact_outer_root_stored_forwarded_or_returned_before_derivation": false
   },
   "derived_path": {
-    "first_consumer": "0x004fb9c4 call FUN_0048fc70 with ECX=outer+0x780",
+    "first_consumer": "0x004fb9c4 call 0x0048fc70 with ECX=outer+0x780",
     "second_consumer": "0x004fb9e1 prepares ECX=outer+0x780 for FUN_00493410",
     "fun_0048fc70": {
       "address": "0x0048fc70",
