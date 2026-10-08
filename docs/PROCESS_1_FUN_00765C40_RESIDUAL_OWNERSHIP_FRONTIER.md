@@ -1,12 +1,12 @@
-# Process 1 — `FUN_00765c40` residual ownership frontier
+# Process 1 — `FUN_00765c40` ownership handoff
 
 ## BLOCKER
 
-P1.2 remains the Process 1 proof gate for Process 2 P2.4. The collision/world lookup boundary is now machine-backed and closed as an explicit typed external provider boundary; only exhaustive residual side-effect classification still blocks complete `FUN_00765c40` removal.
+P1.2 was the Process 1 proof gate for Process 2 P2.4. It is now complete.
 
 ## Closed surface
 
-The following selected-session work is no longer open:
+The complete selected-session proof surface is now positively owned:
 
 ```text
 selected per-pass world position       CLOSED
@@ -17,28 +17,55 @@ four wheel +0x738 load terms           CLOSED
 FUN_0074f560 provider pointer domain   CLOSED: global 0x00c133ac
 scene-query virtual dispatch           CLOSED: vtable slot +0x1c0
 0x58-byte surface-record provenance    CLOSED
+direct FUN_00765c40 write surface      CLOSED
+callee-mediated object side effects    CLOSED
 ```
 
-The PC-retail machine proof is `SHIFT.Fun0074f560CollisionProviderMachineProof/1`. It establishes the exact lower dispatch without assigning an unproven PhysX/engine class name. The implementation behind the virtual slot remains external and must be preserved as an explicit typed provider callback/interface.
+The lower collision implementation remains external by design. Process 2 must preserve `0x00c133ac` / vtable slot `+0x1c0` as a typed scene-query boundary until that lower implementation is independently replaced.
 
-## Remaining P1.2 proof
+## Final P1.2b closure
 
-Only **P1.2b** remains: classify every source-visible `FUN_00765c40` write and side-effecting callee outside the already-closed query input/output, collision-provider boundary, and four `+0x738` load terms.
+The last unresolved callee was `FUN_007584f0` (`0x007584f0..0x00758802`). The retail machine span is 787 bytes with SHA-256 `252bade571ca266a620628da463c4cd3b3ca81333df0746d438cd95f77e2295f`.
 
-The source-hash-locked helper `tools/ghidra/inventory_fun_00765c40_write_surface.py` exists specifically for this audit. Lack of a currently typed field is not proof that a write does not exist.
+It is called at `0x00765f2b` with `ecx = HDVehicle`. Its persistent object-state writes are exactly:
 
-## Consumer
+- qword `HDVehicle+0xd40`;
+- qword `HDVehicle+0x17c0`;
+- float `HDVehicle+0x3420`.
 
-Process 2 P2.4 may consume the typed provider boundary at `0x00c133ac` / vtable slot `+0x1c0`. It must not substitute a guessed track query and must not remove the complete residual `FUN_00765c40` pass until P1.2b closes.
+The first two are the two loop destinations of `[HDVehicle + index*0xa80 + 0xd40]` for indices 0 and 1. The final float stores the result of scalar helper `0x00783a30`.
 
-## Gates
+All nested calls are classified. Vector transform/add/scale/cross helpers write stack-local or explicit output buffers; `0x007aefb0` is already classified as receiver-read-only; `0x00900b10`/`0x00900c40` are x87 cosine/sine wrappers that receive no HDVehicle/BODY pointer; `0x00783a30` is a scalar interpolation helper. No additional persistent game-object write is reachable through those calls.
+
+No physical field names are assigned to `+0xd40`, `+0x17c0`, or `+0x3420`.
+
+## CONSUMER
+
+Process 2 P2.4 now has a complete Process 1 handoff. It may internalize the residual `FUN_00765c40` pass in exact retail order while retaining the lower collision scene-query dispatch as an explicit typed external boundary.
+
+## GATES_CHANGED
 
 - P1.2a: **closed**;
-- P1.2b: **open**;
-- P1.2 complete: **false**;
-- `FUN_00765c40` provider removal authorized: **false**;
-- external-provider count: **7**.
+- P1.2b: **closed**;
+- P1.2 complete: **true**;
+- `FUN_00765c40` provider removal authorized for Process 2: **true**;
+- lower collision scene-query implementation internalized: **false**;
+- external-provider count before Process 2 consumption: **7**.
 
-## Next step
+The provider count is deliberately not reduced in this Process 1 proof PR. The count changes only when Process 2 actually lands the runtime removal/replacement.
 
-Run the pinned residual write/call inventory against the authoritative PC-retail `SHIFT.exe.c`, resolve aliases for every assignment and side-effecting call, and publish the smallest positive residual-state contract. Do not reopen P1.2a.
+## LIMITS
+
+This is an ownership/proof handoff, not a native runtime replacement. The x87 math wrappers may touch process floating-point environment internally; this proof only establishes that no HDVehicle/BODY pointer is passed to them and no additional persistent game-object mutation is introduced by that path.
+
+## TESTS
+
+`tests/test_process1_fun_007584f0_machine_side_effect_proof.py` pins the retail machine span, caller receiver, three persistent destinations, nested helper classification and completed P1.2 gate. Existing frontier tests are updated to require an empty unresolved-callee set.
+
+## NEXT_OWNER
+
+Process 2 P2.4.
+
+## NEXT_STEP
+
+Consume the completed P1.2 handoff, preserve exact pass order and all proven state writes, keep the `0x00c133ac/+0x1c0` scene-query boundary explicit, and remove the top-level residual callback only in the native runtime change that consumes this proof.
