@@ -21,7 +21,7 @@ Current selected-BMW ownership is:
 
 The active `Fun00765c40ExternalPassResult` contract is `/5`. It preserves the historical `/4` prefix and appends an optional, non-authoritative `SHIFT.Fun00765c40ResidualProducerHandoff/1`. Historical Phase744 evidence remains pinned to `/4` because it records the collision-output handoff milestone, not the current result version.
 
-The producer handoff is now threaded through the provider result only. It is **not** yet captured in `NativeVehicleProviderSessionResult`, and its presence does not make any producer formula native-owned.
+The producer handoff is now threaded through both the provider result and `NativeVehicleProviderSessionResult`. The session captures one optional witness per recovered physics pass and exposes a capture-count telemetry field. The witness is still **not authoritative**, and its presence does not make any producer formula native-owned or permit automatic composed-executor consumption.
 
 ## REMAINING PRODUCER FRONTIER
 
@@ -49,7 +49,8 @@ No formula or owner in that list is promoted until source or machine evidence pr
 - External provider count remains 7.
 - The lower collision provider is not renamed or semantically inferred.
 - The `/5` producer witness is optional and non-authoritative.
+- Session capture is local to one explicit step and adds no persistent session state.
 
 ## NEXT STEP
 
-Capture the optional `/5` producer handoff per pass in `NativeVehicleProviderSessionResult`. It remains a witness until selected-provider source-backed production is available. Provider removal remains fail-closed until the explicit producer list is empty.
+Populate one or more captured witness fields from source-backed selected-provider production and compare them against an independently reconstructed native producer. Only a positively proven producer may then feed the composed executor. Provider removal remains fail-closed until the explicit producer list is empty.
