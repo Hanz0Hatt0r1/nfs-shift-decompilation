@@ -2,11 +2,11 @@
 
 ## BLOCKER
 
-The historical `SHIFT.NativeVehicleExternalProviderFrontierCurrent/1` audit is anchored at the Phase726 state. Later P2.4 work changed selected-query ownership and added a composed residual executor, so treating the Phase726 description as current now misstates the runtime boundary.
+The historical `SHIFT.NativeVehicleExternalProviderFrontierCurrent/1` audit is anchored at the Phase726 state. Later P2.4 work changed selected-query ownership, added a composed residual executor, and typed the remaining pure-data producer witness, so treating the Phase726 description as current now misstates the runtime boundary.
 
 ## OUTPUT
 
-`SHIFT.NativeVehicleExternalProviderFrontierP2_4Current/1` overlays only the later positive P2.4 changes while leaving the historical audit untouched.
+`SHIFT.NativeVehicleExternalProviderFrontierP2_4Current/1` overlays only the later positive P2.4 changes while leaving historical evidence untouched.
 
 Current selected-BMW ownership is:
 
@@ -19,7 +19,9 @@ Current selected-BMW ownership is:
 - composed eleven-stage residual executor: present;
 - lower scene-query implementation at global `0x00c133ac`, vtable `+0x1c0`: still external.
 
-The active `Fun00765c40ExternalPassResult` contract is `/4`, not the historical `/2` recorded by the Phase726 audit.
+The active `Fun00765c40ExternalPassResult` contract is `/5`. It preserves the historical `/4` prefix and appends an optional, non-authoritative `SHIFT.Fun00765c40ResidualProducerHandoff/1`. Historical Phase744 evidence remains pinned to `/4` because it records the collision-output handoff milestone, not the current result version.
+
+The producer handoff is now threaded through the provider result only. It is **not** yet captured in `NativeVehicleProviderSessionResult`, and its presence does not make any producer formula native-owned.
 
 ## REMAINING PRODUCER FRONTIER
 
@@ -46,7 +48,8 @@ No formula or owner in that list is promoted until source or machine evidence pr
 - The top-level provider remains present.
 - External provider count remains 7.
 - The lower collision provider is not renamed or semantically inferred.
+- The `/5` producer witness is optional and non-authoritative.
 
 ## NEXT STEP
 
-Trace ownership/refresh lifetime for `HDVehicle+0x98`, or recover one remaining explicit producer formula from pinned PC-retail evidence, then consume it in `SHIFT.Fun00765c40ComposedResidualExecutor/1`. Provider removal remains fail-closed until the explicit producer list is empty.
+Capture the optional `/5` producer handoff per pass in `NativeVehicleProviderSessionResult`. It remains a witness until selected-provider source-backed production is available. Provider removal remains fail-closed until the explicit producer list is empty.

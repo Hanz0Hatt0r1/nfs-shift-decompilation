@@ -1,6 +1,6 @@
 #pragma once
 
-#include "shift_fun_00765c40_external_pass_result.hpp"
+#include "shift_fun_00765c40_collision_output_validation.hpp"
 #include "shift_fun_00765c40_load_terms.hpp"
 #include "shift_fun_00765c40_query_input_boundary.hpp"
 

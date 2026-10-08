@@ -1,16 +1,19 @@
 #pragma once
 
+#include "shift_fun_00765c40_collision_output_validation.hpp"
 #include "shift_fun_00765c40_load_terms.hpp"
 #include "shift_fun_00765c40_query_input_boundary.hpp"
+#include "shift_fun_00765c40_residual_producer_handoff.hpp"
 #include "shift_fun_00765c40_selected_bmw_query_fallback.hpp"
 
-#include <cmath>
 #include <optional>
 #include <stdexcept>
 
 namespace shift::runtime::physics {
 
 inline constexpr const char* kFun00765c40ExternalPassResultFormat =
+    "SHIFT.Fun00765c40ExternalPassResult/5";
+inline constexpr const char* kFun00765c40HistoricalCollisionOutputResultFormat =
     "SHIFT.Fun00765c40ExternalPassResult/4";
 inline constexpr const char* kFun00765c40ExternalPassInputFormat =
     "SHIFT.Fun00765c40ExternalPassInput/2";
@@ -40,64 +43,19 @@ struct Fun00765c40ExternalPassInput {
 };
 
 struct Fun00765c40ExternalPassResult {
+    // Historical /1..../4 prefix. Keep field order stable so existing aggregate
+    // providers remain source-compatible when the /5 witness is omitted.
     Fun00765c40LoadTerms load_terms{};
     Fun00765c40QueryInputBoundary query_input{};
     std::optional<std::uint64_t> returned_cache_handle{};
     std::optional<CollisionQueryOutput> query_output{};
+
+    // /5 appends a non-authoritative pure-data witness for the residual producer
+    // values grouped by SHIFT.Fun00765c40ResidualProducerHandoff/1. Absence is
+    // valid: selected providers are not required to synthesize unresolved
+    // producer formulas. Presence does not make these values native-owned.
+    std::optional<Fun00765c40ResidualProducerHandoff> residual_producer_handoff{};
 };
-
-inline void validate_fun_00765c40_collision_output_handoff(
-    const Fun00765c40QueryInputBoundary& query_input,
-    const CollisionQueryOutput& output) {
-    const auto expected = build_fun_00765c40_query_record(query_input);
-
-    if (output.query_record.query_position != expected.query_position ||
-        output.query_record.y_tolerance != expected.y_tolerance ||
-        output.query_record.max_aux != expected.max_aux ||
-        output.query_record.cache_enabled != expected.cache_enabled) {
-        throw std::invalid_argument(
-            "FUN_00765c40 collision output does not belong to the typed query input");
-    }
-    for (double value : output.normal) {
-        if (!std::isfinite(value)) {
-            throw std::invalid_argument(
-                "FUN_00765c40 collision output normal must be finite");
-        }
-    }
-
-    if (output.hit) {
-        if (!output.contact_height.has_value() ||
-            !output.returned_handle.has_value() ||
-            !output.query_record.output_height.has_value() ||
-            !output.query_record.cache_handle.has_value()) {
-            throw std::invalid_argument(
-                "FUN_00765c40 hit output is incomplete");
-        }
-        if (!std::isfinite(*output.contact_height) ||
-            *output.query_record.output_height != *output.contact_height ||
-            *output.query_record.cache_handle != *output.returned_handle) {
-            throw std::invalid_argument(
-                "FUN_00765c40 hit output fields disagree");
-        }
-    } else {
-        if (output.contact_height.has_value() ||
-            output.returned_handle.has_value() ||
-            output.query_record.output_height.has_value() ||
-            output.query_record.cache_handle != expected.cache_handle) {
-            throw std::invalid_argument(
-                "FUN_00765c40 miss output fields disagree");
-        }
-    }
-
-    const bool expected_reuse =
-        output.hit && query_input.cached_handle.has_value() &&
-        output.returned_handle.has_value() &&
-        *query_input.cached_handle == *output.returned_handle;
-    if (output.reused_cache != expected_reuse) {
-        throw std::invalid_argument(
-            "FUN_00765c40 collision output cache-reuse flag disagrees with query state");
-    }
-}
 
 inline void validate_fun_00765c40_external_pass_result(
     const Fun00765c40ExternalPassInput& input,
@@ -146,6 +104,10 @@ inline void validate_fun_00765c40_external_pass_result(
                 "FUN_00765c40 returned cache handle disagrees with FUN_007b0710 output");
         }
     }
+
+    // The /5 residual producer handoff is intentionally opaque here. Exact-width
+    // payload validation belongs to the individual stage contracts. Merely
+    // returning this witness cannot promote producer arithmetic to native-owned.
 }
 
 inline Fun00765c40QueryInputBoundary

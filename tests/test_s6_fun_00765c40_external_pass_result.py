@@ -41,15 +41,17 @@ def test_phase725_historical_scope_remains_immutable() -> None:
     assert scope["complete_FUN_00765c40_internalized"] is False
 
 
-def test_active_cpp_api_extends_historical_result_with_phase744_collision_output() -> None:
+def test_active_cpp_api_extends_historical_result_without_mutating_phase744() -> None:
     result_header = RESULT_HEADER.read_text(encoding="utf-8")
     query_input_header = QUERY_INPUT_HEADER.read_text(encoding="utf-8")
     session_header = SESSION_HEADER.read_text(encoding="utf-8")
     session_source = SESSION_SOURCE.read_text(encoding="utf-8")
 
+    assert "SHIFT.Fun00765c40ExternalPassResult/5" in result_header
     assert "SHIFT.Fun00765c40ExternalPassResult/4" in result_header
     assert "SHIFT.Fun00765c40ExternalPassInput/2" in result_header
     assert "std::optional<CollisionQueryOutput> query_output" in result_header
+    assert "std::optional<Fun00765c40ResidualProducerHandoff> residual_producer_handoff" in result_header
     assert "validate_fun_00765c40_collision_output_handoff" in result_header
     assert "selected BMW provider hid FUN_007b0710 collision output" in result_header
     assert "returned cache handle disagrees with FUN_007b0710 output" in result_header

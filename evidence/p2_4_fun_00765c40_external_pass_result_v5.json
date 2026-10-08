@@ -1,0 +1,34 @@
+{
+  "format": "SHIFT.Fun00765c40ExternalPassResult/5",
+  "ready": true,
+  "extends_historical_result": "SHIFT.Fun00765c40ExternalPassResult/4",
+  "appended_field": {
+    "name": "residual_producer_handoff",
+    "type": "optional<SHIFT.Fun00765c40ResidualProducerHandoff/1>",
+    "trailing": true,
+    "authoritative": false,
+    "required_on_selected_bmw": false,
+    "required_on_generic_fixtures": false
+  },
+  "historical_prefix_preserved": [
+    "load_terms",
+    "query_input",
+    "returned_cache_handle",
+    "query_output"
+  ],
+  "ownership": {
+    "selected_query_input_native": true,
+    "query_cache_native": true,
+    "selected_query_fallback_native": true,
+    "collision_output_typed_external": true,
+    "producer_handoff_native_computation": false,
+    "producer_handoff_session_captured": false,
+    "lower_scene_query_external": true
+  },
+  "scope": {
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_provider_removed": false,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Capture the optional residual_producer_handoff per pass in NativeVehicleProviderSession, still as a non-authoritative witness."
+}

@@ -12,7 +12,8 @@ from typing import Any
 from . import native_vehicle_external_provider_frontier_current as phase726
 
 FORMAT = "SHIFT.NativeVehicleExternalProviderFrontierP2_4Current/1"
-EXTERNAL_PASS_RESULT_FORMAT = "SHIFT.Fun00765c40ExternalPassResult/4"
+EXTERNAL_PASS_RESULT_FORMAT = "SHIFT.Fun00765c40ExternalPassResult/5"
+HISTORICAL_COLLISION_OUTPUT_RESULT_FORMAT = "SHIFT.Fun00765c40ExternalPassResult/4"
 NATIVE_SELECTED_QUERY_INPUT_FORMAT = "SHIFT.Fun00765c40NativeSelectedQueryInput/1"
 SESSION_QUERY_SNAPSHOT_FORMAT = "SHIFT.Fun00765c40SessionQuerySnapshot/1"
 SELECTED_WORLD_POSITION_FORMAT = "SHIFT.Fun00765c40SelectedBMWWorldPosition/1"
@@ -70,6 +71,7 @@ def build_current_frontier() -> dict[str, Any]:
             "provider_removal_authorized_by_process1": True,
             "provider_removed": False,
             "external_pass_result_contract": EXTERNAL_PASS_RESULT_FORMAT,
+            "historical_collision_output_result_contract": HISTORICAL_COLLISION_OUTPUT_RESULT_FORMAT,
             "native_selected_query_input_contract": NATIVE_SELECTED_QUERY_INPUT_FORMAT,
             "session_query_snapshot_contract": SESSION_QUERY_SNAPSHOT_FORMAT,
             "selected_world_position_contract": SELECTED_WORLD_POSITION_FORMAT,
@@ -78,7 +80,9 @@ def build_current_frontier() -> dict[str, Any]:
             "composed_residual_executor_contract": COMPOSED_RESIDUAL_EXECUTOR_FORMAT,
             "residual_producer_handoff_contract": RESIDUAL_PRODUCER_HANDOFF_FORMAT,
             "residual_producer_handoff_present": True,
-            "residual_producer_handoff_threaded_through_provider_result": False,
+            "residual_producer_handoff_threaded_through_provider_result": True,
+            "residual_producer_handoff_threaded_through_session_result": False,
+            "residual_producer_handoff_authoritative": False,
             "wheel_state_machine_proof_contract": WHEEL_STATE_MACHINE_PROOF_FORMAT,
             "wheel_state_source_address": "HDVehicle+0x98",
             "wheel_state_source_address_proven": True,
@@ -98,6 +102,7 @@ def build_current_frontier() -> dict[str, Any]:
         },
         "guards": {
             "historical_phase726_audit_mutated": False,
+            "historical_phase744_evidence_mutated": False,
             "external_provider_count_decremented": False,
             "lower_collision_semantics_invented": False,
             "unproven_producer_formula_invented": False,
@@ -115,6 +120,9 @@ def contract() -> dict[str, Any]:
         "upstream_frontier": report["upstream_frontier"],
         "external_provider_count": report["external_provider_count"],
         "external_pass_result_contract": fun["external_pass_result_contract"],
+        "historical_collision_output_result_contract": fun[
+            "historical_collision_output_result_contract"
+        ],
         "native_selected_query_input_contract": fun["native_selected_query_input_contract"],
         "session_query_snapshot_contract": fun["session_query_snapshot_contract"],
         "collision_output_handoff_contract": fun["collision_output_handoff_contract"],
@@ -123,6 +131,12 @@ def contract() -> dict[str, Any]:
         "residual_producer_handoff_present": fun["residual_producer_handoff_present"],
         "residual_producer_handoff_threaded_through_provider_result": fun[
             "residual_producer_handoff_threaded_through_provider_result"
+        ],
+        "residual_producer_handoff_threaded_through_session_result": fun[
+            "residual_producer_handoff_threaded_through_session_result"
+        ],
+        "residual_producer_handoff_authoritative": fun[
+            "residual_producer_handoff_authoritative"
         ],
         "wheel_state_machine_proof_contract": fun["wheel_state_machine_proof_contract"],
         "wheel_state_source_address": fun["wheel_state_source_address"],
@@ -148,6 +162,7 @@ def contract() -> dict[str, Any]:
 __all__ = [
     "FORMAT",
     "EXTERNAL_PASS_RESULT_FORMAT",
+    "HISTORICAL_COLLISION_OUTPUT_RESULT_FORMAT",
     "NATIVE_SELECTED_QUERY_INPUT_FORMAT",
     "SESSION_QUERY_SNAPSHOT_FORMAT",
     "SELECTED_WORLD_POSITION_FORMAT",

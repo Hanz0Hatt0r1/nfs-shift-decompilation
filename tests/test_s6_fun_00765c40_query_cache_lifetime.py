@@ -33,15 +33,17 @@ def test_phase740_evidence_freezes_only_cache_lifetime() -> None:
     assert scope["collision_provider_internalized"] is False
 
 
-def test_phase740_cache_ownership_survives_phase744_result_extension() -> None:
+def test_phase740_cache_ownership_survives_later_result_extensions() -> None:
     result_header = RESULT_HEADER.read_text(encoding="utf-8")
     session_header = SESSION_HEADER.read_text(encoding="utf-8")
     session_source = SESSION_SOURCE.read_text(encoding="utf-8")
+    assert "SHIFT.Fun00765c40ExternalPassResult/5" in result_header
     assert "SHIFT.Fun00765c40ExternalPassResult/4" in result_header
     assert "SHIFT.Fun00765c40ExternalPassInput/2" in result_header
     assert "std::optional<std::uint64_t> cached_handle" in result_header
     assert "std::optional<std::uint64_t> returned_cache_handle" in result_header
     assert "std::optional<CollisionQueryOutput> query_output" in result_header
+    assert "std::optional<Fun00765c40ResidualProducerHandoff> residual_producer_handoff" in result_header
     assert "result.query_input.cached_handle != input.cached_handle" in result_header
     assert "const physics::Fun00765c40ExternalPassInput& input" in session_header
     assert "fun_00765c40_query_cache_handle_" in session_header

@@ -45,17 +45,19 @@ def test_phase744_evidence_types_selected_collision_output_without_closing_provi
     assert payload["next_blocker"]["phase"] == 745
 
 
-def test_phase744_active_result_requires_output_only_on_selected_bmw_domain() -> None:
+def test_phase744_active_result_preserves_historical_v4_prefix_under_v5() -> None:
     header = RESULT_HEADER.read_text(encoding="utf-8")
+    assert "SHIFT.Fun00765c40ExternalPassResult/5" in header
     assert "SHIFT.Fun00765c40ExternalPassResult/4" in header
     assert "SHIFT.Fun00765c40ExternalPassInput/2" in header
     assert "std::optional<CollisionQueryOutput> query_output" in header
+    assert "std::optional<Fun00765c40ResidualProducerHandoff> residual_producer_handoff" in header
     assert "input.world_position.has_value() && !result.query_output.has_value()" in header
     assert "validate_fun_00765c40_collision_output_handoff" in header
     assert "result.returned_cache_handle != result.query_output->returned_handle" in header
 
 
-def test_phase744_query_scalar_helper_is_native_but_not_session_wired() -> None:
+def test_phase744_query_scalar_helper_is_native_but_historical_evidence_stays_immutable() -> None:
     header = HANDOFF_HEADER.read_text(encoding="utf-8")
     assert "SHIFT.Fun00766510QueryScalarHandoff/1" in header
     assert "CollisionQueryOutput query_output" in header
