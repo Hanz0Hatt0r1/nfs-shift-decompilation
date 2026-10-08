@@ -31,7 +31,7 @@ def test_participant_a00_callsite_is_rejected_from_manager_root():
     assert row["rejected_as_manager_374_writer"] is True
 
 
-def test_only_parent_2d0_direct_bulkcopy_callsite_remains_open():
+def test_participant_contract_keeps_its_original_bounded_adjudication():
     a = _payload()["adjudication"]
     assert a["fun_00481e20_callsite_0x004848f5_rejected"] is True
     assert a["remaining_direct_embedded_subobject_callsites"] == [
@@ -43,10 +43,10 @@ def test_only_parent_2d0_direct_bulkcopy_callsite_remains_open():
     assert a["external_provider_count"] == 7
 
 
-def test_coordination_frontier_tracks_single_remaining_direct_callsite():
+def test_coordination_preserves_participant_rejection_after_later_frontier_advances():
     coord = json.loads(COORD.read_text(encoding="utf-8"))
     p13 = next(w for w in coord["workstreams"] if w["id"] == "P1.3")
     row = next(c for c in p13["children"] if c["id"] == "P1.3.manager374")
-    assert row["status"] == "participant-bulk-copy-rejected-one-direct-callsite-open"
-    assert row["remaining_bulk_copy_direct_callsite"] == "0x0081d335 parent+0x2d0"
-    assert "0x0081d335" in row["next"]
+    assert any("0x004848f5" in item for item in row["rejected_bulk_copy_aliases"])
+    assert row["status"] == "direct-literal-bulkcopy-surface-closed-helper-alias-indirect-open"
+    assert row["direct_bulk_copy_surface_complete"] is True
