@@ -1,0 +1,86 @@
+{
+  "format": "SHIFT.Fun00765c40ResidualOwnershipFrontier/1",
+  "ready": true,
+  "purpose": "Fail-closed Process 1 join of already-positive FUN_00765c40 ownership contracts, removing solved load-term/input work from P1.2 without claiming the collision provider or unknown side effects",
+  "authority": {
+    "semantic_platform": "PC retail primary",
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "new_machine_or_source_claims_in_this_join": false,
+    "xbox_recomp_may_replace_pc_proof": false
+  },
+  "closed_inputs_and_outputs": [
+    {
+      "format": "SHIFT.Fun00765c40SelectedBMWWorldPosition/1",
+      "role": "selected BMW per-pass query world position is native-owned before the residual provider"
+    },
+    {
+      "format": "SHIFT.Fun00765c40QueryCacheLifetime/1",
+      "role": "persistent HDVehicle+0x38dc cache handle lifetime is native-owned across passes"
+    },
+    {
+      "format": "SHIFT.Fun00765c40SelectedBMWQueryFallback/1",
+      "role": "selected BMW HDVehicle+0x38e8 miss fallback setup value is source/resource-owned before the residual provider"
+    },
+    {
+      "format": "SHIFT.Fun00765c40CollisionOutputHandoff/1",
+      "role": "typed FUN_007b0710 CollisionQueryOutput and +0x38e0/+0x38e8 scalar handoff are defined; provider implementation remains external"
+    },
+    {
+      "format": "SHIFT.Fun00765c40LoadTerms/1",
+      "role": "all four per-pass wheel +0x738 f64 load terms are positively owned by FUN_00765c40 wheel jobs and typed for downstream consumption"
+    }
+  ],
+  "selected_bmw_prequery_surface": {
+    "world_position_native": true,
+    "cache_state_offset": "HDVehicle+0x38dc",
+    "cache_lifetime_native": true,
+    "miss_fallback_offset": "HDVehicle+0x38e8",
+    "miss_fallback_native": true,
+    "query_function": "FUN_007b0710",
+    "query_record_typed": true,
+    "collision_output_typed": true,
+    "collision_provider_internalized": false
+  },
+  "load_term_surface": {
+    "format": "SHIFT.Fun00765c40LoadTerms/1",
+    "wheel_array_base": "HDVehicle+0x400",
+    "wheel_count": 4,
+    "wheel_stride": "0xa80",
+    "per_wheel_field": "+0x738 f64",
+    "hdvehicle_offsets": ["0xb38", "0x15b8", "0x2038", "0x2ab8"],
+    "ownership_closed": true,
+    "must_not_be_reselected_as_P1_2_proof": true
+  },
+  "historical_scope_reconciliation": {
+    "note": "Phase739-741 evidence correctly marked load terms external at the time those narrower contracts were authored. The later SHIFT.Fun00765c40LoadTerms/1 contract supersedes only that historical open item; it does not retroactively internalize the collision provider or unknown side effects.",
+    "provider_count_reduced_by_this_join": false
+  },
+  "remaining_process_1_proof": [
+    {
+      "id": "P1.2a",
+      "target": "collision/world lookup provider below the typed FUN_007b0710 query record",
+      "reason": "The query record and returned output are typed, but the object/call that performs the retail collision/world lookup is still not source-owned as an internal provider implementation.",
+      "consumer": "Process 2 P2.4"
+    },
+    {
+      "id": "P1.2b",
+      "target": "remaining source-visible FUN_00765c40 side effects outside the closed query-input/output and load-term surfaces",
+      "reason": "Complete provider removal requires an exhaustive side-effect audit; absence from existing typed outputs is not proof of absence.",
+      "consumer": "Process 2 P2.4"
+    }
+  ],
+  "completion_gate": {
+    "p1_2_complete": false,
+    "complete_FUN_00765c40_internalized": false,
+    "fun_00765c40_provider_removal_authorized": false,
+    "external_provider_count": 7,
+    "requirements": [
+      "positively identify and source-own the collision/world lookup object/call below FUN_007b0710 or preserve it as an explicit typed provider boundary",
+      "classify every remaining source-visible FUN_00765c40 side effect not represented by the closed contracts",
+      "publish a Process 1 handoff that lets Process 2 preserve exact pass order without re-proving the four +0x738 load terms"
+    ]
+  },
+  "next_owner": "Process 1",
+  "next_step": "Trace the collision/world lookup object/call beneath FUN_007b0710; in parallel audit the residual FUN_00765c40 body for side effects not covered by the selected query surface or four closed +0x738 load terms."
+}
