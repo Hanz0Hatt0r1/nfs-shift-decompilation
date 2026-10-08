@@ -1,0 +1,45 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374SimpleArithmeticReconstructionSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_bytes_adjudicate": true,
+    "disassembly_role": "navigation and bounded instruction-pattern inventory"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374DirectSingletonReferenceSurface/1",
+  "manager_singleton": {
+    "address": "0x00bc9fc0",
+    "target_offset": "+0x374",
+    "target_address": "0x00bca334"
+  },
+  "scan": {
+    "pattern": "mov r32, imm32 followed by same-register add/sub/lea arithmetic before call/jmp/ret/int3 or register overwrite",
+    "lookahead_instruction_limit": 15,
+    "general_purpose_registers": ["eax","ebx","ecx","edx","esi","edi","ebp"],
+    "mov_immediate_seed_count": 38128,
+    "known_exact_literal_seed_count": 3,
+    "same_register_arithmetic_transition_count": 499,
+    "non_literal_chains_reconstructing_exact_singleton_count": 0,
+    "known_literal_sites": ["0x00489ae3","0x00489afa","0x00a9c5a0"]
+  },
+  "adjudication": {
+    "simple_immediate_arithmetic_reconstruction_surface_complete": true,
+    "simple_non_literal_reconstruction_site_count": 0,
+    "surface_can_create_unrelated_manager_root": false,
+    "getter_result_persistence_surface_complete": true,
+    "direct_singleton_immediate_surface_complete": true,
+    "load_or_table_derived_reconstruction_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only straight-line immediate arithmetic reconstruction from mov r32,imm32 through same-register add/sub/lea before control transfer or overwrite.",
+    "It does not close roots reconstructed from memory loads, tables, multiple-register arithmetic, opaque helper returns, or indirect dataflow.",
+    "No identity is inferred from numeric offset equality."
+  ],
+  "next_step": "Trace load/table-derived or multi-register Participants Manager root reconstruction and continue remaining non-wrapper HDVehicle+0x4330 aliases."
+}

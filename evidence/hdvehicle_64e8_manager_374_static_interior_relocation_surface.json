@@ -1,0 +1,48 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374StaticInteriorRelocationSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "whole-PE aligned static-cell scan plus PE relocation-directory inspection"
+  },
+  "manager": {
+    "root": "0x00bc9fc0",
+    "target_offset": "+0x374",
+    "scanned_interior_range": {
+      "start": "0x00bc9fc0",
+      "end_exclusive": "0x00bca4c0",
+      "size": "0x500"
+    }
+  },
+  "static_cell_scan": {
+    "alignment_bytes": 4,
+    "sections": [".rdata", ".data"],
+    "aligned_cells_in_manager_range": 0,
+    "can_load_static_interior_pointer_and_subtract_to_root": false
+  },
+  "relocation_surface": {
+    "coff_relocations_stripped": true,
+    "base_relocation_directory_rva": "0x00000000",
+    "base_relocation_directory_size": "0x00000000",
+    "base_relocation_entries_available": false,
+    "can_reconstruct_root_from_shipped_base_relocation_table": false
+  },
+  "adjudication": {
+    "static_interior_pointer_surface_complete": true,
+    "relocation_derived_surface_complete": true,
+    "surface_can_create_unrelated_manager_root": false,
+    "runtime_created_or_opaque_manager_root_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The static-cell statement is limited to 4-byte aligned cells in .rdata and .data over the bounded manager interior range.",
+    "Runtime-created pointers, opaque helper returns, indirect external initialization, and unrecognized runtime transforms remain open.",
+    "No identity is inferred from matching offsets."
+  ],
+  "next_step": "Trace runtime-created/opaque Participants Manager roots and keep the manager+0x374 to HDVehicle+0x4330 join fail-closed until every surviving runtime source is adjudicated."
+}
