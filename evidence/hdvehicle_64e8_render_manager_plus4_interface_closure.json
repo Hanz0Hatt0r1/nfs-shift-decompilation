@@ -1,0 +1,87 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerPlus4InterfaceClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "producer": {
+    "function": "FUN_0040d6a0",
+    "root_load": "0x0040d834 mov eax,[0x00bc185c]",
+    "derived_materialization": "0x0040d83d lea esi,[eax+0x4]",
+    "singleton_getter": "FUN_0080bfb0",
+    "singleton_root": "0x00c24d80",
+    "persistent_store": "0x0040d84b [FUN_0080bfb0()+0x574]=outer+0x4"
+  },
+  "exact_owner_field_surface": {
+    "singleton_getter_direct_call_count": 313,
+    "exact_owner_plus_0x574_access_count": 26,
+    "writer_count": 1,
+    "guard_compare_count": 2,
+    "loaded_consumer_count": 23,
+    "root_minus_4_reconstruction_count": 0,
+    "derived_pointer_return_count": 0,
+    "derived_pointer_nonstack_store_count": 0,
+    "derived_pointer_stack_local_store_count": 1
+  },
+  "secondary_vtable": {
+    "constructor": "FUN_0045ef50",
+    "vptr_store": "0x0045ef7e [outer+0x4]=0x00ab55f0",
+    "vtable": "0x00ab55f0",
+    "reached_dispatches": [
+      {
+        "callsite": "0x0050ad2a",
+        "slot": "+0x2c",
+        "target": "FUN_0045d870",
+        "target_address": "0x0045d870",
+        "incoming_ecx_used_as_root": false,
+        "this_minus_4_reconstruction": false,
+        "manager_getter_used": true
+      },
+      {
+        "callsite": "0x0081d328",
+        "slot": "+0x1c",
+        "target": "FUN_0045da00",
+        "target_address": "0x0045da00",
+        "incoming_ecx_used_as_root": false,
+        "this_minus_4_reconstruction": false,
+        "manager_getter_used": true
+      },
+      {
+        "callsite": "0x0082357f",
+        "slot": "+0x04",
+        "target": "FUN_0045d900",
+        "target_address": "0x0045d900",
+        "incoming_ecx_used_as_root": false,
+        "this_minus_4_reconstruction": false,
+        "manager_getter_used": true
+      }
+    ]
+  },
+  "stack_local_path": {
+    "store": "0x0081d306 [ebp-0x64]=outer+0x4",
+    "same_value_kept_in_edi": true,
+    "dispatch": "0x0081d328 vslot+0x1c",
+    "escapes_stack_frame_as_pointer": false
+  },
+  "adjudication": {
+    "persistent_outer_plus_4_alias_identity_complete": true,
+    "outer_plus_4_reconstructs_exact_outer_root": false,
+    "outer_plus_4_interface_surface_closed_negative_for_exact_root_reconstruction": true,
+    "outer_plus_0x780_derived_alias_surface_complete": false,
+    "callee_created_or_external_exact_root_alias_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_alias_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only the persistent outer+0x4 secondary-interface alias rooted by the exact singleton+0x574 field.",
+    "The two outer+0x780 LEA-derived paths remain separate and open in this contract.",
+    "No offset equality is used as object identity."
+  ],
+  "next_step": "Bound the two outer+0x780 call-only aliases through FUN_0070e1c0 and continue callee-created/external exact-root plus two-unknown-origin HDVehicle+0x4330 provenance."
+}
