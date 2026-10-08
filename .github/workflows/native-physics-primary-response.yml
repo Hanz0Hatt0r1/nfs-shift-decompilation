@@ -1,0 +1,125 @@
+name: native-physics-primary-response
+
+on:
+  push:
+    paths:
+      - 'native_runtime/include/shift_fun_00766510_primary_response_application.hpp'
+      - 'native_runtime/tests/fun_00766510_primary_response_application_check.cpp'
+      - 'native_runtime/include/shift_body_accumulator_primitives.hpp'
+      - 'native_runtime/src/body_accumulator_primitives.cpp'
+      - 'native_runtime/cmake/phase741.cmake'
+      - 'native_runtime/cmake/phase742.cmake'
+      - 'native_runtime/cmake/phase745.cmake'
+      - 'native_runtime/cmake/phase746.cmake'
+      - 'tests/test_s6_fun_00766510_primary_response_application.py'
+      - 'tests/test_s6_fun_00766510_primary_caller_accumulator.py'
+      - 'evidence/fun_00766510_primary_response_application.json'
+      - 'evidence/fun_00766510_primary_caller_accumulator.json'
+      - 'evidence/phase742_next_blocker.md'
+      - 'evidence/phase746_next_blocker.md'
+      - 'docs/PHASE742_FUN_00766510_PRIMARY_RESPONSE_APPLICATION.md'
+      - 'docs/PHASE742_SCOPE.md'
+      - 'docs/PHASE746_FUN_00766510_PRIMARY_CALLER_ACCUMULATOR.md'
+      - 'docs/PHASE746_SCOPE.md'
+      - 'coordination/ci_migrations/native_physics_primary_response_742_746.json'
+      - 'tests/test_ci_workflow_migration_primary_response.py'
+      - '.github/workflows/native-physics-primary-response.yml'
+  pull_request:
+    paths:
+      - 'native_runtime/include/shift_fun_00766510_primary_response_application.hpp'
+      - 'native_runtime/tests/fun_00766510_primary_response_application_check.cpp'
+      - 'native_runtime/include/shift_body_accumulator_primitives.hpp'
+      - 'native_runtime/src/body_accumulator_primitives.cpp'
+      - 'native_runtime/cmake/phase741.cmake'
+      - 'native_runtime/cmake/phase742.cmake'
+      - 'native_runtime/cmake/phase745.cmake'
+      - 'native_runtime/cmake/phase746.cmake'
+      - 'tests/test_s6_fun_00766510_primary_response_application.py'
+      - 'tests/test_s6_fun_00766510_primary_caller_accumulator.py'
+      - 'evidence/fun_00766510_primary_response_application.json'
+      - 'evidence/fun_00766510_primary_caller_accumulator.json'
+      - 'evidence/phase742_next_blocker.md'
+      - 'evidence/phase746_next_blocker.md'
+      - 'docs/PHASE742_FUN_00766510_PRIMARY_RESPONSE_APPLICATION.md'
+      - 'docs/PHASE742_SCOPE.md'
+      - 'docs/PHASE746_FUN_00766510_PRIMARY_CALLER_ACCUMULATOR.md'
+      - 'docs/PHASE746_SCOPE.md'
+      - 'coordination/ci_migrations/native_physics_primary_response_742_746.json'
+      - 'tests/test_ci_workflow_migration_primary_response.py'
+      - '.github/workflows/native-physics-primary-response.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: native-physics-primary-response-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  primary-response-regressions:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run primary-response Python regressions
+        run: >-
+          python3 -m pytest -q
+          tests/test_s6_fun_00766510_primary_response_application.py
+          tests/test_s6_fun_00766510_primary_caller_accumulator.py
+
+      - name: Validate primary-response evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          application = json.loads(Path('evidence/fun_00766510_primary_response_application.json').read_text())
+          assert application['format'] == 'SHIFT.Fun00766510PrimaryResponseApplication/1'
+          assert application['ready'] is True
+          assert application['pc_machine']['transform_and_application_span']['raw_byte_sha256'] == 'db2e2358db25f5cc7a6d869e2a346fc40b0562702c79a32ea4245b4d4ea7dc57'
+          assert application['ownership']['selected_bmw_body_index'] == 0
+          assert application['scope']['primary_response_application_internalized'] is True
+          assert application['scope']['complete_FUN_00766510_internalized'] is False
+          assert application['scope']['external_provider_count_after'] == 7
+
+          accumulator = json.loads(Path('evidence/fun_00766510_primary_caller_accumulator.json').read_text())
+          assert accumulator['format'] == 'SHIFT.Fun00766510PrimaryCallerAccumulator/1'
+          assert accumulator['ready'] is True
+          assert accumulator['source']['cross_and_caller_store_span']['raw_byte_sha256'] == '5813de173dee954d843b69c1b0bf9491863f1094b858509bdf0f03d01183be2a'
+          assert accumulator['native_contract']['delta_is_recomputed_from_body_difference'] is False
+          assert accumulator['scope']['external_provider_count_after'] == 7
+          assert accumulator['scope']['contact_response_provider_removed'] is False
+          PY
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build consolidated primary-response regressions
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_fun_00766510_primary_response_application_check
+          shift_runtime_wheel_contact_response_check
+          shift_runtime_aux_contact_pair_check
+          shift_runtime_body_accumulator_primitives_check
+
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_fun_00766510_primary_response_application|shift_runtime_wheel_contact_response|shift_runtime_aux_contact_pair|shift_runtime_body_accumulator_primitives)$'
+
+      - name: Verify primary-response native report
+        run: |
+          mkdir -p out/native-physics-primary-response
+          native_runtime/build/shift_runtime_fun_00766510_primary_response_application_check \
+            > out/native-physics-primary-response/fun_00766510_primary_response_application.json
+          grep -q '"format":"SHIFT.Fun00766510PrimaryResponseApplication/2"' \
+            out/native-physics-primary-response/fun_00766510_primary_response_application.json
+          grep -q '"caller_accumulator_delta_native":true' \
+            out/native-physics-primary-response/fun_00766510_primary_response_application.json
+          grep -q '"contact_response_provider_removed":false' \
+            out/native-physics-primary-response/fun_00766510_primary_response_application.json
+          grep -q '"external_provider_count":7' \
+            out/native-physics-primary-response/fun_00766510_primary_response_application.json
