@@ -30,6 +30,8 @@
     "fun_00766510_direct_caller_accumulator_surface_ready": true,
     "fun_00766510_p1_residual_frontier_ready": true,
     "fun_00766510_p1_complete": false,
+    "controller1_direct_control_timing_surface_ready": true,
+    "controller1_control_timing_complete": false,
     "retail_control_chain_complete": false,
     "retail_camera_follow_ready": false,
     "playable_slice_complete": false
@@ -56,7 +58,8 @@
         {
           "id": "P1.3",
           "state": "ready-parallel",
-          "task": "Finish retail input -> drivetrain/wheel/control producer provenance and Controller #1 timing/wake constraints required by that chain",
+          "task": "Finish retail input -> drivetrain/wheel/control producer provenance. The direct/source-visible Controller #1 control timing surface is now joined; the only remaining timing ambiguity is indirect/native APC injection into the alertable worker. Render-frame phase locking is not a prerequisite for proving the control producer chain.",
+          "contract": "SHIFT.Process1Controller1ControlTimingFrontier/1",
           "consumer": "Process 2 P2.6"
         },
         {
