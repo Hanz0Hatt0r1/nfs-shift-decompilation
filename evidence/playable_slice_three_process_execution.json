@@ -33,7 +33,7 @@
     "controller1_direct_control_timing_surface_ready": true,
     "controller1_control_timing_complete": false,
     "retail_control_chain_complete": false,
-    "retail_camera_follow_ready": false,
+    "retail_camera_follow_ready": true,
     "final_playable_smoke_entrypoint_ready": true,
     "final_playable_smoke_currently_runnable": false,
     "playable_slice_complete": false
@@ -66,8 +66,9 @@
         },
         {
           "id": "P1.4",
-          "state": "queued",
-          "task": "Prove retail camera-follow source and timing against the admitted current vehicle transform",
+          "state": "complete",
+          "task": "Completed retail camera-follow source, selected-player target dependency, physics-before-camera ordering, and current persistent BMW world-transform handoff for Process 2 consumption.",
+          "contract": "SHIFT.CameraFollowP14CurrentVehicleTransformHandoff/1",
           "consumer": "Process 2 camera feed and Process 3 P3.5"
         }
       ]
@@ -144,16 +145,16 @@
         },
         {
           "id": "P3.5",
-          "state": "blocked-on-handoff",
-          "task": "Consume Process 2 fresh vehicle transform and later Process 1/2 camera source/timing feed for continuous camera + Vulkan presentation",
-          "depends_on": ["P1.4", "Process 2 camera feed"]
+          "state": "blocked-on-process-2-camera-feed",
+          "task": "Consume the completed Process 1D camera semantics/current-transform handoff after Process 2 implements the runtime camera feed, then present continuous camera + Vulkan output.",
+          "depends_on": ["Process 2 camera feed"]
         },
         {
           "id": "P3.6",
           "state": "mechanically-ready-blocked-on-upstream",
-          "task": "Run the merged fail-closed final exact resource-driven Silverstone + BMW continuous smoke entrypoint with no test-only core vehicle transform once retail control and camera gates are positive",
+          "task": "Run the merged fail-closed final exact resource-driven Silverstone + BMW continuous smoke entrypoint with no test-only core vehicle transform once retail control and runtime camera-feed gates are positive",
           "tracking": "PR #1482",
-          "depends_on": ["P3.3", "retail_control_chain_complete", "retail_camera_follow_ready"]
+          "depends_on": ["P3.3", "retail_control_chain_complete", "Process 2 camera feed"]
         }
       ]
     }

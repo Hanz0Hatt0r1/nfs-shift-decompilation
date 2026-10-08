@@ -22,7 +22,7 @@ Updated: **2026-10-08**
 | --- | --- |
 | P1 contact-response proof complete | open |
 | Retail control chain | open |
-| Retail camera follow | open |
+| Retail camera follow | positive |
 | Final smoke runnable | open |
 
 ## Development lanes
@@ -31,9 +31,9 @@ Updated: **2026-10-08**
 | --- | --- | --- | --- |
 | P1A-contact | Process 1A | P1.1=current, P1.2=complete | P2.3, P2.4 |
 | P1B-control | Process 1B | P1.3=ready-parallel | P2.6, P1.4 when target identity is required |
-| P1D-camera | Process 1D | P1.4=queued | Process 2 camera feed, P3.5 |
+| P1D-camera | Process 1D | P1.4=complete | Process 2 camera feed, P3.5 |
 | P2-runtime | Process 2 | P2.1=complete, P2.2=complete, P2.3=current-blocked-on-process-1, P2.4=ready-to-consume, P2.5=queued, P2.6=blocked-on-process-1 | P3.5, P3.6 |
-| P3-integration | Process 3 | P3.1=complete, P3.2=complete, P3.3=complete, P3.4=continuous, P3.5=blocked-on-handoff, P3.6=mechanically-ready-blocked-on-upstream | native playable Linux vertical slice |
+| P3-integration | Process 3 | P3.1=complete, P3.2=complete, P3.3=complete, P3.4=continuous, P3.5=blocked-on-process-2-camera-feed, P3.6=mechanically-ready-blocked-on-upstream | native playable Linux vertical slice |
 
 ## Parallel work available now
 
@@ -44,7 +44,7 @@ Updated: **2026-10-08**
 
 ## Blocker burndown
 
-Terminal milestone gates closed: **0/5**.
+Terminal milestone gates closed: **1/5**.
 
 The provider count is an architectural metric. It changes only when a complete external callback boundary is removed without dropping source-visible behavior.
 
