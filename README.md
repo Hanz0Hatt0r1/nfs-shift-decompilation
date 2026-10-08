@@ -28,36 +28,79 @@ Vulkan rendering
 native playable Linux vertical slice
 ```
 
-The project is not trying to decompile every `SHIFT.exe` function before this milestone. Work that does not shorten the active blocker, produce evidence required by the next edge, or create immediately reusable infrastructure for that edge is deferred.
+The project is not trying to decompile every `SHIFT.exe` function before this milestone. Work that does not shorten an active blocker, produce evidence required by the next edge, or create immediately reusable infrastructure for that edge is deferred.
 
 ## Active development model
 
-The first playable slice now uses **one active development process**.
+The first playable slice uses **three active parallel processes with explicit ownership**.
 
 ```text
-static proof / ABI / provenance / scheduling
-        -> native physics/runtime
-        -> persistent vehicle + fresh world transform
-        -> resources / scene / camera / Vulkan
-        -> playable Linux slice
+PROCESS 1
+retail proof / ABI / producer / timing
+        |
+        v
+PROCESS 2
+native physics / runtime execution
+        |
+        v
+PROCESS 3
+resources / scene / renderer / playable bootstrap
+        |
+        v
+native playable Linux vertical slice
 ```
 
 Canonical coordination files:
 
 - [`PROCESS_INSTRUCTIONS.md`](PROCESS_INSTRUCTIONS.md)
-- [`docs/PLAYABLE_SLICE_SINGLE_PROCESS_INSTRUCTIONS_V5.md`](docs/PLAYABLE_SLICE_SINGLE_PROCESS_INSTRUCTIONS_V5.md)
-- [`docs/PLAYABLE_SLICE_SINGLE_PROCESS_PROMPT_V5.md`](docs/PLAYABLE_SLICE_SINGLE_PROCESS_PROMPT_V5.md)
-- [`evidence/playable_slice_single_process_execution.json`](evidence/playable_slice_single_process_execution.json)
+- [`docs/PLAYABLE_SLICE_THREE_PROCESS_INSTRUCTIONS_V6.md`](docs/PLAYABLE_SLICE_THREE_PROCESS_INSTRUCTIONS_V6.md)
+- [`docs/PLAYABLE_SLICE_THREE_PROCESS_PROMPTS_V6.md`](docs/PLAYABLE_SLICE_THREE_PROCESS_PROMPTS_V6.md)
+- [`evidence/playable_slice_three_process_execution.json`](evidence/playable_slice_three_process_execution.json)
 
-The old Process 1 / Process 2 / Process 3 lanes are historical compatibility/evidence names only; they no longer define active ownership.
+The v5 single-process coordination files remain historical records and do not select new work.
 
 Before substantial work, answer:
 
 > **Какой конкретный blocker первого playable Linux vertical slice снимает эта работа?**
 
+### Current process queues
+
+**Process 1 — retail proof / provenance / timing**
+
+```text
+P1.1  close remaining FUN_00766510 configuration/branch/state ownership
+P1.2  prove FUN_00765c40 collision-provider/load-term/residual ownership
+P1.3  close input -> drivetrain/wheel/control producer chain
+P1.4  prove retail camera-follow source/timing
+```
+
+**Process 2 — native physics / runtime**
+
+```text
+P2.1  finish Phase745 same-pass FUN_00766510 session handoff on merged Phase744
+P2.2  finish Phase746 caller accumulator delta
+P2.3  consume P1.1 and remove complete contact_response; target providers 7 -> 6
+P2.4  consume P1.2 and narrow/remove residual FUN_00765c40
+P2.5  replace remaining provider boundaries in dependency order
+P2.6  consume the proven retail control chain continuously
+```
+
+**Process 3 — resources / scene / renderer / bootstrap**
+
+```text
+P3.1  resource-pipeline -> playable-scene provenance join
+P3.2  playable pipeline launcher/profile preparation
+P3.3  one-command playable resource-pipeline bootstrap
+P3.4  preserve exact Silverstone/BMW resource + participant authority
+P3.5  consume fresh vehicle transform and later camera handoff
+P3.6  final continuous Silverstone + BMW smoke path
+```
+
+Processes may advance in parallel on independent items. Cross-process handoffs must be explicit fail-closed contracts; one process does not invent another process's unresolved semantics.
+
 ## Current status
 
-Current `main` frontier: **Phase 743**.
+Current `main` frontier: **Phase 744**.
 
 | Area | State | Notes |
 | --- | --- | --- |
@@ -71,92 +114,64 @@ Current `main` frontier: **Phase 743**.
 | Selected-session inner physics rate | **Positive and consumed** | Exact PC retail `PhysicsTweaker` rate is **180 Hz** |
 | Retail inner BODY execution | **Positive** | Exact **1/180 s** persistent inner substeps are admitted; normal outer update resolves to six recovered substeps |
 | `FUN_007682c0` BODY0 delta/effect path | **Largely native** | BODY0 destination, machine effect, x87 FSQRT, derived projection state and steering angle path are internalized |
-| `FUN_00765c40` collision/query pass | **Partially native** | World position, query-cache lifetime and selected miss fallback are native-owned; collision lookup/load terms/residual side effects remain external |
-| `FUN_00766510` contact response | **Partially native** | Primary response application is native; Phase 743 proves the selected BMW application-point owner |
-| External top-level vehicle providers | **7 remain** | The count must fall only when complete callbacks can be removed without dropping source-visible behavior |
+| `FUN_00765c40` collision/query pass | **Partially native** | World position, query-cache lifetime, selected miss fallback and typed selected `CollisionQueryOutput` are available; collision provider/load terms/residual side effects remain external |
+| `FUN_00766510` contact response | **Partially native** | Primary response application is native; application-point ownership and the Phase744 query-scalar handoff are proven |
+| External top-level vehicle providers | **7 remain** | The count falls only when a complete callback can be removed without dropping source-visible behavior |
 | Input -> drivetrain/wheel/control mapping | Incomplete | Live input exists, but full retail control producer/consumer mapping is not closed |
 | Retail camera follow | Incomplete | Camera transport exists; authoritative follow source/timing is still open |
 | End-to-end playable Linux slice | **Not yet** | Core physics/control and final integration blockers remain |
 
-## What Phase 743 closes
+## What Phase 744 closes
 
-The selected BMW application-point source for the primary `FUN_00766510` response path is now proven.
+Phase 744 makes the selected BMW `FUN_007b0710` result explicit at the residual `FUN_00765c40` boundary and freezes the next scalar handoff toward `FUN_00766510`.
 
-```text
-HDVehicle+0x38f0/+0x38f8/+0x3900
-    = Phase 727 BODY0-basis transform result
-    = Fun00765c40WorldPositionTransformResult.body_rotated_local
-```
-
-The same stored vector is later consumed by `FUN_00766510` as the point argument to the already-native primary response application.
-
-This is deliberately distinct from the origin-added collision `world_position` used by the `FUN_00765c40` query.
-
-Phase 743 does **not** remove the `contact_response` provider. The active top-level provider count remains seven.
-
-See:
-
-- [`docs/PHASE743_SCOPE.md`](docs/PHASE743_SCOPE.md)
-- [`evidence/phase743_next_blocker.md`](evidence/phase743_next_blocker.md)
-
-## Current shortest blocker
-
-The next bounded integration edge is the handoff from the residual `FUN_00765c40` collision result into the remaining `FUN_00766510` / `contact_response` path.
-
-Required chain:
+The selected path now has a typed collision output rather than an opaque result, while the already-proven state remains available:
 
 ```text
-same-pass FUN_00765c40 collision/query result
-        +
-native HDVehicle+0x38e0 hit/miss state
-        +
-selected HDVehicle+0x38e8 fallback / clamp bound
-        +
-Phase 743 HDVehicle+0x38f0 application point
-        v
-typed FUN_00766510 response input
-        v
-native primary response application
-        v
-remaining contact-response state / auxiliary branches / writes
+current persistent BODY state
+  -> native FUN_00765c40 query inputs
+  -> typed CollisionQueryOutput
+  -> native +0x38e0 hit/miss projection
+  -> selected +0x38e8 fallback / upper clamp
+  -> Phase743 +0x38f0 application point
+  -> FUN_00766510 response handoff
 ```
 
-After that handoff, remaining response configuration owners include:
+Phase 744 does **not** remove `FUN_00765c40` or `contact_response`. The active top-level provider count remains seven.
+
+## Current shortest native integration blocker
+
+The immediate Process 2 edge is Phase 745: thread the same-pass selected `CollisionQueryOutput`, native `+0x38e0/+0x38e8` state and Phase 743 application point through `NativeVehicleProviderSession` into the residual `FUN_00766510` callback.
+
+After that, Phase 746 exposes the primary caller accumulator delta following `FUN_007baa70` through the recovered `FUN_00753650` cross-product path.
+
+The first architectural provider reduction remains:
+
+```text
+complete FUN_00766510/contact_response internalization
+        -> active external providers 7 -> 6
+```
+
+That reduction depends on Process 1 closing the remaining source-side configuration/branch/state owners, including:
 
 ```text
 HDVehicle+0x3908
 HDVehicle+0x3910
 HDVehicle+0x3918
 HDVehicle+0x3950
++0x3b20 earlier response branch
+optional +0x3bc8/+0x3cxx branch
+auxiliary/state/diagnostic writes
 ```
-
-The `contact_response` callback can only be removed after the earlier/optional branches, auxiliary calls and source-visible state/diagnostic writes are also preserved.
 
 ## Active work not yet on `main`
 
-The following work is ahead of Phase 743 and should not be treated as merged until it lands:
+The following work is ahead of Phase 744 and should not be treated as merged until it lands:
 
-- **Phase 744 / PR #1441** — expose typed selected-BMW `CollisionQueryOutput` from the residual `FUN_00765c40` boundary and derive the `FUN_00766510` query scalar handoff.
-- **Phase 745 / PR #1445** — thread same-pass collision output, `+0x38e0/+0x38e8` state and the Phase 743 application point into the residual contact-response callback.
+- **Phase 745 / PR #1445** — thread same-pass collision output, `+0x38e0/+0x38e8` state and the selected application point into the residual contact-response callback.
 - **Phase 746 / PR #1447** — expose the primary `FUN_00766510` caller accumulator delta after `FUN_007baa70` using the recovered `FUN_00753650` cross-product path.
-- Process 3 integration PRs are also building a provenance-gated resource-pipeline -> playable-scene -> profile -> launcher path for a one-command vertical-slice bootstrap.
-
-These changes are important because they convert the old broad boundary
-
-```text
-FUN_00765c40 -> opaque external data -> FUN_00766510
-```
-
-into a progressively typed/native path:
-
-```text
-native query inputs
-  -> typed collision output
-  -> native clamp/config
-  -> native response transform
-  -> native application point
-  -> native accumulator pieces
-```
+- **Process 1** — close the remaining `FUN_00766510` configuration/branch/state ownership and continue the input/control and camera provenance queues.
+- **Process 3** — build the provenance-gated resource-pipeline -> playable-scene -> profile -> launcher -> one-command bootstrap chain (`#1431`, `#1442`, `#1443`, `#1444` lineages).
 
 ## Remaining external vehicle boundaries
 
@@ -264,6 +279,7 @@ Implemented pieces include:
 - native derived projection state;
 - native `FUN_007594e0` steering/machine-angle path;
 - native pieces of `FUN_00765c40` query-state ownership;
+- typed selected `CollisionQueryOutput` and query-scalar handoff;
 - native primary `FUN_00766510` response application.
 
 This is still **not a complete retail vehicle frame**. Remaining producer/refresh ownership, residual collision/contact callbacks, control production and camera timing must be closed before the project can claim a playable retail-consistent loop.
@@ -337,7 +353,7 @@ The repository deliberately stays fail-closed.
 - Fixtures and test scripts cannot satisfy retail-semantic gates.
 - A native implementation is not automatically treated as recovered retail behavior.
 
-Cross-process historical contracts remain useful evidence artifacts, but active development now consumes positive contracts immediately in the single-process blocker chain.
+Cross-process contracts are explicit handoffs: Process 1 proves semantics, Process 2 consumes them in native runtime, and Process 3 consumes admitted runtime/resource state for the visible playable slice.
 
 ## Ghidra and runtime evidence
 
@@ -434,6 +450,7 @@ The milestone is reached only when one continuous native session satisfies all o
 [x] selected-session 180 Hz inner rate is admitted
 [x] exact 1/180 s persistent inner execution exists
 [x] BODY0 can publish a fresh admitted vehicle world transform
+[x] selected FUN_00765c40 collision output is typed for the BMW path
 [ ] residual vehicle provider callbacks needed by the core loop are eliminated or reduced to proven resource/runtime inputs
 [ ] user input reaches the complete source-backed drivetrain/wheel/control chain
 [ ] camera follows the proven current vehicle source/timing
