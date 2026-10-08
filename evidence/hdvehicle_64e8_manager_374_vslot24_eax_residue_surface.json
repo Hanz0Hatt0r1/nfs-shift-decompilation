@@ -1,0 +1,64 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374VSlot24EaxResidueSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_sqlite_role": "navigation-only"
+  },
+  "object_identity": {
+    "constructor": "FUN_004d1210",
+    "constructor_vptr_store": "0x004d121b [object+0x0]=0x00ac1860",
+    "vtable": "0x00ac1860",
+    "slot_offset": "+0x24",
+    "slot_cell": "0x00ac1884",
+    "slot_target": "FUN_004d1640",
+    "allocation_root": "0x00468998 allocate 0x18 bytes",
+    "constructor_callsite": "0x004689a8",
+    "owner_store": "0x004689b1 [outer+0xc4c]=constructed object",
+    "constructor_span_sha256": "a91fc56bf86e93600e88557d35a27b28d612fde1cfa341cf8190d6968b69b468",
+    "allocation_owner_span_sha256": "19064b85764b4f6aebed5d45e4be52ae3cc9359bc4d4d9712d55146a55317848"
+  },
+  "slot_body": {
+    "function": "FUN_004d1640",
+    "manager_getter_callsite": "0x004d16e9",
+    "manager_getter": "FUN_00489ad0",
+    "local_use": "0x004d16f0 [EAX+0x434]=0",
+    "return_site": "0x004d16f8",
+    "eax_at_return_can_equal_manager_root": true,
+    "eax_root_is_explicit_function_result": false,
+    "machine_span_sha256": "033b9a5aa87e443eb84fcd1baf980ecaf4fb0f8ed82433a8b8fd4f4efead2c5c"
+  },
+  "exact_dispatch": {
+    "outer_root_global": "0x00bc185c",
+    "object_load": "0x004b75ab [0x00bc185c] then 0x004b75b1 [outer+0xc4c]",
+    "vtable_load": "0x004b75b7",
+    "slot_load": "0x004b75b9 [vtable+0x24]",
+    "callsite": "0x004b75bc",
+    "post_call_clobber": "0x004b75be mov al,1",
+    "function_return": "0x004b75c6 ret 4",
+    "exact_manager_root_preserved_after_dispatch": false,
+    "dispatch_span_sha256": "4625cd0eec35a453cb2a3a80a7b1dffb2dd42331cec226b15f94706eb2d0c7c3"
+  },
+  "adjudication": {
+    "vslot_24_identity_closed": true,
+    "slot_body_can_leave_manager_root_in_eax": true,
+    "exact_dispatch_preserves_exact_manager_root_return": false,
+    "vslot_24_can_export_exact_manager_root_to_its_observed_consumer": false,
+    "fun_0045b130_slot_0c_surface_complete": false,
+    "runtime_created_or_opaque_manager_root_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only the exact vtable+0x24 FUN_004d1640 path rooted at outer+0xc4c.",
+    "FUN_004d1640 may leave the manager root in EAX internally, but the exact dispatch consumer overwrites AL immediately and therefore does not preserve the exact 32-bit manager-root value.",
+    "FUN_0045b130 at vtable 0x00ab5644+0x0c remains an independent indirect-dispatch frontier.",
+    "No identity is inferred from matching offsets."
+  ],
+  "next_step": "Trace exact indirect dispatch/return use for FUN_0045b130 at vtable 0x00ab5644+0x0c, then continue runtime-created manager-root aliases."
+}
