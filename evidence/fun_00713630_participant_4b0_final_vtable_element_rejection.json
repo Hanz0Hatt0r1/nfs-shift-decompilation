@@ -1,0 +1,62 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0FinalVtableElementRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "pc_decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630Participant4b0DerRecordRejection/1"
+  ],
+  "candidate": {
+    "site": "0x0076019f",
+    "entry": "0x0075cfb0",
+    "operation": "fstp qword ptr [ESI+0x4b0]",
+    "entry_receiver_setup": "ESI = ECX",
+    "selected_physics_participant_writer": false,
+    "entry_to_next_named_function_sha256": "964956ebc1c2c9acee0524c486662ae045a50402a9f90515df87311e2b8bf4a1"
+  },
+  "vtable_join": {
+    "vtable": "PTR_FUN_00b09a68",
+    "vtable_address": "0x00b09a68",
+    "slot_pair": ["0x0076b100", "0x0075cfb0"],
+    "slot_pair_sha256": "a0a7ee6292a11c8c7e582fc654bda7bd4663b43b730a9e848ce8f8d6bb089dff",
+    "constructor": "FUN_0076b060",
+    "constructor_installs_vtable": true,
+    "constructor_source_sha256": "3b1f5007f827389e81facc320cdf0540612484327b86523a1d0667efa33859bd"
+  },
+  "embedded_element_root": {
+    "outer_constructor": "FUN_0076b130",
+    "vector_start": "outer+0x400",
+    "element_stride": "0xa80",
+    "element_count": 4,
+    "element_constructor": "FUN_0076b060",
+    "element_destructor": "FUN_007694b0",
+    "outer_constructor_source_sha256": "e6627738ab8afd493860de7e71634245865b7b02a46cf4d322340c48742bd488",
+    "candidate_storage": "element+0x4b0",
+    "candidate_is_outer_root_plus_0x4b0": false,
+    "candidate_is_separately_allocated_0x2b90_participant_root": false
+  },
+  "adjudication": {
+    "candidate_receiver_domain_closed": true,
+    "candidate_is_embedded_0xa80_vtable_element": true,
+    "candidate_is_selected_physics_participant": false,
+    "direct_displacement_site_rejected": true,
+    "remaining_unjoined_direct_site_count": 0,
+    "direct_displacement_surface_identity_complete": true,
+    "selected_participant_runtime_plus_0x4b0_writer_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This exhausts the literal direct-displacement +0x4b0 writer surface only.",
+    "Computed-address, escaped-alias, indirect-dispatch and residual bulk-copy writers remain open and must be adjudicated before P1.1a can close.",
+    "The selected PhysicsParticipant runtime +0x4b0 producer is not promoted by this negative proof."
+  ],
+  "next_step": "Widen Process 1A to computed-address, escaped-alias, indirect-dispatch and residual bulk-copy writer paths for selected PhysicsParticipant+0x4b0."
+}
