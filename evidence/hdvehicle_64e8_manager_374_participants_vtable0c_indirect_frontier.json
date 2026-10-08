@@ -1,0 +1,67 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374ParticipantsVtable0cIndirectFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact retail machine transfer; Ghidra SQLite/vtable index used for navigation and exact static target resolution"
+  },
+  "participants_callback": {
+    "function": "FUN_0048a7f0",
+    "participants_receiver": "manager+0x20",
+    "mnemonic_sha256": "d965ea9dd5813a21e0df2bb904b8709598fdff0f538bea4aab9df0dff7c3e947",
+    "indirect_call_count": 6
+  },
+  "indirect_receiver_domains": {
+    "heap_helper_calls": ["0x0048aba4", "0x0048abdd", "0x0048ac1b"],
+    "manager_derived_calls": ["0x0048ac8c", "0x0048aca6", "0x0048acc4"],
+    "manager_derived_receiver": "participants+0x418 == manager+0x438"
+  },
+  "manager_438_object": {
+    "constructor_site": "0x00488f7c lea ecx,[manager+0x438] -> FUN_007de7f0",
+    "constructor": "FUN_007de7f0",
+    "constructor_mnemonic_sha256": "d444beea9f4dfd687982a7ea3ffddefd69e79073d83584d6c1209ebab343f87b",
+    "vptr_store": "0x007de803 mov [this],0x00b10728",
+    "vptr": "0x00b10728",
+    "indirect_slot_offset": "+0x3c",
+    "slot_index": 15,
+    "resolved_target": "FUN_007da470",
+    "resolved_target_mnemonic_sha256": "66b835ea6ec200f10df83381dc390405e280b2641de9ac2287263b7b952b9fb5"
+  },
+  "resolved_target_body": {
+    "parent_recovery_from_manager_438_observed": false,
+    "direct_manager_plus_0x374_store_observed": false,
+    "receiver_fields_used": ["+0x04", "+0x34"],
+    "same_receiver_direct_callee": "FUN_007d8e00",
+    "same_receiver_deeper_surface_complete": false
+  },
+  "direct_root_side_path": {
+    "callsite": "0x0048ace6",
+    "target": "0x00488b20 thunk_FUN_00d60e50",
+    "receiver": "participants-0x20 == manager root",
+    "resolved_target": "FUN_00d60e50",
+    "resolved_target_mnemonic_sha256": "017aab0d39b8ccdc3940d511f4e8aa77674f72f5c704d73c9fc1ef7ff139c510",
+    "direct_manager_plus_0x374_store_observed": false,
+    "apparent_root_forward_to_0x00487350_is_semantically_false": true,
+    "reason": "0x00487350 is a thunk to stdcall FUN_00d607b0; FUN_00d607b0 consumes stack param_1 at [ebp+0x8] and does not consume incoming ECX manager root"
+  },
+  "adjudication": {
+    "participants_vtable_0x0c_indirect_receiver_inventory_complete": true,
+    "manager_438_indirect_target_resolved": true,
+    "manager_438_resolved_target_direct_body_reaches_manager_374": false,
+    "direct_root_side_path_direct_body_reaches_manager_374": false,
+    "manager_438_deeper_same_receiver_surface_complete": false,
+    "heap_helper_indirect_target_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The three heap-helper virtual calls are not manager-derived receiver calls and remain outside the manager+0x374 affine identity question unless a separate back-reference is proven.",
+    "FUN_007da470 direct body is bounded, but its same-receiver descendant FUN_007d8e00 and later indirect descendants remain open.",
+    "No manager-root identity is assigned to manager+0x438 from numeric offset arithmetic alone; the constructor/vptr join is exact."
+  ],
+  "next_step": "Trace same-receiver descendants of FUN_007da470 beginning at FUN_007d8e00 for any exact parent recovery from manager+0x438; separately classify heap-helper virtual-call objects for any proven manager back-reference."
+}
