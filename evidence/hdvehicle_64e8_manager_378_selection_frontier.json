@@ -1,0 +1,106 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager378SelectionFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "retail machine-code root and collection-access proof, corroborated by Ghidra whole-export index"
+  },
+  "target": {
+    "manager_getter": "FUN_00489ad0",
+    "manager_singleton_address": "0x00bc9fc0",
+    "selection_function": "FUN_0045da80",
+    "selection_slot": "manager+0x378",
+    "collection": "manager+0x2a0"
+  },
+  "selection_machine_proof": {
+    "function_range": "0x0045da80..0x0045dab8",
+    "instructions": [
+      "0x0045da84 call FUN_00489ad0",
+      "0x0045da89 mov edx,[ebp+0x0c]",
+      "0x0045da8c mov esi,eax",
+      "0x0045da8e cmp edx,[esi+0x2c4]",
+      "0x0045da94 jb 0x0045daa3",
+      "0x0045da96 xor eax,eax",
+      "0x0045da98 mov [esi+0x378],eax",
+      "0x0045daa3 lea ecx,[esi+0x2a0]",
+      "0x0045daa9 call FUN_0054ed00",
+      "0x0045daae mov [esi+0x378],eax"
+    ],
+    "adjudication": {
+      "receiver_is_exact_singleton_manager": true,
+      "second_argument_is_index_candidate": true,
+      "out_of_primary_range_clears_manager_378": true,
+      "in_primary_range_calls_collection_accessor_on_manager_2a0": true,
+      "accessor_return_is_written_to_manager_378": true
+    }
+  },
+  "collection_accessor": {
+    "function": "FUN_0054ed00",
+    "instructions": [
+      "0x0054ed00 cmp edx,[ecx+0x28]",
+      "0x0054ed03 jb 0x0054ed0a",
+      "0x0054ed05 jmp FUN_0054da60",
+      "0x0054ed0a mov eax,[ecx]",
+      "0x0054ed0c imul eax,edx",
+      "0x0054ed0f add eax,[ecx+0x30]",
+      "0x0054ed12 ret"
+    ],
+    "normal_return_formula": "collection_base(+0x30) + index * stride(+0x00)",
+    "collection_count_field": "+0x28",
+    "manager_normalized_fields": {
+      "stride": "manager+0x2a0",
+      "count": "manager+0x2c8",
+      "base": "manager+0x2d0"
+    }
+  },
+  "manager_374_378_relation": {
+    "proven_comparison_sites": [
+      {
+        "function": "FUN_004326e0",
+        "manager_378_load": "0x004326fe mov esi,[eax+0x378]",
+        "manager_374_compare": "0x00432709 cmp esi,[eax+0x374]"
+      },
+      {
+        "function": "FUN_00434eb0",
+        "manager_378_load": "0x00435139 mov edi,[eax+0x378]",
+        "manager_374_compare": "0x00435144 cmp edi,[eax+0x374]"
+      }
+    ],
+    "same_storage": false,
+    "values_can_be_compared_for_identity": true,
+    "hdvehicle_4330_identity_proven": false
+  },
+  "ghidra_index": {
+    "fun_0045da80_address": "0x0045da80",
+    "fun_0045da80_size": 57,
+    "vtable_candidate": "0x00ab563c",
+    "vtable_slot": 0,
+    "vtable_slot_targets": [
+      "FUN_0045da80",
+      "FUN_00459070",
+      "FUN_0066d450",
+      "FUN_004692e0"
+    ],
+    "vtable_function_xrefs": []
+  },
+  "adjudication": {
+    "manager_378_is_collection_selection_cache": true,
+    "manager_378_exact_collection_element_formula_proven": true,
+    "manager_374_equals_manager_378_always": false,
+    "manager_374_identity_to_hdvehicle_4330_complete": false,
+    "manager_2a0_entry_identity_to_hdvehicle_4330_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The primary pre-check uses manager+0x2c4, while FUN_0054ed00 independently checks collection+0x28 = manager+0x2c8; this contract does not assert those counts are equivalent.",
+    "The collection accessor returns an element address on its normal path; this alone does not identify that element as HDVehicle+0x4330.",
+    "manager+0x374 and manager+0x378 are distinct fields. Equality comparisons prove that their runtime values can match, not that either field has a specific vehicle identity.",
+    "The heuristic vtable candidate is navigation evidence only and does not establish a semantic class name."
+  ],
+  "next_step": "Trace the producer/mutator of manager+0x374 and the call/dispatch path that supplies FUN_0045da80's second argument. Join either manager+0x374 or the selected manager+0x2a0 element to HDVehicle+0x4330 only with exact pointer provenance."
+}
