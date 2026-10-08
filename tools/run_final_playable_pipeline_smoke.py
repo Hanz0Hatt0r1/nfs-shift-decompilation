@@ -73,13 +73,9 @@ def build_final_smoke_preflight(
     blockers: list[str] = []
 
     if args.track != EXACT_TRACK:
-        blockers.append(
-            f"target:track-must-be-{EXACT_TRACK}:got-{args.track}"
-        )
+        blockers.append(f"target:track-must-be-{EXACT_TRACK}:got-{args.track}")
     if args.vehicle != EXACT_VEHICLE:
-        blockers.append(
-            f"target:vehicle-must-be-{EXACT_VEHICLE}:got-{args.vehicle}"
-        )
+        blockers.append(f"target:vehicle-must-be-{EXACT_VEHICLE}:got-{args.vehicle}")
     if not args.interactive:
         blockers.append("runtime:final-smoke-requires-interactive-continuous-mode")
     if args.frames is not None:
@@ -103,10 +99,7 @@ def build_final_smoke_preflight(
         blockers.append("coordination:main-frontier-missing")
         frontier = {}
 
-    missing_gates = [
-        gate for gate in REQUIRED_FRONTIER_GATES
-        if frontier.get(gate) is not True
-    ]
+    missing_gates = [gate for gate in REQUIRED_FRONTIER_GATES if frontier.get(gate) is not True]
     blockers.extend(f"coordination:{gate}:not-ready" for gate in missing_gates)
 
     blockers = list(dict.fromkeys(blockers))
@@ -164,9 +157,7 @@ def execute_final_smoke(
         label="playable coordination",
     )
     if current_coordination_sha256 != preflight["coordination_sha256"]:
-        raise FinalSmokeError(
-            "playable coordination changed after final smoke preflight"
-        )
+        raise FinalSmokeError("playable coordination changed after final smoke preflight")
 
     result = execution.execute_playable_pipeline_slice(forwarded)
     return {
@@ -178,6 +169,7 @@ def execute_final_smoke(
         "boundary": {
             "preflight_completed_before_runtime": True,
             "coordination_stability_checked_before_runtime": True,
+            "coordination_rehash_occurs_immediately_before_runtime_delegation": True,
             "exact_resource_driven_target_required": True,
             "test_only_core_vehicle_transform_allowed": False,
             "retail_game_loop_claimed": False,
