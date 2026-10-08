@@ -1,0 +1,57 @@
+{
+  "format": "SHIFT.CameraFollowP14TargetRuntimeBridge/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "semantic_sources": ["SHIFT.exe machine/decompile body", "Process 1B manager+0x2a0 identity rejection"],
+    "sqlite_index_is_semantic_proof": false
+  },
+  "service_path": {
+    "camera_service_interface": "CameraManager+0x574 = DAT_00bc185c+4",
+    "target_query": "FUN_0045d940",
+    "manager_root": "thunk_FUN_00444fcc()",
+    "collection": "manager+0x2a0",
+    "count": "manager+0x2c4",
+    "entry_lookup": "FUN_0054ed00(manager+0x2a0,target_id)",
+    "entry_transform_dispatch": "FUN_00481420"
+  },
+  "rejected_identity": {
+    "manager_2a0_entry_is_HDVehicle_plus_0x4330": false,
+    "reason": "Process 1B proves manager+0x2a0 entries are allocator-owned 0x22e0-byte collection storage while HDVehicle+0x4330 belongs to the separately allocated HDVehicle owner"
+  },
+  "entry_attached_runtime": {
+    "pointer_field": "entry+0x1e80",
+    "producer": "FUN_00481d46",
+    "allocation_constructor": "FUN_008868c0 -> FUN_0046c050",
+    "constructor_vtable": "0x00ab6890",
+    "post_construction_update": "FUN_0046d7b0(entry+0x1e80, entry+0x1e84)",
+    "identity_with_selected_HDVehicle_or_BODY0": "unproven"
+  },
+  "target_transform_dispatch": {
+    "call_chain": ["FUN_00481420", "FUN_004810a0", "FUN_004585e6", "FUN_004810bf"],
+    "selector_2": {
+      "fallback_source": "entry+0x1e80",
+      "lanes": ["+0x10", "+0x14", "+0x18"]
+    },
+    "selector_4": {
+      "source": "entry+0x1e80",
+      "helper": "FUN_0047f810"
+    },
+    "selector_5": {
+      "source": "entry+0x1e80",
+      "lanes": ["+0x1c", "+0x20", "+0x24"]
+    }
+  },
+  "adjudication": {
+    "manager_entry_direct_vehicle_identity_rejected": true,
+    "entry_attached_runtime_pose_dependency_proven": true,
+    "entry_attached_runtime_is_selected_vehicle_proven": false,
+    "entry_attached_runtime_pose_is_BODY0_world_pose_proven": false,
+    "phase651_request_3_complete": false,
+    "native_camera_follow_ready": false,
+    "external_provider_count": 7
+  },
+  "next": "Trace the producers feeding entry+0x1e84/FUN_0046d7b0 and writers of entry+0x1e80 pose lanes, then prove or reject their current-pose identity with selected retail HDVehicle/BODY0."
+}
