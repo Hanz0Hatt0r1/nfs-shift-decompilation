@@ -1,0 +1,209 @@
+{
+  "format": "SHIFT.HDVehicle64e8Affine4330ParserDescendantClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact retail machine/decompiler transfer with bounded index domains; Ghidra SQLite used for navigation/fingerprints only"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8Affine4330MaterializationFrontier/1",
+  "target": {
+    "subobject": "HDVehicle+0x4330",
+    "relative_offset": "+0x21b8",
+    "absolute_address": "0x00c19be8"
+  },
+  "parser_root": {
+    "function": "FUN_007c3b00",
+    "address": "0x007c3b00",
+    "size": 5739,
+    "mnemonic_sha256": "a8b5650ee33983f6bf4375a491846bb0d675a0274bb75ca99cbb97b1f88b0dce",
+    "direct_target_read": true,
+    "direct_target_write": false
+  },
+  "exact_receiver_descendants": [
+    {
+      "function": "FUN_007715f0",
+      "carrier": "this",
+      "address": "0x007715f0",
+      "size": 44,
+      "mnemonic_sha256": "044bd3046e8809c53194484b34814bf08724e23fc4aaa58be9415a06ec285626",
+      "bounded_formula": "receiver + selector*8 + 0x2158",
+      "observed_selector_domain": [0,1,3],
+      "destination_offsets": ["+0x2158","+0x2160","+0x2170"],
+      "target_reachable": false
+    },
+    {
+      "function": "FUN_007be420",
+      "carrier": "param_3 captured as iVar1",
+      "address": "0x007be420",
+      "size": 2098,
+      "mnemonic_sha256": "060a6b5e982e03765455ab2afc56dfe34affe35470ed571e6292f0406c6e05a9",
+      "exact_receiver_destinations": ["+0x2364","+0x2368","+0x236c","+0x2370","+0x2374"],
+      "later_param_3_repurposed_to_non_receiver_local": true,
+      "target_reachable": false
+    },
+    {
+      "function": "FUN_007c3920",
+      "carrier": "param_1",
+      "address": "0x007c3920",
+      "size": 480,
+      "mnemonic_sha256": "da1d384d154d2c9ec5373a3a84b6ccf8f758137eab432389144fc3c33cc9dc1f",
+      "descendant_chains": [
+        {
+          "chain": ["FUN_007725f0"],
+          "computed_table": "receiver + 0xddc + index*0x50",
+          "index_domain": "0x2d..0x34",
+          "computed_root_range": ["+0x1bec","+0x1e1c"],
+          "other_exact_fields": ["+0x2181","+0x2188"],
+          "target_reachable": false
+        },
+        {
+          "chain": ["FUN_007c3280","FUN_007c01f0","FUN_007c0150"],
+          "exact_receiver_writes": ["+0x2180","+0x1a98","+0x1ae8"],
+          "target_reachable": false
+        }
+      ]
+    },
+    {
+      "function": "FUN_007bf0e0",
+      "carrier": "param_2",
+      "address": "0x007bf0e0",
+      "size": 480,
+      "mnemonic_sha256": "51d7f506d0fac2043e40379dfea8da9d214647941897182f1822e9eef4d7a76f",
+      "bounded_formula": "receiver + index*0x370 + field",
+      "index_domain": "0..3",
+      "field_offsets": ["+0x8","+0x58","+0xa8","+0xf8","+0x198","+0x1e8","+0x238","+0x288","+0x2d8","+0x328"],
+      "maximum_receiver_offset": "+0xd78",
+      "target_reachable": false
+    },
+    {
+      "function": "FUN_007bf590",
+      "carrier": "param_1",
+      "address": "0x007bf590",
+      "size": 330,
+      "mnemonic_sha256": "9fcc537f931d293763c55f34cc3dadeaabbbfa5dbddec3e51a4538ea82524b42",
+      "exact_receiver_destinations": ["+0x17c8","+0x1818","+0x1868","+0x18b8"],
+      "uses_bounded_selector_helper": true,
+      "target_reachable": false
+    },
+    {
+      "function": "FUN_007bfbe0",
+      "carrier": "param_1",
+      "address": "0x007bfbe0",
+      "size": 1381,
+      "mnemonic_sha256": "9b5b44a1685b5bf2c1a6b681a3864109a443cca18ce9c3445ebb1516a9a0c7b8",
+      "highest_direct_exact_receiver_offsets": ["+0x215c","+0x2164","+0x217c","+0x2184","+0x2188","+0x2190","+0x2199","+0x219c"],
+      "bounded_selector_chain": {
+        "selector_function": "FUN_007715a0",
+        "selector_domain": "0..4",
+        "write_chain": ["FUN_00771c70","FUN_004338a6","FUN_00771c7c"],
+        "formula": "receiver + 0xdc8 + selector*0x50 + field",
+        "fields": ["+0x18","+0x1c","+0x20"],
+        "maximum_receiver_offset": "+0xf28"
+      },
+      "secondary_table_helper": {
+        "function": "FUN_00771cd0",
+        "formula": "receiver + (row*0xb+column)*0x50 + field",
+        "row_domain": "0..4 from FUN_007715a0",
+        "observed_column_domain": "0..8",
+        "fields": ["+0x1c","+0x20","+0x24","+0x28"],
+        "target_reachable": false
+      },
+      "target_reachable": false
+    },
+    {
+      "function": "FUN_007bf790",
+      "carrier": "param_1",
+      "address": "0x007bf790",
+      "size": 1102,
+      "mnemonic_sha256": "49f0d79197cfb14c78b85be0b1b353456b8134e5031bdb3a1deb7ea2b1d5a17e",
+      "direct_destination_range": ["+0x1048","+0x1638"],
+      "status_offsets": ["+0x2181","+0x2182","+0x2183"],
+      "target_reachable": false
+    },
+    {
+      "function": "FUN_007bf6e0",
+      "carrier": "param_3",
+      "address": "0x007bf6e0",
+      "size": 173,
+      "mnemonic_sha256": "c0fb12ef5957dacd69d89ac6d803200aa2ce8300c53bc07212acbd7b236e90d6",
+      "exact_receiver_destinations": ["+0x1728","+0x1778"],
+      "uses_bounded_selector_helper": true,
+      "target_reachable": false
+    },
+    {
+      "function": "FUN_007c2110",
+      "carrier": "param_1",
+      "address": "0x007c2110",
+      "size": 1729,
+      "mnemonic_sha256": "5a0215847f3746538aec94cab943f7f49aac9df917cb5262cf3f8c27043f9d32",
+      "highest_direct_exact_receiver_offset": "+0x2174",
+      "table_helper": {
+        "function": "FUN_007bf4e0",
+        "formula": "receiver + 0xdc8 + selector*0x50 + field",
+        "selector_upper_bound": "0x34",
+        "fields": ["+0x14","+0x18","+0x1c","+0x20"],
+        "maximum_receiver_offset": "+0x1e28",
+        "target_reachable": false
+      },
+      "other_same_receiver_helper": {
+        "function": "FUN_00772ef0",
+        "destinations": ["+0x1b48","+0x1b98","+0x1be8","+0x1c38","+0x1c88","+0x1cd8","+0x1d28","+0x1d78","+0x1dc8","+0x1e18"],
+        "target_reachable": false
+      },
+      "target_reachable": false
+    },
+    {
+      "function": "FUN_007bf430",
+      "carrier": "param_2",
+      "address": "0x007bf430",
+      "size": 170,
+      "mnemonic_sha256": "92c0be18365193fe008294b8bfbc91566842f2c94c803b79f306992d365f991d",
+      "only_receiver_path": "FUN_007715a0(selector=1) -> FUN_00771c70 bounded selector chain",
+      "target_reachable": false
+    },
+    {
+      "function": "FUN_007bf310",
+      "carrier": "param_4",
+      "address": "0x007bf310",
+      "size": 68,
+      "mnemonic_sha256": "2fcde58a277741b528741c65163e0a25bc5129c52d91d6753eba12630f95f52b",
+      "formula": "receiver + 0xdc8 + selector*0x50",
+      "observed_selector_domain": [10,11],
+      "destination_offsets": ["+0x10e8","+0x1138"],
+      "target_reachable": false
+    }
+  ],
+  "shared_helpers": {
+    "FUN_007715a0": {"address":"0x007715a0","size":71,"mnemonic_sha256":"e477cdb66a2331175041ce81b147ef0cdc501cdf734346aa7ebf91187214146e","proven_return_domain":"0..4"},
+    "FUN_00771c70": {"address":"0x00771c70","size":11,"mnemonic_sha256":"2c9080a7f2110d5ef9a393603bdee12511c382d4eee21d4a104ae5443a9a595b"},
+    "FUN_004338a6": {"address":"0x004338a6","size":13,"mnemonic_sha256":"eca43ac3f961bbe0811d2c3ea872a468a21834465ccb2a65e4280980c27ee16a"},
+    "FUN_00771c7c": {"address":"0x00771c7c","size":82,"mnemonic_sha256":"0ff989f19e4ef264cce2e27db9fe09727cddb830af5720f29506a4fbe8995394"},
+    "FUN_00771cd0": {"address":"0x00771cd0","size":85,"mnemonic_sha256":"df7463e41e4e8b0aecd65274fbeb6ff4e0b88434ee8c880a46a43e2eefef8193"},
+    "FUN_007bf4e0": {"address":"0x007bf4e0","size":175,"mnemonic_sha256":"c01de606e9e783b841288be90146d30c805931554a682e361f02ba2ba0a4465d"},
+    "FUN_00772ef0": {"address":"0x00772ef0","size":146,"mnemonic_sha256":"f568b71075aca4f7f92711d16de2aa5b9a442d961de9e6b634f06bfa895e7183"},
+    "FUN_007c3280": {"address":"0x007c3280","size":1690,"mnemonic_sha256":"cd78d4312c6e09c68e8362a45ad23a0f63a17aff5b6feff37483cb015d548d08"},
+    "FUN_007c01f0": {"address":"0x007c01f0","size":312,"mnemonic_sha256":"e5c7b341f0c3c3b161dd11d3d5814732258ad378a92085bc27f313530257976d"},
+    "FUN_007c0150": {"address":"0x007c0150","size":145,"mnemonic_sha256":"3560be9bde0eb4eced022b16142587eb4fcc010ec6ba1802cb45b5dab971e430"}
+  },
+  "adjudication": {
+    "parser_exact_receiver_descendant_count": 11,
+    "parser_computed_or_derived_alias_surface_complete": true,
+    "parser_descendant_target_writer": false,
+    "affine_4330_materializer_descendant_surface_complete": true,
+    "affine_4330_path_writes_hdvehicle_64e8": false,
+    "global_non_literal_hdvehicle_64e8_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes the complete exact-receiver descendant surface reachable from FUN_007c3b00 within the three proven exact-root affine +0x4330 materializers.",
+    "It does not close escaped aliases or other non-literal HDVehicle+0x64e8 writers that do not arise from these exact-root affine materializers.",
+    "It does not close unrelated Participants Manager+0x374 aliases or prove manager+0x374 == HDVehicle+0x4330.",
+    "The literal 0x004b86cf candidate therefore remains fail-closed."
+  ],
+  "next_step": "Search escaped/non-root-derived aliases of HDVehicle+0x4330 and unrelated Participants Manager+0x374 computed writers. Keep the last literal candidate open until the manager join is exact."
+}
