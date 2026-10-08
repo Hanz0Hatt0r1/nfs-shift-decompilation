@@ -2,11 +2,9 @@
 
 ## Result
 
-The P1.3 absolute writer search now has one positive result.
+`FUN_007530e0` is the direct PC-retail writer for the `HDVehicle+0x1e38` field consumed by the slot-2 `FUN_00755950` path. The receiver, writer algebra, caller argument owner, and absolute source fields are all machine-proven.
 
-`FUN_007530e0` is the direct PC-retail writer for the `HDVehicle+0x1e38` field consumed by the slot-2 `FUN_00755950` path.
-
-This proof assigns no throttle/brake/steering, suspension, force, or unit semantics. It closes only receiver identity and exact scalar algebra.
+No throttle/brake/steering, suspension, force, unit, or class semantics are assigned.
 
 ## Consumer target
 
@@ -19,44 +17,34 @@ slot 2 -> HDVehicle+0x1e38
 slot 3 -> HDVehicle+0x28b8
 ```
 
-The target here is slot 2, `HDVehicle+0x1e38`, width `f64`.
+This proof closes slot 2.
 
-## Writer body
+## Exact writer
 
-Retail `FUN_007530e0` is a small one-argument receiver helper:
+Retail `FUN_007530e0` executes:
 
 ```text
-0x007530e3  fld   qword [ebp+0x8]       ; x
+0x007530e3  fld   qword [ebp+0x8]
 0x007530e8  fsub  qword [ecx+0x2e10]
 0x007530f0  fstp  qword [ecx+0x2e10]
 0x007530f6  fmul  qword [ecx+0x2e18]
 0x007530fc  fadd  qword [ecx+0x1e38]
 0x00753102  fstp  qword [ecx+0x1e38]
-0x00753109  ret   0x8
 ```
 
-Therefore, preserving the retail x87 operation order:
+Therefore:
 
 ```text
-old_reference = old(HDVehicle+0x2e10)
-old_target    = old(HDVehicle+0x1e38)
-scale         = HDVehicle+0x2e18
-
 HDVehicle+0x2e10 = x
-HDVehicle+0x1e38 = old_target + (x - old_reference) * scale
+HDVehicle+0x1e38 = old(HDVehicle+0x1e38)
+                  + (x - old(HDVehicle+0x2e10)) * HDVehicle+0x2e18
 ```
 
-## Receiver proof
+A full PE disassembly contains exactly one direct `call 0x7530e0`, at `0x0076ce7b` inside `FUN_0076b280`.
 
-A complete PE disassembly finds exactly one direct call to `FUN_007530e0`:
+## Same-HDVehicle receiver proof
 
-```text
-0x0076ce7b  call FUN_007530e0
-```
-
-It is inside `FUN_0076b280`.
-
-The existing `SHIFT.BMWOffset33bStoreProvenance/1` contract already proves the source-backed HDVehicle identity for `FUN_0076b280` entry `ECX`. Machine code then keeps that exact root in `ESI`:
+`SHIFT.BMWOffset33bStoreProvenance/1` already proves that `FUN_0076b280` entry `ECX` is HDVehicle. Retail preserves that root:
 
 ```text
 0x0076b2c9  ESI = ECX
@@ -65,42 +53,59 @@ The existing `SHIFT.BMWOffset33bStoreProvenance/1` contract already proves the s
 0x0076ce7b  call FUN_007530e0
 ```
 
-So the helper receiver is the same HDVehicle root. The store at helper `receiver+0x1e38` is therefore the exact absolute field consumed by slot 2, not a numeric-offset collision on another object.
+Thus `FUN_007530e0 receiver == HDVehicle`, so the `+0x1e38` store is the exact slot-2 consumer field rather than an offset collision on another object.
 
-## Argument producer
+## Source owner
 
-`FUN_0076b280` uses `EBX` as an anchor to the original incoming stack before its aligned local frame is built:
+The only call to `FUN_0076b280` is inside `FUN_0076df50`, whose entry receiver is HDVehicle. Before the call:
 
 ```text
-0x0076b280  push ebx
-0x0076b281  EBX = ESP
+0x0076e1c1  EBX = HDVehicle+0x4330
+...
+0x0076e266  EAX = [HDVehicle+0x66b4]
+0x0076e26c  push EAX
+0x0076e26d  push EBX
+0x0076e26e  ECX = HDVehicle
+0x0076e270  call FUN_0076b280
 ```
 
-At the sole writer call it loads:
+Therefore the first physical stack argument of `FUN_0076b280` is exactly:
 
 ```text
-0x0076ce56  EAX = [EBX+0x8]
+HDVehicle+0x4330
 ```
 
-That is the first physical stack argument to `FUN_0076b280`. Retail computes the helper argument as:
+and the second is `*(HDVehicle+0x66b4)`.
+
+## Exact argument formula
+
+`FUN_0076b280` anchors the incoming call frame in `EBX` at `0x0076b281`. At the writer call:
 
 ```text
+0x0076ce56  EAX = [EBX+0x8] = HDVehicle+0x4330
 0x0076ce66  fild  dword [eax+0xf1c]
 0x0076ce6c  fmul  qword [eax+0xf10]
 0x0076ce72  fadd  qword [eax+0xf08]
 0x0076ce78  fstp  qword [esp]
+0x0076ce7b  call FUN_007530e0
 ```
 
-Thus:
+Absolute source fields are therefore:
 
 ```text
-x = f64([source+0xf08])
-  + f64(int32([source+0xf1c])) * f64([source+0xf10])
+HDVehicle+0x4330 + 0xf08 = HDVehicle+0x5238  (f64)
+HDVehicle+0x4330 + 0xf10 = HDVehicle+0x5240  (f64)
+HDVehicle+0x4330 + 0xf1c = HDVehicle+0x524c  (int32)
 ```
 
-where `source` is the first physical stack argument of `FUN_0076b280`.
+and:
 
-The owner and higher-level meaning of that source object are deliberately still open.
+```text
+x = f64(HDVehicle+0x5238)
+  + f64(int32(HDVehicle+0x524c)) * f64(HDVehicle+0x5240)
+```
+
+Their value producers remain open; their control meaning is not inferred.
 
 ## P1.3 gate
 
@@ -108,8 +113,9 @@ The owner and higher-level meaning of that source object are deliberately still 
 slot-2 absolute writer identified       = true
 same-HDVehicle receiver proven          = true
 writer scalar formula proven            = true
-explicit argument formula proven        = true
-source argument owner proven            = false
+caller source owner proven              = true
+absolute source fields proven           = +0x5238/+0x5240/+0x524c
+source field value producers proven     = false
 retail input/control provenance proven  = false
 P1.3 complete                           = false
 provider count                          = 7
@@ -117,4 +123,4 @@ provider count                          = 7
 
 ## NEXT_STEP
 
-Trace the first physical stack argument of `FUN_0076b280` to its exact PC-retail owner, then trace the producers of `+0xf08/+0xf10/+0xf1c`. Only an exact value-transfer chain may promote this writer into a retail control producer.
+Trace the exact PC-retail writers/value producers of `HDVehicle+0x5238`, `HDVehicle+0x5240`, and `HDVehicle+0x524c`. Only an exact value-transfer chain may promote them into retail control provenance.
