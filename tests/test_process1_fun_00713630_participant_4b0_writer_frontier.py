@@ -47,17 +47,20 @@ def test_false_candidates_are_receiver_rejected():
     assert "FUN_007215b0" in text
 
 
-def test_checked_direct_surface_is_negative_not_complete_alias_proof():
+def test_checked_direct_surface_and_generic_reflection_candidate_are_fail_closed():
     p = _payload()
     surface = p["constructor_and_selected_runtime_direct_surface"]
     assert surface["direct_subobject_plus_0x170_store_found"] is False
-    assert "alias/computed/reflection/bulk paths remain open" in surface["meaning"]
-    reflection = p["reflection_frontier"]
+    assert "alias/computed/bulk/indirect paths remain open" in surface["meaning"]
+    reflection = p["reflection_candidate_rejection"]
     assert reflection["function"] == "FUN_0072a2d0"
-    assert reflection["descriptor_root"] == "0x00b8d1b4"
+    assert reflection["registry_receiver"] == "DAT_00b8d1b4"
+    assert reflection["fun_0072a2d0_fun_0063a280_registration_count"] == 189
+    assert reflection["name_argument"] == "Add Pressure - Steer From Wall"
     assert reflection["selected_participant_subobject_identity_joined"] is False
-    assert reflection["status"] == "open"
-    assert "descriptor `0x00b8d1b4`" in DOC.read_text(encoding="utf-8")
+    assert reflection["rejected_as_writer_proof"] is True
+    assert p["adjudication"]["generic_reflection_0x170_candidate_rejected_as_identity_proof"] is True
+    assert "computed-address" in DOC.read_text(encoding="utf-8")
 
 
 def test_machine_spans_are_pinned():
