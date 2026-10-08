@@ -1,0 +1,105 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374ParticipantsLifecycleZeroWriters/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact PE32 instruction flow plus recovered BManager escaped-registry dispatch and Participants Manager vtable"
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8Manager374ParticipantsSubobjectFrontier/1",
+    "SHIFT.HDVehicle64e8Manager2a0EntryIdentityRejection/1"
+  ],
+  "receiver": {
+    "manager_getter": "FUN_00489ad0",
+    "manager_singleton": "0x00bc9fc0",
+    "participants_subobject": "manager+0x20",
+    "label": "Participants Manager",
+    "target_relative_offset": "+0x354",
+    "normalized_target": "manager+0x374"
+  },
+  "constructor_vptr": {
+    "function": "FUN_00488dc0",
+    "base_constructor_call": "0x00488dea -> FUN_00647a10(manager+0x20)",
+    "manager_root_vptr_store": "0x00488df5 mov [manager],0x00ab9190",
+    "participants_vptr_store": "0x00488dfb mov [manager+0x20],0x00ab916c",
+    "vptr": "0x00ab916c"
+  },
+  "escaped_registry_consumers": {
+    "registrations": [
+      "FUN_00648730 -> FUN_004f5e60(FUN_0065bf80()+0x24, manager+0x20)",
+      "FUN_00648890 -> FUN_004f5e60(FUN_0065bf80()+0x44, manager+0x20)"
+    ],
+    "resolved_lifecycle_helpers": [
+      "FUN_00648640 -> vptr+0x08",
+      "FUN_00647b70 -> vptr+0x0c",
+      "FUN_00647cf0 -> vptr+0x10",
+      "FUN_00647c60 -> vptr+0x14",
+      "FUN_00647da0 -> vptr+0x20"
+    ]
+  },
+  "participants_vtable": {
+    "base": "0x00ab916c",
+    "slots": {
+      "+0x08": "FUN_004871f0",
+      "+0x0c": "FUN_0048a7f0",
+      "+0x10": "FUN_00488a10",
+      "+0x14": "FUN_00488970",
+      "+0x18": "FUN_0048ade0",
+      "+0x1c": "FUN_0048aee0",
+      "+0x20": "0x0048b9a0"
+    }
+  },
+  "exact_target_writers": [
+    {
+      "function": "FUN_004871f0",
+      "vtable_slot": "+0x08",
+      "instructions": [
+        "0x00487203 xor eax,eax",
+        "0x0048720b mov [esi+0x354],eax"
+      ],
+      "written_value": 0,
+      "normalized_store": "manager+0x374 = 0"
+    },
+    {
+      "function": "FUN_00488970",
+      "vtable_slot": "+0x14",
+      "instructions": [
+        "0x004889ac xor ebx,ebx",
+        "0x004889b4 mov [esi+0x354],ebx"
+      ],
+      "written_value": 0,
+      "normalized_store": "manager+0x374 = 0"
+    }
+  ],
+  "other_direct_callback_scan": {
+    "callbacks_without_literal_plus_0x354_store": [
+      "FUN_0048a7f0 (+0x0c)",
+      "FUN_00488a10 (+0x10)",
+      "FUN_0048ade0 (+0x18)",
+      "FUN_0048aee0 (+0x1c)",
+      "0x0048b9a0 (+0x20 entry)"
+    ],
+    "direct_literal_target_surface_nonzero_writer_found": false
+  },
+  "adjudication": {
+    "participants_manager_vptr_exact": true,
+    "escaped_registry_reaches_lifecycle_dispatch": true,
+    "participants_lifecycle_reaches_manager_374": true,
+    "participants_lifecycle_direct_target_writers_are_zero_only": true,
+    "participants_lifecycle_nonzero_manager_374_writer_proven": false,
+    "participants_lifecycle_establishes_hdvehicle_4330_identity": false,
+    "unrelated_computed_or_non_vtable_writer_surface_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only the direct target stores reached through the recovered Participants Manager lifecycle vtable surface.",
+    "Callbacks can contain nested callees; no absence claim is made for unrelated computed stores or non-vtable aliases outside this bounded surface.",
+    "The previously proven manager+0x2a0 selection writer is a non-HDVehicle allocation-domain path and is not reopened here.",
+    "Zero lifecycle stores do not establish manager+0x374 == HDVehicle+0x4330."
+  ],
+  "next_step": "Trace remaining computed/non-vtable manager+0x374 writers and direct HDVehicle+0x64e8 non-sentinel provenance; do not reuse the closed manager+0x2a0 or zero-only Participants Manager lifecycle paths as HDVehicle identity bridges."
+}
