@@ -25,7 +25,13 @@ def test_all_eleven_exact_receiver_descendants_are_bounded_negative():
         "FUN_007bf590", "FUN_007bfbe0", "FUN_007bf790", "FUN_007bf6e0",
         "FUN_007c2110", "FUN_007bf430", "FUN_007bf310",
     }
-    assert all(entry["target_reachable"] is False for entry in descendants)
+    for entry in descendants:
+        if "target_reachable" in entry:
+            assert entry["target_reachable"] is False
+        else:
+            assert entry["function"] == "FUN_007c3920"
+            assert entry["descendant_chains"]
+            assert all(chain["target_reachable"] is False for chain in entry["descendant_chains"])
 
 
 def test_indexed_formula_bounds_stay_below_target():
