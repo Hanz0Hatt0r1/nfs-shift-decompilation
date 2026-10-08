@@ -1,0 +1,45 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerGlobalSlotAddressSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "target_slot_address": "0x00bc185c",
+  "raw_occurrence_partition": {
+    "whole_image_little_endian_occurrence_count": 115,
+    "direct_load_count": 112,
+    "direct_store_count": 2,
+    "slot_address_literal_materialization_count": 1,
+    "partition_complete": true,
+    "slot_address_literal_site": "0x004fb9af"
+  },
+  "simple_constant_reconstruction_scan": {
+    "mov_r32_imm32_seed_count": 38128,
+    "same_register_add_sub_lea_transition_count": 267,
+    "literal_target_production_count": 1,
+    "literal_target_production_sites": ["0x004fb9af"],
+    "nonliteral_target_production_count": 0,
+    "lookahead_instruction_limit": 15,
+    "stops_at_call_jump_return_or_register_overwrite": true
+  },
+  "adjudication": {
+    "all_raw_target_address_occurrences_classified": true,
+    "simple_nonliteral_constant_slot_address_reconstruction_found": false,
+    "canonical_slot_hidden_simple_arithmetic_access_surface_closed_negative": true,
+    "external_or_unknown_origin_alias_copies_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The arithmetic scan is bounded to same-register immediate add/sub and same-register LEA within 15 instructions; it is not a global symbolic proof.",
+    "Unknown-memory-derived or opaque-helper-derived addresses remain outside this contract.",
+    "The single literal site materializes the address of DAT_00bc185c and immediately dereferences it; it is already classified separately from the outer-root value."
+  ],
+  "next_step": "Continue runtime/external exact-root copy and unknown-memory reconstruction surfaces after the canonical slot address/store/constructor paths are bounded."
+}
