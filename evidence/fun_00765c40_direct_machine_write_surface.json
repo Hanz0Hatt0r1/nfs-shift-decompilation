@@ -73,21 +73,35 @@
       "format": "SHIFT.Fun00752fa0WheelStateMachineProof/1",
       "receiver": "four wheel records at HDVehicle+0x400 stride 0x0a80",
       "writes": "wheel+0x9f8 dword index and wheel+0xa00 qword from HDVehicle+0x98"
+    },
+    {
+      "callee": "0x007aefb0",
+      "format": "SHIFT.Fun00765c40CalleeClassificationJoin/1",
+      "classification": "receiver-read-only transform; explicit output buffer only"
+    },
+    {
+      "callee": "0x007afd20",
+      "format": "SHIFT.Fun00765c40CalleeClassificationJoin/1",
+      "classification": "receiver-read-only transform-plus-add; explicit output buffer only"
+    },
+    {
+      "callee": "0x007b0430",
+      "format": "SHIFT.Fun00765c40CalleeClassificationJoin/1",
+      "classification": "receiver-read-only extractor; explicit output buffer only"
+    },
+    {
+      "callee": "0x007baa70",
+      "format": "SHIFT.Fun00765c40CalleeClassificationJoin/1",
+      "classification": "Phase 392 positive BODY accumulator primitive; exact six-channel mutation already proven"
     }
   ],
   "callee_mediated_side_effects_complete": false,
-  "representative_unresolved_callees": [
-    "0x007584f0",
-    "0x007aefb0",
-    "0x007afd20",
-    "0x007b0430",
-    "0x007baa70"
-  ],
+  "representative_unresolved_callees": ["0x007584f0"],
   "gate": {
     "p1_2b_direct_write_inventory_closed": true,
     "p1_2b_complete": false,
     "fun_00765c40_provider_removal_authorized": false,
     "external_provider_count": 7,
-    "remaining_requirement": "classify side effects and receiver ownership for every potentially mutating callee in FUN_00765c40 before complete callback removal"
+    "remaining_requirement": "classify side effects and receiver ownership of FUN_007584f0 before complete callback removal"
   }
 }
