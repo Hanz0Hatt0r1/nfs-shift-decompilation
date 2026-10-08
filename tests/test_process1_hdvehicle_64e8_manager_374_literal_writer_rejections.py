@@ -54,11 +54,11 @@ def test_remaining_bulk_copy_stays_open_and_gates_fail_closed():
     assert a["external_provider_count"] == 7
 
 
-def test_coordination_points_to_bulk_copy_alias_closure():
+def test_coordination_reflects_newer_bulk_copy_alias_frontier():
     graph = json.loads(COORD.read_text(encoding="utf-8"))
     p13 = next(row for row in graph["workstreams"] if row["id"] == "P1.3")
     node = next(row for row in p13["children"] if row["id"] == "P1.3.manager374")
-    assert node["status"] == "two-literal-writers-rejected-bulk-copy-open"
-    assert "FUN_00481e20" in node["next"]
-    assert "0x004848f5" in node["next"]
+    assert node["status"] == "participant-bulk-copy-rejected-one-direct-callsite-open"
+    assert "FUN_00481e20" in node["remaining_literal_writer"]
+    assert node["remaining_bulk_copy_direct_callsite"] == "0x0081d335 parent+0x2d0"
     assert "0x0081d335" in node["next"]
