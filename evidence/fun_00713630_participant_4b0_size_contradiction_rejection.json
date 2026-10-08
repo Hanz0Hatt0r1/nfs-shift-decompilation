@@ -1,0 +1,52 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0SizeContradictionRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "pc_decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630Participant4b0AccountRecordRejections/1"
+  ],
+  "candidate": {
+    "site": "0x00832f46",
+    "function": "FUN_00832a80",
+    "operation": "mov dword ptr [ESI+0x4b0],ECX",
+    "selected_physics_participant_writer": false,
+    "machine_span": {"start":"0x00832f25","end_exclusive":"0x00832f53","sha256":"2f863cbbf6a03bd4a47bbbe793fecf91115bac8a42dd71eacc89a6bee88b8db5"}
+  },
+  "receiver_size_contradiction": {
+    "selected_participant_allocation_size": "0x2b90",
+    "same_receiver_far_access": "receiver+0x3960",
+    "decompiler_expression": "piVar17 = param_1 + 0xe58",
+    "element_size": 4,
+    "computed_byte_offset": "0x3960",
+    "machine_expression": "0x00832fe1 lea EDI,[ESI+0x3960]",
+    "machine_span": {"start":"0x00832fd9","end_exclusive":"0x00832ff2","sha256":"75faff00fbbe167d622350da9840840d1da8b1be56969f65ecac309f0aec27b4"},
+    "meaning": "The candidate and receiver+0x3960 access use the same ESI/param_1 receiver. A selected PhysicsParticipant is a separately allocated 0x2b90 object, so this receiver layout cannot be that object."
+  },
+  "decompiler_proof": {
+    "function_lines": "904408-904865",
+    "function_sha256": "8c59edec061e4c859ae55e901e4fcbbc3add48d25abb006c2de5c80dc45e4032"
+  },
+  "adjudication": {
+    "candidate_receiver_identity_rejected_by_size": true,
+    "candidate_is_selected_physics_participant": false,
+    "direct_displacement_site_rejected": true,
+    "remaining_unjoined_direct_site_count": 3,
+    "selected_participant_runtime_plus_0x4b0_writer_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This proof assigns no semantic class name to FUN_00832a80; exact same-receiver size/layout contradiction is sufficient.",
+    "It rejects only direct site 0x00832f46.",
+    "Three direct-displacement sites plus computed/alias/indirect/residual-bulk paths remain open."
+  ],
+  "next_step": "Adjudicate the remaining 3 direct-displacement +0x4b0 sites by exact receiver provenance."
+}
