@@ -19,7 +19,7 @@ def test_three_process_execution_contract_is_active_and_current() -> None:
     assert payload["format"] == "SHIFT.PlayableSliceThreeProcessExecution/1"
     assert payload["status"] == "active"
     assert payload["execution_model"] == "three-process-parallel"
-    assert frontier["phase"] == 744
+    assert frontier["phase"] == 747
     assert frontier["active_external_provider_count"] == 7
     assert frontier["selected_session_rate_hz"] == 180
     assert frontier["selected_session_normal_outer_substeps"] == 6
@@ -29,6 +29,12 @@ def test_three_process_execution_contract_is_active_and_current() -> None:
     assert frontier["fun_00765c40_selected_collision_output_typed"] is True
     assert frontier["fun_00766510_primary_response_application_native"] is True
     assert frontier["fun_00766510_application_point_owner_ready"] is True
+    assert frontier["fun_00766510_primary_caller_accumulator_delta_native"] is True
+    assert frontier["fun_00766510_shared_reference_owner_ready"] is True
+    assert frontier["fun_00766510_early_branch_owner_ready"] is True
+    assert frontier["fun_00766510_optional_branch_owner_ready"] is True
+    assert frontier["fun_00766510_p1_residual_frontier_ready"] is True
+    assert frontier["fun_00766510_p1_complete"] is False
     assert frontier["retail_control_chain_complete"] is False
     assert frontier["retail_camera_follow_ready"] is False
 
@@ -50,7 +56,10 @@ def test_process_queues_are_separate_and_dependency_routed() -> None:
     assert [row["id"] for row in p3["queue"]] == ["P3.1", "P3.2", "P3.3", "P3.4", "P3.5", "P3.6"]
 
     assert p1["queue"][0]["state"] == "current"
-    assert p2["queue"][0]["state"] == "current"
+    assert p1["queue"][0]["contract"] == "SHIFT.Fun00766510ResidualOwnershipFrontier/1"
+    assert p2["queue"][0]["state"] == "complete"
+    assert p2["queue"][1]["state"] == "complete"
+    assert p2["queue"][2]["state"] == "current-blocked-on-process-1"
     assert p3["queue"][0]["state"] == "current"
     assert "P1.1" in p2["queue"][2]["depends_on"]
     assert p1["queue"][0]["consumer"] == "Process 2 P2.3"
