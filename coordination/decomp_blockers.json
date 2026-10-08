@@ -1,7 +1,7 @@
 {
   "format": "SHIFT.DecompBlockerGraph/1",
   "version": 1,
-  "updated_from_main": "89a8ebf808735b7e4b734312697c88d26a3f3e6d",
+  "updated_from_main": "775fb2843861ee29e87d77e56b6b363279d2f737",
   "rules": {
     "pc_retail_semantic_authority": true,
     "numeric_offset_equality_is_identity": false,
@@ -50,8 +50,11 @@
         {
           "id": "P1.3.manager374",
           "target": "FUN_00489ad0()+0x374 value == HDVehicle+0x4330",
-          "status": "helper-alias-indirect-only",
-          "next": "Trace helper-mediated, escaped-alias and non-vtable indirect mutations."
+          "status": "two-literal-writers-rejected-bulk-copy-open",
+          "rejected_literal_writers": ["FUN_0051efa0", "FUN_005dec70"],
+          "rejected_bulk_copy_alias": "FUN_0070dcc0 direct-call surface forwards only stack-local destinations into FUN_00481e20",
+          "remaining_literal_writer": "FUN_00481e20",
+          "next": "Close parent provenance for FUN_00481e20 destinations at 0x004848f5 (parent+0xa00) and 0x0081d335 (parent+0x2d0); continue helper-mediated/indirect manager-root mutations."
         },
         {
           "id": "P1.3.manager2a0",
