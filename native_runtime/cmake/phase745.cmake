@@ -20,3 +20,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00766510_same_pass_handoff
     COMMAND shift_runtime_fun_00766510_same_pass_handoff_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase746.cmake)
