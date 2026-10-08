@@ -1,0 +1,83 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374GetterLocalAliasSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact retail machine transfer; Ghidra SQLite used for navigation/fingerprints only"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374ExactRootDirectCalleeSurface/1",
+  "manager": {
+    "getter": "FUN_00489ad0",
+    "target_offset": "+0x374"
+  },
+  "scope": {
+    "immediate_push_eax_after_getter_count": 0,
+    "immediate_local_store_count": 2,
+    "immediate_local_store_functions": ["FUN_0051dd30", "FUN_0051e370"],
+    "non_immediate_object_storage_or_reconstructed_aliases_complete": false
+  },
+  "local_aliases": [
+    {
+      "function": "FUN_0051dd30",
+      "address": "0x0051dd30",
+      "size": 292,
+      "mnemonic_sha256": "8a620f97c704b553c61f684cf476fd541568be8b8940aa6b220dae46028c2451",
+      "getter_callsite": "0x0051dd3f",
+      "store_instruction": "0x0051dd44",
+      "local_slot": "[ebp-0x4]",
+      "alias_uses": [
+        {
+          "load_instruction": "0x0051dda0",
+          "use": "ECX exact manager root",
+          "callee_entry": "0x004893d0",
+          "callee_target": "FUN_004d3760",
+          "callee_target_address": "0x004d3760",
+          "callee_size": 95,
+          "callee_mnemonic_sha256": "d6382d94227ffe1dfc2937109ccc9c95b1686ad015cba4e074cc5d0d7edf4977",
+          "receiver_transition": "manager+0x2d8 at 0x004d3769",
+          "behavior": "iterate manager+0x2d8 entries and compare entry object +0x100 with requested index",
+          "writes_manager_374": false
+        }
+      ],
+      "other_local_alias_uses": false,
+      "writes_manager_374": false
+    },
+    {
+      "function": "FUN_0051e370",
+      "address": "0x0051e370",
+      "size": 897,
+      "mnemonic_sha256": "ddf1a25b97ae3f5efe9b4c49d2a954dde859818eecd04768f1934dbdf8f738b0",
+      "getter_callsite": "0x0051e3a9",
+      "store_instruction": "0x0051e3ae",
+      "local_slot": "[ebp-0x8]",
+      "alias_load_instructions": ["0x0051e424", "0x0051e473"],
+      "first_load_reads": ["manager+0x2d4", "manager+0x374"],
+      "selected_manager_374_value_use": "read selected object +0x100 only when non-null",
+      "second_load_reads": ["manager+0x2c4", "manager+0x2a0[index]"],
+      "writes_through_local_alias": false,
+      "passes_local_alias_to_callee": false,
+      "writes_manager_374": false
+    }
+  ],
+  "adjudication": {
+    "immediate_getter_local_alias_surface_complete": true,
+    "immediate_getter_stack_argument_surface_complete": true,
+    "immediate_getter_local_alias_writer_count": 0,
+    "immediate_getter_local_alias_surface_places_hdvehicle_plus_0x4330_into_manager_374": false,
+    "non_immediate_or_object_storage_alias_surface_complete": false,
+    "unrelated_manager_root_reconstruction_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes immediate getter-result stack stores and immediate stack-argument forwarding only.",
+    "No immediate push of EAX after FUN_00489ad0 exists in the audited call surface.",
+    "It does not close delayed object-field stores, aliases reconstructed from another manager pointer, or aliases returned through unrelated APIs.",
+    "The final literal writer at 0x004b86cf therefore remains fail-closed."
+  ],
+  "next_step": "Search delayed/object-field storage of FUN_00489ad0 results and unrelated reconstructions of the Participants Manager root. In parallel continue escaped/non-root-derived HDVehicle+0x4330 aliases."
+}
