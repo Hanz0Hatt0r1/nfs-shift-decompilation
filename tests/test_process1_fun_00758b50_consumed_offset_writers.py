@@ -86,6 +86,24 @@ def test_extract_functions_and_rank_direct_writers() -> None:
     assert ranked[0]["offset"] == "0x940"
 
 
+def test_extract_functions_handles_multiline_decompiler_header() -> None:
+    module = _module()
+    lines = [
+        "void __thiscall",
+        "FUN_00444444(void *this, int param_1)",
+        "{",
+        "  *(int *)((int)this + 0x538) = param_1;",
+        "}",
+        "void caller(void)",
+        "{",
+        "  FUN_00444444(local_4, 1);",
+        "}",
+    ]
+    functions = module._extract_functions(lines)
+    assert [row["name"] for row in functions] == ["FUN_00444444"]
+    assert functions[0]["start_line"] == 2
+
+
 def test_numeric_offset_match_does_not_promote_control_semantics() -> None:
     text = DOC.read_text(encoding="utf-8")
     for token in (
