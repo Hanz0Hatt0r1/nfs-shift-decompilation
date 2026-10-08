@@ -46,15 +46,16 @@ Current priorities:
 
 ```text
 P1.1  residual FUN_00766510 frontier:
-      a) finish FUN_00713630 upstream dynamic-input provenance
-      c) final +0x40a0/+0x40a8/+0x40b0 accumulator + conditional state/diagnostic writes
+      a) remaining upstream runtime inputs behind merged Phase748 FUN_00713630 producer
+      c) exact FUN_00758fc0 caller scheduling + final transformed-vector add + residual conditional state/diagnostic tail
       CLOSED: later +0x3a28/+0x3a40 direct response block ownership/order
+      CLOSED: all four direct FUN_00753650 caller-accumulator sites
 P1.2  FUN_00765c40 collision-provider/load-term/residual ownership
 P1.3  input -> drivetrain/wheel/control producer chain
 P1.4  retail camera-follow source/timing
 ```
 
-`SHIFT.Fun00766510ResidualOwnershipFrontier/1` is the current P1.1 selection contract. Response config, the earlier `+0x3b20` branch, optional `+0x3bc8/+0x3cxx` branch, and later `+0x3a28/+0x3a40` branch are already positive and must not be rediscovered.
+`SHIFT.Fun00766510ResidualOwnershipFrontier/1` is the current P1.1 selection contract. Response config, the earlier `+0x3b20` branch, optional `+0x3bc8/+0x3cxx` branch, later `+0x3a28/+0x3a40` branch, and `SHIFT.Fun00766510DirectCallerAccumulatorSurface/1` are already positive and must not be rediscovered.
 
 ### Process 2
 
@@ -65,7 +66,7 @@ Current priorities:
 ```text
 P2.1  COMPLETE — Phase745 same-pass FUN_00766510 session handoff
 P2.2  COMPLETE — Phase746 primary caller accumulator delta
-P2.3  CURRENT/BLOCKED — consume remaining P1.1 and remove complete contact_response; target 7 -> 6 providers
+P2.3  CURRENT/BLOCKED — preserve Phase747 shared-reference + Phase748 reference-source + Phase749 later-response native work; consume remaining P1.1 and remove complete contact_response; target 7 -> 6 providers
 P2.4  consume P1.2 and narrow/remove residual FUN_00765c40
 P2.5  replace remaining provider boundaries in dependency order
 P2.6  consume proven control chain continuously
@@ -75,20 +76,11 @@ P2.6  consume proven control chain continuously
 
 Owns exact retail resources, Silverstone/BMW scene composition, participant handoff, Vulkan, playable profile/launcher/bootstrap, and final visible integration.
 
-Current priorities:
-
-```text
-P3.1  resource-pipeline -> playable-scene provenance join (#1431 lineage)
-P3.2  playable pipeline launcher/profile (#1442/#1443 lineage)
-P3.3  one-command playable bootstrap (#1444 lineage)
-P3.4  preserve exact Silverstone/BMW resource + participant authority
-P3.5  consume fresh vehicle transform and later camera handoff
-P3.6  final continuous Silverstone + BMW smoke path
-```
+Current priorities remain P3.1–P3.6 as defined by the canonical V6 instructions and machine-readable execution state.
 
 ## Shared frontier
 
-Current merged main frontier: **Phase 747**.
+Current merged main frontier: **Phase 749**.
 
 Already positive:
 
@@ -104,12 +96,15 @@ Phase744 typed CollisionQueryOutput/query scalar handoff
 Phase745 selected same-pass FUN_00766510 session handoff
 Phase746 primary FUN_00766510 caller accumulator delta
 Phase747 shared reference-vector owner/transform
+Phase748 FUN_00713630 dynamic reference-source arithmetic/cadence
+Phase749 native later +0x3a28/+0x3a40 response-state branch
 Phase742 primary FUN_00766510 response application
 Phase743 selected BMW application-point owner
 Process 1 response-config ownership
 Process 1 earlier +0x3b20 branch ownership
 Process 1 optional +0x3bc8/+0x3cxx branch ownership
 Process 1 later +0x3a28/+0x3a40 branch ownership
+Process 1 direct FUN_00753650 caller-accumulator surface (4/4)
 ```
 
 Active top-level external provider count:
