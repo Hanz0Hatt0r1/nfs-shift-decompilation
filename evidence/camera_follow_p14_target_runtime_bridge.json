@@ -27,7 +27,9 @@
     "allocation_constructor": "FUN_008868c0 -> FUN_0046c050",
     "constructor_vtable": "0x00ab6890",
     "post_construction_update": "FUN_0046d7b0(entry+0x1e80, entry+0x1e84)",
-    "identity_with_selected_HDVehicle_or_BODY0": "unproven"
+    "classification": "target-local offset/runtime state",
+    "world_pose_identity": false,
+    "reason": "FUN_00481420 obtains the vehicle world affine independently through FUN_0070dcc0 before FUN_004394a0 transforms these local target vectors"
   },
   "target_transform_dispatch": {
     "call_chain": ["FUN_00481420", "FUN_004810a0", "FUN_004585e6", "FUN_004810bf"],
@@ -46,12 +48,12 @@
   },
   "adjudication": {
     "manager_entry_direct_vehicle_identity_rejected": true,
-    "entry_attached_runtime_pose_dependency_proven": true,
-    "entry_attached_runtime_is_selected_vehicle_proven": false,
-    "entry_attached_runtime_pose_is_BODY0_world_pose_proven": false,
+    "entry_attached_runtime_local_target_dependency_proven": true,
+    "entry_attached_runtime_is_world_pose": false,
+    "world_pose_dependency_moved_to_snapshot_affine_bridge": true,
     "phase651_request_3_complete": false,
     "native_camera_follow_ready": false,
     "external_provider_count": 7
   },
-  "next": "Trace the producers feeding entry+0x1e84/FUN_0046d7b0 and writers of entry+0x1e80 pose lanes, then prove or reject their current-pose identity with selected retail HDVehicle/BODY0."
+  "next": "Consume SHIFT.CameraFollowP14SnapshotAffineBridge/1 for world-pose provenance. The remaining camera-side request-3 blocker is TrackingCamera target-id identity with the selected player/BMW entry."
 }
