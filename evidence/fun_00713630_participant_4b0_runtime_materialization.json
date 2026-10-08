@@ -1,0 +1,125 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0RuntimeMaterialization/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "pc_decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630UpstreamDirectSurface/1",
+    "SHIFT.Fun00713630PhysicsTweakerMaterialization/1",
+    "SHIFT.Fun00713630Participant4b0SubobjectAliasFrontier/1",
+    "SHIFT.Fun00766510ResidualTailClosure/1"
+  ],
+  "exact_storage": {
+    "participant_subobject_offset": "0x340",
+    "subobject_field_offset": "0x170",
+    "participant_field_offset": "0x4b0",
+    "identity": "participant+0x4b0 == (participant+0x340)+0x170",
+    "type": "f32",
+    "triplet": ["subobject+0x16c", "subobject+0x170", "subobject+0x174"]
+  },
+  "canonical_materializer": {
+    "function": "FUN_007927c0",
+    "source_lines": "789888-789936",
+    "source_sha256": "f75b15c2a0eb0496dcdf54c0af522d02704bb7d1a6efa784c8bd374cb2e4a8d8",
+    "stores": [
+      "subobject+0x16c = param_2[0]",
+      "subobject+0x170 = param_2[1]",
+      "subobject+0x174 = param_2[2]"
+    ],
+    "target_machine_store": "0x007927ee fstp dword [eax+4]",
+    "machine_span": {
+      "start": "0x007927dc",
+      "end_exclusive": "0x007927fd",
+      "sha256": "814751910e5b5db792c6b57e0689d5e95e02297514b9c52d84b96527403e3f88"
+    }
+  },
+  "selected_runtime_manager_materialization": {
+    "function": "FUN_00713340",
+    "source_lines": "706072-706157",
+    "source_sha256": "5f6d3da417afeb9b322165e49d91bc0f91e0fadebaa701ef6770337476d57c02",
+    "manager_participant_array": "manager+0x140",
+    "participant_record_stride": "0x1fa0",
+    "active_byte": "record+0x4e",
+    "per_index_condition_byte": "manager+0x15c+index",
+    "actual_participant_pointer": "record[0]",
+    "materializer_receiver": "actual_participant+0x340",
+    "second_float3_input": [0.0, 0.0, 0.0],
+    "materialized_target_on_this_path": "actual_participant+0x4b0 = +0.0f",
+    "machine_callsite": "0x007133db call FUN_007927c0",
+    "machine_receiver_setup": "0x007133d3 mov ecx,[ecx]; 0x007133d5 add ecx,0x340",
+    "machine_span": {
+      "start": "0x00713360",
+      "end_exclusive": "0x007133e0",
+      "sha256": "593dace066f40faef0049c1216d043f8f85be3717ed427674ab82eedf1a71809"
+    }
+  },
+  "pre_consumer_order": {
+    "outer_update_function": "FUN_00715380",
+    "source_lines": "707679-707766",
+    "source_sha256": "1f3c7e89de3d1947b7bdee21e1a39c7dcfbda51b6916e9f5bfed8a7a5eb859c5",
+    "ordered_calls": [
+      "0x0071556f call FUN_00713340",
+      "0x00715576 call FUN_007135b0",
+      "0x0071557d call FUN_007144a0"
+    ],
+    "cadence_function": "FUN_007144a0",
+    "cadence_behavior": "calls FUN_00713630 when manager counter/state % 3 == 0",
+    "cadence_source_lines": "706883-706919",
+    "cadence_source_sha256": "5c6e45dda09bc829cf791fd7608033b0e59452300f2e737bc6664cc09123cd46",
+    "machine_span": {
+      "start": "0x0071556d",
+      "end_exclusive": "0x00715582",
+      "sha256": "b95729403b1504e6dfd1386765cfda3e1df644dc57224ffb1d533e1921129422"
+    },
+    "materializer_runs_before_cadence_consumer": true
+  },
+  "dynamic_nonconstant_proof": {
+    "function": "FUN_0074ddc3",
+    "role": "PhysicsParticipant::Restart selected-participant path",
+    "source_lines": "744508-744656",
+    "source_sha256": "4076ba13fb59e5f5a9effab0fe221392b534c8e8ddb1eb799cb01b2773d1e38c",
+    "case4_machine_span": {
+      "start": "0x0074df98",
+      "end_exclusive": "0x0074dfd3",
+      "sha256": "60ab47c8a60f9d0c389c919180175fc4be77ae1892360640b422f9b1674cd730"
+    },
+    "case4_receiver": "actual_participant+0x340",
+    "case4_second_float3_source": "restart input +0x34/+0x38/+0x3c",
+    "participant_plus_0x4b0_source_on_case4": "restart input +0x38",
+    "meaning": "The runtime zero-materialization path is conditional; other selected runtime paths write dynamic values. participant+0x4b0 must not be frozen as a setup constant."
+  },
+  "closed_prior_inputs": {
+    "seven_config_runtime_owners_materialized": true,
+    "sample_history_writer_selected_participant_scheduling_closed": true
+  },
+  "adjudication": {
+    "participant_plus_0x4b0_storage_identity_closed": true,
+    "participant_plus_0x4b0_materializer_closed": true,
+    "participant_plus_0x4b0_selected_runtime_path_closed": true,
+    "participant_plus_0x4b0_preconsumer_order_closed": true,
+    "participant_plus_0x4b0_is_dynamic_not_setup_constant": true,
+    "p1_1a_complete": true,
+    "p1_1c_complete": true,
+    "p1_1_complete": true,
+    "contact_response_provider_removal_authorized": true,
+    "external_provider_count": 7,
+    "target_external_provider_count_after_process_2_consumption": 6
+  },
+  "handoff": {
+    "consumer": "Process 2 P2.3",
+    "instruction": "Preserve runtime materialization and retail ordering. Do not replace participant+0x4b0 with a constant. The zero value proven in FUN_00713340 applies only to its conditioned path; Restart and other selected paths can write dynamic values.",
+    "provider_removal_owner": "Process 2",
+    "process_1_must_not_reduce_provider_count": true
+  },
+  "limits": [
+    "This contract proves the actual selected participant storage/materializer and one exact runtime pre-consumer materialization path; it does not claim participant+0x4b0 is globally zero.",
+    "Two residual root-relative direct-displacement candidates may remain as diagnostic frontier items, but they no longer block P1.1a because the exact selected-object materializer and scheduling are positively joined.",
+    "Process 1 authorizes Process 2 consumption/removal but does not itself reduce the external provider count."
+  ],
+  "next_step": "Process 2 P2.3 consumes this handoff in exact retail order and may reduce provider count 7 -> 6 only when FUN_00766510/contact_response is actually removed."
+}
