@@ -5,7 +5,7 @@
   "authority": {
     "platform": "PC retail 1.02",
     "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
-    "evidence_kind": "full-retail direct-call receiver inventory plus bounded machine-body store scan"
+    "evidence_kind": "full-retail direct-call receiver inventory plus manager-vtable machine-body store scan"
   },
   "upstream_contract": "SHIFT.HDVehicle64e8ManagerDomainFrontier/1",
   "target": {
@@ -17,6 +17,7 @@
   },
   "constructor": {
     "function": "FUN_00488dc0",
+    "manager_vtable_store": "manager[0] = 0x00ab9190",
     "direct_slot_store": "0x00488e33 [manager+0x374] = 0",
     "initial_slot_value": 0
   },
@@ -38,11 +39,39 @@
       {"function": "FUN_004939e0", "address": "0x004939e0", "call_count": 1, "body_end": "0x00493a3e", "direct_store_to_plus_0x374": false}
     ]
   },
+  "manager_virtual_surface": {
+    "vtable_address": "0x00ab9190",
+    "slot_count": 18,
+    "unique_target_count": 17,
+    "targets": [
+      "FUN_00489aa0",
+      "FUN_004891a0",
+      "FUN_00407e50",
+      "FUN_006389b0",
+      "FUN_00407e70",
+      "FUN_005f1a20",
+      "FUN_00638850",
+      "FUN_006383c0",
+      "FUN_006383d0",
+      "FUN_008542a0",
+      "FUN_00a251c0",
+      "FUN_00638470",
+      "FUN_00638490",
+      "FUN_00638360",
+      "FUN_00638900",
+      "FUN_00638390",
+      "FUN_006383e0"
+    ],
+    "duplicate_target": "FUN_00407e50 appears in two slots",
+    "direct_store_to_plus_0x374_found": false
+  },
   "adjudication": {
     "constructor_zero_proven": true,
     "direct_manager_receiver_method_setter_found": false,
     "direct_manager_receiver_method_setter_surface_exhausted": true,
-    "indirect_virtual_alias_setter_still_possible": true,
+    "manager_vtable_direct_setter_found": false,
+    "manager_vtable_direct_setter_surface_exhausted": true,
+    "helper_alias_or_non_vtable_indirect_setter_still_possible": true,
     "singleton_slot_join_to_hdvehicle_4330_complete": false,
     "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
     "retail_input_control_provenance_proven": false,
@@ -50,9 +79,10 @@
     "external_provider_count": 7
   },
   "limits": [
-    "Only direct calls where ECX is still an unmodified alias of FUN_00489ad0 return are admitted to this inventory.",
-    "Calls on manager subobjects such as manager+0x20 are excluded.",
-    "Absence of a direct +0x374 store does not reject indirect, virtual, helper, alias, or bulk-copy registration paths."
+    "Only direct calls where ECX is still an unmodified alias of FUN_00489ad0 return are admitted to the direct-call inventory.",
+    "Calls on manager subobjects such as manager+0x20 are excluded from the manager-root receiver inventory.",
+    "The vtable scan covers the 18 function-pointer slots beginning at the constructor-installed table 0x00ab9190; the next bytes are non-code data.",
+    "Absence of a direct +0x374 store does not reject helper-mediated writes, escaped aliases, non-vtable function pointers, or bulk-copy registration paths."
   ],
-  "next_step": "Trace indirect/virtual/helper writes that can mutate manager+0x374, and separately trace insertion producers for manager+0x2a0. Promote or reject the +0x21b8 literal writers only after exact pointer identity is joined to HDVehicle+0x4330."
+  "next_step": "Trace helper-mediated, escaped-alias, and non-vtable indirect writes that can mutate manager+0x374; separately trace insertion producers for manager+0x2a0. Promote or reject the +0x21b8 literal writers only after exact pointer identity is joined to HDVehicle+0x4330."
 }
