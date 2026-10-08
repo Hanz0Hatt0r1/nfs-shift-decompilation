@@ -8,7 +8,9 @@ ROOT = Path(__file__).resolve().parents[1]
 EXTERNAL_RESULT = ROOT / "native_runtime/include/shift_fun_00765c40_external_pass_result.hpp"
 NATIVE_QUERY_EVIDENCE = ROOT / "evidence/p2_4_fun_00765c40_native_selected_query_input.json"
 SESSION_QUERY_EVIDENCE = ROOT / "evidence/p2_4_fun_00765c40_session_query_snapshot.json"
+WHEEL_STATE_EVIDENCE = ROOT / "evidence/fun_00752fa0_wheel_state_machine_proof.json"
 COMPOSED_EVIDENCE = ROOT / "evidence/p2_4_fun_00765c40_composed_residual_executor.json"
+COMPOSED_HEADER = ROOT / "native_runtime/include/shift_fun_00765c40_composed_residual_executor.hpp"
 SESSION_SOURCE = ROOT / "native_runtime/src/native_vehicle_provider_session.cpp"
 
 
@@ -26,6 +28,10 @@ def test_p2_4_overlay_currentizes_fun_00765c40_without_rewriting_history() -> No
     assert fun["provider_returned_selected_query_input_authoritative"] is False
     assert fun["session_query_snapshot_native"] is True
     assert fun["collision_output_typed"] is True
+    assert fun["wheel_state_machine_proof_contract"] == p2_4.WHEEL_STATE_MACHINE_PROOF_FORMAT
+    assert fun["wheel_state_source_address"] == "HDVehicle+0x98"
+    assert fun["wheel_state_source_address_proven"] is True
+    assert fun["wheel_state_source_owner_lifetime_native"] is False
     assert fun["lower_scene_query_provider_external"] is True
     assert fun["lower_scene_query_provider_global"] == "0x00c133ac"
     assert fun["lower_scene_query_provider_vtable_slot"] == "0x1c0"
@@ -34,19 +40,26 @@ def test_p2_4_overlay_currentizes_fun_00765c40_without_rewriting_history() -> No
     assert tuple(fun["remaining_explicit_producers"]) == p2_4.REMAINING_EXPLICIT_PRODUCERS
     assert report["guards"]["historical_phase726_audit_mutated"] is False
     assert report["guards"]["external_provider_count_decremented"] is False
+    assert report["guards"]["wheel_state_source_owner_inferred_from_address"] is False
 
 
 def test_overlay_matches_active_runtime_contracts() -> None:
     result_header = EXTERNAL_RESULT.read_text(encoding="utf-8")
     native_query_evidence = NATIVE_QUERY_EVIDENCE.read_text(encoding="utf-8")
     session_query_evidence = SESSION_QUERY_EVIDENCE.read_text(encoding="utf-8")
+    wheel_state_evidence = WHEEL_STATE_EVIDENCE.read_text(encoding="utf-8")
     session_source = SESSION_SOURCE.read_text(encoding="utf-8")
     composed = COMPOSED_EVIDENCE.read_text(encoding="utf-8")
+    composed_header = COMPOSED_HEADER.read_text(encoding="utf-8")
 
     assert p2_4.EXTERNAL_PASS_RESULT_FORMAT in result_header
     assert "std::optional<CollisionQueryOutput> query_output" in result_header
     assert p2_4.NATIVE_SELECTED_QUERY_INPUT_FORMAT in native_query_evidence
     assert p2_4.SESSION_QUERY_SNAPSHOT_FORMAT in session_query_evidence
+    assert p2_4.WHEEL_STATE_MACHINE_PROOF_FORMAT in wheel_state_evidence
+    assert '"qword_argument_source": "HDVehicle+0x98"' in wheel_state_evidence
+    assert "std::uint64_t wheel_state_source_bits = 0u" in composed_header
+    assert "inputs.wheel_state_source_bits" in composed_header
     assert "materialize_fun_00765c40_session_query_snapshot" in session_source
     assert "query_inputs[pass_index] = session_query_input" in session_source
     assert p2_4.COMPOSED_RESIDUAL_EXECUTOR_FORMAT in composed
@@ -58,9 +71,13 @@ def test_contract_is_fail_closed_on_remaining_producers() -> None:
     payload = p2_4.contract()
     assert payload["external_provider_count"] == 7
     assert payload["provider_returned_selected_query_input_authoritative"] is False
+    assert payload["wheel_state_source_address"] == "HDVehicle+0x98"
+    assert payload["wheel_state_source_address_proven"] is True
+    assert payload["wheel_state_source_owner_lifetime_native"] is False
     assert payload["lower_scene_query_provider_external"] is True
     assert payload["complete_internalization"] is False
     assert payload["provider_removed"] is False
     assert payload["remaining_explicit_producers"] == list(p2_4.REMAINING_EXPLICIT_PRODUCERS)
+    assert "wheel_state_source_HDVehicle_0x98_owner_lifetime" in payload["remaining_explicit_producers"]
     assert "wheel_job_formula_FUN_0075cfb0" in payload["remaining_explicit_producers"]
     assert "FUN_007584f0_computed_payloads" in payload["remaining_explicit_producers"]
