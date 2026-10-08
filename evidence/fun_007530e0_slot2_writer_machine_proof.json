@@ -1,0 +1,75 @@
+{
+  "format": "SHIFT.Fun007530e0Slot2WriterMachineProof/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "direct PE32 machine-code receiver/value flow"
+  },
+  "consumer_join": {
+    "consumer_contract": "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1",
+    "target_slot": 2,
+    "target_absolute_offset": "HDVehicle+0x1e38",
+    "target_width": "f64"
+  },
+  "writer_function": {
+    "function": "FUN_007530e0",
+    "entry": "0x007530e0",
+    "end_exclusive": "0x0075310c",
+    "abi": "thiscall-like machine boundary: ECX receiver, one f64 stack argument, ret 0x8",
+    "sole_direct_callsite": "0x0076ce7b",
+    "direct_callsite_count": 1,
+    "instructions": [
+      "0x007530e3 fld qword [ebp+0x8]",
+      "0x007530e8 fsub qword [ecx+0x2e10]",
+      "0x007530f0 fstp qword [ecx+0x2e10]",
+      "0x007530f6 fmul qword [ecx+0x2e18]",
+      "0x007530fc fadd qword [ecx+0x1e38]",
+      "0x00753102 fstp qword [ecx+0x1e38]"
+    ],
+    "exact_update": {
+      "argument": "x",
+      "old_reference": "old(HDVehicle+0x2e10)",
+      "scale": "HDVehicle+0x2e18",
+      "old_target": "old(HDVehicle+0x1e38)",
+      "store_reference": "HDVehicle+0x2e10 = x",
+      "store_target": "HDVehicle+0x1e38 = old_target + (x - old_reference) * scale"
+    }
+  },
+  "caller_receiver_proof": {
+    "caller": "FUN_0076b280",
+    "caller_entry": "0x0076b280",
+    "existing_hdvehicle_contract": "SHIFT.BMWOffset33bStoreProvenance/1",
+    "existing_contract_role": "FUN_0076b280 entry ECX is the source-backed HDVehicle receiver",
+    "caller_prologue": "0x0076b2c9 ESI = ECX",
+    "call_receiver_setup": "0x0076ce5e ECX = ESI",
+    "call_instruction": "0x0076ce7b call FUN_007530e0",
+    "same_hdvehicle_receiver_proven": true
+  },
+  "caller_argument_proof": {
+    "original_stack_frame_anchor": "0x0076b281 EBX = ESP before realigned frame setup",
+    "source_pointer_load": "0x0076ce56 EAX = [EBX+0x8]",
+    "source_expression_role": "first physical stack argument to FUN_0076b280",
+    "argument_instructions": [
+      "0x0076ce66 fild dword [eax+0xf1c]",
+      "0x0076ce6c fmul qword [eax+0xf10]",
+      "0x0076ce72 fadd qword [eax+0xf08]",
+      "0x0076ce78 fstp qword [esp]",
+      "0x0076ce7b call FUN_007530e0"
+    ],
+    "exact_argument_formula": "x = f64([source+0xf08]) + f64(int32([source+0xf1c])) * f64([source+0xf10])",
+    "source_owner_or_control_semantics_proven": false
+  },
+  "adjudication": {
+    "slot2_absolute_writer_identified": true,
+    "same_hdvehicle_receiver_proven": true,
+    "writer_value_formula_proven": true,
+    "explicit_argument_formula_proven": true,
+    "first_stack_argument_owner_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Trace the first physical stack argument of FUN_0076b280 to its owner and then the +0xf08/+0xf10/+0xf1c value producers. Do not assign throttle/brake/steering semantics without an exact PC-retail value-transfer proof."
+}
