@@ -1,0 +1,35 @@
+{
+  "authority": {
+    "ownership_contract": "SHIFT.Fun00766510DirectCallerAccumulatorSurface/1",
+    "source_authority": "PC retail 1.02",
+    "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.Fun00766510DirectAccumulatorSurface/1",
+  "ready": true,
+  "accumulator": {
+    "offsets": ["+0x40a0", "+0x40a8", "+0x40b0"],
+    "entry_zeroing_proven": true,
+    "direct_site_count": 4
+  },
+  "direct_sites": [
+    {"id":"early_3b20","source_line":759558,"conditional":true},
+    {"id":"optional_3c60","source_line":759621,"conditional":true},
+    {"id":"primary_3950","source_line":759692,"conditional":false},
+    {"id":"later_3a40","source_line":759732,"conditional":true}
+  ],
+  "native_contract": {
+    "fun_00753650_cross_product_primitive_reused": true,
+    "source_computed_delta_applied_one_site_at_a_time": true,
+    "four_sites_batched_or_reordered": false
+  },
+  "scope": {
+    "direct_surface_consumed_by_process2": true,
+    "auxiliary_pair_scheduling_internalized": false,
+    "final_transformed_vector_add_internalized": false,
+    "whole_caller_accumulator_closed": false,
+    "contact_response_provider_removed": false,
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7
+  }
+}
