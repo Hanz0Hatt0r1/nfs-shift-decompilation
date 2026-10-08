@@ -12,6 +12,7 @@
     "literal_store_inventory_format": "SHIFT.HDVehicle64e8Manager374LiteralStoreInventory/1",
     "corrected_inventory_pr": 1670,
     "remaining_site_count_before": 20,
+    "manager_singleton_root": "0x00bc9fc0",
     "manager_root_vptr": "0x00ab9190",
     "participants_manager_subobject_vptr_at_manager_plus_0x20": "0x00ab916c",
     "manager_constructor_vptr_proof": [
@@ -21,110 +22,42 @@
     "inherited_negative_site_excluded_here": "0x005ded7e"
   },
   "same_body_vptr_rejections": [
-    {
-      "site": "0x0074874b",
-      "function": "FUN_00748280",
-      "base_register": "ESI",
-      "receiver_capture": "0x0074829d mov esi,ecx",
-      "same_receiver_vptr_store": "0x007482b2 mov [esi],0x00b07938",
-      "vptr": "0x00b07938",
-      "equals_manager_root_vptr": false
-    },
-    {
-      "site": "0x008169c3",
-      "function": "FUN_008167f0",
-      "base_register": "ESI",
-      "receiver_capture": "0x008167f8 mov esi,ecx",
-      "same_receiver_vptr_stores": [
-        "0x008167fa mov [esi],0x00b1e270",
-        "0x00816810 mov [esi],0x00aaa9a0",
-        "0x00816825 mov [esi],0x00b16158"
-      ],
-      "last_explicit_vptr_before_target_store": "0x00b16158",
-      "equals_manager_root_vptr": false
-    },
-    {
-      "site": "0x00833972",
-      "function": "FUN_00833760",
-      "base_register": "EBX",
-      "receiver_capture": "0x0083376a mov ebx,ecx",
-      "same_receiver_vptr_stores": [
-        "0x00833773 mov [ebx],0x00b18bc8",
-        "0x0083378a mov [ebx],0x00b190a8"
-      ],
-      "last_explicit_vptr_before_target_store": "0x00b190a8",
-      "equals_manager_root_vptr": false
-    },
-    {
-      "site": "0x00844343",
-      "function": "FUN_00844320",
-      "base_register": "ESI",
-      "receiver_capture": "0x00844321 mov esi,ecx",
-      "same_receiver_vptr_store": "0x0084432b mov [esi],0x00b190a8",
-      "vptr": "0x00b190a8",
-      "equals_manager_root_vptr": false
-    },
-    {
-      "site": "0x00844b67",
-      "function": "FUN_00844a20",
-      "base_register": "ESI",
-      "receiver_capture": "0x00844a28 mov esi,ecx",
-      "same_receiver_vptr_store": "0x00844a3a mov [esi],0x00b190a8",
-      "vptr": "0x00b190a8",
-      "equals_manager_root_vptr": false
-    },
-    {
-      "site": "0x00d7f104",
-      "function": "FUN_00d7f040",
-      "base_register": "ESI",
-      "receiver_capture": "0x00d7f041 mov esi,ecx",
-      "same_receiver_vptr_store": "0x00d7f057 mov [esi],0x00ac1fc4",
-      "vptr": "0x00ac1fc4",
-      "equals_manager_root_vptr": false
-    }
+    {"site":"0x0074874b","function":"FUN_00748280","base_register":"ESI","receiver_capture":"0x0074829d mov esi,ecx","same_receiver_vptr_store":"0x007482b2 mov [esi],0x00b07938","vptr":"0x00b07938","equals_manager_root_vptr":false},
+    {"site":"0x008169c3","function":"FUN_008167f0","base_register":"ESI","receiver_capture":"0x008167f8 mov esi,ecx","same_receiver_vptr_stores":["0x008167fa mov [esi],0x00b1e270","0x00816810 mov [esi],0x00aaa9a0","0x00816825 mov [esi],0x00b16158"],"last_explicit_vptr_before_target_store":"0x00b16158","equals_manager_root_vptr":false},
+    {"site":"0x00833972","function":"FUN_00833760","base_register":"EBX","receiver_capture":"0x0083376a mov ebx,ecx","same_receiver_vptr_stores":["0x00833773 mov [ebx],0x00b18bc8","0x0083378a mov [ebx],0x00b190a8"],"last_explicit_vptr_before_target_store":"0x00b190a8","equals_manager_root_vptr":false},
+    {"site":"0x00844343","function":"FUN_00844320","base_register":"ESI","receiver_capture":"0x00844321 mov esi,ecx","same_receiver_vptr_store":"0x0084432b mov [esi],0x00b190a8","vptr":"0x00b190a8","equals_manager_root_vptr":false},
+    {"site":"0x00844b67","function":"FUN_00844a20","base_register":"ESI","receiver_capture":"0x00844a28 mov esi,ecx","same_receiver_vptr_store":"0x00844a3a mov [esi],0x00b190a8","vptr":"0x00b190a8","equals_manager_root_vptr":false},
+    {"site":"0x00d7f104","function":"FUN_00d7f040","base_register":"ESI","receiver_capture":"0x00d7f041 mov esi,ecx","same_receiver_vptr_store":"0x00d7f057 mov [esi],0x00ac1fc4","vptr":"0x00ac1fc4","equals_manager_root_vptr":false}
   ],
   "unique_vtable_dispatch_rejection": {
-    "function": "FUN_008446a0",
-    "target_sites": ["0x008446cb", "0x008446e3", "0x008446f8"],
-    "receiver_capture": "0x008446a9 mov esi,ecx",
-    "whole_pe_function_pointer_occurrence_count": 1,
-    "unique_function_pointer_location": "0x00b19144",
-    "owning_vtable": "0x00b190a8",
-    "vtable_slot_offset": "+0x9c",
-    "direct_callsite_count": 0,
-    "owning_vtable_equals_manager_root_vptr": false
+    "function":"FUN_008446a0","target_sites":["0x008446cb","0x008446e3","0x008446f8"],"receiver_capture":"0x008446a9 mov esi,ecx","whole_pe_function_pointer_occurrence_count":1,"unique_function_pointer_location":"0x00b19144","owning_vtable":"0x00b190a8","vtable_slot_offset":"+0x9c","direct_callsite_count":0,"owning_vtable_equals_manager_root_vptr":false
   },
   "owner_child_vptr_rejection": {
-    "site": "0x00816c9c",
-    "function": "FUN_00816c70",
-    "store": "add [ecx+0x374],1",
-    "owner_child_construction": [
-      "0x0080bb2c push 0x390",
-      "0x0080bb37 call FUN_008868c0",
-      "0x0080bb43 mov ecx,eax",
-      "0x0080bb45 call FUN_008167f0",
-      "0x0080bb4a mov [esi+0x56c],eax"
+    "site":"0x00816c9c","function":"FUN_00816c70","store":"add [ecx+0x374],1","owner_child_construction":["0x0080bb2c push 0x390","0x0080bb37 call FUN_008868c0","0x0080bb43 mov ecx,eax","0x0080bb45 call FUN_008167f0","0x0080bb4a mov [esi+0x56c],eax"],"child_constructor_final_vptr":"0x00b16158","child_getter":"0x0080b8f0 mov eax,[ecx+0x56c]; ret","consumer_chain":["0x00572f14 call FUN_0080bfb0","0x00572f19 mov ecx,eax","0x00572f1b call FUN_0080b8f0","0x00572f20 mov edi,eax","0x00572f49 mov ecx,edi","0x00572f4d call FUN_00816c70"],"receiver_vptr":"0x00b16158","equals_manager_root_vptr":false
+  },
+  "embedded_owner_address_rejections": {
+    "owner_constructor": "FUN_007c3170",
+    "owner_entry_capture": "0x007c318a mov esi,ecx",
+    "owner_callsite_count": 3,
+    "owner_call_domains": [
+      {"callsite":"0x0076dfcc","source":"fresh allocation","allocation":"0x0076dfac push 0x3848; 0x0076dfb4 call FUN_008868d0","receiver":"allocation_result"},
+      {"callsite":"0x00798e74","source":"fresh allocation","allocation":"0x00798e58 push 0x3848; 0x00798e60 call FUN_008868d0","receiver":"allocation_result"},
+      {"callsite":"0x00a8ca65","source":"fixed static","receiver":"0x00c1c568"}
     ],
-    "child_constructor_final_vptr": "0x00b16158",
-    "child_getter": "0x0080b8f0 mov eax,[ecx+0x56c]; ret",
-    "consumer_chain": [
-      "0x00572f14 call FUN_0080bfb0",
-      "0x00572f19 mov ecx,eax",
-      "0x00572f1b call FUN_0080b8f0",
-      "0x00572f20 mov edi,eax",
-      "0x00572f49 mov ecx,edi",
-      "0x00572f4d call FUN_00816c70"
+    "embedded_targets": [
+      {"site":"0x007c0fa0","function":"FUN_007c0db0","owner_call":"0x007c31a3 lea ecx,[esi+0x8]; 0x007c31aa call FUN_007c0db0","receiver_relation":"owner+0x8","fixed_static_receiver_if_static_owner":"0x00c1c570","equals_manager_singleton_root":false},
+      {"site":"0x007c1ace","function":"FUN_007c19c0","owner_call":"0x007c320b lea ecx,[esi+0xfe8]; 0x007c3215 call FUN_007c19c0","receiver_relation":"owner+0xfe8","fixed_static_receiver_if_static_owner":"0x00c1d550","equals_manager_singleton_root":false}
     ],
-    "receiver_vptr": "0x00b16158",
-    "equals_manager_root_vptr": false
+    "fresh_allocation_receivers_are_new_objects_not_fixed_manager_singleton": true
   },
   "adjudication": {
-    "rejected_site_count": 10,
-    "remaining_literal_store_site_count": 10,
+    "rejected_site_count": 12,
+    "remaining_literal_store_site_count": 8,
     "same_body_vptr_rejected_site_count": 6,
     "unique_vtable_dispatch_rejected_site_count": 3,
     "owner_child_vptr_rejected_site_count": 1,
-    "rejections_use_exact_receiver_or_owner_vptr_identity": true,
+    "embedded_owner_address_rejected_site_count": 2,
+    "rejections_use_exact_receiver_owner_or_address_identity": true,
     "numeric_plus_0x374_equality_used_as_identity": false,
     "remaining_literal_store_receiver_provenance_complete": false,
     "computed_address_manager_374_writer_surface_complete": false,
@@ -135,11 +68,12 @@
   },
   "limits": [
     "0x005ded7e is intentionally absent because corrected upstream inventory already inherits its separate exact allocation-size rejection.",
-    "The manager root vptr 0x00ab9190 and embedded Participants Manager subobject vptr 0x00ab916c are distinct object levels and are not conflated.",
+    "Manager root vptr 0x00ab9190 and embedded Participants Manager subobject vptr 0x00ab916c are distinct object levels and are not conflated.",
     "The six same-body sites require the exact +0x374 base register to be the entry receiver with a non-manager-root vptr before the target write.",
-    "FUN_008446a0 is rejected because its address has exactly one whole-PE function-pointer occurrence at vtable 0x00b190a8+0x9c, zero direct callsites, and ECX is the receiver used for all three target stores.",
-    "0x00816c9c is rejected only through the exact owner+0x56c allocate/construct/store/get/load/call chain; no semantic class label is used as identity evidence.",
-    "This contract does not classify the other 10 literal +0x374 stores and does not cover computed-address +0x374 writes."
+    "FUN_008446a0 is rejected by its unique whole-PE registration at vtable 0x00b190a8+0x9c plus zero direct calls and exact ECX receiver capture.",
+    "0x00816c9c is rejected only through the exact owner+0x56c allocate/construct/store/get/load/call chain.",
+    "0x007c0fa0 and 0x007c1ace are rejected by exhaustive caller-domain identity of their common owner constructor: fresh 0x3848 allocations or fixed 0x00c1c568, followed by exact embedded offsets +0x8/+0xfe8; neither path is fixed manager singleton 0x00bc9fc0.",
+    "This contract does not classify the other 8 literal +0x374 stores and does not cover computed-address +0x374 writes."
   ],
-  "next_step": "Classify the remaining 10 literal +0x374 stores by exact owner/caller provenance, prioritizing embedded receivers and runtime-object/copy families; then widen to computed-address forms only if needed."
+  "next_step": "Classify the remaining 8 literal +0x374 stores by exact owner/caller provenance, prioritizing FUN_00818000, FUN_00864c10, FUN_0097d8c4/FUN_0097eacc, FUN_00a38959 and FUN_00a44a50; then widen to computed-address forms only if needed."
 }
