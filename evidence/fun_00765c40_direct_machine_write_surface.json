@@ -1,0 +1,86 @@
+{
+  "format": "SHIFT.Fun00765c40DirectMachineWriteSurface/1",
+  "ready": true,
+  "purpose": "Machine-backed inventory of direct HDVehicle-relative writes performed by PC-retail FUN_00765c40, separating direct state writes from unresolved callee-mediated side effects.",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "function": "FUN_00765c40",
+    "entry": "0x00765c40",
+    "end_exclusive": "0x00766510",
+    "evidence_kind": "direct PE32 machine-code disassembly",
+    "decompiler_export_required_for_this_claim": false
+  },
+  "closed_preexisting_writes": [
+    {"offset":"+0x38dc","width":"dword","site":"0x00765e8d","role":"typed query cache handle; previously closed"},
+    {"offset":"+0x38e0","width":"qword","site":"0x00765ea6","role":"typed collision scalar handoff; previously closed"}
+  ],
+  "direct_write_groups": [
+    {
+      "kind": "wheel_qword_loop_a",
+      "base_offset": "+0x0a70",
+      "count": 4,
+      "stride": "0x0a80",
+      "offsets": ["+0x0a70","+0x14f0","+0x1f70","+0x29f0"],
+      "sites": ["0x00765cf7/0x00765d46","0x00765d9c/0x00765dd7"],
+      "semantic_name_proven": false
+    },
+    {
+      "kind": "wheel_qword_pair_loop_b",
+      "base_offsets": ["+0x0ba0","+0x0ba8"],
+      "count": 4,
+      "stride": "0x0a80",
+      "offsets": ["+0x0ba0","+0x0ba8","+0x1620","+0x1628","+0x20a0","+0x20a8","+0x2b20","+0x2b28"],
+      "sites": ["0x0076606b","0x00766073"],
+      "semantic_name_proven": false
+    },
+    {
+      "kind": "contact_record_pointer_array",
+      "base_offset": "+0x35c8",
+      "count": 12,
+      "stride": "0x04",
+      "last_offset": "+0x35f4",
+      "site": "0x00766120",
+      "semantic_name_proven": false
+    },
+    {
+      "kind": "contact_scalar_qword_array",
+      "base_offset": "+0x35f8",
+      "count": 12,
+      "stride": "0x08",
+      "last_offset": "+0x3650",
+      "site": "0x0076618b",
+      "semantic_name_proven": false
+    },
+    {"kind":"flag","offset":"+0x3660","width":"byte","site":"0x007661ac","value":"1","semantic_name_proven":false},
+    {"kind":"qword_state","offset":"+0x3668","width":"qword","site":"0x00766381","semantic_name_proven":false},
+    {"kind":"qword_state","offset":"+0x3670","width":"qword","site":"0x0076638a","semantic_name_proven":false},
+    {"kind":"dword_state","offset":"+0x3678","width":"dword","site":"0x0076639b","semantic_name_proven":false},
+    {
+      "kind": "load_term_positive_count",
+      "offset": "+0x407c",
+      "width": "dword",
+      "sites": ["0x00765f32","0x00765f4e","0x00765f61","0x00765f74","0x00765f87"],
+      "inputs": ["+0x0b38","+0x15b8","+0x2038","+0x2ab8"],
+      "semantics": "counts how many of the four already-closed +0x738 wheel load terms compare greater than zero",
+      "semantic_name_proven": false
+    }
+  ],
+  "direct_write_surface_complete_for_machine_body": true,
+  "callee_mediated_side_effects_complete": false,
+  "representative_unresolved_callees": [
+    "0x00752fa0",
+    "0x007584f0",
+    "0x007aefb0",
+    "0x007afd20",
+    "0x007b0430",
+    "0x007baa70"
+  ],
+  "gate": {
+    "p1_2b_direct_write_inventory_closed": true,
+    "p1_2b_complete": false,
+    "fun_00765c40_provider_removal_authorized": false,
+    "external_provider_count": 7,
+    "remaining_requirement": "classify side effects and receiver ownership for every potentially mutating callee in FUN_00765c40 before complete callback removal"
+  }
+}
