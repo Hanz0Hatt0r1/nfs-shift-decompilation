@@ -1,0 +1,65 @@
+{
+  "format": "SHIFT.CameraFollowP14ActiveTargetIdProducer/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact PC-retail machine/decompile value flow"
+  },
+  "mode2_activation": {
+    "function": "FUN_0080e1b0",
+    "tracking_branch": "FUN_0080e0d0(this, tracking_camera, camera_object_id)",
+    "target_id_argument": "param_1",
+    "lookat_id_argument": "param_2",
+    "camera_object_id_argument": "param_3",
+    "current_target_publication": "FUN_0080d500(this,param_1) -> lane+0x26a4 = param_1"
+  },
+  "active_camera_data_publication": {
+    "guard": "FUN_0081f2e0(mode2_source)[+0x68] == 1",
+    "target_setter": "FUN_0080ce80(mode2_source,param_1)",
+    "target_setter_flow": [
+      "FUN_0080ce80 calls FUN_00812ed0(source)",
+      "if active camera data exists: active_data+0x74 = param_1"
+    ],
+    "lookat_setter": "FUN_0080cea0(mode2_source,param_2)",
+    "lookat_setter_flow": [
+      "FUN_0080cea0 calls FUN_00812ed0(source)",
+      "if active camera data exists: active_data+0x7c = param_2"
+    ],
+    "active_target_id_producer_proven": true,
+    "active_lookat_id_producer_proven": true
+  },
+  "steady_state_reuse": {
+    "function": "FUN_00812050",
+    "flow": [
+      "local_18 = camera_lane+0x26a4",
+      "FUN_0080e1b0(camera_lane, local_18, local_18, camera_object_id)",
+      "therefore an already-selected target ID is republished unchanged to active data+0x74"
+    ],
+    "preserves_target_id": true
+  },
+  "callsite_frontier": {
+    "direct_activation_sources": [
+      "FUN_004b9350",
+      "FUN_004b94f0",
+      "FUN_0050a* camera/event path",
+      "FUN_0080be50 wrapper",
+      "FUN_0080e650 command dispatcher",
+      "FUN_00812050 steady-state path",
+      "thunk_FUN_00d91f10 script/UI path"
+    ],
+    "remaining_question": "which initial/retarget activation path supplies param_1 from the proven selected-player manager ID source"
+  },
+  "adjudication": {
+    "active_camera_plus_0x74_write_site_known": true,
+    "active_camera_plus_0x74_value_is_FUN_0080e1b0_param_1": true,
+    "camera_lane_plus_0x26a4_tracks_same_target_id": true,
+    "steady_state_republishes_same_target_id": true,
+    "initial_activation_param_1_selected_player_proven": false,
+    "selected_player_target_identity_complete": false,
+    "native_camera_follow_ready": false,
+    "external_provider_count": 7
+  },
+  "next": "Trace the initial/retarget callers of FUN_0080e1b0/FUN_0080be50 and prove which one supplies param_1 from FUN_00459b80('player'/'teammate') or another independently proven selected-player manager ID source."
+}
