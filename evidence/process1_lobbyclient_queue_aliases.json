@@ -1,0 +1,80 @@
+{
+  "format": "SHIFT.Process1LobbyClientQueueAliases/1",
+  "ready": true,
+  "source": {
+    "authority": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "xbox_recomp_required": false
+  },
+  "lobby_client": {
+    "singleton_storage": "DAT_00be4800",
+    "owner_name": "Plasma_Online",
+    "queue_name": "LobbyClient Output Message Queue",
+    "queue_offset": "+0x2180",
+    "base_vtable": "0x00ae3b00",
+    "queue_accessor_vtable_slot": "+0x88",
+    "queue_accessor": "0x005aa4e0",
+    "queue_accessor_machine_semantics": "return this + 0x2180"
+  },
+  "resolved_generic_enqueue_callers": {
+    "FUN_0057e5b0": {
+      "queue_owner": "Plasma_Online/LobbyClient",
+      "controller1_alias_ruled_out_by_object_identity": true
+    },
+    "FUN_0057e820": {
+      "queue_owner": "Plasma_Online/LobbyClient",
+      "controller1_alias_ruled_out_by_object_identity": true
+    }
+  },
+  "fun_006503d0_direct_callers": {
+    "direct_callsite_count": 3,
+    "lobby_client_global_queue_calls": [
+      "FUN_0057e1c0",
+      "FUN_0057e2a0"
+    ],
+    "embedded_plus_0x2180_call": "FUN_005a8b90",
+    "embedded_plus_0x2180_exact_owner_promoted": false,
+    "wrapper_fully_ruled_out_as_controller1_alias": false
+  },
+  "adjudication": {
+    "fun_0057e5b0_controller1_queue_alias_ruled_out": true,
+    "fun_0057e820_controller1_queue_alias_ruled_out": true,
+    "fun_006503d0_two_of_three_direct_calls_joined_to_lobby_client": true,
+    "fun_006503d0_all_possible_controller1_aliases_ruled_out": false,
+    "indirect_or_native_apc_injection_ruled_out": false,
+    "render_or_present_phase_lock_proven": false
+  },
+  "machine_spans": {
+    "lobby_constructor": {
+      "start": "0x005aa390",
+      "end_exclusive": "0x005aa477",
+      "sha256": "ec57d35157c4875474707f21ed68add1936444c76a98f688d2cef0b6ebf5b599"
+    },
+    "lobby_queue_init_tail": {
+      "start": "0x005aa456",
+      "end_exclusive": "0x005aa470",
+      "sha256": "3b6764e649251bd9e4b6c3b316ac43a0307c66daf4b29451952f9c672587dc6d"
+    },
+    "lobby_queue_accessor": {
+      "start": "0x005aa4e0",
+      "end_exclusive": "0x005aa4e7",
+      "sha256": "5dd1f86c0c4905503bb9356b2237508931587870c27385f4755724c0ab40c134"
+    },
+    "lobby_vtable_queue_slot": {
+      "start": "0x00ae3b88",
+      "end_exclusive": "0x00ae3b8c",
+      "sha256": "c77c37cf7f5c224258a25b2c8754827abc9e34cdd433b7537d3b94de54d3fbb5"
+    }
+  },
+  "next_blocker": {
+    "process": 1,
+    "remaining_generic_queue_pointer_callers": [
+      "FUN_006333f0",
+      "FUN_006503d0",
+      "FUN_006880c0"
+    ],
+    "description": "classify FUN_006333f0, the remaining FUN_006503d0 +0x2180 owner, and FUN_006880c0 by exact queue-object identity; keep indirect/native APC injection and render/presentation phase locking fail-closed"
+  }
+}
