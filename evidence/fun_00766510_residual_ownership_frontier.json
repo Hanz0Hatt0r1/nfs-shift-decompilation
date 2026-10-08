@@ -22,6 +22,10 @@
       "role": "optional +0x3bc8/+0x3cxx branch setup, +0x3bd0 mutation and source order"
     },
     {
+      "format": "SHIFT.Fun00766510LaterResponseBranchOwnership/1",
+      "role": "later +0x3a28/+0x3a40 branch setup, dynamic sixth-entry lanes and source order"
+    },
+    {
       "format": "SHIFT.Fun00766510PrimaryResponseApplication/1",
       "role": "primary +0x38f0/+0x3950 response transform and BODY application"
     },
@@ -60,14 +64,8 @@
     {
       "id": "P1.1a",
       "target": "FUN_00713630 dynamic writer inputs",
-      "reason": "Phase747 proves the writer/cadence but not the upstream dynamic X/Z generator state feeding actual-participant +0x16b4/+0x16bc",
-      "consumer": "early +0x3b20 branch and FUN_00758fc0 auxiliary pair"
-    },
-    {
-      "id": "P1.1b",
-      "target": "later +0x3a28/+0x3a40 direct response block",
-      "reason": "Phase746 inventory identifies the block but no positive owner/config/order contract currently closes it",
-      "consumer": "complete FUN_00766510 internalization"
+      "reason": "The arithmetic writer is now known, but runtime owner/value provenance for its earlier dynamic inputs still remains fail-closed",
+      "consumer": "shared reference-vector producer consumed by FUN_00766510"
     },
     {
       "id": "P1.1c",
@@ -82,12 +80,11 @@
     "external_provider_count": 7,
     "target_external_provider_count_after_process_2_consumption": 6,
     "requirements": [
-      "close P1.1a producer/value provenance without freezing dynamic participant lanes as setup constants",
-      "close P1.1b owner/config/source-order provenance",
+      "close remaining P1.1a producer/value provenance without freezing dynamic participant lanes as setup constants",
       "classify every remaining caller-accumulator contribution and conditional state/diagnostic write",
       "publish an explicit Process 1 handoff that Process 2 can preserve in exact retail order"
     ]
   },
   "next_owner": "Process 1",
-  "next_step": "Trace the upstream dynamic X/Z generator state consumed by FUN_00713630, then continue P1.1b/P1.1c until the removal-ready handoff is positive."
+  "next_step": "Finish P1.1a upstream dynamic-input provenance, then close P1.1c with an exhaustive accumulator/state-write preservation contract."
 }

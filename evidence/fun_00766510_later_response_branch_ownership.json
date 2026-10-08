@@ -1,0 +1,120 @@
+{
+  "adjudication": {
+    "contact_response_provider_removable_now": false,
+    "curve_and_application_setup_owner_closed": true,
+    "later_response_branch_owner_closed": true,
+    "plus_3a00_persistent_refresh_required": true,
+    "plus_3ac0_runtime_mutation_required": true,
+    "plus_3ac8_persistent_refresh_required": true,
+    "safe_to_model_whole_3a40_table_as_setup_constant": false,
+    "table_setup_owner_closed": true
+  },
+  "format": "SHIFT.Fun00766510LaterResponseBranchOwnership/1",
+  "limits": [
+    "No physical semantic names are promoted for this response block.",
+    "This contract does not close FUN_00713630 upstream runtime-global/value ownership or the final cumulative response/tail write audit.",
+    "Selected BMW numeric values are not synthesized."
+  ],
+  "next_owner": "Process 2 can consume this later-branch ownership; Process 1 continues residual P1.1a/P1.1c proof before contact_response removal.",
+  "persistent_derived_state": {
+    "HDVehicle+0x3a00": {
+      "formula": "+0x3780*s^2 + +0x3778*s + +0x3770",
+      "selector_state": "+0x3cb0",
+      "setup_constant": false,
+      "writer": "FUN_00756b10",
+      "writer_call_surface": [751615, 752661, 752742, 761382],
+      "writer_line": 751473
+    },
+    "HDVehicle+0x3ac0": {
+      "role": "sixth table entry second lane overwritten immediately before FUN_007551e0",
+      "runtime_write_line": 759727,
+      "setup_constant": false,
+      "source": "current FUN_00755340(+0x3a08) result multiplied by persistent +0x3a00"
+    },
+    "HDVehicle+0x3ac8": {
+      "formula": "+0x3798*s^2 + +0x3790*s + +0x3788",
+      "selector_state": "+0x3cb0",
+      "setup_constant": false,
+      "writer": "FUN_00756b10",
+      "writer_call_surface": [751615, 752661, 752742, 761382],
+      "writer_line": 751476
+    },
+    "mutable_coefficient_bases": {
+      "+0x3770": {
+        "baseline": "+0x3cb8",
+        "clamp_reset": "FUN_00758280 and reset path",
+        "mutation": "FUN_00758000"
+      },
+      "+0x3788": {
+        "baseline": "+0x3cc0",
+        "clamp_reset": "FUN_00758280 and reset path",
+        "mutation": "FUN_00758000"
+      }
+    }
+  },
+  "ready": true,
+  "runtime_branch": {
+    "application_transform_line": 759711,
+    "body_apply_line": 759730,
+    "caller_accumulator_line": 759732,
+    "cross_product_line": 759731,
+    "curve_line": 759724,
+    "diagnostic_gate_line": 759738,
+    "diagnostic_write_line": 759748,
+    "function": "FUN_00766510",
+    "last_entry_y_refresh_line": 759727,
+    "ordering": "transform +0x3a28 application -> derive relative vector -> +0x3a08 curve * persistent +0x3a00 -> overwrite +0x3ac0 -> +0x3a40 table response -> transform table output -> BODY apply -> FUN_00753650 -> caller accumulator -> optional +0x42d8..+0x42f0 diagnostics",
+    "scale_line": 759725,
+    "table_use_line": 759728
+  },
+  "setup_owned": {
+    "anchor_lines": {
+      "application_setup": 757128,
+      "application_store": 757129,
+      "baseline_3cb8": 751613,
+      "baseline_3cc0": 751614,
+      "coeff_3770": 751595,
+      "coeff_3778": 751598,
+      "coeff_3780": 751601,
+      "coeff_3788": 751604,
+      "coeff_3790": 751607,
+      "coeff_3798": 751610,
+      "curve_setup": 751571,
+      "initial_refresh": 751615,
+      "table_dest": 751575,
+      "table_source": 751574,
+      "table_stride": 751589
+    },
+    "application_vector_3a28": {
+      "source": "VehicleLoadData+0xc18 transformed by FUN_00753590",
+      "storage": "+0x3a28/+0x3a30/+0x3a38"
+    },
+    "coefficient_initial_sources": {
+      "+0x3770": "evaluated VehicleLoadData+0x9f4",
+      "+0x3778": "evaluated VehicleLoadData+0xa08",
+      "+0x3780": "evaluated VehicleLoadData+0xa1c",
+      "+0x3788": "evaluated VehicleLoadData+0x9b8",
+      "+0x3790": "evaluated VehicleLoadData+0x9cc",
+      "+0x3798": "evaluated VehicleLoadData+0x9e0"
+    },
+    "curve_3a08": "FUN_00752f10 from VehicleLoadData+0xa38/+0xa40/+0xa48",
+    "table_3a40": {
+      "count": 6,
+      "entry_stride": "0x18 bytes",
+      "evaluator": "FUN_007a6be0 with explicit f32 spill before f64 storage",
+      "runtime_overwritten_lanes": ["+0x3ac0", "+0x3ac8"],
+      "source_component_offsets_per_record": ["+0x00", "+0x14", "+0x28"],
+      "source_cursor_anchor": "VehicleLoadData+0xa68",
+      "source_record_first_component": "VehicleLoadData+0xa50",
+      "source_record_stride": "0x48 bytes",
+      "storage": "+0x3a40..+0x3ac8"
+    }
+  },
+  "source": {
+    "authority": "PC retail 1.02",
+    "file": "SHIFT.exe.c",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "xbox_recomp_required": false
+  }
+}
