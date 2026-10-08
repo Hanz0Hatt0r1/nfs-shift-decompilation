@@ -1,0 +1,73 @@
+{
+  "format": "SHIFT.HDVehicle64e8ManagerDomainFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "direct PE32 machine-code receiver provenance"
+  },
+  "target": {
+    "root_storage": "HDVehicle+0x64e8",
+    "owned_subobject_base": "HDVehicle+0x4330",
+    "subobject_offset": "0x21b8",
+    "upstream_contract": "SHIFT.HDVehicle64e8WriterFrontier/1"
+  },
+  "literal_store_domains": {
+    "singleton_slot": {
+      "store_instruction": "0x004b86cf",
+      "receiver_chain": [
+        "0x004b8664 call FUN_00489ad0",
+        "0x004b8669 ESI = [EAX+0x374]",
+        "0x004b86cf [ESI+0x21b8] = 1"
+      ],
+      "manager_constructor_zeroes_slot": "0x00488e33 [manager+0x374] = 0",
+      "same_as_hdvehicle_4330_proven": false
+    },
+    "indexed_collection": {
+      "manager_base": "FUN_00489ad0 return",
+      "collection_base": "manager+0x2a0",
+      "lookup": "FUN_0054ed00(collection,index)",
+      "stores": [
+        {
+          "instruction": "0x004bb205",
+          "value": 4,
+          "receiver": "FUN_0054ed00(manager+0x2a0,index)"
+        },
+        {
+          "instruction": "0x004bca6b",
+          "value": 3,
+          "receiver": "FUN_0054ed00(manager+0x2a0,index)"
+        },
+        {
+          "instruction": "0x00d775ee",
+          "value": 2,
+          "receiver": "FUN_0054ed00(manager+0x2a0,index)"
+        }
+      ],
+      "same_as_hdvehicle_4330_proven": false
+    }
+  },
+  "hdvehicle_4330_machine_surface": {
+    "constructor": "0x0076b241 ECX = HDVehicle+0x4330; call FUN_00772200",
+    "update": "0x00768c16 ECX = HDVehicle+0x4330; call FUN_00772570",
+    "destructor": "0x00769551 ECX = HDVehicle+0x4330; call FUN_00756050",
+    "load_forward": "0x0076e1c1 EBX = HDVehicle+0x4330; forwarded to FUN_007c3b00/FUN_0076b280/FUN_007618f0",
+    "direct_fun_00489ad0_call_in_constructor_update_destructor": false,
+    "direct_fun_0054ed00_call_in_constructor_update_destructor": false,
+    "direct_store_of_hdvehicle_4330_into_manager_0x374_proven": false,
+    "direct_insert_of_hdvehicle_4330_into_manager_0x2a0_proven": false
+  },
+  "adjudication": {
+    "four_literal_store_sites_reduced_to_two_receiver_domains": true,
+    "singleton_slot_join_to_hdvehicle_4330_complete": false,
+    "indexed_collection_join_to_hdvehicle_4330_complete": false,
+    "exact_hdvehicle_64e8_writer_proven": false,
+    "literal_candidates_rejected": false,
+    "alias_or_indirect_registration_still_possible": true,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Trace writes/inserts into FUN_00489ad0 manager+0x374 and manager+0x2a0 and prove or reject pointer identity against HDVehicle+0x4330. Do not reject the literal candidates merely because no direct registration occurs in the constructor/update/destructor windows."
+}
