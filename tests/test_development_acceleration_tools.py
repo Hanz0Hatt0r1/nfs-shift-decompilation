@@ -23,6 +23,8 @@ def test_blocker_graph_is_fail_closed_and_partitioned():
     assert p["rules"]["numeric_offset_equality_is_identity"] is False
     assert p["rules"]["external_provider_count"] == 7
     streams = {row["id"]: row for row in p["workstreams"]}
+    assert streams["P1.1"]["status"] == "complete"
+    assert "SHIFT.Fun00766510P11FinalHandoff/1" in streams["P1.1"]["closed"]
     assert streams["P1.3"]["owner"] == "Process 1B"
     children = {row["id"]: row for row in streams["P1.3"]["children"]}
     manager2a0 = children["P1.3.manager2a0"]
@@ -32,7 +34,9 @@ def test_blocker_graph_is_fail_closed_and_partitioned():
     assert manager2a0["insertion_producer_complete"] is True
     assert manager2a0["element_size"] == "0x22e0"
     assert manager2a0["entry_identity_to_hdvehicle_4330"] is False
-    assert streams["P2.3"]["blocked_by"] == ["P1.1"]
+    assert streams["P2.3"]["status"] == "ready"
+    assert streams["P2.3"]["blocked_by"] == []
+    assert streams["P2.3"]["handoff"] == "SHIFT.Fun00766510P11FinalHandoff/1"
 
 
 def test_scaffold_generator_defaults_fail_closed(tmp_path):
