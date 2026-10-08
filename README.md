@@ -2,7 +2,7 @@
 
 Evidence-driven reconstruction of *Need for Speed: SHIFT* with one practical milestone: a native offline Linux/Vulkan playable slice driven by original retail resources.
 
-The repository already contains a connected retail-resource pipeline, Silverstone scene reconstruction, native Vulkan execution, a continuous runtime shell, persistent BMW physics state, exact selected-session scheduler timing, a proven BMW render/physics frame bridge, and freshness-gated vehicle world-transform publication.
+The repository already contains a connected retail-resource pipeline, Silverstone scene reconstruction, native Vulkan execution, a continuous runtime shell, persistent BMW physics state, exact selected-session scheduler timing, a proven BMW render/physics frame bridge, freshness-gated vehicle world-transform publication, and a progressively internalized retail `FUN_00766510` contact-response path.
 
 It is **not yet a complete playable native build**. Current work is concentrated on the shortest remaining retail-semantic path needed to close the first Silverstone + BMW vertical slice.
 
@@ -68,7 +68,7 @@ Before substantial work, answer:
 **Process 1 — retail proof / provenance / timing**
 
 ```text
-P1.1  close remaining FUN_00766510 configuration/branch/state ownership
+P1.1  close remaining FUN_00766510 dynamic-writer / optional-branch / residual-state ownership
 P1.2  prove FUN_00765c40 collision-provider/load-term/residual ownership
 P1.3  close input -> drivetrain/wheel/control producer chain
 P1.4  prove retail camera-follow source/timing
@@ -77,9 +77,9 @@ P1.4  prove retail camera-follow source/timing
 **Process 2 — native physics / runtime**
 
 ```text
-P2.1  finish Phase745 same-pass FUN_00766510 session handoff on merged Phase744
-P2.2  finish Phase746 caller accumulator delta
-P2.3  consume P1.1 and remove complete contact_response; target providers 7 -> 6
+P2.1  consume Phase747 shared-reference-vector ownership without inventing dynamic source values
+P2.2  consume the remaining P1.1 FUN_00766510 branch/state proofs in exact retail order
+P2.3  remove complete contact_response when behavior is fully internal; target providers 7 -> 6
 P2.4  consume P1.2 and narrow/remove residual FUN_00765c40
 P2.5  replace remaining provider boundaries in dependency order
 P2.6  consume the proven retail control chain continuously
@@ -88,9 +88,9 @@ P2.6  consume the proven retail control chain continuously
 **Process 3 — resources / scene / renderer / bootstrap**
 
 ```text
-P3.1  resource-pipeline -> playable-scene provenance join
-P3.2  playable pipeline launcher/profile preparation
-P3.3  one-command playable resource-pipeline bootstrap
+P3.1  merge resource-pipeline -> playable-scene provenance join (#1431)
+P3.2  merge provenance-gated playable launcher/profile preparation (#1442, #1443)
+P3.3  merge one-command playable resource-pipeline bootstrap (#1444)
 P3.4  preserve exact Silverstone/BMW resource + participant authority
 P3.5  consume fresh vehicle transform and later camera handoff
 P3.6  final continuous Silverstone + BMW smoke path
@@ -100,7 +100,7 @@ Processes may advance in parallel on independent items. Cross-process handoffs m
 
 ## Current status
 
-Current `main` frontier: **Phase 744**.
+Current `main` frontier: **Phase 747**.
 
 | Area | State | Notes |
 | --- | --- | --- |
@@ -115,35 +115,35 @@ Current `main` frontier: **Phase 744**.
 | Retail inner BODY execution | **Positive** | Exact **1/180 s** persistent inner substeps are admitted; normal outer update resolves to six recovered substeps |
 | `FUN_007682c0` BODY0 delta/effect path | **Largely native** | BODY0 destination, machine effect, x87 FSQRT, derived projection state and steering angle path are internalized |
 | `FUN_00765c40` collision/query pass | **Partially native** | World position, query-cache lifetime, selected miss fallback and typed selected `CollisionQueryOutput` are available; collision provider/load terms/residual side effects remain external |
-| `FUN_00766510` contact response | **Partially native** | Primary response application is native; application-point ownership and the Phase744 query-scalar handoff are proven |
+| `FUN_00766510` contact response | **Partially native, narrowed through Phase 747** | Same-pass collision/application-point handoff, primary caller accumulator delta, and shared reference-vector owner/transform are recovered; dynamic participant source materialization, optional branch integration and residual state/diagnostic writes still block removal |
 | External top-level vehicle providers | **7 remain** | The count falls only when a complete callback can be removed without dropping source-visible behavior |
 | Input -> drivetrain/wheel/control mapping | Incomplete | Live input exists, but full retail control producer/consumer mapping is not closed |
 | Retail camera follow | Incomplete | Camera transport exists; authoritative follow source/timing is still open |
-| End-to-end playable Linux slice | **Not yet** | Core physics/control and final integration blockers remain |
+| Resource-pipeline -> playable bootstrap | **Implemented in open Process 3 stack, not yet on `main`** | Provenance join, launcher/profile wrappers and one-command orchestration are in #1431/#1442/#1443/#1444 |
+| End-to-end playable Linux slice | **Not yet** | Core physics/control/camera and final integration blockers remain |
 
-## What Phase 744 closes
+## What Phases 745–747 close
 
-Phase 744 makes the selected BMW `FUN_007b0710` result explicit at the residual `FUN_00765c40` boundary and freezes the next scalar handoff toward `FUN_00766510`.
+Phase 745 threads the same-pass selected `CollisionQueryOutput`, native `+0x38e0/+0x38e8` state and Phase 743 application point through `NativeVehicleProviderSession` into the residual `FUN_00766510` callback.
 
-The selected path now has a typed collision output rather than an opaque result, while the already-proven state remains available:
+Phase 746 exposes the primary caller accumulator delta after `FUN_007baa70` using the recovered `FUN_00753650` cross-product path.
+
+Phase 747 closes the owner and transform for the shared `local_d8/local_d0/local_c8` reference vector used by the early `+0x3b20` response branch and later contact-response work:
 
 ```text
-current persistent BODY state
-  -> native FUN_00765c40 query inputs
-  -> typed CollisionQueryOutput
-  -> native +0x38e0 hit/miss projection
-  -> selected +0x38e8 fallback / upper clamp
-  -> Phase743 +0x38f0 application point
-  -> FUN_00766510 response handoff
+HDVehicle+0x3fe8
+  -> actual participant
+  -> f32 +0x16b4/+0x16b8/+0x16bc
+  -> independent f32 -> f64 widening
+  -> FUN_007af0a0(BODY0+0xd4)
+  -> local_d8/local_d0/local_c8
 ```
 
-Phase 744 does **not** remove `FUN_00765c40` or `contact_response`. The active top-level provider count remains seven.
+The source vector is **not** an immutable setup constant. `FUN_00713630` dynamically refreshes its X/Z participant lanes, with the source-visible cadence reached from `FUN_007144a0`. Phase 747 intentionally does not manufacture those dynamic values.
+
+Phases 745–747 therefore narrow the residual callback substantially but do **not** remove `FUN_00765c40` or `contact_response`. The active top-level provider count remains seven.
 
 ## Current shortest native integration blocker
-
-The immediate Process 2 edge is Phase 745: thread the same-pass selected `CollisionQueryOutput`, native `+0x38e0/+0x38e8` state and Phase 743 application point through `NativeVehicleProviderSession` into the residual `FUN_00766510` callback.
-
-After that, Phase 746 exposes the primary caller accumulator delta following `FUN_007baa70` through the recovered `FUN_00753650` cross-product path.
 
 The first architectural provider reduction remains:
 
@@ -152,26 +152,33 @@ complete FUN_00766510/contact_response internalization
         -> active external providers 7 -> 6
 ```
 
-That reduction depends on Process 1 closing the remaining source-side configuration/branch/state owners, including:
+The immediate source/native boundary is now concrete rather than anonymous:
 
 ```text
-HDVehicle+0x3908
-HDVehicle+0x3910
-HDVehicle+0x3918
-HDVehicle+0x3950
-+0x3b20 earlier response branch
-optional +0x3bc8/+0x3cxx branch
-auxiliary/state/diagnostic writes
+FUN_00713630 dynamic participant X/Z writer state
+        +
+optional FUN_00766510 +0x3bc8/+0x3cxx branch
+        +
+remaining residual state/diagnostic writes
+        -> exact-order native consumption
+        -> remove top-level contact_response provider
 ```
+
+Do not replace the unresolved dynamic participant state with a selected-session constant.
+
+Process 1 PR **#1459** proves the optional `FUN_00766510` branch rooted at `HDVehicle+0x3bc8/+0x3cxx`, including setup-owned coefficients and the mutable `+0x3bd0` state. It is still open and therefore must not be treated as merged into `main`.
 
 ## Active work not yet on `main`
 
-The following work is ahead of Phase 744 and should not be treated as merged until it lands:
+The following work is ahead of Phase 747 and should not be treated as merged until it lands:
 
-- **Phase 745 / PR #1445** — thread same-pass collision output, `+0x38e0/+0x38e8` state and the selected application point into the residual contact-response callback.
-- **Phase 746 / PR #1447** — expose the primary `FUN_00766510` caller accumulator delta after `FUN_007baa70` using the recovered `FUN_00753650` cross-product path.
-- **Process 1** — close the remaining `FUN_00766510` configuration/branch/state ownership and continue the input/control and camera provenance queues.
-- **Process 3** — build the provenance-gated resource-pipeline -> playable-scene -> profile -> launcher -> one-command bootstrap chain (`#1431`, `#1442`, `#1443`, `#1444` lineages).
+- **Process 1 / PR #1459** — optional `FUN_00766510` `+0x3bc8/+0x3cxx` response-branch ownership; complete `contact_response` removal remains false after this proof alone.
+- **Process 1** — close the remaining dynamic `FUN_00713630` participant-source state plus residual `FUN_00766510` state/diagnostic writes; continue the input/control and camera provenance queues.
+- **Process 2** — consume the remaining proven `FUN_00766510` pieces in exact source order and remove `contact_response` only when no source-visible behavior is dropped.
+- **Process 3 / PR #1431** — prove the exact resource-pipeline -> playable-scene provenance join.
+- **Process 3 / PR #1442** — provenance-gated playable pipeline launcher.
+- **Process 3 / PR #1443** — playable resource-pipeline profile preparation.
+- **Process 3 / PR #1444** — one-command playable resource-pipeline bootstrap, stacked on #1443 -> #1442 -> #1431.
 
 ## Remaining external vehicle boundaries
 
@@ -280,7 +287,10 @@ Implemented pieces include:
 - native `FUN_007594e0` steering/machine-angle path;
 - native pieces of `FUN_00765c40` query-state ownership;
 - typed selected `CollisionQueryOutput` and query-scalar handoff;
-- native primary `FUN_00766510` response application.
+- native primary `FUN_00766510` response application;
+- same-pass `FUN_00766510` collision/application-point session handoff;
+- primary `FUN_00766510` caller accumulator delta through recovered `FUN_00753650`;
+- shared `FUN_00766510` reference-vector owner plus exact f32 -> f64 -> BODY-frame transform boundary.
 
 This is still **not a complete retail vehicle frame**. Remaining producer/refresh ownership, residual collision/contact callbacks, control production and camera timing must be closed before the project can claim a playable retail-consistent loop.
 
@@ -334,6 +344,8 @@ Launch after all required profile gates are ready:
 python3 tools/run_native_vertical_slice.py \
   out/vertical_slice/profile.json
 ```
+
+The Process 3 stack extends this with a provenance-gated playable-pipeline profile/launcher/bootstrap path, but #1431/#1442/#1443/#1444 are not yet merged into `main`.
 
 A valid launch profile proves structural/runtime admission only; it does not by itself prove gameplay-semantic completeness.
 
@@ -405,7 +417,7 @@ cmake -S native_vulkan -B native_vulkan/build -DCMAKE_BUILD_TYPE=Release
 cmake --build native_vulkan/build --parallel
 ```
 
-CI exercises software Vulkan/lavapipe paths, shader compilation/reflection, scene/material submission, runtime contracts and focused native-physics regressions.
+CI exercises software Vulkan/lavapipe paths, shader compilation/reflection, scene/material submission, runtime contracts and focused native-physics regressions. Phase 747 adds a focused Python + native CTest + evidence-validation workflow for the shared `FUN_00766510` reference-vector boundary.
 
 ## Repository layout
 
@@ -451,6 +463,9 @@ The milestone is reached only when one continuous native session satisfies all o
 [x] exact 1/180 s persistent inner execution exists
 [x] BODY0 can publish a fresh admitted vehicle world transform
 [x] selected FUN_00765c40 collision output is typed for the BMW path
+[x] same-pass FUN_00766510 handoff and primary caller accumulator path are native/proven
+[x] shared FUN_00766510 reference-vector owner/transform is proven
+[ ] dynamic participant source and remaining FUN_00766510 residual branches/state are fully internalized
 [ ] residual vehicle provider callbacks needed by the core loop are eliminated or reduced to proven resource/runtime inputs
 [ ] user input reaches the complete source-backed drivetrain/wheel/control chain
 [ ] camera follows the proven current vehicle source/timing
