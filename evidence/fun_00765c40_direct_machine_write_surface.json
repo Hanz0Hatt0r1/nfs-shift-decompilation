@@ -67,9 +67,16 @@
     }
   ],
   "direct_write_surface_complete_for_machine_body": true,
+  "classified_callee_side_effects": [
+    {
+      "callee": "0x00752fa0",
+      "format": "SHIFT.Fun00752fa0WheelStateMachineProof/1",
+      "receiver": "four wheel records at HDVehicle+0x400 stride 0x0a80",
+      "writes": "wheel+0x9f8 dword index and wheel+0xa00 qword from HDVehicle+0x98"
+    }
+  ],
   "callee_mediated_side_effects_complete": false,
   "representative_unresolved_callees": [
-    "0x00752fa0",
     "0x007584f0",
     "0x007aefb0",
     "0x007afd20",
