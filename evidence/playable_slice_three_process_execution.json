@@ -29,7 +29,7 @@
     "fun_00766510_later_branch_native": true,
     "fun_00766510_direct_caller_accumulator_surface_ready": true,
     "fun_00766510_p1_residual_frontier_ready": true,
-    "fun_00766510_p1_complete": false,
+    "fun_00766510_p1_complete": true,
     "controller1_direct_control_timing_surface_ready": true,
     "controller1_control_timing_complete": false,
     "retail_control_chain_complete": false,
@@ -45,9 +45,9 @@
       "queue": [
         {
           "id": "P1.1",
-          "state": "current",
-          "task": "Close the reduced FUN_00766510 residual frontier: P1.1a owns the remaining upstream runtime inputs behind the merged Phase748 FUN_00713630 producer; P1.1c owns exact FUN_00758fc0 caller scheduling, the final transformed-vector accumulation and residual conditional state/diagnostic tail. P1.1b and all four direct FUN_00753650 caller-accumulator sites are closed.",
-          "contract": "SHIFT.Fun00766510ResidualOwnershipFrontier/1",
+          "state": "complete",
+          "task": "Completed FUN_00766510/contact_response Process 1 proof: P1.1a closes runtime config globals, selected-participant sample-history scheduling and dynamic participant+0x4b0 ownership via FUN_007927c0; P1.1c closes auxiliary scheduling, final transformed-vector accumulation and guarded residual tail. Final handoff authorizes Process 2 P2.3 consumption without pre-applying the provider reduction.",
+          "contract": "SHIFT.Fun00766510P11FinalHandoff/1",
           "consumer": "Process 2 P2.3"
         },
         {
@@ -91,8 +91,8 @@
         },
         {
           "id": "P2.3",
-          "state": "current-blocked-on-process-1",
-          "task": "Consume the remaining P1.1 handoff after merged Phase747 shared-reference ownership, Phase748 FUN_00713630 reference-source producer and Phase749 later-response native branch; preserve the closed direct caller-accumulator surface and remove complete FUN_00766510/contact_response only when the residual proof closes; target 7 -> 6",
+          "state": "ready-to-consume",
+          "task": "Consume SHIFT.Fun00766510P11FinalHandoff/1 and finish native FUN_00766510/contact_response in exact retail order. Keep selected participant+0x4b0 runtime-mutable via FUN_007927c0 and preserve the proven sample-history cadence, response branches, accumulator ordering, auxiliary-pair scheduling and guarded residual tail. Remove the external boundary only when production execution no longer requires it; target provider count 7 -> 6.",
           "depends_on": ["P1.1", "P2.2"]
         },
         {
@@ -104,7 +104,7 @@
         {
           "id": "P2.5",
           "state": "queued",
-          "task": "Replace remaining providers in dependency order: wheel_update -> FUN_007675f0 inputs -> FUN_007afdd0 scalar factory -> FUN_00765470 half-step refresh -> FUN_007b8810 post-half-step"
+          "task": "Replace remaining providers in dependency order: wheel_update -> FUN_007675f0 inputs -> FUN_007afdd0 scalar factory -> FUN_00765470 half-step refresh provider -> FUN_007b8810 post-half-step"
         },
         {
           "id": "P2.6",
