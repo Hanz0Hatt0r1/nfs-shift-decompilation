@@ -3,6 +3,9 @@ name: coordination
 on:
   pull_request:
     paths:
+      - 'README.md'
+      - 'ROADMAP.md'
+      - 'PROCESS_INSTRUCTIONS.md'
       - 'evidence/playable_slice_three_process_execution.json'
       - 'coordination/**'
       - 'tools/coordination/**'
@@ -13,6 +16,9 @@ on:
   push:
     branches: ['main']
     paths:
+      - 'README.md'
+      - 'ROADMAP.md'
+      - 'PROCESS_INSTRUCTIONS.md'
       - 'evidence/playable_slice_three_process_execution.json'
       - 'coordination/**'
       - 'tools/coordination/**'
@@ -37,6 +43,6 @@ jobs:
       - name: Install focused test dependency
         run: python -m pip install --disable-pip-version-check pytest
       - name: Validate canonical execution state and generated status
-        run: python tools/coordination/render_playable_slice_status.py --check
+        run: python tools/coordination/render_playable_slice_status.py --strict-human-docs --check
       - name: Run coordination regressions
         run: python -m pytest -q tests/test_coordination_source_of_truth.py tests/test_blocker_graph_shape.py
