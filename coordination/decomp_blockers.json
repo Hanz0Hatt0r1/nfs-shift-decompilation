@@ -1,7 +1,7 @@
 {
   "format": "SHIFT.DecompBlockerGraph/1",
   "version": 1,
-  "updated_from_main": "337ac60ac376d3af991888680dd445227021f2ab",
+  "updated_from_main": "bafb52809f0e4328f2b1815ef7a5cc0e85838afe",
   "rules": {"pc_retail_semantic_authority":true,"numeric_offset_equality_is_identity":false,"external_provider_count":7,"semantic_promotion_requires_exact_provenance":true},
   "workstreams": [
     {"id":"P1.1","owner":"Process 1A","title":"FUN_00766510/contact_response producer closure","status":"in_progress","consumer":"Process 2 P2.3","closed":["P1.1c auxiliary scheduling/final transformed-vector/guarded tail"],"next":"Close P1.1a FUN_00713630 upstream runtime config globals, sample-history scheduling, and participant+0x4b0 ownership; then publish final Process 1 handoff."},
@@ -12,14 +12,20 @@
         {"id":"P1.3.slot2","target":"HDVehicle+0x1e38","status":"partial-producer-proven","next":"Continue exact selected HDVehicle+0x64e8 non-sentinel writer provenance; the manager+0x2a0 selection bridge to HDVehicle+0x4330 is rejected."},
         {"id":"P1.3.slot3","target":"HDVehicle+0x28b8","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
         {
-          "id":"P1.3.manager374","target":"FUN_00489ad0()+0x374 value == HDVehicle+0x4330","status":"participants-subobject-direct-writes-rejected-escaped-alias-open",
+          "id":"P1.3.manager374","target":"FUN_00489ad0()+0x374 value == HDVehicle+0x4330","status":"participants-lifecycle-zero-writers-proven-other-indirect-open",
           "rejected_literal_writers":["FUN_0051efa0","FUN_005dec70"],
           "rejected_bulk_copy_aliases":["FUN_0070dcc0 direct-call surface forwards only stack-local destinations into FUN_00481e20","0x004848f5 destination is proven SMS participant+0xa00 render snapshot, not manager singleton","0x0081d335 destination is existing CCameraView+0x2d0 state in FUN_0081d2b0, not manager singleton"],
-          "remaining_literal_writer":null,"direct_bulk_copy_surface_complete":true,"manager_plus_0x20_label":"Participants Manager","manager_plus_0x20_direct_helper_surface_complete":true,"manager_plus_0x20_direct_helper_reaches_0x374":false,"manager_plus_0x20_escaped_alias_open":true,
-          "proven_nonzero_writer":"thunk_FUN_00d60660","proven_selection_relation":"exact manager getter receiver -> FUN_0054ed00(manager+0x2a0,index) -> successful FUN_00485290 state transition -> selected entry stored to manager+0x374 when post-load entry[0] == 0",
+          "remaining_literal_writer":null,"direct_bulk_copy_surface_complete":true,"manager_plus_0x20_label":"Participants Manager","manager_plus_0x20_direct_helper_surface_complete":true,"manager_plus_0x20_direct_helper_reaches_0x374":false,
+          "manager_plus_0x20_escaped_alias_open":false,
+          "manager_plus_0x20_vptr":"0x00ab916c",
+          "manager_plus_0x20_lifecycle_target_reaches_0x374":true,
+          "manager_plus_0x20_lifecycle_target_writes_zero_only":true,
+          "participants_lifecycle_zero_writers":["FUN_004871f0 slot+0x08 -> subobject+0x354 = 0","FUN_00488970 slot+0x14 -> subobject+0x354 = 0"],
+          "proven_nonzero_writer":"thunk_FUN_00d60660",
+          "proven_selection_relation":"exact manager getter receiver -> FUN_0054ed00(manager+0x2a0,index) -> successful FUN_00485290 state transition -> selected entry stored to manager+0x374 when post-load entry[0] == 0",
           "selection_writer_identity_to_hdvehicle_4330":false,
           "selection_writer_identity_rejection":"manager+0x2a0 entries are allocator-owned BArray storage after FUN_00486aa0 reset/repopulation; HDVehicle+0x4330 is fixed global 0x00c17a30",
-          "next":"Continue escaped manager+0x20 alias tracing through FUN_00648730/FUN_00648890 -> FUN_004f5e60 at FUN_0065bf80()+0x24/+0x44, plus unrelated computed/non-vtable manager+0x374 writers; only another exact writer can still establish manager+0x374 == HDVehicle+0x4330."
+          "next":"Trace unrelated computed-offset/non-vtable manager+0x374 writers and direct HDVehicle+0x64e8 non-sentinel provenance. The manager+0x2a0 selection route is rejected for HDVehicle identity, and the bounded Participants Manager escaped-registry lifecycle surface reaches manager+0x374 only through zero stores."
         },
         {
           "id":"P1.3.manager2a0","target":"FUN_00489ad0()+0x2a0 collection entry == HDVehicle+0x4330","status":"entry-identity-rejected-complete",
