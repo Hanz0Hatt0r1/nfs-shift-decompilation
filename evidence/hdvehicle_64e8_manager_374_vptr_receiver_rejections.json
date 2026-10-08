@@ -10,19 +10,12 @@
   },
   "upstream": {
     "literal_store_inventory_format": "SHIFT.HDVehicle64e8Manager374LiteralStoreInventory/1",
-    "remaining_site_count_before": 23,
-    "participants_manager_vptr": "0x00ab916c"
+    "corrected_inventory_pr": 1670,
+    "remaining_site_count_before": 20,
+    "participants_manager_vptr": "0x00ab916c",
+    "inherited_negative_site_excluded_here": "0x005ded7e"
   },
   "rejections": [
-    {
-      "site": "0x005ded7e",
-      "function": "FUN_005dec70",
-      "base_register": "ESI",
-      "receiver_capture": "0x005dec77 mov esi,ecx",
-      "same_receiver_vptr_store": "0x005dec8a mov [esi],0x00adee38",
-      "vptr": "0x00adee38",
-      "vptr_is_participants_manager": false
-    },
     {
       "site": "0x0074874b",
       "function": "FUN_00748280",
@@ -86,8 +79,8 @@
     }
   ],
   "adjudication": {
-    "rejected_site_count": 7,
-    "remaining_literal_store_site_count": 16,
+    "rejected_site_count": 6,
+    "remaining_literal_store_site_count": 14,
     "rejections_use_exact_same_receiver_vptr_identity": true,
     "numeric_plus_0x374_equality_used_as_identity": false,
     "remaining_literal_store_receiver_provenance_complete": false,
@@ -98,9 +91,10 @@
     "external_provider_count": 7
   },
   "limits": [
+    "0x005ded7e is intentionally absent because the corrected upstream inventory already inherits its separate exact allocation-size rejection.",
     "A site is rejected here only when the exact register used as the +0x374 destination base is the same receiver captured from entry ECX and that receiver is explicitly assigned a non-Participants-Manager vptr in the same machine body before the target write.",
-    "This contract does not classify the other 16 literal +0x374 stores and does not cover computed-address +0x374 writes.",
+    "This contract does not classify the other 14 literal +0x374 stores and does not cover computed-address +0x374 writes.",
     "Vptr inequality is used as exact object-identity evidence; offset coincidence is not used."
   ],
-  "next_step": "Classify the remaining 16 literal +0x374 stores by exact receiver provenance, prioritizing child-base and constructor/copy families; then widen to computed-address forms only if needed."
+  "next_step": "Classify the remaining 14 literal +0x374 stores by exact receiver provenance, prioritizing child-base and constructor/copy families; then widen to computed-address forms only if needed."
 }
