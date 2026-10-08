@@ -1,0 +1,12 @@
+{
+  "format": "SHIFT.Process1P13AbsoluteWriterFrontier/1",
+  "ready": true,
+  "consumer_contract": "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1",
+  "rejected_candidate_contract": "SHIFT.Fun00791020HDVehicleRejection/1",
+  "absolute_selected_hdvehicle_offsets": ["0x938", "0x13b8", "0x1e38", "0x28b8"],
+  "candidate_acceptance_rule": "receiver/base must be independently proven to alias selected HDVehicle before value tracing",
+  "raw_numeric_offset_match_is_ownership_proof": false,
+  "retail_input_control_provenance_proven": false,
+  "p1_3_control_producer_complete": false,
+  "external_provider_count": 7
+}
