@@ -47,16 +47,37 @@
       "rejected_as_manager_374_writer": true
     }
   ],
+  "fun_00481e20_forwarded_alias": {
+    "store": "0x004826a6 fstp dword [ESI+0x374]",
+    "path": "FUN_0070dcc0 -> trampoline 0x0047af96 -> FUN_0070dccf -> FUN_0070db00 -> FUN_00481e20",
+    "direct_callers_of_fun_0070dcc0": 21,
+    "direct_callsites": [
+      "0x0041d531", "0x00435f3b", "0x0047fa0d", "0x004811e5", "0x00481254", "0x004812c3", "0x00481332", "0x00481486", "0x00481519", "0x004c9109", "0x004d0e9a", "0x006c916f", "0x006c9e4a", "0x006d1ea7", "0x006d20c3", "0x006d2c8a", "0x007994b6", "0x00811a56", "0x008120df", "0x0088f90e", "0x00d7e14e"
+    ],
+    "receiver_shape_at_all_direct_callsites": "ECX is formed with LEA from EBP-negative stack storage before the call",
+    "forwarding": [
+      "FUN_0070dcc0 preserves incoming ECX across its trampoline split",
+      "FUN_0070dccf pushes that incoming ECX as the argument to FUN_0070db00",
+      "FUN_0070db00 reloads it from [EBP+0x8] into ECX before calling FUN_00481e20"
+    ],
+    "manager_singleton_possible_on_direct_call_surface": false,
+    "rejected_on_direct_call_surface": true
+  },
   "remaining_candidate": {
     "function": "FUN_00481e20",
     "store": "0x004826a6 fstp dword [ESI+0x374]",
     "shape": "large field-by-field float copy including +0x374/+0x378/+0x37c",
-    "status": "open-alias-bulk-copy",
-    "reason_open": "One direct caller path supplies the destination through a forwarded argument; exact exclusion of manager identity is not yet complete."
+    "status": "two-embedded-subobject-callers-open",
+    "open_direct_callsites": [
+      "0x004848f5 destination ECX=parent+0xa00",
+      "0x0081d335 destination ECX=parent+0x2d0"
+    ],
+    "reason_open": "Exact parent-object provenance has not yet excluded an affine alias to the fixed manager address."
   },
   "adjudication": {
     "fun_0051efa0_rejected": true,
     "fun_005dec70_rejected": true,
+    "fun_00481e20_forwarded_stack_alias_rejected": true,
     "fun_00481e20_bulk_copy_still_open": true,
     "manager_374_literal_writer_surface_complete": false,
     "manager_374_join_to_hdvehicle_4330_complete": false,
@@ -68,8 +89,9 @@
   "limits": [
     "Numeric +0x374 equality is not object identity.",
     "No semantic class names are assigned to 0x00be1680 or the 0x37c-byte allocated object.",
-    "FUN_00481e20 remains deliberately open until every admissible destination alias is rooted or rejected.",
+    "The 21-callsite statement covers the Ghidra direct-call surface of FUN_0070dcc0; unresolved indirect entry remains a separate generic limit.",
+    "FUN_00481e20 remains deliberately open for its two embedded-subobject direct callsites until their parent aliases are rooted or rejected.",
     "This proof does not promote manager+0x374 to an HDVehicle/control meaning."
   ],
-  "next_step": "Close the remaining FUN_00481e20 bulk-copy destination aliases, especially the FUN_0070dccf -> FUN_0070db00 forwarded-argument path; separately continue exact manager-root helper/indirect mutations."
+  "next_step": "Close the parent-object provenance for FUN_00481e20 direct callsites 0x004848f5 (parent+0xa00) and 0x0081d335 (parent+0x2d0); separately continue exact manager-root helper/indirect mutations."
 }
