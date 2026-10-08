@@ -1,0 +1,44 @@
+{
+  "format": "SHIFT.CameraFollowP14SourceVtableIdentity/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact constructor machine code plus retail rdata vtable decode"
+  },
+  "source_lane": {
+    "base": "CameraManager+0x1ca0",
+    "stride": "0x460",
+    "element_count_observed_in_constructor_loop": 2,
+    "manager_constructor": "FUN_0080f740",
+    "element_constructor": "FUN_0081fac0"
+  },
+  "constructor_path": [
+    "0x0080f7b3: EDI = CameraManager+0x1ca0",
+    "0x0080f7c2: call FUN_0081fac0",
+    "0x0080f7c7: EDI += 0x460",
+    "0x0081fac3: call FUN_00814f60 base constructor",
+    "0x0081face: source[0] = 0x00b16788"
+  ],
+  "vtable": {
+    "address": "0x00b16788",
+    "plus_0x5c": "FUN_006bbf70",
+    "plus_0x64": "FUN_00820a50",
+    "plus_0x90": "FUN_0081f7c0"
+  },
+  "resolved_behavior": {
+    "FUN_0081f7c0": "rechecks runtime camera object with descriptor 0x00c25fb8, then dispatches source vtable+0x5c",
+    "FUN_006bbf70": "stores its argument at source+0x64",
+    "FUN_00820a50": "obtains the current camera lookup object (+0x10 view) and calls FUN_0081fbc0"
+  },
+  "adjudication": {
+    "mode2_source_vtable_identity_ready": true,
+    "phase651_request_2_closed": true,
+    "mode2_vehicle_pose_dependency_ready": false,
+    "camera_follow_update_order_ready": false,
+    "native_camera_follow_ready": false,
+    "external_provider_count": 7
+  },
+  "next": "Trace selected vehicle/current-pose reads through FUN_0081f7c0/FUN_006bbf70/FUN_00820a50 downstream logic, then prove update ordering."
+}
