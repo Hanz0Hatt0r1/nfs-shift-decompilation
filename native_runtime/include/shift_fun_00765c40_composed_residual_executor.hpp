@@ -6,6 +6,7 @@
 #include "shift_fun_00765c40_contact_body_accumulation.hpp"
 #include "shift_fun_00765c40_optional_body_accumulator_sweep.hpp"
 #include "shift_fun_00765c40_residual_pass_contract.hpp"
+#include "shift_fun_00765c40_residual_producer_handoff.hpp"
 #include "shift_fun_00765c40_selected_bmw_query_fallback.hpp"
 #include "shift_fun_00765c40_selected_bmw_world_position.hpp"
 #include "shift_fun_00765c40_wheel_job_scheduling.hpp"
@@ -38,6 +39,24 @@ struct Fun00765c40ComposedResidualInputs {
     Fun00765c40BoundedStateTailComputedInputs bounded_state_tail{};
     Fun00765c40OptionalBodyAccumulatorSweepInput optional_body_sweep{};
 };
+
+// Copy only the unresolved pure-data producer payload families. Native-owned
+// BODY/query/cache state, the wheel-job execution seam, lower scene-query
+// behavior and the persistent initial BODY accumulator remain with the caller.
+inline Fun00765c40ComposedResidualInputs
+apply_fun_00765c40_residual_producer_handoff(
+    Fun00765c40ComposedResidualInputs inputs,
+    const Fun00765c40ResidualProducerHandoff& handoff) {
+    inputs.wheel_plane = handoff.wheel_plane;
+    inputs.wheel_state_source_bits = handoff.wheel_state_source_bits;
+    inputs.persistent_write = handoff.persistent_write;
+    inputs.wheel_pair = handoff.wheel_pair;
+    inputs.contact_array = handoff.contact_array;
+    inputs.contact_body_entries = handoff.contact_body_entries;
+    inputs.bounded_state_tail = handoff.bounded_state_tail;
+    inputs.optional_body_sweep = handoff.optional_body_sweep;
+    return inputs;
+}
 
 struct Fun00765c40ComposedResidualResult {
     Fun00765c40WheelPlaneRefreshState wheel_plane{};

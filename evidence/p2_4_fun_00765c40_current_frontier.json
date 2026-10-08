@@ -11,6 +11,9 @@
     "selected_query_fallback_contract": "SHIFT.Fun00765c40SelectedBMWQueryFallback/1",
     "collision_output_handoff_contract": "SHIFT.Fun00765c40CollisionOutputHandoff/1",
     "composed_residual_executor_contract": "SHIFT.Fun00765c40ComposedResidualExecutor/1",
+    "residual_producer_handoff_contract": "SHIFT.Fun00765c40ResidualProducerHandoff/1",
+    "residual_producer_handoff_present": true,
+    "residual_producer_handoff_threaded_through_provider_result": false,
     "wheel_state_machine_proof_contract": "SHIFT.Fun00752fa0WheelStateMachineProof/1",
     "wheel_state_source_address": "HDVehicle+0x98",
     "wheel_state_source_address_proven": true,
@@ -44,7 +47,8 @@
     "external_provider_count_decremented": false,
     "lower_collision_semantics_invented": false,
     "unproven_producer_formula_invented": false,
-    "wheel_state_source_owner_inferred_from_address": false
+    "wheel_state_source_owner_inferred_from_address": false,
+    "producer_handoff_treated_as_native_computation": false
   },
-  "next_step": "Recover ownership/lifetime for HDVehicle+0x98 or one remaining producer formula from pinned retail evidence, then consume it in the composed executor without changing the lower scene-query boundary."
+  "next_step": "Thread SHIFT.Fun00765c40ResidualProducerHandoff/1 through the top-level provider result as a typed witness without making it authoritative; keep all nine producer/owner blockers fail-closed."
 }

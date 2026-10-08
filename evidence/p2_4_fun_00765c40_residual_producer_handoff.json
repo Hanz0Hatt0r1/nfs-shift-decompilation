@@ -1,0 +1,35 @@
+{
+  "format": "SHIFT.Fun00765c40ResidualProducerHandoff/1",
+  "ready": true,
+  "consumer": "SHIFT.Fun00765c40ComposedResidualExecutor/1",
+  "payload_family_count": 8,
+  "payload_families": [
+    "wheel_plane",
+    "wheel_state_source_bits",
+    "FUN_007584f0_computed_payloads",
+    "wheel_pair",
+    "contact_array",
+    "contact_body_entries",
+    "bounded_state_tail",
+    "optional_body_sweep"
+  ],
+  "preserved_outside_handoff": {
+    "current_BODY_bytes": "native-owned",
+    "selected_world_position": "native-owned",
+    "query_cache": "native-owned",
+    "selected_query_fallback": "native-owned",
+    "initial_BODY_accumulator_state": "persistent native BODY state",
+    "wheel_job_queue_execution": "explicit external scheduling seam",
+    "wheel_load_term_reads": "explicit external scheduling seam",
+    "lower_scene_query_provider": "external 0x00c133ac/+0x1c0 seam"
+  },
+  "claims": {
+    "producer_formulas_internalized": false,
+    "payload_semantics_invented": false,
+    "top_level_provider_result_extended": false,
+    "top_level_provider_removed": false,
+    "complete_FUN_00765c40_internalized": false,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Thread this pure-data handoff through the top-level FUN_00765c40 result/session boundary, then require it only when the selected provider can supply source-backed values; keep wheel-job execution and lower scene-query behavior external until independently closed."
+}
