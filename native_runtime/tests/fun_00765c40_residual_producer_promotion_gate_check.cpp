@@ -1,0 +1,110 @@
+#include "shift_fun_00765c40_residual_producer_promotion_gate.hpp"
+
+#include <cstdint>
+#include <iostream>
+#include <stdexcept>
+
+namespace {
+using namespace shift::runtime::physics;
+
+void require(bool condition, const char* message) {
+    if (!condition) {
+        throw std::runtime_error(message);
+    }
+}
+}  // namespace
+
+int main() {
+    try {
+        Fun00765c40ComposedResidualInputs base{};
+        base.wheel_state_source_bits = 0x1111222233334444ull;
+        base.wheel_plane = {0x10u, 0x20u, 0x30u, 0x40u};
+        base.persistent_write.positive_branch_values = {1.0, 2.0};
+        base.persistent_write.interpolation_result = 3.0f;
+
+        Fun00765c40ResidualProducerHandoff selective{};
+        selective.family_presence_explicit = true;
+        selective.family_present.fill(false);
+        selective.wheel_state_source_bits = 0xaaaabbbbccccddddull;
+        set_fun_00765c40_residual_producer_family_present(
+            selective,
+            Fun00765c40ResidualProducerFamily::WheelStateSource);
+
+        Fun00765c40ResidualProducerProofMask proof{};
+        bool unproven_rejected = false;
+        try {
+            (void)apply_proven_fun_00765c40_residual_producer_handoff(
+                base, selective, proof);
+        } catch (const std::invalid_argument&) {
+            unproven_rejected = true;
+        }
+        require(unproven_rejected,
+                "present residual producer family passed without independent proof");
+
+        set_fun_00765c40_residual_producer_family_proven(
+            proof,
+            Fun00765c40ResidualProducerFamily::WheelStateSource);
+        const auto promoted =
+            apply_proven_fun_00765c40_residual_producer_handoff(
+                base, selective, proof);
+        require(promoted.wheel_state_source_bits ==
+                    selective.wheel_state_source_bits,
+                "proven selective family did not promote");
+        require(promoted.wheel_plane == base.wheel_plane &&
+                    promoted.persistent_write.positive_branch_values ==
+                        base.persistent_write.positive_branch_values,
+                "promotion gate overwrote absent unresolved family");
+
+        Fun00765c40ResidualProducerHandoff legacy{};
+        legacy.wheel_state_source_bits = 0x55u;
+        legacy.persistent_write.positive_branch_values = {4.0, 5.0};
+        legacy.persistent_write.interpolation_result = 6.0f;
+        require(!legacy.family_presence_explicit,
+                "legacy handoff did not preserve all-family mode");
+
+        bool partial_legacy_proof_rejected = false;
+        try {
+            (void)apply_proven_fun_00765c40_residual_producer_handoff(
+                base, legacy, proof);
+        } catch (const std::invalid_argument&) {
+            partial_legacy_proof_rejected = true;
+        }
+        require(partial_legacy_proof_rejected,
+                "legacy all-family witness accepted partial proof mask");
+
+        Fun00765c40ResidualProducerProofMask all_proven{};
+        all_proven.independently_proven.fill(true);
+        const auto legacy_promoted =
+            apply_proven_fun_00765c40_residual_producer_handoff(
+                base, legacy, all_proven);
+        require(legacy_promoted.wheel_state_source_bits == 0x55u &&
+                    legacy_promoted.persistent_write.positive_branch_values[1] == 5.0,
+                "fully proven legacy witness did not preserve /1 behavior");
+
+        Fun00765c40ResidualProducerHandoff empty_selective{};
+        empty_selective.family_presence_explicit = true;
+        empty_selective.family_present.fill(false);
+        Fun00765c40ResidualProducerProofMask empty_proof{};
+        const auto no_op =
+            apply_proven_fun_00765c40_residual_producer_handoff(
+                base, empty_selective, empty_proof);
+        require(no_op.wheel_state_source_bits == base.wheel_state_source_bits &&
+                    no_op.wheel_plane == base.wheel_plane,
+                "empty selective witness changed composed inputs");
+
+        std::cout
+            << "{\"format\":\""
+            << kFun00765c40ResidualProducerPromotionGateFormat
+            << "\",\"ready\":true,"
+               "\"default_proof_mask_fail_closed\":true,"
+               "\"present_family_requires_proof\":true,"
+               "\"absent_family_preserved\":true,"
+               "\"legacy_all_family_requires_all_proofs\":true,"
+               "\"external_provider_count_after\":7,"
+               "\"complete_fun_00765c40_internalized\":false}\n";
+        return 0;
+    } catch (const std::exception& exc) {
+        std::cerr << exc.what() << '\n';
+        return 1;
+    }
+}

@@ -1,0 +1,37 @@
+{
+  "format": "SHIFT.Fun00765c40ResidualProducerPromotionGate/1",
+  "ready": true,
+  "lane": "Process 2 / P2-runtime",
+  "dependencies": {
+    "producer_handoff": "SHIFT.Fun00765c40ResidualProducerHandoff/2",
+    "composed_executor": "SHIFT.Fun00765c40ComposedResidualExecutor/1"
+  },
+  "proof_mask": {
+    "family_count": 8,
+    "default": "all false",
+    "meaning": "caller asserts an independent source-backed ownership/equivalence proof exists for the corresponding family",
+    "proof_mask_is_evidence": false
+  },
+  "promotion_rule": {
+    "present_family_requires_independent_proof": true,
+    "absent_family_requires_proof": false,
+    "legacy_v1_all_family_witness_requires_all_eight_proofs": true,
+    "selective_v2_witness_can_promote_individual_family": true,
+    "known_invariant_validation_runs_before_promotion": true,
+    "direct_session_promotion_wired": false
+  },
+  "guards": {
+    "presence_treated_as_proof": false,
+    "unproven_family_applied": false,
+    "producer_formula_invented": false,
+    "lower_scene_query_internalized": false,
+    "provider_count_reduced": false
+  },
+  "scope": {
+    "remaining_producer_owner_blockers": 9,
+    "external_provider_count_after": 7,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_provider_removed": false
+  },
+  "next_step": "When Process 1 closes one producer/owner proof, set only that proof bit and compare the captured /2 family with independent native reconstruction before any session wiring."
+}
