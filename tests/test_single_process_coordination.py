@@ -40,7 +40,7 @@ def test_three_process_execution_contract_is_active_and_current() -> None:
     assert frontier["fun_00766510_later_branch_native"] is True
     assert frontier["fun_00766510_direct_caller_accumulator_surface_ready"] is True
     assert frontier["fun_00766510_p1_residual_frontier_ready"] is True
-    assert frontier["fun_00766510_p1_complete"] is False
+    assert frontier["fun_00766510_p1_complete"] is True
     assert frontier["controller1_direct_control_timing_surface_ready"] is True
     assert frontier["controller1_control_timing_complete"] is False
     assert frontier["retail_control_chain_complete"] is False
@@ -66,9 +66,10 @@ def test_process_queues_are_separate_and_dependency_routed() -> None:
     assert [row["id"] for row in p2["queue"]] == ["P2.1", "P2.2", "P2.3", "P2.4", "P2.5", "P2.6"]
     assert [row["id"] for row in p3["queue"]] == ["P3.1", "P3.2", "P3.3", "P3.4", "P3.5", "P3.6"]
 
-    assert p1["queue"][0]["state"] == "current"
-    assert p1["queue"][0]["contract"] == "SHIFT.Fun00766510ResidualOwnershipFrontier/1"
-    assert "all four direct FUN_00753650" in p1["queue"][0]["task"]
+    assert p1["queue"][0]["state"] == "complete"
+    assert p1["queue"][0]["contract"] == "SHIFT.Fun00766510P11FinalHandoff/1"
+    assert "FUN_007927c0" in p1["queue"][0]["task"]
+    assert "provider reduction" in p1["queue"][0]["task"]
     assert p1["queue"][1]["state"] == "complete"
     assert p1["queue"][1]["contract"] == "SHIFT.Fun00765c40ResidualOwnershipFrontier/1"
     assert "0x00c133ac/vtable+0x1c0" in p1["queue"][1]["task"]
@@ -82,8 +83,9 @@ def test_process_queues_are_separate_and_dependency_routed() -> None:
 
     assert p2["queue"][0]["state"] == "complete"
     assert p2["queue"][1]["state"] == "complete"
-    assert p2["queue"][2]["state"] == "current-blocked-on-process-1"
-    assert "Phase749" in p2["queue"][2]["task"]
+    assert p2["queue"][2]["state"] == "ready-to-consume"
+    assert "SHIFT.Fun00766510P11FinalHandoff/1" in p2["queue"][2]["task"]
+    assert "target provider count 7 -> 6" in p2["queue"][2]["task"]
     assert p2["queue"][3]["state"] == "ready-to-consume"
     assert "P1.2" in p2["queue"][3]["depends_on"]
     assert "0x00c133ac/vtable+0x1c0" in p2["queue"][3]["task"]
