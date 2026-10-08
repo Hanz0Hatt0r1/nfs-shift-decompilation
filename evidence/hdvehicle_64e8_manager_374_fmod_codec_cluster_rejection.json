@@ -1,0 +1,74 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374FmodCodecClusterRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "decompiler_role": "navigation-only"
+  },
+  "target": {
+    "manager_slot": "manager+0x374",
+    "sites": ["0x0097da09", "0x0097daf8", "0x0097dc63"]
+  },
+  "callback_descriptor": {
+    "descriptor_base": "0x00b9ca20",
+    "initializer": "FUN_0097dd0b",
+    "name_string": "FMOD DSP Codec",
+    "process_callback_slot": "0x00b9ca54",
+    "process_callback": "FUN_0097dce4",
+    "reset_callback_slot": "0x00b9ca48",
+    "reset_callback": "0x0097d855",
+    "position_callback_slot": "0x00b9ca58",
+    "position_callback": "0x0097d86a"
+  },
+  "receiver_transform": {
+    "process_wrapper": [
+      "0x0097dce4 loads callback arg1",
+      "0x0097dcea lea eax,[arg1-0x1c]",
+      "0x0097dcf0..0x0097dd00 null-masks the derived receiver",
+      "0x0097dd02 calls FUN_0097d8c4 with ECX=(arg1 ? arg1-0x1c : 0)"
+    ],
+    "sibling_callbacks": [
+      "0x0097d855 applies the same arg1-0x1c/null-mask transform before FUN_0097d725",
+      "0x0097d86a applies the same arg1-0x1c/null-mask transform before FUN_0097d83c"
+    ],
+    "same_descriptor_domain": true
+  },
+  "writer_function": {
+    "function": "FUN_0097d8c4",
+    "entry_capture": "0x0097d8d3 mov esi,ecx",
+    "writes": [
+      "0x0097da09 mov [esi+0x374],eax",
+      "0x0097daf8 add [esi+0x374],eax",
+      "0x0097dc63 mov [esi+0x374],eax"
+    ],
+    "receiver_register": "ESI",
+    "receiver_is_callback_derived_codec_state": true
+  },
+  "identity_adjudication": {
+    "participants_manager_root_vptr": "0x00ab9190",
+    "participants_manager_subobject_vptr": "0x00ab916c",
+    "receiver_source": "FMOD DSP Codec callback arg1 minus 0x1c",
+    "receiver_is_participants_manager_root": false,
+    "receiver_is_participants_manager_subobject": false,
+    "listed_sites_can_write_manager_plus_0x374": false
+  },
+  "adjudication": {
+    "fmod_codec_literal_374_cluster_complete": true,
+    "rejected_literal_site_count": 3,
+    "computed_address_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The descriptor name is supporting context only; identity is adjudicated by exact descriptor-slot ownership plus the shared machine receiver transform.",
+    "This contract rejects only the three literal +0x374 sites in FUN_0097d8c4.",
+    "It does not classify computed-address +0x374 writers or FUN_00864c10 argument provenance.",
+    "No identity is inferred from numeric offset equality."
+  ],
+  "next_step": "Resolve the first stack-argument provenance reaching FUN_00864c10/0x00865013, then widen to computed-address manager+0x374 writers only after the literal surface closes."
+}
