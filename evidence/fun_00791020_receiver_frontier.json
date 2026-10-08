@@ -1,0 +1,58 @@
+{
+  "format": "SHIFT.Fun00791020ReceiverFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "direct PE32 machine-code call/receiver flow"
+  },
+  "candidate_writer": {
+    "function": "FUN_00791020",
+    "receiver_register": "ECX",
+    "receiver_copy_instruction": "0x00791027",
+    "writes_receiver_plus_0x938": ["0x007910f8", "0x0079113e"],
+    "write_width": "f32",
+    "selected_hdvehicle_identity_proven": false
+  },
+  "setup_path": {
+    "outer_call_instruction": "0x0074e2be",
+    "outer_callee": "FUN_00799ff0",
+    "receiver_setup": [
+      "0x0074e2b6 ECX = [ESI]",
+      "0x0074e2b8 ECX += 0x340",
+      "0x0074e2be call FUN_00799ff0"
+    ],
+    "fun_00799ff0_entry": "0x00799ff0",
+    "fun_00799ff0_preserves_receiver": [
+      "0x00799ff1 ESI = ECX",
+      "0x00799ff3 call FUN_00791020"
+    ],
+    "proven_receiver_expression_at_setup_call": "*(setup_context)+0x340",
+    "setup_context_identity": "unproven",
+    "same_as_selected_hdvehicle": false
+  },
+  "second_direct_call": {
+    "instruction": "0x00799f7e",
+    "receiver_setup": "0x00799f76 ECX = ESI",
+    "enclosing_object_identity": "unproven",
+    "same_receiver_class_as_setup_path_inferred_from_same local function family only": false
+  },
+  "join_to_fun_00755950_consumer": {
+    "consumer_contract": "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1",
+    "consumer_hdvehicle_slot0_offset": "0x938",
+    "numeric_offset_match": true,
+    "receiver_identity_join_complete": false,
+    "may_promote_as_upstream_writer": false
+  },
+  "adjudication": {
+    "fun_00791020_receiver_setup_path_proven": true,
+    "receiver_is_plus_0x340_child_object_proven": true,
+    "plus_0x340_child_object_is_selected_hdvehicle_proven": false,
+    "fun_00791020_is_fun_00755950_slot0_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Trace the object loaded by the 0x0074e2b6 setup-context dereference and prove or reject its +0x340 child against selected HDVehicle identity. Do not use the matching +0x938 numeric offset as an identity substitute."
+}
