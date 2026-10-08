@@ -1,7 +1,7 @@
 #pragma once
 
 #include "shift_fun_00766510_query_scalar_handoff.hpp"
-#include "shift_body_accumulator_primitives.hpp"
+#include "shift_fun_00766510_selected_bmw_application_point.hpp"
 
 #include <cmath>
 #include <optional>
@@ -12,10 +12,10 @@ namespace shift::runtime::physics {
 inline constexpr const char* kFun00766510ExternalPassInputFormat =
     "SHIFT.Fun00766510ExternalPassInput/1";
 
-// Phase745 same-pass handoff into the still-external remainder of FUN_00766510.
-// The selected BMW path must carry both the exact FUN_00765c40 query-result scalar
-// handoff and the caller-owned HDVehicle+0x38f0 application point recovered by
-// Phase743. Generic historical fixtures may leave both fields absent.
+// Phase745 pre-call contract for the still-external remainder of FUN_00766510.
+// Selected BMW execution must consume the already-native query-scalar handoff
+// and the same-pass +0x38f0 application point. Generic historical fixtures do
+// not pretend to own those selected-session values and therefore carry neither.
 struct Fun00766510ExternalPassInput {
     bool selected_bmw_domain = false;
     std::optional<Fun00766510QueryScalarHandoff> query_scalar_handoff{};
@@ -24,30 +24,50 @@ struct Fun00766510ExternalPassInput {
 
 inline void validate_fun_00766510_external_pass_input(
     const Fun00766510ExternalPassInput& input) {
-    if (input.selected_bmw_domain) {
-        if (!input.query_scalar_handoff.has_value() ||
-            !input.primary_application_point.has_value()) {
+    if (!input.selected_bmw_domain) {
+        if (input.query_scalar_handoff.has_value() ||
+            input.primary_application_point.has_value()) {
             throw std::invalid_argument(
-                "selected BMW FUN_00766510 input requires same-pass query handoff and +0x38f0 application point");
+                "generic FUN_00766510 compatibility input cannot claim selected BMW ownership");
         }
+        return;
     }
-    if (input.primary_application_point.has_value()) {
-        for (double value : *input.primary_application_point) {
-            if (!std::isfinite(value)) {
-                throw std::invalid_argument(
-                    "FUN_00766510 primary application point must be finite");
-            }
-        }
+
+    if (!input.query_scalar_handoff.has_value() ||
+        !input.primary_application_point.has_value()) {
+        throw std::invalid_argument(
+            "selected BMW FUN_00766510 input requires query handoff and +0x38f0 application point");
     }
-    if (input.query_scalar_handoff.has_value()) {
-        const auto& handoff = *input.query_scalar_handoff;
-        if (!std::isfinite(handoff.query_scalar) ||
-            !std::isfinite(handoff.query_limit) ||
-            !std::isfinite(handoff.clamped_query_scalar)) {
+
+    const auto& handoff = *input.query_scalar_handoff;
+    if (!std::isfinite(handoff.query_scalar) ||
+        !std::isfinite(handoff.query_limit) ||
+        !std::isfinite(handoff.clamped_query_scalar)) {
+        throw std::invalid_argument(
+            "selected BMW FUN_00766510 query handoff must remain finite");
+    }
+    for (double value : *input.primary_application_point) {
+        if (!std::isfinite(value)) {
             throw std::invalid_argument(
-                "FUN_00766510 same-pass query scalar handoff must be finite");
+                "selected BMW FUN_00766510 +0x38f0 application point must remain finite");
         }
     }
+}
+
+inline Fun00766510ExternalPassInput
+build_fun_00766510_selected_bmw_external_pass_input(
+    const Fun00765c40QueryInputBoundary& query_input,
+    const CollisionQueryOutput& query_output,
+    const BodyAccumulatorVector3d& primary_application_point) {
+    Fun00766510ExternalPassInput input{};
+    input.selected_bmw_domain = true;
+    input.query_scalar_handoff =
+        execute_fun_00765c40_to_00766510_query_scalar_handoff(
+            query_input,
+            query_output);
+    input.primary_application_point = primary_application_point;
+    validate_fun_00766510_external_pass_input(input);
+    return input;
 }
 
 }  // namespace shift::runtime::physics

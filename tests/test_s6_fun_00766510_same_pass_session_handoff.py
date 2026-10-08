@@ -25,9 +25,12 @@ def test_phase745_evidence_freezes_same_pass_selected_handoff() -> None:
     ]
     join = payload["session_join"]
     assert join["provider_input"] == "SHIFT.Fun00766510ExternalPassInput/1"
+    assert join["typed_input_built_before_wheel_update"] is True
+    assert join["typed_input_consumed_only_at_contact_response_anchor"] is True
     assert join["contact_response_receives_same_pass_handoff"] is True
     assert join["selected_missing_query_output_fail_closed"] is True
     assert join["selected_missing_application_point_fail_closed"] is True
+    assert join["generic_input_cannot_claim_selected_bmw_ownership"] is True
 
 
 def test_phase745_active_session_threads_query_output_and_application_point() -> None:
@@ -38,17 +41,23 @@ def test_phase745_active_session_threads_query_output_and_application_point() ->
     assert "SHIFT.Fun00766510ExternalPassInput/1" in input_header
     assert "query_scalar_handoff" in input_header
     assert "primary_application_point" in input_header
-    assert "selected BMW FUN_00766510 input requires" in input_header
+    assert "generic FUN_00766510 compatibility input cannot claim selected BMW ownership" in input_header
+    assert "build_fun_00766510_selected_bmw_external_pass_input" in input_header
 
     assert "NativeVehicleContactResponseProvider" in session_header
     assert "const physics::Fun00766510ExternalPassInput& input" in session_header
 
-    assert "Fun00766510PassHandoffState" in session_source
+    assert "Fun00766510PassInputState" in session_source
     assert "result.query_output.has_value()" in session_source
-    assert "execute_fun_00765c40_to_00766510_query_scalar_handoff" in session_source
+    assert "build_fun_00766510_selected_bmw_external_pass_input" in session_source
     assert "fun_00766510_selected_bmw_primary_application_point" in session_source
     assert "validate_fun_00766510_external_pass_input" in session_source
-    assert "providers_.contact_response(pass_index, input)" in session_source
+    assert "providers_.contact_response(" in session_source
+
+    build_pos = session_source.index("build_fun_00766510_selected_bmw_external_pass_input")
+    wheel_pos = session_source.index("callbacks.wheel_update")
+    consume_pos = session_source.index("providers_.contact_response(")
+    assert build_pos < wheel_pos < consume_pos
 
 
 def test_phase745_keeps_provider_count_until_complete_contact_response_removal() -> None:
