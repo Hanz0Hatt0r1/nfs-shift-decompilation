@@ -1,0 +1,80 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0FlacRecordRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "pc_decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630Participant4b0Frontier/1",
+    "SHIFT.Fun00713630Participant4b0SubobjectAliasFrontier/1",
+    "SHIFT.Fun00713630Participant4b0Fun00481e20BulkCopyRejection/1"
+  ],
+  "candidate": {
+    "site": "0x00991650",
+    "function": "FUN_00991540",
+    "operation": "mov dword ptr [ESI+0x4b0],EAX",
+    "selected_physics_participant_writer": false,
+    "machine_span": {
+      "start": "0x00991540",
+      "end_exclusive": "0x0099165e",
+      "sha256": "8756a99b19110df16af96c827a6f3615b6c734b609e016f803f0a8a3bf1c004c"
+    }
+  },
+  "record_geometry": {
+    "decompiler_expression": "iVar4 = param_2 * 0x124 + in_EAX[1]",
+    "candidate_expression": "*(uint *)(iVar4 + 0x4b0) = local_c",
+    "record_stride": "0x124",
+    "record_base_owner": "in_EAX[1] FLAC decoder state",
+    "candidate_is_root_relative_participant_store": false
+  },
+  "parser_chain": {
+    "FUN_009918c0": "dispatches to FUN_00991540 for code >= 0x40",
+    "FUN_00991b00": "iterates FLAC subframes and calls FUN_009918c0",
+    "FUN_00991e60": "state-machine dispatch invokes FUN_00991b00",
+    "codec_bridge": "FUN_00963383 passes [this+0x108] into FUN_00991e60",
+    "machine_spans": {
+      "codec_bridge_0x00963383_sha256": "1df1eeed61ed9829701e87f2041c77588460d377d493a6875a81075bc37fccad",
+      "fun_00991e60_sha256": "15659c25ed483e0ad71d1fb551b1678e8267a8b3311f446c34b00e0a9cb222d1",
+      "fun_00991b00_sha256": "90fab7dbd5bd8da125830b2e8a4a0db6c1439298a19a27ab37ef4990a314e32b",
+      "fun_009918c0_window_sha256": "a0646adfdfb858936ccb9672348844c544903b7921540d677b723f4b6a7134bf"
+    }
+  },
+  "flac_owner": {
+    "initializer": "FUN_00963478",
+    "magic_test": "fLaC",
+    "state_pointer_store": "[codec+0x108] = FUN_0098f9d0()",
+    "source_path": "..\\..\\src\\fmod_codec_flac.cpp",
+    "allocation_source_line": "0x1e2",
+    "machine_span": {
+      "start": "0x00963478",
+      "end_exclusive": "0x009635c8",
+      "sha256": "a4bf7504bdff4f32309ab1c519b6d470f29b36d056cc05ba73dac149315ec5ef"
+    },
+    "decompiler_source_spans": [
+      {"lines":"1203611-1203690","sha256":"e86cfda336a99309da0450febc655d3a112f415ca7fd4c66df5048726faa9a48"},
+      {"lines":"1164573-1164604","sha256":"28936460b02c908154b7a17873df8cafb18c7a9df530b58cde3ddc9a6e437017"}
+    ]
+  },
+  "adjudication": {
+    "candidate_receiver_domain_closed": true,
+    "candidate_is_fmod_flac_record_state": true,
+    "candidate_is_selected_physics_participant": false,
+    "direct_displacement_site_rejected": true,
+    "remaining_unjoined_direct_site_count": 8,
+    "selected_participant_runtime_plus_0x4b0_writer_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The codec/source-path name is used only after the machine chain joins the candidate record to the [codec+0x108] decoder state.",
+    "The candidate offset is record-relative under base + index*0x124, not a generic root-relative +0x4b0 identity.",
+    "Computed-address, escaped-alias, indirect-dispatch and remaining direct writer sites remain open."
+  ],
+  "next_step": "Adjudicate the remaining 8 direct-displacement +0x4b0 writer sites by exact receiver provenance."
+}
