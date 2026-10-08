@@ -81,7 +81,7 @@ def build_current_frontier() -> dict[str, Any]:
             "residual_producer_handoff_contract": RESIDUAL_PRODUCER_HANDOFF_FORMAT,
             "residual_producer_handoff_present": True,
             "residual_producer_handoff_threaded_through_provider_result": True,
-            "residual_producer_handoff_threaded_through_session_result": False,
+            "residual_producer_handoff_threaded_through_session_result": True,
             "residual_producer_handoff_authoritative": False,
             "wheel_state_machine_proof_contract": WHEEL_STATE_MACHINE_PROOF_FORMAT,
             "wheel_state_source_address": "HDVehicle+0x98",
