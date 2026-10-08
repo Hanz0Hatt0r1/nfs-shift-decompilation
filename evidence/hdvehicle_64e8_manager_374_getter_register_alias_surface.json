@@ -1,0 +1,23 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374GetterRegisterAliasSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {"platform":"PC retail 1.02","retail_executable_sha256":"eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1","evidence_kind":"exact retail machine transfer; Ghidra SQLite navigation/fingerprints only"},
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374GetterLocalAliasSurface/1",
+  "scope": {"immediate_non_ecx_register_alias_count":10,"immediate_object_field_store_count":0,"direct_ecx_forwarding_owned_by_upstream":true},
+  "sites": [
+    {"function":"FUN_0043a6c0","callsite":"0x0043a6e9","alias":"EDI","size":215,"mnemonic_sha256":"d003fa81d20381405322867b2047923e193e876f8186770a1bc05f6d310ff057","root_uses":["+0x2d4","+0x2c4","+0x2a0"],"writes_manager_374":false},
+    {"function":"FUN_00492520","callsite":"0x00492591","alias":"EDI","size":247,"mnemonic_sha256":"3e976a0cb7f19144082816f872e3897626e220a20f68d4ce5ce9e5261589880f","root_uses":["+0x2d4","+0x2c4","+0x2a0"],"alias_saved_and_restored_for_iteration":true,"writes_manager_374":false},
+    {"function":"FUN_00494422","callsite":"0x004944b0","alias":"EBX","size":1488,"mnemonic_sha256":"45c16b6fdeee86d1c64d514b7de1222b80e854d3daf64c56e582182be2f6b299","root_uses":["+0x2fc","+0x2d8"],"later_plus_0x374_read_uses_independent_getter":"0x0049450d","writes_manager_374":false},
+    {"function":"FUN_00495690","callsite":"0x00495705","alias":"EBX","size":270,"mnemonic_sha256":"6880382cc31290127987724ec5ceef8216d00419c6a55c3eaf2a7198fd4a6a9c","root_uses":["+0x2fc","+0x2d8"],"writes_manager_374":false},
+    {"function":"FUN_00496680","callsite":"0x004966c3","alias":"ESI","size":261,"mnemonic_sha256":"f35ef1abc5d1b53fa3143b6822d6edc3574b638c7b6a973208a66b511c213688","root_uses":["+0x2d4","+0x2c4","+0x2a0"],"alias_saved_and_restored":true,"alias_replaced_before_subobject_writes":true,"writes_manager_374":false},
+    {"function":"FUN_00498f20","callsite":"0x00498f36","alias":"EBX","size":681,"mnemonic_sha256":"84089216cfb153ad5368f39e60a8edd2319bbd1272888cc4a057a02a12bd6dcd","root_uses":["+0x2c4","+0x2a0"],"writes_manager_374":false},
+    {"function":"FUN_00499de0","callsite":"0x0049a07d","alias":"EDI","size":1472,"mnemonic_sha256":"175fe0230002b786e6f5e6451b44ef6b390d7fa4984919742cae0104f608f292","root_uses":["+0x2d4","+0x2c4","+0x2a0"],"alias_overwritten_before_later_unrelated_work":true,"writes_manager_374":false},
+    {"function":"FUN_004bad20","callsite":"0x004bad36","alias":"ESI","size":491,"mnemonic_sha256":"491fef6b73071f8e12f6832dfdc75b1e05ec0e1cd7ed7063cf0243f25b261b3b","root_uses":["+0x2fc","+0x2d4","+0x2d8","+0x2a0"],"selected_entry_replaces_alias_before_offsets_0x2174_through_0x21ac":true,"writes_manager_374":false},
+    {"function":"FUN_004bd000","callsite":"0x004bd017","alias":"EDI","size":166,"mnemonic_sha256":"f050383bf6af2e85b0e1921cd1b0cd60918ef6bd2ed44a091d60d9665eee5bf3","root_uses":["+0x2fc","+0x2d8"],"writes_manager_374":false},
+    {"function":"FUN_0051df70","callsite":"0x0051df7a","alias":"EDX","size":137,"mnemonic_sha256":"c5ed4dda9191849d2d970d378dfe7636fee76f2edea2cebca4c74edb07e3ed11","root_uses":["+0x2d4","+0x2c4","+0x2a0"],"delayed_local_slot":"[ebp-0x4]","callee_0x0051cb90_receives_output_slot_in_ecx_and_ignores_edx":true,"writes_manager_374":false}
+  ],
+  "adjudication": {"immediate_non_ecx_register_alias_surface_complete":true,"immediate_object_field_store_surface_complete":true,"register_alias_writer_count":0,"register_alias_surface_places_hdvehicle_plus_0x4330_into_manager_374":false,"delayed_object_or_unrelated_reconstruction_surface_complete":false,"manager_374_join_to_hdvehicle_4330_complete":false,"last_literal_0x004b86cf_rejected":false,"p1_3_control_producer_complete":false,"external_provider_count":7},
+  "limits": ["This closes only immediate non-ECX register aliases after the exact getter return and immediate object-field stores while EAX is live.","Delayed reconstruction from another manager pointer or aliases returned/stored through unrelated APIs remain open.","No matching offset is treated as identity."],
+  "next_step": "Search non-immediate/reconstructed Participants Manager aliases and escaped/non-root-derived HDVehicle+0x4330 aliases."
+}
