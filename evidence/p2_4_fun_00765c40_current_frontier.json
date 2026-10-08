@@ -1,0 +1,44 @@
+{
+  "format": "SHIFT.NativeVehicleExternalProviderFrontierP2_4Current/1",
+  "ready": true,
+  "upstream_frontier": "SHIFT.NativeVehicleExternalProviderFrontierCurrent/1",
+  "external_provider_count": 7,
+  "fun_00765c40": {
+    "external_pass_result_contract": "SHIFT.Fun00765c40ExternalPassResult/4",
+    "native_selected_query_input_contract": "SHIFT.Fun00765c40NativeSelectedQueryInput/1",
+    "session_query_snapshot_contract": "SHIFT.Fun00765c40SessionQuerySnapshot/1",
+    "selected_world_position_contract": "SHIFT.Fun00765c40SelectedBMWWorldPosition/1",
+    "selected_query_fallback_contract": "SHIFT.Fun00765c40SelectedBMWQueryFallback/1",
+    "collision_output_handoff_contract": "SHIFT.Fun00765c40CollisionOutputHandoff/1",
+    "composed_residual_executor_contract": "SHIFT.Fun00765c40ComposedResidualExecutor/1",
+    "provider_returned_selected_query_input_authoritative": false,
+    "selected_world_position_native": true,
+    "selected_query_fallback_native": true,
+    "selected_query_input_native": true,
+    "session_query_snapshot_native": true,
+    "collision_output_typed": true,
+    "lower_scene_query_provider_external": true,
+    "lower_scene_query_provider_global": "0x00c133ac",
+    "lower_scene_query_provider_vtable_slot": "0x1c0",
+    "composed_residual_executor_present": true,
+    "complete_internalization": false,
+    "provider_removed": false
+  },
+  "remaining_explicit_producers": [
+    "wheel_plane_producer_arithmetic",
+    "wheel_job_formula_FUN_0075cfb0",
+    "FUN_007584f0_computed_payloads",
+    "wheel_pair_producer_arithmetic",
+    "contact_array_producer_arithmetic",
+    "contact_body_predicates_and_vectors",
+    "bounded_state_tail_predicate_and_payloads",
+    "optional_body_predicate_and_vectors"
+  ],
+  "guards": {
+    "historical_phase726_audit_mutated": false,
+    "external_provider_count_decremented": false,
+    "lower_collision_semantics_invented": false,
+    "unproven_producer_formula_invented": false
+  },
+  "next_step": "Recover one remaining producer formula from pinned retail source or machine evidence, then consume it in the composed executor without changing the lower scene-query boundary."
+}
