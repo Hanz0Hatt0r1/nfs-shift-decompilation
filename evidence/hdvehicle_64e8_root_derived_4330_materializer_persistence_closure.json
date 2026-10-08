@@ -1,0 +1,87 @@
+{
+  "format": "SHIFT.HDVehicle64e8RootDerived4330MaterializerPersistenceClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_sqlite_role": "navigation/fingerprints only"
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8Affine4330MaterializationFrontier/1",
+    "SHIFT.HDVehicle64e8Affine4330ParserDescendantClosure/1",
+    "SHIFT.HDVehicle64e8EscapedRoot4330RuntimeSurface/1"
+  ],
+  "target": {
+    "hdvehicle_root": "0x00c13700",
+    "subobject": "HDVehicle+0x4330",
+    "absolute": "0x00c17a30",
+    "writer_target_relative": "+0x21b8"
+  },
+  "materializer_lifetimes": [
+    {
+      "function": "FUN_00769520",
+      "materialization": "0x00769551 lea ecx,[esi+0x4330]",
+      "alias_register": "ECX",
+      "terminal_use": "0x0076955b call FUN_00756050",
+      "memory_store_before_terminal_use": false,
+      "stack_persistence_before_terminal_use": false,
+      "exact_alias_returned": false
+    },
+    {
+      "function": "FUN_0076b130",
+      "materialization": "0x0076b241 lea ecx,[esi+0x4330]",
+      "alias_register": "ECX",
+      "terminal_use": "0x0076b247 call FUN_00772200",
+      "memory_store_before_terminal_use": false,
+      "stack_persistence_before_terminal_use": false,
+      "exact_alias_returned": false
+    },
+    {
+      "function": "FUN_0076df50",
+      "materialization": "0x0076e1c1 lea ebx,[esi+0x4330]",
+      "alias_register": "EBX",
+      "forwarding_calls": [
+        "0x0076e1d0/0x0076e1f6/0x0076e21a -> FUN_007c3b00",
+        "0x0076e270 -> FUN_0076b280",
+        "0x0076e27f -> FUN_007618f0"
+      ],
+      "alias_kill": "0x0076e28e xor ebx,ebx",
+      "memory_store_while_exact_alias_live": false,
+      "non_call_stack_persistence_while_exact_alias_live": false,
+      "exact_alias_returned": false,
+      "all_forwarded_consumer_writer_surfaces_already_bounded_negative": true
+    },
+    {
+      "function": "FUN_00768a4d",
+      "materialization": "0x00768c16 lea ecx,[esi+0x4330]",
+      "alias_register": "ECX",
+      "terminal_use": "0x00768c1c call FUN_00772570",
+      "memory_store_before_terminal_use": false,
+      "stack_persistence_before_terminal_use": false,
+      "exact_alias_returned": false
+    }
+  ],
+  "adjudication": {
+    "exact_root_affine_materializer_count": 3,
+    "escaped_wrapper_materializer_count": 1,
+    "materializer_level_exact_alias_memory_store_count": 0,
+    "materializer_level_exact_alias_return_count": 0,
+    "materializer_level_unbounded_forward_count": 0,
+    "root_derived_materializer_persistence_return_surface_complete": true,
+    "downstream_consumer_persistence_return_surface_complete": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes persistence/return only at the four proven root-derived +0x4330 materialization sites.",
+    "Calls receiving the exact alias are bounded by already-merged writer contracts, but this contract does not yet claim their own pointer-persistence surfaces are complete.",
+    "Runtime-derived aliases not arising from these materializers remain open.",
+    "No identity is inferred from offset equality."
+  ],
+  "next_step": "Trace pointer persistence/return inside the already-bounded exact-receiver consumers, then continue other runtime-derived HDVehicle+0x4330 aliases. Keep manager+0x374 join and literal 0x004b86cf fail-closed."
+}

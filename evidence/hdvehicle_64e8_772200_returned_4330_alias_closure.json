@@ -1,0 +1,40 @@
+{
+  "format": "SHIFT.HDVehicle64e8Fun00772200Returned4330AliasClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {"platform":"PC retail 1.02","retail_executable_sha256":"eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1","machine_transfer_adjudicates":true,"ghidra_sqlite_role":"call-index/navigation only"},
+  "upstream_contracts": ["SHIFT.HDVehicle64e8Affine4330MaterializationFrontier/1","SHIFT.HDVehicle64e8RootDerived4330MaterializerPersistenceClosure/1"],
+  "callee": {
+    "function":"FUN_00772200","address":"0x00772200","size":334,"mnemonic_sha256":"79328aa9670d0845d454a0f7beb2cf4ab85c3cb988a83ad37bb56001f1596c3e",
+    "receiver_capture":"0x0077221b mov esi,ecx","returned_receiver":"0x0077233f mov eax,esi","returns_input_receiver":true
+  },
+  "direct_callers": [
+    {
+      "caller":"FUN_0076b130","callsite":"0x0076b247","receiver":"HDVehicle+0x4330 via 0x0076b241 lea ecx,[esi+0x4330]",
+      "post_call_exact_eax_store":false,"post_call_exact_eax_forward":false,
+      "post_call_sequence":"0x0076b24c lea ecx,[esi+0x6730]; 0x0076b256 call 0x00a62cb0; 0x0076b260 mov eax,esi",
+      "returned_4330_alias_escapes":false
+    },
+    {
+      "caller":"FUN_00798df0","callsite":"0x00798f5c","receiver":"stack-local EBP-0x238c via 0x00798f56 lea ecx,[ebp-0x238c]",
+      "receiver_is_exact_hdvehicle_4330":false,
+      "post_call":"0x00798f61 mov eax,[esi+0x234]",
+      "returned_4330_alias_escapes":false
+    }
+  ],
+  "adjudication": {
+    "direct_caller_count":2,
+    "exact_hdvehicle_4330_caller_count":1,
+    "exact_caller_consumes_returned_4330_alias":false,
+    "other_caller_receiver_is_hdvehicle_4330":false,
+    "fun_00772200_returned_4330_alias_surface_complete":true,
+    "downstream_consumer_persistence_return_surface_complete":false,
+    "global_runtime_derived_4330_alias_surface_complete":false,
+    "manager_374_join_to_hdvehicle_4330_complete":false,
+    "last_literal_0x004b86cf_rejected":false,
+    "p1_3_control_producer_complete":false,
+    "external_provider_count":7
+  },
+  "limits": ["This closes only returned-receiver aliasing through FUN_00772200.","Other exact-receiver consumers and runtime-derived aliases remain open.","No identity is inferred from offset equality."],
+  "next_step":"Audit returned/persisted exact receiver identity in the remaining bounded consumer families, especially FUN_0076b280/FUN_007618f0 and their exact-param forwarders."
+}

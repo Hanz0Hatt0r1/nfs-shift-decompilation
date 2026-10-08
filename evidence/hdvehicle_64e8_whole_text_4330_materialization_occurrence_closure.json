@@ -1,0 +1,37 @@
+{
+  "format": "SHIFT.HDVehicle64e8WholeText4330MaterializationOccurrenceClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {"platform":"PC retail 1.02","retail_executable_sha256":"eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1","machine_transfer_adjudicates":true},
+  "scan": {
+    "whole_text_immediate_or_displacement_0x4330_occurrence_count":6,
+    "occurrences":[
+      {"site":"0x00768c16","function":"FUN_00768a4d","instruction":"lea ecx,[esi+0x4330]","role":"proven escaped-root materializer"},
+      {"site":"0x00769551","function":"FUN_00769520","instruction":"lea ecx,[esi+0x4330]","role":"proven exact-root affine materializer"},
+      {"site":"0x0076b241","function":"FUN_0076b130","instruction":"lea ecx,[esi+0x4330]","role":"proven exact-root affine materializer"},
+      {"site":"0x0076e1c1","function":"FUN_0076df50","instruction":"lea ebx,[esi+0x4330]","role":"proven exact-root affine materializer"},
+      {"site":"0x007a28ab","function":"FUN_007a25d0","instruction":"call 0x007a6be0","role":"rel32 encoding coincidence, not +0x4330 pointer arithmetic"},
+      {"site":"0x00a70642","function":"Unwind@00a7063f","instruction":"add ecx,0x4330","role":"compiler unwind cleanup reaching already-bounded FUN_00756050 destructor path"}
+    ],
+    "runtime_pointer_arithmetic_site_count":5,
+    "normal_runtime_materializer_count":4,
+    "unwind_only_materializer_count":1,
+    "unknown_generic_single_instruction_materializer_count":0
+  },
+  "upstream_contracts":["SHIFT.HDVehicle64e8Affine4330MaterializationFrontier/1","SHIFT.HDVehicle64e8EscapedRoot4330RuntimeSurface/1","SHIFT.HDVehicle64e8RootDerived4330MaterializerPersistenceClosure/1","SHIFT.HDVehicle64e8Large4330ConsumerPersistenceClosure/1"],
+  "adjudication": {
+    "whole_text_single_instruction_4330_materialization_surface_complete":true,
+    "unknown_generic_single_instruction_4330_materializer_exists":false,
+    "known_normal_runtime_materializers_persistence_return_closed":true,
+    "known_unwind_materializer_closed":true,
+    "multi_instruction_runtime_4330_synthesis_complete":false,
+    "externally_supplied_or_opaque_4330_alias_surface_complete":false,
+    "global_runtime_derived_4330_alias_surface_complete":false,
+    "manager_374_join_to_hdvehicle_4330_complete":false,
+    "last_literal_0x004b86cf_rejected":false,
+    "p1_3_control_producer_complete":false,
+    "external_provider_count":7
+  },
+  "limits":["This closes only single-instruction uses of immediate/displacement 0x4330 in retail .text.","Multi-instruction arithmetic or externally supplied exact pointers remain fail-closed.","The rel32 call encoding is not pointer arithmetic."],
+  "next_step":"Search multi-instruction/runtime-opaque derivations of HDVehicle+0x4330; keep manager+0x374 identity and 0x004b86cf fail-closed."
+}
