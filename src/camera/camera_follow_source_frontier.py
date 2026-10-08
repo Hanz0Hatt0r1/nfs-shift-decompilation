@@ -1,10 +1,10 @@
 """Machine-readable frontier for the first playable camera-follow source.
 
-PC-retail proofs now close the mode-2 runtime argument, source-vtable identity,
-and default/steady physics-before-camera update order.  The remaining semantic
-join is narrower: retail target transform resolution reaches an entry-attached
-runtime object at manager+0x2a0[target_id]+0x1e80, but that object's identity
-with the selected HDVehicle/BODY0 current pose remains unproven.
+PC-retail proofs close the mode-2 runtime argument, source-vtable identity,
+vehicle-snapshot affine dependency, and default/steady physics-before-camera
+ordering. The remaining camera-side semantic join is target selection: the
+playable TrackingCamera target id must still be joined to the selected
+player/BMW manager entry.
 """
 from __future__ import annotations
 
@@ -80,8 +80,10 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "runtime_argument_identity_resolved": True,
             "runtime_argument_is_selected_retail_vehicle": False,
             "source_vtable_identity_proven": True,
-            "entry_attached_runtime_pose_dependency_proven": True,
-            "vehicle_transform_dependency_proven": False,
+            "entry_attached_runtime_local_target_dependency_proven": True,
+            "target_vehicle_snapshot_affine_dependency_proven": True,
+            "selected_player_target_identity_proven": False,
+            "vehicle_transform_dependency_proven": True,
             "retail_update_order_proven": True,
         },
         {"mode": 3, "source": "active_buffer+0x17a0", "source_stride": 0x280, "activation": "FUN_0080e140", "classification": "static-camera-source-lane", "playable_follow_candidate": False},
@@ -93,20 +95,20 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
         {"id": "mode2_source_vtable_identity", "target": "active_buffer+0x1ca0 source object", "status": "resolved", "result": "FUN_0081fac0 installs vtable 0x00b16788; +0x90=FUN_0081f7c0, +0x64=FUN_00820a50, +0x60=FUN_008216a0", "required_for_native_follow": False},
         {
             "id": "mode2_vehicle_pose_dependency",
-            "target": "camera target service -> manager+0x2a0[target_id] -> entry+0x1e80 attached runtime",
-            "status": "entry-attached-runtime-pose-bridge-proven-identity-open",
-            "result": "direct manager-entry == HDVehicle identity is rejected; FUN_004810bf selectors consume state from entry+0x1e80",
-            "request": "prove or reject entry+0x1e80 pose producer identity with the selected retail HDVehicle/BODY0 current pose",
+            "target": "TrackingCamera target_id -> selected player/BMW manager+0x2a0 entry",
+            "status": "vehicle-snapshot-affine-proven-selected-target-identity-open",
+            "result": "manager entry+0xfc is the numeric vehicle index; FUN_00481420 -> FUN_0070dcc0 resolves the exact indexed active vehicle render snapshot affine; entry+0x1e80 remains local target/offset state",
+            "request": "prove or reject that the playable mode-2 TrackingCamera target id selects the current player/BMW manager entry",
             "required_for_native_follow": True,
         },
         {"id": "camera_follow_update_order", "target": "cPhysicsManager scheduler -> callback -> mode-2 source+0x60", "status": "resolved", "result": "admitted default/steady retail path runs FUN_0070f940/FUN_007155e0 physics before FUN_0070f890 callback -> FUN_00489f70 -> mode2 +0x60/FUN_008216a0", "required_for_native_follow": False},
     ]
 
-    static_source_ready = False
+    selected_target_identity_ready = False
     timing_ready = True
-    native_follow_ready = static_source_ready and timing_ready and transform_state["ready_for_camera_source_join"]
+    native_follow_ready = selected_target_identity_ready and timing_ready and transform_state["ready_for_camera_source_join"]
 
-    blockers = ["camera-follow:entry-attached-runtime-to-selected-vehicle-BODY0-identity-unproven"]
+    blockers = ["camera-follow:tracking-target-id-to-selected-player-bmw-entry-unproven"]
     blockers.extend(transform_state["blocking_reasons"])
     blockers = list(dict.fromkeys(blockers))
 
@@ -139,7 +141,9 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "mode2_runtime_argument_identity_resolved": True,
             "mode2_runtime_argument_is_selected_retail_vehicle": False,
             "mode2_source_vtable_identity_ready": True,
-            "mode2_entry_attached_runtime_pose_dependency_ready": True,
+            "mode2_entry_attached_runtime_local_target_dependency_ready": True,
+            "mode2_target_vehicle_snapshot_affine_dependency_ready": True,
+            "mode2_selected_player_target_identity_ready": False,
             "mode2_vehicle_pose_dependency_ready": False,
             "camera_follow_update_order_ready": True,
             "retail_vehicle_world_matrix_ready": transform_state["ready_for_camera_source_join"],
@@ -150,9 +154,10 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "may_bind_vehicle_transform_to_camera_source": False,
             "may_schedule_camera_after_vehicle_update": False,
             "retail_physics_before_camera_order_proven": True,
+            "target_vehicle_snapshot_affine_proven": True,
             "may_serialize_opaque_word0_as_native_pointer": False,
             "required_positive_contracts": [
-                "entry+0x1e80 attached runtime pose -> selected retail vehicle/BODY0 identity",
+                "playable TrackingCamera target_id -> selected player/BMW manager entry",
                 WORLD_HANDOFF_FORMAT + " current retail world matrix",
                 PERSISTENT_TRANSFORM_FORMAT + " freshness-checked transport",
             ],
@@ -166,11 +171,14 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "camera_target_collection": "thunk_FUN_00444fcc()+0x2a0[target_id]",
             "manager_entry_is_HDVehicle_plus_0x4330": False,
             "entry_attached_runtime_field": "+0x1e80",
-            "entry_attached_runtime_producer": "FUN_00481d46 -> FUN_0046c050",
-            "entry_attached_runtime_update": "FUN_0046d7b0(entry+0x1e80, entry+0x1e84)",
-            "target_dispatch_chain": "FUN_00481420 -> FUN_004810a0 -> FUN_004585e6 -> FUN_004810bf",
-            "target_selector_2_lanes": ["+0x10", "+0x14", "+0x18"],
-            "target_selector_5_lanes": ["+0x1c", "+0x20", "+0x24"],
+            "entry_attached_runtime_classification": "local target/offset runtime state, not world pose",
+            "entry_numeric_vehicle_index_source": "FUN_00d60660 index -> FUN_00485290 entry+0x100 -> FUN_00484cb0 entry+0xfc",
+            "camera_snapshot_index_callsite": "FUN_00481420@0x00481477..0x00481486",
+            "vehicle_snapshot_slot_formula": "DAT_00c10b20 + entry[+0xfc] * 0x1fa0",
+            "vehicle_snapshot_active_source": "slot+0xd70 + (slot+0x1f50 & 1) * 0x8f0",
+            "vehicle_snapshot_copy": "FUN_0070db00 -> FUN_00481e20(stack-local affine, active snapshot)",
+            "target_world_transform": "FUN_004394a0(stack-local vehicle snapshot affine, target-local vector) + affine translation",
+            "outer_vehicle_snapshot_contract": "SHIFT.OuterVehicleRenderSnapshotAffineBridge/1",
             "retail_update_order": "physics scheduler -> cPhysicsManager+0x298 callback -> camera manager -> mode2 +0x60",
             "phase705_world_matrix_contract": WORLD_HANDOFF_FORMAT,
             "phase706_persistent_transport_contract": PERSISTENT_TRANSFORM_FORMAT,
@@ -178,7 +186,8 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
         "boundary": {
             "mode2_tracking_label_promoted_to_player_vehicle_follow_proof": False,
             "manager_entry_promoted_to_HDVehicle_identity": False,
-            "entry_attached_runtime_promoted_to_HDVehicle_or_BODY0_identity": False,
+            "entry_attached_runtime_promoted_to_world_pose": False,
+            "target_vehicle_snapshot_promoted_to_selected_player_without_target_id_proof": False,
             "camera_source_pointer_invented": False,
             "camera_source_vtable_invented": False,
             "native_vehicle_world_matrix_substituted_for_retail_source": False,

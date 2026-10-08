@@ -5,7 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "evidence" / "camera_follow_p14_target_runtime_bridge.json"
 
 
-def test_target_runtime_bridge_rejects_entry_identity_but_keeps_pose_dependency():
+def test_target_runtime_bridge_rejects_entry_identity_and_classifies_local_target_state():
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     assert payload["format"] == "SHIFT.CameraFollowP14TargetRuntimeBridge/1"
     assert payload["ready"] is True
@@ -18,7 +18,9 @@ def test_target_runtime_bridge_rejects_entry_identity_but_keeps_pose_dependency(
     assert attached["pointer_field"] == "entry+0x1e80"
     assert attached["producer"] == "FUN_00481d46"
     assert "FUN_0046c050" in attached["allocation_constructor"]
-    assert attached["identity_with_selected_HDVehicle_or_BODY0"] == "unproven"
+    assert attached["classification"] == "target-local offset/runtime state"
+    assert attached["world_pose_identity"] is False
+    assert "FUN_0070dcc0" in attached["reason"]
 
     dispatch = payload["target_transform_dispatch"]
     assert dispatch["call_chain"] == [
@@ -32,9 +34,9 @@ def test_target_runtime_bridge_rejects_entry_identity_but_keeps_pose_dependency(
 
     adjudication = payload["adjudication"]
     assert adjudication["manager_entry_direct_vehicle_identity_rejected"] is True
-    assert adjudication["entry_attached_runtime_pose_dependency_proven"] is True
-    assert adjudication["entry_attached_runtime_is_selected_vehicle_proven"] is False
-    assert adjudication["entry_attached_runtime_pose_is_BODY0_world_pose_proven"] is False
+    assert adjudication["entry_attached_runtime_local_target_dependency_proven"] is True
+    assert adjudication["entry_attached_runtime_is_world_pose"] is False
+    assert adjudication["world_pose_dependency_moved_to_snapshot_affine_bridge"] is True
     assert adjudication["phase651_request_3_complete"] is False
     assert adjudication["native_camera_follow_ready"] is False
     assert adjudication["external_provider_count"] == 7

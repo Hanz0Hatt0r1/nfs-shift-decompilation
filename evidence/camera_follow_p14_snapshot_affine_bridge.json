@@ -1,0 +1,62 @@
+{
+  "format": "SHIFT.CameraFollowP14SnapshotAffineBridge/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact PC-retail machine-code value flow composed with SHIFT.OuterVehicleRenderSnapshotAffineBridge/1"
+  },
+  "target_entry_index_assignment": {
+    "manager_selector": "FUN_00d60660",
+    "entry_lookup": "FUN_0054ed00(manager+0x2a0,index)",
+    "callsite": "0x00d606db -> FUN_00485290",
+    "machine_flow": [
+      "0x00d606d8 push ESI (manager+0x2a0 collection index)",
+      "0x00485293 EAX = param_1",
+      "0x004852a1 entry+0x100 = EAX",
+      "0x004853c1 -> FUN_00484cb0",
+      "0x00485224 entry+0xfc = entry+0x100"
+    ],
+    "entry_plus_0xfc_role": "numeric vehicle index"
+  },
+  "camera_callsite": {
+    "function": "FUN_00481420",
+    "machine_flow": [
+      "0x00481477 ECX = entry+0xfc",
+      "0x0048147d push 7",
+      "0x0048147f push ECX (numeric vehicle index)",
+      "0x00481480 ECX = stack-local affine destination",
+      "0x00481486 call FUN_0070dcc0"
+    ]
+  },
+  "snapshot_lookup": {
+    "entry": "FUN_0070dcc0",
+    "bounds_trampoline": "0x0047af96 -> FUN_0070dccf",
+    "slot_formula": "DAT_00c10b20 + numeric_vehicle_index * 0x1fa0",
+    "slot_active_check": "+0x4c != 0",
+    "active_snapshot": "slot+0xd70 + (slot+0x1f50 & 1) * 0x8f0",
+    "copy": "FUN_0070db00 -> FUN_00481e20(stack-local affine, active snapshot)"
+  },
+  "world_transform_application": {
+    "local_target_source": "FUN_004810bf / entry-attached target offsets",
+    "matrix_apply": "0x00481493 -> FUN_004394a0(stack-local affine, target vector)",
+    "translation_add": ["stack affine +0x10", "stack affine +0x14", "stack affine +0x18"],
+    "outer_vehicle_snapshot_contract": "SHIFT.OuterVehicleRenderSnapshotAffineBridge/1",
+    "outer_vehicle_slot_continuity": true,
+    "target_entry_to_vehicle_render_snapshot_affine_proven": true
+  },
+  "adjudication": {
+    "entry_plus_0xfc_numeric_vehicle_index_proven": true,
+    "camera_target_uses_exact_indexed_vehicle_snapshot_proven": true,
+    "camera_target_world_affine_dependency_proven": true,
+    "entry_attached_runtime_is_world_pose": false,
+    "tracking_camera_target_id_is_selected_player_bmw_entry_proven": false,
+    "phase651_request_3_pose_dependency_complete": true,
+    "phase651_request_3_selected_vehicle_identity_complete": false,
+    "phase651_request_3_complete": false,
+    "native_camera_follow_ready": false,
+    "external_provider_count": 7
+  },
+  "next": "Trace the exact retail producer of the TrackingCamera Target/target_id used by the playable mode-2 camera and prove or reject equality with the selected player/BMW manager+0x2a0 entry. Do not reopen the vehicle snapshot affine path."
+}
