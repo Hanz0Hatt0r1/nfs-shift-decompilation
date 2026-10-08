@@ -1,0 +1,44 @@
+{
+  "format": "SHIFT.CameraFollowP14UpdateOrder/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact machine-code callback ownership and same-path call ordering"
+  },
+  "callback_registration": {
+    "owner": "FUN_0070fe90() cPhysicsManager",
+    "field": "+0x298",
+    "writer": "FUN_0048a7f0@0x0048a80d",
+    "target": "FUN_00489f70"
+  },
+  "scheduler_order": {
+    "scheduler_entry": "FUN_00711b50",
+    "chain": ["FUN_00711b50", "FUN_007119c0", "FUN_007117e0"],
+    "physics_scheduler_callsite": "0x0071196b -> FUN_0070f940",
+    "default_scheduler_call": "0x0070f9af -> FUN_007155e0",
+    "inner_physics_chain": "FUN_007155e0 -> FUN_00715380 -> FUN_00713050",
+    "callback_dispatch_callsite": "0x007119a7 -> FUN_0070f890",
+    "ordering": "physics scheduler completes before callback dispatcher"
+  },
+  "camera_update_chain": {
+    "callback_dispatch": "FUN_0070f890 reads cPhysicsManager+0x298 and calls it at 0x0070f90c",
+    "callback": "FUN_00489f70",
+    "camera_manager_update": "FUN_00489f70 -> FUN_0080b820 -> FUN_0080ec80",
+    "active_source_field": "CameraManager+0x2568",
+    "per_frame_virtual_call": "0x0080f22d/+0x60 -> 0x0080f23a call",
+    "mode2_target": "FUN_008216a0"
+  },
+  "adjudication": {
+    "cphysics_callback_owner_proven": true,
+    "physics_before_camera_callback_proven": true,
+    "mode2_per_frame_update_after_physics_proven": true,
+    "phase651_request_4_complete": true,
+    "applies_to_admitted_default_steady_path": true,
+    "phase651_request_3_complete": false,
+    "native_camera_follow_ready": false,
+    "external_provider_count": 7
+  },
+  "next": "Consume P1.3.manager2a0 exact selected-entry identity to close Phase 651 request 3; do not reopen scheduler ordering unless evidence changes the admitted default/steady path."
+}
