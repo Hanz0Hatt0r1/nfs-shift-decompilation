@@ -112,7 +112,7 @@
   },
   "handoff": {
     "consumer": "Process 2 P2.3",
-    "instruction": "Preserve runtime materialization and retail ordering. Do not replace participant+0x4b0 with a constant. The zero value proven in FUN_00713340 applies only to its conditioned path; Restart and other selected paths can write dynamic values.",
+    "instruction": "Preserve runtime materialization and retail ordering. participant+0x4b0 must not be frozen or replaced with a constant. The zero value proven in FUN_00713340 applies only to its conditioned path; Restart and other selected paths can write dynamic values.",
     "provider_removal_owner": "Process 2",
     "process_1_must_not_reduce_provider_count": true
   },
