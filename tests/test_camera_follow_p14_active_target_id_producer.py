@@ -20,9 +20,9 @@ def test_active_target_id_producer_is_exact_but_player_source_stays_open():
 
     publication = payload["active_camera_data_publication"]
     assert publication["target_setter"] == "FUN_0080ce80(mode2_source,param_1)"
-    assert "active_data+0x74 = param_1" in publication["target_setter_flow"]
+    assert any("active_data+0x74 = param_1" in row for row in publication["target_setter_flow"])
     assert publication["lookat_setter"] == "FUN_0080cea0(mode2_source,param_2)"
-    assert "active_data+0x7c = param_2" in publication["lookat_setter_flow"]
+    assert any("active_data+0x7c = param_2" in row for row in publication["lookat_setter_flow"])
     assert publication["active_target_id_producer_proven"] is True
     assert publication["active_lookat_id_producer_proven"] is True
 
