@@ -1,0 +1,62 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from src.physics import native_vehicle_external_provider_frontier_p2_4_current as p2_4
+
+ROOT = Path(__file__).resolve().parents[1]
+EXTERNAL_RESULT = ROOT / "native_runtime/include/shift_fun_00765c40_external_pass_result.hpp"
+COMPOSED_EVIDENCE = ROOT / "evidence/p2_4_fun_00765c40_composed_residual_executor.json"
+SESSION_SOURCE = ROOT / "native_runtime/src/native_vehicle_provider_session.cpp"
+
+
+def test_p2_4_overlay_currentizes_fun_00765c40_without_rewriting_history() -> None:
+    report = p2_4.build_current_frontier()
+    assert report["format"] == p2_4.FORMAT
+    assert report["external_provider_count"] == 7
+    fun = report["fun_00765c40"]
+    assert fun["active_provider_required"] is True
+    assert fun["provider_removal_authorized_by_process1"] is True
+    assert fun["provider_removed"] is False
+    assert fun["selected_world_position_native"] is True
+    assert fun["selected_query_fallback_native"] is True
+    assert fun["selected_query_input_native"] is True
+    assert fun["provider_returned_selected_query_input_authoritative"] is False
+    assert fun["session_query_snapshot_native"] is True
+    assert fun["collision_output_typed"] is True
+    assert fun["lower_scene_query_provider_external"] is True
+    assert fun["lower_scene_query_provider_global"] == "0x00c133ac"
+    assert fun["lower_scene_query_provider_vtable_slot"] == "0x1c0"
+    assert fun["composed_residual_executor_present"] is True
+    assert fun["complete_internalization"] is False
+    assert tuple(fun["remaining_explicit_producers"]) == p2_4.REMAINING_EXPLICIT_PRODUCERS
+    assert report["guards"]["historical_phase726_audit_mutated"] is False
+    assert report["guards"]["external_provider_count_decremented"] is False
+
+
+def test_overlay_matches_active_runtime_contracts() -> None:
+    result_header = EXTERNAL_RESULT.read_text(encoding="utf-8")
+    session_source = SESSION_SOURCE.read_text(encoding="utf-8")
+    composed = COMPOSED_EVIDENCE.read_text(encoding="utf-8")
+
+    assert p2_4.EXTERNAL_PASS_RESULT_FORMAT in result_header
+    assert "std::optional<CollisionQueryOutput> query_output" in result_header
+    assert p2_4.NATIVE_SELECTED_QUERY_INPUT_FORMAT in result_header
+    assert p2_4.SESSION_QUERY_SNAPSHOT_FORMAT in result_header
+    assert "materialize_fun_00765c40_session_query_snapshot" in session_source
+    assert "query_inputs[pass_index] = session_query_input" in session_source
+    assert p2_4.COMPOSED_RESIDUAL_EXECUTOR_FORMAT in composed
+    assert '"complete_FUN_00765c40_internalized": false' in composed
+    assert '"external_provider_count_after": 7' in composed
+
+
+def test_contract_is_fail_closed_on_remaining_producers() -> None:
+    payload = p2_4.contract()
+    assert payload["external_provider_count"] == 7
+    assert payload["provider_returned_selected_query_input_authoritative"] is False
+    assert payload["lower_scene_query_provider_external"] is True
+    assert payload["complete_internalization"] is False
+    assert payload["provider_removed"] is False
+    assert payload["remaining_explicit_producers"] == list(p2_4.REMAINING_EXPLICIT_PRODUCERS)
+    assert "wheel_job_formula_FUN_0075cfb0" in payload["remaining_explicit_producers"]
+    assert "FUN_007584f0_computed_payloads" in payload["remaining_explicit_producers"]
