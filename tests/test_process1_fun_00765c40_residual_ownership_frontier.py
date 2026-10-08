@@ -10,6 +10,7 @@ CACHE = ROOT / "evidence/fun_00765c40_query_cache_lifetime.json"
 FALLBACK = ROOT / "evidence/fun_00765c40_selected_bmw_query_fallback.json"
 OUTPUT = ROOT / "evidence/fun_00765c40_collision_output_handoff.json"
 LOADS = ROOT / "evidence/fun_00765c40_load_term_ownership.json"
+PROVIDER_FRONTIER = ROOT / "evidence/fun_007b0710_collision_provider_frontier.json"
 DOC = ROOT / "docs/PROCESS_1_FUN_00765C40_RESIDUAL_OWNERSHIP_FRONTIER.md"
 
 
@@ -31,6 +32,7 @@ def test_frontier_joins_only_positive_existing_contracts() -> None:
         (FALLBACK, "SHIFT.Fun00765c40SelectedBMWQueryFallback/1"),
         (OUTPUT, "SHIFT.Fun00765c40CollisionOutputHandoff/1"),
         (LOADS, "SHIFT.Fun00765c40LoadTerms/1"),
+        (PROVIDER_FRONTIER, "SHIFT.Fun007b0710CollisionProviderFrontier/1"),
     )
     for path, fmt in expected:
         payload = _load(path)
@@ -49,6 +51,7 @@ def test_selected_prequery_surface_is_closed_but_provider_is_not() -> None:
     assert selected["query_function"] == "FUN_007b0710"
     assert selected["query_record_typed"] is True
     assert selected["collision_output_typed"] is True
+    assert selected["known_lower_fallback_query"] == "FUN_0074f560"
     assert selected["collision_provider_internalized"] is False
 
 
@@ -63,21 +66,19 @@ def test_four_load_terms_are_closed_and_must_not_be_reselected() -> None:
     assert loads["wheel_stride"] == source["wheel_layout"]["stride"] == "0xa80"
     assert loads["per_wheel_field"] == source["wheel_layout"]["per_wheel_load_field"] == "+0x738 f64"
     assert loads["hdvehicle_offsets"] == source["wheel_layout"]["hdvehicle_offsets"] == [
-        "0xb38",
-        "0x15b8",
-        "0x2038",
-        "0x2ab8",
+        "0xb38", "0x15b8", "0x2038", "0x2ab8"
     ]
     assert loads["ownership_closed"] is True
     assert loads["must_not_be_reselected_as_P1_2_proof"] is True
 
 
-def test_only_collision_lookup_and_residual_side_effects_remain() -> None:
+def test_only_lower_scene_lookup_and_residual_side_effects_remain() -> None:
     frontier = _load(FRONTIER)
     residual = frontier["remaining_process_1_proof"]
     assert [row["id"] for row in residual] == ["P1.2a", "P1.2b"]
-    assert "collision/world lookup provider" in residual[0]["target"]
-    assert "FUN_007b0710" in residual[0]["target"]
+    assert "FUN_0074f560" in residual[0]["target"]
+    assert "scene-query boundary" in residual[0]["target"]
+    assert "FUN_007b0710 caller-visible ABI" in residual[0]["reason"]
     assert "remaining source-visible FUN_00765c40 side effects" in residual[1]["target"]
 
     gate = frontier["completion_gate"]
@@ -94,10 +95,11 @@ def test_documentation_keeps_the_frontier_fail_closed() -> None:
         "P1.2a",
         "P1.2b",
         "FUN_007b0710",
+        "FUN_0074f560",
         "+0x38dc",
         "+0x38e8",
         "+0x738",
-        "collision/world",
+        "scene-query",
         "side effects",
         "provider removal authorized: **false**",
         "NEXT_STEP",
