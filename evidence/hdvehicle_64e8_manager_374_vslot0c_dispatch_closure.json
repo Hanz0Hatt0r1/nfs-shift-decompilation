@@ -1,0 +1,71 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374VSlot0cDispatchClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_sqlite_role": "navigation/fingerprint only"
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8Manager374VSlot0cIndirectFrontier/1",
+    "SHIFT.PlayerVehicleRenderManagerReceiverTransferFrontier/2"
+  ],
+  "vslot": {
+    "primary_vtable": "0x00ab5644",
+    "target_slot_offset": "+0x0c",
+    "target": "FUN_0045b130",
+    "direct_call_count": 0
+  },
+  "exhaustive_exact_manager_first_hop": {
+    "exact_global": "0x00bc185c",
+    "source_read_count": 95,
+    "source_function_count": 80,
+    "proven_indirect_receiver_transfer_count": 3,
+    "calls": [
+      {
+        "function": "FUN_0056bcd0",
+        "function_mnemonic_sha256": "10d8e5e14681e8eaaf945da9088c1371af04405317205365affa0efa6871abfc",
+        "callsite": "0x0056bcf2",
+        "vptr_load": "0x0056bceb mov eax,[esi]",
+        "slot_load": "0x0056bced mov edx,[eax+0x1c]",
+        "slot_offset": "+0x1c"
+      },
+      {
+        "function": "FUN_0056bcd0",
+        "function_mnemonic_sha256": "10d8e5e14681e8eaaf945da9088c1371af04405317205365affa0efa6871abfc",
+        "callsite": "0x0056bd09",
+        "vptr_load": "0x0056bd00 mov eax,[esi]",
+        "slot_load": "0x0056bd02 mov edx,[eax+0x20]",
+        "slot_offset": "+0x20"
+      },
+      {
+        "function": "FUN_0056bd30",
+        "function_mnemonic_sha256": "c68b1d28492156f66417e66845627e8bfc5f8a4ed5c518c216e479828849e2f4",
+        "callsite": "0x0056bd59",
+        "vptr_load": "0x0056bd54 mov eax,[ecx]",
+        "slot_load": "0x0056bd56 mov edx,[eax+0x1c]",
+        "slot_offset": "+0x1c"
+      }
+    ],
+    "target_slot_plus_0x0c_dispatch_count": 0
+  },
+  "adjudication": {
+    "exact_manager_first_hop_indirect_surface_complete": true,
+    "target_vslot_plus_0x0c_reached_by_exact_manager": false,
+    "fun_0045b130_alternate_manager_root_source_closed": true,
+    "runtime_created_or_copied_outer_alias_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes FUN_0045b130 only for the exhaustive exact DAT_00bc185c first-hop receiver-transfer surface.",
+    "Runtime-created/copied aliases not rooted in the exhaustive exact-global first-hop analysis remain open.",
+    "Synthetic unit-test fixture slot offsets are not retail evidence; the retail machine instructions above adjudicate the actual slots.",
+    "No identity is inferred from matching offsets."
+  ],
+  "next_step": "Search runtime-created/copied outer-object aliases that could bypass the exact-global first-hop receiver-transfer frontier, and continue runtime-derived HDVehicle+0x4330 aliases."
+}
