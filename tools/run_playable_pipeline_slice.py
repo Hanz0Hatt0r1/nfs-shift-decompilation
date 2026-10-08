@@ -60,14 +60,32 @@ def _write_json(path: Path, value: Mapping[str, Any]) -> None:
 
 def _output_from_bootstrap_args(args: Sequence[str]) -> Path:
     values = list(args)
-    for index, token in enumerate(values):
+    outputs: list[Path] = []
+    index = 0
+    while index < len(values):
+        token = values[index]
         if token in {"-o", "--output"}:
             if index + 1 >= len(values):
                 raise ExecutionError(f"{token} requires a value")
-            return Path(values[index + 1]).resolve()
+            outputs.append(Path(values[index + 1]).resolve())
+            index += 2
+            continue
         if token.startswith("--output="):
-            return Path(token.split("=", 1)[1]).resolve()
-    raise ExecutionError("bootstrap arguments must include -o/--output")
+            raw = token.split("=", 1)[1]
+            if not raw:
+                raise ExecutionError("--output requires a value")
+            outputs.append(Path(raw).resolve())
+        index += 1
+
+    if not outputs:
+        raise ExecutionError("bootstrap arguments must include -o/--output")
+    distinct = list(dict.fromkeys(outputs))
+    if len(distinct) != 1:
+        rendered = ", ".join(str(path) for path in distinct)
+        raise ExecutionError(
+            "bootstrap arguments contain conflicting output authorities: " + rendered
+        )
+    return distinct[0]
 
 
 def _validated_execution_plan(output_dir: Path) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -184,6 +202,7 @@ def execute_playable_pipeline_slice(
         "track": report.get("track"),
         "vehicle": report.get("vehicle"),
         "boundary": {
+            "single_output_authority_required": True,
             "bootstrap_completed_before_runtime_execution": True,
             "provenance_validated_launch_plan_required": True,
             "launch_plan_argv_reconstructed": False,
