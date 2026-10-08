@@ -1,48 +1,49 @@
-"""Evidence-backed TrackingCamera target attachment/lifecycle boundaries.
+"""Evidence-backed TrackingCamera override/lifecycle boundaries.
 
-Recovered from FUN_0081f070 and FUN_0081f160.
-
-The target acquisition loop is preserved literally: after FUN_0081ea70, the
-manager's global service list is scanned, each candidate is checked for the
-0xc25fb8 RTTI marker in its linked list, and FUN_00408210 compares the
-candidate's +0x18 field with TrackingCamera +0x35. On success FUN_00812970
-receives that candidate.
+Retail machine code corrects an earlier naming mistake in this model.  The
+FUN_00812aa0/FUN_0081f070 scan does *not* resolve the CTrackingCamData
+``Target`` field.  It compares the runtime camera field at byte ``+0xd4`` with
+a candidate name at byte ``+0x60``.  CTrackingCamData reflection registers
+``Target`` at ``+0x78`` and ``OverridedBy`` at ``+0xd4``.  RTTI 0xc25fb8 is
+constructed through FUN_0081f990 as the TrackingCamera-sized object.  The scan
+therefore belongs to camera-to-camera override linkage and must not be used as
+player-vehicle target proof.
 """
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable
 
-FORMAT = "SHIFT.TrackingTargetLifecycleRuntime/1"
+FORMAT = "SHIFT.TrackingTargetLifecycleRuntime/2"
 
 
-def describe_tracking_target_acquisition(
+def describe_tracking_override_resolution(
     *,
-    target_handle_present: bool,
-    target_handle_count_nonzero: bool,
+    override_name_present: bool,
+    override_name_count_nonzero: bool,
     service_available: bool,
     candidates: Iterable[dict[str, Any]],
 ) -> dict[str, Any]:
-    """Trace FUN_0081f070 without assigning semantics to service candidates."""
+    """Trace the FUN_0081f070 override-name scan with exact byte offsets."""
     actions: list[dict[str, Any]] = [
         {"action": "FUN_00812aa0"},
         {"action": "FUN_0081ea70"},
     ]
 
-    if not target_handle_present or not target_handle_count_nonzero:
+    if not override_name_present or not override_name_count_nonzero:
         return {
             "format": FORMAT,
-            "version": 1,
-            "operation": "tracking-target-acquisition",
-            "status": "no-target-handle",
+            "version": 2,
+            "operation": "tracking-camera-override-resolution",
+            "status": "no-override-name",
             "actions": actions,
         }
 
     if not service_available:
         return {
             "format": FORMAT,
-            "version": 1,
-            "operation": "tracking-target-acquisition",
+            "version": 2,
+            "operation": "tracking-camera-override-resolution",
             "status": "service-unavailable",
             "actions": actions + [
                 {"action": "FUN_0080bfb0"},
@@ -52,11 +53,11 @@ def describe_tracking_target_acquisition(
 
     for ordinal, candidate in enumerate(candidates):
         has_rtti = bool(candidate.get("contains_rtti_0xc25fb8", False))
-        compare_matches = bool(candidate.get("field_0x18_matches_target", False))
+        compare_matches = bool(candidate.get("name_0x60_matches_override_0xd4", False))
         row = {
             "ordinal": ordinal,
             "contains_rtti_0xc25fb8": has_rtti,
-            "field_0x18_matches_target": compare_matches,
+            "name_0x60_matches_override_0xd4": compare_matches,
             "actions": [
                 {
                     "action": "candidate linked-list scan",
@@ -69,8 +70,8 @@ def describe_tracking_target_acquisition(
             row["actions"].append({
                 "action": "FUN_00408210",
                 "arguments": {
-                    "candidate_field": "candidate + 0x18",
-                    "target_handle": "TrackingCamera + 0x35",
+                    "candidate_name": "candidate byte +0x60",
+                    "override_name": "TrackingCamera byte +0xd4 (OverridedBy)",
                 },
                 "result": compare_matches,
             })
@@ -78,45 +79,80 @@ def describe_tracking_target_acquisition(
             row["actions"].append({
                 "action": "FUN_00812970",
                 "argument": f"candidate[{ordinal}]",
+                "destination": "TrackingCamera byte +0xe8",
             })
             actions.append(row)
             return {
                 "format": FORMAT,
-                "version": 1,
-                "operation": "tracking-target-acquisition",
+                "version": 2,
+                "operation": "tracking-camera-override-resolution",
                 "status": "attached",
                 "selected_candidate": ordinal,
                 "actions": actions,
                 "candidate_trace": row,
+                "semantic_classification": "camera-to-camera override linkage",
+                "not_vehicle_target_proof": True,
                 "evidence": {
                     "function": "FUN_0081f070",
                     "service_root": "FUN_0080bfb0",
                     "service_view": "FUN_0080b8e0",
                     "rtti_marker": "DAT_00c25fb8",
-                    "compare": "FUN_00408210(candidate+0x18, this+0x35)",
-                    "attach": "FUN_00812970",
+                    "compare": "FUN_00408210(candidate byte +0x60, this byte +0xd4)",
+                    "attach": "FUN_00812970 -> this byte +0xe8",
+                    "reflection_target_field": "CTrackingCamData byte +0x78",
+                    "reflection_override_field": "CTrackingCamData byte +0xd4 (OverridedBy)",
                 },
             }
         actions.append(row)
 
     return {
         "format": FORMAT,
-        "version": 1,
-        "operation": "tracking-target-acquisition",
+        "version": 2,
+        "operation": "tracking-camera-override-resolution",
         "status": "not-found",
         "actions": actions,
+        "semantic_classification": "camera-to-camera override linkage",
+        "not_vehicle_target_proof": True,
         "evidence": {
             "function": "FUN_0081f070",
             "rtti_marker": "DAT_00c25fb8",
+            "reflection_target_field": "CTrackingCamData byte +0x78",
+            "reflection_override_field": "CTrackingCamData byte +0xd4 (OverridedBy)",
         },
     }
+
+
+def describe_tracking_target_acquisition(
+    *,
+    target_handle_present: bool,
+    target_handle_count_nonzero: bool,
+    service_available: bool,
+    candidates: Iterable[dict[str, Any]],
+) -> dict[str, Any]:
+    """Compatibility wrapper for the formerly misnamed override scan."""
+    normalized = []
+    for candidate in candidates:
+        row = dict(candidate)
+        if "name_0x60_matches_override_0xd4" not in row:
+            row["name_0x60_matches_override_0xd4"] = bool(
+                row.get("field_0x18_matches_target", False)
+            )
+        normalized.append(row)
+    result = describe_tracking_override_resolution(
+        override_name_present=target_handle_present,
+        override_name_count_nonzero=target_handle_count_nonzero,
+        service_available=service_available,
+        candidates=normalized,
+    )
+    result["compatibility_wrapper"] = "describe_tracking_target_acquisition"
+    return result
 
 
 def describe_tracking_camera_lifecycle_reset() -> dict[str, Any]:
     """Trace FUN_0081f160's lifecycle reset ordering."""
     return {
         "format": FORMAT,
-        "version": 1,
+        "version": 2,
         "operation": "tracking-camera-lifecycle-reset",
         "actions": [
             {"action": "write vtable", "value": "PTR_FUN_00b16788"},
