@@ -32,11 +32,21 @@ def test_small_allocated_object_is_not_manager():
     assert row["rejected_as_manager_374_writer"] is True
 
 
+def test_forwarded_stack_alias_surface_is_rejected():
+    row = _payload()["fun_00481e20_forwarded_alias"]
+    assert row["direct_callers_of_fun_0070dcc0"] == 21
+    assert len(row["direct_callsites"]) == 21
+    assert row["manager_singleton_possible_on_direct_call_surface"] is False
+    assert row["rejected_on_direct_call_surface"] is True
+
+
 def test_remaining_bulk_copy_stays_open_and_gates_fail_closed():
     p = _payload()
     assert p["remaining_candidate"]["function"] == "FUN_00481e20"
-    assert p["remaining_candidate"]["status"] == "open-alias-bulk-copy"
+    assert p["remaining_candidate"]["status"] == "two-embedded-subobject-callers-open"
+    assert len(p["remaining_candidate"]["open_direct_callsites"]) == 2
     a = p["adjudication"]
+    assert a["fun_00481e20_forwarded_stack_alias_rejected"] is True
     assert a["fun_00481e20_bulk_copy_still_open"] is True
     assert a["manager_374_literal_writer_surface_complete"] is False
     assert a["manager_374_join_to_hdvehicle_4330_complete"] is False
@@ -50,3 +60,5 @@ def test_coordination_points_to_bulk_copy_alias_closure():
     node = next(row for row in p13["children"] if row["id"] == "P1.3.manager374")
     assert node["status"] == "two-literal-writers-rejected-bulk-copy-open"
     assert "FUN_00481e20" in node["next"]
+    assert "0x004848f5" in node["next"]
+    assert "0x0081d335" in node["next"]
