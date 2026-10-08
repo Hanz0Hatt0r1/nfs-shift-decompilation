@@ -9,42 +9,16 @@
     "xbox_recomp_may_replace_pc_proof": false
   },
   "closed_inputs": [
-    {
-      "format": "SHIFT.Fun00766510ResponseConfigOwnership/1",
-      "role": "HDVehicle+0x3908/+0x3910/+0x3918/+0x3950 owner and mutation provenance"
-    },
-    {
-      "format": "SHIFT.Fun00766510EarlyResponseBranchOwnership/1",
-      "role": "earlier +0x3b08/+0x3b20 branch setup, mutable lane and source order"
-    },
-    {
-      "format": "SHIFT.Fun00766510OptionalResponseBranchOwnership/1",
-      "role": "optional +0x3bc8/+0x3cxx branch setup, +0x3bd0 mutation and source order"
-    },
-    {
-      "format": "SHIFT.Fun00766510LaterResponseBranchOwnership/1",
-      "role": "later +0x3a28/+0x3a40 branch setup, dynamic sixth-entry lanes and source order"
-    },
-    {
-      "format": "SHIFT.Fun00766510PrimaryResponseApplication/1",
-      "role": "primary +0x38f0/+0x3950 response transform and BODY application"
-    },
-    {
-      "format": "SHIFT.Fun00766510PrimaryResponseApplication/2",
-      "role": "primary caller FUN_00753650 accumulator delta"
-    },
-    {
-      "format": "SHIFT.Fun00766510SharedReferenceVector/1",
-      "role": "actual-participant +0x16b4/+0x16b8/+0x16bc owner, writer cadence and BODY-frame transform"
-    },
-    {
-      "format": "SHIFT.NativeAuxContactPair/1",
-      "role": "two FUN_00758fc0 records at +0x37d8/+0x3858 in exact caller order"
-    },
-    {
-      "format": "SHIFT.NativeAuxContactResponse/1",
-      "role": "complete per-record FUN_00758fc0 arithmetic and BODY accumulator application"
-    }
+    {"format":"SHIFT.Fun00766510ResponseConfigOwnership/1","role":"HDVehicle+0x3908/+0x3910/+0x3918/+0x3950 owner and mutation provenance"},
+    {"format":"SHIFT.Fun00766510EarlyResponseBranchOwnership/1","role":"earlier +0x3b08/+0x3b20 branch setup, mutable lane and source order"},
+    {"format":"SHIFT.Fun00766510OptionalResponseBranchOwnership/1","role":"optional +0x3bc8/+0x3cxx branch setup, +0x3bd0 mutation and source order"},
+    {"format":"SHIFT.Fun00766510LaterResponseBranchOwnership/1","role":"later +0x3a28/+0x3a40 branch setup, dynamic sixth-entry lanes and source order"},
+    {"format":"SHIFT.Fun00766510PrimaryResponseApplication/1","role":"primary +0x38f0/+0x3950 response transform and BODY application"},
+    {"format":"SHIFT.Fun00766510PrimaryResponseApplication/2","role":"primary caller FUN_00753650 accumulator delta"},
+    {"format":"SHIFT.Fun00766510DirectCallerAccumulatorSurface/1","role":"exhaustive join of all four direct FUN_00753650 caller-accumulator add sites"},
+    {"format":"SHIFT.Fun00766510SharedReferenceVector/1","role":"actual-participant +0x16b4/+0x16b8/+0x16bc owner, writer cadence and BODY-frame transform"},
+    {"format":"SHIFT.NativeAuxContactPair/1","role":"two FUN_00758fc0 records at +0x37d8/+0x3858 in exact caller order"},
+    {"format":"SHIFT.NativeAuxContactResponse/1","role":"complete per-record FUN_00758fc0 arithmetic and BODY accumulator application"}
   ],
   "retail_accumulator_inventory": {
     "state": "HDVehicle+0x40a0/+0x40a8/+0x40b0",
@@ -57,6 +31,9 @@
       "later +0x3a28/+0x3a40 direct response block",
       "final transformed cumulative response vector"
     ],
+    "direct_FUN_00753650_site_count": 4,
+    "direct_FUN_00753650_sites_accounted": 4,
+    "direct_FUN_00753650_surface_closed": true,
     "primary_direct_delta_native": true,
     "whole_accumulator_internalized": false
   },
@@ -64,13 +41,13 @@
     {
       "id": "P1.1a",
       "target": "FUN_00713630 dynamic writer inputs",
-      "reason": "The arithmetic writer is now known, but runtime owner/value provenance for its earlier dynamic inputs still remains fail-closed",
+      "reason": "Phase 748 internalizes the arithmetic producer but keeps earlier runtime config globals, sample-history scheduling and participant +0x4b0 ownership fail-closed",
       "consumer": "shared reference-vector producer consumed by FUN_00766510"
     },
     {
       "id": "P1.1c",
       "target": "final cumulative response and residual state/diagnostic writes",
-      "reason": "The full +0x40a0/+0x40a8/+0x40b0 accumulator and later conditional writes still lack one exhaustive preservation contract",
+      "reason": "All four direct FUN_00753650 caller-accumulator sites are now exhaustively accounted; remaining proof is the exact auxiliary-pair scheduling join, final transformed-vector add and residual conditional state/diagnostic tail",
       "consumer": "Process 2 P2.3 provider removal"
     }
   ],
@@ -80,11 +57,11 @@
     "external_provider_count": 7,
     "target_external_provider_count_after_process_2_consumption": 6,
     "requirements": [
-      "close remaining P1.1a producer/value provenance without freezing dynamic participant lanes as setup constants",
-      "classify every remaining caller-accumulator contribution and conditional state/diagnostic write",
+      "close remaining P1.1a upstream runtime-input ownership without freezing dynamic participant lanes as setup constants",
+      "close P1.1c auxiliary scheduling, final transformed-vector add and residual conditional state/diagnostic writes while preserving the now-closed direct caller surface",
       "publish an explicit Process 1 handoff that Process 2 can preserve in exact retail order"
     ]
   },
   "next_owner": "Process 1",
-  "next_step": "Finish P1.1a upstream dynamic-input provenance, then close P1.1c with an exhaustive accumulator/state-write preservation contract."
+  "next_step": "Continue P1.1c with exact FUN_00758fc0 caller scheduling, the final transformed cumulative-response vector add and residual diagnostic/state writes; P1.1a remains a separate upstream-input ownership lane after Phase 748."
 }
