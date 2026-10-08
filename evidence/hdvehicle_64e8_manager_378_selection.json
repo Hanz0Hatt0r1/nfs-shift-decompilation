@@ -1,0 +1,69 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager378Selection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact PC-retail machine value transfer with Ghidra-index navigation"
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8ManagerDomainFrontier/1",
+    "SHIFT.HDVehicle64e8Manager2a0CandidateRejection/1"
+  ],
+  "function": {
+    "name": "FUN_0045da80",
+    "address": "0x0045da80",
+    "size": 57,
+    "gated_index_argument": "[EBP+0x0c]"
+  },
+  "machine_chain": [
+    "0x0045da84 call FUN_00489ad0",
+    "0x0045da89 mov EDX,[EBP+0x0c]",
+    "0x0045da8c mov ESI,EAX",
+    "0x0045da8e cmp EDX,[ESI+0x2c4]",
+    "0x0045da94 jb 0x0045daa3",
+    "0x0045da96 xor EAX,EAX",
+    "0x0045da98 mov [ESI+0x378],EAX",
+    "0x0045daa3 lea ECX,[ESI+0x2a0]",
+    "0x0045daa9 call FUN_0054ed00",
+    "0x0045daae mov [ESI+0x378],EAX"
+  ],
+  "structural_relation": {
+    "manager_root": "FUN_00489ad0() == 0x00bc9fc0",
+    "collection": "manager+0x2a0",
+    "bound_field": "manager+0x2c4",
+    "destination": "manager+0x378",
+    "valid_index_case": "manager+0x378 = FUN_0054ed00(manager+0x2a0,index)",
+    "out_of_range_case": "manager+0x378 = 0"
+  },
+  "fun_0054ed00": {
+    "role": "read-only indexed element address accessor",
+    "machine_shape": "bounds check against collection+0x28; result = collection+0x30 + index * collection[0]",
+    "semantic_element_type": "unproven"
+  },
+  "ghidra_navigation": {
+    "vtable_candidate": "0x00ab563c",
+    "slot": 0,
+    "slot_targets": ["FUN_0045da80", "FUN_00459070", "FUN_0066d450", "FUN_004692e0"],
+    "class_identity": "unproven",
+    "vtable_semantic_promotion": false
+  },
+  "adjudication": {
+    "manager_378_indexed_selection_relation_proven": true,
+    "manager_378_entry_identity_to_hdvehicle_4330_proven": false,
+    "manager_2a0_insertion_identity_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The relation is structural only; no semantic name is assigned to manager+0x378 or collection elements.",
+    "The vtable candidate is navigation evidence and does not establish a class/interface identity.",
+    "Selection from manager+0x2a0 does not prove how entries are registered or that any selected entry is HDVehicle+0x4330.",
+    "No relationship between manager+0x378 and sibling manager+0x374 is inferred beyond their common manager root."
+  ],
+  "next_step": "Trace producers/registration paths for the exact manager+0x2a0 collection and exact writers/selection ownership for sibling manager+0x374; use the proven +0x378 selection relation only as a structural anchor."
+}
