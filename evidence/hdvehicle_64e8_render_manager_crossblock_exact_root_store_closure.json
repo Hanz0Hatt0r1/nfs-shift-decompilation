@@ -1,0 +1,76 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerCrossBlockExactRootStoreClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_sqlite_role": "function-boundary/name navigation only"
+  },
+  "scope": {
+    "exact_outer_global": "0x00bc185c",
+    "exact_direct_load_seed_count": 112,
+    "function_boundary_source": "shift_ghidra.sqlite function starts; end inferred from next function start",
+    "cfg_tracking": "all reachable intra-function direct conditional/unconditional branches from each seed",
+    "exact_alias_transfers": ["MOV r32,r32", "XCHG r32,r32"],
+    "call_clobbers": ["EAX", "ECX", "EDX"],
+    "call_preserves": ["EBX", "ESI", "EDI", "EBP"],
+    "partial_register_write_kills_exact_identity": true,
+    "derived_pointer_lea_kept_separate_from_exact_root": true
+  },
+  "result": {
+    "exact_root_memory_store_count": 0,
+    "exact_root_push_count": 0,
+    "unmodelled_exact_alias_transfer_count": 0,
+    "derived_subobject_transition_count": 3,
+    "derived_subobject_transitions": [
+      {
+        "function": "FUN_0040d6a0",
+        "seed": "0x0040d834",
+        "instruction": "0x0040d83d",
+        "operation": "lea esi,[eax+0x4]"
+      },
+      {
+        "function": "FUN_00498b80",
+        "seed": "0x00498b89",
+        "instruction": "0x00498b93",
+        "operation": "lea ecx,[edi+0x780]"
+      },
+      {
+        "function": "FUN_00499240",
+        "seed": "0x004994c1",
+        "instruction": "0x004995bf",
+        "operation": "lea ecx,[ebx+0x780]"
+      }
+    ],
+    "exact_root_call_receiver_sink_count": 47,
+    "exact_root_eax_return_sink_count": 9,
+    "exact_root_dereference_sink_count": 77
+  },
+  "relationship_to_merged_surfaces": {
+    "same_block_escape_contract": "SHIFT.HDVehicle64e8RenderManagerSameBlockEscapeSurface/1",
+    "returned_root_direct_caller_contract": "SHIFT.HDVehicle64e8RenderManagerReturnedRootDirectCallerSurface/1",
+    "returned_root_table_contract": "SHIFT.HDVehicle64e8RenderManagerTableReturnedRootClosure/1",
+    "memory_escape_analyzer_contract": "SHIFT.PlayerVehicleRenderManagerMemoryEscapeSurface/1",
+    "note": "This machine-CFG replay closes exact-root MOV-to-memory persistence independently of the missing exhaustive retail-v2 instruction artifact; call/return/dereference sinks remain governed by their dedicated merged contracts."
+  },
+  "adjudication": {
+    "cross_block_exact_root_memory_store_surface_complete": true,
+    "cross_block_exact_root_memory_store_surface_closed_negative": true,
+    "derived_subobject_alias_surface_complete": false,
+    "callee_created_or_external_exact_root_alias_surface_complete": false,
+    "two_unknown_origin_hdvehicle_4330_alias_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only persistent stores of the exact 0x00bc185c root value while it remains an exact register alias on intra-function CFG paths.",
+    "LEA-derived subobjects are deliberately not promoted back to the exact root.",
+    "The scan does not follow a pointer after it is passed into a callee and recreated or returned by opaque code.",
+    "No manager+0x374 to HDVehicle+0x4330 identity is inferred."
+  ],
+  "next_step": "Bound the three derived-subobject transitions and any callee-created/external exact-root aliases; continue two-unknown-origin/cross-control-flow HDVehicle+0x4330 provenance."
+}
