@@ -21,27 +21,6 @@
   },
   "rejections": [
     {
-      "site": "0x00865013",
-      "function": "FUN_00864c10",
-      "function_mnemonic_sha256": "ba7464e733ada713d37976823ad8885f95726f652e4bf569f68b46e87b8855bf",
-      "store": "fstp dword ptr [esi+0x374]",
-      "receiver_capture": "0x00864c40 mov edi,ecx; same exact receiver later carried in ESI at target path",
-      "exact_receiver_vptr": "0x00b1d508",
-      "vptr_install": "0x0085afda mov [esi],0x00b1d508",
-      "vtable_callsites": [
-        "0x0085b6f2 call 0x00864c10",
-        "0x0085c38f call 0x00864c10"
-      ],
-      "vtable_registration": {
-        "0x00b1d520": "0x0085b6e0",
-        "0x00b1d524": "0x0085c370"
-      },
-      "manager_root_vptr": "0x00ab9190",
-      "participants_subobject_vptr": "0x00ab916c",
-      "receiver_is_participants_manager": false,
-      "reason": "exact receiver family is rooted at vptr 0x00b1d508, distinct from both manager identities"
-    },
-    {
       "site": "0x0097ed06",
       "function": "FUN_0097eacc",
       "function_mnemonic_sha256": "15dc460f8ee15582a2fa8fdf855ee6d2844bc86c36e0eb7bb663b0b00560083b",
@@ -53,19 +32,33 @@
         "0x0097ed06 mov [eax+0x374],ebx"
       ],
       "can_place_hdvehicle_plus_0x4330_into_manager_plus_0x374": false,
-      "receiver_identity_required_for_rejection": false,
-      "reason": "payload is unconditionally zero on the target path"
+      "receiver_identity_required_for_nonzero_producer_rejection": false,
+      "receiver_identity_complete": false,
+      "reason": "payload is unconditionally zero on the target path; destination identity remains fail-closed"
     }
   ],
+  "explicit_non_rejection": {
+    "site": "0x00865013",
+    "function": "FUN_00864c10",
+    "store": "fstp dword ptr [esi+0x374]",
+    "target_base_source": "0x00864c67 mov esi,[ebx+0x8], where EBX points to the entry stack frame and [EBX+0x8] is the first stack argument",
+    "caller_argument_sources": [
+      "0x0085b6e0 pushes caller [ebp+0x8] as first argument before 0x0085b6f2",
+      "0x0085c370 pushes caller [ebp+0x8] as first argument before 0x0085c38f"
+    ],
+    "caller_this_vptr": "0x00b1d508",
+    "caller_this_vptr_proves_target_base_identity": false,
+    "status": "open pending exact first-argument provenance"
+  },
   "adjudication": {
-    "closed_site_count_this_contract": 2,
-    "remaining_literal_site_count": 3,
+    "closed_site_count_this_contract": 1,
+    "remaining_literal_site_count": 4,
     "remaining_literal_sites": [
+      "0x00865013",
       "0x0097da09",
       "0x0097daf8",
       "0x0097dc63"
     ],
-    "remaining_literal_function": "FUN_0097d8c4",
     "literal_manager_374_receiver_provenance_complete": false,
     "computed_address_manager_374_writer_surface_complete": false,
     "manager_374_join_to_hdvehicle_4330_complete": false,
@@ -74,10 +67,10 @@
     "external_provider_count": 7
   },
   "limits": [
-    "The 0x00865013 rejection uses exact receiver vptr continuity, not numeric +0x374 coincidence.",
     "The 0x0097ed06 rejection is payload-only: it proves this site cannot install a nonzero pointer even if destination identity remains otherwise unknown.",
+    "0x00865013 remains open because its +0x374 base comes from the first stack argument, not the ECX receiver; caller vptr identity is therefore insufficient.",
     "The three FUN_0097d8c4 sites remain open until exact callback/argument receiver provenance is resolved.",
     "Computed-address writes to manager+0x374 remain outside this literal-displacement slice."
   ],
-  "next_step": "Resolve callback receiver provenance for FUN_0097d8c4 and its three remaining +0x374 writes; then widen to computed-address forms only if literal provenance closes negative."
+  "next_step": "Resolve first-argument provenance for FUN_00864c10 and callback receiver provenance for FUN_0097d8c4; then widen to computed-address forms only if literal provenance closes."
 }
