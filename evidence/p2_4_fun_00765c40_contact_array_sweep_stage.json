@@ -1,0 +1,51 @@
+{
+  "format": "SHIFT.Fun00765c40ContactArraySweepStage/1",
+  "ready": true,
+  "authority": {
+    "ownership_handoff": "SHIFT.Fun00765c40ResidualOwnershipFrontier/1",
+    "direct_write_surface": "SHIFT.Fun00765c40DirectMachineWriteSurface/1",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "retail_write_surface": {
+    "slot_count": 12,
+    "record_pointer_array": {
+      "site": "0x00766120",
+      "base": "+0x35c8",
+      "last": "+0x35f4",
+      "stride": 4,
+      "width": "dword"
+    },
+    "scalar_qword_array": {
+      "site": "0x0076618b",
+      "base": "+0x35f8",
+      "last": "+0x3650",
+      "stride": 8,
+      "width": "qword"
+    },
+    "semantic_names_proven": false
+  },
+  "ordering": {
+    "previous_stage": "wheel_pair_state_refresh",
+    "this_stage": "contact_array_sweep",
+    "next_stage": "optional_BODY_accumulator_sweep",
+    "pinned_by": "SHIFT.Fun00765c40ResidualPassContract/1"
+  },
+  "native_consumption": {
+    "header": "native_runtime/include/shift_fun_00765c40_contact_array_sweep_stage.hpp",
+    "record_pointer_payloads_are_explicit_inputs": true,
+    "scalar_qword_payloads_are_explicit_inputs": true,
+    "payloads_preserved_bit_for_bit": true,
+    "all_24_array_destinations_native_owned": true,
+    "per_slot_producer_arithmetic_internalized": false,
+    "bounded_state_tail_offsets_0x3660_0x3678_internalized": false
+  },
+  "scope": {
+    "p2_4_contact_array_write_stage_internalized": true,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_FUN_00765c40_provider_removed": false,
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Internalize the separately bounded +0x3660/+0x3668/+0x3670/+0x3678 state-write slice with its conditional semantics preserved; provider removal remains fail-closed."
+}
