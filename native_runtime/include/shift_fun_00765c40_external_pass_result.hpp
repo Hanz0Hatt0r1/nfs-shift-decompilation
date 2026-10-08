@@ -148,4 +148,16 @@ inline void validate_fun_00765c40_external_pass_result(
     }
 }
 
+inline Fun00765c40QueryInputBoundary
+materialize_fun_00765c40_session_query_snapshot(
+    const Fun00765c40ExternalPassInput& input,
+    const Fun00765c40ExternalPassResult& result) {
+    validate_fun_00765c40_external_pass_result(input, result);
+    const auto native_selected_query = input.selected_bmw_query_input();
+    if (native_selected_query.has_value()) {
+        return *native_selected_query;
+    }
+    return result.query_input;
+}
+
 }  // namespace shift::runtime::physics
