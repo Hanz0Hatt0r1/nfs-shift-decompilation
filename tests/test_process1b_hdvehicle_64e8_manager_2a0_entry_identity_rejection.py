@@ -50,3 +50,4 @@ def test_coordination_closes_manager2a0_identity_only():
     assert m374["selection_writer_identity_to_hdvehicle_4330"] is False
     assert m374["manager_plus_0x20_escaped_alias_open"] is True
     assert "FUN_004f5e60" in m374["next"]
+    assert m374["participants_lifecycle_direct_target_surface_complete"] is True
