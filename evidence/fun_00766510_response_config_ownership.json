@@ -1,0 +1,100 @@
+{
+  "adjudication": {
+    "contact_response_provider_removable_now": false,
+    "plus_3908_is_setup_constant": false,
+    "plus_3908_requires_persistent_state_and_mutation_hooks": true,
+    "plus_3910_per_pass_provider_required": false,
+    "plus_3918_per_pass_provider_required": false,
+    "plus_3950_per_pass_provider_required": false,
+    "response_config_owner_closed": true
+  },
+  "consumer": {
+    "curve_line": 759681,
+    "function": "FUN_00766510",
+    "ordering": "curve(+0x3918) -> scale(+0x3910,+0x3908) -> six-vector response(+0x3950)",
+    "scale_line": 759683,
+    "vector_table_line": 759686
+  },
+  "fields": {
+    "HDVehicle+0x3908": {
+      "direct_writer_count": 1,
+      "formula": "(+0x3750*s*s) + (+0x3748*s) + (+0x3740)",
+      "ownership": "derived mutable state",
+      "post_setup_refresh": {
+        "FUN_00757e60": "mutates +0x3740/+0x3758 then recomputes +0x3908 from +0x3c78",
+        "FUN_00758210": "clamps/reset +0x3740/+0x3758 then recomputes +0x3908 from +0x3c78",
+        "FUN_00769d60": "global reset path recomputes +0x3908 from +0x3c78",
+        "source_visible_recompute_anchor_lines": [
+          752606,
+          752728,
+          761370
+        ]
+      },
+      "runtime_consumer": "FUN_00766510",
+      "selector_state": "HDVehicle+0x3c78",
+      "setup_call_line": 751568,
+      "setup_seed": "VehicleLoadData interpolation at param_1+0x1688/+0x1690/+0x169c",
+      "writer": "FUN_00756ac0",
+      "writer_line": 751458
+    },
+    "HDVehicle+0x3910": {
+      "direct_writer_count": 1,
+      "ownership": "setup-copy",
+      "runtime_consumer": "FUN_00766510",
+      "source": "setup_param_2+0x730",
+      "writer": "FUN_00756bb0",
+      "writer_line": 751523
+    },
+    "HDVehicle+0x3918": {
+      "ownership": "setup-configured helper state",
+      "runtime_consumer": "FUN_00766510 -> FUN_00755340",
+      "setup_writer_count": 1,
+      "source": [
+        "setup_param_2+0x738",
+        "setup_param_2+0x740",
+        "setup_param_2+0x748"
+      ],
+      "writer": "FUN_00756bb0 -> FUN_00752f10",
+      "writer_line": 751524
+    },
+    "HDVehicle+0x3950[6]": {
+      "constructor": "FUN_0076b130 vector constructor count=6 stride=0x18",
+      "evaluator": "FUN_007a6be0",
+      "ownership": "setup-populated six-vector table",
+      "population_anchor_lines": [
+        751526,
+        751527,
+        751528,
+        751543
+      ],
+      "population_function": "FUN_00756bb0",
+      "runtime_consumer": "FUN_00766510 -> FUN_007551e0",
+      "source_record_base": "setup_param_2+0x750",
+      "source_record_count": 6,
+      "source_record_stride": "0x48 bytes",
+      "storage": "six contiguous 0x18-byte vectors at +0x3950..+0x39d8"
+    }
+  },
+  "format": "SHIFT.Fun00766510ResponseConfigOwnership/1",
+  "limits": [
+    "This contract proves owner/write/refresh provenance, not selected BMW numeric values for every response-config scalar/vector.",
+    "It does not internalize the earlier +0x3b20 branch, optional +0x3bc8/+0x3cxx branch, or all auxiliary/state/diagnostic writes in FUN_00766510.",
+    "Xbox recompilation is not required for any promoted claim."
+  ],
+  "next_owner": "Process 2 for consuming setup-owned +0x3910/+0x3918/+0x3950 and persistent +0x3908 state once selected values/materialization are available; Process 1 continues P1.1 remaining branches.",
+  "ready": true,
+  "setup_owner": {
+    "response_setup_function": "FUN_00756bb0",
+    "setup_call_line": 757115,
+    "setup_param_2_role": "VehicleLoadData/config object passed unchanged into FUN_00756bb0",
+    "vehicle_setup_function": "FUN_0076b280"
+  },
+  "source": {
+    "authority": "PC retail 1.02",
+    "file": "SHIFT.exe.c",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "xbox_recomp_required": false
+  }
+}
