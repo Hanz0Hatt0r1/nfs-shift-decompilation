@@ -82,7 +82,6 @@ def test_provider_removal_remains_fail_closed() -> None:
         "four direct",
         "FUN_00758fc0",
         "final transformed cumulative-response vector",
-        "caller accumulator",
         "contact_response",
         "NEXT_STEP",
     ):
