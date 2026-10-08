@@ -106,16 +106,31 @@ inline void validate_fun_00765c40_external_pass_result(
     validate_fun_00765c40_query_input_boundary(result.query_input);
 
     const auto native_selected_query = input.selected_bmw_query_input();
-    if (native_selected_query.has_value()) {
-        if (result.query_input.world_position != native_selected_query->world_position ||
-            result.query_input.cached_handle != native_selected_query->cached_handle ||
-            result.query_input.miss_fallback != native_selected_query->miss_fallback) {
-            throw std::invalid_argument(
-                "FUN_00765c40 residual provider changed native-owned selected query input");
-        }
-    } else if (result.query_input.cached_handle != input.cached_handle) {
+    if (native_selected_query.has_value() &&
+        (result.query_input.world_position != native_selected_query->world_position ||
+         result.query_input.cached_handle != native_selected_query->cached_handle ||
+         result.query_input.miss_fallback != native_selected_query->miss_fallback)) {
+        throw std::invalid_argument(
+            "FUN_00765c40 residual provider changed native-owned selected query input");
+    }
+
+    // Preserve the source-visible provenance guards individually as well as the
+    // aggregate native query-object comparison. Older phase gates pin these
+    // explicit ownership checks, and their distinct diagnostics remain useful.
+    if (result.query_input.cached_handle != input.cached_handle) {
         throw std::invalid_argument(
             "FUN_00765c40 residual provider did not consume native-owned cached handle");
+    }
+    if (input.world_position.has_value() &&
+        result.query_input.world_position != *input.world_position) {
+        throw std::invalid_argument(
+            "FUN_00765c40 residual provider did not consume native-owned selected BMW world position");
+    }
+    const auto selected_fallback = input.selected_bmw_miss_fallback();
+    if (selected_fallback.has_value() &&
+        result.query_input.miss_fallback != *selected_fallback) {
+        throw std::invalid_argument(
+            "FUN_00765c40 residual provider did not consume native-owned selected BMW +0x38e8 fallback");
     }
 
     if (input.world_position.has_value() && !result.query_output.has_value()) {
