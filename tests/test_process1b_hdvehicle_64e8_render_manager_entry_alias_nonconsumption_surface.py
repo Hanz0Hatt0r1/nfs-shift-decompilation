@@ -8,7 +8,7 @@ def load_evidence():
     return json.loads(EVIDENCE.read_text(encoding="utf-8"))
 
 
-def test_contract_and_exact_target_set():
+def test_contract_and_exact_closed_target_set():
     data = load_evidence()
     assert data["format"] == "SHIFT.HDVehicle64e8RenderManagerEntryAliasNonConsumptionSurface/1"
     assert data["ready"] is True
@@ -18,12 +18,10 @@ def test_contract_and_exact_target_set():
         "0x00459140",
         "0x0045abe0",
         "0x00468ed0",
-        "0x00489ad0",
-        "0x00493fb0",
     ]
 
 
-def test_each_path_destroys_or_replaces_exact_outer_alias():
+def test_each_closed_path_destroys_or_replaces_exact_outer_alias():
     targets = {item["target"]: item for item in load_evidence()["targets"]}
     assert targets["0x00449630"]["entry_alias_register"] == "EDX"
     assert targets["0x00449630"]["alias_read_before_kill"] is False
@@ -42,33 +40,32 @@ def test_each_path_destroys_or_replaces_exact_outer_alias():
     assert len(targets["0x00468ed0"]["all_path_kills_before_read"]) == 2
 
 
-def test_distinct_singleton_returns_are_not_outer_root():
-    targets = {item["target"]: item for item in load_evidence()["targets"]}
-    manager = targets["0x00489ad0"]
-    assert manager["entry_alias_read"] is False
-    assert manager["returned_pointer_is_exact_outer_root"] is False
-    assert "0x00bc9fc0" in manager["return_value"]
-
-    other = targets["0x00493fb0"]
-    assert other["entry_alias_read"] is False
-    assert other["returned_pointer_is_exact_outer_root"] is False
-    assert "0x00bcae00" in other["return_value"]
+def test_getter_residue_targets_are_reopened():
+    data = load_evidence()
+    reopened = {item["target"]: item for item in data["reopened_getter_residue_targets"]}
+    assert set(reopened) == {"0x00489ad0", "0x00493fb0"}
+    assert reopened["0x00489ad0"]["exact_root_callsites"] == ["0x004989c6", "0x00498ac4"]
+    assert reopened["0x00493fb0"]["exact_root_callsites"] == ["0x004d1a1f"]
+    assert all(item["exact_root_entry_register"] == "ECX" for item in reopened.values())
 
 
-def test_bounded_worklist_reduces_ten_to_four_without_opening_global_gates():
+def test_bounded_worklist_reduces_ten_to_six_without_opening_global_gates():
     data = load_evidence()
     work = data["worklist"]
     assert work["bounded_direct_target_count_before_this_contract"] == 10
-    assert work["closed_target_count_this_contract"] == 6
-    assert work["bounded_direct_target_count_after_this_contract"] == 4
+    assert work["closed_target_count_this_contract"] == 4
+    assert work["bounded_direct_target_count_after_this_contract"] == 6
     assert work["remaining_targets"] == [
         "0x0045bfc0",
         "0x0045cc50",
         "0x0045db50",
         "0x00462400",
+        "0x00489ad0",
+        "0x00493fb0",
     ]
     adj = data["adjudication"]
-    assert adj["six_entry_alias_paths_closed_negative"] is True
+    assert adj["four_entry_alias_paths_closed_negative"] is True
+    assert adj["getter_residue_targets_closed_negative"] is False
     assert adj["bounded_direct_target_opaque_surface_complete"] is False
     assert adj["opaque_callee_created_or_returned_alias_surface_complete"] is False
     assert adj["external_or_unknown_origin_alias_surface_complete"] is False
