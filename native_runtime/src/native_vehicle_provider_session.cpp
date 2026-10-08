@@ -131,6 +131,10 @@ NativeVehicleProviderSession::execute_explicit_step(
     std::array<bool, kNativeVehiclePhysicsPassCount> query_input_present{};
     std::array<std::optional<std::uint64_t>, kNativeVehiclePhysicsPassCount>
         returned_cache_handles{};
+    std::array<
+        std::optional<physics::Fun00765c40ResidualProducerHandoff>,
+        kNativeVehiclePhysicsPassCount>
+        residual_producer_handoffs{};
 
     physics::Fun0076d100MotionReadMachineInputProvider pass_provider =
         [this,
@@ -138,7 +142,8 @@ NativeVehicleProviderSession::execute_explicit_step(
          steering,
          &query_inputs,
          &query_input_present,
-         &returned_cache_handles](std::size_t pass_index) {
+         &returned_cache_handles,
+         &residual_producer_handoffs](std::size_t pass_index) {
             if (pass_index >= kNativeVehiclePhysicsPassCount) {
                 throw std::logic_error(
                     "native vehicle provider session pass index exceeds recovered two-pass contract");
@@ -183,7 +188,8 @@ NativeVehicleProviderSession::execute_explicit_step(
                  contact_response_state,
                  &query_inputs,
                  &query_input_present,
-                 &returned_cache_handles] {
+                 &returned_cache_handles,
+                 &residual_producer_handoffs] {
                     physics::Fun00765c40ExternalPassInput external_input{};
                     external_input.cached_handle = fun_00765c40_query_cache_handle_;
                     if (world_position_state->selected_bmw_domain) {
@@ -215,6 +221,12 @@ NativeVehicleProviderSession::execute_explicit_step(
                     returned_cache_handles[pass_index] =
                         result.returned_cache_handle;
                     ++telemetry.fun_00765c40_cache_commit_count;
+
+                    if (result.residual_producer_handoff.has_value()) {
+                        residual_producer_handoffs[pass_index] =
+                            result.residual_producer_handoff;
+                        ++telemetry.fun_00765c40_residual_producer_handoff_capture_count;
+                    }
 
                     contact_response_state->input = {};
                     if (world_position_state->selected_bmw_domain) {
@@ -410,6 +422,8 @@ NativeVehicleProviderSession::execute_explicit_step(
     result.fun_00765c40_query_inputs = query_inputs;
     result.fun_00765c40_query_input_present = query_input_present;
     result.fun_00765c40_returned_cache_handles = returned_cache_handles;
+    result.fun_00765c40_residual_producer_handoffs =
+        residual_producer_handoffs;
     result.session_step_count = step_count_;
     result.telemetry = last_telemetry_;
     return result;

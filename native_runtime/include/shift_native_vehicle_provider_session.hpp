@@ -133,6 +133,7 @@ struct NativeVehicleProviderSessionTelemetry {
     std::size_t fun_00765c40_call_count = 0u;
     std::size_t fun_00765c40_query_input_capture_count = 0u;
     std::size_t fun_00765c40_cache_commit_count = 0u;
+    std::size_t fun_00765c40_residual_producer_handoff_capture_count = 0u;
     std::size_t wheel_update_call_count = 0u;
     std::size_t contact_response_call_count = 0u;
     std::size_t contact_outer_input_call_count = 0u;
@@ -152,6 +153,13 @@ struct NativeVehicleProviderSessionResult {
         fun_00765c40_query_input_present{};
     std::array<std::optional<std::uint64_t>, kNativeVehiclePhysicsPassCount>
         fun_00765c40_returned_cache_handles{};
+    // The /5 producer handoff remains a provider witness. Capturing it here does
+    // not make its values native-owned and does not authorize the composed
+    // residual executor to consume them automatically.
+    std::array<
+        std::optional<physics::Fun00765c40ResidualProducerHandoff>,
+        kNativeVehiclePhysicsPassCount>
+        fun_00765c40_residual_producer_handoffs{};
     std::uint64_t session_step_count = 0u;
     NativeVehicleProviderSessionTelemetry telemetry{};
 };

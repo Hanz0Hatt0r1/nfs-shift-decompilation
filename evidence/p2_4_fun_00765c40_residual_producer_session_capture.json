@@ -1,0 +1,42 @@
+{
+  "format": "SHIFT.Fun00765c40ResidualProducerSessionCapture/1",
+  "ready": true,
+  "lane": "Process 2 / P2-runtime",
+  "dependencies": {
+    "external_result": "SHIFT.Fun00765c40ExternalPassResult/5",
+    "producer_handoff": "SHIFT.Fun00765c40ResidualProducerHandoff/1",
+    "session": "SHIFT.NativeVehicleProviderSession/1"
+  },
+  "capture": {
+    "pass_count": 2,
+    "source_field": "Fun00765c40ExternalPassResult.residual_producer_handoff",
+    "result_field": "NativeVehicleProviderSessionResult.fun_00765c40_residual_producer_handoffs",
+    "presence_rule": "copy only when source optional has_value()",
+    "telemetry_field": "fun_00765c40_residual_producer_handoff_capture_count",
+    "per_step_storage": "local to execute_explicit_step; discarded when the step throws",
+    "persistent_session_state_added": false
+  },
+  "ordering": [
+    "call top-level FUN_00765c40 provider",
+    "validate typed /5 result",
+    "materialize native authoritative query snapshot",
+    "commit query/cache snapshots",
+    "capture optional residual producer witness when present",
+    "continue existing contact/motion-read chain"
+  ],
+  "ownership": {
+    "witness_authoritative": false,
+    "witness_treated_as_native_computation": false,
+    "composed_executor_invoked_by_session": false,
+    "missing_witness_rejected": false,
+    "remaining_explicit_producer_count": 9
+  },
+  "boundaries": {
+    "lower_scene_query_external": true,
+    "lower_scene_query_global": "0x00c133ac",
+    "lower_scene_query_vtable_slot": "0x1c0",
+    "external_provider_count_after": 7,
+    "complete_FUN_00765c40_internalized": false
+  },
+  "next_step": "Obtain source-backed selected-provider production for one or more captured producer fields, then validate those witnesses against native reconstruction before allowing any composed-executor consumption."
+}
