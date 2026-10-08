@@ -1,0 +1,58 @@
+{
+  "format": "SHIFT.HDVehicle64e8ManagerDirectSetterFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "full-retail direct-call receiver inventory plus bounded machine-body store scan"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8ManagerDomainFrontier/1",
+  "target": {
+    "manager_getter": "FUN_00489ad0",
+    "manager_singleton_address": "0x00bc9fc0",
+    "slot": "manager+0x374",
+    "candidate_store": "0x004b86cf [slot_value+0x21b8] = 1",
+    "identity_join_needed": "manager+0x374 value == HDVehicle+0x4330"
+  },
+  "constructor": {
+    "function": "FUN_00488dc0",
+    "direct_slot_store": "0x00488e33 [manager+0x374] = 0",
+    "initial_slot_value": 0
+  },
+  "direct_manager_receiver_calls": {
+    "total_calls": 44,
+    "unique_targets": 12,
+    "targets": [
+      {"function": "FUN_004042e0", "address": "0x004042e0", "call_count": 19, "body_end": "0x0040439a", "direct_store_to_plus_0x374": false},
+      {"function": "FUN_00489430", "address": "0x00489430", "call_count": 5, "body_end": "0x00489475", "direct_store_to_plus_0x374": false},
+      {"function": "FUN_00489480", "address": "0x00489480", "call_count": 5, "body_end": "0x004894bd", "direct_store_to_plus_0x374": false},
+      {"function": "FUN_00489310", "address": "0x00489310", "call_count": 4, "body_end": "0x004893bb", "direct_store_to_plus_0x374": false},
+      {"function": "FUN_00402400", "address": "0x00402400", "call_count": 2, "body_end": "0x0040249f", "direct_store_to_plus_0x374": false},
+      {"function": "FUN_004892c0", "address": "0x004892c0", "call_count": 2, "body_end": "0x00489309", "direct_store_to_plus_0x374": false},
+      {"function": "FUN_00487240", "address": "0x00487240", "call_count": 2, "body_end": "0x004872f9", "direct_store_to_plus_0x374": false},
+      {"function": "FUN_004894d0", "address": "0x004894d0", "call_count": 1, "body_end": "0x0048950a", "direct_store_to_plus_0x374": false},
+      {"function": "FUN_00488a60", "address": "0x00488a60", "call_count": 1, "body_end": "0x00488acb", "direct_store_to_plus_0x374": false},
+      {"function": "FUN_00488ad0", "address": "0x00488ad0", "call_count": 1, "body_end": "0x00488b0f", "direct_store_to_plus_0x374": false},
+      {"function": "FUN_0048c070", "address": "0x0048c070", "call_count": 1, "body_end": "0x0048c0c3", "direct_store_to_plus_0x374": false},
+      {"function": "FUN_004939e0", "address": "0x004939e0", "call_count": 1, "body_end": "0x00493a3e", "direct_store_to_plus_0x374": false}
+    ]
+  },
+  "adjudication": {
+    "constructor_zero_proven": true,
+    "direct_manager_receiver_method_setter_found": false,
+    "direct_manager_receiver_method_setter_surface_exhausted": true,
+    "indirect_virtual_alias_setter_still_possible": true,
+    "singleton_slot_join_to_hdvehicle_4330_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Only direct calls where ECX is still an unmodified alias of FUN_00489ad0 return are admitted to this inventory.",
+    "Calls on manager subobjects such as manager+0x20 are excluded.",
+    "Absence of a direct +0x374 store does not reject indirect, virtual, helper, alias, or bulk-copy registration paths."
+  ],
+  "next_step": "Trace indirect/virtual/helper writes that can mutate manager+0x374, and separately trace insertion producers for manager+0x2a0. Promote or reject the +0x21b8 literal writers only after exact pointer identity is joined to HDVehicle+0x4330."
+}
