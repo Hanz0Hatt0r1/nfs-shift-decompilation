@@ -1,0 +1,62 @@
+{
+  "format": "SHIFT.Fun007b0710CollisionProviderFrontier/1",
+  "ready": true,
+  "purpose": "Process 1 fail-closed boundary join that separates the recovered FUN_007b0710 cache/query ABI from the still-unowned retail collision/world lookup implementation",
+  "authority": {
+    "semantic_platform": "PC retail primary",
+    "source_file": "SHIFT.exe.c",
+    "new_machine_or_source_claims_in_this_join": false,
+    "xbox_recomp_may_replace_pc_proof": false
+  },
+  "known_call_surface": {
+    "caller": "FUN_00765c40",
+    "caller_source_line": 759173,
+    "query_function": "FUN_007b0710",
+    "query_function_source_line": 811231,
+    "known_lower_fallback_query": "FUN_0074f560",
+    "evidence": "SHIFT.CollisionQueryRuntime/1 and SHIFT.NativeCollisionQueryContract/1"
+  },
+  "closed_abi": {
+    "query_record_double_slots": 7,
+    "query_position_offset": "0x00",
+    "y_tolerance_offset": "0x18",
+    "max_aux_offset": "0x20",
+    "output_height_offset": "0x28",
+    "cache_handle_offset": "0x30",
+    "cache_record_size": "0x58",
+    "hit_output": ["returned surface record handle", "normal", "contact height"],
+    "miss_output": ["null handle", "normal=(0,1,0)", "no contact height"],
+    "provider_execution_implemented": false
+  },
+  "closed_selected_session_inputs": {
+    "world_position": "SHIFT.Fun00765c40SelectedBMWWorldPosition/1",
+    "persistent_cache_lifetime": "SHIFT.Fun00765c40QueryCacheLifetime/1",
+    "miss_fallback": "SHIFT.Fun00765c40SelectedBMWQueryFallback/1",
+    "collision_output_handoff": "SHIFT.Fun00765c40CollisionOutputHandoff/1"
+  },
+  "adjudication": {
+    "FUN_007b0710_caller_visible_contract_closed": true,
+    "FUN_0074f560_known_as_lower_fallback_query_surface": true,
+    "exact_scene_query_implementation_below_cache_boundary_known": false,
+    "collision_provider_object_owned": false,
+    "physx_class_or_scene_object_name_proven": false,
+    "safe_to_replace_provider_with_guessed_track_query": false
+  },
+  "remaining_P1_2a": {
+    "target": "retail collision/world lookup implementation at or below FUN_0074f560 / the scene-query boundary",
+    "required_proof": [
+      "identify the object/pointer domain used for provider execution",
+      "identify the exact call/virtual-slot or lower function that performs the retail scene lookup",
+      "preserve cache-reuse versus fallback-query control flow without assigning unsupported PhysX class names",
+      "bind returned surface-record provenance to the already-closed 0x58-byte observable contract"
+    ]
+  },
+  "consumer": {
+    "process": "Process 2 P2.4",
+    "may_use_typed_collision_output_now": true,
+    "may_internalize_collision_provider_now": false,
+    "may_remove_complete_FUN_00765c40_now": false
+  },
+  "next_owner": "Process 1",
+  "next_step": "Perform targeted PC static review starting at FUN_0074f560 and its scene-query call surface. Do not spend further proof work on FUN_007b0710 record layout, selected query inputs, or caller-visible hit/miss projection unless new contradictory evidence appears."
+}
