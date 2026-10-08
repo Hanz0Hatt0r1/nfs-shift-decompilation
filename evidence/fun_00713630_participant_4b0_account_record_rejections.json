@@ -1,0 +1,70 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0AccountRecordRejections/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "pc_decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630Participant4b0RemainingDirectWorklist/1",
+    "SHIFT.Fun00713630Participant4b0FmodChannelMusicRejection/1"
+  ],
+  "sites": [
+    {
+      "site": "0x005b0ea6",
+      "function": "FUN_005b0e60",
+      "width": "u8",
+      "receiver_proof": {
+        "sole_direct_callsite": "0x005b3057",
+        "setup": "lea ECX,[ESP+0xb4]; call FUN_005b0e60",
+        "receiver_domain": "caller stack-local record",
+        "machine_span": {"start":"0x005b3049","end_exclusive":"0x005b3071","sha256":"53d2fd751af09be36c3ea3bec236138b75cd02b09c69db25e9fca0fa5150ec41"}
+      },
+      "selected_physics_participant_writer": false
+    },
+    {
+      "site": "0x005b0b1b",
+      "function": "FUN_005b0af0",
+      "width": "u8",
+      "receiver_proof": {
+        "sole_direct_callsite": "0x005b4c00",
+        "setup": "lea ECX,[ESI+0x10]; call FUN_005b0af0",
+        "caller_entry": "0x005b4be0",
+        "caller_vtable_slot": "0x00adb49c -> 0x005b4be0",
+        "vtable_root": "PTR_LAB_00adb440",
+        "allocation_root": "FUN_005b1b00 allocates 0x4bc and installs PTR_LAB_00adb440",
+        "machine_span": {"start":"0x005b4be0","end_exclusive":"0x005b4c15","sha256":"85d5b1dab232b6528e0b39ce60e51548094fe86191dead4850b9fd5c4c59b3c1"},
+        "vtable_span": {"start":"0x00adb440","size":"0x70","sha256":"ba85bc797cc59accf5fa36a692c8d00cd3992153eac9886ef8784ffe5ab49a53"}
+      },
+      "selected_physics_participant_writer": false
+    }
+  ],
+  "decompiler_proof": {
+    "fun_005b0af0_lines": "401553-401566",
+    "fun_005b0af0_sha256": "f6d787ca1c87796c70782fb88103c7a85e945e049ea6d650e112bcda777cc49e",
+    "fun_005b0e60_lines": "401694-401709",
+    "fun_005b0e60_sha256": "fd3c688d94fe7f4458782663bfd2e592974101c6a2de4eaf4fb78708680870aa",
+    "fun_005b1b00_lines": "402045-402243",
+    "fun_005b1b00_sha256": "605f0c946fe84eb20d4b982656d57a5b82c1f011583e310056d75cf025743c51"
+  },
+  "adjudication": {
+    "both_receiver_domains_closed": true,
+    "site_0x005b0b1b_rejected": true,
+    "site_0x005b0ea6_rejected": true,
+    "remaining_unjoined_direct_site_count": 4,
+    "selected_participant_runtime_plus_0x4b0_writer_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The semantic label is secondary; rejection rests on exact receiver provenance: stack-local storage for FUN_005b0e60 and a separately allocated PTR_LAB_00adb440 object subobject for FUN_005b0af0.",
+    "No conclusion is made about the remaining four direct-displacement sites.",
+    "Computed-address, escaped-alias, indirect-dispatch and residual bulk-copy paths remain deferred until the direct frontier is exhausted."
+  ],
+  "next_step": "Adjudicate the remaining 4 direct-displacement +0x4b0 sites by exact receiver provenance."
+}
