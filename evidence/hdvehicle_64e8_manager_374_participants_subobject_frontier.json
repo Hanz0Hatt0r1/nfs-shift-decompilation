@@ -1,0 +1,90 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374ParticipantsSubobjectFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "PC-retail decompiler value flow plus Ghidra callsite navigation for the known manager+0x20 adjusted-receiver surface"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374BulkCopyCameraRejection/1",
+  "manager": {
+    "getter": "FUN_00489ad0",
+    "singleton_address": "0x00bc9fc0",
+    "constructor": "FUN_00488dc0",
+    "target_slot": "+0x374"
+  },
+  "participants_subobject": {
+    "root_offset": "+0x20",
+    "constructor_chain": [
+      "FUN_00488dc0 -> FUN_00647a10(manager+0x20)",
+      "FUN_00488dc0 -> FUN_00647820(manager+0x20, \"Participants Manager\")"
+    ],
+    "label": "Participants Manager",
+    "target_relative_offset_for_manager_374": "+0x354"
+  },
+  "adjusted_receiver_setup": {
+    "function": "FUN_0040e630",
+    "function_mnemonic_sha256": "8cb4fd1c5b80dc860152d05e17af0a708121224eb30e02c148c8c7be183a1e0e",
+    "calls": [
+      {
+        "getter_callsite": "0x0040e83a",
+        "helper_callsite": "0x0040e846",
+        "helper": "FUN_00648890",
+        "receiver": "FUN_00489ad0()+0x20"
+      },
+      {
+        "getter_callsite": "0x0040e84b",
+        "helper_callsite": "0x0040e855",
+        "helper": "FUN_00647800",
+        "receiver": "FUN_00489ad0()+0x20"
+      }
+    ]
+  },
+  "direct_helper_writes": {
+    "FUN_00648890": {
+      "mnemonic_sha256": "4a74c5000bbb152997e93f5ec1b5c500efb2316e628014e98201f9cda7a193d1",
+      "receiver_relative_writes": ["+0x15c", "+0x34", "+0x35", "+0x158"],
+      "manager_root_writes": ["+0x17c", "+0x54", "+0x55", "+0x178"],
+      "calls_same_receiver_helper": "FUN_00648730"
+    },
+    "FUN_00648730": {
+      "mnemonic_sha256": "155403edb1e7e26ee08162e429ffe9a72e7c21e77802391b1897673e3b944aa1",
+      "conditional_receiver_relative_write": "+0x30",
+      "manager_root_write": "+0x50"
+    },
+    "FUN_00647800": {
+      "mnemonic_sha256": "e041bc8dec99de5758e5f6659a7c388f3bfcc288fc3292ada8e4b955a9cc9484",
+      "receiver_relative_write": "+0x35",
+      "manager_root_write": "+0x55"
+    },
+    "target_relative_offset": "+0x354",
+    "any_direct_write_reaches_manager_374": false
+  },
+  "escaped_alias_registration": {
+    "proven": true,
+    "paths": [
+      "FUN_00648730 -> FUN_004f5e60(FUN_0065bf80()+0x24, manager+0x20)",
+      "FUN_00648890 -> FUN_004f5e60(FUN_0065bf80()+0x44, manager+0x20)"
+    ],
+    "later_mutator_provenance_complete": false
+  },
+  "adjudication": {
+    "known_manager_plus_0x20_direct_helper_write_surface_reaches_manager_374": false,
+    "manager_plus_0x20_escape_is_proven": true,
+    "escaped_alias_consumers_closed": false,
+    "manager_374_helper_alias_indirect_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This contract bounds only the known FUN_0040e630 adjusted-receiver setup calls on manager+0x20 and their immediate same-receiver helper writes.",
+    "FUN_004f5e60 stores the manager+0x20 pointer into registry/container state; later consumers of those escaped aliases remain open.",
+    "No absence claim is made for unrelated adjusted manager subobjects or non-vtable indirect callbacks.",
+    "The Ghidra callgraph is navigation evidence; no gameplay/control semantic promotion is made from this negative direct-write result."
+  ],
+  "next_step": "Trace consumers/removers/dispatch of the manager+0x20 aliases registered through FUN_004f5e60 at FUN_0065bf80()+0x24 and +0x44, looking specifically for a write at subobject+0x354. Continue other computed/escaped aliases independently."
+}

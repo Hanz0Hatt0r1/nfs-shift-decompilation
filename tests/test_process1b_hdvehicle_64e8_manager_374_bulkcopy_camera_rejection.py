@@ -53,10 +53,10 @@ def test_direct_bulk_copy_surface_is_closed_but_indirect_paths_remain_open():
     assert a["external_provider_count"] == 7
 
 
-def test_coordination_advances_to_helper_alias_indirect_only():
+def test_coordination_preserves_bulk_copy_closure_after_later_alias_progress():
     coord = json.loads(COORD.read_text(encoding="utf-8"))
     p13 = next(w for w in coord["workstreams"] if w["id"] == "P1.3")
     row = next(c for c in p13["children"] if c["id"] == "P1.3.manager374")
-    assert row["status"] == "direct-literal-bulkcopy-surface-closed-helper-alias-indirect-open"
     assert row["direct_bulk_copy_surface_complete"] is True
-    assert "helper-mediated" in row["next"]
+    assert any("0x0081d335" in item for item in row["rejected_bulk_copy_aliases"])
+    assert row["status"] == "participants-subobject-direct-writes-rejected-escaped-alias-open"

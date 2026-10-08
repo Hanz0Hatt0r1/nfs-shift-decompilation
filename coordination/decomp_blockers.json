@@ -53,7 +53,7 @@
         {
           "id": "P1.3.manager374",
           "target": "FUN_00489ad0()+0x374 value == HDVehicle+0x4330",
-          "status": "direct-literal-bulkcopy-surface-closed-helper-alias-indirect-open",
+          "status": "participants-subobject-direct-writes-rejected-escaped-alias-open",
           "rejected_literal_writers": ["FUN_0051efa0", "FUN_005dec70"],
           "rejected_bulk_copy_aliases": [
             "FUN_0070dcc0 direct-call surface forwards only stack-local destinations into FUN_00481e20",
@@ -62,7 +62,11 @@
           ],
           "remaining_literal_writer": null,
           "direct_bulk_copy_surface_complete": true,
-          "next": "Trace helper-mediated, escaped-alias, computed-offset and non-vtable indirect mutations of the exact FUN_00489ad0 singleton; do not repeat the closed direct FUN_00481e20 surface unless new caller evidence appears."
+          "manager_plus_0x20_label": "Participants Manager",
+          "manager_plus_0x20_direct_helper_surface_complete": true,
+          "manager_plus_0x20_direct_helper_reaches_0x374": false,
+          "manager_plus_0x20_escaped_alias_open": true,
+          "next": "Trace consumers/removers/dispatch of manager+0x20 aliases registered by FUN_00648730/FUN_00648890 through FUN_004f5e60 at FUN_0065bf80()+0x24 and +0x44; look for subobject+0x354 == manager+0x374 writes. Continue unrelated computed/non-vtable aliases independently."
         },
         {
           "id": "P1.3.manager2a0",
