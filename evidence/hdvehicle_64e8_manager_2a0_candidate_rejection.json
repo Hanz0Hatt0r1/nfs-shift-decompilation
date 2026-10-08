@@ -1,0 +1,92 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager2a0CandidateRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "evidence_kind": "Ghidra-index navigation joined to exact PC-retail machine receiver provenance"
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8ManagerDomainFrontier/1",
+    "SHIFT.HDVehicle64e8ManagerDirectSetterFrontier/1"
+  ],
+  "target": {
+    "manager_getter": "FUN_00489ad0",
+    "manager_singleton_address": "0x00bc9fc0",
+    "manager_collection": "manager+0x2a0",
+    "candidate_mutator": "FUN_00469ab0",
+    "candidate_mutation_site": "0x00469b1d -> FUN_0057f620",
+    "candidate_receiver_field": "receiver+0x2a0"
+  },
+  "ghidra_index_navigation": {
+    "database_format": "SHIFT.GhidraEvidenceDatabase/1",
+    "function": "FUN_00469ab0",
+    "function_address": "0x00469ab0",
+    "calling_convention": "__thiscall",
+    "function_size": 85,
+    "direct_callgraph_callers_found": 0,
+    "vtable_candidate_memberships_found": 0,
+    "navigation_limit": "The direct-call SQLite index omits jump thunks, so zero direct callers is not semantic reachability proof."
+  },
+  "machine_chain": {
+    "manager_read_domain": [
+      "0x004b6229 call FUN_00489ad0",
+      "0x004b622e cmp ESI,[EAX+0x2c4]",
+      "0x004b623a lea ECX,[EAX+0x2a0]",
+      "0x004b6242 call FUN_0054ed00"
+    ],
+    "candidate_receiver_getter": [
+      "0x004b62f2 push 1",
+      "0x004b62f4 call 0x004042b0",
+      "0x004b62f9 mov ECX,EAX",
+      "0x004b62fb call 0x004b5dc0"
+    ],
+    "getter_thunk": [
+      "0x004042b0 jmp 0x0043b920",
+      "0x0043b920 jmp 0x0043b932",
+      "0x0043b945 mov ECX,0x00bbdbe0",
+      "0x0043b94b call FUN_005801e0",
+      "0x0043b97b mov EAX,0x00bbdbe0",
+      "0x0043b980 ret"
+    ],
+    "candidate_thunk": [
+      "0x004b5dc0 jmp FUN_00469ab0"
+    ],
+    "candidate_body": [
+      "0x00469abc mov ESI,ECX",
+      "0x00469b17 lea ECX,[ESI+0x2a0]",
+      "0x00469b1d call FUN_0057f620",
+      "0x00469b3b ret 0x14"
+    ]
+  },
+  "receiver_provenance": {
+    "candidate_receiver_address": "0x00bbdbe0",
+    "candidate_receiver_source": "return value of 0x004042b0 -> 0x0043b920 -> 0x0043b932",
+    "candidate_mutated_collection": "0x00bbdbe0+0x2a0",
+    "manager_receiver_address": "0x00bc9fc0",
+    "manager_collection": "0x00bc9fc0+0x2a0",
+    "same_receiver": false,
+    "same_collection": false
+  },
+  "adjudication": {
+    "candidate_rejected_as_manager_2a0_mutator": true,
+    "matching_plus_0x2a0_offset_is_object_identity": false,
+    "caller_reads_real_manager_2a0_separately": true,
+    "manager_2a0_insertion_identity_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This contract rejects only the 0x00469b1d/FUN_0057f620 candidate as a writer of the FUN_00489ad0 singleton's +0x2a0 collection.",
+    "It does not assign a semantic class name to the distinct 0x00bbdbe0 singleton.",
+    "The fact that the enclosing caller also reads manager+0x2a0 does not transfer manager identity to the later 0x00bbdbe0 receiver.",
+    "FUN_0057f620 operation semantics remain intentionally unnamed; only receiver ownership is adjudicated here.",
+    "Ghidra SQLite/vtable observations are navigation evidence only; the rejection is grounded in the exact PC-retail machine value transfer."
+  ],
+  "next_step": "Continue the manager-domain search without reusing 0x00469b1d. Prioritize the exact path that indexes manager+0x2a0 and stores the selected entry into manager+0x378 around 0x0045daa3, then trace registration/writer provenance from that exact manager-root alias."
+}
