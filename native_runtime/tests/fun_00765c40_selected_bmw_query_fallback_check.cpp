@@ -57,8 +57,14 @@ int main() {
         query.world_position = *selected.world_position;
         query.cached_handle = std::nullopt;
         query.miss_fallback = *owned;
+        const auto record = build_fun_00765c40_query_record(query);
+        const auto miss_output =
+            apply_fun_007b0710_collision_query_result(record, std::nullopt);
         const Fun00765c40ExternalPassResult good{
-            Fun00765c40LoadTerms{1.0, 2.0, 3.0, 4.0}, query, std::nullopt};
+            Fun00765c40LoadTerms{1.0, 2.0, 3.0, 4.0},
+            query,
+            std::nullopt,
+            miss_output};
         validate_fun_00765c40_external_pass_result(selected, good);
 
         bool mismatch_rejected = false;
@@ -78,6 +84,7 @@ int main() {
             << "\"fw_max_height_f32_bits\":\"0x3dcccccd\","
             << "\"fallback_f64_bits\":\"0x3fb99999a0000000\","
             << "\"selected_pre_call_owned\":true,"
+            << "\"selected_collision_output_exposed\":true,"
             << "\"generic_compatibility_path_preserved\":true}\n";
         return 0;
     } catch (const std::exception& exc) {

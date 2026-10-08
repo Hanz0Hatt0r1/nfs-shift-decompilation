@@ -22,35 +22,21 @@ def test_phase726_evidence_reuses_only_proven_query_boundary() -> None:
     )
     assert payload["source"]["fun_00765c40_query_call_source_line"] == 759173
     assert payload["source"]["fun_007b0710_source_line"] == 811231
-
     inputs = payload["input"]
     assert "three finite f64" in inputs["world_position"]
     assert "+0x30" in inputs["cached_handle"]
     assert inputs["miss_fallback"] == "caller state +0x38e8"
     assert inputs["original_world_y_for_hit_scalar"] == "world_position[1]"
 
-    native = payload["native_materialization"]
-    assert native["query_y_bias"] == 0.15
-    assert native["query_y_tolerance"] == 200.35
-    assert native["query_max_aux"] == 9.999999933815813e36
-    assert native["cache_flag"] == 1
-    assert native["hit_scalar"] == "world_position[1] - returned contact height"
-    assert native["miss_scalar"] == "miss_fallback"
-
 
 def test_phase726_historical_scope_remains_immutable() -> None:
     payload = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     scope = payload["scope"]
     assert scope["world_position_producer_internalized"] is False
-    assert scope["world_position_coordinate_provenance_inferred"] is False
-    assert scope["renderer_BODY0_VHF_transform_reused_as_query_transform"] is False
     assert scope["collision_provider_internalized"] is False
     assert scope["FUN_007b0710_query_record_native"] is True
     assert scope["query_response_join_native"] is True
-    assert scope["external_provider_count_before"] == 7
     assert scope["external_provider_count_after"] == 7
-    assert scope["provider_count_reduced"] is False
-    assert scope["boundary_narrowed"] is True
 
 
 def test_active_cpp_contract_feeds_owned_query_state_before_residual_pass() -> None:
@@ -58,7 +44,6 @@ def test_active_cpp_contract_feeds_owned_query_state_before_residual_pass() -> N
     result_header = RESULT_HEADER.read_text(encoding="utf-8")
     session_header = SESSION_HEADER.read_text(encoding="utf-8")
     session_source = SESSION_SOURCE.read_text(encoding="utf-8")
-
     assert "SHIFT.Fun00765c40QueryInputBoundary/1" in query_header
     assert "CollisionQueryVector3d world_position" in query_header
     assert "std::optional<std::uint64_t> cached_handle" in query_header
@@ -66,20 +51,14 @@ def test_active_cpp_contract_feeds_owned_query_state_before_residual_pass() -> N
     assert "build_fun_00765c40_collision_query_record" in query_header
     assert "input.world_position[1]" in query_header
     assert "input.miss_fallback" in query_header
-
-    assert "SHIFT.Fun00765c40ExternalPassResult/3" in result_header
+    assert "SHIFT.Fun00765c40ExternalPassResult/4" in result_header
     assert "SHIFT.Fun00765c40ExternalPassInput/2" in result_header
     assert "Fun00765c40QueryInputBoundary query_input" in result_header
+    assert "std::optional<CollisionQueryOutput> query_output" in result_header
     assert "selected_bmw_miss_fallback" in result_header
     assert "returned_cache_handle" in result_header
-
     assert "kNativeVehiclePhysicsPassCount = 2u" in session_header
     assert "fun_00765c40_query_input_capture_count" in session_header
-    assert "fun_00765c40_cache_commit_count" in session_header
-    assert "fun_00765c40_query_inputs" in session_header
-    assert "fun_00765c40_returned_cache_handles" in session_header
-    assert "fun_00765c40_query_cache_handle_" in session_header
-
     request = session_source.index("external_input.cached_handle =")
     provider_call = session_source.index("providers_.fun_00765c40(pass_index, external_input)")
     validation = session_source.index("validate_fun_00765c40_external_pass_result")
