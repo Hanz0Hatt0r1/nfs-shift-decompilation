@@ -55,6 +55,16 @@ def _requirements() -> dict:
     }
 
 
+def _ready_provenance(**kwargs) -> dict:
+    return {
+        "format": "SHIFT.ResourcePipelinePlayableSceneJoin/1",
+        "version": 1,
+        "ready": True,
+        "source_scene": {"path": "out/pipeline-scene"},
+        "composite_scene": {"path": "out/playable-scene/scene"},
+    }
+
+
 def test_cli_composes_pipeline_scene_into_playable_profile_and_launch_plan(
     monkeypatch,
     tmp_path,
@@ -93,6 +103,10 @@ def test_cli_composes_pipeline_scene_into_playable_profile_and_launch_plan(
         path.write_text("{}", encoding="utf-8")
         return {"format": "SHIFT.NativePlayableSceneBootstrap/1", "ready": True}
 
+    def fake_provenance(**kwargs):
+        calls["provenance"] = kwargs
+        return _ready_provenance(**kwargs)
+
     def fake_profile(requirements, **kwargs):
         calls["profile"] = kwargs
         return {
@@ -115,12 +129,18 @@ def test_cli_composes_pipeline_scene_into_playable_profile_and_launch_plan(
     monkeypatch.setattr(CLI, "build_offline_vertical_slice_bootstrap", fake_offline)
     monkeypatch.setattr(CLI, "load_bmw_vehicle_render_model_resource_join", lambda path: {"ready": True})
     monkeypatch.setattr(CLI, "build_native_playable_scene_bootstrap", fake_playable)
+    monkeypatch.setattr(CLI, "build_resource_pipeline_playable_scene_join", fake_provenance)
     monkeypatch.setattr(CLI, "build_playable_pipeline_profile_prepare", fake_profile)
     monkeypatch.setattr(CLI, "build_playable_pipeline_launch_plan", fake_launch)
 
     assert CLI.main(_argv(tmp_path) + ["--validate-launch-plan"]) == 0
     assert calls["playable"][1] == source_scene
     assert calls["offline"]["resource_pipeline"] == "out/offline-pipeline"
+    assert calls["provenance"]["workspace_root"] == tmp_path.resolve()
+    assert calls["provenance"]["resource_pipeline"] == "out/offline-pipeline"
+    assert Path(calls["provenance"]["playable_scene_bootstrap"]).name == (
+        "playable_scene_bootstrap.json"
+    )
     assert calls["profile"]["resource_pipeline"] == "out/offline-pipeline"
     assert Path(calls["profile"]["playable_scene_bootstrap"]).name == (
         "playable_scene_bootstrap.json"
@@ -132,7 +152,10 @@ def test_cli_composes_pipeline_scene_into_playable_profile_and_launch_plan(
     )
     assert report["ready"] is True
     assert report["profile_ready"] is True
+    assert report["playable_scene_provenance_ready"] is True
     assert report["launch_plan_ready"] is True
+    assert report["boundary"]["playable_scene_provenance_required_before_profile"] is True
+    assert report["boundary"]["playable_scene_provenance_revalidated_before_profile"] is True
     assert report["boundary"]["resource_pipeline_physics_or_participant_replaced"] is False
     assert report["boundary"]["runtime_execution_claimed"] is False
 
@@ -158,15 +181,74 @@ def test_cli_requires_pipeline_participant_before_playable_composition(monkeypat
 
     monkeypatch.setattr(CLI, "build_offline_vertical_slice_bootstrap", unexpected)
     monkeypatch.setattr(CLI, "build_native_playable_scene_bootstrap", unexpected)
+    monkeypatch.setattr(CLI, "build_resource_pipeline_playable_scene_join", unexpected)
 
     assert CLI.main(_argv(tmp_path)) == 2
     report = json.loads(
         (tmp_path / "out" / "playable_pipeline_bootstrap.json").read_text()
     )
     assert report["ready"] is False
+    assert report["playable_scene_provenance_ready"] is False
     assert "resource-pipeline:participant-runtime-evidence-required" in report[
         "blocking_reasons"
     ]
+
+
+def test_cli_provenance_failure_blocks_profile_without_launch_plan(monkeypatch, tmp_path):
+    source_scene = tmp_path / "out" / "pipeline-scene"
+    source_scene.mkdir(parents=True)
+    participant = tmp_path / "out" / "participant.json"
+    participant.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(
+        CLI.native,
+        "_resolve_resource_pipeline_inputs",
+        lambda *args, **kwargs: (
+            {
+                "scene_set": source_scene,
+                "participant_boundary": participant,
+                "physics_manifest": tmp_path / "out" / "physics.json",
+                "resource_pipeline": tmp_path / "out" / "offline-pipeline",
+            },
+            {"ready": True},
+        ),
+    )
+    monkeypatch.setattr(
+        CLI,
+        "build_offline_vertical_slice_bootstrap",
+        lambda *args, **kwargs: {
+            "offline_bootstrap_ready": True,
+            "blocking_reasons": [],
+            "stages": {"runtime_requirements": _requirements()},
+        },
+    )
+    monkeypatch.setattr(CLI, "load_bmw_vehicle_render_model_resource_join", lambda path: {"ready": True})
+
+    def fake_playable(inputs, scene, output, **kwargs):
+        path = Path(output) / "playable_scene_bootstrap.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{}", encoding="utf-8")
+        return {"ready": True}
+
+    monkeypatch.setattr(CLI, "build_native_playable_scene_bootstrap", fake_playable)
+
+    def fail_provenance(**kwargs):
+        raise ValueError("composite manifest SHA mismatch")
+
+    monkeypatch.setattr(CLI, "build_resource_pipeline_playable_scene_join", fail_provenance)
+
+    def unexpected_profile(*args, **kwargs):
+        raise AssertionError("profile must not be prepared before provenance is ready")
+
+    monkeypatch.setattr(CLI, "build_playable_pipeline_profile_prepare", unexpected_profile)
+
+    assert CLI.main(_argv(tmp_path)) == 2
+    report = json.loads(
+        (tmp_path / "out" / "playable_pipeline_bootstrap.json").read_text()
+    )
+    assert report["ready"] is False
+    assert report["profile_ready"] is False
+    assert report["playable_scene_provenance_ready"] is False
+    assert any("composite manifest SHA mismatch" in row for row in report["blocking_reasons"])
 
 
 def test_cli_launch_plan_failure_remains_fail_closed(monkeypatch, tmp_path):
@@ -205,6 +287,7 @@ def test_cli_launch_plan_failure_remains_fail_closed(monkeypatch, tmp_path):
         return {"ready": True}
 
     monkeypatch.setattr(CLI, "build_native_playable_scene_bootstrap", fake_playable)
+    monkeypatch.setattr(CLI, "build_resource_pipeline_playable_scene_join", _ready_provenance)
     monkeypatch.setattr(
         CLI,
         "build_playable_pipeline_profile_prepare",
@@ -229,5 +312,6 @@ def test_cli_launch_plan_failure_remains_fail_closed(monkeypatch, tmp_path):
     )
     assert report["ready"] is False
     assert report["profile_ready"] is True
+    assert report["playable_scene_provenance_ready"] is True
     assert report["launch_plan_ready"] is False
     assert any("composite provenance mismatch" in row for row in report["blocking_reasons"])

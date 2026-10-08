@@ -32,6 +32,9 @@ from bmw_vehicle_render_model_resource_join import (
 from native_playable_scene_bootstrap import build_native_playable_scene_bootstrap
 from offline_playable_pipeline_profile import build_playable_pipeline_profile_prepare
 from offline_vertical_slice_bootstrap import build_offline_vertical_slice_bootstrap
+from resource_pipeline_playable_scene_join import (
+    build_resource_pipeline_playable_scene_join,
+)
 import run_native_vertical_slice as native
 from run_native_vertical_slice_playable_pipeline import (
     build_playable_pipeline_launch_plan,
@@ -203,6 +206,21 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 artifacts["playable_scene_bootstrap"] = str(playable_path)
 
+    provenance_join: Mapping[str, Any] | None = None
+    if not blockers:
+        try:
+            provenance_join = build_resource_pipeline_playable_scene_join(
+                workspace_root=workspace,
+                resource_pipeline=args.resource_pipeline,
+                playable_scene_bootstrap=playable_path,
+            )
+        except (OSError, ValueError) as exc:
+            blockers.append(f"playable-provenance:{type(exc).__name__}:{exc}")
+        else:
+            stages["playable_scene_provenance"] = dict(provenance_join)
+            if provenance_join.get("ready") is not True:
+                blockers.append("playable-provenance:not-ready")
+
     profile_prepare: Mapping[str, Any] | None = None
     if not blockers and isinstance(base_report, Mapping):
         runtime_requirements = (
@@ -255,7 +273,15 @@ def main(argv: list[str] | None = None) -> int:
     blockers = list(dict.fromkeys(blockers))
     profile_ready = artifacts["profile"] is not None
     launch_plan_ready = artifacts["launch_plan"] is not None
-    ready = profile_ready and (not args.validate_launch_plan or launch_plan_ready)
+    provenance_ready = (
+        isinstance(provenance_join, Mapping)
+        and provenance_join.get("ready") is True
+    )
+    ready = (
+        provenance_ready
+        and profile_ready
+        and (not args.validate_launch_plan or launch_plan_ready)
+    )
     report = {
         "format": FORMAT,
         "version": 1,
@@ -271,6 +297,7 @@ def main(argv: list[str] | None = None) -> int:
         "vehicle": args.vehicle,
         "resource_pipeline": str(args.resource_pipeline),
         "profile_ready": profile_ready,
+        "playable_scene_provenance_ready": provenance_ready,
         "launch_plan_ready": launch_plan_ready,
         "blocking_reasons": blockers,
         "stages": stages,
@@ -279,6 +306,8 @@ def main(argv: list[str] | None = None) -> int:
             "pipeline_scene_validated_before_playable_composition": True,
             "pipeline_participant_runtime_evidence_required": True,
             "phase643_playable_composite_required": True,
+            "playable_scene_provenance_required_before_profile": True,
+            "playable_scene_provenance_revalidated_before_profile": provenance_ready,
             "playable_scene_provenance_revalidated_by_launcher": (
                 launch_plan_ready
             ),
