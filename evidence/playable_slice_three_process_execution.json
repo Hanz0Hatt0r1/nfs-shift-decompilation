@@ -22,6 +22,7 @@
     "fun_00766510_shared_reference_owner_ready": true,
     "fun_00766510_early_branch_owner_ready": true,
     "fun_00766510_optional_branch_owner_ready": true,
+    "fun_00766510_later_branch_owner_ready": true,
     "fun_00766510_p1_residual_frontier_ready": true,
     "fun_00766510_p1_complete": false,
     "retail_control_chain_complete": false,
@@ -36,7 +37,7 @@
         {
           "id": "P1.1",
           "state": "current",
-          "task": "Close the residual FUN_00766510 proof frontier: trace FUN_00713630 dynamic X/Z generator inputs, prove the later +0x3a28/+0x3a40 direct response block, and exhaustively classify final +0x40a0/+0x40a8/+0x40b0 accumulator plus conditional state/diagnostic writes before contact_response removal",
+          "task": "Close the residual FUN_00766510 proof frontier: finish upstream dynamic-input provenance around FUN_00713630 and exhaustively classify the final +0x40a0/+0x40a8/+0x40b0 accumulator plus conditional state/diagnostic writes before contact_response removal; later +0x3a28/+0x3a40 ownership is already positive",
           "contract": "SHIFT.Fun00766510ResidualOwnershipFrontier/1",
           "consumer": "Process 2 P2.3"
         },
