@@ -1,0 +1,59 @@
+{
+  "format": "SHIFT.Process1Fun006880c0RequestObjectIdentity/1",
+  "ready": true,
+  "source": {
+    "authority": "PC retail 1.02",
+    "retail_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "upstream_contract": "SHIFT.Process1Fun006880c0QueueProvenance/1",
+    "xbox_recomp_required": false
+  },
+  "propagation": {
+    "api_wrappers": [
+      "FUN_00634ed0",
+      "FUN_00634f00",
+      "FUN_00634f50"
+    ],
+    "upstream_provenance": "API param_2 propagates through FUN_0066bb50 embedded_state+0x8 to FUN_006880c0 queue pointer"
+  },
+  "source_visible_request_surface": {
+    "fun_00634ed0": {
+      "call_count": 2,
+      "request_object": "owner+0x1820",
+      "classification": "embedded request descriptor"
+    },
+    "fun_00634f00": {
+      "call_count": 3,
+      "embedded_request_count": 2,
+      "embedded_request_offset": "+0x1820",
+      "heap_request_count": 1,
+      "heap_request_size": "0x220",
+      "heap_request_owner_slot": "+0x60"
+    },
+    "fun_00634f50": {
+      "call_count": 20,
+      "forwarding_wrapper_definition_count": 2,
+      "forwarding_wrapper_direct_caller_count": 4,
+      "forwarding_wrapper_request_offset": "+0x100",
+      "direct_embedded_request_offsets": [
+        "+0x100",
+        "+0x120",
+        "+0x140",
+        "+0x160"
+      ]
+    }
+  },
+  "adjudication": {
+    "fun_006880c0_source_visible_direct_surface_closed": true,
+    "fun_006880c0_controller1_queue_alias_ruled_out_for_direct_surface": true,
+    "fun_006333f0_controller1_alias_ruled_out": false,
+    "indirect_or_native_apc_injection_ruled_out": false,
+    "render_or_present_phase_lock_proven": false
+  },
+  "next_blocker": {
+    "process": 1,
+    "remaining_generic_queue_pointer_callers": [
+      "FUN_006333f0"
+    ],
+    "description": "classify FUN_006333f0 by exact queue-object identity; keep indirect/native APC injection and render/presentation phase locking fail-closed"
+  }
+}
