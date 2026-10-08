@@ -1,0 +1,10 @@
+{
+  "format": "SHIFT.Process1Fun00791020RejectionSummary/1",
+  "ready": true,
+  "primary_contract": "SHIFT.Fun00791020HDVehicleRejection/1",
+  "rejected_candidate": "FUN_00791020 receiver+0x938",
+  "reason": "receiver derives from [element+0]+0x340 where [element+0] is a freshly allocated 0x2b90 object; selected HDVehicle has proven state at +0x66b4 and cannot be that root allocation",
+  "next_absolute_writer_offsets": ["0x938", "0x13b8", "0x1e38", "0x28b8"],
+  "p1_3_control_producer_complete": false,
+  "external_provider_count": 7
+}
