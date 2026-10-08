@@ -26,6 +26,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check pytest
       - name: Validate JSON evidence and coordination files
         run: |
           python - <<'PY'
@@ -40,7 +42,7 @@ jobs:
                   print(path)
           PY
       - name: Run acceleration regressions
-        run: python -m pytest -q tests/test_development_acceleration_tools.py
+        run: python -m pytest -q tests/test_development_acceleration_tools.py tests/test_blocker_graph_shape.py
       - name: Run changed Process 1 tests when present
         shell: bash
         run: |
