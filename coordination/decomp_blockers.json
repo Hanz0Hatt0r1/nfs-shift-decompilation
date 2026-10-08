@@ -2,59 +2,31 @@
   "format": "SHIFT.DecompBlockerGraph/1",
   "version": 1,
   "updated_from_main": "3465259f235d464b34c5d8ec2542ee2bd0d0f7e0",
-  "rules": {
-    "pc_retail_semantic_authority": true,
-    "numeric_offset_equality_is_identity": false,
-    "external_provider_count": 7,
-    "semantic_promotion_requires_exact_provenance": true
-  },
+  "rules": {"pc_retail_semantic_authority":true,"numeric_offset_equality_is_identity":false,"external_provider_count":7,"semantic_promotion_requires_exact_provenance":true},
   "workstreams": [
+    {"id":"P1.1","owner":"Process 1A","title":"FUN_00766510/contact_response producer closure","status":"in_progress","consumer":"Process 2 P2.3","closed":["P1.1c auxiliary scheduling/final transformed-vector/guarded tail"],"next":"Close P1.1a FUN_00713630 upstream runtime config globals, sample-history scheduling, and participant+0x4b0 ownership; then publish final Process 1 handoff."},
     {
-      "id": "P1.1",
-      "owner": "Process 1A",
-      "title": "FUN_00766510/contact_response producer closure",
-      "status": "in_progress",
-      "consumer": "Process 2 P2.3",
-      "closed": ["P1.1c auxiliary scheduling/final transformed-vector/guarded tail"],
-      "next": "Close P1.1a FUN_00713630 upstream runtime config globals, sample-history scheduling, and participant+0x4b0 ownership; then publish final Process 1 handoff."
-    },
-    {
-      "id": "P1.3",
-      "owner": "Process 1B",
-      "title": "retail control/input producer provenance",
-      "status": "in_progress",
-      "children": [
+      "id":"P1.3","owner":"Process 1B","title":"retail control/input producer provenance","status":"in_progress","children":[
         {"id":"P1.3.slot0","target":"HDVehicle+0x938","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
         {"id":"P1.3.slot1","target":"HDVehicle+0x13b8","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
         {"id":"P1.3.slot2","target":"HDVehicle+0x1e38","status":"partial-producer-proven","next":"Resolve selected HDVehicle+0x64e8 non-sentinel provenance and manager collection insertion identity."},
         {"id":"P1.3.slot3","target":"HDVehicle+0x28b8","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
         {
-          "id": "P1.3.manager374",
-          "target": "FUN_00489ad0()+0x374 value == HDVehicle+0x4330",
-          "status": "participants-subobject-direct-writes-rejected-escaped-alias-open",
-          "rejected_literal_writers": ["FUN_0051efa0", "FUN_005dec70"],
-          "rejected_bulk_copy_aliases": [
-            "FUN_0070dcc0 direct-call surface forwards only stack-local destinations into FUN_00481e20",
-            "0x004848f5 destination is proven SMS participant+0xa00 render snapshot, not manager singleton",
-            "0x0081d335 destination is existing CCameraView+0x2d0 state in FUN_0081d2b0, not manager singleton"
-          ],
-          "remaining_literal_writer": null,
-          "direct_bulk_copy_surface_complete": true,
-          "manager_plus_0x20_label": "Participants Manager",
-          "manager_plus_0x20_direct_helper_surface_complete": true,
-          "manager_plus_0x20_direct_helper_reaches_0x374": false,
-          "manager_plus_0x20_escaped_alias_open": true,
-          "proven_nonzero_writer": "thunk_FUN_00d60660",
-          "proven_selection_relation": "exact manager getter receiver -> FUN_0054ed00(manager+0x2a0,index) -> successful FUN_00485290 state transition -> selected entry stored to manager+0x374 when post-load entry[0] == 0",
-          "next": "Join the selected manager+0x2a0 entry stored at manager+0x374 to HDVehicle+0x4330 or reject that identity; in parallel continue escaped manager+0x20 alias tracing through FUN_00648730/FUN_00648890 and FUN_004f5e60."
+          "id":"P1.3.manager374","target":"FUN_00489ad0()+0x374 value == HDVehicle+0x4330","status":"participants-subobject-direct-writes-rejected-escaped-alias-open",
+          "rejected_literal_writers":["FUN_0051efa0","FUN_005dec70"],
+          "rejected_bulk_copy_aliases":["FUN_0070dcc0 direct-call surface forwards only stack-local destinations into FUN_00481e20","0x004848f5 destination is proven SMS participant+0xa00 render snapshot, not manager singleton","0x0081d335 destination is existing CCameraView+0x2d0 state in FUN_0081d2b0, not manager singleton"],
+          "remaining_literal_writer":null,"direct_bulk_copy_surface_complete":true,"manager_plus_0x20_label":"Participants Manager","manager_plus_0x20_direct_helper_surface_complete":true,"manager_plus_0x20_direct_helper_reaches_0x374":false,"manager_plus_0x20_escaped_alias_open":true,
+          "proven_nonzero_writer":"thunk_FUN_00d60660","proven_selection_relation":"exact manager getter receiver -> FUN_0054ed00(manager+0x2a0,index) -> successful FUN_00485290 state transition -> selected entry stored to manager+0x374 when post-load entry[0] == 0",
+          "next":"Join the selected manager+0x2a0 entry stored at manager+0x374 to HDVehicle+0x4330 or reject that identity; in parallel continue escaped manager+0x20 alias tracing through FUN_00648730/FUN_00648890 and FUN_004f5e60."
         },
         {
-          "id": "P1.3.manager2a0",
-          "target": "FUN_00489ad0()+0x2a0 collection entry == HDVehicle+0x4330",
-          "status": "selection-writer-proven-registration-identity-open",
-          "rejected_candidate": "0x00469b1d -> FUN_0057f620 mutates 0x00bbdbe0+0x2a0, not manager+0x2a0",
-          "proven_relation": "FUN_0045da80 stores 0 or manager+0x2a0[index] into manager+0x378; thunk_FUN_00d60660 selects the exact manager+0x2a0 entry and stores it into manager+0x374 after successful post-load state 0 transition",
-          "next": "Trace exact insertion/producer mutations for manager+0x2a0 entries and join selected entry identity to HDVehicle+0x4330."
+          "id":"P1.3.manager2a0","target":"FUN_00489ad0()+0x2a0 collection entry == HDVehicle+0x4330","status":"population-producer-proven-entry-identity-open",
+          "rejected_candidate":"0x00469b1d -> FUN_0057f620 mutates 0x00bbdbe0+0x2a0, not manager+0x2a0",
+          "proven_relation":"FUN_0045da80 stores 0 or manager+0x2a0[index] into manager+0x378; thunk_FUN_00d60660 selects the exact manager+0x2a0 entry and stores it into manager+0x374 after successful post-load state 0 transition",
+          "proven_population_producer":"FUN_004978f0 -> exact thunk_FUN_00444fcc manager root -> thunk_FUN_00d61e00(manager, ..., DAT_00bbc628)",
+          "population_helper":"thunk_FUN_00d61e00 clears/configures manager+0x2a0 then calls thunk_FUN_00d61d10 once per count element",
+          "element_size":"0x22e0","population_count_source":"DAT_00bbc628","insertion_producer_complete":true,
+          "next":"Trace the 0x22e0 collection-entry construction/registration bridge and prove or reject selected manager+0x2a0 entry == HDVehicle+0x4330."
         }
       ]
     },
