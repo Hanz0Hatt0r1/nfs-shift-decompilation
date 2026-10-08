@@ -12,11 +12,11 @@ def test_exact_vptr_rejection_inventory():
     data = load_evidence()
     assert data["format"] == "SHIFT.HDVehicle64e8Manager374VptrReceiverRejections/1"
     assert data["ready"] is True
-    assert data["upstream"]["remaining_site_count_before"] == 23
+    assert data["upstream"]["remaining_site_count_before"] == 20
     assert data["upstream"]["participants_manager_vptr"] == "0x00ab916c"
+    assert data["upstream"]["inherited_negative_site_excluded_here"] == "0x005ded7e"
     rows = data["rejections"]
     assert [r["site"] for r in rows] == [
-        "0x005ded7e",
         "0x0074874b",
         "0x008169c3",
         "0x00833972",
@@ -29,8 +29,8 @@ def test_exact_vptr_rejection_inventory():
 
 def test_worklist_reduces_without_promoting_identity_join():
     adj = load_evidence()["adjudication"]
-    assert adj["rejected_site_count"] == 7
-    assert adj["remaining_literal_store_site_count"] == 16
+    assert adj["rejected_site_count"] == 6
+    assert adj["remaining_literal_store_site_count"] == 14
     assert adj["rejections_use_exact_same_receiver_vptr_identity"] is True
     assert adj["numeric_plus_0x374_equality_used_as_identity"] is False
     assert adj["remaining_literal_store_receiver_provenance_complete"] is False
