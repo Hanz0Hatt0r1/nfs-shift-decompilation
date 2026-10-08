@@ -1,0 +1,46 @@
+{
+  "format": "SHIFT.HDVehicle64e8Constant4330ReconstructionSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_bytes_adjudicate": true,
+    "disassembly_role": "bounded constant-propagation inventory"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8Static4330PointerOccurrenceSurface/1",
+  "target": {
+    "hdvehicle_root": "0x00c13700",
+    "subobject_offset": "+0x4330",
+    "subobject_address": "0x00c17a30"
+  },
+  "scan": {
+    "mov_immediate_seed_count": 38128,
+    "known_exact_literal_production_count": 4,
+    "known_literal_sites": ["0x00702715","0x0070274d","0x00702776","0x007027ac"],
+    "same_register_arithmetic_transition_count": 499,
+    "same_register_non_literal_exact_target_count": 0,
+    "constant_multi_register_transition_count": 834,
+    "constant_multi_register_non_literal_exact_target_count": 0,
+    "recognized_multi_register_operations": ["mov r32,imm32","mov r32,r32","add/sub r32,imm32","add/sub r32,r32","lea r32,[base+index*scale+disp]"],
+    "reset_on": ["call","jmp","ret","int3"]
+  },
+  "adjudication": {
+    "constant_only_4330_reconstruction_surface_complete": true,
+    "constant_only_non_literal_4330_production_count": 0,
+    "surface_creates_new_hdvehicle_4330_alias": false,
+    "static_exact_4330_pointer_cell_surface_complete": true,
+    "runtime_memory_or_opaque_4330_alias_surface_complete": false,
+    "global_non_literal_hdvehicle_64e8_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes constant-only straight-line synthesis of the exact HDVehicle+0x4330 address through the recognized register/arithmetic operations.",
+    "It does not propagate runtime values through memory loads, opaque helper returns, indirect/external initialization, or unrecognized transforms.",
+    "No identity is inferred from numeric offset equality."
+  ],
+  "next_step": "Trace runtime memory/opaque-derived HDVehicle+0x4330 aliases and the remaining runtime-derived Participants Manager reconstruction frontier."
+}
