@@ -1,0 +1,70 @@
+name: native-physics-phase753
+
+on:
+  push:
+    paths:
+      - 'native_runtime/include/shift_fun_00766510_direct_accumulator_surface.hpp'
+      - 'native_runtime/tests/fun_00766510_direct_accumulator_surface_check.cpp'
+      - 'native_runtime/cmake/phase752.cmake'
+      - 'native_runtime/cmake/phase753.cmake'
+      - 'tests/test_s6_fun_00766510_direct_accumulator_surface.py'
+      - 'evidence/fun_00766510_direct_accumulator_surface_native.json'
+      - 'docs/PHASE753_FUN_00766510_DIRECT_ACCUMULATOR_SURFACE.md'
+      - '.github/workflows/native-physics-phase753.yml'
+  pull_request:
+    paths:
+      - 'native_runtime/include/shift_fun_00766510_direct_accumulator_surface.hpp'
+      - 'native_runtime/tests/fun_00766510_direct_accumulator_surface_check.cpp'
+      - 'native_runtime/cmake/phase752.cmake'
+      - 'native_runtime/cmake/phase753.cmake'
+      - 'tests/test_s6_fun_00766510_direct_accumulator_surface.py'
+      - 'evidence/fun_00766510_direct_accumulator_surface_native.json'
+      - 'docs/PHASE753_FUN_00766510_DIRECT_ACCUMULATOR_SURFACE.md'
+      - '.github/workflows/native-physics-phase753.yml'
+
+jobs:
+  direct-accumulator-surface:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+      - name: Run Phase 753 Python regression
+        run: python3 -m pytest -q tests/test_s6_fun_00766510_direct_accumulator_surface.py
+      - name: Validate Phase 753 evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          e = json.loads(Path('evidence/fun_00766510_direct_accumulator_surface_native.json').read_text())
+          assert e['format'] == 'SHIFT.Fun00766510DirectAccumulatorSurface/1'
+          assert e['ready'] is True
+          assert e['accumulator']['direct_site_count'] == 4
+          assert e['native_contract']['four_sites_batched_or_reordered'] is False
+          assert e['scope']['whole_caller_accumulator_closed'] is False
+          assert e['scope']['external_provider_count_after'] == 7
+          PY
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+      - name: Build Phase 753 and Phase 752 regressions
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_fun_00766510_direct_accumulator_surface_check
+          shift_runtime_fun_00766510_response_config_check
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_fun_00766510_direct_accumulator_surface|shift_runtime_fun_00766510_response_config)$'
+      - name: Verify native report
+        run: |
+          mkdir -p out/native-physics-phase753
+          native_runtime/build/shift_runtime_fun_00766510_direct_accumulator_surface_check \
+            > out/native-physics-phase753/fun_00766510_direct_accumulator_surface.json
+          grep -q '"format":"SHIFT.Fun00766510DirectAccumulatorSurface/1"' \
+            out/native-physics-phase753/fun_00766510_direct_accumulator_surface.json
+          grep -q '"direct_site_count":4' \
+            out/native-physics-phase753/fun_00766510_direct_accumulator_surface.json
+          grep -q '"contact_response_provider_removed":false' \
+            out/native-physics-phase753/fun_00766510_direct_accumulator_surface.json
