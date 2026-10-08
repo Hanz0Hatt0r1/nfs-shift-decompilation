@@ -1,0 +1,65 @@
+{
+  "format": "SHIFT.HDVehicle64e8RenderManagerReturnedRootDirectCallerSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_sqlite_role": "navigation/fingerprints only"
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8RenderManagerSameBlockEscapeSurface/1",
+    "SHIFT.PlayerVehicleRenderManagerMemoryEscapeSurface/1"
+  ],
+  "machine_return_scan": {
+    "exact_global": "0x00bc185c",
+    "direct_load_count": 112,
+    "partial_register_writes_invalidate_full_pointer": true,
+    "conditional_exact_eax_return_function_count": 7,
+    "functions": [
+      {"function":"FUN_0040cfc0","address":"0x0040cfc0","size":117,"mnemonic_sha256":"a2356494cde2357bf44a05b1efaf9e197d2e055f646bf9b35870e3aea672464e","ret_site":"0x0040d034","direct_callsite_count":1},
+      {"function":"FUN_00499840","address":"0x00499840","size":138,"mnemonic_sha256":"f7abbf1a87feaff3808cb97d66610fd3b8057baa6f3ec878d627f76b5c497fb9","ret_site":"0x004998c9","direct_callsite_count":1},
+      {"function":"FUN_004b7350","address":"0x004b7350","size":112,"mnemonic_sha256":"03e1436c00ae4b840044be4f4b33b450d0de3b1ab63570d1867bb7b136ce37e8","ret_site":"0x004b73bd","direct_callsite_count":0,"static_pointer_cell":"0x00abed00"},
+      {"function":"FUN_004b73c0","address":"0x004b73c0","size":31,"mnemonic_sha256":"f8bbc24c7a45fa7b5301c6acf46217c7c31081840a9c0ed31c67d0459ad1a2cd","ret_site":"0x004b73dc","direct_callsite_count":0,"static_pointer_cell":"0x00abed04"},
+      {"function":"FUN_00512b00","address":"0x00512b00","size":53,"mnemonic_sha256":"5cce86cb0ad002a7220914bd363d99592e9d069953f0aa659068d4cccf5ac6fa","ret_site":"0x00512b32","direct_callsite_count":1},
+      {"function":"FUN_0051e010","address":"0x0051e010","size":102,"mnemonic_sha256":"463a8f1684f1211a074479a00e0d469c24bdc7d13a6f611fc724c7b77a83da8d","ret_site":"0x0051e075","direct_callsite_count":2},
+      {"function":"FUN_00558b30","address":"0x00558b30","size":105,"mnemonic_sha256":"0d34eb25629e654d6262a79e6cf2915ef3415b4f55ea1bded9533126bb59206d","ret_site":"0x00558b98","direct_callsite_count":1}
+    ]
+  },
+  "direct_callers": {
+    "callsite_count": 6,
+    "calls": [
+      {"callsite":"0x0040d240","caller":"FUN_0040d040","callee":"FUN_0040cfc0","post_call":"0x0040d245 call FUN_0040b870","exact_eax_consumed_before_clobber":false,"exact_eax_persists_after_window":false},
+      {"callsite":"0x0049a2cf","caller":"FUN_00499de0","callee":"FUN_00499840","post_call":"0x0049a2d4 jmp 0x0049a2ef; first EAX definition/use boundary is 0x0049a2f6 call FUN_00624930","exact_eax_consumed_before_clobber":false,"exact_eax_persists_after_window":false},
+      {"callsite":"0x005115ab","caller":"FUN_005115a0","callee":"FUN_00512b00","post_call":"tests BL only; either 0x005115b5 call FUN_00493fb0 or 0x005115d9 call FUN_00518e80 clobbers EAX before any EAX use","exact_eax_consumed_before_clobber":false,"exact_eax_persists_after_window":false},
+      {"callsite":"0x0051e099","caller":"FUN_0051e080","callee":"FUN_0051e010","post_call":"0x0051e09e call FUN_006e8da0","exact_eax_consumed_before_clobber":false,"exact_eax_persists_after_window":false},
+      {"callsite":"0x0051e8e8","caller":"FUN_0051e8c0","callee":"FUN_0051e010","post_call":"0x0051e8f0 mov eax,[ebp+0x8]","exact_eax_consumed_before_clobber":false,"exact_eax_persists_after_window":false},
+      {"callsite":"0x008a82b0","caller":"unrecovered local code region before FUN_008a82c0","callee":"FUN_00558b30","post_call":"0x008a82b5 mov al,bl; partial-register write destroys exact 32-bit pointer before return","exact_eax_consumed_before_clobber":false,"exact_eax_persists_after_window":false}
+    ]
+  },
+  "indirect_only_frontier": {
+    "function_count": 2,
+    "functions": ["FUN_004b7350","FUN_004b73c0"],
+    "direct_rel32_callsite_count": 0,
+    "static_pointer_cells": ["0x00abed00","0x00abed04"],
+    "recognized_as_vtable_slots_by_vtables_json": false,
+    "indirect_consumer_return_use_complete": false
+  },
+  "adjudication": {
+    "direct_returned_root_caller_surface_complete": true,
+    "direct_returned_root_caller_can_persist_or_dispatch_exact_root": false,
+    "indirect_table_only_return_consumer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The seven-function return list is conditional-path provenance, not an API return-type claim.",
+    "Partial writes to AL/AH/AX invalidate exact 32-bit EAX identity.",
+    "The two table-only functions remain open until their indirect consumers and post-call EAX use are bounded.",
+    "No identity is inferred from matching offsets."
+  ],
+  "next_step": "Resolve indirect consumers of the 0x00abed00/0x00abed04 table entries and their post-call EAX use; run the merged CFG memory-escape analyzer on the exhaustive retail export when available."
+}
