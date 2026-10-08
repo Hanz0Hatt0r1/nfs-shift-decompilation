@@ -43,6 +43,13 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _sha256_or_none(path: Path) -> str | None:
+    try:
+        return _sha256(path)
+    except OSError:
+        return None
+
+
 def _write_json(path: Path, value: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -114,6 +121,9 @@ def execute_playable_pipeline_slice(
     report, plan = _validated_execution_plan(output_dir)
     report_path = (output_dir / "playable_pipeline_bootstrap.json").resolve()
     plan_path = (output_dir / "launch_plan.json").resolve()
+    report_sha256 = _sha256(report_path)
+    plan_sha256 = _sha256(plan_path)
+
     runtime_path = Path(plan["argv"][0]).resolve()
     if not runtime_path.is_file():
         raise ExecutionError(f"launch plan runtime executable not found: {runtime_path}")
@@ -128,13 +138,22 @@ def execute_playable_pipeline_slice(
         env=launch_environment,
         check=False,
     )
-    try:
-        runtime_sha256_after = _sha256(runtime_path)
-    except OSError:
-        runtime_sha256_after = None
+
+    report_sha256_after = _sha256_or_none(report_path)
+    plan_sha256_after = _sha256_or_none(plan_path)
+    runtime_sha256_after = _sha256_or_none(runtime_path)
+    report_stable = report_sha256_after == report_sha256
+    plan_stable = plan_sha256_after == plan_sha256
+    launch_artifacts_stable = report_stable and plan_stable
     runtime_binary_stable = runtime_sha256_after == runtime_sha256
-    execution_ready = completed.returncode == 0 and runtime_binary_stable
-    if not runtime_binary_stable:
+    execution_ready = (
+        completed.returncode == 0
+        and launch_artifacts_stable
+        and runtime_binary_stable
+    )
+    if not launch_artifacts_stable:
+        status = "launch-artifact-changed"
+    elif not runtime_binary_stable:
         status = "runtime-binary-changed"
     elif completed.returncode == 0:
         status = "completed"
@@ -153,9 +172,14 @@ def execute_playable_pipeline_slice(
         "runtime_executable_sha256_after": runtime_sha256_after,
         "runtime_executable_stable": runtime_binary_stable,
         "bootstrap_report": str(report_path),
-        "bootstrap_report_sha256": _sha256(report_path),
+        "bootstrap_report_sha256": report_sha256,
+        "bootstrap_report_sha256_after": report_sha256_after,
+        "bootstrap_report_stable": report_stable,
         "launch_plan": str(plan_path),
-        "launch_plan_sha256": _sha256(plan_path),
+        "launch_plan_sha256": plan_sha256,
+        "launch_plan_sha256_after": plan_sha256_after,
+        "launch_plan_stable": plan_stable,
+        "launch_artifacts_stable": launch_artifacts_stable,
         "execution_receipt": str(receipt_path),
         "track": report.get("track"),
         "vehicle": report.get("vehicle"),
@@ -164,8 +188,11 @@ def execute_playable_pipeline_slice(
             "provenance_validated_launch_plan_required": True,
             "launch_plan_argv_reconstructed": False,
             "launch_plan_environment_reconstructed": False,
-            "bootstrap_report_hash_recorded": True,
-            "launch_plan_hash_recorded": True,
+            "bootstrap_report_hash_recorded_before_execution": True,
+            "launch_plan_hash_recorded_before_execution": True,
+            "bootstrap_report_rehashed_after_execution": True,
+            "launch_plan_rehashed_after_execution": True,
+            "launch_artifacts_stable_across_execution": launch_artifacts_stable,
             "runtime_executable_hash_recorded_before_execution": True,
             "runtime_executable_rehashed_after_execution": True,
             "runtime_executable_stable_across_execution": runtime_binary_stable,
