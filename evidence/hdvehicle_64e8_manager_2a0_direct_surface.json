@@ -1,0 +1,73 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager2a0DirectSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "bounded retail machine-body scan over proven manager-root direct and vtable surfaces"
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8ManagerDirectSetterFrontier/1",
+    "SHIFT.HDVehicle64e8Manager378Selection/1"
+  ],
+  "target": {
+    "manager_getter": "FUN_00489ad0",
+    "manager_singleton_address": "0x00bc9fc0",
+    "collection": "manager+0x2a0"
+  },
+  "bounded_surface": {
+    "direct_manager_receiver_calls": 44,
+    "direct_manager_receiver_unique_targets": 12,
+    "manager_vtable_address": "0x00ab9190",
+    "manager_vtable_slots": 18,
+    "manager_vtable_unique_targets": 17,
+    "functions_with_literal_plus_0x2a0_reference": ["FUN_00488a60"],
+    "vtable_targets_with_literal_plus_0x2a0_reference": []
+  },
+  "fun_00488a60": {
+    "role": "only proven direct manager-root method in the bounded surface that forms manager+0x2a0",
+    "instructions": [
+      "0x00488a6a lea esi,[ecx+0x2a0]",
+      "0x00488a72 lea edx,[ebp-0x0c]",
+      "0x00488a75 mov ecx,esi",
+      "0x00488a80 call FUN_0052cce0",
+      "0x00488ab5 lea edx,[ebp-0x0c]",
+      "0x00488ab8 mov ecx,esi",
+      "0x00488aba call FUN_0052cce0"
+    ],
+    "container_store_found": false,
+    "observed_operation": "iteration through a stack-local iterator descriptor"
+  },
+  "iterator_helper": {
+    "entry": "FUN_0052cce0",
+    "delegate": "FUN_0052ca50",
+    "entry_instructions": [
+      "0x0052cce0 push edx",
+      "0x0052cce1 xor edx,edx",
+      "0x0052cce3 call FUN_0052ca50"
+    ],
+    "delegate_reads_container_fields": ["receiver+0x18", "receiver+0x30", "receiver+0x00"],
+    "delegate_writes_stack_iterator_descriptor": true,
+    "delegate_direct_store_to_container_receiver": false
+  },
+  "adjudication": {
+    "direct_manager_root_registration_found": false,
+    "manager_vtable_registration_found": false,
+    "bounded_direct_and_vtable_registration_surface_exhausted": true,
+    "escaped_subobject_alias_registration_still_possible": true,
+    "helper_or_callback_registration_still_possible": true,
+    "manager_2a0_entry_identity_to_hdvehicle_4330_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This inventory is bounded to the already proven 12 direct manager-root receiver targets and 17 unique targets from vtable 0x00ab9190.",
+    "Absence of a literal +0x2a0 registration in those bodies does not reject escaped manager+0x2a0 aliases, helper-mediated mutation, callbacks, computed offsets, or bulk-copy paths.",
+    "FUN_0052cce0/FUN_0052ca50 are admitted only as read/iteration evidence for this receiver path; no semantic collection type name is assigned."
+  ],
+  "next_step": "Search escaped aliases of manager+0x2a0 and helper/callback registration paths. Prioritize functions that receive a pre-adjusted manager+0x2a0 pointer rather than repeating direct manager-root or manager-vtable scans."
+}
