@@ -1,0 +1,43 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0RemainingDirectWorklist/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630Participant4b0Frontier/1",
+    "SHIFT.Fun00713630Participant4b0VehicleLoadDataConstructorRejection/1",
+    "SHIFT.Fun00713630Participant4b0FixedSingletonByteRejections/1",
+    "SHIFT.Fun00713630Participant4b0600AllocationRejection/1",
+    "SHIFT.Fun00713630Participant4b0Fun00481e20BulkCopyRejection/1",
+    "SHIFT.Fun00713630Participant4b0FlacRecordRejection/1",
+    "SHIFT.Fun00713630Participant4b0TbcCompoundRejection/1"
+  ],
+  "remaining_direct_displacement_sites": [
+    {"site":"0x00487d2d","function":"FUN_004876f0","width":"f32"},
+    {"site":"0x005b0b1b","function":"FUN_005b0af0","width":"u8"},
+    {"site":"0x005b0ea6","function":"FUN_005b0e60","width":"u8"},
+    {"site":"0x00607f22","function":"FUN_00607980","width":"u32"},
+    {"site":"0x0076019f","function":null,"width":"f64"},
+    {"site":"0x00832f46","function":"FUN_00832a80","width":"u32"},
+    {"site":"0x0098e583","function":"FUN_0098e558","width":"u32-or"}
+  ],
+  "adjudication": {
+    "remaining_unjoined_direct_site_count": 7,
+    "all_previously_rejected_direct_sites_excluded": true,
+    "selected_participant_runtime_plus_0x4b0_writer_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "rules": [
+    "Each remaining site must be joined or rejected by exact receiver provenance; numeric +0x4b0 equality is never sufficient.",
+    "Do not reopen previously rejected PhysicsTweaker, VehicleLoadData, fixed-singleton, 0x600-allocation, FUN_00481e20 bulk-copy, FMOD FLAC or TBC compound sites.",
+    "Only after this seven-site direct surface is exhausted should Process 1A widen to computed-address, escaped-alias, indirect-dispatch or residual bulk-copy writer paths."
+  ],
+  "next_step": "Adjudicate the seven listed sites in address order or by available exact owner roots; publish one bounded negative/positive contract per independently proven receiver domain."
+}
