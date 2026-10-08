@@ -1,0 +1,70 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374Vtable865013Rejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_role": "navigation/fingerprint only"
+  },
+  "upstream": {
+    "receiver_rejection_format": "SHIFT.HDVehicle64e8Manager374VptrReceiverRejections/1",
+    "literal_receiver_worklist_before": 6,
+    "manager_root_vptr": "0x00ab9190",
+    "participants_manager_subobject_vptr": "0x00ab916c"
+  },
+  "target": {
+    "site": "0x00865013",
+    "function": "FUN_00864c10",
+    "function_mnemonic_sha256": "ba7464e733ada713d37976823ad8885f95726f652e4bf569f68b46e87b8855bf",
+    "receiver_capture": "0x00864c40 mov edi,ecx",
+    "store": "0x00865013 fstp [esi+0x374]",
+    "base_relation": "ESI is the same object-family receiver selected from the FUN_00864c10 input state; direct entry receiver identity is bounded by the two caller methods"
+  },
+  "caller_surface": {
+    "direct_calls_to_target": ["0x0085b6f2", "0x0085c38f"],
+    "callers": [
+      {
+        "function": "FUN_0085b6e0",
+        "mnemonic_sha256": "dc0fd05ddc8fa3012722e7c8b1f449c1fc0042af8e3329415737d0469458ebb8",
+        "direct_callsite_count_to_this_method": 0,
+        "whole_pe_function_pointer_occurrence_count": 1,
+        "function_pointer_location": "0x00b1d520",
+        "vtable": "0x00b1d520",
+        "slot_offset": "+0x0",
+        "receiver_transfer": "entry ECX is not overwritten before 0x0085b6f2 call FUN_00864c10"
+      },
+      {
+        "function": "FUN_0085c370",
+        "mnemonic_sha256": "8a69036316a217ed5a29e37518d105ed4dd17601281a73ebc7f207c54b9c2373",
+        "direct_callsite_count_to_this_method": 0,
+        "whole_pe_function_pointer_occurrence_count": 1,
+        "function_pointer_location": "0x00b1d524",
+        "vtable": "0x00b1d520",
+        "slot_offset": "+0x4",
+        "receiver_capture": "0x0085c374 mov esi,ecx",
+        "receiver_transfer": "0x0085c38d mov ecx,esi; 0x0085c38f call FUN_00864c10"
+      }
+    ],
+    "shared_vtable": "0x00b1d520",
+    "shared_vtable_equals_manager_root_vptr": false,
+    "shared_vtable_equals_participants_manager_subobject_vptr": false
+  },
+  "adjudication": {
+    "site_closed_negative": true,
+    "literal_receiver_worklist_before": 6,
+    "literal_receiver_worklist_after": 5,
+    "computed_address_manager_374_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The rejection is based on exact whole-PE method registration and machine receiver transfer, not the shared +0x374 displacement.",
+    "This contract closes only literal site 0x00865013; five literal sites and computed-address forms remain open.",
+    "No object identity is inferred from decompiler type names."
+  ],
+  "next_step": "Classify the remaining five literal +0x374 sites: three FUN_0097d8c4 sites, 0x0097ed06, and 0x00a38974."
+}
