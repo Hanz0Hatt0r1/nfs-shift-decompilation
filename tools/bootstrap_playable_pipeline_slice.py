@@ -97,6 +97,19 @@ def main(argv: list[str] | None = None) -> int:
 
     workspace = Path(args.workspace_root).resolve()
     out = Path(args.output).resolve()
+    if not workspace.is_dir():
+        print(f"error: --workspace-root directory not found: {workspace}", file=sys.stderr)
+        return 2
+    try:
+        out.relative_to(workspace)
+    except ValueError:
+        print(
+            "error: --output must be inside --workspace-root: "
+            f"output={out} workspace={workspace}",
+            file=sys.stderr,
+        )
+        return 2
+
     out.mkdir(parents=True, exist_ok=True)
     report_path = out / "playable_pipeline_bootstrap.json"
     profile_path = out / "vertical_slice_profile.json"
