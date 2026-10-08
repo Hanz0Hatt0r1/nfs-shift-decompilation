@@ -1,0 +1,64 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0NestedCopyRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "pc_decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630Participant4b0SizeContradictionRejection/1"
+  ],
+  "candidate": {
+    "site": "0x00487d2d",
+    "function": "FUN_004876f0",
+    "width": "f32",
+    "selected_physics_participant_writer": false,
+    "candidate_machine_span": {"start":"0x00487d10","end_exclusive":"0x00487d45","sha256":"1e30cf6e880b97abe53f0c3da7fc529fff36929dfad2ba65ce5ec7803e599484"}
+  },
+  "static_reference_closure": {
+    "direct_rel32_calls": ["0x0048bc90","0x0048bca2"],
+    "direct_rel32_call_count": 2,
+    "direct_rel32_jump_count": 0,
+    "literal_address_reference_count": 0,
+    "caller_function": "FUN_0048bbc0",
+    "callsite_machine_span": {"start":"0x0048bc71","end_exclusive":"0x0048bca7","sha256":"846d098d45891070b81f3c570daa8bda060e287f5d5e52a000407b04cf94afcb"}
+  },
+  "receiver_mapping": [
+    {
+      "callsite":"0x0048bc90",
+      "receiver_setup":"lea ECX,[EBX+0x110]",
+      "candidate_storage_in_outer":"outer+0x5c0"
+    },
+    {
+      "callsite":"0x0048bca2",
+      "receiver_setup":"lea ECX,[EBX+0xa00]",
+      "candidate_storage_in_outer":"outer+0xeb0"
+    }
+  ],
+  "decompiler_proof": {
+    "candidate_function_lines":"126755-127133",
+    "candidate_function_sha256":"46c8d05e77f2b1f30f30268c7a1571abcebf3659b0993a37d95a23746b76f40b",
+    "caller_expression_1":"FUN_004876f0((void *)((int)this + 0x110),param_1 + 0x44)",
+    "caller_expression_2":"FUN_004876f0((void *)((int)this + 0xa00),param_1 + 0x280)"
+  },
+  "adjudication": {
+    "candidate_static_receiver_surface_closed": true,
+    "candidate_is_selected_physics_participant_root_writer": false,
+    "direct_displacement_site_rejected": true,
+    "remaining_unjoined_direct_site_count": 2,
+    "selected_participant_runtime_plus_0x4b0_writer_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The proof closes the retail static reference surface visible as rel32 calls/jumps and literal address references; no semantic class name for FUN_0048bbc0 is required.",
+    "At both actual callsites, FUN_004876f0 receives a nested receiver, so its internal +0x4b0 store maps to outer+0x5c0 or outer+0xeb0, never outer+0x4b0.",
+    "Two direct-displacement sites plus computed/alias/indirect/residual-bulk paths remain open."
+  ],
+  "next_step":"Adjudicate 0x00607f22 and 0x0076019f without widening until both direct sites are closed."
+}
