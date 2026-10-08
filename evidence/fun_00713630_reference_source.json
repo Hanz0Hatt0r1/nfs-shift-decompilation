@@ -1,0 +1,112 @@
+{
+  "format": "SHIFT.Fun00713630ReferenceSource/1",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "aggregate_function": "FUN_00712940",
+    "aggregate_source_line": 705479,
+    "writer_function": "FUN_00713630",
+    "writer_source_line": 706188,
+    "cadence_function": "FUN_007144a0",
+    "cadence_source_line": 706883,
+    "sample_history_writer": "FUN_00727870",
+    "sample_history_writer_source_line": 721427,
+    "machine_spans": {
+      "FUN_00712940": {
+        "start": "0x00712940",
+        "end_exclusive": "0x00712a73",
+        "sha256": "5f39e507f181793de613158848251f35b20e098349c4d3fe28383df3793f12d4"
+      },
+      "FUN_00713630": {
+        "start": "0x00713630",
+        "end_exclusive": "0x00713783",
+        "sha256": "2ae2558440bf633e3bd6e926c2a060451b5c8d630df7a2dbb94ce51e5f030590"
+      },
+      "FUN_007144a0": {
+        "start": "0x007144a0",
+        "end_exclusive": "0x00714557",
+        "sha256": "11dcc27639936fc13379f4e91f6a3d35697715ccfdce10c7865baf2f431308db"
+      },
+      "CRT_FCOS_wrapper": {
+        "start": "0x00900b10",
+        "end_exclusive": "0x00900bf9",
+        "sha256": "0de3a2479ceb44dc4eeb1eba23ab27c53407c3fd7eb2052f7fc9a7df1790dbbd"
+      },
+      "CRT_FSIN_wrapper": {
+        "start": "0x00900c40",
+        "end_exclusive": "0x00900d29",
+        "sha256": "cae7003b4b9682164685955c7aa4c877b523f3ed0a72844b3b0c1d71312fb81f"
+      }
+    }
+  },
+  "manager_geometry": {
+    "participant_array": "+0x140",
+    "participant_count": "+0x144",
+    "cadence_counter": "+0x158",
+    "record_stride": "0x1fa0",
+    "active_byte": "+0x4e",
+    "refresh_condition": "manager_counter % 3 == 0"
+  },
+  "participant_input": {
+    "sample_base": "+0x2b10",
+    "sample_count": 3,
+    "sample_stride": "0x0c",
+    "sample_lane_type": "f32[3]",
+    "angle": "+0x4b0 f32",
+    "sample_history_writer": {
+      "function": "FUN_00727870",
+      "behavior": "new qualifying sample enters +0x2b10 and older samples shift to +0x2b1c/+0x2b28",
+      "fully_scheduled_by_phase748": false
+    }
+  },
+  "aggregate_config_boundary": {
+    "DAT_00c12eec": "record_0_limit",
+    "DAT_00c12ef4": "record_0_scale",
+    "DAT_00c12ef0": "record_0_offset",
+    "DAT_00c12ee0": "record_2_ramp_begin",
+    "DAT_00c12ee4": "record_2_ramp_end",
+    "DAT_00c12ee8": "record_2_divisor",
+    "DAT_00c12f04": "final_output_scale",
+    "runtime_values_frozen": false,
+    "physical_semantics_named": false
+  },
+  "writer_output": {
+    "participant_plus_0x16b4": "-FSIN(participant+0x4b0) * f32(final_output_scale * secondary_aggregate)",
+    "participant_plus_0x16b8": "0.0f",
+    "participant_plus_0x16bc": "-FCOS(participant+0x4b0) * f32(final_output_scale * secondary_aggregate)",
+    "participant_plus_0x2128": "primary aggregate",
+    "participant_plus_0x212c": "secondary aggregate",
+    "trig_outputs_explicitly_spilled_to_f32": true,
+    "consumer": "SHIFT.Fun00766510SharedReferenceVector/1"
+  },
+  "native_join": {
+    "aggregate_format": "SHIFT.Fun00712940ReferenceAggregate/1",
+    "writer_format": "SHIFT.Fun00713630ReferenceSource/1",
+    "three_record_arithmetic_native": true,
+    "FSIN_FCOS_x87_path_native_on_x86": true,
+    "phase747_participant_source_type_reused": true,
+    "manager_scheduling_integrated": false,
+    "participant_sample_materialization_integrated": false,
+    "aggregate_global_config_materialization_integrated": false
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "contact_response_provider_removed": false,
+    "dynamic_writer_arithmetic_internalized": true,
+    "selected_session_constants_invented": false,
+    "physical_semantics_invented": false
+  },
+  "next_blocker": {
+    "target": "materialize FUN_00713630 earlier inputs and exact cadence into selected session state",
+    "items": [
+      "owner/runtime values of DAT_00c12ee0/+0x04/+0x08/+0x0c/+0x10/+0x14 and DAT_00c12f04",
+      "participant +0x2b10 three-record history produced by FUN_00727870",
+      "participant +0x4b0 source value",
+      "remaining Process1 FUN_00766510 residual tail/state/diagnostic audit"
+    ]
+  }
+}
