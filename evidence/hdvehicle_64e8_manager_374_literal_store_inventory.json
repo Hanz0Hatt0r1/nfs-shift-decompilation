@@ -24,31 +24,31 @@
     "literal_write_site_count": 25,
     "containing_function_count": 21,
     "sites": [
-      {"site":"0x004826a6","instruction":"fstp DWORD PTR [esi+0x374]","mnemonic":"fstp","operands":"dword ptr [esi+0x374]","function":"FUN_00481e20","function_address":"0x00481e20","function_size":2270,"function_mnemonic_sha256":"e9ad52b740a1d38484159319885256536e027e280f3cd230028352601d805263"},
+      {"site":"0x004826a6","instruction":"fstp DWORD PTR [esi+0x374]","mnemonic":"fstp","operands":"dword ptr [esi+0x374]","function":"FUN_00481e20","function_address":"0x00481e20","function_size":5913,"function_mnemonic_sha256":"37a722e4d69ffa88ae44b3b22d251fda6064674d8654da3506a3a298a3bb8c7d"},
       {"site":"0x00488e33","instruction":"mov DWORD PTR [esi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebx","function":"FUN_00488dc0","function_address":"0x00488dc0","function_size":969,"function_mnemonic_sha256":"e13355f805e2a6500eae78b6dca3d4ed0812bc7f9c574b2401da1c08395f2001"},
-      {"site":"0x0051effd","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_0051efa0","function_address":"0x0051efa0","function_size":131,"function_mnemonic_sha256":"3fd2ce6a16d1857226479f57089b1cc7ce7fbfa9510da56f32fb7d47875cf7f8"},
-      {"site":"0x005ded7e","instruction":"mov DWORD PTR [esi+0x374],ebp","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebp","function":"FUN_005dec70","function_address":"0x005dec70","function_size":544,"function_mnemonic_sha256":"0fab6aff43dc6debcf8d126eabdd1245919eed76b5ab77de89cf71a66f6061f7"},
-      {"site":"0x0074874b","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_00748280","function_address":"0x00748280","function_size":1295,"function_mnemonic_sha256":"8c315c01413572ea634a87e99202f6dc47d4e77dccb1734b547ff58632f59e39"},
-      {"site":"0x007c0fa0","instruction":"mov DWORD PTR [esi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebx","function":"FUN_007c0db0","function_address":"0x007c0db0","function_size":1323,"function_mnemonic_sha256":"252393530f412eb9e9f5b354a2d23da5f12f7fd67afc3cc147f2d07374c58dcb"},
-      {"site":"0x007c1ace","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_007c19c0","function_address":"0x007c19c0","function_size":393,"function_mnemonic_sha256":"110ead3d34ce00243ae65ff88b654687484a9d3c05f65ce4d6a177ab9be10811"},
-      {"site":"0x008169c3","instruction":"mov DWORD PTR [esi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebx","function":"FUN_008167f0","function_address":"0x008167f0","function_size":609,"function_mnemonic_sha256":"a33b1554bda5e541f8a850f44840d536c9c02a121b275f6b447f49f61f571bd4"},
-      {"site":"0x00816c9c","instruction":"add DWORD PTR [ecx+0x374],0x1","mnemonic":"add","operands":"dword ptr [ecx+0x374],0x1","function":"FUN_00816c70","function_address":"0x00816c70","function_size":65,"function_mnemonic_sha256":"3179c99608619c64ec534e85b8dc95a05b2ae504a87fd1cc8daab9a5e2c58306"},
-      {"site":"0x00818157","instruction":"mov DWORD PTR [ebx+0x374],esi","mnemonic":"mov","operands":"dword ptr [ebx+0x374],esi","function":"FUN_00818000","function_address":"0x00818000","function_size":470,"function_mnemonic_sha256":"e873222cfbad12dc14178da0dcfeff2f4a75b89a68115d52b73ad5c52d8f038a"},
-      {"site":"0x00833972","instruction":"mov DWORD PTR [ebx+0x374],ecx","mnemonic":"mov","operands":"dword ptr [ebx+0x374],ecx","function":"FUN_00833760","function_address":"0x00833760","function_size":623,"function_mnemonic_sha256":"e0f31f1015c010a272d2c97c33a98b545324417df2b03eec88fb165084a12062"},
-      {"site":"0x00844343","instruction":"mov DWORD PTR [esi+0x374],0x0","mnemonic":"mov","operands":"dword ptr [esi+0x374],0x0","function":"FUN_00844320","function_address":"0x00844320","function_size":123,"function_mnemonic_sha256":"7cd97db9013865121358028b804ad11f4b503b47d888658cc0efc3dba460f1a7"},
-      {"site":"0x008446cb","instruction":"mov DWORD PTR [esi+0x374],0x0","mnemonic":"mov","operands":"dword ptr [esi+0x374],0x0","function":"FUN_008446a0","function_address":"0x008446a0","function_size":223,"function_mnemonic_sha256":"8058865223556938174270e2dfd4fb6342b657d0781c08ced6a178b248baf1de"},
-      {"site":"0x008446e3","instruction":"mov DWORD PTR [esi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebx","function":"FUN_008446a0","function_address":"0x008446a0","function_size":223,"function_mnemonic_sha256":"8058865223556938174270e2dfd4fb6342b657d0781c08ced6a178b248baf1de"},
-      {"site":"0x008446f8","instruction":"mov DWORD PTR [esi+0x374],0x0","mnemonic":"mov","operands":"dword ptr [esi+0x374],0x0","function":"FUN_008446a0","function_address":"0x008446a0","function_size":223,"function_mnemonic_sha256":"8058865223556938174270e2dfd4fb6342b657d0781c08ced6a178b248baf1de"},
-      {"site":"0x00844b67","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_00844a20","function_address":"0x00844a20","function_size":442,"function_mnemonic_sha256":"6efaf3f258dd0fd6ea59d0149921a381e582475068301817a651f2fdc0ad6908"},
-      {"site":"0x00865013","instruction":"fstp DWORD PTR [esi+0x374]","mnemonic":"fstp","operands":"dword ptr [esi+0x374]","function":"FUN_00864c10","function_address":"0x00864c10","function_size":1289,"function_mnemonic_sha256":"0e43f3123d31e3279c7a337a3e445f6632167dad7bf1e30fbfb14069a3c97e7f"},
-      {"site":"0x0097da09","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_0097d8c4","function_address":"0x0097d8c4","function_size":1072,"function_mnemonic_sha256":"34542aa4e24d43034aa025357420396ec105f90f73cf10ba90756d38621b6f3b"},
-      {"site":"0x0097daf8","instruction":"add DWORD PTR [esi+0x374],eax","mnemonic":"add","operands":"dword ptr [esi+0x374],eax","function":"FUN_0097d8c4","function_address":"0x0097d8c4","function_size":1072,"function_mnemonic_sha256":"34542aa4e24d43034aa025357420396ec105f90f73cf10ba90756d38621b6f3b"},
-      {"site":"0x0097dc63","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_0097d8c4","function_address":"0x0097d8c4","function_size":1072,"function_mnemonic_sha256":"34542aa4e24d43034aa025357420396ec105f90f73cf10ba90756d38621b6f3b"},
-      {"site":"0x0097ed06","instruction":"mov DWORD PTR [eax+0x374],ebx","mnemonic":"mov","operands":"dword ptr [eax+0x374],ebx","function":"FUN_0097eacc","function_address":"0x0097eacc","function_size":765,"function_mnemonic_sha256":"19f82d1715929795215728892b64cf5af6f8382876a59799965c7352090d8a0d"},
-      {"site":"0x00a38974","instruction":"mov DWORD PTR [esi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebx","function":"FUN_00a38959","function_address":"0x00a38959","function_size":62,"function_mnemonic_sha256":"b913bd18d2dce1411f2dc0a6f6c7d285aaf47ba48563ee7e1643764138923d77"},
-      {"site":"0x00a44ac5","instruction":"fstp DWORD PTR [ebx+0x374]","mnemonic":"fstp","operands":"dword ptr [ebx+0x374]","function":"FUN_00a44a50","function_address":"0x00a44a50","function_size":245,"function_mnemonic_sha256":"e24070c785a13f51b7d9483fa127e2cc16f060014113db8e4117160749c9a617"},
+      {"site":"0x0051effd","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_0051efa0","function_address":"0x0051efa0","function_size":380,"function_mnemonic_sha256":"b32ba85afdc1f6d8847559f68e98e39569f0b9eeb20ab064edb29d88722eae65"},
+      {"site":"0x005ded7e","instruction":"mov DWORD PTR [esi+0x374],ebp","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebp","function":"FUN_005dec70","function_address":"0x005dec70","function_size":615,"function_mnemonic_sha256":"7438b010075393107ea7bd20ecd0a2947948b39cc7c6620267f76bfd8bfae8be"},
+      {"site":"0x0074874b","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_00748280","function_address":"0x00748280","function_size":2247,"function_mnemonic_sha256":"6eb579841dc27729011aeef7db976fe6e5296f65f014365e276d0058d0ceb650"},
+      {"site":"0x007c0fa0","instruction":"mov DWORD PTR [esi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebx","function":"FUN_007c0db0","function_address":"0x007c0db0","function_size":1481,"function_mnemonic_sha256":"cdab4b268824fa7f423f738f22b1091e2dd45572e5132f9a5892a2d1fff25efd"},
+      {"site":"0x007c1ace","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_007c19c0","function_address":"0x007c19c0","function_size":1147,"function_mnemonic_sha256":"6fdac41ffc3eafa1e12bb5ad6ca6abbaa5008103f1a5d6e1fd6d7afe12025be6"},
+      {"site":"0x008169c3","instruction":"mov DWORD PTR [esi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebx","function":"FUN_008167f0","function_address":"0x008167f0","function_size":901,"function_mnemonic_sha256":"b4da6008545d1a924c7606bfa3f6cda96e9ff5bfe0bbbb519749e573ee6ffe26"},
+      {"site":"0x00816c9c","instruction":"add DWORD PTR [ecx+0x374],0x1","mnemonic":"add","operands":"dword ptr [ecx+0x374],0x1","function":"FUN_00816c70","function_address":"0x00816c70","function_size":55,"function_mnemonic_sha256":"80b8cce34234815775eb8d65660988faf726cb330a86a8c7b192b06381732069"},
+      {"site":"0x00818157","instruction":"mov DWORD PTR [ebx+0x374],esi","mnemonic":"mov","operands":"dword ptr [ebx+0x374],esi","function":"FUN_00818000","function_address":"0x00818000","function_size":354,"function_mnemonic_sha256":"bdf034dc13276fada174c9e1f1240641c4d3d7d2623d0cb2118a67825139ec79"},
+      {"site":"0x00833972","instruction":"mov DWORD PTR [ebx+0x374],ecx","mnemonic":"mov","operands":"dword ptr [ebx+0x374],ecx","function":"FUN_00833760","function_address":"0x00833760","function_size":557,"function_mnemonic_sha256":"ed2f1767bd3da9117f8529fbbc51de86c4a48f6f340225e4285ad96f9cb5ec94"},
+      {"site":"0x00844343","instruction":"mov DWORD PTR [esi+0x374],0x0","mnemonic":"mov","operands":"dword ptr [esi+0x374],0x0","function":"FUN_00844320","function_address":"0x00844320","function_size":61,"function_mnemonic_sha256":"b198cd4e8c80e2d14984348ad9e8f43c0ecf7615afddf119742cbcf046f355c1"},
+      {"site":"0x008446cb","instruction":"mov DWORD PTR [esi+0x374],0x0","mnemonic":"mov","operands":"dword ptr [esi+0x374],0x0","function":"FUN_008446a0","function_address":"0x008446a0","function_size":106,"function_mnemonic_sha256":"ba866ae628aa72ed7b39ffbacc1bb9c8c581a9f1fd197efbbcd7854f0a28bd5c"},
+      {"site":"0x008446e3","instruction":"mov DWORD PTR [esi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebx","function":"FUN_008446a0","function_address":"0x008446a0","function_size":106,"function_mnemonic_sha256":"ba866ae628aa72ed7b39ffbacc1bb9c8c581a9f1fd197efbbcd7854f0a28bd5c"},
+      {"site":"0x008446f8","instruction":"mov DWORD PTR [esi+0x374],0x0","mnemonic":"mov","operands":"dword ptr [esi+0x374],0x0","function":"FUN_008446a0","function_address":"0x008446a0","function_size":106,"function_mnemonic_sha256":"ba866ae628aa72ed7b39ffbacc1bb9c8c581a9f1fd197efbbcd7854f0a28bd5c"},
+      {"site":"0x00844b67","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_00844a20","function_address":"0x00844a20","function_size":366,"function_mnemonic_sha256":"1ae4c3384cb932a4be044c0f1554dd5d686d73f9fc901bf60bfee38fa173f7e5"},
+      {"site":"0x00865013","instruction":"fstp DWORD PTR [esi+0x374]","mnemonic":"fstp","operands":"dword ptr [esi+0x374]","function":"FUN_00864c10","function_address":"0x00864c10","function_size":2801,"function_mnemonic_sha256":"ba7464e733ada713d37976823ad8885f95726f652e4bf569f68b46e87b8855bf"},
+      {"site":"0x0097da09","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_0097d8c4","function_address":"0x0097d8c4","function_size":1011,"function_mnemonic_sha256":"e1e06f1e17662275814cebbfbd0fd618efb1b5b6aeba65a84a6671044dd52c12"},
+      {"site":"0x0097daf8","instruction":"add DWORD PTR [esi+0x374],eax","mnemonic":"add","operands":"dword ptr [esi+0x374],eax","function":"FUN_0097d8c4","function_address":"0x0097d8c4","function_size":1011,"function_mnemonic_sha256":"e1e06f1e17662275814cebbfbd0fd618efb1b5b6aeba65a84a6671044dd52c12"},
+      {"site":"0x0097dc63","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_0097d8c4","function_address":"0x0097d8c4","function_size":1011,"function_mnemonic_sha256":"e1e06f1e17662275814cebbfbd0fd618efb1b5b6aeba65a84a6671044dd52c12"},
+      {"site":"0x0097ed06","instruction":"mov DWORD PTR [eax+0x374],ebx","mnemonic":"mov","operands":"dword ptr [eax+0x374],ebx","function":"FUN_0097eacc","function_address":"0x0097eacc","function_size":831,"function_mnemonic_sha256":"15dc460f8ee15582a2fa8fdf855ee6d2844bc86c36e0eb7bb663b0b00560083b"},
+      {"site":"0x00a38974","instruction":"mov DWORD PTR [esi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [esi+0x374],ebx","function":"FUN_00a38959","function_address":"0x00a38959","function_size":52,"function_mnemonic_sha256":"746799a235deb43f35e0e0f1cd20e126d2f23ce2efd1e3dd4481d1b8ccbd18ec"},
+      {"site":"0x00a44ac5","instruction":"fstp DWORD PTR [ebx+0x374]","mnemonic":"fstp","operands":"dword ptr [ebx+0x374]","function":"FUN_00a44a50","function_address":"0x00a44a50","function_size":169,"function_mnemonic_sha256":"d9a68f532e69cfefbab923b59c29e2f551bc6c842fd4923357442426f0253e41"},
       {"site":"0x00d606f3","instruction":"mov DWORD PTR [edi+0x374],ebx","mnemonic":"mov","operands":"dword ptr [edi+0x374],ebx","function":"FUN_00d60660","function_address":"0x00d60660","function_size":223,"function_mnemonic_sha256":"3aa7b36b4aaad15c4eba5381b8c0b31997637ae25def1093706982eb0b774f23"},
-      {"site":"0x00d7f104","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_00d7f040","function_address":"0x00d7f040","function_size":339,"function_mnemonic_sha256":"d2f6d4c6b62a50f34bf094db1bb778dc2d2fc6bc05a3237b902ddf13fa2c017d"}
+      {"site":"0x00d7f104","instruction":"mov DWORD PTR [esi+0x374],eax","mnemonic":"mov","operands":"dword ptr [esi+0x374],eax","function":"FUN_00d7f040","function_address":"0x00d7f040","function_size":376,"function_mnemonic_sha256":"9a5def75b06e4d300a1ef6f90f8856c9599d053b53640bdc19f072569f801c12"}
     ]
   },
   "proven_manager_domain_sites": [
@@ -70,16 +70,44 @@
       "upstream_contract": "SHIFT.HDVehicle64e8Manager374ExactRootDirectCalleeSurface/1"
     }
   ],
+  "inherited_closed_negative_sites": [
+    {
+      "site": "0x004826a6",
+      "function": "FUN_00481e20",
+      "status": "closed-negative",
+      "receiver_proof": "all direct destination surfaces closed: stack-local forwarding, SMS participant+0xa00 render snapshot, CCameraView+0x2d0 motion-target state",
+      "upstream_contracts": [
+        "SHIFT.HDVehicle64e8Manager374LiteralWriterRejections/1",
+        "SHIFT.HDVehicle64e8Manager374BulkCopyParticipantRejection/1",
+        "SHIFT.HDVehicle64e8Manager374BulkCopyCameraRejection/1"
+      ]
+    },
+    {
+      "site": "0x0051effd",
+      "function": "FUN_0051efa0",
+      "status": "closed-negative",
+      "receiver_proof": "exact receiver is fixed 0x00be1680, distinct from manager singleton 0x00bc9fc0",
+      "upstream_contract": "SHIFT.HDVehicle64e8Manager374LiteralWriterRejections/1"
+    },
+    {
+      "site": "0x005ded7e",
+      "function": "FUN_005dec70",
+      "status": "closed-negative",
+      "receiver_proof": "fresh 0x37c-byte allocation ends at +0x37b and cannot be Participants Manager layout, whose constructor writes through +0x37f",
+      "upstream_contract": "SHIFT.HDVehicle64e8Manager374LiteralWriterRejections/1"
+    }
+  ],
   "remaining_receiver_provenance_worklist": {
-    "site_count": 23,
-    "function_count": 19,
-    "sites": ["0x004826a6","0x0051effd","0x005ded7e","0x0074874b","0x007c0fa0","0x007c1ace","0x008169c3","0x00816c9c","0x00818157","0x00833972","0x00844343","0x008446cb","0x008446e3","0x008446f8","0x00844b67","0x00865013","0x0097da09","0x0097daf8","0x0097dc63","0x0097ed06","0x00a38974","0x00a44ac5","0x00d7f104"],
-    "functions": ["FUN_00481e20","FUN_0051efa0","FUN_005dec70","FUN_00748280","FUN_007c0db0","FUN_007c19c0","FUN_008167f0","FUN_00816c70","FUN_00818000","FUN_00833760","FUN_00844320","FUN_008446a0","FUN_00844a20","FUN_00864c10","FUN_0097d8c4","FUN_0097eacc","FUN_00a38959","FUN_00a44a50","FUN_00d7f040"]
+    "site_count": 20,
+    "function_count": 16,
+    "sites": ["0x0074874b","0x007c0fa0","0x007c1ace","0x008169c3","0x00816c9c","0x00818157","0x00833972","0x00844343","0x008446cb","0x008446e3","0x008446f8","0x00844b67","0x00865013","0x0097da09","0x0097daf8","0x0097dc63","0x0097ed06","0x00a38974","0x00a44ac5","0x00d7f104"],
+    "functions": ["FUN_00748280","FUN_007c0db0","FUN_007c19c0","FUN_008167f0","FUN_00816c70","FUN_00818000","FUN_00833760","FUN_00844320","FUN_008446a0","FUN_00844a20","FUN_00864c10","FUN_0097d8c4","FUN_0097eacc","FUN_00a38959","FUN_00a44a50","FUN_00d7f040"]
   },
   "adjudication": {
     "literal_plus_0x374_write_inventory_complete": true,
     "proven_manager_domain_literal_writer_count": 2,
     "proven_manager_domain_literal_nonzero_writer_count": 1,
+    "inherited_closed_negative_literal_site_count": 3,
     "remaining_literal_store_receiver_provenance_complete": false,
     "computed_address_manager_374_writer_surface_complete": false,
     "manager_374_join_to_hdvehicle_4330_complete": false,
@@ -88,10 +116,10 @@
     "external_provider_count": 7
   },
   "limits": [
-    "The 23 unclassified literal +0x374 stores are a receiver-provenance worklist, not rejected candidates.",
+    "The 20 unclassified literal +0x374 stores are a receiver-provenance worklist, not rejected candidates.",
     "This inventory does not include stores that compute +0x374 through prior LEA/add/sub/indexed arithmetic and then write through a zero or different displacement.",
     "The Participants Manager subobject lifecycle stores at manager+0x20 +0x354 are covered by separate exact identity contracts and are not required to appear as literal root+0x374 instructions.",
     "No identity is inferred from matching numeric offsets."
   ],
-  "next_step": "Classify the 23 remaining literal +0x374 store sites by exact receiver ownership/provenance; then widen only if a computed-address manager+0x374 writer remains possible."
+  "next_step": "Classify the 20 remaining literal +0x374 store sites by exact receiver ownership/provenance; then widen only if a computed-address manager+0x374 writer remains possible."
 }

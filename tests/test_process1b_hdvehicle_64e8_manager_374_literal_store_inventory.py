@@ -11,6 +11,9 @@ EXPECTED_SITES = [
     "0x0097ed06", "0x00a38974", "0x00a44ac5", "0x00d606f3", "0x00d7f104",
 ]
 
+INHERITED_NEGATIVE_SITES = {"0x004826a6", "0x0051effd", "0x005ded7e"}
+MANAGER_DOMAIN_SITES = {"0x00488e33", "0x00d606f3"}
+
 
 def load_evidence():
     return json.loads(EVIDENCE.read_text(encoding="utf-8"))
@@ -50,13 +53,23 @@ def test_selection_writer_is_allocator_owned_not_fixed_hdvehicle():
     assert selected["upstream_contract"] == "SHIFT.HDVehicle64e8Manager374ExactRootDirectCalleeSurface/1"
 
 
+def test_merged_literal_rejections_are_preserved():
+    data = load_evidence()
+    closed = {item["site"]: item for item in data["inherited_closed_negative_sites"]}
+    assert set(closed) == INHERITED_NEGATIVE_SITES
+    assert closed["0x004826a6"]["status"] == "closed-negative"
+    assert "CCameraView+0x2d0" in closed["0x004826a6"]["receiver_proof"]
+    assert "0x00be1680" in closed["0x0051effd"]["receiver_proof"]
+    assert "0x37c-byte allocation" in closed["0x005ded7e"]["receiver_proof"]
+
+
 def test_remaining_literal_sites_are_worklist_not_rejections():
     data = load_evidence()
     work = data["remaining_receiver_provenance_worklist"]
-    assert work["site_count"] == 23
-    assert work["function_count"] == 19
-    assert set(work["sites"]) == set(EXPECTED_SITES) - {"0x00488e33", "0x00d606f3"}
-    assert len(work["functions"]) == 19
+    assert work["site_count"] == 20
+    assert work["function_count"] == 16
+    assert set(work["sites"]) == set(EXPECTED_SITES) - MANAGER_DOMAIN_SITES - INHERITED_NEGATIVE_SITES
+    assert len(work["functions"]) == 16
 
 
 def test_broader_identity_and_p1_3_gates_remain_fail_closed():
@@ -69,6 +82,7 @@ def test_broader_identity_and_p1_3_gates_remain_fail_closed():
     assert adj["literal_plus_0x374_write_inventory_complete"] is True
     assert adj["proven_manager_domain_literal_writer_count"] == 2
     assert adj["proven_manager_domain_literal_nonzero_writer_count"] == 1
+    assert adj["inherited_closed_negative_literal_site_count"] == 3
     assert adj["remaining_literal_store_receiver_provenance_complete"] is False
     assert adj["computed_address_manager_374_writer_surface_complete"] is False
     assert adj["manager_374_join_to_hdvehicle_4330_complete"] is False
