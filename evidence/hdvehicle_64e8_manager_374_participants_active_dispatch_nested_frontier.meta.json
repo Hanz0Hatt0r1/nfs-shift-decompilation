@@ -1,0 +1,12 @@
+{
+  "lane": "P1.3 / Process 1B",
+  "blocker": "manager+0x374 escaped/lifecycle nested provenance",
+  "result": "default and alternate BManager active-dispatch callbacks plus their sole exact manager-root forwarder are direct-negative for manager+0x374 writes",
+  "remaining": [
+    "receiver-preserving descendants of FUN_00489b00",
+    "indirect dispatches reachable from Participants Manager vtable +0x0c",
+    "unrelated computed/non-vtable manager aliases",
+    "non-literal HDVehicle+0x64e8 alias/callee writers"
+  ],
+  "provider_count": 7
+}
