@@ -114,6 +114,13 @@ def execute_playable_pipeline_slice(
     report, plan = _validated_execution_plan(output_dir)
     report_path = (output_dir / "playable_pipeline_bootstrap.json").resolve()
     plan_path = (output_dir / "launch_plan.json").resolve()
+    runtime_path = Path(plan["argv"][0]).resolve()
+    if not runtime_path.is_file():
+        raise ExecutionError(f"launch plan runtime executable not found: {runtime_path}")
+    if not os.access(runtime_path, os.X_OK):
+        raise ExecutionError(f"launch plan runtime is not executable: {runtime_path}")
+    runtime_sha256 = _sha256(runtime_path)
+
     launch_environment = os.environ.copy()
     launch_environment.update(dict(plan["environment"]))
     completed = runner(
@@ -128,6 +135,8 @@ def execute_playable_pipeline_slice(
         "status": "completed" if completed.returncode == 0 else "runtime-failed",
         "ready": completed.returncode == 0,
         "runtime_returncode": completed.returncode,
+        "runtime_executable": str(runtime_path),
+        "runtime_executable_sha256": runtime_sha256,
         "bootstrap_report": str(report_path),
         "bootstrap_report_sha256": _sha256(report_path),
         "launch_plan": str(plan_path),
@@ -142,6 +151,7 @@ def execute_playable_pipeline_slice(
             "launch_plan_environment_reconstructed": False,
             "bootstrap_report_hash_recorded": True,
             "launch_plan_hash_recorded": True,
+            "runtime_executable_hash_recorded_before_execution": True,
             "resource_pipeline_physics_or_participant_replaced": False,
             "runtime_execution_attempted": True,
             "runtime_success_claimed": completed.returncode == 0,

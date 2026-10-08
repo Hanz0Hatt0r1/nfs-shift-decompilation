@@ -28,11 +28,15 @@ def _sha(path: Path) -> str:
 
 def _ready_output(tmp_path: Path) -> Path:
     out = tmp_path / "out"
+    runtime = out / "shift_runtime"
+    runtime.parent.mkdir(parents=True, exist_ok=True)
+    runtime.write_bytes(b"fixture-runtime")
+    runtime.chmod(0o755)
     plan = {
         "format": "SHIFT.NativeVerticalSliceLaunchPlan/1",
         "version": 1,
         "ready": True,
-        "argv": ["/tmp/runtime", "--scene-set", "/tmp/scene"],
+        "argv": [str(runtime.resolve()), "--scene-set", "/tmp/scene"],
         "environment": {"SHIFT_NATIVE_BODY_FEEDBACK": "1"},
     }
     plan_path = out / "launch_plan.json"
@@ -54,6 +58,7 @@ def _ready_output(tmp_path: Path) -> Path:
 
 def test_execution_forces_launch_plan_validation_and_reuses_saved_plan(tmp_path, monkeypatch):
     out = _ready_output(tmp_path)
+    runtime = out / "shift_runtime"
     captured: dict[str, object] = {}
 
     def fake_bootstrap(args):
@@ -73,11 +78,14 @@ def test_execution_forces_launch_plan_validation_and_reuses_saved_plan(tmp_path,
     )
 
     assert "--validate-launch-plan" in captured["bootstrap_args"]
-    assert captured["argv"] == ["/tmp/runtime", "--scene-set", "/tmp/scene"]
+    assert captured["argv"] == [str(runtime.resolve()), "--scene-set", "/tmp/scene"]
     assert captured["env"]["SHIFT_NATIVE_BODY_FEEDBACK"] == "1"
     assert captured["check"] is False
     assert result["ready"] is True
     assert result["runtime_returncode"] == 0
+    assert result["runtime_executable"] == str(runtime.resolve())
+    assert result["runtime_executable_sha256"] == _sha(runtime)
+    assert result["boundary"]["runtime_executable_hash_recorded_before_execution"] is True
     assert result["boundary"]["launch_plan_argv_reconstructed"] is False
     assert result["boundary"]["launch_plan_environment_reconstructed"] is False
     receipt = out / "execution_result.json"
@@ -141,6 +149,18 @@ def test_launch_plan_path_substitution_fails_closed(tmp_path, monkeypatch):
     monkeypatch.setattr(MODULE.bootstrap, "main", lambda args: 0)
 
     with pytest.raises(MODULE.ExecutionError, match="path disagrees"):
+        MODULE.execute_playable_pipeline_slice(
+            ["input.bff", "--output", str(out)],
+            runner=lambda *args, **kwargs: pytest.fail("runtime must not run"),
+        )
+    assert not (out / "execution_result.json").exists()
+
+
+def test_missing_runtime_executable_fails_before_runner(tmp_path, monkeypatch):
+    out = _ready_output(tmp_path)
+    (out / "shift_runtime").unlink()
+    monkeypatch.setattr(MODULE.bootstrap, "main", lambda args: 0)
+    with pytest.raises(MODULE.ExecutionError, match="runtime executable not found"):
         MODULE.execute_playable_pipeline_slice(
             ["input.bff", "--output", str(out)],
             runner=lambda *args, **kwargs: pytest.fail("runtime must not run"),
