@@ -15,7 +15,7 @@
     "residual_producer_handoff_contract": "SHIFT.Fun00765c40ResidualProducerHandoff/1",
     "residual_producer_handoff_present": true,
     "residual_producer_handoff_threaded_through_provider_result": true,
-    "residual_producer_handoff_threaded_through_session_result": false,
+    "residual_producer_handoff_threaded_through_session_result": true,
     "residual_producer_handoff_authoritative": false,
     "wheel_state_machine_proof_contract": "SHIFT.Fun00752fa0WheelStateMachineProof/1",
     "wheel_state_source_address": "HDVehicle+0x98",
@@ -54,5 +54,5 @@
     "wheel_state_source_owner_inferred_from_address": false,
     "producer_handoff_treated_as_native_computation": false
   },
-  "next_step": "Capture the optional /5 residual producer handoff in NativeVehicleProviderSession without making it authoritative, then connect it to the composed executor only after selected-provider source-backed production is available."
+  "next_step": "Use captured /5 producer witnesses only as diagnostics until selected-provider source-backed production and the remaining producer/owner proofs authorize composed-executor consumption."
 }
