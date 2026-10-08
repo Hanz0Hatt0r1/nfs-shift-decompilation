@@ -1,8 +1,9 @@
 """Machine-readable frontier for the first playable camera-follow source.
 
-The mode-2 runtime argument and concrete source vtable are now proven from PC
-retail machine code. The remaining semantic blockers are the selected vehicle
-pose dependency and retail update ordering/freshness.
+The mode-2 runtime argument, concrete source vtable and retail update ordering
+are now proven from PC retail machine code. The remaining camera semantic
+blocker is the selected vehicle/BODY0 identity behind the exact manager+0x2a0
+target-service join.
 """
 from __future__ import annotations
 
@@ -69,6 +70,7 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "vtable": "0x00b16788",
             "preapply_virtual_call": {"offset": 0x90, "target": "FUN_0081f7c0", "argument": "selected camera object"},
             "internal_setter_virtual_call": {"offset": 0x5c, "target": "FUN_006bbf70", "effect": "source+0x64 = selected camera object"},
+            "per_frame_virtual_call": {"offset": 0x60, "target": "FUN_008216a0", "ordering": "after cPhysicsManager scheduler work"},
             "controller_apply": "FUN_0080d300",
             "common_apply_virtual_call": {"offset": 0x64, "target": "FUN_00820a50", "manager_back_reference_offset": 0x44},
             "classification": "tracking-source-lane",
@@ -78,6 +80,7 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "runtime_argument_is_selected_retail_vehicle": False,
             "source_vtable_identity_proven": True,
             "vehicle_transform_dependency_proven": False,
+            "retail_update_order_proven": True,
         },
         {"mode": 3, "source": "active_buffer+0x17a0", "source_stride": 0x280, "activation": "FUN_0080e140", "classification": "static-camera-source-lane", "playable_follow_candidate": False},
         {"mode": 4, "source": "caller-supplied external source", "activation": "FUN_0080d520", "preapply_helper": "FUN_0081b170", "classification": "external-source-lane", "playable_follow_candidate": False, "reason": "caller identity remains external and mode-4 semantics are not vehicle-follow proof"},
@@ -86,18 +89,15 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
     proof_requests = [
         {"id": "mode2_runtime_argument_identity", "target": "FUN_0080e0d0", "status": "resolved-negative", "result": "source.vtable+0x90 receives the selected camera object; selected retail vehicle identity rejected", "required_for_native_follow": False},
         {"id": "mode2_source_vtable_identity", "target": "active_buffer+0x1ca0 source object", "status": "resolved", "result": "constructor FUN_0081fac0 installs vtable 0x00b16788; +0x90=FUN_0081f7c0; +0x64=FUN_00820a50", "required_for_native_follow": False},
-        {"id": "mode2_vehicle_pose_dependency", "target": "FUN_0081f7c0 / FUN_006bbf70 / FUN_00820a50 and downstream callees", "status": "open", "request": "prove the exact reads/derived values by which the selected vehicle or its current world pose reaches camera source state", "required_for_native_follow": True},
-        {"id": "camera_follow_update_order", "target": "retail caller/scheduler around mode-2 source update", "status": "open", "request": "prove the update ordering/freshness relation between the retail vehicle update and the mode-2 camera-source update", "required_for_native_follow": True},
+        {"id": "mode2_vehicle_pose_dependency", "target": "camera target service -> FUN_00489ad0()+0x2a0[target_id]", "status": "blocked-by-p1.3-manager2a0-entry-identity", "request": "consume exact P1.3.manager2a0 selected-entry identity, then join the entry transform/position producer to selected BMW/BODY0", "required_for_native_follow": True},
+        {"id": "camera_follow_update_order", "target": "cPhysicsManager scheduler -> callback -> mode-2 source+0x60", "status": "resolved", "result": "default/steady retail path runs FUN_0070f940/FUN_007155e0 physics before cPhysicsManager+0x298 callback FUN_00489f70 and mode-2 +0x60 FUN_008216a0", "required_for_native_follow": False},
     ]
 
     static_source_ready = False
-    timing_ready = False
+    timing_ready = True
     native_follow_ready = static_source_ready and timing_ready and transform_state["ready_for_camera_source_join"]
 
-    blockers = [
-        "camera-follow:mode2-vehicle-pose-dependency-unproven",
-        "camera-follow:retail-update-order-unproven",
-    ]
+    blockers = ["camera-follow:mode2-vehicle-pose-dependency-unproven"]
     blockers.extend(transform_state["blocking_reasons"])
     blockers = list(dict.fromkeys(blockers))
 
@@ -117,6 +117,8 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "source_vtable": "0x00b16788",
             "preapply_vfunc_offset": 0x90,
             "preapply_vfunc_target": "FUN_0081f7c0",
+            "per_frame_vfunc_offset": 0x60,
+            "per_frame_vfunc_target": "FUN_008216a0",
             "controller_apply_function": "FUN_0080d300",
             "common_apply_vfunc_offset": 0x64,
             "common_apply_vfunc_target": "FUN_00820a50",
@@ -130,7 +132,7 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "mode2_runtime_argument_is_selected_retail_vehicle": False,
             "mode2_source_vtable_identity_ready": True,
             "mode2_vehicle_pose_dependency_ready": False,
-            "camera_follow_update_order_ready": False,
+            "camera_follow_update_order_ready": True,
             "retail_vehicle_world_matrix_ready": transform_state["ready_for_camera_source_join"],
         },
         "process1_requested_proof": proof_requests,
@@ -138,10 +140,10 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
         "native_admission": {
             "may_bind_vehicle_transform_to_camera_source": False,
             "may_schedule_camera_after_vehicle_update": False,
+            "retail_physics_before_camera_order_proven": True,
             "may_serialize_opaque_word0_as_native_pointer": False,
             "required_positive_contracts": [
-                "mode-2 source -> retail vehicle pose dependency",
-                "retail vehicle update -> camera update ordering/freshness",
+                "mode-2 target service manager+0x2a0 entry -> selected retail vehicle/BODY0 pose",
                 WORLD_HANDOFF_FORMAT + " current retail world matrix",
                 PERSISTENT_TRANSFORM_FORMAT + " freshness-checked transport",
             ],
@@ -155,10 +157,14 @@ def build_camera_follow_source_frontier(world_handoff: Mapping[str, Any] | None 
             "mode2_vtable": "0x00b16788",
             "mode2_preapply_vfunc": "0x90 -> FUN_0081f7c0",
             "mode2_internal_setter_vfunc": "0x5c -> FUN_006bbf70",
+            "mode2_per_frame_vfunc": "0x60 -> FUN_008216a0",
             "mode2_common_apply_vfunc": "0x64 -> FUN_00820a50",
             "camera_snapshot_source_field": "CameraManager+0x2568",
             "controller_apply": "FUN_0080d300",
             "source_manager_back_reference": "camera_source+0x44 = manager",
+            "camera_target_service": "CameraManager+0x574 = DAT_00bc185c+4 -> FUN_00489ad0()+0x2a0[target_id]",
+            "cphysics_camera_callback": "cPhysicsManager+0x298 = FUN_00489f70",
+            "retail_update_order": "FUN_0070f940/FUN_007155e0 physics -> FUN_0070f890 callback -> FUN_00489f70 -> mode2 +0x60",
             "phase705_world_matrix_contract": WORLD_HANDOFF_FORMAT,
             "phase706_persistent_transport_contract": PERSISTENT_TRANSFORM_FORMAT,
         },
