@@ -1,0 +1,75 @@
+{
+  "format": "SHIFT.Fun0074f560CollisionProviderMachineProof/1",
+  "ready": true,
+  "purpose": "Machine-backed P1.2a proof for the retail collision/world lookup provider boundary below FUN_007b0710, without inventing a physical PhysX class name.",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "executable_size": 8801792,
+    "image_base": "0x00400000",
+    "evidence_kind": "direct PE32 machine-code disassembly",
+    "decompiler_export_required_for_this_claim": false
+  },
+  "upper_join": {
+    "query_function": "FUN_007b0710",
+    "fallback_call_site": "0x007b0c8e",
+    "instruction": "call 0x0074f560",
+    "receiver_before_call": "ecx = edi = FUN_007b0710 query record",
+    "returned_record_register": "esi = eax",
+    "returned_record_cache_store": "0x007b0d17: mov [edi+0x30], esi",
+    "returned_contact_height_store": "0x007b0d03: fstp qword [edi+0x28]",
+    "returned_normal_stores": [
+      "0x007b0d09: fstp dword [ebx]",
+      "0x007b0d0e: fstp dword [ebx+0x4]",
+      "0x007b0d14: fstp dword [ebx+0x8]"
+    ]
+  },
+  "provider_dispatch": {
+    "function": "FUN_0074f560",
+    "entry": "0x0074f560",
+    "provider_global_pointer": "0x00c133ac",
+    "provider_guard": "0x0074f566: cmp dword [0x00c133ac], 0",
+    "provider_load": "0x0074f5a1: mov ecx, dword [0x00c133ac]",
+    "vtable_load": "0x0074f5e3: mov eax, dword [ecx]",
+    "virtual_slot_offset": "0x1c0",
+    "slot_load": "0x0074f5eb: mov eax, dword [eax+0x1c0]",
+    "indirect_call": "0x0074f600: call eax",
+    "receiver_register": "ecx",
+    "provider_object_domain": "global singleton/object pointer stored at 0x00c133ac",
+    "physical_class_name_proven": false,
+    "physx_class_name_proven": false,
+    "typed_external_provider_boundary_allowed": true
+  },
+  "surface_record_provenance": {
+    "ring_base_global": "0x00c1bae0",
+    "ring_index_global": "0x00c1bbe8",
+    "record_stride": "0x58",
+    "record_pointer_build": [
+      "0x0074f579: mov esi, dword [0x00c1bbe8]",
+      "0x0074f584: imul esi, esi, 0x58",
+      "0x0074f587: add esi, dword [0x00c1bae0]"
+    ],
+    "hit_flag_store": "0x0074f726: mov dword [esi+0x44], 1",
+    "record_return_hit": "0x0074f757: mov eax, esi",
+    "record_return_alt_hit": "0x0074f76c: mov eax, esi",
+    "null_provider_return": "0x0074f56f: xor eax, eax",
+    "cache_record_size_matches_upper_contract": true
+  },
+  "p1_2a_adjudication": {
+    "provider_object_pointer_domain_identified": true,
+    "exact_scene_query_dispatch_identified": true,
+    "virtual_slot_identified": true,
+    "provenance_to_0x58_surface_record_identified": true,
+    "physical_provider_implementation_internalized": false,
+    "replacement_with_guessed_track_query_allowed": false,
+    "p1_2a_complete_as_typed_external_provider_boundary": true
+  },
+  "limits": [
+    "The machine proof does not assign a PhysX or engine class name to 0x00c133ac.",
+    "The target behind vtable slot +0x1c0 remains an explicit external provider implementation boundary.",
+    "This proof does not classify residual FUN_00765c40 side effects; P1.2b remains open.",
+    "The complete FUN_00765c40 provider cannot be removed from this proof alone."
+  ],
+  "next_owner": "Process 1",
+  "next_step": "Close P1.2b by classifying every residual FUN_00765c40 write/callee against the machine/source-backed contracts; keep the 0x00c133ac/+0x1c0 scene-query dispatch as an explicit typed external boundary until its physical implementation is independently recovered."
+}

@@ -1,21 +1,22 @@
 {
   "format": "SHIFT.Fun00765c40ResidualOwnershipFrontier/1",
   "ready": true,
-  "purpose": "Fail-closed Process 1 join of already-positive FUN_00765c40 ownership contracts, removing solved input/load/query ABI work from P1.2 without claiming the collision provider or unknown side effects",
+  "purpose": "Fail-closed Process 1 join of positive FUN_00765c40 ownership contracts; P1.2a is closed as an explicit typed external scene-query provider boundary and only residual side-effect classification remains open.",
   "authority": {
     "semantic_platform": "PC retail primary",
     "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
     "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
-    "new_machine_or_source_claims_in_this_join": false,
+    "new_machine_or_source_claims_in_this_join": true,
     "xbox_recomp_may_replace_pc_proof": false
   },
   "closed_inputs_and_outputs": [
     {"format":"SHIFT.Fun00765c40SelectedBMWWorldPosition/1","role":"selected BMW per-pass query world position is native-owned before the residual provider"},
     {"format":"SHIFT.Fun00765c40QueryCacheLifetime/1","role":"persistent HDVehicle+0x38dc cache handle lifetime is native-owned across passes"},
     {"format":"SHIFT.Fun00765c40SelectedBMWQueryFallback/1","role":"selected BMW HDVehicle+0x38e8 miss fallback setup value is source/resource-owned before the residual provider"},
-    {"format":"SHIFT.Fun00765c40CollisionOutputHandoff/1","role":"typed FUN_007b0710 CollisionQueryOutput and +0x38e0/+0x38e8 scalar handoff are defined; provider implementation remains external"},
+    {"format":"SHIFT.Fun00765c40CollisionOutputHandoff/1","role":"typed FUN_007b0710 CollisionQueryOutput and +0x38e0/+0x38e8 scalar handoff are defined"},
     {"format":"SHIFT.Fun00765c40LoadTerms/1","role":"all four per-pass wheel +0x738 f64 load terms are positively owned by FUN_00765c40 wheel jobs and typed for downstream consumption"},
-    {"format":"SHIFT.Fun007b0710CollisionProviderFrontier/1","role":"caller-visible FUN_007b0710 ABI is closed and FUN_0074f560 is pinned as the known lower fallback-query surface; exact scene-query implementation remains open"}
+    {"format":"SHIFT.Fun007b0710CollisionProviderFrontier/1","role":"caller-visible FUN_007b0710 ABI and lower FUN_0074f560 navigation target are pinned"},
+    {"format":"SHIFT.Fun0074f560CollisionProviderMachineProof/1","role":"PC-retail machine code identifies provider pointer 0x00c133ac, virtual slot +0x1c0, indirect dispatch, and provenance to the 0x58-byte returned surface record"}
   ],
   "selected_bmw_prequery_surface": {
     "world_position_native": true,
@@ -27,6 +28,9 @@
     "query_record_typed": true,
     "collision_output_typed": true,
     "known_lower_fallback_query": "FUN_0074f560",
+    "collision_provider_pointer_global": "0x00c133ac",
+    "collision_provider_virtual_slot": "0x1c0",
+    "collision_provider_boundary_typed": true,
     "collision_provider_internalized": false
   },
   "load_term_surface": {
@@ -39,35 +43,26 @@
     "ownership_closed": true,
     "must_not_be_reselected_as_P1_2_proof": true
   },
-  "historical_scope_reconciliation": {
-    "note": "Phase739-741 evidence correctly marked load terms external at the time those narrower contracts were authored. Later load-term and provider-frontier contracts supersede only those solved open items; they do not internalize the scene-query provider or prove unknown side effects absent.",
-    "provider_count_reduced_by_this_join": false
-  },
   "remaining_process_1_proof": [
     {
-      "id": "P1.2a",
-      "target": "retail collision/world lookup implementation at or below FUN_0074f560 / the scene-query boundary",
-      "reason": "FUN_007b0710 caller-visible ABI and its known lower fallback-query surface are pinned, but the provider object/call and exact scene lookup implementation remain unowned.",
-      "consumer": "Process 2 P2.4"
-    },
-    {
       "id": "P1.2b",
-      "target": "remaining source-visible FUN_00765c40 side effects outside the closed query-input/output and load-term surfaces",
+      "target": "remaining source-visible FUN_00765c40 side effects outside the closed query-input/output, typed external provider boundary, and load-term surfaces",
       "reason": "Complete provider removal requires an exhaustive side-effect audit; absence from existing typed outputs is not proof of absence.",
       "consumer": "Process 2 P2.4"
     }
   ],
   "completion_gate": {
     "p1_2_complete": false,
+    "p1_2a_complete": true,
+    "p1_2b_complete": false,
     "complete_FUN_00765c40_internalized": false,
     "fun_00765c40_provider_removal_authorized": false,
     "external_provider_count": 7,
     "requirements": [
-      "positively identify and source-own the provider object/call at or below FUN_0074f560 / the scene-query boundary or preserve it as an explicit typed provider boundary",
       "classify every remaining source-visible FUN_00765c40 side effect not represented by the closed contracts",
-      "publish a Process 1 handoff that lets Process 2 preserve exact pass order without re-proving query ABI or four +0x738 load terms"
+      "publish a Process 1 handoff that lets Process 2 preserve exact pass order while keeping the 0x00c133ac/+0x1c0 scene-query dispatch as an explicit typed external boundary"
     ]
   },
   "next_owner": "Process 1",
-  "next_step": "Start targeted PC static review at FUN_0074f560 and its lower scene-query dispatch; in parallel audit the residual FUN_00765c40 body for side effects not covered by the selected query surface or four closed +0x738 load terms."
+  "next_step": "Run the pinned FUN_00765c40 write/call inventory and classify every residual assignment/callee; do not reopen P1.2a or replace the typed 0x00c133ac/+0x1c0 collision-provider boundary with a guessed implementation."
 }
