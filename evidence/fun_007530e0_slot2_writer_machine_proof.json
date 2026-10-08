@@ -17,7 +17,6 @@
     "function": "FUN_007530e0",
     "entry": "0x007530e0",
     "end_exclusive": "0x0075310c",
-    "abi": "thiscall-like machine boundary: ECX receiver, one f64 stack argument, ret 0x8",
     "sole_direct_callsite": "0x0076ce7b",
     "direct_callsite_count": 1,
     "instructions": [
@@ -29,28 +28,37 @@
       "0x00753102 fstp qword [ecx+0x1e38]"
     ],
     "exact_update": {
-      "argument": "x",
-      "old_reference": "old(HDVehicle+0x2e10)",
-      "scale": "HDVehicle+0x2e18",
-      "old_target": "old(HDVehicle+0x1e38)",
       "store_reference": "HDVehicle+0x2e10 = x",
-      "store_target": "HDVehicle+0x1e38 = old_target + (x - old_reference) * scale"
+      "store_target": "HDVehicle+0x1e38 = old(HDVehicle+0x1e38) + (x - old(HDVehicle+0x2e10)) * HDVehicle+0x2e18"
     }
   },
   "caller_receiver_proof": {
     "caller": "FUN_0076b280",
     "caller_entry": "0x0076b280",
     "existing_hdvehicle_contract": "SHIFT.BMWOffset33bStoreProvenance/1",
-    "existing_contract_role": "FUN_0076b280 entry ECX is the source-backed HDVehicle receiver",
     "caller_prologue": "0x0076b2c9 ESI = ECX",
     "call_receiver_setup": "0x0076ce5e ECX = ESI",
     "call_instruction": "0x0076ce7b call FUN_007530e0",
     "same_hdvehicle_receiver_proven": true
   },
+  "source_owner_proof": {
+    "enclosing_initializer": "FUN_0076df50",
+    "initializer_receiver": "HDVehicle",
+    "source_base_instruction": "0x0076e1c1 EBX = HDVehicle+0x4330",
+    "second_argument_instruction": "0x0076e266 EAX = [HDVehicle+0x66b4]",
+    "call_sequence": [
+      "0x0076e26c push EAX",
+      "0x0076e26d push EBX",
+      "0x0076e26e ECX = HDVehicle",
+      "0x0076e270 call FUN_0076b280"
+    ],
+    "first_physical_stack_argument": "HDVehicle+0x4330",
+    "second_physical_stack_argument": "*(HDVehicle+0x66b4)",
+    "source_owner_proven": true
+  },
   "caller_argument_proof": {
-    "original_stack_frame_anchor": "0x0076b281 EBX = ESP before realigned frame setup",
-    "source_pointer_load": "0x0076ce56 EAX = [EBX+0x8]",
-    "source_expression_role": "first physical stack argument to FUN_0076b280",
+    "fun_0076b280_stack_anchor": "0x0076b281 EBX = original aligned-call frame anchor",
+    "source_pointer_load": "0x0076ce56 EAX = [EBX+0x8] = HDVehicle+0x4330",
     "argument_instructions": [
       "0x0076ce66 fild dword [eax+0xf1c]",
       "0x0076ce6c fmul qword [eax+0xf10]",
@@ -58,18 +66,26 @@
       "0x0076ce78 fstp qword [esp]",
       "0x0076ce7b call FUN_007530e0"
     ],
-    "exact_argument_formula": "x = f64([source+0xf08]) + f64(int32([source+0xf1c])) * f64([source+0xf10])",
-    "source_owner_or_control_semantics_proven": false
+    "normalized_fields": {
+      "base": "HDVehicle+0x4330",
+      "f64_addend": "HDVehicle+0x5238",
+      "f64_scale": "HDVehicle+0x5240",
+      "int32_index": "HDVehicle+0x524c"
+    },
+    "exact_argument_formula": "x = f64(HDVehicle+0x5238) + f64(int32(HDVehicle+0x524c)) * f64(HDVehicle+0x5240)",
+    "control_semantics_proven": false
   },
   "adjudication": {
     "slot2_absolute_writer_identified": true,
     "same_hdvehicle_receiver_proven": true,
     "writer_value_formula_proven": true,
     "explicit_argument_formula_proven": true,
-    "first_stack_argument_owner_proven": false,
+    "first_stack_argument_owner_proven": true,
+    "normalized_source_fields_proven": true,
+    "source_field_value_producers_proven": false,
     "retail_input_control_provenance_proven": false,
     "p1_3_control_producer_complete": false,
     "external_provider_count": 7
   },
-  "next_step": "Trace the first physical stack argument of FUN_0076b280 to its owner and then the +0xf08/+0xf10/+0xf1c value producers. Do not assign throttle/brake/steering semantics without an exact PC-retail value-transfer proof."
+  "next_step": "Trace the PC-retail writers/producers of HDVehicle+0x5238/+0x5240/+0x524c. Do not assign throttle/brake/steering semantics without an exact value-transfer proof."
 }
