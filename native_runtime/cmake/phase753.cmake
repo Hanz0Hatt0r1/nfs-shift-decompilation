@@ -21,3 +21,7 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00766510_direct_accumulator_surface
     COMMAND shift_runtime_fun_00766510_direct_accumulator_surface_check)
 endif()
+
+# New runtime work after the historical Phase 753 workflow freeze uses stable
+# blocker-based CMake modules instead of introducing another numbered workflow.
+include(${CMAKE_CURRENT_LIST_DIR}/p2_4_fun_00765c40.cmake)
