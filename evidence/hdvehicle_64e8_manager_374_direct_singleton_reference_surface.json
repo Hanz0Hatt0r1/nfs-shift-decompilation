@@ -1,0 +1,60 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374DirectSingletonReferenceSurface/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "whole-image exact immediate reference scan plus retail disassembly; Ghidra SQLite navigation-only"
+  },
+  "manager_singleton": {
+    "address": "0x00bc9fc0",
+    "target_offset": "+0x374",
+    "target_address": "0x00bca334"
+  },
+  "whole_image_immediate_reference_surface": {
+    "reference_count": 3,
+    "references": [
+      {
+        "instruction_address": "0x00489ae3",
+        "instruction": "mov ecx,0x00bc9fc0",
+        "role": "singleton init path before FUN_00488dc0",
+        "function_region": "thunk_FUN_00444fcc / FUN_00489ad0 getter-init implementation",
+        "creates_independent_manager_root": false
+      },
+      {
+        "instruction_address": "0x00489afa",
+        "instruction": "mov eax,0x00bc9fc0",
+        "role": "getter return",
+        "function_region": "thunk_FUN_00444fcc / FUN_00489ad0 getter-init implementation",
+        "creates_independent_manager_root": false
+      },
+      {
+        "instruction_address": "0x00a9c5a0",
+        "instruction": "mov ecx,0x00bc9fc0; jmp FUN_004891b0",
+        "role": "registered static cleanup thunk",
+        "registered_from": "0x00489aed push 0x00a9c5a0; 0x00489af2 call 0x00900fb3",
+        "creates_independent_manager_root": false
+      }
+    ]
+  },
+  "adjudication": {
+    "direct_singleton_immediate_reference_count": 3,
+    "independent_runtime_singleton_reconstruction_site_count": 0,
+    "direct_singleton_reconstruction_surface_complete": true,
+    "surface_can_create_new_manager_plus_0x374_value": false,
+    "object_field_or_global_persistence_of_manager_root_complete": false,
+    "non_immediate_manager_root_reconstruction_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only direct whole-image immediate materialization of the exact Participants Manager singleton address 0x00bc9fc0.",
+    "The cleanup thunk is lifecycle destruction, not an independent runtime producer.",
+    "Object-field/global persistence, arithmetic/non-immediate reconstruction, and other escaped aliases remain open.",
+    "No identity is inferred from matching offsets."
+  ],
+  "next_step": "Search object-field/global persistence and arithmetic/non-immediate reconstruction of the Participants Manager root; continue remaining escaped HDVehicle+0x4330 aliases."
+}
