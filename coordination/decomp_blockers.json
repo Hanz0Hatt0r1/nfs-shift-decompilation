@@ -1,7 +1,7 @@
 {
   "format": "SHIFT.DecompBlockerGraph/1",
   "version": 1,
-  "updated_from_main": "8d6810110edc5b8d352cd30bb5ad62105803b50b",
+  "updated_from_main": "3465259f235d464b34c5d8ec2542ee2bd0d0f7e0",
   "rules": {
     "pc_retail_semantic_authority": true,
     "numeric_offset_equality_is_identity": false,
@@ -53,7 +53,7 @@
         {
           "id": "P1.3.manager374",
           "target": "FUN_00489ad0()+0x374 value == HDVehicle+0x4330",
-          "status": "participants-subobject-direct-writes-rejected-escaped-alias-open",
+          "status": "participants-registry-clear-proven-nonzero-helper-candidate-open",
           "rejected_literal_writers": ["FUN_0051efa0", "FUN_005dec70"],
           "rejected_bulk_copy_aliases": [
             "FUN_0070dcc0 direct-call surface forwards only stack-local destinations into FUN_00481e20",
@@ -66,7 +66,15 @@
           "manager_plus_0x20_direct_helper_surface_complete": true,
           "manager_plus_0x20_direct_helper_reaches_0x374": false,
           "manager_plus_0x20_escaped_alias_open": true,
-          "next": "Trace consumers/removers/dispatch of manager+0x20 aliases registered by FUN_00648730/FUN_00648890 through FUN_004f5e60 at FUN_0065bf80()+0x24 and +0x44; look for subobject+0x354 == manager+0x374 writes. Continue unrelated computed/non-vtable aliases independently."
+          "participants_vtable": "0x00ab916c",
+          "manager_374_clear_writer_proven": true,
+          "participants_registry_clear_paths": [
+            "FUN_0065b990 -> FUN_00648640 -> vslot+0x8 -> FUN_004871f0 -> manager+0x374=0",
+            "FUN_0065ba90/FUN_0065bbc0 -> FUN_00647c60 -> vslot+0x14 -> FUN_00488970 -> manager+0x374=0"
+          ],
+          "nonzero_helper_candidate": "thunk_FUN_00d60660 -> FUN_00d60660",
+          "nonzero_helper_direct_callers": ["FUN_00465860@0x00465bae", "FUN_00468ed0@0x004690b5"],
+          "next": "Recover exact instruction/value flow for thunk_FUN_00d60660/FUN_00d60660 around the apparent manager+0x374 assignment on its two exact manager-root callers; prove reachability and stored-pointer identity before promoting a nonzero selected-HDVehicle writer."
         },
         {
           "id": "P1.3.manager2a0",
