@@ -45,6 +45,9 @@ def test_three_process_execution_contract_is_active_and_current() -> None:
     assert frontier["controller1_control_timing_complete"] is False
     assert frontier["retail_control_chain_complete"] is False
     assert frontier["retail_camera_follow_ready"] is False
+    assert frontier["final_playable_smoke_entrypoint_ready"] is True
+    assert frontier["final_playable_smoke_currently_runnable"] is False
+    assert frontier["playable_slice_complete"] is False
 
 
 def test_process_queues_are_separate_and_dependency_routed() -> None:
@@ -80,7 +83,16 @@ def test_process_queues_are_separate_and_dependency_routed() -> None:
     assert p2["queue"][3]["state"] == "ready-to-consume"
     assert "P1.2" in p2["queue"][3]["depends_on"]
     assert "0x00c133ac/vtable+0x1c0" in p2["queue"][3]["task"]
-    assert p3["queue"][0]["state"] == "current"
+    assert [row["state"] for row in p3["queue"][:3]] == ["complete", "complete", "complete"]
+    assert p3["queue"][3]["state"] == "continuous"
+    assert p3["queue"][4]["state"] == "blocked-on-handoff"
+    assert p3["queue"][5]["state"] == "mechanically-ready-blocked-on-upstream"
+    assert p3["queue"][5]["tracking"] == "PR #1482"
+    assert p3["queue"][5]["depends_on"] == [
+        "P3.3",
+        "retail_control_chain_complete",
+        "retail_camera_follow_ready",
+    ]
     assert "P1.1" in p2["queue"][2]["depends_on"]
     assert p1["queue"][0]["consumer"] == "Process 2 P2.3"
     assert p1["queue"][1]["consumer"] == "Process 2 P2.4"
