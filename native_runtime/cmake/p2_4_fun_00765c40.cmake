@@ -1,0 +1,24 @@
+# Process 2 P2.4: consume the completed P1.2 FUN_00765c40 handoff without
+# inventing the lower collision implementation.  This first native layer pins
+# exact residual-pass scheduling and state surfaces while provider removal
+# remains fail-closed until every computational stage is native.
+
+add_executable(shift_runtime_fun_00765c40_residual_pass_contract_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_residual_pass_contract_check.cpp)
+target_include_directories(
+  shift_runtime_fun_00765c40_residual_pass_contract_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_link_libraries(
+  shift_runtime_fun_00765c40_residual_pass_contract_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(
+  shift_runtime_fun_00765c40_residual_pass_contract_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
+if(BUILD_TESTING)
+  add_test(
+    NAME shift_runtime_fun_00765c40_residual_pass_contract
+    COMMAND shift_runtime_fun_00765c40_residual_pass_contract_check)
+endif()
