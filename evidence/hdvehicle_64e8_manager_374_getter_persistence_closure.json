@@ -1,0 +1,72 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374GetterPersistenceClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "whole-image direct-call and exact alias-lifetime machine scan; Ghidra SQLite navigation-only"
+  },
+  "getter": "FUN_00489ad0",
+  "whole_image_direct_getter_callsite_count": 394,
+  "exact_root_persistence_partition": {
+    "stack_save_count": 9,
+    "object_or_global_store_count": 0,
+    "previously_closed": {
+      "immediate_eax_stack_saves": 2,
+      "immediate_register_alias_surface": 10,
+      "delayed_gpr_to_stack_saves": 4
+    },
+    "remaining_delayed_eax_to_stack_saves": [
+      {
+        "function": "FUN_00460c80",
+        "getter_callsite": "0x00460df2",
+        "stack_store": "0x00460e01 [ebp-0xc] = eax",
+        "reload": "0x00460ef9",
+        "root_accesses_after_reload": ["+0x2fc", "+0x2d8"],
+        "root_forwarded_to_callee": false,
+        "root_written_through": false,
+        "target_plus_0x374_write": false
+      },
+      {
+        "function": "FUN_00498b80",
+        "getter_callsite": "0x00498c63",
+        "stack_store": "0x00498c72 [ebp-0x4] = eax",
+        "reload": "0x00498ce4",
+        "root_accesses_after_reload": ["+0x2c4", "+0x2a0"],
+        "root_forwarded_to_callee": false,
+        "root_written_through": false,
+        "target_plus_0x374_write": false
+      },
+      {
+        "function": "FUN_00499de0",
+        "getter_callsite": "0x0049a0ea",
+        "stack_store": "0x0049a0f6 [ebp-0xc] = eax",
+        "reload": "0x0049a16f ecx=[ebp-0xc]",
+        "forwarded_callee": "FUN_004939e0 -> FUN_0040f290",
+        "callee_domain_transition": "manager root -> manager+0x2a0 iterator",
+        "callee_target_plus_0x374_write": false,
+        "root_written_through": false,
+        "target_plus_0x374_write": false
+      }
+    ]
+  },
+  "adjudication": {
+    "exact_getter_stack_persistence_surface_complete": true,
+    "exact_getter_object_or_global_persistence_surface_complete": true,
+    "exact_getter_object_or_global_store_count": 0,
+    "exact_getter_persistence_can_create_manager_plus_0x374_value": false,
+    "non_immediate_manager_root_reconstruction_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes persistence of the exact FUN_00489ad0 return value through registers, stack locals, object fields, and absolute globals.",
+    "It does not close arithmetic/non-immediate reconstruction of the manager singleton root.",
+    "Participant-entry identities reached through manager+0x2a0 remain separate from the manager root.",
+    "No identity is inferred from matching offsets."
+  ],
+  "next_step": "Close arithmetic/non-immediate Participants Manager root reconstruction and continue remaining escaped/reconstructed HDVehicle+0x4330 aliases."
+}
