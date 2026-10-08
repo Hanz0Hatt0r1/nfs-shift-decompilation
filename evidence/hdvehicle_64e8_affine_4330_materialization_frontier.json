@@ -1,0 +1,49 @@
+{
+  "format": "SHIFT.HDVehicle64e8Affine4330MaterializationFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "exact retail machine transfer; Ghidra SQLite used for navigation/fingerprints only"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8AbsoluteRootReferenceSurface/1",
+  "addresses": {
+    "hdvehicle_root": "0x00c13700",
+    "hdvehicle_plus_0x4330": "0x00c17a30",
+    "hdvehicle_plus_0x64e8": "0x00c19be8",
+    "target_relative_to_plus_0x4330": "+0x21b8"
+  },
+  "exact_root_affine_materializers": [
+    {"function":"FUN_00769520","address":"0x00769520","size":280,"mnemonic_sha256":"9298d68af33d267227cbabe19e663b22a8ddb1720eee0e44cb7778a2b20bc9f3","materialization_instruction":"0x00769551","expression":"root+0x4330","consumer":"FUN_00756050","consumer_callsite":"0x0076955b"},
+    {"function":"FUN_0076b130","address":"0x0076b130","size":321,"mnemonic_sha256":"d74607c82ee610c9ade7a14d3813df774d5621f541c33d64542371f8e3793430","materialization_instruction":"0x0076b241","expression":"root+0x4330","consumer":"FUN_00772200","consumer_callsite":"0x0076b247"},
+    {"function":"FUN_0076df50","address":"0x0076df50","size":1548,"mnemonic_sha256":"73a0d9d46d5d1bfd58068d2f72e91b77cf8c31cadb27745ba75b646901834dda","materialization_instruction":"0x0076e1c1","expression":"root+0x4330","consumers":[{"function":"FUN_007c3b00","callsites":["0x0076e1d0","0x0076e1f6","0x0076e21a"]},{"function":"FUN_0076b280","callsite":"0x0076e270"},{"function":"FUN_007618f0","callsite":"0x0076e27f"}]}
+  ],
+  "bounded_consumers": {
+    "FUN_00756050": {"address":"0x00756050","size":97,"mnemonic_sha256":"5557c675c3b699005eca89288611b4386e928b99b1e69fe4ccea7c815a053a01","target_access":false,"root_relative_subobjects":["+0x2128","+0x219c","+0x21a0"],"exact_receiver_forwarding":false},
+    "FUN_00772200": {"address":"0x00772200","size":334,"mnemonic_sha256":"79328aa9670d0845d454a0f7beb2cf4ab85c3cb988a83ad37bb56001f1596c3e","target_access":false,"highest_direct_initialization_before_later_block":"+0x217c","same_receiver_helper":"FUN_00771c30","same_receiver_helper_target_access":false},
+    "FUN_00771c30": {"address":"0x00771c30","size":58,"mnemonic_sha256":"fe9e84cc530930cf6b62843932c7931b09b676a8ff6e6b5c0e2cf12dd6dd290a","writes":["+0x2364","+0x2368","+0x236c","+0x2370","+0x2374"],"target_access":false},
+    "FUN_0076b280": {"address":"0x0076b280","size":7796,"mnemonic_sha256":"9563b40c06bcc7442aabd3308eefa62e1b9f7d0bb9afe752ddf0dc068e0cd7f6","direct_target_access":false,"exact_param_forwarders":["FUN_00769640","FUN_007567a0"],"forwarders_direct_target_access":false},
+    "FUN_007618f0": {"address":"0x007618f0","size":6706,"mnemonic_sha256":"05ce71ce315b2d6bf40fb224235aaae46ee3db26da789f566e5d05b6953d5b4a","direct_target_access":false,"exact_param_consumers":["FUN_00756bb0","FUN_00901310","FUN_00771db0","FUN_00771e10"],"consumers_direct_target_access":false},
+    "FUN_007c3b00": {"address":"0x007c3b00","size":5739,"mnemonic_sha256":"a8b5650ee33983f6bf4375a491846bb0d675a0274bb75ca99cbb97b1f88b0dce","direct_target_read":true,"direct_target_write":false,"same_receiver_helper":"FUN_00771c30","same_receiver_helper_target_access":false,"deeper_exact_receiver_parser_descendants_complete":false}
+  },
+  "parser_descendant_frontier": {
+    "exact_receiver_callees_still_open": ["FUN_007715f0","FUN_007be420","FUN_007c3920","FUN_007bf0e0","FUN_007bf590","FUN_007bfbe0","FUN_007bf790","FUN_007bf6e0","FUN_007c2110","FUN_007bf430","FUN_007bf310"],
+    "direct_literal_plus_0x21b8_access_in_listed_callees": false,
+    "computed_or_derived_alias_writes_complete": false
+  },
+  "adjudication": {
+    "exact_root_affine_plus_0x4330_materializer_count": 3,
+    "ctor_dtor_direct_target_writer": false,
+    "load_large_consumers_direct_target_writer": false,
+    "FUN_007c3b00_direct_target_writer": false,
+    "affine_4330_full_descendant_surface_complete": false,
+    "non_literal_hdvehicle_64e8_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": ["This bounds the three direct exact-root affine materializers and their immediate receiver-preserving consumers only.","The parser descendants reached from FUN_007c3b00 remain open for computed or derived aliases even though none directly uses literal +0x21b8.","Escaped aliases and unrelated manager+0x374 writers remain open.","No identity is inferred from matching offsets."],
+  "next_step": "Classify the remaining exact-receiver parser descendants of FUN_007c3b00 for computed writes to subobject+0x21b8, then continue unrelated manager+0x374 alias/writer provenance."
+}
