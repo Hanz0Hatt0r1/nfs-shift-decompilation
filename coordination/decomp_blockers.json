@@ -4,7 +4,7 @@
   "updated_from_main": "29eaea929f4af69c6f2e574baa886975c7aa5499",
   "rules": {"pc_retail_semantic_authority":true,"numeric_offset_equality_is_identity":false,"external_provider_count":7,"semantic_promotion_requires_exact_provenance":true},
   "workstreams": [
-    {"id":"P1.1","owner":"Process 1A","title":"FUN_00766510/contact_response producer closure","status":"complete","consumer":"Process 2 P2.3","closed":["P1.1a FUN_00713630 runtime config/sample-history/selected participant+0x4b0 ownership","P1.1c auxiliary scheduling/final transformed-vector/guarded tail","SHIFT.Fun00766510P11FinalHandoff/1 published"],"next":"Process 2 P2.3 consumes the final handoff; provider count remains 7 until contact_response is actually removed from selected production execution."},
+    {"id":"P1.1","owner":"Process 1A","title":"FUN_00766510/contact_response producer closure","status":"complete","consumer":"Process 2 P2.3","closed":["P1.1a FUN_00713630 runtime config/sample-history/selected participant+0x4b0 ownership","P1.1c auxiliary scheduling/final transformed-vector/guarded tail","SHIFT.Fun00766510P11FinalHandoff/1"],"next":"Process 2 P2.3 consumes the final handoff; provider count remains 7 until contact_response is actually removed from selected production execution."},
     {
       "id":"P1.3","owner":"Process 1B","title":"retail control/input producer provenance","status":"in_progress","children":[
         {"id":"P1.3.slot0","target":"HDVehicle+0x938","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
