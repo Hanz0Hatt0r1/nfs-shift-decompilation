@@ -1,0 +1,68 @@
+{
+  "format": "SHIFT.Fun00713630Participant4b0Fun00481e20BulkCopyRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.Fun00713630Participant4b0Frontier/1",
+    "SHIFT.Fun00713630Participant4b0SubobjectAliasFrontier/1",
+    "SHIFT.HDVehicle64e8Manager374LiteralWriterRejections/1",
+    "SHIFT.HDVehicle64e8Manager374BulkCopyParticipantRejection/1",
+    "SHIFT.HDVehicle64e8Manager374BulkCopyCameraRejection/1"
+  ],
+  "candidate": {
+    "site": "0x00482a5a",
+    "function": "FUN_00481e20",
+    "operation": "fld [EDI+0x4b0]; fstp [ESI+0x4b0]",
+    "writer_machine_span": {
+      "start": "0x00482a54",
+      "end_exclusive": "0x00482a60",
+      "sha256": "8fab6a1db52f430fd2203b7ebd3683e77eb6f3c37877b734d3ee3bc8e5ac0e76"
+    },
+    "selected_physics_participant_writer": false
+  },
+  "direct_destination_surface": [
+    {
+      "callsite": "0x0070db29",
+      "caller": "FUN_0070db00",
+      "destination": "forwarded incoming destination; upstream direct surface roots all FUN_0070dcc0 entries to stack-local storage",
+      "selected_participant_root": false,
+      "machine_span_sha256": "8e3c7a0e787e9fafb5471df9b20361d76e6135cfc98a0f29f51762988ac099be"
+    },
+    {
+      "callsite": "0x004848f5",
+      "caller": "FUN_004848bc",
+      "destination": "SMS participant + 0xa00 render snapshot",
+      "candidate_store_maps_to": "participant parent + 0xeb0",
+      "selected_participant_plus_0x4b0": false,
+      "machine_span_sha256": "b3053a69379c42b6facc7c99a6b1fc407897ee7621a06602fc3dc4531b31f05c"
+    },
+    {
+      "callsite": "0x0081d335",
+      "caller": "FUN_0081d2b0",
+      "destination": "CCameraView + 0x2d0 state",
+      "selected_participant_root": false,
+      "machine_span_sha256": "c525f0e6469f6831376d6e27d489cc15288d42c431f96868ca75876a1fa78850"
+    }
+  ],
+  "adjudication": {
+    "fun_00481e20_direct_destination_surface_closed": true,
+    "candidate_site_rejected": true,
+    "remaining_unjoined_direct_site_count": 9,
+    "selected_participant_runtime_plus_0x4b0_writer_closed": false,
+    "p1_1a_complete": false,
+    "p1_1_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This proof reuses already-merged Process 1B/1D ownership boundaries only to reject receiver identity; it does not take ownership of their semantics.",
+    "The generic FUN_00481e20 body is rejected only because every direct destination family is closed; generic copy shape alone is insufficient.",
+    "Computed-address, escaped-alias and unrelated indirect/bulk-copy writers remain open."
+  ],
+  "next_step": "Adjudicate the remaining 9 direct-displacement +0x4b0 writer sites by exact receiver provenance."
+}
