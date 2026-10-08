@@ -1,0 +1,86 @@
+{
+  "format": "SHIFT.HDVehicle64e8LiteralCandidateRejections/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_literal_inventory": "SHIFT.HDVehicle64e8WriterFrontier/1",
+    "allocation_identity_contract": "SHIFT.HDVehicle64e8Manager2a0EntryIdentityRejection/1"
+  },
+  "target": {
+    "storage": "HDVehicle+0x64e8",
+    "normalized_subobject": "HDVehicle+0x4330+0x21b8"
+  },
+  "original_literal_candidates": [
+    "0x004b86cf dword [ESI+0x21b8] = 1",
+    "0x004bb205 dword [ESI+0x21b8] = 4",
+    "0x004bca6b dword [ESI+0x21b8] = 3",
+    "0x00d775ee dword [EAX+0x21b8] = 2"
+  ],
+  "rejections": [
+    {
+      "instruction": "0x004bb205",
+      "function": "FUN_004bb1b0",
+      "machine_chain": [
+        "0x004bb1be call FUN_00489ad0",
+        "0x004bb1cf lea ecx,[manager+0x2a0]",
+        "0x004bb1d7 call FUN_0054ed00(index)",
+        "0x004bb1dc mov esi,eax",
+        "0x004bb205 mov [esi+0x21b8],4"
+      ],
+      "receiver_domain": "manager+0x2a0 allocator-owned entry",
+      "receiver_equals_hdvehicle_4330": false
+    },
+    {
+      "instruction": "0x004bca6b",
+      "function": "FUN_004bca10",
+      "machine_chain": [
+        "0x004bca20 call FUN_00489ad0",
+        "0x004bca31 lea ecx,[manager+0x2a0]",
+        "0x004bca39 call FUN_0054ed00(index)",
+        "0x004bca3e mov esi,eax",
+        "0x004bca6b mov [esi+0x21b8],3"
+      ],
+      "receiver_domain": "manager+0x2a0 allocator-owned entry",
+      "receiver_equals_hdvehicle_4330": false
+    },
+    {
+      "instruction": "0x00d775ee",
+      "function": "FUN_00d77590",
+      "machine_chain": [
+        "0x00d77596 call FUN_00489ad0",
+        "0x00d775bc lea ecx,[manager+0x2a0]",
+        "0x00d775c2 call FUN_0054ed00(index)",
+        "0x00d775ea test eax,eax",
+        "0x00d775ee mov [eax+0x21b8],2"
+      ],
+      "receiver_domain": "manager+0x2a0 allocator-owned entry",
+      "receiver_equals_hdvehicle_4330": false
+    }
+  ],
+  "remaining_candidate": {
+    "instruction": "0x004b86cf",
+    "function": "FUN_004b8660",
+    "machine_chain": [
+      "0x004b8664 call FUN_00489ad0",
+      "0x004b8669 mov esi,[manager+0x374]",
+      "0x004b866f test esi,esi",
+      "0x004b86cf mov [esi+0x21b8],1"
+    ],
+    "receiver_domain": "current manager+0x374 value",
+    "receiver_equals_hdvehicle_4330": "unresolved",
+    "reason_open": "manager+0x374 has a rejected manager+0x2a0 selection identity and zero-only direct Participants lifecycle target stores, but other nested/computed/non-vtable writers remain open"
+  },
+  "adjudication": {
+    "original_literal_candidate_count": 4,
+    "manager2a0_candidates_rejected": 3,
+    "remaining_literal_candidate_count": 1,
+    "remaining_candidate_depends_on_manager_374_identity": true,
+    "exact_hdvehicle_64e8_non_sentinel_writer_proven": false,
+    "alias_or_callee_writer_exhausted": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Resolve whether any remaining nested/computed/non-vtable writer can place HDVehicle+0x4330 into manager+0x374. If not, reject 0x004b86cf as the final literal HDVehicle+0x64e8 candidate and continue alias/callee writer search."
+}
