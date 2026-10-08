@@ -14,29 +14,45 @@ INPUT_FORMAT = "SHIFT.Fun00758b50InputSurfaceInventory/1"
 PINNED_SOURCE_SHA256 = "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
 RETAIL_EXECUTABLE_SHA256 = "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
 
-_FUNCTION_DEF = re.compile(r"^(?P<prefix>.+?)\b(?P<name>FUN_[0-9a-fA-F]{8})\s*\(")
+_FUNCTION_TOKEN = re.compile(r"\b(?P<name>FUN_[0-9a-fA-F]{8})\s*\(")
 _HEX_OFFSET = re.compile(r"\+\s*0x([0-9a-fA-F]+)\b")
 _ASSIGNMENT = re.compile(r"(?<![=!<>])(?:\+=|-=|\*=|/=|&=|\|=|\^=|=)(?!=)")
 
 
 def _is_definition_candidate(lines: list[str], index: int) -> tuple[bool, str | None]:
-    stripped = lines[index].strip()
-    match = _FUNCTION_DEF.match(stripped)
+    raw = lines[index]
+    stripped = raw.strip()
+    match = _FUNCTION_TOKEN.search(stripped)
     if not match:
         return False, None
-    prefix = match.group("prefix").strip()
-    if (
-        not prefix
-        or prefix.endswith(("=", ",", "(", "+", "-", "*", "/"))
+
+    prefix = stripped[: match.start()].strip()
+    if prefix and (
+        prefix.endswith(("=", ",", "(", "+", "-", "*", "/"))
+        or prefix.startswith(("if ", "if(", "while ", "while(", "for ", "for(", "return "))
         or "{" in prefix
         or "}" in prefix
         or ";" in prefix
     ):
         return False, None
+
     lookahead = "\n".join(lines[index : min(index + 8, len(lines))])
-    before_brace = lookahead.split("{", 1)[0]
-    if "{" not in lookahead or ";" in before_brace:
+    brace_index = lookahead.find("{")
+    if brace_index < 0:
         return False, None
+    semicolon_index = lookahead.find(";")
+    if semicolon_index >= 0 and semicolon_index < brace_index:
+        return False, None
+
+    if not prefix:
+        previous = ""
+        for cursor in range(index - 1, max(-1, index - 4), -1):
+            previous = lines[cursor].strip()
+            if previous:
+                break
+        if previous and previous.endswith((";", "{", "}")):
+            return False, None
+
     return True, match.group("name")
 
 
