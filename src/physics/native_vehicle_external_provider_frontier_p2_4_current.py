@@ -1,7 +1,7 @@
 """Current P2.4 overlay for the active FUN_00765c40 provider frontier.
 
 The older ``native_vehicle_external_provider_frontier_current`` module remains a
-Phase726-era compatibility audit.  This overlay consumes that report and records
+Phase726-era compatibility audit. This overlay consumes that report and records
 only later positive P2.4 ownership changes so callers do not have to reinterpret
 historical Phase725/726 claims as current state.
 """
@@ -19,9 +19,11 @@ SELECTED_WORLD_POSITION_FORMAT = "SHIFT.Fun00765c40SelectedBMWWorldPosition/1"
 SELECTED_QUERY_FALLBACK_FORMAT = "SHIFT.Fun00765c40SelectedBMWQueryFallback/1"
 COLLISION_OUTPUT_HANDOFF_FORMAT = "SHIFT.Fun00765c40CollisionOutputHandoff/1"
 COMPOSED_RESIDUAL_EXECUTOR_FORMAT = "SHIFT.Fun00765c40ComposedResidualExecutor/1"
+WHEEL_STATE_MACHINE_PROOF_FORMAT = "SHIFT.Fun00752fa0WheelStateMachineProof/1"
 
 REMAINING_EXPLICIT_PRODUCERS = (
     "wheel_plane_producer_arithmetic",
+    "wheel_state_source_HDVehicle_0x98_owner_lifetime",
     "wheel_job_formula_FUN_0075cfb0",
     "FUN_007584f0_computed_payloads",
     "wheel_pair_producer_arithmetic",
@@ -73,6 +75,10 @@ def build_current_frontier() -> dict[str, Any]:
             "selected_query_fallback_contract": SELECTED_QUERY_FALLBACK_FORMAT,
             "collision_output_handoff_contract": COLLISION_OUTPUT_HANDOFF_FORMAT,
             "composed_residual_executor_contract": COMPOSED_RESIDUAL_EXECUTOR_FORMAT,
+            "wheel_state_machine_proof_contract": WHEEL_STATE_MACHINE_PROOF_FORMAT,
+            "wheel_state_source_address": "HDVehicle+0x98",
+            "wheel_state_source_address_proven": True,
+            "wheel_state_source_owner_lifetime_native": False,
             "selected_world_position_native": True,
             "selected_query_fallback_native": True,
             "selected_query_input_native": True,
@@ -91,6 +97,7 @@ def build_current_frontier() -> dict[str, Any]:
             "external_provider_count_decremented": False,
             "lower_collision_semantics_invented": False,
             "unproven_producer_formula_invented": False,
+            "wheel_state_source_owner_inferred_from_address": False,
         },
     }
 
@@ -107,6 +114,12 @@ def contract() -> dict[str, Any]:
         "session_query_snapshot_contract": fun["session_query_snapshot_contract"],
         "collision_output_handoff_contract": fun["collision_output_handoff_contract"],
         "composed_residual_executor_contract": fun["composed_residual_executor_contract"],
+        "wheel_state_machine_proof_contract": fun["wheel_state_machine_proof_contract"],
+        "wheel_state_source_address": fun["wheel_state_source_address"],
+        "wheel_state_source_address_proven": fun["wheel_state_source_address_proven"],
+        "wheel_state_source_owner_lifetime_native": fun[
+            "wheel_state_source_owner_lifetime_native"
+        ],
         "selected_world_position_native": fun["selected_world_position_native"],
         "selected_query_fallback_native": fun["selected_query_fallback_native"],
         "selected_query_input_native": fun["selected_query_input_native"],
@@ -131,6 +144,7 @@ __all__ = [
     "SELECTED_QUERY_FALLBACK_FORMAT",
     "COLLISION_OUTPUT_HANDOFF_FORMAT",
     "COMPOSED_RESIDUAL_EXECUTOR_FORMAT",
+    "WHEEL_STATE_MACHINE_PROOF_FORMAT",
     "REMAINING_EXPLICIT_PRODUCERS",
     "build_current_frontier",
     "contract",
