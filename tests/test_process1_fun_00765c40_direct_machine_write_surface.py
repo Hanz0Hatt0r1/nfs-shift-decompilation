@@ -60,7 +60,8 @@ def test_gate_remains_fail_closed_for_callee_side_effects() -> None:
     payload = _load()
     assert payload["direct_write_surface_complete_for_machine_body"] is True
     assert payload["callee_mediated_side_effects_complete"] is False
-    assert "0x00752fa0" in payload["representative_unresolved_callees"]
+    assert any(row["callee"] == "0x00752fa0" for row in payload["classified_callee_side_effects"])
+    assert "0x00752fa0" not in payload["representative_unresolved_callees"]
     assert "0x007baa70" in payload["representative_unresolved_callees"]
     gate = payload["gate"]
     assert gate["p1_2b_direct_write_inventory_closed"] is True
