@@ -1,0 +1,83 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374FinalPreclusterRejections/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_sqlite_role": "navigation and mnemonic fingerprints only"
+  },
+  "upstream": {
+    "contract": "SHIFT.HDVehicle64e8Manager374VptrReceiverRejections/1",
+    "remaining_literal_site_count": 5,
+    "remaining_sites": [
+      "0x00865013",
+      "0x0097da09",
+      "0x0097daf8",
+      "0x0097dc63",
+      "0x0097ed06"
+    ]
+  },
+  "rejections": [
+    {
+      "site": "0x00865013",
+      "function": "FUN_00864c10",
+      "function_mnemonic_sha256": "ba7464e733ada713d37976823ad8885f95726f652e4bf569f68b46e87b8855bf",
+      "store": "fstp dword ptr [esi+0x374]",
+      "receiver_capture": "0x00864c40 mov edi,ecx; same exact receiver later carried in ESI at target path",
+      "exact_receiver_vptr": "0x00b1d508",
+      "vptr_install": "0x0085afda mov [esi],0x00b1d508",
+      "vtable_callsites": [
+        "0x0085b6f2 call 0x00864c10",
+        "0x0085c38f call 0x00864c10"
+      ],
+      "vtable_registration": {
+        "0x00b1d520": "0x0085b6e0",
+        "0x00b1d524": "0x0085c370"
+      },
+      "manager_root_vptr": "0x00ab9190",
+      "participants_subobject_vptr": "0x00ab916c",
+      "receiver_is_participants_manager": false,
+      "reason": "exact receiver family is rooted at vptr 0x00b1d508, distinct from both manager identities"
+    },
+    {
+      "site": "0x0097ed06",
+      "function": "FUN_0097eacc",
+      "function_mnemonic_sha256": "15dc460f8ee15582a2fa8fdf855ee6d2844bc86c36e0eb7bb663b0b00560083b",
+      "store": "mov dword ptr [eax+0x374],ebx",
+      "zero_source": "0x0097ecbe xor ebx,ebx",
+      "destination_chain": [
+        "0x0097eccd mov [esi+0x2f4],edi",
+        "0x0097ed00 mov eax,[esi+0x2f4]",
+        "0x0097ed06 mov [eax+0x374],ebx"
+      ],
+      "can_place_hdvehicle_plus_0x4330_into_manager_plus_0x374": false,
+      "receiver_identity_required_for_rejection": false,
+      "reason": "payload is unconditionally zero on the target path"
+    }
+  ],
+  "adjudication": {
+    "closed_site_count_this_contract": 2,
+    "remaining_literal_site_count": 3,
+    "remaining_literal_sites": [
+      "0x0097da09",
+      "0x0097daf8",
+      "0x0097dc63"
+    ],
+    "remaining_literal_function": "FUN_0097d8c4",
+    "literal_manager_374_receiver_provenance_complete": false,
+    "computed_address_manager_374_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The 0x00865013 rejection uses exact receiver vptr continuity, not numeric +0x374 coincidence.",
+    "The 0x0097ed06 rejection is payload-only: it proves this site cannot install a nonzero pointer even if destination identity remains otherwise unknown.",
+    "The three FUN_0097d8c4 sites remain open until exact callback/argument receiver provenance is resolved.",
+    "Computed-address writes to manager+0x374 remain outside this literal-displacement slice."
+  ],
+  "next_step": "Resolve callback receiver provenance for FUN_0097d8c4 and its three remaining +0x374 writes; then widen to computed-address forms only if literal provenance closes negative."
+}
