@@ -1,0 +1,47 @@
+{
+  "format": "SHIFT.HDVehicle64e8WriterFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "scan_kind": "full PE disassembly literal-memory-write inventory"
+  },
+  "target": {
+    "root_storage": "HDVehicle+0x64e8",
+    "owned_subobject_base": "HDVehicle+0x4330",
+    "subobject_offset": "0x21b8",
+    "consumer_contract": "SHIFT.Fun007530e0Slot2VehicleLoadData4c8Producer/1",
+    "consumer_transfer": "VehicleLoadData+0x4c8 = f64(int32(HDVehicle+0x64e8)) when source != -1"
+  },
+  "known_owned_subobject_paths": {
+    "constructor": {
+      "function": "FUN_00772200",
+      "receiver": "HDVehicle+0x4330",
+      "direct_literal_write_to_0x21b8": false
+    },
+    "update": {
+      "function": "FUN_00772570",
+      "receiver": "HDVehicle+0x4330",
+      "direct_literal_write_to_0x21b8": false
+    }
+  },
+  "literal_write_candidates": [
+    {"instruction": "0x004b86cf", "store": "dword [ESI+0x21b8] = EBX", "receiver_identity_joined_to_hdvehicle_4330": false},
+    {"instruction": "0x004bb205", "store": "dword [ESI+0x21b8] = 4", "receiver_identity_joined_to_hdvehicle_4330": false},
+    {"instruction": "0x004bca6b", "store": "dword [ESI+0x21b8] = 3", "receiver_identity_joined_to_hdvehicle_4330": false},
+    {"instruction": "0x00d775ee", "store": "dword [EAX+0x21b8] = 2", "receiver_identity_joined_to_hdvehicle_4330": false}
+  ],
+  "candidate_count": 4,
+  "adjudication": {
+    "full_literal_write_candidate_set_bounded": true,
+    "constructor_direct_writer_rejected": true,
+    "update_direct_writer_rejected": true,
+    "exact_hdvehicle_64e8_writer_proven": false,
+    "alias_or_callee_writer_exhausted": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Resolve receiver provenance for the four literal +0x21b8 store sites, prioritizing 0x004b86cf because its receiver comes from the global-manager path call 0x00489ad0 -> +0x374. Promote a writer only if that receiver is independently joined to HDVehicle+0x4330; otherwise reject it and continue."
+}
