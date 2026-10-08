@@ -1,0 +1,55 @@
+{
+  "format": "SHIFT.Fun00766510DirectCallerAccumulatorSurface/1",
+  "ready": true,
+  "purpose": "Process 1 fail-closed join proving that every direct FUN_00753650 caller-accumulator site in FUN_00766510 is already covered by a positive PC-retail-backed branch contract",
+  "authority": {
+    "semantic_platform": "PC retail 1.02",
+    "pc_decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "new_machine_or_source_claims_in_this_join": false,
+    "xbox_recomp_required": false
+  },
+  "inventory_basis": {
+    "format": "SHIFT.Fun00766510PrimaryCallerAccumulator/1",
+    "direct_FUN_00753650_add_sites_in_FUN_00766510": 4,
+    "auxiliary_FUN_00758fc0_calls": 2,
+    "final_transformed_vector_add_site": 1
+  },
+  "direct_sites": [
+    {"id":"early_3b20","contract":"SHIFT.Fun00766510EarlyResponseBranchOwnership/1","application":"HDVehicle+0x3b08/+0x3b10/+0x3b18","response_table":"HDVehicle+0x3b20","caller_accumulator_write_line":759558,"conditional":true,"owner_closed":true},
+    {"id":"optional_3c60","contract":"SHIFT.Fun00766510OptionalResponseBranchOwnership/1","application":"HDVehicle+0x3c60/+0x3c68/+0x3c70","gate":"+0x3bc8 != 0 and local_50 < 0","caller_accumulator_write_line":759621,"conditional":true,"owner_closed":true},
+    {"id":"primary_3950","contract":"SHIFT.Fun00766510PrimaryCallerAccumulator/1","application":"HDVehicle+0x38f0","response_table":"HDVehicle+0x3950","source_window":[759686,759692],"cross_and_store_machine_sha256":"5813de173dee954d843b69c1b0bf9491863f1094b858509bdf0f03d01183be2a","conditional":false,"owner_closed":true,"native_delta_available":true},
+    {"id":"later_3a40","contract":"SHIFT.Fun00766510LaterResponseBranchOwnership/1","application":"HDVehicle+0x3a28/+0x3a30/+0x3a38","response_table":"HDVehicle+0x3a40","cross_product_line":759731,"caller_accumulator_write_line":759732,"conditional":true,"owner_closed":true}
+  ],
+  "accumulator": {
+    "state": "HDVehicle+0x40a0/+0x40a8/+0x40b0",
+    "entry_zeroing_proven": true,
+    "direct_site_count_expected": 4,
+    "direct_site_count_accounted": 4,
+    "all_direct_FUN_00753650_sites_accounted": true,
+    "direct_surface_complete": true
+  },
+  "adjacent_positive_inputs": {
+    "auxiliary_pair": {
+      "format": "SHIFT.NativeAuxContactPair/1",
+      "callee": "FUN_00758fc0",
+      "record_count": 2,
+      "record_offsets": ["0x37d8", "0x3858"],
+      "per_record_arithmetic_format": "SHIFT.NativeAuxContactResponse/1",
+      "direct_surface_member": false
+    }
+  },
+  "remaining_p1_1c": [
+    "join the two already-native FUN_00758fc0 auxiliary contributions to the complete caller accumulator preservation contract at exact FUN_00766510 scheduling points",
+    "source-lock the final transformed cumulative response vector add to BODY0+0x48/+0x50/+0x58 and HDVehicle+0x40a0/+0x40a8/+0x40b0",
+    "classify every residual conditional state/diagnostic write after the response branches"
+  ],
+  "adjudication": {
+    "four_direct_caller_cross_product_sites_closed": true,
+    "whole_caller_accumulator_closed": false,
+    "p1_1c_complete": false,
+    "contact_response_provider_removal_authorized": false,
+    "external_provider_count": 7
+  },
+  "next_owner": "Process 1 continues P1.1c on auxiliary scheduling/final transformed-vector/tail-write preservation; Process 2 may consume this direct-site closure without removing contact_response."
+}
