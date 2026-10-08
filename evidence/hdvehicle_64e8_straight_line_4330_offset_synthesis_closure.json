@@ -1,0 +1,34 @@
+{
+  "format": "SHIFT.HDVehicle64e8StraightLine4330OffsetSynthesisClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {"platform":"PC retail 1.02","retail_executable_sha256":"eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1","machine_transfer_adjudicates":true},
+  "scan": {
+    "scope":"whole retail .text; straight-line per-register affine propagation; reset at call/jump/ret and unrecognized register overwrite",
+    "tracked_operations":["mov reg,reg","lea reg,[reg+/-imm]","add reg,imm","sub reg,imm","inc reg","dec reg"],
+    "affine_transition_count":181525,
+    "base_plus_0x4330_production_count":5,
+    "multi_step_base_plus_0x4330_production_count":0,
+    "productions":[
+      {"site":"0x00768c16","steps":1,"function":"FUN_00768a4d"},
+      {"site":"0x00769551","steps":1,"function":"FUN_00769520"},
+      {"site":"0x0076b241","steps":1,"function":"FUN_0076b130"},
+      {"site":"0x0076e1c1","steps":1,"function":"FUN_0076df50"},
+      {"site":"0x00a70642","steps":1,"function":"Unwind@00a7063f"}
+    ]
+  },
+  "upstream_contract":"SHIFT.HDVehicle64e8WholeText4330MaterializationOccurrenceClosure/1",
+  "adjudication": {
+    "straight_line_simple_affine_4330_synthesis_surface_complete":true,
+    "hidden_multi_step_simple_affine_4330_materializer_count":0,
+    "indexed_two_origin_or_cross_control_flow_synthesis_complete":false,
+    "externally_supplied_or_opaque_4330_alias_surface_complete":false,
+    "global_runtime_derived_4330_alias_surface_complete":false,
+    "manager_374_join_to_hdvehicle_4330_complete":false,
+    "last_literal_0x004b86cf_rejected":false,
+    "p1_3_control_producer_complete":false,
+    "external_provider_count":7
+  },
+  "limits":["The scan intentionally does not claim two-origin indexed LEA, cross-control-flow symbolic equivalence, opaque helper returns, or externally supplied pointers.","All five simple affine productions are already independently bounded."],
+  "next_step":"Search indexed/two-origin or opaque runtime derivations of HDVehicle+0x4330; separately replay the render-manager memory-escape analyzer when exact exhaustive v2 inputs are reacquired."
+}
