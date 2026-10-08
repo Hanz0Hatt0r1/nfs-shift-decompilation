@@ -31,7 +31,7 @@ def test_collection_population_layout_and_loop_are_pinned():
     assert any("param_3 times" in step for step in h["steps"])
 
 
-def test_population_producer_closes_but_entry_identity_remains_open():
+def test_population_producer_closes_but_entry_identity_remains_open_in_original_contract():
     a = _payload()["adjudication"]
     assert a["manager_2a0_population_producer_proven"] is True
     assert a["manager_2a0_insertion_producer_complete"] is True
@@ -40,14 +40,14 @@ def test_population_producer_closes_but_entry_identity_remains_open():
     assert a["external_provider_count"] == 7
 
 
-def test_coordination_advances_to_entry_identity_only():
+def test_coordination_preserves_population_producer_and_rejects_entry_identity():
     graph = json.loads(COORD.read_text(encoding="utf-8"))
     p13 = next(row for row in graph["workstreams"] if row["id"] == "P1.3")
     node = next(row for row in p13["children"] if row["id"] == "P1.3.manager2a0")
-    assert node["status"] == "population-producer-proven-entry-identity-open"
+    assert node["status"] == "entry-identity-rejected-complete"
     producer = node["proven_population_producer"]
     assert "FUN_004978f0" in producer
     assert "thunk_FUN_00d61e00" in producer
     assert node["element_size"] == "0x22e0"
     assert node["insertion_producer_complete"] is True
-    assert "HDVehicle+0x4330" in node["next"]
+    assert node["entry_identity_to_hdvehicle_4330"] is False
