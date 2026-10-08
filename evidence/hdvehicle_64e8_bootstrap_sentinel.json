@@ -1,0 +1,60 @@
+{
+  "format": "SHIFT.HDVehicle64e8BootstrapSentinel/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "evidence_kind": "direct PE32 machine-code alias/callee write and consumer branch"
+  },
+  "target": {
+    "root_storage": "HDVehicle+0x64e8",
+    "record_base": "HDVehicle+0x4330",
+    "record_offset": "0x21b8",
+    "nested_base": "record+0x21a4",
+    "nested_offset": "0x14"
+  },
+  "constructor_chain": {
+    "selected_hdvehicle_call": "0x0076b241 ECX = HDVehicle+0x4330; 0x0076b247 call FUN_00772200",
+    "record_constructor": "FUN_00772200",
+    "nested_receiver_setup": "0x007722d4 EDI = record+0x21a4",
+    "nested_constructor_call": "0x007722e0 call FUN_00458a80 with ECX=EDI",
+    "writer": "FUN_00458a80",
+    "writer_setup": [
+      "0x00458a80 EDX = ECX",
+      "0x00458a84 EAX = 0xffffffff",
+      "0x00458a87 EDI = receiver+0x4",
+      "0x0045b5df ECX = 0x3e",
+      "0x00458a8f rep stos dword [EDI], EAX"
+    ],
+    "contiguous_dword_range": "receiver+0x4 through receiver+0xf8 inclusive",
+    "target_inside_range": true,
+    "exact_target_write": "record+0x21b8 = (record+0x21a4)+0x14 = int32 -1",
+    "bootstrap_value": -1
+  },
+  "consumer_branch": {
+    "function": "FUN_007c3b00",
+    "load": "0x007c48ba EAX = [record+0x21b8]",
+    "sentinel_compare": "0x007c48c0 compare EAX with -1",
+    "sentinel_branch": "0x007c48c6 jump to 0x007c48d1 when equal",
+    "non_sentinel_transfer": "0x007c48c8 fild int32 value; 0x007c48cb store f64 VehicleLoadData+0x4c8",
+    "bootstrap_effect": "fresh -1 skips VehicleLoadData+0x4c8 overwrite"
+  },
+  "manager_literal_candidates": {
+    "contract": "SHIFT.HDVehicle64e8ManagerDomainFrontier/1",
+    "values_seen": [1, 2, 3, 4],
+    "joined_to_selected_hdvehicle_record": false,
+    "role": "possible later/runtime writers; not required for bootstrap sentinel proof"
+  },
+  "adjudication": {
+    "alias_callee_bootstrap_writer_proven": true,
+    "fresh_hdvehicle_64e8_value_proven": true,
+    "fresh_hdvehicle_64e8_is_minus_one": true,
+    "mode4_bootstrap_transfer_to_vld4c8_occurs": false,
+    "later_runtime_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Trace the first post-construction writer that changes HDVehicle+0x64e8 away from -1. Continue with the two manager receiver domains only if pointer/index ownership joins them to the selected HDVehicle+0x4330 record; otherwise search other alias/callee writers."
+}
