@@ -1,0 +1,83 @@
+{
+  "format": "SHIFT.Fun00766510PrimaryCallerAccumulator/1",
+  "ready": true,
+  "platform_authority": "PC retail primary",
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "decompiler_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "fun_00753650_source_line": 749322,
+    "primary_application_source_lines": [759686, 759692],
+    "machine_span": {
+      "start": "0x00766fc3",
+      "end_exclusive": "0x0076701e",
+      "raw_byte_sha256": "3e1bb93c36162aa474335af341f6f7d24d21183c644a309acd8dd2c2de9a84c7"
+    },
+    "cross_and_caller_store_span": {
+      "start": "0x00766fd6",
+      "end_exclusive": "0x0076701e",
+      "raw_byte_sha256": "5813de173dee954d843b69c1b0bf9491863f1094b858509bdf0f03d01183be2a"
+    }
+  },
+  "fun_00753650": {
+    "operation": "three-lane cross product",
+    "input_order": ["application_point", "transformed_response"],
+    "formula": [
+      "left.y*right.z - left.z*right.y",
+      "left.z*right.x - left.x*right.z",
+      "left.x*right.y - left.y*right.x"
+    ],
+    "physical_semantics_named": false
+  },
+  "primary_block": {
+    "response_table_offset": "HDVehicle+0x3950",
+    "response_gain_output_offset": "HDVehicle+0x39d0",
+    "application_point_offset": "HDVehicle+0x38f0",
+    "body_pointer_offset": "HDVehicle+0x33a0",
+    "body_basis_offset": "BODY0+0xd4",
+    "order": [
+      "FUN_007551e0 response vector",
+      "FUN_007aefb0 transform",
+      "FUN_007baa70 BODY accumulation",
+      "FUN_00753650(application_point, transformed_response)",
+      "add cross-product lanes into HDVehicle+0x40a0/+0x40a8/+0x40b0"
+    ],
+    "caller_accumulator_offsets": ["0x40a0", "0x40a8", "0x40b0"]
+  },
+  "native_contract": {
+    "body_cross_helper": "execute_fun_00753650_cross_product",
+    "primary_response_format_before": "SHIFT.Fun00766510PrimaryResponseApplication/1",
+    "primary_response_format_after": "SHIFT.Fun00766510PrimaryResponseApplication/2",
+    "new_result_field": "caller_accumulator_delta",
+    "delta_is_recomputed_from_body_difference": false,
+    "same_FUN_00753650_primitive_used_by_FUN_007baa70": true
+  },
+  "whole_function_accumulator_inventory": {
+    "entry_zero_seed_offsets": ["0x40a0", "0x40a8", "0x40b0"],
+    "entry_zero_seed_machine_span": {
+      "start": "0x0076652c",
+      "end_exclusive": "0x00766544",
+      "raw_byte_sha256": "9642f0717ece22cd747e169f48cdc7cb1bfe89a5c18a2474ac9e7d966a096cb5"
+    },
+    "direct_FUN_00753650_add_sites_in_FUN_00766510": 4,
+    "auxiliary_FUN_00758fc0_calls": 2,
+    "auxiliary_helper_may_add_same_state": true,
+    "final_transformed_vector_add_site": 1,
+    "this_phase_closes_only_primary_0x38f0_0x3950_direct_site": true
+  },
+  "scope": {
+    "external_provider_count_before": 7,
+    "external_provider_count_after": 7,
+    "provider_count_reduced": false,
+    "contact_response_provider_removed": false,
+    "whole_40a0_accumulator_internalized": false,
+    "primary_direct_accumulator_delta_internalized": true,
+    "auxiliary_scheduling_internalized": false,
+    "other_direct_response_blocks_internalized": false,
+    "final_transformed_vector_add_internalized": false,
+    "physical_semantics_invented": false
+  },
+  "next_blocker": {
+    "target": "compose the remaining +0x40a0/+0x40a8/+0x40b0 contributions in exact FUN_00766510 order",
+    "note": "do not call the whole caller accumulator native until the other direct blocks, both auxiliary records and the final transformed vector add are source-owned"
+  }
+}
