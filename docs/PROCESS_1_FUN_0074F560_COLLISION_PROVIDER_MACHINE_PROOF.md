@@ -40,7 +40,7 @@ P1.2a is now closed **as an explicit typed external provider boundary**:
 - provenance to the 0x58-byte surface record: closed;
 - physical PhysX/engine class name: not claimed;
 - implementation behind the virtual slot: still external;
-- guessed replacement track query: forbidden.
+- guessed track query: forbidden.
 
 This is sufficient for Process 2 to preserve the collision provider as an explicit callback/interface rather than reopening the upper `FUN_007b0710` ABI.
 
