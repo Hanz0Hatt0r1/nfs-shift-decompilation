@@ -15,7 +15,7 @@ def test_exact_vptr_rejection_inventory():
     assert data["upstream"]["remaining_site_count_before"] == 20
     assert data["upstream"]["participants_manager_vptr"] == "0x00ab916c"
     assert data["upstream"]["inherited_negative_site_excluded_here"] == "0x005ded7e"
-    rows = data["rejections"]
+    rows = data["same_body_vptr_rejections"]
     assert [r["site"] for r in rows] == [
         "0x0074874b",
         "0x008169c3",
@@ -24,14 +24,27 @@ def test_exact_vptr_rejection_inventory():
         "0x00844b67",
         "0x00d7f104",
     ]
-    assert all(r.get("vptr_is_participants_manager") is False or r.get("all_explicit_vptrs_are_not_participants_manager") is True for r in rows)
+
+
+def test_unique_vtable_dispatch_rejects_three_more_sites():
+    row = load_evidence()["unique_vtable_dispatch_rejection"]
+    assert row["function"] == "FUN_008446a0"
+    assert row["target_sites"] == ["0x008446cb", "0x008446e3", "0x008446f8"]
+    assert row["whole_pe_function_pointer_occurrence_count"] == 1
+    assert row["unique_function_pointer_location"] == "0x00b19144"
+    assert row["owning_vtable"] == "0x00b190a8"
+    assert row["vtable_slot_offset"] == "+0x9c"
+    assert row["direct_callsite_count"] == 0
+    assert row["owning_vtable_is_participants_manager"] is False
 
 
 def test_worklist_reduces_without_promoting_identity_join():
     adj = load_evidence()["adjudication"]
-    assert adj["rejected_site_count"] == 6
-    assert adj["remaining_literal_store_site_count"] == 14
-    assert adj["rejections_use_exact_same_receiver_vptr_identity"] is True
+    assert adj["rejected_site_count"] == 9
+    assert adj["remaining_literal_store_site_count"] == 11
+    assert adj["same_body_vptr_rejected_site_count"] == 6
+    assert adj["unique_vtable_dispatch_rejected_site_count"] == 3
+    assert adj["rejections_use_exact_receiver_vptr_identity"] is True
     assert adj["numeric_plus_0x374_equality_used_as_identity"] is False
     assert adj["remaining_literal_store_receiver_provenance_complete"] is False
     assert adj["computed_address_manager_374_writer_surface_complete"] is False
