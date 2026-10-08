@@ -2,6 +2,7 @@
 
 #include "shift_fun_00765c40_load_terms.hpp"
 #include "shift_fun_00765c40_query_input_boundary.hpp"
+#include "shift_fun_00765c40_residual_producer_handoff.hpp"
 #include "shift_fun_00765c40_selected_bmw_query_fallback.hpp"
 
 #include <cmath>
@@ -11,6 +12,8 @@
 namespace shift::runtime::physics {
 
 inline constexpr const char* kFun00765c40ExternalPassResultFormat =
+    "SHIFT.Fun00765c40ExternalPassResult/5";
+inline constexpr const char* kFun00765c40HistoricalCollisionOutputResultFormat =
     "SHIFT.Fun00765c40ExternalPassResult/4";
 inline constexpr const char* kFun00765c40ExternalPassInputFormat =
     "SHIFT.Fun00765c40ExternalPassInput/2";
@@ -40,10 +43,18 @@ struct Fun00765c40ExternalPassInput {
 };
 
 struct Fun00765c40ExternalPassResult {
+    // Historical /1..../4 prefix. Keep field order stable so existing aggregate
+    // providers remain source-compatible when the /5 witness is omitted.
     Fun00765c40LoadTerms load_terms{};
     Fun00765c40QueryInputBoundary query_input{};
     std::optional<std::uint64_t> returned_cache_handle{};
     std::optional<CollisionQueryOutput> query_output{};
+
+    // /5 appends a non-authoritative pure-data witness for the residual producer
+    // values grouped by SHIFT.Fun00765c40ResidualProducerHandoff/1. Absence is
+    // valid: selected providers are not required to synthesize unresolved
+    // producer formulas. Presence does not make these values native-owned.
+    std::optional<Fun00765c40ResidualProducerHandoff> residual_producer_handoff{};
 };
 
 inline void validate_fun_00765c40_collision_output_handoff(
@@ -146,6 +157,10 @@ inline void validate_fun_00765c40_external_pass_result(
                 "FUN_00765c40 returned cache handle disagrees with FUN_007b0710 output");
         }
     }
+
+    // The /5 residual producer handoff is intentionally opaque here. Exact-width
+    // payload validation belongs to the individual stage contracts. Merely
+    // returning this witness cannot promote producer arithmetic to native-owned.
 }
 
 inline Fun00765c40QueryInputBoundary
