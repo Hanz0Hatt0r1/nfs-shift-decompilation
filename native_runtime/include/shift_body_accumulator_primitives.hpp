@@ -14,8 +14,14 @@ inline constexpr const char* kBodyPositiveAccumulatorSourceFunction =
     "FUN_007baa70";
 inline constexpr const char* kBodyNegativeAccumulatorSourceFunction =
     "FUN_007baaf0";
+inline constexpr const char* kBodyCrossProductSourceFunction =
+    "FUN_00753650";
 
 using BodyAccumulatorVector3d = std::array<double, 3>;
+
+BodyAccumulatorVector3d execute_fun_00753650_cross_product(
+    const BodyAccumulatorVector3d& left,
+    const BodyAccumulatorVector3d& right);
 
 void apply_fun_007baa70_body_accumulator(
     BodyAccumulatorState& body,
