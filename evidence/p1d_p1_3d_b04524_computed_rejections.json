@@ -1,0 +1,69 @@
+{
+  "format": "SHIFT.P1D.P13D.B04524ComputedReceiverRejections/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "shard": {
+    "id": "P1.3D",
+    "owner": "Process 1D",
+    "integration_owner": "Process 1B",
+    "upstream_contract": "SHIFT.HDVehicle64e8Manager374SourceOnlyForwardingBatch/1"
+  },
+  "participants_manager_identity": {
+    "root_vptr": "0x00ab9190",
+    "subobject_vptr": "0x00ab916c"
+  },
+  "receiver_class": {
+    "vptr": "0x00b04524",
+    "constructor": "FUN_0070fae0",
+    "entry_receiver_capture": "0x0070fafd ESI = entry ECX",
+    "constructor_vptr_store": "0x0070fb13 mov [esi],0x00b04524"
+  },
+  "sites": [
+    {
+      "site": "0x0070fb45",
+      "function": "FUN_0070fae0",
+      "materializer": "lea ecx,[esi+0x374]",
+      "callee": "FUN_00533e70",
+      "same_receiver_proof": "ESI is the entry ECX captured at 0x0070fafd; exact vptr 0x00b04524 is installed at 0x0070fb13 before this materializer",
+      "can_target_participants_manager_plus_0x374": false
+    },
+    {
+      "site": "0x0070fdeb",
+      "function": "FUN_0070fae0",
+      "materializer": "lea ecx,[esi+0x374]",
+      "callee": "FUN_006329e0",
+      "same_receiver_proof": "the same constructor ESI remains live from 0x0070fafd through 0x0070fdeb after the exact 0x00b04524 vptr install",
+      "can_target_participants_manager_plus_0x374": false
+    }
+  ],
+  "adjudication": {
+    "assigned_site_count": 2,
+    "rejected_site_count": 2,
+    "assigned_sites_complete": true,
+    "p1_3d_computed_forwarding_handoff_ready": true,
+    "aggregate_remaining_forwarding_path_count_after_handoff": 4,
+    "aggregate_remaining_sites_after_handoff": [
+      "0x005292db",
+      "0x005f4ffa",
+      "0x005f6eda",
+      "0x0070f62d"
+    ],
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This contract closes only the two computed forwarding paths assigned to P1.3D.",
+    "It does not adjudicate P1.3B site 0x0070f62d even though that site belongs to the same 0x00b04524 receiver class.",
+    "P1.3D slot3 HDVehicle+0x28b8 and Controller #1 indirect/native APC injection timing remain open.",
+    "No identity is inferred from numeric offset equality."
+  ],
+  "handoff_to": "Process 1B P1.3 integration",
+  "next_step": "Continue P1.3D with selected-root alias/callee/bulk-copy provenance for HDVehicle+0x28b8 and the Controller #1 indirect/native APC injection timing closure."
+}
