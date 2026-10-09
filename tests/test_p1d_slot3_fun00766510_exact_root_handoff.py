@@ -4,7 +4,7 @@ import pytest
 
 ROOT=Path(__file__).resolve().parents[1]
 TOOL=ROOT/'tools'/'ghidra'/'build_p1d_slot3_fun00766510_exact_root_handoff.py'
-IDENTITY=ROOT/'evidence'/'p1a_p13a_slot01_x87_reuse_tranche_closure.json'
+IDENTITY=ROOT/'evidence'/'p1a_p13a_slot01_x87_stack_output_tranche_closure.json'
 TAIL=ROOT/'evidence'/'fun_00766510_residual_tail_closure.json'
 EVIDENCE=ROOT/'evidence'/'p1d_slot3_fun00766510_exact_root_handoff.json'
 
