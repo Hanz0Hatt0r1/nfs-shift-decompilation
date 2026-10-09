@@ -51,6 +51,7 @@ def validate(execution: dict, registry: dict) -> None:
 
     queues = queue_map(execution)
     assigned: list[str] = []
+    registry_shards: dict[str, tuple[str, str, dict]] = {}
     for lane in registry["lanes"]:
         if not lane.get("queue_ids"):
             raise ValueError(f"lane {lane['id']} owns no queue ids")
@@ -58,6 +59,16 @@ def validate(execution: dict, registry: dict) -> None:
         for task_id in lane["queue_ids"]:
             if task_id not in queues:
                 raise ValueError(f"lane {lane['id']} references unknown queue id {task_id}")
+        for shard in lane.get("shared_queue_shards", []):
+            shard_id = shard["id"]
+            parent_id = shard["parent_queue_id"]
+            if shard_id in registry_shards:
+                raise ValueError(f"duplicate shared queue shard id: {shard_id}")
+            if parent_id not in queues:
+                raise ValueError(f"shared shard {shard_id} references unknown parent queue id {parent_id}")
+            if shard.get("state") != queues[parent_id]["state"]:
+                raise ValueError(f"shared shard {shard_id} state disagrees with parent queue {parent_id}")
+            registry_shards[shard_id] = (parent_id, lane["owner"], shard)
 
     if len(assigned) != len(set(assigned)):
         raise ValueError("a queue id is assigned to more than one lane")
@@ -65,6 +76,28 @@ def validate(execution: dict, registry: dict) -> None:
         missing = sorted(set(queues) - set(assigned))
         extra = sorted(set(assigned) - set(queues))
         raise ValueError(f"lane coverage mismatch: missing={missing}, extra={extra}")
+
+    execution_shards: dict[str, tuple[str, dict]] = {}
+    for parent_id, row in queues.items():
+        for shard in row.get("parallel_shards", []):
+            shard_id = shard["id"]
+            if shard_id in execution_shards:
+                raise ValueError(f"duplicate execution shard id: {shard_id}")
+            execution_shards[shard_id] = (parent_id, shard)
+
+    if set(registry_shards) != set(execution_shards):
+        missing = sorted(set(execution_shards) - set(registry_shards))
+        extra = sorted(set(registry_shards) - set(execution_shards))
+        raise ValueError(f"shared shard coverage mismatch: missing={missing}, extra={extra}")
+
+    for shard_id, (parent_id, lane_owner, _registry_shard) in registry_shards.items():
+        execution_parent, execution_shard = execution_shards[shard_id]
+        if execution_parent != parent_id:
+            raise ValueError(f"shared shard {shard_id} parent mismatch")
+        if execution_shard.get("owner") != lane_owner:
+            raise ValueError(f"shared shard {shard_id} owner mismatch")
+        if execution_shard.get("state") != queues[parent_id]["state"]:
+            raise ValueError(f"execution shard {shard_id} state disagrees with parent queue")
 
     if frontier["final_playable_smoke_currently_runnable"]:
         required = (
