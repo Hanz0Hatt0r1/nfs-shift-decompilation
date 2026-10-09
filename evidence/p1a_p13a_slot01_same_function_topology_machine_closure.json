@@ -1,0 +1,167 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01SameFunctionTopologyMachineClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01TopologyAliasInventoryPlan/1",
+    "SHIFT.P1A.P13ASlot01Wheel538ForwardingFrontier/1",
+    "SHIFT.Fun00765c40DirectMachineWriteSurface/1"
+  ],
+  "inventory": {
+    "format": "SHIFT.P1A.P13ASlot01SameFunctionTopologyMachineInventory/1",
+    "scanned_sized_function_count": 41538,
+    "candidate_count": 10,
+    "required_same_function_scalars": ["0x400", "0xa80"],
+    "candidate_addresses": [
+      "0x00757318",
+      "0x00763570",
+      "0x00765850",
+      "0x00765aa0",
+      "0x00765c40",
+      "0x00769520",
+      "0x0076b130",
+      "0x0076df50",
+      "0x00770e80",
+      "0x00a705ae"
+    ]
+  },
+  "candidate_adjudication": [
+    {
+      "function": "FUN_00757318",
+      "address": "0x00757318",
+      "class": "wheel-configuration",
+      "rejected": true,
+      "evidence": [
+        "0x0075733c index *= 0xa80; 0x00757348 EDI = vehicle_root + index*0xa80 + 0x400",
+        "no direct f64 store to wheel+0x538; 0x007576b0 stores only a DWORD at wheel+0x938 (absolute slot0 root+0xd38, not root+0x938)",
+        "FUN_007a25d0 is called with ESI loaded from config table [EBX+index*4+0x490], not the wheel receiver; its DWORD +0x538 write is therefore a config-object write",
+        "wheel receiver callee FUN_00752fc0 writes only wheel+0x5b8 and wheel+0x7d8",
+        "FUN_007a06a0 is reached on wheel subobjects +0x638/+0x5e8 and writes only non-negative +0x0..+0x20 inside those subobjects"
+      ]
+    },
+    {
+      "function": "FUN_00763570",
+      "address": "0x00763570",
+      "class": "wheel-read/child-update-loop",
+      "rejected": true,
+      "evidence": [
+        "0x007635f4 seeds wheel pointer vehicle_root+0x400 and 0x0076361b advances it by 0xa80",
+        "the wheel pointer is passed to FUN_00755f80; that helper reads [wheel+0x420] and writes only child+0x48/+0x50/+0x58",
+        "no direct write through the iterated wheel pointer covers local +0x538"
+      ]
+    },
+    {
+      "function": "FUN_00765850",
+      "address": "0x00765850",
+      "class": "per-wheel-runtime-update",
+      "rejected": true,
+      "evidence": [
+        "0x00765878/0x0076588b derive wheel = vehicle_root + index*0xa80 + 0x400",
+        "direct wheel writes are byte +0x505 and qwords +0x510/+0x518/+0x520",
+        "FUN_007653f0 is invoked on the vehicle root; remaining callees receive stack locals or child/service pointers, not wheel+0x538"
+      ]
+    },
+    {
+      "function": "FUN_00765aa0",
+      "address": "0x00765aa0",
+      "class": "per-wheel-reset-update",
+      "rejected": true,
+      "evidence": [
+        "0x00765abe/0x00765ac8 derive wheel = vehicle_root + index*0xa80 + 0x400",
+        "direct wheel writes are byte +0x505 and qwords +0x510/+0x518/+0x520",
+        "FUN_007653f0 is invoked on the vehicle root; remaining callees receive child/service pointers"
+      ]
+    },
+    {
+      "function": "FUN_00765c40",
+      "address": "0x00765c40",
+      "class": "completed-P1.2-residual-pass",
+      "rejected": true,
+      "evidence": [
+        "existing SHIFT.Fun00765c40DirectMachineWriteSurface/1 exhausts direct writes and reports no target +0x938/+0x13b8 f64 producer",
+        "existing callee audit is complete; there are no remaining unclassified FUN_00765c40 callees"
+      ]
+    },
+    {
+      "function": "FUN_00769520",
+      "address": "0x00769520",
+      "class": "wheel-array-destructor",
+      "rejected": true,
+      "evidence": [
+        "0x00769602 pushes element size 0xa80 and 0x00769607 materializes vehicle_root+0x400 for eh_vector_destructor_iterator",
+        "element destructor FUN_007694b0 touches vptr, subobject +0x550, base small-state destructor, and subobject +0x80; it has no target +0x538 store"
+      ]
+    },
+    {
+      "function": "FUN_0076b130",
+      "address": "0x0076b130",
+      "class": "wheel-array-constructor",
+      "rejected": true,
+      "evidence": [
+        "0x0076b166 pushes element size 0xa80 and 0x0076b16b materializes vehicle_root+0x400 for eh_vector_constructor_iterator",
+        "element constructor FUN_0076b060 initializes qwords +0x2d0/+0x2d8/+0x400/+0x408/+0x5e0/+0x850 and byte/dword +0x2e0/+0x660, not +0x538",
+        "nested constructors operate at +0x80 and +0x550 or on small base fields and do not overlap local +0x538"
+      ]
+    },
+    {
+      "function": "FUN_0076df50",
+      "address": "0x0076df50",
+      "class": "wheel-registration-loop",
+      "rejected": true,
+      "evidence": [
+        "0x0076e4b4 initializes EBX=vehicle_root+0x400 and 0x0076e507 advances EBX by 0xa80",
+        "FUN_00a62690 writes only wheel-local +0x8/+0x10/+0x18/+0x1c/+0x20/+0x2c",
+        "FUN_00a62f60 treats wheel as EDX source, reads wheel+0x20, and writes a separately allocated record"
+      ]
+    },
+    {
+      "function": "FUN_00770e80",
+      "address": "0x00770e80",
+      "class": "wheel-runtime-dispatch",
+      "rejected": true,
+      "evidence": [
+        "0x007710c9 passes wheel receivers vehicle_root+0x400+slot*0xa80 to FUN_00755a60",
+        "FUN_00755a60 direct wheel stores are confined to +0x7b0/+0x7b8/+0x7c0/+0x7f8/+0x800/+0x850; its wheel callee FUN_00752fc0 writes +0x5b8/+0x7d8",
+        "0x007710fe and following explicit receivers +0xe80/+0x1900/+0x2380 call FUN_00760b50; that helper writes only +0x368 and +0x868/+0x888/+0x8b0 on the wheel",
+        "FUN_00760b50 final state writer FUN_007ba860 receives child [wheel+0x420], not the wheel base"
+      ]
+    },
+    {
+      "function": "Unwind@00a705ae",
+      "address": "0x00a705ae",
+      "class": "wheel-array-unwind-destructor",
+      "rejected": true,
+      "evidence": [
+        "0x00a705b5 pushes 0xa80; 0x00a705bd adds 0x400 to saved vehicle root; 0x00a705c3 calls eh_vector_destructor_iterator with FUN_007694b0",
+        "same element destructor rejection as FUN_00769520 applies"
+      ]
+    }
+  ],
+  "adjudication": {
+    "same_function_wheel_topology_candidate_count": 10,
+    "same_function_wheel_topology_rejected_count": 10,
+    "same_function_wheel_topology_subset_complete": true,
+    "same_function_topology_target_f64_writer_found": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "remaining_frontier": [
+    "Interprocedural aliases where +0x400/+0xa80 derivation and target write occur in different functions.",
+    "Overlapping bulk-copy/memory-initialization destinations not represented by a same-function +0x400/+0xa80 scalar pair."
+  ],
+  "limits": [
+    "This closes only functions that contain exact machine scalar uses of both +0x400 and +0xa80 within the same recovered function boundary.",
+    "It does not prove the absence of interprocedural aliases or caller-derived bases that hide one or both constants.",
+    "Slot0, slot1, aggregate P1.3 and provider removal remain fail-closed."
+  ],
+  "next_step": "Widen from the closed same-function topology subset to interprocedural wheel-base aliases and overlapping copy/init destinations, preserving exact selected-HDVehicle root provenance."
+}
