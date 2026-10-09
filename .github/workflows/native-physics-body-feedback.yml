@@ -1,0 +1,160 @@
+name: native-physics-body-feedback
+
+on:
+  push:
+    paths:
+      - ".github/workflows/native-physics-body-feedback.yml"
+      - "native_runtime/include/shift_body_frame_integration.hpp"
+      - "native_runtime/src/body_frame_integration.cpp"
+      - "native_runtime/tests/body_array_basis_callback_check.cpp"
+      - "src/physics/body_array_basis_callback_runtime.py"
+      - "tests/test_body_array_basis_callback_runtime.py"
+      - "native_runtime/include/shift_body_record_adapter.hpp"
+      - "native_runtime/src/body_record_adapter.cpp"
+      - "native_runtime/tests/body_record_adapter_check.cpp"
+      - "src/physics/body_record_adapter_runtime.py"
+      - "tests/test_body_record_adapter_runtime.py"
+      - "native_runtime/include/shift_body_feedback_record_bridge.hpp"
+      - "native_runtime/src/body_feedback_record_bridge.cpp"
+      - "native_runtime/tests/body_feedback_record_bridge_check.cpp"
+      - "src/physics/body_feedback_record_bridge_runtime.py"
+      - "tests/test_body_feedback_record_bridge_runtime.py"
+      - "native_runtime/include/shift_body_feedback_integration_join.hpp"
+      - "native_runtime/src/body_feedback_integration_join.cpp"
+      - "native_runtime/tests/body_feedback_integration_join_check.cpp"
+      - "src/physics/body_feedback_integration_join_runtime.py"
+      - "tests/test_body_feedback_integration_join_runtime.py"
+      - "native_runtime/cmake/recent_physics.cmake"
+  pull_request:
+    paths:
+      - ".github/workflows/native-physics-body-feedback.yml"
+      - "native_runtime/include/shift_body_frame_integration.hpp"
+      - "native_runtime/src/body_frame_integration.cpp"
+      - "native_runtime/tests/body_array_basis_callback_check.cpp"
+      - "src/physics/body_array_basis_callback_runtime.py"
+      - "tests/test_body_array_basis_callback_runtime.py"
+      - "native_runtime/include/shift_body_record_adapter.hpp"
+      - "native_runtime/src/body_record_adapter.cpp"
+      - "native_runtime/tests/body_record_adapter_check.cpp"
+      - "src/physics/body_record_adapter_runtime.py"
+      - "tests/test_body_record_adapter_runtime.py"
+      - "native_runtime/include/shift_body_feedback_record_bridge.hpp"
+      - "native_runtime/src/body_feedback_record_bridge.cpp"
+      - "native_runtime/tests/body_feedback_record_bridge_check.cpp"
+      - "src/physics/body_feedback_record_bridge_runtime.py"
+      - "tests/test_body_feedback_record_bridge_runtime.py"
+      - "native_runtime/include/shift_body_feedback_integration_join.hpp"
+      - "native_runtime/src/body_feedback_integration_join.cpp"
+      - "native_runtime/tests/body_feedback_integration_join_check.cpp"
+      - "src/physics/body_feedback_integration_join_runtime.py"
+      - "tests/test_body_feedback_integration_join_runtime.py"
+      - "native_runtime/cmake/recent_physics.cmake"
+
+jobs:
+  body-feedback-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            g++ \
+            python3-pytest \
+            libvulkan-dev \
+            glslang-tools \
+            libxcb1-dev
+
+      - name: Run body array basis callback Python oracle
+        run: PYTHONPATH=src/physics python3 -m pytest -q tests/test_body_array_basis_callback_runtime.py
+
+      - name: Run body record adapter Python oracle
+        run: PYTHONPATH=src/physics python3 -m pytest -q tests/test_body_record_adapter_runtime.py
+
+      - name: Run body feedback record bridge Python oracle
+        run: PYTHONPATH=src/physics python3 -m pytest -q tests/test_body_feedback_record_bridge_runtime.py
+
+      - name: Run body feedback integration join Python oracle
+        run: PYTHONPATH=src/physics python3 -m pytest -q tests/test_body_feedback_integration_join_runtime.py
+
+      - name: Configure native runtime once
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build and verify body array basis callback
+        run: |
+          cmake --build native_runtime/build --config Release --parallel \
+            --target shift_runtime_body_array_basis_callback_check
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R '^shift_runtime_body_array_basis_callback$'
+          mkdir -p out/native-physics-body-feedback/676
+          native_runtime/build/shift_runtime_body_array_basis_callback_check \
+            | tee out/native-physics-body-feedback/676/body_array_basis_callback.json
+          report=out/native-physics-body-feedback/676/body_array_basis_callback.json
+          grep -q '"format":"SHIFT.NativeBodyArrayBasisCallback/1"' "$report"
+          grep -q '"body_stride":368' "$report"
+          grep -q '"retail_iteration_order_proven":true' "$report"
+          grep -q '"basis_provider_inside_each_body_proven":true' "$report"
+          grep -q '"basis_rotation_arithmetic_external":true' "$report"
+          grep -q '"render_frame_scheduler_proven":false' "$report"
+
+      - name: Build and verify body record adapter
+        run: |
+          cmake --build native_runtime/build --config Release --parallel \
+            --target shift_runtime_body_record_adapter_check
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R '^shift_runtime_body_record_adapter$'
+          mkdir -p out/native-physics-body-feedback/677
+          native_runtime/build/shift_runtime_body_record_adapter_check \
+            | tee out/native-physics-body-feedback/677/body_record_adapter.json
+          report=out/native-physics-body-feedback/677/body_record_adapter.json
+          grep -q '"format":"SHIFT.NativeBodyRecordAdapter/1"' "$report"
+          grep -q '"body_record_size":368' "$report"
+          grep -q '"little_endian_codec_proven":true' "$report"
+          grep -q '"writer_mask_preserved":true' "$report"
+          grep -q '"retail_iteration_order_proven":true' "$report"
+          grep -q '"size_mismatch_rejected":true' "$report"
+          grep -q '"non_finite_rejected":true' "$report"
+          grep -q '"basis_rotation_arithmetic_external":true' "$report"
+          grep -q '"render_frame_scheduler_proven":false' "$report"
+
+      - name: Build and verify body feedback record bridge
+        run: |
+          cmake --build native_runtime/build --config Release --parallel \
+            --target shift_runtime_body_feedback_record_bridge_check
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R '^shift_runtime_body_feedback_record_bridge$'
+          mkdir -p out/native-physics-body-feedback/678
+          native_runtime/build/shift_runtime_body_feedback_record_bridge_check \
+            | tee out/native-physics-body-feedback/678/body_feedback_record_bridge.json
+          report=out/native-physics-body-feedback/678/body_feedback_record_bridge.json
+          grep -q '"format":"SHIFT.NativeBodyFeedbackRecordBridge/1"' "$report"
+          grep -q '"body_record_size":368' "$report"
+          grep -q '"accumulator_writer_bytes":48' "$report"
+          grep -q '"raw_feedback_seed_proven":true' "$report"
+          grep -q '"post_solve_accumulator_write_proven":true' "$report"
+          grep -q '"unrelated_bytes_preserved":true' "$report"
+          grep -q '"size_mismatch_rejected":true' "$report"
+          grep -q '"non_finite_rejected":true' "$report"
+          grep -q '"body_integration_scheduled":false' "$report"
+          grep -q '"runtime_scheduling_proven":false' "$report"
+
+      - name: Build and verify body feedback integration join
+        run: |
+          cmake --build native_runtime/build --config Release --parallel \
+            --target shift_runtime_body_feedback_integration_join_check
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R '^shift_runtime_body_feedback_integration_join$'
+          mkdir -p out/native-physics-body-feedback/679
+          native_runtime/build/shift_runtime_body_feedback_integration_join_check \
+            | tee out/native-physics-body-feedback/679/body_feedback_integration_join.json
+          report=out/native-physics-body-feedback/679/body_feedback_integration_join.json
+          grep -q '"format":"SHIFT.NativeBodyFeedbackIntegrationJoin/1"' "$report"
+          grep -q '"post_solve_feedback_function":"FUN_007b4110"' "$report"
+          grep -q '"body_array_function":"FUN_007b2270"' "$report"
+          grep -q '"feedback_before_integration_proven":true' "$report"
+          grep -q '"raw_handoff_proven":true' "$report"
+          grep -q '"basis_rotation_arithmetic_external":true' "$report"
+          grep -q '"complete_half_step_implemented":false' "$report"
+          grep -q '"render_frame_scheduler_proven":false' "$report"
