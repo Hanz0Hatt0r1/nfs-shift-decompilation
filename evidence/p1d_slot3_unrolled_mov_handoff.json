@@ -1,0 +1,58 @@
+{
+  "format": "SHIFT.P1D.P13DSlot3UnrolledMovHandoff/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "p1a_contract_consumed_not_reowned": true
+  },
+  "upstream_contract": "SHIFT.P1A.P13ASlot01UnrolledMovCopyMachineClosure/1",
+  "slot3": {
+    "absolute_target": "HDVehicle+0x28b8",
+    "target_byte_range": ["HDVehicle+0x28b8", "HDVehicle+0x28bf"],
+    "local_field": "+0x538",
+    "width": "f64/qword"
+  },
+  "shallow_unrolled_mov_surface": {
+    "max_direct_call_depth": 4,
+    "candidate_count": 11,
+    "rejected_count": 11,
+    "candidate_rejections": [
+      {"function": "FUN_0076e560", "class": "service-message-record-output", "selected_slot3_writer": false},
+      {"function": "FUN_007b0710", "class": "collision-provider-surface-record", "selected_slot3_writer": false},
+      {"function": "FUN_00403d00", "class": "service-owned-output-record", "selected_slot3_writer": false},
+      {"function": "FUN_004e9380", "class": "fixed-global-hash-table-entry", "selected_slot3_writer": false},
+      {"function": "FUN_00633290", "class": "service-record-allocation-or-lookup", "selected_slot3_writer": false},
+      {"function": "FUN_006333f0", "class": "service-linked-list-maintenance", "selected_slot3_writer": false},
+      {"function": "FUN_0075a8d0", "class": "hdvehicle-root-explicit-high-offset-output", "selected_slot3_writer": false},
+      {"function": "FUN_007b0580", "class": "stack-output-structure", "selected_slot3_writer": false},
+      {"function": "FUN_0064fef0", "class": "allocator-owned-record", "selected_slot3_writer": false},
+      {"function": "FUN_007b0450", "class": "statically-reachable-but-path-infeasible-optional-output", "selected_slot3_writer": false},
+      {"function": "_LocaleUpdate", "class": "crt-locale-state", "selected_slot3_writer": false}
+    ],
+    "genuine_hdvehicle_non_target_destination": "HDVehicle+0x40c8..+0x40d7",
+    "selected_slot3_writer_found": false
+  },
+  "adjudication": {
+    "slot3_shallow_straight_line_unrolled_mov_depth4_subset_complete": true,
+    "slot3_straight_line_zero_init_surface_complete": false,
+    "slot3_sse_vector_custom_copy_surface_complete": false,
+    "slot3_non_entry_alias_loop_surface_complete": false,
+    "slot3_deeper_direct_alias_paths_complete": false,
+    "slot3_indirect_callback_alias_paths_complete": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "P1A machine evidence is consumed only where receiver/destination provenance is slot-agnostic; P1A ownership is unchanged.",
+    "This closes only the 11 straight-line ordinary-MOV candidates from direct depth <=4.",
+    "Zero-init, SSE/vector/custom transforms, non-entry aliases, deeper direct paths and indirect/callback carriers remain open.",
+    "Reachability or numeric offset equality alone never proves selected-HDVehicle identity."
+  ],
+  "next_step": "Consume or adjudicate straight-line zero-init and shallow SSE/vector candidates, then trace non-entry aliases and deeper/indirect carriers only from exact selected-wheel-derived destinations."
+}
