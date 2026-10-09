@@ -1,0 +1,71 @@
+{
+  "format": "SHIFT.P1D.Controller1GetProcArgumentWorklist/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "source_contract": "SHIFT.P1D.Controller1DirectResolverReachability/1",
+    "source_sqlite_format": "SHIFT.GhidraSQLiteIndex/1",
+    "source_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "pc_retail_machine_evidence_required_for_promotion": true
+  },
+  "worker": "0x00662880",
+  "targets": [
+    {
+      "function": "0x0090748b",
+      "name": "FUN_0090748b",
+      "getprocaddress_callsites": ["0x009074a0"]
+    },
+    {
+      "function": "0x0090aa27",
+      "name": "FUN_0090aa27",
+      "getprocaddress_callsites": ["0x0090aa7b"]
+    },
+    {
+      "function": "0x0090aa9e",
+      "name": "FUN_0090aa9e",
+      "getprocaddress_callsites": ["0x0090aaf2"]
+    },
+    {
+      "function": "0x0090abb8",
+      "name": "FUN_0090abb8",
+      "getprocaddress_callsites": ["0x0090abfd", "0x0090ac0d"]
+    },
+    {
+      "function": "0x009189cd",
+      "name": "___crtInitCritSecAndSpinCount",
+      "getprocaddress_callsites": ["0x00918a26"]
+    },
+    {
+      "function": "0x0091c073",
+      "name": "FUN_0091c073",
+      "getprocaddress_callsites": [
+        "0x0091c0bc",
+        "0x0091c0d9",
+        "0x0091c0ee",
+        "0x0091c123",
+        "0x0091c13b"
+      ]
+    }
+  ],
+  "counts": {
+    "function_count": 6,
+    "getprocaddress_call_count": 11
+  },
+  "execution": {
+    "targeted_instruction_export_ready": true,
+    "machine_instruction_export_captured": false,
+    "exact_lpProcName_flow_adjudicated": false
+  },
+  "adjudication": {
+    "local_function_strings_are_argument_flow_proof": false,
+    "direct_named_resolver_surface_rejected": false,
+    "hashed_or_generated_resolution_ruled_out": false,
+    "manual_export_walk_ruled_out": false,
+    "native_or_syscall_injection_ruled_out": false,
+    "controller1_timing_exhaustive": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Export these six functions with ShiftFunctionInstructionExporter, recover exact literal lpProcName arguments for all 11 GetProcAddress callsites, and close only the direct named-resolver sub-surface if every resolved name is non-APC."
+}
