@@ -1,0 +1,72 @@
+{
+  "format": "SHIFT.CIWorkflowMigration/1",
+  "version": 1,
+  "status": "ready",
+  "stable_workflow": ".github/workflows/native-physics-provider-session.yml",
+  "superseded_workflows": [
+    {"path": ".github/workflows/native-physics-phase699.yml", "blob_sha": "f87687387835205be481a1300ad93b64c8466aff"},
+    {"path": ".github/workflows/native-physics-phase701.yml", "blob_sha": "c4b8772637272c2529befdd65436a61a4238abd5"}
+  ],
+  "coverage_policy": "superset",
+  "parity": {
+    "python_tests": [
+      "tests/test_fun_00770e80_motion_read_runtime_state.py",
+      "tests/test_native_vehicle_external_provider_frontier.py",
+      "tests/test_native_vehicle_provider_session_runtime.py"
+    ],
+    "native_targets": [
+      "shift_runtime_fun_00770e80_motion_read_runtime_state_check",
+      "shift_runtime_native_vehicle_provider_session_check",
+      "shift_runtime_selected_session_physics_tweaker_rate_handoff_check",
+      "shift_runtime_selected_session_retail_vehicle_execution_check"
+    ],
+    "ctest_names": [
+      "shift_runtime_fun_00770e80_motion_read_runtime_state",
+      "shift_runtime_native_vehicle_provider_session",
+      "shift_runtime_selected_session_physics_tweaker_rate_handoff",
+      "shift_runtime_selected_session_retail_vehicle_execution"
+    ],
+    "reports": [
+      "SHIFT.NativeVehicleExternalProviderFrontier/1",
+      "SHIFT.NativeVehicleProviderSession/1",
+      "SHIFT.SelectedSessionPhysicsTweakerRateNativeHandoffRegression/1",
+      "SHIFT.SelectedSessionRetailVehicleExecution/1"
+    ],
+    "semantic_gate_markers": [
+      "external_provider_count",
+      "process1_handoff_requests",
+      "outer_update_cadence_owner",
+      "body_to_vehicle_identity",
+      "body_pose_to_renderer_world_transform",
+      "retail_outer_scheduler_authority",
+      "selected_session_inner_rate_ready",
+      "retail_body_owner_identity_ready",
+      "body_pose_to_vehicle_transform_promotion_allowed",
+      "phase697_persistent_outer_path_reused",
+      "phase699_external_provider_count",
+      "session_step_count",
+      "provider_admission_before_execution",
+      "participant_gate_before_provider_side_effects",
+      "retail_inner_batch_bridge_ready",
+      "selected_session_rate_promoted",
+      "provider_semantics_promoted",
+      "typed_handoff_admission_ready",
+      "fixture_is_retail_selected_session_rate",
+      "materialized_pc_rate_hz",
+      "materialized_pc_rate_admitted",
+      "selected_session_rate_hz",
+      "normal_outer_substeps",
+      "two_dispatch_persistent_steps",
+      "retail_inner_substep_execution_admitted",
+      "render_frame_equivalence_claimed",
+      "fixed_step_auto_schedule",
+      "deep_outer_update_executable_schedule_enabled"
+    ]
+  },
+  "trigger_policy": {
+    "mode": "union",
+    "meaning": "Any path that previously triggered Phase 699 or Phase 701 now runs the complete external-provider frontier and selected-session provider execution regression chain. Coverage is intentionally a superset."
+  },
+  "semantic_gate_changes": false,
+  "provider_count_changes": false
+}
