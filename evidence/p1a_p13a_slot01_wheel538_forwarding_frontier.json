@@ -1,0 +1,131 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01Wheel538ForwardingFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "owner_shard": "P1.3A",
+  "consumer_contract": "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1",
+  "consumer": {
+    "receiver": "HDVehicle+0x400+slot*0xa80",
+    "local_field": "+0x538",
+    "width": "f64",
+    "slot0_absolute": "HDVehicle+0x938",
+    "slot1_absolute": "HDVehicle+0x13b8"
+  },
+  "whole_image_surface": {
+    "exact_0x538_scalar_use_count": 43,
+    "positive_address_materializer_count": 4,
+    "positive_address_materializers": [
+      "0x006c1b8a lea ebx,[ecx+0x538]",
+      "0x008fe259 lea ecx,[esi+0x538]",
+      "0x008fe2c4 lea ebx,[esi+0x538]",
+      "0x00958c28 lea eax,[ebx+0x538]"
+    ],
+    "direct_qword_store": "0x00761b67 fstp qword [esi+0x538]",
+    "direct_qword_store_existing_rejection": {
+      "proven_base": "HDVehicle+0x748+slot*0xa80",
+      "normalized_absolute_slots": ["HDVehicle+0xc80", "HDVehicle+0x1700", "HDVehicle+0x2180", "HDVehicle+0x2c00"],
+      "matches_consumer_slots": false
+    }
+  },
+  "materializer_adjudication": [
+    {
+      "site": "0x006c1b8a",
+      "function": "FUN_006c1b80",
+      "role": "internal cursor",
+      "evidence": [
+        "EBX = entry ECX + 0x538",
+        "0x006c1bb5 and 0x006c1bdd reconstruct ECX=EBX-0x538 before containing-object calls",
+        "later record calls use EBX-0x24",
+        "EBX advances by 0x34 for 0x19 records"
+      ],
+      "forwards_materialized_pointer_as_write_destination": false,
+      "writes_qword_at_materialized_base": false,
+      "adjudication": "rejected-as-target-f64-producer"
+    },
+    {
+      "site": "0x008fe259",
+      "function": "FUN_008fe230",
+      "callee": "FUN_008fe130",
+      "role": "teardown subobject reader/releaser",
+      "callee_receiver_store_count": 0,
+      "callee_observed_field_groups": [
+        "+0x7c/+0x84/+0x88",
+        "+0x68/+0x70/+0x74",
+        "+0x54/+0x5c/+0x60",
+        "+0x40/+0x48/+0x4c",
+        "+0x2c/+0x34/+0x38",
+        "+0x18/+0x20/+0x24",
+        "+0x4/+0xc/+0x10"
+      ],
+      "writes_qword_at_materialized_base": false,
+      "adjudication": "rejected-as-target-f64-producer"
+    },
+    {
+      "site": "0x008fe2c4",
+      "function": "FUN_008fe2a0",
+      "role": "real subobject initializer on non-HDVehicle pool object",
+      "writer_callees": ["FUN_00a39210", "FUN_00a33000"],
+      "writes_materialized_base": true,
+      "target_function_direct_caller_count": 1,
+      "target_function_direct_caller": "0x008f8a66",
+      "receiver_provenance": {
+        "manager_getter": "FUN_00894b60 returns 0x00c2af60",
+        "allocator_state_materializer": "0x008f8a45 lea ecx,[eax+0x28c] = 0x00c2b1ec",
+        "allocator": "FUN_0062f6f0",
+        "allocator_result_capture": "0x008f8a58 mov ebx,eax",
+        "constructor_receiver_setup": "0x008f8a64 mov ecx,ebx",
+        "constructor_call": "0x008f8a66 call FUN_008fe2a0",
+        "constructor_vptr_store": "0x008fe2b9 mov [esi],0x00b35e6c",
+        "receiver_is_hdvehicle_wheel_runtime": false
+      },
+      "adjudication": "rejected-by-allocator-owned-receiver-provenance"
+    },
+    {
+      "site": "0x00958c28",
+      "function": "FUN_0095883f",
+      "role": "FMOD IT Codec callback load buffer",
+      "callee": "FUN_0093a188",
+      "call_shape": {
+        "buffer": "receiver+0x538",
+        "element_size": 1,
+        "count": 64,
+        "writer_capable": true
+      },
+      "receiver_provenance": {
+        "descriptor_base": "0x00b9bd40",
+        "descriptor_name_pointer_store": "0x0095ac11 mov [0x00b9bd40],0x00b47990",
+        "descriptor_name": "FMOD IT Codec",
+        "callback_store": "0x0095ac39 mov [0x00b9bd50],0x0095abdf",
+        "state_size_store": "0x0095ac9d mov [0x00b9bd84],0x3e80",
+        "callback_thunk": "0x0095abdf",
+        "thunk_receiver_recovery": "ECX = callback_arg1 - 0x1c before call FUN_0095883f",
+        "receiver_is_hdvehicle_wheel_runtime": false
+      },
+      "adjudication": "rejected-by-plugin-callback-receiver-provenance"
+    }
+  ],
+  "adjudication": {
+    "wheel_local_0x538_positive_materializer_surface_exhausted": true,
+    "wheel_local_0x538_materializer_writers_rejected": true,
+    "slot0_selected_root_alias_callee_bulk_copy_complete": false,
+    "slot1_selected_root_alias_callee_bulk_copy_complete": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "remaining_frontier": [
+    "Search aliases reaching the selected slot bytes without embedding literal 0x538.",
+    "Search overlapping bulk-copy/memory-initialization destinations with exact selected-HDVehicle root provenance."
+  ],
+  "limits": [
+    "This contract closes only the exact positive local +0x538 address-materializer/callee subset.",
+    "It does not claim full base-plus-delta alias or bulk-copy exhaustion.",
+    "Slot0, slot1, aggregate P1.3 and provider removal remain fail-closed."
+  ]
+}
