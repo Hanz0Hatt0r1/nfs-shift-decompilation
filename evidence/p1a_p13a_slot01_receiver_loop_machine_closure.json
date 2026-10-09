@@ -1,0 +1,140 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01ReceiverLoopMachineClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "source_index_format": "SHIFT.GhidraSQLiteIndex/1",
+    "source_index_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "machine_transfer_adjudicates": true,
+    "callgraph_is_navigation_only": true
+  },
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01InlineRepMachineClosure/1",
+    "SHIFT.P1A.P13ASlot01BareStringMachineClosure/1",
+    "SHIFT.Fun00765c40DirectMachineWriteSurface/1"
+  ],
+  "inventory": {
+    "format": "SHIFT.P1A.P13ASlot01ReceiverLoopWriteFrontier/1",
+    "max_direct_call_depth": 4,
+    "candidate_count": 8,
+    "candidate_functions": [
+      "FUN_00765c40",
+      "FUN_0075bf60",
+      "FUN_007b0710",
+      "FUN_006333f0",
+      "FUN_007b0600",
+      "FUN_00a62780",
+      "FUN_00638020",
+      "FUN_0076f030"
+    ],
+    "verified_byte_window_count": 47,
+    "verified_rel32_transfer_count": 15
+  },
+  "candidate_adjudication": [
+    {
+      "function": "FUN_00765c40",
+      "rejected": true,
+      "class": "already-exhausted-hdvehicle-runtime-pass",
+      "evidence": [
+        "Merged SHIFT.Fun00765c40DirectMachineWriteSurface/1 already exhausts this function's direct stores and callee surface for the P1 control search.",
+        "The receiver-loop stores captured by this bounded detector are HDVehicle+0x407c, +0x3660 and +0x3678, not selected HDVehicle+0x938 or +0x13b8."
+      ]
+    },
+    {
+      "function": "FUN_0075bf60",
+      "rejected": true,
+      "class": "hdvehicle-root-small-byte-remap-loop",
+      "evidence": [
+        "FUN_00770e80 captures entry ECX in ESI and calls FUN_0076f970 at 0x00770eab without replacing ECX; FUN_0076f970 captures the same ECX in ESI and calls FUN_0075bf60 at 0x0076f97f.",
+        "FUN_0075bf60 captures ECX in ESI at 0x0075bf6b. Its loop bounds EAX to [0,16) and writes only bytes at ESI+0xea+EAX plus the scalar ESI+0xea case.",
+        "Therefore the bounded loop writes HDVehicle+0xea..+0xf9, not +0x938 or +0x13b8."
+      ]
+    },
+    {
+      "function": "FUN_007b0710",
+      "rejected": true,
+      "class": "stack-local-receiver",
+      "evidence": [
+        "Immediately before the only shallow call at 0x00765e86, 0x00765e38 sets ECX=EBP-0xe0 and 0x00765e4a sets EDX=EBP-0x28.",
+        "FUN_007b0710 captures ECX in EDI at 0x007b0719; the detected loop write 0x007b0c50 stores to EDI+0x30.",
+        "The destination is therefore stack local EBP-0xb0, not selected HDVehicle storage."
+      ]
+    },
+    {
+      "function": "FUN_006333f0",
+      "rejected": true,
+      "class": "service-object-linked-list-maintenance",
+      "evidence": [
+        "Within the outer physics path, 0x00770105 calls FUN_0070fe90, 0x0077010a loads EDI=[result+0x288], and 0x00770135 sets ECX=EDI before calling FUN_0076d6a0.",
+        "FUN_0076d6a0 captures that service object in ESI and calls FUN_006333f0 with ECX=ESI at 0x0076d748.",
+        "FUN_006333f0 therefore maintains +0x18/+0x1c/+0xb4/+0xb8 links on the service object and its list nodes, not the HDVehicle root or wheel-runtime target."
+      ]
+    },
+    {
+      "function": "FUN_007b0600",
+      "rejected": true,
+      "class": "fixed-global-table-receiver",
+      "evidence": [
+        "The shallow caller hard-codes ECX=0x00c1b9e0 at 0x007b0cb9 before calling FUN_007b0600 at 0x007b0cbe.",
+        "FUN_007b0600 captures ECX in ESI at 0x007b060b; its loop-exit cleanup writes zero to [ESI] at 0x007b06ac/0x007b06e1.",
+        "The receiver is the fixed image-global 0x00c1b9e0, not selected HDVehicle."
+      ]
+    },
+    {
+      "function": "FUN_00a62780",
+      "rejected": true,
+      "class": "hdvehicle-plus-0x6730-service-subobject-with-alias-kill",
+      "evidence": [
+        "0x00765ed8 materializes ECX=HDVehicle+0x6730 and 0x00765ee6 calls FUN_00a62940; that function captures ECX in EDI.",
+        "FUN_00a62940 restores ECX=EDI at 0x00a62b17 before calling FUN_00a62780, which initially captures ECX in EDI at 0x00a62789.",
+        "Inside the detected loop, however, 0x00a627c0 overwrites EDI from [ESI+0xc] before the 0x00a627d1 store. The apparent receiver-relative store is therefore a killed-alias false positive into an owned node, not HDVehicle+0x6730 itself.",
+        "Neither the entry service subobject nor its node cleanup can be selected HDVehicle+0x938/+0x13b8 by numeric offset coincidence."
+      ]
+    },
+    {
+      "function": "FUN_00638020",
+      "rejected": true,
+      "class": "allocator-service-receiver",
+      "evidence": [
+        "The shallow path reaches FUN_00633290 through the separate object loaded from FUN_0070fe90()+0x288, not through the HDVehicle receiver.",
+        "FUN_00633290 calls FUN_0065b130 at 0x006332c5, loads ECX=[result+0x5c] at 0x006332ca/0x006332d4, and calls FUN_00638020 at 0x006332d6.",
+        "FUN_00638020 captures that ECX in ESI at 0x00638028; its detected loop cleanup writes zero to [ESI] at 0x00638096. The receiver is an allocator/service object, not selected HDVehicle."
+      ]
+    },
+    {
+      "function": "FUN_0076f030",
+      "rejected": true,
+      "class": "hdvehicle-root-high-offset-state-loop",
+      "evidence": [
+        "Inside FUN_0076f970, ESI remains the HDVehicle root captured from entry ECX. At 0x00770a25 ECX=ESI and 0x00770a27 calls FUN_0076f030.",
+        "FUN_0076f030 captures ECX in ESI at 0x0076f03a. The detected loop writes the receiver-relative state DWORD at ESI+0x3fe0 (0x0076f0fd and 0x0076f265).",
+        "HDVehicle+0x3fe0 is distinct from selected +0x938/+0x13b8; the other shown receiver writes are likewise outside the target qwords."
+      ]
+    }
+  ],
+  "adjudication": {
+    "shallow_receiver_loop_depth4_surface_complete": true,
+    "shallow_receiver_loop_candidate_count": 8,
+    "shallow_receiver_loop_rejected_count": 8,
+    "shallow_receiver_loop_selected_hdvehicle_writer_found": false,
+    "all_ordinary_mov_unrolled_custom_copy_init_ruled_out": false,
+    "indirect_copy_dispatch_ruled_out": false,
+    "deeper_direct_copy_init_paths_ruled_out": false,
+    "slot0_selected_root_alias_callee_bulk_copy_complete": false,
+    "slot1_selected_root_alias_callee_bulk_copy_complete": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only depth<=4 backward-jump loops whose functions preserve entry ECX in ESI/EDI/EBX and whose loop body contains a MOV/FST/FSTP store syntactically using that alias.",
+    "The detector intentionally over-approximates alias lifetime; FUN_00a62780 demonstrates a killed-alias false positive and is rejected by exact machine flow.",
+    "Acyclic unrolled stores, loop destinations reached only through non-entry aliases, indirect/callback paths, and deeper direct paths remain open.",
+    "No slot or aggregate P1.3 gate is promoted by this bounded closure."
+  ],
+  "next_step": "Continue with acyclic unrolled MOV/FST copy-init sequences and non-entry-alias destination loops, then widen to deeper/indirect carriers only where exact selected-HDVehicle destination provenance survives."
+}
