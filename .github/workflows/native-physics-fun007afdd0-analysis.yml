@@ -1,0 +1,70 @@
+name: native-physics-fun007afdd0-analysis
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/ShiftFunctionInstructionExporter.java'
+      - 'tools/ghidra/analyze_fun_007afdd0_basis_rotation.py'
+      - 'tools/ghidra/run_fun_007afdd0_basis_rotation.sh'
+      - 'tools/ghidra/analyze_fun_007afdd0_scalar_provenance.py'
+      - 'tools/ghidra/run_fun_007afdd0_scalar_provenance.sh'
+      - 'tests/test_ghidra_fun_007afdd0_basis_rotation.py'
+      - 'tests/test_ghidra_fun_007afdd0_scalar_provenance.py'
+      - 'docs/PHASE680_FUN_007AFDD0_STATIC_FREEZE.md'
+      - 'docs/PHASE692_FUN_007AFDD0_SCALAR_PROVENANCE.md'
+      - '.github/workflows/native-physics-fun007afdd0-analysis.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/ShiftFunctionInstructionExporter.java'
+      - 'tools/ghidra/analyze_fun_007afdd0_basis_rotation.py'
+      - 'tools/ghidra/run_fun_007afdd0_basis_rotation.sh'
+      - 'tools/ghidra/analyze_fun_007afdd0_scalar_provenance.py'
+      - 'tools/ghidra/run_fun_007afdd0_scalar_provenance.sh'
+      - 'tests/test_ghidra_fun_007afdd0_basis_rotation.py'
+      - 'tests/test_ghidra_fun_007afdd0_scalar_provenance.py'
+      - 'docs/PHASE680_FUN_007AFDD0_STATIC_FREEZE.md'
+      - 'docs/PHASE692_FUN_007AFDD0_SCALAR_PROVENANCE.md'
+      - '.github/workflows/native-physics-fun007afdd0-analysis.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: native-physics-fun007afdd0-analysis-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fun-007afdd0-analysis:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+
+      - name: Check targeted runner syntax
+        run: |
+          bash -n tools/ghidra/run_fun_007afdd0_basis_rotation.sh
+          bash -n tools/ghidra/run_fun_007afdd0_scalar_provenance.sh
+
+      - name: Verify structured p-code exporter fields
+        run: |
+          grep -Fq 'output' tools/ghidra/ShiftFunctionInstructionExporter.java
+          grep -Fq 'inputs' tools/ghidra/ShiftFunctionInstructionExporter.java
+          grep -Fq 'varnodeJson' tools/ghidra/ShiftFunctionInstructionExporter.java
+          grep -Fq 'Varnode' tools/ghidra/ShiftFunctionInstructionExporter.java
+
+      - name: Run consolidated FUN_007AFDD0 analyzer regressions
+        run: >-
+          python -m pytest -q
+          tests/test_ghidra_fun_007afdd0_basis_rotation.py
+          tests/test_ghidra_fun_007afdd0_scalar_provenance.py
+
+      - name: Verify fail-closed semantics remain explicit
+        run: |
+          grep -Fq '"rodrigues_semantics_assumed": False' tools/ghidra/analyze_fun_007afdd0_basis_rotation.py
+          grep -Fq '"normalization_assumed": False' tools/ghidra/analyze_fun_007afdd0_basis_rotation.py
+          grep -Fq 'FUN_007afdd0' docs/PHASE680_FUN_007AFDD0_STATIC_FREEZE.md
