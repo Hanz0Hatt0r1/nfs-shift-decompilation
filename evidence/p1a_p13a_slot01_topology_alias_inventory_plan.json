@@ -1,0 +1,48 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01TopologyAliasInventoryPlan/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "blocker": "selected-root alias/callee/bulk-copy provenance for HDVehicle+0x938 and HDVehicle+0x13b8",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "drive_ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e"
+  },
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01ExactAddressForwardingFrontier/1",
+    "SHIFT.P1A.P13ASlot01Wheel538ForwardingFrontier/1",
+    "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1"
+  ],
+  "tooling": {
+    "exporter": "tools/ghidra/ShiftP13ASlot01TopologyAliasExporter.java",
+    "analyzer": "tools/ghidra/analyze_p1a_slot01_topology_aliases.py",
+    "export_format": "SHIFT.GhidraP13ASlot01TopologyAliasCandidates/1",
+    "analysis_format": "SHIFT.P1A.P13ASlot01TopologyAliasInventory/1"
+  },
+  "search_shape": {
+    "required_same_function_hints": ["+0x400 wheel-runtime base", "+0xa80 wheel stride"],
+    "already_bounded_literal_field": "+0x538",
+    "absolute_targets": ["HDVehicle+0x938", "HDVehicle+0x13b8"],
+    "candidate_operations": ["STORE", "LOAD", "CALL", "CALLIND", "COPY", "PIECE", "SUBPIECE", "PTRADD", "PTRSUB", "INT_ADD", "INT_MULT"],
+    "priority": "nonliteral +0x538 topology functions first"
+  },
+  "adjudication": {
+    "exporter_ready": true,
+    "analyzer_ready": true,
+    "authoritative_machine_inventory_captured": false,
+    "selected_hdvehicle_root_proven_for_new_candidates": false,
+    "target_range_writer_proven": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Same-function +0x400/+0xa80 constants are navigation topology only and do not establish HDVehicle identity.",
+    "The exporter intentionally broadens beyond literal +0x538 uses but is not a proof of all possible interprocedural aliases.",
+    "No slot completion or provider-count change is permitted without exact selected-root and target-byte write provenance."
+  ],
+  "next_step": "Run the exporter on the authoritative PC retail 1.02 Ghidra program, analyze novel nonliteral candidates, then prove or reject selected-HDVehicle root identity and qword/bulk-copy coverage for each high-ranked path."
+}
