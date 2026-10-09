@@ -1,0 +1,94 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374P13A005292dbReceiverRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "owner_shard": "P1.3A",
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374SourceOnlyForwardingBatch/1",
+  "participants_manager_identity": {
+    "root_address": "0x00bc9fc0",
+    "root_vptr": "0x00ab9190",
+    "subobject_vptr": "0x00ab916c"
+  },
+  "target_site": {
+    "address": "0x005292db",
+    "function": "FUN_005292d0",
+    "receiver_capture": "0x005292d8 mov esi,ecx",
+    "materializer": "0x005292db lea edi,[esi+0x374]",
+    "write_path": "0x005292ee mov ecx,edi; 0x005292f0 call FUN_00531fa0",
+    "mutator": "FUN_00531fa0 ORs a selected bit into DWORD PTR [ecx]"
+  },
+  "target_entry_surface": {
+    "direct_caller_count": 1,
+    "direct_caller": "0x005320c0 call 0x005292d0",
+    "absolute_function_pointer_occurrence_count_for_0x005292d0": 0
+  },
+  "adapter_to_receiver_chain": {
+    "caller_function": "FUN_00532090",
+    "owner_load": "0x00531ff0 mov ecx,[ecx+0x4]",
+    "owner_to_nested_receiver": "0x0040d4e6 lea eax,[ecx+0x218]",
+    "target_call": "0x005320be mov ecx,eax; 0x005320c0 call 0x005292d0",
+    "relation": "FUN_005292d0 this = adapter.owner + 0x218",
+    "adapter_function_pointer_occurrence_count_for_0x00532090": 0
+  },
+  "adapter_identity": {
+    "constructor": "FUN_00532670",
+    "constructor_direct_caller_count": 1,
+    "constructor_callsite": "0x0051b602 call 0x00532670",
+    "embedded_offset_in_outer": "0x1a90",
+    "constructor_owner_field_initialization": "0x00532680 mov [esi+0x4],0",
+    "owner_binding_function": "FUN_0051b660",
+    "owner_binding": "0x0051b682 push esi; 0x0051b683 lea ecx,[esi+0x1a90]; 0x0051b689 call FUN_008380d0",
+    "owner_setter": "0x008380d6 mov [ecx+0x4],eax",
+    "owner_binding_relation": "adapter+0x4 = containing outer object"
+  },
+  "outer_object_domain": {
+    "constructor": "FUN_0051b570",
+    "constructor_direct_callers": [
+      "0x0052353d call 0x0051b570",
+      "0x00523697 call 0x0051b570"
+    ],
+    "absolute_function_pointer_occurrence_count_for_0x0051b570": 0,
+    "static_instance": {
+      "controller_address": "0x00bdc570",
+      "controller_constructor_call": "0x00a791c0 mov ecx,0x00bdc570; 0x00a791c5 call FUN_005234c0",
+      "outer_offset": "0x3574",
+      "outer_address": "0x00bdfae4",
+      "nested_receiver_address": "0x00bdfcfc",
+      "computed_plus_0x374_address": "0x00be0070",
+      "parent_binding_call": "0x004a5950 mov ecx,0x00bdc570; 0x004a5955 call FUN_005235e0 -> 0x0052361a call FUN_0051b660"
+    },
+    "dynamic_instances": {
+      "allocation_site": "0x00523665 push 0x1b54; 0x0052366c call FUN_008868c0",
+      "allocation_size": "0x1b54",
+      "constructor_call": "0x00523697 call FUN_0051b570",
+      "parent_binding_call": "0x005236a7 call FUN_0051b660",
+      "nested_receiver_relation": "fresh heap outer + 0x218"
+    }
+  },
+  "identity_adjudication": {
+    "receiver_is_participants_manager": false,
+    "reason": "The only retail receiver domain is outer+0x218. The static instance resolves exactly to 0x00bdfcfc, while dynamic instances are +0x218 subobjects of fresh 0x1b54 heap allocations. Participants Manager is the distinct image-global root 0x00bc9fc0 with vptr 0x00ab9190 (embedded manager vptr 0x00ab916c).",
+    "site_can_write_participants_manager_plus_0x374": false,
+    "numeric_offset_equality_used_as_identity": false
+  },
+  "adjudication": {
+    "p13a_site_0x005292db_complete": true,
+    "p13a_site_0x005f4ffa_complete": true,
+    "p13a_computed_forwarding_sites_complete": true,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This contract closes only P1.3A computed forwarding site 0x005292db and, together with the merged 0x005f4ffa contract, completes the P1.3A computed-site subfrontier.",
+    "It does not close slot0 HDVehicle+0x938 or slot1 HDVehicle+0x13b8 selected-root provenance.",
+    "Global manager+0x374 -> HDVehicle+0x4330, final 0x004b86cf, P1.3 completion and provider removal remain fail-closed."
+  ],
+  "next_step": "Close selected-root alias/callee/bulk-copy provenance for HDVehicle+0x938 and HDVehicle+0x13b8, then return the complete P1.3A handoff to Process 1B."
+}
