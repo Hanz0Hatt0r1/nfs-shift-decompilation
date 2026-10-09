@@ -1,0 +1,80 @@
+{
+  "format": "SHIFT.P1D.Controller1LoaderArgumentFlow/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_bytes_adjudicate": true
+  },
+  "surface": {
+    "worker_reachable_direct_loader_call_count": 7,
+    "calls": [
+      {"function":"FUN_0090748b","callsite":"0x00907490","api":"GetModuleHandleA","argument_kind":"literal","argument":"mscoree.dll","argument_address":"0x00b36d0c"},
+      {"function":"FUN_0090a9bb","callsite":"0x0090a9e3","api":"GetModuleHandleA","argument_kind":"null-current-module","argument":null,"argument_address":null},
+      {"function":"FUN_0090aa27","callsite":"0x0090aa60","api":"GetModuleHandleA","argument_kind":"literal","argument":"KERNEL32.DLL","argument_address":"0x00b384cc"},
+      {"function":"FUN_0090aa9e","callsite":"0x0090aad7","api":"GetModuleHandleA","argument_kind":"literal","argument":"KERNEL32.DLL","argument_address":"0x00b384cc"},
+      {"function":"FUN_0090abb8","callsite":"0x0090abc9","api":"GetModuleHandleA","argument_kind":"literal","argument":"KERNEL32.DLL","argument_address":"0x00b384cc"},
+      {"function":"___crtInitCritSecAndSpinCount","callsite":"0x00918a16","api":"GetModuleHandleA","argument_kind":"literal","argument":"kernel32.dll","argument_address":"0x00b41740"},
+      {"function":"FUN_0091c073","callsite":"0x0091c0a0","api":"LoadLibraryA","argument_kind":"literal","argument":"USER32.DLL","argument_address":"0x00b42154"}
+    ],
+    "literal_module_argument_count": 6,
+    "null_current_module_argument_count": 1
+  },
+  "current_module_pe_walk": {
+    "function": "FUN_0090a9bb",
+    "loader_call": "0x0090a9e3 GetModuleHandleA(NULL)",
+    "null_proof": "0x0090a9c8 xor ebx,ebx; 0x0090a9e2 push ebx",
+    "e_lfanew_read": "0x0090a9e9 mov esi,[eax+0x3c]",
+    "section_count_read": "0x0090a9ee cmp word [esi+0x6],bx",
+    "optional_header_size_read": "0x0090a9f2 movzx eax,word [esi+0x14]",
+    "first_section_materialization": "0x0090a9f6 lea edi,[eax+esi+0x18]",
+    "section_name": ".mixcrt",
+    "section_name_push": "0x0090a9fd push 0x00b384b4",
+    "section_stride": "0x0090aa12 add edi,0x28",
+    "export_directory_0x78_access_present": false,
+    "role": "current-module section-table lookup, not PE export-directory resolution"
+  },
+  "machine_anchors": {
+    "byte_windows": [
+      {"address":"0x0090748b","bytes":"680c6db300"},{"address":"0x00907490","bytes":"ff15d061aa00"},
+      {"address":"0x0090a9c8","bytes":"33db"},{"address":"0x0090a9e2","bytes":"53"},{"address":"0x0090a9e3","bytes":"ff15d061aa00"},
+      {"address":"0x0090a9e9","bytes":"8b703c"},{"address":"0x0090a9f2","bytes":"0fb74614"},{"address":"0x0090a9f6","bytes":"8d7c3018"},
+      {"address":"0x0090a9fd","bytes":"68b484b300"},{"address":"0x0090aa12","bytes":"83c728"},
+      {"address":"0x0090aa5b","bytes":"68cc84b300"},{"address":"0x0090aa60","bytes":"ff15d061aa00"},
+      {"address":"0x0090aad2","bytes":"68cc84b300"},{"address":"0x0090aad7","bytes":"ff15d061aa00"},
+      {"address":"0x0090abc4","bytes":"68cc84b300"},{"address":"0x0090abc9","bytes":"ff15d061aa00"},
+      {"address":"0x00918a11","bytes":"684017b400"},{"address":"0x00918a16","bytes":"ff15d061aa00"},
+      {"address":"0x0091c09b","bytes":"685421b400"},{"address":"0x0091c0a0","bytes":"ff150063aa00"}
+    ],
+    "literal_strings": [
+      {"address":"0x00b36d0c","value":"mscoree.dll"},
+      {"address":"0x00b384cc","value":"KERNEL32.DLL"},
+      {"address":"0x00b41740","value":"kernel32.dll"},
+      {"address":"0x00b42154","value":"USER32.DLL"},
+      {"address":"0x00b384b4","value":".mixcrt"}
+    ]
+  },
+  "adjudication": {
+    "all_worker_reachable_direct_loader_arguments_proven": true,
+    "direct_loader_literal_or_null_surface_complete": true,
+    "current_module_section_walk_is_export_resolver": false,
+    "direct_loader_argument_surface_supports_apc_resolution": false,
+    "indirect_loader_calls_ruled_out": false,
+    "nonliteral_generated_module_names_ruled_out": false,
+    "manual_export_walking_overall_ruled_out": false,
+    "native_or_syscall_apc_injection_ruled_out": false,
+    "controller1_thread_handle_join_complete": false,
+    "controller1_timing_exhaustive": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Only the seven already-proven direct worker-reachable GetModuleHandleA/LoadLibraryA callsites are covered.",
+    "Indirect loader calls, generated/nonliteral module names, alternate module-base acquisition and manual export walking outside these callsites remain open.",
+    "The GetProcAddress target-name surface is governed by the separate merged direct argument-flow proof.",
+    "No result changes Controller #1 target-thread identity or timing-exhaustiveness gates."
+  ],
+  "next_step": "Continue indirect/manual/native resolution and target-thread identity. The direct loader + direct named GetProcAddress path is now exact and non-APC."
+}
