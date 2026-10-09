@@ -32,7 +32,7 @@ if(GLSLANG_VALIDATOR)
     COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
     COMMAND ${GLSLANG_VALIDATOR} -V
             ${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.vert
-            -o ${SHIFT_VULKAN_VERT_SPV}
+            -o ${SHIFT_VULKAN_SHADER_DIR}/triangle.vert.spv
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.vert
     VERBATIM
   )
