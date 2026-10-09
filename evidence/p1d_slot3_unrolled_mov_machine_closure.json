@@ -1,0 +1,114 @@
+{
+  "adjudication": {
+    "external_provider_count": 7,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "slot3_deeper_direct_copy_init_paths_complete": false,
+    "slot3_indirect_dispatch_surface_complete": false,
+    "slot3_non_entry_alias_loop_surface_complete": false,
+    "slot3_shallow_straight_line_unrolled_mov_depth4_subset_complete": true,
+    "slot3_shallow_unrolled_mov_writer_found": false,
+    "slot3_sse_custom_copy_surface_complete": false,
+    "slot3_straight_line_zero_init_surface_complete": false,
+    "slot3_writer_provenance_proven": false
+  },
+  "authority": {
+    "machine_transfer_adjudicates": true,
+    "p1a_frontier_is_navigation_only": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1D.P13DSlot3UnrolledMovMachineClosure/1",
+  "frontier": {
+    "candidate_adjudication": [
+      {
+        "address": "0x0076e560",
+        "class": "service-query-record-output",
+        "function": "FUN_0076e560",
+        "reason": "Both 8-byte store clusters target records returned through FUN_0070a290 from the service object at FUN_0070fe90()->+0x288, not the wheel receiver."
+      },
+      {
+        "address": "0x007b0710",
+        "class": "fixed-global-contact-ring-record",
+        "function": "FUN_007b0710",
+        "reason": "FUN_0074f560 returns the current 0x58-byte record from the fixed global ring rooted at 0x00c1bae0; the unrolled stores update that record at +0x48/+0x4c."
+      },
+      {
+        "address": "0x00403d00",
+        "class": "tagged-service-query-record",
+        "function": "FUN_00403d00",
+        "reason": "The destination ECX/EAX is returned by the same service-query family that creates tagged request/record objects; it is not selected wheel storage."
+      },
+      {
+        "address": "0x004e9380",
+        "class": "fixed-global-table-entry",
+        "function": "FUN_004e9380",
+        "reason": "The destination ESI is an indexed entry from fixed global object 0x00c1b9e0->+0xe0, not a selected HDVehicle wheel."
+      },
+      {
+        "address": "0x00633290",
+        "class": "fresh-allocator-node",
+        "function": "FUN_00633290",
+        "reason": "Candidate stores initialize an allocator-managed node and return node+0x10; no store targets the caller wheel receiver."
+      },
+      {
+        "address": "0x006333f0",
+        "class": "service-record-linked-list",
+        "function": "FUN_006333f0",
+        "reason": "The candidate writes are linked-list fields joining the service-query record passed in EDI, not wheel-local storage."
+      },
+      {
+        "address": "0x0075a8d0",
+        "class": "hdvehicle-output-at-0x40c8",
+        "function": "FUN_0075a8d0",
+        "reason": "The third stack argument is exactly HDVehicle+0x40c8, so the 16-byte destination is +0x40c8..+0x40d7, not slot3 +0x28b8..+0x28bf."
+      },
+      {
+        "address": "0x007b0580",
+        "class": "stack-local-output-record",
+        "function": "FUN_007b0580",
+        "reason": "The candidate destination ESI is exactly the caller stack local EBP-0x58."
+      },
+      {
+        "address": "0x0064fef0",
+        "class": "fresh-allocator-output",
+        "function": "FUN_0064fef0",
+        "reason": "All candidate stores target the freshly allocated block returned by FUN_0062f6f0 and published through an out-pointer."
+      },
+      {
+        "address": "0x007b0450",
+        "class": "path-infeasible-zero-gated-optional-output",
+        "function": "FUN_007b0450",
+        "reason": "On the only bounded path, 0x007b0710 passes zero as arg5 to FUN_004e9380; FUN_004e9380 calls FUN_007b0450 only when arg5 is nonzero, so this path cannot execute that candidate."
+      },
+      {
+        "address": "0x00900fef",
+        "class": "crt-stack-local-locale-update",
+        "function": "_LocaleUpdate",
+        "reason": "The bounded caller passes ECX=EBP-0x64, so all candidate stores update a stack-local CRT locale wrapper."
+      }
+    ],
+    "candidate_count": 11,
+    "max_direct_call_depth": 4,
+    "rejected_count": 11
+  },
+  "limits": [
+    "This closes only the 11 shallow depth<=4 non-loop, non-stack, non-zero-init unrolled MOV-copy candidates inventoried by the upstream P1A navigation frontier.",
+    "Zero-init, SSE/vector/custom transforms, non-entry alias loops, deeper direct paths and indirect/callback dispatch remain open.",
+    "No numeric offset or callgraph reachability is used as selected-HDVehicle identity."
+  ],
+  "next_step": "Inventory shallow straight-line zero-initialization and SSE/custom transfer candidates; separately trace non-entry alias loops. Widen deeper/indirect only when exact selected-wheel-derived destination provenance exists.",
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "slot3": {
+    "absolute_target": "HDVehicle+0x28b8",
+    "local_field": "+0x538",
+    "target_byte_range": [
+      "HDVehicle+0x28b8",
+      "HDVehicle+0x28bf"
+    ],
+    "width": "f64/qword"
+  },
+  "upstream_contract": "SHIFT.P1A.P13ASlot01UnrolledMovCopyFrontierEvidence/1",
+  "version": 1
+}
