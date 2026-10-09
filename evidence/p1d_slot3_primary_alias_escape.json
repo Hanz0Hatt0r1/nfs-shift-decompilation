@@ -1,0 +1,85 @@
+{
+  "format": "SHIFT.P1D.P13DSlot3PrimaryAliasEscape/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_bytes_adjudicate": true
+  },
+  "primary_loop": {
+    "function": "FUN_00758b50",
+    "vehicle_root_capture": "0x00758b98 EDI=entry ECX=HDVehicle",
+    "loop_seed": "0x00758bb4 ESI=HDVehicle+0x848",
+    "loop_stride": "0x00758d7d ESI+=0xa80",
+    "selected_wheel_materialization": "0x00758ccf ECX=ESI-0x448=HDVehicle+0x400+slot*0xa80",
+    "selected_wheel_direct_call": "0x00758d6b -> FUN_00755950",
+    "other_direct_calls_in_per_wheel_body": [
+      {"site": "0x00758be6", "target": "FUN_007aefb0", "receiver": "external/body object +0xd4, not wheel root"},
+      {"site": "0x00758bf2", "target": "FUN_00753590", "receiver": "stack local EBP-0x80"},
+      {"site": "0x00758c1f", "target": "FUN_007aefb0", "receiver": "[HDVehicle+0x33a0]+0xd4"},
+      {"site": "0x00758c34", "target": "FUN_00753590", "receiver": "stack local EBP-0x80"},
+      {"site": "0x00758c71", "target": "__CIsqrt", "receiver": "not a thiscall wheel receiver"}
+    ],
+    "exact_selected_wheel_root_forwarded_to_other_direct_callee": false
+  },
+  "consumer": {
+    "function": "FUN_00755950",
+    "entry_root_copy": "0x00755956 EDX=ECX",
+    "target_read": "0x00755958 fld qword [EDX+0x538]",
+    "direct_writes": [
+      "0x0075596a qword [EDX+0x528]",
+      "0x00755975 qword [EDX+0x530]",
+      "0x00755988 qword [EDX+0x548]"
+    ],
+    "writes_overlap_target_0x538_0x53f": false,
+    "only_direct_callee": "0x00755983 -> FUN_007555b0",
+    "callee_receiver": "0x00755964 ECX=EDX+0x80",
+    "exact_wheel_root_forwarded_to_callee": false
+  },
+  "machine_anchors": {
+    "byte_windows": [
+      {"address":"0x00758b98","bytes":"8bf9"},
+      {"address":"0x00758bb4","bytes":"8db748080000"},
+      {"address":"0x00758be0","bytes":"8d8fd4000000"},
+      {"address":"0x00758bef","bytes":"8d4d80"},
+      {"address":"0x00758c19","bytes":"81c1d4000000"},
+      {"address":"0x00758c31","bytes":"8d4d80"},
+      {"address":"0x00758ccf","bytes":"8d8eb8fbffff"},
+      {"address":"0x00758d7d","bytes":"81c6800a0000"},
+      {"address":"0x00755956","bytes":"8bd1"},
+      {"address":"0x00755958","bytes":"dd8238050000"},
+      {"address":"0x00755964","bytes":"8d8a80000000"},
+      {"address":"0x0075596a","bytes":"dd9228050000"},
+      {"address":"0x00755975","bytes":"dd9230050000"},
+      {"address":"0x00755988","bytes":"dd9a48050000"}
+    ],
+    "rel32_calls": [
+      {"site":"0x00758be6","target":"0x007aefb0","bytes":"e8c5630500"},
+      {"site":"0x00758bf2","target":"0x00753590","bytes":"e899a9ffff"},
+      {"site":"0x00758c1f","target":"0x007aefb0","bytes":"e88c630500"},
+      {"site":"0x00758c34","target":"0x00753590","bytes":"e857a9ffff"},
+      {"site":"0x00758c71","target":"0x00900d30","bytes":"e8ba801a00"},
+      {"site":"0x00758d6b","target":"0x00755950","bytes":"e8e0cbffff"},
+      {"site":"0x00755983","target":"0x007555b0","bytes":"e828fcffff"}
+    ]
+  },
+  "adjudication": {
+    "primary_loop_exact_wheel_root_one_hop_forwarding_complete": true,
+    "primary_loop_exact_wheel_root_only_direct_target_is_FUN_00755950": true,
+    "FUN_00755950_target_field_is_read_only": true,
+    "FUN_00755950_exact_wheel_root_does_not_escape_to_direct_callee": true,
+    "global_interprocedural_wheel_alias_surface_complete": false,
+    "escaped_alias_store_surface_complete": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only direct one-hop forwarding from the primary FUN_00758b50 per-wheel loop and FUN_00755950 itself.",
+    "Other lifecycle functions, indirect calls, stored aliases and callbacks remain outside this proof.",
+    "The target +0x538 field is proven read-only only within FUN_00755950, not globally."
+  ],
+  "next_step": "Trace selected-wheel aliases emitted by other proven lifecycle functions or stored/escaped before calls; keep indirect/callback and custom copy/init carriers fail-closed."
+}
