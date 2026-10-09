@@ -1,0 +1,56 @@
+{
+  "adjudication": {
+    "candidate_reachability_proves_selected_hdvehicle_alias": false,
+    "external_provider_count": 7,
+    "loop_body_transfers_included": false,
+    "navigation_frontier_captured": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "unrolled_copy_semantics_complete": false,
+    "zero_init_included": false
+  },
+  "authority": {
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "navigation_only": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "candidates": [
+    {"address":"0x0076e560","clusters":[{"base":"edx","coverage":8,"stores":["0x0076e7a6","0x0076e7b7"]},{"base":"edx","coverage":8,"stores":["0x0076e82d","0x0076e83c"]}],"depth":1,"function":"FUN_0076e560","path":["FUN_00770e80","FUN_0076e560"]},
+    {"address":"0x007b0710","clusters":[{"base":"esi","coverage":8,"stores":["0x007b0cca","0x007b0ccd"]}],"depth":2,"function":"FUN_007b0710","path":["FUN_0076d100","FUN_00765c40","FUN_007b0710"]},
+    {"address":"0x00403d00","clusters":[{"base":"eax","coverage":8,"stores":["0x00403d5f","0x00403d65"]}],"depth":3,"function":"FUN_00403d00","path":["FUN_00770e80","FUN_0076f970","FUN_0076d6a0","FUN_00403d00"]},
+    {"address":"0x004e9380","clusters":[{"base":"esi","coverage":20,"stores":["0x004e9454","0x004e9459","0x004e945c","0x004e945f","0x004e9476"]}],"depth":3,"function":"FUN_004e9380","path":["FUN_0076d100","FUN_00765c40","FUN_007b0710","FUN_004e9380"]},
+    {"address":"0x00633290","clusters":[{"base":"eax","coverage":8,"stores":["0x006332f4","0x006332f7"]}],"depth":3,"function":"FUN_00633290","path":["FUN_00770e80","FUN_0076e560","FUN_0070ab90","FUN_00633290"]},
+    {"address":"0x006333f0","clusters":[{"base":"eax","coverage":8,"stores":["0x00633492","0x006334b6"]},{"base":"esi","coverage":8,"stores":["0x00633498","0x006334bc"]}],"depth":3,"function":"FUN_006333f0","path":["FUN_00770e80","FUN_0076f970","FUN_0076d6a0","FUN_006333f0"]},
+    {"address":"0x0075a8d0","clusters":[{"base":"eax","coverage":16,"stores":["0x0075ad5c","0x0075ad61","0x0075ad67","0x0075ad6a"]}],"depth":3,"function":"FUN_0075a8d0","path":["FUN_00770e80","FUN_0076f970","FUN_00767b30","FUN_0075a8d0"]},
+    {"address":"0x007b0580","clusters":[{"base":"esi","coverage":8,"stores":["0x007b05cc","0x007b05d2","0x007b05df","0x007b05e6"]}],"depth":3,"function":"FUN_007b0580","path":["FUN_0076d100","FUN_00765c40","FUN_007b0710","FUN_007b0580"]},
+    {"address":"0x0064fef0","clusters":[{"base":"eax","coverage":8,"stores":["0x0064ff0c","0x0064ff1e","0x0064ff21"]}],"depth":4,"function":"FUN_0064fef0","path":["FUN_00770e80","FUN_0076f970","FUN_0076d6a0","FUN_006333f0","FUN_0064fef0"]},
+    {"address":"0x007b0450","clusters":[{"base":"edx","coverage":12,"stores":["0x007b0466","0x007b046c","0x007b0472","0x007b0479","0x007b047f"]}],"depth":4,"function":"FUN_007b0450","path":["FUN_0076d100","FUN_00765c40","FUN_007b0710","FUN_004e9380","FUN_007b0450"]},
+    {"address":"0x00900fef","clusters":[{"base":"esi","coverage":8,"stores":["0x00901009","0x0090100e"]},{"base":"esi","coverage":8,"stores":["0x00901063","0x00901068"]}],"depth":4,"function":"_LocaleUpdate","path":["FUN_0076d100","FUN_00765c40","FID_conflict:_wprintf","FUN_0090db22","_LocaleUpdate"]}
+  ],
+  "format": "SHIFT.P1A.P13ASlot01UnrolledMovCopyFrontierEvidence/1",
+  "limits": [
+    "Candidate membership does not prove selected-HDVehicle identity.",
+    "Straight-line zero-init, SSE/vector copies, deeper direct paths and indirect/callback paths remain open."
+  ],
+  "next_step": "Adjudicate the 11 bounded candidates by exact receiver/destination provenance, then inventory straight-line zero-init separately before deeper/indirect expansion.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scan": {
+    "candidate_function_count": 11,
+    "criteria": [
+      "outside backward-branch loop intervals",
+      "clobber-safe memory-load/register/memory-store",
+      "non-stack destination",
+      "same destination base",
+      "store gap <=16 instructions",
+      "contiguous destination coverage >=8 bytes",
+      "zero-init excluded"
+    ],
+    "max_direct_call_depth": 4,
+    "reachable_sized_function_count": 377,
+    "reachable_unique_node_count": 377
+  },
+  "version": 1
+}
