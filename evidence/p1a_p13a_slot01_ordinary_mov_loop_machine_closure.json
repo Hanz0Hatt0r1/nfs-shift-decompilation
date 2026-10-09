@@ -1,0 +1,108 @@
+{
+  "adjudication": {
+    "candidate_function_count": 5,
+    "deeper_direct_paths_ruled_out": false,
+    "external_provider_count": 7,
+    "indirect_copy_dispatch_ruled_out": false,
+    "nonloop_unrolled_mov_surface_complete": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "rejected_candidate_count": 5,
+    "selected_hdvehicle_slot01_writer_found": false,
+    "shallow_ordinary_mov_copy_init_depth4_surface_complete": true
+  },
+  "authority": {
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "machine_transfer_adjudicates": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "candidate_adjudication": [
+    {
+      "address": "0x00765c40",
+      "class": "HDVehicle far-offset cursor loop",
+      "function": "FUN_00765c40",
+      "proof": [
+        "0x00766081 materializes EDI = receiver+0x35c8 and saves it as the loop cursor",
+        "0x00766120 stores through [EDI]; the loop advances the cursor by four bytes across 12 iterations",
+        "the selected slot0/slot1 targets are receiver+0x938 / receiver+0x13b8, so this destination domain is disjoint"
+      ],
+      "rejected": true
+    },
+    {
+      "address": "0x00764266",
+      "class": "stack-local zero-init loop",
+      "function": "FUN_00764266",
+      "proof": [
+        "0x00764e68 materializes EDI = EBP-0xd0",
+        "0x00764ea6 stores zero through [EDI]",
+        "0x00764eb5 advances EDI by four bytes; the entire destination is stack-local"
+      ],
+      "rejected": true
+    },
+    {
+      "address": "0x00a62940",
+      "class": "HDVehicle+0x6730 service-record maintenance",
+      "function": "FUN_00a62940",
+      "proof": [
+        "FUN_00765c40 materializes ECX = receiver+0x6730 at 0x00765ed8 before calls 0x00765ee6 / 0x00765fd2",
+        "0x00a62947 captures incoming ECX in EDI",
+        "the loop starts records at EDI+0x44, advances outer record cursor by 0x30, and writes only record/node fields through EBX/ESI; it never aliases selected receiver+0x938/+0x13b8"
+      ],
+      "rejected": true
+    },
+    {
+      "address": "0x0090db22",
+      "class": "CRT formatting output loop",
+      "function": "FUN_0090db22",
+      "proof": [
+        "the shallow path is FUN_00765c40 -> FID_conflict:_wprintf at 0x00765fe7 -> FUN_0090db22 at 0x00904beb",
+        "Ghidra signature is FUN_0090db22(FILE *, byte *, localeinfo_struct *, wchar_t *)",
+        "other direct callers are __vsprintf_l, _sprintf, __snprintf, __vsnprintf_l and _fprintf; 0x0090e095 writes the formatter output cursor, not an HDVehicle-derived destination"
+      ],
+      "rejected": true
+    },
+    {
+      "address": "0x00a62fd0",
+      "class": "HDVehicle+0x6730 service-record compaction",
+      "function": "FUN_00a62fd0",
+      "proof": [
+        "FUN_00a62940 captures its receiver in EDI and calls FUN_00a62fd0 with ECX=EDI at 0x00a62a93/0x00a62a9f",
+        "0x00a62fd8 captures that same receiver in ESI",
+        "0x00a63021 / 0x00a63052 derive record bases as ESI + index*0x30; stores at 0x00a63064, 0x00a6309f and 0x00a630d6 target record+0x44 slots",
+        "the receiver domain remains the service subobject rooted at HDVehicle+0x6730, disjoint from slot0/slot1"
+      ],
+      "rejected": true
+    }
+  ],
+  "format": "SHIFT.P1A.P13ASlot01OrdinaryMovLoopMachineClosure/1",
+  "inventory": {
+    "candidate_function_count": 5,
+    "candidate_functions": [
+      "FUN_00765c40",
+      "FUN_00764266",
+      "FUN_00a62940",
+      "FUN_0090db22",
+      "FUN_00a62fd0"
+    ],
+    "format": "SHIFT.P1A.P13ASlot01OrdinaryMovLoopFrontier/1",
+    "max_direct_call_depth": 4,
+    "reachable_sized_function_count": 377,
+    "reachable_unique_node_count": 377
+  },
+  "limits": [
+    "This closes only backward-branch ordinary MOV copy/init loops reachable within four direct-call edges.",
+    "Straight-line unrolled MOV sequences without a loop, deeper direct paths, indirect/callback paths, SSE copies, and arbitrary computed stores remain open.",
+    "Reachability and numeric offset coincidence are navigation evidence only; exact receiver provenance adjudicates identity."
+  ],
+  "next_step": "Inventory shallow straight-line unrolled ordinary MOV copy/init sequences, then trace deeper/indirect aliases only when an exact selected-HDVehicle-derived destination is carried.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01InlineRepMachineClosure/1",
+    "SHIFT.P1A.P13ASlot01BareStringMachineClosure/1",
+    "SHIFT.P1A.P13ASlot01ExactOverlapStoreClosure/1"
+  ],
+  "version": 1
+}
