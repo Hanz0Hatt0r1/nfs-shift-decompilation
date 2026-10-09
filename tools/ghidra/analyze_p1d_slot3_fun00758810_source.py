@@ -104,7 +104,7 @@ def analyze(source: Path, database: Path, resource_path: Path, body0_path: Path)
     caller = extract_function(
         text,
         "void __thiscall FUN_0076d100(void *this,char param_1)",
-        "void __thiscall FUN_0076d300",
+        "void __fastcall FUN_0076d3c0",
     )
     callee = extract_function(
         text,
