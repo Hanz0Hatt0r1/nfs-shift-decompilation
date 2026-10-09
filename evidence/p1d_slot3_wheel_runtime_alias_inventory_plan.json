@@ -1,0 +1,51 @@
+{
+  "format": "SHIFT.P1D.Slot3WheelRuntimeAliasInventoryPlan/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "target": {
+    "selected_root": "HDVehicle",
+    "wheel_runtime_expression": "HDVehicle+0x400+slot*0xa80",
+    "per_wheel_field": "+0x138",
+    "slot3_absolute": "HDVehicle+0x28b8",
+    "target_width": "qword/f64",
+    "known_consumer_caller": "FUN_00758b50",
+    "known_consumer": "FUN_00755950",
+    "known_callsite": "0x00758d6b"
+  },
+  "prerequisites": [
+    "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1",
+    "SHIFT.Fun00755950RemainingSlotDirectWriterFrontier/1",
+    "SHIFT.P1D.Slot3DispatchCarrierBoundary/1"
+  ],
+  "tooling": {
+    "exporter": "tools/ghidra/ShiftWheelRuntimeAliasExporter.java",
+    "export_format": "SHIFT.GhidraWheelRuntimeAliasUses/1",
+    "analyzer": "tools/ghidra/analyze_p1d_slot3_wheel_runtime_aliases.py",
+    "analysis_format": "SHIFT.P1D.Slot3WheelRuntimeAliasInventory/1",
+    "search_surface": [
+      "instruction and raw p-code uses of exact per-wheel +0x138",
+      "same-function +0x400 wheel-runtime base hints",
+      "same-function +0xa80 wheel-stride hints",
+      "same-function +0x28b8 scalar hints without semantic promotion",
+      "STORE/LOAD/CALL/CALLIND/COPY-like/address-arithmetic p-code classes"
+    ]
+  },
+  "adjudication": {
+    "exporter_ready": true,
+    "analyzer_ready": true,
+    "machine_inventory_executed": false,
+    "scalar_or_topology_hints_prove_object_identity": false,
+    "selected_hdvehicle_slot3_writer_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "promotion_requirements": [
+    "exact selected-HDVehicle wheel-runtime base provenance",
+    "exact slot=3 mapping to HDVehicle+0x28b8",
+    "f64/qword STORE or exact bulk-copy coverage of the target field",
+    "backward value provenance to an exact PC-retail producer"
+  ],
+  "next_step": "Run ShiftWheelRuntimeAliasExporter.java on authoritative PC retail 1.02 Ghidra, analyze the JSONL output, and adjudicate strong topology candidates before any semantic promotion."
+}
