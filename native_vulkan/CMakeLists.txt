@@ -32,7 +32,7 @@ if(GLSLANG_VALIDATOR)
     COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
     COMMAND ${GLSLANG_VALIDATOR} -V
             ${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.vert
-            -o ${SHIFT_VULKAN_SHADER_DIR}/triangle.vert.spv
+            -o ${SHIFT_VULKAN_VERT_SPV}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.vert
     VERBATIM
   )
@@ -190,4 +190,27 @@ if(Vulkan_FOUND)
   add_executable(shift_vulkan_bundle_execute src/vulkan_bundle_execute.cpp)
   target_include_directories(shift_vulkan_bundle_execute PRIVATE include)
   target_link_libraries(shift_vulkan_bundle_execute PRIVATE Vulkan::Vulkan)
+endif()
+
+if(ANDROID)
+  add_library(
+    shift_vulkan_android_surface_probe
+    SHARED
+    src/android_vulkan_surface_probe.cpp
+  )
+  target_include_directories(
+    shift_vulkan_android_surface_probe
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+  )
+  target_compile_definitions(
+    shift_vulkan_android_surface_probe
+    PRIVATE
+    VK_USE_PLATFORM_ANDROID_KHR
+  )
+  target_link_libraries(
+    shift_vulkan_android_surface_probe
+    PRIVATE
+    Vulkan::Vulkan
+  )
 endif()
