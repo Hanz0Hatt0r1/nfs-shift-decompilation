@@ -1,0 +1,111 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01OrdinaryMovZeroInitMachineClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01InlineRepMachineClosure/1",
+    "SHIFT.P1A.P13ASlot01ReceiverLoopMachineClosure/1",
+    "SHIFT.Process1PhysicsManagerControllerOwner/1",
+    "SHIFT.P1A.P13ASlot01UnrolledMovCopyMachineClosure/1"
+  ],
+  "inventory": {
+    "format": "SHIFT.P1A.P13ASlot01OrdinaryMovZeroInitFrontier/1",
+    "max_direct_call_depth": 4,
+    "reachable_sized_function_count": 377,
+    "candidate_count": 6,
+    "candidate_functions": [
+      "FUN_00887580",
+      "FUN_00647a10",
+      "FUN_0070fae0",
+      "FUN_0087aa00",
+      "FUN_00886e10",
+      "FUN_0088f110"
+    ]
+  },
+  "candidate_adjudication": [
+    {
+      "function": "FUN_00887580",
+      "rejected": true,
+      "class": "fixed-singleton-constructor",
+      "evidence": [
+        "Merged inline-REP proof pins FUN_00887720 -> FUN_00887580 receiver exactly to image-global 0x00c29640 with vptr 0x00b20a90.",
+        "The ordinary MOV zero stores are therefore fields of that singleton, not selected HDVehicle slot0/slot1."
+      ]
+    },
+    {
+      "function": "FUN_00647a10",
+      "rejected": true,
+      "class": "base-constructor-on-fixed-singleton",
+      "evidence": [
+        "FUN_00887580 captures its singleton receiver in ESI at 0x00887583 and calls FUN_00647a10 immediately at 0x00887585 without replacing ECX.",
+        "FUN_00647a10 captures that same ECX in ESI at 0x00647a12; its detected zero stores are confined to local offsets through +0x150.",
+        "The receiver is the already-proven fixed singleton 0x00c29640, not selected HDVehicle."
+      ]
+    },
+    {
+      "function": "FUN_0070fae0",
+      "rejected": true,
+      "class": "physics-manager-singleton-constructor",
+      "evidence": [
+        "Merged SHIFT.Process1PhysicsManagerControllerOwner/1 identifies FUN_0070fae0 as constructor of singleton DAT_00c104e0 named Physics Manager with vtable 0x00b04524.",
+        "The bounded ordinary MOV zero stores belong to that Physics Manager object; numeric offsets are not HDVehicle identity."
+      ]
+    },
+    {
+      "function": "FUN_0087aa00",
+      "rejected": true,
+      "class": "hdvehicle-plus-0x6730-service-subobject-clear",
+      "evidence": [
+        "Merged receiver-loop proof pins FUN_00a62780 entry receiver to HDVehicle+0x6730.",
+        "FUN_00a62780 forms EBX=receiver+0x24, calls FUN_0087aa00 at 0x00a627fd, advances EBX by 0x30 for four service records, then calls FUN_0087aa00 again on receiver+0xe4 at 0x00a62811.",
+        "FUN_0087aa00 only clears +0/+0xc/+0x10/+0x14 of those service subobjects, disjoint from selected slot0/slot1."
+      ]
+    },
+    {
+      "function": "FUN_00886e10",
+      "rejected": true,
+      "class": "nested-fixed-singleton-constructor",
+      "evidence": [
+        "Merged inline-REP proof pins the call at 0x00887604 to receiver 0x00c29640+0x70c = 0x00c29d4c.",
+        "The detected ordinary MOV zero stores are nested-object +0x230/+0x234/+0x238, not selected HDVehicle storage."
+      ]
+    },
+    {
+      "function": "FUN_0088f110",
+      "rejected": true,
+      "class": "fixed-singleton-plus-0x558-subobject-constructor",
+      "evidence": [
+        "FUN_00887580 materializes ECX=receiver+0x558 at 0x0088759b and calls FUN_0088f110 at 0x008875a1.",
+        "Because the parent receiver is exact singleton 0x00c29640, FUN_0088f110 owns the fixed nested subobject at 0x00c29b98.",
+        "Its ordinary MOV zero stores remain within that nested object and cannot establish selected-HDVehicle slot0/slot1 writes."
+      ]
+    }
+  ],
+  "adjudication": {
+    "shallow_ordinary_mov_zero_init_depth4_surface_complete": true,
+    "candidate_count": 6,
+    "rejected_count": 6,
+    "selected_hdvehicle_slot01_writer_found": false,
+    "x87_zero_init_surface_complete": false,
+    "sse_vector_zero_init_surface_complete": false,
+    "deeper_direct_aliases_ruled_out": false,
+    "indirect_callback_aliases_ruled_out": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only straight-line ordinary MOV zero stores reachable within four direct-call edges and outside backward-branch loops.",
+    "x87 FLDZ/FST zero stores, SSE/vector zero stores, deeper direct paths and indirect/callback paths remain open.",
+    "Receiver identity comes from exact singleton/service provenance, never numeric offset coincidence."
+  ],
+  "next_step": "Bound shallow x87 FLDZ/FST zero-initialization and SSE/vector copy-init surfaces, then widen only concrete selected-HDVehicle-derived deeper or indirect aliases."
+}
