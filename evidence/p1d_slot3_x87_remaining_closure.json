@@ -7,11 +7,13 @@
     "platform": "PC retail 1.02",
     "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
     "machine_transfer_adjudicates": true,
-    "verified_machine_anchor_count": 71
+    "verified_machine_anchor_count": 37,
+    "p1a_contracts_consumed_not_reowned": true
   },
   "upstream_contracts": [
     "SHIFT.P1A.P13ASlot01X87ZeroInitFrontierEvidence/1",
     "SHIFT.P1A.P13ASlot01X87ReuseTrancheClosure/1",
+    "SHIFT.P1A.P13ASlot01X87StackOutputTrancheClosure/1",
     "SHIFT.GlobalVehicleBodyOwnerIdentity/1",
     "SHIFT.BodyFrameIntegrationStatic/1",
     "SHIFT.BMWBody0BindPoseWriterDirectRole/1"
@@ -24,28 +26,18 @@
   },
   "frontier": {
     "original_candidate_count": 18,
-    "resolved_by_upstream_reuse_tranche": 9,
-    "resolved_here": 9,
+    "resolved_by_p1a_first_tranche": 9,
+    "resolved_by_p1a_second_tranche": 5,
+    "resolved_before_this_pr": 14,
+    "resolved_here": 4,
     "remaining_count": 0
   },
   "resolved": [
-    {
-      "function": "FUN_00766510",
-      "rejected": true,
-      "domain": "HDVehicle root",
-      "proof": "FUN_0076d100 preserves entry HDVehicle in ESI and calls FUN_00766510 with ECX=ESI at 0x0076d139; x87 zero stores are only HDVehicle+0x40a0/+0x40a8/+0x40b0/+0x42b0/+0x4300, disjoint from +0x28b8..+0x28bf"
-    },
     {
       "function": "FUN_0075c0d0",
       "rejected": true,
       "domain": "bounded shallow path infeasible",
       "proof": "The only depth<=4 root path is FUN_00770e80 -> FUN_007b1790 -> FUN_0075c0d0. FUN_00770e80 pushes literal 0 as FUN_007b1790 arg2 at 0x00771231; FUN_007b1790 loads arg2 from [EBX+0xc] and calls FUN_0075c0d0 only when it is nonzero, so 0x007b19d9 is infeasible on this bounded path"
-    },
-    {
-      "function": "FUN_007aa940",
-      "rejected": true,
-      "domain": "caller stack-local vec3",
-      "proof": "FUN_007aa9b0 materializes EBP-0x18 at 0x007aaa93, pushes it at 0x007aaa96 and calls FUN_007aa940 at 0x007aaa97; zero stores target only that output vec3"
     },
     {
       "function": "FUN_007b8630",
@@ -58,24 +50,6 @@
       "rejected": true,
       "domain": "caller stack-local outputs",
       "proof": "FUN_007682c0 passes EBP-0x8, EBP-0xc, EBP-0x18 and EBP-0x24 as the four output pointers at 0x00768356..0x00768368 before 0x0076836b -> FUN_0075ada0"
-    },
-    {
-      "function": "FUN_0075afc0",
-      "rejected": true,
-      "domain": "caller stack-local outputs",
-      "proof": "FUN_0076a200 passes EBP-0x28, EBP-0x34 and EBP-0x4c as the three output pointers at 0x0076a2e3..0x0076a2ee before 0x0076a302 -> FUN_0075afc0"
-    },
-    {
-      "function": "FUN_007876e0",
-      "rejected": true,
-      "domain": "caller stack-local output",
-      "proof": "FUN_00787730 materializes EBP-0xc at 0x00787745, pushes it at 0x00787748 and calls FUN_007876e0 at 0x0078774b; x87 zero stores target only [output] and [output+4]"
-    },
-    {
-      "function": "FUN_007ade70",
-      "rejected": true,
-      "domain": "caller stack-local outputs",
-      "proof": "Both shallow callsites are pinned: 0x007592ae materializes EBP-0x38 before 0x007592b4, and 0x007593e5 materializes EBP-0x2c before 0x007593eb. FUN_007ade70 zeroes only output+4/+8"
     },
     {
       "function": "FUN_007b7840",
@@ -100,6 +74,7 @@
   },
   "limits": [
     "This closes only the direct-depth<=4 FLDZ -> FST/FSTP zero-init frontier captured by the merged P1A inventory.",
+    "P1D consumes the 14 merged P1A x87 rejections but does not re-own them; this contract adds only the final four pointer-chain adjudications.",
     "Path-infeasible rejection for FUN_0075c0d0 applies to the bounded shallow root path, not to every possible caller globally.",
     "BODY-domain rejection uses merged owner identity and BODY lifecycle contracts, not numeric pointer offsets or callgraph adjacency alone.",
     "SSE/vector copy-init, deeper direct aliases and indirect/callback aliases remain open."
