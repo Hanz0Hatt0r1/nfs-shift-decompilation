@@ -1,0 +1,62 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374FinalLiteral865013Rejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "ghidra_role": "navigation-only"
+  },
+  "target": {
+    "site": "0x00865013",
+    "function": "FUN_00864c10",
+    "store": "fstp dword [esi+0x374]",
+    "remaining_literal_manager_374_site_before_this_contract": true
+  },
+  "target_receiver_flow": {
+    "first_stack_argument_capture": "0x00864c67 mov esi,[ebx+0x8]",
+    "virtual_probe": [
+      "0x00864c87 mov eax,[esi]",
+      "0x00864c89 mov eax,[eax+0x20]",
+      "0x00864c92 mov ecx,esi",
+      "0x00864c94 call eax"
+    ],
+    "stack_argument_pushed_before_virtual_probe": false,
+    "edx_at_virtual_probe": "lea edx,[ebp-0x220] at 0x00864c8c"
+  },
+  "participants_manager_root": {
+    "vptr": "0x00ab9190",
+    "vslot_0x20_cell": "0x00ab91b0",
+    "vslot_0x20_target": "FUN_006383c0",
+    "target_machine_abi": [
+      "0x006383c0 push ebp",
+      "0x006383c3 mov ecx,[ebp+0x8]",
+      "0x006383c6 call 0x00641700",
+      "0x006383cc ret 4"
+    ],
+    "requires_one_stack_argument": true
+  },
+  "identity_adjudication": {
+    "if_esi_were_participants_manager_root": "0x00864c94 would dispatch to FUN_006383c0",
+    "observed_callsite_pushes_required_stack_argument": false,
+    "manager_dispatch_stack_effect_compatible_with_callsite": false,
+    "esi_can_be_participants_manager_root_at_0x00864c94": false,
+    "site_0x00865013_can_write_manager_plus_0x374": false
+  },
+  "adjudication": {
+    "literal_base_plus_0x374_receiver_surface_complete": true,
+    "remaining_literal_manager_374_site_count": 0,
+    "computed_address_manager_374_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This rejects only the last literal [base+0x374] receiver candidate by exact machine ABI incompatibility with the Participants Manager root vtable.",
+    "Computed-address writes that reach manager+0x374 remain a separate open surface.",
+    "No identity is inferred from numeric offset equality or semantic naming."
+  ],
+  "next_step": "Inventory computed-address writes that can target Participants Manager+0x374. Keep 0x004b86cf fail-closed until that computed writer surface is bounded."
+}
