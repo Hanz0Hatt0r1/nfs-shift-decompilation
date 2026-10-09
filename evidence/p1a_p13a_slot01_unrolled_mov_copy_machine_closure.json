@@ -1,0 +1,142 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01UnrolledMovCopyMachineClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "source_index_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "machine_transfer_adjudicates": true,
+    "frontier_contract": "SHIFT.P1A.P13ASlot01UnrolledMovCopyFrontier/1"
+  },
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01UnrolledMovCopyFrontier/1",
+    "SHIFT.P1A.P13ASlot01ReceiverLoopMachineClosure/1",
+    "SHIFT.P1A.P13ASlot01OrdinaryMovLoopMachineClosure/1",
+    "SHIFT.Fun0074f560CollisionProviderMachineProof/1",
+    "SHIFT.Fun00755950RemainingSlotDirectWriterFrontier/1"
+  ],
+  "inventory": {
+    "candidate_count": 11,
+    "candidate_functions": [
+      "FUN_0076e560", "FUN_007b0710", "FUN_00403d00", "FUN_004e9380", "FUN_00633290",
+      "FUN_006333f0", "FUN_0075a8d0", "FUN_007b0580", "FUN_0064fef0", "FUN_007b0450", "_LocaleUpdate"
+    ],
+    "verified_byte_window_count": 76,
+    "verified_rel32_transfer_count": 16
+  },
+  "candidate_adjudication": [
+    {
+      "function": "FUN_0076e560", "rejected": true, "class": "service-message-record-output",
+      "evidence": [
+        "FUN_00770e80 calls FUN_0076e560 with ECX=ESI, so the function itself is on the HDVehicle path.",
+        "The candidate copy destination is not ESI: FUN_0076e560 calls FUN_0070fe90, loads EDI=[result+0x288], calls FUN_0070ab90 with an out-local, then reloads EDX from that out-local.",
+        "The unrolled stores write only [EDX+0x8] and [EDX+0xc] in two message-record cases. EDX is therefore a record returned by the separate service object, not selected HDVehicle storage."
+      ]
+    },
+    {
+      "function": "FUN_007b0710", "rejected": true, "class": "collision-provider-surface-record",
+      "evidence": [
+        "Merged SHIFT.Fun0074f560CollisionProviderMachineProof/1 proves FUN_0074f560 returns records from the fixed 0x00c1bae0 ring, stride 0x58.",
+        "At 0x007b0c8e FUN_007b0710 calls FUN_0074f560; 0x007b0c93 copies EAX to ESI; the candidate stores then write ESI+0x48/+0x4c.",
+        "The destination is a collision-provider surface record, not selected HDVehicle+0x938/+0x13b8."
+      ]
+    },
+    {
+      "function": "FUN_00403d00", "rejected": true, "class": "service-owned-output-record",
+      "evidence": [
+        "On the bounded P1A path FUN_0076d6a0 calls FUN_0070a290 with EDX=&local_out while ECX is its separate service receiver, then loads ECX=local_out at 0x0076d7b5 and calls FUN_00403d00.",
+        "FUN_00403d00 uses EAX=ECX and copies only +0x4/+0x8 from its argument into that returned output record.",
+        "The destination base is the service-produced local_out pointer, not an HDVehicle-derived alias."
+      ]
+    },
+    {
+      "function": "FUN_004e9380", "rejected": true, "class": "fixed-global-hash-table-entry",
+      "evidence": [
+        "The bounded caller hard-codes ECX=0x00c1b9e0 at 0x007b0cf4 before calling FUN_004e9380.",
+        "FUN_004e9380 captures EBX=ECX, loads the table base from [EBX+0xe0], derives ESI as a 24-byte table entry, and stores the candidate fields at ESI+0/+0x4/+0x8/+0xc/+0x10.",
+        "The destination is an entry owned by the fixed global 0x00c1b9e0 table, not selected HDVehicle."
+      ]
+    },
+    {
+      "function": "FUN_00633290", "rejected": true, "class": "service-record-allocation-or-lookup",
+      "evidence": [
+        "FUN_0070ab90 calls FUN_00633290 as a record acquisition helper for the separate service object used by FUN_0076e560.",
+        "FUN_00633290 either obtains a record through FUN_006331b0/FUN_0062f6f0 or falls back to FUN_0065b130()+0x5c -> FUN_00638020 allocation.",
+        "The candidate stores populate the returned EAX record at +0/+0x4/+0x8/+0xc before returning EAX+0x10; they do not target the caller's HDVehicle receiver."
+      ]
+    },
+    {
+      "function": "FUN_006333f0", "rejected": true, "class": "service-linked-list-maintenance",
+      "evidence": [
+        "Merged SHIFT.P1A.P13ASlot01ReceiverLoopMachineClosure/1 already proves this function receives the separate service object reached through FUN_0070fe90()+0x288.",
+        "The straight-line candidate stores update list-node +0x18/+0x1c and service-object +0xb4/+0xb8 links.",
+        "Neither destination is the selected HDVehicle root or its slot0/slot1 qwords."
+      ]
+    },
+    {
+      "function": "FUN_0075a8d0", "rejected": true, "class": "hdvehicle-root-explicit-high-offset-output",
+      "evidence": [
+        "The bounded caller derives EDI=ESI+0x40c8 at 0x00767cbc, pushes that exact pointer as the third argument, restores ECX=ESI and calls FUN_0075a8d0 at 0x00767cd3.",
+        "At 0x0075ad4f FUN_0075a8d0 loads EAX=arg3 and the candidate cluster writes 16 bytes at EAX+0/+0x4/+0x8/+0xc.",
+        "This is genuine HDVehicle-rooted storage, but the destination is exactly HDVehicle+0x40c8..+0x40d7, not +0x938 or +0x13b8."
+      ]
+    },
+    {
+      "function": "FUN_007b0580", "rejected": true, "class": "stack-output-structure",
+      "evidence": [
+        "FUN_007b0710 materializes EDX=EBP-0x58 at 0x007b0919 and hard-codes ECX=0x00c1b9e0 before calling FUN_007b0580.",
+        "FUN_007b0580 captures ESI=EDX at 0x007b0590 and writes the candidate fields at ESI+0x8/+0xc/+0x18/+0x1c.",
+        "The destination is therefore the caller's stack-local output structure, not selected HDVehicle."
+      ]
+    },
+    {
+      "function": "FUN_0064fef0", "rejected": true, "class": "allocator-owned-record",
+      "evidence": [
+        "FUN_006333f0 calls FUN_0064fef0 with EDX=&argument-local while ECX is the already-proven service object.",
+        "FUN_0064fef0 captures EDI=ECX and ESI=EDX, obtains EAX by calling FUN_0062f6f0 on service+0x90, stores EAX through the out pointer, and populates the returned record at +0/+0x4/+0x8/+0xc/+0x10.",
+        "The copy destination is allocator/service-owned returned storage, not selected HDVehicle."
+      ]
+    },
+    {
+      "function": "FUN_007b0450", "rejected": true, "class": "statically-reachable-but-path-infeasible-optional-output",
+      "evidence": [
+        "The only bounded shortest path reaches FUN_007b0450 through FUN_007b0710 -> FUN_004e9380.",
+        "That caller pushes three literal zero optional arguments at 0x007b0ce4/0x007b0ce6/0x007b0ce8 before calling FUN_004e9380.",
+        "FUN_004e9380 loads the fifth argument at 0x004e9479, tests it at 0x004e947c, and calls FUN_007b0450 only when it is nonzero. Therefore the static edge cannot execute on the bounded P1A path."
+      ]
+    },
+    {
+      "function": "_LocaleUpdate", "rejected": true, "class": "crt-locale-state",
+      "evidence": [
+        "The bounded path is FUN_00765c40 -> FID_conflict:_wprintf -> FUN_0090db22 -> _LocaleUpdate.",
+        "Merged SHIFT.P1A.P13ASlot01OrdinaryMovLoopMachineClosure/1 already classifies FUN_0090db22 as the CRT formatting path.",
+        "The candidate stores in _LocaleUpdate update its locale-state destination at +0/+0x4 and are outside the game-object HDVehicle domain."
+      ]
+    }
+  ],
+  "adjudication": {
+    "shallow_unrolled_mov_copy_candidate_count": 11,
+    "shallow_unrolled_mov_copy_rejected_count": 11,
+    "shallow_unrolled_mov_copy_semantics_complete": true,
+    "shallow_unrolled_mov_copy_selected_hdvehicle_slot_writer_found": false,
+    "straight_line_zero_init_complete": false,
+    "sse_vector_custom_copy_complete": false,
+    "deeper_direct_alias_paths_complete": false,
+    "indirect_callback_alias_paths_complete": false,
+    "slot0_selected_root_alias_callee_bulk_copy_complete": false,
+    "slot1_selected_root_alias_callee_bulk_copy_complete": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only the 11 straight-line ordinary-MOV copy candidates captured by SHIFT.P1A.P13ASlot01UnrolledMovCopyFrontier/1 within direct depth <=4.",
+    "Straight-line zero initialization was intentionally excluded from the upstream detector and remains a separate class.",
+    "SSE/vector/custom transforms, deeper direct paths, and indirect/callback carriers remain open.",
+    "No slot or aggregate P1.3 gate is promoted from this bounded closure."
+  ],
+  "next_step": "Inventory straight-line zero-init ranges and shallow SSE/vector copy-init sequences; then widen to deeper/indirect aliases only from concrete selected-HDVehicle-derived destinations."
+}
