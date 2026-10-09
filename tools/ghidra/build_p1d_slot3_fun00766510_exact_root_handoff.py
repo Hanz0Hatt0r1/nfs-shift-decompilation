@@ -9,7 +9,7 @@ import argparse, json
 from pathlib import Path
 
 FORMAT="SHIFT.P1D.Slot3Fun00766510ExactRootHandoff/1"
-IDENTITY_FORMAT="SHIFT.P1A.P13ASlot01X87ReuseTrancheClosure/1"
+IDENTITY_FORMAT="SHIFT.P1A.P13ASlot01X87StackOutputTrancheClosure/1"
 TAIL_FORMAT="SHIFT.Fun00766510ResidualTailClosure/1"
 PE_SHA256="eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
 
