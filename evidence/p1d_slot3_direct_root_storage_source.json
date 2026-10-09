@@ -1,0 +1,54 @@
+{
+  "format": "SHIFT.P1D.Slot3DirectExactRootStorageSource/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_decompiler_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "source_is_navigation_crosscheck": true
+  },
+  "carrier_set": {
+    "count": 15,
+    "semantic_identity_source": "merged P1D exact-root/exact-wheel machine contracts"
+  },
+  "direct_exact_root_assignments": {
+    "count": 2,
+    "rows": [
+      {
+        "function": "FUN_00758b50",
+        "root": "param_1",
+        "lhs": "local_2c",
+        "text": "local_2c = param_1;",
+        "storage": "stack-local"
+      },
+      {
+        "function": "FUN_00763570",
+        "root": "this",
+        "lhs": "local_4c",
+        "text": "local_4c = this;",
+        "storage": "stack-local"
+      }
+    ],
+    "persistent_or_unknown_count": 0,
+    "persistent_or_unknown_rows": []
+  },
+  "adjudication": {
+    "source_direct_exact_entry_root_assignment_subset_complete": true,
+    "source_direct_exact_entry_root_persistent_store_found": false,
+    "derived_alias_storage_ruled_out": false,
+    "machine_register_alias_storage_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "callbacks_registered_outside_carriers_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This is a source-level exact entry-root assignment subset, not a machine-level universal pointer-escape proof.",
+    "It does not follow local aliases after assignment, derived wheel/base pointers, register-only aliases, bulk stores, or callee-created escapes.",
+    "Object identity remains owned by the merged retail machine contracts; the pinned source export is used only to bound this direct assignment syntax."
+  ],
+  "next_step": "Trace the two stack-local root aliases through their later uses and inventory derived selected-wheel aliases before testing persistent stores or callback registration."
+}
