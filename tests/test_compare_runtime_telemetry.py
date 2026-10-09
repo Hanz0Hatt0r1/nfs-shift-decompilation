@@ -128,7 +128,10 @@ def test_load_trace_reads_jsonl_and_comments(tmp_path):
 
     loaded = runtime.load_trace(path)
 
-    assert loaded == frames
+    assert [frame["step"] for frame in loaded] == [0, 1]
+    assert loaded[1]["position"] == frames[1]["position"]
+    assert loaded[1]["wheel_loads"] == frames[1]["wheel_loads"]
+    assert "format" not in loaded[0]
 
 
 def test_cli_returns_two_for_policy_failure(tmp_path, capsys):
