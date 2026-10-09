@@ -1,0 +1,51 @@
+{
+  "format": "SHIFT.P1D.Slot3StackExactRootAliasClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_decompiler_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "source_is_navigation_crosscheck": true
+  },
+  "aliases": {
+    "FUN_00758b50": {
+      "alias": "local_2c",
+      "source_root": "param_1 = exact HDVehicle root",
+      "uses": [
+        "dereference HDVehicle+0x33a0 for chassis BODY transform input",
+        "dereference HDVehicle+0x33a0 for vector add input",
+        "load HDVehicle+0x33a0",
+        "restore local param_1 from local_2c"
+      ],
+      "passes_exact_root_to_callee": false,
+      "stores_exact_root_nonlocally": false,
+      "escapes_exact_root": false
+    },
+    "FUN_00763570": {
+      "alias": "local_4c",
+      "source_root": "this = exact HDVehicle root",
+      "uses_after_assignment": 0,
+      "passes_exact_root_to_callee": false,
+      "stores_exact_root_nonlocally": false,
+      "escapes_exact_root": false
+    }
+  },
+  "adjudication": {
+    "source_stack_local_exact_entry_root_alias_subset_complete": true,
+    "source_stack_local_exact_entry_root_escape_found": false,
+    "derived_wheel_alias_storage_ruled_out": false,
+    "machine_register_alias_storage_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only the two exact entry-root stack aliases found by the preceding direct-assignment source contract.",
+    "Dereferencing HDVehicle+0x33a0 yields a distinct chassis BODY pointer and is not an escape of the HDVehicle root itself.",
+    "Derived wheel/base pointers, machine register aliases, callee-created aliases, aggregate stores and callbacks remain open."
+  ],
+  "next_step": "Inventory derived selected-wheel/base aliases materialized inside the proven carrier set, then test whether any are stored or forwarded beyond already-closed direct callees."
+}
