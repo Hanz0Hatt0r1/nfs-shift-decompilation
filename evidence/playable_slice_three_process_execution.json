@@ -60,9 +60,36 @@
         {
           "id": "P1.3",
           "state": "ready-parallel",
-          "task": "Finish retail input -> drivetrain/wheel/control producer provenance. The manager+0x374 computed-address frontier is reduced to six receiver/destination forwarding paths (0x005292db, 0x005f4ffa, 0x005f6eda, 0x0070f62d, 0x0070fb45, 0x0070fdeb); close those before deciding manager+0x374 -> HDVehicle+0x4330 and the final HDVehicle+0x64e8 candidate 0x004b86cf. The direct/source-visible Controller #1 timing surface is already joined; the remaining timing ambiguity is indirect/native APC injection into the alertable worker. Render-frame phase locking is not a prerequisite for proving the control producer chain.",
+          "task": "Finish retail input -> drivetrain/wheel/control producer provenance through three equal P1.3 proof shards. P1A owns two computed manager+0x374 receiver/destination paths plus slot0/slot1 selected-root provenance; P1B owns two computed paths plus the manager+0x374 -> HDVehicle+0x4330 identity join and final 0x004b86cf/slot2 adjudication; P1D owns two computed paths plus slot3 selected-root provenance and indirect/native APC injection timing. Process 1B integrates the three shard handoffs into the final P1.3 contract. Render-frame phase locking is not a prerequisite for proving the control producer chain.",
           "contract": "SHIFT.Process1Controller1ControlTimingFrontier/1",
-          "consumer": "Process 2 P2.6"
+          "consumer": "Process 2 P2.6",
+          "integration_owner": "Process 1B",
+          "parallel_shards": [
+            {
+              "id": "P1.3A",
+              "owner": "Process 1A",
+              "state": "ready-parallel",
+              "computed_forwarding_sites": ["0x005292db", "0x005f4ffa"],
+              "additional_work": ["P1.3.slot0 HDVehicle+0x938 selected-root alias/callee/bulk-copy provenance", "P1.3.slot1 HDVehicle+0x13b8 selected-root alias/callee/bulk-copy provenance"],
+              "handoff_to": "Process 1B P1.3 integration"
+            },
+            {
+              "id": "P1.3B",
+              "owner": "Process 1B",
+              "state": "ready-parallel",
+              "computed_forwarding_sites": ["0x005f6eda", "0x0070f62d"],
+              "additional_work": ["exact manager+0x374 -> HDVehicle+0x4330 identity join", "final 0x004b86cf / P1.3.slot2 adjudication"],
+              "handoff_to": "Process 2 P2.6 after integration"
+            },
+            {
+              "id": "P1.3D",
+              "owner": "Process 1D",
+              "state": "ready-parallel",
+              "computed_forwarding_sites": ["0x0070fb45", "0x0070fdeb"],
+              "additional_work": ["P1.3.slot3 HDVehicle+0x28b8 selected-root alias/callee/bulk-copy provenance", "indirect/native APC injection timing closure for the Controller #1 alertable-worker producer chain"],
+              "handoff_to": "Process 1B P1.3 integration"
+            }
+          ]
         },
         {
           "id": "P1.4",

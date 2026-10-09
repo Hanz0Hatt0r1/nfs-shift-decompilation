@@ -10,7 +10,10 @@
     "max_stacked_successors_per_blocker": 1,
     "superseded_prs_close_after_evidence_transplant": true,
     "merge_requires_fresh_main": true,
-    "new_phase_numbered_workflows": false
+    "new_phase_numbered_workflows": false,
+    "shared_queue_shards_must_be_explicit": true,
+    "shared_queue_shards_do_not_transfer_aggregate_queue_ownership": true,
+    "shared_queue_shard_results_return_to_integration_owner": true
   },
   "lanes": [
     {
@@ -20,16 +23,47 @@
       "branch_prefixes": ["process-1a/", "process-1/"],
       "owns": "contact/collision retail proof, producer ownership, ABI and exact ordering",
       "touch_set": ["evidence/retail-proof", "docs/process-1", "tests/test_process1_*"],
-      "consumers": ["P2.3", "P2.4"]
+      "shared_queue_shards": [
+        {
+          "id": "P1.3A",
+          "parent_queue_id": "P1.3",
+          "role": "parallel proof shard",
+          "state": "ready-parallel",
+          "touch_set": ["evidence/control-proof", "docs/process-1", "tests/test_process1_*"],
+          "work_items": [
+            "Classify exact receiver/destination provenance for computed manager+0x374 forwarding site 0x005292db.",
+            "Classify exact receiver/destination provenance for computed manager+0x374 forwarding site 0x005f4ffa.",
+            "Close selected-root alias/callee/bulk-copy provenance for P1.3.slot0 HDVehicle+0x938.",
+            "Close selected-root alias/callee/bulk-copy provenance for P1.3.slot1 HDVehicle+0x13b8."
+          ],
+          "handoff_to": "Process 1B P1.3 integration"
+        }
+      ],
+      "consumers": ["P2.3", "P2.4", "Process 1B P1.3 integration"]
     },
     {
       "id": "P1B-control",
       "owner": "Process 1B",
       "queue_ids": ["P1.3"],
       "branch_prefixes": ["process-1b/", "process-1/"],
-      "owns": "retail input -> drivetrain/wheel/control producer provenance",
+      "owns": "retail input -> drivetrain/wheel/control producer provenance and aggregate P1.3 integration",
       "touch_set": ["evidence/control-proof", "docs/process-1", "tests/test_process1_*"],
-      "consumers": ["P2.6", "P1.4 when target identity is required"]
+      "shared_queue_shards": [
+        {
+          "id": "P1.3B",
+          "parent_queue_id": "P1.3",
+          "role": "parallel proof shard and integration owner",
+          "state": "ready-parallel",
+          "work_items": [
+            "Classify exact receiver/destination provenance for computed manager+0x374 forwarding site 0x005f6eda.",
+            "Classify exact receiver/destination provenance for computed manager+0x374 forwarding site 0x0070f62d.",
+            "Decide the exact manager+0x374 -> HDVehicle+0x4330 identity join after all three forwarding shards report.",
+            "Adjudicate the final HDVehicle+0x64e8 literal candidate 0x004b86cf / P1.3.slot2 from the completed identity join."
+          ],
+          "handoff_to": "Process 2 P2.6"
+        }
+      ],
+      "consumers": ["P2.6"]
     },
     {
       "id": "P1D-camera",
@@ -38,7 +72,23 @@
       "branch_prefixes": ["process-1d/", "process-1/"],
       "owns": "retail camera-follow source, target dependency, ordering and freshness",
       "touch_set": ["evidence/camera-proof", "docs/process-1", "tests/test_process1_*"],
-      "consumers": ["Process 2 camera feed", "P3.5"]
+      "shared_queue_shards": [
+        {
+          "id": "P1.3D",
+          "parent_queue_id": "P1.3",
+          "role": "parallel proof shard",
+          "state": "ready-parallel",
+          "touch_set": ["evidence/control-proof", "docs/process-1", "tests/test_process1_*"],
+          "work_items": [
+            "Classify exact receiver/destination provenance for computed manager+0x374 forwarding site 0x0070fb45.",
+            "Classify exact receiver/destination provenance for computed manager+0x374 forwarding site 0x0070fdeb.",
+            "Close selected-root alias/callee/bulk-copy provenance for P1.3.slot3 HDVehicle+0x28b8.",
+            "Close the remaining indirect/native APC injection timing ambiguity for the Controller #1 alertable-worker producer chain."
+          ],
+          "handoff_to": "Process 1B P1.3 integration"
+        }
+      ],
+      "consumers": ["Process 2 camera feed", "P3.5", "Process 1B P1.3 integration"]
     },
     {
       "id": "P2-runtime",
