@@ -34,8 +34,9 @@
     {"depth":4,"destination_class":"stack","function":"FUN_00911e19","instruction":"movlpd qword ptr [esp+0x4],xmm0","site":"0x00912912"}
   ],
   "format": "SHIFT.P1A.P13ASlot01SSEVectorWriteClosure/1",
+  "implicit_mask_vector_stores": [],
   "limits": [
-    "This closes only explicit XMM/MM memory writes and vector-to-GPR ordinary-store escapes within four direct-call edges of the four P1.3A roots.",
+    "This closes explicit XMM/MM memory writes, MASKMOVQ/MASKMOVDQU implicit stores, and vector-to-GPR ordinary-store escapes within four direct-call edges of the four P1.3A roots.",
     "Deeper direct paths and indirect/callback aliases remain outside this bounded surface.",
     "Callgraph reachability never establishes selected-HDVehicle identity by itself."
   ],
@@ -47,6 +48,7 @@
     "direct_stack_vector_memory_store_count": 14,
     "direct_vector_memory_store_count": 14,
     "direct_vector_store_function_count": 4,
+    "implicit_mask_vector_store_count": 0,
     "max_direct_call_depth": 4,
     "reachable_sized_function_count": 371,
     "reachable_unique_node_count": 377,
