@@ -1,0 +1,86 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374ComputedAddressUseClassification/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374ComputedAddressInventory/1",
+  "partition": {
+    "inventory_materializer_count": 22,
+    "unwind_metadata_count": 2,
+    "code_materializer_count": 20,
+    "read_only_count": 1,
+    "direct_write_through_count": 1,
+    "return_escape_count": 1,
+    "callee_forwarding_count": 17,
+    "remaining_runtime_paths_where_write_is_still_possible": 19
+  },
+  "unwind_metadata": [
+    {"site":"0x00a6cfe7","function":"Unwind@00a6cfe4","runtime_writer":false},
+    {"site":"0x00a6d067","function":"Unwind@00a6d064","runtime_writer":false}
+  ],
+  "read_only": [
+    {
+      "site":"0x009857b7",
+      "function":"FUN_009857a2",
+      "materializer":"lea eax,[esi+0x374]",
+      "uses":["cmp [eax-0xa0],edi","cmp [eax],edi","mov ebx,[eax-0xa0]","cmp ecx,[eax]","add eax,4"],
+      "store_through_computed_pointer":false,
+      "computed_pointer_forwarded_or_returned":false
+    }
+  ],
+  "direct_write_through": [
+    {
+      "site":"0x00985bd3",
+      "function":"FUN_00985bc0",
+      "materializer":"add esi,0x374",
+      "writes":["0x00985c12 [esi-0xa0]=eax","0x00985c1a [esi+0x48]&=0","0x00985c1e [esi]=edi","0x00985c21 [esi+0x28]=edi"],
+      "receiver_provenance_complete":false
+    }
+  ],
+  "return_escape": [
+    {
+      "site":"0x0052902b",
+      "function":"FUN_00529020",
+      "materializer":"lea eax,[ecx+0x374]",
+      "escape":"0x00529031 ret returns computed pointer when [ecx+0x18] >= 2",
+      "receiver_provenance_complete":false,
+      "consumer_surface_complete":false
+    }
+  ],
+  "callee_forwarding": [
+    {"site":"0x005292db","function":"FUN_005292d0","target":"FUN_00531f80 / FUN_00531fa0","transfer":"computed pointer -> ECX"},
+    {"site":"0x0052aac0","function":"FUN_0052a9b0","target":"FUN_0051b370","transfer":"computed pointer pushed as argument"},
+    {"site":"0x005f4e86","function":"FUN_005f4e70","target":"FUN_0060d580","transfer":"computed pointer pushed as argument"},
+    {"site":"0x005f4ffa","function":"FUN_005f4f55","target":"FUN_00901cc5","transfer":"computed pointer pushed as destination argument"},
+    {"site":"0x005f548e","function":"FUN_005f5260","target":"FUN_0060d580","transfer":"computed pointer pushed as argument"},
+    {"site":"0x005f569b","function":"FUN_005f54b0","target":"FUN_0060d9c0","transfer":"computed pointer pushed as argument"},
+    {"site":"0x005f5a3e","function":"FUN_005f5930","target":"FUN_0060d9c0","transfer":"computed pointer pushed as argument"},
+    {"site":"0x005f5d0a","function":"FUN_005f5c70","target":"FUN_0060d580","transfer":"computed pointer pushed as argument"},
+    {"site":"0x005f5ebb","function":"FUN_005f5d70","target":"FUN_0060d580","transfer":"computed pointer pushed as argument"},
+    {"site":"0x005f61c8","function":"FUN_005f6160","target":"FUN_0060d580","transfer":"computed pointer pushed as argument"},
+    {"site":"0x005f6593","function":"FUN_005f63e0","target":"FUN_008f3df0 / FUN_0060d580","transfer":"computed pointer pushed to helper calls"},
+    {"site":"0x005f6eda","function":"FUN_005f6850","target":"FUN_00901cc5","transfer":"computed pointer pushed as destination argument"},
+    {"site":"0x0070f62d","function":"FUN_0070f580","target":"FUN_006310c0","transfer":"computed pointer -> ECX"},
+    {"site":"0x0070fb45","function":"FUN_0070fae0","target":"FUN_00533e70","transfer":"computed pointer -> ECX"},
+    {"site":"0x0070fdeb","function":"FUN_0070fae0","target":"FUN_006329e0","transfer":"computed pointer -> ECX"},
+    {"site":"0x0075070b","function":"FUN_007506b0","target":"FUN_00632c10","transfer":"computed pointer -> EDX"},
+    {"site":"0x0075096d","function":"FUN_007506b0","target":"FUN_00632c10","transfer":"computed pointer -> EDX"}
+  ],
+  "adjudication": {
+    "unwind_metadata_rejected_as_runtime_writers":true,
+    "read_only_materializer_rejected_as_writer":true,
+    "use_classification_complete_for_inventory":true,
+    "remaining_runtime_path_count":19,
+    "remaining_receiver_provenance_complete":false,
+    "computed_address_manager_374_writer_surface_complete":false,
+    "manager_374_join_to_hdvehicle_4330_complete":false,
+    "last_literal_0x004b86cf_rejected":false,
+    "p1_3_control_producer_complete":false,
+    "external_provider_count":7
+  },
+  "next_step":"Classify receiver ownership for the direct write-through site 0x00985bd3, then bound the returned-pointer consumer surface from 0x0052902b and the 17 callee-forwarding paths without inferring identity from +0x374 alone."
+}
