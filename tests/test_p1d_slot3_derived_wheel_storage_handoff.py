@@ -49,7 +49,7 @@ def test_synthetic_builder_joins_machine_identity_to_source_storage(monkeypatch,
     m = load_module()
     source = tmp_path / "SHIFT.exe.c"
     source.write_text(
-        """void __thiscall FUN_00763570(void *this,double param_1)\n\n{\n"
+        "void __thiscall FUN_00763570(void *this,double param_1)\n\n{\n"
         "  local_18._4_4_ = (float)((int)this + 0x400);\n"
         "  fVar8 = FUN_00755f80((int)local_18._4_4_);\n"
         "  local_18._4_4_ = (float)((int)local_18._4_4_ + 0xa80);\n"
@@ -57,7 +57,8 @@ def test_synthetic_builder_joins_machine_identity_to_source_storage(monkeypatch,
         "}\n\n"
         "void __thiscall FUN_00770e80(void *this,undefined8 param_1,undefined8 param_2,char param_3)\n\n{\n"
         "  FUN_00760b50((void *)((int)this + 0x2380),*(double *)((int)this + 0xa0),iVar2);\n"
-        "}\n\nvoid FUN_00000000()\n\n{\n}\n""",
+        "}\n\n"
+        "void FUN_00000000()\n\n{\n}\n",
         encoding="utf-8",
     )
     direct = tmp_path / "direct.json"
