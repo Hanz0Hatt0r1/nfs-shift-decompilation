@@ -1,0 +1,48 @@
+{
+  "format": "SHIFT.Fun007584f0PositiveQwordReduction/1",
+  "ready": true,
+  "platform_authority": "PC retail 1.02",
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_side_effect_contract": "SHIFT.Fun007584f0MachineSideEffectProof/1"
+  },
+  "machine_reduction": {
+    "start": "0x007586f9",
+    "end_exclusive": "0x00758731",
+    "size": 56,
+    "raw_byte_sha256": "c8f5e51aeeb6a14a947ba7c5c1d44ec8b3c687765377ba8b01254c15c38e9b0f",
+    "numerator": "A[1]*B[1] + A[0]*B[0] + A[2]*B[2]",
+    "denominator": "A[1]*C[1] + A[0]*C[0] + A[2]*C[2]",
+    "result": "numerator / denominator",
+    "accumulation_component_order": [1, 0, 2],
+    "final_instruction": "0x0075872f FDIVRP ST(1),ST",
+    "positive_store": "0x00758731 FSTP qword [ESI+0x0d40]",
+    "alternate_zero_store": "0x0075873b FST qword [ESI+0x0d40]"
+  },
+  "loop_geometry": {
+    "loop_indices": [0, 1],
+    "hdvehicle_base_offsets": ["0x0d40", "0x17c0"],
+    "wheel_stride": "0x0a80",
+    "positive_branch_guard": "existing load-term > 0 branch owned by SHIFT.Fun007584f0PersistentWriteStage/1"
+  },
+  "native_contract": {
+    "positional_vec3_roles_preserved": true,
+    "semantic_names_for_A_B_C_claimed": false,
+    "final_ratio_reduction_internalized": true,
+    "retail_component_accumulation_order_preserved": true,
+    "finite_inputs_required": true,
+    "zero_denominator_rejected": true,
+    "persistent_write_stage_consumes_native_result": true
+  },
+  "limits": {
+    "A_B_C_vector_construction_internalized": false,
+    "x87_extended_precision_bit_parity_claimed": false,
+    "positive_qword_producer_family_complete": false,
+    "FUN_007584f0_computed_payloads_complete": false,
+    "residual_producer_promotion_bit_set": false,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_provider_removed": false,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Recover the source construction of positional vec3 A/B/C for the two FUN_007584f0 loop iterations; only then can the two positive-load qword producers become complete."
+}
