@@ -1,0 +1,84 @@
+{
+  "format": "SHIFT.P1D.Controller1RetailNativeTransitionSurface/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "scope": "Controller #1 direct native-transition timing frontier",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "sqlite_format": "SHIFT.GhidraSQLiteIndex/1",
+    "sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "whole_pe_instruction_disassembly": "GNU objdump -Mintel -d",
+    "machine_code_is_semantic_authority": true
+  },
+  "inventory": {
+    "instruction_count": 2845103,
+    "instruction_aligned_native_transition_count": 1,
+    "sysenter_count": 1,
+    "int2e_count": 0,
+    "outside_sized_ghidra_function_count": 1,
+    "transitions": [
+      {
+        "address": "0x004209c8",
+        "mnemonic": "sysenter",
+        "bytes": "0f34",
+        "asm": "sysenter",
+        "containing_function": null,
+        "outside_sized_ghidra_function": true,
+        "direct_static_reference_count": 0,
+        "direct_static_references": [],
+        "local_machine_context": [
+          "0x004209bc pop edi",
+          "0x004209bd pop esi",
+          "0x004209be pop ebp",
+          "0x004209bf ret 0x4",
+          "0x004209c2..0x004209c7 int3 padding",
+          "0x004209c8 sysenter",
+          "0x004209ca jmp 0x00400739"
+        ]
+      }
+    ],
+    "raw_signature_cross_check": {
+      "0f34_raw_byte_hits": ["0x004209c8", "0x00943f07"],
+      "cd2e_raw_byte_hits": ["0x004d15e8", "0x008b9a2b", "0x008ba262"],
+      "non_instruction_aligned_raw_hits": [
+        {
+          "address": "0x00943f07",
+          "reason": "bytes 0f 34 are embedded in displacement bytes of MOV [edi+ecx+0x14034],eax"
+        },
+        {
+          "address": "0x004d15e8",
+          "reason": "bytes cd 2e are embedded in absolute address 0x00be2ecd of CMP"
+        },
+        {
+          "address": "0x008b9a2b",
+          "reason": "bytes cd 2e are embedded in absolute address 0x00be2ecd of MOV"
+        },
+        {
+          "address": "0x008ba262",
+          "reason": "bytes cd 2e are embedded in absolute address 0x00be2ecd of MOV"
+        }
+      ]
+    }
+  },
+  "adjudication": {
+    "whole_pe_sysenter_int2e_instruction_surface_bounded": true,
+    "function_scoped_ghidra_exporter_covers_all_native_transitions": false,
+    "direct_static_entry_to_native_transition_present": false,
+    "indirect_entry_to_native_transition_ruled_out": false,
+    "native_service_identity_proven": false,
+    "controller1_target_thread_join_complete": false,
+    "native_or_syscall_apc_injection_ruled_out": false,
+    "controller1_timing_exhaustive": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The single SYSENTER instruction does not identify a Windows service number or APC semantics.",
+    "Zero direct static call/jump references does not rule out indirect entry, computed control flow, callbacks, generated code, or external transfer.",
+    "The instruction lies outside every sized Ghidra function record and would be omitted by the function-scoped #1699 exporter.",
+    "No timing gate changes without exact service/API identity and Controller #1 target-thread provenance."
+  ],
+  "next_step": "Adjudicate orphan SYSENTER 0x004209c8 by recovering any indirect pointer/data references and service setup; separately continue manual PEB/export-walk adjudication."
+}
