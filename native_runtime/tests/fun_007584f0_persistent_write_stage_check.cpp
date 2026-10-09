@@ -2,7 +2,9 @@
 #include "shift_fun_007584f0_persistent_write_stage.hpp"
 #include "shift_fun_007584f0_positive_qword_reduction.hpp"
 #include "shift_fun_007584f0_positive_qword_vector_construction.hpp"
+#include "shift_fun_007584f0_trig_boundary.hpp"
 
+#include <array>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -52,6 +54,13 @@ int main() {
                     kFun007584f0SourceVector888Offset == 0x0888u &&
                     kFun007584f0SourceVector8d0Offset == 0x08d0u,
                 "FUN_007584f0 positive-qword vector source offsets drift");
+        require(kFun007584f0TrigCallerStart == 0x00758560u &&
+                    kFun007584f0TrigCallerEnd == 0x0075858bu &&
+                    kFun007584f0TrigSourceOffset == 0x0738u,
+                "FUN_007584f0 trig caller/source drift");
+        require(kFun007584f0CosineWrapper == 0x00900b10u &&
+                    kFun007584f0SineWrapper == 0x00900c40u,
+                "FUN_007584f0 trig wrapper addresses drift");
 
         const Fun007584f0InterpolationArguments interpolation_arguments{{
             0.0f,
@@ -68,12 +77,48 @@ int main() {
         require(interpolation.value == 1.0f,
                 "FUN_007584f0 native FUN_00783a30 formula drift");
 
+        std::array<int, 2> trig_call_order{};
+        std::size_t trig_call_index = 0u;
+        const auto trig = execute_fun_007584f0_trig_boundary(
+            0.0,
+            [&](float source) {
+                require(source == 0.0f,
+                        "FUN_007584f0 cosine wrapper source narrowing drift");
+                trig_call_order[trig_call_index++] = 1;
+                return 0.0f;
+            },
+            [&](float source) {
+                require(source == 0.0f,
+                        "FUN_007584f0 sine wrapper source reuse drift");
+                trig_call_order[trig_call_index++] = 2;
+                return 1.0f;
+            });
+        require(trig.source_f32 == 0.0f &&
+                    trig.cosine_f32 == 0.0f && trig.sine_f32 == 1.0f,
+                "FUN_007584f0 trig f32 boundary drift");
+        require(trig.cosine_call_count == 1u && trig.sine_call_count == 1u &&
+                    trig_call_index == 2u &&
+                    trig_call_order == std::array<int, 2>{1, 2},
+                "FUN_007584f0 trig wrapper call order drift");
+
+        bool rejected_missing_trig_wrapper = false;
+        try {
+            (void)execute_fun_007584f0_trig_boundary(
+                0.0,
+                {},
+                [](float) { return 0.0f; });
+        } catch (const std::invalid_argument&) {
+            rejected_missing_trig_wrapper = true;
+        }
+        require(rejected_missing_trig_wrapper,
+                "FUN_007584f0 missing trig wrapper failed open");
+
         const Fun007584f0PositiveQwordVectorSourceInput vector_source{
             {1.0f, 0.0f, 0.0f,
              0.0f, 1.0f, 0.0f,
              0.0f, 0.0f, 1.0f},
-            0.0f,
-            1.0f,
+            trig.cosine_f32,
+            trig.sine_f32,
             1u,
             {1.0, 2.0, 3.0},
             {4.0, 5.0, 6.0},
@@ -193,6 +238,10 @@ int main() {
             << kFun007584f0PositiveQwordReductionFormat << "\","
             << "\"positive_qword_vector_construction_format\":\""
             << kFun007584f0PositiveQwordVectorConstructionFormat << "\","
+            << "\"trig_boundary_format\":\""
+            << kFun007584f0TrigBoundaryFormat << "\","
+            << "\"trig_source_f32_narrowing_internalized\":true,"
+            << "\"trig_wrapper_call_order_internalized\":true,"
             << "\"positive_qword_final_reduction_internalized\":true,"
             << "\"positive_qword_vector_arithmetic_internalized\":true,"
             << "\"positive_qword_source_acquisition_internalized\":false,"
