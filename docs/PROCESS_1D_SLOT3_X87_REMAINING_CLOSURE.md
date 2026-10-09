@@ -1,28 +1,34 @@
-# Process 1D / P1.3D — remaining shallow x87 zero-init closure
+# Process 1D / P1.3D — final shallow x87 pointer-chain closure
 
 ## Scope
 
-Merged P1A #1738 bounded 18 direct-depth<=4 `FLDZ -> FST/FSTP` candidates. Merged #1740 machine-rejected the first 9. This P1D slice adjudicates the remaining 9 only for selected slot3 `HDVehicle+0x28b8..+0x28bf`.
+Merged P1A #1738 bounded 18 direct-depth<=4 `FLDZ -> FST/FSTP` candidates. Merged #1740 rejected 9 and merged #1742 rejected 5 more. This P1D slice consumes those 14 results without changing P1A ownership and adjudicates only the final four pointer-chain candidates for selected slot3 `HDVehicle+0x28b8..+0x28bf`:
 
-The proof is fail-closed. Reachability and numeric offset equality never establish selected-HDVehicle identity. Machine receiver/argument flow, exact disjoint destinations, or existing merged BODY ownership contracts are required.
+- `FUN_0075c0d0`
+- `FUN_007b8630`
+- `FUN_0075ada0`
+- `FUN_007b7840`
+
+The proof is fail-closed. Reachability and numeric offset equality never establish selected-HDVehicle identity.
 
 ## Retail result
 
-The hash-locked verifier pins 71 exact retail machine anchors.
+The hash-locked verifier pins 37 exact retail machine anchors for the four final candidates.
 
-- `FUN_00766510` receives the exact HDVehicle root from `FUN_0076d100`, but zeroes only `+0x40a0/+0x40a8/+0x40b0/+0x42b0/+0x4300`.
 - `FUN_0075c0d0` is path-infeasible on its only shallow root path: `FUN_00770e80` passes literal zero as `FUN_007b1790` arg2, while `FUN_007b1790` calls `FUN_0075c0d0` only when that argument is nonzero.
-- `FUN_007aa940`, `FUN_0075ada0`, `FUN_0075afc0`, and `FUN_007876e0` receive exact caller stack-local output objects.
-- Both shallow `FUN_007ade70` calls are exact stack-local outputs: `EBP-0x38` at `0x007592b4` and `EBP-0x2c` at `0x007593eb`.
-- `FUN_007b8630` and `FUN_007b7840` operate on the separate BODY owner/lifecycle domain. `SHIFT.GlobalVehicleBodyOwnerIdentity/1` proves `HDVehicle+0x339c` contains a pointer to a BODY-array owner that is not the vehicle base. `SHIFT.BodyFrameIntegrationStatic/1` independently classifies these functions as BODY recovery/state writers.
+- `FUN_0075ada0` receives four exact caller stack-local output pointers: `EBP-0x8`, `EBP-0xc`, `EBP-0x18`, and `EBP-0x24`.
+- `FUN_007b8630` operates in the BODY recovery domain. The shallow path begins from vehicle `+0x339c`; `SHIFT.GlobalVehicleBodyOwnerIdentity/1` proves that field contains a pointer to a separate BODY-array owner rather than the vehicle base. The callee then follows nested pointers before clearing BODY motion/accumulator lanes.
+- `FUN_007b7840` is reached by the proven relation-refresh BODY chain `FUN_00770e80 -> FUN_007b8810 -> FUN_007b8630 -> FUN_007b8260 -> FUN_007b7840`. Existing BODY contracts classify it as a broader BODY lifecycle/state writer and the bounded call forwards BODY storage, not an inline wheel target.
 
-Together with merged #1740, all 18 shallow x87 zero-init candidates are negative for selected slot3.
+Together with merged #1740 and #1742, all 18 shallow x87 zero-init candidates are negative for selected slot3.
 
 ## Gate
 
 ```text
 slot3 shallow x87 depth<=4 complete = true
 x87 candidates                       = 18
+resolved by merged P1A              = 14
+resolved here                        = 4
 x87 candidates rejected              = 18
 selected slot3 x87 writer found       = false
 SSE/vector copy-init complete         = false
@@ -39,7 +45,7 @@ provider count                        = 7
 python3 tools/ghidra/verify_p1d_slot3_x87_remaining.py /path/to/SHIFT.exe
 ```
 
-The verifier fails closed on retail SHA-256 drift or any of the 71 exact receiver/call/store anchors changing.
+The verifier fails closed on retail SHA-256 drift or any of the 37 exact receiver/call/store anchors changing.
 
 ## Next step
 
