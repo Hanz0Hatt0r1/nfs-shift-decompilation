@@ -1,0 +1,71 @@
+{
+  "format": "SHIFT.P1D.Slot3Fun00769ef0DescendantHandoff/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "upstream_contracts": [
+    "SHIFT.Fun007682c0Body0DeltaDestination/1",
+    "SHIFT.Fun007675f0SurfaceProbeNodeCache/1",
+    "SHIFT.Fun007675f0DistanceStateOwnership/1"
+  ],
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_source_machine_contracts_consumed_not_reowned": true
+  },
+  "selected_slot3": {
+    "absolute_target": "HDVehicle+0x28b8..+0x28bf",
+    "width": "f64/qword"
+  },
+  "exact_root_chain": {
+    "pass_tail_callsite": "0x0076d2c1",
+    "pass_tail": "FUN_0076d100 -> FUN_00769ef0",
+    "receiver": "HDVehicle",
+    "descendant_calls": [
+      {
+        "callsite": "0x0076a1c7",
+        "callee": "FUN_007675f0",
+        "receiver_domain": "HDVehicle pass state"
+      },
+      {
+        "callsite": "0x0076a1e8",
+        "callee": "FUN_007682c0",
+        "receiver_domain": "forwarded HDVehicle -> chassis BODY0 pointer field"
+      }
+    ]
+  },
+  "proven_descendant_destinations": {
+    "FUN_007675f0_hdvehicle_state_offsets": [
+      "+0x120",
+      "+0x128",
+      "+0x130",
+      "+0x138",
+      "+0x4080"
+    ],
+    "FUN_007675f0_selected_slot3_overlap": false,
+    "FUN_007682c0_vehicle_pointer_field": "HDVehicle+0x33a0",
+    "FUN_007682c0_destination_owner": "retail BMW chassis BODY0",
+    "FUN_007682c0_body_record_write_offset": "+0x50",
+    "FUN_007682c0_writes_selected_hdvehicle_slot3": false
+  },
+  "adjudication": {
+    "slot3_fun00769ef0_known_descendant_tranche_complete": true,
+    "slot3_fun00769ef0_known_descendant_writer_found": false,
+    "fun00769ef0_complete_write_surface_proven": false,
+    "fun00758810_exact_root_branch_complete": false,
+    "deeper_direct_aliases_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "indirect_callback_aliases_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only the already-proven FUN_00769ef0 descendant destinations carried by the three upstream contracts.",
+    "It does not claim every write performed directly inside FUN_00769ef0 has been exhaustively classified.",
+    "FUN_00758810 remains a separate exact-HDVehicle branch from FUN_0076d100.",
+    "BODY0 +0x50 is a distinct object destination and is never equated with HDVehicle+0x28b8 by numeric coincidence."
+  ],
+  "next_step": "Adjudicate FUN_0076d100 0x0076d193 -> FUN_00758810 by exact HDVehicle receiver flow, then continue only stored/escaped or indirect carriers that preserve selected-wheel identity."
+}
