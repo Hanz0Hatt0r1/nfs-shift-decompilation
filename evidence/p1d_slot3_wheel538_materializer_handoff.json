@@ -46,7 +46,7 @@
       {
         "site": "0x008fe2c4",
         "function": "FUN_008fe2a0",
-        "role": "non-HDVehicle pool-object subobject initializer",
+        "role": "real subobject initializer on non-HDVehicle pool object",
         "adjudication": "rejected-by-allocator-owned-receiver-provenance"
       },
       {
