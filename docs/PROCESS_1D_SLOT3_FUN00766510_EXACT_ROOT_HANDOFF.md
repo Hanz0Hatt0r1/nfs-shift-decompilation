@@ -2,7 +2,7 @@
 
 This P1.3D slice reuses two already merged retail contracts rather than reopening their ownership:
 
-- `SHIFT.P1A.P13ASlot01X87ReuseTrancheClosure/1` proves `FUN_00766510` receives the exact `HDVehicle` root.
+- `SHIFT.P1A.P13ASlot01X87StackOutputTrancheClosure/1` proves `FUN_00766510` receives the exact `HDVehicle` root from `FUN_0076d100` at `0x0076d137/0x0076d139`.
 - `SHIFT.Fun00766510ResidualTailClosure/1` proves two exact calls to `FUN_00758fc0` with `ECX=ESI=HDVehicle`.
 
 The calls are:
@@ -24,7 +24,7 @@ Reproduce the handoff from merged contracts:
 
 ```bash
 python3 tools/ghidra/build_p1d_slot3_fun00766510_exact_root_handoff.py \
-  evidence/p1a_p13a_slot01_x87_reuse_tranche_closure.json \
+  evidence/p1a_p13a_slot01_x87_stack_output_tranche_closure.json \
   evidence/fun_00766510_residual_tail_closure.json \
   --output out/p1d_slot3_fun00766510_exact_root_handoff.json
 ```
