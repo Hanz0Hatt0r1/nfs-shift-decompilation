@@ -69,19 +69,19 @@ P3-integration resources / scene / Vulkan / bootstrap
 native playable Linux vertical slice
 ```
 
-Processes exchange only explicit fail-closed contracts. Missing semantic ownership is never guessed or transferred merely to keep another lane busy.
+Processes exchange only explicit fail-closed contracts. Missing semantic ownership is never guessed. When a large proof frontier is explicitly sharded, aggregate queue ownership stays with its integration owner while bounded shard work may be executed by the other P1 lanes under `coordination/lane_ownership.json`.
 
 ### Current process snapshot — 2026-10-09
 
 This is a convenience snapshot only. The execution JSON and generated status above remain authoritative if this section ever drifts.
 
-- **Process 1A / P1A-contact:** P1.1 `FUN_00766510/contact_response` proof and P1.2 `FUN_00765c40` ownership proof are complete. Their handoffs are available to Process 2.
-- **Process 1B / P1B-control:** active P1.3 work is narrowed to the remaining control-producer provenance. The explicit computed `manager+0x374` surface is down to six receiver/destination forwarding paths: `0x005292db`, `0x005f4ffa`, `0x005f6eda`, `0x0070f62d`, `0x0070fb45`, `0x0070fdeb`. After those close, the remaining identity join decides `manager+0x374 -> HDVehicle+0x4330` and final `0x004b86cf`; indirect/native APC injection remains the timing ambiguity.
-- **Process 1D / P1D-camera:** P1.4 retail camera-follow provenance is complete. The remaining camera blocker is runtime consumption, not retail proof.
-- **Process 2 / P2-runtime:** P2.3 may now consume the complete `contact_response` handoff; provider count stays at **7** until the external boundary is actually gone. In P2.4, the `FUN_007584f0 -> 0x00783a30` interpolation helper path and `FUN_0075cfb0` commit surface are native-owned, while two positive-load qword producers and wheel-job producer arithmetic/branch predicates remain open. P2.6 remains blocked on P1.3.
+- **Process 1A / P1A-contact:** P1.1 `FUN_00766510/contact_response` proof and P1.2 `FUN_00765c40` ownership proof are complete. In addition, P1A now owns shard **P1.3A**: computed `manager+0x374` paths `0x005292db` and `0x005f4ffa`, plus selected-root provenance for `HDVehicle+0x938` and `HDVehicle+0x13b8`.
+- **Process 1B / P1B-control:** P1B remains the aggregate P1.3 integration owner but now carries only shard **P1.3B**: computed paths `0x005f6eda` and `0x0070f62d`, the final `manager+0x374 -> HDVehicle+0x4330` identity join, and final `0x004b86cf` / slot2 adjudication. It integrates P1.3A/P1.3B/P1.3D into the final handoff for P2.6.
+- **Process 1D / P1D-camera:** P1.4 retail camera-follow provenance is complete. P1D now additionally owns shard **P1.3D**: computed paths `0x0070fb45` and `0x0070fdeb`, selected-root provenance for `HDVehicle+0x28b8`, and the remaining indirect/native APC injection timing closure for the Controller #1 alertable-worker producer chain.
+- **Process 2 / P2-runtime:** P2.3 may now consume the complete `contact_response` handoff; provider count stays at **7** until the external boundary is actually gone. In P2.4, the `FUN_007584f0 -> 0x00783a30` interpolation helper path and `FUN_0075cfb0` commit surface are native-owned, while two positive-load qword producers and wheel-job producer arithmetic/branch predicates remain open. P2.6 remains blocked until the three P1.3 shards are integrated.
 - **Process 3 / P3-integration:** resource, Silverstone/BMW scene, launcher and Vulkan infrastructure are maintained continuously. Final continuous presentation remains blocked on the completed retail control chain and a Process 2 runtime camera feed.
 
-The current external vehicle-provider count is **7**. The first planned architectural reduction remains `FUN_00766510/contact_response`: **7 -> 6** only after Process 2 removes that boundary from selected production execution.
+P1.3 is therefore balanced as **4 work items per P1 lane**: two computed forwarding paths plus two additional provenance/timing items for P1A, P1B and P1D respectively. The current external vehicle-provider count is **7**. The first planned architectural reduction remains `FUN_00766510/contact_response`: **7 -> 6** only after Process 2 removes that boundary from selected production execution.
 
 ## What already works
 
@@ -150,7 +150,7 @@ The current provider count and exact remaining native boundaries are intentional
 
 Already implemented infrastructure includes live X11 keyboard intent, deterministic scripted input for regressions, CameraManager state transport, guarded camera double-buffer updates, and camera state inside the continuous native session.
 
-Retail camera-follow provenance is now complete. Runtime camera-feed production/consumption remains a separate Process 2 -> Process 3 gate. Retail-semantic control completion remains governed by P1.3 rather than by the existence of input transport code.
+Retail camera-follow provenance is now complete. Runtime camera-feed production/consumption remains a separate Process 2 -> Process 3 gate. Retail-semantic control completion remains governed by the integrated P1.3 result rather than by the existence of input transport code.
 
 ### Continuous runtime
 
