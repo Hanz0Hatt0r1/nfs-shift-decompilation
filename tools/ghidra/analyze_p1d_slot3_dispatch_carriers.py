@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Cross-check FUN_00755950 dispatch carriers against retail machine proof.
 
-The Ghidra SQLite/vtable/static-table exports are navigation indexes. This tool
-must not promote an index miss over direct PC-retail machine evidence.
+The Ghidra SQLite/vtable/static-table exports are navigation indexes. Version-1
+SQLite indexes stored authoritative call targets in raw_json while some legacy
+callee columns were left empty, so this analyzer reports both surfaces.
 """
 
 from __future__ import annotations
@@ -26,15 +27,55 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def direct_callers(db_path: Path, target_hex: str) -> list[dict]:
+def callgraph_matches(db_path: Path, target_hex: str) -> dict:
     db = sqlite3.connect(db_path)
     db.row_factory = sqlite3.Row
     try:
-        rows = db.execute(
-            "SELECT raw_json FROM calls WHERE lower(callee)=lower(?) ORDER BY callsite",
-            (target_hex,),
-        ).fetchall()
-        return [json.loads(row["raw_json"]) for row in rows]
+        fmt_row = db.execute("SELECT value FROM metadata WHERE key='format'").fetchone()
+        fmt = str(fmt_row[0]) if fmt_row else ""
+        columns = {row[1] for row in db.execute("PRAGMA table_info(calls)")}
+        if fmt == "SHIFT.GhidraSQLiteIndex/1":
+            column_rows = db.execute(
+                "SELECT raw_json FROM calls WHERE lower(callee)=lower(?) ORDER BY callsite",
+                (target_hex,),
+            ).fetchall()
+            normalized: list[dict] = []
+            for row in db.execute("SELECT caller,callee,callsite,kind,raw_json FROM calls ORDER BY callsite"):
+                rec = json.loads(row["raw_json"])
+                to_addr = str(rec.get("to") or row["callee"] or "")
+                to_name = str(rec.get("to_name") or rec.get("callee") or to_addr)
+                if target_hex.lower() not in {to_addr.lower(), to_name.lower()}:
+                    continue
+                normalized.append(
+                    {
+                        "from_function": str(rec.get("from_function") or row["caller"] or ""),
+                        "from_name": str(rec.get("from_name") or rec.get("caller") or rec.get("from_function") or row["caller"] or ""),
+                        "instruction": str(rec.get("instruction") or rec.get("callsite") or row["callsite"] or ""),
+                        "to": to_addr,
+                        "to_name": to_name,
+                        "indirect": bool(rec.get("indirect")),
+                    }
+                )
+            return {
+                "index_format": fmt,
+                "legacy_callee_column_match_count": len(column_rows),
+                "normalized_match_count": len(normalized),
+                "callers": normalized,
+            }
+
+        if {"callee", "callee_address"}.issubset(columns):
+            rows = db.execute(
+                "SELECT raw_json FROM calls WHERE lower(callee)=lower(?) OR lower(callee_address)=lower(?) ORDER BY callsite",
+                (target_hex, target_hex),
+            ).fetchall()
+            normalized = [json.loads(row["raw_json"]) for row in rows]
+            return {
+                "index_format": fmt,
+                "legacy_callee_column_match_count": len(rows),
+                "normalized_match_count": len(normalized),
+                "callers": normalized,
+            }
+        raise ValueError(f"unsupported calls schema for {fmt!r}")
     finally:
         db.close()
 
@@ -90,11 +131,16 @@ def static_pointer_hits(static_tables_path: Path, target: int) -> tuple[int, int
 
 def analyze(db_path: Path, vtables_path: Path, static_tables_path: Path, machine_proof_path: Path, target: int = TARGET) -> dict:
     target_hex = f"0x{target:08x}"
-    callers = direct_callers(db_path, target_hex)
+    callgraph = callgraph_matches(db_path, target_hex)
+    callers = callgraph["callers"]
     machine_call = load_machine_call(machine_proof_path)
     vt_count, vt_slots, vt_hits = vtable_slots(vtables_path, target_hex)
     st_count, st_bytes, st_hits = static_pointer_hits(static_tables_path, target)
     machine_call_covered = any(str(rec.get("instruction", "")).lower() == machine_call["call_instruction"].lower() for rec in callers)
+    legacy_gap = (
+        callgraph["index_format"] == "SHIFT.GhidraSQLiteIndex/1"
+        and callgraph["legacy_callee_column_match_count"] < callgraph["normalized_match_count"]
+    )
 
     return {
         "format": FORMAT,
@@ -111,32 +157,31 @@ def analyze(db_path: Path, vtables_path: Path, static_tables_path: Path, machine
             "pc_retail_machine_proof_overrides_index_misses": True,
         },
         "retail_machine_direct_call": machine_call,
-        "sqlite_direct_callgraph": {
-            "caller_count": len(callers),
-            "callers": callers,
-            "known_machine_call_covered": machine_call_covered,
-            "coverage_gap_against_machine_proof": not machine_call_covered,
+        "sqlite_callgraph": {
+            **callgraph,
+            "known_machine_call_covered_after_raw_json_normalization": machine_call_covered,
+            "legacy_v1_callee_column_population_gap": legacy_gap,
         },
         "heuristic_vtables": {"table_count": vt_count, "slot_count": vt_slots, "target_slot_hit_count": len(vt_hits), "target_slot_hits": vt_hits},
         "static_tables": {"record_count": st_count, "exported_byte_count": st_bytes, "literal_pointer_hit_count": len(st_hits), "literal_pointer_hits": st_hits},
         "adjudication": {
             "direct_call_carrier_proven_by_machine": True,
-            "sqlite_direct_callgraph_complete_for_target": machine_call_covered,
+            "normalized_sqlite_callgraph_recovers_machine_call": machine_call_covered,
+            "legacy_v1_column_population_gap_proven": legacy_gap,
             "heuristic_vtable_carrier_present": bool(vt_hits),
             "static_literal_pointer_carrier_present": bool(st_hits),
-            "index_misses_can_prove_carrier_absence": False,
-            "runtime_or_other_indirect_dispatch_ruled_out": False,
+            "vtable_or_static_pointer_misses_prove_carrier_absence": False,
             "slot3_writer_provenance_proven": False,
             "p1_3_control_producer_complete": False,
             "external_provider_count": 7,
         },
         "limits": [
-            "The SQLite direct-callgraph miss is contradicted by direct retail machine evidence and therefore demonstrates index incompleteness, not carrier absence.",
+            "Version-1 callee-column misses are navigation-index defects when raw_json contains the target; they are not semantic absence proofs.",
             "The vtable export is heuristic and a miss cannot rule out virtual dispatch.",
             "A static-table literal-pointer miss cannot rule out code-built, copied, registered, relocated, or runtime-resolved pointers.",
             "The proven FUN_00758b50 -> FUN_00755950 call establishes the consumer lifecycle but not the writer of selected HDVehicle+0x28b8."
         ],
-        "next_step": "Use the proven FUN_00758b50 wheel lifecycle and exact HDVehicle+0x400+slot*0xa80 receiver expression to trace alias/callee/bulk-copy writes to slot3; treat SQLite caller queries as non-authoritative for this target until the index exporter is repaired."
+        "next_step": "Use the proven FUN_00758b50 wheel lifecycle and exact HDVehicle+0x400+slot*0xa80 receiver expression to trace alias/callee/bulk-copy writes to slot3; use raw_json-compatible caller queries for v1 indexes."
     }
 
 
