@@ -1,0 +1,80 @@
+{
+  "format": "SHIFT.P1D.Controller1NativePrimitivePEClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "ghidra_sqlite_format": "SHIFT.GhidraSQLiteIndex/1",
+    "machine_disassembly_is_semantic_authority": true,
+    "sqlite_function_entries_are_navigation_only": true,
+    "sqlite_size_is_not_assumed_to_be_a_contiguous_function_body": true
+  },
+  "surface": {
+    "ghidra_function_entry_count": 41538,
+    "fs_access": {
+      "raw_disassembly_count": 3458,
+      "exact_fs30_count": 0,
+      "exact_fs30_sites": []
+    },
+    "manual_export_walk": {
+      "exact_fs30_plus_pe_export_offset_candidate_possible": false,
+      "candidate_count": 0
+    },
+    "direct_native": {
+      "raw_sysenter_count": 1,
+      "raw_int2e_count": 0,
+      "native_sites": [
+        {
+          "address": "0x004209c8",
+          "text": "sysenter",
+          "preceding_instructions": [
+            {"address": "0x004209be", "text": "pop    ebp"},
+            {"address": "0x004209bf", "text": "ret    0x4"},
+            {"address": "0x004209c2", "text": "int3"},
+            {"address": "0x004209c3", "text": "int3"},
+            {"address": "0x004209c4", "text": "int3"},
+            {"address": "0x004209c5", "text": "int3"},
+            {"address": "0x004209c6", "text": "int3"},
+            {"address": "0x004209c7", "text": "int3"}
+          ],
+          "ghidra_function_entry": null,
+          "previous_function_entry": {
+            "address": "0x00420770",
+            "name": "FUN_00420770"
+          },
+          "next_function_entry": {
+            "address": "0x004209d0",
+            "name": "FUN_004209d0"
+          },
+          "direct_static_incoming_refs": [],
+          "absolute_pointer_occurrence_count": 0
+        }
+      ]
+    }
+  },
+  "adjudication": {
+    "exact_fs30_plus_pe_export_offset_heuristic_ruled_out": true,
+    "direct_statically_addressed_sysenter_int2e_surface_ruled_out": true,
+    "computed_or_indirect_entry_to_native_bytes_ruled_out": false,
+    "alternative_peb_acquisition_ruled_out": false,
+    "indirect_native_stub_or_function_pointer_ruled_out": false,
+    "generated_or_wow64_transition_ruled_out": false,
+    "manual_export_walking_ruled_out": false,
+    "native_or_syscall_apc_injection_ruled_out": false,
+    "controller1_thread_handle_join_complete": false,
+    "controller1_timing_exhaustive": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Ghidra function size is a summary count, not assumed to describe a contiguous body; chunked bodies are possible.",
+    "Zero exact FS:[0x30] instructions rules out only the exact #1699 PEB heuristic, not alternate PEB/module discovery or generated/decoded resolver logic.",
+    "The lone raw SYSENTER decode at 0x004209c8 has no direct branch/call reference and no absolute 32-bit pointer occurrence, but computed/indirect control flow could still target it.",
+    "Indirect native stubs, imported ntdll calls, WOW64 transitions and generated code remain outside this narrow direct-static surface.",
+    "No result changes Controller #1 target-thread identity or timing-exhaustiveness gates."
+  ],
+  "next_step": "Adjudicate computed/indirect reachability to raw 0x004209c8, then continue indirect/native-stub and Controller #1 target-thread-handle provenance."
+}
