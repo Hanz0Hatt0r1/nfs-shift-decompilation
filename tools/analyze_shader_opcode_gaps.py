@@ -50,7 +50,9 @@ def analyze_opcode_gaps(report: dict[str, Any]) -> dict[str, Any]:
         ),
         "gap_count": len(gaps),
         "gaps": gaps,
-        "ready": report.get("ready") is True,
+        # Fail closed: a corpus cannot be backend-ready while any observed
+        # instruction remains outside the executable shader oracle.
+        "ready": report.get("ready") is True and not gaps,
     }
 
 
