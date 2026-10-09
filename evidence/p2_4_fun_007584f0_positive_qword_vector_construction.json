@@ -1,0 +1,92 @@
+{
+  "format": "SHIFT.Fun007584f0PositiveQwordVectorConstruction/1",
+  "ready": true,
+  "platform_authority": "PC retail 1.02",
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "downstream_reduction_contract": "SHIFT.Fun007584f0PositiveQwordReduction/1"
+  },
+  "machine_spans": {
+    "axis_transform_setup": {
+      "start": "0x0075850c",
+      "end_exclusive": "0x0075853c",
+      "size": 48,
+      "raw_byte_sha256": "2f8a8303545bad3b90e57c80dcac011a78d6370dc0cc1e044e44d114b2842925"
+    },
+    "loop_vector_construction": {
+      "start": "0x0075858b",
+      "end_exclusive": "0x007586f9",
+      "size": 366,
+      "raw_byte_sha256": "e261e763d2d493ad9f3f59242b4a7ee5d90a066ff5b59fafba8aad56a06dc270"
+    }
+  },
+  "helper_machine_contracts": {
+    "vec3_add": {
+      "entry": "0x00753590",
+      "end_exclusive": "0x007535b4",
+      "raw_byte_sha256": "29ad42134f1176109058b222289fc03a1654034956d44d7f5dafadd20e1aa8e6"
+    },
+    "vec3_scale": {
+      "entry": "0x007535f0",
+      "end_exclusive": "0x00753612",
+      "raw_byte_sha256": "f99de4e31545a94fc20a3b4e7771569a19d5d6536faa08e04440079f8b380321"
+    },
+    "vec3_cross": {
+      "entry": "0x00753650",
+      "end_exclusive": "0x0075368c",
+      "raw_byte_sha256": "01a753b9668434bc769f1c9304931f0067e502e26f93097275e4c1b3469202ab"
+    },
+    "body_frame_transform": {
+      "entry": "0x007aefb0",
+      "end_exclusive": "0x007af003",
+      "raw_byte_sha256": "76c52235cce08d3ec131d43e1b62cda623ac8528944e44f902846a0a71b14f29",
+      "component_accumulation_order": [1, 0, 2]
+    }
+  },
+  "source_layout": {
+    "selected_body_pointer": "HDVehicle+0x33a0",
+    "selected_body_transform_base": "+0x0d4",
+    "loop_stride": "0x0a80",
+    "loop_indices": [0, 1],
+    "vector_8a0": "+0x8a0 vec3 f64",
+    "vector_888": "+0x888 vec3 f64",
+    "vector_8d0": "+0x8d0 vec3 f64",
+    "scalar_818": "+0x818 f64",
+    "scalar_7f0": "+0x7f0 f64",
+    "scalar_7e8": "+0x7e8 f64",
+    "load_b38": "+0xb38 f64",
+    "scalar_900": "+0x900 f32",
+    "index_zero_factor_global": "0x00aa9afc f32",
+    "scale_global": "0x00aadd68 f64",
+    "add_global": "0x00b09138 f64",
+    "cross_scale_global": "0x00b03df8 f64"
+  },
+  "recovered_construction": {
+    "axis": "transform(body_frame, [1,0,0])",
+    "A": "transform(body_frame, [0, cosine_f32, sine_f32])",
+    "first_sum": "vector_8a0*(scalar_818+add_global) + vector_888*((loop_index==0 ? index_zero_factor : 1)*scale_global)",
+    "second_sum": "vector_888*scalar_7e8 + vector_8a0*scalar_7f0 + vector_8d0*load_b38",
+    "B": "cross(first_sum, second_sum) + vector_8d0*scalar_900",
+    "C": "cross(vector_8a0*cross_scale_global, axis)"
+  },
+  "native_contract": {
+    "vector_arithmetic_internalized": true,
+    "body_frame_transform_arithmetic_internalized": true,
+    "retail_add_scale_cross_order_preserved": true,
+    "loop_index_zero_factor_branch_internalized": true,
+    "source_values_positionally_typed": true,
+    "physical_semantic_names_claimed": false
+  },
+  "limits": {
+    "HDVehicle_and_BODY_source_acquisition_internalized": false,
+    "x87_cosine_sine_wrappers_internalized": false,
+    "source_field_owner_lifetimes_proven": false,
+    "positive_qword_producer_family_complete": false,
+    "FUN_007584f0_computed_payloads_complete": false,
+    "residual_producer_promotion_bit_set": false,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_provider_removed": false,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Bind the positional source reads and f32-rounded cosine/sine results from the active HDVehicle/BODY session state; only then can the positive-qword producer be complete."
+}

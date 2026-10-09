@@ -1,6 +1,7 @@
 #include "shift_fun_007584f0_interpolation_call_seam.hpp"
 #include "shift_fun_007584f0_persistent_write_stage.hpp"
 #include "shift_fun_007584f0_positive_qword_reduction.hpp"
+#include "shift_fun_007584f0_positive_qword_vector_construction.hpp"
 
 #include <iostream>
 #include <limits>
@@ -44,6 +45,13 @@ int main() {
         require(fun_007584f0_positive_qword_destination_offset(0u) == 0x0d40u &&
                     fun_007584f0_positive_qword_destination_offset(1u) == 0x17c0u,
                 "FUN_007584f0 positive-qword destination geometry drift");
+        require(kFun007584f0SelectedBodyPointerOffset == 0x33a0u &&
+                    kFun007584f0SelectedBodyTransformOffset == 0x00d4u,
+                "FUN_007584f0 selected BODY transform source drift");
+        require(kFun007584f0SourceVector8a0Offset == 0x08a0u &&
+                    kFun007584f0SourceVector888Offset == 0x0888u &&
+                    kFun007584f0SourceVector8d0Offset == 0x08d0u,
+                "FUN_007584f0 positive-qword vector source offsets drift");
 
         const Fun007584f0InterpolationArguments interpolation_arguments{{
             0.0f,
@@ -59,6 +67,60 @@ int main() {
                 "FUN_007584f0 interpolation destination drift");
         require(interpolation.value == 1.0f,
                 "FUN_007584f0 native FUN_00783a30 formula drift");
+
+        const Fun007584f0PositiveQwordVectorSourceInput vector_source{
+            {1.0f, 0.0f, 0.0f,
+             0.0f, 1.0f, 0.0f,
+             0.0f, 0.0f, 1.0f},
+            0.0f,
+            1.0f,
+            1u,
+            {1.0, 2.0, 3.0},
+            {4.0, 5.0, 6.0},
+            {7.0, 8.0, 9.0},
+            2.0,
+            2.0,
+            0.25,
+            1.0,
+            0.5f,
+            7.0f,
+            0.5,
+            1.0,
+            2.0,
+        };
+        const auto constructed =
+            materialize_fun_007584f0_positive_qword_vectors(vector_source);
+        require(constructed.a == Fun007584f0PositiveQwordVector{0.0, 0.0, 1.0},
+                "FUN_007584f0 vector A construction drift");
+        require(constructed.b ==
+                    Fun007584f0PositiveQwordVector{-15.25, 41.5, -14.25},
+                "FUN_007584f0 vector B construction drift");
+        require(constructed.c == Fun007584f0PositiveQwordVector{0.0, 6.0, -4.0},
+                "FUN_007584f0 vector C construction drift");
+
+        const double constructed_qword =
+            execute_fun_007584f0_positive_qword_reduction(constructed);
+        require(constructed_qword == 3.5625,
+                "FUN_007584f0 constructed positive-qword result drift");
+
+        auto index_zero_source = vector_source;
+        index_zero_source.loop_index = 0u;
+        index_zero_source.index_zero_factor_aa9afc = 2.0f;
+        const auto index_zero_constructed =
+            materialize_fun_007584f0_positive_qword_vectors(index_zero_source);
+        require(index_zero_constructed.b != constructed.b,
+                "FUN_007584f0 index-zero factor branch was not applied");
+
+        bool rejected_bad_loop_index = false;
+        try {
+            auto bad = vector_source;
+            bad.loop_index = 2u;
+            (void)materialize_fun_007584f0_positive_qword_vectors(bad);
+        } catch (const std::out_of_range&) {
+            rejected_bad_loop_index = true;
+        }
+        require(rejected_bad_loop_index,
+                "FUN_007584f0 invalid positive-qword loop index failed open");
 
         const Fun007584f0PositiveQwordReductionInput qword_input{
             {2.0, 3.0, 4.0},
@@ -98,7 +160,7 @@ int main() {
 
         const Fun00765c40LoadTerms loads = {-0.5, 2.0, 8.0, 9.0};
         const Fun007584f0ComputedInputs computed{
-            {11.0, positive_qword},
+            {11.0, constructed_qword},
             interpolation.value,
         };
         const auto state = materialize_fun_007584f0_persistent_write_stage(
@@ -106,7 +168,7 @@ int main() {
             computed);
         require(state.wheel_values[0] == 0.0,
                 "FUN_007584f0 non-positive load must write zero qword");
-        require(state.wheel_values[1] == positive_qword,
+        require(state.wheel_values[1] == constructed_qword,
                 "FUN_007584f0 positive load must preserve computed qword");
         require(state.filtered_value == 1.0f,
                 "FUN_007584f0 +0x3420 interpolation handoff drift");
@@ -129,8 +191,12 @@ int main() {
             << "\"interpolation_helper_formula_internalized\":true,"
             << "\"positive_qword_reduction_format\":\""
             << kFun007584f0PositiveQwordReductionFormat << "\","
+            << "\"positive_qword_vector_construction_format\":\""
+            << kFun007584f0PositiveQwordVectorConstructionFormat << "\","
             << "\"positive_qword_final_reduction_internalized\":true,"
-            << "\"positive_qword_input_vectors_internalized\":false,"
+            << "\"positive_qword_vector_arithmetic_internalized\":true,"
+            << "\"positive_qword_source_acquisition_internalized\":false,"
+            << "\"positive_qword_x87_trig_internalized\":false,"
             << "\"branch_semantics_internalized\":true,"
             << "\"computed_arithmetic_internalized\":false}\n";
         return 0;
