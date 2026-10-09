@@ -1,8 +1,11 @@
 #include "shift_fun_007584f0_interpolation_call_seam.hpp"
 #include "shift_fun_007584f0_persistent_write_stage.hpp"
 #include "shift_fun_007584f0_positive_qword_reduction.hpp"
+#include "shift_fun_007584f0_positive_qword_trig.hpp"
 #include "shift_fun_007584f0_positive_qword_vector_construction.hpp"
 
+#include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -15,6 +18,12 @@ void require(bool condition, const char* message) {
     if (!condition) {
         throw std::runtime_error(message);
     }
+}
+
+std::uint32_t f32_bits(float value) {
+    std::uint32_t bits = 0u;
+    std::memcpy(&bits, &value, sizeof(bits));
+    return bits;
 }
 
 }  // namespace
@@ -52,6 +61,15 @@ int main() {
                     kFun007584f0SourceVector888Offset == 0x0888u &&
                     kFun007584f0SourceVector8d0Offset == 0x08d0u,
                 "FUN_007584f0 positive-qword vector source offsets drift");
+        require(kFun007584f0TrigSpanStart == 0x00758560u &&
+                    kFun007584f0TrigSpanEnd == 0x0075858bu,
+                "FUN_007584f0 positive-qword trig span drift");
+        require(kFun007584f0CosineCallSite == 0x0075856fu &&
+                    kFun007584f0SineCallSite == 0x00758580u,
+                "FUN_007584f0 positive-qword trig call order drift");
+        require(fun_007584f0_trig_source_offset(0u) == 0x0738u &&
+                    fun_007584f0_trig_source_offset(1u) == 0x11b8u,
+                "FUN_007584f0 positive-qword trig source geometry drift");
 
         const Fun007584f0InterpolationArguments interpolation_arguments{{
             0.0f,
@@ -67,6 +85,25 @@ int main() {
                 "FUN_007584f0 interpolation destination drift");
         require(interpolation.value == 1.0f,
                 "FUN_007584f0 native FUN_00783a30 formula drift");
+
+        const auto trig =
+            materialize_fun_007584f0_positive_qword_trig(0.25);
+        require(f32_bits(trig.angle_f32) == 0x3e800000u,
+                "FUN_007584f0 trig angle f32 spill drift");
+        require(f32_bits(trig.cosine_f32) == 0x3f780aa5u,
+                "FUN_007584f0 FCOS f32 witness drift");
+        require(f32_bits(trig.sine_f32) == 0x3e7d5777u,
+                "FUN_007584f0 FSIN f32 witness drift");
+
+        bool rejected_non_finite_trig = false;
+        try {
+            (void)materialize_fun_007584f0_positive_qword_trig(
+                std::numeric_limits<double>::infinity());
+        } catch (const std::invalid_argument&) {
+            rejected_non_finite_trig = true;
+        }
+        require(rejected_non_finite_trig,
+                "FUN_007584f0 non-finite trig source failed open");
 
         const Fun007584f0PositiveQwordVectorSourceInput vector_source{
             {1.0f, 0.0f, 0.0f,
@@ -97,6 +134,18 @@ int main() {
                 "FUN_007584f0 vector B construction drift");
         require(constructed.c == Fun007584f0PositiveQwordVector{0.0, 6.0, -4.0},
                 "FUN_007584f0 vector C construction drift");
+
+        auto trig_vector_source = vector_source;
+        trig_vector_source.cosine_f32 = trig.cosine_f32;
+        trig_vector_source.sine_f32 = trig.sine_f32;
+        const auto trig_constructed =
+            materialize_fun_007584f0_positive_qword_vectors(trig_vector_source);
+        require(trig_constructed.a ==
+                    Fun007584f0PositiveQwordVector{
+                        0.0,
+                        static_cast<double>(trig.cosine_f32),
+                        static_cast<double>(trig.sine_f32)},
+                "FUN_007584f0 trig-to-vector A handoff drift");
 
         const double constructed_qword =
             execute_fun_007584f0_positive_qword_reduction(constructed);
@@ -193,10 +242,13 @@ int main() {
             << kFun007584f0PositiveQwordReductionFormat << "\","
             << "\"positive_qword_vector_construction_format\":\""
             << kFun007584f0PositiveQwordVectorConstructionFormat << "\","
+            << "\"positive_qword_trig_format\":\""
+            << kFun007584f0PositiveQwordTrigFormat << "\","
             << "\"positive_qword_final_reduction_internalized\":true,"
             << "\"positive_qword_vector_arithmetic_internalized\":true,"
             << "\"positive_qword_source_acquisition_internalized\":false,"
-            << "\"positive_qword_x87_trig_internalized\":false,"
+            << "\"positive_qword_x87_trig_internalized\":true,"
+            << "\"positive_qword_trig_source_acquisition_internalized\":false,"
             << "\"branch_semantics_internalized\":true,"
             << "\"computed_arithmetic_internalized\":false}\n";
         return 0;

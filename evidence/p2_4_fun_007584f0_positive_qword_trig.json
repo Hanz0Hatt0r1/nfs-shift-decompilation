@@ -1,0 +1,55 @@
+{
+  "format": "SHIFT.Fun007584f0PositiveQwordTrig/1",
+  "ready": true,
+  "platform_authority": "PC retail 1.02",
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "reused_x87_contract": "SHIFT.Fun00713630ReferenceSource/1",
+    "downstream_vector_contract": "SHIFT.Fun007584f0PositiveQwordVectorConstruction/1"
+  },
+  "machine_span": {
+    "start": "0x00758560",
+    "end_exclusive": "0x0075858b",
+    "size": 43,
+    "raw_byte_sha256": "65d14dcffa1b71078029c5675f57374bb9c3f1a2fb46cc5ca25d55f0d765a27f"
+  },
+  "retail_sequence": {
+    "source": "HDVehicle + loop_index*0x0a80 + 0x0738 f64",
+    "loop_indices": [0, 1],
+    "absolute_source_offsets": ["0x0738", "0x11b8"],
+    "f64_to_f32_spill_before_wrappers": true,
+    "cosine_call_site": "0x0075856f",
+    "cosine_helper": "0x00900b10 / FCOS",
+    "cosine_result_spilled_to_f32": true,
+    "sine_call_site": "0x00758580",
+    "sine_helper": "0x00900c40 / FSIN",
+    "sine_result_spilled_to_f32": true,
+    "wrapper_call_order": ["FCOS", "FSIN"]
+  },
+  "native_contract": {
+    "f64_to_f32_angle_narrowing_internalized": true,
+    "retail_FCOS_FSIN_order_internalized": true,
+    "retail_x87_control_word_reused": "0x027f",
+    "f32_result_spills_internalized": true,
+    "phase748_helpers_reused": true,
+    "witness_angle_f32_bits": "0x3e800000",
+    "witness_cosine_f32_bits": "0x3f780aa5",
+    "witness_sine_f32_bits": "0x3e7d5777"
+  },
+  "ownership_boundary": {
+    "trig_source_is_FUN_00765c40_load_term": false,
+    "reason": "FUN_00765c40 load terms are HDVehicle+0x400+wheel*0x0a80+0x738, while this FUN_007584f0 source is HDVehicle+wheel*0x0a80+0x738",
+    "source_writer": "FUN_00769640",
+    "source_writer_internalized": false,
+    "source_acquisition_internalized": false
+  },
+  "limits": {
+    "positive_qword_producer_family_complete": false,
+    "FUN_007584f0_computed_payloads_complete": false,
+    "residual_producer_promotion_bit_set": false,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_provider_removed": false,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Internalize or bind authoritative native acquisition for the remaining FUN_007584f0 source fields, especially the +0x738/+0x11b8 writer path in FUN_00769640 and the positional wheel/BODY inputs consumed by vector construction."
+}
