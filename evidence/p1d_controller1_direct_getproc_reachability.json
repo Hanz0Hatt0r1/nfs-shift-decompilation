@@ -1,0 +1,48 @@
+{
+  "format": "SHIFT.P1D.Controller1DirectGetProcReachability/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "ghidra_database_format": "SHIFT.GhidraEvidenceDatabase/1",
+    "sqlite_index_format": "SHIFT.GhidraSQLiteIndex/1",
+    "function_count": 41538,
+    "call_edge_count": 200598,
+    "source_modified_utc": "2026-10-08T11:02:26.920Z"
+  },
+  "controller1": {
+    "worker": "FUN_00662880",
+    "address": "0x00662880",
+    "direct_reachable_internal_function_count": 497
+  },
+  "getprocaddress_surface": {
+    "direct_getprocaddress_callsite_count": 100,
+    "direct_getprocaddress_caller_function_count": 18,
+    "reachable_caller_function_count": 6,
+    "reachable_functions": [
+      {"function":"0x0090748b","name":"FUN_0090748b","getprocaddress_callsites":["0x009074a0"],"local_defined_strings":["CorExitProcess","mscoree.dll"],"local_apc_name_hits":[]},
+      {"function":"0x0090aa27","name":"FUN_0090aa27","getprocaddress_callsites":["0x0090aa7b"],"local_defined_strings":["EncodePointer","KERNEL32.DLL"],"local_apc_name_hits":[]},
+      {"function":"0x0090aa9e","name":"FUN_0090aa9e","getprocaddress_callsites":["0x0090aaf2"],"local_defined_strings":["KERNEL32.DLL","DecodePointer"],"local_apc_name_hits":[]},
+      {"function":"0x0090abb8","name":"FUN_0090abb8","getprocaddress_callsites":["0x0090abfd","0x0090ac0d"],"local_defined_strings":["EncodePointer","KERNEL32.DLL","DecodePointer"],"local_apc_name_hits":[]},
+      {"function":"0x009189cd","name":"___crtInitCritSecAndSpinCount","getprocaddress_callsites":["0x00918a26"],"local_defined_strings":["InitializeCriticalSectionAndSpinCount","kernel32.dll"],"local_apc_name_hits":[]},
+      {"function":"0x0091c073","name":"FUN_0091c073","getprocaddress_callsites":["0x0091c0bc","0x0091c0d9","0x0091c0ee","0x0091c123","0x0091c13b"],"local_defined_strings":["GetUserObjectInformationA","GetLastActivePopup","GetActiveWindow","MessageBoxA","USER32.DLL"],"local_apc_name_hits":[]}
+    ]
+  },
+  "adjudication": {
+    "reachable_direct_getprocaddress_functions_have_local_apc_literal_names": false,
+    "reachable_direct_named_resolver_local_literal_apc_surface_rejected": true,
+    "nonlocal_runtime_generated_or_hashed_names_ruled_out": false,
+    "manual_export_walking_ruled_out": false,
+    "native_or_syscall_apc_injection_ruled_out": false,
+    "controller1_timing_exhaustive": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Direct-callgraph reachability does not prove a dynamic resolver call executes on every Controller #1 worker iteration.",
+    "Local defined strings constrain only literal names owned by the resolver function; names forwarded from callers, generated at runtime, encrypted, hashed or resolved by manual export walking remain open.",
+    "This contract does not adjudicate indirect function-pointer calls or native/syscall APC injection."
+  ],
+  "next_step": "Use the native primitive inventory to adjudicate manual export walking and direct syscall candidates, and separately trace any nonlocal resolver-name flow into the six reachable GetProcAddress callers before declaring Controller #1 timing exhaustive."
+}
