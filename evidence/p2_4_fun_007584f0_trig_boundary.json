@@ -1,0 +1,63 @@
+{
+  "format": "SHIFT.Fun007584f0TrigBoundary/1",
+  "ready": true,
+  "platform_authority": "PC retail 1.02",
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "downstream_vector_contract": "SHIFT.Fun007584f0PositiveQwordVectorConstruction/1"
+  },
+  "caller_surface": {
+    "start": "0x00758560",
+    "end_exclusive": "0x0075858b",
+    "size": 43,
+    "raw_byte_sha256": "65d14dcffa1b71078029c5675f57374bb9c3f1a2fb46cc5ca25d55f0d765a27f",
+    "source": "[HDVehicle + loop_index*0x0a80 + 0x0738] qword",
+    "source_narrowing": "qword -> f32 before either wrapper call",
+    "call_order": ["0x00900b10 cosine", "0x00900c40 sine"],
+    "cosine_result": "x87 result stored to f32 before later widening",
+    "sine_result": "x87 result stored to f32 before later widening"
+  },
+  "wrapper_machine_contracts": {
+    "cosine": {
+      "entry": "0x00900b10",
+      "end_exclusive": "0x00900bf9",
+      "size": 233,
+      "raw_byte_sha256": "0de3a2479ceb44dc4eeb1eba23ab27c53407c3fd7eb2052f7fc9a7df1790dbbd",
+      "core_instruction": "FCOS",
+      "range_fallback_present": true,
+      "fp_environment_checks_present": true
+    },
+    "sine": {
+      "entry": "0x00900c40",
+      "end_exclusive": "0x00900d29",
+      "size": 233,
+      "raw_byte_sha256": "cae7003b4b9682164685955c7aa4c877b523f3ed0a72844b3b0c1d71312fb81f",
+      "core_instruction": "FSIN",
+      "range_fallback_present": true,
+      "fp_environment_checks_present": true
+    }
+  },
+  "native_contract": {
+    "source_offset_pinned": "0x0738",
+    "source_f64_to_f32_narrowing_internalized": true,
+    "cosine_before_sine_order_internalized": true,
+    "same_f32_source_reused_for_both_wrappers": true,
+    "wrapper_call_count_each": 1,
+    "wrapper_results_positionally_typed_as_f32": true,
+    "non_finite_boundary_values_rejected": true
+  },
+  "limits": {
+    "x87_cosine_wrapper_formula_internalized": false,
+    "x87_sine_wrapper_formula_internalized": false,
+    "fp_environment_behavior_internalized": false,
+    "range_reduction_fallback_internalized": false,
+    "HDVehicle_source_acquisition_internalized": false,
+    "positive_qword_producer_family_complete": false,
+    "FUN_007584f0_computed_payloads_complete": false,
+    "residual_producer_promotion_bit_set": false,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_provider_removed": false,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Prove a native-equivalent implementation of the two CRT/x87 trig wrappers or retain them as explicit lower math boundaries while binding the +0x738 and remaining positional source reads to authoritative native session state."
+}
