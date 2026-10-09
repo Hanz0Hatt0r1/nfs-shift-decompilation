@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify the remaining shallow P1.3D slot3 x87 zero-init candidates."""
+"""Verify the final four shallow P1.3D slot3 x87 pointer-chain candidates."""
 from __future__ import annotations
 
 import argparse
@@ -12,27 +12,15 @@ from pathlib import Path
 FORMAT = "SHIFT.P1D.P13DSlot3X87RemainingClosure/1"
 RETAIL_SHA256 = "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
 REMAINING = [
-    "FUN_00766510",
     "FUN_0075c0d0",
-    "FUN_007aa940",
     "FUN_007b8630",
     "FUN_0075ada0",
-    "FUN_0075afc0",
-    "FUN_007876e0",
-    "FUN_007ade70",
     "FUN_007b7840",
 ]
 
-# Exact retail machine anchors for receiver/argument provenance and x87 stores.
+# Exact retail machine anchors for the four candidates left open by P1A #1742.
 EXPECTED = {
-    0x0076D118: "mov esi,ecx",
-    0x0076D137: "mov ecx,esi",
-    0x0076D139: "call 0x766510",
-    0x00766531: "fst QWORD PTR [esi+0x40a0]",
-    0x00766537: "fst QWORD PTR [esi+0x40a8]",
-    0x0076653E: "fst QWORD PTR [esi+0x40b0]",
-    0x00766D8B: "fstp QWORD PTR [esi+0x42b0]",
-    0x00767498: "fstp QWORD PTR [esi+0x4300]",
+    # FUN_0075c0d0: only shallow root path passes literal-zero optional arg2.
     0x00771231: "push 0x0",
     0x00771275: "lea eax,[edi-0x104]",
     0x0077127B: "push eax",
@@ -44,12 +32,7 @@ EXPECTED = {
     0x007B19D6: "push eax",
     0x007B19D9: "call 0x75c0d0",
     0x0075C14F: "fstp QWORD PTR [edi+0x10]",
-    0x007AAA93: "lea edx,[ebp-0x18]",
-    0x007AAA96: "push edx",
-    0x007AAA97: "call 0x7aa940",
-    0x007AA999: "fst DWORD PTR [esi]",
-    0x007AA99B: "fst DWORD PTR [esi+0x4]",
-    0x007AA99E: "fstp DWORD PTR [esi+0x8]",
+    # FUN_007b8630: vehicle+0x339c -> BODY owner -> nested BODY state pointer.
     0x00770FB1: "mov ecx,DWORD PTR [esi+0x339c]",
     0x00770FB7: "call 0x7b8810",
     0x007B8813: "mov ecx,DWORD PTR [esi+0x5c]",
@@ -58,6 +41,7 @@ EXPECTED = {
     0x007B8650: "mov esi,DWORD PTR [eax+0x18]",
     0x007B86B0: "fst QWORD PTR [esi+0x78]",
     0x007B86E4: "fstp QWORD PTR [esi+0x58]",
+    # FUN_0075ada0: all four shallow outputs are caller stack locals.
     0x00768356: "lea eax,[ebp-0x8]",
     0x0076835C: "push eax",
     0x0076835D: "lea ecx,[ebp-0xc]",
@@ -68,26 +52,7 @@ EXPECTED = {
     0x00768368: "push eax",
     0x00768369: "mov ecx,esi",
     0x0076836B: "call 0x75ada0",
-    0x0076A2E3: "lea eax,[ebp-0x28]",
-    0x0076A2E6: "push eax",
-    0x0076A2E7: "lea ecx,[ebp-0x34]",
-    0x0076A2EA: "push ecx",
-    0x0076A2EB: "lea edx,[ebp-0x4c]",
-    0x0076A2EE: "push edx",
-    0x0076A302: "call 0x75afc0",
-    0x00787745: "lea ecx,[ebp-0xc]",
-    0x00787748: "push ecx",
-    0x0078774B: "call 0x7876e0",
-    0x007876F2: "fst DWORD PTR [eax]",
-    0x007876F4: "fstp DWORD PTR [eax+0x4]",
-    0x007592AE: "lea ecx,[ebp-0x38]",
-    0x007592B1: "push ecx",
-    0x007592B4: "call 0x7ade70",
-    0x007593E5: "lea eax,[ebp-0x2c]",
-    0x007593E8: "push eax",
-    0x007593EB: "call 0x7ade70",
-    0x007ADF1B: "fst DWORD PTR [esi+0x4]",
-    0x007ADF1E: "fstp DWORD PTR [esi+0x8]",
+    # FUN_007b7840: relation-refresh BODY path and BODY-lane zero stores.
     0x007B82E6: "mov eax,DWORD PTR [esi+0x18]",
     0x007B82ED: "push eax",
     0x007B82EE: "lea ecx,[ebp-0x80]",
