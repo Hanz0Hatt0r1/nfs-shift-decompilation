@@ -1,0 +1,83 @@
+{
+  "format": "SHIFT.P1D.P13DSlot3X87RemainingClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "verified_machine_anchor_count": 37,
+    "p1a_contracts_consumed_not_reowned": true
+  },
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01X87ZeroInitFrontierEvidence/1",
+    "SHIFT.P1A.P13ASlot01X87ReuseTrancheClosure/1",
+    "SHIFT.P1A.P13ASlot01X87StackOutputTrancheClosure/1",
+    "SHIFT.GlobalVehicleBodyOwnerIdentity/1",
+    "SHIFT.BodyFrameIntegrationStatic/1",
+    "SHIFT.BMWBody0BindPoseWriterDirectRole/1"
+  ],
+  "slot3": {
+    "absolute_target": "HDVehicle+0x28b8",
+    "target_byte_range": ["HDVehicle+0x28b8", "HDVehicle+0x28bf"],
+    "wheel_local_field": "+0x538",
+    "width": "f64/qword"
+  },
+  "frontier": {
+    "original_candidate_count": 18,
+    "resolved_by_p1a_first_tranche": 9,
+    "resolved_by_p1a_second_tranche": 5,
+    "resolved_before_this_pr": 14,
+    "resolved_here": 4,
+    "remaining_count": 0
+  },
+  "resolved": [
+    {
+      "function": "FUN_0075c0d0",
+      "rejected": true,
+      "domain": "bounded shallow path infeasible",
+      "proof": "The only depth<=4 root path is FUN_00770e80 -> FUN_007b1790 -> FUN_0075c0d0. FUN_00770e80 pushes literal 0 as FUN_007b1790 arg2 at 0x00771231; FUN_007b1790 loads arg2 from [EBX+0xc] and calls FUN_0075c0d0 only when it is nonzero, so 0x007b19d9 is infeasible on this bounded path"
+    },
+    {
+      "function": "FUN_007b8630",
+      "rejected": true,
+      "domain": "BODY recovery domain",
+      "proof": "The bounded path loads vehicle+0x339c at 0x00770fb1, then FUN_007b8810 loads owner+0x5c and FUN_007b8630 follows nested pointers [receiver+0x8]->[+0x18] before clearing BODY +0x48..+0x88. SHIFT.GlobalVehicleBodyOwnerIdentity/1 proves vehicle+0x339c is a separate BODY-array owner pointer, not the vehicle base; SHIFT.BodyFrameIntegrationStatic/1 classifies FUN_007b8630 as BODY recovery"
+    },
+    {
+      "function": "FUN_0075ada0",
+      "rejected": true,
+      "domain": "caller stack-local outputs",
+      "proof": "FUN_007682c0 passes EBP-0x8, EBP-0xc, EBP-0x18 and EBP-0x24 as the four output pointers at 0x00768356..0x00768368 before 0x0076836b -> FUN_0075ada0"
+    },
+    {
+      "function": "FUN_007b7840",
+      "rejected": true,
+      "domain": "BODY lifecycle/recovery state",
+      "proof": "The only bounded non-recursive direct path is FUN_00770e80 -> FUN_007b8810 -> FUN_007b8630 -> FUN_007b8260 -> 0x007b82f4 -> FUN_007b7840. The call forwards [ESI+0x18] as BODY storage; the zero stores target BODY +0x48..+0x70. Existing BODY contracts prove the +0x339c owner domain is separate from HDVehicle and classify FUN_007b7840 as a broader BODY state setter, not an inline HDVehicle wheel writer"
+    }
+  ],
+  "adjudication": {
+    "slot3_shallow_x87_zero_init_depth4_subset_complete": true,
+    "slot3_shallow_x87_candidate_count": 18,
+    "slot3_shallow_x87_rejected_count": 18,
+    "slot3_shallow_x87_selected_hdvehicle_writer_found": false,
+    "slot3_sse_vector_copy_init_complete": false,
+    "slot3_deeper_direct_aliases_complete": false,
+    "slot3_indirect_callback_aliases_complete": false,
+    "slot3_writer_provenance_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only the direct-depth<=4 FLDZ -> FST/FSTP zero-init frontier captured by the merged P1A inventory.",
+    "P1D consumes the 14 merged P1A x87 rejections but does not re-own them; this contract adds only the final four pointer-chain adjudications.",
+    "Path-infeasible rejection for FUN_0075c0d0 applies to the bounded shallow root path, not to every possible caller globally.",
+    "BODY-domain rejection uses merged owner identity and BODY lifecycle contracts, not numeric pointer offsets or callgraph adjacency alone.",
+    "SSE/vector copy-init, deeper direct aliases and indirect/callback aliases remain open."
+  ],
+  "next_step": "Bound shallow SSE/vector copy/zero-init candidates, then widen only exact selected-wheel-derived deeper direct or indirect/callback aliases."
+}
