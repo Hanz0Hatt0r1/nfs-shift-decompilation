@@ -1,0 +1,60 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374ComputedAddressInventory/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_scan": "whole .text explicit LEA/ADD address materializers containing exact +0x374",
+    "ghidra_sqlite_role": "containing-function navigation only"
+  },
+  "scope": {
+    "includes": "explicit address materialization of base+0x374 via LEA or register ADD",
+    "excludes": [
+      "already-inventoried literal memory destinations [base+0x374]",
+      "+0x3740 displacement matches",
+      "stack/address -0x374 forms",
+      "inverse base-0x374 reconstruction"
+    ],
+    "numeric_offset_implies_manager_identity": false
+  },
+  "inventory": {
+    "materializer_count": 22,
+    "code_candidate_count": 20,
+    "unwind_metadata_candidate_count": 2,
+    "sites": [
+      {"site":"0x0052902b","instruction":"lea eax,[ecx+0x374]","function":"FUN_00529020","kind":"code"},
+      {"site":"0x005292db","instruction":"lea edi,[esi+0x374]","function":"FUN_005292d0","kind":"code"},
+      {"site":"0x0052aac0","instruction":"lea eax,[esi+0x374]","function":"FUN_0052a9b0","kind":"code"},
+      {"site":"0x005f4e86","instruction":"lea edx,[ecx+0x374]","function":"FUN_005f4e70","kind":"code"},
+      {"site":"0x005f4ffa","instruction":"lea eax,[esi+0x374]","function":"FUN_005f4f55","kind":"code"},
+      {"site":"0x005f548e","instruction":"lea eax,[esi+0x374]","function":"FUN_005f5260","kind":"code"},
+      {"site":"0x005f569b","instruction":"lea eax,[esi+0x374]","function":"FUN_005f54b0","kind":"code"},
+      {"site":"0x005f5a3e","instruction":"lea ecx,[esi+0x374]","function":"FUN_005f5930","kind":"code"},
+      {"site":"0x005f5d0a","instruction":"lea ecx,[esi+0x374]","function":"FUN_005f5c70","kind":"code"},
+      {"site":"0x005f5ebb","instruction":"lea eax,[esi+0x374]","function":"FUN_005f5d70","kind":"code"},
+      {"site":"0x005f61c8","instruction":"lea edx,[esi+0x374]","function":"FUN_005f6160","kind":"code"},
+      {"site":"0x005f6593","instruction":"lea edi,[esi+0x374]","function":"FUN_005f63e0","kind":"code"},
+      {"site":"0x005f6eda","instruction":"lea ecx,[edi+0x374]","function":"FUN_005f6850","kind":"code"},
+      {"site":"0x0070f62d","instruction":"lea ecx,[esi+0x374]","function":"FUN_0070f580","kind":"code"},
+      {"site":"0x0070fb45","instruction":"lea ecx,[esi+0x374]","function":"FUN_0070fae0","kind":"code"},
+      {"site":"0x0070fdeb","instruction":"lea ecx,[esi+0x374]","function":"FUN_0070fae0","kind":"code"},
+      {"site":"0x0075070b","instruction":"lea edx,[eax+0x374]","function":"FUN_007506b0","kind":"code"},
+      {"site":"0x0075096d","instruction":"lea edx,[eax+0x374]","function":"FUN_007506b0","kind":"code"},
+      {"site":"0x009857b7","instruction":"lea eax,[esi+0x374]","function":"FUN_009857a2","kind":"code"},
+      {"site":"0x00985bd3","instruction":"add esi,0x374","function":"FUN_00985bc0","kind":"code"},
+      {"site":"0x00a6cfe7","instruction":"add ecx,0x374","function":"Unwind@00a6cfe4","kind":"unwind_metadata"},
+      {"site":"0x00a6d067","instruction":"add ecx,0x374","function":"Unwind@00a6d064","kind":"unwind_metadata"}
+    ]
+  },
+  "adjudication": {
+    "explicit_computed_address_worklist_finite": true,
+    "explicit_computed_address_receiver_provenance_complete": false,
+    "computed_address_manager_374_writer_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Reject the two unwind metadata candidates, then classify the 20 code materializers by exact receiver provenance and whether the computed pointer is actually written through or only passed/read."
+}
