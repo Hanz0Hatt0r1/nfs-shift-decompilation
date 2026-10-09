@@ -1,0 +1,143 @@
+name: auto-merge-owner-prs
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+      - linux-vulkan
+      - evidence-fast
+      - shift-live-dump
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Optional pull request number to evaluate
+        required: false
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-merge-${{ github.event.workflow_run.head_sha || inputs.pr || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISPATCH_PR: ${{ inputs.pr }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pr="${DISPATCH_PR:-}"
+          if [[ -z "$pr" && "${GITHUB_EVENT_NAME}" == "workflow_run" ]]; then
+            pr="$(jq -r '.workflow_run.pull_requests[0].number // empty' "$GITHUB_EVENT_PATH")"
+          fi
+
+          if [[ -z "$pr" ]]; then
+            echo "No pull request is associated with this event; nothing to do."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! [[ "$pr" =~ ^[0-9]+$ ]]; then
+            echo "Invalid pull request number: $pr" >&2
+            exit 1
+          fi
+
+          echo "number=$pr" >> "$GITHUB_OUTPUT"
+          echo "found=true" >> "$GITHUB_OUTPUT"
+
+      - name: Merge when all required workflows are green
+        if: steps.pr.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          owner="${GITHUB_REPOSITORY%%/*}"
+          pr_json="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
+
+          state="$(jq -r '.state' <<<"$pr_json")"
+          draft="$(jq -r '.draft' <<<"$pr_json")"
+          author="$(jq -r '.user.login' <<<"$pr_json")"
+          head_repo="$(jq -r '.head.repo.full_name // empty' <<<"$pr_json")"
+          head_sha="$(jq -r '.head.sha' <<<"$pr_json")"
+          mergeable="$(jq -r '.mergeable' <<<"$pr_json")"
+          body="$(jq -r '.body // ""' <<<"$pr_json")"
+
+          if [[ "$state" != "open" ]]; then
+            echo "PR #$PR_NUMBER is not open; skipping."
+            exit 0
+          fi
+          if [[ "$draft" == "true" ]]; then
+            echo "PR #$PR_NUMBER is a draft; skipping."
+            exit 0
+          fi
+          if [[ "$author" != "$owner" || "$head_repo" != "$GITHUB_REPOSITORY" ]]; then
+            echo "PR #$PR_NUMBER is not an owner-authored same-repository PR; skipping."
+            exit 0
+          fi
+
+          if jq -e '[.labels[].name] | any(. == "manual-review" or . == "no-auto-merge" or . == "do-not-merge" or . == "hold")' <<<"$pr_json" >/dev/null; then
+            echo "PR #$PR_NUMBER carries a manual/hold label; skipping."
+            exit 0
+          fi
+
+          if grep -Eiq '(explicit|manual)[ -]?review|do not auto[- ]?merge|do not merge|intentionally left for explicit review' <<<"$body"; then
+            echo "PR #$PR_NUMBER explicitly requests manual review; skipping."
+            exit 0
+          fi
+
+          if [[ "$mergeable" == "false" ]]; then
+            echo "PR #$PR_NUMBER has merge conflicts; skipping."
+            exit 0
+          fi
+
+          runs="$(gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$head_sha&event=pull_request&per_page=100" --slurp | jq -s '{workflow_runs: map(.[]?.workflow_runs[]?)}')"
+          required=("CI" "linux-vulkan" "evidence-fast" "shift-live-dump")
+
+          for workflow in "${required[@]}"; do
+            conclusion="$(jq -r --arg workflow "$workflow" '[.workflow_runs[] | select(.name == $workflow)] | sort_by(.created_at) | reverse | .[0].conclusion // "missing"' <<<"$runs")"
+            status="$(jq -r --arg workflow "$workflow" '[.workflow_runs[] | select(.name == $workflow)] | sort_by(.created_at) | reverse | .[0].status // "missing"' <<<"$runs")"
+            echo "$workflow: status=$status conclusion=$conclusion"
+            if [[ "$status" != "completed" || "$conclusion" != "success" ]]; then
+              echo "PR #$PR_NUMBER is not fully green yet; skipping for now."
+              exit 0
+            fi
+          done
+
+          # Re-read immediately before merge so a force-push cannot race the checks.
+          fresh="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
+          fresh_sha="$(jq -r '.head.sha' <<<"$fresh")"
+          fresh_state="$(jq -r '.state' <<<"$fresh")"
+          fresh_draft="$(jq -r '.draft' <<<"$fresh")"
+          fresh_mergeable="$(jq -r '.mergeable' <<<"$fresh")"
+
+          if [[ "$fresh_sha" != "$head_sha" || "$fresh_state" != "open" || "$fresh_draft" == "true" || "$fresh_mergeable" == "false" ]]; then
+            echo "PR #$PR_NUMBER changed while being evaluated; refusing stale merge."
+            exit 0
+          fi
+
+          result="$(gh api --method PUT "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/merge" -f sha="$head_sha" -f merge_method=squash)"
+          merged="$(jq -r '.merged' <<<"$result")"
+          message="$(jq -r '.message' <<<"$result")"
+          echo "merge result: merged=$merged message=$message"
+
+          if [[ "$merged" != "true" ]]; then
+            exit 1
+          fi
