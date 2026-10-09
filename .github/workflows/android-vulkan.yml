@@ -1,0 +1,79 @@
+name: android-vulkan
+
+on:
+  push:
+    paths:
+      - 'native_vulkan/android/**'
+      - 'native_vulkan/include/shift_android_native_activity.h'
+      - 'native_vulkan/include/shift_android_surface_probe.h'
+      - 'native_vulkan/include/shift_vulkan_surface_backend.h'
+      - 'native_vulkan/src/android_native_activity.cpp'
+      - 'native_vulkan/src/android_vulkan_surface_probe.cpp'
+      - 'native_vulkan/src/vulkan_surface_backend.cpp'
+      - 'tests/test_android_native_activity_contract.py'
+      - '.github/workflows/android-vulkan.yml'
+  pull_request:
+    paths:
+      - 'native_vulkan/android/**'
+      - 'native_vulkan/include/shift_android_native_activity.h'
+      - 'native_vulkan/include/shift_android_surface_probe.h'
+      - 'native_vulkan/include/shift_vulkan_surface_backend.h'
+      - 'native_vulkan/src/android_native_activity.cpp'
+      - 'native_vulkan/src/android_vulkan_surface_probe.cpp'
+      - 'native_vulkan/src/vulkan_surface_backend.cpp'
+      - 'tests/test_android_native_activity_contract.py'
+      - '.github/workflows/android-vulkan.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: android-vulkan-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-activity-arm64:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve Android NDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          NDK="${ANDROID_NDK_LATEST_HOME:-${ANDROID_NDK_HOME:-}}"
+          if [[ -z "$NDK" || ! -f "$NDK/build/cmake/android.toolchain.cmake" ]]; then
+            if [[ -z "${ANDROID_HOME:-}" || ! -d "$ANDROID_HOME/ndk" ]]; then
+              echo "Android NDK is unavailable on this runner" >&2
+              exit 1
+            fi
+            NDK="$(find "$ANDROID_HOME/ndk" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          fi
+          test -f "$NDK/build/cmake/android.toolchain.cmake"
+          echo "ANDROID_NDK_ROOT=$NDK" >> "$GITHUB_ENV"
+          echo "Using Android NDK: $NDK"
+
+      - name: Configure arm64 NativeActivity proof
+        run: >-
+          cmake -S native_vulkan/android -B out/android-vulkan-arm64
+          -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake"
+          -DANDROID_ABI=arm64-v8a
+          -DANDROID_PLATFORM=android-26
+          -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build arm64 NativeActivity proof
+        run: >-
+          cmake --build out/android-vulkan-arm64 --config Release --parallel
+          --target shift_vulkan_android_native_activity
+
+      - name: Verify Android shared-library contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          LIB="out/android-vulkan-arm64/libshift_vulkan_android_native_activity.so"
+          test -f "$LIB"
+          file "$LIB" | grep -q 'ARM aarch64'
+          readelf -Ws "$LIB" | grep -q 'ANativeActivity_onCreate'
+          readelf -Ws "$LIB" | grep -q 'shift_android_activity_last_surface_probe_status'
+          if readelf -d "$LIB" | grep -qi 'xcb'; then
+            echo "Android proof unexpectedly depends on XCB" >&2
+            exit 1
+          fi
