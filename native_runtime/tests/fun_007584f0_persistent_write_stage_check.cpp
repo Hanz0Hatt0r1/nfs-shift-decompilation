@@ -3,6 +3,7 @@
 #include "shift_fun_007584f0_positive_qword_reduction.hpp"
 #include "shift_fun_007584f0_positive_qword_trig.hpp"
 #include "shift_fun_007584f0_positive_qword_vector_construction.hpp"
+#include "shift_fun_00769640_trig_source_writer.hpp"
 
 #include <cstdint>
 #include <cstring>
@@ -70,6 +71,22 @@ int main() {
         require(fun_007584f0_trig_source_offset(0u) == 0x0738u &&
                     fun_007584f0_trig_source_offset(1u) == 0x11b8u,
                 "FUN_007584f0 positive-qword trig source geometry drift");
+        require(kFun00769640TrigWriterSpanStart == 0x00769c05u &&
+                    kFun00769640TrigWriterSpanEnd == 0x00769c2du,
+                "FUN_00769640 trig source writer span drift");
+        require(kFun00769640TableRootOffset == 0x4330u &&
+                    kFun00769640TableRecordStride == 0x50u,
+                "FUN_00769640 trig source table geometry drift");
+        require(kFun00769640SelectedRecordIndices ==
+                    std::array<std::size_t, 2>{12u, 13u},
+                "FUN_00769640 selected table record drift");
+        require(kFun00769640TableBaseValueOffsets ==
+                    std::array<std::size_t, 2>{0x54b8u, 0x5508u} &&
+                    kFun00769640TableSlopeValueOffsets ==
+                    std::array<std::size_t, 2>{0x54c0u, 0x5510u} &&
+                    kFun00769640TableCoefficientAbsoluteOffsets ==
+                    std::array<std::size_t, 2>{0x54ccu, 0x551cu},
+                "FUN_00769640 trig source table field offsets drift");
 
         const Fun007584f0InterpolationArguments interpolation_arguments{{
             0.0f,
@@ -86,8 +103,29 @@ int main() {
         require(interpolation.value == 1.0f,
                 "FUN_007584f0 native FUN_00783a30 formula drift");
 
+        const double trig_source = execute_fun_00769640_trig_source_writer({
+            0.0,
+            0.125,
+            2,
+        });
+        require(trig_source == 0.25,
+                "FUN_00769640 trig source writer arithmetic drift");
+
+        bool rejected_non_finite_writer = false;
+        try {
+            (void)execute_fun_00769640_trig_source_writer({
+                std::numeric_limits<double>::infinity(),
+                1.0,
+                1,
+            });
+        } catch (const std::invalid_argument&) {
+            rejected_non_finite_writer = true;
+        }
+        require(rejected_non_finite_writer,
+                "FUN_00769640 non-finite trig source input failed open");
+
         const auto trig =
-            materialize_fun_007584f0_positive_qword_trig(0.25);
+            materialize_fun_007584f0_positive_qword_trig(trig_source);
         require(f32_bits(trig.angle_f32) == 0x3e800000u,
                 "FUN_007584f0 trig angle f32 spill drift");
         require(f32_bits(trig.cosine_f32) == 0x3f780aa5u,
@@ -244,11 +282,14 @@ int main() {
             << kFun007584f0PositiveQwordVectorConstructionFormat << "\","
             << "\"positive_qword_trig_format\":\""
             << kFun007584f0PositiveQwordTrigFormat << "\","
+            << "\"trig_source_writer_format\":\""
+            << kFun00769640TrigSourceWriterFormat << "\","
             << "\"positive_qword_final_reduction_internalized\":true,"
             << "\"positive_qword_vector_arithmetic_internalized\":true,"
             << "\"positive_qword_source_acquisition_internalized\":false,"
             << "\"positive_qword_x87_trig_internalized\":true,"
-            << "\"positive_qword_trig_source_acquisition_internalized\":false,"
+            << "\"positive_qword_trig_source_writer_arithmetic_internalized\":true,"
+            << "\"positive_qword_trig_source_table_acquisition_internalized\":false,"
             << "\"branch_semantics_internalized\":true,"
             << "\"computed_arithmetic_internalized\":false}\n";
         return 0;
