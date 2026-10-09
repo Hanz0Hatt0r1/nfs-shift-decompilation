@@ -1,0 +1,98 @@
+{
+  "format": "SHIFT.P1D.Controller1ModuleLiteralReachability/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "source_index_format": "SHIFT.GhidraSQLiteIndex/1",
+    "source_index_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "source_dir": "out/shift_ghidra_database",
+    "index_is_navigation_evidence_only": true
+  },
+  "worker": "0x00662880",
+  "surface": {
+    "module_literals": ["kernel32", "kernel32.dll", "ntdll", "ntdll.dll"],
+    "literal_row_count": 8,
+    "unique_literal_owner_count": 7,
+    "ntdll_literal_row_count": 0,
+    "direct_worker_reachable_literal_owner_count": 4,
+    "direct_worker_reachable_literal_owners_outside_getprocaddress_surface": 0,
+    "owners": [
+      {
+        "function": "0x00634030",
+        "direct_worker_reachable": false,
+        "shortest_direct_path": [],
+        "is_getprocaddress_caller": true,
+        "module_literals": [{"address":"0x00aebe44","value":"kernel32"}],
+        "local_strings": [{"address":"0x00aebe44","value":"kernel32"},{"address":"0x00aebe58","value":"IsWow64Process"}]
+      },
+      {
+        "function": "0x00909da4",
+        "direct_worker_reachable": false,
+        "shortest_direct_path": [],
+        "is_getprocaddress_caller": true,
+        "module_literals": [{"address":"0x00b36d4c","value":"KERNEL32"}],
+        "local_strings": [{"address":"0x00b36d4c","value":"KERNEL32"}]
+      },
+      {
+        "function": "0x0090aa27",
+        "direct_worker_reachable": true,
+        "shortest_direct_path": ["0x00662880","0x00662400","0x0065bf80","0x00900fb3","0x00900f77","0x00900e8f","0x0090aa27"],
+        "is_getprocaddress_caller": true,
+        "module_literals": [{"address":"0x00b384cc","value":"KERNEL32.DLL"}],
+        "local_strings": [{"address":"0x00b384bc","value":"EncodePointer"},{"address":"0x00b384cc","value":"KERNEL32.DLL"}]
+      },
+      {
+        "function": "0x0090aa9e",
+        "direct_worker_reachable": true,
+        "shortest_direct_path": ["0x00662880","0x00662400","0x0065bf80","0x00900fb3","0x00900f77","0x00900e8f","0x0090aa9e"],
+        "is_getprocaddress_caller": true,
+        "module_literals": [{"address":"0x00b384cc","value":"KERNEL32.DLL"}],
+        "local_strings": [{"address":"0x00b384cc","value":"KERNEL32.DLL"},{"address":"0x00b384dc","value":"DecodePointer"}]
+      },
+      {
+        "function": "0x0090abb8",
+        "direct_worker_reachable": true,
+        "shortest_direct_path": ["0x00662880","0x0064ecc0","0x006329e0","0x00631230","0x00906fb6","0x0090a68d","0x0090ac77","0x0090abb8"],
+        "is_getprocaddress_caller": true,
+        "module_literals": [{"address":"0x00b384cc","value":"KERNEL32.DLL"}],
+        "local_strings": [{"address":"0x00b384bc","value":"EncodePointer"},{"address":"0x00b384cc","value":"KERNEL32.DLL"},{"address":"0x00b384dc","value":"DecodePointer"}]
+      },
+      {
+        "function": "0x0090ae90",
+        "direct_worker_reachable": false,
+        "shortest_direct_path": [],
+        "is_getprocaddress_caller": true,
+        "module_literals": [{"address":"0x00b384cc","value":"KERNEL32.DLL"}],
+        "local_strings": [{"address":"0x00b384cc","value":"KERNEL32.DLL"},{"address":"0x00b384ec","value":"FlsFree"},{"address":"0x00b384f4","value":"FlsSetValue"},{"address":"0x00b38500","value":"FlsGetValue"},{"address":"0x00b3850c","value":"FlsAlloc"}]
+      },
+      {
+        "function": "0x009189cd",
+        "direct_worker_reachable": true,
+        "shortest_direct_path": ["0x00662880","0x00662400","0x0065bf80","0x00900fb3","0x00900f77","0x009074c6","0x0090e7c7","0x0090e704","0x009189cd"],
+        "is_getprocaddress_caller": true,
+        "module_literals": [{"address":"0x00b41740","value":"kernel32.dll"}],
+        "local_strings": [{"address":"0x00b41718","value":"InitializeCriticalSectionAndSpinCount"},{"address":"0x00b41740","value":"kernel32.dll"}]
+      }
+    ]
+  },
+  "adjudication": {
+    "direct_literal_module_name_surface_bounded": true,
+    "reachable_literal_module_owner_adds_new_direct_manual_resolution_candidate": false,
+    "direct_literal_module_surface_adds_no_new_candidate": true,
+    "peb_walk_without_literal_module_name_ruled_out": false,
+    "hashed_or_generated_module_name_ruled_out": false,
+    "indirect_callgraph_surface_ruled_out": false,
+    "native_or_syscall_injection_ruled_out": false,
+    "controller1_timing_exhaustive": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Literal module-name ownership is context only; it is not export-table traversal proof.",
+    "Direct-call reachability cannot exhaust indirect calls, callbacks, or virtual dispatch.",
+    "Absence of NTDLL literals does not rule out PEB walking, hashed/generated names, or pre-resolved pointers.",
+    "No timing gate changes without exact API/service identity and Controller #1 target-thread identity."
+  ],
+  "next_step": "Adjudicate the native/manual primitive inventory for PEB/export traversal or direct native transitions; the direct literal KERNEL32/NTDLL module-name surface adds no new worker-reachable candidate beyond the already bounded GetProcAddress subset."
+}
