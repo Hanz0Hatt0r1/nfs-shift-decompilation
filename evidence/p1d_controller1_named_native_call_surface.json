@@ -1,0 +1,81 @@
+{
+  "format": "SHIFT.P1D.Controller1NamedNativeCallSurface/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "scope": "Controller #1 direct named native API call surface",
+  "authority": {
+    "source_index_format": "SHIFT.GhidraSQLiteIndex/1",
+    "source_index_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "source_dir": "out/shift_ghidra_database",
+    "index_is_navigation_evidence_only": true
+  },
+  "worker": "0x00662880",
+  "native_name_prefixes": ["Nt", "Zw", "Rtl"],
+  "apc_native_names": ["ntqueueapcthread", "ntqueueapcthreadex", "rtlqueueapcwow64thread", "zwqueueapcthread"],
+  "counts": {
+    "direct_named_native_call_count": 4,
+    "unique_named_native_target_count": 1,
+    "direct_worker_reachable_named_native_call_count": 0,
+    "apc_capable_name_match_count": 0,
+    "direct_worker_reachable_apc_capable_name_match_count": 0
+  },
+  "calls": [
+    {
+      "caller": "0x009084d5",
+      "callsite": "0x009084f9",
+      "target_address": "0x00a62594",
+      "target_name": "RtlUnwind",
+      "direct_worker_reachable_caller": false,
+      "shortest_direct_path_to_caller": [],
+      "apc_capable_name_match": false
+    },
+    {
+      "caller": "0x00908e24",
+      "callsite": "0x00908e37",
+      "target_address": "0x00a62594",
+      "target_name": "RtlUnwind",
+      "direct_worker_reachable_caller": false,
+      "shortest_direct_path_to_caller": [],
+      "apc_capable_name_match": false
+    },
+    {
+      "caller": "0x0091747e",
+      "callsite": "0x0091748e",
+      "target_address": "0x00a62594",
+      "target_name": "RtlUnwind",
+      "direct_worker_reachable_caller": false,
+      "shortest_direct_path_to_caller": [],
+      "apc_capable_name_match": false
+    },
+    {
+      "caller": "0x00a6a0a0",
+      "callsite": "0x00a6a0e9",
+      "target_address": "0x00a62594",
+      "target_name": "RtlUnwind",
+      "direct_worker_reachable_caller": false,
+      "shortest_direct_path_to_caller": [],
+      "apc_capable_name_match": false
+    }
+  ],
+  "adjudication": {
+    "direct_named_native_call_surface_bounded": true,
+    "direct_named_native_surface_contains_apc_target_name": false,
+    "direct_worker_reachable_named_native_surface_contains_apc_target_name": false,
+    "direct_named_native_surface_adds_no_controller1_apc_candidate": true,
+    "direct_syscall_surface_ruled_out": false,
+    "indirect_ntdll_pointer_surface_ruled_out": false,
+    "manual_or_hashed_resolution_ruled_out": false,
+    "controller1_thread_handle_join_complete": false,
+    "controller1_timing_exhaustive": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Named direct-call targets depend on recovered symbols and do not cover unnamed/direct syscall stubs.",
+    "No direct-callgraph result can exhaust indirect calls, callbacks, generated code, wow64 transitions, or pre-resolved function pointers.",
+    "Rtl-prefixed runtime helpers are not APC evidence unless exact invocation semantics prove otherwise.",
+    "Controller #1 timing cannot advance without exact API/service identity plus target-thread identity."
+  ],
+  "next_step": "Continue with #1699 native/manual primitive adjudication and direct-syscall/indirect-ntdll paths. The named direct Nt/Zw/Rtl surface adds no Controller #1 APC candidate."
+}
