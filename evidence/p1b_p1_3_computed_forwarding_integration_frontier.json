@@ -1,0 +1,68 @@
+{
+  "format": "SHIFT.P1B.P13ComputedForwardingIntegrationFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "queue": {
+    "id": "P1.3",
+    "integration_owner": "Process 1B",
+    "upstream_frontier": "SHIFT.HDVehicle64e8Manager374SourceOnlyForwardingBatch/1",
+    "original_remaining_computed_forwarding_sites": [
+      "0x005292db",
+      "0x005f4ffa",
+      "0x005f6eda",
+      "0x0070f62d",
+      "0x0070fb45",
+      "0x0070fdeb"
+    ]
+  },
+  "consumed_handoffs": [
+    {
+      "shard": "P1.3B",
+      "contract": "SHIFT.HDVehicle64e8Manager374P13B0070f62dVptrRejection/1",
+      "site": "0x0070f62d",
+      "result": "closed-negative"
+    },
+    {
+      "shard": "P1.3B",
+      "contract": "SHIFT.HDVehicle64e8Manager374P13B005f6edaReceiverRejection/1",
+      "site": "0x005f6eda",
+      "result": "closed-negative"
+    },
+    {
+      "shard": "P1.3D",
+      "contract": "SHIFT.P1D.P13D.B04524ComputedReceiverRejections/1",
+      "sites": ["0x0070fb45", "0x0070fdeb"],
+      "result": "closed-negative"
+    }
+  ],
+  "closed_site_count": 4,
+  "closed_sites": [
+    "0x005f6eda",
+    "0x0070f62d",
+    "0x0070fb45",
+    "0x0070fdeb"
+  ],
+  "remaining_site_count": 2,
+  "remaining_sites": [
+    "0x005292db",
+    "0x005f4ffa"
+  ],
+  "remaining_owner": "Process 1A / P1.3A",
+  "adjudication": {
+    "p1_3b_computed_forwarding_complete": true,
+    "p1_3d_computed_forwarding_complete": true,
+    "p1_3a_computed_forwarding_complete": false,
+    "aggregate_computed_forwarding_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "integration_rule": "Process 1B must not promote the aggregate manager+0x374 writer surface until P1.3A returns fail-closed adjudication for both remaining computed forwarding sites.",
+  "next_step": "Consume P1.3A results for 0x005292db and 0x005f4ffa. If both close-negative, complete the manager+0x374 writer-domain join to fixed HDVehicle+0x4330 and adjudicate final 0x004b86cf / slot2."
+}
