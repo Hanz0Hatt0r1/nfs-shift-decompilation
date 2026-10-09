@@ -1,0 +1,70 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01X87PointerChainClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_frontier": "SHIFT.P1A.P13ASlot01X87ZeroInitFrontierEvidence/1",
+    "upstream_first_tranche": "SHIFT.P1A.P13ASlot01X87ReuseTrancheClosure/1",
+    "upstream_second_tranche": "SHIFT.P1A.P13ASlot01X87StackOutputTrancheClosure/1",
+    "machine_transfer_adjudicates": true
+  },
+  "frontier": {
+    "candidate_count": 18,
+    "resolved_before": 14,
+    "resolved_in_tranche": 4,
+    "resolved_total": 18,
+    "remaining_count": 0
+  },
+  "resolved": [
+    {
+      "function": "FUN_0075c0d0",
+      "rejected": true,
+      "domain": "bounded-path-infeasible optional output",
+      "proof": "FUN_00770e80 pushes literal zero at 0x00771231 before the bounded FUN_007b1790 call. FUN_007b1790 loads the corresponding optional output from [EBX+0xc], tests it at 0x007b19d2, and jumps over the 0x007b19d9 call to FUN_0075c0d0 when zero. Therefore the x87 store at 0x0075c14f cannot execute on the bounded P1A path."
+    },
+    {
+      "function": "FUN_007b8630",
+      "rejected": true,
+      "domain": "separately allocated object graph",
+      "proof": "FUN_0076df50 captures HDVehicle in ESI, allocates exactly 0x60 bytes, constructs it through FUN_007b3070, and stores the pointer at HDVehicle+0x339c. FUN_007b3070 installs exact vptr 0x00b0cd90. FUN_00770e80 loads [HDVehicle+0x339c], FUN_007b8810 passes its +0x5c child to FUN_007b8630, and FUN_007b8630 follows [receiver+0x8]+0x18 before zeroing only nested +0x48..+0x88 fields."
+    },
+    {
+      "function": "FUN_0075ada0",
+      "rejected": true,
+      "domain": "caller stack-local output vectors",
+      "proof": "FUN_007682c0 materializes EBP-0x8, EBP-0xc, EBP-0x18 and EBP-0x24 at 0x00768356..0x00768368 immediately before 0x0076836b -> FUN_0075ada0. The zero branch writes only through those output arguments, so the frontier stores are stack-local."
+    },
+    {
+      "function": "FUN_007b7840",
+      "rejected": true,
+      "domain": "nested child of separately allocated object graph",
+      "proof": "The same 0x60-byte vptr-0x00b0cd90 object stored at HDVehicle+0x339c reaches FUN_007b8630. FUN_007b8630 passes [object+0x8] to FUN_007b8260; FUN_007b8260 loads [receiver+0x18] and calls FUN_007b7840. The frontier x87 stores target only nested-object offsets such as +0x48/+0x60 and child +0x8/+0x10, never inline selected HDVehicle slot bytes."
+    }
+  ],
+  "object_provenance": {
+    "allocation_size": "0x60",
+    "allocation_site": "FUN_0076df50",
+    "constructor": "FUN_007b3070",
+    "exact_vptr": "0x00b0cd90",
+    "owner_field": "HDVehicle+0x339c"
+  },
+  "adjudication": {
+    "x87_pointer_chain_tranche_complete": true,
+    "x87_pointer_chain_tranche_rejected_count": 4,
+    "x87_resolved_total": 18,
+    "x87_remaining_count": 0,
+    "x87_zero_init_semantics_complete": true,
+    "x87_selected_hdvehicle_target_writer_found": false,
+    "sse_vector_copy_init_complete": false,
+    "deeper_direct_aliases_ruled_out": false,
+    "indirect_callback_aliases_ruled_out": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Bound shallow SSE/vector copy and zero-initialization candidates; then widen only exact selected-HDVehicle-derived deeper direct or indirect/callback aliases."
+}
