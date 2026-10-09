@@ -22,7 +22,7 @@ def write_rows(path: Path) -> None:
             "program": "SHIFT.exe",
             "function_address": "0x00758b50",
             "function_name": "FUN_00758b50",
-            "field_offset": "0x138",
+            "field_offset": "0x538",
             "runtime_base_hint": True,
             "stride_hint": True,
             "slot3_absolute_hint": False,
@@ -36,7 +36,7 @@ def write_rows(path: Path) -> None:
             "uses": [{
                 "instruction_address": "0x00758d60",
                 "mnemonic": "LEA",
-                "text": "LEA ECX,[ESI + 0x138]",
+                "text": "LEA ECX,[ESI + 0x538]",
                 "instruction_scalar_match": True,
                 "pcode_constant_match": True,
                 "pcode_ops": ["INT_ADD", "COPY"],
@@ -47,7 +47,7 @@ def write_rows(path: Path) -> None:
             "program": "SHIFT.exe",
             "function_address": "0x00600000",
             "function_name": "FUN_00600000",
-            "field_offset": "0x138",
+            "field_offset": "0x538",
             "runtime_base_hint": False,
             "stride_hint": False,
             "slot3_absolute_hint": False,
@@ -61,7 +61,7 @@ def write_rows(path: Path) -> None:
             "uses": [{
                 "instruction_address": "0x00600010",
                 "mnemonic": "FSTP",
-                "text": "FSTP qword ptr [EAX + 0x138]",
+                "text": "FSTP qword ptr [EAX + 0x538]",
                 "instruction_scalar_match": True,
                 "pcode_constant_match": True,
                 "pcode_ops": ["STORE"],
@@ -73,11 +73,12 @@ def write_rows(path: Path) -> None:
 
 def test_exporter_is_candidate_only_and_pins_topology_constants():
     text = EXPORTER.read_text(encoding="utf-8")
-    assert 'FIELD = 0x138L' in text
+    assert 'FIELD = 0x538L' in text
+    assert 'FIELD = 0x138L' not in text
     assert 'RUNTIME_BASE = 0x400L' in text
     assert 'STRIDE = 0xa80L' in text
     assert 'SLOT3_ABSOLUTE = 0x28b8L' in text
-    assert "numeric constant equality is never object identity" in text
+    assert "numeric constant equality is never semantic object identity" in text
 
 
 def test_analyzer_ranks_topology_context_but_stays_fail_closed(tmp_path):
@@ -87,30 +88,31 @@ def test_analyzer_ranks_topology_context_but_stays_fail_closed(tmp_path):
     payload = module.analyze(input_path)
 
     assert payload["format"] == "SHIFT.P1D.Slot3WheelRuntimeAliasInventory/1"
-    assert payload["counts"]["functions_with_exact_0x138_use"] == 2
+    assert payload["counts"]["functions_with_exact_0x538_use"] == 2
     assert payload["counts"]["known_caller_rows"] == 1
     assert payload["ranked_candidates"][0]["function_name"] == "FUN_00758b50"
     assert payload["ranked_candidates"][0]["selected_hdvehicle_root_proven"] is False
     assert payload["ranked_candidates"][0]["f64_qword_write_proven"] is False
 
     adj = payload["adjudication"]
-    assert adj["inventory_complete_for_exported_exact_0x138_uses"] is True
+    assert adj["inventory_complete_for_exported_exact_0x538_uses"] is True
     assert adj["scalar_or_topology_hints_prove_object_identity"] is False
     assert adj["selected_hdvehicle_slot3_writer_proven"] is False
     assert adj["p1_3_control_producer_complete"] is False
     assert adj["external_provider_count"] == 7
 
 
-def test_analyzer_rejects_field_drift(tmp_path):
+def test_analyzer_rejects_field_drift_and_old_contract_offset(tmp_path):
     module = load_module()
-    path = tmp_path / "bad.jsonl"
-    path.write_text(json.dumps({
-        "format": "SHIFT.GhidraWheelRuntimeAliasUses/1",
-        "field_offset": "0x139",
-    }) + "\n", encoding="utf-8")
-    try:
-        module.analyze(path)
-    except ValueError as exc:
-        assert "unexpected field offset" in str(exc)
-    else:
-        raise AssertionError("expected field drift rejection")
+    for bad_offset in ("0x539", "0x138"):
+        path = tmp_path / f"bad-{bad_offset}.jsonl"
+        path.write_text(json.dumps({
+            "format": "SHIFT.GhidraWheelRuntimeAliasUses/1",
+            "field_offset": bad_offset,
+        }) + "\n", encoding="utf-8")
+        try:
+            module.analyze(path)
+        except ValueError as exc:
+            assert "unexpected field offset" in str(exc)
+        else:
+            raise AssertionError(f"expected field drift rejection for {bad_offset}")

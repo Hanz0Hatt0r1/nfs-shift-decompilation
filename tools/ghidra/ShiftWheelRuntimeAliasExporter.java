@@ -1,5 +1,5 @@
-// Export p-code/instruction evidence around exact wheel-runtime field +0x138.
-// Candidate inventory only: numeric constant equality is never object identity.
+// Export p-code/instruction evidence around exact wheel-runtime field +0x538.
+// Candidate inventory only: numeric constant equality is never semantic object identity.
 // @category SHIFT
 // @menupath Tools.SHIFT.Export wheel runtime aliases
 
@@ -28,7 +28,7 @@ import java.util.Set;
 
 public class ShiftWheelRuntimeAliasExporter extends GhidraScript {
     private static final String FORMAT = "SHIFT.GhidraWheelRuntimeAliasUses/1";
-    private static final long FIELD = 0x138L;
+    private static final long FIELD = 0x538L;
     private static final long RUNTIME_BASE = 0x400L;
     private static final long STRIDE = 0xa80L;
     private static final long SLOT3_ABSOLUTE = 0x28b8L;
@@ -160,7 +160,7 @@ public class ShiftWheelRuntimeAliasExporter extends GhidraScript {
             "\"program\":" + q(scan.function.getProgram().getName()) + "," +
             "\"function_address\":" + q(addr(scan.function.getEntryPoint())) + "," +
             "\"function_name\":" + q(scan.function.getName()) + "," +
-            "\"field_offset\":\"0x138\"," +
+            "\"field_offset\":\"0x538\"," +
             "\"runtime_base_hint\":" + scan.runtimeBaseHint + "," +
             "\"stride_hint\":" + scan.strideHint + "," +
             "\"slot3_absolute_hint\":" + scan.slot3AbsoluteHint + "," +

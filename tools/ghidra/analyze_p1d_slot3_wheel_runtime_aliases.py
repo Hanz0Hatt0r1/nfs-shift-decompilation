@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rank +0x138 wheel-runtime alias/callee/bulk-copy candidates for P1.3D.
+"""Rank +0x538 wheel-runtime alias/callee/bulk-copy candidates for P1.3D.
 
 Input is produced by ShiftWheelRuntimeAliasExporter.java. The output is a finite
 candidate inventory only. A candidate is never promoted to the selected
@@ -27,7 +27,7 @@ def read_rows(path: Path) -> list[dict]:
         rec = json.loads(raw)
         if rec.get("format") != INPUT_FORMAT:
             raise ValueError(f"{path}:{line_no}: unexpected format {rec.get('format')!r}")
-        if rec.get("field_offset") != "0x138":
+        if rec.get("field_offset") != "0x538":
             raise ValueError(f"{path}:{line_no}: unexpected field offset {rec.get('field_offset')!r}")
         rows.append(rec)
     return rows
@@ -73,19 +73,19 @@ def rank(rec: dict) -> tuple[int, list[str]]:
         reasons.append("same-function +0x28b8 scalar hint only")
     if "store-like" in classes:
         score += 6
-        reasons.append("exact +0x138 use is store-like")
+        reasons.append("exact +0x538 use is store-like")
     if "address-materializer" in classes:
         score += 5
-        reasons.append("exact +0x138 use participates in address arithmetic")
+        reasons.append("exact +0x538 use participates in address arithmetic")
     if "call-use" in classes:
         score += 5
-        reasons.append("exact +0x138 use reaches a call instruction")
+        reasons.append("exact +0x538 use reaches a call instruction")
     if "function-has-call" in classes:
         score += 2
-        reasons.append("function containing +0x138 use also contains call p-code")
+        reasons.append("function containing +0x538 use also contains call p-code")
     if "function-has-indirect-call" in classes:
         score += 2
-        reasons.append("function containing +0x138 use also contains indirect call")
+        reasons.append("function containing +0x538 use also contains indirect call")
     if "copy-like" in classes or "function-has-copy-like" in classes:
         score += 2
         reasons.append("copy-like p-code is present")
@@ -134,15 +134,16 @@ def analyze(path: Path) -> dict:
         "scope": "selected HDVehicle+0x28b8 alias/callee/bulk-copy writer provenance",
         "input_format": INPUT_FORMAT,
         "target": {
-            "per_wheel_field": "+0x138",
+            "machine_receiver_field": "+0x538",
             "wheel_runtime_base": "+0x400",
             "wheel_stride": "+0xa80",
             "slot3_absolute": "+0x28b8",
+            "normalization": "0x400 + 3*0xa80 + 0x538 = 0x28b8",
             "known_consumer": KNOWN_CONSUMER,
             "known_consumer_caller": KNOWN_CALLER,
         },
         "counts": {
-            "functions_with_exact_0x138_use": len(ranked),
+            "functions_with_exact_0x538_use": len(ranked),
             "strong_topology_candidates": len(strong),
             "known_consumer_rows": len(known_consumer),
             "known_caller_rows": len(known_caller),
@@ -150,7 +151,7 @@ def analyze(path: Path) -> dict:
         "strong_topology_candidates": strong,
         "ranked_candidates": ranked,
         "adjudication": {
-            "inventory_complete_for_exported_exact_0x138_uses": True,
+            "inventory_complete_for_exported_exact_0x538_uses": True,
             "scalar_or_topology_hints_prove_object_identity": False,
             "selected_hdvehicle_slot3_writer_proven": False,
             "retail_input_control_provenance_proven": False,
@@ -158,15 +159,15 @@ def analyze(path: Path) -> dict:
             "external_provider_count": 7,
         },
         "promotion_requirements": [
-            "prove the candidate base aliases the selected HDVehicle wheel-runtime root HDVehicle+0x400+slot*0xa80",
-            "prove slot=3 reaches selected HDVehicle+0x28b8 rather than an unrelated +0x138 subobject",
+            "prove the candidate base aliases the selected HDVehicle wheel-runtime receiver HDVehicle+0x400+slot*0xa80",
+            "prove slot=3 plus machine displacement +0x538 reaches selected HDVehicle+0x28b8",
             "prove an f64/qword write or a bulk-copy range that covers exactly the target field",
             "trace the written value backward to its exact PC-retail producer before assigning semantics",
         ],
         "next_step": (
-            "Run the exporter on authoritative PC retail 1.02 Ghidra, inspect strong topology candidates first, "
+            "Run the corrected exporter on authoritative PC retail 1.02 Ghidra, inspect strong topology candidates first, "
             "then adjudicate exact receiver/base and write width. If no strong candidate writes the field, "
-            "extend the machine trace through callees receiving a materialized +0x138 alias or copy ranges."
+            "extend the machine trace through callees receiving a materialized +0x538 alias or copy ranges."
         ),
     }
 
