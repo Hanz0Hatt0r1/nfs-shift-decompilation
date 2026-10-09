@@ -1,5 +1,8 @@
 import struct, sys
 from pathlib import Path
+
+import pytest
+
 sys.path.insert(0,str(Path(__file__).parents[1]))
 from shader_ir import parse_shader_blobs
 from shader_asm import parse_program, to_glsl
@@ -73,13 +76,13 @@ def test_predication_is_preserved_in_ir():
     assert "mix(r0,r1,predicate.xxxx)" in glsl
 
 
-def test_glsl_translation_covers_abs_and_derivative_aliases():
+def test_glsl_translation_covers_abs_and_d3d9_derivatives():
     abs_glsl = to_glsl(_program_with(35, "ABS"))
-    ddx_glsl = to_glsl(_program_with(84, "DDX"))
-    ddy_glsl = to_glsl(_program_with(85, "DDY"))
+    dsx_glsl = to_glsl(_program_with(91, "DSX"))
+    dsy_glsl = to_glsl(_program_with(92, "DSY"))
     assert "abs(r1)" in abs_glsl
-    assert "dFdx(r1)" in ddx_glsl
-    assert "dFdy(r1)" in ddy_glsl
+    assert "dFdx(r1)" in dsx_glsl
+    assert "dFdy(r1)" in dsy_glsl
 
 
 def test_glsl_float_constants_use_shift_d3d9_ubo():
@@ -87,3 +90,95 @@ def test_glsl_float_constants_use_shift_d3d9_ubo():
     assert "layout(std140, binding = 14) uniform ShiftD3D9Constants" in glsl
     assert "    vec4 c[" in glsl
     assert "vec4 c[" not in glsl.split("ShiftD3D9Constants", 1)[1].split("};", 1)[1]
+
+
+def test_d3d9_opcode_table_preserves_authoritative_numeric_holes():
+    from shader_asm import OPCODES
+
+    assert 49 not in OPCODES
+    assert 63 not in OPCODES
+    assert OPCODES[64] == "TEXCOORD"
+    assert OPCODES[65] == "TEXKILL"
+    assert OPCODES[66] == "TEX"
+    assert OPCODES[75] == "RESERVED0"
+    assert OPCODES[81] == "DEF"
+    assert OPCODES[82] == "TEXREG2RGB"
+    assert OPCODES[91] == "DSX"
+    assert OPCODES[92] == "DSY"
+    assert OPCODES[93] == "TEXLDD"
+    assert OPCODES[95] == "TEXLDL"
+
+
+def test_texkill_is_not_decoded_as_def():
+    src = 0x80000000
+    data = struct.pack('<III', 0xFFFF0300, (1<<24)|65, src) + struct.pack('<I', 0xFFFF)
+    p = parse_program(data)
+
+    assert p.instructions[0].name == "TEXKILL"
+    assert p.instructions[0].operands[0].kind == "source"
+    assert p.constants == []
+
+
+def test_def_uses_opcode_81_and_literal_payload():
+    dst_c0 = 0x80000000 | (2<<28) | (0xF<<16)
+    values = [struct.unpack('<I', struct.pack('<f', value))[0] for value in (1.0, 2.0, 3.0, 4.0)]
+    data = struct.pack('<II', 0xFFFF0300, (5<<24)|81)
+    data += struct.pack('<I', dst_c0)
+    data += struct.pack('<4I', *values)
+    data += struct.pack('<I', 0xFFFF)
+    p = parse_program(data)
+
+    assert p.instructions[0].name == "DEF"
+    assert p.instructions[0].operands[0].kind == "dest"
+    assert all(o.kind == "literal" for o in p.instructions[0].operands[1:])
+    assert p.constants == [0]
+
+
+def test_glsl_translation_fails_closed_by_default():
+    with pytest.raises(ValueError, match="unsupported CND opcode=80"):
+        to_glsl(_program_with(80, "CND"))
+
+    glsl = to_glsl(_program_with(80, "CND"), strict=False)
+    assert "unsupported CND opcode=80" in glsl
+
+
+def test_vertex_output_written_without_dcl_is_declared():
+    from shader_asm import Operand, Instruction, ShaderProgram
+
+    dst = Operand(token=0, kind="dest", reg_type=6, index=0, write_mask="xyzw")
+    src = Operand(token=0, kind="source", reg_type=0, index=0, swizzle="xyzw")
+    p = ShaderProgram(
+        0, 0, "vertex", 3, 0,
+        [Instruction(0, 1, "MOV", 0, 2, 0, False, [dst, src])],
+        [], [], [], [], [0], [], [], [], {}
+    )
+
+    glsl = to_glsl(p)
+    assert "layout(location=0) out vec4 out_0;" in glsl
+    assert "out_0 = r0;" in glsl
+
+
+def test_pixel_mrt_outputs_are_declared_from_written_registers():
+    from shader_asm import Operand, Instruction, ShaderProgram
+
+    src = Operand(token=0, kind="source", reg_type=0, index=0, swizzle="xyzw")
+    dst0 = Operand(token=0, kind="dest", reg_type=8, index=0, write_mask="xyzw")
+    dst1 = Operand(token=0, kind="dest", reg_type=8, index=1, write_mask="xyzw")
+    p = ShaderProgram(
+        0, 0, "pixel", 3, 0,
+        [
+            Instruction(0, 1, "MOV", 0, 2, 0, False, [dst0, src]),
+            Instruction(0, 1, "MOV", 0, 2, 0, False, [dst1, src]),
+        ],
+        [], [], [], [], [0], [], [], [], {}
+    )
+
+    glsl = to_glsl(p)
+    assert "layout(location=0) out vec4 fragColor0;" in glsl
+    assert "layout(location=1) out vec4 fragColor1;" in glsl
+
+
+def test_gles_constant_binding_uses_portable_guaranteed_range():
+    with pytest.raises(ValueError, match="0..23"):
+        to_glsl(_program_with(1, "MOV"), constant_binding=24)
+    assert "binding = 24" in to_glsl(_program_with(1, "MOV"), constant_binding=24, target="vulkan")

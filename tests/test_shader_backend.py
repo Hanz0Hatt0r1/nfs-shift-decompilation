@@ -195,7 +195,7 @@ this is not valid GLSL
 
 def test_parser_decodes_setp_destination_as_predicate():
     version = 0xFFFF0300
-    setp = (3 << 24) | 78
+    setp = (3 << 24) | 94
     dst_predicate = 0x80000000 | (3 << 28) | (16 << 8)
     src_c0 = 0x80000000 | (2 << 28) | 0
     src_c1 = 0x80000000 | (2 << 28) | 1

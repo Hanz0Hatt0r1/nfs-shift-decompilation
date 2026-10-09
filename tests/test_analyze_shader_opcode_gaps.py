@@ -37,6 +37,22 @@ def test_analyze_opcode_gaps_reports_only_observed_unsupported_ops(monkeypatch):
         },
     ]
     assert result["observed_supported_count"] == 2
+    assert result["ready"] is False
+
+
+def test_analyze_opcode_gaps_is_ready_only_when_corpus_is_ready_and_gap_free(monkeypatch):
+    monkeypatch.setattr(runtime, "_SUPPORTED", {"MOV", "TEX"})
+    result = runtime.analyze_opcode_gaps(
+        {
+            "format": "SHIFT.FXOShaderCorpusAudit/1",
+            "ready": True,
+            "summary": {
+                "opcode_counts": {"MOV": 3, "TEX": 2},
+                "unsupported_opcode_counts": {},
+            },
+        }
+    )
+    assert result["gap_count"] == 0
     assert result["ready"] is True
 
 

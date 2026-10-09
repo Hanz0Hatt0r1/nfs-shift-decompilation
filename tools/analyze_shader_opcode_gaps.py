@@ -39,6 +39,9 @@ def analyze_opcode_gaps(report: dict[str, Any]) -> dict[str, Any]:
         )
     )
 
+    corpus_ready = report.get("ready") is True
+    ready = corpus_ready and not gaps
+
     return {
         "format": "SHIFT.FXOShaderOpcodeGapAnalysis/1",
         "version": 1,
@@ -50,7 +53,7 @@ def analyze_opcode_gaps(report: dict[str, Any]) -> dict[str, Any]:
         ),
         "gap_count": len(gaps),
         "gaps": gaps,
-        "ready": report.get("ready") is True,
+        "ready": ready,
     }
 
 
