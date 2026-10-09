@@ -1,0 +1,106 @@
+{
+  "format": "SHIFT.P1D.P13DSlot3ShallowSIMDStoreFrontier/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "direct_callgraph_is_navigation_only": true,
+    "machine_destination_adjudicates": true
+  },
+  "slot3": {
+    "absolute_target": "HDVehicle+0x28b8",
+    "target_byte_range": ["HDVehicle+0x28b8", "HDVehicle+0x28bf"],
+    "wheel_local_field": "+0x538",
+    "width": "f64/qword"
+  },
+  "scan": {
+    "roots": ["FUN_00758b50", "FUN_0076d100", "FUN_00763570", "FUN_00770e80"],
+    "max_direct_call_depth": 4,
+    "reachable_unique_node_count": 377,
+    "reachable_sized_function_count": 377,
+    "simd_instruction_count": 497,
+    "simd_instruction_function_count": 8,
+    "explicit_simd_store_count": 14,
+    "explicit_simd_store_function_count": 4,
+    "stack_explicit_simd_store_count": 14,
+    "non_stack_explicit_simd_store_count": 0,
+    "implicit_mask_store_count": 0,
+    "store_functions": ["FUN_009011e0", "FUN_00909e0e", "FUN_0090a37e", "FUN_00911e19"]
+  },
+  "store_groups": [
+    {
+      "function": "FUN_009011e0",
+      "min_direct_depth": 3,
+      "shortest_path": ["FUN_00763570", "FUN_00786250", "FUN_007840e0", "FUN_009011e0"],
+      "stores": [
+        "0x00901268 movq qword ptr [esp+0x4],xmm1",
+        "0x009012cf movq qword ptr [esp+0x4],xmm1",
+        "0x009012f6 movq qword ptr [esp+0x4],xmm3"
+      ],
+      "destination_domain": "stack",
+      "selected_slot3_candidate": false
+    },
+    {
+      "function": "FUN_00909e0e",
+      "min_direct_depth": 4,
+      "shortest_path": ["FUN_00770e80", "FUN_00760b50", "FUN_00900b10", "FUN_00909df0", "FUN_00909e0e"],
+      "stores": [
+        "0x00909f59 movlpd qword ptr [esp+0x4],xmm4",
+        "0x00909f86 movlpd qword ptr [esp+0x4],xmm1"
+      ],
+      "destination_domain": "stack",
+      "selected_slot3_candidate": false
+    },
+    {
+      "function": "FUN_0090a37e",
+      "min_direct_depth": 4,
+      "shortest_path": ["FUN_0076d100", "FUN_00765c40", "FUN_00900c40", "FUN_0090a360", "FUN_0090a37e"],
+      "stores": [
+        "0x0090a4c9 movlpd qword ptr [esp+0x4],xmm4",
+        "0x0090a4ee movlpd qword ptr [esp+0x4],xmm0",
+        "0x0090a514 movlpd qword ptr [esp+0x4],xmm0"
+      ],
+      "destination_domain": "stack",
+      "selected_slot3_candidate": false
+    },
+    {
+      "function": "FUN_00911e19",
+      "min_direct_depth": 4,
+      "shortest_path": ["FUN_00770e80", "FUN_0076e560", "FUN_00902e40", "FUN_00911e00", "FUN_00911e19"],
+      "stores": [
+        "0x00912159 movlpd qword ptr [esp+0x4],xmm0",
+        "0x00912605 movlpd qword ptr [esp+0x4],xmm0",
+        "0x00912623 movlpd qword ptr [esp+0x10],xmm0",
+        "0x00912821 movlpd qword ptr [esp+0x4],xmm0",
+        "0x0091286b movlpd qword ptr [esp+0x4],xmm0",
+        "0x00912912 movlpd qword ptr [esp+0x4],xmm0"
+      ],
+      "destination_domain": "stack",
+      "selected_slot3_candidate": false
+    }
+  ],
+  "adjudication": {
+    "shallow_mapped_canonical_simd_store_surface_complete": true,
+    "all_explicit_simd_stores_are_stack_local": true,
+    "shallow_non_stack_simd_store_candidate_count": 0,
+    "selected_slot3_simd_writer_found": false,
+    "slot3_shallow_sse_vector_copy_zero_init_subset_complete": true,
+    "deeper_direct_aliases_complete": false,
+    "indirect_callback_aliases_complete": false,
+    "slot3_writer_provenance_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only explicit canonical MMX/SSE/SSE2 move stores mapped into sized function ranges reachable within four direct edges.",
+    "Ghidra function ranges and direct reachability are navigation evidence; semantic rejection rests on exact retail store destinations.",
+    "All 14 explicit stores write ESP-relative stack slots, so none can be selected HDVehicle+0x28b8.",
+    "Out-of-line chunks outside sized ranges, deeper direct paths, implicit/custom vector stores outside the enumerated class, and indirect/callback paths remain open."
+  ],
+  "next_step": "Remove shallow canonical SSE/vector copy-zero-init from the slot3 frontier; continue with exact selected-wheel-derived deeper direct and indirect/callback aliases."
+}
