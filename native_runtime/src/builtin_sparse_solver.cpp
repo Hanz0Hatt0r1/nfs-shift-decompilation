@@ -83,7 +83,20 @@ BuiltinSparseSolveResult solve_builtin_sparse(
             "reverse_records must contain n records");
     }
 
-    std::vector<std::vector<double>> a = matrix;
+    // The recovered solver is sparse in its dependency graph, not in its
+    // public matrix ABI. Keep that ABI stable while using one contiguous
+    // row-major work buffer for the factorization hot path. This avoids the
+    // per-row allocations and pointer chasing of vector<vector<double>>.
+    std::vector<double> a(n * n, 0.0);
+    for (std::size_t row = 0; row < n; ++row) {
+        std::copy(
+            matrix[row].begin(),
+            matrix[row].end(),
+            a.begin() + static_cast<std::ptrdiff_t>(row * n));
+    }
+    auto cell = [&a, n](std::size_t row, std::size_t column) -> double& {
+        return a[row * n + column];
+    };
     std::vector<double> b = rhs;
 
     const auto& terminal_items = forward_records[n].items;
@@ -105,10 +118,10 @@ BuiltinSparseSolveResult solve_builtin_sparse(
                 throw std::invalid_argument(
                     "invalid pivot dependency");
             }
-            a[i][i] -= a[k][i] * a[i][k];
+            cell(i, i) -= cell(k, i) * cell(i, k);
         }
 
-        const double diagonal = a[i][i];
+        const double diagonal = cell(i, i);
         if (diagonal == 0.0) {
             throw std::domain_error("zero pivot");
         }
@@ -128,9 +141,9 @@ BuiltinSparseSolveResult solve_builtin_sparse(
                     throw std::invalid_argument(
                         "invalid row dependency");
                 }
-                a[j][i] -= a[k][i] * a[j][k];
+                cell(j, i) -= cell(k, i) * cell(j, k);
             }
-            a[i][j] = a[j][i] * inv_diagonal;
+            cell(i, j) = cell(j, i) * inv_diagonal;
         }
 
         const auto& terminal = terminal_items[i];
@@ -139,7 +152,7 @@ BuiltinSparseSolveResult solve_builtin_sparse(
                 throw std::invalid_argument(
                     "invalid RHS dependency");
             }
-            b[i] -= a[i][k] * b[k];
+            b[i] -= cell(i, k) * b[k];
         }
         b[i] *= inv_diagonal;
     }
@@ -158,13 +171,24 @@ BuiltinSparseSolveResult solve_builtin_sparse(
                     throw std::invalid_argument(
                         "invalid reverse dependency");
                 }
-                b[i] -= a[i][k] * b[k];
+                b[i] -= cell(i, k) * b[k];
             }
         }
     }
 
+    std::vector<std::vector<double>> factorized_matrix(
+        n, std::vector<double>(n, 0.0));
+    for (std::size_t row = 0; row < n; ++row) {
+        const auto first =
+            a.begin() + static_cast<std::ptrdiff_t>(row * n);
+        std::copy(
+            first,
+            first + static_cast<std::ptrdiff_t>(n),
+            factorized_matrix[row].begin());
+    }
+
     return {
-        std::move(a),
+        std::move(factorized_matrix),
         std::move(b),
     };
 }
