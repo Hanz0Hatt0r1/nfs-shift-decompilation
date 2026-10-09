@@ -1,0 +1,83 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374P13A005f4ffaReceiverRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "owner_shard": "P1.3A",
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374SourceOnlyForwardingBatch/1",
+  "participants_manager_identity": {
+    "root_vptr": "0x00ab9190",
+    "subobject_vptr": "0x00ab916c"
+  },
+  "target_site": {
+    "address": "0x005f4ffa",
+    "function": "FUN_005f4f50",
+    "machine_body": "0x005f4f55",
+    "materializer": "0x005f4ffa lea eax,[esi+0x374]",
+    "receiver_capture": "0x005f4f6d mov esi,ecx",
+    "destination_use": "0x005f501b push eax; 0x005f501c call FUN_00901cc5",
+    "source": "receiver+0x354",
+    "copy_size": "0x20"
+  },
+  "whole_image_entry_surface": {
+    "wrapper": "0x005f4f50 -> 0x00445d5d -> 0x005f4f55",
+    "direct_callers_to_wrapper": [
+      "0x005f79d7 call 0x005f4f50",
+      "0x005f7b85 call 0x005f4f50"
+    ],
+    "direct_tail_jumps_to_wrapper": [
+      "0x005f8aff jmp 0x005f4f50"
+    ],
+    "absolute_function_pointer_occurrence_count_for_0x005f4f50": 0,
+    "absolute_function_pointer_occurrence_count_for_0x005f4f55": 0
+  },
+  "receiver_class": {
+    "allocation_site_function": "FUN_005fbbb0",
+    "allocation_size": "0x1fe0",
+    "constructor": "FUN_005f78e0",
+    "constructor_vptr_store": "0x005f78fd mov [esi],0x00ae2a60",
+    "destructor": "FUN_005f79c0",
+    "destructor_vptr_store": "0x005f79cb mov [esi],0x00ae2a60",
+    "vptr": "0x00ae2a60",
+    "cross_shard_identity_contract": "SHIFT.HDVehicle64e8Manager374P13B005f6edaReceiverRejection/1"
+  },
+  "entry_path_provenance": [
+    {
+      "entry": "0x005f79d7",
+      "proof": "FUN_005f79c0 captures ECX in ESI at 0x005f79c2, reinstalls exact vptr 0x00ae2a60 at 0x005f79cb, then calls 0x005f4f50 with the same receiver."
+    },
+    {
+      "entry": "0x005f7b85",
+      "proof": "FUN_005f7a60 captures its ECX in ESI at 0x005f7a63 and calls 0x005f4f50 with ECX=ESI. Its only direct transfer is the 0x005f8a4b tail jump from FUN_005f8950, which preserves the same ESI receiver. FUN_005f8950 is called at 0x005a89e4 on the pointer loaded from owner+0x2448; FUN_005fbbb0 allocates exactly 0x1fe0 bytes, constructs that pointer with FUN_005f78e0, and stores it to owner+0x2448."
+    },
+    {
+      "entry": "0x005f8aff",
+      "proof": "FUN_005f8950 captures entry ECX in ESI at 0x005f8952-0x005f8953 and the state-dispatch arm restores ECX=ESI at 0x005f8afc before tail-jumping to 0x005f4f50. The same FUN_005f8950 receiver is the separately allocated/constructed 0x1fe0 object from FUN_005fbbb0/FUN_005f78e0."
+    }
+  ],
+  "identity_adjudication": {
+    "receiver_is_participants_manager": false,
+    "reason": "Every bounded static entry into FUN_005f4f50 carries the separately allocated 0x1fe0 receiver class with exact vptr 0x00ae2a60; Participants Manager root/subobject use 0x00ab9190/0x00ab916c.",
+    "site_can_write_participants_manager_plus_0x374": false,
+    "numeric_offset_equality_used_as_identity": false
+  },
+  "adjudication": {
+    "p13a_site_0x005f4ffa_complete": true,
+    "p13a_site_0x005292db_complete": false,
+    "p13a_computed_forwarding_sites_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This contract closes only P1.3A computed forwarding site 0x005f4ffa.",
+    "The whole-image entry surface is bounded by direct call/jump transfers plus absolute function-pointer occurrence scans for the wrapper/body; no numeric +0x374 coincidence is treated as identity.",
+    "P1.3A site 0x005292db and slot0/slot1 selected-root provenance remain open."
+  ],
+  "next_step": "Resolve exact receiver provenance for remaining P1.3A computed path 0x005292db, then close selected-root alias/callee/bulk-copy provenance for HDVehicle+0x938 and HDVehicle+0x13b8 before returning the P1.3A handoff to Process 1B."
+}
