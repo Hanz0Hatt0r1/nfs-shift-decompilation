@@ -1,0 +1,55 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374ReturnedPointer529020Closure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform":"PC retail 1.02",
+    "retail_executable_sha256":"eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates":true
+  },
+  "upstream_contracts":[
+    "SHIFT.HDVehicle64e8Manager374ComputedAddressUseClassification/1",
+    "SHIFT.HDVehicle64e8Manager374DirectWriteDspRejection/1"
+  ],
+  "producer": {
+    "function":"FUN_00529020",
+    "materializer":"0x0052902b lea eax,[ecx+0x374]",
+    "return":"0x00529031 ret",
+    "conditional_fallback":"0x00529024 mov eax,0x00be2104 when [ecx+0x18] < 2"
+  },
+  "whole_image_consumer_surface": {
+    "direct_control_transfer_count":1,
+    "direct_control_transfer":"0x0051f051 call FUN_00529020",
+    "direct_jump_count":0,
+    "absolute_function_pointer_occurrence_count":0,
+    "static_table_or_global_function_pointer_surface":false
+  },
+  "only_consumer": {
+    "callsite":"0x0051f051",
+    "post_call_machine":[
+      "0x0051f051 call FUN_00529020",
+      "0x0051f056 mov eax,[eax]",
+      "0x0051f058 mov ecx,[esi+0x384]",
+      "0x0051f05e mov [esi+0x390],eax"
+    ],
+    "returned_pointer_written_through":false,
+    "returned_pointer_stored_or_forwarded":false,
+    "only_pointee_value_is_read":true
+  },
+  "adjudication": {
+    "returned_computed_pointer_consumer_surface_complete":true,
+    "returned_pointer_path_can_write_manager_plus_0x374":false,
+    "remaining_computed_runtime_path_count":17,
+    "callee_forwarding_surface_complete":false,
+    "computed_address_manager_374_writer_surface_complete":false,
+    "manager_374_join_to_hdvehicle_4330_complete":false,
+    "last_literal_0x004b86cf_rejected":false,
+    "p1_3_control_producer_complete":false,
+    "external_provider_count":7
+  },
+  "limits":[
+    "This closes the returned-pointer escape from FUN_00529020 only; receiver identity is unnecessary because every consumer is bounded and read-only through the returned pointer.",
+    "The 17 callee-forwarding computed-address paths remain open."
+  ],
+  "next_step":"Classify the 17 callee-forwarding paths by callee argument direction and receiver ownership. Source-only forwards can close without receiver identity; destination/receiver forwards require exact provenance."
+}
