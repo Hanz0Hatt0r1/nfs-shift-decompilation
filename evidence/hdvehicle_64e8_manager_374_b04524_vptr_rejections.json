@@ -1,0 +1,64 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374B04524VptrRejections/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform":"PC retail 1.02",
+    "retail_executable_sha256":"eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates":true
+  },
+  "upstream_contract":"SHIFT.HDVehicle64e8Manager374SourceOnlyForwardingBatch/1",
+  "participants_manager_identity": {
+    "root_vptr":"0x00ab9190",
+    "subobject_vptr":"0x00ab916c"
+  },
+  "receiver_class": {
+    "vptr":"0x00b04524",
+    "constructor":"FUN_0070fae0",
+    "constructor_vptr_store":"0x0070fb13 mov [esi],0x00b04524",
+    "destructor":"FUN_0070f580",
+    "destructor_vptr_store":"0x0070f5a0 mov [esi],0x00b04524"
+  },
+  "sites": [
+    {
+      "site":"0x0070f62d",
+      "function":"FUN_0070f580",
+      "materializer":"lea ecx,[esi+0x374]",
+      "callee":"FUN_006310c0",
+      "same_receiver_proof":"ESI captured from entry ECX at 0x0070f59b; exact vptr 0x00b04524 installed at 0x0070f5a0 before target materializer",
+      "can_target_participants_manager_plus_0x374":false
+    },
+    {
+      "site":"0x0070fb45",
+      "function":"FUN_0070fae0",
+      "materializer":"lea ecx,[esi+0x374]",
+      "callee":"FUN_00533e70",
+      "same_receiver_proof":"ESI captured from entry ECX at 0x0070fafd; exact vptr 0x00b04524 installed at 0x0070fb13 before target materializer",
+      "can_target_participants_manager_plus_0x374":false
+    },
+    {
+      "site":"0x0070fdeb",
+      "function":"FUN_0070fae0",
+      "materializer":"lea ecx,[esi+0x374]",
+      "callee":"FUN_006329e0",
+      "same_receiver_proof":"same constructor ESI remains live from 0x0070fafd through 0x0070fdeb after exact 0x00b04524 vptr install",
+      "can_target_participants_manager_plus_0x374":false
+    }
+  ],
+  "adjudication": {
+    "rejected_site_count":3,
+    "same_receiver_vptr_identity_complete":true,
+    "remaining_callee_forwarding_path_count":3,
+    "remaining_sites":["0x005292db","0x005f4ffa","0x005f6eda"],
+    "computed_address_manager_374_writer_surface_complete":false,
+    "manager_374_join_to_hdvehicle_4330_complete":false,
+    "last_literal_0x004b86cf_rejected":false,
+    "p1_3_control_producer_complete":false,
+    "external_provider_count":7
+  },
+  "limits":[
+    "This rejection uses same-receiver machine continuity plus explicit vptr stores, not numeric offset equality.",
+    "The three remaining forwarding paths use unrelated receiver domains and remain open."
+  ],
+  "next_step":"Resolve receiver provenance for 0x005292db and the two strcpy_s destination sites 0x005f4ffa/0x005f6eda."
+}
