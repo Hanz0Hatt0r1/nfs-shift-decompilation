@@ -1,0 +1,99 @@
+{
+  "adjudication": {
+    "all_named_copy_paths_exhausted": false,
+    "external_provider_count": 7,
+    "indirect_copy_dispatch_ruled_out": false,
+    "inline_or_custom_bulk_copy_ruled_out": false,
+    "nearest_named_secure_copy_branches_rejected_as_slot01_target_writers": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "slot0_selected_root_alias_callee_bulk_copy_complete": false,
+    "slot1_selected_root_alias_callee_bulk_copy_complete": false
+  },
+  "authority": {
+    "machine_transfer_adjudicates": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "copy_helper_proof": {
+    "FUN_006310d0": "allocates separate backing storage, advances returned pointer by 6, and stores that backing pointer into [this]",
+    "FUN_00631230": "loads destination from [this] and invokes 0x00906fb6 (_memmove_s); the destination is backing storage, not the inline string object",
+    "FUN_00631740": "allocates backing storage, loads destination from [this], and invokes 0x00900dea (_memcpy_s)",
+    "FUN_006329e0": "bounded NUL-length scan followed by one of four calls to FUN_00631230"
+  },
+  "format": "SHIFT.P1A.P13ASlot01NearestSecureCopyMachineProof/1",
+  "nearest_branch_proof": {
+    "FUN_00647820_receiver": "containing object+0x24",
+    "FUN_0070fae0_receivers": [
+      "object+0x370",
+      "object+0x374",
+      "object+0x378",
+      "object+0x37c",
+      "object+0x380",
+      "stack-local string object fed from object+0x380"
+    ],
+    "copy_destination_domain": "separately allocated string backing storage reached through [string_object]",
+    "targets_rejected": [
+      "HDVehicle+0x938",
+      "HDVehicle+0x13b8",
+      "wheel-local +0x538"
+    ],
+    "writes_inline_wheel_target_bytes": false
+  },
+  "next_step": "Remove these secure-string branches from the slot0/slot1 bulk-copy frontier, then trace remaining interprocedural aliases and inline/custom copy/init paths.",
+  "ready": true,
+  "verified_byte_windows": [
+    {"bytes": "e8d2900200", "site": "0x006310f9"},
+    {"bytes": "8d4806", "site": "0x006310fe"},
+    {"bytes": "890f", "site": "0x0063110e"},
+    {"bytes": "e84cffffff", "site": "0x0063123f"},
+    {"bytes": "8b0f", "site": "0x00631247"},
+    {"bytes": "56505651", "site": "0x00631249"},
+    {"bytes": "e8645d2d00", "site": "0x0063124d"},
+    {"bytes": "c6041600", "site": "0x00631265"},
+    {"bytes": "e83af9ffff", "site": "0x00631791"},
+    {"bytes": "8b03", "site": "0x00631796"},
+    {"bytes": "56575650", "site": "0x00631798"},
+    {"bytes": "e849f62c00", "site": "0x0063179c"},
+    {"bytes": "e812e8ffff", "site": "0x00632a19"},
+    {"bytes": "e8ffe7ffff", "site": "0x00632a2c"},
+    {"bytes": "e8ece7ffff", "site": "0x00632a3f"},
+    {"bytes": "e8d9e7ffff", "site": "0x00632a52"},
+    {"bytes": "8d4f24", "site": "0x00647827"},
+    {"bytes": "e8b1b1feff", "site": "0x0064782a"},
+    {"bytes": "8dbe80030000", "site": "0x0070fb72"},
+    {"bytes": "8d8e70030000", "site": "0x0070fdcb"},
+    {"bytes": "e8fa2bf2ff", "site": "0x0070fde1"},
+    {"bytes": "8d8e74030000", "site": "0x0070fdeb"},
+    {"bytes": "e8ea2bf2ff", "site": "0x0070fdf1"},
+    {"bytes": "8d8e78030000", "site": "0x0070fdfb"},
+    {"bytes": "e8da2bf2ff", "site": "0x0070fe01"},
+    {"bytes": "8d8e7c030000", "site": "0x0070fe0b"},
+    {"bytes": "e8ca2bf2ff", "site": "0x0070fe11"},
+    {"bytes": "8bcf", "site": "0x0070fe1b"},
+    {"bytes": "e8be2bf2ff", "site": "0x0070fe1d"},
+    {"bytes": "8bd7", "site": "0x0070fe27"},
+    {"bytes": "8d4df0", "site": "0x0070fe29"},
+    {"bytes": "e83f2ef2ff", "site": "0x0070fe2c"}
+  ],
+  "verified_calls": [
+    {"site": "0x006310f9", "target": "0x0065a1d0"},
+    {"site": "0x0063123f", "target": "0x00631190"},
+    {"site": "0x0063124d", "target": "0x00906fb6"},
+    {"site": "0x00631791", "target": "0x006310d0"},
+    {"site": "0x0063179c", "target": "0x00900dea"},
+    {"site": "0x00632a19", "target": "0x00631230"},
+    {"site": "0x00632a2c", "target": "0x00631230"},
+    {"site": "0x00632a3f", "target": "0x00631230"},
+    {"site": "0x00632a52", "target": "0x00631230"},
+    {"site": "0x0064782a", "target": "0x006329e0"},
+    {"site": "0x0070fde1", "target": "0x006329e0"},
+    {"site": "0x0070fdf1", "target": "0x006329e0"},
+    {"site": "0x0070fe01", "target": "0x006329e0"},
+    {"site": "0x0070fe11", "target": "0x006329e0"},
+    {"site": "0x0070fe1d", "target": "0x006329e0"},
+    {"site": "0x0070fe2c", "target": "0x00632c70"}
+  ],
+  "version": 1
+}
