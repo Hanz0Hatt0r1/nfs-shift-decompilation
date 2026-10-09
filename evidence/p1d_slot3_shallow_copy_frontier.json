@@ -1,0 +1,84 @@
+{
+  "format": "SHIFT.P1D.Slot3ShallowCopyFrontier/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "scope": "HDVehicle+0x28b8 slot3 bulk-copy navigation frontier",
+  "authority": {
+    "source_index_format": "SHIFT.GhidraSQLiteIndex/1",
+    "source_index_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "index_is_navigation_evidence_only": true
+  },
+  "roots": [
+    "FUN_00758b50",
+    "FUN_0076d100",
+    "FUN_00763570",
+    "FUN_00770e80"
+  ],
+  "max_direct_call_depth": 4,
+  "named_copy_symbols": [
+    "__VEC_memcpy",
+    "_memcpy",
+    "_memcpy_s",
+    "_memmove",
+    "_memmove_s",
+    "memcpy",
+    "memcpy_s",
+    "memmove",
+    "memmove_s"
+  ],
+  "root_results": [
+    {
+      "root": "FUN_00758b50",
+      "max_depth": 4,
+      "reachable_unique_node_count": 23,
+      "nodes_by_min_depth": {"0": 1, "1": 10, "2": 6, "3": 5, "4": 1},
+      "named_copy_hit_count": 0,
+      "named_copy_hits": []
+    },
+    {
+      "root": "FUN_0076d100",
+      "max_depth": 4,
+      "reachable_unique_node_count": 151,
+      "nodes_by_min_depth": {"0": 1, "1": 8, "2": 41, "3": 52, "4": 49},
+      "named_copy_hit_count": 0,
+      "named_copy_hits": []
+    },
+    {
+      "root": "FUN_00763570",
+      "max_depth": 4,
+      "reachable_unique_node_count": 48,
+      "nodes_by_min_depth": {"0": 1, "1": 8, "2": 6, "3": 10, "4": 23},
+      "named_copy_hit_count": 0,
+      "named_copy_hits": []
+    },
+    {
+      "root": "FUN_00770e80",
+      "max_depth": 4,
+      "reachable_unique_node_count": 325,
+      "nodes_by_min_depth": {"0": 1, "1": 20, "2": 61, "3": 111, "4": 132},
+      "named_copy_hit_count": 0,
+      "named_copy_hits": []
+    }
+  ],
+  "summary": {
+    "named_copy_hits_within_depth": 0,
+    "all_roots_empty_for_named_copy_calls": true
+  },
+  "adjudication": {
+    "shallow_named_memcpy_memmove_surface_empty": true,
+    "inline_or_custom_bulk_copy_ruled_out": false,
+    "indirect_copy_dispatch_ruled_out": false,
+    "deeper_direct_copy_paths_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This scan follows direct call edges only and cannot reject indirect/callback copy dispatch.",
+    "Named memcpy/memmove absence cannot reject compiler-inlined copies or custom copy helpers.",
+    "The depth bound is a prioritization frontier, not a semantic reachability theorem.",
+    "A copy routine on a deeper path would still require exact destination range and selected-HDVehicle root provenance."
+  ],
+  "next_step": "Prioritize exact +0x538 STORE/address-materializer/callee candidates from the corrected Ghidra exporter. If none writes the target, extend copy analysis only along concrete alias-forwarding callees rather than broadening the entire callgraph blindly."
+}
