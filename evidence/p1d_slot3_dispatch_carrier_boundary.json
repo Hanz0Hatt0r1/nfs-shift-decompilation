@@ -21,11 +21,22 @@
     "call_instruction": "0x00758d6b",
     "wheel_runtime_this_expression": "HDVehicle+0x400+slot*0xa80"
   },
-  "sqlite_direct_callgraph": {
-    "caller_count": 0,
-    "callers": [],
-    "known_machine_call_covered": false,
-    "coverage_gap_against_machine_proof": true
+  "sqlite_callgraph": {
+    "index_format": "SHIFT.GhidraSQLiteIndex/1",
+    "legacy_callee_column_match_count": 0,
+    "normalized_match_count": 1,
+    "callers": [
+      {
+        "from_function": "0x00758b50",
+        "from_name": "FUN_00758b50",
+        "instruction": "0x00758d6b",
+        "to": "0x00755950",
+        "to_name": "FUN_00755950",
+        "indirect": false
+      }
+    ],
+    "known_machine_call_covered_after_raw_json_normalization": true,
+    "legacy_v1_callee_column_population_gap": true
   },
   "heuristic_vtables": {
     "table_count": 2533,
@@ -41,20 +52,20 @@
   },
   "adjudication": {
     "direct_call_carrier_proven_by_machine": true,
-    "sqlite_direct_callgraph_complete_for_target": false,
+    "normalized_sqlite_callgraph_recovers_machine_call": true,
+    "legacy_v1_column_population_gap_proven": true,
     "heuristic_vtable_carrier_present": false,
     "static_literal_pointer_carrier_present": false,
-    "index_misses_can_prove_carrier_absence": false,
-    "runtime_or_other_indirect_dispatch_ruled_out": false,
+    "vtable_or_static_pointer_misses_prove_carrier_absence": false,
     "slot3_writer_provenance_proven": false,
     "p1_3_control_producer_complete": false,
     "external_provider_count": 7
   },
   "limits": [
-    "The SQLite direct-callgraph miss is contradicted by direct retail machine evidence and therefore demonstrates index incompleteness, not carrier absence.",
+    "Version-1 callee-column misses are navigation-index defects when raw_json contains the target; they are not semantic absence proofs.",
     "The vtable export is heuristic and a miss cannot rule out virtual dispatch.",
     "A static-table literal-pointer miss cannot rule out code-built, copied, registered, relocated, or runtime-resolved pointers.",
     "The proven FUN_00758b50 -> FUN_00755950 call establishes the consumer lifecycle but not the writer of selected HDVehicle+0x28b8."
   ],
-  "next_step": "Use the proven FUN_00758b50 wheel lifecycle and exact HDVehicle+0x400+slot*0xa80 receiver expression to trace alias/callee/bulk-copy writes to slot3; treat SQLite caller queries as non-authoritative for this target until the index exporter is repaired."
+  "next_step": "Use the proven FUN_00758b50 wheel lifecycle and exact HDVehicle+0x400+slot*0xa80 receiver expression to trace alias/callee/bulk-copy writes to slot3; use raw_json-compatible caller queries for v1 indexes."
 }
