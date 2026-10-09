@@ -1,0 +1,59 @@
+{
+  "format": "SHIFT.P1D.P13DSlot3ShallowMovLoopHandoff/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01ReceiverLoopMachineClosure/1",
+    "SHIFT.P1A.P13ASlot01OrdinaryMovLoopMachineClosure/1"
+  ],
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "p1a_contracts_consumed_not_reowned": true
+  },
+  "slot3": {
+    "absolute_target": "HDVehicle+0x28b8",
+    "target_byte_range": ["HDVehicle+0x28b8", "HDVehicle+0x28bf"],
+    "local_field": "+0x538"
+  },
+  "receiver_loop_surface": {
+    "max_direct_call_depth": 4,
+    "candidate_count": 8,
+    "rejected_count": 8,
+    "selected_slot3_writer_found": false
+  },
+  "ordinary_mov_loop_surface": {
+    "max_direct_call_depth": 4,
+    "candidate_count": 5,
+    "rejected_count": 5,
+    "selected_slot3_writer_found": false
+  },
+  "proven_hdvehicle_destination_domains": [
+    "HDVehicle+0xea..+0xf9",
+    "HDVehicle+0x3fe0",
+    "HDVehicle+0x407c/+0x3660/+0x3678",
+    "HDVehicle+0x35c8 ordinary-MOV cursor range"
+  ],
+  "adjudication": {
+    "slot3_shallow_receiver_loop_depth4_subset_complete": true,
+    "slot3_shallow_ordinary_mov_loop_depth4_subset_complete": true,
+    "slot3_shallow_mov_loop_writer_found": false,
+    "slot3_straight_line_unrolled_mov_surface_complete": false,
+    "slot3_sse_custom_copy_surface_complete": false,
+    "slot3_non_entry_alias_loop_surface_complete": false,
+    "slot3_deeper_direct_copy_init_paths_complete": false,
+    "slot3_indirect_dispatch_surface_complete": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only the two merged depth<=4 backward-loop detector families.",
+    "Acyclic/unrolled stores, SSE/custom transforms, non-entry aliases, deeper direct paths and indirect/callback dispatch remain open.",
+    "Reachability and numeric offset equality are never selected-HDVehicle identity.",
+    "P1A ownership remains unchanged."
+  ],
+  "next_step": "Inventory shallow straight-line unrolled MOV/FST/SSE copy-init shapes and non-entry-alias loops, then widen only exact selected-wheel-derived deeper or indirect carriers."
+}
