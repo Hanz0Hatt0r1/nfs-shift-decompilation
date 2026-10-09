@@ -1,0 +1,81 @@
+{
+  "format": "SHIFT.CIWorkflowMigration/1",
+  "version": 1,
+  "status": "ready",
+  "stable_workflow": ".github/workflows/native-physics-contact-motion-chain.yml",
+  "superseded_workflows": [
+    {"path": ".github/workflows/native-physics-phase693.yml", "blob_sha": "c735b7faddb825584fb88488cb8ad1aefc71290d"},
+    {"path": ".github/workflows/native-physics-phase694.yml", "blob_sha": "4234032c39e48e80dd5b72baabb118078283c4d1"},
+    {"path": ".github/workflows/native-physics-phase695.yml", "blob_sha": "f47931f4dc11c27fb61bef74a2dbada784b36b8b"},
+    {"path": ".github/workflows/native-physics-phase696.yml", "blob_sha": "9c99712a1cda733f7bbaa9166602ea2acad71c74"},
+    {"path": ".github/workflows/native-physics-phase697.yml", "blob_sha": "c95b5350ecf22f38f68d7554209fa00641a3af09"}
+  ],
+  "coverage_policy": "superset",
+  "parity": {
+    "python_tests": [
+      "tests/test_fun_00770e80_contact_outer_provider_chain_runtime.py",
+      "tests/test_fun_00770e80_contact_outer_runtime_state.py",
+      "tests/test_persistent_body_pose_snapshot_runtime.py",
+      "tests/test_fun_00770e80_motion_read_effect_provider_chain_runtime.py",
+      "tests/test_s6_fun_007682c0_body0_delta_destination.py",
+      "tests/test_s6_fun_007682c0_effect_input_machine_frontier.py",
+      "tests/test_fun_00770e80_motion_read_runtime_state.py"
+    ],
+    "native_targets": [
+      "shift_runtime_fun_00770e80_scalar_provider_anchor_chain_check",
+      "shift_runtime_fun_00770e80_contact_outer_provider_chain_check",
+      "shift_runtime_fun_00770e80_contact_outer_runtime_state_check",
+      "shift_runtime_persistent_body_pose_runtime_state_check",
+      "shift_runtime_fun_00770e80_motion_read_effect_provider_chain_check",
+      "shift_runtime_fun_007682c0_machine_magnitude_check",
+      "shift_runtime_fun_00770e80_motion_read_runtime_state_check"
+    ],
+    "ctest_names": [
+      "shift_runtime_fun_00770e80_scalar_provider_anchor_chain",
+      "shift_runtime_fun_00770e80_contact_outer_provider_chain",
+      "shift_runtime_fun_00770e80_contact_outer_runtime_state",
+      "shift_runtime_persistent_body_pose_runtime_state",
+      "shift_runtime_fun_00770e80_motion_read_effect_provider_chain",
+      "shift_runtime_fun_007682c0_machine_magnitude",
+      "shift_runtime_fun_00770e80_motion_read_runtime_state"
+    ],
+    "native_reports": [
+      "SHIFT.NativeFun00770e80ContactOuterProviderChain/1",
+      "SHIFT.NativeFun00770e80ContactOuterRuntimeState/1",
+      "SHIFT.NativePersistentBodyPoseSnapshot/1",
+      "SHIFT.NativeFun00770e80MotionReadEffectProviderChain/1",
+      "SHIFT.Fun007682c0MachineMagnitude/1",
+      "SHIFT.NativeFun00770e80MotionReadRuntimeState/1"
+    ],
+    "semantic_gate_markers": [
+      "fun_007675f0_typed_input_provider",
+      "fun_007675f0_native_kernel_internal",
+      "contact_outer_input_provider_call_count",
+      "contact_outer_native_call_count",
+      "participant_gate_before_provider_side_effects",
+      "snapshot_generation",
+      "persistent_snapshot_matches_committed_body_bytes",
+      "body_to_vehicle_identity_proven",
+      "renderer_transport_enabled",
+      "fun_007682c0_typed_effect_provider",
+      "fun_007682c0_body0_delta_application_internal",
+      "host_sqrt_substitution_allowed",
+      "retail_x87_control_word",
+      "pc_cisqrt_resolved_to_fsqrt",
+      "planar_squared_f32_checkpoint",
+      "body_pose_snapshot_generation",
+      "motion_read_delta_application_call_count",
+      "persistent_pose_snapshots_committed",
+      "phase696_motion_read_chain_reused",
+      "motion_read_body0_delta_application_internal",
+      "motion_read_machine_scalar_production_external",
+      "fixed_step_auto_schedule"
+    ]
+  },
+  "trigger_policy": {
+    "mode": "union",
+    "meaning": "Any path that previously triggered Phase 693 through Phase 697 now runs the complete contact-provider, persistent-state, pose-snapshot and motion-read regression chain. Coverage is intentionally a superset."
+  },
+  "semantic_gate_changes": false,
+  "provider_count_changes": false
+}

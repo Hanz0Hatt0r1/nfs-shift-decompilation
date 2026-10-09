@@ -1,0 +1,220 @@
+name: native-physics-contact-motion-chain
+
+on:
+  push:
+    paths:
+      - 'src/physics/fun_00770e80_contact_outer_provider_chain_runtime.py'
+      - 'tests/test_fun_00770e80_contact_outer_provider_chain_runtime.py'
+      - 'native_runtime/include/shift_fun_00770e80_contact_outer_provider_chain.hpp'
+      - 'native_runtime/src/fun_00770e80_contact_outer_provider_chain.cpp'
+      - 'native_runtime/tests/fun_00770e80_contact_outer_provider_chain_check.cpp'
+      - 'native_runtime/cmake/phase691.cmake'
+      - 'native_runtime/cmake/phase693.cmake'
+      - 'docs/PHASE693_FUN_007675F0_CONTACT_OUTER_PROVIDER_JOIN.md'
+      - 'src/physics/fun_00770e80_contact_outer_runtime_state.py'
+      - 'tests/test_fun_00770e80_contact_outer_runtime_state.py'
+      - 'native_runtime/src/runtime_explicit_outer_update_state.hpp'
+      - 'native_runtime/src/runtime_state.hpp'
+      - 'native_runtime/tests/fun_00770e80_outer_update_fixture.hpp'
+      - 'native_runtime/tests/fun_00770e80_scalar_provider_anchor_chain_check.cpp'
+      - 'native_runtime/tests/fun_00770e80_contact_outer_runtime_state_check.cpp'
+      - 'native_runtime/cmake/phase694.cmake'
+      - 'docs/PHASE694_FUN_007675F0_CONTACT_OUTER_RUNTIME_STATE.md'
+      - 'src/physics/persistent_body_pose_snapshot_runtime.py'
+      - 'tests/test_persistent_body_pose_snapshot_runtime.py'
+      - 'native_runtime/include/shift_persistent_body_pose_snapshot.hpp'
+      - 'native_runtime/src/persistent_body_pose_snapshot.cpp'
+      - 'native_runtime/tests/persistent_body_pose_runtime_state_check.cpp'
+      - 'native_runtime/cmake/phase695.cmake'
+      - 'docs/PHASE695_PERSISTENT_BODY_POSE_SNAPSHOT.md'
+      - 'src/physics/fun_00770e80_motion_read_effect_provider_chain_runtime.py'
+      - 'tests/test_fun_00770e80_motion_read_effect_provider_chain_runtime.py'
+      - 'tests/test_s6_fun_007682c0_body0_delta_destination.py'
+      - 'tests/test_s6_fun_007682c0_effect_input_machine_frontier.py'
+      - 'evidence/fun_007682c0_body0_delta_destination.json'
+      - 'evidence/fun_007682c0_effect_input_machine_frontier.json'
+      - 'native_runtime/include/shift_body_record_adapter.hpp'
+      - 'native_runtime/src/body_record_adapter.cpp'
+      - 'native_runtime/include/shift_fun_00770e80_composed_anchor_chain.hpp'
+      - 'native_runtime/src/fun_00770e80_composed_anchor_chain.cpp'
+      - 'native_runtime/include/shift_fun_00770e80_motion_read_effect_provider_chain.hpp'
+      - 'native_runtime/src/fun_00770e80_motion_read_effect_provider_chain.cpp'
+      - 'native_runtime/include/shift_fun_007682c0_machine_magnitude.hpp'
+      - 'native_runtime/src/fun_007682c0_machine_magnitude.cpp'
+      - 'native_runtime/tests/fun_00770e80_motion_read_effect_provider_chain_check.cpp'
+      - 'native_runtime/tests/fun_007682c0_machine_magnitude_check.cpp'
+      - 'native_runtime/cmake/phase696.cmake'
+      - 'docs/PHASE696_FUN_007682C0_MOTION_READ_EFFECT_PROVIDER_JOIN.md'
+      - 'src/physics/fun_00770e80_motion_read_runtime_state.py'
+      - 'tests/test_fun_00770e80_motion_read_runtime_state.py'
+      - 'native_runtime/tests/fun_00770e80_motion_read_runtime_state_check.cpp'
+      - 'native_runtime/cmake/phase697.cmake'
+      - 'docs/PHASE697_FUN_007682C0_MOTION_READ_RUNTIME_STATE.md'
+      - 'coordination/ci_migrations/native_physics_contact_motion_chain_693_697.json'
+      - 'tests/test_ci_workflow_migration_contact_motion_chain.py'
+      - '.github/workflows/native-physics-contact-motion-chain.yml'
+  pull_request:
+    paths:
+      - 'src/physics/fun_00770e80_contact_outer_provider_chain_runtime.py'
+      - 'tests/test_fun_00770e80_contact_outer_provider_chain_runtime.py'
+      - 'native_runtime/include/shift_fun_00770e80_contact_outer_provider_chain.hpp'
+      - 'native_runtime/src/fun_00770e80_contact_outer_provider_chain.cpp'
+      - 'native_runtime/tests/fun_00770e80_contact_outer_provider_chain_check.cpp'
+      - 'native_runtime/cmake/phase691.cmake'
+      - 'native_runtime/cmake/phase693.cmake'
+      - 'docs/PHASE693_FUN_007675F0_CONTACT_OUTER_PROVIDER_JOIN.md'
+      - 'src/physics/fun_00770e80_contact_outer_runtime_state.py'
+      - 'tests/test_fun_00770e80_contact_outer_runtime_state.py'
+      - 'native_runtime/src/runtime_explicit_outer_update_state.hpp'
+      - 'native_runtime/src/runtime_state.hpp'
+      - 'native_runtime/tests/fun_00770e80_outer_update_fixture.hpp'
+      - 'native_runtime/tests/fun_00770e80_scalar_provider_anchor_chain_check.cpp'
+      - 'native_runtime/tests/fun_00770e80_contact_outer_runtime_state_check.cpp'
+      - 'native_runtime/cmake/phase694.cmake'
+      - 'docs/PHASE694_FUN_007675F0_CONTACT_OUTER_RUNTIME_STATE.md'
+      - 'src/physics/persistent_body_pose_snapshot_runtime.py'
+      - 'tests/test_persistent_body_pose_snapshot_runtime.py'
+      - 'native_runtime/include/shift_persistent_body_pose_snapshot.hpp'
+      - 'native_runtime/src/persistent_body_pose_snapshot.cpp'
+      - 'native_runtime/tests/persistent_body_pose_runtime_state_check.cpp'
+      - 'native_runtime/cmake/phase695.cmake'
+      - 'docs/PHASE695_PERSISTENT_BODY_POSE_SNAPSHOT.md'
+      - 'src/physics/fun_00770e80_motion_read_effect_provider_chain_runtime.py'
+      - 'tests/test_fun_00770e80_motion_read_effect_provider_chain_runtime.py'
+      - 'tests/test_s6_fun_007682c0_body0_delta_destination.py'
+      - 'tests/test_s6_fun_007682c0_effect_input_machine_frontier.py'
+      - 'evidence/fun_007682c0_body0_delta_destination.json'
+      - 'evidence/fun_007682c0_effect_input_machine_frontier.json'
+      - 'native_runtime/include/shift_body_record_adapter.hpp'
+      - 'native_runtime/src/body_record_adapter.cpp'
+      - 'native_runtime/include/shift_fun_00770e80_composed_anchor_chain.hpp'
+      - 'native_runtime/src/fun_00770e80_composed_anchor_chain.cpp'
+      - 'native_runtime/include/shift_fun_00770e80_motion_read_effect_provider_chain.hpp'
+      - 'native_runtime/src/fun_00770e80_motion_read_effect_provider_chain.cpp'
+      - 'native_runtime/include/shift_fun_007682c0_machine_magnitude.hpp'
+      - 'native_runtime/src/fun_007682c0_machine_magnitude.cpp'
+      - 'native_runtime/tests/fun_00770e80_motion_read_effect_provider_chain_check.cpp'
+      - 'native_runtime/tests/fun_007682c0_machine_magnitude_check.cpp'
+      - 'native_runtime/cmake/phase696.cmake'
+      - 'docs/PHASE696_FUN_007682C0_MOTION_READ_EFFECT_PROVIDER_JOIN.md'
+      - 'src/physics/fun_00770e80_motion_read_runtime_state.py'
+      - 'tests/test_fun_00770e80_motion_read_runtime_state.py'
+      - 'native_runtime/tests/fun_00770e80_motion_read_runtime_state_check.cpp'
+      - 'native_runtime/cmake/phase697.cmake'
+      - 'docs/PHASE697_FUN_007682C0_MOTION_READ_RUNTIME_STATE.md'
+      - 'coordination/ci_migrations/native_physics_contact_motion_chain_693_697.json'
+      - 'tests/test_ci_workflow_migration_contact_motion_chain.py'
+      - '.github/workflows/native-physics-contact-motion-chain.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: native-physics-contact-motion-chain-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contact-motion-chain-regressions:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run Python regressions
+        run: >-
+          PYTHONPATH=src/physics python3 -m pytest -q
+          tests/test_fun_00770e80_contact_outer_provider_chain_runtime.py
+          tests/test_fun_00770e80_contact_outer_runtime_state.py
+          tests/test_persistent_body_pose_snapshot_runtime.py
+          tests/test_fun_00770e80_motion_read_effect_provider_chain_runtime.py
+          tests/test_s6_fun_007682c0_body0_delta_destination.py
+          tests/test_s6_fun_007682c0_effect_input_machine_frontier.py
+          tests/test_fun_00770e80_motion_read_runtime_state.py
+          tests/test_ci_workflow_migration_contact_motion_chain.py
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build consolidated native regressions
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_fun_00770e80_scalar_provider_anchor_chain_check
+          shift_runtime_fun_00770e80_contact_outer_provider_chain_check
+          shift_runtime_fun_00770e80_contact_outer_runtime_state_check
+          shift_runtime_persistent_body_pose_runtime_state_check
+          shift_runtime_fun_00770e80_motion_read_effect_provider_chain_check
+          shift_runtime_fun_007682c0_machine_magnitude_check
+          shift_runtime_fun_00770e80_motion_read_runtime_state_check
+
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_fun_00770e80_scalar_provider_anchor_chain|shift_runtime_fun_00770e80_contact_outer_provider_chain|shift_runtime_fun_00770e80_contact_outer_runtime_state|shift_runtime_persistent_body_pose_runtime_state|shift_runtime_fun_00770e80_motion_read_effect_provider_chain|shift_runtime_fun_007682c0_machine_magnitude|shift_runtime_fun_00770e80_motion_read_runtime_state)$'
+
+      - name: Verify native reports and semantic gates
+        run: |
+          OUT=out/native-physics-contact-motion-chain
+          mkdir -p "$OUT"
+
+          native_runtime/build/shift_runtime_fun_00770e80_contact_outer_provider_chain_check > "$OUT/contact_outer_provider_chain.json"
+          grep -q '"format":"SHIFT.NativeFun00770e80ContactOuterProviderChain/1"' "$OUT/contact_outer_provider_chain.json"
+          grep -q '"fun_007675f0_typed_input_provider":true' "$OUT/contact_outer_provider_chain.json"
+          grep -q '"fun_007675f0_native_kernel_internal":true' "$OUT/contact_outer_provider_chain.json"
+          grep -q '"fun_007675f0_arbitrary_callback_external":false' "$OUT/contact_outer_provider_chain.json"
+          grep -q '"fun_007675f0_input_production_external":true' "$OUT/contact_outer_provider_chain.json"
+          grep -q '"machine_scalar_production_external":true' "$OUT/contact_outer_provider_chain.json"
+          grep -q '"fixed_step_auto_schedule":false' "$OUT/contact_outer_provider_chain.json"
+
+          native_runtime/build/shift_runtime_fun_00770e80_contact_outer_runtime_state_check > "$OUT/contact_outer_runtime_state.json"
+          grep -q '"format":"SHIFT.NativeFun00770e80ContactOuterRuntimeState/1"' "$OUT/contact_outer_runtime_state.json"
+          grep -q '"explicit_update_count":2' "$OUT/contact_outer_runtime_state.json"
+          grep -q '"contact_outer_input_provider_call_count":2' "$OUT/contact_outer_runtime_state.json"
+          grep -q '"contact_outer_native_call_count":2' "$OUT/contact_outer_runtime_state.json"
+          grep -q '"persistent_body_bytes_carried_between_explicit_updates":true' "$OUT/contact_outer_runtime_state.json"
+          grep -q '"participant_gate_before_provider_side_effects":true' "$OUT/contact_outer_runtime_state.json"
+          grep -q '"fixed_step_auto_schedule":false' "$OUT/contact_outer_runtime_state.json"
+          grep -q '"machine_scalar_production_external":true' "$OUT/contact_outer_runtime_state.json"
+
+          native_runtime/build/shift_runtime_persistent_body_pose_runtime_state_check > "$OUT/persistent_body_pose_runtime_state.json"
+          grep -q '"format":"SHIFT.NativePersistentBodyPoseSnapshot/1"' "$OUT/persistent_body_pose_runtime_state.json"
+          grep -q '"snapshot_generation":2' "$OUT/persistent_body_pose_runtime_state.json"
+          grep -q '"explicit_update_count":2' "$OUT/persistent_body_pose_runtime_state.json"
+          grep -q '"persistent_snapshot_matches_committed_body_bytes":true' "$OUT/persistent_body_pose_runtime_state.json"
+          grep -q '"body_to_vehicle_identity_proven":false' "$OUT/persistent_body_pose_runtime_state.json"
+          grep -q '"vehicle_world_transform_proven":false' "$OUT/persistent_body_pose_runtime_state.json"
+          grep -q '"renderer_transport_enabled":false' "$OUT/persistent_body_pose_runtime_state.json"
+          grep -q '"fixed_step_auto_schedule":false' "$OUT/persistent_body_pose_runtime_state.json"
+
+          native_runtime/build/shift_runtime_fun_00770e80_motion_read_effect_provider_chain_check > "$OUT/motion_read_effect_provider_chain.json"
+          grep -q '"format":"SHIFT.NativeFun00770e80MotionReadEffectProviderChain/1"' "$OUT/motion_read_effect_provider_chain.json"
+          grep -q '"fun_007682c0_typed_effect_provider":true' "$OUT/motion_read_effect_provider_chain.json"
+          grep -q '"fun_007682c0_legacy_delta_observer_optional":true' "$OUT/motion_read_effect_provider_chain.json"
+          grep -q '"fun_007682c0_body_identity_application_external":false' "$OUT/motion_read_effect_provider_chain.json"
+          grep -q '"fun_007682c0_body0_delta_application_internal":true' "$OUT/motion_read_effect_provider_chain.json"
+          grep -q '"fun_007682c0_effect_production_external":true' "$OUT/motion_read_effect_provider_chain.json"
+          grep -q '"host_sqrt_substitution_allowed":false' "$OUT/motion_read_effect_provider_chain.json"
+
+          native_runtime/build/shift_runtime_fun_007682c0_machine_magnitude_check > "$OUT/machine_magnitude.json"
+          grep -q '"format":"SHIFT.Fun007682c0MachineMagnitude/1"' "$OUT/machine_magnitude.json"
+          grep -q '"ready":true' "$OUT/machine_magnitude.json"
+          grep -q '"retail_x87_control_word":639' "$OUT/machine_magnitude.json"
+          grep -q '"pc_cisqrt_resolved_to_fsqrt":true' "$OUT/machine_magnitude.json"
+          grep -q '"planar_squared_f32_checkpoint":true' "$OUT/machine_magnitude.json"
+          grep -q '"host_std_sqrt_used_for_retail_path":false' "$OUT/machine_magnitude.json"
+          grep -q '"fun_007595d0_response_complete":false' "$OUT/machine_magnitude.json"
+
+          native_runtime/build/shift_runtime_fun_00770e80_motion_read_runtime_state_check > "$OUT/motion_read_runtime_state.json"
+          grep -q '"format":"SHIFT.NativeFun00770e80MotionReadRuntimeState/1"' "$OUT/motion_read_runtime_state.json"
+          grep -q '"explicit_update_count":2' "$OUT/motion_read_runtime_state.json"
+          grep -q '"body_pose_snapshot_generation":2' "$OUT/motion_read_runtime_state.json"
+          grep -q '"motion_read_delta_application_call_count":2' "$OUT/motion_read_runtime_state.json"
+          grep -q '"persistent_body_bytes_carried_between_explicit_updates":true' "$OUT/motion_read_runtime_state.json"
+          grep -q '"persistent_pose_snapshots_committed":true' "$OUT/motion_read_runtime_state.json"
+          grep -q '"phase696_motion_read_chain_reused":true' "$OUT/motion_read_runtime_state.json"
+          grep -q '"fixed_step_auto_schedule":false' "$OUT/motion_read_runtime_state.json"
+          grep -q '"motion_read_body_identity_application_external":false' "$OUT/motion_read_runtime_state.json"
+          grep -q '"motion_read_body0_delta_application_internal":true' "$OUT/motion_read_runtime_state.json"
+          grep -q '"motion_read_machine_scalar_production_external":true' "$OUT/motion_read_runtime_state.json"
+          grep -q '"host_sqrt_substitution_allowed":false' "$OUT/motion_read_runtime_state.json"
