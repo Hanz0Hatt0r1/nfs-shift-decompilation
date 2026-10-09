@@ -4,7 +4,7 @@
   "ready": true,
   "owner": "Process 1D / P1.3D",
   "upstream_contracts": [
-    "SHIFT.P1A.P13ASlot01X87ReuseTrancheClosure/1",
+    "SHIFT.P1A.P13ASlot01X87StackOutputTrancheClosure/1",
     "SHIFT.Fun00766510ResidualTailClosure/1"
   ],
   "authority": {
@@ -18,20 +18,8 @@
     "width": "f64/qword"
   },
   "exact_root_calls": [
-    {
-      "callsite": "0x00766da5",
-      "callee": "FUN_00758fc0",
-      "receiver": "HDVehicle",
-      "record_argument": "HDVehicle+0x37d8",
-      "reference_vector": "[EBP-0xc8]"
-    },
-    {
-      "callsite": "0x00766dba",
-      "callee": "FUN_00758fc0",
-      "receiver": "HDVehicle",
-      "record_argument": "HDVehicle+0x3858",
-      "reference_vector": "[EBP-0xc8]"
-    }
+    {"callsite":"0x00766da5","callee":"FUN_00758fc0","receiver":"HDVehicle","record_argument":"HDVehicle+0x37d8","reference_vector":"[EBP-0xc8]"},
+    {"callsite":"0x00766dba","callee":"FUN_00758fc0","receiver":"HDVehicle","record_argument":"HDVehicle+0x3858","reference_vector":"[EBP-0xc8]"}
   ],
   "callee_effect": {
     "function": "FUN_00758fc0",
