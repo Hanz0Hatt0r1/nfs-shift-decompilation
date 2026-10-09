@@ -1,0 +1,57 @@
+{
+  "format": "SHIFT.P1D.Slot3ExactCarrierIndirectCallSurface/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "ghidra_sqlite_format": "SHIFT.GhidraSQLiteIndex/1",
+    "sqlite_is_navigation_index": true
+  },
+  "carrier_set": {
+    "count": 15,
+    "functions": [
+      {"address":"0x00758b50","name":"FUN_00758b50","size":1136,"mnemonic_sha256":"3ef5ee12cb0af2f75b5e039dacaf95e42b40002cb681dc1cf00556c6bebe1eeb"},
+      {"address":"0x00755950","name":"FUN_00755950","size":66,"mnemonic_sha256":"976369508b2d92e05d62cfb8d489f19e40c1ec4a145203c84346d5abe89089b8"},
+      {"address":"0x00770e80","name":"FUN_00770e80","size":1183,"mnemonic_sha256":"509d932c8a3c397f69fe91acecadef2bc148a05237a947c226d9ff039860514e"},
+      {"address":"0x00755a60","name":"FUN_00755a60","size":1297,"mnemonic_sha256":"b54457da18192fdb856f0a176dbea0d8d017b32de078e46c36fa1dea2833194c"},
+      {"address":"0x00752fc0","name":"FUN_00752fc0","size":37,"mnemonic_sha256":"850d8c8eb123598b8e54c2ee199c82f9bb0879ad7ba3d9ca1f7e9018c968321e"},
+      {"address":"0x00760b50","name":"FUN_00760b50","size":531,"mnemonic_sha256":"31f53fc3a79ca1df57a7a96e470cdca64ffb590fbbe47169964df348421d447b"},
+      {"address":"0x00763570","name":"FUN_00763570","size":3277,"mnemonic_sha256":"613c21748d8b549f1d94d93cd8bada5b2a75763c58b64ba57691245aa14e37d3"},
+      {"address":"0x00755f80","name":"FUN_00755f80","size":132,"mnemonic_sha256":"35c5d9528694a35a282cccde02739d5b922a3ddeeba2ef1bce57464dd23c1135"},
+      {"address":"0x0076d100","name":"FUN_0076d100","size":508,"mnemonic_sha256":"ab1d8a14406c88e02240c03b0a636b7433df72e9dfaec4654746d19e6ba6de5c"},
+      {"address":"0x00758810","name":"FUN_00758810","size":347,"mnemonic_sha256":"dfc311f47d9922ab17b799f2f6840e10dfd1e5118c0bb39afbc2725691db1cf6"},
+      {"address":"0x00769ef0","name":"FUN_00769ef0","size":774,"mnemonic_sha256":"1ee3fee50472079154d2029eb4c861b3d1b1eda895347c531316678b7e15d1bf"},
+      {"address":"0x007675f0","name":"FUN_007675f0","size":1340,"mnemonic_sha256":"8d112f82c1deec91c6a197002fcf37b5201dc3377e0cfd9bb23d795afbbf72d7"},
+      {"address":"0x007682c0","name":"FUN_007682c0","size":335,"mnemonic_sha256":"f60c733cc0d0b3c755b3104953d1dc1d623d15f33978a6cbe50de7947b7f5d34"},
+      {"address":"0x00766510","name":"FUN_00766510","size":4310,"mnemonic_sha256":"3559c0125cdda2b171b357d35392d93eaba68db86899ec5b44730a6533b91098"},
+      {"address":"0x00758fc0","name":"FUN_00758fc0","size":364,"mnemonic_sha256":"515ba898241d40c003ea49958052af13cdf765af3dc66d275b5238447e3b395b"}
+    ],
+    "semantic_identity_source": "merged P1D exact-root/exact-wheel machine contracts"
+  },
+  "indirect_surface": {
+    "whole_index_indirect_call_edge_count": 19500,
+    "carrier_indirect_call_edge_count": 0,
+    "carrier_indirect_call_edges": []
+  },
+  "adjudication": {
+    "sqlite_indirect_call_edge_class_present": true,
+    "known_exact_carrier_indirect_call_edge_surface_complete": true,
+    "known_exact_carrier_indirect_call_edge_surface_empty": true,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "callbacks_registered_outside_carriers_ruled_out": false,
+    "global_indirect_dispatch_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This is only the Ghidra-recorded CALLIND surface whose caller is one of the 15 already-proven exact carrier functions.",
+    "Zero CALLIND rows does not rule out pointers stored for later use, callbacks invoked elsewhere, indirect entry into a carrier, or aliases created in other functions.",
+    "Function fingerprints and call rows are navigation/cross-check evidence; existing merged machine contracts remain semantic authority for selected-object identity."
+  ],
+  "next_step": "Trace stores/escapes of exact HDVehicle or selected-wheel pointers from the proven carrier set, then join any escaped pointer to its later indirect/callback consumer before changing slot3 gates."
+}
