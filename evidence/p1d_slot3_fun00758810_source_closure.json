@@ -1,0 +1,65 @@
+{
+  "format": "SHIFT.P1D.Slot3Fun00758810SourceClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_decompiler_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "ghidra_sqlite_format": "SHIFT.GhidraSQLiteIndex/1",
+    "source_identity_is_pinned_to_retail_export": true
+  },
+  "selected_slot3": {
+    "absolute_target": "HDVehicle+0x28b8..+0x28bf",
+    "width": "f64/qword"
+  },
+  "entry": {
+    "caller": "FUN_0076d100",
+    "callsite": "0x0076d193",
+    "callee": "FUN_00758810",
+    "receiver": "HDVehicle",
+    "callee_size": 347
+  },
+  "object_identity": {
+    "fuel_tank_pointer_field": "HDVehicle+0x280",
+    "fuel_tank_binding": "FUN_007b3da0(..., \"fuel_tank\")",
+    "selected_BMW_SDF_fuel_tank_body_index": 9,
+    "chassis_body_pointer_field": "HDVehicle+0x33a0",
+    "selected_BMW_chassis_BODY0_index": 0,
+    "fuel_tank_is_chassis_BODY0": false,
+    "pointer_fields_are_embedded_target_bytes": false
+  },
+  "callee_effect": {
+    "direct_persistent_write_owner": "fuel_tank BODY record",
+    "direct_persistent_write_offsets": [
+      "+0x60",
+      "+0x68",
+      "+0x70"
+    ],
+    "body0_helper_receiver": "HDVehicle+0x33a0 -> chassis BODY0",
+    "hdvehicle_subobject_argument": "HDVehicle+0x268",
+    "contains_literal_0x28b8": false,
+    "selected_slot3_write_found": false
+  },
+  "adjudication": {
+    "slot3_fun0076d100_to_fun00758810_exact_root_branch_complete": true,
+    "fun00758810_selected_slot3_writer_found": false,
+    "fun00758810_fuel_tank_destination_identity_proven": true,
+    "fun00758810_chassis_body_destination_separate_from_hdvehicle": true,
+    "deeper_direct_aliases_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "indirect_callback_aliases_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only the exact FUN_0076d100 -> FUN_00758810 branch.",
+    "Writes through HDVehicle+0x280 are assigned to the separately named fuel_tank BODY lookup, not to HDVehicle by numeric offset coincidence.",
+    "The BODY0 helper receiver comes from the independently proven HDVehicle+0x33a0 chassis BODY pointer field.",
+    "Stored aliases, other lifecycle descendants and indirect/callback carriers remain open."
+  ],
+  "next_step": "Compose the now-closed FUN_00758810 and FUN_00769ef0 exact-root branches into the remaining slot3 lifecycle frontier; then trace only stored/escaped or indirect carriers with exact selected-wheel identity."
+}

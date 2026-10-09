@@ -1,0 +1,54 @@
+{
+  "format": "SHIFT.P1D.Slot3Fun00758810HelperEffects/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_decompiler_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "call_context": {
+    "caller": "FUN_00758810",
+    "selected_target": "HDVehicle+0x28b8..+0x28bf"
+  },
+  "helpers": {
+    "FUN_007aefb0": {
+      "role": "matrix/vector transform",
+      "writes_only_output_param": true,
+      "FUN_00758810_output_is_stack_local": true
+    },
+    "FUN_00753590": {
+      "role": "3-double add",
+      "writes_only_output_param": true,
+      "FUN_00758810_outputs_are_stack_local": true
+    },
+    "FUN_007535f0": {
+      "role": "3-double scale",
+      "writes_only_output_param": true,
+      "FUN_00758810_outputs_are_stack_local": true
+    },
+    "FUN_007baaf0": {
+      "receiver": "chassis BODY0",
+      "direct_write_offsets": [
+        "+0x48",
+        "+0x50",
+        "+0x58",
+        "+0x60",
+        "+0x68",
+        "+0x70"
+      ],
+      "writes_HDVehicle_slot3": false
+    }
+  },
+  "adjudication": {
+    "fun00758810_direct_helper_side_effect_surface_complete": true,
+    "helper_selected_slot3_writer_found": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This covers only the four direct non-CRT helpers invoked by FUN_00758810.",
+    "Chassis BODY0 is a separate pointed-to object; its offsets are not HDVehicle offsets."
+  ]
+}
