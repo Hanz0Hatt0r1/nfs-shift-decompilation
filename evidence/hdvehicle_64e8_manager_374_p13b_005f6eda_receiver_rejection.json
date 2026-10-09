@@ -1,0 +1,64 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374P13B005f6edaReceiverRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "navigation_only_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "owner_shard": "P1.3B",
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374SourceOnlyForwardingBatch/1",
+  "participants_manager_identity": {
+    "root_vptr": "0x00ab9190",
+    "subobject_vptr": "0x00ab916c"
+  },
+  "target_site": {
+    "address": "0x005f6eda",
+    "function": "FUN_005f6850",
+    "materializer": "lea ecx,[edi+0x374]",
+    "callee": "FUN_00901cc5",
+    "transfer": "computed pointer pushed as destination argument"
+  },
+  "direct_call_surface": {
+    "direct_caller_count": 1,
+    "caller": "FUN_005f7df0",
+    "callsite": "0x005f7e9b",
+    "receiver_relation": "FUN_005f7df0 passes its own receiver unchanged as FUN_005f6850 this"
+  },
+  "receiver_class": {
+    "allocation_site_function": "FUN_005fbbb0",
+    "allocation_size": "0x1fe0",
+    "constructor": "FUN_005f78e0",
+    "constructor_vptr_store": "receiver[0] = 0x00ae2a60",
+    "destructor": "FUN_005f79c0",
+    "destructor_vptr_store": "receiver[0] = 0x00ae2a60",
+    "object_local_fields_used_by_target": [
+      "receiver+0x374 locker string destination",
+      "receiver+0x1db4 state",
+      "receiver+0x1df8 callback/user field",
+      "receiver+0x1fcc/+0x1fd0/+0x1fd4 dynamic strings"
+    ]
+  },
+  "identity_adjudication": {
+    "receiver_is_participants_manager": false,
+    "reason": "The target function is reached through the same receiver chain belonging to the separately allocated 0x1fe0 object constructed with exact vptr 0x00ae2a60; Participants Manager root/subobject use 0x00ab9190/0x00ab916c.",
+    "numeric_offset_equality_used_as_identity": false
+  },
+  "adjudication": {
+    "p13b_site_0x005f6eda_complete": true,
+    "p13b_site_0x0070f62d_complete": true,
+    "p13b_computed_forwarding_sites_complete": true,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This contract closes only P1.3B site 0x005f6eda.",
+    "The decompiled source is navigation/supporting context; exact callsite inventory, allocation size, constructor identity and vptr mismatch adjudicate receiver identity.",
+    "P1.3A and P1.3D shard results must still be integrated before the aggregate manager+0x374 frontier is declared complete."
+  ],
+  "next_step": "Integrate P1.3A/P1.3B/P1.3D computed-path results, then adjudicate manager+0x374 -> HDVehicle+0x4330 and final 0x004b86cf / slot2."
+}
