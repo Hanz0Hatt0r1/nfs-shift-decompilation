@@ -1,0 +1,81 @@
+{
+  "format": "SHIFT.P1D.Controller1ApcSqliteResult/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "source_index_format": "SHIFT.GhidraSQLiteIndex/1",
+    "source_index_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "source_dir": "out/shift_ghidra_database",
+    "index_is_navigation_evidence_only": true
+  },
+  "index_counts": {
+    "functions": 41538,
+    "calls": 200598,
+    "strings": 53433
+  },
+  "getprocaddress": {
+    "direct_call_count": 100,
+    "unique_caller_count": 18,
+    "unique_callers": [
+      "0x0061b632",
+      "0x00634030",
+      "0x007d6550",
+      "0x0090748b",
+      "0x00909da4",
+      "0x0090aa27",
+      "0x0090aa9e",
+      "0x0090abb8",
+      "0x0090ae90",
+      "0x009189cd",
+      "0x0091c073",
+      "0x0093dd2b",
+      "0x009505f3",
+      "0x0096d92d",
+      "0x00999f8e",
+      "0x009a7e04",
+      "0x00a61a4e",
+      "0x00a62310"
+    ]
+  },
+  "target_api_names": [
+    "QueueUserAPC",
+    "NtQueueApcThread",
+    "NtQueueApcThreadEx",
+    "ZwQueueApcThread",
+    "RtlQueueApcWow64Thread",
+    "SetWaitableTimerEx"
+  ],
+  "exact_embedded_target_name_rows": {},
+  "resolver_caller_suspicious_strings": [
+    {
+      "caller": "0x009a7e04",
+      "address": "0x00b4cdb4",
+      "value": "alSourceUnqueueBuffers"
+    },
+    {
+      "caller": "0x009a7e04",
+      "address": "0x00b4cdcc",
+      "value": "alSourceQueueBuffers"
+    }
+  ],
+  "adjudication": {
+    "getprocaddress_surface_present": true,
+    "plain_target_api_names_present_in_index": false,
+    "plain_name_apc_resolution_supported_by_sqlite_index": false,
+    "hashed_or_generated_resolution_ruled_out": false,
+    "manual_export_walk_ruled_out": false,
+    "native_or_syscall_injection_ruled_out": false,
+    "controller1_timing_exhaustive": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Absence of exact API-name strings cannot rule out hashed/generated names.",
+    "The Ghidra SQLite index does not contain full instruction data and cannot rule out manual export walking or direct syscall transitions.",
+    "GetProcAddress call presence does not prove Controller #1 thread reachability.",
+    "The two queue-like strings under 0x009a7e04 are OpenAL source-buffer API names, not APC API names.",
+    "Scalar/string-name equality is not semantic identity."
+  ],
+  "next_step": "Adjudicate the native/manual primitive inventory from P1D PR #1699 and join any positive candidate to Controller #1 worker/thread identity before changing timing gates."
+}
