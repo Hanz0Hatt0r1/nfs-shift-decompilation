@@ -14,6 +14,7 @@ import sqlite3
 from pathlib import Path
 
 FORMAT = "SHIFT.P1D.Slot3DispatchCarrierBoundary/1"
+MACHINE_PROOF_FORMAT = "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1"
 TARGET = 0x00755950
 
 
@@ -40,7 +41,7 @@ def direct_callers(db_path: Path, target_hex: str) -> list[dict]:
 
 def load_machine_call(machine_proof_path: Path) -> dict:
     proof = json.loads(machine_proof_path.read_text(encoding="utf-8"))
-    if proof.get("format") != "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1":
+    if proof.get("format") != MACHINE_PROOF_FORMAT:
         raise ValueError("unexpected FUN_00755950 machine-proof format")
     consumer = proof["consumer"]
     return {
@@ -106,7 +107,7 @@ def analyze(db_path: Path, vtables_path: Path, static_tables_path: Path, machine
             "ghidra_sqlite_sha256": sha256(db_path),
             "vtables_sha256": sha256(vtables_path),
             "static_tables_sha256": sha256(static_tables_path),
-            "machine_proof_sha256": sha256(machine_proof_path),
+            "machine_proof_contract": MACHINE_PROOF_FORMAT,
             "pc_retail_machine_proof_overrides_index_misses": True,
         },
         "retail_machine_direct_call": machine_call,
