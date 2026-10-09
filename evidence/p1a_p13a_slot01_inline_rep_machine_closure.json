@@ -1,0 +1,157 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01InlineRepMachineClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "machine_transfer_adjudicates": true,
+    "direct_callgraph_is_navigation_only": true
+  },
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01SameFunctionTopologyMachineClosure/1",
+    "SHIFT.P1A.P13ASlot01NamedMemoryFrontierEvidence/1",
+    "SHIFT.P1A.P13ASlot01Wheel538ForwardingFrontier/1"
+  ],
+  "inventory": {
+    "format": "SHIFT.P1A.P13ASlot01InlineRepFrontier/1",
+    "max_direct_call_depth": 4,
+    "roots": [
+      "FUN_00758b50",
+      "FUN_0076d100",
+      "FUN_00763570",
+      "FUN_00770e80"
+    ],
+    "whole_image_rep_site_count": 822,
+    "mapped_rep_site_count": 735,
+    "mapped_rep_function_count": 466,
+    "distinct_shallow_candidate_count": 5,
+    "candidate_functions": [
+      "FUN_00764266",
+      "FUN_00887580",
+      "FUN_00634240",
+      "FUN_007b7840",
+      "FUN_00886e10"
+    ]
+  },
+  "candidate_adjudication": [
+    {
+      "function": "FUN_00764266",
+      "class": "stack-local-zero",
+      "rejected": true,
+      "rep_sites": ["0x0076426c"],
+      "reachable_from": [
+        {"callsites": ["0x00764261", "0x0047b681"], "depth": 2, "nodes": ["FUN_00763570", "FUN_0047b67b", "FUN_00764266"], "root": "FUN_00763570"},
+        {"callsites": ["0x00770fac", "0x007657b2", "0x00764261", "0x0047b681"], "depth": 4, "nodes": ["FUN_00770e80", "FUN_00765470", "FUN_00763570", "FUN_0047b67b", "FUN_00764266"], "root": "FUN_00770e80"}
+      ],
+      "evidence": [
+        "0x0076425f clears EAX; 0x00764261 jumps to the unique thunk FUN_0047b67b.",
+        "0x0047b67b loads ECX=0x54 and 0x0047b681 tail-jumps to 0x00764266.",
+        "0x00764266 materializes EDI=EBP-0x320 and 0x0076426c executes REP STOSD, clearing exactly 0x54*4=0x150 stack bytes.",
+        "Destination is a stack-local frame range, not a selected-HDVehicle-derived address."
+      ]
+    },
+    {
+      "function": "FUN_00634240",
+      "class": "fixed-global-message-buffer-copy",
+      "rejected": true,
+      "rep_sites": ["0x006343c4", "0x006343cb", "0x0063441a", "0x00634434"],
+      "reachable_from": [
+        {"callsites": ["0x00764261", "0x0047b681", "0x0076472e", "0x0062df40"], "depth": 4, "nodes": ["FUN_00763570", "FUN_0047b67b", "FUN_00764266", "FUN_0062de50", "FUN_00634240"], "root": "FUN_00763570"},
+        {"callsites": ["0x00770fb7", "0x007b8816", "0x007b875e", "0x0062df40"], "depth": 4, "nodes": ["FUN_00770e80", "FUN_007b8810", "FUN_007b8630", "FUN_0062de50", "FUN_00634240"], "root": "FUN_00770e80"}
+      ],
+      "evidence": [
+        "0x006343a9 loads EDI=0x00bf9b30; the routine scans to the current NUL terminator before copying.",
+        "0x006343c4/0x006343cb append the input bytes to that fixed image-global buffer.",
+        "0x00634415 and 0x0063442f load fixed sources 0x00aebefc/0x00aebee0 before REP MOVSD at 0x0063441a/0x00634434.",
+        "All REP destinations are in the fixed global message buffer domain, not selected HDVehicle wheel storage."
+      ]
+    },
+    {
+      "function": "FUN_007b7840",
+      "class": "stack-to-stack-copy",
+      "rejected": true,
+      "rep_sites": ["0x007b79b3"],
+      "reachable_from": [
+        {"callsites": ["0x00770fb7", "0x007b8816", "0x007b8729", "0x007b82f4"], "depth": 4, "nodes": ["FUN_00770e80", "FUN_007b8810", "FUN_007b8630", "FUN_007b8260", "FUN_007b7840"], "root": "FUN_00770e80"}
+      ],
+      "evidence": [
+        "0x007b79a2 loads ECX=8, 0x007b79a7 sets ESI=EBP-0xb0, and 0x007b79ad sets EDI=EBP-0x180.",
+        "0x007b79b3 REP MOVSD copies exactly 32 bytes from one stack local to another.",
+        "No selected-HDVehicle root participates in the REP destination."
+      ]
+    },
+    {
+      "function": "FUN_00887580",
+      "class": "fixed-singleton-zero-range",
+      "rejected": true,
+      "rep_sites": ["0x0088767a"],
+      "reachable_from": [
+        {"callsites": ["0x00770eab", "0x0076fa0a", "0x00887738"], "depth": 3, "nodes": ["FUN_00770e80", "FUN_0076f970", "FUN_00887720", "FUN_00887580"], "root": "FUN_00770e80"}
+      ],
+      "evidence": [
+        "FUN_00887720 gates construction of the exact image-global object 0x00c29640: 0x00887733 loads ECX=0x00c29640, calls FUN_00887580 at 0x00887738, and returns 0x00c29640 at 0x0088774a.",
+        "FUN_00887580 installs vptr 0x00b20a90 at 0x00887590.",
+        "0x0088766f sets EDI=receiver+0x3a0; 0x00887675 sets ECX=0x6e; 0x0088767a REP STOSD clears [receiver+0x3a0, receiver+0x558).",
+        "That range numerically includes local +0x538, but its exact receiver is fixed singleton 0x00c29640. Numeric overlap is not object identity, so it cannot establish a selected-HDVehicle slot0/slot1 write."
+      ]
+    },
+    {
+      "function": "FUN_00886e10",
+      "class": "fixed-singleton-nested-record-init",
+      "rejected": true,
+      "rep_sites": ["0x00886e63", "0x00886e88", "0x00886eb8", "0x00886ee4", "0x00886f10", "0x00886f3b", "0x00886f6f", "0x00886f91", "0x00886fb3", "0x00886fd5", "0x00886ff7", "0x00887019", "0x0088703b", "0x0088705d", "0x0088707f", "0x008870a1", "0x008870c3", "0x008870e5", "0x00887107", "0x00887129"],
+      "reachable_from": [
+        {"callsites": ["0x00770eab", "0x0076fa0a", "0x00887738", "0x00887604"], "depth": 4, "nodes": ["FUN_00770e80", "FUN_0076f970", "FUN_00887720", "FUN_00887580", "FUN_00886e10"], "root": "FUN_00770e80"}
+      ],
+      "evidence": [
+        "FUN_00887580 materializes ECX=receiver+0x70c at 0x008875fe and calls FUN_00886e10 at 0x00887604.",
+        "Because the parent receiver is the exact singleton 0x00c29640, the nested receiver is exact image address 0x00c29d4c.",
+        "FUN_00886e10 performs 20 REP MOVSD initializations of 0x1c-byte records from nested offsets +0x0 through +0x214; the final record ends at +0x230.",
+        "This is a fixed nested-singleton initialization domain and neither receiver provenance nor written range matches selected HDVehicle wheel storage."
+      ]
+    }
+  ],
+  "machine_anchors": {
+    "byte_windows": [
+      {"address": "0x0076425f", "bytes": "33c0"}, {"address": "0x00764261", "bytes": "e91574d1ff"}, {"address": "0x0047b67b", "bytes": "b954000000"}, {"address": "0x0047b681", "bytes": "e9e08b2e00"}, {"address": "0x00764266", "bytes": "8dbde0fcffff"}, {"address": "0x0076426c", "bytes": "f3ab"},
+      {"address": "0x006343a9", "bytes": "bf309bbf00"}, {"address": "0x006343c4", "bytes": "f3a5"}, {"address": "0x006343cb", "bytes": "f3a4"}, {"address": "0x00634415", "bytes": "befcbeae00"}, {"address": "0x0063441a", "bytes": "f3a5"}, {"address": "0x0063442f", "bytes": "bee0beae00"}, {"address": "0x00634434", "bytes": "f3a5"},
+      {"address": "0x007b79a2", "bytes": "b908000000"}, {"address": "0x007b79a7", "bytes": "8db550ffffff"}, {"address": "0x007b79ad", "bytes": "8dbd80feffff"}, {"address": "0x007b79b3", "bytes": "f3a5"},
+      {"address": "0x00887733", "bytes": "b94096c200"}, {"address": "0x00887738", "bytes": "e843feffff"}, {"address": "0x0088774a", "bytes": "b84096c200"}, {"address": "0x00887590", "bytes": "c706900ab200"}, {"address": "0x0088766f", "bytes": "8dbea0030000"}, {"address": "0x00887675", "bytes": "b96e000000"}, {"address": "0x0088767a", "bytes": "f3ab"}, {"address": "0x008875fe", "bytes": "8d8e0c070000"}, {"address": "0x00887604", "bytes": "e807f8ffff"},
+      {"address": "0x00886e61", "bytes": "8bf8"}, {"address": "0x00886e63", "bytes": "f3a5"}, {"address": "0x00887118", "bytes": "8db814020000"}, {"address": "0x0088711e", "bytes": "b907000000"}, {"address": "0x00887129", "bytes": "f3a5"}, {"address": "0x0062df40", "bytes": "e8fb620000"}, {"address": "0x007b82f4", "bytes": "e847f5ffff"}
+    ],
+    "rel32_transfers": [
+      {"site": "0x00764261", "target": "0x0047b67b"}, {"site": "0x0047b681", "target": "0x00764266"}, {"site": "0x0062df40", "target": "0x00634240"}, {"site": "0x007b82f4", "target": "0x007b7840"}, {"site": "0x00887738", "target": "0x00887580"}, {"site": "0x00887604", "target": "0x00886e10"}
+    ]
+  },
+  "adjudication": {
+    "shallow_inline_rep_depth4_surface_complete": true,
+    "shallow_inline_rep_candidate_count": 5,
+    "shallow_inline_rep_rejected_count": 5,
+    "shallow_inline_rep_selected_hdvehicle_writer_found": false,
+    "inline_or_custom_bulk_copy_ruled_out_globally": false,
+    "indirect_copy_dispatch_ruled_out": false,
+    "deeper_direct_copy_init_paths_ruled_out": false,
+    "slot0_selected_root_alias_callee_bulk_copy_complete": false,
+    "slot1_selected_root_alias_callee_bulk_copy_complete": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "remaining_frontier": [
+    "Interprocedural aliases whose target write is not implemented with REP MOVS/STOS within four direct-call edges.",
+    "Custom unrolled/loop copies or initializers that do not use REP string instructions.",
+    "Indirect/callback dispatch and deeper direct paths carrying a selected-HDVehicle-derived alias.",
+    "Any later candidate still requires exact selected-HDVehicle root provenance plus exact target-byte coverage."
+  ],
+  "limits": [
+    "This closes only mapped REP MOVS/STOS functions reachable from the four P1.3A roots within at most four direct callgraph edges.",
+    "The Ghidra SQLite callgraph is navigation evidence; semantic rejection rests on exact retail machine destinations and receiver provenance.",
+    "Numeric coverage of local +0x538 inside an unrelated receiver is explicitly insufficient for object identity.",
+    "Slot0, slot1, aggregate P1.3 and provider removal remain fail-closed."
+  ],
+  "next_step": "Continue with non-REP custom copy/init and deeper or indirect alias paths, prioritizing only paths that carry an exact selected-HDVehicle-derived destination."
+}
