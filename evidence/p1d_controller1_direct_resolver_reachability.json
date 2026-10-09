@@ -1,0 +1,104 @@
+{
+  "format": "SHIFT.P1D.Controller1DirectResolverReachability/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "source_index_format": "SHIFT.GhidraSQLiteIndex/1",
+    "source_index_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "source_dir": "out/shift_ghidra_database",
+    "index_is_navigation_evidence_only": true
+  },
+  "worker": "0x00662880",
+  "resolver_surface": {
+    "all_getprocaddress_call_count": 100,
+    "all_unique_resolver_callers": 18,
+    "directly_reachable_unique_resolver_callers": 6,
+    "directly_reachable_getprocaddress_call_count": 11,
+    "directly_reachable": [
+      {
+        "caller": "0x0090748b",
+        "distance": 9,
+        "getprocaddress_call_count": 1,
+        "shortest_direct_path": ["0x00662880","0x006626a0","0x0065bf80","0x00900fb3","0x00900f77","0x009074c6","0x0090e7c7","0x0090e704","0x009074b1","0x0090748b"],
+        "contained_strings": [
+          {"address":"0x00b36cfc","value":"CorExitProcess"},
+          {"address":"0x00b36d0c","value":"mscoree.dll"}
+        ]
+      },
+      {
+        "caller": "0x0090aa27",
+        "distance": 6,
+        "getprocaddress_call_count": 1,
+        "shortest_direct_path": ["0x00662880","0x006626a0","0x0065bf80","0x00900fb3","0x00900f77","0x00900e8f","0x0090aa27"],
+        "contained_strings": [
+          {"address":"0x00b384bc","value":"EncodePointer"},
+          {"address":"0x00b384cc","value":"KERNEL32.DLL"}
+        ]
+      },
+      {
+        "caller": "0x0090aa9e",
+        "distance": 6,
+        "getprocaddress_call_count": 1,
+        "shortest_direct_path": ["0x00662880","0x0064ecc0","0x006329e0","0x00631230","0x00906fb6","0x0090a62e","0x0090aa9e"],
+        "contained_strings": [
+          {"address":"0x00b384cc","value":"KERNEL32.DLL"},
+          {"address":"0x00b384dc","value":"DecodePointer"}
+        ]
+      },
+      {
+        "caller": "0x0090abb8",
+        "distance": 7,
+        "getprocaddress_call_count": 2,
+        "shortest_direct_path": ["0x00662880","0x0064ecc0","0x006329e0","0x00631230","0x00906fb6","0x0090a68d","0x0090ac77","0x0090abb8"],
+        "contained_strings": [
+          {"address":"0x00b384bc","value":"EncodePointer"},
+          {"address":"0x00b384cc","value":"KERNEL32.DLL"},
+          {"address":"0x00b384dc","value":"DecodePointer"}
+        ]
+      },
+      {
+        "caller": "0x009189cd",
+        "distance": 8,
+        "getprocaddress_call_count": 1,
+        "shortest_direct_path": ["0x00662880","0x006626a0","0x0065bf80","0x00900fb3","0x00900f77","0x009074c6","0x0090e7c7","0x0090e704","0x009189cd"],
+        "contained_strings": [
+          {"address":"0x00b41718","value":"InitializeCriticalSectionAndSpinCount"},
+          {"address":"0x00b41740","value":"kernel32.dll"}
+        ]
+      },
+      {
+        "caller": "0x0091c073",
+        "distance": 9,
+        "getprocaddress_call_count": 5,
+        "shortest_direct_path": ["0x00662880","0x006626a0","0x0065bf80","0x00900fb3","0x00900f77","0x009074c6","0x0090e7c7","0x0090e704","0x0090a7e2","0x0091c073"],
+        "contained_strings": [
+          {"address":"0x00b42108","value":"GetUserObjectInformationA"},
+          {"address":"0x00b42124","value":"GetLastActivePopup"},
+          {"address":"0x00b42138","value":"GetActiveWindow"},
+          {"address":"0x00b42148","value":"MessageBoxA"},
+          {"address":"0x00b42154","value":"USER32.DLL"}
+        ]
+      }
+    ]
+  },
+  "adjudication": {
+    "direct_callgraph_resolver_surface_bounded": true,
+    "direct_worker_reachable_resolver_count": 6,
+    "direct_worker_reachable_plain_apc_name_evidence": false,
+    "indirect_callgraph_surface_ruled_out": false,
+    "hashed_or_generated_resolution_ruled_out": false,
+    "manual_export_walk_ruled_out": false,
+    "native_or_syscall_injection_ruled_out": false,
+    "controller1_timing_exhaustive": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "A direct-call graph cannot model indirect calls, callbacks or virtual dispatch exhaustively.",
+    "Strings contained by a function are candidate context; they are not argument-flow proof by themselves.",
+    "The absence of APC names on reachable resolver callers does not rule out hashed/generated API names.",
+    "No reachability result changes Controller #1 timing gates without exact target-thread and API/service identity."
+  ],
+  "next_step": "Adjudicate indirect/native primitive candidates and exact target-thread identity; keep Controller #1 timing fail-closed until those surfaces are exhausted."
+}
