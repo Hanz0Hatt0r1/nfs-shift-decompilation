@@ -1,0 +1,24 @@
+{
+  "format": "SHIFT.P1D.Controller1NativePrimitiveReachabilityReadiness/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "tooling_ready": true,
+  "retail_primitive_frontier_captured": false,
+  "retail_reachability_join_captured": false,
+  "inputs": {
+    "primitive_frontier_format": "SHIFT.P1D.Controller1NativeApcPrimitiveFrontier/1",
+    "callgraph_index": "Drive-backed SHIFT.GhidraSQLiteIndex/1 or rebuilt /2"
+  },
+  "worker": "0x00662880",
+  "output_format": "SHIFT.P1D.Controller1NativePrimitiveReachability/1",
+  "adjudication": {
+    "manual_export_walking_ruled_out": false,
+    "native_or_syscall_apc_injection_ruled_out": false,
+    "controller1_thread_handle_join_complete": false,
+    "controller1_timing_exhaustive": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Run the #1699 primitive exporter/analyzer on authoritative PC retail 1.02, then feed that frontier plus shift_ghidra.sqlite into analyze_p1d_controller1_native_primitive_reachability.py. Adjudicate direct-worker-reachable candidates first by exact API/service identity and Controller #1 target-thread identity."
+}
