@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -34,16 +35,25 @@ class FinalSmokeError(ValueError):
     """Raised when the final playable smoke is not yet admissible."""
 
 
-def _load_json(path: Path, *, label: str) -> dict[str, Any]:
+def _load_json_with_sha256(path: Path, *, label: str) -> tuple[dict[str, Any], str]:
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
+        raw = path.read_bytes()
     except FileNotFoundError as exc:
         raise FinalSmokeError(f"{label} not found: {path}") from exc
-    except json.JSONDecodeError as exc:
+    try:
+        value = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise FinalSmokeError(f"{label} is not valid JSON: {path}: {exc}") from exc
     if not isinstance(value, dict):
         raise FinalSmokeError(f"{label} must be a JSON object: {path}")
-    return value
+    return value, hashlib.sha256(raw).hexdigest()
+
+
+def _sha256_file(path: Path, *, label: str) -> str:
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except FileNotFoundError as exc:
+        raise FinalSmokeError(f"{label} not found: {path}") from exc
 
 
 def _parse_bootstrap_args(argv: Sequence[str]) -> argparse.Namespace:
@@ -63,13 +73,9 @@ def build_final_smoke_preflight(
     blockers: list[str] = []
 
     if args.track != EXACT_TRACK:
-        blockers.append(
-            f"target:track-must-be-{EXACT_TRACK}:got-{args.track}"
-        )
+        blockers.append(f"target:track-must-be-{EXACT_TRACK}:got-{args.track}")
     if args.vehicle != EXACT_VEHICLE:
-        blockers.append(
-            f"target:vehicle-must-be-{EXACT_VEHICLE}:got-{args.vehicle}"
-        )
+        blockers.append(f"target:vehicle-must-be-{EXACT_VEHICLE}:got-{args.vehicle}")
     if not args.interactive:
         blockers.append("runtime:final-smoke-requires-interactive-continuous-mode")
     if args.frames is not None:
@@ -79,7 +85,11 @@ def build_final_smoke_preflight(
     if args.keyboard:
         blockers.append("runtime:bounded-keyboard-mode-not-allowed")
 
-    coordination = _load_json(Path(coordination_path), label="playable coordination")
+    coordination_file = Path(coordination_path).resolve()
+    coordination, coordination_sha256 = _load_json_with_sha256(
+        coordination_file,
+        label="playable coordination",
+    )
     if coordination.get("format") != COORDINATION_FORMAT:
         blockers.append(f"coordination:format-must-be-{COORDINATION_FORMAT}")
     if coordination.get("status") != "active":
@@ -89,10 +99,7 @@ def build_final_smoke_preflight(
         blockers.append("coordination:main-frontier-missing")
         frontier = {}
 
-    missing_gates = [
-        gate for gate in REQUIRED_FRONTIER_GATES
-        if frontier.get(gate) is not True
-    ]
+    missing_gates = [gate for gate in REQUIRED_FRONTIER_GATES if frontier.get(gate) is not True]
     blockers.extend(f"coordination:{gate}:not-ready" for gate in missing_gates)
 
     blockers = list(dict.fromkeys(blockers))
@@ -105,7 +112,8 @@ def build_final_smoke_preflight(
         "track": args.track,
         "vehicle": args.vehicle,
         "mode": "interactive-continuous" if args.interactive else "not-continuous",
-        "coordination": str(Path(coordination_path).resolve()),
+        "coordination": str(coordination_file),
+        "coordination_sha256": coordination_sha256,
         "required_frontier_gates": list(REQUIRED_FRONTIER_GATES),
         "blocking_reasons": blockers,
         "boundary": {
@@ -119,6 +127,8 @@ def build_final_smoke_preflight(
             "retail_cadence_required": True,
             "retail_control_chain_required": True,
             "retail_camera_follow_required": True,
+            "coordination_bytes_bound_to_preflight": True,
+            "coordination_must_remain_stable_before_runtime": True,
             "missing_upstream_gate_may_be_guessed": False,
             "retail_game_loop_claimed": False,
         },
@@ -140,6 +150,15 @@ def execute_final_smoke(
             "final playable smoke preflight blocked: "
             + ", ".join(str(reason) for reason in preflight["blocking_reasons"])
         )
+
+    coordination_file = Path(str(preflight["coordination"]))
+    current_coordination_sha256 = _sha256_file(
+        coordination_file,
+        label="playable coordination",
+    )
+    if current_coordination_sha256 != preflight["coordination_sha256"]:
+        raise FinalSmokeError("playable coordination changed after final smoke preflight")
+
     result = execution.execute_playable_pipeline_slice(forwarded)
     return {
         "format": "SHIFT.FinalPlayablePipelineSmokeExecution/1",
@@ -149,6 +168,8 @@ def execute_final_smoke(
         "execution": result,
         "boundary": {
             "preflight_completed_before_runtime": True,
+            "coordination_stability_checked_before_runtime": True,
+            "coordination_rehash_occurs_immediately_before_runtime_delegation": True,
             "exact_resource_driven_target_required": True,
             "test_only_core_vehicle_transform_allowed": False,
             "retail_game_loop_claimed": False,
