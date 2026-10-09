@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Compose machine-proven selected-wheel paths with source-visible storage syntax.
-
-This closes only derived wheel aliases already identified by merged P1D machine
-contracts. The pinned decompiler source is a navigation/cross-check artifact;
-selected-object identity remains owned by the upstream machine contracts.
-"""
+"""Compose machine-proven selected-wheel paths with source-visible storage syntax."""
 from __future__ import annotations
 
 import argparse
@@ -59,6 +54,9 @@ def build(source: Path, direct_path: Path, child_path: Path) -> dict:
     d60 = direct.get("paths", {}).get("fun00760b50", {})
     if d60.get("receiver") != "HDVehicle+0x2380" or d60.get("target_overlap") is not False:
         raise ValueError("FUN_00760b50 exact selected-wheel proof drift")
+    if direct.get("adjudication", {}).get("fun00760b50_selected_target_writer_found") is not False:
+        raise ValueError("FUN_00760b50 writer status drift")
+
     caller = child.get("caller", {})
     if (
         caller.get("function") != "FUN_00763570"
@@ -68,12 +66,18 @@ def build(source: Path, direct_path: Path, child_path: Path) -> dict:
         or caller.get("slot3_receiver") != "HDVehicle+0x2380"
     ):
         raise ValueError("FUN_00763570 four-wheel machine proof drift")
-    if child.get("callee", {}).get("fun00755f80_exact_wheel_escape_found") is True:
-        raise ValueError("upstream FUN_00755f80 escape status drift")
+    child_adj = child.get("adjudication", {})
+    if child_adj.get("fun00755f80_exact_wheel_escape_found") is not False:
+        raise ValueError("FUN_00755f80 escape status drift")
+    if child_adj.get("fun00755f80_selected_target_writer_found") is not False:
+        raise ValueError("FUN_00755f80 writer status drift")
 
     text = source.read_text(encoding="utf-8", errors="replace")
     f63570 = extract(text, "void __thiscall FUN_00763570(void *this,double param_1)")
-    f70e80 = extract(text, "void __thiscall FUN_00770e80(void *this,undefined8 param_1,undefined8 param_2,char param_3)")
+    f70e80 = extract(
+        text,
+        "void __thiscall FUN_00770e80(void *this,undefined8 param_1,undefined8 param_2,char param_3)",
+    )
 
     iterator_lines = [line.strip() for line in f63570.splitlines() if "local_18._4_4_" in line]
     expected_prefix = [
@@ -83,9 +87,6 @@ def build(source: Path, direct_path: Path, child_path: Path) -> dict:
     ]
     if iterator_lines[:3] != expected_prefix:
         raise ValueError(f"FUN_00763570 wheel iterator surface drift: {iterator_lines!r}")
-    # The next use after the loop must overwrite the same decompiler storage before
-    # it is reused as an unrelated float temporary. This prevents treating later
-    # float uses as wheel-pointer escapes.
     if len(iterator_lines) < 4 or iterator_lines[3] != "local_18._4_4_ = (float)local_40;":
         raise ValueError("FUN_00763570 iterator storage is not overwritten after wheel loop")
 
