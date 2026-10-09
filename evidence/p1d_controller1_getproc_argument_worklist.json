@@ -7,6 +7,8 @@
     "source_contract": "SHIFT.P1D.Controller1DirectResolverReachability/1",
     "source_sqlite_format": "SHIFT.GhidraSQLiteIndex/1",
     "source_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "retail_machine_contract": "SHIFT.P1D.Controller1GetProcRetailMachineProof/1",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
     "pc_retail_machine_evidence_required_for_promotion": true
   },
   "worker": "0x00662880",
@@ -55,11 +57,13 @@
   "execution": {
     "targeted_instruction_export_ready": true,
     "machine_instruction_export_captured": false,
-    "exact_lpProcName_flow_adjudicated": false
+    "direct_retail_pe_machine_proof_captured": true,
+    "exact_lpProcName_flow_adjudicated": true
   },
   "adjudication": {
     "local_function_strings_are_argument_flow_proof": false,
-    "direct_named_resolver_surface_rejected": false,
+    "all_11_exact_names_non_apc": true,
+    "direct_named_resolver_surface_rejected": true,
     "hashed_or_generated_resolution_ruled_out": false,
     "manual_export_walk_ruled_out": false,
     "native_or_syscall_injection_ruled_out": false,
@@ -67,5 +71,5 @@
     "p1_3d_complete": false,
     "external_provider_count": 7
   },
-  "next_step": "Export these six functions with ShiftFunctionInstructionExporter, recover exact literal lpProcName arguments for all 11 GetProcAddress callsites, and close only the direct named-resolver sub-surface if every resolved name is non-APC."
+  "next_step": "Direct worker-reachable named GetProcAddress APC resolution is closed negative. Continue manual export-walk/native transition inventory and exact Controller #1 thread-target joins before changing timing gates."
 }
