@@ -71,6 +71,18 @@ native playable Linux vertical slice
 
 Processes exchange only explicit fail-closed contracts. Missing semantic ownership is never guessed or transferred merely to keep another lane busy.
 
+### Current process snapshot — 2026-10-09
+
+This is a convenience snapshot only. The execution JSON and generated status above remain authoritative if this section ever drifts.
+
+- **Process 1A / P1A-contact:** P1.1 `FUN_00766510/contact_response` proof and P1.2 `FUN_00765c40` ownership proof are complete. Their handoffs are available to Process 2.
+- **Process 1B / P1B-control:** active P1.3 work is narrowed to the remaining control-producer provenance. The explicit computed `manager+0x374` surface is down to six receiver/destination forwarding paths: `0x005292db`, `0x005f4ffa`, `0x005f6eda`, `0x0070f62d`, `0x0070fb45`, `0x0070fdeb`. After those close, the remaining identity join decides `manager+0x374 -> HDVehicle+0x4330` and final `0x004b86cf`; indirect/native APC injection remains the timing ambiguity.
+- **Process 1D / P1D-camera:** P1.4 retail camera-follow provenance is complete. The remaining camera blocker is runtime consumption, not retail proof.
+- **Process 2 / P2-runtime:** P2.3 may now consume the complete `contact_response` handoff; provider count stays at **7** until the external boundary is actually gone. In P2.4, the `FUN_007584f0 -> 0x00783a30` interpolation helper path and `FUN_0075cfb0` commit surface are native-owned, while two positive-load qword producers and wheel-job producer arithmetic/branch predicates remain open. P2.6 remains blocked on P1.3.
+- **Process 3 / P3-integration:** resource, Silverstone/BMW scene, launcher and Vulkan infrastructure are maintained continuously. Final continuous presentation remains blocked on the completed retail control chain and a Process 2 runtime camera feed.
+
+The current external vehicle-provider count is **7**. The first planned architectural reduction remains `FUN_00766510/contact_response`: **7 -> 6** only after Process 2 removes that boundary from selected production execution.
+
 ## What already works
 
 ### Retail resource pipeline
@@ -132,13 +144,13 @@ CDF + EDF + GDF + SDF
 
 Closed infrastructure includes persistent BMW BODY state, freshness-gated world-transform publication, selected-session scheduler timing, exact fixed inner execution, source-backed solver kernels, BODY projections, wheel/contact arithmetic, and multiple recovered collision/contact-response paths.
 
-The current provider count and exact remaining native boundaries are intentionally **not duplicated here**; use the generated status page so this README cannot drift from `main`.
+The current provider count and exact remaining native boundaries are intentionally summarized only in the dated snapshot above; use the generated status page and execution JSON for authoritative live state.
 
 ### Input and camera transport
 
 Already implemented infrastructure includes live X11 keyboard intent, deterministic scripted input for regressions, CameraManager state transport, guarded camera double-buffer updates, and camera state inside the continuous native session.
 
-Retail-semantic completion of control and camera-follow remains governed by the canonical execution gates, not by the existence of transport code.
+Retail camera-follow provenance is now complete. Runtime camera-feed production/consumption remains a separate Process 2 -> Process 3 gate. Retail-semantic control completion remains governed by P1.3 rather than by the existence of input transport code.
 
 ### Continuous runtime
 

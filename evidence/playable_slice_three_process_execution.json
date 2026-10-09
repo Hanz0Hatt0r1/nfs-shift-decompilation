@@ -3,7 +3,7 @@
   "version": 1,
   "status": "active",
   "execution_model": "three-process-parallel",
-  "updated": "2026-10-08",
+  "updated": "2026-10-09",
   "milestone": "Silverstone + exact retail BMW M3 E36 + resource-driven bootstrap + input + continuous persistent physics + fresh vehicle world transform + camera + Vulkan rendering -> native playable Linux vertical slice",
   "main_frontier": {
     "phase": 749,
@@ -60,7 +60,7 @@
         {
           "id": "P1.3",
           "state": "ready-parallel",
-          "task": "Finish retail input -> drivetrain/wheel/control producer provenance. The direct/source-visible Controller #1 control timing surface is now joined; the only remaining timing ambiguity is indirect/native APC injection into the alertable worker. Render-frame phase locking is not a prerequisite for proving the control producer chain.",
+          "task": "Finish retail input -> drivetrain/wheel/control producer provenance. The manager+0x374 computed-address frontier is reduced to six receiver/destination forwarding paths (0x005292db, 0x005f4ffa, 0x005f6eda, 0x0070f62d, 0x0070fb45, 0x0070fdeb); close those before deciding manager+0x374 -> HDVehicle+0x4330 and the final HDVehicle+0x64e8 candidate 0x004b86cf. The direct/source-visible Controller #1 timing surface is already joined; the remaining timing ambiguity is indirect/native APC injection into the alertable worker. Render-frame phase locking is not a prerequisite for proving the control producer chain.",
           "contract": "SHIFT.Process1Controller1ControlTimingFrontier/1",
           "consumer": "Process 2 P2.6"
         },
@@ -98,18 +98,18 @@
         {
           "id": "P2.4",
           "state": "ready-to-consume",
-          "task": "Consume completed P1.2 FUN_00765c40 ownership handoff and internalize the residual pass in exact retail order while preserving 0x00c133ac/vtable+0x1c0 as an explicit typed external scene-query boundary. Change provider count only when the runtime boundary is actually removed.",
+          "task": "Continue internalizing the FUN_00765c40 residual pass from the completed P1.2 handoff. The FUN_007584f0 -> 0x00783a30 interpolation helper path is native-owned, but its two positive-load qword producers remain unresolved; the FUN_0075cfb0 +0x738 commit surface is native while its arithmetic/branch predicates remain external. Recover those producers and the remaining residual families before promotion, while preserving 0x00c133ac/vtable+0x1c0 as an explicit typed external scene-query boundary. Change provider count only when the runtime boundary is actually removed.",
           "depends_on": ["P1.2"]
         },
         {
           "id": "P2.5",
           "state": "queued",
-          "task": "Replace remaining providers in dependency order: wheel_update -> FUN_007675f0 inputs -> FUN_007afdd0 scalar factory -> FUN_00765470 half-step refresh -> FUN_007b8810 post-half-step"
+          "task": "After the current P2.3/P2.4 reductions, replace remaining providers in dependency order: wheel_update -> FUN_007675f0 inputs -> FUN_007afdd0 scalar factory -> FUN_00765470 half-step refresh -> FUN_007b8810 post-half-step."
         },
         {
           "id": "P2.6",
           "state": "blocked-on-process-1",
-          "task": "Consume proven retail control chain continuously while preserving persistent BODY state and fresh world-transform publication",
+          "task": "Consume the completed retail control chain continuously once P1.3 closes, while preserving persistent BODY state and fresh world-transform publication.",
           "depends_on": ["P1.3"]
         }
       ]
@@ -141,18 +141,18 @@
         {
           "id": "P3.4",
           "state": "continuous",
-          "task": "Preserve exact Silverstone + BMW resource identity, participant authority and Vulkan slice regressions"
+          "task": "Preserve exact Silverstone + BMW resource identity, participant authority, Vulkan slice regressions, and fail-closed final-smoke admission while upstream runtime gates continue to move."
         },
         {
           "id": "P3.5",
           "state": "blocked-on-process-2-camera-feed",
-          "task": "Consume the completed Process 1D camera semantics/current-transform handoff after Process 2 implements the runtime camera feed, then present continuous camera + Vulkan output.",
+          "task": "Consume the completed Process 1D camera semantics/current-transform handoff only after Process 2 supplies a runtime camera feed, then present continuous camera + Vulkan output.",
           "depends_on": ["Process 2 camera feed"]
         },
         {
           "id": "P3.6",
           "state": "mechanically-ready-blocked-on-upstream",
-          "task": "Run the merged fail-closed final exact resource-driven Silverstone + BMW continuous smoke entrypoint with no test-only core vehicle transform once retail control and runtime camera-feed gates are positive",
+          "task": "Run the merged fail-closed final exact resource-driven Silverstone + BMW continuous smoke entrypoint with no test-only core vehicle transform once the retail control chain and Process 2 runtime camera-feed gates are positive.",
           "tracking": "PR #1482",
           "depends_on": ["P3.3", "retail_control_chain_complete", "Process 2 camera feed"]
         }
