@@ -39,6 +39,31 @@ def _database(path: Path):
     db.close()
 
 
+def _database_v1(path: Path):
+    db = sqlite3.connect(path)
+    db.executescript(
+        """
+        CREATE TABLE metadata(key TEXT PRIMARY KEY, value TEXT NOT NULL);
+        INSERT INTO metadata VALUES('format','SHIFT.GhidraSQLiteIndex/1');
+        CREATE TABLE functions(address TEXT PRIMARY KEY,name TEXT,end_address TEXT,signature TEXT,mnemonic_fingerprint TEXT,raw_json TEXT NOT NULL);
+        CREATE TABLE calls(caller TEXT,callee TEXT,callsite TEXT,kind TEXT,raw_json TEXT NOT NULL);
+        CREATE TABLE strings(value TEXT,address TEXT,containing_function TEXT,raw_json TEXT NOT NULL);
+        CREATE TABLE globals(address TEXT,name TEXT,data_type TEXT,xref_count INTEGER,raw_json TEXT NOT NULL);
+        """
+    )
+    raw = json.dumps({
+        "from_function": "0x00758b50",
+        "from_name": "FUN_00758b50",
+        "instruction": "0x00758d6b",
+        "to": "0x00755950",
+        "to_name": "FUN_00755950",
+        "indirect": False,
+    })
+    db.execute("INSERT INTO calls VALUES(?,?,?,?,?)", ("0x00758b50", "", "0x00758d6b", "direct", raw))
+    db.commit()
+    db.close()
+
+
 def test_query_helpers_cover_common_navigation(tmp_path):
     db_path = tmp_path / "shift.sqlite"
     _database(db_path)
@@ -66,16 +91,53 @@ def test_cli_outputs_stable_json(tmp_path):
     payload = json.loads(proc.stdout)
     assert payload["format"] == "SHIFT.GhidraSQLiteQuery/1"
     assert payload["index_format"] == "SHIFT.GhidraSQLiteIndex/2"
+    assert payload["preferred_index_format"] == "SHIFT.GhidraSQLiteIndex/2"
     assert payload["command"] == "callers"
     assert payload["count"] == 1
     assert payload["rows"][0]["caller_address"] == "0x1000"
 
 
-def test_query_rejects_stale_v1_index(tmp_path):
+def test_v1_callers_query_recovers_target_from_raw_json(tmp_path):
     db_path = tmp_path / "old.sqlite"
+    _database_v1(db_path)
+    module = _load(SCRIPT, "query_shift_sqlite_v1")
+
+    by_address = module.query(db_path, "callers", "0x00755950")
+    assert by_address["index_format"] == "SHIFT.GhidraSQLiteIndex/1"
+    assert by_address["count"] == 1
+    row = by_address["rows"][0]
+    assert row["caller"] == "FUN_00758b50"
+    assert row["caller_address"] == "0x00758b50"
+    assert row["callee"] == "FUN_00755950"
+    assert row["callee_address"] == "0x00755950"
+    assert row["callsite"] == "0x00758d6b"
+    assert row["indirect"] == 0
+
+    by_name = module.query(db_path, "callers", "FUN_00755950")
+    assert by_name["count"] == 1
+    assert by_name["rows"][0] == row
+
+
+def test_cli_supports_v1_raw_json_callers(tmp_path):
+    db_path = tmp_path / "old.sqlite"
+    _database_v1(db_path)
+    proc = subprocess.run(
+        [sys.executable, str(SCRIPT), str(db_path), "callers", "FUN_00755950"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(proc.stdout)
+    assert payload["index_format"] == "SHIFT.GhidraSQLiteIndex/1"
+    assert payload["count"] == 1
+    assert payload["rows"][0]["callsite"] == "0x00758d6b"
+
+
+def test_query_rejects_unknown_index_format(tmp_path):
+    db_path = tmp_path / "unknown.sqlite"
     db = sqlite3.connect(db_path)
     db.execute("CREATE TABLE metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL)")
-    db.execute("INSERT INTO metadata VALUES('format','SHIFT.GhidraSQLiteIndex/1')")
+    db.execute("INSERT INTO metadata VALUES('format','SHIFT.GhidraSQLiteIndex/0')")
     db.commit()
     db.close()
     proc = subprocess.run(
