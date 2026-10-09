@@ -1,0 +1,56 @@
+{
+  "format": "SHIFT.Fun00769640TrigSourceWriter/1",
+  "ready": true,
+  "platform_authority": "PC retail 1.02",
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_hdvehicle_4330_provenance": "SHIFT.Fun007530e0Slot2WriterMachineProof/1",
+    "downstream_trig_contract": "SHIFT.Fun007584f0PositiveQwordTrig/1"
+  },
+  "machine_span": {
+    "start": "0x00769c05",
+    "end_exclusive": "0x00769c2d",
+    "size": 40,
+    "raw_byte_sha256": "4ec2458e9f056d77b30baae9dbfe9a20b9e56d6069f19155d9542966709fa26d"
+  },
+  "caller_provenance": {
+    "FUN_0076b280_first_physical_stack_argument": "HDVehicle+0x4330",
+    "FUN_0076b280_forwards_argument_to_FUN_00769640": true,
+    "FUN_00769640_table_root": "HDVehicle+0x4330"
+  },
+  "retail_writer": {
+    "record_stride": "0x50",
+    "selected_record_indices": [12, 13],
+    "relative_record_base": "param_1+0x0dc8+record_index*0x50",
+    "relative_integer_coefficient": "param_1+0x0ddc+record_index*0x50",
+    "absolute_base_value_offsets": ["0x54b8", "0x5508"],
+    "absolute_slope_value_offsets": ["0x54c0", "0x5510"],
+    "absolute_coefficient_offsets": ["0x54cc", "0x551c"],
+    "destination_offsets": ["0x0738", "0x11b8"],
+    "formula": "base_value + int32_coefficient * slope_value",
+    "instruction_order": ["FILD int32_coefficient", "FMUL slope_qword", "FADD base_qword", "FST destination_qword"]
+  },
+  "native_contract": {
+    "writer_formula_internalized": true,
+    "record_selection_internalized": true,
+    "table_layout_internalized": true,
+    "destination_geometry_internalized": true,
+    "finite_qword_inputs_required": true,
+    "x87_extended_precision_bit_parity_claimed": false
+  },
+  "ownership_boundary": {
+    "hdvehicle_4330_pointer_provenance_proven": true,
+    "table_value_acquisition_internalized": false,
+    "table_value_lifetime_internalized": false,
+    "FUN_00769640_complete": false
+  },
+  "limits": {
+    "positive_qword_producer_family_complete": false,
+    "FUN_007584f0_computed_payloads_complete": false,
+    "residual_producer_promotion_bit_set": false,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_provider_removed": false,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Resolve native ownership/lifetime for HDVehicle table fields +0x54b8/+0x54c0/+0x54cc and +0x5508/+0x5510/+0x551c, then bind writer output directly into the native FUN_007584f0 trig path."
+}
