@@ -3,24 +3,23 @@ import struct, math, re
 from dataclasses import dataclass, asdict, field
 from typing import Optional
 
-# D3DSIO values used by the SHIFT shader cache. Values are the standard D3D9
-# instruction opcode numbers; unknown values remain numeric instead of being dropped.
+# D3DSHADER_INSTRUCTION_OPCODE_TYPE from the Direct3D 9 SDK.  The enum has an
+# intentional hole after DEFI: TEXCOORD is explicitly 64.  Keep this table
+# authoritative rather than filling the reserved values with legacy aliases.
 OPCODES = {
   0:'NOP',1:'MOV',2:'ADD',3:'SUB',4:'MAD',5:'MUL',6:'RCP',7:'RSQ',8:'DP3',9:'DP4',
   10:'MIN',11:'MAX',12:'SLT',13:'SGE',14:'EXP',15:'LOG',16:'LIT',17:'DST',18:'LRP',
   19:'FRC',20:'M4x4',21:'M4x3',22:'M3x4',23:'M3x3',24:'M3x2',25:'CALL',26:'CALLNZ',
   27:'LOOP',28:'RET',29:'ENDLOOP',30:'LABEL',31:'DCL',32:'POW',33:'CRS',34:'SGN',
   35:'ABS',36:'NRM',37:'SINCOS',38:'REP',39:'ENDREP',40:'IF',41:'IFC',42:'ELSE',43:'ENDIF',
-  44:'BREAK',45:'BREAKC',46:'MOVA',47:'DEFB',48:'DEFI',49:'TEXCOORD',50:'TEXKILL',
-  51:'TEX',52:'TEXBEM',53:'TEXBEML',54:'TEXREG2AR',55:'TEXREG2GB',56:'TEXM3x2PAD',
-  57:'TEXM3x2TEX',58:'TEXM3x3PAD',59:'TEXM3x3TEX',60:'TEXM3x3SPEC',61:'TEXM3x3VSPEC',
-  62:'EXPP',63:'LOGP',64:'CND',65:'DEF',66:'TEX',67:'TEXDP3TEX',68:'TEXM3x2DEPTH',
-  69:'TEXDP3',70:'TEXM3x3',71:'TEXDEPTH',72:'CMP',73:'BEM',74:'DP2ADD',75:'DSX',
-  76:'DSY',77:'TEXLDD',78:'SETP',79:'TEXLDL',80:'BREAKP',81:'DEF',82:'DEFI',83:'DEFB',
-  84:'DDX',85:'DDY',86:'SAMPLE',87:'SAMPLE_C',88:'CMP',89:'BEM',90:'DP2ADD',91:'DSX',92:'DSY',93:'TEXLDD',94:'SETP',95:'TEXLDL',96:'BREAKP'
+  44:'BREAK',45:'BREAKC',46:'MOVA',47:'DEFB',48:'DEFI',
+  64:'TEXCOORD',65:'TEXKILL',66:'TEX',67:'TEXBEM',68:'TEXBEML',69:'TEXREG2AR',
+  70:'TEXREG2GB',71:'TEXM3x2PAD',72:'TEXM3x2TEX',73:'TEXM3x3PAD',74:'TEXM3x3TEX',
+  75:'RESERVED0',76:'TEXM3x3SPEC',77:'TEXM3x3VSPEC',78:'EXPP',79:'LOGP',80:'CND',
+  81:'DEF',82:'TEXREG2RGB',83:'TEXDP3TEX',84:'TEXM3x2DEPTH',85:'TEXDP3',86:'TEXM3x3',
+  87:'TEXDEPTH',88:'CMP',89:'BEM',90:'DP2ADD',91:'DSX',92:'DSY',93:'TEXLDD',94:'SETP',
+  95:'TEXLDL',96:'BREAKP',0xfffd:'PHASE',0xfffe:'COMMENT',0xffff:'END'
 }
-# The cache observed in SHIFT uses the standard D3DSIO numbering for the common
-# SM2/SM3 opcodes (e.g. MOV=1, ADD=2, MAD=4, TEX=66, CMP=88, TEXLDD=93).
 
 REG_TYPES = {
   0:'temp',1:'input',2:'const',3:'addr_or_texture',4:'rastout',5:'attrout',6:'texcoordout_or_output',
@@ -149,7 +148,7 @@ def _physical_constant_index(o:Operand)->int:
 
 def _decode_params(raw:list[int], opcode:int)->list[Operand]:
     source_only={
-        25,26,27,28,29,30,38,39,40,41,42,43,44,45,50,80
+        25,26,27,28,29,30,38,39,40,41,42,43,44,45,65,96
     }
     dest_first=opcode not in source_only
     operands=[]
@@ -211,7 +210,7 @@ def parse_program(data:bytes, blob_offset:int=0, blob_end:int|None=None, stage:s
                 inputs.append(sem)
             elif d.reg_type in (4,5,6,8,9):
                 outputs.append(sem)
-        elif raw and op in (47,48,65):
+        elif raw and op in (47,48,81):
             # DEFB/DEFI/DEF: everything after the destination is literal payload.
             d=decode_dest(raw[0]) if is_param_token(raw[0]) else decode_literal(raw[0])
             operands=[d]
@@ -221,7 +220,7 @@ def parse_program(data:bytes, blob_offset:int=0, blob_end:int|None=None, stage:s
                 const_ints.add(d.index or 0)
             elif op==47 and d.reg_type==14:
                 const_bools.add(d.index or 0)
-            elif op==65 and d.reg_type in (2,11,12,13):
+            elif op==81 and d.reg_type in (2,11,12,13):
                 consts.add(_physical_constant_index(d))
         elif raw:
             operands=_decode_params(raw,op)
@@ -368,6 +367,15 @@ def _bank_size(program:ShaderProgram, reg_type:int)->int:
             m=max(m,(pred.index or 0)+1)
     return max(1,m)
 
+def _written_dest_indices(program:ShaderProgram, reg_type:int)->list[int]:
+    found=set()
+    for ins in program.instructions:
+        if ins.operands:
+            dst=ins.operands[0]
+            if dst.kind=='dest' and dst.reg_type==reg_type:
+                found.add(dst.index or 0)
+    return sorted(found)
+
 def _emit_matrix(dst:Operand, src:Operand, mat:Operand, rows:int, cols:int, stage:str)->str:
     v=_glsl_reg(src,stage)
     bank={2:'c',11:'c2',12:'c3',13:'c4'}.get(mat.reg_type or 2,'c')
@@ -388,17 +396,29 @@ def to_glsl(
     output_locations: dict[int, int] | None = None,
     constant_binding: int = 14,
     target: str = "gles",
+    strict: bool = True,
 )->str:
     if target not in {"gles", "vulkan"}:
         raise ValueError("unsupported GLSL target")
+    if strict and program.unsupported_opcodes:
+        raise ValueError(
+            "shader contains unsupported opcode values: "
+            + ", ".join(str(x) for x in program.unsupported_opcodes)
+        )
     lines = (
         ['#version 450']
         if target == "vulkan"
         else ['#version 310 es','precision highp float;','precision highp int;']
     )
     for i in program.temps: lines.append(f'vec4 r{i}=vec4(0.0);')
-    if not 0 <= constant_binding <= 31:
-        raise ValueError("constant UBO binding must fit the GLES implementation range")
+    if target == "gles":
+        # GLES 3.1 guarantees at least 24 UBO binding points: valid guaranteed
+        # indices are therefore 0..23.  Vulkan validation is descriptor-layout
+        # driven, so do not impose the GLES minimum on that backend.
+        if not 0 <= constant_binding < 24:
+            raise ValueError("constant UBO binding must fit the GLES 3.1 guaranteed range 0..23")
+    elif constant_binding < 0:
+        raise ValueError("constant UBO binding must be non-negative")
     lines.insert(
         2,
         f'layout(std140, binding = {constant_binding}) uniform ShiftD3D9Constants {{'
@@ -428,14 +448,24 @@ def to_glsl(
         glsl_loc=input_locations.get(loc,loc)
         lines.append(f'layout(location={glsl_loc}) in vec4 in_{loc};')
     if program.stage=='vertex':
+        declared_output_indices=set()
         for x in program.outputs:
             reg=str(x.get('register','oT0'))
             match=re.search(r'(?:oT|oC|oD|oDepth)(\d+)',reg)
             reg_index=int(match.group(1)) if match else int(x.get("index",0))
+            declared_output_indices.add(reg_index)
             glsl_loc=output_locations.get(reg_index,int(x.get("index",0)))
             lines.append(f'layout(location={glsl_loc}) out vec4 out_{reg_index};')
+        undeclared=sorted(set(_written_dest_indices(program,6))-declared_output_indices)
+        if undeclared:
+            message="vertex shader writes undeclared generic outputs: " + ", ".join(f"o{idx}" for idx in undeclared)
+            if strict:
+                raise ValueError(message)
+            lines.append('/* '+message+' */')
     else:
-        lines.append('layout(location=0) out vec4 fragColor0;')
+        pixel_outputs=_written_dest_indices(program,8) or [0]
+        for idx in pixel_outputs:
+            lines.append(f'layout(location={idx}) out vec4 fragColor{idx};')
     lines.append('void main(){')
 
     rep_depth=0
@@ -517,8 +547,6 @@ def to_glsl(
             elif n=='TEXKILL' and len(o)>=1:
                 x=_glsl_reg(o[0],program.stage)
                 lines.append(f'  if(any(lessThan({x}.xyz,vec3(0.0))) ) discard;')
-            elif n=='DSX' and len(o)>=2: lines.append('  '+_assign(o[0],f'dFdx({_glsl_reg(o[1],program.stage)})',program.stage,pred))
-            elif n=='DSY' and len(o)>=2: lines.append('  '+_assign(o[0],f'dFdy({_glsl_reg(o[1],program.stage)})',program.stage,pred))
             elif n=='SETP' and len(o)>=3:
                 cmp=_cmp_expr(_glsl_reg(o[1],program.stage),_glsl_reg(o[2],program.stage),ins.controls)
                 lines.append('  '+_assign(o[0],cmp,program.stage))
@@ -560,8 +588,13 @@ def to_glsl(
             elif n=='RET':
                 lines.append('  return;')
             else:
-                lines.append(f'  /* unsupported {n} opcode={ins.opcode} */')
+                message=f'unsupported {n} opcode={ins.opcode}'
+                if strict:
+                    raise NotImplementedError(message)
+                lines.append(f'  /* {message} */')
         except Exception as e:
+            if strict:
+                raise
             lines.append(f'  /* translator error {n}: {e} */')
         if len(lines)>=max_lines: break
     lines.append('}')
