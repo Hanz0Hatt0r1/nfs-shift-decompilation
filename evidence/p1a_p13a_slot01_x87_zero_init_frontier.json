@@ -1,0 +1,50 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01X87ZeroInitFrontierEvidence/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "navigation_only": true
+  },
+  "scan": {
+    "max_direct_call_depth": 4,
+    "reachable_unique_node_count": 377,
+    "reachable_sized_function_count": 377,
+    "candidate_function_count": 18
+  },
+  "candidates": [
+    {"function":"FUN_00763570","address":"0x00763570","depth":0,"path":["FUN_00763570"],"clusters":[{"base":"edi","coverage":8,"stores":["0x0076379a","0x007637df"]}]},
+    {"function":"FUN_00770e80","address":"0x00770e80","depth":0,"path":["FUN_00770e80"],"clusters":[{"base":"esi","coverage":12,"stores":["0x00770f2f","0x00770f35","0x00770f3b"]},{"base":"esi","coverage":48,"stores":["0x007712f0","0x007712f7","0x007712fd","0x00771303","0x00771309","0x0077130f"]}]},
+    {"function":"FUN_00755a60","address":"0x00755a60","depth":1,"path":["FUN_00770e80","FUN_00755a60"],"clusters":[{"base":"esi","coverage":8,"stores":["0x00755e2e"]}]},
+    {"function":"FUN_00760b50","address":"0x00760b50","depth":1,"path":["FUN_00770e80","FUN_00760b50"],"clusters":[{"base":"esi","coverage":8,"stores":["0x00760c8a","0x00760c90"]}]},
+    {"function":"FUN_00766510","address":"0x00766510","depth":1,"path":["FUN_0076d100","FUN_00766510"],"clusters":[{"base":"esi","coverage":24,"stores":["0x00766531","0x00766537","0x0076653e"]},{"base":"esi","coverage":8,"stores":["0x00766d8b"]},{"base":"esi","coverage":8,"stores":["0x00767498"]}]},
+    {"function":"FUN_0076e560","address":"0x0076e560","depth":1,"path":["FUN_00770e80","FUN_0076e560"],"clusters":[{"base":"esi","coverage":16,"stores":["0x0076e97b","0x0076e9d0"]}]},
+    {"function":"FUN_0075c0d0","address":"0x0075c0d0","depth":2,"path":["FUN_00770e80","FUN_007b1790","FUN_0075c0d0"],"clusters":[{"base":"edi","coverage":8,"stores":["0x0075c14f"]}]},
+    {"function":"FUN_007aa940","address":"0x007aa940","depth":2,"path":["FUN_00770e80","FUN_007aa9b0","FUN_007aa940"],"clusters":[{"base":"esi","coverage":12,"stores":["0x007aa999","0x007aa99b","0x007aa99e"]}]},
+    {"function":"FUN_007b8630","address":"0x007b8630","depth":2,"path":["FUN_00770e80","FUN_007b8810","FUN_007b8630"],"clusters":[{"base":"esi","coverage":72,"stores":["0x007b86b0","0x007b86b3","0x007b86b9","0x007b86d5","0x007b86d8","0x007b86db","0x007b86de","0x007b86e1","0x007b86e4"]}]},
+    {"function":"FUN_0075ada0","address":"0x0075ada0","depth":3,"path":["FUN_0076d100","FUN_00769ef0","FUN_007682c0","FUN_0075ada0"],"clusters":[{"base":"eax","coverage":12,"stores":["0x0075ae09","0x0075ae0c","0x0075ae0f","0x0075ae15","0x0075ae17","0x0075ae1a","0x0075ae20"]}]},
+    {"function":"FUN_00647a10","address":"0x00647a10","depth":4,"path":["FUN_00770e80","FUN_0076f970","FUN_00887720","FUN_00887580","FUN_00647a10"],"clusters":[{"base":"esi","coverage":8,"stores":["0x00647a5a","0x00647a62","0x00647aa8"]}]},
+    {"function":"FUN_0070fae0","address":"0x0070fae0","depth":4,"path":["FUN_0076d100","FUN_0070fe90","FUN_0041903c","FUN_0070fe99","FUN_0070fae0"],"clusters":[{"base":"esi","coverage":8,"stores":["0x0070fb99"]},{"base":"esi","coverage":12,"stores":["0x0070fc31","0x0070fc37","0x0070fc42","0x0070fc4e","0x0070fc5a","0x0070fc62"]}]},
+    {"function":"FUN_0075afc0","address":"0x0075afc0","depth":4,"path":["FUN_00770e80","FUN_0076f970","FUN_0076a6e0","FUN_0076a200","FUN_0075afc0"],"clusters":[{"base":"eax","coverage":12,"stores":["0x0075afd3","0x0075afd6","0x0075afd9","0x0075afdf","0x0075afe1","0x0075afe4","0x0075afea","0x0075afec","0x0075afef"]}]},
+    {"function":"FUN_0076f030","address":"0x0076f030","depth":4,"path":["FUN_00770e80","FUN_0076f970","FUN_0046f565","FUN_007708f4","FUN_0076f030"],"clusters":[{"base":"esi","coverage":8,"stores":["0x0076f03d"]}]},
+    {"function":"FUN_007876e0","address":"0x007876e0","depth":4,"path":["FUN_00770e80","FUN_0076f970","FUN_00767ef0","FUN_00787730","FUN_007876e0"],"clusters":[{"base":"eax","coverage":8,"stores":["0x007876f2","0x007876f4"]}]},
+    {"function":"FUN_007ade70","address":"0x007ade70","depth":4,"path":["FUN_0076d100","FUN_00769ef0","FUN_007675f0","FUN_00759210","FUN_007ade70"],"clusters":[{"base":"esi","coverage":8,"stores":["0x007adf1b","0x007adf1e"]}]},
+    {"function":"FUN_007b7840","address":"0x007b7840","depth":4,"path":["FUN_00770e80","FUN_007b8810","FUN_007b8630","FUN_007b8260","FUN_007b7840"],"clusters":[{"base":"eax","coverage":16,"stores":["0x007b7cde","0x007b7ce4","0x007b7ce7","0x007b7ced","0x007b7cf3","0x007b7cf6"]}]},
+    {"function":"FUN_0088f110","address":"0x0088f110","depth":4,"path":["FUN_00770e80","FUN_0076f970","FUN_00887720","FUN_00887580","FUN_0088f110"],"clusters":[{"base":"esi","coverage":20,"stores":["0x0088f116","0x0088f11f","0x0088f126","0x0088f12b","0x0088f131","0x0088f137","0x0088f13d","0x0088f143","0x0088f147","0x0088f14d","0x0088f152","0x0088f15c","0x0088f15f","0x0088f162","0x0088f165"]}]}
+  ],
+  "adjudication": {
+    "navigation_frontier_captured": true,
+    "x87_zero_init_semantics_complete": false,
+    "sse_vector_copy_init_complete": false,
+    "deeper_direct_aliases_ruled_out": false,
+    "indirect_callback_aliases_ruled_out": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Adjudicate all 18 x87 candidates by exact receiver/destination provenance; then bound shallow SSE/vector copy-init before deeper/indirect expansion."
+}
