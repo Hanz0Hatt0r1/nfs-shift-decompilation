@@ -6,6 +6,7 @@
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.Function;
+import ghidra.program.model.listing.FunctionIterator;
 import ghidra.program.model.listing.FunctionManager;
 import ghidra.program.model.listing.Instruction;
 import ghidra.program.model.listing.InstructionIterator;
@@ -53,14 +54,14 @@ public class ShiftWheelRuntimeAliasExporter extends GhidraScript {
 
         try (PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream(output), StandardCharsets.UTF_8)))) {
-            Function function = functions.getFirstFunction();
-            while (function != null && !monitor.isCancelled()) {
+            FunctionIterator iterator = functions.getFunctions(true);
+            while (iterator.hasNext() && !monitor.isCancelled()) {
+                Function function = iterator.next();
                 FunctionScan scan = scanFunction(function, listing);
                 if (scan.fieldUseCount > 0) {
                     out.println(render(scan));
                     rows++;
                 }
-                function = functions.getFunctionAfter(function);
             }
         }
 
