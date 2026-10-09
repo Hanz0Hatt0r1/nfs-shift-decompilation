@@ -1,0 +1,107 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01ExactAddressForwardingFrontier/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "owner_shard": "P1.3A",
+  "consumer_contract": "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1",
+  "targets": {
+    "slot0": {"field": "HDVehicle+0x938", "width": "f64"},
+    "slot1": {"field": "HDVehicle+0x13b8", "width": "f64"}
+  },
+  "whole_image_exact_scalar_surface": {
+    "slot0_0x938": {
+      "exact_scalar_use_count": 6,
+      "address_materializer_count": 0,
+      "address_materializers": []
+    },
+    "slot1_0x13b8": {
+      "exact_scalar_use_count": 35,
+      "address_materializer_count": 3,
+      "address_materializers": [
+        "0x007726b3 lea eax,[esi+0x13b8]",
+        "0x00772763 lea edx,[esi+0x13b8]",
+        "0x007bfaa0 lea ecx,[edi+0x13b8]"
+      ]
+    }
+  },
+  "slot1_materializer_adjudication": [
+    {
+      "site": "0x007726b3",
+      "function": "FUN_007725f0",
+      "transfer": "pointer passed as second stack argument to FUN_00771620",
+      "callee_writes": ["DWORD [arg2+0x14]"],
+      "callee_writes_target_base_qword": false,
+      "adjudication": "rejected-as-slot1-f64-producer"
+    },
+    {
+      "site": "0x00772763",
+      "function": "FUN_007725f0",
+      "transfer": "pointer passed as second stack argument to FUN_00771d30",
+      "callee_writes": ["DWORD [arg2+0x14]"],
+      "callee_reads": ["QWORD [arg2+0x8]"],
+      "callee_writes_target_base_qword": false,
+      "adjudication": "rejected-as-slot1-f64-producer"
+    },
+    {
+      "site": "0x007bfaa0",
+      "function": "FUN_007bf790",
+      "transfer": "ECX=destination_base+0x13b8 -> FUN_007c5a20",
+      "callee": "FUN_007c5a20",
+      "callee_writes_target_base_qword": true,
+      "destination_provenance": {
+        "fun_007bf790_direct_caller_count": 1,
+        "fun_007bf790_direct_caller": "0x007c50ce in FUN_007c3b00",
+        "fun_007bf790_destination_base": "EDI=[EBP+8]",
+        "fun_007c3b00_direct_callers": [
+          "0x0076e1d0",
+          "0x0076e1f6",
+          "0x0076e21a",
+          "0x00798fce",
+          "0x00798fff",
+          "0x00799054"
+        ],
+        "hdvehicle_call_group": {
+          "calls": ["0x0076e1d0", "0x0076e1f6", "0x0076e21a"],
+          "third_argument_base_materializer": "0x0076e1c1 lea ebx,[esi+0x4330]",
+          "third_argument": "HDVehicle+0x4330",
+          "fun_007bf790_base": "HDVehicle+0x4330",
+          "normalized_qword_destination": "HDVehicle+0x56e8",
+          "equals_selected_hdvehicle_plus_0x13b8": false
+        },
+        "non_hdvehicle_call_group": {
+          "calls": ["0x00798fce", "0x00798fff", "0x00799054"],
+          "third_argument": "stack local EBP-0x238c",
+          "normalized_qword_destination": "stack_local+0x13b8",
+          "equals_selected_hdvehicle_plus_0x13b8": false
+        }
+      },
+      "adjudication": "rejected-by-destination-base-provenance"
+    }
+  ],
+  "adjudication": {
+    "slot0_exact_displacement_address_materializer_surface_exhausted": true,
+    "slot1_exact_displacement_address_materializer_surface_exhausted": true,
+    "slot1_exact_displacement_callee_writers_rejected": true,
+    "slot0_selected_root_alias_callee_bulk_copy_complete": false,
+    "slot1_selected_root_alias_callee_bulk_copy_complete": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "remaining_frontier": [
+    "Normalize wheel-subobject paths rooted at HDVehicle+0x400+slot*0xa80, especially local +0x538 forwarding/writes.",
+    "Search base-plus-delta aliases that reach the target without embedding exact 0x938/0x13b8 scalars.",
+    "Search overlapping bulk-copy/memory-initialization destinations with exact selected-HDVehicle root provenance."
+  ],
+  "limits": [
+    "Exact scalar equality is used only to bound this address-materializer subset, never as object identity.",
+    "This contract does not claim full alias/callee/bulk-copy exhaustion for slot0 or slot1.",
+    "Global P1.3 and provider removal remain fail-closed."
+  ]
+}
