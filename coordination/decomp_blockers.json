@@ -6,7 +6,7 @@
   "workstreams": [
     {"id":"P1.1","owner":"Process 1A","title":"FUN_00766510/contact_response producer closure","status":"complete","consumer":"Process 2 P2.3","closed":["P1.1a FUN_00713630 runtime config/sample-history/selected participant+0x4b0 ownership","P1.1c auxiliary scheduling/final transformed-vector/guarded tail","SHIFT.Fun00766510P11FinalHandoff/1"],"next":"Process 2 P2.3 consumes the final handoff; provider count remains 7 until contact_response is actually removed from selected production execution."},
     {
-      "id":"P1.3","owner":"Process 1B integration with P1A/P1D parallel shards","title":"retail control/input producer provenance","status":"in_progress","parallel_shards":[
+      "id":"P1.3","owner":"Process 1B","title":"retail control/input producer provenance","status":"in_progress","parallel_shards":[
         {"id":"P1.3A","owner":"Process 1A","computed_forwarding_sites":["0x005292db","0x005f4ffa"],"additional_work":["P1.3.slot0 HDVehicle+0x938","P1.3.slot1 HDVehicle+0x13b8"],"handoff_to":"Process 1B P1.3 integration"},
         {"id":"P1.3B","owner":"Process 1B","computed_forwarding_sites":["0x005f6eda","0x0070f62d"],"additional_work":["manager+0x374 -> HDVehicle+0x4330 identity join","final 0x004b86cf / P1.3.slot2 adjudication"],"handoff_to":"Process 2 P2.6 after integration"},
         {"id":"P1.3D","owner":"Process 1D","computed_forwarding_sites":["0x0070fb45","0x0070fdeb"],"additional_work":["P1.3.slot3 HDVehicle+0x28b8","Controller #1 indirect/native APC injection timing"],"handoff_to":"Process 1B P1.3 integration"}
