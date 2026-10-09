@@ -1,0 +1,79 @@
+{
+  "format": "SHIFT.P1D.Slot3ExactWheelDirectCarrierClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "upstream_contracts": ["SHIFT.P1A.P13ASlot01X87ReuseTrancheClosure/1"],
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "selected_slot3": {
+    "hdvehicle_offset": "0x2380",
+    "local_target": "+0x538",
+    "absolute_target": "HDVehicle+0x28b8",
+    "width": "f64/qword"
+  },
+  "paths": {
+    "fun00755a60": {
+      "receiver": "HDVehicle+0x400+slot*0xa80",
+      "slot3_receiver": "HDVehicle+0x2380",
+      "caller_transfer": "EDI=HDVehicle+0x740+slot*0xa80; ECX=EDI-0x340",
+      "write_offsets": ["+0x7b0", "+0x7b8", "+0x7c0", "+0x7c8", "+0x7f8", "+0x800", "+0x850"],
+      "exact_root_direct_forward": "FUN_00752fc0",
+      "leaf_write_offsets": ["+0x5b8", "+0x7d8"],
+      "leaf_has_direct_calls": false,
+      "target_overlap": false
+    },
+    "fun00760b50": {
+      "receiver": "HDVehicle+0x2380",
+      "caller_transfer": "0x00771177 lea ecx,[esi+0x2380]",
+      "write_offsets": ["+0x368", "+0x868", "+0x888", "+0x8b0"],
+      "exact_root_direct_forward": null,
+      "child_receiver_call": "FUN_007ba860 receives [wheel+0x420]",
+      "target_overlap": false
+    }
+  },
+  "call_inventory": {
+    "FUN_00755a60": [
+      {"site":"0x00755ada","target":"0x00900d30"},
+      {"site":"0x00755b43","target":"0x00753620"},
+      {"site":"0x00755b81","target":"0x00753620"},
+      {"site":"0x00755bf9","target":"0x00900d30"},
+      {"site":"0x00755dae","target":"0x00753620"},
+      {"site":"0x00755db5","target":"0x00752fc0"},
+      {"site":"0x00755e11","target":"0x00749340"},
+      {"site":"0x00755e75","target":"0x00749340"},
+      {"site":"0x00755ea3","target":"0x0070e2c0"},
+      {"site":"0x00755ec3","target":"0x00749340"},
+      {"site":"0x00755ef2","target":"0x0070e2c0"}
+    ],
+    "FUN_00760b50": [
+      {"site":"0x00760b98","target":"0x007af0a0"},
+      {"site":"0x00760c27","target":"0x00749340"},
+      {"site":"0x00760cd7","target":"0x00900b10"},
+      {"site":"0x00760d4b","target":"0x007ba860"}
+    ],
+    "FUN_00752fc0": []
+  },
+  "adjudication": {
+    "slot3_fun00770e80_exact_wheel_direct_carrier_subset_complete": true,
+    "fun00755a60_selected_target_writer_found": false,
+    "fun00752fc0_selected_target_writer_found": false,
+    "fun00760b50_selected_target_writer_found": false,
+    "deeper_direct_aliases_ruled_out": false,
+    "indirect_callback_aliases_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Only the two exact selected-wheel carriers materialized in FUN_00770e80 and their bounded direct descendants are closed.",
+    "Other lifecycle functions, stored aliases, out-of-line chunks, indirect calls and callbacks remain open.",
+    "Object identity comes from the merged upstream contract plus exact machine transfer, never numeric coincidence."
+  ],
+  "next_step": "Trace stored/escaped selected-wheel aliases and indirect/callback carriers outside these FUN_00770e80 direct paths."
+}
