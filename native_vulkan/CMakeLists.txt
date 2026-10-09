@@ -191,3 +191,26 @@ if(Vulkan_FOUND)
   target_include_directories(shift_vulkan_bundle_execute PRIVATE include)
   target_link_libraries(shift_vulkan_bundle_execute PRIVATE Vulkan::Vulkan)
 endif()
+
+if(ANDROID)
+  add_library(
+    shift_vulkan_android_surface_probe
+    SHARED
+    src/android_vulkan_surface_probe.cpp
+  )
+  target_include_directories(
+    shift_vulkan_android_surface_probe
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+  )
+  target_compile_definitions(
+    shift_vulkan_android_surface_probe
+    PRIVATE
+    VK_USE_PLATFORM_ANDROID_KHR
+  )
+  target_link_libraries(
+    shift_vulkan_android_surface_probe
+    PRIVATE
+    Vulkan::Vulkan
+  )
+endif()
