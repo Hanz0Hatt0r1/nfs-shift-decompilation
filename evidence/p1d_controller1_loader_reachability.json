@@ -1,0 +1,43 @@
+{
+  "format": "SHIFT.P1D.Controller1LoaderReachability/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "source_index_format": "SHIFT.GhidraSQLiteIndex/1",
+    "source_index_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "index_is_navigation_evidence_only": true
+  },
+  "worker": "0x00662880",
+  "counts": {
+    "direct_loader_call_count": 37,
+    "direct_worker_reachable_loader_call_count": 7,
+    "all_by_target": {"GetModuleHandleA":8,"GetModuleHandleW":2,"LoadLibraryA":14,"FreeLibrary":13},
+    "reachable_by_target": {"GetModuleHandleA":6,"LoadLibraryA":1}
+  },
+  "reachable_calls": [
+    {"target_name":"GetModuleHandleA","caller":"0x0090748b","callsite":"0x00907490","local_strings":["CorExitProcess","mscoree.dll"]},
+    {"target_name":"GetModuleHandleA","caller":"0x0090a9bb","callsite":"0x0090a9e3","local_strings":[".mixcrt"]},
+    {"target_name":"GetModuleHandleA","caller":"0x0090aa27","callsite":"0x0090aa60","local_strings":["EncodePointer","KERNEL32.DLL"]},
+    {"target_name":"GetModuleHandleA","caller":"0x0090aa9e","callsite":"0x0090aad7","local_strings":["KERNEL32.DLL","DecodePointer"]},
+    {"target_name":"GetModuleHandleA","caller":"0x0090abb8","callsite":"0x0090abc9","local_strings":["EncodePointer","KERNEL32.DLL","DecodePointer"]},
+    {"target_name":"GetModuleHandleA","caller":"0x009189cd","callsite":"0x00918a16","local_strings":["InitializeCriticalSectionAndSpinCount","kernel32.dll"]},
+    {"target_name":"LoadLibraryA","caller":"0x0091c073","callsite":"0x0091c0a0","local_strings":["GetUserObjectInformationA","GetLastActivePopup","GetActiveWindow","MessageBoxA","USER32.DLL"]}
+  ],
+  "adjudication": {
+    "direct_loader_surface_bounded": true,
+    "reachable_loader_surface_adds_new_apc_resolution_candidate": false,
+    "manual_or_hashed_resolution_ruled_out": false,
+    "indirect_loader_or_resolver_surface_ruled_out": false,
+    "native_or_syscall_apc_injection_ruled_out": false,
+    "controller1_timing_exhaustive": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Local strings are navigation context, not argument-flow proof.",
+    "Direct reachability does not cover callbacks, virtual dispatch, indirect calls, generated code, or pre-resolved pointers.",
+    "This surface does not replace #1699 native/manual primitive adjudication."
+  ],
+  "next_step": "Continue #1699/#1712 native/manual primitive adjudication; direct reachable loader calls add no new APC resolution candidate beyond already bounded resolver contexts."
+}
