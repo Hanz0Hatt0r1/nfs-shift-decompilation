@@ -230,7 +230,7 @@ def test_resolves_three_frozen_indirect_dispatches(tmp_path: Path) -> None:
 def test_rejects_non_negative_direct_branch(tmp_path: Path) -> None:
     direct = _direct_negative()
     direct["ready"] = True
-    with pytest.raises(ValueError, match="direct \+0xca4 branch is not negative"):
+    with pytest.raises(ValueError, match=r"direct \+0xca4 branch is not negative"):
         m.analyze(*_paths(tmp_path, direct=direct))
 
 
