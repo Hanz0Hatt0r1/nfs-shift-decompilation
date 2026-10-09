@@ -40,6 +40,15 @@ The backend consumes the same abstract graph shape as the Python reference:
 - forward record `n`, item `i` = forward-substitution dependencies;
 - reverse record `i` = already-solved upper dependencies.
 
+Here, **sparse** describes those dependency records and the operations selected
+by them. It is not a claim that the public matrix ABI is CSR/CSC or another
+compressed sparse storage format. The compatibility API still accepts and
+returns `std::vector<std::vector<double>>`, while the native factorization hot
+path flattens the validated square matrix into one contiguous row-major
+`std::vector<double>` work buffer to avoid per-row allocation and pointer
+chasing. A future compressed-matrix ABI should only be introduced if retail
+storage evidence or measured scene scale makes it necessary.
+
 Invalid cardinality, invalid dependency direction and zero pivots fail closed.
 
 ## Native regression
