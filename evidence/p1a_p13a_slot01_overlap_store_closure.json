@@ -1,0 +1,198 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01OverlapStoreClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "machine_transfer_adjudicates": true
+  },
+  "target": {
+    "wheel_local_byte_range": ["0x538", "0x540"],
+    "slot0_absolute": "HDVehicle+0x938..+0x93f",
+    "slot1_absolute": "HDVehicle+0x13b8..+0x13bf",
+    "width": "f64/qword"
+  },
+  "inventory": {
+    "format": "SHIFT.P1A.P13ASlot01OverlapStoreInventory/1",
+    "scanned_sized_function_count": 41538,
+    "overlapping_store_count": 25,
+    "partial_store_count": 24,
+    "qword_or_wider_store_count": 1,
+    "function_count": 13,
+    "unowned_instruction_count": 0,
+    "partial_writer_function_count": 12,
+    "partial_writer_functions": [
+      "FUN_00481e20",
+      "FUN_004876f0",
+      "FUN_004dbdb0",
+      "FUN_0051f4b0",
+      "FUN_005cb010",
+      "FUN_00748280",
+      "FUN_007a1fc0",
+      "FUN_007a25d0",
+      "FUN_007c0db0",
+      "FUN_00860bf0",
+      "FUN_008614c0",
+      "FUN_008620b0"
+    ],
+    "known_qword_writer": {
+      "function": "FUN_007618f0",
+      "site": "0x00761b67",
+      "instruction": "fstp qword ptr [esi+0x538]",
+      "existing_rejection": "SHIFT.P1A.P13ASlot01Wheel538ForwardingFrontier/1",
+      "proven_base": "HDVehicle+0x748+slot*0xa80",
+      "normalized_absolute_slots": [
+        "HDVehicle+0xc80",
+        "HDVehicle+0x1700",
+        "HDVehicle+0x2180",
+        "HDVehicle+0x2c00"
+      ],
+      "matches_slot0_or_slot1": false
+    }
+  },
+  "candidate_adjudication": [
+    {
+      "function": "FUN_00481e20",
+      "sites": ["0x00482c1a", "0x00482c26"],
+      "writes": ["dword +0x538", "dword +0x53c"],
+      "receiver_domain": "all direct destinations already closed as stack-local, SMS participant+0xa00 render snapshot, or CCameraView+0x2d0 state",
+      "upstream": "evidence/fun_00713630_participant_4b0_fun00481e20_bulkcopy_rejection.json",
+      "selected_slot_writer": false
+    },
+    {
+      "function": "FUN_004876f0",
+      "sites": ["0x00487ec5", "0x00487ed1"],
+      "writes": ["dword +0x538", "dword +0x53c"],
+      "receiver_domain": "two exact nested receivers outer+0x110 and outer+0xa00; stores normalize to outer+0x648/+0x64c or outer+0xf38/+0xf3c",
+      "upstream": "evidence/fun_00713630_participant_4b0_nested_copy_rejection.json",
+      "selected_slot_writer": false
+    },
+    {
+      "function": "FUN_004dbdb0",
+      "sites": ["0x004dc0a9", "0x004dc0b1"],
+      "writes": ["dword +0x538", "dword +0x53c"],
+      "receiver_domain": "separately allocated 0x600-byte object",
+      "upstream": "evidence/fun_00713630_participant_4b0_600_allocation_rejection.json",
+      "selected_slot_writer": false
+    },
+    {
+      "function": "FUN_0051f4b0",
+      "sites": ["0x0051f4e7", "0x0051f527", "0x0051f5b7", "0x0051f5c7"],
+      "writes": ["high dword +0x53c only"],
+      "receiver_domain": "fixed singleton 0x00be1680 reached through FUN_00518de0 -> FUN_0051f8f0 -> FUN_0051f4b0",
+      "upstream": "evidence/fun_00713630_participant_4b0_fixed_singleton_byte_rejections.json",
+      "selected_slot_writer": false
+    },
+    {
+      "function": "FUN_005cb010",
+      "sites": ["0x005cb4df", "0x005cb4eb"],
+      "writes": ["dword +0x538", "dword +0x53c"],
+      "receiver_domain": "copy subobject at separately allocated 0x560-stride node+0x8; stores normalize to node+0x540/+0x544",
+      "new_machine_proof": {
+        "allocator_stride": "0x005c11aa imul esi,esi,0x560",
+        "node_vptr_stores": ["0x005c11c6", "0x005c11eb"],
+        "node_vptr": "0x00adc8c0",
+        "vtable_slot2": "0x00adc8c8 -> 0x005d1ba0",
+        "copy_receiver": "0x005d1ba1 lea esi,[ecx+0x8]",
+        "only_direct_call_to_FUN_005cb010": "0x005d1bba",
+        "literal_pointer_occurrences_of_FUN_005cb010": 0
+      },
+      "selected_slot_writer": false
+    },
+    {
+      "function": "FUN_00748280",
+      "sites": ["0x00748a91", "0x00748a99"],
+      "writes": ["dword +0x538", "dword +0x53c"],
+      "receiver_domain": "fixed PhysicsTweaker object 0x00c12c40",
+      "upstream": "evidence/fun_00713630_physics_tweaker_materialization.json",
+      "selected_slot_writer": false
+    },
+    {
+      "function": "FUN_007a1fc0",
+      "sites": ["0x007a20cf", "0x007a20db"],
+      "writes": ["dword +0x538", "dword +0x53c"],
+      "receiver_domain": "separately allocated TBC compound array element, exact stride 0x610",
+      "upstream": "evidence/fun_00713630_participant_4b0_tbc_compound_rejection.json",
+      "selected_slot_writer": false
+    },
+    {
+      "function": "FUN_007a25d0",
+      "sites": ["0x007a2a18"],
+      "writes": ["low dword +0x538 only"],
+      "receiver_domain": "configuration object loaded from config table [EBX+index*4+0x490], not wheel receiver",
+      "upstream": "evidence/p1a_p13a_slot01_same_function_topology_machine_closure.json",
+      "selected_slot_writer": false
+    },
+    {
+      "function": "FUN_007c0db0",
+      "sites": ["0x007c0ffa", "0x007c100c"],
+      "writes": ["dword +0x538", "dword +0x53c"],
+      "receiver_domain": "VehicleLoadData +0x8 subobject of separately allocated 0x3848 object",
+      "upstream": "evidence/fun_00713630_participant_4b0_vehicle_load_data_constructor_rejection.json",
+      "selected_slot_writer": false
+    },
+    {
+      "function": "FUN_00860bf0",
+      "sites": ["0x00860c94", "0x00860c9a"],
+      "writes": ["dword +0x538", "dword +0x53c"],
+      "receiver_domain": "separately allocated 0x8c0-byte object with vptr 0x00b1dae0",
+      "new_machine_proof": {
+        "allocation": "0x0083281e push 0x8c0; 0x00832829 call FUN_008868c0",
+        "constructor": "0x00832837 call FUN_00860bf0",
+        "vptr_store": "0x00860c15 mov [esi],0x00b1dae0"
+      },
+      "selected_slot_writer": false
+    },
+    {
+      "function": "FUN_008614c0",
+      "sites": ["0x00861569"],
+      "writes": ["low dword +0x538 only"],
+      "receiver_domain": "same 0x8c0 / vptr 0x00b1dae0 object; virtual slot0 function 0x00862b40 forwards unchanged receiver to cleanup",
+      "new_machine_proof": {
+        "vtable_slot0": "0x00b1dae0 -> 0x00862b40",
+        "cleanup_call": "0x00862b79 call FUN_008614c0",
+        "destructor_vptr_store": "0x00862083 mov [esi],0x00b1dae0"
+      },
+      "selected_slot_writer": false
+    },
+    {
+      "function": "FUN_008620b0",
+      "sites": ["0x0086279a", "0x008627b1"],
+      "writes": ["dword +0x538", "dword +0x53c"],
+      "receiver_domain": "same 0x8c0 / vptr 0x00b1dae0 object reached through virtual slot0 function 0x00862b40",
+      "new_machine_proof": {
+        "vtable_slot0": "0x00b1dae0 -> 0x00862b40",
+        "update_call": "0x00862b51 call FUN_008620b0"
+      },
+      "selected_slot_writer": false
+    }
+  ],
+  "adjudication": {
+    "exact_literal_overlap_store_surface_complete": true,
+    "overlapping_store_site_count": 25,
+    "overlapping_store_function_count": 13,
+    "all_partial_store_receivers_rejected": true,
+    "known_qword_store_receiver_rejected": true,
+    "selected_slot0_or_slot1_exact_literal_overlap_writer_found": false,
+    "computed_address_store_surface_complete": false,
+    "escaped_alias_store_surface_complete": false,
+    "bulk_copy_or_memory_init_surface_complete": false,
+    "indirect_dispatch_surface_complete": false,
+    "slot0_selected_root_alias_callee_bulk_copy_complete": false,
+    "slot1_selected_root_alias_callee_bulk_copy_complete": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes direct machine stores whose literal memory destination range overlaps wheel-local +0x538..+0x53f.",
+    "Computed destinations that reach the same bytes without an overlapping literal displacement remain open.",
+    "Bulk copy/memory initialization and indirect dispatch remain open.",
+    "Numeric offset equality is never used as receiver identity."
+  ],
+  "next_step": "Remove the exact-literal overlap-store class from the slot0/slot1 frontier. Continue with computed destination aliases and inline/custom bulk-copy or initialization ranges, requiring exact selected-HDVehicle root provenance."
+}
