@@ -1,0 +1,49 @@
+{
+  "format": "SHIFT.P1D.P13DSlot3OrdinaryMovZeroInitHandoff/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "p1a_contract_consumed_not_reowned": true
+  },
+  "upstream_contract": "SHIFT.P1A.P13ASlot01OrdinaryMovZeroInitMachineClosure/1",
+  "slot3": {
+    "absolute_target": "HDVehicle+0x28b8",
+    "target_byte_range": ["HDVehicle+0x28b8", "HDVehicle+0x28bf"],
+    "local_field": "+0x538"
+  },
+  "ordinary_mov_zero_init_surface": {
+    "max_direct_call_depth": 4,
+    "candidate_count": 6,
+    "rejected_count": 6,
+    "candidate_rejections": [
+      {"function": "FUN_00887580", "class": "fixed-singleton-constructor", "selected_slot3_writer": false},
+      {"function": "FUN_00647a10", "class": "base-constructor-on-fixed-singleton", "selected_slot3_writer": false},
+      {"function": "FUN_0070fae0", "class": "physics-manager-singleton-constructor", "selected_slot3_writer": false},
+      {"function": "FUN_0087aa00", "class": "hdvehicle-plus-0x6730-service-subobject-clear", "selected_slot3_writer": false},
+      {"function": "FUN_00886e10", "class": "nested-fixed-singleton-constructor", "selected_slot3_writer": false},
+      {"function": "FUN_0088f110", "class": "fixed-singleton-plus-0x558-subobject-constructor", "selected_slot3_writer": false}
+    ],
+    "selected_slot3_writer_found": false
+  },
+  "adjudication": {
+    "slot3_shallow_ordinary_mov_zero_init_depth4_subset_complete": true,
+    "slot3_x87_zero_init_surface_complete": false,
+    "slot3_sse_vector_zero_init_surface_complete": false,
+    "slot3_deeper_direct_alias_paths_complete": false,
+    "slot3_indirect_callback_alias_paths_complete": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Only slot-agnostic P1A receiver/destination rejections are consumed; P1A ownership is unchanged.",
+    "This closes ordinary MOV zero stores outside backward loops within direct depth <=4 only.",
+    "x87 FLDZ/FST, SSE/vector zero stores, deeper direct and indirect/callback paths remain open.",
+    "Numeric offset coincidence is never selected-HDVehicle identity."
+  ],
+  "next_step": "Bound shallow x87 FLDZ/FST and SSE/vector zero-init/copy surfaces, then widen only exact selected-wheel-derived deeper or indirect aliases."
+}
