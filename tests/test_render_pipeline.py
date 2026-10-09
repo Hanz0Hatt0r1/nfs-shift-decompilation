@@ -57,7 +57,7 @@ def test_render_binding_emits_static_draw_contract_and_normalized_mesh():
             }],
             "primitives": [{"material": "vehicles/A/body.mtx", "first_index": 0, "index_count": 3}],
         }
-        material = {"format": "SHIFT.BMT", "material": {"name": "BODY", "shader": "render\shaders\body.fx", "technique": "Default", "shaderparams": []}}
+        material = {"format": "SHIFT.BMT", "material": {"name": "BODY", "shader": r"render\shaders\body.fx", "technique": "Default", "shaderparams": []}}
         (tmp/"scenes/scene.json").write_text(json.dumps(scene))
         (tmp/"meshes/mesh.json").write_text(json.dumps(mesh))
         (tmp/"materials/mat.json").write_text(json.dumps(material))

@@ -30,7 +30,7 @@ def _mini_meb() -> bytes:
 
 
 def _mini_vhf() -> bytes:
-    xml = """<?xml version="1.0" encoding="utf-8"?>
+    xml = r"""<?xml version="1.0" encoding="utf-8"?>
 <CAR Name="SMOKE">
   <NODE type="HIERARCHY" Name="Root" MatrixNumber="0">
     <MATRIX id="0" Offset="0 0 0" Orientation="0 0 0 1" />
