@@ -1,0 +1,39 @@
+{
+  "format": "SHIFT.P1D.Controller1RetailPebWalkSurface/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "scope": "Controller #1 standard x86 PEB/manual-export-walk frontier",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "whole_pe_instruction_disassembly": "GNU objdump -Mintel -d",
+    "machine_code_is_semantic_authority": true
+  },
+  "inventory": {
+    "instruction_count": 2845103,
+    "fs_segment_instruction_count": 3458,
+    "fs30_peb_access_count": 0,
+    "fs30_peb_accesses": []
+  },
+  "adjudication": {
+    "whole_pe_fs30_surface_bounded": true,
+    "standard_fs30_peb_entry_present": false,
+    "standard_fs30_peb_export_walk_ruled_out": true,
+    "all_manual_export_resolution_ruled_out": false,
+    "loader_api_or_import_derived_module_base_ruled_out": false,
+    "generated_or_runtime_code_ruled_out": false,
+    "hashed_or_generated_resolution_ruled_out": false,
+    "native_or_syscall_apc_injection_ruled_out": false,
+    "controller1_timing_exhaustive": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only the classic direct FS:[0x30] PEB entry shape over the static retail instruction stream.",
+    "A module base can still come from GetModuleHandle/LoadLibrary, imports, globals, caller arguments, alternate TEB derivation, generated code, or another resolver.",
+    "Absence of FS:[0x30] does not prove absence of manual PE export parsing after a module base is acquired by another route.",
+    "Controller #1 timing remains fail-closed until all remaining indirect/native mechanisms and target-thread identity are adjudicated."
+  ],
+  "next_step": "Bound manual export parsing fed by non-PEB module-base sources and continue the orphan SYSENTER 0x004209c8 indirect-entry/service-identity frontier."
+}
