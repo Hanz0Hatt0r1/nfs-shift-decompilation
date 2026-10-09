@@ -1,0 +1,72 @@
+{
+  "format": "SHIFT.P1D.P13DSlot3SharedMachineHandoff/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "p1a_contracts_consumed_not_reowned": true
+  },
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01OverlapStoreClosure/1",
+    "SHIFT.P1A.P13ASlot01InlineRepMachineClosure/1",
+    "SHIFT.P1A.P13ASlot01BareStringMachineClosure/1",
+    "SHIFT.P1A.P13ASlot01NamedMemoryFrontierEvidence/1",
+    "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1"
+  ],
+  "slot3": {
+    "wheel_runtime_receiver": "HDVehicle+0x400+3*0xa80",
+    "wheel_runtime_receiver_absolute": "HDVehicle+0x2380",
+    "local_byte_range": ["+0x538", "+0x53f"],
+    "absolute_byte_range": ["HDVehicle+0x28b8", "HDVehicle+0x28bf"],
+    "width": "f64/qword"
+  },
+  "closed_shared_subsets": {
+    "exact_literal_overlap_stores": {
+      "store_count": 25,
+      "function_count": 13,
+      "all_receivers_rejected_for_selected_hdvehicle": true,
+      "slot3_writer_found": false
+    },
+    "named_copy_set_depth4": {
+      "roots": ["FUN_00758b50", "FUN_0076d100", "FUN_00763570", "FUN_00770e80"],
+      "named_copy_or_set_within_depth4_any_root": false,
+      "navigation_only": true
+    },
+    "inline_rep_depth4": {
+      "candidate_count": 5,
+      "rejected_count": 5,
+      "selected_hdvehicle_writer_found": false
+    },
+    "bare_string_depth4": {
+      "candidate_count": 2,
+      "rejected_count": 2,
+      "selected_hdvehicle_writer_found": false
+    }
+  },
+  "adjudication": {
+    "slot3_exact_literal_overlap_store_subset_complete": true,
+    "slot3_shallow_named_copy_set_depth4_surface_empty": true,
+    "slot3_shallow_inline_rep_depth4_subset_complete": true,
+    "slot3_shallow_bare_string_depth4_subset_complete": true,
+    "slot3_computed_address_store_surface_complete": false,
+    "slot3_escaped_alias_store_surface_complete": false,
+    "slot3_nonstring_custom_unrolled_copy_init_complete": false,
+    "slot3_deeper_direct_copy_init_paths_complete": false,
+    "slot3_indirect_dispatch_surface_complete": false,
+    "slot3_writer_provenance_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Only slot-agnostic machine rejections are consumed from P1A; P1A ownership is unchanged.",
+    "Direct-call reachability remains navigation evidence and is never object identity.",
+    "Computed destinations, escaped aliases, ordinary MOV/unrolled custom copies, deeper direct paths and indirect dispatch remain open.",
+    "Numeric overlap with +0x538..+0x53f never proves selected-HDVehicle identity."
+  ],
+  "next_step": "Trace computed-address and escaped selected-HDVehicle wheel aliases first; only then inspect ordinary MOV/unrolled custom copy/init ranges or deeper/indirect carriers that receive such an alias."
+}
