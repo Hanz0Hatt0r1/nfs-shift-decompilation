@@ -2,7 +2,7 @@
 
 ## Purpose
 
-P1.3D owns selected `HDVehicle+0x28b8` (slot3) writer provenance. The same retail helper topology used by P1A is slot-parametric:
+P1.3D owns selected `HDVehicle+0x28b8` writer provenance. The retail consumer topology is slot-parametric:
 
 ```text
 FUN_00758b50 -> FUN_00755950
@@ -17,18 +17,14 @@ HDVehicle + 0x400 + 3*0xa80 = HDVehicle + 0x2380
 HDVehicle + 0x2380 + 0x538 = HDVehicle + 0x28b8
 ```
 
-The merged P1A contract `SHIFT.P1A.P13ASlot01Wheel538ForwardingFrontier/1` is therefore reusable as whole-image machine evidence for the **exact local `+0x538` use/materializer surface**. Consuming that evidence does not transfer P1A shard ownership.
+Two merged P1A whole-image machine contracts operate on this same local byte range and are reusable without transferring P1A shard ownership:
 
-## Reused retail result
+- `SHIFT.P1A.P13ASlot01Wheel538ForwardingFrontier/1`
+- `SHIFT.P1A.P13ASlot01OverlapStoreClosure/1`
 
-The authoritative whole-image scan contains:
+## Exact `+0x538` materializer surface
 
-```text
-exact +0x538 scalar uses            43
-positive LEA/address materializers   4
-```
-
-The four materializers are:
+The retail whole-image scan contains 43 exact `+0x538` scalar uses and exactly four positive address materializers:
 
 ```text
 0x006c1b8a  lea ebx,[ecx+0x538]
@@ -37,67 +33,73 @@ The four materializers are:
 0x00958c28  lea eax,[ebx+0x538]
 ```
 
-The merged machine proof rejects all four as selected wheel-runtime f64 producers:
+Merged machine provenance rejects all four as selected wheel-runtime f64 producers: internal cursor, teardown reader, separately allocated pool-object initializer, and `FMOD IT Codec` callback buffer respectively.
 
-- `FUN_006c1b80`: internal cursor; reconstructs the containing object and does not write qword at the materialized base.
-- `FUN_008fe230`: teardown reader/releaser; callee has no receiver stores.
-- `FUN_008fe2a0`: real initializer, but receiver is a separately allocated pool object with vptr `0x00b35e6c`, not selected HDVehicle wheel runtime.
-- `FUN_0095883f`: `FMOD IT Codec` callback buffer, not HDVehicle wheel runtime.
-
-## Direct positive qword store
-
-The same whole-image contract identifies:
+The positive qword literal store is:
 
 ```text
 0x00761b67  fstp qword [esi+0x538]
 ```
 
-Its proven base is:
+Its proven base is `HDVehicle+0x748+slot*0xa80`; slot 3 therefore normalizes to `HDVehicle+0x2c00`, not `HDVehicle+0x28b8`.
+
+## Exact literal store overlap surface
+
+P1A #1723 additionally scans by byte-range overlap, not just exact `+0x538` operands. For local f64 bytes `[+0x538,+0x540)` it finds:
 
 ```text
-HDVehicle + 0x748 + slot*0xa80
+overlapping stores     25
+partial-width stores   24
+qword-or-wider stores   1
+functions              13
+unowned instructions    0
 ```
 
-Therefore slot 3 normalizes to:
+This includes low-DWORD, high-DWORD (`+0x53c`) and wider overlapping writes. The 12 partial-writer functions are:
 
 ```text
-HDVehicle + 0x748 + 3*0xa80 + 0x538
-= HDVehicle + 0x2c00
+FUN_00481e20  FUN_004876f0  FUN_004dbdb0  FUN_0051f4b0
+FUN_005cb010  FUN_00748280  FUN_007a1fc0  FUN_007a25d0
+FUN_007c0db0  FUN_00860bf0  FUN_008614c0  FUN_008620b0
 ```
 
-This is not selected `HDVehicle+0x28b8`.
+Every partial-store receiver is rejected by exact merged provenance as a different object domain; the one qword store is the already-rejected `FUN_007618f0` path. Because the local range is slot-parametric, these receiver-domain rejections also remove them as selected slot3 writers.
 
-## What is now closed
+## Closed sub-surfaces
 
 ```text
 slot3 exact local +0x538 materializer/callee subset = complete
+slot3 exact literal overlap-store surface           = complete
 slot3 direct positive qword +0x538 store             = rejected
 ```
 
-## What remains open
+## Remaining frontier
 
 ```text
-base-plus-delta aliases without literal +0x538       = open
-overlapping bulk-copy / memory-init destinations     = open
+computed-address stores without literal overlap      = open
+escaped aliases                                      = open
+base-plus-delta aliases                              = open
+bulk-copy / memory-init destinations                 = open
+indirect dispatch                                    = open
 selected-root slot3 writer provenance                = false
-retail input/control provenance                      = false
 P1.3D complete                                       = false
 provider count                                       = 7
 ```
 
-Numeric offset equality is never object identity. A future candidate must prove exact selected-HDVehicle root provenance and f64/qword target-byte coverage.
+Numeric offset equality is never object identity. A future candidate must prove selected-HDVehicle root provenance and exact target-byte coverage.
 
 ## Reproduction
 
 ```bash
 python3 tools/ghidra/build_p1d_slot3_wheel538_handoff.py \
   evidence/p1a_p13a_slot01_wheel538_forwarding_frontier.json \
+  evidence/p1a_p13a_slot01_overlap_store_closure.json \
   evidence/fun_00755950_absolute_consumed_field_machine_proof.json \
   --output out/p1d_slot3_wheel538_materializer_handoff.json
 ```
 
-The builder fails closed if the consumer slot map, local field width, whole-image use count, materializer count, rejection status, or direct qword-store normalization changes.
+The builder fails closed on drift in the consumer slot map, local field width, 43-use/four-materializer surface, qword normalization, 25-store overlap inventory, or upstream rejection gates.
 
 ## Next step
 
-Trace only aliases that reach the selected slot3 bytes without embedding literal `+0x538`, plus overlapping copy/init destinations covering `HDVehicle+0x28b8`. Promote nothing without exact selected-root provenance.
+Trace computed destinations and escaped/base-plus-delta aliases, then overlapping copy/init and indirect-dispatch paths capable of covering selected `HDVehicle+0x28b8..+0x28bf`.
