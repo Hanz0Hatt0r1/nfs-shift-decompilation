@@ -1,0 +1,39 @@
+{
+  "format": "SHIFT.P1D.Slot3WheelRuntimeAliasFrontier/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "scope": "selected HDVehicle+0x28b8 alias/callee/bulk-copy writer provenance",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "consumer_contract": "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1",
+    "consumer_caller": "FUN_00758b50",
+    "wheel_runtime_expression": "HDVehicle+0x400+slot*0xa80",
+    "per_wheel_field": "+0x138",
+    "slot3_absolute": "HDVehicle+0x28b8"
+  },
+  "tooling": {
+    "exporter": "tools/ghidra/ShiftWheelRuntimeAliasExporter.java",
+    "analyzer": "tools/ghidra/analyze_p1d_slot3_wheel_runtime_aliases.py",
+    "input_format": "SHIFT.GhidraWheelRuntimeAliasUses/1",
+    "output_format": "SHIFT.P1D.Slot3WheelRuntimeAliasInventory/1",
+    "exporter_ready": true,
+    "analyzer_ready": true,
+    "retail_export_captured": false
+  },
+  "promotion_requirements": [
+    "exact selected HDVehicle root provenance",
+    "slot=3 normalization to HDVehicle+0x28b8",
+    "f64/qword write or exact bulk-copy coverage",
+    "backward value provenance to retail producer"
+  ],
+  "adjudication": {
+    "numeric_offset_equality_is_identity": false,
+    "alias_callee_bulk_copy_frontier_closed": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Run ShiftWheelRuntimeAliasExporter on authoritative PC retail 1.02 Ghidra, analyze the JSONL, then adjudicate strong topology candidates against exact selected-root and f64-width proof."
+}
