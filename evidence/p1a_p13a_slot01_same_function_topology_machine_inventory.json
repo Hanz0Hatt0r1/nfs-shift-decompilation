@@ -1,0 +1,114 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01SameFunctionTopologyMachineInventory/1",
+  "version": 1,
+  "authority": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e"
+  },
+  "scanned_sized_function_count": 41538,
+  "required_same_function_scalars": ["0x400", "0xa80"],
+  "context_scalars": ["0x538", "0x938", "0x13b8"],
+  "candidate_count": 10,
+  "candidates": [
+    {
+      "function_address": "0x00757318",
+      "function_end": "0x00757beb",
+      "function_name": "FUN_00757318",
+      "hits": {
+        "0x400": [{"address": "0x00757348", "instruction": "lea    edi,[eax+edi*1+0x400]"}],
+        "0xa80": [{"address": "0x0075733c", "instruction": "imul   eax,eax,0xa80"}],
+        "0x938": [{"address": "0x007576b0", "instruction": "fstp   DWORD PTR [edi+0x938]"}]
+      }
+    },
+    {
+      "function_address": "0x00763570",
+      "function_end": "0x0076423d",
+      "function_name": "FUN_00763570",
+      "hits": {
+        "0x400": [{"address": "0x007635f4", "instruction": "lea    eax,[edi+0x400]"}],
+        "0xa80": [{"address": "0x0076361b", "instruction": "add    DWORD PTR [ebp-0x4],0xa80"}]
+      }
+    },
+    {
+      "function_address": "0x00765850",
+      "function_end": "0x00765a93",
+      "function_name": "FUN_00765850",
+      "hits": {
+        "0x400": [{"address": "0x0076588b", "instruction": "lea    edi,[eax+ecx*1+0x400]"}],
+        "0xa80": [{"address": "0x00765878", "instruction": "imul   eax,eax,0xa80"}]
+      }
+    },
+    {
+      "function_address": "0x00765aa0",
+      "function_end": "0x00765c37",
+      "function_name": "FUN_00765aa0",
+      "hits": {
+        "0x400": [{"address": "0x00765ac8", "instruction": "lea    edi,[eax+esi*1+0x400]"}],
+        "0xa80": [{"address": "0x00765abe", "instruction": "imul   eax,eax,0xa80"}]
+      }
+    },
+    {
+      "function_address": "0x00765c40",
+      "function_end": "0x00766509",
+      "function_name": "FUN_00765c40",
+      "hits": {
+        "0x400": [{"address": "0x00765eae", "instruction": "lea    ecx,[esi+0x400]"}],
+        "0xa80": [
+          {"address": "0x00765d55", "instruction": "add    eax,0xa80"},
+          {"address": "0x00765de4", "instruction": "add    ecx,0xa80"},
+          {"address": "0x00765ec9", "instruction": "add    ecx,0xa80"},
+          {"address": "0x00766062", "instruction": "add    ecx,0xa80"},
+          {"address": "0x00766073", "instruction": "fst    QWORD PTR [ecx-0xa80]"}
+        ]
+      }
+    },
+    {
+      "function_address": "0x00769520",
+      "function_end": "0x00769638",
+      "function_name": "FUN_00769520",
+      "hits": {
+        "0x400": [{"address": "0x00769607", "instruction": "lea    edx,[esi+0x400]"}],
+        "0xa80": [{"address": "0x00769602", "instruction": "push   0xa80"}]
+      }
+    },
+    {
+      "function_address": "0x0076b130",
+      "function_end": "0x0076b271",
+      "function_name": "FUN_0076b130",
+      "hits": {
+        "0x400": [{"address": "0x0076b16b", "instruction": "lea    eax,[esi+0x400]"}],
+        "0xa80": [{"address": "0x0076b166", "instruction": "push   0xa80"}]
+      }
+    },
+    {
+      "function_address": "0x0076df50",
+      "function_end": "0x0076e55c",
+      "function_name": "FUN_0076df50",
+      "hits": {
+        "0x400": [{"address": "0x0076e4b4", "instruction": "lea    ebx,[esi+0x400]"}],
+        "0xa80": [{"address": "0x0076e507", "instruction": "add    ebx,0xa80"}]
+      }
+    },
+    {
+      "function_address": "0x00770e80",
+      "function_end": "0x0077131f",
+      "function_name": "FUN_00770e80",
+      "hits": {
+        "0x400": [{"address": "0x007710fe", "instruction": "lea    ecx,[esi+0x400]"}],
+        "0xa80": [
+          {"address": "0x007710da", "instruction": "add    edi,0xa80"},
+          {"address": "0x007712cb", "instruction": "add    edi,0xa80"}
+        ]
+      }
+    },
+    {
+      "function_address": "0x00a705ae",
+      "function_end": "0x00a705c9",
+      "function_name": "Unwind@00a705ae",
+      "hits": {
+        "0x400": [{"address": "0x00a705bd", "instruction": "add    eax,0x400"}],
+        "0xa80": [{"address": "0x00a705b5", "instruction": "push   0xa80"}]
+      }
+    }
+  ]
+}
