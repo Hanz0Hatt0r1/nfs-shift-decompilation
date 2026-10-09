@@ -1,0 +1,82 @@
+{
+  "format": "SHIFT.P1D.P13DSlot3Wheel538MaterializerHandoff/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01Wheel538ForwardingFrontier/1",
+    "SHIFT.P1A.P13ASlot01OverlapStoreClosure/1",
+    "SHIFT.Fun00755950AbsoluteConsumedFieldMachineProof/1"
+  ],
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "p1a_contracts_are_consumed_not_reowned": true
+  },
+  "slot3": {
+    "slot": 3,
+    "wheel_runtime_receiver": "HDVehicle+0x400+3*0xa80",
+    "wheel_runtime_receiver_absolute": "HDVehicle+0x2380",
+    "local_field": "+0x538",
+    "local_byte_range": ["+0x538", "+0x540"],
+    "absolute_target": "HDVehicle+0x28b8",
+    "absolute_byte_range": ["HDVehicle+0x28b8", "HDVehicle+0x28c0"],
+    "width": "f64/qword"
+  },
+  "exact_local_surface": {
+    "whole_image_exact_0x538_scalar_use_count": 43,
+    "positive_address_materializer_count": 4,
+    "positive_address_materializers": [
+      "0x006c1b8a lea ebx,[ecx+0x538]",
+      "0x008fe259 lea ecx,[esi+0x538]",
+      "0x008fe2c4 lea ebx,[esi+0x538]",
+      "0x00958c28 lea eax,[ebx+0x538]"
+    ],
+    "materializer_adjudication": [
+      {"site":"0x006c1b8a","function":"FUN_006c1b80","role":"internal cursor","adjudication":"rejected-as-target-f64-producer"},
+      {"site":"0x008fe259","function":"FUN_008fe230","role":"teardown subobject reader/releaser","adjudication":"rejected-as-target-f64-producer"},
+      {"site":"0x008fe2c4","function":"FUN_008fe2a0","role":"real subobject initializer on non-HDVehicle pool object","adjudication":"rejected-by-allocator-owned-receiver-provenance"},
+      {"site":"0x00958c28","function":"FUN_0095883f","role":"FMOD IT Codec callback load buffer","adjudication":"rejected-by-plugin-callback-receiver-provenance"}
+    ],
+    "all_positive_materializers_rejected_as_selected_slot3_f64_producers": true,
+    "direct_positive_qword_store": "0x00761b67 fstp qword [esi+0x538]",
+    "direct_positive_qword_store_slot3_destination": "HDVehicle+0x2c00",
+    "direct_positive_qword_store_matches_slot3_target": false
+  },
+  "exact_literal_overlap_store_surface": {
+    "overlapping_store_count": 25,
+    "partial_store_count": 24,
+    "qword_or_wider_store_count": 1,
+    "function_count": 13,
+    "unowned_instruction_count": 0,
+    "partial_writer_functions": [
+      "FUN_00481e20","FUN_004876f0","FUN_004dbdb0","FUN_0051f4b0","FUN_005cb010","FUN_00748280","FUN_007a1fc0","FUN_007a25d0","FUN_007c0db0","FUN_00860bf0","FUN_008614c0","FUN_008620b0"
+    ],
+    "all_partial_store_receivers_rejected": true,
+    "known_qword_store_receiver_rejected": true,
+    "selected_slot3_exact_literal_overlap_writer_found": false
+  },
+  "adjudication": {
+    "slot3_exact_local_0x538_materializer_callee_subset_complete": true,
+    "slot3_exact_literal_overlap_store_surface_complete": true,
+    "slot3_direct_positive_qword_0x538_store_rejected": true,
+    "slot3_computed_address_store_surface_complete": false,
+    "slot3_escaped_alias_store_surface_complete": false,
+    "slot3_base_plus_delta_alias_surface_complete": false,
+    "slot3_overlapping_bulk_copy_surface_complete": false,
+    "slot3_indirect_dispatch_surface_complete": false,
+    "slot3_writer_provenance_proven": false,
+    "retail_input_control_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Merged P1A contracts are consumed because their whole-image local +0x538 range is slot-parametric; shard ownership is not transferred.",
+    "Literal address materializers and every literal store overlapping local bytes +0x538..+0x53f are closed only after exact receiver-domain rejection.",
+    "Computed destinations, escaped aliases, nonliteral base-plus-delta paths, bulk-copy/init and indirect dispatch remain open.",
+    "Numeric equality alone is never selected-HDVehicle object identity."
+  ],
+  "next_step": "Trace computed destinations and escaped/base-plus-delta aliases, then overlapping bulk-copy/init and indirect dispatch that can cover selected HDVehicle+0x28b8..+0x28bf. Require exact selected-root provenance before promotion."
+}
