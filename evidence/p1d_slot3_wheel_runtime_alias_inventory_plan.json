@@ -6,8 +6,9 @@
   "target": {
     "selected_root": "HDVehicle",
     "wheel_runtime_expression": "HDVehicle+0x400+slot*0xa80",
-    "per_wheel_field": "+0x138",
+    "machine_receiver_field": "+0x538",
     "slot3_absolute": "HDVehicle+0x28b8",
+    "normalization": "0x400 + 3*0xa80 + 0x538 = 0x28b8",
     "target_width": "qword/f64",
     "known_consumer_caller": "FUN_00758b50",
     "known_consumer": "FUN_00755950",
@@ -24,12 +25,17 @@
     "analyzer": "tools/ghidra/analyze_p1d_slot3_wheel_runtime_aliases.py",
     "analysis_format": "SHIFT.P1D.Slot3WheelRuntimeAliasInventory/1",
     "search_surface": [
-      "instruction and raw p-code uses of exact per-wheel +0x138",
+      "instruction and raw p-code uses of exact machine displacement +0x538",
       "same-function +0x400 wheel-runtime base hints",
       "same-function +0xa80 wheel-stride hints",
       "same-function +0x28b8 scalar hints without semantic promotion",
       "STORE/LOAD/CALL/CALLIND/COPY-like/address-arithmetic p-code classes"
     ]
+  },
+  "correction": {
+    "superseded_scan_displacement": "+0x138",
+    "correct_machine_displacement": "+0x538",
+    "reason": "FUN_00755950 receives HDVehicle+0x400+slot*0xa80 in ECX and directly reads f64 [ECX+0x538]; +0x138 is not the retail instruction displacement for the whole-program scan"
   },
   "adjudication": {
     "exporter_ready": true,
@@ -42,10 +48,10 @@
     "external_provider_count": 7
   },
   "promotion_requirements": [
-    "exact selected-HDVehicle wheel-runtime base provenance",
-    "exact slot=3 mapping to HDVehicle+0x28b8",
+    "exact selected-HDVehicle wheel-runtime receiver provenance",
+    "exact slot=3 plus +0x538 mapping to HDVehicle+0x28b8",
     "f64/qword STORE or exact bulk-copy coverage of the target field",
     "backward value provenance to an exact PC-retail producer"
   ],
-  "next_step": "Run ShiftWheelRuntimeAliasExporter.java on authoritative PC retail 1.02 Ghidra, analyze the JSONL output, and adjudicate strong topology candidates before any semantic promotion."
+  "next_step": "Run the corrected +0x538 ShiftWheelRuntimeAliasExporter.java on authoritative PC retail 1.02 Ghidra, analyze the JSONL output, and adjudicate strong topology candidates before any semantic promotion."
 }
