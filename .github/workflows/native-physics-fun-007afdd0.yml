@@ -1,0 +1,90 @@
+name: native-physics-fun-007afdd0
+
+on:
+  push:
+    paths:
+      - ".github/workflows/native-physics-fun-007afdd0.yml"
+      - "src/physics/fun_007afdd0_source_core.py"
+      - "tests/test_fun_007afdd0_source_core.py"
+      - "native_runtime/include/shift_fun_007afdd0_source_core.hpp"
+      - "native_runtime/src/fun_007afdd0_source_core.cpp"
+      - "native_runtime/tests/fun_007afdd0_source_core_check.cpp"
+      - "evidence/fun_007afdd0_source_core.json"
+      - "docs/PHASE681_FUN_007AFDD0_SOURCE_CORE.md"
+      - "src/physics/fun_007afdd0_scalar_provider_join_runtime.py"
+      - "tests/test_fun_007afdd0_scalar_provider_join_runtime.py"
+      - "native_runtime/include/shift_fun_007afdd0_scalar_provider_join.hpp"
+      - "native_runtime/src/fun_007afdd0_scalar_provider_join.cpp"
+      - "native_runtime/tests/fun_007afdd0_scalar_provider_join_check.cpp"
+      - "docs/PHASE682_FUN_007AFDD0_SCALAR_PROVIDER_JOIN.md"
+      - "native_runtime/cmake/recent_physics.cmake"
+  pull_request:
+    paths:
+      - ".github/workflows/native-physics-fun-007afdd0.yml"
+      - "src/physics/fun_007afdd0_source_core.py"
+      - "tests/test_fun_007afdd0_source_core.py"
+      - "native_runtime/include/shift_fun_007afdd0_source_core.hpp"
+      - "native_runtime/src/fun_007afdd0_source_core.cpp"
+      - "native_runtime/tests/fun_007afdd0_source_core_check.cpp"
+      - "evidence/fun_007afdd0_source_core.json"
+      - "docs/PHASE681_FUN_007AFDD0_SOURCE_CORE.md"
+      - "src/physics/fun_007afdd0_scalar_provider_join_runtime.py"
+      - "tests/test_fun_007afdd0_scalar_provider_join_runtime.py"
+      - "native_runtime/include/shift_fun_007afdd0_scalar_provider_join.hpp"
+      - "native_runtime/src/fun_007afdd0_scalar_provider_join.cpp"
+      - "native_runtime/tests/fun_007afdd0_scalar_provider_join_check.cpp"
+      - "docs/PHASE682_FUN_007AFDD0_SCALAR_PROVIDER_JOIN.md"
+      - "native_runtime/cmake/recent_physics.cmake"
+
+jobs:
+  fun-007afdd0-contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run source-core Python oracle
+        run: PYTHONPATH=src/physics python3 -m pytest -q tests/test_fun_007afdd0_source_core.py
+
+      - name: Run scalar-provider join Python oracle
+        run: >-
+          PYTHONPATH=src/physics python3 -m pytest -q
+          tests/test_fun_007afdd0_scalar_provider_join_runtime.py
+
+      - name: Configure native runtime once
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build and verify source core with evidence gate
+        run: |
+          cmake --build native_runtime/build --config Release --parallel \
+            --target shift_runtime_fun_007afdd0_source_core_check
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R '^shift_runtime_fun_007afdd0_source_core$'
+          mkdir -p out/native-physics-fun-007afdd0/source-core
+          native_runtime/build/shift_runtime_fun_007afdd0_source_core_check \
+            > out/native-physics-fun-007afdd0/source-core/report.json
+          report=out/native-physics-fun-007afdd0/source-core/report.json
+          grep -q '"format":"SHIFT.NativeFun007afdd0SourceCore/1"' "$report"
+          grep -q '"machine_precision_gate_required":true' "$report"
+          grep -q '"native_callback_replacement_ready":false' "$report"
+          python3 -m json.tool evidence/fun_007afdd0_source_core.json >/dev/null
+          grep -q '"machine_precision_ready": false' evidence/fun_007afdd0_source_core.json
+
+      - name: Build and verify scalar-provider join
+        run: |
+          cmake --build native_runtime/build --config Release --parallel \
+            --target shift_runtime_fun_007afdd0_scalar_provider_join_check
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R '^shift_runtime_fun_007afdd0_scalar_provider_join$'
+          mkdir -p out/native-physics-fun-007afdd0/scalar-provider
+          native_runtime/build/shift_runtime_fun_007afdd0_scalar_provider_join_check \
+            > out/native-physics-fun-007afdd0/scalar-provider/report.json
+          report=out/native-physics-fun-007afdd0/scalar-provider/report.json
+          grep -q '"format":"SHIFT.NativeFun007afdd0ScalarProviderJoin/1"' "$report"
+          grep -q '"source_core_used":true' "$report"
+          grep -q '"machine_scalar_production_ready":false' "$report"
+          grep -q '"production_basis_callback_replacement_ready":false' "$report"
