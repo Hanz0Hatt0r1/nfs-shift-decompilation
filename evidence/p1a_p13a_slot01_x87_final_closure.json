@@ -1,0 +1,84 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01X87FinalClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "cross_lane_machine_evidence_consumed_not_reowned": true
+  },
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01X87ZeroInitFrontierEvidence/1",
+    "SHIFT.P1A.P13ASlot01X87ReuseTrancheClosure/1",
+    "SHIFT.P1A.P13ASlot01X87StackOutputTrancheClosure/1",
+    "SHIFT.P1D.P13DSlot3X87RemainingClosure/1",
+    "SHIFT.GlobalVehicleBodyOwnerIdentity/1",
+    "SHIFT.BodyFrameIntegrationStatic/1",
+    "SHIFT.BMWBody0BindPoseWriterDirectRole/1"
+  ],
+  "targets": {
+    "slot0": "HDVehicle+0x938",
+    "slot1": "HDVehicle+0x13b8",
+    "wheel_local_field": "+0x538",
+    "width": "f64/qword"
+  },
+  "composition": {
+    "original_candidate_count": 18,
+    "p1a_reuse_tranche_rejected": 9,
+    "p1a_stack_output_tranche_rejected": 5,
+    "shared_pointer_chain_rejected": 4,
+    "total_rejected": 18,
+    "remaining_count": 0
+  },
+  "shared_pointer_chain_adjudication": [
+    {
+      "function": "FUN_0075c0d0",
+      "rejected": true,
+      "domain": "bounded shallow path infeasible",
+      "proof": "On the only captured depth<=4 root path, FUN_00770e80 pushes literal zero as FUN_007b1790 arg2 at 0x00771231. FUN_007b1790 loads arg2 from [EBX+0xc] and reaches 0x007b19d9 -> FUN_0075c0d0 only when that value is nonzero. The candidate zero store is therefore unreachable on the bounded P1.3A path."
+    },
+    {
+      "function": "FUN_0075ada0",
+      "rejected": true,
+      "domain": "caller stack-local outputs",
+      "proof": "FUN_007682c0 materializes EBP-0x8, EBP-0xc, EBP-0x18 and EBP-0x24 and passes those four pointers to 0x0076836b -> FUN_0075ada0. The x87 zero branch writes only through those output arguments, so it cannot touch inline HDVehicle slot0/slot1 storage."
+    },
+    {
+      "function": "FUN_007b8630",
+      "rejected": true,
+      "domain": "BODY recovery domain",
+      "proof": "The bounded path loads the proven BODY-owner pointer from HDVehicle+0x339c, FUN_007b8810 then follows owner+0x5c, and FUN_007b8630 resolves the destination BODY record through [receiver+0x8]->[+0x18]. Its x87 stores clear BODY motion/accumulator lanes +0x48..+0x88. SHIFT.GlobalVehicleBodyOwnerIdentity/1 and SHIFT.BodyFrameIntegrationStatic/1 establish this BODY domain independently of numeric offset coincidence."
+    },
+    {
+      "function": "FUN_007b7840",
+      "rejected": true,
+      "domain": "BODY lifecycle/recovery state",
+      "proof": "The bounded direct path is FUN_00770e80 -> FUN_007b8810 -> FUN_007b8630 -> FUN_007b8260 -> 0x007b82f4 -> FUN_007b7840. FUN_007b8260 forwards its [receiver+0x18] BODY record and FUN_007b7840 clears BODY +0x48..+0x70. SHIFT.BodyFrameIntegrationStatic/1 classifies the function as a broader BODY lifecycle/state writer, while SHIFT.BMWBody0BindPoseWriterDirectRole/1 independently pins this resolved direct relation-refresh path."
+    }
+  ],
+  "adjudication": {
+    "shallow_x87_zero_init_depth4_surface_complete": true,
+    "shallow_x87_candidate_count": 18,
+    "shallow_x87_rejected_count": 18,
+    "shallow_x87_selected_hdvehicle_slot01_writer_found": false,
+    "x87_zero_init_semantics_complete": true,
+    "sse_vector_copy_init_complete": false,
+    "deeper_direct_aliases_ruled_out": false,
+    "indirect_callback_aliases_ruled_out": false,
+    "slot0_selected_root_alias_callee_bulk_copy_complete": false,
+    "slot1_selected_root_alias_callee_bulk_copy_complete": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This composes the direct-depth<=4 FLDZ -> FST/FSTP frontier only.",
+    "The four final pointer-chain conclusions are consumed from merged P1D retail machine evidence because their receiver/destination provenance is slot-agnostic; P1A does not re-own the P1D contract.",
+    "The FUN_0075c0d0 path-infeasible conclusion applies only to the captured shallow root path, not every possible caller globally.",
+    "SSE/vector copy or zero initialization, deeper direct aliases, and indirect/callback aliases remain open; slot0, slot1 and aggregate P1.3 therefore remain fail-closed."
+  ],
+  "next_step": "Bound the shallow SSE/vector copy/zero-init surface for slot0/slot1, then widen only exact selected-HDVehicle-derived deeper direct or indirect/callback aliases."
+}
