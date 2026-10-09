@@ -76,8 +76,6 @@ def load_functions(db_path: Path) -> tuple[str, list[dict]]:
 
 
 def containing_function(functions: list[dict], address: int) -> dict | None:
-    # 41k functions is small enough for deterministic linear lookup over the few
-    # transition candidates. Avoid adding an interval-tree dependency.
     for fn in functions:
         if fn["start"] <= address < fn["end"]:
             return fn
@@ -147,6 +145,7 @@ def analyze(exe: Path, db_path: Path, objdump: str | None = None) -> dict:
     digest = sha256(exe)
     if digest != RETAIL_SHA256:
         raise ValueError(f"unexpected retail PE sha256: {digest}")
+    sqlite_digest = sha256(db_path)
 
     index_format, functions = load_functions(db_path)
     text = run_objdump(exe, objdump=objdump)
@@ -186,6 +185,7 @@ def analyze(exe: Path, db_path: Path, objdump: str | None = None) -> dict:
             "platform": "PC retail 1.02",
             "retail_executable_sha256": digest,
             "sqlite_format": index_format,
+            "sqlite_sha256": sqlite_digest,
             "whole_pe_instruction_disassembly": "GNU objdump -Mintel -d",
             "machine_code_is_semantic_authority": True,
         },
