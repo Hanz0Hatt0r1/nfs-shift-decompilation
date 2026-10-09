@@ -1,0 +1,88 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374SourceOnlyForwardingBatch/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform":"PC retail 1.02",
+    "retail_executable_sha256":"eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates":true
+  },
+  "upstream_contract":"SHIFT.HDVehicle64e8Manager374ReturnedPointer529020Closure/1",
+  "closed_site_count":11,
+  "groups": {
+    "bitmask_source": {
+      "sites":["0x0052aac0"],
+      "call_chain":"FUN_0052a9b0 -> FUN_0051b370 -> FUN_00531fc0",
+      "argument_proof":[
+        "0x0052aac0 lea eax,[esi+0x374]",
+        "0x0052aac6 push eax as FUN_0051b370 arg2",
+        "FUN_0051b370 loads arg2 from [ebp+0xc] and forwards it to FUN_00531fc0",
+        "FUN_00531fc0 reads source dword from [arg] and ORs it into separate ECX destination"
+      ],
+      "writes_source":false
+    },
+    "string_object_source": {
+      "sites":["0x0075070b","0x0075096d"],
+      "target":"FUN_00632c10",
+      "argument_role":"EDX/param_2 source object",
+      "target_machine_summary":[
+        "0x00632c15 mov edi,edx captures source",
+        "0x00632c17 mov esi,ecx captures separate destination",
+        "target reads [edi] and source payload",
+        "all object mutation/copy helpers operate on ESI/ECX destination"
+      ],
+      "writes_source":false
+    },
+    "network_format_source": {
+      "sites":["0x005f4e86","0x005f548e","0x005f5d0a","0x005f5ebb","0x005f61c8","0x005f6593"],
+      "target":"0x0060d580 thunk -> FUN_0048dde1/0x0060d586 body",
+      "argument_role":"stdcall arg2 source string/value",
+      "callsite_shape":"push arg3; push computed +0x374 as arg2; push service/object as arg1; call 0x0060d580",
+      "target_machine_summary":[
+        "body captures arg1 as ESI service object",
+        "0x0060d5dd loads original arg2",
+        "0x0060d5e4 pushes arg2 only as source to formatting/copy helper with local 0x100-byte destination",
+        "subsequent stores target arg1-owned fields/local buffers, not arg2"
+      ],
+      "extra_0x005f6593_call":"0x008f3df0 is exact one-byte ret and cannot mutate the computed pointer",
+      "writes_source":false
+    },
+    "network_state_source": {
+      "sites":["0x005f569b","0x005f5a3e"],
+      "target":"FUN_0060d9c0",
+      "argument_role":"stdcall arg3 source",
+      "callsite_shape":"push arg5; push arg4; push computed +0x374 as arg3; push separate state as arg2; push service/object as arg1",
+      "target_machine_summary":[
+        "FUN_0060d9c0 captures arg1 as EBX destination/service object",
+        "0x0060da30 loads original arg3",
+        "when non-null, arg3 is copied into EBX+0x1b0 with length 0x20",
+        "all stores target EBX-owned state; arg3 is never written through"
+      ],
+      "writes_source":false
+    }
+  },
+  "remaining_forwarding_sites":[
+    "0x005292db",
+    "0x005f4ffa",
+    "0x005f6eda",
+    "0x0070f62d",
+    "0x0070fb45",
+    "0x0070fdeb"
+  ],
+  "adjudication": {
+    "source_only_forwarding_batch_complete":true,
+    "source_only_forwarding_site_count":11,
+    "remaining_callee_forwarding_path_count":6,
+    "remaining_forwarding_paths_require_receiver_or_destination_identity":true,
+    "computed_address_manager_374_writer_surface_complete":false,
+    "manager_374_join_to_hdvehicle_4330_complete":false,
+    "last_literal_0x004b86cf_rejected":false,
+    "p1_3_control_producer_complete":false,
+    "external_provider_count":7
+  },
+  "limits":[
+    "These paths close without receiver identity because exact callee ABI proves the computed pointer is source-only.",
+    "The six remaining paths pass the computed pointer as a receiver or destination and therefore require exact receiver provenance or destination-domain rejection."
+  ],
+  "next_step":"Classify the six remaining destination/receiver forwarding paths: 0x005292db, 0x005f4ffa, 0x005f6eda, 0x0070f62d, 0x0070fb45, 0x0070fdeb."
+}
