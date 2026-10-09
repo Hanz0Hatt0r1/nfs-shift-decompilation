@@ -41,7 +41,7 @@
           "proven_selection_relation":"exact manager getter receiver -> FUN_0054ed00(manager+0x2a0,index) -> successful FUN_00485290 state transition -> selected entry stored to manager+0x374 when post-load entry[0] == 0",
           "selection_writer_identity_to_hdvehicle_4330":false,
           "selection_writer_identity_rejection":"manager+0x2a0 entries are allocator-owned BArray storage after FUN_00486aa0 reset/repopulation; HDVehicle+0x4330 is fixed global 0x00c17a30",
-          "next":"FUN_004f5e60 registration is already resolved through Participants Manager lifecycle direct callbacks as zero-only on the literal target surface. P1A now owns 0x005292db/0x005f4ffa, P1B owns 0x005f6eda/0x0070f62d, and P1D owns 0x0070fb45/0x0070fdeb. Process 1B integrates the three shard results, then decides the manager+0x374 -> HDVehicle+0x4330 join and final 0x004b86cf candidate."
+          "next":"FUN_004f5e60 registration is already resolved through Participants Manager lifecycle direct callbacks as zero-only on the literal target surface. The remaining computed forwarding paths are now sharded evenly: P1A owns 0x005292db/0x005f4ffa, P1B owns 0x005f6eda/0x0070f62d, and P1D owns 0x0070fb45/0x0070fdeb. Process 1B integrates the three shard results, then decides the manager+0x374 -> HDVehicle+0x4330 join and final 0x004b86cf candidate."
         },
         {
           "id":"P1.3.manager2a0","target":"FUN_00489ad0()+0x2a0 collection entry == HDVehicle+0x4330","status":"entry-identity-rejected-complete",
