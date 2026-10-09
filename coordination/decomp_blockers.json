@@ -8,7 +8,7 @@
     {
       "id":"P1.3","owner":"Process 1B","title":"retail control/input producer provenance","status":"in_progress","children":[
         {"id":"P1.3.slot0","target":"HDVehicle+0x938","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
-        {"id":"P1.3.slot1","target":"HDVehicle+0x13b8","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee-bulk-copy writers."},
+        {"id":"P1.3.slot1","target":"HDVehicle+0x13b8","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
         {"id":"P1.3.slot2","target":"HDVehicle+0x1e38","status":"partial-producer-proven","hdvehicle_64e8_literal_candidate_count":1,"hdvehicle_64e8_remaining_literal_candidate":"0x004b86cf via manager+0x374","hdvehicle_64e8_rejected_literal_candidates":["0x004bb205","0x004bca6b","0x00d775ee"],"next":"Close the six remaining manager+0x374 computed receiver/destination forwarding paths, then decide the manager+0x374 identity bridge required to adjudicate final HDVehicle+0x64e8 literal candidate 0x004b86cf."},
         {"id":"P1.3.slot3","target":"HDVehicle+0x28b8","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
         {
