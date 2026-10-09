@@ -1,0 +1,57 @@
+{
+  "format": "SHIFT.P1D.Slot3Fun00755f80WheelChildClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "upstream_contracts": ["SHIFT.P1A.P13ASlot01X87ReuseTrancheClosure/1"],
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "selected_slot3": {
+    "wheel_receiver": "HDVehicle+0x2380",
+    "local_target": "+0x538",
+    "absolute_target": "HDVehicle+0x28b8",
+    "width": "f64/qword"
+  },
+  "caller": {
+    "function": "FUN_00763570",
+    "entry_receiver": "HDVehicle",
+    "wheel_seed": "HDVehicle+0x400",
+    "stride": "0xa80",
+    "iteration_count": 4,
+    "slot3_receiver": "HDVehicle+0x2380",
+    "callee": "FUN_00755f80"
+  },
+  "callee": {
+    "function": "FUN_00755f80",
+    "exact_wheel_root_capture": "ESI=ECX",
+    "wheel_root_write_count": 0,
+    "wheel_root_stored_or_pushed_after_capture": false,
+    "child_pointer_source": "[wheel+0x420]",
+    "child_direct_callees": ["FUN_007af0a0", "FUN_007af010"],
+    "child_write_offsets": ["+0x48", "+0x50", "+0x58"],
+    "exact_wheel_root_forwarded_to_direct_callee": false,
+    "indirect_call_count": 0,
+    "target_overlap": false
+  },
+  "adjudication": {
+    "slot3_fun00763570_to_fun00755f80_exact_wheel_path_complete": true,
+    "fun00755f80_selected_target_writer_found": false,
+    "fun00755f80_exact_wheel_escape_found": false,
+    "deeper_direct_aliases_ruled_out": false,
+    "indirect_callback_aliases_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Only the exact four-wheel path from FUN_00763570 into FUN_00755f80 is closed.",
+    "Writes through [wheel+0x420] belong to the child object and are not reclassified as wheel-local writes.",
+    "Other lifecycle roots, stored aliases, out-of-line chunks and indirect/callback carriers remain open."
+  ],
+  "next_step": "Continue exact selected-wheel alias tracing in remaining lifecycle functions, then bound stored/escaped and indirect/callback carriers."
+}
