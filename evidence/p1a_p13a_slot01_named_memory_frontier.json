@@ -1,0 +1,496 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01NamedMemoryFrontierEvidence/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "source_index_format": "SHIFT.GhidraSQLiteIndex/1",
+    "source_index_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "index_is_navigation_evidence_only": true
+  },
+  "targets": {
+    "slot0": "HDVehicle+0x938",
+    "slot1": "HDVehicle+0x13b8",
+    "wheel_receiver": "HDVehicle+0x400+slot*0xa80",
+    "wheel_local_field": "+0x538"
+  },
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01ExactAddressForwardingFrontier/1",
+    "SHIFT.P1A.P13ASlot01Wheel538ForwardingFrontier/1",
+    "SHIFT.P1A.P13ASlot01TopologyAliasInventoryPlan/1"
+  ],
+  "scan": {
+    "roots": [
+      "FUN_00758b50",
+      "FUN_0076d100",
+      "FUN_00763570",
+      "FUN_00770e80"
+    ],
+    "max_direct_call_depth": 12,
+    "copy_symbols": [
+      "__VEC_memcpy",
+      "_memcpy",
+      "_memcpy_s",
+      "_memmove",
+      "_memmove_s",
+      "memcpy",
+      "memcpy_s",
+      "memmove",
+      "memmove_s"
+    ],
+    "set_symbols": [
+      "RtlFillMemory",
+      "RtlZeroMemory",
+      "__VEC_memset",
+      "_memset",
+      "memset",
+      "memset_s"
+    ],
+    "root_results": [
+      {
+        "root": "FUN_00758b50",
+        "max_depth": 12,
+        "reachable_unique_node_count": 115,
+        "nodes_by_min_depth": {
+          "0": 1,
+          "1": 10,
+          "2": 6,
+          "3": 5,
+          "4": 1,
+          "5": 6,
+          "6": 5,
+          "7": 11,
+          "8": 8,
+          "9": 16,
+          "10": 15,
+          "11": 12,
+          "12": 19
+        },
+        "copy_family": {
+          "nearest_depth": 10,
+          "nearest_symbols": [
+            "_memmove"
+          ],
+          "nearest_paths": [
+            {
+              "symbol": "_memmove",
+              "depth": 10,
+              "nodes": [
+                "FUN_00758b50",
+                "__CIsqrt",
+                "FUN_00900d4d",
+                "__startOneArgErrorHandling",
+                "__87except",
+                "__set_errno_from_matherr",
+                "FUN_0090a68d",
+                "FUN_0090ac77",
+                "_free",
+                "___sbh_free_block",
+                "_memmove"
+              ],
+              "callsites": [
+                "0x00758c71",
+                "0x00900d3b",
+                "0x00900de3",
+                "0x0090a33b",
+                "0x0091c050",
+                "0x00914e60",
+                "0x0090a68d",
+                "0x0090acda",
+                "0x00901662",
+                "0x0090eb45"
+              ]
+            }
+          ]
+        },
+        "set_family": {
+          "nearest_depth": 10,
+          "nearest_symbols": [
+            "_memset"
+          ],
+          "nearest_paths": [
+            {
+              "symbol": "_memset",
+              "depth": 10,
+              "nodes": [
+                "FUN_00758b50",
+                "__CIsqrt",
+                "FUN_00900d4d",
+                "__startOneArgErrorHandling",
+                "__87except",
+                "__set_errno_from_matherr",
+                "FUN_0090a68d",
+                "FUN_0090ac77",
+                "__calloc_crt",
+                "__calloc_impl",
+                "_memset"
+              ],
+              "callsites": [
+                "0x00758c71",
+                "0x00900d3b",
+                "0x00900de3",
+                "0x0090a33b",
+                "0x0091c050",
+                "0x00914e60",
+                "0x0090a68d",
+                "0x0090ac9b",
+                "0x0090b06c",
+                "0x00908157"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "root": "FUN_0076d100",
+        "max_depth": 12,
+        "reachable_unique_node_count": 612,
+        "nodes_by_min_depth": {
+          "0": 1,
+          "1": 8,
+          "2": 41,
+          "3": 52,
+          "4": 49,
+          "5": 60,
+          "6": 63,
+          "7": 77,
+          "8": 75,
+          "9": 46,
+          "10": 47,
+          "11": 41,
+          "12": 52
+        },
+        "copy_family": {
+          "nearest_depth": 6,
+          "nearest_symbols": [
+            "_memmove"
+          ],
+          "nearest_paths": [
+            {
+              "symbol": "_memmove",
+              "depth": 6,
+              "nodes": [
+                "FUN_0076d100",
+                "FUN_00765c40",
+                "FID_conflict:_wprintf",
+                "FUN_0090db22",
+                "_free",
+                "___sbh_free_block",
+                "_memmove"
+              ],
+              "callsites": [
+                "0x0076d12b",
+                "0x00765fe7",
+                "0x00904beb",
+                "0x0090e434",
+                "0x00901662",
+                "0x0090eb45"
+              ]
+            }
+          ]
+        },
+        "set_family": {
+          "nearest_depth": 5,
+          "nearest_symbols": [
+            "_memset"
+          ],
+          "nearest_paths": [
+            {
+              "symbol": "_memset",
+              "depth": 5,
+              "nodes": [
+                "FUN_0076d100",
+                "FUN_00765c40",
+                "FID_conflict:_wprintf",
+                "FUN_0090a62e",
+                "__invoke_watson",
+                "_memset"
+              ],
+              "callsites": [
+                "0x0076d12b",
+                "0x00765fe7",
+                "0x00904ba7",
+                "0x0090a64d",
+                "0x0090a5be"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "root": "FUN_00763570",
+        "max_depth": 12,
+        "reachable_unique_node_count": 531,
+        "nodes_by_min_depth": {
+          "0": 1,
+          "1": 8,
+          "2": 6,
+          "3": 10,
+          "4": 23,
+          "5": 38,
+          "6": 60,
+          "7": 76,
+          "8": 70,
+          "9": 69,
+          "10": 66,
+          "11": 49,
+          "12": 55
+        },
+        "copy_family": {
+          "nearest_depth": 7,
+          "nearest_symbols": [
+            "_memcpy_s",
+            "_memmove_s"
+          ],
+          "nearest_paths": [
+            {
+              "symbol": "_memcpy_s",
+              "depth": 7,
+              "nodes": [
+                "FUN_00763570",
+                "FUN_0070fe90",
+                "FUN_0041903c",
+                "FUN_0070fe99",
+                "FUN_0070fae0",
+                "FUN_00632c70",
+                "FUN_00631740",
+                "_memcpy_s"
+              ],
+              "callsites": [
+                "0x0076376f",
+                "0x0070fe93",
+                "0x00419042",
+                "0x0070fec7",
+                "0x0070fe2c",
+                "0x00632d02",
+                "0x0063179c"
+              ]
+            },
+            {
+              "symbol": "_memmove_s",
+              "depth": 7,
+              "nodes": [
+                "FUN_00763570",
+                "FUN_0070fe90",
+                "FUN_0041903c",
+                "FUN_0070fe99",
+                "FUN_0070fae0",
+                "FUN_006329e0",
+                "FUN_00631230",
+                "_memmove_s"
+              ],
+              "callsites": [
+                "0x0076376f",
+                "0x0070fe93",
+                "0x00419042",
+                "0x0070fec7",
+                "0x0070fde1",
+                "0x00632a19",
+                "0x0063124d"
+              ]
+            }
+          ]
+        },
+        "set_family": {
+          "nearest_depth": 6,
+          "nearest_symbols": [
+            "_memset"
+          ],
+          "nearest_paths": [
+            {
+              "symbol": "_memset",
+              "depth": 6,
+              "nodes": [
+                "FUN_00763570",
+                "FUN_0047b67b",
+                "FUN_00764266",
+                "FUN_0062de50",
+                "FUN_00657180",
+                "FUN_00656da0",
+                "_memset"
+              ],
+              "callsites": [
+                "0x00764261",
+                "0x0047b681",
+                "0x0076472e",
+                "0x0062df10",
+                "0x00657190",
+                "0x00656dfc"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "root": "FUN_00770e80",
+        "max_depth": 12,
+        "reachable_unique_node_count": 999,
+        "nodes_by_min_depth": {
+          "0": 1,
+          "1": 20,
+          "2": 61,
+          "3": 111,
+          "4": 132,
+          "5": 144,
+          "6": 127,
+          "7": 109,
+          "8": 106,
+          "9": 81,
+          "10": 42,
+          "11": 33,
+          "12": 32
+        },
+        "copy_family": {
+          "nearest_depth": 7,
+          "nearest_symbols": [
+            "_memcpy_s",
+            "_memmove",
+            "_memmove_s"
+          ],
+          "nearest_paths": [
+            {
+              "symbol": "_memcpy_s",
+              "depth": 7,
+              "nodes": [
+                "FUN_00770e80",
+                "FUN_0070fe90",
+                "FUN_0041903c",
+                "FUN_0070fe99",
+                "FUN_0070fae0",
+                "FUN_00632c70",
+                "FUN_00631740",
+                "_memcpy_s"
+              ],
+              "callsites": [
+                "0x00770eec",
+                "0x0070fe93",
+                "0x00419042",
+                "0x0070fec7",
+                "0x0070fe2c",
+                "0x00632d02",
+                "0x0063179c"
+              ]
+            },
+            {
+              "symbol": "_memmove",
+              "depth": 7,
+              "nodes": [
+                "FUN_00770e80",
+                "FUN_0076d100",
+                "FUN_00765c40",
+                "FID_conflict:_wprintf",
+                "FUN_0090db22",
+                "_free",
+                "___sbh_free_block",
+                "_memmove"
+              ],
+              "callsites": [
+                "0x00770f8f",
+                "0x0076d12b",
+                "0x00765fe7",
+                "0x00904beb",
+                "0x0090e434",
+                "0x00901662",
+                "0x0090eb45"
+              ]
+            },
+            {
+              "symbol": "_memmove_s",
+              "depth": 7,
+              "nodes": [
+                "FUN_00770e80",
+                "FUN_0076f970",
+                "FUN_00887720",
+                "FUN_00887580",
+                "FUN_00647820",
+                "FUN_006329e0",
+                "FUN_00631230",
+                "_memmove_s"
+              ],
+              "callsites": [
+                "0x00770eab",
+                "0x0076fa0a",
+                "0x00887738",
+                "0x00887668",
+                "0x0064782a",
+                "0x00632a19",
+                "0x0063124d"
+              ]
+            }
+          ]
+        },
+        "set_family": {
+          "nearest_depth": 6,
+          "nearest_symbols": [
+            "_memset"
+          ],
+          "nearest_paths": [
+            {
+              "symbol": "_memset",
+              "depth": 6,
+              "nodes": [
+                "FUN_00770e80",
+                "FUN_0076d100",
+                "FUN_00765c40",
+                "FID_conflict:_wprintf",
+                "FUN_0090a62e",
+                "__invoke_watson",
+                "_memset"
+              ],
+              "callsites": [
+                "0x00770f8f",
+                "0x0076d12b",
+                "0x00765fe7",
+                "0x00904ba7",
+                "0x0090a64d",
+                "0x0090a5be"
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "summary": {
+    "wheel_update_root_nearest_copy_depth": 10,
+    "wheel_update_root_nearest_set_depth": 10,
+    "physics_pass_root_nearest_copy_depth": 6,
+    "physics_pass_root_nearest_set_depth": 5,
+    "four_wheel_feedback_root_nearest_copy_depth": 7,
+    "four_wheel_feedback_root_nearest_set_depth": 6,
+    "outer_scheduler_root_nearest_copy_depth": 7,
+    "outer_scheduler_root_nearest_set_depth": 6,
+    "named_copy_or_set_within_depth4_any_root": false,
+    "nearest_game_side_copy_paths_to_trace": [
+      "FUN_00763570 -> FUN_0070fe90 -> FUN_0041903c -> FUN_0070fe99 -> FUN_0070fae0 -> FUN_00632c70 -> FUN_00631740 -> _memcpy_s",
+      "FUN_00763570 -> FUN_0070fe90 -> FUN_0041903c -> FUN_0070fe99 -> FUN_0070fae0 -> FUN_006329e0 -> FUN_00631230 -> _memmove_s",
+      "FUN_00770e80 -> FUN_0076f970 -> FUN_00887720 -> FUN_00887580 -> FUN_00647820 -> FUN_006329e0 -> FUN_00631230 -> _memmove_s"
+    ],
+    "nearest_crt_only_copy_paths_not_priority": [
+      "FUN_00758b50 -> __CIsqrt -> ... -> _free -> ___sbh_free_block -> _memmove",
+      "FUN_0076d100 -> FUN_00765c40 -> FID_conflict:_wprintf -> FUN_0090db22 -> _free -> ___sbh_free_block -> _memmove"
+    ]
+  },
+  "adjudication": {
+    "named_memory_navigation_frontier_captured": true,
+    "named_copy_or_set_within_depth4_any_root": false,
+    "named_memory_reachability_proves_selected_hdvehicle_alias": false,
+    "inline_or_custom_bulk_copy_ruled_out": false,
+    "indirect_copy_dispatch_ruled_out": false,
+    "slot0_selected_root_alias_callee_bulk_copy_complete": false,
+    "slot1_selected_root_alias_callee_bulk_copy_complete": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Direct callgraph reachability is navigation evidence only and cannot establish destination identity.",
+    "The nearest named copy/set paths may operate on unrelated buffers; each needs exact selected-HDVehicle alias provenance before semantic use.",
+    "Inline/custom copies and indirect dispatch remain open.",
+    "No P1.3 or provider-removal gate changes in this contract."
+  ],
+  "next_step": "Join the topology-alias exporter output to the three nearest game-side secure-copy paths. Trace exact argument/destination provenance only where a selected-HDVehicle wheel alias is carried; otherwise reject the branch and continue to inline/custom copy candidates."
+}
