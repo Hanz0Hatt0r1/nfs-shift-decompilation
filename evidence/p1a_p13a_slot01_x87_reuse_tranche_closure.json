@@ -1,0 +1,39 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01X87ReuseTrancheClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_frontier": "SHIFT.P1A.P13ASlot01X87ZeroInitFrontierEvidence/1",
+    "machine_transfer_adjudicates": true
+  },
+  "frontier": {"candidate_count": 18, "resolved_in_tranche": 9, "remaining_count": 9},
+  "resolved": [
+    {"function":"FUN_00763570","rejected":true,"domain":"HDVehicle root","proof":"entry ECX is captured in EDI at 0x0076358e; both x87 zero stores target only EDI+0x41d8 (0x0076379a/0x007637df), disjoint from +0x938/+0x13b8"},
+    {"function":"FUN_00770e80","rejected":true,"domain":"HDVehicle root","proof":"entry ECX is captured in ESI at 0x00770ea1; x87 zero stores target +0x4024..+0x402c and +0x3ff0..+0x4018, disjoint from +0x938/+0x13b8"},
+    {"function":"FUN_00755a60","rejected":true,"domain":"wheel receiver HDVehicle+0x400+slot*0xa80","proof":"merged wheel topology proves receiver identity; x87 zero site 0x00755e2e writes only wheel+0x850, not local +0x538"},
+    {"function":"FUN_00760b50","rejected":true,"domain":"wheel receiver HDVehicle+0x400+slot*0xa80","proof":"merged wheel topology proves receiver identity; x87 zero sites 0x00760c8a/0x00760c90 write only wheel+0x8b0/+0x868, not local +0x538"},
+    {"function":"FUN_0076e560","rejected":true,"domain":"HDVehicle root","proof":"entry ECX is captured in ESI at 0x0076e57a and the shallow root caller carries the vehicle receiver; x87 zero sites write only HDVehicle+0x3e58/+0x3e50"},
+    {"function":"FUN_00647a10","rejected":true,"domain":"fixed singleton constructor tree","proof":"merged ordinary-MOV zero-init proof pins the bounded receiver to fixed singleton 0x00c29640; x87 zero stores are singleton-local +0xe0/+0xf0/+0x104"},
+    {"function":"FUN_0070fae0","rejected":true,"domain":"Physics Manager singleton","proof":"merged proof pins exact receiver 0x00c104e0 and vptr 0x00b04524; x87 stores are Physics Manager +0x440/+0x41c..+0x434"},
+    {"function":"FUN_0076f030","rejected":true,"domain":"HDVehicle root","proof":"entry ECX is captured in ESI at 0x0076f03a; x87 zero site 0x0076f03d writes only HDVehicle+0x18"},
+    {"function":"FUN_0088f110","rejected":true,"domain":"fixed singleton nested subobject","proof":"merged proof pins receiver to 0x00c29640+0x558=0x00c29b98; x87 zero stores are local +0x4..+0x64"}
+  ],
+  "remaining_candidates": ["FUN_00766510","FUN_0075c0d0","FUN_007aa940","FUN_007b8630","FUN_0075ada0","FUN_0075afc0","FUN_007876e0","FUN_007ade70","FUN_007b7840"],
+  "adjudication": {
+    "x87_reuse_tranche_complete": true,
+    "x87_reuse_tranche_rejected_count": 9,
+    "x87_selected_hdvehicle_target_writer_found_in_tranche": false,
+    "x87_zero_init_semantics_complete": false,
+    "sse_vector_copy_init_complete": false,
+    "deeper_direct_aliases_ruled_out": false,
+    "indirect_callback_aliases_ruled_out": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Adjudicate the remaining nine x87 candidates with new receiver/output provenance, then close shallow SSE/vector copy-init before deeper/indirect expansion."
+}
