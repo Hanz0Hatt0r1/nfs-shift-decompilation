@@ -1,0 +1,58 @@
+{
+  "adjudication": {
+    "deeper_direct_alias_paths_ruled_out": false,
+    "external_provider_count": 7,
+    "indirect_or_callback_alias_paths_ruled_out": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "selected_hdvehicle_target_writer_found": false,
+    "shallow_straight_zero_init_candidate_count": 6,
+    "shallow_straight_zero_init_depth4_surface_complete": true,
+    "shallow_straight_zero_init_rejected_count": 6,
+    "slot0_selected_root_alias_callee_bulk_copy_complete": false,
+    "slot1_selected_root_alias_callee_bulk_copy_complete": false,
+    "sse_vector_copy_init_ruled_out": false
+  },
+  "authority": {
+    "callgraph_is_navigation_only": true,
+    "machine_transfer_adjudicates": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "source_index_format": "SHIFT.GhidraSQLiteIndex/1",
+    "source_index_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e"
+  },
+  "candidate_adjudication": [
+    {"class":"fixed-singleton-constructor","function":"FUN_00887580","reason":"FUN_00887720 passes exact ECX=0x00c29640; the ordinary MOV zero stores remain fields of that singleton. Merged REP closure independently rejects the same receiver domain.","rejected":true},
+    {"class":"fixed-singleton-base-constructor","function":"FUN_00647a10","reason":"On the only depth<=4 P1A path, FUN_00887580 calls FUN_00647a10 with the unchanged singleton receiver 0x00c29640. Its +0x20/+0x2c/+0x38/+0xb0/+0x140/+0x14c/+0x150 stores therefore do not target HDVehicle.","rejected":true},
+    {"class":"physics-manager-singleton-constructor","function":"FUN_0070fae0","reason":"FUN_0070fe99 passes exact ECX=0x00c104e0; FUN_0070fae0 installs vptr 0x00b04524 before its straight zero stores. This is the recovered Physics Manager singleton, not selected HDVehicle.","rejected":true},
+    {"class":"hdvehicle-high-service-subobjects","function":"FUN_0087aa00","reason":"The bounded caller FUN_00a62780 is entered as HDVehicle+0x6730. It calls FUN_0087aa00 with ECX=entry+0x24 (HDVehicle+0x6754) and entry+0xe4 (HDVehicle+0x6814); the helper clears only +0/+0xc/+0x10/+0x14 of those subobjects.","rejected":true},
+    {"class":"fixed-singleton-nested-subobject","function":"FUN_00886e10","reason":"FUN_00887580 calls it with ECX=0x00c29640+0x70c=0x00c29d4c; merged REP evidence independently pins this exact nested receiver. The straight zero stores are local to that singleton subobject.","rejected":true},
+    {"class":"fixed-singleton-nested-subobject","function":"FUN_0088f110","reason":"FUN_00887580 calls it with ECX=0x00c29640+0x558=0x00c29b98. Its ordinary MOV zero stores at local +0x18/+0x1c/+0x38/+0x3c and +0xa0...+0xc8 therefore belong to the singleton subobject, not HDVehicle.","rejected":true}
+  ],
+  "candidate_count": 6,
+  "candidates": [
+    {"address":"0x00887580","clusters":[{"destination_base":"esi","max_contiguous_coverage_bytes":68,"store_sites":["0x008875a8","0x008875ae","0x008875b4","0x008875ba","0x008875c0","0x008875c6","0x008875cc","0x008875f3","0x00887609","0x0088760f","0x00887615","0x0088761b","0x00887621","0x00887627","0x0088762d","0x00887633","0x00887639","0x0088763f","0x00887645","0x0088767c","0x00887682","0x00887688","0x0088768e","0x00887694","0x0088769a","0x008876a0","0x008876a6","0x008876ac","0x008876b2","0x008876b8","0x008876be","0x008876c4","0x008876ca","0x008876d0","0x008876d6"]}],"function":"FUN_00887580","min_direct_depth":3,"shortest_path":["FUN_00770e80","FUN_0076f970","FUN_00887720","FUN_00887580"]},
+    {"address":"0x00647a10","clusters":[{"destination_base":"esi","max_contiguous_coverage_bytes":8,"store_sites":["0x00647a1f","0x00647a30","0x00647a40","0x00647a70","0x00647ab9","0x00647ac5","0x00647acb"]}],"function":"FUN_00647a10","min_direct_depth":4,"shortest_path":["FUN_00770e80","FUN_0076f970","FUN_00887720","FUN_00887580","FUN_00647a10"]},
+    {"address":"0x0070fae0","clusters":[{"destination_base":"esi","max_contiguous_coverage_bytes":12,"store_sites":["0x0070fb19","0x0070fb1f","0x0070fb25","0x0070fb2b"]},{"destination_base":"esi","max_contiguous_coverage_bytes":132,"store_sites":["0x0070fc1e","0x0070fc6f","0x0070fc75","0x0070fc7b","0x0070fc81","0x0070fc87","0x0070fc8d","0x0070fc93","0x0070fc99","0x0070fc9f","0x0070fca5","0x0070fcab","0x0070fcb1","0x0070fcb7","0x0070fcbd","0x0070fcc3","0x0070fcc9","0x0070fccf","0x0070fcd5","0x0070fcdb","0x0070fce1","0x0070fce7","0x0070fced","0x0070fcf3","0x0070fcf9","0x0070fcff","0x0070fd05","0x0070fd0b","0x0070fd11","0x0070fd17","0x0070fd1d","0x0070fd23","0x0070fd29","0x0070fd2f","0x0070fd40","0x0070fd46","0x0070fd4c","0x0070fd52","0x0070fd58","0x0070fd5e","0x0070fd64","0x0070fd6a","0x0070fd70","0x0070fd76","0x0070fd7c"]}],"function":"FUN_0070fae0","min_direct_depth":4,"shortest_path":["FUN_0076d100","FUN_0070fe90","FUN_0041903c","FUN_0070fe99","FUN_0070fae0"]},
+    {"address":"0x0087aa00","clusters":[{"destination_base":"edi","max_contiguous_coverage_bytes":12,"store_sites":["0x0087aa23","0x0087aa29","0x0087aa30","0x0087aa37"]}],"function":"FUN_0087aa00","min_direct_depth":4,"shortest_path":["FUN_0076d100","FUN_00765c40","FUN_00a62940","FUN_00a62780","FUN_0087aa00"]},
+    {"address":"0x00886e10","clusters":[{"destination_base":"eax","max_contiguous_coverage_bytes":12,"store_sites":["0x00886f43","0x00886f49","0x00886f4f"]}],"function":"FUN_00886e10","min_direct_depth":4,"shortest_path":["FUN_00770e80","FUN_0076f970","FUN_00887720","FUN_00887580","FUN_00886e10"]},
+    {"address":"0x0088f110","clusters":[{"destination_base":"esi","max_contiguous_coverage_bytes":8,"store_sites":["0x0088f12e","0x0088f134","0x0088f13a","0x0088f140"]},{"destination_base":"esi","max_contiguous_coverage_bytes":12,"store_sites":["0x0088f184","0x0088f18a","0x0088f19a","0x0088f1a0","0x0088f1a6","0x0088f1cd"]}],"function":"FUN_0088f110","min_direct_depth":4,"shortest_path":["FUN_00770e80","FUN_0076f970","FUN_00887720","FUN_00887580","FUN_0088f110"]}
+  ],
+  "format": "SHIFT.P1A.P13ASlot01StraightZeroInitMachineClosure/1",
+  "limits": [
+    "Closes only straight-line ordinary MOV zero initialization within direct depth <=4.",
+    "Stores inside backward-branch loops are excluded because those were closed by earlier loop contracts.",
+    "REP/bare-string paths and nonzero unrolled MOV copies are already closed by prior P1A contracts.",
+    "SSE/vector initialization, deeper direct paths, and indirect/callback carriers remain open.",
+    "Reachability and numeric offset equality never establish selected-HDVehicle identity."
+  ],
+  "max_direct_call_depth": 4,
+  "next_step": "Inventory and adjudicate shallow SSE/vector copy-init sequences, then widen only concrete selected-HDVehicle-derived aliases to deeper direct or indirect/callback paths.",
+  "owner": "Process 1A / P1.3A",
+  "reachable_sized_function_count": 377,
+  "ready": true,
+  "roots": ["FUN_00758b50","FUN_0076d100","FUN_00763570","FUN_00770e80"],
+  "scope": "slot0/slot1 shallow straight-line ordinary-MOV zero-init machine closure",
+  "version": 1
+}
