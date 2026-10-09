@@ -50,11 +50,20 @@ def build(p1a_path: Path, consumer_path: Path) -> dict:
     if surface.get("positive_address_materializer_count") != 4 or len(materializers) != 4:
         raise ValueError("+0x538 materializer count drift")
 
-    adjudications = p1a.get("materializer_adjudication", [])
-    if len(adjudications) != 4:
+    upstream_rows = p1a.get("materializer_adjudication", [])
+    if len(upstream_rows) != 4:
         raise ValueError("materializer adjudication count drift")
-    if any(not str(row.get("adjudication", "")).startswith("rejected") for row in adjudications):
+    if any(not str(row.get("adjudication", "")).startswith("rejected") for row in upstream_rows):
         raise ValueError("an upstream +0x538 materializer is no longer rejected")
+    adjudications = [
+        {
+            "site": row.get("site"),
+            "function": row.get("function"),
+            "role": row.get("role"),
+            "adjudication": row.get("adjudication"),
+        }
+        for row in upstream_rows
+    ]
 
     direct = surface.get("direct_qword_store_existing_rejection", {})
     normalized = [str(x).lower() for x in direct.get("normalized_absolute_slots", [])]
