@@ -2,105 +2,41 @@
 #include <vulkan/vulkan.h>
 
 #include "shift_android_surface_probe.h"
-
-#include <cstdint>
-#include <vector>
+#include "shift_vulkan_surface_backend.h"
 
 namespace {
 
-constexpr int kInvalidWindow = 2;
-constexpr int kInstanceFailure = 3;
-constexpr int kSurfaceFailure = 4;
-constexpr int kPhysicalDeviceFailure = 5;
-constexpr int kQueueFamilyFailure = 6;
+VkResult create_android_surface(
+    void* raw_context,
+    VkInstance instance,
+    VkSurfaceKHR* out_surface) {
+    auto* window = static_cast<ANativeWindow*>(raw_context);
+    if (window == nullptr || out_surface == nullptr) {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
+    VkAndroidSurfaceCreateInfoKHR create{};
+    create.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
+    create.window = window;
+    return vkCreateAndroidSurfaceKHR(instance, &create, nullptr, out_surface);
+}
 
 }  // namespace
 
 extern "C" int shift_android_vulkan_surface_probe(ANativeWindow* window) {
     if (window == nullptr) {
-        return kInvalidWindow;
+        return SHIFT_VULKAN_SURFACE_PROBE_INVALID_BACKEND;
     }
 
-    const char* instance_extensions[] = {
+    const char* extensions[] = {
         VK_KHR_SURFACE_EXTENSION_NAME,
         VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
     };
-
-    VkApplicationInfo app{};
-    app.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    app.pApplicationName = "SHIFT Android Vulkan Surface Probe";
-    app.applicationVersion = 1;
-    app.pEngineName = "SHIFT";
-    app.engineVersion = 1;
-    app.apiVersion = VK_API_VERSION_1_0;
-
-    VkInstanceCreateInfo instance_create{};
-    instance_create.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instance_create.pApplicationInfo = &app;
-    instance_create.enabledExtensionCount = 2;
-    instance_create.ppEnabledExtensionNames = instance_extensions;
-
-    VkInstance instance = VK_NULL_HANDLE;
-    if (vkCreateInstance(&instance_create, nullptr, &instance) != VK_SUCCESS) {
-        return kInstanceFailure;
-    }
-
-    VkAndroidSurfaceCreateInfoKHR surface_create{};
-    surface_create.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
-    surface_create.window = window;
-
-    VkSurfaceKHR surface = VK_NULL_HANDLE;
-    if (vkCreateAndroidSurfaceKHR(
-            instance, &surface_create, nullptr, &surface) != VK_SUCCESS) {
-        vkDestroyInstance(instance, nullptr);
-        return kSurfaceFailure;
-    }
-
-    uint32_t device_count = 0;
-    VkResult enumerate_result =
-        vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
-    if (enumerate_result != VK_SUCCESS || device_count == 0) {
-        vkDestroySurfaceKHR(instance, surface, nullptr);
-        vkDestroyInstance(instance, nullptr);
-        return kPhysicalDeviceFailure;
-    }
-
-    std::vector<VkPhysicalDevice> devices(device_count);
-    enumerate_result =
-        vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
-    if (enumerate_result != VK_SUCCESS) {
-        vkDestroySurfaceKHR(instance, surface, nullptr);
-        vkDestroyInstance(instance, nullptr);
-        return kPhysicalDeviceFailure;
-    }
-
-    bool compatible_queue = false;
-    for (VkPhysicalDevice physical : devices) {
-        uint32_t queue_count = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(
-            physical, &queue_count, nullptr);
-        std::vector<VkQueueFamilyProperties> queues(queue_count);
-        vkGetPhysicalDeviceQueueFamilyProperties(
-            physical, &queue_count, queues.data());
-
-        for (uint32_t index = 0; index < queue_count; ++index) {
-            if ((queues[index].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0u) {
-                continue;
-            }
-            VkBool32 present = VK_FALSE;
-            if (vkGetPhysicalDeviceSurfaceSupportKHR(
-                    physical, index, surface, &present) == VK_SUCCESS &&
-                present == VK_TRUE) {
-                compatible_queue = true;
-                break;
-            }
-        }
-        if (compatible_queue) {
-            break;
-        }
-    }
-
-    vkDestroySurfaceKHR(instance, surface, nullptr);
-    vkDestroyInstance(instance, nullptr);
-    return compatible_queue ? 0 : kQueueFamilyFailure;
+    ShiftVulkanSurfaceBackend backend{};
+    backend.backend_name = "SHIFT Android Vulkan Surface";
+    backend.required_instance_extensions = extensions;
+    backend.required_instance_extension_count = 2u;
+    backend.context = window;
+    backend.create_surface = create_android_surface;
+    return shift_vulkan_surface_probe_backend(&backend);
 }

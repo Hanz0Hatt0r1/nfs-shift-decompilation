@@ -192,6 +192,22 @@ if(Vulkan_FOUND)
   target_link_libraries(shift_vulkan_bundle_execute PRIVATE Vulkan::Vulkan)
 endif()
 
+add_library(
+  shift_vulkan_surface_backend
+  STATIC
+  src/vulkan_surface_backend.cpp
+)
+target_include_directories(
+  shift_vulkan_surface_backend
+  PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_link_libraries(
+  shift_vulkan_surface_backend
+  PUBLIC
+  Vulkan::Vulkan
+)
+
 if(ANDROID)
   add_library(
     shift_vulkan_android_surface_probe
@@ -211,6 +227,36 @@ if(ANDROID)
   target_link_libraries(
     shift_vulkan_android_surface_probe
     PRIVATE
+    shift_vulkan_surface_backend
     Vulkan::Vulkan
   )
+else()
+  find_package(PkgConfig QUIET)
+  if(PkgConfig_FOUND)
+    pkg_check_modules(XCB QUIET IMPORTED_TARGET xcb)
+  endif()
+  if(XCB_FOUND)
+    add_library(
+      shift_vulkan_xcb_surface_probe
+      STATIC
+      src/xcb_vulkan_surface_probe.cpp
+    )
+    target_include_directories(
+      shift_vulkan_xcb_surface_probe
+      PUBLIC
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+    target_compile_definitions(
+      shift_vulkan_xcb_surface_probe
+      PRIVATE
+      VK_USE_PLATFORM_XCB_KHR
+    )
+    target_link_libraries(
+      shift_vulkan_xcb_surface_probe
+      PRIVATE
+      shift_vulkan_surface_backend
+      Vulkan::Vulkan
+      PkgConfig::XCB
+    )
+  endif()
 endif()
