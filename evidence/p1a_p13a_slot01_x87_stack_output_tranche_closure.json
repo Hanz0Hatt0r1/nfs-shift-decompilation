@@ -1,0 +1,69 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01X87StackOutputTrancheClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_frontier": "SHIFT.P1A.P13ASlot01X87ZeroInitFrontierEvidence/1",
+    "upstream_first_tranche": "SHIFT.P1A.P13ASlot01X87ReuseTrancheClosure/1",
+    "machine_transfer_adjudicates": true
+  },
+  "frontier": {
+    "candidate_count": 18,
+    "resolved_before": 9,
+    "resolved_in_tranche": 5,
+    "resolved_total": 14,
+    "remaining_count": 4
+  },
+  "resolved": [
+    {
+      "function": "FUN_00766510",
+      "rejected": true,
+      "domain": "HDVehicle root",
+      "proof": "FUN_0076d100 carries the selected HDVehicle receiver in ESI and calls FUN_00766510 with ECX=ESI at 0x0076d137/0x0076d139. FUN_00766510 captures ECX in ESI and all frontier FLDZ stores target only +0x40a0/+0x40a8/+0x40b0/+0x42b0/+0x4300, disjoint from +0x938/+0x13b8."
+    },
+    {
+      "function": "FUN_007aa940",
+      "rejected": true,
+      "domain": "caller stack-local output vector",
+      "proof": "At 0x007aaa93 FUN_007aa9b0 materializes EBP-0x18, pushes it at 0x007aaa96, and calls FUN_007aa940 at 0x007aaa97. The callee zeroes only output +0/+4/+8."
+    },
+    {
+      "function": "FUN_0075afc0",
+      "rejected": true,
+      "domain": "three caller stack-local output vectors",
+      "proof": "Before 0x0076a302, FUN_0076a200 pushes EBP-0x28, EBP-0x34 and EBP-0x4c as arguments 6, 5 and 4. The zero branch in FUN_0075afc0 writes only [EBP+0x14], [EBP+0x18], [EBP+0x1c] output vectors, therefore exactly those stack locals."
+    },
+    {
+      "function": "FUN_007876e0",
+      "rejected": true,
+      "domain": "caller stack-local output vector",
+      "proof": "FUN_00787730 materializes EBP-0xc at 0x00787745, pushes it at 0x00787748 and calls FUN_007876e0 at 0x0078774b. The callee loads that output pointer from [EBP+8] and zeroes only +0/+4."
+    },
+    {
+      "function": "FUN_007ade70",
+      "rejected": true,
+      "domain": "caller stack-local output vectors",
+      "proof": "The only bounded direct calls from FUN_00759210 pass EBP-0x38 at 0x007592ae..0x007592b4 or EBP-0x2c at 0x007593e5..0x007593eb. FUN_007ade70 loads [EBP+8] into ESI; its frontier zero stores are output +4/+8."
+    }
+  ],
+  "remaining_candidates": ["FUN_0075c0d0", "FUN_007b8630", "FUN_0075ada0", "FUN_007b7840"],
+  "adjudication": {
+    "x87_stack_output_tranche_complete": true,
+    "x87_stack_output_tranche_rejected_count": 5,
+    "x87_resolved_total": 14,
+    "x87_remaining_count": 4,
+    "x87_selected_hdvehicle_target_writer_found_in_tranche": false,
+    "x87_zero_init_semantics_complete": false,
+    "sse_vector_copy_init_complete": false,
+    "deeper_direct_aliases_ruled_out": false,
+    "indirect_callback_aliases_ruled_out": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Resolve the four remaining pointer-chain x87 candidates FUN_0075c0d0, FUN_007b8630, FUN_0075ada0 and FUN_007b7840; then close shallow SSE/vector copy-init."
+}
