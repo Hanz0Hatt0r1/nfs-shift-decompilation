@@ -1,0 +1,42 @@
+{
+  "format": "SHIFT.CIWorkflowMigration/1",
+  "version": 1,
+  "status": "ready",
+  "stable_workflow": ".github/workflows/native-physics-fun007afdd0-analysis.yml",
+  "superseded_workflows": [
+    {
+      "path": ".github/workflows/native-physics-phase680.yml",
+      "blob_sha": "85b67abfa572f5ed37d5398ef41468ad9cb7a9b9"
+    },
+    {
+      "path": ".github/workflows/native-physics-phase692.yml",
+      "blob_sha": "8c957d0ff363fdb216b07f7f195c34b53bdbc7b7"
+    }
+  ],
+  "coverage_policy": "superset",
+  "parity": {
+    "python_tests": [
+      "tests/test_ghidra_fun_007afdd0_basis_rotation.py",
+      "tests/test_ghidra_fun_007afdd0_scalar_provenance.py"
+    ],
+    "shell_syntax_checks": [
+      "tools/ghidra/run_fun_007afdd0_basis_rotation.sh",
+      "tools/ghidra/run_fun_007afdd0_scalar_provenance.sh"
+    ],
+    "static_guards": [
+      "ShiftFunctionInstructionExporter.java",
+      "rodrigues_semantics_assumed",
+      "normalization_assumed"
+    ],
+    "native_targets": [],
+    "ctest_names": [],
+    "native_reports": [],
+    "evidence_formats": []
+  },
+  "trigger_policy": {
+    "mode": "union",
+    "meaning": "Any path that previously triggered Phase 680 or Phase 692 now runs the complete consolidated FUN_007AFDD0 static-analysis regression set. Coverage is intentionally a superset, not a reduction."
+  },
+  "semantic_gate_changes": false,
+  "provider_count_changes": false
+}
