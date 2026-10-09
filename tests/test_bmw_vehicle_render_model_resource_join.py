@@ -121,7 +121,7 @@ def test_proves_exact_bmw_descriptor_to_vhf_resource_join(tmp_path, monkeypatch)
 
 def test_rejects_owner_property_offset_drift(tmp_path, monkeypatch):
     _install_positive_archives(monkeypatch)
-    with pytest.raises(ValueError, match="\+0x54 proof drift"):
+    with pytest.raises(ValueError, match=r"\+0x54 proof drift"):
         m.analyze(
             _owner(tmp_path / "owner.json", field="+0x58"),
             _file(tmp_path, "BMW_M3_E36.bff"),
