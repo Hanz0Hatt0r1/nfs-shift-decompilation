@@ -2,10 +2,11 @@
 """Adjudicate direct worker-reachable GetProcAddress name arguments.
 
 Consumes targeted SHIFT.GhidraFunctionInstructions/2 rows plus the Ghidra SQLite
-index and a pinned P1D worklist.  The analysis is deliberately conservative:
-it only promotes a resolver name when the lpProcName argument is recovered as an
-exact literal string address from the two PUSH arguments immediately feeding a
-GetProcAddress call.  Register/generated/stack-built names remain unresolved.
+index and a pinned P1D worklist. The analysis is deliberately conservative: it
+promotes lpProcName only when a bounded linear x86 stack model recovers an exact
+literal indexed string at GetProcAddress argument slot 1. This covers ordinary
+PUSH/PUSH sequences and compiler stack-slot reuse such as MOV [ESP], imm32.
+Register/generated/decoded names remain unresolved.
 """
 
 from __future__ import annotations
@@ -28,6 +29,7 @@ APC_NAMES = {
     "SetWaitableTimerEx",
 }
 HEX_RE = re.compile(r"0x[0-9a-fA-F]+")
+ESP_SLOT_RE = re.compile(r"\[\s*ESP(?:\s*\+\s*(0x[0-9a-fA-F]+|[0-9]+))?\s*\]", re.I)
 
 
 def norm_hex(value: str | None) -> str | None:
@@ -98,7 +100,7 @@ def literal_addresses(ins: dict) -> list[str]:
     return values
 
 
-def classify_push(ins: dict, strings_by_address: dict[str, list[str]]) -> dict:
+def literal_value(ins: dict, strings_by_address: dict[str, list[str]]) -> dict:
     addresses = literal_addresses(ins)
     hits = []
     for address in addresses:
@@ -114,6 +116,99 @@ def classify_push(ins: dict, strings_by_address: dict[str, list[str]]) -> dict:
             for address, value in sorted(unique)
         ],
     }
+
+
+def stack_slot_write(ins: dict) -> int | None:
+    mnemonic = str(ins.get("mnemonic", "")).upper()
+    if not mnemonic.startswith("MOV"):
+        return None
+    operands = ins.get("operands", [])
+    if not operands:
+        return None
+    match = ESP_SLOT_RE.search(str(operands[0]))
+    if not match:
+        match = ESP_SLOT_RE.search(str(ins.get("text", "")))
+    if not match:
+        return None
+    raw = match.group(1)
+    byte_offset = int(raw, 0) if raw else 0
+    if byte_offset < 0 or byte_offset % 4:
+        return None
+    return byte_offset // 4
+
+
+def esp_adjust(ins: dict) -> int | None:
+    mnemonic = str(ins.get("mnemonic", "")).upper()
+    if mnemonic not in {"ADD", "SUB"}:
+        return None
+    operands = [str(x).upper() for x in ins.get("operands", [])]
+    if len(operands) < 2 or operands[0] != "ESP":
+        return None
+    tokens = HEX_RE.findall(str(ins.get("operands", ["", ""])[1]))
+    if tokens:
+        amount = int(tokens[0], 16)
+    else:
+        try:
+            amount = int(str(ins.get("operands", ["", ""])[1]), 0)
+        except ValueError:
+            return None
+    if amount < 0 or amount % 4:
+        return None
+    return amount // 4 if mnemonic == "ADD" else -(amount // 4)
+
+
+def recover_stack_arguments(
+    instructions: list[dict], call_index: int, strings_by_address: dict[str, list[str]]
+) -> tuple[list[dict | None], list[dict]]:
+    lower = max(0, call_index - 24)
+    start = lower
+    for i in range(call_index - 1, lower - 1, -1):
+        mnemonic = str(instructions[i].get("mnemonic", "")).upper()
+        if mnemonic.startswith("CALL") or mnemonic.startswith("RET"):
+            start = i + 1
+            break
+
+    # Unknown pre-existing stack slots are retained because MSVC frequently
+    # reuses a caller-clean argument slot with MOV [ESP], imm32 before the next
+    # GetProcAddress call.
+    stack: list[dict | None] = [None] * 8
+    trace: list[dict] = []
+    for ins in instructions[start:call_index]:
+        mnemonic = str(ins.get("mnemonic", "")).upper()
+        if mnemonic == "PUSH":
+            value = literal_value(ins, strings_by_address)
+            stack.insert(0, value)
+            trace.append({"op": "push", **value})
+            continue
+        if mnemonic == "POP":
+            if stack:
+                stack.pop(0)
+            trace.append({"op": "pop", "instruction_address": norm_hex(ins.get("address")), "text": ins.get("text")})
+            continue
+
+        adjust = esp_adjust(ins)
+        if adjust is not None:
+            if adjust > 0:
+                del stack[:adjust]
+            elif adjust < 0:
+                stack[:0] = [None] * (-adjust)
+            trace.append({
+                "op": "esp-adjust",
+                "dword_delta": adjust,
+                "instruction_address": norm_hex(ins.get("address")),
+                "text": ins.get("text"),
+            })
+            continue
+
+        slot = stack_slot_write(ins)
+        if slot is not None:
+            while len(stack) <= slot:
+                stack.append(None)
+            value = literal_value(ins, strings_by_address)
+            stack[slot] = value
+            trace.append({"op": "stack-write", "slot": slot, **value})
+
+    return stack, trace
 
 
 def adjudicate_call(function_row: dict, callsite: str, strings_by_address: dict[str, list[str]]) -> dict:
@@ -145,34 +240,9 @@ def adjudicate_call(function_row: dict, callsite: str, strings_by_address: dict[
             "call_text": call_ins.get("text"),
         }
 
-    pushes: list[dict] = []
-    lower = max(0, call_index - 16)
-    for i in range(call_index - 1, lower - 1, -1):
-        ins = instructions[i]
-        mnemonic = str(ins.get("mnemonic", "")).upper()
-        if mnemonic.startswith("CALL") or mnemonic.startswith("RET"):
-            break
-        if mnemonic == "PUSH":
-            pushes.append(classify_push(ins, strings_by_address))
-            if len(pushes) == 2:
-                break
-
-    if len(pushes) < 2:
-        return {
-            "callsite": target,
-            "call_instruction_found": True,
-            "call_text": call_ins.get("text"),
-            "lp_proc_name_proven": False,
-            "resolved_name": None,
-            "apc_name": False,
-            "argument_pushes_nearest_first": pushes,
-            "reason": "fewer than two bounded PUSH arguments recovered",
-        }
-
-    # Win32 stdcall: GetProcAddress(hModule, lpProcName) arguments are pushed
-    # right-to-left, so nearest PUSH is hModule and second-nearest is lpProcName.
-    name_push = pushes[1]
-    hits = name_push["string_hits"]
+    stack, trace = recover_stack_arguments(instructions, call_index, strings_by_address)
+    name_slot = stack[1] if len(stack) > 1 else None
+    hits = [] if name_slot is None else name_slot.get("string_hits", [])
     if len(hits) != 1:
         return {
             "callsite": target,
@@ -181,8 +251,8 @@ def adjudicate_call(function_row: dict, callsite: str, strings_by_address: dict[
             "lp_proc_name_proven": False,
             "resolved_name": None,
             "apc_name": False,
-            "argument_pushes_nearest_first": pushes,
-            "reason": "lpProcName PUSH does not resolve to exactly one indexed literal string",
+            "bounded_stack_trace": trace,
+            "reason": "lpProcName stack slot does not resolve to exactly one indexed literal string",
         }
 
     name = hits[0]["value"]
@@ -194,8 +264,8 @@ def adjudicate_call(function_row: dict, callsite: str, strings_by_address: dict[
         "resolved_name": name,
         "resolved_name_address": hits[0]["address"],
         "apc_name": name in APC_NAMES,
-        "argument_pushes_nearest_first": pushes,
-        "reason": "exact literal lpProcName recovered from bounded stdcall PUSH sequence",
+        "bounded_stack_trace": trace,
+        "reason": "exact literal lpProcName recovered from bounded x86 stack argument flow",
     }
 
 
@@ -267,7 +337,7 @@ def analyze(instructions_path: Path, db_path: Path, plan_path: Path) -> dict:
         },
         "limits": [
             "Only the pinned worker-reachable direct GetProcAddress callsites are analyzed.",
-            "Only exact literal lpProcName PUSH arguments are promoted; register, stack-built, decoded or generated names remain unresolved.",
+            "Only exact literal lpProcName values recovered by the bounded linear stack model are promoted; register, decoded or generated names remain unresolved.",
             "A non-APC direct named resolver result does not rule out manual export walking, indirect resolution or native/syscall APC injection.",
         ],
         "next_step": (
