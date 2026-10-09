@@ -1,0 +1,72 @@
+{
+  "format": "SHIFT.HDVehicle64e8Manager374DirectWriteDspRejection/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true,
+    "decompiler_role": "supporting navigation only"
+  },
+  "upstream_contract": "SHIFT.HDVehicle64e8Manager374ComputedAddressUseClassification/1",
+  "target": {
+    "site":"0x00985bd3",
+    "function":"FUN_00985bc0",
+    "materializer":"add esi,0x374",
+    "direct_writes":["0x00985c12 [esi-0xa0]=eax","0x00985c1a [esi+0x48]&=0","0x00985c1e [esi]=edi","0x00985c21 [esi+0x28]=edi"]
+  },
+  "descriptor_owner": {
+    "descriptor_base":"0x00b98c88",
+    "initializer":"FUN_0093fa39",
+    "callback_slot":"0x00b98cb0",
+    "callback":"0x0093fa0f",
+    "descriptor_size_field":"0x00b98cf8 = 0x76c",
+    "supporting_source_context":"lib/sfx/foreverb/aSfxDsp.cpp"
+  },
+  "machine_receiver_chain": [
+    "0x0093fa0f loads callback arg1",
+    "0x0093fa13 lea eax,[arg1-0x1c]",
+    "0x0093fa16..0x0093fa1a null-mask the derived receiver",
+    "0x0093fa1c call FUN_0093f4d3 with ECX=(arg1 ? arg1-0x1c : 0)",
+    "0x0093f4ea mov esi,ecx",
+    "0x0093f5d4 lea ebx,[esi+0x12c]",
+    "0x0093f5df mov ecx,ebx",
+    "0x0093f5e4 call FUN_00986a67",
+    "0x00986a6c mov ebx,ecx",
+    "0x00986b86 mov ecx,ebx",
+    "0x00986b88 call FUN_00985bc0",
+    "0x00985bc6 mov esi,ecx",
+    "0x00985bd3 add esi,0x374"
+  ],
+  "call_surface": {
+    "FUN_00986a67_direct_caller_count":1,
+    "FUN_00986a67_only_direct_caller":"0x0093f5e4",
+    "FUN_00985bc0_direct_caller_count":1,
+    "FUN_00985bc0_only_direct_caller":"0x00986b88"
+  },
+  "identity_adjudication": {
+    "receiver_expression":"descriptor callback state (arg1-0x1c) + 0x12c",
+    "receiver_is_participants_manager_root":false,
+    "receiver_is_participants_manager_subobject":false,
+    "site_can_write_participants_manager_plus_0x374":false,
+    "numeric_offset_used_as_identity_evidence":false
+  },
+  "adjudication": {
+    "direct_write_through_computed_candidate_complete":true,
+    "direct_write_through_computed_candidate_rejected":true,
+    "remaining_computed_runtime_path_count":18,
+    "returned_pointer_escape_complete":false,
+    "callee_forwarding_surface_complete":false,
+    "computed_address_manager_374_writer_surface_complete":false,
+    "manager_374_join_to_hdvehicle_4330_complete":false,
+    "last_literal_0x004b86cf_rejected":false,
+    "p1_3_control_producer_complete":false,
+    "external_provider_count":7
+  },
+  "limits":[
+    "Descriptor ownership and exact callback/embedded-receiver transfer adjudicate identity; the source-path string is supporting context only.",
+    "This closes only the unique direct write-through computed materializer from the upstream use partition.",
+    "Returned-pointer and callee-forwarding computed paths remain open."
+  ],
+  "next_step":"Bound the returned pointer from FUN_00529020, then classify the 17 callee-forwarding paths by receiver identity and callee mutation semantics."
+}
