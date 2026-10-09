@@ -1,0 +1,43 @@
+{
+  "format": "SHIFT.P1D.P13DSlot3SameFunctionTopologyHandoff/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "upstream_contract": "SHIFT.P1A.P13ASlot01SameFunctionTopologyMachineClosure/1",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "p1a_contract_consumed_not_reowned": true,
+    "machine_transfer_adjudicates": true
+  },
+  "slot3": {
+    "wheel_receiver": "HDVehicle+0x400+3*0xa80",
+    "absolute_target": "HDVehicle+0x28b8",
+    "local_field": "+0x538"
+  },
+  "surface": {
+    "required_same_function_scalars": ["0x400", "0xa80"],
+    "candidate_count": 10,
+    "rejected_count": 10,
+    "candidate_addresses": [
+      "0x00757318", "0x00763570", "0x00765850", "0x00765aa0", "0x00765c40",
+      "0x00769520", "0x0076b130", "0x0076df50", "0x00770e80", "0x00a705ae"
+    ],
+    "target_f64_writer_found": false
+  },
+  "adjudication": {
+    "slot3_same_function_wheel_topology_subset_complete": true,
+    "slot3_same_function_topology_target_f64_writer_found": false,
+    "slot3_interprocedural_wheel_alias_surface_complete": false,
+    "slot3_overlapping_bulk_copy_surface_complete": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only recovered functions containing exact machine scalars +0x400 and +0xa80 in the same function.",
+    "Interprocedural aliases, caller-derived bases and copy/init destinations that hide one or both constants remain open.",
+    "P1A ownership is unchanged."
+  ],
+  "next_step": "Trace interprocedural selected-wheel aliases where wheel-base derivation and target write occur in different functions; then inspect only copy/init carriers reached by those aliases."
+}
