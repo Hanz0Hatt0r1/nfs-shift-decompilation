@@ -74,7 +74,7 @@ def test_builtin_solver_matches_numpy_for_deterministic_spd_case():
 
 
 def test_builtin_solver_rejects_bad_graph_cardinality():
-    with pytest.raises(ValueError, match="n\+1"):
+    with pytest.raises(ValueError, match=r"n\+1"):
         runtime.solve_builtin_sparse_in_place(
             [[1.0]],
             [1.0],
