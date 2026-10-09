@@ -1,16 +1,20 @@
 {
   "format": "SHIFT.DecompBlockerGraph/1",
   "version": 1,
-  "updated_from_main": "0d629ea1b65ae36c87d7114ca356dda8ba408001",
+  "updated_from_main": "6d2ff70e949e4609333cdf13a14639cbf63c3b76",
   "rules": {"pc_retail_semantic_authority":true,"numeric_offset_equality_is_identity":false,"external_provider_count":7,"semantic_promotion_requires_exact_provenance":true},
   "workstreams": [
     {"id":"P1.1","owner":"Process 1A","title":"FUN_00766510/contact_response producer closure","status":"complete","consumer":"Process 2 P2.3","closed":["P1.1a FUN_00713630 runtime config/sample-history/selected participant+0x4b0 ownership","P1.1c auxiliary scheduling/final transformed-vector/guarded tail","SHIFT.Fun00766510P11FinalHandoff/1"],"next":"Process 2 P2.3 consumes the final handoff; provider count remains 7 until contact_response is actually removed from selected production execution."},
     {
-      "id":"P1.3","owner":"Process 1B","title":"retail control/input producer provenance","status":"in_progress","children":[
-        {"id":"P1.3.slot0","target":"HDVehicle+0x938","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
-        {"id":"P1.3.slot1","target":"HDVehicle+0x13b8","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
-        {"id":"P1.3.slot2","target":"HDVehicle+0x1e38","status":"partial-producer-proven","hdvehicle_64e8_literal_candidate_count":1,"hdvehicle_64e8_remaining_literal_candidate":"0x004b86cf via manager+0x374","hdvehicle_64e8_rejected_literal_candidates":["0x004bb205","0x004bca6b","0x00d775ee"],"next":"Close the six remaining manager+0x374 computed receiver/destination forwarding paths, then decide the manager+0x374 identity bridge required to adjudicate final HDVehicle+0x64e8 literal candidate 0x004b86cf."},
-        {"id":"P1.3.slot3","target":"HDVehicle+0x28b8","status":"alias-callee-bulk-copy","next":"Trace exact selected-root alias/callee/bulk-copy writers."},
+      "id":"P1.3","owner":"Process 1B integration with P1A/P1D parallel shards","title":"retail control/input producer provenance","status":"in_progress","parallel_shards":[
+        {"id":"P1.3A","owner":"Process 1A","computed_forwarding_sites":["0x005292db","0x005f4ffa"],"additional_work":["P1.3.slot0 HDVehicle+0x938","P1.3.slot1 HDVehicle+0x13b8"],"handoff_to":"Process 1B P1.3 integration"},
+        {"id":"P1.3B","owner":"Process 1B","computed_forwarding_sites":["0x005f6eda","0x0070f62d"],"additional_work":["manager+0x374 -> HDVehicle+0x4330 identity join","final 0x004b86cf / P1.3.slot2 adjudication"],"handoff_to":"Process 2 P2.6 after integration"},
+        {"id":"P1.3D","owner":"Process 1D","computed_forwarding_sites":["0x0070fb45","0x0070fdeb"],"additional_work":["P1.3.slot3 HDVehicle+0x28b8","Controller #1 indirect/native APC injection timing"],"handoff_to":"Process 1B P1.3 integration"}
+      ],"integration_owner":"Process 1B","children":[
+        {"id":"P1.3.slot0","owner_shard":"P1.3A","target":"HDVehicle+0x938","status":"alias-callee-bulk-copy","next":"Process 1A closes exact selected-root alias/callee/bulk-copy writers and returns a fail-closed shard contract to Process 1B."},
+        {"id":"P1.3.slot1","owner_shard":"P1.3A","target":"HDVehicle+0x13b8","status":"alias-callee-bulk-copy","next":"Process 1A closes exact selected-root alias/callee/bulk-copy writers and returns a fail-closed shard contract to Process 1B."},
+        {"id":"P1.3.slot2","owner_shard":"P1.3B","target":"HDVehicle+0x1e38","status":"partial-producer-proven","hdvehicle_64e8_literal_candidate_count":1,"hdvehicle_64e8_remaining_literal_candidate":"0x004b86cf via manager+0x374","hdvehicle_64e8_rejected_literal_candidates":["0x004bb205","0x004bca6b","0x00d775ee"],"next":"Process 1B consumes all three computed-path shard results, decides the manager+0x374 identity bridge, then adjudicates final HDVehicle+0x64e8 literal candidate 0x004b86cf."},
+        {"id":"P1.3.slot3","owner_shard":"P1.3D","target":"HDVehicle+0x28b8","status":"alias-callee-bulk-copy","next":"Process 1D closes exact selected-root alias/callee/bulk-copy writers and returns a fail-closed shard contract to Process 1B."},
         {
           "id":"P1.3.manager374","target":"FUN_00489ad0()+0x374 value == HDVehicle+0x4330","status":"participants-lifecycle-zero-writers-proven-other-indirect-open",
           "rejected_literal_writers":["FUN_0051efa0","FUN_005dec70"],
@@ -32,11 +36,12 @@
           "computed_address_source_only_forwarding_site_count":11,
           "computed_address_remaining_forwarding_path_count":6,
           "computed_address_remaining_forwarding_sites":["0x005292db","0x005f4ffa","0x005f6eda","0x0070f62d","0x0070fb45","0x0070fdeb"],
+          "computed_address_shard_assignment":{"P1.3A":["0x005292db","0x005f4ffa"],"P1.3B":["0x005f6eda","0x0070f62d"],"P1.3D":["0x0070fb45","0x0070fdeb"]},
           "proven_nonzero_writer":"thunk_FUN_00d60660",
           "proven_selection_relation":"exact manager getter receiver -> FUN_0054ed00(manager+0x2a0,index) -> successful FUN_00485290 state transition -> selected entry stored to manager+0x374 when post-load entry[0] == 0",
           "selection_writer_identity_to_hdvehicle_4330":false,
           "selection_writer_identity_rejection":"manager+0x2a0 entries are allocator-owned BArray storage after FUN_00486aa0 reset/repopulation; HDVehicle+0x4330 is fixed global 0x00c17a30",
-          "next":"FUN_004f5e60 registration is already resolved through Participants Manager lifecycle direct callbacks as zero-only on the literal target surface. The explicit computed manager+0x374 surface is now reduced to six receiver/destination forwarding paths: 0x005292db, 0x005f4ffa, 0x005f6eda, 0x0070f62d, 0x0070fb45, 0x0070fdeb. Prove their receiver/destination domains, then decide the manager+0x374 -> HDVehicle+0x4330 join and final 0x004b86cf candidate."
+          "next":"FUN_004f5e60 registration is already resolved through Participants Manager lifecycle direct callbacks as zero-only on the literal target surface. P1A now owns 0x005292db/0x005f4ffa, P1B owns 0x005f6eda/0x0070f62d, and P1D owns 0x0070fb45/0x0070fdeb. Process 1B integrates the three shard results, then decides the manager+0x374 -> HDVehicle+0x4330 join and final 0x004b86cf candidate."
         },
         {
           "id":"P1.3.manager2a0","target":"FUN_00489ad0()+0x2a0 collection entry == HDVehicle+0x4330","status":"entry-identity-rejected-complete",
@@ -52,7 +57,7 @@
         }
       ]
     },
-    {"id":"P1.4","owner":"Process 1D","title":"camera follow provenance","status":"complete","handoff":"SHIFT.CameraFollowP14CurrentVehicleTransformHandoff/1","next":"Process 2 supplies the runtime camera feed; Process 3 P3.5 consumes it after the runtime handoff is positive."},
+    {"id":"P1.4","owner":"Process 1D","title":"camera follow provenance","status":"complete","handoff":"SHIFT.CameraFollowP14CurrentVehicleTransformHandoff/1","next":"Process 2 supplies the runtime camera feed; Process 3 P3.5 consumes it after the runtime handoff is positive. Process 1D may concurrently execute its explicit P1.3D control-proof shard without reopening P1.4."},
     {"id":"P2.3","owner":"Process 2","title":"native contact_response replacement","status":"ready","blocked_by":[],"handoff":"SHIFT.Fun00766510P11FinalHandoff/1","provider_reduction_on_completion":"7 -> 6","next":"Internalize the complete contact_response boundary in frozen retail order and decrement provider count only after selected production execution no longer calls the external boundary."},
     {"id":"P2.4","owner":"Process 2","title":"consume P1.2 vehicle writer ownership","status":"ready","frontier":"SHIFT.NativeVehicleExternalProviderFrontierP2_4Current/1","native_interpolation_path":true,"positive_qword_producers_internalized":false,"wheel_job_commit_surface_native":true,"wheel_job_formula_internalized":false,"next":"Recover FUN_007584f0 two positive-load qword producers and FUN_0075cfb0 producer arithmetic/branch predicates, then continue the remaining residual producer families while preserving 0x00c133ac/vtable+0x1c0 as external until independently proven."},
     {"id":"P3","owner":"Process 3","title":"resources/scene/render/bootstrap","status":"parallel","next":"Maintain exact Silverstone/BMW resource and Vulkan regressions; final presentation remains blocked on the retail control chain and Process 2 runtime camera feed."}
