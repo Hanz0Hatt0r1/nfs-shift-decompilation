@@ -1,0 +1,18 @@
+{
+  "format": "SHIFT.ReviewRemediation/1",
+  "version": 1,
+  "source": "REVIEW_nfs-shift-decompilation.md",
+  "finding": "P2 builtin sparse solver uses vector<vector<double>> work storage",
+  "status": "addressed",
+  "changes": {
+    "public_matrix_abi_preserved": true,
+    "factorization_work_storage": "contiguous-row-major-vector<double>",
+    "sparse_term_scope": "dependency-graph",
+    "csr_claimed": false,
+    "algorithm_semantics_changed": false
+  },
+  "validation": [
+    "native_runtime/tests/builtin_sparse_solver_check.cpp",
+    "shift_runtime_builtin_sparse_solver"
+  ]
+}
