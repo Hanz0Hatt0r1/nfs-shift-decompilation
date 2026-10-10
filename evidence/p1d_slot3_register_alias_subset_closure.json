@@ -1,0 +1,70 @@
+{
+  "adjudication": {
+    "aggregate_or_bulk_alias_stores_ruled_out": false,
+    "callbacks_registered_outside_carriers_ruled_out": false,
+    "callee_created_aliases_ruled_out": false,
+    "external_provider_count": 7,
+    "machine_proven_register_alias_subset_callind_found": false,
+    "machine_proven_register_alias_subset_complete": true,
+    "machine_proven_register_alias_subset_new_forward_found": false,
+    "machine_proven_register_alias_subset_persistent_store_found": false,
+    "machine_register_alias_storage_ruled_out": false,
+    "other_register_aliases_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "slot3_writer_provenance_proven": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_contracts_adjudicate_object_identity": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "sqlite_call_surface_is_navigation_crosscheck": true
+  },
+  "format": "SHIFT.P1D.Slot3RegisterAliasSubsetClosure/1",
+  "limits": [
+    "This closes only three exact register-resident alias paths already proven by merged retail machine contracts.",
+    "Zero CALLIND edges inside the known carrier set does not rule out aliases created in other callees, indirect entry, later callbacks, or persistent stores outside these paths.",
+    "No decompiler variable type or numeric offset coincidence is used as selected-wheel identity."
+  ],
+  "next_step": "Inventory callee-created selected-wheel aliases and register aliases outside FUN_00758b50, FUN_00755950 and FUN_00755f80; join any positive persistence or callback registration to its later consumer before changing global stored/escaped-alias gates.",
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "register_aliases": {
+    "FUN_00755950": {
+      "capture": "0x00755956 EDX=ECX",
+      "exact_root_forwarded_to_direct_callee": false,
+      "known_exact_carrier_callind_edges": 0,
+      "persistent_store_proven": false,
+      "target_is_read_only_in_consumer": true,
+      "target_use": "0x00755958 fld qword [EDX+0x538]"
+    },
+    "FUN_00755f80": {
+      "capture": "ESI=ECX",
+      "exact_root_forwarded_to_direct_callee": false,
+      "known_exact_carrier_callind_edges": 0,
+      "machine_proven_selected_iteration_receiver": "HDVehicle+0x2380",
+      "persistent_store_proven": false,
+      "wheel_root_stored_or_pushed_after_capture": false,
+      "wheel_root_write_count": 0
+    },
+    "FUN_00758b50": {
+      "consumer": "0x00758d6b -> FUN_00755950",
+      "forwarded_to_other_direct_callee": false,
+      "known_exact_carrier_callind_edges": 0,
+      "materialization": "0x00758ccf ECX=ESI-0x448=HDVehicle+0x400+slot*0xa80",
+      "persistent_store_proven": false
+    }
+  },
+  "selected_slot3": {
+    "absolute_target": "HDVehicle+0x28b8..+0x28bf",
+    "local_target": "+0x538",
+    "wheel_receiver": "HDVehicle+0x2380"
+  },
+  "upstream_contracts": [
+    "SHIFT.P1D.P13DSlot3PrimaryAliasEscape/1",
+    "SHIFT.P1D.Slot3Fun00755f80WheelChildClosure/1",
+    "SHIFT.P1D.Slot3ExactCarrierIndirectCallSurface/1"
+  ],
+  "version": 1
+}
