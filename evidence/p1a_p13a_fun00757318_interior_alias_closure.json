@@ -1,0 +1,147 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "other_derived_aliases_ruled_out": false,
+    "p13a_fun00757318_interior_alias_persistent_escape_found": false,
+    "p13a_fun00757318_interior_alias_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "reconstructed_wheel_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "ghidra_receiver_abi": "FUN_007a06a0 and FUN_007a0420 are __thiscall; ECX=this",
+    "platform": "PC retail 1.02",
+    "ranges": {
+      "indexed_body": {
+        "end_exclusive": "0x00757beb",
+        "sha256": "40e942861f5e15b40542c88c11f7b08131c0280d47cf43109889c3363bfbdcee",
+        "size": 2259,
+        "start": "0x00757318"
+      },
+      "interpolating_writer": {
+        "end_exclusive": "0x007a07b7",
+        "sha256": "06bffad36d14d0a5a9c0e4774acaa1b04f5ea3cf1895f39d65c9d9a381b8cb02",
+        "size": 279,
+        "start": "0x007a06a0"
+      },
+      "scalar_writer": {
+        "end_exclusive": "0x007a0451",
+        "sha256": "c1bb69f90c4bb2db3e12b615ed2b06d8af00ea4a21b2d7b627941000f1075b7f",
+        "size": 49,
+        "start": "0x007a0420"
+      }
+    },
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun007572f0IndexedWheelRootLifetime/1"
+  },
+  "consumer_adjudication": {
+    "FUN_007a0420": {
+      "complete_function_size": 49,
+      "derived_receiver_forwarded": false,
+      "derived_receiver_returned": false,
+      "derived_receiver_stored_as_pointer": false,
+      "direct_call_count": 0,
+      "scalar_fpu_write_count": 4,
+      "scalar_fpu_write_offsets": [
+        "+0x0",
+        "+0x8",
+        "+0x10",
+        "+0x18"
+      ]
+    },
+    "FUN_007a06a0": {
+      "callee_receivers_are_stack_locals": true,
+      "complete_function_size": 279,
+      "derived_receiver_forwarded": false,
+      "derived_receiver_returned": false,
+      "derived_receiver_stored_as_pointer": false,
+      "entry_receiver_capture": "0x007a06b1 ESI=ECX",
+      "only_direct_callees": [
+        {
+          "call": "0x007a06d2",
+          "target": "0x753620"
+        },
+        {
+          "call": "0x007a0777",
+          "target": "0x7af310"
+        }
+      ],
+      "scalar_fpu_write_count": 9,
+      "scalar_fpu_write_offsets": [
+        "+0x20",
+        "+0x0",
+        "+0x8",
+        "+0x10",
+        "+0x18",
+        "+0x0",
+        "+0x8",
+        "+0x10",
+        "+0x18"
+      ]
+    },
+    "all_five_aliases_are_interior_not_root": true,
+    "any_interior_alias_pointer_persisted": false,
+    "any_interior_alias_reconstructed_as_root": false
+  },
+  "format": "SHIFT.P1A.P13AFun00757318InteriorAliasClosure/1",
+  "limits": [
+    "Closes only five machine-verified FUN_00757318 interior aliases from the merged indexed-wheel-root path.",
+    "The interpolating writer retains the receiver in ESI, passes stack-local ECX receivers to its two direct callees, and writes only QWORD scalar fields to the derived receiver.",
+    "The second writer is a 49-byte leaf that writes four QWORD scalar fields and does not copy or forward its ECX receiver.",
+    "Other runtime reconstructed roots, callbacks, incoming indirect entry and global selected-wheel pointer persistence remain open."
+  ],
+  "next_step": "Compose the bounded indexed/trampolined wheel-root materializer closures; keep broad alias, runtime-callback, slot0/slot1 and P1.3 gates fail-closed.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "aliases": [
+      {
+        "consumer": "FUN_007a06a0",
+        "consumer_call": "0x007573fd",
+        "intervening_instruction_count": 11,
+        "receiver_register": "ECX",
+        "site": "0x007573bc",
+        "wheel_relative_offset": "+0x610"
+      },
+      {
+        "consumer": "FUN_007a06a0",
+        "consumer_call": "0x00757428",
+        "intervening_instruction_count": 4,
+        "receiver_register": "ECX",
+        "site": "0x0075740f",
+        "wheel_relative_offset": "+0x638"
+      },
+      {
+        "consumer": "FUN_007a06a0",
+        "consumer_call": "0x00757453",
+        "intervening_instruction_count": 4,
+        "receiver_register": "ECX",
+        "site": "0x0075743a",
+        "wheel_relative_offset": "+0x5e8"
+      },
+      {
+        "consumer": "FUN_007a0420",
+        "consumer_call": "0x007577e4",
+        "intervening_instruction_count": 8,
+        "receiver_register": "ECX",
+        "site": "0x007577b8",
+        "wheel_relative_offset": "+0x6a0"
+      },
+      {
+        "consumer": "FUN_007a0420",
+        "consumer_call": "0x0075780f",
+        "intervening_instruction_count": 4,
+        "receiver_register": "ECX",
+        "site": "0x007577f6",
+        "wheel_relative_offset": "+0x6c0"
+      }
+    ],
+    "derived_alias_count": 5,
+    "indexed_wheel_root": "vehicle_root + 0x400 + index*0xA80"
+  },
+  "version": 1
+}
