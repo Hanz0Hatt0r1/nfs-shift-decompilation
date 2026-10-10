@@ -15,7 +15,7 @@ def load_module():
     return module
 
 
-def test_vtable_scanner_surfaces_exact_carrier_target():
+def test_vtable_scanner_surfaces_new_exact_carrier_target():
     module = load_module()
     payload = {
         "format": module.VTABLE_FORMAT,
@@ -23,7 +23,7 @@ def test_vtable_scanner_surfaces_exact_carrier_target():
             {
                 "address": "0x00aa0000",
                 "slots": [
-                    {"slot": 0, "target": "0x00758b50", "name": "FUN_00758b50"},
+                    {"slot": 0, "target": "0x00765c40", "name": "FUN_00765c40"},
                     {"slot": 1, "target": "0x00123456", "name": "other"},
                 ],
             }
@@ -33,18 +33,18 @@ def test_vtable_scanner_surfaces_exact_carrier_target():
     assert result["table_count"] == 1
     assert result["slot_count"] == 2
     assert result["hits"] == [
-        {"carrier": "FUN_00758b50", "target": "0x00758b50", "vtable": "0x00aa0000", "slot": 0}
+        {"carrier": "FUN_00765c40", "target": "0x00765c40", "vtable": "0x00aa0000", "slot": 0}
     ]
 
 
-def test_static_scanner_surfaces_little_endian_carrier_pointer():
+def test_static_scanner_surfaces_new_little_endian_carrier_pointer():
     module = load_module()
     rows = [
         json.dumps({
             "address": "0x00bb0000",
             "data_type": "demo",
             "length": 8,
-            "raw_hex": "00000000508b7500",
+            "raw_hex": "00000000405c7600",
         })
     ]
     result = module.scan_static_records(rows)
@@ -53,8 +53,8 @@ def test_static_scanner_surfaces_little_endian_carrier_pointer():
     assert result["raw_hex_bytes_total"] == 8
     assert result["hits"] == [
         {
-            "carrier": "FUN_00758b50",
-            "target": "0x00758b50",
+            "carrier": "FUN_00765c40",
+            "target": "0x00765c40",
             "record_address": "0x00bb0000",
             "data_type": "demo",
             "byte_offset": 4,
@@ -65,7 +65,8 @@ def test_static_scanner_surfaces_little_endian_carrier_pointer():
 def test_checked_evidence_pins_empty_static_surface_and_fail_closed_gates():
     data = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     assert data["format"] == "SHIFT.P1D.Slot3ExactCarrierStaticPointerSurface/1"
-    assert data["carrier_set"]["count"] == 15
+    assert data["carrier_set"]["count"] == 16
+    assert data["carrier_set"]["rows"][-1] == {"name": "FUN_00765c40", "address": "0x00765c40"}
     assert data["vtable_surface"]["candidate_table_count"] == 2533
     assert data["vtable_surface"]["slot_count"] == 22416
     assert data["vtable_surface"]["exact_carrier_target_hit_count"] == 0
