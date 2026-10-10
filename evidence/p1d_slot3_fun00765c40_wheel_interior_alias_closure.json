@@ -1,0 +1,116 @@
+{
+  "adjudication": {
+    "callee_created_aliases_ruled_out": false,
+    "external_provider_count": 7,
+    "fun00758ad0_consumes_hdvehicle_receiver": false,
+    "fun00765c40_selected_slot3_child_pointer_forward_found": false,
+    "fun00765c40_selected_slot3_interior_alias_reached": true,
+    "fun00765c40_selected_slot3_interior_persistent_escape_found": false,
+    "fun00765c40_transient_stack_pointer_copy_found": true,
+    "fun00765c40_transient_stack_pointer_copy_reaches_callee": false,
+    "fun00765c40_wheel_678_interior_alias_subset_complete": true,
+    "machine_register_alias_storage_ruled_out": false,
+    "other_fun00765c40_derived_aliases_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "runtime_generated_pointer_stores_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_transfer_adjudicates": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "child_pointer_load": {
+    "branch_a_site": "0x00765cfc",
+    "branch_b_site": "0x00765d83",
+    "child_pointer_forward_to_call_found": false,
+    "child_pointer_store_found": false,
+    "expression": "[wheel+0x678-0x258] = [wheel+0x420]",
+    "selected_slot3_child_field": "HDVehicle+0x27a0 = wheel+0x420"
+  },
+  "format": "SHIFT.P1D.Slot3Fun00765c40WheelInteriorAliasClosure/1",
+  "limits": [
+    "This closes only the two branch-equivalent wheel+0x678 interior-pointer loops in FUN_00765c40 and the immediate scalar-call boundary.",
+    "The branch-B push of the interior pointer is a transient stack scratch copy that is overwritten before FUN_00758ad0; it is recorded rather than silently discarded.",
+    "Other FUN_00765c40 derived pointers, runtime/generated pointers, callbacks, indirect entry and callee-created aliases remain open."
+  ],
+  "next_step": "Inventory the remaining FUN_00765c40 LEA-derived pointer families after 0x00765df2 and classify which are wheel-relative, HDVehicle-local, BODY-child, stack-only, or callee-facing before composing the carrier-level register/storage gate.",
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "scalar_call_ecx": {
+    "callee": "FUN_00758ad0",
+    "callee_ecx_overwrite": "lea ecx,[ebp+0x8]",
+    "callee_ecx_overwrite_site": "0x00758adb",
+    "callee_incoming_ecx_read_before_overwrite": false,
+    "caller_sites": [
+      "0x00765d08",
+      "0x00765da8"
+    ],
+    "caller_value": "ECX=ESI=HDVehicle",
+    "hdvehicle_pointer_consumed_as_object_receiver": false
+  },
+  "scope": {
+    "branch_a": {
+      "end_exclusive": "0x00765d67",
+      "instruction_count": 43,
+      "machine_byte_count": 137,
+      "machine_bytes_sha256": "121f38a8c68794ca54bbae3e21f06628e002bc35f06c4803f77358d8e8c37012",
+      "start": "0x00765cde"
+    },
+    "branch_b": {
+      "end_exclusive": "0x00765df2",
+      "instruction_count": 44,
+      "machine_byte_count": 139,
+      "machine_bytes_sha256": "397e90320df096bfb209a003e4bed7e8b4354a8640dc81b971728874e07ce887",
+      "start": "0x00765d67"
+    },
+    "scalar_callee_prefix": {
+      "end_exclusive": "0x00758ade",
+      "function": "FUN_00758ad0",
+      "instruction_count": 6,
+      "machine_byte_count": 14,
+      "machine_bytes_sha256": "890d669a54d968f9d24ea7ab54bbe8d3ff20317bedb966ffc346250654629882",
+      "start": "0x00758ad0"
+    }
+  },
+  "transient_stack_alias": {
+    "callee": "FUN_00758ad0",
+    "instruction": "push ecx",
+    "next_call_site": "0x00765dcc",
+    "overwrite_instruction": "fstp DWORD PTR [esp]",
+    "overwrite_site": "0x00765dc9",
+    "persistent_escape": false,
+    "pointer_reaches_callee_stack_argument": false,
+    "site": "0x00765da4",
+    "value_at_site": "wheel+0x678 interior pointer"
+  },
+  "upstream_contracts": [
+    "SHIFT.P1D.Slot3Fun00765c40CarrierHandoff/1"
+  ],
+  "version": 1,
+  "wheel_interior_alias": {
+    "per_wheel_offset": "+0x678",
+    "persistent_or_nonlocal_pointer_store_found": false,
+    "selected_slot3_receiver": "HDVehicle+0x29f8 = wheel+0x678",
+    "selected_slot3_write_offsets": [
+      "HDVehicle+0x29f0 = wheel+0x670 qword",
+      "HDVehicle+0x29f8 = wheel+0x678 qword"
+    ],
+    "selected_target_overlap": false,
+    "stack_local_pointer_store_sites": [
+      "0x00765ce4",
+      "0x00765d5d",
+      "0x00765d6d",
+      "0x00765ded"
+    ],
+    "stack_local_slot": "[ebp-0xc]",
+    "vehicle_relative_offsets": [
+      "+0x0a78",
+      "+0x14f8",
+      "+0x1f78",
+      "+0x29f8"
+    ]
+  }
+}
