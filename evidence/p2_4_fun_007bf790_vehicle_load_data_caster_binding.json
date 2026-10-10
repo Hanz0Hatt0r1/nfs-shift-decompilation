@@ -1,0 +1,57 @@
+{
+  "format": "SHIFT.Fun007bf790VehicleLoadDataCasterBinding/1",
+  "ready": true,
+  "platform_authority": "PC retail 1.02",
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "vehicle_load_data_ownership_contract": "SHIFT.Fun007618f0VehicleLoadDataOwnership/1",
+    "cdf_layout_contract": "SHIFT.VehicleCDFRuntime/1",
+    "caster_materializer_contract": "SHIFT.Fun007bf790CasterRecordMaterialization/1",
+    "integer_conversion_contract": "SHIFT.Fun00901310Cvttsd2si/1"
+  },
+  "owner_provenance": {
+    "owner": "HDVehicle",
+    "vehicle_load_data_pointer_offset": "0x66b4",
+    "allocation_size": "0x3848",
+    "allocation_constructor": "FUN_007c3170",
+    "selected_bmw_resource_path": "vehicles\\physics\\chassis\\bmw_m3_e36.cdf",
+    "selected_bmw_cdf_sha256": "bbee83f0d2fdcbfc2bbd62ddb2a10bf6fed71bb1b4fa78f303a4730d038b970d"
+  },
+  "caster_layout": {
+    "left_range_offsets": ["0x1e8", "0x1f0", "0x1f8"],
+    "left_setting_offset": "0x3d8",
+    "right_range_offsets": ["0x200", "0x208", "0x210"],
+    "right_setting_offset": "0x3e0",
+    "scalar_encoding": "little-endian IEEE-754 f64",
+    "minimum_snapshot_size": "0x3e8"
+  },
+  "native_contract": {
+    "vehicle_load_data_byte_snapshot_binding_internalized": true,
+    "caster_offset_reads_internalized": true,
+    "little_endian_f64_decode_internalized": true,
+    "left_right_caster_pair_input_internalized": true,
+    "downstream_caster_materialization_composed": true,
+    "opaque_caster_scalar_inputs_required": false,
+    "prior_record_counts_remain_explicit": true
+  },
+  "validation": {
+    "null_snapshot_rejected": true,
+    "short_snapshot_rejected": true,
+    "non_finite_caster_source_rejected": true,
+    "unaligned_host_pointer_casts_used": false,
+    "host_endianness_assumed": false
+  },
+  "limits": {
+    "HDVehicle_pointer_dereference_internalized": false,
+    "VehicleLoadData_snapshot_lifetime_internalized": false,
+    "retail_CDF_binary_decode_internalized_in_native_runtime": false,
+    "selected_BMW_caster_numeric_values_promoted": false,
+    "positive_qword_producer_family_complete": false,
+    "FUN_007584f0_computed_payloads_complete": false,
+    "residual_producer_promotion_bit_set": false,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_provider_removed": false,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Bind the authoritative VehicleLoadData snapshot lifetime into the selected native vehicle session (or source-back selected BMW caster values from the pinned retail CDF); do not promote CDF values without resource proof."
+}
