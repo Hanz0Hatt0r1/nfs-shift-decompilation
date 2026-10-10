@@ -6,8 +6,8 @@ import argparse
 import json
 from pathlib import Path
 
-FORMAT = "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/2"
-SUPERSEDES = "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/1"
+FORMAT = "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/3"
+SUPERSEDES = "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/2"
 EXPECTED = {
     "thread": "SHIFT.P1B.HDVehicle4330ThreadStartCallbackSurface/1",
     "nonthread": "SHIFT.P1B.HDVehicle4330NonThreadCallbackClosure/1",
@@ -15,10 +15,11 @@ EXPECTED = {
     "qsort": "SHIFT.P1B.HDVehicle4330QsortCallbackSurface/1",
     "winmm": "SHIFT.P1B.HDVehicle4330WinMMCallbackSurface/1",
     "unhandled": "SHIFT.P1B.HDVehicle4330UnhandledExceptionFilterSurface/1",
+    "fiber": "SHIFT.P1B.HDVehicle4330CreateFiberCallbackSurface/1",
 }
 EXPECTED_PROVIDER_COUNT = 7
-EXPECTED_TOTAL_CALLSITES = 48
-EXPECTED_UNIQUE_ENTRYPOINTS = 33
+EXPECTED_TOTAL_CALLSITES = 49
+EXPECTED_UNIQUE_ENTRYPOINTS = 34
 
 
 def load(path: Path) -> dict:
@@ -33,14 +34,11 @@ def addr(value: str) -> str:
 
 
 def build(thread_path: Path, nonthread_path: Path, massive_path: Path, qsort_path: Path,
-          winmm_path: Path, unhandled_path: Path) -> dict:
+          winmm_path: Path, unhandled_path: Path, fiber_path: Path) -> dict:
     data = {
-        "thread": load(thread_path),
-        "nonthread": load(nonthread_path),
-        "massive": load(massive_path),
-        "qsort": load(qsort_path),
-        "winmm": load(winmm_path),
-        "unhandled": load(unhandled_path),
+        "thread": load(thread_path), "nonthread": load(nonthread_path), "massive": load(massive_path),
+        "qsort": load(qsort_path), "winmm": load(winmm_path), "unhandled": load(unhandled_path),
+        "fiber": load(fiber_path),
     }
     for name, doc in data.items():
         if doc.get("format") != EXPECTED[name]:
@@ -51,7 +49,7 @@ def build(thread_path: Path, nonthread_path: Path, massive_path: Path, qsort_pat
             raise ValueError(f"{name} provider-count drift")
 
     thread, nonthread, massive = data["thread"], data["nonthread"], data["massive"]
-    qsort, winmm, unhandled = data["qsort"], data["winmm"], data["unhandled"]
+    qsort, winmm, unhandled, fiber = data["qsort"], data["winmm"], data["unhandled"], data["fiber"]
 
     zero_hit_checks = [
         (thread["surface"]["exact_4330_carrier_thread_start_count"], thread["adjudication"]["exact_4330_carrier_thread_start_found"]),
@@ -60,6 +58,7 @@ def build(thread_path: Path, nonthread_path: Path, massive_path: Path, qsort_pat
         (qsort["surface"]["exact_4330_carrier_comparator_count"], qsort["adjudication"]["exact_4330_carrier_reachable_via_qsort"]),
         (winmm["surface"]["exact_4330_carrier_callback_count"], winmm["adjudication"]["exact_4330_carrier_reachable_via_winmm"]),
         (unhandled["surface"]["exact_4330_carrier_filter_count"], unhandled["adjudication"]["exact_4330_carrier_reachable_via_unhandled_exception_filter"]),
+        (fiber["surface"]["exact_4330_carrier_start_routine_count"], fiber["adjudication"]["exact_4330_carrier_reachable_via_createfiber"]),
     ]
     if any(count != 0 or found is not False for count, found in zero_hit_checks):
         raise ValueError("bounded callback exact-carrier intersection drift")
@@ -71,6 +70,7 @@ def build(thread_path: Path, nonthread_path: Path, massive_path: Path, qsort_pat
         qsort["adjudication"]["qsort_callback_surface_complete"],
         winmm["adjudication"]["winmm_callback_surface_complete"],
         unhandled["adjudication"]["set_unhandled_exception_filter_surface_complete"],
+        fiber["adjudication"]["createfiber_callback_surface_complete"],
     ]
     if any(value is not True for value in complete_checks):
         raise ValueError("bounded callback subset reopened")
@@ -88,6 +88,7 @@ def build(thread_path: Path, nonthread_path: Path, massive_path: Path, qsort_pat
         entrypoints.add(addr(row["address"]))
     if unhandled["surface"]["nonnull_filter_registration_count"] != 0:
         raise ValueError("UnhandledExceptionFilter gained a non-null callback")
+    entrypoints.add(addr(fiber["surface"]["start_routine"]))
 
     coverage = [
         {"surface": "CreateThread/__beginthreadex", "physical_callsite_count": thread["surface"]["create_thread_direct_callsite_count"] + thread["surface"]["beginthreadex_direct_callsite_count"], "possible_entrypoint_count": thread["surface"]["resolved_thread_start_count"], "exact_4330_carrier_hit_count": 0},
@@ -96,6 +97,7 @@ def build(thread_path: Path, nonthread_path: Path, massive_path: Path, qsort_pat
         {"surface": "CRT _qsort comparators", "physical_callsite_count": qsort["surface"]["direct_qsort_callsite_count"], "possible_entrypoint_count": qsort["surface"]["possible_comparator_entrypoint_count"], "exact_4330_carrier_hit_count": 0},
         {"surface": "WinMM waveOut/waveIn/timeSetEvent callbacks", "physical_callsite_count": winmm["surface"]["physical_callsite_count"], "possible_entrypoint_count": winmm["surface"]["nonnull_callback_entrypoint_count"], "exact_4330_carrier_hit_count": 0},
         {"surface": "SetUnhandledExceptionFilter", "physical_callsite_count": unhandled["surface"]["direct_callsite_count"], "possible_entrypoint_count": unhandled["surface"]["nonnull_filter_registration_count"], "exact_4330_carrier_hit_count": 0},
+        {"surface": "CreateFiber", "physical_callsite_count": fiber["surface"]["physical_callsite_count"], "possible_entrypoint_count": 1, "exact_4330_carrier_hit_count": 0},
     ]
     total_callsites = sum(row["physical_callsite_count"] for row in coverage)
     if total_callsites != EXPECTED_TOTAL_CALLSITES:
@@ -104,12 +106,9 @@ def build(thread_path: Path, nonthread_path: Path, massive_path: Path, qsort_pat
         raise ValueError(f"unique callback entrypoint count drift: {len(entrypoints)}")
 
     return {
-        "format": FORMAT,
-        "version": 2,
-        "ready": True,
-        "owner": "Process 1B / P1.3B",
+        "format": FORMAT, "version": 3, "ready": True, "owner": "Process 1B / P1.3B",
         "supersedes": SUPERSEDES,
-        "upstream_contracts": [EXPECTED[k] for k in ("thread", "nonthread", "massive", "qsort", "winmm", "unhandled")],
+        "upstream_contracts": [EXPECTED[k] for k in ("thread", "nonthread", "massive", "qsort", "winmm", "unhandled", "fiber")],
         "surface": {
             "closed_surface_count": len(coverage),
             "bounded_callback_capable_callsite_count": total_callsites,
@@ -133,7 +132,7 @@ def build(thread_path: Path, nonthread_path: Path, massive_path: Path, qsort_pat
             "external_provider_count": EXPECTED_PROVIDER_COUNT,
         },
         "limits": [
-            "This composes only six callback/indirect-entry surfaces already proven by dedicated retail contracts.",
+            "This composes only seven callback/indirect-entry surfaces already proven by dedicated retail contracts.",
             "It does not claim that all callback-capable APIs or application-owned wrappers are inventoried.",
             "Generic function-pointer stores/copies, computed or encoded code pointers, vtable-driven runtime registration and other indirect dispatch remain open."
         ],
@@ -143,23 +142,17 @@ def build(thread_path: Path, nonthread_path: Path, massive_path: Path, qsort_pat
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("thread", type=Path)
-    p.add_argument("nonthread", type=Path)
-    p.add_argument("massive", type=Path)
-    p.add_argument("qsort", type=Path)
-    p.add_argument("winmm", type=Path)
-    p.add_argument("unhandled", type=Path)
-    p.add_argument("--output", type=Path)
+    p.add_argument("thread", type=Path); p.add_argument("nonthread", type=Path); p.add_argument("massive", type=Path)
+    p.add_argument("qsort", type=Path); p.add_argument("winmm", type=Path); p.add_argument("unhandled", type=Path)
+    p.add_argument("fiber", type=Path); p.add_argument("--output", type=Path)
     args = p.parse_args()
     try:
-        result = build(args.thread, args.nonthread, args.massive, args.qsort, args.winmm, args.unhandled)
+        result = build(args.thread, args.nonthread, args.massive, args.qsort, args.winmm, args.unhandled, args.fiber)
     except (ValueError, KeyError, json.JSONDecodeError) as exc:
         p.error(str(exc))
     text = json.dumps(result, indent=2, sort_keys=True) + "\n"
-    if args.output:
-        args.output.write_text(text, encoding="utf-8")
-    else:
-        print(text, end="")
+    if args.output: args.output.write_text(text, encoding="utf-8")
+    else: print(text, end="")
     return 0
 
 
