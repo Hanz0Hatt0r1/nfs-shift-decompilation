@@ -1,0 +1,63 @@
+{
+  "adjudication": {
+    "bounded_computed_and_loader_entry_coverage_composed": true,
+    "bounded_computed_or_loader_exact_carrier_hit_found": false,
+    "canonical_call_pop_eip_capture_complete": true,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "noncanonical_nonx87_eip_capture_surface_complete": false,
+    "p1_3_control_producer_complete": false,
+    "pe_loader_published_entry_surface_complete": true,
+    "runtime_callback_registration_ruled_out": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false,
+    "x87_saved_eip_capture_complete": true
+  },
+  "format": "SHIFT.P1B.HDVehicle4330ComputedEntryCoverage/1",
+  "limits": [
+    "This aggregate composes only canonical CALL-next/POP EIP capture, x87 FSTENV/FNSTENV saved-EIP extraction, and PE loader-published entry surfaces.",
+    "Other noncanonical non-x87 address synthesis, transformed constants, copied/encoded pointers, runtime patching and opaque indirect dispatch remain open.",
+    "The sole canonical CALL-next/POP candidate derives the .secu base, not an exact carrier pointer."
+  ],
+  "next_step": "Bound noncanonical non-x87 code-address synthesis and runtime copied/encoded exact-carrier pointer flows before promoting computed-pointer or indirect-entry gates.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "classes": [
+      {
+        "candidate_count": 1,
+        "class": "canonical CALL-next/POP EIP capture",
+        "derived_identity": ".secu section base",
+        "derived_value": "0x00d31000",
+        "exact_carrier_hit_count": 0
+      },
+      {
+        "class": "x87 FSTENV/FNSTENV saved-EIP extraction",
+        "decoded_site_count": 4,
+        "exact_carrier_hit_count": 0,
+        "real_env_save_instruction_count": 2,
+        "saved_eip_extraction_found": false
+      },
+      {
+        "class": "PE loader-published entry surfaces",
+        "entrypoint_va": "0x0090488a",
+        "exact_carrier_hit_count": 0,
+        "export_function_count": 509,
+        "load_config_present": false,
+        "tls_callback_count": 0
+      }
+    ],
+    "closed_computed_or_loader_entry_class_count": 3,
+    "exact_carrier_entry_hit_count": 0
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330CanonicalEipCaptureSurface/1",
+    "SHIFT.P1B.HDVehicle4330X87EipCaptureSurface/1",
+    "SHIFT.P1B.HDVehicle4330PeLoaderEntrySurface/1"
+  ],
+  "version": 1
+}
