@@ -1,0 +1,57 @@
+{
+  "adjudication": {
+    "cumulative_resolved_external_caller_count": 4,
+    "cumulative_resolved_external_callsite_count": 8,
+    "external_caller_tranche2_complete": true,
+    "external_provider_count": 7,
+    "external_receiver_provenance_complete": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "remaining_external_caller_count": 3,
+    "remaining_external_callers": [
+      "FUN_00aa2850",
+      "Unwind@00a7063f",
+      "Unwind@00a72322"
+    ],
+    "tranche2_preexisting_4330_alias_found": false
+  },
+  "authority": {
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_machine_transfer_adjudicates": true,
+    "sqlite_role": "direct-call inventory/fingerprint cross-check only"
+  },
+  "format": "SHIFT.P1B.HDVehicle4330ExternalCallerTranche2/1",
+  "fun_0074da70": {
+    "actual_receiver": "literal ECX=0x00c13700 HDVehicle root",
+    "classification": "exact-root entry to an already-proven root carrier, not a pre-existing +0x4330 alias",
+    "preexisting_hdvehicle_4330_alias_forwarded": false,
+    "site": "0x0074dadf -> FUN_0076df50"
+  },
+  "fun_00795d60": {
+    "actual_receiver": "stack local EBP-0x238c",
+    "caller_param3_argument": "LEA EAX,[EBP-0x238c]; PUSH EAX",
+    "only_direct_caller": "0x007990ed in FUN_00798df0",
+    "preexisting_hdvehicle_4330_alias_forwarded": false,
+    "site": "0x007973fe -> FUN_00771db0",
+    "source_parameter": "FUN_00795d60 param3 loaded from [EBP+8]",
+    "target_exact_4330_parameter": "ECX"
+  },
+  "limits": [
+    "This closes only FUN_0074da70 and FUN_00795d60 from the seven-caller direct frontier.",
+    "Three tiny callers remain, including two Ghidra Unwind@ funclets that require enclosing-frame provenance rather than name-based rejection.",
+    "Indirect entry and runtime-generated/copied pointer paths remain open."
+  ],
+  "next_step": "Close FUN_00aa2850 and establish enclosing-frame provenance for Unwind@00a7063f / Unwind@00a72322; then promote direct external receiver provenance only if all three close.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330ExternalCallerTranche1/1",
+    "SHIFT.HDVehicle64e8Large4330ConsumerPersistenceClosure/1"
+  ],
+  "version": 1
+}
