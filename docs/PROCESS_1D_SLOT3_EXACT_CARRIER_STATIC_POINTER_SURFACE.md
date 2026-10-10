@@ -1,6 +1,6 @@
 # Process 1D — exact-carrier static pointer surface
 
-This P1.3D slice bounds two static pointer-registration avenues for the 15 already-proven exact HDVehicle/wheel carrier functions.
+This P1.3D slice bounds two static pointer-registration avenues for the **16** already-proven exact HDVehicle/wheel carrier functions. The set includes `FUN_00765c40` through merged `SHIFT.P1D.Slot3Fun00765c40CarrierHandoff/1`.
 
 Inputs are the pinned retail Ghidra candidate exports:
 
@@ -22,7 +22,7 @@ The vtable candidate inventory contains:
 ```text
 2,533 candidate vtables
 22,416 slots
-0 slots targeting any of the 15 exact carriers
+0 slots targeting any of the 16 exact carriers
 ```
 
 The static-table export contains:
@@ -31,7 +31,7 @@ The static-table export contains:
 55,066 records
 956,464 declared bytes
 684,472 raw_hex bytes available for exact byte scanning
-0 little-endian 32-bit absolute pointers to any of the 15 exact carriers
+0 little-endian 32-bit absolute pointers to any of the 16 exact carriers
 ```
 
 This closes only these two exported static candidate subsets. It means the current Ghidra vtable candidates do not install an exact carrier as a slot target and the current static-table candidate records do not contain a literal absolute pointer to one of those carriers.
