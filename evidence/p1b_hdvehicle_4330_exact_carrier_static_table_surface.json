@@ -1,0 +1,62 @@
+{
+  "format": "SHIFT.P1B.HDVehicle4330ExactCarrierStaticTableSurface/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1B / P1.3B",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "static_tables_sha256": "798c426ef160d82ea297a088a52e737a7715febc55be631e63afa02390fc5bc2",
+    "export_is_navigation_crosscheck_only": true
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8RootDerived4330MaterializerPersistenceClosure/1",
+    "SHIFT.HDVehicle64e8Large4330ConsumerPersistenceClosure/1",
+    "SHIFT.P1B.HDVehicle4330ExactCarrierVtableSurface/1"
+  ],
+  "carrier_set": {
+    "count": 15,
+    "rows": [
+      {"name":"FUN_00769520","address":"0x00769520"},
+      {"name":"FUN_0076b130","address":"0x0076b130"},
+      {"name":"FUN_0076df50","address":"0x0076df50"},
+      {"name":"FUN_00768a4d","address":"0x00768a4d"},
+      {"name":"FUN_00756050","address":"0x00756050"},
+      {"name":"FUN_00772200","address":"0x00772200"},
+      {"name":"FUN_00772570","address":"0x00772570"},
+      {"name":"FUN_007c3b00","address":"0x007c3b00"},
+      {"name":"FUN_0076b280","address":"0x0076b280"},
+      {"name":"FUN_007618f0","address":"0x007618f0"},
+      {"name":"FUN_00769640","address":"0x00769640"},
+      {"name":"FUN_007567a0","address":"0x007567a0"},
+      {"name":"FUN_00756bb0","address":"0x00756bb0"},
+      {"name":"FUN_00771db0","address":"0x00771db0"},
+      {"name":"FUN_00771e10","address":"0x00771e10"}
+    ],
+    "semantic_identity_source": "merged exact HDVehicle+0x4330 materializer/consumer retail machine contracts"
+  },
+  "static_table_surface": {
+    "record_count": 55066,
+    "declared_length_total": 956464,
+    "raw_hex_bytes_total": 684472,
+    "pointer_encoding": "little-endian 32-bit absolute VA",
+    "exact_carrier_pointer_hit_count": 0,
+    "hits": []
+  },
+  "adjudication": {
+    "exact_4330_carrier_static_table_literal_pointer_subset_complete": true,
+    "static_table_exact_carrier_pointer_found": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "callee_created_4330_aliases_ruled_out": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only literal little-endian 32-bit absolute carrier pointers inside raw bytes exported for Ghidra static-table candidates.",
+    "The static-table export is finite and does not cover runtime-generated/copied/encoded pointers, computed destinations, or arbitrary heap/global writes.",
+    "Carrier identity is supplied by merged retail machine contracts, not address coincidence in the export."
+  ],
+  "next_step": "Trace runtime-generated/copied indirect entry and non-root-derived HDVehicle+0x4330 data aliases before changing the manager identity gate."
+}
