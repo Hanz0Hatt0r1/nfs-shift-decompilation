@@ -1,0 +1,83 @@
+{
+  "adjudication": {
+    "callee_created_aliases_ruled_out": false,
+    "external_provider_count": 7,
+    "fun00765c40_selected_slot3_wheel_7a8_alias_reached": true,
+    "fun00765c40_selected_slot3_wheel_7a8_pointer_escape_found": false,
+    "fun00765c40_wheel_7a8_register_alias_subset_complete": true,
+    "fun00765c40_wheel_7a8_selected_target_writer_found": false,
+    "machine_register_alias_storage_ruled_out": false,
+    "other_fun00765c40_derived_aliases_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "runtime_generated_pointer_stores_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_transfer_adjudicates": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1D.Slot3Fun00765c40Wheel7a8AliasClosure/1",
+  "limits": [
+    "This closes only the register-only wheel+0x7a8 four-iteration loop at 0x00765fbe/0x00765ff1..0x0076607f.",
+    "Vehicle-local and physics-structure pointers later in FUN_00765c40 are not reclassified as wheel aliases without separate evidence.",
+    "Runtime/generated pointers, callbacks, indirect entry and callee-created aliases remain open."
+  ],
+  "next_step": "Classify the remaining post-0x00766081 FUN_00765c40 derived pointer families (+0x3430/+0x35c8/+0x35f8/+0x36e0/+0x6730) by exact storage/callee lifetime, without treating numeric proximity as wheel identity.",
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "scope": {
+    "init": {
+      "end_exclusive": "0x00765fcd",
+      "instruction_count": 4,
+      "machine_byte_count": 15,
+      "machine_bytes_sha256": "bee86cb6900505f103c284f893576dbdda0fd9b0a5ae6ef3f509e3e70044ddce",
+      "start": "0x00765fbe"
+    },
+    "loop": {
+      "end_exclusive": "0x00766081",
+      "instruction_count": 55,
+      "machine_byte_count": 144,
+      "machine_bytes_sha256": "66ef07bd668d00b964a16c782d83c40dedca8fd156b057a8de617487aecb1de4",
+      "start": "0x00765ff1"
+    }
+  },
+  "upstream_contracts": [
+    "SHIFT.P1D.Slot3Fun00765c40CarrierHandoff/1"
+  ],
+  "version": 1,
+  "wheel_alias": {
+    "direct_call_count": 0,
+    "init_instruction": "lea ecx,[esi+0xba8]",
+    "init_site": "0x00765fbe",
+    "per_wheel_offset": "+0x7a8",
+    "pointer_push_found": false,
+    "pointer_store_found": false,
+    "selected_slot3_alias": "HDVehicle+0x2b28 = wheel+0x7a8",
+    "stride_instruction": "add ecx,0xa80",
+    "stride_site": "0x00766062",
+    "vehicle_relative_aliases": [
+      "+0x0ba8",
+      "+0x1628",
+      "+0x20a8",
+      "+0x2b28"
+    ]
+  },
+  "writes": {
+    "machine_forms": [
+      "[ecx-0xa88] qword",
+      "[ecx-0xa80] qword"
+    ],
+    "per_wheel_offsets": [
+      "+0x7a0 qword",
+      "+0x7a8 qword"
+    ],
+    "selected_slot3_vehicle_relative_offsets": [
+      "+0x2b20 qword",
+      "+0x2b28 qword"
+    ],
+    "selected_target_overlap": false
+  }
+}
