@@ -13,94 +13,37 @@
     "remaining_callback_api_families_ruled_out": false,
     "runtime_callback_registration_ruled_out": false
   },
-  "format": "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/2",
+  "format": "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/3",
   "limits": [
-    "This composes only six callback/indirect-entry surfaces already proven by dedicated retail contracts.",
+    "This composes only seven callback/indirect-entry surfaces already proven by dedicated retail contracts.",
     "It does not claim that all callback-capable APIs or application-owned wrappers are inventoried.",
     "Generic function-pointer stores/copies, computed or encoded code pointers, vtable-driven runtime registration and other indirect dispatch remain open."
   ],
   "next_step": "Use this aggregate as the no-duplication baseline, then inventory remaining finite callback API families and generic function-pointer stores/copies before promoting global indirect-entry gates.",
   "owner": "Process 1B / P1.3B",
   "ready": true,
-  "supersedes": "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/1",
+  "supersedes": "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/2",
   "surface": {
-    "bounded_callback_capable_callsite_count": 48,
-    "closed_surface_count": 6,
+    "bounded_callback_capable_callsite_count": 49,
+    "closed_surface_count": 7,
     "coverage": [
-      {
-        "exact_4330_carrier_hit_count": 0,
-        "physical_callsite_count": 10,
-        "possible_entrypoint_count": 9,
-        "surface": "CreateThread/__beginthreadex"
-      },
-      {
-        "exact_4330_carrier_hit_count": 0,
-        "physical_callsite_count": 11,
-        "possible_entrypoint_count": 3,
-        "surface": "selected Win32/Winsock non-thread callbacks"
-      },
-      {
-        "exact_4330_carrier_hit_count": 0,
-        "physical_callsite_count": 2,
-        "possible_entrypoint_count": 2,
-        "surface": "FUN_0061cdf0 Massive callback wrapper"
-      },
-      {
-        "exact_4330_carrier_hit_count": 0,
-        "physical_callsite_count": 16,
-        "possible_entrypoint_count": 17,
-        "surface": "CRT _qsort comparators"
-      },
-      {
-        "exact_4330_carrier_hit_count": 0,
-        "physical_callsite_count": 6,
-        "possible_entrypoint_count": 2,
-        "surface": "WinMM waveOut/waveIn/timeSetEvent callbacks"
-      },
-      {
-        "exact_4330_carrier_hit_count": 0,
-        "physical_callsite_count": 3,
-        "possible_entrypoint_count": 0,
-        "surface": "SetUnhandledExceptionFilter"
-      }
+      {"exact_4330_carrier_hit_count":0,"physical_callsite_count":10,"possible_entrypoint_count":9,"surface":"CreateThread/__beginthreadex"},
+      {"exact_4330_carrier_hit_count":0,"physical_callsite_count":11,"possible_entrypoint_count":3,"surface":"selected Win32/Winsock non-thread callbacks"},
+      {"exact_4330_carrier_hit_count":0,"physical_callsite_count":2,"possible_entrypoint_count":2,"surface":"FUN_0061cdf0 Massive callback wrapper"},
+      {"exact_4330_carrier_hit_count":0,"physical_callsite_count":16,"possible_entrypoint_count":17,"surface":"CRT _qsort comparators"},
+      {"exact_4330_carrier_hit_count":0,"physical_callsite_count":6,"possible_entrypoint_count":2,"surface":"WinMM waveOut/waveIn/timeSetEvent callbacks"},
+      {"exact_4330_carrier_hit_count":0,"physical_callsite_count":3,"possible_entrypoint_count":0,"surface":"SetUnhandledExceptionFilter"},
+      {"exact_4330_carrier_hit_count":0,"physical_callsite_count":1,"possible_entrypoint_count":1,"surface":"CreateFiber"}
     ],
     "exact_4330_carrier_entrypoint_hit_count": 0,
     "possible_entrypoints": [
-      "0x00431dd0",
-      "0x004ba980",
-      "0x004baa90",
-      "0x004bab80",
-      "0x004bac50",
-      "0x004e5d80",
-      "0x004efbd0",
-      "0x0051ce10",
-      "0x0051ffd0",
-      "0x0053c250",
-      "0x005d5f40",
-      "0x005fdd70",
-      "0x005ff1e0",
-      "0x005ff710",
-      "0x0060b457",
-      "0x0061cd93",
-      "0x0061d300",
-      "0x00626140",
-      "0x00634870",
-      "0x00649b10",
-      "0x006553e0",
-      "0x00655410",
-      "0x00771320",
-      "0x007a7970",
-      "0x0087a730",
-      "0x00907e4f",
-      "0x009396c0",
-      "0x0099955b",
-      "0x009a8d8f",
-      "0x009aede8",
-      "0x009b597a",
-      "0x009f7ac0",
-      "0x00a2a370"
+      "0x00431dd0","0x004ba980","0x004baa90","0x004bab80","0x004bac50","0x004e5d80","0x004efbd0",
+      "0x0051ce10","0x0051ffd0","0x0053c250","0x005d5f40","0x005fdd70","0x005ff1e0","0x005ff710",
+      "0x0060b457","0x0061cd93","0x0061d300","0x00626140","0x00634870","0x00649b10","0x006553e0","0x00655410",
+      "0x00771320","0x007a7970","0x0087a730","0x00907e4f","0x009396c0","0x0099955b","0x009a8d8f","0x009aede8",
+      "0x009b597a","0x009f7ac0","0x00a2a370","0x00a62710"
     ],
-    "unique_possible_callback_entrypoint_count": 33
+    "unique_possible_callback_entrypoint_count": 34
   },
   "upstream_contracts": [
     "SHIFT.P1B.HDVehicle4330ThreadStartCallbackSurface/1",
@@ -108,7 +51,8 @@
     "SHIFT.P1B.HDVehicle4330MassiveThreadCallbackWrapper/1",
     "SHIFT.P1B.HDVehicle4330QsortCallbackSurface/1",
     "SHIFT.P1B.HDVehicle4330WinMMCallbackSurface/1",
-    "SHIFT.P1B.HDVehicle4330UnhandledExceptionFilterSurface/1"
+    "SHIFT.P1B.HDVehicle4330UnhandledExceptionFilterSurface/1",
+    "SHIFT.P1B.HDVehicle4330CreateFiberCallbackSurface/1"
   ],
-  "version": 2
+  "version": 3
 }
