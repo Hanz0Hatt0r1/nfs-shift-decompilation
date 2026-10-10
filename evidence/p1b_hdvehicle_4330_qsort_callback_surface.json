@@ -1,0 +1,57 @@
+{
+  "adjudication": {
+    "exact_4330_carrier_reachable_via_qsort": false,
+    "external_provider_count": 7,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "qsort_callback_surface_complete": true,
+    "runtime_callback_registration_ruled_out": false
+  },
+  "authority": {
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "platform": "PC retail 1.02",
+    "shift_exe_c_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "sqlite_and_source_are_navigation_crosscheck": true
+  },
+  "format": "SHIFT.P1B.HDVehicle4330QsortCallbackSurface/1",
+  "limits": [
+    "This closes only comparator callbacks reachable through the 16 direct CRT _qsort callsites in the pinned SQLite/source pair.",
+    "The FUN_004bad20 dynamic comparator is finite because the local comparator variable is assigned only FUN_004ba980 or FUN_004bac50 on paths reaching the shared qsort call.",
+    "Other application callback wrappers, CRT callback mechanisms, generic function-pointer stores/copies and computed indirect entry remain open."
+  ],
+  "next_step": "Continue finite CRT/application callback mechanisms and generic runtime function-pointer stores/copies; keep global callback and manager identity gates fail-closed.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "direct_qsort_callsite_count": 16,
+    "exact_4330_carrier_comparator_count": 0,
+    "possible_comparator_entrypoint_count": 17,
+    "possible_comparator_entrypoints": [
+      {"address": "0x00431dd0", "name": "FUN_00431dd0"},
+      {"address": "0x004ba980", "name": "FUN_004ba980"},
+      {"address": "0x004baa90", "name": "FUN_004baa90"},
+      {"address": "0x004bab80", "name": "FUN_004bab80"},
+      {"address": "0x004bac50", "name": "FUN_004bac50"},
+      {"address": "0x004e5d80", "name": "FUN_004e5d80"},
+      {"address": "0x004efbd0", "name": "FUN_004efbd0"},
+      {"address": "0x0051ce10", "name": "FUN_0051ce10"},
+      {"address": "0x0051ffd0", "name": "FUN_0051ffd0"},
+      {"address": "0x0053c250", "name": "FUN_0053c250"},
+      {"address": "0x00626140", "name": "FUN_00626140"},
+      {"address": "0x00771320", "name": "FUN_00771320"},
+      {"address": "0x007a7970", "name": "FUN_007a7970"},
+      {"address": "0x0087a730", "name": "FUN_0087a730"},
+      {"address": "0x009aede8", "name": "LAB_009aede8"},
+      {"address": "0x009b597a", "name": "LAB_009b597a"},
+      {"address": "0x009f7ac0", "name": "LAB_009f7ac0"}
+    ],
+    "stack_materialized_comparator": "LAB_009aede8",
+    "stack_materialized_comparator_site": "0x009aeec0",
+    "switch_resolved_dynamic_choices": ["FUN_004ba980", "FUN_004bac50"],
+    "switch_resolved_dynamic_comparator_site": "0x004baeff"
+  },
+  "version": 1
+}
