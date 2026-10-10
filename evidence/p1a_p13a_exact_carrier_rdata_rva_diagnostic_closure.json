@@ -1,0 +1,104 @@
+{
+  "format": "SHIFT.P1A.P13AExactCarrierRdataRvaDiagnosticClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "upstream_contract": "SHIFT.P1A.P13AExactCarrierTextRvaLiteralClosure/1",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates": true
+  },
+  "target_diagnostic": {
+    "carrier": "FUN_0076d100",
+    "carrier_va": "0x0076d100",
+    "carrier_rva": "0x0036d100",
+    "raw_match_bytes": "00d13600"
+  },
+  "tables": [
+    {
+      "name": "table_a",
+      "table_start": "0x00ad42c8",
+      "table_end": "0x00ad46c8",
+      "table_size": 1024,
+      "element_width": 4,
+      "element_count": 256,
+      "table_sha256": "85f4d25300d1437af965cebc94bf108d075b6dccff375290da83bc73aac2fb7e",
+      "nondecreasing_u32": true,
+      "consumer": "0x00597db0",
+      "consumer_proof": "FUN_00597db0 computes (end-start)>>2 and compares DWORD PTR [base+index*4]",
+      "diagnostic_va": "0x00ad443f",
+      "diagnostic_rva_bytes": "00d13600",
+      "diagnostic_unaligned_u32_value": "0x0036d100",
+      "diagnostic_offset_from_table_start": "0x177",
+      "diagnostic_offset_mod_element_width": 3,
+      "previous_aligned_element_offset": "0x174",
+      "previous_aligned_element_value": "0x000032b7",
+      "next_aligned_element_offset": "0x178",
+      "next_aligned_element_value": "0x000036d1",
+      "diagnostic_is_aligned_table_element": false,
+      "classification": "cross-DWORD byte sequence inside machine-consumed 256-element u32 table"
+    },
+    {
+      "name": "table_b",
+      "table_start": "0x00b66330",
+      "table_end": "0x00b66730",
+      "table_size": 1024,
+      "element_width": 4,
+      "element_count": 256,
+      "table_sha256": "85f4d25300d1437af965cebc94bf108d075b6dccff375290da83bc73aac2fb7e",
+      "nondecreasing_u32": true,
+      "consumer": "0x00a485a0",
+      "consumer_proof": "FUN_00a485a0 computes (end-start)>>2 and compares DWORD PTR [base+index*4]",
+      "diagnostic_va": "0x00b664a7",
+      "diagnostic_rva_bytes": "00d13600",
+      "diagnostic_unaligned_u32_value": "0x0036d100",
+      "diagnostic_offset_from_table_start": "0x177",
+      "diagnostic_offset_mod_element_width": 3,
+      "previous_aligned_element_offset": "0x174",
+      "previous_aligned_element_value": "0x000032b7",
+      "next_aligned_element_offset": "0x178",
+      "next_aligned_element_value": "0x000036d1",
+      "diagnostic_is_aligned_table_element": false,
+      "classification": "cross-DWORD byte sequence inside machine-consumed 256-element u32 table"
+    }
+  ],
+  "verified_machine_windows": [
+    {"site":"0x0059cd29","bytes":"68c846ad00"},
+    {"site":"0x0059cd2e","bytes":"68c842ad00"},
+    {"site":"0x00597db0","bytes":"8b5424088b4424042bd0c1fa02"},
+    {"site":"0x00597dd0","bytes":"8bcad1f9393488730d83"},
+    {"site":"0x00a485e8","bytes":"ba3067b600"},
+    {"site":"0x00a485ed","bytes":"b93063b600"},
+    {"site":"0x00a485a0","bytes":"8bc12bd0c1fa02568bf285f67e24"},
+    {"site":"0x00a485b5","bytes":"8bd6d1fa3b0c90720d83"}
+  ],
+  "verified_calls": [
+    {"site":"0x0059cd43","target":"0x00597db0"},
+    {"site":"0x00a485f2","target":"0x00a485a0"}
+  ],
+  "adjudication": {
+    "p13a_non_text_exact_carrier_rva_diagnostic_subset_complete": true,
+    "p13a_non_text_exact_carrier_rva_diagnostic_count": 2,
+    "p13a_non_text_exact_carrier_rva_diagnostic_pointer_element_found": false,
+    "p13a_whole_image_raw_exact_carrier_rva_match_subset_complete": true,
+    "p13a_whole_image_raw_exact_carrier_rva_semantic_pointer_hit_found": false,
+    "relocated_or_rva_encoded_carrier_pointers_ruled_out": false,
+    "runtime_callback_registration_ruled_out": false,
+    "incoming_indirect_entry_ruled_out": false,
+    "runtime_generated_or_copied_carrier_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only the two raw FUN_0076d100-RVA byte matches retained by the merged whole-image scan.",
+    "Both matches are machine-proven cross-element byte sequences inside 256xDWORD tables; this does not rule out separately relocated, encoded, reconstructed, copied or runtime-generated carrier pointers.",
+    "The table classification is structural (ordered u32 elements consumed by binary-search-style machine code); no higher-level table meaning is required or claimed.",
+    "No global callback/indirect-entry, stored-or-escaped-alias, slot0/slot1 or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Remove raw exact-carrier absolute-VA/RVA literals from the callback seed frontier and trace relocation records, encoded/reconstructed/runtime-generated carrier pointers, plus selected-wheel data-pointer persistence."
+}
