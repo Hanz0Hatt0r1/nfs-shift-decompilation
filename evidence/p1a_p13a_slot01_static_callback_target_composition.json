@@ -1,0 +1,77 @@
+{
+  "format": "SHIFT.P1A.P13ASlot01StaticCallbackTargetComposition/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01CarrierSurfaceComposition/1",
+    "SHIFT.P1D.Slot3ExactCarrierIndirectCallSurface/1",
+    "SHIFT.P1D.Slot3ExactCarrierStaticPointerSurface/1"
+  ],
+  "authority": {
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "vtables_sha256": "15ca935e5bdca1efe2e6b3cac8eb01d20b54c05c5abf829cdb5903b62e52a7ed",
+    "static_tables_sha256": "798c426ef160d82ea297a088a52e737a7715febc55be631e63afa02390fc5bc2",
+    "exports_are_navigation_crosscheck_only": true,
+    "cross_lane_evidence_consumed_without_reowning": true
+  },
+  "carrier_set": {
+    "count": 16,
+    "rows": [
+      {"name":"FUN_00758b50","address":"0x00758b50"},
+      {"name":"FUN_00755950","address":"0x00755950"},
+      {"name":"FUN_00770e80","address":"0x00770e80"},
+      {"name":"FUN_00755a60","address":"0x00755a60"},
+      {"name":"FUN_00752fc0","address":"0x00752fc0"},
+      {"name":"FUN_00760b50","address":"0x00760b50"},
+      {"name":"FUN_00763570","address":"0x00763570"},
+      {"name":"FUN_00755f80","address":"0x00755f80"},
+      {"name":"FUN_0076d100","address":"0x0076d100"},
+      {"name":"FUN_00758810","address":"0x00758810"},
+      {"name":"FUN_00769ef0","address":"0x00769ef0"},
+      {"name":"FUN_007675f0","address":"0x007675f0"},
+      {"name":"FUN_007682c0","address":"0x007682c0"},
+      {"name":"FUN_00766510","address":"0x00766510"},
+      {"name":"FUN_00758fc0","address":"0x00758fc0"},
+      {"name":"FUN_00765c40","address":"0x00765c40"}
+    ]
+  },
+  "callind_caller_surface": {
+    "whole_index_indirect_call_edge_count": 19500,
+    "exact_carrier_caller_edge_count": 0,
+    "exact_carrier_caller_edges": []
+  },
+  "static_target_surface": {
+    "vtable_candidate_count": 2533,
+    "vtable_slot_count": 22416,
+    "vtable_exact_carrier_target_hit_count": 0,
+    "static_table_record_count": 55066,
+    "static_table_declared_length_total": 956464,
+    "static_table_raw_hex_bytes_total": 684472,
+    "static_pointer_encoding": "little-endian 32-bit absolute VA",
+    "static_table_exact_carrier_pointer_hit_count": 0
+  },
+  "adjudication": {
+    "p13a_exact_carrier_callind_caller_subset_complete": true,
+    "p13a_exact_carrier_callind_caller_edge_found": false,
+    "p13a_exact_carrier_vtable_target_subset_complete": true,
+    "p13a_exact_carrier_static_table_literal_pointer_subset_complete": true,
+    "p13a_exact_carrier_static_target_hit_found": false,
+    "callbacks_registered_outside_carriers_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "global_indirect_dispatch_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The CALLIND result closes only Ghidra-recorded indirect-call edges whose caller is one of the 16 exact carriers.",
+    "The vtable/static-table result closes only the two finite exported static code-pointer inventories and is navigation/cross-check evidence, not semantic object identity.",
+    "Zero static carrier targets does not exclude runtime callback registration, incoming computed indirect entry, copied/encoded code pointers, heap/global pointer stores outside exported records, or selected-wheel data-pointer aliases.",
+    "No global callback/indirect-entry, stored-or-escaped-alias, slot0/slot1 or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Trace runtime callback registration/incoming indirect-entry joins and runtime-generated/copied selected-wheel data pointers; join any positive escape to its consumer before changing global alias gates."
+}
