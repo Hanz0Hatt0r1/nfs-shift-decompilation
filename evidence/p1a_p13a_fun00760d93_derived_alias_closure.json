@@ -1,0 +1,92 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun00760d93_derived_alias_pointer_persistence_found": false,
+    "fun00760d93_derived_alias_selected_target_writer_found": false,
+    "fun00760d93_derived_alias_wheel_root_reconstruction_found": false,
+    "other_derived_aliases_ruled_out": false,
+    "p13a_fun00760d93_derived_alias_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "reconstructed_wheel_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "aliases": {
+    "wheel_420_child": {
+      "callee": "FUN_007538a0",
+      "callee_scalar_writes": ["child+0xd4..+0xf4", "child+0x18/+0x20/+0x28"],
+      "caller": "FUN_00760d93",
+      "exact_child_persistence_found": false,
+      "source": "[wheel+0x420]",
+      "transitive_derived_child_call": "FUN_007ba7e0",
+      "transitive_exact_child_call": "FUN_007ba630",
+      "wheel_root_reconstruction_found": false
+    },
+    "wheel_424_child": {
+      "callee": "FUN_007538a0",
+      "callee_scalar_writes": ["child+0xd4..+0xf4", "child+0x18/+0x20/+0x28"],
+      "caller": "FUN_00760d93",
+      "exact_child_persistence_found": false,
+      "source": "[wheel+0x424]",
+      "transitive_derived_child_call": "FUN_007ba7e0",
+      "transitive_exact_child_call": "FUN_007ba630",
+      "wheel_root_reconstruction_found": false
+    },
+    "wheel_508_interior": {
+      "consumer": "FUN_007b1790 stack param1",
+      "consumer_forwards_pointer": false,
+      "consumer_pointer_persistence_found": false,
+      "consumer_register": "EDI",
+      "source": "wheel+0x508",
+      "wheel_root_reconstruction_found": false
+    },
+    "wheel_9b0_interior": {
+      "consumer": "FUN_00753710 receiver",
+      "consumer_forwards_pointer": false,
+      "consumer_pointer_persistence_found": false,
+      "consumer_register": "ESI",
+      "source": "wheel+0x9b0",
+      "wheel_root_reconstruction_found": false
+    }
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "ranges": {
+      "fun00753710": {"end_exclusive": "0x0075375c", "sha256": "5fbab5956392a1d73e81f20090b28894631d0a9b0f7e130e4c3d6d4401fe0ea0", "size": 76, "start": "0x00753710"},
+      "fun007538a0": {"end_exclusive": "0x0075391e", "sha256": "780fd2c2b532fa18db0c02dc010f4f36d090ae611a0dffb44ee4346f424478c4", "size": 126, "start": "0x007538a0"},
+      "fun00760d93": {"end_exclusive": "0x00760f79", "sha256": "c5dc2f0564fcefd31dab2555f7fa910758739cc9e95a1ac8029f995ea6d088f1", "size": 486, "start": "0x00760d93"},
+      "fun007b1790": {"end_exclusive": "0x007b19e9", "sha256": "44969e5c54b61563c235d2c6fad3da9e062d1184920e30b48c4219552cf23359", "size": 601, "start": "0x007b1790"},
+      "fun007ba630": {"end_exclusive": "0x007ba7de", "sha256": "4d7c11507756faf8213747d354ff9ab30ec1162693286afb69de241718f9080c", "size": 430, "start": "0x007ba630"},
+      "fun007ba7e0": {"end_exclusive": "0x007ba852", "sha256": "c44dac55776ac266f00822c40762b2d452226a043a0bd687209b67d3bbe947a4", "size": 114, "start": "0x007ba7e0"}
+    },
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13ATrampolinedWheelRootLifetime/1"
+  },
+  "format": "SHIFT.P1A.P13AFun00760d93DerivedAliasClosure/1",
+  "limits": [
+    "This closes only derived aliases emitted by the merged FUN_00760d93 trampolined exact-root path: children +0x420/+0x424 and interiors +0x508/+0x9b0.",
+    "FUN_007538a0 forwards the exact child receiver only to complete leaf FUN_007ba630; FUN_007ba7e0 receives the child but immediately derives child+0xd4/+0x18/+0x30 lanes rather than persisting the raw child pointer.",
+    "FUN_007b1790 consumes wheel+0x508 as a stack pointer and never copies/stores/forwards it. FUN_00753710 consumes wheel+0x9b0 as receiver and performs scalar writes only.",
+    "Independent FUN_00757318 interior aliases and callback/indirect surfaces remain open; no global gate is promoted."
+  ],
+  "machine_anchors": {
+    "child420_call": "0x00760dea call 0x7538a0",
+    "child420_callprep": "0x00760de4 mov ecx,DWORD PTR [esi+0x420]",
+    "child420_first": "0x00760dbc mov eax,DWORD PTR [esi+0x420]",
+    "child424_call": "0x00760e2c call 0x7538a0",
+    "child424_callprep": "0x00760e26 mov ecx,DWORD PTR [esi+0x424]",
+    "child424_first": "0x00760dfc mov eax,DWORD PTR [esi+0x424]",
+    "interior508": "0x00760ea3 lea edx,[esi+0x508]",
+    "interior508_call": "0x00760ead call 0x7b1790",
+    "interior508_push": "0x00760ea9 push edx",
+    "interior9b0": "0x00760f22 lea ecx,[esi+0x9b0]",
+    "interior9b0_call": "0x00760f2b call 0x753710"
+  },
+  "next_step": "Close FUN_00757318 interior aliases (+0x5e8/+0x610/+0x638/+0x6a0/+0x6c0), then compose derived-alias coverage.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "version": 1
+}
