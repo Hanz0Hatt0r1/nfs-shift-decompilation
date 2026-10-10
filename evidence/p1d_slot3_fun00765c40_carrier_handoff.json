@@ -1,0 +1,58 @@
+{
+  "format": "SHIFT.P1D.Slot3Fun00765c40CarrierHandoff/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "upstream_contracts": [
+    "SHIFT.Fun00765c40ResidualOwnershipFrontier/1",
+    "SHIFT.Fun00765c40DirectMachineWriteSurface/1",
+    "SHIFT.Fun00752fa0WheelStateMachineProof/1",
+    "SHIFT.Fun007584f0MachineSideEffectProof/1"
+  ],
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_machine_contracts_consumed_not_reowned": true
+  },
+  "carrier": {
+    "function": "FUN_00765c40",
+    "entry": "0x00765c40",
+    "receiver_domain": "HDVehicle",
+    "lifecycle_parent": "FUN_0076d100",
+    "direct_callsite": "0x0076d12b",
+    "previous_p1d_exact_carrier_count": 15,
+    "expanded_p1d_exact_carrier_count": 16
+  },
+  "selected_slot3": {
+    "absolute_target": "HDVehicle+0x28b8",
+    "target_byte_range": ["HDVehicle+0x28b8", "HDVehicle+0x28bf"],
+    "width": "f64/qword"
+  },
+  "write_surface": {
+    "direct_machine_write_surface_complete": true,
+    "direct_target_overlap": false,
+    "callee_mediated_object_side_effects_complete": true,
+    "unclassified_callees": [],
+    "fun00752fa0_target_overlap": false,
+    "fun007584f0_target_overlap": false
+  },
+  "adjudication": {
+    "fun00765c40_exact_hdvehicle_carrier_handoff_complete": true,
+    "fun00765c40_selected_slot3_writer_found": false,
+    "p1d_exact_carrier_set_expanded_to_16": true,
+    "source_storage_replay_for_16_carriers_complete": false,
+    "runtime_generated_pointer_stores_ruled_out": false,
+    "callee_created_aliases_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This consumes the already-complete Process 1/P1A FUN_00765c40 ownership and side-effect contracts; ownership is unchanged.",
+    "The prior 15-carrier source-storage replay is not silently promoted to 16 carriers; FUN_00765c40 source-storage replay remains a separate fail-closed task.",
+    "Runtime/generated pointers, callee-created aliases and unresolved indirect entry remain open."
+  ],
+  "next_step": "Rerun the P1D storage/indirect/static-pointer carrier inventories with FUN_00765c40 included, then continue callee-created/runtime pointer aliases."
+}
