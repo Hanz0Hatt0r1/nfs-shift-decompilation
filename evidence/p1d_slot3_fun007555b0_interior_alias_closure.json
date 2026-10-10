@@ -1,0 +1,53 @@
+{
+  "format": "SHIFT.P1D.Slot3Fun007555b0InteriorAliasClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_bytes_adjudicate": true
+  },
+  "path": {
+    "caller": "FUN_00755950",
+    "callsite": "0x00755983",
+    "callee": "FUN_007555b0",
+    "callee_receiver": "selected wheel+0x80",
+    "selected_slot3_wheel": "HDVehicle+0x2380",
+    "callee_receiver_absolute": "HDVehicle+0x2400",
+    "selected_target_from_wheel": "+0x538",
+    "selected_target_from_callee_receiver": "+0x4b8"
+  },
+  "callee": {
+    "start": "0x007555b0",
+    "size": 364,
+    "instruction_count": 115,
+    "machine_bytes_sha256": "43aff676522a3b6b558980b56e29e289926893d266bf71e063b25d401d1e4881",
+    "receiver_register": "ECX",
+    "receiver_relative_memory_offsets": ["+0x1d0", "+0x1d8", "+0x1e0", "+0x1e8", "+0x1f0", "+0x1f8", "+0x200", "+0x208", "+0x210", "+0x218", "+0x220", "+0x228", "+0x230", "+0x238", "+0x240", "+0x248", "+0x250", "+0x258", "+0x260"],
+    "receiver_relative_write_offsets": ["+0x248", "+0x250", "+0x258", "+0x260"],
+    "selected_target_relative_offset_observed": false,
+    "direct_call_count": 0,
+    "receiver_value_reconstruction_or_mutation_count": 0
+  },
+  "selected_wheel_write_offsets": ["+0x2c8", "+0x2d0", "+0x2d8", "+0x2e0"],
+  "adjudication": {
+    "fun007555b0_wheel_80_interior_alias_subset_complete": true,
+    "fun007555b0_reconstructs_exact_wheel_root": false,
+    "fun007555b0_selected_slot3_target_writer_found": false,
+    "fun007555b0_forwards_interior_or_reconstructed_root_to_callee": false,
+    "other_callee_created_aliases_ruled_out": false,
+    "callee_created_aliases_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only the machine-proven wheel+0x80 interior receiver passed from FUN_00755950 to FUN_007555b0.",
+    "Other interior/child/callee-created aliases remain independent until their receiver identity and complete machine body are bounded.",
+    "No numeric offset coincidence is promoted to selected-wheel identity."
+  ],
+  "next_step": "Close remaining transformed-receiver callees and callee-created aliases, then compose with the 16-carrier source-storage and persistence closures."
+}
