@@ -1,0 +1,49 @@
+{
+  "adjudication": {
+    "cfg_aware_register_loaded_result_lineage_subset_complete": true,
+    "dynamic_getprocaddress_resolution_ruled_out": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "resolver_populated_bounded_storage_surface_complete": true,
+    "resolver_populated_storage_can_hold_exact_internal_p1b_carrier": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "runtime_patching_or_generated_code_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_bytes_are_machine_authority": true,
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_file_size": 8801792
+  },
+  "format": "SHIFT.P1B.HDVehicle4330GetProcAddressRegisterLoadedResultLineage/1",
+  "limits": [
+    "Closes only the seven CFG-aware static IAT-load families. Runtime-created resolver aliases, external function pointers, unrelated runtime-populated tables and opaque helper resolution remain open."
+  ],
+  "next_step": "Compose direct-IAT, wrapper-output and CFG-aware register-loaded result lineage into bounded GetProcAddress storage coverage.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "all_resolved_values_external_dll_exports": true,
+    "exact_internal_p1b_carrier_identity_hit_count": 0,
+    "external_module_count": 6,
+    "families": [
+      {"callsite_count": 2, "distinct_sink_count": 2, "loadsite": "0x0090abf7", "module": "KERNEL32.DLL", "sink_kind": "object_fields"},
+      {"callsite_count": 4, "distinct_sink_count": 4, "loadsite": "0x0090aeac", "module": "KERNEL32.DLL", "sink_kind": "absolute_globals"},
+      {"callsite_count": 5, "distinct_sink_count": 5, "loadsite": "0x0091c0b0", "module": "USER32.DLL", "sink_kind": "encoded_absolute_globals"},
+      {"callsite_count": 2, "distinct_sink_count": 2, "loadsite": "0x0096daa2", "module": "wnaspi32.dll", "sink_kind": "absolute_globals"},
+      {"callsite_count": 6, "distinct_sink_count": 4, "loadsite": "0x00999fe7", "module": "dsound.dll", "sink_kind": "object_fields_with_fallback_overwrite"},
+      {"callsite_count": 67, "distinct_sink_count": 67, "loadsite": "0x009a7e40", "module": "openal32.dll", "sink_kind": "caller_provided_function_table"},
+      {"callsite_count": 3, "distinct_sink_count": 1, "loadsite": "0x00a62354", "module": "gdi32.dll", "sink_kind": "stack_register_helper_transient"}
+    ],
+    "family_count": 7,
+    "openal_table_first_offset": "0x0",
+    "openal_table_last_offset": "0x108",
+    "openal_table_slot_count": 67,
+    "register_loaded_callsite_count": 89
+  },
+  "version": 1
+}
