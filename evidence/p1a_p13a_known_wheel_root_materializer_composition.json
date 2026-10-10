@@ -1,0 +1,159 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_known_materializer_all_four_wheel_slots_covered": true,
+    "p13a_known_materializer_derived_alias_persistent_escape_found": false,
+    "p13a_known_materializer_derived_alias_wheel_root_reconstruction_found": false,
+    "p13a_known_materializer_exact_root_persistent_escape_found": false,
+    "p13a_known_wheel_root_materializer_surface_composed": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "reconstructed_wheel_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "composition_only": true,
+    "machine_proofs_remain_authoritative_upstream": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "bounded_surface": {
+    "derived_alias_count": 9,
+    "derived_alias_group_count": 2,
+    "derived_alias_groups": [
+      {
+        "alias_count": 4,
+        "name": "FUN_00760d93 derived aliases",
+        "persistent_alias_escape_found": false,
+        "source_contract": "SHIFT.P1A.P13AFun00760d93DerivedAliasClosure/1",
+        "wheel_root_reconstruction_found": false
+      },
+      {
+        "alias_count": 5,
+        "name": "FUN_00757318 interior aliases",
+        "persistent_alias_escape_found": false,
+        "source_contract": "SHIFT.P1A.P13AFun00757318InteriorAliasClosure/1",
+        "wheel_root_reconstruction_found": false
+      }
+    ],
+    "exact_root_materializer_families": [
+      {
+        "covered_slots": [
+          0,
+          1
+        ],
+        "kind": "loop+explicit",
+        "name": "slot01_known_materializers",
+        "persistent_exact_root_escape_found": false,
+        "source_contract": "SHIFT.P1A.P13ASlot01WheelRootMaterializationPersistenceHandoff/1"
+      },
+      {
+        "covered_slots": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "kind": "runtime-indexed",
+        "name": "FUN_00757d2c",
+        "persistent_exact_root_escape_found": false,
+        "source_contract": "SHIFT.P1A.P13AFun00757d2cRuntimeIndexedWheelRootPersistence/1"
+      },
+      {
+        "covered_slots": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "kind": "fixed-four-wheel-leaf-handoff",
+        "name": "FUN_007582f0",
+        "persistent_exact_root_escape_found": false,
+        "source_contract": "SHIFT.P1A.P13AFixedWheelRootLeafHandoffs/1",
+        "transient_handoff_count": 4
+      },
+      {
+        "covered_slots": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "kind": "fixed-four-wheel-leaf-handoff",
+        "name": "FUN_0076ed60",
+        "persistent_exact_root_escape_found": false,
+        "source_contract": "SHIFT.P1A.P13AFixedWheelRootLeafHandoffs/1",
+        "transient_handoff_count": 4
+      },
+      {
+        "covered_slots": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "kind": "trampolined",
+        "name": "FUN_007653f9 -> FUN_00760d70/FUN_00760d93",
+        "persistent_exact_root_escape_found": false,
+        "source_contract": "SHIFT.P1A.P13ATrampolinedWheelRootLifetime/1",
+        "transient_handoff_count": 6
+      },
+      {
+        "covered_slots": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "exact_root_forward_count": 1,
+        "kind": "runtime-indexed",
+        "name": "FUN_007572f0/FUN_00757318",
+        "persistent_exact_root_escape_found": false,
+        "source_contract": "SHIFT.P1A.P13AFun007572f0IndexedWheelRootLifetime/1"
+      }
+    ],
+    "exact_root_materializer_family_count": 6,
+    "known_derived_alias_persistent_escape_count": 0,
+    "known_derived_alias_wheel_root_reconstruction_count": 0,
+    "known_exact_root_persistent_escape_count": 0
+  },
+  "format": "SHIFT.P1A.P13AKnownWheelRootMaterializerComposition/1",
+  "limits": [
+    "This is a deterministic composition of seven merged P1.3A contracts; it does not discover new machine paths.",
+    "The composed exact-root materializer families cover all four canonical wheel slots and show no persistent exact-root escape in those bounded families.",
+    "The nine positive derived aliases already emitted by the trampolined/indexed families are also closed for persistence and wheel-root reconstruction within their bounded consumers.",
+    "Unknown materializer families, runtime-generated/copied pointer stores, callbacks, incoming indirect entry and broader stored aliases remain open, so global reconstructed/slot/P1.3 gates stay fail-closed."
+  ],
+  "next_step": "Enumerate residual exact-wheel-root construction/store sites outside this composed known-materializer surface, then join any positives to consumers; continue runtime callback/incoming-indirect entry independently.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01WheelRootMaterializationPersistenceHandoff/1",
+    "SHIFT.P1A.P13AFun00757d2cRuntimeIndexedWheelRootPersistence/1",
+    "SHIFT.P1A.P13AFixedWheelRootLeafHandoffs/1",
+    "SHIFT.P1A.P13ATrampolinedWheelRootLifetime/1",
+    "SHIFT.P1A.P13AFun00760d93DerivedAliasClosure/1",
+    "SHIFT.P1A.P13AFun007572f0IndexedWheelRootLifetime/1",
+    "SHIFT.P1A.P13AFun00757318InteriorAliasClosure/1"
+  ],
+  "version": 1,
+  "wheel_layout": {
+    "count": 4,
+    "roots": [
+      "HDVehicle+0x400",
+      "HDVehicle+0xe80",
+      "HDVehicle+0x1900",
+      "HDVehicle+0x2380"
+    ],
+    "slots": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "stride": "+0xa80"
+  }
+}
