@@ -1,0 +1,43 @@
+{
+  "format": "SHIFT.P1B.HDVehicle4330NonThreadCallbackTranche1/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1B / P1.3B",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "shift_exe_c_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "source_is_navigation_crosscheck": true
+  },
+  "surface": {
+    "frontier_callsite_count": 11,
+    "resolved_callsite_count": 7,
+    "remaining_callsite_count": 4,
+    "resolved_callback_count": 3,
+    "resolved_callbacks": [
+      {"name": "FUN_00634870", "address": "0x00634870", "role": "WNDPROC", "callsites": ["0x00634b89", "0x00634c52", "0x00634c93"]},
+      {"name": "lpCompletionRoutine_006553e0", "address": "0x006553e0", "role": "ReadFileEx completion", "callsites": ["0x006558d5", "0x00655c15"]},
+      {"name": "lpCompletionRoutine_00655410", "address": "0x00655410", "role": "WriteFileEx completion", "callsites": ["0x006559df", "0x00655dca"]}
+    ],
+    "remaining_apis": ["SetWaitableTimer", "WSARecv", "WSARecvFrom"]
+  },
+  "adjudication": {
+    "wndproc_registration_subset_complete": true,
+    "readfileex_writefileex_completion_subset_complete": true,
+    "exact_4330_carrier_callback_found": false,
+    "nonthread_callback_argument_provenance_complete": false,
+    "runtime_callback_registration_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Only the three RegisterClassExW and four ReadFileEx/WriteFileEx callback registrations are closed here.",
+    "Two SetWaitableTimer and two Winsock completion-parameter callsites remain open.",
+    "No callback identity is inferred from caller identity or decompiler type guesses."
+  ],
+  "next_step": "Adjudicate SetWaitableTimer and Winsock completion parameters, then continue generic runtime function-pointer stores/copies."
+}
