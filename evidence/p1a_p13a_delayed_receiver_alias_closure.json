@@ -1,0 +1,172 @@
+{
+  "adjudication": {
+    "delayed_or_stored_receiver_alias_dispatch_ruled_out": false,
+    "direct_getter_delayed_stack_spill_reaches_module_base_getter_slot": false,
+    "direct_getter_local_call_argument_escape_found": false,
+    "direct_getter_local_non_stack_store_found": false,
+    "direct_getter_raw_receiver_return_consumed": false,
+    "direct_singleton_getter_delayed_or_stored_alias_dispatch_ruled_out": true,
+    "encoded_or_reconstructed_carrier_pointers_ruled_out": false,
+    "external_provider_count": 7,
+    "incoming_indirect_entry_ruled_out": false,
+    "module_base_getter_consumer_paths_complete": false,
+    "p13a_direct_getter_delayed_spill_return_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_callback_registration_ruled_out": false,
+    "runtime_generated_or_copied_carrier_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "external_abi_reference": {
+      "interface_id": "0xe5ac921f",
+      "provider": "NVIDIA NVAPI",
+      "second_parameter": "NvU32 *pGpuCount (output)",
+      "success_status": "NVAPI_OK == 0",
+      "symbol": "NvAPI_EnumPhysicalGPUs"
+    },
+    "machine_disassembly_adjudicates": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1A.P13ADelayedReceiverAliasClosure/1",
+  "limits": [
+    "The local event inventory starts only from the 203 direct FUN_00886980 calls and records exact receiver stores/returns before the first intervening call or unconditional jump; it is not a generic whole-program points-to proof.",
+    "The sole stack spill is then followed explicitly through its delayed reload, virtual dispatches and NVAPI overwrite. The sole raw return is closed using the already-bounded FUN_005f4f50 static entry surface from the upstream receiver-rejection contract plus the one direct FUN_005f8950 caller.",
+    "NVAPI symbol identity and output-parameter semantics are ABI facts keyed by interface ID 0xe5ac921f; tests do not require network access.",
+    "This promotes only the direct singleton-getter delayed/stored receiver consumer frontier. Callback registration, incoming indirect entry, encoded/reconstructed pointers and selected-wheel pointer persistence remain fail-closed."
+  ],
+  "local_exact_receiver_events": {
+    "call_argument_escape_count": 0,
+    "non_stack_store_count": 0,
+    "raw_return_count": 1,
+    "raw_returns": [
+      {
+        "detail": "eax",
+        "getter_call": "0x005f5182",
+        "kind": "raw_return",
+        "site": "0x005f51a1"
+      }
+    ],
+    "stack_spill_count": 1,
+    "stack_spills": [
+      {
+        "detail": "DWORD PTR [ebp-0x10]",
+        "getter_call": "0x00832a96",
+        "kind": "stack_spill",
+        "site": "0x00832aa2"
+      }
+    ]
+  },
+  "machine_anchors": {
+    "caller_5f79d7": "0x005f79d7 call 0x5f4f50",
+    "caller_5f79d7_next": "0x005f79dc lea edi,[esi+0x1fa4]",
+    "caller_5f7b85": "0x005f7b85 call 0x5f4f50",
+    "caller_5f7b85_overwrite": "0x005f7b8c mov eax,DWORD PTR [edx+0x2c]",
+    "count_address": "0x00833139 lea edx,[ebp-0x10]",
+    "dispatch_slot_0x50_call": "0x00832fce call eax",
+    "dispatch_slot_0x50_load": "0x00832fc4 mov eax,DWORD PTR [eax+0x50]",
+    "dispatch_slot_0x58_call": "0x00832fd7 call eax",
+    "dispatch_slot_0x58_load": "0x00832fd2 mov eax,DWORD PTR [edx+0x58]",
+    "dynamic_resolver_id_load": "0x00a61ab3 mov eax,DWORD PTR [esi+0x4]",
+    "dynamic_resolver_query_call": "0x00a61abb call ebp",
+    "dynamic_resolver_slot_store": "0x00a61ac2 mov DWORD PTR [esi],eax",
+    "dynamic_resolver_stride": "0x00a61ac4 add esi,0x8",
+    "dynamic_resolver_table_base": "0x00a61aae mov esi,0xbbbd0c",
+    "failure_branch": "0x0083314e jne 0x833167",
+    "gpu_array_address": "0x0083313d lea eax,[ebp-0x224]",
+    "nvapi_enum_call": "0x00833144 call 0xa61b06",
+    "nvapi_status_test": "0x0083314c test eax,eax",
+    "push_count_address": "0x0083313c push edx",
+    "push_gpu_array_address": "0x00833143 push eax",
+    "raw_return_origin": "0x005f5182 call 0x886980",
+    "raw_return_site": "0x005f51a1 ret",
+    "spill_origin": "0x00832a96 call 0x886980",
+    "spill_reload": "0x00832fbc mov edi,DWORD PTR [ebp-0x10]",
+    "spill_store": "0x00832aa2 mov DWORD PTR [ebp-0x10],eax",
+    "success_count_reload": "0x00833150 mov eax,DWORD PTR [ebp-0x10]",
+    "success_count_store": "0x00833156 mov DWORD PTR [esi+0x1f48],eax",
+    "tail_to_wrapper": "0x005f8aff jmp 0x5f4f50",
+    "tail_wrapper_caller": "0x005a89e4 call 0x5f8950",
+    "tail_wrapper_caller_overwrite": "0x005a89e9 call 0x586dd0"
+  },
+  "next_step": "Move P1.3A to runtime callback/incoming-indirect and selected-wheel pointer-persistence frontiers; keep slot0, slot1 and aggregate P1.3 gates false until those independent blockers close.",
+  "owner": "Process 1A / P1.3A",
+  "raw_return_closure": {
+    "caller_consumption": [
+      {
+        "proof": "next instruction is LEA to EDI; following call overwrites caller-saved EAX before use",
+        "result": "ignored",
+        "site": "0x005f79d7"
+      },
+      {
+        "proof": "EAX overwritten at 0x005f7b8c before any use",
+        "result": "ignored",
+        "site": "0x005f7b85"
+      },
+      {
+        "proof": "immediate 0x005a89e9 call 0x00586dd0 overwrites caller-saved EAX before use",
+        "result": "ignored",
+        "site": "0x005a89e4 via 0x005f8950 -> 0x005f4f50 tail"
+      }
+    ],
+    "escaped_receiver_return_consumed": false,
+    "origin": "0x005f5182 call FUN_00886980",
+    "return": "0x005f51a1 ret with exact receiver still in EAX",
+    "tail_wrapper_direct_call_surface": [
+      {
+        "kind": "call",
+        "site": "0x005a89e4",
+        "target": "0x005f8950"
+      }
+    ],
+    "wrapper_direct_transfer_surface": [
+      {
+        "kind": "call",
+        "site": "0x005f79d7",
+        "target": "0x005f4f50"
+      },
+      {
+        "kind": "call",
+        "site": "0x005f7b85",
+        "target": "0x005f4f50"
+      },
+      {
+        "kind": "jmp",
+        "site": "0x005f8aff",
+        "target": "0x005f4f50"
+      }
+    ]
+  },
+  "ready": true,
+  "scope": {
+    "direct_singleton_getter_call_count": 203,
+    "local_event_window_max_instructions": 24,
+    "local_event_window_stops_at_first_intervening_call_or_unconditional_jump": true,
+    "singleton_getter": "FUN_00886980",
+    "singleton_getter_address": "0x00886980",
+    "upstream_entry_surface_contract": "SHIFT.HDVehicle64e8Manager374P13A005f4ffaReceiverRejection/1"
+  },
+  "stack_spill_closure": {
+    "call_arguments": {
+      "arg1": "&[ebp-0x224] physical-GPU handle array",
+      "arg2": "&[ebp-0x10] output GPU count"
+    },
+    "dynamic_nvapi_interface_id": "0xe5ac921f",
+    "dynamic_nvapi_slot": "0x00bbbd34",
+    "dynamic_nvapi_slot_initial_value": "0x00a61a48",
+    "dynamic_nvapi_symbol": "NvAPI_EnumPhysicalGPUs",
+    "module_base_getter_slots_seen_before_overwrite": [],
+    "post_call_adjudication": "On the only path that reaches 0x00833150/0x00833156, [ebp-0x10] is the NvAPI_EnumPhysicalGPUs output GPU count, not the prior singleton receiver.",
+    "post_call_store_is_receiver_escape": false,
+    "pre_overwrite_receiver_dispatch_slots": [
+      "+0x50",
+      "+0x58"
+    ],
+    "spill": "0x00832aa2 [ebp-0x10] = exact FUN_00886980 receiver",
+    "success_path": "0x0083314c test eax,eax; 0x0083314e jne failure; fallthrough is NVAPI_OK (0)"
+  },
+  "version": 1
+}
