@@ -1,0 +1,39 @@
+{
+  "adjudication": {
+    "bounded_runtime_pointer_seed_can_produce_exact_internal_carrier": false,
+    "bounded_runtime_pointer_seed_domains_composed": true,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "memory_table_derived_carrier_pointers_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "runtime_patching_or_generated_code_ruled_out": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330BoundedRuntimePointerSeedCoverage/1",
+  "limits": [
+    "This composes only already-bounded exact-carrier seed/materialization classes plus statically reachable imported-GetProcAddress storage.",
+    "Runtime-created resolver aliases, unrelated runtime-populated pointer tables, cross-block/table-derived arithmetic, runtime patching and opaque external pointer sources remain open."
+  ],
+  "next_step": "Inventory unrelated runtime-populated function-pointer tables and cross-block/table-derived carrier synthesis before promoting global store/copy or indirect-entry gates.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "composed_bounded_exact_carrier_hit_count": 0,
+    "composed_bounded_seed_domain_count": 8,
+    "nonresolver_bounded_exact_carrier_hit_count": 0,
+    "nonresolver_bounded_seed_class_count": 7,
+    "p1b_exact_carrier_count": 15,
+    "statically_reachable_getprocaddress_callsite_count": 101,
+    "statically_reachable_getprocaddress_carrier_identity_hit_count": 0
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/4",
+    "SHIFT.P1B.HDVehicle4330GetProcAddressStorageCoverage/1"
+  ],
+  "version": 1
+}
