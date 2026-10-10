@@ -1,0 +1,100 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "other_derived_aliases_ruled_out": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p13a_trampolined_wheel_root_exact_lifetime_subset_complete": true,
+    "p1_3_control_producer_complete": false,
+    "reconstructed_wheel_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "trampolined_exact_wheel_root_materialization_found": true,
+    "trampolined_exact_wheel_root_persistent_escape_found": false
+  },
+  "authority": {
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "platform": "PC retail 1.02",
+    "ranges": {
+      "entry_trampoline": {"end_exclusive": "0x0041903c", "sha256": "da250265c2741065a467312ac54ea653005a48200d5dca8f361641395487d252", "size": 11, "start": "0x00419031"},
+      "fun00760d70": {"end_exclusive": "0x00760d91", "sha256": "25379836160fa14a909fb49e19ffbe7616942afb0264e70fc44fe90d64ee7ca5", "size": 33, "start": "0x00760d70"},
+      "fun00760d93": {"end_exclusive": "0x00760f79", "sha256": "c5dc2f0564fcefd31dab2555f7fa910758739cc9e95a1ac8029f995ea6d088f1", "size": 486, "start": "0x00760d93"},
+      "fun007653f0": {"end_exclusive": "0x007653f8", "sha256": "186c430d078f7ca53c5210117b069a805b9c8f0bed280bf71c06a5f04ab683a4", "size": 8, "start": "0x007653f0"},
+      "fun007653f9": {"end_exclusive": "0x00765461", "sha256": "b6b2fd78772d2db662bd953f51747413305859448776904422cb62029888154e", "size": 104, "start": "0x007653f9"},
+      "root_trampoline": {"end_exclusive": "0x0043dbc9", "sha256": "ef7624958f7133103e5f319b09a48680c1307b7aaa9100f7b7080b6bf5f6d657", "size": 12, "start": "0x0043dbbd"}
+    },
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contracts": ["SHIFT.P1A.P13ASlot01SameFunctionTopologyMachineClosure/1", "SHIFT.GlobalVehicleBodyOwnerIdentity/1"]
+  },
+  "exact_root_lifetime": {
+    "call_with_explicit_ECX_equal_exact_root_count": 0,
+    "callee_abi": {
+      "0x00753710": {"calling_convention": "__fastcall", "name": "FUN_00753710", "signature": "undefined FUN_00753710(undefined8 * param_1)"},
+      "0x007538a0": {"calling_convention": "__thiscall", "name": "FUN_007538a0", "signature": "undefined FUN_007538a0(void * this, double * param_1, undefined8 * param_2)"},
+      "0x007b1130": {"calling_convention": "__fastcall", "name": "FUN_007b1130", "signature": "undefined FUN_007b1130(double * param_1)"},
+      "0x007b1790": {"calling_convention": "__thiscall", "name": "FUN_007b1790", "signature": "undefined FUN_007b1790(void * this, double * param_1, double * param_2)"},
+      "0x007b19f0": {"calling_convention": "__thiscall", "name": "FUN_007b19f0", "signature": "undefined FUN_007b19f0(void * this, undefined4 param_1, undefined4 param_2, double * param_3)"}
+    },
+    "capture": "0x00760d8a ESI=ECX exact wheel root",
+    "child_pointer_loads": [
+      {"operands": "eax,DWORD PTR [esi+0x420]", "site": "0x00760dbc"},
+      {"operands": "eax,DWORD PTR [esi+0x420]", "site": "0x00760dd1"},
+      {"operands": "ecx,DWORD PTR [esi+0x420]", "site": "0x00760de4"},
+      {"operands": "eax,DWORD PTR [esi+0x424]", "site": "0x00760dfc"},
+      {"operands": "eax,DWORD PTR [esi+0x424]", "site": "0x00760e0f"},
+      {"operands": "ecx,DWORD PTR [esi+0x424]", "site": "0x00760e26"},
+      {"operands": "ecx,DWORD PTR [esi+0x420]", "site": "0x00760f4b"}
+    ],
+    "derived_aliases_are_exact_root": false,
+    "derived_interior_aliases": [
+      {"operands": "edx,[esi+0x508]", "site": "0x00760ea3"},
+      {"operands": "ecx,[esi+0x9b0]", "site": "0x00760f22"}
+    ],
+    "explicit_exact_root_push_count": 0,
+    "explicit_exact_root_register_copy_count": 0,
+    "explicit_exact_root_store_count": 0
+  },
+  "format": "SHIFT.P1A.P13ATrampolinedWheelRootLifetime/1",
+  "incoming_vehicle_root_surface": {
+    "direct_FUN_007653f0_call_count": 4,
+    "direct_call_sites": ["0x00765831", "0x00765944", "0x00765ae8", "0x007712c6"],
+    "global_vehicle_address": "0x00c13700",
+    "note": "FUN_00765470 is reached from FUN_00770e80 with ECX restored from its vehicle-root ESI; FUN_00770e80 is the global outer-update receiver lane. This contract does not use those facts to widen global entry gates.",
+    "other_direct_callers": ["FUN_00765470", "FUN_00770e80"],
+    "upstream_vehicle_root_qualified_callers": ["FUN_00765850", "FUN_00765aa0"]
+  },
+  "limits": [
+    "This closes exact wheel-root value persistence only across FUN_007653f0 -> FUN_00419031 -> FUN_007653f9 -> FUN_00760d70 -> FUN_0043dbbd -> FUN_00760d93.",
+    "The root remains live in callee-saved ESI while standard-convention callees execute. Machine code never explicitly forwards bare ESI; Ghidra ABI confirms those callees consume ECX/stack arguments rather than ESI.",
+    "Derived interior pointers such as wheel+0x508 and wheel+0x9b0 and child pointers [wheel+0x420]/[wheel+0x424] are positive derived aliases and remain outside this exact-root closure.",
+    "Global runtime-generated/reconstructed/stored-alias and callback/indirect gates remain fail-closed."
+  ],
+  "machine_anchors": {
+    "entry_trampoline_jump": "0x007653f3 jmp 0x419031",
+    "materializer_continuation": "0x00419037 jmp 0x7653f9",
+    "root_body_continuation": "0x0043dbc4 jmp 0x760d93",
+    "root_flag_test": "0x0043dbbd cmp BYTE PTR [esi+0x504],0x0",
+    "root_receiver_capture": "0x00760d8a mov esi,ecx",
+    "root_trampoline_jump": "0x00760d8c jmp 0x43dbbd",
+    "slot0_body_pointer_load": "0x00419031 mov eax,DWORD PTR [esi+0x824]",
+    "vehicle_capture": "0x007653f1 mov esi,ecx"
+  },
+  "next_step": "Trace persistence of the positive wheel+0x508/wheel+0x9b0 and child-pointer aliases, then classify FUN_00757318 indexed wheel-root lifetime before changing global runtime-generated selected-wheel gates.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "trampolined_materialization": {
+    "distinct_slots": [0, 1, 2, 3],
+    "handoff_count": 6,
+    "handoffs": [
+      {"kind": "call", "materialization": "0x007653fa", "root_offset": "+0x400", "slot": 0, "transfer": "0x00765400"},
+      {"kind": "call", "materialization": "0x0076540c", "root_offset": "+0xe80", "slot": 1, "transfer": "0x00765412"},
+      {"kind": "call", "materialization": "0x0076541f", "root_offset": "+0x1900", "slot": 2, "transfer": "0x00765428"},
+      {"kind": "call", "materialization": "0x0076541f", "root_offset": "+0x1900", "slot": 2, "transfer": "0x00765448"},
+      {"kind": "call", "materialization": "0x00765434", "root_offset": "+0x2380", "slot": 3, "transfer": "0x0076543a"},
+      {"kind": "call", "materialization": "0x00765454", "root_offset": "+0x2380", "slot": 3, "transfer": "0x0076545a"}
+    ],
+    "vehicle_capture": "ESI=vehicle root"
+  },
+  "version": 1
+}
