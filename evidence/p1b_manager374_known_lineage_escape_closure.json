@@ -1,0 +1,59 @@
+{
+  "adjudication": {
+    "external_provider_count": 7,
+    "global_helper_non_vtable_indirect_setter_surface_complete": false,
+    "global_manager_root_origin_surface_complete": false,
+    "independent_opaque_or_external_runtime_root_synthesis_complete": false,
+    "known_manager_root_lineage_can_seed_external_memory_alias": false,
+    "known_manager_root_lineage_escapes_as_stack_argument": false,
+    "known_manager_root_lineage_escape_surface_complete": true,
+    "known_manager_root_lineage_helper_or_indirect_setter_surface_complete": true,
+    "known_manager_root_lineage_persists_into_object_or_global_memory": false,
+    "known_manager_root_lineage_reaches_external_direct_callee": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1B.Manager374KnownLineageEscapeClosure/1",
+  "inputs": {
+    "alias": "SHIFT.P1B.Manager374ExactRootAliasClosure/1",
+    "direct": "SHIFT.HDVehicle64e8Manager374ExactRootDirectCalleeSurface/1",
+    "origin": "SHIFT.P1B.Manager374RootOriginCoverage/1",
+    "participants": "SHIFT.P1B.Manager374ParticipantsLifecycleClosure/1",
+    "setter": "SHIFT.HDVehicle64e8ManagerDirectSetterFrontier/1"
+  },
+  "known_root_lineage": {
+    "direct_exact_root_callee_count": 9,
+    "direct_exact_root_callees_all_inside_retail_image": true,
+    "exact_getter_callsite_count": 394,
+    "exact_root_immediate_push_count": 0,
+    "exact_root_object_or_global_store_count": 0,
+    "exact_root_stack_save_count": 9
+  },
+  "limits": [
+    "This closes escape and reseeding from the known canonical Participants Manager root lineage, not arbitrary process memory.",
+    "It does not prove that an unrelated opaque computation cannot independently synthesize the same absolute address.",
+    "No identity is inferred from matching offsets."
+  ],
+  "next_step": "Reduce independent opaque/external exact-root synthesis to concrete machine candidates; only then perform final manager+0x374 identity and 0x004b86cf slot2 adjudication.",
+  "ready": true,
+  "setter_surfaces": {
+    "direct_manager_receiver_call_count": 44,
+    "direct_manager_receiver_unique_target_count": 12,
+    "direct_or_vtable_manager_374_setter_found": false,
+    "manager_vtable_slot_count": 18,
+    "manager_vtable_unique_target_count": 17,
+    "participants_lifecycle_indirect_call_count": 6,
+    "participants_lifecycle_surface_reaches_manager_374": false
+  },
+  "surviving_frontier": [
+    "independent opaque helper return that synthesizes exact 0x00bc9fc0 from unrelated inputs",
+    "externally initialized memory containing exact 0x00bc9fc0 without prior known-lineage escape",
+    "unrecognized runtime transform outside merged reconstruction classes"
+  ],
+  "version": 1
+}
