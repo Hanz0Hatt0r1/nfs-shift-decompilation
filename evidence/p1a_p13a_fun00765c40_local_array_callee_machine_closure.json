@@ -1,0 +1,131 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "other_derived_aliases_ruled_out": false,
+    "p13a_fun00765c40_local_array_callee_lifetimes_complete": true,
+    "p13a_fun00765c40_local_array_pointer_escape_found": false,
+    "p13a_fun00765c40_local_array_selected_slot_writer_found": false,
+    "p13a_fun00765c40_local_array_wheel_root_reconstruction_found": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "array_3430": {
+    "FUN_007aefb0_argument_role": "param_1 data-vector pointer; reads qwords +0x0/+0x8/+0x10 only; writes output param_2; zero calls",
+    "FUN_007afd20_argument_role": "param_2 data-vector pointer; forwarded once to FUN_007aefb0 and otherwise only read as scalar/vector data",
+    "callee_path": [
+      "FUN_007afd20",
+      "FUN_007aefb0"
+    ],
+    "caller_stack_slot": "[EBP-0x10]",
+    "identity": "HDVehicle+0x3430 + iteration*0x18, 12 iterations",
+    "pointer_store_or_back_reference_found": false,
+    "wheel_root_reconstruction_found": false
+  },
+  "array_35c8": {
+    "absolute_write_span_over_iterations": "HDVehicle+0x3610..+0x3664",
+    "callee": "FUN_007baa70",
+    "caller_stack_slot": "[EBP-0x0c]",
+    "direct_call_count": 0,
+    "identity": "HDVehicle+0x35c8 + iteration*0x4, 12 iterations",
+    "pointer_store_or_back_reference_found": false,
+    "receiver_relative_writes": [
+      "+0x48",
+      "+0x50",
+      "+0x58",
+      "+0x60",
+      "+0x68",
+      "+0x70"
+    ],
+    "wheel_root_reconstruction_found": false
+  },
+  "array_35f8": {
+    "callee_receives_cursor": false,
+    "caller_stack_slot": "[EBP-0x14]",
+    "identity": "HDVehicle+0x35f8 + iteration*0x8, 12 iterations",
+    "machine_use": "0x0076618b FST QWORD PTR [EDX] after EDX=[EBP-0x14]",
+    "pointer_store_or_back_reference_found": false,
+    "wheel_root_reconstruction_found": false
+  },
+  "array_36e0": {
+    "FUN_00747b90_argument_role": "EDX/param_2 data-vector pointer; reads qwords +0x0/+0x8/+0x10; writes stack/output ECX only; zero calls",
+    "caller_stack_slot": "[EBP-0x0c]",
+    "cursor_data_callee": "FUN_00747b90",
+    "derived_data_callee": "FUN_007aefb0",
+    "derived_data_source": "cursor-0x2b0 => HDVehicle+0x3430 + iteration*0x18",
+    "identity": "HDVehicle+0x36e0 + iteration*0x18, 4 iterations",
+    "later_FUN_007baa70_receiver": "chassis BODY [HDVehicle+0x33a0], not +0x36e0 cursor",
+    "pointer_store_or_back_reference_found": false,
+    "wheel_root_reconstruction_found": false
+  },
+  "authority": {
+    "machine_bytes_adjudicate": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "callee_bodies": {
+    "FUN_00747b90": {
+      "machine_bytes_sha256": "e2c7ab1cffe9f74b40aa5706acf142958fcb2fc37c5427550f9266960410155d",
+      "size": 36,
+      "start": "0x00747b90"
+    },
+    "FUN_007aefb0": {
+      "machine_bytes_sha256": "76c52235cce08d3ec131d43e1b62cda623ac8528944e44f902846a0a71b14f29",
+      "size": 83,
+      "start": "0x007aefb0"
+    },
+    "FUN_007afd20": {
+      "machine_bytes_sha256": "2e93cc7574546ce67474eac98cfb1b41aad12ff83b23738ae69754b2f7d021cf",
+      "size": 49,
+      "start": "0x007afd20"
+    },
+    "FUN_007baa70": {
+      "machine_bytes_sha256": "eed5416afe216f33c24d437e8ed50a7773c2fee316a4f1c841ef0e6bbd5e817e",
+      "size": 121,
+      "start": "0x007baa70"
+    }
+  },
+  "format": "SHIFT.P1A.P13AFun00765c40LocalArrayCalleeMachineClosure/1",
+  "limits": [
+    "This closes only the callee/data-use lifetimes of HDVehicle+0x3430/+0x35c8/+0x35f8/+0x36e0 already classified upstream as non-wheel local arrays.",
+    "The proof does not infer pointer identity from numeric offsets: selected slot0/slot1 wheel identity remains separate machine-proven state.",
+    "Runtime-generated/copied selected-wheel pointers, callbacks, indirect entry, aggregate copies and other derived aliases remain open.",
+    "No global stored-or-escaped-alias, slot-completion or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Compose this closure with the FUN_00765c40 derived-alias handoff; consume the merged 16-carrier/direct-callee bulk-opcode absence; then trace the two unresolved FUN_00770e80 indirect callsites and runtime-generated/copied selected-wheel pointers.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "upstream_contract": "SHIFT.P1D.Slot3Fun00765c40PostDerivedInventory/1",
+  "verified_byte_windows": [
+    {"bytes": "8dbec8350000", "site": "0x00766081"},
+    {"bytes": "8d86f8350000", "site": "0x00766089"},
+    {"bytes": "8d8e30340000", "site": "0x00766091"},
+    {"bytes": "897df48945ec894df0", "site": "0x00766099"},
+    {"bytes": "e85d9c0400", "site": "0x007660be"},
+    {"bytes": "8b55ecdd12", "site": "0x00766188"},
+    {"bytes": "8bcf", "site": "0x00766353"},
+    {"bytes": "e806470500", "site": "0x00766365"},
+    {"bytes": "8345ec088345f01883c704836df801897df4", "site": "0x007663a8"},
+    {"bytes": "8d8ee0360000", "site": "0x007663cd"},
+    {"bytes": "0550fdffff", "site": "0x007663ea"},
+    {"bytes": "e8b58b0400", "site": "0x007663f6"},
+    {"bytes": "8b55f4", "site": "0x00766460"},
+    {"bytes": "e82117feff", "site": "0x0076646a"},
+    {"bytes": "8bcf", "site": "0x007664ed"},
+    {"bytes": "e879450500", "site": "0x007664f2"},
+    {"bytes": "8345f418836df801", "site": "0x007664f7"},
+    {"bytes": "e87ff2ffff", "site": "0x007afd2c"}
+  ],
+  "verified_calls": [
+    {"site": "0x007660be", "target": "0x007afd20"},
+    {"site": "0x00766365", "target": "0x007baa70"},
+    {"site": "0x007663f6", "target": "0x007aefb0"},
+    {"site": "0x0076646a", "target": "0x00747b90"},
+    {"site": "0x007664f2", "target": "0x007baa70"},
+    {"site": "0x007afd2c", "target": "0x007aefb0"}
+  ],
+  "version": 1
+}
