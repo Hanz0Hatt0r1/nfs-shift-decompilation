@@ -2,10 +2,10 @@
 """Bound the shallow P1.3A SSE/MMX vector write surface.
 
 The scan follows direct calls from the four recovered wheel/physics roots to depth
-four. It records direct XMM/MM -> memory stores and vector -> GPR extraction
-values that subsequently escape through an ordinary non-stack memory store before
-a clobber or call. This is a bounded machine-write surface, not an object-identity
-claim for deeper or indirect paths.
+four. It records direct XMM/MM -> memory stores, implicit MASKMOVQ/MASKMOVDQU
+stores, and vector -> GPR extraction values that subsequently escape through an
+ordinary non-stack memory store before a clobber or call. This is a bounded
+machine-write surface, not an object-identity claim for deeper or indirect paths.
 """
 from __future__ import annotations
 
@@ -32,6 +32,7 @@ VECTOR_STORE_MNEMONICS = {
     "movd", "movntps", "movntpd", "movntdq", "movntq",
 }
 VECTOR_TO_GPR_MNEMONICS = {"movd", "pextrw", "pmovmskb", "movmskpd", "movmskps"}
+IMPLICIT_VECTOR_STORE_MNEMONICS = {"maskmovq", "maskmovdqu"}
 GPRS = {"eax", "ebx", "ecx", "edx", "esi", "edi"}
 VECTOR_RE = re.compile(r"\b(?:xmm\d+|mm\d+)\b", re.I)
 LINE_RE = re.compile(r"^\s*([0-9a-fA-F]+):\s+(?:[0-9a-fA-F]{2}\s+)+\s*([^\s]+)\s*(.*)$")
@@ -200,9 +201,18 @@ def analyze(executable: Path, database: Path) -> dict:
     instructions = disassemble_reachable(executable, ranges)
 
     direct_rows = []
+    implicit_rows = []
     escape_rows = []
     for name in sorted(instructions, key=lambda n: (distance.get(n, 999), n)):
         for address, mnemonic, operands in instructions[name]:
+            if mnemonic in IMPLICIT_VECTOR_STORE_MNEMONICS:
+                implicit_rows.append({
+                    "depth": distance[name],
+                    "function": name,
+                    "site": f"0x{address:08x}",
+                    "instruction": f"{mnemonic} {operands}",
+                    "destination_class": "implicit-edi",
+                })
             is_store, is_stack = direct_vector_store(mnemonic, operands)
             if is_store:
                 direct_rows.append({
@@ -217,6 +227,7 @@ def analyze(executable: Path, database: Path) -> dict:
             escape_rows.append(row)
 
     direct_rows.sort(key=lambda r: int(r["site"], 16))
+    implicit_rows.sort(key=lambda r: int(r["site"], 16))
     escape_rows.sort(key=lambda r: int(r["site"], 16))
     stack_count = sum(r["destination_class"] == "stack" for r in direct_rows)
     nonstack_count = len(direct_rows) - stack_count
@@ -243,14 +254,16 @@ def analyze(executable: Path, database: Path) -> dict:
             "direct_stack_vector_memory_store_count": stack_count,
             "direct_nonstack_vector_memory_store_count": nonstack_count,
             "direct_vector_store_function_count": len(functions),
+            "implicit_mask_vector_store_count": len(implicit_rows),
             "vector_to_gpr_nonstack_escape_count": len(escape_rows),
         },
         "direct_vector_stores": direct_rows,
+        "implicit_mask_vector_stores": implicit_rows,
         "vector_to_gpr_nonstack_escapes": escape_rows,
         "adjudication": {
             "shallow_sse_vector_write_depth4_surface_complete": True,
-            "shallow_sse_vector_selected_hdvehicle_writer_found": False,
-            "sse_vector_copy_init_complete": True,
+            "shallow_sse_vector_selected_hdvehicle_writer_found": bool(nonstack_count or implicit_rows or escape_rows),
+            "sse_vector_copy_init_complete": not nonstack_count and not implicit_rows and not escape_rows,
             "deeper_direct_aliases_ruled_out": False,
             "indirect_callback_aliases_ruled_out": False,
             "p13a_slot0_complete": False,
@@ -259,7 +272,7 @@ def analyze(executable: Path, database: Path) -> dict:
             "external_provider_count": 7,
         },
         "limits": [
-            "This closes only explicit XMM/MM memory writes and vector-to-GPR ordinary-store escapes within four direct-call edges of the four P1.3A roots.",
+            "This closes explicit XMM/MM memory writes, MASKMOVQ/MASKMOVDQU implicit stores, and vector-to-GPR ordinary-store escapes within four direct-call edges of the four P1.3A roots.",
             "Deeper direct paths and indirect/callback aliases remain outside this bounded surface.",
             "Callgraph reachability never establishes selected-HDVehicle identity by itself."
         ],

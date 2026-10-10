@@ -40,9 +40,11 @@ def test_retail_surface_is_exact_and_stack_only():
     assert s['direct_stack_vector_memory_store_count']==14
     assert s['direct_nonstack_vector_memory_store_count']==0
     assert s['direct_vector_store_function_count']==4
+    assert s['implicit_mask_vector_store_count']==0
     assert s['vector_to_gpr_nonstack_escape_count']==0
     assert [r['site'] for r in d['direct_vector_stores']]==EXPECTED_SITES
     assert all(r['destination_class']=='stack' for r in d['direct_vector_stores'])
+    assert d['implicit_mask_vector_stores']==[]
     assert d['vector_to_gpr_nonstack_escapes']==[]
 
 def test_sse_closes_but_deeper_and_indirect_gates_stay_closed():
