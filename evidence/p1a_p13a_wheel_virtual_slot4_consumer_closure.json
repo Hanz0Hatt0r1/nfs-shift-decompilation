@@ -1,0 +1,104 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_persisted_wheel_virtual_slot4_consumer_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "persisted_wheel_virtual_slot4_exact_root_pointer_persistence_found": false,
+    "persisted_wheel_virtual_slot4_only_exact_root_forward_closed": true,
+    "persisted_wheel_virtual_slot4_selected_target_write_found": false,
+    "runtime_generated_selected_wheel_pointer_store_found": true,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_bytes_adjudicate": true,
+    "platform": "PC retail 1.02",
+    "ranges": {
+      "FUN_00755790": {
+        "end_exclusive": "0x0075594a",
+        "sha256": "33941107f8edbee236047ccc7e2d558ae3405e656cfecb389a792abcdc1d6117",
+        "size": 442,
+        "start": "0x00755790"
+      },
+      "wheel_virtual_slot4_target": {
+        "end_exclusive": "0x00760b48",
+        "sha256": "16864e91b7b2af46fe7c18cd01209c37fbccbe6047633da6f70b26e3deb0f45d",
+        "size": 15256,
+        "start": "0x0075cfb0"
+      }
+    },
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun0076df50RuntimeWheelQueueStore/1"
+  },
+  "format": "SHIFT.P1A.P13AWheelVirtualSlot4ConsumerClosure/1",
+  "forward_callee": {
+    "direct_selected_target_overlap_count": 0,
+    "direct_selected_target_overlaps": [],
+    "exact_root_surface": {
+      "nonstack_pointer_stores": [],
+      "pushes": [],
+      "register_copies": [],
+      "writes_to_root_register": []
+    },
+    "function": "FUN_00755790",
+    "pointer_persistence_found": false,
+    "range_size": 442,
+    "selected_target_write_found": false
+  },
+  "limits": [
+    "This closes the selected-wheel consumer reached through the proven FUN_0076df50 runtime queue node and retail wheel vtable +0x4 only; it does not enumerate other queue registrations or virtual slots.",
+    "The 0x0075cfb0 target contains no wheel-relative memory access overlapping +0x538..+0x53f and no exact-root pointer store/push. Its sole exact-root forward is ECX=ESI into FUN_00755790.",
+    "The complete pinned FUN_00755790 range likewise has no +0x538..+0x53f overlap and performs scalar root-relative updates without persisting or forwarding the exact root pointer.",
+    "The positive queue pointer store from the upstream contract remains present, so global runtime-generated/stored-alias and slot/P1.3 gates remain fail-closed."
+  ],
+  "machine_anchors": {
+    "callee_receiver_capture": "0x007557b6 mov esi,ecx",
+    "callee_return_a": "0x0075590e ret 0xc",
+    "callee_return_b": "0x00755947 ret 0xc",
+    "callee_scalar_write_4b8": "0x007558e0 fstp QWORD PTR [esi+0x4b8]",
+    "callee_scalar_write_4c0": "0x007558e9 fstp QWORD PTR [esi+0x4c0]",
+    "callee_scalar_write_4c8": "0x007558f2 fstp QWORD PTR [esi+0x4c8]",
+    "callee_scalar_write_500": "0x00755900 fstp DWORD PTR [esi+0x500]",
+    "target_early_scalar_write": "0x0075d001 fst QWORD PTR [esi+0x738]",
+    "target_exact_root_forward": "0x007606f4 mov ecx,esi",
+    "target_forward_call": "0x00760705 call 0x755790",
+    "target_receiver_capture": "0x0075cfe5 mov esi,ecx",
+    "target_return": "0x00760b45 ret 0x8"
+  },
+  "next_step": "Enumerate other FUN_00a62f60 registrations whose source is an exact wheel root or selected-wheel-derived alias; compose them with residual indexed lifetimes before any global stored-alias decision.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "selected_target": {
+    "slot0_absolute": "HDVehicle+0x938..+0x93f",
+    "slot1_absolute": "HDVehicle+0x13b8..+0x13bf",
+    "wheel_relative_range": "+0x538..+0x53f"
+  },
+  "version": 1,
+  "virtual_consumer": {
+    "direct_selected_target_overlap_count": 0,
+    "direct_selected_target_overlaps": [],
+    "exact_root_forward": {
+      "call": "0x00760705",
+      "callee": "FUN_00755790",
+      "prep": "0x007606f4"
+    },
+    "exact_root_forward_count": 1,
+    "exact_root_surface": {
+      "nonstack_pointer_stores": [],
+      "pushes": [],
+      "register_copies": [
+        {
+          "dst": "ecx",
+          "site": "0x007606f4"
+        }
+      ],
+      "writes_to_root_register": []
+    },
+    "instruction_count": 3841,
+    "receiver": "exact persisted wheel root from runtime queue node",
+    "target": "0x0075cfb0"
+  }
+}
