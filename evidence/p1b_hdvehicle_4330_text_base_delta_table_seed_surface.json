@@ -1,0 +1,88 @@
+{
+  "adjudication": {
+    "all_raw_text_base_delta_diagnostics_classified": true,
+    "computed_or_encoded_code_pointers_ruled_out": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "image_backed_text_base_delta_table_seed_found": false,
+    "image_backed_text_base_delta_table_seed_subset_complete": true,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "memory_table_derived_carrier_pointers_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "preferred_image_base": "0x00400000",
+    "retail_bytes_are_machine_authority": true,
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_file_size": 8801792,
+    "text_base_va": "0x00401000",
+    "text_rva": "0x00001000"
+  },
+  "carrier_set": {
+    "count": 15,
+    "rows": [
+      {"address":"0x00769520","name":"FUN_00769520","raw_hit_count":0,"text_base_delta":"0x00368520"},
+      {"address":"0x0076b130","name":"FUN_0076b130","raw_hit_count":0,"text_base_delta":"0x0036a130"},
+      {"address":"0x0076df50","name":"FUN_0076df50","raw_hit_count":0,"text_base_delta":"0x0036cf50"},
+      {"address":"0x00768a4d","name":"FUN_00768a4d","raw_hit_count":1,"text_base_delta":"0x00367a4d"},
+      {"address":"0x00756050","name":"FUN_00756050","raw_hit_count":0,"text_base_delta":"0x00355050"},
+      {"address":"0x00772200","name":"FUN_00772200","raw_hit_count":0,"text_base_delta":"0x00371200"},
+      {"address":"0x00772570","name":"FUN_00772570","raw_hit_count":0,"text_base_delta":"0x00371570"},
+      {"address":"0x007c3b00","name":"FUN_007c3b00","raw_hit_count":0,"text_base_delta":"0x003c2b00"},
+      {"address":"0x0076b280","name":"FUN_0076b280","raw_hit_count":0,"text_base_delta":"0x0036a280"},
+      {"address":"0x007618f0","name":"FUN_007618f0","raw_hit_count":0,"text_base_delta":"0x003608f0"},
+      {"address":"0x00769640","name":"FUN_00769640","raw_hit_count":0,"text_base_delta":"0x00368640"},
+      {"address":"0x007567a0","name":"FUN_007567a0","raw_hit_count":0,"text_base_delta":"0x003557a0"},
+      {"address":"0x00756bb0","name":"FUN_00756bb0","raw_hit_count":0,"text_base_delta":"0x00355bb0"},
+      {"address":"0x00771db0","name":"FUN_00771db0","raw_hit_count":0,"text_base_delta":"0x00370db0"},
+      {"address":"0x00771e10","name":"FUN_00771e10","raw_hit_count":0,"text_base_delta":"0x00370e10"}
+    ]
+  },
+  "format": "SHIFT.P1B.HDVehicle4330TextBaseDeltaTableSeedSurface/1",
+  "limits": [
+    "This closes only direct image-backed data-table entries equal to carrier_va - .text_base.",
+    "Executable-section raw matches are retained as diagnostics and are rejected only when exact machine bytes prove they are rel32 control-transfer displacements.",
+    "Other section bases, transformed/delta chains, runtime-populated tables, cross-block arithmetic, runtime patching, opaque helper returns and copied pointers remain open."
+  ],
+  "next_step": "Bound other transformed table bases or cross-block memory-derived reconstruction, then classify any positive runtime pointer store/copy sinks.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "scan": {
+    "non_executable_section_exact_text_base_delta_hit_count": 0,
+    "raw_exact_text_base_delta_hit_count": 1,
+    "raw_hits": [
+      {
+        "carrier": "FUN_00768a4d",
+        "carrier_va": "0x00768a4d",
+        "classification": "rel32_control_transfer_displacement",
+        "control_target_is_exact_p1b_carrier": false,
+        "control_target_va": "0x009031bd",
+        "control_transfer": "call",
+        "file_offset": "0x0019ab6c",
+        "file_offset_mod4": 0,
+        "instruction_va": "0x0059b76b",
+        "section": ".text",
+        "section_executable": true,
+        "sequence_va": "0x0059b76c",
+        "text_base_delta": "0x00367a4d"
+      }
+    ],
+    "rel32_control_transfer_diagnostic_count": 1,
+    "unclassified_executable_diagnostic_count": 0
+  },
+  "section_inventory": [
+    {"executable":true,"name":".text","raw_offset":"0x00000400","raw_size":6964736,"rva":"0x00001000"},
+    {"executable":false,"name":".rdata","raw_offset":"0x006a4a00","raw_size":896000,"rva":"0x006a6000"},
+    {"executable":false,"name":".data","raw_offset":"0x0077f600","raw_size":243200,"rva":"0x00781000"},
+    {"executable":false,"name":".tls","raw_offset":"0x007bac00","raw_size":512,"rva":"0x008e9000"},
+    {"executable":false,"name":".rsrc","raw_offset":"0x007bae00","raw_size":290304,"rva":"0x008ea000"},
+    {"executable":true,"name":".secu","raw_offset":"0x00801c00","raw_size":406016,"rva":"0x00931000"}
+  ],
+  "version": 1
+}
