@@ -1,0 +1,64 @@
+{
+  "adjudication": {
+    "arbitrary_unknown_memory_exact_root_alias_surface_complete": false,
+    "candidate_global_non_null_origin_unique": true,
+    "candidate_global_writer_surface_complete": true,
+    "external_or_unknown_origin_through_candidate_global_complete": true,
+    "external_or_unknown_origin_through_candidate_global_found": false,
+    "external_provider_count": 7,
+    "helper_non_vtable_setter_surface_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "memory_load_opaque_runtime_reconstruction_complete": false,
+    "p1_3_control_producer_complete": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "source_contract": "SHIFT.PlayerVehicleRenderManagerGlobalConstructorIdentity/1",
+    "source_proof_doc": "docs/PROCESS_1_PLAYER_VEHICLE_RENDER_MANAGER_CONSTRUCTOR_WRITER_PROOF.md"
+  },
+  "candidate_global": "0x00bc185c",
+  "composition": {
+    "bounded_direct_callee_contract": "SHIFT.P1B.RenderManagerBoundedCalleeClosure/1",
+    "copy_return_contract": "SHIFT.P1B.RenderManagerCopyReturnClosure/1",
+    "derived_subobject_contract": "SHIFT.P1B.RenderManagerDerivedSubobjectClosure/1",
+    "runtime_root_frontier_contract": "SHIFT.P1B.Manager374RuntimeRootFrontier/1"
+  },
+  "constructor_identity": {
+    "allocation_size": "0x46e0",
+    "all_reachable_returns_eax_origin": "entry:ECX",
+    "constructor": "FUN_0045ef50",
+    "layout_anchor_store": "0x0045f1bf MOV [ESI+0xca4],EAX",
+    "non_null_global_value_has_constructor_identity": true
+  },
+  "format": "SHIFT.P1B.RenderManagerGlobalOriginClosure/1",
+  "limits": [
+    "This closes origin ambiguity only for values sourced through DAT_00bc185c.",
+    "Pointers loaded from unrelated or unknown memory are not promoted to the proven singleton root.",
+    "No identity is inferred from matching numeric offsets."
+  ],
+  "next_step": "Bound unknown-memory/helper-created exact-root candidates that do not originate at DAT_00bc185c, then revisit the manager+0x374 identity join and slot2 adjudication.",
+  "ready": true,
+  "version": 1,
+  "writer_inventory": {
+    "exact_xref_count": 116,
+    "selected_function_count": 80,
+    "write_reference_count": 2,
+    "writer_function": "FUN_00d36210",
+    "writes": [
+      {
+        "non_null_constructor_receiver": true,
+        "operation": "MOV [0x00bc185c],EAX",
+        "site": "0x00d362ec",
+        "value_origin": "FUN_0045ef50 return == entry ECX"
+      },
+      {
+        "null_store": true,
+        "operation": "MOV dword ptr [0x00bc185c],ESI",
+        "site": "0x00d362f3",
+        "value_origin": "0x00d36224 XOR ESI,ESI"
+      }
+    ]
+  }
+}
