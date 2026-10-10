@@ -1,0 +1,55 @@
+{
+  "adjudication": {
+    "bounded_runtime_callback_coverage_composed": true,
+    "bounded_runtime_callback_exact_4330_carrier_hit_found": false,
+    "bsearch_included_in_runtime_callback_baseline": true,
+    "computed_or_encoded_code_pointers_ruled_out": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "remaining_callback_api_families_ruled_out": false,
+    "runtime_callback_registration_ruled_out": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/4",
+  "limits": [
+    "This composes eight bounded callback/indirect-entry surfaces, now including both retail _bsearch comparators.",
+    "It does not claim that all callback-capable APIs or application-owned wrappers are inventoried.",
+    "Generic/runtime-generated/copied/encoded function-pointer paths and opaque indirect dispatch remain open."
+  ],
+  "next_step": "Use /4 as the no-duplication callback baseline; inventory remaining callback families and generic/runtime-generated function-pointer paths before promoting global indirect-entry gates.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "supersedes": "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/3",
+  "surface": {
+    "bounded_callback_capable_callsite_count": 51,
+    "closed_surface_count": 8,
+    "coverage": [
+      {"exact_4330_carrier_hit_count":0,"physical_callsite_count":10,"possible_entrypoint_count":9,"surface":"CreateThread/__beginthreadex"},
+      {"exact_4330_carrier_hit_count":0,"physical_callsite_count":11,"possible_entrypoint_count":3,"surface":"selected Win32/Winsock non-thread callbacks"},
+      {"exact_4330_carrier_hit_count":0,"physical_callsite_count":2,"possible_entrypoint_count":2,"surface":"FUN_0061cdf0 Massive callback wrapper"},
+      {"exact_4330_carrier_hit_count":0,"physical_callsite_count":16,"possible_entrypoint_count":17,"surface":"CRT _qsort comparators"},
+      {"exact_4330_carrier_hit_count":0,"physical_callsite_count":6,"possible_entrypoint_count":2,"surface":"WinMM waveOut/waveIn/timeSetEvent callbacks"},
+      {"exact_4330_carrier_hit_count":0,"physical_callsite_count":3,"possible_entrypoint_count":0,"surface":"SetUnhandledExceptionFilter"},
+      {"exact_4330_carrier_hit_count":0,"physical_callsite_count":1,"possible_entrypoint_count":1,"surface":"CreateFiber"},
+      {"exact_4330_carrier_hit_count":0,"physical_callsite_count":2,"possible_entrypoint_count":2,"surface":"CRT _bsearch comparators"}
+    ],
+    "exact_4330_carrier_entrypoint_hit_count": 0,
+    "possible_entrypoints": [
+      "0x00431dd0","0x004ba980","0x004baa90","0x004bab80","0x004bac50","0x004e5d80","0x004efbd0",
+      "0x0051ce10","0x0051ffd0","0x0053c250","0x0053c280","0x005d5f40","0x005fdd70","0x005ff1e0","0x005ff710",
+      "0x0060b457","0x0061cd93","0x0061d300","0x00626140","0x00634870","0x00649b10","0x006553e0","0x00655410",
+      "0x00771320","0x007a7970","0x0087a730","0x00907e4f","0x009396c0","0x0099955b","0x009a8d8f","0x009aede8",
+      "0x009b597a","0x009f7ac0","0x00a2a370","0x00a5df20","0x00a62710"
+    ],
+    "unique_possible_callback_entrypoint_count": 36
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/3",
+    "SHIFT.P1B.HDVehicle4330BsearchCallbackClosure/1"
+  ],
+  "version": 4
+}
