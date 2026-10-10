@@ -1,0 +1,76 @@
+{
+  "adjudication": {
+    "callbacks_registered_outside_carriers_ruled_out": false,
+    "external_provider_count": 7,
+    "known_hdvehicle_to_four_wheel_root_materialization_machine_subset_complete": true,
+    "other_derived_alias_storage_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "runtime_generated_pointer_stores_ruled_out": false,
+    "selected_slot3_wheel_root_materialization_proven": true,
+    "selected_slot3_wheel_root_new_forward_beyond_closed_consumers_found": false,
+    "selected_slot3_wheel_root_nonstack_persistence_found": false,
+    "slot3_writer_provenance_proven": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_bytes_adjudicate": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1D.Slot3MachineWheelRootMaterializationClosure/1",
+  "fun00763570_loop": {
+    "callsite": "0x0076360f",
+    "consumer": "FUN_00755f80",
+    "cursor_storage": "stack-local [EBP-0x4]",
+    "iteration_test": "0x00763625 ESI == 4",
+    "materialized_receivers": ["HDVehicle+0x400", "HDVehicle+0xe80", "HDVehicle+0x1900", "HDVehicle+0x2380"],
+    "nonstack_wheel_root_store_found": false,
+    "seed": "0x007635f4 EAX = HDVehicle+0x400",
+    "stride_update": "0x0076361b [EBP-0x4] += 0xa80",
+    "window": {
+      "decoded_byte_count": 54,
+      "end_exclusive": "0x0076362a",
+      "instruction_count": 12,
+      "machine_bytes_sha256": "30ae593298ee11283898a0397b527583fc232d3db7ac4f0db7a8578e6bf00333",
+      "start": "0x007635f4"
+    }
+  },
+  "fun00770e80_explicit": {
+    "callee": "FUN_00760b50",
+    "materializations": [
+      {"calls": ["0x00771107"], "receiver": "HDVehicle+0x400", "site": "0x007710fe"},
+      {"calls": ["0x00771125"], "receiver": "HDVehicle+0xe80", "site": "0x0077111c"},
+      {"calls": ["0x00771147", "0x00771162"], "note": "branch alternatives reuse the same ECX receiver", "receiver": "HDVehicle+0x1900", "site": "0x00771138"},
+      {"calls": ["0x00771180"], "receiver": "HDVehicle+0x2380", "selected_slot3": true, "site": "0x00771177"}
+    ],
+    "wheel_root_nonstack_store_count": 0,
+    "wheel_root_push_count": 0,
+    "window": {
+      "decoded_byte_count": 135,
+      "end_exclusive": "0x00771185",
+      "instruction_count": 34,
+      "machine_bytes_sha256": "9007ea4422621778fa979ae4ca105faa85f1f03b792803da7f6d3b34d38c6534",
+      "start": "0x007710fe"
+    }
+  },
+  "limits": [
+    "This closes only the two already-machine-identified HDVehicle-to-wheel-root materialization paths in FUN_00763570 and FUN_00770e80.",
+    "Interior/child aliases, reconstructed pointers from memory, aggregate copies, callbacks, indirect entry and runtime-generated/copied/encoded pointers remain separate.",
+    "The loop cursor is stack-local; no numeric offset coincidence is promoted to object identity."
+  ],
+  "next_step": "Trace remaining derived/interior aliases that can persist or be reconstructed from memory, then compose callback/indirect-entry evidence before changing stored-or-escaped-alias gates.",
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "selected_slot3": {
+    "absolute_target": "HDVehicle+0x28b8..+0x28bf",
+    "local_target": "+0x538",
+    "wheel_receiver": "HDVehicle+0x2380"
+  },
+  "version": 1,
+  "wheel_layout": {
+    "count": 4,
+    "root_offsets": ["+0x400", "+0xe80", "+0x1900", "+0x2380"],
+    "stride": "+0xa80"
+  }
+}
