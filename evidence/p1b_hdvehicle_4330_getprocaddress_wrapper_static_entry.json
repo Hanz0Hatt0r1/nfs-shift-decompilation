@@ -1,0 +1,44 @@
+{
+  "adjudication": {
+    "dynamic_getprocaddress_resolution_ruled_out": false,
+    "external_provider_count": 7,
+    "generic_wrapper_indirect_runtime_entry_ruled_out": false,
+    "generic_wrapper_static_address_taken_or_literal_seed_found": false,
+    "generic_wrapper_static_entry_surface_complete": true,
+    "generic_wrapper_static_indirect_entry_seed_found": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_patching_or_generated_code_ruled_out": false
+  },
+  "authority": {
+    "ghidra_c_is_navigation_crosscheck_only": true,
+    "ghidra_c_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "retail_bytes_are_machine_authority": true,
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_file_size": 8801792
+  },
+  "format": "SHIFT.P1B.HDVehicle4330GetProcAddressWrapperStaticEntrySurface/1",
+  "limits": [
+    "This closes static exact VA/RVA publication and source-visible address-taking of wrapper 0x0093dd2b only.",
+    "Runtime-computed/copied/encoded wrapper pointers and opaque indirect entry remain open."
+  ],
+  "next_step": "Trace runtime-generated/copied wrapper pointers or runtime-populated function-pointer stores.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "direct_callsite_count": 12,
+    "direct_callsites": ["0x0093cf1d","0x0093cf5b","0x0093cf99","0x0093cfd4","0x0093d007","0x0093d042","0x0093d06e","0x0093d086","0x0093d276","0x00997659","0x00997b7a","0x009a8a1d"],
+    "direct_jumpsite_count": 0,
+    "source_definition_count": 1,
+    "source_direct_invocation_count": 12,
+    "source_non_invocation_value_use_count": 0,
+    "source_symbol_occurrence_count": 13,
+    "whole_image_absolute_va_literal_hit_count": 0,
+    "whole_image_rva_literal_hit_count": 0,
+    "wrapper_rva": "0x0053dd2b",
+    "wrapper_va": "0x0093dd2b"
+  },
+  "version": 1
+}
