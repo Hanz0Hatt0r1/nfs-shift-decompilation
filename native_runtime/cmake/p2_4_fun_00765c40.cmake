@@ -44,6 +44,20 @@ target_compile_options(
   shift_runtime_fun_007bf790_caster_record_materialization_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_fun_00901310_cvttsd2si_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00901310_cvttsd2si_check.cpp)
+target_include_directories(
+  shift_runtime_fun_00901310_cvttsd2si_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_link_libraries(
+  shift_runtime_fun_00901310_cvttsd2si_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(
+  shift_runtime_fun_00901310_cvttsd2si_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 add_executable(shift_runtime_fun_00765c40_wheel_pair_refresh_stage_check
   ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00765c40_wheel_pair_refresh_stage_check.cpp)
 target_include_directories(
@@ -194,6 +208,9 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_fun_007bf790_caster_record_materialization
     COMMAND shift_runtime_fun_007bf790_caster_record_materialization_check)
+  add_test(
+    NAME shift_runtime_fun_00901310_cvttsd2si
+    COMMAND shift_runtime_fun_00901310_cvttsd2si_check)
   add_test(
     NAME shift_runtime_fun_00765c40_wheel_pair_refresh_stage
     COMMAND shift_runtime_fun_00765c40_wheel_pair_refresh_stage_check)

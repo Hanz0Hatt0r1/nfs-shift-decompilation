@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shift_fun_00769640_trig_source_writer.hpp"
+#include "shift_fun_00901310_cvttsd2si.hpp"
 
 #include <array>
 #include <cmath>
@@ -127,6 +128,29 @@ materialize_fun_007bf790_caster_records(
     const auto right = materialize_fun_007c5a20_caster_record(
         input.right, conversion);
     return {left, right};
+}
+
+// Native value-path overloads. Keep the callback forms above for historical
+// tests and explicit instrumentation, while production P2.4 callers can use
+// the recovered FUN_00901310 value semantics directly.
+inline Fun007bf790CasterRecordResult
+materialize_fun_007c5a20_caster_record(
+    const Fun007bf790CasterConfigInput& input) {
+    return materialize_fun_007c5a20_caster_record(
+        input,
+        [](double value) {
+            return execute_fun_00901310_cvttsd2si(value);
+        });
+}
+
+inline Fun007bf790CasterPairResult
+materialize_fun_007bf790_caster_records(
+    const Fun007bf790CasterPairInput& input) {
+    return materialize_fun_007bf790_caster_records(
+        input,
+        [](double value) {
+            return execute_fun_00901310_cvttsd2si(value);
+        });
 }
 
 inline Fun00769640TrigSourceWriterInput
