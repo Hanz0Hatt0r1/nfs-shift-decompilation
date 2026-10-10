@@ -1,0 +1,89 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun00765850_exact_root_persistent_escape_found": false,
+    "fun00765aa0_exact_root_persistent_escape_found": false,
+    "p13a_residual_indexed_wheel_root_lifetime_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "reconstructed_wheel_pointers_ruled_out": false,
+    "residual_indexed_exact_root_direct_callee_forward_found": false,
+    "residual_indexed_exact_root_nonstack_store_found": false,
+    "residual_indexed_exact_root_push_found": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_bytes_adjudicate": true,
+    "platform": "PC retail 1.02",
+    "ranges": {
+      "fun00765850": {"end_exclusive": "0x00765a93", "sha256": "279d20bf853889e31a7e7d594fdde5d79d323435894629aa25925697c2069d19", "size": 579, "start": "0x00765850"},
+      "fun00765aa0": {"end_exclusive": "0x00765c37", "sha256": "c094c028f42dedd868fb39179db7906e386b5a84217b6ff008e2767960761ae4", "size": 407, "start": "0x00765aa0"},
+      "selected_caller_fun00765850_a": {"end_exclusive": "0x0074d98d", "sha256": "ce125396503a0b863689591d27e1b6a8f1590b112d322d44e6d9e6c6fceca14b", "size": 10, "start": "0x0074d983"},
+      "selected_caller_fun00765850_b": {"end_exclusive": "0x00713b10", "sha256": "92179493933149cf264ec44a8887e143bf0f3469b10fd6ecb7fff1335dc97830", "size": 10, "start": "0x00713b06"},
+      "selected_caller_fun00765aa0": {"end_exclusive": "0x00713acc", "sha256": "9e165eeb62186e0e1f02c5ce4397ada83c1825d42c88153daef26d68354625b9", "size": 10, "start": "0x00713ac2"}
+    },
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1A.P13AResidualIndexedWheelRootLifetimes/1",
+  "indexed_materializers": [
+    {
+      "child_identity_kill": "0x007659b8 EDI=[root+0x424]",
+      "exact_root_events": {"exact_receiver_calls": [], "nonstack_stores": [], "pushes": [], "register_copies": [], "stack_spills": [{"dst": "DWORD PTR [ebp-0x24]", "site": "0x0076589a"}]},
+      "formula": "HDVehicle+0x400+index*0xa80",
+      "function": "FUN_00765850",
+      "persistent_exact_root_escape_found": false,
+      "root_register": "EDI",
+      "root_reload": "0x00765a57",
+      "root_stack_spill": "[EBP-0x24]"
+    },
+    {
+      "child_identity_kill": "0x00765b5c EDI=[root+0x424]",
+      "exact_root_events": {"exact_receiver_calls": [], "nonstack_stores": [], "pushes": [], "register_copies": [], "stack_spills": [{"dst": "DWORD PTR [ebp-0x1c]", "site": "0x00765ad2"}]},
+      "formula": "HDVehicle+0x400+index*0xa80",
+      "function": "FUN_00765aa0",
+      "persistent_exact_root_escape_found": false,
+      "root_register": "EDI",
+      "root_reload": "0x00765bf8",
+      "root_stack_spill": "[EBP-0x1c]"
+    }
+  ],
+  "limits": [
+    "This closes exact-root lifetime only in FUN_00765850 and FUN_00765aa0 after machine-proven selected-HDVehicle direct entry; child/interior pointers are separate values.",
+    "Each exact root is spilled only to a stack local, later EDI is replaced by a child/derived pointer, and the exact root is reloaded only for final scalar wheel-field writes.",
+    "No exact root is stored to non-stack memory, pushed, copied to a new GPR alias, or forwarded as an ECX receiver while exact-root identity is live.",
+    "The positive FUN_0076df50 runtime queue store and all broader runtime/callback/stored-alias gates remain independent and fail-closed."
+  ],
+  "machine_anchors": {
+    "65850_child_kill": "0x007659b8 mov edi,DWORD PTR [edi+0x424]",
+    "65850_final_scalar_store": "0x00765a82 fstp QWORD PTR [edi+0x520]",
+    "65850_index_stride": "0x00765878 imul eax,eax,0xa80",
+    "65850_root": "0x0076588b lea edi,[eax+ecx*1+0x400]",
+    "65850_root_reload": "0x00765a57 mov edi,DWORD PTR [ebp-0x24]",
+    "65850_root_spill": "0x0076589a mov DWORD PTR [ebp-0x24],edi",
+    "65aa0_child_kill": "0x00765b5c mov edi,DWORD PTR [edi+0x424]",
+    "65aa0_final_byte_store": "0x00765c1f mov BYTE PTR [edi+0x505],0x0",
+    "65aa0_final_scalar_store": "0x00765c26 fstp QWORD PTR [edi+0x520]",
+    "65aa0_index_stride": "0x00765abe imul eax,eax,0xa80",
+    "65aa0_root": "0x00765ac8 lea edi,[eax+esi*1+0x400]",
+    "65aa0_root_reload": "0x00765bf8 mov edi,DWORD PTR [ebp-0x1c]",
+    "65aa0_root_spill": "0x00765ad2 mov DWORD PTR [ebp-0x1c],edi",
+    "65aa0_vehicle_capture": "0x00765ac5 mov esi,ecx",
+    "selected_65850_call_a": "0x0074d988 call 0x765850",
+    "selected_65850_call_b": "0x00713b0b call 0x765850",
+    "selected_65850_literal_a": "0x0074d983 mov ecx,0xc13700",
+    "selected_65850_literal_b": "0x00713b06 mov ecx,0xc13700",
+    "selected_65aa0_call": "0x00713ac7 call 0x765aa0",
+    "selected_65aa0_literal": "0x00713ac2 mov ecx,0xc13700"
+  },
+  "next_step": "Compose these residual indexed lifetimes with the known-materializer handoff and the positive FUN_0076df50 queue-store contract, then continue exact consumer tracing from wheel virtual target 0x0075cfb0.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "selected_hdvehicle_entry": {
+    "FUN_00765850": [{"call": "0x0074d988", "literal": "0x00c13700"}, {"call": "0x00713b0b", "literal": "0x00c13700"}],
+    "FUN_00765aa0": [{"call": "0x00713ac7", "literal": "0x00c13700"}]
+  },
+  "version": 1
+}
