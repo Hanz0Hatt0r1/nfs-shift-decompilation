@@ -1,0 +1,60 @@
+{
+  "adjudication": {
+    "exact_4330_carrier_reachable_via_massive_thread_wrapper": false,
+    "external_provider_count": 7,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "massive_thread_callback_values_complete": true,
+    "massive_thread_callback_wrapper_surface_complete": true,
+    "p1_3_control_producer_complete": false,
+    "runtime_callback_registration_ruled_out": false
+  },
+  "authority": {
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "platform": "PC retail 1.02",
+    "shift_exe_c_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "sqlite_and_source_are_navigation_crosscheck": true
+  },
+  "format": "SHIFT.P1B.HDVehicle4330MassiveThreadCallbackWrapper/1",
+  "limits": [
+    "This closes only the two direct FUN_0061cdf0 registrations visible in the pinned SQLite/source pair.",
+    "It does not close other application-owned callback wrappers, arbitrary function-pointer storage, computed/encoded code pointers or indirect dispatch.",
+    "Decompiler source is used only to pin the wrapper dataflow and concrete callback values; no object identity is inferred from types."
+  ],
+  "next_step": "Continue application-owned callback wrappers and generic function-pointer stores/copies before promoting the global runtime-callback or indirect-entry gates.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "callback_storage": "heap record [0]=callback, [1]=callback argument",
+    "direct_caller_count": 2,
+    "direct_callers": [
+      {
+        "caller": "0x0060b54e",
+        "callsite": "0x0060b6e5"
+      },
+      {
+        "caller": "0x0061a780",
+        "callsite": "0x0061a7ce"
+      }
+    ],
+    "exact_4330_carrier_callback_count": 0,
+    "exact_4330_carrier_thread_start": false,
+    "fixed_thread_start": "0x0061cd93",
+    "resolved_callback_count": 2,
+    "resolved_callbacks": [
+      {
+        "address": "0x0060b457",
+        "name": "FUN_0060b457"
+      },
+      {
+        "address": "0x0061d300",
+        "name": "FUN_0061d300"
+      }
+    ],
+    "thread_dispatch": "lpStartAddress_0061cd93 invokes (*(code*)record[0])(record[1])",
+    "wrapper": "0x0061cdf0"
+  },
+  "version": 1
+}
