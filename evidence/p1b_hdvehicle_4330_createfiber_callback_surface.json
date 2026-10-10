@@ -1,0 +1,42 @@
+{
+  "adjudication": {
+    "computed_or_encoded_code_pointers_ruled_out": false,
+    "createfiber_callback_surface_complete": true,
+    "exact_4330_carrier_reachable_via_createfiber": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "remaining_callback_api_families_ruled_out": false,
+    "runtime_callback_registration_ruled_out": false
+  },
+  "authority": {
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "platform": "PC retail 1.02",
+    "shift_exe_c_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "sqlite_machine_calls_are_physical_callsite_authority": true
+  },
+  "format": "SHIFT.P1B.HDVehicle4330CreateFiberCallbackSurface/1",
+  "limits": [
+    "This closes only direct CreateFiber start-routine registration in the pinned retail SQLite/source pair.",
+    "The single physical callsite uses fixed lpStartAddress_00a62710; the fiber entry itself performs further object/vtable dispatch that is outside this registration subset.",
+    "Other callbacks, function-pointer stores/copies and computed indirect entry remain open."
+  ],
+  "next_step": "Trace remaining finite callback families and generic function-pointer stores/copies; keep global indirect-entry gates fail-closed.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "caller": "0x00a62940",
+    "caller_name": "FUN_00a62940",
+    "callsite": "0x00a62a43",
+    "exact_4330_carrier_start_routine_count": 0,
+    "fiber_parameter": "piVar4 + 2",
+    "physical_callsite_count": 1,
+    "start_routine": "0x00a62710",
+    "start_routine_name": "lpStartAddress_00a62710"
+  },
+  "version": 1
+}
