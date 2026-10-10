@@ -25,6 +25,26 @@ The two physical `SetWaitableTimer` callsites are machine-verified. The Ghidra C
 - `SHIFT.exe.c` SHA-256 `512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9`;
 - exact machine spans for the WSA receive branch, `WSAIoctl`, and both waitable-timer callsites.
 
+### `WSARecvFrom @ 0x005fdd09` ABI reconstruction
+
+The call at `0x005fdd09` reaches the `WS2_32.dll!WSARecvFrom` import through the thunk at `0x0061207c` and IAT slot `0x00aa64e8`. Let `S` be `ESP` after the function prologue and before the call arguments are pushed. The function places a `WSABUF` at `S+0x0c`: `len = 0x4f0` at `0x005fdcd7`, `buf = ESI+0xb0` at `0x005fdcd3`. `ESI` holds the receiver from the entry `EAX`.
+
+| ABI position | Parameter | Exact call value | Push address |
+| --- | --- | --- | --- |
+| 1 | `s` | `[ESI+0x18]` | `0x005fdd08` |
+| 2 | `lpBuffers` | `S+0x0c` | `0x005fdd07` |
+| 3 | `dwBufferCount` | `1` | `0x005fdd01` |
+| 4 | `lpNumberOfBytesRecvd` | `ESI+0xac` | `0x005fdd00` |
+| 5 | `lpFlags` | `ESI+0x94` | `0x005fdcff` |
+| 6 | `lpFrom` | `ESI+0x9a` | `0x005fdcfe` |
+| 7 | `lpFromlen` | `ESI+0x90` | `0x005fdcf1` |
+| 8 | `lpOverlapped` | `ESI+0x54` | `0x005fdce7` |
+| 9 | `lpCompletionRoutine` | `NULL` (`EBP=0`) | `0x005fdce1` |
+
+`0x005fdc98` executes `xor ebp,ebp`; no instruction writes `EBP` before `0x005fdce1` executes `push ebp`. The push precedes the branch at `0x005fdce2`, so it belongs to the `WSARecvFrom` path as well as the sibling `WSARecv` path. The call's ninth stack argument is therefore exactly zero. The machine-span hash and individually pinned instruction bytes in the analyzer fail closed on drift.
+
+This completion-routine slot cannot carry a callback into any of the exact `HDVehicle+0x4330` carriers. This conclusion concerns this `WSARecvFrom` callback site only; it does not settle separate indirect calls, APC sources, or the vehicle receiver-identity joins. The external-provider count remains **7**.
+
 Xbox recomp is not required for any promoted claim in this slice.
 
 ## Scope boundary

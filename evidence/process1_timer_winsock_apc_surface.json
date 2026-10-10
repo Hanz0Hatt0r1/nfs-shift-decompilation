@@ -39,6 +39,75 @@
     "owner_ioctl": "FUN_005ff390",
     "wsarecv_completion_routine": "NULL",
     "wsarecvfrom_completion_routine": "NULL (machine ABI ninth argument)",
+    "wsarecvfrom_machine_abi": {
+      "callsite": "0x005fdd09",
+      "import_thunk": "0x0061207c",
+      "import_address_table_slot": "0x00aa64e8",
+      "stack_base": "S = ESP after FUN_005fdc90 prologue, before argument pushes",
+      "wsabuf": {
+        "address": "S+0x0c",
+        "len": "0x4f0",
+        "buf": "ESI+0xb0"
+      },
+      "arguments": [
+        {
+          "position": 1,
+          "name": "s",
+          "value": "[ESI+0x18]",
+          "push": "0x005fdd08"
+        },
+        {
+          "position": 2,
+          "name": "lpBuffers",
+          "value": "S+0x0c",
+          "push": "0x005fdd07"
+        },
+        {
+          "position": 3,
+          "name": "dwBufferCount",
+          "value": "1",
+          "push": "0x005fdd01"
+        },
+        {
+          "position": 4,
+          "name": "lpNumberOfBytesRecvd",
+          "value": "ESI+0xac",
+          "push": "0x005fdd00"
+        },
+        {
+          "position": 5,
+          "name": "lpFlags",
+          "value": "ESI+0x94",
+          "push": "0x005fdcff"
+        },
+        {
+          "position": 6,
+          "name": "lpFrom",
+          "value": "ESI+0x9a",
+          "push": "0x005fdcfe"
+        },
+        {
+          "position": 7,
+          "name": "lpFromlen",
+          "value": "ESI+0x90",
+          "push": "0x005fdcf1"
+        },
+        {
+          "position": 8,
+          "name": "lpOverlapped",
+          "value": "ESI+0x54",
+          "push": "0x005fdce7"
+        },
+        {
+          "position": 9,
+          "name": "lpCompletionRoutine",
+          "value": "NULL (EBP=0)",
+          "push": "0x005fdce1"
+        }
+      ],
+      "ninth_argument_provenance": "0x005fdc98 xor ebp,ebp; 0x005fdce1 push ebp; EBP is not written between them",
+      "exact_hdvehicle_4330_carrier_reachable_via_completion_routine": false
+    },
     "wsaioctl_overlapped": "NULL",
     "wsaioctl_completion_routine": "NULL",
     "source_lines": {

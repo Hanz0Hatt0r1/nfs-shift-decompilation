@@ -67,6 +67,26 @@ def test_winsock_completion_routines_are_disabled() -> None:
     assert surface["wsaioctl_overlapped"] == "NULL"
     assert surface["wsaioctl_completion_routine"] == "NULL"
 
+    abi = surface["wsarecvfrom_machine_abi"]
+    assert abi["callsite"] == "0x005fdd09"
+    assert abi["import_thunk"] == "0x0061207c"
+    assert abi["import_address_table_slot"] == "0x00aa64e8"
+    assert abi["wsabuf"] == {"address": "S+0x0c", "len": "0x4f0", "buf": "ESI+0xb0"}
+    assert [entry["position"] for entry in abi["arguments"]] == list(range(1, 10))
+    assert [(entry["name"], entry["value"]) for entry in abi["arguments"]] == [
+        ("s", "[ESI+0x18]"),
+        ("lpBuffers", "S+0x0c"),
+        ("dwBufferCount", "1"),
+        ("lpNumberOfBytesRecvd", "ESI+0xac"),
+        ("lpFlags", "ESI+0x94"),
+        ("lpFrom", "ESI+0x9a"),
+        ("lpFromlen", "ESI+0x90"),
+        ("lpOverlapped", "ESI+0x54"),
+        ("lpCompletionRoutine", "NULL (EBP=0)"),
+    ]
+    assert abi["arguments"][-1]["push"] == "0x005fdce1"
+    assert abi["exact_hdvehicle_4330_carrier_reachable_via_completion_routine"] is False
+
     adjudication = payload["adjudication"]
     assert adjudication["source_visible_waitable_timer_completion_can_apc_controller1"] is False
     assert adjudication["source_visible_winsock_completion_can_apc_controller1"] is False
@@ -96,3 +116,8 @@ def test_analyzer_rejects_retail_identity_or_completion_drift() -> None:
     assert '"WSAIoctl null overlapped/completion push pattern drift"' in source
     assert '"record timer zero-argument push pattern drift"' in source
     assert '"output timer zero-argument push pattern drift"' in source
+    assert '"WSARecvFrom instruction drift at 0x{address:08x}"' in source
+    assert '0x005FDC98: "33ed"' in source
+    assert '0x005FDCE1: "55"' in source
+    assert '0x005FDD09: "e86e430100"' in source
+    assert '0x0061207C: "ff25e864aa00"' in source

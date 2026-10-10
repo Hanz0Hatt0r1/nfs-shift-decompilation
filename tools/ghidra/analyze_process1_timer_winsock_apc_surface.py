@@ -19,6 +19,61 @@ SPANS = {
     "fmod_output_timer_completion_null": (0x00998DF7, 0x00998E19),
 }
 
+# Exact instruction boundaries in the retail x86 call path. The surrounding
+# span hash also pins intervening instructions and control flow.
+RECVFROM_INSTRUCTIONS = {
+    0x005FDC95: "8bf0",  # ESI = receiver from EAX
+    0x005FDC98: "33ed",  # xor ebp, ebp
+    0x005FDCA0: "8dbeac000000",  # EDI = &bytes_received
+    0x005FDCCD: "8d8e94000000",  # ECX = &flags
+    0x005FDCD3: "89442410",  # [S+0x10] = &socket.recv_buffer
+    0x005FDCD7: "c744240cf0040000",  # [S+0x0c] = WSABUF.len
+    0x005FDCE1: "55",  # arg 9: lpCompletionRoutine = EBP
+    0x005FDCE4: "8d5654",  # arg 8: &socket.overlapped
+    0x005FDCE7: "52",
+    0x005FDCE8: "8b5618",  # socket handle
+    0x005FDCEB: "8d8690000000",  # arg 7: &fromlen
+    0x005FDCF1: "50",
+    0x005FDCF2: "c70010000000",  # fromlen = 16
+    0x005FDCF8: "8d869a000000",  # arg 6: &from
+    0x005FDCFE: "50",
+    0x005FDCFF: "51",  # arg 5: &flags
+    0x005FDD00: "57",  # arg 4: &bytes_received
+    0x005FDD01: "6a01",  # arg 3: buffer count = 1
+    0x005FDD03: "8d4c2428",  # arg 2: S+0x0c = &WSABUF
+    0x005FDD07: "51",
+    0x005FDD08: "52",  # arg 1: socket handle
+    0x005FDD09: "e86e430100",  # call 0x0061207c
+    0x0061207C: "ff25e864aa00",  # jmp [0x00aa64e8] (WSARecvFrom IAT)
+}
+
+
+def recvfrom_machine_abi(image: bytes) -> dict[str, object]:
+    for address, expected_hex in RECVFROM_INSTRUCTIONS.items():
+        expected = bytes.fromhex(expected_hex)
+        if va_bytes(image, address, address + len(expected)) != expected:
+            raise ValueError(f"WSARecvFrom instruction drift at 0x{address:08x}")
+    return {
+        "callsite": "0x005fdd09",
+        "import_thunk": "0x0061207c",
+        "import_address_table_slot": "0x00aa64e8",
+        "stack_base": "S = ESP after FUN_005fdc90 prologue, before argument pushes",
+        "wsabuf": {"address": "S+0x0c", "len": "0x4f0", "buf": "ESI+0xb0"},
+        "arguments": [
+            {"position": 1, "name": "s", "value": "[ESI+0x18]", "push": "0x005fdd08"},
+            {"position": 2, "name": "lpBuffers", "value": "S+0x0c", "push": "0x005fdd07"},
+            {"position": 3, "name": "dwBufferCount", "value": "1", "push": "0x005fdd01"},
+            {"position": 4, "name": "lpNumberOfBytesRecvd", "value": "ESI+0xac", "push": "0x005fdd00"},
+            {"position": 5, "name": "lpFlags", "value": "ESI+0x94", "push": "0x005fdcff"},
+            {"position": 6, "name": "lpFrom", "value": "ESI+0x9a", "push": "0x005fdcfe"},
+            {"position": 7, "name": "lpFromlen", "value": "ESI+0x90", "push": "0x005fdcf1"},
+            {"position": 8, "name": "lpOverlapped", "value": "ESI+0x54", "push": "0x005fdce7"},
+            {"position": 9, "name": "lpCompletionRoutine", "value": "NULL (EBP=0)", "push": "0x005fdce1"},
+        ],
+        "ninth_argument_provenance": "0x005fdc98 xor ebp,ebp; 0x005fdce1 push ebp; EBP is not written between them",
+        "exact_hdvehicle_4330_carrier_reachable_via_completion_routine": False,
+    }
+
 
 def digest(path: Path, algorithm: str = "sha256") -> str:
     hasher = hashlib.new(algorithm)
@@ -185,6 +240,7 @@ def build_payload(source: Path, executable: Path) -> dict[str, object]:
             "owner_ioctl": "FUN_005ff390",
             "wsarecv_completion_routine": "NULL",
             "wsarecvfrom_completion_routine": "NULL (machine ABI ninth argument)",
+            "wsarecvfrom_machine_abi": recvfrom_machine_abi(image),
             "wsaioctl_overlapped": "NULL",
             "wsaioctl_completion_routine": "NULL",
             "source_lines": {
