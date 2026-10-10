@@ -1,0 +1,61 @@
+{
+  "adjudication": {
+    "callbacks_registered_outside_carriers_ruled_out": false,
+    "callee_created_aliases_ruled_out": false,
+    "external_provider_count": 7,
+    "other_indirect_entry_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "runtime_generated_pointer_stores_ruled_out": false,
+    "sixteen_carrier_import_resolved_callsite_count": 2,
+    "sixteen_carrier_machine_call_target_surface_complete": true,
+    "sixteen_carrier_runtime_unknown_call_target_count": 0,
+    "sixteen_carrier_runtime_unknown_call_target_found": false,
+    "sixteen_carrier_static_game_code_target_count_for_aa60b4": 0,
+    "slot3_writer_provenance_proven": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "format": "SHIFT.P1D.Slot3CarrierCallTargetComposition/2",
+  "limits": [
+    "This composes only CALL instructions physically present in the 16 exact-root carrier bodies.",
+    "The two call-through-memory sites are loader-resolved PE imports to KERNEL32!InterlockedExchange; the on-disk 0x00778052 value is an IMAGE_IMPORT_BY_NAME RVA, not game code.",
+    "It does not rule out callbacks, indirect entry into carriers/callees, deeper callee indirection, runtime-generated/copied aliases, or reconstructed pointer aliases."
+  ],
+  "next_step": "Trace callback/indirect entry and reconstructed/runtime-generated pointer-store surfaces outside the 16 carrier bodies before changing global P1.3D gates.",
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "supersedes": "SHIFT.P1D.Slot3CarrierCallTargetComposition/1",
+  "surface": {
+    "call_through_memory_site_count": 2,
+    "carrier_count": 16,
+    "immediate_direct_callsite_count": 214,
+    "on_disk_import_name_rva_misclassified_as_code_target": false,
+    "resolved_call_through_memory_sites": [
+      {
+        "operation": "InterlockedExchange((LONG volatile*)(HDVehicle+0x4020), 1)",
+        "resolution_kind": "PE import/IAT",
+        "runtime_import": "KERNEL32!InterlockedExchange",
+        "site": "0x00770ec4",
+        "slot": "0x00aa60b4",
+        "target_argument": "HDVehicle+0x4020",
+        "value_argument": 1
+      },
+      {
+        "operation": "InterlockedExchange((LONG volatile*)(HDVehicle+0x4020), 2)",
+        "resolution_kind": "PE import/IAT",
+        "runtime_import": "KERNEL32!InterlockedExchange",
+        "site": "0x00770f41",
+        "slot": "0x00aa60b4",
+        "target_argument": "HDVehicle+0x4020",
+        "value_argument": 2
+      }
+    ],
+    "runtime_unknown_call_target_count_within_16_carrier_bodies": 0,
+    "total_machine_callsite_count": 216
+  },
+  "upstream_contracts": [
+    "SHIFT.P1D.Slot3DirectCalleeBulkOpcodeClosure/1",
+    "SHIFT.P1D.Slot3StaticIndirectAA60B4Closure/2"
+  ],
+  "version": 2
+}
