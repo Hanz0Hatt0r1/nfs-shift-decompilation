@@ -1,0 +1,84 @@
+{
+  "adjudication": {
+    "encoded_or_reconstructed_carrier_pointers_ruled_out": false,
+    "external_provider_count": 7,
+    "incoming_indirect_entry_ruled_out": false,
+    "manual_imagebase_plus_exact_rva_immediate_construction_ruled_out": true,
+    "manual_imagebase_plus_rva_pointer_construction_ruled_out": false,
+    "p13a_exact_imagebase_plus_exact_carrier_rva_candidate_found": false,
+    "p13a_exact_imagebase_plus_exact_carrier_rva_immediate_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_callback_registration_ruled_out": false,
+    "runtime_generated_or_copied_carrier_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "machine_disassembly_adjudicates": true,
+    "platform": "PC retail 1.02",
+    "preferred_image_base": "0x00400000",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "carrier_rva_surface": [
+    {"address":"0x00758b50","exact_rva_scalar_hit_count":0,"name":"FUN_00758b50","rva":"0x00358b50"},
+    {"address":"0x00755950","exact_rva_scalar_hit_count":0,"name":"FUN_00755950","rva":"0x00355950"},
+    {"address":"0x00770e80","exact_rva_scalar_hit_count":0,"name":"FUN_00770e80","rva":"0x00370e80"},
+    {"address":"0x00755a60","exact_rva_scalar_hit_count":0,"name":"FUN_00755a60","rva":"0x00355a60"},
+    {"address":"0x00752fc0","exact_rva_scalar_hit_count":0,"name":"FUN_00752fc0","rva":"0x00352fc0"},
+    {"address":"0x00760b50","exact_rva_scalar_hit_count":0,"name":"FUN_00760b50","rva":"0x00360b50"},
+    {"address":"0x00763570","exact_rva_scalar_hit_count":0,"name":"FUN_00763570","rva":"0x00363570"},
+    {"address":"0x00755f80","exact_rva_scalar_hit_count":0,"name":"FUN_00755f80","rva":"0x00355f80"},
+    {"address":"0x0076d100","exact_rva_scalar_hit_count":0,"name":"FUN_0076d100","rva":"0x0036d100"},
+    {"address":"0x00758810","exact_rva_scalar_hit_count":0,"name":"FUN_00758810","rva":"0x00358810"},
+    {"address":"0x00769ef0","exact_rva_scalar_hit_count":0,"name":"FUN_00769ef0","rva":"0x00369ef0"},
+    {"address":"0x007675f0","exact_rva_scalar_hit_count":0,"name":"FUN_007675f0","rva":"0x003675f0"},
+    {"address":"0x007682c0","exact_rva_scalar_hit_count":0,"name":"FUN_007682c0","rva":"0x003682c0"},
+    {"address":"0x00766510","exact_rva_scalar_hit_count":0,"name":"FUN_00766510","rva":"0x00366510"},
+    {"address":"0x00758fc0","exact_rva_scalar_hit_count":0,"name":"FUN_00758fc0","rva":"0x00358fc0"},
+    {"address":"0x00765c40","exact_rva_scalar_hit_count":0,"name":"FUN_00765c40","rva":"0x00365c40"}
+  ],
+  "format": "SHIFT.P1A.P13AExactImagebaseRvaImmediateConstructionClosure/1",
+  "imagebase_value_materializers": [
+    {"address":"0x0065228e","function":"FUN_00652260","mnemonic":"mov","operands":"eax,0x400000"},
+    {"address":"0x00652360","function":"FUN_00652340","mnemonic":"mov","operands":"eax,0x400000"},
+    {"address":"0x00652420","function":"FUN_00652400","mnemonic":"mov","operands":"eax,0x400000"},
+    {"address":"0x00652bab","function":"FUN_00652b50","mnemonic":"mov","operands":"eax,0x400000"},
+    {"address":"0x007367ec","function":"FUN_00736510","mnemonic":"push","operands":"0x400000"},
+    {"address":"0x007368a4","function":"FUN_00736510","mnemonic":"push","operands":"0x400000"},
+    {"address":"0x00869017","function":"FUN_00868d80","mnemonic":"mov","operands":"DWORD PTR [ebp-0x38],0x400000"},
+    {"address":"0x00904817","function":"___tmainCRTStartup","mnemonic":"push","operands":"0x400000"},
+    {"address":"0x0091868a","function":"__IsNonwritableInCurrentImage","mnemonic":"push","operands":"0x400000"},
+    {"address":"0x0091869e","function":"__IsNonwritableInCurrentImage","mnemonic":"sub","operands":"eax,0x400000"},
+    {"address":"0x009186a4","function":"__IsNonwritableInCurrentImage","mnemonic":"push","operands":"0x400000"},
+    {"address":"0x009814e4","function":"FUN_00981475","mnemonic":"mov","operands":"edx,0x400000"},
+    {"address":"0x0098dd1c","function":"FUN_0098dca9","mnemonic":"mov","operands":"DWORD PTR [eax+0x214],0x400000"}
+  ],
+  "limits": [
+    "This closes only constructions whose function contains the exact preferred image-base scalar 0x00400000 and an exact canonical carrier RVA scalar.",
+    "The result does not cover split additions, table-derived RVAs, encoded/XORed values, runtime arithmetic, copied/generated pointers, callback registration or incoming indirect dispatch.",
+    "Exact image-base numeric uses that are flags, sizes, startup arguments or CRT image inspection are retained as observations and are not treated as pointer identity by themselves.",
+    "No slot0/slot1 or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Trace split/table-derived/encoded carrier reconstruction and runtime registration/dispatch; continue selected-wheel data-pointer persistence independently.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "same_function_candidates": [],
+  "scan": {
+    "disassembled_instruction_count": 2847850,
+    "exact_carrier_rva_scalar_use_count": 0,
+    "exact_imagebase_mnemonic_counts": {"and":2,"cmp":4,"mov":7,"or":8,"push":5,"sub":1,"test":25},
+    "exact_imagebase_scalar_use_count": 52,
+    "exact_imagebase_value_materializing_use_count": 13,
+    "same_function_exact_imagebase_plus_carrier_rva_candidate_count": 0
+  },
+  "scope": {
+    "carrier_count": 16,
+    "description": "same-function exact preferred-imagebase scalar plus exact canonical-carrier RVA scalar",
+    "split_or_encoded_arithmetic_in_scope": false
+  },
+  "upstream_contracts": ["SHIFT.P1A.P13AStaticCarrierSeedHandoff/1"],
+  "version": 1
+}
