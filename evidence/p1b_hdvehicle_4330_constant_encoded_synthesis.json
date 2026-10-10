@@ -1,0 +1,108 @@
+{
+  "adjudication": {
+    "computed_or_encoded_code_pointers_ruled_out": false,
+    "constant_only_encoded_carrier_synthesis_subset_complete": true,
+    "constant_only_encoded_exact_carrier_synthesis_found": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false
+  },
+  "authority": {
+    "machine_disassembly_adjudicates": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_executable_size": 8801792
+  },
+  "format": "SHIFT.P1B.HDVehicle4330ConstantEncodedSynthesis/1",
+  "limits": [
+    "This closes only constant-only straight-line register synthesis within the recognized operation set.",
+    "State resets at calls, jumps, conditional branches, returns and other control transfers; path joins are intentionally not modeled.",
+    "Memory/table-derived values, delayed module-base consumers, split arithmetic across control-flow boundaries, opaque helper returns, runtime patching and copied pointers remain open.",
+    "No identity is inferred from numeric offset equality."
+  ],
+  "next_step": "Bound memory/table-derived and cross-block encoded carrier reconstruction, then classify any positive exact-carrier stores/copies.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "scan": {
+    "constant_seed_count": 67970,
+    "constant_seed_counts": {
+      "mov_imm": 38128,
+      "xor_zero": 29842
+    },
+    "control_flow_reset_count": 1081262,
+    "exact_carrier_synthesis_hit_count": 0,
+    "exact_carrier_synthesis_hits": [],
+    "instruction_count": 2847850,
+    "recognized_transition_count": 2168,
+    "recognized_transition_counts": {
+      "add": 245,
+      "and": 49,
+      "dec": 34,
+      "inc": 493,
+      "lea": 294,
+      "neg": 610,
+      "not": 3,
+      "or": 49,
+      "sar": 5,
+      "shl": 136,
+      "shr": 3,
+      "sub": 247
+    }
+  },
+  "scope": {
+    "exact_carrier_count": 15,
+    "exact_carriers": [
+      "0x00769520",
+      "0x0076b130",
+      "0x0076df50",
+      "0x00768a4d",
+      "0x00756050",
+      "0x00772200",
+      "0x00772570",
+      "0x007c3b00",
+      "0x0076b280",
+      "0x007618f0",
+      "0x00769640",
+      "0x007567a0",
+      "0x00756bb0",
+      "0x00771db0",
+      "0x00771e10"
+    ],
+    "memory_or_table_loads_in_scope": false,
+    "model": "straight-line GPR constant propagation with reset at every control-transfer boundary",
+    "tracked_operations": [
+      "mov imm/reg",
+      "xor",
+      "add",
+      "sub",
+      "or",
+      "and",
+      "inc",
+      "dec",
+      "neg",
+      "not",
+      "shl/sal",
+      "shr",
+      "sar",
+      "rol",
+      "ror",
+      "lea reg,[reg+/-imm]"
+    ],
+    "tracked_registers": [
+      "eax",
+      "ebp",
+      "ebx",
+      "ecx",
+      "edi",
+      "edx",
+      "esi"
+    ]
+  },
+  "version": 1
+}
