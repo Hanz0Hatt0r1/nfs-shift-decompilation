@@ -24,7 +24,7 @@ def build() -> dict:
     assert vtable["carrier_set"]["count"] == 15
     assert vs["slot_count"] == 22416
     assert vs["exact_carrier_target_hit_count"] == 0
-    assert fs["incoming_indirect_unresolved_target_count"] == 19500
+    assert fs["navigation_index_unresolved_indirect_target_count"] == 19500
     return {
         "format": FORMAT,
         "version": 1,
@@ -36,8 +36,8 @@ def build() -> dict:
             "static_vtable_candidate_count": vs["candidate_table_count"],
             "static_vtable_slot_count": vs["slot_count"],
             "static_vtable_exact_carrier_target_hit_count": vs["exact_carrier_target_hit_count"],
-            "incoming_indirect_navigation_edge_count": fs["incoming_indirect_navigation_edge_count"],
-            "incoming_indirect_unresolved_target_count": fs["incoming_indirect_unresolved_target_count"],
+            "incoming_indirect_navigation_edge_count": fs["navigation_index_indirect_edge_count"],
+            "incoming_indirect_unresolved_target_count": fs["navigation_index_unresolved_indirect_target_count"],
         },
         "adjudication": {
             "static_vtable_indirect_target_subset_complete": True,
