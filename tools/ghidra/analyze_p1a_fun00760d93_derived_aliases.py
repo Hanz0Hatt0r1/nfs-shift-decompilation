@@ -12,7 +12,7 @@ RANGES={
  'fun007ba630':(0x7ba630,0x7ba7de,'4d7c11507756faf8213747d354ff9ab30ec1162693286afb69de241718f9080c'),
  'fun007ba7e0':(0x7ba7e0,0x7ba852,'c44dac55776ac266f00822c40762b2d452226a043a0bd687209b67d3bbe947a4'),
  'fun007b1790':(0x7b1790,0x7b19e9,'44969e5c54b61563c235d2c6fad3da9e062d1184920e30b48c4219552cf23359'),
- 'fun00753710':(0x753710,0x75375c,'5fbab5956392a1d73e81f20090b28894631d0a9b0f7e130e4c3d6d4401fe0ea'),
+ 'fun00753710':(0x753710,0x75375c,'5fbab5956392a1d73e81f20090b28894631d0a9b0f7e130e4c3d6d4401fe0ea0'),
 }
 I=re.compile(r'^\s*([0-9a-fA-F]+):\s+(?:[0-9a-fA-F]{2}\s+)+\s*([a-zA-Z][a-zA-Z0-9]*)\s*(.*)$')
 def norm(s):return re.sub(r'\s+',' ',s.strip()).replace(', ', ',')
