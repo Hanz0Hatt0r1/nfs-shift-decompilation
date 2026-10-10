@@ -1,0 +1,165 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_fun0076df50_runtime_wheel_queue_store_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "reconstructed_wheel_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_store_count_per_initialization": 4,
+    "runtime_generated_selected_wheel_pointer_store_found": true,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "slot0_runtime_wheel_pointer_store_found": true,
+    "slot1_runtime_wheel_pointer_store_found": true,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "stored_wheel_pointer_indirect_virtual_consumer_found": true,
+    "stored_wheel_pointer_virtual_slot_4_target_resolved": true
+  },
+  "authority": {
+    "machine_bytes_adjudicate": true,
+    "platform": "PC retail 1.02",
+    "ranges": {
+      "fiber_virtual_dispatch": {
+        "end_exclusive": "0x00a6272e",
+        "sha256": "1b663770eda4394194ef84e8f42de8ee9a52d548e83042be17e2bc5d293090c0",
+        "size": 22,
+        "start": "0x00a62718"
+      },
+      "fun0076df50_wheel_loop": {
+        "end_exclusive": "0x0076e512",
+        "sha256": "7e1490ab82ff57f10d2e5b2499e8ca39bb43a5ececa8a2d346810366d2007c6f",
+        "size": 102,
+        "start": "0x0076e4ac"
+      },
+      "fun00a62690_wheel_init": {
+        "end_exclusive": "0x00a626c9",
+        "sha256": "da54e07d14af4c90f1c3defc4d2992a11c776f4f641c961cacbb779e144690b4",
+        "size": 57,
+        "start": "0x00a62690"
+      },
+      "fun00a62c30_queue_node_alloc": {
+        "end_exclusive": "0x00a62ca5",
+        "sha256": "ae50955fea73d9f8c7805b0d0cffef4b90fca64f7dbddbef65fdb36a6237ba66",
+        "size": 117,
+        "start": "0x00a62c30"
+      },
+      "fun00a62f60_queue_register": {
+        "end_exclusive": "0x00a62fc8",
+        "sha256": "31d7c42ff25684a56fcb424f2cab1c91613b3387ef808c10cd7c0006daaab54e",
+        "size": 104,
+        "start": "0x00a62f60"
+      },
+      "queue_execute_pack": {
+        "end_exclusive": "0x00a62a49",
+        "sha256": "d6f3db2b085fd4660c68f8f4b79c908bcb8029f293747dbbe532ebd542b3e474",
+        "size": 70,
+        "start": "0x00a62a03"
+      },
+      "selected_hdvehicle_caller": {
+        "end_exclusive": "0x00798fa1",
+        "sha256": "2134b802158e59b84e2c746abd12f6db1a4b875a93623808a19f0d538149c08d",
+        "size": 10,
+        "start": "0x00798f97"
+      },
+      "wheel_constructor_vptr": {
+        "end_exclusive": "0x0076b0a8",
+        "sha256": "b02199ed822256698ac54fae5bfdb4d9687b1c96a4f985cb1903f2b3e12b200d",
+        "size": 16,
+        "start": "0x0076b098"
+      },
+      "wheel_vtable_slot01": {
+        "end_exclusive": "0x00b09a70",
+        "sha256": "a0a7ee6292a11c8c7e582fc654bda7bd4663b43b730a9e848ce8f8d6bb089dff",
+        "size": 8,
+        "start": "0x00b09a68"
+      }
+    },
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "consumer_path": {
+    "consumer_receiver_is_exact_stored_wheel_root": true,
+    "dispatch": "exact stored wheel root -> vptr -> slot +0x4 -> indirect call",
+    "fiber_entry": "lpStartAddress_00a62710",
+    "queue_execute": "FUN_00a62940",
+    "resolved_slot_4_target": "0x0075cfb0",
+    "runtime_node_task_pointer_reloaded": true,
+    "wheel_constructor": "FUN_0076b060",
+    "wheel_vptr": "0x00b09a68",
+    "wheel_vtable_slot_0": "0x0076b100",
+    "wheel_vtable_slot_4": "0x0075cfb0"
+  },
+  "format": "SHIFT.P1A.P13AFun0076df50RuntimeWheelQueueStore/1",
+  "four_wheel_loop": {
+    "initializer_pointer_persistence_found": false,
+    "queue_manager": "HDVehicle+0x6730",
+    "queue_register": "FUN_00a62f60",
+    "root_formula": "HDVehicle+0x400 + slot*0xa80",
+    "roots": [
+      "HDVehicle+0x400",
+      "HDVehicle+0xe80",
+      "HDVehicle+0x1900",
+      "HDVehicle+0x2380"
+    ],
+    "selected_slot_roots": {
+      "slot0": "HDVehicle+0x400",
+      "slot1": "HDVehicle+0xe80"
+    },
+    "slot_count": 4,
+    "slots": [0, 1, 2, 3],
+    "wheel_initializer": "FUN_00a62690"
+  },
+  "limits": [
+    "This is a positive runtime pointer-persistence proof for the exact four-wheel loop in FUN_0076df50; it does not claim that every runtime-generated selected-wheel pointer store has been enumerated.",
+    "The queue manager at HDVehicle+0x6730 is a distinct non-wheel subobject, but its allocated node payload at +0 stores the exact wheel-root pointer.",
+    "The generic queue consumer reloads that stored pointer and invokes its virtual slot +0x4; the retail wheel vtable resolves that slot to 0x0075cfb0.",
+    "Because a selected-wheel pointer store is positively present, global runtime-generated-pointer, stored-alias, slot0/slot1 and aggregate P1.3 gates remain fail-closed."
+  ],
+  "machine_anchors": {
+    "allocator_payload_call": "0x00a62c7b call 0x62f6f0",
+    "allocator_return_payload": "0x00a62c9e mov eax,ebx",
+    "fiber_entry_pack": "0x00a62a3d push 0xa62710",
+    "fiber_receiver_restore": "0x00a6272a mov ecx,esi",
+    "fiber_slot4_load": "0x00a62722 mov eax,DWORD PTR [eax+0x4]",
+    "fiber_task_load": "0x00a6271b mov esi,DWORD PTR [edi]",
+    "fiber_virtual_call": "0x00a6272c call eax",
+    "fiber_vptr_load": "0x00a62720 mov eax,DWORD PTR [esi]",
+    "queue_node_allocator_call": "0x00a62f98 call 0xa62c30",
+    "queue_node_capture": "0x00a62f9d mov esi,eax",
+    "queue_record_task_load": "0x00a62a06 mov eax,DWORD PTR [esi]",
+    "queue_task_pointer_store": "0x00a62fc0 mov DWORD PTR [esi],ebx",
+    "selected_hdvehicle_init_call": "0x00798f9c call 0x76df50",
+    "selected_hdvehicle_literal": "0x00798f97 mov ecx,0xc13700",
+    "wheel_init_call": "0x0076e4f2 call 0xa62690",
+    "wheel_init_capture": "0x00a62694 mov esi,ecx",
+    "wheel_init_receiver": "0x0076e4f0 mov ecx,ebx",
+    "wheel_loop_backedge": "0x0076e510 jb 0x76e4e4",
+    "wheel_loop_bound": "0x0076e50d cmp edi,0x4",
+    "wheel_loop_counter_zero": "0x0076e4ac xor edi,edi",
+    "wheel_queue_argument": "0x0076e4f7 mov edx,ebx",
+    "wheel_queue_manager": "0x0076e4f9 lea ecx,[esi+0x6730]",
+    "wheel_queue_register_call": "0x0076e4ff call 0xa62f60",
+    "wheel_slot0_materialization": "0x0076e4b4 lea ebx,[esi+0x400]",
+    "wheel_stride": "0x0076e507 add ebx,0xa80",
+    "wheel_vptr_store": "0x0076b0a2 mov DWORD PTR [esi],0xb09a68"
+  },
+  "next_step": "Trace 0x0075cfb0 wheel virtual-update semantics and enumerate any additional wheel-root registrations/stores outside FUN_0076df50; separately close residual indexed exact-root lifetimes in FUN_00765850/FUN_00765aa0.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "runtime_pointer_store": {
+    "runtime_node_allocator": "FUN_00a62c30 -> FUN_0062f6f0",
+    "runtime_node_register": "ESI",
+    "slot0_store_found": true,
+    "slot1_store_found": true,
+    "source": "exact wheel root in EDX -> EBX",
+    "store": "[runtime_node+0x0] = exact wheel root",
+    "store_site": "0x00a62fc0",
+    "stores_per_fun0076df50_wheel_loop": 4
+  },
+  "selected_hdvehicle_entry": {
+    "callee": "FUN_0076df50",
+    "caller_site": "0x00798f9c",
+    "receiver_literal": "0x00c13700"
+  },
+  "version": 1
+}
