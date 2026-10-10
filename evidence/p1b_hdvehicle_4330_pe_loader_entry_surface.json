@@ -1,0 +1,76 @@
+{
+  "adjudication": {
+    "exact_carrier_export_found": false,
+    "exact_carrier_export_surface_complete": true,
+    "exact_carrier_is_pe_entrypoint": false,
+    "exact_carrier_tls_callback_found": false,
+    "external_provider_count": 7,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "load_config_published_handler_surface_complete": true,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "pe_published_loader_entry_subset_complete": true,
+    "runtime_callback_registration_ruled_out": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false,
+    "tls_callback_surface_complete": true
+  },
+  "authority": {
+    "image_base": "0x00400000",
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_pe_headers_and_tables_adjudicate": true
+  },
+  "entrypoint": {
+    "is_exact_carrier": false,
+    "rva": "0x0050488a",
+    "va": "0x0090488a"
+  },
+  "export_surface": {
+    "directory_rva": "0x00779d60",
+    "directory_size": 28247,
+    "dll_name": "GeckoFnl.exe",
+    "exact_carrier_export_hit_count": 0,
+    "exact_carrier_export_hits": [],
+    "forwarder_count": 0,
+    "function_count": 509,
+    "named_count": 509,
+    "zero_function_rva_count": 0
+  },
+  "format": "SHIFT.P1B.HDVehicle4330PeLoaderEntrySurface/1",
+  "limits": [
+    "This closes only PE-published/loader-managed entry surfaces represented by AddressOfEntryPoint, the export address table, TLS callbacks, and the load-config directory.",
+    "The absent PE exception directory is not treated as absence of x86 MSVC inline EH cleanup actions.",
+    "Runtime callback registration, computed/copied/encoded pointers, and unresolved indirect dispatch remain open."
+  ],
+  "load_config_surface": {
+    "directory_rva": "0x00000000",
+    "directory_size": 0,
+    "present": false,
+    "safe_seh_or_guard_tables_available_through_load_config": false
+  },
+  "next_step": "Trace runtime callback-registration APIs and pointer-copy flows that can receive a nonliteral internal code address; keep indirect-entry and manager identity gates fail-closed.",
+  "owner": "Process 1B / P1.3B",
+  "pe_exception_directory": {
+    "directory_rva": "0x00000000",
+    "directory_size": 0,
+    "note": "This says nothing about x86 MSVC inline EH metadata already handled separately.",
+    "present": false
+  },
+  "ready": true,
+  "tls_surface": {
+    "address_of_callbacks": "0x00aa9990",
+    "callback_count": 0,
+    "callbacks": [],
+    "directory_rva": "0x007672ac",
+    "directory_size": 24,
+    "exact_carrier_callback_hit_count": 0
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330WholeImageLiteralPointerSurface/1",
+    "SHIFT.P1B.HDVehicle4330X87EipCaptureSurface/1"
+  ],
+  "version": 1
+}
