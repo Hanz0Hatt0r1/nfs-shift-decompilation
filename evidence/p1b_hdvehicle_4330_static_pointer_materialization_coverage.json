@@ -1,0 +1,68 @@
+{
+  "adjudication": {
+    "bounded_static_pointer_materialization_exact_carrier_hit_found": false,
+    "computed_or_encoded_code_pointers_ruled_out": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_callback_registration_ruled_out": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "static_and_source_visible_exact_carrier_pointer_materialization_coverage_composed": true
+  },
+  "format": "SHIFT.P1B.HDVehicle4330StaticFunctionPointerMaterializationCoverage/1",
+  "limits": [
+    "This aggregate composes four already-bounded static/source-visible function-pointer materialization classes only.",
+    "It does not rule out runtime-generated, copied, encoded, reconstructed, code-relative/EIP-derived, heap/global-written or otherwise decompiler-opaque function pointers.",
+    "Zero hits in these bounded classes does not by itself prove global indirect entry into exact carriers impossible."
+  ],
+  "next_step": "Continue machine-level runtime-generated/copied/reconstructed exact-carrier pointer creation and stores; keep global indirect-entry and manager identity gates fail-closed.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "classes": [
+      {
+        "bounded_unit": "vtable slots",
+        "bounded_unit_count": 22416,
+        "class": "vtable candidate targets",
+        "exact_carrier_hit_count": 0
+      },
+      {
+        "bounded_unit": "static-table records",
+        "bounded_unit_count": 55066,
+        "class": "static-table absolute pointers",
+        "exact_carrier_hit_count": 0,
+        "scanned_raw_byte_count": 684472
+      },
+      {
+        "absolute_va_hit_count": 0,
+        "bounded_unit": "retail file bytes",
+        "bounded_unit_count": 8801792,
+        "class": "whole-image absolute VA/RVA literals",
+        "exact_carrier_hit_count": 0,
+        "rva_hit_count": 0
+      },
+      {
+        "address_taken_symbol_count": 0,
+        "bounded_unit": "exact carrier symbol occurrences",
+        "bounded_unit_count": 40,
+        "class": "Ghidra C exact-symbol references",
+        "exact_carrier_hit_count": 0,
+        "noncall_symbol_value_use_count": 0
+      }
+    ],
+    "closed_materialization_class_count": 4,
+    "exact_carrier_count": 15,
+    "exact_carrier_materialization_hit_count": 0
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330ExactCarrierVtableSurface/1",
+    "SHIFT.P1B.HDVehicle4330ExactCarrierStaticTableSurface/1",
+    "SHIFT.P1B.HDVehicle4330WholeImageLiteralPointerSurface/1",
+    "SHIFT.P1B.HDVehicle4330SourceSymbolAddressTaking/1"
+  ],
+  "version": 1
+}
