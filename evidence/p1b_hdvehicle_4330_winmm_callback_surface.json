@@ -1,0 +1,46 @@
+{
+  "adjudication": {
+    "exact_4330_carrier_reachable_via_winmm": false,
+    "external_provider_count": 7,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_callback_registration_ruled_out": false,
+    "winmm_callback_surface_complete": true
+  },
+  "authority": {
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "platform": "PC retail 1.02",
+    "shift_exe_c_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "sqlite_and_source_are_navigation_crosscheck": true
+  },
+  "format": "SHIFT.P1B.HDVehicle4330WinMMCallbackSurface/1",
+  "limits": [
+    "This closes only waveOutOpen, waveInOpen and timeSetEvent callback registration in the pinned retail SQLite/source pair.",
+    "Three waveOutOpen sites and the simple waveInOpen site use NULL callbacks; the FMOD waveIn callback is 0x0099955b and the timer callback is 0x009a8d8f.",
+    "The Ghidra source renders the FMOD waveInOpen path twice, while the SQLite machine-call inventory pins one physical callsite at 0x00999714.",
+    "Other callback APIs, application wrappers, CRT registration, generic function-pointer stores/copies and computed entry remain open."
+  ],
+  "next_step": "Continue finite callback registrations and generic runtime function-pointer stores/copies before promoting global runtime-callback or indirect-entry gates.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "exact_4330_carrier_callback_count": 0,
+    "machine_inventory_is_physical_callsite_authority": true,
+    "nonnull_callback_callsite_count": 2,
+    "nonnull_callback_entrypoint_count": 2,
+    "nonnull_callbacks": [
+      {"address": "0x009a8d8f", "registration": "timeSetEvent@0x009a8e7d"},
+      {"address": "0x0099955b", "registration": "waveInOpen@0x00999714"}
+    ],
+    "null_callback_callsite_count": 4,
+    "physical_callsite_count": 6,
+    "source_rendered_duplicate_wavein_path": true,
+    "timesetevent_callsite_count": 1,
+    "waveinopen_callsite_count": 2,
+    "waveoutopen_callsite_count": 3
+  },
+  "version": 1
+}
