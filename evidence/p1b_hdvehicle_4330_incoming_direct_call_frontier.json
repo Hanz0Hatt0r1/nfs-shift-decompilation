@@ -1,0 +1,72 @@
+{
+  "format": "SHIFT.P1B.HDVehicle4330IncomingDirectCallFrontier/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1B / P1.3B",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "ghidra_sqlite_format": "SHIFT.GhidraSQLiteIndex/1",
+    "sqlite_is_navigation_index": true
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8RootDerived4330MaterializerPersistenceClosure/1",
+    "SHIFT.HDVehicle64e8Large4330ConsumerPersistenceClosure/1",
+    "SHIFT.P1B.HDVehicle4330ExactCarrierIndirectCallSurface/1"
+  ],
+  "carrier_set": {
+    "count": 15,
+    "functions": {
+      "0x00769520":"FUN_00769520","0x0076b130":"FUN_0076b130","0x0076df50":"FUN_0076df50",
+      "0x00768a4d":"FUN_00768a4d","0x00756050":"FUN_00756050","0x00772200":"FUN_00772200",
+      "0x00772570":"FUN_00772570","0x007c3b00":"FUN_007c3b00","0x0076b280":"FUN_0076b280",
+      "0x007618f0":"FUN_007618f0","0x00769640":"FUN_00769640","0x007567a0":"FUN_007567a0",
+      "0x00756bb0":"FUN_00756bb0","0x00771db0":"FUN_00771db0","0x00771e10":"FUN_00771e10"
+    }
+  },
+  "incoming_direct_surface": {
+    "callsite_count": 25,
+    "exact_carrier_internal_callsite_count": 14,
+    "external_callsite_count": 11,
+    "external_caller_count": 7,
+    "external_callers": [
+      {"address":"0x00aa2850","name":"FUN_00aa2850"},
+      {"address":"0x0074da70","name":"FUN_0074da70"},
+      {"address":"0x00798df0","name":"FUN_00798df0"},
+      {"address":"0x00491d86","name":"FUN_00491d86"},
+      {"address":"0x00a7063f","name":"Unwind@00a7063f"},
+      {"address":"0x00a72322","name":"Unwind@00a72322"},
+      {"address":"0x00795d60","name":"FUN_00795d60"}
+    ],
+    "external_calls": [
+      {"caller":"0x00491d86","caller_name":"FUN_00491d86","callsite":"0x00491d99","target":"0x00768a4d","target_name":"FUN_00768a4d","caller_is_exact_carrier":false},
+      {"caller":"0x0074da70","caller_name":"FUN_0074da70","callsite":"0x0074dadf","target":"0x0076df50","target_name":"FUN_0076df50","caller_is_exact_carrier":false},
+      {"caller":"0x00795d60","caller_name":"FUN_00795d60","callsite":"0x007973fe","target":"0x00771db0","target_name":"FUN_00771db0","caller_is_exact_carrier":false},
+      {"caller":"0x00798df0","caller_name":"FUN_00798df0","callsite":"0x00798f5c","target":"0x00772200","target_name":"FUN_00772200","caller_is_exact_carrier":false},
+      {"caller":"0x00798df0","caller_name":"FUN_00798df0","callsite":"0x00798f9c","target":"0x0076df50","target_name":"FUN_0076df50","caller_is_exact_carrier":false},
+      {"caller":"0x00798df0","caller_name":"FUN_00798df0","callsite":"0x00798fce","target":"0x007c3b00","target_name":"FUN_007c3b00","caller_is_exact_carrier":false},
+      {"caller":"0x00798df0","caller_name":"FUN_00798df0","callsite":"0x00798fff","target":"0x007c3b00","target_name":"FUN_007c3b00","caller_is_exact_carrier":false},
+      {"caller":"0x00798df0","caller_name":"FUN_00798df0","callsite":"0x00799054","target":"0x007c3b00","target_name":"FUN_007c3b00","caller_is_exact_carrier":false},
+      {"caller":"0x00a7063f","caller_name":"Unwind@00a7063f","callsite":"0x00a70648","target":"0x00756050","target_name":"FUN_00756050","caller_is_exact_carrier":false},
+      {"caller":"0x00a72322","caller_name":"Unwind@00a72322","callsite":"0x00a72328","target":"0x00756050","target_name":"FUN_00756050","caller_is_exact_carrier":false},
+      {"caller":"0x00aa2850","caller_name":"FUN_00aa2850","callsite":"0x00aa2855","target":"0x00769520","target_name":"FUN_00769520","caller_is_exact_carrier":false}
+    ]
+  },
+  "adjudication": {
+    "incoming_direct_call_frontier_inventory_complete": true,
+    "known_internal_carrier_edges_separated": true,
+    "external_receiver_provenance_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Direct callgraph reachability is not HDVehicle+0x4330 receiver identity.",
+    "The seven external callers require exact receiver/argument provenance before any can be admitted or rejected as an alternate 0x4330 path.",
+    "Two external caller records are named Unwind@ by Ghidra; that label alone is not sufficient to reject them as non-executable metadata."
+  ],
+  "next_step": "Adjudicate the seven external caller functions by exact machine receiver provenance, starting with one-hop wrappers and the FUN_00798df0 cluster."
+}
