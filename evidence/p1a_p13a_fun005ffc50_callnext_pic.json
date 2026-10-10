@@ -1,0 +1,68 @@
+{
+  "adjudication": {
+    "call_next_pop_fun005ffc50_indirect_entry_found": false,
+    "call_next_pop_fun005ffc50_reconstruction_found": false,
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "dynamic_registry_reconstructed_or_indirect_registration_ruled_out": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "other_pic_or_fnstenv_entry_ruled_out": false,
+    "p13a_fun005ffc50_call_next_pop_pic_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "machine_range": {
+      "end_exclusive": "0x00d31422",
+      "sha256": "e1890a43eb24c8e35b25f6847e8d343902d22d0a7adb08395c3fcf67d105e112",
+      "size": 34,
+      "start": "0x00d31400"
+    },
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50StaticMemoryStackReconstruction/1"
+  },
+  "call_next_surface": {
+    "call_next_count": 1,
+    "decoded_instruction_count": 2847850,
+    "rows": [
+      {
+        "call": "0x00d31404",
+        "next_instruction": "pop ebp",
+        "return": "0x00d31409"
+      }
+    ]
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50CallNextPic/1",
+  "limits": [
+    "This closes only the exact direct call-to-next-instruction / pop-register EIP acquisition class present in the retail image.",
+    "The sole call-next site derives 0x00d31000 before its first conditional branch, not FUN_005ffc50 at 0x005ffc50.",
+    "FPU-environment EIP acquisition, inter-block arithmetic, writable-memory callback slots, return-value provenance, encoded/split values, and runtime-generated pointers remain open.",
+    "No global reconstructed-entry, callback, slot0, slot1, stored-alias, runtime selected-wheel-store-negative, or aggregate P1.3 gate is promoted."
+  ],
+  "machine_anchors": {
+    "call_next": "0x00d31404 call 0xd31409",
+    "capture_return": "0x00d31409 pop ebp",
+    "copy_pic_base": "0x00d3141a mov ebx,ebp",
+    "first_control_boundary": "0x00d31420 je 0xd3142b",
+    "push_flags": "0x00d31400 pushf",
+    "subtract_delta": "0x00d3140a sub ebp,0x409"
+  },
+  "next_step": "Trace writable-memory/runtime callback slots, FPU-environment or other inter-block entry to FUN_005ffc50; direct/raw, simple GPR, read-only image, explicit stack-local and call-next/pop PIC subsets are now bounded.",
+  "owner": "Process 1A / P1.3A",
+  "pic_candidate": {
+    "call": "0x00d31404",
+    "captured_return": "0x00d31409",
+    "derived_value": "0x00d31000",
+    "derived_value_is_fun005ffc50": false,
+    "first_control_boundary": "0x00d31420",
+    "operation": "sub ebp,0x409"
+  },
+  "ready": true,
+  "version": 1
+}
