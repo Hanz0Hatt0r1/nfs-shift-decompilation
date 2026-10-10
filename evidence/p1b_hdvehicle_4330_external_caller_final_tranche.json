@@ -1,0 +1,70 @@
+{
+  "adjudication": {
+    "cumulative_resolved_external_caller_count": 7,
+    "cumulative_resolved_external_callsite_count": 11,
+    "exceptional_root_derived_4330_materializer_bounded": true,
+    "exceptional_root_derived_4330_materializer_found": true,
+    "external_caller_final_tranche_complete": true,
+    "external_direct_incoming_preexisting_4330_alias_found": false,
+    "external_direct_incoming_receiver_provenance_complete": true,
+    "external_provider_count": 7,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "remaining_external_caller_count": 0
+  },
+  "authority": {
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_machine_transfer_adjudicates": true,
+    "sqlite_role": "call inventory/fingerprints only"
+  },
+  "format": "SHIFT.P1B.HDVehicle4330ExternalCallerFinalTranche/1",
+  "fun_00aa2850": {
+    "preexisting_hdvehicle_4330_alias": false,
+    "receiver": "literal ECX=0x00c13700 HDVehicle root",
+    "site": "0x00aa2855 -> FUN_00769520"
+  },
+  "limits": [
+    "This closes all eleven direct external callsites into the 15 exact HDVehicle+0x4330 carrier set.",
+    "Unwind@00a7063f is admitted as a real exceptional root-derived +0x4330 materializer, not rejected by label.",
+    "Indirect entry, runtime-generated/copied function pointers and other non-root-derived data aliases remain open.",
+    "The manager+0x374 identity join and final literal candidate remain fail-closed."
+  ],
+  "next_step": "Remove direct external incoming calls from the 0x4330 frontier. Continue only indirect-entry/runtime-generated pointer paths and other non-root-derived runtime 0x4330 aliases before attempting the manager identity join.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "unwind_00a7063f": {
+    "action": "ECX=[EBP-0x10]; ECX+=0x4330; tail FUN_00756050",
+    "classification": "positive exceptional root-derived +0x4330 materializer; not an unknown/pre-existing alias entry",
+    "enclosing_exact_root_functions": [
+      "FUN_00769520",
+      "FUN_0076b130"
+    ],
+    "enclosing_handler_pushes": [
+      "0x00769526 -> 0x00a7064d",
+      "0x0076b136 -> 0x00a7064d"
+    ],
+    "exceptional_root_derived_4330_materializer": true,
+    "saved_root_proof": "both parents execute ESI=ECX then [EBP-0x10]=ESI",
+    "shared_funcinfo": "0x00b71bbc",
+    "site": "0x00a70648 -> FUN_00756050",
+    "unwind_state": 8
+  },
+  "unwind_00a72322": {
+    "enclosing_funcinfo": "0x00b73e7c",
+    "enclosing_function": "FUN_00798df0",
+    "handler_push": "0x00798dfc -> 0x00a7234b",
+    "preexisting_hdvehicle_4330_alias": false,
+    "receiver": "LEA ECX,[EBP-0x238c] parent stack local",
+    "site": "0x00a72328 -> FUN_00756050"
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330ExternalCallerTranche2/1",
+    "SHIFT.HDVehicle64e8RootDerived4330MaterializerPersistenceClosure/1"
+  ],
+  "version": 1
+}
