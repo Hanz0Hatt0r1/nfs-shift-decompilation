@@ -1,0 +1,107 @@
+{
+  "adjudication": {
+    "callbacks_registered_outside_carriers_ruled_out": false,
+    "callee_created_aliases_ruled_out": false,
+    "derived_alias_storage_ruled_out": false,
+    "external_provider_count": 7,
+    "machine_direct_exact_root_new_gpr_alias_beyond_ecx_receiver_reload_found": false,
+    "machine_direct_exact_root_nonstack_store_found": false,
+    "machine_direct_exact_root_push_found": false,
+    "machine_direct_exact_root_storage_16_carrier_subset_complete": true,
+    "machine_register_alias_storage_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "runtime_generated_pointer_stores_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_bytes_adjudicate": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "direct_exact_root_value_surface": {
+    "memory_store_count": 2,
+    "memory_stores": [
+      {
+        "address": "0x00758b9b",
+        "function": "FUN_00758b50",
+        "operands": "dword ptr [ebp-0x1c],edi",
+        "storage": "stack-local"
+      },
+      {
+        "address": "0x00763590",
+        "function": "FUN_00763570",
+        "operands": "dword ptr [ebp-0x3c],edi",
+        "storage": "stack-local"
+      }
+    ],
+    "nonstack_or_unknown_memory_store_count": 0,
+    "push_count": 0,
+    "pushes": [],
+    "register_copies": [
+      {"address":"0x00770f6f","destination":"ecx","function":"FUN_00770e80","operands":"ecx,esi"},
+      {"address":"0x00770fa7","destination":"ecx","function":"FUN_00770e80","operands":"ecx,esi"},
+      {"address":"0x00770fbd","destination":"ecx","function":"FUN_00770e80","operands":"ecx,esi"},
+      {"address":"0x00770fd7","destination":"ecx","function":"FUN_00770e80","operands":"ecx,esi"},
+      {"address":"0x00771069","destination":"ecx","function":"FUN_00770e80","operands":"ecx,esi"},
+      {"address":"0x007712c4","destination":"ecx","function":"FUN_00770e80","operands":"ecx,esi"},
+      {"address":"0x00755db3","destination":"ecx","function":"FUN_00755a60","operands":"ecx,esi"},
+      {"address":"0x0076388a","destination":"ecx","function":"FUN_00763570","operands":"ecx,edi"},
+      {"address":"0x0076d129","destination":"ecx","function":"FUN_0076d100","operands":"ecx,esi"},
+      {"address":"0x0076d130","destination":"ecx","function":"FUN_0076d100","operands":"ecx,esi"},
+      {"address":"0x0076d137","destination":"ecx","function":"FUN_0076d100","operands":"ecx,esi"},
+      {"address":"0x0076d191","destination":"ecx","function":"FUN_0076d100","operands":"ecx,esi"},
+      {"address":"0x0076d2bf","destination":"ecx","function":"FUN_0076d100","operands":"ecx,esi"},
+      {"address":"0x0076a1be","destination":"ecx","function":"FUN_00769ef0","operands":"ecx,esi"},
+      {"address":"0x0076a1e0","destination":"ecx","function":"FUN_00769ef0","operands":"ecx,esi"},
+      {"address":"0x007677ad","destination":"ecx","function":"FUN_007675f0","operands":"ecx,esi"},
+      {"address":"0x00768369","destination":"ecx","function":"FUN_007682c0","operands":"ecx,esi"},
+      {"address":"0x0076839e","destination":"ecx","function":"FUN_007682c0","operands":"ecx,esi"},
+      {"address":"0x00766da3","destination":"ecx","function":"FUN_00766510","operands":"ecx,esi"},
+      {"address":"0x00766db8","destination":"ecx","function":"FUN_00766510","operands":"ecx,esi"},
+      {"address":"0x00765d08","destination":"ecx","function":"FUN_00765c40","operands":"ecx,esi"},
+      {"address":"0x00765da8","destination":"ecx","function":"FUN_00765c40","operands":"ecx,esi"},
+      {"address":"0x00765f29","destination":"ecx","function":"FUN_00765c40","operands":"ecx,esi"}
+    ],
+    "register_copy_count": 23,
+    "register_copy_destinations": ["ecx"]
+  },
+  "format": "SHIFT.P1D.Slot3SixteenCarrierDirectRootPersistence/1",
+  "limits": [
+    "This closes direct stores, pushes, and immediate GPR copies whose source operand is a machine-proven stable exact-root carrier register inside the pinned intervals.",
+    "ECX receiver reloads remain call/temporary register traffic, not persistence; their callees are separate alias surfaces and are not globally reclassified here.",
+    "Derived/interior addresses, aggregate copies, values reconstructed from memory, callbacks, indirect entry, encoded/copied/runtime-generated pointers, and callee-created aliases remain open.",
+    "No numeric offset or scalar equality is promoted to selected-wheel identity."
+  ],
+  "next_step": "Trace derived/interior register aliases and runtime-generated/copied pointer stores outside this direct exact-root value surface; compose callback/indirect-entry evidence before changing the global stored-or-escaped-alias gate.",
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "scope": {
+    "carrier_count": 16,
+    "fun00758b50_stack_bridge": {
+      "restore": "0x00758d70 EDI = [ebp-0x1c]",
+      "store": "0x00758b9b [ebp-0x1c] = EDI exact root"
+    },
+    "functions": {
+      "FUN_00752fc0":{"decoded_byte_count":37,"ghidra_size":37,"instruction_count":7,"machine_bytes_sha256":"830ecb8fa09bf20a07a8e269f4d44351dc167232bba00f5d9a7d931675d111cc","stable_exact_root_register":"ecx","stable_intervals":[{"end_exclusive":"0x00752fe5","start":"0x00752fc0"}],"start":"0x00752fc0"},
+      "FUN_00755950":{"decoded_byte_count":66,"ghidra_size":66,"instruction_count":19,"machine_bytes_sha256":"581672ff3f3990ca40d8869725c89966a43c89330786ea800c3517fa02389d29","stable_exact_root_register":"edx","stable_intervals":[{"end_exclusive":"0x00755992","start":"0x00755956"}],"start":"0x00755950"},
+      "FUN_00755a60":{"decoded_byte_count":1297,"ghidra_size":1297,"instruction_count":393,"machine_bytes_sha256":"7064be6d7afc007796a22dd439105572a63e4a7adb17df7b7a0ca3e216c7a5df","stable_exact_root_register":"esi","stable_intervals":[{"end_exclusive":"0x00755f6a","start":"0x00755a73"}],"start":"0x00755a60"},
+      "FUN_00755f80":{"decoded_byte_count":132,"ghidra_size":132,"instruction_count":46,"machine_bytes_sha256":"7ca9b230d67c47859cabb8a5f2e6cc6f4cea620765addeca5ec1a9e393c7f0f9","stable_exact_root_register":"esi","stable_intervals":[{"end_exclusive":"0x00755fe5","start":"0x00755f9a"}],"start":"0x00755f80"},
+      "FUN_00758810":{"decoded_byte_count":347,"ghidra_size":347,"instruction_count":114,"machine_bytes_sha256":"1d06be3f816f57d65e9b6e8efb669ed1d20ab2966bc7c418fe52a5d32b47b5f8","stable_exact_root_register":"edi","stable_intervals":[{"end_exclusive":"0x00758962","start":"0x0075882e"}],"start":"0x00758810"},
+      "FUN_00758b50":{"decoded_byte_count":1136,"ghidra_size":1136,"instruction_count":323,"machine_bytes_sha256":"c2fec71ef5a88d9802f0a176f4f6674f0cb6211d43548a4ec6bf1b45373ba220","stable_exact_root_register":"edi","stable_intervals":[{"end_exclusive":"0x00758bce","start":"0x00758b98"},{"end_exclusive":"0x00758fb0","start":"0x00758d70"}],"start":"0x00758b50"},
+      "FUN_00758fc0":{"decoded_byte_count":364,"ghidra_size":364,"instruction_count":118,"machine_bytes_sha256":"b308d2be888da1428340950a0c0c96d9ca09e4b7efedae30962c17a961c475fb","stable_exact_root_register":"esi","stable_intervals":[{"end_exclusive":"0x00759122","start":"0x00758fe4"}],"start":"0x00758fc0"},
+      "FUN_00760b50":{"decoded_byte_count":531,"ghidra_size":531,"instruction_count":146,"machine_bytes_sha256":"6befdb2ebc8df4b449242abcaaeb9a8c9aab00a03dfaa6f2c0a03d7e1087d9a0","stable_exact_root_register":"esi","stable_intervals":[{"end_exclusive":"0x00760d5c","start":"0x00760b6a"}],"start":"0x00760b50"},
+      "FUN_00763570":{"decoded_byte_count":3276,"ghidra_size":3277,"instruction_count":971,"machine_bytes_sha256":"c251e9114cdfe57c63eaf836727da51255e44ba38d8550fcebf5d5849047a470","stable_exact_root_register":"edi","stable_intervals":[{"end_exclusive":"0x0076423d","start":"0x0076358e"}],"start":"0x00763570"},
+      "FUN_00765c40":{"decoded_byte_count":2248,"ghidra_size":2249,"instruction_count":647,"machine_bytes_sha256":"ecd9a4981e8b62bb1d323d0a195b498ff293b27458d56ffcb451db45f5c3351c","stable_exact_root_register":"esi","stable_intervals":[{"end_exclusive":"0x00766506","start":"0x00765c5f"}],"start":"0x00765c40"},
+      "FUN_00766510":{"decoded_byte_count":4310,"ghidra_size":4310,"instruction_count":1128,"machine_bytes_sha256":"f4834c7dd376cf80d87935cbea0da8eb3ff446108983ed5d49190b2cd4c0fc85","stable_exact_root_register":"esi","stable_intervals":[{"end_exclusive":"0x007675de","start":"0x0076652f"}],"start":"0x00766510"},
+      "FUN_007675f0":{"decoded_byte_count":1340,"ghidra_size":1340,"instruction_count":436,"machine_bytes_sha256":"2255f6e983a08a36f9f3a4ee2f3194d293cfa712a48b546875b0a9bd53e01c74","stable_exact_root_register":"esi","stable_intervals":[{"end_exclusive":"0x00767b22","start":"0x00767610"}],"start":"0x007675f0"},
+      "FUN_007682c0":{"decoded_byte_count":335,"ghidra_size":335,"instruction_count":121,"machine_bytes_sha256":"7ef6c0cb7fdca913bbc7e4a3128c56f5a69cd4d4b300323bdc1ade0825897acc","stable_exact_root_register":"esi","stable_intervals":[{"end_exclusive":"0x00768405","start":"0x007682da"}],"start":"0x007682c0"},
+      "FUN_00769ef0":{"decoded_byte_count":774,"ghidra_size":774,"instruction_count":252,"machine_bytes_sha256":"882839f3a01e34e923e4b32b3e71d0f5d9c417109df0899769e90a165d114ebb","stable_exact_root_register":"esi","stable_intervals":[{"end_exclusive":"0x0076a1ee","start":"0x00769f0a"}],"start":"0x00769ef0"},
+      "FUN_0076d100":{"decoded_byte_count":508,"ghidra_size":508,"instruction_count":142,"machine_bytes_sha256":"a52188e2049aca73eeb1c4de13652a3e9a1ba2d113722d0d0c49e00c6db5bd9b","stable_exact_root_register":"esi","stable_intervals":[{"end_exclusive":"0x0076d2ec","start":"0x0076d118"}],"start":"0x0076d100"},
+      "FUN_00770e80":{"decoded_byte_count":1183,"ghidra_size":1183,"instruction_count":315,"machine_bytes_sha256":"eafcd64bdef560bfece1e18ba07349156d5992cacc8ac34bcd88b0e156c3f0b4","stable_exact_root_register":"esi","stable_intervals":[{"end_exclusive":"0x00771315","start":"0x00770ea1"}],"start":"0x00770e80"}
+    },
+    "stable_exact_root_register_intervals_seeded_from_merged_machine_contracts": true
+  },
+  "version": 1
+}
