@@ -19,7 +19,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -41,8 +40,8 @@ public class ShiftExactWheelRootPersistenceExporter extends GhidraScript {
             "entry ECX exact wheel root"),
         new RootWindow(0x00760b50L, "FUN_00760b50", "esi", 0x00760b6aL, 0x00760d63L,
             "ESI=entry ECX exact wheel root"),
-        new RootWindow(0x00755f80L, "FUN_00755f80", "esi", 0x00755f80L, 0x00756004L,
-            "ESI captures entry ECX exact wheel root")
+        new RootWindow(0x00755f80L, "FUN_00755f80", "esi", 0x00755f9aL, 0x00756004L,
+            "0x00755f9a ESI=ECX exact wheel root")
     };
 
     @Override
