@@ -1,0 +1,98 @@
+{
+  "format": "SHIFT.P1A.P13AExactCarrierWholeImagePointerLiteralClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "upstream_contract": "SHIFT.P1A.P13ASlot01StaticCallbackTargetComposition/1",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_file_size": 8801792,
+    "image_base": "0x00400000",
+    "whole_file_raw_bytes_adjudicate_literal_presence": true
+  },
+  "carrier_set": {
+    "count": 16,
+    "rows": [
+      {"name":"FUN_00758b50","address":"0x00758b50"},
+      {"name":"FUN_00755950","address":"0x00755950"},
+      {"name":"FUN_00770e80","address":"0x00770e80"},
+      {"name":"FUN_00755a60","address":"0x00755a60"},
+      {"name":"FUN_00752fc0","address":"0x00752fc0"},
+      {"name":"FUN_00760b50","address":"0x00760b50"},
+      {"name":"FUN_00763570","address":"0x00763570"},
+      {"name":"FUN_00755f80","address":"0x00755f80"},
+      {"name":"FUN_0076d100","address":"0x0076d100"},
+      {"name":"FUN_00758810","address":"0x00758810"},
+      {"name":"FUN_00769ef0","address":"0x00769ef0"},
+      {"name":"FUN_007675f0","address":"0x007675f0"},
+      {"name":"FUN_007682c0","address":"0x007682c0"},
+      {"name":"FUN_00766510","address":"0x00766510"},
+      {"name":"FUN_00758fc0","address":"0x00758fc0"},
+      {"name":"FUN_00765c40","address":"0x00765c40"}
+    ]
+  },
+  "pe_sections": [
+    {"name":".text","rva":"0x00001000","raw_size":6964736},
+    {"name":".rdata","rva":"0x006a6000","raw_size":896000},
+    {"name":".data","rva":"0x00781000","raw_size":243200},
+    {"name":".tls","rva":"0x008e9000","raw_size":512},
+    {"name":".rsrc","rva":"0x008ea000","raw_size":290304},
+    {"name":".secu","rva":"0x00931000","raw_size":406016}
+  ],
+  "absolute_va_literal_scan": {
+    "encoding": "little-endian 32-bit absolute VA",
+    "searched_file_byte_count": 8801792,
+    "hit_count": 0,
+    "hits": []
+  },
+  "rva_diagnostics": {
+    "semantic_gate": false,
+    "encoding": "little-endian 32-bit RVA byte sequence",
+    "raw_match_count": 2,
+    "aligned_file_offset_match_count": 0,
+    "matches": [
+      {
+        "function":"FUN_0076d100",
+        "target":"0x0076d100",
+        "rva_value":"0x0036d100",
+        "file_offset":"0x006d2e3f",
+        "image_va":"0x00ad443f",
+        "section":".rdata",
+        "file_offset_mod4":3
+      },
+      {
+        "function":"FUN_0076d100",
+        "target":"0x0076d100",
+        "rva_value":"0x0036d100",
+        "file_offset":"0x00764ea7",
+        "image_va":"0x00b664a7",
+        "section":".rdata",
+        "file_offset_mod4":3
+      }
+    ],
+    "interpretation": "RVA byte matches are navigation diagnostics only; numeric equality is not code-pointer identity."
+  },
+  "adjudication": {
+    "p13a_whole_image_exact_carrier_absolute_va_literal_subset_complete": true,
+    "p13a_whole_image_exact_carrier_absolute_va_literal_hit_found": false,
+    "p13a_whole_image_exact_carrier_absolute_va_literal_hit_count": 0,
+    "runtime_callback_registration_ruled_out": false,
+    "incoming_indirect_entry_ruled_out": false,
+    "relocated_or_rva_encoded_carrier_pointers_ruled_out": false,
+    "runtime_generated_or_copied_carrier_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only raw 32-bit absolute-VA literals equal to one of the 16 exact carrier entrypoints anywhere in the on-disk retail image.",
+    "Direct rel32 calls are intentionally outside this pointer-literal class and are already covered by the carrier call-target composition.",
+    "RVA byte-sequence matches are retained only as diagnostics; they are not treated as callback/function-pointer identity.",
+    "Relocated, encoded, copied, reconstructed or runtime-generated pointers plus incoming indirect entry remain open."
+  ],
+  "next_step": "Use whole-image machine references and runtime/dataflow evidence to bound relocated/RVA-encoded or runtime-generated carrier pointers, then join any positive callback registration to its eventual indirect consumer."
+}
