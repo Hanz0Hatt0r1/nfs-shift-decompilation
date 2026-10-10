@@ -1,0 +1,83 @@
+{
+  "adjudication": {
+    "bounded_manager_root_origin_classes_composed": true,
+    "computed_runtime_writer_paths_complete": true,
+    "exact_getter_alias_persistence_complete": true,
+    "external_provider_count": 7,
+    "global_helper_non_vtable_indirect_setter_surface_complete": false,
+    "global_manager_root_origin_surface_complete": false,
+    "known_bounded_origin_classes_create_unrelated_manager_root": false,
+    "known_literal_static_loader_constant_reconstruction_origins_complete": true,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "opaque_helper_or_external_memory_root_origin_surface_complete": false,
+    "p1_3_control_producer_complete": false,
+    "participants_lifecycle_helper_writer_surface_complete": true,
+    "unrecognized_runtime_transform_root_origin_surface_complete": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "bounded_reconstruction": {
+    "constant_multi_register_transition_count": 834,
+    "non_literal_exact_root_count": 0,
+    "simple_arithmetic_transition_count": 499,
+    "simple_mov_immediate_seed_count": 38128
+  },
+  "exact_getter_aliases": {
+    "direct_getter_callsite_count": 394,
+    "escaped_storage_complete": true,
+    "immediate_push_eax_count": 0,
+    "object_or_global_store_count": 0,
+    "stack_argument_aliases_complete": true,
+    "stack_save_count": 9
+  },
+  "format": "SHIFT.P1B.Manager374RootOriginCoverage/1",
+  "inputs": {
+    "computed": "SHIFT.P1B.Manager374ComputedRuntimeClosure/1",
+    "exact_alias": "SHIFT.P1B.Manager374ExactRootAliasClosure/1",
+    "interior": "SHIFT.HDVehicle64e8Manager374StaticInteriorRelocationSurface/1",
+    "literal": "SHIFT.HDVehicle64e8Manager374DirectSingletonReferenceSurface/1",
+    "participants": "SHIFT.P1B.Manager374ParticipantsLifecycleClosure/1",
+    "reconstruction": "SHIFT.P1B.Manager374ReconstructionCoverage/1",
+    "static": "SHIFT.HDVehicle64e8Manager374StaticPointerOccurrenceSurface/1"
+  },
+  "known_literal_origins": {
+    "count": 3,
+    "independent_runtime_producer_count": 0,
+    "sites": [
+      "0x00489ae3",
+      "0x00489afa",
+      "0x00a9c5a0"
+    ]
+  },
+  "limits": [
+    "This is a composition of bounded retail machine-evidence contracts, not a proof over arbitrary process memory.",
+    "The final manager+0x374 identity join remains fail-closed until the surviving opaque/external runtime-origin class is closed or shown unable to reach another target writer.",
+    "No identity is inferred from matching numeric offsets."
+  ],
+  "manager_root": "0x00bc9fc0",
+  "manager_target": "manager+0x374",
+  "next_step": "Reduce the remaining opaque/external manager-root origin class to concrete machine candidates; only then decide the final manager+0x374 -> HDVehicle+0x4330 rejection and 0x004b86cf slot2 adjudication.",
+  "ready": true,
+  "static_and_loader_origins": {
+    "aligned_static_interior_cell_count": 0,
+    "base_relocation_entries_available": false,
+    "non_text_exact_pointer_occurrence_count": 0,
+    "static_exact_pointer_cell_count": 0,
+    "whole_file_exact_occurrence_count": 3
+  },
+  "surviving_frontier": [
+    "opaque helper-returned exact manager roots synthesized from unrelated inputs",
+    "externally/runtime initialized memory containing the exact manager root without a canonical getter lineage",
+    "unrecognized runtime transforms outside the bounded arithmetic/multi-register classes"
+  ],
+  "version": 1,
+  "writer_and_helper_surfaces": {
+    "computed_runtime_remaining_path_count": 0,
+    "participants_lifecycle_can_place_fixed_hdvehicle_4330_into_manager_374": false,
+    "participants_lifecycle_helper_or_indirect_setter_surface_complete": true,
+    "participants_lifecycle_nonzero_writer_found": false
+  }
+}
