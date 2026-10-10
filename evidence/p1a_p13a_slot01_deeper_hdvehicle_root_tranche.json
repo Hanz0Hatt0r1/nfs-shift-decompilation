@@ -1,0 +1,97 @@
+{
+  "adjudication": {
+    "all_deeper_direct_aliases_ruled_out": false,
+    "deeper_hdvehicle_root_tranche_source_complete": true,
+    "external_provider_count": 7,
+    "indirect_callback_aliases_ruled_out": false,
+    "novel_depth5_candidate_count": 4,
+    "novel_depth5_rejected_count": 4,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "selected_slot0_slot1_writer_found": false
+  },
+  "authority": {
+    "callgraph_is_navigation_only": true,
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "machine_transfer_adjudicates": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "source_index_format": "SHIFT.GhidraSQLiteIndex/1"
+  },
+  "candidate_adjudication": [
+    {
+      "class": "hdvehicle-root-read-only-predicate",
+      "evidence": [
+        "0x0076f464 restores ECX=ESI immediately before 0x0076f468; ESI is the HDVehicle root captured at 0x0076f03a.",
+        "The complete 0x35-byte callee reads only HDVehicle+0x3e58/+0x248 and bytes +0x3cd2/+0x3da0, returns AL, and contains no memory store."
+      ],
+      "function": "FUN_007534b0",
+      "rejected": true
+    },
+    {
+      "class": "hdvehicle-root-high-offset-state-plus-service-record",
+      "evidence": [
+        "0x0076f49e restores ECX=ESI before 0x0076f4a1; FUN_0076ea70 captures that HDVehicle root in ESI at 0x0076ea7d.",
+        "Direct HDVehicle writes are byte +0x3cd2 at 0x0076ea91 and qword +0x3da8 at 0x0076eb51, both disjoint from +0x938/+0x13b8.",
+        "The remaining writes use EDX returned through FUN_0070a990 on the separate service object loaded from FUN_0070fe90()+0x288; they target service-record +0x4/+0x5/+0x8/+0xc/+0x10."
+      ],
+      "function": "FUN_0076ea70",
+      "rejected": true
+    },
+    {
+      "class": "x87-to-int-runtime-helper",
+      "evidence": [
+        "0x0076f523 calls the helper without forwarding ECX as an object receiver.",
+        "The helper spills only the incoming x87 value to [ESP] and converts that stack qword with CVTTSD2SI; it has no non-stack destination."
+      ],
+      "function": "FUN_00901310",
+      "rejected": true
+    },
+    {
+      "class": "hdvehicle-root-read-only-scalar-helper",
+      "evidence": [
+        "0x0076f54e restores ECX=ESI before 0x0076f550, so FUN_0075bdc0 receives the exact HDVehicle root.",
+        "The callee reads HDVehicle+0x3cd2 and +0x248; every FST/FSTP destination is EBP-relative stack local. It contains no receiver-relative store."
+      ],
+      "function": "FUN_0075bdc0",
+      "rejected": true
+    }
+  ],
+  "format": "SHIFT.P1A.P13ASlot01DeeperHDVehicleRootTranche/1",
+  "limits": [
+    "This closes only the novel depth-5 direct callees under the exact HDVehicle-root function FUN_0076f030.",
+    "FUN_0076eb60 and FUN_0090328a are direct callees of FUN_0076f030 but already have min direct depth <=4 and therefore remain part of the merged shallow surface rather than this tranche.",
+    "No claim is made about unrelated depth-5 functions, deeper descendants, or indirect/callback carriers."
+  ],
+  "next_step": "Enumerate the next exact HDVehicle/wheel receiver carriers at the shallow boundary and close only their novel deeper direct callees; do not scan unrelated depth-5 nodes wholesale.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "source": {
+    "direct_callee_count": 6,
+    "direct_callees": [
+      {"callsite":"0x0076f468","function":"FUN_007534b0","min_direct_depth":5},
+      {"callsite":"0x0076f499","function":"FUN_0076eb60","min_direct_depth":3},
+      {"callsite":"0x0076f4a1","function":"FUN_0076ea70","min_direct_depth":5},
+      {"callsite":"0x0076f51a","function":"FUN_0090328a","min_direct_depth":1},
+      {"callsite":"0x0076f523","function":"FUN_00901310","min_direct_depth":5},
+      {"callsite":"0x0076f550","function":"FUN_0075bdc0","min_direct_depth":5}
+    ],
+    "function": "FUN_0076f030",
+    "min_direct_depth": 4,
+    "novel_depth5_callees": ["FUN_007534b0","FUN_0076ea70","FUN_00901310","FUN_0075bdc0"],
+    "receiver": "selected HDVehicle root",
+    "receiver_proof_upstream": "SHIFT.P1A.P13ASlot01X87ReuseTrancheClosure/1"
+  },
+  "verified_byte_windows": [
+    {"bytes":"dc91583e0000","site":"0x007534b2"},{"bytes":"dc9948020000","site":"0x007534c4"},{"bytes":"80b9d23c000000","site":"0x007534d1"},{"bytes":"80b9a03d000000","site":"0x007534da"},
+    {"bytes":"80b9d23c000000","site":"0x0075bdc6"},{"bytes":"dc9948020000","site":"0x0075bddb"},{"bytes":"dd5df0","site":"0x0075be05"},{"bytes":"dd5df8","site":"0x0075be14"},{"bytes":"dd55f8","site":"0x0075be2a"},{"bytes":"dd55f0","site":"0x0075be2f"},
+    {"bytes":"8bf1","site":"0x0076ea7d"},{"bytes":"c686d23c000001","site":"0x0076ea91"},{"bytes":"e8f313faff","site":"0x0076ea98"},{"bytes":"8bb888020000","site":"0x0076ea9d"},{"bytes":"8d55fc","site":"0x0076eaa9"},{"bytes":"e8ddbef9ff","site":"0x0076eaae"},{"bytes":"c6420503","site":"0x0076eac1"},{"bytes":"c6420404","site":"0x0076eac5"},{"bytes":"894208","site":"0x0076eae0"},{"bytes":"894a0c","site":"0x0076eaf7"},{"bytes":"894210","site":"0x0076eaff"},{"bytes":"dd86003d0000","site":"0x0076eb21"},{"bytes":"dd9ea83d0000","site":"0x0076eb51"},
+    {"bytes":"8bf1","site":"0x0076f03a"},{"bytes":"8bce","site":"0x0076f464"},{"bytes":"e84340feff","site":"0x0076f468"},{"bytes":"8bce","site":"0x0076f49e"},{"bytes":"e8caf5ffff","site":"0x0076f4a1"},{"bytes":"e8e81d1900","site":"0x0076f523"},{"bytes":"8bce","site":"0x0076f54e"},{"bytes":"e86bc8feff","site":"0x0076f550"},
+    {"bytes":"dd1c24","site":"0x00901322"},{"bytes":"f20f2c0424","site":"0x00901325"}
+  ],
+  "verified_calls": [
+    {"site":"0x0076ea98","target":"0x0070fe90"},{"site":"0x0076eaae","target":"0x0070a990"},{"site":"0x0076f468","target":"0x007534b0"},{"site":"0x0076f4a1","target":"0x0076ea70"},{"site":"0x0076f523","target":"0x00901310"},{"site":"0x0076f550","target":"0x0075bdc0"}
+  ],
+  "version": 1
+}
