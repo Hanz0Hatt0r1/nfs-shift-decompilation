@@ -1,0 +1,81 @@
+{
+  "adjudication": {
+    "exact_4330_carrier_registered_as_selected_nonthread_callback": false,
+    "external_provider_count": 7,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_callback_registration_ruled_out": false,
+    "selected_nonthread_callback_argument_provenance_complete": true,
+    "selected_nonthread_callback_frontier_complete": true
+  },
+  "format": "SHIFT.P1B.HDVehicle4330NonThreadCallbackClosure/1",
+  "limits": [
+    "This composes only the selected Win32/Winsock non-thread callback families originally pinned by the P1B frontier.",
+    "Other callback-registration families, generic function-pointer stores/copies, computed/encoded pointers and unresolved indirect dispatch remain outside this closure.",
+    "Closing this selected callback frontier does not promote the global runtime-callback or indirect-entry gates."
+  ],
+  "next_step": "Continue generic runtime function-pointer stores/copies and remaining indirect-entry mechanisms before attempting the manager+0x374 identity join.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "distinct_nonnull_callback_count": 3,
+    "exact_4330_carrier_callback_count": 0,
+    "frontier_callsite_count": 11,
+    "nonnull_callback_callsite_count": 7,
+    "nonnull_callbacks": [
+      {
+        "callback": "0x00634870",
+        "callsite": "0x00634b89"
+      },
+      {
+        "callback": "0x00634870",
+        "callsite": "0x00634c52"
+      },
+      {
+        "callback": "0x00634870",
+        "callsite": "0x00634c93"
+      },
+      {
+        "callback": "0x006553e0",
+        "callsite": "0x006558d5"
+      },
+      {
+        "callback": "0x00655410",
+        "callsite": "0x006559df"
+      },
+      {
+        "callback": "0x006553e0",
+        "callsite": "0x00655c15"
+      },
+      {
+        "callback": "0x00655410",
+        "callsite": "0x00655dca"
+      }
+    ],
+    "null_callback_callsite_count": 4,
+    "null_callbacks": [
+      {
+        "api": "WSARecvFrom",
+        "callsite": "0x005fdd09"
+      },
+      {
+        "api": "WSARecv",
+        "callsite": "0x005fdd21"
+      },
+      {
+        "api": "SetWaitableTimer",
+        "callsite": "0x0099882b"
+      },
+      {
+        "api": "SetWaitableTimer",
+        "callsite": "0x00998e13"
+      }
+    ],
+    "remaining_callsite_count": 0,
+    "resolved_callsite_count": 11
+  },
+  "version": 1
+}
