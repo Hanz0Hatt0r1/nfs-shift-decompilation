@@ -1,0 +1,58 @@
+{
+  "adjudication": {
+    "bounded_indirect_entry_coverage_composed": true,
+    "bounded_indirect_entry_exact_4330_carrier_hit_found": false,
+    "computed_or_encoded_code_pointers_ruled_out": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "remaining_callback_api_families_ruled_out": false,
+    "runtime_callback_registration_ruled_out": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/1",
+  "limits": [
+    "This composes only three already-bounded classes: known callback registrations, static/source-visible pointer materialization, and canonical/x87/loader computed-entry coverage.",
+    "It does not rule out unresolved callback APIs such as _bsearch, application-owned wrappers, runtime-generated/copied/encoded/reconstructed pointers, runtime patching, arbitrary pointer stores, noncanonical code-address synthesis, or opaque indirect dispatch.",
+    "Zero exact-carrier hits in these bounded classes is not global proof that indirect entry into the 15 exact HDVehicle+0x4330 carriers is impossible."
+  ],
+  "next_step": "Close the unresolved _bsearch comparator with machine evidence, then bound runtime-generated/copied/encoded exact-carrier pointer stores and noncanonical code-address synthesis before promoting any global indirect-entry gate.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "bounded_exact_carrier_hit_count": 0,
+    "composed_coverage_class_count": 3,
+    "coverage": [
+      {
+        "bounded_callback_capable_callsite_count": 49,
+        "class": "bounded runtime callback registrations",
+        "closed_surface_count": 7,
+        "exact_carrier_hit_count": 0,
+        "unique_possible_callback_entrypoint_count": 34
+      },
+      {
+        "class": "static/source-visible function-pointer materialization",
+        "closed_materialization_class_count": 4,
+        "exact_carrier_count": 15,
+        "exact_carrier_hit_count": 0
+      },
+      {
+        "class": "computed/loader entry materialization",
+        "closed_computed_or_loader_entry_class_count": 3,
+        "exact_carrier_hit_count": 0
+      }
+    ]
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/3",
+    "SHIFT.P1B.HDVehicle4330StaticFunctionPointerMaterializationCoverage/1",
+    "SHIFT.P1B.HDVehicle4330ComputedEntryCoverage/1"
+  ],
+  "version": 1
+}
