@@ -1,0 +1,105 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "interior_or_child_alias_storage_ruled_out": false,
+    "p13a_slot01_direct_exact_wheel_root_persistence_subset_complete": true,
+    "p13a_slot01_exact_wheel_root_new_persistent_gpr_alias_found": false,
+    "p13a_slot01_exact_wheel_root_nonstack_store_found": false,
+    "p13a_slot01_exact_wheel_root_push_found": false,
+    "p13a_slot01_known_wheel_root_materialization_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "reconstructed_wheel_pointers_ruled_out": false,
+    "runtime_generated_or_copied_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "cross_lane_machine_proofs_consumed_without_reowning": true,
+    "machine_bytes_adjudicate_upstream": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "exact_wheel_root_persistence": {
+    "carrier_count": 5,
+    "carriers": [
+      "FUN_00752fc0",
+      "FUN_00755950",
+      "FUN_00755a60",
+      "FUN_00755f80",
+      "FUN_00760b50"
+    ],
+    "direct_memory_store_count": 0,
+    "direct_push_count": 0,
+    "direct_register_copies": [
+      {
+        "address": "0x00755db3",
+        "destination": "ecx",
+        "function": "FUN_00755a60",
+        "operands": "ecx,esi"
+      }
+    ],
+    "direct_register_copy_count": 1,
+    "new_persistent_gpr_alias_found": false
+  },
+  "format": "SHIFT.P1A.P13ASlot01WheelRootMaterializationPersistenceHandoff/1",
+  "limits": [
+    "This closes only the two known machine-proven HDVehicle-to-wheel-root materialization paths and direct exact-wheel-root store/push/immediate-GPR-copy persistence for the five wheel-root carriers.",
+    "Slot0 and slot1 are normalized by exact wheel geometry: HDVehicle+0x400/+0xe80 plus local +0x538 equals HDVehicle+0x938/+0x13b8.",
+    "Interior aliases such as wheel+0x80/wheel+0x7c8, dereferenced child pointers such as [wheel+0x420], reconstructed pointers, aggregate copies, runtime-generated pointers, callbacks and indirect entry remain open.",
+    "No slot completion or aggregate P1.3 gate is promoted by this bounded pointer-persistence result."
+  ],
+  "materialization_surface": {
+    "fun00763570_loop_cursor_storage": "stack-local [EBP-0x4]",
+    "fun00763570_nonstack_wheel_root_store_found": false,
+    "fun00770e80_wheel_root_nonstack_store_count": 0,
+    "fun00770e80_wheel_root_push_count": 0,
+    "known_consumers": [
+      "FUN_00755f80",
+      "FUN_00760b50"
+    ]
+  },
+  "next_step": "Consume the already-machine-bounded wheel interior/child alias tranches where slot-agnostic, then trace remaining reconstructed/runtime-generated pointers and callback/indirect-entry carriers before changing the global stored-or-escaped-alias gate.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "slot01": [
+    {
+      "absolute_target": "HDVehicle+0x938..+0x93f",
+      "explicit_consumer": "FUN_00760b50",
+      "explicit_consumer_call": "0x00771107",
+      "explicit_materialization_site": "0x007710fe",
+      "local_target": "+0x538..+0x53f",
+      "loop_consumer": "FUN_00755f80",
+      "loop_consumer_call": "0x0076360f",
+      "slot": 0,
+      "wheel_receiver": "HDVehicle+0x400"
+    },
+    {
+      "absolute_target": "HDVehicle+0x13b8..+0x13bf",
+      "explicit_consumer": "FUN_00760b50",
+      "explicit_consumer_call": "0x00771125",
+      "explicit_materialization_site": "0x0077111c",
+      "local_target": "+0x538..+0x53f",
+      "loop_consumer": "FUN_00755f80",
+      "loop_consumer_call": "0x0076360f",
+      "slot": 1,
+      "wheel_receiver": "HDVehicle+0xe80"
+    }
+  ],
+  "upstream_contracts": [
+    "SHIFT.P1D.Slot3SixteenCarrierDirectRootPersistence/1",
+    "SHIFT.P1D.Slot3MachineWheelRootMaterializationClosure/1"
+  ],
+  "version": 1,
+  "wheel_layout": {
+    "count": 4,
+    "root_offsets": [
+      "+0x400",
+      "+0xe80",
+      "+0x1900",
+      "+0x2380"
+    ],
+    "stride": "+0xa80"
+  }
+}
