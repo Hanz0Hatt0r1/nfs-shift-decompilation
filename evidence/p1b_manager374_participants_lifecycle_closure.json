@@ -1,0 +1,87 @@
+{
+  "active_dispatch": {
+    "alternate_target": "FUN_0048aee0",
+    "default_target": "FUN_0048ade0",
+    "descendant_preserves_manager_root_further": false,
+    "exact_root_direct_descendant_count": 1,
+    "exact_root_direct_descendant_reaches_manager_374": false,
+    "exact_root_forwarder": "FUN_00489b00",
+    "exact_root_forwarder_count": 1,
+    "root_forwarder_direct_body_reaches_manager_374": false
+  },
+  "adjudication": {
+    "computed_runtime_paths_complete": true,
+    "exact_getter_alias_storage_and_stack_paths_complete": true,
+    "external_provider_count": 7,
+    "global_helper_non_vtable_indirect_setter_surface_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "participants_lifecycle_can_place_fixed_hdvehicle_4330_into_manager_374": false,
+    "participants_lifecycle_helper_or_indirect_setter_surface_complete": true,
+    "participants_lifecycle_nested_writer_surface_complete": true,
+    "participants_lifecycle_nonzero_manager_374_writer_found": false,
+    "unrelated_manager_alias_or_unknown_root_surface_complete": false
+  },
+  "already_closed_parallel_surfaces": {
+    "computed_runtime_remaining_path_count": 0,
+    "exact_getter_escaped_storage_paths_complete": true,
+    "exact_getter_stack_argument_alias_paths_complete": true
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1B.Manager374ParticipantsLifecycleClosure/1",
+  "inputs": {
+    "active": "SHIFT.HDVehicle64e8Manager374ParticipantsActiveDispatchNestedFrontier/1",
+    "computed": "SHIFT.P1B.Manager374ComputedRuntimeClosure/1",
+    "exact_alias": "SHIFT.P1B.Manager374ExactRootAliasClosure/1",
+    "lifecycle": "SHIFT.HDVehicle64e8Manager374ParticipantsLifecycleZeroWriters/1",
+    "root_descendant": "SHIFT.HDVehicle64e8Manager374RootDescendantFrontier/1",
+    "vtable0c": "SHIFT.HDVehicle64e8Manager374ParticipantsVtable0cIndirectFrontier/1"
+  },
+  "lifecycle_writers": {
+    "exact_target_writer_count": 2,
+    "nonzero_writer_count": 0,
+    "writers": [
+      {
+        "function": "FUN_004871f0",
+        "vtable_slot": "+0x08",
+        "written_value": 0
+      },
+      {
+        "function": "FUN_00488970",
+        "vtable_slot": "+0x14",
+        "written_value": 0
+      }
+    ]
+  },
+  "limits": [
+    "This closes the exact Participants Manager lifecycle vtable surface, its active-dispatch receiver-preserving descendants, and the six indirect calls in vtable +0x0c.",
+    "It does not claim that an unrelated reconstructed/unknown manager root cannot reach another helper or indirect setter outside the audited Participants lifecycle lineage.",
+    "The manager+0x2a0 selection writer remains a separate allocator-owned object domain and is not promoted to HDVehicle+0x4330.",
+    "No identity is inferred from matching numeric offsets."
+  ],
+  "next_step": "Bound unrelated/unknown Participants Manager root aliases outside the lifecycle lineage; if none can reach an additional manager+0x374 writer, perform the final manager+0x374 identity rejection and 0x004b86cf slot2 adjudication.",
+  "participants_manager": {
+    "manager_getter": "FUN_00489ad0",
+    "manager_singleton": "0x00bc9fc0",
+    "subobject": "manager+0x20",
+    "target": "manager+0x374",
+    "vptr": "0x00ab916c"
+  },
+  "ready": true,
+  "version": 1,
+  "vtable_0x0c_indirect": {
+    "callback": "FUN_0048a7f0",
+    "heap_helper_call_count": 3,
+    "indirect_call_count": 6,
+    "manager_438_direct_manager_374_store_found": false,
+    "manager_438_parent_recovery_found": false,
+    "manager_438_target": "FUN_007da470",
+    "manager_derived_call_count": 3,
+    "manager_derived_receiver": "participants+0x418 == manager+0x438",
+    "surface_reaches_manager_374": false
+  }
+}
