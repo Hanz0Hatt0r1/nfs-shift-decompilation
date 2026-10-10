@@ -1,0 +1,43 @@
+{
+  "adjudication": {
+    "bounded_non_literal_manager_root_reconstruction_count": 0,
+    "bounded_reconstruction_classes_can_create_unrelated_manager_root": false,
+    "constant_only_multi_register_reconstruction_complete": true,
+    "external_provider_count": 7,
+    "helper_or_non_vtable_indirect_setter_surface_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "memory_load_or_opaque_runtime_reconstruction_complete": false,
+    "p1_3_control_producer_complete": false,
+    "simple_immediate_arithmetic_reconstruction_complete": true,
+    "static_exact_pointer_cells_complete": true
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1B.Manager374ReconstructionCoverage/1",
+  "limits": [
+    "This composes only static exact-pointer cells, simple same-register immediate arithmetic, and constant-only multi-register synthesis.",
+    "Memory-load-derived, externally initialized, relocated, opaque helper-return, indirect-call, and unrecognized transform paths remain open.",
+    "No identity is inferred from numeric offset equality."
+  ],
+  "next_step": "Close memory-load/opaque-runtime manager-root reconstruction and helper/non-vtable indirect setters; then perform the final manager+0x374 -> HDVehicle+0x4330 identity join and 0x004b86cf / slot2 adjudication.",
+  "owner": "Process 1B / P1.3B aggregate integration",
+  "ready": true,
+  "surface": {
+    "constant_multi_register_non_literal_exact_root_count": 0,
+    "constant_multi_register_transition_count": 834,
+    "simple_arithmetic_transition_count": 499,
+    "simple_mov_immediate_seed_count": 38128,
+    "simple_non_literal_exact_root_count": 0,
+    "static_exact_pointer_cell_count": 0
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8Manager374StaticPointerOccurrenceSurface/1",
+    "SHIFT.HDVehicle64e8Manager374SimpleArithmeticReconstructionSurface/1",
+    "SHIFT.HDVehicle64e8Manager374ConstantMultiRegisterReconstructionSurface/1",
+    "SHIFT.P1B.Manager374ExactRootAliasClosure/1"
+  ],
+  "version": 1
+}
