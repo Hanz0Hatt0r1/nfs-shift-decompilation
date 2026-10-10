@@ -1,0 +1,80 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_fun00757d2c_runtime_indexed_wheel_root_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "reconstructed_wheel_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "runtime_indexed_exact_wheel_root_materialization_found": true,
+    "runtime_indexed_exact_wheel_root_persistent_escape_found": false,
+    "runtime_indexed_exact_wheel_root_selected_slot0_or_slot1_store_found": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_body_end_exclusive": "0x00757e51",
+    "machine_body_sha256": "587dcc93159ef142ef57d18e657aa3078e5d2748db0febb4ecba32a286bc20fa",
+    "machine_body_size": 293,
+    "machine_body_start": "0x00757d2c",
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_runtime_identity_contract": "SHIFT.GlobalVehicleComponentCallsiteStatic/1"
+  },
+  "exact_root_lifetime": {
+    "child_pointer_note": "[wheel+0x420] is loaded to EDX on the slow path and written only to stack slot [EBP+0x8] here; it is not the exact wheel-root value.",
+    "fast_path_kill": "0x00757d51",
+    "materialization": "0x00757d2e",
+    "register": "EAX",
+    "root_memory_accesses": [
+      {"address": "0x00757d2e", "mnemonic": "lea", "operands": "eax,[eax+ecx*1+0x400]"},
+      {"address": "0x00757d36", "mnemonic": "mov", "operands": "edi,DWORD PTR [eax+0x424]"},
+      {"address": "0x00757d43", "mnemonic": "mov", "operands": "BYTE PTR [eax+0x504],bl"},
+      {"address": "0x00757d4b", "mnemonic": "mov", "operands": "BYTE PTR [eax+0x540],bl"},
+      {"address": "0x00757d93", "mnemonic": "mov", "operands": "edx,DWORD PTR [eax+0x420]"}
+    ],
+    "root_value_call_or_jump_while_live_count": 0,
+    "root_value_nonstack_store_count": 0,
+    "root_value_push_count": 0,
+    "root_value_register_copy_count": 0,
+    "slow_path_kill": "0x00757d99",
+    "slow_path_last_root_use": "0x00757d93"
+  },
+  "format": "SHIFT.P1A.P13AFun00757d2cRuntimeIndexedWheelRootPersistence/1",
+  "limits": [
+    "This closes only the source-backed runtime indexed wheel-root materializer in FUN_00757d2c.",
+    "A positive exact wheel-root reconstruction exists, so the global reconstructed-wheel-pointer gate remains fail-closed; this contract proves only that this reconstructed root does not itself escape or persist.",
+    "The slow path loads child=[wheel+0x420]; child aliases are a separate pointer class and are not promoted to wheel-root identity.",
+    "Other indexed/loop/fixed wheel-root materializers, copied pointers, callbacks and incoming indirect entry remain open."
+  ],
+  "machine_anchors": {
+    "child_stack_store": "0x00757da4 mov DWORD PTR [ebp+0x8],edx",
+    "root_child_420_read": "0x00757d93 mov edx,DWORD PTR [eax+0x420]",
+    "root_child_424_read": "0x00757d36 mov edi,DWORD PTR [eax+0x424]",
+    "root_kill_fast": "0x00757d51 mov eax,DWORD PTR [ecx+0x339c]",
+    "root_kill_slow": "0x00757d99 mov eax,DWORD PTR [ecx+0x339c]",
+    "root_materialization": "0x00757d2e lea eax,[eax+ecx*1+0x400]",
+    "root_scalar_504_write": "0x00757d43 mov BYTE PTR [eax+0x504],bl",
+    "root_scalar_540_write": "0x00757d4b mov BYTE PTR [eax+0x540],bl"
+  },
+  "next_step": "Inventory the remaining exact four-wheel/indexed materializers (especially FUN_00757318, FUN_007582f0, FUN_007653f9 and FUN_0076ed60) and classify root-value stores/copies before changing the runtime-generated selected-wheel pointer gate.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "runtime_identity": {
+    "call_address": "0x0079a5bc",
+    "caller": "0x0079a050",
+    "component_count": 4,
+    "core_entry_abi": "ECX=vehicle, EAX=slot*0xa80",
+    "return_address": "0x0079a5c1",
+    "slots": [
+      {"selected_target": "HDVehicle+0x938..+0x93f", "slot": 0, "wheel_root": "HDVehicle+0x400"},
+      {"selected_target": "HDVehicle+0x13b8..+0x13bf", "slot": 1, "wheel_root": "HDVehicle+0xe80"},
+      {"selected_target": "HDVehicle+0x1e38..+0x1e3f", "slot": 2, "wheel_root": "HDVehicle+0x1900"},
+      {"selected_target": "HDVehicle+0x28b8..+0x28bf", "slot": 3, "wheel_root": "HDVehicle+0x2380"}
+    ],
+    "vehicle_base_address": "0x00c13700",
+    "wheel_root_formula": "vehicle + 0x400 + slot*0xa80"
+  },
+  "version": 1
+}
