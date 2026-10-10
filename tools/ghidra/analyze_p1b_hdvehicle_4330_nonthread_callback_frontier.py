@@ -18,10 +18,12 @@ EXPECTED={
 }
 # RegisterClassA is retained as an explicit API family even when this pinned SQLite
 # records no direct callsites; this distinguishes zero from unexamined.
+# Canonical P1B exact HDVehicle+0x4330 carrier set. This is intentionally not the
+# P1D slot3 carrier set.
 CARRIERS={
- "0x00758b50","0x00755950","0x00770e80","0x00755a60","0x00752fc0",
- "0x00760b50","0x00763570","0x00755f80","0x0076d100","0x00758810",
- "0x00769ef0","0x007675f0","0x007682c0","0x00766510","0x00758fc0",
+ "0x00769520","0x0076b130","0x0076df50","0x00768a4d","0x00756050",
+ "0x00772200","0x00772570","0x007c3b00","0x0076b280","0x007618f0",
+ "0x00769640","0x007567a0","0x00756bb0","0x00771db0","0x00771e10",
 }
 
 def sha256(path:Path)->str:
@@ -75,7 +77,7 @@ def analyze(database:Path)->dict:
     'Zero exact-carrier callers is not evidence that no carrier address is passed by another function.',
     'Other callback families and generic function-pointer stores remain outside this subset.'
    ],
-   'next_step':'Adjudicate callback arguments at the 10 pinned callsites, beginning with RegisterClassExW WndProc and ReadFileEx/WriteFileEx completion routines, then SetWaitableTimer and Winsock completion parameters.'
+   'next_step':'Adjudicate callback arguments at the 11 pinned callsites, beginning with RegisterClassExW WndProc and ReadFileEx/WriteFileEx completion routines, then SetWaitableTimer and Winsock completion parameters.'
   }
  finally: db.close()
 
