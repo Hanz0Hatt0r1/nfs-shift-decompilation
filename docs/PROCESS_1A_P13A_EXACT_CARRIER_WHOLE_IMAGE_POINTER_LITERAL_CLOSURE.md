@@ -38,7 +38,7 @@ file 0x006d2e3f -> image 0x00ad443f (.rdata), offset mod 4 = 3
 file 0x00764ea7 -> image 0x00b664a7 (.rdata), offset mod 4 = 3
 ```
 
-Both are unaligned byte-sequence collisions. Numeric equality to an RVA is not treated as function-pointer identity.
+Both matches are unaligned in the file. They remain unresolved raw RVA diagnostics: neither alignment nor numeric equality is used to classify them as function pointers or as non-pointers.
 
 ## Gate
 
