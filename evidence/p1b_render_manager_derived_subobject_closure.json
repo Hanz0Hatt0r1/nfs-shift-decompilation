@@ -1,0 +1,53 @@
+{
+  "format": "SHIFT.P1B.RenderManagerDerivedSubobjectClosure/1",
+  "version": 1,
+  "ready": true,
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8RenderManagerCrossBlockExactRootStoreClosure/1",
+    "SHIFT.HDVehicle64e8RenderManagerPlus4InterfaceClosure/1",
+    "SHIFT.HDVehicle64e8RenderManagerPlus780ItemAliasClosure/1"
+  ],
+  "derived_transitions": [
+    {
+      "function": "FUN_0040d6a0",
+      "seed": "0x0040d834",
+      "instruction": "0x0040d83d",
+      "operation": "lea esi,[eax+0x4]"
+    },
+    {
+      "function": "FUN_00498b80",
+      "seed": "0x00498b89",
+      "instruction": "0x00498b93",
+      "operation": "lea ecx,[edi+0x780]"
+    },
+    {
+      "function": "FUN_00499240",
+      "seed": "0x004994c1",
+      "instruction": "0x004995bf",
+      "operation": "lea ecx,[ebx+0x780]"
+    }
+  ],
+  "classification": {
+    "outer_plus_4": {
+      "transition_count": 1,
+      "secondary_vtable": "0x00ab55f0",
+      "reconstructs_exact_outer_root": false
+    },
+    "outer_plus_0x780": {
+      "transition_count": 2,
+      "subobject_vtable": "0x00aebdbc",
+      "reconstructs_exact_outer_root": false
+    }
+  },
+  "adjudication": {
+    "derived_subobject_transition_count": 3,
+    "derived_subobject_alias_surface_complete": true,
+    "derived_subobject_can_reconstruct_exact_outer_root": false,
+    "callee_created_or_external_exact_root_alias_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "next_step": "Close callee-created/external exact outer-root aliases and opaque helper/non-vtable setter paths before final manager+0x374 identity adjudication."
+}
