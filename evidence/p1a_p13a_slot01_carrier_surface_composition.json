@@ -1,0 +1,98 @@
+{
+  "adjudication": {
+    "aggregate_or_bulk_alias_stores_ruled_out": false,
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "other_derived_aliases_ruled_out": false,
+    "other_indirect_entry_ruled_out": false,
+    "p13a_fun00765c40_known_derived_and_local_array_subset_complete": true,
+    "p13a_fun00765c40_nonwheel_runtime_backpointer_store_found": true,
+    "p13a_fun00765c40_selected_slot_writer_found": false,
+    "p13a_fun00765c40_selected_wheel_pointer_escape_found": false,
+    "p13a_fun00770e80_aa60b4_import_indirect_subset_complete": true,
+    "p13a_sixteen_carrier_call_target_surface_complete": true,
+    "p13a_sixteen_carrier_direct_bulk_opcode_subset_complete": true,
+    "p13a_sixteen_carrier_direct_callee_bulk_opcode_subset_complete": true,
+    "p13a_sixteen_carrier_runtime_unknown_call_target_found": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "reconstructed_wheel_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "cross_lane_machine_proofs_consumed_without_reowning": true,
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "carrier_surface": {
+    "call_through_memory_site_count": 2,
+    "carrier_bulk_opcode_hit_count": 0,
+    "carrier_count": 16,
+    "carrier_instruction_count": 5178,
+    "direct_callee_bulk_opcode_hit_count": 0,
+    "direct_callee_instruction_count": 9159,
+    "immediate_direct_callsite_count": 214,
+    "resolved_call_through_memory_sites": [
+      {
+        "operation": "InterlockedExchange((LONG volatile*)(HDVehicle+0x4020), 1)",
+        "resolution_kind": "PE import/IAT",
+        "runtime_import": "KERNEL32!InterlockedExchange",
+        "site": "0x00770ec4",
+        "slot": "0x00aa60b4",
+        "target_argument": "HDVehicle+0x4020",
+        "value_argument": 1
+      },
+      {
+        "operation": "InterlockedExchange((LONG volatile*)(HDVehicle+0x4020), 2)",
+        "resolution_kind": "PE import/IAT",
+        "runtime_import": "KERNEL32!InterlockedExchange",
+        "site": "0x00770f41",
+        "slot": "0x00aa60b4",
+        "target_argument": "HDVehicle+0x4020",
+        "value_argument": 2
+      }
+    ],
+    "runtime_unknown_call_target_count": 0,
+    "total_machine_callsite_count": 216,
+    "unique_immediate_direct_callee_count": 82
+  },
+  "format": "SHIFT.P1A.P13ASlot01CarrierSurfaceComposition/1",
+  "fun00765c40": {
+    "known_wheel_alias_persistent_escape_found": false,
+    "known_wheel_alias_target_writer_found": false,
+    "known_wheel_derived_aliases_complete": true,
+    "local_array_bases": [
+      "HDVehicle+0x3430",
+      "HDVehicle+0x35c8",
+      "HDVehicle+0x35f8",
+      "HDVehicle+0x36e0"
+    ],
+    "local_array_callee_lifetimes_complete": true,
+    "local_array_pointer_escape_found": false,
+    "local_array_wheel_root_reconstruction_found": false,
+    "nonwheel_runtime_backpointer_family": "HDVehicle+0x6730",
+    "nonwheel_runtime_backpointer_store_found": true,
+    "post_derived_identity_inventory_complete": true
+  },
+  "limits": [
+    "This composes only already-merged bounded machine surfaces; it adds no new physical-class identity claim.",
+    "Zero x86 string-opcode hits cover the 16 exact-root carrier bodies and their 82 immediate direct callees only; hand-unrolled copies, deeper callees and aggregate stores remain open.",
+    "The two FUN_00770e80 call-through-memory sites are resolved PE imports to KERNEL32!InterlockedExchange on HDVehicle+0x4020, not selected-wheel callbacks.",
+    "The positive HDVehicle+0x6730 runtime-created-node backpointers remain explicit evidence for a distinct non-wheel subobject and prevent any global runtime-pointer gate from closing.",
+    "Callbacks/indirect entry outside the bounded carrier callsites, reconstructed pointers and runtime-generated/copied selected-wheel aliases remain open."
+  ],
+  "next_step": "Trace runtime-generated/copied selected-wheel pointers and callback/indirect-entry surfaces outside the bounded 16-carrier callsites; promote no global stored-or-escaped-alias or slot gate until those surfaces are exhausted.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01Fun00765c40DerivedAliasHandoff/1",
+    "SHIFT.P1A.P13AFun00765c40LocalArrayCalleeMachineClosure/1",
+    "SHIFT.P1D.Slot3SixteenCarrierBulkOpcodeClosure/1",
+    "SHIFT.P1D.Slot3DirectCalleeBulkOpcodeClosure/1",
+    "SHIFT.P1D.Slot3CarrierCallTargetComposition/2"
+  ],
+  "version": 1
+}
