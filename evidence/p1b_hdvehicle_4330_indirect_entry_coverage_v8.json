@@ -1,0 +1,46 @@
+{
+  "adjudication": {
+    "bounded_indirect_entry_coverage_composed": true,
+    "bounded_indirect_entry_exact_4330_carrier_hit_found": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "remaining_incoming_entry_blocker_is_unresolved_nonstatic_indirect_target_recovery": true,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "runtime_patching_or_generated_code_ruled_out": false,
+    "static_vtable_indirect_target_subset_included": true
+  },
+  "format": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/8",
+  "limits": [
+    "This supersedes /7 by adding the static-vtable indirect-target recovery subset.",
+    "Runtime-written vtables, callbacks, persistent function-pointer stores and opaque/runtime-generated targets remain open."
+  ],
+  "next_step": "Recover callback-backed and persistent function-pointer-storage target subsets from the unresolved indirect navigation set.",
+  "owner": "Process 1B / P1.3B aggregate integration",
+  "ready": true,
+  "supersedes": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/7",
+  "surface": {
+    "bounded_exact_carrier_hit_count": 0,
+    "composed_coverage_class_count": 12,
+    "coverage_addition": {
+      "class": "static vtable-backed indirect target recovery",
+      "exact_carrier_target_hit_count": 0,
+      "slot_count": 22416
+    },
+    "incoming_indirect_navigation_edge_count": 19500,
+    "incoming_indirect_unresolved_target_count": 19500,
+    "p1b_exact_carrier_count": 15,
+    "previous_bounded_coverage_class_count": 11,
+    "static_vtable_candidate_count": 2533,
+    "static_vtable_exact_carrier_target_hit_count": 0,
+    "static_vtable_slot_count": 22416
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/7",
+    "SHIFT.P1B.HDVehicle4330StaticVtableIndirectRecovery/1"
+  ],
+  "version": 8
+}
