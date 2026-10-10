@@ -1,0 +1,128 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_is_selected_wheel_ruled_out": false,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "fun0067b660_immediate_slot4_dispatch_target_proven": false,
+    "p13a_fun0067b660_immediate_slot4_caller_cleanup_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_ranges": {
+      "registry_dispatch": {
+        "end_exclusive": "0x006145e1",
+        "sha256": "66e3758fccaa6e1682c769bb68556f7d75dea76c51aa82bf8fd523e3ce7626bc",
+        "size": 113,
+        "start": "0x00614570"
+      },
+      "registry_registration_1": {
+        "end_exclusive": "0x005ff8da",
+        "sha256": "61d2d99bfffc233302cce7d7d317767b8f343ca6a98009a394e36fc30ed5e0a6",
+        "size": 30,
+        "start": "0x005ff8bc"
+      },
+      "registry_registration_2": {
+        "end_exclusive": "0x005ffc85",
+        "sha256": "f98e932cd57e4e720b1853f379cb2ca7b00c08e38f35b30c48318d88c7040d70",
+        "size": 53,
+        "start": "0x005ffc50"
+      },
+      "secondary_dispatch": {
+        "end_exclusive": "0x006022fe",
+        "sha256": "6eb7ca96c6e6201003cf2c6ef463680592c019b19f7dcf74528a1a6a251309a6",
+        "size": 46,
+        "start": "0x006022d0"
+      }
+    },
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun0067b660StaticVtableObject/1"
+  },
+  "format": "SHIFT.P1A.P13AFun0067b660Slot4DispatchAbiFrontier/1",
+  "limits": [
+    "79 raw call [reg+4] sites are an opcode inventory, not 79 proven virtual dispatches.",
+    "Near register-call provenance is bounded to 16 preceding decoded instructions and stops at intervening branches, calls, or writes to the target register.",
+    "Caller cleanup requires immediate add esp,4 after the indirect call and an immediately preceding push; alternate cleanup, delayed aliases, and indirect target formation remain unclassified.",
+    "Registry record+0x8 is populated from a separate initializer callback return at 0x00614584, not directly from registration input; that return identity is unresolved.",
+    "The registry can accept dynamic registrations via 0x005ffc7a, so a connection to the animation object is not ruled out.",
+    "The explicit callback argument for FUN_0067b660 remains unresolved; no global negative gate is promoted."
+  ],
+  "machine_anchors": {
+    "registry_arg": "0x006145c3 push eax",
+    "registry_array": "0x006145a9 mov esi,0xbe8738",
+    "registry_call": "0x006145c4 call edx",
+    "registry_cleanup": "0x006145c6 add esp,0x4",
+    "registry_clear": "0x006145c9 mov DWORD PTR [esi],0x0",
+    "registry_init_callback": "0x0061457a mov eax,DWORD PTR [edi+0x4]",
+    "registry_init_indirect_call": "0x00614584 call edx",
+    "registry_receiver_load": "0x006145b0 mov eax,DWORD PTR [esi]",
+    "registry_registration_005ff8c6": "0x005ff8c6 call 0x6144f0",
+    "registry_registration_005ff8d5": "0x005ff8d5 call 0x6144f0",
+    "registry_registration_005ffc7a": "0x005ffc7a call 0x6144f0",
+    "registry_result_store": "0x0061458b mov DWORD PTR [edi+0x8],eax",
+    "registry_slot4_load": "0x006145c0 mov edx,DWORD PTR [ecx+0x4]",
+    "registry_vptr_load": "0x006145be mov ecx,DWORD PTR [eax]",
+    "secondary_arg": "0x006022ed push eax",
+    "secondary_call": "0x006022ee call ecx",
+    "secondary_cleanup": "0x006022f0 add esp,0x4",
+    "secondary_slot4_load": "0x006022ea mov ecx,DWORD PTR [eax+0x4]",
+    "secondary_vptr_load": "0x006022e8 mov eax,DWORD PTR [esi]"
+  },
+  "next_step": "Trace dynamic registration arguments through 0x005ffc7a or recover alternate indirect invocation forms of 0x00af7544 slot +0x4.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "registry_path": {
+    "array_base": "0x00be8730",
+    "array_capacity": 8,
+    "array_record_stride": 12,
+    "callback_result_field": "record+0x8",
+    "direct_registration_calls": [
+      "0x005ff8c6",
+      "0x005ff8d5",
+      "0x005ffc7a"
+    ],
+    "direct_registration_thunk": "0x006144f0",
+    "dispatch_call": "0x006145c4",
+    "dynamic_registration_forwarder": "0x005ffc7a",
+    "pushed_argument_equals_registry_receiver": true,
+    "receiver_loaded_from_registry": true,
+    "record_8_populated_by_callback_result": true,
+    "registered_fun0067b660_object_proven": false,
+    "registry_dispatch_target_fun0067b660_proven": false,
+    "registry_receiver_is_initializer_callback_return": true
+  },
+  "secondary_path": {
+    "dispatch_call": "0x006022ee",
+    "pushed_argument_is_loaded_vtable_pointer": true,
+    "pushed_argument_is_receiver_object_proven": false,
+    "target_fun0067b660_proven": false
+  },
+  "slot4_abi_inventory": {
+    "decoded_instruction_count": 2847850,
+    "near_register_slot4_call_count": 1832,
+    "near_register_slot4_immediate_cleanup": [
+      {
+        "call": "0x006022ee",
+        "caller_cleanup": "0x006022f0",
+        "pushed_argument": "eax",
+        "slot4_load": "0x006022ea",
+        "vtable_operand": "DWORD PTR [eax+0x4]"
+      },
+      {
+        "call": "0x006145c4",
+        "caller_cleanup": "0x006145c6",
+        "pushed_argument": "eax",
+        "slot4_load": "0x006145c0",
+        "vtable_operand": "DWORD PTR [ecx+0x4]"
+      }
+    ],
+    "raw_memory_slot4_call_count": 79,
+    "raw_memory_slot4_immediate_cleanup": []
+  },
+  "version": 1
+}
