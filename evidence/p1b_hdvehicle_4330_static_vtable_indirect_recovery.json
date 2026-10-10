@@ -1,0 +1,35 @@
+{
+  "adjudication": {
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "remaining_incoming_indirect_blocker_requires_nonstatic_vtable_or_other_runtime_target_provenance": true,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "static_vtable_can_target_exact_p1b_carrier": false,
+    "static_vtable_indirect_target_subset_complete": true
+  },
+  "format": "SHIFT.P1B.HDVehicle4330StaticVtableIndirectRecovery/1",
+  "limits": [
+    "This closes only indirect targets backed by the pinned static vtable candidate inventory.",
+    "Runtime-written vtables, callback tables, copied/generated pointers and opaque memory remain open."
+  ],
+  "next_step": "Recover callback-backed and persistent function-pointer-storage targets from the unresolved indirect navigation set.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "incoming_indirect_navigation_edge_count": 19500,
+    "incoming_indirect_unresolved_target_count": 19500,
+    "p1b_exact_carrier_count": 15,
+    "static_vtable_candidate_count": 2533,
+    "static_vtable_exact_carrier_target_hit_count": 0,
+    "static_vtable_slot_count": 22416
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330ExactCarrierVtableSurface/1",
+    "SHIFT.P1B.HDVehicle4330IncomingEntryFrontier/1"
+  ],
+  "version": 1
+}
