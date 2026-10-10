@@ -1,0 +1,36 @@
+{
+  "adjudication": {
+    "bounded_carrier_self_propagation_subset_complete": true,
+    "exact_carrier_direct_value_escape_or_copy_origin_found": false,
+    "exact_carrier_outgoing_indirect_dispatch_found": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_created_or_table_derived_carrier_values_ruled_out": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330CarrierSelfPropagationClosure/1",
+  "limits": [
+    "This closes only self-propagation from the already-proven canonical 15 P1B carrier functions.",
+    "Incoming indirect entry, callbacks registered outside the carrier set, runtime-created/table-derived carrier values, runtime patching and opaque external pointer sources remain open.",
+    "The indirect-call input is a Ghidra SQLite navigation index; semantic carrier identity remains established by merged retail machine contracts."
+  ],
+  "next_step": "Inventory unrelated runtime-populated function-pointer tables or bound incoming indirect-entry candidates before promoting global pointer-store/copy or indirect-entry gates.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "carrier_indirect_call_edge_count": 0,
+    "direct_known_carrier_value_copy_origin_count": 0,
+    "p1b_exact_carrier_count": 15,
+    "source_address_taken_carrier_count": 0,
+    "source_noncall_carrier_value_use_count": 0
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330ExactCarrierIndirectCallSurface/1",
+    "SHIFT.P1B.HDVehicle4330KnownCarrierValueCopyOriginClosure/1"
+  ],
+  "version": 1
+}
