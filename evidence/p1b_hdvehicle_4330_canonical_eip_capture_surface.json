@@ -1,0 +1,56 @@
+{
+  "adjudication": {
+    "canonical_call_next_pop_can_derive_exact_carrier": false,
+    "canonical_call_next_pop_candidate_count": 1,
+    "canonical_call_next_pop_eip_capture_surface_complete": true,
+    "external_provider_count": 7,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "noncanonical_eip_capture_surface_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false
+  },
+  "authority": {
+    "executable_sections": [
+      ".secu",
+      ".text"
+    ],
+    "objdump_role": "instruction-boundary inventory",
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_machine_bytes_adjudicate": true
+  },
+  "canonical_call_next_pop_surface": {
+    "candidate_count": 1,
+    "candidate_machine_window": "0x00d31400..0x00d31442",
+    "candidates": [
+      {
+        "call": "0x00d31404",
+        "pop": "0x00d31409",
+        "pop_register": "ebp",
+        "section": ".secu"
+      }
+    ],
+    "derived_value": "0x00d31000",
+    "derived_value_identity": ".secu section base",
+    "exact_4330_carrier_pointer_derived": false,
+    "post_capture_use": "16-slot lock/TLS bookkeeping rooted at .secu base; candidate returns at 0x00d31442"
+  },
+  "format": "SHIFT.P1B.HDVehicle4330CanonicalEipCaptureSurface/1",
+  "limits": [
+    "This closes only the canonical direct CALL-next followed immediately by POP-GPR EIP-capture idiom on instruction boundaries.",
+    "The sole candidate derives the .secu base and is unrelated to the exact carrier address domain.",
+    "Other EIP acquisition idioms, transformed constants, runtime copies, and encoded pointers remain open."
+  ],
+  "next_step": "Bound noncanonical EIP acquisition, especially x87 F[N]STENV instruction-pointer extraction, then continue copied/transformed runtime callback pointers.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330WholeImageLiteralPointerSurface/1",
+    "SHIFT.P1B.HDVehicle4330ExternalCallerFinalTranche/1"
+  ],
+  "version": 1
+}
