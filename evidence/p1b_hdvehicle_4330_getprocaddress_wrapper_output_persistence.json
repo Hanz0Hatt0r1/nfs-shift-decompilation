@@ -1,0 +1,63 @@
+{
+  "adjudication": {
+    "dynamic_getprocaddress_resolution_ruled_out": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "generic_wrapper_direct_output_persistence_subset_complete": true,
+    "generic_wrapper_direct_output_persistent_store_found": false,
+    "generic_wrapper_direct_outputs_stack_local_only": true,
+    "generic_wrapper_runtime_indirect_entry_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "runtime_patching_or_generated_code_ruled_out": false
+  },
+  "authority": {
+    "disassembler": "GNU objdump -d -Mintel",
+    "platform": "PC retail 1.02",
+    "retail_bytes_are_machine_authority": true,
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_file_size": 8801792
+  },
+  "format": "SHIFT.P1B.HDVehicle4330GetProcAddressWrapperOutputPersistence/1",
+  "limits": [
+    "This closes persistence only for the 12 direct machine callers of the generic GetProcAddress wrapper.",
+    "Direct GetProcAddress callsites outside the wrapper, register-loaded GetProcAddress calls, runtime/indirect wrapper entry, external proc addresses and unrelated runtime-populated function-pointer stores remain open.",
+    "A stack-local resolved pointer may be invoked transiently; this contract proves only that these direct wrapper outputs are not copied into persistent non-stack storage before their terminal use or overwrite."
+  ],
+  "next_step": "Classify direct-IAT/register-loaded GetProcAddress result stores and their downstream indirect calls, then compose bounded runtime-populated function-pointer storage coverage.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "direct_wrapper_callsite_count": 12,
+    "generic_wrapper": "0x0093dd2b",
+    "nonstack_output_destination_count": 0,
+    "resolved_pointer_persistent_nonstack_store_count": 0,
+    "resolved_pointer_value_copy_count_before_terminal_or_kill": 0,
+    "rows": [
+      {"destination_class":"stack_local","output_destination":"[ebp-0x30]","overwrite_kill":null,"persistent_nonstack_store_before_terminal_or_kill":false,"pointer_value_copy_before_terminal_or_kill":false,"terminal_pointer_use":"0x0093cf2f","terminal_pointer_use_class":"indirect_call","wrapper_callsite":"0x0093cf1d"},
+      {"destination_class":"stack_local","output_destination":"[ebp-0x20]","overwrite_kill":null,"persistent_nonstack_store_before_terminal_or_kill":false,"pointer_value_copy_before_terminal_or_kill":false,"terminal_pointer_use":"0x0093cf6d","terminal_pointer_use_class":"indirect_call","wrapper_callsite":"0x0093cf5b"},
+      {"destination_class":"stack_local","output_destination":"[ebp-0x24]","overwrite_kill":null,"persistent_nonstack_store_before_terminal_or_kill":false,"pointer_value_copy_before_terminal_or_kill":false,"terminal_pointer_use":"0x0093cfa8","terminal_pointer_use_class":"indirect_call","wrapper_callsite":"0x0093cf99"},
+      {"destination_class":"stack_local","output_destination":"[ebp-0x1c]","overwrite_kill":null,"persistent_nonstack_store_before_terminal_or_kill":false,"pointer_value_copy_before_terminal_or_kill":false,"terminal_pointer_use":"0x0093cfe3","terminal_pointer_use_class":"indirect_call","wrapper_callsite":"0x0093cfd4"},
+      {"destination_class":"stack_local","output_destination":"[ebp-0x28]","overwrite_kill":null,"persistent_nonstack_store_before_terminal_or_kill":false,"pointer_value_copy_before_terminal_or_kill":false,"terminal_pointer_use":"0x0093d016","terminal_pointer_use_class":"indirect_call","wrapper_callsite":"0x0093d007"},
+      {"destination_class":"stack_local","output_destination":"[ebp-0x34]","overwrite_kill":null,"persistent_nonstack_store_before_terminal_or_kill":false,"pointer_value_copy_before_terminal_or_kill":false,"terminal_pointer_use":"0x0093d051","terminal_pointer_use_class":"indirect_call","wrapper_callsite":"0x0093d042"},
+      {"destination_class":"stack_local","output_destination":"[ebp-0x18]","overwrite_kill":null,"persistent_nonstack_store_before_terminal_or_kill":false,"pointer_value_copy_before_terminal_or_kill":false,"terminal_pointer_use":"0x0093d09b","terminal_pointer_use_class":"indirect_call","wrapper_callsite":"0x0093d06e"},
+      {"destination_class":"stack_local","output_destination":"[ebp-0x18]","overwrite_kill":null,"persistent_nonstack_store_before_terminal_or_kill":false,"pointer_value_copy_before_terminal_or_kill":false,"terminal_pointer_use":"0x0093d09b","terminal_pointer_use_class":"indirect_call","wrapper_callsite":"0x0093d086"},
+      {"destination_class":"stack_local","output_destination":"[ebp-0x2c]","overwrite_kill":null,"persistent_nonstack_store_before_terminal_or_kill":false,"pointer_value_copy_before_terminal_or_kill":false,"terminal_pointer_use":"0x0093d288","terminal_pointer_use_class":"indirect_call","wrapper_callsite":"0x0093d276"},
+      {"destination_class":"stack_local","output_destination":"[ebp-0x14]","overwrite_kill":"0x009976d8","persistent_nonstack_store_before_terminal_or_kill":false,"pointer_value_copy_before_terminal_or_kill":false,"terminal_pointer_use":"0x0099767c","terminal_pointer_use_class":"indirect_call","wrapper_callsite":"0x00997659"},
+      {"destination_class":"stack_local","output_destination":"[ebp-0x14]","overwrite_kill":"0x00997c65","persistent_nonstack_store_before_terminal_or_kill":false,"pointer_value_copy_before_terminal_or_kill":false,"terminal_pointer_use":"0x00997b9d","terminal_pointer_use_class":"indirect_call","wrapper_callsite":"0x00997b7a"},
+      {"destination_class":"stack_local","output_destination":"[ebp-0x20]","overwrite_kill":"0x009a8ac9","persistent_nonstack_store_before_terminal_or_kill":false,"pointer_value_copy_before_terminal_or_kill":false,"terminal_pointer_use":"0x009a8a32","terminal_pointer_use_class":"indirect_call","wrapper_callsite":"0x009a8a1d"}
+    ],
+    "stack_local_output_destination_count": 12,
+    "unique_terminal_indirect_call_count": 11
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330GetProcAddressStaticResolutionSurface/1",
+    "SHIFT.P1B.HDVehicle4330GetProcAddressWrapperStaticEntrySurface/1"
+  ],
+  "version": 1
+}
