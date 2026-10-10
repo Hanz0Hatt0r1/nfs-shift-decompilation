@@ -13,9 +13,9 @@ No new semantic identity is inferred by this tooling. It only inventories candid
 | `FUN_00755a60` | `ESI` | `0x00755a73 .. 0x00755f71` |
 | `FUN_00752fc0` | `ECX` | `0x00752fc0 .. 0x00752fe5` |
 | `FUN_00760b50` | `ESI` | `0x00760b6a .. 0x00760d63` |
-| `FUN_00755f80` | `ESI` | `0x00755f80 .. 0x00756004` |
+| `FUN_00755f80` | `ESI` | `0x00755f9a .. 0x00756004` |
 
-The exporter refuses function-name drift and emits only instructions in these windows that mention the exact-root register, plus call boundaries in the same window.
+`FUN_00755f80` intentionally starts at machine anchor `0x00755f9a mov esi,ecx`; pre-capture `ESI` is outside the exact-root lifetime. The exporter refuses function-name drift and emits only instructions in these windows that mention the exact-root register, plus call boundaries in the same window.
 
 ## Candidate classes
 
