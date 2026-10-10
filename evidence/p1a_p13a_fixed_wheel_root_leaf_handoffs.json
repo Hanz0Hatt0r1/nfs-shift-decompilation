@@ -1,0 +1,78 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fixed_four_wheel_leaf_handoff_count": 8,
+    "fixed_four_wheel_leaf_root_persistence_found": false,
+    "p13a_fixed_four_wheel_leaf_handoff_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "reconstructed_wheel_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "global_vehicle_receiver": "0x00c13700",
+    "platform": "PC retail 1.02",
+    "ranges": {
+      "caller_fun007582f0": {"end_exclusive": "0x0074d8bb", "sha256": "4e64c7876a3c648e60fa6528c29ca09bec21be44b3cb1e69fe32cf204b3e7bfd", "size": 10, "start": "0x0074d8b1"},
+      "caller_fun0076ed60": {"end_exclusive": "0x0074dfed", "sha256": "0c5451be59e83de8fee5267dbf790f56baaba44a28bb75c462733a4b3f5c154c", "size": 10, "start": "0x0074dfe3"},
+      "fun00753020": {"end_exclusive": "0x007530e0", "sha256": "117dd2fa87dfca67d162638192ab7ba71dc0fd32cdef5a19fc2c42a79caa59c2", "size": 192, "start": "0x00753020"},
+      "fun00756010": {"end_exclusive": "0x0075603b", "sha256": "76ef5a938d5ea0008c6b9411f115c2aaa6684d4f06b067e1cf4261880f4c2100", "size": 43, "start": "0x00756010"},
+      "fun007582f0": {"end_exclusive": "0x0075831e", "sha256": "23f06607cb7adf6cb75adc72fb3d8a4880cd87a00af068c8230c34fc6737875e", "size": 46, "start": "0x007582f0"},
+      "fun0076ed60_prologue": {"end_exclusive": "0x0076ed67", "sha256": "b3c713f9d08334723ded524160c23970444b1a55d80015d013eeb87172742d22", "size": 7, "start": "0x0076ed60"},
+      "fun0076ed60_window": {"end_exclusive": "0x0076ee84", "sha256": "7eacc49b1481bdb5c27d267f0bfac29607829d721106013481384bece580dbfd", "size": 72, "start": "0x0076ee3c"}
+    },
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1A.P13AFixedWheelRootLeafHandoffs/1",
+  "handoffs": {
+    "FUN_007582f0_to_FUN_00756010": {
+      "callee_complete_leaf": true,
+      "callee_root_value_store_or_copy_found": false,
+      "callee_scalar_destination_offsets": ["+0x8b0", "+0x868", "+0x888"],
+      "count": 4,
+      "entry_receiver_proof": "0x0074d8b1 ECX=0x00c13700; 0x0074d8b6 call FUN_007582f0",
+      "rows": [
+        {"callee": "FUN_00756010", "materialization": "0x007582f2", "root_offset": "+0x400", "slot": 0, "transfer": "0x007582f8", "transfer_kind": "call"},
+        {"callee": "FUN_00756010", "materialization": "0x007582fd", "root_offset": "+0xe80", "slot": 1, "transfer": "0x00758303", "transfer_kind": "call"},
+        {"callee": "FUN_00756010", "materialization": "0x00758308", "root_offset": "+0x1900", "slot": 2, "transfer": "0x0075830e", "transfer_kind": "call"},
+        {"callee": "FUN_00756010", "materialization": "0x00758313", "root_offset": "+0x2380", "slot": 3, "transfer": "0x00758319", "transfer_kind": "jmp"}
+      ]
+    },
+    "FUN_0076ed60_to_FUN_00753020": {
+      "callee_complete_leaf": true,
+      "callee_root_value_store_or_copy_found": false,
+      "callee_writes_only_fields_relative_to_exact_wheel_receiver": true,
+      "count": 4,
+      "entry_receiver_proof": "0x0074dfe3 ECX=0x00c13700; 0x0074dfe8 call FUN_0076ed60; 0x0076ed64 ESI=ECX",
+      "rows": [
+        {"call": "0x0076ee49", "callee": "FUN_00753020", "materialization": "0x0076ee43", "root_offset": "+0x400", "slot": 0},
+        {"call": "0x0076ee5b", "callee": "FUN_00753020", "materialization": "0x0076ee55", "root_offset": "+0xe80", "slot": 1},
+        {"call": "0x0076ee6d", "callee": "FUN_00753020", "materialization": "0x0076ee67", "root_offset": "+0x1900", "slot": 2},
+        {"call": "0x0076ee7f", "callee": "FUN_00753020", "materialization": "0x0076ee79", "root_offset": "+0x2380", "slot": 3}
+      ]
+    }
+  },
+  "limits": [
+    "This closes exactly two fixed four-wheel receiver handoff families on the proven global vehicle 0x00c13700 and the complete leaf callees FUN_00756010/FUN_00753020.",
+    "The receiver itself is forwarded into the leaf callees, so this is a positive transient alias handoff; neither complete leaf stores, copies, pushes or further forwards the receiver value.",
+    "FUN_007653f9 -> FUN_00760d70 remains open because that callee enters a non-contiguous/trampolined control-flow body; dynamic indexed materializers such as FUN_00757318 remain separate.",
+    "Global reconstructed/runtime-generated/stored-alias and callback/indirect gates remain fail-closed."
+  ],
+  "next_step": "Resolve FUN_007653f9 -> FUN_00760d70 across its trampoline and then classify FUN_00757318 indexed wheel-root lifetime.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "version": 1,
+  "wheel_layout": {
+    "count": 4,
+    "slots": [
+      {"selected_target": "HDVehicle+0x938..+0x93f", "slot": 0, "wheel_root": "HDVehicle+0x400"},
+      {"selected_target": "HDVehicle+0x13b8..+0x13bf", "slot": 1, "wheel_root": "HDVehicle+0xe80"},
+      {"selected_target": "HDVehicle+0x1e38..+0x1e3f", "slot": 2, "wheel_root": "HDVehicle+0x1900"},
+      {"selected_target": "HDVehicle+0x28b8..+0x28bf", "slot": 3, "wheel_root": "HDVehicle+0x2380"}
+    ],
+    "stride": "+0xa80"
+  }
+}
