@@ -1,0 +1,43 @@
+{
+  "adjudication": {
+    "bounded_indirect_entry_coverage_composed": true,
+    "bounded_indirect_entry_exact_4330_carrier_hit_found": false,
+    "carrier_self_propagation_subset_included": true,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "memory_table_derived_carrier_pointers_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "runtime_patching_or_generated_code_ruled_out": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/6",
+  "limits": [
+    "This supersedes /5 by adding the bounded exact-carrier self-propagation subset.",
+    "Incoming indirect entry, unrelated runtime-populated tables, cross-block/table-derived reconstruction, runtime patching and opaque/external pointer sources remain open."
+  ],
+  "next_step": "Inventory unrelated runtime-populated function-pointer tables or bound incoming indirect-entry candidates before promoting global indirect-entry/store-copy gates.",
+  "owner": "Process 1B / P1.3B aggregate integration",
+  "ready": true,
+  "supersedes": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/5",
+  "surface": {
+    "bounded_exact_carrier_hit_count": 0,
+    "carrier_self_propagation_direct_copy_origin_count": 0,
+    "carrier_self_propagation_outgoing_indirect_edge_count": 0,
+    "composed_coverage_class_count": 10,
+    "coverage_addition": {
+      "class": "bounded exact-carrier self-propagation",
+      "direct_exact_carrier_copy_origin_count": 0,
+      "outgoing_indirect_edge_count": 0
+    },
+    "p1b_exact_carrier_count": 15,
+    "previous_bounded_coverage_class_count": 9
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/5",
+    "SHIFT.P1B.HDVehicle4330CarrierSelfPropagationClosure/1"
+  ],
+  "version": 6
+}
