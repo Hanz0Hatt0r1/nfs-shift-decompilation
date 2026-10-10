@@ -1,0 +1,120 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "other_derived_or_child_aliases_ruled_out": false,
+    "p13a_slot01_known_interior_child_alias_pointer_persistence_found": false,
+    "p13a_slot01_known_interior_child_alias_root_reconstruction_found": false,
+    "p13a_slot01_known_interior_child_alias_target_writer_found": false,
+    "p13a_slot01_wheel_420_child_alias_subset_complete": true,
+    "p13a_slot01_wheel_7c8_interior_alias_subset_complete": true,
+    "p13a_slot01_wheel_80_interior_alias_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "reconstructed_wheel_pointers_ruled_out": false,
+    "runtime_generated_or_copied_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "cross_lane_machine_proofs_consumed_without_reowning": true,
+    "machine_bytes_adjudicate_upstream": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1A.P13ASlot01KnownInteriorChildAliasHandoff/1",
+  "limits": [
+    "This composes only the already-machine-bounded wheel+0x80, wheel+0x7c8 and [wheel+0x420] child alias families for slot0/slot1.",
+    "Slot0/slot1 object identity is supplied by the merged P1A wheel-root handoff; P1D contracts contribute machine body/callee semantics without ownership transfer.",
+    "Other derived aliases, reconstructed pointers, aggregate copies, runtime-generated/copied pointers, callbacks and indirect entry remain open.",
+    "No global stored-or-escaped-alias, slot-completion or aggregate P1.3 gate is promoted by this bounded composition."
+  ],
+  "next_step": "Consume remaining four-wheel interior alias families (including FUN_00765c40 wheel+0x678/+0x7a8 where slot-agnostic), then trace reconstructed/runtime-generated pointers and callback/indirect-entry carriers.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "slot01": [
+    {
+      "absolute_target": "HDVehicle+0x938..+0x93f",
+      "slot": 0,
+      "wheel_7c8_receiver": "HDVehicle+0xbc8",
+      "wheel_80_receiver": "HDVehicle+0x480",
+      "wheel_receiver": "HDVehicle+0x400"
+    },
+    {
+      "absolute_target": "HDVehicle+0x13b8..+0x13bf",
+      "slot": 1,
+      "wheel_7c8_receiver": "HDVehicle+0x1648",
+      "wheel_80_receiver": "HDVehicle+0xf00",
+      "wheel_receiver": "HDVehicle+0xe80"
+    }
+  ],
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01WheelRootMaterializationPersistenceHandoff/1",
+    "SHIFT.P1D.P13DSlot3PrimaryAliasEscape/1",
+    "SHIFT.P1D.Slot3Fun007555b0InteriorAliasClosure/1",
+    "SHIFT.P1D.Slot3ExactWheelDirectCarrierClosure/1",
+    "SHIFT.P1D.Slot3Fun00755a60RegisterAliasClosure/1",
+    "SHIFT.P1D.Slot3Wheel420ChildCalleeMachineClosure/1"
+  ],
+  "version": 1,
+  "wheel_420_child_alias": {
+    "back_pointer_or_wheel_root_recovery_found": false,
+    "bounded_callees": [
+      "FUN_007ba860",
+      "FUN_007af0a0",
+      "FUN_007af010",
+      "FUN_007ba7e0",
+      "FUN_007aefb0"
+    ],
+    "bounded_callers": [
+      "FUN_00760b50",
+      "FUN_00755f80"
+    ],
+    "child_pointer_persistence_found": false,
+    "persistent_child_scalar_writes": [
+      "child+0x128 f32",
+      "child+0x12c f32",
+      "child+0x130 f32",
+      "child+0x138 f64",
+      "child+0x140 f64",
+      "child+0x148 f64"
+    ],
+    "selected_target_writer_found": false,
+    "source": "child=[wheel+0x420]"
+  },
+  "wheel_7c8_alias": {
+    "callee": "FUN_00753620",
+    "callee_call": "0x00755dae -> FUN_00753620",
+    "callee_direct_call_count": 0,
+    "callee_write_offsets": [
+      "+0x0"
+    ],
+    "materialization": "0x00755c04 ECX=wheel+0x7c8",
+    "source": "FUN_00755a60 exact wheel receiver",
+    "target_writer_found": false,
+    "wheel_relative_write_offsets": [
+      "+0x7c8"
+    ]
+  },
+  "wheel_80_alias": {
+    "callee": "FUN_007555b0",
+    "callee_receiver_write_offsets": [
+      "+0x248",
+      "+0x250",
+      "+0x258",
+      "+0x260"
+    ],
+    "forwards_to_direct_callee": false,
+    "interior_materialization": "FUN_00755950 ECX=wheel+0x80",
+    "reconstructs_wheel_root": false,
+    "source": "FUN_00758b50 per-wheel loop -> FUN_00755950",
+    "target_relative_to_callee": "+0x4b8",
+    "target_writer_found": false,
+    "wheel_relative_write_offsets": [
+      "+0x2c8",
+      "+0x2d0",
+      "+0x2d8",
+      "+0x2e0"
+    ]
+  }
+}
