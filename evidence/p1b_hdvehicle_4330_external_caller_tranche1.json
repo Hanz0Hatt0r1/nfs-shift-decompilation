@@ -1,0 +1,69 @@
+{
+  "adjudication": {
+    "external_caller_tranche1_complete": true,
+    "external_provider_count": 7,
+    "external_receiver_provenance_complete": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "remaining_external_caller_count": 5,
+    "remaining_external_callers": [
+      "FUN_0074da70",
+      "FUN_00795d60",
+      "FUN_00aa2850",
+      "Unwind@00a7063f",
+      "Unwind@00a72322"
+    ],
+    "resolved_external_caller_count": 2,
+    "resolved_external_callsite_count": 6,
+    "tranche1_preexisting_4330_alias_found": false
+  },
+  "authority": {
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_machine_transfer_adjudicates": true,
+    "sqlite_role": "direct-call inventory/fingerprint cross-check only"
+  },
+  "format": "SHIFT.P1B.HDVehicle4330ExternalCallerTranche1/1",
+  "fun_00491d86_wrapper_chain": {
+    "classification": "exact HDVehicle-root entry to already-proven +0x4330 materializer, not an alternate +0x4330 alias entry",
+    "direct_entries_to_fun_00768a30": [
+      {"receiver": "literal 0x00c13700 HDVehicle root", "site": "0x0070275c", "source": "FUN_00702720"},
+      {"receiver": "literal 0x00c13700 HDVehicle root", "site": "0x007027be", "source": "FUN_00702770"},
+      {"receiver": "already-admitted exact-root internal path", "site": "0x0076e544", "source": "FUN_0076df50"}
+    ],
+    "ecx_preserved_across_wrappers": true,
+    "external_frontier_callsite": "0x00491d99 -> FUN_00768a4d",
+    "preexisting_hdvehicle_4330_alias_forwarded": false,
+    "wrapper_entry": "FUN_00768a30 -> FUN_00491d86 -> FUN_00768a4d"
+  },
+  "fun_00798df0_cluster": {
+    "calls": [
+      {"actual": "stack local EBP-0x238c", "matches_exact_4330": false, "site": "0x00798f5c", "target": "FUN_00772200", "target_exact_4330_parameter": "ECX"},
+      {"actual": "literal ECX=0x00c13700", "preexisting_4330_alias": false, "site": "0x00798f9c", "target": "FUN_0076df50", "target_domain": "HDVehicle root"},
+      {"actual": "stack local EBP-0x238c", "matches_exact_4330": false, "site": "0x00798fce", "target": "FUN_007c3b00", "target_exact_4330_parameter": "stack param3"},
+      {"actual": "stack local EBP-0x238c", "matches_exact_4330": false, "site": "0x00798fff", "target": "FUN_007c3b00", "target_exact_4330_parameter": "stack param3"},
+      {"actual": "stack local EBP-0x238c", "matches_exact_4330": false, "site": "0x00799054", "target": "FUN_007c3b00", "target_exact_4330_parameter": "stack param3"}
+    ],
+    "classification": "all five calls are exact-root or stack-local argument paths; none forwards an existing HDVehicle+0x4330 pointer",
+    "external_callsite_count": 5,
+    "preexisting_hdvehicle_4330_alias_forwarded": false
+  },
+  "limits": [
+    "This closes only the direct FUN_00491d86 wrapper chain and the five exact-carrier calls in FUN_00798df0.",
+    "The other five external caller functions remain open.",
+    "Indirect entry, callbacks registered elsewhere, runtime-generated/copied pointers and non-root-derived data aliases remain open.",
+    "Callgraph reachability is never promoted to HDVehicle+0x4330 identity without retail machine argument provenance."
+  ],
+  "next_step": "Adjudicate FUN_0074da70 and FUN_00795d60, then the tiny FUN_00aa2850/Unwind caller set; only after all seven direct callers close should indirect-entry work resume.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8RootDerived4330MaterializerPersistenceClosure/1",
+    "SHIFT.P1B.HDVehicle4330IncomingDirectCallFrontier/1"
+  ],
+  "version": 1
+}
