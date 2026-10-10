@@ -1,0 +1,83 @@
+{
+  "adjudication": {
+    "encoded_or_reconstructed_carrier_pointers_ruled_out": false,
+    "external_provider_count": 7,
+    "incoming_indirect_entry_ruled_out": false,
+    "manual_imagebase_plus_rva_pointer_construction_ruled_out": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p13a_startup_module_base_storage_subset_complete": true,
+    "p1_3_control_producer_complete": false,
+    "runtime_callback_registration_ruled_out": false,
+    "runtime_generated_or_copied_carrier_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "runtime_module_base_fields_are_carrier_pointers": false,
+    "runtime_module_base_getter_consumer_paths_complete": false,
+    "runtime_module_base_persistence_found": true,
+    "runtime_module_base_storage_field_count": 2,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_transfer_adjudicates": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1A.P13ARuntimeModuleBaseStorageFrontier/1",
+  "limits": [
+    "This closes only startup propagation of the exact module base into two proven runtime storage fields.",
+    "The persisted value is the module base itself, not one of the 16 carrier entrypoints.",
+    "Downstream consumers of getters +0x84/+0xa4, arithmetic using the stored base, callback registration and incoming indirect dispatch remain open.",
+    "No slot or aggregate P1.3 gate is promoted."
+  ],
+  "module_base_sinks": [
+    {
+      "destination": "0x00bfa4fc / singleton+0x4",
+      "dispatch_slot": "+0x80",
+      "flow": "EDX -> stack arg -> FUN_006347e0",
+      "getter": "FUN_00886c00",
+      "getter_slot": "+0x84",
+      "storage_singleton": "0x00bfa4f8",
+      "target": "FUN_00886b70"
+    },
+    {
+      "destination": "0x00bfa504 / singleton+0xc",
+      "dispatch_slot": "+0xa0",
+      "flow": "EDX -> ESI -> [FUN_006347b0()+0xc]",
+      "getter": "FUN_00886c70",
+      "getter_slot": "+0xa4",
+      "storage_singleton": "0x00bfa4f8",
+      "target": "FUN_00886c60"
+    }
+  ],
+  "next_step": "Trace consumers of FUN_00886c00/FUN_00886c70 (vtable +0x84/+0xa4) and classify any RVA arithmetic or callback registration before changing reconstruction/dispatch gates.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "runtime_receiver": {
+    "constructor": "thunk_FUN_00d33990",
+    "fixed_object": "0x00bbf960",
+    "getter": "FUN_00886980",
+    "global": "0x00c29634",
+    "resolved_slots": {
+      "+0x80": "0x00886b70",
+      "+0x84": "0x00886c00",
+      "+0xa0": "0x00886c60",
+      "+0xa4": "0x00886c70"
+    },
+    "setup": "0x00886a66 calls thunk_FUN_0040b870 and stores returned 0x00bbf960 into 0x00c29634",
+    "vptr_store": "0x00d339b0 -> 0x00aab2d8",
+    "vtable": "0x00aab2d8"
+  },
+  "startup_seed": {
+    "argument_role": "first stack argument / module instance base",
+    "call": "0x0090481c -> FUN_00a69160",
+    "site": "0x00904817",
+    "value": "0x00400000"
+  },
+  "storage_singleton_proof": {
+    "all_paths_return": "0x00bfa4f8",
+    "direct_plus_c_store": "FUN_00886c60 writes EDX-derived ESI to [FUN_006347b0()+0xc]",
+    "factory": "FUN_006347b0",
+    "setter_for_plus_4": "FUN_006347e0 writes its first stack argument to [ECX+0x4]"
+  },
+  "version": 1
+}
