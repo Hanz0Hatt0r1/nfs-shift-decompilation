@@ -1,0 +1,72 @@
+{
+  "format": "SHIFT.Fun007bf790CasterRecordMaterialization/1",
+  "ready": true,
+  "platform_authority": "PC retail 1.02",
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "decompiler_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "vehicle_load_source": "./Source/Vehicle/vehload.cpp",
+    "downstream_writer_contract": "SHIFT.Fun00769640TrigSourceWriter/1"
+  },
+  "machine_spans": {
+    "selected_caster_calls": {
+      "start": "0x007bf983",
+      "end_exclusive": "0x007bf9d3",
+      "size": 80,
+      "raw_byte_sha256": "12049fc9876432475c2ee2b34705372173dd2e6aec68842a42141ef3a30ea258"
+    },
+    "record_materializer": {
+      "start": "0x007c5a20",
+      "end_exclusive": "0x007c5aba",
+      "size": 154,
+      "raw_byte_sha256": "cf994c54d1a693fd2a1091fa553cc0da632082e25e3ba549143b9bf8443963f0"
+    },
+    "integer_conversion_boundary": "0x00901310"
+  },
+  "source_fields": {
+    "LeftCasterRange": "VehicleLoadData+0x1e8 vec3 f64",
+    "LeftCasterSetting": "VehicleLoadData+0x3d8 f64",
+    "RightCasterRange": "VehicleLoadData+0x200 vec3 f64",
+    "RightCasterSetting": "VehicleLoadData+0x3e0 f64",
+    "semantic_names_source_backed": true
+  },
+  "selected_records": {
+    "left_relative_to_HDVehicle_plus_0x4330": "0x1188",
+    "right_relative_to_HDVehicle_plus_0x4330": "0x11d8",
+    "left_absolute_base_slope_coefficient": ["0x54b8", "0x54c0", "0x54cc"],
+    "right_absolute_base_slope_coefficient": ["0x5508", "0x5510", "0x551c"],
+    "degrees_to_radians": 0.017453292519943295
+  },
+  "recovered_materialization": {
+    "copy_base_from_range_0": true,
+    "copy_slope_from_range_1": true,
+    "range_norm_accumulation": "range[1]^2 + range[0]^2 + range[2]^2",
+    "nonzero_range_count": "FUN_00901310(range[2])",
+    "nonzero_range_scales_base_and_slope": true,
+    "zero_range_preserves_prior_count": true,
+    "requested_coefficient": "FUN_00901310(setting)",
+    "coefficient_clamp": "count < 1 or requested < 0 -> 0; requested >= count -> count-1; otherwise requested",
+    "left_before_right_call_order": true
+  },
+  "native_contract": {
+    "caster_record_materialization_internalized": true,
+    "selected_record_geometry_internalized": true,
+    "degree_scaling_internalized": true,
+    "coefficient_clamp_internalized": true,
+    "zero_range_prior_count_preserved": true,
+    "downstream_FUN_00769640_input_materialized": true
+  },
+  "limits": {
+    "FUN_00901310_integer_conversion_internalized": false,
+    "FUN_00901310_rounding_semantics_promoted": false,
+    "caster_config_source_acquisition_internalized": false,
+    "record_plus_0x18_mirror_side_effect_internalized": false,
+    "positive_qword_producer_family_complete": false,
+    "FUN_007584f0_computed_payloads_complete": false,
+    "residual_producer_promotion_bit_set": false,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_provider_removed": false,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Bind LeftCasterRange/Setting and RightCasterRange/Setting to authoritative native VehicleLoadData state while retaining FUN_00901310 as a typed machine-conversion boundary until its environment-dependent semantics are separately proven."
+}
