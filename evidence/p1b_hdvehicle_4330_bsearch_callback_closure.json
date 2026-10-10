@@ -1,0 +1,81 @@
+{
+  "adjudication": {
+    "bsearch_comparator_count": 2,
+    "bsearch_comparator_provenance_complete": true,
+    "bsearch_exact_p1b_carrier_hit_count": 0,
+    "bsearch_exact_p1b_carrier_hit_found": false,
+    "bsearch_physical_callsite_count": 2,
+    "bsearch_physical_callsite_surface_complete": true,
+    "computed_or_encoded_code_pointers_ruled_out": false,
+    "external_provider_count": 7,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "remaining_callback_api_families_ruled_out": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false
+  },
+  "authority": {
+    "evidence_kind": "whole-PE rel32 call scan plus exact machine-byte provenance",
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "bsearch": {
+    "callsites": [
+      "0x0053c2da",
+      "0x00a5df75"
+    ],
+    "physical_callsite_count": 2,
+    "target": "0x0090421d"
+  },
+  "canonical_p1b_carriers": [
+    "0x00756050",
+    "0x007567a0",
+    "0x00756bb0",
+    "0x007618f0",
+    "0x00768a4d",
+    "0x00769520",
+    "0x00769640",
+    "0x0076b130",
+    "0x0076b280",
+    "0x0076df50",
+    "0x00771db0",
+    "0x00771e10",
+    "0x00772200",
+    "0x00772570",
+    "0x007c3b00"
+  ],
+  "exact_carrier_comparator_hits": [],
+  "format": "SHIFT.P1B.HDVehicle4330BsearchCallbackClosure/1",
+  "limits": [
+    "This closes only the two retail _bsearch comparator registrations.",
+    "Other callback families and generic/runtime-generated function-pointer paths remain outside this contract.",
+    "No function identity is inferred from decompiler calling-convention guesses; exact retail bytes adjudicate the comparator provenance."
+  ],
+  "next_step": "Compose _bsearch into the runtime callback aggregate, then continue remaining callback families and runtime-generated/copied/encoded exact-carrier pointer paths.",
+  "ready": true,
+  "registrations": [
+    {
+      "callsite": "0x0053c2da",
+      "comparator": "0x0053c280",
+      "decompiler_unaff_retaddr_is_artifact": true,
+      "provenance": [
+        "0x0053c2c0 push ebp; mov ebp,esp",
+        "0x0053c2cd tail-jmp 0x00429e86",
+        "0x00429e86 push 0x0053c280",
+        "0x00429e98 tail-jmp 0x0053c2d2",
+        "0x0053c2d2 pushes size/nmemb/base/key then calls _bsearch"
+      ]
+    },
+    {
+      "callsite": "0x00a5df75",
+      "comparator": "0x00a5df20",
+      "comparator_behavior": "unsigned 16-bit key minus unsigned 16-bit element",
+      "provenance": [
+        "0x00a5df62 push 0x00a5df20",
+        "0x00a5df69..0x00a5df74 push size/nmemb/base/key"
+      ]
+    }
+  ],
+  "version": 1
+}
