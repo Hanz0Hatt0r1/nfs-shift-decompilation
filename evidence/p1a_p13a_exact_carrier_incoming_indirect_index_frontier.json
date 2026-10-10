@@ -1,0 +1,64 @@
+{
+  "format": "SHIFT.P1A.P13AExactCarrierIncomingIndirectIndexFrontier/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "authority": {
+    "platform": "PC retail 1.02 navigation index",
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "ghidra_sqlite_format": "SHIFT.GhidraSQLiteIndex/1",
+    "sqlite_is_navigation_index": true
+  },
+  "carrier_set": {
+    "count": 16,
+    "rows": [
+      {"name":"FUN_00758b50","address":"0x00758b50"},
+      {"name":"FUN_00755950","address":"0x00755950"},
+      {"name":"FUN_00770e80","address":"0x00770e80"},
+      {"name":"FUN_00755a60","address":"0x00755a60"},
+      {"name":"FUN_00752fc0","address":"0x00752fc0"},
+      {"name":"FUN_00760b50","address":"0x00760b50"},
+      {"name":"FUN_00763570","address":"0x00763570"},
+      {"name":"FUN_00755f80","address":"0x00755f80"},
+      {"name":"FUN_0076d100","address":"0x0076d100"},
+      {"name":"FUN_00758810","address":"0x00758810"},
+      {"name":"FUN_00769ef0","address":"0x00769ef0"},
+      {"name":"FUN_007675f0","address":"0x007675f0"},
+      {"name":"FUN_007682c0","address":"0x007682c0"},
+      {"name":"FUN_00766510","address":"0x00766510"},
+      {"name":"FUN_00758fc0","address":"0x00758fc0"},
+      {"name":"FUN_00765c40","address":"0x00765c40"}
+    ]
+  },
+  "incoming_indirect_surface": {
+    "call_record_count": 200598,
+    "indirect_edge_count": 19500,
+    "resolved_indirect_target_count": 0,
+    "unresolved_indirect_target_count": 19500,
+    "resolved_exact_carrier_incoming_count": 0,
+    "resolved_exact_carrier_incoming": []
+  },
+  "adjudication": {
+    "p13a_incoming_indirect_index_frontier_captured": true,
+    "p13a_incoming_indirect_index_has_resolved_target_coverage": false,
+    "p13a_resolved_exact_carrier_incoming_indirect_found": false,
+    "p13a_resolved_exact_carrier_incoming_indirect_count": 0,
+    "p13a_index_can_prove_exact_carrier_incoming_indirect_absence": false,
+    "incoming_indirect_entry_ruled_out": false,
+    "runtime_callback_registration_ruled_out": false,
+    "runtime_generated_or_copied_carrier_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The current Drive index records indirect=true edges as navigation candidates but all indirect targets are unresolved; zero exact-carrier resolved hits is therefore not an absence proof.",
+    "This frontier does not classify runtime callback registration, virtual dispatch targets, copied/encoded function pointers, or machine-level indirect entry.",
+    "Existing retail machine contracts and whole-image pointer scans remain semantic authority for the bounded surfaces they explicitly cover.",
+    "No slot or aggregate P1.3 gate is promoted by this index-capability result."
+  ],
+  "next_step": "Recover incoming indirect targets from machine/vtable/registration dataflow rather than treating the unresolved SQLite CALLIND set as negative evidence; join any positive exact-carrier registration to its runtime consumer."
+}
