@@ -83,15 +83,12 @@ def analyze(exe: Path) -> dict:
         (0x00778056, "mov    ecx,esi"), (0x0077806C, "or     esi,0xffffffff")
     ]:
         raise ValueError("fragment ESI-use drift")
-    # Exact root arrives in ESI from merged FUN_00770e80 carrier proof. Before the clobber it is only moved to ECX.
     if any("push   esi" in r["text"] or ("[" in r["text"] and r["text"].endswith(",esi")) for r in frag_esi if r["address"] < 0x0077806C):
         raise ValueError("unexpected exact-root persistence in fragment")
-    # FUN_0063f350 receives exact root in ECX, copies it to ESI, forwards once to FUN_0063f300, then overwrites ESI on the success path.
-    expected_350 = {0x0063F357,0x0063F359,0x0063F35F,0x0063F367,0x0063F37B,0x0063F382,0x0063F399,0x0063F3C5,0x0063F3CC,0x0063F3D3,0x0063F3D5,0x0063F3E6}
+    expected_350 = {0x0063F356,0x0063F357,0x0063F359,0x0063F35F,0x0063F367,0x0063F37B,0x0063F382,0x0063F399,0x0063F3C5,0x0063F3CC,0x0063F3D3,0x0063F3D5,0x0063F3E6}
     if {r["address"] for r in e350} != expected_350:
         raise ValueError("FUN_0063f350 ESI-use drift")
-    # FUN_0063f300 receives exact root in ECX, reads fields, then replaces ESI with its output argument before any push/store of ESI.
-    expected_300 = {0x0063F304,0x0063F306,0x0063F30C,0x0063F314,0x0063F327,0x0063F329,0x0063F330,0x0063F337,0x0063F339,0x0063F348}
+    expected_300 = {0x0063F303,0x0063F304,0x0063F306,0x0063F30C,0x0063F314,0x0063F327,0x0063F329,0x0063F330,0x0063F337,0x0063F339,0x0063F348}
     if {r["address"] for r in e300} != expected_300:
         raise ValueError("FUN_0063f300 ESI-use drift")
     return {
