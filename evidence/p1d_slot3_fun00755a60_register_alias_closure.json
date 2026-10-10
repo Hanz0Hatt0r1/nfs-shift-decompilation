@@ -1,0 +1,59 @@
+{
+  "adjudication": {
+    "callee_created_aliases_ruled_out": false,
+    "external_provider_count": 7,
+    "fun00753620_selected_target_writer_found": false,
+    "fun00755a60_exact_root_register_alias_subset_complete": true,
+    "fun00755a60_unexpected_exact_root_register_escape_found": false,
+    "fun00755a60_wheel_7c8_derived_alias_subset_complete": true,
+    "machine_register_alias_storage_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "slot3_writer_provenance_proven": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_transfer_adjudicates": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1D.Slot3Fun00755a60RegisterAliasClosure/1",
+  "fun00753620": {
+    "absolute_selected_wheel_write_offsets": ["+0x7c8"],
+    "direct_call_count": 0,
+    "receiver": "selected wheel+0x7c8",
+    "selected_target_overlap": false,
+    "write_offsets": ["+0x0"]
+  },
+  "fun00755a60": {
+    "derived_subfield_alias": "0x00755c04 ECX=ESI+0x7c8",
+    "derived_subfield_alias_persists_to_call": "0x00755dae FUN_00753620",
+    "esi_use_count": 70,
+    "exact_root_value_transfers_after_capture": [
+      "0x00755db3 ECX=ESI -> 0x00755db5 FUN_00752fc0"
+    ],
+    "known_exact_root_leaf": "FUN_00752fc0",
+    "known_exact_root_leaf_has_direct_calls": false,
+    "root_capture": "0x00755a73 ESI=ECX",
+    "unexpected_exact_root_transfer_found": false
+  },
+  "limits": [
+    "This closes only the exact ESI root transfer and the one machine-proven wheel+0x7c8 ECX subfield alias in FUN_00755a60.",
+    "The exact-root transfer to FUN_00752fc0 is consumed from the merged direct-carrier proof; this tranche does not re-own its leaf semantics.",
+    "Other derived subobject aliases, callee-created aliases, aggregate stores, callbacks and indirect carriers remain open."
+  ],
+  "next_step": "Inventory callee-created aliases reached from other machine-proven selected-wheel subobjects and then compose the closed FUN_00755950/FUN_00755f80/FUN_00760b50/FUN_00755a60 register paths without promoting the global escape gate prematurely.",
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "selected_slot3": {
+    "absolute_target": "HDVehicle+0x28b8..+0x28bf",
+    "local_target": "+0x538",
+    "wheel_receiver": "HDVehicle+0x2380"
+  },
+  "upstream_contracts": [
+    "SHIFT.P1D.Slot3ExactWheelDirectCarrierClosure/1",
+    "SHIFT.P1D.Slot3RegisterAliasSubsetClosure/1"
+  ],
+  "version": 1
+}
