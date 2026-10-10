@@ -1,0 +1,65 @@
+{
+  "format": "SHIFT.P1D.Slot3ExactRootPersistenceMachineClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "gnu_objdump_machine_bytes_adjudicate_finite_window_surface": true,
+    "semantic_root_windows_seeded_from_merged_machine_contracts": true
+  },
+  "scope": {
+    "carrier_window_count": 6,
+    "windows": [
+      {"function":"FUN_00758b50","root_register":"ecx","start":"0x00758ccf","end_exclusive":"0x00758d70","instruction_count":52,"machine_byte_count":161,"machine_bytes_sha256":"82218e6367840c8d9c7e3723fcad5c70e25c8d198fd1772c65dbc83900ac9377","memory_store_root_count":0,"push_root_count":0},
+      {"function":"FUN_00755950","root_register":"edx","start":"0x00755956","end_exclusive":"0x00755992","instruction_count":16,"machine_byte_count":60,"machine_bytes_sha256":"79b509c1706c0aa91c335548404f53e9dac1c10b89cf71e7894edda47d2567ba","memory_store_root_count":0,"push_root_count":0},
+      {"function":"FUN_00755a60","root_register":"esi","start":"0x00755a73","end_exclusive":"0x00755f71","instruction_count":387,"machine_byte_count":1278,"machine_bytes_sha256":"3c7f7ecc4348f555cf643c02ab652440568351bade905e9ffbf8056f71ec1f8a","memory_store_root_count":0,"push_root_count":0},
+      {"function":"FUN_00752fc0","root_register":"ecx","start":"0x00752fc0","end_exclusive":"0x00752fe5","instruction_count":7,"machine_byte_count":37,"machine_bytes_sha256":"830ecb8fa09bf20a07a8e269f4d44351dc167232bba00f5d9a7d931675d111cc","memory_store_root_count":0,"push_root_count":0},
+      {"function":"FUN_00760b50","root_register":"esi","start":"0x00760b6a","end_exclusive":"0x00760d63","instruction_count":135,"machine_byte_count":505,"machine_bytes_sha256":"f648d08e067bd2a9e4a22187829d08e40b58d6cbce8e9c967d00e403090d2ec8","memory_store_root_count":0,"push_root_count":0},
+      {"function":"FUN_00755f80","root_register":"esi","start":"0x00755f9a","end_exclusive":"0x00756004","instruction_count":35,"machine_byte_count":106,"machine_bytes_sha256":"c2843b9d46ffebf900114d96fcc96e1b21d7c11355dc3aad8209bbde5ca80179","memory_store_root_count":0,"push_root_count":0}
+    ],
+    "memory_store_root_count": 0,
+    "push_root_count": 0,
+    "ranked_persistence_candidate_count": 8
+  },
+  "ranked_candidates": [
+    {"instruction_address":"0x00755964","function":"FUN_00755950","root_register":"edx","raw_candidate_class":"derived-address-root","mnemonic":"lea","operands":"ecx,[edx+0x80]","machine_adjudication":"derived-interior-alias","note":"EDX+0x80 forwarded to FUN_007555b0; exact wheel root is not forwarded"},
+    {"instruction_address":"0x00755b8f","function":"FUN_00755a60","root_register":"esi","raw_candidate_class":"register-copy-root","mnemonic":"mov","operands":"eax,dword ptr [esi+0x420]","machine_adjudication":"child-pointer-load","note":"EAX=[wheel+0x420], not an exact-root copy"},
+    {"instruction_address":"0x00755c04","function":"FUN_00755a60","root_register":"esi","raw_candidate_class":"derived-address-root","mnemonic":"lea","operands":"ecx,[esi+0x7c8]","machine_adjudication":"derived-interior-alias","note":"wheel+0x7c8 reaches FUN_00753620 and writes only local +0x0 => wheel+0x7c8"},
+    {"instruction_address":"0x00755db3","function":"FUN_00755a60","root_register":"esi","raw_candidate_class":"register-copy-root","mnemonic":"mov","operands":"ecx,esi","machine_adjudication":"known-exact-root-forward","note":"ECX=ESI immediately before already-closed FUN_00752fc0 leaf"},
+    {"instruction_address":"0x00760d02","function":"FUN_00760b50","root_register":"esi","raw_candidate_class":"register-copy-root","mnemonic":"mov","operands":"ecx,dword ptr [esi+0x420]","machine_adjudication":"child-pointer-load","note":"ECX=[wheel+0x420] reaches FUN_007ba860; distinct child receiver"},
+    {"instruction_address":"0x00755f9c","function":"FUN_00755f80","root_register":"esi","raw_candidate_class":"register-copy-root","mnemonic":"mov","operands":"eax,dword ptr [esi+0x420]","machine_adjudication":"child-pointer-load","note":"EAX=[wheel+0x420], not exact wheel root"},
+    {"instruction_address":"0x00755fb8","function":"FUN_00755f80","root_register":"esi","raw_candidate_class":"register-copy-root","mnemonic":"mov","operands":"ecx,dword ptr [esi+0x420]","machine_adjudication":"child-pointer-load","note":"ECX=[wheel+0x420], not exact wheel root"},
+    {"instruction_address":"0x00755fd6","function":"FUN_00755f80","root_register":"esi","raw_candidate_class":"register-copy-root","mnemonic":"mov","operands":"eax,dword ptr [esi+0x420]","machine_adjudication":"child-pointer-load","note":"EAX=[wheel+0x420], not exact wheel root"}
+  ],
+  "composition": {
+    "FUN_00755950": "SHIFT.P1D.P13DSlot3PrimaryAliasEscape/1",
+    "FUN_00755a60": "SHIFT.P1D.Slot3Fun00755a60RegisterAliasClosure/1",
+    "FUN_00760b50": "SHIFT.P1D.Slot3Fun00760b50RegisterAliasClosure/1",
+    "FUN_00755f80": "SHIFT.P1D.Slot3RegisterAliasSubsetClosure/1 plus SHIFT.P1D.Slot3Fun00755f80WheelChildClosure/1",
+    "FUN_00758b50": "SHIFT.P1D.P13DSlot3PrimaryAliasEscape/1",
+    "FUN_00752fc0": "SHIFT.P1D.Slot3ExactWheelDirectCarrierClosure/1"
+  },
+  "adjudication": {
+    "bounded_six_window_machine_persistence_inventory_complete": true,
+    "bounded_six_window_memory_store_root_count": 0,
+    "bounded_six_window_push_root_count": 0,
+    "bounded_six_window_persistence_candidates_adjudicated": true,
+    "bounded_six_window_selected_slot3_writer_found": false,
+    "machine_register_alias_storage_ruled_out": false,
+    "callee_created_aliases_ruled_out": false,
+    "callbacks_registered_outside_carriers_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only the six exact-root register windows defined by merged #1793 tooling and upstream machine contracts.",
+    "The raw exporter-style register-copy class intentionally over-approximates MOV reg,[root+offset]; those rows are machine-adjudicated as child-pointer loads, not exact-root copies.",
+    "Aliases created in other carriers/callees, aggregate stores, callbacks, runtime-generated pointer paths and the 16-carrier source-storage replay remain open."
+  ],
+  "next_step": "Trace callee-created selected-wheel aliases outside these six windows and complete the separate 16-carrier source-storage replay before composing any global stored/escaped-alias gate."
+}
