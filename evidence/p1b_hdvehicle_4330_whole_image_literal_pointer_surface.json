@@ -1,0 +1,67 @@
+{
+  "adjudication": {
+    "external_provider_count": 7,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false,
+    "whole_image_exact_carrier_absolute_va_literal_surface_complete": true,
+    "whole_image_exact_carrier_literal_pointer_hit_found": false,
+    "whole_image_exact_carrier_rva_literal_surface_complete": true
+  },
+  "authority": {
+    "image_base": "0x00400000",
+    "platform": "PC retail 1.02",
+    "retail_bytes_are_machine_authority": true,
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_file_size": 8801792,
+    "whole_file_raw_bytes_scanned": 8801792
+  },
+  "carrier_set": {
+    "count": 15,
+    "functions": [
+      {"address":"0x00769520","name":"FUN_00769520","rva":"0x00369520"},
+      {"address":"0x0076b130","name":"FUN_0076b130","rva":"0x0036b130"},
+      {"address":"0x0076df50","name":"FUN_0076df50","rva":"0x0036df50"},
+      {"address":"0x00768a4d","name":"FUN_00768a4d","rva":"0x00368a4d"},
+      {"address":"0x00756050","name":"FUN_00756050","rva":"0x00356050"},
+      {"address":"0x00772200","name":"FUN_00772200","rva":"0x00372200"},
+      {"address":"0x00772570","name":"FUN_00772570","rva":"0x00372570"},
+      {"address":"0x007c3b00","name":"FUN_007c3b00","rva":"0x003c3b00"},
+      {"address":"0x0076b280","name":"FUN_0076b280","rva":"0x0036b280"},
+      {"address":"0x007618f0","name":"FUN_007618f0","rva":"0x003618f0"},
+      {"address":"0x00769640","name":"FUN_00769640","rva":"0x00369640"},
+      {"address":"0x007567a0","name":"FUN_007567a0","rva":"0x003567a0"},
+      {"address":"0x00756bb0","name":"FUN_00756bb0","rva":"0x00356bb0"},
+      {"address":"0x00771db0","name":"FUN_00771db0","rva":"0x00371db0"},
+      {"address":"0x00771e10","name":"FUN_00771e10","rva":"0x00371e10"}
+    ]
+  },
+  "format": "SHIFT.P1B.HDVehicle4330WholeImageLiteralPointerSurface/1",
+  "limits": [
+    "The scan is exhaustive for literal 32-bit absolute VA and image-base-relative RVA encodings in the retail file bytes.",
+    "Direct rel32 CALL/JMP encodings do not contain the target VA/RVA and are intentionally not classified as pointer literals.",
+    "Computed pointers, call/pop EIP synthesis, transformed/encoded values, and pointers copied from runtime inputs remain open.",
+    "Zero literal pointer bytes do not by itself prove that indirect entry is impossible."
+  ],
+  "next_step": "Trace computed or copied exact-carrier function-pointer creation, prioritizing code-relative/EIP-derived synthesis and runtime callback registration. Keep the manager identity join fail-closed.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330ExternalCallerFinalTranche/1",
+    "SHIFT.P1B.HDVehicle4330ExactCarrierVtableSurface/1",
+    "SHIFT.P1B.HDVehicle4330ExactCarrierStaticTableLiteralPointerSurface/1"
+  ],
+  "version": 1,
+  "whole_image_surface": {
+    "absolute_va_encoding": "little-endian uint32",
+    "absolute_va_hit_count": 0,
+    "absolute_va_hits": [],
+    "rva_encoding": "little-endian uint32",
+    "rva_hit_count": 0,
+    "rva_hits": []
+  }
+}
