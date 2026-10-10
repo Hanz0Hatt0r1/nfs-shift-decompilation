@@ -1,0 +1,58 @@
+{
+  "adjudication": {
+    "computed_or_encoded_code_pointers_ruled_out": false,
+    "exact_4330_carrier_reachable_via_unhandled_exception_filter": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "remaining_callback_api_families_ruled_out": false,
+    "runtime_callback_registration_ruled_out": false,
+    "set_unhandled_exception_filter_surface_complete": true
+  },
+  "authority": {
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "platform": "PC retail 1.02",
+    "shift_exe_c_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "sqlite_machine_calls_are_physical_callsite_authority": true
+  },
+  "format": "SHIFT.P1B.HDVehicle4330UnhandledExceptionFilterSurface/1",
+  "limits": [
+    "This closes only direct SetUnhandledExceptionFilter calls in the pinned retail SQLite/source pair.",
+    "All three registrations explicitly pass NULL, so this API family cannot enter a P1B exact HDVehicle+0x4330 carrier in the pinned image.",
+    "Vectored exception handlers, signal handlers, arbitrary function-pointer stores and other runtime callback mechanisms remain outside this subset."
+  ],
+  "next_step": "Continue other finite exception/signal callback mechanisms and generic runtime function-pointer stores/copies before promoting global indirect-entry gates.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "callsites": [
+      {
+        "caller": "0x0090a532",
+        "caller_name": "__invoke_watson",
+        "callsite": "0x0090a5e6",
+        "registered_filter": "NULL"
+      },
+      {
+        "caller": "0x0090a6d1",
+        "caller_name": "_abort",
+        "callsite": "0x0090a7ac",
+        "registered_filter": "NULL"
+      },
+      {
+        "caller": "0x00916e88",
+        "caller_name": "___report_gsfailure",
+        "callsite": "0x00916f56",
+        "registered_filter": "NULL"
+      }
+    ],
+    "direct_callsite_count": 3,
+    "exact_4330_carrier_filter_count": 0,
+    "nonnull_filter_registration_count": 0,
+    "null_filter_registration_count": 3
+  },
+  "version": 1
+}
