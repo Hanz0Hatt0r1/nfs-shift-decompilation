@@ -1,0 +1,88 @@
+{
+  "format": "SHIFT.P1A.P13AExactCarrierTextRvaLiteralClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "upstream_contract": "SHIFT.P1A.P13AExactCarrierWholeImagePointerLiteralClosure/1",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_whole_file_raw_bytes_adjudicate_literal_presence": true
+  },
+  "carrier_set": {
+    "count": 16,
+    "rows": [
+      {"name":"FUN_00758b50","address":"0x00758b50"},
+      {"name":"FUN_00755950","address":"0x00755950"},
+      {"name":"FUN_00770e80","address":"0x00770e80"},
+      {"name":"FUN_00755a60","address":"0x00755a60"},
+      {"name":"FUN_00752fc0","address":"0x00752fc0"},
+      {"name":"FUN_00760b50","address":"0x00760b50"},
+      {"name":"FUN_00763570","address":"0x00763570"},
+      {"name":"FUN_00755f80","address":"0x00755f80"},
+      {"name":"FUN_0076d100","address":"0x0076d100"},
+      {"name":"FUN_00758810","address":"0x00758810"},
+      {"name":"FUN_00769ef0","address":"0x00769ef0"},
+      {"name":"FUN_007675f0","address":"0x007675f0"},
+      {"name":"FUN_007682c0","address":"0x007682c0"},
+      {"name":"FUN_00766510","address":"0x00766510"},
+      {"name":"FUN_00758fc0","address":"0x00758fc0"},
+      {"name":"FUN_00765c40","address":"0x00765c40"}
+    ]
+  },
+  "text_surface": {
+    "section": ".text",
+    "section_rva": "0x00001000",
+    "raw_size": 6964736,
+    "encoding": "little-endian 32-bit RVA byte sequence",
+    "exact_carrier_rva_literal_hit_count": 0,
+    "hits": []
+  },
+  "non_text_unresolved_surface": {
+    "raw_match_count": 2,
+    "matches": [
+      {
+        "function":"FUN_0076d100",
+        "target":"0x0076d100",
+        "rva_value":"0x0036d100",
+        "file_offset":"0x006d2e3f",
+        "image_va":"0x00ad443f",
+        "section":".rdata",
+        "file_offset_mod4":3
+      },
+      {
+        "function":"FUN_0076d100",
+        "target":"0x0076d100",
+        "rva_value":"0x0036d100",
+        "file_offset":"0x00764ea7",
+        "image_va":"0x00b664a7",
+        "section":".rdata",
+        "file_offset_mod4":3
+      }
+    ],
+    "semantic_gate": false
+  },
+  "adjudication": {
+    "p13a_text_exact_carrier_rva_literal_subset_complete": true,
+    "p13a_text_exact_carrier_rva_literal_hit_found": false,
+    "p13a_text_exact_carrier_rva_literal_hit_count": 0,
+    "p13a_non_text_exact_carrier_rva_matches_remain_unresolved": true,
+    "relocated_or_rva_encoded_carrier_pointers_ruled_out": false,
+    "runtime_callback_registration_ruled_out": false,
+    "incoming_indirect_entry_ruled_out": false,
+    "runtime_generated_or_copied_carrier_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only raw exact-carrier RVA byte sequences inside the on-disk executable .text section.",
+    "The two merged .rdata RVA matches remain unresolved and are neither promoted to pointers nor rejected as non-pointers.",
+    "Absence of a raw RVA byte sequence in .text does not exclude rel32 control transfers, relocations, encoded/reconstructed pointers, runtime registration, or copied/generated code pointers.",
+    "No global callback/indirect-entry, stored-or-escaped-alias, slot0/slot1 or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Classify the two unresolved .rdata RVA matches by exact data/xref provenance or trace runtime-generated/relocated callback registration paths; continue selected-wheel data-pointer persistence independently."
+}
