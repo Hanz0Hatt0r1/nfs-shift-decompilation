@@ -29,7 +29,7 @@ def test_narrow_gate_only_and_global_gates_fail_closed():
   assert a[k] is False
  assert a['external_provider_count']==7
 def test_machine_ranges_are_hash_pinned_to_tool_constants():
- p=data();m=module();assert p['retail_executable_sha256'] if False else True
+ p=data();m=module()
  assert p['authority']['retail_executable_sha256']==m.SHA
  for name,(s,e,h) in m.RANGES.items():
   r=p['authority']['ranges'][name];assert r['start']==f'0x{s:08x}' and r['end_exclusive']==f'0x{e:08x}' and r['size']==e-s and r['sha256']==h
