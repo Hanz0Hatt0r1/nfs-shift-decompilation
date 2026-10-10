@@ -1,0 +1,116 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "other_derived_aliases_ruled_out": false,
+    "p13a_fun00765c40_known_wheel_alias_persistent_escape_found": false,
+    "p13a_fun00765c40_known_wheel_alias_target_writer_found": false,
+    "p13a_fun00765c40_local_array_callee_lifetimes_complete": false,
+    "p13a_fun00765c40_nonwheel_runtime_backpointer_store_found": true,
+    "p13a_fun00765c40_post_derived_identity_inventory_complete": true,
+    "p13a_fun00765c40_post_derived_selected_wheel_alias_found": false,
+    "p13a_fun00765c40_wheel_678_alias_subset_complete": true,
+    "p13a_fun00765c40_wheel_7a8_alias_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "reconstructed_wheel_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "cross_lane_machine_proofs_consumed_without_reowning": true,
+    "machine_bytes_adjudicate_upstream": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1A.P13ASlot01Fun00765c40DerivedAliasHandoff/1",
+  "limits": [
+    "This composes only the bounded FUN_00765c40 wheel+0x678 and wheel+0x7a8 four-wheel aliases plus the post-derived identity inventory.",
+    "The proven HDVehicle+0x6730 runtime-created-node backpointers are retained as positive pointer persistence for a distinct non-wheel manager/subobject; they are not silently discarded and do not close runtime/generated pointer stores globally.",
+    "HDVehicle+0x3430/+0x35c8/+0x35f8/+0x36e0 are classified as non-wheel local arrays, but their callee-facing lifetimes remain open.",
+    "Reconstructed selected-wheel pointers, aggregate copies, callbacks, indirect entry and other derived families remain open; no slot or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Trace the callee-facing lifetimes of the HDVehicle-local array cursors through FUN_007afd20/FUN_007baa70/FUN_00747b90/FUN_007aefb0; separately consume the direct 16-carrier bulk-opcode absence and continue runtime-generated/copied selected-wheel pointer plus callback/indirect-entry surfaces.",
+  "owner": "Process 1A / P1.3A",
+  "post_derived_identity_inventory": {
+    "hdvehicle_local_array_bases": [
+      "HDVehicle+0x3430",
+      "HDVehicle+0x35c8",
+      "HDVehicle+0x35f8",
+      "HDVehicle+0x36e0"
+    ],
+    "local_array_callee_lifetimes_complete": false,
+    "nonwheel_runtime_backpointer_family": "HDVehicle+0x6730",
+    "nonwheel_runtime_backpointer_stores": [
+      "0x00a62a20 [node+0x24]=HDVehicle+0x6730",
+      "0x00a62a63 [node+0x34]=HDVehicle+0x6730"
+    ],
+    "selected_wheel_alias_found": false
+  },
+  "ready": true,
+  "slot01": [
+    {
+      "absolute_target": "HDVehicle+0x938..+0x93f",
+      "slot": 0,
+      "wheel_678_receiver": "HDVehicle+0xa78",
+      "wheel_678_writes": [
+        "HDVehicle+0xa70 qword",
+        "HDVehicle+0xa78 qword"
+      ],
+      "wheel_7a8_receiver": "HDVehicle+0xba8",
+      "wheel_7a8_writes": [
+        "HDVehicle+0xba0 qword",
+        "HDVehicle+0xba8 qword"
+      ],
+      "wheel_receiver": "HDVehicle+0x400"
+    },
+    {
+      "absolute_target": "HDVehicle+0x13b8..+0x13bf",
+      "slot": 1,
+      "wheel_678_receiver": "HDVehicle+0x14f8",
+      "wheel_678_writes": [
+        "HDVehicle+0x14f0 qword",
+        "HDVehicle+0x14f8 qword"
+      ],
+      "wheel_7a8_receiver": "HDVehicle+0x1628",
+      "wheel_7a8_writes": [
+        "HDVehicle+0x1620 qword",
+        "HDVehicle+0x1628 qword"
+      ],
+      "wheel_receiver": "HDVehicle+0xe80"
+    }
+  ],
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01WheelRootMaterializationPersistenceHandoff/1",
+    "SHIFT.P1D.Slot3Fun00765c40WheelInteriorAliasClosure/1",
+    "SHIFT.P1D.Slot3Fun00765c40Wheel7a8AliasClosure/1",
+    "SHIFT.P1D.Slot3Fun00765c40PostDerivedInventory/1"
+  ],
+  "version": 1,
+  "wheel_678_alias": {
+    "child_pointer_forward_or_store_found": false,
+    "child_source": "[wheel+0x420]",
+    "per_wheel_offset": "+0x678",
+    "persistent_or_nonlocal_pointer_store_found": false,
+    "target_overlap": false,
+    "transient_stack_pointer_overwrite_site": "0x00765dc9",
+    "transient_stack_pointer_reaches_callee": false,
+    "transient_stack_pointer_site": "0x00765da4",
+    "write_offsets": [
+      "+0x670 qword",
+      "+0x678 qword"
+    ]
+  },
+  "wheel_7a8_alias": {
+    "direct_call_count": 0,
+    "per_wheel_offset": "+0x7a8",
+    "pointer_push_found": false,
+    "pointer_store_found": false,
+    "target_overlap": false,
+    "write_offsets": [
+      "+0x7a0 qword",
+      "+0x7a8 qword"
+    ]
+  }
+}
