@@ -1,0 +1,55 @@
+{
+  "adjudication": {
+    "computed_or_encoded_code_pointers_ruled_out": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_callback_registration_ruled_out": false,
+    "source_visible_exact_carrier_symbol_address_taken_found": false,
+    "source_visible_exact_carrier_symbol_reference_surface_complete": true,
+    "source_visible_exact_carrier_symbol_value_store_found": false
+  },
+  "authority": {
+    "ghidra_c_export_is_source_visible_reference_surface": true,
+    "platform": "PC retail 1.02",
+    "shift_exe_c_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "format": "SHIFT.P1B.HDVehicle4330SourceSymbolAddressTaking/1",
+  "limits": [
+    "This closes only references emitted under the exact carrier function symbols in the hash-pinned Ghidra C export.",
+    "Every one of the 40 symbol occurrences is immediately followed by '(' after whitespace, consistent with a definition/direct invocation rather than source-visible symbol-as-value use.",
+    "Computed, encoded, copied, reconstructed, table-derived, address-literal, or decompiler-unresolved function pointers remain outside this subset."
+  ],
+  "next_step": "Compose this with existing whole-image literal/static-table negatives, then continue machine-level generic function-pointer stores/copies and reconstructed pointer creation.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "call_or_definition_form_occurrence_count": 40,
+    "exact_carrier_symbol_count": 15,
+    "source_visible_address_taken_carrier_symbol_count": 0,
+    "source_visible_noncall_symbol_value_use_count": 0,
+    "symbols": [
+      {"call_or_definition_form_count":2,"noncall_symbol_value_use_count":0,"occurrence_count":2,"source_lines":[760976,1430170],"symbol":"FUN_00769520"},
+      {"call_or_definition_form_count":1,"noncall_symbol_value_use_count":0,"occurrence_count":1,"source_lines":[761972],"symbol":"FUN_0076b130"},
+      {"call_or_definition_form_count":3,"noncall_symbol_value_use_count":0,"occurrence_count":3,"source_lines":[744332,763648,793531],"symbol":"FUN_0076df50"},
+      {"call_or_definition_form_count":2,"noncall_symbol_value_use_count":0,"occurrence_count":2,"source_lines":[136924,760476],"symbol":"FUN_00768a4d"},
+      {"call_or_definition_form_count":4,"noncall_symbol_value_use_count":0,"occurrence_count":4,"source_lines":[751089,760990,1397803,1403060],"symbol":"FUN_00756050"},
+      {"call_or_definition_form_count":3,"noncall_symbol_value_use_count":0,"occurrence_count":3,"source_lines":[762012,766593,793526],"symbol":"FUN_00772200"},
+      {"call_or_definition_form_count":2,"noncall_symbol_value_use_count":0,"occurrence_count":2,"source_lines":[760550,766753],"symbol":"FUN_00772570"},
+      {"call_or_definition_form_count":7,"noncall_symbol_value_use_count":0,"occurrence_count":7,"source_lines":[763757,763763,763766,793538,793544,793561,823641],"symbol":"FUN_007c3b00"},
+      {"call_or_definition_form_count":2,"noncall_symbol_value_use_count":0,"occurrence_count":2,"source_lines":[762022,763779],"symbol":"FUN_0076b280"},
+      {"call_or_definition_form_count":2,"noncall_symbol_value_use_count":0,"occurrence_count":2,"source_lines":[756566,763780],"symbol":"FUN_007618f0"},
+      {"call_or_definition_form_count":2,"noncall_symbol_value_use_count":0,"occurrence_count":2,"source_lines":[761015,762821],"symbol":"FUN_00769640"},
+      {"call_or_definition_form_count":2,"noncall_symbol_value_use_count":0,"occurrence_count":2,"source_lines":[751357,762822],"symbol":"FUN_007567a0"},
+      {"call_or_definition_form_count":2,"noncall_symbol_value_use_count":0,"occurrence_count":2,"source_lines":[751499,757115],"symbol":"FUN_00756bb0"},
+      {"call_or_definition_form_count":4,"noncall_symbol_value_use_count":0,"occurrence_count":4,"source_lines":[757308,766384,766760,792510],"symbol":"FUN_00771db0"},
+      {"call_or_definition_form_count":2,"noncall_symbol_value_use_count":0,"occurrence_count":2,"source_lines":[757316,766404],"symbol":"FUN_00771e10"}
+    ],
+    "total_exact_carrier_symbol_occurrence_count": 40
+  },
+  "version": 1
+}
