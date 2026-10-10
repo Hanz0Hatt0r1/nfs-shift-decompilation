@@ -1,0 +1,77 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "direct_static_candidate_006022ee_fun0067b660_rejected": true,
+    "direct_static_immediate_slot4_target_fun0067b660_found": false,
+    "dynamic_registry_reconstructed_or_indirect_registration_ruled_out": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "external_exact_creg_scalar_seed_found": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "p13a_fun0067b660_direct_static_immediate_slot4_surface_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "two_static_registry_initializer_results_fun0067b660_rejected": true
+  },
+  "authority": {
+    "inputs": {
+      "direct_creg": "SHIFT.P1A.P13AFun005ffc50DirectCregEntryClosure/1",
+      "frontier": "SHIFT.P1A.P13AFun0067b660Slot4DispatchAbiFrontier/1",
+      "secondary": "SHIFT.P1A.P13ASlot4Candidate6022eeCommUdpResolution/1",
+      "static_registry": "SHIFT.P1A.P13ASlot4StaticRegistryInitializers/1"
+    },
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "creg_static_seed_surface": {
+    "command": "0x63726567",
+    "direct_fun005ffc50_creg_call_count": 0,
+    "exact_fun005ffc50_rva_pointer_count": 0,
+    "exact_fun005ffc50_va_pointer_count": 0,
+    "external_exact_creg_scalar_seed_count": 0,
+    "sole_exact_scalar_use": {
+      "instruction": "cmp eax,0x63726567",
+      "site": "0x005ffc69"
+    },
+    "whole_image_raw_dword_occurrence_count": 1,
+    "whole_image_raw_dword_occurrences": [
+      "0x001ff06a file offset"
+    ]
+  },
+  "format": "SHIFT.P1A.P13AFun0067b660DirectStaticSlot4Composition/1",
+  "limits": [
+    "This composition closes only the direct/static immediate slot+4 candidate surface isolated by the upstream 16-instruction/caller-cleanup scanner.",
+    "0x006022ee is rejected as FUN_0067b660 only on its bounded direct/static provenance; reconstructed/encoded/runtime-generated FUN_006022d0 entry remains open.",
+    "0x006145c4 has two known static initializer result types and both are non-animation; dynamic registration at 0x005ffc7a remains open because FUN_005ffc50 can still be reached through an unproven indirect/reconstructed entry.",
+    "The exact creg scalar occurs only in the dispatcher comparison itself, so there is no separate whole-image exact-immediate seed for a static creg caller; split/encoded/runtime command formation is not ruled out.",
+    "No global callback, incoming-indirect, stored-alias, slot0, slot1, or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Focus P1.3A callback work on reconstructed/indirect entry to FUN_005ffc50 and dynamic registry initializer provenance; the direct/static immediate slot4 surface is now composed and closed.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "slot4_candidate_composition": {
+    "candidate_0x006022ee": {
+      "direct_static_class": "CommUDP table family",
+      "exact_target": "FUN_00600f60",
+      "reconstructed_or_runtime_entry_closed": false,
+      "targets_FUN_0067b660": false
+    },
+    "candidate_0x006145c4": {
+      "direct_creg_registration_count": 0,
+      "dynamic_registration_forwarder": "0x005ffc7a",
+      "dynamic_result_types_closed": false,
+      "static_initializer_result_count": 2,
+      "static_initializer_results_target_animation_vtable": false
+    },
+    "frontier_candidate_count": 2,
+    "frontier_candidates": [
+      "0x006022ee",
+      "0x006145c4"
+    ],
+    "raw_memory_immediate_cleanup_candidate_count": 0
+  },
+  "version": 1
+}
