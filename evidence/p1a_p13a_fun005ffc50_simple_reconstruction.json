@@ -1,0 +1,56 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "dynamic_registry_reconstructed_or_indirect_registration_ruled_out": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "p13a_fun005ffc50_simple_straight_line_immediate_reconstruction_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "simple_straight_line_fun005ffc50_indirect_transfer_found": false,
+    "simple_straight_line_fun005ffc50_reconstruction_found": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50DirectCregEntryClosure/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50SimpleImmediateReconstruction/1",
+  "inventory": {
+    "exact_target_indirect_call_or_jump_count": 0,
+    "exact_target_materialization_count": 0,
+    "indirect_transfers": [],
+    "materializations": []
+  },
+  "limits": [
+    "This is a path-insensitive straight-line constant-propagation subset only. State is deliberately discarded at every control-flow transfer or call.",
+    "It does not model constants loaded from memory, stack spill/reload, split-byte/word assembly, table lookup, relocation, return values, or runtime-generated pointers.",
+    "The merged direct/raw-literal closure remains authoritative for direct calls and exact raw VA/RVA literals; this contract adds only multi-instruction GPR reconstruction.",
+    "No global reconstructed-entry, callback, slot0, slot1, stored-alias, or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Trace memory-backed, stack-backed, or runtime/indirect entry to FUN_005ffc50; direct/raw and simple straight-line immediate reconstruction subsets are now separately bounded.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "decoded_instruction_count": 2847850,
+    "modeled_constant_operations": [
+      "mov reg,imm/reg",
+      "lea reg,[known_reg(+/-imm)]",
+      "lea reg,[known_reg*scale(+/-imm)]",
+      "add/sub/xor/or/and reg,imm/known_reg",
+      "shl/sal/shr/sar reg,imm",
+      "inc/dec/neg/not reg",
+      "imul reg,known_reg,imm",
+      "xchg reg,reg"
+    ],
+    "straight_line_region_resets_on": ["call","jmp","conditional branch","loop","ret/int/ud2"],
+    "subregister_or_unmodeled_register_writes_kill_constant": true,
+    "target": "FUN_005ffc50",
+    "target_address": "0x005ffc50"
+  },
+  "version": 1
+}
