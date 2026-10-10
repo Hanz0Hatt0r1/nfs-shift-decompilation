@@ -1,0 +1,148 @@
+{
+  "adjudication": {
+    "callee_created_aliases_ruled_out": false,
+    "external_provider_count": 7,
+    "known_wheel_420_child_back_pointer_recovery_found": false,
+    "known_wheel_420_child_callee_subset_complete": true,
+    "known_wheel_420_child_nested_direct_calls_complete": true,
+    "known_wheel_420_child_pointer_persistence_found": false,
+    "known_wheel_420_child_selected_target_writer_found": false,
+    "other_callee_created_aliases_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "slot3_writer_provenance_proven": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_bytes_adjudicate": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "child_effects": {
+    "FUN_007ba860_writes": [
+      "child+0x128 f32",
+      "child+0x12c f32",
+      "child+0x130 f32",
+      "child+0x138 f64",
+      "child+0x140 f64",
+      "child+0x148 f64"
+    ],
+    "back_pointer_or_wheel_root_recovery_found": false,
+    "child_pointer_persistence_found": false,
+    "selected_slot3_target_writer_found": false,
+    "transform_helpers": "FUN_007af0a0/FUN_007af010/FUN_007aefb0 read scalar matrix/vector fields and write caller-provided output buffers; they do not write receiver fields."
+  },
+  "entry_paths": [
+    {
+      "callee": "FUN_007ba860",
+      "caller": "FUN_00760b50",
+      "callsite": "0x00760d4b",
+      "load": "0x00760d02 ECX=[wheel+0x420]",
+      "receiver_identity": "child=[wheel+0x420]"
+    },
+    {
+      "callee": "FUN_007af0a0",
+      "caller": "FUN_00755f80",
+      "callsite": "0x00755fb0",
+      "load": "0x00755f9c EAX=[wheel+0x420]; 0x00755faa ECX=EAX+0xd4",
+      "receiver_identity": "child+0xd4"
+    },
+    {
+      "callee": "FUN_007af010",
+      "caller": "FUN_00755f80",
+      "callsite": "0x00755fd1",
+      "load": "0x00755fb8 ECX=[wheel+0x420]; 0x00755fc8 ECX+=0xd4",
+      "receiver_identity": "child+0xd4"
+    }
+  ],
+  "format": "SHIFT.P1D.Slot3Wheel420ChildCalleeMachineClosure/1",
+  "limits": [
+    "This closes only the machine-proven child receiver loaded from selected wheel+0x420 and the bounded nested direct helper chain above.",
+    "The child object and child+0xd4 interior are not the selected wheel root; no scalar offset coincidence is promoted to object identity.",
+    "Other callee-created aliases, runtime/generated pointers, callbacks, aggregate copies, and 16-carrier source-storage replay remain open."
+  ],
+  "machine_bodies": {
+    "FUN_007aefb0": {
+      "child_relative_gpr_load_count": 0,
+      "child_relative_gpr_loads": [],
+      "child_relative_gpr_store_count": 0,
+      "child_relative_gpr_stores": [],
+      "direct_calls": [],
+      "instruction_count": 33,
+      "machine_bytes_sha256": "76c52235cce08d3ec131d43e1b62cda623ac8528944e44f902846a0a71b14f29",
+      "size": 83,
+      "start": "0x007aefb0"
+    },
+    "FUN_007af010": {
+      "child_relative_gpr_load_count": 0,
+      "child_relative_gpr_loads": [],
+      "child_relative_gpr_store_count": 0,
+      "child_relative_gpr_stores": [],
+      "direct_calls": [],
+      "instruction_count": 15,
+      "machine_bytes_sha256": "f3256201dee28b97260576ee14c522e236a44d1808516ed8e42efd2e2e2e8324",
+      "size": 35,
+      "start": "0x007af010"
+    },
+    "FUN_007af0a0": {
+      "child_relative_gpr_load_count": 0,
+      "child_relative_gpr_loads": [],
+      "child_relative_gpr_store_count": 0,
+      "child_relative_gpr_stores": [],
+      "direct_calls": [],
+      "instruction_count": 33,
+      "machine_bytes_sha256": "8cd039935dbbe493db7742f7af1859d9abcc7d9c40f212c3f2fa331e992c52cc",
+      "size": 83,
+      "start": "0x007af0a0"
+    },
+    "FUN_007ba7e0": {
+      "child_relative_gpr_load_count": 0,
+      "child_relative_gpr_loads": [],
+      "child_relative_gpr_store_count": 0,
+      "child_relative_gpr_stores": [],
+      "direct_calls": [
+        {
+          "callsite": "0x007ba80d",
+          "target": "0x007af0a0"
+        },
+        {
+          "callsite": "0x007ba844",
+          "target": "0x007aefb0"
+        }
+      ],
+      "instruction_count": 44,
+      "machine_bytes_sha256": "c44dac55776ac266f00822c40762b2d452226a043a0bd687209b67d3bbe947a4",
+      "size": 114,
+      "start": "0x007ba7e0"
+    },
+    "FUN_007ba860": {
+      "child_relative_gpr_load_count": 0,
+      "child_relative_gpr_loads": [],
+      "child_relative_gpr_store_count": 0,
+      "child_relative_gpr_stores": [],
+      "direct_calls": [
+        {
+          "callsite": "0x007ba8a0",
+          "target": "0x007ba7e0"
+        }
+      ],
+      "instruction_count": 21,
+      "machine_bytes_sha256": "1ad69d788cf63b85923c0340516a83601266ec2c0317de3c9b27f42a9d68c476",
+      "size": 73,
+      "start": "0x007ba860"
+    }
+  },
+  "nested_path": {
+    "FUN_007ba7e0": "copies child ECX to ESI, derives EDI=child+0xd4, calls FUN_007af0a0 and FUN_007aefb0 with EDI",
+    "FUN_007ba860": "forwards unchanged child ECX to FUN_007ba7e0 at 0x007ba8a0"
+  },
+  "next_step": "Continue remaining callee-created/runtime alias surfaces and the independent 16-carrier source-storage replay before changing any global P1.3D gate.",
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "selected_slot3": {
+    "local_target": "+0x538",
+    "target": "HDVehicle+0x28b8..+0x28bf",
+    "wheel_root": "HDVehicle+0x2380"
+  },
+  "version": 1
+}
