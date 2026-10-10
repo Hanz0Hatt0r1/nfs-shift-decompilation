@@ -1,0 +1,71 @@
+{
+  "adjudication": {
+    "callee_created_aliases_ruled_out": false,
+    "external_provider_count": 7,
+    "fun00760b50_child_pointer_handoff_distinguished": true,
+    "fun00760b50_exact_selected_wheel_explicit_register_escape_found": false,
+    "fun00760b50_exact_selected_wheel_register_alias_subset_complete": true,
+    "machine_register_alias_storage_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "slot3_writer_provenance_proven": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_transfer_adjudicates": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "call_inventory": [
+    {"site": "0x00760b98", "target": "0x007af0a0"},
+    {"site": "0x00760c27", "target": "0x00749340"},
+    {"site": "0x00760cd7", "target": "0x00900b10"},
+    {"site": "0x00760d4b", "target": "0x007ba860"}
+  ],
+  "child_handoff": {
+    "callee": "FUN_007ba860",
+    "callee_site": "0x00760d4b",
+    "classification": "dereferenced child pointer, not selected-wheel root escape",
+    "destination_register": "ECX",
+    "is_exact_wheel_root": false,
+    "site": "0x00760d02",
+    "source": "[wheel+0x420]"
+  },
+  "format": "SHIFT.P1D.Slot3Fun00760b50RegisterAliasClosure/1",
+  "function": {
+    "esi_use_count": 35,
+    "explicit_root_forward_to_direct_callee_found": false,
+    "explicit_root_nonlocal_store_after_capture_found": false,
+    "explicit_root_push_after_capture_found": false,
+    "explicit_root_value_copy_after_capture_found": false,
+    "name": "FUN_00760b50",
+    "post_capture_pre_restore_esi_use_count": 32,
+    "post_capture_pre_restore_esi_uses_are_memory_base_only": true,
+    "root_capture": {
+      "alias": "ESI = exact selected wheel",
+      "instruction": "mov esi,ecx",
+      "site": "0x00760b6a"
+    },
+    "size": 531,
+    "start": "0x00760b50"
+  },
+  "limits": [
+    "This closes only explicit post-capture uses of ESI inside FUN_00760b50 for the already-proven selected slot3 receiver.",
+    "A child pointer loaded from [wheel+0x420] is a distinct receiver and is not reclassified as an escape of the exact selected-wheel root.",
+    "Other exact-wheel register aliases, callee-created aliases, aggregate stores, callbacks and indirect carriers remain open."
+  ],
+  "next_step": "Continue outside the now-closed FUN_00758b50/FUN_00755950/FUN_00755f80/FUN_00760b50 register paths: bound the non-duplicated residual register surface of FUN_00755a60 and then callee-created selected-wheel aliases; keep FUN_00766510/FUN_00758fc0 ownership with their existing P1D tranche.",
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "selected_slot3": {
+    "absolute_target": "HDVehicle+0x28b8..+0x28bf",
+    "local_target": "+0x538",
+    "wheel_receiver": "HDVehicle+0x2380"
+  },
+  "upstream_contracts": [
+    "SHIFT.P1D.Slot3ExactWheelDirectCarrierClosure/1",
+    "SHIFT.P1D.Slot3RegisterAliasSubsetClosure/1"
+  ],
+  "version": 1
+}
