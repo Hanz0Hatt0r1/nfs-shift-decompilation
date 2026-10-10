@@ -1,0 +1,46 @@
+{
+  "format": "SHIFT.P1D.Slot3Fun00766510ExactRootHandoff/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01X87StackOutputTrancheClosure/1",
+    "SHIFT.Fun00766510ResidualTailClosure/1"
+  ],
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_transfer_adjudicates_upstream": true,
+    "upstream_contracts_consumed_not_reowned": true
+  },
+  "selected_slot3": {
+    "absolute_target": "HDVehicle+0x28b8",
+    "width": "f64/qword"
+  },
+  "exact_root_calls": [
+    {"callsite":"0x00766da5","callee":"FUN_00758fc0","receiver":"HDVehicle","record_argument":"HDVehicle+0x37d8","reference_vector":"[EBP-0xc8]"},
+    {"callsite":"0x00766dba","callee":"FUN_00758fc0","receiver":"HDVehicle","record_argument":"HDVehicle+0x3858","reference_vector":"[EBP-0xc8]"}
+  ],
+  "callee_effect": {
+    "function": "FUN_00758fc0",
+    "proven_hdvehicle_write_offsets": ["+0x40a0", "+0x40a8", "+0x40b0"],
+    "selected_target_overlap": false,
+    "machine_cross_callsite": "0x007590df"
+  },
+  "adjudication": {
+    "slot3_fun00766510_fun00758fc0_exact_root_pair_complete": true,
+    "fun00758fc0_selected_slot3_writer_found": false,
+    "deeper_direct_aliases_ruled_out": false,
+    "indirect_callback_aliases_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "Only the two exact-HDVehicle FUN_00758fc0 calls proven by the residual-tail contract are closed here.",
+    "Other FUN_00766510 direct callees, descendants, stored aliases and indirect/callback carriers remain open.",
+    "P1A/P1.1 contracts retain their original ownership."
+  ],
+  "next_step": "Trace remaining exact HDVehicle/wheel receiver callees from lifecycle roots; prioritize any call that can derive or store the selected wheel root."
+}
