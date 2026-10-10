@@ -1,0 +1,53 @@
+{
+  "adjudication": {
+    "bounded_getprocaddress_storage_included": true,
+    "bounded_indirect_entry_coverage_composed": true,
+    "bounded_indirect_entry_exact_4330_carrier_hit_found": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "known_exact_carrier_value_copy_origin_subset_included": true,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "memory_table_derived_carrier_pointers_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "runtime_patching_or_generated_code_ruled_out": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/5",
+  "limits": [
+    "This supersedes /4 by adding bounded imported-GetProcAddress result-storage coverage and the known exact-carrier direct-copy-origin subset.",
+    "Runtime-created/table-derived pointers, cross-block reconstruction, runtime patching, opaque/external pointer sources and unbounded generic stores/copies remain open."
+  ],
+  "next_step": "Inventory unrelated runtime-populated function-pointer tables and cross-block/table-derived exact-carrier reconstruction before promoting global indirect-entry or store/copy gates.",
+  "owner": "Process 1B / P1.3B aggregate integration",
+  "ready": true,
+  "supersedes": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/4",
+  "surface": {
+    "bounded_exact_carrier_hit_count": 0,
+    "composed_coverage_class_count": 9,
+    "coverage_additions": [
+      {
+        "class": "bounded statically reachable imported-GetProcAddress result storage",
+        "exact_carrier_hit_count": 0,
+        "physical_callsite_count": 101
+      },
+      {
+        "class": "direct copy/store from already-materialized exact canonical carrier value",
+        "exact_carrier_origin_count": 0
+      }
+    ],
+    "known_carrier_direct_copy_origin_count": 0,
+    "p1b_exact_carrier_count": 15,
+    "previous_bounded_coverage_class_count": 7,
+    "statically_reachable_getprocaddress_callsite_count": 101
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/4",
+    "SHIFT.P1B.HDVehicle4330BoundedRuntimePointerSeedCoverage/1",
+    "SHIFT.P1B.HDVehicle4330KnownCarrierValueCopyOriginClosure/1"
+  ],
+  "version": 5
+}
