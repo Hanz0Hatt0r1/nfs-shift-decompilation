@@ -22,9 +22,9 @@ def build(indirect_path: Path, copy_path: Path):
     assert indirect["carrier_set"]["count"] == 15
     assert indirect["indirect_surface"]["carrier_indirect_call_edge_count"] == 0
     assert copy["surface"]["p1b_exact_carrier_count"] == 15
-    assert copy["surface"]["source_visible_address_taken_carrier_symbol_count"] == 0
-    assert copy["surface"]["source_visible_noncall_carrier_value_use_count"] == 0
-    assert copy["surface"]["bounded_exact_carrier_copy_origin_count"] == 0
+    assert copy["surface"]["source_address_taken_carrier_count"] == 0
+    assert copy["surface"]["source_noncall_carrier_value_use_count"] == 0
+    assert copy["surface"]["direct_known_carrier_value_copy_origin_count"] == 0
     return {
         "format": FORMAT,
         "version": 1,
@@ -34,9 +34,9 @@ def build(indirect_path: Path, copy_path: Path):
         "surface": {
             "p1b_exact_carrier_count": 15,
             "carrier_indirect_call_edge_count": 0,
-            "source_visible_address_taken_carrier_symbol_count": 0,
-            "source_visible_noncall_carrier_value_use_count": 0,
-            "bounded_exact_carrier_copy_origin_count": 0,
+            "source_address_taken_carrier_count": 0,
+            "source_noncall_carrier_value_use_count": 0,
+            "direct_known_carrier_value_copy_origin_count": 0,
         },
         "adjudication": {
             "bounded_carrier_self_propagation_subset_complete": True,
