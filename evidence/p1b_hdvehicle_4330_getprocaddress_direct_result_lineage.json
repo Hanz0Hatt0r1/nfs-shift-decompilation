@@ -1,0 +1,72 @@
+{
+  "adjudication": {
+    "direct_getprocaddress_persistent_carrier_identity_found": false,
+    "direct_getprocaddress_persistent_global_lineage_complete": true,
+    "direct_getprocaddress_result_lineage_subset_complete": true,
+    "dynamic_getprocaddress_resolution_ruled_out": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "register_loaded_getprocaddress_result_lineage_complete": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "runtime_patching_or_generated_code_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_bytes_are_machine_authority": true,
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_file_size": 8801792
+  },
+  "format": "SHIFT.P1B.HDVehicle4330GetProcAddressDirectResultLineage/1",
+  "limits": [
+    "This closes result lineage for the 12 direct calls to the imported GetProcAddress IAT slot only.",
+    "The 86 register-loaded GetProcAddress calls, runtime/indirect resolver entry, external function pointers and unrelated runtime-populated tables remain open.",
+    "Known persistent globals contain resolved external API identities, not P1B exact carrier identities."
+  ],
+  "next_step": "Classify the 86 register-loaded GetProcAddress result lineages and compose bounded resolver-populated function-pointer storage coverage.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "classified_direct_iat_result_lineage_count": 12,
+    "direct_calls": [
+      {"callsite":"0x0061b684","classification":"transient_immediate_call"},
+      {"callsite":"0x00634046","classification":"transient_register_call"},
+      {"callsite":"0x007d655a","classification":"bounded_return_helper"},
+      {"callsite":"0x009074a0","classification":"transient_immediate_call"},
+      {"callsite":"0x00909db9","classification":"transient_immediate_call"},
+      {"callsite":"0x0090aa7b","classification":"transient_encodepointer_call"},
+      {"callsite":"0x0090aaf2","classification":"transient_decodepointer_call"},
+      {"callsite":"0x00918a26","classification":"persistent_encoded_global"},
+      {"callsite":"0x0093dd43","classification":"generic_wrapper_upstream_closed"},
+      {"callsite":"0x009506b9","classification":"persistent_global"},
+      {"callsite":"0x00a61a7c","classification":"transient_register_call"},
+      {"callsite":"0x00a9ab1a","classification":"persistent_global"}
+    ],
+    "direct_iat_callsite_count": 12,
+    "geteventhandler_helper_direct_caller_count": 2,
+    "persistent_carrier_identity_hit_count": 0,
+    "persistent_encoded_pointer_global_count": 1,
+    "persistent_exact_pointer_global_count": 2,
+    "persistent_global_exact_reference_addresses": {
+      "0x00c328c8": ["0x009189b7","0x009189de","0x00918a3e"],
+      "0x00c593b0": ["0x0095068a","0x009506c1","0x0095073b"],
+      "0x00cce308": ["0x00a9ab25","0x00a9ab36"]
+    },
+    "persistent_global_lineage_count": 3,
+    "persistent_globals": [
+      {"decode":"DecodePointer before call","exact_reference_count":3,"global":"0x00c328c8","identity":"InitializeCriticalSectionAndSpinCount","storage":"EncodePointer result"},
+      {"exact_reference_count":3,"global":"0x00c593b0","identity":"WMCreateSyncReader","module":"wmvcore.dll","terminal_call":"0x0095073b"},
+      {"exact_direct_call_count":0,"exact_reference_count":2,"global":"0x00cce308","identity":"ReadDirectoryChangesW","module":"kernel32.dll"}
+    ]
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330GetProcAddressStaticResolutionSurface/1",
+    "SHIFT.P1B.HDVehicle4330GetProcAddressWrapperOutputPersistence/1"
+  ],
+  "version": 1
+}
