@@ -1,0 +1,55 @@
+{
+  "format": "SHIFT.Fun00901310Cvttsd2si/1",
+  "ready": true,
+  "platform_authority": "PC retail 1.02",
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_machine_proof": "SHIFT.P1A.P13ASlot01DeeperHDVehicleRootTranche/1",
+    "consumer_contract": "SHIFT.Fun007bf790CasterRecordMaterialization/1"
+  },
+  "machine_contract": {
+    "entry": "0x00901310",
+    "x87_spill": {
+      "site": "0x00901322",
+      "bytes": "dd1c24",
+      "instruction": "FSTP qword ptr [ESP]"
+    },
+    "conversion": {
+      "site": "0x00901325",
+      "bytes": "f20f2c0424",
+      "instruction": "CVTTSD2SI EAX,qword ptr [ESP]"
+    },
+    "receiver_required": false,
+    "non_stack_destination_present": false,
+    "returned_value_register": "EAX"
+  },
+  "value_semantics": {
+    "source_width": "f64",
+    "result_width": "i32",
+    "rounding": "truncate_toward_zero",
+    "nan_or_infinity_result": "0x80000000",
+    "out_of_i32_range_result": "0x80000000",
+    "signed_zero_result": 0,
+    "integer_indefinite_hex": "0x80000000"
+  },
+  "native_contract": {
+    "eax_value_semantics_internalized": true,
+    "truncate_toward_zero_internalized": true,
+    "integer_indefinite_internalized": true,
+    "caster_materializer_native_overload_added": true,
+    "caster_materializer_callback_still_available_for_instrumentation": true,
+    "caster_materializer_callback_required": false
+  },
+  "limits": {
+    "mxcsr_exception_status_flags_internalized": false,
+    "floating_point_exception_delivery_internalized": false,
+    "caster_config_source_acquisition_internalized": false,
+    "positive_qword_producer_family_complete": false,
+    "FUN_007584f0_computed_payloads_complete": false,
+    "residual_producer_promotion_bit_set": false,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_provider_removed": false,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Bind the source-backed left/right caster CDF values to authoritative native VehicleLoadData/session state; FUN_00901310 no longer blocks the value path."
+}
