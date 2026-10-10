@@ -1,0 +1,87 @@
+{
+  "adjudication": {
+    "aggregate_or_bulk_alias_stores_ruled_out": false,
+    "callbacks_registered_outside_carriers_ruled_out": false,
+    "callee_created_aliases_ruled_out": false,
+    "external_provider_count": 7,
+    "known_direct_callee_callind_found": false,
+    "known_direct_callee_created_alias_subset_complete": true,
+    "known_direct_callee_exact_root_escape_found": false,
+    "known_direct_callee_exact_root_receiver_count": 2,
+    "known_direct_callee_selected_target_writer_found": false,
+    "machine_register_alias_storage_ruled_out": false,
+    "other_callee_created_aliases_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "slot3_writer_provenance_proven": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_contracts_adjudicate_object_identity": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "sqlite_call_surface_is_navigation_crosscheck": true
+  },
+  "exact_root_direct_callees": {
+    "FUN_00752fc0": {
+      "direct_call_count": 0,
+      "exact_root_forwarded_further": false,
+      "leaf_write_offsets": [
+        "+0x5b8",
+        "+0x7d8"
+      ],
+      "source": "FUN_00755a60 exact wheel root",
+      "target_writer_found": false
+    },
+    "FUN_00755950": {
+      "exact_root_forwarded_further": false,
+      "next_receiver": "FUN_007555b0 receives wheel+0x80, not exact wheel root",
+      "source": "FUN_00758b50 exact per-wheel root",
+      "target_field_use": "read-only qword [wheel+0x538]",
+      "target_writer_found": false
+    }
+  },
+  "format": "SHIFT.P1D.Slot3DirectCalleeAliasSubsetClosure/1",
+  "limits": [
+    "This closes only direct callees reached from the already-proven exact-wheel carrier paths represented by the upstream contracts.",
+    "Interior wheel pointers and dereferenced child pointers are kept distinct from the exact wheel root; numeric offset proximity is not object identity.",
+    "Callee-created aliases outside these direct paths, indirect entry, persistent stores, callbacks, and aggregate copies remain open."
+  ],
+  "next_step": "Search for exact wheel-root persistence or callback registration outside the known direct-callee paths; for each positive store, prove the later consumer and selected slot3 identity before promoting any global alias gate.",
+  "nonroot_direct_callee_receivers": [
+    {
+      "callee": "FUN_007555b0",
+      "reason_not_exact_root": "derived interior pointer",
+      "receiver": "wheel+0x80"
+    },
+    {
+      "callee": "FUN_007ba860",
+      "reason_not_exact_root": "dereferenced child pointer",
+      "receiver": "[wheel+0x420]"
+    },
+    {
+      "callee": "FUN_007af0a0",
+      "reason_not_exact_root": "dereferenced child pointer",
+      "receiver": "[wheel+0x420]"
+    },
+    {
+      "callee": "FUN_007af010",
+      "reason_not_exact_root": "dereferenced child pointer",
+      "receiver": "[wheel+0x420]"
+    }
+  ],
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "selected_slot3": {
+    "absolute_target": "HDVehicle+0x28b8..+0x28bf",
+    "local_target": "+0x538",
+    "wheel_receiver": "HDVehicle+0x2380"
+  },
+  "upstream_contracts": [
+    "SHIFT.P1D.Slot3ExactWheelDirectCarrierClosure/1",
+    "SHIFT.P1D.P13DSlot3PrimaryAliasEscape/1",
+    "SHIFT.P1D.Slot3Fun00755f80WheelChildClosure/1",
+    "SHIFT.P1D.Slot3ExactCarrierIndirectCallSurface/1"
+  ],
+  "version": 1
+}
