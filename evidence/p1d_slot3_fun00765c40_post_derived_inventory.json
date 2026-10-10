@@ -1,0 +1,75 @@
+{
+  "format": "SHIFT.P1D.Slot3Fun00765c40PostDerivedInventory/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "upstream_contracts": [
+    "SHIFT.P1D.Slot3Fun00765c40CarrierHandoff/1",
+    "SHIFT.P1D.Slot3Fun00765c40Wheel7a8AliasClosure/1"
+  ],
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine_bytes_adjudicate": true
+  },
+  "scope": {
+    "manager_6730": {"start": "0x00765ed4", "end_exclusive": "0x00765f29", "instruction_count": 22, "decoded_byte_count": 85, "machine_bytes_sha256": "76663fd72c8ed75e938e5383e383130c146af33296e50993382a7c37f6f1f579"},
+    "local_12": {"start": "0x00766081", "end_exclusive": "0x007663c0", "instruction_count": 236, "decoded_byte_count": 831, "machine_bytes_sha256": "57c0b69ac7b952b42b82fdd2fd5e6be5f113b8cbfa653570ac0f08b24afa8bf5"},
+    "local_4": {"start": "0x007663c0", "end_exclusive": "0x00766505", "instruction_count": 84, "decoded_byte_count": 325, "machine_bytes_sha256": "f8c0651194f031f12f8739b964e426a64c08417f5ebd49dac066cb1143607ece"},
+    "a62940": {"start": "0x00a62940", "end_exclusive": "0x00a62b39", "instruction_count": 158, "decoded_byte_count": 501, "machine_bytes_sha256": "01cc38b6fe9f5cd1cbc061a0c8516ee9425141476870319a6468d12ea0a45e75"},
+    "a628a0": {"start": "0x00a628a0", "end_exclusive": "0x00a6293a", "instruction_count": 53, "decoded_byte_count": 152, "machine_bytes_sha256": "832eb82f6465cad7cdbfe0bab1b33bee970d424634d470136f6c2a68850ab96b"}
+  },
+  "families": {
+    "hdvehicle_6730": {
+      "identity": "HDVehicle+0x6730 local manager/subobject; not a wheel root or wheel-relative alias",
+      "caller_sites": ["0x00765ed8 -> FUN_00a62940", "0x00765ef5 -> FUN_00a628a0"],
+      "fun00a62940_receiver_alias": "EDI=ECX at 0x00a62947",
+      "runtime_created_node_backpointer_stores": [
+        "0x00a62a20 [node+0x24]=HDVehicle+0x6730",
+        "0x00a62a63 [node+0x34]=HDVehicle+0x6730"
+      ],
+      "fun00a628a0_receiver_alias": "ESI=ECX at 0x00a628a5",
+      "fun00a628a0_receiver_value_store_or_push_found": false,
+      "selected_slot3_pointer_identity": false
+    },
+    "hdvehicle_local_arrays_12": {
+      "bases": ["HDVehicle+0x3430", "HDVehicle+0x35c8", "HDVehicle+0x35f8"],
+      "materialization_sites": ["0x00766091", "0x00766081", "0x00766089"],
+      "stack_cursor_slots": ["[ebp-0x10]", "[ebp-0xc]", "[ebp-0x14]"],
+      "iteration_count": 12,
+      "strides": ["+0x18", "+0x4", "+0x8"],
+      "selected_slot3_pointer_identity": false,
+      "callee_lifetime_fully_closed": false
+    },
+    "hdvehicle_local_array_4": {
+      "base": "HDVehicle+0x36e0",
+      "materialization_site": "0x007663cd",
+      "stack_cursor_slot": "[ebp-0xc]",
+      "iteration_count": 4,
+      "stride": "+0x18",
+      "selected_slot3_pointer_identity": false,
+      "callee_lifetime_fully_closed": false
+    }
+  },
+  "adjudication": {
+    "fun00765c40_post_derived_family_inventory_complete": true,
+    "fun00765c40_hdvehicle_6730_nested_receiver_subset_complete": true,
+    "fun00765c40_hdvehicle_6730_runtime_backpointer_store_found": true,
+    "fun00765c40_hdvehicle_6730_is_selected_slot3_alias": false,
+    "fun00765c40_post_derived_selected_slot3_alias_found": false,
+    "other_fun00765c40_derived_aliases_ruled_out": false,
+    "runtime_generated_pointer_stores_ruled_out": false,
+    "callee_created_aliases_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The +0x6730 runtime back-pointer persistence is proven for a distinct HDVehicle-local manager/subobject; it is not promoted to wheel identity by numeric proximity.",
+    "The +0x3430/+0x35c8/+0x35f8 and +0x36e0 families are classified as HDVehicle-local array cursors in FUN_00765c40, but their callee-facing lifetimes remain separate work.",
+    "Runtime/generated selected-wheel pointers, aggregate copies, callbacks and indirect entry remain open."
+  ],
+  "next_step": "Trace the callee-facing lifetimes of the +0x3430/+0x35c8/+0x35f8/+0x36e0 array cursors (FUN_007afd20/FUN_007baa70/FUN_00747b90/FUN_007aefb0) and reject or prove any nonlocal pointer persistence before changing global alias gates."
+}
