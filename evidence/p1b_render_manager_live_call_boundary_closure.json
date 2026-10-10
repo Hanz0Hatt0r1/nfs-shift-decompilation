@@ -1,0 +1,93 @@
+{
+  "adjudication": {
+    "all_live_exact_root_indirect_calls_classified": true,
+    "arbitrary_unknown_memory_exact_root_alias_surface_complete": false,
+    "bounded_direct_callee_alias_surface_complete": true,
+    "canonical_lineage_live_call_boundary_surface_complete": true,
+    "canonical_lineage_live_exact_root_non_vtable_indirect_setter_found": false,
+    "canonical_lineage_live_exact_root_non_vtable_indirect_setter_surface_complete": true,
+    "external_provider_count": 7,
+    "helper_non_vtable_setter_surface_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "opaque_helper_created_exact_root_surface_complete": false,
+    "p1_3_control_producer_complete": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "canonical_slot": "0x00bc185c",
+  "direct_exact_root_callees": {
+    "bounded_target_count": 17,
+    "byaddress_local_helper_paths_closed": 2,
+    "can_export_or_recreate_exact_outer_root": false,
+    "closed_target_count": 17,
+    "remaining_target_count": 0
+  },
+  "format": "SHIFT.P1B.RenderManagerLiveCallBoundaryClosure/1",
+  "indirect_exact_root_calls": {
+    "all_match_known_vtable_slots": true,
+    "calls": [
+      {
+        "callsite": "0x0056bcf2",
+        "dispatch_register": "edx",
+        "exact_alias_registers": [
+          "ecx",
+          "esi"
+        ],
+        "vslot_offset": "+0x1c"
+      },
+      {
+        "callsite": "0x0056bd09",
+        "dispatch_register": "edx",
+        "exact_alias_registers": [
+          "ecx",
+          "esi"
+        ],
+        "vslot_offset": "+0x20"
+      },
+      {
+        "callsite": "0x0056bd59",
+        "dispatch_register": "edx",
+        "exact_alias_registers": [
+          "ecx"
+        ],
+        "vslot_offset": "+0x1c"
+      }
+    ],
+    "count": 3,
+    "known_vtable_offsets": [
+      "+0x1c",
+      "+0x20"
+    ],
+    "non_vtable_indirect_call_count": 0,
+    "target_vslot_plus_0x0c_dispatch_count": 0
+  },
+  "inputs": {
+    "bounded_callee": "SHIFT.P1B.RenderManagerBoundedCalleeClosure/1",
+    "call_boundary": "SHIFT.HDVehicle64e8RenderManagerMachineCfgCallBoundaryReconciliation/1",
+    "canonical": "SHIFT.P1B.RenderManagerCanonicalAccessClosure/1",
+    "vslot": "SHIFT.HDVehicle64e8Manager374VSlot0cDispatchClosure/1"
+  },
+  "limits": [
+    "This closes call boundaries only when an exact canonical render-manager alias is already live in the machine-CFG replay.",
+    "The three indirect callsites are known vtable dispatches at +0x1c/+0x20; this does not prove that an opaque callee cannot synthesize the exact root from unrelated unknown inputs.",
+    "Unknown-memory/helper-created roots that never originate from the canonical lineage remain open.",
+    "No identity is inferred from numeric offset equality."
+  ],
+  "live_call_boundary_inventory": {
+    "call_boundary_observation_count": 303,
+    "callee_saved_only_unique_callsite_count": 207,
+    "caller_saved_direct_callsite_count": 92,
+    "caller_saved_exact_alias_unique_callsite_count": 95,
+    "caller_saved_indirect_callsite_count": 3,
+    "direct_ecx_or_edx_receiver_like_unique_callsite_count": 51,
+    "eax_only_unique_callsite_count": 41,
+    "ecx_or_edx_receiver_like_unique_callsite_count": 54,
+    "unique_callsite_count": 302
+  },
+  "next_step": "Bound opaque helper returns and unrelated unknown-memory exact-root synthesis outside the canonical lineage, then revisit manager+0x374 identity and slot2 adjudication.",
+  "ready": true,
+  "version": 1
+}
