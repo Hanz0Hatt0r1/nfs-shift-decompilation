@@ -1,0 +1,72 @@
+{
+  "format": "SHIFT.Fun007c5a20TrigRecordMaterializer/1",
+  "ready": true,
+  "platform_authority": "PC retail 1.02",
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "downstream_writer_contract": "SHIFT.Fun00769640TrigSourceWriter/1",
+    "hdvehicle_4330_provenance_reused": true
+  },
+  "machine_spans": {
+    "FUN_007c5a20": {
+      "start": "0x007c5a20",
+      "end_exclusive": "0x007c5ab8",
+      "size": 152,
+      "raw_byte_sha256": "46a5c431c573c83d21c64e135c884f40521cbbbd74724706479fb3541f184713"
+    },
+    "FUN_007bf790_selected_record_calls": {
+      "start": "0x007bf983",
+      "end_exclusive": "0x007bf9d3",
+      "size": 80,
+      "raw_byte_sha256": "12049fc9876432475c2ee2b34705372173dd2e6aec68842a42141ef3a30ea258"
+    }
+  },
+  "selected_records": {
+    "load_object_pointer": "*(HDVehicle+0x66b4)",
+    "FUN_007bf790_receiver": "load_object+0x0fe8",
+    "destination_table_root": "HDVehicle+0x4330",
+    "source_vector_offsets_from_load_object": ["0x11d0", "0x11e8"],
+    "selector_offsets_from_load_object": ["0x13c0", "0x13c8"],
+    "destination_record_offsets_from_table_root": ["0x1188", "0x11d8"],
+    "absolute_destination_base_offsets": ["0x54b8", "0x5508"],
+    "scale_constant_address": "0x00b09258",
+    "scale_constant": 0.017453292519943295
+  },
+  "materializer_semantics": {
+    "source_layout": ["base_qword", "slope_qword", "count_qword"],
+    "copy_base_and_slope_always": true,
+    "nonzero_source_predicate": "base^2 + slope^2 + count^2 > 0",
+    "nonzero_source_actions": [
+      "count = trunc_toward_zero(source_count_qword)",
+      "base *= 0.017453292519943295",
+      "slope *= 0.017453292519943295"
+    ],
+    "zero_source_action": "preserve previous destination count",
+    "selector_conversion": "trunc_toward_zero(selector_qword)",
+    "selector_clamp": "count < 1 -> 0; selector < 0 -> 0; selector >= count -> count-1; otherwise selector",
+    "writer_visible_fields": ["base_qword", "slope_qword", "current_index_dword"]
+  },
+  "native_contract": {
+    "copy_scale_count_and_clamp_internalized": true,
+    "zero_source_previous_count_preserved": true,
+    "selected_record_call_geometry_internalized": true,
+    "valid_i32_conversion_domain_enforced": true,
+    "materializer_to_FUN_00769640_writer_handoff_tested": true
+  },
+  "ownership_boundary": {
+    "load_object_pointer_provenance_known": true,
+    "load_object_selected_source_values_internalized": false,
+    "load_object_selected_source_lifetime_internalized": false,
+    "FUN_007c5a20_complete": false,
+    "FUN_007bf790_complete": false
+  },
+  "limits": {
+    "positive_qword_producer_family_complete": false,
+    "FUN_007584f0_computed_payloads_complete": false,
+    "residual_producer_promotion_bit_set": false,
+    "complete_FUN_00765c40_internalized": false,
+    "top_level_provider_removed": false,
+    "external_provider_count_after": 7
+  },
+  "next_step": "Resolve native ownership of the selected load-object source vectors at +0x11d0/+0x11e8 and selectors at +0x13c0/+0x13c8; the table materialization and downstream writer/trig arithmetic no longer need opaque precomputed table values."
+}
