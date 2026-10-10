@@ -1,0 +1,88 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "indexed_exact_wheel_root_materialization_found": true,
+    "indexed_exact_wheel_root_persistent_escape_found": false,
+    "other_derived_aliases_ruled_out": false,
+    "p13a_fun007572f0_indexed_wheel_root_lifetime_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "reconstructed_wheel_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "ranges": {
+      "config_trampoline": {"end_exclusive": "0x004066b0", "sha256": "81907fd68c7bd3f5f4f1ad91d1351b37ffeb3d810721924987dfb5aa176590d1", "size": 11, "start": "0x004066a5"},
+      "fun00752fc0_leaf": {"end_exclusive": "0x00752fe5", "sha256": "830ecb8fa09bf20a07a8e269f4d44351dc167232bba00f5d9a7d931675d111cc", "size": 37, "start": "0x00752fc0"},
+      "fun007572f0_entry": {"end_exclusive": "0x00757315", "sha256": "0fc3c9c378ac13ab76b1c603a708579d33622ad09c9296856e492183efb6194a", "size": 37, "start": "0x007572f0"},
+      "fun00757318_body": {"end_exclusive": "0x00757beb", "sha256": "40e942861f5e15b40542c88c11f7b08131c0280d47cf43109889c3363bfbdcee", "size": 2259, "start": "0x00757318"}
+    },
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13ASlot01SameFunctionTopologyMachineClosure/1"
+  },
+  "entry_surface": {
+    "direct_FUN_007572f0_call_count": 3,
+    "direct_call_sites": ["0x00761d96", "0x00763349", "0x0076335c"]
+  },
+  "exact_root_lifetime": {
+    "bare_root_copies": [
+      {"consumer": "0x00757b87 FUN_00752fc0", "operation": "ECX=EDI", "site": "0x00757b55"}
+    ],
+    "derived_aliases_are_exact_root": false,
+    "derived_interior_aliases": [
+      {"operands": "ecx,[edi+0x610]", "site": "0x007573bc"},
+      {"operands": "ecx,[edi+0x638]", "site": "0x0075740f"},
+      {"operands": "ecx,[edi+0x5e8]", "site": "0x0075743a"},
+      {"operands": "ecx,[edi+0x6a0]", "site": "0x007577b8"},
+      {"operands": "ecx,[edi+0x6c0]", "site": "0x007577f6"}
+    ],
+    "exact_root_call_count": 1,
+    "exact_root_calls": [
+      {"call": "0x00757b87", "prep": "0x00757b55", "target": "0x752fc0"}
+    ],
+    "explicit_bare_root_copy_count": 1,
+    "explicit_bare_root_push_count": 0,
+    "explicit_bare_root_store_count": 0,
+    "forward_leaf": "FUN_00752fc0",
+    "forward_leaf_is_complete": true,
+    "forward_leaf_root_persistence_found": false
+  },
+  "format": "SHIFT.P1A.P13AFun007572f0IndexedWheelRootLifetime/1",
+  "indexed_root": {
+    "exact_root_register_after_0x00757348": "EDI",
+    "formula": "vehicle_root + 0x400 + index*0xA80",
+    "index_source": "[EBP+0x8]",
+    "slot0_root": "HDVehicle+0x400",
+    "slot1_root": "HDVehicle+0xe80",
+    "vehicle_register_before_materialization": "EDI"
+  },
+  "limits": [
+    "This consumes the merged same-function topology contract for semantic vehicle-root/index identity and independently machine-proves exact-root lifetime through the split FUN_007572f0/FUN_00757318 body.",
+    "The only bare exact-root forward is ECX=EDI into complete leaf FUN_00752fc0; that leaf performs only scalar FPU field writes relative to ECX and does not persist/copy/forward the root pointer.",
+    "Positive interior aliases wheel+0x610, +0x638, +0x5e8, +0x6a0 and +0x6c0 remain separate derived-alias work.",
+    "Global reconstructed/runtime-generated/stored-alias and callback/indirect gates remain fail-closed."
+  ],
+  "machine_anchors": {
+    "config01_load": "0x004066a5 mov eax,DWORD PTR [edi+0x2e44]",
+    "config01_trampoline": "0x0075730a jmp 0x4066a5",
+    "config_join": "0x004066ab jmp 0x757310",
+    "config_other_load": "0x00757312 mov eax,DWORD PTR [edi+0x2e48]",
+    "config_thunk": "0x00757310 jmp 0x757318",
+    "exact_root_forward": "0x00757b55 mov ecx,edi",
+    "exact_root_leaf_call": "0x00757b87 call 0x752fc0",
+    "index_reload": "0x00757329 mov eax,DWORD PTR [ebp+0x8]",
+    "index_stride": "0x0075733c imul eax,eax,0xa80",
+    "leaf_return": "0x00752fe4 ret",
+    "root_materialization": "0x00757348 lea edi,[eax+edi*1+0x400]",
+    "vehicle_capture": "0x007572fe mov edi,ecx",
+    "vehicle_stack_alias": "0x00757300 mov DWORD PTR [ebp-0x4],edi"
+  },
+  "next_step": "Classify the positive interior aliases from FUN_00757318 and compose the now-closed exact-root materializer families before considering the global runtime-generated selected-wheel pointer gate.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "version": 1
+}
