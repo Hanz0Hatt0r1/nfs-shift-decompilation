@@ -1,0 +1,104 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "direct_fun005ffc50_creg_registration_found": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "exact_static_fun005ffc50_absolute_pointer_found": false,
+    "exact_static_fun005ffc50_rva_pointer_found": false,
+    "external_provider_count": 7,
+    "fun005ffc50_creg_requires_indirect_or_reconstructed_entry": true,
+    "fun0067b660_callback_argument_is_selected_wheel_ruled_out": false,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "p13a_fun005ffc50_direct_creg_entry_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "fun005ffc50_range": {
+      "end_exclusive": "0x005ffd88",
+      "sha256": "c06a36d72bae94295247b8cd1864984ec58feaf4efdfeccf38968af5d699c234",
+      "size": 312,
+      "start": "0x005ffc50"
+    },
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13ASlot4StaticRegistryInitializers/1"
+  },
+  "creg_branch": {
+    "command_value": "0x63726567",
+    "dispatcher": "FUN_005ffc50",
+    "dispatcher_address": "0x005ffc50",
+    "forwarded_stack_arguments": [
+      "[entry ESP+0xc]",
+      "[entry ESP+0x10]"
+    ],
+    "registry_forward_call": "0x005ffc7a",
+    "registry_target": "thunk_FUN_0043ca56 / 0x006144f0"
+  },
+  "direct_entry_surface": {
+    "command_counts": {
+      "0x63646563": 3,
+      "0x636c6964": 1,
+      "0x63726566": 1,
+      "0x69646576": 1,
+      "0x6d696372": 3,
+      "0x6f646576": 1,
+      "0x706f7274": 1,
+      "0x73657276": 1,
+      "0x74696d65": 1
+    },
+    "direct_call_count": 13,
+    "direct_callers": [
+      "FUN_005b81a0",
+      "FUN_005b8210",
+      "FUN_005be1b0"
+    ],
+    "direct_creg_call_count": 0,
+    "distinct_direct_caller_count": 3,
+    "rows": [
+      {"call_site":"0x005b81db","caller":"FUN_005b81a0","command":"0x6d696372","command_push_site":"0x005b81d5","is_creg":false},
+      {"call_site":"0x005b8204","caller":"FUN_005b81a0","command":"0x6d696372","command_push_site":"0x005b81fe","is_creg":false},
+      {"call_site":"0x005b8239","caller":"FUN_005b8210","command":"0x706f7274","command_push_site":"0x005b8233","is_creg":false},
+      {"call_site":"0x005be27f","caller":"FUN_005be1b0","command":"0x74696d65","command_push_site":"0x005be279","is_creg":false},
+      {"call_site":"0x005be2ee","caller":"FUN_005be1b0","command":"0x6d696372","command_push_site":"0x005be2e8","is_creg":false},
+      {"call_site":"0x005be30d","caller":"FUN_005be1b0","command":"0x636c6964","command_push_site":"0x005be307","is_creg":false},
+      {"call_site":"0x005be32c","caller":"FUN_005be1b0","command":"0x73657276","command_push_site":"0x005be326","is_creg":false},
+      {"call_site":"0x005be369","caller":"FUN_005be1b0","command":"0x63646563","command_push_site":"0x005be363","is_creg":false},
+      {"call_site":"0x005be38b","caller":"FUN_005be1b0","command":"0x63646563","command_push_site":"0x005be385","is_creg":false},
+      {"call_site":"0x005be3af","caller":"FUN_005be1b0","command":"0x63726566","command_push_site":"0x005be3a9","is_creg":false},
+      {"call_site":"0x005be3c3","caller":"FUN_005be1b0","command":"0x63646563","command_push_site":"0x005be3bd","is_creg":false},
+      {"call_site":"0x005be42b","caller":"FUN_005be1b0","command":"0x69646576","command_push_site":"0x005be425","is_creg":false},
+      {"call_site":"0x005be464","caller":"FUN_005be1b0","command":"0x6f646576","command_push_site":"0x005be45e","is_creg":false}
+    ]
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50DirectCregEntryClosure/1",
+  "limits": [
+    "This closes only direct machine calls to FUN_005ffc50 plus exact raw absolute-VA/RVA pointer literals for that dispatcher.",
+    "The creg branch remains present and forwards two runtime-supplied stack arguments to the registry; its indirect/reconstructed incoming entry surface is not proven empty.",
+    "Encoded/split pointers, runtime registration, incoming indirect entry, and alternate FUN_0067b660 slot4 dispatch forms remain open.",
+    "No slot0, slot1, aggregate P1.3, stored-alias, or global callback gate is promoted."
+  ],
+  "machine_anchors": {
+    "command_load": "0x005ffc50 mov eax,DWORD PTR [esp+0x8]",
+    "creg_arg1_load": "0x005ffc74 mov eax,DWORD PTR [esp+0xc]",
+    "creg_arg1_push": "0x005ffc79 push eax",
+    "creg_arg2_load": "0x005ffc70 mov edx,DWORD PTR [esp+0x10]",
+    "creg_arg2_push": "0x005ffc78 push edx",
+    "creg_cleanup": "0x005ffc7f add esp,0x8",
+    "creg_compare": "0x005ffc69 cmp eax,0x63726567",
+    "creg_registry_call": "0x005ffc7a call 0x6144f0"
+  },
+  "next_step": "Trace incoming indirect/reconstructed entry to FUN_005ffc50 or recover another concrete FUN_0067b660 slot+0x4 dispatcher with explicit argument provenance.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "static_pointer_literal_surface": {
+    "exact_absolute_va": "0x005ffc50",
+    "exact_absolute_va_occurrence_count": 0,
+    "exact_rva": "0x001ffc50",
+    "exact_rva_occurrence_count": 0
+  },
+  "version": 1
+}
