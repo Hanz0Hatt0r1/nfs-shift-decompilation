@@ -1,0 +1,46 @@
+{
+  "adjudication": {
+    "aggregate_or_bulk_alias_stores_ruled_out": false,
+    "callee_created_aliases_ruled_out": false,
+    "external_provider_count": 7,
+    "first_direct_callee_bulk_opcode_found": false,
+    "first_direct_callee_bulk_opcode_surface_complete": true,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "runtime_generated_pointer_stores_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "machine_bytes_adjudicate": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1D.Slot3DirectCalleeBulkOpcodeClosure/1",
+  "limits": [
+    "This closes x86 REP/MOVS/STOS/LODS/SCAS/CMPS opcodes only in the 82 unique immediate direct callees reached from the 16 carrier bodies.",
+    "The two indirect callsites at 0x00770ec4 and 0x00770f41 are inventoried but their runtime targets are not inferred here.",
+    "Hand-unrolled scalar/SIMD copies, deeper callees, reconstructed pointers, callbacks and runtime-generated/copied aliases remain open."
+  ],
+  "next_step": "Trace the two indirect callsites and hand-unrolled copy/store patterns before changing aggregate/runtime alias gates.",
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "surface": {
+    "bulk_opcode_hit_count": 0,
+    "bulk_opcode_hits": [],
+    "carrier_count": 16,
+    "direct_callee_instruction_count": 9159,
+    "direct_callee_manifest_sha256": "439a0227f1f7619763f579f4e7a6d0033fd7de341eb7180645b0537124633b27",
+    "direct_callsite_count": 214,
+    "direct_callsite_manifest_sha256": "bdd48b9a2c49f2aaec1f0311a895c7b077f44b254ca05c7165d84629e0ddbed8",
+    "indirect_callsite_count": 2,
+    "indirect_callsite_manifest_sha256": "f25f5ac79ea099196349cf39ebb69c9e586ad2c12523f1c19cd43bf837444c27",
+    "indirect_callsites": [
+      {"caller": "FUN_00770e80", "site": "0x00770ec4", "text": "call   DWORD PTR ds:0xaa60b4"},
+      {"caller": "FUN_00770e80", "site": "0x00770f41", "text": "call   DWORD PTR ds:0xaa60b4"}
+    ],
+    "unique_direct_callee_count": 82
+  },
+  "version": 1
+}
