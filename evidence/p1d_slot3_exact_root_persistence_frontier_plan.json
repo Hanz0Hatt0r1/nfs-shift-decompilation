@@ -1,0 +1,60 @@
+{
+  "format": "SHIFT.P1D.Slot3ExactRootPersistenceFrontierPlan/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1D / P1.3D",
+  "scope": "bounded machine-proven exact wheel-root persistence/escape candidate capture",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "semantic_root_windows_are_seeded_from_merged_machine_contracts": true,
+    "candidate_export_is_not_semantic_persistence_proof": true
+  },
+  "tooling": {
+    "exporter": "tools/ghidra/ShiftExactWheelRootPersistenceExporter.java",
+    "export_format": "SHIFT.GhidraExactWheelRootPersistenceUses/1",
+    "analyzer": "tools/ghidra/analyze_p1d_slot3_exact_root_persistence.py",
+    "analysis_format": "SHIFT.P1D.Slot3ExactRootPersistenceFrontier/1",
+    "exporter_ready": true,
+    "analyzer_ready": true,
+    "retail_export_captured": false
+  },
+  "carrier_windows": [
+    {"function":"FUN_00758b50","root_register":"ecx","start":"0x00758ccf","end_exclusive":"0x00758d70"},
+    {"function":"FUN_00755950","root_register":"edx","start":"0x00755956","end_exclusive":"0x00755992"},
+    {"function":"FUN_00755a60","root_register":"esi","start":"0x00755a73","end_exclusive":"0x00755f71"},
+    {"function":"FUN_00752fc0","root_register":"ecx","start":"0x00752fc0","end_exclusive":"0x00752fe5"},
+    {"function":"FUN_00760b50","root_register":"esi","start":"0x00760b6a","end_exclusive":"0x00760d63"},
+    {"function":"FUN_00755f80","root_register":"esi","start":"0x00755f80","end_exclusive":"0x00756004"}
+  ],
+  "candidate_priority": [
+    "memory-store-root",
+    "push-root",
+    "register-copy-root",
+    "derived-address-root",
+    "call-boundary",
+    "root-based-memory-destination",
+    "root-based-memory-source",
+    "other-root-use"
+  ],
+  "adjudication": {
+    "bounded_exact_root_window_inventory_defined": true,
+    "retail_persistence_candidates_captured": false,
+    "exact_root_persistent_store_proven": false,
+    "exact_root_escape_to_stack_or_argument_proven": false,
+    "machine_register_alias_storage_ruled_out": false,
+    "callee_created_aliases_ruled_out": false,
+    "callbacks_registered_outside_carriers_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "p1_3d_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The exporter is deliberately bounded to register lifetimes already established by merged machine contracts.",
+    "A root-register mention, store, push, copy, LEA, or nearby call remains a candidate until instruction-level data flow and destination/consumer ownership are adjudicated.",
+    "This plan contains no new retail capture and therefore cannot promote any persistence or global alias gate."
+  ],
+  "next_step": "Run the exporter in authoritative PC retail 1.02 Ghidra, analyze the JSONL, then adjudicate memory-store-root and push-root candidates first."
+}
