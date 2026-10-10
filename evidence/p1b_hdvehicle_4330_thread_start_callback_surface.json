@@ -1,0 +1,54 @@
+{
+  "format": "SHIFT.P1B.HDVehicle4330ThreadStartCallbackSurface/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1B / P1.3B",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "shift_exe_c_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "sqlite_and_source_are_navigation_crosscheck": true
+  },
+  "surface": {
+    "create_thread_direct_callsite_count": 7,
+    "beginthreadex_direct_callsite_count": 3,
+    "dynamic_create_thread_wrapper": "FUN_0093db2b",
+    "dynamic_wrapper_direct_caller_count": 1,
+    "resolved_thread_start_count": 9,
+    "resolved_thread_starts": [
+      {"name":"lpStartAddress_005d5f40","address":"0x005d5f40"},
+      {"name":"lpStartAddress_005fdd70","address":"0x005fdd70"},
+      {"name":"lpStartAddress_005ff1e0","address":"0x005ff1e0"},
+      {"name":"lpStartAddress_005ff710","address":"0x005ff710"},
+      {"name":"lpStartAddress_0061cd93","address":"0x0061cd93"},
+      {"name":"FUN_00649b10","address":"0x00649b10"},
+      {"name":"lpStartAddress_00907e4f","address":"0x00907e4f"},
+      {"name":"FUN_009396c0","address":"0x009396c0"},
+      {"name":"FUN_00a2a370","address":"0x00a2a370"}
+    ],
+    "exact_4330_carrier_thread_start_count": 0
+  },
+  "adjudication": {
+    "thread_start_registration_surface_complete": true,
+    "create_thread_surface_complete": true,
+    "beginthreadex_surface_complete": true,
+    "dynamic_create_thread_wrapper_resolved": true,
+    "exact_4330_carrier_thread_start_found": false,
+    "runtime_thread_start_callback_subset_complete": true,
+    "runtime_callback_registration_ruled_out": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only explicit CreateThread/__beginthreadex thread-start registration visible in the pinned retail SQLite/source pair.",
+    "It does not close window procedures, timers, hooks, APCs, wait callbacks, multimedia/plugin callbacks, arbitrary function-pointer stores, or computed/copied/encoded pointer paths.",
+    "Source symbols identify the fixed start routine selected at each bounded registration callsite; no selected-object identity is inferred from decompiler typing."
+  ],
+  "next_step": "Inventory other runtime callback-registration API families and generic function-pointer stores; keep indirect-entry and manager identity gates fail-closed until those non-thread surfaces are bounded."
+}
