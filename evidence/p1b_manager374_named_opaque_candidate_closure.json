@@ -1,0 +1,65 @@
+{
+  "adjudication": {
+    "external_provider_count": 7,
+    "global_helper_non_vtable_indirect_setter_surface_complete": false,
+    "global_manager_root_origin_surface_complete": false,
+    "independent_unnamed_opaque_or_external_runtime_root_synthesis_complete": false,
+    "known_named_opaque_helpers_can_create_independent_manager_root_alias": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "named_opaque_manager_root_candidate_count": 2,
+    "named_opaque_manager_root_candidate_surface_complete": true,
+    "named_opaque_manager_root_exportable_candidate_count": 0,
+    "p1_3_control_producer_complete": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1B.Manager374NamedOpaqueCandidateClosure/1",
+  "inputs": {
+    "known_escape": "SHIFT.P1B.Manager374KnownLineageEscapeClosure/1",
+    "root_origin": "SHIFT.P1B.Manager374RootOriginCoverage/1",
+    "vslot0c": "SHIFT.HDVehicle64e8Manager374VSlot0cDispatchClosure/1",
+    "vslot24": "SHIFT.HDVehicle64e8Manager374VSlot24EaxResidueSurface/1"
+  },
+  "limits": [
+    "This contract closes the two named opaque manager-root candidates present in merged Process 1B evidence; it is not a proof that no as-yet-unidentified opaque helper exists.",
+    "The vslot0c rejection is scoped to the exhaustive exact render-manager lineage; runtime-created outer aliases remain a separate global concern.",
+    "No identity is inferred from matching offsets."
+  ],
+  "named_opaque_candidates": [
+    {
+      "can_materialize_exact_manager_root_in_eax": true,
+      "exportable_to_observed_consumer": false,
+      "function": "FUN_004d1640",
+      "id": "render-child-vslot24-eax-residue",
+      "reason": "0x004b75be mov al,1",
+      "slot": "+0x24",
+      "vtable": "0x00ac1860"
+    },
+    {
+      "direct_call_count": 0,
+      "exact_lineage_dispatch_count": 0,
+      "exportable_to_observed_consumer": false,
+      "function": "FUN_0045b130",
+      "id": "render-manager-vslot0c",
+      "slot": "+0x0c",
+      "vtable": "0x00ab5644"
+    }
+  ],
+  "next_step": "Search specifically for any additional unnamed opaque helper/memory-load producer of exact 0x00bc9fc0; if none is present in the retail machine surface, promote the final manager-root origin closure before slot2 adjudication.",
+  "ready": true,
+  "summary": {
+    "named_candidate_count": 2,
+    "named_candidate_exportable_count": 0,
+    "vslot0c_exact_lineage_dispatch_count": 0,
+    "vslot24_observed_dispatch_preserves_root": false
+  },
+  "surviving_frontier": [
+    "previously unobserved opaque helper return that independently synthesizes exact 0x00bc9fc0",
+    "externally initialized memory containing exact 0x00bc9fc0 without known-lineage seeding",
+    "unrecognized runtime transform outside merged reconstruction classes"
+  ],
+  "version": 1
+}
