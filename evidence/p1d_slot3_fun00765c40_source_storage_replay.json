@@ -1,0 +1,71 @@
+{
+  "adjudication": {
+    "callee_created_aliases_ruled_out": false,
+    "derived_alias_storage_ruled_out": false,
+    "external_provider_count": 7,
+    "fun00765c40_direct_exact_entry_root_assignment_found": false,
+    "fun00765c40_direct_exact_entry_root_persistent_store_found": false,
+    "machine_register_alias_storage_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "runtime_generated_pointer_stores_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "source_direct_exact_entry_root_assignment_16_carrier_subset_complete": true,
+    "source_storage_replay_for_16_carriers_complete": true,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_handoff_owns_fun00765c40_object_identity": true,
+    "platform": "PC retail 1.02",
+    "retail_decompiler_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "source_is_navigation_crosscheck": true
+  },
+  "carrier_expansion": {
+    "added_entry": "0x00765c40",
+    "added_function": "FUN_00765c40",
+    "new_count": 16,
+    "previous_count": 15
+  },
+  "combined_direct_exact_root_assignments": {
+    "count": 2,
+    "persistent_or_unknown_count": 0,
+    "persistent_or_unknown_rows": [],
+    "rows": [
+      {
+        "function": "FUN_00758b50",
+        "lhs": "local_2c",
+        "root": "param_1",
+        "storage": "stack-local",
+        "text": "local_2c = param_1;"
+      },
+      {
+        "function": "FUN_00763570",
+        "lhs": "local_4c",
+        "root": "this",
+        "storage": "stack-local",
+        "text": "local_4c = this;"
+      }
+    ]
+  },
+  "format": "SHIFT.P1D.Slot3Fun00765c40SourceStorageReplay/1",
+  "fun00765c40_source_replay": {
+    "direct_exact_root_assignment_count": 0,
+    "direct_exact_root_assignments": [],
+    "entry_root": "this",
+    "persistent_or_unknown_direct_root_assignment_count": 0,
+    "signature": "void __thiscall FUN_00765c40(void *this,char param_1)"
+  },
+  "limits": [
+    "The completed 16-carrier source-storage replay is exactly the direct exact-entry-root assignment syntax owned by the original 15-carrier contract plus FUN_00765c40; it is not a universal pointer-storage proof.",
+    "FUN_00765c40 contains derived addresses such as this+offset assigned to locals; those are outside this exact-root grammar and remain governed by machine side-effect/alias evidence.",
+    "Runtime/generated/copied pointers, callee-created aliases, callbacks and indirect entry remain open."
+  ],
+  "next_step": "Consume the parallel 16-carrier CALLIND/static-pointer refresh, then trace callee-created/runtime aliases and indirect-entry joins before changing the global stored/escaped-alias gate.",
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "upstream_contracts": [
+    "SHIFT.P1D.Slot3DirectExactRootStorageSource/1",
+    "SHIFT.P1D.Slot3Fun00765c40CarrierHandoff/1"
+  ],
+  "version": 1
+}
