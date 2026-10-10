@@ -1,0 +1,67 @@
+{
+  "adjudication": {
+    "delayed_or_stored_receiver_alias_dispatch_ruled_out": false,
+    "direct_module_base_field_getter_transfer_found": false,
+    "encoded_or_reconstructed_carrier_pointers_ruled_out": false,
+    "external_provider_count": 7,
+    "immediate_module_base_getter_dispatch_found": false,
+    "incoming_indirect_entry_ruled_out": false,
+    "module_base_getter_consumer_paths_complete": false,
+    "p13a_module_base_immediate_dispatch_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_callback_registration_ruled_out": false,
+    "runtime_generated_or_copied_carrier_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_disassembly_adjudicates": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "direct_field_getter_transfers": [],
+  "format": "SHIFT.P1A.P13AModuleBaseImmediateDispatchClosure/1",
+  "immediate_virtual_dispatches": [
+    {"dispatch_site":"0x0063770c","form":"call-register","singleton_getter_call":"0x00637700","slot":"+0x48"},
+    {"dispatch_site":"0x00656afe","form":"call-register","singleton_getter_call":"0x00656aef","slot":"+0x5c"},
+    {"dispatch_site":"0x00665735","form":"call-register","singleton_getter_call":"0x00665729","slot":"+0x58"},
+    {"dispatch_site":"0x006657a1","form":"call-register","singleton_getter_call":"0x0066578f","slot":"+0x58"},
+    {"dispatch_site":"0x006657c3","form":"call-register","singleton_getter_call":"0x006657b7","slot":"+0x58"},
+    {"dispatch_site":"0x0066b1f1","form":"call-register","singleton_getter_call":"0x0066b1e5","slot":"+0x48"},
+    {"dispatch_site":"0x0066b453","form":"call-register","singleton_getter_call":"0x0066b447","slot":"+0x48"},
+    {"dispatch_site":"0x0066b67c","form":"call-register","singleton_getter_call":"0x0066b670","slot":"+0x48"},
+    {"dispatch_site":"0x008333bb","form":"call-register","singleton_getter_call":"0x008333af","slot":"+0x3c"},
+    {"dispatch_site":"0x0085cd78","form":"call-register","singleton_getter_call":"0x0085cd6c","slot":"+0x3c"},
+    {"dispatch_site":"0x008947bd","form":"call-register","singleton_getter_call":"0x008947aa","slot":"+0x58"},
+    {"dispatch_site":"0x008947e4","form":"call-register","singleton_getter_call":"0x008947d7","slot":"+0x58"},
+    {"dispatch_site":"0x008c859f","form":"call-register","singleton_getter_call":"0x008c8593","slot":"+0x3c"},
+    {"dispatch_site":"0x00a691b2","form":"call-register","singleton_getter_call":"0x00a69197","slot":"+0x80"}
+  ],
+  "inventory": {
+    "direct_field_getter_transfer_count": 0,
+    "direct_singleton_getter_call_count": 203,
+    "immediate_virtual_dispatch_count": 14,
+    "module_base_getter_slot_0x84_count": 0,
+    "module_base_getter_slot_0xa4_count": 0,
+    "slot_counts": {"+0x3c":3,"+0x48":4,"+0x58":5,"+0x5c":1,"+0x80":1}
+  },
+  "limits": [
+    "This closes only direct transfers to the two field-getter bodies and immediate virtual dispatches within 16 instructions of a direct FUN_00886980 call, stopping at the first intervening call.",
+    "Stored/delayed receiver aliases, callbacks, indirect entry and dispatch recovered only at runtime remain open.",
+    "Numeric +0x84/+0xa4 references on unrelated objects are deliberately excluded; slot identity requires the tracked FUN_00886980 receiver.",
+    "No slot or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Trace delayed/stored aliases of the exact 0x00bbf960 receiver and runtime registration/indirect consumers; continue selected-wheel data-pointer persistence independently.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "max_instructions_after_getter": 16,
+    "singleton_getter": "FUN_00886980",
+    "singleton_getter_address": "0x00886980",
+    "tracked_shape": "return alias -> vptr load -> slot load -> indirect call",
+    "window_stops_at_first_other_call": true
+  },
+  "version": 1
+}
