@@ -1,0 +1,48 @@
+{
+  "format": "SHIFT.P1A.P13APeBaseRelocationCarrierClosure/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_file_size": 8801792,
+    "machine_format_adjudicates": true
+  },
+  "pe": {
+    "format": "PE32",
+    "image_base": "0x00400000",
+    "file_characteristics": "0x0103",
+    "image_file_relocs_stripped": true,
+    "number_of_rva_and_sizes": 16,
+    "base_relocation_directory": {
+      "index": 5,
+      "rva": "0x00000000",
+      "size": 0
+    },
+    "section_names": [".text", ".rdata", ".data", ".tls", ".rsrc", ".secu"],
+    "reloc_section_present": false
+  },
+  "adjudication": {
+    "p13a_standard_pe_base_relocation_subset_complete": true,
+    "p13a_standard_pe_base_relocation_records_present": false,
+    "p13a_pe_loader_base_relocation_carrier_pointer_path_ruled_out": true,
+    "manual_imagebase_plus_rva_pointer_construction_ruled_out": false,
+    "encoded_or_reconstructed_carrier_pointers_ruled_out": false,
+    "runtime_callback_registration_ruled_out": false,
+    "incoming_indirect_entry_ruled_out": false,
+    "runtime_generated_or_copied_carrier_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only IMAGE_DIRECTORY_ENTRY_BASERELOC / Windows loader base-relocation records in the authoritative on-disk PE.",
+    "IMAGE_FILE_RELOCS_STRIPPED plus a zero RVA/size relocation directory and no .reloc section do not exclude manual image-base addition, encoded/reconstructed values, runtime registration or copied pointers.",
+    "The result does not classify selected-wheel data-pointer persistence and does not promote slot0/slot1 or aggregate P1.3."
+  ],
+  "next_step": "Trace manual image-base/RVA reconstruction, encoded/runtime-generated carrier code pointers and callback registration; continue selected-wheel data-pointer persistence independently."
+}
