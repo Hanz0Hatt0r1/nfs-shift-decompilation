@@ -1,0 +1,71 @@
+{
+  "adjudication": {
+    "callee_created_or_external_exact_root_alias_surface_complete": false,
+    "derived_subobject_alias_surface_complete": false,
+    "direct_exact_global_postconstruction_copy_surface_closed_negative": true,
+    "direct_exact_global_postconstruction_copy_surface_complete": true,
+    "external_provider_count": 7,
+    "helper_non_vtable_indirect_setter_surface_complete": false,
+    "known_returned_root_can_persist_or_dispatch_exact_root": false,
+    "known_returned_root_consumer_surface_complete": true,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "memory_load_or_opaque_runtime_reconstruction_complete": false,
+    "p1_3_control_producer_complete": false
+  },
+  "format": "SHIFT.P1B.RenderManagerCopyReturnClosure/1",
+  "limits": [
+    "The closed copy surface starts from exact direct loads of DAT_00bc185c and follows exact register identity only within decoded intra-function CFG paths.",
+    "The three LEA-derived subobjects remain distinct from the exact outer root and are not promoted back to it.",
+    "Opaque callees, external initialization, unknown-memory loads, and helper-created aliases remain open.",
+    "No identity is inferred from matching offsets."
+  ],
+  "machine_cfg": {
+    "derived_subobject_transition_count": 3,
+    "exact_global_seed_count": 112,
+    "exact_root_memory_store_count": 0,
+    "exact_root_push_count": 0,
+    "unmodelled_exact_alias_transfer_count": 0
+  },
+  "next_step": "Adjudicate the three derived-subobject paths and opaque callee/external exact-root aliases; then revisit the final manager+0x374 identity join and 0x004b86cf.",
+  "owner": "Process 1B / P1.3B aggregate integration",
+  "ready": true,
+  "remaining_frontier": {
+    "callee_created_or_external_exact_root_aliases": true,
+    "derived_subobject_transitions": [
+      {
+        "function": "FUN_0040d6a0",
+        "instruction": "0x0040d83d",
+        "operation": "lea esi,[eax+0x4]",
+        "seed": "0x0040d834"
+      },
+      {
+        "function": "FUN_00498b80",
+        "instruction": "0x00498b93",
+        "operation": "lea ecx,[edi+0x780]",
+        "seed": "0x00498b89"
+      },
+      {
+        "function": "FUN_00499240",
+        "instruction": "0x004995bf",
+        "operation": "lea ecx,[ebx+0x780]",
+        "seed": "0x004994c1"
+      }
+    ],
+    "unknown_memory_or_opaque_helper_returns": true
+  },
+  "returned_root": {
+    "conditional_exact_eax_return_function_count": 7,
+    "direct_return_callsite_count": 6,
+    "direct_return_consumers_persist_or_dispatch_exact_root": false,
+    "table_return_consumer_surface_complete": true,
+    "table_return_consumers_persist_or_dispatch_exact_root": false
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.Manager374RuntimeRootFrontier/1",
+    "SHIFT.HDVehicle64e8RenderManagerCrossBlockExactRootStoreClosure/1",
+    "SHIFT.HDVehicle64e8RenderManagerReturnedRootDirectCallerSurface/1",
+    "SHIFT.HDVehicle64e8RenderManagerTableReturnedRootClosure/1"
+  ],
+  "version": 1
+}
