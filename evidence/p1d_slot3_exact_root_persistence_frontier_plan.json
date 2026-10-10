@@ -25,7 +25,7 @@
     {"function":"FUN_00755a60","root_register":"esi","start":"0x00755a73","end_exclusive":"0x00755f71"},
     {"function":"FUN_00752fc0","root_register":"ecx","start":"0x00752fc0","end_exclusive":"0x00752fe5"},
     {"function":"FUN_00760b50","root_register":"esi","start":"0x00760b6a","end_exclusive":"0x00760d63"},
-    {"function":"FUN_00755f80","root_register":"esi","start":"0x00755f80","end_exclusive":"0x00756004"}
+    {"function":"FUN_00755f80","root_register":"esi","start":"0x00755f9a","end_exclusive":"0x00756004"}
   ],
   "candidate_priority": [
     "memory-store-root",
@@ -53,6 +53,7 @@
   },
   "limits": [
     "The exporter is deliberately bounded to register lifetimes already established by merged machine contracts.",
+    "FUN_00755f80 starts at 0x00755f9a, the pinned mov esi,ecx capture; pre-capture ESI is excluded.",
     "A root-register mention, store, push, copy, LEA, or nearby call remains a candidate until instruction-level data flow and destination/consumer ownership are adjudicated.",
     "This plan contains no new retail capture and therefore cannot promote any persistence or global alias gate."
   ],
