@@ -1,0 +1,148 @@
+{
+  "adjudication": {
+    "direct_imported_code_page_protection_api_found": false,
+    "direct_standard_win32_runtime_patching_subset_complete": true,
+    "direct_virtualalloc_executable_allocation_found": false,
+    "external_provider_count": 7,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false,
+    "runtime_patching_or_generated_code_ruled_out": false,
+    "virtualalloc_static_reference_surface_complete": true
+  },
+  "authority": {
+    "image_base": "0x00400000",
+    "platform": "PC retail 1.02",
+    "retail_bytes_are_machine_authority": true,
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_file_size": 8801792
+  },
+  "format": "SHIFT.P1B.HDVehicle4330DirectWin32RuntimePatchingSurface/1",
+  "import_surface": {
+    "getprocaddress_imported": true,
+    "import_descriptor_count": 26,
+    "imported_function_count": 411,
+    "patch_api_ascii_string_hit_counts": {
+      "FlushInstructionCache": 0,
+      "NtProtectVirtualMemory": 0,
+      "VirtualAllocEx": 0,
+      "VirtualProtect": 0,
+      "VirtualProtectEx": 0,
+      "WriteProcessMemory": 0,
+      "ZwProtectVirtualMemory": 0
+    },
+    "patch_api_import_presence": {
+      "FlushInstructionCache": false,
+      "NtProtectVirtualMemory": false,
+      "VirtualAllocEx": false,
+      "VirtualProtect": false,
+      "VirtualProtectEx": false,
+      "WriteProcessMemory": false,
+      "ZwProtectVirtualMemory": false
+    },
+    "virtualalloc_iat_va": "0x00aa6288",
+    "virtualalloc_imported": true
+  },
+  "limits": [
+    "This closes only direct retail-image references to imported Win32 code-page protection/write APIs and direct VirtualAlloc IAT calls.",
+    "GetProcAddress is imported, so dynamically resolved APIs, externally supplied names/addresses, runtime patching by opaque helpers, JIT-style engines and copied/generated code pointers remain open.",
+    "PAGE_READWRITE allocations are not treated as executable code pages."
+  ],
+  "next_step": "Trace dynamic GetProcAddress consumers or runtime-populated function-pointer stores before promoting global runtime-generated/copied pointer gates.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "version": 1,
+  "virtualalloc_surface": {
+    "callsites": [
+      {
+        "callsite": "0x006344d2",
+        "executable_protection": false,
+        "fl_protect": "0x00000004"
+      },
+      {
+        "callsite": "0x0090ebf6",
+        "executable_protection": false,
+        "fl_protect": "0x00000004"
+      },
+      {
+        "callsite": "0x0090ec81",
+        "executable_protection": false,
+        "fl_protect": "0x00000004"
+      },
+      {
+        "callsite": "0x00a5cac1",
+        "executable_protection": false,
+        "fl_protect": "0x00000004"
+      },
+      {
+        "callsite": "0x00a5cafc",
+        "executable_protection": false,
+        "fl_protect": "0x00000004"
+      },
+      {
+        "callsite": "0x00a5cb23",
+        "executable_protection": false,
+        "fl_protect": "0x00000004"
+      },
+      {
+        "callsite": "0x00a5cd9a",
+        "executable_protection": false,
+        "fl_protect": "0x00000004"
+      },
+      {
+        "callsite": "0x00a5d1b8",
+        "executable_protection": false,
+        "fl_protect": "0x00000004"
+      }
+    ],
+    "direct_iat_callsite_count": 8,
+    "executable_protection_callsite_count": 0,
+    "iat_address_occurrences": [
+      {
+        "file_offset": "0x002338d4",
+        "section": ".text",
+        "va": "0x006344d4"
+      },
+      {
+        "file_offset": "0x0050dff8",
+        "section": ".text",
+        "va": "0x0090ebf8"
+      },
+      {
+        "file_offset": "0x0050e083",
+        "section": ".text",
+        "va": "0x0090ec83"
+      },
+      {
+        "file_offset": "0x0065bec3",
+        "section": ".text",
+        "va": "0x00a5cac3"
+      },
+      {
+        "file_offset": "0x0065befe",
+        "section": ".text",
+        "va": "0x00a5cafe"
+      },
+      {
+        "file_offset": "0x0065bf25",
+        "section": ".text",
+        "va": "0x00a5cb25"
+      },
+      {
+        "file_offset": "0x0065c19c",
+        "section": ".text",
+        "va": "0x00a5cd9c"
+      },
+      {
+        "file_offset": "0x0065c5ba",
+        "section": ".text",
+        "va": "0x00a5d1ba"
+      }
+    ],
+    "iat_address_whole_image_occurrence_count": 8,
+    "unknown_protection_callsite_count": 0
+  }
+}
