@@ -1,0 +1,43 @@
+{
+  "adjudication": {
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "incoming_direct_entry_surface_complete": true,
+    "incoming_direct_external_receiver_provenance_complete": true,
+    "incoming_direct_preexisting_4330_alias_found": false,
+    "incoming_indirect_index_capability_captured": true,
+    "incoming_indirect_index_has_resolved_target_coverage": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "remaining_incoming_entry_blocker_is_unresolved_indirect_target_recovery": true,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330IncomingEntryFrontier/1",
+  "limits": [
+    "Direct incoming entry is fully adjudicated; the remaining incoming-entry uncertainty is indirect target recovery.",
+    "The shared SQLite navigation index contains 19,500 indirect edges but resolves none to concrete targets, so zero carrier hits is not an absence proof.",
+    "The P1A contract is consumed only for shared-index capability counts; P1A carrier semantics are not imported into P1B."
+  ],
+  "next_step": "Recover bounded indirect targets from vtable/callback/function-pointer storage provenance and compare them with the canonical 15 P1B carrier addresses.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "incoming_direct_callsite_count": 25,
+    "incoming_direct_external_caller_count": 7,
+    "incoming_direct_external_callsite_count": 11,
+    "incoming_direct_internal_callsite_count": 14,
+    "incoming_direct_remaining_unresolved_external_caller_count": 0,
+    "navigation_index_indirect_edge_count": 19500,
+    "navigation_index_resolved_indirect_target_count": 0,
+    "navigation_index_unresolved_indirect_target_count": 19500,
+    "p1b_exact_carrier_count": 15
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330IncomingDirectCallFrontier/1",
+    "SHIFT.P1B.HDVehicle4330ExternalCallerFinalTranche/1",
+    "SHIFT.P1A.P13AExactCarrierIncomingIndirectIndexFrontier/1"
+  ],
+  "version": 1
+}
