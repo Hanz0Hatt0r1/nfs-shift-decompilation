@@ -1,0 +1,39 @@
+{
+  "adjudication": {
+    "computed_runtime_paths_complete": false,
+    "escaped_storage_paths_complete": false,
+    "external_provider_count": 7,
+    "known_direct_writers_join_to_hdvehicle_4330": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_direct_writer_surface_composed": true,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "stack_argument_alias_paths_complete": false
+  },
+  "format": "SHIFT.P1B.Manager374IdentityBlocker/1",
+  "limits": [
+    "This contract composes only the exact-root direct-callee writer surface and the unique direct computed +0x374 write-through rejection.",
+    "The remaining 18 computed runtime paths are not adjudicated here: one returned-pointer escape plus seventeen callee-forwarding paths.",
+    "No identity is inferred from matching numeric offsets."
+  ],
+  "next_step": "Adjudicate the one returned-pointer escape and seventeen callee-forwarding computed runtime paths, then revisit manager+0x374 -> HDVehicle+0x4330 and 0x004b86cf.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "computed_direct_write_candidate_count": 1,
+    "computed_direct_write_candidate_rejected_count": 1,
+    "direct_surface_places_hdvehicle_plus_0x4330_into_manager_374": false,
+    "exact_root_direct_callee_count": 9,
+    "exact_root_direct_manager_374_writer_count": 1,
+    "only_direct_nonzero_writer": "FUN_00d60660",
+    "only_direct_nonzero_writer_value_domain": "allocator-owned manager+0x2a0 selected entry",
+    "remaining_callee_forwarding_path_count": 17,
+    "remaining_computed_runtime_path_count": 18,
+    "remaining_returned_pointer_escape_path_count": 1
+  },
+  "upstream_contracts": [
+    "SHIFT.HDVehicle64e8Manager374ExactRootDirectCalleeSurface/1",
+    "SHIFT.HDVehicle64e8Manager374DirectWriteDspRejection/1"
+  ],
+  "version": 1
+}
