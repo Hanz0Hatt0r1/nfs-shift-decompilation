@@ -1,0 +1,68 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_is_selected_wheel_ruled_out": false,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "fun0067b660_constructor_layout_complete": true,
+    "fun0067b660_exact_vtable_slot_4_proven": true,
+    "fun0067b660_source_record_layout_complete": true,
+    "p13a_fun0067b660_static_vtable_object_identity_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_bytes_adjudicate": true,
+    "platform": "PC retail 1.02",
+    "ranges": {
+      "callback_body": {"end_exclusive":"0x0067b720","sha256":"58bb8b26934ed847ac33567b21cbf58d1c333e75867687228e79b104d3e942f7","size":192,"start":"0x0067b660"},
+      "caller_parent_plus_2c0": {"end_exclusive":"0x0067b185","sha256":"551c4b69ad0bcc9253c9a8be50e59c2fca10a15e215b256da8784c597809dddd","size":37,"start":"0x0067b160"},
+      "caller_parent_plus_320": {"end_exclusive":"0x00d4b553","sha256":"9898fa6904e192ab669f7d350872ddc335c079240150baca15e4d9042df9832c","size":37,"start":"0x00d4b52e"},
+      "caller_parent_plus_8a0": {"end_exclusive":"0x00489176","sha256":"db85d347cde63d7a05264a567fb1db27757e4c77c68303682036cf166e92d7ce","size":16,"start":"0x00489166"},
+      "constructor": {"end_exclusive":"0x0067b849","sha256":"d592315b9df2a6c6b49723b87c26095436f8b19faa590a31b1ebba7ee34d8ef4","size":153,"start":"0x0067b7b0"},
+      "destructor": {"end_exclusive":"0x0067b8bc","sha256":"59690907327bdaf8336880ceb03ce9354323da4ae91bc625fe7d58c939ef1857","size":108,"start":"0x0067b850"},
+      "object_vtable": {"end_exclusive":"0x00af7550","sha256":"05cf68ee84264357361e9d7956aa279eda83851a024e29d58f806b8675545b37","size":12,"start":"0x00af7544"},
+      "source_record_vtable": {"end_exclusive":"0x00af74fc","sha256":"f93268918771209fe4428fbc9826136cfdb11477e1b4776580be96ec5925afb8","size":8,"start":"0x00af74f4"}
+    },
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AQueueRegistrationFrontier/1"
+  },
+  "callback_argument_boundary": {
+    "ghidra_stack_argument": "param_1 at [EBP+0x8]",
+    "note": "The constructor proves the class layout, but not what explicit stack argument the indirect slot +0x4 dispatcher supplies.",
+    "param1_equals_vtable_object_this_proven": false,
+    "param1_object_identity_complete": false,
+    "slot4_method_uses_ecx_receiver": false,
+    "slot4_target": "FUN_0067b660"
+  },
+  "constructor_layout": {
+    "constructor": "FUN_0067b7b0",
+    "direct_call_count": 3,
+    "direct_calls": ["0x00489171","0x0067b180","0x00d4b54e"],
+    "embedded_instance_offsets": ["parent+0x8a0","parent+0x2c0","parent+0x320"],
+    "queue_manager_offset": "+0x2b0",
+    "source_record_base": "+0x130",
+    "source_record_count": 7,
+    "source_record_stride": "0x30",
+    "source_record_vtable": "0x00af74f4",
+    "source_record_vtable_entries": ["0x0067b300","0x0067b730"]
+  },
+  "format": "SHIFT.P1A.P13AFun0067b660StaticVtableObject/1",
+  "limits": [
+    "This proves that 0x0067b660 is exactly vtable slot +0x4 of the class constructed by FUN_0067b7b0 and pins that class layout.",
+    "The constructor creates exactly seven embedded source records starting at this+0x130 with stride 0x30, installs source-record vptr 0x00af74f4, and initializes the queue manager at this+0x2b0.",
+    "FUN_0067b7b0 has exactly three direct construction sites, embedding instances at parent+0x8a0, parent+0x2c0 and parent+0x320.",
+    "The slot +0x4 method ignores ECX and consumes an explicit stack param_1. This contract does not assume param_1 equals the vtable object receiver; its dispatcher/argument provenance remains open."
+  ],
+  "machine_anchors": {
+    "caller_2c0_call":"0x0067b180 call 0x67b7b0","caller_2c0_receiver":"0x0067b165 lea ecx,[esi+0x2c0]","caller_320_call":"0x00d4b54e call 0x67b7b0","caller_320_receiver":"0x00d4b533 lea ecx,[ebx+0x320]","caller_8a0_call":"0x00489171 call 0x67b7b0","caller_8a0_receiver":"0x0048916b lea ecx,[esi+0x8a0]","ctor_queue_base":"0x0067b838 lea ecx,[esi+0x2b0]","ctor_queue_init":"0x0067b83e call 0xa62cb0","ctor_source_base":"0x0067b81a lea edi,[esi+0x130]","ctor_source_construct":"0x0067b825 call 0xa62620","ctor_source_loop_backedge":"0x0067b836 jns 0x67b823","ctor_source_loop_count_derive":"0x0067b820 lea ebx,[eax-0x9]","ctor_source_loop_count_seed":"0x0067b7f5 mov eax,0x10","ctor_source_loop_dec":"0x0067b833 sub ebx,0x1","ctor_source_stride":"0x0067b830 add edi,0x30","ctor_source_vptr_store":"0x0067b82a mov DWORD PTR [edi],0xaf74f4","ctor_vptr_store":"0x0067b7c5 mov DWORD PTR [esi],0xaf7544","dtor_queue_base":"0x0067b855 lea ecx,[esi+0x2b0]","dtor_queue_destroy":"0x0067b861 call 0xa62d40","dtor_vptr_restore":"0x0067b85b mov DWORD PTR [esi],0xaf7544"
+  },
+  "next_step": "Recover indirect dispatch to vtable 0x00af7544 slot +0x4 and prove the explicit stack param_1 identity. Only then classify the remaining direct FUN_00a62f60 source at 0x0067b69e.",
+  "object_vtable": {"address":"0x00af7544","entries":[{"role":"destructor-like","slot":"+0x0","target":"0x0067b8c0"},{"role":"queue-registration callback frontier","slot":"+0x4","target":"0x0067b660"},{"role":"state method","slot":"+0x8","target":"0x0067b330"}],"fun0067b660_is_exact_slot_4":true},
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "version": 1
+}
