@@ -1,0 +1,70 @@
+{
+  "format": "SHIFT.P1A.P13AStaticCarrierSeedHandoff/1",
+  "version": 1,
+  "ready": true,
+  "owner": "Process 1A / P1.3A",
+  "upstream_contracts": [
+    "SHIFT.P1A.P13ASlot01StaticCallbackTargetComposition/1",
+    "SHIFT.P1A.P13AExactCarrierWholeImagePointerLiteralClosure/1",
+    "SHIFT.P1A.P13AExactCarrierTextRvaLiteralClosure/1",
+    "SHIFT.P1A.P13AExactCarrierRdataRvaDiagnosticClosure/1",
+    "SHIFT.P1A.P13APeBaseRelocationCarrierClosure/1",
+    "SHIFT.P1A.P13AExactCarrierIncomingIndirectIndexFrontier/1"
+  ],
+  "carrier_set": {
+    "count": 16,
+    "rows": [
+      {"name":"FUN_00758b50","address":"0x00758b50"},
+      {"name":"FUN_00755950","address":"0x00755950"},
+      {"name":"FUN_00770e80","address":"0x00770e80"},
+      {"name":"FUN_00755a60","address":"0x00755a60"},
+      {"name":"FUN_00752fc0","address":"0x00752fc0"},
+      {"name":"FUN_00760b50","address":"0x00760b50"},
+      {"name":"FUN_00763570","address":"0x00763570"},
+      {"name":"FUN_00755f80","address":"0x00755f80"},
+      {"name":"FUN_0076d100","address":"0x0076d100"},
+      {"name":"FUN_00758810","address":"0x00758810"},
+      {"name":"FUN_00769ef0","address":"0x00769ef0"},
+      {"name":"FUN_007675f0","address":"0x007675f0"},
+      {"name":"FUN_007682c0","address":"0x007682c0"},
+      {"name":"FUN_00766510","address":"0x00766510"},
+      {"name":"FUN_00758fc0","address":"0x00758fc0"},
+      {"name":"FUN_00765c40","address":"0x00765c40"}
+    ]
+  },
+  "bounded_static_seed_surface": {
+    "exported_vtable_exact_carrier_hits": 0,
+    "exported_static_table_exact_carrier_hits": 0,
+    "whole_image_absolute_va_literal_hits": 0,
+    "whole_image_raw_rva_matches": 2,
+    "whole_image_raw_rva_semantic_pointer_hits": 0,
+    "pe_base_relocation_records_present": false,
+    "exact_carrier_callind_caller_edges": 0,
+    "incoming_indirect_index_edges": 19500,
+    "incoming_indirect_index_resolved_targets": 0
+  },
+  "adjudication": {
+    "p13a_bounded_on_disk_static_exact_carrier_seed_surface_complete": true,
+    "p13a_bounded_on_disk_static_exact_carrier_seed_hit_found": false,
+    "p13a_standard_pe_loader_relocation_seed_path_ruled_out": true,
+    "p13a_incoming_indirect_index_capability_gap_explicit": true,
+    "runtime_callback_registration_ruled_out": false,
+    "incoming_indirect_entry_ruled_out": false,
+    "manual_imagebase_plus_rva_pointer_construction_ruled_out": false,
+    "encoded_or_reconstructed_carrier_pointers_ruled_out": false,
+    "runtime_generated_or_copied_carrier_pointers_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "The complete flag is scoped to the explicitly composed on-disk/static classes: exported vtable/static tables, raw absolute-VA literals, raw RVA byte matches, and standard PE base relocations.",
+    "The incoming-indirect SQLite result is a capability gap, not negative semantic evidence: all 19,500 indirect targets are unresolved.",
+    "Manual arithmetic reconstruction, encoded pointers, runtime callback registration, incoming indirect entry, runtime copies/generated code pointers and selected-wheel data-pointer persistence remain open.",
+    "No slot0/slot1, global stored-or-escaped-alias or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Trace runtime/generated/encoded carrier pointer construction and callback registration/incoming dispatch, while continuing selected-wheel data-pointer persistence independently."
+}
