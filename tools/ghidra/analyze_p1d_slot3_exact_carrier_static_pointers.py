@@ -35,6 +35,7 @@ CARRIERS = {
     "FUN_007682c0": 0x007682C0,
     "FUN_00766510": 0x00766510,
     "FUN_00758fc0": 0x00758FC0,
+    "FUN_00765c40": 0x00765C40,
 }
 ADDR_TO_NAME = {value: key for key, value in CARRIERS.items()}
 
@@ -156,7 +157,7 @@ def analyze(vtables_path: Path, static_tables_path: Path) -> dict:
         "carrier_set": {
             "count": len(carriers),
             "rows": carriers,
-            "semantic_identity_source": "merged P1D exact-root/exact-wheel retail machine contracts",
+            "semantic_identity_source": "merged P1D exact-root/exact-wheel retail machine contracts including SHIFT.P1D.Slot3Fun00765c40CarrierHandoff/1",
         },
         "vtable_surface": {
             "candidate_table_count": vtable_result["table_count"],
