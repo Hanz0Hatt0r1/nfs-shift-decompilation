@@ -1,0 +1,55 @@
+{
+  "adjudication": {
+    "bounded_indirect_entry_coverage_composed": true,
+    "bounded_indirect_entry_exact_4330_carrier_hit_found": false,
+    "bsearch_closed_and_included": true,
+    "computed_or_encoded_code_pointers_ruled_out": false,
+    "constant_only_encoded_carrier_synthesis_subset_included": true,
+    "exact_imagebase_plus_exact_rva_immediate_seed_subset_included": true,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "image_backed_direct_table_seed_subset_included": true,
+    "image_backed_text_base_delta_table_seed_subset_included": true,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "memory_table_derived_carrier_pointers_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "remaining_callback_api_families_ruled_out": false,
+    "runtime_callback_registration_ruled_out": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/4",
+  "limits": [
+    "This supersedes /3 by adding two bounded image-backed table seed classes.",
+    "Direct exact VA/RVA table elements and direct .text-base-delta data-table elements are closed negative for the canonical 15 P1B carriers.",
+    "Other transformed/delta chains, other section bases, runtime-populated tables, cross-block arithmetic, runtime-copied pointers, delayed module-base consumers, runtime patching, remaining callback families and opaque indirect dispatch remain open."
+  ],
+  "next_step": "Bound cross-block or runtime-populated memory/table-derived exact-carrier reconstruction and classify any positive pointer store/copy sinks before promoting global indirect-entry gates.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "supersedes": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/3",
+  "surface": {
+    "bounded_exact_carrier_hit_count": 0,
+    "composed_coverage_class_count": 7,
+    "coverage": [
+      {"class":"static/source-visible exact carrier materialization","exact_carrier_hit_count":0,"subclass_count":4},
+      {"class":"canonical computed/loader entry publication","exact_carrier_hit_count":0,"subclass_count":3},
+      {"class":"bounded runtime callback registration","exact_carrier_hit_count":0,"physical_callsite_count":51,"possible_entrypoint_count":36,"subclass_count":8},
+      {"carrier_superset_count":16,"class":"exact preferred-imagebase + exact carrier-RVA immediate synthesis","disassembled_instruction_count":2847850,"exact_carrier_hit_count":0,"exact_carrier_rva_scalar_use_count":0},
+      {"class":"constant-only straight-line encoded carrier synthesis","constant_seed_count":67970,"exact_carrier_hit_count":0,"instruction_count":2847850,"recognized_transition_count":2168},
+      {"class":"direct image-backed exact VA/RVA table seeds","exact_carrier_hit_count":0,"exact_rva_seed_count":0,"exact_va_seed_count":0,"static_table_record_count":55066,"whole_image_raw_bytes_scanned":8801792},
+      {"class":"image-backed .text-base delta table seeds","exact_carrier_hit_count":0,"non_executable_table_seed_count":0,"raw_diagnostic_count":1,"rel32_diagnostic_count":1,"unclassified_executable_diagnostic_count":0}
+    ],
+    "p1b_exact_carrier_count": 15
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/3",
+    "SHIFT.P1B.HDVehicle4330ImageBackedTableSeedClosure/1",
+    "SHIFT.P1B.HDVehicle4330TextBaseDeltaTableSeedSurface/1"
+  ],
+  "version": 4
+}
