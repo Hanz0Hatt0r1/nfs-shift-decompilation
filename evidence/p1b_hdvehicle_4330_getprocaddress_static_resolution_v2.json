@@ -1,0 +1,71 @@
+{
+  "adjudication": {
+    "cfg_aware_register_loaded_getprocaddress_surface_complete": true,
+    "dynamic_getprocaddress_resolution_ruled_out": false,
+    "external_provider_count": 7,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "known_getprocaddress_patch_api_resolution_found": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "runtime_patching_or_generated_code_ruled_out": false,
+    "v1_linear_scan_count_superseded": true
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_bytes_are_machine_authority": true,
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_file_size": 8801792
+  },
+  "format": "SHIFT.P1B.HDVehicle4330GetProcAddressStaticResolutionSurface/2",
+  "getprocaddress_surface": {
+    "classified_instruction_reference_count": 19,
+    "direct_iat_call_reference_count": 12,
+    "generic_wrapper": "0x0093dd2b",
+    "generic_wrapper_direct_caller_count": 12,
+    "generic_wrapper_direct_caller_names": [
+      "_FMODGetCodecDescription@0",
+      "_FMODGetCodecDescriptionEx@0",
+      "_FMODGetDSPDescription@0",
+      "_FMODGetDSPDescriptionEx@0",
+      "_FMODGetOutputDescription@0",
+      "_FMODGetOutputDescriptionEx@0",
+      "VSTPluginMain",
+      "main",
+      "winampDSPGetHeader2",
+      "AvSetMmThreadCharacteristicsA",
+      "AvSetMmThreadCharacteristicsA",
+      "AvSetMmThreadCharacteristicsA"
+    ],
+    "iat_load_reference_count": 7,
+    "iat_va": "0x00aa62fc",
+    "known_name_instance_count": 112,
+    "known_patch_api_name_hits": [],
+    "known_unique_name_count": 108,
+    "physical_getprocaddress_callsite_count": 101,
+    "register_loaded_callsite_count": 89,
+    "register_loaded_families": [
+      {"callsite_count": 2, "first_callsite": "0x0090abfd", "last_callsite": "0x0090ac0d", "loadsite": "0x0090abf7", "register": "ebx"},
+      {"callsite_count": 4, "first_callsite": "0x0090aeb8", "last_callsite": "0x0090aedf", "loadsite": "0x0090aeac", "register": "esi"},
+      {"callsite_count": 5, "first_callsite": "0x0091c0bc", "last_callsite": "0x0091c13b", "loadsite": "0x0091c0b0", "register": "esi"},
+      {"callsite_count": 2, "first_callsite": "0x0096daae", "last_callsite": "0x0096dac0", "loadsite": "0x0096daa2", "register": "esi"},
+      {"callsite_count": 6, "first_callsite": "0x0099a003", "last_callsite": "0x0099a116", "loadsite": "0x00999fe7", "register": "edi"},
+      {"callsite_count": 67, "first_callsite": "0x009a7e54", "last_callsite": "0x009a84d5", "loadsite": "0x009a7e40", "register": "esi"},
+      {"callsite_count": 3, "first_callsite": "0x00a62360", "last_callsite": "0x00a623c2", "loadsite": "0x00a62354", "register": "ebx"}
+    ],
+    "register_loaded_family_count": 7,
+    "v1_physical_getprocaddress_callsite_count": 98,
+    "v1_register_loaded_callsite_count": 86,
+    "v2_newly_recovered_callsites": ["0x0099a116", "0x00a623b8", "0x00a623c2"]
+  },
+  "limits": [
+    "CFG-aware traversal closes only static lifetimes rooted at the seven imported GetProcAddress IAT loads. Runtime-generated resolver aliases, external resolver pointers and unrelated pointer tables remain open."
+  ],
+  "next_step": "Classify the 89 CFG-aware register-loaded GetProcAddress result lineages and compose resolver-populated function-pointer storage coverage.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "version": 2
+}
