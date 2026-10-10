@@ -1,0 +1,90 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "dynamic_registry_reconstructed_or_indirect_registration_ruled_out": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "explicit_stack_local_fun005ffc50_reconstruction_found": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "p13a_fun005ffc50_readonly_image_and_explicit_stack_reconstruction_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "readonly_image_backed_fun005ffc50_reconstruction_found": false,
+    "readonly_image_or_stack_fun005ffc50_indirect_transfer_found": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "static_seed_sections": {
+      ".rdata": {
+        "end_exclusive": "0x00b80bb7",
+        "raw_offset": "0x006a4a00",
+        "start": "0x00aa6000"
+      },
+      ".text": {
+        "end_exclusive": "0x00aa5489",
+        "raw_offset": "0x00000400",
+        "start": "0x00401000"
+      }
+    },
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50SimpleImmediateReconstruction/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50StaticMemoryStackReconstruction/1",
+  "inventory": {
+    "exact_target_indirect_transfer_count": 0,
+    "exact_target_register_materialization_count": 0,
+    "exact_target_stack_materialization_count": 0,
+    "image_backed_dword_load_count": 484,
+    "image_backed_dword_load_count_by_section": {
+      ".rdata": 483,
+      ".text": 1
+    },
+    "indirect_transfers": [],
+    "register_materializations": [],
+    "stack_materializations": []
+  },
+  "limits": [
+    "This contract tracks only image-backed 32-bit dword seeds from .text/.rdata and explicit syntactic stack locals within one straight-line region.",
+    "Writable .data state is deliberately not treated as immutable because startup/runtime code may replace it before a load.",
+    "Unknown pointer-based memory writes clear tracked stack constants; memory aliasing through arbitrary pointers is not proven absent.",
+    "Calls and control-flow transfers reset state, so return-address/PIC reconstruction, inter-block dataflow, return-value provenance, runtime-generated pointers, encoded/split values, and writable-memory callback slots remain open.",
+    "No global reconstructed-entry, callback, slot0, slot1, stored-alias, runtime selected-wheel-store-negative, or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Trace writable-memory/runtime callback slots, return-address/PIC construction, or inter-block incoming entry to FUN_005ffc50; direct/raw, simple GPR, read-only image seed and explicit stack-local reconstruction subsets are now separately bounded.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "decoded_instruction_count": 2847850,
+    "state_resets_on": [
+      "call/jmp after transfer check",
+      "conditional branch/loop",
+      "ret/int/ud2/leave"
+    ],
+    "target": "FUN_005ffc50",
+    "target_address": "0x005ffc50",
+    "tracked_stack_sources": [
+      "explicit [esp+disp] slots with ESP delta",
+      "explicit [ebp+disp] slots after mov ebp,esp",
+      "push/pop values"
+    ],
+    "tracked_static_sources": [
+      "32-bit dword loads from image .text",
+      ".rdata"
+    ],
+    "tracked_transformations": [
+      "mov",
+      "lea over known GPR address terms",
+      "add/sub/xor/or/and",
+      "shifts",
+      "inc/dec/neg/not",
+      "imul reg,known,imm",
+      "xchg"
+    ],
+    "unknown_pointer_memory_write_clears_stack_constants": true
+  },
+  "version": 1
+}
