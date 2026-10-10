@@ -10,6 +10,7 @@ NONTHREAD = ROOT / "evidence/p1b_hdvehicle_4330_nonthread_callback_closure.json"
 MASSIVE = ROOT / "evidence/p1b_hdvehicle_4330_massive_thread_callback_wrapper.json"
 QSORT = ROOT / "evidence/p1b_hdvehicle_4330_qsort_callback_surface.json"
 WINMM = ROOT / "evidence/p1b_hdvehicle_4330_winmm_callback_surface.json"
+UNHANDLED = ROOT / "evidence/p1b_hdvehicle_4330_unhandled_exception_filter_surface.json"
 
 
 def load_module():
@@ -26,21 +27,28 @@ def load_evidence():
 
 def test_builder_reproduces_committed_coverage():
     module = load_module()
-    built = module.build(THREAD, NONTHREAD, MASSIVE, QSORT, WINMM)
+    built = module.build(THREAD, NONTHREAD, MASSIVE, QSORT, WINMM, UNHANDLED)
     assert built == load_evidence()
-    assert module.FORMAT == "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/1"
-    assert module.EXPECTED_TOTAL_CALLSITES == 45
+    assert module.FORMAT == "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/2"
+    assert module.SUPERSEDES == "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/1"
+    assert module.EXPECTED_TOTAL_CALLSITES == 48
     assert module.EXPECTED_UNIQUE_ENTRYPOINTS == 33
 
 
 def test_bounded_runtime_callback_coverage_is_zero_hit():
     data = load_evidence()
     surface = data["surface"]
-    assert surface["closed_surface_count"] == 5
-    assert surface["bounded_callback_capable_callsite_count"] == 45
+    assert surface["closed_surface_count"] == 6
+    assert surface["bounded_callback_capable_callsite_count"] == 48
     assert surface["unique_possible_callback_entrypoint_count"] == 33
     assert surface["exact_4330_carrier_entrypoint_hit_count"] == 0
     assert all(row["exact_4330_carrier_hit_count"] == 0 for row in surface["coverage"])
+    assert surface["coverage"][-1] == {
+        "surface": "SetUnhandledExceptionFilter",
+        "physical_callsite_count": 3,
+        "possible_entrypoint_count": 0,
+        "exact_4330_carrier_hit_count": 0,
+    }
 
 
 def test_global_callback_and_indirect_gates_stay_fail_closed():

@@ -13,18 +13,19 @@
     "remaining_callback_api_families_ruled_out": false,
     "runtime_callback_registration_ruled_out": false
   },
-  "format": "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/1",
+  "format": "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/2",
   "limits": [
-    "This composes only five callback/indirect-entry surfaces already proven by dedicated retail contracts.",
+    "This composes only six callback/indirect-entry surfaces already proven by dedicated retail contracts.",
     "It does not claim that all callback-capable APIs or application-owned wrappers are inventoried.",
     "Generic function-pointer stores/copies, computed or encoded code pointers, vtable-driven runtime registration and other indirect dispatch remain open."
   ],
   "next_step": "Use this aggregate as the no-duplication baseline, then inventory remaining finite callback API families and generic function-pointer stores/copies before promoting global indirect-entry gates.",
   "owner": "Process 1B / P1.3B",
   "ready": true,
+  "supersedes": "SHIFT.P1B.HDVehicle4330RuntimeCallbackCoverage/1",
   "surface": {
-    "bounded_callback_capable_callsite_count": 45,
-    "closed_surface_count": 5,
+    "bounded_callback_capable_callsite_count": 48,
+    "closed_surface_count": 6,
     "coverage": [
       {
         "exact_4330_carrier_hit_count": 0,
@@ -55,6 +56,12 @@
         "physical_callsite_count": 6,
         "possible_entrypoint_count": 2,
         "surface": "WinMM waveOut/waveIn/timeSetEvent callbacks"
+      },
+      {
+        "exact_4330_carrier_hit_count": 0,
+        "physical_callsite_count": 3,
+        "possible_entrypoint_count": 0,
+        "surface": "SetUnhandledExceptionFilter"
       }
     ],
     "exact_4330_carrier_entrypoint_hit_count": 0,
@@ -100,7 +107,8 @@
     "SHIFT.P1B.HDVehicle4330NonThreadCallbackClosure/1",
     "SHIFT.P1B.HDVehicle4330MassiveThreadCallbackWrapper/1",
     "SHIFT.P1B.HDVehicle4330QsortCallbackSurface/1",
-    "SHIFT.P1B.HDVehicle4330WinMMCallbackSurface/1"
+    "SHIFT.P1B.HDVehicle4330WinMMCallbackSurface/1",
+    "SHIFT.P1B.HDVehicle4330UnhandledExceptionFilterSurface/1"
   ],
-  "version": 1
+  "version": 2
 }
