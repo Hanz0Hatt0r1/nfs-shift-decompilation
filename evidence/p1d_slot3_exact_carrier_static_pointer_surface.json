@@ -10,7 +10,7 @@
     "exports_are_navigation_crosscheck_only": true
   },
   "carrier_set": {
-    "count": 15,
+    "count": 16,
     "rows": [
       {"name": "FUN_00758b50", "address": "0x00758b50"},
       {"name": "FUN_00755950", "address": "0x00755950"},
@@ -26,9 +26,10 @@
       {"name": "FUN_007675f0", "address": "0x007675f0"},
       {"name": "FUN_007682c0", "address": "0x007682c0"},
       {"name": "FUN_00766510", "address": "0x00766510"},
-      {"name": "FUN_00758fc0", "address": "0x00758fc0"}
+      {"name": "FUN_00758fc0", "address": "0x00758fc0"},
+      {"name": "FUN_00765c40", "address": "0x00765c40"}
     ],
-    "semantic_identity_source": "merged P1D exact-root/exact-wheel retail machine contracts"
+    "semantic_identity_source": "merged P1D exact-root/exact-wheel retail machine contracts including SHIFT.P1D.Slot3Fun00765c40CarrierHandoff/1"
   },
   "vtable_surface": {
     "candidate_table_count": 2533,

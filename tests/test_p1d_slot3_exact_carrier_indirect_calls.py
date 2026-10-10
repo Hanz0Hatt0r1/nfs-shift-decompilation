@@ -18,7 +18,13 @@ def load_module():
 
 def test_pinned_retail_surface():
     data = json.loads(EVIDENCE.read_text(encoding="utf-8"))
-    assert data["carrier_set"]["count"] == 15
+    assert data["carrier_set"]["count"] == 16
+    assert data["carrier_set"]["functions"][-1] == {
+        "address": "0x00765c40",
+        "name": "FUN_00765c40",
+        "size": 2249,
+        "mnemonic_sha256": "dcebcb4d773245033351265d65f7e2212cb60d097f323b84379bd2000a5a1df4",
+    }
     assert data["indirect_surface"]["whole_index_indirect_call_edge_count"] == 19500
     assert data["indirect_surface"]["carrier_indirect_call_edge_count"] == 0
     assert data["adjudication"]["known_exact_carrier_indirect_call_edge_surface_complete"] is True
@@ -48,7 +54,7 @@ def test_synthetic_indirect_edge_is_not_hidden(monkeypatch, tmp_path):
     for addr, name in m.CARRIERS.items():
         size, digest = m.EXPECTED[addr]
         db.execute("INSERT INTO functions VALUES(?,?,?)", (addr, name, json.dumps({"size":size,"mnemonic_sha256":digest})))
-    db.execute("INSERT INTO calls VALUES(?,?,?,?,?)", ("0x00755950","","0x00755960","call",json.dumps({"from_function":"0x00755950","from_name":"FUN_00755950","instruction":"0x00755960","indirect":True,"to":None,"to_name":None})))
+    db.execute("INSERT INTO calls VALUES(?,?,?,?,?)", ("0x00765c40","","0x00765d00","call",json.dumps({"from_function":"0x00765c40","from_name":"FUN_00765c40","instruction":"0x00765d00","indirect":True,"to":None,"to_name":None})))
     db.commit(); db.close()
     monkeypatch.setattr(m, "sha256", lambda path: m.SQLITE_SHA256)
     result = m.analyze(db_path)

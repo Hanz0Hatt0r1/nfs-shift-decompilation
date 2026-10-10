@@ -15,7 +15,7 @@ CARRIERS={
  "0x0076d100":"FUN_0076d100","0x00758810":"FUN_00758810",
  "0x00769ef0":"FUN_00769ef0","0x007675f0":"FUN_007675f0",
  "0x007682c0":"FUN_007682c0","0x00766510":"FUN_00766510",
- "0x00758fc0":"FUN_00758fc0",
+ "0x00758fc0":"FUN_00758fc0","0x00765c40":"FUN_00765c40",
 }
 EXPECTED={
  "0x00758b50":(1136,"3ef5ee12cb0af2f75b5e039dacaf95e42b40002cb681dc1cf00556c6bebe1eeb"),
@@ -33,6 +33,7 @@ EXPECTED={
  "0x007682c0":(335,"f60c733cc0d0b3c755b3104953d1dc1d623d15f33978a6cbe50de7947b7f5d34"),
  "0x00766510":(4310,"3559c0125cdda2b171b357d35392d93eaba68db86899ec5b44730a6533b91098"),
  "0x00758fc0":(364,"515ba898241d40c003ea49958052af13cdf765af3dc66d275b5238447e3b395b"),
+ "0x00765c40":(2249,"dcebcb4d773245033351265d65f7e2212cb60d097f323b84379bd2000a5a1df4"),
 }
 
 def sha256(path:Path)->str:
@@ -68,7 +69,7 @@ def analyze(database:Path)->dict:
   return {
    'format':FORMAT,'version':1,'ready':True,'owner':'Process 1D / P1.3D',
    'authority':{'platform':'PC retail 1.02','ghidra_sqlite_sha256':digest,'ghidra_sqlite_format':fmt,'sqlite_is_navigation_index':True},
-   'carrier_set':{'count':len(admitted),'functions':admitted,'semantic_identity_source':'merged P1D exact-root/exact-wheel machine contracts'},
+   'carrier_set':{'count':len(admitted),'functions':admitted,'semantic_identity_source':'merged P1D exact-root/exact-wheel machine contracts including SHIFT.P1D.Slot3Fun00765c40CarrierHandoff/1'},
    'indirect_surface':{'whole_index_indirect_call_edge_count':total_indirect,'carrier_indirect_call_edge_count':len(carrier_indirect),'carrier_indirect_call_edges':carrier_indirect},
    'adjudication':{
     'sqlite_indirect_call_edge_class_present':True,
@@ -84,7 +85,7 @@ def analyze(database:Path)->dict:
     'external_provider_count':7,
    },
    'limits':[
-    'This is only the Ghidra-recorded CALLIND surface whose caller is one of the 15 already-proven exact carrier functions.',
+    'This is only the Ghidra-recorded CALLIND surface whose caller is one of the 16 already-proven exact carrier functions.',
     'Zero CALLIND rows does not rule out pointers stored for later use, callbacks invoked elsewhere, indirect entry into a carrier, or aliases created in other functions.',
     'Function fingerprints and call rows are navigation/cross-check evidence; existing merged machine contracts remain semantic authority for selected-object identity.'
    ],

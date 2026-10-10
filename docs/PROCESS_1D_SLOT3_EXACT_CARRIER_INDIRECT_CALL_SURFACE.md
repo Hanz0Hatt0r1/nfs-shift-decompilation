@@ -2,17 +2,17 @@
 
 After the merged P1D exact-root/exact-wheel closures, this pass asks a narrow question: do any of those already-proven carrier functions themselves execute a Ghidra-recorded indirect call (`CALLIND`)?
 
-The authoritative Drive SQLite index contains **19,500** `indirect=true` call edges overall, so the edge class is present in the export. The 15 pinned exact-carrier functions are fingerprinted by address, size, and mnemonic SHA-256 before their call rows are inspected.
+The authoritative Drive SQLite index contains **19,500** `indirect=true` call edges overall, so the edge class is present in the export. After `SHIFT.P1D.Slot3Fun00765c40CarrierHandoff/1`, the exact-carrier set contains **16** functions. Every carrier is fingerprinted by address, size, and mnemonic SHA-256 before its call rows are inspected.
 
 Result:
 
 ```text
 whole SQLite indirect-call edges: 19500
-proven exact carrier functions:       15
+proven exact carrier functions:       16
 indirect-call edges from carriers:     0
 ```
 
-The carrier set covers the already-proven direct slot3 lifecycle chains through `FUN_00758b50/FUN_00755950`, `FUN_00770e80` descendants, `FUN_00763570/FUN_00755f80`, `FUN_0076d100` descendants including `FUN_00758810` and `FUN_00769ef0`, and `FUN_00766510/FUN_00758fc0`.
+The carrier set covers the already-proven direct slot3 lifecycle chains through `FUN_00758b50/FUN_00755950`, `FUN_00770e80` descendants, `FUN_00763570/FUN_00755f80`, `FUN_0076d100` descendants including `FUN_00758810` and `FUN_00769ef0`, `FUN_00766510/FUN_00758fc0`, plus the completed exact-HDVehicle `FUN_00765c40` pass carrier.
 
 Reproduce:
 
@@ -24,7 +24,7 @@ python3 tools/ghidra/analyze_p1d_slot3_exact_carrier_indirect_calls.py \
 
 ## Boundary
 
-This closes only the Ghidra-recorded indirect-call edge surface **with a caller inside the 15 proven carrier functions**. It does not rule out:
+This closes only the Ghidra-recorded indirect-call edge surface **with a caller inside the 16 proven carrier functions**. It does not rule out:
 
 - exact pointers stored or escaped for later use;
 - callbacks invoked in some other function;
