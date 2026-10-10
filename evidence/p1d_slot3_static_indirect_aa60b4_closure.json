@@ -1,11 +1,14 @@
 {
   "adjudication": {
     "aa60b4_exact_hdvehicle_root_persistent_store_found": false,
+    "aa60b4_on_disk_value_is_code_target": false,
+    "aa60b4_runtime_import": "KERNEL32!InterlockedExchange",
     "aa60b4_runtime_unknown_target": false,
+    "aa60b4_scalar_state_target": "HDVehicle+0x4020",
     "aa60b4_selected_wheel_alias_found": false,
     "callee_created_aliases_ruled_out": false,
     "external_provider_count": 7,
-    "fun00770e80_aa60b4_static_indirect_subset_complete": true,
+    "fun00770e80_aa60b4_import_indirect_subset_complete": true,
     "other_indirect_entry_ruled_out": false,
     "p1_3_control_producer_complete": false,
     "p1_3d_complete": false,
@@ -14,44 +17,66 @@
     "stored_or_escaped_aliases_ruled_out": false
   },
   "authority": {
-    "machine_bytes_adjudicate": true,
+    "pe_import_table_adjudicates_indirect_target": true,
     "platform": "PC retail 1.02",
     "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
   },
   "callsites": [
-    {"address": "0x00770ec4", "caller_exact_root_register": "ESI=HDVehicle", "encoding": "ff 15 b4 60 aa 00"},
-    {"address": "0x00770f41", "caller_exact_root_register": "ESI=HDVehicle", "encoding": "ff 15 b4 60 aa 00"}
+    {
+      "address": "0x00770ec4",
+      "encoding": "ff 15 b4 60 aa 00",
+      "operation": "InterlockedExchange((LONG volatile*)(HDVehicle+0x4020), 1)",
+      "target_argument": "HDVehicle+0x4020",
+      "value_argument": 1
+    },
+    {
+      "address": "0x00770f41",
+      "encoding": "ff 15 b4 60 aa 00",
+      "operation": "InterlockedExchange((LONG volatile*)(HDVehicle+0x4020), 2)",
+      "target_argument": "HDVehicle+0x4020",
+      "value_argument": 2
+    }
   ],
-  "format": "SHIFT.P1D.Slot3StaticIndirectAA60B4Closure/1",
+  "format": "SHIFT.P1D.Slot3StaticIndirectAA60B4Closure/2",
+  "iat": {
+    "dll": "KERNEL32.dll",
+    "first_thunk_rva": "0x006a6088",
+    "import_descriptor_rva": "0x007776bc",
+    "import_hint": 553,
+    "import_name": "InterlockedExchange",
+    "import_name_rva": "0x00778052",
+    "on_disk_first_thunk_value": "0x00778052",
+    "on_disk_value_semantics": "IMAGE_IMPORT_BY_NAME RVA, not code VA",
+    "original_first_thunk_rva": "0x00777938",
+    "runtime_slot_semantics": "loader-resolved KERNEL32!InterlockedExchange address",
+    "slot_rva": "0x006a60b4",
+    "slot_section": ".rdata",
+    "slot_va": "0x00aa60b4",
+    "thunk_index": 11
+  },
   "limits": [
-    "This closes only the two FUN_00770e80 call-through-memory sites that use image slot 0x00aa60b4.",
-    "Read-only is an image-section property; arbitrary runtime code patching is not globally ruled out.",
-    "The target is an interior entry that inherits caller ESI/EBP state; no generic function-entry equivalence is assumed.",
+    "This closes only the two FUN_00770e80 calls through IAT slot 0x00aa60b4.",
+    "The on-disk FirstThunk value 0x00778052 is an IMAGE_IMPORT_BY_NAME RVA and must not be executed as a code VA.",
+    "Both bounded calls exchange scalar state at HDVehicle+0x4020; they do not materialize/store a selected wheel pointer.",
     "Other indirect calls, callbacks, reconstructed pointers and runtime-generated/copied aliases remain open."
   ],
-  "next_step": "Continue with other indirect/callback entry surfaces and hand-unrolled pointer-copy patterns before changing global alias gates.",
+  "next_step": "Continue with other indirect/callback entry surfaces and runtime-generated/copied selected-wheel pointer paths before changing global alias gates.",
   "owner": "Process 1D / P1.3D",
   "ready": true,
-  "static_slot": {
-    "address": "0x00aa60b4",
-    "section": ".rdata",
-    "section_readonly_in_image": true,
-    "value": "0x00778052",
-    "value_sha256": "645ad0d4ac2c159435cb407e7008790d2f26b34c0ef1f47327a44994167d7ba6"
-  },
-  "target_chain": {
-    "exact_root_persistent_store_found": false,
-    "fun0063f300_instruction_count": 34,
-    "fun0063f300_sha256": "568124aa784f7f57e9f3ca85c78cc524f7673a030db4cc1ff3bbbf6e697078e4",
-    "fun0063f350_exact_root_forward": "0x0063f37b ECX=ESI -> 0x0063f37d FUN_0063f300",
-    "fun0063f350_instruction_count": 62,
-    "fun0063f350_sha256": "078f68e1e3715a4acb0cf375671e6e0164848fbf554641d78cf77292a6b7d0f1",
-    "selected_wheel_root_materialization_found": false,
-    "static_target": "0x00778052 (interior of FUN_00777fe0)",
-    "target_fragment_exact_root_clobber": "0x0077806c ESI=-1",
-    "target_fragment_exact_root_forward": "0x00778056 ECX=ESI -> 0x0077805b FUN_0063f350",
-    "target_fragment_instruction_count": 9,
-    "target_fragment_sha256": "c4b76757adce88d4cdf64c40b72c934bf5a7a60a0cb5b529f3e5274124ae84d1"
-  },
-  "version": 1
+  "supersedes": "SHIFT.P1D.Slot3StaticIndirectAA60B4Closure/1",
+  "verified_caller_windows": [
+    {
+      "bytes": "6a018d862040000050ff15b460aa00",
+      "sha256": "687df04bb024afe13a22da177fd986c83e4fe3f1edcc273a20cad5e8737a1ce3",
+      "start": "0x00770ebb",
+      "stop": "0x00770eca"
+    },
+    {
+      "bytes": "6a02db45fc8d862040000050d9c0dc0fdd1fd9c0dc4f08dd5f08dc4f10dd5f10d9eed99624400000d99628400000d99e2c400000ff15b460aa00",
+      "sha256": "48505813af30c6aebc2287761d0793038d771593a40cd594dc8c831eb7355273",
+      "start": "0x00770f0d",
+      "stop": "0x00770f47"
+    }
+  ],
+  "version": 2
 }
