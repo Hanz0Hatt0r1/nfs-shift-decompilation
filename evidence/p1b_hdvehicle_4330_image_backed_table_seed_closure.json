@@ -1,0 +1,47 @@
+{
+  "adjudication": {
+    "computed_or_encoded_code_pointers_ruled_out": false,
+    "direct_imagebase_plus_image_table_exact_rva_seed_path_ruled_out": true,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "image_backed_direct_table_exact_carrier_seed_subset_complete": true,
+    "image_backed_exact_carrier_rva_table_seed_found": false,
+    "image_backed_exact_carrier_va_table_seed_found": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "memory_table_derived_carrier_pointers_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330ImageBackedTableSeedClosure/1",
+  "limits": [
+    "This closes only direct image-backed table elements that already contain an exact carrier absolute VA or exact carrier RVA.",
+    "The exhaustive retail-byte scan has zero exact P1B carrier VA and RVA encodings, so a direct load of such an image-backed element cannot seed an exact carrier pointer, including preferred-imagebase + exact-table-RVA.",
+    "Runtime-populated tables, transformed/delta/encoded entries, split or cross-block arithmetic, opaque helper returns, runtime patching and copied pointers remain open.",
+    "The Ghidra static-table export is a finite navigation cross-check; retail whole-image bytes are the authority for the zero direct VA/RVA seed claim."
+  ],
+  "next_step": "Bound transformed/delta table entries and cross-block memory-derived carrier reconstruction, then classify any positive runtime store/copy sinks.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "direct_image_backed_exact_rva_table_seed_count": 0,
+    "direct_image_backed_exact_va_table_seed_count": 0,
+    "p1b_exact_carrier_count": 15,
+    "retail_file_size": 8801792,
+    "static_table_exact_carrier_absolute_va_hit_count": 0,
+    "static_table_raw_bytes_scanned": 684472,
+    "static_table_record_count": 55066,
+    "whole_image_exact_carrier_absolute_va_hit_count": 0,
+    "whole_image_exact_carrier_rva_hit_count": 0,
+    "whole_image_raw_bytes_scanned": 8801792
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330WholeImageLiteralPointerSurface/1",
+    "SHIFT.P1B.HDVehicle4330ExactCarrierStaticTableSurface/1"
+  ],
+  "version": 1
+}
