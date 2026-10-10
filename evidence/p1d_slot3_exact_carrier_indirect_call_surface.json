@@ -10,7 +10,7 @@
     "sqlite_is_navigation_index": true
   },
   "carrier_set": {
-    "count": 15,
+    "count": 16,
     "functions": [
       {"address":"0x00758b50","name":"FUN_00758b50","size":1136,"mnemonic_sha256":"3ef5ee12cb0af2f75b5e039dacaf95e42b40002cb681dc1cf00556c6bebe1eeb"},
       {"address":"0x00755950","name":"FUN_00755950","size":66,"mnemonic_sha256":"976369508b2d92e05d62cfb8d489f19e40c1ec4a145203c84346d5abe89089b8"},
@@ -26,9 +26,10 @@
       {"address":"0x007675f0","name":"FUN_007675f0","size":1340,"mnemonic_sha256":"8d112f82c1deec91c6a197002fcf37b5201dc3377e0cfd9bb23d795afbbf72d7"},
       {"address":"0x007682c0","name":"FUN_007682c0","size":335,"mnemonic_sha256":"f60c733cc0d0b3c755b3104953d1dc1d623d15f33978a6cbe50de7947b7f5d34"},
       {"address":"0x00766510","name":"FUN_00766510","size":4310,"mnemonic_sha256":"3559c0125cdda2b171b357d35392d93eaba68db86899ec5b44730a6533b91098"},
-      {"address":"0x00758fc0","name":"FUN_00758fc0","size":364,"mnemonic_sha256":"515ba898241d40c003ea49958052af13cdf765af3dc66d275b5238447e3b395b"}
+      {"address":"0x00758fc0","name":"FUN_00758fc0","size":364,"mnemonic_sha256":"515ba898241d40c003ea49958052af13cdf765af3dc66d275b5238447e3b395b"},
+      {"address":"0x00765c40","name":"FUN_00765c40","size":2249,"mnemonic_sha256":"dcebcb4d773245033351265d65f7e2212cb60d097f323b84379bd2000a5a1df4"}
     ],
-    "semantic_identity_source": "merged P1D exact-root/exact-wheel machine contracts"
+    "semantic_identity_source": "merged P1D exact-root/exact-wheel machine contracts including SHIFT.P1D.Slot3Fun00765c40CarrierHandoff/1"
   },
   "indirect_surface": {
     "whole_index_indirect_call_edge_count": 19500,
@@ -49,7 +50,7 @@
     "external_provider_count": 7
   },
   "limits": [
-    "This is only the Ghidra-recorded CALLIND surface whose caller is one of the 15 already-proven exact carrier functions.",
+    "This is only the Ghidra-recorded CALLIND surface whose caller is one of the 16 already-proven exact carrier functions.",
     "Zero CALLIND rows does not rule out pointers stored for later use, callbacks invoked elsewhere, indirect entry into a carrier, or aliases created in other functions.",
     "Function fingerprints and call rows are navigation/cross-check evidence; existing merged machine contracts remain semantic authority for selected-object identity."
   ],
