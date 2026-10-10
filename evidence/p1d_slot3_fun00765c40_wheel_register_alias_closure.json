@@ -1,0 +1,78 @@
+{
+  "adjudication": {
+    "callee_created_aliases_ruled_out": false,
+    "external_provider_count": 7,
+    "fun00752fa0_selected_slot3_writer_found": false,
+    "fun00765c40_four_wheel_register_alias_subset_complete": true,
+    "fun00765c40_selected_slot3_pointer_escape_found": false,
+    "fun00765c40_selected_slot3_register_alias_reached": true,
+    "machine_register_alias_storage_ruled_out": false,
+    "other_fun00765c40_derived_aliases_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "runtime_generated_pointer_stores_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_transfer_adjudicates": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_machine_contracts_consumed_not_reowned": true
+  },
+  "callee": {
+    "direct_call_count": 0,
+    "ecx_value_reassigned": false,
+    "ecx_value_stored_or_pushed": false,
+    "function": "FUN_00752fa0",
+    "leaf": true,
+    "per_wheel_write_offsets": [
+      "+0x9f8 dword",
+      "+0xa00 qword"
+    ],
+    "selected_slot3_vehicle_relative_writes": [
+      "+0x2d78 dword",
+      "+0x2d80 qword"
+    ],
+    "selected_target_overlap": false
+  },
+  "format": "SHIFT.P1D.Slot3Fun00765c40WheelRegisterAliasClosure/1",
+  "limits": [
+    "This closes only the four-wheel ECX alias loop at 0x00765eae..0x00765ed2 and its leaf FUN_00752fa0 receiver use.",
+    "Other FUN_00765c40 interior wheel pointers, stack-local derived aliases, runtime/generated pointers, callbacks and indirect entry remain open.",
+    "The callee's write semantics are consumed from SHIFT.Fun00752fa0WheelStateMachineProof/1 and are not re-owned here."
+  ],
+  "next_step": "Bound the branch-equivalent FUN_00765c40 wheel+0x678 interior-pointer loops at 0x00765cde/0x00765d67, including their stack-local pointer slot and [wheel+0x420] child loads; then continue runtime/callee-created alias joins.",
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "root_capture": {
+    "alias": "ESI=HDVehicle",
+    "input_receiver": "HDVehicle",
+    "instruction": "mov esi,ecx",
+    "site": "0x00765c5f"
+  },
+  "upstream_contracts": [
+    "SHIFT.P1D.Slot3Fun00765c40CarrierHandoff/1",
+    "SHIFT.Fun00752fa0WheelStateMachineProof/1"
+  ],
+  "version": 1,
+  "wheel_loop": {
+    "call_site": "0x00765ec1",
+    "callee": "FUN_00752fa0",
+    "exact_receiver_pointer_push_found": false,
+    "exact_receiver_pointer_store_found": false,
+    "init_instruction": "lea ecx,[esi+0x400]",
+    "init_site": "0x00765eae",
+    "receiver_count": 4,
+    "receiver_offsets": [
+      "+0x400",
+      "+0x0e80",
+      "+0x1900",
+      "+0x2380"
+    ],
+    "selected_slot3_iteration": 3,
+    "selected_slot3_receiver": "HDVehicle+0x2380",
+    "stride_instruction": "add ecx,0xa80",
+    "stride_site": "0x00765ec9"
+  }
+}
