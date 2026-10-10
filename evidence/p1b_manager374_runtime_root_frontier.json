@@ -1,0 +1,53 @@
+{
+  "adjudication": {
+    "bounded_runtime_root_classes_composed": true,
+    "external_provider_count": 7,
+    "helper_non_vtable_indirect_setter_surface_complete": false,
+    "known_bounded_runtime_root_paths_can_create_manager_374_to_hdvehicle_4330_join": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "memory_load_or_opaque_runtime_reconstruction_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_created_or_copied_outer_alias_surface_complete": false
+  },
+  "closed_runtime_root_classes": {
+    "constant_same_or_multi_register_reconstruction": true,
+    "constructor_pre_global_store_exact_this_escape": true,
+    "exact_getter_persistence_and_stack_argument_aliases": true,
+    "fun_0045b130_exact_global_first_hop_dispatch": true,
+    "shipped_pe_base_relocations": true,
+    "static_exact_or_interior_pointer_cells": true,
+    "vslot24_opaque_eax_residue_export": true
+  },
+  "format": "SHIFT.P1B.Manager374RuntimeRootFrontier/1",
+  "limits": [
+    "This is a composition of already-merged bounded machine-evidence contracts; it does not invent a global runtime alias absence proof.",
+    "The remaining frontier is post-construction runtime-created/copied outer-object aliases plus external/unknown-origin opaque sources.",
+    "No identity is inferred from matching offsets."
+  ],
+  "next_step": "Close post-construction runtime-created/copied aliases of the outer object and external/unknown-origin opaque manager-root sources; then revisit the final manager+0x374 identity join and 0x004b86cf adjudication.",
+  "observed_counts": {
+    "constructor_exact_this_helper_transfer_count": 0,
+    "constructor_exact_this_memory_store_count": 0,
+    "static_interior_aligned_cells_in_manager_range": 0,
+    "vslot0c_exact_global_source_function_count": 80,
+    "vslot0c_exact_global_source_read_count": 95,
+    "vslot0c_proven_indirect_receiver_transfer_count": 3,
+    "vslot0c_target_dispatch_count": 0
+  },
+  "owner": "Process 1B / P1.3B aggregate integration",
+  "ready": true,
+  "surviving_frontier": {
+    "external_or_unknown_origin_outer_alias_copies": true,
+    "opaque_runtime_sources_not_rooted_in_closed_exact_global_first_hop": true,
+    "runtime_created_or_copied_post_construction_outer_aliases": true
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.Manager374ReconstructionCoverage/1",
+    "SHIFT.HDVehicle64e8Manager374StaticInteriorRelocationSurface/1",
+    "SHIFT.HDVehicle64e8Manager374VSlot24EaxResidueSurface/1",
+    "SHIFT.HDVehicle64e8Manager374VSlot0cDispatchClosure/1",
+    "SHIFT.HDVehicle64e8RenderManagerConstructorExactThisEscapeClosure/1"
+  ],
+  "version": 1
+}
