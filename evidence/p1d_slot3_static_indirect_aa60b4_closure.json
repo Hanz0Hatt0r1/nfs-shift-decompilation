@@ -1,0 +1,57 @@
+{
+  "adjudication": {
+    "aa60b4_exact_hdvehicle_root_persistent_store_found": false,
+    "aa60b4_runtime_unknown_target": false,
+    "aa60b4_selected_wheel_alias_found": false,
+    "callee_created_aliases_ruled_out": false,
+    "external_provider_count": 7,
+    "fun00770e80_aa60b4_static_indirect_subset_complete": true,
+    "other_indirect_entry_ruled_out": false,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "runtime_generated_pointer_stores_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_bytes_adjudicate": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "callsites": [
+    {"address": "0x00770ec4", "caller_exact_root_register": "ESI=HDVehicle", "encoding": "ff 15 b4 60 aa 00"},
+    {"address": "0x00770f41", "caller_exact_root_register": "ESI=HDVehicle", "encoding": "ff 15 b4 60 aa 00"}
+  ],
+  "format": "SHIFT.P1D.Slot3StaticIndirectAA60B4Closure/1",
+  "limits": [
+    "This closes only the two FUN_00770e80 call-through-memory sites that use image slot 0x00aa60b4.",
+    "Read-only is an image-section property; arbitrary runtime code patching is not globally ruled out.",
+    "The target is an interior entry that inherits caller ESI/EBP state; no generic function-entry equivalence is assumed.",
+    "Other indirect calls, callbacks, reconstructed pointers and runtime-generated/copied aliases remain open."
+  ],
+  "next_step": "Continue with other indirect/callback entry surfaces and hand-unrolled pointer-copy patterns before changing global alias gates.",
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "static_slot": {
+    "address": "0x00aa60b4",
+    "section": ".rdata",
+    "section_readonly_in_image": true,
+    "value": "0x00778052",
+    "value_sha256": "645ad0d4ac2c159435cb407e7008790d2f26b34c0ef1f47327a44994167d7ba6"
+  },
+  "target_chain": {
+    "exact_root_persistent_store_found": false,
+    "fun0063f300_instruction_count": 34,
+    "fun0063f300_sha256": "568124aa784f7f57e9f3ca85c78cc524f7673a030db4cc1ff3bbbf6e697078e4",
+    "fun0063f350_exact_root_forward": "0x0063f37b ECX=ESI -> 0x0063f37d FUN_0063f300",
+    "fun0063f350_instruction_count": 62,
+    "fun0063f350_sha256": "078f68e1e3715a4acb0cf375671e6e0164848fbf554641d78cf77292a6b7d0f1",
+    "selected_wheel_root_materialization_found": false,
+    "static_target": "0x00778052 (interior of FUN_00777fe0)",
+    "target_fragment_exact_root_clobber": "0x0077806c ESI=-1",
+    "target_fragment_exact_root_forward": "0x00778056 ECX=ESI -> 0x0077805b FUN_0063f350",
+    "target_fragment_instruction_count": 9,
+    "target_fragment_sha256": "c4b76757adce88d4cdf64c40b72c934bf5a7a60a0cb5b529f3e5274124ae84d1"
+  },
+  "version": 1
+}
