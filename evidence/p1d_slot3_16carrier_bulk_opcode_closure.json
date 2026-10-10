@@ -1,0 +1,55 @@
+{
+  "adjudication": {
+    "aggregate_or_bulk_alias_stores_ruled_out": false,
+    "external_provider_count": 7,
+    "machine_direct_bulk_opcode_16_carrier_subset_complete": true,
+    "machine_direct_bulk_opcode_found": false,
+    "p1_3_control_producer_complete": false,
+    "p1_3d_complete": false,
+    "runtime_generated_pointer_stores_ruled_out": false,
+    "slot3_writer_provenance_proven": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "machine_bytes_adjudicate": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "direct_bulk_opcode_surface": {
+    "hit_count": 0,
+    "hits": [],
+    "rep_prefixed_or_x86_string_opcode_found": false
+  },
+  "format": "SHIFT.P1D.Slot3SixteenCarrierBulkOpcodeClosure/1",
+  "limits": [
+    "This closes only direct REP-prefixed and x86 MOVS/STOS/LODS/SCAS/CMPS opcode forms inside the 16 pinned carrier bodies.",
+    "Call-based memcpy/memmove helpers, hand-unrolled scalar/SIMD copies, reconstructed pointers, callbacks and indirect entry remain open.",
+    "Zero string-opcode hits are not promoted to a global no-aggregate-copy claim."
+  ],
+  "next_step": "Inventory direct callees and hand-unrolled copy patterns that could persist reconstructed selected-wheel aliases before changing aggregate/runtime storage gates.",
+  "owner": "Process 1D / P1.3D",
+  "ready": true,
+  "scope": {
+    "carrier_count": 16,
+    "functions": {
+      "FUN_00752fc0": {"bulk_opcode_hits": [], "instruction_count": 7, "size": 37, "start": "0x00752fc0"},
+      "FUN_00755950": {"bulk_opcode_hits": [], "instruction_count": 19, "size": 66, "start": "0x00755950"},
+      "FUN_00755a60": {"bulk_opcode_hits": [], "instruction_count": 393, "size": 1297, "start": "0x00755a60"},
+      "FUN_00755f80": {"bulk_opcode_hits": [], "instruction_count": 46, "size": 132, "start": "0x00755f80"},
+      "FUN_00758810": {"bulk_opcode_hits": [], "instruction_count": 114, "size": 347, "start": "0x00758810"},
+      "FUN_00758b50": {"bulk_opcode_hits": [], "instruction_count": 323, "size": 1136, "start": "0x00758b50"},
+      "FUN_00758fc0": {"bulk_opcode_hits": [], "instruction_count": 118, "size": 364, "start": "0x00758fc0"},
+      "FUN_00760b50": {"bulk_opcode_hits": [], "instruction_count": 146, "size": 531, "start": "0x00760b50"},
+      "FUN_00763570": {"bulk_opcode_hits": [], "instruction_count": 971, "size": 3276, "start": "0x00763570"},
+      "FUN_00765c40": {"bulk_opcode_hits": [], "instruction_count": 647, "size": 2248, "start": "0x00765c40"},
+      "FUN_00766510": {"bulk_opcode_hits": [], "instruction_count": 1128, "size": 4310, "start": "0x00766510"},
+      "FUN_007675f0": {"bulk_opcode_hits": [], "instruction_count": 436, "size": 1340, "start": "0x007675f0"},
+      "FUN_007682c0": {"bulk_opcode_hits": [], "instruction_count": 121, "size": 335, "start": "0x007682c0"},
+      "FUN_00769ef0": {"bulk_opcode_hits": [], "instruction_count": 252, "size": 774, "start": "0x00769ef0"},
+      "FUN_0076d100": {"bulk_opcode_hits": [], "instruction_count": 142, "size": 508, "start": "0x0076d100"},
+      "FUN_00770e80": {"bulk_opcode_hits": [], "instruction_count": 315, "size": 1183, "start": "0x00770e80"}
+    },
+    "instruction_count": 5178
+  },
+  "version": 1
+}
