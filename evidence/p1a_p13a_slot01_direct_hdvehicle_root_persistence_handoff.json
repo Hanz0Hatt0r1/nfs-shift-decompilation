@@ -1,0 +1,87 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "callee_created_aliases_ruled_out": false,
+    "derived_wheel_or_interior_alias_storage_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_direct_exact_hdvehicle_root_new_gpr_alias_found": false,
+    "p13a_direct_exact_hdvehicle_root_nonstack_store_found": false,
+    "p13a_direct_exact_hdvehicle_root_persistence_subset_complete": true,
+    "p13a_direct_exact_hdvehicle_root_push_found": false,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_generated_or_copied_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false
+  },
+  "authority": {
+    "cross_lane_machine_proof_consumed_without_reowning": true,
+    "machine_bytes_adjudicate_upstream": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "direct_exact_hdvehicle_root_value_surface": {
+    "memory_store_count": 2,
+    "memory_stores": [
+      {
+        "address": "0x00758b9b",
+        "function": "FUN_00758b50",
+        "operands": "dword ptr [ebp-0x1c],edi",
+        "storage": "stack-local"
+      },
+      {
+        "address": "0x00763590",
+        "function": "FUN_00763570",
+        "operands": "dword ptr [ebp-0x3c],edi",
+        "storage": "stack-local"
+      }
+    ],
+    "new_gpr_alias_beyond_ecx_receiver_reload_found": false,
+    "nonstack_or_unknown_memory_store_count": 0,
+    "push_count": 0,
+    "upstream_register_copy_destinations": [
+      "ecx"
+    ],
+    "upstream_total_register_copy_count": 23
+  },
+  "format": "SHIFT.P1A.P13ADirectHDVehicleRootPersistenceHandoff/1",
+  "limits": [
+    "This consumes only the 11 exact-HDVehicle-root carriers from the merged 16-carrier machine proof.",
+    "The five exact-wheel-root carriers are intentionally excluded and remain part of the separate derived/wheel-root alias frontier.",
+    "The upstream direct-value proof classifies only stable exact-root register stores, pushes and immediate GPR copies; derived/interior addresses, aggregate copies, reconstructed pointers, callbacks, indirect entry and callee-created aliases remain open.",
+    "No slot completion or aggregate P1.3 gate is promoted by pointer-persistence absence alone."
+  ],
+  "next_step": "Close the exact wheel-root persistence/materialization subset for slot0/slot1, then trace derived/interior and runtime-generated pointer aliases before changing the global stored-or-escaped-alias gate.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "consumed_exact_hdvehicle_root_carrier_count": 11,
+    "consumed_exact_hdvehicle_root_carriers": [
+      "FUN_00758810",
+      "FUN_00758b50",
+      "FUN_00758fc0",
+      "FUN_00763570",
+      "FUN_00765c40",
+      "FUN_00766510",
+      "FUN_007675f0",
+      "FUN_007682c0",
+      "FUN_00769ef0",
+      "FUN_0076d100",
+      "FUN_00770e80"
+    ],
+    "excluded_exact_wheel_root_carrier_count": 5,
+    "excluded_exact_wheel_root_carriers": [
+      "FUN_00752fc0",
+      "FUN_00755950",
+      "FUN_00755a60",
+      "FUN_00755f80",
+      "FUN_00760b50"
+    ],
+    "slot0_target": "HDVehicle+0x938..+0x93f",
+    "slot1_target": "HDVehicle+0x13b8..+0x13bf",
+    "upstream_carrier_count": 16,
+    "wheel_local_target": "+0x538..+0x53f"
+  },
+  "upstream_contract": "SHIFT.P1D.Slot3SixteenCarrierDirectRootPersistence/1",
+  "version": 1
+}
