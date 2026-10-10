@@ -1,0 +1,47 @@
+{
+  "adjudication": {
+    "bounded_static_getprocaddress_result_storage_complete": true,
+    "bounded_static_getprocaddress_storage_can_seed_internal_carrier": false,
+    "dynamic_getprocaddress_resolution_ruled_out": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "runtime_patching_or_generated_code_ruled_out": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330GetProcAddressStorageCoverage/1",
+  "limits": [
+    "This composes only statically reachable result lineages rooted at the imported GetProcAddress IAT and the direct generic wrapper callers.",
+    "Runtime-created resolver aliases, indirect/runtime-generated wrapper entry, externally supplied function pointers, unrelated runtime-populated tables and opaque dynamic resolution remain open."
+  ],
+  "next_step": "Bound unrelated runtime-populated function-pointer tables and runtime-created/indirect resolver aliases before promoting global store/copy or indirect-entry gates.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "all_statically_reachable_imported_getprocaddress_result_lineages_covered": true,
+    "bounded_static_getprocaddress_carrier_identity_hit_count": 0,
+    "direct_iat_callsite_count": 12,
+    "direct_iat_persistent_carrier_identity_hit_count": 0,
+    "direct_iat_persistent_global_lineage_count": 3,
+    "generic_wrapper_direct_caller_count": 12,
+    "generic_wrapper_persistent_nonstack_store_count": 0,
+    "iat_load_root_count": 7,
+    "physical_getprocaddress_callsite_count": 101,
+    "register_loaded_callsite_count": 89,
+    "register_loaded_carrier_identity_hit_count": 0,
+    "register_loaded_external_module_count": 6,
+    "register_loaded_family_count": 7
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330GetProcAddressStaticResolutionSurface/2",
+    "SHIFT.P1B.HDVehicle4330GetProcAddressWrapperOutputPersistence/1",
+    "SHIFT.P1B.HDVehicle4330GetProcAddressDirectResultLineage/1",
+    "SHIFT.P1B.HDVehicle4330GetProcAddressRegisterLoadedResultLineage/1"
+  ],
+  "version": 1
+}
