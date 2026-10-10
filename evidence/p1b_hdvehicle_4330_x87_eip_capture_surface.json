@@ -1,0 +1,75 @@
+{
+  "adjudication": {
+    "decoded_x87_env_site_count": 4,
+    "decoded_x87_env_site_surface_complete": true,
+    "external_provider_count": 7,
+    "global_runtime_derived_4330_alias_surface_complete": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "noncanonical_eip_capture_surface_complete": false,
+    "p1_3_control_producer_complete": false,
+    "real_x87_env_save_instruction_count": 2,
+    "runtime_computed_carrier_pointers_ruled_out": false,
+    "runtime_copied_or_encoded_carrier_pointers_ruled_out": false,
+    "x87_fstenv_eip_capture_surface_complete": true,
+    "x87_saved_eip_extraction_found": false
+  },
+  "authority": {
+    "ghidra_sqlite_sha256": "ffcee0fe527563db7b74d17533164e2256ebd5fe6296a1deef4117f80dde732e",
+    "objdump_role": "decoded x87-site inventory",
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_machine_bytes_adjudicate": true,
+    "sqlite_role": "function ownership/fingerprints"
+  },
+  "classifications": [
+    {
+      "address": "0x004177e4",
+      "classification": "inline switch-table data, not instruction",
+      "owner": null,
+      "proof": "0x004175d0 jumps through [ECX*4+0x004177e4]; 11 dwords are branch targets inside FUN_004175b9"
+    },
+    {
+      "address": "0x0050d063",
+      "classification": "INT3 padding false decode, not function-owned instruction",
+      "owner": null,
+      "proof": "between thunk_FUN_004eb550 end and thunk_FUN_0040cc70 start; no direct control-flow target"
+    },
+    {
+      "address": "0x00913763",
+      "classification": "real FNSTENV save/modify/reload; no saved-EIP extraction",
+      "owner": "FUN_00913576",
+      "proof": "only saved-env RMW is [ESP+4], followed by FLDENV [ESP] and stack release"
+    },
+    {
+      "address": "0x00913a1b",
+      "classification": "real FNSTENV save/modify/reload; no saved-EIP extraction",
+      "owner": "FUN_0091382e",
+      "proof": "only saved-env RMW is [ESP+4], followed by FLDENV [ESP] and stack release"
+    }
+  ],
+  "decoded_x87_env_sites": {
+    "addresses": [
+      "0x004177e4",
+      "0x0050d063",
+      "0x00913763",
+      "0x00913a1b"
+    ],
+    "count": 4
+  },
+  "format": "SHIFT.P1B.HDVehicle4330X87EipCaptureSurface/1",
+  "limits": [
+    "This closes decoded FSTENV/FNSTENV instruction-pointer extraction only.",
+    "Two objdump-looking sites are proven inline data/padding rather than instructions; two real sites never extract an environment instruction pointer.",
+    "Other noncanonical EIP/address synthesis, runtime copies, transformed constants and encoded pointers remain open."
+  ],
+  "next_step": "Continue non-x87 computed pointer synthesis and runtime callback-pointer copies; do not promote indirect-entry or manager identity gates yet.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330CanonicalEipCaptureSurface/1",
+    "SHIFT.P1B.HDVehicle4330WholeImageLiteralPointerSurface/1"
+  ],
+  "version": 1
+}
