@@ -208,6 +208,7 @@ def scan_rows(rows):
         "stack_barrier": 0,
         "unsupported_esp_write": 0,
         "esp_memory_reference_barrier": 0,
+        "esp_dword_overlap_invalidation": 0,
         "tracked_register_clobber": 0,
         "implicit_tracked_register_clobber": 0,
     }
@@ -222,12 +223,16 @@ def scan_rows(rows):
         sp_position = 0
         stack_generation += 1
 
+    def invalidate_overlapping_dword_cells(key: int):
+        victims = [old for old in cells if old < key + 4 and key < old + 4]
+        for old in victims:
+            cells.pop(old, None)
+        terminations["esp_dword_overlap_invalidation"] += len(victims)
+
     for address, raw_mnemonic, raw_operands in rows:
         mnemonic, operands, prefixes = normalize_prefixed_instruction(raw_mnemonic, raw_operands)
         ops = split_ops(operands)
 
-        # Observe dereferences through a pointer that has crossed an exact ESP
-        # spill/reload boundary before this instruction can clobber it.
         for operand_index, op in enumerate(ops):
             pointer_reg = zero_displacement_pointer_reg(op)
             if pointer_reg in regs and regs[pointer_reg]["reload_depth"] > 0:
@@ -259,8 +264,6 @@ def scan_rows(rows):
             stack_generation += 1
             continue
 
-        # Exact stack-pointer normalization. These operations are consumed here
-        # so the generic destination-register clobber path does not fire.
         if mnemonic in {"add", "sub"} and len(ops) == 2 and ops[0] == "esp":
             amount = parse_immediate(ops[1])
             if amount is None:
@@ -292,9 +295,6 @@ def scan_rows(rows):
             continue
 
         if mnemonic in STACK_BARRIERS:
-            # Push/pop/enter/leave are intentionally not normalized in this
-            # subset because they combine ESP mutation with implicit memory or
-            # frame-base semantics.
             if ops:
                 parent = explicit_register_parent(ops[0])
                 if parent in regs:
@@ -303,9 +303,6 @@ def scan_rows(rows):
             reset_stack("stack_barrier")
             continue
 
-        # Seed exact receiver+0x374 address materialization. ESP is excluded as
-        # the destination pointer register because changing ESP is stack state,
-        # not ordinary pointer transport.
         if mnemonic == "lea" and len(ops) == 2 and full_gpr(ops[0]) in POINTER_GPRS:
             base = lea_plus374_base(ops[1])
             if base is not None:
@@ -333,11 +330,8 @@ def scan_rows(rows):
             src_off = esp_cell_offset(src, require_dword=True)
 
             if dst_off is not None:
-                # A DWORD spill overwrites exactly one tracked DWORD cell. The
-                # cell key is normalized to the original straight-line ESP
-                # coordinate, so add/sub/lea adjustments preserve identity.
                 key = sp_position + dst_off
-                cells.pop(key, None)
+                invalidate_overlapping_dword_cells(key)
                 if src_full in regs:
                     provenance = dict(regs[src_full])
                     cells[key] = provenance
@@ -382,8 +376,6 @@ def scan_rows(rows):
                 regs[dst_full] = provenance
                 continue
 
-            # MOV using any ESP-relative memory operand outside the exact DWORD
-            # spill/reload grammar is a conservative cell-state barrier.
             if any(esp_cell_offset(op, require_dword=False) is not None for op in ops):
                 if cells:
                     terminations["esp_memory_reference_barrier"] += len(cells)
@@ -396,9 +388,6 @@ def scan_rows(rows):
                 terminations["tracked_register_clobber"] += 1
             continue
 
-        # Outside exact MOV spill/reload and normalized ESP arithmetic, any
-        # ESP-relative memory-like reference invalidates cell state. This keeps
-        # operand-width overlap and unusual opcodes fail-closed.
         if any(esp_cell_offset(op, require_dword=False) is not None for op in ops):
             if cells:
                 terminations["esp_memory_reference_barrier"] += len(cells)
@@ -451,6 +440,7 @@ def scan_rows(rows):
         },
         "limits": [
             "Covers exact full-GPR receiver+0x374 materialization, exact DWORD ESP-relative MOV spill/reload, and immediate add/sub or lea esp,[esp+/-imm] normalization inside one straight-line region.",
+            "Tracked DWORD cells use normalized four-byte ranges; overlapping DWORD stores invalidate prior cells before new provenance can be installed.",
             "Push/pop/enter/leave, arbitrary ESP writes, CFG stack-state carry, non-ESP memory aliases, helper returns, indexed LEA and arithmetic pointer reconstruction remain outside this subset.",
             "Any ESP-relative memory reference outside the exact DWORD MOV grammar invalidates tracked ESP cells conservatively.",
             "Recovered receiver registers are syntactic provenance only and do not imply Participants Manager identity.",
