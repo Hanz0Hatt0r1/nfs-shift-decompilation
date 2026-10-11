@@ -76,6 +76,12 @@ def apply_taint(m,o,regs):
   handled=True;d,s=p
   if s in nr:nr[d]=nr[s]
   else:nr.pop(d,None)
+ elif m=='mov' and len(p)==2 and p[0] in REGS:
+  qmem=MEM.fullmatch(p[1]);handled=bool(qmem);d=p[0]
+  if qmem:
+   refs=[r for r in REGS if re.search(r'(?<![a-z0-9])'+r+r'(?![a-z0-9])',qmem.group(1)) and r in nr]
+   if refs:nr[d]=True
+   else:nr.pop(d,None)
  elif m=='xchg' and len(p)==2 and p[0] in REGS and p[1] in REGS:
   handled=True;d,s=p;dv=nr.pop(d,None);sv=nr.pop(s,None)
   if dv is not None:nr[s]=dv
@@ -115,7 +121,7 @@ def scan(rows):
    if key in seen:continue
    seen.add(key);a,m,o=rows[idx]
    if m in {'call','jmp'}:
-    if o in regs:hits.append((la,a,m,o));continue
+    if o in regs:hits.append((la,ea,a,m,o,tuple(sorted(regs))));continue
     t=imm(o)
     if m=='jmp' and t is not None and t in by:
      carried.add(la);branch_states.add((la,a,t,tuple(sorted(regs.items()))));branch_sites.add(a);q.append((by[t],dict(regs)));continue
@@ -132,10 +138,10 @@ def scan(rows):
    nr=apply_taint(m,o,regs)
    if not nr:ends['taint_dead']+=1;continue
    q.append((idx+1,nr))
- return {'decoded_instruction_count':len(rows),'base_indexed_data_load_count':len(loads),'unique_effective_address_count':len({x[3] for x in loads}),'direct_cfg_carried_load_count':len(carried),'direct_cfg_carried_load_sites':[f'0x{x:08x}' for x in sorted(carried)],'direct_branch_state_event_count':len(branch_states),'direct_branch_site_count':len(branch_sites),'tainted_register_indirect_transfer_count':len(hits),'direct_call_boundary_count':len(calls),'direct_call_boundary_unique_load_call_pair_count':len({(x[0],x[2]) for x in calls}),'direct_call_boundary_unique_site_count':len({x[2] for x in calls}),'indirect_call_boundary_count':len(icalls),'indirect_call_boundaries':[{'load_site':f'0x{x[0]:08x}','effective_address':f'0x{x[1]:08x}','call_site':f'0x{x[2]:08x}','call_register':x[3],'live_taint_registers':list(x[4])} for x in icalls],'indirect_jump_boundary_count':len(ijumps),'indirect_jump_boundaries':[{'load_site':f'0x{x[0]:08x}','effective_address':f'0x{x[1]:08x}','jump_site':f'0x{x[2]:08x}','jump_register':x[3],'live_taint_registers':list(x[4])} for x in ijumps],'taint_dead_terminal_state_count':ends['taint_dead'],'terminal_return_or_trap_state_count':ends['terminal'],'fixed_point_maxout_count':0}
+ return {'decoded_instruction_count':len(rows),'base_indexed_data_load_count':len(loads),'unique_effective_address_count':len({x[3] for x in loads}),'direct_cfg_carried_load_count':len(carried),'direct_cfg_carried_load_sites':[f'0x{x:08x}' for x in sorted(carried)],'direct_branch_state_event_count':len(branch_states),'direct_branch_site_count':len(branch_sites),'tainted_register_indirect_transfer_count':len(hits),'tainted_register_indirect_transfers':[{'load_site':f'0x{x[0]:08x}','effective_address':f'0x{x[1]:08x}','transfer_site':f'0x{x[2]:08x}','kind':x[3],'transfer_register':x[4],'live_taint_registers':list(x[5])} for x in hits],'direct_call_boundary_count':len(calls),'direct_call_boundary_unique_load_call_pair_count':len({(x[0],x[2]) for x in calls}),'direct_call_boundary_unique_site_count':len({x[2] for x in calls}),'indirect_call_boundary_count':len(icalls),'indirect_call_boundaries':[{'load_site':f'0x{x[0]:08x}','effective_address':f'0x{x[1]:08x}','call_site':f'0x{x[2]:08x}','call_register':x[3],'live_taint_registers':list(x[4])} for x in icalls],'indirect_jump_boundary_count':len(ijumps),'indirect_jump_boundaries':[{'load_site':f'0x{x[0]:08x}','effective_address':f'0x{x[1]:08x}','jump_site':f'0x{x[2]:08x}','jump_register':x[3],'live_taint_registers':list(x[4])} for x in ijumps],'taint_dead_terminal_state_count':ends['taint_dead'],'terminal_return_or_trap_state_count':ends['terminal'],'fixed_point_maxout_count':0}
 def analyze(exe):
  if hashlib.sha256(exe.read_bytes()).hexdigest()!=SHA:raise ValueError('unexpected executable SHA')
- r=scan(dis(exe));expected=(2847850,63,51,44,228,199,0,56,54,54,11,0,107,6)
+ r=scan(dis(exe));expected=(2847850,63,51,44,228,199,2,56,54,54,9,0,107,6)
  actual=(r['decoded_instruction_count'],r['base_indexed_data_load_count'],r['unique_effective_address_count'],r['direct_cfg_carried_load_count'],r['direct_branch_state_event_count'],r['direct_branch_site_count'],r['tainted_register_indirect_transfer_count'],r['direct_call_boundary_count'],r['direct_call_boundary_unique_load_call_pair_count'],r['direct_call_boundary_unique_site_count'],r['indirect_call_boundary_count'],r['indirect_jump_boundary_count'],r['taint_dead_terminal_state_count'],r['terminal_return_or_trap_state_count'])
  if actual!=expected:raise AssertionError((actual,r))
  return r
