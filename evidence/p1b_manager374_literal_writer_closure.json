@@ -1,0 +1,47 @@
+{
+  "format": "SHIFT.P1B.Manager374LiteralWriterClosure/1",
+  "version": 1,
+  "ready": true,
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "inputs": {
+    "inventory": "SHIFT.HDVehicle64e8Manager374LiteralStoreInventory/1",
+    "vptr": "SHIFT.HDVehicle64e8Manager374VptrReceiverRejections/1",
+    "precluster": "SHIFT.HDVehicle64e8Manager374FinalPreclusterRejections/2",
+    "fmod": "SHIFT.HDVehicle64e8Manager374FmodCodecClusterRejection/1"
+  },
+  "surface": {
+    "literal_write_site_count": 25,
+    "unique_literal_write_site_count": 25,
+    "partition_counts": {
+      "proven_manager_domain": 2,
+      "inherited_closed_negative": 3,
+      "vptr_receiver_rejections": 15,
+      "corrected_precluster_rejections": 2,
+      "fmod_codec_rejections": 3
+    },
+    "closed_site_count": 25,
+    "remaining_literal_site_count": 0,
+    "remaining_literal_sites": []
+  },
+  "adjudication": {
+    "literal_plus_0x374_writer_surface_complete": true,
+    "literal_manager_374_receiver_provenance_complete": true,
+    "literal_plus_0x374_site_can_place_fixed_hdvehicle_4330": false,
+    "computed_address_manager_374_writer_surface_complete": false,
+    "global_helper_non_vtable_indirect_setter_surface_complete": false,
+    "global_manager_root_origin_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "p1_3_control_producer_complete": false,
+    "external_provider_count": 7
+  },
+  "limits": [
+    "This closes only machine instructions whose memory destination itself carries literal +0x374.",
+    "Computed/materialized +0x374 addresses, helper-mediated setters, runtime aliases and arbitrary process-memory mutation remain separate fail-closed surfaces.",
+    "The final 0x004b86cf/slot2 adjudication is not promoted by literal writer closure alone."
+  ],
+  "next_step": "Run the already-merged materialized/computed +0x374 probes on authoritative PC retail 1.02 SHIFT.exe and classify only their positive candidates before revisiting the final manager identity join."
+}
