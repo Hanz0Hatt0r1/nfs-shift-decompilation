@@ -16,6 +16,7 @@ REGS = {"eax", "ebx", "ecx", "edx", "esi", "edi", "ebp", "esp"}
 I = re.compile(r"^\s*([0-9a-fA-F]+):\s+(?:[0-9a-fA-F]{2}\s+)+\s*([a-zA-Z][a-zA-Z0-9]*)\s*(.*)$")
 MEM = re.compile(r"^(?:(?:BYTE|WORD|DWORD|QWORD) PTR )?\[([^\]]+)\]$")
 IMM = re.compile(r"^(?:0x([0-9a-fA-F]+)|([0-9]+))$")
+TARGET = re.compile(r"^\s*(?:0x)?([0-9a-fA-F]+)(?:\s+<[^>]+>)?\s*$")
 
 
 def norm(s: str) -> str:
@@ -27,6 +28,13 @@ def imm(s: str):
     if not m:
         return None
     return int(m.group(1), 16) if m.group(1) else int(m.group(2))
+
+
+def direct_target(s: str):
+    m = TARGET.fullmatch(s)
+    if not m:
+        return None
+    return int(m.group(1), 16)
 
 
 def split_ops(ops: str):
@@ -103,7 +111,7 @@ def next_index(rows, idx):
 def branch_target(mn: str, ops: str):
     if mn == "jmp" or mn.startswith("j") or mn.startswith("loop"):
         p = split_ops(ops)
-        return imm(p[0]) if p else None
+        return direct_target(p[0]) if p else None
     return None
 
 
@@ -193,7 +201,7 @@ def scan_rows(rows):
         p = split_ops(ops)
         if mn == "call":
             live = {reg: value for reg, value in consts.items() if value in SLOTS}
-            target = imm(p[0]) if p else None
+            target = direct_target(p[0]) if p else None
             if live and target is not None:
                 entry = {
                     "call_site": f"0x{address:08x}",
