@@ -1,0 +1,48 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_fun005ffc50_writable_callback_pair_d94_loop_source_key_semantics_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "writable_callback_pair_d94_loop_source_record_dword0_string_key_compatible": true,
+    "writable_callback_pair_d94_loop_source_record_dword0_unique_type_proven": false,
+    "writable_callback_pair_d94_runtime_writer_relevant_to_loop_bound_proven": false,
+    "writable_callback_pair_d94_value_range_proven": false,
+    "writable_callback_pair_d94_writer_consumer_receiver_identity_proven": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_callback_pair_target_compatible_frontier_empty": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94LoopReceiverProvenance/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94LoopSourceKeySemantics/1",
+  "limits": [
+    "This proves usage semantics for non-null source_record+0 values selected by FUN_00503390; it does not prove a unique C++ type or constructor for those values.",
+    "String-key-compatible usage does not by itself prove inequality with the runtime writer singleton.",
+    "Producer/copy paths for source_record+0 remain open."
+  ],
+  "next_step": "Classify the producer/copy surface for source_record+0 and combine it with the bounded DAT_00bc185c propagation frontier before deciding writer/loop receiver identity.",
+  "owner": "Process 1A / P1.3A",
+  "proof": {
+    "comparison_call_site": "0x005033fd",
+    "comparison_target": "0x00901179",
+    "decoded_instruction_count": 2847850,
+    "default_ascii_compare_target": "0x00901071",
+    "default_compare_ascii_fold_delta": "0x20",
+    "default_compare_ascii_uppercase_range": ["0x41", "0x5a"],
+    "default_compare_terminates_on_nul": true,
+    "empty_key_fallback": "0x00aa9b60",
+    "empty_key_fallback_first_dword": 0,
+    "locale_aware_compare_target": "0x009010a6",
+    "non_null_source_record_dword0_is_string_key_input": true,
+    "source_record_key_load_site": "0x005033f1",
+    "source_record_key_null_guard_site": "0x005033f3"
+  },
+  "ready": true,
+  "version": 1
+}
