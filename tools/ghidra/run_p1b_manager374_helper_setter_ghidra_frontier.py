@@ -43,6 +43,17 @@ def open_text(path: Path) -> TextIO:
     return path.open("r", encoding="utf-8")
 
 
+def file_sha256(path: Path, *, chunk_size: int = 1024 * 1024) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        while True:
+            chunk = stream.read(chunk_size)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def parse_address(value: object, *, context: str) -> int:
     require(isinstance(value, str), f"{context}: address must be a string")
     text = value.strip().lower()
@@ -76,7 +87,7 @@ def canonical_operands(mnemonic: str, operands: list[str], flows: list[str]) -> 
     rendered = ",".join(str(item).strip() for item in operands)
     if mnemonic == "call" and len(operands) == 1 and len(flows) == 1:
         if not is_indirect_call_operand(str(operands[0])):
-            # Ghidra often renders a direct target as FUN_XXXXXXXX.  The merged
+            # Ghidra often renders a direct target as FUN_XXXXXXXX. The merged
             # probes consume a numeric direct target, so use the exact flow
             # address rather than attempting to parse a symbol name.
             return str(flows[0]).strip()
@@ -140,7 +151,7 @@ def acquire(path: Path) -> tuple[dict, dict, dict[str, dict]]:
     aggregate, results = runner.run_rows(rows)
 
     # The shared probe composition is useful on the pinned Ghidra listing, but
-    # it is not the raw-PE objdump execution path.  Rewrite only the acquisition
+    # it is not the raw-PE objdump execution path. Rewrite only the acquisition
     # authority/gates that would otherwise overstate what happened in this run.
     authority = dict(aggregate.get("authority", {}))
     authority.update({
@@ -172,7 +183,7 @@ def acquire(path: Path) -> tuple[dict, dict, dict[str, dict]]:
         "authority": authority,
         "source_stream": {
             "path_name": path.name,
-            "file_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "file_sha256": file_sha256(path),
             "canonical_instruction_stream_sha256": canonical_sha256,
             "instruction_count": len(rows),
         },
