@@ -8,6 +8,8 @@ At the consumer `0x0045ecca`, lookup target `0x0082da60` calls that slot with `E
 
 `0x00835290` queries the embedded container at `entry+0x40` via `0x0062f6f0`. It can return zero. On the non-zero path it forwards the returned container-derived value through `0x008339e0` and returns that same value on success.
 
+The analyzer asserts these concrete instructions and the first DWORD of vtable `0x00b17fe0` against the PC retail 1.02 image; unknown or drifted instructions fail the subset rather than widening the claim.
+
 This closes the indirect-dispatch identity but not the non-zero return domain. In particular, the downstream loop shape at `0x005032ea` / `0x0050337a` is not by itself sufficient to prove that `+0xd94` is a small integer count.
 
 Promoted only: `p13a_fun005ffc50_writable_callback_pair_d94_entry_slot0_contract_subset_complete` and the concrete slot-0 target `0x00835290`. The `+0xd94` value-range gate and all aggregate callback/slot/P1.3 gates remain fail-closed.
