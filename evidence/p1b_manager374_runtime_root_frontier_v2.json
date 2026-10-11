@@ -1,0 +1,81 @@
+{
+  "adjudication": {
+    "bounded_runtime_root_classes_composed": true,
+    "canonical_lineage_derived_subobject_surface_complete": true,
+    "canonical_lineage_live_call_boundary_surface_complete": true,
+    "canonical_lineage_postconstruction_copy_surface_complete": true,
+    "canonical_lineage_pre_global_escape_surface_complete": true,
+    "canonical_lineage_returned_root_consumer_surface_complete": true,
+    "external_or_unknown_origin_outer_alias_surface_complete": false,
+    "external_provider_count": 7,
+    "global_helper_non_vtable_indirect_setter_surface_complete": false,
+    "global_manager_root_origin_surface_complete": false,
+    "independent_unnamed_opaque_or_external_runtime_root_synthesis_complete": false,
+    "known_named_opaque_manager_root_exportable_candidate_count": 0,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "memory_load_or_opaque_runtime_reconstruction_complete": false,
+    "named_opaque_manager_root_candidate_surface_complete": true,
+    "p1_3_control_producer_complete": false,
+    "program_internal_canonical_lineage_runtime_alias_found": false,
+    "program_internal_canonical_lineage_runtime_alias_surface_complete": true,
+    "unrecognized_runtime_transform_root_origin_surface_complete": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "canonical_outer_root": {
+    "constructor": "FUN_0045ef50",
+    "non_null_origin_unique": true,
+    "slot": "0x00bc185c"
+  },
+  "format": "SHIFT.P1B.Manager374RuntimeRootFrontier/2",
+  "limits": [
+    "This supersedes the v1 runtime-root frontier only for program-internal canonical-lineage creation, copies, returns, derived aliases and live call boundaries.",
+    "It does not claim that arbitrary external process writes or unrelated unknown memory cannot contain the same runtime pointer.",
+    "It does not claim that an as-yet-unidentified opaque helper cannot synthesize the runtime pointer from unrelated inputs.",
+    "No object identity is inferred from equal numeric offsets."
+  ],
+  "named_opaque_surface": {
+    "candidate_count": 2,
+    "exportable_candidate_count": 0
+  },
+  "next_step": "Reduce only the three surviving external/unnamed-opaque/unrecognized-transform origin classes; do not reopen canonical-lineage postconstruction copies before final manager+0x374 -> HDVehicle+0x4330 and slot2 adjudication.",
+  "owner": "Process 1B / P1.3B aggregate integration",
+  "program_internal_exact_root_surface": {
+    "bounded_direct_callee_remaining_count": 0,
+    "bounded_direct_callee_target_count": 17,
+    "canonical_direct_load_count": 112,
+    "conditional_exact_eax_return_function_count": 7,
+    "derived_subobject_reconstructs_exact_outer_root": false,
+    "derived_subobject_transition_count": 3,
+    "direct_return_callsite_count": 6,
+    "indirect_exact_root_call_count": 3,
+    "live_call_boundary_observation_count": 303,
+    "live_call_boundary_unique_callsite_count": 302,
+    "non_vtable_indirect_exact_root_call_count": 0,
+    "postconstruction_exact_root_memory_store_count": 0,
+    "postconstruction_exact_root_push_count": 0,
+    "postconstruction_unmodelled_exact_alias_transfer_count": 0,
+    "pre_global_exact_this_helper_transfer_count": 0,
+    "pre_global_exact_this_memory_store_count": 0,
+    "returned_root_consumer_can_persist_or_dispatch": false
+  },
+  "ready": true,
+  "surviving_frontier": [
+    "externally or unknown-origin initialized memory containing the exact outer root without a canonical program-internal producer",
+    "previously unidentified opaque helper return that synthesizes the exact outer root from unrelated unknown input",
+    "unrecognized runtime transform outside the merged bounded reconstruction classes"
+  ],
+  "upstream_contracts": [
+    "SHIFT.P1B.Manager374RuntimeRootFrontier/1",
+    "SHIFT.HDVehicle64e8RenderManagerConstructorExactThisEscapeClosure/1",
+    "SHIFT.P1B.RenderManagerCanonicalAccessClosure/1",
+    "SHIFT.P1B.RenderManagerCopyReturnClosure/1",
+    "SHIFT.P1B.RenderManagerDerivedSubobjectClosure/1",
+    "SHIFT.P1B.RenderManagerLiveCallBoundaryClosure/1",
+    "SHIFT.P1B.Manager374NamedOpaqueCandidateClosure/1"
+  ],
+  "version": 2
+}
