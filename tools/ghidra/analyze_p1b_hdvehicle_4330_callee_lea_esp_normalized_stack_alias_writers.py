@@ -64,7 +64,7 @@ def logical_stack_key(op: str, esp_delta: int):
         return None
     base, off = parsed
     if base == "esp":
-        off += esp_delta
+        off -= esp_delta
     return f"{base}{off:+#x}"
 
 
