@@ -1,0 +1,44 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_fun005ffc50_writable_callback_pair_d94_entry_payload_address_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "writable_callback_pair_d94_entry_slot0_nonzero_return_is_payload_address": true,
+    "writable_callback_pair_d94_value_range_proven": false,
+    "writable_callback_pair_d94_writer_consumer_receiver_identity_proven": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_callback_pair_target_compatible_frontier_empty": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94EntrySlot0Contract/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94EntryPayloadAddress/1",
+  "limits": [
+    "The non-zero slot-0 result is an address into allocator payload, not a proven small integer count.",
+    "This does not establish that the writer receiver at 0x0045ecd3 is the same object type/instance as the +0xd94 loop consumers at 0x005032ea and 0x0050337a.",
+    "No aggregate gate is promoted."
+  ],
+  "next_step": "Resolve receiver identity/provenance between the 0x0045ecd3 writer and the two +0xd94 loop consumers before treating this runtime producer as relevant to their bound.",
+  "owner": "Process 1A / P1.3A",
+  "proof": {
+    "allocator_slot_formula": "payload_base + index * stride",
+    "block_payload_base_field": "block+0x4",
+    "container_block_quantity_argument": "0x80",
+    "container_edx_argument": "0x100",
+    "container_init_call": "0x00830d05",
+    "container_init_flags": 4,
+    "decoded_instruction_count": 2847850,
+    "entry_container": "entry+0x40",
+    "nonzero_slot0_return_is_payload_address": true,
+    "slot0_container_acquire": "0x0062f6f0",
+    "slot_allocator": "0x0063ac90"
+  },
+  "ready": true,
+  "version": 1
+}
