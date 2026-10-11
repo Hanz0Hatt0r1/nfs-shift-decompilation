@@ -1,0 +1,47 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_fun005ffc50_writable_callback_pair_d94_writer_singleton_direct_propagation_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "writable_callback_pair_d94_runtime_writer_relevant_to_loop_bound_proven": false,
+    "writable_callback_pair_d94_value_range_proven": false,
+    "writable_callback_pair_d94_writer_consumer_receiver_identity_proven": false,
+    "writable_callback_pair_d94_writer_singleton_direct_store_into_loop_source_record_found": false,
+    "writable_callback_pair_d94_writer_singleton_same_block_nonstack_store_found": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_callback_pair_target_compatible_frontier_empty": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94RuntimeWriterSingletonProvenance/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94WriterSingletonDirectPropagation/1",
+  "limits": [
+    "The scan stops at the first control transfer and therefore does not claim interprocedural or multi-block alias closure.",
+    "Four same-block memory stores are stack locals only; zero same-block non-stack stores are observed.",
+    "Calls receiving the singleton can return or create aliases and remain open."
+  ],
+  "next_step": "Classify the 30 ECX-receiver and 2 EDX-argument call frontiers, and classify source_record+0 key semantics/producers independently before deciding writer relevance.",
+  "owner": "Process 1A / P1.3A",
+  "proof": {
+    "decoded_instruction_count": 2847850,
+    "same_block_ecx_receiver_call_count": 30,
+    "same_block_edx_argument_call_count": 2,
+    "same_block_nonstack_store_count": 0,
+    "same_block_stack_store_count": 4,
+    "same_block_stack_store_sites": ["0x0057b6e4", "0x00d77fad", "0x00d77fb0", "0x00d77fb3"],
+    "singleton_direct_load_count": 113,
+    "singleton_direct_reference_count": 115
+  },
+  "ready": true,
+  "scope": {
+    "method": "exact register copies within the straight-line block from each direct singleton load up to the first call/jump/return",
+    "source": "DAT_00bc185c"
+  },
+  "version": 1
+}
