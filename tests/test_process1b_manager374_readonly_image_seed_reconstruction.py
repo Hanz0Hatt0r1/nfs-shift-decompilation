@@ -126,6 +126,58 @@ def test_window_expiry_prevents_late_reconstruction():
     assert data["surface"]["window_expiration_count"] == 1
 
 
+def test_cdq_implicit_edx_clobber_kills_seed():
+    mod = module()
+    data = mod.scan_rows([
+        (0x40A000, "mov", "edx,DWORD PTR [0x00aaf000]"),
+        (0x40A006, "cdq", ""),
+        (0x40A007, "add", "edx,0x20"),
+    ], reader({0x00AAF000: (TARGET - 0x20, ".rdata")}))
+    assert data["surface"]["exact_root_formation_count"] == 0
+    assert data["surface"]["implicit_tracked_clobber_count"] == 1
+
+
+def test_xchg_clobbers_both_tracked_operands_fail_closed():
+    mod = module()
+    data = mod.scan_rows([
+        (0x40B000, "mov", "eax,DWORD PTR [0x00aaf100]"),
+        (0x40B006, "mov", "edx,DWORD PTR [0x00aaf104]"),
+        (0x40B00C, "xchg", "eax,edx"),
+        (0x40B00E, "add", "edx,0x20"),
+    ], reader({
+        0x00AAF100: (0x11111111, ".rdata"),
+        0x00AAF104: (TARGET - 0x20, ".rdata"),
+    }))
+    assert data["surface"]["exact_root_formation_count"] == 0
+    assert data["surface"]["implicit_tracked_clobber_count"] == 2
+
+
+def test_leave_invalidates_tracked_ebp():
+    mod = module()
+    data = mod.scan_rows([
+        (0x40C000, "mov", "ebp,DWORD PTR [0x00aaf200]"),
+        (0x40C006, "leave", ""),
+        (0x40C007, "add", "ebp,0x20"),
+    ], reader({0x00AAF200: (TARGET - 0x20, ".rdata")}))
+    assert data["surface"]["exact_root_formation_count"] == 0
+    assert data["surface"]["implicit_tracked_clobber_count"] == 1
+
+
+def test_rep_string_instruction_invalidates_tracked_index_and_count_registers():
+    mod = module()
+    data = mod.scan_rows([
+        (0x40D000, "mov", "esi,DWORD PTR [0x00aaf300]"),
+        (0x40D006, "mov", "ecx,DWORD PTR [0x00aaf304]"),
+        (0x40D00C, "rep", "movsd DWORD PTR es:[edi],DWORD PTR ds:[esi]"),
+        (0x40D00E, "add", "esi,0x20"),
+    ], reader({
+        0x00AAF300: (TARGET - 0x20, ".rdata"),
+        0x00AAF304: (0x10, ".rdata"),
+    }))
+    assert data["surface"]["exact_root_formation_count"] == 0
+    assert data["surface"]["implicit_tracked_clobber_count"] >= 2
+
+
 def make_pe32(path: Path):
     blob = bytearray(0x800)
     blob[:2] = b"MZ"
@@ -138,10 +190,8 @@ def make_pe32(path: Path):
     struct.pack_into("<H", blob, optional, 0x10B)
     struct.pack_into("<I", blob, optional + 28, 0x00400000)
     table = optional + 0xE0
-    # .rdata RVA 0x2000 -> raw 0x400
     blob[table:table + 8] = b".rdata\0\0"
     struct.pack_into("<IIII", blob, table + 8, 0x100, 0x2000, 0x100, 0x400)
-    # .data RVA 0x3000 -> raw 0x500 (must not be a seed source)
     table2 = table + 40
     blob[table2:table2 + 8] = b".data\0\0\0"
     struct.pack_into("<IIII", blob, table2 + 8, 0x100, 0x3000, 0x100, 0x500)
