@@ -1,0 +1,52 @@
+{
+  "adjudication": {
+    "bounded_indirect_entry_coverage_composed": true,
+    "bounded_indirect_entry_exact_4330_carrier_hit_found": false,
+    "direct_absolute_writable_internal_static_target_subset_included": true,
+    "external_provider_count": 7,
+    "external_runtime_writable_target_providers_remain_open": true,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "register_loaded_or_base_indexed_writable_targets_remain_open": true,
+    "remaining_incoming_entry_blocker_is_unresolved_nonstatic_indirect_target_recovery": true,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "runtime_patching_or_generated_code_ruled_out": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/9",
+  "limits": [
+    "This supersedes /8 by adding bounded internal/static target provenance for the complete direct-absolute writable .data transfer inventory.",
+    "The navigation index unresolved-target count remains 19,500 because that index does not map its unresolved edges onto the independently recovered writable-slot targets.",
+    "External NVAPI results, alias/indirect writers, register-loaded/base-indexed writable pointers, runtime-written vtables and opaque/generated targets remain open."
+  ],
+  "next_step": "Recover register-loaded/base-indexed writable target provenance and alias/indirect writers, then compose those subsets without treating the navigation-index unresolved count as a literal remainder counter.",
+  "owner": "Process 1B / P1.3B aggregate integration",
+  "ready": true,
+  "supersedes": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/8",
+  "surface": {
+    "bounded_exact_carrier_hit_count": 0,
+    "composed_coverage_class_count": 13,
+    "coverage_addition": {
+      "bounded_candidate_value_count": 9,
+      "class": "direct absolute writable .data indirect target recovery (bounded internal/static providers)",
+      "exact_carrier_hit_count": 0,
+      "slot_count": 259,
+      "transfer_count": 334
+    },
+    "direct_absolute_writable_bounded_candidate_value_count": 9,
+    "direct_absolute_writable_exact_carrier_hit_count": 0,
+    "direct_absolute_writable_transfer_count": 334,
+    "direct_absolute_writable_unique_slot_count": 259,
+    "incoming_indirect_navigation_edge_count": 19500,
+    "incoming_indirect_unresolved_target_count": 19500,
+    "p1b_exact_carrier_count": 15,
+    "previous_bounded_coverage_class_count": 12
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/8",
+    "SHIFT.P1B.HDVehicle4330DirectAbsoluteWritableIndirectRecovery/1"
+  ],
+  "version": 9
+}
