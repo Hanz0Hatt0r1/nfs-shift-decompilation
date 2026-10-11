@@ -31,6 +31,16 @@ def test_rmw_indexed_plus374_store_is_candidate():
     assert data["surface"]["exact_plus_374_write_candidates"][0]["registers"] == ["edx", "esi"]
 
 
+def test_lock_prefixed_rmw_is_normalized_and_kept():
+    data = module().scan_rows([
+        (0x402100, "lock", "add DWORD PTR [ecx+0x374],0x1"),
+    ])
+    assert data["surface"]["exact_plus_374_write_candidate_count"] == 1
+    row = data["surface"]["exact_plus_374_write_candidates"][0]
+    assert row["mnemonic"] == "add"
+    assert row["prefixes"] == ["lock"]
+
+
 def test_read_only_source_operand_is_not_candidate():
     data = module().scan_rows([
         (0x403000, "mov", "eax,DWORD PTR [ecx+0x374]"),
