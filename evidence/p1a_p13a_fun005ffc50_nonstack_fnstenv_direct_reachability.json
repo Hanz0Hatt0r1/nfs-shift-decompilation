@@ -1,0 +1,90 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "dynamic_registry_reconstructed_or_indirect_registration_ruled_out": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "nonstack_fnstenv_direct_call_or_branch_entry_found": false,
+    "nonstack_fnstenv_fallthrough_from_preceding_code_found": false,
+    "nonstack_fnstenv_indirect_or_runtime_entry_ruled_out": false,
+    "other_pic_or_fnstenv_entry_ruled_out": false,
+    "p13a_fun005ffc50_nonstack_fnstenv_direct_reachability_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "machine_ranges": {
+      "aligned_code_pointer_table": {
+        "end_exclusive": "0x00417810",
+        "sha256": "9a817be1f31c12cb0a5a79c7575f0ba684ced9e51a42943ed5b208c24880fbb5",
+        "size": 44,
+        "start": "0x004177e4"
+      },
+      "int3_padding_window": {
+        "end_exclusive": "0x0050d070",
+        "sha256": "020aacab70bd13f9f9bf551024cd02f41c6552cabeea54d771789a00ca745696",
+        "size": 59,
+        "start": "0x0050d035"
+      }
+    },
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50FnstenvStackRestore/1"
+  },
+  "decode_0x004177e4_context": {
+    "aligned_dword_count": 11,
+    "aligned_dwords": [
+      "0x004177d9",
+      "0x004175e3",
+      "0x004175e3",
+      "0x00417630",
+      "0x004175d7",
+      "0x00417654",
+      "0x0041768b",
+      "0x0041774b",
+      "0x00417768",
+      "0x004177a8",
+      "0x004177cc"
+    ],
+    "all_dwords_point_into_nearby_text": true,
+    "preceded_by": "0x004177e2 ret"
+  },
+  "decode_0x0050d063_context": {
+    "following_transfer": "0x0050d070 jmp 0x40cc70",
+    "int3_byte_count": 56,
+    "non_int3_bytes": [
+      {"byte": "0x90", "site": "0x0050d035"},
+      {"byte": "0xd9", "site": "0x0050d063"},
+      {"byte": "0xb3", "site": "0x0050d064"}
+    ],
+    "preceding_transfer": "0x0050d030 jmp 0x4eb550",
+    "size": 59,
+    "window_end_exclusive": "0x0050d070",
+    "window_start": "0x0050d035"
+  },
+  "direct_incoming_edges": {
+    "0x004177e4": [],
+    "0x0050d063": []
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50NonStackFnstenvDirectReachability/1",
+  "limits": [
+    "This closes only direct call/jmp/jcc/loop entry and ordinary fallthrough into the two non-stack FNSTENV decode addresses.",
+    "At 0x004177e4 the bytes form eleven aligned little-endian dwords pointing into nearby .text and begin immediately after a RET; this is strong table-shaped machine evidence but not a universal proof against arbitrary indirect entry.",
+    "At 0x0050d063 the decode sits in a 59-byte padding window containing 56 INT3 bytes, bounded by an earlier unconditional JMP and the next trampoline JMP; arbitrary indirect/runtime entry into the middle remains unruled.",
+    "Writable-memory callbacks, indirect computed jumps, inter-block/return-value reconstruction and runtime-generated pointers remain open.",
+    "No global callback, reconstructed-entry, slot0, slot1, stored-alias, runtime selected-wheel-store-negative or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Move P1.3A FUN_005ffc50 entry work to writable-memory/runtime callback slots and inter-block/return-value provenance; all four retail FNSTENV decodes now have bounded direct/static classifications.",
+  "non_stack_fnstenv_rows": [
+    {"mnemonic": "fnstenv", "operand": "[edi+0x41]", "site": "0x004177e4"},
+    {"mnemonic": "fnstenv", "operand": "[ebx-0x33333334]", "site": "0x0050d063"}
+  ],
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "version": 1
+}
