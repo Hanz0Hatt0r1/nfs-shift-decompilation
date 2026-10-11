@@ -43,14 +43,15 @@ Only dereferences whose provenance crossed at least one EBP-relative reload are 
 
 - any control transfer clears register and EBP-cell state;
 - any explicit EBP write invalidates all tracked EBP-relative cells;
-- any unmodeled EBP-relative write/RMW invalidates **all** tracked EBP-relative cells conservatively;
-- exact tracked full-GPR `MOV` spill first invalidates older cells, then installs the new tracked cell;
+- outside the exact two-operand `MOV` spill/reload grammar, **any instruction operand that references an EBP-relative cell is a barrier** and invalidates all tracked EBP cells;
+- this deliberately treats read-only and unusual addressing forms as barriers too, avoiding incomplete opcode/write-set assumptions;
+- exact tracked full-GPR `MOV` spill invalidates older cells before installing the new tracked cell;
 - this whole-cell invalidation intentionally avoids unsound byte/word overlap assumptions;
 - full and partial tracked-register writes kill exact address provenance;
-- selected implicit x86 GPR clobbers are modeled conservatively;
+- selected implicit x86 GPR clobbers are modeled conservatively, including `enter/leave`, `popad`, multiply/divide, timestamp/cpuid families and string instructions;
 - `lock`/`rep*` prefixes are normalized before mnemonic classification.
 
-An explicit write/RMW mnemonic allowlist is used for recovered `[reg]` destinations. Other first-memory-operand dereferences are emitted separately and remain fail-closed.
+An explicit write/RMW mnemonic classifier is used only for recovered `[reg]` target candidates. Other first-memory-operand dereferences are emitted separately and remain fail-closed.
 
 ## Deliberate limits
 
