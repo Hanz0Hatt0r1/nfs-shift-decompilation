@@ -1,0 +1,52 @@
+{
+  "adjudication": {
+    "bounded_indirect_entry_coverage_composed": true,
+    "bounded_indirect_entry_exact_4330_carrier_hit_found": false,
+    "computed_or_runtime_alias_surface_complete": false,
+    "exact_source_slot_address_literal_surface_included": true,
+    "exact_source_slot_alias_getter_static_entry_surface_included": true,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "memory_derived_indirect_call_target_identity_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "runtime_or_alias_writer_provenance_complete": false,
+    "runtime_patching_or_generated_code_ruled_out": false,
+    "source_slot_alias_getter_function_address_taken_found": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/16",
+  "limits": [
+    "This supersedes /15 by composing only the exact whole-image source-slot address literal surface and static entry surface of the two exact alias getters.",
+    "The exact source-slot addresses occur six times total, and the alias getters have three direct callsites with zero raw function-address dword occurrences.",
+    "Computed/copied/runtime aliases and caller write/escape semantics remain open, so runtime target identity and global incoming indirect entry remain fail-closed."
+  ],
+  "next_step": "Classify the three direct alias-getter caller paths for write/escape behavior, then continue computed alias/runtime writer provenance.",
+  "owner": "Process 1B / P1.3B aggregate integration",
+  "ready": true,
+  "supersedes": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/15",
+  "surface": {
+    "bounded_exact_carrier_hit_count": 0,
+    "composed_coverage_class_count": 20,
+    "coverage_addition": {
+      "alias_getter_direct_call_site_count": 3,
+      "alias_getter_function_address_dword_occurrence_count": 0,
+      "class": "selected source-slot exact address and static alias-getter entry surface",
+      "source_slot_address_dword_occurrence_count": 6
+    },
+    "incoming_indirect_navigation_edge_count": 19500,
+    "incoming_indirect_unresolved_target_count": 19500,
+    "p1b_exact_carrier_count": 15,
+    "previous_bounded_coverage_class_count": 19,
+    "source_slot_exact_address_dword_occurrence_count": 6,
+    "source_slot_static_alias_getter_direct_call_site_count": 3,
+    "source_slot_static_alias_getter_function_address_dword_occurrence_count": 0
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/15",
+    "SHIFT.P1B.HDVehicle4330SourceSlotExactAddressSurface/1"
+  ],
+  "version": 16
+}
