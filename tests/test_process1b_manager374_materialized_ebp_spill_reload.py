@@ -64,6 +64,43 @@ def test_rmw_on_any_ebp_cell_invalidates_tracked_cells_conservatively():
     assert data["surface"]["reload_derived_zero_displacement_write_candidate_count"] == 0
 
 
+def test_partial_register_spill_cannot_install_pointer_provenance():
+    data = module().scan_rows([
+        (0x403200, "lea", "eax,[ecx+0x374]"),
+        (0x403206, "mov", "WORD PTR [ebp-0x8],ax"),
+        (0x40320A, "mov", "edx,DWORD PTR [ebp-0x8]"),
+        (0x40320D, "mov", "DWORD PTR [edx],esi"),
+    ])
+    assert data["surface"]["ebp_relative_spill_count"] == 0
+    assert data["surface"]["ebp_relative_reload_count"] == 0
+    assert data["surface"]["reload_derived_zero_displacement_write_candidate_count"] == 0
+
+
+def test_partial_register_reload_cannot_recover_pointer_provenance():
+    data = module().scan_rows([
+        (0x403300, "lea", "eax,[ecx+0x374]"),
+        (0x403306, "mov", "DWORD PTR [ebp-0x8],eax"),
+        (0x40330A, "mov", "dx,WORD PTR [ebp-0x8]"),
+        (0x40330E, "mov", "DWORD PTR [edx],esi"),
+    ])
+    assert data["surface"]["ebp_relative_spill_count"] == 1
+    assert data["surface"]["ebp_relative_reload_count"] == 0
+    assert data["surface"]["reload_derived_zero_displacement_write_candidate_count"] == 0
+
+
+def test_partial_register_copy_cannot_propagate_pointer_provenance():
+    data = module().scan_rows([
+        (0x403400, "lea", "eax,[ecx+0x374]"),
+        (0x403406, "mov", "bx,ax"),
+        (0x403409, "mov", "DWORD PTR [ebp-0x8],ebx"),
+        (0x40340D, "mov", "edx,DWORD PTR [ebp-0x8]"),
+        (0x403410, "mov", "DWORD PTR [edx],esi"),
+    ])
+    assert data["surface"]["ebp_relative_spill_count"] == 0
+    assert data["surface"]["ebp_relative_reload_count"] == 0
+    assert data["surface"]["reload_derived_zero_displacement_write_candidate_count"] == 0
+
+
 def test_ebp_change_invalidates_cells():
     data = module().scan_rows([
         (0x404000, "lea", "eax,[ecx+0x374]"),
