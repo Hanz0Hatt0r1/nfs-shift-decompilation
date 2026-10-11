@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "evidence" / "p1b_manager374_literal_writer_closure.json"
+VPTR = ROOT / "evidence" / "hdvehicle_64e8_manager_374_vptr_receiver_rejections.json"
 BUILDER = ROOT / "tools" / "ghidra" / "build_p1b_manager374_literal_writer_closure.py"
 
 
@@ -21,6 +22,16 @@ def load_builder():
 
 def test_builder_reproduces_committed_evidence():
     assert load_builder().build() == load_evidence()
+
+
+def test_structured_vptr_contract_flattens_to_exact_15_sites():
+    vptr = json.loads(VPTR.read_text(encoding="utf-8"))
+    assert vptr["format"] == "SHIFT.HDVehicle64e8Manager374VptrReceiverRejections/1"
+    sites = load_builder().vptr_rejection_sites(vptr)
+    assert len(sites) == 15
+    assert "0x008446cb" in sites
+    assert "0x00a38974" in sites
+    assert vptr["adjudication"]["numeric_plus_0x374_equality_used_as_identity"] is False
 
 
 def test_exact_25_site_partition_closes_without_overlap():
