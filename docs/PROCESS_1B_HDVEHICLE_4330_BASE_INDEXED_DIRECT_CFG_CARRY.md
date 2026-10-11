@@ -7,7 +7,7 @@ A retail PC 1.02 fixed-point CFG pass extends the base/index writable-data prove
 For the same **63** base/index-addressed writable `.data` loads / **51** effective addresses:
 
 - **44** loads carry live GPR taint across at least one direct basic-block edge;
-- **207** unique load/branch/taint-state events occur at **199** branch sites;
+- **228** unique load/branch/taint-state events occur at **199** branch sites; state identity includes the transformed/untransformed taint bit;
 - **0** modeled paths dispatch `CALL/JMP` through the tainted register;
 - fixed-point max-out count is **0**;
 - **56** direct-call boundaries remain with live taint;
