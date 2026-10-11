@@ -1,0 +1,87 @@
+{
+  "adjudication": {
+    "bounded_internal_static_provider_exact_carrier_hit_found": false,
+    "bounded_internal_static_provider_subset_complete": true,
+    "callback_pair_alias_or_indirect_writers_remain_open": true,
+    "direct_absolute_writable_indirect_slot_inventory_complete": true,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "nvapi_external_runtime_provider_remains_open": true,
+    "p1_3_control_producer_complete": false,
+    "register_loaded_or_base_indexed_writable_targets_remain_open": true,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "carrier_set": {
+    "addresses": [
+      "0x00756050",
+      "0x007567a0",
+      "0x00756bb0",
+      "0x007618f0",
+      "0x00768a4d",
+      "0x00769520",
+      "0x00769640",
+      "0x0076b130",
+      "0x0076b280",
+      "0x0076df50",
+      "0x00771db0",
+      "0x00771e10",
+      "0x00772200",
+      "0x00772570",
+      "0x007c3b00"
+    ],
+    "count": 15
+  },
+  "format": "SHIFT.P1B.HDVehicle4330DirectAbsoluteWritableIndirectRecovery/1",
+  "limits": [
+    "This reuses the complete direct absolute writable .data transfer inventory but closes only bounded internal/static value provenance for those slots.",
+    "Nonzero NVAPI table values come from external nvapi_QueryInterface and are intentionally not reclassified as internal carrier negatives without runtime module/provider evidence.",
+    "Alias/indirect writers, register-loaded/base-indexed writable pointers, runtime mutation and other writable-memory target classes remain open."
+  ],
+  "next_step": "Compose this bounded writable-data target recovery into P1B indirect-entry coverage, then continue register-loaded/base-indexed and alias-writer target provenance.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "bounded_internal_or_static_candidate_value_count": 9,
+    "bounded_internal_or_static_exact_carrier_hit_count": 0,
+    "callback_pair_direct_static_candidate_value_count": 6,
+    "callback_pair_direct_static_candidate_values": [
+      "0x005f46f0",
+      "0x005f4760",
+      "0x006165b6",
+      "0x006165c0",
+      "0x0061cb43",
+      "0x0061cbff"
+    ],
+    "callback_pair_exact_carrier_hit_count": 0,
+    "callback_pair_slot_count": 2,
+    "callback_pair_transfer_count": 77,
+    "direct_absolute_writable_transfer_count": 334,
+    "fixed_bridge_direct_absolute_writer_count": 0,
+    "fixed_bridge_exact_carrier_hit_count": 0,
+    "fixed_bridge_initial_targets": [
+      "0x0090162a",
+      "0x00901707"
+    ],
+    "fixed_bridge_slot_count": 2,
+    "fixed_bridge_transfer_count": 2,
+    "nvapi_initial_exact_carrier_hit_count": 0,
+    "nvapi_initial_internal_stub": "0x00a61a48",
+    "nvapi_runtime_value_provider": "external nvapi_QueryInterface",
+    "nvapi_slot_count": 255,
+    "nvapi_transfer_count": 255,
+    "unique_writable_slot_count": 259
+  },
+  "upstream_contracts": [
+    "SHIFT.P1A.P13AFun005ffc50DirectAbsoluteWritableTransferComposition/1",
+    "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairStaticProvenance/1",
+    "SHIFT.P1A.P13AFun005ffc50NvapiWritableDispatchTable/1"
+  ],
+  "version": 1
+}
