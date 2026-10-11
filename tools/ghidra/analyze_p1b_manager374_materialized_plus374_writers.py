@@ -93,15 +93,17 @@ def implicit_clobbers(mnemonic: str, ops: list[str], prefixes: list[str]) -> set
         clobbered.add("esp")
         if mnemonic == "leave":
             clobbered.add("ebp")
+    if mnemonic in {"popa", "popad"}:
+        clobbered.update(GPRS)
     if mnemonic in {"mul", "div", "idiv"} or (mnemonic == "imul" and len(ops) == 1):
         clobbered.update({"eax", "edx"})
     if mnemonic in {"cdq", "cwd"}:
         clobbered.add("edx")
-    if mnemonic in {"cbw", "cwde"}:
+    if mnemonic in {"cbw", "cwde", "lahf", "xlat"}:
         clobbered.add("eax")
     if mnemonic == "cpuid":
         clobbered.update({"eax", "ebx", "ecx", "edx"})
-    if mnemonic == "rdtsc":
+    if mnemonic in {"rdtsc", "rdpmc"}:
         clobbered.update({"eax", "edx"})
     if mnemonic == "rdtscp":
         clobbered.update({"eax", "ecx", "edx"})
