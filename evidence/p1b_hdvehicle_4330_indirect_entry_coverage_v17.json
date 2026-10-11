@@ -1,0 +1,51 @@
+{
+  "adjudication": {
+    "bounded_indirect_entry_coverage_composed": true,
+    "bounded_indirect_entry_exact_4330_carrier_hit_found": false,
+    "computed_or_runtime_alias_surface_complete": false,
+    "direct_alias_getter_consumer_slot0_write_or_pointer_escape_found": false,
+    "direct_alias_getter_consumer_slot0_writer_subset_included": true,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "memory_derived_indirect_call_target_identity_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "runtime_or_alias_writer_provenance_complete": false,
+    "runtime_patching_or_generated_code_ruled_out": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/17",
+  "limits": [
+    "This supersedes /16 by composing only the three direct alias-getter caller paths with respect to slot0/table-pointer writes and pointer escapes.",
+    "Those callers expose only nonzero object-field addresses to helpers and contain zero non-stack direct memory writes; slot0 itself is neither written nor passed by address.",
+    "Computed/copied/runtime aliases, indirect getter entry and unrelated writers remain open, so exact runtime target identity and global incoming indirect entry remain fail-closed."
+  ],
+  "next_step": "Continue computed/copied/runtime alias provenance for 0x00b83dc0 and 0x00b83ec0, then return to remaining live-taint call boundaries.",
+  "owner": "Process 1B / P1.3B aggregate integration",
+  "ready": true,
+  "supersedes": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/16",
+  "surface": {
+    "bounded_exact_carrier_hit_count": 0,
+    "composed_coverage_class_count": 21,
+    "coverage_addition": {
+      "class": "direct alias-getter consumer slot0 writer closure",
+      "direct_getter_callsite_count": 3,
+      "nonstack_direct_memory_write_count": 0,
+      "slot0_write_or_pointer_escape_count": 0
+    },
+    "direct_alias_getter_callsite_count": 3,
+    "direct_alias_getter_nonstack_direct_memory_write_count": 0,
+    "direct_alias_getter_slot0_write_or_pointer_escape_count": 0,
+    "incoming_indirect_navigation_edge_count": 19500,
+    "incoming_indirect_unresolved_target_count": 19500,
+    "p1b_exact_carrier_count": 15,
+    "previous_bounded_coverage_class_count": 20
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/16",
+    "SHIFT.P1B.HDVehicle4330AliasGetterDirectConsumerSlot0Writer/1"
+  ],
+  "version": 17
+}
