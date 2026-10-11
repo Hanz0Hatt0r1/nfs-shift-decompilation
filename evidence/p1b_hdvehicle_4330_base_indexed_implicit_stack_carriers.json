@@ -1,0 +1,118 @@
+{
+  "adjudication": {
+    "base_indexed_direct_call_argument_escape_found": true,
+    "base_indexed_implicit_pop_reload_found": false,
+    "base_indexed_implicit_stack_carrier_surface_complete": true,
+    "base_indexed_inter_block_carry_ruled_out": false,
+    "base_indexed_normalized_esp_adjustment_found": false,
+    "base_indexed_tainted_indirect_transfer_found": false,
+    "direct_call_argument_escape_callees_require_provenance": true,
+    "external_provider_count": 7,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_machine_model": "SHIFT.P1A.P13AFun005ffc50BaseIndexedDataStackSpillReload/1"
+  },
+  "format": "SHIFT.P1B.HDVehicle4330BaseIndexedImplicitStackCarrierSurface/1",
+  "inventory": {
+    "base_indexed_data_load_count": 63,
+    "decoded_instruction_count": 2847850,
+    "direct_call_argument_escape_count": 5,
+    "direct_call_argument_escapes": [
+      {
+        "call_site": "0x004b1c1b",
+        "direct_callee": "0x006329e0",
+        "distance": 1,
+        "effective_address": "0x00b82034",
+        "load_site": "0x004b1c10",
+        "push_site": "0x004b1c17",
+        "source_register": "ecx",
+        "transformed": false
+      },
+      {
+        "call_site": "0x004cd46b",
+        "direct_callee": "0x00632c70",
+        "distance": 1,
+        "effective_address": "0x00b822a4",
+        "load_site": "0x004cd45d",
+        "push_site": "0x004cd464",
+        "source_register": "ecx",
+        "transformed": false
+      },
+      {
+        "call_site": "0x005f51ed",
+        "direct_callee": "0x00403c90",
+        "distance": 1,
+        "effective_address": "0x00b869d0",
+        "load_site": "0x005f51e0",
+        "push_site": "0x005f51e2",
+        "source_register": "eax",
+        "transformed": false
+      },
+      {
+        "call_site": "0x008d1960",
+        "direct_callee": "0x008b4c70",
+        "distance": 1,
+        "effective_address": "0x00b95320",
+        "load_site": "0x008d1951",
+        "push_site": "0x008d1958",
+        "source_register": "eax",
+        "transformed": false
+      },
+      {
+        "call_site": "0x00d74308",
+        "direct_callee": "0x006329e0",
+        "distance": 1,
+        "effective_address": "0x00b82030",
+        "load_site": "0x00d742fd",
+        "push_site": "0x00d74304",
+        "source_register": "eax",
+        "transformed": false
+      }
+    ],
+    "implicit_pop_reload_event_count": 0,
+    "implicit_pop_reload_events": [],
+    "implicit_push_event_count": 5,
+    "normalized_esp_adjust_event_count": 0,
+    "normalized_esp_adjust_events": [],
+    "tainted_register_indirect_transfer_count": 0,
+    "tainted_register_indirect_transfers": [],
+    "termination_reason_counts": {
+      "all_taint_dead": 2,
+      "other_control_transfer": 61
+    },
+    "unique_effective_address_count": 51
+  },
+  "limits": [
+    "The five implicit pushes are real direct-call argument escapes and are not treated as a negative closure of callee-side provenance.",
+    "No implicit pop reload, ESP-delta normalization event, or tainted indirect call/jmp occurs before the bounded same-block termination points.",
+    "Interprocedural callee flow, inter-block/phi carry, aliases, runtime mutation and aggregate P1.3 remain open."
+  ],
+  "next_step": "Classify the five direct-call argument escape callees, then bound inter-block carry.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "scope": {
+    "canonical_esp_model": "slot offsets normalized to ESP at the originating base/index load",
+    "forward_window_decoded_instructions": 16,
+    "implicit_stack_ops": [
+      "push GPR",
+      "pop GPR"
+    ],
+    "normalized_esp_arithmetic": [
+      "add esp,imm",
+      "sub esp,imm"
+    ],
+    "stops_on": [
+      "call/jmp after transfer or direct-argument-escape classification",
+      "conditional branch/loop/ret/trap",
+      "all taint dead",
+      "16-instruction window"
+    ]
+  },
+  "version": 1
+}
