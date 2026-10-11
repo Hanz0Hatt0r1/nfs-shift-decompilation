@@ -295,11 +295,11 @@ def scan_rows(rows):
             continue
 
         if mnemonic in STACK_BARRIERS:
-            if ops:
-                parent = explicit_register_parent(ops[0])
-                if parent in regs:
-                    regs.pop(parent, None)
-                    terminations["tracked_register_clobber"] += 1
+            # Push/pop/enter/leave are outside this subset. No pointer or ESP
+            # cell provenance is permitted to cross such a mutation.
+            if regs:
+                terminations["tracked_register_clobber"] += len(regs)
+                regs.clear()
             reset_stack("stack_barrier")
             continue
 
@@ -441,7 +441,7 @@ def scan_rows(rows):
         "limits": [
             "Covers exact full-GPR receiver+0x374 materialization, exact DWORD ESP-relative MOV spill/reload, and immediate add/sub or lea esp,[esp+/-imm] normalization inside one straight-line region.",
             "Tracked DWORD cells use normalized four-byte ranges; overlapping DWORD stores invalidate prior cells before new provenance can be installed.",
-            "Push/pop/enter/leave, arbitrary ESP writes, CFG stack-state carry, non-ESP memory aliases, helper returns, indexed LEA and arithmetic pointer reconstruction remain outside this subset.",
+            "Push/pop/enter/leave are hard barriers for both tracked pointer GPRs and ESP cells; arbitrary ESP writes, CFG stack-state carry, non-ESP memory aliases, helper returns, indexed LEA and arithmetic pointer reconstruction remain outside this subset.",
             "Any ESP-relative memory reference outside the exact DWORD MOV grammar invalidates tracked ESP cells conservatively.",
             "Recovered receiver registers are syntactic provenance only and do not imply Participants Manager identity.",
         ],
