@@ -1,0 +1,54 @@
+{
+  "adjudication": {
+    "base_indexed_inter_block_carry_remains_open": true,
+    "base_indexed_stack_spill_reload_remains_open": true,
+    "base_indexed_writable_same_register_can_target_exact_p1b_carrier": false,
+    "base_indexed_writable_same_register_near_transfer_subset_complete": true,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "register_copy_or_transform_after_base_indexed_load_remains_open": true,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50AbsoluteDataEspNormalization/1"
+  },
+  "format": "SHIFT.P1B.HDVehicle4330BaseIndexedWritableNearTransfer/1",
+  "limits": [
+    "This closes only same-register indirect CALL/JMP within the upstream 16-instruction straight-line window after exact base/index-addressed writable .data loads.",
+    "Register copies/transforms, stack spills/reloads, inter-block carry, aliases, heap/runtime values and arbitrary mutation remain open."
+  ],
+  "next_step": "Compose this near-transfer negative into P1B indirect-entry coverage, then follow copied/transformed/spilled base-indexed writable values.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "base_indexed_writable_data_load_count": 63,
+    "decoded_instruction_count": 2847850,
+    "destination_register_counts": {
+      "eax": 37,
+      "ebx": 4,
+      "ecx": 10,
+      "edi": 2,
+      "edx": 5,
+      "esi": 5
+    },
+    "exact_carrier_target_hit_count": 0,
+    "forward_window_decoded_instructions": 16,
+    "p1b_exact_carrier_count": 15,
+    "same_register_indirect_transfer_count": 0,
+    "termination_reason_counts": {
+      "other_control_transfer": 58,
+      "register_clobber": 5
+    },
+    "unique_effective_address_count": 51
+  },
+  "upstream_contracts": [
+    "SHIFT.P1A.P13AFun005ffc50BaseIndexedDataNearTransfer/1"
+  ],
+  "version": 1
+}
