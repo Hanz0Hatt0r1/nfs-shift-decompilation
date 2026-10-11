@@ -9,6 +9,8 @@ def data():return json.loads(E.read_text())
 def test_exact_effective_address_uses_known_constants():
  m=mod(); assert m.eval_expr('esi*4+0xb81618',{'esi':2})==0xb81620
  assert m.eval_expr('edi-0xc',{'edi':0xb83ed0})==0xb83ec4
+ st={'esi':(0,0),'eax':(1,0)};st=m.update_state('call','0x123456',st);assert 'esi' in st and 'eax' not in st
+ st={'edi':(0xbac6d4,16)};st=m.update_state('nop','',st);assert st=={}
 def test_synthetic_same_register_call_is_detected():
  m=mod();r=m.scan_rows([(0x1000,'mov','esi,0xb81000'),(0x1005,'mov','eax,DWORD PTR [esi]'),(0x1007,'nop',''),(0x1008,'call','eax')]);assert r['base_indexed_data_load_count']==1 and r['same_register_indirect_transfer_count']==1
 def test_clobber_blocks_transfer():
