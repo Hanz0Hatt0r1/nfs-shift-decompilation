@@ -1,0 +1,48 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_fun005ffc50_writable_callback_pair_d94_loop_receiver_provenance_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "writable_callback_pair_d94_loop_receiver_source_chain_proven": true,
+    "writable_callback_pair_d94_runtime_writer_relevant_to_loop_bound_proven": false,
+    "writable_callback_pair_d94_value_range_proven": false,
+    "writable_callback_pair_d94_writer_consumer_receiver_identity_proven": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_callback_pair_target_compatible_frontier_empty": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94EntryPayloadAddress/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94LoopReceiverProvenance/1",
+  "limits": [
+    "This proves the complete local receiver chain used by the two +0xd94 loop comparisons, not the provenance of source_record+0x0 before it enters loop_owner+0x4.",
+    "The runtime writer at 0x0045ecd3 uses the ECX receiver of FUN_0045ec60; no equality with the loop receiver is established here.",
+    "Identical displacement +0xd94 is not receiver identity."
+  ],
+  "next_step": "Classify producers of source_record+0x0 in loop_owner+0x4 and compare their object class/provenance with the FUN_0045ec60 receiver; only then decide whether 0x0045ecd3 belongs to the loop-bound producer frontier.",
+  "owner": "Process 1A / P1.3A",
+  "proof": {
+    "decoded_instruction_count": 2847850,
+    "derived_container": "loop_owner+0x38",
+    "derived_record_first_dword_source": "source_record+0x0",
+    "loop_bound_sites": ["0x005032ea", "0x0050337a"],
+    "loop_function": "0x005031e0",
+    "loop_function_pointer_occurrences_in_image": 1,
+    "loop_owner_vtable": "0x00ac4a58",
+    "loop_owner_vtable_slot1": "0x005031e0",
+    "loop_receiver_expression": "DWORD PTR [derived_record+0x0]",
+    "loop_receiver_load_site": "0x005032e6",
+    "runtime_writer_receiver_expression": "ECX/ESI of FUN_0045ec60",
+    "runtime_writer_site": "0x0045ecd3",
+    "source_container": "loop_owner+0x4",
+    "source_container_element_stride": "0x0d98"
+  },
+  "ready": true,
+  "version": 1
+}
