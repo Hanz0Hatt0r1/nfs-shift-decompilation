@@ -12,14 +12,17 @@ RETAIL_SHA256 = "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee
 FORMAT = "SHIFT.P1B.Manager374MaterializedEbpSpillReloadProbe/1"
 GPRS = {"eax", "ebx", "ecx", "edx", "esi", "edi", "ebp", "esp"}
 PREFIXES = {"lock", "rep", "repe", "repz", "repne", "repnz"}
-CONTROL = {"call", "jmp", "ret", "retn", "iret", "iretd", "int", "int3", "ud2"}
+CONTROL = {
+    "call", "jmp", "ret", "retn", "iret", "iretd", "int", "int3", "ud2",
+    "syscall", "sysret", "sysenter", "sysexit", "hlt",
+}
 WRITE_MNEMONICS = {
     "mov", "movd", "movq", "movss", "movsd", "movaps", "movups", "movapd", "movupd",
     "movdqa", "movdqu", "movnti", "movntq", "movntdq", "movntps", "movntpd",
     "add", "sub", "adc", "sbb", "and", "or", "xor", "inc", "dec", "not", "neg",
-    "xchg", "cmpxchg", "cmpxchg8b", "bts", "btr", "btc",
-    "rol", "ror", "rcl", "rcr", "shl", "shr", "sal", "sar",
-    "fst", "fstp", "fist", "fistp", "fisttp",
+    "xchg", "xadd", "cmpxchg", "cmpxchg8b", "bts", "btr", "btc",
+    "rol", "ror", "rcl", "rcr", "shl", "shr", "sal", "sar", "shld", "shrd",
+    "fst", "fstp", "fist", "fistp", "fisttp", "pop",
 }
 SUBREG_PARENT = {
     "al": "eax", "ah": "eax", "ax": "eax", "eax": "eax",
@@ -113,11 +116,20 @@ def is_control(mnemonic: str) -> bool:
     return mnemonic in CONTROL or mnemonic.startswith("j") or mnemonic.startswith("loop")
 
 
+def is_write_mnemonic(mnemonic: str) -> bool:
+    return (
+        mnemonic in WRITE_MNEMONICS
+        or mnemonic.startswith("set")
+        or mnemonic.startswith("stos")
+        or mnemonic.startswith("movs")
+    )
+
+
 def implicit_clobbers(mnemonic: str, ops: list[str], prefixes: list[str]) -> set[str]:
     clobbered: set[str] = set()
     if mnemonic in STACK_MUTATORS:
         clobbered.add("esp")
-        if mnemonic in {"leave", "popa", "popad"}:
+        if mnemonic in {"enter", "leave", "popa", "popad"}:
             clobbered.add("ebp")
         if mnemonic in {"popa", "popad"}:
             clobbered.update({"eax", "ebx", "ecx", "edx", "esi", "edi"})
@@ -125,7 +137,7 @@ def implicit_clobbers(mnemonic: str, ops: list[str], prefixes: list[str]) -> set
         clobbered.update({"eax", "edx"})
     if mnemonic in {"cdq", "cwd"}:
         clobbered.add("edx")
-    if mnemonic in {"cbw", "cwde", "lahf", "xlat", "xlatb"}:
+    if mnemonic in {"cbw", "cwde", "lahf", "xlat", "xlatb", "aaa", "aad", "aam", "aas", "daa", "das"}:
         clobbered.add("eax")
     if mnemonic == "cpuid":
         clobbered.update({"eax", "ebx", "ecx", "edx"})
@@ -133,8 +145,9 @@ def implicit_clobbers(mnemonic: str, ops: list[str], prefixes: list[str]) -> set
         clobbered.update({"eax", "edx"})
     if mnemonic == "rdtscp":
         clobbered.update({"eax", "ecx", "edx"})
-    if mnemonic == "cmpxchg":
-        clobbered.add("eax")
+    if mnemonic in {"cmpxchg", "xadd"}:
+        clobbered.add("eax" if mnemonic == "cmpxchg" else "")
+        clobbered.discard("")
     if mnemonic == "cmpxchg8b":
         clobbered.update({"eax", "edx"})
     if mnemonic == "xchg":
@@ -162,7 +175,7 @@ def scan_rows(rows):
         "tracked_register_clobber": 0,
         "implicit_tracked_register_clobber": 0,
         "ebp_frame_invalidation": 0,
-        "ebp_memory_write_invalidation": 0,
+        "ebp_memory_reference_invalidation": 0,
         "tracked_ebp_cell_overwrite": 0,
     }
 
@@ -171,12 +184,12 @@ def scan_rows(rows):
             terminations["ebp_frame_invalidation"] += len(ebp_cells)
             ebp_cells.clear()
 
-    def invalidate_cells_for_memory_write(dst_cell=None):
+    def invalidate_cells_for_reference(dst_cell=None):
         if not ebp_cells:
             return
         if dst_cell is not None and dst_cell in ebp_cells:
             terminations["tracked_ebp_cell_overwrite"] += 1
-        terminations["ebp_memory_write_invalidation"] += len(ebp_cells)
+        terminations["ebp_memory_reference_invalidation"] += len(ebp_cells)
         ebp_cells.clear()
 
     for address, raw_mnemonic, raw_operands in rows:
@@ -199,7 +212,7 @@ def scan_rows(rows):
                     "copy_depth": provenance["copy_depth"],
                     "operands": operands,
                 }
-                if mnemonic in WRITE_MNEMONICS:
+                if is_write_mnemonic(mnemonic):
                     reload_write_candidates.append(row)
                 else:
                     reload_other_dereferences.append(row)
@@ -234,17 +247,13 @@ def scan_rows(rows):
         if mnemonic == "mov" and len(ops) == 2:
             dst, src = ops
             dst_parent = explicit_register_parent(dst)
-            src_parent = explicit_register_parent(src)
             dst_full = full_gpr(dst)
             src_full = full_gpr(src)
             dst_cell = ebp_cell_offset(dst)
             src_cell = ebp_cell_offset(src)
 
-            # Only a complete 32-bit GPR value can establish a pointer spill.
-            # Partial-register stores still invalidate older tracked cells but
-            # can never install new exact pointer provenance.
             if dst_cell is not None:
-                invalidate_cells_for_memory_write(dst_cell)
+                invalidate_cells_for_reference(dst_cell)
                 if src_full in regs:
                     provenance = dict(regs[src_full])
                     ebp_cells[dst_cell] = provenance
@@ -258,8 +267,6 @@ def scan_rows(rows):
                     })
                 continue
 
-            # Only a complete 32-bit GPR destination can recover exact pointer
-            # provenance from a tracked cell.
             if dst_full and src_cell is not None:
                 provenance = dict(ebp_cells[src_cell]) if src_cell in ebp_cells else None
                 if dst_full == "ebp":
@@ -281,7 +288,6 @@ def scan_rows(rows):
                     terminations["tracked_register_clobber"] += 1
                 continue
 
-            # Identity-preserving pointer copies are full-GPR MOV only.
             if dst_full and src_full in regs:
                 if dst_full == "ebp":
                     clear_frame_cells()
@@ -290,8 +296,6 @@ def scan_rows(rows):
                 regs[dst_full] = provenance
                 continue
 
-            # Any other MOV destination, including a partial register, kills
-            # exact provenance for its 32-bit parent.
             if dst_parent in regs:
                 if dst_parent == "ebp":
                     clear_frame_cells()
@@ -301,10 +305,12 @@ def scan_rows(rows):
                 clear_frame_cells()
             continue
 
-        if ops:
-            write_cell = ebp_cell_offset(ops[0])
-            if write_cell is not None and mnemonic in WRITE_MNEMONICS:
-                invalidate_cells_for_memory_write(write_cell)
+        # Outside exact MOV spill/reload, any EBP-relative memory-like operand
+        # is a conservative barrier. This intentionally treats read-only forms
+        # and LEA-style syntax as invalidating too, avoiding incomplete opcode
+        # and operand-width alias modeling.
+        if any(ebp_cell_offset(op) is not None for op in ops):
+            invalidate_cells_for_reference()
 
         if ops:
             parent = explicit_register_parent(ops[0])
@@ -355,7 +361,7 @@ def scan_rows(rows):
             "This successor adds only exact MOV spill/reload through unchanged EBP-relative memory cells after exact lea addr,[receiver+0x374] materialization.",
             "Pointer spill/reload/copy propagation requires complete 32-bit GPR operands; partial-register MOV is clobber-only.",
             "Direct/copy-only materialized dereferences are predecessor coverage and are not counted as new reload-derived candidates.",
-            "Any unmodeled EBP-relative write/RMW invalidates all tracked EBP cells conservatively because operand-width overlap is not reconstructed.",
+            "Any non-MOV EBP-relative memory-like reference invalidates all tracked EBP cells conservatively; exact MOV spill replaces older tracked cells before installing new provenance.",
             "ESP-relative cells, implicit push/pop transport, cross-control-flow state, memory-stored non-EBP aliases, helper returns, indexed LEA and arithmetic reconstruction remain outside this subset.",
             "Any EBP write invalidates tracked cell identity; control boundaries clear all tracked state.",
             "Recovered receiver registers remain syntactic provenance only and do not imply Participants Manager identity.",
