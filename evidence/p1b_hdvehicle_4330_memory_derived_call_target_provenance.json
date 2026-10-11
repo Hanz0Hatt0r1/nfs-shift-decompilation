@@ -1,0 +1,83 @@
+{
+  "adjudication": {
+    "bounded_static_initializer_target_can_hit_exact_p1b_carrier": false,
+    "bounded_static_initializer_target_provenance_complete": true,
+    "external_provider_count": 7,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "memory_derived_indirect_call_target_identity_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_or_alias_writer_provenance_complete": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1B.HDVehicle4330BaseIndexedMemoryDerivedCallTargetProvenance/1",
+  "limits": [
+    "This closes only image-initial and exact visible initializer/reset writers for the two selected source slots.",
+    "Computed aliases, arbitrary runtime mutation, heap/object replacement and other writers remain open; exact runtime target identity is therefore not complete."
+  ],
+  "next_step": "Bound computed/alias/runtime writers for 0x00b83dc0 and 0x00b83ec0, then compose this negative exact-carrier target subset into aggregate coverage.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "bounded_callable_target_exact_carrier_hit_count": 0,
+    "bounded_callable_target_values": [
+      "0x00553260",
+      "0x00553a90"
+    ],
+    "bounded_static_initializer_writer_subset_complete": true,
+    "bounded_target_table_pointer_values": [
+      "0x00acdd68",
+      "0x00acdd70"
+    ],
+    "bounded_writer_evidence": {
+      "0x00b83dc0": [
+        "image=0x00acdd68",
+        "0x00a79af0 -> 0x00a79b0d writes 0x00acdd70",
+        "0x00a9d6d0 four-object reset loop includes slot and writes 0x00acdd68"
+      ],
+      "0x00b83ec0": [
+        "image=0x00acdd68",
+        "0x00a9d730 41-object reset loop includes slot and writes 0x00acdd68"
+      ]
+    },
+    "calls": [
+      {
+        "call_site": "0x00553247",
+        "callable_target_values": [
+          "0x00553260",
+          "0x00553a90"
+        ],
+        "source_slot": "0x00b83dc0",
+        "table_pointer_values": [
+          "0x00acdd68",
+          "0x00acdd70"
+        ]
+      },
+      {
+        "call_site": "0x005539ac",
+        "callable_target_values": [
+          "0x00553a90"
+        ],
+        "source_slot": "0x00b83ec0",
+        "table_pointer_values": [
+          "0x00acdd68"
+        ]
+      }
+    ],
+    "canonical_p1b_carrier_count": 15,
+    "image_initial_values": {
+      "0x00b83dc0": "0x00acdd68",
+      "0x00b83ec0": "0x00acdd68"
+    },
+    "table_plus_4_targets": {
+      "0x00acdd68": "0x00553a90",
+      "0x00acdd70": "0x00553260"
+    },
+    "target_derived_call_count": 2
+  },
+  "version": 1
+}
