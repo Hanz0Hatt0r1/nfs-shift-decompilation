@@ -1,0 +1,76 @@
+{
+  "adjudication": {
+    "absolute_data_implicit_pop_indirect_transfer_found": false,
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "dynamic_registry_reconstructed_or_indirect_registration_ruled_out": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "p13a_fun005ffc50_absolute_data_implicit_push_pop_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "register_loaded_or_aliased_writable_slots_ruled_out": false,
+    "return_value_fun005ffc50_provenance_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "unbounded_multi_edge_or_phi_reconstruction_ruled_out": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50AbsoluteDataStackSpillReload/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50AbsoluteDataImplicitPushPop/1",
+  "inventory": {
+    "absolute_data_load_count": 1786,
+    "decoded_instruction_count": 2847850,
+    "pop_derived_indirect_transfer_count": 0,
+    "pop_derived_indirect_transfers": [],
+    "pop_reload_events": [],
+    "popped_load_count": 0,
+    "push_count_by_register": {"eax":92,"ecx":71,"edx":44,"esi":1},
+    "push_event_samples": [
+      {"distance":2,"load_site":"0x00403f42","push_site":"0x00403f4e","slot":"0x00b811d4","source_register":"ecx","transformed":false},
+      {"distance":2,"load_site":"0x0040d768","push_site":"0x0040d773","slot":"0x00b811d0","source_register":"ecx","transformed":false},
+      {"distance":2,"load_site":"0x004685f3","push_site":"0x004685fe","slot":"0x00b81924","source_register":"ecx","transformed":false},
+      {"distance":3,"load_site":"0x0047885b","push_site":"0x0047886a","slot":"0x00b81bf0","source_register":"edx","transformed":false},
+      {"distance":3,"load_site":"0x00478871","push_site":"0x00478880","slot":"0x00b81bf0","source_register":"ecx","transformed":true},
+      {"distance":2,"load_site":"0x00493f03","push_site":"0x00493f0d","slot":"0x00b81e54","source_register":"eax","transformed":false},
+      {"distance":2,"load_site":"0x004a0697","push_site":"0x004a06a0","slot":"0x00b81f08","source_register":"ecx","transformed":false},
+      {"distance":2,"load_site":"0x004a20d8","push_site":"0x004a20e2","slot":"0x00b82168","source_register":"eax","transformed":false},
+      {"distance":1,"load_site":"0x00aa5410","push_site":"0x00aa5415","slot":"0x00bbb4c8","source_register":"eax","transformed":false},
+      {"distance":1,"load_site":"0x00aa5430","push_site":"0x00aa5435","slot":"0x00bbb148","source_register":"eax","transformed":false},
+      {"distance":1,"load_site":"0x00d57690","push_site":"0x00d57695","slot":"0x00b81b60","source_register":"eax","transformed":false},
+      {"distance":1,"load_site":"0x00d67b8d","push_site":"0x00d67b92","slot":"0x00b81e80","source_register":"eax","transformed":false}
+    ],
+    "pushed_load_count": 208,
+    "tainted_pop_reload_event_count": 0,
+    "tainted_push_event_count": 208,
+    "tainted_register_indirect_transfer_count": 0,
+    "tainted_register_indirect_transfers": [],
+    "termination_reason_counts": {"all_taint_dead":259,"other_control_transfer":1482,"unmodelled_esp_write":25,"window_exhausted":20},
+    "transformed_tainted_push_count": 12,
+    "unique_absolute_data_slot_count": 434
+  },
+  "limits": [
+    "This closes only implicit push/pop value transfer for GPR taint derived directly from absolute .data loads plus bounded same-block copies/transforms.",
+    "Arbitrary ESP arithmetic/LEA normalization, explicit stack aliases beyond the separate upstream mov spill/reload contract, inter-block carry, base/indexed writable sources, heap/runtime values and return provenance remain open.",
+    "Retail contains 208 tainted pushes but zero tainted pop reloads before the bounded control-flow/window boundary, hence zero pop-derived indirect transfers.",
+    "No global writable-memory, callback, reconstructed-entry, slot0, slot1, stored-alias or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Normalize simple ESP arithmetic and then trace inter-block/base-indexed writable-memory provenance; implicit push/pop transfer is now bounded.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "data_end_exclusive": "0x00bbc600",
+    "data_start": "0x00b81000",
+    "explicit_stack_spill_reload_composed_upstream": true,
+    "forward_window_decoded_instructions": 16,
+    "implicit_stack_model": "push creates one abstract stack cell; pop consumes top cell; nested push/pop allowed",
+    "unmodelled_esp_write_policy": "stop provenance on arithmetic/LEA/other writes to ESP or SP"
+  },
+  "version": 1
+}
