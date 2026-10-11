@@ -1,0 +1,50 @@
+{
+  "adjudication": {
+    "computed_or_runtime_alias_surface_complete": false,
+    "direct_alias_getter_consumer_slot0_writer_subset_complete": true,
+    "direct_alias_getter_consumer_slot0_write_or_pointer_escape_found": false,
+    "external_provider_count": 7,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_or_alias_writer_provenance_complete": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1B.HDVehicle4330SourceSlotExactAddressSurface/1"
+  },
+  "format": "SHIFT.P1B.HDVehicle4330AliasGetterDirectConsumerSlot0Writer/1",
+  "limits": [
+    "This classifies only the three direct callsites of the two exact alias getters.",
+    "The direct consumers do expose addresses of nonzero object fields to helper calls, so this is specifically a slot0/table-pointer writer closure rather than an all-fields read-only claim.",
+    "Computed aliases, runtime-created getter pointers, indirect getter entry and unrelated writers remain open."
+  ],
+  "next_step": "Continue computed/copied/runtime alias provenance for the two source slots, using slot0 specifically as the writer target of interest.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "caller_functions": [
+      {
+        "function_range": "0x008defc0-0x008df483",
+        "getter_calls": ["0x008df037 -> 0x00553640", "0x008df2cf -> 0x00552f50"],
+        "nonstack_direct_memory_write_count": 0
+      },
+      {
+        "function_range": "0x008dfbd0-0x008dfd71",
+        "getter_calls": ["0x008dfc06 -> 0x00552f50"],
+        "nonstack_direct_memory_write_count": 0
+      }
+    ],
+    "direct_alias_getter_callsite_count": 3,
+    "nonzero_field_pointer_argument_offsets": {
+      "0x00b83dc0_stride_0x40": ["0x0c", "0x10", "0x38"],
+      "0x00b83ec0_stride_0x3c": ["0x0c", "0x10", "0x14", "0x18", "0x1c", "0x38"]
+    },
+    "slot0_pointer_argument_count": 0,
+    "slot0_direct_memory_write_count": 0,
+    "slot0_write_or_pointer_escape_count": 0
+  },
+  "version": 1
+}
