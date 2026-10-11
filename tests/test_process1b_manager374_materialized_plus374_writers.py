@@ -78,6 +78,16 @@ def test_implicit_cmpxchg_eax_clobber_stops_stale_address():
     assert data["surface"]["termination_counts"]["implicit_tracked_register_clobber"] == 1
 
 
+def test_popad_clobbers_materialized_address_register():
+    data = module().scan_rows([
+        (0x406100, "lea", "ebx,[ecx+0x374]"),
+        (0x406106, "popad", ""),
+        (0x406107, "mov", "DWORD PTR [ebx],eax"),
+    ])
+    assert data["surface"]["zero_displacement_write_candidate_count"] == 0
+    assert data["surface"]["termination_counts"]["implicit_tracked_register_clobber"] >= 1
+
+
 def test_indexed_lea_is_not_exact_receiver_plus374_seed():
     data = module().scan_rows([
         (0x407000, "lea", "eax,[ecx+edx*4+0x374]"),
