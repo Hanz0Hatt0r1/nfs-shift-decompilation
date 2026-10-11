@@ -1,0 +1,72 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "dynamic_registry_reconstructed_or_indirect_registration_ruled_out": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "multi_edge_or_phi_reconstruction_ruled_out": false,
+    "one_edge_fun005ffc50_indirect_transfer_found": false,
+    "one_edge_fun005ffc50_materialization_found": false,
+    "p13a_fun005ffc50_one_direct_cfg_edge_constant_carry_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "return_value_fun005ffc50_provenance_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50NonStackFnstenvDirectReachability/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50OneEdgeConstantCarry/1",
+  "inventory": {
+    "branch_seed_count": 17745,
+    "branch_seed_kind_counts": {
+      "ja": 161,
+      "jae": 143,
+      "jb": 244,
+      "jbe": 2007,
+      "je": 4450,
+      "jg": 89,
+      "jge": 177,
+      "jl": 321,
+      "jle": 1370,
+      "jmp": 5309,
+      "jne": 3288,
+      "jno": 1,
+      "jnp": 31,
+      "jns": 52,
+      "jp": 83,
+      "js": 16,
+      "loope": 2,
+      "loopne": 1
+    },
+    "indirect_transfers": [],
+    "materializations": [],
+    "max_successor_block_instruction_count": 225,
+    "simulated_successor_instruction_count": 159630,
+    "successor_basic_block_path_count": 30181
+  },
+  "limits": [
+    "This closes only exact constants carried across one direct branch/jump edge from a straight-line predecessor into the complete immediately reached successor basic block.",
+    "Calls clear all constant state; return values, memory-backed values, phi/merge reasoning and paths that require two or more CFG edges remain open.",
+    "The analysis deliberately does not infer arbitrary indirect branch successors.",
+    "No global reconstructed-entry, callback, writable-runtime, stored-alias, slot0, slot1 or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Trace multi-edge/phi, return-value and writable-memory/runtime provenance to FUN_005ffc50; same-block and one-direct-edge exact constant construction are now independently bounded.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "calls_clear_state": true,
+    "decoded_instruction_count": 2847850,
+    "edge_class": "one direct conditional/unconditional branch edge carrying exact GPR constants into the complete immediate successor basic block",
+    "successor_scan_stops_at_next_control_transfer": true,
+    "target": "FUN_005ffc50",
+    "target_address": "0x005ffc50"
+  },
+  "version": 1
+}
