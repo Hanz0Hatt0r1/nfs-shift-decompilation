@@ -1,0 +1,48 @@
+{
+  "adjudication": {
+    "base_indexed_direct_call_escape_can_be_callable_target_in_bounded_callee_surface": false,
+    "base_indexed_direct_call_escape_data_provenance_complete": true,
+    "base_indexed_direct_callee_provenance_included": true,
+    "base_indexed_implicit_stack_carrier_surface_included": true,
+    "base_indexed_inter_block_carry_remains_open": true,
+    "base_indexed_runtime_or_alias_provenance_remains_open": true,
+    "bounded_indirect_entry_coverage_composed": true,
+    "bounded_indirect_entry_exact_4330_carrier_hit_found": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "remaining_incoming_entry_blocker_is_unresolved_nonstatic_indirect_target_recovery": true,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "runtime_patching_or_generated_code_ruled_out": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/13",
+  "limits": [
+    "This supersedes /12 by classifying all five exact direct-call argument escapes found by the implicit-stack carrier scan.",
+    "All five are consumed as NUL-terminated string/data on the bounded selected callee chains, with zero CALL/JMP through the escape value.",
+    "Inter-block/phi carry, aliases, heap/runtime mutation, generated/copied pointers and unrelated indirect target classes remain open.",
+    "The 19,500 navigation-index unresolved edges remain a capability metric, not a decrementing remainder counter."
+  ],
+  "next_step": "Bound inter-block carry and remaining alias/runtime target classes before promoting the global indirect-entry gate.",
+  "owner": "Process 1B / P1.3B aggregate integration",
+  "ready": true,
+  "supersedes": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/12",
+  "surface": {
+    "base_indexed_direct_call_argument_escape_classified_count": 5,
+    "base_indexed_direct_call_argument_escape_count": 5,
+    "base_indexed_direct_call_argument_escape_unclassified_count": 0,
+    "base_indexed_direct_callee_indirect_transfer_count": 0,
+    "base_indexed_direct_callee_string_data_escape_count": 5,
+    "bounded_exact_carrier_hit_count": 0,
+    "composed_coverage_class_count": 17,
+    "coverage_addition": {"class":"base/index-addressed writable .data direct-callee argument provenance","classified_count":5,"escape_count":5,"exact_carrier_hit_count":0,"indirect_transfer_count":0,"unclassified_count":0},
+    "incoming_indirect_navigation_edge_count": 19500,
+    "incoming_indirect_unresolved_target_count": 19500,
+    "p1b_exact_carrier_count": 15,
+    "previous_bounded_coverage_class_count": 16
+  },
+  "upstream_contracts": ["SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/12","SHIFT.P1B.HDVehicle4330BaseIndexedDirectCalleeProvenance/1"],
+  "version": 13
+}

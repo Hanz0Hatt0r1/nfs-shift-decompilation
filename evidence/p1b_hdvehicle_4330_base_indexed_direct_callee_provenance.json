@@ -1,0 +1,33 @@
+{
+  "adjudication": {
+    "all_direct_call_argument_escapes_classified": true,
+    "base_indexed_direct_call_escape_can_be_callable_target_in_bounded_callee_surface": false,
+    "base_indexed_direct_call_escape_data_provenance_complete": true,
+    "base_indexed_inter_block_carry_ruled_out": false,
+    "base_indexed_runtime_or_alias_provenance_ruled_out": false,
+    "external_provider_count": 7,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1B.HDVehicle4330BaseIndexedImplicitStackCarrierSurface/1"
+  },
+  "escapes": [
+    {"call_site":"0x004b1c1b","callee":"0x006329e0","classification":"nul_terminated_byte_string","effective_address":"0x00b82034","load_site":"0x004b1c10","proof":["0x006329e6 loads argument [ebp+0x8] into ECX","0x006329f0..0x00632a09 reads successive bytes and tests for NUL","0x00632a19/2c/3f/52 forwards source+length to direct helper 0x00631230","0x00631230 forwards the source pointer only as data to direct copy helper 0x00906fb6"]},
+    {"call_site":"0x00d74308","callee":"0x006329e0","classification":"nul_terminated_byte_string","effective_address":"0x00b82030","load_site":"0x00d742fd","proof":["same 0x006329e0 string-scan/copy path as the 0x004b1c1b escape"]},
+    {"call_site":"0x004cd46b","callee":"0x00632c70","classification":"nul_terminated_byte_string","effective_address":"0x00b822a4","load_site":"0x004cd45d","proof":["0x00632c87 loads argument [ebp+0x8] into ECX","0x00632c90..0x00632ca9 reads successive bytes and tests for NUL","nonempty destination path forwards the source as data to direct helper 0x00631290","empty destination path forwards the source as data to direct helper 0x00631740","0x00631740 independently scans the same argument bytewise to NUL and copies it"]},
+    {"call_site":"0x005f51ed","callee":"0x00403c90","classification":"printf_percent_s_string_argument","effective_address":"0x00b869d0","load_site":"0x005f51e0","proof":["callsite pushes the base/index-derived value as the first vararg after literal 0x00ac03c4","literal 0x00ac03c4 is ASCII '%s='","0x00403c90 passes [ebp+0x10] as vararg-list storage and [ebp+0xc] as format to direct helper 0x00631d30","0x00631d30 tail-jumps to 0x00631ca0; that path uses direct formatting helpers rather than CALL/JMP through the vararg value"]},
+    {"call_site":"0x008d1960","callee":"0x008b4c70","classification":"nul_terminated_byte_string_to_refcounted_string","effective_address":"0x00b95320","load_site":"0x008d1951","proof":["0x008b4c8d loads argument [ebp+0x8] and forwards it to direct helper 0x009f5e50","0x009f5e50 forwards the same argument to direct helper 0x009f1df0","0x009f1df0 tests the first byte, scans until NUL, allocates a ref-counted buffer and copies the string via direct helper 0x009042e0","no bounded instruction on this selected chain dispatches CALL/JMP through the argument value"]}
+  ],
+  "format": "SHIFT.P1B.HDVehicle4330BaseIndexedDirectCalleeProvenance/1",
+  "limits": ["This classifies only the five exact direct-call argument escapes identified by the upstream implicit-stack carrier surface.","The conclusion is bounded to the selected first-hop and necessary direct next-hop machine paths; it does not close unrelated inter-block, alias, heap, runtime mutation or generated-pointer provenance.","String/data use on these five paths does not by itself prove the global incoming-indirect-entry surface closed."],
+  "next_step": "Compose this five-of-five direct-callee classification into aggregate indirect-entry coverage, then bound inter-block carry and remaining alias/runtime target classes.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {"classified_escape_count":5,"direct_callee_count":4,"escape_count":5,"format_string_literal_address":"0x00ac03c4","format_string_literal_ascii":"%s=","indirect_call_or_jump_through_escape_value_count":0,"nul_terminated_string_escape_count":5,"unclassified_escape_count":0},
+  "version": 1
+}
