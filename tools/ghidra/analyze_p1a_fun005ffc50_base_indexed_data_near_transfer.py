@@ -66,35 +66,37 @@ def writes_reg(mn,ops,reg):
  if reg in {'eax','edx'} and mn in {'mul','div','idiv','cdq','cwd','cwde'}:return True
  if reg in {'eax','edx'} and mn=='imul' and len(p)==1:return True
  return False
-def update_consts(mn,ops,consts):
+def state_values(state): return {r:v for r,(v,age) in state.items() if age<=WINDOW}
+def update_state(mn,ops,state):
  p=ops.split(',') if ops else []
- c=dict(consts)
+ c={r:(v,age+1) for r,(v,age) in state.items() if age+1<=WINDOW}
+ if mn=='call':return {r:x for r,x in c.items() if r in {'ebx','esi','edi','ebp'}}
+ if mn in {'jmp','ret','retn'} or mn.startswith('j') or mn.startswith('loop') or mn in CONTROL_STOPS:return {}
  if mn=='mov' and len(p)==2 and p[0] in REGS:
-  d,s=p
-  n=parse_imm(s)
-  if n is not None:c[d]=n&0xffffffff
-  elif s in REGS and s in c:c[d]=c[s]
+  d,src=p;n=parse_imm(src)
+  if n is not None:c[d]=(n&0xffffffff,0)
+  elif src in c:c[d]=(c[src][0],0)
   else:c.pop(d,None)
  elif mn=='lea' and len(p)==2 and p[0] in REGS:
-  d,s=p;q=MEM.fullmatch(s);v=eval_expr(q.group(1),c) if q else None
+  d,src=p;q=MEM.fullmatch(src);v=eval_expr(q.group(1),state_values(c)) if q else None
   if v is None:c.pop(d,None)
-  else:c[d]=v
+  else:c[d]=(v,0)
  elif mn in {'add','sub'} and len(p)==2 and p[0] in REGS:
-  d,s=p;n=parse_imm(s)
-  if d in c and n is not None:c[d]=(c[d]+(n if mn=='add' else -n))&0xffffffff
+  d,src=p;n=parse_imm(src)
+  if d in c and n is not None:c[d]=((c[d][0]+(n if mn=='add' else -n))&0xffffffff,0)
   else:c.pop(d,None)
- elif mn=='xor' and len(p)==2 and p[0] in REGS and p[0]==p[1]:c[p[0]]=0
+ elif mn=='xor' and len(p)==2 and p[0] in REGS and p[0]==p[1]:c[p[0]]=(0,0)
  else:
   for r in REGS:
    if writes_reg(mn,ops,r):c.pop(r,None)
  return c
 def scan_rows(rows):
- rows=list(rows);consts={};loads=[]
+ rows=list(rows);state={};loads=[]
  for idx,(a,mn,ops) in enumerate(rows):
-  q=parse_base_index_load(mn,ops,consts)
+  q=parse_base_index_load(mn,ops,state_values(state))
   if q:
    reg,ea,source=q;loads.append((idx,a,reg,ea,source))
-  consts=update_consts(mn,ops,consts)
+  state=update_state(mn,ops,state)
  hits=[];terms=Counter()
  for idx,a,reg,ea,source in loads:
   reason='window_exhausted'
@@ -122,7 +124,7 @@ def analyze(exe,upstream):
  if r['destination_register_counts']!=expected_regs:raise AssertionError(('register distribution drift',r))
  if r['same_register_indirect_transfer_count']!=0:raise AssertionError(('unexpected transfer',r))
  if r['termination_reason_counts']!={'other_control_transfer':58,'register_clobber':5}:raise AssertionError(('termination drift',r))
- return {'format':FORMAT,'version':1,'ready':True,'owner':'Process 1A / P1.3A','authority':{'platform':'PC retail 1.02','retail_executable_sha256':sha,'upstream_contract':UPSTREAM},'scope':{'data_start':f'0x{DATA_START:08x}','data_end_exclusive':f'0x{DATA_END:08x}','forward_window_decoded_instructions':WINDOW,'address_model':'straight-line exact GPR constants; effective address evaluated before MOV load','transfer_model':'same destination register only','unknown_base_or_index_policy':'exclude from this subset'},'inventory':r,'adjudication':{'p13a_fun005ffc50_base_indexed_data_same_register_near_transfer_subset_complete':True,'base_indexed_data_same_register_indirect_transfer_found':False,'register_copy_or_transform_after_base_indexed_load_ruled_out':False,'base_indexed_stack_spill_reload_ruled_out':False,'base_indexed_inter_block_carry_ruled_out':False,'base_indexed_writable_sources_ruled_out':False,'register_loaded_or_aliased_writable_slots_ruled_out':False,'writable_memory_or_runtime_fun005ffc50_entry_ruled_out':False,'writable_callback_pair_indirect_or_alias_writers_ruled_out':False,'return_value_fun005ffc50_provenance_ruled_out':False,'unbounded_multi_edge_or_phi_reconstruction_ruled_out':False,'encoded_or_reconstructed_callback_entry_ruled_out':False,'dynamic_registry_reconstructed_or_indirect_registration_ruled_out':False,'callbacks_and_indirect_entry_ruled_out':False,'fun0067b660_callback_argument_provenance_complete':False,'runtime_generated_selected_wheel_pointer_stores_ruled_out':False,'stored_or_escaped_aliases_ruled_out':False,'p13a_slot0_complete':False,'p13a_slot1_complete':False,'p1_3_control_producer_complete':False,'external_provider_count':7},'limits':['This closes only exact straight-line base/index effective-address MOV loads into writable .data and direct same-register CALL/JMP within 16 decoded instructions.','Register copies/transforms, spills/reloads, inter-block carry, aliases, heap/runtime values and global P1.3 gates remain open.'],'next_step':'Propagate these 63 base/index-addressed writable .data loads through GPR copies/transforms, stack carriers and bounded inter-block carry.'}
+ return {'format':FORMAT,'version':1,'ready':True,'owner':'Process 1A / P1.3A','authority':{'platform':'PC retail 1.02','retail_executable_sha256':sha,'upstream_contract':UPSTREAM},'scope':{'data_start':f'0x{DATA_START:08x}','data_end_exclusive':f'0x{DATA_END:08x}','forward_window_decoded_instructions':WINDOW,'address_model':'bounded straight-line exact GPR constants; max age 16 decoded instructions; call preserves only EBX/ESI/EDI/EBP; branches/returns clear state; effective address evaluated before MOV load','transfer_model':'same destination register only','constant_horizon_decoded_instructions':WINDOW,'unknown_base_or_index_policy':'exclude from this subset'},'inventory':r,'adjudication':{'p13a_fun005ffc50_base_indexed_data_same_register_near_transfer_subset_complete':True,'base_indexed_data_same_register_indirect_transfer_found':False,'register_copy_or_transform_after_base_indexed_load_ruled_out':False,'base_indexed_stack_spill_reload_ruled_out':False,'base_indexed_inter_block_carry_ruled_out':False,'base_indexed_writable_sources_ruled_out':False,'register_loaded_or_aliased_writable_slots_ruled_out':False,'writable_memory_or_runtime_fun005ffc50_entry_ruled_out':False,'writable_callback_pair_indirect_or_alias_writers_ruled_out':False,'return_value_fun005ffc50_provenance_ruled_out':False,'unbounded_multi_edge_or_phi_reconstruction_ruled_out':False,'encoded_or_reconstructed_callback_entry_ruled_out':False,'dynamic_registry_reconstructed_or_indirect_registration_ruled_out':False,'callbacks_and_indirect_entry_ruled_out':False,'fun0067b660_callback_argument_provenance_complete':False,'runtime_generated_selected_wheel_pointer_stores_ruled_out':False,'stored_or_escaped_aliases_ruled_out':False,'p13a_slot0_complete':False,'p13a_slot1_complete':False,'p1_3_control_producer_complete':False,'external_provider_count':7},'limits':['This closes only exact straight-line base/index effective-address MOV loads into writable .data and direct same-register CALL/JMP within 16 decoded instructions.','Register copies/transforms, spills/reloads, inter-block carry, aliases, heap/runtime values and global P1.3 gates remain open.'],'next_step':'Propagate these 63 base/index-addressed writable .data loads through GPR copies/transforms, stack carriers and bounded inter-block carry.'}
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('executable',type=Path);ap.add_argument('--upstream',type=Path,required=True);ap.add_argument('--output',type=Path);a=ap.parse_args();r=analyze(a.executable,a.upstream);s=json.dumps(r,indent=2,sort_keys=True)+'\n';a.output.write_text(s,encoding='utf-8') if a.output else print(s,end='')
 if __name__=='__main__':main()
