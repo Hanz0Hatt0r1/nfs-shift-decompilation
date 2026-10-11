@@ -1,0 +1,93 @@
+{
+  "adjudication": {
+    "absolute_data_transformed_register_indirect_transfer_found": false,
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "dynamic_registry_reconstructed_or_indirect_registration_ruled_out": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "p13a_fun005ffc50_absolute_data_transform_near_transfer_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "register_loaded_or_aliased_writable_slots_ruled_out": false,
+    "return_value_fun005ffc50_provenance_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "unbounded_multi_edge_or_phi_reconstruction_ruled_out": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50AbsoluteDataCopyNearTransfer/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50AbsoluteDataTransformNearTransfer/1",
+  "inventory": {
+    "absolute_data_load_count": 1786,
+    "decoded_instruction_count": 2847850,
+    "tainted_register_indirect_transfer_count": 0,
+    "tainted_register_indirect_transfers": [],
+    "termination_reason_counts": {
+      "all_tainted_registers_clobbered": 336,
+      "other_control_transfer": 1430,
+      "window_exhausted": 20
+    },
+    "transform_count_by_mnemonic": {
+      "add": 26,
+      "and": 9,
+      "dec": 4,
+      "imul": 1,
+      "inc": 4,
+      "lea": 45,
+      "or": 2,
+      "shl": 1,
+      "sub": 3,
+      "xor": 84
+    },
+    "transform_event_count": 179,
+    "transform_event_samples": [
+      {"destination_register":"edi","distance":1,"instruction":"add edi,0xffffffff","load_site":"0x004787ec","mnemonic":"add","slot":"0x00b81bf0","transform_site":"0x004787f2"},
+      {"destination_register":"ecx","distance":2,"instruction":"add ecx,0xffffffff","load_site":"0x00478871","mnemonic":"add","slot":"0x00b81bf0","transform_site":"0x0047887d"},
+      {"destination_register":"ecx","distance":1,"instruction":"shl ecx,0xa","load_site":"0x005a6e40","mnemonic":"shl","slot":"0x00b85bd4","transform_site":"0x005a6e46"},
+      {"destination_register":"esi","distance":3,"instruction":"lea esi,[ecx+eax*4]","load_site":"0x005a743b","mnemonic":"lea","slot":"0x00b86744","transform_site":"0x005a7448"},
+      {"destination_register":"esi","distance":2,"instruction":"lea esi,[ecx+eax*4]","load_site":"0x005a7440","mnemonic":"lea","slot":"0x00b8673c","transform_site":"0x005a7448"},
+      {"destination_register":"edx","distance":2,"instruction":"lea edx,[ecx+eax*4]","load_site":"0x005a74ed","mnemonic":"lea","slot":"0x00b86744","transform_site":"0x005a74f8"},
+      {"destination_register":"edx","distance":1,"instruction":"lea edx,[ecx+eax*4]","load_site":"0x005a74f2","mnemonic":"lea","slot":"0x00b8673c","transform_site":"0x005a74f8"},
+      {"destination_register":"ecx","distance":2,"instruction":"lea ecx,[ecx+edx*4]","load_site":"0x005a7504","mnemonic":"lea","slot":"0x00b8673c","transform_site":"0x005a7510"},
+      {"destination_register":"ecx","distance":1,"instruction":"lea ecx,[ecx+edx*4]","load_site":"0x005a750a","mnemonic":"lea","slot":"0x00b86744","transform_site":"0x005a7510"},
+      {"destination_register":"edi","distance":2,"instruction":"lea edi,[esi+edx*4]","load_site":"0x005b6c3c","mnemonic":"lea","slot":"0x00b86664","transform_site":"0x005b6c48"},
+      {"destination_register":"edi","distance":1,"instruction":"lea edi,[esi+edx*4]","load_site":"0x005b6c42","mnemonic":"lea","slot":"0x00b8666c","transform_site":"0x005b6c48"},
+      {"destination_register":"edi","distance":2,"instruction":"lea edi,[esi+edx*4]","load_site":"0x005b6cc1","mnemonic":"lea","slot":"0x00b86664","transform_site":"0x005b6ccd"},
+      {"destination_register":"edx","distance":1,"instruction":"lea edx,[eax+0x1]","load_site":"0x00a7fa8f","mnemonic":"lea","slot":"0x00b87e90","transform_site":"0x00a7fa94"},
+      {"destination_register":"eax","distance":3,"instruction":"inc eax","load_site":"0x00a7fa8f","mnemonic":"inc","slot":"0x00b87e90","transform_site":"0x00a7fa99"},
+      {"destination_register":"edx","distance":1,"instruction":"lea edx,[eax+0x1]","load_site":"0x00a7fbbf","mnemonic":"lea","slot":"0x00b8887c","transform_site":"0x00a7fbc4"},
+      {"destination_register":"eax","distance":3,"instruction":"inc eax","load_site":"0x00a7fbbf","mnemonic":"inc","slot":"0x00b8887c","transform_site":"0x00a7fbc9"}
+    ],
+    "transformed_load_count": 160,
+    "transformed_register_indirect_transfer_count": 0,
+    "transformed_register_indirect_transfers": [],
+    "unique_absolute_data_slot_count": 434,
+    "unique_transform_site_count": 164
+  },
+  "limits": [
+    "This is a dependency-taint subset, not exact pointer-value recovery: selected arithmetic/bitwise/shift/LEA transforms preserve whether a value depends on an absolute .data load.",
+    "Stack spill/reload, memory-to-memory aliases, inter-block carry, base/indexed writable sources, heap/runtime values, return values, and unmodelled transforms remain open.",
+    "Across 179 bounded transform events from 160 loads, no indirect call/jmp consumes a tainted or transformed register.",
+    "No global writable-memory, callback, reconstructed-entry, slot0, slot1, stored-alias or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Trace stack spill/reload and inter-block writable-memory provenance, then base/indexed/alias sources; bounded same-block copy plus selected transform paths are now negative.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "data_end_exclusive": "0x00bbc600",
+    "data_start": "0x00b81000",
+    "dependency_erasing_special_cases": ["xor reg,reg","sub reg,reg","and reg,0"],
+    "dependency_preserving_transform_ops": ["adc","add","and","dec","imul","inc","lea","neg","not","or","rcl","rcr","rol","ror","sal","sar","sbb","shl","shr","sub","xor"],
+    "forward_window_decoded_instructions": 16,
+    "identity_copy_ops": ["mov GPR,GPR","xchg GPR,GPR"],
+    "stops_on": ["any call/jmp after transfer check","conditional branch/loop/ret/trap","clobber of every tainted GPR","16-instruction window"]
+  },
+  "version": 1
+}
