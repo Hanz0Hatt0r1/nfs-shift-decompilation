@@ -1,0 +1,125 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "dynamic_registry_reconstructed_or_indirect_registration_ruled_out": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "non_stack_fnstenv_decodes_ruled_out_as_entry": false,
+    "other_pic_or_fnstenv_entry_ruled_out": false,
+    "p13a_fun005ffc50_fnstenv_stack_restore_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stack_fnstenv_fun005ffc50_indirect_entry_found": false,
+    "stack_fnstenv_fun005ffc50_reconstruction_found": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "machine_ranges": {
+      "stack_env_A": {
+        "end_exclusive": "0x00913778",
+        "sha256": "ea4f5c6c31838c0870199482d9737a9144cb251b51efff293beffb4577892fe7",
+        "size": 24,
+        "start": "0x00913760"
+      },
+      "stack_env_B": {
+        "end_exclusive": "0x00913a30",
+        "sha256": "ea4f5c6c31838c0870199482d9737a9144cb251b51efff293beffb4577892fe7",
+        "size": 24,
+        "start": "0x00913a18"
+      },
+      "unowned_decode_A": {
+        "end_exclusive": "0x00417810",
+        "sha256": "75b8e4d2e3ff6de4d1868821c32f69251ef3e3e6ac11051e12d1c50c1f7eb270",
+        "size": 45,
+        "start": "0x004177e3"
+      },
+      "unowned_decode_B": {
+        "end_exclusive": "0x0050d070",
+        "sha256": "5c7394388b81b8f5203f762ed16b831c4133cf0ea36c1af42bae8ba058534952",
+        "size": 24,
+        "start": "0x0050d058"
+      }
+    },
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50CallNextPic/1"
+  },
+  "fnstenv_inventory": {
+    "decoded_instruction_count": 2847850,
+    "non_stack_fnstenv_count": 2,
+    "rows": [
+      {
+        "mnemonic": "fnstenv",
+        "operand": "[edi+0x41]",
+        "site": "0x004177e4"
+      },
+      {
+        "mnemonic": "fnstenv",
+        "operand": "[ebx-0x33333334]",
+        "site": "0x0050d063"
+      },
+      {
+        "mnemonic": "fnstenv",
+        "operand": "[esp]",
+        "site": "0x00913763"
+      },
+      {
+        "mnemonic": "fnstenv",
+        "operand": "[esp]",
+        "site": "0x00913a1b"
+      }
+    ],
+    "stack_esp_fnstenv_count": 2,
+    "total_fnstenv_or_fstenv_count": 4
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50FnstenvStackRestore/1",
+  "limits": [
+    "This closes only the two exact fnstenv [esp] / fldenv [esp] stack-local sequences present in the retail image.",
+    "Neither sequence loads any saved environment field into a GPR before fldenv restores it; only DWORD PTR [esp+4] is masked/ORed as part of environment control-state modification.",
+    "The other two objdump FNSTENV decodes use non-stack operands and remain outside this narrow closure; no claim of reachability or non-reachability is made for them.",
+    "Other PIC, inter-block dataflow, writable-memory callback slots, return-value provenance, encoded/split values and runtime-generated pointers remain open.",
+    "No global reconstructed-entry, callback, slot0, slot1, stored-alias, runtime selected-wheel-store-negative or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Trace writable-memory/runtime callback slots and inter-block/return-value entry to FUN_005ffc50; the two exact stack-local FNSTENV restore sequences no longer need to be treated as EIP-extraction candidates.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "stack_restore_semantics": {
+    "fun005ffc50_pointer_extracted": false,
+    "gpr_load_from_saved_environment_between_fnstenv_and_fldenv": false,
+    "only_memory_mutation_between_save_and_restore": "DWORD PTR [esp+0x4] via AND/OR",
+    "saved_environment_restored_with_fldenv": true,
+    "saved_environment_size_bytes": 28,
+    "stack_storage_released_immediately_after_restore": true
+  },
+  "stack_restore_sequences": [
+    {
+      "end_exclusive": "0x00913778",
+      "instructions": [
+        "0x00913760 sub esp,0x1c",
+        "0x00913763 fnstenv [esp]",
+        "0x00913766 and DWORD PTR [esp+0x4],0xbcff",
+        "0x0091376e or DWORD PTR [esp+0x4],eax",
+        "0x00913772 fldenv [esp]",
+        "0x00913775 add esp,0x1c"
+      ],
+      "start": "0x00913760"
+    },
+    {
+      "end_exclusive": "0x00913a30",
+      "instructions": [
+        "0x00913a18 sub esp,0x1c",
+        "0x00913a1b fnstenv [esp]",
+        "0x00913a1e and DWORD PTR [esp+0x4],0xbcff",
+        "0x00913a26 or DWORD PTR [esp+0x4],eax",
+        "0x00913a2a fldenv [esp]",
+        "0x00913a2d add esp,0x1c"
+      ],
+      "start": "0x00913a18"
+    }
+  ],
+  "version": 1
+}
