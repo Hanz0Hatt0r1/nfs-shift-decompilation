@@ -1,0 +1,64 @@
+{
+  "adjudication": {
+    "base_indexed_direct_call_boundaries_remain_open": true,
+    "base_indexed_direct_callee_provenance_included": true,
+    "base_indexed_direct_cfg_gpr_carry_subset_included": true,
+    "base_indexed_direct_cfg_tainted_register_indirect_transfer_found": false,
+    "base_indexed_indirect_call_boundaries_remain_open": true,
+    "base_indexed_inter_block_carry_globally_ruled_out": false,
+    "base_indexed_runtime_or_alias_provenance_remains_open": true,
+    "bounded_indirect_entry_coverage_composed": true,
+    "bounded_indirect_entry_exact_4330_carrier_hit_found": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "remaining_incoming_entry_blocker_is_unresolved_nonstatic_indirect_target_recovery": true,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "runtime_patching_or_generated_code_ruled_out": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/14",
+  "limits": [
+    "This supersedes /13 by composing a direct-CFG GPR carry fixed-point subset over the same 63 base/index writable-data loads.",
+    "Forty-four loads cross at least one direct basic-block edge; no path dispatches CALL/JMP through the tainted register within the modeled direct-CFG surface.",
+    "Fifty-six direct-call boundaries and eleven indirect-call boundaries remain explicit open interprocedural provenance frontiers; indirect-jump boundaries are zero.",
+    "Stack/alias/heap/runtime/generated-pointer classes remain open, and the 19,500 navigation-index unresolved edges remain a capability metric."
+  ],
+  "next_step": "Classify the 11 indirect-call live-taint boundaries and relevant direct-call live-taint boundaries before promoting any global inter-block or indirect-entry gate.",
+  "owner": "Process 1B / P1.3B aggregate integration",
+  "ready": true,
+  "supersedes": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/13",
+  "surface": {
+    "base_indexed_direct_cfg_branch_site_count": 199,
+    "base_indexed_direct_cfg_branch_state_event_count": 228,
+    "base_indexed_direct_cfg_carried_load_count": 44,
+    "base_indexed_direct_cfg_direct_call_boundary_count": 56,
+    "base_indexed_direct_cfg_indirect_call_boundary_count": 11,
+    "base_indexed_direct_cfg_indirect_jump_boundary_count": 0,
+    "base_indexed_direct_cfg_tainted_indirect_transfer_count": 0,
+    "bounded_exact_carrier_hit_count": 0,
+    "composed_coverage_class_count": 18,
+    "coverage_addition": {
+      "branch_site_count": 199,
+      "branch_state_event_count": 228,
+      "carried_load_count": 44,
+      "class": "base/index-addressed writable .data direct-CFG GPR carry",
+      "direct_call_boundary_count": 56,
+      "exact_carrier_hit_count": 0,
+      "indirect_call_boundary_count": 11,
+      "indirect_jump_boundary_count": 0,
+      "tainted_indirect_transfer_count": 0
+    },
+    "incoming_indirect_navigation_edge_count": 19500,
+    "incoming_indirect_unresolved_target_count": 19500,
+    "p1b_exact_carrier_count": 15,
+    "previous_bounded_coverage_class_count": 17
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/13",
+    "SHIFT.P1B.HDVehicle4330BaseIndexedDirectCFGCarry/1"
+  ],
+  "version": 14
+}
