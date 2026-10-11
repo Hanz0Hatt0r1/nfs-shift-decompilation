@@ -157,6 +157,7 @@ def scan_rows(rows):
         "tracked_register_clobber": 0,
         "implicit_tracked_register_clobber": 0,
         "ebp_frame_invalidation": 0,
+        "ebp_memory_write_invalidation": 0,
         "tracked_ebp_cell_overwrite": 0,
     }
 
@@ -165,11 +166,19 @@ def scan_rows(rows):
             terminations["ebp_frame_invalidation"] += len(ebp_cells)
             ebp_cells.clear()
 
+    def invalidate_cells_for_memory_write(dst_cell=None):
+        if not ebp_cells:
+            return
+        if dst_cell is not None and dst_cell in ebp_cells:
+            terminations["tracked_ebp_cell_overwrite"] += 1
+        terminations["ebp_memory_write_invalidation"] += len(ebp_cells)
+        ebp_cells.clear()
+
     for address, raw_mnemonic, raw_operands in rows:
         mnemonic, operands, prefixes = normalize_prefixed_instruction(raw_mnemonic, raw_operands)
         ops = split_ops(operands)
 
-        # Only dereferences whose pointer provenance has crossed an EBP-local
+        # Only dereferences whose pointer provenance has crossed an EBP-relative
         # spill/reload boundary are new evidence beyond the predecessor probe.
         if ops:
             pointer_reg = zero_displacement_memory_register(ops[0])
@@ -227,8 +236,11 @@ def scan_rows(rows):
             dst_cell = ebp_cell_offset(dst)
             src_cell = ebp_cell_offset(src)
 
-            # Exact EBP-local spill.
+            # Exact EBP-relative spill. Conservatively invalidate all older
+            # tracked EBP cells first because operand width/overlap is not
+            # modeled in this bounded probe.
             if dst_cell is not None:
+                invalidate_cells_for_memory_write(dst_cell)
                 if src_parent in regs:
                     provenance = dict(regs[src_parent])
                     ebp_cells[dst_cell] = provenance
@@ -240,16 +252,11 @@ def scan_rows(rows):
                         "materializer_site": provenance["materializer_site"],
                         "reload_depth": provenance["reload_depth"],
                     })
-                elif dst_cell in ebp_cells:
-                    ebp_cells.pop(dst_cell, None)
-                    terminations["tracked_ebp_cell_overwrite"] += 1
                 continue
 
-            # Exact EBP-local reload.
+            # Exact EBP-relative reload.
             if dst_parent in GPRS and src_cell is not None:
                 if dst_parent == "ebp":
-                    # Source is evaluated using the old frame base, but the
-                    # write changes EBP, so all tracked frame cells die after it.
                     provenance = dict(ebp_cells[src_cell]) if src_cell in ebp_cells else None
                     clear_frame_cells()
                 else:
@@ -272,7 +279,7 @@ def scan_rows(rows):
                 continue
 
             # Exact GPR copy, preserving whether provenance already crossed an
-            # EBP-local reload boundary.
+            # EBP-relative reload boundary.
             if dst_parent in GPRS and src_parent in regs:
                 if dst_parent == "ebp":
                     clear_frame_cells()
@@ -291,7 +298,15 @@ def scan_rows(rows):
                 clear_frame_cells()
             continue
 
-        # Any explicit full/partial EBP write invalidates local-cell identity.
+        # Any non-MOV write/RMW whose first operand is EBP-relative invalidates
+        # all tracked EBP cells. This is deliberately broader than exact-offset
+        # invalidation because byte/word overlap is not modeled.
+        if ops:
+            write_cell = ebp_cell_offset(ops[0])
+            if write_cell is not None and mnemonic in WRITE_MNEMONICS:
+                invalidate_cells_for_memory_write(write_cell)
+
+        # Any explicit full/partial EBP write invalidates EBP-cell identity.
         if ops:
             parent = explicit_register_parent(ops[0])
             if parent == "ebp":
@@ -315,10 +330,10 @@ def scan_rows(rows):
         "surface": {
             "materialized_plus_374_seed_count": len(seeds),
             "materialized_plus_374_seeds": seeds,
-            "ebp_local_spill_count": len(spills),
-            "ebp_local_spills": spills,
-            "ebp_local_reload_count": len(reloads),
-            "ebp_local_reloads": reloads,
+            "ebp_relative_spill_count": len(spills),
+            "ebp_relative_spills": spills,
+            "ebp_relative_reload_count": len(reloads),
+            "ebp_relative_reloads": reloads,
             "reload_derived_zero_displacement_write_candidate_count": len(reload_write_candidates),
             "reload_derived_zero_displacement_write_candidates": reload_write_candidates,
             "reload_derived_other_dereference_count": len(reload_other_dereferences),
@@ -338,10 +353,11 @@ def scan_rows(rows):
             "external_provider_count": 7,
         },
         "limits": [
-            "This successor adds only exact MOV spill/reload through EBP-relative local cells after exact lea addr,[receiver+0x374] materialization.",
+            "This successor adds only exact MOV spill/reload through unchanged EBP-relative memory cells after exact lea addr,[receiver+0x374] materialization.",
             "Direct/copy-only materialized dereferences are predecessor coverage and are not counted as new reload-derived candidates.",
-            "ESP-relative locals, implicit push/pop transport, cross-control-flow stack state, memory-stored non-stack aliases, helper returns, indexed LEA and arithmetic reconstruction remain outside this subset.",
-            "Any EBP write invalidates tracked local-cell identity; control boundaries clear all tracked state.",
+            "Any unmodeled EBP-relative write/RMW invalidates all tracked EBP cells conservatively because operand-width overlap is not reconstructed.",
+            "ESP-relative cells, implicit push/pop transport, cross-control-flow state, memory-stored non-EBP aliases, helper returns, indexed LEA and arithmetic reconstruction remain outside this subset.",
+            "Any EBP write invalidates tracked cell identity; control boundaries clear all tracked state.",
             "Recovered receiver registers remain syntactic provenance only and do not imply Participants Manager identity.",
         ],
         "next_step": "Run on authoritative PC retail 1.02 SHIFT.exe and classify only positive reload-derived +0x374 write receivers; extend another carrier class only if retail evidence survives this subset.",
