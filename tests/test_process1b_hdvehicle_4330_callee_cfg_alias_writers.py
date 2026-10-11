@@ -43,6 +43,21 @@ def test_alias_copy_survives_jump_successor():
     assert d["surface"]["cfg_exact_slot_writers"][0]["slot"] == "0x00b83ec0"
 
 
+def test_objdump_symbolic_bare_hex_targets_are_parsed():
+    d = module().scan_rows([
+        (0x404000, "mov", "ecx,0xb83dc0"),
+        (0x404005, "call", "500000 <FUN_00500000>"),
+        (0x40400A, "ret", ""),
+        (0x500000, "jne", "500010 <LAB_00500010>"),
+        (0x500005, "ret", ""),
+        (0x500010, "mov", "DWORD PTR [ecx],eax"),
+        (0x500012, "ret", ""),
+    ])
+    assert d["surface"]["direct_call_boundary_count"] == 1
+    assert d["surface"]["cfg_exact_slot_writer_count"] == 1
+    assert d["surface"]["cfg_exact_slot_writers"][0]["site"] == "0x00500010"
+
+
 def test_nested_call_stops_cfg_alias_path():
     d = module().scan_rows([
         (0x403000, "mov", "ecx,0xb83dc0"),
