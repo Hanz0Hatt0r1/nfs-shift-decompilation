@@ -1,0 +1,48 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_fun005ffc50_writable_callback_pair_d94_concrete_vtable_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "writable_callback_pair_d94_value_range_proven": false,
+    "writable_callback_pair_d94_vtable_ec_concrete_target_proven": true,
+    "writable_callback_pair_d94_vtable_ec_target": "0x0082da60",
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_callback_pair_target_compatible_frontier_empty": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94VtableKeyContract/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94ConcreteVtable/1",
+  "limits": [
+    "Concrete singleton construction and +0xec dispatch target are proven, but non-null handle entries delegate to the registered entry object vtable slot 0.",
+    "The return domain of those entry implementations is not yet globally bounded."
+  ],
+  "next_step": "Classify the concrete entry objects constructed by 0x008309f0 and their slot-0 implementations for the 0x00bbf2d4 registration.",
+  "owner": "Process 1A / P1.3A",
+  "proof": {
+    "concrete_vtable": "0x00b18d38",
+    "decoded_instruction_count": 2847850,
+    "direct_singleton_write_sites": [
+      "0x00823d1a",
+      "0x00823d50"
+    ],
+    "lookup_slot_ec_target": "0x0082da60",
+    "lookup_target_dispatch_table_offset": "0x1ac8",
+    "lookup_target_nonnull_entry_dispatches_entry_vtable_slot0": true,
+    "lookup_target_null_entry_returns_zero": true,
+    "registration_slot_e0_target": "0x008313b0",
+    "registration_target_writes_handle_index": true,
+    "singleton_allocation_size": "0x3970",
+    "singleton_clear": "0x00823d50",
+    "singleton_constructor": "0x008323d0",
+    "singleton_store": "0x00823d1a"
+  },
+  "ready": true,
+  "version": 1
+}
