@@ -21,7 +21,7 @@
   "inventory": {
     "base_indexed_data_load_count": 63,
     "decoded_instruction_count": 2847850,
-    "direct_branch_state_event_count": 207,
+    "direct_branch_state_event_count": 228,
     "direct_branch_site_count": 199,
     "direct_call_boundary_count": 56,
     "direct_call_boundary_unique_load_call_pair_count": 54,
