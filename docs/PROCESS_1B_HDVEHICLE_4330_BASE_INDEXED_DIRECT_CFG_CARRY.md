@@ -11,9 +11,10 @@ For the same **63** base/index-addressed writable `.data` loads / **51** effecti
 - **0** modeled paths dispatch `CALL/JMP` through the tainted register;
 - fixed-point max-out count is **0**;
 - **56** direct-call boundaries remain with live taint;
-- **11** indirect-jump boundaries remain where the jump register itself is not tainted but another tainted register is live.
+- **11** indirect-call boundaries remain where the call target register itself is not tainted but another tainted register is live;
+- indirect-jump boundaries are **0**.
 
-Those 11 boundaries are kept fail-closed instead of guessing successor provenance.
+The eleven indirect calls are kept fail-closed instead of guessing interprocedural provenance.
 
 ## Aggregate effect
 
@@ -21,8 +22,8 @@ Those 11 boundaries are kept fail-closed instead of guessing successor provenanc
 
 ## Boundary
 
-This is a direct-CFG GPR subset, not global inter-block closure. Still open are direct-call interprocedural continuation, the 11 indirect-jump successor identities, stack/alias/heap/runtime mutation, generated/copied pointer provenance, global incoming indirect entry, the manager+0x374 identity join, slot2 `0x004b86cf`, and aggregate P1.3. Provider count remains **7**.
+This is a direct-CFG GPR subset, not global inter-block closure. Still open are direct-call and indirect-call interprocedural continuation, stack/alias/heap/runtime mutation, generated/copied pointer provenance, global incoming indirect entry, the manager+0x374 identity join, slot2 `0x004b86cf`, and aggregate P1.3. Provider count remains **7**.
 
 ## Next
 
-Classify the 11 indirect-jump successor boundaries first, then the relevant direct-call live-taint boundaries. Only after those surfaces are bounded should the global inter-block or incoming-indirect-entry gates be reconsidered.
+Classify the 11 indirect-call live-taint boundaries first, then the relevant direct-call live-taint boundaries. Only after those surfaces are bounded should the global inter-block or incoming-indirect-entry gates be reconsidered.
