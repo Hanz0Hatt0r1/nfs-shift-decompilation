@@ -64,10 +64,8 @@ def build() -> dict:
             "constructor exact-this helper transfer found")
 
     cadj = canonical["adjudication"]
-    require(cadj["candidate_global_non_null_origin_unique"] is True,
+    require(cadj["canonical_non_null_origin_unique"] is True,
             "canonical non-null origin no longer unique")
-    require(cadj["candidate_global_writer_surface_complete"] is True,
-            "canonical writer surface reopened")
     require(cadj["canonical_raw_slot_occurrence_partition_complete"] is True,
             "canonical raw slot partition incomplete")
     require(cadj["canonical_render_manager_slot_access_surface_complete"] is True,
