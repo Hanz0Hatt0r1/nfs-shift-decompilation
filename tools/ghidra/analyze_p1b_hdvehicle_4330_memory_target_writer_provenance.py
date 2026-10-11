@@ -15,6 +15,7 @@ CALL_SITES = (0x00553247, 0x005539AC)
 I = re.compile(r"^\s*([0-9a-fA-F]+):\s+(?:[0-9a-fA-F]{2}\s+)+\s*([a-zA-Z][a-zA-Z0-9]*)\s*(.*)$")
 ABS_MEM = re.compile(r"^(?:BYTE|WORD|DWORD|QWORD) PTR \[(0x[0-9a-fA-F]+)\]$")
 MEM = re.compile(r"^(?:BYTE|WORD|DWORD|QWORD) PTR \[([^\]]+)\]$")
+CONTROL_BOUNDARIES = {"call", "jmp", "ret", "retn", "iret", "iretd", "int", "int3", "ud2"}
 
 
 def norm(s: str) -> str:
@@ -51,6 +52,19 @@ def refs_slot(ops: str, slot: int) -> bool:
     return needle in ops.lower()
 
 
+def local_predecessor_window(rows, call_idx: int, limit: int = 4):
+    """Return at most `limit` immediately preceding instructions in the same local control-flow span."""
+    start = call_idx
+    seen = 0
+    while start > 0 and seen < limit:
+        prev = rows[start - 1]
+        if prev[1] in CONTROL_BOUNDARIES or prev[1].startswith("j") or prev[1].startswith("loop"):
+            break
+        start -= 1
+        seen += 1
+    return rows[start: call_idx + 1]
+
+
 def scan_rows(rows):
     rows = list(rows)
     by_addr = {a: i for i, (a, _, _) in enumerate(rows)}
@@ -77,7 +91,7 @@ def scan_rows(rows):
             calls.append({"call_site": f"0x{call_site:08x}", "present": False})
             continue
         a, mn, ops = rows[idx]
-        window = rows[max(0, idx - 4): idx + 1]
+        window = local_predecessor_window(rows, idx)
         target_loads = []
         for wa, wmn, wops in window:
             p = split_ops(wops)
@@ -99,6 +113,7 @@ def scan_rows(rows):
             "object_pointer_slots": [f"0x{x:08x}" for x in SLOTS],
             "positive_call_sites": [f"0x{x:08x}" for x in CALL_SITES],
             "claims_exact_runtime_target_identity": False,
+            "call_shape_window": "up to four immediately preceding instructions, stopping at prior control-flow boundary",
         },
         "slot_reference_counts": {f"0x{k:08x}": len(v) for k, v in slot_refs.items()},
         "slot_write_counts": {f"0x{k:08x}": len(v) for k, v in slot_writes.items()},
