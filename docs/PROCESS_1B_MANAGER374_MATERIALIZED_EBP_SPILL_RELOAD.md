@@ -10,19 +10,17 @@ lea addr,[receiver+0x374]
 write/RMW [addr]
 ```
 
-inside one straight-line region. It deliberately leaves memory spill/reload of the materialized address open. That class can hide a later writer even when the original address register is no longer live.
-
-This successor bounds the smallest such class: exact `MOV` spill/reload through an unchanged **EBP-relative memory cell** before the next control boundary.
+inside one straight-line region. It deliberately leaves memory spill/reload of the materialized address open. This successor bounds the smallest such class: exact `MOV` spill/reload through an unchanged **EBP-relative memory cell** before the next control boundary.
 
 ## Authority
 
-The executable path accepted by the analyzer is SHA-locked to PC retail 1.02:
+The analyzer accepts only PC retail 1.02 `SHIFT.exe` with SHA-256:
 
 ```text
 eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1
 ```
 
-No committed retail result is fabricated. The analyzer is ready for authoritative execution when the raw executable is available.
+No retail result is fabricated when the raw executable is unavailable.
 
 ## Exact tracked grammar
 
@@ -35,15 +33,17 @@ The probe tracks only:
 5. exact GPR copies after reload;
 6. a first-memory-operand zero-displacement dereference `[reloaded_reg]`.
 
-Only dereferences whose provenance has crossed at least one EBP-relative reload are reported as this successor's new candidates. Direct/copy-only dereferences remain predecessor coverage and are intentionally not counted again.
+Only dereferences whose provenance crossed at least one EBP-relative reload are reported as new candidates. Direct/copy-only dereferences remain predecessor coverage and are not counted again.
 
-The term "EBP-relative cell" is syntactic. This contract does **not** infer that EBP is a canonical compiler frame pointer or that the cell is semantically a stack local. It proves only equality of the unchanged EBP-relative effective address within the bounded straight-line region.
+`EBP-relative cell` is a syntactic statement only. The contract does not infer a canonical compiler frame pointer or semantic stack-local identity; it requires only the same unchanged EBP-relative effective address inside the bounded straight-line region.
 
 ## Fail-closed invalidation
 
-- any control transfer clears all register and EBP-cell state;
+- any control transfer clears register and EBP-cell state;
 - any explicit EBP write invalidates all tracked EBP-relative cells;
-- an overwrite of a tracked EBP-relative cell with an untracked value kills that cell;
+- any unmodeled EBP-relative write/RMW invalidates **all** tracked EBP-relative cells conservatively;
+- exact tracked `MOV` spill first invalidates older cells, then installs the new tracked cell;
+- this whole-cell invalidation intentionally avoids unsound byte/word overlap assumptions;
 - full and partial tracked-register writes kill exact address provenance;
 - selected implicit x86 GPR clobbers are modeled conservatively;
 - `lock`/`rep*` prefixes are normalized before mnemonic classification.
@@ -57,7 +57,7 @@ Not covered here:
 - ESP-relative spill/reload or ESP normalization;
 - implicit push/pop transport;
 - EBP-relative state across CFG edges;
-- arbitrary non-stack/non-EBP memory storage of the materialized pointer;
+- arbitrary non-EBP memory storage of the materialized pointer;
 - helper return values;
 - indexed LEA;
 - arithmetic reconstruction of `receiver+0x374`;
@@ -90,4 +90,4 @@ External provider count remains `7`.
 
 ## Next step
 
-Run the probe on authoritative PC retail 1.02 `SHIFT.exe`. Classify only positive reload-derived write receivers. Extend another carrier class only if the retail result leaves a concrete survivor; otherwise compose this negative subset into the bounded `manager+0x374` setter frontier without promoting global identity gates.
+Run the probe on authoritative PC retail 1.02 `SHIFT.exe`. Classify only positive reload-derived write receivers. Extend another carrier class only if retail evidence leaves a concrete survivor; otherwise compose the negative subset into the bounded `manager+0x374` setter frontier without promoting global identity gates.
