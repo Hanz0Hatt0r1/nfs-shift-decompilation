@@ -1,0 +1,81 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "dynamic_registry_reconstructed_or_indirect_registration_ruled_out": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "p13a_fun005ffc50_writable_callback_pair_direct_static_provenance_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "return_value_fun005ffc50_provenance_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "unbounded_multi_edge_or_phi_reconstruction_ruled_out": false,
+    "writable_callback_pair_direct_static_fun005ffc50_value_found": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50TrivialConstantReturnProducers/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairStaticProvenance/1",
+  "limits": [
+    "This closes only direct absolute writers and direct/static entry to FUN_00616687/FUN_0060ad99 for the heavily used writable callback slots 0x00b87b80 and 0x00b87b7c.",
+    "The default snapshots are tied to the retail initial slot values through startup initializer entries, but arbitrary alias writes, reconstructed/indirect setter entry, and external/runtime mutation remain open.",
+    "Other writable callback slots are not classified by this contract.",
+    "No global writable-memory, callback, reconstructed-entry, slot0, slot1, stored-alias or aggregate P1.3 gate is promoted."
+  ],
+  "machine_anchors": {
+    "config_fixed_A": "0x005f47b2 push 0x5f46f0",
+    "config_fixed_B": "0x005f47ad push 0x5f4760",
+    "config_setter_call": "0x0060adde call 0x616687",
+    "config_zero_push_1": "0x005f3b7d push eax",
+    "config_zero_push_2": "0x005f3b7e push eax",
+    "init_snapshot_A": "0x00a7fa5c mov eax,ds:0xb87b80",
+    "init_snapshot_A_store": "0x00a7fa61 mov ds:0xbe87dc,eax",
+    "init_snapshot_B": "0x00a7fa67 mov eax,ds:0xb87b7c",
+    "init_snapshot_B_store": "0x00a7fa6c mov ds:0xbe87e0,eax",
+    "setter_call_fixed": "0x0061ccbe call 0x616687",
+    "setter_fixed_A": "0x0061ccb9 push 0x61cb43",
+    "setter_fixed_B": "0x0061ccb4 push 0x61cbff",
+    "setter_fixed_flag_zero": "0x0061ccb3 push eax",
+    "slot_A_default_load": "0x006166c0 mov eax,ds:0xbe87dc",
+    "slot_A_store": "0x006166c5 mov ds:0xb87b80,eax",
+    "slot_B_default_load": "0x006166d1 mov eax,ds:0xbe87e0",
+    "slot_B_store": "0x006166d8 mov ds:0xb87b7c,eax"
+  },
+  "next_step": "Trace alias/indirect writers or other writable function-pointer slots; the direct/static producer surface of 0x00b87b80/0x00b87b7c no longer needs to be rescanned.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "static_entry_address_literals": {
+    "FUN_0060ad99_absolute_va_count": 0,
+    "FUN_0060ad99_rva_count": 0,
+    "FUN_00616687_absolute_va_count": 0,
+    "FUN_00616687_rva_count": 0
+  },
+  "version": 1,
+  "writable_callback_pair": {
+    "default_snapshot_A": "0x00be87dc",
+    "default_snapshot_B": "0x00be87e0",
+    "direct_config": "FUN_0060ad99",
+    "direct_config_callsites": ["0x005f3b7f","0x005f47b7"],
+    "direct_setter": "FUN_00616687",
+    "direct_setter_callsites": ["0x0060adde","0x0061ccbe"],
+    "direct_static_candidate_values_include_FUN_005ffc50": false,
+    "direct_static_slot_A_candidate_values": ["0x005f46f0","0x006165b6","0x0061cb43"],
+    "direct_static_slot_B_candidate_values": ["0x005f4760","0x006165c0","0x0061cbff"],
+    "initial_slot_A": "0x006165b6",
+    "initial_slot_B": "0x006165c0",
+    "slot_A": "0x00b87b80",
+    "slot_A_direct_absolute_writers": ["0x00616602","0x006166c5"],
+    "slot_A_direct_indirect_transfer_count": 26,
+    "slot_B": "0x00b87b7c",
+    "slot_B_direct_absolute_writers": ["0x0061660d","0x006166d8"],
+    "slot_B_direct_indirect_transfer_count": 51,
+    "startup_snapshot_table_entries": {"0x00aa77b8":"0x00a7fa5c","0x00aa77bc":"0x00a7fa67"}
+  }
+}
