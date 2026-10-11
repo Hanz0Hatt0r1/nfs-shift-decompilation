@@ -109,8 +109,7 @@ def scan_rows(rows):
     reason='other_control_transfer';break
    if writes_reg(mn,ops,reg):reason='register_clobber';break
   terms[reason]+=1
- inv=[{'load_site':f'0x{a:08x}','destination_register':r,'effective_address':f'0x{ea:08x}','source_operand':s} for _,a,r,ea,s in loads]
- return {'decoded_instruction_count':len(rows),'base_indexed_data_load_count':len(loads),'unique_effective_address_count':len({x[3] for x in loads}),'destination_register_counts':dict(sorted(Counter(x[2] for x in loads).items())),'loads':inv,'same_register_indirect_transfer_count':len(hits),'same_register_indirect_transfers':hits,'termination_reason_counts':dict(sorted(terms.items()))}
+ return {'decoded_instruction_count':len(rows),'base_indexed_data_load_count':len(loads),'unique_effective_address_count':len({x[3] for x in loads}),'destination_register_counts':dict(sorted(Counter(x[2] for x in loads).items())),'same_register_indirect_transfer_count':len(hits),'same_register_indirect_transfers':hits,'termination_reason_counts':dict(sorted(terms.items()))}
 def analyze(exe,upstream):
  sha=hashlib.sha256(exe.read_bytes()).hexdigest()
  if sha!=SHA:raise ValueError(sha)
