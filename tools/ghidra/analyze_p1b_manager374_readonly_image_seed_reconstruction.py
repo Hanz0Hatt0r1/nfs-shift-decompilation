@@ -54,14 +54,16 @@ def split_ops(text: str) -> list[str]:
     return text.split(",") if text else []
 
 
-def normalize_prefixed_instruction(mnemonic: str, operands: str) -> tuple[str, str]:
+def normalize_prefixed_instruction(mnemonic: str, operands: str) -> tuple[str, str, list[str]]:
+    prefixes: list[str] = []
     mnemonic = mnemonic.lower()
     operands = norm(operands)
     while mnemonic in PREFIXES and operands:
+        prefixes.append(mnemonic)
         parts = operands.split(" ", 1)
         mnemonic = parts[0].lower()
         operands = parts[1] if len(parts) == 2 else ""
-    return mnemonic, operands
+    return mnemonic, operands, prefixes
 
 
 def full_gpr(op: str) -> str | None:
@@ -98,6 +100,40 @@ def abs_memory_address(op: str) -> int | None:
 
 def is_control(mnemonic: str) -> bool:
     return mnemonic in CONTROL or mnemonic.startswith("j") or mnemonic.startswith("loop")
+
+
+def implicit_clobbers(mnemonic: str, ops: list[str], prefixes: list[str]) -> set[str]:
+    clobbered: set[str] = set()
+    if mnemonic in {"mul", "div", "idiv"} or (mnemonic == "imul" and len(ops) == 1):
+        clobbered.update({"eax", "edx"})
+    if mnemonic in {"cdq", "cwd"}:
+        clobbered.add("edx")
+    if mnemonic in {"cbw", "cwde", "lahf", "xlat", "xlatb", "aaa", "aad", "aam", "aas", "daa", "das"}:
+        clobbered.add("eax")
+    if mnemonic == "cpuid":
+        clobbered.update({"eax", "ebx", "ecx", "edx"})
+    if mnemonic in {"rdtsc", "rdpmc"}:
+        clobbered.update({"eax", "edx"})
+    if mnemonic == "rdtscp":
+        clobbered.update({"eax", "ecx", "edx"})
+    if mnemonic == "cmpxchg":
+        clobbered.add("eax")
+    if mnemonic == "cmpxchg8b":
+        clobbered.update({"eax", "edx"})
+    if mnemonic in {"xchg", "xadd"}:
+        for op in ops[:2]:
+            parent = parent_reg(op)
+            if parent:
+                clobbered.add(parent)
+    if mnemonic in {"popa", "popad"}:
+        clobbered.update(TRACKED_GPRS)
+    if mnemonic == "leave":
+        clobbered.add("ebp")
+    if mnemonic.startswith(("movs", "cmps", "stos", "lods", "scas")):
+        clobbered.update({"eax", "ecx", "esi", "edi"})
+    if any(prefix.startswith("rep") for prefix in prefixes):
+        clobbered.add("ecx")
+    return clobbered
 
 
 def source_key(source: dict) -> tuple:
@@ -150,6 +186,7 @@ def scan_rows(rows: Iterable[tuple[int, str, str]], read_seed: Callable[[int], t
     expirations = 0
     control_resets = 0
     unsupported_clobbers = 0
+    implicit_tracked_clobbers = 0
 
     def install(reg: str, info: dict, address: int, mnemonic: str, operands: str, kind: str) -> None:
         regs[reg] = info
@@ -157,7 +194,7 @@ def scan_rows(rows: Iterable[tuple[int, str, str]], read_seed: Callable[[int], t
             formations.append(formation_row(address, reg, info, mnemonic, operands, kind))
 
     for row_index, (address, raw_mnemonic, raw_operands) in enumerate(rows):
-        mnemonic, operands = normalize_prefixed_instruction(raw_mnemonic, raw_operands)
+        mnemonic, operands, prefixes = normalize_prefixed_instruction(raw_mnemonic, raw_operands)
         ops = split_ops(operands)
 
         stale = [reg for reg, info in regs.items() if row_index - info["origin_index"] > WINDOW]
@@ -220,11 +257,16 @@ def scan_rows(rows: Iterable[tuple[int, str, str]], read_seed: Callable[[int], t
                     unsupported_clobbers += 1
                     continue
                 rhs = rhs_imm if rhs_imm is not None else rhs_info["value"]
-                if mnemonic == "add": value = lhs["value"] + rhs
-                elif mnemonic == "sub": value = lhs["value"] - rhs
-                elif mnemonic == "xor": value = lhs["value"] ^ rhs
-                elif mnemonic == "or": value = lhs["value"] | rhs
-                else: value = lhs["value"] & rhs
+                if mnemonic == "add":
+                    value = lhs["value"] + rhs
+                elif mnemonic == "sub":
+                    value = lhs["value"] - rhs
+                elif mnemonic == "xor":
+                    value = lhs["value"] ^ rhs
+                elif mnemonic == "or":
+                    value = lhs["value"] | rhs
+                else:
+                    value = lhs["value"] & rhs
                 sources = merge_sources(lhs, rhs_info) if rhs_info is not None else list(lhs["sources"])
                 origin = min([lhs["origin_index"]] + ([rhs_info["origin_index"]] if rhs_info else []))
                 info = {"value": u32(value), "origin_index": origin, "sources": sources}
@@ -236,10 +278,14 @@ def scan_rows(rows: Iterable[tuple[int, str, str]], read_seed: Callable[[int], t
             dst = full_gpr(ops[0])
             if dst in regs:
                 old = regs[dst]
-                if mnemonic == "inc": value = old["value"] + 1
-                elif mnemonic == "dec": value = old["value"] - 1
-                elif mnemonic == "neg": value = -old["value"]
-                else: value = ~old["value"]
+                if mnemonic == "inc":
+                    value = old["value"] + 1
+                elif mnemonic == "dec":
+                    value = old["value"] - 1
+                elif mnemonic == "neg":
+                    value = -old["value"]
+                else:
+                    value = ~old["value"]
                 info = {"value": u32(value), "origin_index": old["origin_index"], "sources": list(old["sources"])}
                 install(dst, info, address, mnemonic, operands, "unary-arithmetic")
                 transitions += 1
@@ -279,6 +325,11 @@ def scan_rows(rows: Iterable[tuple[int, str, str]], read_seed: Callable[[int], t
                 transitions += 1
                 continue
 
+        for reg in implicit_clobbers(mnemonic, ops, prefixes):
+            if reg in regs:
+                regs.pop(reg, None)
+                implicit_tracked_clobbers += 1
+
         if ops:
             parent = parent_reg(ops[0])
             if parent in regs and mnemonic not in NON_WRITING_FIRST_REG:
@@ -309,6 +360,7 @@ def scan_rows(rows: Iterable[tuple[int, str, str]], read_seed: Callable[[int], t
             "window_expiration_count": expirations,
             "control_reset_count": control_resets,
             "unsupported_tracked_clobber_count": unsupported_clobbers,
+            "implicit_tracked_clobber_count": implicit_tracked_clobbers,
         },
         "adjudication": {
             "bounded_readonly_image_memory_seed_reconstruction_subset_complete": True,
@@ -325,6 +377,7 @@ def scan_rows(rows: Iterable[tuple[int, str, str]], read_seed: Callable[[int], t
         "limits": [
             f"Tracks only exact dword loads from retail .text/.rdata through a straight-line {WINDOW}-instruction GPR window.",
             "Calls, branches, returns and traps clear tracked state; helper-return provenance is outside this subset.",
+            "Known implicit GPR clobbers and unsupported explicit writes invalidate provenance conservatively.",
             "Writable .data/heap/anonymous memory, table indexing, arbitrary memory aliases, runtime patching and unsupported transforms remain open.",
             "A positive exact numeric formation is only a candidate source until its runtime ownership and consumer path are classified.",
         ],
