@@ -1,0 +1,60 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "direct_absolute_writable_transfer_internal_fun005ffc50_provider_found": false,
+    "dynamic_registry_reconstructed_or_indirect_registration_ruled_out": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "p13a_fun005ffc50_direct_absolute_writable_indirect_transfer_slot_inventory_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "register_loaded_or_aliased_writable_slots_ruled_out": false,
+    "return_value_fun005ffc50_provenance_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "unbounded_multi_edge_or_phi_reconstruction_ruled_out": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "input_contracts": {
+      "callback_pair": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairStaticProvenance/1",
+      "nvapi_table": "SHIFT.P1A.P13AFun005ffc50NvapiWritableDispatchTable/1"
+    },
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "direct_absolute_writable_transfer_inventory": {
+    "all_unique_slots_partitioned": true,
+    "bounded_internal_FUN_005ffc50_provider_found": false,
+    "data_end_exclusive": "0x00bbc600",
+    "data_start": "0x00b81000",
+    "groups": {
+      "fixed_bridge_slots": {
+        "rows": {
+          "0x00b87b64": {"direct_absolute_writer_count":0,"direct_transfer_count":1,"direct_transfer_kind":"jmp","initial_target":"0x00901707","targets_FUN_005ffc50":false},
+          "0x00b87b68": {"direct_absolute_writer_count":0,"direct_transfer_count":1,"direct_transfer_kind":"jmp","initial_target":"0x0090162a","targets_FUN_005ffc50":false}
+        },
+        "slot_count": 2,
+        "transfer_count": 2
+      },
+      "nvapi_queryinterface_table": {"internal_FUN_005ffc50_provider_found":false,"slot_count":255,"transfer_count":255},
+      "writable_callback_pair": {"direct_static_FUN_005ffc50_value_found":false,"slot_count":2,"transfer_count":77}
+    },
+    "transfer_count": 334,
+    "unique_slot_count": 259
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50DirectAbsoluteWritableTransferComposition/1",
+  "limits": [
+    "This composes only direct machine transfers of the form call/jmp DWORD PTR ds:<absolute address> where the slot lies in the retail .data section.",
+    "Register-loaded writable pointers, base/index-addressed slots, alias writes, heap/runtime-generated pointers and arbitrary external mutation remain open.",
+    "The NVAPI group is external-provider infrastructure; the callback pair is only direct/static-closed; the two fixed bridge slots have no direct absolute writers.",
+    "No global writable-memory, callback, reconstructed-entry, slot0, slot1, stored-alias or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Focus writable-memory work on register-loaded/base-indexed/aliased sources; all direct absolute .data indirect-transfer slots are now partitioned and bounded.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "version": 1
+}
