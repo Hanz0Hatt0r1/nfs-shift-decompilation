@@ -1,0 +1,71 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_fun005ffc50_writable_callback_pair_mod1_zero_guard_exclusion_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "register_loaded_or_aliased_writable_slots_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "writable_callback_pair_fully_represented_two_gpr_frontier_empty": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_callback_pair_may_state_top_frontier_empty": false,
+    "writable_callback_pair_mod1_zero_guard_exclusion_found": true,
+    "writable_callback_pair_multi_edge_computed_alias_sources_ruled_out": false,
+    "writable_callback_pair_single_top_frontier_empty": false,
+    "writable_callback_pair_target_compatible_frontier_empty": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairMod4LocalInductionBounds/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairMod1ZeroGuardExclusion/1",
+  "inventory": {
+    "decoded_instruction_count": 2847850,
+    "remaining_target_compatible_site_count": 6,
+    "remaining_target_compatible_sites": [
+      "0x00503328",
+      "0x0050334b",
+      "0x007a6e9e",
+      "0x007a6ea5",
+      "0x007f25a0",
+      "0x0080b696"
+    ],
+    "upstream_target_compatible_site_count": 7,
+    "zero_guard_excluded_site_count": 1,
+    "zero_guard_excluded_sites": [
+      {
+        "base_first_byte": "0x00",
+        "base_section": ".rdata",
+        "callback_target_possible": false,
+        "expression": "esi+ebp*1",
+        "guard_site": "0x005d560c",
+        "guard_taken_target": "0x005d562b",
+        "primary_register": "esi",
+        "secondary_register": "ebp",
+        "secondary_singleton": "0x00aa9b60",
+        "site": "0x005d5621",
+        "site_reachable_under_secondary_singleton": false
+      }
+    ]
+  },
+  "limits": [
+    "This excludes only 0x005d5621 under the already-proven EBP=0x00aa9b60 singleton observation.",
+    "The two ESI+EBX*2 sites at 0x00503328/0x0050334b still depend on a runtime loop-count bound.",
+    "The four remaining modulo-4/8 sites, missing-secondary/runtime aliases and aggregate P1.3 gates remain open."
+  ],
+  "next_step": "Trace the runtime count provenance feeding ESI at 0x00503328/0x0050334b; then classify the four remaining modulo-4/8 target-compatible sites.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "method": "exact branch-feasibility proof using the upstream singleton secondary operand and the retail .rdata byte at that address",
+    "targets": [
+      "0x00b87b7c",
+      "0x00b87b80"
+    ]
+  },
+  "version": 1
+}
