@@ -105,7 +105,7 @@ def scan(rows):
   q=parse_load(m,o,{r:v for r,(v,age) in const.items() if age<=W})
   if q:loads.append((idx,a,q[0],q[1]))
   const=update_consts(m,o,const)
- branch_states=set();branch_sites=set();carried=set();calls=[];ij=[];hits=[];ends=Counter()
+ branch_states=set();branch_sites=set();carried=set();calls=[];icalls=[];ijumps=[];hits=[];ends=Counter()
  for li,la,lr,ea in loads:
   q=[(li+1,{lr:False})];seen=set()
   while q:
@@ -120,7 +120,8 @@ def scan(rows):
     if m=='jmp' and t is not None and t in by:
      carried.add(la);branch_states.add((la,a,t,tuple(sorted(regs.items()))));branch_sites.add(a);q.append((by[t],dict(regs)));continue
     if m=='call' and t is not None:calls.append((la,ea,a,t,tuple(sorted(regs))))
-    else:ij.append((la,ea,a,o,tuple(sorted(regs))))
+    elif m=='call':icalls.append((la,ea,a,o,tuple(sorted(regs))))
+    else:ijumps.append((la,ea,a,o,tuple(sorted(regs))))
     continue
    if (m.startswith('j') and m!='jmp') or m.startswith('loop'):
     t=imm(o);carried.add(la);branch_states.add((la,a,t,tuple(sorted(regs.items()))));branch_sites.add(a)
@@ -131,11 +132,11 @@ def scan(rows):
    nr=apply_taint(m,o,regs)
    if not nr:ends['taint_dead']+=1;continue
    q.append((idx+1,nr))
- return {'decoded_instruction_count':len(rows),'base_indexed_data_load_count':len(loads),'unique_effective_address_count':len({x[3] for x in loads}),'direct_cfg_carried_load_count':len(carried),'direct_cfg_carried_load_sites':[f'0x{x:08x}' for x in sorted(carried)],'direct_branch_state_event_count':len(branch_states),'direct_branch_site_count':len(branch_sites),'tainted_register_indirect_transfer_count':len(hits),'direct_call_boundary_count':len(calls),'direct_call_boundary_unique_load_call_pair_count':len({(x[0],x[2]) for x in calls}),'direct_call_boundary_unique_site_count':len({x[2] for x in calls}),'indirect_jump_boundary_count':len(ij),'indirect_jump_boundaries':[{'load_site':f'0x{x[0]:08x}','effective_address':f'0x{x[1]:08x}','jump_site':f'0x{x[2]:08x}','jump_register':x[3],'live_taint_registers':list(x[4])} for x in ij],'taint_dead_terminal_state_count':ends['taint_dead'],'terminal_return_or_trap_state_count':ends['terminal'],'fixed_point_maxout_count':0}
+ return {'decoded_instruction_count':len(rows),'base_indexed_data_load_count':len(loads),'unique_effective_address_count':len({x[3] for x in loads}),'direct_cfg_carried_load_count':len(carried),'direct_cfg_carried_load_sites':[f'0x{x:08x}' for x in sorted(carried)],'direct_branch_state_event_count':len(branch_states),'direct_branch_site_count':len(branch_sites),'tainted_register_indirect_transfer_count':len(hits),'direct_call_boundary_count':len(calls),'direct_call_boundary_unique_load_call_pair_count':len({(x[0],x[2]) for x in calls}),'direct_call_boundary_unique_site_count':len({x[2] for x in calls}),'indirect_call_boundary_count':len(icalls),'indirect_call_boundaries':[{'load_site':f'0x{x[0]:08x}','effective_address':f'0x{x[1]:08x}','call_site':f'0x{x[2]:08x}','call_register':x[3],'live_taint_registers':list(x[4])} for x in icalls],'indirect_jump_boundary_count':len(ijumps),'indirect_jump_boundaries':[{'load_site':f'0x{x[0]:08x}','effective_address':f'0x{x[1]:08x}','jump_site':f'0x{x[2]:08x}','jump_register':x[3],'live_taint_registers':list(x[4])} for x in ijumps],'taint_dead_terminal_state_count':ends['taint_dead'],'terminal_return_or_trap_state_count':ends['terminal'],'fixed_point_maxout_count':0}
 def analyze(exe):
  if hashlib.sha256(exe.read_bytes()).hexdigest()!=SHA:raise ValueError('unexpected executable SHA')
- r=scan(dis(exe));expected=(2847850,63,51,44,228,199,0,56,54,54,11,107,6)
- actual=(r['decoded_instruction_count'],r['base_indexed_data_load_count'],r['unique_effective_address_count'],r['direct_cfg_carried_load_count'],r['direct_branch_state_event_count'],r['direct_branch_site_count'],r['tainted_register_indirect_transfer_count'],r['direct_call_boundary_count'],r['direct_call_boundary_unique_load_call_pair_count'],r['direct_call_boundary_unique_site_count'],r['indirect_jump_boundary_count'],r['taint_dead_terminal_state_count'],r['terminal_return_or_trap_state_count'])
+ r=scan(dis(exe));expected=(2847850,63,51,44,228,199,0,56,54,54,11,0,107,6)
+ actual=(r['decoded_instruction_count'],r['base_indexed_data_load_count'],r['unique_effective_address_count'],r['direct_cfg_carried_load_count'],r['direct_branch_state_event_count'],r['direct_branch_site_count'],r['tainted_register_indirect_transfer_count'],r['direct_call_boundary_count'],r['direct_call_boundary_unique_load_call_pair_count'],r['direct_call_boundary_unique_site_count'],r['indirect_call_boundary_count'],r['indirect_jump_boundary_count'],r['taint_dead_terminal_state_count'],r['terminal_return_or_trap_state_count'])
  if actual!=expected:raise AssertionError((actual,r))
  return r
 def main():
