@@ -1,0 +1,63 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "dynamic_registry_reconstructed_or_indirect_registration_ruled_out": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "four_edge_fun005ffc50_indirect_transfer_found": false,
+    "four_edge_fun005ffc50_materialization_found": false,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "p13a_fun005ffc50_up_to_four_direct_cfg_edge_constant_carry_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "return_value_fun005ffc50_provenance_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "unbounded_multi_edge_or_phi_reconstruction_ruled_out": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50OneEdgeConstantCarry/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50FourEdgeConstantCarry/1",
+  "inventory": {
+    "branch_seed_count": 17745,
+    "evaluated_state_block_count": 84674,
+    "evaluated_state_block_count_by_depth": {
+      "1": 29768,
+      "2": 21280,
+      "3": 17555,
+      "4": 16071
+    },
+    "indirect_transfers": [],
+    "initial_successor_path_count": 30181,
+    "materializations": [],
+    "max_edges": 4,
+    "max_scanned_block_instruction_count": 226,
+    "max_work_queue_depth": 30186,
+    "simulated_instruction_count": 443364,
+    "unique_start_state_count": 84674
+  },
+  "limits": [
+    "This extends the one-edge exact-constant subset through at most four direct CFG edges while keeping taken and fallthrough states path-separated.",
+    "Calls terminate carried state; return values, memory-backed values, indirect-branch successors, and paths requiring five or more direct edges remain open.",
+    "This is not an unbounded phi/fixed-point proof and does not merge alternative predecessor states.",
+    "No global reconstructed-entry, callback, writable-runtime, stored-alias, slot0, slot1 or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Trace five-plus-edge/phi, return-value and writable/runtime-memory provenance to FUN_005ffc50; direct/static through four direct CFG edges is now separately bounded.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "calls_clear_and_terminate_carried_state": true,
+    "decoded_instruction_count": 2847850,
+    "indirect_branch_successors_not_followed": true,
+    "max_direct_cfg_edges": 4,
+    "path_model": "path-sensitive exact GPR constants carried through up to four direct conditional/unconditional CFG edges",
+    "target": "FUN_005ffc50",
+    "target_address": "0x005ffc50"
+  },
+  "version": 1
+}
