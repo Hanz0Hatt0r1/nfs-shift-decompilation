@@ -36,6 +36,46 @@ def require(value: bool, message: str) -> None:
         raise ValueError(message)
 
 
+def vptr_rejection_sites(vptr: dict) -> set[str]:
+    """Flatten the structured vptr/owner rejection contract into exact sites."""
+    require(vptr["adjudication"]["rejected_site_count"] == 15, "vptr rejected-site count drift")
+    require(vptr["adjudication"]["rejections_use_exact_receiver_owner_vptr_or_address_identity"] is True,
+            "vptr rejection authority drift")
+    require(vptr["adjudication"]["numeric_plus_0x374_equality_used_as_identity"] is False,
+            "numeric offset equality became identity")
+
+    sites: set[str] = set()
+
+    for row in vptr["same_body_vptr_rejections"]:
+        require(row["equals_manager_root_vptr"] is False, f"same-body vptr site reopened: {row['site']}")
+        sites.add(row["site"])
+
+    dispatch = vptr["unique_vtable_dispatch_rejection"]
+    require(dispatch["owning_vtable_equals_manager_root_vptr"] is False, "vtable dispatch owner reopened")
+    sites.update(dispatch["target_sites"])
+
+    for row in vptr["owner_child_vptr_rejections"]:
+        require(row["equals_manager_root_vptr"] is False, f"owner-child vptr site reopened: {row['site']}")
+        sites.add(row["site"])
+
+    embedded = vptr["embedded_owner_address_rejections"]
+    for row in embedded["embedded_targets"]:
+        require(row["equals_manager_singleton_root"] is False, f"embedded owner site reopened: {row['site']}")
+        sites.add(row["site"])
+
+    copied = vptr["embedded_copy_receiver_rejection"]
+    require(copied["equals_manager_singleton_root"] is False, "embedded copy receiver reopened")
+    sites.add(copied["site"])
+
+    fresh = vptr["fresh_allocation_receiver_rejection"]
+    require(fresh["all_receivers_are_fresh_allocation_results"] is True, "fresh allocation provenance drift")
+    require(fresh["equals_fixed_manager_singleton_root"] is False, "fresh allocation receiver reopened")
+    sites.add(fresh["site"])
+
+    require(len(sites) == 15, f"flattened vptr rejection set drift: {len(sites)}")
+    return sites
+
+
 def build() -> dict:
     data = {name: load(path) for name, path in INPUTS.items()}
     for name, expected in EXPECTED.items():
@@ -53,7 +93,7 @@ def build() -> dict:
 
     manager_sites = {row["site"] for row in inventory["proven_manager_domain_sites"]}
     inherited = {row["site"] for row in inventory["inherited_closed_negative_sites"]}
-    vptr_sites = {row["site"] for row in vptr["rejections"]}
+    vptr_sites = vptr_rejection_sites(vptr)
     precluster_sites = {row["site"] for row in precluster["rejections"]}
     fmod_sites = set(fmod["target"]["sites"])
 
@@ -77,8 +117,6 @@ def build() -> dict:
         require(negative, f"manager-domain site not closed: {row['site']}")
     for row in inventory["inherited_closed_negative_sites"]:
         require(row.get("status") == "closed-negative", f"inherited site reopened: {row['site']}")
-    for row in vptr["rejections"]:
-        require(row.get("can_place_hdvehicle_plus_0x4330_into_manager_plus_0x374") is False, f"vptr site reopened: {row['site']}")
     for row in precluster["rejections"]:
         require(row.get("can_place_hdvehicle_plus_0x4330_into_manager_plus_0x374") is False, f"precluster site reopened: {row['site']}")
     require(fmod["identity_adjudication"]["listed_sites_can_write_manager_plus_0x374"] is False, "FMOD cluster reopened")
