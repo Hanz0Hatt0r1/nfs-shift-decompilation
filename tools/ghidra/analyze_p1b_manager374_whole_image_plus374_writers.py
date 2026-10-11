@@ -11,6 +11,7 @@ from pathlib import Path
 RETAIL_SHA256 = "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
 FORMAT = "SHIFT.P1B.Manager374WholeImagePlus374WriterProbe/1"
 GPRS = {"eax", "ebx", "ecx", "edx", "esi", "edi", "ebp", "esp"}
+PREFIXES = {"lock", "rep", "repe", "repz", "repne", "repnz"}
 
 # Intentionally explicit. Any first-memory-operand +0x374 form outside this set is
 # reported separately instead of being guessed as a write.
@@ -24,7 +25,10 @@ WRITE_MNEMONICS = {
 }
 
 INSN = re.compile(r"^\s*([0-9a-fA-F]+):\s+(?:[0-9a-fA-F]{2}\s+)+\s*([a-zA-Z][a-zA-Z0-9]*)\s*(.*)$")
-MEM = re.compile(r"^(?:(?:BYTE|WORD|DWORD|QWORD|XMMWORD|TBYTE) PTR )?\[([^\]]+)\]$", re.I)
+MEM = re.compile(
+    r"^(?:(?:BYTE|WORD|DWORD|QWORD|XMMWORD|TBYTE) PTR )?(?:(?:cs|ds|es|fs|gs|ss):)?\[([^\]]+)\]$",
+    re.I,
+)
 GPR_RE = re.compile(r"\b(eax|ebx|ecx|edx|esi|edi|ebp|esp)\b", re.I)
 PLUS_374 = re.compile(r"(?:^|\+)0x0*374(?:$|\+)", re.I)
 
@@ -35,6 +39,20 @@ def norm(text: str) -> str:
 
 def split_ops(text: str) -> list[str]:
     return text.split(",") if text else []
+
+
+def normalize_prefixed_instruction(mnemonic: str, operands: str) -> tuple[str, str, list[str]]:
+    prefixes: list[str] = []
+    mnemonic = mnemonic.lower()
+    operands = norm(operands)
+    while mnemonic in PREFIXES:
+        prefixes.append(mnemonic)
+        if not operands:
+            return mnemonic, operands, prefixes
+        parts = operands.split(" ", 1)
+        mnemonic = parts[0].lower()
+        operands = parts[1] if len(parts) == 2 else ""
+    return mnemonic, operands, prefixes
 
 
 def plus374_memory(op: str):
@@ -56,7 +74,8 @@ def scan_rows(rows):
     mnemonic_counts: dict[str, int] = {}
     other_mnemonic_counts: dict[str, int] = {}
 
-    for address, mnemonic, operands in rows:
+    for address, raw_mnemonic, raw_operands in rows:
+        mnemonic, operands, prefixes = normalize_prefixed_instruction(raw_mnemonic, raw_operands)
         ops = split_ops(operands)
         if not ops:
             continue
@@ -66,6 +85,7 @@ def scan_rows(rows):
         row = {
             "site": f"0x{address:08x}",
             "mnemonic": mnemonic,
+            "prefixes": prefixes,
             "destination": ops[0],
             "expression": info["expression"],
             "registers": info["registers"],
@@ -105,6 +125,7 @@ def scan_rows(rows):
         },
         "limits": [
             "This is a syntactic whole-image inventory of first memory operands with an exact +0x374 displacement and at least one 32-bit GPR base/index.",
+            "GNU objdump lock/rep-family instruction prefixes are normalized before mnemonic classification.",
             "Only an explicit write/RMW mnemonic allowlist is promoted to write candidates; every other first-memory-operand mnemonic is surfaced separately and remains fail-closed.",
             "A +0x374 displacement does not imply Participants Manager identity. Every positive candidate receiver must be machine-proven before it can affect manager+0x374 identity adjudication.",
             "Computed effective addresses that materialize +0x374 in a register before a zero-displacement store are outside this probe.",
