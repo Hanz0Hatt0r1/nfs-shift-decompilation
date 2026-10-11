@@ -1,0 +1,91 @@
+{
+  "adjudication": {
+    "absolute_data_copied_register_indirect_transfer_found": false,
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "dynamic_registry_reconstructed_or_indirect_registration_ruled_out": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "p13a_fun005ffc50_absolute_data_register_copy_near_transfer_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "register_loaded_or_aliased_writable_slots_ruled_out": false,
+    "return_value_fun005ffc50_provenance_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "unbounded_multi_edge_or_phi_reconstruction_ruled_out": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50AbsoluteDataLoadNearTransfer/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50AbsoluteDataCopyNearTransfer/1",
+  "inventory": {
+    "absolute_data_load_count": 1786,
+    "copied_load_count": 10,
+    "copied_register_indirect_transfer_count": 0,
+    "copied_register_indirect_transfers": [],
+    "copy_count_by_pair": {
+      "eax->ecx": 2,
+      "eax->edx": 1,
+      "ecx->eax": 1,
+      "ecx->edx": 2,
+      "edi->eax": 1,
+      "edi->ecx": 2,
+      "edx->ecx": 1
+    },
+    "copy_event_count": 10,
+    "copy_events": [
+      {"copy_kind":"mov","copy_site":"0x005ec427","destination_register":"ecx","distance":1,"load_site":"0x005ec421","origin_register":"edi","slot":"0x00b86954","source_register":"edi"},
+      {"copy_kind":"mov","copy_site":"0x005ec4a1","destination_register":"ecx","distance":1,"load_site":"0x005ec49b","origin_register":"edi","slot":"0x00b86950","source_register":"edi"},
+      {"copy_kind":"mov","copy_site":"0x0083ee04","destination_register":"ecx","distance":2,"load_site":"0x0083edfc","origin_register":"edx","slot":"0x00b8e41c","source_register":"edx"},
+      {"copy_kind":"mov","copy_site":"0x008a455b","destination_register":"edx","distance":2,"load_site":"0x008a4554","origin_register":"eax","slot":"0x00b94854","source_register":"eax"},
+      {"copy_kind":"mov","copy_site":"0x00915828","destination_register":"edx","distance":2,"load_site":"0x0091581c","origin_register":"ecx","slot":"0x00b97b08","source_register":"ecx"},
+      {"copy_kind":"mov","copy_site":"0x0091ebf7","destination_register":"ecx","distance":1,"load_site":"0x0091ebf2","origin_register":"eax","slot":"0x00b98084","source_register":"eax"},
+      {"copy_kind":"mov","copy_site":"0x0091f139","destination_register":"ecx","distance":1,"load_site":"0x0091f134","origin_register":"eax","slot":"0x00b9809c","source_register":"eax"},
+      {"copy_kind":"mov","copy_site":"0x009fbe40","destination_register":"edx","distance":2,"load_site":"0x009fbe34","origin_register":"ecx","slot":"0x00bac6cc","source_register":"ecx"},
+      {"copy_kind":"mov","copy_site":"0x00a22e89","destination_register":"eax","distance":1,"load_site":"0x00a22e83","origin_register":"edi","slot":"0x00bac2f8","source_register":"edi"},
+      {"copy_kind":"mov","copy_site":"0x00a22fa9","destination_register":"eax","distance":2,"load_site":"0x00a22f9f","origin_register":"ecx","slot":"0x00bac2f8","source_register":"ecx"}
+    ],
+    "decoded_instruction_count": 2847850,
+    "tainted_register_indirect_transfer_count": 0,
+    "tainted_register_indirect_transfers": [],
+    "termination_reason_counts": {
+      "all_tainted_registers_clobbered": 411,
+      "other_control_transfer": 1357,
+      "window_exhausted": 18
+    },
+    "unique_absolute_data_slot_count": 434
+  },
+  "limits": [
+    "This closes only identity-preserving GPR copies (mov/xchg) of direct absolute .data loads within the same 16-decoded-instruction straight-line window.",
+    "Pointer arithmetic/transforms, stack spill/reload, inter-block carry, base/indexed writable memory, aliases, heap/runtime values and wider points-to closure remain open.",
+    "The 10 retail copy events produce zero indirect call/jmp through either the original or copied tainted register; two windows continue past the original-register-clobber and terminate at unrelated control transfers.",
+    "No global writable-memory, callback, reconstructed-entry, slot0, slot1, stored-alias or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Trace arithmetic/transformed or spill/reload writable-memory values, then base/indexed/alias sources; the direct absolute load plus same-block GPR-copy subset is now bounded.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "data_end_exclusive": "0x00bbc600",
+    "data_start": "0x00b81000",
+    "forward_window_decoded_instructions": 16,
+    "provenance": "absolute .data dword load -> GPR, preserving identity through mov/xchg GPR copies only",
+    "stops_on": [
+      "any call/jmp after transfer check",
+      "conditional branch/loop/ret/trap",
+      "clobber of every tainted GPR",
+      "16-instruction window"
+    ]
+  },
+  "upstream_termination_delta": {
+    "other_control_transfer": 2,
+    "register_clobber_to_all_tainted_clobbered": -2,
+    "window_exhausted": 0
+  },
+  "version": 1
+}
