@@ -1,0 +1,88 @@
+{
+  "adjudication": {
+    "absolute_data_stack_reload_indirect_transfer_found": false,
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "dynamic_registry_reconstructed_or_indirect_registration_ruled_out": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "p13a_fun005ffc50_absolute_data_stack_spill_reload_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "register_loaded_or_aliased_writable_slots_ruled_out": false,
+    "return_value_fun005ffc50_provenance_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "unbounded_multi_edge_or_phi_reconstruction_ruled_out": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50AbsoluteDataTransformNearTransfer/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50AbsoluteDataStackSpillReload/1",
+  "inventory": {
+    "absolute_data_load_count": 1786,
+    "decoded_instruction_count": 2847850,
+    "reload_derived_indirect_transfer_count": 0,
+    "reload_derived_indirect_transfers": [],
+    "reload_events": [
+      {"destination_register":"eax","distance":2,"load_site":"0x0090df55","reload_site":"0x0090df5d","slot":"0x00b97604","stack_base":"ebp","stack_displacement":"-0x24","transformed":false},
+      {"destination_register":"eax","distance":2,"load_site":"0x0090e308","reload_site":"0x0090e310","slot":"0x00b97600","stack_base":"ebp","stack_displacement":"-0x24","transformed":false},
+      {"destination_register":"esi","distance":4,"load_site":"0x00910e1b","reload_site":"0x00910e29","slot":"0x00b97600","stack_base":"ebp","stack_displacement":"-0x1c","transformed":false},
+      {"destination_register":"eax","distance":2,"load_site":"0x009111f6","reload_site":"0x009111fe","slot":"0x00b97604","stack_base":"ebp","stack_displacement":"-0x1c","transformed":false},
+      {"destination_register":"esi","distance":4,"load_site":"0x009117b5","reload_site":"0x009117c3","slot":"0x00b97600","stack_base":"ebp","stack_displacement":"-0x1c","transformed":false},
+      {"destination_register":"eax","distance":2,"load_site":"0x00911b90","reload_site":"0x00911b98","slot":"0x00b97604","stack_base":"ebp","stack_displacement":"-0x1c","transformed":false},
+      {"destination_register":"eax","distance":2,"load_site":"0x00918f77","reload_site":"0x00918f7f","slot":"0x00b97604","stack_base":"ebp","stack_displacement":"-0x24","transformed":false},
+      {"destination_register":"eax","distance":2,"load_site":"0x00919326","reload_site":"0x0091932e","slot":"0x00b97600","stack_base":"ebp","stack_displacement":"-0x24","transformed":false}
+    ],
+    "reloaded_load_count": 8,
+    "spill_event_samples": [
+      {"distance":5,"load_site":"0x005a2075","slot":"0x00b85b9c","source_register":"eax","spill_site":"0x005a2084","stack_base":"esp","stack_displacement":"+0x18","transformed":false},
+      {"distance":2,"load_site":"0x0060bfad","slot":"0x00b96d0c","source_register":"eax","spill_site":"0x0060bfb4","stack_base":"ebp","stack_displacement":"-0x4","transformed":true},
+      {"distance":1,"load_site":"0x00612109","slot":"0x00b879e0","source_register":"edx","spill_site":"0x0061210f","stack_base":"esp","stack_displacement":"+0x4","transformed":false},
+      {"distance":3,"load_site":"0x00612103","slot":"0x00b879dc","source_register":"ecx","spill_site":"0x00612113","stack_base":"esp","stack_displacement":"+0x0","transformed":false},
+      {"distance":4,"load_site":"0x0061221d","slot":"0x00b879e8","source_register":"edi","spill_site":"0x0061222c","stack_base":"esp","stack_displacement":"+0x8","transformed":false},
+      {"distance":3,"load_site":"0x00612230","slot":"0x00b879ec","source_register":"edi","spill_site":"0x0061223b","stack_base":"esp","stack_displacement":"+0xc","transformed":false},
+      {"distance":3,"load_site":"0x006122b3","slot":"0x00b879f4","source_register":"eax","spill_site":"0x006122c5","stack_base":"esp","stack_displacement":"+0x0","transformed":false},
+      {"distance":9,"load_site":"0x006122b8","slot":"0x00b879f8","source_register":"ecx","spill_site":"0x006122da","stack_base":"esp","stack_displacement":"+0x8","transformed":false},
+      {"distance":2,"load_site":"0x00a69f78","slot":"0x00b96d0c","source_register":"eax","spill_site":"0x00a69f7f","stack_base":"ebp","stack_displacement":"-0x4","transformed":true},
+      {"distance":2,"load_site":"0x00a6a25c","slot":"0x00b96d0c","source_register":"eax","spill_site":"0x00a6a263","stack_base":"ebp","stack_displacement":"-0x4","transformed":true},
+      {"distance":2,"load_site":"0x00a6a383","slot":"0x00b96d0c","source_register":"eax","spill_site":"0x00a6a38a","stack_base":"ebp","stack_displacement":"-0x4","transformed":true},
+      {"distance":2,"load_site":"0x00a6a562","slot":"0x00b96d0c","source_register":"eax","spill_site":"0x00a6a569","stack_base":"ebp","stack_displacement":"+0x90","transformed":true}
+    ],
+    "spilled_load_count": 108,
+    "stack_reload_count_by_base": {"ebp":8},
+    "stack_reload_event_count": 8,
+    "stack_spill_count_by_base": {"ebp":91,"esp":18},
+    "stack_spill_event_count": 109,
+    "tainted_register_indirect_transfer_count": 0,
+    "tainted_register_indirect_transfers": [],
+    "termination_reason_counts": {"all_taint_dead":282,"other_control_transfer":1466,"window_exhausted":38},
+    "transformed_stack_reload_count": 0,
+    "transformed_stack_spill_count": 82,
+    "unique_absolute_data_slot_count": 434
+  },
+  "limits": [
+    "This closes exact mov-based EBP/ESP-relative stack spill/reload within the same 16-instruction straight-line window while preserving the upstream GPR copy/transform taint.",
+    "Implicit push/pop value transfer, stack-pointer-delta normalization across ESP changes, memory aliases, inter-block carry, base/indexed writable sources, heap/runtime values and return provenance remain open.",
+    "Retail has 109 tracked spills and 8 exact reloads; none of the reload-derived values reaches an indirect call/jmp.",
+    "No global writable-memory, callback, reconstructed-entry, slot0, slot1, stored-alias or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Trace inter-block carry and implicit/normalized stack transfer, then base/indexed writable-memory and alias sources; exact same-block mov spill/reload is now negative.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "data_end_exclusive": "0x00bbc600",
+    "data_start": "0x00b81000",
+    "forward_window_decoded_instructions": 16,
+    "implicit_push_pop_taint_tracking": false,
+    "stack_base_invalidation": ["any write to EBP invalidates EBP-relative tracked slots","push/pop or write to ESP invalidates ESP-relative tracked slots"],
+    "stack_slot_shape": "exact DWORD PTR [ebp/esp +/- immediate] mov spill/reload",
+    "stops_on": ["any call/jmp after transfer check","conditional branch/loop/ret/trap","all register and tracked-stack taint dead","16-instruction window"]
+  },
+  "version": 1
+}
