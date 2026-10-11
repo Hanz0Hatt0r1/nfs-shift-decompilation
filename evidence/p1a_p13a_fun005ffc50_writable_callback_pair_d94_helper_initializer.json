@@ -1,0 +1,53 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_fun005ffc50_writable_callback_pair_d94_helper_initializer_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "writable_callback_pair_d94_helper_base_dword_value": 4,
+    "writable_callback_pair_d94_helper_base_dword_value_proven": true,
+    "writable_callback_pair_d94_helper_is_unbounded_value_source": false,
+    "writable_callback_pair_d94_runtime_vtable_producer_value_range_proven": false,
+    "writable_callback_pair_d94_value_range_proven": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_callback_pair_target_compatible_frontier_empty": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94LiteralProducerInventory/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94HelperInitializer/1",
+  "limits": [
+    "This proves only the concrete helper path reached from 0x00872257; it is not a global alias/write closure for +0xd94.",
+    "The independent write at 0x0045ecd3 still receives the runtime result of the vtable +0xec call and remains unbounded in this subset."
+  ],
+  "next_step": "Resolve the vtable +0xec target/value contract feeding 0x0045ecd3; the helper-mediated +0xd94 initializer no longer contributes an unconstrained value.",
+  "owner": "Process 1A / P1.3A",
+  "proof": {
+    "base_dword_write_site": "0x0062f5e2",
+    "base_dword_written_value": 4,
+    "cross_section_trampoline": "0x00457f31",
+    "decoded_instruction_count": 2847850,
+    "direct_helper_chain": [
+      "0x0041a560",
+      "0x0062ffd0",
+      "0x0062fde0",
+      "0x0062f520"
+    ],
+    "field_object_register": "esi",
+    "forced_low_flag_bits": "0x1f",
+    "forwarded_initializer_arg1": 4
+  },
+  "ready": true,
+  "scope": {
+    "field_displacement": "0x0d94",
+    "helper_call_site": "0x00872257",
+    "helper_target": "0x0041a560",
+    "method": "exact fixed-argument propagation through the direct helper chain"
+  },
+  "version": 1
+}
