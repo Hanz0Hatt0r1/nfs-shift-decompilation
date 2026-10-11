@@ -72,6 +72,30 @@ def test_push_is_stack_barrier():
     assert data["surface"]["termination_counts"]["stack_barrier"] >= 1
 
 
+def test_stack_barrier_stops_pointer_register_before_new_spill():
+    data = module().scan_rows([
+        (0x404100, "lea", "eax,[ecx+0x374]"),
+        (0x404106, "push", "esi"),
+        (0x404107, "mov", "DWORD PTR [esp+0x8],eax"),
+        (0x40410B, "mov", "edx,DWORD PTR [esp+0x8]"),
+        (0x40410F, "mov", "DWORD PTR [edx],ebx"),
+    ])
+    assert data["surface"]["esp_relative_spill_count"] == 0
+    assert data["surface"]["esp_relative_reload_count"] == 0
+    assert data["surface"]["termination_counts"]["tracked_register_clobber"] == 1
+
+
+def test_popad_stops_all_pointer_register_state():
+    data = module().scan_rows([
+        (0x404200, "lea", "ebp,[ecx+0x374]"),
+        (0x404206, "popad", ""),
+        (0x404207, "mov", "DWORD PTR [esp+0x8],ebp"),
+        (0x40420B, "mov", "edx,DWORD PTR [esp+0x8]"),
+    ])
+    assert data["surface"]["esp_relative_spill_count"] == 0
+    assert data["surface"]["esp_relative_reload_count"] == 0
+
+
 def test_non_mov_esp_reference_is_cell_barrier():
     data = module().scan_rows([
         (0x405000, "lea", "eax,[ecx+0x374]"),
