@@ -1,0 +1,60 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_fun005ffc50_writable_callback_pair_d94_literal_producer_inventory_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "writable_callback_pair_d94_literal_surface_has_runtime_or_helper_producers": true,
+    "writable_callback_pair_d94_value_range_proven": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_callback_pair_target_compatible_frontier_empty": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairRemainingAllocationProvenance/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94LiteralProducerInventory/1",
+  "inventory": {
+    "address_taken_count": 1,
+    "address_taken_sites": ["0x00872247"],
+    "decoded_instruction_count": 2847850,
+    "direct_runtime_value_write_count": 1,
+    "direct_runtime_value_write_sites": ["0x0045ecd3"],
+    "direct_write_count": 3,
+    "direct_write_sites": ["0x0045b2ae", "0x0045ecd3", "0x0045f43f"],
+    "direct_zero_write_count": 2,
+    "direct_zero_write_sites": ["0x0045b2ae", "0x0045f43f"],
+    "escaped_address_helper": {
+      "helper_call_site": "0x00872257",
+      "helper_target": "0x0041a560",
+      "lea_site": "0x00872247"
+    },
+    "literal_reference_count": 12,
+    "literal_reference_sites": ["0x0044ad39", "0x0045b288", "0x0045b2ae", "0x0045ecd3", "0x0045f43f", "0x00460ad3", "0x00464a33", "0x00464d23", "0x00466e5d", "0x005032ea", "0x0050337a", "0x00872247"],
+    "read_or_compare_count": 8,
+    "read_or_compare_sites": ["0x0044ad39", "0x0045b288", "0x00460ad3", "0x00464a33", "0x00464d23", "0x00466e5d", "0x005032ea", "0x0050337a"],
+    "remaining_modulus1_sites": ["0x00503328", "0x0050334b"],
+    "runtime_value_source": {
+      "source": "return value from indirect virtual call through [edi vtable + 0xec] at 0x0045ecca",
+      "value_register": "eax",
+      "write_site": "0x0045ecd3"
+    }
+  },
+  "limits": [
+    "Literal +0xd94 references are complete for the decoded image, but receiver identity and aliases through copied/materialized field addresses are not globally closed.",
+    "The write at 0x0045ecd3 receives an unconstrained runtime return value in this subset.",
+    "The address of +0xd94 escapes to helper 0x0041a560 at 0x00872257; helper semantics/value bounds remain open."
+  ],
+  "next_step": "Resolve the value contract of the vtable+0xec producer feeding 0x0045ecd3 and the helper 0x0041a560 path from 0x00872257 before attempting a bound for [ecx+0xd94].",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "field_displacement": "0x0d94",
+    "method": "whole-image literal displacement inventory plus local producer classification"
+  },
+  "version": 1
+}
