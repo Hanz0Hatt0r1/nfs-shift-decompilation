@@ -1,0 +1,66 @@
+{
+  "adjudication": {
+    "computed_or_runtime_alias_surface_complete": false,
+    "exact_source_slot_address_literal_surface_complete": true,
+    "exact_source_slot_alias_getter_static_entry_surface_complete": true,
+    "external_provider_count": 7,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "runtime_or_alias_writer_provenance_complete": false,
+    "source_slot_alias_getter_function_address_taken_found": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/15"
+  },
+  "format": "SHIFT.P1B.HDVehicle4330SourceSlotExactAddressSurface/1",
+  "limits": [
+    "This closes only exact whole-image little-endian dword occurrences of the two source-slot addresses and the static entry surface of the two exact alias getters.",
+    "Computed addresses, copied aliases, runtime-created pointers and consumers reached through runtime-computed getter pointers remain outside this subset.",
+    "The getter caller paths are not yet promoted read-only by this contract."
+  ],
+  "next_step": "Classify the three direct alias-getter caller paths for read/write/escape behavior, then continue computed alias and runtime writer provenance.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "alias_getters": [
+      {
+        "address": "0x00552f50",
+        "direct_call_sites": ["0x008df2cf", "0x008dfc06"],
+        "direct_call_site_count": 2,
+        "raw_function_address_dword_occurrence_count": 0,
+        "returned_base": "0x00b83dc0",
+        "returned_count": 4
+      },
+      {
+        "address": "0x00553640",
+        "direct_call_sites": ["0x008df037"],
+        "direct_call_site_count": 1,
+        "raw_function_address_dword_occurrence_count": 0,
+        "returned_base": "0x00b83ec0",
+        "returned_count": 41
+      }
+    ],
+    "source_slots": [
+      {
+        "address": "0x00b83dc0",
+        "exact_instruction_sites": ["0x00552f59", "0x00553229", "0x00553a62", "0x00a79b0d"],
+        "raw_dword_occurrence_count": 4,
+        "roles": ["alias_getter_output_value", "four_object_call_loop_base", "four_object_direct_method_loop_base", "direct_initializer_write_destination"]
+      },
+      {
+        "address": "0x00b83ec0",
+        "exact_instruction_sites": ["0x00553649", "0x00553b62"],
+        "raw_dword_occurrence_count": 2,
+        "roles": ["alias_getter_output_value", "forty_one_object_direct_method_loop_base"]
+      }
+    ],
+    "total_exact_source_slot_address_dword_occurrence_count": 6,
+    "total_static_alias_getter_direct_call_site_count": 3,
+    "total_static_alias_getter_function_address_dword_occurrence_count": 0
+  },
+  "version": 1
+}
