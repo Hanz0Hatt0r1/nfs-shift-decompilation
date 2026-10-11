@@ -1,0 +1,60 @@
+{
+  "adjudication": {
+    "base_indexed_direct_call_argument_escapes_require_callee_provenance": true,
+    "base_indexed_exact_mov_stack_spill_reload_subset_included": true,
+    "base_indexed_implicit_stack_carrier_surface_included": true,
+    "base_indexed_inter_block_carry_remains_open": true,
+    "bounded_indirect_entry_coverage_composed": true,
+    "bounded_indirect_entry_exact_4330_carrier_hit_found": false,
+    "external_provider_count": 7,
+    "generic_function_pointer_stores_copies_ruled_out": false,
+    "indirect_entry_into_carriers_ruled_out": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "remaining_incoming_entry_blocker_is_unresolved_nonstatic_indirect_target_recovery": true,
+    "runtime_generated_or_copied_function_pointers_ruled_out": false,
+    "runtime_patching_or_generated_code_ruled_out": false
+  },
+  "format": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/12",
+  "limits": [
+    "This supersedes /11 by composing the bounded implicit push/pop and normalized ESP carrier scan over the same 63 base/index-addressed writable .data loads.",
+    "Five tainted values escape as arguments to direct callees; those callee-side flows are an explicit open provenance frontier rather than a negative closure.",
+    "No implicit pop reload, normalized ESP-delta event, or tainted indirect CALL/JMP occurs before same-block termination.",
+    "Interprocedural callee flow, inter-block/phi carry, aliases, runtime mutation and other indirect target classes remain open.",
+    "The 19,500 navigation-index unresolved edges remain a capability metric, not a decrementing remainder counter."
+  ],
+  "next_step": "Classify the four unique direct callees receiving five base/index-derived argument escapes, then bound inter-block carry before promoting any global indirect-entry gate.",
+  "owner": "Process 1B / P1.3B aggregate integration",
+  "ready": true,
+  "supersedes": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/11",
+  "surface": {
+    "base_indexed_direct_call_argument_escape_count": 5,
+    "base_indexed_direct_call_argument_escape_unique_callee_count": 4,
+    "base_indexed_implicit_pop_reload_event_count": 0,
+    "base_indexed_implicit_push_event_count": 5,
+    "base_indexed_normalized_esp_adjust_event_count": 0,
+    "base_indexed_tainted_indirect_transfer_count": 0,
+    "base_indexed_writable_data_load_count": 63,
+    "bounded_exact_carrier_hit_count": 0,
+    "composed_coverage_class_count": 16,
+    "coverage_addition": {
+      "class": "base/index-addressed writable .data implicit stack carrier surface",
+      "direct_call_argument_escape_count": 5,
+      "exact_carrier_hit_count": 0,
+      "implicit_pop_reload_event_count": 0,
+      "implicit_push_event_count": 5,
+      "normalized_esp_adjust_event_count": 0,
+      "tainted_indirect_transfer_count": 0
+    },
+    "incoming_indirect_navigation_edge_count": 19500,
+    "incoming_indirect_unresolved_target_count": 19500,
+    "p1b_exact_carrier_count": 15,
+    "previous_bounded_coverage_class_count": 15
+  },
+  "upstream_contracts": [
+    "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/11",
+    "SHIFT.P1B.HDVehicle4330BaseIndexedImplicitStackCarrierSurface/1"
+  ],
+  "version": 12
+}
