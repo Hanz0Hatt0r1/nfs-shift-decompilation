@@ -1,0 +1,51 @@
+{
+  "adjudication": {
+    "all_materialized_candidate_receivers_classified": false,
+    "computed_address_manager_374_writer_surface_complete": false,
+    "external_provider_count": 7,
+    "global_helper_non_vtable_indirect_setter_surface_complete": false,
+    "global_manager_root_origin_surface_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "retail_materialized_candidate_frontier_composed": true,
+    "retail_materialized_probe_bundle_execution_complete": true,
+    "unknown_or_unrelated_manager_root_alias_surface_complete": false
+  },
+  "authority": {
+    "all_probe_outputs_same_authoritative_executable": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1B.Manager374MaterializedRetailFrontier/1",
+  "inputs": {
+    "ebp_spill_reload": "SHIFT.P1B.Manager374MaterializedEbpSpillReloadProbe/1",
+    "esp_spill_reload": "SHIFT.P1B.Manager374MaterializedESPSpillReloadProbe/1",
+    "same_region": "SHIFT.P1B.Manager374MaterializedPlus374WriterProbe/1"
+  },
+  "limits": [
+    "This composes only the three already-bounded materialized receiver+0x374 transport classes: same-region GPR, EBP spill/reload and normalized ESP spill/reload.",
+    "A positive row proves syntactic receiver-register provenance to a materialized +0x374 address, not Participants Manager identity.",
+    "Indexed/arithmetic address construction, cross-control-flow carry, non-stack memory aliases, helper-returned addresses, runtime mutation and arbitrary process memory remain outside this bundle.",
+    "A zero candidate union would close only these three bounded transport classes; it would not by itself close helper/runtime/global manager-root surfaces."
+  ],
+  "next_step": "Machine-adjudicate every unique positive candidate receiver against Participants Manager identity; extend only concrete surviving transport classes before the final manager+0x374 -> HDVehicle+0x4330 join and slot2 adjudication.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "candidate_record_count": 0,
+    "candidate_record_count_by_probe": {
+      "ebp_spill_reload": 0,
+      "esp_spill_reload": 0,
+      "same_region": 0
+    },
+    "candidate_records": [],
+    "candidate_site_sources": [],
+    "probe_count": 3,
+    "unadjudicated_candidate_site_count": 0,
+    "unadjudicated_candidate_sites": [],
+    "unique_candidate_site_count": 0,
+    "unique_candidate_sites": []
+  },
+  "version": 1
+}

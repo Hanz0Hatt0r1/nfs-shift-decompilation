@@ -1,0 +1,47 @@
+{
+  "adjudication": {
+    "all_materialized_candidate_receivers_classified": true,
+    "computed_address_manager_374_writer_surface_complete": false,
+    "external_or_unknown_origin_outer_alias_surface_complete": false,
+    "external_provider_count": 7,
+    "global_helper_non_vtable_indirect_setter_surface_complete": false,
+    "global_manager_root_origin_surface_complete": false,
+    "independent_unnamed_opaque_or_external_runtime_root_synthesis_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "materialized_plus_374_bounded_transport_can_write_manager_374": false,
+    "materialized_plus_374_bounded_transport_surface_complete": true,
+    "materialized_plus_374_ebp_spill_reload_retail_frontier_empty": true,
+    "materialized_plus_374_esp_spill_reload_retail_frontier_empty": true,
+    "materialized_plus_374_same_region_retail_frontier_empty": true,
+    "memory_load_or_opaque_runtime_reconstruction_complete": false,
+    "p1_3_control_producer_complete": false,
+    "unrecognized_runtime_transform_root_origin_surface_complete": false
+  },
+  "authority": {
+    "machine_execution_adjudicates": true,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1B.Manager374MaterializedRetailClosure/1",
+  "limits": [
+    "This closes only the three merged materialized receiver+0x374 transport classes executed on authoritative retail: same-region GPR, EBP spill/reload and normalized ESP spill/reload.",
+    "Indexed or arithmetic materialization, cross-control-flow carry, non-stack memory aliases, helper-returned materialized addresses and arbitrary runtime mutation remain outside this closure unless covered by separate contracts.",
+    "An empty materialized frontier is not a proof over arbitrary external process memory and does not complete the final manager-root identity join.",
+    "No identity is inferred from matching numeric offsets."
+  ],
+  "next_step": "Compose this zero materialized frontier with already-closed computed-runtime/reconstruction classes, then reduce only surviving external-memory, unnamed opaque-helper and unrecognized-transform root origins before final manager+0x374 -> HDVehicle+0x4330 and slot2 adjudication.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "candidate_record_count": 0,
+    "ebp_spill_reload_write_candidate_count": 0,
+    "esp_spill_reload_write_candidate_count": 0,
+    "probe_count": 3,
+    "remaining_materialized_candidate_site_count": 0,
+    "same_region_write_candidate_count": 0,
+    "unique_candidate_site_count": 0
+  },
+  "upstream_contract": "SHIFT.P1B.Manager374MaterializedRetailFrontier/1",
+  "version": 1
+}
