@@ -21,6 +21,18 @@ WRITE_MNEMONICS = {
     "rol", "ror", "rcl", "rcr", "shl", "shr", "sal", "sar",
     "fst", "fstp", "fist", "fistp", "fisttp",
 }
+SUBREG_PARENT = {
+    "al": "eax", "ah": "eax", "ax": "eax", "eax": "eax",
+    "bl": "ebx", "bh": "ebx", "bx": "ebx", "ebx": "ebx",
+    "cl": "ecx", "ch": "ecx", "cx": "ecx", "ecx": "ecx",
+    "dl": "edx", "dh": "edx", "dx": "edx", "edx": "edx",
+    "si": "esi", "esi": "esi", "di": "edi", "edi": "edi",
+    "bp": "ebp", "ebp": "ebp", "sp": "esp", "esp": "esp",
+}
+STACK_MUTATORS = {
+    "push", "pushf", "pushfd", "pusha", "pushad",
+    "pop", "popf", "popfd", "popa", "popad", "enter", "leave",
+}
 
 INSN = re.compile(r"^\s*([0-9a-fA-F]+):\s+(?:[0-9a-fA-F]{2}\s+)+\s*([a-zA-Z][a-zA-Z0-9]*)\s*(.*)$")
 MEM = re.compile(
@@ -67,8 +79,48 @@ def zero_displacement_memory_register(op: str):
     return zero.group(1).lower() if zero else None
 
 
+def explicit_register_parent(op: str):
+    return SUBREG_PARENT.get(op.strip().lower())
+
+
 def is_control(mnemonic: str) -> bool:
     return mnemonic in CONTROL or mnemonic.startswith("j") or mnemonic.startswith("loop")
+
+
+def implicit_clobbers(mnemonic: str, ops: list[str], prefixes: list[str]) -> set[str]:
+    clobbered: set[str] = set()
+    if mnemonic in STACK_MUTATORS:
+        clobbered.add("esp")
+        if mnemonic == "leave":
+            clobbered.add("ebp")
+    if mnemonic in {"mul", "div", "idiv"} or (mnemonic == "imul" and len(ops) == 1):
+        clobbered.update({"eax", "edx"})
+    if mnemonic in {"cdq", "cwd"}:
+        clobbered.add("edx")
+    if mnemonic in {"cbw", "cwde"}:
+        clobbered.add("eax")
+    if mnemonic == "cpuid":
+        clobbered.update({"eax", "ebx", "ecx", "edx"})
+    if mnemonic == "rdtsc":
+        clobbered.update({"eax", "edx"})
+    if mnemonic == "rdtscp":
+        clobbered.update({"eax", "ecx", "edx"})
+    if mnemonic == "cmpxchg":
+        clobbered.add("eax")
+    if mnemonic == "cmpxchg8b":
+        clobbered.update({"eax", "edx"})
+    if mnemonic == "xchg":
+        for op in ops[:2]:
+            parent = explicit_register_parent(op)
+            if parent:
+                clobbered.add(parent)
+    if mnemonic.startswith(("movs", "cmps", "stos", "lods", "scas")):
+        # Conservative superset. String instructions can update ESI/EDI, and REP
+        # forms update ECX; LODS/STOS/SCAS also involve the accumulator.
+        clobbered.update({"eax", "ecx", "esi", "edi"})
+    if prefixes and any(prefix.startswith("rep") for prefix in prefixes):
+        clobbered.add("ecx")
+    return clobbered
 
 
 def scan_rows(rows):
@@ -80,7 +132,11 @@ def scan_rows(rows):
     copies = []
     write_candidates = []
     other_dereferences = []
-    terminations = {"control_boundary": 0, "tracked_register_clobber": 0}
+    terminations = {
+        "control_boundary": 0,
+        "tracked_register_clobber": 0,
+        "implicit_tracked_register_clobber": 0,
+    }
 
     for address, raw_mnemonic, raw_operands in rows:
         mnemonic, operands, prefixes = normalize_prefixed_instruction(raw_mnemonic, raw_operands)
@@ -153,13 +209,23 @@ def scan_rows(rows):
             elif dst in tracked:
                 tracked.pop(dst, None)
                 terminations["tracked_register_clobber"] += 1
+            # MOV has no additional implicit GPR clobber relevant here.
             continue
 
-        # Any instruction whose first operand is a tracked GPR is conservatively
-        # treated as a clobber unless it was one of the exact LEA/MOV forms above.
-        if ops and ops[0] in tracked:
-            tracked.pop(ops[0], None)
-            terminations["tracked_register_clobber"] += 1
+        # Explicit full or partial register destinations destroy exact address
+        # provenance. Partial writes such as mov al,1 must invalidate EAX.
+        if ops:
+            parent = explicit_register_parent(ops[0])
+            if parent in tracked:
+                tracked.pop(parent, None)
+                terminations["tracked_register_clobber"] += 1
+
+        # Model high-risk implicit clobbers conservatively so a later [reg]
+        # store cannot inherit stale exact-address provenance.
+        for reg in implicit_clobbers(mnemonic, ops, prefixes):
+            if reg in tracked:
+                tracked.pop(reg, None)
+                terminations["implicit_tracked_register_clobber"] += 1
 
     return {
         "format": FORMAT,
@@ -191,6 +257,7 @@ def scan_rows(rows):
         },
         "limits": [
             "Covers exact lea addr,[receiver+0x374], GPR MOV copies of addr, and exact zero-displacement first-memory-operand dereferences before a control boundary or tracked-register clobber.",
+            "Partial-register destinations and selected implicit x86 GPR clobbers invalidate exact-address provenance conservatively.",
             "Indexed LEA, arithmetic reconstruction, stack spill/reload, cross-control-flow carry, helper returns, and memory-stored materialized addresses remain outside this subset.",
             "A recovered receiver register is syntactic provenance only and does not imply Participants Manager identity.",
             "Only an explicit write/RMW mnemonic allowlist is classified as a write candidate; other dereferences remain separately fail-closed.",
