@@ -1,0 +1,50 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_fun005ffc50_writable_callback_pair_d94_runtime_writer_singleton_provenance_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "writable_callback_pair_d94_runtime_writer_direct_entry_surface_bounded": true,
+    "writable_callback_pair_d94_runtime_writer_relevant_to_loop_bound_proven": false,
+    "writable_callback_pair_d94_runtime_writer_singleton_constructor_proven": true,
+    "writable_callback_pair_d94_value_range_proven": false,
+    "writable_callback_pair_d94_writer_consumer_receiver_identity_proven": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_callback_pair_target_compatible_frontier_empty": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94LoopReceiverProvenance/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94RuntimeWriterSingletonProvenance/1",
+  "limits": [
+    "This proves the direct singleton construction/storage and direct branch surface of the runtime writer class; it does not prove that every possible FUN_0045ec60 receiver is the global singleton.",
+    "The loop receiver still originates from source_record+0 in loop_owner+0x4; no equality with DAT_00bc185c is established.",
+    "Indirect/copy-based propagation of the singleton pointer remains outside this bounded subset."
+  ],
+  "next_step": "Inventory exact/direct propagation of DAT_00bc185c into memory or source-record construction, and independently classify source_record+0 producer paths before deciding writer relevance to the loop bound.",
+  "owner": "Process 1A / P1.3A",
+  "proof": {
+    "constructor_primary_vtable": "0x00ab5644",
+    "constructor_secondary_tables": ["0x00ab55f0", "0x00ab55e4"],
+    "decoded_instruction_count": 2847850,
+    "runtime_writer_singleton_storage": "0x00bc185c",
+    "singleton_allocation_size": "0x46e0",
+    "singleton_constructor": "0x0045ef50",
+    "singleton_direct_reference_count": 115,
+    "singleton_direct_write_count": 2,
+    "singleton_direct_write_sites": ["0x00d362ec", "0x00d362f3"],
+    "writer_body": "0x0045ec60",
+    "writer_body_direct_branch_sites": ["0x00462d1e"],
+    "writer_d94_store": "0x0045ecd3",
+    "writer_guard_fields": ["+0xd9c", "+0xcbc"],
+    "writer_guard_wrapper": "0x00462d10",
+    "writer_wrapper_direct_call_sites": ["0x004694fb"]
+  },
+  "ready": true,
+  "version": 1
+}
