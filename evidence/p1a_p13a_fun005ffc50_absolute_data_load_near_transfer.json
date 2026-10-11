@@ -1,0 +1,55 @@
+{
+  "adjudication": {
+    "absolute_data_load_near_register_indirect_transfer_found": false,
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "dynamic_registry_reconstructed_or_indirect_registration_ruled_out": false,
+    "encoded_or_reconstructed_callback_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "fun0067b660_callback_argument_provenance_complete": false,
+    "p13a_fun005ffc50_absolute_data_load_near_register_transfer_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "register_loaded_or_aliased_writable_slots_ruled_out": false,
+    "return_value_fun005ffc50_provenance_ruled_out": false,
+    "runtime_generated_selected_wheel_pointer_stores_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "unbounded_multi_edge_or_phi_reconstruction_ruled_out": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50DirectAbsoluteWritableTransferComposition/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50AbsoluteDataLoadNearTransfer/1",
+  "inventory": {
+    "absolute_data_load_count": 1786,
+    "load_count_by_encoding_form": {"modrm_absolute":661,"moffs_absolute":1125},
+    "load_count_by_register": {"eax":1125,"ebp":1,"ebx":25,"ecx":326,"edi":72,"edx":186,"esi":51},
+    "near_loaded_register_indirect_transfer_count": 0,
+    "near_loaded_register_indirect_transfers": [],
+    "termination_reason_counts": {"other_control_transfer":1355,"register_clobber":413,"window_exhausted":18},
+    "unique_absolute_data_slot_count": 434
+  },
+  "limits": [
+    "This closes only a loaded-register near-use subset: an absolute .data dword is loaded directly into one GPR and that same GPR is checked for call/jmp use within 16 decoded instructions before control flow or clobber.",
+    "Register copies, spill/reload, arithmetic transformations of the loaded pointer, base/index-addressed memory, inter-block carry, alias stores, and heap/runtime-generated pointers remain open.",
+    "Immediate loads of a .data address are not memory-content loads and are intentionally excluded from the 1,786-load inventory.",
+    "No global writable-memory, callback, reconstructed-entry, slot0, slot1, stored-alias or aggregate P1.3 gate is promoted."
+  ],
+  "next_step": "Trace copied/transformed/inter-block writable-memory values, base/indexed slots, or alias writers; the direct absolute .data load -> same-register near transfer subset is now bounded.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "data_end_exclusive": "0x00bbc600",
+    "data_start": "0x00b81000",
+    "decoded_instruction_count": 2847850,
+    "forward_window_decoded_instructions": 16,
+    "load_shape": "mov 32-bit GPR, absolute ds:.data memory contents",
+    "stop_conditions": ["any call/jmp after same-register transfer check","conditional branch/loop/ret/trap","write/clobber of loaded GPR or subregister"],
+    "target_context": "FUN_005ffc50 writable-memory incoming-entry frontier"
+  },
+  "version": 1
+}
