@@ -10,7 +10,7 @@ Examples from the recovered inventory include `0x0041b842 ecx,[esi*4+0xb81618]`,
 
 ## Boundaries
 
-The analysis uses straight-line exact GPR constant propagation solely to evaluate effective addresses. Unknown base/index values are excluded rather than guessed. After a qualifying load, only the original destination register is followed; copies, arithmetic/LEA transforms, stack spill/reload, and inter-block propagation are deliberately not promoted here.
+The analysis uses bounded straight-line exact GPR constant propagation solely to evaluate effective addresses. Constants are retained for at most 16 decoded instructions; `call` preserves only the x86 callee-saved set (`EBX/ESI/EDI/EBP`), while jumps/conditional branches/loops/returns stop the straight-line state. Unknown or stale base/index values are excluded rather than guessed. After a qualifying load, only the original destination register is followed; copies, arithmetic/LEA transforms, stack spill/reload, and inter-block propagation are deliberately not promoted here.
 
 Therefore only `p13a_fun005ffc50_base_indexed_data_same_register_near_transfer_subset_complete` becomes true. All aggregate writable-source, callback-entry, slot0/slot1 and P1.3-complete gates remain false. External provider count remains 7.
 
