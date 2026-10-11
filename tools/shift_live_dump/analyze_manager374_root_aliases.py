@@ -96,7 +96,7 @@ def analyze(root: Path, *, alignment: int = 1) -> dict:
     scanned_regions = 0
     scanned_bytes = 0
 
-    for snap_index, (snapshot, manifest) in enumerate(zip(snapshots, manifests)):
+    for snapshot, manifest in zip(snapshots, manifests):
         root_region = region_for_address(manifest, ROOT_SLOT)
         if root_region is None:
             raise ValueError(f"{snapshot}: root slot 0x{ROOT_SLOT:08x} was not captured")
@@ -127,15 +127,16 @@ def analyze(root: Path, *, alignment: int = 1) -> dict:
                     "perms": perms,
                     "path": region.get("path", ""),
                     "category": classify(str(region.get("path", ""))),
-                    "snapshot_hits": [],
+                    "snapshot_hits": set(),
                     "root_values": set(),
                 })
-                row["snapshot_hits"].append(snapshot.name)
+                row["snapshot_hits"].add(snapshot.name)
                 row["root_values"].add(root_value)
 
     candidates = []
     for address in sorted(aggregate):
         row = aggregate[address]
+        snapshot_hits = sorted(row["snapshot_hits"])
         candidates.append({
             "address": row["address"],
             "region_start": row["region_start"],
@@ -143,8 +144,8 @@ def analyze(root: Path, *, alignment: int = 1) -> dict:
             "perms": row["perms"],
             "path": row["path"],
             "category": row["category"],
-            "snapshot_hit_count": len(row["snapshot_hits"]),
-            "snapshot_hits": row["snapshot_hits"],
+            "snapshot_hit_count": len(snapshot_hits),
+            "snapshot_hits": snapshot_hits,
             "unique_root_value_count": len(row["root_values"]),
             "root_values": [f"0x{x:08x}" for x in sorted(row["root_values"])],
         })
