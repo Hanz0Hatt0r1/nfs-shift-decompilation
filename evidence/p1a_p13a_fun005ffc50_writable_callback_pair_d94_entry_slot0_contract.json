@@ -1,0 +1,50 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_fun005ffc50_writable_callback_pair_d94_entry_slot0_contract_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "writable_callback_pair_d94_entry_slot0_concrete_target_proven": true,
+    "writable_callback_pair_d94_entry_slot0_nonzero_return_domain_bounded": false,
+    "writable_callback_pair_d94_entry_slot0_target": "0x00835290",
+    "writable_callback_pair_d94_entry_slot0_zero_return_possible": true,
+    "writable_callback_pair_d94_value_range_proven": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_callback_pair_target_compatible_frontier_empty": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94ConcreteVtable/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94EntrySlot0Contract/1",
+  "limits": [
+    "This resolves the registered entry class and concrete slot-0 implementation only.",
+    "The non-zero return from 0x00835290 is derived from the embedded container at entry+0x40 via 0x0062f6f0 and remains unbounded in this subset.",
+    "Therefore +0xd94 must not yet be treated as a proven small integer count solely from the consumer loop shape."
+  ],
+  "next_step": "Trace the return value of 0x0062f6f0/0x0062f460 for the entry+0x40 container and determine whether 0x00835290 returns an index/count, pointer-like token, or another bounded domain before promoting the +0xd94 range gate.",
+  "owner": "Process 1A / P1.3A",
+  "proof": {
+    "consumer_call_site": "0x0045ecca",
+    "consumer_destination": "[esi+0xd94]",
+    "consumer_entry_arg": "&[esi+0xcb0]",
+    "consumer_stack_args": [0, 0],
+    "decoded_instruction_count": 2847850,
+    "entry_allocation_size": "0x68",
+    "entry_constructor": "0x008309f0",
+    "entry_vtable": "0x00b17fe0",
+    "entry_vtable_slot0_target": "0x00835290",
+    "lookup_target": "0x0082da60",
+    "slot0_container_acquire": "0x0062f6f0",
+    "slot0_embedded_container": "this+0x40",
+    "slot0_finalize": "0x008339e0",
+    "slot0_nonzero_return_is_container_derived": true,
+    "slot0_zero_return_possible": true
+  },
+  "ready": true,
+  "version": 1
+}
