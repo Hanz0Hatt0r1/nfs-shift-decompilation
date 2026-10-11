@@ -32,7 +32,7 @@
   "supersedes": "SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/13",
   "surface": {
     "base_indexed_direct_cfg_branch_site_count": 199,
-    "base_indexed_direct_cfg_branch_state_event_count": 207,
+    "base_indexed_direct_cfg_branch_state_event_count": 228,
     "base_indexed_direct_cfg_carried_load_count": 44,
     "base_indexed_direct_cfg_direct_call_boundary_count": 56,
     "base_indexed_direct_cfg_indirect_jump_boundary_count": 11,
@@ -41,7 +41,7 @@
     "composed_coverage_class_count": 18,
     "coverage_addition": {
       "branch_site_count": 199,
-      "branch_state_event_count": 207,
+      "branch_state_event_count": 228,
       "carried_load_count": 44,
       "class": "base/index-addressed writable .data direct-CFG GPR carry",
       "direct_call_boundary_count": 56,
