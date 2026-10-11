@@ -20,8 +20,8 @@ def test_ebp_spill_reload_then_write_is_new_candidate():
         (0x401009, "mov", "edx,DWORD PTR [ebp-0x8]"),
         (0x40100C, "mov", "DWORD PTR [edx],esi"),
     ])
-    assert data["surface"]["ebp_local_spill_count"] == 1
-    assert data["surface"]["ebp_local_reload_count"] == 1
+    assert data["surface"]["ebp_relative_spill_count"] == 1
+    assert data["surface"]["ebp_relative_reload_count"] == 1
     assert data["surface"]["reload_derived_zero_displacement_write_candidate_count"] == 1
     row = data["surface"]["reload_derived_zero_displacement_write_candidates"][0]
     assert row["receiver_register"] == "ecx"
@@ -45,12 +45,75 @@ def test_unknown_overwrite_kills_tracked_ebp_cell():
         (0x403010, "mov", "edx,DWORD PTR [ebp-0x4]"),
         (0x403013, "mov", "DWORD PTR [edx],esi"),
     ])
-    assert data["surface"]["ebp_local_reload_count"] == 0
+    assert data["surface"]["ebp_relative_reload_count"] == 0
     assert data["surface"]["termination_counts"]["tracked_ebp_cell_overwrite"] == 1
+    assert data["surface"]["termination_counts"]["ebp_memory_reference_invalidation"] == 1
     assert data["surface"]["reload_derived_zero_displacement_write_candidate_count"] == 0
 
 
-def test_ebp_change_invalidates_frame_cells():
+def test_non_mov_ebp_reference_invalidates_tracked_cells_conservatively():
+    data = module().scan_rows([
+        (0x403100, "lea", "eax,[ecx+0x374]"),
+        (0x403106, "mov", "DWORD PTR [ebp-0x8],eax"),
+        (0x403109, "cmp", "DWORD PTR [ebp-0x20],0x1"),
+        (0x40310D, "mov", "edx,DWORD PTR [ebp-0x8]"),
+        (0x403110, "mov", "DWORD PTR [edx],esi"),
+    ])
+    assert data["surface"]["ebp_relative_reload_count"] == 0
+    assert data["surface"]["termination_counts"]["ebp_memory_reference_invalidation"] == 1
+    assert data["surface"]["reload_derived_zero_displacement_write_candidate_count"] == 0
+
+
+def test_xchg_second_operand_ebp_cell_is_barrier():
+    data = module().scan_rows([
+        (0x403180, "lea", "eax,[ecx+0x374]"),
+        (0x403186, "mov", "DWORD PTR [ebp-0x8],eax"),
+        (0x403189, "xchg", "esi,DWORD PTR [ebp-0x20]"),
+        (0x40318D, "mov", "edx,DWORD PTR [ebp-0x8]"),
+        (0x403190, "mov", "DWORD PTR [edx],esi"),
+    ])
+    assert data["surface"]["ebp_relative_reload_count"] == 0
+    assert data["surface"]["termination_counts"]["ebp_memory_reference_invalidation"] == 1
+
+
+def test_partial_register_spill_cannot_install_pointer_provenance():
+    data = module().scan_rows([
+        (0x403200, "lea", "eax,[ecx+0x374]"),
+        (0x403206, "mov", "WORD PTR [ebp-0x8],ax"),
+        (0x40320A, "mov", "edx,DWORD PTR [ebp-0x8]"),
+        (0x40320D, "mov", "DWORD PTR [edx],esi"),
+    ])
+    assert data["surface"]["ebp_relative_spill_count"] == 0
+    assert data["surface"]["ebp_relative_reload_count"] == 0
+    assert data["surface"]["reload_derived_zero_displacement_write_candidate_count"] == 0
+
+
+def test_partial_register_reload_cannot_recover_pointer_provenance():
+    data = module().scan_rows([
+        (0x403300, "lea", "eax,[ecx+0x374]"),
+        (0x403306, "mov", "DWORD PTR [ebp-0x8],eax"),
+        (0x40330A, "mov", "dx,WORD PTR [ebp-0x8]"),
+        (0x40330E, "mov", "DWORD PTR [edx],esi"),
+    ])
+    assert data["surface"]["ebp_relative_spill_count"] == 1
+    assert data["surface"]["ebp_relative_reload_count"] == 0
+    assert data["surface"]["reload_derived_zero_displacement_write_candidate_count"] == 0
+
+
+def test_partial_register_copy_cannot_propagate_pointer_provenance():
+    data = module().scan_rows([
+        (0x403400, "lea", "eax,[ecx+0x374]"),
+        (0x403406, "mov", "bx,ax"),
+        (0x403409, "mov", "DWORD PTR [ebp-0x8],ebx"),
+        (0x40340D, "mov", "edx,DWORD PTR [ebp-0x8]"),
+        (0x403410, "mov", "DWORD PTR [edx],esi"),
+    ])
+    assert data["surface"]["ebp_relative_spill_count"] == 0
+    assert data["surface"]["ebp_relative_reload_count"] == 0
+    assert data["surface"]["reload_derived_zero_displacement_write_candidate_count"] == 0
+
+
+def test_ebp_change_invalidates_cells():
     data = module().scan_rows([
         (0x404000, "lea", "eax,[ecx+0x374]"),
         (0x404006, "mov", "DWORD PTR [ebp-0xc],eax"),
@@ -58,7 +121,18 @@ def test_ebp_change_invalidates_frame_cells():
         (0x40400B, "mov", "edx,DWORD PTR [ebp-0xc]"),
         (0x40400E, "mov", "DWORD PTR [edx],eax"),
     ])
-    assert data["surface"]["ebp_local_reload_count"] == 0
+    assert data["surface"]["ebp_relative_reload_count"] == 0
+    assert data["surface"]["termination_counts"]["ebp_frame_invalidation"] == 1
+
+
+def test_enter_invalidates_ebp_cells():
+    data = module().scan_rows([
+        (0x404100, "lea", "eax,[ecx+0x374]"),
+        (0x404106, "mov", "DWORD PTR [ebp-0xc],eax"),
+        (0x404109, "enter", "0x20,0x0"),
+        (0x40410D, "mov", "edx,DWORD PTR [ebp-0xc]"),
+    ])
+    assert data["surface"]["ebp_relative_reload_count"] == 0
     assert data["surface"]["termination_counts"]["ebp_frame_invalidation"] == 1
 
 
@@ -70,7 +144,7 @@ def test_control_boundary_clears_registers_and_ebp_cells():
         (0x40500B, "mov", "edx,DWORD PTR [ebp-0x10]"),
         (0x40500E, "mov", "DWORD PTR [edx],esi"),
     ])
-    assert data["surface"]["ebp_local_reload_count"] == 0
+    assert data["surface"]["ebp_relative_reload_count"] == 0
     assert data["surface"]["termination_counts"]["control_boundary"] == 1
 
 
@@ -108,8 +182,8 @@ def test_esp_spill_is_outside_this_subset():
         (0x40800A, "mov", "edx,DWORD PTR [esp+0x8]"),
         (0x40800E, "mov", "DWORD PTR [edx],esi"),
     ])
-    assert data["surface"]["ebp_local_spill_count"] == 0
-    assert data["surface"]["ebp_local_reload_count"] == 0
+    assert data["surface"]["ebp_relative_spill_count"] == 0
+    assert data["surface"]["ebp_relative_reload_count"] == 0
     assert data["surface"]["reload_derived_zero_displacement_write_candidate_count"] == 0
 
 

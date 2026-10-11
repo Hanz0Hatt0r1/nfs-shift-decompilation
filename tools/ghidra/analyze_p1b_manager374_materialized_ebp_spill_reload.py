@@ -12,14 +12,17 @@ RETAIL_SHA256 = "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee
 FORMAT = "SHIFT.P1B.Manager374MaterializedEbpSpillReloadProbe/1"
 GPRS = {"eax", "ebx", "ecx", "edx", "esi", "edi", "ebp", "esp"}
 PREFIXES = {"lock", "rep", "repe", "repz", "repne", "repnz"}
-CONTROL = {"call", "jmp", "ret", "retn", "iret", "iretd", "int", "int3", "ud2"}
+CONTROL = {
+    "call", "jmp", "ret", "retn", "iret", "iretd", "int", "int3", "ud2",
+    "syscall", "sysret", "sysenter", "sysexit", "hlt",
+}
 WRITE_MNEMONICS = {
     "mov", "movd", "movq", "movss", "movsd", "movaps", "movups", "movapd", "movupd",
     "movdqa", "movdqu", "movnti", "movntq", "movntdq", "movntps", "movntpd",
     "add", "sub", "adc", "sbb", "and", "or", "xor", "inc", "dec", "not", "neg",
-    "xchg", "cmpxchg", "cmpxchg8b", "bts", "btr", "btc",
-    "rol", "ror", "rcl", "rcr", "shl", "shr", "sal", "sar",
-    "fst", "fstp", "fist", "fistp", "fisttp",
+    "xchg", "xadd", "cmpxchg", "cmpxchg8b", "bts", "btr", "btc",
+    "rol", "ror", "rcl", "rcr", "shl", "shr", "sal", "sar", "shld", "shrd",
+    "fst", "fstp", "fist", "fistp", "fisttp", "pop",
 }
 SUBREG_PARENT = {
     "al": "eax", "ah": "eax", "ax": "eax", "eax": "eax",
@@ -104,15 +107,29 @@ def explicit_register_parent(op: str):
     return SUBREG_PARENT.get(op.strip().lower())
 
 
+def full_gpr(op: str):
+    reg = op.strip().lower()
+    return reg if reg in GPRS else None
+
+
 def is_control(mnemonic: str) -> bool:
     return mnemonic in CONTROL or mnemonic.startswith("j") or mnemonic.startswith("loop")
+
+
+def is_write_mnemonic(mnemonic: str) -> bool:
+    return (
+        mnemonic in WRITE_MNEMONICS
+        or mnemonic.startswith("set")
+        or mnemonic.startswith("stos")
+        or mnemonic.startswith("movs")
+    )
 
 
 def implicit_clobbers(mnemonic: str, ops: list[str], prefixes: list[str]) -> set[str]:
     clobbered: set[str] = set()
     if mnemonic in STACK_MUTATORS:
         clobbered.add("esp")
-        if mnemonic in {"leave", "popa", "popad"}:
+        if mnemonic in {"enter", "leave", "popa", "popad"}:
             clobbered.add("ebp")
         if mnemonic in {"popa", "popad"}:
             clobbered.update({"eax", "ebx", "ecx", "edx", "esi", "edi"})
@@ -120,7 +137,7 @@ def implicit_clobbers(mnemonic: str, ops: list[str], prefixes: list[str]) -> set
         clobbered.update({"eax", "edx"})
     if mnemonic in {"cdq", "cwd"}:
         clobbered.add("edx")
-    if mnemonic in {"cbw", "cwde", "lahf", "xlat", "xlatb"}:
+    if mnemonic in {"cbw", "cwde", "lahf", "xlat", "xlatb", "aaa", "aad", "aam", "aas", "daa", "das"}:
         clobbered.add("eax")
     if mnemonic == "cpuid":
         clobbered.update({"eax", "ebx", "ecx", "edx"})
@@ -128,8 +145,9 @@ def implicit_clobbers(mnemonic: str, ops: list[str], prefixes: list[str]) -> set
         clobbered.update({"eax", "edx"})
     if mnemonic == "rdtscp":
         clobbered.update({"eax", "ecx", "edx"})
-    if mnemonic == "cmpxchg":
-        clobbered.add("eax")
+    if mnemonic in {"cmpxchg", "xadd"}:
+        clobbered.add("eax" if mnemonic == "cmpxchg" else "")
+        clobbered.discard("")
     if mnemonic == "cmpxchg8b":
         clobbered.update({"eax", "edx"})
     if mnemonic == "xchg":
@@ -157,6 +175,7 @@ def scan_rows(rows):
         "tracked_register_clobber": 0,
         "implicit_tracked_register_clobber": 0,
         "ebp_frame_invalidation": 0,
+        "ebp_memory_reference_invalidation": 0,
         "tracked_ebp_cell_overwrite": 0,
     }
 
@@ -165,12 +184,18 @@ def scan_rows(rows):
             terminations["ebp_frame_invalidation"] += len(ebp_cells)
             ebp_cells.clear()
 
+    def invalidate_cells_for_reference(dst_cell=None):
+        if not ebp_cells:
+            return
+        if dst_cell is not None and dst_cell in ebp_cells:
+            terminations["tracked_ebp_cell_overwrite"] += 1
+        terminations["ebp_memory_reference_invalidation"] += len(ebp_cells)
+        ebp_cells.clear()
+
     for address, raw_mnemonic, raw_operands in rows:
         mnemonic, operands, prefixes = normalize_prefixed_instruction(raw_mnemonic, raw_operands)
         ops = split_ops(operands)
 
-        # Only dereferences whose pointer provenance has crossed an EBP-local
-        # spill/reload boundary are new evidence beyond the predecessor probe.
         if ops:
             pointer_reg = zero_displacement_memory_register(ops[0])
             if pointer_reg in regs and regs[pointer_reg]["reload_depth"] > 0:
@@ -187,7 +212,7 @@ def scan_rows(rows):
                     "copy_depth": provenance["copy_depth"],
                     "operands": operands,
                 }
-                if mnemonic in WRITE_MNEMONICS:
+                if is_write_mnemonic(mnemonic):
                     reload_write_candidates.append(row)
                 else:
                     reload_other_dereferences.append(row)
@@ -199,11 +224,10 @@ def scan_rows(rows):
             ebp_cells.clear()
             continue
 
-        # Seed exact receiver+0x374 address materialization.
-        if mnemonic == "lea" and len(ops) == 2 and ops[0] in GPRS:
+        if mnemonic == "lea" and len(ops) == 2 and full_gpr(ops[0]):
             base = lea_plus374_base(ops[1])
             if base is not None:
-                dst = ops[0]
+                dst = full_gpr(ops[0])
                 if dst == "ebp":
                     clear_frame_cells()
                 regs[dst] = {
@@ -223,65 +247,55 @@ def scan_rows(rows):
         if mnemonic == "mov" and len(ops) == 2:
             dst, src = ops
             dst_parent = explicit_register_parent(dst)
-            src_parent = explicit_register_parent(src)
+            dst_full = full_gpr(dst)
+            src_full = full_gpr(src)
             dst_cell = ebp_cell_offset(dst)
             src_cell = ebp_cell_offset(src)
 
-            # Exact EBP-local spill.
             if dst_cell is not None:
-                if src_parent in regs:
-                    provenance = dict(regs[src_parent])
+                invalidate_cells_for_reference(dst_cell)
+                if src_full in regs:
+                    provenance = dict(regs[src_full])
                     ebp_cells[dst_cell] = provenance
                     spills.append({
                         "site": f"0x{address:08x}",
                         "offset": dst_cell,
-                        "source_register": src_parent,
+                        "source_register": src_full,
                         "receiver_register": provenance["receiver_register"],
                         "materializer_site": provenance["materializer_site"],
                         "reload_depth": provenance["reload_depth"],
                     })
-                elif dst_cell in ebp_cells:
-                    ebp_cells.pop(dst_cell, None)
-                    terminations["tracked_ebp_cell_overwrite"] += 1
                 continue
 
-            # Exact EBP-local reload.
-            if dst_parent in GPRS and src_cell is not None:
-                if dst_parent == "ebp":
-                    # Source is evaluated using the old frame base, but the
-                    # write changes EBP, so all tracked frame cells die after it.
-                    provenance = dict(ebp_cells[src_cell]) if src_cell in ebp_cells else None
+            if dst_full and src_cell is not None:
+                provenance = dict(ebp_cells[src_cell]) if src_cell in ebp_cells else None
+                if dst_full == "ebp":
                     clear_frame_cells()
-                else:
-                    provenance = dict(ebp_cells[src_cell]) if src_cell in ebp_cells else None
                 if provenance is not None:
                     provenance["reload_depth"] += 1
                     provenance["copy_depth"] = 0
-                    regs[dst_parent] = provenance
+                    regs[dst_full] = provenance
                     reloads.append({
                         "site": f"0x{address:08x}",
                         "offset": src_cell,
-                        "destination_register": dst_parent,
+                        "destination_register": dst_full,
                         "receiver_register": provenance["receiver_register"],
                         "materializer_site": provenance["materializer_site"],
                         "reload_depth": provenance["reload_depth"],
                     })
-                elif dst_parent in regs:
-                    regs.pop(dst_parent, None)
+                elif dst_full in regs:
+                    regs.pop(dst_full, None)
                     terminations["tracked_register_clobber"] += 1
                 continue
 
-            # Exact GPR copy, preserving whether provenance already crossed an
-            # EBP-local reload boundary.
-            if dst_parent in GPRS and src_parent in regs:
-                if dst_parent == "ebp":
+            if dst_full and src_full in regs:
+                if dst_full == "ebp":
                     clear_frame_cells()
-                provenance = dict(regs[src_parent])
+                provenance = dict(regs[src_full])
                 provenance["copy_depth"] += 1
-                regs[dst_parent] = provenance
+                regs[dst_full] = provenance
                 continue
 
-            # Any other MOV destination register kills exact provenance.
             if dst_parent in regs:
                 if dst_parent == "ebp":
                     clear_frame_cells()
@@ -291,7 +305,13 @@ def scan_rows(rows):
                 clear_frame_cells()
             continue
 
-        # Any explicit full/partial EBP write invalidates local-cell identity.
+        # Outside exact MOV spill/reload, any EBP-relative memory-like operand
+        # is a conservative barrier. This intentionally treats read-only forms
+        # and LEA-style syntax as invalidating too, avoiding incomplete opcode
+        # and operand-width alias modeling.
+        if any(ebp_cell_offset(op) is not None for op in ops):
+            invalidate_cells_for_reference()
+
         if ops:
             parent = explicit_register_parent(ops[0])
             if parent == "ebp":
@@ -315,10 +335,10 @@ def scan_rows(rows):
         "surface": {
             "materialized_plus_374_seed_count": len(seeds),
             "materialized_plus_374_seeds": seeds,
-            "ebp_local_spill_count": len(spills),
-            "ebp_local_spills": spills,
-            "ebp_local_reload_count": len(reloads),
-            "ebp_local_reloads": reloads,
+            "ebp_relative_spill_count": len(spills),
+            "ebp_relative_spills": spills,
+            "ebp_relative_reload_count": len(reloads),
+            "ebp_relative_reloads": reloads,
             "reload_derived_zero_displacement_write_candidate_count": len(reload_write_candidates),
             "reload_derived_zero_displacement_write_candidates": reload_write_candidates,
             "reload_derived_other_dereference_count": len(reload_other_dereferences),
@@ -338,10 +358,12 @@ def scan_rows(rows):
             "external_provider_count": 7,
         },
         "limits": [
-            "This successor adds only exact MOV spill/reload through EBP-relative local cells after exact lea addr,[receiver+0x374] materialization.",
+            "This successor adds only exact MOV spill/reload through unchanged EBP-relative memory cells after exact lea addr,[receiver+0x374] materialization.",
+            "Pointer spill/reload/copy propagation requires complete 32-bit GPR operands; partial-register MOV is clobber-only.",
             "Direct/copy-only materialized dereferences are predecessor coverage and are not counted as new reload-derived candidates.",
-            "ESP-relative locals, implicit push/pop transport, cross-control-flow stack state, memory-stored non-stack aliases, helper returns, indexed LEA and arithmetic reconstruction remain outside this subset.",
-            "Any EBP write invalidates tracked local-cell identity; control boundaries clear all tracked state.",
+            "Any non-MOV EBP-relative memory-like reference invalidates all tracked EBP cells conservatively; exact MOV spill replaces older tracked cells before installing new provenance.",
+            "ESP-relative cells, implicit push/pop transport, cross-control-flow state, memory-stored non-EBP aliases, helper returns, indexed LEA and arithmetic reconstruction remain outside this subset.",
+            "Any EBP write invalidates tracked cell identity; control boundaries clear all tracked state.",
             "Recovered receiver registers remain syntactic provenance only and do not imply Participants Manager identity.",
         ],
         "next_step": "Run on authoritative PC retail 1.02 SHIFT.exe and classify only positive reload-derived +0x374 write receivers; extend another carrier class only if retail evidence survives this subset.",
