@@ -1,12 +1,13 @@
 {
-  "format": "SHIFT.HDVehicle64e8Manager374FinalPreclusterRejections/1",
-  "version": 1,
+  "format": "SHIFT.HDVehicle64e8Manager374FinalPreclusterRejections/2",
+  "version": 2,
   "ready": true,
+  "corrects": "SHIFT.HDVehicle64e8Manager374FinalPreclusterRejections/1",
   "authority": {
     "platform": "PC retail 1.02",
     "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
     "machine_transfer_adjudicates": true,
-    "ghidra_sqlite_role": "navigation and mnemonic fingerprints only"
+    "decompiler_role": "navigation-only"
   },
   "upstream": {
     "contract": "SHIFT.HDVehicle64e8Manager374VptrReceiverRejections/1",
@@ -19,7 +20,58 @@
       "0x0097ed06"
     ]
   },
+  "correction": {
+    "site": "0x00865013",
+    "function": "FUN_00864c10",
+    "function_mnemonic_sha256": "7b047e2b2feb3d9925e5141008466c1f2f4b15a5b935ec2fc9f493efc7800737",
+    "store": "0x00865013 fstp DWORD PTR [esi+0x374]",
+    "rejected_prior_claim": "ESI at the target comes from the first stack argument loaded at 0x00864c67",
+    "entry_receiver_chain": [
+      "0x00864c40 mov edi,ecx",
+      "0x00864c42 mov [ebp-0x34],edi",
+      "0x00864d63 mov esi,[ebp-0x34]",
+      "0x00864da9 lea esi,[eax+esi+0x134] is a temporary REP-MOVS source cursor",
+      "0x00864db5 mov esi,[ebp-0x34] restores entry ECX again",
+      "0x00864db6..0x00865013 contains no later ESI write before the target store"
+    ],
+    "temporary_first_stack_argument_chain": [
+      "0x00864c67 mov esi,[ebx+0x8]",
+      "0x00864c87..0x00864d25 consumes that temporary receiver only",
+      "0x00864d63 restores ESI from saved entry ECX before the target-state writes"
+    ],
+    "machine_window": {
+      "start": "0x00864c40",
+      "end_exclusive": "0x00865019",
+      "byte_count": 985,
+      "sha256": "8ae83797d2f0a6bd6120737d84df25ce8a50ff1f4ad35122997277e2acea033a"
+    },
+    "direct_callers": {
+      "count": 2,
+      "callsites": ["0x0085b6f2", "0x0085c38f"],
+      "functions": ["FUN_0085b6e0", "FUN_0085c370"],
+      "first_preserves_entry_ecx_to_call": true,
+      "second_restores_ecx_from_saved_entry_esi_to_call": true
+    },
+    "caller_this_identity": {
+      "vptr": "0x00b1d508",
+      "constructor_store": "0x0085afda mov [esi],0x00b1d508",
+      "slot_0x18": "0x0085b6e0",
+      "slot_0x1c": "0x0085c370",
+      "participants_manager_root_vptr": "0x00ab9190",
+      "participants_manager_subobject_vptr": "0x00ab916c",
+      "receiver_is_participants_manager_root": false,
+      "receiver_is_participants_manager_subobject": false
+    },
+    "can_write_manager_plus_0x374": false
+  },
   "rejections": [
+    {
+      "site": "0x00865013",
+      "function": "FUN_00864c10",
+      "reason": "machine-proven target base is entry ECX/this; both direct caller methods belong to vptr 0x00b1d508, distinct from Participants Manager vptrs",
+      "receiver_identity_complete": true,
+      "can_place_hdvehicle_plus_0x4330_into_manager_plus_0x374": false
+    },
     {
       "site": "0x0097ed06",
       "function": "FUN_0097eacc",
@@ -31,34 +83,17 @@
         "0x0097ed00 mov eax,[esi+0x2f4]",
         "0x0097ed06 mov [eax+0x374],ebx"
       ],
-      "can_place_hdvehicle_plus_0x4330_into_manager_plus_0x374": false,
       "receiver_identity_required_for_nonzero_producer_rejection": false,
       "receiver_identity_complete": false,
-      "reason": "payload is unconditionally zero on the target path; destination identity remains fail-closed"
+      "can_place_hdvehicle_plus_0x4330_into_manager_plus_0x374": false,
+      "reason": "payload is unconditionally zero on the target path"
     }
   ],
-  "explicit_non_rejection": {
-    "site": "0x00865013",
-    "function": "FUN_00864c10",
-    "store": "fstp dword ptr [esi+0x374]",
-    "target_base_source": "0x00864c67 mov esi,[ebx+0x8], where EBX points to the entry stack frame and [EBX+0x8] is the first stack argument",
-    "caller_argument_sources": [
-      "0x0085b6e0 pushes caller [ebp+0x8] as first argument before 0x0085b6f2",
-      "0x0085c370 pushes caller [ebp+0x8] as first argument before 0x0085c38f"
-    ],
-    "caller_this_vptr": "0x00b1d508",
-    "caller_this_vptr_proves_target_base_identity": false,
-    "status": "open pending exact first-argument provenance"
-  },
   "adjudication": {
-    "closed_site_count_this_contract": 1,
-    "remaining_literal_site_count": 4,
-    "remaining_literal_sites": [
-      "0x00865013",
-      "0x0097da09",
-      "0x0097daf8",
-      "0x0097dc63"
-    ],
+    "prior_00865013_first_stack_argument_claim_rejected": true,
+    "closed_site_count_this_contract": 2,
+    "remaining_literal_site_count": 3,
+    "remaining_literal_sites": ["0x0097da09", "0x0097daf8", "0x0097dc63"],
     "literal_manager_374_receiver_provenance_complete": false,
     "computed_address_manager_374_writer_surface_complete": false,
     "manager_374_join_to_hdvehicle_4330_complete": false,
@@ -67,10 +102,9 @@
     "external_provider_count": 7
   },
   "limits": [
-    "The 0x0097ed06 rejection is payload-only: it proves this site cannot install a nonzero pointer even if destination identity remains otherwise unknown.",
-    "0x00865013 remains open because its +0x374 base comes from the first stack argument, not the ECX receiver; caller vptr identity is therefore insufficient.",
-    "The three FUN_0097d8c4 sites remain open until exact callback/argument receiver provenance is resolved.",
-    "Computed-address writes to manager+0x374 remain outside this literal-displacement slice."
+    "This correction closes the two non-FMOD sites remaining after the vptr tranche; the three FUN_0097d8c4 sites are owned by the separate FMOD codec cluster contract.",
+    "Computed-address writes to manager+0x374 remain outside this literal-displacement slice.",
+    "No identity is inferred from numeric offset equality."
   ],
-  "next_step": "Resolve first-argument provenance for FUN_00864c10 and callback receiver provenance for FUN_0097d8c4; then widen to computed-address forms only if literal provenance closes."
+  "next_step": "Compose this corrected two-site tranche with the merged FMOD codec rejection and the upstream literal/vptr inventories; promote literal +0x374 closure only if the exact union contains all 25 sites once."
 }
