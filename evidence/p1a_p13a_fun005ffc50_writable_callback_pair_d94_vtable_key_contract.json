@@ -1,0 +1,87 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_fun005ffc50_writable_callback_pair_d94_vtable_key_contract_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "writable_callback_pair_d94_runtime_value_is_registered_singleton_key_lookup": true,
+    "writable_callback_pair_d94_value_range_proven": false,
+    "writable_callback_pair_d94_vtable_ec_concrete_target_proven": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_callback_pair_target_compatible_frontier_empty": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94HelperInitializer/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairD94VtableKeyContract/1",
+  "inventory": {
+    "consumer_function_entry": "0x0045ec60",
+    "consumer_receiver_load": "0x0045ec69",
+    "decoded_instruction_count": 2847850,
+    "descriptor_flag_mutation_between_registrations": {
+      "offset": "0x0c",
+      "site": "0x0040db36",
+      "value": 1
+    },
+    "descriptor_initial_dword": 1,
+    "descriptor_zero_dwords": 2,
+    "handle_reference_counts": {
+      "0x00bbf2d0": 13,
+      "0x00bbf2d4": 24
+    },
+    "lookups": [
+      {
+        "call": "0x0045eca7",
+        "handle_storage": "0x00bbf2d0",
+        "result_field_offset": "0x0d98",
+        "result_store": "0x0045eca9",
+        "slot_load": "0x0045ec94"
+      },
+      {
+        "call": "0x0045ecca",
+        "handle_storage": "0x00bbf2d4",
+        "result_field_offset": "0x0d94",
+        "result_store": "0x0045ecd3",
+        "slot_load": "0x0045ecb7"
+      }
+    ],
+    "registration_function_entry": "0x0040d910",
+    "registration_receiver_load": "0x0040d918",
+    "registrations": [
+      {
+        "call": "0x0040db34",
+        "handle_storage": "0x00bbf2d4",
+        "slot_load": "0x0040db24"
+      },
+      {
+        "call": "0x0040db4c",
+        "handle_storage": "0x00bbf2d0",
+        "slot_load": "0x0040db3c"
+      }
+    ],
+    "same_singleton_registers_and_consumes_handles": true
+  },
+  "limits": [
+    "The proof establishes registration/lookup provenance and ABI identity only; it does not resolve the concrete runtime vtable target at +0xec.",
+    "The returned integer domain remains unbounded in this subset.",
+    "DAT_00c26058 is runtime storage outside the file-backed .data extent, so a static initial vtable pointer is not available from the image bytes alone."
+  ],
+  "next_step": "Resolve construction/vtable installation for DAT_00c26058 or otherwise bound the +0xec return for handle storage 0x00bbf2d4.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "lookup_vtable_slot": "0xec",
+    "registered_handle_storage": [
+      "0x00bbf2d4",
+      "0x00bbf2d0"
+    ],
+    "registration_vtable_slot": "0xe0",
+    "singleton": "DAT_00c26058"
+  },
+  "version": 1
+}
