@@ -104,6 +104,11 @@ def explicit_register_parent(op: str):
     return SUBREG_PARENT.get(op.strip().lower())
 
 
+def full_gpr(op: str):
+    reg = op.strip().lower()
+    return reg if reg in GPRS else None
+
+
 def is_control(mnemonic: str) -> bool:
     return mnemonic in CONTROL or mnemonic.startswith("j") or mnemonic.startswith("loop")
 
@@ -178,8 +183,6 @@ def scan_rows(rows):
         mnemonic, operands, prefixes = normalize_prefixed_instruction(raw_mnemonic, raw_operands)
         ops = split_ops(operands)
 
-        # Only dereferences whose pointer provenance has crossed an EBP-relative
-        # spill/reload boundary are new evidence beyond the predecessor probe.
         if ops:
             pointer_reg = zero_displacement_memory_register(ops[0])
             if pointer_reg in regs and regs[pointer_reg]["reload_depth"] > 0:
@@ -208,11 +211,10 @@ def scan_rows(rows):
             ebp_cells.clear()
             continue
 
-        # Seed exact receiver+0x374 address materialization.
-        if mnemonic == "lea" and len(ops) == 2 and ops[0] in GPRS:
+        if mnemonic == "lea" and len(ops) == 2 and full_gpr(ops[0]):
             base = lea_plus374_base(ops[1])
             if base is not None:
-                dst = ops[0]
+                dst = full_gpr(ops[0])
                 if dst == "ebp":
                     clear_frame_cells()
                 regs[dst] = {
@@ -233,62 +235,63 @@ def scan_rows(rows):
             dst, src = ops
             dst_parent = explicit_register_parent(dst)
             src_parent = explicit_register_parent(src)
+            dst_full = full_gpr(dst)
+            src_full = full_gpr(src)
             dst_cell = ebp_cell_offset(dst)
             src_cell = ebp_cell_offset(src)
 
-            # Exact EBP-relative spill. Conservatively invalidate all older
-            # tracked EBP cells first because operand width/overlap is not
-            # modeled in this bounded probe.
+            # Only a complete 32-bit GPR value can establish a pointer spill.
+            # Partial-register stores still invalidate older tracked cells but
+            # can never install new exact pointer provenance.
             if dst_cell is not None:
                 invalidate_cells_for_memory_write(dst_cell)
-                if src_parent in regs:
-                    provenance = dict(regs[src_parent])
+                if src_full in regs:
+                    provenance = dict(regs[src_full])
                     ebp_cells[dst_cell] = provenance
                     spills.append({
                         "site": f"0x{address:08x}",
                         "offset": dst_cell,
-                        "source_register": src_parent,
+                        "source_register": src_full,
                         "receiver_register": provenance["receiver_register"],
                         "materializer_site": provenance["materializer_site"],
                         "reload_depth": provenance["reload_depth"],
                     })
                 continue
 
-            # Exact EBP-relative reload.
-            if dst_parent in GPRS and src_cell is not None:
-                if dst_parent == "ebp":
-                    provenance = dict(ebp_cells[src_cell]) if src_cell in ebp_cells else None
+            # Only a complete 32-bit GPR destination can recover exact pointer
+            # provenance from a tracked cell.
+            if dst_full and src_cell is not None:
+                provenance = dict(ebp_cells[src_cell]) if src_cell in ebp_cells else None
+                if dst_full == "ebp":
                     clear_frame_cells()
-                else:
-                    provenance = dict(ebp_cells[src_cell]) if src_cell in ebp_cells else None
                 if provenance is not None:
                     provenance["reload_depth"] += 1
                     provenance["copy_depth"] = 0
-                    regs[dst_parent] = provenance
+                    regs[dst_full] = provenance
                     reloads.append({
                         "site": f"0x{address:08x}",
                         "offset": src_cell,
-                        "destination_register": dst_parent,
+                        "destination_register": dst_full,
                         "receiver_register": provenance["receiver_register"],
                         "materializer_site": provenance["materializer_site"],
                         "reload_depth": provenance["reload_depth"],
                     })
-                elif dst_parent in regs:
-                    regs.pop(dst_parent, None)
+                elif dst_full in regs:
+                    regs.pop(dst_full, None)
                     terminations["tracked_register_clobber"] += 1
                 continue
 
-            # Exact GPR copy, preserving whether provenance already crossed an
-            # EBP-relative reload boundary.
-            if dst_parent in GPRS and src_parent in regs:
-                if dst_parent == "ebp":
+            # Identity-preserving pointer copies are full-GPR MOV only.
+            if dst_full and src_full in regs:
+                if dst_full == "ebp":
                     clear_frame_cells()
-                provenance = dict(regs[src_parent])
+                provenance = dict(regs[src_full])
                 provenance["copy_depth"] += 1
-                regs[dst_parent] = provenance
+                regs[dst_full] = provenance
                 continue
 
-            # Any other MOV destination register kills exact provenance.
+            # Any other MOV destination, including a partial register, kills
+            # exact provenance for its 32-bit parent.
             if dst_parent in regs:
                 if dst_parent == "ebp":
                     clear_frame_cells()
@@ -298,15 +301,11 @@ def scan_rows(rows):
                 clear_frame_cells()
             continue
 
-        # Any non-MOV write/RMW whose first operand is EBP-relative invalidates
-        # all tracked EBP cells. This is deliberately broader than exact-offset
-        # invalidation because byte/word overlap is not modeled.
         if ops:
             write_cell = ebp_cell_offset(ops[0])
             if write_cell is not None and mnemonic in WRITE_MNEMONICS:
                 invalidate_cells_for_memory_write(write_cell)
 
-        # Any explicit full/partial EBP write invalidates EBP-cell identity.
         if ops:
             parent = explicit_register_parent(ops[0])
             if parent == "ebp":
@@ -354,6 +353,7 @@ def scan_rows(rows):
         },
         "limits": [
             "This successor adds only exact MOV spill/reload through unchanged EBP-relative memory cells after exact lea addr,[receiver+0x374] materialization.",
+            "Pointer spill/reload/copy propagation requires complete 32-bit GPR operands; partial-register MOV is clobber-only.",
             "Direct/copy-only materialized dereferences are predecessor coverage and are not counted as new reload-derived candidates.",
             "Any unmodeled EBP-relative write/RMW invalidates all tracked EBP cells conservatively because operand-width overlap is not reconstructed.",
             "ESP-relative cells, implicit push/pop transport, cross-control-flow state, memory-stored non-EBP aliases, helper returns, indexed LEA and arithmetic reconstruction remain outside this subset.",
