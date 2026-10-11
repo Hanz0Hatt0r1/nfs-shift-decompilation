@@ -14,7 +14,7 @@ def test_direct_cfg_surface_is_fixed_point_and_fail_closed():
  assert d['format']=='SHIFT.P1B.HDVehicle4330BaseIndexedDirectCFGCarry/1'
  assert (i['base_indexed_data_load_count'],i['unique_effective_address_count'])==(63,51)
  assert i['direct_cfg_carried_load_count']==44
- assert i['direct_branch_state_event_count']==207
+ assert i['direct_branch_state_event_count']==228
  assert i['direct_branch_site_count']==199
  assert i['tainted_register_indirect_transfer_count']==0
  assert i['fixed_point_maxout_count']==0
@@ -32,6 +32,7 @@ def test_v14_advances_only_one_bounded_class():
  assert d['format']=='SHIFT.P1B.HDVehicle4330IndirectEntryCoverage/14'
  assert (s['previous_bounded_coverage_class_count'],s['composed_coverage_class_count'])==(17,18)
  assert s['base_indexed_direct_cfg_carried_load_count']==44
+ assert s['base_indexed_direct_cfg_branch_state_event_count']==228
  assert s['base_indexed_direct_cfg_tainted_indirect_transfer_count']==0
  assert s['base_indexed_direct_cfg_direct_call_boundary_count']==56
  assert s['base_indexed_direct_cfg_indirect_jump_boundary_count']==11
