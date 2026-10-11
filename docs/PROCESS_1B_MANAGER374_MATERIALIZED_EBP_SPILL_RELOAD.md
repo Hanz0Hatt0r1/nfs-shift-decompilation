@@ -27,11 +27,13 @@ No retail result is fabricated when the raw executable is unavailable.
 The probe tracks only:
 
 1. `lea addr,[receiver+0x374]` with one 32-bit GPR receiver and no index;
-2. exact GPR `mov` copies of that address;
-3. `mov [ebp+/-imm],tracked_reg` or `mov [ebp],tracked_reg`;
-4. exact reload `mov reg,[ebp+/-same_imm]`;
-5. exact GPR copies after reload;
+2. exact full 32-bit GPR `mov` copies of that address;
+3. `mov [ebp+/-imm],tracked_32bit_gpr` or `mov [ebp],tracked_32bit_gpr`;
+4. exact reload into a full 32-bit GPR from the same EBP-relative cell;
+5. exact full-GPR copies after reload;
 6. a first-memory-operand zero-displacement dereference `[reloaded_reg]`.
+
+Partial registers (`AL/AH/AX`, `BL/BH/BX`, `CL/CH/CX`, `DL/DH/DX`, `SI/DI/BP/SP`) never establish or preserve pointer provenance. They are clobber-only for their 32-bit parent register.
 
 Only dereferences whose provenance crossed at least one EBP-relative reload are reported as new candidates. Direct/copy-only dereferences remain predecessor coverage and are not counted again.
 
@@ -42,7 +44,7 @@ Only dereferences whose provenance crossed at least one EBP-relative reload are 
 - any control transfer clears register and EBP-cell state;
 - any explicit EBP write invalidates all tracked EBP-relative cells;
 - any unmodeled EBP-relative write/RMW invalidates **all** tracked EBP-relative cells conservatively;
-- exact tracked `MOV` spill first invalidates older cells, then installs the new tracked cell;
+- exact tracked full-GPR `MOV` spill first invalidates older cells, then installs the new tracked cell;
 - this whole-cell invalidation intentionally avoids unsound byte/word overlap assumptions;
 - full and partial tracked-register writes kill exact address provenance;
 - selected implicit x86 GPR clobbers are modeled conservatively;
