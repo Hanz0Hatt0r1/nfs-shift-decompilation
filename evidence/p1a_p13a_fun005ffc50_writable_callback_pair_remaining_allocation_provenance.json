@@ -1,0 +1,78 @@
+{
+  "adjudication": {
+    "callbacks_and_indirect_entry_ruled_out": false,
+    "external_provider_count": 7,
+    "p13a_fun005ffc50_writable_callback_pair_remaining_allocation_provenance_subset_complete": true,
+    "p13a_slot0_complete": false,
+    "p13a_slot1_complete": false,
+    "p1_3_control_producer_complete": false,
+    "register_loaded_or_aliased_writable_slots_ruled_out": false,
+    "stored_or_escaped_aliases_ruled_out": false,
+    "writable_callback_pair_allocator_range_disjoint_from_image_proven": false,
+    "writable_callback_pair_indirect_or_alias_writers_ruled_out": false,
+    "writable_callback_pair_remaining_mod4_mod8_sites_all_allocation_backed": true,
+    "writable_callback_pair_target_compatible_frontier_empty": false,
+    "writable_memory_or_runtime_fun005ffc50_entry_ruled_out": false
+  },
+  "authority": {
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "upstream_contract": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairMod1ZeroGuardExclusion/1"
+  },
+  "format": "SHIFT.P1A.P13AFun005ffc50WritableCallbackPairRemainingAllocationProvenance/1",
+  "inventory": {
+    "allocation_provenance_group_count": 3,
+    "allocation_provenance_groups": [
+      {
+        "address_forms": ["esi+ebx*8+0x4", "esi+ebx*8"],
+        "allocation_size_expression": "edi*8",
+        "base_provenance": "return value of allocator call 0x008868d0",
+        "base_register": "esi",
+        "callback_target_possible": "unresolved_without_allocator_range_proof",
+        "index_origin": "xor ebx,ebx at 0x007a6d0a",
+        "index_register": "ebx",
+        "index_step": "add ebx,1 at 0x007a6eab",
+        "sites": ["0x007a6e9e", "0x007a6ea5"]
+      },
+      {
+        "address_forms": ["ebx+edi*4"],
+        "allocation_size_expression": "[ebp+8]*4",
+        "base_provenance": "return value of allocator call 0x008868d0",
+        "base_register": "ebx",
+        "callback_target_possible": "unresolved_without_allocator_range_proof",
+        "index_bound": "edi < [ebp+8]",
+        "index_origin": "xor edi,edi at 0x007f2592",
+        "index_register": "edi",
+        "sites": ["0x007f25a0"]
+      },
+      {
+        "address_forms": ["edx+eax*8"],
+        "allocation_size_expression": "(old_count+requested_count)*8+4",
+        "base_provenance": "payload base alloc_return+4 from 0x008868c0, or zero on allocation failure",
+        "base_register": "edx",
+        "callback_target_possible": "unresolved_without_allocator_range_proof",
+        "index_bound": "eax < [esi]",
+        "index_origin": "xor eax,eax at 0x0080b689",
+        "index_register": "eax",
+        "sites": ["0x0080b696"]
+      }
+    ],
+    "classified_site_count": 4,
+    "classified_sites": ["0x007a6e9e", "0x007a6ea5", "0x007f25a0", "0x0080b696"],
+    "decoded_instruction_count": 2847850,
+    "remaining_modulus1_sites": ["0x00503328", "0x0050334b"]
+  },
+  "limits": [
+    "This classifies provenance only; allocator returns are not assumed disjoint from the PE image without a separate allocator/address-space proof.",
+    "The two modulus-1 sites at 0x00503328/0x0050334b still depend on runtime count/object provenance.",
+    "Missing-secondary/runtime aliases and aggregate callback/P1.3 gates remain fail-closed."
+  ],
+  "next_step": "Prove allocator/image-range disjointness for 0x008868c0/0x008868d0 or capture authoritative runtime allocation ranges; independently trace [ecx+0xd94] feeding ESI at 0x00503328/0x0050334b.",
+  "owner": "Process 1A / P1.3A",
+  "ready": true,
+  "scope": {
+    "classification": "concrete local base/index provenance for the four remaining modulo-4/8 target-compatible sites",
+    "targets": ["0x00b87b7c", "0x00b87b80"]
+  },
+  "version": 1
+}
