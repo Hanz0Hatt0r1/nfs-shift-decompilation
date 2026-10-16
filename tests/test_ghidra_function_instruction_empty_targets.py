@@ -80,6 +80,7 @@ def test_runner_drops_blank_targets_before_headless(tmp_path):
         SHIFT_TEST_CALLED=str(called),
         SHIFT_TEST_TARGETS=str(observed_targets),
         SHIFT_GHIDRA_HEADLESS_TIMEOUT_SECONDS="30",
+        REVENGINSTR_REPO=str(tmp_path / "missing-revenginstr"),
     )
 
     completed = subprocess.run(

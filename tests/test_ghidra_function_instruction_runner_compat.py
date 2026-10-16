@@ -91,6 +91,7 @@ with out_file.open('w', encoding='utf-8') as handle:
     env["GHIDRA_HOME"] = str(ghidra_home)
     env["SHIFT_TEST_CAPTURE"] = str(capture)
     env["SHIFT_GHIDRA_HEADLESS_TIMEOUT_SECONDS"] = "30"
+    env["REVENGINSTR_REPO"] = str(tmp_path / "missing-revenginstr")
 
     subprocess.run(
         [
