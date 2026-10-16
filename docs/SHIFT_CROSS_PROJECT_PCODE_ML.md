@@ -67,6 +67,8 @@ audit/join metadata only.
 The Ghidra project must already contain an analyzed `SHIFT.exe`. No analyzers are
 rerun.
 
+Historical foreign-model baseline:
+
 ```bash
 cd ~/nfs-shift-decompilation
 
@@ -92,9 +94,39 @@ For a focused static frontier:
 SHIFT_ML_NAME_CONTAINS=FUN_0070
 ```
 
-When `NEVERGONE_REPO` is set, the runner uses the P-code-only Nevergone v4 model
-as a foreign-model OOD probe. The model remains a Nevergone artifact; the generic
-export/audit/foreign guard are owned by `revenginstr`.
+## Classifier migration
+
+The generic classifier implementation now lives in revenginstr as
+`REVENGINSTR.SelectiveClassifier/1`. However the runner does **not** automatically
+switch from the retained historical Nevergone v4 model. A generic model is used
+only when a validated model directory is explicitly supplied:
+
+```bash
+GHIDRA_HOME=/opt/ghidra \
+REVENGINSTR_REPO=~/revenginstr \
+REVENGINSTR_MODEL_DIR=~/.local/share/nevergone-ml-v2/models/revenginstr-selective-v1 \
+bash tools/ml/run_shift_cross_project_pcode_probe.sh \
+  /home/pes/ghidra_projects/shift \
+  shift \
+  SHIFT.exe \
+  out/ml-cross-project-generic
+```
+
+Before using that path for retained comparisons, run the Nevergone migration
+suite and require strict v4/v5.2 parity plus the generic accept-router production
+gate. Until then, leaving `REVENGINSTR_MODEL_DIR` unset preserves the historical
+Nevergone transfer path when `NEVERGONE_REPO` is provided.
+
+The generic-model path emits:
+
+```text
+revenginstr-selective-transfer.jsonl
+revenginstr-selective-transfer-foreign-guard.jsonl
+```
+
+This migration changes implementation ownership, not semantic authority. Even a
+parity-validated generic artifact is still trained on Nevergone labels and is a
+foreign structural/OOD probe on SHIFT.
 
 ## Foreign-project guard
 
@@ -124,11 +156,23 @@ against hand-picked P1.3 answers.
 
 ## Outputs
 
+Historical model path:
+
 ```text
 out/ml-cross-project/
   shift-pcode.jsonl
   nevergone-v4-transfer.jsonl
   nevergone-v4-transfer-foreign-guard.jsonl
+  cross-project-audit.json
+```
+
+Generic validated model path:
+
+```text
+out/ml-cross-project-generic/
+  shift-pcode.jsonl
+  revenginstr-selective-transfer.jsonl
+  revenginstr-selective-transfer-foreign-guard.jsonl
   cross-project-audit.json
 ```
 
@@ -139,11 +183,12 @@ zero-promotion routing information.
 
 ## Interpretation
 
-There are no SHIFT semantic labels in this probe. A Nevergone prediction such as
-`game`, `engine`, `runtime_library` or `media_library` is therefore **not** a
-recovered SHIFT semantic fact.
+There are no SHIFT semantic labels in this probe. A Nevergone-trained prediction
+such as `game`, `engine`, `runtime_library` or `media_library` is therefore **not**
+a recovered SHIFT semantic fact, regardless of whether inference is executed by
+the historical Nevergone CLI or the generic revenginstr classifier implementation.
 
 The useful signal is OOD/selective behavior. Coherent structural neighborhoods can
 only prioritize exact P1.3 analysis; they cannot assert receiver/producer
 ownership. The retained 1000-function run is the cross-project baseline for later
-generic frontend/ABI improvements.
+generic frontend/ABI/model improvements.
