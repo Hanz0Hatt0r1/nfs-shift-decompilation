@@ -105,18 +105,36 @@ mkdir -p -- "$(dirname -- "$OUT_FILE")"
 OUT_DIR=$(cd -- "$(dirname -- "$OUT_FILE")" && pwd)
 OUT_FILE="$OUT_DIR/$(basename -- "$OUT_FILE")"
 
-# Keep Ghidra's Java script compiler isolated from the rest of tools/ghidra.
-# Ghidra compiles Java files it discovers under -scriptPath, so pointing it at
-# the repository directory can make an unrelated script's API incompatibility
-# abort this targeted export. Copy only the requested exporter into a temporary
-# script directory and compile exactly that source.
+# Prefer the shared generic exporter when available. Retain the local script as
+# a fallback for existing checkouts that do not yet have revenginstr installed.
+NFS_REPO_ROOT=$(cd -- "$SCRIPT_DIR/../.." && pwd)
+SHARED_REPO=$(printenv REVENGINSTR_REPO || true)
+if [[ -z "$SHARED_REPO" ]]; then
+  SHARED_REPO="$NFS_REPO_ROOT/../revenginstr"
+fi
+SHARED_EXPORTER="$SHARED_REPO/ghidra/ExportGhidraFunctionInstructions.java"
+USE_SHARED_EXPORTER=0
+EXPORTER_NAME=ShiftFunctionInstructionExporter.java
+EXPORTER_SOURCE="$SCRIPT_DIR/$EXPORTER_NAME"
+if [[ -f "$SHARED_EXPORTER" ]]; then
+  USE_SHARED_EXPORTER=1
+  EXPORTER_NAME=ExportGhidraFunctionInstructions.java
+  EXPORTER_SOURCE=$SHARED_EXPORTER
+fi
+
+# Ghidra compiles Java files it discovers under -scriptPath. Keep the compiler
+# isolated and compile exactly the selected exporter.
 COMPAT_SCRIPT_DIR=$(mktemp -d)
 cleanup() {
   rm -rf -- "$COMPAT_SCRIPT_DIR"
 }
 trap cleanup EXIT
-cp -- "$SCRIPT_DIR/ShiftFunctionInstructionExporter.java" \
-  "$COMPAT_SCRIPT_DIR/ShiftFunctionInstructionExporter.java"
+cp -- "$EXPORTER_SOURCE" "$COMPAT_SCRIPT_DIR/$EXPORTER_NAME"
+GENERIC_OUT_FILE="$COMPAT_SCRIPT_DIR/function-instructions.jsonl"
+OUT_FILE_FOR_GHIDRA=$OUT_FILE
+if (( USE_SHARED_EXPORTER == 1 )); then
+  OUT_FILE_FOR_GHIDRA=$GENERIC_OUT_FILE
+fi
 
 # This exporter is observational only. -readOnly tells Ghidra that any incidental
 # program changes are disposable and avoids requesting a writable processing
@@ -128,7 +146,7 @@ HEADLESS_CMD=(
   -readOnly
   -noanalysis
   -scriptPath "$COMPAT_SCRIPT_DIR"
-  -postScript ShiftFunctionInstructionExporter.java "$OUT_FILE" "${TARGETS[@]}"
+  -postScript "$EXPORTER_NAME" "$OUT_FILE_FOR_GHIDRA" "${TARGETS[@]}"
 )
 
 HEADLESS_STATUS=0
@@ -152,6 +170,11 @@ if [[ $HEADLESS_STATUS -eq 124 || $HEADLESS_STATUS -eq 137 ]]; then
 fi
 if [[ $HEADLESS_STATUS -ne 0 ]]; then
   exit "$HEADLESS_STATUS"
+fi
+
+if (( USE_SHARED_EXPORTER == 1 )); then
+  python3 "$SCRIPT_DIR/adapt_revenginstr_function_instructions.py" \
+    "$GENERIC_OUT_FILE" "$OUT_FILE"
 fi
 
 python3 "$SCRIPT_DIR/validate_function_instruction_export.py" \

@@ -1,10 +1,17 @@
 # Targeted Ghidra function instruction export
 
-`tools/ghidra/ShiftFunctionInstructionExporter.java` provides a narrow
-instruction-level export for already identified reverse-engineering targets.
-It exists to avoid turning the normal evidence database into a multi-million
-instruction dump when only a handful of functions need operand/data-flow
-analysis.
+`tools/ghidra/run_shift_function_instructions.sh` uses the generic
+`revenginstr` Ghidra function-instruction exporter when it is available, then
+adapts each row to the established Shift JSONL contract. The local
+`ShiftFunctionInstructionExporter.java` remains a fallback for checkouts without
+the shared exporter. The targeted runner avoids turning the normal evidence
+database into a multi-million instruction dump when only a handful of functions
+need operand/data-flow analysis.
+
+The adapter preserves instruction, reference, flow and p-code evidence. For a
+found function it maps the generic resolved entry address to Shift's historical
+`requested` field and changes the format identifier; the game-specific analysis
+and labels stay in this repository.
 
 The current output format is `SHIFT.GhidraFunctionInstructions/2` JSONL with one
 row per requested function. The validator remains backward-compatible with
