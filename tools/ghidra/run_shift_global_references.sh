@@ -62,13 +62,32 @@ mkdir -p -- "$(dirname -- "$OUT_FILE")"
 OUT_DIR=$(cd -- "$(dirname -- "$OUT_FILE")" && pwd)
 OUT_FILE="$OUT_DIR/$(basename -- "$OUT_FILE")"
 
+NFS_REPO_ROOT=$(cd -- "$SCRIPT_DIR/../.." && pwd)
+SHARED_REPO=$(printenv REVENGINSTR_REPO || true)
+if [[ -z "$SHARED_REPO" ]]; then
+  SHARED_REPO="$NFS_REPO_ROOT/../revenginstr"
+fi
+SHARED_EXPORTER="$SHARED_REPO/ghidra/ExportGhidraAddressReferences.java"
+USE_SHARED_EXPORTER=0
+EXPORTER_NAME=ShiftGlobalReferenceExporter.java
+EXPORTER_SOURCE="$SCRIPT_DIR/$EXPORTER_NAME"
+if [[ -f "$SHARED_EXPORTER" ]]; then
+  USE_SHARED_EXPORTER=1
+  EXPORTER_NAME=ExportGhidraAddressReferences.java
+  EXPORTER_SOURCE=$SHARED_EXPORTER
+fi
+
 COMPAT_SCRIPT_DIR=$(mktemp -d)
 cleanup() {
   rm -rf -- "$COMPAT_SCRIPT_DIR"
 }
 trap cleanup EXIT
-cp -- "$SCRIPT_DIR/ShiftGlobalReferenceExporter.java" \
-  "$COMPAT_SCRIPT_DIR/ShiftGlobalReferenceExporter.java"
+cp -- "$EXPORTER_SOURCE" "$COMPAT_SCRIPT_DIR/$EXPORTER_NAME"
+GENERIC_OUT_FILE="$COMPAT_SCRIPT_DIR/address-references.jsonl"
+OUT_FILE_FOR_GHIDRA=$OUT_FILE
+if (( USE_SHARED_EXPORTER == 1 )); then
+  OUT_FILE_FOR_GHIDRA=$GENERIC_OUT_FILE
+fi
 
 HEADLESS_CMD=(
   "$ANALYZE_HEADLESS"
@@ -77,7 +96,7 @@ HEADLESS_CMD=(
   -readOnly
   -noanalysis
   -scriptPath "$COMPAT_SCRIPT_DIR"
-  -postScript ShiftGlobalReferenceExporter.java "$OUT_FILE" "${TARGETS[@]}"
+  -postScript "$EXPORTER_NAME" "$OUT_FILE_FOR_GHIDRA" "${TARGETS[@]}"
 )
 
 HEADLESS_STATUS=0
@@ -99,6 +118,11 @@ if [[ $HEADLESS_STATUS -eq 124 || $HEADLESS_STATUS -eq 137 ]]; then
 fi
 if [[ $HEADLESS_STATUS -ne 0 ]]; then
   exit "$HEADLESS_STATUS"
+fi
+
+if (( USE_SHARED_EXPORTER == 1 )); then
+  python3 "$SCRIPT_DIR/adapt_revenginstr_address_references.py" \
+    "$GENERIC_OUT_FILE" "$OUT_FILE"
 fi
 
 python3 "$SCRIPT_DIR/validate_global_reference_export.py" \
