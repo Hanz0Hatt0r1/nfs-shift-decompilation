@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Audit portable SHIFT high-P-code and optional Nevergone-model transfer output.
+"""Audit portable SHIFT high-P-code and optional foreign-model transfer output.
 
-This is a representation/OOD probe, not semantic ground truth.  The script checks
+This is a representation/OOD probe, not semantic ground truth. The script checks
 that model_text is architecture-normalized and free of obvious join-key leakage,
 then summarizes prediction/routing/OOD behavior when a classified JSONL is given.
+When the monotone foreign-project guard has been applied, both pre-guard and
+post-guard actions are reported explicitly.
 """
 from __future__ import annotations
 
@@ -15,7 +17,7 @@ import statistics
 from pathlib import Path
 from typing import Any, Iterable
 
-FORMAT = "SHIFT.CrossProjectPcodeAudit/1"
+FORMAT = "SHIFT.CrossProjectPcodeAudit/2"
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -43,9 +45,11 @@ def quantiles(values: Iterable[float]) -> dict[str, float | None]:
     data = sorted(float(value) for value in values if math.isfinite(float(value)))
     if not data:
         return {"min": None, "median": None, "p90": None, "max": None}
+
     def pick(q: float) -> float:
         index = min(len(data) - 1, max(0, round((len(data) - 1) * q)))
         return data[index]
+
     return {
         "min": data[0],
         "median": statistics.median(data),
@@ -82,7 +86,11 @@ def corpus_audit(rows: list[dict[str, Any]]) -> dict[str, Any]:
         source_entry = row.get("source_entry")
         source_name = row.get("source_name")
         program = row.get("program")
-        for label, value in (("source_entry", source_entry), ("source_name", source_name), ("program", program)):
+        for label, value in (
+            ("source_entry", source_entry),
+            ("source_name", source_name),
+            ("program", program),
+        ):
             if isinstance(value, str) and value and value in text:
                 leakage.append({"row": index, "reason": f"{label}_leaked"})
         metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
@@ -114,15 +122,51 @@ def corpus_audit(rows: list[dict[str, Any]]) -> dict[str, Any]:
 def transfer_audit(rows: list[dict[str, Any]]) -> dict[str, Any]:
     predictions = collections.Counter(str(row.get("prediction")) for row in rows)
     actions = collections.Counter(str(row.get("action")) for row in rows)
-    confidence = [float(row["confidence"]) for row in rows if isinstance(row.get("confidence"), (int, float))]
-    raw_confidence = [float(row["raw_confidence"]) for row in rows if isinstance(row.get("raw_confidence"), (int, float))]
-    similarity = [float(row["family_similarity"]) for row in rows if isinstance(row.get("family_similarity"), (int, float))]
-    contrast = [float(row["contrast_margin"]) for row in rows if isinstance(row.get("contrast_margin"), (int, float))]
+    base_actions = collections.Counter(
+        str(row.get("base_action", row.get("action"))) for row in rows
+    )
+    confidence = [
+        float(row["confidence"])
+        for row in rows
+        if isinstance(row.get("confidence"), (int, float))
+    ]
+    raw_confidence = [
+        float(row["raw_confidence"])
+        for row in rows
+        if isinstance(row.get("raw_confidence"), (int, float))
+    ]
+    similarity = [
+        float(row["family_similarity"])
+        for row in rows
+        if isinstance(row.get("family_similarity"), (int, float))
+    ]
+    contrast = [
+        float(row["contrast_margin"])
+        for row in rows
+        if isinstance(row.get("contrast_margin"), (int, float))
+    ]
     accept = actions.get("accept", 0)
-    return {
+    base_accept = base_actions.get("accept", 0)
+    changed = sum(bool(row.get("foreign_guard_changed")) for row in rows)
+    guard_present = any("foreign_guard_format" in row for row in rows)
+    reason_counts = collections.Counter(
+        reason
+        for row in rows
+        for reason in row.get("foreign_guard_reasons", [])
+        if isinstance(reason, str)
+    )
+    promotions = sum(
+        1
+        for row in rows
+        if str(row.get("base_action", row.get("action"))) != "accept"
+        and str(row.get("action")) == "accept"
+    )
+    report = {
         "rows": len(rows),
         "predictions": dict(sorted(predictions.items())),
+        "base_actions": dict(sorted(base_actions.items())),
         "actions": dict(sorted(actions.items())),
+        "base_accept_fraction": base_accept / len(rows) if rows else 0.0,
         "accept_fraction": accept / len(rows) if rows else 0.0,
         "confidence": quantiles(confidence),
         "raw_confidence": quantiles(raw_confidence),
@@ -130,7 +174,21 @@ def transfer_audit(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "contrast_margin": quantiles(contrast),
         "semantic_labels_available": False,
         "interpretation": "OOD/representation probe only; accept is not correctness on SHIFT.",
+        "foreign_guard": None,
     }
+    if guard_present:
+        report["foreign_guard"] = {
+            "format": next(
+                (str(row.get("foreign_guard_format")) for row in rows if row.get("foreign_guard_format")),
+                None,
+            ),
+            "changed_accepts": changed,
+            "changed_fraction": changed / len(rows) if rows else 0.0,
+            "accept_retention": accept / base_accept if base_accept else 0.0,
+            "promotions": promotions,
+            "reasons": dict(sorted(reason_counts.items())),
+        }
+    return report
 
 
 def main() -> int:
@@ -158,7 +216,9 @@ def main() -> int:
 
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        args.output.write_text(
+            json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
 
     corpus_report = report["corpus"]
     print("format:", FORMAT)
@@ -171,10 +231,14 @@ def main() -> int:
     if report["transfer"] is not None:
         transfer = report["transfer"]
         print("predictions:", transfer["predictions"])
+        print("base actions:", transfer["base_actions"])
         print("actions:", transfer["actions"])
+        print("base accept fraction:", round(transfer["base_accept_fraction"], 6))
         print("accept fraction:", round(transfer["accept_fraction"], 6))
         print("family similarity:", transfer["family_similarity"])
         print("contrast margin:", transfer["contrast_margin"])
+        if transfer["foreign_guard"] is not None:
+            print("foreign guard:", transfer["foreign_guard"])
         print("semantic labels available:", transfer["semantic_labels_available"])
     if args.output is not None:
         print("output:", args.output)
