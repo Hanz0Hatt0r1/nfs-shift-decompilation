@@ -87,24 +87,90 @@ by default:
 
 Override with `NEVERGONE_MODEL_DIR` when needed.
 
+The runner copies only `ShiftMlPcodeCorpusExporter.java` into a temporary Ghidra
+script path. This prevents unrelated legacy Ghidra scripts from being compiled
+and producing warnings/errors during the ML export.
+
+## Foreign-project guard
+
+The first real 1000-function x86-32 run proved the portable representation but
+also showed that the Nevergone routing policy was not conservative enough for a
+foreign project:
+
+```text
+rows                     1000
+architecture             X8632 (1000/1000)
+portable contract pass   true
+leakage findings         0
+base accept fraction     0.288
+family similarity median 0.669450
+contrast margin median   0.000123
+```
+
+The base prediction mix was:
+
+```text
+engine          260
+game            239
+media_library   464
+runtime_library  37
+```
+
+These are **not SHIFT semantic labels**. In particular, the large
+`media_library` count must not be interpreted as a recovered subsystem mapping.
+
+`tools/ml/guard_shift_foreign_pcode_predictions.py` therefore adds a monotone
+cross-project safety gate. It can only demote a foreign-model `accept` to
+`review`; it can never promote an existing `review` or `escalate`.
+
+For a base `accept`, the guarded action requires both:
+
+```text
+family_similarity >= max(base per-class OOD threshold, 0.70)
+contrast_margin    >= max(base per-class contrast threshold, 0.05)
+```
+
+The fixed `0.70` / `0.05` floors are safety defaults, **not** thresholds fitted to
+SHIFT labels. They can be changed for diagnostic experiments without changing the
+semantic gate:
+
+```bash
+SHIFT_FOREIGN_MIN_SIMILARITY=0.75 \
+SHIFT_FOREIGN_MIN_CONTRAST=0.08 \
+  bash tools/ml/run_shift_cross_project_pcode_probe.sh ...
+```
+
+Do not tune these values against hand-picked P1.3 answers. The purpose is to keep
+foreign-model acceptance conservative until a SHIFT-specific training/calibration
+set exists.
+
 ## Outputs
 
 ```text
 out/ml-cross-project/
   shift-pcode.jsonl
-  nevergone-v4-transfer.jsonl      # when model probe is enabled
+  nevergone-v4-transfer.jsonl
+  nevergone-v4-transfer-foreign-guard.jsonl
   cross-project-audit.json
 ```
 
-The audit reports:
+The audit format is:
+
+```text
+SHIFT.CrossProjectPcodeAudit/2
+```
+
+It reports:
 
 - exporter/decompile success counts;
 - architecture, endian and pointer-size distributions;
 - 256-op cap/truncation behavior;
 - obvious source-name/source-entry/program leakage checks;
-- prediction/action distribution from the foreign Nevergone model;
+- prediction distribution from the foreign Nevergone model;
+- base and guarded action distributions;
 - confidence, family-similarity and contrast-margin quantiles;
-- cross-project `accept` fraction.
+- base and guarded cross-project `accept` fractions;
+- guard downgrade count, retention, reasons and promotion invariant.
 
 ## Interpretation
 
@@ -116,11 +182,12 @@ The useful signal is OOD/selective behavior:
 
 - mostly `review`/`escalate` with low family similarity is healthy foreign-project
   rejection;
-- a high `accept` rate with weak similarity indicates an OOD-gate portability
-  problem;
+- a high base `accept` rate with near-zero contrast indicates that same-project
+  routing thresholds do not transfer safely;
+- the foreign guard is a triage safety layer, not evidence of correctness;
 - coherent structural neighborhoods can be used only to prioritize exact P1.3
   analysis, not to assert receiver/producer ownership.
 
-The first cross-project run should be frozen and compared against later generic
-front-end/ABI improvements instead of repeatedly resampling until the metrics look
-better.
+The first 1000-function run is the cross-project baseline. Later generic
+front-end/ABI improvements should be compared against it rather than repeatedly
+resampling until metrics look better.
