@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'tools/ghidra/ShiftInstructionSliceExporter.java'
+      - 'tools/ghidra/adapt_revenginstr_instruction_slices.py'
       - 'tools/ghidra/run_shift_instruction_slices.sh'
       - 'tools/ghidra/analyze_player_vehicle_render_manager_indirect_method_ca4_access.py'
       - 'tests/test_ghidra_player_vehicle_render_manager_indirect_method_ca4_access.py'
@@ -12,6 +13,7 @@ on:
   push:
     paths:
       - 'tools/ghidra/ShiftInstructionSliceExporter.java'
+      - 'tools/ghidra/adapt_revenginstr_instruction_slices.py'
       - 'tools/ghidra/run_shift_instruction_slices.sh'
       - 'tools/ghidra/analyze_player_vehicle_render_manager_indirect_method_ca4_access.py'
       - 'tests/test_ghidra_player_vehicle_render_manager_indirect_method_ca4_access.py'

@@ -5,11 +5,10 @@ usage() {
   cat <<'EOF'
 Usage:
   GHIDRA_HOME=/path/to/ghidra ./tools/ghidra/run_shift_instruction_slices.sh \
-    <project-dir> <project-name> <program-name> <output-jsonl> \
+    <project-dir> <project-name> <program-name> <output.jsonl> \
     <address[:hex-length]> [address[:hex-length] ...]
 
-Example targets: 0x0045f620:0x80 0x0045f630:0x40
-The Ghidra project must already contain an analyzed SHIFT.exe program.
+The analyzed SHIFT.exe project is inspected in read-only/no-analysis mode.
 EOF
 }
 
@@ -38,35 +37,48 @@ mkdir -p -- "$(dirname -- "$OUT_FILE")"
 OUT_DIR=$(cd -- "$(dirname -- "$OUT_FILE")" && pwd)
 OUT_FILE="$OUT_DIR/$(basename -- "$OUT_FILE")"
 
+NFS_REPO_ROOT=$(cd -- "$SCRIPT_DIR/../.." && pwd)
+SHARED_REPO=$(printenv REVENGINSTR_REPO || true)
+if [[ -z "$SHARED_REPO" ]]; then SHARED_REPO="$NFS_REPO_ROOT/../revenginstr"; fi
+SHARED_RUNNER="$SHARED_REPO/scripts/run_ghidra_instruction_slices.sh"
+SHARED_EXPORTER="$SHARED_REPO/ghidra/ExportGhidraInstructionSlices.java"
+
 COMPAT_SCRIPT_DIR=$(mktemp -d)
 cleanup() { rm -rf -- "$COMPAT_SCRIPT_DIR"; }
 trap cleanup EXIT
-cp -- "$SCRIPT_DIR/ShiftInstructionSliceExporter.java" \
-  "$COMPAT_SCRIPT_DIR/ShiftInstructionSliceExporter.java"
 
-HEADLESS_CMD=(
-  "$ANALYZE_HEADLESS"
-  "$PROJECT_DIR" "$PROJECT_NAME"
-  -process "$PROGRAM_NAME"
-  -readOnly
-  -noanalysis
-  -scriptPath "$COMPAT_SCRIPT_DIR"
-  -postScript ShiftInstructionSliceExporter.java "$OUT_FILE" "${TARGETS[@]}"
-)
-
-HEADLESS_STATUS=0
-if command -v timeout >/dev/null 2>&1; then
-  set +e
-  timeout --signal=TERM --kill-after=10s "${TIMEOUT_SECONDS}s" "${HEADLESS_CMD[@]}"
-  HEADLESS_STATUS=$?
-  set -e
+if [[ -x "$SHARED_RUNNER" && -f "$SHARED_EXPORTER" ]]; then
+  GENERIC_OUT_FILE="$COMPAT_SCRIPT_DIR/instruction-slices.jsonl"
+  REVENGINSTR_GHIDRA_HEADLESS_TIMEOUT_SECONDS=${REVENGINSTR_GHIDRA_HEADLESS_TIMEOUT_SECONDS:-$TIMEOUT_SECONDS} \
+    "$SHARED_RUNNER" "$PROJECT_DIR" "$PROJECT_NAME" "$PROGRAM_NAME" \
+    "$GENERIC_OUT_FILE" "${TARGETS[@]}"
+  python3 "$SCRIPT_DIR/adapt_revenginstr_instruction_slices.py" "$GENERIC_OUT_FILE" "$OUT_FILE"
 else
-  set +e
-  "${HEADLESS_CMD[@]}"
-  HEADLESS_STATUS=$?
-  set -e
+  cp -- "$SCRIPT_DIR/ShiftInstructionSliceExporter.java" \
+    "$COMPAT_SCRIPT_DIR/ShiftInstructionSliceExporter.java"
+  HEADLESS_CMD=(
+    "$ANALYZE_HEADLESS" "$PROJECT_DIR" "$PROJECT_NAME"
+    -process "$PROGRAM_NAME" -readOnly -noanalysis
+    -scriptPath "$COMPAT_SCRIPT_DIR"
+    -postScript ShiftInstructionSliceExporter.java "$OUT_FILE" "${TARGETS[@]}"
+  )
+  if command -v timeout >/dev/null 2>&1; then
+    set +e
+    timeout --signal=TERM --kill-after=10s "${TIMEOUT_SECONDS}s" "${HEADLESS_CMD[@]}"
+    HEADLESS_STATUS=$?
+    set -e
+  else
+    set +e
+    "${HEADLESS_CMD[@]}"
+    HEADLESS_STATUS=$?
+    set -e
+  fi
+  if [[ $HEADLESS_STATUS -eq 124 || $HEADLESS_STATUS -eq 137 ]]; then
+    echo "error: Ghidra headless exceeded ${TIMEOUT_SECONDS}s" >&2
+    exit "$HEADLESS_STATUS"
+  fi
+  if [[ $HEADLESS_STATUS -ne 0 ]]; then exit "$HEADLESS_STATUS"; fi
 fi
-if [[ $HEADLESS_STATUS -ne 0 ]]; then exit "$HEADLESS_STATUS"; fi
 
 python3 - "$OUT_FILE" "$PROGRAM_NAME" "${TARGETS[@]}" <<'PY'
 import json, pathlib, sys
