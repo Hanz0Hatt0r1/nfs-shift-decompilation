@@ -11,9 +11,10 @@ Usage:
 Optional environment:
   SHIFT_ML_MAX_FUNCTIONS        Number of internal functions to export (default 1000)
   SHIFT_ML_NAME_CONTAINS       Optional qualified-name substring filter
-  NEVERGONE_REPO               Path to nevergone-recomp; enables model transfer probe
-  NEVERGONE_MODEL_DIR          Override P-code-only model directory
   REVENGINSTR_REPO             Path to revenginstr; defaults to ../revenginstr when present
+  REVENGINSTR_MODEL_DIR        Validated REVENGINSTR.SelectiveClassifier/1 model directory
+  NEVERGONE_REPO               Historical fallback: path to nevergone-recomp
+  NEVERGONE_MODEL_DIR          Historical fallback: override Nevergone v4 model directory
   SHIFT_FOREIGN_MIN_SIMILARITY Foreign-project family-similarity floor (default 0.70)
   SHIFT_FOREIGN_MIN_CONTRAST   Foreign-project contrast-margin floor (default 0.05)
 
@@ -21,7 +22,10 @@ The Ghidra project must already contain an analyzed SHIFT.exe. The runner uses
 -noanalysis/-readOnly and never changes semantic/provenance gates.
 
 When revenginstr is available it owns the generic P-code exporter/audit/OOD guard.
-The historical Shift-local implementations remain a temporary compatibility fallback.
+A generic classifier is used only when REVENGINSTR_MODEL_DIR is explicitly set;
+there is intentionally no unvalidated automatic model switch. The historical
+Nevergone v4 transfer path remains the fallback while retained parity is being
+proven.
 EOF
 }
 
@@ -53,9 +57,9 @@ SCRIPT_DIR="$ROOT/tools/ghidra"
 mkdir -p "$OUT_DIR"
 OUT_DIR=$(cd -- "$OUT_DIR" && pwd)
 CORPUS="$OUT_DIR/shift-pcode.jsonl"
-CLASSIFIED="$OUT_DIR/nevergone-v4-transfer.jsonl"
-GUARDED="$OUT_DIR/nevergone-v4-transfer-foreign-guard.jsonl"
 SUMMARY="$OUT_DIR/cross-project-audit.json"
+CLASSIFIED=""
+GUARDED=""
 
 use_revenginstr=0
 if [[ -n "$REVENGINSTR_REPO" \
@@ -105,7 +109,43 @@ else
     "$CORPUS" --output "$SUMMARY"
 fi
 
-if [[ -n "${NEVERGONE_REPO:-}" ]]; then
+if [[ -n "${REVENGINSTR_MODEL_DIR:-}" ]]; then
+  if [[ "$use_revenginstr" != "1" ]]; then
+    echo "error: REVENGINSTR_MODEL_DIR requires a usable REVENGINSTR_REPO" >&2
+    exit 2
+  fi
+  if [[ ! -f "$REVENGINSTR_MODEL_DIR/classifier.joblib" ]]; then
+    echo "error: revenginstr model not found: $REVENGINSTR_MODEL_DIR/classifier.joblib" >&2
+    exit 2
+  fi
+  if [[ ! -f "$REVENGINSTR_REPO/src/revenginstr/ml/selective.py" ]]; then
+    echo "error: revenginstr selective classifier module not found" >&2
+    exit 2
+  fi
+
+  CLASSIFIED="$OUT_DIR/revenginstr-selective-transfer.jsonl"
+  GUARDED="$OUT_DIR/revenginstr-selective-transfer-foreign-guard.jsonl"
+  echo
+  echo "== revenginstr selective model -> SHIFT cross-project OOD probe =="
+  python3 -c \
+    'import sys; from revenginstr.ml.selective import infer_main; raise SystemExit(infer_main(sys.argv[1:]))' \
+    "$REVENGINSTR_MODEL_DIR" \
+    "$CORPUS" \
+    --output "$CLASSIFIED"
+
+  echo
+  echo "== monotone foreign-project OOD guard =="
+  python3 -m revenginstr.ood.foreign_guard \
+    "$CLASSIFIED" \
+    --similarity-floor "$FOREIGN_MIN_SIMILARITY" \
+    --contrast-floor "$FOREIGN_MIN_CONTRAST" \
+    --output "$GUARDED"
+
+  python3 -m revenginstr.pcode.audit \
+    "$CORPUS" \
+    --classified "$GUARDED" \
+    --output "$SUMMARY"
+elif [[ -n "${NEVERGONE_REPO:-}" ]]; then
   MODEL_DIR=${NEVERGONE_MODEL_DIR:-$HOME/.local/share/nevergone-ml-v2/models/production-code-domain-v4}
   CLASSIFIER="$NEVERGONE_REPO/tools/ml/classify_nevergone_pcode.py"
   if [[ ! -f "$CLASSIFIER" ]]; then
@@ -117,6 +157,8 @@ if [[ -n "${NEVERGONE_REPO:-}" ]]; then
     exit 2
   fi
 
+  CLASSIFIED="$OUT_DIR/nevergone-v4-transfer.jsonl"
+  GUARDED="$OUT_DIR/nevergone-v4-transfer-foreign-guard.jsonl"
   echo
   echo "== Nevergone v4 -> SHIFT cross-project OOD probe =="
   python3 "$CLASSIFIER" "$MODEL_DIR" "$CORPUS" --output "$CLASSIFIED"
@@ -148,16 +190,16 @@ if [[ -n "${NEVERGONE_REPO:-}" ]]; then
   fi
 else
   echo
-  echo "NEVERGONE_REPO not set; skipped model-transfer OOD probe."
+  echo "REVENGINSTR_MODEL_DIR and NEVERGONE_REPO are unset; skipped model-transfer OOD probe."
 fi
 
 echo
 echo "== cross-project probe outputs =="
 echo "corpus: $CORPUS"
 echo "audit: $SUMMARY"
-if [[ -f "$CLASSIFIED" ]]; then
+if [[ -n "$CLASSIFIED" && -f "$CLASSIFIED" ]]; then
   echo "classified: $CLASSIFIED"
 fi
-if [[ -f "$GUARDED" ]]; then
+if [[ -n "$GUARDED" && -f "$GUARDED" ]]; then
   echo "foreign guarded: $GUARDED"
 fi
