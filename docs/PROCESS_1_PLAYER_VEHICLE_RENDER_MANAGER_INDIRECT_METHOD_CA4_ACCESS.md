@@ -22,12 +22,14 @@ dispatch table physically stores `0x0045f620`, so the dispatch proof itself
 establishes it as a machine entry target.
 
 The ordinary function exporter intentionally uses `getFunctionAt()` and cannot
-export such an entry. This phase therefore adds an observational exact-address
-slice exporter:
+export such an entry. This phase uses the generic observational exact-address
+slice exporter when `revenginstr` is available, with the local Java exporter
+retained as a fallback:
 
 ```text
-tools/ghidra/ShiftInstructionSliceExporter.java
+revenginstr/ghidra/ExportGhidraInstructionSlices.java
 tools/ghidra/run_shift_instruction_slices.sh
+tools/ghidra/ShiftInstructionSliceExporter.java (fallback)
 ```
 
 It does not create functions, rename symbols, or modify the Ghidra project.
