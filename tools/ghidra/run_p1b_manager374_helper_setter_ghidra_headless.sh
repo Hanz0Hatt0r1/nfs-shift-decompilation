@@ -39,17 +39,30 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 ANALYZE_HEADLESS="$GHIDRA_HOME/support/analyzeHeadless"
 EXPORTER="$SCRIPT_DIR/ShiftCompactInstructionStreamExporter.java"
 BRIDGE="$SCRIPT_DIR/run_p1b_manager374_helper_setter_ghidra_frontier.py"
+ADAPTER="$SCRIPT_DIR/adapt_revenginstr_compact_instruction_stream.py"
 
 if [[ ! -x "$ANALYZE_HEADLESS" ]]; then
   echo "error: analyzeHeadless not found or not executable: $ANALYZE_HEADLESS" >&2
   exit 1
 fi
-if [[ ! -f "$EXPORTER" ]]; then
+if [[ ! -f "$BRIDGE" ]]; then
+  echo "error: Ghidra helper-setter bridge missing: $BRIDGE" >&2
+  exit 1
+fi
+NFS_REPO_ROOT=$(cd -- "$SCRIPT_DIR/../.." && pwd)
+SHARED_REPO=$(printenv REVENGINSTR_REPO || true)
+if [[ -z "$SHARED_REPO" ]]; then SHARED_REPO="$NFS_REPO_ROOT/../revenginstr"; fi
+SHARED_RUNNER="$SHARED_REPO/scripts/run_ghidra_compact_instruction_stream.sh"
+SHARED_EXPORTER="$SHARED_REPO/ghidra/ExportGhidraCompactInstructionStream.java"
+USE_SHARED_EXPORTER=0
+if [[ -x "$SHARED_RUNNER" && -f "$SHARED_EXPORTER" ]]; then
+  USE_SHARED_EXPORTER=1
+elif [[ ! -f "$EXPORTER" ]]; then
   echo "error: compact instruction exporter missing: $EXPORTER" >&2
   exit 1
 fi
-if [[ ! -f "$BRIDGE" ]]; then
-  echo "error: Ghidra helper-setter bridge missing: $BRIDGE" >&2
+if (( USE_SHARED_EXPORTER == 1 )) && [[ ! -f "$ADAPTER" ]]; then
+  echo "error: shared compact instruction adapter missing: $ADAPTER" >&2
   exit 1
 fi
 if ! command -v python3 >/dev/null 2>&1; then
@@ -112,48 +125,70 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Ghidra compiles Java scripts discovered under -scriptPath. Isolate only the
-# requested exporter so unrelated repository scripts cannot break this export.
-cp -- "$EXPORTER" "$COMPAT_SCRIPT_DIR/ShiftCompactInstructionStreamExporter.java"
-
 RESULT_DIR="$STAGE_ROOT/result"
 mkdir -p -- "$RESULT_DIR"
 STREAM="$STAGE_ROOT/compact_instruction_stream.jsonl.gz"
 HEADLESS_LOG="$STAGE_ROOT/ghidra_headless.log"
 
-HEADLESS_CMD=(
-  "$ANALYZE_HEADLESS"
-  "$PROJECT_DIR" "$PROJECT_NAME"
-  -process "$PROGRAM_NAME"
-  -readOnly
-  -noanalysis
-  -scriptPath "$COMPAT_SCRIPT_DIR"
-  -postScript ShiftCompactInstructionStreamExporter.java "$STREAM"
-)
-
-HEADLESS_STATUS=0
-if command -v timeout >/dev/null 2>&1; then
+if (( USE_SHARED_EXPORTER == 1 )); then
+  GENERIC_STREAM="$STAGE_ROOT/generic_compact_instruction_stream.jsonl.gz"
   set +e
-  timeout --signal=TERM --kill-after=10s "${TIMEOUT_SECONDS}s" \
-    "${HEADLESS_CMD[@]}" >"$HEADLESS_LOG" 2>&1
+  REVENGINSTR_GHIDRA_HEADLESS_TIMEOUT_SECONDS="$TIMEOUT_SECONDS" \
+    "$SHARED_RUNNER" "$PROJECT_DIR" "$PROJECT_NAME" "$PROGRAM_NAME" \
+    "$GENERIC_STREAM" >"$HEADLESS_LOG" 2>&1
   HEADLESS_STATUS=$?
   set -e
+  if [[ $HEADLESS_STATUS -ne 0 ]]; then
+    cat "$HEADLESS_LOG" >&2 || true
+    if [[ $HEADLESS_STATUS -eq 124 || $HEADLESS_STATUS -eq 137 ]]; then
+      echo "error: Ghidra headless did not complete within ${TIMEOUT_SECONDS}s" >&2
+    fi
+    exit "$HEADLESS_STATUS"
+  fi
+  if [[ ! -s "$GENERIC_STREAM" ]]; then
+    cat "$HEADLESS_LOG" >&2 || true
+    echo "error: shared exporter produced no compact instruction stream" >&2
+    exit 1
+  fi
+  python3 "$ADAPTER" "$GENERIC_STREAM" "$STREAM"
+  python3 - "$GENERIC_STREAM" <<'PY'
+from pathlib import Path
+import sys
+Path(sys.argv[1]).unlink()
+PY
 else
-  set +e
-  "${HEADLESS_CMD[@]}" >"$HEADLESS_LOG" 2>&1
-  HEADLESS_STATUS=$?
-  set -e
+  # Isolate only the local fallback exporter from scripts unrelated to this export.
+  cp -- "$EXPORTER" "$COMPAT_SCRIPT_DIR/ShiftCompactInstructionStreamExporter.java"
+  HEADLESS_CMD=(
+    "$ANALYZE_HEADLESS" "$PROJECT_DIR" "$PROJECT_NAME"
+    -process "$PROGRAM_NAME" -readOnly -noanalysis
+    -scriptPath "$COMPAT_SCRIPT_DIR"
+    -postScript ShiftCompactInstructionStreamExporter.java "$STREAM"
+  )
+  HEADLESS_STATUS=0
+  if command -v timeout >/dev/null 2>&1; then
+    set +e
+    timeout --signal=TERM --kill-after=10s "${TIMEOUT_SECONDS}s" \
+      "${HEADLESS_CMD[@]}" >"$HEADLESS_LOG" 2>&1
+    HEADLESS_STATUS=$?
+    set -e
+  else
+    set +e
+    "${HEADLESS_CMD[@]}" >"$HEADLESS_LOG" 2>&1
+    HEADLESS_STATUS=$?
+    set -e
+  fi
+  if [[ $HEADLESS_STATUS -eq 124 || $HEADLESS_STATUS -eq 137 ]]; then
+    cat "$HEADLESS_LOG" >&2 || true
+    echo "error: Ghidra headless did not complete within ${TIMEOUT_SECONDS}s" >&2
+    exit "$HEADLESS_STATUS"
+  fi
+  if [[ $HEADLESS_STATUS -ne 0 ]]; then
+    cat "$HEADLESS_LOG" >&2 || true
+    exit "$HEADLESS_STATUS"
+  fi
 fi
 
-if [[ $HEADLESS_STATUS -eq 124 || $HEADLESS_STATUS -eq 137 ]]; then
-  cat "$HEADLESS_LOG" >&2 || true
-  echo "error: Ghidra headless did not complete within ${TIMEOUT_SECONDS}s" >&2
-  exit "$HEADLESS_STATUS"
-fi
-if [[ $HEADLESS_STATUS -ne 0 ]]; then
-  cat "$HEADLESS_LOG" >&2 || true
-  exit "$HEADLESS_STATUS"
-fi
 if [[ ! -s "$STREAM" ]]; then
   cat "$HEADLESS_LOG" >&2 || true
   echo "error: Ghidra exporter produced no compact instruction stream" >&2
