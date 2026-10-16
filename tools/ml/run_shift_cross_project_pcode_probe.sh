@@ -9,16 +9,19 @@ Usage:
     <project-dir> <project-name> <program-name> <output-dir>
 
 Optional environment:
-  SHIFT_ML_MAX_FUNCTIONS       Number of internal functions to export (default 1000)
-  SHIFT_ML_NAME_CONTAINS      Optional qualified-name substring filter
-  NEVERGONE_REPO              Path to nevergone-recomp; enables model transfer probe
-  NEVERGONE_MODEL_DIR         Override P-code-only model directory
+  SHIFT_ML_MAX_FUNCTIONS        Number of internal functions to export (default 1000)
+  SHIFT_ML_NAME_CONTAINS       Optional qualified-name substring filter
+  NEVERGONE_REPO               Path to nevergone-recomp; enables model transfer probe
+  NEVERGONE_MODEL_DIR          Override P-code-only model directory
+  REVENGINSTR_REPO             Path to revenginstr; defaults to ../revenginstr when present
   SHIFT_FOREIGN_MIN_SIMILARITY Foreign-project family-similarity floor (default 0.70)
   SHIFT_FOREIGN_MIN_CONTRAST   Foreign-project contrast-margin floor (default 0.05)
 
 The Ghidra project must already contain an analyzed SHIFT.exe. The runner uses
--noanalysis/-readOnly, isolates the ML exporter from unrelated Ghidra scripts,
-and never changes semantic/provenance gates.
+-noanalysis/-readOnly and never changes semantic/provenance gates.
+
+When revenginstr is available it owns the generic P-code exporter/audit/OOD guard.
+The historical Shift-local implementations remain a temporary compatibility fallback.
 EOF
 }
 
@@ -38,6 +41,11 @@ NAME_FILTER=${SHIFT_ML_NAME_CONTAINS:-}
 FOREIGN_MIN_SIMILARITY=${SHIFT_FOREIGN_MIN_SIMILARITY:-0.70}
 FOREIGN_MIN_CONTRAST=${SHIFT_FOREIGN_MIN_CONTRAST:-0.05}
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
+DEFAULT_REVENGINSTR=$(cd -- "$ROOT/.." && pwd)/revenginstr
+REVENGINSTR_REPO=${REVENGINSTR_REPO:-}
+if [[ -z "$REVENGINSTR_REPO" && -f "$DEFAULT_REVENGINSTR/pyproject.toml" ]]; then
+  REVENGINSTR_REPO="$DEFAULT_REVENGINSTR"
+fi
 ANALYZE="$GHIDRA_HOME/support/analyzeHeadless"
 SCRIPT_DIR="$ROOT/tools/ghidra"
 
@@ -49,32 +57,53 @@ CLASSIFIED="$OUT_DIR/nevergone-v4-transfer.jsonl"
 GUARDED="$OUT_DIR/nevergone-v4-transfer-foreign-guard.jsonl"
 SUMMARY="$OUT_DIR/cross-project-audit.json"
 
-ARGS=("$CORPUS" "$MAX_FUNCTIONS")
-if [[ -n "$NAME_FILTER" ]]; then
-  ARGS+=("$NAME_FILTER")
+use_revenginstr=0
+if [[ -n "$REVENGINSTR_REPO" \
+   && -f "$REVENGINSTR_REPO/scripts/run_ghidra_pcode_export.sh" \
+   && -f "$REVENGINSTR_REPO/src/revenginstr/pcode/audit.py" \
+   && -f "$REVENGINSTR_REPO/src/revenginstr/ood/foreign_guard.py" ]]; then
+  use_revenginstr=1
 fi
 
-# Headless Ghidra tries to compile every Java file in -scriptPath. Keep this
-# probe isolated so unrelated legacy scripts cannot inject compiler warnings or
-# fail because of API changes that are irrelevant to the ML exporter.
-ML_SCRIPT_DIR=$(mktemp -d)
-trap 'rm -rf -- "$ML_SCRIPT_DIR"' EXIT
-cp "$SCRIPT_DIR/ShiftMlPcodeCorpusExporter.java" "$ML_SCRIPT_DIR/"
+if [[ "$use_revenginstr" == "1" ]]; then
+  echo "== portable core: revenginstr =="
+  echo "revenginstr: $REVENGINSTR_REPO"
+  export PYTHONPATH="$REVENGINSTR_REPO/src${PYTHONPATH:+:$PYTHONPATH}"
+  EXPORT_ARGS=(
+    "$PROJECT_DIR" "$PROJECT_NAME" "$PROGRAM_NAME" "$CORPUS" "$MAX_FUNCTIONS"
+  )
+  if [[ -n "$NAME_FILTER" ]]; then
+    EXPORT_ARGS+=("$NAME_FILTER")
+  fi
+  GHIDRA_HOME="$GHIDRA_HOME" \
+    bash "$REVENGINSTR_REPO/scripts/run_ghidra_pcode_export.sh" "${EXPORT_ARGS[@]}"
 
-echo "== SHIFT portable high-P-code export =="
-"$ANALYZE" \
-  "$PROJECT_DIR" "$PROJECT_NAME" \
-  -process "$PROGRAM_NAME" \
-  -noanalysis \
-  -readOnly \
-  -scriptPath "$ML_SCRIPT_DIR" \
-  -postScript ShiftMlPcodeCorpusExporter.java "${ARGS[@]}"
+  echo
+  echo "== portable representation audit =="
+  python3 -m revenginstr.pcode.audit "$CORPUS" --output "$SUMMARY"
+else
+  echo "== portable core: Shift compatibility fallback =="
+  echo "warning: revenginstr not found; set REVENGINSTR_REPO or clone it next to this repository" >&2
+  ARGS=("$CORPUS" "$MAX_FUNCTIONS")
+  if [[ -n "$NAME_FILTER" ]]; then
+    ARGS+=("$NAME_FILTER")
+  fi
+  ML_SCRIPT_DIR=$(mktemp -d)
+  trap 'rm -rf -- "$ML_SCRIPT_DIR"' EXIT
+  cp "$SCRIPT_DIR/ShiftMlPcodeCorpusExporter.java" "$ML_SCRIPT_DIR/"
+  "$ANALYZE" \
+    "$PROJECT_DIR" "$PROJECT_NAME" \
+    -process "$PROGRAM_NAME" \
+    -noanalysis \
+    -readOnly \
+    -scriptPath "$ML_SCRIPT_DIR" \
+    -postScript ShiftMlPcodeCorpusExporter.java "${ARGS[@]}"
 
-echo
-echo "== portable representation audit =="
-python3 "$ROOT/tools/ml/audit_shift_cross_project_pcode.py" \
-  "$CORPUS" \
-  --output "$SUMMARY"
+  echo
+  echo "== portable representation audit =="
+  python3 "$ROOT/tools/ml/audit_shift_cross_project_pcode.py" \
+    "$CORPUS" --output "$SUMMARY"
+fi
 
 if [[ -n "${NEVERGONE_REPO:-}" ]]; then
   MODEL_DIR=${NEVERGONE_MODEL_DIR:-$HOME/.local/share/nevergone-ml-v2/models/production-code-domain-v4}
@@ -90,23 +119,33 @@ if [[ -n "${NEVERGONE_REPO:-}" ]]; then
 
   echo
   echo "== Nevergone v4 -> SHIFT cross-project OOD probe =="
-  python3 "$CLASSIFIER" \
-    "$MODEL_DIR" \
-    "$CORPUS" \
-    --output "$CLASSIFIED"
+  python3 "$CLASSIFIER" "$MODEL_DIR" "$CORPUS" --output "$CLASSIFIED"
 
   echo
   echo "== monotone foreign-project OOD guard =="
-  python3 "$ROOT/tools/ml/guard_shift_foreign_pcode_predictions.py" \
-    "$CLASSIFIED" \
-    --min-similarity "$FOREIGN_MIN_SIMILARITY" \
-    --min-contrast "$FOREIGN_MIN_CONTRAST" \
-    --output "$GUARDED"
+  if [[ "$use_revenginstr" == "1" ]]; then
+    python3 -m revenginstr.ood.foreign_guard \
+      "$CLASSIFIED" \
+      --similarity-floor "$FOREIGN_MIN_SIMILARITY" \
+      --contrast-floor "$FOREIGN_MIN_CONTRAST" \
+      --output "$GUARDED"
 
-  python3 "$ROOT/tools/ml/audit_shift_cross_project_pcode.py" \
-    "$CORPUS" \
-    --classified "$GUARDED" \
-    --output "$SUMMARY"
+    python3 -m revenginstr.pcode.audit \
+      "$CORPUS" \
+      --classified "$GUARDED" \
+      --output "$SUMMARY"
+  else
+    python3 "$ROOT/tools/ml/guard_shift_foreign_pcode_predictions.py" \
+      "$CLASSIFIED" \
+      --min-similarity "$FOREIGN_MIN_SIMILARITY" \
+      --min-contrast "$FOREIGN_MIN_CONTRAST" \
+      --output "$GUARDED"
+
+    python3 "$ROOT/tools/ml/audit_shift_cross_project_pcode.py" \
+      "$CORPUS" \
+      --classified "$GUARDED" \
+      --output "$SUMMARY"
+  fi
 else
   echo
   echo "NEVERGONE_REPO not set; skipped model-transfer OOD probe."

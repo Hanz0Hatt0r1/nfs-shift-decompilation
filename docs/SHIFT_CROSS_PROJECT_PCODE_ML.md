@@ -1,7 +1,7 @@
 # SHIFT cross-project portable P-code probe
 
-This probe ports the architecture-neutral high-P-code representation developed in
-the Nevergone ML testbed to the analyzed PC retail `SHIFT.exe` program.
+This probe applies the generic `revenginstr` portable high-P-code core to the
+analyzed PC retail `SHIFT.exe` program.
 
 It is a **triage/OOD tool**, not semantic authority. It does not close P1.3 and it
 must not replace exact PC-retail provenance evidence for the control chain.
@@ -13,29 +13,44 @@ multiple computed forwarding/receiver provenance questions. The probe provides a
 mass portable-code view that can prioritize functions/families for exact static
 proof while keeping the semantic gate fail-closed.
 
-## Portable representation
+## Generic core
 
-`tools/ghidra/ShiftMlPcodeCorpusExporter.java` exports format:
+The project-neutral implementation now lives in:
 
 ```text
-SHIFT.MlPcodeCorpus/1
+Hanz0Hatt0r1/revenginstr
 ```
 
-`model_text` intentionally excludes:
+Clone it next to this repository:
 
-- absolute function/instruction addresses;
-- function and symbol names;
-- disassembly and instruction bytes;
-- decompiler C;
-- strings/resources;
-- direct call target identity;
-- branch target bookkeeping;
-- high-P-code `INDIRECT` iop bookkeeping;
-- LOAD/STORE address-space IDs.
+```bash
+cd ~
+git clone https://github.com/Hanz0Hatt0r1/revenginstr.git
+```
 
-The representation retains normalized architecture/ABI scale and structural
-P-code evidence. For a normal 32-bit x86 Ghidra language ID such as
-`x86:LE:32:default`, the header is expected to be:
+or set an explicit path:
+
+```bash
+export REVENGINSTR_REPO=/path/to/revenginstr
+```
+
+When `REVENGINSTR_REPO` is not set, the runner automatically uses
+`../revenginstr` when available. The historical Shift-local exporter/audit/guard
+remain a temporary compatibility fallback and are no longer the preferred generic
+implementation.
+
+The revenginstr exporter emits:
+
+```text
+REVENGINSTR.PcodeCorpus/1
+```
+
+`model_text` intentionally excludes absolute function/instruction addresses,
+function and symbol names, disassembly/bytes, decompiler C, strings/resources,
+direct call target identity, branch-target bookkeeping, high-P-code `INDIRECT`
+iop bookkeeping and LOAD/STORE address-space IDs.
+
+For 32-bit x86 the normalized header is:
 
 ```text
 ARCH=X8632
@@ -43,11 +58,9 @@ ENDIAN=LE
 PTR_SIZE=4
 ```
 
-The representation caps model input at 256 high-P-code operations using a
-deterministic head+tail selection. Large constants are bucketed; small constants
-remain because field offsets, flags and loop bounds are useful structural evidence.
-
-`source_entry` and `source_name` remain outer audit/join metadata only.
+The representation caps model input at 256 high-P-code operations with a
+deterministic head+tail selection. `source_entry` and `source_name` remain outer
+audit/join metadata only.
 
 ## One-command probe
 
@@ -58,6 +71,7 @@ rerun.
 cd ~/nfs-shift-decompilation
 
 GHIDRA_HOME=/opt/ghidra \
+REVENGINSTR_REPO=~/revenginstr \
 NEVERGONE_REPO=~/nevergone-recomp \
 bash tools/ml/run_shift_cross_project_pcode_probe.sh \
   /home/pes/ghidra_projects/shift \
@@ -79,23 +93,12 @@ SHIFT_ML_NAME_CONTAINS=FUN_0070
 ```
 
 When `NEVERGONE_REPO` is set, the runner uses the P-code-only Nevergone v4 model
-by default:
-
-```text
-~/.local/share/nevergone-ml-v2/models/production-code-domain-v4
-```
-
-Override with `NEVERGONE_MODEL_DIR` when needed.
-
-The runner copies only `ShiftMlPcodeCorpusExporter.java` into a temporary Ghidra
-script path. This prevents unrelated legacy Ghidra scripts from being compiled
-and producing warnings/errors during the ML export.
+as a foreign-model OOD probe. The model remains a Nevergone artifact; the generic
+export/audit/foreign guard are owned by `revenginstr`.
 
 ## Foreign-project guard
 
-The first real 1000-function x86-32 run proved the portable representation but
-also showed that the Nevergone routing policy was not conservative enough for a
-foreign project:
+The first real 1000-function x86-32 run established the baseline:
 
 ```text
 rows                     1000
@@ -107,42 +110,17 @@ family similarity median 0.669450
 contrast margin median   0.000123
 ```
 
-The base prediction mix was:
+These predictions are **not SHIFT semantic labels**. The monotone foreign guard
+can only demote a foreign-model `accept` to `review`; it never promotes review or
+escalate. The default diagnostic floors are:
 
 ```text
-engine          260
-game            239
-media_library   464
-runtime_library  37
+family_similarity >= 0.70
+contrast_margin    >= 0.05
 ```
 
-These are **not SHIFT semantic labels**. In particular, the large
-`media_library` count must not be interpreted as a recovered subsystem mapping.
-
-`tools/ml/guard_shift_foreign_pcode_predictions.py` therefore adds a monotone
-cross-project safety gate. It can only demote a foreign-model `accept` to
-`review`; it can never promote an existing `review` or `escalate`.
-
-For a base `accept`, the guarded action requires both:
-
-```text
-family_similarity >= max(base per-class OOD threshold, 0.70)
-contrast_margin    >= max(base per-class contrast threshold, 0.05)
-```
-
-The fixed `0.70` / `0.05` floors are safety defaults, **not** thresholds fitted to
-SHIFT labels. They can be changed for diagnostic experiments without changing the
-semantic gate:
-
-```bash
-SHIFT_FOREIGN_MIN_SIMILARITY=0.75 \
-SHIFT_FOREIGN_MIN_CONTRAST=0.08 \
-  bash tools/ml/run_shift_cross_project_pcode_probe.sh ...
-```
-
-Do not tune these values against hand-picked P1.3 answers. The purpose is to keep
-foreign-model acceptance conservative until a SHIFT-specific training/calibration
-set exists.
+They are safety floors, not thresholds fitted to SHIFT labels. Do not tune them
+against hand-picked P1.3 answers.
 
 ## Outputs
 
@@ -154,23 +132,10 @@ out/ml-cross-project/
   cross-project-audit.json
 ```
 
-The audit format is:
-
-```text
-SHIFT.CrossProjectPcodeAudit/2
-```
-
-It reports:
-
-- exporter/decompile success counts;
-- architecture, endian and pointer-size distributions;
-- 256-op cap/truncation behavior;
-- obvious source-name/source-entry/program leakage checks;
-- prediction distribution from the foreign Nevergone model;
-- base and guarded action distributions;
-- confidence, family-similarity and contrast-margin quantiles;
-- base and guarded cross-project `accept` fractions;
-- guard downgrade count, retention, reasons and promotion invariant.
+With revenginstr enabled the audit format is `REVENGINSTR.PcodeAudit/1`. The
+legacy fallback still emits the historical Shift audit format. Both report
+portable-contract/leakage status plus prediction/action/similarity/contrast and
+zero-promotion routing information.
 
 ## Interpretation
 
@@ -178,16 +143,7 @@ There are no SHIFT semantic labels in this probe. A Nevergone prediction such as
 `game`, `engine`, `runtime_library` or `media_library` is therefore **not** a
 recovered SHIFT semantic fact.
 
-The useful signal is OOD/selective behavior:
-
-- mostly `review`/`escalate` with low family similarity is healthy foreign-project
-  rejection;
-- a high base `accept` rate with near-zero contrast indicates that same-project
-  routing thresholds do not transfer safely;
-- the foreign guard is a triage safety layer, not evidence of correctness;
-- coherent structural neighborhoods can be used only to prioritize exact P1.3
-  analysis, not to assert receiver/producer ownership.
-
-The first 1000-function run is the cross-project baseline. Later generic
-front-end/ABI improvements should be compared against it rather than repeatedly
-resampling until metrics look better.
+The useful signal is OOD/selective behavior. Coherent structural neighborhoods can
+only prioritize exact P1.3 analysis; they cannot assert receiver/producer
+ownership. The retained 1000-function run is the cross-project baseline for later
+generic frontend/ABI improvements.
