@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import json
 import os
 import stat
@@ -70,6 +71,7 @@ def run_wrapper(tmp_path: Path, ghidra_home: Path, out_dir: Path, *, extra_env: 
     env = os.environ.copy()
     env["GHIDRA_HOME"] = str(ghidra_home)
     env["SHIFT_GHIDRA_HEADLESS_TIMEOUT_SECONDS"] = "30"
+    env["REVENGINSTR_REPO"] = str(tmp_path / "missing-revenginstr")
     if extra_env:
         env.update(extra_env)
     return subprocess.run(
@@ -87,6 +89,40 @@ def run_wrapper(tmp_path: Path, ghidra_home: Path, out_dir: Path, *, extra_env: 
         capture_output=True,
         check=False,
     )
+
+
+def make_fake_revenginstr(tmp_path: Path) -> Path:
+    repo = tmp_path / "revenginstr"
+    scripts = repo / "scripts"
+    scripts.mkdir(parents=True)
+    (repo / "ghidra").mkdir()
+    (repo / "ghidra/ExportGhidraCompactInstructionStream.java").write_text("// generic exporter\n")
+    runner = scripts / "run_ghidra_compact_instruction_stream.sh"
+    runner.write_text(
+        """#!/usr/bin/env python3
+import gzip
+import json
+import sys
+from pathlib import Path
+out = Path(sys.argv[4])
+rows = [
+    {'format': 'REVENGINSTR.GhidraCompactInstructionStream/1', 'kind': 'header',
+     'program': 'SHIFT.exe', 'executable_md5': '705af8b420e5eb1e3834ac43d5533c6b',
+     'language_id': 'x86:LE:32:default', 'image_base': '0x00400000', 'pointer_size': 4},
+    {'format': 'REVENGINSTR.GhidraCompactInstructionStream/1', 'kind': 'instruction',
+     'address': '0x00401000', 'mnemonic': 'RET', 'operands': [],
+     'flow_type': 'TERMINATOR', 'flows': []},
+]
+out.parent.mkdir(parents=True, exist_ok=True)
+with gzip.open(out, 'wt', encoding='utf-8') as stream:
+    for row in rows:
+        stream.write(json.dumps(row) + '\\n')
+print('FAKE_SHARED_RUNNER_OK')
+""",
+        encoding="utf-8",
+    )
+    runner.chmod(runner.stat().st_mode | stat.S_IXUSR)
+    return repo
 
 
 def test_headless_wrapper_exports_analyzes_and_publishes_atomically(tmp_path: Path) -> None:
@@ -119,6 +155,28 @@ def test_headless_wrapper_exports_analyzes_and_publishes_atomically(tmp_path: Pa
     assert acquisition["adjudication"]["external_provider_count"] == 7
 
     assert list((tmp_path / "evidence").glob(".p1b-helper-setter-ghidra.*")) == []
+
+
+def test_headless_wrapper_prefers_shared_stream_exporter_and_adapts_format(tmp_path: Path) -> None:
+    ghidra_home = make_fake_ghidra(tmp_path)
+    shared_repo = make_fake_revenginstr(tmp_path)
+    out_dir = tmp_path / "evidence" / "helper-setter-ghidra"
+
+    result = run_wrapper(tmp_path, ghidra_home, out_dir, extra_env={"REVENGINSTR_REPO": str(shared_repo)})
+    assert result.returncode == 0, result.stderr
+
+    log = (out_dir / "ghidra_headless.log").read_text(encoding="utf-8")
+    assert "FAKE_SHARED_RUNNER_OK" in log
+    with gzip.open(out_dir / "compact_instruction_stream.jsonl.gz", "rt", encoding="utf-8") as stream:
+        rows = [json.loads(line) for line in stream if line.strip()]
+    assert [row["format"] for row in rows] == ["SHIFT.GhidraCompactInstructionStream/1"] * 2
+    assert rows[0]["kind"] == "header"
+    assert rows[1]["kind"] == "instruction"
+    assert rows[0]["executable_md5"] == "705af8b420e5eb1e3834ac43d5533c6b"
+    assert rows[1]["address"] == "0x00401000"
+
+    acquisition = json.loads((out_dir / "ghidra_acquisition.json").read_text(encoding="utf-8"))
+    assert acquisition["source_stream"]["instruction_count"] == 1
 
 
 def test_headless_wrapper_refuses_nonempty_destination_without_running_ghidra(tmp_path: Path) -> None:
@@ -166,6 +224,8 @@ def test_wrapper_pins_readonly_isolated_export_and_fail_closed_publication_guard
     assert "-readOnly" in source
     assert "-noanalysis" in source
     assert "ShiftCompactInstructionStreamExporter.java" in source
+    assert "run_ghidra_compact_instruction_stream.sh" in source
+    assert "adapt_revenginstr_compact_instruction_stream.py" in source
     assert "COMPAT_SCRIPT_DIR=$(mktemp -d)" in source
     assert "output directory must be empty" in source
     assert "raw_executable_sha256_verified_in_this_run" in source

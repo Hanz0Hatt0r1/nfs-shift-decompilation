@@ -11,16 +11,32 @@ Ghidra acquisition is corroborating static evidence. It does not silently replac
 ## Components
 
 ```text
+revenginstr/ghidra/ExportGhidraCompactInstructionStream.java
+tools/ghidra/run_p1b_manager374_helper_setter_ghidra_headless.sh
+tools/ghidra/adapt_revenginstr_compact_instruction_stream.py
 tools/ghidra/ShiftCompactInstructionStreamExporter.java
+```
+
+The local Java exporter remains a fallback when the shared generic checkout
+does not contain the compact-stream runner. The compatibility wrapper adapts
+only the row format tag before passing the stream to the existing bridge.
+
+The downstream bridge is:
+
+```text
 tools/ghidra/run_p1b_manager374_helper_setter_ghidra_frontier.py
 ```
 
 Contracts:
 
 ```text
+REVENGINSTR.GhidraCompactInstructionStream/1
 SHIFT.GhidraCompactInstructionStream/1
 SHIFT.P1B.Manager374GhidraHelperSetterAcquisition/1
 ```
+
+The shared exporter emits the `REVENGINSTR` tag. The adapter changes that tag
+to the existing `SHIFT` contract for the domain-specific bridge.
 
 The downstream composed frontier remains:
 
@@ -70,21 +86,20 @@ If the output filename ends with `.gz`, the exporter uses gzip. This is recommen
 
 The exporter intentionally omits p-code, references, raw instruction bytes and function metadata because #2011 does not consume them; keeping the row format compact materially reduces a multi-million-instruction export.
 
-## Example Ghidra headless export
+## Run the Ghidra acquisition and bridge
 
-Use the existing analyzed project and make `tools/ghidra` available as a script path. A typical headless invocation is:
+Use the existing analyzed project. The compatibility wrapper selects the
+shared generic exporter when available, retains the local exporter as a
+fallback, and publishes the bridge output only after its fail-closed guards:
 
 ```bash
-/path/to/ghidra/support/analyzeHeadless \
-  /path/to/project-dir PROJECT_NAME \
-  -process SHIFT.exe \
-  -noanalysis \
-  -scriptPath /path/to/nfs-shift-decompilation/tools/ghidra \
-  -postScript ShiftCompactInstructionStreamExporter.java \
-    /tmp/shift-compact-instructions.jsonl.gz
+GHIDRA_HOME=/path/to/ghidra \
+  bash tools/ghidra/run_p1b_manager374_helper_setter_ghidra_headless.sh \
+  /path/to/project-dir PROJECT_NAME SHIFT.exe \
+  /tmp/p1b-helper-setter-ghidra
 ```
 
-The exact project directory/name should be the already-analyzed project containing the pinned `SHIFT.exe`; this step is an export, not a re-import or re-analysis requirement.
+The exact project directory/name should be the already-analyzed project containing the pinned `SHIFT.exe`; this step does not re-import or re-analyze it.
 
 ## Run the P1B frontier from the export
 
