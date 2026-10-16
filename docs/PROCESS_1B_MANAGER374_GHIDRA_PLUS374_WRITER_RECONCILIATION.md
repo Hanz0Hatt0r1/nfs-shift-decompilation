@@ -12,7 +12,7 @@ The repository also has an analyzed Ghidra database for the same executable. Thi
 
 `tools/ghidra/analyze_p1b_manager374_ghidra_plus374_writers.py` consumes:
 
-1. JSONL from the existing `ShiftScalarUseExporter.java` run for exact scalar `0x374`;
+1. JSONL from `run_shift_scalar_uses.sh` for exact scalar `0x374` (the shared generic exporter is preferred; the existing `ShiftScalarUseExporter.java` remains the fallback);
 2. `binary.json` from the same Ghidra evidence export;
 3. `evidence/hdvehicle_64e8_manager_374_literal_store_inventory.json`.
 
@@ -31,15 +31,12 @@ The raw inventory remains pinned to SHA-256 `eca479aa2d8dbb88bc55709d91ae5c7159a
 
 ## Run
 
-Export exact scalar uses from the existing analyzed Ghidra project:
+Export exact scalar uses from the existing analyzed Ghidra project through the
+compatibility runner:
 
 ```bash
-"$GHIDRA_HOME/support/analyzeHeadless" \
-  "$HOME/ghidra-projects" shift \
-  -process SHIFT.exe \
-  -noanalysis \
-  -scriptPath "$PWD/tools/ghidra" \
-  -postScript ShiftScalarUseExporter.java \
+GHIDRA_HOME="$GHIDRA_HOME" tools/ghidra/run_shift_scalar_uses.sh \
+  "$HOME/ghidra-projects" shift SHIFT.exe \
   "$PWD/out/p1b_manager374_scalar_374.jsonl" 0x374
 ```
 

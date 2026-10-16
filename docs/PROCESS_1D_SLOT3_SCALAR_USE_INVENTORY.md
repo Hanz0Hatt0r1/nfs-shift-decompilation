@@ -12,15 +12,18 @@ The existing full-PC-retail direct-store scan is already exhausted: there are **
 
 ## New bounded search surface
 
-This change adds two tools:
+This change uses the shared generic scalar-use exporter when `revenginstr` is
+available, with the original local Java exporter retained as a fallback:
 
-- `ShiftScalarUseExporter.java` — scans the Ghidra program for instructions containing an exact scalar value and emits the containing function/instruction/operand plus a coarse usage class;
+- `run_shift_scalar_uses.sh` — scans the Ghidra program for instructions containing an exact scalar value, adapts only the format tag back to the established SHIFT contract, and falls back to `ShiftScalarUseExporter.java` for older shared checkouts;
 - `analyze_p1d_slot3_scalar_uses.py` — consumes the exact `0x28b8` rows and groups the candidate functions, with address-materializers separated for priority adjudication.
 
 The intended headless flow is:
 
 ```text
-ShiftScalarUseExporter.java out/p1d_slot3_28b8.jsonl 0x28b8
+GHIDRA_HOME=/opt/ghidra tools/ghidra/run_shift_scalar_uses.sh \
+  "$HOME/ghidra-projects" shift SHIFT.exe \
+  out/p1d_slot3_28b8.jsonl 0x28b8
 python3 tools/ghidra/analyze_p1d_slot3_scalar_uses.py \
   out/p1d_slot3_28b8.jsonl \
   --output out/p1d_slot3_28b8_inventory.json
