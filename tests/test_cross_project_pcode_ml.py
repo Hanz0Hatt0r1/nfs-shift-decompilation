@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+REVENGINSTR_ROOT = Path(
+    os.environ.get("REVENGINSTR_REPO", str(ROOT.parent / "revenginstr"))
+)
 
 
 def _write_jsonl(path: Path, rows: list[dict]) -> None:
@@ -14,13 +18,16 @@ def _write_jsonl(path: Path, rows: list[dict]) -> None:
 
 
 def test_shift_ml_exporter_keeps_portable_contract() -> None:
-    text = (ROOT / "tools/ghidra/ShiftMlPcodeCorpusExporter.java").read_text(encoding="utf-8")
-    assert 'FORMAT = "SHIFT.MlPcodeCorpus/1"' in text
+    text = (REVENGINSTR_ROOT / "ghidra/PortablePcodeCorpusExporter.java").read_text(encoding="utf-8")
+    assert 'FORMAT = "REVENGINSTR.PcodeCorpus/1"' in text
+    assert "PortablePcodeCorpusExporter" in text
+    assert "SHIFT" not in text
+    assert "Nevergone" not in text
     assert "MAX_MODEL_OPS = 256" in text
     assert 'text.append("ARCH=")' in text
     assert 'text.append("ENDIAN=")' in text
     assert 'text.append("PTR_SIZE=")' in text
-    assert "appendGenericInputs(text, op, opIds, 1, \"arg\")" in text
+    assert "appendInputs(text, op, opIds, 1, \"arg\")" in text
     assert "if (opcode == PcodeOp.BRANCH) return;" in text
     assert "if (opcode == PcodeOp.INDIRECT)" in text
     assert "source_entry" in text
@@ -29,15 +36,19 @@ def test_shift_ml_exporter_keeps_portable_contract() -> None:
 
 def test_cross_project_runner_is_read_only_isolated_and_guarded() -> None:
     text = (ROOT / "tools/ml/run_shift_cross_project_pcode_probe.sh").read_text(encoding="utf-8")
+    exporter = (REVENGINSTR_ROOT / "scripts/run_ghidra_pcode_export.sh").read_text(encoding="utf-8")
     assert "-noanalysis" in text
     assert "-readOnly" in text
     assert "production-code-domain-v4" in text
-    assert "ShiftMlPcodeCorpusExporter.java" in text
-    assert "audit_shift_cross_project_pcode.py" in text
-    assert "guard_shift_foreign_pcode_predictions.py" in text
-    assert "ML_SCRIPT_DIR=$(mktemp -d)" in text
-    assert 'cp "$SCRIPT_DIR/ShiftMlPcodeCorpusExporter.java" "$ML_SCRIPT_DIR/"' in text
-    assert '-scriptPath "$ML_SCRIPT_DIR"' in text
+    assert "REVENGINSTR_REPO" in text
+    assert "scripts/run_ghidra_pcode_export.sh" in text
+    assert "revenginstr.pcode.audit" in text
+    assert "revenginstr.ood.foreign_guard" in text
+    assert "ShiftMlPcodeCorpusExporter.java" not in text
+    assert "ML_SCRIPT_DIR" not in text
+    assert "-readOnly" in exporter and "-noanalysis" in exporter
+    assert "mktemp -d" in exporter
+    assert '-scriptPath "$TMP_SCRIPT_DIR"' in exporter
 
 
 def test_foreign_guard_only_demotes_weak_accepts(tmp_path: Path) -> None:

@@ -34,10 +34,11 @@ or set an explicit path:
 export REVENGINSTR_REPO=/path/to/revenginstr
 ```
 
-When `REVENGINSTR_REPO` is not set, the runner automatically uses
-`../revenginstr` when available. The historical Shift-local exporter/audit/guard
-remain a temporary compatibility fallback and are no longer the preferred generic
-implementation.
+When `REVENGINSTR_REPO` is not set, the runner uses `../revenginstr` when
+available. The shared repository is required for the exporter, audit and foreign
+guard; the Shift-local exporter fallback has been removed. The historical audit
+and guard commands remain thin adapters for callers that need their older
+`SHIFT.*` output formats.
 
 The revenginstr exporter emits:
 
@@ -176,10 +177,11 @@ out/ml-cross-project-generic/
   cross-project-audit.json
 ```
 
-With revenginstr enabled the audit format is `REVENGINSTR.PcodeAudit/1`. The
-legacy fallback still emits the historical Shift audit format. Both report
-portable-contract/leakage status plus prediction/action/similarity/contrast and
-zero-promotion routing information.
+The runner's audit format is `REVENGINSTR.PcodeAudit/1`. Calling the retained
+`audit_shift_cross_project_pcode.py` adapter directly preserves
+`SHIFT.CrossProjectPcodeAudit/2`. Both report portable-contract/leakage status
+plus prediction/action/similarity/contrast and zero-promotion routing
+information.
 
 ## Interpretation
 

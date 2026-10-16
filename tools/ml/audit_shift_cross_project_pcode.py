@@ -1,219 +1,105 @@
 #!/usr/bin/env python3
-"""Audit portable SHIFT high-P-code and optional foreign-model transfer output.
-
-This is a representation/OOD probe, not semantic ground truth. The script checks
-that model_text is architecture-normalized and free of obvious join-key leakage,
-then summarizes prediction/routing/OOD behavior when a classified JSONL is given.
-When the monotone foreign-project guard has been applied, both pre-guard and
-post-guard actions are reported explicitly.
-"""
+"""SHIFT-format compatibility adapter for the shared portable P-code audit."""
 from __future__ import annotations
 
 import argparse
 import collections
 import json
-import math
-import statistics
+import os
+import sys
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
+
+_repo = Path(
+    os.environ.get(
+        "REVENGINSTR_REPO",
+        str(Path(__file__).resolve().parents[2].parent / "revenginstr"),
+    )
+)
+_source = _repo / "src"
+if _source.is_dir() and str(_source) not in sys.path:
+    sys.path.insert(0, str(_source))
+
+from revenginstr.pcode.audit import (  # noqa: E402
+    build_report as _build_report,
+    corpus_audit,
+    header_value,
+    quantiles,
+    read_jsonl,
+    transfer_audit as _transfer_audit,
+)
 
 FORMAT = "SHIFT.CrossProjectPcodeAudit/2"
 
 
-def read_jsonl(path: Path) -> list[dict[str, Any]]:
-    rows = []
-    with path.open("r", encoding="utf-8") as handle:
-        for line_no, raw in enumerate(handle, 1):
-            if not raw.strip():
-                continue
-            row = json.loads(raw)
-            if not isinstance(row, dict):
-                raise ValueError(f"{path}:{line_no}: expected object")
-            rows.append(row)
-    return rows
-
-
-def header_value(text: str, name: str) -> str | None:
-    prefix = name + "="
-    for line in text.splitlines():
-        if line.startswith(prefix):
-            return line[len(prefix):]
-    return None
-
-
-def quantiles(values: Iterable[float]) -> dict[str, float | None]:
-    data = sorted(float(value) for value in values if math.isfinite(float(value)))
-    if not data:
-        return {"min": None, "median": None, "p90": None, "max": None}
-
-    def pick(q: float) -> float:
-        index = min(len(data) - 1, max(0, round((len(data) - 1) * q)))
-        return data[index]
-
-    return {
-        "min": data[0],
-        "median": statistics.median(data),
-        "p90": pick(0.90),
-        "max": data[-1],
-    }
-
-
-def corpus_audit(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    formats = collections.Counter()
-    statuses = collections.Counter()
-    arch = collections.Counter()
-    endian = collections.Counter()
-    ptr = collections.Counter()
-    callconv = collections.Counter()
-    leakage = []
-    emitted = []
-    truncated = 0
-
-    for index, row in enumerate(rows, 1):
-        formats[str(row.get("format"))] += 1
-        status = str(row.get("decompile_status"))
-        statuses[status] += 1
-        if status != "ok":
-            continue
-        text = row.get("model_text")
-        if not isinstance(text, str) or not text:
-            leakage.append({"row": index, "reason": "missing_model_text"})
-            continue
-        arch[str(header_value(text, "ARCH"))] += 1
-        endian[str(header_value(text, "ENDIAN"))] += 1
-        ptr[str(header_value(text, "PTR_SIZE"))] += 1
-        callconv[str(header_value(text, "CALLCONV"))] += 1
-        source_entry = row.get("source_entry")
-        source_name = row.get("source_name")
-        program = row.get("program")
-        for label, value in (
-            ("source_entry", source_entry),
-            ("source_name", source_name),
-            ("program", program),
-        ):
-            if isinstance(value, str) and value and value in text:
-                leakage.append({"row": index, "reason": f"{label}_leaked"})
-        metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
-        emitted_ops = metrics.get("emitted_ops")
-        if isinstance(emitted_ops, int):
-            emitted.append(emitted_ops)
-            if emitted_ops > 256:
-                leakage.append({"row": index, "reason": "emitted_ops_gt_256"})
-        if bool(metrics.get("truncated")):
-            truncated += 1
-
-    ok = statuses.get("ok", 0)
-    return {
-        "rows": len(rows),
-        "formats": dict(sorted(formats.items())),
-        "statuses": dict(sorted(statuses.items())),
-        "architecture": dict(sorted(arch.items())),
-        "endian": dict(sorted(endian.items())),
-        "pointer_size": dict(sorted(ptr.items())),
-        "calling_convention": dict(sorted(callconv.items())),
-        "truncated": truncated,
-        "truncated_fraction": truncated / ok if ok else 0.0,
-        "emitted_ops": quantiles(emitted),
-        "leakage_findings": leakage,
-        "portable_contract_pass": bool(ok) and not leakage,
-    }
-
-
 def transfer_audit(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    predictions = collections.Counter(str(row.get("prediction")) for row in rows)
-    actions = collections.Counter(str(row.get("action")) for row in rows)
+    transfer = _transfer_audit(rows)
     base_actions = collections.Counter(
         str(row.get("base_action", row.get("action"))) for row in rows
     )
-    confidence = [
-        float(row["confidence"])
-        for row in rows
-        if isinstance(row.get("confidence"), (int, float))
-    ]
-    raw_confidence = [
-        float(row["raw_confidence"])
-        for row in rows
-        if isinstance(row.get("raw_confidence"), (int, float))
-    ]
-    similarity = [
-        float(row["family_similarity"])
-        for row in rows
-        if isinstance(row.get("family_similarity"), (int, float))
-    ]
-    contrast = [
-        float(row["contrast_margin"])
-        for row in rows
-        if isinstance(row.get("contrast_margin"), (int, float))
-    ]
+    actions = collections.Counter(str(row.get("action")) for row in rows)
     accept = actions.get("accept", 0)
     base_accept = base_actions.get("accept", 0)
-    changed = sum(bool(row.get("foreign_guard_changed")) for row in rows)
-    guard_present = any("foreign_guard_format" in row for row in rows)
-    reason_counts = collections.Counter(
-        reason
-        for row in rows
-        for reason in row.get("foreign_guard_reasons", [])
-        if isinstance(reason, str)
-    )
-    promotions = sum(
-        1
-        for row in rows
-        if str(row.get("base_action", row.get("action"))) != "accept"
-        and str(row.get("action")) == "accept"
-    )
-    report = {
-        "rows": len(rows),
-        "predictions": dict(sorted(predictions.items())),
-        "base_actions": dict(sorted(base_actions.items())),
-        "actions": dict(sorted(actions.items())),
-        "base_accept_fraction": base_accept / len(rows) if rows else 0.0,
-        "accept_fraction": accept / len(rows) if rows else 0.0,
-        "confidence": quantiles(confidence),
-        "raw_confidence": quantiles(raw_confidence),
-        "family_similarity": quantiles(similarity),
-        "contrast_margin": quantiles(contrast),
-        "semantic_labels_available": False,
-        "interpretation": "OOD/representation probe only; accept is not correctness on SHIFT.",
-        "foreign_guard": None,
-    }
-    if guard_present:
-        report["foreign_guard"] = {
+    transfer["base_actions"] = dict(sorted(base_actions.items()))
+    transfer["base_accept_fraction"] = base_accept / len(rows) if rows else 0.0
+    transfer["actions"] = dict(sorted(actions.items()))
+
+    if any("foreign_guard_format" in row for row in rows):
+        reasons = collections.Counter(
+            reason
+            for row in rows
+            for reason in row.get("foreign_guard_reasons", [])
+            if isinstance(reason, str)
+        )
+        changed = sum(bool(row.get("foreign_guard_changed")) for row in rows)
+        promotions = sum(
+            row.get("base_action", row.get("action")) != "accept"
+            and row.get("action") == "accept"
+            for row in rows
+        )
+        transfer["foreign_guard"] = {
             "format": next(
-                (str(row.get("foreign_guard_format")) for row in rows if row.get("foreign_guard_format")),
+                (str(row["foreign_guard_format"]) for row in rows if row.get("foreign_guard_format")),
                 None,
             ),
             "changed_accepts": changed,
             "changed_fraction": changed / len(rows) if rows else 0.0,
             "accept_retention": accept / base_accept if base_accept else 0.0,
             "promotions": promotions,
-            "reasons": dict(sorted(reason_counts.items())),
+            "reasons": dict(sorted(reasons.items())),
         }
+    else:
+        transfer["foreign_guard"] = None
+    transfer["interpretation"] = "OOD/representation probe only; accept is not correctness on SHIFT."
+    return transfer
+
+
+def build_report(
+    corpus_rows: list[dict[str, Any]],
+    classified_rows: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Keep the historical SHIFT report envelope around shared audit metrics."""
+    report = _build_report(corpus_rows, classified_rows)
+    report["format"] = FORMAT
+    transfer = report["transfer"]
+    if transfer is None or classified_rows is None:
+        return report
+    report["transfer"] = transfer_audit(classified_rows)
     return report
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("corpus", type=Path)
     parser.add_argument("--classified", type=Path)
     parser.add_argument("--output", type=Path)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     corpus = read_jsonl(args.corpus)
     if not corpus:
         raise SystemExit("corpus is empty")
-    report: dict[str, Any] = {
-        "format": FORMAT,
-        "corpus": corpus_audit(corpus),
-        "transfer": None,
-    }
-    if args.classified is not None:
-        classified = read_jsonl(args.classified)
-        report["transfer"] = transfer_audit(classified)
-        if len(classified) != report["corpus"]["statuses"].get("ok", 0):
-            report["transfer"]["row_count_warning"] = (
-                "classified rows differ from successful corpus rows"
-            )
-
+    classified = read_jsonl(args.classified) if args.classified is not None else None
+    report = build_report(corpus, classified)
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(
