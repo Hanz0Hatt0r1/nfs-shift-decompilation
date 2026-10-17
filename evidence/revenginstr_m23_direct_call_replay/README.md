@@ -33,4 +33,6 @@ Scan20 screened eight previously unscanned functions with exactly five indirect 
 
 Scan21 screened three previously unscanned functions with exactly six indirect calls. The parameter-field exporter returned zero rows; it retained 28 parameter loads and 12 general STORE facts, with no exact field pairs, so no dominance audit was run. The empty pair export replays byte-for-byte. See [`screening-scan21.json`](screening-scan21.json) for the frozen selection and exports.
 
+Scan22 screened one previously unscanned function with exactly nine indirect calls. It produced two parameter-field stores and two exact field pairs, alongside 12 parameter loads and three general STORE facts. The call sidecar has six explicit-memory-write sites and nine indirect-call barriers. CFG/2 and CFG/3 agree that both stores do not dominate their paired loads; neither reports a unique candidate. See [`screening-scan22.json`](screening-scan22.json) for frozen evidence and byte-for-byte replay inputs.
+
 These are conservative structural audits only. They make no branch-feasibility, runtime value-flow, or semantic-label claim.
