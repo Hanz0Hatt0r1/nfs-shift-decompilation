@@ -280,13 +280,70 @@ def validate_frozen(evidence_dir: Path) -> dict[str, int]:
     if any(totals[key] != scan14["summary"].get(key) for key in totals):
         raise ValueError("scan14 export totals do not match the screening report")
     if totals["parameter_store_rows"] or totals["field_access_pair_rows"]:
-        raise ValueError("scan14 reports field pairs without any parameter-rooted stores")
+        raise ValueError("scan14 reports field pairs without parameter-store-field rows")
     if (
         scan14["summary"].get("candidate_roots") != len(exported)
         or scan14["summary"].get("roots_with_field_pairs") != 0
         or scan14["summary"].get("dominance_audits_run") != 0
     ):
         raise ValueError("scan14 screening conclusion is inconsistent with its exports")
+
+    scan15 = manifest.get("expanded_scan15_screen")
+    if not isinstance(scan15, dict) or json.loads((evidence_dir / "screening-scan15.json").read_text()) != scan15:
+        raise ValueError("scan15 screening report does not match the frozen manifest")
+    selected = scan15.get("selection", {}).get("candidates", [])
+    if len(selected) != scan15.get("selection", {}).get("candidate_count"):
+        raise ValueError("scan15 candidate count does not match its selection rows")
+    entries = [candidate["function_entry"] for candidate in selected]
+    if len(entries) != len(set(entries)):
+        raise ValueError("scan15 contains duplicate function entries")
+    load_path = evidence_dir / "screening-scan15" / "parameter-loads.tsv"
+    store_path = evidence_dir / "screening-scan15" / "memory-store-access.jsonl"
+    with load_path.open(newline="") as stream:
+        load_rows = list(csv.DictReader(stream, delimiter="\t"))
+    memory_rows = _read_jsonl(store_path)
+    loads_by_entry = Counter(row["function_entry"] for row in load_rows)
+    stores_by_entry = Counter(row["function_entry"] for row in memory_rows)
+    expected_empty_hashes = scan15.get("empty_export_contract", {})
+    store_hashes = set(expected_empty_hashes.get("parameter_stores_sha256_values", []))
+    pair_hashes = set(expected_empty_hashes.get("field_access_pairs_sha256_values", []))
+    for candidate in selected:
+        entry = candidate["function_entry"]
+        metrics = candidate["pcode_metrics"]
+        rows = candidate["export_rows"]
+        hashes = candidate["source_export_sha256"]
+        if (
+            candidate["parameter_count"] < 1
+            or metrics["calls"] <= metrics["indirect_calls"]
+            or metrics["indirect_calls"] != 0
+            or metrics["loads"] < 1
+            or metrics["stores"] < 1
+            or metrics["truncated"]
+            or candidate["source_name"].startswith("thunk_")
+        ):
+            raise ValueError(f"scan15 candidate does not satisfy the recorded selection: {entry}")
+        if (
+            rows["parameter_store_field"] != 0
+            or rows["field_access_pairs"] != 0
+            or rows["parameter_load_field"] != loads_by_entry[entry]
+            or rows["memory_store_access"] != stores_by_entry[entry]
+            or hashes["parameter_stores"] not in store_hashes
+            or hashes["field_access_pairs"] not in pair_hashes
+        ):
+            raise ValueError(f"scan15 per-function export summary mismatch: {entry}")
+    totals = scan15["summary"]
+    if (
+        totals.get("candidate_roots") != len(selected)
+        or totals.get("parameter_store_field_rows") != 0
+        or totals.get("parameter_load_field_rows") != len(load_rows)
+        or totals.get("memory_store_access_rows") != len(memory_rows)
+        or totals.get("field_access_pair_rows") != 0
+        or totals.get("roots_with_field_pairs") != 0
+        or totals.get("dominance_audits_run") != 0
+        or sum(loads_by_entry.values()) != totals.get("parameter_load_field_rows")
+        or sum(stores_by_entry.values()) != totals.get("memory_store_access_rows")
+    ):
+        raise ValueError("scan15 export totals do not match the screening report")
 
     return {"artifacts": len(artifacts), "candidates": len(candidates), "bytes": total_bytes}
 
