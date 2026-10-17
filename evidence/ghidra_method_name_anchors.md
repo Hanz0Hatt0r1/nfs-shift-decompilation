@@ -111,6 +111,32 @@ adjustment. The 94 unmatched callsites and 52 target addresses still lack exact
 callgraph confirmation; 32 of those targets are not Ghidra function entries.
 This batch does not establish receiver identity or close P1.3B.
 
+## P1.3B orphan wrapper function recovery
+
+The follow-up
+[`docs/PROCESS_1B_ORPHAN_WRAPPER_FUNCTION_RECOVERY.md`](../docs/PROCESS_1B_ORPHAN_WRAPPER_FUNCTION_RECOVERY.md)
+reconciles the 94 remaining sites against exact Ghidra instructions and
+references: 60 are real direct calls without caller-function ownership, and
+34 are not instruction starts. Fifteen caller functions met the strict
+contiguous call/return plus entry-reference screen and were restored in an
+isolated project copy. Their 137 instruction/P-code rows bring this targeted
+body corpus to 759 unique functions, 110,761 instructions, and 110,577 P-code
+rows. The original Ghidra project and semantic names are unchanged.
+
+## P1.3B address-taken orphan function recovery
+
+The follow-up
+[`docs/PROCESS_1B_ADDRESS_TAKEN_ORPHAN_FUNCTION_RECOVERY.md`](../docs/PROCESS_1B_ADDRESS_TAKEN_ORPHAN_FUNCTION_RECOVERY.md)
+uses exact data references and bounded Ghidra control-flow evidence to restore
+three more unowned bodies in the isolated project copy. One 703-instruction
+body assigns two orphan caller sites; a six-instruction address-taken body
+assigns one more. A separate two-instruction body ends in an unresolved direct
+tail transfer and receives no semantic claim. This brings the combined body
+corpus to 762 functions, 111,472 instructions and 111,288 P-code rows, with
+42 of the 60 exact orphan callsites still awaiting caller boundaries. The
+hash-pinned report is
+[`evidence/p1b_address_taken_orphan_function_recovery.json`](p1b_address_taken_orphan_function_recovery.json).
+
 ## Evidence boundary
 
 A unique method-name anchor is a high-value **semantic-name candidate**, not an
