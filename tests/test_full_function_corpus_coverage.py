@@ -235,3 +235,24 @@ def test_linux_pcode_elf_smoke_evidence_matches_build_report() -> None:
     assert evidence["smoke_test"]["result"] == "passed"
     assert evidence["smoke_test"]["function"] == "rvi_00401000"
     assert evidence["smoke_test"]["call_target"] == "0x00685700"
+
+
+def test_partial_windows_dll_link_evidence_matches_coff_build() -> None:
+    evidence = json.loads((ROOT / "evidence/pcode_windows_partial_dll_20261018.json").read_text())
+    build_path = ROOT / evidence["build_report"]["path"]
+    report_bytes = build_path.read_bytes()
+    report = json.loads(report_bytes)
+    assert evidence["format"] == "NFSShift.NativePcodePartialWindowsDll/1"
+    assert evidence["revenginstr_revision"] == "378fca4af3089aecf8dd02110d9960b26ef41c1e"
+    assert "ref: " + evidence["revenginstr_revision"] in (ROOT / ".github/workflows/ci.yml").read_text()
+    assert evidence["source"] == report["source"]
+    assert hashlib.sha256(report_bytes).hexdigest() == evidence["build_report"]["sha256"]
+    assert len(report["shards"]) == evidence["build_report"]["object_shards"] == 71
+    assert evidence["linked_library"]["format"] == "PE32 Windows DLL"
+    assert evidence["linked_library"]["machine"] == "Intel i386"
+    assert evidence["linked_library"]["exported_pcode_functions"] == 35004
+    assert evidence["linked_library"]["export_table_function_count"] == 35004
+    assert len(evidence["linked_library"]["sha256"]) == 64
+    assert evidence["link"]["result"] == "passed"
+    assert evidence["link"]["undefined_references"] == 0
+    assert evidence["limitations"]["complete_game"] is False

@@ -36,6 +36,9 @@ The Windows cross-build compiles lowerable functions with
 `i686-w64-mingw32-gcc` into bounded COFF object shards. Its hash-pinned build
 report is recorded in
 [`evidence/pcode_native_lowering_build_20261017.json`](../evidence/pcode_native_lowering_build_20261017.json).
+All 71 COFF objects also link into a 1.3 GB PE32 partial DLL exporting the
+35,004 lowerable P-code functions. Its hash and PE export evidence are recorded
+in [`evidence/pcode_windows_partial_dll_20261018.json`](../evidence/pcode_windows_partial_dll_20261018.json).
 The native Linux build uses the same wrapper and inputs with `gcc` and PIC
 objects:
 
@@ -61,7 +64,8 @@ are recorded in
 The 982 MB `.so` remains in the persistent artifact directory named by that
 evidence record and is not stored in Git.
 
-Generated C and objects stay in the persistent artifact directory rather than
-Git. Object emission proves that the current subset compiles for the target;
-it does not yet provide a linked PE, complete function coverage, a reconstructed
-link map, or behavioral parity. Full NFS Shift recompilation remains open.
+Generated C, objects, the partial DLL, and the partial `.so` stay in the
+persistent artifact directory rather than Git. Linking and the Linux smoke
+test do not provide complete function coverage, the original game's startup
+and platform runtime, a reconstructed game link map, or behavioral parity.
+Full NFS Shift recompilation remains open.
