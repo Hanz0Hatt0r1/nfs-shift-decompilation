@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Hanz0Hatt0r1/revenginstr
-          ref: b6b1ceebdb167181aeb0d4313711ad990149b925
+          ref: ccfef5da1a52350efdb8d29608a27d4341009688
           path: revenginstr
           persist-credentials: false
       - uses: actions/setup-python@v5

@@ -1,0 +1,49 @@
+{
+  "artifact": {
+    "bytes": 831,
+    "path": "evidence/revenginstr_m5_state_machine_replay/scan22/state-machine-candidate-audit-v1.json",
+    "sha256": "c63cef2a2754cb0a8d8bff80aaaf5f9ed23f319ba0fbe916c6004cb743519133"
+  },
+  "format": "NFS.RevenginstrStateMachineReplay/1",
+  "inputs": {
+    "cfg_v3": {
+      "bytes": 29694,
+      "path": "evidence/revenginstr_m23_direct_call_replay/screening-scan22/function-pcode-cfg-v3.jsonl",
+      "rows": 1,
+      "sha256": "e8ac68b98f970558f773d7b571e713602d00a7b810c1f7cc673a5c2ad91baa83"
+    },
+    "memory_stores": {
+      "bytes": 2028,
+      "path": "evidence/revenginstr_m23_direct_call_replay/screening-scan22/memory-store-access.jsonl",
+      "rows": 3,
+      "sha256": "daa886daacc77d84cc5c6aa3b8bc0f7b957b8f3579e866a890b8592493a033eb"
+    },
+    "parameter_loads": {
+      "bytes": 1755,
+      "path": "evidence/revenginstr_m23_direct_call_replay/screening-scan22/parameter-loads.tsv",
+      "rows": 12,
+      "sha256": "2f82f0e230e71043d287fd93110293161ba6a0d3b2520fd4335bc7da1f463c1d"
+    },
+    "pcode_flow": {
+      "bytes": 13597,
+      "path": "evidence/revenginstr_m23_direct_call_replay/screening-scan22/caller-pcode-flow/00a277d0.tsv",
+      "rows": 169,
+      "sha256": "06f8b1197ec3ee104f73d4040751fe794e3e0f934f96cd42da0fbfb86c5f8c0c"
+    }
+  },
+  "limitations": [
+    "The report is a single-function structural candidate audit, not state semantics.",
+    "Zero candidates means this bounded pattern was not observed in the selected function; it is not evidence that the function has no state behavior.",
+    "The audit makes no branch-polarity, path-feasibility, or runtime value-flow claim."
+  ],
+  "revenginstr_source_commit": "ccfef5da1a52350efdb8d29608a27d4341009688",
+  "summary": {
+    "candidate_count": 0,
+    "function_count": 1,
+    "memory_store_rows": 3,
+    "parameter_load_rows": 12,
+    "pcode_operations": 169,
+    "program_id": "nfs-shift:SHIFT.exe",
+    "unresolved_store_rows": 0
+  }
+}
