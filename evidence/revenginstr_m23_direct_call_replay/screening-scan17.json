@@ -1,0 +1,1339 @@
+{
+  "format": "NFS.RevenginstrM23Screening/2",
+  "program_id": "nfs-shift:SHIFT.exe",
+  "source": {
+    "corpus": "SHIFT portable P-code sample 00a",
+    "rows": 1000,
+    "sha256": "cbab8b43b96a0c779ec19e4054fda2d19fec793bc644d10df01af38e2c28cd5e"
+  },
+  "capture": {
+    "analysis_enabled": false,
+    "read_only": true,
+    "ghidra_version": "12.1.2 DEV",
+    "exporters": [
+      "ExportGhidraParameterStoreField.java",
+      "ExportFunctionPcodeCFG.java",
+      "ExportFunctionPcodeFlow.java"
+    ],
+    "revenginstr_source_commit": "bd8f4725e5c38c502a647110518c7116b5e82d5b"
+  },
+  "selection": {
+    "previously_scanned_distinct_roots_excluded": 2297,
+    "candidate_count": 49,
+    "filters": [
+      "PARAMS >= 1",
+      "direct calls > 0",
+      "exactly two indirect calls",
+      "loads > 0",
+      "stores > 0",
+      "not truncated",
+      "source name does not begin with thunk_",
+      "entry was not in prior M2.3 scan exports"
+    ],
+    "candidates": [
+      {
+        "function_entry": "00a01a00",
+        "source_name": "FUN_00a01a00",
+        "parameter_count": 3,
+        "pcode_metrics": {
+          "ops": 65,
+          "emitted_ops": 65,
+          "calls": 4,
+          "indirect_calls": 2,
+          "branches": 3,
+          "loads": 10,
+          "stores": 5,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 1,
+          "parameter_load_field": 4,
+          "memory_store_access": 5,
+          "field_access_pairs": 2
+        }
+      },
+      {
+        "function_entry": "00a03460",
+        "source_name": "FUN_00a03460",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 229,
+          "emitted_ops": 229,
+          "calls": 12,
+          "indirect_calls": 2,
+          "branches": 18,
+          "loads": 29,
+          "stores": 7,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 9,
+          "memory_store_access": 7,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a05bd0",
+        "source_name": "FUN_00a05bd0",
+        "parameter_count": 4,
+        "pcode_metrics": {
+          "ops": 86,
+          "emitted_ops": 86,
+          "calls": 6,
+          "indirect_calls": 2,
+          "branches": 0,
+          "loads": 10,
+          "stores": 6,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 6,
+          "memory_store_access": 6,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a06190",
+        "source_name": "FUN_00a06190",
+        "parameter_count": 3,
+        "pcode_metrics": {
+          "ops": 135,
+          "emitted_ops": 135,
+          "calls": 6,
+          "indirect_calls": 2,
+          "branches": 5,
+          "loads": 14,
+          "stores": 2,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 3,
+          "memory_store_access": 2,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a08830",
+        "source_name": "FUN_00a08830",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 29,
+          "emitted_ops": 29,
+          "calls": 3,
+          "indirect_calls": 2,
+          "branches": 2,
+          "loads": 6,
+          "stores": 2,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 2,
+          "memory_store_access": 2,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a0c510",
+        "source_name": "FUN_00a0c510",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 97,
+          "emitted_ops": 97,
+          "calls": 6,
+          "indirect_calls": 2,
+          "branches": 5,
+          "loads": 16,
+          "stores": 2,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 3,
+          "memory_store_access": 2,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a0e1f0",
+        "source_name": "FUN_00a0e1f0",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 64,
+          "emitted_ops": 64,
+          "calls": 4,
+          "indirect_calls": 2,
+          "branches": 4,
+          "loads": 15,
+          "stores": 3,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 8,
+          "memory_store_access": 3,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a11140",
+        "source_name": "FUN_00a11140",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 120,
+          "emitted_ops": 120,
+          "calls": 8,
+          "indirect_calls": 2,
+          "branches": 11,
+          "loads": 19,
+          "stores": 2,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 11,
+          "memory_store_access": 2,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a17810",
+        "source_name": "FUN_00a17810",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 68,
+          "emitted_ops": 68,
+          "calls": 4,
+          "indirect_calls": 2,
+          "branches": 3,
+          "loads": 17,
+          "stores": 4,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 9,
+          "memory_store_access": 4,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a178e0",
+        "source_name": "FUN_00a178e0",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 78,
+          "emitted_ops": 78,
+          "calls": 4,
+          "indirect_calls": 2,
+          "branches": 3,
+          "loads": 17,
+          "stores": 4,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 9,
+          "memory_store_access": 4,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a18f00",
+        "source_name": "FUN_00a18f00",
+        "parameter_count": 4,
+        "pcode_metrics": {
+          "ops": 170,
+          "emitted_ops": 170,
+          "calls": 9,
+          "indirect_calls": 2,
+          "branches": 6,
+          "loads": 10,
+          "stores": 2,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 0,
+          "memory_store_access": 2,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a19250",
+        "source_name": "FUN_00a19250",
+        "parameter_count": 4,
+        "pcode_metrics": {
+          "ops": 238,
+          "emitted_ops": 238,
+          "calls": 11,
+          "indirect_calls": 2,
+          "branches": 13,
+          "loads": 14,
+          "stores": 6,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 0,
+          "memory_store_access": 6,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a1d050",
+        "source_name": "FUN_00a1d050",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 119,
+          "emitted_ops": 119,
+          "calls": 6,
+          "indirect_calls": 2,
+          "branches": 12,
+          "loads": 13,
+          "stores": 2,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 7,
+          "memory_store_access": 2,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a25b30",
+        "source_name": "FUN_00a25b30",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 111,
+          "emitted_ops": 111,
+          "calls": 3,
+          "indirect_calls": 2,
+          "branches": 4,
+          "loads": 19,
+          "stores": 6,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 1,
+          "parameter_load_field": 10,
+          "memory_store_access": 6,
+          "field_access_pairs": 3
+        }
+      },
+      {
+        "function_entry": "00a25f40",
+        "source_name": "FUN_00a25f40",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 108,
+          "emitted_ops": 108,
+          "calls": 7,
+          "indirect_calls": 2,
+          "branches": 10,
+          "loads": 23,
+          "stores": 1,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 8,
+          "memory_store_access": 1,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a263e0",
+        "source_name": "FUN_00a263e0",
+        "parameter_count": 3,
+        "pcode_metrics": {
+          "ops": 91,
+          "emitted_ops": 91,
+          "calls": 5,
+          "indirect_calls": 2,
+          "branches": 9,
+          "loads": 9,
+          "stores": 8,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 3,
+          "memory_store_access": 8,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a265e0",
+        "source_name": "FUN_00a265e0",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 131,
+          "emitted_ops": 131,
+          "calls": 3,
+          "indirect_calls": 2,
+          "branches": 5,
+          "loads": 21,
+          "stores": 8,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 10,
+          "memory_store_access": 8,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a276c0",
+        "source_name": "FUN_00a276c0",
+        "parameter_count": 3,
+        "pcode_metrics": {
+          "ops": 140,
+          "emitted_ops": 140,
+          "calls": 5,
+          "indirect_calls": 2,
+          "branches": 10,
+          "loads": 19,
+          "stores": 7,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 13,
+          "memory_store_access": 7,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a27c80",
+        "source_name": "FUN_00a27c80",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 86,
+          "emitted_ops": 86,
+          "calls": 3,
+          "indirect_calls": 2,
+          "branches": 4,
+          "loads": 14,
+          "stores": 3,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 10,
+          "memory_store_access": 3,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a281d0",
+        "source_name": "FUN_00a281d0",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 86,
+          "emitted_ops": 86,
+          "calls": 6,
+          "indirect_calls": 2,
+          "branches": 6,
+          "loads": 6,
+          "stores": 7,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 2,
+          "memory_store_access": 7,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a28290",
+        "source_name": "FUN_00a28290",
+        "parameter_count": 3,
+        "pcode_metrics": {
+          "ops": 89,
+          "emitted_ops": 89,
+          "calls": 6,
+          "indirect_calls": 2,
+          "branches": 6,
+          "loads": 6,
+          "stores": 8,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 2,
+          "memory_store_access": 8,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a28380",
+        "source_name": "FUN_00a28380",
+        "parameter_count": 3,
+        "pcode_metrics": {
+          "ops": 86,
+          "emitted_ops": 86,
+          "calls": 6,
+          "indirect_calls": 2,
+          "branches": 6,
+          "loads": 6,
+          "stores": 8,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 2,
+          "memory_store_access": 8,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a28600",
+        "source_name": "FUN_00a28600",
+        "parameter_count": 3,
+        "pcode_metrics": {
+          "ops": 86,
+          "emitted_ops": 86,
+          "calls": 6,
+          "indirect_calls": 2,
+          "branches": 5,
+          "loads": 5,
+          "stores": 1,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 0,
+          "memory_store_access": 1,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a28aa0",
+        "source_name": "FUN_00a28aa0",
+        "parameter_count": 3,
+        "pcode_metrics": {
+          "ops": 86,
+          "emitted_ops": 86,
+          "calls": 6,
+          "indirect_calls": 2,
+          "branches": 5,
+          "loads": 5,
+          "stores": 1,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 0,
+          "memory_store_access": 1,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a29380",
+        "source_name": "FUN_00a29380",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 147,
+          "emitted_ops": 147,
+          "calls": 8,
+          "indirect_calls": 2,
+          "branches": 7,
+          "loads": 10,
+          "stores": 1,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 6,
+          "memory_store_access": 1,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a2f460",
+        "source_name": "FUN_00a2f460",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 48,
+          "emitted_ops": 48,
+          "calls": 5,
+          "indirect_calls": 2,
+          "branches": 2,
+          "loads": 5,
+          "stores": 7,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 2,
+          "memory_store_access": 7,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a35e40",
+        "source_name": "FUN_00a35e40",
+        "parameter_count": 3,
+        "pcode_metrics": {
+          "ops": 161,
+          "emitted_ops": 161,
+          "calls": 5,
+          "indirect_calls": 2,
+          "branches": 7,
+          "loads": 19,
+          "stores": 7,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 14,
+          "memory_store_access": 7,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a36000",
+        "source_name": "FUN_00a36000",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 117,
+          "emitted_ops": 117,
+          "calls": 3,
+          "indirect_calls": 2,
+          "branches": 4,
+          "loads": 20,
+          "stores": 6,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 1,
+          "parameter_load_field": 10,
+          "memory_store_access": 6,
+          "field_access_pairs": 3
+        }
+      },
+      {
+        "function_entry": "00a360c0",
+        "source_name": "FUN_00a360c0",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 114,
+          "emitted_ops": 114,
+          "calls": 3,
+          "indirect_calls": 2,
+          "branches": 4,
+          "loads": 19,
+          "stores": 6,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 1,
+          "parameter_load_field": 10,
+          "memory_store_access": 6,
+          "field_access_pairs": 3
+        }
+      },
+      {
+        "function_entry": "00a361c0",
+        "source_name": "FUN_00a361c0",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 114,
+          "emitted_ops": 114,
+          "calls": 3,
+          "indirect_calls": 2,
+          "branches": 4,
+          "loads": 19,
+          "stores": 6,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 1,
+          "parameter_load_field": 10,
+          "memory_store_access": 6,
+          "field_access_pairs": 3
+        }
+      },
+      {
+        "function_entry": "00a36270",
+        "source_name": "FUN_00a36270",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 114,
+          "emitted_ops": 114,
+          "calls": 3,
+          "indirect_calls": 2,
+          "branches": 4,
+          "loads": 19,
+          "stores": 6,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 1,
+          "parameter_load_field": 10,
+          "memory_store_access": 6,
+          "field_access_pairs": 3
+        }
+      },
+      {
+        "function_entry": "00a38690",
+        "source_name": "FUN_00a38690",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 58,
+          "emitted_ops": 58,
+          "calls": 3,
+          "indirect_calls": 2,
+          "branches": 3,
+          "loads": 15,
+          "stores": 3,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 11,
+          "memory_store_access": 3,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a396e0",
+        "source_name": "FUN_00a396e0",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 100,
+          "emitted_ops": 100,
+          "calls": 5,
+          "indirect_calls": 2,
+          "branches": 4,
+          "loads": 13,
+          "stores": 3,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 9,
+          "memory_store_access": 3,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a3b040",
+        "source_name": "FUN_00a3b040",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 85,
+          "emitted_ops": 85,
+          "calls": 7,
+          "indirect_calls": 2,
+          "branches": 6,
+          "loads": 11,
+          "stores": 7,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 7,
+          "memory_store_access": 7,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a3b4e0",
+        "source_name": "FUN_00a3b4e0",
+        "parameter_count": 3,
+        "pcode_metrics": {
+          "ops": 171,
+          "emitted_ops": 171,
+          "calls": 4,
+          "indirect_calls": 2,
+          "branches": 11,
+          "loads": 28,
+          "stores": 16,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 1,
+          "parameter_load_field": 12,
+          "memory_store_access": 16,
+          "field_access_pairs": 4
+        }
+      },
+      {
+        "function_entry": "00a3b640",
+        "source_name": "FUN_00a3b640",
+        "parameter_count": 4,
+        "pcode_metrics": {
+          "ops": 168,
+          "emitted_ops": 168,
+          "calls": 11,
+          "indirect_calls": 2,
+          "branches": 8,
+          "loads": 21,
+          "stores": 6,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 17,
+          "memory_store_access": 6,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a3b7c0",
+        "source_name": "FUN_00a3b7c0",
+        "parameter_count": 3,
+        "pcode_metrics": {
+          "ops": 145,
+          "emitted_ops": 145,
+          "calls": 4,
+          "indirect_calls": 2,
+          "branches": 11,
+          "loads": 24,
+          "stores": 12,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 14,
+          "memory_store_access": 12,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a3ba70",
+        "source_name": "FUN_00a3ba70",
+        "parameter_count": 3,
+        "pcode_metrics": {
+          "ops": 191,
+          "emitted_ops": 191,
+          "calls": 4,
+          "indirect_calls": 2,
+          "branches": 19,
+          "loads": 20,
+          "stores": 8,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 1,
+          "parameter_load_field": 12,
+          "memory_store_access": 8,
+          "field_access_pairs": 4
+        }
+      },
+      {
+        "function_entry": "00a3c350",
+        "source_name": "FUN_00a3c350",
+        "parameter_count": 4,
+        "pcode_metrics": {
+          "ops": 233,
+          "emitted_ops": 233,
+          "calls": 10,
+          "indirect_calls": 2,
+          "branches": 10,
+          "loads": 22,
+          "stores": 9,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 2,
+          "parameter_load_field": 18,
+          "memory_store_access": 9,
+          "field_access_pairs": 10
+        }
+      },
+      {
+        "function_entry": "00a3c560",
+        "source_name": "FUN_00a3c560",
+        "parameter_count": 4,
+        "pcode_metrics": {
+          "ops": 207,
+          "emitted_ops": 207,
+          "calls": 11,
+          "indirect_calls": 2,
+          "branches": 10,
+          "loads": 20,
+          "stores": 7,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 1,
+          "parameter_load_field": 15,
+          "memory_store_access": 7,
+          "field_access_pairs": 7
+        }
+      },
+      {
+        "function_entry": "00a3c8f0",
+        "source_name": "FUN_00a3c8f0",
+        "parameter_count": 4,
+        "pcode_metrics": {
+          "ops": 251,
+          "emitted_ops": 251,
+          "calls": 11,
+          "indirect_calls": 2,
+          "branches": 8,
+          "loads": 25,
+          "stores": 6,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 2,
+          "parameter_load_field": 21,
+          "memory_store_access": 6,
+          "field_access_pairs": 10
+        }
+      },
+      {
+        "function_entry": "00a3cb10",
+        "source_name": "FUN_00a3cb10",
+        "parameter_count": 4,
+        "pcode_metrics": {
+          "ops": 198,
+          "emitted_ops": 198,
+          "calls": 11,
+          "indirect_calls": 2,
+          "branches": 9,
+          "loads": 19,
+          "stores": 6,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 1,
+          "parameter_load_field": 15,
+          "memory_store_access": 6,
+          "field_access_pairs": 7
+        }
+      },
+      {
+        "function_entry": "00a3cd20",
+        "source_name": "FUN_00a3cd20",
+        "parameter_count": 4,
+        "pcode_metrics": {
+          "ops": 164,
+          "emitted_ops": 164,
+          "calls": 11,
+          "indirect_calls": 2,
+          "branches": 9,
+          "loads": 19,
+          "stores": 6,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 15,
+          "memory_store_access": 6,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a3cea0",
+        "source_name": "FUN_00a3cea0",
+        "parameter_count": 4,
+        "pcode_metrics": {
+          "ops": 194,
+          "emitted_ops": 194,
+          "calls": 11,
+          "indirect_calls": 2,
+          "branches": 8,
+          "loads": 19,
+          "stores": 6,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 1,
+          "parameter_load_field": 15,
+          "memory_store_access": 6,
+          "field_access_pairs": 7
+        }
+      },
+      {
+        "function_entry": "00a3d910",
+        "source_name": "FUN_00a3d910",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 47,
+          "emitted_ops": 47,
+          "calls": 6,
+          "indirect_calls": 2,
+          "branches": 2,
+          "loads": 10,
+          "stores": 4,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 6,
+          "memory_store_access": 4,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a3ebc0",
+        "source_name": "FUN_00a3ebc0",
+        "parameter_count": 4,
+        "pcode_metrics": {
+          "ops": 210,
+          "emitted_ops": 210,
+          "calls": 7,
+          "indirect_calls": 2,
+          "branches": 18,
+          "loads": 21,
+          "stores": 10,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 17,
+          "memory_store_access": 10,
+          "field_access_pairs": 0
+        }
+      },
+      {
+        "function_entry": "00a3ef80",
+        "source_name": "FUN_00a3ef80",
+        "parameter_count": 4,
+        "pcode_metrics": {
+          "ops": 197,
+          "emitted_ops": 197,
+          "calls": 11,
+          "indirect_calls": 2,
+          "branches": 8,
+          "loads": 19,
+          "stores": 6,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 1,
+          "parameter_load_field": 15,
+          "memory_store_access": 6,
+          "field_access_pairs": 3
+        }
+      },
+      {
+        "function_entry": "00a3f140",
+        "source_name": "FUN_00a3f140",
+        "parameter_count": 4,
+        "pcode_metrics": {
+          "ops": 197,
+          "emitted_ops": 197,
+          "calls": 11,
+          "indirect_calls": 2,
+          "branches": 8,
+          "loads": 19,
+          "stores": 6,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 1,
+          "parameter_load_field": 15,
+          "memory_store_access": 6,
+          "field_access_pairs": 3
+        }
+      },
+      {
+        "function_entry": "00a3fbb0",
+        "source_name": "FUN_00a3fbb0",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 62,
+          "emitted_ops": 62,
+          "calls": 6,
+          "indirect_calls": 2,
+          "branches": 2,
+          "loads": 15,
+          "stores": 4,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 11,
+          "memory_store_access": 4,
+          "field_access_pairs": 0
+        }
+      }
+    ]
+  },
+  "summary": {
+    "candidate_roots": 49,
+    "parameter_store_field_rows": 17,
+    "parameter_load_field_rows": 438,
+    "memory_store_access_rows": 269,
+    "field_access_pair_rows": 72,
+    "roots_with_field_pairs": 15,
+    "audit_roots": 15,
+    "audit_memory_store_access_rows": 105,
+    "direct_call_effect_rows": 103,
+    "direct_call_effect_status_counts": {
+      "explicit_memory_write": 73,
+      "indirect_call": 30
+    },
+    "write_free_direct_call_rows": 0,
+    "audit_v2_rows": 72,
+    "audit_v2_status_counts": {
+      "possible_intervening_memory_effect": 2,
+      "store_not_dominating_load": 70
+    },
+    "unique_cfg_store_candidate_v2_rows": 0,
+    "audit_rows": 72,
+    "audit_status_counts": {
+      "possible_intervening_memory_effect": 2,
+      "store_not_dominating_load": 70
+    },
+    "unique_cfg_store_candidate_rows": 0,
+    "per_pair_status_changes_v2_to_v3": 0,
+    "outcome": "The 49-function screen yielded 17 ParameterStoreField/1 rows and 72 exact field-access pairs across 15 functions, alongside 438 parameter loads and 269 general memory-store facts. The call sidecar has 73 explicit-write direct-call sites and 30 indirect-call barriers, with no complete write-free direct callee. CFG/2 and CFG/3 audited all 72 pairs with identical statuses: 70 are store_not_dominating_load and 2 are possible_intervening_memory_effect; neither version reports a unique candidate. No runtime value-flow claim is made."
+  },
+  "replay_inputs": {
+    "callee-pcode-flow/009015b0.tsv": {
+      "bytes": 6831,
+      "rows": 82,
+      "sha256": "70500231ab0ef1ee2b6ff617ea711e95b573e8684d1f31a945f83f21b25981d2"
+    },
+    "callee-pcode-flow/00901960.tsv": {
+      "bytes": 58707,
+      "rows": 687,
+      "sha256": "c45759174269d6472fd3e346b51e2274ae07e23bbff7920371a8e4cfadf66a82"
+    },
+    "callee-pcode-flow/009f0eb0.tsv": {
+      "bytes": 6968,
+      "rows": 83,
+      "sha256": "bdcc2ed2f1deff99841966fa3ccd7de14cb9b11240ce821715179a27b966ab72"
+    },
+    "callee-pcode-flow/009feac0.tsv": {
+      "bytes": 4584,
+      "rows": 57,
+      "sha256": "ee72129ac17773bc9739123552e220f77436286ae2f92e789a3994b8268443a7"
+    },
+    "callee-pcode-flow/00a31bf0.tsv": {
+      "bytes": 1727,
+      "rows": 19,
+      "sha256": "3b6f7188263d7bc306e1c424cd81c5ab0a4009f23b98d321d73bdeb2b7345a84"
+    },
+    "callee-pcode-flow/00a31c70.tsv": {
+      "bytes": 2438,
+      "rows": 27,
+      "sha256": "3f9bbf7df99fd3cf8cee7a4405cc47453f182a15864948f35527afb00c2851f4"
+    },
+    "callee-pcode-flow/00a31e00.tsv": {
+      "bytes": 3685,
+      "rows": 45,
+      "sha256": "ca88adea96641c29047971c1a478e0dcdce74294aa9eb8b34e23d551a9881266"
+    },
+    "callee-pcode-flow/00a35f60.tsv": {
+      "bytes": 2198,
+      "rows": 25,
+      "sha256": "07d72f378579a5ba12f0d718729b480ef8ac2d08ebafef13ced4ab29c50bab57"
+    },
+    "callee-pcode-flow/00a363d0.tsv": {
+      "bytes": 1373,
+      "rows": 15,
+      "sha256": "18e7d314fa4384f3d4a0dc98f3331ace47399dca0f483e5a5e6cbc2a146a6fbd"
+    },
+    "callee-pcode-flow/00a36400.tsv": {
+      "bytes": 1908,
+      "rows": 23,
+      "sha256": "4745e6e23c036df73aaef1642b5a034f239a7b7683a7e426d20f18985d34658e"
+    },
+    "callee-pcode-flow/00a36430.tsv": {
+      "bytes": 2105,
+      "rows": 25,
+      "sha256": "bb5cbb770670c29720e5acbdf99a4756c5818c661e3a9c7020ed4ca152565538"
+    },
+    "callee-pcode-flow/00a36460.tsv": {
+      "bytes": 2597,
+      "rows": 31,
+      "sha256": "bc792d30e1836e54f47ddd4b2666998241ec262d5f2e026bb9d618c42b8966b4"
+    },
+    "callee-pcode-flow/00a364a0.tsv": {
+      "bytes": 3266,
+      "rows": 37,
+      "sha256": "aadab63fca344767414d81a079146b27393406a1182d1683f8b92914de3e984c"
+    },
+    "callee-pcode-flow/00a364f0.tsv": {
+      "bytes": 2822,
+      "rows": 31,
+      "sha256": "1b33a245bbce04cac05ade262d05599a6e496c7a1db5b64041645a282b0681b5"
+    },
+    "callee-pcode-flow/00a38240.tsv": {
+      "bytes": 2597,
+      "rows": 31,
+      "sha256": "4f7e57c44a72e6fc4027cb85d5e2556ccfc490faaf5fb96db396633e881168bb"
+    },
+    "callee-pcode-flow/00a3a510.tsv": {
+      "bytes": 1562,
+      "rows": 17,
+      "sha256": "121752168c46f1624a460e4bfb047860e371762c80c9b814d5406205c55dca65"
+    },
+    "callee-pcode-flow/00a3a540.tsv": {
+      "bytes": 1995,
+      "rows": 23,
+      "sha256": "37996aa53da8ad7e9d6f4c6c9d344cef35c604eeb96a1bcf24958c59806b189e"
+    },
+    "callee-pcode-flow/00a3a5d0.tsv": {
+      "bytes": 2235,
+      "rows": 27,
+      "sha256": "b5e15271fabf068782ca876de45a4898abf43c361abf467558c1705be3017850"
+    },
+    "callee-pcode-flow/00a3a600.tsv": {
+      "bytes": 1976,
+      "rows": 23,
+      "sha256": "e80e70578a629c0589a52de7433e599ef12538b22575f5f77784cec508fae135"
+    },
+    "caller-pcode-flow/00a01a00.tsv": {
+      "bytes": 5171,
+      "rows": 65,
+      "sha256": "0dcf4713f5ee7682aec54bbc37e2bbff5fe26635bc173b47bc9f4cf80fa7a73e"
+    },
+    "caller-pcode-flow/00a25b30.tsv": {
+      "bytes": 8970,
+      "rows": 111,
+      "sha256": "6f15c53a0f549e8f70951c9be1d63134ed9de5f974e82829ec3d89b10667b7f8"
+    },
+    "caller-pcode-flow/00a36000.tsv": {
+      "bytes": 9470,
+      "rows": 117,
+      "sha256": "af47fa99c4739a4bc3b25a0c8b8939431f7c1351ea0d4475ad86978e1df682da"
+    },
+    "caller-pcode-flow/00a360c0.tsv": {
+      "bytes": 9181,
+      "rows": 114,
+      "sha256": "1777d11238cd265980f1769fe52a4d1ff3fd026770c48337edef23e86a29cebc"
+    },
+    "caller-pcode-flow/00a361c0.tsv": {
+      "bytes": 9181,
+      "rows": 114,
+      "sha256": "3e37fbd7008b21227acc4cec81e32ca414c27373aaf85e87d4b1c2ed25c5f070"
+    },
+    "caller-pcode-flow/00a36270.tsv": {
+      "bytes": 9181,
+      "rows": 114,
+      "sha256": "07a34645758a36077814bab22d3fb5b5648f88e3b5ebe6cda361f032b59d23ac"
+    },
+    "caller-pcode-flow/00a3b4e0.tsv": {
+      "bytes": 14489,
+      "rows": 171,
+      "sha256": "840e15e951fd233bea75e5a6fe2aed273ade68953d885a544b083daa0f8349d1"
+    },
+    "caller-pcode-flow/00a3ba70.tsv": {
+      "bytes": 15981,
+      "rows": 191,
+      "sha256": "9797589a06dc1591f352ac74a8474e08b7cfec6543a855ac19d5b8851661357a"
+    },
+    "caller-pcode-flow/00a3c350.tsv": {
+      "bytes": 19938,
+      "rows": 233,
+      "sha256": "385b090bffafd3707e1b8f75cd730cf806c3feb5bcd7190644da393b9a17c3ed"
+    },
+    "caller-pcode-flow/00a3c560.tsv": {
+      "bytes": 17789,
+      "rows": 207,
+      "sha256": "5b79fef76d9967da6d85890cfcd07c72df85daf69c3c1d26df022e73dfd58356"
+    },
+    "caller-pcode-flow/00a3c8f0.tsv": {
+      "bytes": 21627,
+      "rows": 251,
+      "sha256": "3364ff11d7a810cbea1e46b3d0f6ce91e287674f6b3877197ef77458b2cb2fab"
+    },
+    "caller-pcode-flow/00a3cb10.tsv": {
+      "bytes": 17063,
+      "rows": 198,
+      "sha256": "0999df4f670314fe5c429d22f288d982ad2229813c8d9a4b067a02c4dec9184f"
+    },
+    "caller-pcode-flow/00a3cea0.tsv": {
+      "bytes": 16736,
+      "rows": 194,
+      "sha256": "a3c0a054ccf9755441b6bbe4f1c7a2c74d205d9107a840067335609dd2d05bf4"
+    },
+    "caller-pcode-flow/00a3ef80.tsv": {
+      "bytes": 16260,
+      "rows": 197,
+      "sha256": "e9c1da76439ad5495782fb9fe9a7bba96d2d766c1505d48c907ee617b28e0951"
+    },
+    "caller-pcode-flow/00a3f140.tsv": {
+      "bytes": 16222,
+      "rows": 197,
+      "sha256": "17f204beca588fc2bf53a66309da37df2f67486b7b0cf5d34db245d6b9fc3ad5"
+    },
+    "direct-call-memory-effects.jsonl": {
+      "bytes": 54690,
+      "rows": 103,
+      "sha256": "d59f17d7293581e9b3ff1132d1e418076ba1845a2cacfa407e40bbbbe17f87db"
+    },
+    "field-access-pairs.jsonl": {
+      "bytes": 97280,
+      "rows": 72,
+      "sha256": "2ecb70b35d7e01774abcffbe14ab341cfa855f2085de5abdab71b2f79723d374"
+    },
+    "field-store-load-dominance-v2.jsonl": {
+      "bytes": 127336,
+      "rows": 72,
+      "sha256": "13b07f8a694affe1518bc2f560243fa726d559a815fb37d257f769f595b55cf5"
+    },
+    "field-store-load-dominance-v3.jsonl": {
+      "bytes": 145389,
+      "rows": 72,
+      "sha256": "d20af4707ae62ba9fbef70243155051728ee41c6dfedcc9f3c9b8b8752a15a50"
+    },
+    "function-pcode-cfg-v3.jsonl": {
+      "bytes": 421877,
+      "rows": 15,
+      "sha256": "e8b569fb04f52cabdab14b65d6f6197f0c1ee4bfd4cfdd3c844df2297d0aa885"
+    },
+    "memory-store-access-relevant.jsonl": {
+      "bytes": 67394,
+      "rows": 105,
+      "sha256": "1b1b8273f63919b1447a8a2e6fc777180eeec0f53f55ee654eaeb98b6712b8e3"
+    },
+    "memory-store-access.jsonl": {
+      "bytes": 169185,
+      "rows": 269,
+      "sha256": "4f4338530da4292125dae7b5b132039acf442ffbb234df31059f2da29e573f56"
+    },
+    "parameter-loads.tsv": {
+      "bytes": 59014,
+      "rows": 438,
+      "sha256": "0731756f1d1682c4ea7b100643947733dac486acddd3f14b79f588b688697dee"
+    },
+    "parameter-stores.tsv": {
+      "bytes": 2243,
+      "rows": 17,
+      "sha256": "16a957130a53b11736aa360068014583f8c7f415f4f89b4ba6d153899a887f00"
+    },
+    "selection-source.json": {
+      "bytes": 16406,
+      "rows": 1,
+      "sha256": "83290e7ca25e9b05f3b91726c7143f8b919b63eeb6df1d855d6310ceabb4ba0c"
+    }
+  },
+  "aggregated_exports": {
+    "parameter-stores.tsv": {
+      "rows": 17,
+      "bytes": 2243,
+      "sha256": "16a957130a53b11736aa360068014583f8c7f415f4f89b4ba6d153899a887f00"
+    },
+    "parameter-loads.tsv": {
+      "rows": 438,
+      "bytes": 59014,
+      "sha256": "0731756f1d1682c4ea7b100643947733dac486acddd3f14b79f588b688697dee"
+    },
+    "memory-store-access.jsonl": {
+      "rows": 269,
+      "bytes": 169185,
+      "sha256": "4f4338530da4292125dae7b5b132039acf442ffbb234df31059f2da29e573f56"
+    },
+    "field-access-pairs.jsonl": {
+      "rows": 72,
+      "bytes": 97280,
+      "sha256": "2ecb70b35d7e01774abcffbe14ab341cfa855f2085de5abdab71b2f79723d374"
+    }
+  }
+}
