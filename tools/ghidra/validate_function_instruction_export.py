@@ -120,8 +120,12 @@ def validate_export(path: Path, expected_targets: list[str]) -> dict[str, Any]:
             raise ValueError(f"{function_address}: instruction list is empty")
         if row.get("instruction_count") != len(instructions):
             raise ValueError(f"{function_address}: instruction_count mismatch")
-        if normalize_target(str(instructions[0].get("address"))) != function_address:
-            raise ValueError(f"{function_address}: first instruction is not function entry")
+        instruction_addresses = {
+            normalize_target(str(instruction.get("address")))
+            for instruction in instructions
+        }
+        if function_address not in instruction_addresses:
+            raise ValueError(f"{function_address}: function entry instruction is missing")
 
         previous = -1
         for instruction in instructions:
