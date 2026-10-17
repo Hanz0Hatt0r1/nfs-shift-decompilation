@@ -1,0 +1,205 @@
+{
+  "authority": {
+    "function_recovery_copy_project": "shift-recovered-mass-20261017",
+    "ghidra_export_source_hashes": {
+      "batch1_address_taken_evidence": "eda97d8000eb1d7ca6cd8734e3ab2d44a77da92ed1778adfb693b7ea3f383e46",
+      "executable": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+      "original_4b_instruction_slice": "bb59ce9eb8eae7b1625361e7e3bcf3c374084d47fea805e7ccaf7fbb8e0bb8c3",
+      "original_address_metadata": "ac2c94e1d70557eb9d9dc55880e6f7017015d210d31f72c3135000df2f6aeaf0",
+      "original_boundary_instruction_slice": "412fb9b7070ba1b0d47322c22f4a6561979134ce183eeb6a5b1cd543ce46eee4",
+      "original_pointer_candidate_slice": "abf62fe00be45f1727fbeda57458418bcf42185b0c9e826a651bc79f8753cfe3",
+      "original_small_instruction_slice": "bdadc1d188de0d7fe337b1bcbaf6208a1acb075af9b9bd65e75e0bf819986f62",
+      "original_xref_index": "76d8f21adb9568ca245cb6fe05a7def31da702d29e9ace75e4e625c6a89a4be7",
+      "plan_tsv": "2cec3a35358259df439b3ebf64fa8a9b2b416a457a5d1a2ac254e65076b542dd",
+      "previous_address_taken_evidence": "b7265ee2dd7eeb585baa292d53eeff2cab56c835cabfead3b39191f57d3319a3",
+      "recovered_function_instructions": "5371d8bda808bff63c72583f3ae9c5d0d7132a770df73fa61f4ba47dc74eaab2",
+      "recovered_function_plan": "23624a3163123008dae4eac21bfeda813ea7e096c4773535763d1ab5ae341bdb",
+      "recovered_target_reference_owners": "e3b2764ff1eced1ae88047f518ab2349b01de6e0037c09ca4d166342a0cc36ca",
+      "recovery_runner": "8a86f7108599f8653269a20b8cce42d70b5ec94545af87efa5c10de5a94b2e95",
+      "recovery_script_java": "d40f7a4dd6aae9424ff36837e015bbf847fee47664d346b1005bcadda80e741b",
+      "report_builder": "c4aa2204f8fbcab5123f51a590343c803579238c3366434234cfdd12b5344a1c",
+      "wrapper_orphan_inventory": "37da78448c7ead5ce2cd9c5d5e370dcd9681dd5efec6ab0d83f88ae3e94cd137"
+    },
+    "original_ghidra_project_modified": false,
+    "platform": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "combined_function_instruction_exports": {
+    "previous_unique_function_count": 784,
+    "unique_function_count": 787,
+    "unique_instruction_count": 113725,
+    "unique_pcode_instruction_count": 113541
+  },
+  "format": "SHIFT.P1B.OrphanCallerRecoveryBatch3/1",
+  "limitations": [
+    "One recovered body has two explicitly evidenced control-flow exits into existing functions, including a shared epilogue.",
+    "The remaining .secu callsite at 0x00d38db6 is not assigned an owner because its containing body boundary is unresolved.",
+    "No game-specific semantic names or behavior claims were added."
+  ],
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "recovered_orphan_functions": {
+    "all_body_instructions_reachable_in_bounded_cfg": true,
+    "all_body_instructions_unowned_in_original_project": true,
+    "all_instruction_bytes_match_original_project": true,
+    "all_pcode_rows_match_original_project": true,
+    "body_byte_count": 1849,
+    "function_count": 3,
+    "functions": [
+      {
+        "address": "0x004b6150",
+        "body_bytes": 599,
+        "body_sha256": "8980ff95a14bbb8d9ce0e905be3bd32007139e6b803c14349cef706363f17b0d",
+        "boundary_gap_hex": "cccccccccccccccccccccccccccccccccc",
+        "branch_instruction_count": 17,
+        "call_instruction_count": 22,
+        "end": "0x004b63a6",
+        "entry_evidence": [
+          {
+            "from": "0x004b5c3f",
+            "kind": "JUMP",
+            "target": "0x004b6150",
+            "type": "UNCONDITIONAL_JUMP"
+          }
+        ],
+        "external_cfg_flows": [],
+        "instruction_count": 163,
+        "name": "FUN_004b6150",
+        "orphan_callsites": [
+          {
+            "callsite": "0x004b62f4",
+            "instruction": "CALL 0x004042b0",
+            "target_function": "0x004042b0"
+          },
+          {
+            "callsite": "0x004b631d",
+            "instruction": "CALL 0x004042b0",
+            "target_function": "0x004042b0"
+          }
+        ],
+        "pcode_instruction_count": 163,
+        "preceding_instruction": {
+          "address": "0x004b613e",
+          "bytes": "c3",
+          "mnemonic": "RET"
+        }
+      },
+      {
+        "address": "0x00a86ca0",
+        "body_bytes": 36,
+        "body_sha256": "322e7bee18b1d602bc73bfc44a580bd562af3e0de1f22ed03631982f97f0a2f3",
+        "boundary_gap_hex": "cccccccccccccccccccc",
+        "branch_instruction_count": 1,
+        "call_instruction_count": 3,
+        "end": "0x00a86cc3",
+        "entry_evidence": [
+          {
+            "from": "0x00aa8660",
+            "kind": "RAW_U32",
+            "raw_u32": "0xa86ca0",
+            "target": "0x00a86ca0"
+          }
+        ],
+        "external_cfg_flows": [],
+        "instruction_count": 10,
+        "name": "FUN_00a86ca0",
+        "orphan_callsites": [
+          {
+            "callsite": "0x00a86cb3",
+            "instruction": "CALL 0x006f0570",
+            "target_function": "0x006f0570"
+          }
+        ],
+        "pcode_instruction_count": 10,
+        "preceding_instruction": {
+          "address": "0x00a86c95",
+          "bytes": "c3",
+          "mnemonic": "RET"
+        }
+      },
+      {
+        "address": "0x005fccc0",
+        "body_bytes": 1214,
+        "body_sha256": "913b7769daceb5ba7701f5116cb64ff53ccf411aefc2851d0c2084597c6ab423",
+        "boundary_gap_hex": "cccccccccccccccccccccccccc",
+        "branch_instruction_count": 24,
+        "call_instruction_count": 55,
+        "end": "0x005fd179",
+        "entry_evidence": [
+          {
+            "from": "0x00ae4b58",
+            "kind": "DATA",
+            "target": "0x005fccc0",
+            "type": "DATA"
+          }
+        ],
+        "external_cfg_flows": [
+          {
+            "kind": "SHARED_BRANCH",
+            "source": "0x005fcd65",
+            "target": "0x005fd185",
+            "target_function_entry": "0x005fd180"
+          },
+          {
+            "kind": "TAIL",
+            "source": "0x005fd179",
+            "target": "0x004031c4",
+            "target_function_entry": "0x004031c4"
+          }
+        ],
+        "instruction_count": 349,
+        "name": "FUN_005fccc0",
+        "orphan_callsites": [
+          {
+            "callsite": "0x005fcf35",
+            "instruction": "CALL 0x005b73a0",
+            "target_function": "0x005b73a0"
+          },
+          {
+            "callsite": "0x005fd01e",
+            "instruction": "CALL 0x005b73a0",
+            "target_function": "0x005b73a0"
+          },
+          {
+            "callsite": "0x005fd13d",
+            "instruction": "CALL 0x005b73a0",
+            "target_function": "0x005b73a0"
+          },
+          {
+            "callsite": "0x005fd15b",
+            "instruction": "CALL 0x004042b0",
+            "target_function": "0x004042b0"
+          }
+        ],
+        "pcode_instruction_count": 349,
+        "preceding_instruction": {
+          "address": "0x005fccb0",
+          "bytes": "c20c00",
+          "mnemonic": "RET"
+        }
+      }
+    ],
+    "instruction_count": 522,
+    "pcode_instruction_count": 522
+  },
+  "unresolved_callsite_reconciliation": {
+    "newly_owned_callsite_count": 7,
+    "newly_owned_callsites": [
+      "0x004b62f4",
+      "0x004b631d",
+      "0x005fcf35",
+      "0x005fd01e",
+      "0x005fd13d",
+      "0x005fd15b",
+      "0x00a86cb3"
+    ],
+    "previously_owned_callsite_count": 52,
+    "remaining_exact_orphan_callsite_count": 1,
+    "remaining_exact_orphan_callsites": [
+      "0x00d38db6"
+    ],
+    "source_exact_orphan_callsite_count": 60
+  },
+  "version": 1
+}
