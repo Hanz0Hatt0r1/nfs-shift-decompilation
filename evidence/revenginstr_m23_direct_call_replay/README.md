@@ -1,6 +1,6 @@
 # M2.3 direct-call audit replay (SHIFT)
 
-This consumer replay freezes twelve SHIFT functions with 31 exact parameter and field-offset store/load pairs. It uses the retail input SHA-256 recorded in `coordination/research_inputs.lock.json`, read-only Ghidra exports, and `revenginstr` commit `88a30066b79af827de7c7a9cb91c24a9947edee4`.
+This consumer replay freezes thirteen SHIFT functions with 33 exact parameter and field-offset store/load pairs. It uses the retail input SHA-256 recorded in `coordination/research_inputs.lock.json`, read-only Ghidra exports, and `revenginstr` commit `88a30066b79af827de7c7a9cb91c24a9947edee4`.
 
 Each candidate includes bounded P-code, parameter store/load rows, CFG/3, memory-store facts, paired-field graphs, direct-call effect rows, and the `/1`, `/2`, and `/3` audit outputs. `manifest.json` pins every artifact by byte count, row count, and SHA-256. The replay rebuilds the derived pairs, call effects, and audits byte-for-byte.
 
@@ -17,10 +17,12 @@ The replay verifies the frozen artifacts, rebuilds field-access pairs and direct
 
 ## Results
 
-All 31 paired-field rows replay exactly. `/1` reports 26 `possible_intervening_memory_effect`, four `store_not_dominating_load`, and one `unique_cfg_store_candidate`. `/2` and `/3` each report 25, four, and two rows in those categories.
+All 33 paired-field rows replay exactly. `/1` reports 28 `possible_intervening_memory_effect`, four `store_not_dominating_load`, and one `unique_cfg_store_candidate`. `/2` and `/3` each report 27, four, and two rows in those categories.
 
-Across 67 direct-call effect rows, three have `no_explicit_memory_write` status. One eligible call occurs on the exact store-to-load witness in `00619b7d`: direct call `0060a369` at P-code time 27 lies between the paired store at time 22 and load at time 102, on witness blocks `[0, 1, 4]`. `/3` leaves the row `possible_intervening_memory_effect` because the same witness contains an `unknown_effect` direct call at time 31 (`0060a7e1`). The write-free call is eligible for filtering; the unknown call remains a barrier. No status is promoted to a unique candidate.
+Across 71 direct-call effect rows, five have `no_explicit_memory_write` status. In `00619b7d`, direct call `0060a369` at P-code time 27 lies between the paired store at time 22 and load at time 102, on witness blocks `[0, 1, 4]`. `/3` leaves the row `possible_intervening_memory_effect` because the same witness contains an `unknown_effect` direct call at time 31 (`0060a7e1`). The write-free call is eligible for filtering; the unknown call remains a barrier.
 
-The control case `00503790` has a complete write-free direct call at time 91, after its paired loads at times 38 and 68; it does not lie in either store-to-load interval. The expanded scan9 screen covered 32 bounded roots and 90 ordered pairs. It found three complete write-free call rows, with exactly one on an audited witness; `/1`, `/2`, and `/3` status counts remained identical across the screen.
+Scan12 adds a second path-filter case in `0060de20`: write-free calls at times 18 and 32 occur on both exact store-to-load witnesses. Each witness also contains two `CALLIND` barriers at times 42 and 52, so both pairs remain `possible_intervening_memory_effect` in `/1`, `/2`, and `/3`. This exercises the filter with multiple eligible calls and barriers without promoting either candidate.
+
+The control case `00503790` has a complete write-free direct call at time 91, after its paired loads at times 38 and 68; it does not lie in either store-to-load interval. The scan9 screen covered 32 bounded roots and 90 ordered pairs. Scans 10–13 screened 630 additional function exports: 45 field-pair rows and 23 ordered pairs across nine roots. Two write-free direct calls were on exact witnesses in scan12, both alongside indirect-call barriers; the `/2` to `/3` status-change count remained zero. Detailed counts and selection criteria are frozen in [`screening-scan10-13.json`](screening-scan10-13.json).
 
 These are conservative structural audits only. They make no branch-feasibility, runtime value-flow, or semantic-label claim.

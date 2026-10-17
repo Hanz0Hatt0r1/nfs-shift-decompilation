@@ -26,6 +26,9 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
 def _row_count(path: Path) -> int:
     if path.suffix == ".jsonl":
         return len(_read_jsonl(path))
+    if path.suffix == ".json":
+        json.loads(path.read_text())
+        return 1
     if path.suffix == ".tsv":
         with path.open(newline="") as stream:
             return max(0, sum(1 for _ in csv.reader(stream, delimiter="\t")) - 1)
@@ -33,7 +36,7 @@ def _row_count(path: Path) -> int:
 
 
 def _validate_path_filter_case(evidence_dir: Path, entry: str, expected: dict[str, Any]) -> None:
-    """Check that an eligible call lies on the witnessed path and another barrier remains."""
+    """Check write-free calls and retained barriers against exact audit witnesses."""
     folder = evidence_dir / entry
     calls = _read_jsonl(folder / "direct-call-memory-effects.jsonl")
     cfg_rows = _read_jsonl(folder / "function-pcode-cfg-v3.jsonl")
@@ -47,17 +50,23 @@ def _validate_path_filter_case(evidence_dir: Path, entry: str, expected: dict[st
             if row.get("address") == spec["address"]
             and row.get("time") == spec["time"]
             and ("callee_entry" not in spec or row.get("callee_entry") == spec["callee_entry"])
+            and ("opcode" not in spec or row.get("opcode") == spec["opcode"])
         ]
         if len(matches) != 1:
             raise ValueError(f"path-filter call identity does not resolve exactly once: {entry}/{spec}")
         return matches[0]
 
-    eligible = call_row(expected["eligible_call"])
-    if eligible["status"] != "no_explicit_memory_write":
+    eligible_specs = expected.get("eligible_calls", [expected.get("eligible_call")])
+    barrier_specs = expected.get("retained_barriers", [expected.get("retained_barrier")])
+    eligible = [call_row(spec) for spec in eligible_specs if spec is not None]
+    barriers = [call_row(spec) for spec in barrier_specs if spec is not None]
+    if not eligible:
+        raise ValueError(f"path-filter case has no eligible write-free call: {entry}")
+    if any(row["status"] != "no_explicit_memory_write" for row in eligible):
         raise ValueError(f"path-filter call is not proven write-free: {entry}")
-    barrier = call_row(expected["retained_barrier"])
-    if barrier["status"] != expected["retained_barrier"]["status"] or barrier["status"] == "no_explicit_memory_write":
-        raise ValueError(f"path-filter case does not retain the expected barrier: {entry}")
+    for spec, row in zip(barrier_specs, barriers):
+        if row["status"] != spec["status"] or row["status"] == "no_explicit_memory_write":
+            raise ValueError(f"path-filter case does not retain the expected barrier: {entry}")
 
     def operation_block(fact: dict[str, Any]) -> int:
         matches = [
@@ -66,38 +75,48 @@ def _validate_path_filter_case(evidence_dir: Path, entry: str, expected: dict[st
             for operation in block["operations"]
             if operation.get("address") == fact["address"]
             and operation.get("time") == fact["time"]
-            and operation.get("opcode") == "CALL"
+            and operation.get("opcode") == fact.get("opcode")
         ]
         if len(matches) != 1:
             raise ValueError(f"path-filter call does not join to one CFG CALL: {entry}/{fact['address']}")
         return matches[0]
 
-    eligible_block = operation_block(eligible)
-    barrier_block = operation_block(barrier)
+    eligible_blocks = [operation_block(row) for row in eligible]
+    barrier_blocks = [operation_block(row) for row in barriers]
     versions = {version: _read_jsonl(folder / f"audit-{version}.jsonl") for version in ("v2", "v3")}
-    matched_rows = {}
+    pairs = expected.get("pairs", [expected])
+    baseline_witnesses: dict[tuple[int, int, str], list[int]] = {}
     for version, rows in versions.items():
-        matches = [
-            row for row in rows
-            if row["store"]["time"] == expected["store_time"]
-            and row["load"]["time"] == expected["load_time"]
-            and row["field_offset"] == expected["field_offset"]
-        ]
-        if len(matches) != 1:
-            raise ValueError(f"path-filter pair does not resolve exactly once: {entry}/{version}")
-        row = matches[0]
-        witness = row["witnesses"]["memory_effect_store_to_load"]
-        if witness != expected["witness_blocks"]:
-            raise ValueError(f"path-filter witness changed: {entry}/{version}")
-        if not expected["store_time"] < eligible["time"] < expected["load_time"]:
-            raise ValueError(f"write-free call is outside the paired access interval: {entry}")
-        if eligible_block not in witness or barrier_block not in witness:
-            raise ValueError(f"eligible call or retained barrier is outside the effect witness: {entry}/{version}")
-        if row["status"] != expected["audit_status"] or not row["memory_effect_path_exists"]:
-            raise ValueError(f"path-filter case did not remain fail-closed: {entry}/{version}")
-        matched_rows[version] = row
-    if matched_rows["v2"]["witnesses"] != matched_rows["v3"]["witnesses"]:
-        raise ValueError(f"/3 changed the witness despite a retained memory-effect barrier: {entry}")
+        for pair in pairs:
+            matches = [
+                row for row in rows
+                if row["store"]["time"] == pair["store_time"]
+                and row["load"]["time"] == pair["load_time"]
+                and row["field_offset"] == pair["field_offset"]
+            ]
+            if len(matches) != 1:
+                raise ValueError(f"path-filter pair does not resolve exactly once: {entry}/{version}")
+            row = matches[0]
+            witness = row["witnesses"]["memory_effect_store_to_load"]
+            if witness != pair["witness_blocks"]:
+                raise ValueError(f"path-filter witness changed: {entry}/{version}")
+            for call, block in zip(eligible, eligible_blocks):
+                if not pair["store_time"] < call["time"] < pair["load_time"]:
+                    raise ValueError(f"write-free call is outside the paired access interval: {entry}")
+                if block not in witness:
+                    raise ValueError(f"eligible call is outside the effect witness: {entry}/{version}")
+            for call, block in zip(barriers, barrier_blocks):
+                if not pair["store_time"] < call["time"] < pair["load_time"]:
+                    raise ValueError(f"retained barrier is outside the paired access interval: {entry}")
+                if block not in witness:
+                    raise ValueError(f"retained barrier is outside the effect witness: {entry}/{version}")
+            if row["status"] != pair["audit_status"] or not row["memory_effect_path_exists"]:
+                raise ValueError(f"path-filter case did not remain fail-closed: {entry}/{version}")
+            pair_key = (pair["store_time"], pair["load_time"], pair["field_offset"])
+            if version == "v2":
+                baseline_witnesses[pair_key] = witness
+            elif witness != baseline_witnesses[pair_key]:
+                raise ValueError(f"/3 changed the witness despite a retained memory-effect barrier: {entry}")
 
 
 def validate_frozen(evidence_dir: Path) -> dict[str, int]:
@@ -131,6 +150,10 @@ def validate_frozen(evidence_dir: Path) -> dict[str, int]:
     expected_candidate_count = manifest.get("candidate_count")
     if not isinstance(candidates, dict) or len(candidates) != expected_candidate_count:
         raise ValueError(f"expected {expected_candidate_count} frozen candidates, found {len(candidates)}")
+    replay_pairs = 0
+    replay_calls = 0
+    replay_call_statuses: Counter[str] = Counter()
+    replay_audit_statuses = {version: Counter() for version in AUDIT_VERSIONS}
     for entry, expected in candidates.items():
         folder = evidence_dir / entry
         pairs = _read_jsonl(folder / "field-access-pairs.jsonl")
@@ -140,6 +163,9 @@ def validate_frozen(evidence_dir: Path) -> dict[str, int]:
         call_counts = dict(sorted(Counter(row["status"] for row in calls).items()))
         if call_counts != expected["direct_call_effect_status_counts"]:
             raise ValueError(f"direct-call status summary mismatch for {entry}")
+        replay_pairs += len(pairs)
+        replay_calls += len(calls)
+        replay_call_statuses.update(call_counts)
         expected_write_free_rows = expected.get("write_free_direct_call_rows", 0)
         if call_counts.get("no_explicit_memory_write", 0) != expected_write_free_rows:
             raise ValueError(f"write-free direct-call count mismatch for {entry}")
@@ -153,8 +179,22 @@ def validate_frozen(evidence_dir: Path) -> dict[str, int]:
             if any("runtime value-flow claim" not in row["claim_scope"] for row in rows):
                 raise ValueError(f"audit scope overclaims value flow for {entry}/{version}")
             audit_counts[version] = counts
+            replay_audit_statuses[version].update(counts)
         if audit_counts["v2"] != audit_counts["v3"]:
             raise ValueError(f"unexpected /2-to-/3 status-count change in frozen candidate {entry}")
+
+    computed_summary = {
+        "candidate_count": len(candidates),
+        "field_access_pair_rows": replay_pairs,
+        "direct_call_effect_rows": replay_calls,
+        "direct_call_effect_status_counts": dict(sorted(replay_call_statuses.items())),
+        "audit_status_counts": {
+            version: dict(sorted(counts.items())) for version, counts in replay_audit_statuses.items()
+        },
+        "per_pair_status_changes_v2_to_v3": 0,
+    }
+    if manifest.get("replay_summary") != computed_summary:
+        raise ValueError("aggregate frozen replay summary does not match its candidate artifacts")
 
     path_filter_cases = manifest.get("path_filter_cases", {})
     if not isinstance(path_filter_cases, dict) or not path_filter_cases:
@@ -178,8 +218,34 @@ def validate_frozen(evidence_dir: Path) -> dict[str, int]:
         or screen.get("per_pair_status_changes_v2_to_v3") != 0
     ):
         raise ValueError("scan9 screening reports an unexpected audit status change")
-    if len(screen.get("write_free_calls_on_exact_audit_witness", [])) != len(path_filter_cases):
+    scan9_eligible_calls = sum(
+        len(case.get("eligible_calls", [case.get("eligible_call")]))
+        for case in path_filter_cases.values() if case.get("screen_source", "scan9") == "scan9"
+    )
+    if len(screen.get("write_free_calls_on_exact_audit_witness", [])) != scan9_eligible_calls:
         raise ValueError("scan9 write-free-call path count does not match the frozen cases")
+
+    expanded = manifest.get("expanded_scan10_13_screen")
+    if not isinstance(expanded, dict) or json.loads((evidence_dir / "screening-scan10-13.json").read_text()) != expanded:
+        raise ValueError("scan10–13 screening report does not match the frozen manifest")
+    scans = expanded.get("scans", [])
+    totals = expanded.get("totals", {})
+    for field in (
+        "parameter_export_candidates", "roots_with_pairs", "field_pair_rows", "ordered_pairs",
+        "roots_with_ordered_pairs", "write_free_calls_on_exact_witness", "per_pair_status_changes_v2_to_v3",
+    ):
+        if sum(scan.get(field, 0) for scan in scans) != totals.get(field):
+            raise ValueError(f"scan10–13 {field} does not match the screening total")
+        if field == "per_pair_status_changes_v2_to_v3" and totals.get(field) != 0:
+            raise ValueError("scan10–13 screening reports an unexpected /2-to-/3 status change")
+    scan12_case = path_filter_cases.get("0060de20", {})
+    scan12 = next((scan for scan in scans if scan.get("id") == "scan12"), {})
+    if (
+        len(scan12_case.get("eligible_calls", [])) != scan12.get("write_free_calls_on_exact_witness")
+        or len(scan12_case.get("retained_barriers", [])) != scan12.get("retained_indirect_barriers_on_witness")
+        or len(scan12_case.get("pairs", [])) != 2
+    ):
+        raise ValueError("scan12 path-filter case does not match its screening summary")
 
     return {"artifacts": len(artifacts), "candidates": len(candidates), "bytes": total_bytes}
 
