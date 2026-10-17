@@ -1,0 +1,5927 @@
+{
+  "adjudication": {
+    "all_unresolved_direct_call_targets_classified": false,
+    "automatic_function_renaming_performed": false,
+    "confirmed_objdump_unresolved_direct_call_subset_recovered": true,
+    "helper_returned_materialized_address_surface_complete": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false
+  },
+  "authority": {
+    "ghidra_export_source_hashes": {
+      "binary.json": "709a287ca9eec0599252baefe6abf356f2e4e04652ade140a1f10d381e5865df",
+      "callgraph.jsonl": "4a1ddf450e7be4a03cf456d47225ec96da8ee5d715db18514f795f6d7bd56e27",
+      "functions.jsonl": "006073467f3e5b6a532418a036000d11782ae61ddd0aceacca9236bab7f2063a",
+      "manifest.json": "ec4c0d873c342421682c5633b07c6f3a87565a1f5ddc55ab81c843639e63ad33"
+    },
+    "platform": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "combined_function_instruction_exports": {
+    "new_function_count": 166,
+    "overlap_function_count": 4,
+    "prior_export_sha256": "bb865913330aeb84250eaed9efabeae57b8d1f27042ffca54007c5be794f0a80",
+    "prior_function_count": 559,
+    "prior_instruction_count": 97417,
+    "prior_pcode_instruction_count": 97233,
+    "unique_function_count": 725,
+    "unique_instruction_count": 109749,
+    "unique_pcode_instruction_count": 109565
+  },
+  "format": "SHIFT.P1B.HelperReturnGhidraTargetRecovery/1",
+  "function_body_recovery": {
+    "helper_return_probe_termination_counts": {
+      "control-boundary": 111,
+      "nested-call": 45,
+      "return": 8,
+      "unsupported-stack-adjustment": 6
+    },
+    "instruction_count": 13261,
+    "instruction_export_format": "SHIFT.GhidraFunctionInstructions/2",
+    "instruction_export_sha256": "95e4056a747c6199e91d749b67d25efa661dfa2d664cdd99cbaa67303f163d3c",
+    "pcode_available_for_every_instruction": true,
+    "pcode_instruction_count": 13261,
+    "qualified_entry_argument_plus_0x374_function_count": 0,
+    "recovered_functions": [
+      {
+        "address": "0x00403d90",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "thunk_FUN_00404290",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x004042b0",
+        "direct_unresolved_callsite_count": 15,
+        "ghidra_name": "thunk_FUN_0043b932",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x00406370",
+        "direct_unresolved_callsite_count": 4,
+        "ghidra_name": "thunk_FUN_0046ef30",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x0040b080",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_0040b080",
+        "helper_return_probe": {
+          "instruction_count": 11,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 218,
+        "mnemonic_sha256": "0190cb73182ba9e4b981aeaa550c64a027d9990f3b155a73d93c57aff1d84dff",
+        "size": 719
+      },
+      {
+        "address": "0x0040b990",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_00d34180",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x00415900",
+        "direct_unresolved_callsite_count": 4,
+        "ghidra_name": "thunk_FUN_00d38b90",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x00416e60",
+        "direct_unresolved_callsite_count": 10,
+        "ghidra_name": "FUN_00416e60",
+        "helper_return_probe": {
+          "instruction_count": 2,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 18,
+        "mnemonic_sha256": "67905d05beed07fcde410fb3e913c8180b5ca3a648aee3bb22a32f2fbf25f24f",
+        "size": 40
+      },
+      {
+        "address": "0x00417810",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_0045c8d0",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x00419020",
+        "direct_unresolved_callsite_count": 5,
+        "ghidra_name": "thunk_FUN_00446380",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x0041ae80",
+        "direct_unresolved_callsite_count": 13,
+        "ghidra_name": "thunk_FUN_00d3b710",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x0041c790",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_00d3cb20",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x00426ce0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00426ce0",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 211,
+        "mnemonic_sha256": "aa760f9dec6f45b9a45782bffba6393fcac7a1f7909a41ddefcc0b72ed69bf12",
+        "size": 1029
+      },
+      {
+        "address": "0x00427500",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_00427500",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 32,
+        "mnemonic_sha256": "4cf9297e056d782ff6b6a417682ea890fff78fd3ede88417ac763e19c620da3a",
+        "size": 92
+      },
+      {
+        "address": "0x0042ee30",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0042ee30",
+        "helper_return_probe": {
+          "instruction_count": 14,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 61,
+        "mnemonic_sha256": "dfe7f6f3684415b094a5507959d792f65003744d078a95ee25962acc0820762b",
+        "size": 140
+      },
+      {
+        "address": "0x0042f130",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0042f130",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "unsupported-stack-adjustment"
+        },
+        "instruction_count": 71,
+        "mnemonic_sha256": "a18b3780bcc37fe3e246985eb486fcd77d817145549e74aa750412474c557967",
+        "size": 192
+      },
+      {
+        "address": "0x0042f270",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0042f270",
+        "helper_return_probe": {
+          "instruction_count": 11,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 87,
+        "mnemonic_sha256": "a30fc972b4fa362adf3a1bd5a83fc55ab2fd45dea89faa0d63414dbc0f2a8a78",
+        "size": 227
+      },
+      {
+        "address": "0x0042ff20",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "thunk_FUN_004f6410",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x00433d80",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00433d80",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 27,
+        "mnemonic_sha256": "e414f867aa6ffa766780aa9c8305bb1bf068a056b7f285a244cb1396bb883c07",
+        "size": 61
+      },
+      {
+        "address": "0x0043bee0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_00d4b100",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x0043ceb0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0043ceb0",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 23,
+        "mnemonic_sha256": "92a2fa34e1ecefba18453ebac94be82fc651399490cc46cc519ee81c095cf228",
+        "size": 57
+      },
+      {
+        "address": "0x0043f220",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_0041b7e0",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x0044aaa0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0044aaa0",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "unsupported-stack-adjustment"
+        },
+        "instruction_count": 494,
+        "mnemonic_sha256": "91b85867b25c13a936a1130c08f7b473f75ef025d5429e385368fbc2d571d07d",
+        "size": 1685
+      },
+      {
+        "address": "0x00454b50",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00454b50",
+        "helper_return_probe": {
+          "instruction_count": 24,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 63,
+        "mnemonic_sha256": "a5f607d396761e051e6dfad62e57d669246e5dbc7cb2dc1a4886861617d4f41b",
+        "size": 184
+      },
+      {
+        "address": "0x0045c000",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0045c000",
+        "helper_return_probe": {
+          "instruction_count": 5,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 43,
+        "mnemonic_sha256": "f55a5888c22b7a897126e9fb4501cec3d4fb734f65196d0af1fe5de1015983e2",
+        "size": 151
+      },
+      {
+        "address": "0x0045c960",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0045c960",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "unsupported-stack-adjustment"
+        },
+        "instruction_count": 105,
+        "mnemonic_sha256": "a50829dcd6b1c5a0008757b7ab963e72b1e7ac83a83c2c7cc5349c0175a4d0d6",
+        "size": 284
+      },
+      {
+        "address": "0x0045e110",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_0045e110",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 21,
+        "mnemonic_sha256": "c79981c01b460e46d42c2100020a7971afed263483a4f2d96ada769b1247435b",
+        "size": 60
+      },
+      {
+        "address": "0x0045eaa0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_00496110",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x00469730",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "thunk_FUN_00432c40",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x00470440",
+        "direct_unresolved_callsite_count": 6,
+        "ghidra_name": "thunk_FUN_0041c910",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x00475410",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "thunk_FUN_00d58af0",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x00480880",
+        "direct_unresolved_callsite_count": 5,
+        "ghidra_name": "FUN_00480880",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 56,
+        "mnemonic_sha256": "59a8192da99067f306fd6ca1945b9a98ab132ad4d5692e8e58adaeca278b527f",
+        "size": 217
+      },
+      {
+        "address": "0x00483b90",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00483b90",
+        "helper_return_probe": {
+          "instruction_count": 5,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 21,
+        "mnemonic_sha256": "9c5cbbd188edcd482a9b61d369182f362add04a145d0f6d94a597a422e3d57de",
+        "size": 54
+      },
+      {
+        "address": "0x004855f0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_00d5e1f0",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x00487460",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00487460",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 7,
+        "mnemonic_sha256": "85938f9b1c048192a45916eef8e04e95f4039a03df21681e8ab19e458ac93fd3",
+        "size": 22
+      },
+      {
+        "address": "0x0048c3a0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0048c3a0",
+        "helper_return_probe": {
+          "instruction_count": 16,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": "0x0048c3c3",
+          "termination": "return"
+        },
+        "instruction_count": 16,
+        "mnemonic_sha256": "02fa533b8bbbb4c5d8a0889408acff2b07fe6c9cbea14a32977b60e2e853c3d8",
+        "size": 38
+      },
+      {
+        "address": "0x004937d0",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "thunk_FUN_00d65eb0",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x00495c30",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_00495c30",
+        "helper_return_probe": {
+          "instruction_count": 12,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 127,
+        "mnemonic_sha256": "d0092a92143673b4949078bd6c20ad6237b52b6cf9e4b597b6d255b5ca3f7dfd",
+        "size": 401
+      },
+      {
+        "address": "0x00499240",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00499240",
+        "helper_return_probe": {
+          "instruction_count": 8,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 287,
+        "mnemonic_sha256": "8d68ef8e93d45d4225c057075cc3a7a7bbed8d6c6be91af1d51dc3098848451c",
+        "size": 1072
+      },
+      {
+        "address": "0x0049b930",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_00491a90",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x0049c760",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0049c760",
+        "helper_return_probe": {
+          "instruction_count": 10,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 93,
+        "mnemonic_sha256": "b2086b993f1843c32b9b0f70a3a82b30c003524f9c1b85d661bbd3795cf15388",
+        "size": 248
+      },
+      {
+        "address": "0x0049d720",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_004cebb0",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x0049db50",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_00d6a150",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x004a91b0",
+        "direct_unresolved_callsite_count": 11,
+        "ghidra_name": "FUN_004a91b0",
+        "helper_return_probe": {
+          "instruction_count": 22,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 68,
+        "mnemonic_sha256": "1669a2b470a503c57a5a71450739af772fff68995bbadcd702cd337ced80b6a1",
+        "size": 173
+      },
+      {
+        "address": "0x004aa2d0",
+        "direct_unresolved_callsite_count": 6,
+        "ghidra_name": "thunk_FUN_00d71eb0",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x004aa7f0",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "thunk_FUN_00d72280",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x004b0dc0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_00454100",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x004b44e0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_00d748c0",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x004bb7e0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_004bb7e0",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 13,
+        "mnemonic_sha256": "16a8f08c6c60ef1e13da27bf0b9ea6ddb91f053fd0e1c8f87e88ef37148db688",
+        "size": 55
+      },
+      {
+        "address": "0x004c2500",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_004c2500",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 30,
+        "mnemonic_sha256": "6f52b4bd8ac19f8f01086c2bd814dc51f73f963f706c60a07db850ebfa36c3a1",
+        "size": 68
+      },
+      {
+        "address": "0x004d0870",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_004d0870",
+        "helper_return_probe": {
+          "instruction_count": 23,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 44,
+        "mnemonic_sha256": "952ed7a6801b5029f4d559fed43493a8e945dbbfc680444f148b1138def0f98a",
+        "size": 116
+      },
+      {
+        "address": "0x004d7540",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_004d7540",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 87,
+        "mnemonic_sha256": "c1448ad56c34ac14947d0d481d2d70eac1a8ab78b24dd63e62560aab0f553471",
+        "size": 246
+      },
+      {
+        "address": "0x004deb30",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_004deb30",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "unsupported-stack-adjustment"
+        },
+        "instruction_count": 134,
+        "mnemonic_sha256": "396ba4ec39653bd7f8c0142cf0cda6236c8729d18a151b3db2f088d52b10fa6e",
+        "size": 465
+      },
+      {
+        "address": "0x004e0340",
+        "direct_unresolved_callsite_count": 10,
+        "ghidra_name": "FUN_004e0340",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 11,
+        "mnemonic_sha256": "5355201cf418fa98e3b6162e4a63b4a79ba7eb7b88142844d4f7b6db102ecf04",
+        "size": 29
+      },
+      {
+        "address": "0x004e2060",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_00d83200",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x004e2450",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "thunk_FUN_00d837c0",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x004ed210",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_004ed210",
+        "helper_return_probe": {
+          "instruction_count": 14,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": "0x004ed230",
+          "termination": "return"
+        },
+        "instruction_count": 14,
+        "mnemonic_sha256": "a2f6dafa9615ae3f4b350642f3e332054ebe8fbf9b08dc00f4f1932ae15db895",
+        "size": 35
+      },
+      {
+        "address": "0x004f9120",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "thunk_FUN_005054d0",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x004fce10",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_0050df50",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x004fec10",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "thunk_FUN_00419590",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x005038c0",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_005038c0",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 65,
+        "mnemonic_sha256": "2205ad91e8212043bf8859268bfa48ddf96b2848806f7bbc203902616ce0a42b",
+        "size": 197
+      },
+      {
+        "address": "0x00504ca0",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_00504ca0",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 10,
+        "mnemonic_sha256": "9a8de2a183c1af5e82af6bd40178f05ff836452eaf001c6d5db7a928b73af3b8",
+        "size": 31
+      },
+      {
+        "address": "0x00505720",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_00505720",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": "0x00505728",
+          "termination": "return"
+        },
+        "instruction_count": 4,
+        "mnemonic_sha256": "618c13045e60107672d9913f556a107437aa8ed2a3c9e448b92cc77967fb7f5f",
+        "size": 9
+      },
+      {
+        "address": "0x00506220",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_00d89db0",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x0050c640",
+        "direct_unresolved_callsite_count": 14,
+        "ghidra_name": "thunk_FUN_00d8d890",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x0050dfc0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0050dfc0",
+        "helper_return_probe": {
+          "instruction_count": 13,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 86,
+        "mnemonic_sha256": "fce2ab2360ff98a46c8397fe4fdc44228616f13ee971be8e091f0a84b5116d7e",
+        "size": 241
+      },
+      {
+        "address": "0x005106a0",
+        "direct_unresolved_callsite_count": 14,
+        "ghidra_name": "FUN_005106a0",
+        "helper_return_probe": {
+          "instruction_count": 8,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 8,
+        "mnemonic_sha256": "65145d43ee8a11432302712e70b5723166a868037c86c9fc69227c75fe93801e",
+        "size": 19
+      },
+      {
+        "address": "0x00513690",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00513690",
+        "helper_return_probe": {
+          "instruction_count": 2,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 2,
+        "mnemonic_sha256": "176a39ed845abe7a6fbe51c430190743abeda60e4c62b6f9c3b68280720750d4",
+        "size": 11
+      },
+      {
+        "address": "0x00513990",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00513990",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 36,
+        "mnemonic_sha256": "6cfb45f0454c5154f15e1e2317d314b170514db8826ddb9e601814a1e55bfd34",
+        "size": 100
+      },
+      {
+        "address": "0x00514510",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "thunk_FUN_00d92e10",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x00515b70",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00515b70",
+        "helper_return_probe": {
+          "instruction_count": 2,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 2,
+        "mnemonic_sha256": "176a39ed845abe7a6fbe51c430190743abeda60e4c62b6f9c3b68280720750d4",
+        "size": 11
+      },
+      {
+        "address": "0x00516ce0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "thunk_FUN_00d93960",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x005176b0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_005176b0",
+        "helper_return_probe": {
+          "instruction_count": 2,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 2,
+        "mnemonic_sha256": "176a39ed845abe7a6fbe51c430190743abeda60e4c62b6f9c3b68280720750d4",
+        "size": 11
+      },
+      {
+        "address": "0x005184e0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_005184e0",
+        "helper_return_probe": {
+          "instruction_count": 2,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 2,
+        "mnemonic_sha256": "176a39ed845abe7a6fbe51c430190743abeda60e4c62b6f9c3b68280720750d4",
+        "size": 11
+      },
+      {
+        "address": "0x00519040",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00519040",
+        "helper_return_probe": {
+          "instruction_count": 3,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 80,
+        "mnemonic_sha256": "b4bc4ce2005b3369afe8ba37d9350cd2eb84e1838223e1a596b35902fbf5dc39",
+        "size": 244
+      },
+      {
+        "address": "0x00534e00",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00534e00",
+        "helper_return_probe": {
+          "instruction_count": 11,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 60,
+        "mnemonic_sha256": "d3173b7b24ab011978a503d2189c61c7fa77849d5d0a84ae604705891fba12d8",
+        "size": 188
+      },
+      {
+        "address": "0x00558640",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_00558640",
+        "helper_return_probe": {
+          "instruction_count": 3,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 8,
+        "mnemonic_sha256": "05e36cb7f553a0a5a230ddee895821ef48cd8e8bdaacc91f4ea69a3dc88e5cc4",
+        "size": 19
+      },
+      {
+        "address": "0x0055d850",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0055d850",
+        "helper_return_probe": {
+          "instruction_count": 9,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 291,
+        "mnemonic_sha256": "b4f77d796ed14999460fc0c4f999b0181eed2d88fe39d9870041cba195703b9c",
+        "size": 924
+      },
+      {
+        "address": "0x00564660",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00564660",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 9,
+        "mnemonic_sha256": "91714710a3bd7a32947ea553a8a5acbe54696afe613f5bfa1bc84029e42d2c63",
+        "size": 23
+      },
+      {
+        "address": "0x00566280",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00566280",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 9,
+        "mnemonic_sha256": "3b672f2e3a4507358b3638f4c8665682868e63f70e11588497d7c75c57c570fc",
+        "size": 24
+      },
+      {
+        "address": "0x0056a7e0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0056a7e0",
+        "helper_return_probe": {
+          "instruction_count": 5,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 31,
+        "mnemonic_sha256": "d3b83f8eb28446d764494ad531bf2a782a840e89532b447014cabf7067cf520d",
+        "size": 93
+      },
+      {
+        "address": "0x0056b970",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0056b970",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "unsupported-stack-adjustment"
+        },
+        "instruction_count": 99,
+        "mnemonic_sha256": "82016381ae206f8854c17440881d51d5e2a599b63e654e01cb11590a830ae700",
+        "size": 249
+      },
+      {
+        "address": "0x005759a0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_005759a0",
+        "helper_return_probe": {
+          "instruction_count": 17,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 86,
+        "mnemonic_sha256": "75676444747d2869f0564e04180e9dc505c23379476b7ac1a974a13f266a8fd3",
+        "size": 259
+      },
+      {
+        "address": "0x00579360",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00579360",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 9,
+        "mnemonic_sha256": "2fde7e25f88d31e19a3a600889ffc9319c3057f169d58de6ae61a9db28d37d77",
+        "size": 27
+      },
+      {
+        "address": "0x005b73a0",
+        "direct_unresolved_callsite_count": 15,
+        "ghidra_name": "FUN_005b73a0",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 19,
+        "mnemonic_sha256": "658cbbc18831dd0fccbda6732fc3777962ca8658b35db59d1c9fc48f4b4283d6",
+        "size": 60
+      },
+      {
+        "address": "0x0063a880",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0063a880",
+        "helper_return_probe": {
+          "instruction_count": 11,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 235,
+        "mnemonic_sha256": "a6a5f2ed97ccf852b6f407ba008c7a09de5e6f0d1f35a49782004d2f527930e1",
+        "size": 770
+      },
+      {
+        "address": "0x0063b830",
+        "direct_unresolved_callsite_count": 8,
+        "ghidra_name": "FUN_0063b830",
+        "helper_return_probe": {
+          "instruction_count": 14,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 17,
+        "mnemonic_sha256": "45471894b2ef71f7c03c61a92e1965b531d69aaea671d4d5a3cfc8e3ace366e4",
+        "size": 45
+      },
+      {
+        "address": "0x00665c50",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00665c50",
+        "helper_return_probe": {
+          "instruction_count": 17,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 137,
+        "mnemonic_sha256": "d762d9e82d386113dc176c86a63592db4050326978522810ed3d8fbec518ee32",
+        "size": 448
+      },
+      {
+        "address": "0x00665e30",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_00665e30",
+        "helper_return_probe": {
+          "instruction_count": 2,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": "0x00665e36",
+          "termination": "return"
+        },
+        "instruction_count": 2,
+        "mnemonic_sha256": "e041bc8dec99de5758e5f6659a7c388f3bfcc288fc3292ada8e4b955a9cc9484",
+        "size": 7
+      },
+      {
+        "address": "0x0066dfd0",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_0066dfd0",
+        "helper_return_probe": {
+          "instruction_count": 3,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 122,
+        "mnemonic_sha256": "d4154c436896611f54c2473e36e6180b92b7ab06a33062c5b743245283badb99",
+        "size": 306
+      },
+      {
+        "address": "0x006c45f0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_006c45f0",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 71,
+        "mnemonic_sha256": "f595fe88d590df73783ab462ef92e07849c0ebbec9eaa5d87192709e00b92a3f",
+        "size": 201
+      },
+      {
+        "address": "0x006c5c80",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_006c5c80",
+        "helper_return_probe": {
+          "instruction_count": 10,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 30,
+        "mnemonic_sha256": "cfea9eee915f0afe2d902752346fa35065cd1a9ea62a46467289f3b3d487687b",
+        "size": 78
+      },
+      {
+        "address": "0x006c7980",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_006c7980",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 80,
+        "mnemonic_sha256": "9ae673b908775ca7e1092eac65c60b1f0652ff976b179d1adb1ee050faf79178",
+        "size": 209
+      },
+      {
+        "address": "0x006e56a0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_006e56a0",
+        "helper_return_probe": {
+          "instruction_count": 12,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 107,
+        "mnemonic_sha256": "a6b376f3e3cac1358a38a17401041e089308f279dd28c72bac63a134865527cd",
+        "size": 377
+      },
+      {
+        "address": "0x007106c0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_007106c0",
+        "helper_return_probe": {
+          "instruction_count": 5,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 43,
+        "mnemonic_sha256": "fb5f38db2a3a2737938af4f96369c5af8c9b9f2cbdd348b5b6702b81bdfb46dc",
+        "size": 177
+      },
+      {
+        "address": "0x00741df0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00741df0",
+        "helper_return_probe": {
+          "instruction_count": 5,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 20,
+        "mnemonic_sha256": "eb3448595ed6026f35e1dfb85040a87e815fefc2fbe1ce519793e22e1a0f572f",
+        "size": 76
+      },
+      {
+        "address": "0x007473b0",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_007473b0",
+        "helper_return_probe": {
+          "instruction_count": 13,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 490,
+        "mnemonic_sha256": "0cec73f901b180e017016dadd59872bd1509107880925f43967448db317ae81e",
+        "size": 1799
+      },
+      {
+        "address": "0x00749340",
+        "direct_unresolved_callsite_count": 17,
+        "ghidra_name": "FUN_00749340",
+        "helper_return_probe": {
+          "instruction_count": 3,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 15,
+        "mnemonic_sha256": "411ea389c05c7128ffd2cd634a839d8ccad94c6b93e05b0d7cb8419bccce1940",
+        "size": 34
+      },
+      {
+        "address": "0x00821be0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00821be0",
+        "helper_return_probe": {
+          "instruction_count": 13,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 164,
+        "mnemonic_sha256": "22a78355632acf0b41b068093035039e6db9c772b8ccf5ace342959a4b2ad7e2",
+        "size": 423
+      },
+      {
+        "address": "0x0082a340",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_0082a340",
+        "helper_return_probe": {
+          "instruction_count": 12,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 39,
+        "mnemonic_sha256": "35c00a52697ce36cd35eed9e829ff3172834e5ba35ddfaa98edbbbc6eb0796bb",
+        "size": 91
+      },
+      {
+        "address": "0x0082edf0",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_0082edf0",
+        "helper_return_probe": {
+          "instruction_count": 3,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 84,
+        "mnemonic_sha256": "51e76855f649a6f8f16d4a680bf9e376179c38bdc248001c3f5edaf8af73c86a",
+        "size": 256
+      },
+      {
+        "address": "0x0082efb0",
+        "direct_unresolved_callsite_count": 6,
+        "ghidra_name": "FUN_0082efb0",
+        "helper_return_probe": {
+          "instruction_count": 2,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 34,
+        "mnemonic_sha256": "741ceb2885f915db68d3d710edd1931d7e12b92e488a64344887be97980f0e1d",
+        "size": 106
+      },
+      {
+        "address": "0x0082f190",
+        "direct_unresolved_callsite_count": 13,
+        "ghidra_name": "FUN_0082f190",
+        "helper_return_probe": {
+          "instruction_count": 2,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 101,
+        "mnemonic_sha256": "f5d558226e5d46fc66eee45d044dac3abb06365143bb3cf6531e7cd41ecc5d42",
+        "size": 333
+      },
+      {
+        "address": "0x00856030",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00856030",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 33,
+        "mnemonic_sha256": "f44ba3482de7043ec932e29aed4a0875630ad2112feb1f815dd42fcdc2331c52",
+        "size": 112
+      },
+      {
+        "address": "0x008613e0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_008613e0",
+        "helper_return_probe": {
+          "instruction_count": 12,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 75,
+        "mnemonic_sha256": "be7d7a9d3b72e76a699b47e4e58ac256220b9838cc61158e08d2f60148908866",
+        "size": 211
+      },
+      {
+        "address": "0x00862080",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00862080",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 11,
+        "mnemonic_sha256": "ebf2fec984a0e4d1acdd4286733a8fab74f13debc08b5e79abebca674e307377",
+        "size": 44
+      },
+      {
+        "address": "0x008dc900",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_008dc900",
+        "helper_return_probe": {
+          "instruction_count": 5,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 17,
+        "mnemonic_sha256": "bcb6f8698a2164e92452eb4edc844295eb4b4bed43817d355ef9cc0b8c103865",
+        "size": 46
+      },
+      {
+        "address": "0x008ecbf0",
+        "direct_unresolved_callsite_count": 6,
+        "ghidra_name": "FUN_008ecbf0",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 56,
+        "mnemonic_sha256": "885eddd2b372242441fa6fc1f227106cc04d8c1bb5ff4e001768db5b1d461d9b",
+        "size": 187
+      },
+      {
+        "address": "0x008f9250",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_008f9250",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 36,
+        "mnemonic_sha256": "2f08dc3c1c8462aade501d28ca2b13dec9668958177a5e1586dd1ed3aacf42d3",
+        "size": 101
+      },
+      {
+        "address": "0x0090e4b6",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "fastzero_I",
+        "helper_return_probe": {
+          "instruction_count": 9,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 24,
+        "mnemonic_sha256": "b4ed2c6c65189025a31da7dc4dfa7c841d978862e406604f89e6437af45b0f30",
+        "size": 79
+      },
+      {
+        "address": "0x009113b5",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "write_char",
+        "helper_return_probe": {
+          "instruction_count": 2,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 15,
+        "mnemonic_sha256": "971e4ec8a4dc67628fae37a4f95cf70729c24f39ef5cf810275a0bdb28f7d8bc",
+        "size": 37
+      },
+      {
+        "address": "0x00911d45",
+        "direct_unresolved_callsite_count": 12,
+        "ghidra_name": "__isctype_l",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 69,
+        "mnemonic_sha256": "4650f8f08445e9767bb559be5e71874b61065ae3fe65b9befc36ab09339106ab",
+        "size": 182
+      },
+      {
+        "address": "0x0091e001",
+        "direct_unresolved_callsite_count": 5,
+        "ghidra_name": "__frnd",
+        "helper_return_probe": {
+          "instruction_count": 9,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": "0x0091e011",
+          "termination": "return"
+        },
+        "instruction_count": 9,
+        "mnemonic_sha256": "fa4d05134de44f39f168dd971ced70fbf7a3fe16e29f3faaf097743a528d0488",
+        "size": 17
+      },
+      {
+        "address": "0x009237a8",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_009237a8",
+        "helper_return_probe": {
+          "instruction_count": 3,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 10,
+        "mnemonic_sha256": "e511fd08a215890f25343a337951c8d133af5fd96b2bc6525a734fa18c71950d",
+        "size": 26
+      },
+      {
+        "address": "0x00927f00",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_00927f00",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 53,
+        "mnemonic_sha256": "43b1c5892aa3e8c20ef7aae9d85343544811226446cf1ce12ec0b028a04168d0",
+        "size": 162
+      },
+      {
+        "address": "0x00929221",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_00929221",
+        "helper_return_probe": {
+          "instruction_count": 10,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 92,
+        "mnemonic_sha256": "645e91457fb91e214e245f3950cb0b859b6d4312ef1d983defde9bf21fc415e0",
+        "size": 251
+      },
+      {
+        "address": "0x0092ba44",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0092ba44",
+        "helper_return_probe": {
+          "instruction_count": 15,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 322,
+        "mnemonic_sha256": "04d050c511d1eea4daec28cb76851c4b17c3e887b105172cc8187d650f84d929",
+        "size": 1339
+      },
+      {
+        "address": "0x0092f826",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_0092f826",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 33,
+        "mnemonic_sha256": "7189717df6cf849236d482f7dcef9161e14d350a6f1e0d655bebb58bb9348ee7",
+        "size": 92
+      },
+      {
+        "address": "0x0092fd71",
+        "direct_unresolved_callsite_count": 7,
+        "ghidra_name": "FUN_0092fd71",
+        "helper_return_probe": {
+          "instruction_count": 15,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 121,
+        "mnemonic_sha256": "f3f07c29f20e55a17edac7b59a7633b755877b46237c572c0a85347288280dbb",
+        "size": 338
+      },
+      {
+        "address": "0x009304ef",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_009304ef",
+        "helper_return_probe": {
+          "instruction_count": 11,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 227,
+        "mnemonic_sha256": "1beed641969c771ed313d6e516cb57dd6a9a5c200a2af5290a4005682b7c7457",
+        "size": 556
+      },
+      {
+        "address": "0x00930773",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00930773",
+        "helper_return_probe": {
+          "instruction_count": 8,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 383,
+        "mnemonic_sha256": "8b7465a57948038fd124655d6d650ca5fa9eb087cd5c7f2209de047ee22f678c",
+        "size": 1230
+      },
+      {
+        "address": "0x009314ab",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_009314ab",
+        "helper_return_probe": {
+          "instruction_count": 11,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 113,
+        "mnemonic_sha256": "7bc3090969bd1399d977918cd399d6944a37e0701e7993f75f64956e6faa4222",
+        "size": 290
+      },
+      {
+        "address": "0x009351d3",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_009351d3",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 210,
+        "mnemonic_sha256": "c02b73ad30aa662ee44d58672249377d762fab0a04e772ae3ab6a4205e44c237",
+        "size": 521
+      },
+      {
+        "address": "0x00935437",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_00935437",
+        "helper_return_probe": {
+          "instruction_count": 10,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 219,
+        "mnemonic_sha256": "d150341dff22c994b4ed65b25eb7c4d8e135d8b9caa8fd087eb0a0345ce86a6b",
+        "size": 660
+      },
+      {
+        "address": "0x00935e52",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_00935e52",
+        "helper_return_probe": {
+          "instruction_count": 10,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 161,
+        "mnemonic_sha256": "bcbe605ad0fa4acb47ee55a513e2ec35813c105760940abc487ad3a2c6d84b6d",
+        "size": 492
+      },
+      {
+        "address": "0x0093bf79",
+        "direct_unresolved_callsite_count": 6,
+        "ghidra_name": "FUN_0093bf79",
+        "helper_return_probe": {
+          "instruction_count": 3,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 14,
+        "mnemonic_sha256": "a73be144c2689a14886e38c03da0b711d4e6df7d0d12f1a0615cd9bdcb18e8c6",
+        "size": 30
+      },
+      {
+        "address": "0x0093ea8a",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_0093ea8a",
+        "helper_return_probe": {
+          "instruction_count": 8,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 83,
+        "mnemonic_sha256": "487560cc88e4df68af53270e188064a1437a687783612936c11ed157dec2fbc8",
+        "size": 224
+      },
+      {
+        "address": "0x0094699d",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "thunk_FUN_0096e9a2",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5
+      },
+      {
+        "address": "0x00953ba1",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_00953ba1",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 347,
+        "mnemonic_sha256": "4fef80076deaace5fe2b708afeca0fbe88cdfedc388745b2de05bb2315b4cc21",
+        "size": 1205
+      },
+      {
+        "address": "0x00954081",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_00954081",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 35,
+        "mnemonic_sha256": "815f9d58eab81f1dc32bff2ed022ea933c23fa15726c7cc493910f89ca1c3bb4",
+        "size": 105
+      },
+      {
+        "address": "0x00957f2d",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_00957f2d",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 107,
+        "mnemonic_sha256": "654c174fc0acbfdf6efd4b6f37bc8d29daac6084917e73cca4e5444114772785",
+        "size": 440
+      },
+      {
+        "address": "0x0095b350",
+        "direct_unresolved_callsite_count": 5,
+        "ghidra_name": "FUN_0095b350",
+        "helper_return_probe": {
+          "instruction_count": 12,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 31,
+        "mnemonic_sha256": "79d50a497e5ae8ca015fb84b732887e363add4d3eb514a0b2ccf9fab9797215e",
+        "size": 77
+      },
+      {
+        "address": "0x0095bf40",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0095bf40",
+        "helper_return_probe": {
+          "instruction_count": 16,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 648,
+        "mnemonic_sha256": "37175c8d43c01837456787b9ec0cf0b8df996f553cad906e59020e6d2583e2c5",
+        "size": 2313
+      },
+      {
+        "address": "0x0095c888",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_0095c888",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 72,
+        "mnemonic_sha256": "880cc4173c9d4eb093f0b1b49e3696437846ed20f383cc582c44a0c5f847b8fa",
+        "size": 278
+      },
+      {
+        "address": "0x0095ef3d",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0095ef3d",
+        "helper_return_probe": {
+          "instruction_count": 16,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 458,
+        "mnemonic_sha256": "d3db7594e7eaaf84d88c5fe4a325fc7de1a9ad5e600aa833a3f34f63b71e0b41",
+        "size": 1763
+      },
+      {
+        "address": "0x0095f65d",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_0095f65d",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 63,
+        "mnemonic_sha256": "b9a9d35d9c90d0c7594d31d2f49a8ee670a149ee3fe705bea5f7f853664b8d39",
+        "size": 245
+      },
+      {
+        "address": "0x0096164f",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0096164f",
+        "helper_return_probe": {
+          "instruction_count": 15,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 363,
+        "mnemonic_sha256": "4abb11ba9d45be69cde0c226d82a3cfcec83f330b57eb050825c83e892a28e9f",
+        "size": 1331
+      },
+      {
+        "address": "0x0096b361",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0096b361",
+        "helper_return_probe": {
+          "instruction_count": 21,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 324,
+        "mnemonic_sha256": "0950288fdb8de1317cfe8ca9d570ae978f11ad525fcf2f68791d2dc954092f5f",
+        "size": 800
+      },
+      {
+        "address": "0x0096b729",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0096b729",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 66,
+        "mnemonic_sha256": "0fdcc231e88aa562259b311633a6e67574c8d46fa50a99d8ce760a518de5a916",
+        "size": 146
+      },
+      {
+        "address": "0x00972098",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00972098",
+        "helper_return_probe": {
+          "instruction_count": 11,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 52,
+        "mnemonic_sha256": "fd3d53173b83a8ab9d03f620406232c93fd12ff121ceed57551b15488f7eb6f8",
+        "size": 150
+      },
+      {
+        "address": "0x00972c06",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_00972c06",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 11,
+        "mnemonic_sha256": "6f43b5a8321d4824573bc8cc2e4b2f2e1423e1a0e1697d0a3a07f14570903d51",
+        "size": 25
+      },
+      {
+        "address": "0x00973662",
+        "direct_unresolved_callsite_count": 36,
+        "ghidra_name": "FUN_00973662",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 41,
+        "mnemonic_sha256": "64416195bc74ec53628b0c9c166109268a8c8ecb3c2b51c23ae607cf44b4de2a",
+        "size": 114
+      },
+      {
+        "address": "0x00974067",
+        "direct_unresolved_callsite_count": 5,
+        "ghidra_name": "FUN_00974067",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 35,
+        "mnemonic_sha256": "c5534b24a71ff4fc74024ed5f6184de6c807e47d32c258cc71ab01ff25c00509",
+        "size": 82
+      },
+      {
+        "address": "0x0097546e",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0097546e",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 6,
+        "mnemonic_sha256": "90e6ce4168feed10986d5e419d3fa999bb7159cd76c8c300bf28d5c3ea7944cc",
+        "size": 23
+      },
+      {
+        "address": "0x00978d4d",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00978d4d",
+        "helper_return_probe": {
+          "instruction_count": 10,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 32,
+        "mnemonic_sha256": "c0783a2352228416b599e9d54844491a207748dc3b25421da70f40c9e90dee08",
+        "size": 81
+      },
+      {
+        "address": "0x0098171c",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0098171c",
+        "helper_return_probe": {
+          "instruction_count": 11,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 346,
+        "mnemonic_sha256": "c5f6a3aaff345d98d3d1b4b3fb6e96dfc1712e5c0854ba933dee301d6db93980",
+        "size": 915
+      },
+      {
+        "address": "0x00981b34",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00981b34",
+        "helper_return_probe": {
+          "instruction_count": 9,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 122,
+        "mnemonic_sha256": "ce4348067fb1a71a6643db4367af4f34501b44c8b16ac3e756b705217c5069b4",
+        "size": 283
+      },
+      {
+        "address": "0x00990710",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00990710",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 118,
+        "mnemonic_sha256": "55dc0752cde624cf492785bb0ac2b466f3d69be32a59b5b1fa04832be474300c",
+        "size": 340
+      },
+      {
+        "address": "0x0099546e",
+        "direct_unresolved_callsite_count": 2,
+        "ghidra_name": "FUN_0099546e",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 281,
+        "mnemonic_sha256": "d9a925f41f2275eac2de7e628cef5642b18ee6459a01fc070091a84ca5940f35",
+        "size": 747
+      },
+      {
+        "address": "0x009957d2",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_009957d2",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": "0x009957d2",
+          "termination": "return"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "e8e7140de480867761f4bdfa2097e3088cdea2efaeb6b264a90c7f895e92ca97",
+        "size": 1
+      },
+      {
+        "address": "0x0099b46a",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_0099b46a",
+        "helper_return_probe": {
+          "instruction_count": 14,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 466,
+        "mnemonic_sha256": "ea76671cb81dfbe6c91256e1f85598ce195fa115d04d6c3dd2c68043ae78c91c",
+        "size": 1490
+      },
+      {
+        "address": "0x0099ebd6",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_0099ebd6",
+        "helper_return_probe": {
+          "instruction_count": 9,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 583,
+        "mnemonic_sha256": "e1ea2b30c2ea2b915fb9fdbf010367fee01e1cea6d760d578bb042e8f0e08241",
+        "size": 1674
+      },
+      {
+        "address": "0x009a33b0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_009a33b0",
+        "helper_return_probe": {
+          "instruction_count": 22,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 77,
+        "mnemonic_sha256": "d0d2b946f1b0a613dc9f3eb50d4794ff9f32d2077fe3a7a4e59ac8c7528805f7",
+        "size": 223
+      },
+      {
+        "address": "0x009a9b67",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_009a9b67",
+        "helper_return_probe": {
+          "instruction_count": 9,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 157,
+        "mnemonic_sha256": "0a57490c5a477092f4a9b4f550a1f1343252370a4814c92b575bfbb7975bf943",
+        "size": 364
+      },
+      {
+        "address": "0x009af6c2",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_009af6c2",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 53,
+        "mnemonic_sha256": "9a387e7a4dcec329f941d9d4b34135d58121d3fdf71f5c1d87e0d6b94319fa40",
+        "size": 116
+      },
+      {
+        "address": "0x009b3900",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_009b3900",
+        "helper_return_probe": {
+          "instruction_count": 32,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 141,
+        "mnemonic_sha256": "6f371dd873fd49f6e22a80cb2cd5f5402e9b4a84e40a518ecd39836fe05c3317",
+        "size": 484
+      },
+      {
+        "address": "0x009cf5c0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_009cf5c0",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": "0x009cf5cf",
+          "termination": "return"
+        },
+        "instruction_count": 6,
+        "mnemonic_sha256": "911391698806d3f4e0805507ab5e4ae18512d7cdbf88d47a9de056959f9ab63f",
+        "size": 18
+      },
+      {
+        "address": "0x009e8370",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_009e8370",
+        "helper_return_probe": {
+          "instruction_count": 5,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 38,
+        "mnemonic_sha256": "d3d4fc3fa0bd8f25fc7a6d68c978627f6e9facea19872d80d9fdfca04bc42b08",
+        "size": 96
+      },
+      {
+        "address": "0x009f3810",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_009f3810",
+        "helper_return_probe": {
+          "instruction_count": 5,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 97,
+        "mnemonic_sha256": "7c3b285a87a04b56249c547fd5711b13966a346401648297e1eff6141510a6e1",
+        "size": 330
+      },
+      {
+        "address": "0x009f6f40",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_009f6f40",
+        "helper_return_probe": {
+          "instruction_count": 9,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 36,
+        "mnemonic_sha256": "2117f192d6c316e218a6dae0b1b86754130326b6e205c831fb87af7b58f1efc8",
+        "size": 110
+      },
+      {
+        "address": "0x009f8640",
+        "direct_unresolved_callsite_count": 3,
+        "ghidra_name": "FUN_009f8640",
+        "helper_return_probe": {
+          "instruction_count": 9,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 52,
+        "mnemonic_sha256": "03e6b88207e6dac590300d4066f8cc807ceafcb9057ccdbd895d391a5961c987",
+        "size": 136
+      },
+      {
+        "address": "0x009ffee0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_009ffee0",
+        "helper_return_probe": {
+          "instruction_count": 10,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 27,
+        "mnemonic_sha256": "777601b27e30b6e4cc3042911c0e588870f7a9bc2f83deafa78ba5e89ec52c51",
+        "size": 103
+      },
+      {
+        "address": "0x00a052f0",
+        "direct_unresolved_callsite_count": 101,
+        "ghidra_name": "FUN_00a052f0",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 68,
+        "mnemonic_sha256": "b742faa4d71b90828bbfe696aea9e9db8b661c1a27be7a5a904d5bb60980ed42",
+        "size": 173
+      },
+      {
+        "address": "0x00a10b30",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00a10b30",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 30,
+        "mnemonic_sha256": "24fe6c17202201c76c3ebb5c9b3855eb6b2eb91ebf94a89c72a2887612042b75",
+        "size": 91
+      },
+      {
+        "address": "0x00a24410",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00a24410",
+        "helper_return_probe": {
+          "instruction_count": 3,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "unsupported-stack-adjustment"
+        },
+        "instruction_count": 85,
+        "mnemonic_sha256": "06d3e7f125f27318a3da47f6fe3ec49f582f0fb7083d7c575ca0bb023cbe2ccf",
+        "size": 279
+      },
+      {
+        "address": "0x00a297e0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00a297e0",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 8,
+        "mnemonic_sha256": "3785f0d0f6a843247886c9818503330f2452bc53f63477007a8ed3fac7aaf580",
+        "size": 24
+      },
+      {
+        "address": "0x00a34cd0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00a34cd0",
+        "helper_return_probe": {
+          "instruction_count": 16,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 59,
+        "mnemonic_sha256": "cb7d7db2eb5f3610ee2052a2289d42dd2f6e800880d4a1011e82ba0c615cef94",
+        "size": 130
+      },
+      {
+        "address": "0x00a37370",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00a37370",
+        "helper_return_probe": {
+          "instruction_count": 19,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": "0x00a373bd",
+          "termination": "return"
+        },
+        "instruction_count": 19,
+        "mnemonic_sha256": "887b37552e6bbc7e5df7d93b6c0138ddfa6d07326bbc9669f727c393785ccde1",
+        "size": 78
+      },
+      {
+        "address": "0x00a419b0",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00a419b0",
+        "helper_return_probe": {
+          "instruction_count": 16,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 65,
+        "mnemonic_sha256": "165b3d23b6560f761f0f8e8e5e30b4d34e8f773294933cfb5a6b140cc19e5e7c",
+        "size": 175
+      },
+      {
+        "address": "0x00a4a760",
+        "direct_unresolved_callsite_count": 7,
+        "ghidra_name": "FUN_00a4a760",
+        "helper_return_probe": {
+          "instruction_count": 2,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 14,
+        "mnemonic_sha256": "8e5841a11f7c0d0a435c187248431736380d210c39bf6b0d7036d7c26a894345",
+        "size": 40
+      },
+      {
+        "address": "0x00a60147",
+        "direct_unresolved_callsite_count": 1,
+        "ghidra_name": "FUN_00a60147",
+        "helper_return_probe": {
+          "instruction_count": 5,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 9,
+        "mnemonic_sha256": "095954239e874d7d22a853f7489461bb4b46034fb22f38c1949aec7e1a8beb26",
+        "size": 21
+      }
+    ],
+    "target_function_count": 170
+  },
+  "limits": [
+    "Ghidra callgraph edge matches confirm only the listed direct callsite/target pairs; unmatched objdump calls and targets remain unresolved.",
+    "The 96-instruction helper probe starts at each exact Ghidra function entry and stops at the first call, branch/trap, return, unsupported stack adjustment, or probe bound.",
+    "A negative helper probe result does not exclude alternate control-flow paths, persisted return values, indirect callees, or other address-construction patterns.",
+    "Exported assembly/P-code bodies do not by themselves establish function names, receiver identity, or manager+0x374 -> HDVehicle+0x4330 identity."
+  ],
+  "next_step": "Continue the independent opaque/external manager-root search and exact manager+0x374 -> HDVehicle+0x4330 identity join; adjudicate slot2 only from that join.",
+  "objdump_unresolved_direct_calls": {
+    "callsite_count": 669,
+    "exact_callgraph_matches": [
+      {
+        "caller_function": "0x004068e0",
+        "callsite": "0x00406953",
+        "target_function": "0x0048c3a0"
+      },
+      {
+        "caller_function": "0x004073f0",
+        "callsite": "0x004074af",
+        "target_function": "0x00406370"
+      },
+      {
+        "caller_function": "0x00407920",
+        "callsite": "0x00407939",
+        "target_function": "0x00504ca0"
+      },
+      {
+        "caller_function": "0x0040a5d0",
+        "callsite": "0x0040a5f5",
+        "target_function": "0x004deb30"
+      },
+      {
+        "caller_function": "0x0040b5d0",
+        "callsite": "0x0040b5ea",
+        "target_function": "0x00426ce0"
+      },
+      {
+        "caller_function": "0x0040c8a0",
+        "callsite": "0x0040c8fb",
+        "target_function": "0x0042f130"
+      },
+      {
+        "caller_function": "0x0040cce0",
+        "callsite": "0x0040cd1e",
+        "target_function": "0x005106a0"
+      },
+      {
+        "caller_function": "0x0040dd60",
+        "callsite": "0x0040e2bb",
+        "target_function": "0x005106a0"
+      },
+      {
+        "caller_function": "0x0040e460",
+        "callsite": "0x0040e4b4",
+        "target_function": "0x0040b080"
+      },
+      {
+        "caller_function": "0x00414a80",
+        "callsite": "0x00414acb",
+        "target_function": "0x00415900"
+      },
+      {
+        "caller_function": "0x00417860",
+        "callsite": "0x00417b1d",
+        "target_function": "0x00417810"
+      },
+      {
+        "caller_function": "0x0041cbf0",
+        "callsite": "0x0041cbf9",
+        "target_function": "0x0041ae80"
+      },
+      {
+        "caller_function": "0x0041cc10",
+        "callsite": "0x0041cc19",
+        "target_function": "0x0041ae80"
+      },
+      {
+        "caller_function": "0x0041cc30",
+        "callsite": "0x0041cc39",
+        "target_function": "0x0041ae80"
+      },
+      {
+        "caller_function": "0x0041cc50",
+        "callsite": "0x0041cc5c",
+        "target_function": "0x0041ae80"
+      },
+      {
+        "caller_function": "0x0041cc70",
+        "callsite": "0x0041cc7c",
+        "target_function": "0x0041ae80"
+      },
+      {
+        "caller_function": "0x0041cc90",
+        "callsite": "0x0041cc9c",
+        "target_function": "0x0041ae80"
+      },
+      {
+        "caller_function": "0x0041ccb0",
+        "callsite": "0x0041ccbc",
+        "target_function": "0x0041ae80"
+      },
+      {
+        "caller_function": "0x0041ccd0",
+        "callsite": "0x0041ccdc",
+        "target_function": "0x0041ae80"
+      },
+      {
+        "caller_function": "0x0041ccf0",
+        "callsite": "0x0041ccfc",
+        "target_function": "0x0041ae80"
+      },
+      {
+        "caller_function": "0x0041cd10",
+        "callsite": "0x0041cd1c",
+        "target_function": "0x0041ae80"
+      },
+      {
+        "caller_function": "0x0041cd30",
+        "callsite": "0x0041cd3c",
+        "target_function": "0x0041ae80"
+      },
+      {
+        "caller_function": "0x0041ce10",
+        "callsite": "0x0041ce8d",
+        "target_function": "0x0043ceb0"
+      },
+      {
+        "caller_function": "0x004270f0",
+        "callsite": "0x00427130",
+        "target_function": "0x0041c790"
+      },
+      {
+        "caller_function": "0x0042f050",
+        "callsite": "0x0042f0c2",
+        "target_function": "0x0042ee30"
+      },
+      {
+        "caller_function": "0x004318f0",
+        "callsite": "0x00431915",
+        "target_function": "0x00415900"
+      },
+      {
+        "caller_function": "0x004326e0",
+        "callsite": "0x00432787",
+        "target_function": "0x0042ff20"
+      },
+      {
+        "caller_function": "0x00432830",
+        "callsite": "0x004329ac",
+        "target_function": "0x0042ff20"
+      },
+      {
+        "caller_function": "0x004337b0",
+        "callsite": "0x004337f5",
+        "target_function": "0x0042f270"
+      },
+      {
+        "caller_function": "0x004342e0",
+        "callsite": "0x00434352",
+        "target_function": "0x00433d80"
+      },
+      {
+        "caller_function": "0x0043c490",
+        "callsite": "0x0043c4ad",
+        "target_function": "0x0043bee0"
+      },
+      {
+        "caller_function": "0x0043ff70",
+        "callsite": "0x0043ff96",
+        "target_function": "0x005106a0"
+      },
+      {
+        "caller_function": "0x0044f2c0",
+        "callsite": "0x0044f2f2",
+        "target_function": "0x00454b50"
+      },
+      {
+        "caller_function": "0x00450120",
+        "callsite": "0x00450fca",
+        "target_function": "0x0050c640"
+      },
+      {
+        "caller_function": "0x00450120",
+        "callsite": "0x00450fe1",
+        "target_function": "0x0050c640"
+      },
+      {
+        "caller_function": "0x00450120",
+        "callsite": "0x00450ff8",
+        "target_function": "0x0050c640"
+      },
+      {
+        "caller_function": "0x00450120",
+        "callsite": "0x0045100f",
+        "target_function": "0x0050c640"
+      },
+      {
+        "caller_function": "0x00450120",
+        "callsite": "0x00451026",
+        "target_function": "0x0050c640"
+      },
+      {
+        "caller_function": "0x00450120",
+        "callsite": "0x0045103d",
+        "target_function": "0x0050c640"
+      },
+      {
+        "caller_function": "0x00450120",
+        "callsite": "0x00451054",
+        "target_function": "0x0050c640"
+      },
+      {
+        "caller_function": "0x00450120",
+        "callsite": "0x0045106b",
+        "target_function": "0x0050c640"
+      },
+      {
+        "caller_function": "0x00450120",
+        "callsite": "0x00451082",
+        "target_function": "0x0050c640"
+      },
+      {
+        "caller_function": "0x00450120",
+        "callsite": "0x00451099",
+        "target_function": "0x0050c640"
+      },
+      {
+        "caller_function": "0x00450120",
+        "callsite": "0x004510b0",
+        "target_function": "0x0050c640"
+      },
+      {
+        "caller_function": "0x00451280",
+        "callsite": "0x004513b1",
+        "target_function": "0x0044aaa0"
+      },
+      {
+        "caller_function": "0x00459e60",
+        "callsite": "0x00459e9d",
+        "target_function": "0x00483b90"
+      },
+      {
+        "caller_function": "0x0045f640",
+        "callsite": "0x0045f8dd",
+        "target_function": "0x004042b0"
+      },
+      {
+        "caller_function": "0x0045f640",
+        "callsite": "0x0045f8eb",
+        "target_function": "0x004042b0"
+      },
+      {
+        "caller_function": "0x00463780",
+        "callsite": "0x00463881",
+        "target_function": "0x0045e110"
+      },
+      {
+        "caller_function": "0x00464900",
+        "callsite": "0x00464ab4",
+        "target_function": "0x0045c960"
+      },
+      {
+        "caller_function": "0x004651f0",
+        "callsite": "0x00465336",
+        "target_function": "0x00470440"
+      },
+      {
+        "caller_function": "0x00466650",
+        "callsite": "0x004667b9",
+        "target_function": "0x004042b0"
+      },
+      {
+        "caller_function": "0x00466650",
+        "callsite": "0x004667d9",
+        "target_function": "0x004042b0"
+      },
+      {
+        "caller_function": "0x00467e50",
+        "callsite": "0x00467e5b",
+        "target_function": "0x0040b990"
+      },
+      {
+        "caller_function": "0x004692e0",
+        "callsite": "0x00469417",
+        "target_function": "0x0045eaa0"
+      },
+      {
+        "caller_function": "0x004692e0",
+        "callsite": "0x0046944d",
+        "target_function": "0x0045c000"
+      },
+      {
+        "caller_function": "0x0046d7b0",
+        "callsite": "0x0046e1a3",
+        "target_function": "0x004b0dc0"
+      },
+      {
+        "caller_function": "0x0046fea0",
+        "callsite": "0x0046feb4",
+        "target_function": "0x005106a0"
+      },
+      {
+        "caller_function": "0x004743f0",
+        "callsite": "0x00474402",
+        "target_function": "0x0050c640"
+      },
+      {
+        "caller_function": "0x004745a0",
+        "callsite": "0x00474664",
+        "target_function": "0x00475410"
+      },
+      {
+        "caller_function": "0x00477cd0",
+        "callsite": "0x00477f06",
+        "target_function": "0x00475410"
+      },
+      {
+        "caller_function": "0x0047814c",
+        "callsite": "0x004781ad",
+        "target_function": "0x00475410"
+      },
+      {
+        "caller_function": "0x00478c10",
+        "callsite": "0x00478c43",
+        "target_function": "0x00514510"
+      },
+      {
+        "caller_function": "0x00484cb0",
+        "callsite": "0x00484cc4",
+        "target_function": "0x00480880"
+      },
+      {
+        "caller_function": "0x004891b0",
+        "callsite": "0x0048929d",
+        "target_function": "0x00487460"
+      },
+      {
+        "caller_function": "0x0048bbc0",
+        "callsite": "0x0048bdcc",
+        "target_function": "0x004855f0"
+      },
+      {
+        "caller_function": "0x0048e820",
+        "callsite": "0x0048e88a",
+        "target_function": "0x00469730"
+      },
+      {
+        "caller_function": "0x004906a0",
+        "callsite": "0x0049075e",
+        "target_function": "0x004bb7e0"
+      },
+      {
+        "caller_function": "0x00491ef0",
+        "callsite": "0x004921ac",
+        "target_function": "0x00470440"
+      },
+      {
+        "caller_function": "0x00494422",
+        "callsite": "0x00494598",
+        "target_function": "0x00470440"
+      },
+      {
+        "caller_function": "0x00494422",
+        "callsite": "0x004945a3",
+        "target_function": "0x00470440"
+      },
+      {
+        "caller_function": "0x00494422",
+        "callsite": "0x004945cc",
+        "target_function": "0x00470440"
+      },
+      {
+        "caller_function": "0x00495290",
+        "callsite": "0x004952f6",
+        "target_function": "0x00470440"
+      },
+      {
+        "caller_function": "0x00496e80",
+        "callsite": "0x00496ef0",
+        "target_function": "0x00495c30"
+      },
+      {
+        "caller_function": "0x00496e80",
+        "callsite": "0x00496efe",
+        "target_function": "0x00495c30"
+      },
+      {
+        "caller_function": "0x00496f40",
+        "callsite": "0x00497000",
+        "target_function": "0x004937d0"
+      },
+      {
+        "caller_function": "0x00496f40",
+        "callsite": "0x00497137",
+        "target_function": "0x004937d0"
+      },
+      {
+        "caller_function": "0x00497fb0",
+        "callsite": "0x004980b6",
+        "target_function": "0x0045e110"
+      },
+      {
+        "caller_function": "0x00498140",
+        "callsite": "0x0049829a",
+        "target_function": "0x004042b0"
+      },
+      {
+        "caller_function": "0x00498670",
+        "callsite": "0x00498751",
+        "target_function": "0x004042b0"
+      },
+      {
+        "caller_function": "0x00499cc0",
+        "callsite": "0x00499d1e",
+        "target_function": "0x00499240"
+      },
+      {
+        "caller_function": "0x0049cb00",
+        "callsite": "0x0049cb46",
+        "target_function": "0x0049c760"
+      },
+      {
+        "caller_function": "0x004ac6a0",
+        "callsite": "0x004ac6bc",
+        "target_function": "0x004aa2d0"
+      },
+      {
+        "caller_function": "0x004ac7e0",
+        "callsite": "0x004ac8dc",
+        "target_function": "0x004aa2d0"
+      },
+      {
+        "caller_function": "0x004ad3a0",
+        "callsite": "0x004ad514",
+        "target_function": "0x004a91b0"
+      },
+      {
+        "caller_function": "0x004ad3a0",
+        "callsite": "0x004ad551",
+        "target_function": "0x004a91b0"
+      },
+      {
+        "caller_function": "0x004ad3a0",
+        "callsite": "0x004ad58d",
+        "target_function": "0x004a91b0"
+      },
+      {
+        "caller_function": "0x004ad3a0",
+        "callsite": "0x004ad5cd",
+        "target_function": "0x004a91b0"
+      },
+      {
+        "caller_function": "0x004ad3a0",
+        "callsite": "0x004ad5f2",
+        "target_function": "0x004a91b0"
+      },
+      {
+        "caller_function": "0x004ad3a0",
+        "callsite": "0x004ad617",
+        "target_function": "0x004a91b0"
+      },
+      {
+        "caller_function": "0x004ad3a0",
+        "callsite": "0x004ad643",
+        "target_function": "0x004a91b0"
+      },
+      {
+        "caller_function": "0x004ad3a0",
+        "callsite": "0x004ad683",
+        "target_function": "0x004a91b0"
+      },
+      {
+        "caller_function": "0x004ad3a0",
+        "callsite": "0x004ad6a8",
+        "target_function": "0x004a91b0"
+      },
+      {
+        "caller_function": "0x004ad3a0",
+        "callsite": "0x004ad6cd",
+        "target_function": "0x004a91b0"
+      },
+      {
+        "caller_function": "0x004ad3a0",
+        "callsite": "0x004ad6f5",
+        "target_function": "0x004a91b0"
+      },
+      {
+        "caller_function": "0x004b4e70",
+        "callsite": "0x004b4e78",
+        "target_function": "0x004b44e0"
+      },
+      {
+        "caller_function": "0x004b6cc0",
+        "callsite": "0x004b6e99",
+        "target_function": "0x004042b0"
+      },
+      {
+        "caller_function": "0x004bb820",
+        "callsite": "0x004bb933",
+        "target_function": "0x004042b0"
+      },
+      {
+        "caller_function": "0x004bbb80",
+        "callsite": "0x004bbeed",
+        "target_function": "0x00403d90"
+      },
+      {
+        "caller_function": "0x004bc3c0",
+        "callsite": "0x004bc5ef",
+        "target_function": "0x004042b0"
+      },
+      {
+        "caller_function": "0x004bc3c0",
+        "callsite": "0x004bc86f",
+        "target_function": "0x004042b0"
+      },
+      {
+        "caller_function": "0x004c22a0",
+        "callsite": "0x004c22ce",
+        "target_function": "0x005106a0"
+      },
+      {
+        "caller_function": "0x004c4160",
+        "callsite": "0x004c4196",
+        "target_function": "0x005106a0"
+      },
+      {
+        "caller_function": "0x004c4160",
+        "callsite": "0x004c4202",
+        "target_function": "0x005106a0"
+      },
+      {
+        "caller_function": "0x004cf800",
+        "callsite": "0x004cf8f2",
+        "target_function": "0x00427500"
+      },
+      {
+        "caller_function": "0x004d0a30",
+        "callsite": "0x004d0a7a",
+        "target_function": "0x004d0870"
+      },
+      {
+        "caller_function": "0x004d0a30",
+        "callsite": "0x004d0b59",
+        "target_function": "0x004d0870"
+      },
+      {
+        "caller_function": "0x004d1840",
+        "callsite": "0x004d18af",
+        "target_function": "0x005106a0"
+      },
+      {
+        "caller_function": "0x004d4010",
+        "callsite": "0x004d40e8",
+        "target_function": "0x00504ca0"
+      },
+      {
+        "caller_function": "0x004d4960",
+        "callsite": "0x004d4a22",
+        "target_function": "0x00406370"
+      },
+      {
+        "caller_function": "0x004d5b50",
+        "callsite": "0x004d5d01",
+        "target_function": "0x00504ca0"
+      },
+      {
+        "caller_function": "0x004d6700",
+        "callsite": "0x004d676d",
+        "target_function": "0x00406370"
+      },
+      {
+        "caller_function": "0x004d7c10",
+        "callsite": "0x004d7c8b",
+        "target_function": "0x00406370"
+      },
+      {
+        "caller_function": "0x004ddb00",
+        "callsite": "0x004ddb60",
+        "target_function": "0x00506220"
+      },
+      {
+        "caller_function": "0x004e0ae0",
+        "callsite": "0x004e0b6e",
+        "target_function": "0x004fec10"
+      },
+      {
+        "caller_function": "0x004e17f0",
+        "callsite": "0x004e1911",
+        "target_function": "0x004e0340"
+      },
+      {
+        "caller_function": "0x004e17f0",
+        "callsite": "0x004e1925",
+        "target_function": "0x004e0340"
+      },
+      {
+        "caller_function": "0x004e17f0",
+        "callsite": "0x004e1939",
+        "target_function": "0x004e0340"
+      },
+      {
+        "caller_function": "0x004ed710",
+        "callsite": "0x004ed7f8",
+        "target_function": "0x004fec10"
+      },
+      {
+        "caller_function": "0x004edae0",
+        "callsite": "0x004edbd7",
+        "target_function": "0x004e0340"
+      },
+      {
+        "caller_function": "0x004f9170",
+        "callsite": "0x004f9177",
+        "target_function": "0x004f9120"
+      },
+      {
+        "caller_function": "0x00500a10",
+        "callsite": "0x00500a3d",
+        "target_function": "0x004fce10"
+      },
+      {
+        "caller_function": "0x00503b10",
+        "callsite": "0x00503b24",
+        "target_function": "0x005038c0"
+      },
+      {
+        "caller_function": "0x00507010",
+        "callsite": "0x00507152",
+        "target_function": "0x00505720"
+      },
+      {
+        "caller_function": "0x0050734a",
+        "callsite": "0x00507358",
+        "target_function": "0x00505720"
+      },
+      {
+        "caller_function": "0x0050e490",
+        "callsite": "0x0050e496",
+        "target_function": "0x0050dfc0"
+      },
+      {
+        "caller_function": "0x00513740",
+        "callsite": "0x00513746",
+        "target_function": "0x00513690"
+      },
+      {
+        "caller_function": "0x00513db0",
+        "callsite": "0x00513e31",
+        "target_function": "0x00513990"
+      },
+      {
+        "caller_function": "0x00515ba0",
+        "callsite": "0x00515ba6",
+        "target_function": "0x00515b70"
+      },
+      {
+        "caller_function": "0x00517020",
+        "callsite": "0x005170d5",
+        "target_function": "0x00516ce0"
+      },
+      {
+        "caller_function": "0x005176e0",
+        "callsite": "0x005176e6",
+        "target_function": "0x005176b0"
+      },
+      {
+        "caller_function": "0x00518000",
+        "callsite": "0x00518058",
+        "target_function": "0x00514510"
+      },
+      {
+        "caller_function": "0x005185a0",
+        "callsite": "0x005185a6",
+        "target_function": "0x005184e0"
+      },
+      {
+        "caller_function": "0x0051cfe0",
+        "callsite": "0x0051cff7",
+        "target_function": "0x005106a0"
+      },
+      {
+        "caller_function": "0x0051e800",
+        "callsite": "0x0051e836",
+        "target_function": "0x005106a0"
+      },
+      {
+        "caller_function": "0x005200b0",
+        "callsite": "0x005200ed",
+        "target_function": "0x00519040"
+      },
+      {
+        "caller_function": "0x00526e20",
+        "callsite": "0x00526e29",
+        "target_function": "0x0041ae80"
+      },
+      {
+        "caller_function": "0x005352f0",
+        "callsite": "0x0053540e",
+        "target_function": "0x00534e00"
+      },
+      {
+        "caller_function": "0x0054d4a0",
+        "callsite": "0x0054d4ae",
+        "target_function": "0x004c2500"
+      },
+      {
+        "caller_function": "0x00550800",
+        "callsite": "0x00550894",
+        "target_function": "0x00419020"
+      },
+      {
+        "caller_function": "0x005510a0",
+        "callsite": "0x00551198",
+        "target_function": "0x00419020"
+      },
+      {
+        "caller_function": "0x005512d0",
+        "callsite": "0x0055134a",
+        "target_function": "0x00419020"
+      },
+      {
+        "caller_function": "0x00551b00",
+        "callsite": "0x00551b35",
+        "target_function": "0x00419020"
+      },
+      {
+        "caller_function": "0x00551b00",
+        "callsite": "0x00551b62",
+        "target_function": "0x00419020"
+      },
+      {
+        "caller_function": "0x00553530",
+        "callsite": "0x00553570",
+        "target_function": "0x00480880"
+      },
+      {
+        "caller_function": "0x00555ec0",
+        "callsite": "0x00555ee0",
+        "target_function": "0x00415900"
+      },
+      {
+        "caller_function": "0x00555f70",
+        "callsite": "0x00555fa1",
+        "target_function": "0x00415900"
+      },
+      {
+        "caller_function": "0x0055aa00",
+        "callsite": "0x0055aa48",
+        "target_function": "0x005106a0"
+      },
+      {
+        "caller_function": "0x0055aba0",
+        "callsite": "0x0055abc2",
+        "target_function": "0x005106a0"
+      },
+      {
+        "caller_function": "0x0055b970",
+        "callsite": "0x0055b9f6",
+        "target_function": "0x005106a0"
+      },
+      {
+        "caller_function": "0x0055dc30",
+        "callsite": "0x0055dd63",
+        "target_function": "0x0055d850"
+      },
+      {
+        "caller_function": "0x0055e6b0",
+        "callsite": "0x0055e868",
+        "target_function": "0x0056a7e0"
+      },
+      {
+        "caller_function": "0x00560b70",
+        "callsite": "0x00560bb4",
+        "target_function": "0x00558640"
+      },
+      {
+        "caller_function": "0x005637f0",
+        "callsite": "0x00563805",
+        "target_function": "0x00558640"
+      },
+      {
+        "caller_function": "0x00564c80",
+        "callsite": "0x00564eac",
+        "target_function": "0x00403d90"
+      },
+      {
+        "caller_function": "0x00572f10",
+        "callsite": "0x00572f44",
+        "target_function": "0x00416e60"
+      },
+      {
+        "caller_function": "0x00577270",
+        "callsite": "0x005772ac",
+        "target_function": "0x005759a0"
+      },
+      {
+        "caller_function": "0x00578660",
+        "callsite": "0x00578794",
+        "target_function": "0x00416e60"
+      },
+      {
+        "caller_function": "0x00578660",
+        "callsite": "0x00578814",
+        "target_function": "0x00416e60"
+      },
+      {
+        "caller_function": "0x00579a00",
+        "callsite": "0x00579a27",
+        "target_function": "0x00579360"
+      },
+      {
+        "caller_function": "0x0057f9c0",
+        "callsite": "0x0057fae3",
+        "target_function": "0x004042b0"
+      },
+      {
+        "caller_function": "0x0057fbe0",
+        "callsite": "0x0057fd4e",
+        "target_function": "0x004042b0"
+      },
+      {
+        "caller_function": "0x005a7b80",
+        "callsite": "0x005a7c5b",
+        "target_function": "0x009957d2"
+      },
+      {
+        "caller_function": "0x005a91d6",
+        "callsite": "0x005a9409",
+        "target_function": "0x005b73a0"
+      },
+      {
+        "caller_function": "0x005a91d6",
+        "callsite": "0x005a9481",
+        "target_function": "0x005b73a0"
+      },
+      {
+        "caller_function": "0x005a91d6",
+        "callsite": "0x005a9499",
+        "target_function": "0x005b73a0"
+      },
+      {
+        "caller_function": "0x005a91d6",
+        "callsite": "0x005a9503",
+        "target_function": "0x005b73a0"
+      },
+      {
+        "caller_function": "0x005b5df0",
+        "callsite": "0x005b5ebc",
+        "target_function": "0x005b73a0"
+      },
+      {
+        "caller_function": "0x005ca610",
+        "callsite": "0x005ca723",
+        "target_function": "0x005b73a0"
+      },
+      {
+        "caller_function": "0x005ca750",
+        "callsite": "0x005ca93e",
+        "target_function": "0x005b73a0"
+      },
+      {
+        "caller_function": "0x005cca10",
+        "callsite": "0x005ccac0",
+        "target_function": "0x005b73a0"
+      },
+      {
+        "caller_function": "0x005cda80",
+        "callsite": "0x005cdbf9",
+        "target_function": "0x005b73a0"
+      },
+      {
+        "caller_function": "0x005cfed0",
+        "callsite": "0x005cff42",
+        "target_function": "0x005b73a0"
+      },
+      {
+        "caller_function": "0x005d2130",
+        "callsite": "0x005d2404",
+        "target_function": "0x005b73a0"
+      },
+      {
+        "caller_function": "0x005d4fe0",
+        "callsite": "0x005d51c4",
+        "target_function": "0x005b73a0"
+      },
+      {
+        "caller_function": "0x005d65c0",
+        "callsite": "0x005d66c6",
+        "target_function": "0x005b73a0"
+      },
+      {
+        "caller_function": "0x005fcaa0",
+        "callsite": "0x005fcca3",
+        "target_function": "0x005b73a0"
+      },
+      {
+        "caller_function": "0x005fd180",
+        "callsite": "0x005fd180",
+        "target_function": "0x005b73a0"
+      },
+      {
+        "caller_function": "0x0061a65a",
+        "callsite": "0x0061a677",
+        "target_function": "0x009957d2"
+      },
+      {
+        "caller_function": "0x0062f000",
+        "callsite": "0x0062f015",
+        "target_function": "0x0063b830"
+      },
+      {
+        "caller_function": "0x0062f070",
+        "callsite": "0x0062f082",
+        "target_function": "0x0063b830"
+      },
+      {
+        "caller_function": "0x0063be30",
+        "callsite": "0x0063be50",
+        "target_function": "0x0063b830"
+      },
+      {
+        "caller_function": "0x00640390",
+        "callsite": "0x0064047e",
+        "target_function": "0x0063a880"
+      },
+      {
+        "caller_function": "0x0064a9c0",
+        "callsite": "0x0064aa33",
+        "target_function": "0x00665c50"
+      },
+      {
+        "caller_function": "0x006565d0",
+        "callsite": "0x006565f9",
+        "target_function": "0x0063b830"
+      },
+      {
+        "caller_function": "0x006565d0",
+        "callsite": "0x00656604",
+        "target_function": "0x0063b830"
+      },
+      {
+        "caller_function": "0x0065f230",
+        "callsite": "0x0065f26c",
+        "target_function": "0x00416e60"
+      },
+      {
+        "caller_function": "0x0065f550",
+        "callsite": "0x0065f56b",
+        "target_function": "0x00665e30"
+      },
+      {
+        "caller_function": "0x00660750",
+        "callsite": "0x00660791",
+        "target_function": "0x00665e30"
+      },
+      {
+        "caller_function": "0x006690d0",
+        "callsite": "0x006690f8",
+        "target_function": "0x0063b830"
+      },
+      {
+        "caller_function": "0x006bb740",
+        "callsite": "0x006bb759",
+        "target_function": "0x006c5c80"
+      },
+      {
+        "caller_function": "0x006c61e0",
+        "callsite": "0x006c62ab",
+        "target_function": "0x006c45f0"
+      },
+      {
+        "caller_function": "0x006c7a60",
+        "callsite": "0x006c7a97",
+        "target_function": "0x006c7980"
+      },
+      {
+        "caller_function": "0x006ec2e0",
+        "callsite": "0x006ec2e9",
+        "target_function": "0x0041ae80"
+      },
+      {
+        "caller_function": "0x007091e0",
+        "callsite": "0x00709214",
+        "target_function": "0x00480880"
+      },
+      {
+        "caller_function": "0x007117e0",
+        "callsite": "0x007118e0",
+        "target_function": "0x007106c0"
+      },
+      {
+        "caller_function": "0x00713340",
+        "callsite": "0x007134b4",
+        "target_function": "0x007473b0"
+      },
+      {
+        "caller_function": "0x00713340",
+        "callsite": "0x00713508",
+        "target_function": "0x007473b0"
+      },
+      {
+        "caller_function": "0x00713820",
+        "callsite": "0x00713839",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x007138b0",
+        "callsite": "0x007138cd",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x00714360",
+        "callsite": "0x007143ab",
+        "target_function": "0x00480880"
+      },
+      {
+        "caller_function": "0x00714c50",
+        "callsite": "0x00714cdd",
+        "target_function": "0x00480880"
+      },
+      {
+        "caller_function": "0x007150b0",
+        "callsite": "0x007150cd",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x0071c400",
+        "callsite": "0x0071c46a",
+        "target_function": "0x004ed210"
+      },
+      {
+        "caller_function": "0x00744110",
+        "callsite": "0x0074416e",
+        "target_function": "0x00741df0"
+      },
+      {
+        "caller_function": "0x00755a60",
+        "callsite": "0x00755e11",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x00755a60",
+        "callsite": "0x00755e75",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x00755a60",
+        "callsite": "0x00755ec3",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x00760b50",
+        "callsite": "0x00760c27",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x0076e560",
+        "callsite": "0x0076e716",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x0076e560",
+        "callsite": "0x0076e950",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x0076e560",
+        "callsite": "0x0076e9a4",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x0076f970",
+        "callsite": "0x0076fe1c",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x00787200",
+        "callsite": "0x0078723b",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x00787680",
+        "callsite": "0x0078768c",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x0079a050",
+        "callsite": "0x0079a56c",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x0079b490",
+        "callsite": "0x0079b55d",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x0079b490",
+        "callsite": "0x0079b5ac",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x0079b490",
+        "callsite": "0x0079b769",
+        "target_function": "0x00749340"
+      },
+      {
+        "caller_function": "0x0079d060",
+        "callsite": "0x0079d092",
+        "target_function": "0x0063b830"
+      },
+      {
+        "caller_function": "0x007abbc0",
+        "callsite": "0x007abc68",
+        "target_function": "0x004e0340"
+      },
+      {
+        "caller_function": "0x007abbc0",
+        "callsite": "0x007abc7c",
+        "target_function": "0x004e0340"
+      },
+      {
+        "caller_function": "0x007abbc0",
+        "callsite": "0x007abc90",
+        "target_function": "0x004e0340"
+      },
+      {
+        "caller_function": "0x007abbc0",
+        "callsite": "0x007abca7",
+        "target_function": "0x004e0340"
+      },
+      {
+        "caller_function": "0x007abbc0",
+        "callsite": "0x007abcbe",
+        "target_function": "0x004e0340"
+      },
+      {
+        "caller_function": "0x007abbc0",
+        "callsite": "0x007abcd5",
+        "target_function": "0x004e0340"
+      },
+      {
+        "caller_function": "0x007e1bd0",
+        "callsite": "0x007e1df6",
+        "target_function": "0x00416e60"
+      },
+      {
+        "caller_function": "0x00822220",
+        "callsite": "0x008222b2",
+        "target_function": "0x00821be0"
+      },
+      {
+        "caller_function": "0x0082a3a0",
+        "callsite": "0x0082a3ec",
+        "target_function": "0x0082a340"
+      },
+      {
+        "caller_function": "0x0082a480",
+        "callsite": "0x0082a4d0",
+        "target_function": "0x0082a340"
+      },
+      {
+        "caller_function": "0x0082f440",
+        "callsite": "0x0082f445",
+        "target_function": "0x0082edf0"
+      },
+      {
+        "caller_function": "0x0082f480",
+        "callsite": "0x0082f485",
+        "target_function": "0x0082edf0"
+      },
+      {
+        "caller_function": "0x008323d0",
+        "callsite": "0x0083257a",
+        "target_function": "0x0063b830"
+      },
+      {
+        "caller_function": "0x00832a80",
+        "callsite": "0x008331b7",
+        "target_function": "0x0082f190"
+      },
+      {
+        "caller_function": "0x00832a80",
+        "callsite": "0x00833229",
+        "target_function": "0x0082f190"
+      },
+      {
+        "caller_function": "0x00832a80",
+        "callsite": "0x008332c2",
+        "target_function": "0x0082efb0"
+      },
+      {
+        "caller_function": "0x00832a80",
+        "callsite": "0x008332f3",
+        "target_function": "0x0082efb0"
+      },
+      {
+        "caller_function": "0x00834c00",
+        "callsite": "0x00834c49",
+        "target_function": "0x0082f190"
+      },
+      {
+        "caller_function": "0x00834c00",
+        "callsite": "0x00834ca8",
+        "target_function": "0x0082f190"
+      },
+      {
+        "caller_function": "0x00834c00",
+        "callsite": "0x00834d40",
+        "target_function": "0x0082efb0"
+      },
+      {
+        "caller_function": "0x008391b0",
+        "callsite": "0x008391d9",
+        "target_function": "0x0082edf0"
+      },
+      {
+        "caller_function": "0x008391b0",
+        "callsite": "0x00839849",
+        "target_function": "0x0082f190"
+      },
+      {
+        "caller_function": "0x008391b0",
+        "callsite": "0x00839920",
+        "target_function": "0x0082f190"
+      },
+      {
+        "caller_function": "0x008391b0",
+        "callsite": "0x008399ee",
+        "target_function": "0x0082f190"
+      },
+      {
+        "caller_function": "0x0084bde0",
+        "callsite": "0x0084be39",
+        "target_function": "0x00856030"
+      },
+      {
+        "caller_function": "0x00850dc0",
+        "callsite": "0x00850dff",
+        "target_function": "0x0082efb0"
+      },
+      {
+        "caller_function": "0x00850e30",
+        "callsite": "0x00850e6f",
+        "target_function": "0x0082efb0"
+      },
+      {
+        "caller_function": "0x00850ea0",
+        "callsite": "0x00850edf",
+        "target_function": "0x0082efb0"
+      },
+      {
+        "caller_function": "0x00853790",
+        "callsite": "0x0085392d",
+        "target_function": "0x0082f190"
+      },
+      {
+        "caller_function": "0x00853790",
+        "callsite": "0x00853b17",
+        "target_function": "0x0082f190"
+      },
+      {
+        "caller_function": "0x0085cd20",
+        "callsite": "0x0085d302",
+        "target_function": "0x0082f190"
+      },
+      {
+        "caller_function": "0x0085cd20",
+        "callsite": "0x0085d3c7",
+        "target_function": "0x0082f190"
+      },
+      {
+        "caller_function": "0x0085cd20",
+        "callsite": "0x0085d4a6",
+        "target_function": "0x0082f190"
+      },
+      {
+        "caller_function": "0x0085cd20",
+        "callsite": "0x0085d54a",
+        "target_function": "0x0082f190"
+      },
+      {
+        "caller_function": "0x008614c0",
+        "callsite": "0x0086167a",
+        "target_function": "0x008613e0"
+      },
+      {
+        "caller_function": "0x00862b10",
+        "callsite": "0x00862b16",
+        "target_function": "0x00862080"
+      },
+      {
+        "caller_function": "0x00867780",
+        "callsite": "0x00867812",
+        "target_function": "0x00416e60"
+      },
+      {
+        "caller_function": "0x008696f0",
+        "callsite": "0x0086989a",
+        "target_function": "0x00416e60"
+      },
+      {
+        "caller_function": "0x0087f4a0",
+        "callsite": "0x0087f511",
+        "target_function": "0x00416e60"
+      },
+      {
+        "caller_function": "0x0087f930",
+        "callsite": "0x0087f9a1",
+        "target_function": "0x00416e60"
+      },
+      {
+        "caller_function": "0x008922a0",
+        "callsite": "0x008922fd",
+        "target_function": "0x0066dfd0"
+      },
+      {
+        "caller_function": "0x008926f0",
+        "callsite": "0x00892739",
+        "target_function": "0x0066dfd0"
+      },
+      {
+        "caller_function": "0x00892bb0",
+        "callsite": "0x00892c4b",
+        "target_function": "0x0066dfd0"
+      },
+      {
+        "caller_function": "0x0089cfb0",
+        "callsite": "0x0089cff6",
+        "target_function": "0x00566280"
+      },
+      {
+        "caller_function": "0x008bdfb0",
+        "callsite": "0x008be0c4",
+        "target_function": "0x00564660"
+      },
+      {
+        "caller_function": "0x008d13d0",
+        "callsite": "0x008d140a",
+        "target_function": "0x00558640"
+      },
+      {
+        "caller_function": "0x008ecd40",
+        "callsite": "0x008ecdea",
+        "target_function": "0x008ecbf0"
+      },
+      {
+        "caller_function": "0x008ecd40",
+        "callsite": "0x008ece0b",
+        "target_function": "0x008ecbf0"
+      },
+      {
+        "caller_function": "0x008ecd40",
+        "callsite": "0x008ecea1",
+        "target_function": "0x008ecbf0"
+      },
+      {
+        "caller_function": "0x008ecd40",
+        "callsite": "0x008ecef2",
+        "target_function": "0x008ecbf0"
+      },
+      {
+        "caller_function": "0x008ecf00",
+        "callsite": "0x008ecfb6",
+        "target_function": "0x008ecbf0"
+      },
+      {
+        "caller_function": "0x008ecf00",
+        "callsite": "0x008ecfc6",
+        "target_function": "0x008ecbf0"
+      },
+      {
+        "caller_function": "0x008efee0",
+        "callsite": "0x008efefe",
+        "target_function": "0x0056b970"
+      },
+      {
+        "caller_function": "0x008f9710",
+        "callsite": "0x008f972f",
+        "target_function": "0x008f9250"
+      },
+      {
+        "caller_function": "0x008ffce0",
+        "callsite": "0x008ffd28",
+        "target_function": "0x008dc900"
+      },
+      {
+        "caller_function": "0x00902aa7",
+        "callsite": "0x00902ad0",
+        "target_function": "0x00911d45"
+      },
+      {
+        "caller_function": "0x00902b26",
+        "callsite": "0x00902b4c",
+        "target_function": "0x00911d45"
+      },
+      {
+        "caller_function": "0x00902b9e",
+        "callsite": "0x00902bc7",
+        "target_function": "0x00911d45"
+      },
+      {
+        "caller_function": "0x00902c1d",
+        "callsite": "0x00902c43",
+        "target_function": "0x00911d45"
+      },
+      {
+        "caller_function": "0x00902c95",
+        "callsite": "0x00902cbe",
+        "target_function": "0x00911d45"
+      },
+      {
+        "caller_function": "0x00902d14",
+        "callsite": "0x00902d3d",
+        "target_function": "0x00911d45"
+      },
+      {
+        "caller_function": "0x0090330b",
+        "callsite": "0x00903365",
+        "target_function": "0x00911d45"
+      },
+      {
+        "caller_function": "0x00903d12",
+        "callsite": "0x00903d7b",
+        "target_function": "0x00911d45"
+      },
+      {
+        "caller_function": "0x00903e40",
+        "callsite": "0x00903ec1",
+        "target_function": "0x00911d45"
+      },
+      {
+        "caller_function": "0x00905ff0",
+        "callsite": "0x00906022",
+        "target_function": "0x00911d45"
+      },
+      {
+        "caller_function": "0x00907737",
+        "callsite": "0x00907764",
+        "target_function": "0x009957d2"
+      },
+      {
+        "caller_function": "0x009079f6",
+        "callsite": "0x00907a7d",
+        "target_function": "0x00911d45"
+      },
+      {
+        "caller_function": "0x00908ce2",
+        "callsite": "0x00908d12",
+        "target_function": "0x00911d45"
+      },
+      {
+        "caller_function": "0x009011e0",
+        "callsite": "0x0090bedd",
+        "target_function": "0x0091e001"
+      },
+      {
+        "caller_function": "0x0090e50d",
+        "callsite": "0x0090e53e",
+        "target_function": "0x0090e4b6"
+      },
+      {
+        "caller_function": "0x00910a80",
+        "callsite": "0x00910a91",
+        "target_function": "0x009113b5"
+      },
+      {
+        "caller_function": "0x009113da",
+        "callsite": "0x009113fe",
+        "target_function": "0x009113b5"
+      },
+      {
+        "caller_function": "0x009113da",
+        "callsite": "0x00911419",
+        "target_function": "0x009113b5"
+      },
+      {
+        "caller_function": "0x00912960",
+        "callsite": "0x00912980",
+        "target_function": "0x0091e001"
+      },
+      {
+        "caller_function": "0x00912960",
+        "callsite": "0x009129a5",
+        "target_function": "0x0091e001"
+      },
+      {
+        "caller_function": "0x00914588",
+        "callsite": "0x0091465a",
+        "target_function": "0x0091e001"
+      },
+      {
+        "caller_function": "0x00915670",
+        "callsite": "0x009156f6",
+        "target_function": "0x0091e001"
+      },
+      {
+        "caller_function": "0x00923a1d",
+        "callsite": "0x00923a38",
+        "target_function": "0x009237a8"
+      },
+      {
+        "caller_function": "0x0092414d",
+        "callsite": "0x0092418b",
+        "target_function": "0x0092ba44"
+      },
+      {
+        "caller_function": "0x009255ef",
+        "callsite": "0x00925ba9",
+        "target_function": "0x00935e52"
+      },
+      {
+        "caller_function": "0x009255ef",
+        "callsite": "0x00925c3d",
+        "target_function": "0x00935e52"
+      },
+      {
+        "caller_function": "0x00929432",
+        "callsite": "0x00929489",
+        "target_function": "0x00929221"
+      },
+      {
+        "caller_function": "0x00929a00",
+        "callsite": "0x00929e8c",
+        "target_function": "0x0097546e"
+      },
+      {
+        "caller_function": "0x00929a00",
+        "callsite": "0x0092ad04",
+        "target_function": "0x0092fd71"
+      },
+      {
+        "caller_function": "0x00929a00",
+        "callsite": "0x0092aeaa",
+        "target_function": "0x0092fd71"
+      },
+      {
+        "caller_function": "0x00929a00",
+        "callsite": "0x0092aef0",
+        "target_function": "0x00974067"
+      },
+      {
+        "caller_function": "0x00929a00",
+        "callsite": "0x0092b88a",
+        "target_function": "0x00972c06"
+      },
+      {
+        "caller_function": "0x0092c85a",
+        "callsite": "0x0092cb95",
+        "target_function": "0x00972098"
+      },
+      {
+        "caller_function": "0x0092c85a",
+        "callsite": "0x0092cc79",
+        "target_function": "0x00978d4d"
+      },
+      {
+        "caller_function": "0x0092cd78",
+        "callsite": "0x0092d1dd",
+        "target_function": "0x00929221"
+      },
+      {
+        "caller_function": "0x0092cd78",
+        "callsite": "0x0092d21c",
+        "target_function": "0x009237a8"
+      },
+      {
+        "caller_function": "0x0092f882",
+        "callsite": "0x0092f888",
+        "target_function": "0x0092f826"
+      },
+      {
+        "caller_function": "0x00930773",
+        "callsite": "0x00930803",
+        "target_function": "0x0092f826"
+      },
+      {
+        "caller_function": "0x00930c41",
+        "callsite": "0x00930cd6",
+        "target_function": "0x0092fd71"
+      },
+      {
+        "caller_function": "0x00930c41",
+        "callsite": "0x00930e0a",
+        "target_function": "0x00974067"
+      },
+      {
+        "caller_function": "0x00931a8c",
+        "callsite": "0x00931ad5",
+        "target_function": "0x00929221"
+      },
+      {
+        "caller_function": "0x009356cb",
+        "callsite": "0x0093571b",
+        "target_function": "0x009351d3"
+      },
+      {
+        "caller_function": "0x0093603e",
+        "callsite": "0x009360ad",
+        "target_function": "0x00935437"
+      },
+      {
+        "caller_function": "0x009361e7",
+        "callsite": "0x00936242",
+        "target_function": "0x00935437"
+      },
+      {
+        "caller_function": "0x009362bf",
+        "callsite": "0x009363a3",
+        "target_function": "0x00935e52"
+      },
+      {
+        "caller_function": "0x0093b56f",
+        "callsite": "0x0093b587",
+        "target_function": "0x00972c06"
+      },
+      {
+        "caller_function": "0x0093bfc3",
+        "callsite": "0x0093bfe9",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0093c0ac",
+        "callsite": "0x0093c0c4",
+        "target_function": "0x0093bf79"
+      },
+      {
+        "caller_function": "0x0093c0d8",
+        "callsite": "0x0093c0f0",
+        "target_function": "0x0093bf79"
+      },
+      {
+        "caller_function": "0x0093c104",
+        "callsite": "0x0093c11c",
+        "target_function": "0x0093bf79"
+      },
+      {
+        "caller_function": "0x0093ef95",
+        "callsite": "0x0093f01e",
+        "target_function": "0x0093ea8a"
+      },
+      {
+        "caller_function": "0x0093f0ae",
+        "callsite": "0x0093f1b6",
+        "target_function": "0x0093ea8a"
+      },
+      {
+        "caller_function": "0x00946a20",
+        "callsite": "0x00946a37",
+        "target_function": "0x0094699d"
+      },
+      {
+        "caller_function": "0x00946a20",
+        "callsite": "0x00946a4b",
+        "target_function": "0x0094699d"
+      },
+      {
+        "caller_function": "0x0094f09f",
+        "callsite": "0x0094f1c6",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0094f09f",
+        "callsite": "0x0094f233",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0094f09f",
+        "callsite": "0x0094f29b",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0094f4ef",
+        "callsite": "0x0094f6e9",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0094f725",
+        "callsite": "0x0094f85b",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0094f895",
+        "callsite": "0x0094fa39",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0094fa8a",
+        "callsite": "0x0094fbeb",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0094fc59",
+        "callsite": "0x0094fcb1",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x00952fe1",
+        "callsite": "0x00953040",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x00953ba1",
+        "callsite": "0x00953d08",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x00954081",
+        "callsite": "0x0095409c",
+        "target_function": "0x00953ba1"
+      },
+      {
+        "caller_function": "0x009540ea",
+        "callsite": "0x009541e0",
+        "target_function": "0x00954081"
+      },
+      {
+        "caller_function": "0x009543be",
+        "callsite": "0x009543df",
+        "target_function": "0x00954081"
+      },
+      {
+        "caller_function": "0x00954435",
+        "callsite": "0x00954aa0",
+        "target_function": "0x00953ba1"
+      },
+      {
+        "caller_function": "0x00954435",
+        "callsite": "0x00954b73",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x00954435",
+        "callsite": "0x00954ba6",
+        "target_function": "0x009314ab"
+      },
+      {
+        "caller_function": "0x0095841f",
+        "callsite": "0x00958470",
+        "target_function": "0x00957f2d"
+      },
+      {
+        "caller_function": "0x009584ea",
+        "callsite": "0x00958502",
+        "target_function": "0x00957f2d"
+      },
+      {
+        "caller_function": "0x00958542",
+        "callsite": "0x00958646",
+        "target_function": "0x00957f2d"
+      },
+      {
+        "caller_function": "0x0095883f",
+        "callsite": "0x0095935a",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0095883f",
+        "callsite": "0x009593f8",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0095883f",
+        "callsite": "0x00959c9e",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0095b564",
+        "callsite": "0x0095b7b2",
+        "target_function": "0x0095b350"
+      },
+      {
+        "caller_function": "0x0095bf40",
+        "callsite": "0x0095c3f5",
+        "target_function": "0x0095b350"
+      },
+      {
+        "caller_function": "0x0095bf40",
+        "callsite": "0x0095c40a",
+        "target_function": "0x0095b350"
+      },
+      {
+        "caller_function": "0x0095bf40",
+        "callsite": "0x0095c444",
+        "target_function": "0x0095b350"
+      },
+      {
+        "caller_function": "0x0095bf40",
+        "callsite": "0x0095c459",
+        "target_function": "0x0095b350"
+      },
+      {
+        "caller_function": "0x0095c888",
+        "callsite": "0x0095c950",
+        "target_function": "0x0095bf40"
+      },
+      {
+        "caller_function": "0x0095cbb3",
+        "callsite": "0x0095cc04",
+        "target_function": "0x0095c888"
+      },
+      {
+        "caller_function": "0x0095cc95",
+        "callsite": "0x0095ccad",
+        "target_function": "0x0095c888"
+      },
+      {
+        "caller_function": "0x0095ccd5",
+        "callsite": "0x0095cdd9",
+        "target_function": "0x0095c888"
+      },
+      {
+        "caller_function": "0x0095cfd2",
+        "callsite": "0x0095d252",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0095cfd2",
+        "callsite": "0x0095dae8",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0095f65d",
+        "callsite": "0x0095f714",
+        "target_function": "0x0095ef3d"
+      },
+      {
+        "caller_function": "0x0095f8fa",
+        "callsite": "0x0095f94b",
+        "target_function": "0x0095f65d"
+      },
+      {
+        "caller_function": "0x0095f9c5",
+        "callsite": "0x0095f9dd",
+        "target_function": "0x0095f65d"
+      },
+      {
+        "caller_function": "0x0095fa05",
+        "callsite": "0x0095fb09",
+        "target_function": "0x0095f65d"
+      },
+      {
+        "caller_function": "0x0095fd02",
+        "callsite": "0x00960080",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0095fd02",
+        "callsite": "0x009603aa",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x00961b82",
+        "callsite": "0x00961c3a",
+        "target_function": "0x0096164f"
+      },
+      {
+        "caller_function": "0x0096223e",
+        "callsite": "0x00962498",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0096223e",
+        "callsite": "0x009625b2",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x00964451",
+        "callsite": "0x009644b6",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x009651e8",
+        "callsite": "0x00965416",
+        "target_function": "0x0099546e"
+      },
+      {
+        "caller_function": "0x00966a90",
+        "callsite": "0x00966b9a",
+        "target_function": "0x0099546e"
+      },
+      {
+        "caller_function": "0x00968c8f",
+        "callsite": "0x00968d03",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x00968c8f",
+        "callsite": "0x00968d64",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x00968c8f",
+        "callsite": "0x00968dc9",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x00968c8f",
+        "callsite": "0x00968e2e",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x00968c8f",
+        "callsite": "0x00968e93",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x00968c8f",
+        "callsite": "0x00968ed3",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x00968c8f",
+        "callsite": "0x00968f3a",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x00968f46",
+        "callsite": "0x00969264",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x009693d8",
+        "callsite": "0x0096966d",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x009693d8",
+        "callsite": "0x009696cf",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x009693d8",
+        "callsite": "0x00969731",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x009693d8",
+        "callsite": "0x00969793",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x009693d8",
+        "callsite": "0x009697f9",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x009693d8",
+        "callsite": "0x009699cf",
+        "target_function": "0x00973662"
+      },
+      {
+        "caller_function": "0x0096b729",
+        "callsite": "0x0096b7a2",
+        "target_function": "0x0096b361"
+      },
+      {
+        "caller_function": "0x0096b7bb",
+        "callsite": "0x0096b8b5",
+        "target_function": "0x0096b729"
+      },
+      {
+        "caller_function": "0x00971055",
+        "callsite": "0x009710d0",
+        "target_function": "0x00930773"
+      },
+      {
+        "caller_function": "0x00972eb3",
+        "callsite": "0x00972eca",
+        "target_function": "0x0093bf79"
+      },
+      {
+        "caller_function": "0x00973869",
+        "callsite": "0x0097396c",
+        "target_function": "0x0092fd71"
+      },
+      {
+        "caller_function": "0x00973b8f",
+        "callsite": "0x00973cf5",
+        "target_function": "0x0092fd71"
+      },
+      {
+        "caller_function": "0x00973b8f",
+        "callsite": "0x00974015",
+        "target_function": "0x009304ef"
+      },
+      {
+        "caller_function": "0x00974067",
+        "callsite": "0x009740ab",
+        "target_function": "0x009304ef"
+      },
+      {
+        "caller_function": "0x00974aa3",
+        "callsite": "0x00974b91",
+        "target_function": "0x00974067"
+      },
+      {
+        "caller_function": "0x009750fa",
+        "callsite": "0x009752c6",
+        "target_function": "0x0092fd71"
+      },
+      {
+        "caller_function": "0x009750fa",
+        "callsite": "0x00975345",
+        "target_function": "0x009304ef"
+      },
+      {
+        "caller_function": "0x009750fa",
+        "callsite": "0x009753fa",
+        "target_function": "0x00974067"
+      },
+      {
+        "caller_function": "0x00977ced",
+        "callsite": "0x00977df1",
+        "target_function": "0x0092fd71"
+      },
+      {
+        "caller_function": "0x00977ced",
+        "callsite": "0x00977e0e",
+        "target_function": "0x00974067"
+      },
+      {
+        "caller_function": "0x009785e5",
+        "callsite": "0x00978b03",
+        "target_function": "0x0099ebd6"
+      },
+      {
+        "caller_function": "0x0097dda2",
+        "callsite": "0x0097e3bb",
+        "target_function": "0x009a33b0"
+      },
+      {
+        "caller_function": "0x00981ca3",
+        "callsite": "0x00981cb5",
+        "target_function": "0x0098171c"
+      },
+      {
+        "caller_function": "0x00981cbe",
+        "callsite": "0x00981dbd",
+        "target_function": "0x00981b34"
+      },
+      {
+        "caller_function": "0x00981eb6",
+        "callsite": "0x009821ff",
+        "target_function": "0x0099ebd6"
+      },
+      {
+        "caller_function": "0x00982347",
+        "callsite": "0x00982826",
+        "target_function": "0x0099ebd6"
+      },
+      {
+        "caller_function": "0x00991e60",
+        "callsite": "0x00991e8c",
+        "target_function": "0x00990710"
+      },
+      {
+        "caller_function": "0x0099bc1c",
+        "callsite": "0x0099bc4c",
+        "target_function": "0x0099b46a"
+      },
+      {
+        "caller_function": "0x009a1ba9",
+        "callsite": "0x009a21ea",
+        "target_function": "0x009b3900"
+      },
+      {
+        "caller_function": "0x009a9d5a",
+        "callsite": "0x009a9e59",
+        "target_function": "0x009a9b67"
+      },
+      {
+        "caller_function": "0x009b62e5",
+        "callsite": "0x009b63a1",
+        "target_function": "0x009af6c2"
+      },
+      {
+        "caller_function": "0x009c18b0",
+        "callsite": "0x009c18f2",
+        "target_function": "0x0093bf79"
+      },
+      {
+        "caller_function": "0x009c3b30",
+        "callsite": "0x009c3bb9",
+        "target_function": "0x00927f00"
+      },
+      {
+        "caller_function": "0x009c3b30",
+        "callsite": "0x009c3da5",
+        "target_function": "0x00927f00"
+      },
+      {
+        "caller_function": "0x009c7570",
+        "callsite": "0x009c75b2",
+        "target_function": "0x0093bf79"
+      },
+      {
+        "caller_function": "0x009d18f0",
+        "callsite": "0x009d18f8",
+        "target_function": "0x009cf5c0"
+      },
+      {
+        "caller_function": "0x009eb6e0",
+        "callsite": "0x009eb710",
+        "target_function": "0x009e8370"
+      },
+      {
+        "caller_function": "0x009f9b70",
+        "callsite": "0x009f9bb9",
+        "target_function": "0x009f3810"
+      },
+      {
+        "caller_function": "0x00a060a0",
+        "callsite": "0x00a060d4",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06190",
+        "callsite": "0x00a06211",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06300",
+        "callsite": "0x00a06332",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06300",
+        "callsite": "0x00a06388",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06300",
+        "callsite": "0x00a063ca",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06300",
+        "callsite": "0x00a0640c",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06300",
+        "callsite": "0x00a06427",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06300",
+        "callsite": "0x00a06469",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06300",
+        "callsite": "0x00a064a9",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06300",
+        "callsite": "0x00a064ca",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06300",
+        "callsite": "0x00a064ec",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06300",
+        "callsite": "0x00a06510",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06300",
+        "callsite": "0x00a06529",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06540",
+        "callsite": "0x00a06584",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06540",
+        "callsite": "0x00a065c6",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06540",
+        "callsite": "0x00a065e2",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a065f0",
+        "callsite": "0x00a06622",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a065f0",
+        "callsite": "0x00a06664",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a065f0",
+        "callsite": "0x00a066a6",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a065f0",
+        "callsite": "0x00a066c1",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a065f0",
+        "callsite": "0x00a06701",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a065f0",
+        "callsite": "0x00a06722",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a065f0",
+        "callsite": "0x00a06744",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a065f0",
+        "callsite": "0x00a06768",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a065f0",
+        "callsite": "0x00a06781",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06790",
+        "callsite": "0x00a067af",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06790",
+        "callsite": "0x00a067df",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06790",
+        "callsite": "0x00a067fa",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06790",
+        "callsite": "0x00a0682a",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06790",
+        "callsite": "0x00a0686c",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06790",
+        "callsite": "0x00a068ae",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06790",
+        "callsite": "0x00a06904",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06790",
+        "callsite": "0x00a06946",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06790",
+        "callsite": "0x00a06986",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06790",
+        "callsite": "0x00a069a8",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06790",
+        "callsite": "0x00a069c1",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06790",
+        "callsite": "0x00a06a19",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06a30",
+        "callsite": "0x00a06a7c",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06a30",
+        "callsite": "0x00a06abe",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06a30",
+        "callsite": "0x00a06b14",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06a30",
+        "callsite": "0x00a06b56",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06a30",
+        "callsite": "0x00a06b96",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06a30",
+        "callsite": "0x00a06bb7",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06a30",
+        "callsite": "0x00a06bd0",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06a30",
+        "callsite": "0x00a06c28",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06a30",
+        "callsite": "0x00a06daa",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06a30",
+        "callsite": "0x00a06dbb",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06dd0",
+        "callsite": "0x00a06e3a",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a06dd0",
+        "callsite": "0x00a06e50",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a07300",
+        "callsite": "0x00a0731f",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a07360",
+        "callsite": "0x00a0765e",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a07da0",
+        "callsite": "0x00a07eb6",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a08350",
+        "callsite": "0x00a08422",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a08350",
+        "callsite": "0x00a0843c",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a084b0",
+        "callsite": "0x00a085c6",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a084b0",
+        "callsite": "0x00a085e0",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a08650",
+        "callsite": "0x00a087c5",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a08650",
+        "callsite": "0x00a087df",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a08650",
+        "callsite": "0x00a087f9",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a08650",
+        "callsite": "0x00a08813",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a08870",
+        "callsite": "0x00a089a5",
+        "target_function": "0x009f8640"
+      },
+      {
+        "caller_function": "0x00a08e70",
+        "callsite": "0x00a08eef",
+        "target_function": "0x009f8640"
+      },
+      {
+        "caller_function": "0x00a08e70",
+        "callsite": "0x00a091d3",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a08e70",
+        "callsite": "0x00a0920a",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a09360",
+        "callsite": "0x00a093f2",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a09360",
+        "callsite": "0x00a09468",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a09360",
+        "callsite": "0x00a094de",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a09360",
+        "callsite": "0x00a09554",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a09360",
+        "callsite": "0x00a095ca",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a09360",
+        "callsite": "0x00a09640",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a09360",
+        "callsite": "0x00a096b6",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a09360",
+        "callsite": "0x00a0972c",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a09360",
+        "callsite": "0x00a097a2",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a09360",
+        "callsite": "0x00a097fd",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a09360",
+        "callsite": "0x00a09858",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a09360",
+        "callsite": "0x00a098b3",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a0a340",
+        "callsite": "0x00a0a36a",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a0a420",
+        "callsite": "0x00a0a4bd",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a0a5d0",
+        "callsite": "0x00a0a705",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a0aa90",
+        "callsite": "0x00a0ac97",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a0b320",
+        "callsite": "0x00a0b417",
+        "target_function": "0x009f8640"
+      },
+      {
+        "caller_function": "0x00a0b6e0",
+        "callsite": "0x00a0bab7",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a0cf60",
+        "callsite": "0x00a0cff1",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a14530",
+        "callsite": "0x00a145db",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a14530",
+        "callsite": "0x00a14637",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a14990",
+        "callsite": "0x00a14ba5",
+        "target_function": "0x009ffee0"
+      },
+      {
+        "caller_function": "0x00a15320",
+        "callsite": "0x00a15488",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a15320",
+        "callsite": "0x00a15566",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a15320",
+        "callsite": "0x00a155ba",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a15320",
+        "callsite": "0x00a155e5",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a15320",
+        "callsite": "0x00a15603",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a160f0",
+        "callsite": "0x00a1613b",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a16350",
+        "callsite": "0x00a163c6",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a179b0",
+        "callsite": "0x00a17a4d",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a17fe0",
+        "callsite": "0x00a1816d",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a183f0",
+        "callsite": "0x00a18500",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a18f00",
+        "callsite": "0x00a18fd1",
+        "target_function": "0x00a10b30"
+      },
+      {
+        "caller_function": "0x00a194f0",
+        "callsite": "0x00a19df2",
+        "target_function": "0x009f6f40"
+      },
+      {
+        "caller_function": "0x00a1a310",
+        "callsite": "0x00a1a3ef",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a1a9b0",
+        "callsite": "0x00a1abfc",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a1b430",
+        "callsite": "0x00a1b9dd",
+        "target_function": "0x009e8370"
+      },
+      {
+        "caller_function": "0x00a1b430",
+        "callsite": "0x00a1bd21",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a1b430",
+        "callsite": "0x00a1bef7",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a1b430",
+        "callsite": "0x00a1bf2a",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a1b430",
+        "callsite": "0x00a1bfb0",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a1b430",
+        "callsite": "0x00a1c074",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a1dee0",
+        "callsite": "0x00a1df9d",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a214c0",
+        "callsite": "0x00a2190d",
+        "target_function": "0x009e8370"
+      },
+      {
+        "caller_function": "0x00a214c0",
+        "callsite": "0x00a21e33",
+        "target_function": "0x00a052f0"
+      },
+      {
+        "caller_function": "0x00a24050",
+        "callsite": "0x00a2411f",
+        "target_function": "0x009f3810"
+      },
+      {
+        "caller_function": "0x00a24050",
+        "callsite": "0x00a24206",
+        "target_function": "0x009f3810"
+      },
+      {
+        "caller_function": "0x00a24530",
+        "callsite": "0x00a24558",
+        "target_function": "0x00a24410"
+      },
+      {
+        "caller_function": "0x00a25420",
+        "callsite": "0x00a2543b",
+        "target_function": "0x00a297e0"
+      },
+      {
+        "caller_function": "0x00a417e0",
+        "callsite": "0x00a41944",
+        "target_function": "0x00a34cd0"
+      },
+      {
+        "caller_function": "0x00a463c0",
+        "callsite": "0x00a46598",
+        "target_function": "0x00a419b0"
+      },
+      {
+        "caller_function": "0x00a47510",
+        "callsite": "0x00a47531",
+        "target_function": "0x00a37370"
+      },
+      {
+        "caller_function": "0x00a539f0",
+        "callsite": "0x00a53a5e",
+        "target_function": "0x00a4a760"
+      },
+      {
+        "caller_function": "0x00a539f0",
+        "callsite": "0x00a53b4f",
+        "target_function": "0x00a4a760"
+      },
+      {
+        "caller_function": "0x00a539f0",
+        "callsite": "0x00a53b70",
+        "target_function": "0x00a4a760"
+      },
+      {
+        "caller_function": "0x00a539f0",
+        "callsite": "0x00a53ba2",
+        "target_function": "0x00a4a760"
+      },
+      {
+        "caller_function": "0x00a539f0",
+        "callsite": "0x00a53bc1",
+        "target_function": "0x00a4a760"
+      },
+      {
+        "caller_function": "0x00a539f0",
+        "callsite": "0x00a53cfa",
+        "target_function": "0x00a4a760"
+      },
+      {
+        "caller_function": "0x00a539f0",
+        "callsite": "0x00a53d66",
+        "target_function": "0x00a4a760"
+      },
+      {
+        "caller_function": "0x00a614a3",
+        "callsite": "0x00a61510",
+        "target_function": "0x00a60147"
+      },
+      {
+        "caller_function": "0x00a85940",
+        "callsite": "0x00a85976",
+        "target_function": "0x006e56a0"
+      },
+      {
+        "caller_function": "0x00d317f0",
+        "callsite": "0x00d3190a",
+        "target_function": "0x0040b080"
+      },
+      {
+        "caller_function": "0x00d39340",
+        "callsite": "0x00d394eb",
+        "target_function": "0x00416e60"
+      },
+      {
+        "caller_function": "0x00d42f90",
+        "callsite": "0x00d430df",
+        "target_function": "0x00427500"
+      },
+      {
+        "caller_function": "0x00d4ccf0",
+        "callsite": "0x00d4d56c",
+        "target_function": "0x0043f220"
+      },
+      {
+        "caller_function": "0x00d52c90",
+        "callsite": "0x00d530e9",
+        "target_function": "0x00403d90"
+      },
+      {
+        "caller_function": "0x00d53380",
+        "callsite": "0x00d533a8",
+        "target_function": "0x00469730"
+      },
+      {
+        "caller_function": "0x00d6a2e0",
+        "callsite": "0x00d6a359",
+        "target_function": "0x0049db50"
+      },
+      {
+        "caller_function": "0x00d6a2e0",
+        "callsite": "0x00d6a38f",
+        "target_function": "0x0049d720"
+      },
+      {
+        "caller_function": "0x00d6ec00",
+        "callsite": "0x00d6ef1a",
+        "target_function": "0x0049b930"
+      },
+      {
+        "caller_function": "0x00d72a80",
+        "callsite": "0x00d72b49",
+        "target_function": "0x004aa2d0"
+      },
+      {
+        "caller_function": "0x00d72e50",
+        "callsite": "0x00d72f5c",
+        "target_function": "0x004aa2d0"
+      },
+      {
+        "caller_function": "0x00d72e50",
+        "callsite": "0x00d72fad",
+        "target_function": "0x004aa2d0"
+      },
+      {
+        "caller_function": "0x00d72e50",
+        "callsite": "0x00d72fe6",
+        "target_function": "0x004aa2d0"
+      },
+      {
+        "caller_function": "0x00d75700",
+        "callsite": "0x00d757ff",
+        "target_function": "0x004042b0"
+      },
+      {
+        "caller_function": "0x00d77d50",
+        "callsite": "0x00d77ee5",
+        "target_function": "0x004042b0"
+      },
+      {
+        "caller_function": "0x00d78170",
+        "callsite": "0x00d7867d",
+        "target_function": "0x0050c640"
+      },
+      {
+        "caller_function": "0x00d78170",
+        "callsite": "0x00d7869c",
+        "target_function": "0x0050c640"
+      },
+      {
+        "caller_function": "0x00d7a360",
+        "callsite": "0x00d7a44e",
+        "target_function": "0x005106a0"
+      },
+      {
+        "caller_function": "0x00d7a360",
+        "callsite": "0x00d7a4a2",
+        "target_function": "0x004c2500"
+      },
+      {
+        "caller_function": "0x00d7b8a0",
+        "callsite": "0x00d7bb54",
+        "target_function": "0x004042b0"
+      },
+      {
+        "caller_function": "0x00d7fa00",
+        "callsite": "0x00d7fc79",
+        "target_function": "0x004aa7f0"
+      },
+      {
+        "caller_function": "0x00d7fa00",
+        "callsite": "0x00d7fcbc",
+        "target_function": "0x004aa7f0"
+      },
+      {
+        "caller_function": "0x00d80670",
+        "callsite": "0x00d806d3",
+        "target_function": "0x004d7540"
+      },
+      {
+        "caller_function": "0x00d80670",
+        "callsite": "0x00d80a85",
+        "target_function": "0x004d7540"
+      },
+      {
+        "caller_function": "0x00d826f0",
+        "callsite": "0x00d827a4",
+        "target_function": "0x004e2450"
+      },
+      {
+        "caller_function": "0x00d826f0",
+        "callsite": "0x00d827f8",
+        "target_function": "0x004e2450"
+      },
+      {
+        "caller_function": "0x00d874c0",
+        "callsite": "0x00d874c7",
+        "target_function": "0x004f9120"
+      },
+      {
+        "caller_function": "0x00d880a0",
+        "callsite": "0x00d88106",
+        "target_function": "0x004e2060"
+      },
+      {
+        "caller_function": "0x00d88a10",
+        "callsite": "0x00d88a69",
+        "target_function": "0x005038c0"
+      },
+      {
+        "caller_function": "0x00d88a10",
+        "callsite": "0x00d88aff",
+        "target_function": "0x005038c0"
+      }
+    ],
+    "exact_ghidra_direct_callgraph_match_count": 575,
+    "unconfirmed_target_addresses": [
+      "0x0040e630",
+      "0x00431160",
+      "0x0049ab30",
+      "0x006f0570",
+      "0x009194e3",
+      "0x0093e7b6",
+      "0x00941350",
+      "0x00946909",
+      "0x00951c09",
+      "0x009543be",
+      "0x0096404d",
+      "0x009673ce",
+      "0x0096ad41",
+      "0x0098e0e9",
+      "0x009966c7",
+      "0x00998f42",
+      "0x00999245",
+      "0x00999868",
+      "0x0099ac12",
+      "0x009b2aae",
+      "0x10f9a25a",
+      "0x32a058ff",
+      "0x523b8bd9",
+      "0x689fed2d",
+      "0x8b38c2b3",
+      "0xcc6e5a19",
+      "0xcc862fa8",
+      "0xcd0e2572",
+      "0xcd159189",
+      "0xcd1e0d15",
+      "0xcd23fe5d",
+      "0xcd4ee9d8",
+      "0xd0599a41",
+      "0xd7515731",
+      "0xde3b881b",
+      "0xe8e2eaef",
+      "0xe916e9d0",
+      "0xe9722d5b",
+      "0xe977ef78",
+      "0xe98aeaff",
+      "0xe98cea45",
+      "0xe994ea4d",
+      "0xe9b3ea55",
+      "0xe9e1459e",
+      "0xebdeec31",
+      "0xec4b6bf3",
+      "0xee862f98",
+      "0xef792fbc",
+      "0xf3228fda",
+      "0xf57ca512",
+      "0xf8a9cdaf",
+      "0xfd470964"
+    ],
+    "unconfirmed_target_count": 52,
+    "unique_confirmed_target_function_count": 170,
+    "unique_target_count": 222,
+    "unmatched_callsite_count": 94,
+    "unmatched_callsites": [
+      {
+        "callsite": "0x00414e85",
+        "target": "0x32a058ff"
+      },
+      {
+        "callsite": "0x004158a1",
+        "target": "0xcd0e2572"
+      },
+      {
+        "callsite": "0x0041fa6d",
+        "target": "0xcd23fe5d"
+      },
+      {
+        "callsite": "0x004320bf",
+        "target": "0x00431160"
+      },
+      {
+        "callsite": "0x00432476",
+        "target": "0xfd470964"
+      },
+      {
+        "callsite": "0x0047b1c1",
+        "target": "0xf8a9cdaf"
+      },
+      {
+        "callsite": "0x004816ff",
+        "target": "0x10f9a25a"
+      },
+      {
+        "callsite": "0x0048c4b8",
+        "target": "0xcd159189"
+      },
+      {
+        "callsite": "0x00496e78",
+        "target": "0xcc6e5a19"
+      },
+      {
+        "callsite": "0x0049b93d",
+        "target": "0x689fed2d"
+      },
+      {
+        "callsite": "0x004b0324",
+        "target": "0xf57ca512"
+      },
+      {
+        "callsite": "0x004b43f6",
+        "target": "0xe9722d5b"
+      },
+      {
+        "callsite": "0x004b62f4",
+        "target": "0x004042b0"
+      },
+      {
+        "callsite": "0x004b631d",
+        "target": "0x004042b0"
+      },
+      {
+        "callsite": "0x004b774a",
+        "target": "0xec4b6bf3"
+      },
+      {
+        "callsite": "0x004d4b14",
+        "target": "0xebdeec31"
+      },
+      {
+        "callsite": "0x004d66ec",
+        "target": "0xf3228fda"
+      },
+      {
+        "callsite": "0x004d723a",
+        "target": "0x8b38c2b3"
+      },
+      {
+        "callsite": "0x004f007f",
+        "target": "0x523b8bd9"
+      },
+      {
+        "callsite": "0x00514044",
+        "target": "0xcd1e0d15"
+      },
+      {
+        "callsite": "0x005141ce",
+        "target": "0xef792fbc"
+      },
+      {
+        "callsite": "0x00514512",
+        "target": "0xe9e1459e"
+      },
+      {
+        "callsite": "0x0051685d",
+        "target": "0xd7515731"
+      },
+      {
+        "callsite": "0x00518828",
+        "target": "0xde3b881b"
+      },
+      {
+        "callsite": "0x0054b587",
+        "target": "0x0040e630"
+      },
+      {
+        "callsite": "0x005940fc",
+        "target": "0xd0599a41"
+      },
+      {
+        "callsite": "0x005a963d",
+        "target": "0x005b73a0"
+      },
+      {
+        "callsite": "0x005a9900",
+        "target": "0x005b73a0"
+      },
+      {
+        "callsite": "0x005bf2ee",
+        "target": "0x005b73a0"
+      },
+      {
+        "callsite": "0x005bf32d",
+        "target": "0x005b73a0"
+      },
+      {
+        "callsite": "0x005bf462",
+        "target": "0x005b73a0"
+      },
+      {
+        "callsite": "0x005bf5b1",
+        "target": "0x005b73a0"
+      },
+      {
+        "callsite": "0x005ccf13",
+        "target": "0x005b73a0"
+      },
+      {
+        "callsite": "0x005fac46",
+        "target": "0x004042b0"
+      },
+      {
+        "callsite": "0x005fcf35",
+        "target": "0x005b73a0"
+      },
+      {
+        "callsite": "0x005fd01e",
+        "target": "0x005b73a0"
+      },
+      {
+        "callsite": "0x005fd13d",
+        "target": "0x005b73a0"
+      },
+      {
+        "callsite": "0x005fd15b",
+        "target": "0x004042b0"
+      },
+      {
+        "callsite": "0x0082e949",
+        "target": "0xe916e9d0"
+      },
+      {
+        "callsite": "0x0082e951",
+        "target": "0xcd4ee9d8"
+      },
+      {
+        "callsite": "0x0083556c",
+        "target": "0x00416e60"
+      },
+      {
+        "callsite": "0x0085a9f4",
+        "target": "0xee862f98"
+      },
+      {
+        "callsite": "0x0085aa04",
+        "target": "0xcc862fa8"
+      },
+      {
+        "callsite": "0x00907d35",
+        "target": "0x009194e3"
+      },
+      {
+        "callsite": "0x00910d62",
+        "target": "0x009113b5"
+      },
+      {
+        "callsite": "0x009112e7",
+        "target": "0x009113b5"
+      },
+      {
+        "callsite": "0x009116fb",
+        "target": "0x009113b5"
+      },
+      {
+        "callsite": "0x00911c81",
+        "target": "0x009113b5"
+      },
+      {
+        "callsite": "0x0093ea57",
+        "target": "0xe8e2eaef"
+      },
+      {
+        "callsite": "0x0093ea67",
+        "target": "0xe98aeaff"
+      },
+      {
+        "callsite": "0x0093ef07",
+        "target": "0x0093e7b6"
+      },
+      {
+        "callsite": "0x00941484",
+        "target": "0x00941350"
+      },
+      {
+        "callsite": "0x00946a18",
+        "target": "0x00946909"
+      },
+      {
+        "callsite": "0x00951e3e",
+        "target": "0x00951c09"
+      },
+      {
+        "callsite": "0x0095442d",
+        "target": "0x009543be"
+      },
+      {
+        "callsite": "0x0095cc8d",
+        "target": "0x0095c888"
+      },
+      {
+        "callsite": "0x0095eede",
+        "target": "0xe977ef78"
+      },
+      {
+        "callsite": "0x00964197",
+        "target": "0x0096404d"
+      },
+      {
+        "callsite": "0x009675eb",
+        "target": "0x009673ce"
+      },
+      {
+        "callsite": "0x0096add5",
+        "target": "0x0096ad41"
+      },
+      {
+        "callsite": "0x0098e2ed",
+        "target": "0x0098e0e9"
+      },
+      {
+        "callsite": "0x009968f5",
+        "target": "0x009966c7"
+      },
+      {
+        "callsite": "0x00998fee",
+        "target": "0x00998f42"
+      },
+      {
+        "callsite": "0x00999a0a",
+        "target": "0x00999245"
+      },
+      {
+        "callsite": "0x00999b21",
+        "target": "0x00999868"
+      },
+      {
+        "callsite": "0x0099b06b",
+        "target": "0x0099ac12"
+      },
+      {
+        "callsite": "0x0099b0e7",
+        "target": "0x009b2aae"
+      },
+      {
+        "callsite": "0x0099e9a7",
+        "target": "0xe98cea45"
+      },
+      {
+        "callsite": "0x0099e9af",
+        "target": "0xe994ea4d"
+      },
+      {
+        "callsite": "0x0099e9b7",
+        "target": "0xe9b3ea55"
+      },
+      {
+        "callsite": "0x00a0615c",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a06e84",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a07027",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a0708d",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a0710f",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a071fe",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a0722d",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a072be",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a0774e",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a0777b",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a077ad",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a077da",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a07807",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a07834",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a07866",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a07893",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a0932e",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a0cf3a",
+        "target": "0x00a052f0"
+      },
+      {
+        "callsite": "0x00a2576d",
+        "target": "0x00a297e0"
+      },
+      {
+        "callsite": "0x00a258bd",
+        "target": "0x00a297e0"
+      },
+      {
+        "callsite": "0x00a781e3",
+        "target": "0x0049ab30"
+      },
+      {
+        "callsite": "0x00a86cb3",
+        "target": "0x006f0570"
+      },
+      {
+        "callsite": "0x00a9a87d",
+        "target": "0x0092ba44"
+      },
+      {
+        "callsite": "0x00d38db6",
+        "target": "0x00415900"
+      }
+    ]
+  },
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "version": 1
+}

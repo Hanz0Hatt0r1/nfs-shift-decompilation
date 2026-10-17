@@ -65,6 +65,46 @@ The report retains original function address/name, calling convention, size,
 mnemonic fingerprint, exact anchor values and string addresses so every
 candidate can be audited back to the original Ghidra export.
 
+## Bulk function recovery index
+
+`tools/ghidra/build_function_recovery_index.py` preserves the full unique-name
+candidate set and joins direct callers of the Participants Manager getter into
+one portable evidence artifact:
+
+```bash
+python tools/ghidra/build_function_recovery_index.py \
+  /path/to/SHIFT.exe out/shift_ghidra_database \
+  --output evidence/ghidra_function_recovery_index.json
+```
+
+For the hash-locked PC retail 1.02 export, the index contains 338 unique method
+name candidates and 2 ambiguous functions. It also inventories 241 functions
+with 393 direct callgraph edges to `FUN_00489ad0`; 22 callers have a unique
+method-name candidate. These names remain candidates and are not applied as
+Ghidra renames. The output records hashes for the executable and every source
+export used to build it.
+
+## P1.3B direct-callee body recovery
+
+`tools/ghidra/build_p1b_helper_return_ghidra_recovery.py` cross-checks direct
+`objdump` calls whose target bytes were absent from the linear instruction
+index against the exact Ghidra callgraph. Its hash-locked batch report is
+[`evidence/p1b_helper_return_ghidra_target_recovery.json`](p1b_helper_return_ghidra_target_recovery.json).
+
+For this retail build, Ghidra confirms 575 of 669 unresolved direct callsites,
+covering 170 exact callee function entries. Their Ghidra instruction/P-code
+bodies contain 13,261 instructions; P-code is present for each. This adds 166
+functions to the earlier 559-function targeted export, for 725 unique
+functions across both local batches. The raw instruction bodies stay outside
+Git; the evidence records their hashes and function-level fingerprints.
+
+The bounded helper-return scan found no `entry argument + 0x374` returns among
+these 170 functions. It stopped at 111 control-flow boundaries, 45 nested
+calls, 6 unsupported stack adjustments, and 8 returns. The other 94 callsites
+and 52 unique target addresses did not match a direct Ghidra callgraph edge;
+they remain unclassified. This batch does not establish receiver identity or
+close P1.3B.
+
 ## Evidence boundary
 
 A unique method-name anchor is a high-value **semantic-name candidate**, not an

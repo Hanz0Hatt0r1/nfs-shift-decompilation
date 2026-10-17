@@ -106,6 +106,29 @@ def test_validates_exact_target_set_and_instruction_count(tmp_path):
     assert report["pcode_available"] is False
 
 
+def test_allows_body_blocks_before_the_function_entrypoint(tmp_path):
+    module = _load_module()
+    export = tmp_path / "functions.jsonl"
+    _write(
+        export,
+        [
+            _row(
+                "0x00886910",
+                "FUN_00886910",
+                [
+                    _instruction("0x00886900"),
+                    _instruction("0x00886910", "8b442404", "MOV", "MOV EAX,dword ptr [ESP + 0x4]"),
+                ],
+            )
+        ],
+    )
+
+    report = module.validate_export(export, ["0x00886910"])
+
+    assert report["function_count"] == 1
+    assert report["functions"] == ["0x00886910"]
+
+
 def test_validates_v2_structured_pcode(tmp_path):
     module = _load_module()
     export = tmp_path / "functions.jsonl"
