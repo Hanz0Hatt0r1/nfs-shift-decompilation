@@ -14,7 +14,9 @@ translation gap until its semantics are handled or otherwise proven irrelevant.
 This report helps define the coverage target for a future portable translator.
 It does not establish that any opcode is implemented, that the original C
 decompilation is buildable, or that a replacement is linkable or behaviorally
-equivalent. Full recompilation remains open.
+equivalent. The first fail-closed native C lowering pass and its current corpus
+coverage are documented in
+[`PROCESS_0_PCODE_NATIVE_LOWERING.md`](PROCESS_0_PCODE_NATIVE_LOWERING.md).
 
 The 283 `CALLOTHER` operations are separately joined to the exact x86 language
 userop table in [`evidence/pcode_userop_coverage_20261017.json`](../evidence/pcode_userop_coverage_20261017.json).

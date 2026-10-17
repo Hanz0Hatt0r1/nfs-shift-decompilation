@@ -172,3 +172,66 @@ def test_full_corpus_address_space_coverage_is_hash_pinned_and_resolved() -> Non
         "operations": 1293437,
     }]
     assert report["unmapped_address_spaces"] == []
+
+
+def test_native_pcode_lowering_coverage_is_hash_pinned() -> None:
+    report = json.loads((ROOT / "evidence/pcode_native_lowering_coverage_20261017.json").read_text())
+    spaces_path = ROOT / "evidence/shift_language_address_spaces_20261017.json"
+    spaces = json.loads(spaces_path.read_text())
+    full = json.loads((ROOT / "evidence/full_function_instruction_corpus_20261017.json").read_text())
+    assert report["format"] == "REVENGINSTR.PcodeCFunctionLoweringCoverage/1"
+    assert report["source"]["program"] == full["authority"]["ghidra_program"] == "SHIFT.exe"
+    assert report["source"]["language_id"] == full["authority"]["language_id"] == "x86:LE:32:default"
+    assert report["source"]["corpus_sha256"] == full["authority"]["portable_function_corpus_sha256"]
+    assert report["source"]["manifest_sha256"] == full["authority"]["corpus_manifest_sha256"]
+    assert hashlib.sha256(spaces_path.read_bytes()).hexdigest() == report["source"]["address_spaces_sha256"]
+    assert spaces["language_id"] == report["source"]["language_id"]
+    assert report["functions"] == {
+        "records": 41538, "found": 41538, "missing": 0, "fully_lowerable": 35004, "rejected": 6534,
+    }
+    assert report["instructions"]["total"] == 2088152
+    assert report["pcode_operations"]["in_fully_lowerable_functions"] == 4970468
+    assert sum(row["functions"] for row in report["rejection_reasons"]) == 6534
+
+
+def test_native_pcode_object_build_report_is_hash_pinned() -> None:
+    report = json.loads((ROOT / "evidence/pcode_native_lowering_build_20261017.json").read_text())
+    coverage = json.loads((ROOT / "evidence/pcode_native_lowering_coverage_20261017.json").read_text())
+    assert report["format"] == "REVENGINSTR.PcodeCFunctionShardBuild/1"
+    assert report["source"] == coverage["source"]
+    assert report["compiler"]["path"].endswith("i686-w64-mingw32-gcc")
+    assert report["functions"] == {
+        "records": 41538, "found": 41538, "missing": 0, "lowerable": 35004, "rejected": 6534,
+    }
+    assert report["shard_size_limit"] == 500
+    assert report["jobs"] == 2
+    assert report["resumed"] is True
+    assert len(report["builder_source_sha256"]) == 64
+    assert len(report["shards"]) == 71
+    assert sum(shard["functions"] for shard in report["shards"]) == 35004
+    assert max(shard["functions"] for shard in report["shards"]) <= report["shard_size_limit"]
+    assert all(shard["object_bytes"] > 0 and len(shard["object_sha256"]) == 64 for shard in report["shards"])
+
+
+def test_linux_pcode_elf_smoke_evidence_matches_build_report() -> None:
+    evidence = json.loads((ROOT / "evidence/pcode_linux_native_smoke_20261018.json").read_text())
+    build_path = ROOT / evidence["build_report"]["path"]
+    report_bytes = build_path.read_bytes()
+    report = json.loads(report_bytes)
+    coverage = json.loads((ROOT / "evidence/pcode_native_lowering_coverage_20261017.json").read_text())
+    assert evidence["format"] == "NFSShift.NativeLinuxPcodeSmoke/1"
+    assert evidence["revenginstr_revision"] == "378fca4af3089aecf8dd02110d9960b26ef41c1e"
+    assert "ref: " + evidence["revenginstr_revision"] in (ROOT / ".github/workflows/ci.yml").read_text()
+    assert evidence["source"] == report["source"] == coverage["source"]
+    assert hashlib.sha256(report_bytes).hexdigest() == evidence["build_report"]["sha256"]
+    assert report["compiler"]["path"].endswith("/gcc")
+    assert "-fPIC" in report["compiler"]["arguments"]
+    assert evidence["build_report"]["builder_source_sha256"] == report["builder_source_sha256"]
+    assert report["functions"]["lowerable"] == evidence["coverage"]["lowerable"] == 35004
+    assert len(report["shards"]) == evidence["build_report"]["object_shards"] == 71
+    assert evidence["linux_library"]["format"] == "ELF64 shared object"
+    assert evidence["linux_library"]["exported_pcode_functions"] == 35004
+    assert len(evidence["linux_library"]["sha256"]) == 64
+    assert evidence["smoke_test"]["result"] == "passed"
+    assert evidence["smoke_test"]["function"] == "rvi_00401000"
+    assert evidence["smoke_test"]["call_target"] == "0x00685700"
