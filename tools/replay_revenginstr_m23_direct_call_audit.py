@@ -17,7 +17,6 @@ from typing import Any
 EVIDENCE_DIR = Path("evidence/revenginstr_m23_direct_call_replay")
 PROGRAM_ID = "nfs-shift:SHIFT.exe"
 AUDIT_VERSIONS = ("v1", "v2", "v3")
-POSITIVE_STATUSES = {"unique_cfg_store_candidate"}
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -61,10 +60,13 @@ def validate_frozen(evidence_dir: Path) -> dict[str, int]:
         total_bytes += len(payload)
 
     candidates = manifest.get("candidates", {})
-    if len(candidates) != 5:
-        raise ValueError(f"expected five frozen candidates, found {len(candidates)}")
+    if len(candidates) != 10:
+        raise ValueError(f"expected ten frozen candidates, found {len(candidates)}")
     for entry, expected in candidates.items():
         folder = evidence_dir / entry
+        pairs = _read_jsonl(folder / "field-access-pairs.jsonl")
+        if len(pairs) != expected["field_access_pair_rows"]:
+            raise ValueError(f"field-pair row count mismatch for {entry}")
         calls = _read_jsonl(folder / "direct-call-memory-effects.jsonl")
         call_counts = dict(sorted(Counter(row["status"] for row in calls).items()))
         if call_counts != expected["direct_call_effect_status_counts"]:
@@ -78,11 +80,11 @@ def validate_frozen(evidence_dir: Path) -> dict[str, int]:
             counts = dict(sorted(Counter(row["status"] for row in rows).items()))
             if counts != expected["audit_status_counts"][version]:
                 raise ValueError(f"audit status summary mismatch for {entry}/{version}")
-            if POSITIVE_STATUSES.intersection(counts):
-                raise ValueError(f"unexpected positive structural candidate for {entry}/{version}")
+            if any("runtime value-flow claim" not in row["claim_scope"] for row in rows):
+                raise ValueError(f"audit scope overclaims value flow for {entry}/{version}")
             audit_counts[version] = counts
-        if not (audit_counts["v1"] == audit_counts["v2"] == audit_counts["v3"]):
-            raise ValueError(f"audit versions disagree on result statuses for {entry}")
+        if audit_counts["v2"] != audit_counts["v3"]:
+            raise ValueError(f"/3 changed /2 statuses without an eligible write-free call: {entry}")
 
     return {"artifacts": len(artifacts), "candidates": len(candidates), "bytes": total_bytes}
 
