@@ -20,6 +20,16 @@
       "closure_format": "REVENGINSTR.GhidraDirectCallMemoryEffectClosure/1",
       "audit_format": "REVENGINSTR.FieldStoreLoadDominanceAudit/4",
       "revenginstr_source_commit": "d15a4d748c8468b277cc278cb19decf1f378a727"
+    },
+    "alias_aware_interprocedural_memory_effect": {
+      "format": "REVENGINSTR.GhidraInterproceduralMemoryEffect/1",
+      "audit_format": "REVENGINSTR.FieldStoreLoadDominanceAudit/5",
+      "revenginstr_source_commit": "e33d27ddf69e7381eb3def950d41f1c4b4ddc0e9",
+      "pcode_flow_function_count": 5,
+      "caller_parameter_root_rows": 0,
+      "callee_cfg_captured": false,
+      "callee_memory_store_access_facts_captured": false,
+      "limitation": "The frozen package has caller P-code/CFG and bounded callee P-code flows, but no exact caller-parameter-root rows or callee CFG/memory-access facts; these remain unknown barriers."
     }
   },
   "selection": {
@@ -97,7 +107,21 @@
       "store_not_dominating_load": 2
     },
     "unique_cfg_store_candidate_v4_rows": 0,
-    "per_pair_status_changes_v3_to_v4": 0
+    "per_pair_status_changes_v3_to_v4": 0,
+    "caller_parameter_root_rows": 0,
+    "interprocedural_memory_effect_rows": 30,
+    "interprocedural_memory_effect_status_counts": {
+      "indirect_call": 18,
+      "unknown_effect": 12
+    },
+    "no_aliasing_interprocedural_call_rows": 0,
+    "audit_v5_rows": 2,
+    "audit_v5_status_counts": {
+      "store_not_dominating_load": 2
+    },
+    "unique_cfg_store_candidate_v5_rows": 0,
+    "per_pair_status_changes_v4_to_v5": 0,
+    "outcome_v5": "Alias-aware /5 replay remains fail-closed: six direct-call sites produce unknown_effect for each pair and nine indirect calls remain barriers for each pair. The v4 and v5 audits both report store_not_dominating_load for both pairs, with zero status changes or unique candidates. No exact caller-parameter-root rows, callee CFG, or callee memory-access facts were captured."
   },
   "replay_inputs": {
     "callee-pcode-flow/009eb3f0.tsv": {
@@ -120,10 +144,20 @@
       "rows": 75,
       "sha256": "eb488399d3e1defa76dfc758473ad048386d1e6c4eccf5eccfe8f2eab467a798"
     },
+    "caller-parameter-roots.tsv": {
+      "bytes": 121,
+      "rows": 0,
+      "sha256": "889f0396b740e76109572b802d75a52b9664d2edc000eadbcad77c1449979930"
+    },
     "caller-pcode-flow/00a277d0.tsv": {
       "bytes": 13597,
       "rows": 169,
       "sha256": "06f8b1197ec3ee104f73d4040751fe794e3e0f934f96cd42da0fbfb86c5f8c0c"
+    },
+    "direct-call-memory-effect-closures.jsonl": {
+      "bytes": 9513,
+      "rows": 15,
+      "sha256": "b51384d417559abaced933bb0e45059f181041864d3c7817048ee699a993b846"
     },
     "direct-call-memory-effects.jsonl": {
       "bytes": 7585,
@@ -145,10 +179,25 @@
       "rows": 2,
       "sha256": "0e011522314d57d935cb5d0ed26bdc7d8169d95e4273b7b3e7b51136b912ffce"
     },
+    "field-store-load-dominance-v4.jsonl": {
+      "bytes": 4143,
+      "rows": 2,
+      "sha256": "28657b793260f50e720059cb39dcb6235d3feb05d2e928ea8fd5200056e867ea"
+    },
+    "field-store-load-dominance-v5.jsonl": {
+      "bytes": 4302,
+      "rows": 2,
+      "sha256": "4906f161fc570f3eab931d98d5744c0b6be20ad4ac7e7da419bbe8027f35d8a4"
+    },
     "function-pcode-cfg-v3.jsonl": {
       "bytes": 29694,
       "rows": 1,
       "sha256": "e8ac68b98f970558f773d7b571e713602d00a7b810c1f7cc673a5c2ad91baa83"
+    },
+    "interprocedural-memory-effect-v1.jsonl": {
+      "bytes": 51831,
+      "rows": 30,
+      "sha256": "8c905ee9827802a4fee9e6efeeca7b08c8d7bd02c519a377cec618a76c86cdc0"
     },
     "memory-store-access-relevant.jsonl": {
       "bytes": 2028,
@@ -174,16 +223,6 @@
       "bytes": 587,
       "rows": 1,
       "sha256": "d2480a86dc0a1cfefc63c92a79077cdc921f7893237cc1f3fb7d7fcf2f269425"
-    },
-    "direct-call-memory-effect-closures.jsonl": {
-      "bytes": 9513,
-      "rows": 15,
-      "sha256": "b51384d417559abaced933bb0e45059f181041864d3c7817048ee699a993b846"
-    },
-    "field-store-load-dominance-v4.jsonl": {
-      "bytes": 4143,
-      "rows": 2,
-      "sha256": "28657b793260f50e720059cb39dcb6235d3feb05d2e928ea8fd5200056e867ea"
     }
   },
   "aggregated_exports": {

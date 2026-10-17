@@ -17,6 +17,10 @@ from typing import Any
 EVIDENCE_DIR = Path("evidence/revenginstr_m23_direct_call_replay")
 PROGRAM_ID = "nfs-shift:SHIFT.exe"
 AUDIT_VERSIONS = ("v1", "v2", "v3")
+CALLER_PARAMETER_ROOT_HEADER = (
+    "format", "plan_id", "callee_entry", "parameter_index", "caller_entry",
+    "caller_call_site", "caller_parameter_index", "argument_node_id", "status",
+)
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -176,15 +180,37 @@ def _validate_screening_scan(
     call_rows = _read_jsonl(folder / "direct-call-memory-effects.jsonl")
     closure_path = folder / "direct-call-memory-effect-closures.jsonl"
     audit_v4_path = folder / "field-store-load-dominance-v4.jsonl"
+    parameter_roots_path = folder / "caller-parameter-roots.tsv"
+    interprocedural_path = folder / "interprocedural-memory-effect-v1.jsonl"
+    audit_v5_path = folder / "field-store-load-dominance-v5.jsonl"
     has_v4 = closure_path.is_file() or audit_v4_path.is_file()
     if has_v4 and not (closure_path.is_file() and audit_v4_path.is_file()):
         raise ValueError(f"{label} transitive closure and /4 audit must be frozen together")
+    has_v5 = any(path.is_file() for path in (parameter_roots_path, interprocedural_path, audit_v5_path))
+    if has_v5 and not all(path.is_file() for path in (parameter_roots_path, interprocedural_path, audit_v5_path)):
+        raise ValueError(f"{label} caller roots, interprocedural sidecar, and /5 audit must be frozen together")
+    if has_v5 and not has_v4:
+        raise ValueError(f"{label} /5 audit requires the frozen /4 baseline")
     closure_rows = _read_jsonl(closure_path) if has_v4 else []
     audit_v2_rows = _read_jsonl(folder / "field-store-load-dominance-v2.jsonl")
     audit_rows = _read_jsonl(folder / "field-store-load-dominance-v3.jsonl")
     audit_v4_rows = _read_jsonl(audit_v4_path) if has_v4 else []
+    interprocedural_rows = _read_jsonl(interprocedural_path) if has_v5 else []
+    audit_v5_rows = _read_jsonl(audit_v5_path) if has_v5 else []
+    parameter_root_rows: list[dict[str, str]] = []
+    if has_v5:
+        with parameter_roots_path.open(newline="") as stream:
+            reader = csv.DictReader(stream, delimiter="\t", strict=True)
+            if tuple(reader.fieldnames or ()) != CALLER_PARAMETER_ROOT_HEADER:
+                raise ValueError(f"{label} caller parameter-root header changed")
+            parameter_root_rows = list(reader)
+        if any(None in row or any(value is None for value in row.values()) for row in parameter_root_rows):
+            raise ValueError(f"{label} caller parameter-root TSV is malformed")
     cfg_rows = _read_jsonl(folder / "function-pcode-cfg-v3.jsonl")
     relevant_memory_rows = _read_jsonl(folder / "memory-store-access-relevant.jsonl")
+
+    def audit_key(row: dict[str, Any]) -> tuple[str, str, str]:
+        return (row["function_entry"], row["store"]["source_id"], row["load"]["source_id"])
 
     counts = {
         "parameter_store_field": Counter(row["function_entry"] for row in store_rows),
@@ -277,6 +303,30 @@ def _validate_screening_scan(
                 row["status"] == "unique_cfg_store_candidate" for row in audit_v4_rows
             ),
         })
+    if has_v5:
+        audit_v4_by_key = {audit_key(row): row for row in audit_v4_rows}
+        audit_v5_by_key = {audit_key(row): row for row in audit_v5_rows}
+        if audit_v4_by_key.keys() != audit_v5_by_key.keys():
+            raise ValueError(f"{label} /4 and /5 audits do not cover the same exact pairs")
+        totals.update({
+            "caller_parameter_root_rows": len(parameter_root_rows),
+            "interprocedural_memory_effect_rows": len(interprocedural_rows),
+            "interprocedural_memory_effect_status_counts": dict(
+                sorted(Counter(row["status"] for row in interprocedural_rows).items())
+            ),
+            "no_aliasing_interprocedural_call_rows": sum(
+                row["status"] == "no_aliasing_memory_effect" for row in interprocedural_rows
+            ),
+            "audit_v5_rows": len(audit_v5_rows),
+            "audit_v5_status_counts": dict(sorted(Counter(row["status"] for row in audit_v5_rows).items())),
+            "unique_cfg_store_candidate_v5_rows": sum(
+                row["status"] == "unique_cfg_store_candidate" for row in audit_v5_rows
+            ),
+            "per_pair_status_changes_v4_to_v5": sum(
+                audit_v4_by_key[key]["status"] != audit_v5_by_key[key]["status"]
+                for key in audit_v4_by_key
+            ),
+        })
     expected_summary = report.get("summary", {})
     if any(expected_summary.get(key) != value for key, value in totals.items()):
         raise ValueError(f"{label} aggregate summary does not match the frozen rows")
@@ -285,15 +335,18 @@ def _validate_screening_scan(
     pair_roots = {entry for entry, count in pair_counts.items() if count}
     if len(cfg_rows) != len(audit_roots) or audit_roots != pair_roots:
         raise ValueError(f"{label} CFG roots do not match the field-pair roots")
-    if any(row.get("function_entry") not in audit_roots for row in (*audit_v2_rows, *audit_rows, *audit_v4_rows)):
+    if any(
+        row.get("function_entry") not in audit_roots
+        for row in (*audit_v2_rows, *audit_rows, *audit_v4_rows, *audit_v5_rows)
+    ):
         raise ValueError(f"{label} audit contains a root without CFG evidence")
     if any(row.get("function_entry") not in audit_roots for row in relevant_memory_rows):
         raise ValueError(f"{label} audit memory sidecar contains a root without CFG evidence")
-    if any("runtime value-flow claim" not in row.get("claim_scope", "") for row in (*audit_v2_rows, *audit_rows, *audit_v4_rows)):
+    if any(
+        "runtime value-flow claim" not in row.get("claim_scope", "")
+        for row in (*audit_v2_rows, *audit_rows, *audit_v4_rows, *audit_v5_rows)
+    ):
         raise ValueError(f"{label} audit scope overclaims value flow")
-    def audit_key(row: dict[str, Any]) -> tuple[str, str, str]:
-        return (row["function_entry"], row["store"]["source_id"], row["load"]["source_id"])
-
     audit_v2_by_key = {audit_key(row): row for row in audit_v2_rows}
     audit_v3_by_key = {audit_key(row): row for row in audit_rows}
     if audit_v2_by_key.keys() != audit_v3_by_key.keys():
@@ -328,12 +381,68 @@ def _validate_screening_scan(
             closure_rows_by_root.setdefault(row.get("function_entry", ""), []).append(row)
     else:
         closure_rows_by_root = {}
+    if has_v5:
+        pair_sha = hashlib.sha256((folder / "field-access-pairs.jsonl").read_bytes()).hexdigest()
+        cfg_sha = hashlib.sha256((folder / "function-pcode-cfg-v3.jsonl").read_bytes()).hexdigest()
+        memory_sha = hashlib.sha256((folder / "memory-store-access.jsonl").read_bytes()).hexdigest()
+        roots_sha = hashlib.sha256(parameter_roots_path.read_bytes()).hexdigest()
+        interprocedural_sha = hashlib.sha256(interprocedural_path.read_bytes()).hexdigest()
+        pair_indices = {row["graph_id"]: index for index, row in enumerate(pair_rows, 1)}
+        if len(pair_indices) != len(pair_rows):
+            raise ValueError(f"{label} field-pair graph IDs are not unique")
+        pair_ids_by_audit_key = {}
+        pair_roots_by_id = {}
+        for graph in pair_rows:
+            stores = [
+                item["source_id"] for edge in graph.get("edges", [])
+                if edge.get("relation") == "field_store" for item in edge.get("provenance", [])
+            ]
+            loads = [
+                item["source_id"] for edge in graph.get("edges", [])
+                if edge.get("relation") == "field_load" for item in edge.get("provenance", [])
+            ]
+            if len(stores) != 1 or len(loads) != 1:
+                raise ValueError(f"{label} field-pair graph has ambiguous access provenance")
+            pair_root = json.loads(stores[0])[1]
+            pair_ids_by_audit_key[(pair_root, stores[0], loads[0])] = graph["graph_id"]
+            pair_roots_by_id[graph["graph_id"]] = pair_root
+        effects_by_pair: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+        for record_index, row in enumerate(interprocedural_rows, 1):
+            pair_id = row.get("field_pair_id")
+            pair_index = pair_indices.get(pair_id)
+            if pair_index is None:
+                raise ValueError(f"{label} interprocedural sidecar references an unknown pair")
+            provenance = row.get("provenance", {})
+            if (
+                row.get("program_id") != PROGRAM_ID
+                or provenance.get("field_access_pair_graph_sha256") != pair_sha
+                or provenance.get("field_access_pair_graph_record_index") != pair_index
+                or provenance.get("cfg_sha256") != cfg_sha
+                or provenance.get("memory_store_access_sha256") != memory_sha
+                or provenance.get("caller_parameter_roots_sha256") != roots_sha
+            ):
+                raise ValueError(f"{label} interprocedural sidecar has stale input provenance")
+            effects_by_pair.setdefault(pair_id, []).append((record_index, row))
+        if set(effects_by_pair) != set(pair_indices):
+            raise ValueError(f"{label} interprocedural sidecar does not cover every field pair")
+        for row in audit_v5_rows:
+            provenance = row.get("provenance", {})
+            if provenance.get("interprocedural_memory_effect_sha256") != interprocedural_sha:
+                raise ValueError(f"{label} /5 row does not pin the interprocedural sidecar")
+            graph_id = pair_ids_by_audit_key.get(audit_key(row))
+            if graph_id is None:
+                raise ValueError(f"{label} /5 row does not resolve to a field-pair graph")
+            expected_indices = [index for index, _ in effects_by_pair[graph_id]]
+            if provenance.get("interprocedural_memory_effect_record_indices") != expected_indices:
+                raise ValueError(f"{label} /5 row does not pin its exact pair-call records")
     if (
         totals["unique_cfg_store_candidate_rows"]
         or totals["unique_cfg_store_candidate_v2_rows"]
         or totals["write_free_direct_call_rows"]
         or totals.get("unique_cfg_store_candidate_v4_rows", 0)
         or totals.get("write_free_transitive_direct_call_rows", 0)
+        or totals.get("no_aliasing_interprocedural_call_rows", 0)
+        or totals.get("unique_cfg_store_candidate_v5_rows", 0)
     ):
         raise ValueError(f"{label} records an unsupported unique candidate or write-free call")
 
@@ -372,6 +481,17 @@ def _validate_screening_scan(
             ]
             if actual_closure_calls != expected_calls:
                 raise ValueError(f"{label} transitive closure facts do not match caller P-code: {entry}")
+        if has_v5:
+            for graph in pair_rows:
+                if pair_roots_by_id[graph["graph_id"]] != entry:
+                    continue
+                pair_effects = [row for row in interprocedural_rows if row["field_pair_id"] == graph["graph_id"]]
+                actual_effect_calls = [
+                    (row.get("address"), row.get("time"), row.get("opcode"), row.get("callee_entry"))
+                    for row in pair_effects
+                ]
+                if actual_effect_calls != expected_calls:
+                    raise ValueError(f"{label} interprocedural effects do not match caller P-code: {entry}")
         for _, _, opcode, target in expected_calls:
             if opcode == "CALL" and target != entry and not (folder / "callee-pcode-flow" / f"{target}.tsv").is_file():
                 raise ValueError(f"{label} direct callee flow is missing: {entry} -> {target}")
@@ -791,6 +911,7 @@ def replay(evidence_dir: Path, bin_dir: Path) -> dict[str, int]:
         "revenginstr-direct-call-memory-effects",
         "revenginstr-receiver-field-store-load-dominance-audit",
         "revenginstr-direct-call-memory-effect-closure",
+        "revenginstr-interprocedural-memory-effects",
     )
     binaries = {name: bin_dir / name for name in names}
     missing = [str(path) for path in binaries.values() if not path.is_file()]
@@ -945,6 +1066,41 @@ def replay(evidence_dir: Path, bin_dir: Path) -> dict[str, int]:
                 )
                 if audit.read_bytes() != (scan / "field-store-load-dominance-v4.jsonl").read_bytes():
                     raise ValueError(f"{label} dominance /4 audit changed on replay")
+
+            interprocedural_path = scan / "interprocedural-memory-effect-v1.jsonl"
+            if interprocedural_path.is_file():
+                roots_path = scan / "caller-parameter-roots.tsv"
+                rebuilt_effects = screening_scratch / "interprocedural-memory-effect-v1.jsonl"
+                effect_arguments = [
+                    str(scan / "field-access-pairs.jsonl"),
+                    str(scan / "function-pcode-cfg-v3.jsonl"),
+                    str(scan / "memory-store-access.jsonl"),
+                    str(roots_path),
+                ]
+                flow_paths = sorted([
+                    * (scan / "caller-pcode-flow").glob("*.tsv"),
+                    * (scan / "callee-pcode-flow").glob("*.tsv"),
+                ])
+                for flow_path in flow_paths:
+                    effect_arguments.extend(["--pcode-flow", flow_path.stem, str(flow_path)])
+                effect_arguments.extend(["--output", str(rebuilt_effects)])
+                _run(binaries[names[4]], effect_arguments)
+                if rebuilt_effects.read_bytes() != interprocedural_path.read_bytes():
+                    raise ValueError(f"{label} interprocedural memory effects changed on replay")
+
+                audit = screening_scratch / "field-store-load-dominance-v5.jsonl"
+                _run(
+                    binaries[names[2]],
+                    [
+                        str(scan / "field-access-pairs.jsonl"),
+                        str(scan / "function-pcode-cfg-v3.jsonl"),
+                        "--memory-store-access-jsonl", str(scan / "memory-store-access.jsonl"),
+                        "--interprocedural-memory-effect-jsonl", str(rebuilt_effects),
+                        "--output", str(audit),
+                    ],
+                )
+                if audit.read_bytes() != (scan / "field-store-load-dominance-v5.jsonl").read_bytes():
+                    raise ValueError(f"{label} dominance /5 audit changed on replay")
 
             replayed_screening_roots += manifest[f"expanded_{label}_screen"]["selection"]["candidate_count"]
 
