@@ -1,0 +1,744 @@
+{
+  "format": "NFS.M23ScreeningSelection/1",
+  "source_rows": 1000,
+  "source_sha256": "cbab8b43b96a0c779ec19e4054fda2d19fec793bc644d10df01af38e2c28cd5e",
+  "previously_scanned_distinct_roots_excluded": 2297,
+  "candidate_count": 49,
+  "selection": [
+    {
+      "function_entry": "00a01a00",
+      "source_name": "FUN_00a01a00",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 65,
+        "emitted_ops": 65,
+        "calls": 4,
+        "indirect_calls": 2,
+        "branches": 3,
+        "loads": 10,
+        "stores": 5,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a03460",
+      "source_name": "FUN_00a03460",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 229,
+        "emitted_ops": 229,
+        "calls": 12,
+        "indirect_calls": 2,
+        "branches": 18,
+        "loads": 29,
+        "stores": 7,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a05bd0",
+      "source_name": "FUN_00a05bd0",
+      "parameter_count": 4,
+      "metrics": {
+        "ops": 86,
+        "emitted_ops": 86,
+        "calls": 6,
+        "indirect_calls": 2,
+        "branches": 0,
+        "loads": 10,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a06190",
+      "source_name": "FUN_00a06190",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 135,
+        "emitted_ops": 135,
+        "calls": 6,
+        "indirect_calls": 2,
+        "branches": 5,
+        "loads": 14,
+        "stores": 2,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a08830",
+      "source_name": "FUN_00a08830",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 29,
+        "emitted_ops": 29,
+        "calls": 3,
+        "indirect_calls": 2,
+        "branches": 2,
+        "loads": 6,
+        "stores": 2,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a0c510",
+      "source_name": "FUN_00a0c510",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 97,
+        "emitted_ops": 97,
+        "calls": 6,
+        "indirect_calls": 2,
+        "branches": 5,
+        "loads": 16,
+        "stores": 2,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a0e1f0",
+      "source_name": "FUN_00a0e1f0",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 64,
+        "emitted_ops": 64,
+        "calls": 4,
+        "indirect_calls": 2,
+        "branches": 4,
+        "loads": 15,
+        "stores": 3,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a11140",
+      "source_name": "FUN_00a11140",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 120,
+        "emitted_ops": 120,
+        "calls": 8,
+        "indirect_calls": 2,
+        "branches": 11,
+        "loads": 19,
+        "stores": 2,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a17810",
+      "source_name": "FUN_00a17810",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 68,
+        "emitted_ops": 68,
+        "calls": 4,
+        "indirect_calls": 2,
+        "branches": 3,
+        "loads": 17,
+        "stores": 4,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a178e0",
+      "source_name": "FUN_00a178e0",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 78,
+        "emitted_ops": 78,
+        "calls": 4,
+        "indirect_calls": 2,
+        "branches": 3,
+        "loads": 17,
+        "stores": 4,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a18f00",
+      "source_name": "FUN_00a18f00",
+      "parameter_count": 4,
+      "metrics": {
+        "ops": 170,
+        "emitted_ops": 170,
+        "calls": 9,
+        "indirect_calls": 2,
+        "branches": 6,
+        "loads": 10,
+        "stores": 2,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a19250",
+      "source_name": "FUN_00a19250",
+      "parameter_count": 4,
+      "metrics": {
+        "ops": 238,
+        "emitted_ops": 238,
+        "calls": 11,
+        "indirect_calls": 2,
+        "branches": 13,
+        "loads": 14,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a1d050",
+      "source_name": "FUN_00a1d050",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 119,
+        "emitted_ops": 119,
+        "calls": 6,
+        "indirect_calls": 2,
+        "branches": 12,
+        "loads": 13,
+        "stores": 2,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a25b30",
+      "source_name": "FUN_00a25b30",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 111,
+        "emitted_ops": 111,
+        "calls": 3,
+        "indirect_calls": 2,
+        "branches": 4,
+        "loads": 19,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a25f40",
+      "source_name": "FUN_00a25f40",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 108,
+        "emitted_ops": 108,
+        "calls": 7,
+        "indirect_calls": 2,
+        "branches": 10,
+        "loads": 23,
+        "stores": 1,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a263e0",
+      "source_name": "FUN_00a263e0",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 91,
+        "emitted_ops": 91,
+        "calls": 5,
+        "indirect_calls": 2,
+        "branches": 9,
+        "loads": 9,
+        "stores": 8,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a265e0",
+      "source_name": "FUN_00a265e0",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 131,
+        "emitted_ops": 131,
+        "calls": 3,
+        "indirect_calls": 2,
+        "branches": 5,
+        "loads": 21,
+        "stores": 8,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a276c0",
+      "source_name": "FUN_00a276c0",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 140,
+        "emitted_ops": 140,
+        "calls": 5,
+        "indirect_calls": 2,
+        "branches": 10,
+        "loads": 19,
+        "stores": 7,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a27c80",
+      "source_name": "FUN_00a27c80",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 86,
+        "emitted_ops": 86,
+        "calls": 3,
+        "indirect_calls": 2,
+        "branches": 4,
+        "loads": 14,
+        "stores": 3,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a281d0",
+      "source_name": "FUN_00a281d0",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 86,
+        "emitted_ops": 86,
+        "calls": 6,
+        "indirect_calls": 2,
+        "branches": 6,
+        "loads": 6,
+        "stores": 7,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a28290",
+      "source_name": "FUN_00a28290",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 89,
+        "emitted_ops": 89,
+        "calls": 6,
+        "indirect_calls": 2,
+        "branches": 6,
+        "loads": 6,
+        "stores": 8,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a28380",
+      "source_name": "FUN_00a28380",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 86,
+        "emitted_ops": 86,
+        "calls": 6,
+        "indirect_calls": 2,
+        "branches": 6,
+        "loads": 6,
+        "stores": 8,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a28600",
+      "source_name": "FUN_00a28600",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 86,
+        "emitted_ops": 86,
+        "calls": 6,
+        "indirect_calls": 2,
+        "branches": 5,
+        "loads": 5,
+        "stores": 1,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a28aa0",
+      "source_name": "FUN_00a28aa0",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 86,
+        "emitted_ops": 86,
+        "calls": 6,
+        "indirect_calls": 2,
+        "branches": 5,
+        "loads": 5,
+        "stores": 1,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a29380",
+      "source_name": "FUN_00a29380",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 147,
+        "emitted_ops": 147,
+        "calls": 8,
+        "indirect_calls": 2,
+        "branches": 7,
+        "loads": 10,
+        "stores": 1,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a2f460",
+      "source_name": "FUN_00a2f460",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 48,
+        "emitted_ops": 48,
+        "calls": 5,
+        "indirect_calls": 2,
+        "branches": 2,
+        "loads": 5,
+        "stores": 7,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a35e40",
+      "source_name": "FUN_00a35e40",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 161,
+        "emitted_ops": 161,
+        "calls": 5,
+        "indirect_calls": 2,
+        "branches": 7,
+        "loads": 19,
+        "stores": 7,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a36000",
+      "source_name": "FUN_00a36000",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 117,
+        "emitted_ops": 117,
+        "calls": 3,
+        "indirect_calls": 2,
+        "branches": 4,
+        "loads": 20,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a360c0",
+      "source_name": "FUN_00a360c0",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 114,
+        "emitted_ops": 114,
+        "calls": 3,
+        "indirect_calls": 2,
+        "branches": 4,
+        "loads": 19,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a361c0",
+      "source_name": "FUN_00a361c0",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 114,
+        "emitted_ops": 114,
+        "calls": 3,
+        "indirect_calls": 2,
+        "branches": 4,
+        "loads": 19,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a36270",
+      "source_name": "FUN_00a36270",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 114,
+        "emitted_ops": 114,
+        "calls": 3,
+        "indirect_calls": 2,
+        "branches": 4,
+        "loads": 19,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a38690",
+      "source_name": "FUN_00a38690",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 58,
+        "emitted_ops": 58,
+        "calls": 3,
+        "indirect_calls": 2,
+        "branches": 3,
+        "loads": 15,
+        "stores": 3,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a396e0",
+      "source_name": "FUN_00a396e0",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 100,
+        "emitted_ops": 100,
+        "calls": 5,
+        "indirect_calls": 2,
+        "branches": 4,
+        "loads": 13,
+        "stores": 3,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3b040",
+      "source_name": "FUN_00a3b040",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 85,
+        "emitted_ops": 85,
+        "calls": 7,
+        "indirect_calls": 2,
+        "branches": 6,
+        "loads": 11,
+        "stores": 7,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3b4e0",
+      "source_name": "FUN_00a3b4e0",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 171,
+        "emitted_ops": 171,
+        "calls": 4,
+        "indirect_calls": 2,
+        "branches": 11,
+        "loads": 28,
+        "stores": 16,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3b640",
+      "source_name": "FUN_00a3b640",
+      "parameter_count": 4,
+      "metrics": {
+        "ops": 168,
+        "emitted_ops": 168,
+        "calls": 11,
+        "indirect_calls": 2,
+        "branches": 8,
+        "loads": 21,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3b7c0",
+      "source_name": "FUN_00a3b7c0",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 145,
+        "emitted_ops": 145,
+        "calls": 4,
+        "indirect_calls": 2,
+        "branches": 11,
+        "loads": 24,
+        "stores": 12,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3ba70",
+      "source_name": "FUN_00a3ba70",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 191,
+        "emitted_ops": 191,
+        "calls": 4,
+        "indirect_calls": 2,
+        "branches": 19,
+        "loads": 20,
+        "stores": 8,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3c350",
+      "source_name": "FUN_00a3c350",
+      "parameter_count": 4,
+      "metrics": {
+        "ops": 233,
+        "emitted_ops": 233,
+        "calls": 10,
+        "indirect_calls": 2,
+        "branches": 10,
+        "loads": 22,
+        "stores": 9,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3c560",
+      "source_name": "FUN_00a3c560",
+      "parameter_count": 4,
+      "metrics": {
+        "ops": 207,
+        "emitted_ops": 207,
+        "calls": 11,
+        "indirect_calls": 2,
+        "branches": 10,
+        "loads": 20,
+        "stores": 7,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3c8f0",
+      "source_name": "FUN_00a3c8f0",
+      "parameter_count": 4,
+      "metrics": {
+        "ops": 251,
+        "emitted_ops": 251,
+        "calls": 11,
+        "indirect_calls": 2,
+        "branches": 8,
+        "loads": 25,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3cb10",
+      "source_name": "FUN_00a3cb10",
+      "parameter_count": 4,
+      "metrics": {
+        "ops": 198,
+        "emitted_ops": 198,
+        "calls": 11,
+        "indirect_calls": 2,
+        "branches": 9,
+        "loads": 19,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3cd20",
+      "source_name": "FUN_00a3cd20",
+      "parameter_count": 4,
+      "metrics": {
+        "ops": 164,
+        "emitted_ops": 164,
+        "calls": 11,
+        "indirect_calls": 2,
+        "branches": 9,
+        "loads": 19,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3cea0",
+      "source_name": "FUN_00a3cea0",
+      "parameter_count": 4,
+      "metrics": {
+        "ops": 194,
+        "emitted_ops": 194,
+        "calls": 11,
+        "indirect_calls": 2,
+        "branches": 8,
+        "loads": 19,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3d910",
+      "source_name": "FUN_00a3d910",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 47,
+        "emitted_ops": 47,
+        "calls": 6,
+        "indirect_calls": 2,
+        "branches": 2,
+        "loads": 10,
+        "stores": 4,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3ebc0",
+      "source_name": "FUN_00a3ebc0",
+      "parameter_count": 4,
+      "metrics": {
+        "ops": 210,
+        "emitted_ops": 210,
+        "calls": 7,
+        "indirect_calls": 2,
+        "branches": 18,
+        "loads": 21,
+        "stores": 10,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3ef80",
+      "source_name": "FUN_00a3ef80",
+      "parameter_count": 4,
+      "metrics": {
+        "ops": 197,
+        "emitted_ops": 197,
+        "calls": 11,
+        "indirect_calls": 2,
+        "branches": 8,
+        "loads": 19,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3f140",
+      "source_name": "FUN_00a3f140",
+      "parameter_count": 4,
+      "metrics": {
+        "ops": 197,
+        "emitted_ops": 197,
+        "calls": 11,
+        "indirect_calls": 2,
+        "branches": 8,
+        "loads": 19,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3fbb0",
+      "source_name": "FUN_00a3fbb0",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 62,
+        "emitted_ops": 62,
+        "calls": 6,
+        "indirect_calls": 2,
+        "branches": 2,
+        "loads": 15,
+        "stores": 4,
+        "truncated": false
+      }
+    }
+  ]
+}
