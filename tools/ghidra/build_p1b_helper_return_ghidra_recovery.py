@@ -72,6 +72,8 @@ def compose_report(
     target_export_sha256: str,
     prior_export_sha256: str,
     executable_sha256: str,
+    unconfirmed_target_exports: list[dict[str, Any]] | None = None,
+    unconfirmed_export_sha256: str | None = None,
 ) -> dict[str, Any]:
     if executable_sha256 != RETAIL_SHA256:
         raise ValueError("unexpected SHIFT retail executable SHA-256")
@@ -106,6 +108,7 @@ def compose_report(
 
     unresolved_targets = {target for _, target in unresolved_callsites}
     confirmed_targets = set(target_sites)
+    unconfirmed_targets = unresolved_targets - confirmed_targets
     export_by_address: dict[int, dict[str, Any]] = {}
     for row in target_exports:
         if row.get("found") is not True:
@@ -117,6 +120,19 @@ def compose_report(
         export_by_address[entry] = row
     if set(export_by_address) != confirmed_targets:
         raise ValueError("Ghidra instruction export does not match confirmed target function set")
+
+    candidate_entries = unconfirmed_targets.intersection(function_by_address)
+    candidate_export_by_address: dict[int, dict[str, Any]] = {}
+    for row in unconfirmed_target_exports or []:
+        if row.get("found") is not True:
+            raise ValueError(f"Ghidra candidate function body missing for {row.get('requested')}")
+        function = row.get("function") or {}
+        entry = address(function.get("address"))
+        if entry in candidate_export_by_address:
+            raise ValueError(f"duplicate Ghidra candidate function export: 0x{entry:08x}")
+        candidate_export_by_address[entry] = row
+    if set(candidate_export_by_address) != candidate_entries:
+        raise ValueError("candidate instruction export does not match unconfirmed Ghidra function entries")
 
     termination_counts: Counter[str] = Counter()
     recovered_functions = []
@@ -157,7 +173,8 @@ def compose_report(
         for row in prior_exports
         if row.get("found") is True
     }
-    new_addresses = set(export_by_address)
+    all_target_exports = {**export_by_address, **candidate_export_by_address}
+    all_target_addresses = set(all_target_exports)
     prior_instruction_counts = {
         address(row["function"]["address"]): int(row.get("instruction_count", 0))
         for row in prior_exports
@@ -175,26 +192,60 @@ def compose_report(
         for row in prior_exports
         if row.get("found") is True
     }
-    for entry in prior_addresses & new_addresses:
-        if prior_by_address[entry].get("instructions") != export_by_address[entry].get("instructions"):
+    for entry in prior_addresses & all_target_addresses:
+        if prior_by_address[entry].get("instructions") != all_target_exports[entry].get("instructions"):
             raise ValueError(f"overlapping Ghidra function bodies differ: 0x{entry:08x}")
     prior_instruction_count = sum(
         prior_instruction_counts.values()
     )
     prior_pcode_instruction_count = sum(prior_pcode_counts.values())
     new_only_instruction_count = sum(
-        len(export_by_address[entry].get("instructions", []))
-        for entry in new_addresses - prior_addresses
+        len(all_target_exports[entry].get("instructions", []))
+        for entry in all_target_addresses - prior_addresses
     )
     new_only_pcode_instruction_count = sum(
-        sum(bool(item.get("pcode")) for item in export_by_address[entry].get("instructions", []))
-        for entry in new_addresses - prior_addresses
+        sum(bool(item.get("pcode")) for item in all_target_exports[entry].get("instructions", []))
+        for entry in all_target_addresses - prior_addresses
     )
 
     qualified_helpers = sum(
         row["helper_return_probe"]["qualified_entry_argument_plus_0x374"]
         for row in recovered_functions
     )
+    candidate_termination_counts: Counter[str] = Counter()
+    candidate_functions = []
+    candidate_instruction_count = 0
+    candidate_pcode_instruction_count = 0
+    unconfirmed_site_counts = Counter(target for _, target in unresolved_callsites)
+    for entry in sorted(candidate_entries):
+        function = function_by_address[entry]
+        exported = candidate_export_by_address[entry]
+        instructions = exported.get("instructions", [])
+        rows = instruction_rows(exported)
+        candidate_instruction_count += len(instructions)
+        candidate_pcode_instruction_count += sum(bool(item.get("pcode")) for item in instructions)
+        entry_index = next((i for i, row in enumerate(rows) if row[0] == entry), None)
+        if entry_index is None:
+            raise ValueError(f"Ghidra candidate entry instruction missing: 0x{entry:08x}")
+        result = analyze_helper(rows, entry_index)
+        candidate_termination_counts[result.get("termination", "unknown")] += 1
+        candidate_functions.append(
+            {
+                "address": f"0x{entry:08x}",
+                "ghidra_name": function.get("name"),
+                "size": function.get("size"),
+                "mnemonic_sha256": function.get("mnemonic_sha256"),
+                "unconfirmed_objdump_callsite_count": unconfirmed_site_counts[entry],
+                "instruction_count": len(instructions),
+                "helper_return_probe": {
+                    "termination": result.get("termination"),
+                    "instruction_count": result.get("instruction_count"),
+                    "qualified_entry_argument_plus_0x374": bool(result.get("qualified")),
+                    "return_argument_channel": result.get("return_argument_channel"),
+                    "return_site": result.get("return_site"),
+                },
+            }
+        )
     return {
         "format": FORMAT,
         "version": 1,
@@ -212,11 +263,12 @@ def compose_report(
             "exact_ghidra_direct_callgraph_match_count": len(confirmed_sites),
             "unique_confirmed_target_function_count": len(confirmed_targets),
             "unmatched_callsite_count": len(set(unresolved_callsites)) - len(confirmed_sites),
-            "unconfirmed_target_count": len(unresolved_targets - confirmed_targets),
+            "unconfirmed_target_count": len(unconfirmed_targets),
+            "unconfirmed_target_function_entry_count": len(candidate_entries),
             "exact_callgraph_matches": confirmed_sites,
             "unmatched_callsites": unmatched_sites,
             "unconfirmed_target_addresses": [
-                f"0x{target:08x}" for target in sorted(unresolved_targets - confirmed_targets)
+                f"0x{target:08x}" for target in sorted(unconfirmed_targets)
             ],
         },
         "function_body_recovery": {
@@ -230,14 +282,28 @@ def compose_report(
             "helper_return_probe_termination_counts": dict(sorted(termination_counts.items())),
             "qualified_entry_argument_plus_0x374_function_count": qualified_helpers,
         },
+        "inventory_only_function_body_candidates": {
+            "callgraph_confirmed_callsite_count": 0,
+            "function_entry_count": len(candidate_functions),
+            "instruction_count": candidate_instruction_count,
+            "pcode_instruction_count": candidate_pcode_instruction_count,
+            "pcode_available_for_every_instruction": candidate_instruction_count == candidate_pcode_instruction_count,
+            "instruction_export_sha256": unconfirmed_export_sha256,
+            "helper_return_probe_termination_counts": dict(sorted(candidate_termination_counts.items())),
+            "qualified_entry_argument_plus_0x374_function_count": sum(
+                row["helper_return_probe"]["qualified_entry_argument_plus_0x374"]
+                for row in candidate_functions
+            ),
+            "functions": candidate_functions,
+        },
         "combined_function_instruction_exports": {
             "prior_export_sha256": prior_export_sha256,
             "prior_function_count": len(prior_addresses),
             "prior_instruction_count": prior_instruction_count,
             "prior_pcode_instruction_count": prior_pcode_instruction_count,
-            "overlap_function_count": len(prior_addresses & new_addresses),
-            "new_function_count": len(new_addresses - prior_addresses),
-            "unique_function_count": len(prior_addresses | new_addresses),
+            "overlap_function_count": len(prior_addresses & all_target_addresses),
+            "new_function_count": len(all_target_addresses - prior_addresses),
+            "unique_function_count": len(prior_addresses | all_target_addresses),
             "unique_instruction_count": prior_instruction_count + new_only_instruction_count,
             "unique_pcode_instruction_count": prior_pcode_instruction_count + new_only_pcode_instruction_count,
         },
@@ -263,6 +329,7 @@ def build(
     executable: Path,
     ghidra_export: Path,
     instruction_export: Path,
+    unconfirmed_instruction_export: Path,
     prior_instruction_export: Path,
 ) -> dict[str, Any]:
     executable_sha256 = sha256(executable)
@@ -298,6 +365,8 @@ def build(
         sha256(instruction_export),
         sha256(prior_instruction_export),
         executable_sha256,
+        read_jsonl(unconfirmed_instruction_export),
+        sha256(unconfirmed_instruction_export),
     )
 
 
@@ -306,17 +375,25 @@ def main() -> int:
     parser.add_argument("executable", type=Path)
     parser.add_argument("ghidra_export", type=Path)
     parser.add_argument("instruction_export", type=Path)
+    parser.add_argument("unconfirmed_instruction_export", type=Path)
     parser.add_argument("prior_instruction_export", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
-        report = build(args.executable, args.ghidra_export, args.instruction_export, args.prior_instruction_export)
+        report = build(
+            args.executable,
+            args.ghidra_export,
+            args.instruction_export,
+            args.unconfirmed_instruction_export,
+            args.prior_instruction_export,
+        )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         parser.error(str(exc))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"confirmed unresolved callsites: {report['objdump_unresolved_direct_calls']['exact_ghidra_direct_callgraph_match_count']}")
     print(f"recovered target functions: {report['function_body_recovery']['target_function_count']}")
+    print(f"inventory-only function candidates: {report['inventory_only_function_body_candidates']['function_entry_count']}")
     print(f"new unique function bodies: {report['combined_function_instruction_exports']['new_function_count']}")
     print(f"output: {args.output}")
     return 0
