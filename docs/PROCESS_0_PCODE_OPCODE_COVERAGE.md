@@ -15,3 +15,9 @@ This report helps define the coverage target for a future portable translator.
 It does not establish that any opcode is implemented, that the original C
 decompilation is buildable, or that a replacement is linkable or behaviorally
 equivalent. Full recompilation remains open.
+
+The 283 `CALLOTHER` operations are separately joined to the exact x86 language
+userop table in [`evidence/pcode_userop_coverage_20261017.json`](../evidence/pcode_userop_coverage_20261017.json).
+That resolves 32 used indices and leaves 0 indices outside the table; it does
+not implement or define their semantics. See
+[`PROCESS_0_PCODE_USEROP_COVERAGE.md`](PROCESS_0_PCODE_USEROP_COVERAGE.md).
