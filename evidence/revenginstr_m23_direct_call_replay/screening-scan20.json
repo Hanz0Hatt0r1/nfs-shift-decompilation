@@ -1,0 +1,317 @@
+{
+  "format": "NFS.RevenginstrM23Screening/2",
+  "program_id": "nfs-shift:SHIFT.exe",
+  "source": {
+    "corpus": "SHIFT portable P-code sample 00a",
+    "rows": 1000,
+    "sha256": "cbab8b43b96a0c779ec19e4054fda2d19fec793bc644d10df01af38e2c28cd5e"
+  },
+  "capture": {
+    "analysis_enabled": false,
+    "read_only": true,
+    "ghidra_version": "12.1.2 DEV",
+    "exporter": "ExportGhidraParameterStoreField.java",
+    "revenginstr_source_commit": "bd8f4725e5c38c502a647110518c7116b5e82d5b"
+  },
+  "selection": {
+    "previously_scanned_distinct_roots_excluded": 2372,
+    "candidate_count": 8,
+    "filters": [
+      "PARAMS >= 1",
+      "direct calls > 0",
+      "exactly five indirect calls",
+      "loads > 0",
+      "stores > 0",
+      "not truncated",
+      "source name does not begin with thunk_",
+      "entry was not in prior M2.3 scan exports"
+    ],
+    "candidates": [
+      {
+        "function_entry": "00a036e0",
+        "source_name": "FUN_00a036e0",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 204,
+          "emitted_ops": 204,
+          "calls": 9,
+          "indirect_calls": 5,
+          "branches": 15,
+          "loads": 34,
+          "stores": 8,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 14,
+          "memory_store_access": 8,
+          "field_access_pairs": 0
+        },
+        "source_export_sha256": {
+          "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+          "parameter_loads": "f0d4aa38939a9a70f11d72073cc643e9bb55fd46416f7e352903fed015cc95a4",
+          "memory_store_access": "ccab56d3ca041f5dcc7f3fc2d54a21425ad53e56288dbf08656e361c6a96e8e8",
+          "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "function_entry": "00a0e360",
+        "source_name": "FUN_00a0e360",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 135,
+          "emitted_ops": 135,
+          "calls": 12,
+          "indirect_calls": 5,
+          "branches": 11,
+          "loads": 20,
+          "stores": 1,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 2,
+          "memory_store_access": 1,
+          "field_access_pairs": 0
+        },
+        "source_export_sha256": {
+          "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+          "parameter_loads": "4b3414fc7d748054690961c094d331378ae2a38f5b66462c171bcbbda161eeb3",
+          "memory_store_access": "8b19652051b961d2b7b804d390ee1639e9d427fcac8a28db07accfa0edb97be3",
+          "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "function_entry": "00a179b0",
+        "source_name": "FUN_00a179b0",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 212,
+          "emitted_ops": 212,
+          "calls": 15,
+          "indirect_calls": 5,
+          "branches": 12,
+          "loads": 36,
+          "stores": 7,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 13,
+          "memory_store_access": 7,
+          "field_access_pairs": 0
+        },
+        "source_export_sha256": {
+          "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+          "parameter_loads": "eb025d8eb93af9f169ea918ad01adb07a69d1db42cd85ae850a82e693232eb71",
+          "memory_store_access": "00cb6e96a4ca34a72f9f1a126a71285b2b6392692d155a7cfd3e98a4e557df7d",
+          "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "function_entry": "00a1a610",
+        "source_name": "FUN_00a1a610",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 241,
+          "emitted_ops": 241,
+          "calls": 9,
+          "indirect_calls": 5,
+          "branches": 12,
+          "loads": 37,
+          "stores": 8,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 14,
+          "memory_store_access": 8,
+          "field_access_pairs": 0
+        },
+        "source_export_sha256": {
+          "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+          "parameter_loads": "2bfeaa7b329fd70d2b2ca8be955c73dc6cdad8998bb5ba160962dcf9a60a6615",
+          "memory_store_access": "6ee06caefe85c4cb91792c42b786a64c690c7722142871f67570ad578ca00b09",
+          "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "function_entry": "00a26490",
+        "source_name": "FUN_00a26490",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 104,
+          "emitted_ops": 104,
+          "calls": 7,
+          "indirect_calls": 5,
+          "branches": 11,
+          "loads": 17,
+          "stores": 4,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 3,
+          "memory_store_access": 4,
+          "field_access_pairs": 0
+        },
+        "source_export_sha256": {
+          "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+          "parameter_loads": "c220b1a4652b7ad1fe69b814c9ee16cff955e6a70f01ca47c4cd077da084955f",
+          "memory_store_access": "1babb93f4064770d6cbb88ed76416c460fb2504522df2402ff75fa055a80600e",
+          "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "function_entry": "00a28820",
+        "source_name": "FUN_00a28820",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 185,
+          "emitted_ops": 185,
+          "calls": 15,
+          "indirect_calls": 5,
+          "branches": 5,
+          "loads": 31,
+          "stores": 10,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 21,
+          "memory_store_access": 10,
+          "field_access_pairs": 0
+        },
+        "source_export_sha256": {
+          "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+          "parameter_loads": "83eab1140ab9c1d30ae433cad3a612d9703368ea7807bb7fa8d3d8c7d7757a1c",
+          "memory_store_access": "a01c99c144d5615e48869ec9f1b787dd53940b7787db04200af927f7e6b99072",
+          "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "function_entry": "00a32cd0",
+        "source_name": "FUN_00a32cd0",
+        "parameter_count": 3,
+        "pcode_metrics": {
+          "ops": 89,
+          "emitted_ops": 89,
+          "calls": 9,
+          "indirect_calls": 5,
+          "branches": 5,
+          "loads": 12,
+          "stores": 3,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 3,
+          "memory_store_access": 3,
+          "field_access_pairs": 0
+        },
+        "source_export_sha256": {
+          "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+          "parameter_loads": "5a283e241776a012d7fda3fde40c34bac3f557cbebaee08ef1f093aeba1d9ca6",
+          "memory_store_access": "556d252dab546de1c5f4b54c622ee2e1b34c52df617879d8d3d1c7cacac1bdea",
+          "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "function_entry": "00a3dca0",
+        "source_name": "FUN_00a3dca0",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 97,
+          "emitted_ops": 97,
+          "calls": 9,
+          "indirect_calls": 5,
+          "branches": 9,
+          "loads": 14,
+          "stores": 1,
+          "truncated": false
+        },
+        "export_rows": {
+          "parameter_store_field": 0,
+          "parameter_load_field": 9,
+          "memory_store_access": 1,
+          "field_access_pairs": 0
+        },
+        "source_export_sha256": {
+          "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+          "parameter_loads": "0105f2b295c29657c61ab8515cd8be7352a032918bc38b02dbb1c0134f53186c",
+          "memory_store_access": "0687470a25779f8cf65460113bbbbb60ff9ea68dbdc7ae9790ecc9df21076364",
+          "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ]
+  },
+  "empty_export_contract": {
+    "parameter_store_field_rows_per_candidate": 0,
+    "parameter_stores_sha256_values": [
+      "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+    ],
+    "field_access_pair_rows_per_candidate": 0,
+    "field_access_pairs_sha256_values": [
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ]
+  },
+  "summary": {
+    "candidate_roots": 8,
+    "parameter_store_field_rows": 0,
+    "parameter_load_field_rows": 79,
+    "memory_store_access_rows": 42,
+    "field_access_pair_rows": 0,
+    "roots_with_field_pairs": 0,
+    "dominance_audits_run": 0,
+    "outcome": "The 8-function screen yielded no ParameterStoreField/1 rows or exact field pairs. The parameter-load exporter emitted 79 rows and the general memory-store exporter emitted 42 STORE facts; no dominance audit was run."
+  },
+  "replay_inputs": {
+    "field-access-pairs.jsonl": {
+      "bytes": 0,
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "memory-store-access.jsonl": {
+      "bytes": 24487,
+      "rows": 42,
+      "sha256": "05adba025eb2e9e010e5443ad8339b9f97d58ace3bc691499875e604bd27f602"
+    },
+    "parameter-loads.tsv": {
+      "bytes": 10716,
+      "rows": 79,
+      "sha256": "b29548ef94f9ff8d39f44b3e10d6de81f02db6495cbddaea8c94a4c9e5a9e5c1"
+    },
+    "parameter-stores.tsv": {
+      "bytes": 169,
+      "rows": 0,
+      "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+    },
+    "selection-source.json": {
+      "bytes": 2900,
+      "rows": 1,
+      "sha256": "dd2b67e79d46ced77b136db1e8611f3e29fb20e0392fdc974e6317fd7769af36"
+    }
+  },
+  "aggregated_exports": {
+    "field-access-pairs.jsonl": {
+      "bytes": 0,
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "memory-store-access.jsonl": {
+      "bytes": 24487,
+      "rows": 42,
+      "sha256": "05adba025eb2e9e010e5443ad8339b9f97d58ace3bc691499875e604bd27f602"
+    },
+    "parameter-loads.tsv": {
+      "bytes": 10716,
+      "rows": 79,
+      "sha256": "b29548ef94f9ff8d39f44b3e10d6de81f02db6495cbddaea8c94a4c9e5a9e5c1"
+    },
+    "parameter-stores.tsv": {
+      "bytes": 169,
+      "rows": 0,
+      "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+    }
+  }
+}

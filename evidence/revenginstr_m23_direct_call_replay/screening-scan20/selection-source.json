@@ -1,0 +1,129 @@
+{
+  "format": "NFS.M23ScreeningSelection/1",
+  "source_rows": 1000,
+  "source_sha256": "cbab8b43b96a0c779ec19e4054fda2d19fec793bc644d10df01af38e2c28cd5e",
+  "previously_scanned_distinct_roots_excluded": 2372,
+  "candidate_count": 8,
+  "selection": [
+    {
+      "function_entry": "00a036e0",
+      "source_name": "FUN_00a036e0",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 204,
+        "emitted_ops": 204,
+        "calls": 9,
+        "indirect_calls": 5,
+        "branches": 15,
+        "loads": 34,
+        "stores": 8,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a0e360",
+      "source_name": "FUN_00a0e360",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 135,
+        "emitted_ops": 135,
+        "calls": 12,
+        "indirect_calls": 5,
+        "branches": 11,
+        "loads": 20,
+        "stores": 1,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a179b0",
+      "source_name": "FUN_00a179b0",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 212,
+        "emitted_ops": 212,
+        "calls": 15,
+        "indirect_calls": 5,
+        "branches": 12,
+        "loads": 36,
+        "stores": 7,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a1a610",
+      "source_name": "FUN_00a1a610",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 241,
+        "emitted_ops": 241,
+        "calls": 9,
+        "indirect_calls": 5,
+        "branches": 12,
+        "loads": 37,
+        "stores": 8,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a26490",
+      "source_name": "FUN_00a26490",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 104,
+        "emitted_ops": 104,
+        "calls": 7,
+        "indirect_calls": 5,
+        "branches": 11,
+        "loads": 17,
+        "stores": 4,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a28820",
+      "source_name": "FUN_00a28820",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 185,
+        "emitted_ops": 185,
+        "calls": 15,
+        "indirect_calls": 5,
+        "branches": 5,
+        "loads": 31,
+        "stores": 10,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a32cd0",
+      "source_name": "FUN_00a32cd0",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 89,
+        "emitted_ops": 89,
+        "calls": 9,
+        "indirect_calls": 5,
+        "branches": 5,
+        "loads": 12,
+        "stores": 3,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3dca0",
+      "source_name": "FUN_00a3dca0",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 97,
+        "emitted_ops": 97,
+        "calls": 9,
+        "indirect_calls": 5,
+        "branches": 9,
+        "loads": 14,
+        "stores": 1,
+        "truncated": false
+      }
+    }
+  ]
+}
