@@ -128,3 +128,22 @@ def test_full_corpus_pcode_inventory_is_pinned_and_consistent() -> None:
     }
     assert report["pcode"]["operations"] == full["coverage"]["pcode_operation_count"] == 9600713
     assert report["pcode"]["unique_opcodes"] == len(report["pcode"]["opcode_counts"]) == 56
+
+
+def test_full_corpus_userop_coverage_is_hash_pinned_and_resolved() -> None:
+    report = json.loads((ROOT / "evidence/pcode_userop_coverage_20261017.json").read_text())
+    full = json.loads((ROOT / "evidence/full_function_instruction_corpus_20261017.json").read_text())
+    assert report["format"] == "REVENGINSTR.PcodeUseropCoverage/1"
+    assert report["source"]["program"] == full["authority"]["ghidra_program"] == "SHIFT.exe"
+    assert report["source"]["language_id"] == full["authority"]["language_id"] == "x86:LE:32:default"
+    assert report["source"]["corpus_sha256"] == full["authority"]["portable_function_corpus_sha256"]
+    assert report["source"]["manifest_sha256"] == full["authority"]["corpus_manifest_sha256"]
+    assert report["corpus"] == {
+        "callother_operations": 283,
+        "functions": 41538,
+        "instructions": 2088152,
+        "pcode_operations": 9600713,
+    }
+    assert len(report["used_userops"]) == 32
+    assert report["unmapped_userops"] == []
+    assert sum(row["uses"] for row in report["used_userops"]) == 283

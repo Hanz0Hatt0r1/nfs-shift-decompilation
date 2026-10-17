@@ -1,0 +1,179 @@
+{
+  "corpus": {
+    "callother_operations": 283,
+    "functions": 41538,
+    "instructions": 2088152,
+    "pcode_operations": 9600713
+  },
+  "format": "REVENGINSTR.PcodeUseropCoverage/1",
+  "source": {
+    "corpus_sha256": "bc3f5a5972842f605b0bdd25dbc80b3129b96df30c3584d2dd31222aa5a454bc",
+    "language_id": "x86:LE:32:default",
+    "manifest_sha256": "f3a70bb2e65adafcb72d292e03956a9354e99b9a6b994e2586e91fb14b547074",
+    "program": "SHIFT.exe",
+    "userop_table_sha256": "203d0910a0f90bac762a50ae2864371ee13f8e3fba1c8381cb70d6915b935e84"
+  },
+  "unmapped_userops": [],
+  "used_userops": [
+    {
+      "index": 16,
+      "name": "swi",
+      "uses": 1
+    },
+    {
+      "index": 17,
+      "name": "LOCK",
+      "uses": 91
+    },
+    {
+      "index": 18,
+      "name": "UNLOCK",
+      "uses": 91
+    },
+    {
+      "index": 44,
+      "name": "cpuid",
+      "uses": 3
+    },
+    {
+      "index": 45,
+      "name": "cpuid_basic_info",
+      "uses": 3
+    },
+    {
+      "index": 46,
+      "name": "cpuid_Version_info",
+      "uses": 3
+    },
+    {
+      "index": 47,
+      "name": "cpuid_cache_tlb_info",
+      "uses": 3
+    },
+    {
+      "index": 48,
+      "name": "cpuid_serial_info",
+      "uses": 3
+    },
+    {
+      "index": 49,
+      "name": "cpuid_Deterministic_Cache_Parameters_info",
+      "uses": 3
+    },
+    {
+      "index": 50,
+      "name": "cpuid_MONITOR_MWAIT_Features_info",
+      "uses": 3
+    },
+    {
+      "index": 51,
+      "name": "cpuid_Thermal_Power_Management_info",
+      "uses": 3
+    },
+    {
+      "index": 52,
+      "name": "cpuid_Extended_Feature_Enumeration_info",
+      "uses": 3
+    },
+    {
+      "index": 53,
+      "name": "cpuid_Direct_Cache_Access_info",
+      "uses": 3
+    },
+    {
+      "index": 54,
+      "name": "cpuid_Architectural_Performance_Monitoring_info",
+      "uses": 3
+    },
+    {
+      "index": 55,
+      "name": "cpuid_Extended_Topology_info",
+      "uses": 3
+    },
+    {
+      "index": 56,
+      "name": "cpuid_Processor_Extended_States_info",
+      "uses": 3
+    },
+    {
+      "index": 57,
+      "name": "cpuid_Quality_of_Service_info",
+      "uses": 3
+    },
+    {
+      "index": 58,
+      "name": "cpuid_brand_part1_info",
+      "uses": 3
+    },
+    {
+      "index": 59,
+      "name": "cpuid_brand_part2_info",
+      "uses": 3
+    },
+    {
+      "index": 60,
+      "name": "cpuid_brand_part3_info",
+      "uses": 3
+    },
+    {
+      "index": 72,
+      "name": "rdtsc",
+      "uses": 16
+    },
+    {
+      "index": 100,
+      "name": "fcos",
+      "uses": 2
+    },
+    {
+      "index": 103,
+      "name": "fpatan",
+      "uses": 3
+    },
+    {
+      "index": 104,
+      "name": "fptan",
+      "uses": 2
+    },
+    {
+      "index": 105,
+      "name": "fscale",
+      "uses": 2
+    },
+    {
+      "index": 106,
+      "name": "fsin",
+      "uses": 2
+    },
+    {
+      "index": 111,
+      "name": "log2",
+      "uses": 2
+    },
+    {
+      "index": 121,
+      "name": "maxps",
+      "uses": 7
+    },
+    {
+      "index": 123,
+      "name": "minps",
+      "uses": 7
+    },
+    {
+      "index": 129,
+      "name": "packssdw",
+      "uses": 3
+    },
+    {
+      "index": 165,
+      "name": "rcpps",
+      "uses": 2
+    },
+    {
+      "index": 166,
+      "name": "rcpss",
+      "uses": 1
+    }
+  ]
+}
