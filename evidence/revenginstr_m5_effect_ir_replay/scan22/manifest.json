@@ -1,0 +1,69 @@
+{
+  "artifacts": {
+    "function-effect-ir-v2.jsonl": {
+      "bytes": 37006,
+      "rows": 1,
+      "sha256": "a94c7a7b4c15225c486cd6f6e99223279df7443997dfb2c45254c7a37ef3d2d1"
+    },
+    "function-summary-v2.jsonl": {
+      "bytes": 18784,
+      "rows": 1,
+      "sha256": "bdf0f6992bf2ab2d2c4eec38632d505e057503c7efae711bf9d290ddae0be64e"
+    }
+  },
+  "format": "NFS.RevenginstrM5EffectIRReplay/1",
+  "function_entry": "00a277d0",
+  "inputs": {
+    "parameter_loads": {
+      "bytes": 1755,
+      "path": "evidence/revenginstr_m23_direct_call_replay/screening-scan22/parameter-loads.tsv",
+      "rows": 12,
+      "sha256": "2f82f0e230e71043d287fd93110293161ba6a0d3b2520fd4335bc7da1f463c1d"
+    },
+    "parameter_stores": {
+      "bytes": 412,
+      "path": "evidence/revenginstr_m23_direct_call_replay/screening-scan22/parameter-stores.tsv",
+      "rows": 2,
+      "sha256": "19ef099a8fd7781d0697dc27f9cb77691780a91c576fb1d475db7f08378ed4ed"
+    },
+    "pcode_flow": {
+      "bytes": 13597,
+      "path": "evidence/revenginstr_m23_direct_call_replay/screening-scan22/caller-pcode-flow/00a277d0.tsv",
+      "rows": 169,
+      "sha256": "06f8b1197ec3ee104f73d4040751fe794e3e0f934f96cd42da0fbfb86c5f8c0c"
+    }
+  },
+  "limitations": [
+    "P-code LOAD/STORE rows record exact High-P-code operations, not runtime execution.",
+    "Generic memory rows preserve operand tokens and do not resolve globals, pointer aliases, or write-to-read flow.",
+    "Parameter-rooted field facts are structural projections; they do not assert semantic roles."
+  ],
+  "program_id": "nfs-shift:SHIFT.exe",
+  "revenginstr_source_commit": "b6b1ceebdb167181aeb0d4313711ad990149b925",
+  "summary": {
+    "effect_functions": 1,
+    "effects": 60,
+    "effects_by_kind": {
+      "direct_call": 6,
+      "indirect_call": 9,
+      "memory_read": 27,
+      "memory_write": 3,
+      "parameter_field_read": 12,
+      "parameter_field_write": 2,
+      "return_op": 1
+    },
+    "function_entry": "00a277d0",
+    "program_id": "nfs-shift:SHIFT.exe",
+    "summary_claims": 18,
+    "summary_claims_by_kind": {
+      "direct_call": 4,
+      "indirect_call": 1,
+      "memory_read": 1,
+      "memory_write": 1,
+      "parameter_field_read": 8,
+      "parameter_field_write": 2,
+      "return_op": 1
+    },
+    "summary_functions": 1
+  }
+}
