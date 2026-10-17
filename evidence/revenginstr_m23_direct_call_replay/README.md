@@ -35,4 +35,6 @@ Scan21 screened three previously unscanned functions with exactly six indirect c
 
 Scan22 screened one previously unscanned function with exactly nine indirect calls. It produced two parameter-field stores and two exact field pairs, alongside 12 parameter loads and three general STORE facts. The call sidecar has six explicit-memory-write sites and nine indirect-call barriers. CFG/2 and CFG/3 agree that both stores do not dominate their paired loads; neither reports a unique candidate. See [`screening-scan22.json`](screening-scan22.json) for frozen evidence and byte-for-byte replay inputs.
 
+Scan23 screened the last previously unscanned function in this 1,000-row sample that met the same candidate filters, with exactly ten indirect calls. It returned five parameter loads and four general STORE facts, but no parameter-field stores or exact field pairs, so no dominance audit was run. The empty pair export replays byte-for-byte. No additional eligible roots remain in this corpus under these filters. See [`screening-scan23.json`](screening-scan23.json) for the frozen selection and exports.
+
 These are conservative structural audits only. They make no branch-feasibility, runtime value-flow, or semantic-label claim.

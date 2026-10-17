@@ -2075,6 +2075,42 @@
       "path": "screening-scan22/selection-source.json",
       "rows": 1,
       "sha256": "d2480a86dc0a1cfefc63c92a79077cdc921f7893237cc1f3fb7d7fcf2f269425"
+    },
+    {
+      "path": "screening-scan23.json",
+      "bytes": 4222,
+      "rows": 1,
+      "sha256": "6396aea7131f679920f994c411cef1784f29b5098a218686f7549d0ecea11c5e"
+    },
+    {
+      "path": "screening-scan23/field-access-pairs.jsonl",
+      "bytes": 0,
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "screening-scan23/memory-store-access.jsonl",
+      "bytes": 2248,
+      "rows": 4,
+      "sha256": "1a4fe112a1724b23e8af8222a40725135138edab39d2c9ce2edf82bac23a6006"
+    },
+    {
+      "path": "screening-scan23/parameter-loads.tsv",
+      "bytes": 806,
+      "rows": 5,
+      "sha256": "695d0946762b1b733f19b03300d3caf83254ecd74d5811ce580a37f0b176b5df"
+    },
+    {
+      "path": "screening-scan23/parameter-stores.tsv",
+      "bytes": 169,
+      "rows": 0,
+      "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+    },
+    {
+      "path": "screening-scan23/selection-source.json",
+      "bytes": 588,
+      "rows": 1,
+      "sha256": "ceda3201461c6607874e0fe5842517b48c33df6ce1a1fcecbf3c815ccf0a4a83"
     }
   ],
   "candidates": {
@@ -10044,6 +10080,134 @@
         "bytes": 2699,
         "rows": 2,
         "sha256": "293d1a2cd3ec300a6a974111b243c4038f9fe618d5ca21b955b39a0747c0c29a"
+      }
+    }
+  },
+  "expanded_scan23_screen": {
+    "format": "NFS.RevenginstrM23Screening/2",
+    "program_id": "nfs-shift:SHIFT.exe",
+    "source": {
+      "corpus": "SHIFT portable P-code sample 00a",
+      "rows": 1000,
+      "sha256": "cbab8b43b96a0c779ec19e4054fda2d19fec793bc644d10df01af38e2c28cd5e"
+    },
+    "capture": {
+      "analysis_enabled": false,
+      "read_only": true,
+      "ghidra_version": "12.1.2 DEV",
+      "exporter": "ExportGhidraParameterStoreField.java",
+      "revenginstr_source_commit": "bd8f4725e5c38c502a647110518c7116b5e82d5b"
+    },
+    "selection": {
+      "previously_scanned_distinct_roots_excluded": 2384,
+      "candidate_count": 1,
+      "filters": [
+        "PARAMS >= 1",
+        "direct calls > 0",
+        "exactly ten indirect calls",
+        "loads > 0",
+        "stores > 0",
+        "not truncated",
+        "source name does not begin with thunk_",
+        "entry was not in prior M2.3 scan exports"
+      ],
+      "candidates": [
+        {
+          "function_entry": "00a25470",
+          "source_name": "FUN_00a25470",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 119,
+            "emitted_ops": 119,
+            "calls": 11,
+            "indirect_calls": 10,
+            "branches": 10,
+            "loads": 25,
+            "stores": 4,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 5,
+            "memory_store_access": 4,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "695d0946762b1b733f19b03300d3caf83254ecd74d5811ce580a37f0b176b5df",
+            "memory_store_access": "1a4fe112a1724b23e8af8222a40725135138edab39d2c9ce2edf82bac23a6006",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        }
+      ]
+    },
+    "empty_export_contract": {
+      "parameter_store_field_rows_per_candidate": 0,
+      "parameter_stores_sha256_values": [
+        "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+      ],
+      "field_access_pair_rows_per_candidate": 0,
+      "field_access_pairs_sha256_values": [
+        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      ]
+    },
+    "summary": {
+      "candidate_roots": 1,
+      "parameter_store_field_rows": 0,
+      "parameter_load_field_rows": 5,
+      "memory_store_access_rows": 4,
+      "field_access_pair_rows": 0,
+      "roots_with_field_pairs": 0,
+      "dominance_audits_run": 0,
+      "outcome": "The one-function screen yielded no ParameterStoreField/1 rows or exact field pairs. The parameter-load exporter emitted 5 rows and the general memory-store exporter emitted 4 STORE facts; no dominance audit was run."
+    },
+    "replay_inputs": {
+      "field-access-pairs.jsonl": {
+        "bytes": 0,
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "memory-store-access.jsonl": {
+        "bytes": 2248,
+        "rows": 4,
+        "sha256": "1a4fe112a1724b23e8af8222a40725135138edab39d2c9ce2edf82bac23a6006"
+      },
+      "parameter-loads.tsv": {
+        "bytes": 806,
+        "rows": 5,
+        "sha256": "695d0946762b1b733f19b03300d3caf83254ecd74d5811ce580a37f0b176b5df"
+      },
+      "parameter-stores.tsv": {
+        "bytes": 169,
+        "rows": 0,
+        "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+      },
+      "selection-source.json": {
+        "bytes": 588,
+        "rows": 1,
+        "sha256": "ceda3201461c6607874e0fe5842517b48c33df6ce1a1fcecbf3c815ccf0a4a83"
+      }
+    },
+    "aggregated_exports": {
+      "field-access-pairs.jsonl": {
+        "bytes": 0,
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "memory-store-access.jsonl": {
+        "bytes": 2248,
+        "rows": 4,
+        "sha256": "1a4fe112a1724b23e8af8222a40725135138edab39d2c9ce2edf82bac23a6006"
+      },
+      "parameter-loads.tsv": {
+        "bytes": 806,
+        "rows": 5,
+        "sha256": "695d0946762b1b733f19b03300d3caf83254ecd74d5811ce580a37f0b176b5df"
+      },
+      "parameter-stores.tsv": {
+        "bytes": 169,
+        "rows": 0,
+        "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
       }
     }
   }

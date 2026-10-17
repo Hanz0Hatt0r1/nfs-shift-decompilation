@@ -1,0 +1,24 @@
+{
+  "format": "NFS.M23ScreeningSelection/1",
+  "source_rows": 1000,
+  "source_sha256": "cbab8b43b96a0c779ec19e4054fda2d19fec793bc644d10df01af38e2c28cd5e",
+  "previously_scanned_distinct_roots_excluded": 2384,
+  "candidate_count": 1,
+  "selection": [
+    {
+      "function_entry": "00a25470",
+      "source_name": "FUN_00a25470",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 119,
+        "emitted_ops": 119,
+        "calls": 11,
+        "indirect_calls": 10,
+        "branches": 10,
+        "loads": 25,
+        "stores": 4,
+        "truncated": false
+      }
+    }
+  ]
+}
