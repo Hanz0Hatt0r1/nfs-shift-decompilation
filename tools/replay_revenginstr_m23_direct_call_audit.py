@@ -560,6 +560,7 @@ def validate_frozen(evidence_dir: Path) -> dict[str, int]:
 
     _validate_screening_scan(evidence_dir, manifest, scan_number=16, indirect_call_count=1)
     _validate_screening_scan(evidence_dir, manifest, scan_number=17, indirect_call_count=2)
+    _validate_screening_scan(evidence_dir, manifest, scan_number=18, indirect_call_count=3)
 
     return {"artifacts": len(artifacts), "candidates": len(candidates), "bytes": total_bytes}
 
@@ -662,7 +663,7 @@ def replay(evidence_dir: Path, bin_dir: Path) -> dict[str, int]:
                     raise ValueError(f"{version} audit changed on replay: {entry}")
 
         replayed_screening_roots = 0
-        for scan_number in (16, 17):
+        for scan_number in (16, 17, 18):
             label = f"scan{scan_number}"
             scan = evidence_dir / f"screening-{label}"
             screening_scratch = temporary_dir / label

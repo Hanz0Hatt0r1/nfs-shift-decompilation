@@ -1,0 +1,369 @@
+{
+  "format": "NFS.M23ScreeningSelection/1",
+  "source_rows": 1000,
+  "source_sha256": "cbab8b43b96a0c779ec19e4054fda2d19fec793bc644d10df01af38e2c28cd5e",
+  "previously_scanned_distinct_roots_excluded": 2346,
+  "candidate_count": 24,
+  "selection": [
+    {
+      "function_entry": "00a01010",
+      "source_name": "FUN_00a01010",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 64,
+        "emitted_ops": 64,
+        "calls": 5,
+        "indirect_calls": 3,
+        "branches": 4,
+        "loads": 11,
+        "stores": 4,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a02af0",
+      "source_name": "FUN_00a02af0",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 237,
+        "emitted_ops": 237,
+        "calls": 15,
+        "indirect_calls": 3,
+        "branches": 11,
+        "loads": 16,
+        "stores": 3,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a03fb0",
+      "source_name": "FUN_00a03fb0",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 127,
+        "emitted_ops": 127,
+        "calls": 6,
+        "indirect_calls": 3,
+        "branches": 7,
+        "loads": 11,
+        "stores": 1,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a12740",
+      "source_name": "FUN_00a12740",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 146,
+        "emitted_ops": 146,
+        "calls": 7,
+        "indirect_calls": 3,
+        "branches": 6,
+        "loads": 10,
+        "stores": 14,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a15f10",
+      "source_name": "FUN_00a15f10",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 152,
+        "emitted_ops": 152,
+        "calls": 7,
+        "indirect_calls": 3,
+        "branches": 10,
+        "loads": 24,
+        "stores": 4,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a183f0",
+      "source_name": "FUN_00a183f0",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 246,
+        "emitted_ops": 246,
+        "calls": 21,
+        "indirect_calls": 3,
+        "branches": 12,
+        "loads": 19,
+        "stores": 9,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a1a1f0",
+      "source_name": "FUN_00a1a1f0",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 194,
+        "emitted_ops": 194,
+        "calls": 7,
+        "indirect_calls": 3,
+        "branches": 11,
+        "loads": 30,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a25eb0",
+      "source_name": "FUN_00a25eb0",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 73,
+        "emitted_ops": 73,
+        "calls": 4,
+        "indirect_calls": 3,
+        "branches": 5,
+        "loads": 9,
+        "stores": 4,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a271a0",
+      "source_name": "FUN_00a271a0",
+      "parameter_count": 5,
+      "metrics": {
+        "ops": 75,
+        "emitted_ops": 75,
+        "calls": 6,
+        "indirect_calls": 3,
+        "branches": 5,
+        "loads": 7,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a28480",
+      "source_name": "FUN_00a28480",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 96,
+        "emitted_ops": 96,
+        "calls": 7,
+        "indirect_calls": 3,
+        "branches": 5,
+        "loads": 7,
+        "stores": 1,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a28540",
+      "source_name": "FUN_00a28540",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 96,
+        "emitted_ops": 96,
+        "calls": 7,
+        "indirect_calls": 3,
+        "branches": 5,
+        "loads": 7,
+        "stores": 1,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a286b0",
+      "source_name": "FUN_00a286b0",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 150,
+        "emitted_ops": 150,
+        "calls": 6,
+        "indirect_calls": 3,
+        "branches": 13,
+        "loads": 13,
+        "stores": 7,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a289e0",
+      "source_name": "FUN_00a289e0",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 96,
+        "emitted_ops": 96,
+        "calls": 7,
+        "indirect_calls": 3,
+        "branches": 5,
+        "loads": 7,
+        "stores": 1,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a28b50",
+      "source_name": "FUN_00a28b50",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 96,
+        "emitted_ops": 96,
+        "calls": 7,
+        "indirect_calls": 3,
+        "branches": 5,
+        "loads": 7,
+        "stores": 1,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a2b020",
+      "source_name": "FUN_00a2b020",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 48,
+        "emitted_ops": 48,
+        "calls": 6,
+        "indirect_calls": 3,
+        "branches": 3,
+        "loads": 9,
+        "stores": 1,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a2c460",
+      "source_name": "FUN_00a2c460",
+      "parameter_count": 6,
+      "metrics": {
+        "ops": 190,
+        "emitted_ops": 190,
+        "calls": 6,
+        "indirect_calls": 3,
+        "branches": 23,
+        "loads": 13,
+        "stores": 15,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a2c5d0",
+      "source_name": "FUN_00a2c5d0",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 173,
+        "emitted_ops": 173,
+        "calls": 5,
+        "indirect_calls": 3,
+        "branches": 15,
+        "loads": 21,
+        "stores": 7,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a2cc80",
+      "source_name": "FUN_00a2cc80",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 146,
+        "emitted_ops": 146,
+        "calls": 4,
+        "indirect_calls": 3,
+        "branches": 11,
+        "loads": 20,
+        "stores": 8,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a30f40",
+      "source_name": "FUN_00a30f40",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 178,
+        "emitted_ops": 178,
+        "calls": 4,
+        "indirect_calls": 3,
+        "branches": 7,
+        "loads": 18,
+        "stores": 6,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a35d50",
+      "source_name": "FUN_00a35d50",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 134,
+        "emitted_ops": 134,
+        "calls": 4,
+        "indirect_calls": 3,
+        "branches": 9,
+        "loads": 18,
+        "stores": 8,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3d690",
+      "source_name": "FUN_00a3d690",
+      "parameter_count": 2,
+      "metrics": {
+        "ops": 127,
+        "emitted_ops": 127,
+        "calls": 6,
+        "indirect_calls": 3,
+        "branches": 11,
+        "loads": 20,
+        "stores": 4,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a3f410",
+      "source_name": "FUN_00a3f410",
+      "parameter_count": 6,
+      "metrics": {
+        "ops": 197,
+        "emitted_ops": 197,
+        "calls": 4,
+        "indirect_calls": 3,
+        "branches": 8,
+        "loads": 15,
+        "stores": 10,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a427e0",
+      "source_name": "FUN_00a427e0",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 60,
+        "emitted_ops": 60,
+        "calls": 4,
+        "indirect_calls": 3,
+        "branches": 3,
+        "loads": 14,
+        "stores": 1,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a45150",
+      "source_name": "FUN_00a45150",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 84,
+        "emitted_ops": 84,
+        "calls": 6,
+        "indirect_calls": 3,
+        "branches": 7,
+        "loads": 11,
+        "stores": 2,
+        "truncated": false
+      }
+    }
+  ]
+}
