@@ -18,7 +18,7 @@
     "filters": [
       "PARAMS >= 1",
       "direct calls > 0",
-      "exactly one indirect call",
+      "zero indirect calls",
       "loads > 0",
       "stores > 0",
       "not truncated",
