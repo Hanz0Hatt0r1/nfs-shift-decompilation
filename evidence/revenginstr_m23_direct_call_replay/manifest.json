@@ -1,6 +1,126 @@
 {
   "artifacts": [
     {
+      "bytes": 2773,
+      "path": "00503790/audit-v1.jsonl",
+      "rows": 2,
+      "sha256": "dff1ea611192b364d593697a5b61e44987e0ca9ac7a07c94c50d565d7a5c6fe4"
+    },
+    {
+      "bytes": 3465,
+      "path": "00503790/audit-v2.jsonl",
+      "rows": 2,
+      "sha256": "8fb75f8a15fa8854c554fbf5f3dec7d7a18f2ecda7f83d60553b32890e3588f0"
+    },
+    {
+      "bytes": 3931,
+      "path": "00503790/audit-v3.jsonl",
+      "rows": 2,
+      "sha256": "f3caf1eb5aee310b0087123968eee478b024150246e6f5c2cfcadf1d598fe88f"
+    },
+    {
+      "bytes": 14434,
+      "path": "00503790/bounded-pcode.tsv",
+      "rows": 171,
+      "sha256": "fc480c131c8b7871def5c35acfaefa9b514dc2511a43700e70a9f8bb338505a4"
+    },
+    {
+      "bytes": 2762,
+      "path": "00503790/direct-call-memory-effects.jsonl",
+      "rows": 5,
+      "sha256": "6fddd16d563c210e26e4173a01a908c0a0034f18e5bc426d3d8d041cd8e3c8f2"
+    },
+    {
+      "bytes": 2698,
+      "path": "00503790/field-access-pairs.jsonl",
+      "rows": 2,
+      "sha256": "621f9d2cf4c3e708d961ef331fec7ad81e054bd2d4112501737fcba42b7d8415"
+    },
+    {
+      "bytes": 7931,
+      "path": "00503790/function-pcode-cfg-v3.jsonl",
+      "rows": 1,
+      "sha256": "990934e62314f4f41a9dde247a941f55975ecc857060b073a92bea5e78f15632"
+    },
+    {
+      "bytes": 4367,
+      "path": "00503790/memory-store-access.jsonl",
+      "rows": 7,
+      "sha256": "b565a5e63924f5a902b814ee568c08d6d79b2ec0ae079c78982aad26c8298aee"
+    },
+    {
+      "bytes": 407,
+      "path": "00503790/parameter-loads.tsv",
+      "rows": 2,
+      "sha256": "3713ad8bbd5f5ceac28d5416cff8783dcf9c42ba142aa4888f7dac2cfdbc7e04"
+    },
+    {
+      "bytes": 781,
+      "path": "00503790/parameter-stores.tsv",
+      "rows": 5,
+      "sha256": "2184d2940424676ba2938af493e76ed9286265c1ff91cff929c391fc9bbc1944"
+    },
+    {
+      "bytes": 1396,
+      "path": "00619b7d/audit-v1.jsonl",
+      "rows": 1,
+      "sha256": "ef9cc57593ca768c37fde02f2e86f8c6ed7fcf06b2b44172010fa8ec4aaea3b4"
+    },
+    {
+      "bytes": 1742,
+      "path": "00619b7d/audit-v2.jsonl",
+      "rows": 1,
+      "sha256": "a5d55bb2d2e5c810fd20fa24cf0d059635e99d80dbea45412ed649e5662cdade"
+    },
+    {
+      "bytes": 1978,
+      "path": "00619b7d/audit-v3.jsonl",
+      "rows": 1,
+      "sha256": "20cf3a13a37723016360c632fa8248f16b7d783556f3f21249134a6f5bd9a785"
+    },
+    {
+      "bytes": 16394,
+      "path": "00619b7d/bounded-pcode.tsv",
+      "rows": 206,
+      "sha256": "ade74957c3dd45a157021c3ca6b500ac6117ac2d9d3b2fcf3919e325b7ba4dd3"
+    },
+    {
+      "bytes": 3291,
+      "path": "00619b7d/direct-call-memory-effects.jsonl",
+      "rows": 6,
+      "sha256": "33f6c6aecaf834eff34a27b964d7ea8a4e861782e8029befd157d742740f3453"
+    },
+    {
+      "bytes": 1353,
+      "path": "00619b7d/field-access-pairs.jsonl",
+      "rows": 1,
+      "sha256": "e4086c534ec11434b1b67f219d78c2ef9b464341baf7b42910b891d15d8e0358"
+    },
+    {
+      "bytes": 14543,
+      "path": "00619b7d/function-pcode-cfg-v3.jsonl",
+      "rows": 1,
+      "sha256": "7190d3f2fc8b5174f052381d4c12a8b0ea723bcb17e1d694b441afe0cd31638b"
+    },
+    {
+      "bytes": 4720,
+      "path": "00619b7d/memory-store-access.jsonl",
+      "rows": 7,
+      "sha256": "0bb4e659491c71ca601a8119975c195a22db0ee3fd2dded66441f9c8b3bea2d5"
+    },
+    {
+      "bytes": 951,
+      "path": "00619b7d/parameter-loads.tsv",
+      "rows": 6,
+      "sha256": "f2ffb6fd50a6a685f81222dce736bbf2ea5764602251478aa888ab794c82e118"
+    },
+    {
+      "bytes": 291,
+      "path": "00619b7d/parameter-stores.tsv",
+      "rows": 1,
+      "sha256": "a5d85260d437bb4a0baa6b8e738e510b972be3f4cda2c0e617c1c078ec976bab"
+    },
+    {
       "bytes": 1397,
       "path": "00620a38/audit-v1.jsonl",
       "rows": 1,
@@ -621,7 +741,8 @@
         "unknown_effect": 2,
         "unresolved_target": 9
       },
-      "field_access_pair_rows": 1
+      "field_access_pair_rows": 1,
+      "write_free_direct_call_rows": 0
     },
     "00880bf0": {
       "audit_status_counts": {
@@ -640,7 +761,8 @@
       "direct_call_effect_status_counts": {
         "explicit_memory_write": 9
       },
-      "field_access_pair_rows": 4
+      "field_access_pair_rows": 4,
+      "write_free_direct_call_rows": 0
     },
     "00891be0": {
       "audit_status_counts": {
@@ -663,7 +785,8 @@
         "explicit_memory_write": 7,
         "indirect_call": 6
       },
-      "field_access_pair_rows": 2
+      "field_access_pair_rows": 2,
+      "write_free_direct_call_rows": 0
     },
     "009cf690": {
       "audit_status_counts": {
@@ -683,7 +806,8 @@
         "indirect_call": 5,
         "unknown_effect": 3
       },
-      "field_access_pair_rows": 7
+      "field_access_pair_rows": 7,
+      "write_free_direct_call_rows": 0
     },
     "00a0a740": {
       "audit_status_counts": {
@@ -705,7 +829,8 @@
       "direct_call_effect_status_counts": {
         "explicit_memory_write": 7
       },
-      "field_access_pair_rows": 2
+      "field_access_pair_rows": 2,
+      "write_free_direct_call_rows": 0
     },
     "00a3d3c0": {
       "audit_status_counts": {
@@ -724,7 +849,8 @@
       "direct_call_effect_status_counts": {
         "explicit_memory_write": 1
       },
-      "field_access_pair_rows": 3
+      "field_access_pair_rows": 3,
+      "write_free_direct_call_rows": 0
     },
     "00a3d7d0": {
       "audit_status_counts": {
@@ -743,7 +869,8 @@
       "direct_call_effect_status_counts": {
         "explicit_memory_write": 2
       },
-      "field_access_pair_rows": 2
+      "field_access_pair_rows": 2,
+      "write_free_direct_call_rows": 0
     },
     "00a3dda0": {
       "audit_status_counts": {
@@ -762,7 +889,8 @@
       "direct_call_effect_status_counts": {
         "explicit_memory_write": 1
       },
-      "field_access_pair_rows": 3
+      "field_access_pair_rows": 3,
+      "write_free_direct_call_rows": 0
     },
     "00a45520": {
       "audit_status_counts": {
@@ -784,7 +912,8 @@
       "direct_call_effect_status_counts": {
         "explicit_memory_write": 1
       },
-      "field_access_pair_rows": 2
+      "field_access_pair_rows": 2,
+      "write_free_direct_call_rows": 0
     },
     "00a45b50": {
       "audit_status_counts": {
@@ -805,7 +934,51 @@
       "direct_call_effect_status_counts": {
         "explicit_memory_write": 2
       },
-      "field_access_pair_rows": 2
+      "field_access_pair_rows": 2,
+      "write_free_direct_call_rows": 0
+    },
+    "00503790": {
+      "audit_status_counts": {
+        "v1": {
+          "store_not_dominating_load": 2
+        },
+        "v2": {
+          "store_not_dominating_load": 2
+        },
+        "v3": {
+          "store_not_dominating_load": 2
+        }
+      },
+      "bounded_pcode_max_depth": 1,
+      "direct_call_effect_rows": 5,
+      "direct_call_effect_status_counts": {
+        "explicit_memory_write": 4,
+        "no_explicit_memory_write": 1
+      },
+      "field_access_pair_rows": 2,
+      "write_free_direct_call_rows": 1
+    },
+    "00619b7d": {
+      "audit_status_counts": {
+        "v1": {
+          "possible_intervening_memory_effect": 1
+        },
+        "v2": {
+          "possible_intervening_memory_effect": 1
+        },
+        "v3": {
+          "possible_intervening_memory_effect": 1
+        }
+      },
+      "bounded_pcode_max_depth": 1,
+      "direct_call_effect_rows": 6,
+      "direct_call_effect_status_counts": {
+        "explicit_memory_write": 2,
+        "no_explicit_memory_write": 2,
+        "unknown_effect": 2
+      },
+      "field_access_pair_rows": 1,
+      "write_free_direct_call_rows": 2
     }
   },
   "capture": {
@@ -824,5 +997,102 @@
   "tool": {
     "commit": "88a30066b79af827de7c7a9cb91c24a9947edee4",
     "repository": "Hanz0Hatt0r1/revenginstr"
+  },
+  "candidate_count": 12,
+  "path_filter_cases": {
+    "00619b7d": {
+      "field_offset": "0x18",
+      "store_time": 22,
+      "load_time": 102,
+      "eligible_call": {
+        "address": "00619b90",
+        "time": 27,
+        "callee_entry": "0060a369"
+      },
+      "retained_barrier": {
+        "address": "00619b97",
+        "time": 31,
+        "callee_entry": "0060a7e1",
+        "status": "unknown_effect"
+      },
+      "audit_status": "possible_intervening_memory_effect",
+      "witness_blocks": [
+        0,
+        1,
+        4
+      ]
+    }
+  },
+  "expanded_scan9_screen": {
+    "source_pcode_families": [
+      "005",
+      "006",
+      "007",
+      "008",
+      "009"
+    ],
+    "source_pcode_rows": 5000,
+    "selection": {
+      "non_thunk": true,
+      "loads_gt_zero": true,
+      "stores_gt_zero": true,
+      "direct_calls_gt_zero": true,
+      "indirect_calls_eq_zero": true,
+      "parameters_at_least": 2
+    },
+    "exported_functions": 801,
+    "nonempty_parameter_store_exports": 127,
+    "parameter_field_pair_rows_before_large_root_exclusion": 189,
+    "ordered_pairs_before_large_root_exclusion": 104,
+    "roots_before_large_root_exclusion": 33,
+    "excluded_large_root": {
+      "function_entry": "0072fa10",
+      "body_bytes": 16735,
+      "pcode_ops": 117006,
+      "direct_calls": 271
+    },
+    "bounded_roots": 32,
+    "ordered_field_pairs": 90,
+    "direct_call_effect_rows": 203,
+    "direct_call_effect_status_counts": {
+      "explicit_memory_write": 86,
+      "no_explicit_memory_write": 3,
+      "unknown_effect": 110,
+      "unresolved_target": 4
+    },
+    "audit_status_counts": {
+      "v1": {
+        "possible_intervening_memory_effect": 36,
+        "store_not_dominating_load": 53,
+        "unique_cfg_store_candidate": 1
+      },
+      "v2": {
+        "possible_intervening_memory_effect": 36,
+        "store_not_dominating_load": 53,
+        "unique_cfg_store_candidate": 1
+      },
+      "v3": {
+        "possible_intervening_memory_effect": 36,
+        "store_not_dominating_load": 53,
+        "unique_cfg_store_candidate": 1
+      }
+    },
+    "per_pair_status_changes_v1_to_v2": 0,
+    "per_pair_status_changes_v2_to_v3": 0,
+    "write_free_calls_on_exact_audit_witness": [
+      {
+        "function_entry": "00619b7d",
+        "address": "00619b90",
+        "time": 27,
+        "callee_entry": "0060a369",
+        "store_time": 22,
+        "load_time": 102,
+        "witness_blocks": [
+          0,
+          1,
+          4
+        ]
+      }
+    ]
   }
 }
