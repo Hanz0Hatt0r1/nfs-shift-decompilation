@@ -1,0 +1,80 @@
+{
+  "build_report": {
+    "builder_source_sha256": "cafa35adb93d9ef174b36b1891601867f9ef1aec6c9d7c4211380e5c3814301e",
+    "jobs": 2,
+    "object_shards": 71,
+    "path": "evidence/pcode_native_lowering_linux_build_20261018.json",
+    "resumed": true,
+    "sha256": "a4ce39d03409f134d80cae26ddc0b9b60979e5b9a0ca0e1cd423a8401e87523d"
+  },
+  "coverage": {
+    "instructions_lowered": 1288871,
+    "lowerable": 35004,
+    "pcode_operations_lowered": 4970468,
+    "records": 41538,
+    "rejected": 6534,
+    "rejection_reasons": [
+      {
+        "functions": 6440,
+        "reason": "scalar varnode size 10 exceeds 8-byte limit"
+      },
+      {
+        "functions": 65,
+        "reason": "CBRANCH conflicts with machine fallthrough"
+      },
+      {
+        "functions": 28,
+        "reason": "scalar varnode size 16 exceeds 8-byte limit"
+      },
+      {
+        "functions": 1,
+        "reason": "CALLIND conflicts with machine flow type 'COMPUTED_CALL_TERMINATOR'"
+      }
+    ]
+  },
+  "format": "NFSShift.NativeLinuxPcodeSmoke/1",
+  "limitations": {
+    "complete_game": false,
+    "guest_state": "x86-32 represented through RviPcodeContext callbacks",
+    "host_architecture": "x86_64 Linux",
+    "runtime_and_platform_layer": "not implemented by this partial library",
+    "unlowered_functions": 6534
+  },
+  "linux_library": {
+    "artifact_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-20261018/libnfs_shift_pcode_partial.so",
+    "bytes": 982203944,
+    "exported_pcode_functions": 35004,
+    "format": "ELF64 shared object",
+    "linker_flags": [
+      "-shared",
+      "-Wl,-z,defs",
+      "-Wl,-soname,libnfs_shift_pcode_partial.so",
+      "-lm"
+    ],
+    "machine": "Advanced Micro Devices X86-64",
+    "sha256": "0e7af97af78b403d435fd9ebda9866c0649c9b49371ce1ebce795bb360774d0a"
+  },
+  "revenginstr_revision": "378fca4af3089aecf8dd02110d9960b26ef41c1e",
+  "smoke_test": {
+    "call_count": 1,
+    "call_target": "0x00685700",
+    "eax_after": "0x00020000",
+    "function": "rvi_00401000",
+    "memory_write": {
+      "address": "0x00020000",
+      "space": "ram",
+      "value": "0x00aa99d0"
+    },
+    "result": "passed",
+    "return_code": 0,
+    "runner": "tools/ghidra/smoke_shift_pcode_elf.sh",
+    "stdout": "PASS: rvi_00401000 returned 0, called 0x685700 once, EAX=0x20000, [ESI]=0xaa99d0"
+  },
+  "source": {
+    "address_spaces_sha256": "e922b22ab08ba04109f57197534a2e848b171210a35de795514fe0f3ef8effb0",
+    "corpus_sha256": "bc3f5a5972842f605b0bdd25dbc80b3129b96df30c3584d2dd31222aa5a454bc",
+    "language_id": "x86:LE:32:default",
+    "manifest_sha256": "f3a70bb2e65adafcb72d292e03956a9354e99b9a6b994e2586e91fb14b547074",
+    "program": "SHIFT.exe"
+  }
+}

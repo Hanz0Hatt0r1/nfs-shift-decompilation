@@ -1,0 +1,42 @@
+{
+  "format": "REVENGINSTR.PcodeCFunctionLoweringCoverage/1",
+  "functions": {
+    "found": 41538,
+    "fully_lowerable": 35004,
+    "missing": 0,
+    "records": 41538,
+    "rejected": 6534
+  },
+  "instructions": {
+    "in_fully_lowerable_functions": 1288871,
+    "total": 2088152
+  },
+  "pcode_operations": {
+    "in_fully_lowerable_functions": 4970468
+  },
+  "rejection_reasons": [
+    {
+      "functions": 6440,
+      "reason": "scalar varnode size 10 exceeds 8-byte limit"
+    },
+    {
+      "functions": 65,
+      "reason": "CBRANCH conflicts with machine fallthrough"
+    },
+    {
+      "functions": 28,
+      "reason": "scalar varnode size 16 exceeds 8-byte limit"
+    },
+    {
+      "functions": 1,
+      "reason": "CALLIND conflicts with machine flow type 'COMPUTED_CALL_TERMINATOR'"
+    }
+  ],
+  "source": {
+    "address_spaces_sha256": "e922b22ab08ba04109f57197534a2e848b171210a35de795514fe0f3ef8effb0",
+    "corpus_sha256": "bc3f5a5972842f605b0bdd25dbc80b3129b96df30c3584d2dd31222aa5a454bc",
+    "language_id": "x86:LE:32:default",
+    "manifest_sha256": "f3a70bb2e65adafcb72d292e03956a9354e99b9a6b994e2586e91fb14b547074",
+    "program": "SHIFT.exe"
+  }
+}
