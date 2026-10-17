@@ -1,0 +1,119 @@
+{
+  "format": "NFS.RevenginstrM23Screening/1",
+  "program_id": "nfs-shift:SHIFT.exe",
+  "capture": {
+    "analysis_enabled": false,
+    "ghidra_version": "12.1.2 DEV",
+    "read_only": true
+  },
+  "scans": [
+    {
+      "id": "scan10",
+      "parameter_export_candidates": 279,
+      "roots_with_pairs": 2,
+      "field_pair_rows": 8,
+      "ordered_pairs": 0,
+      "roots_with_ordered_pairs": 0,
+      "write_free_calls_on_exact_witness": 0,
+      "per_pair_status_changes_v2_to_v3": 0,
+      "selection": "Previously unscanned, non-thunk functions with at least one parameter, loads, stores, and direct calls; no indirect calls; bounded and non-truncated."
+    },
+    {
+      "id": "scan11",
+      "parameter_export_candidates": 218,
+      "roots_with_pairs": 14,
+      "field_pair_rows": 30,
+      "ordered_pairs": 18,
+      "roots_with_ordered_pairs": 7,
+      "write_free_calls_on_exact_witness": 0,
+      "per_pair_status_changes_v2_to_v3": 0,
+      "selection": "Previously unscanned, non-thunk, non-truncated functions with at least one parameter, exactly one indirect call, and at least one direct call."
+    },
+    {
+      "id": "scan12",
+      "parameter_export_candidates": 118,
+      "roots_with_pairs": 4,
+      "field_pair_rows": 7,
+      "ordered_pairs": 5,
+      "roots_with_ordered_pairs": 2,
+      "write_free_calls_on_exact_witness": 2,
+      "retained_indirect_barriers_on_witness": 2,
+      "per_pair_status_changes_v2_to_v3": 0,
+      "selection": "Previously unscanned, non-thunk, non-truncated functions with at least one parameter, at least two indirect calls, and at least one direct call."
+    },
+    {
+      "id": "scan13",
+      "parameter_export_candidates": 15,
+      "roots_with_pairs": 0,
+      "field_pair_rows": 0,
+      "ordered_pairs": 0,
+      "roots_with_ordered_pairs": 0,
+      "write_free_calls_on_exact_witness": 0,
+      "per_pair_status_changes_v2_to_v3": 0,
+      "selection": "Previously unscanned non-thunk candidates selected from the existing 1,000-function cross-project P-code corpus; parameter exports and pair construction returned no pairs."
+    }
+  ],
+  "totals": {
+    "parameter_export_candidates": 630,
+    "roots_with_pairs": 20,
+    "field_pair_rows": 45,
+    "ordered_pairs": 23,
+    "roots_with_ordered_pairs": 9,
+    "write_free_calls_on_exact_witness": 2,
+    "per_pair_status_changes_v2_to_v3": 0
+  },
+  "scan12_path_filter_case": {
+    "function_entry": "0060de20",
+    "write_free_direct_calls": [
+      {
+        "address": "0060de31",
+        "time": 18,
+        "callee_entry": "00586320"
+      },
+      {
+        "address": "0060de3a",
+        "time": 32,
+        "callee_entry": "00586320"
+      }
+    ],
+    "retained_indirect_barriers": [
+      {
+        "address": "0060de46",
+        "time": 42,
+        "opcode": "CALLIND",
+        "status": "indirect_call"
+      },
+      {
+        "address": "0060de4f",
+        "time": 52,
+        "opcode": "CALLIND",
+        "status": "indirect_call"
+      }
+    ],
+    "pairs": [
+      {
+        "field_offset": "0x18",
+        "store_time": 12,
+        "load_time": 54,
+        "witness_blocks": [
+          0,
+          1
+        ],
+        "v1_v2_v3_status": "possible_intervening_memory_effect"
+      },
+      {
+        "field_offset": "0x1c",
+        "store_time": 15,
+        "load_time": 69,
+        "witness_blocks": [
+          0,
+          1,
+          2
+        ],
+        "v1_v2_v3_status": "possible_intervening_memory_effect"
+      }
+    ],
+    "conclusion": "Both write-free direct calls are on both exact witnesses, but each witness also contains both indirect-call barriers. No pair status changes; no value-flow claim."
+  },
+  "screening_scope": "Read-only exporter selection and structural pair/effect audits; labels and runtime semantics were not inferred."
+}
