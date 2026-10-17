@@ -13,7 +13,7 @@ python tools/replay_revenginstr_m23_direct_call_audit.py \
   --bin-dir /path/to/revenginstr/.venv/bin
 ```
 
-The replay verifies the frozen artifacts, rebuilds field-access pairs and direct-call effects from the committed TSVs, runs the `/1`–`/3` candidate audits and the scan22 transitive-call closure plus `/4` audit, and compares generated JSONL byte-for-byte. The bounded TSV is split by exact `function_entry`; only direct callees present in the export are supplied to the effect builders.
+The replay verifies the frozen artifacts, rebuilds field-access pairs and direct-call effects from the committed TSVs, runs the `/1`–`/3` candidate audits and the scan22 transitive-call closure plus `/4` and alias-aware `/5` audits, and compares generated JSONL byte-for-byte. The bounded TSV is split by exact `function_entry`; only direct callees present in the export are supplied to the effect builders.
 
 ## Results
 
@@ -33,7 +33,7 @@ Scan20 screened eight previously unscanned functions with exactly five indirect 
 
 Scan21 screened three previously unscanned functions with exactly six indirect calls. The parameter-field exporter returned zero rows; it retained 28 parameter loads and 12 general STORE facts, with no exact field pairs, so no dominance audit was run. The empty pair export replays byte-for-byte. See [`screening-scan21.json`](screening-scan21.json) for the frozen selection and exports.
 
-Scan22 screened one previously unscanned function with exactly nine indirect calls. It produced two parameter-field stores and two exact field pairs, alongside 12 parameter loads and three general STORE facts. The direct-call sidecar and transitive closure each retain six explicit-memory-write sites and nine indirect-call barriers. CFG/2, CFG/3, and CFG/4 agree that both stores do not dominate their paired loads; the `/3`→`/4` status-change count is zero and neither audit reports a unique candidate. The frozen closure and `/4` rows pin their input hashes and replay byte-for-byte. See [`screening-scan22.json`](screening-scan22.json) for frozen evidence and replay inputs.
+Scan22 screened one previously unscanned function with exactly nine indirect calls. It produced two parameter-field stores and two exact field pairs, alongside 12 parameter loads and three general STORE facts. The direct-call sidecar and transitive closure each retain six explicit-memory-write sites and nine indirect-call barriers. CFG/2, CFG/3, CFG/4, and the alias-aware `/5` audit agree that both stores do not dominate their paired loads; there are zero status changes from `/4` to `/5` and no unique candidate. The `/5` sidecar contains 12 `unknown_effect` rows and 18 indirect-call barriers across the two pairs. Its frozen inputs have caller P-code/CFG and bounded callee P-code flows, but no exact caller-parameter-root records or callee CFG/memory-access facts; those unknowns remain barriers. All closure and audit rows pin their input hashes and replay byte-for-byte. See [`screening-scan22.json`](screening-scan22.json) for frozen evidence and replay inputs.
 
 Scan23 screened the last previously unscanned function in this 1,000-row sample that met the same candidate filters, with exactly ten indirect calls. It returned five parameter loads and four general STORE facts, but no parameter-field stores or exact field pairs, so no dominance audit was run. The empty pair export replays byte-for-byte. No additional eligible roots remain in this corpus under these filters. See [`screening-scan23.json`](screening-scan23.json) for the frozen selection and exports.
 
