@@ -113,3 +113,18 @@ def test_shift_full_corpus_runner_delegates_to_generic_exporter() -> None:
     assert 'scripts/run_ghidra_function_instructions.sh' in runner
     assert '--all "$OFFSET" "$LIMIT"' in runner
     assert '[[ "$OUTPUT" != *.gz ]]' in runner
+
+
+def test_full_corpus_pcode_inventory_is_pinned_and_consistent() -> None:
+    report = json.loads((ROOT / "evidence/pcode_instruction_coverage_20261017.json").read_text())
+    full = json.loads((ROOT / "evidence/full_function_instruction_corpus_20261017.json").read_text())
+    assert report["source"]["sha256"] == full["authority"]["portable_function_corpus_sha256"]
+    assert report["functions"] == {"records": 41538, "found": 41538, "missing": 0}
+    assert report["instructions"] == {
+        "total": 2088152,
+        "with_pcode": 2085683,
+        "without_pcode": 2469,
+        "without_pcode_mnemonics": {"NOP": 2460, "WAIT": 9},
+    }
+    assert report["pcode"]["operations"] == full["coverage"]["pcode_operation_count"] == 9600713
+    assert report["pcode"]["unique_opcodes"] == len(report["pcode"]["opcode_counts"]) == 56
