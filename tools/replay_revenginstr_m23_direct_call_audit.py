@@ -171,6 +171,7 @@ def _validate_scan16(evidence_dir: Path, manifest: dict[str, Any]) -> None:
     memory_rows = _read_jsonl(folder / "memory-store-access.jsonl")
     pair_rows = _read_jsonl(folder / "field-access-pairs.jsonl")
     call_rows = _read_jsonl(folder / "direct-call-memory-effects.jsonl")
+    audit_v2_rows = _read_jsonl(folder / "field-store-load-dominance-v2.jsonl")
     audit_rows = _read_jsonl(folder / "field-store-load-dominance-v3.jsonl")
     cfg_rows = _read_jsonl(folder / "function-pcode-cfg-v3.jsonl")
     relevant_memory_rows = _read_jsonl(folder / "memory-store-access-relevant.jsonl")
@@ -236,9 +237,17 @@ def _validate_scan16(evidence_dir: Path, manifest: dict[str, Any]) -> None:
         "roots_with_field_pairs": len(pair_counts),
         "audit_roots": len(cfg_rows),
         "audit_rows": len(audit_rows),
+        "audit_v2_rows": len(audit_v2_rows),
         "audit_memory_store_access_rows": len(relevant_memory_rows),
         "audit_status_counts": dict(sorted(Counter(row["status"] for row in audit_rows).items())),
+        "audit_v2_status_counts": dict(
+            sorted(Counter(row["status"] for row in audit_v2_rows).items())
+        ),
         "unique_cfg_store_candidate_rows": sum(row["status"] == "unique_cfg_store_candidate" for row in audit_rows),
+        "unique_cfg_store_candidate_v2_rows": sum(
+            row["status"] == "unique_cfg_store_candidate" for row in audit_v2_rows
+        ),
+        "per_pair_status_changes_v2_to_v3": 0,
         "direct_call_effect_rows": len(call_rows),
         "direct_call_effect_status_counts": dict(sorted(Counter(row["status"] for row in call_rows).items())),
         "write_free_direct_call_rows": sum(row["status"] == "no_explicit_memory_write" for row in call_rows),
@@ -251,13 +260,31 @@ def _validate_scan16(evidence_dir: Path, manifest: dict[str, Any]) -> None:
     pair_roots = {entry for entry, count in pair_counts.items() if count}
     if len(cfg_rows) != len(audit_roots) or audit_roots != pair_roots:
         raise ValueError("scan16 CFG roots do not match the field-pair roots")
-    if any(row.get("function_entry") not in audit_roots for row in audit_rows):
+    if any(row.get("function_entry") not in audit_roots for row in (*audit_v2_rows, *audit_rows)):
         raise ValueError("scan16 audit contains a root without CFG evidence")
     if any(row.get("function_entry") not in audit_roots for row in relevant_memory_rows):
         raise ValueError("scan16 audit memory sidecar contains a root without CFG evidence")
-    if any("runtime value-flow claim" not in row.get("claim_scope", "") for row in audit_rows):
+    if any("runtime value-flow claim" not in row.get("claim_scope", "") for row in (*audit_v2_rows, *audit_rows)):
         raise ValueError("scan16 audit scope overclaims value flow")
-    if totals["unique_cfg_store_candidate_rows"] or totals["write_free_direct_call_rows"]:
+    def audit_key(row: dict[str, Any]) -> tuple[str, str, str]:
+        return (row["function_entry"], row["store"]["source_id"], row["load"]["source_id"])
+
+    audit_v2_by_key = {audit_key(row): row for row in audit_v2_rows}
+    audit_v3_by_key = {audit_key(row): row for row in audit_rows}
+    if audit_v2_by_key.keys() != audit_v3_by_key.keys():
+        raise ValueError("scan16 /2 and /3 audits do not cover the same exact pairs")
+    status_changes = sum(
+        audit_v2_by_key[key]["status"] != audit_v3_by_key[key]["status"]
+        for key in audit_v2_by_key
+    )
+    totals["per_pair_status_changes_v2_to_v3"] = status_changes
+    if status_changes != report.get("summary", {}).get("per_pair_status_changes_v2_to_v3"):
+        raise ValueError("scan16 /2-to-/3 per-pair status change count is incorrect")
+    if (
+        totals["unique_cfg_store_candidate_rows"]
+        or totals["unique_cfg_store_candidate_v2_rows"]
+        or totals["write_free_direct_call_rows"]
+    ):
         raise ValueError("scan16 records an unsupported unique candidate or write-free call")
 
     caller_dir = folder / "caller-pcode-flow"
@@ -278,7 +305,10 @@ def _validate_scan16(evidence_dir: Path, manifest: dict[str, Any]) -> None:
             if row.get("opcode") not in {"CALL", "CALLIND"}:
                 continue
             target = row.get("callee_entry")
-            expected_calls.append((row["op_address"], int(row["op_time"]), row["opcode"], target if target not in {"", "-"} else None))
+            expected_target = target if target not in {"", "-"} else None
+            expected_calls.append(
+                (row["op_address"], int(row["op_time"]), row["opcode"], expected_target)
+            )
         actual_calls = [
             (row.get("address"), row.get("time"), row.get("opcode"), row.get("callee_entry"))
             for row in call_rows_by_root.get(entry, [])
@@ -666,6 +696,23 @@ def replay(evidence_dir: Path, bin_dir: Path) -> dict[str, int]:
         if combined_effects.read_bytes() != (scan16 / "direct-call-memory-effects.jsonl").read_bytes():
             raise ValueError("scan16 direct-call effects changed on replay")
 
+        scan16_audit_v2 = screening_scratch / "field-store-load-dominance-v2.jsonl"
+        _run(
+            binaries[names[2]],
+            [
+                str(pairs),
+                str(scan16 / "function-pcode-cfg-v3.jsonl"),
+                "--memory-store-access-jsonl",
+                str(scan16 / "memory-store-access-relevant.jsonl"),
+                "--output",
+                str(scan16_audit_v2),
+            ],
+        )
+        if scan16_audit_v2.read_bytes() != (
+            scan16 / "field-store-load-dominance-v2.jsonl"
+        ).read_bytes():
+            raise ValueError("scan16 dominance /2 audit changed on replay")
+
         scan16_audit = screening_scratch / "field-store-load-dominance-v3.jsonl"
         _run(
             binaries[names[2]],
@@ -680,7 +727,9 @@ def replay(evidence_dir: Path, bin_dir: Path) -> dict[str, int]:
                 str(scan16_audit),
             ],
         )
-        if scan16_audit.read_bytes() != (scan16 / "field-store-load-dominance-v3.jsonl").read_bytes():
+        if scan16_audit.read_bytes() != (
+            scan16 / "field-store-load-dominance-v3.jsonl"
+        ).read_bytes():
             raise ValueError("scan16 dominance audit changed on replay")
 
     return {
