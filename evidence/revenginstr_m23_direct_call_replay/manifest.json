@@ -1,0 +1,421 @@
+{
+  "artifacts": [
+    {
+      "bytes": 1397,
+      "path": "00620a38/audit-v1.jsonl",
+      "rows": 1,
+      "sha256": "01a05d47fd6e184bbdc76a6780147fb9b4e87497cc4837f64bc74e9abbdd7c37"
+    },
+    {
+      "bytes": 1734,
+      "path": "00620a38/audit-v2.jsonl",
+      "rows": 1,
+      "sha256": "220ab0f548d531046793b38214428c5454f64cdb94e87ac7cec3d41af19bd365"
+    },
+    {
+      "bytes": 1991,
+      "path": "00620a38/audit-v3.jsonl",
+      "rows": 1,
+      "sha256": "bfd12334c376e56f59558bf6487ef8b0e63bcc1551a08739b39069cf08c24997"
+    },
+    {
+      "bytes": 58347,
+      "path": "00620a38/bounded-pcode.tsv",
+      "rows": 688,
+      "sha256": "690a2139949dd5b24146b8e9ffc3d4aae8a16c46472de485bcbaa211296c441e"
+    },
+    {
+      "bytes": 5925,
+      "path": "00620a38/direct-call-memory-effects.jsonl",
+      "rows": 12,
+      "sha256": "733eb39a4fb9e2eacbe517abb70951d74a2cad63c2425acdaa2e4f81d03104d9"
+    },
+    {
+      "bytes": 1353,
+      "path": "00620a38/field-access-pairs.jsonl",
+      "rows": 1,
+      "sha256": "353f99547fb6cff2483c43ec4b97b7f24e62e5222e312f8b04b518d504eb0a7a"
+    },
+    {
+      "bytes": 40910,
+      "path": "00620a38/function-pcode-cfg-v3.jsonl",
+      "rows": 1,
+      "sha256": "063cca9998c02cf08b62d86bbf85cd8ce2c237c4e7957b2ba2137e5912749110"
+    },
+    {
+      "bytes": 2705,
+      "path": "00620a38/memory-store-access.jsonl",
+      "rows": 4,
+      "sha256": "b2cc605143dc82725f10903fb9c14ff9ee828225a96b7d8eea8a4fac33147ec8"
+    },
+    {
+      "bytes": 1089,
+      "path": "00620a38/parameter-loads.tsv",
+      "rows": 7,
+      "sha256": "984a296d5be0d98f6aaf78c6650a31ee4c0c044d74860ecde3f3846560405260"
+    },
+    {
+      "bytes": 535,
+      "path": "00620a38/parameter-stores.tsv",
+      "rows": 3,
+      "sha256": "fc7f1bc3fef7399ef823fc2372f359761dec0e32540db45e6f48200e3c1e1d64"
+    },
+    {
+      "bytes": 5604,
+      "path": "00880bf0/audit-v1.jsonl",
+      "rows": 4,
+      "sha256": "43c86c648000c1090e06cc7be253abd6699385a2de3052143abe3b1724ff9525"
+    },
+    {
+      "bytes": 7002,
+      "path": "00880bf0/audit-v2.jsonl",
+      "rows": 4,
+      "sha256": "5a0e52129596d5d0a4a718b9e0f3c419d56a6e82ffeb3bd1b7e3114843bd835d"
+    },
+    {
+      "bytes": 7982,
+      "path": "00880bf0/audit-v3.jsonl",
+      "rows": 4,
+      "sha256": "a0f64f3e2357006477ebbf4c5004d7d8a72a708e477690c22fc73737e1f242ab"
+    },
+    {
+      "bytes": 19570,
+      "path": "00880bf0/bounded-pcode.tsv",
+      "rows": 230,
+      "sha256": "96fec75b604f13621997587e780260131c0244f4faa862204bb7c9c67d5b9533"
+    },
+    {
+      "bytes": 4987,
+      "path": "00880bf0/direct-call-memory-effects.jsonl",
+      "rows": 9,
+      "sha256": "aa68a70e96a4beef6c7fc45e9a0937f52bfc7bc371c8b40f391f2f86e3eaf5f4"
+    },
+    {
+      "bytes": 5409,
+      "path": "00880bf0/field-access-pairs.jsonl",
+      "rows": 4,
+      "sha256": "c99a0b10aa187b1337f3e4140a0dcbb0efc077192c2b3c75d080fb74d5f1209b"
+    },
+    {
+      "bytes": 23940,
+      "path": "00880bf0/function-pcode-cfg-v3.jsonl",
+      "rows": 1,
+      "sha256": "82fe28c6a01e463d901b103692f92e9dac142ce3a69bcba0ae2bbd22998d6cac"
+    },
+    {
+      "bytes": 4488,
+      "path": "00880bf0/memory-store-access.jsonl",
+      "rows": 8,
+      "sha256": "724205c179494252b0b0b04fccce5c01f39de3d2c290878b5484c7611e04b67e"
+    },
+    {
+      "bytes": 2296,
+      "path": "00880bf0/parameter-loads.tsv",
+      "rows": 16,
+      "sha256": "24be4469021072554c24b60f2fda51f26ce16c9d09fb69f8211a9579ecb0ca1f"
+    },
+    {
+      "bytes": 653,
+      "path": "00880bf0/parameter-stores.tsv",
+      "rows": 4,
+      "sha256": "ca2d07b3a81a81e90acaf0a25136571863ce2a752a9d726e093c6cba50132d11"
+    },
+    {
+      "bytes": 2817,
+      "path": "00891be0/audit-v1.jsonl",
+      "rows": 2,
+      "sha256": "c084ab77c4d50a3cadc152bf691179ba650ad1cf5e4bf1bfdf7c62e0f1436efc"
+    },
+    {
+      "bytes": 3509,
+      "path": "00891be0/audit-v2.jsonl",
+      "rows": 2,
+      "sha256": "9bdbb3c3002203670ba18fc2867fca37e829cf83b9754f1078b750956943bebc"
+    },
+    {
+      "bytes": 4031,
+      "path": "00891be0/audit-v3.jsonl",
+      "rows": 2,
+      "sha256": "c57989e6be8271151ca6a71687d9bbd62deee5334a3938413d1a9e4f8ca061cc"
+    },
+    {
+      "bytes": 34707,
+      "path": "00891be0/bounded-pcode.tsv",
+      "rows": 421,
+      "sha256": "409c5eeb38b737ce6d038b840bb45a4edd628e9968da175e18d8d2efb965efd8"
+    },
+    {
+      "bytes": 6717,
+      "path": "00891be0/direct-call-memory-effects.jsonl",
+      "rows": 13,
+      "sha256": "16dc7507fe5e1054e4d2e6b15377492e08e7e4e9064785cfdecd12a3d29049af"
+    },
+    {
+      "bytes": 2709,
+      "path": "00891be0/field-access-pairs.jsonl",
+      "rows": 2,
+      "sha256": "4ef8786acbcec3384bb69d9acc65cfe50179dc16dd118aca89922db0744d074a"
+    },
+    {
+      "bytes": 34409,
+      "path": "00891be0/function-pcode-cfg-v3.jsonl",
+      "rows": 1,
+      "sha256": "71b507589e22de563eebf0015eb4d6248ff2c35716efa4dd11b1b96392c7763e"
+    },
+    {
+      "bytes": 4633,
+      "path": "00891be0/memory-store-access.jsonl",
+      "rows": 7,
+      "sha256": "d0d95852678e0c4bdb291c987460273139d471529afda36696568c4b1b208d46"
+    },
+    {
+      "bytes": 1749,
+      "path": "00891be0/parameter-loads.tsv",
+      "rows": 12,
+      "sha256": "a279dff3922fc8af1042fec34bd9de4917e575824bc5c2d9b5d42ab80d117d62"
+    },
+    {
+      "bytes": 414,
+      "path": "00891be0/parameter-stores.tsv",
+      "rows": 2,
+      "sha256": "03db3021a8d7ddc0e7f23263b002c83674269678d2e1f3ba32f24e229a48a5d1"
+    },
+    {
+      "bytes": 9830,
+      "path": "009cf690/audit-v1.jsonl",
+      "rows": 7,
+      "sha256": "acb603c5551fb0113043781e24af4a1881b7500867dac3967afe8ac58ed5c83d"
+    },
+    {
+      "bytes": 12236,
+      "path": "009cf690/audit-v2.jsonl",
+      "rows": 7,
+      "sha256": "b197ffe76adc3c38d1b8256b63d298db3656aa6a191456fbc7266d036897951c"
+    },
+    {
+      "bytes": 13930,
+      "path": "009cf690/audit-v3.jsonl",
+      "rows": 7,
+      "sha256": "f42b7811417d3ebd374f7a116e3da2b1296e4bc9f0e57a715eccad90d20c2b33"
+    },
+    {
+      "bytes": 23499,
+      "path": "009cf690/bounded-pcode.tsv",
+      "rows": 286,
+      "sha256": "c3bd38fa8f2be0fbc7b34c66027b302c9e82533ff413574eac85605d3721da21"
+    },
+    {
+      "bytes": 4043,
+      "path": "009cf690/direct-call-memory-effects.jsonl",
+      "rows": 8,
+      "sha256": "d0ccc85e6b7b8bc02e988b2c9160ff1229ae35c78da83d6b208d34952836cf83"
+    },
+    {
+      "bytes": 9471,
+      "path": "009cf690/field-access-pairs.jsonl",
+      "rows": 7,
+      "sha256": "7ce38bc801bda52c237da5b0bd76fc3b353698a7ec32751dc0540af73328e451"
+    },
+    {
+      "bytes": 40081,
+      "path": "009cf690/function-pcode-cfg-v3.jsonl",
+      "rows": 1,
+      "sha256": "9ba2a65b4c5553aec11007809806994c409d002652e1420243de6db68ab5c85d"
+    },
+    {
+      "bytes": 4056,
+      "path": "009cf690/memory-store-access.jsonl",
+      "rows": 6,
+      "sha256": "8382b4c2013f3de51f52cebba2eb063701b3d50d6399b93c73884538e9dce9a2"
+    },
+    {
+      "bytes": 2434,
+      "path": "009cf690/parameter-loads.tsv",
+      "rows": 17,
+      "sha256": "a270c31460ed5ba178e70adaa5a9d064a1d68082ace91ddd66ae9a051aca3ee7"
+    },
+    {
+      "bytes": 901,
+      "path": "009cf690/parameter-stores.tsv",
+      "rows": 6,
+      "sha256": "17d883e970046430bf10e39949de0bacc9caad88e0ca1940f7934ff55f8eacd3"
+    },
+    {
+      "bytes": 2778,
+      "path": "00a3d7d0/audit-v1.jsonl",
+      "rows": 2,
+      "sha256": "fe3b297c3836d45dbb8e538fd2cecd501d4104ecc7ecd1c7746f458d283bb6c4"
+    },
+    {
+      "bytes": 3757,
+      "path": "00a3d7d0/audit-v2.jsonl",
+      "rows": 2,
+      "sha256": "9f24cae45283258d2686bb8b2c5a33ced42b1403dc2a6fb092f7a11afe9f273b"
+    },
+    {
+      "bytes": 4205,
+      "path": "00a3d7d0/audit-v3.jsonl",
+      "rows": 2,
+      "sha256": "fcfdcf9ca496695a8a04f7639343bafa0b011ae96aed2c42fd5d589813fe2d26"
+    },
+    {
+      "bytes": 47598,
+      "path": "00a3d7d0/bounded-pcode.tsv",
+      "rows": 585,
+      "sha256": "b658dc59afaac03d1922c4470e88cb618faebd72754375d3d1af329de036f0aa"
+    },
+    {
+      "bytes": 1111,
+      "path": "00a3d7d0/direct-call-memory-effects.jsonl",
+      "rows": 2,
+      "sha256": "e2f90de45ba9617979d3012537932021e510e9217acd633fa8dbdcf481462740"
+    },
+    {
+      "bytes": 2696,
+      "path": "00a3d7d0/field-access-pairs.jsonl",
+      "rows": 2,
+      "sha256": "a980f613e9c97c5c1065513ab5182b40949defa679ddf2bf31082fd0e94f51c2"
+    },
+    {
+      "bytes": 53624,
+      "path": "00a3d7d0/function-pcode-cfg-v3.jsonl",
+      "rows": 1,
+      "sha256": "48dd7476f31e949cf81dacb8da06587158d5301a8ddf42f4dc6ab1160830ca6b"
+    },
+    {
+      "bytes": 28826,
+      "path": "00a3d7d0/memory-store-access.jsonl",
+      "rows": 43,
+      "sha256": "9dafd9fbc7f2436a8a9a7d77a834a897b5a5aa3ef594a22b4a6e48b4d73ec561"
+    },
+    {
+      "bytes": 409,
+      "path": "00a3d7d0/parameter-loads.tsv",
+      "rows": 2,
+      "sha256": "a1b5dc5928ff06e7ec33d95fe84335245962a27bf95458f1b5dc7188fd3b3e74"
+    },
+    {
+      "bytes": 290,
+      "path": "00a3d7d0/parameter-stores.tsv",
+      "rows": 1,
+      "sha256": "0e18b99b787cc40a2bbc8da65ca972c4e35d701c632e38d7605e36de9a3b5934"
+    }
+  ],
+  "candidates": {
+    "00620a38": {
+      "audit_status_counts": {
+        "v1": {
+          "possible_intervening_memory_effect": 1
+        },
+        "v2": {
+          "possible_intervening_memory_effect": 1
+        },
+        "v3": {
+          "possible_intervening_memory_effect": 1
+        }
+      },
+      "direct_call_effect_rows": 12,
+      "direct_call_effect_status_counts": {
+        "explicit_memory_write": 1,
+        "unknown_effect": 2,
+        "unresolved_target": 9
+      },
+      "field_access_pair_rows": 1
+    },
+    "00880bf0": {
+      "audit_status_counts": {
+        "v1": {
+          "possible_intervening_memory_effect": 4
+        },
+        "v2": {
+          "possible_intervening_memory_effect": 4
+        },
+        "v3": {
+          "possible_intervening_memory_effect": 4
+        }
+      },
+      "direct_call_effect_rows": 9,
+      "direct_call_effect_status_counts": {
+        "explicit_memory_write": 9
+      },
+      "field_access_pair_rows": 4
+    },
+    "00891be0": {
+      "audit_status_counts": {
+        "v1": {
+          "possible_intervening_memory_effect": 1,
+          "store_not_dominating_load": 1
+        },
+        "v2": {
+          "possible_intervening_memory_effect": 1,
+          "store_not_dominating_load": 1
+        },
+        "v3": {
+          "possible_intervening_memory_effect": 1,
+          "store_not_dominating_load": 1
+        }
+      },
+      "direct_call_effect_rows": 13,
+      "direct_call_effect_status_counts": {
+        "explicit_memory_write": 7,
+        "indirect_call": 6
+      },
+      "field_access_pair_rows": 2
+    },
+    "009cf690": {
+      "audit_status_counts": {
+        "v1": {
+          "possible_intervening_memory_effect": 7
+        },
+        "v2": {
+          "possible_intervening_memory_effect": 7
+        },
+        "v3": {
+          "possible_intervening_memory_effect": 7
+        }
+      },
+      "direct_call_effect_rows": 8,
+      "direct_call_effect_status_counts": {
+        "indirect_call": 5,
+        "unknown_effect": 3
+      },
+      "field_access_pair_rows": 7
+    },
+    "00a3d7d0": {
+      "audit_status_counts": {
+        "v1": {
+          "possible_intervening_memory_effect": 2
+        },
+        "v2": {
+          "possible_intervening_memory_effect": 2
+        },
+        "v3": {
+          "possible_intervening_memory_effect": 2
+        }
+      },
+      "direct_call_effect_rows": 2,
+      "direct_call_effect_status_counts": {
+        "explicit_memory_write": 2
+      },
+      "field_access_pair_rows": 2
+    }
+  },
+  "capture": {
+    "analysis_enabled": false,
+    "bounded_pcode_max_depth": 4,
+    "bounded_pcode_max_functions": 96,
+    "cfg_format": "REVENGINSTR.GhidraFunctionPcodeCFG/3",
+    "direct_call_effect_format": "REVENGINSTR.GhidraDirectCallMemoryEffect/1",
+    "ghidra_version": "12.1.2 DEV",
+    "memory_store_format": "REVENGINSTR.GhidraMemoryStoreAccess/1",
+    "read_only": true
+  },
+  "consumer": "Hanz0Hatt0r1/nfs-shift-decompilation",
+  "format": "NFS.RevenginstrM23DirectCallReplay/1",
+  "program_id": "nfs-shift:SHIFT.exe",
+  "retail_input_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "tool": {
+    "commit": "88a30066b79af827de7c7a9cb91c24a9947edee4",
+    "repository": "Hanz0Hatt0r1/revenginstr"
+  }
+}
