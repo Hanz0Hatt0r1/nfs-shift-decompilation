@@ -35,7 +35,8 @@ def test_indexes_only_ghidra_confirmed_call_targets_and_starts_at_function_entry
             "name": "FUN_00001000",
             "size": 6,
             "mnemonic_sha256": "abc",
-        }
+        },
+        {"address": "0x00003000", "name": "FUN_00003000", "size": 1, "mnemonic_sha256": "def"},
     ]
     callgraph = [
         {
@@ -68,6 +69,15 @@ def test_indexes_only_ghidra_confirmed_call_targets_and_starts_at_function_entry
             "instructions": [_instruction("0x00002000", "RET", [], pcode=[{}])],
         }
     ]
+    unconfirmed_exports = [
+        {
+            "found": True,
+            "requested": "0x00003000",
+            "function": {"address": "0x00003000", "name": "FUN_00003000", "size": 1},
+            "instruction_count": 1,
+            "instructions": [_instruction("0x00003000", "RET", [], pcode=[{}])],
+        }
+    ]
 
     report = module.compose_report(
         [(0x2004, 0x1000), (0x2010, 0x3000)],
@@ -79,12 +89,15 @@ def test_indexes_only_ghidra_confirmed_call_targets_and_starts_at_function_entry
         "target-hash",
         "prior-hash",
         module.RETAIL_SHA256,
+        unconfirmed_exports,
+        "unconfirmed-hash",
     )
 
     unresolved = report["objdump_unresolved_direct_calls"]
     assert unresolved["callsite_count"] == 2
     assert unresolved["exact_ghidra_direct_callgraph_match_count"] == 1
     assert unresolved["unmatched_callsite_count"] == 1
+    assert unresolved["unconfirmed_target_function_entry_count"] == 1
     assert unresolved["unique_confirmed_target_function_count"] == 1
     assert report["function_body_recovery"]["qualified_entry_argument_plus_0x374_function_count"] == 1
     function = report["function_body_recovery"]["recovered_functions"][0]
@@ -92,6 +105,11 @@ def test_indexes_only_ghidra_confirmed_call_targets_and_starts_at_function_entry
     assert function["helper_return_probe"]["return_argument_channel"] == "ecx"
     assert report["adjudication"]["automatic_function_renaming_performed"] is False
     assert report["adjudication"]["p1_3_control_producer_complete"] is False
+    candidates = report["inventory_only_function_body_candidates"]
+    assert candidates["exact_unresolved_callsite_callgraph_match_count"] == 0
+    assert candidates["instruction_export_sha256"] == "unconfirmed-hash"
+    assert candidates["functions"][0]["address"] == "0x00003000"
+    assert report["combined_function_instruction_exports"]["unique_function_count"] == 3
 
 
 def test_rejects_instruction_export_with_unconfirmed_target():

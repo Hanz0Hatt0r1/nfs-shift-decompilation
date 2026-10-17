@@ -19,15 +19,15 @@
     "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
   },
   "combined_function_instruction_exports": {
-    "new_function_count": 166,
-    "overlap_function_count": 4,
+    "new_function_count": 185,
+    "overlap_function_count": 5,
     "prior_export_sha256": "bb865913330aeb84250eaed9efabeae57b8d1f27042ffca54007c5be794f0a80",
     "prior_function_count": 559,
     "prior_instruction_count": 97417,
     "prior_pcode_instruction_count": 97233,
-    "unique_function_count": 725,
-    "unique_instruction_count": 109749,
-    "unique_pcode_instruction_count": 109565
+    "unique_function_count": 744,
+    "unique_instruction_count": 110624,
+    "unique_pcode_instruction_count": 110440
   },
   "format": "SHIFT.P1B.HelperReturnGhidraTargetRecovery/1",
   "function_body_recovery": {
@@ -2596,6 +2596,322 @@
       }
     ],
     "target_function_count": 170
+  },
+  "inventory_only_function_body_candidates": {
+    "exact_unresolved_callsite_callgraph_match_count": 0,
+    "function_entry_count": 20,
+    "functions": [
+      {
+        "address": "0x0040e630",
+        "ghidra_name": "FUN_0040e630",
+        "helper_return_probe": {
+          "instruction_count": 9,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 350,
+        "mnemonic_sha256": "8cb4fd1c5b80dc860152d05e17af0a708121224eb30e02c148c8c7be183a1e0e",
+        "size": 1182,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x00431160",
+        "ghidra_name": "FUN_00431160",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "unsupported-stack-adjustment"
+        },
+        "instruction_count": 65,
+        "mnemonic_sha256": "e916d74e72ba247698ef4c04bf2db5ba10e66c936ac54fbaaccd6f0acb4c570a",
+        "size": 199,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x0049ab30",
+        "ghidra_name": "thunk_FUN_00d67c70",
+        "helper_return_probe": {
+          "instruction_count": 1,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 1,
+        "mnemonic_sha256": "68de32f85d6daf246c1b8163a07400b82021cdc7a881415976e223547625a126",
+        "size": 5,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x006f0570",
+        "ghidra_name": "FUN_006f0570",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 26,
+        "mnemonic_sha256": "4ab48f459e2f351cbcc0a2884db20fe846d511af0de6271dbee540949083c0ca",
+        "size": 81,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x009194e3",
+        "ghidra_name": "_CallDestructExceptionObject",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 18,
+        "mnemonic_sha256": "5588062f2ca471ad73b1613acc09014e551469b33f608a8353efa18785623bfb",
+        "size": 52,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x0093e7b6",
+        "ghidra_name": "FUN_0093e7b6",
+        "helper_return_probe": {
+          "instruction_count": 5,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 184,
+        "mnemonic_sha256": "86794e4ab4555312e4aa843c178a0544a30e6370e021354936bb1b9da3c3a5ac",
+        "size": 662,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x00941350",
+        "ghidra_name": "FUN_00941350",
+        "helper_return_probe": {
+          "instruction_count": 5,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 35,
+        "mnemonic_sha256": "0f947da38bd09e787985c01b28d6d2dc217638d0e1984cd68ebaee07253744e9",
+        "size": 116,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x00946909",
+        "ghidra_name": "FUN_00946909",
+        "helper_return_probe": {
+          "instruction_count": 5,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 35,
+        "mnemonic_sha256": "0f947da38bd09e787985c01b28d6d2dc217638d0e1984cd68ebaee07253744e9",
+        "size": 116,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x00951c09",
+        "ghidra_name": "FUN_00951c09",
+        "helper_return_probe": {
+          "instruction_count": 17,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 77,
+        "mnemonic_sha256": "f2f0ee457fcfbe1e5e18185fcde6f19bf38974d39790171444f6cb5146d74016",
+        "size": 232,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x009543be",
+        "ghidra_name": "FUN_009543be",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 20,
+        "mnemonic_sha256": "4e4ed6fb1891fa1840b68c36d624d20d5955c89fa7b1836691aba9478b62183d",
+        "size": 53,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x0096404d",
+        "ghidra_name": "FUN_0096404d",
+        "helper_return_probe": {
+          "instruction_count": 8,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 83,
+        "mnemonic_sha256": "d26a148d50b733a29a0b7ed4737535bfdbe9a0749455c76e50663a278912c542",
+        "size": 215,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x009673ce",
+        "ghidra_name": "FUN_009673ce",
+        "helper_return_probe": {
+          "instruction_count": 9,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 38,
+        "mnemonic_sha256": "98c2abe72280f54e4e64756ba55079d3300ca95f3a773b74e77c4f8f1a082b00",
+        "size": 113,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x0096ad41",
+        "ghidra_name": "FUN_0096ad41",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 29,
+        "mnemonic_sha256": "3815f25e89f0fd7193ae42121df7b397e73d992241415b699a25990edb0a8c8a",
+        "size": 87,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x0098e0e9",
+        "ghidra_name": "FUN_0098e0e9",
+        "helper_return_probe": {
+          "instruction_count": 4,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 21,
+        "mnemonic_sha256": "26f12dc792dc9153402ec315ea51c4b7b6e226a904510da1c2be4284b674acb6",
+        "size": 80,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x009966c7",
+        "ghidra_name": "FUN_009966c7",
+        "helper_return_probe": {
+          "instruction_count": 5,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 51,
+        "mnemonic_sha256": "b5b67ec592fec157f134f4352419b60551682ddca866e6e8d2fad22fb4dbdc45",
+        "size": 160,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x00998f42",
+        "ghidra_name": "FUN_00998f42",
+        "helper_return_probe": {
+          "instruction_count": 15,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 42,
+        "mnemonic_sha256": "2bdb104d9b6c476e59a081b8ef16a340a66038da53a4096c7f6b32585eddc69c",
+        "size": 102,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x00999245",
+        "ghidra_name": "FUN_00999245",
+        "helper_return_probe": {
+          "instruction_count": 12,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 62,
+        "mnemonic_sha256": "33632d3b0aac2dfded01bd395b7da38da6c008754ec4c8cbe4b4b3711335118c",
+        "size": 143,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x00999868",
+        "ghidra_name": "FUN_00999868",
+        "helper_return_probe": {
+          "instruction_count": 7,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "nested-call"
+        },
+        "instruction_count": 39,
+        "mnemonic_sha256": "61cd5a430c7b0e329ba4c2d98b60084a64316b730769e45392294bf4ff8f6fbe",
+        "size": 132,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x0099ac12",
+        "ghidra_name": "FUN_0099ac12",
+        "helper_return_probe": {
+          "instruction_count": 3,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 16,
+        "mnemonic_sha256": "ae19f30d7351ee0ae33f2012bdab8ccda712b5e738422e5d47adeba43f58a42d",
+        "size": 48,
+        "unconfirmed_objdump_callsite_count": 1
+      },
+      {
+        "address": "0x009b2aae",
+        "ghidra_name": "FUN_009b2aae",
+        "helper_return_probe": {
+          "instruction_count": 6,
+          "qualified_entry_argument_plus_0x374": false,
+          "return_argument_channel": null,
+          "return_site": null,
+          "termination": "control-boundary"
+        },
+        "instruction_count": 33,
+        "mnemonic_sha256": "f19c6515e62b64a37f6f24517ca8928c2e401d3059b62c845e6ebfc87a788848",
+        "size": 109,
+        "unconfirmed_objdump_callsite_count": 1
+      }
+    ],
+    "helper_return_probe_termination_counts": {
+      "control-boundary": 11,
+      "nested-call": 8,
+      "unsupported-stack-adjustment": 1
+    },
+    "instruction_count": 1225,
+    "instruction_export_sha256": "276e1a4c772f49590ee73c5234a5f236271abe1f3a3f66dce906ca8bbe68d141",
+    "pcode_available_for_every_instruction": true,
+    "pcode_instruction_count": 1225,
+    "qualified_entry_argument_plus_0x374_function_count": 0
   },
   "limits": [
     "Ghidra callgraph edge matches confirm only the listed direct callsite/target pairs; unmatched objdump calls and targets remain unresolved.",
@@ -5539,6 +5855,7 @@
       "0xfd470964"
     ],
     "unconfirmed_target_count": 52,
+    "unconfirmed_target_function_entry_count": 20,
     "unique_confirmed_target_function_count": 170,
     "unique_target_count": 222,
     "unmatched_callsite_count": 94,

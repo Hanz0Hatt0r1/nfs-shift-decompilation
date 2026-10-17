@@ -94,16 +94,22 @@ index against the exact Ghidra callgraph. Its hash-locked batch report is
 For this retail build, Ghidra confirms 575 of 669 unresolved direct callsites,
 covering 170 exact callee function entries. Their Ghidra instruction/P-code
 bodies contain 13,261 instructions; P-code is present for each. This adds 166
-functions to the earlier 559-function targeted export, for 725 unique
-functions across both local batches. The raw instruction bodies stay outside
-Git; the evidence records their hashes and function-level fingerprints.
+functions to the earlier 559-function targeted export. A separate inventory
+pass also exports 20 exact Ghidra function entries among the unmatched targets;
+their 1,225 instruction/P-code records remain callsite-unconfirmed, and 19 are
+new to the earlier batch. Together the batches cover 744 unique function
+bodies and 110,624 unique instructions (P-code is present for 110,440). The raw
+instruction bodies stay outside Git; the evidence records their hashes and
+function-level fingerprints.
 
 The bounded helper-return scan found no `entry argument + 0x374` returns among
-these 170 functions. It stopped at 111 control-flow boundaries, 45 nested
-calls, 6 unsupported stack adjustments, and 8 returns. The other 94 callsites
-and 52 unique target addresses did not match a direct Ghidra callgraph edge;
-they remain unclassified. This batch does not establish receiver identity or
-close P1.3B.
+the 170 callgraph-confirmed functions or the 20 inventory-only candidates. It
+stopped at 111 control-flow boundaries, 45 nested calls, 6 unsupported stack
+adjustments, and 8 returns in the confirmed set; the inventory-only set stopped
+at 11 control-flow boundaries, 8 nested calls, and 1 unsupported stack
+adjustment. The 94 unmatched callsites and 52 target addresses still lack exact
+callgraph confirmation; 32 of those targets are not Ghidra function entries.
+This batch does not establish receiver identity or close P1.3B.
 
 ## Evidence boundary
 
