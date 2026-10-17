@@ -1340,9 +1340,9 @@
     },
     {
       "path": "screening-scan16.json",
-      "bytes": 44403,
+      "bytes": 44856,
       "rows": 1,
-      "sha256": "5ba8982f433990c8f9a8c9292325dc9b3684306413bd6039791fa1ae3d36e3e3"
+      "sha256": "31fcd7fee7b91bfa84de188cb13c7a94410140c16c196890878ffddcba479420"
     },
     {
       "path": "screening-scan16/callee-pcode-flow/00886930.tsv",
@@ -1421,6 +1421,12 @@
       "bytes": 6770,
       "rows": 5,
       "sha256": "4cf4b8c0e1c087136b45defefcfd48847ac76895898eb7c69ebda048e94505fc"
+    },
+    {
+      "path": "screening-scan16/field-store-load-dominance-v2.jsonl",
+      "bytes": 8845,
+      "rows": 5,
+      "sha256": "c681249d03f9b3bd0ea7c59019d3bdfa64896ddc1bc01f102bcea38ba6f78cba"
     },
     {
       "path": "screening-scan16/field-store-load-dominance-v3.jsonl",
@@ -6419,8 +6425,15 @@
         "unknown_effect": 1
       },
       "write_free_direct_call_rows": 0,
-      "outcome": "The 70-function screen yielded 18 ParameterStoreField/1 rows and 5 exact field-access pairs across 3 functions. CFG/3 audited all 5 pairs and returned no unique_cfg_store_candidate: 3 remain possible_intervening_memory_effect and 2 are store_not_dominating_load. The direct-call sidecar has 8 explicit-write sites, 3 indirect-call barriers, and 1 unknown-effect site; it has no complete write-free direct call. No runtime value-flow claim is made.",
-      "audit_memory_store_access_rows": 25
+      "outcome": "The 70-function screen yielded 18 ParameterStoreField/1 rows and 5 exact field-access pairs across 3 functions. CFG/2 and CFG/3 audited all 5 pairs with identical statuses: 3 remain possible_intervening_memory_effect and 2 are store_not_dominating_load; neither version reports a unique_cfg_store_candidate. The direct-call sidecar has 8 explicit-write sites, 3 indirect-call barriers, and 1 unknown-effect site; it has no complete write-free direct call. No runtime value-flow claim is made.",
+      "audit_memory_store_access_rows": 25,
+      "audit_v2_rows": 5,
+      "audit_v2_status_counts": {
+        "possible_intervening_memory_effect": 3,
+        "store_not_dominating_load": 2
+      },
+      "unique_cfg_store_candidate_v2_rows": 0,
+      "per_pair_status_changes_v2_to_v3": 0
     },
     "replay_inputs": {
       "callee-pcode-flow/00886930.tsv": {
@@ -6487,6 +6500,11 @@
         "bytes": 6770,
         "rows": 5,
         "sha256": "4cf4b8c0e1c087136b45defefcfd48847ac76895898eb7c69ebda048e94505fc"
+      },
+      "field-store-load-dominance-v2.jsonl": {
+        "bytes": 8845,
+        "rows": 5,
+        "sha256": "c681249d03f9b3bd0ea7c59019d3bdfa64896ddc1bc01f102bcea38ba6f78cba"
       },
       "field-store-load-dominance-v3.jsonl": {
         "bytes": 10016,
