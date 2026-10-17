@@ -20,7 +20,6 @@ from revenginstr.pcode.c_lowering import (
 
 
 FUNCTION = re.compile(r"\bint rvi_([0-9a-f]{8})\(RviPcodeContext \*ctx\)")
-GENERATED = "/* Generated from raw P-code "
 
 
 def digest(path: Path) -> str:
@@ -70,22 +69,14 @@ def emit(corpus: Path, manifest_path: Path, spaces_path: Path, base_dir: Path,
     expected = base.get("functions", {}).get("lowerable")
     if len(existing) != expected or not shards:
         raise ValueError("base shard function inventory does not match its build report")
-    header = []
-    with shards[0].open(errors="replace") as stream:
-        for line in stream:
-            if line.startswith(GENERATED):
-                break
-            header.append(line)
-        else:
-            raise ValueError("base shard has no generated function marker")
 
     added = rejected = records = instructions = operations = 0
     reasons: collections.Counter[str] = collections.Counter()
     first = last = None
+    runtime_written = False
     source_path = output_dir / "shift-pcode-delta.c"
     temporary = source_path.with_suffix(".c.tmp")
     with temporary.open("w") as output:
-        output.writelines(header)
         with gzip.open(corpus, "rt", encoding="utf-8") as stream:
             for line_no, raw in enumerate(stream, 1):
                 row = json.loads(raw)
@@ -103,6 +94,15 @@ def emit(corpus: Path, manifest_path: Path, spaces_path: Path, base_dir: Path,
                     rejected += 1
                     reasons[rejection_reason(error)] += 1
                     continue
+                if not runtime_written:
+                    runtime_source, _ = compile_function(row, spaces)
+                    function_marker = f"int rvi_{int(address_text, 16):08x}(RviPcodeContext *ctx) {{"
+                    runtime_start = runtime_source.find("\n") + 1
+                    runtime_end = runtime_source.find(function_marker, runtime_start)
+                    if runtime_start == 0 or runtime_end < 0:
+                        raise ValueError("shared lowerer output has no runtime/function boundary")
+                    output.write(runtime_source[runtime_start:runtime_end])
+                    runtime_written = True
                 output.write(function_source)
                 added += 1
                 instructions += row["instruction_count"]
