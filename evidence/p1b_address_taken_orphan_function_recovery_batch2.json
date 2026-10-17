@@ -1,0 +1,1502 @@
+{
+  "adjudication": {
+    "automatic_semantic_renaming_performed": false,
+    "caller_functions_added_to_original_project": false,
+    "caller_functions_added_to_separate_project_copy": true,
+    "p1_3_control_producer_complete": false
+  },
+  "authority": {
+    "function_recovery_copy_project": "shift-recovered-mass-20261017",
+    "ghidra_export_source_hashes": {
+      "all_data_code_target_metadata": "33a509ae3bbd7e16aae3b55a668c1190bded078de1a46b2138425db29ec9acb4",
+      "batch2_plan_json": "89c5687461dbac21656212d5bbb5d741092a2033339755eae5bb83af6747f7dc",
+      "batch2_plan_tsv": "036fb42989c58eb175ba902e553801da28280116bf420014b4ddf71de721d231",
+      "boundary_gap_metadata": "c4d6308a9203f126e6688096b0598266de2b846866c16401947e40164f3ceea1",
+      "entry_references": "569c8ef3d9702f52baf9ad7755e937b5940915e5fae3251e9c706e3d06c2b589",
+      "executable": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+      "original_body_metadata": "0b7824705bf431472d2e97ce3616f8aabdacdc6564204b330dc9b77b505d9659",
+      "original_callsite_slices": "906c3150310f683d8a4f4eb6d2b91bedaf8644aee695d25c79b9c29b1d506f4d",
+      "original_function_index": "8b8b00d8493dba459edf186869ddf492dc26002af3b65d08b6988dc91a87fa24",
+      "original_pointer_candidate_slices": "abf62fe00be45f1727fbeda57458418bcf42185b0c9e826a651bc79f8753cfe3",
+      "original_target_references": "ddf4e48fce2e1cc0650ec709e55394d082b43ee15b3acdca9f3273eb4e0cbab9",
+      "original_xref_index": "76d8f21adb9568ca245cb6fe05a7def31da702d29e9ace75e4e625c6a89a4be7",
+      "previous_address_taken_evidence": "eda97d8000eb1d7ca6cd8734e3ab2d44a77da92ed1778adfb693b7ea3f383e46",
+      "recovered_function_instructions": "e2f5d0bdf2a398a1abbbbef4ff7d000b5df2b35f83248699922d85d14ef5ada6",
+      "recovered_function_plan": "3488723858cefa0cfe65ebb3760e21e4681b1ad29d4a1bd9ef8bb91d94336951",
+      "recovered_target_references": "d0f2b17495fd3e54538250b9b6cb15abc452fa0a75cbd108e1dfe89a431ae8ed",
+      "recovery_runner.sh": "4882b5ee0a8ede8791ca204e702f0e8b43a1ba1f6196288c6cb1c5ae7ed66694",
+      "recovery_script.java": "116ef58e99782a59dbd49297a8450f0448bc6a6dfac7610729d2d3e4085674f9",
+      "report_builder.py": "77b6639e446c0ddf9b16d65f4e3db618fc1397311f2811668e0da6e21e3f70dd",
+      "wrapper_recovery_evidence": "37da78448c7ead5ce2cd9c5d5e370dcd9681dd5efec6ab0d83f88ae3e94cd137"
+    },
+    "original_ghidra_project_modified": false,
+    "platform": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "combined_function_instruction_exports": {
+    "new_function_count": 22,
+    "new_instruction_count": 1731,
+    "new_pcode_instruction_count": 1731,
+    "previous_unique_function_count": 762,
+    "previous_unique_instruction_count": 111472,
+    "previous_unique_pcode_instruction_count": 111288,
+    "unique_function_count": 784,
+    "unique_instruction_count": 113203,
+    "unique_pcode_instruction_count": 113019
+  },
+  "format": "SHIFT.P1B.AddressTakenOrphanFunctionRecoveryBatch2/1",
+  "limits": [
+    "8 exact orphan direct-call sites remain without a recovered caller owner.",
+    "No game-specific semantic names or behavior claims were added."
+  ],
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "recovered_address_taken_functions": {
+    "all_body_instructions_reachable_in_cfg": true,
+    "all_body_instructions_unowned_in_original_project": true,
+    "all_entries_have_exact_data_references": true,
+    "all_instruction_bytes_match_original_project": true,
+    "all_orphan_callsites_have_exact_copy_owners": true,
+    "body_byte_count": 5567,
+    "function_count": 22,
+    "functions": [
+      {
+        "address": "0x004320a0",
+        "body_bytes": 40,
+        "body_sha256": "997aa64eaed0e9b9164a6910911097fe53bffa483acfaa036d5b0e77995a0f9f",
+        "boundary_gap_hex": "cccccccccccccccccccc",
+        "branch_instruction_count": 0,
+        "call_instruction_count": 2,
+        "end": "0x004320c7",
+        "entry_data_references": [
+          {
+            "from": "0x00ab15a4",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 13,
+        "name": "FUN_004320a0",
+        "orphan_callsites": [
+          {
+            "callsite": "0x004320bf",
+            "instruction": "CALL 0x00431160",
+            "target_function": "0x00431160"
+          }
+        ],
+        "pcode_instruction_count": 13,
+        "preceding_instruction": {
+          "address": "0x00432095",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET",
+        "terminator_target": null
+      },
+      {
+        "address": "0x0054b560",
+        "body_bytes": 74,
+        "body_sha256": "61105a8a51f464a9a23acb3b56603481f2487ad3f76fbaf9e34e2091b62cc73a",
+        "boundary_gap_hex": "cccccccccccccccccccccccccc",
+        "branch_instruction_count": 0,
+        "call_instruction_count": 8,
+        "end": "0x0054b5a9",
+        "entry_data_references": [
+          {
+            "from": "0x00acc694",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 20,
+        "name": "FUN_0054b560",
+        "orphan_callsites": [
+          {
+            "callsite": "0x0054b587",
+            "instruction": "CALL 0x0040e630",
+            "target_function": "0x0040e630"
+          }
+        ],
+        "pcode_instruction_count": 20,
+        "preceding_instruction": {
+          "address": "0x0054b552",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET",
+        "terminator_target": null
+      },
+      {
+        "address": "0x005a9520",
+        "body_bytes": 301,
+        "body_sha256": "c595760be5a365569e46144c474548935bb2cb38cf509ad090f304788dafcd14",
+        "boundary_gap_hex": "cccccccccccccccccc",
+        "branch_instruction_count": 4,
+        "call_instruction_count": 13,
+        "end": "0x005a964a",
+        "entry_data_references": [
+          {
+            "from": "0x00ad9900",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 92,
+        "name": "FUN_005a9520",
+        "orphan_callsites": [
+          {
+            "callsite": "0x005a963d",
+            "instruction": "CALL 0x005b73a0",
+            "target_function": "0x005b73a0"
+          }
+        ],
+        "pcode_instruction_count": 92,
+        "preceding_instruction": {
+          "address": "0x005a9514",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET 0x4",
+        "terminator_target": null
+      },
+      {
+        "address": "0x005a9650",
+        "body_bytes": 705,
+        "body_sha256": "9fa79e3a9585f737dc3c8b9c8d9dc470fbce51e82f345bdaf9edec6c80bf1011",
+        "boundary_gap_hex": "cccccc",
+        "branch_instruction_count": 7,
+        "call_instruction_count": 29,
+        "end": "0x005a990e",
+        "entry_data_references": [
+          {
+            "from": "0x00ad9908",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 212,
+        "name": "FUN_005a9650",
+        "orphan_callsites": [
+          {
+            "callsite": "0x005a9900",
+            "instruction": "CALL 0x005b73a0",
+            "target_function": "0x005b73a0"
+          }
+        ],
+        "pcode_instruction_count": 212,
+        "preceding_instruction": {
+          "address": "0x005a964a",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET 0x4",
+        "terminator_target": null
+      },
+      {
+        "address": "0x005bf210",
+        "body_bytes": 302,
+        "body_sha256": "6c73851932b238bcd791b04af6a2f30ac0a2a6261a141a0cc3816d70cb1138f3",
+        "boundary_gap_hex": "cccccccccccccccccccccccccccc",
+        "branch_instruction_count": 4,
+        "call_instruction_count": 13,
+        "end": "0x005bf33b",
+        "entry_data_references": [
+          {
+            "from": "0x005d195b",
+            "instruction": "MOV dword ptr [ESP + 0x1c],EDX",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          },
+          {
+            "from": "0x005d192d",
+            "instruction": "MOV EAX,0x5bf210",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 97,
+        "name": "FUN_005bf210",
+        "orphan_callsites": [
+          {
+            "callsite": "0x005bf2ee",
+            "instruction": "CALL 0x005b73a0",
+            "target_function": "0x005b73a0"
+          },
+          {
+            "callsite": "0x005bf32d",
+            "instruction": "CALL 0x005b73a0",
+            "target_function": "0x005b73a0"
+          }
+        ],
+        "pcode_instruction_count": 97,
+        "preceding_instruction": {
+          "address": "0x005bf201",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET 0xc",
+        "terminator_target": null
+      },
+      {
+        "address": "0x005bf360",
+        "body_bytes": 278,
+        "body_sha256": "ecd6a27249f10d015894ecf4d55dc19bec9f0bcd93e51742bea171806bfc8a71",
+        "boundary_gap_hex": "",
+        "branch_instruction_count": 7,
+        "call_instruction_count": 8,
+        "end": "0x005bf473",
+        "entry_data_references": [
+          {
+            "from": "0x00adc858",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 94,
+        "name": "FUN_005bf360",
+        "orphan_callsites": [
+          {
+            "callsite": "0x005bf462",
+            "instruction": "CALL 0x005b73a0",
+            "target_function": "0x005b73a0"
+          }
+        ],
+        "pcode_instruction_count": 94,
+        "preceding_instruction": {
+          "address": "0x005bf35d",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET 0x14",
+        "terminator_target": null
+      },
+      {
+        "address": "0x005bf480",
+        "body_bytes": 322,
+        "body_sha256": "ec8ade02557ff80bb456503980007de72b9917599312e594eac22057892b45d5",
+        "boundary_gap_hex": "cccccccccccccccccccc",
+        "branch_instruction_count": 9,
+        "call_instruction_count": 19,
+        "end": "0x005bf5bf",
+        "entry_data_references": [
+          {
+            "from": "0x005cf3e5",
+            "instruction": "MOV dword ptr [ESP + 0x68],ECX",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          },
+          {
+            "from": "0x005cf3e0",
+            "instruction": "MOV ECX,0x5bf480",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 120,
+        "name": "FUN_005bf480",
+        "orphan_callsites": [
+          {
+            "callsite": "0x005bf5b1",
+            "instruction": "CALL 0x005b73a0",
+            "target_function": "0x005b73a0"
+          }
+        ],
+        "pcode_instruction_count": 120,
+        "preceding_instruction": {
+          "address": "0x005bf473",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET 0x4",
+        "terminator_target": null
+      },
+      {
+        "address": "0x005cceb0",
+        "body_bytes": 181,
+        "body_sha256": "7ab5a70a08f10331a4c47da044d5d958d75ede0c35902f7c20fdb589f0d1b074",
+        "boundary_gap_hex": "cccccccccccccccccccccccccc",
+        "branch_instruction_count": 4,
+        "call_instruction_count": 9,
+        "end": "0x005ccf62",
+        "entry_data_references": [
+          {
+            "from": "0x005cf3d8",
+            "instruction": "MOV dword ptr [ESP + 0x38],ECX",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          },
+          {
+            "from": "0x005cf3d3",
+            "instruction": "MOV ECX,0x5cceb0",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 63,
+        "name": "FUN_005cceb0",
+        "orphan_callsites": [
+          {
+            "callsite": "0x005ccf13",
+            "instruction": "CALL 0x005b73a0",
+            "target_function": "0x005b73a0"
+          }
+        ],
+        "pcode_instruction_count": 63,
+        "preceding_instruction": {
+          "address": "0x005ccea2",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET 0x4",
+        "terminator_target": null
+      },
+      {
+        "address": "0x005fab90",
+        "body_bytes": 618,
+        "body_sha256": "7ecaac3788ee4866b5b351b2cf2e6fa058d3f720536ec5d751a4c934ad1acba2",
+        "boundary_gap_hex": "cccc",
+        "branch_instruction_count": 20,
+        "call_instruction_count": 22,
+        "end": "0x005fadf7",
+        "entry_data_references": [
+          {
+            "from": "0x00ad9744",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00ae3b6c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 159,
+        "name": "FUN_005fab90",
+        "orphan_callsites": [
+          {
+            "callsite": "0x005fac46",
+            "instruction": "CALL 0x004042b0",
+            "target_function": "0x004042b0"
+          }
+        ],
+        "pcode_instruction_count": 159,
+        "preceding_instruction": {
+          "address": "0x005fab8b",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET 0x8",
+        "terminator_target": null
+      },
+      {
+        "address": "0x00835560",
+        "body_bytes": 35,
+        "body_sha256": "841a5eb2a7bc4837d5617e626d529de27383586afd347e44071aacaa94ab95d8",
+        "boundary_gap_hex": "cccccccccccccccccccccc",
+        "branch_instruction_count": 1,
+        "call_instruction_count": 2,
+        "end": "0x00835582",
+        "entry_data_references": [
+          {
+            "from": "0x00b18fd4",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [
+          {
+            "at": "0x0083557b",
+            "target": "0x004f5e60"
+          }
+        ],
+        "instruction_count": 16,
+        "name": "FUN_00835560",
+        "orphan_callsites": [
+          {
+            "callsite": "0x0083556c",
+            "instruction": "CALL 0x00416e60",
+            "target_function": "0x00416e60"
+          }
+        ],
+        "pcode_instruction_count": 16,
+        "preceding_instruction": {
+          "address": "0x00835554",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET",
+        "terminator_target": null
+      },
+      {
+        "address": "0x00907cbc",
+        "body_bytes": 254,
+        "body_sha256": "27064c2568fcf8d4d34ea1b6be0ae0419642c4db736bc78721327a745c2c9f29",
+        "boundary_gap_hex": "5643323058433030",
+        "branch_instruction_count": 9,
+        "call_instruction_count": 8,
+        "end": "0x00907db9",
+        "entry_data_references": [
+          {
+            "from": "0x00a2a06a",
+            "instruction": "PUSH 0x907cbc",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00a2a37a",
+            "instruction": "PUSH 0x907cbc",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          },
+          {
+            "from": "0x0064968a",
+            "instruction": "PUSH 0x907cbc",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 96,
+        "name": "FUN_00907cbc",
+        "orphan_callsites": [
+          {
+            "callsite": "0x00907d35",
+            "instruction": "CALL 0x009194e3",
+            "target_function": "0x009194e3"
+          }
+        ],
+        "pcode_instruction_count": 96,
+        "preceding_instruction": {
+          "address": "0x00907cb3",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET",
+        "terminator_target": null
+      },
+      {
+        "address": "0x00951e29",
+        "body_bytes": 29,
+        "body_sha256": "da13bb4b4a1003e6072fc605e93aa409548a0d6b8a5e849f38f0e4eb52192ded",
+        "boundary_gap_hex": "",
+        "branch_instruction_count": 0,
+        "call_instruction_count": 1,
+        "end": "0x00951e43",
+        "entry_data_references": [
+          {
+            "from": "0x00951e9a",
+            "instruction": "MOV dword ptr [0x00b9b558],0x951e29",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 9,
+        "name": "FUN_00951e29",
+        "orphan_callsites": [
+          {
+            "callsite": "0x00951e3e",
+            "instruction": "CALL 0x00951c09",
+            "target_function": "0x00951c09"
+          }
+        ],
+        "pcode_instruction_count": 9,
+        "preceding_instruction": null,
+        "terminator": "RET 0xc",
+        "terminator_target": null
+      },
+      {
+        "address": "0x00a06120",
+        "body_bytes": 112,
+        "body_sha256": "06ed57ac5193b2a1dc943f530df05579fb7952377b5af9638240f7b4e8bffec2",
+        "boundary_gap_hex": "cccccc",
+        "branch_instruction_count": 3,
+        "call_instruction_count": 4,
+        "end": "0x00a0618d",
+        "entry_data_references": [
+          {
+            "from": "0x00b59f50",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 35,
+        "name": "FUN_00a06120",
+        "orphan_callsites": [
+          {
+            "callsite": "0x00a0615c",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          }
+        ],
+        "pcode_instruction_count": 35,
+        "preceding_instruction": {
+          "address": "0x00a0611a",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET 0x8",
+        "terminator_target": null
+      },
+      {
+        "address": "0x00a06e60",
+        "body_bytes": 48,
+        "body_sha256": "ffce6ab7a12ab452ada2e54f0ef6422acf856fb49a02960a631d6d9e753e66a3",
+        "boundary_gap_hex": "cccccccc",
+        "branch_instruction_count": 1,
+        "call_instruction_count": 2,
+        "end": "0x00a06e8d",
+        "entry_data_references": [
+          {
+            "from": "0x00b59b44",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 19,
+        "name": "FUN_00a06e60",
+        "orphan_callsites": [
+          {
+            "callsite": "0x00a06e84",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          }
+        ],
+        "pcode_instruction_count": 19,
+        "preceding_instruction": {
+          "address": "0x00a06e5b",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET 0xc",
+        "terminator_target": null
+      },
+      {
+        "address": "0x00a06f60",
+        "body_bytes": 490,
+        "body_sha256": "3e00704d6bd1feb685b98d32ef0956fa08135028b2417114d07214e8293dafdb",
+        "boundary_gap_hex": "cccccccccccccccccccccccccc",
+        "branch_instruction_count": 17,
+        "call_instruction_count": 13,
+        "end": "0x00a07149",
+        "entry_data_references": [
+          {
+            "from": "0x00a0c0d4",
+            "instruction": "PUSH 0xa06f60",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 144,
+        "name": "FUN_00a06f60",
+        "orphan_callsites": [
+          {
+            "callsite": "0x00a07027",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          },
+          {
+            "callsite": "0x00a0708d",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          },
+          {
+            "callsite": "0x00a0710f",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          }
+        ],
+        "pcode_instruction_count": 144,
+        "preceding_instruction": {
+          "address": "0x00a06f50",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET",
+        "terminator_target": null
+      },
+      {
+        "address": "0x00a07150",
+        "body_bytes": 423,
+        "body_sha256": "985aadd04d0c10a3bbcd426246c223b1029de6beaf1d6285f3a6a0f234378e28",
+        "boundary_gap_hex": "cccccccccccc",
+        "branch_instruction_count": 12,
+        "call_instruction_count": 13,
+        "end": "0x00a072f6",
+        "entry_data_references": [
+          {
+            "from": "0x00a0c126",
+            "instruction": "PUSH 0xa07150",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 126,
+        "name": "FUN_00a07150",
+        "orphan_callsites": [
+          {
+            "callsite": "0x00a071fe",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          },
+          {
+            "callsite": "0x00a0722d",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          },
+          {
+            "callsite": "0x00a072be",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          }
+        ],
+        "pcode_instruction_count": 126,
+        "preceding_instruction": {
+          "address": "0x00a07149",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET",
+        "terminator_target": null
+      },
+      {
+        "address": "0x00a076b0",
+        "body_bytes": 502,
+        "body_sha256": "85b4c36104fef546831bc5942e9d00d0e33573bcc9d4eea3591942752b2e6b66",
+        "boundary_gap_hex": "cccccccc",
+        "branch_instruction_count": 9,
+        "call_instruction_count": 26,
+        "end": "0x00a078a5",
+        "entry_data_references": [
+          {
+            "from": "0x00a0c3e7",
+            "instruction": "PUSH 0xa076b0",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 147,
+        "name": "FUN_00a076b0",
+        "orphan_callsites": [
+          {
+            "callsite": "0x00a0774e",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          },
+          {
+            "callsite": "0x00a0777b",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          },
+          {
+            "callsite": "0x00a077ad",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          },
+          {
+            "callsite": "0x00a077da",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          },
+          {
+            "callsite": "0x00a07807",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          },
+          {
+            "callsite": "0x00a07834",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          },
+          {
+            "callsite": "0x00a07866",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          },
+          {
+            "callsite": "0x00a07893",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          }
+        ],
+        "pcode_instruction_count": 147,
+        "preceding_instruction": {
+          "address": "0x00a076a7",
+          "flow_target": "0x00a074c0",
+          "mnemonic": "JMP"
+        },
+        "terminator": "RET",
+        "terminator_target": null
+      },
+      {
+        "address": "0x00a09270",
+        "body_bytes": 234,
+        "body_sha256": "ba8d2c1b0374aa571f5db0d2255e167d4ff6545fd239898d24e98b7a3e79bd01",
+        "boundary_gap_hex": "cccccccccccccccc",
+        "branch_instruction_count": 9,
+        "call_instruction_count": 7,
+        "end": "0x00a09359",
+        "entry_data_references": [
+          {
+            "from": "0x00a0a2f6",
+            "instruction": "PUSH 0xa09270",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 80,
+        "name": "FUN_00a09270",
+        "orphan_callsites": [
+          {
+            "callsite": "0x00a0932e",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          }
+        ],
+        "pcode_instruction_count": 80,
+        "preceding_instruction": {
+          "address": "0x00a09265",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET",
+        "terminator_target": null
+      },
+      {
+        "address": "0x00a0cf10",
+        "body_bytes": 65,
+        "body_sha256": "cc6cef5f53c598de272bd15c114b40ab0f878ede82874ca63142811998efa09e",
+        "boundary_gap_hex": "cccccccccccc",
+        "branch_instruction_count": 1,
+        "call_instruction_count": 4,
+        "end": "0x00a0cf4e",
+        "entry_data_references": [
+          {
+            "from": "0x00b24134",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b240d4",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b245bc",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b24814",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b25134",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b25934",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b275ec",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b27734",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2833c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2843c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b28cd4",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b29424",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b29554",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2968c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2974c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2993c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2b6fc",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2bbe4",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2bcbc",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2bd84",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2be0c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2be74",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2c254",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2c634",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2c6bc",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2c77c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2c894",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2cacc",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2cc2c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2cd1c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2ce7c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2cf6c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2d06c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2d144",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2d284",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2d2f4",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2d364",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2d3dc",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2d564",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2ddbc",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2de44",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2df1c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2e01c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2e16c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2e8b4",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2e9c4",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2ea5c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2eae4",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2ebac",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2ecdc",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2ee4c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2ef2c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2f054",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2f2d4",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2f38c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2f45c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2f634",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2f6ec",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2f7e4",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2f89c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2fa14",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b2fcac",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b300ec",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b30314",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b3043c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b30574",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b30714",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b30a54",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b30b04",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b30cac",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b30e1c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b30f0c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b30ff4",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b3110c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b311dc",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b3128c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b31324",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b313a4",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b3142c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b31504",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b31574",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b315ec",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b316c4",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b31734",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b3183c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b31944",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b34dc4",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          },
+          {
+            "from": "0x00b5977c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 23,
+        "name": "FUN_00a0cf10",
+        "orphan_callsites": [
+          {
+            "callsite": "0x00a0cf3a",
+            "instruction": "CALL 0x00a052f0",
+            "target_function": "0x00a052f0"
+          }
+        ],
+        "pcode_instruction_count": 23,
+        "preceding_instruction": {
+          "address": "0x00a0cf07",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET 0xc",
+        "terminator_target": null
+      },
+      {
+        "address": "0x00a25720",
+        "body_bytes": 259,
+        "body_sha256": "118d95bbea4731b6f4ade608cba37db4d3c461f5aeb824fb7fcd759bf9b43fc0",
+        "boundary_gap_hex": "cc",
+        "branch_instruction_count": 10,
+        "call_instruction_count": 5,
+        "end": "0x00a25822",
+        "entry_data_references": [
+          {
+            "from": "0x00a28fcc",
+            "instruction": "MOV dword ptr [0x00cca7a4],0xa25720",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 78,
+        "name": "FUN_00a25720",
+        "orphan_callsites": [
+          {
+            "callsite": "0x00a2576d",
+            "instruction": "CALL 0x00a297e0",
+            "target_function": "0x00a297e0"
+          }
+        ],
+        "pcode_instruction_count": 78,
+        "preceding_instruction": {
+          "address": "0x00a2571e",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET",
+        "terminator_target": null
+      },
+      {
+        "address": "0x00a25870",
+        "body_bytes": 259,
+        "body_sha256": "3d9fc30db14c0edc76232efb24b4bd65ef530bc310fc14f2a902f38cdb27f6b9",
+        "boundary_gap_hex": "cccccccccccc",
+        "branch_instruction_count": 10,
+        "call_instruction_count": 5,
+        "end": "0x00a25972",
+        "entry_data_references": [
+          {
+            "from": "0x00a29012",
+            "instruction": "MOV dword ptr [0x00cca774],0xa25870",
+            "source": "ANALYSIS",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 78,
+        "name": "FUN_00a25870",
+        "orphan_callsites": [
+          {
+            "callsite": "0x00a258bd",
+            "instruction": "CALL 0x00a297e0",
+            "target_function": "0x00a297e0"
+          }
+        ],
+        "pcode_instruction_count": 78,
+        "preceding_instruction": {
+          "address": "0x00a25869",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET",
+        "terminator_target": null
+      },
+      {
+        "address": "0x00a781d0",
+        "body_bytes": 36,
+        "body_sha256": "1e79799d38b531ccfa4d1fb3deb5dcad1c2e207733028da8dcc565a71e3685c8",
+        "boundary_gap_hex": "cccccccccccccccccccc",
+        "branch_instruction_count": 1,
+        "call_instruction_count": 3,
+        "end": "0x00a781f3",
+        "entry_data_references": [
+          {
+            "from": "0x00aa6e6c",
+            "instruction": null,
+            "source": "DEFAULT",
+            "type": "DATA"
+          }
+        ],
+        "external_tail_transfers": [],
+        "instruction_count": 10,
+        "name": "FUN_00a781d0",
+        "orphan_callsites": [
+          {
+            "callsite": "0x00a781e3",
+            "instruction": "CALL 0x0049ab30",
+            "target_function": "0x0049ab30"
+          }
+        ],
+        "pcode_instruction_count": 10,
+        "preceding_instruction": {
+          "address": "0x00a781c5",
+          "flow_target": null,
+          "mnemonic": "RET"
+        },
+        "terminator": "RET",
+        "terminator_target": null
+      }
+    ],
+    "instruction_count": 1731,
+    "pcode_instruction_count": 1731
+  },
+  "unresolved_callsite_reconciliation": {
+    "newly_owned_callsite_count": 34,
+    "newly_owned_callsites": [
+      "0x004320bf",
+      "0x0054b587",
+      "0x005a963d",
+      "0x005a9900",
+      "0x005bf2ee",
+      "0x005bf32d",
+      "0x005bf462",
+      "0x005bf5b1",
+      "0x005ccf13",
+      "0x005fac46",
+      "0x0083556c",
+      "0x00907d35",
+      "0x00951e3e",
+      "0x00a0615c",
+      "0x00a06e84",
+      "0x00a07027",
+      "0x00a0708d",
+      "0x00a0710f",
+      "0x00a071fe",
+      "0x00a0722d",
+      "0x00a072be",
+      "0x00a0774e",
+      "0x00a0777b",
+      "0x00a077ad",
+      "0x00a077da",
+      "0x00a07807",
+      "0x00a07834",
+      "0x00a07866",
+      "0x00a07893",
+      "0x00a0932e",
+      "0x00a0cf3a",
+      "0x00a2576d",
+      "0x00a258bd",
+      "0x00a781e3"
+    ],
+    "previously_owned_callsite_count": 18,
+    "prior_address_taken_owned_callsite_count": 3,
+    "prior_wrapper_owned_callsite_count": 15,
+    "remaining_exact_orphan_callsite_count": 8,
+    "source_exact_orphan_callsite_count": 60
+  },
+  "version": 1
+}
