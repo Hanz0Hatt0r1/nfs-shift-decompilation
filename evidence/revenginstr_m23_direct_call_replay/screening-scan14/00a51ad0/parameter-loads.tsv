@@ -1,0 +1,15 @@
+format	function_entry	function_name	load_address	load_time	base_parameter_index	field_offset	address_pattern	value_size	value_token	status
+REVENGINSTR.GhidraParameterLoadField/1	00a51ad0	FUN_00a51ad0	00a51ae0	32	0	0x0	direct	4	def:LOAD@00a51ae0:32:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a51ad0	FUN_00a51ad0	00a51ae6	45	0	0x4	ptradd	4	def:LOAD@00a51ae6:45:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a51ad0	FUN_00a51ad0	00a51aea	57	0	0x21c	ptradd	4	def:LOAD@00a51aea:57:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a51ad0	FUN_00a51ad0	00a51af4	66	0	0x218	ptradd	4	def:LOAD@00a51af4:66:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a51ad0	FUN_00a51ad0	00a51afd	84	0	0x214	ptradd	4	def:LOAD@00a51afd:84:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a51ad0	FUN_00a51ad0	00a51b05	98	0	0x220	ptradd	4	def:LOAD@00a51b05:98:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a51ad0	FUN_00a51ad0	00a51b19	125	0	0x210	ptradd	4	def:LOAD@00a51b19:125:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a51ad0	FUN_00a51ad0	00a51b32	160	0	0x21c	ptradd	4	def:LOAD@00a51b32:160:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a51ad0	FUN_00a51ad0	00a51b38	162	0	0x0	direct	4	def:LOAD@00a51b38:162:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a51ad0	FUN_00a51ad0	00a51b3c	170	0	0x218	ptradd	4	def:LOAD@00a51b3c:170:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a51ad0	FUN_00a51ad0	00a51b5e	309	0	0x21c	ptradd	4	def:LOAD@00a51b5e:309:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a51ad0	FUN_00a51ad0	00a51b76	328	0	0x4	ptradd	4	def:LOAD@00a51b76:328:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a51ad0	FUN_00a51ad0	00a51b81	346	0	0xc	ptradd	1	def:LOAD@00a51b81:346:1	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a51ad0	FUN_00a51ad0	00a51ba1	349	0	0x22c	ptradd	4	def:LOAD@00a51ba1:349:4	parameter_field_load

@@ -1,0 +1,1075 @@
+{
+  "format": "NFS.RevenginstrM23Screening/2",
+  "program_id": "nfs-shift:SHIFT.exe",
+  "source": {
+    "corpus": "SHIFT portable P-code sample 00a5",
+    "rows": 213,
+    "sha256": "87abe82ce7daa1fed04be8efe9ae7bfa1438e54fb556e75921b43ce165e40360"
+  },
+  "capture": {
+    "analysis_enabled": false,
+    "ghidra_version": "12.1.2 DEV",
+    "read_only": true,
+    "exporter": "ExportGhidraParameterStoreField.java"
+  },
+  "selection": {
+    "previously_scanned_distinct_roots_excluded": 2143,
+    "candidate_count": 22,
+    "filters": [
+      "PARAMS >= 1",
+      "direct calls > 0",
+      "indirect calls may be 0 or more",
+      "loads > 0",
+      "stores > 0",
+      "not truncated",
+      "source name does not begin with thunk_",
+      "entry was not in prior M2.3 scan exports"
+    ],
+    "candidates": [
+      {
+        "function_entry": "00a50050",
+        "source_name": "FUN_00a50050",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 35,
+          "emitted_ops": 35,
+          "calls": 1,
+          "indirect_calls": 0,
+          "branches": 3,
+          "loads": 4,
+          "stores": 2,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 2,
+          "memory_store_access_rows": 2,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a50050/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a50050/parameter-loads.tsv",
+            "bytes": 402,
+            "rows": 2,
+            "sha256": "9e1afd4eff056f5f70a18599859d76c89eeaec92cff6b5404010bd0fae5102ce"
+          },
+          {
+            "path": "screening-scan14/00a50050/memory-store-access.jsonl",
+            "bytes": 1175,
+            "rows": 2,
+            "sha256": "050b97c70a7fed1efadede9d67a4a443d3a1cdad6e4b6436f009beb31d929a1c"
+          },
+          {
+            "path": "screening-scan14/00a50050/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a515e0",
+        "source_name": "FUN_00a515e0",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 55,
+          "emitted_ops": 55,
+          "calls": 5,
+          "indirect_calls": 0,
+          "branches": 7,
+          "loads": 9,
+          "stores": 2,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 7,
+          "memory_store_access_rows": 2,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a515e0/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a515e0/parameter-loads.tsv",
+            "bytes": 1086,
+            "rows": 7,
+            "sha256": "326e03933a8880c6d5ae5b7e15b63147f9da07f20af6feb1b47cd853339eb40b"
+          },
+          {
+            "path": "screening-scan14/00a515e0/memory-store-access.jsonl",
+            "bytes": 1344,
+            "rows": 2,
+            "sha256": "bf0f61c0f4d1cc42b226d01c2e7e4d20bf34904f4c63cbc8193bf7d35f995ed6"
+          },
+          {
+            "path": "screening-scan14/00a515e0/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a51670",
+        "source_name": "FUN_00a51670",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 38,
+          "emitted_ops": 38,
+          "calls": 2,
+          "indirect_calls": 1,
+          "branches": 3,
+          "loads": 4,
+          "stores": 5,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 4,
+          "memory_store_access_rows": 5,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a51670/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a51670/parameter-loads.tsv",
+            "bytes": 673,
+            "rows": 4,
+            "sha256": "678b2530651f72c64c0ec1f97ce502aa300564ad5426b44f9ce43242f3dc635c"
+          },
+          {
+            "path": "screening-scan14/00a51670/memory-store-access.jsonl",
+            "bytes": 2922,
+            "rows": 5,
+            "sha256": "6fdfcc723c7c599d3bf670db2994ed46d3b8c4b05672a9f230ce2568a40139f3"
+          },
+          {
+            "path": "screening-scan14/00a51670/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a51720",
+        "source_name": "FUN_00a51720",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 68,
+          "emitted_ops": 68,
+          "calls": 3,
+          "indirect_calls": 1,
+          "branches": 4,
+          "loads": 12,
+          "stores": 2,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 8,
+          "memory_store_access_rows": 2,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a51720/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a51720/parameter-loads.tsv",
+            "bytes": 1209,
+            "rows": 8,
+            "sha256": "47adb3c907802d4b01b4d077396499110d7d66b9c7f8d6773e0423f895331d5c"
+          },
+          {
+            "path": "screening-scan14/00a51720/memory-store-access.jsonl",
+            "bytes": 1248,
+            "rows": 2,
+            "sha256": "355c808c9eff7634d43f336113b3be07a0ee65ac82da994114880ca45463bae7"
+          },
+          {
+            "path": "screening-scan14/00a51720/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a517c0",
+        "source_name": "FUN_00a517c0",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 59,
+          "emitted_ops": 59,
+          "calls": 3,
+          "indirect_calls": 1,
+          "branches": 4,
+          "loads": 10,
+          "stores": 2,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 8,
+          "memory_store_access_rows": 2,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a517c0/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a517c0/parameter-loads.tsv",
+            "bytes": 1209,
+            "rows": 8,
+            "sha256": "c64ebe461ad8ad5c73227ff5859d158b1dad513e118e8b4250f55b73d031f8bd"
+          },
+          {
+            "path": "screening-scan14/00a517c0/memory-store-access.jsonl",
+            "bytes": 1248,
+            "rows": 2,
+            "sha256": "c27190b55ae658239fd6bd805d739a5130f3b1e5da2de33f72388d4dc4113a26"
+          },
+          {
+            "path": "screening-scan14/00a517c0/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a51850",
+        "source_name": "FUN_00a51850",
+        "parameter_count": 3,
+        "pcode_metrics": {
+          "ops": 44,
+          "emitted_ops": 44,
+          "calls": 4,
+          "indirect_calls": 1,
+          "branches": 4,
+          "loads": 6,
+          "stores": 3,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 6,
+          "memory_store_access_rows": 3,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a51850/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a51850/parameter-loads.tsv",
+            "bytes": 945,
+            "rows": 6,
+            "sha256": "1daf1b669469bbd4f0f640b32bcc4ac6b4c9b659f5536e365136c1850c3c5435"
+          },
+          {
+            "path": "screening-scan14/00a51850/memory-store-access.jsonl",
+            "bytes": 1919,
+            "rows": 3,
+            "sha256": "1fbb03d200945b09585746f5564c14a1504b04df83d9da760a700b67f5b2832a"
+          },
+          {
+            "path": "screening-scan14/00a51850/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a51ad0",
+        "source_name": "FUN_00a51ad0",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 98,
+          "emitted_ops": 98,
+          "calls": 3,
+          "indirect_calls": 1,
+          "branches": 10,
+          "loads": 16,
+          "stores": 4,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 14,
+          "memory_store_access_rows": 4,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a51ad0/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a51ad0/parameter-loads.tsv",
+            "bytes": 2021,
+            "rows": 14,
+            "sha256": "20cdcf52671b2ccb0854aa5f49a6574ba11eddd79690c117b759d5451e157141"
+          },
+          {
+            "path": "screening-scan14/00a51ad0/memory-store-access.jsonl",
+            "bytes": 2396,
+            "rows": 4,
+            "sha256": "89e57c7b24196f57e4273532083add3c283bc9e34bda21ef8b792c9b3f6534fb"
+          },
+          {
+            "path": "screening-scan14/00a51ad0/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a52530",
+        "source_name": "FUN_00a52530",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 49,
+          "emitted_ops": 49,
+          "calls": 8,
+          "indirect_calls": 0,
+          "branches": 4,
+          "loads": 3,
+          "stores": 9,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 0,
+          "memory_store_access_rows": 9,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a52530/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a52530/parameter-loads.tsv",
+            "bytes": 139,
+            "rows": 0,
+            "sha256": "9bf996bbc0407605cca0d438ba646ed672c7faeef55b7cd64d7bfca36b14d265"
+          },
+          {
+            "path": "screening-scan14/00a52530/memory-store-access.jsonl",
+            "bytes": 5719,
+            "rows": 9,
+            "sha256": "b6a1d41145b83889cb149ec1162b9d6d7723bd0788c2b3bbad3be26118273539"
+          },
+          {
+            "path": "screening-scan14/00a52530/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a525c0",
+        "source_name": "FUN_00a525c0",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 53,
+          "emitted_ops": 53,
+          "calls": 6,
+          "indirect_calls": 0,
+          "branches": 4,
+          "loads": 5,
+          "stores": 6,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 0,
+          "memory_store_access_rows": 0,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a525c0/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a525c0/parameter-loads.tsv",
+            "bytes": 139,
+            "rows": 0,
+            "sha256": "9bf996bbc0407605cca0d438ba646ed672c7faeef55b7cd64d7bfca36b14d265"
+          },
+          {
+            "path": "screening-scan14/00a525c0/memory-store-access.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "screening-scan14/00a525c0/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a52d00",
+        "source_name": "FUN_00a52d00",
+        "parameter_count": 2,
+        "pcode_metrics": {
+          "ops": 65,
+          "emitted_ops": 65,
+          "calls": 2,
+          "indirect_calls": 1,
+          "branches": 4,
+          "loads": 8,
+          "stores": 6,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 6,
+          "memory_store_access_rows": 6,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a52d00/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a52d00/parameter-loads.tsv",
+            "bytes": 948,
+            "rows": 6,
+            "sha256": "39dcd057bc0530d9c244290d8651e40ef4750a5e73227cb7d00f67ff33cbf041"
+          },
+          {
+            "path": "screening-scan14/00a52d00/memory-store-access.jsonl",
+            "bytes": 3666,
+            "rows": 6,
+            "sha256": "ca0c64629a6aefc8693ce4d85a018e3c875ad2781ac756d1750c342d5d28f96c"
+          },
+          {
+            "path": "screening-scan14/00a52d00/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a52d07",
+        "source_name": "FUN_00a52d07",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 68,
+          "emitted_ops": 68,
+          "calls": 2,
+          "indirect_calls": 1,
+          "branches": 4,
+          "loads": 8,
+          "stores": 6,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 6,
+          "memory_store_access_rows": 6,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a52d07/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a52d07/parameter-loads.tsv",
+            "bytes": 946,
+            "rows": 6,
+            "sha256": "8d25fb09d64bb13cb674b26076e3f8fb991a43699d51d7f87f04bd03d9ffebf4"
+          },
+          {
+            "path": "screening-scan14/00a52d07/memory-store-access.jsonl",
+            "bytes": 3666,
+            "rows": 6,
+            "sha256": "24d3a2066b4cd60108d96ab0f275c8a941e3da479767b295cf78f716eb2ab808"
+          },
+          {
+            "path": "screening-scan14/00a52d07/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a53250",
+        "source_name": "FUN_00a53250",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 17,
+          "emitted_ops": 17,
+          "calls": 1,
+          "indirect_calls": 0,
+          "branches": 1,
+          "loads": 1,
+          "stores": 3,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 0,
+          "memory_store_access_rows": 0,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a53250/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a53250/parameter-loads.tsv",
+            "bytes": 139,
+            "rows": 0,
+            "sha256": "9bf996bbc0407605cca0d438ba646ed672c7faeef55b7cd64d7bfca36b14d265"
+          },
+          {
+            "path": "screening-scan14/00a53250/memory-store-access.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "screening-scan14/00a53250/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a54480",
+        "source_name": "FUN_00a54480",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 242,
+          "emitted_ops": 242,
+          "calls": 10,
+          "indirect_calls": 2,
+          "branches": 29,
+          "loads": 12,
+          "stores": 10,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 6,
+          "memory_store_access_rows": 10,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a54480/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a54480/parameter-loads.tsv",
+            "bytes": 951,
+            "rows": 6,
+            "sha256": "885f6df44a096fa0b55a43af3603120503e0e1431431ffa82403e880402dfd33"
+          },
+          {
+            "path": "screening-scan14/00a54480/memory-store-access.jsonl",
+            "bytes": 5740,
+            "rows": 10,
+            "sha256": "1ef7471ba7113e5536e50ea0edf484e8ba9a06e935f6ab5b3dc0c1a916023062"
+          },
+          {
+            "path": "screening-scan14/00a54480/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a57140",
+        "source_name": "FUN_00a57140",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 70,
+          "emitted_ops": 70,
+          "calls": 3,
+          "indirect_calls": 0,
+          "branches": 5,
+          "loads": 17,
+          "stores": 2,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 0,
+          "memory_store_access_rows": 0,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a57140/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a57140/parameter-loads.tsv",
+            "bytes": 139,
+            "rows": 0,
+            "sha256": "9bf996bbc0407605cca0d438ba646ed672c7faeef55b7cd64d7bfca36b14d265"
+          },
+          {
+            "path": "screening-scan14/00a57140/memory-store-access.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "screening-scan14/00a57140/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a5b230",
+        "source_name": "FUN_00a5b230",
+        "parameter_count": 7,
+        "pcode_metrics": {
+          "ops": 90,
+          "emitted_ops": 90,
+          "calls": 5,
+          "indirect_calls": 1,
+          "branches": 7,
+          "loads": 9,
+          "stores": 9,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 8,
+          "memory_store_access_rows": 9,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a5b230/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a5b230/parameter-loads.tsv",
+            "bytes": 1222,
+            "rows": 8,
+            "sha256": "84a4ff4ec959c2474b6655ad6fecf2bee860d1dcc275f9278415af3c59b7a596"
+          },
+          {
+            "path": "screening-scan14/00a5b230/memory-store-access.jsonl",
+            "bytes": 5668,
+            "rows": 9,
+            "sha256": "e9de24e5317522eccde2006cfb7235a42fc7f960b7c7f1bbf3ce736168662e5c"
+          },
+          {
+            "path": "screening-scan14/00a5b230/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a5c390",
+        "source_name": "FUN_00a5c390",
+        "parameter_count": 7,
+        "pcode_metrics": {
+          "ops": 223,
+          "emitted_ops": 223,
+          "calls": 9,
+          "indirect_calls": 1,
+          "branches": 18,
+          "loads": 20,
+          "stores": 53,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 0,
+          "memory_store_access_rows": 53,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a5c390/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a5c390/parameter-loads.tsv",
+            "bytes": 139,
+            "rows": 0,
+            "sha256": "9bf996bbc0407605cca0d438ba646ed672c7faeef55b7cd64d7bfca36b14d265"
+          },
+          {
+            "path": "screening-scan14/00a5c390/memory-store-access.jsonl",
+            "bytes": 33007,
+            "rows": 53,
+            "sha256": "b967a1caebac880552cdf1fd34aecaeb26d8a2a551df6b95397bdd70e170aa5c"
+          },
+          {
+            "path": "screening-scan14/00a5c390/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a5c900",
+        "source_name": "FUN_00a5c900",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 68,
+          "emitted_ops": 68,
+          "calls": 2,
+          "indirect_calls": 1,
+          "branches": 5,
+          "loads": 6,
+          "stores": 6,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 6,
+          "memory_store_access_rows": 6,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a5c900/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a5c900/parameter-loads.tsv",
+            "bytes": 946,
+            "rows": 6,
+            "sha256": "4bee74dded790240c10b8fad22642aefe1f2fdc4e545933b4af6985e470e75f7"
+          },
+          {
+            "path": "screening-scan14/00a5c900/memory-store-access.jsonl",
+            "bytes": 3788,
+            "rows": 6,
+            "sha256": "0f953517461e937137a117038e3a7129dc80395a2aaea7961ef633dab675b04d"
+          },
+          {
+            "path": "screening-scan14/00a5c900/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a5d570",
+        "source_name": "FUN_00a5d570",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 187,
+          "emitted_ops": 187,
+          "calls": 1,
+          "indirect_calls": 0,
+          "branches": 12,
+          "loads": 23,
+          "stores": 23,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 6,
+          "memory_store_access_rows": 23,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a5d570/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a5d570/parameter-loads.tsv",
+            "bytes": 954,
+            "rows": 6,
+            "sha256": "5ac830069bb6474020453d0abb341fb8bfa7ebc2fee5dbd5c9db469eda8a8396"
+          },
+          {
+            "path": "screening-scan14/00a5d570/memory-store-access.jsonl",
+            "bytes": 14849,
+            "rows": 23,
+            "sha256": "6e36a0104d5ecc7d4071e3845cd540872312398e157991147dd0c37894b452b4"
+          },
+          {
+            "path": "screening-scan14/00a5d570/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a5ece8",
+        "source_name": "FUN_00a5ece8",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 19,
+          "emitted_ops": 19,
+          "calls": 2,
+          "indirect_calls": 0,
+          "branches": 0,
+          "loads": 1,
+          "stores": 3,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 1,
+          "memory_store_access_rows": 3,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a5ece8/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a5ece8/parameter-loads.tsv",
+            "bytes": 273,
+            "rows": 1,
+            "sha256": "167172399ac8a55a0f8fb1cc1559f8cfc5601c8cdacde869c0ab6e9abb923c02"
+          },
+          {
+            "path": "screening-scan14/00a5ece8/memory-store-access.jsonl",
+            "bytes": 1874,
+            "rows": 3,
+            "sha256": "55543b6964ed508dcd8047b07b17c80fcdd902f9def8450373b4af3e6ccf4229"
+          },
+          {
+            "path": "screening-scan14/00a5ece8/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a5ed23",
+        "source_name": "FUN_00a5ed23",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 60,
+          "emitted_ops": 60,
+          "calls": 5,
+          "indirect_calls": 0,
+          "branches": 2,
+          "loads": 2,
+          "stores": 7,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 2,
+          "memory_store_access_rows": 7,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a5ed23/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a5ed23/parameter-loads.tsv",
+            "bytes": 411,
+            "rows": 2,
+            "sha256": "a2dc00908fda0885a93091e46dff1737ea431eb3b67cd9a4b4d71c37cc7b5403"
+          },
+          {
+            "path": "screening-scan14/00a5ed23/memory-store-access.jsonl",
+            "bytes": 4384,
+            "rows": 7,
+            "sha256": "1b5e3f03907f7ac26001e668826b1295ad858c1064e1c48534d047f52d1b6f67"
+          },
+          {
+            "path": "screening-scan14/00a5ed23/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a5efe1",
+        "source_name": "FUN_00a5efe1",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 20,
+          "emitted_ops": 20,
+          "calls": 1,
+          "indirect_calls": 0,
+          "branches": 0,
+          "loads": 1,
+          "stores": 4,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 1,
+          "memory_store_access_rows": 4,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a5efe1/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a5efe1/parameter-loads.tsv",
+            "bytes": 273,
+            "rows": 1,
+            "sha256": "e94b88dd97ae1bc125db881da4929bd45a9c1f82db87e11e4f3b905a1283b89a"
+          },
+          {
+            "path": "screening-scan14/00a5efe1/memory-store-access.jsonl",
+            "bytes": 2490,
+            "rows": 4,
+            "sha256": "988e3a2ea18dd3106dd647b0b3d81df582e33dda8ad4d0a7ac88ff94b28faf73"
+          },
+          {
+            "path": "screening-scan14/00a5efe1/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      },
+      {
+        "function_entry": "00a5f2a7",
+        "source_name": "FUN_00a5f2a7",
+        "parameter_count": 1,
+        "pcode_metrics": {
+          "ops": 37,
+          "emitted_ops": 37,
+          "calls": 2,
+          "indirect_calls": 1,
+          "branches": 3,
+          "loads": 4,
+          "stores": 4,
+          "truncated": false
+        },
+        "exports": {
+          "parameter_store_rows": 0,
+          "parameter_load_rows": 0,
+          "memory_store_access_rows": 0,
+          "field_access_pair_rows": 0
+        },
+        "artifacts": [
+          {
+            "path": "screening-scan14/00a5f2a7/parameter-stores.tsv",
+            "bytes": 169,
+            "rows": 0,
+            "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+          },
+          {
+            "path": "screening-scan14/00a5f2a7/parameter-loads.tsv",
+            "bytes": 139,
+            "rows": 0,
+            "sha256": "9bf996bbc0407605cca0d438ba646ed672c7faeef55b7cd64d7bfca36b14d265"
+          },
+          {
+            "path": "screening-scan14/00a5f2a7/memory-store-access.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "screening-scan14/00a5f2a7/field-access-pairs.jsonl",
+            "bytes": 0,
+            "rows": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "candidate_roots": 22,
+    "parameter_store_rows": 0,
+    "parameter_load_rows": 91,
+    "memory_store_access_rows": 156,
+    "field_access_pair_rows": 0,
+    "roots_with_field_pairs": 0,
+    "dominance_audits_run": 0,
+    "outcome": "All 22 candidate functions exported zero parameter-rooted STORE rows, so no exact parameter field store/load pairs were available for a dominance audit."
+  }
+}
