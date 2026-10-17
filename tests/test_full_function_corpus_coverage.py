@@ -266,7 +266,6 @@ def test_repeat_cbranch_delta_is_hash_pinned_and_closes_only_its_old_rejections(
     assert delta["remaining_rejected_functions"] == 6469
     assert delta["base_build_report_sha256"] == "a4ce39d03409f134d80cae26ddc0b9b60979e5b9a0ca0e1cd423a8401e87523d"
     assert sum(reason["functions"] for reason in delta["rejection_reasons"]) == 6469
-    assert "ref: fde4275d0385fcb42097652eb2c3ebf2601c8a40" in (ROOT / ".github/workflows/ci.yml").read_text()
 
 
 def test_repeat_cbranch_supplemental_libraries_are_linked_and_linux_smoke_passed() -> None:
@@ -274,7 +273,6 @@ def test_repeat_cbranch_supplemental_libraries_are_linked_and_linux_smoke_passed
     delta_bytes = (ROOT / evidence["delta"]["report_path"]).read_bytes()
     assert evidence["format"] == "NFSShift.PcodeRepeatBranchSupplementalBuild/1"
     assert evidence["revenginstr_revision"] == "fde4275d0385fcb42097652eb2c3ebf2601c8a40"
-    assert "ref: " + evidence["revenginstr_revision"] in (ROOT / ".github/workflows/ci.yml").read_text()
     assert hashlib.sha256(delta_bytes).hexdigest() == evidence["delta"]["report_sha256"]
     assert evidence["coverage"]["lowerable_functions"] == 35004 + evidence["delta"]["added_functions"] == 35069
     assert evidence["coverage"]["corpus_functions"] == 41538
@@ -285,3 +283,34 @@ def test_repeat_cbranch_supplemental_libraries_are_linked_and_linux_smoke_passed
     assert evidence["windows_pe"]["library"]["export_table_function_count"] == 35069
     assert evidence["windows_pe"]["link"]["result"] == "passed"
     assert evidence["limitations"]["complete_game"] is False
+
+
+def test_binary80_linux_partial_build_matches_coverage_and_export_evidence() -> None:
+    coverage_path = ROOT / "evidence/pcode_native_lowering_coverage_binary80_20261018.json"
+    delta_path = ROOT / "evidence/pcode_binary80_delta_20261018.json"
+    build_path = ROOT / "evidence/pcode_binary80_linux_build_20261018.json"
+    coverage = json.loads(coverage_path.read_text())
+    delta = json.loads(delta_path.read_text())
+    build = json.loads(build_path.read_text())
+    assert coverage["functions"] == {
+        "records": 41538, "found": 41538, "missing": 0, "fully_lowerable": 41483, "rejected": 55,
+    }
+    assert coverage["instructions"]["total"] == 2088152
+    assert delta["base_lowerable_functions"] == 35004
+    assert delta["added_functions"] == 6479
+    assert delta["remaining_rejected_functions"] == 55
+    assert delta["source"] == coverage["source"] == build["source"]
+    assert build["format"] == "NFSShift.NativeLinuxPcodePartialBuild/1"
+    assert build["revenginstr_revision"] == "a58d8dcdc6cfa73af360c3f4cb253ad43fe507d7"
+    assert build["jobs"] == 4
+    assert build["shard_size_limit"] == 100
+    assert "ref: " + build["revenginstr_revision"] in (ROOT / ".github/workflows/ci.yml").read_text()
+    assert build["base"]["lowerable_functions"] + build["delta"]["functions"] == 41483
+    assert build["delta"]["report_sha256"] == hashlib.sha256(delta_path.read_bytes()).hexdigest()
+    assert build["coverage"]["report_sha256"] == hashlib.sha256(coverage_path.read_bytes()).hexdigest()
+    assert build["library"]["format"] == "ELF64 shared object"
+    assert build["library"]["exported_pcode_functions"] == 41483
+    assert len(build["library"]["sha256"]) == 64
+    assert build["link"]["undefined_references"] == 0
+    assert build["smoke_test"]["result"] == "passed"
+    assert build["limitations"]["complete_game"] is False
