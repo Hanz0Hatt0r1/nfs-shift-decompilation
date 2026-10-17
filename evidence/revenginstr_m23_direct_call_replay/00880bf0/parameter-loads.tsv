@@ -1,0 +1,17 @@
+format	function_entry	function_name	load_address	load_time	base_parameter_index	field_offset	address_pattern	value_size	value_token	status
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880bfd	34	0	0x10	int_add	4	def:LOAD@00880bfd:34:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880c06	61	0	0x0	direct	4	def:LOAD@00880c06:61:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880c13	91	0	0x20	int_add	4	def:LOAD@00880c13:91:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880c3e	216	0	0x14	int_add	4	def:LOAD@00880c3e:216:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880c44	240	0	0x4	int_add	4	def:LOAD@00880c44:240:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880c52	270	0	0x24	int_add	4	def:LOAD@00880c52:270:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880c7b	393	0	0x18	int_add	4	def:LOAD@00880c7b:393:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880c81	417	0	0x8	int_add	4	def:LOAD@00880c81:417:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880c8f	447	0	0x28	int_add	4	def:LOAD@00880c8f:447:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880cb8	570	0	0x1c	int_add	4	def:LOAD@00880cb8:570:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880cbe	594	0	0xc	int_add	4	def:LOAD@00880cbe:594:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880ccc	624	0	0x2c	int_add	4	def:LOAD@00880ccc:624:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880cf7	751	1	0x0	direct	4	def:LOAD@00880cf7:751:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880cfd	775	1	0x4	ptradd	4	def:LOAD@00880cfd:775:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880d03	799	1	0x8	ptradd	4	def:LOAD@00880d03:799:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00880bf0	FUN_00880bf0	00880d09	823	1	0xc	ptradd	4	def:LOAD@00880d09:823:4	parameter_field_load
