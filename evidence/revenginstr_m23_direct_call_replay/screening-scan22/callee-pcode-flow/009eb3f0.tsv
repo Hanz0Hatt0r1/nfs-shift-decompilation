@@ -1,0 +1,7 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+009eb3f0	009eb3f0	4	LOAD	def:009eb3f0:4:4	const:0x1a1:4;register:register:00000004:4	-	-
+009eb3f0	009eb3f0	5	INT_ADD	def:009eb3f0:5:4	def:009eb3f0:4:4;const:0x1:4	-	-
+009eb3f0	009eb3f0	6	STORE	-	const:0x1a1:4;register:register:00000004:4;def:009eb3f0:5:4	-	-
+009eb3f0	009eb3f3	16	LOAD	def:009eb3f3:16:4	const:0x1a1:4;register:register:00000004:4	-	-
+009eb3f0	009eb3f3	17	COPY	def:009eb3f3:17:4	def:009eb3f3:16:4	-	-
+009eb3f0	009eb3f5	20	RETURN	-	const:0x0:4;def:009eb3f3:17:4	-	-
