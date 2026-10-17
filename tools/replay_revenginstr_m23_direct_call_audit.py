@@ -119,6 +119,186 @@ def _validate_path_filter_case(evidence_dir: Path, entry: str, expected: dict[st
                 raise ValueError(f"/3 changed the witness despite a retained memory-effect barrier: {entry}")
 
 
+
+def _validate_scan16(evidence_dir: Path, manifest: dict[str, Any]) -> None:
+    report_path = evidence_dir / "screening-scan16.json"
+    report = manifest.get("expanded_scan16_screen")
+    if not isinstance(report, dict) or json.loads(report_path.read_text()) != report:
+        raise ValueError("scan16 screening report does not match the frozen manifest")
+    if report.get("format") != "NFS.RevenginstrM23Screening/2" or report.get("program_id") != PROGRAM_ID:
+        raise ValueError("scan16 has an unsupported report format or program id")
+
+    folder = evidence_dir / "screening-scan16"
+    for relative, expected in report.get("replay_inputs", {}).items():
+        relative_path = Path(relative)
+        if relative_path.is_absolute() or ".." in relative_path.parts:
+            raise ValueError(f"scan16 input path escapes its evidence directory: {relative}")
+        path = folder / relative_path
+        if not path.is_file():
+            raise ValueError(f"scan16 replay input is missing: {relative}")
+        payload = path.read_bytes()
+        if (
+            len(payload) != expected.get("bytes")
+            or hashlib.sha256(payload).hexdigest() != expected.get("sha256")
+            or _row_count(path) != expected.get("rows")
+        ):
+            raise ValueError(f"scan16 replay input digest/count mismatch: {relative}")
+
+    source_path = folder / "selection-source.json"
+    source = json.loads(source_path.read_text())
+    selection = report.get("selection", {})
+    selected = selection.get("candidates", [])
+    if (
+        report.get("source", {}).get("rows") != source.get("source_rows")
+        or report.get("source", {}).get("sha256") != source.get("source_sha256")
+        or selection.get("candidate_count") != source.get("candidate_count")
+        or selection.get("previously_scanned_distinct_roots_excluded")
+        != source.get("previously_scanned_distinct_roots_excluded")
+        or len(selected) != selection.get("candidate_count")
+    ):
+        raise ValueError("scan16 selection metadata does not match its frozen source")
+    source_candidates = {row["function_entry"]: row for row in source.get("selection", [])}
+    entries = [row.get("function_entry") for row in selected]
+    if len(entries) != len(set(entries)) or set(entries) != set(source_candidates):
+        raise ValueError("scan16 candidate roots do not match the frozen selection source")
+
+    stores_path = folder / "parameter-stores.tsv"
+    loads_path = folder / "parameter-loads.tsv"
+    with stores_path.open(newline="") as stream:
+        store_rows = list(csv.DictReader(stream, delimiter="\t"))
+    with loads_path.open(newline="") as stream:
+        load_rows = list(csv.DictReader(stream, delimiter="\t"))
+    memory_rows = _read_jsonl(folder / "memory-store-access.jsonl")
+    pair_rows = _read_jsonl(folder / "field-access-pairs.jsonl")
+    call_rows = _read_jsonl(folder / "direct-call-memory-effects.jsonl")
+    audit_rows = _read_jsonl(folder / "field-store-load-dominance-v3.jsonl")
+    cfg_rows = _read_jsonl(folder / "function-pcode-cfg-v3.jsonl")
+    relevant_memory_rows = _read_jsonl(folder / "memory-store-access-relevant.jsonl")
+
+    counts = {
+        "parameter_store_field": Counter(row["function_entry"] for row in store_rows),
+        "parameter_load_field": Counter(row["function_entry"] for row in load_rows),
+        "memory_store_access": Counter(row["function_entry"] for row in memory_rows),
+    }
+    pair_counts: Counter[str] = Counter()
+    for pair in pair_rows:
+        source_ids = []
+        for edge in pair.get("edges", []):
+            for provenance in edge.get("provenance", []):
+                try:
+                    identity = json.loads(provenance.get("source_id", ""))
+                except (TypeError, json.JSONDecodeError):
+                    continue
+                if isinstance(identity, list) and len(identity) > 2 and identity[0] == PROGRAM_ID:
+                    source_ids.append(identity)
+        if not source_ids:
+            raise ValueError("scan16 field-pair graph has no exact source-row provenance")
+        pair_counts[source_ids[0][1]] += 1
+    counts["field_access_pairs"] = pair_counts
+
+    selected_set = set(entries)
+    for row in (*store_rows, *load_rows):
+        if row.get("function_entry") not in selected_set:
+            raise ValueError("scan16 parameter export contains a root outside its selection")
+    for row in memory_rows:
+        if row.get("program_id") != PROGRAM_ID or row.get("function_entry") not in selected_set:
+            raise ValueError("scan16 memory-store export contains a foreign program/root")
+    for candidate in selected:
+        entry = candidate["function_entry"]
+        source_candidate = source_candidates[entry]
+        metrics = candidate["pcode_metrics"]
+        if (
+            candidate.get("source_name") != source_candidate.get("source_name")
+            or candidate.get("parameter_count") != source_candidate.get("parameter_count")
+            or metrics != source_candidate.get("metrics")
+        ):
+            raise ValueError(f"scan16 source selection record changed: {entry}")
+        if (
+            candidate["parameter_count"] < 1
+            or metrics["calls"] <= metrics["indirect_calls"]
+            or metrics["indirect_calls"] != 1
+            or metrics["loads"] < 1
+            or metrics["stores"] < 1
+            or metrics["truncated"]
+            or candidate["source_name"].startswith("thunk_")
+        ):
+            raise ValueError(f"scan16 candidate does not satisfy the recorded selection: {entry}")
+        actual_rows = {key: counts[key][entry] for key in counts}
+        if candidate.get("export_rows") != actual_rows:
+            raise ValueError(f"scan16 per-root export counts changed: {entry}")
+
+    totals = {
+        "candidate_roots": len(selected),
+        "parameter_store_field_rows": len(store_rows),
+        "parameter_load_field_rows": len(load_rows),
+        "memory_store_access_rows": len(memory_rows),
+        "field_access_pair_rows": len(pair_rows),
+        "roots_with_field_pairs": len(pair_counts),
+        "audit_roots": len(cfg_rows),
+        "audit_rows": len(audit_rows),
+        "audit_memory_store_access_rows": len(relevant_memory_rows),
+        "audit_status_counts": dict(sorted(Counter(row["status"] for row in audit_rows).items())),
+        "unique_cfg_store_candidate_rows": sum(row["status"] == "unique_cfg_store_candidate" for row in audit_rows),
+        "direct_call_effect_rows": len(call_rows),
+        "direct_call_effect_status_counts": dict(sorted(Counter(row["status"] for row in call_rows).items())),
+        "write_free_direct_call_rows": sum(row["status"] == "no_explicit_memory_write" for row in call_rows),
+    }
+    expected_summary = report.get("summary", {})
+    if any(expected_summary.get(key) != value for key, value in totals.items()):
+        raise ValueError("scan16 aggregate summary does not match the frozen rows")
+
+    audit_roots = {row.get("function_entry") for row in cfg_rows}
+    pair_roots = {entry for entry, count in pair_counts.items() if count}
+    if len(cfg_rows) != len(audit_roots) or audit_roots != pair_roots:
+        raise ValueError("scan16 CFG roots do not match the field-pair roots")
+    if any(row.get("function_entry") not in audit_roots for row in audit_rows):
+        raise ValueError("scan16 audit contains a root without CFG evidence")
+    if any(row.get("function_entry") not in audit_roots for row in relevant_memory_rows):
+        raise ValueError("scan16 audit memory sidecar contains a root without CFG evidence")
+    if any("runtime value-flow claim" not in row.get("claim_scope", "") for row in audit_rows):
+        raise ValueError("scan16 audit scope overclaims value flow")
+    if totals["unique_cfg_store_candidate_rows"] or totals["write_free_direct_call_rows"]:
+        raise ValueError("scan16 records an unsupported unique candidate or write-free call")
+
+    caller_dir = folder / "caller-pcode-flow"
+    caller_paths = sorted(caller_dir.glob("*.tsv"))
+    if {path.stem for path in caller_paths} != audit_roots:
+        raise ValueError("scan16 caller-flow files do not match the audited roots")
+    call_rows_by_root: dict[str, list[dict[str, Any]]] = {}
+    for row in call_rows:
+        call_rows_by_root.setdefault(row.get("function_entry", ""), []).append(row)
+    for caller_path in caller_paths:
+        entry = caller_path.stem
+        with caller_path.open(newline="") as stream:
+            flow_rows = list(csv.DictReader(stream, delimiter="\t"))
+        if not flow_rows or any(row.get("function_entry") != entry for row in flow_rows):
+            raise ValueError(f"scan16 caller flow is not exact for {entry}")
+        expected_calls = []
+        for row in flow_rows:
+            if row.get("opcode") not in {"CALL", "CALLIND"}:
+                continue
+            target = row.get("callee_entry")
+            expected_calls.append((row["op_address"], int(row["op_time"]), row["opcode"], target if target not in {"", "-"} else None))
+        actual_calls = [
+            (row.get("address"), row.get("time"), row.get("opcode"), row.get("callee_entry"))
+            for row in call_rows_by_root.get(entry, [])
+        ]
+        if actual_calls != expected_calls:
+            raise ValueError(f"scan16 direct-call facts do not match caller P-code: {entry}")
+        for _, _, opcode, target in expected_calls:
+            if opcode == "CALL" and target != entry and not (folder / "callee-pcode-flow" / f"{target}.tsv").is_file():
+                raise ValueError(f"scan16 direct callee flow is missing: {entry} -> {target}")
+
+    for name, expected in report.get("aggregated_exports", {}).items():
+        path = folder / name
+        payload = path.read_bytes()
+        if (
+            len(payload) != expected.get("bytes")
+            or hashlib.sha256(payload).hexdigest() != expected.get("sha256")
+            or _row_count(path) != expected.get("rows")
+        ):
+            raise ValueError(f"scan16 aggregate export metadata changed: {name}")
+
 def validate_frozen(evidence_dir: Path) -> dict[str, int]:
     """Check the manifest, digests, row counts, and fail-closed result summary."""
     manifest = json.loads((evidence_dir / "manifest.json").read_text())
@@ -345,6 +525,8 @@ def validate_frozen(evidence_dir: Path) -> dict[str, int]:
     ):
         raise ValueError("scan15 export totals do not match the screening report")
 
+    _validate_scan16(evidence_dir, manifest)
+
     return {"artifacts": len(artifacts), "candidates": len(candidates), "bytes": total_bytes}
 
 
@@ -445,9 +627,66 @@ def replay(evidence_dir: Path, bin_dir: Path) -> dict[str, int]:
                 if output.read_bytes() != (folder / f"audit-{version}.jsonl").read_bytes():
                     raise ValueError(f"{version} audit changed on replay: {entry}")
 
+        scan16 = evidence_dir / "screening-scan16"
+        screening_scratch = temporary_dir / "screening-scan16"
+        screening_scratch.mkdir()
+        pairs = screening_scratch / "field-access-pairs.jsonl"
+        _run(
+            binaries[names[0]],
+            [
+                str(scan16 / "parameter-stores.tsv"),
+                str(scan16 / "parameter-loads.tsv"),
+                "--program-id",
+                PROGRAM_ID,
+                "--output",
+                str(pairs),
+            ],
+        )
+        if pairs.read_bytes() != (scan16 / "field-access-pairs.jsonl").read_bytes():
+            raise ValueError("scan16 field access pairs changed on replay")
+
+        combined_effects = screening_scratch / "direct-call-memory-effects.jsonl"
+        with combined_effects.open("wb") as combined:
+            for caller in sorted((scan16 / "caller-pcode-flow").glob("*.tsv")):
+                arguments = [str(caller), "--program-id", PROGRAM_ID]
+                with caller.open(newline="") as stream:
+                    targets = sorted({
+                        row["callee_entry"]
+                        for row in csv.DictReader(stream, delimiter="\t")
+                        if row["opcode"] == "CALL" and row["callee_entry"] not in {"", "-"}
+                    })
+                for target in targets:
+                    flow = caller if target == caller.stem else scan16 / "callee-pcode-flow" / f"{target}.tsv"
+                    if flow.is_file():
+                        arguments.extend(["--callee-flow", target, str(flow)])
+                output = screening_scratch / f"{caller.stem}-direct-call-memory-effects.jsonl"
+                arguments.extend(["--output", str(output)])
+                _run(binaries[names[1]], arguments)
+                combined.write(output.read_bytes())
+        if combined_effects.read_bytes() != (scan16 / "direct-call-memory-effects.jsonl").read_bytes():
+            raise ValueError("scan16 direct-call effects changed on replay")
+
+        scan16_audit = screening_scratch / "field-store-load-dominance-v3.jsonl"
+        _run(
+            binaries[names[2]],
+            [
+                str(pairs),
+                str(scan16 / "function-pcode-cfg-v3.jsonl"),
+                "--memory-store-access-jsonl",
+                str(scan16 / "memory-store-access-relevant.jsonl"),
+                "--direct-call-memory-effect-jsonl",
+                str(combined_effects),
+                "--output",
+                str(scan16_audit),
+            ],
+        )
+        if scan16_audit.read_bytes() != (scan16 / "field-store-load-dominance-v3.jsonl").read_bytes():
+            raise ValueError("scan16 dominance audit changed on replay")
+
     return {
         **summary,
         "replayed_candidates": len(manifest["candidates"]),
+        "replayed_screening_roots": manifest["expanded_scan16_screen"]["selection"]["candidate_count"],
     }
 
 
@@ -459,8 +698,9 @@ def main() -> int:
     evidence_dir = arguments.repository_root / EVIDENCE_DIR
     summary = replay(evidence_dir, arguments.bin_dir)
     print(
-        f"M2.3 frozen replay passed: {summary['replayed_candidates']} candidates, "
-        f"{summary['artifacts']} artifacts, {summary['bytes']} bytes"
+        f"M2.3 frozen replay passed: {summary['replayed_candidates']} audit candidates, "
+        f"{summary['replayed_screening_roots']} screening roots, {summary['artifacts']} artifacts, "
+        f"{summary['bytes']} bytes"
     )
     return 0
 

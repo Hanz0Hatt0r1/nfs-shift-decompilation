@@ -1,0 +1,6 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+00886930	00886936	11	INT_NOTEQUAL	def:00886936:11:1	input:Stack[0x4]:4;const:0x0:4	-	-
+00886930	00886938	16	CBRANCH	-	address:00886940:1;def:00886936:11:1	-	-
+00886930	0088693b	21	CALL	-	input:Stack[0x4]:4;register:register:00000008:1	0064f4c0	thunk_FUN_0064f3a0
+00886930	0088693b	22	RETURN	-	const:0x0:8	-	-
+00886930	00886941	29	RETURN	-	const:0x0:4	-	-
