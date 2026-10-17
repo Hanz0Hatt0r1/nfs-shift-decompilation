@@ -247,6 +247,47 @@ def validate_frozen(evidence_dir: Path) -> dict[str, int]:
     ):
         raise ValueError("scan12 path-filter case does not match its screening summary")
 
+    scan14 = manifest.get("expanded_scan14_screen")
+    if not isinstance(scan14, dict) or json.loads((evidence_dir / "screening-scan14.json").read_text()) != scan14:
+        raise ValueError("scan14 screening report does not match the frozen manifest")
+    exported = scan14.get("selection", {}).get("candidates", [])
+    if len(exported) != scan14.get("selection", {}).get("candidate_count"):
+        raise ValueError("scan14 candidate count does not match its selection rows")
+    totals = Counter()
+    for candidate in exported:
+        entry = candidate["function_entry"]
+        metrics = candidate["pcode_metrics"]
+        if (
+            candidate["parameter_count"] < 1
+            or metrics["calls"] <= metrics["indirect_calls"]
+            or metrics["loads"] < 1
+            or metrics["stores"] < 1
+            or metrics["truncated"]
+            or candidate["source_name"].startswith("thunk_")
+        ):
+            raise ValueError(f"scan14 candidate does not satisfy the recorded selection: {entry}")
+        folder = evidence_dir / "screening-scan14" / entry
+        for filename, key in (
+            ("parameter-stores.tsv", "parameter_store_rows"),
+            ("parameter-loads.tsv", "parameter_load_rows"),
+            ("memory-store-access.jsonl", "memory_store_access_rows"),
+            ("field-access-pairs.jsonl", "field_access_pair_rows"),
+        ):
+            count = _row_count(folder / filename)
+            if count != candidate["exports"][key]:
+                raise ValueError(f"scan14 export row count mismatch: {entry}/{filename}")
+            totals[key] += count
+    if any(totals[key] != scan14["summary"].get(key) for key in totals):
+        raise ValueError("scan14 export totals do not match the screening report")
+    if totals["parameter_store_rows"] or totals["field_access_pair_rows"]:
+        raise ValueError("scan14 reports field pairs without any parameter-rooted stores")
+    if (
+        scan14["summary"].get("candidate_roots") != len(exported)
+        or scan14["summary"].get("roots_with_field_pairs") != 0
+        or scan14["summary"].get("dominance_audits_run") != 0
+    ):
+        raise ValueError("scan14 screening conclusion is inconsistent with its exports")
+
     return {"artifacts": len(artifacts), "candidates": len(candidates), "bytes": total_bytes}
 
 
