@@ -13,6 +13,14 @@ def test_shift_native_pcode_runner_delegates_to_shared_lowerer() -> None:
     assert runner.stat().st_mode & 0o111
 
 
+def test_shift_pcode_delta_emitter_reuses_the_shared_lowerer() -> None:
+    emitter = ROOT / "tools/ghidra/emit_shift_pcode_delta.py"
+    text = emitter.read_text(encoding="utf-8")
+    assert "from revenginstr.pcode.c_lowering import" in text
+    assert "compile_function(row, spaces, include_runtime=False)" in text
+    assert "base shard function inventory does not match its build report" in text
+
+
 def test_linux_elf_smoke_harness_checks_generated_function_behavior() -> None:
     runner = ROOT / "tools/ghidra/smoke_shift_pcode_elf.sh"
     harness = ROOT / "tools/ghidra/smoke_shift_pcode_elf.c"

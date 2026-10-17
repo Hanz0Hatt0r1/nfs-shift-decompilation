@@ -1,0 +1,36 @@
+{
+  "added_functions": 65,
+  "added_instructions": 9231,
+  "added_pcode_operations": 36595,
+  "base_build_report_sha256": "a4ce39d03409f134d80cae26ddc0b9b60979e5b9a0ca0e1cd423a8401e87523d",
+  "base_lowerable_functions": 35004,
+  "first_added_function": "0x00445370",
+  "format": "NFSShift.PcodeLoweringSupplementalShard/1",
+  "last_added_function": "0x00d92600",
+  "records": 41538,
+  "rejection_reasons": [
+    {
+      "functions": 1,
+      "reason": "CALLIND conflicts with machine flow type 'COMPUTED_CALL_TERMINATOR'"
+    },
+    {
+      "functions": 6440,
+      "reason": "scalar varnode size 10 exceeds 8-byte limit"
+    },
+    {
+      "functions": 28,
+      "reason": "scalar varnode size 16 exceeds 8-byte limit"
+    }
+  ],
+  "remaining_rejected_functions": 6469,
+  "source": {
+    "address_spaces_sha256": "e922b22ab08ba04109f57197534a2e848b171210a35de795514fe0f3ef8effb0",
+    "corpus_sha256": "bc3f5a5972842f605b0bdd25dbc80b3129b96df30c3584d2dd31222aa5a454bc",
+    "language_id": "x86:LE:32:default",
+    "manifest_sha256": "f3a70bb2e65adafcb72d292e03956a9354e99b9a6b994e2586e91fb14b547074",
+    "program": "SHIFT.exe"
+  },
+  "source_bytes": 13115913,
+  "source_file": "shift-pcode-delta.c",
+  "source_sha256": "5da8c50dc2f3785743efa4dfdd935d5c08e107d6270230921bba8b4cd18938c2"
+}

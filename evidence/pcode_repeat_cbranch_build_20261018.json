@@ -1,0 +1,98 @@
+{
+  "format": "NFSShift.PcodeRepeatBranchSupplementalBuild/1",
+  "revenginstr_revision": "fde4275d0385fcb42097652eb2c3ebf2601c8a40",
+  "source": {
+    "address_spaces_sha256": "e922b22ab08ba04109f57197534a2e848b171210a35de795514fe0f3ef8effb0",
+    "corpus_sha256": "bc3f5a5972842f605b0bdd25dbc80b3129b96df30c3584d2dd31222aa5a454bc",
+    "language_id": "x86:LE:32:default",
+    "manifest_sha256": "f3a70bb2e65adafcb72d292e03956a9354e99b9a6b994e2586e91fb14b547074",
+    "program": "SHIFT.exe"
+  },
+  "base": {
+    "lowerable_functions": 35004,
+    "linux_build_report_sha256": "a4ce39d03409f134d80cae26ddc0b9b60979e5b9a0ca0e1cd423a8401e87523d",
+    "native_build_report_path": "evidence/pcode_native_lowering_build_20261017.json"
+  },
+  "delta": {
+    "report_path": "evidence/pcode_repeat_cbranch_delta_20261018.json",
+    "report_sha256": "cb9ea7772e9bfa93645c9e695b41d057fde7cd30de093ec8fb930c29d63fdb30",
+    "added_functions": 65,
+    "added_instructions": 9231,
+    "added_pcode_operations": 36595,
+    "remaining_rejected_functions": 6469
+  },
+  "coverage": {
+    "lowerable_functions": 35069,
+    "corpus_functions": 41538,
+    "lowerable_fraction": 0.8443,
+    "remaining_rejection_reasons": [
+      {"functions": 6440, "reason": "scalar varnode size 10 exceeds 8-byte limit"},
+      {"functions": 28, "reason": "scalar varnode size 16 exceeds 8-byte limit"},
+      {"functions": 1, "reason": "CALLIND conflicts with machine flow type 'COMPUTED_CALL_TERMINATOR'"}
+    ]
+  },
+  "linux": {
+    "compiler": "/usr/bin/gcc",
+    "compiler_version": "gcc (GCC) 16.2.1 20260810",
+    "delta_object": {
+      "artifact_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-repeat-cbranch-20261018/shift-pcode-delta.o",
+      "bytes": 8891256,
+      "sha256": "bb0ac874d310fc3d458d159794bbaab23a8f3715436c80ef74805e0ce540437f",
+      "functions": 65
+    },
+    "link": {
+      "arguments": ["-shared", "-Wl,-z,defs", "-Wl,-soname,libnfs_shift_pcode_partial.so", "-lm"],
+      "result": "passed",
+      "undefined_references": 0
+    },
+    "library": {
+      "artifact_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-repeat-cbranch-20261018/libnfs_shift_pcode_partial.so",
+      "format": "ELF64 shared object",
+      "machine": "x86-64",
+      "bytes": 989354616,
+      "sha256": "90803fe982eea08dc94daaf7490806540dfb3d3771d1d13700b4109c484028ef",
+      "exported_pcode_functions": 35069,
+      "build_id": "cf8ff27e6386cecba28d1f210c2a239ce87fac23"
+    },
+    "smoke_test": {
+      "runner": "tools/ghidra/smoke_shift_pcode_elf.sh",
+      "result": "passed",
+      "function": "rvi_00401000",
+      "call_target": "0x00685700",
+      "eax_after": "0x00020000",
+      "memory_write": "RAM[0x00020000] = 0x00aa99d0",
+      "stdout": "PASS: rvi_00401000 returned 0, called 0x685700 once, EAX=0x20000, [ESI]=0xaa99d0"
+    }
+  },
+  "windows_pe": {
+    "compiler": "/usr/bin/i686-w64-mingw32-gcc",
+    "compiler_version": "i686-w64-mingw32-gcc (GCC) 16.2.0",
+    "delta_object": {
+      "artifact_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-windows-build-repeat-cbranch-20261018/shift-pcode-delta.o",
+      "bytes": 10105014,
+      "sha256": "7a9d32e6a009d92a393d47fa8c0dc1ae2f532ca64f367b03a9a82c40407d69b0",
+      "functions": 65
+    },
+    "link": {
+      "arguments": ["-shared", "-Wl,--no-undefined", "-Wl,--export-all-symbols", "-lm"],
+      "result": "passed",
+      "undefined_references": 0
+    },
+    "library": {
+      "artifact_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-windows-build-repeat-cbranch-20261018/shift_pcode_partial.dll",
+      "format": "PE32 Windows DLL",
+      "machine": "Intel i386",
+      "sections": 18,
+      "bytes": 1328165416,
+      "sha256": "aff011b90f707c0f2f1f6862b4d41ffe4d2d70613db0427fcfbc14039c19b89f",
+      "export_table_function_count": 35069,
+      "exported_pcode_functions": 35069
+    }
+  },
+  "limitations": {
+    "complete_game": false,
+    "behavioral_parity": "not validated by linking or the smoke test",
+    "runtime_startup_and_game_platform_layer": "not implemented by these partial libraries",
+    "guest_state": "x86-32 represented through RviPcodeContext callbacks"
+  }
+}
