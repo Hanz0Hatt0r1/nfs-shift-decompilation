@@ -694,6 +694,7 @@ def validate_frozen(evidence_dir: Path) -> dict[str, int]:
     _validate_screening_scan(evidence_dir, manifest, scan_number=18, indirect_call_count=3)
     _validate_empty_screen(evidence_dir, manifest, scan_number=19, indirect_call_count=4)
     _validate_empty_screen(evidence_dir, manifest, scan_number=20, indirect_call_count=5)
+    _validate_empty_screen(evidence_dir, manifest, scan_number=21, indirect_call_count=6)
 
     return {"artifacts": len(artifacts), "candidates": len(candidates), "bytes": total_bytes}
 
@@ -891,6 +892,25 @@ def replay(evidence_dir: Path, bin_dir: Path) -> dict[str, int]:
         if pairs.read_bytes() != (scan20 / "field-access-pairs.jsonl").read_bytes():
             raise ValueError("scan20 field access pairs changed on replay")
         replayed_screening_roots += manifest["expanded_scan20_screen"]["selection"]["candidate_count"]
+
+        scan21 = evidence_dir / "screening-scan21"
+        screening_scratch = temporary_dir / "scan21"
+        screening_scratch.mkdir()
+        pairs = screening_scratch / "field-access-pairs.jsonl"
+        _run(
+            binaries[names[0]],
+            [
+                str(scan21 / "parameter-stores.tsv"),
+                str(scan21 / "parameter-loads.tsv"),
+                "--program-id",
+                PROGRAM_ID,
+                "--output",
+                str(pairs),
+            ],
+        )
+        if pairs.read_bytes() != (scan21 / "field-access-pairs.jsonl").read_bytes():
+            raise ValueError("scan21 field access pairs changed on replay")
+        replayed_screening_roots += manifest["expanded_scan21_screen"]["selection"]["candidate_count"]
 
     return {
         **summary,

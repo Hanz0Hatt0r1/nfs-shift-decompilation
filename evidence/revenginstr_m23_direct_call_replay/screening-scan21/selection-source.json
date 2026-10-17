@@ -1,0 +1,54 @@
+{
+  "format": "NFS.M23ScreeningSelection/1",
+  "source_rows": 1000,
+  "source_sha256": "cbab8b43b96a0c779ec19e4054fda2d19fec793bc644d10df01af38e2c28cd5e",
+  "previously_scanned_distinct_roots_excluded": 2380,
+  "candidate_count": 3,
+  "selection": [
+    {
+      "function_entry": "00a13c80",
+      "source_name": "FUN_00a13c80",
+      "parameter_count": 4,
+      "metrics": {
+        "ops": 165,
+        "emitted_ops": 165,
+        "calls": 10,
+        "indirect_calls": 6,
+        "branches": 18,
+        "loads": 29,
+        "stores": 3,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a266c0",
+      "source_name": "FUN_00a266c0",
+      "parameter_count": 1,
+      "metrics": {
+        "ops": 167,
+        "emitted_ops": 167,
+        "calls": 14,
+        "indirect_calls": 6,
+        "branches": 7,
+        "loads": 25,
+        "stores": 4,
+        "truncated": false
+      }
+    },
+    {
+      "function_entry": "00a47310",
+      "source_name": "FUN_00a47310",
+      "parameter_count": 3,
+      "metrics": {
+        "ops": 251,
+        "emitted_ops": 251,
+        "calls": 8,
+        "indirect_calls": 6,
+        "branches": 19,
+        "loads": 39,
+        "stores": 5,
+        "truncated": false
+      }
+    }
+  ]
+}

@@ -31,4 +31,6 @@ Scan19 screened two previously unscanned functions with exactly four indirect ca
 
 Scan20 screened eight previously unscanned functions with exactly five indirect calls. The parameter-field exporter returned zero rows; it retained 79 parameter loads and 42 general STORE facts, with no exact field pairs, so no dominance audit was run. The empty pair export replays byte-for-byte. See [`screening-scan20.json`](screening-scan20.json) for the frozen selection and exports.
 
+Scan21 screened three previously unscanned functions with exactly six indirect calls. The parameter-field exporter returned zero rows; it retained 28 parameter loads and 12 general STORE facts, with no exact field pairs, so no dominance audit was run. The empty pair export replays byte-for-byte. See [`screening-scan21.json`](screening-scan21.json) for the frozen selection and exports.
+
 These are conservative structural audits only. They make no branch-feasibility, runtime value-flow, or semantic-label claim.

@@ -1943,6 +1943,42 @@
       "path": "screening-scan20/selection-source.json",
       "rows": 1,
       "sha256": "dd2b67e79d46ced77b136db1e8611f3e29fb20e0392fdc974e6317fd7769af36"
+    },
+    {
+      "bytes": 6207,
+      "path": "screening-scan21.json",
+      "rows": 1,
+      "sha256": "ab3d948e34ae2115942864bc4da93ae8ea13a38daf70e672cf9b4d23afc6aced"
+    },
+    {
+      "bytes": 0,
+      "path": "screening-scan21/field-access-pairs.jsonl",
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 7774,
+      "path": "screening-scan21/memory-store-access.jsonl",
+      "rows": 12,
+      "sha256": "486c5372c29c0c2cdf66bff25e36f7ecf747e363894367c7930c7d4933a458d3"
+    },
+    {
+      "bytes": 3933,
+      "path": "screening-scan21/parameter-loads.tsv",
+      "rows": 28,
+      "sha256": "1d9ebcb8ec8e70299fe3d16b5ae66173de3a1b50c511ff44bcefb1e9ce512013"
+    },
+    {
+      "bytes": 169,
+      "path": "screening-scan21/parameter-stores.tsv",
+      "rows": 0,
+      "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+    },
+    {
+      "bytes": 1249,
+      "path": "screening-scan21/selection-source.json",
+      "rows": 1,
+      "sha256": "4423e73b0c656df54128ad79ebd90500944da35db81cc96c34ff64f6e2eb07bd"
     }
   ],
   "candidates": {
@@ -9546,6 +9582,188 @@
         "bytes": 169,
         "rows": 0,
         "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+      }
+    }
+  },
+  "expanded_scan21_screen": {
+    "format": "NFS.RevenginstrM23Screening/2",
+    "program_id": "nfs-shift:SHIFT.exe",
+    "source": {
+      "corpus": "SHIFT portable P-code sample 00a",
+      "rows": 1000,
+      "sha256": "cbab8b43b96a0c779ec19e4054fda2d19fec793bc644d10df01af38e2c28cd5e"
+    },
+    "capture": {
+      "analysis_enabled": false,
+      "read_only": true,
+      "ghidra_version": "12.1.2 DEV",
+      "exporter": "ExportGhidraParameterStoreField.java",
+      "revenginstr_source_commit": "bd8f4725e5c38c502a647110518c7116b5e82d5b"
+    },
+    "selection": {
+      "previously_scanned_distinct_roots_excluded": 2380,
+      "candidate_count": 3,
+      "filters": [
+        "PARAMS >= 1",
+        "direct calls > 0",
+        "exactly six indirect calls",
+        "loads > 0",
+        "stores > 0",
+        "not truncated",
+        "source name does not begin with thunk_",
+        "entry was not in prior M2.3 scan exports"
+      ],
+      "candidates": [
+        {
+          "function_entry": "00a13c80",
+          "source_name": "FUN_00a13c80",
+          "parameter_count": 4,
+          "pcode_metrics": {
+            "ops": 165,
+            "emitted_ops": 165,
+            "calls": 10,
+            "indirect_calls": 6,
+            "branches": 18,
+            "loads": 29,
+            "stores": 3,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 5,
+            "memory_store_access": 3,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "8335b0e720669b929874ff16de71941ddfeb1f7175acdccc225e57f69ba06fb8",
+            "memory_store_access": "9ee96b88d376686eb07337a40e45f90fd5f9e98cd55a4d0b457cc7138bf51101",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a266c0",
+          "source_name": "FUN_00a266c0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 167,
+            "emitted_ops": 167,
+            "calls": 14,
+            "indirect_calls": 6,
+            "branches": 7,
+            "loads": 25,
+            "stores": 4,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 5,
+            "memory_store_access": 4,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "2b39195e57f1963c1c0dfab3e6c49c1d5c3e0f5c49a2e77339b9b65ec9b10d3d",
+            "memory_store_access": "64b429ece1d1615d668572c47406218285e5a131872b62b46cb23cf3c46c09f3",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a47310",
+          "source_name": "FUN_00a47310",
+          "parameter_count": 3,
+          "pcode_metrics": {
+            "ops": 251,
+            "emitted_ops": 251,
+            "calls": 8,
+            "indirect_calls": 6,
+            "branches": 19,
+            "loads": 39,
+            "stores": 5,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 18,
+            "memory_store_access": 5,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "ce604aeacb629a67bd09d09dfd4f5f0a5bf322f25b380061248d5462709d60e7",
+            "memory_store_access": "e3de3ee89f90baf1b8967e48b0b86b1f0565d155b8da3852bfb27842177e53b1",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        }
+      ]
+    },
+    "empty_export_contract": {
+      "parameter_store_field_rows_per_candidate": 0,
+      "parameter_stores_sha256_values": [
+        "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+      ],
+      "field_access_pair_rows_per_candidate": 0,
+      "field_access_pairs_sha256_values": [
+        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      ]
+    },
+    "summary": {
+      "candidate_roots": 3,
+      "parameter_store_field_rows": 0,
+      "parameter_load_field_rows": 28,
+      "memory_store_access_rows": 12,
+      "field_access_pair_rows": 0,
+      "roots_with_field_pairs": 0,
+      "dominance_audits_run": 0,
+      "outcome": "The 3-function screen yielded no ParameterStoreField/1 rows or exact field pairs. The parameter-load exporter emitted 28 rows and the general memory-store exporter emitted 12 STORE facts; no dominance audit was run."
+    },
+    "replay_inputs": {
+      "field-access-pairs.jsonl": {
+        "bytes": 0,
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "memory-store-access.jsonl": {
+        "bytes": 7774,
+        "rows": 12,
+        "sha256": "486c5372c29c0c2cdf66bff25e36f7ecf747e363894367c7930c7d4933a458d3"
+      },
+      "parameter-loads.tsv": {
+        "bytes": 3933,
+        "rows": 28,
+        "sha256": "1d9ebcb8ec8e70299fe3d16b5ae66173de3a1b50c511ff44bcefb1e9ce512013"
+      },
+      "parameter-stores.tsv": {
+        "bytes": 169,
+        "rows": 0,
+        "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+      },
+      "selection-source.json": {
+        "bytes": 1249,
+        "rows": 1,
+        "sha256": "4423e73b0c656df54128ad79ebd90500944da35db81cc96c34ff64f6e2eb07bd"
+      }
+    },
+    "aggregated_exports": {
+      "parameter-stores.tsv": {
+        "bytes": 169,
+        "rows": 0,
+        "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+      },
+      "parameter-loads.tsv": {
+        "bytes": 3933,
+        "rows": 28,
+        "sha256": "1d9ebcb8ec8e70299fe3d16b5ae66173de3a1b50c511ff44bcefb1e9ce512013"
+      },
+      "memory-store-access.jsonl": {
+        "bytes": 7774,
+        "rows": 12,
+        "sha256": "486c5372c29c0c2cdf66bff25e36f7ecf747e363894367c7930c7d4933a458d3"
+      },
+      "field-access-pairs.jsonl": {
+        "bytes": 0,
+        "rows": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       }
     }
   }

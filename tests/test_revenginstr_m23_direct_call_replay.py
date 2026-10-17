@@ -7,4 +7,4 @@ def test_frozen_m23_direct_call_replay_evidence_is_complete_and_fail_closed():
     root = Path(__file__).resolve().parents[1]
     summary = validate_frozen(root / "evidence/revenginstr_m23_direct_call_replay")
 
-    assert summary == {"artifacts": 324, "candidates": 13, "bytes": 4133196}
+    assert summary == {"artifacts": 330, "candidates": 13, "bytes": 4152528}
