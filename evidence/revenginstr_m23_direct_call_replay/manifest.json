@@ -788,9 +788,9 @@
     },
     {
       "path": "screening-scan14.json",
-      "bytes": 34676,
+      "bytes": 34744,
       "rows": 1,
-      "sha256": "a16cb7bd8b1f2c672e86fa6c07264795b50d7b27f44c4f980fcc9de5c4c3f1af"
+      "sha256": "7baa3e041ebb88da62521e64603c66d8f25496dd4a018a39b4206d0f80c83314"
     },
     {
       "path": "screening-scan14/00a50050/field-access-pairs.jsonl",
@@ -1319,6 +1319,24 @@
       "bytes": 169,
       "rows": 0,
       "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+    },
+    {
+      "path": "screening-scan15.json",
+      "bytes": 63215,
+      "rows": 1,
+      "sha256": "ed06ba0f561371a04a6cf81b2ae5149e86963417e85dbedd293b09996e926ef5"
+    },
+    {
+      "path": "screening-scan15/memory-store-access.jsonl",
+      "bytes": 182497,
+      "rows": 302,
+      "sha256": "5ce12a2c4e0af3451e48b0b7050ae3ad38c1418b6069ae7e6664b9251bd95215"
+    },
+    {
+      "path": "screening-scan15/parameter-loads.tsv",
+      "bytes": 32122,
+      "rows": 238,
+      "sha256": "a186767f10db8cec10d419ee6b8b1417781dbcb7ae2fe8a2426350e592112346"
     }
   ],
   "candidates": {
@@ -3007,7 +3025,1746 @@
       "field_access_pair_rows": 0,
       "roots_with_field_pairs": 0,
       "dominance_audits_run": 0,
-      "outcome": "All 22 candidate functions exported zero parameter-rooted STORE rows, so no exact parameter field store/load pairs were available for a dominance audit."
+      "outcome": "The ParameterStoreField/1 exporter returned zero rows for all 22 functions. The general memory-store exporter still emitted 156 STORE facts; none formed an exact parameter field pair, so no dominance audit was available."
     }
+  },
+  "expanded_scan15_screen": {
+    "format": "NFS.RevenginstrM23Screening/2",
+    "program_id": "nfs-shift:SHIFT.exe",
+    "source": {
+      "corpus": "SHIFT portable P-code sample 00a",
+      "rows": 1000,
+      "sha256": "cbab8b43b96a0c779ec19e4054fda2d19fec793bc644d10df01af38e2c28cd5e"
+    },
+    "capture": {
+      "analysis_enabled": false,
+      "ghidra_version": "12.1.2 DEV",
+      "read_only": true,
+      "exporter": "ExportGhidraParameterStoreField.java"
+    },
+    "selection": {
+      "previously_scanned_distinct_roots_excluded": 2165,
+      "candidate_count": 62,
+      "filters": [
+        "PARAMS >= 1",
+        "direct calls > 0",
+        "exactly one indirect call",
+        "loads > 0",
+        "stores > 0",
+        "not truncated",
+        "source name does not begin with thunk_",
+        "entry was not in prior M2.3 scan exports"
+      ],
+      "candidates": [
+        {
+          "function_entry": "00a00020",
+          "source_name": "FUN_00a00020",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 55,
+            "emitted_ops": 55,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 0,
+            "loads": 4,
+            "stores": 12,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 4,
+            "memory_store_access": 12,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "40163512d49f17f1b3670fce64e1c5735f810795f34ab9faf565000a78b69234",
+            "memory_store_access": "d6334a832e513eeaba7c7e8a3340d39911d7166182ebb957810eb619a53f41aa",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a000b0",
+          "source_name": "FUN_00a000b0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 56,
+            "emitted_ops": 56,
+            "calls": 3,
+            "indirect_calls": 0,
+            "branches": 0,
+            "loads": 3,
+            "stores": 11,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 3,
+            "memory_store_access": 11,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "f98209fdce2090e3d6a325928327d3c4b8c13ed1f688b6e53b3a0654f61a9a5a",
+            "memory_store_access": "88a628d54872fa07ccec24402a035b47965bae5ed374c2c9fd111fb3dcd4af4c",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a00890",
+          "source_name": "FUN_00a00890",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 55,
+            "emitted_ops": 55,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 0,
+            "loads": 4,
+            "stores": 12,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 4,
+            "memory_store_access": 12,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "38e8a4903302facf3501f0a3bf4d6c70d4d2b45fa9347748a6b731642829ae9a",
+            "memory_store_access": "fa81dac0e186e008c1d5ee75542c223197a62ba21c62791ca1299c5198c514ab",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a00aa0",
+          "source_name": "FUN_00a00aa0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 63,
+            "emitted_ops": 63,
+            "calls": 3,
+            "indirect_calls": 0,
+            "branches": 5,
+            "loads": 9,
+            "stores": 5,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 3,
+            "memory_store_access": 5,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "ff1cd4915877635ae57632c4d61a196223c575e79797a08ffb7243989afea463",
+            "memory_store_access": "085ad3682e66f6fd2a8846fe473d274c0303ebe146254e2b209d082acf1cf05d",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a00b20",
+          "source_name": "FUN_00a00b20",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 86,
+            "emitted_ops": 86,
+            "calls": 3,
+            "indirect_calls": 0,
+            "branches": 0,
+            "loads": 3,
+            "stores": 11,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 3,
+            "memory_store_access": 11,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "525536150b9010667c1634c9d92fdf108a40b1aafaad2d85afc55b666ac3c07f",
+            "memory_store_access": "c0ca09a4f0c26e79c68be3b037e730b8fe3ca471d7a147ebf6bbb34aafed6733",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a01540",
+          "source_name": "FUN_00a01540",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 55,
+            "emitted_ops": 55,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 0,
+            "loads": 4,
+            "stores": 12,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 4,
+            "memory_store_access": 12,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "7ba7b67de39d39624da67c9b4fb97b6f4ebac6655e72e33d254971a798e00012",
+            "memory_store_access": "9e506af1e4af106173f9cca75177e7cec062265a223b3712c36a687a4bb1fa13",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a01a70",
+          "source_name": "FUN_00a01a70",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 57,
+            "emitted_ops": 57,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 0,
+            "loads": 3,
+            "stores": 14,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 3,
+            "memory_store_access": 14,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "5798bb103724172c683dfc5900e80b710f840036099863c175a944ebb4979ebd",
+            "memory_store_access": "d35fde9d50784fc8a543b36184d6f415ef7d2c913823d4cc900f4a896d824152",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a02aa0",
+          "source_name": "FUN_00a02aa0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 32,
+            "emitted_ops": 32,
+            "calls": 4,
+            "indirect_calls": 0,
+            "branches": 2,
+            "loads": 2,
+            "stores": 2,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 1,
+            "memory_store_access": 2,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "f01d9b192b427931951ca676cd14b6cf8747aa03bd4ea13a634f05a635df13d4",
+            "memory_store_access": "bdd6bb979c3d90eddad32b82fdacaa7b2899deb21e8c7343836ec121e53a414c",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a02dc0",
+          "source_name": "FUN_00a02dc0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 48,
+            "emitted_ops": 48,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 0,
+            "loads": 3,
+            "stores": 11,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 3,
+            "memory_store_access": 11,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "9f3cb9fd88e7a0cd1cbd1a9c6127dbbb73c54312e74c1a75966c78663955c329",
+            "memory_store_access": "5217987055fc0ad41a38d39eeae826ffa0a27f40b1ffa78581cc768574edb6c9",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a05f20",
+          "source_name": "FUN_00a05f20",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 57,
+            "emitted_ops": 57,
+            "calls": 3,
+            "indirect_calls": 0,
+            "branches": 6,
+            "loads": 10,
+            "stores": 5,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 3,
+            "memory_store_access": 5,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "72f0238b413166c3295f797b24bf1700c6e0797d8264f7cfa407b1a4c8e2f265",
+            "memory_store_access": "47931320a979c291be43408de81f4cd9bb1bc8d04472453db99d36a22ad5d097",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a0bb20",
+          "source_name": "FUN_00a0bb20",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 43,
+            "emitted_ops": 43,
+            "calls": 2,
+            "indirect_calls": 0,
+            "branches": 4,
+            "loads": 5,
+            "stores": 1,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 1,
+            "memory_store_access": 1,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "923dc125cebed42c9f29f528e3ce4d3f2b7070044fdcef3b0479672a497f0be1",
+            "memory_store_access": "f1646b2cdf55c803e7ab67709d27171041bbb8ecfb2ab5312508014023449312",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a0e9b0",
+          "source_name": "FUN_00a0e9b0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 163,
+            "emitted_ops": 163,
+            "calls": 3,
+            "indirect_calls": 0,
+            "branches": 8,
+            "loads": 20,
+            "stores": 3,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 2,
+            "memory_store_access": 3,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "32cce839ed0aed23812db891e68e603105c50df3baaf657e85ac11f2d10dd7db",
+            "memory_store_access": "950011390c30e8c1ef3ecc97c2ae625e53d104868b3ece7543f3d74f095e6f1f",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a12810",
+          "source_name": "FUN_00a12810",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 38,
+            "emitted_ops": 38,
+            "calls": 4,
+            "indirect_calls": 0,
+            "branches": 3,
+            "loads": 5,
+            "stores": 2,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 2,
+            "memory_store_access": 2,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "ab12b43b4ef1a30cc4a8085c928aec5b7520a8d5832e7bdabaf52a2c6a0356a9",
+            "memory_store_access": "657ed4ab22ca5ebb44078027811fc2109189fe4dc3150801bb66eb85ac0ca04b",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a12870",
+          "source_name": "FUN_00a12870",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 57,
+            "emitted_ops": 57,
+            "calls": 6,
+            "indirect_calls": 0,
+            "branches": 4,
+            "loads": 8,
+            "stores": 4,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 4,
+            "memory_store_access": 4,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "ea75a23fe5b6eda729c85d4e3ada20cd28326411773c15134d7f6e0b71bd90cc",
+            "memory_store_access": "a7b3beca120e03c5d9a95916a8b2a3670799befd149fb962480c86323453caf1",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a128f0",
+          "source_name": "FUN_00a128f0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 198,
+            "emitted_ops": 198,
+            "calls": 14,
+            "indirect_calls": 0,
+            "branches": 17,
+            "loads": 3,
+            "stores": 9,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 1,
+            "memory_store_access": 9,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "d630c097125e42ecece577289fe2b15912cfbefd6e6b373c673d2992675a2775",
+            "memory_store_access": "d8195af7fefb8c3dbd94977e7fba3ba6605a72c68a79d714eb171eb71e0175fe",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a12d00",
+          "source_name": "FUN_00a12d00",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 87,
+            "emitted_ops": 87,
+            "calls": 6,
+            "indirect_calls": 0,
+            "branches": 7,
+            "loads": 12,
+            "stores": 2,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 0,
+            "memory_store_access": 2,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "9bf996bbc0407605cca0d438ba646ed672c7faeef55b7cd64d7bfca36b14d265",
+            "memory_store_access": "fb15f87ecff44630880d64870aaaac946de066ab216ed747e1ac538d2372acbe",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a1a960",
+          "source_name": "FUN_00a1a960",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 43,
+            "emitted_ops": 43,
+            "calls": 2,
+            "indirect_calls": 0,
+            "branches": 3,
+            "loads": 6,
+            "stores": 2,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 4,
+            "memory_store_access": 2,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "fc5586fd4a6830fd8f1e93d56ca4a48c4b455296e3c8786713e3928150a02b79",
+            "memory_store_access": "4beca91d7625ff27e8dc494d0381ebe741ab5b64b496ad8d5b081a6a01ca1aa6",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a1d180",
+          "source_name": "FUN_00a1d180",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 87,
+            "emitted_ops": 87,
+            "calls": 5,
+            "indirect_calls": 0,
+            "branches": 8,
+            "loads": 8,
+            "stores": 3,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 5,
+            "memory_store_access": 3,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "5ad6feb24074551abdff52cf8dfd66cdf22b9ad351a4571c33eaa09d9627e0ac",
+            "memory_store_access": "5588d0f7ccbe6c0cd42d8419ba7a13adf0172a8746df62e04c26d3d41cac77c3",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a1d2c0",
+          "source_name": "FUN_00a1d2c0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 32,
+            "emitted_ops": 32,
+            "calls": 3,
+            "indirect_calls": 0,
+            "branches": 3,
+            "loads": 2,
+            "stores": 1,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 2,
+            "memory_store_access": 1,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "ed99a8d55db7b1f4bfc659fa66bc8cc3ed6b16120a300e3ced0a188a634fd597",
+            "memory_store_access": "01cbb3f5805c519cee38323062454d073cbda46f99fc854c4858593e3b338ee1",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a1d300",
+          "source_name": "FUN_00a1d300",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 63,
+            "emitted_ops": 63,
+            "calls": 6,
+            "indirect_calls": 0,
+            "branches": 2,
+            "loads": 4,
+            "stores": 3,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 2,
+            "memory_store_access": 3,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "c2c7c06f32965b4ee9d73b6973ee719a86f9824a41d6429a32dc7e78191970b1",
+            "memory_store_access": "0a0bf5555ea0aa7d922fecb2cb3093fb4d217a1f5095717488d89677e65822a7",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a1dbc0",
+          "source_name": "FUN_00a1dbc0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 38,
+            "emitted_ops": 38,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 2,
+            "loads": 3,
+            "stores": 5,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 3,
+            "memory_store_access": 5,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "21ef7d07228c6b84df3f3fdc2bc58bfbe4714331104d49de3244cd6612b9ff41",
+            "memory_store_access": "ad4e8259a0df070b4facceb94cfea929cf7cd2d813e658f4d4c26b4f40614016",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a1e9c0",
+          "source_name": "FUN_00a1e9c0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 73,
+            "emitted_ops": 73,
+            "calls": 5,
+            "indirect_calls": 0,
+            "branches": 2,
+            "loads": 7,
+            "stores": 3,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 5,
+            "memory_store_access": 3,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "e5d26a0a899649e8bd28ab9b9947442d76140babbec97209582687e41eac59fc",
+            "memory_store_access": "ef622ad87c1353e2a9aca154dd1cb33cbcb98af5f830c0bc5c554c5c13607b76",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a1ef40",
+          "source_name": "FUN_00a1ef40",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 151,
+            "emitted_ops": 151,
+            "calls": 6,
+            "indirect_calls": 0,
+            "branches": 9,
+            "loads": 8,
+            "stores": 3,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 0,
+            "memory_store_access": 3,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "9bf996bbc0407605cca0d438ba646ed672c7faeef55b7cd64d7bfca36b14d265",
+            "memory_store_access": "d6cee41f89774fd0a6ea457e32d761ef4738d13940da2567fcc7f152680523ca",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a1fec0",
+          "source_name": "FUN_00a1fec0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 59,
+            "emitted_ops": 59,
+            "calls": 4,
+            "indirect_calls": 0,
+            "branches": 6,
+            "loads": 4,
+            "stores": 2,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 1,
+            "memory_store_access": 2,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "887397cddcc6a6b34bd610fdd2965875da2a35e7895127de943766bb31abfb24",
+            "memory_store_access": "f44294a42f6e070c3a75802417363e3654af7403f772a6aab58de571e10b79f8",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a202a0",
+          "source_name": "FUN_00a202a0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 23,
+            "emitted_ops": 23,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 0,
+            "loads": 4,
+            "stores": 1,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 2,
+            "memory_store_access": 1,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "d4f390b1b0c29a811685fef8a1e3e2f36d662a8f116eca1f023f015af9e370b0",
+            "memory_store_access": "c9ec6d5eb3ce8fb4c4ef24cfd276c03328a41a5cec1b4e54517290fa4652a1d6",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a202d0",
+          "source_name": "FUN_00a202d0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 23,
+            "emitted_ops": 23,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 0,
+            "loads": 4,
+            "stores": 1,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 2,
+            "memory_store_access": 1,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "79c459fc8eac54bc628fd0f8c87f0aa45b58ada9f129637343d0d486f1e25372",
+            "memory_store_access": "73432419f389905ff5cd1a44293117bbf4106e7cc49a9d52a6df63df4809198d",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a20d60",
+          "source_name": "FUN_00a20d60",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 93,
+            "emitted_ops": 93,
+            "calls": 5,
+            "indirect_calls": 0,
+            "branches": 5,
+            "loads": 4,
+            "stores": 2,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 3,
+            "memory_store_access": 2,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "10729959f286401c338872c36f92f91a33ccdf5adc135de16606b73665ef0461",
+            "memory_store_access": "069df02da4454d5d700831a1230cfa56092a0d61d041afa861453262b65c12a2",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a212c0",
+          "source_name": "FUN_00a212c0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 187,
+            "emitted_ops": 187,
+            "calls": 6,
+            "indirect_calls": 0,
+            "branches": 15,
+            "loads": 14,
+            "stores": 4,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 0,
+            "memory_store_access": 4,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "9bf996bbc0407605cca0d438ba646ed672c7faeef55b7cd64d7bfca36b14d265",
+            "memory_store_access": "758819eee011655148ca67ff8310d87c3178aee2042db49a0515f25c1a64db30",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a21400",
+          "source_name": "FUN_00a21400",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 87,
+            "emitted_ops": 87,
+            "calls": 5,
+            "indirect_calls": 0,
+            "branches": 5,
+            "loads": 7,
+            "stores": 3,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 0,
+            "memory_store_access": 3,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "9bf996bbc0407605cca0d438ba646ed672c7faeef55b7cd64d7bfca36b14d265",
+            "memory_store_access": "443cb353c88b2923f9a67ed8c20c7ddbe8d5e8b085b3b69b18eaf9a52d6a02c8",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a23b60",
+          "source_name": "FUN_00a23b60",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 228,
+            "emitted_ops": 228,
+            "calls": 16,
+            "indirect_calls": 0,
+            "branches": 8,
+            "loads": 7,
+            "stores": 5,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 6,
+            "memory_store_access": 5,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "7b00e2523c342d5cf41dcc21847fed518820326a76bb8744bff1f298a33a2a99",
+            "memory_store_access": "176290fc8816bdfcad2542e6830ba9fdce4e7e10dbea18c57302da527c138acc",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a23c90",
+          "source_name": "FUN_00a23c90",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 103,
+            "emitted_ops": 103,
+            "calls": 6,
+            "indirect_calls": 0,
+            "branches": 4,
+            "loads": 3,
+            "stores": 2,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 0,
+            "memory_store_access": 2,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "9bf996bbc0407605cca0d438ba646ed672c7faeef55b7cd64d7bfca36b14d265",
+            "memory_store_access": "8040b45627eb83081a1fbe0d3ad4c718e44d9f8390183e8b855833a90af68622",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a24410",
+          "source_name": "FUN_00a24410",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 211,
+            "emitted_ops": 211,
+            "calls": 10,
+            "indirect_calls": 0,
+            "branches": 14,
+            "loads": 11,
+            "stores": 4,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 0,
+            "memory_store_access": 4,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "9bf996bbc0407605cca0d438ba646ed672c7faeef55b7cd64d7bfca36b14d265",
+            "memory_store_access": "6e8a55a18f8378e11dfbc9657429cdc4434b9b5f695d69e5d363b1f0a2a82560",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a245b0",
+          "source_name": "FUN_00a245b0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 70,
+            "emitted_ops": 70,
+            "calls": 2,
+            "indirect_calls": 0,
+            "branches": 5,
+            "loads": 2,
+            "stores": 2,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 2,
+            "memory_store_access": 2,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "5873d075f7b4b5e0c1403790a8ba96e0ff8b188436e9b2b8040b87730db7e070",
+            "memory_store_access": "9a394b3625a68941ca01010ed10cf27e4b083cb90781b7a9e376ef5eb4a670b6",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a24b70",
+          "source_name": "FUN_00a24b70",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 67,
+            "emitted_ops": 67,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 3,
+            "loads": 5,
+            "stores": 4,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 3,
+            "memory_store_access": 4,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "2b314b67986f97703e986a2bd4a4c2a5c6a205dd405afbe89b233a11b0b5661a",
+            "memory_store_access": "b3828a219a86274eb3c4fd6fd95a109943965d7f0df53af07a1404574ff3f3ff",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a24c30",
+          "source_name": "FUN_00a24c30",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 67,
+            "emitted_ops": 67,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 3,
+            "loads": 5,
+            "stores": 4,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 3,
+            "memory_store_access": 4,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "5f107d4e6a3b2f36ef0dc9cadadf9abff0ae170ab0d6460d7765d0e9e3f8d89e",
+            "memory_store_access": "d3ccb32dd9f3555636253ce026288f5243b5f71ef69db3259244a0d4160fd413",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a25420",
+          "source_name": "FUN_00a25420",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 28,
+            "emitted_ops": 28,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 1,
+            "loads": 1,
+            "stores": 5,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 1,
+            "memory_store_access": 5,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "66bb712e618f0d8ccebac4a1ef64180ba1069c58a38605d5a91538a585e1b40d",
+            "memory_store_access": "c0721ca8b837827597bbee89933fc1bdd138e13141e4528684b988a23d67c429",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a29a90",
+          "source_name": "FUN_00a29a90",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 117,
+            "emitted_ops": 117,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 6,
+            "loads": 12,
+            "stores": 8,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 12,
+            "memory_store_access": 8,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "2dab64d9c12efffe3dc77853c4170bae33f8a9eb64648a70f91c775fbfb60086",
+            "memory_store_access": "ff1565e511197b2cb1de82f5d5a3cb0d77fe9be3da5d9dd6cac889f6b5bc8e9c",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a29e70",
+          "source_name": "FUN_00a29e70",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 22,
+            "emitted_ops": 22,
+            "calls": 2,
+            "indirect_calls": 0,
+            "branches": 1,
+            "loads": 4,
+            "stores": 1,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 4,
+            "memory_store_access": 1,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "48ea0e5a287fa9156768905641fa7a6c047b1b0c9de8720cddc0bbb0302812fd",
+            "memory_store_access": "34cca9e719bbb33eff4c43177c70048f4e2a6b7f17aa446c0e156a0619e77f44",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a2a350",
+          "source_name": "FUN_00a2a350",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 17,
+            "emitted_ops": 17,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 2,
+            "loads": 3,
+            "stores": 1,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 1,
+            "memory_store_access": 1,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "038df9a6e0371ebb3e91abfc42fd7a836d1b565bf1c1de9a1aa53d8a6cc8a3a0",
+            "memory_store_access": "1bd4151678b6d07828329e881e8e678232ece9698796d628014c67d9ca2099e1",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a2afc0",
+          "source_name": "FUN_00a2afc0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 44,
+            "emitted_ops": 44,
+            "calls": 2,
+            "indirect_calls": 0,
+            "branches": 5,
+            "loads": 4,
+            "stores": 2,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 4,
+            "memory_store_access": 2,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "1e400fcc7ea6a7a67d0855551361bd4d06d753f9043d2552143ef44f0583cbe6",
+            "memory_store_access": "1c8f93f3d83149705e41ab02e05a57f6a435d91c39b774067e11c24e6f40395e",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a2b260",
+          "source_name": "FUN_00a2b260",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 17,
+            "emitted_ops": 17,
+            "calls": 2,
+            "indirect_calls": 0,
+            "branches": 2,
+            "loads": 1,
+            "stores": 1,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 1,
+            "memory_store_access": 1,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "0b762f445249441e588207b27189740bdfd71b7dc77a76e7ae847b21e46f3377",
+            "memory_store_access": "55b645808b8df9fe45a392f4bbfe56aa6f55257323650ee80b7e188f745210c4",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a2bfa0",
+          "source_name": "FUN_00a2bfa0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 23,
+            "emitted_ops": 23,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 1,
+            "loads": 1,
+            "stores": 8,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 1,
+            "memory_store_access": 8,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "adba06b4b2718a8c6cfdf7455289d2e148a695a244aa2da4013b5ad84e555846",
+            "memory_store_access": "d4aa3cb7dbbc89087d6b62f8e352ef8977822309632464047c9e822fbc7f6ced",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a2cd80",
+          "source_name": "FUN_00a2cd80",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 24,
+            "emitted_ops": 24,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 1,
+            "loads": 1,
+            "stores": 4,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 1,
+            "memory_store_access": 4,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "b2083a498cbc804dda14c2d56eb67dc6b048e15a3a6f7d8fd4dea30d426d5e6a",
+            "memory_store_access": "3623a09c7d451b7d62350e261760d04cfe8c319008547cbae3b5e3abbd298427",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a2f050",
+          "source_name": "FUN_00a2f050",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 94,
+            "emitted_ops": 94,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 8,
+            "loads": 14,
+            "stores": 3,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 11,
+            "memory_store_access": 3,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "b9588ff46506f00eb75cb16595b3ab9618abfa204f11444d4839b1b020859737",
+            "memory_store_access": "d6ec4841d9d5c7f6e466469811eb5d81b6d9102ca35df9c25aa6a3c182e4c028",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a2fad0",
+          "source_name": "FUN_00a2fad0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 15,
+            "emitted_ops": 15,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 1,
+            "loads": 2,
+            "stores": 1,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 2,
+            "memory_store_access": 1,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "b70b440a3d5d3cc27e5ea406cd080e4c8612636228dd9dfd4ece8471a60d6188",
+            "memory_store_access": "13d0c18c6d583ec4c091c58dea8e84d4c181b78376b6bbd262480405f4785e38",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a318e0",
+          "source_name": "FUN_00a318e0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 24,
+            "emitted_ops": 24,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 3,
+            "loads": 4,
+            "stores": 1,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 3,
+            "memory_store_access": 1,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "ea39767bbaad63662fea636be9100f9437fdb44e3a22a4b8af921fc65963b1a4",
+            "memory_store_access": "866a3c1e2285faf04afa5dda7e649a355f906331855a4bed698884dd96d21efd",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a32380",
+          "source_name": "FUN_00a32380",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 98,
+            "emitted_ops": 98,
+            "calls": 4,
+            "indirect_calls": 0,
+            "branches": 2,
+            "loads": 16,
+            "stores": 6,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 9,
+            "memory_store_access": 6,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "e2231845e5481d8b0d434949245ed6984d33788cddccc6beff8f39dd5d597b9a",
+            "memory_store_access": "43cf0976957a57fdb5185eaaaccbef97b93ac45a9efeb66068ccd6abf18b14ae",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a394c0",
+          "source_name": "FUN_00a394c0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 226,
+            "emitted_ops": 226,
+            "calls": 6,
+            "indirect_calls": 0,
+            "branches": 25,
+            "loads": 15,
+            "stores": 12,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 12,
+            "memory_store_access": 12,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "971e523947b1381ef173055672512bfcb657c56928704235a9a5534a79650ee7",
+            "memory_store_access": "c7a17eb471fb0f5ed335d4787b33ff9d63a57606ae73cbdbe3974a95bf3d4720",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a3d320",
+          "source_name": "FUN_00a3d320",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 39,
+            "emitted_ops": 39,
+            "calls": 2,
+            "indirect_calls": 0,
+            "branches": 0,
+            "loads": 1,
+            "stores": 14,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 1,
+            "memory_store_access": 14,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "9559906b90f93488133a488c0a780191692317d12673805f9d7a1a8b52948e65",
+            "memory_store_access": "6cf4287a642f0e0aa6c4c09a534fd98766ca45de12262847827dcb3267ae99c9",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a3e400",
+          "source_name": "FUN_00a3e400",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 24,
+            "emitted_ops": 24,
+            "calls": 3,
+            "indirect_calls": 0,
+            "branches": 2,
+            "loads": 2,
+            "stores": 1,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 2,
+            "memory_store_access": 1,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "f813c6c66b7a81725eae9f5f99a5c8d53e1ac7f54d92fdd39c5bcbf3841796ec",
+            "memory_store_access": "6e3e5ce4e1f6e8fd5a28db35ab2952ecf20b72f83672d12c6020d922191d36bc",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a3fcd0",
+          "source_name": "FUN_00a3fcd0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 46,
+            "emitted_ops": 46,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 1,
+            "loads": 7,
+            "stores": 7,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 6,
+            "memory_store_access": 7,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "9f5147ec6112eb693fbf37d22db86622d5da414e55b393b021b054e5a6fc4f27",
+            "memory_store_access": "d824903ac5e482f0dd4ac10062bbd58b9b313bd066da35b449309bc0049fd160",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a3fed0",
+          "source_name": "FUN_00a3fed0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 114,
+            "emitted_ops": 114,
+            "calls": 2,
+            "indirect_calls": 0,
+            "branches": 10,
+            "loads": 13,
+            "stores": 2,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 11,
+            "memory_store_access": 2,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "992dc3f928e811378d67f78cf373cda44bea553be0f2f753a230f553a9dca3ab",
+            "memory_store_access": "42626e80b9e462505f58dda05231183dbdda203764e780c05a3ec66f5a09afb0",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a3fff0",
+          "source_name": "FUN_00a3fff0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 180,
+            "emitted_ops": 180,
+            "calls": 3,
+            "indirect_calls": 0,
+            "branches": 19,
+            "loads": 15,
+            "stores": 1,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 11,
+            "memory_store_access": 1,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "c990a780e70dbd662cc69b85582f50731f9d098ff7b72319dbe1b34900325d82",
+            "memory_store_access": "9231fb78ad6b2d4b172ff34233ea258a57c0e6d7fc12172e535771e82129b8aa",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a412d0",
+          "source_name": "FUN_00a412d0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 231,
+            "emitted_ops": 231,
+            "calls": 8,
+            "indirect_calls": 0,
+            "branches": 13,
+            "loads": 32,
+            "stores": 4,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 20,
+            "memory_store_access": 4,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "6152df7a41db913a9da25dee44738852e9c1efdd671971573257fa15bc3d8e25",
+            "memory_store_access": "4439df15e323247571cf4e325805e290702276278d3b1ee2bfffcec3c863e66f",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a45370",
+          "source_name": "FUN_00a45370",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 125,
+            "emitted_ops": 125,
+            "calls": 6,
+            "indirect_calls": 0,
+            "branches": 1,
+            "loads": 2,
+            "stores": 6,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 2,
+            "memory_store_access": 6,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "6d0d1926d1aeebe502cd70061a97179dd55a128fa9dad67d7d672e59fa26dfe9",
+            "memory_store_access": "2fd01b61e6dc6d3b0c2b14ae81aae650c49f71b3d51eb07a649e896dd6c1bbf0",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a46620",
+          "source_name": "FUN_00a46620",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 125,
+            "emitted_ops": 125,
+            "calls": 6,
+            "indirect_calls": 0,
+            "branches": 1,
+            "loads": 2,
+            "stores": 6,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 2,
+            "memory_store_access": 6,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "8651884d1ddf73e7d7440aa4faa2fbef4cca768470800dbe3cff19f0cc128c79",
+            "memory_store_access": "bee36a4012662fb71f6105204f046d0c8839a1bf2812251b67c54be5990af72a",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a46819",
+          "source_name": "FUN_00a46819",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 71,
+            "emitted_ops": 71,
+            "calls": 3,
+            "indirect_calls": 0,
+            "branches": 1,
+            "loads": 1,
+            "stores": 15,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 1,
+            "memory_store_access": 15,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "7bfa7d1f49b8b5fca3d0d9862e772e15ecb32bcd22696c9e1b30dc803e6004f8",
+            "memory_store_access": "da387296dff682693bc41d7257ccc5074d903c9ff84e931fb673629aabd13b13",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a47a30",
+          "source_name": "FUN_00a47a30",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 32,
+            "emitted_ops": 32,
+            "calls": 3,
+            "indirect_calls": 0,
+            "branches": 1,
+            "loads": 3,
+            "stores": 3,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 3,
+            "memory_store_access": 3,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "1c2a8e5399f2eb2040ec28ba49b2beb4a3826cc3062ff1ea1a162e93281a6ff7",
+            "memory_store_access": "21fb64047bcf531f503e1e306df313b49db758edc7ce190e48469fda1026cefb",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a47a80",
+          "source_name": "FUN_00a47a80",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 206,
+            "emitted_ops": 206,
+            "calls": 15,
+            "indirect_calls": 0,
+            "branches": 10,
+            "loads": 27,
+            "stores": 7,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 20,
+            "memory_store_access": 7,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "8fabd732aba460b9f8ae2ecc2022292f59b337cef6406663e43659ad74beb016",
+            "memory_store_access": "241f5a78fbdd96d16fd782c0825243f08ff64653e375685430b3a336dda6d3a8",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a49a00",
+          "source_name": "FUN_00a49a00",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 39,
+            "emitted_ops": 39,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 9,
+            "loads": 5,
+            "stores": 3,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 3,
+            "memory_store_access": 3,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "9a4a02d873d4afcee36b39276b00dcf703a95c721aa2b948186f2f83ffb4ef13",
+            "memory_store_access": "f40a191c92ed05db87a298fd25d655a7a94660ce94bcd304c53ea94f90b3ced6",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a49a50",
+          "source_name": "FUN_00a49a50",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 23,
+            "emitted_ops": 23,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 5,
+            "loads": 2,
+            "stores": 2,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 1,
+            "memory_store_access": 2,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "d9e1a8fcb24c0129081a7d4d1123fdb4d2901dd1171cb98e3b660b924c380128",
+            "memory_store_access": "5399bf0e64e2e355e9f3962ae3b8a6294116e37bc57a08dc2c1fa4271ce780c2",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        {
+          "function_entry": "00a49cf0",
+          "source_name": "FUN_00a49cf0",
+          "parameter_count": 1,
+          "pcode_metrics": {
+            "ops": 64,
+            "emitted_ops": 64,
+            "calls": 1,
+            "indirect_calls": 0,
+            "branches": 1,
+            "loads": 15,
+            "stores": 8,
+            "truncated": false
+          },
+          "export_rows": {
+            "parameter_store_field": 0,
+            "parameter_load_field": 9,
+            "memory_store_access": 8,
+            "field_access_pairs": 0
+          },
+          "source_export_sha256": {
+            "parameter_stores": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282",
+            "parameter_loads": "b4dc8258ae472d5cffdc7459db6d9eada812f0f9f3a53a8b4570f81f34ca5e58",
+            "memory_store_access": "9e2304c42abee6f8f82f605c8f986a31ee20092e213896e3fbf19231d0f89c4e",
+            "field_access_pairs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        }
+      ]
+    },
+    "empty_export_contract": {
+      "parameter_store_field_rows_per_candidate": 0,
+      "parameter_stores_sha256_values": [
+        "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+      ],
+      "field_access_pair_rows_per_candidate": 0,
+      "field_access_pairs_sha256_values": [
+        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      ]
+    },
+    "summary": {
+      "candidate_roots": 62,
+      "parameter_store_field_rows": 0,
+      "parameter_load_field_rows": 238,
+      "memory_store_access_rows": 302,
+      "field_access_pair_rows": 0,
+      "roots_with_field_pairs": 0,
+      "dominance_audits_run": 0,
+      "outcome": "The parameter-store-field exporter returned no rows for these 62 functions, so the pair builder had no field stores to match. The general memory-store exporter still produced STORE facts; these remain separate evidence and are preserved below."
+    },
+    "aggregated_exports": [
+      {
+        "path": "screening-scan15/parameter-loads.tsv",
+        "bytes": 32122,
+        "rows": 238,
+        "sha256": "a186767f10db8cec10d419ee6b8b1417781dbcb7ae2fe8a2426350e592112346"
+      },
+      {
+        "path": "screening-scan15/memory-store-access.jsonl",
+        "bytes": 182497,
+        "rows": 302,
+        "sha256": "5ce12a2c4e0af3451e48b0b7050ae3ad38c1418b6069ae7e6664b9251bd95215"
+      }
+    ]
   }
 }

@@ -1070,6 +1070,6 @@
     "field_access_pair_rows": 0,
     "roots_with_field_pairs": 0,
     "dominance_audits_run": 0,
-    "outcome": "All 22 candidate functions exported zero parameter-rooted STORE rows, so no exact parameter field store/load pairs were available for a dominance audit."
+    "outcome": "The ParameterStoreField/1 exporter returned zero rows for all 22 functions. The general memory-store exporter still emitted 156 STORE facts; none formed an exact parameter field pair, so no dominance audit was available."
   }
 }
