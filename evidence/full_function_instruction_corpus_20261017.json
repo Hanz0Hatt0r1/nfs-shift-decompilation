@@ -1,0 +1,33 @@
+{
+  "authority": {
+    "corpus_manifest_sha256": "f3a70bb2e65adafcb72d292e03956a9354e99b9a6b994e2586e91fb14b547074",
+    "executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "ghidra_function_inventory_sha256": "8b8b00d8493dba459edf186869ddf492dc26002af3b65d08b6988dc91a87fa24",
+    "ghidra_program": "SHIFT.exe",
+    "language_id": "x86:LE:32:default",
+    "platform": "PC retail 1.02",
+    "portable_function_corpus_sha256": "bc3f5a5972842f605b0bdd25dbc80b3129b96df30c3584d2dd31222aa5a454bc"
+  },
+  "coverage": {
+    "exported_function_count": 41538,
+    "full_function_inventory_covered": true,
+    "full_pcode_instruction_coverage": false,
+    "ghidra_function_count": 41538,
+    "instructions_without_pcode": 2469,
+    "machine_instruction_count": 2088152,
+    "pcode_empty_instruction_mnemonic_counts": {
+      "NOP": 2460,
+      "WAIT": 9
+    },
+    "pcode_instruction_count": 2085683,
+    "pcode_operation_count": 9600713
+  },
+  "format": "SHIFT.FullFunctionInstructionCorpusCoverage/1",
+  "limits": [
+    "This portable machine-instruction/P-code corpus is not decompiled C or project source.",
+    "It does not alone establish a recompilable source reconstruction or behavioral equivalence.",
+    "Function boundaries reflect the supplied analyzed Ghidra project and are validated against its function index."
+  ],
+  "validated": true
+}

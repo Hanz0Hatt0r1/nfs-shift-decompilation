@@ -219,6 +219,13 @@ Frontier counts do not participate in `direct_evidence_mismatch_count` and never
 make `--fail-on-mismatch` fail. They identify the next functions for targeted
 instruction/decompiler investigation; they do not enlarge subsystem membership.
 
+For the separate full-recompilation track, use
+`run_shift_full_function_corpus.sh` to call the shared `revenginstr` exporter,
+then `build_full_function_corpus_coverage.py` to compare the portable corpus
+against the complete local Ghidra function inventory. See
+`docs/PROCESS_0_FULL_FUNCTION_PORTABLE_CORPUS.md`; keep the full proprietary
+corpus outside Git.
+
 The orchestration still excludes heuristic `vtables.json`, `constructors.jsonl`
 and `factories.jsonl` from semantic promotion. `--fail-on-mismatch` applies to
 failed direct anchor/alias/registration/allocator-boundary checks;
