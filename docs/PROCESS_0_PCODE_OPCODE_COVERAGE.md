@@ -21,3 +21,8 @@ userop table in [`evidence/pcode_userop_coverage_20261017.json`](../evidence/pco
 That resolves 32 used indices and leaves 0 indices outside the table; it does
 not implement or define their semantics. See
 [`PROCESS_0_PCODE_USEROP_COVERAGE.md`](PROCESS_0_PCODE_USEROP_COVERAGE.md).
+
+The corpus's 1,293,437 `LOAD` and `STORE` operations all resolve to the
+language's `ram` space ID. See
+[`evidence/pcode_address_space_coverage_20261017.json`](../evidence/pcode_address_space_coverage_20261017.json)
+and [`PROCESS_0_PCODE_ADDRESS_SPACE_COVERAGE.md`](PROCESS_0_PCODE_ADDRESS_SPACE_COVERAGE.md).
