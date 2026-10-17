@@ -1,0 +1,1113 @@
+{
+  "adjudication": {
+    "automatic_semantic_renaming_performed": false,
+    "caller_functions_added_to_original_project": false,
+    "caller_functions_added_to_separate_project_copy": true,
+    "p1_3_control_producer_complete": false
+  },
+  "authority": {
+    "function_recovery_copy_project": "shift-recovered-mass-20261017",
+    "ghidra_export_source_hashes": {
+      "address_metadata": "8972c842240d25f73746f01088776932ecbbc8e6c460e793cc15f75c9f7633f2",
+      "binary.json": "709a287ca9eec0599252baefe6abf356f2e4e04652ade140a1f10d381e5865df",
+      "callgraph.jsonl": "4a1ddf450e7be4a03cf456d47225ec96da8ee5d715db18514f795f6d7bd56e27",
+      "callsite_slices": "8b41c9d70ea968dea44487762baadde1c4aa274a554ba0191ac2c32d8fd51b3e",
+      "candidate_entry_metadata": "2d2d466e81161a628ed13fda470bf2c709e298e00e666c637752133ba8bfd3ad",
+      "candidate_entry_references": "1d7f000230d0e66d7127b07720884ea91d54320ce54f7950a9904d51b045020d",
+      "functions.jsonl": "006073467f3e5b6a532418a036000d11782ae61ddd0aceacca9236bab7f2063a",
+      "manifest.json": "ec4c0d873c342421682c5633b07c6f3a87565a1f5ddc55ab81c843639e63ad33",
+      "previous_recovery_report": "3b4fdda1c1790635842ddd150ef37b31bb2f8a49d01c177ce0d72b65ae2e9417",
+      "restored_function_instructions": "91dd6d44fb5bf0de5d91d74130bb9ba11a223499fe68b92fbb2a05190c3e0b6c",
+      "restored_functions_tsv": "39726bb0c39e34ba226b3a2a23af7d618bc36722bba37614242e87b0a0dc9723",
+      "restored_target_references": "1ca2fed6231b08bf163288a2144eaa8ad52d4141121d3ac8d761284933d14a67",
+      "target_references": "ddf4e48fce2e1cc0650ec709e55394d082b43ee15b3acdca9f3273eb4e0cbab9"
+    },
+    "original_ghidra_project_modified": false,
+    "platform": "PC retail 1.02",
+    "retail_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "combined_function_instruction_exports": {
+    "new_function_count": 15,
+    "new_instruction_count": 137,
+    "new_pcode_instruction_count": 137,
+    "previous_unique_function_count": 744,
+    "previous_unique_instruction_count": 110624,
+    "previous_unique_pcode_instruction_count": 110440,
+    "unique_function_count": 759,
+    "unique_instruction_count": 110761,
+    "unique_pcode_instruction_count": 110577
+  },
+  "format": "SHIFT.P1B.OrphanWrapperFunctionRecovery/1",
+  "limits": [
+    "All 60 caller sites are exact Ghidra CALL instructions and unconditional references, but had no caller function owner in the original project.",
+    "The 15 recovered wrappers use only exact contiguous instruction boundaries, one direct CALL, a terminal RET, and an exact stored-address reference at the entry.",
+    "The remaining orphan direct-call sites are not promoted to function bodies without the same boundary and entry-reference evidence."
+  ],
+  "next_step": "Apply the same bounded boundary and entry-reference screen to the remaining orphan direct-call sites; preserve the original project and fail closed on ambiguous bodies.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "recovered_orphan_wrapper_functions": {
+    "all_callsites_have_function_owners_in_copy": true,
+    "all_entries_have_exact_data_references": true,
+    "all_function_bodies_are_contiguous_one_call_return_wrappers": true,
+    "body_byte_count": 438,
+    "function_count": 15,
+    "functions": [
+      {
+        "address": "0x0093eeee",
+        "body_bytes": 33,
+        "callee_function": "0x0093e7b6",
+        "caller_callsite": "0x0093ef07",
+        "entry_data_reference_count": 1,
+        "entry_data_references": [
+          {
+            "from": "0x0093fab3",
+            "instruction": "MOV dword ptr [0x00b98cd0],0x93eeee",
+            "source": "ANALYSIS"
+          }
+        ],
+        "entry_instruction": "PUSH",
+        "instruction_bytes_sha256": "9fc3acd6ccffcbdb4f5f80b8635568cf9af520a1c5e509be75be19bb31f81120",
+        "instruction_count": 10,
+        "name": "FUN_0093eeee",
+        "pcode_instruction_count": 10,
+        "return_instruction": "0x0093ef0c"
+      },
+      {
+        "address": "0x0094146b",
+        "body_bytes": 33,
+        "callee_function": "0x00941350",
+        "caller_callsite": "0x00941484",
+        "entry_data_reference_count": 1,
+        "entry_data_references": [
+          {
+            "from": "0x00941506",
+            "instruction": "MOV dword ptr [0x00b993a8],0x94146b",
+            "source": "ANALYSIS"
+          }
+        ],
+        "entry_instruction": "PUSH",
+        "instruction_bytes_sha256": "234d333a566bb8c7000c57b096b30e87170a5ca96fb1ad7e136af26438f221b2",
+        "instruction_count": 10,
+        "name": "FUN_0094146b",
+        "pcode_instruction_count": 10,
+        "return_instruction": "0x00941489"
+      },
+      {
+        "address": "0x009469ff",
+        "body_bytes": 33,
+        "callee_function": "0x00946909",
+        "caller_callsite": "0x00946a18",
+        "entry_data_reference_count": 1,
+        "entry_data_references": [
+          {
+            "from": "0x00946c36",
+            "instruction": "MOV dword ptr [0x00b9a268],0x9469ff",
+            "source": "ANALYSIS"
+          }
+        ],
+        "entry_instruction": "PUSH",
+        "instruction_bytes_sha256": "d936953671cab45595711e89aa8ca1541c613c9618b2a9124761697406e5cee6",
+        "instruction_count": 10,
+        "name": "FUN_009469ff",
+        "pcode_instruction_count": 10,
+        "return_instruction": "0x00946a1d"
+      },
+      {
+        "address": "0x00954414",
+        "body_bytes": 33,
+        "callee_function": "0x009543be",
+        "caller_callsite": "0x0095442d",
+        "entry_data_reference_count": 1,
+        "entry_data_references": [
+          {
+            "from": "0x00954e15",
+            "instruction": "MOV dword ptr [0x00b9bce8],0x954414",
+            "source": "ANALYSIS"
+          }
+        ],
+        "entry_instruction": "PUSH",
+        "instruction_bytes_sha256": "61e10a4760daa62242072c7ba808ce6654fb9515d301ec482691d185e88ca85c",
+        "instruction_count": 10,
+        "name": "FUN_00954414",
+        "pcode_instruction_count": 10,
+        "return_instruction": "0x00954432"
+      },
+      {
+        "address": "0x0095cc7e",
+        "body_bytes": 23,
+        "callee_function": "0x0095c888",
+        "caller_callsite": "0x0095cc8d",
+        "entry_data_reference_count": 1,
+        "entry_data_references": [
+          {
+            "from": "0x0095e2f8",
+            "instruction": "MOV dword ptr [0x00b9be48],0x95cc7e",
+            "source": "ANALYSIS"
+          }
+        ],
+        "entry_instruction": "MOV",
+        "instruction_bytes_sha256": "70c7a1a0910170d7fd7af4379df8084cb4bec44ecaa9bb22fd5cea83e66acc5d",
+        "instruction_count": 8,
+        "name": "FUN_0095cc7e",
+        "pcode_instruction_count": 8,
+        "return_instruction": "0x0095cc92"
+      },
+      {
+        "address": "0x0096417e",
+        "body_bytes": 33,
+        "callee_function": "0x0096404d",
+        "caller_callsite": "0x00964197",
+        "entry_data_reference_count": 1,
+        "entry_data_references": [
+          {
+            "from": "0x009641f3",
+            "instruction": "MOV dword ptr [0x00b9bfe0],0x96417e",
+            "source": "ANALYSIS"
+          }
+        ],
+        "entry_instruction": "PUSH",
+        "instruction_bytes_sha256": "d84f290d200db8864e71450213b6d0c763b0076db0a912458ea23012dea74de2",
+        "instruction_count": 10,
+        "name": "FUN_0096417e",
+        "pcode_instruction_count": 10,
+        "return_instruction": "0x0096419c"
+      },
+      {
+        "address": "0x009675d6",
+        "body_bytes": 29,
+        "callee_function": "0x009673ce",
+        "caller_callsite": "0x009675eb",
+        "entry_data_reference_count": 1,
+        "entry_data_references": [
+          {
+            "from": "0x00968890",
+            "instruction": "MOV dword ptr [0x00b9c1ec],0x9675d6",
+            "source": "ANALYSIS"
+          }
+        ],
+        "entry_instruction": "MOV",
+        "instruction_bytes_sha256": "4b5ec5698a346de9ce39b73f37db490858ca78f530e98554d935a2730b15492b",
+        "instruction_count": 9,
+        "name": "FUN_009675d6",
+        "pcode_instruction_count": 9,
+        "return_instruction": "0x009675f0"
+      },
+      {
+        "address": "0x0096adc8",
+        "body_bytes": 21,
+        "callee_function": "0x0096ad41",
+        "caller_callsite": "0x0096add5",
+        "entry_data_reference_count": 1,
+        "entry_data_references": [
+          {
+            "from": "0x0096ae38",
+            "instruction": "MOV dword ptr [0x00b9c5d4],0x96adc8",
+            "source": "ANALYSIS"
+          }
+        ],
+        "entry_instruction": "MOV",
+        "instruction_bytes_sha256": "b91421109cbd023f44f3c5e6ff6e48461db081acbc7e04b7ff8b2a3b4d487c0e",
+        "instruction_count": 7,
+        "name": "FUN_0096adc8",
+        "pcode_instruction_count": 7,
+        "return_instruction": "0x0096adda"
+      },
+      {
+        "address": "0x0098e2d8",
+        "body_bytes": 29,
+        "callee_function": "0x0098e0e9",
+        "caller_callsite": "0x0098e2ed",
+        "entry_data_reference_count": 4,
+        "entry_data_references": [
+          {
+            "from": "0x0095ac57",
+            "instruction": "MOV dword ptr [0x00b9bd5c],0x98e2d8",
+            "source": "ANALYSIS"
+          },
+          {
+            "from": "0x0095e2b2",
+            "instruction": "MOV dword ptr [0x00b9bdfc],0x98e2d8",
+            "source": "ANALYSIS"
+          },
+          {
+            "from": "0x00960e3a",
+            "instruction": "MOV dword ptr [0x00b9be74],0x98e2d8",
+            "source": "ANALYSIS"
+          },
+          {
+            "from": "0x00962fa2",
+            "instruction": "MOV dword ptr [0x00b9beec],0x98e2d8",
+            "source": "ANALYSIS"
+          }
+        ],
+        "entry_instruction": "MOV",
+        "instruction_bytes_sha256": "680ec4a09eb8c270461b1ff6b30a8e089c978f4b2c299ee97c98945664162560",
+        "instruction_count": 9,
+        "name": "FUN_0098e2d8",
+        "pcode_instruction_count": 9,
+        "return_instruction": "0x0098e2f2"
+      },
+      {
+        "address": "0x009968d7",
+        "body_bytes": 38,
+        "callee_function": "0x009966c7",
+        "caller_callsite": "0x009968f5",
+        "entry_data_reference_count": 1,
+        "entry_data_references": [
+          {
+            "from": "0x009969c1",
+            "instruction": "MOV dword ptr [0x00ba0eb8],0x9968d7",
+            "source": "ANALYSIS"
+          }
+        ],
+        "entry_instruction": "CMP",
+        "instruction_bytes_sha256": "c4001fe76539c037f0e9319a2ae12816c659d4d1f31da56bb47a50f77d0222d6",
+        "instruction_count": 12,
+        "name": "FUN_009968d7",
+        "pcode_instruction_count": 12,
+        "return_instruction": "0x009968fa"
+      },
+      {
+        "address": "0x00998fe1",
+        "body_bytes": 21,
+        "callee_function": "0x00998f42",
+        "caller_callsite": "0x00998fee",
+        "entry_data_reference_count": 1,
+        "entry_data_references": [
+          {
+            "from": "0x0099906f",
+            "instruction": "MOV dword ptr [0x00ba0f44],0x998fe1",
+            "source": "ANALYSIS"
+          }
+        ],
+        "entry_instruction": "MOV",
+        "instruction_bytes_sha256": "725eba2f4c15c857f57e04b1654a771079361c5a567cef5d1f45ddf7642c0af4",
+        "instruction_count": 7,
+        "name": "FUN_00998fe1",
+        "pcode_instruction_count": 7,
+        "return_instruction": "0x00998ff3"
+      },
+      {
+        "address": "0x009999f5",
+        "body_bytes": 29,
+        "callee_function": "0x00999245",
+        "caller_callsite": "0x00999a0a",
+        "entry_data_reference_count": 1,
+        "entry_data_references": [
+          {
+            "from": "0x00999eec",
+            "instruction": "MOV dword ptr [0x00ba0fa4],0x9999f5",
+            "source": "ANALYSIS"
+          }
+        ],
+        "entry_instruction": "MOV",
+        "instruction_bytes_sha256": "3f2eaab3fec3f959e4f0285ddb43fe6ed73591f53c697a5c1c54cf8d51f4fe1b",
+        "instruction_count": 9,
+        "name": "FUN_009999f5",
+        "pcode_instruction_count": 9,
+        "return_instruction": "0x00999a0f"
+      },
+      {
+        "address": "0x00999b10",
+        "body_bytes": 25,
+        "callee_function": "0x00999868",
+        "caller_callsite": "0x00999b21",
+        "entry_data_reference_count": 1,
+        "entry_data_references": [
+          {
+            "from": "0x00999f5a",
+            "instruction": "MOV dword ptr [0x00ba101c],0x999b10",
+            "source": "ANALYSIS"
+          }
+        ],
+        "entry_instruction": "MOV",
+        "instruction_bytes_sha256": "857edd4264a00260fab5f7e87a0a401a4b82e3ae09353c64092d0e178192c58d",
+        "instruction_count": 8,
+        "name": "FUN_00999b10",
+        "pcode_instruction_count": 8,
+        "return_instruction": "0x00999b26"
+      },
+      {
+        "address": "0x0099b052",
+        "body_bytes": 33,
+        "callee_function": "0x0099ac12",
+        "caller_callsite": "0x0099b06b",
+        "entry_data_reference_count": 1,
+        "entry_data_references": [
+          {
+            "from": "0x0099bd49",
+            "instruction": "MOV dword ptr [0x00ba10b4],0x99b052",
+            "source": "ANALYSIS"
+          }
+        ],
+        "entry_instruction": "PUSH",
+        "instruction_bytes_sha256": "f44d4057560ee8eed43b6d2489afbb8d98accacb7bd0b44d84d3b98b1b20cfbe",
+        "instruction_count": 10,
+        "name": "FUN_0099b052",
+        "pcode_instruction_count": 10,
+        "return_instruction": "0x0099b070"
+      },
+      {
+        "address": "0x0099b0d6",
+        "body_bytes": 25,
+        "callee_function": "0x009b2aae",
+        "caller_callsite": "0x0099b0e7",
+        "entry_data_reference_count": 1,
+        "entry_data_references": [
+          {
+            "from": "0x0099bd71",
+            "instruction": "MOV dword ptr [0x00ba10cc],0x99b0d6",
+            "source": "ANALYSIS"
+          }
+        ],
+        "entry_instruction": "MOV",
+        "instruction_bytes_sha256": "78c469abac5965aae9932360f4f4e4e7130cbd70be29fa5a7dc5182cb1e749ca",
+        "instruction_count": 8,
+        "name": "FUN_0099b0d6",
+        "pcode_instruction_count": 8,
+        "return_instruction": "0x0099b0ec"
+      }
+    ],
+    "instruction_count": 137,
+    "pcode_instruction_count": 137
+  },
+  "unresolved_callsite_reconciliation": {
+    "call_sites_without_ghidra_instruction": [
+      {
+        "callsite": "0x00414e85",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0x32a058ff",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x004158a1",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xcd0e2572",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x0041fa6d",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xcd23fe5d",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x00432476",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xfd470964",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x0047b1c1",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xf8a9cdaf",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x004816ff",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0x10f9a25a",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x0048c4b8",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xcd159189",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x00496e78",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xcc6e5a19",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x0049b93d",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0x689fed2d",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x004b0324",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xf57ca512",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x004b43f6",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xe9722d5b",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x004b774a",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xec4b6bf3",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x004d4b14",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xebdeec31",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x004d66ec",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xf3228fda",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x004d723a",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0x8b38c2b3",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x004f007f",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0x523b8bd9",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x00514044",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xcd1e0d15",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x005141ce",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xef792fbc",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x00514512",
+        "function_containing": {
+          "body": "0x00514510..0x00514514",
+          "entry": "0x00514510",
+          "name": "thunk_FUN_00d92e10"
+        },
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xe9e1459e",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x0051685d",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xd7515731",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x00518828",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xde3b881b",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x005940fc",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xd0599a41",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x0082e949",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xe916e9d0",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x0082e951",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xcd4ee9d8",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x0085a9f4",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xee862f98",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x0085aa04",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xcc862fa8",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x009116fb",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0x009113b5",
+        "target_in_program_memory": true
+      },
+      {
+        "callsite": "0x00911c81",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0x009113b5",
+        "target_in_program_memory": true
+      },
+      {
+        "callsite": "0x0093ea57",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xe8e2eaef",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x0093ea67",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xe98aeaff",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x0095eede",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xe977ef78",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x0099e9a7",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xe98cea45",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x0099e9af",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xe994ea4d",
+        "target_in_program_memory": false
+      },
+      {
+        "callsite": "0x0099e9b7",
+        "function_containing": null,
+        "instruction_defined_by_ghidra": false,
+        "objdump_target": "0xe9b3ea55",
+        "target_in_program_memory": false
+      }
+    ],
+    "callsite_addresses_without_ghidra_instruction_count": 34,
+    "confirmed_orphan_call_sites": [
+      {
+        "caller_function": null,
+        "callsite": "0x004320bf",
+        "instruction": "CALL 0x00431160",
+        "instruction_bytes": "e89cf0ffff",
+        "target_function": "0x00431160",
+        "target_function_name": "FUN_00431160"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x004b62f4",
+        "instruction": "CALL 0x004042b0",
+        "instruction_bytes": "e8b7dff4ff",
+        "target_function": "0x004042b0",
+        "target_function_name": "thunk_FUN_0043b932"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x004b631d",
+        "instruction": "CALL 0x004042b0",
+        "instruction_bytes": "e88edff4ff",
+        "target_function": "0x004042b0",
+        "target_function_name": "thunk_FUN_0043b932"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x0054b587",
+        "instruction": "CALL 0x0040e630",
+        "instruction_bytes": "e8a430ecff",
+        "target_function": "0x0040e630",
+        "target_function_name": "FUN_0040e630"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x005a963d",
+        "instruction": "CALL 0x005b73a0",
+        "instruction_bytes": "e85edd0000",
+        "target_function": "0x005b73a0",
+        "target_function_name": "FUN_005b73a0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x005a9900",
+        "instruction": "CALL 0x005b73a0",
+        "instruction_bytes": "e89bda0000",
+        "target_function": "0x005b73a0",
+        "target_function_name": "FUN_005b73a0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x005bf2ee",
+        "instruction": "CALL 0x005b73a0",
+        "instruction_bytes": "e8ad80ffff",
+        "target_function": "0x005b73a0",
+        "target_function_name": "FUN_005b73a0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x005bf32d",
+        "instruction": "CALL 0x005b73a0",
+        "instruction_bytes": "e86e80ffff",
+        "target_function": "0x005b73a0",
+        "target_function_name": "FUN_005b73a0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x005bf462",
+        "instruction": "CALL 0x005b73a0",
+        "instruction_bytes": "e8397fffff",
+        "target_function": "0x005b73a0",
+        "target_function_name": "FUN_005b73a0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x005bf5b1",
+        "instruction": "CALL 0x005b73a0",
+        "instruction_bytes": "e8ea7dffff",
+        "target_function": "0x005b73a0",
+        "target_function_name": "FUN_005b73a0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x005ccf13",
+        "instruction": "CALL 0x005b73a0",
+        "instruction_bytes": "e888a4feff",
+        "target_function": "0x005b73a0",
+        "target_function_name": "FUN_005b73a0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x005fac46",
+        "instruction": "CALL 0x004042b0",
+        "instruction_bytes": "e86596e0ff",
+        "target_function": "0x004042b0",
+        "target_function_name": "thunk_FUN_0043b932"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x005fcf35",
+        "instruction": "CALL 0x005b73a0",
+        "instruction_bytes": "e866a4fbff",
+        "target_function": "0x005b73a0",
+        "target_function_name": "FUN_005b73a0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x005fd01e",
+        "instruction": "CALL 0x005b73a0",
+        "instruction_bytes": "e87da3fbff",
+        "target_function": "0x005b73a0",
+        "target_function_name": "FUN_005b73a0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x005fd13d",
+        "instruction": "CALL 0x005b73a0",
+        "instruction_bytes": "e85ea2fbff",
+        "target_function": "0x005b73a0",
+        "target_function_name": "FUN_005b73a0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x005fd15b",
+        "instruction": "CALL 0x004042b0",
+        "instruction_bytes": "e85071e0ff",
+        "target_function": "0x004042b0",
+        "target_function_name": "thunk_FUN_0043b932"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x0083556c",
+        "instruction": "CALL 0x00416e60",
+        "instruction_bytes": "e8ef18beff",
+        "target_function": "0x00416e60",
+        "target_function_name": "FUN_00416e60"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00907d35",
+        "instruction": "CALL 0x009194e3",
+        "instruction_bytes": "e8a9170100",
+        "target_function": "0x009194e3",
+        "target_function_name": "_CallDestructExceptionObject"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00910d62",
+        "instruction": "CALL 0x009113b5",
+        "instruction_bytes": "e84e060000",
+        "target_function": "0x009113b5",
+        "target_function_name": "write_char"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x009112e7",
+        "instruction": "CALL 0x009113b5",
+        "instruction_bytes": "e8c9000000",
+        "target_function": "0x009113b5",
+        "target_function_name": "write_char"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x0093ef07",
+        "instruction": "CALL 0x0093e7b6",
+        "instruction_bytes": "e8aaf8ffff",
+        "target_function": "0x0093e7b6",
+        "target_function_name": "FUN_0093e7b6"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00941484",
+        "instruction": "CALL 0x00941350",
+        "instruction_bytes": "e8c7feffff",
+        "target_function": "0x00941350",
+        "target_function_name": "FUN_00941350"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00946a18",
+        "instruction": "CALL 0x00946909",
+        "instruction_bytes": "e8ecfeffff",
+        "target_function": "0x00946909",
+        "target_function_name": "FUN_00946909"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00951e3e",
+        "instruction": "CALL 0x00951c09",
+        "instruction_bytes": "e8c6fdffff",
+        "target_function": "0x00951c09",
+        "target_function_name": "FUN_00951c09"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x0095442d",
+        "instruction": "CALL 0x009543be",
+        "instruction_bytes": "e88cffffff",
+        "target_function": "0x009543be",
+        "target_function_name": "FUN_009543be"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x0095cc8d",
+        "instruction": "CALL 0x0095c888",
+        "instruction_bytes": "e8f6fbffff",
+        "target_function": "0x0095c888",
+        "target_function_name": "FUN_0095c888"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00964197",
+        "instruction": "CALL 0x0096404d",
+        "instruction_bytes": "e8b1feffff",
+        "target_function": "0x0096404d",
+        "target_function_name": "FUN_0096404d"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x009675eb",
+        "instruction": "CALL 0x009673ce",
+        "instruction_bytes": "e8defdffff",
+        "target_function": "0x009673ce",
+        "target_function_name": "FUN_009673ce"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x0096add5",
+        "instruction": "CALL 0x0096ad41",
+        "instruction_bytes": "e867ffffff",
+        "target_function": "0x0096ad41",
+        "target_function_name": "FUN_0096ad41"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x0098e2ed",
+        "instruction": "CALL 0x0098e0e9",
+        "instruction_bytes": "e8f7fdffff",
+        "target_function": "0x0098e0e9",
+        "target_function_name": "FUN_0098e0e9"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x009968f5",
+        "instruction": "CALL 0x009966c7",
+        "instruction_bytes": "e8cdfdffff",
+        "target_function": "0x009966c7",
+        "target_function_name": "FUN_009966c7"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00998fee",
+        "instruction": "CALL 0x00998f42",
+        "instruction_bytes": "e84fffffff",
+        "target_function": "0x00998f42",
+        "target_function_name": "FUN_00998f42"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00999a0a",
+        "instruction": "CALL 0x00999245",
+        "instruction_bytes": "e836f8ffff",
+        "target_function": "0x00999245",
+        "target_function_name": "FUN_00999245"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00999b21",
+        "instruction": "CALL 0x00999868",
+        "instruction_bytes": "e842fdffff",
+        "target_function": "0x00999868",
+        "target_function_name": "FUN_00999868"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x0099b06b",
+        "instruction": "CALL 0x0099ac12",
+        "instruction_bytes": "e8a2fbffff",
+        "target_function": "0x0099ac12",
+        "target_function_name": "FUN_0099ac12"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x0099b0e7",
+        "instruction": "CALL 0x009b2aae",
+        "instruction_bytes": "e8c2790100",
+        "target_function": "0x009b2aae",
+        "target_function_name": "FUN_009b2aae"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a0615c",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e88ff1ffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a06e84",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e867e4ffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a07027",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e8c4e2ffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a0708d",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e85ee2ffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a0710f",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e8dce1ffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a071fe",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e8ede0ffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a0722d",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e8bee0ffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a072be",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e82de0ffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a0774e",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e89ddbffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a0777b",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e870dbffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a077ad",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e83edbffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a077da",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e811dbffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a07807",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e8e4daffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a07834",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e8b7daffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a07866",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e885daffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a07893",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e858daffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a0932e",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e8bdbfffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a0cf3a",
+        "instruction": "CALL 0x00a052f0",
+        "instruction_bytes": "e8b183ffff",
+        "target_function": "0x00a052f0",
+        "target_function_name": "FUN_00a052f0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a2576d",
+        "instruction": "CALL 0x00a297e0",
+        "instruction_bytes": "e86e400000",
+        "target_function": "0x00a297e0",
+        "target_function_name": "FUN_00a297e0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a258bd",
+        "instruction": "CALL 0x00a297e0",
+        "instruction_bytes": "e81e3f0000",
+        "target_function": "0x00a297e0",
+        "target_function_name": "FUN_00a297e0"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a781e3",
+        "instruction": "CALL 0x0049ab30",
+        "instruction_bytes": "e84829a2ff",
+        "target_function": "0x0049ab30",
+        "target_function_name": "thunk_FUN_00d67c70"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a86cb3",
+        "instruction": "CALL 0x006f0570",
+        "instruction_bytes": "e8b898c6ff",
+        "target_function": "0x006f0570",
+        "target_function_name": "FUN_006f0570"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00a9a87d",
+        "instruction": "CALL 0x0092ba44",
+        "instruction_bytes": "e8c211e9ff",
+        "target_function": "0x0092ba44",
+        "target_function_name": "FUN_0092ba44"
+      },
+      {
+        "caller_function": null,
+        "callsite": "0x00d38db6",
+        "instruction": "CALL 0x00415900",
+        "instruction_bytes": "e845cb6dff",
+        "target_function": "0x00415900",
+        "target_function_name": "thunk_FUN_00d38b90"
+      }
+    ],
+    "exact_callsite_caller_function_owner_count_before_recovery": 0,
+    "exact_ghidra_call_instruction_and_reference_count": 60,
+    "noninstruction_site_with_existing_function_owner_count": 1,
+    "previously_inventory_only_callee_function_count_now_callsite_confirmed": 20,
+    "source_unmatched_callsite_count": 94,
+    "unique_exact_callee_function_count": 29,
+    "unrecognized_targets_outside_program_memory_count": 32
+  },
+  "version": 1
+}
