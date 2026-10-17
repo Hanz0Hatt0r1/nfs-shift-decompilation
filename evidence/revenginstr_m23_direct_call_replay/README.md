@@ -27,4 +27,6 @@ The control case `00503790` has a complete write-free direct call at time 91, af
 
 Scan18 screened 24 previously unscanned functions with exactly three indirect calls. It retained 9 parameter-to-field stores, 115 parameter loads, and 124 general STORE facts, producing 5 exact field pairs across 3 functions. CFG/2 and CFG/3 audited all 5 with identical statuses: 3 `store_not_dominating_load` and 2 `possible_intervening_memory_effect`; neither version reports a unique candidate. The call sidecar has 8 explicit-write sites and 9 indirect-call barriers, with no complete write-free direct callee. The screen makes no runtime value-flow claim. See [`screening-scan18.json`](screening-scan18.json) for its frozen selection and exports.
 
+Scan19 screened two previously unscanned functions with exactly four indirect calls. The parameter-field exporter returned zero rows; it retained 18 parameter loads and 9 general STORE facts, with no exact field pairs, so no dominance audit was run. The empty pair export replays byte-for-byte. See [`screening-scan19.json`](screening-scan19.json) for the frozen selection and exports.
+
 These are conservative structural audits only. They make no branch-feasibility, runtime value-flow, or semantic-label claim.

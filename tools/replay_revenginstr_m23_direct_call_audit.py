@@ -332,6 +332,137 @@ def _validate_screening_scan(
         ):
             raise ValueError(f"{label} aggregate export metadata changed: {name}")
 
+
+def _validate_empty_screen(
+    evidence_dir: Path, manifest: dict[str, Any], *, scan_number: int, indirect_call_count: int
+) -> None:
+    label = f"scan{scan_number}"
+    report_path = evidence_dir / f"screening-{label}.json"
+    report = manifest.get(f"expanded_{label}_screen")
+    if not isinstance(report, dict) or json.loads(report_path.read_text()) != report:
+        raise ValueError(f"{label} screening report does not match the frozen manifest")
+    if report.get("format") != "NFS.RevenginstrM23Screening/2" or report.get("program_id") != PROGRAM_ID:
+        raise ValueError(f"{label} has an unsupported report format or program id")
+
+    folder = evidence_dir / f"screening-{label}"
+    for relative, expected in report.get("replay_inputs", {}).items():
+        relative_path = Path(relative)
+        if relative_path.is_absolute() or ".." in relative_path.parts:
+            raise ValueError(f"{label} input path escapes its evidence directory: {relative}")
+        path = folder / relative_path
+        if not path.is_file():
+            raise ValueError(f"{label} replay input is missing: {relative}")
+        payload = path.read_bytes()
+        if (
+            len(payload) != expected.get("bytes")
+            or hashlib.sha256(payload).hexdigest() != expected.get("sha256")
+            or _row_count(path) != expected.get("rows")
+        ):
+            raise ValueError(f"{label} replay input digest/count mismatch: {relative}")
+
+    source = json.loads((folder / "selection-source.json").read_text())
+    selection = report.get("selection", {})
+    selected = selection.get("candidates", [])
+    if (
+        report.get("source", {}).get("rows") != source.get("source_rows")
+        or report.get("source", {}).get("sha256") != source.get("source_sha256")
+        or selection.get("candidate_count") != source.get("candidate_count")
+        or selection.get("previously_scanned_distinct_roots_excluded")
+        != source.get("previously_scanned_distinct_roots_excluded")
+        or len(selected) != selection.get("candidate_count")
+    ):
+        raise ValueError(f"{label} selection metadata does not match its frozen source")
+    source_candidates = {row["function_entry"]: row for row in source.get("selection", [])}
+    entries = [row.get("function_entry") for row in selected]
+    if len(entries) != len(set(entries)) or set(entries) != set(source_candidates):
+        raise ValueError(f"{label} candidate roots do not match the frozen selection source")
+
+    with (folder / "parameter-stores.tsv").open(newline="") as stream:
+        store_rows = list(csv.DictReader(stream, delimiter="\t"))
+    with (folder / "parameter-loads.tsv").open(newline="") as stream:
+        load_rows = list(csv.DictReader(stream, delimiter="\t"))
+    memory_rows = _read_jsonl(folder / "memory-store-access.jsonl")
+    pair_rows = _read_jsonl(folder / "field-access-pairs.jsonl")
+    if store_rows or pair_rows:
+        raise ValueError(f"{label} empty screen contains a parameter-field store or pair")
+    selected_set = set(entries)
+    if any(row.get("function_entry") not in selected_set for row in (*store_rows, *load_rows)):
+        raise ValueError(f"{label} parameter export contains a root outside its selection")
+    if any(row.get("program_id") != PROGRAM_ID or row.get("function_entry") not in selected_set for row in memory_rows):
+        raise ValueError(f"{label} memory-store export contains a foreign program/root")
+
+    loads_by_entry = Counter(row["function_entry"] for row in load_rows)
+    memory_by_entry = Counter(row["function_entry"] for row in memory_rows)
+    contract = report.get("empty_export_contract", {})
+    store_hashes = set(contract.get("parameter_stores_sha256_values", []))
+    pair_hashes = set(contract.get("field_access_pairs_sha256_values", []))
+    empty_store_hash = hashlib.sha256((folder / "parameter-stores.tsv").read_bytes()).hexdigest()
+    empty_pair_hash = hashlib.sha256((folder / "field-access-pairs.jsonl").read_bytes()).hexdigest()
+    if (
+        contract.get("parameter_store_field_rows_per_candidate") != 0
+        or contract.get("field_access_pair_rows_per_candidate") != 0
+        or store_hashes != {empty_store_hash}
+        or pair_hashes != {empty_pair_hash}
+    ):
+        raise ValueError(f"{label} empty-export contract does not match its frozen outputs")
+
+    for candidate in selected:
+        entry = candidate["function_entry"]
+        source_candidate = source_candidates[entry]
+        metrics = candidate["pcode_metrics"]
+        hashes = candidate.get("source_export_sha256", {})
+        if (
+            candidate.get("source_name") != source_candidate.get("source_name")
+            or candidate.get("parameter_count") != source_candidate.get("parameter_count")
+            or metrics != source_candidate.get("metrics")
+        ):
+            raise ValueError(f"{label} source selection record changed: {entry}")
+        if (
+            candidate["parameter_count"] < 1
+            or metrics["calls"] <= metrics["indirect_calls"]
+            or metrics["indirect_calls"] != indirect_call_count
+            or metrics["loads"] < 1
+            or metrics["stores"] < 1
+            or metrics["truncated"]
+            or candidate["source_name"].startswith("thunk_")
+        ):
+            raise ValueError(f"{label} candidate does not satisfy the recorded selection: {entry}")
+        actual_rows = {
+            "parameter_store_field": 0,
+            "parameter_load_field": loads_by_entry[entry],
+            "memory_store_access": memory_by_entry[entry],
+            "field_access_pairs": 0,
+        }
+        if (
+            candidate.get("export_rows") != actual_rows
+            or hashes.get("parameter_stores") not in store_hashes
+            or hashes.get("field_access_pairs") not in pair_hashes
+        ):
+            raise ValueError(f"{label} per-root export summary mismatch: {entry}")
+
+    totals = report.get("summary", {})
+    actual_totals = {
+        "candidate_roots": len(selected),
+        "parameter_store_field_rows": len(store_rows),
+        "parameter_load_field_rows": len(load_rows),
+        "memory_store_access_rows": len(memory_rows),
+        "field_access_pair_rows": len(pair_rows),
+        "roots_with_field_pairs": 0,
+        "dominance_audits_run": 0,
+    }
+    if any(totals.get(key) != value for key, value in actual_totals.items()):
+        raise ValueError(f"{label} aggregate summary does not match its frozen rows")
+    for name, expected in report.get("aggregated_exports", {}).items():
+        path = folder / name
+        payload = path.read_bytes()
+        if (
+            len(payload) != expected.get("bytes")
+            or hashlib.sha256(payload).hexdigest() != expected.get("sha256")
+            or _row_count(path) != expected.get("rows")
+        ):
+            raise ValueError(f"{label} aggregate export metadata changed: {name}")
+
+
 def validate_frozen(evidence_dir: Path) -> dict[str, int]:
     """Check the manifest, digests, row counts, and fail-closed result summary."""
     manifest = json.loads((evidence_dir / "manifest.json").read_text())
@@ -561,6 +692,7 @@ def validate_frozen(evidence_dir: Path) -> dict[str, int]:
     _validate_screening_scan(evidence_dir, manifest, scan_number=16, indirect_call_count=1)
     _validate_screening_scan(evidence_dir, manifest, scan_number=17, indirect_call_count=2)
     _validate_screening_scan(evidence_dir, manifest, scan_number=18, indirect_call_count=3)
+    _validate_empty_screen(evidence_dir, manifest, scan_number=19, indirect_call_count=4)
 
     return {"artifacts": len(artifacts), "candidates": len(candidates), "bytes": total_bytes}
 
@@ -720,6 +852,25 @@ def replay(evidence_dir: Path, bin_dir: Path) -> dict[str, int]:
                     raise ValueError(f"{label} dominance /{version[-1]} audit changed on replay")
 
             replayed_screening_roots += manifest[f"expanded_{label}_screen"]["selection"]["candidate_count"]
+
+        scan19 = evidence_dir / "screening-scan19"
+        screening_scratch = temporary_dir / "scan19"
+        screening_scratch.mkdir()
+        pairs = screening_scratch / "field-access-pairs.jsonl"
+        _run(
+            binaries[names[0]],
+            [
+                str(scan19 / "parameter-stores.tsv"),
+                str(scan19 / "parameter-loads.tsv"),
+                "--program-id",
+                PROGRAM_ID,
+                "--output",
+                str(pairs),
+            ],
+        )
+        if pairs.read_bytes() != (scan19 / "field-access-pairs.jsonl").read_bytes():
+            raise ValueError("scan19 field access pairs changed on replay")
+        replayed_screening_roots += manifest["expanded_scan19_screen"]["selection"]["candidate_count"]
 
     return {
         **summary,
