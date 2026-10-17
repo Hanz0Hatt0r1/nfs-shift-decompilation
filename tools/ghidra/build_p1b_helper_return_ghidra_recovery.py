@@ -283,7 +283,7 @@ def compose_report(
             "qualified_entry_argument_plus_0x374_function_count": qualified_helpers,
         },
         "inventory_only_function_body_candidates": {
-            "callgraph_confirmed_callsite_count": 0,
+            "exact_unresolved_callsite_callgraph_match_count": 0,
             "function_entry_count": len(candidate_functions),
             "instruction_count": candidate_instruction_count,
             "pcode_instruction_count": candidate_pcode_instruction_count,

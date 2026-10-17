@@ -106,7 +106,7 @@ def test_indexes_only_ghidra_confirmed_call_targets_and_starts_at_function_entry
     assert report["adjudication"]["automatic_function_renaming_performed"] is False
     assert report["adjudication"]["p1_3_control_producer_complete"] is False
     candidates = report["inventory_only_function_body_candidates"]
-    assert candidates["callgraph_confirmed_callsite_count"] == 0
+    assert candidates["exact_unresolved_callsite_callgraph_match_count"] == 0
     assert candidates["instruction_export_sha256"] == "unconfirmed-hash"
     assert candidates["functions"][0]["address"] == "0x00003000"
     assert report["combined_function_instruction_exports"]["unique_function_count"] == 3

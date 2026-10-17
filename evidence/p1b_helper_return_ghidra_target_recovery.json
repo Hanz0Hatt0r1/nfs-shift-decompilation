@@ -2598,7 +2598,7 @@
     "target_function_count": 170
   },
   "inventory_only_function_body_candidates": {
-    "callgraph_confirmed_callsite_count": 0,
+    "exact_unresolved_callsite_callgraph_match_count": 0,
     "function_entry_count": 20,
     "functions": [
       {
