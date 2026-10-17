@@ -1,0 +1,50 @@
+# Full SHIFT function instruction corpus
+
+The separate full-recompilation track starts with a portable export of every
+function in the analyzed PC retail 1.02 Ghidra program. The shared exporter
+records machine instructions and per-instruction P-code without exporting
+decompiler C or changing the Ghidra project.
+
+Keep the full corpus outside Git. It contains proprietary instruction evidence;
+commit only the compact coverage report, manifest hashes and derived counts.
+
+```bash
+REVENGINSTR_REPO=/path/to/revenginstr \
+GHIDRA_HOME=/opt/ghidra \
+bash tools/ghidra/run_shift_full_function_corpus.sh \
+  /path/to/ghidra/project shift SHIFT.exe \
+  /path/to/persistent-storage/shift-functions.jsonl.gz
+```
+
+The exporter writes `shift-functions.jsonl.gz.manifest.json` alongside the
+corpus. Large projects can be split into deterministic address-ordered shards
+by adding `<offset> <limit>` after the output path. A limit of `0` writes the
+remaining functions. The manifest records the complete function count, ordinal
+range, instruction count and SHA-256 of each compressed shard.
+
+After export, compare every exported entry to the machine-local
+`shift.functions.tsv.gz` inventory and verify the retail executable and
+manifest hashes:
+
+```bash
+python tools/ghidra/build_full_function_corpus_coverage.py \
+  /path/to/SHIFT.exe \
+  /path/to/shift.functions.tsv.gz \
+  /path/to/shift-functions.jsonl.gz \
+  /path/to/shift-functions.jsonl.gz.manifest.json \
+  --output evidence/full_function_instruction_corpus_20261017.json
+```
+
+This closes portable instruction-corpus coverage only. Decompiler output,
+source reconstruction, linkable replacement modules, and original-versus-native
+behavioral parity remain separate work before NFS Shift can be called fully
+recompiled.
+
+The first complete export contains 41,538 functions and 2,088,152 machine
+instructions. Ghidra emits no P-code for 2,460 `NOP` instructions and 9 x87
+`WAIT` instructions; the audit keeps these counts visible. The `WAIT` semantics
+remain an explicit translation gap rather than being guessed or synthesized.
+The compact hash and coverage record is
+`evidence/full_function_instruction_corpus_20261017.json`. On this workstation,
+the compressed corpus is stored outside Git at
+`/home/pes/nfs-shift-recompilation-artifacts/full-function-corpus-20261017/shift-pc-retail-1.02-function-instructions.jsonl.gz`.
