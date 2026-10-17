@@ -174,8 +174,15 @@ def _validate_screening_scan(
     memory_rows = _read_jsonl(folder / "memory-store-access.jsonl")
     pair_rows = _read_jsonl(folder / "field-access-pairs.jsonl")
     call_rows = _read_jsonl(folder / "direct-call-memory-effects.jsonl")
+    closure_path = folder / "direct-call-memory-effect-closures.jsonl"
+    audit_v4_path = folder / "field-store-load-dominance-v4.jsonl"
+    has_v4 = closure_path.is_file() or audit_v4_path.is_file()
+    if has_v4 and not (closure_path.is_file() and audit_v4_path.is_file()):
+        raise ValueError(f"{label} transitive closure and /4 audit must be frozen together")
+    closure_rows = _read_jsonl(closure_path) if has_v4 else []
     audit_v2_rows = _read_jsonl(folder / "field-store-load-dominance-v2.jsonl")
     audit_rows = _read_jsonl(folder / "field-store-load-dominance-v3.jsonl")
+    audit_v4_rows = _read_jsonl(audit_v4_path) if has_v4 else []
     cfg_rows = _read_jsonl(folder / "function-pcode-cfg-v3.jsonl")
     relevant_memory_rows = _read_jsonl(folder / "memory-store-access-relevant.jsonl")
 
@@ -255,6 +262,21 @@ def _validate_screening_scan(
         "direct_call_effect_status_counts": dict(sorted(Counter(row["status"] for row in call_rows).items())),
         "write_free_direct_call_rows": sum(row["status"] == "no_explicit_memory_write" for row in call_rows),
     }
+    if has_v4:
+        totals.update({
+            "direct_call_memory_effect_closure_rows": len(closure_rows),
+            "direct_call_memory_effect_closure_status_counts": dict(
+                sorted(Counter(row["status"] for row in closure_rows).items())
+            ),
+            "write_free_transitive_direct_call_rows": sum(
+                row["status"] == "no_explicit_memory_write" for row in closure_rows
+            ),
+            "audit_v4_rows": len(audit_v4_rows),
+            "audit_v4_status_counts": dict(sorted(Counter(row["status"] for row in audit_v4_rows).items())),
+            "unique_cfg_store_candidate_v4_rows": sum(
+                row["status"] == "unique_cfg_store_candidate" for row in audit_v4_rows
+            ),
+        })
     expected_summary = report.get("summary", {})
     if any(expected_summary.get(key) != value for key, value in totals.items()):
         raise ValueError(f"{label} aggregate summary does not match the frozen rows")
@@ -263,11 +285,11 @@ def _validate_screening_scan(
     pair_roots = {entry for entry, count in pair_counts.items() if count}
     if len(cfg_rows) != len(audit_roots) or audit_roots != pair_roots:
         raise ValueError(f"{label} CFG roots do not match the field-pair roots")
-    if any(row.get("function_entry") not in audit_roots for row in (*audit_v2_rows, *audit_rows)):
+    if any(row.get("function_entry") not in audit_roots for row in (*audit_v2_rows, *audit_rows, *audit_v4_rows)):
         raise ValueError(f"{label} audit contains a root without CFG evidence")
     if any(row.get("function_entry") not in audit_roots for row in relevant_memory_rows):
         raise ValueError(f"{label} audit memory sidecar contains a root without CFG evidence")
-    if any("runtime value-flow claim" not in row.get("claim_scope", "") for row in (*audit_v2_rows, *audit_rows)):
+    if any("runtime value-flow claim" not in row.get("claim_scope", "") for row in (*audit_v2_rows, *audit_rows, *audit_v4_rows)):
         raise ValueError(f"{label} audit scope overclaims value flow")
     def audit_key(row: dict[str, Any]) -> tuple[str, str, str]:
         return (row["function_entry"], row["store"]["source_id"], row["load"]["source_id"])
@@ -283,10 +305,35 @@ def _validate_screening_scan(
     totals["per_pair_status_changes_v2_to_v3"] = status_changes
     if status_changes != report.get("summary", {}).get("per_pair_status_changes_v2_to_v3"):
         raise ValueError(f"{label} /2-to-/3 per-pair status change count is incorrect")
+    if has_v4:
+        closure_sha = hashlib.sha256(closure_path.read_bytes()).hexdigest()
+        audit_v4_by_key = {audit_key(row): row for row in audit_v4_rows}
+        if audit_v4_by_key.keys() != audit_v3_by_key.keys():
+            raise ValueError(f"{label} /3 and /4 audits do not cover the same exact pairs")
+        status_changes_v3_to_v4 = sum(
+            audit_v3_by_key[key]["status"] != audit_v4_by_key[key]["status"]
+            for key in audit_v3_by_key
+        )
+        totals["per_pair_status_changes_v3_to_v4"] = status_changes_v3_to_v4
+        if status_changes_v3_to_v4 != report.get("summary", {}).get("per_pair_status_changes_v3_to_v4"):
+            raise ValueError(f"{label} /3-to-/4 per-pair status change count is incorrect")
+        for row in audit_v4_rows:
+            provenance = row.get("provenance", {})
+            if provenance.get("direct_call_memory_effect_closure_sha256") != closure_sha:
+                raise ValueError(f"{label} /4 row does not pin the closure sidecar")
+        closure_rows_by_root: dict[str, list[dict[str, Any]]] = {}
+        for row in closure_rows:
+            if row.get("program_id") != PROGRAM_ID:
+                raise ValueError(f"{label} closure sidecar contains a foreign program")
+            closure_rows_by_root.setdefault(row.get("function_entry", ""), []).append(row)
+    else:
+        closure_rows_by_root = {}
     if (
         totals["unique_cfg_store_candidate_rows"]
         or totals["unique_cfg_store_candidate_v2_rows"]
         or totals["write_free_direct_call_rows"]
+        or totals.get("unique_cfg_store_candidate_v4_rows", 0)
+        or totals.get("write_free_transitive_direct_call_rows", 0)
     ):
         raise ValueError(f"{label} records an unsupported unique candidate or write-free call")
 
@@ -318,6 +365,13 @@ def _validate_screening_scan(
         ]
         if actual_calls != expected_calls:
             raise ValueError(f"{label} direct-call facts do not match caller P-code: {entry}")
+        if has_v4:
+            actual_closure_calls = [
+                (row.get("address"), row.get("time"), row.get("opcode"), row.get("callee_entry"))
+                for row in closure_rows_by_root.get(entry, [])
+            ]
+            if actual_closure_calls != expected_calls:
+                raise ValueError(f"{label} transitive closure facts do not match caller P-code: {entry}")
         for _, _, opcode, target in expected_calls:
             if opcode == "CALL" and target != entry and not (folder / "callee-pcode-flow" / f"{target}.tsv").is_file():
                 raise ValueError(f"{label} direct callee flow is missing: {entry} -> {target}")
@@ -736,6 +790,7 @@ def replay(evidence_dir: Path, bin_dir: Path) -> dict[str, int]:
         "revenginstr-receiver-field-access-pairs",
         "revenginstr-direct-call-memory-effects",
         "revenginstr-receiver-field-store-load-dominance-audit",
+        "revenginstr-direct-call-memory-effect-closure",
     )
     binaries = {name: bin_dir / name for name in names}
     missing = [str(path) for path in binaries.values() if not path.is_file()]
@@ -854,6 +909,42 @@ def replay(evidence_dir: Path, bin_dir: Path) -> dict[str, int]:
                 _run(binaries[names[2]], command)
                 if audit.read_bytes() != (scan / f"field-store-load-dominance-{version}.jsonl").read_bytes():
                     raise ValueError(f"{label} dominance /{version[-1]} audit changed on replay")
+
+            closure_path = scan / "direct-call-memory-effect-closures.jsonl"
+            if closure_path.is_file():
+                combined_closures = screening_scratch / "direct-call-memory-effect-closures.jsonl"
+                with combined_closures.open("wb") as combined:
+                    for caller in sorted((scan / "caller-pcode-flow").glob("*.tsv")):
+                        arguments = [str(caller), "--program-id", PROGRAM_ID]
+                        with caller.open(newline="") as stream:
+                            targets = sorted({
+                                row["callee_entry"]
+                                for row in csv.DictReader(stream, delimiter="\t")
+                                if row["opcode"] == "CALL" and row["callee_entry"] not in {"", "-"}
+                            })
+                        for target in targets:
+                            flow = caller if target == caller.stem else scan / "callee-pcode-flow" / f"{target}.tsv"
+                            if flow.is_file():
+                                arguments.extend(["--callee-flow", target, str(flow)])
+                        output = screening_scratch / f"{caller.stem}-direct-call-memory-effect-closures.jsonl"
+                        arguments.extend(["--output", str(output)])
+                        _run(binaries[names[3]], arguments)
+                        combined.write(output.read_bytes())
+                if combined_closures.read_bytes() != closure_path.read_bytes():
+                    raise ValueError(f"{label} transitive call-effect closures changed on replay")
+
+                audit = screening_scratch / "field-store-load-dominance-v4.jsonl"
+                _run(
+                    binaries[names[2]],
+                    [
+                        str(pairs), str(scan / "function-pcode-cfg-v3.jsonl"),
+                        "--memory-store-access-jsonl", str(scan / "memory-store-access-relevant.jsonl"),
+                        "--direct-call-memory-effect-closure-jsonl", str(combined_closures),
+                        "--output", str(audit),
+                    ],
+                )
+                if audit.read_bytes() != (scan / "field-store-load-dominance-v4.jsonl").read_bytes():
+                    raise ValueError(f"{label} dominance /4 audit changed on replay")
 
             replayed_screening_roots += manifest[f"expanded_{label}_screen"]["selection"]["candidate_count"]
 

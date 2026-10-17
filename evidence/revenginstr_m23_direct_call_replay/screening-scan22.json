@@ -15,7 +15,12 @@
       "ExportFunctionPcodeCFG.java",
       "ExportFunctionPcodeFlow.java"
     ],
-    "revenginstr_source_commit": "bd8f4725e5c38c502a647110518c7116b5e82d5b"
+    "revenginstr_source_commit": "bd8f4725e5c38c502a647110518c7116b5e82d5b",
+    "transitive_call_effect": {
+      "closure_format": "REVENGINSTR.GhidraDirectCallMemoryEffectClosure/1",
+      "audit_format": "REVENGINSTR.FieldStoreLoadDominanceAudit/4",
+      "revenginstr_source_commit": "d15a4d748c8468b277cc278cb19decf1f378a727"
+    }
   },
   "selection": {
     "previously_scanned_distinct_roots_excluded": 2383,
@@ -80,7 +85,19 @@
     },
     "unique_cfg_store_candidate_rows": 0,
     "per_pair_status_changes_v2_to_v3": 0,
-    "outcome": "The one-function screen yielded two exact parameter-field pairs. Both CFG/2 and CFG/3 report store_not_dominating_load for both pairs; the direct-call sidecar records six explicit-memory-write sites and nine indirect-call barriers. No unique candidate or runtime value-flow claim is made."
+    "outcome": "Scan22 transitive call closure preserved six explicit-memory-write sites and nine indirect-call barriers. CFG/3 and CFG/4 both report store_not_dominating_load for both pairs; there are no status changes, write-free calls, or unique candidates.",
+    "direct_call_memory_effect_closure_rows": 15,
+    "direct_call_memory_effect_closure_status_counts": {
+      "explicit_memory_write": 6,
+      "indirect_call": 9
+    },
+    "write_free_transitive_direct_call_rows": 0,
+    "audit_v4_rows": 2,
+    "audit_v4_status_counts": {
+      "store_not_dominating_load": 2
+    },
+    "unique_cfg_store_candidate_v4_rows": 0,
+    "per_pair_status_changes_v3_to_v4": 0
   },
   "replay_inputs": {
     "callee-pcode-flow/009eb3f0.tsv": {
@@ -157,6 +174,16 @@
       "bytes": 587,
       "rows": 1,
       "sha256": "d2480a86dc0a1cfefc63c92a79077cdc921f7893237cc1f3fb7d7fcf2f269425"
+    },
+    "direct-call-memory-effect-closures.jsonl": {
+      "bytes": 9513,
+      "rows": 15,
+      "sha256": "b51384d417559abaced933bb0e45059f181041864d3c7817048ee699a993b846"
+    },
+    "field-store-load-dominance-v4.jsonl": {
+      "bytes": 4143,
+      "rows": 2,
+      "sha256": "28657b793260f50e720059cb39dcb6235d3feb05d2e928ea8fd5200056e867ea"
     }
   },
   "aggregated_exports": {
