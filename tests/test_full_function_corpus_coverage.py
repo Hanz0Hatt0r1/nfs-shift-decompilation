@@ -221,7 +221,6 @@ def test_linux_pcode_elf_smoke_evidence_matches_build_report() -> None:
     coverage = json.loads((ROOT / "evidence/pcode_native_lowering_coverage_20261017.json").read_text())
     assert evidence["format"] == "NFSShift.NativeLinuxPcodeSmoke/1"
     assert evidence["revenginstr_revision"] == "378fca4af3089aecf8dd02110d9960b26ef41c1e"
-    assert "ref: " + evidence["revenginstr_revision"] in (ROOT / ".github/workflows/ci.yml").read_text()
     assert evidence["source"] == report["source"] == coverage["source"]
     assert hashlib.sha256(report_bytes).hexdigest() == evidence["build_report"]["sha256"]
     assert report["compiler"]["path"].endswith("/gcc")
@@ -244,7 +243,6 @@ def test_partial_windows_dll_link_evidence_matches_coff_build() -> None:
     report = json.loads(report_bytes)
     assert evidence["format"] == "NFSShift.NativePcodePartialWindowsDll/1"
     assert evidence["revenginstr_revision"] == "378fca4af3089aecf8dd02110d9960b26ef41c1e"
-    assert "ref: " + evidence["revenginstr_revision"] in (ROOT / ".github/workflows/ci.yml").read_text()
     assert evidence["source"] == report["source"]
     assert hashlib.sha256(report_bytes).hexdigest() == evidence["build_report"]["sha256"]
     assert len(report["shards"]) == evidence["build_report"]["object_shards"] == 71
@@ -255,4 +253,35 @@ def test_partial_windows_dll_link_evidence_matches_coff_build() -> None:
     assert len(evidence["linked_library"]["sha256"]) == 64
     assert evidence["link"]["result"] == "passed"
     assert evidence["link"]["undefined_references"] == 0
+    assert evidence["limitations"]["complete_game"] is False
+
+
+def test_repeat_cbranch_delta_is_hash_pinned_and_closes_only_its_old_rejections() -> None:
+    delta = json.loads((ROOT / "evidence/pcode_repeat_cbranch_delta_20261018.json").read_text())
+    coverage = json.loads((ROOT / "evidence/pcode_native_lowering_coverage_20261017.json").read_text())
+    assert delta["format"] == "NFSShift.PcodeLoweringSupplementalShard/1"
+    assert delta["source"] == coverage["source"]
+    assert delta["base_lowerable_functions"] == 35004
+    assert delta["added_functions"] == 65
+    assert delta["remaining_rejected_functions"] == 6469
+    assert delta["base_build_report_sha256"] == "a4ce39d03409f134d80cae26ddc0b9b60979e5b9a0ca0e1cd423a8401e87523d"
+    assert sum(reason["functions"] for reason in delta["rejection_reasons"]) == 6469
+    assert "ref: fde4275d0385fcb42097652eb2c3ebf2601c8a40" in (ROOT / ".github/workflows/ci.yml").read_text()
+
+
+def test_repeat_cbranch_supplemental_libraries_are_linked_and_linux_smoke_passed() -> None:
+    evidence = json.loads((ROOT / "evidence/pcode_repeat_cbranch_build_20261018.json").read_text())
+    delta_bytes = (ROOT / evidence["delta"]["report_path"]).read_bytes()
+    assert evidence["format"] == "NFSShift.PcodeRepeatBranchSupplementalBuild/1"
+    assert evidence["revenginstr_revision"] == "fde4275d0385fcb42097652eb2c3ebf2601c8a40"
+    assert "ref: " + evidence["revenginstr_revision"] in (ROOT / ".github/workflows/ci.yml").read_text()
+    assert hashlib.sha256(delta_bytes).hexdigest() == evidence["delta"]["report_sha256"]
+    assert evidence["coverage"]["lowerable_functions"] == 35004 + evidence["delta"]["added_functions"] == 35069
+    assert evidence["coverage"]["corpus_functions"] == 41538
+    assert evidence["linux"]["library"]["format"] == "ELF64 shared object"
+    assert evidence["linux"]["library"]["exported_pcode_functions"] == 35069
+    assert evidence["linux"]["link"]["result"] == "passed"
+    assert evidence["linux"]["smoke_test"]["result"] == "passed"
+    assert evidence["windows_pe"]["library"]["export_table_function_count"] == 35069
+    assert evidence["windows_pe"]["link"]["result"] == "passed"
     assert evidence["limitations"]["complete_game"] is False
