@@ -1,0 +1,90 @@
+{
+  "base_main_revision": "25a7ff7a3d774c9cf000395a841ca2222f1a3fa5",
+  "captured_at": "2026-10-18",
+  "format": "NFSShift.RecompiledPcodeGuestThreadRuntime/1",
+  "limitations": {
+    "behavioral_parity": false,
+    "guest_thread_scheduler": "synchronous deterministic model; no host parallelism or preemption",
+    "playable_game": false,
+    "retail_game_startup": false,
+    "thread_local_storage_per_guest_thread": false
+  },
+  "retail_entrypoint_probe": {
+    "caller": "0x00649cb0",
+    "entrypoint_invoked": true,
+    "next_blocker": "missing P-code export rvi_00667170",
+    "pcode_functions_dispatched": 13333,
+    "previous_blocker": "KERNEL32.dll!CreateThread",
+    "result": "fails closed before game startup completes",
+    "supplemental_pcode_module_count": 21
+  },
+  "retail_input": {
+    "entry_point": "0x0090488a",
+    "image_base": "0x00400000",
+    "import_function_count": 411,
+    "logical_name": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "version": "PC retail 1.02"
+  },
+  "runtime_additions": {
+    "diagnostics": {
+      "missing_pcode_export_includes_calling_guest_function": true,
+      "unsupported_userop_includes_active_guest_function": true
+    },
+    "guest_threads": {
+      "allocates_guest_stack_and_teb": true,
+      "exit_thread_terminates_pcode_at_call_boundary": true,
+      "imports": [
+        "CreateThread",
+        "ResumeThread",
+        "SuspendThread",
+        "GetExitCodeThread",
+        "ExitThread"
+      ],
+      "initializes_fs_base_and_thread_identity": true,
+      "parallelism_or_preemption": false,
+      "synchronous_resume_runs_to_completion": true,
+      "unscheduled_wait_result": "WAIT_TIMEOUT"
+    },
+    "heap_realloc": {
+      "import": "KERNEL32.dll!HeapReAlloc",
+      "preserves_original_block_on_failure": true,
+      "supported_flags_mask": "0x0000001d",
+      "supports_in_place_only": true,
+      "supports_zero_memory_expansion": true
+    },
+    "pcode_userops": [
+      {
+        "host_requirement": "little-endian x86 Linux with binary80 long double",
+        "index": 100,
+        "input_size_bytes": 10,
+        "name": "x86 FCOS",
+        "output_size_bytes": 10,
+        "unsupported_hosts_fail_closed": true
+      }
+    ]
+  },
+  "validation": {
+    "fixture_vulkan_smoke": {
+      "frames_rendered": 3,
+      "frames_requested": 3,
+      "pcode_functions_dispatched": 7,
+      "pcode_step_invocations": 3,
+      "process_exit_code": 0,
+      "scene": "prepared neutral material bundle",
+      "simulation_steps": 3,
+      "status": "ok",
+      "validation_errors": 0,
+      "validation_warnings": 3
+    },
+    "native_build": {
+      "command": "cmake --build /tmp/nfs-shift-vulkan-guest-thread-state-build -j 8",
+      "result": "passed"
+    },
+    "native_runtime_ctest": {
+      "command": "/usr/bin/ctest --test-dir /tmp/nfs-shift-vulkan-guest-thread-state-build --output-on-failure",
+      "failed": 0,
+      "passed": 138
+    }
+  }
+}

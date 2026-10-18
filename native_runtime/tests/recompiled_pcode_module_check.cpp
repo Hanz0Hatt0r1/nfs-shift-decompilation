@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -179,7 +181,7 @@ void write_pe32_fixture(const std::string& path) {
         std::copy_n(name, std::char_traits<char>::length(name) + 1,
                     bytes.begin() + offset + 2);
     };
-    const std::array<uint32_t, 71> import_thunks = {
+    const std::array<uint32_t, 72> import_thunks = {
         0x2200, 0x8000007b, 0x2240, 0x2260, 0x2280, 0x22a0, 0x22c0,
         0x22e0, 0x2300, 0x2320, 0x2340, 0x2360, 0x2380, 0x23a0,
         0x23c0, 0x23e0, 0x2400, 0x2420, 0x2440, 0x2460, 0x24a0,
@@ -189,7 +191,8 @@ void write_pe32_fixture(const std::string& path) {
         0x27c0, 0x27e0, 0x2800, 0x2820, 0x2840, 0x2860, 0x2880,
         0x28a0, 0x28c0, 0x28e0, 0x2900, 0x2920, 0x2940, 0x2960, 0x2980,
         0x29a0, 0x29c0, 0x29e0, 0x2a00, 0x2a20, 0x2a40, 0x2ad0,
-        0x2af0, 0x2b10, 0x2b30, 0x2b50, 0x2b70, 0x2b90, 0x2bb0};
+        0x2af0, 0x2b10, 0x2b30, 0x2b50, 0x2b70, 0x2b90, 0x2bb0,
+        0x2bd0};
     for (size_t index = 0; index < import_thunks.size(); ++index) {
         write_u32(bytes, 0x464 + index * sizeof(uint32_t), import_thunks[index]);
         write_u32(bytes, 0x1000 + index * sizeof(uint32_t), import_thunks[index]);
@@ -292,6 +295,7 @@ void write_pe32_fixture(const std::string& path) {
     write_import_name(0x11ed, "IsThreadAFiber");
     write_import_name(0x1200, "GlobalMemoryStatus");
     write_import_name(0x1218, "GetLocalTime");
+    write_import_name(0xfd0, "HeapReAlloc");
 
     std::ofstream file(path, std::ios::binary | std::ios::trunc);
     require(static_cast<bool>(file), "could not create PE32 fixture");
@@ -319,7 +323,7 @@ int main(int argc, char** argv) {
                     image.entry_point == 0x00401020 &&
                     image.section_count == 2 &&
                     image.import_module_count == 3 &&
-                    image.import_function_count == 80 &&
+                    image.import_function_count == 81 &&
                     image.import_stub_base == 0xf0000000,
                 "PE32 loader returned unexpected image metadata: image=" +
                     std::to_string(image.image_base) + ", size=" +
@@ -360,34 +364,34 @@ int main(int argc, char** argv) {
                 "could not read GetSystemTimeAsFileTime IAT entry");
         require(value == std::array<uint8_t, 4>{0x20, 0, 0, 0xf0},
                 "GetSystemTimeAsFileTime IAT entry was not mapped to its guest trap");
-        for (uint32_t index = 0; index < 71; ++index) {
+        for (uint32_t index = 0; index < 72; ++index) {
             const uint32_t iat_entry = read_guest_u32(
                 module, "ram", 0x00402c00 + index * sizeof(uint32_t));
             require(iat_entry == 0xf0000000 + index * 0x10,
                     "Kernel32 IAT slot was not mapped to its guest trap");
         }
-        require(read_guest_u32(module, "ram", 0x00402d20) == 0xf0000470 &&
-                    read_guest_u32(module, "ram", 0x00402d24) == 0xf0000480 &&
-                    read_guest_u32(module, "ram", 0x00402d28) == 0xf0000490,
+        require(read_guest_u32(module, "ram", 0x00402d20) == 0xf0000480 &&
+                    read_guest_u32(module, "ram", 0x00402d24) == 0xf0000490 &&
+                    read_guest_u32(module, "ram", 0x00402d28) == 0xf00004a0,
                 "ImageHlp IAT slots were not mapped to their guest traps");
-        require(read_guest_u32(module, "ram", 0x00402d40) == 0xf00004a0 &&
-                    read_guest_u32(module, "ram", 0x00402d44) == 0xf00004b0,
+        require(read_guest_u32(module, "ram", 0x00402d40) == 0xf00004b0 &&
+                    read_guest_u32(module, "ram", 0x00402d44) == 0xf00004c0,
                 "WinMM timer IAT slots were not mapped to their guest traps");
-        require(read_guest_u32(module, "ram", 0x00402d30) == 0xf00004c0 &&
-                    read_guest_u32(module, "ram", 0x00402d34) == 0xf00004d0 &&
-                    read_guest_u32(module, "ram", 0x00402d38) == 0xf00004e0,
+        require(read_guest_u32(module, "ram", 0x00402d30) == 0xf00004d0 &&
+                    read_guest_u32(module, "ram", 0x00402d34) == 0xf00004e0 &&
+                    read_guest_u32(module, "ram", 0x00402d38) == 0xf00004f0,
                 "Kernel32 fiber IAT slots were not mapped to their guest traps");
-        require(read_guest_u32(module, "ram", 0x00402d3c) == 0xf00004f0,
+        require(read_guest_u32(module, "ram", 0x00402d3c) == 0xf0000500,
                 "Kernel32 memory-status IAT slot was not mapped to its guest trap");
         require(invoke_import(module, 5, {}) ==
                     static_cast<uint32_t>(syscall(SYS_gettid)),
                 "one-based P-code import ID did not route to its Kernel32 trap");
-        constexpr uint32_t time_begin_period = 0xf00004a0;
-        constexpr uint32_t time_end_period = 0xf00004b0;
-        require(invoke_import(module, 75, {1}) == 0 &&
+        constexpr uint32_t time_begin_period = 0xf00004b0;
+        constexpr uint32_t time_end_period = 0xf00004c0;
+        require(invoke_import(module, 76, {1}) == 0 &&
                     invoke_import(module, time_begin_period, {1}) == 0 &&
                     invoke_import(module, time_end_period, {2}) == 97 &&
-                    invoke_import(module, 76, {1}) == 0 &&
+                    invoke_import(module, 77, {1}) == 0 &&
                     invoke_import(module, time_end_period, {1}) == 0 &&
                     invoke_import(module, time_end_period, {1}) == 97 &&
                     invoke_import(module, time_begin_period, {0}) == 97,
@@ -511,10 +515,10 @@ int main(int argc, char** argv) {
                     invoke_import(module, 0xf0000390,
                                   {UINT32_MAX - 1}) == 15,
                 "SetThreadPriority did not update the guest thread profile");
-        require(invoke_import(module, 0xf0000470, {0x16}) == 0x16 &&
-                    invoke_import(module, 0xf0000480,
+        require(invoke_import(module, 0xf0000480, {0x16}) == 0x16 &&
+                    invoke_import(module, 0xf0000490,
                                   {UINT32_MAX, 0, 1}) == 1 &&
-                    invoke_import(module, 0xf0000490, {UINT32_MAX}) == 1,
+                    invoke_import(module, 0xf00004a0, {UINT32_MAX}) == 1,
                 "ImageHlp symbol-handler setup/cleanup did not succeed");
         constexpr uint32_t wait_for_single_object_ex = 0xf0000430;
         constexpr uint32_t manual_event = 0x00060000;
@@ -652,6 +656,30 @@ int main(int argc, char** argv) {
         require(invoke_import(module, 0xf00002f0,
                               {0x00010000, 0, first_allocation}) == 16,
                 "HeapSize did not report the aligned live allocation size");
+        write_guest_u32(module, "ram", first_allocation, 0x12345678);
+        require(invoke_import(module, 0xf0000470,
+                              {0x00010000, 0x10, first_allocation, 32}) == 0 &&
+                    read_guest_u32(module, "ram", first_allocation) ==
+                        0x12345678 &&
+                    invoke_import(module, 0xf00002f0,
+                                  {0x00010000, 0, first_allocation}) == 16,
+                "in-place-only HeapReAlloc did not preserve the original block on failure");
+        const uint32_t resized_allocation = invoke_import(
+            module, 0xf0000470,
+            {0x00010000, 0x8, first_allocation, 32});
+        require(resized_allocation != 0 &&
+                    resized_allocation != first_allocation &&
+                    read_guest_u32(module, "ram", resized_allocation) ==
+                        0x12345678 &&
+                    invoke_import(module, 0xf00002f0,
+                                  {0x00010000, 0, resized_allocation}) == 32,
+                "HeapReAlloc did not move and preserve a growing allocation");
+        std::array<uint8_t, 16> zeroed_reallocation_tail{};
+        require(module.read_guest("ram", resized_allocation + 16,
+                                  zeroed_reallocation_tail.size(),
+                                  zeroed_reallocation_tail.data()) &&
+                    zeroed_reallocation_tail == std::array<uint8_t, 16>{},
+                "HEAP_ZERO_MEMORY did not clear the expanded HeapReAlloc range");
         const uint32_t second_allocation = invoke_import(
             module, 0xf00000a0, {0x00010000, 0, 32});
         require(second_allocation > first_allocation &&
@@ -661,7 +689,7 @@ int main(int argc, char** argv) {
                               {0x00010000, 0, second_allocation}) == 32,
                 "HeapSize did not report the second live allocation size");
         require(invoke_import(module, 0xf00000c0,
-                              {0x00010000, 0, first_allocation}) == 1 &&
+                              {0x00010000, 0, resized_allocation}) == 1 &&
                     invoke_import(module, 0xf00000c0,
                                   {0x00010000, 0, second_allocation}) == 1,
                 "HeapFree did not release tracked guest allocations");
@@ -700,6 +728,95 @@ int main(int argc, char** argv) {
         require(invoke_import(module, get_module_handle_a,
                               {image.image_base + 0x2de0}) == 0xe0000000,
                 "GetModuleHandleA did not resolve an imported module name");
+        uint32_t dynamic_api_string_address = 0x00034000;
+        const auto resolve_kernel32_api = [&](const char* name) {
+            const size_t length = std::strlen(name) + 1;
+            const auto* bytes = reinterpret_cast<const uint8_t*>(name);
+            for (size_t offset = 0; offset < length; offset += 16) {
+                const size_t chunk = std::min<size_t>(16, length - offset);
+                require(module.write_guest("ram",
+                                           dynamic_api_string_address + offset,
+                                           chunk, bytes + offset),
+                        std::string("could not write ") + name +
+                            " lookup name");
+            }
+            const uint32_t address = invoke_import(
+                module, 0xf00000e0,
+                {0xe0000000, dynamic_api_string_address});
+            dynamic_api_string_address +=
+                static_cast<uint32_t>((length + 15) & ~size_t(15));
+            require(address != 0,
+                    std::string("GetProcAddress did not resolve ") + name);
+            return address;
+        };
+        const uint32_t create_thread_api = resolve_kernel32_api("CreateThread");
+        const uint32_t suspend_thread_api = resolve_kernel32_api("SuspendThread");
+        const uint32_t resume_thread_api = resolve_kernel32_api("ResumeThread");
+        const uint32_t exit_code_thread_api =
+            resolve_kernel32_api("GetExitCodeThread");
+        const uint32_t thread_priority_api =
+            resolve_kernel32_api("SetThreadPriority");
+        const uint32_t get_thread_priority_api =
+            resolve_kernel32_api("GetThreadPriority");
+        const uint32_t wait_thread_api =
+            resolve_kernel32_api("WaitForSingleObject");
+        const uint32_t close_thread_api = resolve_kernel32_api("CloseHandle");
+        const uint32_t exit_thread_api = resolve_kernel32_api("ExitThread");
+        constexpr uint32_t thread_id_address = 0x00034200;
+        constexpr uint32_t thread_exit_code_address = 0x00034204;
+        write_guest_u32(module, "ram", 0x00034208, exit_thread_api);
+        write_guest_u32(module, "ram", 0x0003420c, 0);
+        const uint32_t guest_thread = invoke_import(
+            module, create_thread_api,
+            {0, 0, 0x0040c000, 0x12345678, 0x4, thread_id_address});
+        require(guest_thread != 0 &&
+                    read_guest_u32(module, "ram", thread_id_address) != 0 &&
+                    invoke_import(module, wait_thread_api,
+                                  {guest_thread, 0}) == 0x102 &&
+                    invoke_import(module, exit_code_thread_api,
+                                  {guest_thread, thread_exit_code_address}) == 1 &&
+                    read_guest_u32(module, "ram", thread_exit_code_address) ==
+                        259,
+                "CreateThread did not preserve a suspended guest thread");
+        require(invoke_import(module, thread_priority_api,
+                              {guest_thread, 2}) == 1 &&
+                    invoke_import(module, get_thread_priority_api,
+                                  {guest_thread}) == 2 &&
+                    invoke_import(module, suspend_thread_api,
+                                  {guest_thread}) == 1 &&
+                    invoke_import(module, resume_thread_api,
+                                  {guest_thread}) == 2 &&
+                    read_guest_u32(module, "ram", thread_exit_code_address) ==
+                        259 &&
+                    invoke_import(module, resume_thread_api,
+                                  {guest_thread}) == 1 &&
+                    invoke_import(module, exit_code_thread_api,
+                                  {guest_thread, thread_exit_code_address}) == 1 &&
+                    read_guest_u32(module, "ram", thread_exit_code_address) ==
+                        0xbeef &&
+                    invoke_import(module, wait_thread_api,
+                                  {guest_thread, UINT32_MAX}) == 0 &&
+                    invoke_import(module, close_thread_api,
+                                  {guest_thread}) == 1,
+                "guest thread resume, return, wait or cleanup failed");
+        constexpr uint32_t exit_thread_id_address = 0x00034210;
+        const uint32_t exiting_guest_thread = invoke_import(
+            module, create_thread_api,
+            {0, 0, 0x0040c100, 0x12345678, 0x4, exit_thread_id_address});
+        require(exiting_guest_thread != 0 &&
+                    invoke_import(module, resume_thread_api,
+                                  {exiting_guest_thread}) == 1 &&
+                    invoke_import(module, exit_code_thread_api,
+                                  {exiting_guest_thread,
+                                   thread_exit_code_address}) == 1 &&
+                    read_guest_u32(module, "ram", thread_exit_code_address) ==
+                        0xbeef &&
+                    read_guest_u32(module, "ram", 0x0003420c) == 0 &&
+                    invoke_import(module, wait_thread_api,
+                                  {exiting_guest_thread, UINT32_MAX}) == 0 &&
+                    invoke_import(module, close_thread_api,
+                                  {exiting_guest_thread}) == 1,
+                "ExitThread did not stop guest execution with its requested code");
         constexpr char missing_module[] = "missing.dll";
         require(module.write_guest("ram", 0x00032300, sizeof(missing_module),
                                    reinterpret_cast<const uint8_t*>(missing_module)),
@@ -1078,8 +1195,13 @@ int main(int argc, char** argv) {
                                   multibyte_output.data()) &&
                     multibyte_output == cp1252_source,
                 "WideCharToMultiByte did not round-trip CP1252 text");
-        require(invoke_import(module, 0xf00000a0,
-                              {0x00010000, 0, 16}) == first_allocation,
+        const uint32_t reused_allocation = invoke_import(
+            module, 0xf00000a0, {0x00010000, 0, 16});
+        require((reused_allocation == first_allocation ||
+                 reused_allocation == resized_allocation ||
+                 reused_allocation == second_allocation) &&
+                    invoke_import(module, 0xf00002f0,
+                                  {0x00010000, 0, reused_allocation}) == 16,
                 "HeapAlloc did not reuse a compatible freed guest range");
         constexpr uint32_t version_info_address = 0x00032200;
         write_guest_u32(module, "ram", version_info_address, 148);
@@ -1107,7 +1229,7 @@ int main(int argc, char** argv) {
                     read_guest_u32(module, "ram", version_info_address + 152) ==
                         0x00010000,
                 "GetVersionExA did not fill OSVERSIONINFOEXA fields");
-        require(module.dispatched_function_count() == 5,
+        require(module.dispatched_function_count() == 7,
                 "direct Kernel32 calls changed the P-code function count");
 
         require(module.call(0x00405000) != 0,
@@ -1116,7 +1238,7 @@ int main(int argc, char** argv) {
                     "unimplemented PE import KERNEL32.dll!Sleep") !=
                     std::string::npos,
                 "import trap did not report its DLL and function name");
-        require(module.dispatched_function_count() == 6,
+        require(module.dispatched_function_count() == 8,
                 "P-code import caller was not dispatched");
         require(module.call(0x00407000) != 0,
                 "null FILETIME output pointer unexpectedly succeeded");
@@ -1131,7 +1253,7 @@ int main(int argc, char** argv) {
         require(esp_after_rejection ==
                     std::array<uint8_t, 4>{0x3c, 0x00, 0x03, 0x00},
                 "invalid API call changed the guest stack pointer");
-        require(module.dispatched_function_count() == 7,
+        require(module.dispatched_function_count() == 9,
                 "invalid FILETIME caller was not dispatched");
 
         require(module.call_pe32_entry_point() == 0,
@@ -1147,11 +1269,11 @@ int main(int argc, char** argv) {
                     read_guest_u16(module, "register", 0x10a2) == 0 &&
                     read_guest_u16(module, "register", 0x10a4) == 0xffff,
                 "PE32 entry point did not receive FINIT x87 state");
-        constexpr uint32_t convert_thread_to_fiber = 0xf00004c0;
-        constexpr uint32_t is_thread_a_fiber = 0xf00004d0;
+        constexpr uint32_t convert_thread_to_fiber = 0xf00004d0;
+        constexpr uint32_t is_thread_a_fiber = 0xf00004e0;
         constexpr uint32_t fiber_data = 0x12345678;
         const uint32_t current_fiber =
-            invoke_import(module, 77, {fiber_data});
+            invoke_import(module, 78, {fiber_data});
         require(current_fiber == 0x00070000 &&
                     read_guest_u32(module, "ram", 0x7ffde010) ==
                         current_fiber &&
@@ -1163,7 +1285,7 @@ int main(int argc, char** argv) {
                     read_guest_u32(module, "ram", 0x7ffde010) == current_fiber,
                 "duplicate ConvertThreadToFiber did not fail with ERROR_ALREADY_FIBER");
         constexpr uint32_t local_time_address = 0x00033000;
-        (void)invoke_import(module, 79, {local_time_address});
+        (void)invoke_import(module, 80, {local_time_address});
         const uint16_t local_year =
             read_guest_u16(module, "ram", local_time_address);
         const uint16_t local_month =
@@ -1177,7 +1299,7 @@ int main(int argc, char** argv) {
                     local_weekday <= 6 && local_day >= 1 && local_day <= 31,
                 "GetLocalTime did not write a valid SYSTEMTIME date");
         constexpr uint32_t memory_status_address = 0x00033020;
-        (void)invoke_import(module, 80, {memory_status_address});
+        (void)invoke_import(module, 81, {memory_status_address});
         const uint32_t memory_status_length =
             read_guest_u32(module, "ram", memory_status_address);
         const uint32_t memory_load =
@@ -1210,7 +1332,7 @@ int main(int argc, char** argv) {
                                   entry_point_marker.data()) &&
                     entry_point_marker == expected_entry_point_marker,
                 "supplemental PE32 entry point did not run its fixture body");
-        require(module.dispatched_function_count() == 8,
+        require(module.dispatched_function_count() == 10,
                 "supplemental P-code function was not dispatched exactly once");
         require(module.call_pe32_entry_point() != 0 &&
                     module.last_error().find("already been invoked") !=
@@ -1237,19 +1359,36 @@ int main(int argc, char** argv) {
         require(module.call(0x00402000) != 0,
                 "missing export call unexpectedly succeeded");
         require(module.last_error().find("no exported function rvi_deadbeef") !=
-                    std::string::npos,
-                "missing export did not fail with the unresolved guest address");
+                    std::string::npos &&
+                    module.last_error().find(
+                        "called from guest function 0x00402000") !=
+                        std::string::npos,
+                "missing export did not identify the unresolved address and caller");
         require(module.call(0x00403000) != 0,
                 "unhandled P-code userop unexpectedly succeeded");
         require(module.last_error().find("unhandled P-code userop index 7") !=
                     std::string::npos,
                 "unhandled P-code userop did not fail with its index");
+        require(module.last_error().find("in guest function 0x00403000") !=
+                    std::string::npos,
+                "unhandled P-code userop did not report its guest function");
         require(module.call(0x00409000) == 0,
                 "single-thread x86 LOCK/UNLOCK userops did not succeed: " +
                     module.last_error());
         require(module.call(0x0040a000) == 0,
                 "x86 RDTSC userop did not return virtual monotonic ticks: " +
                     module.last_error());
+        require(module.call(0x0040b000) == 0,
+                "x86 FCOS userop did not compute in binary80: " +
+                    module.last_error());
+        std::array<uint8_t, 10> fcos_bytes{};
+        require(module.read_guest("ram", 0x1010, fcos_bytes.size(),
+                                  fcos_bytes.data()),
+                "x86 FCOS result was not written to guest memory");
+        long double fcos_result = 0.0L;
+        std::memcpy(&fcos_result, fcos_bytes.data(), fcos_bytes.size());
+        require(std::fabs(fcos_result - std::cos(1.0L)) < 1e-18L,
+                "x86 FCOS result differed from binary80 cos(1)");
         require(module.call(0x00408000) == 0,
                 "x86 CPUID P-code userops did not return readable guest results: " +
                     module.last_error());

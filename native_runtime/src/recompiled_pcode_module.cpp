@@ -18,7 +18,9 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cfloat>
 #include <cctype>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
@@ -86,6 +88,11 @@ constexpr uint32_t kGuestTebAddress = 0x7ffde000;
 constexpr size_t kGuestTebSize = 0x1000;
 constexpr uint32_t kGuestFiberHandleBase = 0x00070000;
 constexpr uint32_t kGuestFiberHandleStride = 0x10;
+constexpr uint32_t kGuestThreadHandleBase = 0x00080000;
+constexpr uint32_t kGuestThreadHandleStride = 0x10;
+constexpr uint32_t kGuestDefaultThreadStackSize = 1024 * 1024;
+constexpr uint32_t kGuestMaximumThreadStackSize = 64 * 1024 * 1024;
+constexpr int kGuestThreadExitResult = 1;
 constexpr uint32_t kGuestCpuidScratchAddress = 0xfffffff0;
 constexpr size_t kMaximumImportDescriptors = 4096;
 constexpr size_t kMaximumImportThunksPerModule = 65536;
@@ -352,6 +359,7 @@ struct RecompiledPcodeModule::Impl {
         uint32_t address = 0;
         size_t size = 0;
         uint32_t heap = 0;
+        size_t requested_size = 0;
     };
     struct GuestCriticalSection {
         uint32_t recursion_count = 0;
@@ -370,6 +378,20 @@ struct RecompiledPcodeModule::Impl {
     };
     struct GuestFiber {
         uint32_t data = 0;
+    };
+    struct GuestThread {
+        uint32_t id = 0;
+        uint32_t start_address = 0;
+        uint32_t parameter = 0;
+        uint32_t suspend_count = 0;
+        int32_t priority = 0;
+        uint32_t exit_code = 259;
+        uint32_t last_error = 0;
+        GuestHeapBlock stack;
+        GuestHeapBlock teb;
+        bool started = false;
+        bool completed = false;
+        bool close_pending = false;
     };
 
     explicit Impl(const std::string& path) {
@@ -450,9 +472,43 @@ struct RecompiledPcodeModule::Impl {
                     .count());
             return 0;
         }
+        if (index == 100) {
+            if (!arguments || !argument_sizes || argument_count != 1 ||
+                argument_sizes[0] != 10 || !output || output_size != 10) {
+                self->error = "invalid x86 FCOS P-code userop signature";
+                return -1;
+            }
+#if (defined(__i386__) || defined(__x86_64__)) && \
+    LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384 && \
+    defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+            std::array<uint8_t, 10> input_bytes{};
+            for (size_t index = 0; index < input_bytes.size(); ++index) {
+                input_bytes[index] = static_cast<uint8_t>(
+                    arguments[index / sizeof(uint64_t)] >>
+                    ((index % sizeof(uint64_t)) * 8));
+            }
+            long double input = 0.0L;
+            std::memcpy(&input, input_bytes.data(), input_bytes.size());
+            const long double result = std::cos(input);
+            std::array<uint8_t, 10> result_bytes{};
+            std::memcpy(result_bytes.data(), &result, result_bytes.size());
+            std::memcpy(output, result_bytes.data(), result_bytes.size());
+            return 0;
+#else
+            self->error = "x86 FCOS P-code userop requires a binary80 Linux host";
+            return -1;
+#endif
+        }
         if (index < 44 || index > 60) {
             self->error = "unhandled P-code userop index " +
                           std::to_string(index);
+            if (!self->active_guest_functions.empty()) {
+                char address[40]{};
+                std::snprintf(address, sizeof(address),
+                              " in guest function 0x%08x",
+                              self->active_guest_functions.back());
+                self->error += address;
+            }
             return -1;
         }
         if (!arguments || !argument_sizes || argument_count != 1 ||
@@ -515,6 +571,13 @@ struct RecompiledPcodeModule::Impl {
         if (!function) {
             error = "P-code module has no exported function " +
                     std::string(symbol);
+            if (!active_guest_functions.empty()) {
+                char caller[48]{};
+                std::snprintf(caller, sizeof(caller),
+                              " called from guest function 0x%08x",
+                              active_guest_functions.back());
+                error += caller;
+            }
             return nullptr;
         }
         functions.emplace(address, function);
@@ -570,6 +633,16 @@ struct RecompiledPcodeModule::Impl {
                 return set_priority_class();
             if (name == "KERNEL32.dll!SetThreadPriority")
                 return set_thread_priority();
+            if (name == "KERNEL32.dll!CreateThread")
+                return create_thread();
+            if (name == "KERNEL32.dll!ResumeThread")
+                return resume_thread();
+            if (name == "KERNEL32.dll!SuspendThread")
+                return suspend_thread();
+            if (name == "KERNEL32.dll!GetExitCodeThread")
+                return get_exit_code_thread();
+            if (name == "KERNEL32.dll!ExitThread")
+                return exit_thread();
             if (name == "KERNEL32.dll!GetCurrentThreadId")
                 return get_current_thread_id();
             if (name == "KERNEL32.dll!GetTickCount")
@@ -626,6 +699,8 @@ struct RecompiledPcodeModule::Impl {
                 return heap_create();
             if (name == "KERNEL32.dll!HeapAlloc")
                 return heap_alloc();
+            if (name == "KERNEL32.dll!HeapReAlloc")
+                return heap_realloc();
             if (name == "KERNEL32.dll!HeapSize")
                 return heap_size();
             if (name == "KERNEL32.dll!HeapFree")
@@ -774,6 +849,10 @@ struct RecompiledPcodeModule::Impl {
         const int result = function(&context);
         active_guest_functions.pop_back();
         --call_depth;
+        if (current_guest_thread_handle != 0 &&
+            current_guest_thread_exit_requested) {
+            return kGuestThreadExitResult;
+        }
         if (result != 0 && error.empty()) {
             char message[96]{};
             std::snprintf(message, sizeof(message),
@@ -977,6 +1056,8 @@ struct RecompiledPcodeModule::Impl {
             "GetCurrentProcess", "GetPriorityClass", "GetCurrentProcessId",
             "GetCurrentThread", "GetThreadPriority", "SetPriorityClass",
             "SetThreadPriority", "GetCurrentThreadId", "GetTickCount",
+            "CreateThread", "ResumeThread", "SuspendThread",
+            "GetExitCodeThread", "ExitThread",
             "GetLocalTime",
             "ConvertThreadToFiber", "IsThreadAFiber",
             "GlobalMemoryStatus",
@@ -989,7 +1070,7 @@ struct RecompiledPcodeModule::Impl {
             "VirtualAlloc", "VirtualFree",
             "CloseHandle",
             "CreateFileA", "GetFileSize", "ReadFile",
-            "HeapCreate", "HeapAlloc", "HeapSize", "HeapFree", "GetVersionExA",
+            "HeapCreate", "HeapAlloc", "HeapReAlloc", "HeapSize", "HeapFree", "GetVersionExA",
             "SetUnhandledExceptionFilter", "GetModuleHandleA",
             "GetModuleFileNameA", "GetProcAddress",
             "TlsAlloc", "TlsGetValue",
@@ -1461,12 +1542,17 @@ struct RecompiledPcodeModule::Impl {
         constexpr const char* api = "KERNEL32.dll!GetThreadPriority";
         uint32_t thread_handle = 0;
         if (!read_stack_argument(0, thread_handle, api)) return -1;
-        if (thread_handle != kGuestCurrentThreadPseudoHandle) {
+        if (thread_handle == kGuestCurrentThreadPseudoHandle)
+            return return_kernel32_dword(
+                static_cast<uint32_t>(guest_thread_priority), api,
+                sizeof(uint32_t));
+        const auto thread = guest_threads.find(thread_handle);
+        if (thread == guest_threads.end()) {
             guest_last_error = 6;
             return return_kernel32_dword(0x7fffffffu, api, sizeof(uint32_t));
         }
         return return_kernel32_dword(
-            static_cast<uint32_t>(guest_thread_priority), api,
+            static_cast<uint32_t>(thread->second.priority), api,
             sizeof(uint32_t));
     }
 
@@ -1502,10 +1588,6 @@ struct RecompiledPcodeModule::Impl {
             !read_stack_argument(1, priority_word, api)) {
             return -1;
         }
-        if (thread_handle != kGuestCurrentThreadPseudoHandle) {
-            guest_last_error = 6;
-            return return_kernel32_dword(0, api, 2 * sizeof(uint32_t));
-        }
         const int32_t priority = static_cast<int32_t>(priority_word);
         constexpr std::array<int32_t, 7> valid_priorities = {
             -15, -2, -1, 0, 1, 2, 15};
@@ -1514,8 +1596,264 @@ struct RecompiledPcodeModule::Impl {
             guest_last_error = 87;
             return return_kernel32_dword(0, api, 2 * sizeof(uint32_t));
         }
-        guest_thread_priority = priority;
+        if (thread_handle == kGuestCurrentThreadPseudoHandle) {
+            guest_thread_priority = priority;
+        } else {
+            const auto thread = guest_threads.find(thread_handle);
+            if (thread == guest_threads.end()) {
+                guest_last_error = 6;
+                return return_kernel32_dword(0, api, 2 * sizeof(uint32_t));
+            }
+            thread->second.priority = priority;
+        }
         return return_kernel32_dword(1, api, 2 * sizeof(uint32_t));
+    }
+
+    void release_guest_thread_blocks(const GuestThread& thread) {
+        for (const auto& block : {thread.stack, thread.teb}) {
+            const auto allocation = heap_allocations.find(block.address);
+            if (allocation == heap_allocations.end()) continue;
+            free_heap_blocks.push_back(allocation->second);
+            heap_allocations.erase(allocation);
+        }
+    }
+
+    bool initialize_guest_thread_teb(const GuestThread& thread) {
+        std::memset(static_cast<uint8_t*>(ram) + thread.teb.address, 0,
+                    kGuestTebSize);
+        const uint32_t stack_top = thread.stack.address +
+                                   static_cast<uint32_t>(thread.stack.size);
+        return write_guest_u32("ram", thread.teb.address, UINT32_MAX) &&
+               write_guest_u32("ram", thread.teb.address + 4, stack_top) &&
+               write_guest_u32("ram", thread.teb.address + 8,
+                               thread.stack.address) &&
+               write_guest_u32("ram", thread.teb.address + 0x18,
+                               thread.teb.address) &&
+               write_guest_u32("ram", thread.teb.address + 0x20,
+                               static_cast<uint32_t>(getpid())) &&
+               write_guest_u32("ram", thread.teb.address + 0x24,
+                               thread.id);
+    }
+
+    bool run_guest_thread(uint32_t handle) {
+        const auto found = guest_threads.find(handle);
+        if (found == guest_threads.end()) return false;
+        GuestThread& thread = found->second;
+        if (thread.started || thread.completed) return true;
+        thread.started = true;
+
+        const auto saved_registers = registers;
+        const uint32_t saved_thread_id = current_guest_thread_id;
+        const uint32_t saved_thread_handle = current_guest_thread_handle;
+        const uint32_t saved_fiber = current_guest_fiber;
+        const uint32_t saved_exit_code = current_guest_thread_exit_code;
+        const bool saved_exit_requested = current_guest_thread_exit_requested;
+        const uint32_t saved_last_error = guest_last_error;
+        const int32_t saved_priority = guest_thread_priority;
+
+        registers.fill(0);
+        current_guest_thread_id = thread.id;
+        current_guest_thread_handle = handle;
+        current_guest_fiber = 0;
+        current_guest_thread_exit_code = 259;
+        current_guest_thread_exit_requested = false;
+        guest_last_error = thread.last_error;
+        guest_thread_priority = thread.priority;
+
+        const uint32_t stack_top = thread.stack.address +
+                                   static_cast<uint32_t>(thread.stack.size);
+        bool initialized = initialize_guest_thread_teb(thread) &&
+            write_guest_u32("register", kX86FsBaseRegisterOffset,
+                            thread.teb.address) &&
+            write_guest_u32("register", kX86EspRegisterOffset,
+                            stack_top - 8) &&
+            write_guest_u32("register", kX86EbpRegisterOffset, 0) &&
+            write_guest_u32("ram", stack_top - 8, 0) &&
+            write_guest_u32("ram", stack_top - 4, thread.parameter);
+        constexpr std::array<uint8_t, 6> x87_environment = {
+            0x7f, 0x03, 0x00, 0x00, 0xff, 0xff};
+        initialized = initialized && write_guest(
+            "register", kX86X87EnvironmentRegisterOffset,
+            x87_environment.size(), x87_environment.data());
+        int result = -1;
+        if (initialized) {
+            result = dispatch(thread.start_address);
+        } else if (error.empty()) {
+            error = "cannot initialize guest thread context";
+        }
+
+        uint32_t returned_code = 0;
+        const bool exited = current_guest_thread_exit_requested;
+        if (result == 0 && !exited &&
+            !read_guest_u32("register", kX86EaxRegisterOffset,
+                            returned_code)) {
+            result = -1;
+        }
+        thread.exit_code = exited
+                               ? current_guest_thread_exit_code
+                               : returned_code;
+        thread.last_error = guest_last_error;
+        thread.completed = true;
+        thread.suspend_count = 0;
+        const bool close_pending = thread.close_pending;
+
+        registers = saved_registers;
+        current_guest_thread_id = saved_thread_id;
+        current_guest_thread_handle = saved_thread_handle;
+        current_guest_fiber = saved_fiber;
+        current_guest_thread_exit_code = saved_exit_code;
+        current_guest_thread_exit_requested = saved_exit_requested;
+        guest_last_error = saved_last_error;
+        guest_thread_priority = saved_priority;
+        if (close_pending) {
+            release_guest_thread_blocks(thread);
+            guest_threads.erase(handle);
+        }
+        return result == 0 ||
+               (exited && result == kGuestThreadExitResult);
+    }
+
+    int create_thread() {
+        constexpr const char* api = "KERNEL32.dll!CreateThread";
+        uint32_t security_attributes = 0;
+        uint32_t stack_size = 0;
+        uint32_t start_address = 0;
+        uint32_t parameter = 0;
+        uint32_t flags = 0;
+        uint32_t thread_id_address = 0;
+        if (!read_stack_argument(0, security_attributes, api) ||
+            !read_stack_argument(1, stack_size, api) ||
+            !read_stack_argument(2, start_address, api) ||
+            !read_stack_argument(3, parameter, api) ||
+            !read_stack_argument(4, flags, api) ||
+            !read_stack_argument(5, thread_id_address, api)) {
+            return -1;
+        }
+        (void)security_attributes;
+        if (start_address == 0 || (flags & ~UINT32_C(0x00010004)) != 0 ||
+            (thread_id_address != 0 &&
+             !valid_guest_pointer(thread_id_address, sizeof(uint32_t)))) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 24);
+        }
+        if (stack_size > kGuestMaximumThreadStackSize) {
+            guest_last_error = 8;
+            return return_kernel32_dword(0, api, 24);
+        }
+        if (next_guest_thread_handle >
+                UINT32_MAX - kGuestThreadHandleStride ||
+            next_guest_thread_id == UINT32_MAX) {
+            guest_last_error = 8;
+            return return_kernel32_dword(0, api, 24);
+        }
+        const size_t effective_stack_size = stack_size == 0
+            ? kGuestDefaultThreadStackSize
+            : std::max<uint32_t>(stack_size, 16 * 1024);
+        uint32_t stack_address = 0;
+        if (!allocate_guest_heap(kGuestProcessHeapHandle,
+                                 effective_stack_size, stack_address)) {
+            guest_last_error = 8;
+            return return_kernel32_dword(0, api, 24);
+        }
+        uint32_t teb_address = 0;
+        if (!allocate_guest_heap(kGuestProcessHeapHandle, kGuestTebSize,
+                                 teb_address)) {
+            const auto stack = heap_allocations.find(stack_address);
+            if (stack != heap_allocations.end()) {
+                free_heap_blocks.push_back(stack->second);
+                heap_allocations.erase(stack);
+            }
+            guest_last_error = 8;
+            return return_kernel32_dword(0, api, 24);
+        }
+
+        const uint32_t handle = next_guest_thread_handle;
+        next_guest_thread_handle += kGuestThreadHandleStride;
+        GuestThread thread{};
+        thread.id = next_guest_thread_id++;
+        thread.start_address = start_address;
+        thread.parameter = parameter;
+        thread.suspend_count = (flags & 0x4) != 0 ? 1 : 0;
+        thread.stack = heap_allocations.at(stack_address);
+        thread.teb = heap_allocations.at(teb_address);
+        if (!initialize_guest_thread_teb(thread)) return -1;
+        if (thread_id_address != 0 &&
+            !write_guest_u32("ram", thread_id_address, thread.id)) {
+            return -1;
+        }
+        guest_threads.emplace(handle, thread);
+        if (thread.suspend_count == 0 && !run_guest_thread(handle))
+            return -1;
+        return return_kernel32_dword(handle, api, 24);
+    }
+
+    int resume_thread() {
+        constexpr const char* api = "KERNEL32.dll!ResumeThread";
+        uint32_t handle = 0;
+        if (!read_stack_argument(0, handle, api)) return -1;
+        const auto thread = guest_threads.find(handle);
+        if (thread == guest_threads.end()) {
+            guest_last_error = 6;
+            return return_kernel32_dword(UINT32_MAX, api, 4);
+        }
+        const uint32_t previous = thread->second.suspend_count;
+        if (previous != 0) --thread->second.suspend_count;
+        if (thread->second.suspend_count == 0 && !thread->second.started &&
+            !run_guest_thread(handle)) {
+            return -1;
+        }
+        return return_kernel32_dword(previous, api, 4);
+    }
+
+    int suspend_thread() {
+        constexpr const char* api = "KERNEL32.dll!SuspendThread";
+        uint32_t handle = 0;
+        if (!read_stack_argument(0, handle, api)) return -1;
+        const auto thread = guest_threads.find(handle);
+        if (thread == guest_threads.end() || thread->second.completed ||
+            thread->second.suspend_count == UINT32_MAX) {
+            guest_last_error = thread == guest_threads.end() ? 6 : 298;
+            return return_kernel32_dword(UINT32_MAX, api, 4);
+        }
+        const uint32_t previous = thread->second.suspend_count++;
+        return return_kernel32_dword(previous, api, 4);
+    }
+
+    int get_exit_code_thread() {
+        constexpr const char* api = "KERNEL32.dll!GetExitCodeThread";
+        uint32_t handle = 0;
+        uint32_t exit_code_address = 0;
+        if (!read_stack_argument(0, handle, api) ||
+            !read_stack_argument(1, exit_code_address, api)) {
+            return -1;
+        }
+        const auto thread = guest_threads.find(handle);
+        if (thread == guest_threads.end()) {
+            guest_last_error = 6;
+            return return_kernel32_dword(0, api, 8);
+        }
+        if (!valid_guest_pointer(exit_code_address, sizeof(uint32_t)) ||
+            !write_guest_u32("ram", exit_code_address,
+                             thread->second.completed
+                                 ? thread->second.exit_code
+                                 : UINT32_C(259))) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 8);
+        }
+        return return_kernel32_dword(1, api, 8);
+    }
+
+    int exit_thread() {
+        constexpr const char* api = "KERNEL32.dll!ExitThread";
+        uint32_t exit_code = 0;
+        if (!read_stack_argument(0, exit_code, api)) return -1;
+        if (!finish_stdcall(4, api)) return -1;
+        if (current_guest_thread_handle != 0) {
+            current_guest_thread_exit_code = exit_code;
+            current_guest_thread_exit_requested = true;
+            return kGuestThreadExitResult;
+        }
+        return 0;
     }
 
     int get_process_heap() {
@@ -1591,6 +1929,14 @@ struct RecompiledPcodeModule::Impl {
 
     uint32_t wait_guest_object(uint32_t handle, uint32_t timeout_ms,
                                const char* api) {
+        const auto thread = guest_threads.find(handle);
+        if (thread != guest_threads.end()) {
+            if (thread->second.completed) return 0;
+            // ponytail: guest threads run synchronously on resume; return a
+            // timeout for unscheduled threads instead of blocking the host.
+            (void)timeout_ms;
+            return 0x00000102;
+        }
         const auto mutex = guest_mutexes.find(handle);
         if (mutex != guest_mutexes.end()) {
             if (mutex->second.recursion_count == UINT32_MAX) {
@@ -1689,6 +2035,17 @@ struct RecompiledPcodeModule::Impl {
             if (::close(descriptor) != 0) {
                 guest_last_error = 6;
                 return return_kernel32_dword(0, api, 4);
+            }
+            return return_kernel32_dword(1, api, 4);
+        }
+        const auto thread = guest_threads.find(handle);
+        if (thread != guest_threads.end()) {
+            if (handle == current_guest_thread_handle &&
+                !thread->second.completed) {
+                thread->second.close_pending = true;
+            } else {
+                release_guest_thread_blocks(thread->second);
+                guest_threads.erase(thread);
             }
             return return_kernel32_dword(1, api, 4);
         }
@@ -2976,7 +3333,8 @@ struct RecompiledPcodeModule::Impl {
             }
             address = block_address;
             heap_allocations.emplace(address, GuestHeapBlock{
-                address, static_cast<size_t>(allocation_size), heap});
+                address, static_cast<size_t>(allocation_size), heap,
+                requested_size});
             return true;
         }
         uint64_t candidate =
@@ -3019,7 +3377,8 @@ struct RecompiledPcodeModule::Impl {
             address = static_cast<uint32_t>(candidate);
             guest_heap_next_address = candidate + allocation_size;
             heap_allocations.emplace(address, GuestHeapBlock{
-                address, static_cast<size_t>(allocation_size), heap});
+                address, static_cast<size_t>(allocation_size), heap,
+                requested_size});
             return true;
         }
         return false;
@@ -3157,6 +3516,63 @@ struct RecompiledPcodeModule::Impl {
         return finish_stdcall(12, api) ? 0 : -1;
     }
 
+    int heap_realloc() {
+        constexpr const char* api = "KERNEL32.dll!HeapReAlloc";
+        uint32_t heap = 0;
+        uint32_t flags = 0;
+        uint32_t address = 0;
+        uint32_t size = 0;
+        if (!read_stack_argument(0, heap, api) ||
+            !read_stack_argument(1, flags, api) ||
+            !read_stack_argument(2, address, api) ||
+            !read_stack_argument(3, size, api)) {
+            return -1;
+        }
+        if ((flags & ~UINT32_C(0x1d)) != 0 ||
+            guest_heap_handles.find(heap) == guest_heap_handles.end()) {
+            return return_kernel32_dword(0, api, 16);
+        }
+        auto allocation = heap_allocations.find(address);
+        if (address == 0 || allocation == heap_allocations.end() ||
+            allocation->second.heap != heap) {
+            return return_kernel32_dword(0, api, 16);
+        }
+
+        const uint64_t requested_size = std::max<uint32_t>(size, 1);
+        const uint64_t allocation_size = (requested_size + 15) & ~UINT64_C(15);
+        if (allocation_size <= allocation->second.size) {
+            if ((flags & 0x8) != 0 && size > allocation->second.requested_size) {
+                std::memset(static_cast<uint8_t*>(ram) + address +
+                                allocation->second.requested_size,
+                            0, size - allocation->second.requested_size);
+            }
+            allocation->second.requested_size = size;
+            return return_kernel32_dword(address, api, 16);
+        }
+        if ((flags & 0x10) != 0) {
+            return return_kernel32_dword(0, api, 16);
+        }
+
+        uint32_t replacement = 0;
+        if (!allocate_guest_heap(heap, size, replacement)) {
+            return return_kernel32_dword(0, api, 16);
+        }
+        const size_t bytes_to_copy = std::min<size_t>(
+            allocation->second.requested_size, size);
+        if (bytes_to_copy != 0) {
+            std::memcpy(static_cast<uint8_t*>(ram) + replacement,
+                        static_cast<uint8_t*>(ram) + address, bytes_to_copy);
+        }
+        if ((flags & 0x8) != 0 && size > bytes_to_copy) {
+            std::memset(static_cast<uint8_t*>(ram) + replacement +
+                            bytes_to_copy,
+                        0, size - bytes_to_copy);
+        }
+        free_heap_blocks.push_back(allocation->second);
+        heap_allocations.erase(allocation);
+        return return_kernel32_dword(replacement, api, 16);
+    }
+
     int heap_size() {
         constexpr const char* api = "KERNEL32.dll!HeapSize";
         uint32_t heap = 0;
@@ -3276,12 +3692,15 @@ struct RecompiledPcodeModule::Impl {
     }
 
     int get_current_thread_id() {
-        const long thread_id = syscall(SYS_gettid);
-        if (thread_id < 0) {
-            error = "KERNEL32.dll!GetCurrentThreadId host syscall failed";
-            return -1;
+        if (current_guest_thread_id == 0) {
+            const long thread_id = syscall(SYS_gettid);
+            if (thread_id < 0) {
+                error = "KERNEL32.dll!GetCurrentThreadId host syscall failed";
+                return -1;
+            }
+            current_guest_thread_id = static_cast<uint32_t>(thread_id);
         }
-        return return_kernel32_dword(static_cast<uint32_t>(thread_id),
+        return return_kernel32_dword(current_guest_thread_id,
                                      "KERNEL32.dll!GetCurrentThreadId");
     }
 
@@ -3737,6 +4156,14 @@ struct RecompiledPcodeModule::Impl {
         store_teb_u32(0x04, kGuestInitialStackPointer);
         store_teb_u32(0x08, kGuestStackLimit);
         store_teb_u32(0x18, kGuestTebAddress);
+        const long host_thread_id = syscall(SYS_gettid);
+        if (host_thread_id < 0) {
+            error = "cannot initialize guest thread identity";
+            return false;
+        }
+        current_guest_thread_id = static_cast<uint32_t>(host_thread_id);
+        store_teb_u32(0x20, static_cast<uint32_t>(getpid()));
+        store_teb_u32(0x24, current_guest_thread_id);
 
         constexpr std::array<uint8_t, 4> fs_base_bytes = {
             static_cast<uint8_t>(kGuestTebAddress),
@@ -3872,6 +4299,7 @@ struct RecompiledPcodeModule::Impl {
     std::unordered_map<uint32_t, GuestFile> guest_files;
     std::unordered_map<uint32_t, GuestEvent> guest_events;
     std::unordered_map<uint32_t, GuestFiber> guest_fibers;
+    std::unordered_map<uint32_t, GuestThread> guest_threads;
     std::unordered_map<uint32_t, uint32_t> guest_timer_period_requests;
     std::unordered_map<uint32_t, uint64_t> guest_virtual_allocations;
     std::unordered_map<std::string, uint32_t> guest_named_mutexes;
@@ -3885,6 +4313,10 @@ struct RecompiledPcodeModule::Impl {
     uint32_t guest_last_error = 0;
     uint32_t guest_process_priority_class = 0x00000020;
     int32_t guest_thread_priority = 0;
+    uint32_t current_guest_thread_id = 0;
+    uint32_t current_guest_thread_handle = 0;
+    uint32_t current_guest_thread_exit_code = 259;
+    bool current_guest_thread_exit_requested = false;
     uint32_t guest_symbol_options = 0;
     uint32_t guest_symbol_process_handle = 0;
     bool guest_symbol_handler_initialized = false;
@@ -3897,6 +4329,8 @@ struct RecompiledPcodeModule::Impl {
     uint64_t next_guest_file_handle = kGuestFileHandleBase;
     uint64_t next_guest_event_handle = kGuestEventHandleBase;
     uint32_t next_guest_fiber_handle = kGuestFiberHandleBase;
+    uint32_t next_guest_thread_id = 0x00010000;
+    uint32_t next_guest_thread_handle = kGuestThreadHandleBase;
     uint32_t current_guest_fiber = 0;
     uint64_t next_dynamic_import_stub_address =
         kGuestDynamicImportStubBase;
