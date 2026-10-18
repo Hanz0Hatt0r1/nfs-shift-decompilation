@@ -1,0 +1,54 @@
+{
+  "format": "NFS.RevenginstrArm64PcodeLoweringFixture/1",
+  "consumer": "Need For Speed: SHIFT PC retail 1.02",
+  "date": "2026-10-18",
+  "revenginstr": {
+    "repository": "Hanz0Hatt0r1/revenginstr",
+    "pull_request": 130,
+    "pull_request_url": "https://github.com/Hanz0Hatt0r1/revenginstr/pull/130",
+    "pull_request_head": "6c3b5aef5ded4cc781f58747428499c1aa00868c",
+    "merge_commit": "432b528f9c3db36dda50c846aafe5afb3c141204"
+  },
+  "github_actions": {
+    "run_id": 39127025065,
+    "run_url": "https://github.com/Hanz0Hatt0r1/revenginstr/actions/runs/39127025065",
+    "head_sha": "6c3b5aef5ded4cc781f58747428499c1aa00868c",
+    "python_job": {
+      "result": "success",
+      "url": "https://github.com/Hanz0Hatt0r1/revenginstr/actions/runs/39127025065/job/117674188537"
+    },
+    "arm64_job": {
+      "result": "success",
+      "runner": "ubuntu-24.04-arm",
+      "command": "pytest -q tests/test_pcode_c_lowering.py",
+      "url": "https://github.com/Hanz0Hatt0r1/revenginstr/actions/runs/39127025065/job/117674188634",
+      "tests_passed": 22,
+      "tests_skipped": 1,
+      "skip_reason": "The x86-only FWAIT fixture is not executable on ARM64."
+    }
+  },
+  "local_validation": {
+    "focused_pcode_tests": "23 passed",
+    "full_revenginstr_suite": "465 passed",
+    "python_compileall": "passed",
+    "git_diff_check": "passed"
+  },
+  "fixture_operations": [
+    "binary32/binary64 conversion to and from binary80",
+    "binary80 arithmetic and comparison",
+    "minimum binary80 subnormal addition",
+    "register and memory callbacks",
+    "integer truncation",
+    "fail-closed rejection of unnormal binary80 encodings"
+  ],
+  "nfs_ci_pin": {
+    "path": ".github/workflows/ci.yml",
+    "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924"
+  },
+  "limitations": [
+    "This is a synthetic P-code fixture, not a build or execution of the full 41,538-function corpus on ARM64.",
+    "The retail guest x87 control state is not yet mapped to the ARM64 host floating-point environment.",
+    "Rare double-rounding cases on hosts with more than 64 significand bits may differ from native x87.",
+    "No retail startup, frontend, race, or Android runtime behavior is established by this fixture."
+  ]
+}

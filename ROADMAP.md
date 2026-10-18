@@ -81,7 +81,7 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 | D3D9 capture tooling | **Available for retail renderer evidence** |
 | Complete D3D9 -> Vulkan game backend | **Not implemented** |
 | Host-architecture-neutral runtime | **Not yet proven** |
-| ARM64 lowered-runtime execution | **Not yet proven** |
+| ARM64 lowered-runtime execution | **Generic P-code fixture passes; full corpus/runtime not yet proven** |
 | Android platform layer | **Not implemented** |
 | Retail entry-point completion | **Not yet proven; v66 reaches the same allocator failure, with the request traced to `FUN_0062f2d0` and a null nested-field lead** |
 | Game main loop | **Not yet proven** |
@@ -90,6 +90,12 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 | Android gameplay | **Not reached** |
 
 The cooperative guest-thread scheduler has been exercised by the real retail entry point together with the complete **41,538-export** lowered P-code ELF. Probes v40–v42 added exact instruction/P-code supplements for `rvi_006408e2`, `rvi_00a69220`, and `rvi_006476e0`; probes v43–v44 added the required `DeleteFileA` and `SleepEx` runtime behavior. With the retail game-data directory as the working directory, probes v65-v66 reached **61,307 guest dispatches across 1,325 unique functions**. `FUN_00638020` first tries `Base System`, then tries `Game`, `Overflow`, and `FMOD`; every captured selected list is too small for the **254,529,224-byte (about 242.74 MiB)** request with flags `0x80`. The Base System object's selected `+0x104` list ends after five nodes at `0x27f88dbc`; its largest compared field is `0x07beed0c` (129,953,036 bytes). Static and runtime evidence trace the request to `FUN_0062f2d0` through `0x00886900`. The caller `FUN_00d8a600` loads a zero field at `0x00bdb560+0x18` into `ECX` before calling `FUN_0062f6f0`; that path reaches the oversized request. This points to a missing or corrupted nested object, but does not identify the first initialization/P-code operation responsible. The guest RAM model now rejects reads and writes below `0x00010000`, preventing low-page dereferences from silently continuing as valid guest memory. The native runtime build, its P-code module CTest and the focused exporter/runtime pytest set pass. A full retail replay after the low-memory correction remains pending because the generated `libnfs_shift_pcode_startup_20261018.so` is absent from this local workspace; the latest listed Actions artifacts are only Linux smoke and Win32 proxy bundles. See the [v65 attempt log](evidence/recompiled_pcode_android_retail_frontier_v65_pool_fallback_attempts_20261018.log), [v66 list log](evidence/recompiled_pcode_android_retail_frontier_v66_pool_fallback_lists_20261018.log), [request-origin analysis](evidence/recompiled_pcode_android_retail_frontier_v67_pool_request_origin_20261018.md), and [machine-readable frontier record](evidence/recompiled_pcode_android_retail_frontier_20261018.json). This remains a startup frontier: entry-point completion, the main loop, and playable behavior have not been demonstrated. The installed retail data directory is `/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02`; its `SHIFT.exe` SHA-256 matches the analyzed image.
+
+The generic `revenginstr` binary80 lowering now executes a synthetic P-code
+fixture on ARM64 CI (22 passed, one x86-only `FWAIT` test skipped). This covers
+the codec and representative operations only; it does not validate the full
+SHIFT corpus, guest x87-state mapping, exact wide-host rounding, or retail
+startup. See the [cross-host fixture evidence](evidence/pcode_native_lowering_arm64_binary80_20261018.json).
 
 The current immediate execution frontier is:
 

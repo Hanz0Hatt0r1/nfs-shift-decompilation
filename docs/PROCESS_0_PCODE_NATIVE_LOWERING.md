@@ -107,3 +107,20 @@ sections at the preferred base; its scope and limits are recorded in
 [`RECOMPILED_PCODE_VULKAN_PE32_LOADER.md`](RECOMPILED_PCODE_VULKAN_PE32_LOADER.md).
 Game startup, relocations, imported platform services, retail initialization,
 and behavioral parity remain open.
+
+## ARM64 binary80 fixture — 2026-10-18
+
+`revenginstr` PR #130 added a host-layout-independent 10-byte binary80
+codec and a native ARM64 test job. The generated P-code fixture passed on
+`ubuntu-24.04-arm` in the upstream `revenginstr` CI. The NFS consumer CI
+remains pinned to `08a31b94c304f8b7a57996974dafe352413f7924`, the revision
+recorded by its existing full-lowering build evidence; this fixture does not
+claim that the full game module was rebuilt against PR #130. The fixture
+passed with 22 tests passing and one x86-only `FWAIT` test skipped. It exercises binary80
+conversion, arithmetic, subnormal handling, comparison, memory callbacks,
+truncation, and fail-closed handling of unnormal encodings. The full
+x86-32/ELF corpus count above is unchanged and does not prove that all lowered
+functions compile or run on ARM64. Guest x87 control-state mapping and rare
+double-rounding differences on wider `long double` hosts remain open. Exact
+run and commit evidence is in
+[`evidence/pcode_native_lowering_arm64_binary80_20261018.json`](../evidence/pcode_native_lowering_arm64_binary80_20261018.json).
