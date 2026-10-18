@@ -2142,6 +2142,9 @@ int main(int argc, char** argv) {
                     !pending_entrypoint_state.entry_point_complete &&
                     pending_entrypoint_state.main_thread_started &&
                     !pending_entrypoint_state.main_thread_completed &&
+                    !pending_entrypoint_state.main_thread_call_stack.empty() &&
+                    pending_entrypoint_state.main_thread_call_stack.back() ==
+                        pending_entrypoint_state.main_thread_current_function &&
                     read_guest_u32(module, "ram", 0x00032c10) == 0x1234 &&
                     read_guest_u32(module, "ram", 0x00032c14) != 0,
                 "cooperative scheduler did not yield after resuming a guest worker");

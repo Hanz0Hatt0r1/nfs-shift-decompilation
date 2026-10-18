@@ -6833,6 +6833,7 @@ struct RecompiledPcodeModule::Impl {
             main_guest_thread.exit_requested;
         snapshot.main_thread_wait_handle = main_guest_thread.wait_handle;
         snapshot.main_thread_wait_result = main_guest_thread.wait_result;
+        snapshot.main_thread_call_stack = main_guest_thread.active_functions;
         if (!main_guest_thread.active_functions.empty()) {
             snapshot.main_thread_current_function =
                 main_guest_thread.active_functions.back();

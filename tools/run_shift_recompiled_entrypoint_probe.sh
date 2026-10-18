@@ -32,6 +32,12 @@ log_path=$6
 log_directory=$(dirname -- "$log_path")
 mkdir -p "$log_directory"
 log_path="$(cd "$log_directory" && pwd)/$(basename -- "$log_path")"
+pcode_module=${SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE:-"$artifact_root/libnfs_shift_pcode_startup_20261018.so"}
+if [[ ! -r "$pcode_module" ]]; then
+  printf 'probe P-code module is not readable: %s\n' "$pcode_module" >&2
+  exit 2
+fi
+pcode_module=$(realpath -- "$pcode_module")
 
 cd "$game_data_root"
 
@@ -40,13 +46,12 @@ if [[ ! -r "$mesh_source" ]]; then
   printf 'probe mesh is not readable: %s\n' "$mesh_source" >&2
   exit 2
 fi
-
 # /dev/null is enough to isolate guest entry-point behavior. Supply an MGEO
 # file through SHIFT_ENTRYPOINT_PROBE_MESH to continue into the Vulkan loop.
 probe_args=(
   --mesh "$mesh_source"
   --shader-dir "$build_root/shaders"
-  --recompiled-module "$artifact_root/libnfs_shift_pcode_startup_20261018.so"
+  --recompiled-module "$pcode_module"
   --recompiled-override "$build_root/libnfs_shift_pcode_frontier.so"
   --recompiled-override "$artifact_root/computed-tail-dispatch-0065d140-pcode-20261018/libnfs_shift_pcode_supplement.so"
   --recompiled-supplement "$artifact_root/constructor-array-pcode-20261018-v11/libnfs_shift_pcode_supplement.so"
@@ -64,6 +69,7 @@ probe_args=(
   --recompiled-supplement "$artifact_root/function-00886c80-pcode-20261018/libnfs_shift_pcode_supplement.so"
   --recompiled-supplement "$artifact_root/function-00a69220-pcode-20261018/libnfs_shift_pcode_supplement.so"
   --recompiled-supplement "$artifact_root/libnfs_shift_pcode_rvi_00909dcd.so"
+  --recompiled-supplement "$artifact_root/libnfs_shift_pcode_rvi_00900f48.so"
   --recompiled-supplement "$artifact_root/libnfs_shift_pcode_rvi_0091577e.so"
   --recompiled-supplement "$artifact_root/libnfs_shift_pcode_rvi_00916b2d.so"
   --recompiled-supplement "$artifact_root/libnfs_shift_pcode_rvi_0091bf62.so"

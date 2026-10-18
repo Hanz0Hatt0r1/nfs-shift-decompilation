@@ -57,3 +57,51 @@ across 1,417 unique functions. The guest main thread was still runnable at
 This confirms the Linux runtime build and Vulkan frame loop, not retail D3D9
 rendering or a playable game. See `entrypoint_probe_v111.json` and
 `shift-probe-v111-validation.log`.
+
+## Full-corpus Linux module and v112 probe
+
+The complete 41,538-export P-code module was regenerated from the hash-pinned
+frozen corpus using the pinned `revenginstr` lowerer at
+`08a31b94c304f8b7a57996974dafe352413f7924`. All 41,538 functions and 2,088,152
+instructions lowered with zero rejects across 416 PIC object shards. The
+verified Linux ELF has SHA-256
+`67b2e74c72b250a168d8276e58d3821f9770f728e6d0c1badc0cf11147799274` and
+exports all 41,538 functions. Its `dlopen` smoke check passed. Build inputs,
+reports, artifact paths and hashes are recorded in
+[`../pcode_full_linux_rebuild_20261018.json`](../pcode_full_linux_rebuild_20261018.json);
+the multi-gigabyte generated sources, objects and ELF remain in the external
+persistent artifact directory.
+
+Probe v112 ran the retail PE32 entry point with that rebuilt module and 32
+supplements, enabled Vulkan validation, and rendered all 600 requested frames
+with zero validation errors. It reached 155,507 guest dispatches across 1,417
+unique functions. The saved main-thread stack ends at `0x006472d0`; four
+workers wait while one thread remains ready. The renderer used a four-vertex,
+two-triangle converted MGEO smoke mesh, so this is not evidence of retail D3D9
+rendering, frontend progress or a playable race. See
+[`entrypoint_probe_v112.json`](entrypoint_probe_v112.json) and
+[`shift-probe-v112-rebuilt-600-validation.log`](shift-probe-v112-rebuilt-600-validation.log).
+
+## Full-corpus Linux module and v112 probe
+
+The complete 41,538-export P-code module was regenerated from the hash-pinned
+frozen corpus using the pinned `revenginstr` lowerer at
+`08a31b94c304f8b7a57996974dafe352413f7924`. All 41,538 functions and 2,088,152
+instructions lowered with zero rejects across 416 PIC object shards. The
+verified Linux ELF has SHA-256
+`67b2e74c72b250a168d8276e58d3821f9770f728e6d0c1badc0cf11147799274` and
+exports all 41,538 functions. Its `dlopen` smoke check passed. Build inputs,
+reports, artifact paths and hashes are recorded in
+[`../pcode_full_linux_rebuild_20261018.json`](../pcode_full_linux_rebuild_20261018.json);
+the multi-gigabyte generated sources, objects and ELF remain in the external
+persistent artifact directory.
+
+Probe v112 ran the retail PE32 entry point with that rebuilt module and 32
+supplements, enabled Vulkan validation, and rendered all 600 requested frames
+with zero validation errors. It reached 155,507 guest dispatches across 1,417
+unique functions. The saved main-thread stack ends at `0x006472d0`; four
+workers wait while one thread remains ready. The renderer used a four-vertex,
+two-triangle converted MGEO smoke mesh, so this is not evidence of retail D3D9
+rendering, frontend progress or a playable race. See
+[`entrypoint_probe_v112.json`](entrypoint_probe_v112.json) and
+[`shift-probe-v112-rebuilt-600-validation.log`](shift-probe-v112-rebuilt-600-validation.log).
