@@ -43,7 +43,7 @@
   ],
   "nfs_ci_pin": {
     "path": ".github/workflows/ci.yml",
-    "revenginstr_revision": "432b528f9c3db36dda50c846aafe5afb3c141204"
+    "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924"
   },
   "limitations": [
     "This is a synthetic P-code fixture, not a build or execution of the full 41,538-function corpus on ARM64.",
