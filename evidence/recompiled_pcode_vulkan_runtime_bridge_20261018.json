@@ -1,0 +1,65 @@
+{
+  "format": "NFSShift.RecompiledPcodeLinuxVulkanRuntimeBridge/1",
+  "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+  "lowered_library": {
+    "format": "ELF64 shared object",
+    "exported_functions": 41538,
+    "sha256": "ee76608bb8c5b6b4b603a747a73378b9c4fb76e6320d7426d000632939984243",
+    "smoke_test": "passed",
+    "smoke_test_scope": "rvi_00401000 on the full frozen-corpus library"
+  },
+  "runtime_bridge": {
+    "executable": "native_runtime/build/shift_runtime",
+    "options": ["--recompiled-module", "--recompiled-step"],
+    "call_schedule": "one-configured-function-per-native-fixed-step-non-retail",
+    "guest_ram_virtual_bytes": 4294967296,
+    "guest_register_bank_bytes": 4096,
+    "supported_memory_spaces": ["ram", "register"],
+    "missing_exports_fail_closed": true,
+    "unhandled_userops_fail_closed": true
+  },
+  "vulkan_integration_smoke": {
+    "ci_fixture": {
+      "pcode_module": "native_runtime/tests/recompiled_pcode_fixture.c",
+      "geometry": "synthetic MGEO triangle",
+      "selected_step": "0x00401000",
+      "frames_rendered": 3,
+      "step_invocations": 3,
+      "pcode_functions_dispatched": 6,
+      "status": "ok",
+      "validation_enabled": true,
+      "validation_errors": 0
+    },
+    "full_lowered_library": {
+      "library_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/libnfs_shift_pcode_partial.so",
+      "library_sha256": "ee76608bb8c5b6b4b603a747a73378b9c4fb76e6320d7426d000632939984243",
+      "selected_step": "0x00401000",
+      "frames_rendered": 3,
+      "step_invocations": 3,
+      "pcode_functions_dispatched": 6,
+      "status": "ok",
+      "validation_enabled": true,
+      "validation_errors": 0
+    }
+  },
+  "validation": {
+    "native_runtime_cmake_build": "passed",
+    "native_runtime_ctest": {
+      "passed": 138,
+      "failed": 0
+    },
+    "python_regressions": {
+      "passed": 19,
+      "failed": 0
+    },
+    "linux_vulkan_workflow_yaml": "parsed"
+  },
+  "limitations": {
+    "full_game": false,
+    "full_pcode_library_used_in_vulkan_integration_smoke": true,
+    "pe_image_loading": false,
+    "platform_imports": false,
+    "retail_timing": false,
+    "behavioral_parity": false
+  }
+}

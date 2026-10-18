@@ -12,6 +12,7 @@ TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
 "$CC" -std=c11 -O2 -Wall -Wextra -Werror \
+  -I "$ROOT/native_runtime/include" \
   "$ROOT/tools/ghidra/smoke_shift_pcode_elf.c" -ldl \
   -o "$TEMP_DIR/smoke_shift_pcode_elf"
 "$TEMP_DIR/smoke_shift_pcode_elf" "$1"
