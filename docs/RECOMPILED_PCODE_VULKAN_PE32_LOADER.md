@@ -18,6 +18,12 @@ The runtime seeds ESP, EBP, and a zero return slot for this call. Use
 `--recompiled-step ADDRESS` separately when a selected guest function should run
 on each native fixed step.
 
+Before the PE entry point, the guest receives the x86 FS base and a minimal TEB
+at `0x7ffde000`: an empty exception-list sentinel, stack bounds, and the TEB
+self pointer. Its x87 control, status, and tag words start at `0x037f`, `0`,
+and `0xffff` respectively, matching `FNINIT`. This does not implement exception
+dispatch or the rest of Windows thread/process startup.
+
 Repeat `--recompiled-supplement ELF` to load additive P-code shards before guest
 execution. Function lookup checks the primary module and then supplements;
 duplicate exports fail closed. Supplements cannot be added after P-code
@@ -60,6 +66,10 @@ entry-point probe: `GetSystemTimeAsFileTime`, `GetCurrentProcess`, `GetPriorityC
 `FreeEnvironmentStringsA`, `WideCharToMultiByte`, `GetLastError`, and
 `SetLastError`, `GetACP`, `IsValidCodePage`, `GetCPInfo`, and
 `GetStringTypeW`, `MultiByteToWideChar`, and `LCMapStringW`.
+`WINMM.dll!timeBeginPeriod` and `timeEndPeriod` track matching single-thread
+guest requests for the supported virtual 1 ms period; they do not change the
+Linux host timer resolution. Other periods and unmatched end requests return
+`TIMERR_NOCANDO`.
 `GetStdHandle` returns
 synthetic guest handles for stdin/stdout/stderr; those handles are not bridged to
 host file descriptors. `GetFileType` classifies those three synthetic streams
@@ -129,19 +139,21 @@ The tiny retail `TlsAlloc` wrapper thunk is recognized by its exact x86 import-
 call/`ret 4` byte pattern and dispatches through the remapped IAT slot.
 
 The module currently accepts one image-load attempt per guest address space and
-loads only at the image's preferred base. Supplemental P-code ELFs are additive
-function shards and do not add guest memory regions. The PE entry point runs only when
-`--recompiled-entrypoint` is supplied; it is invoked once with a small synthetic
-stack and does not establish complete Windows process state. The configured
-P-code step is invoked separately by the native fixed-step loop. Most imported
-APIs, multi-thread TLS and atomics, Windows process initialization, guest page
+loads only at the image's preferred base. The fixed TEB page must not overlap
+the loaded image; that configuration fails closed. Supplemental P-code ELFs are
+additive function shards and do not add guest memory regions. The PE entry point
+runs only when `--recompiled-entrypoint` is supplied; it is invoked once with a
+synthetic stack and partial single-thread state. The configured P-code step is
+invoked separately by the native fixed-step loop. Most imported APIs,
+multi-thread TLS and atomics, remaining Windows process/thread state, guest page
 permissions, retail timing, and game startup are not implemented. A missing generated-function
 export still fails closed unless it matches the documented TlsAlloc thunk.
 The Vulkan scene and this P-code loop are therefore a runtime integration
 probe, not a playable NFS Shift build.
 
 The focused fixture test creates a small PE32 image and verifies header/section
-mapping, zero-fill, all 74 IAT mappings across Kernel32 and ImageHlp, the implemented Kernel32 outputs,
+mapping, zero-fill, all 76 IAT mappings across Kernel32, ImageHlp, and WinMM,
+the implemented import outputs,
 stdcall stack cleanup, null-pointer rejection, diagnostic import dispatch,
 one-shot entry-point execution from a supplemental module, rejection of late
 supplement loading, duplicate-load rejection, and generated P-code reads from

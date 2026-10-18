@@ -1782,8 +1782,8 @@ jobs:
           grep -q '"recompiled_pe_entry_point_invocations": 1' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pcode_supplement_count": 1' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pe_section_count": 2' out/vulkan/runtime/scene_set.json
-          grep -q '"recompiled_pe_import_module_count": 2' out/vulkan/runtime/scene_set.json
-          grep -q '"recompiled_pe_import_function_count": 74' out/vulkan/runtime/scene_set.json
+          grep -q '"recompiled_pe_import_module_count": 3' out/vulkan/runtime/scene_set.json
+          grep -q '"recompiled_pe_import_function_count": 76' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pe_import_stub_base": "0xf0000000"' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pcode_step_address": "0x00404000"' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pcode_step_invocations": 3' out/vulkan/runtime/scene_set.json

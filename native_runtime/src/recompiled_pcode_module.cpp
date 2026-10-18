@@ -48,6 +48,9 @@ constexpr uint32_t kGuestCurrentProcessPseudoHandle = UINT32_MAX;
 constexpr uint32_t kGuestCurrentThreadPseudoHandle = UINT32_MAX - 1;
 constexpr uint32_t kGuestFileHandleBase = 0x00050000;
 constexpr uint32_t kGuestEventHandleBase = 0x00060000;
+constexpr uint32_t kGuestTimerPeriodMs = 1;
+constexpr uint32_t kGuestTimerNoError = 0;
+constexpr uint32_t kGuestTimerErrNoCanDo = 97;
 constexpr size_t kMaximumGuestFileReadBytes = 64 * 1024 * 1024;
 constexpr uint64_t kMaximumGuestVirtualAllocationSize =
     UINT64_C(512) * 1024 * 1024;
@@ -72,7 +75,12 @@ constexpr uint32_t kWindowsAnsiCodePage = 1252;
 constexpr uint64_t kX86EaxRegisterOffset = 0;
 constexpr uint64_t kX86EspRegisterOffset = 0x10;
 constexpr uint64_t kX86EbpRegisterOffset = 0x14;
+constexpr uint64_t kX86FsBaseRegisterOffset = 0x110;
+constexpr uint64_t kX86X87EnvironmentRegisterOffset = 0x10a0;
 constexpr uint32_t kGuestInitialStackPointer = 0x7ffdf000;
+constexpr uint32_t kGuestStackLimit = 0x7ff00000;
+constexpr uint32_t kGuestTebAddress = 0x7ffde000;
+constexpr size_t kGuestTebSize = 0x1000;
 constexpr uint32_t kGuestCpuidScratchAddress = 0xfffffff0;
 constexpr size_t kMaximumImportDescriptors = 4096;
 constexpr size_t kMaximumImportThunksPerModule = 65536;
@@ -558,6 +566,10 @@ struct RecompiledPcodeModule::Impl {
                 return get_current_thread_id();
             if (name == "KERNEL32.dll!GetTickCount")
                 return get_tick_count();
+            if (name == "WINMM.dll!timeBeginPeriod")
+                return time_begin_period();
+            if (name == "WINMM.dll!timeEndPeriod")
+                return time_end_period();
             if (name == "KERNEL32.dll!QueryPerformanceCounter")
                 return query_performance_counter();
             if (name == "KERNEL32.dll!QueryPerformanceFrequency")
@@ -1052,6 +1064,35 @@ struct RecompiledPcodeModule::Impl {
             return -1;
         }
         return finish_stdcall(argument_bytes, api) ? 0 : -1;
+    }
+
+    int time_begin_period() {
+        constexpr const char* api = "WINMM.dll!timeBeginPeriod";
+        uint32_t period = 0;
+        if (!read_stack_argument(0, period, api)) return -1;
+        uint32_t result = kGuestTimerErrNoCanDo;
+        if (period == kGuestTimerPeriodMs) {
+            auto& requests = guest_timer_period_requests[period];
+            if (requests != UINT32_MAX) {
+                ++requests;
+                result = kGuestTimerNoError;
+            }
+        }
+        return return_kernel32_dword(result, api, sizeof(uint32_t));
+    }
+
+    int time_end_period() {
+        constexpr const char* api = "WINMM.dll!timeEndPeriod";
+        uint32_t period = 0;
+        if (!read_stack_argument(0, period, api)) return -1;
+        uint32_t result = kGuestTimerErrNoCanDo;
+        const auto request = guest_timer_period_requests.find(period);
+        if (request != guest_timer_period_requests.end()) {
+            result = kGuestTimerNoError;
+            if (--request->second == 0)
+                guest_timer_period_requests.erase(request);
+        }
+        return return_kernel32_dword(result, api, sizeof(uint32_t));
     }
 
     int get_current_process_id() {
@@ -3471,6 +3512,54 @@ struct RecompiledPcodeModule::Impl {
                 import_stub_base};
     }
 
+    bool initialize_pe32_guest_thread_state() {
+        const uint64_t teb_end =
+            static_cast<uint64_t>(kGuestTebAddress) + kGuestTebSize;
+        const uint64_t image_begin = pe_image_base;
+        const uint64_t image_end = image_begin + pe_image_size;
+        if (pe_image_size != 0 && kGuestTebAddress < image_end &&
+            image_begin < teb_end) {
+            error = "PE32 guest TEB overlaps the loaded image";
+            return false;
+        }
+
+        std::array<uint8_t, kGuestTebSize> teb{};
+        const auto store_teb_u32 = [&teb](size_t offset, uint32_t value) {
+            for (size_t index = 0; index < sizeof(value); ++index) {
+                teb[offset + index] =
+                    static_cast<uint8_t>(value >> (index * 8));
+            }
+        };
+        store_teb_u32(0x00, UINT32_MAX);  // ExceptionList sentinel.
+        store_teb_u32(0x04, kGuestInitialStackPointer);
+        store_teb_u32(0x08, kGuestStackLimit);
+        store_teb_u32(0x18, kGuestTebAddress);
+
+        constexpr std::array<uint8_t, 4> fs_base_bytes = {
+            static_cast<uint8_t>(kGuestTebAddress),
+            static_cast<uint8_t>(kGuestTebAddress >> 8),
+            static_cast<uint8_t>(kGuestTebAddress >> 16),
+            static_cast<uint8_t>(kGuestTebAddress >> 24)};
+        if (!write_guest("register", kX86FsBaseRegisterOffset,
+                         fs_base_bytes.size(), fs_base_bytes.data()) ||
+            !write_guest_bytes(kGuestTebAddress, teb.data(), teb.size(),
+                               "PE32 startup TEB")) {
+            return false;
+        }
+
+        // Ghidra x86:LE:32:default stores the x87 CW, SW, and TW contiguously.
+        constexpr std::array<uint8_t, 6> x87_environment = {
+            0x7f, 0x03,  // FINIT control word: masked, 64-bit precision.
+            0x00, 0x00,  // Clear status and TOP.
+            0xff, 0xff}; // Mark all x87 stack registers empty.
+        if (!write_guest("register", kX86X87EnvironmentRegisterOffset,
+                         x87_environment.size(), x87_environment.data())) {
+            error = "cannot initialize PE32 x87 state";
+            return false;
+        }
+        return true;
+    }
+
     int call_pe32_entry_point() {
         error.clear();
         if (call_depth != 0) {
@@ -3487,7 +3576,8 @@ struct RecompiledPcodeModule::Impl {
         }
         pe32_entry_point_started = true;
         execution_started = true;
-        if (!write_guest_u32("register", kX86EspRegisterOffset,
+        if (!initialize_pe32_guest_thread_state() ||
+            !write_guest_u32("register", kX86EspRegisterOffset,
                              kGuestInitialStackPointer) ||
             !write_guest_u32("register", kX86EbpRegisterOffset, 0) ||
             !write_guest_u32("ram", kGuestInitialStackPointer, 0)) {
@@ -3578,6 +3668,7 @@ struct RecompiledPcodeModule::Impl {
     std::unordered_map<uint32_t, GuestMutex> guest_mutexes;
     std::unordered_map<uint32_t, GuestFile> guest_files;
     std::unordered_map<uint32_t, GuestEvent> guest_events;
+    std::unordered_map<uint32_t, uint32_t> guest_timer_period_requests;
     std::unordered_map<uint32_t, uint64_t> guest_virtual_allocations;
     std::unordered_map<std::string, uint32_t> guest_named_mutexes;
     std::unordered_map<std::string,
