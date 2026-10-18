@@ -186,3 +186,21 @@ int rvi_0040c000(RviPcodeContext *ctx) {
         return -2;
     return ctx->write(ctx->opaque, "register", 0, sizeof(result), result);
 }
+
+int rvi_0040c100(RviPcodeContext *ctx) {
+    uint32_t esp = 0;
+    uint32_t exit_thread_api = 0;
+    const uint8_t exit_code[4] = {0xef, 0xbe, 0, 0};
+    const uint8_t continued_marker[4] = {1, 0, 0, 0};
+    if (ctx->read(ctx->opaque, "register", 0x10, 4,
+                  (uint8_t *)&esp) != 0 ||
+        ctx->read(ctx->opaque, "ram", 0x00034208, 4,
+                  (uint8_t *)&exit_thread_api) != 0 ||
+        ctx->write(ctx->opaque, "ram", esp + 4, sizeof(exit_code),
+                   exit_code) != 0) {
+        return -1;
+    }
+    if (ctx->call(ctx->opaque, exit_thread_api) != 0) return -1;
+    return ctx->write(ctx->opaque, "ram", 0x0003420c,
+                      sizeof(continued_marker), continued_marker);
+}

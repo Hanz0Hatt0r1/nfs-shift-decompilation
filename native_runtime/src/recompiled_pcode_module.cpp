@@ -92,6 +92,7 @@ constexpr uint32_t kGuestThreadHandleBase = 0x00080000;
 constexpr uint32_t kGuestThreadHandleStride = 0x10;
 constexpr uint32_t kGuestDefaultThreadStackSize = 1024 * 1024;
 constexpr uint32_t kGuestMaximumThreadStackSize = 64 * 1024 * 1024;
+constexpr int kGuestThreadExitResult = 1;
 constexpr uint32_t kGuestCpuidScratchAddress = 0xfffffff0;
 constexpr size_t kMaximumImportDescriptors = 4096;
 constexpr size_t kMaximumImportThunksPerModule = 65536;
@@ -848,6 +849,10 @@ struct RecompiledPcodeModule::Impl {
         const int result = function(&context);
         active_guest_functions.pop_back();
         --call_depth;
+        if (current_guest_thread_handle != 0 &&
+            current_guest_thread_exit_requested) {
+            return kGuestThreadExitResult;
+        }
         if (result != 0 && error.empty()) {
             char message[96]{};
             std::snprintf(message, sizeof(message),
@@ -1678,12 +1683,13 @@ struct RecompiledPcodeModule::Impl {
         }
 
         uint32_t returned_code = 0;
-        if (result == 0 &&
+        const bool exited = current_guest_thread_exit_requested;
+        if (result == 0 && !exited &&
             !read_guest_u32("register", kX86EaxRegisterOffset,
                             returned_code)) {
             result = -1;
         }
-        thread.exit_code = current_guest_thread_exit_requested
+        thread.exit_code = exited
                                ? current_guest_thread_exit_code
                                : returned_code;
         thread.last_error = guest_last_error;
@@ -1703,7 +1709,8 @@ struct RecompiledPcodeModule::Impl {
             release_guest_thread_blocks(thread);
             guest_threads.erase(handle);
         }
-        return result == 0;
+        return result == 0 ||
+               (exited && result == kGuestThreadExitResult);
     }
 
     int create_thread() {
@@ -1840,11 +1847,13 @@ struct RecompiledPcodeModule::Impl {
         constexpr const char* api = "KERNEL32.dll!ExitThread";
         uint32_t exit_code = 0;
         if (!read_stack_argument(0, exit_code, api)) return -1;
+        if (!finish_stdcall(4, api)) return -1;
         if (current_guest_thread_handle != 0) {
             current_guest_thread_exit_code = exit_code;
             current_guest_thread_exit_requested = true;
+            return kGuestThreadExitResult;
         }
-        return finish_stdcall(4, api) ? 0 : -1;
+        return 0;
     }
 
     int get_process_heap() {

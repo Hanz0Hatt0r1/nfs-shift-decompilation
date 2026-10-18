@@ -761,8 +761,11 @@ int main(int argc, char** argv) {
         const uint32_t wait_thread_api =
             resolve_kernel32_api("WaitForSingleObject");
         const uint32_t close_thread_api = resolve_kernel32_api("CloseHandle");
+        const uint32_t exit_thread_api = resolve_kernel32_api("ExitThread");
         constexpr uint32_t thread_id_address = 0x00034200;
         constexpr uint32_t thread_exit_code_address = 0x00034204;
+        write_guest_u32(module, "ram", 0x00034208, exit_thread_api);
+        write_guest_u32(module, "ram", 0x0003420c, 0);
         const uint32_t guest_thread = invoke_import(
             module, create_thread_api,
             {0, 0, 0x0040c000, 0x12345678, 0x4, thread_id_address});
@@ -796,6 +799,24 @@ int main(int argc, char** argv) {
                     invoke_import(module, close_thread_api,
                                   {guest_thread}) == 1,
                 "guest thread resume, return, wait or cleanup failed");
+        constexpr uint32_t exit_thread_id_address = 0x00034210;
+        const uint32_t exiting_guest_thread = invoke_import(
+            module, create_thread_api,
+            {0, 0, 0x0040c100, 0x12345678, 0x4, exit_thread_id_address});
+        require(exiting_guest_thread != 0 &&
+                    invoke_import(module, resume_thread_api,
+                                  {exiting_guest_thread}) == 1 &&
+                    invoke_import(module, exit_code_thread_api,
+                                  {exiting_guest_thread,
+                                   thread_exit_code_address}) == 1 &&
+                    read_guest_u32(module, "ram", thread_exit_code_address) ==
+                        0xbeef &&
+                    read_guest_u32(module, "ram", 0x0003420c) == 0 &&
+                    invoke_import(module, wait_thread_api,
+                                  {exiting_guest_thread, UINT32_MAX}) == 0 &&
+                    invoke_import(module, close_thread_api,
+                                  {exiting_guest_thread}) == 1,
+                "ExitThread did not stop guest execution with its requested code");
         constexpr char missing_module[] = "missing.dll";
         require(module.write_guest("ram", 0x00032300, sizeof(missing_module),
                                    reinterpret_cast<const uint8_t*>(missing_module)),
@@ -1208,7 +1229,7 @@ int main(int argc, char** argv) {
                     read_guest_u32(module, "ram", version_info_address + 152) ==
                         0x00010000,
                 "GetVersionExA did not fill OSVERSIONINFOEXA fields");
-        require(module.dispatched_function_count() == 6,
+        require(module.dispatched_function_count() == 7,
                 "direct Kernel32 calls changed the P-code function count");
 
         require(module.call(0x00405000) != 0,
@@ -1217,7 +1238,7 @@ int main(int argc, char** argv) {
                     "unimplemented PE import KERNEL32.dll!Sleep") !=
                     std::string::npos,
                 "import trap did not report its DLL and function name");
-        require(module.dispatched_function_count() == 7,
+        require(module.dispatched_function_count() == 8,
                 "P-code import caller was not dispatched");
         require(module.call(0x00407000) != 0,
                 "null FILETIME output pointer unexpectedly succeeded");
@@ -1232,7 +1253,7 @@ int main(int argc, char** argv) {
         require(esp_after_rejection ==
                     std::array<uint8_t, 4>{0x3c, 0x00, 0x03, 0x00},
                 "invalid API call changed the guest stack pointer");
-        require(module.dispatched_function_count() == 8,
+        require(module.dispatched_function_count() == 9,
                 "invalid FILETIME caller was not dispatched");
 
         require(module.call_pe32_entry_point() == 0,
@@ -1311,7 +1332,7 @@ int main(int argc, char** argv) {
                                   entry_point_marker.data()) &&
                     entry_point_marker == expected_entry_point_marker,
                 "supplemental PE32 entry point did not run its fixture body");
-        require(module.dispatched_function_count() == 9,
+        require(module.dispatched_function_count() == 10,
                 "supplemental P-code function was not dispatched exactly once");
         require(module.call_pe32_entry_point() != 0 &&
                     module.last_error().find("already been invoked") !=

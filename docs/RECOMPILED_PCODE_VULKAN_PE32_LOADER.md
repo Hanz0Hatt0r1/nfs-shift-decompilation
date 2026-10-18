@@ -148,10 +148,11 @@ its truncation behavior follows the reported Windows XP compatibility profile.
 Kernel32 functions not present in the static import table; unknown symbols
 return null. `CreateThread` allocates a guest stack and TEB, initializes the
 thread's FS base, and supports the observed `CREATE_SUSPENDED`, resume, suspend,
-priority, exit-code, and close-handle operations. This is a deterministic
-synchronous model: resuming an unscheduled thread executes its entry point
-inline through completion, and waiting on a thread that has not been resumed
-returns `WAIT_TIMEOUT`. It does not provide host parallelism or preemption.
+priority, exit-code, and close-handle operations. `ExitThread` stops P-code at
+the API call boundary and records the requested exit code. This is a
+deterministic synchronous model: resuming an unscheduled thread executes its
+entry point inline through completion. Waiting on a thread that has not been
+resumed returns `WAIT_TIMEOUT`. It does not provide host parallelism or preemption.
 TLS slots are currently scoped to the main guest thread.
 All implemented calls follow the x86 stdcall stack contract. Other imported
 APIs still stop with an error naming the `DLL!function` or ordinal.

@@ -33,6 +33,7 @@
     },
     "guest_threads": {
       "allocates_guest_stack_and_teb": true,
+      "exit_thread_terminates_pcode_at_call_boundary": true,
       "imports": [
         "CreateThread",
         "ResumeThread",
@@ -65,7 +66,7 @@
   },
   "validation": {
     "fixture_vulkan_smoke": {
-      "frames_rendered": 2,
+      "frames_rendered": 3,
       "frames_requested": 3,
       "pcode_functions_dispatched": 7,
       "pcode_step_invocations": 3,
