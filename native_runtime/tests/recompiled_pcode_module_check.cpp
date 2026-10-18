@@ -517,6 +517,17 @@ int main(int argc, char** argv) {
                 "P-code register bank did not cover extended x86 state");
 
         std::array<uint8_t, 4> value{};
+        require(!module.read_guest("ram", 0x10, value.size(), value.data()) &&
+                    module.last_error().find("reserved low memory") !=
+                        std::string::npos,
+                "guest RAM exposed a reserved low address to P-code reads");
+        require(!module.write_guest("ram", 0xfffe, value.size(), value.data()) &&
+                    module.last_error().find("reserved low memory") !=
+                        std::string::npos,
+                "guest RAM exposed the low-memory boundary to P-code writes");
+        write_guest_bytes(module, 0x00010000, value.data(), value.size());
+        require(module.read_guest("ram", 0x00010000, value.size(), value.data()),
+                "guest RAM rejected the first available user address");
         require(module.read_guest("ram", image.image_base, 2, value.data()),
                 "could not read mapped DOS header");
         require(value[0] == 'M' && value[1] == 'Z',
@@ -2196,7 +2207,7 @@ int main(int argc, char** argv) {
                 "x86 FCOS userop did not compute in binary80: " +
                     module.last_error());
         std::array<uint8_t, 10> fcos_bytes{};
-        require(module.read_guest("ram", 0x1010, fcos_bytes.size(),
+        require(module.read_guest("ram", 0x11010, fcos_bytes.size(),
                                   fcos_bytes.data()),
                 "x86 FCOS result was not written to guest memory");
         long double fcos_result = 0.0L;

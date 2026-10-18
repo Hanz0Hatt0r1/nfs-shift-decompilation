@@ -169,7 +169,7 @@ int rvi_0040b000(RviPcodeContext *ctx) {
         bytes[index] = (uint8_t)(result[index / sizeof(uint64_t)] >>
                                  ((index % sizeof(uint64_t)) * 8));
     }
-    return ctx->write(ctx->opaque, "ram", UINT64_C(0x1010), sizeof(bytes),
+    return ctx->write(ctx->opaque, "ram", UINT64_C(0x11010), sizeof(bytes),
                       bytes);
 }
 
