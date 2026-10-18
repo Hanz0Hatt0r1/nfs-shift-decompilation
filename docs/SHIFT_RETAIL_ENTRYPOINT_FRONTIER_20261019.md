@@ -25,6 +25,15 @@ or changing any of the 64 recent function addresses. The guest is therefore
 repeating the observed update path over the longer run, though the evidence does
 not identify which state prevents later frontend initialization.
 
+The static Ghidra export also shows why entry-point completion is not the
+right success condition: `FUN_0040ba50` is an exit-controlled `do/while` main
+loop. Each iteration calls `FUN_006492d0`, which updates the execution timer via
+`FUN_006472d0` / `SwitchToThread`, then advances other app state; it returns
+only when a virtual exit check becomes nonzero. The live guest remaining in this
+loop is consistent with a running application and is not, by itself, evidence
+of a hang. The missing result is demonstrated frontend state and retail draw
+submission on the Linux renderer.
+
 The first branch-level candidate is the state gate at `0x0050ceb0`, called
 from `0x0054be00` on the object at the `0x00545d90` singleton plus `0x108`.
 It tests the object at `0x0082f3c0` (`[this+0x24] == 0`) and then
@@ -40,9 +49,9 @@ object pointer or return values. The field meanings and whether this state gate
 explains the later return to the scheduler remain unresolved.
 
 The old v66 `Base System` allocator fatal did not recur in v112, v113 or v114
-and is historical unless observed again. The current software frontier is identifying
-which startup helper returns to the yielding update path and whether a missing
-portable runtime service or state transition explains that return.
+and is historical unless observed again. The current software frontier is identifying which frontend state and draw
+submission should run during the active app loop, and whether the `0x0050ceb0`
+state gate or its surrounding state machine is preventing that transition.
 
 ## Capture decision
 
@@ -56,12 +65,12 @@ documents that bounded follow-up in
 
 ## Next engineering step
 
-Continue from the repeated v114 update path: resolve the owning object and
-state fields around `0x0050ceb0` / `0x0050c880`, then follow the caller path
-from `0x0054be00` back to `0x006492d0`. The observed gate uses internal PE code,
-so first establish whether its object state or scheduler handoff is wrong before
-changing runtime services. Implement the smallest generic runtime correction
-supported by evidence and run another bounded probe. Keep generated binaries
+Treat the PE entry point as an active main loop, not a function that should
+return. Trace the frontend transition and renderer submission called during
+that loop; resolve the object state around `0x0050ceb0` / `0x0050c880` and map
+its callers into the UI state machine. Check how those retail draw resources
+reach the Vulkan backend before changing scheduler or Win32 services. Implement
+the smallest correction supported by evidence and run another bounded probe. Keep generated binaries
 and supplements in the external artifact cache.
 
 The existing race capture still lacks one shared dynamic stream-1 vertex-buffer
