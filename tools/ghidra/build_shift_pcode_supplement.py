@@ -14,6 +14,7 @@ from typing import Callable
 
 
 SHIFT_FORMAT = "SHIFT.GhidraFunctionInstructions/2"
+SHIFT_SLICE_FORMAT = "SHIFT.GhidraInstructionSlice/1"
 FUNCTION = re.compile(r"\bint rvi_([0-9a-f]{8})\(RviPcodeContext \*ctx\)")
 EXPORT = re.compile(r"\b[TtWw]\s+(rvi_[0-9a-f]{8})$")
 
@@ -27,8 +28,44 @@ def digest(path: Path) -> str:
 
 
 def adapt_row(row: dict, corpus_format: str) -> dict:
-    if row.get("format") != SHIFT_FORMAT or row.get("program") != "SHIFT.exe" or row.get("found") is not True:
+    if row.get("program") != "SHIFT.exe":
         raise ValueError("expected a found SHIFT.exe GhidraFunctionInstructions/2 row")
+    if row.get("format") == SHIFT_SLICE_FORMAT:
+        address = row.get("start")
+        instructions = row.get("instructions")
+        length = row.get("length")
+        if (row.get("exact_instruction_at_start") is not True or
+                not isinstance(address, str) or not isinstance(length, int) or
+                length <= 0 or not isinstance(instructions, list) or
+                not instructions):
+            raise ValueError("instruction slice is incomplete")
+        expected = int(address, 16)
+        for instruction in instructions:
+            if instruction.get("address") is None or instruction.get("bytes") is None:
+                raise ValueError("instruction slice contains an incomplete instruction")
+            current = int(instruction["address"], 16)
+            encoded = instruction["bytes"]
+            if current != expected or len(encoded) == 0 or len(encoded) % 2:
+                raise ValueError("instruction slice is not contiguous")
+            expected += len(encoded) // 2
+        if expected != int(address, 16) + length:
+            raise ValueError("instruction slice length does not match its instructions")
+        row = {
+            "format": SHIFT_FORMAT,
+            "program": row["program"],
+            "requested": address,
+            "found": True,
+            "function": {
+                "address": address,
+                "name": f"FUN_{int(address, 16):08x}",
+                "size": length,
+                "calling_convention": "unknown",
+            },
+            "instruction_count": len(instructions),
+            "instructions": instructions,
+        }
+    elif row.get("format") != SHIFT_FORMAT or row.get("found") is not True:
+        raise ValueError("expected a found SHIFT function or instruction-slice row")
     function = row.get("function")
     if not isinstance(function, dict) or not isinstance(function.get("address"), str):
         raise ValueError("function address is missing")

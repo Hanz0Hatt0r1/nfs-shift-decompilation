@@ -40,6 +40,11 @@ reports the selected step and executed function count in the frame-loop JSON.
 Missing exports, unsupported address spaces, and unhandled userops fail closed.
 The selected function runs on the runtime's native 60 Hz fixed-step schedule;
 that schedule is not established as retail timing.
+The `SHIFT.NativeRuntimeFrameLoop/1` record includes guest scheduler state and
+the host loop exit reason when PE entry-point execution is enabled. Vulkan
+`VK_SUBOPTIMAL_KHR` acquire/present results continue as successful frames;
+`VK_ERROR_OUT_OF_DATE_KHR` stops the loop with an explicit reason. Swapchain
+recreation on window resize is not implemented yet.
 The full 41,538-export Linux ELF has passed a three-frame Vulkan smoke through
 this bridge at `rvi_00401000`; CI exercises the same path with a small callback
 fixture so it does not need the multi-gigabyte game library.

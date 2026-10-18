@@ -366,9 +366,12 @@ void write_system_parameters_info_pe32_fixture(const std::string& path) {
     write_u32(bytes, 0x40c, 0x2080);
     write_u32(bytes, 0x410, 0x2060);
     write_u32(bytes, 0x440, 0x2090);
+    write_u32(bytes, 0x444, 0x20b0);
     write_u32(bytes, 0x460, 0x2090);
+    write_u32(bytes, 0x464, 0x20b0);
     std::copy_n("USER32.dll", 11, bytes.begin() + 0x480);
     std::copy_n("SystemParametersInfoA", 22, bytes.begin() + 0x492);
+    std::copy_n("PeekMessageW", 13, bytes.begin() + 0x4b2);
 
     std::ofstream file(path, std::ios::binary | std::ios::trunc);
     require(static_cast<bool>(file),
@@ -565,13 +568,58 @@ int main(int argc, char** argv) {
         require(value == std::array<uint8_t, 4>{0, 0, 0, 0},
                 "PE32 virtual section tail was not zero-filled");
 
+        constexpr uint32_t retail_pool_object = 0x00402000;
+        constexpr uint32_t retail_pool_stack = 0x00034000;
+        shift::runtime::RecompiledPcodeModule retail_pool_module(argv[1]);
+        (void)retail_pool_module.load_pe32_image(argv[4]);
+        write_guest_u32(retail_pool_module, "ram", retail_pool_object, 0);
+        write_guest_u32(retail_pool_module, "ram", retail_pool_object + 4,
+                        0x10);
+        write_guest_u32(retail_pool_module, "ram", retail_pool_object + 8,
+                        0x10);
+        write_guest_u32(retail_pool_module, "ram", retail_pool_object + 0x1c,
+                        0);
+        write_guest_u32(retail_pool_module, "register", 4,
+                        retail_pool_object);
+        write_guest_u32(retail_pool_module, "register", 0x10,
+                        retail_pool_stack);
+        require(retail_pool_module.call(0x00d8a600) == 0 &&
+                    read_guest_u32(retail_pool_module, "ram",
+                                   retail_pool_object) ==
+                        retail_pool_object + 0x40 &&
+                    read_guest_u32(retail_pool_module, "register", 4) ==
+                        retail_pool_object &&
+                    read_guest_u32(retail_pool_module, "register", 0x10) ==
+                        retail_pool_stack,
+                "retail pool initializer did not run the missing list helper "
+                "with the expected frame and restore entry registers: " +
+                    retail_pool_module.last_error());
+
         shift::runtime::RecompiledPcodeModule user32_module(argv[1]);
         const auto user32_image = user32_module.load_pe32_image(argv[7]);
         require(user32_image.import_module_count == 1 &&
-                    user32_image.import_function_count == 1,
-                "SystemParametersInfoA fixture imports were not parsed");
+                    user32_image.import_function_count == 2,
+                "USER32 fixture imports were not parsed");
         const uint32_t system_parameters_info = read_guest_u32(
             user32_module, "ram", user32_image.image_base + 0x2060);
+        const uint32_t peek_message_w = read_guest_u32(
+            user32_module, "ram", user32_image.image_base + 0x2064);
+        constexpr uint32_t peek_message_output = 0x00032f00;
+        std::array<uint8_t, 28> initial_message{};
+        initial_message.fill(0xa5);
+        write_guest_bytes(user32_module, peek_message_output,
+                          initial_message.data(), initial_message.size());
+        require(invoke_import(user32_module, peek_message_w,
+                              {peek_message_output, 0, 0, 0, 0}) == 0,
+                "PeekMessageW should report an empty startup queue");
+        std::array<uint8_t, 28> message_after_peek{};
+        require(user32_module.read_guest("ram", peek_message_output, 16,
+                                         message_after_peek.data()) &&
+                    user32_module.read_guest(
+                        "ram", peek_message_output + 16, 12,
+                        message_after_peek.data() + 16) &&
+                    message_after_peek == initial_message,
+                "PeekMessageW modified MSG when no queued message existed");
         constexpr uint32_t system_parameters_buffer = 0x00033000;
         const std::array<std::array<uint32_t, 2>, 5> accessibility_apis =
             {{{0x0032, 0x0033}, {0x0034, 0x0035}, {0x0036, 0x0037},
@@ -2087,7 +2135,13 @@ int main(int argc, char** argv) {
         require(module.call_pe32_entry_point() == 0,
                 "supplemental PE32 entry point did not run with an initialized guest stack: " +
                     module.last_error());
+        const auto pending_entrypoint_state =
+            module.guest_scheduler_snapshot();
         require(!module.pe32_entry_point_complete() &&
+                    pending_entrypoint_state.entry_point_started &&
+                    !pending_entrypoint_state.entry_point_complete &&
+                    pending_entrypoint_state.main_thread_started &&
+                    !pending_entrypoint_state.main_thread_completed &&
                     read_guest_u32(module, "ram", 0x00032c10) == 0x1234 &&
                     read_guest_u32(module, "ram", 0x00032c14) != 0,
                 "cooperative scheduler did not yield after resuming a guest worker");
@@ -2095,6 +2149,11 @@ int main(int argc, char** argv) {
                     module.pe32_entry_point_complete(),
                 "guest scheduler pump did not resume the pending PE entry point: " +
                     module.last_error());
+        const auto complete_entrypoint_state =
+            module.guest_scheduler_snapshot();
+        require(complete_entrypoint_state.entry_point_complete &&
+                    complete_entrypoint_state.main_thread_completed,
+                "guest scheduler snapshot did not report PE entry-point completion");
         require(read_guest_u32(module, "register", 0x110) == 0x7ffde000 &&
                     read_guest_u32(module, "ram", 0x7ffde000) == UINT32_MAX &&
                     read_guest_u32(module, "ram", 0x7ffde004) == 0x7ffdf000 &&
@@ -2241,6 +2300,14 @@ int main(int argc, char** argv) {
         require(module.call(0x00408000) == 0,
                 "x86 CPUID P-code userops did not return readable guest results: " +
                     module.last_error());
+        require(module.call(0x0040d000) != 0 &&
+                    module.last_error().find("at 0x00000008 size 4") !=
+                        std::string::npos &&
+                    module.last_error().find("guest_stack=[0x0040d000]") !=
+                        std::string::npos &&
+                    module.last_error().find("guest_regs={EAX=") !=
+                        std::string::npos,
+                "low-memory write error omitted its address, stack, or registers");
 
         shift::runtime::RecompiledPcodeModule exception_module(argv[1]);
         (void)exception_module.load_pe32_image(argv[5]);

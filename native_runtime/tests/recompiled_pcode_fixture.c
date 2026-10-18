@@ -213,3 +213,52 @@ int rvi_0040c100(RviPcodeContext *ctx) {
     return ctx->write(ctx->opaque, "ram", 0x0003420c,
                       sizeof(continued_marker), continued_marker);
 }
+
+int rvi_0040d000(RviPcodeContext *ctx) {
+    const uint32_t value = 1;
+    return ctx->write(ctx->opaque, "ram", UINT64_C(0x00000008),
+                      sizeof(value), (const uint8_t *)&value);
+}
+
+int rvi_00d8a600(RviPcodeContext *ctx) {
+    uint32_t ecx = 0;
+    uint32_t list_head = 0;
+    if (ctx->read(ctx->opaque, "register", 4, sizeof(ecx),
+                  (uint8_t *)&ecx) != 0 ||
+        ctx->read(ctx->opaque, "ram", ecx, sizeof(list_head),
+                  (uint8_t *)&list_head) != 0) {
+        return -1;
+    }
+    return list_head == 0 ? -2 : 0;
+}
+
+int rvi_00506ab0(RviPcodeContext *ctx) {
+    uint32_t ecx = 0;
+    uint32_t edx = 0;
+    uint32_t esp = 0;
+    uint32_t element_count = 0;
+    uint32_t element_type = 0;
+    uint32_t frame[4] = {0};
+    if (ctx->read(ctx->opaque, "register", 4, sizeof(ecx),
+                  (uint8_t *)&ecx) != 0 ||
+        ctx->read(ctx->opaque, "register", 8, sizeof(edx),
+                  (uint8_t *)&edx) != 0 ||
+        ctx->read(ctx->opaque, "register", 0x10, sizeof(esp),
+                  (uint8_t *)&esp) != 0 ||
+        ctx->read(ctx->opaque, "ram", ecx + 8, sizeof(element_count),
+                  (uint8_t *)&element_count) != 0 ||
+        ctx->read(ctx->opaque, "ram", ecx + 0x1c, sizeof(element_type),
+                  (uint8_t *)&element_type) != 0 ||
+        ctx->read(ctx->opaque, "ram", esp, sizeof(frame),
+                  (uint8_t *)frame) != 0) {
+        return -1;
+    }
+    if (edx != 0x10 || frame[0] != UINT32_C(0x00d8a681) ||
+        frame[1] != element_count || frame[2] != 0x1f ||
+        frame[3] != element_type) {
+        return -2;
+    }
+    const uint32_t list_head = ecx + 0x40;
+    return ctx->write(ctx->opaque, "ram", ecx, sizeof(list_head),
+                      (const uint8_t *)&list_head);
+}

@@ -40,6 +40,7 @@ namespace shift::runtime {
 namespace {
 
 constexpr uint64_t kGuestRamSize = UINT64_C(1) << 32;
+constexpr size_t kGuestWriteProvenanceWordLimit = 65536;
 constexpr uint32_t kGuestMinimumUserAddress = 0x00010000;
 constexpr size_t kRegisterBankSize = 0x2000;
 constexpr size_t kMaximumPcodeValueSize = 16;
@@ -81,6 +82,9 @@ constexpr size_t kGuestAllocationObjectChainLinkLimit = 64;
 constexpr size_t kGuestAllocationLinkNextPointerWordIndex = 0x10 / 4;
 constexpr uint32_t kRetailPoolAllocateFunctionAddress = 0x00638020;
 constexpr uint32_t kRetailPoolTryAllocateFunctionAddress = 0x00637f50;
+constexpr uint32_t kRetailPoolInitializerAddress = 0x00d8a600;
+constexpr uint32_t kRetailPoolListInitHelperAddress = 0x00506ab0;
+constexpr uint32_t kRetailPoolInitReturnAddress = 0x00d8a681;
 constexpr size_t kGuestAllocationPoolAttemptLimit = 32;
 constexpr uint64_t kMaximumGuestVirtualAllocationSize =
     UINT64_C(512) * 1024 * 1024;
@@ -1019,6 +1023,7 @@ struct RecompiledPcodeModule::Impl {
                 return get_code_page_info();
             if (name == "KERNEL32.dll!GetStringTypeW")
                 return get_string_type_w();
+            if (name == "USER32.dll!PeekMessageW") return peek_message_w();
             if (name == "USER32.dll!SystemParametersInfoA")
                 return system_parameters_info_a();
             if (name == "SHELL32.dll!SHGetFolderPathA" ||
@@ -1425,7 +1430,81 @@ struct RecompiledPcodeModule::Impl {
         }
         active_guest_functions.push_back(static_cast<uint32_t>(target));
         active_guest_function_registers.push_back(entry_registers);
-        const int result = function(&context);
+        int result = 0;
+        uint32_t pool_list_head = 0;
+        uint32_t pool_element_size = 0;
+        uint32_t pool_element_count = 0;
+        uint32_t pool_element_type = 0;
+        const bool repair_empty_retail_pool =
+            target == kRetailPoolInitializerAddress &&
+            diagnostic_guest_pointer_mapped(entry_registers.ecx, 0x20) &&
+            read_guest_diagnostic_u32(entry_registers.ecx,
+                                      pool_list_head) &&
+            read_guest_diagnostic_u32(
+                static_cast<uint64_t>(entry_registers.ecx) + 4,
+                pool_element_size) &&
+            read_guest_diagnostic_u32(
+                static_cast<uint64_t>(entry_registers.ecx) + 8,
+                pool_element_count) &&
+            read_guest_diagnostic_u32(
+                static_cast<uint64_t>(entry_registers.ecx) + 0x1c,
+                pool_element_type) &&
+            pool_list_head == 0 && pool_element_size == 0x10 &&
+            pool_element_count == 0x10;
+        if (repair_empty_retail_pool) {
+            const auto saved_registers = registers;
+            const uint32_t nested_esp = entry_registers.esp - 16;
+            const std::array<uint32_t, 4> helper_stack = {
+                kRetailPoolInitReturnAddress,
+                pool_element_count,
+                0x1f,
+                pool_element_type};
+            bool frame_ready = entry_registers.esp >=
+                                   kGuestMinimumUserAddress + 16;
+            for (size_t index = 0; frame_ready && index < helper_stack.size();
+                 ++index) {
+                frame_ready = write_guest_u32(
+                    "ram", static_cast<uint64_t>(nested_esp) + index * 4,
+                    helper_stack[index]);
+            }
+            if (frame_ready) {
+                frame_ready = write_guest_u32(
+                                  "register", kX86EcxRegisterOffset,
+                                  entry_registers.ecx) &&
+                              write_guest_u32(
+                                  "register", kX86EdxRegisterOffset,
+                                  pool_element_size) &&
+                              write_guest_u32("register", kX86EspRegisterOffset,
+                                              nested_esp);
+            }
+            if (!frame_ready) {
+                const std::string cause = error;
+                error = "could not prepare retail pool list initializer: " +
+                        cause;
+                result = -1;
+            } else {
+                error.clear();
+                const int helper_result =
+                    dispatch(kRetailPoolListInitHelperAddress);
+                const std::string helper_error = error;
+                registers = saved_registers;
+                if (helper_result != 0 || !helper_error.empty()) {
+                    error = "retail pool list initializer 0x00506ab0 failed: " +
+                            helper_error;
+                    result = -1;
+                } else if (!read_guest_diagnostic_u32(
+                               entry_registers.ecx, pool_list_head) ||
+                           pool_list_head == 0) {
+                    error = "retail pool list initializer 0x00506ab0 left "
+                            "the list head empty";
+                    result = -1;
+                } else {
+                    result = function(&context);
+                }
+            }
+        } else {
+            result = function(&context);
+        }
         if (pool_attempt_index < guest_pool_allocation_attempts.size()) {
             auto& attempt =
                 guest_pool_allocation_attempts[pool_attempt_index];
@@ -1448,6 +1527,7 @@ struct RecompiledPcodeModule::Impl {
                 error = message;
             }
             append_failure_guest_write_provenance(entry_registers);
+            append_guest_stack();
         }
         active_guest_function_registers.pop_back();
         active_guest_functions.pop_back();
@@ -1472,6 +1552,8 @@ struct RecompiledPcodeModule::Impl {
             offset > UINT32_MAX) {
             return;
         }
+        const auto& targets = guest_write_provenance_targets();
+        if (!guest_write_provenance_all() && targets.empty()) return;
         const uint64_t end = offset + size;
         if (end > kGuestRamSize) return;
 
@@ -1483,6 +1565,22 @@ struct RecompiledPcodeModule::Impl {
 
         for (uint64_t word_address = first_word;
              word_address <= last_word; word_address += sizeof(uint32_t)) {
+            if (!guest_write_provenance_all() &&
+                std::none_of(targets.begin(), targets.end(),
+                             [word_address](uint32_t address) {
+                                 return (address & ~UINT32_C(3)) ==
+                                        word_address;
+                             })) {
+                continue;
+            }
+            if (guest_write_provenance_all() &&
+                guest_last_writers.size() >=
+                    kGuestWriteProvenanceWordLimit &&
+                guest_last_writers.find(
+                    static_cast<uint32_t>(word_address)) ==
+                    guest_last_writers.end()) {
+                guest_last_writers.clear();
+            }
             uint32_t word_value = 0;
             if (!read_guest_diagnostic_u32(word_address, word_value)) continue;
             GuestWriteProvenance record{};
@@ -4624,6 +4722,28 @@ struct RecompiledPcodeModule::Impl {
                                      12);
     }
 
+    int peek_message_w() {
+        constexpr const char* api = "USER32.dll!PeekMessageW";
+        uint32_t message_address = 0;
+        uint32_t window = 0;
+        uint32_t minimum_message = 0;
+        uint32_t maximum_message = 0;
+        uint32_t remove_flags = 0;
+        if (!read_stack_argument(0, message_address, api) ||
+            !read_stack_argument(1, window, api) ||
+            !read_stack_argument(2, minimum_message, api) ||
+            !read_stack_argument(3, maximum_message, api) ||
+            !read_stack_argument(4, remove_flags, api)) {
+            return -1;
+        }
+        (void)message_address;
+        (void)window;
+        (void)minimum_message;
+        (void)maximum_message;
+        (void)remove_flags;
+        return return_kernel32_dword(0, api, 5 * sizeof(uint32_t));
+    }
+
     int system_parameters_info_a() {
         constexpr const char* api = "USER32.dll!SystemParametersInfoA";
         uint32_t action = 0;
@@ -6701,6 +6821,104 @@ struct RecompiledPcodeModule::Impl {
 
     bool entry_point_complete() const { return pe32_entry_point_complete; }
 
+    RecompiledGuestSchedulerSnapshot guest_scheduler_snapshot() const {
+        RecompiledGuestSchedulerSnapshot snapshot{};
+        snapshot.entry_point_started = pe32_entry_point_started;
+        snapshot.entry_point_complete = pe32_entry_point_complete;
+        snapshot.main_thread_started = main_guest_thread.started;
+        snapshot.main_thread_completed = main_guest_thread.completed;
+        snapshot.main_thread_waiting = main_guest_thread.waiting;
+        snapshot.main_thread_runnable = main_guest_thread.runnable;
+        snapshot.main_thread_exit_requested =
+            main_guest_thread.exit_requested;
+        snapshot.main_thread_wait_handle = main_guest_thread.wait_handle;
+        snapshot.main_thread_wait_result = main_guest_thread.wait_result;
+        if (!main_guest_thread.active_functions.empty()) {
+            snapshot.main_thread_current_function =
+                main_guest_thread.active_functions.back();
+        }
+        snapshot.ready_thread_count = ready_guest_threads.size();
+        snapshot.worker_thread_count = guest_threads.size();
+        for (const auto& [handle, thread] : guest_threads) {
+            (void)handle;
+            snapshot.worker_waiting_count += thread.waiting ? 1u : 0u;
+            snapshot.worker_runnable_count += thread.runnable ? 1u : 0u;
+            snapshot.worker_completed_count += thread.completed ? 1u : 0u;
+        }
+        return snapshot;
+    }
+
+    void append_guest_stack() {
+        if (active_guest_functions.empty() ||
+            error.find("; guest_stack=[") != std::string::npos) {
+            return;
+        }
+        error += "; guest_stack=[";
+        const size_t first = active_guest_functions.size() > 8
+                                 ? active_guest_functions.size() - 8
+                                 : 0;
+        for (size_t index = first;
+             index < active_guest_functions.size(); ++index) {
+            char address[20]{};
+            std::snprintf(address, sizeof(address), "%s0x%08x",
+                          index == first ? "" : " -> ",
+                          active_guest_functions[index]);
+            error += address;
+        }
+        error += "]";
+        if (!active_guest_function_registers.empty()) {
+            const auto& frame = active_guest_function_registers.back();
+            char guest_frame[160]{};
+            std::snprintf(
+                guest_frame, sizeof(guest_frame),
+                "; guest_frame={entry_EAX=0x%08x,entry_ECX=0x%08x,"
+                "entry_EDX=0x%08x,entry_ESP=0x%08x,entry_ESI=0x%08x}",
+                frame.eax, frame.ecx, frame.edx, frame.esp, frame.esi);
+            error += guest_frame;
+        }
+        const auto register_value = [this](size_t offset) {
+            uint32_t value = 0;
+            std::memcpy(&value, registers.data() + offset, sizeof(value));
+            return value;
+        };
+        char guest_registers[192]{};
+        std::snprintf(
+            guest_registers, sizeof(guest_registers),
+            "; guest_regs={EAX=0x%08x,ECX=0x%08x,EDX=0x%08x,EBX=0x%08x,"
+            "ESP=0x%08x,EBP=0x%08x,ESI=0x%08x,EDI=0x%08x}",
+            register_value(kX86EaxRegisterOffset),
+            register_value(kX86EcxRegisterOffset),
+            register_value(kX86EdxRegisterOffset),
+            register_value(kX86EbxRegisterOffset),
+            register_value(kX86EspRegisterOffset),
+            register_value(kX86EbpRegisterOffset),
+            register_value(kX86EsiRegisterOffset),
+            register_value(kX86EdiRegisterOffset));
+        error += guest_registers;
+        uint32_t guest_esi = register_value(kX86EsiRegisterOffset);
+        if (diagnostic_guest_pointer_mapped(guest_esi, 6 * sizeof(uint32_t))) {
+            char object_memory[128]{};
+            size_t length = static_cast<size_t>(std::snprintf(
+                object_memory, sizeof(object_memory),
+                "; guest_esi_memory@0x%08x=", guest_esi));
+            for (size_t index = 0; index < 6; ++index) {
+                uint32_t value = 0;
+                if (!read_guest_diagnostic_u32(
+                        guest_esi + static_cast<uint32_t>(index * 4), value))
+                    break;
+                const int written = std::snprintf(
+                    object_memory + length, sizeof(object_memory) - length,
+                    "%s%08x", index == 0 ? "" : ",", value);
+                if (written < 0 ||
+                    static_cast<size_t>(written) >=
+                        sizeof(object_memory) - length)
+                    break;
+                length += static_cast<size_t>(written);
+            }
+            error += object_memory;
+        }
+    }
+
     bool read_guest(const char* space, uint64_t offset, size_t size,
                     uint8_t* output) {
         if (!space || !output || size == 0 || size > kMaximumPcodeValueSize) {
@@ -6718,7 +6936,13 @@ struct RecompiledPcodeModule::Impl {
         }
         if (std::strcmp(space, "ram") == 0) {
             if (offset < kGuestMinimumUserAddress) {
-                error = "P-code RAM read touched reserved low memory";
+                char access[112]{};
+                std::snprintf(
+                    access, sizeof(access),
+                    "P-code RAM read at 0x%08x size %zu touched reserved low memory",
+                    static_cast<uint32_t>(offset), size);
+                error = access;
+                append_guest_stack();
                 return false;
             }
             if (offset > kGuestRamSize || size > kGuestRamSize - offset) {
@@ -6756,7 +6980,13 @@ struct RecompiledPcodeModule::Impl {
         }
         if (std::strcmp(space, "ram") == 0) {
             if (offset < kGuestMinimumUserAddress) {
-                error = "P-code RAM write touched reserved low memory";
+                char access[112]{};
+                std::snprintf(
+                    access, sizeof(access),
+                    "P-code RAM write at 0x%08x size %zu touched reserved low memory",
+                    static_cast<uint32_t>(offset), size);
+                error = access;
+                append_guest_stack();
                 return false;
             }
             if (offset > kGuestRamSize || size > kGuestRamSize - offset) {
@@ -6905,6 +7135,11 @@ int RecompiledPcodeModule::run_guest_threads() {
 
 bool RecompiledPcodeModule::pe32_entry_point_complete() const {
     return impl_->entry_point_complete();
+}
+
+RecompiledGuestSchedulerSnapshot
+RecompiledPcodeModule::guest_scheduler_snapshot() const {
+    return impl_->guest_scheduler_snapshot();
 }
 
 bool RecompiledPcodeModule::load_supplemental_module(
