@@ -1,0 +1,60 @@
+{
+  "format": "SHIFT.D3D9Stream1PartialPayloadFollowup/1",
+  "captured_at": "2026-10-19",
+  "source_capture": {
+    "path": "/home/pes/nfs-shift-recompilation-artifacts/portproton-retail-capture-20261018/retail-race-after-load-20261018/shift_d3d9_capture.jsonl",
+    "sha256": "d90ede38815242dc4a7ff5771b9d886e26931590621631f16ea4617852276afe",
+    "target_buffer_evidence": "../retail_frontier_20261018/d3d9_race_target_buffer_payloads_20261018.json.gz"
+  },
+  "target_draws": {
+    "count": 813,
+    "frames": [5865, 6987],
+    "shader_family": "crowdgeninstanced",
+    "resource_trigger_signature": "ps:b83e3c4ec719e80f"
+  },
+  "missing_stream1_generation": {
+    "capture_local_vertex_buffer_ptr": "0xd39e4b8",
+    "creation_event_index": 224,
+    "length_bytes": 131072,
+    "usage": 520,
+    "usage_hex": "0x0208",
+    "pool": 0,
+    "fvf": 0,
+    "target_draw_use_count": 813,
+    "all_target_draws_use_stream": 1,
+    "stream1_bind_event_count_in_trigger_windows": 1676,
+    "stride_bytes": 64,
+    "unique_target_offsets": 231,
+    "target_offset_range_bytes": [256, 52096],
+    "captured_payload_event_count": 0
+  },
+  "vertex_declaration": {
+    "capture_local_ptr": "0x38e8f3e0",
+    "creation_event_index": 4556786,
+    "signature": "decl:ad512aa7c4523622",
+    "stream1_record_bytes": 64,
+    "stream1_elements": [
+      {"offset": 0, "type": "FLOAT4", "usage": "TEXCOORD", "usage_index": 8},
+      {"offset": 16, "type": "FLOAT4", "usage": "TEXCOORD", "usage_index": 9},
+      {"offset": 32, "type": "FLOAT4", "usage": "TEXCOORD", "usage_index": 10},
+      {"offset": 48, "type": "FLOAT4", "usage": "TEXCOORD", "usage_index": 11}
+    ]
+  },
+  "payload_coverage": {
+    "target_draws_with_stream0_and_index_payloads": 813,
+    "target_buffer_generations_without_full_payload": 1,
+    "resource_identity_pair_event_count": 0,
+    "interpretation": "The four stream-1 FLOAT4 inputs occupy one 64-byte record. Their values are absent, so the target draws' exact stream-1 vertex inputs cannot yet be replayed from this capture; the precise shader meaning remains to be confirmed."
+  },
+  "next_capture": {
+    "wait_until_race_loaded": true,
+    "resource_trigger_signature": "ps:b83e3c4ec719e80f",
+    "pre_frames": 2,
+    "post_frames": 2,
+    "partial_buffer_payloads": true,
+    "partial_buffer_length_bytes": 131072,
+    "capture_textures": false,
+    "capture_screenshots": false,
+    "reason": "This shared dynamic stream-1 buffer has binding evidence but no payload event. The unique 131072-byte descriptor in the existing capture makes a length-filtered partial-range follow-up specific while preserving full-buffer payload behavior."
+  }
+}

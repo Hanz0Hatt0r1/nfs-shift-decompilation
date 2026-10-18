@@ -11,7 +11,8 @@ Usage:
     [--signature-discovery] \
     [--trigger] [--resource-trigger RULES] [--resource-trigger-repeat] \
     [--pre-frames N] [--post-frames N] \
-    [--screenshots] [--buffer-payloads] [--partial-buffer-payloads] [--texture-payloads] \
+    [--screenshots] [--buffer-payloads] [--partial-buffer-payloads] \
+    [--partial-buffer-length N] [--texture-payloads] \
     [--wine wine] [-- GAME_ARGS...]
 
 The launcher temporarily installs the proxy beside SHIFT.exe. If a local
@@ -138,6 +139,7 @@ pre_frames=2
 post_frames=2
 buffer_payloads=0
 partial_buffer_payloads=0
+partial_buffer_length=""
 texture_payloads=0
 game_args=()
 
@@ -161,6 +163,7 @@ while (($#)); do
     --screenshots) screenshots=1; shift ;;
     --buffer-payloads) buffer_payloads=1; shift ;;
     --partial-buffer-payloads) buffer_payloads=1; partial_buffer_payloads=1; shift ;;
+    --partial-buffer-length) partial_buffer_length="${2:?missing value for --partial-buffer-length}"; shift 2 ;;
     --texture-payloads) texture_payloads=1; shift ;;
     --) shift; game_args=("$@"); break ;;
     -h|--help) usage; exit 0 ;;
@@ -194,6 +197,16 @@ for count in "$pre_frames" "$post_frames"; do
     exit 2
   fi
 done
+if [[ -n "$partial_buffer_length" ]]; then
+  if [[ ! "$partial_buffer_length" =~ ^[1-9][0-9]*$ ]]; then
+    echo "--partial-buffer-length must be a positive byte count" >&2
+    exit 2
+  fi
+  if ((!partial_buffer_payloads)); then
+    echo "--partial-buffer-length requires --partial-buffer-payloads" >&2
+    exit 2
+  fi
+fi
 if ((trigger_capture)) && [[ -n "$frame_start" || -n "$frame_end" ]]; then
   echo "--trigger/--resource-trigger cannot be combined with --frame-start/--frame-end" >&2
   exit 2
@@ -518,13 +531,20 @@ if ((buffer_payloads)); then
   export SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR="$(to_wine_path "$buffer_dir")"
   if ((partial_buffer_payloads)); then
     export SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS=1
+    if [[ -n "$partial_buffer_length" ]]; then
+      export SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOAD_LENGTH="$partial_buffer_length"
+    else
+      unset SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOAD_LENGTH || true
+    fi
   else
     unset SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS || true
+    unset SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOAD_LENGTH || true
   fi
 else
   unset SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS || true
   unset SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR || true
   unset SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS || true
+  unset SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOAD_LENGTH || true
 fi
 
 if ((texture_payloads)); then
@@ -654,6 +674,9 @@ if ((trigger_capture)); then
   fi
 fi
 if ((buffer_payloads)); then echo "Buffers : $buffer_dir"; fi
+if ((partial_buffer_payloads)) && [[ -n "$partial_buffer_length" ]]; then
+  echo "Partial VB/IB length filter: $partial_buffer_length bytes"
+fi
 if ((texture_payloads)); then echo "Tex raw : $texture_payload_dir"; fi
 if ((stale_target_proxy)); then
   echo "Stale   : archived old SHIFT capture proxy as $stale_dll"

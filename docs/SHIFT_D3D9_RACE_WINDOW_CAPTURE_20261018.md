@@ -43,6 +43,26 @@ or primitive identity. The audit found no `resource_path`/`resource_sha256`
 pairs and no six-face cube snapshot. The evidence is from the original retail
 executable under PortProton, not the recompiled Linux runtime.
 
-Next, correlate the matched race-window draws with their captured VB/IB
-payloads and textures, then establish exact resource path/SHA identity before
-adding any of them to the Vulkan renderer.
+The matched target draws all bind one dynamic 128 KiB stream-1 vertex buffer
+(`usage=520`, `pool=0`). Its stride is 64 bytes; the captured declaration has
+four stream-1 `FLOAT4` inputs at offsets 0, 16, 32 and 48 (`TEXCOORD8` through
+`TEXCOORD11`). All 813 target draws use this buffer, across 231 distinct
+64-byte-aligned offsets. The capture contains no payload for this generation,
+while stream 0 and index payloads are complete for all 813 draws. These 64-byte
+records are required to reproduce the target draws' stream-1 vertex inputs;
+their exact meaning still needs shader-level confirmation. The exact
+capture-local identity and counts are recorded in
+[`stream1_partial_payload_followup.json`](../evidence/retail_frontier_20261019/stream1_partial_payload_followup.json).
+
+No new capture is needed for the current entrypoint and loop analysis. A later
+renderer capture should be made only after the race is loaded: arm the existing
+resource trigger for `ps:b83e3c4ec719e80f`, use `--partial-buffer-payloads
+--partial-buffer-length 131072`, and keep the two-frame pre/post window. The
+length filter matches the single 128 KiB VB generation in the current capture
+and restricts partial payload files to that size; full-buffer capture behavior
+is unchanged. This captures any partial VB lock ranges around the target shader
+while leaving texture snapshots and screenshots off. The capture producer
+buffers pre-trigger render events and payload ranges in memory, then flushes the
+selected window after the trigger; it does not
+continuously write the startup render stream to disk. Store the resulting log
+and payloads outside Git. No full startup dump needs to be repeated.

@@ -78,7 +78,7 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 | Import/IAT dispatch | **Implemented with fail-closed API boundary** |
 | Guest threads | **Cooperative multi-thread scheduling implemented** |
 | Vulkan runtime shell | **Operational on Linux** |
-| D3D9 capture tooling | **Two user-confirmed PortProton race windows recorded 13,069 indexed draws, 8,252 buffer payloads, and 813 target draws with exact capture-local state; all 541 texture snapshots are hashed, including 85 files directly used by target draws, but original retail resource paths and per-bind immutable texture identity remain unproven** |
+| D3D9 capture tooling | **Two user-confirmed PortProton race windows recorded 13,069 indexed draws, 8,252 buffer payloads, and 813 target draws with exact capture-local state. Their shared dynamic stream-1 input has a 64-byte record, but no payload was captured; original retail resource paths and per-bind immutable texture identity also remain unproven** |
 | Complete D3D9 -> Vulkan game backend | **Not implemented** |
 | Host-architecture-neutral runtime | **Not yet proven** |
 | ARM64 lowered-runtime execution | **Generic P-code fixture passes; full corpus/runtime not yet proven** |
@@ -107,7 +107,7 @@ startup. See the [cross-host fixture evidence](evidence/pcode_native_lowering_ar
 
 The current immediate execution frontier is:
 
-> **Map the frontend state transition and retail draw submissions inside the active app loop. Resolve the `0x0050ceb0` state gate and its caller state machine before changing the scheduler; then make the smallest runtime or renderer change supported by evidence and run another bounded probe. Continue associating existing VB/IB payloads with draw buffer generations, compare them with static IMB resources, and resolve immutable texture snapshot identity before admitting any resources to the Vulkan translator. The old allocator fatal is historical unless it recurs.**
+> **Map the frontend state transition and retail draw submissions inside the active app loop. Resolve the `0x0050ceb0` state gate and its caller state machine before changing the scheduler; then make the smallest runtime or renderer change supported by evidence and run another bounded probe. For renderer evidence, capture the missing 64-byte stream-1 partial updates in a short shader-triggered window after the race loads; continue comparing captured VB/IB payloads with static IMB resources and resolving immutable texture snapshot identity before admitting resources to Vulkan. The old allocator fatal is historical unless it recurs.**
 
 At the same time, new infrastructure must avoid introducing additional x86-64/Linux-only assumptions.
 
