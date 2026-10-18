@@ -43,14 +43,22 @@ vertex input because the shared dynamic stream-1 generation has no payload.
 Absence of a payload event alone does not prove whether that buffer was never
 locked or whether only partial lock ranges were used.
 
-## Next capture
+## Follow-up capture and remaining gaps
 
-No additional dump is needed during the current race. If exact stream-1 bytes
-become necessary for the Vulkan backend, make one short, trigger-based capture
-in a later race session using the Wine launcher option `--partial-buffer-payloads`.
-That option keeps the existing deferred capture workflow and records successful
-VB/IB lock ranges. Capture only after the race loads; do not repeat a full
-startup or process dump for this gap.
+A bounded follow-up on 2026-10-19 captured a separate generation (`0xd4dfd70`)
+of the same 128 KiB stream-1 buffer class. Its five-frame window contains 119
+target-shader draws and 1,806 captured payload events; the ranges cover 109/119
+computed draw inputs. The raw data and comparison are documented in the
+[stream-1 follow-up note](SHIFT_D3D9_STREAM1_FOLLOWUP_20261019.md). This does
+not retroactively supply bytes for the older `0xd39e4b8` generation, and ten
+input intervals in the new window remain incomplete. The shader inventory
+labels the matched signature `crowdgeninstanced`; the follow-up does not prove
+which car models were visible.
+
+Any further capture should be limited to a specific unresolved byte range or
+to a user-confirmed visible vehicle set. Keep the existing partial-buffer
+capture opt-in, trigger it only after the scene is ready, and avoid repeating a
+full startup or process dump.
 
 The analyzer and capture mode preserve backward compatibility: existing full
 buffer captures continue to work, and partial-range capture remains opt-in.

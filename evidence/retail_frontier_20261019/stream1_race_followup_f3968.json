@@ -1,0 +1,112 @@
+{
+  "capture_window": {
+    "complete_event_index": 9498395,
+    "completed_at_frame": 3971,
+    "included_frames": [
+      3966,
+      3970
+    ],
+    "mode": "manual capture.trigger after user requested a second bounded dump",
+    "post_frames": 2,
+    "pre_frames": 2,
+    "target_shader_inventory_family": "crowdgeninstanced",
+    "target_shader_signature": "ps:b83e3c4ec719e80f",
+    "trigger_event_index": 9457245,
+    "trigger_frame": 3968
+  },
+  "captured_at": "2026-10-19",
+  "comparison_to_prior_manual_window_in_this_capture": {
+    "new_offset_size_content_hash_tuples": 1763,
+    "new_payload_offsets": 282,
+    "new_target_stream_offsets": 92,
+    "prior_distinct_target_stream_offsets": 18,
+    "prior_target_draws": 90,
+    "prior_window_frames": [
+      3851,
+      3855
+    ],
+    "same_offset_size_content_hash_tuples": 41
+  },
+  "format": "SHIFT.D3D9Stream1RaceFollowup/1",
+  "game_owned_replaycache": {
+    "evidence_file": "game_owned_replaycache_roster_20261019.json",
+    "is_shader_cache": false,
+    "participant_count": 16,
+    "vehicle_identity_per_target_draw_proven": false,
+    "vehicle_model_id_counts": {
+      "infiniti_g35": 2,
+      "mitsubishi_evox": 3,
+      "renault_megane": 2,
+      "rx7": 5,
+      "vw_scirocco": 4
+    }
+  },
+  "limitations": [
+    "The user reported that the visible car group had already left before this capture could be used to examine the variety; the capture contains no screenshot or car-specific identity.",
+    "The target shader inventory labels this signature crowdgeninstanced; its draws cannot be attributed to individual vehicle models from this evidence.",
+    "This capture-local buffer generation does not fill the older 0xd39e4b8 generation from the 2026-10-18 capture.",
+    "Ten of the 119 target draw input intervals are not fully covered by the captured payload ranges.",
+    "No original retail resource_path/resource_sha256 identity was recorded; this evidence does not admit a draw to the Vulkan backend."
+  ],
+  "payload_capture": {
+    "archive": {
+      "manifest_path": "/home/pes/nfs-shift-recompilation-artifacts/portproton-retail-capture-20261019/stream1-partial-followup-2093/stream1_vb_d4dfd70_frame3968_payloads.manifest.json",
+      "manifest_sha256": "9a6d422d34bb28d67ee9cb139a8b96efe542aedf64e1d962358fc5ded5eaed6c",
+      "manifest_size_bytes": 815437,
+      "path": "/home/pes/nfs-shift-recompilation-artifacts/portproton-retail-capture-20261019/stream1-partial-followup-2093/stream1_vb_d4dfd70_frame3968_payloads.tar.gz",
+      "sha256": "c7cfc8257a31f8e8589128aa64b702c8bc9dae2b297b63333e8cc9d5e0fee8ec",
+      "size_bytes": 434050
+    },
+    "captured_byte_size_sum": 719488,
+    "captured_payload_event_count": 1806,
+    "missing_payload_files": 0,
+    "payload_capture_frame_range": [
+      3877,
+      3970
+    ],
+    "payload_event_count": 1806,
+    "unique_aligned_offset_and_record_hash_pairs": 11023,
+    "unique_offset_size_pairs": 1566,
+    "unique_offsets": 725,
+    "unique_payload_files": 1806,
+    "unique_sha256_values_for_aligned_64_byte_records": 2146
+  },
+  "raw_capture_and_payloads_in_git": false,
+  "source_capture": {
+    "path": "/home/pes/nfs-shift-recompilation-artifacts/portproton-retail-capture-20261019/stream1-partial-followup-2093/shift_d3d9_capture.jsonl",
+    "process_executable": "SHIFT.exe",
+    "producer_change_pr": 2093,
+    "runtime": "PortProton / Wine / D3D9 proxy",
+    "sha256": "ec8f7a3cee0447ee46dedc2d52e15c90d4e16f8cb1fd75c5f22d74099f07d8d6",
+    "size_bytes": 91304285
+  },
+  "stream1_generation": {
+    "capture_local_vertex_buffer_ptr": "0xd4dfd70",
+    "creation_event_index": 224,
+    "fvf": 0,
+    "length_bytes": 131072,
+    "pool": 0,
+    "stream": 1,
+    "stride_bytes": 64,
+    "usage": 520,
+    "usage_hex": "0x0208"
+  },
+  "target_draws": {
+    "count": 119,
+    "coverage_method": "Spatial union of captured stream-1 lock ranges compared with each draw interval computed from binding offset, base vertex, minimum vertex, vertex count, and 64-byte stride; this does not prove exact bytes at each draw time.",
+    "distinct_stream_offsets": 93,
+    "per_frame": {
+      "3966": 13,
+      "3967": 13,
+      "3968": 13,
+      "3969": 36,
+      "3970": 44
+    },
+    "required_input_range_count": 119,
+    "required_input_ranges_fully_covered_by_captured_payloads": 109,
+    "stream_offset_range_bytes": [
+      6528,
+      43712
+    ]
+  }
+}

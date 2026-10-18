@@ -1,0 +1,41 @@
+{
+  "extraction": {
+    "method": "Read NUL-terminated model IDs within each ParticipantReplaySnapshot record; count IDs without storing driver names.",
+    "raw_game_cache_committed_to_git": false
+  },
+  "format": "SHIFT.GameOwnedReplayCacheRoster/1",
+  "observed_at": "2026-10-19",
+  "relationship_to_render_capture": {
+    "cache_written_seconds_after_capture_log_mtime": 22.139,
+    "capture_log_mtime_local": "2026-10-19T01:14:25.351626+03:00",
+    "interpretation": "The cache supplies a game-owned participant roster temporally adjacent to the bounded D3D9 capture. It has no capture-frame or draw identifier, so it does not map a participant model to any target shader draw.",
+    "vehicle_identity_per_draw_proven": false
+  },
+  "shader_cache": {
+    "is_compiled_shader_cache": false,
+    "result": "No separate game-owned compiled shader cache file was found in those searched locations; replaycache.rep is a game-setup/replay participant snapshot.",
+    "searched_locations": "SHIFT installation tree and the PortProton user Documents/NFS SHIFT profile for shader/cache names and common compiled shader extensions"
+  },
+  "snapshot": {
+    "event_or_track_label": "Street",
+    "header": "GameSetupReplaySnapshot",
+    "participant_count": 16,
+    "participant_record_marker": "ParticipantReplaySnapshot",
+    "vehicle_model_id_counts": {
+      "infiniti_g35": 2,
+      "mitsubishi_evox": 3,
+      "renault_megane": 2,
+      "rx7": 5,
+      "vw_scirocco": 4
+    }
+  },
+  "source": {
+    "external_preservation_copy": "/home/pes/nfs-shift-recompilation-artifacts/portproton-retail-capture-20261019/stream1-partial-followup-2093/game_owned_replaycache_20261019.rep",
+    "external_preservation_copy_sha256": "a7c4c9b72698d200fbee5c693e163eba2d6351eb0665f6f25546c6324b2aad02",
+    "external_preservation_copy_size_bytes": 983040,
+    "mtime_local": "2026-10-19T01:14:47.490776+03:00",
+    "path": "/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02/replaycache.rep",
+    "sha256": "a7c4c9b72698d200fbee5c693e163eba2d6351eb0665f6f25546c6324b2aad02",
+    "size_bytes": 983040
+  }
+}
