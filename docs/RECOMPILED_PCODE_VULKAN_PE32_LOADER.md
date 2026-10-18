@@ -49,7 +49,7 @@ named and ordinal imports and rewrites each IAT slot to a unique guest address.
 The runtime implements the observed Kernel32 subset reached by the retail
 entry-point probe: `GetSystemTimeAsFileTime`, `GetCurrentProcess`, `GetPriorityClass`, `GetCurrentProcessId`,
 `GetCurrentThread`, `GetThreadPriority`, `SetPriorityClass`, `SetThreadPriority`,
-`SetThreadIdealProcessor`,
+`SetThreadIdealProcessor`, `SwitchToThread`,
 `CreateThread`, `ResumeThread`, `SuspendThread`, `GetExitCodeThread`, `ExitThread`,
 `GetCurrentThreadId`, `GetTickCount`, `GetLocalTime`, `GlobalMemoryStatus`,
 `QueryPerformanceCounter`,
@@ -106,7 +106,7 @@ reads them, and both environment-block APIs return caller-freed snapshots.
 Missing names report `ERROR_ENVVAR_NOT_FOUND`. `MultiByteToWideChar` and
 `WideCharToMultiByte` convert Windows-1252
 text; unsupported code pages and flags fail closed. The
-last-error value is stored for the single guest thread, initially zero.
+last-error value is stored per guest thread, initially zero.
 `GetACP` uses a fixed Windows-1252 profile for this startup path, and
 `IsValidCodePage` admits only that configured code page.
 `GetCPInfo` reports a one-byte character size, `?` as the default byte, and no
@@ -117,18 +117,22 @@ the supported Windows-1252/Latin-1 range used by this CRT startup path.
 `SetThreadIdealProcessor` stores a guest-thread scheduling hint, returns the
 previous hint, and treats processor 32 as a query. It does not change Linux
 host scheduling or affinity.
-`ResumeThread` currently runs a guest start routine synchronously and does not
-preempt it. A long-lived worker can keep the retail entry-point probe inside
-that routine.
+`ResumeThread` queues a worker while the PE entry point runs. The runtime's
+single-host-thread cooperative scheduler yields at `SwitchToThread` and waits
+on guest thread handles, then restores each guest thread's registers, TLS, and
+last-error value. A worker that never calls a yielding API still runs until it
+returns, so this is not instruction-level preemption or host parallelism.
 `CreateMutexA` returns synthetic handles and reuses a handle for a repeated
 nonempty name within the guest process. `HeapSize` reports the tracked aligned
 size of a live allocation and returns `SIZE_T(-1)` for invalid pointers.
-`WaitForSingleObject` and `ReleaseMutex` model recursive ownership for these
-mutexes in the single guest thread. `InterlockedCompareExchange` and
-`InterlockedExchange` use single-thread guest memory semantics. Unnamed events
-support manual and auto-reset state;
-an unsignaled zero-time wait returns `WAIT_TIMEOUT`, while an unsignaled
-infinite wait fails closed because guest scheduling is single-threaded.
+`WaitForSingleObject` and `ReleaseMutex` track synthetic mutex recursion but do
+not implement full cross-thread mutex ownership. `InterlockedCompareExchange`
+and `InterlockedExchange` execute atomically at scheduler API boundaries.
+Unnamed events support manual and auto-reset state; an unsignaled zero-time
+wait returns `WAIT_TIMEOUT`, while an unsignaled infinite event wait fails
+closed because event waits are not yet connected to the guest scheduler.
+Waits on guest thread handles yield until the thread completes or the timeout
+expires.
 `WaitForSingleObjectEx` supports non-alertable waits. Named events and alertable
 waits fail closed. `CloseHandle` closes
 synthetic file, mutex, and event handles and rejects unknown handles. File
@@ -168,10 +172,10 @@ return null. `CreateThread` allocates a guest stack and TEB, initializes the
 thread's FS base, and supports the observed `CREATE_SUSPENDED`, resume, suspend,
 priority, exit-code, and close-handle operations. `ExitThread` stops P-code at
 the API call boundary and records the requested exit code. This is a
-deterministic synchronous model: resuming an unscheduled thread executes its
-entry point inline through completion. Waiting on a thread that has not been
-resumed returns `WAIT_TIMEOUT`. It does not provide host parallelism or preemption.
-TLS slots are currently scoped to the main guest thread.
+deterministic cooperative model during PE entry-point execution. `SwitchToThread`
+and guest-thread waits can suspend a caller and run another ready guest thread;
+there is no host parallelism or instruction-level preemption. TLS and last-error
+state are saved per guest thread.
 All implemented calls follow the x86 stdcall stack contract. Other imported
 APIs still stop with an error naming the `DLL!function` or ordinal.
 The tiny retail `TlsAlloc` wrapper thunk is recognized by its exact x86 import-
@@ -182,10 +186,11 @@ loads only at the image's preferred base. The fixed TEB page must not overlap
 the loaded image; that configuration fails closed. Supplemental P-code ELFs are
 additive function shards and do not add guest memory regions. The PE entry point
 runs only when `--recompiled-entrypoint` is supplied; it is invoked once with a
-synthetic stack and partial single-thread state. The configured P-code step is
+synthetic stack and partial process state. The configured P-code step is
 invoked separately by the native fixed-step loop. Most imported APIs,
-multi-thread TLS and atomics, fiber creation and context switching, remaining
-Windows process/thread state, guest page permissions, retail timing, and game
+cross-thread critical-section ownership, event wait scheduling, fiber creation
+and context switching, remaining Windows process/thread state, guest page
+permissions, retail timing, and game
 startup are not implemented. A missing generated-function
 export still fails closed unless it matches the documented TlsAlloc thunk.
 The Vulkan scene and this P-code loop are therefore a runtime integration
@@ -211,3 +216,5 @@ The retail entry-point probe is recorded in
 The current override module, API frontier, validation results, and guest worker
 timebox are recorded in
 [`evidence/recompiled_pcode_vulkan_frontier_20261018.json`](../evidence/recompiled_pcode_vulkan_frontier_20261018.json).
+The cooperative scheduler test and current retail-probe gate are recorded in
+[`evidence/recompiled_pcode_guest_cooperative_scheduler_20261018.json`](../evidence/recompiled_pcode_guest_cooperative_scheduler_20261018.json).

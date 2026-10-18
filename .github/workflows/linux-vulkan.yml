@@ -1781,6 +1781,8 @@ jobs:
           grep -q '"recompiled_pe_image_size": 12288' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pe_entry_point": "0x00401020"' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pe_entry_point_invocations": 1' out/vulkan/runtime/scene_set.json
+          grep -q '"recompiled_pe_entry_point_complete": true' out/vulkan/runtime/scene_set.json
+          grep -q '"recompiled_guest_scheduler": "cooperative-host-coroutines"' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pcode_supplement_count": 1' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pe_section_count": 2' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pe_import_module_count": 3' out/vulkan/runtime/scene_set.json
@@ -1788,7 +1790,7 @@ jobs:
           grep -q '"recompiled_pe_import_stub_base": "0xf0000000"' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pcode_step_address": "0x00404000"' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pcode_step_invocations": 3' out/vulkan/runtime/scene_set.json
-          grep -q '"recompiled_pcode_functions_dispatched": 7' out/vulkan/runtime/scene_set.json
+          grep -q '"recompiled_pcode_functions_dispatched": 8' out/vulkan/runtime/scene_set.json
           grep -q '"camera_snapshot_count": 3' out/vulkan/runtime/scene_set.json
           grep -q '"camera_native_updates": 3' out/vulkan/runtime/scene_set.json
           grep -q '"camera_active_buffer": 1' out/vulkan/runtime/scene_set.json

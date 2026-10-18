@@ -3770,6 +3770,18 @@ int main(int argc, char** argv) {
         while (loop_policy.should_continue(quit, rendered)) {
             window.poll(quit, live_input);
 
+            if (recompiled_module && args.recompiled_entrypoint_enabled) {
+                const int result = recompiled_module->run_guest_threads();
+                if (result != 0) {
+                    throw std::runtime_error(
+                        "recompiled guest scheduler failed after " +
+                        std::to_string(
+                            recompiled_module->dispatched_function_count()) +
+                        " P-code function dispatches: " +
+                        recompiled_module->last_error());
+                }
+            }
+
             const InputState step_input =
                 input_script_mode
                     ? input_script.steps.at(
@@ -3957,6 +3969,17 @@ int main(int argc, char** argv) {
             << "\",\n"
             << "  \"recompiled_pe_entry_point_invocations\": "
             << recompiled_pe_entry_point_invocations << ",\n"
+            << "  \"recompiled_pe_entry_point_complete\": "
+            << (recompiled_module && args.recompiled_entrypoint_enabled &&
+                        recompiled_module->pe32_entry_point_complete()
+                    ? "true"
+                    : "false")
+            << ",\n"
+            << "  \"recompiled_guest_scheduler\": \""
+            << (recompiled_module && args.recompiled_entrypoint_enabled
+                    ? "cooperative-host-coroutines"
+                    : "disabled")
+            << "\",\n"
             << "  \"recompiled_pe_section_count\": "
             << recompiled_pe_image_info.section_count << ",\n"
             << "  \"recompiled_pe_import_module_count\": "

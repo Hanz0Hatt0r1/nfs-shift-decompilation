@@ -1,0 +1,65 @@
+{
+  "format": "NFSShift.RecompiledPcodeGuestCooperativeScheduler/1",
+  "captured_at": "2026-10-18",
+  "base_main_revision": "64edd9189a1879b903b4ebacf62b710b5f68bc55",
+  "runtime": {
+    "scheduler": "single-host-thread stackful cooperative scheduler",
+    "host_parallelism": false,
+    "instruction_level_preemption": false,
+    "yield_import": "KERNEL32.dll!SwitchToThread",
+    "wait_support": "guest thread handles; event waits remain outside the scheduler",
+    "guest_state_saved_per_thread": [
+      "x86 registers",
+      "TLS values",
+      "last error",
+      "thread priority and ideal processor",
+      "fiber identity",
+      "P-code call state"
+    ],
+    "frame_loop_pumps_ready_workers": true
+  },
+  "fixture_validation": {
+    "test": "shift_runtime_recompiled_pcode_module",
+    "result": "passed",
+    "pe_entrypoint_completed": true,
+    "entrypoint_yielded_before_completion": true,
+    "scheduler_pump_completed_entrypoint": true,
+    "worker_created_and_resumed": true,
+    "queued_worker_suspend_and_resume_verified": true,
+    "worker_marker_observed_after_switch": true,
+    "worker_exit_thread_code_verified": true,
+    "worker_exit_code": "0x0000beef",
+    "main_thread_last_error_restored_after_worker": true,
+    "guest_worker_export": "0x00401040",
+    "entrypoint_export": "0x00401020"
+  },
+  "validation": {
+    "native_runtime_build": {
+      "command": "cmake --build /tmp/nfs-shift-vulkan-guest-thread-state-build --target shift_runtime_recompiled_pcode_module_check shift_runtime_test_pcode_supplement_module shift_runtime -j 8",
+      "result": "passed"
+    },
+    "native_runtime_ctest": {
+      "command": "/usr/bin/ctest --test-dir /tmp/nfs-shift-vulkan-guest-thread-state-build --output-on-failure --parallel 8",
+      "passed": 138,
+      "failed": 0
+    },
+    "runtime_python_regressions": {
+      "command": "python3 -m pytest -q tests/test_recompiled_pcode_pe32_vulkan_runtime.py",
+      "passed": 7,
+      "failed": 0
+    },
+    "git_diff_check": "passed"
+  },
+  "retail_entrypoint_probe": {
+    "rerun": false,
+    "reason": "the retail SHIFT.exe is present, but the complete 41,538-export lowered P-code ELF required by the runtime probe is absent from this checkout and build directory",
+    "previous_observation": {
+      "result": "timeboxed without completion or import diagnostic",
+      "timeout_seconds": 90,
+      "guest_spinlock_helper": "0x00403cc0",
+      "worker_start_on_call_stack": "0x00907e4f"
+    },
+    "next_step": "restore or build the complete lowered P-code ELF, then rerun the retail entrypoint probe with the cooperative scheduler"
+  },
+  "playable_game": false
+}

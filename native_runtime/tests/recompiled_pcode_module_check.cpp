@@ -1335,6 +1335,14 @@ int main(int argc, char** argv) {
         require(module.call_pe32_entry_point() == 0,
                 "supplemental PE32 entry point did not run with an initialized guest stack: " +
                     module.last_error());
+        require(!module.pe32_entry_point_complete() &&
+                    read_guest_u32(module, "ram", 0x00032c10) == 0x1234 &&
+                    read_guest_u32(module, "ram", 0x00032c14) != 0,
+                "cooperative scheduler did not yield after resuming a guest worker");
+        require(module.run_guest_threads() == 0 &&
+                    module.pe32_entry_point_complete(),
+                "guest scheduler pump did not resume the pending PE entry point: " +
+                    module.last_error());
         require(read_guest_u32(module, "register", 0x110) == 0x7ffde000 &&
                     read_guest_u32(module, "ram", 0x7ffde000) == UINT32_MAX &&
                     read_guest_u32(module, "ram", 0x7ffde004) == 0x7ffdf000 &&
@@ -1408,8 +1416,8 @@ int main(int argc, char** argv) {
                                   entry_point_marker.data()) &&
                     entry_point_marker == expected_entry_point_marker,
                 "supplemental PE32 entry point did not run its fixture body");
-        require(module.dispatched_function_count() == 10,
-                "supplemental P-code function was not dispatched exactly once");
+        require(module.dispatched_function_count() == 11,
+                "supplemental entry point or scheduled worker was not dispatched");
         require(module.call_pe32_entry_point() != 0 &&
                     module.last_error().find("already been invoked") !=
                         std::string::npos,

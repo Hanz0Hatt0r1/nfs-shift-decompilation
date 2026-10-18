@@ -57,8 +57,8 @@ exports, while duplicate overrides still fail closed.
 the guest heap currently supports `GetProcessHeap`, `HeapCreate`, `HeapAlloc`,
 and `HeapFree`; `GetModuleHandleA` resolves the main image and imported modules;
 `GetModuleFileNameA` returns the path used to load the PE image;
-`GetProcAddress` resolves the imports it implements; TLS slots are scoped to
-the single guest thread.
+`GetProcAddress` resolves the imports it implements; TLS slots are scoped per
+guest thread.
 `GetVersionExA` reports a Windows XP SP3 compatibility profile. Performance
 counters use the host monotonic clock with nanosecond frequency.
 `GetStdHandle` returns synthetic guest handles; host standard streams are not
@@ -67,27 +67,33 @@ connected; `GetFileType` classifies these guest handles as character devices.
 `GetCommandLineA` exposes the static guest string `SHIFT.exe` without arguments.
 The ANSI and UTF-16 environment blocks are empty.
 `MultiByteToWideChar` and `WideCharToMultiByte` convert Windows-1252 text.
-`GetLastError` and `SetLastError` keep a single guest-thread value.
+`GetLastError` and `SetLastError` keep a value per guest thread.
 `SetThreadIdealProcessor` tracks the x86 guest's processor preference and
 query sentinel without changing Linux host scheduling or affinity.
-`ResumeThread` runs guest start routines synchronously without preemption, so
-long-lived retail worker loops can keep the entry-point probe inside a worker.
+`ResumeThread` queues a worker while the PE entry point runs. The Linux runtime
+uses a single-host-thread cooperative scheduler: `SwitchToThread` and waits on
+guest thread handles yield to ready workers, then restore the caller's register,
+TLS, and error state. This lets the retail spinlock helper hand off to its
+worker without host parallelism. Guest code that never calls a yielding API is
+still not preempted, and event waits and cross-thread critical-section ownership
+are not fully modeled.
 `GetACP` reports Windows-1252 for the compatibility profile.
 `IsValidCodePage` accepts only Windows-1252.
 `GetCPInfo` returns single-byte Windows-1252 metadata.
 `GetStringTypeW` provides restricted CTYPE1 classification for the supported
 Windows-1252/Latin-1 range.
 `LCMapStringW` maps Windows-1252 uppercase and lowercase characters.
-The x86 critical-section API family maintains recursion for the single guest
-thread; cross-thread locking remains unsupported. `InterlockedIncrement` and
-`InterlockedDecrement` update a guest word for this single-thread execution model.
-`InterlockedExchange` and `InterlockedCompareExchange` also use this guest
-memory model; cross-thread atomic ordering is not implemented.
+The x86 critical-section API family maintains recursion but does not track
+cross-thread ownership. Guest interlocked operations run atomically at the
+single-host-thread scheduler's API boundaries.
 Other Win32 and
 DirectX services, process initialization, and behavioral parity remain
 unimplemented; unsupported imports stop with an explicit diagnostic. The
 current scope and entry-point probe are recorded in
 [`docs/RECOMPILED_PCODE_VULKAN_PE32_LOADER.md`](../docs/RECOMPILED_PCODE_VULKAN_PE32_LOADER.md).
+The cooperative guest scheduler fixture and its remaining retail-probe gate
+are recorded in
+[`evidence/recompiled_pcode_guest_cooperative_scheduler_20261018.json`](../evidence/recompiled_pcode_guest_cooperative_scheduler_20261018.json).
 
 The runtime accepts a single MGEO mesh, a prepared `SHIFT.BMWVulkanBundle/1`, the historical BMW bundle set, or a Phase 586 prepared `SHIFT.NativeSceneVulkanSet/1` via `--scene-set`. Bundle mode validates the native-submission, SPIR-V and Vulkan-interface gates, preserves the packet vertex layout, loads semantic-aware SVGP v3 geometry (while retaining v1/v2 compatibility), loads the bundle vertex/pixel SPIR-V, uploads the `SVCP` constant buffers plus `SVTP` 2D textures and optional cube, creates descriptor sets 0/1, and submits the prepared shader/material path directly. The frame loop also exposes a fixed 60 Hz simulation boundary through `SHIFT.NativeRuntimeState/1`. Phase 599 executes the recovered CameraManager six-word snapshot plus guarded double-buffer flip/copy on that native boundary; Phase 600 can seed it from recovered camera scalar evidence. Phase 601 adds deterministic `SHIFT.NativeRuntimeInputScript/1` control snapshots that traverse the same vehicle-intent/physics-tick boundary as live keyboard input. Phase 602 additionally accepts `SHIFT.NativePhysicsParticipantBoundary/1` via `--participant-boundary`, admitting only the proven registry/selector ABI while keeping the concrete participant unresolved. Phase 603 adds the native `FUN_007b0f20` builtin sparse numerical backend as `shift_runtime_physics`; it is parity-tested separately and is not yet invoked as a complete vehicle frame. The state layer deliberately does not synthesize unknown retail force/integration semantics. `Esc` or `Q` exits the harness.
 

@@ -52,7 +52,8 @@
     "repeatable explicit P-code override modules take precedence over base and supplement exports; duplicate overrides fail closed",
     "SetThreadIdealProcessor keeps a per-guest-thread hint, returns the previous value, and recognizes x86 query sentinel 32",
     "WINMM timeGetTime shares the monotonic DWORD millisecond clock used by GetTickCount",
-    "InterlockedExchange reads, replaces, and returns a 32-bit guest word in the single-thread execution model",
+    "InterlockedExchange reads, replaces, and returns a 32-bit guest word atomically at cooperative scheduler API boundaries",
+    "a single-host-thread cooperative scheduler runs ready guest workers at SwitchToThread and guest-thread wait boundaries",
     "RaiseException handles only the recognized MSVC thread-name diagnostic pattern and fails closed for other exception codes"
   ],
   "validation": {
@@ -67,7 +68,7 @@
     },
     "runtime_python_regressions": {
       "command": "python3 -m pytest -q tests/test_recompiled_pcode_pe32_vulkan_runtime.py",
-      "passed": 6,
+      "passed": 7,
       "failed": 0
     },
     "generic_lowerer_regressions": {
@@ -110,13 +111,14 @@
       "timeout_seconds": 90,
       "debugger_snapshot_guest_function": "0x00403cc0",
       "guest_thread_start_function_on_call_stack": "0x00907e4f",
-      "scheduler_observation": "ResumeThread executes the guest start routine synchronously; there is no instruction-level preemption for a worker loop"
+      "scheduler_observation": "this probe predates the cooperative scheduler; the new fixture validates SwitchToThread handoff, but the retail probe has not been rerun"
     },
     "entrypoint_completed": false,
     "playable_game": false
   },
   "known_limitations": {
-    "concurrent_guest_thread_scheduling": false,
+    "concurrent_guest_thread_scheduling": true,
+    "guest_host_parallelism": false,
     "instruction_level_guest_thread_preemption": false,
     "retail_game_startup_completed": false,
     "vulkan_game_rendering_parity": false,
