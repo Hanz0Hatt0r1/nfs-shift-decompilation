@@ -155,6 +155,8 @@ Install `vulkan-validationlayers` (Ubuntu/Debian), then add `--validation` to
 errors, including resource destruction errors, produce a nonzero exit status.
 The final frame-loop report includes `validation_enabled` and
 `validation_errors`; warnings are written to stderr without failing the run.
+The retail entry-point helper script accepts
+`SHIFT_ENTRYPOINT_PROBE_VALIDATION=1` to forward `--validation` to the runtime.
 
 A software Vulkan smoke run, from the repository root:
 
