@@ -10,6 +10,7 @@
 #include <sys/sysinfo.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <ucontext.h>
 
 #if defined(__i386__) || defined(__x86_64__)
 #include <cpuid.h>
@@ -22,11 +23,14 @@
 #include <cctype>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <ctime>
 #include <fstream>
 #include <limits>
 #include <stdexcept>
+#include <deque>
+#include <thread>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -105,6 +109,7 @@ constexpr std::array<uint16_t, 32> kWindows1252HighCharacters = {
     0x02dc, 0x2122, 0x0161, 0x203a, 0x0153, 0x009d, 0x017e, 0x0178};
 
 using PcodeFunction = int (*)(RviPcodeContext*);
+thread_local void* active_pcode_scheduler = nullptr;
 
 struct PeSection {
     uint32_t virtual_address = 0;
@@ -379,20 +384,40 @@ struct RecompiledPcodeModule::Impl {
     struct GuestFiber {
         uint32_t data = 0;
     };
-    struct GuestThread {
+    struct GuestExecutionState {
+        std::array<uint8_t, kRegisterBankSize> registers{};
+        std::unordered_map<uint32_t, uint32_t> tls_values;
+        std::vector<uint32_t> active_functions;
+        uint32_t last_error = 0;
+        int32_t priority = 0;
+        uint32_t ideal_processor = 0;
+        uint32_t current_fiber = 0;
+        uint32_t current_exit_code = 259;
+        uint32_t call_depth = 0;
+        uint32_t indirect_jump_depth = 0;
+        bool exit_requested = false;
+    };
+
+    struct GuestThread : GuestExecutionState {
         uint32_t id = 0;
         uint32_t start_address = 0;
         uint32_t parameter = 0;
         uint32_t suspend_count = 0;
-        int32_t priority = 0;
-        uint32_t ideal_processor = 0;
         uint32_t exit_code = 259;
-        uint32_t last_error = 0;
         GuestHeapBlock stack;
         GuestHeapBlock teb;
+        ucontext_t coroutine{};
+        std::unique_ptr<uint8_t[]> coroutine_stack;
+        size_t coroutine_stack_size = 0;
+        uint32_t wait_handle = 0;
+        uint32_t wait_result = 0x00000102;
+        std::chrono::steady_clock::time_point wait_deadline{};
         bool started = false;
         bool completed = false;
         bool close_pending = false;
+        bool coroutine_initialized = false;
+        bool runnable = false;
+        bool waiting = false;
     };
 
     explicit Impl(const std::string& path) {
@@ -662,6 +687,8 @@ struct RecompiledPcodeModule::Impl {
                 return set_thread_priority();
             if (name == "KERNEL32.dll!SetThreadIdealProcessor")
                 return set_thread_ideal_processor();
+            if (name == "KERNEL32.dll!SwitchToThread")
+                return switch_to_thread();
             if (name == "KERNEL32.dll!CreateThread")
                 return create_thread();
             if (name == "KERNEL32.dll!ResumeThread")
@@ -1091,6 +1118,7 @@ struct RecompiledPcodeModule::Impl {
             "GetCurrentProcess", "GetPriorityClass", "GetCurrentProcessId",
             "GetCurrentThread", "GetThreadPriority", "SetPriorityClass",
             "SetThreadPriority", "SetThreadIdealProcessor",
+            "SwitchToThread",
             "GetCurrentThreadId", "GetTickCount",
             "CreateThread", "ResumeThread", "SuspendThread",
             "GetExitCodeThread", "ExitThread",
@@ -1688,6 +1716,21 @@ struct RecompiledPcodeModule::Impl {
                                      2 * sizeof(uint32_t));
     }
 
+    int switch_to_thread() {
+        constexpr const char* api = "KERNEL32.dll!SwitchToThread";
+        if (!scheduler_context_active || !guest_coroutine_active) {
+            std::this_thread::yield();
+            return return_kernel32_dword(0, api, 0);
+        }
+
+        const bool another_guest_thread_ready = !ready_guest_threads.empty();
+        enqueue_guest_thread(current_guest_thread_handle);
+        pause_scheduler_after_yield = !another_guest_thread_ready;
+        if (!yield_current_guest_thread(false)) return -1;
+        return return_kernel32_dword(another_guest_thread_ready ? 1 : 0,
+                                     api, 0);
+    }
+
     void release_guest_thread_blocks(const GuestThread& thread) {
         for (const auto& block : {thread.stack, thread.teb}) {
             const auto allocation = heap_allocations.find(block.address);
@@ -1714,7 +1757,297 @@ struct RecompiledPcodeModule::Impl {
                                thread.id);
     }
 
-    bool run_guest_thread(uint32_t handle) {
+    GuestThread* guest_execution_state(uint32_t handle) {
+        if (handle == 0) return &main_guest_thread;
+        const auto found = guest_threads.find(handle);
+        return found == guest_threads.end() ? nullptr : &found->second;
+    }
+
+    void save_execution_state(GuestExecutionState& state) {
+        state.registers = registers;
+        state.tls_values = tls_values;
+        state.active_functions = active_guest_functions;
+        state.last_error = guest_last_error;
+        state.priority = guest_thread_priority;
+        state.ideal_processor = guest_thread_ideal_processor;
+        state.current_fiber = current_guest_fiber;
+        state.current_exit_code = current_guest_thread_exit_code;
+        state.exit_requested = current_guest_thread_exit_requested;
+        state.call_depth = call_depth;
+        state.indirect_jump_depth = indirect_jump_depth;
+    }
+
+    void load_execution_state(const GuestExecutionState& state,
+                              uint32_t handle) {
+        registers = state.registers;
+        tls_values = state.tls_values;
+        active_guest_functions = state.active_functions;
+        guest_last_error = state.last_error;
+        guest_thread_priority = state.priority;
+        guest_thread_ideal_processor = state.ideal_processor;
+        current_guest_fiber = state.current_fiber;
+        current_guest_thread_exit_code = state.current_exit_code;
+        current_guest_thread_exit_requested = state.exit_requested;
+        call_depth = state.call_depth;
+        indirect_jump_depth = state.indirect_jump_depth;
+        current_guest_thread_handle = handle;
+        const auto* thread = guest_execution_state(handle);
+        current_guest_thread_id = thread ? thread->id : 0;
+    }
+
+    bool initialize_guest_coroutine(uint32_t handle) {
+        GuestThread* thread = guest_execution_state(handle);
+        if (!thread) return false;
+        if (thread->coroutine_initialized) return true;
+
+        thread->coroutine_stack_size = handle == 0
+            ? 8 * 1024 * 1024
+            : std::clamp<size_t>(thread->stack.size, 256 * 1024,
+                                 8 * 1024 * 1024);
+        thread->coroutine_stack =
+            std::make_unique<uint8_t[]>(thread->coroutine_stack_size);
+        if (getcontext(&thread->coroutine) != 0) {
+            error = "cannot initialize guest thread coroutine context";
+            return false;
+        }
+        thread->coroutine.uc_stack.ss_sp = thread->coroutine_stack.get();
+        thread->coroutine.uc_stack.ss_size = thread->coroutine_stack_size;
+        thread->coroutine.uc_stack.ss_flags = 0;
+        thread->coroutine.uc_link = &scheduler_context;
+        makecontext(&thread->coroutine, &Impl::guest_coroutine_entry, 0);
+        thread->coroutine_initialized = true;
+        return true;
+    }
+
+    static void guest_coroutine_entry() {
+        auto* self = static_cast<Impl*>(active_pcode_scheduler);
+        if (self) self->run_current_guest_coroutine();
+    }
+
+    void enqueue_guest_thread(uint32_t handle) {
+        GuestThread* thread = guest_execution_state(handle);
+        if (!thread || thread->completed || thread->waiting ||
+            thread->suspend_count != 0 ||
+            thread->runnable) {
+            return;
+        }
+        thread->runnable = true;
+        ready_guest_threads.push_back(handle);
+    }
+
+    bool yield_current_guest_thread(bool requeue) {
+        if (!scheduler_context_active || !guest_coroutine_active) {
+            error = "guest thread yielded outside the cooperative scheduler";
+            return false;
+        }
+        const uint32_t handle = current_guest_thread_handle;
+        GuestThread* thread = guest_execution_state(handle);
+        if (!thread) {
+            error = "active guest thread context disappeared";
+            return false;
+        }
+        if (requeue) enqueue_guest_thread(handle);
+        save_execution_state(*thread);
+        guest_coroutine_active = false;
+        if (swapcontext(&thread->coroutine, &scheduler_context) != 0) {
+            error = "cannot switch from a guest thread to the scheduler";
+            return false;
+        }
+        guest_coroutine_active = true;
+        return true;
+    }
+
+    void complete_current_guest_thread() {
+        const uint32_t handle = current_guest_thread_handle;
+        GuestThread* thread = guest_execution_state(handle);
+        if (!thread) {
+            error = "completed guest thread context disappeared";
+            return;
+        }
+        thread->exit_code = current_guest_thread_exit_code;
+        if (handle == 0) {
+            pe32_entry_point_complete = true;
+        }
+        thread->completed = true;
+        thread->suspend_count = 0;
+        thread->runnable = false;
+        thread->waiting = false;
+        save_execution_state(*thread);
+        wake_guest_waiters(handle);
+        guest_coroutine_active = false;
+        if (swapcontext(&thread->coroutine, &scheduler_context) != 0) {
+            error = "cannot return a completed guest thread to the scheduler";
+        }
+        std::abort();
+    }
+
+    void run_current_guest_coroutine() {
+        const uint32_t handle = current_guest_thread_handle;
+        GuestThread* thread = guest_execution_state(handle);
+        if (!thread) {
+            error = "guest coroutine has no thread record";
+            std::abort();
+        }
+        guest_coroutine_active = true;
+        thread->started = true;
+        int result = -1;
+        if (handle == 0) {
+            result = dispatch(pe_image_entry_point);
+        } else {
+            result = dispatch(thread->start_address);
+        }
+
+        uint32_t returned_code = 0;
+        if (result == 0 && !current_guest_thread_exit_requested &&
+            !read_guest_u32("register", kX86EaxRegisterOffset,
+                            returned_code)) {
+            result = -1;
+        }
+        const bool exited = handle != 0 &&
+                            current_guest_thread_exit_requested;
+        if (result != 0 && !exited && error.empty()) {
+            error = "guest thread routine failed";
+        }
+        if (result == 0 && !exited)
+            current_guest_thread_exit_code = returned_code;
+        thread->completed = true;
+        complete_current_guest_thread();
+    }
+
+    void wake_guest_waiters(uint32_t handle) {
+        auto wake = [&](uint32_t candidate, GuestThread& thread) {
+            if (!thread.waiting || thread.wait_handle != handle) return;
+            thread.waiting = false;
+            thread.wait_result = 0;
+            enqueue_guest_thread(candidate);
+        };
+        wake(0, main_guest_thread);
+        for (auto& [candidate, thread] : guest_threads)
+            wake(candidate, thread);
+    }
+
+    void wake_expired_guest_waiters() {
+        const auto now = std::chrono::steady_clock::now();
+        auto wake = [&](uint32_t handle, GuestThread& thread) {
+            if (!thread.waiting ||
+                thread.wait_deadline ==
+                    std::chrono::steady_clock::time_point::max() ||
+                now < thread.wait_deadline) {
+                return;
+            }
+            thread.waiting = false;
+            thread.wait_result = 0x00000102;
+            enqueue_guest_thread(handle);
+        };
+        wake(0, main_guest_thread);
+        for (auto& [handle, thread] : guest_threads) wake(handle, thread);
+    }
+
+    bool run_guest_scheduler(size_t max_slices, bool stop_when_entrypoint_done) {
+        if (scheduler_context_active) {
+            error = "guest scheduler cannot be entered recursively";
+            return false;
+        }
+        GuestExecutionState host_state{};
+        save_execution_state(host_state);
+        const uint32_t host_handle = current_guest_thread_handle;
+        const uint32_t host_thread_id = current_guest_thread_id;
+        const std::string host_error = error;
+        void* previous_scheduler = active_pcode_scheduler;
+        active_pcode_scheduler = this;
+        scheduler_context_active = true;
+        pause_scheduler_after_yield = false;
+
+        size_t slices = 0;
+        while (slices < max_slices) {
+            wake_expired_guest_waiters();
+            if (stop_when_entrypoint_done && pe32_entry_point_complete) break;
+            if (ready_guest_threads.empty()) break;
+
+            const uint32_t handle = ready_guest_threads.front();
+            ready_guest_threads.pop_front();
+            GuestThread* thread = guest_execution_state(handle);
+            if (!thread || thread->completed || thread->waiting) continue;
+            if (thread->suspend_count != 0) {
+                thread->runnable = false;
+                continue;
+            }
+            thread->runnable = false;
+            if (!initialize_guest_coroutine(handle)) break;
+            load_execution_state(*thread, handle);
+            guest_coroutine_active = true;
+            if (swapcontext(&scheduler_context, &thread->coroutine) != 0) {
+                error = "cannot schedule a guest thread coroutine";
+                guest_coroutine_active = false;
+                break;
+            }
+            guest_coroutine_active = false;
+            ++slices;
+            if (thread->close_pending && thread->completed && handle != 0) {
+                release_guest_thread_blocks(*thread);
+                guest_threads.erase(handle);
+            }
+            if (!error.empty() && error != host_error) break;
+            if (pause_scheduler_after_yield) {
+                pause_scheduler_after_yield = false;
+                break;
+            }
+        }
+
+        scheduler_context_active = false;
+        active_pcode_scheduler = previous_scheduler;
+        load_execution_state(host_state, host_handle);
+        current_guest_thread_id = host_thread_id;
+        guest_coroutine_active = false;
+        return error.empty() || error == host_error;
+    }
+
+    bool prepare_guest_thread_context(uint32_t handle) {
+        GuestThread* thread = guest_execution_state(handle);
+        if (!thread) return false;
+        if (thread->coroutine_initialized) return true;
+
+        GuestExecutionState saved_state{};
+        save_execution_state(saved_state);
+        const uint32_t saved_handle = current_guest_thread_handle;
+        const uint32_t saved_id = current_guest_thread_id;
+
+        registers.fill(0);
+        tls_values.clear();
+        active_guest_functions.clear();
+        call_depth = 0;
+        indirect_jump_depth = 0;
+        current_guest_thread_id = thread->id;
+        current_guest_thread_handle = handle;
+        current_guest_fiber = 0;
+        current_guest_thread_exit_code = 259;
+        current_guest_thread_exit_requested = false;
+        guest_last_error = 0;
+
+        const uint32_t stack_top = thread->stack.address +
+                                   static_cast<uint32_t>(thread->stack.size);
+        bool initialized = initialize_guest_thread_teb(*thread) &&
+            write_guest_u32("register", kX86FsBaseRegisterOffset,
+                            thread->teb.address) &&
+            write_guest_u32("register", kX86EspRegisterOffset,
+                            stack_top - 8) &&
+            write_guest_u32("register", kX86EbpRegisterOffset, 0) &&
+            write_guest_u32("ram", stack_top - 8, 0) &&
+            write_guest_u32("ram", stack_top - 4, thread->parameter);
+        constexpr std::array<uint8_t, 6> x87_environment = {
+            0x7f, 0x03, 0x00, 0x00, 0xff, 0xff};
+        initialized = initialized && write_guest(
+            "register", kX86X87EnvironmentRegisterOffset,
+            x87_environment.size(), x87_environment.data());
+        if (initialized) save_execution_state(*thread);
+
+        load_execution_state(saved_state, saved_handle);
+        current_guest_thread_id = saved_id;
+        if (!initialized || !initialize_guest_coroutine(handle)) return false;
+        return true;
+    }
+
+    bool run_guest_thread_synchronously(uint32_t handle) {
         const auto found = guest_threads.find(handle);
         if (found == guest_threads.end()) return false;
         GuestThread& thread = found->second;
@@ -1796,6 +2129,15 @@ struct RecompiledPcodeModule::Impl {
                (exited && result == kGuestThreadExitResult);
     }
 
+    bool run_guest_thread(uint32_t handle) {
+        if (!guest_coroutine_active) return run_guest_thread_synchronously(handle);
+        GuestThread* thread = guest_execution_state(handle);
+        if (!thread || thread->started || thread->completed) return thread != nullptr;
+        if (!prepare_guest_thread_context(handle)) return false;
+        enqueue_guest_thread(handle);
+        return true;
+    }
+
     int create_thread() {
         constexpr const char* api = "KERNEL32.dll!CreateThread";
         uint32_t security_attributes = 0;
@@ -1864,8 +2206,9 @@ struct RecompiledPcodeModule::Impl {
             !write_guest_u32("ram", thread_id_address, thread.id)) {
             return -1;
         }
-        guest_threads.emplace(handle, thread);
-        if (thread.suspend_count == 0 && !run_guest_thread(handle))
+        const bool suspended = thread.suspend_count != 0;
+        guest_threads.emplace(handle, std::move(thread));
+        if (!suspended && !run_guest_thread(handle))
             return -1;
         return return_kernel32_dword(handle, api, 24);
     }
@@ -1881,9 +2224,11 @@ struct RecompiledPcodeModule::Impl {
         }
         const uint32_t previous = thread->second.suspend_count;
         if (previous != 0) --thread->second.suspend_count;
-        if (thread->second.suspend_count == 0 && !thread->second.started &&
-            !run_guest_thread(handle)) {
-            return -1;
+        if (thread->second.suspend_count == 0 && !thread->second.completed) {
+            if (!thread->second.started && !run_guest_thread(handle))
+                return -1;
+            if (thread->second.started && pe32_entry_point_started)
+                enqueue_guest_thread(handle);
         }
         return return_kernel32_dword(previous, api, 4);
     }
@@ -2015,9 +2360,30 @@ struct RecompiledPcodeModule::Impl {
         const auto thread = guest_threads.find(handle);
         if (thread != guest_threads.end()) {
             if (thread->second.completed) return 0;
-            // ponytail: guest threads run synchronously on resume; return a
-            // timeout for unscheduled threads instead of blocking the host.
-            (void)timeout_ms;
+            if (guest_coroutine_active && scheduler_context_active &&
+                timeout_ms != 0) {
+                const uint32_t waiter_handle = current_guest_thread_handle;
+                GuestThread* waiter =
+                    guest_execution_state(waiter_handle);
+                if (!waiter) {
+                    error = std::string(api) +
+                            " has no current guest thread state";
+                    return UINT32_MAX;
+                }
+                waiter->waiting = true;
+                waiter->runnable = false;
+                waiter->wait_handle = handle;
+                waiter->wait_result = 0x00000102;
+                waiter->wait_deadline = timeout_ms == UINT32_MAX
+                    ? std::chrono::steady_clock::time_point::max()
+                    : std::chrono::steady_clock::now() +
+                          std::chrono::milliseconds(timeout_ms);
+                if (!yield_current_guest_thread(false)) return UINT32_MAX;
+                const GuestThread* resumed_waiter =
+                    guest_execution_state(waiter_handle);
+                if (!resumed_waiter) return UINT32_MAX;
+                return resumed_waiter->wait_result;
+            }
             return 0x00000102;
         }
         const auto mutex = guest_mutexes.find(handle);
@@ -2123,8 +2489,7 @@ struct RecompiledPcodeModule::Impl {
         }
         const auto thread = guest_threads.find(handle);
         if (thread != guest_threads.end()) {
-            if (handle == current_guest_thread_handle &&
-                !thread->second.completed) {
+            if (!thread->second.completed) {
                 thread->second.close_pending = true;
             } else {
                 release_guest_thread_blocks(thread->second);
@@ -4376,8 +4741,22 @@ struct RecompiledPcodeModule::Impl {
             error = "cannot initialize PE32 entry-point stack";
             return -1;
         }
-        return dispatch(pe_image_entry_point);
+        main_guest_thread = GuestThread{};
+        main_guest_thread.id = current_guest_thread_id;
+        main_guest_thread.last_error = guest_last_error;
+        save_execution_state(main_guest_thread);
+        if (!initialize_guest_coroutine(0)) return -1;
+        enqueue_guest_thread(0);
+        return run_guest_scheduler(4096, true) ? 0 : -1;
     }
+
+    int run_guest_threads() {
+        if (!pe32_entry_point_started) return 0;
+        error.clear();
+        return run_guest_scheduler(64, false) ? 0 : -1;
+    }
+
+    bool entry_point_complete() const { return pe32_entry_point_complete; }
 
     bool read_guest(const char* space, uint64_t offset, size_t size,
                     uint8_t* output) {
@@ -4463,6 +4842,9 @@ struct RecompiledPcodeModule::Impl {
     std::unordered_map<uint32_t, GuestEvent> guest_events;
     std::unordered_map<uint32_t, GuestFiber> guest_fibers;
     std::unordered_map<uint32_t, GuestThread> guest_threads;
+    GuestThread main_guest_thread;
+    ucontext_t scheduler_context{};
+    std::deque<uint32_t> ready_guest_threads;
     std::unordered_map<uint32_t, uint32_t> guest_timer_period_requests;
     std::unordered_map<uint32_t, uint64_t> guest_virtual_allocations;
     std::unordered_map<std::string, uint32_t> guest_named_mutexes;
@@ -4507,6 +4889,10 @@ struct RecompiledPcodeModule::Impl {
     uint32_t indirect_jump_depth = 0;
     bool pe_image_load_attempted = false;
     bool pe32_entry_point_started = false;
+    bool pe32_entry_point_complete = false;
+    bool scheduler_context_active = false;
+    bool guest_coroutine_active = false;
+    bool pause_scheduler_after_yield = false;
     bool execution_started = false;
     std::string error;
 };
@@ -4532,6 +4918,14 @@ Pe32ImageInfo RecompiledPcodeModule::load_pe32_image(const std::string& path) {
 
 int RecompiledPcodeModule::call_pe32_entry_point() {
     return impl_->call_pe32_entry_point();
+}
+
+int RecompiledPcodeModule::run_guest_threads() {
+    return impl_->run_guest_threads();
+}
+
+bool RecompiledPcodeModule::pe32_entry_point_complete() const {
+    return impl_->entry_point_complete();
 }
 
 bool RecompiledPcodeModule::load_supplemental_module(

@@ -30,6 +30,8 @@ public:
     int call(uint32_t guest_address);
     Pe32ImageInfo load_pe32_image(const std::string& path);
     int call_pe32_entry_point();
+    int run_guest_threads();
+    bool pe32_entry_point_complete() const;
     bool load_supplemental_module(const std::string& shared_object_path);
     bool load_override_module(const std::string& shared_object_path);
     uint64_t dispatched_function_count() const;

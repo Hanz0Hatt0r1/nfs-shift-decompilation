@@ -289,7 +289,7 @@ def test_vulkan_frontier_evidence_is_hashed_and_bounded() -> None:
     validation = evidence["validation"]
     assert validation["native_runtime_ctest"]["passed"] == 138
     assert validation["native_runtime_ctest"]["failed"] == 0
-    assert validation["runtime_python_regressions"]["passed"] == 6
+    assert validation["runtime_python_regressions"]["passed"] == 7
     assert validation["generic_lowerer_regressions"]["passed"] == 22
     assert validation["local_linux_vulkan_smoke"]["frames_rendered"] == 3
     assert validation["local_linux_vulkan_smoke"]["validation_errors"] == 0
@@ -305,3 +305,39 @@ def test_vulkan_frontier_evidence_is_hashed_and_bounded() -> None:
         evidence["known_limitations"]["instruction_level_guest_thread_preemption"]
         is False
     )
+
+
+def test_cooperative_guest_scheduler_evidence_is_bounded() -> None:
+    evidence = json.loads(
+        (
+            ROOT
+            / "evidence/recompiled_pcode_guest_cooperative_scheduler_20261018.json"
+        ).read_text(encoding="utf-8")
+    )
+    runtime = evidence["runtime"]
+    fixture = evidence["fixture_validation"]
+    validation = evidence["validation"]
+    retail = evidence["retail_entrypoint_probe"]
+
+    assert evidence["format"] == (
+        "NFSShift.RecompiledPcodeGuestCooperativeScheduler/1"
+    )
+    assert runtime["host_parallelism"] is False
+    assert runtime["instruction_level_preemption"] is False
+    assert runtime["yield_import"] == "KERNEL32.dll!SwitchToThread"
+    assert runtime["frame_loop_pumps_ready_workers"] is True
+    assert fixture["result"] == "passed"
+    assert fixture["pe_entrypoint_completed"] is True
+    assert fixture["entrypoint_yielded_before_completion"] is True
+    assert fixture["scheduler_pump_completed_entrypoint"] is True
+    assert fixture["worker_created_and_resumed"] is True
+    assert fixture["queued_worker_suspend_and_resume_verified"] is True
+    assert fixture["worker_marker_observed_after_switch"] is True
+    assert fixture["worker_exit_thread_code_verified"] is True
+    assert fixture["worker_exit_code"] == "0x0000beef"
+    assert fixture["main_thread_last_error_restored_after_worker"] is True
+    assert validation["native_runtime_ctest"]["passed"] == 138
+    assert validation["native_runtime_ctest"]["failed"] == 0
+    assert retail["rerun"] is False
+    assert "41,538-export" in retail["reason"]
+    assert evidence["playable_game"] is False
