@@ -1,0 +1,88 @@
+{
+  "format": "NFSShift.RecompiledPcodePe32FiberMemoryFrontier/1",
+  "captured_at": "2026-10-18",
+  "base_main_revision": "44fd08dbdfe015026d137c68b7328b847dfbd962",
+  "retail_input": {
+    "logical_name": "SHIFT.exe",
+    "version": "PC retail 1.02",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "image_base": "0x00400000",
+    "entry_point": "0x0090488a",
+    "import_function_count": 411
+  },
+  "implemented_guest_apis": {
+    "fiber_identity": [
+      "KERNEL32.dll!ConvertThreadToFiber",
+      "KERNEL32.dll!IsThreadAFiber"
+    ],
+    "time": ["KERNEL32.dll!GetLocalTime"],
+    "memory": ["KERNEL32.dll!GlobalMemoryStatus"],
+    "fiber_context_creation_or_switching": false
+  },
+  "fixture_validation": {
+    "result": "passed",
+    "import_module_count": 3,
+    "import_function_count": 80,
+    "fiber_identity_written_to_teb": true,
+    "fiber_data_pointer_round_trip": true,
+    "duplicate_conversion_last_error": 1280,
+    "is_thread_a_fiber_returns_one": true,
+    "systemtime_date_fields_validated": true,
+    "memory_status_size_bytes": 32,
+    "memory_status_physical_and_pagefile_pairs_ordered": true,
+    "guest_user_virtual_limit_bytes": 2147483648
+  },
+  "memory_status_profile": {
+    "abi_reference": "https://learn.microsoft.com/windows/win32/api/winbase/ns-winbase-memorystatus",
+    "physical_and_pagefile_snapshot_source": "Linux sysinfo",
+    "32_bit_fields_saturate_at_dword_max": true,
+    "guest_virtual_limit_bytes": 2147483648,
+    "available_guest_virtual_accounts_for_image_and_virtual_alloc_regions": true
+  },
+  "validation": {
+    "native_runtime_build": {
+      "command": "cmake --build /tmp/nfs-shift-vulkan-guest-thread-state-build --parallel 4",
+      "result": "passed"
+    },
+    "native_runtime_ctest": {
+      "command": "/usr/bin/ctest --test-dir /tmp/nfs-shift-vulkan-guest-thread-state-build --output-on-failure",
+      "passed": 138,
+      "failed": 0
+    }
+  },
+  "local_linux_vulkan_smoke": {
+    "scene": "prepared neutral Vulkan scene-set with one synthetic draw",
+    "fixture_import_modules": 3,
+    "fixture_import_functions": 80,
+    "entrypoint_invocations": 1,
+    "frames_rendered": 3,
+    "simulation_steps": 3,
+    "pcode_step_invocations": 3,
+    "pcode_functions_dispatched": 7,
+    "validation_enabled": true,
+    "validation_errors": 0,
+    "validation_warnings": 3,
+    "status": "ok"
+  },
+  "retail_entrypoint_probe": {
+    "entrypoint_invoked": true,
+    "pcode_functions_dispatched_observed": [3106, 3107],
+    "passed_import_frontier": [
+      "WINMM.dll!timeBeginPeriod",
+      "KERNEL32.dll!ConvertThreadToFiber",
+      "KERNEL32.dll!GetLocalTime",
+      "KERNEL32.dll!GlobalMemoryStatus"
+    ],
+    "next_blocker": "P-code module has no exported function rvi_00a74fb0",
+    "missing_function_address": "0x00a74fb0",
+    "result": "fails closed before retail startup completes",
+    "playable_game": false
+  },
+  "limitations": {
+    "fiber_scheduling": false,
+    "missing_retail_pcode_exports": true,
+    "retail_game_startup": false,
+    "playable_game": false,
+    "behavioral_parity": false
+  }
+}
