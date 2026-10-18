@@ -1,0 +1,77 @@
+{
+  "format": "REVENGINSTR.UIStateGateEvidence/1",
+  "date": "2026-10-19",
+  "target": {
+    "program": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "analysis": {
+    "tool": "revenginstr GhidraFunctionPcodeFlow/1",
+    "revenginstr_main_commit": "40cff63745b80398b84fa1a72add3012ceb68c31",
+    "ghidra_version": "12.1.2_DEV",
+    "export_count": 9,
+    "pcode_row_count": 351,
+    "static_only": true
+  },
+  "exports": [
+    {
+      "file": "0043ce36-flow.tsv",
+      "function_entry": "0043ce36",
+      "rows": 2,
+      "sha256": "5374a0d648d00cd9e6fbab05379ec413f9b9841f043b0b245213a74546004711"
+    },
+    {
+      "file": "0045c480-flow.tsv",
+      "function_entry": "0045c480",
+      "rows": 61,
+      "sha256": "987d54f842eb31e9c1118a86bec266cb82502f138ae5f50538cd108814cb118e"
+    },
+    {
+      "file": "004692e0-flow.tsv",
+      "function_entry": "004692e0",
+      "rows": 223,
+      "sha256": "ab9243d0984d20833b8b90b763cc5898df312b72cb958845a7db65a0baa1448e"
+    },
+    {
+      "file": "0048fb36-flow.tsv",
+      "function_entry": "0048fb36",
+      "rows": 2,
+      "sha256": "39f67c75ff76c72cca0d5ef035740d74b080f6e63807556131577083a6c59d47"
+    },
+    {
+      "file": "0050c880-flow.tsv",
+      "function_entry": "0050c880",
+      "rows": 26,
+      "sha256": "6972e33feb9c3fbf6a9fc97e5dd782cc954bafa516deaa10b110035bb8a0ce33"
+    },
+    {
+      "file": "0050c8a3-flow.tsv",
+      "function_entry": "0050c8a3",
+      "rows": 6,
+      "sha256": "8c9a61584275c20da01f3def33a2be8a8452748936044b534e5210ef5ccca603"
+    },
+    {
+      "file": "0050ceb0-flow.tsv",
+      "function_entry": "0050ceb0",
+      "rows": 24,
+      "sha256": "1307d7e7f727d9d06dedef0022c2a5564bcf3ef6b5ab8c39d664c18793cb3d47"
+    },
+    {
+      "file": "0050cec4-flow.tsv",
+      "function_entry": "0050cec4",
+      "rows": 1,
+      "sha256": "2ed3f32d8f6db6d20f6537ce1c0225abcb962b2da15db60e51186e04bedc9b2a"
+    },
+    {
+      "file": "0082f3c0-flow.tsv",
+      "function_entry": "0082f3c0",
+      "rows": 6,
+      "sha256": "05b287b616afbdfe5a8a7a36d6546b7d6552b67890b6906c355686e36f320bcc"
+    }
+  ],
+  "instruction_slices": {
+    "file": "ui_gate_instruction_slices.txt",
+    "sha256": "5a7ea6a378471feca7ff0d1632994af65238c148a37d88870975fb8c41d72c5e",
+    "tool": "GNU objdump -d -Mintel"
+  }
+}

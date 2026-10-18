@@ -1,0 +1,7 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0082f3c0	0082f3c0	0	INT_ADD	def:0082f3c0:0:4	register:register:00000004:4;const:0x24:4	-	-
+0082f3c0	0082f3c0	1	LOAD	def:0082f3c0:1:4	const:0x1a1:4;def:0082f3c0:19:4	-	-
+0082f3c0	0082f3c0	7	INT_EQUAL	def:0082f3c0:7:1	def:0082f3c0:1:4;const:0x0:4	-	-
+0082f3c0	0082f3c0	19	CAST	def:0082f3c0:19:4	def:0082f3c0:0:4	-	-
+0082f3c0	0082f3c4	12	COPY	def:0082f3c4:12:1	def:0082f3c0:7:1	-	-
+0082f3c0	0082f3c7	15	RETURN	-	const:0x0:4;def:0082f3c4:12:1	-	-

@@ -34,19 +34,28 @@ loop is consistent with a running application and is not, by itself, evidence
 of a hang. The missing result is demonstrated frontend state and retail draw
 submission on the Linux renderer.
 
-The first branch-level candidate is the state gate at `0x0050ceb0`, called
-from `0x0054be00` on the object at the `0x00545d90` singleton plus `0x108`.
-It tests the object at `0x0082f3c0` (`[this+0x24] == 0`) and then
-`0x0050c880`; a true result branches through `0x0048fb36` and returns true.
-The false path may call a virtual method at offset `0x24c` through the object
-at `[this+0x48]`, then returns false. `0x0050c880` also dispatches through a
-function pointer at `0x00ac59d0`, whose image value points to internal code at
-`0x005460c0`, rather than a Win32 import. The history reaches `0x0050c8a9`,
-which is the `[this+0x0c] == 0` path in `0x0050c880`; it then records
-`0x00833670`. That ordering is consistent with the false result continuing to
-the later virtual callback in `0x0050ceb0`, but the history does not record the
-object pointer or return values. The field meanings and whether this state gate
-explains the later return to the scheduler remain unresolved.
+A hash-pinned Revenginstr P-code pass now covers this gate, the two inspected callers,
+and its direct helpers; the 351 exported rows and instruction-level cross-check
+are recorded in [the UI state-gate evidence report](REVENGINSTR_UI_STATE_GATE_EVIDENCE_20261019.md).
+The two inspected callers, `0x0045c480` and `0x004692e0`, call `0x0050ceb0` on the
+`0x00545d90` singleton plus `0x108`. The gate passes its argument plus `0x10`
+to `0x0082f3c0`, which checks a word at helper argument plus `0x24`; the
+combined state field is singleton plus `0x13c`.
+
+Instruction-level evidence confirms that a nonzero field at gate offset
+`0x34`, or a nonzero result from `0x0050c880`, returns true through
+`0x0048fb36`. A zero helper result can call a virtual method at offset `0x24c`
+through the object at gate offset `0x48`, then returns false. The helper first
+checks its byte at `+0x0c`; if nonzero it calls a virtual method at slot `+4`.
+The history address `0x0050c8a9` is its zero-byte path, which returns zero; a
+following `0x00833670` is consistent with the gate's optional virtual callback.
+The image also contains an indirect call through `0x00ac59d0` on a helper path.
+
+The live field values, callback result, and selected frontend transition remain
+unknown. Function-level P-code alone misrepresents two transfers through
+overlapping code entries, so the checked instruction slices are part of the
+evidence. No captured value yet shows whether this gate prevents frontend
+initialization or retail draw submission.
 
 The old v66 `Base System` allocator fatal did not recur in v112, v113 or v114
 and is historical unless observed again. The current software frontier is identifying which frontend state and draw

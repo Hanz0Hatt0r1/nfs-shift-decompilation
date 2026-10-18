@@ -1,0 +1,107 @@
+Input: SHIFT.exe sha256=eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1
+Command: objdump -d -Mintel over focused ranges
+
+
+
+/home/pes/ghidra_projects/shift/SHIFT.exe:     file format pei-i386
+
+
+Disassembly of section .text:
+
+0043ce30 <.text+0x3be30>:
+  43ce30:	e9 8b d8 05 00       	jmp    0x49a6c0
+  43ce35:	90                   	nop
+  43ce36:	b9 01 00 00 00       	mov    ecx,0x1
+  43ce3b:	90                   	nop
+  43ce3c:	e9 62 fa 0c 00       	jmp    0x50c8a3
+  43ce41:	8d b3 c0 02 00 00    	lea    esi,[ebx+0x2c0]
+  43ce47:	e9                   	.byte 0xe9
+
+
+/home/pes/ghidra_projects/shift/SHIFT.exe:     file format pei-i386
+
+
+Disassembly of section .text:
+
+0048fb30 <.text+0x8eb30>:
+  48fb30:	e9 ab 3c 00 00       	jmp    0x4937e0
+  48fb35:	90                   	nop
+  48fb36:	b8 01 00 00 00       	mov    eax,0x1
+  48fb3b:	e9 84 d3 07 00       	jmp    0x50cec4
+  48fb40:	81                   	.byte 0x81
+
+
+/home/pes/ghidra_projects/shift/SHIFT.exe:     file format pei-i386
+
+
+Disassembly of section .text:
+
+0050c880 <.text+0x10b880>:
+  50c880:	56                   	push   esi
+  50c881:	8b f1                	mov    esi,ecx
+  50c883:	80 7e 0c 00          	cmp    BYTE PTR [esi+0xc],0x0
+  50c887:	74 20                	je     0x50c8a9
+  50c889:	8b 4e 04             	mov    ecx,DWORD PTR [esi+0x4]
+  50c88c:	8b 01                	mov    eax,DWORD PTR [ecx]
+  50c88e:	8b 50 04             	mov    edx,DWORD PTR [eax+0x4]
+  50c891:	ff d2                	call   edx
+  50c893:	84 c0                	test   al,al
+  50c895:	74 16                	je     0x50c8ad
+  50c897:	8b ce                	mov    ecx,esi
+  50c899:	e8 92 ff ff ff       	call   0x50c830
+  50c89e:	e9 93 05 f3 ff       	jmp    0x43ce36
+  50c8a3:	ff 15 d0 59 ac 00    	call   DWORD PTR ds:0xac59d0
+  50c8a9:	32 c0                	xor    al,al
+  50c8ab:	5e                   	pop    esi
+  50c8ac:	c3                   	ret
+  50c8ad:	b0 01                	mov    al,0x1
+  50c8af:	5e                   	pop    esi
+  50c8b0:	c3                   	ret
+
+
+/home/pes/ghidra_projects/shift/SHIFT.exe:     file format pei-i386
+
+
+Disassembly of section .text:
+
+0050ceb0 <.text+0x10beb0>:
+  50ceb0:	56                   	push   esi
+  50ceb1:	8b f1                	mov    esi,ecx
+  50ceb3:	8d 4e 10             	lea    ecx,[esi+0x10]
+  50ceb6:	e8 05 25 32 00       	call   0x82f3c0
+  50cebb:	84 c0                	test   al,al
+  50cebd:	75 07                	jne    0x50cec6
+  50cebf:	e9 72 2c f8 ff       	jmp    0x48fb36
+  50cec4:	5e                   	pop    esi
+  50cec5:	c3                   	ret
+  50cec6:	8b ce                	mov    ecx,esi
+  50cec8:	e8 b3 f9 ff ff       	call   0x50c880
+  50cecd:	84 c0                	test   al,al
+  50cecf:	75 ee                	jne    0x50cebf
+  50ced1:	83 7e 48 00          	cmp    DWORD PTR [esi+0x48],0x0
+  50ced5:	74 0f                	je     0x50cee6
+  50ced7:	8b 4e 48             	mov    ecx,DWORD PTR [esi+0x48]
+  50ceda:	8b 01                	mov    eax,DWORD PTR [ecx]
+  50cedc:	8b 80 4c 02 00 00    	mov    eax,DWORD PTR [eax+0x24c]
+  50cee2:	32 d2                	xor    dl,dl
+  50cee4:	ff d0                	call   eax
+  50cee6:	33 c0                	xor    eax,eax
+  50cee8:	5e                   	pop    esi
+  50cee9:	c3                   	ret
+  50ceea:	cc                   	int3
+  50ceeb:	cc                   	int3
+  50ceec:	cc                   	int3
+  50ceed:	cc                   	int3
+  50ceee:	cc                   	int3
+  50ceef:	cc                   	int3
+
+
+/home/pes/ghidra_projects/shift/SHIFT.exe:     file format pei-i386
+
+
+Disassembly of section .text:
+
+0082f3c0 <.text+0x42e3c0>:
+  82f3c0:	83 79 24 00          	cmp    DWORD PTR [ecx+0x24],0x0
+  82f3c4:	0f 94 c0             	sete   al
+  82f3c7:	c3                   	ret
