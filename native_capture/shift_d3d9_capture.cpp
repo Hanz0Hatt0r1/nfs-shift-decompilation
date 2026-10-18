@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <cctype>
 #include <iterator>
+#include <list>
 #include <locale>
 #include <cstdint>
 #include <cstdlib>
@@ -1391,12 +1392,28 @@ std::unordered_map<void*, BufferLockState> g_index_buffer_lock_states;
 std::atomic<unsigned long long> g_buffer_payload_sequence{0};
 
 struct DeferredBufferPayload {
+    const void* buffer = nullptr;
     BufferLockState state;
     std::vector<unsigned char> payload;
 };
 
 std::mutex g_deferred_buffer_payload_mutex;
-std::unordered_map<const void*, DeferredBufferPayload> g_deferred_buffer_payloads;
+std::list<DeferredBufferPayload> g_deferred_buffer_payloads;
+std::unordered_map<
+    const void*, std::list<DeferredBufferPayload>::iterator>
+    g_deferred_buffer_payload_index;
+std::uint64_t g_deferred_buffer_payload_bytes = 0;
+std::uint64_t g_deferred_buffer_payload_evicted_count = 0;
+std::uint64_t g_deferred_buffer_payload_evicted_bytes = 0;
+std::uint64_t g_deferred_buffer_payload_oversized_count = 0;
+std::uint64_t g_deferred_buffer_payload_oversized_bytes = 0;
+
+std::uint64_t deferred_buffer_payload_max_bytes() {
+    static const std::uint64_t limit = env_u64(
+        "SHIFT_D3D9_CAPTURE_DEFERRED_BUFFER_PAYLOAD_MAX_BYTES",
+        256ULL * 1024 * 1024);
+    return limit;
+}
 
 bool buffer_payload_capture_enabled() {
     return env_enabled("SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS");
@@ -1472,8 +1489,38 @@ void retain_or_write_buffer_payload(
     if (payload.empty()) return;
     if (trigger_capture_enabled() && !writer().trigger_is_active()) {
         std::lock_guard<std::mutex> lock(g_deferred_buffer_payload_mutex);
-        g_deferred_buffer_payloads[buffer] =
-            DeferredBufferPayload{state, std::move(payload)};
+        const auto existing = g_deferred_buffer_payload_index.find(buffer);
+        if (existing != g_deferred_buffer_payload_index.end()) {
+            g_deferred_buffer_payload_bytes -=
+                existing->second->payload.size();
+            g_deferred_buffer_payloads.erase(existing->second);
+            g_deferred_buffer_payload_index.erase(existing);
+        }
+
+        const std::uint64_t payload_bytes = payload.size();
+        const std::uint64_t limit = deferred_buffer_payload_max_bytes();
+        if (payload_bytes > limit) {
+            ++g_deferred_buffer_payload_oversized_count;
+            g_deferred_buffer_payload_oversized_bytes += payload_bytes;
+            return;
+        }
+
+        while (g_deferred_buffer_payload_bytes > limit - payload_bytes &&
+               !g_deferred_buffer_payloads.empty()) {
+            const auto oldest = g_deferred_buffer_payloads.begin();
+            const std::uint64_t oldest_bytes = oldest->payload.size();
+            g_deferred_buffer_payload_index.erase(oldest->buffer);
+            g_deferred_buffer_payload_bytes -= oldest_bytes;
+            g_deferred_buffer_payload_evicted_bytes += oldest_bytes;
+            ++g_deferred_buffer_payload_evicted_count;
+            g_deferred_buffer_payloads.erase(oldest);
+        }
+
+        g_deferred_buffer_payloads.push_back(
+            DeferredBufferPayload{buffer, state, std::move(payload)});
+        const auto inserted = std::prev(g_deferred_buffer_payloads.end());
+        g_deferred_buffer_payload_index[buffer] = inserted;
+        g_deferred_buffer_payload_bytes += payload_bytes;
         return;
     }
     write_buffer_payload_file(buffer, state, payload);
@@ -1482,23 +1529,51 @@ void retain_or_write_buffer_payload(
 void discard_deferred_buffer_payload(const void* buffer) {
     if (!buffer) return;
     std::lock_guard<std::mutex> lock(g_deferred_buffer_payload_mutex);
-    g_deferred_buffer_payloads.erase(buffer);
+    const auto it = g_deferred_buffer_payload_index.find(buffer);
+    if (it == g_deferred_buffer_payload_index.end()) return;
+    g_deferred_buffer_payload_bytes -= it->second->payload.size();
+    g_deferred_buffer_payloads.erase(it->second);
+    g_deferred_buffer_payload_index.erase(it);
 }
 
 void flush_deferred_buffer_payloads_for_trigger() {
-    std::vector<std::pair<const void*, DeferredBufferPayload>> snapshots;
+    if (!buffer_payload_capture_enabled()) return;
+
+    std::list<DeferredBufferPayload> snapshots;
+    std::uint64_t retained_bytes = 0;
+    std::uint64_t evicted_count = 0;
+    std::uint64_t evicted_bytes = 0;
+    std::uint64_t oversized_count = 0;
+    std::uint64_t oversized_bytes = 0;
     {
         std::lock_guard<std::mutex> lock(g_deferred_buffer_payload_mutex);
-        snapshots.reserve(g_deferred_buffer_payloads.size());
-        for (auto& entry : g_deferred_buffer_payloads) {
-            snapshots.emplace_back(entry.first, std::move(entry.second));
-        }
-        g_deferred_buffer_payloads.clear();
+        snapshots.splice(snapshots.end(), g_deferred_buffer_payloads);
+        g_deferred_buffer_payload_index.clear();
+        retained_bytes = g_deferred_buffer_payload_bytes;
+        g_deferred_buffer_payload_bytes = 0;
+        evicted_count = g_deferred_buffer_payload_evicted_count;
+        evicted_bytes = g_deferred_buffer_payload_evicted_bytes;
+        oversized_count = g_deferred_buffer_payload_oversized_count;
+        oversized_bytes = g_deferred_buffer_payload_oversized_bytes;
+        g_deferred_buffer_payload_evicted_count = 0;
+        g_deferred_buffer_payload_evicted_bytes = 0;
+        g_deferred_buffer_payload_oversized_count = 0;
+        g_deferred_buffer_payload_oversized_bytes = 0;
     }
-    for (auto& entry : snapshots) {
+    for (const auto& entry : snapshots) {
         write_buffer_payload_file(
-            entry.first, entry.second.state, entry.second.payload);
+            entry.buffer, entry.state, entry.payload);
     }
+
+    std::ostringstream fields;
+    fields << "\"max_bytes\":" << deferred_buffer_payload_max_bytes()
+           << ",\"retained_count\":" << snapshots.size()
+           << ",\"retained_bytes\":" << retained_bytes
+           << ",\"evicted_count\":" << evicted_count
+           << ",\"evicted_bytes\":" << evicted_bytes
+           << ",\"oversized_count\":" << oversized_count
+           << ",\"oversized_bytes\":" << oversized_bytes;
+    writer().write_event("deferred_buffer_payload_summary", fields.str());
 }
 
 bool should_capture_full_buffer(UINT offset, UINT size, UINT length) {

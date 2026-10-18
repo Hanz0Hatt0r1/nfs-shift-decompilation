@@ -33,21 +33,31 @@ def resolve_input_path(path: str | Path) -> Path:
     )
 
 
-def _decode_line(text: str) -> tuple[Any, list[str]]:
+def _decode_line(text: str) -> tuple[Any, list[str], list[str]]:
     duplicate_keys: list[str] = []
+    conflicting_duplicate_keys: list[str] = []
 
     def hook(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
         value: dict[str, Any] = {}
+        first_values: dict[str, Any] = {}
         for key, item in pairs:
             if key in value:
                 duplicate_keys.append(key)
+                if item != first_values[key]:
+                    conflicting_duplicate_keys.append(key)
+            else:
+                first_values[key] = item
             value[key] = item
         return value
 
-    return json.loads(text, object_pairs_hook=hook), duplicate_keys
+    return (
+        json.loads(text, object_pairs_hook=hook),
+        duplicate_keys,
+        conflicting_duplicate_keys,
+    )
 
 
-def _shader_digest(row: Mapping[str, Any]) -> str | None:
+def _shader_identity(row: Mapping[str, Any]) -> tuple[str, str] | None:
     raw = row.get("bytes_hex")
     if not isinstance(raw, str) or not raw or len(raw) % 2:
         return None
@@ -55,7 +65,11 @@ def _shader_digest(row: Mapping[str, Any]) -> str | None:
         payload = bytes.fromhex(raw)
     except ValueError:
         return None
-    return hashlib.sha256(payload).hexdigest()
+    digest = hashlib.sha256(payload).hexdigest()
+    fnv = 14695981039346656037
+    for byte in payload:
+        fnv = ((fnv ^ byte) * 1099511628211) & 0xFFFFFFFFFFFFFFFF
+    return digest, f"ps:{fnv:016x}"
 
 
 def _target_pixel_hashes(value: Mapping[str, Any] | None) -> set[str]:
@@ -126,7 +140,9 @@ def audit_capture_lines(
 ) -> dict[str, Any]:
     event_counts: Counter[str] = Counter()
     duplicate_key_counts: Counter[str] = Counter()
+    conflicting_duplicate_key_counts: Counter[str] = Counter()
     duplicate_line_count = 0
+    conflicting_duplicate_line_count = 0
     invalid_json_count = 0
     non_object_count = 0
     nonempty_line_count = 0
@@ -155,6 +171,7 @@ def audit_capture_lines(
     target_pixel_draw_counts: Counter[str] = Counter()
     target_pixel_draw_first_frame: dict[str, int] = {}
     target_pixel_draw_last_frame: dict[str, int] = {}
+    target_pixel_resource_signatures: dict[str, set[str]] = {}
     pixel_shader_objects: dict[tuple[str, str], str] = {}
     active_pixel_shader: dict[str, str | None] = {}
 
@@ -164,7 +181,7 @@ def audit_capture_lines(
             continue
         nonempty_line_count += 1
         try:
-            value, duplicates = _decode_line(text)
+            value, duplicates, conflicting_duplicates = _decode_line(text)
         except json.JSONDecodeError:
             invalid_json_count += 1
             continue
@@ -175,6 +192,9 @@ def audit_capture_lines(
         if duplicates:
             duplicate_line_count += 1
             duplicate_key_counts.update(duplicates)
+        if conflicting_duplicates:
+            conflicting_duplicate_line_count += 1
+            conflicting_duplicate_key_counts.update(conflicting_duplicates)
 
         event = str(value.get("event") or "<missing>")
         event_counts[event] += 1
@@ -219,8 +239,9 @@ def audit_capture_lines(
             resource_signature_count += 1
 
         if event in {"create_vertex_shader", "create_pixel_shader"}:
-            digest = _shader_digest(value)
-            if digest:
+            identity = _shader_identity(value)
+            if identity:
+                digest, resource_signature = identity
                 if event == "create_vertex_shader":
                     unique_vertex_shader_hashes.add(digest)
                 else:
@@ -232,6 +253,9 @@ def audit_capture_lines(
                     if digest in target_pixel_hash_set:
                         target_pixel_creation_count += 1
                         target_pixel_creation_counts[digest] += 1
+                        target_pixel_resource_signatures.setdefault(
+                            digest, set()
+                        ).add(resource_signature)
                         matched_target_pixel_hashes.add(digest)
 
         if event == "set_pixel_shader":
@@ -373,6 +397,9 @@ def audit_capture_lines(
             "invalid_json_count": invalid_json_count,
             "non_object_count": non_object_count,
             "duplicate_key_line_count": duplicate_line_count,
+            "duplicate_key_conflict_line_count": (
+                conflicting_duplicate_line_count
+            ),
             "frame_min": frame_min,
             "frame_max": frame_max,
             "event_index_min": event_index_min,
@@ -393,6 +420,9 @@ def audit_capture_lines(
         },
         "event_counts": dict(sorted(event_counts.items())),
         "duplicate_key_counts": dict(sorted(duplicate_key_counts.items())),
+        "duplicate_key_conflict_counts": dict(
+            sorted(conflicting_duplicate_key_counts.items())
+        ),
         "target_inventory": {
             "supplied": target_inventory is not None,
             "pixel_target_hash_count": len(target_pixel_hash_set),
@@ -420,6 +450,9 @@ def audit_capture_lines(
                     ),
                     "last_draw_frame": target_pixel_draw_last_frame.get(
                         digest
+                    ),
+                    "resource_trigger_signatures": sorted(
+                        target_pixel_resource_signatures.get(digest, set())
                     ),
                 }
                 for digest in sorted(matched_target_pixel_hashes)

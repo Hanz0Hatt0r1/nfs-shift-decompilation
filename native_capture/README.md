@@ -29,6 +29,19 @@ Optional capture paths cover:
 
 Binary payloads are separate artifacts referenced by versioned events.
 
+When a resource-triggered capture is armed, full-buffer snapshots are retained
+until the trigger fires so payloads created before the target draw can be
+included. This deferred cache is bounded to 256 MiB by default; oldest
+snapshots are evicted first. Set
+`SHIFT_D3D9_CAPTURE_DEFERRED_BUFFER_PAYLOAD_MAX_BYTES` to change the limit.
+Each trigger writes a `deferred_buffer_payload_summary` event with retained,
+evicted, and oversized payload counts and byte totals.
+
+To discover the exact trigger value for a target shader, run
+`d3d9_raw_capture_audit.py` with the target inventory. Each matched target's
+`resource_trigger_signatures` includes the `ps:<fnv1a64>` signature accepted by
+`SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER`.
+
 ## Stability and black-screen diagnostics
 
 The proxy has three startup modes selected with `SHIFT_D3D9_CAPTURE_MODE`:
@@ -41,6 +54,22 @@ The log is JSONL. Set an explicit path with:
 
 ```bat
 set SHIFT_D3D9_CAPTURE=C:\\temp\\shift_d3d9_capture.jsonl
+```
+
+For a focused shader capture, set the target signature and payload directories
+before launching the game. The output directories must already exist:
+
+```bash
+export SHIFT_D3D9_CAPTURE_MODE=capture
+export SHIFT_D3D9_CAPTURE=/path/to/artifacts/target.jsonl
+export SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER=ps:0123456789abcdef
+export SHIFT_D3D9_CAPTURE_TRIGGER_PRE_FRAMES=2
+export SHIFT_D3D9_CAPTURE_TRIGGER_POST_FRAMES=2
+export SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS=1
+export SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR=/path/to/artifacts/buffers
+export SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT=1
+export SHIFT_D3D9_CAPTURE_TEXTURE_STAGES=0,1,2,3
+export SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR=/path/to/artifacts/textures
 ```
 
 If no path is specified the proxy first uses `shift_d3d9_capture.jsonl` in the process working directory and falls back to the Windows temporary directory if that path is not writable. Set `SHIFT_D3D9_CAPTURE_DEBUG_OUTPUT=1` to mirror events to `OutputDebugStringA` for DebugView/WinDbg.

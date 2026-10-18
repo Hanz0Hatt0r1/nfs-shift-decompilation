@@ -441,11 +441,14 @@ def test_trigger_buffer_payloads_defer_disk_io_until_trigger():
     ):
         assert token in source
 
-    assert "DeferredBufferPayload{state, std::move(payload)}" in source
+    assert "DeferredBufferPayload{buffer, state, std::move(payload)}" in source
+    assert "SHIFT_D3D9_CAPTURE_DEFERRED_BUFFER_PAYLOAD_MAX_BYTES" in source
+    assert "g_deferred_buffer_payload_bytes" in source
     assert "if (!activate_capture_trigger(g_frame.load())) return false;" in source
     assert "activate_capture_trigger(g_frame.load());" in source
     assert "write_buffer_payload_file(" in source
-    assert "g_deferred_buffer_payloads.clear();" in source
+    assert "snapshots.splice(snapshots.end(), g_deferred_buffer_payloads);" in source
+    assert 'writer().write_event("deferred_buffer_payload_summary"' in source
     assert "discard_deferred_buffer_payload(*out_buffer);" in source
 
 

@@ -159,6 +159,7 @@ def test_raw_capture_audit_reports_shader_target_and_missing_payload_gates():
         "draw_hit_count": 1,
         "first_draw_frame": 4,
         "last_draw_frame": 4,
+        "resource_trigger_signatures": ["ps:796cfa17e6e47a79"],
     }]
 
 
@@ -179,7 +180,22 @@ def test_raw_capture_audit_detects_duplicate_keys_before_json_collapses_them():
         "pool": 1,
         "width": 1,
     }
+    assert report["summary"]["duplicate_key_conflict_line_count"] == 0
+    assert report["duplicate_key_conflict_counts"] == {}
     assert "json:duplicate-object-keys-observed" in report["blocking_reasons"]
+
+
+def test_raw_capture_audit_reports_conflicting_duplicate_keys():
+    line = (
+        '{"event":"create_texture","width":64,"width":32}'
+    )
+
+    report = audit_capture_lines([line])
+
+    assert report["summary"]["duplicate_key_line_count"] == 1
+    assert report["summary"]["duplicate_key_conflict_line_count"] == 1
+    assert report["duplicate_key_counts"] == {"width": 1}
+    assert report["duplicate_key_conflict_counts"] == {"width": 1}
 
 
 def test_raw_capture_audit_recognizes_exact_resource_and_snapshot_inputs():
@@ -410,4 +426,3 @@ def test_target_draw_coverage_tracks_device_state_and_shader_unbind():
     assert observation["draw_hit_count"] == 2
     assert observation["first_draw_frame"] == 2
     assert observation["last_draw_frame"] == 4
-
