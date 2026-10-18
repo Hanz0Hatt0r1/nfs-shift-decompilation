@@ -6,6 +6,17 @@ if [[ $# -ne 6 ]]; then
   exit 2
 fi
 
+timeout_seconds=${SHIFT_ENTRYPOINT_TIMEOUT_SECONDS:-180}
+if [[ ! "$timeout_seconds" =~ ^[1-9][0-9]*$ ]]; then
+  printf 'SHIFT_ENTRYPOINT_TIMEOUT_SECONDS must be a positive integer\n' >&2
+  exit 2
+fi
+probe_frames=${SHIFT_ENTRYPOINT_PROBE_FRAMES:-120}
+if [[ ! "$probe_frames" =~ ^[1-9][0-9]*$ ]]; then
+  printf 'SHIFT_ENTRYPOINT_PROBE_FRAMES must be a positive integer\n' >&2
+  exit 2
+fi
+
 runtime=$1
 artifact_root=$2
 build_root=$3
@@ -19,11 +30,16 @@ log_path="$(cd "$log_directory" && pwd)/$(basename -- "$log_path")"
 
 cd "$game_data_root"
 
-# /dev/null satisfies the runtime's required scene-source option. The retail
-# entry-point probe exits before scene loading; replace it if startup reaches
-# the frame loop.
+mesh_source=${SHIFT_ENTRYPOINT_PROBE_MESH:-/dev/null}
+if [[ ! -r "$mesh_source" ]]; then
+  printf 'probe mesh is not readable: %s\n' "$mesh_source" >&2
+  exit 2
+fi
+
+# /dev/null is enough to isolate guest entry-point behavior. Supply an MGEO
+# file through SHIFT_ENTRYPOINT_PROBE_MESH to continue into the Vulkan loop.
 probe_args=(
-  --mesh /dev/null
+  --mesh "$mesh_source"
   --shader-dir "$build_root/shaders"
   --recompiled-module "$artifact_root/libnfs_shift_pcode_startup_20261018.so"
   --recompiled-override "$build_root/libnfs_shift_pcode_frontier.so"
@@ -60,7 +76,8 @@ probe_args=(
   --recompiled-supplement "$artifact_root/libnfs_shift_pcode_rvi_00a9ae54.so"
   --recompiled-supplement "$artifact_root/libnfs_shift_pcode_startup_00918b33_complete.so"
   --pe-image "$pe_image"
+  --frames "$probe_frames"
   --recompiled-entrypoint
 )
 
-timeout 180s "$runtime" "${probe_args[@]}" >"$log_path" 2>&1
+timeout "${timeout_seconds}s" "$runtime" "${probe_args[@]}" >"$log_path" 2>&1

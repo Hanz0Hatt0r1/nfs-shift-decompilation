@@ -1,0 +1,37 @@
+{
+  "compiler": {
+    "arguments": [
+      "-std=c11",
+      "-O0",
+      "-fPIC",
+      "-shared",
+      "-Wl,-z,defs"
+    ],
+    "path": "/usr/bin/clang",
+    "version": "clang version 22.1.8"
+  },
+  "format": "NFSShift.GhidraPcodeSupplementBuild/1",
+  "library": {
+    "bytes": 73232,
+    "exported_pcode_functions": 1,
+    "path": "/tmp/shift-0054be00-supplement-2079/libnfs_shift_pcode_supplement.so",
+    "sha256": "8a652ef9ac3dcec736e805ebf59851c9a7b68e2a3f1b729106d1ea94425d69f8"
+  },
+  "lowering": {
+    "first_function": "0x0054be00",
+    "instructions": 86,
+    "last_function": "0x0054be00",
+    "lowered_functions": 1,
+    "pcode_operations": 249,
+    "records": 1,
+    "rejected_functions": 0,
+    "rejection_reasons": [],
+    "source_bytes": 108818,
+    "source_sha256": "5e002ff2d4ca36cfb67ffdef2b3c9b29e29140a084a3d3e1151919aaee3e2322"
+  },
+  "revenginstr_revision": "432b528f9c3db36dda50c846aafe5afb3c141204",
+  "source_inputs": {
+    "address_spaces_sha256": "e922b22ab08ba04109f57197534a2e848b171210a35de795514fe0f3ef8effb0",
+    "instructions_sha256": "b4303ff681b351e08fa4f6d437b3de7021e1499e3861b2392fa88d1443d8d636"
+  }
+}

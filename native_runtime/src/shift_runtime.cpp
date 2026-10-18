@@ -1450,7 +1450,7 @@ struct Window {
         xcb_flush(connection);
     }
 
-    void poll(bool& quit, InputState& input) {
+    void poll(bool& quit, InputState& input, std::string& quit_reason) {
         while (xcb_generic_event_t* raw = xcb_poll_for_event(connection)) {
             const uint8_t type = raw->response_type & 0x7f;
             if (type == XCB_KEY_PRESS || type == XCB_KEY_RELEASE) {
@@ -1459,8 +1459,16 @@ struct Window {
                 const bool pressed = type == XCB_KEY_PRESS;
                 switch (event->detail) {
                     case 9:
+                        if (pressed) {
+                            quit = true;
+                            quit_reason = "escape_key";
+                        }
+                        break;
                     case 24:
-                        if (pressed) quit = true;
+                        if (pressed) {
+                            quit = true;
+                            quit_reason = "q_key";
+                        }
                         break;
                     case 111:
                     case 25:
@@ -1483,6 +1491,7 @@ struct Window {
                 }
             } else if (type == XCB_DESTROY_NOTIFY) {
                 quit = true;
+                quit_reason = "window_destroyed";
             }
             std::free(raw);
         }
@@ -1641,6 +1650,7 @@ struct Runtime {
     std::vector<VkSemaphore> render_finished;
     std::array<VkFence, kFramesInFlight> fences{};
     size_t frame_slot = 0;
+    std::string frame_stop_reason;
 
     Buffer vertex_buffer;
     Buffer index_buffer;
@@ -2844,6 +2854,7 @@ struct Runtime {
     }
 
     bool frame() {
+        frame_stop_reason.clear();
         const size_t slot = frame_slot % kFramesInFlight;
         vk_check(vkWaitForFences(
                      device, 1, &fences[slot], VK_TRUE, UINT64_MAX),
@@ -2855,8 +2866,13 @@ struct Runtime {
             image_available[slot], VK_NULL_HANDLE,
             &image_index);
 
-        if (acquire == VK_ERROR_OUT_OF_DATE_KHR) return false;
-        vk_check(acquire, "vkAcquireNextImageKHR failed");
+        if (acquire == VK_ERROR_OUT_OF_DATE_KHR) {
+            frame_stop_reason = "acquire_out_of_date";
+            return false;
+        }
+        if (acquire != VK_SUBOPTIMAL_KHR) {
+            vk_check(acquire, "vkAcquireNextImageKHR failed");
+        }
 
         vk_check(vkResetFences(
                      device, 1, &fences[slot]),
@@ -2895,11 +2911,13 @@ struct Runtime {
             vkQueuePresentKHR(present_queue, &present);
 
         ++frame_slot;
-        if (present_result == VK_ERROR_OUT_OF_DATE_KHR ||
-            present_result == VK_SUBOPTIMAL_KHR) {
+        if (present_result == VK_ERROR_OUT_OF_DATE_KHR) {
+            frame_stop_reason = "present_out_of_date";
             return false;
         }
-        vk_check(present_result, "vkQueuePresentKHR failed");
+        if (present_result != VK_SUBOPTIMAL_KHR) {
+            vk_check(present_result, "vkQueuePresentKHR failed");
+        }
         return true;
     }
 
@@ -3430,6 +3448,7 @@ int main(int argc, char** argv) {
         uint64_t simulation_steps = 0;
         uint64_t recompiled_step_invocations = 0;
         bool quit = false;
+        std::string quit_reason;
         InputState live_input{};
         shift::runtime::NativeRuntimeState native_state{};
         const bool camera_state_bridge_loaded =
@@ -3778,7 +3797,7 @@ int main(int argc, char** argv) {
             std::chrono::steady_clock::now();
 
         while (loop_policy.should_continue(quit, rendered)) {
-            window.poll(quit, live_input);
+            window.poll(quit, live_input, quit_reason);
 
             if (recompiled_module && args.recompiled_entrypoint_enabled) {
                 const int result = recompiled_module->run_guest_threads();
@@ -3952,9 +3971,19 @@ int main(int argc, char** argv) {
 
         const auto material_draw_count = runtime.material_draws.size();
         const auto depth_buffer_count = runtime.depth_images.size();
+        const std::string loop_exit_reason = !runtime.frame_stop_reason.empty()
+            ? runtime.frame_stop_reason
+            : !quit_reason.empty()
+                ? quit_reason
+                : (loop_policy.frame_limit_enabled && rendered >= frame_limit
+                       ? "frame_limit"
+                       : "loop_condition");
         runtime.destroy();
         window.destroy();
         const auto validation_errors = runtime.validation.error_count();
+        const auto guest_scheduler_state = recompiled_module
+            ? recompiled_module->guest_scheduler_snapshot()
+            : shift::runtime::RecompiledGuestSchedulerSnapshot{};
 
         std::cout
             << "{\n"
@@ -3962,6 +3991,8 @@ int main(int argc, char** argv) {
             << "\"SHIFT.NativeRuntimeFrameLoop/1\",\n"
             << "  \"frames_rendered\": "
             << rendered << ",\n"
+            << "  \"loop_exit_reason\": \""
+            << loop_exit_reason << "\",\n"
             << "  \"recompiled_pcode_module_loaded\": "
             << (recompiled_module ? "true" : "false") << ",\n"
             << "  \"recompiled_pcode_supplement_count\": "
@@ -3993,6 +4024,49 @@ int main(int argc, char** argv) {
                     ? "cooperative-host-coroutines"
                     : "disabled")
             << "\",\n"
+            << "  \"recompiled_guest_scheduler_state\": {\n"
+            << "    \"entry_point_started\": "
+            << (guest_scheduler_state.entry_point_started ? "true" : "false")
+            << ",\n"
+            << "    \"entry_point_complete\": "
+            << (guest_scheduler_state.entry_point_complete ? "true" : "false")
+            << ",\n"
+            << "    \"main_thread_started\": "
+            << (guest_scheduler_state.main_thread_started ? "true" : "false")
+            << ",\n"
+            << "    \"main_thread_completed\": "
+            << (guest_scheduler_state.main_thread_completed ? "true" : "false")
+            << ",\n"
+            << "    \"main_thread_waiting\": "
+            << (guest_scheduler_state.main_thread_waiting ? "true" : "false")
+            << ",\n"
+            << "    \"main_thread_runnable\": "
+            << (guest_scheduler_state.main_thread_runnable ? "true" : "false")
+            << ",\n"
+            << "    \"main_thread_exit_requested\": "
+            << (guest_scheduler_state.main_thread_exit_requested ? "true" : "false")
+            << ",\n"
+            << "    \"main_thread_wait_handle\": \""
+            << format_guest_address(guest_scheduler_state.main_thread_wait_handle)
+            << "\",\n"
+            << "    \"main_thread_wait_result\": \""
+            << format_guest_address(guest_scheduler_state.main_thread_wait_result)
+            << "\",\n"
+            << "    \"main_thread_current_function\": \""
+            << format_guest_address(
+                   guest_scheduler_state.main_thread_current_function)
+            << "\",\n"
+            << "    \"ready_thread_count\": "
+            << guest_scheduler_state.ready_thread_count << ",\n"
+            << "    \"worker_thread_count\": "
+            << guest_scheduler_state.worker_thread_count << ",\n"
+            << "    \"worker_waiting_count\": "
+            << guest_scheduler_state.worker_waiting_count << ",\n"
+            << "    \"worker_runnable_count\": "
+            << guest_scheduler_state.worker_runnable_count << ",\n"
+            << "    \"worker_completed_count\": "
+            << guest_scheduler_state.worker_completed_count << "\n"
+            << "  },\n"
             << "  \"recompiled_pe_section_count\": "
             << recompiled_pe_image_info.section_count << ",\n"
             << "  \"recompiled_pe_import_module_count\": "

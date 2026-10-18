@@ -1,0 +1,101 @@
+{
+  "format": "NFSShift.RetailEntrypointProbe/1",
+  "captured_at": "2026-10-18",
+  "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+  "branch": "codex/nfs-linux-full-launch-20261018",
+  "base_commit": "506c20176ac93eadb4025e44f95ff4002a38a997",
+  "inputs": {
+    "pe_image": {
+      "path": "/home/pes/ghidra_projects/shift/SHIFT.exe",
+      "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+    },
+    "game_data_root": "/home/pes/ghidra_projects/shift/Need For Speed.Shift.v 1.02",
+    "startup_pcode_module": {
+      "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/libnfs_shift_pcode_startup_20261018.so",
+      "sha256": "6f8016195fffe4e6b3803929cf50946bdcf96e00436295f0db32a468487207c3",
+      "exports": 41539
+    },
+    "linux_runtime": {
+      "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/linux-build-20261018/shift_runtime",
+      "sha256": "c1a59762d9b9ae0af1268ead1905bed72d0e0b3d9b6f58b1ab7420afe00e268b"
+    },
+    "frontier_override": {
+      "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/linux-build-20261018/libnfs_shift_pcode_frontier.so",
+      "sha256": "76d617fc24c81c697380344a2f5f1ecdb6c17361fc23e6f2beca830bdfbb2e51",
+      "new_export": "rvi_0050c8a9"
+    },
+    "mesh": {
+      "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/meshes/alpental-grid1_02.mgeo",
+      "sha256": "e2b4cda0347d94be3350a8ce158f7c1a1306b003e668ff455d9cd4924739f4ea",
+      "source_archive": "/home/pes/ghidra_projects/shift/Need For Speed.Shift.v 1.02/Pakfiles/Tracks/Alpental.bff",
+      "source_entry": "tracks/alpental/grid1_02.meb",
+      "vertices": 4,
+      "triangles": 2
+    }
+  },
+  "execution": {
+    "command_script": "tools/run_shift_recompiled_entrypoint_probe.sh",
+    "exit_code": 0,
+    "log": "evidence/retail_frontier_20261018/shift-probe-v110.log",
+    "persistent_log_copy": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v110.log",
+    "log_sha256": "495dc594560ad41cc60d81267216297d52cf8ec49af62146ae5e5d2f53a5b3f5",
+    "bootstrap": {
+      "format": "SHIFT.NativeRuntimeBootstrap/1",
+      "geometry_source": "MGEO",
+      "geometry_vertices": 4,
+      "geometry_indices": 6,
+      "frames_requested": 120
+    },
+    "frame_loop": {
+      "format": "SHIFT.NativeRuntimeFrameLoop/1",
+      "status": "ok",
+      "validation_enabled": false,
+      "validation_errors": 0,
+      "frames_rendered": 120,
+      "loop_exit_reason": "frame_limit",
+      "pe_image_loaded": true,
+      "pe_entry_point": "0x0090488a",
+      "pe_entry_point_invocations": 1,
+      "pe_entry_point_complete": false,
+      "pcode_function_dispatches": 80626,
+      "pcode_unique_functions_dispatched": 1417,
+      "pcode_frozen_corpus_function_count": 41538,
+      "supplement_count": 31,
+      "guest_scheduler": {
+        "entry_point_started": true,
+        "entry_point_complete": false,
+        "main_thread_started": true,
+        "main_thread_completed": false,
+        "main_thread_waiting": false,
+        "main_thread_runnable": true,
+        "main_thread_exit_requested": false,
+        "main_thread_wait_handle": "0x0006002c",
+        "main_thread_current_function": "0x006472d0",
+        "ready_thread_count": 1,
+        "worker_thread_count": 4,
+        "worker_waiting_count": 4,
+        "worker_runnable_count": 0,
+        "worker_completed_count": 0
+      }
+    }
+  },
+  "analysis": {
+    "current_guest_function": {
+      "address": "0x006472d0",
+      "ghidra_observation": "FUN_006472d0 begins with SwitchToThread and updates execution/app timer fields before returning.",
+      "reference": "/home/pes/ghidra_projects/shift/SHIFT.exe.c:525305"
+    }
+  },
+  "interpretation": {
+    "confirmed": [
+      "The previous missing-export frontier at 0x0050c8a9 is resolved.",
+      "VK_SUBOPTIMAL_KHR from Vulkan acquire/present no longer terminates the loop; the 120-frame smoke reached its frame cap.",
+      "The host Vulkan runtime rendered 120 frames while pumping the cooperative guest scheduler, with 80,626 P-code dispatches and no runtime error."
+    ],
+    "open": [
+      "The main guest thread remains runnable at 0x006472d0; the PE entry point is not marked complete.",
+      "The smoke renders converted MGEO geometry, not a retail D3D9 frame; game rendering and input are not yet connected to this Vulkan loop.",
+      "Validation layers were disabled for this run."
+    ]
+  }
+}

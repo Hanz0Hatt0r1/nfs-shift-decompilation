@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Preflight direct CALL/JMP targets against the frozen P-code function corpus.
+"""Preflight direct control-flow targets against the frozen P-code function corpus.
 
 The report is intentionally structural. It identifies direct control-flow targets
 that are not normal Ghidra function starts so they can be reviewed/exported in a
@@ -21,7 +21,7 @@ FUNCTION_FORMATS = {
     "REVENGINSTR.GhidraFunctionInstructions/1",
     "SHIFT.GhidraFunctionInstructions/2",
 }
-FORMAT = "NFSShift.PcodeDirectEntrypointPreflight/1"
+FORMAT = "NFSShift.PcodeDirectEntrypointPreflight/2"
 
 
 def _open_text(path: Path) -> TextIO:
@@ -74,7 +74,14 @@ def _compact_transfers(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]]
             raise ValueError(f"{path}:{line_no}: unexpected compact row kind")
 
         mnemonic = str(row.get("mnemonic") or "").upper()
-        if mnemonic not in {"CALL", "JMP"}:
+        flow_type = row.get("flow_type")
+        if mnemonic == "CALL" and flow_type == "UNCONDITIONAL_CALL":
+            transfer_kind = "call"
+        elif mnemonic == "JMP" and flow_type == "UNCONDITIONAL_JUMP":
+            transfer_kind = "jump"
+        elif flow_type == "CONDITIONAL_JUMP":
+            transfer_kind = "conditional_branch"
+        else:
             continue
         flows = row.get("flows")
         if not isinstance(flows, list) or len(flows) != 1:
@@ -89,6 +96,7 @@ def _compact_transfers(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]]
                 "source": source,
                 "target": target,
                 "mnemonic": mnemonic,
+                "transfer_kind": transfer_kind,
             }
         )
         direct_targets.add(target)
@@ -160,8 +168,10 @@ def build(compact: Path, corpus: Path) -> dict[str, Any]:
     counts = {
         "covered_function_entry": 0,
         "internal_jump": 0,
+        "internal_conditional_branch": 0,
         "call_into_function_interior": 0,
         "jump_into_other_function_interior": 0,
+        "conditional_branch_into_function_interior": 0,
         "orphan_direct_target": 0,
         "outside_instruction_stream": 0,
     }
@@ -170,23 +180,27 @@ def build(compact: Path, corpus: Path) -> dict[str, Any]:
         source = transfer["source"]
         target = transfer["target"]
         mnemonic = transfer["mnemonic"]
+        transfer_kind = transfer["transfer_kind"]
         source_owner = owners.get(source)
         target_owner = owners.get(target)
 
         if target in starts:
             counts["covered_function_entry"] += 1
             continue
-        if (
-            mnemonic == "JMP"
-            and source_owner is not None
-            and target_owner == source_owner
-        ):
-            counts["internal_jump"] += 1
-            continue
+        if source_owner is not None and target_owner == source_owner:
+            internal_class = {
+                "jump": "internal_jump",
+                "conditional_branch": "internal_conditional_branch",
+            }.get(transfer_kind)
+            if internal_class is not None:
+                counts[internal_class] += 1
+                continue
 
         if target_owner is not None:
-            if mnemonic == "CALL":
+            if transfer_kind == "call":
                 classification = "call_into_function_interior"
+            elif transfer_kind == "conditional_branch":
+                classification = "conditional_branch_into_function_interior"
             else:
                 classification = "jump_into_other_function_interior"
         elif target in present_targets:
@@ -204,6 +218,7 @@ def build(compact: Path, corpus: Path) -> dict[str, Any]:
                     f"0x{source_owner:08x}" if source_owner is not None else None
                 ),
                 "mnemonic": mnemonic,
+                "transfer_kind": transfer_kind,
                 "target": f"0x{target:08x}",
                 "target_function": (
                     f"0x{target_owner:08x}" if target_owner is not None else None
@@ -234,9 +249,11 @@ def build(compact: Path, corpus: Path) -> dict[str, Any]:
         "supplemental_entrypoint_unique_targets": unique_targets,
         "candidates": candidates,
         "scope": {
-            "direct_call_and_jmp_only": True,
+            "direct_calls_included": True,
+            "direct_unconditional_jumps_included": True,
+            "direct_conditional_branches_included": True,
             "indirect_transfers_included": False,
-            "same_function_direct_jumps_ignored": True,
+            "same_function_direct_branches_ignored": True,
             "outside_instruction_stream_targets_are_not_candidates": True,
             "candidate_is_not_semantic_proof": True,
         },

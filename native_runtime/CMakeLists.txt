@@ -485,8 +485,21 @@ target_compile_options(shift_recompiled_pcode_module PRIVATE
   -Wall -Wextra -Wpedantic)
 
 add_library(shift_runtime_pcode_frontier MODULE
+  pcode_frontier/rvi_0040ec70.c
+  pcode_frontier/rvi_004d1f10.c
+  pcode_frontier/rvi_00509551.c
+  pcode_frontier/rvi_00509588.c
+  pcode_frontier/rvi_0050958c.c
+  pcode_frontier/rvi_0050968e.c
+  pcode_frontier/rvi_0050c8a9.c
+  pcode_frontier/rvi_0054be00.c
+  pcode_frontier/rvi_006470e0.c
+  pcode_frontier/rvi_00647d80.c
   pcode_frontier/rvi_00667170.c
   pcode_frontier/rvi_0065f0a0.c
+  pcode_frontier/rvi_0082db70.c
+  pcode_frontier/rvi_0082dda0.c
+  pcode_frontier/rvi_0082f780.c
   pcode_frontier/rvi_00907e4f.c)
 set_target_properties(shift_runtime_pcode_frontier PROPERTIES
   OUTPUT_NAME nfs_shift_pcode_frontier)
