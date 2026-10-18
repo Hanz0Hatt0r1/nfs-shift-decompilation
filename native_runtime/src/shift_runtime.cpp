@@ -2993,6 +2993,7 @@ struct Args {
     std::string shader_dir;
     std::string input_script;
     std::string recompiled_module;
+    std::string pe_image;
     uint32_t recompiled_step = 0;
     bool recompiled_step_enabled = false;
     int frames = kDefaultFrames;
@@ -3021,6 +3022,7 @@ Args parse_args(int argc, char** argv) {
             option == "--shader-dir" ||
             option == "--input-script" ||
             option == "--recompiled-module" ||
+            option == "--pe-image" ||
             option == "--recompiled-step" ||
             option == "--frames") {
             if (i + 1 >= argc) {
@@ -3055,6 +3057,8 @@ Args parse_args(int argc, char** argv) {
                 args.input_script = value;
             } else if (option == "--recompiled-module") {
                 args.recompiled_module = value;
+            } else if (option == "--pe-image") {
+                args.pe_image = value;
             } else if (option == "--recompiled-step") {
                 args.recompiled_step = parse_guest_address(value);
                 args.recompiled_step_enabled = true;
@@ -3082,7 +3086,8 @@ Args parse_args(int argc, char** argv) {
                 << "[--post-solve-projection FILE] "
                 << "[--persist-post-solve-body-state] "
                 << "[--input-script FILE] [--frames N] "
-                << "[--recompiled-module ELF --recompiled-step ADDRESS] "
+                << "[--recompiled-module ELF --recompiled-step ADDRESS "
+                << "[--pe-image PE32]] "
                 << "[--continuous] [--validation]\n";
             std::exit(EXIT_SUCCESS);
         } else {
@@ -3108,6 +3113,10 @@ Args parse_args(int argc, char** argv) {
         throw std::runtime_error(
             "--recompiled-module and --recompiled-step must be provided together");
     }
+    if (!args.pe_image.empty() && args.recompiled_module.empty()) {
+        throw std::runtime_error(
+            "--pe-image requires --recompiled-module and --recompiled-step");
+    }
     return args;
 }
 
@@ -3122,10 +3131,26 @@ int main(int argc, char** argv) {
         runtime.validation.enabled = args.validation;
         std::unique_ptr<shift::runtime::RecompiledPcodeModule>
             recompiled_module;
+        shift::runtime::Pe32ImageInfo recompiled_pe_image_info{};
+        bool recompiled_pe_image_loaded = false;
         if (!args.recompiled_module.empty()) {
             recompiled_module =
                 std::make_unique<shift::runtime::RecompiledPcodeModule>(
                     args.recompiled_module);
+            if (!args.pe_image.empty()) {
+                recompiled_pe_image_info =
+                    recompiled_module->load_pe32_image(args.pe_image);
+                recompiled_pe_image_loaded = true;
+                std::cerr << "Loaded PE32 image into P-code guest RAM: base="
+                          << format_guest_address(
+                                 recompiled_pe_image_info.image_base)
+                          << " size=" << recompiled_pe_image_info.image_size
+                          << " entry="
+                          << format_guest_address(
+                                 recompiled_pe_image_info.entry_point)
+                          << " sections="
+                          << recompiled_pe_image_info.section_count << '\n';
+            }
         }
 
         const bool input_script_mode =
@@ -3855,6 +3880,22 @@ int main(int argc, char** argv) {
             << rendered << ",\n"
             << "  \"recompiled_pcode_module_loaded\": "
             << (recompiled_module ? "true" : "false") << ",\n"
+            << "  \"recompiled_pe_image_loaded\": "
+            << (recompiled_pe_image_loaded ? "true" : "false") << ",\n"
+            << "  \"recompiled_pe_image_base\": \""
+            << (recompiled_pe_image_loaded
+                    ? format_guest_address(recompiled_pe_image_info.image_base)
+                    : std::string())
+            << "\",\n"
+            << "  \"recompiled_pe_image_size\": "
+            << recompiled_pe_image_info.image_size << ",\n"
+            << "  \"recompiled_pe_entry_point\": \""
+            << (recompiled_pe_image_loaded
+                    ? format_guest_address(recompiled_pe_image_info.entry_point)
+                    : std::string())
+            << "\",\n"
+            << "  \"recompiled_pe_section_count\": "
+            << recompiled_pe_image_info.section_count << ",\n"
             << "  \"recompiled_pcode_step_address\": \""
             << (recompiled_module
                     ? format_guest_address(args.recompiled_step)
