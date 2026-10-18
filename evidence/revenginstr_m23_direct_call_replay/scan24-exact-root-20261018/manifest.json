@@ -1,0 +1,251 @@
+{
+  "artifacts": [
+    {
+      "bytes": 530,
+      "path": "callee-memory-store-access-00a1d2c0.jsonl",
+      "rows": 1,
+      "sha256": "01cbb3f5805c519cee38323062454d073cbda46f99fc854c4858593e3b338ee1"
+    },
+    {
+      "bytes": 5108,
+      "path": "callee-memory-store-access-00a26ea0.jsonl",
+      "rows": 9,
+      "sha256": "0e2e0a351de7b829dd4f2faf32a80b1db7f23f0cc8bbb9c030fd56e6a8d1b854"
+    },
+    {
+      "bytes": 169,
+      "path": "callee-parameter-stores-00a1d2c0.tsv",
+      "rows": 0,
+      "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+    },
+    {
+      "bytes": 169,
+      "path": "callee-parameter-stores-00a26ea0.tsv",
+      "rows": 0,
+      "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+    },
+    {
+      "bytes": 2701,
+      "path": "callee-pcode-flow-00a1d2c0.tsv",
+      "rows": 32,
+      "sha256": "a163a5a483cf6691ff078106eb628513eb3802c1a3e8641e8c7f877912ed1004"
+    },
+    {
+      "bytes": 5131,
+      "path": "callee-pcode-flow-00a26ea0.tsv",
+      "rows": 59,
+      "sha256": "a7a64dd640561c2e681769e8fc4bc4cd43b56d2dead0f8ca05b031790ca98a0a"
+    },
+    {
+      "bytes": 1113,
+      "path": "caller-parameter-roots.tsv",
+      "rows": 8,
+      "sha256": "3ce7500b8dac03e0856e6cb6a3fde3f6c0cd5bbd225e7572aafffe6eaac6a986"
+    },
+    {
+      "bytes": 5796,
+      "path": "caller-pcode-flow.tsv",
+      "rows": 69,
+      "sha256": "6d77a4200ca7c909d596169353999930da2b1718fabb4f04713e0f2f1b0f5d06"
+    },
+    {
+      "bytes": 1348,
+      "path": "field-access-pairs-00a271a0.jsonl",
+      "rows": 1,
+      "sha256": "3f665db6980821efff5342bfb76193bb9925fab5c761915232a99b0867441b11"
+    },
+    {
+      "bytes": 0,
+      "path": "field-access-pairs.jsonl",
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 2081,
+      "path": "field-store-load-dominance-v5.jsonl",
+      "rows": 1,
+      "sha256": "99e1b35ab8f26945a38a1067946cb75acdadbd8b6df04881898c4d324c7a29dd"
+    },
+    {
+      "bytes": 30213,
+      "path": "function-pcode-cfg-v3.jsonl",
+      "rows": 4,
+      "sha256": "8d332bec1d0f5a3c160db8a634093ef8ddd3eebc70b4e9ee433539d22f6a5d11"
+    },
+    {
+      "bytes": 10601,
+      "path": "interprocedural-memory-effect-v1.jsonl",
+      "rows": 6,
+      "sha256": "f4b34d5827254e1ba9a5178f3697d8e6074be848ff3b9c15c0af1a073e3a9ab2"
+    },
+    {
+      "bytes": 1040,
+      "path": "memory-store-access-00a20780.jsonl",
+      "rows": 2,
+      "sha256": "056b759069ad635ffbb4c179d3f49beff372726ba8efa09c9665e53b64331f48"
+    },
+    {
+      "bytes": 3936,
+      "path": "memory-store-access-00a271a0.jsonl",
+      "rows": 6,
+      "sha256": "9ac37c3b90e6717d293d9e0569bae7ffe2592ee6b74b045c3107e6cbcbdb7901"
+    },
+    {
+      "bytes": 10103,
+      "path": "memory-store-access.jsonl",
+      "rows": 17,
+      "sha256": "385a226b6678ca9b08372043b9cd4d0daeaf29d695e8e567e2e88e8803867476"
+    },
+    {
+      "bytes": 15948,
+      "path": "new-callee-function-pcode-cfg-v3.jsonl",
+      "rows": 2,
+      "sha256": "a6ae9a7ef866e7a49cf89583874e33d3d97cac2d6157a63d08c3a156375a33ad"
+    },
+    {
+      "bytes": 273,
+      "path": "parameter-loads-00a271a0.tsv",
+      "rows": 1,
+      "sha256": "f1843fb3f9f93799c044456cc46e488a6a888a00b71f66911a687b9840a79b67"
+    },
+    {
+      "bytes": 535,
+      "path": "parameter-loads.tsv",
+      "rows": 3,
+      "sha256": "736829880b0cebd93ceac1d3a8c1eba554f104a2c7a4deb71d6001aaeb6c7622"
+    },
+    {
+      "bytes": 652,
+      "path": "parameter-stores-00a271a0.tsv",
+      "rows": 4,
+      "sha256": "d6b3bf24d6f072d63413552f3011fd022159a4c85d4dd755bb7659e53ac2f735"
+    },
+    {
+      "bytes": 169,
+      "path": "parameter-stores.tsv",
+      "rows": 0,
+      "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+    },
+    {
+      "bytes": 101,
+      "path": "subcall-argument-plan.tsv",
+      "rows": 2,
+      "sha256": "c4bc93e57a7509b8d505157c25f2f0fdf0f0d53a6914be38d3aeed1ec36cc612"
+    },
+    {
+      "bytes": 37073,
+      "path": "subcall-argument-subtrees.tsv",
+      "rows": 187,
+      "sha256": "ca04c76cc743a7fed1c6075e0acada43a2ed48d09b83501967cf4918a3c6fba6"
+    },
+    {
+      "bytes": 493,
+      "path": "subcall-parameter-roots.tsv",
+      "rows": 3,
+      "sha256": "4abeb07559178a88dfda256e18d6f86fb7c39e8527dbc62c64150cd2c0af0eb5"
+    }
+  ],
+  "audit_v5_status_counts": {
+    "possible_intervening_memory_effect": 1
+  },
+  "capture": {
+    "analysis_enabled": false,
+    "ghidra_version": "12.1.2 DEV",
+    "read_only": true,
+    "revenginstr_source_commit": "432b528f9c3db36dda50c846aafe5afb3c141204"
+  },
+  "date": "2026-10-18",
+  "format": "NFS.RevenginstrM23Scan24ExactRoot/1",
+  "interprocedural_status_counts": {
+    "indirect_call": 3,
+    "possible_aliasing_write": 1,
+    "unknown_effect": 2
+  },
+  "limitations": [
+    "The negative function 00a20780 has exact arguments into 00a20300 but no parameter-to-field store/load pair.",
+    "The selected function 00a271a0 has exact caller-formal roots for 009eb3f0 and 00a1d2c0; 00a26ea0 remains unrooted.",
+    "One possible_aliasing_write is conservative may-alias evidence, not proof of a runtime write.",
+    "Nested direct calls beyond the exported four-function closure and all indirect calls remain fail-closed barriers.",
+    "The /5 audit retains possible_intervening_memory_effect and reports no unique CFG store candidate.",
+    "The evidence is structural P-code and memory-access analysis only; it makes no runtime value-flow or gameplay claim."
+  ],
+  "memory_store_access_rows_by_function": {
+    "009eb3f0": 1,
+    "00a1d2c0": 1,
+    "00a26ea0": 9,
+    "00a271a0": 6
+  },
+  "negative_screen": {
+    "field_pair_rows": 0,
+    "function_entry": "00a20780",
+    "memory_store_access_rows": 2,
+    "parameter_field_store_rows": 0,
+    "parameter_load_rows": 3,
+    "pcode_flow_rows": 69
+  },
+  "program_id": "nfs-shift:SHIFT.exe",
+  "selected_function": {
+    "exact_root_callees": [
+      "009eb3f0",
+      "00a1d2c0"
+    ],
+    "exact_roots": [
+      {
+        "callee_entry": "009eb3f0",
+        "callee_parameter_index": 0,
+        "caller_call_site": "00a271c5",
+        "caller_parameter_index": 4
+      },
+      {
+        "callee_entry": "00a1d2c0",
+        "callee_parameter_index": 0,
+        "caller_call_site": "00a27213",
+        "caller_parameter_index": 4
+      }
+    ],
+    "field_pair_rows": 1,
+    "function_entry": "00a271a0",
+    "parameter_load_rows": 1,
+    "parameter_store_rows": 4,
+    "unrooted_direct_callee": "00a26ea0"
+  },
+  "source_artifacts": [
+    {
+      "bytes": 7751,
+      "path": "scan22-recapture-20261018/manifest.json",
+      "rows": 1,
+      "sha256": "5471837b98f9e4a9a5834ad5ffd76357ed7b79e60989301d80d5fb91c81a64eb"
+    },
+    {
+      "bytes": 29151,
+      "path": "scan22-recapture-20261018/callee-function-pcode-cfg-v3.jsonl",
+      "rows": 4,
+      "sha256": "fdc8adbaa62fce672072eefc69d94aec780c2046c1ae5587b07dcfbc8b2554a3"
+    },
+    {
+      "bytes": 529,
+      "path": "scan22-recapture-20261018/callee-memory-store-access-009eb3f0.jsonl",
+      "rows": 1,
+      "sha256": "794871100a6b873f84d6c512ba98aa0378d605266091d65817c7b437b453fe72"
+    },
+    {
+      "bytes": 741,
+      "path": "scan22-recapture-20261018/caller-parameter-roots.tsv",
+      "rows": 5,
+      "sha256": "7476b57951e1f57dab083986454bd96acad0343106e266dae84916b5ee05d2f7"
+    },
+    {
+      "bytes": 5993,
+      "path": "screening-scan22/callee-pcode-flow/00a271a0.tsv",
+      "rows": 75,
+      "sha256": "eb488399d3e1defa76dfc758473ad048386d1e6c4eccf5eccfe8f2eab467a798"
+    },
+    {
+      "bytes": 560,
+      "path": "screening-scan22/callee-pcode-flow/009eb3f0.tsv",
+      "rows": 6,
+      "sha256": "6f4d7cc0c2ea7a929dcd974e43e176c8f9ed32ff70b3dbf6e83acb2e4e673611"
+    }
+  ],
+  "unique_cfg_store_candidates": 0
+}

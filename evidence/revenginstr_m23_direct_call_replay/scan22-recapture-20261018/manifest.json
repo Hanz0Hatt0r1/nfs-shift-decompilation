@@ -1,0 +1,247 @@
+{
+  "artifacts": [
+    {
+      "bytes": 29151,
+      "path": "callee-function-pcode-cfg-v3.jsonl",
+      "rows": 4,
+      "sha256": "fdc8adbaa62fce672072eefc69d94aec780c2046c1ae5587b07dcfbc8b2554a3"
+    },
+    {
+      "bytes": 529,
+      "path": "callee-memory-store-access-009eb3f0.jsonl",
+      "rows": 1,
+      "sha256": "794871100a6b873f84d6c512ba98aa0378d605266091d65817c7b437b453fe72"
+    },
+    {
+      "bytes": 1040,
+      "path": "callee-memory-store-access-00a20300.jsonl",
+      "rows": 2,
+      "sha256": "d6b7c34c69b51ef645d9379af6895a36778ff2b15debfbd8c74f04962540c2dd"
+    },
+    {
+      "bytes": 1910,
+      "path": "callee-memory-store-access-00a26db0.jsonl",
+      "rows": 3,
+      "sha256": "1f0fe593abff5888899a2b23e133199571734dddb7d50986a6bcca38841ff467"
+    },
+    {
+      "bytes": 3936,
+      "path": "callee-memory-store-access-00a271a0.jsonl",
+      "rows": 6,
+      "sha256": "9ac37c3b90e6717d293d9e0569bae7ffe2592ee6b74b045c3107e6cbcbdb7901"
+    },
+    {
+      "bytes": 169,
+      "path": "callee-parameter-stores-009eb3f0.tsv",
+      "rows": 0,
+      "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+    },
+    {
+      "bytes": 169,
+      "path": "callee-parameter-stores-00a20300.tsv",
+      "rows": 0,
+      "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+    },
+    {
+      "bytes": 169,
+      "path": "callee-parameter-stores-00a26db0.tsv",
+      "rows": 0,
+      "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+    },
+    {
+      "bytes": 652,
+      "path": "callee-parameter-stores-00a271a0.tsv",
+      "rows": 4,
+      "sha256": "d6b3bf24d6f072d63413552f3011fd022159a4c85d4dd755bb7659e53ac2f735"
+    },
+    {
+      "bytes": 389,
+      "path": "caller-argument-plan.tsv",
+      "rows": 11,
+      "sha256": "e5597fb7859f622279047257b3839ca7758dd4d3fe14d8b413368687dd486bfa"
+    },
+    {
+      "bytes": 28321,
+      "path": "caller-argument-subtrees.tsv",
+      "rows": 144,
+      "sha256": "b575c333ec8e171f9377a74caaac034600e22953b23f34e377c395a91586dca6"
+    },
+    {
+      "bytes": 741,
+      "path": "caller-parameter-roots.tsv",
+      "rows": 5,
+      "sha256": "7476b57951e1f57dab083986454bd96acad0343106e266dae84916b5ee05d2f7"
+    },
+    {
+      "bytes": 4302,
+      "path": "field-store-load-dominance-v5.jsonl",
+      "rows": 2,
+      "sha256": "eda519a95da71df7cd9e7e3e578b8f04d760c47478804e0fe2277773f5ebe3aa"
+    },
+    {
+      "bytes": 58845,
+      "path": "function-pcode-cfg-v3-combined.jsonl",
+      "rows": 5,
+      "sha256": "3230dc920d69b6ca251a50140dcc4cfdfa48ae94aac3f54ffb9b223be0633aa9"
+    },
+    {
+      "bytes": 49775,
+      "path": "interprocedural-memory-effect-v1.jsonl",
+      "rows": 30,
+      "sha256": "1ad519eae030f91f443568e278e1143c48e30796672193d184b01d0055ac12f2"
+    },
+    {
+      "bytes": 9443,
+      "path": "memory-store-access-combined.jsonl",
+      "rows": 15,
+      "sha256": "9a9d7fa263387624ac4da78adff48a063ba8859ac6aee61c3485b4a29ca3f77f"
+    }
+  ],
+  "callee_exports": {
+    "cfg_rows": 4,
+    "function_entries": [
+      "009eb3f0",
+      "00a20300",
+      "00a26db0",
+      "00a271a0"
+    ],
+    "memory_store_access_rows": 12,
+    "memory_store_access_rows_by_function": {
+      "009eb3f0": 1,
+      "00a20300": 2,
+      "00a26db0": 3,
+      "00a271a0": 6
+    }
+  },
+  "caller_arguments": {
+    "exact_parameter_root_rows_for_selected_caller": 0,
+    "exact_parameter_root_rows_total": 5,
+    "other_caller_root_rows_by_entry": {
+      "00a20780": 4,
+      "00a271a0": 1
+    },
+    "plan_rows": 11,
+    "subtree_rows_for_selected_caller": 78,
+    "subtree_rows_total": 144
+  },
+  "capture": {
+    "analysis_enabled": false,
+    "exporters": [
+      "ExportGhidraCallerArgumentSubtree.java",
+      "ExportFunctionPcodeCFG.java",
+      "ExportGhidraParameterStoreField.java"
+    ],
+    "ghidra_version": "12.1.2 DEV",
+    "read_only": true,
+    "revenginstr_source_commit": "432b528f9c3db36dda50c846aafe5afb3c141204"
+  },
+  "date": "2026-10-18",
+  "format": "NFS.RevenginstrM23Scan22Recapture/1",
+  "limitations": [
+    "The selected caller has no exact caller-formal root for any of the planned direct-call arguments; five exact root rows belong to other callers of the same callees.",
+    "possible_aliasing_write is a conservative may-alias result, not proof that a runtime write reaches the tracked field.",
+    "Indirect-call and unknown-effect barriers remain, and neither tracked field pair yields a unique CFG store candidate.",
+    "The recapture provides structural P-code and memory-access evidence only; it makes no runtime value-flow or gameplay claim."
+  ],
+  "program_id": "nfs-shift:SHIFT.exe",
+  "replay": {
+    "audit_v5_rows": 2,
+    "audit_v5_status_changes": 0,
+    "interprocedural_memory_effect_rows": 30,
+    "new_audit_v5_status_counts": {
+      "store_not_dominating_load": 2
+    },
+    "new_interprocedural_status_counts": {
+      "indirect_call": 18,
+      "possible_aliasing_write": 4,
+      "unknown_effect": 8
+    },
+    "old_audit_v5_status_counts": {
+      "store_not_dominating_load": 2
+    },
+    "old_interprocedural_status_counts": {
+      "indirect_call": 18,
+      "unknown_effect": 12
+    },
+    "unique_cfg_store_candidates": 0
+  },
+  "selection": {
+    "direct_callee_entries": [
+      "009eb3f0",
+      "00a20300",
+      "00a26db0",
+      "00a271a0"
+    ],
+    "function_entry": "00a277d0",
+    "source_report": "screening-scan22.json",
+    "source_report_sha256": "29faa11d44f489df031d9a3778f70471596e8dba2015f83d7235d77069796dcb"
+  },
+  "source_artifacts": [
+    {
+      "bytes": 8787,
+      "path": "screening-scan22.json",
+      "rows": 1,
+      "sha256": "29faa11d44f489df031d9a3778f70471596e8dba2015f83d7235d77069796dcb"
+    },
+    {
+      "bytes": 2699,
+      "path": "screening-scan22/field-access-pairs.jsonl",
+      "rows": 2,
+      "sha256": "293d1a2cd3ec300a6a974111b243c4038f9fe618d5ca21b955b39a0747c0c29a"
+    },
+    {
+      "bytes": 29694,
+      "path": "screening-scan22/function-pcode-cfg-v3.jsonl",
+      "rows": 1,
+      "sha256": "e8ac68b98f970558f773d7b571e713602d00a7b810c1f7cc673a5c2ad91baa83"
+    },
+    {
+      "bytes": 2028,
+      "path": "screening-scan22/memory-store-access.jsonl",
+      "rows": 3,
+      "sha256": "daa886daacc77d84cc5c6aa3b8bc0f7b957b8f3579e866a890b8592493a033eb"
+    },
+    {
+      "bytes": 13597,
+      "path": "screening-scan22/caller-pcode-flow/00a277d0.tsv",
+      "rows": 169,
+      "sha256": "06f8b1197ec3ee104f73d4040751fe794e3e0f934f96cd42da0fbfb86c5f8c0c"
+    },
+    {
+      "bytes": 560,
+      "path": "screening-scan22/callee-pcode-flow/009eb3f0.tsv",
+      "rows": 6,
+      "sha256": "6f4d7cc0c2ea7a929dcd974e43e176c8f9ed32ff70b3dbf6e83acb2e4e673611"
+    },
+    {
+      "bytes": 4471,
+      "path": "screening-scan22/callee-pcode-flow/00a20300.tsv",
+      "rows": 54,
+      "sha256": "b4f332ac8ce82aded9a24984a6755e19cf62437a40be9ef9f9e3e396cee785a5"
+    },
+    {
+      "bytes": 2468,
+      "path": "screening-scan22/callee-pcode-flow/00a26db0.tsv",
+      "rows": 30,
+      "sha256": "a08544eadb65dbcaa213a2e11babe745e5baaa24ce126e077ce2a42dc63b5c30"
+    },
+    {
+      "bytes": 5993,
+      "path": "screening-scan22/callee-pcode-flow/00a271a0.tsv",
+      "rows": 75,
+      "sha256": "eb488399d3e1defa76dfc758473ad048386d1e6c4eccf5eccfe8f2eab467a798"
+    },
+    {
+      "bytes": 51831,
+      "path": "screening-scan22/interprocedural-memory-effect-v1.jsonl",
+      "rows": 30,
+      "sha256": "8c905ee9827802a4fee9e6efeeca7b08c8d7bd02c519a377cec618a76c86cdc0"
+    },
+    {
+      "bytes": 4302,
+      "path": "screening-scan22/field-store-load-dominance-v5.jsonl",
+      "rows": 2,
+      "sha256": "4906f161fc570f3eab931d98d5744c0b6be20ad4ac7e7da419bbe8027f35d8a4"
+    }
+  ]
+}

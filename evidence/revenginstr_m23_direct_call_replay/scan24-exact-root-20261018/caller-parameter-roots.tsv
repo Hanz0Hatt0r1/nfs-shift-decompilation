@@ -1,0 +1,9 @@
+format	plan_id	callee_entry	parameter_index	caller_entry	caller_call_site	caller_parameter_index	argument_node_id	status
+REVENGINSTR.GhidraCallerArgumentParameterRoot/1	scan22_009eb3f0_arg0	009eb3f0	0	00a271a0	00a271c5	4	0	direct_parameter_root
+REVENGINSTR.GhidraCallerArgumentParameterRoot/1	scan22_00a20300_arg0	00a20300	0	00a20780	00a207b2	1	0	direct_parameter_root
+REVENGINSTR.GhidraCallerArgumentParameterRoot/1	scan22_00a20300_arg1	00a20300	1	00a20780	00a207b2	3	0	direct_parameter_root
+REVENGINSTR.GhidraCallerArgumentParameterRoot/1	scan22_00a20300_arg2	00a20300	2	00a20780	00a207b2	2	0	direct_parameter_root
+REVENGINSTR.GhidraCallerArgumentParameterRoot/1	scan22_00a20300_arg3	00a20300	3	00a20780	00a207b2	4	0	direct_parameter_root
+REVENGINSTR.GhidraCallerArgumentParameterRoot/1	scan24_00a1d2c0_arg0	00a1d2c0	0	00a11360	00a113e5	1	0	direct_parameter_root
+REVENGINSTR.GhidraCallerArgumentParameterRoot/1	scan24_00a1d2c0_arg0	00a1d2c0	0	00a26370	00a26394	1	0	direct_parameter_root
+REVENGINSTR.GhidraCallerArgumentParameterRoot/1	scan24_00a1d2c0_arg0	00a1d2c0	0	00a271a0	00a27213	4	0	direct_parameter_root
