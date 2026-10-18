@@ -42,6 +42,7 @@ namespace {
 constexpr uint64_t kGuestRamSize = UINT64_C(1) << 32;
 constexpr size_t kGuestWriteProvenanceWordLimit = 65536;
 constexpr uint32_t kGuestMinimumUserAddress = 0x00010000;
+constexpr size_t kGuestFunctionHistoryLimit = 64;
 constexpr size_t kRegisterBankSize = 0x2000;
 constexpr size_t kMaximumPcodeValueSize = 16;
 constexpr uint32_t kMaximumCallDepth = 256;
@@ -491,6 +492,7 @@ struct RecompiledPcodeModule::Impl {
         std::unordered_map<uint32_t, uint32_t> tls_values;
         std::vector<uint32_t> active_functions;
         std::vector<GuestRegisterSnapshot> active_function_registers;
+        std::deque<uint32_t> recent_functions;
         uint32_t last_error = 0;
         int32_t priority = 0;
         uint32_t ideal_processor = 0;
@@ -1426,6 +1428,18 @@ struct RecompiledPcodeModule::Impl {
                         attempt.selected_list_nodes.size()) {
                     attempt.selected_list_truncated = true;
                 }
+            }
+        }
+        if (scheduler_context_active) {
+            GuestThread* thread =
+                guest_execution_state(current_guest_thread_handle);
+            if (thread) {
+                if (thread->recent_functions.size() ==
+                    kGuestFunctionHistoryLimit) {
+                    thread->recent_functions.pop_front();
+                }
+                thread->recent_functions.push_back(
+                    static_cast<uint32_t>(target));
             }
         }
         active_guest_functions.push_back(static_cast<uint32_t>(target));
@@ -6834,6 +6848,9 @@ struct RecompiledPcodeModule::Impl {
         snapshot.main_thread_wait_handle = main_guest_thread.wait_handle;
         snapshot.main_thread_wait_result = main_guest_thread.wait_result;
         snapshot.main_thread_call_stack = main_guest_thread.active_functions;
+        snapshot.main_thread_recent_functions.assign(
+            main_guest_thread.recent_functions.begin(),
+            main_guest_thread.recent_functions.end());
         if (!main_guest_thread.active_functions.empty()) {
             snapshot.main_thread_current_function =
                 main_guest_thread.active_functions.back();

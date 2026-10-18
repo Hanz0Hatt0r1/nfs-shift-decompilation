@@ -4071,6 +4071,10 @@ int main(int argc, char** argv) {
             << format_guest_call_stack(
                    guest_scheduler_state.main_thread_call_stack)
             << ",\n"
+            << "    \"main_thread_recent_functions\": "
+            << format_guest_call_stack(
+                   guest_scheduler_state.main_thread_recent_functions)
+            << ",\n"
             << "    \"ready_thread_count\": "
             << guest_scheduler_state.ready_thread_count << ",\n"
             << "    \"worker_thread_count\": "

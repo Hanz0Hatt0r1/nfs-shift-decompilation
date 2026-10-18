@@ -2137,6 +2137,8 @@ int main(int argc, char** argv) {
                     module.last_error());
         const auto pending_entrypoint_state =
             module.guest_scheduler_snapshot();
+        const auto& main_thread_recent_functions =
+            pending_entrypoint_state.main_thread_recent_functions;
         require(!module.pe32_entry_point_complete() &&
                     pending_entrypoint_state.entry_point_started &&
                     !pending_entrypoint_state.entry_point_complete &&
@@ -2144,6 +2146,10 @@ int main(int argc, char** argv) {
                     !pending_entrypoint_state.main_thread_completed &&
                     !pending_entrypoint_state.main_thread_call_stack.empty() &&
                     pending_entrypoint_state.main_thread_call_stack.back() ==
+                        pending_entrypoint_state.main_thread_current_function &&
+                    !main_thread_recent_functions.empty() &&
+                    main_thread_recent_functions.size() <= 64 &&
+                    main_thread_recent_functions.back() ==
                         pending_entrypoint_state.main_thread_current_function &&
                     read_guest_u32(module, "ram", 0x00032c10) == 0x1234 &&
                     read_guest_u32(module, "ram", 0x00032c14) != 0,

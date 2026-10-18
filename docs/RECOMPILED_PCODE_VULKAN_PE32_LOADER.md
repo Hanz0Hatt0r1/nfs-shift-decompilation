@@ -176,6 +176,10 @@ deterministic cooperative model during PE entry-point execution. `SwitchToThread
 and guest-thread waits can suspend a caller and run another ready guest thread;
 there is no host parallelism or instruction-level preemption. TLS and last-error
 state are saved per guest thread.
+The frame-loop scheduler snapshot also exposes the main guest thread's last 64
+P-code function entries. This bounded history helps distinguish a repeatedly
+yielding startup/update path from a thread that is advancing through new code;
+direct Win32 import calls are not included in the function-entry history.
 All implemented calls follow the x86 stdcall stack contract. Other imported
 APIs still stop with an error naming the `DLL!function` or ordinal.
 The tiny retail `TlsAlloc` wrapper thunk is recognized by its exact x86 import-
