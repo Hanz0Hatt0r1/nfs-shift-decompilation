@@ -1,0 +1,7 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0050c8a3	0050c8a3	3	CALLIND	-	-	-	-
+0050c8a3	0050c8a3	33	INDIRECT	def:0050c8a3:33:4	address:00ac59d0:4;const:0x3:4	-	-
+0050c8a3	0050c8a3	36	CAST	def:0050c8a3:36:4	address:00ac59d0:4	-	-
+0050c8a3	0050c8a9	6	COPY	def:0050c8a9:6:1	const:0x0:1	-	-
+0050c8a3	0050c8ac	19	RETURN	-	const:0x0:4;def:0050c8a9:6:1	-	-
+0050c8a3	0050c8ac	34	COPY	def:0050c8ac:34:4	def:0050c8a3:33:4	-	-
