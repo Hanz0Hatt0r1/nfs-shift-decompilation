@@ -124,3 +124,47 @@ functions compile or run on ARM64. Guest x87 control-state mapping and rare
 double-rounding differences on wider `long double` hosts remain open. Exact
 run and commit evidence is in
 [`evidence/pcode_native_lowering_arm64_binary80_20261018.json`](../evidence/pcode_native_lowering_arm64_binary80_20261018.json).
+
+## Rebuild the complete Linux module from the frozen corpus
+
+The complete lowered ELF can be regenerated without the previously linked
+module. Restore the authoritative Ghidra instruction corpus and its adjacent
+manifest, then check out the lowerer revision pinned by the complete-build
+evidence. The current persistent corpus copy is
+`/home/pes/nfs-shift-recompilation-artifacts/full-function-corpus-20261017/`;
+its gzip SHA-256 is
+`bc3f5a5972842f605b0bdd25dbc80b3129b96df30c3584d2dd31222aa5a454bc`, the
+manifest SHA-256 is
+`f3a70bb2e65adafcb72d292e03956a9354e99b9a6b994e2586e91fb14b547074`, and the
+address-space table SHA-256 is
+`e922b22ab08ba04109f57197534a2e848b171210a35de795514fe0f3ef8effb0`.
+The manifest identifies the complete 41,538-function `SHIFT.exe` corpus with
+2,088,152 machine instructions.
+
+```bash
+REVENGINSTR_REPO=/path/to/revenginstr
+CORPUS=/path/to/shift-pc-retail-1.02-function-instructions.jsonl.gz
+MANIFEST="$CORPUS.manifest.json"
+SPACES=evidence/shift_language_address_spaces_20261017.json
+SHARDS=/path/to/persistent-artifacts/shift-pcode-linux-full-shards
+LIBRARY=/path/to/persistent-artifacts/libnfs_shift_pcode_full.so
+
+git -C "$REVENGINSTR_REPO" checkout --detach 08a31b94c304f8b7a57996974dafe352413f7924
+REVENGINSTR_REPO="$REVENGINSTR_REPO" tools/ghidra/run_shift_pcode_native_lowering.sh \
+  "$CORPUS" "$MANIFEST" "$SPACES" "$SHARDS" \
+  --compiler gcc --shard-size 100 --jobs 2 --compiler-arg=-fPIC
+python3 tools/ghidra/link_shift_pcode_linux_full.py \
+  "$SHARDS" "$MANIFEST" "$SPACES" "$LIBRARY"
+tools/ghidra/smoke_shift_pcode_elf.sh "$LIBRARY"
+```
+
+The linker helper checks every object hash against the lowerer report, verifies
+the corpus and address-space identities, requires zero rejected functions and
+position-independent objects, and checks the complete ELF export count. For an
+interrupted lowerer run, pass `--resume` to the lowerer command; its pinned
+build state rejects mismatched corpus, tool, compiler or shard settings. Keep
+the generated C, objects and ELF in the persistent artifact directory rather
+than Git. The checked-in
+[`pcode_full_linux_rebuild_20261018.json`](../evidence/pcode_full_linux_rebuild_20261018.json)
+records the corpus, lowerer, shard, linker, smoke and output hashes; the
+external linker report records each object hash.

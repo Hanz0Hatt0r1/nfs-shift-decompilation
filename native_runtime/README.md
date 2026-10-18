@@ -41,8 +41,11 @@ Missing exports, unsupported address spaces, and unhandled userops fail closed.
 The selected function runs on the runtime's native 60 Hz fixed-step schedule;
 that schedule is not established as retail timing.
 The `SHIFT.NativeRuntimeFrameLoop/1` record includes guest scheduler state and
-the host loop exit reason when PE entry-point execution is enabled. Vulkan
-`VK_SUBOPTIMAL_KHR` acquire/present results continue as successful frames;
+the host loop exit reason when PE entry-point execution is enabled. It also
+records the saved main-thread call stack at its most recent cooperative yield,
+ordered from outermost to innermost function. This identifies the caller
+context for a yielded helper without claiming instruction-level tracing.
+Vulkan `VK_SUBOPTIMAL_KHR` acquire/present results continue as successful frames;
 `VK_ERROR_OUT_OF_DATE_KHR` stops the loop with an explicit reason. Swapchain
 recreation on window resize is not implemented yet.
 The full 41,538-export Linux ELF has passed a three-frame Vulkan smoke through
@@ -156,7 +159,9 @@ errors, including resource destruction errors, produce a nonzero exit status.
 The final frame-loop report includes `validation_enabled` and
 `validation_errors`; warnings are written to stderr without failing the run.
 The retail entry-point helper script accepts
-`SHIFT_ENTRYPOINT_PROBE_VALIDATION=1` to forward `--validation` to the runtime.
+`SHIFT_ENTRYPOINT_PROBE_VALIDATION=1` to forward `--validation` to the runtime
+and `SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE` to select a rebuilt full-corpus ELF;
+without that override it retains the startup-probe module default.
 
 A software Vulkan smoke run, from the repository root:
 

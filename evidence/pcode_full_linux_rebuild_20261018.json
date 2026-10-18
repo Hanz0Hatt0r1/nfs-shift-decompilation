@@ -1,0 +1,67 @@
+{
+  "format": "NFSShift.NativeLinuxPcodeFullRebuild/1",
+  "captured_at": "2026-10-18",
+  "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+  "branch": "codex/nfs-shift-pcode-build-repro-20261018",
+  "base_commit": "dc3aba90497d26feb1824e0ee57e8861d0cb63d1",
+  "inputs": {
+    "program": "SHIFT.exe",
+    "language_id": "x86:LE:32:default",
+    "corpus": {
+      "path": "/home/pes/nfs-shift-recompilation-artifacts/full-function-corpus-20261017/shift-pc-retail-1.02-function-instructions.jsonl.gz",
+      "sha256": "bc3f5a5972842f605b0bdd25dbc80b3129b96df30c3584d2dd31222aa5a454bc",
+      "manifest_path": "/home/pes/nfs-shift-recompilation-artifacts/full-function-corpus-20261017/shift-pc-retail-1.02-function-instructions.jsonl.gz.manifest.json",
+      "manifest_sha256": "f3a70bb2e65adafcb72d292e03956a9354e99b9a6b994e2586e91fb14b547074",
+      "functions": 41538,
+      "machine_instructions": 2088152,
+      "pcode_operations": 9600713
+    },
+    "address_spaces": {
+      "path": "evidence/shift_language_address_spaces_20261017.json",
+      "sha256": "e922b22ab08ba04109f57197534a2e848b171210a35de795514fe0f3ef8effb0"
+    },
+    "lowerer": {
+      "repository": "revenginstr",
+      "revision": "08a31b94c304f8b7a57996974dafe352413f7924"
+    }
+  },
+  "lowering": {
+    "result": "passed",
+    "functions_found": 41538,
+    "functions_lowerable": 41538,
+    "functions_rejected": 0,
+    "instructions_lowered": 2088152,
+    "pcode_operations": 9600713,
+    "object_shards": 416,
+    "build_directory": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-rebuild-20261018",
+    "build_report_sha256": "402192dc679e81673bf6ff4bd9cd8368f73fb15487d6797310818d36003c5cb9",
+    "builder_source_sha256": "cafa35adb93d9ef174b36b1891601867f9ef1aec6c9d7c4211380e5c3814301e",
+    "compiler": {
+      "arguments": [
+        "-std=c11",
+        "-O0",
+        "-fPIC"
+      ],
+      "path": "/usr/bin/gcc",
+      "version": "gcc (GCC) 16.2.1 20260810"
+    },
+    "shard_size_limit": 100
+  },
+  "link": {
+    "result": "passed",
+    "library_path": "/home/pes/nfs-shift-recompilation-artifacts/libnfs_shift_pcode_full_rebuilt_20261018.so",
+    "library_sha256": "67b2e74c72b250a168d8276e58d3821f9770f728e6d0c1badc0cf11147799274",
+    "library_bytes": 1853248720,
+    "exported_pcode_functions": 41538,
+    "link_report_sha256": "c359ae654d3398c4c319adbfeac9f2244225d04ac3899f6ff202c456350ea8aa",
+    "smoke_log_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/pcode-full-rebuild-smoke-20261018.log",
+    "smoke_log_sha256": "24355d0318392bcd335c502b3d5ad205a66822981c78a47c0888ba2f35c596ee",
+    "smoke_result": "PASS: rvi_00401000 returned 0, called 0x685700 once, EAX=0x20000, [ESI]=0xaa99d0"
+  },
+  "reproducibility": {
+    "generated_c_and_object_files_in_git": false,
+    "full_module_in_git": false,
+    "evidence_and_verifiers_in_git": true,
+    "external_artifact_directory": "/home/pes/nfs-shift-recompilation-artifacts"
+  }
+}

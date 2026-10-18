@@ -17,7 +17,7 @@ The project is **not playable yet**, but it has moved well beyond isolated funct
 | PE32 entry-point execution | **Implemented** |
 | Guest x86 RAM/register/TEB state | **Implemented for current startup needs** |
 | Import/IAT dispatch | **Implemented, bounded subset of Win32 APIs** |
-| Retail startup probe | **v66 reaches 61,307 guest dispatches / 1,325 unique functions; all four candidate pool lists are too small for the 254,529,224-byte request** |
+| Retail startup probe | **v112 reaches 155,507 guest dispatches / 1,417 unique functions and renders 600 Vulkan frames with validation enabled and zero errors** |
 | Native Vulkan runtime | **Operational** |
 | Retail resource pipeline | **Operational** |
 | Silverstone + BMW native scene path | **Operational as reconstruction infrastructure** |
@@ -64,7 +64,7 @@ native Linux runtime
         +--> XCB + Vulkan frame loop
 ```
 
-The retail PE entry point has been executed against the real **PC retail 1.02** image with the complete 41,538-export lowered module, cooperative guest scheduler, startup supplements and Linux runtime. Probes v65-v66 reach **61,307 guest function dispatches across 1,325 unique functions**. The allocator rejects **254,529,224 bytes** (about 242.74 MiB) from `Base System`, then tries `Game`, `Overflow` and `FMOD`; the selected list in every pool contains no block large enough. Runtime and static evidence trace the request through `0x00886900` to `FUN_0062f2d0`. Its upstream path passes a null field from `0x00bdb560+0x18` into `FUN_0062f6f0`, and the four-gigabyte guest RAM mapping previously allowed low-address reads to continue. The runtime now rejects guest RAM reads and writes below `0x00010000`. The native build, P-code module CTest and focused exporter/runtime pytest set pass; a full retail replay after this correction remains pending because the generated `libnfs_shift_pcode_startup_20261018.so` is absent from this local workspace; the latest listed Actions artifacts are only Linux smoke and Win32 proxy bundles. See the [v65 attempt log](evidence/recompiled_pcode_android_retail_frontier_v65_pool_fallback_attempts_20261018.log), [v66 list log](evidence/recompiled_pcode_android_retail_frontier_v66_pool_fallback_lists_20261018.log), [request-origin analysis](evidence/recompiled_pcode_android_retail_frontier_v67_pool_request_origin_20261018.md), and [frontier JSON](evidence/recompiled_pcode_android_retail_frontier_20261018.json). The retail data directory is available in the PortProton prefix at `/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02`; its `SHIFT.exe` matches the analyzed PE by SHA-256.
+The retail PE entry point has been executed against the real **PC retail 1.02** image with a freshly rebuilt 41,538-export P-code module, cooperative guest scheduler, startup supplements and Linux runtime. Probe v112 lowers all **41,538 functions / 2,088,152 instructions** from the frozen corpus, runs **155,507 guest dispatches across 1,417 unique functions**, and renders 600 Vulkan frames with validation enabled and zero errors. The saved main-thread stack ends at `0x006472d0`, with four worker threads waiting; the entry point is still active and frontend progress is not established. The renderer uses converted MGEO smoke geometry, so this is not retail D3D9 rendering or a playable session. The regenerated multi-gigabyte P-code sources, object shards and ELF remain in the external artifact cache; their hashes and build inputs are recorded in [full-module rebuild evidence](evidence/pcode_full_linux_rebuild_20261018.json). Historical v65-v67 probes also traced a 254,529,224-byte allocator request through `0x00886900` to `FUN_0062f2d0`; see the [request-origin analysis](evidence/recompiled_pcode_android_retail_frontier_v67_pool_request_origin_20261018.md). The retail data directory is available in the PortProton prefix at `/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02`; its `SHIFT.exe` matches the analyzed PE by SHA-256.
 
 This is a startup/recompilation frontier, not a completed entry point or playable-game result. The project target and current priorities are defined in [`ROADMAP.md`](ROADMAP.md).
 
@@ -75,6 +75,8 @@ See:
 - [`evidence/pcode_native_lowering_coverage_full_20261018.json`](evidence/pcode_native_lowering_coverage_full_20261018.json)
 - [`evidence/recompiled_pcode_pe32_fiber_memory_frontier_20261018.json`](evidence/recompiled_pcode_pe32_fiber_memory_frontier_20261018.json)
 - [`evidence/recompiled_pcode_android_retail_frontier_20261018.json`](evidence/recompiled_pcode_android_retail_frontier_20261018.json)
+- [`evidence/pcode_full_linux_rebuild_20261018.json`](evidence/pcode_full_linux_rebuild_20261018.json)
+- [`evidence/retail_frontier_20261018/entrypoint_probe_v112.json`](evidence/retail_frontier_20261018/entrypoint_probe_v112.json)
 
 ## Full frozen-corpus recompilation
 

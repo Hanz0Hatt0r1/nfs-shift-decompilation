@@ -60,6 +60,17 @@ std::string format_guest_address(uint32_t address) {
     return text.str();
 }
 
+std::string format_guest_call_stack(const std::vector<uint32_t>& functions) {
+    std::ostringstream text;
+    text << '[';
+    for (size_t index = 0; index < functions.size(); ++index) {
+        if (index != 0) text << ',';
+        text << '"' << format_guest_address(functions[index]) << '"';
+    }
+    text << ']';
+    return text.str();
+}
+
 #pragma pack(push, 1)
 struct GeometryHeader {
     char magic[4];
@@ -4056,6 +4067,10 @@ int main(int argc, char** argv) {
             << format_guest_address(
                    guest_scheduler_state.main_thread_current_function)
             << "\",\n"
+            << "    \"main_thread_call_stack\": "
+            << format_guest_call_stack(
+                   guest_scheduler_state.main_thread_call_stack)
+            << ",\n"
             << "    \"ready_thread_count\": "
             << guest_scheduler_state.ready_thread_count << ",\n"
             << "    \"worker_thread_count\": "
