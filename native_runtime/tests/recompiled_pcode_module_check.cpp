@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -489,6 +490,29 @@ int main(int argc, char** argv) {
                         "duplicate P-code export rvi_00685700") !=
                         std::string::npos,
                 "duplicate P-code exports were not rejected without an override");
+
+        require(setenv("SHIFT_TRACE_GUEST_PROVENANCE", "0x00020000", 1) == 0,
+                "could not enable guest write provenance fixture");
+        {
+            shift::runtime::RecompiledPcodeModule provenance_module(argv[1]);
+            require(provenance_module.call(0x00401000) == 0,
+                    "guest write provenance setup call failed: " +
+                        provenance_module.last_error());
+            require(provenance_module.call(0x00402000) != 0,
+                    "guest write provenance failure fixture unexpectedly passed");
+            const std::string provenance_error = provenance_module.last_error();
+            require(provenance_error.find("guest write provenance=[") !=
+                        std::string::npos &&
+                    provenance_error.find("0x00020000") != std::string::npos &&
+                    provenance_error.find("last_writer=0x00685700") !=
+                        std::string::npos &&
+                    provenance_error.find("word_value=0x00aa99d0") !=
+                        std::string::npos,
+                    "guest write provenance did not identify the last writer: " +
+                        provenance_error);
+        }
+        require(unsetenv("SHIFT_TRACE_GUEST_PROVENANCE") == 0,
+                "could not disable guest write provenance fixture");
 
         shift::runtime::RecompiledPcodeModule module(argv[1]);
         require(module.load_supplemental_module(argv[2]),
