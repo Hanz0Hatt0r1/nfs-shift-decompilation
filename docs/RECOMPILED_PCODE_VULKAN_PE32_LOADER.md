@@ -43,7 +43,8 @@ named and ordinal imports and rewrites each IAT slot to a unique guest address.
 The runtime implements the observed Kernel32 subset reached by the retail
 entry-point probe: `GetSystemTimeAsFileTime`, `GetCurrentProcess`, `GetPriorityClass`, `GetCurrentProcessId`,
 `GetCurrentThread`, `GetThreadPriority`, `SetPriorityClass`, `SetThreadPriority`,
-`GetCurrentThreadId`, `GetTickCount`, `QueryPerformanceCounter`,
+`GetCurrentThreadId`, `GetTickCount`, `GetLocalTime`, `GlobalMemoryStatus`,
+`QueryPerformanceCounter`,
 `QueryPerformanceFrequency`, `GetStartupInfoA`, `GetProcessHeap`, `CreateMutexA`,
 `WaitForSingleObject`, `WaitForSingleObjectEx`, `CreateEventA`, `CreateEventW`,
 `SetEvent`, `ResetEvent`, `InterlockedCompareExchange`, `VirtualAlloc`,
@@ -66,6 +67,15 @@ entry-point probe: `GetSystemTimeAsFileTime`, `GetCurrentProcess`, `GetPriorityC
 `FreeEnvironmentStringsA`, `WideCharToMultiByte`, `GetLastError`, and
 `SetLastError`, `GetACP`, `IsValidCodePage`, `GetCPInfo`, and
 `GetStringTypeW`, `MultiByteToWideChar`, and `LCMapStringW`.
+`ConvertThreadToFiber` and `IsThreadAFiber` maintain the current single-thread
+fiber identity. The guest TEB's `FiberData` slot points to a guest record whose
+first word holds the caller's fiber-data pointer, so the inline
+`GetCurrentFiber` and `GetFiberData` macros can read it. Fiber creation and
+context switching are not implemented.
+`GlobalMemoryStatus` writes the 32-bit guest `MEMORYSTATUS` layout using a
+host physical/page-file snapshot and the modeled 2 GiB x86 user address range;
+available guest virtual memory accounts for the mapped image and active
+`VirtualAlloc` regions.
 `WINMM.dll!timeBeginPeriod` and `timeEndPeriod` track matching single-thread
 guest requests for the supported virtual 1 ms period; they do not change the
 Linux host timer resolution. Other periods and unmatched end requests return
@@ -145,14 +155,15 @@ additive function shards and do not add guest memory regions. The PE entry point
 runs only when `--recompiled-entrypoint` is supplied; it is invoked once with a
 synthetic stack and partial single-thread state. The configured P-code step is
 invoked separately by the native fixed-step loop. Most imported APIs,
-multi-thread TLS and atomics, remaining Windows process/thread state, guest page
-permissions, retail timing, and game startup are not implemented. A missing generated-function
+multi-thread TLS and atomics, fiber creation and context switching, remaining
+Windows process/thread state, guest page permissions, retail timing, and game
+startup are not implemented. A missing generated-function
 export still fails closed unless it matches the documented TlsAlloc thunk.
 The Vulkan scene and this P-code loop are therefore a runtime integration
 probe, not a playable NFS Shift build.
 
 The focused fixture test creates a small PE32 image and verifies header/section
-mapping, zero-fill, all 76 IAT mappings across Kernel32, ImageHlp, and WinMM,
+mapping, zero-fill, all 80 IAT mappings across Kernel32, ImageHlp, and WinMM,
 the implemented import outputs,
 stdcall stack cleanup, null-pointer rejection, diagnostic import dispatch,
 one-shot entry-point execution from a supplemental module, rejection of late

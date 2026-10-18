@@ -207,3 +207,46 @@ def test_guest_thread_startup_evidence_tracks_retail_import_frontier() -> None:
     assert retail["next_blocker"] == "KERNEL32.dll!ConvertThreadToFiber"
     assert retail["fiber_scheduling_implemented"] is False
     assert evidence["limitations"]["playable_game"] is False
+
+
+def test_fiber_memory_evidence_tracks_current_retail_frontier() -> None:
+    evidence = json.loads(
+        (
+            ROOT
+            / "evidence/recompiled_pcode_pe32_fiber_memory_frontier_20261018.json"
+        ).read_text(encoding="utf-8")
+    )
+    fixture = evidence["fixture_validation"]
+    memory = evidence["memory_status_profile"]
+    smoke = evidence["local_linux_vulkan_smoke"]
+    retail = evidence["retail_entrypoint_probe"]
+
+    assert evidence["format"] == "NFSShift.RecompiledPcodePe32FiberMemoryFrontier/1"
+    assert evidence["base_main_revision"] == (
+        "44fd08dbdfe015026d137c68b7328b847dfbd962"
+    )
+    assert fixture["result"] == "passed"
+    assert fixture["import_module_count"] == 3
+    assert fixture["import_function_count"] == 80
+    assert fixture["fiber_identity_written_to_teb"] is True
+    assert fixture["fiber_data_pointer_round_trip"] is True
+    assert fixture["duplicate_conversion_last_error"] == 1280
+    assert fixture["memory_status_size_bytes"] == 32
+    assert fixture["guest_user_virtual_limit_bytes"] == 2147483648
+    assert memory["physical_and_pagefile_snapshot_source"] == "Linux sysinfo"
+    assert memory["32_bit_fields_saturate_at_dword_max"] is True
+    assert (
+        memory["available_guest_virtual_accounts_for_image_and_virtual_alloc_regions"]
+        is True
+    )
+    assert smoke["frames_rendered"] == smoke["simulation_steps"] == 3
+    assert smoke["pcode_functions_dispatched"] == 7
+    assert smoke["validation_errors"] == 0
+    assert smoke["status"] == "ok"
+    assert retail["pcode_functions_dispatched_observed"] == [3106, 3107]
+    assert retail["passed_import_frontier"][-1] == "KERNEL32.dll!GlobalMemoryStatus"
+    assert retail["next_blocker"] == (
+        "P-code module has no exported function rvi_00a74fb0"
+    )
+    assert evidence["limitations"]["fiber_scheduling"] is False
+    assert evidence["limitations"]["playable_game"] is False

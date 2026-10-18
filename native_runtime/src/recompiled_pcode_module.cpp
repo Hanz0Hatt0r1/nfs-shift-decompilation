@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <sys/sysinfo.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 
@@ -20,6 +21,7 @@
 #include <cctype>
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 #include <fstream>
 #include <limits>
 #include <stdexcept>
@@ -51,6 +53,7 @@ constexpr uint32_t kGuestEventHandleBase = 0x00060000;
 constexpr uint32_t kGuestTimerPeriodMs = 1;
 constexpr uint32_t kGuestTimerNoError = 0;
 constexpr uint32_t kGuestTimerErrNoCanDo = 97;
+constexpr uint32_t kGuestAlreadyFiberError = 1280;
 constexpr size_t kMaximumGuestFileReadBytes = 64 * 1024 * 1024;
 constexpr uint64_t kMaximumGuestVirtualAllocationSize =
     UINT64_C(512) * 1024 * 1024;
@@ -81,6 +84,8 @@ constexpr uint32_t kGuestInitialStackPointer = 0x7ffdf000;
 constexpr uint32_t kGuestStackLimit = 0x7ff00000;
 constexpr uint32_t kGuestTebAddress = 0x7ffde000;
 constexpr size_t kGuestTebSize = 0x1000;
+constexpr uint32_t kGuestFiberHandleBase = 0x00070000;
+constexpr uint32_t kGuestFiberHandleStride = 0x10;
 constexpr uint32_t kGuestCpuidScratchAddress = 0xfffffff0;
 constexpr size_t kMaximumImportDescriptors = 4096;
 constexpr size_t kMaximumImportThunksPerModule = 65536;
@@ -363,6 +368,9 @@ struct RecompiledPcodeModule::Impl {
         bool manual_reset = false;
         bool signaled = false;
     };
+    struct GuestFiber {
+        uint32_t data = 0;
+    };
 
     explicit Impl(const std::string& path) {
         static_assert(sizeof(size_t) >= sizeof(uint64_t),
@@ -566,6 +574,14 @@ struct RecompiledPcodeModule::Impl {
                 return get_current_thread_id();
             if (name == "KERNEL32.dll!GetTickCount")
                 return get_tick_count();
+            if (name == "KERNEL32.dll!GetLocalTime")
+                return get_local_time();
+            if (name == "KERNEL32.dll!ConvertThreadToFiber")
+                return convert_thread_to_fiber();
+            if (name == "KERNEL32.dll!IsThreadAFiber")
+                return is_thread_a_fiber();
+            if (name == "KERNEL32.dll!GlobalMemoryStatus")
+                return global_memory_status();
             if (name == "WINMM.dll!timeBeginPeriod")
                 return time_begin_period();
             if (name == "WINMM.dll!timeEndPeriod")
@@ -961,6 +977,9 @@ struct RecompiledPcodeModule::Impl {
             "GetCurrentProcess", "GetPriorityClass", "GetCurrentProcessId",
             "GetCurrentThread", "GetThreadPriority", "SetPriorityClass",
             "SetThreadPriority", "GetCurrentThreadId", "GetTickCount",
+            "GetLocalTime",
+            "ConvertThreadToFiber", "IsThreadAFiber",
+            "GlobalMemoryStatus",
             "GetSystemTimeAsFileTime", "QueryPerformanceCounter",
             "QueryPerformanceFrequency", "GetStartupInfoA", "GetProcessHeap",
             "CreateMutexA", "WaitForSingleObject", "ReleaseMutex",
@@ -1064,6 +1083,190 @@ struct RecompiledPcodeModule::Impl {
             return -1;
         }
         return finish_stdcall(argument_bytes, api) ? 0 : -1;
+    }
+
+    int get_local_time() {
+        constexpr const char* api = "KERNEL32.dll!GetLocalTime";
+        uint32_t output_address = 0;
+        if (!read_stack_argument(0, output_address, api)) return -1;
+        if (!valid_guest_pointer(output_address, 16)) {
+            error = std::string(api) + " has an invalid output pointer";
+            return -1;
+        }
+
+        const auto now = std::chrono::system_clock::now();
+        const std::time_t seconds = std::chrono::system_clock::to_time_t(now);
+        std::tm local{};
+        if (!localtime_r(&seconds, &local)) {
+            error = std::string(api) + " cannot convert the host local time";
+            return -1;
+        }
+        auto milliseconds =
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                now.time_since_epoch())
+                .count() % 1000;
+        if (milliseconds < 0) milliseconds += 1000;
+
+        std::array<uint8_t, 16> system_time{};
+        const auto store_word = [&system_time](size_t offset, uint16_t value) {
+            system_time[offset] = static_cast<uint8_t>(value);
+            system_time[offset + 1] = static_cast<uint8_t>(value >> 8);
+        };
+        store_word(0, static_cast<uint16_t>(local.tm_year + 1900));
+        store_word(2, static_cast<uint16_t>(local.tm_mon + 1));
+        store_word(4, static_cast<uint16_t>(local.tm_wday));
+        store_word(6, static_cast<uint16_t>(local.tm_mday));
+        store_word(8, static_cast<uint16_t>(local.tm_hour));
+        store_word(10, static_cast<uint16_t>(local.tm_min));
+        store_word(12, static_cast<uint16_t>(local.tm_sec));
+        store_word(14, static_cast<uint16_t>(milliseconds));
+        if (!write_guest_bytes(output_address, system_time.data(),
+                               system_time.size(), api)) {
+            return -1;
+        }
+        return finish_stdcall(sizeof(uint32_t), api) ? 0 : -1;
+    }
+
+    int convert_thread_to_fiber() {
+        constexpr const char* api = "KERNEL32.dll!ConvertThreadToFiber";
+        uint32_t fiber_data = 0;
+        if (!read_stack_argument(0, fiber_data, api)) return -1;
+        if (current_guest_fiber != 0) {
+            guest_last_error = kGuestAlreadyFiberError;
+            return return_kernel32_dword(0, api, sizeof(uint32_t));
+        }
+
+        uint32_t teb_address = 0;
+        uint32_t teb_self = 0;
+        if (!read_guest_u32("register", kX86FsBaseRegisterOffset,
+                            teb_address) ||
+            !valid_guest_pointer(teb_address, 0x1c) ||
+            !read_guest_u32("ram", teb_address + 0x18, teb_self) ||
+            teb_self != teb_address) {
+            error = std::string(api) + " requires an initialized guest TEB";
+            return -1;
+        }
+
+        uint32_t handle = next_guest_fiber_handle;
+        const uint64_t image_begin = pe_image_base;
+        const uint64_t image_end = image_begin + pe_image_size;
+        bool found_fiber_address = false;
+        while (valid_guest_pointer(handle, sizeof(uint32_t))) {
+            const bool overlaps_image =
+                pe_image_size != 0 && handle < image_end &&
+                image_begin < static_cast<uint64_t>(handle) +
+                                  sizeof(uint32_t);
+            if (!overlaps_image && guest_fibers.find(handle) ==
+                                       guest_fibers.end()) {
+                found_fiber_address = true;
+                break;
+            }
+            if (handle > UINT32_MAX - kGuestFiberHandleStride) break;
+            handle += kGuestFiberHandleStride;
+        }
+        if (!found_fiber_address) {
+            guest_last_error = 8;
+            return return_kernel32_dword(0, api, sizeof(uint32_t));
+        }
+
+        if (!write_guest_u32("ram", handle, fiber_data) ||
+            !write_guest_u32("ram", teb_address + 0x10, handle)) {
+            error = std::string(api) + " cannot initialize guest fiber data";
+            return -1;
+        }
+        guest_fibers.emplace(handle, GuestFiber{fiber_data});
+        current_guest_fiber = handle;
+        next_guest_fiber_handle = handle + kGuestFiberHandleStride;
+        return return_kernel32_dword(handle, api, sizeof(uint32_t));
+    }
+
+    int is_thread_a_fiber() {
+        return return_kernel32_dword(current_guest_fiber != 0 ? 1 : 0,
+                                     "KERNEL32.dll!IsThreadAFiber");
+    }
+
+    int global_memory_status() {
+        constexpr const char* api = "KERNEL32.dll!GlobalMemoryStatus";
+        constexpr uint64_t guest_virtual_limit = UINT64_C(1) << 31;
+        uint32_t output_address = 0;
+        if (!read_stack_argument(0, output_address, api)) return -1;
+        if (!valid_guest_pointer(output_address, 8 * sizeof(uint32_t))) {
+            error = std::string(api) + " has an invalid output pointer";
+            return -1;
+        }
+
+        struct sysinfo host_memory {};
+        if (sysinfo(&host_memory) != 0) {
+            error = std::string(api) + " cannot query host memory status";
+            return -1;
+        }
+        const uint64_t unit = host_memory.mem_unit == 0
+                                  ? 1
+                                  : host_memory.mem_unit;
+        const auto to_bytes = [unit](uint64_t value) {
+            return value > UINT64_MAX / unit ? UINT64_MAX : value * unit;
+        };
+        const auto saturating_add = [](uint64_t left, uint64_t right) {
+            return right > UINT64_MAX - left ? UINT64_MAX : left + right;
+        };
+        const auto guest_size = [](uint64_t value) {
+            return static_cast<uint32_t>(std::min<uint64_t>(
+                value, std::numeric_limits<uint32_t>::max()));
+        };
+        const uint64_t total_physical = to_bytes(host_memory.totalram);
+        const uint64_t available_physical = std::min(
+            total_physical,
+            to_bytes(saturating_add(host_memory.freeram,
+                                    host_memory.bufferram)));
+        const uint64_t total_page_file = to_bytes(saturating_add(
+            host_memory.totalram, host_memory.totalswap));
+        const uint64_t available_page_file = std::min(
+            total_page_file,
+            to_bytes(saturating_add(
+                saturating_add(host_memory.freeram, host_memory.bufferram),
+                host_memory.freeswap)));
+        const uint32_t memory_load = total_physical == 0
+                                         ? 0
+                                         : static_cast<uint32_t>(std::clamp(
+                                               (static_cast<long double>(
+                                                    total_physical -
+                                                    available_physical) *
+                                                100.0L) /
+                                                   total_physical,
+                                               0.0L, 100.0L));
+
+        uint64_t used_guest_virtual = pe_image_size;
+        for (const auto& allocation : guest_virtual_allocations) {
+            if (allocation.second > UINT64_MAX - used_guest_virtual) {
+                used_guest_virtual = guest_virtual_limit;
+                break;
+            }
+            used_guest_virtual += allocation.second;
+        }
+        used_guest_virtual = std::min(used_guest_virtual,
+                                      guest_virtual_limit);
+        const std::array<uint32_t, 8> fields = {
+            8 * sizeof(uint32_t),
+            memory_load,
+            guest_size(total_physical),
+            guest_size(available_physical),
+            guest_size(total_page_file),
+            guest_size(available_page_file),
+            static_cast<uint32_t>(guest_virtual_limit),
+            static_cast<uint32_t>(guest_virtual_limit -
+                                  used_guest_virtual)};
+        std::array<uint8_t, sizeof(fields)> status{};
+        for (size_t index = 0; index < fields.size(); ++index) {
+            for (size_t byte = 0; byte < sizeof(uint32_t); ++byte) {
+                status[index * sizeof(uint32_t) + byte] =
+                    static_cast<uint8_t>(fields[index] >> (byte * 8));
+            }
+        }
+        if (!write_guest_bytes(output_address, status.data(), status.size(),
+                               api)) {
+            return -1;
+        }
+        return finish_stdcall(sizeof(uint32_t), api) ? 0 : -1;
     }
 
     int time_begin_period() {
@@ -3668,6 +3871,7 @@ struct RecompiledPcodeModule::Impl {
     std::unordered_map<uint32_t, GuestMutex> guest_mutexes;
     std::unordered_map<uint32_t, GuestFile> guest_files;
     std::unordered_map<uint32_t, GuestEvent> guest_events;
+    std::unordered_map<uint32_t, GuestFiber> guest_fibers;
     std::unordered_map<uint32_t, uint32_t> guest_timer_period_requests;
     std::unordered_map<uint32_t, uint64_t> guest_virtual_allocations;
     std::unordered_map<std::string, uint32_t> guest_named_mutexes;
@@ -3692,6 +3896,8 @@ struct RecompiledPcodeModule::Impl {
     uint64_t next_guest_mutex_handle = 0x00030000;
     uint64_t next_guest_file_handle = kGuestFileHandleBase;
     uint64_t next_guest_event_handle = kGuestEventHandleBase;
+    uint32_t next_guest_fiber_handle = kGuestFiberHandleBase;
+    uint32_t current_guest_fiber = 0;
     uint64_t next_dynamic_import_stub_address =
         kGuestDynamicImportStubBase;
     uint32_t next_tls_index = 0;

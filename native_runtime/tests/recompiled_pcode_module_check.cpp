@@ -102,7 +102,7 @@ uint32_t invoke_import(shift::runtime::RecompiledPcodeModule& module,
 }
 
 void write_pe32_fixture(const std::string& path) {
-    constexpr size_t file_size = 0x1200;
+    constexpr size_t file_size = 0x1300;
     constexpr size_t pe_offset = 0x80;
     constexpr size_t optional_offset = pe_offset + 24;
     constexpr size_t section_offset = optional_offset + 0xe0;
@@ -126,7 +126,7 @@ void write_pe32_fixture(const std::string& path) {
     write_u32(bytes, optional_offset + 60, 0x200);
     write_u32(bytes, optional_offset + 92, 16);
     write_u32(bytes, optional_offset + 104, 0x2000);
-    write_u32(bytes, optional_offset + 108, 80);
+    write_u32(bytes, optional_offset + 108, 100);
 
     bytes[section_offset] = '.';
     bytes[section_offset + 1] = 't';
@@ -143,9 +143,9 @@ void write_pe32_fixture(const std::string& path) {
     bytes[import_section_offset + 3] = 'a';
     bytes[import_section_offset + 4] = 't';
     bytes[import_section_offset + 5] = 'a';
-    write_u32(bytes, import_section_offset + 8, 0xe00);
+    write_u32(bytes, import_section_offset + 8, 0xf00);
     write_u32(bytes, import_section_offset + 12, 0x2000);
-    write_u32(bytes, import_section_offset + 16, 0xe00);
+    write_u32(bytes, import_section_offset + 16, 0xf00);
     write_u32(bytes, import_section_offset + 20, 0x400);
     std::fill(bytes.begin() + 0x200, bytes.begin() + 0x400, 0x90);
     bytes[0x200] = 'P';
@@ -162,15 +162,18 @@ void write_pe32_fixture(const std::string& path) {
     bytes[0x321] = 0x25;
     write_u32(bytes, 0x322, 0x00402c10);
 
-    write_u32(bytes, 0x400, 0x2050);
+    write_u32(bytes, 0x400, 0x2064);
     write_u32(bytes, 0x40c, 0x2de0);
     write_u32(bytes, 0x410, 0x2c00);
-    write_u32(bytes, 0x414, 0x2180);
+    write_u32(bytes, 0x414, 0x21a0);
     write_u32(bytes, 0x420, 0x2a60);
     write_u32(bytes, 0x424, 0x2d20);
-    write_u32(bytes, 0x428, 0x2d80);
+    write_u32(bytes, 0x428, 0x21c0);
     write_u32(bytes, 0x434, 0x2dd0);
     write_u32(bytes, 0x438, 0x2d40);
+    write_u32(bytes, 0x43c, 0x2d58);
+    write_u32(bytes, 0x448, 0x2de0);
+    write_u32(bytes, 0x44c, 0x2d30);
     const auto write_import_name = [&](size_t offset, const char* name) {
         write_u16(bytes, offset, 0);
         std::copy_n(name, std::char_traits<char>::length(name) + 1,
@@ -188,14 +191,22 @@ void write_pe32_fixture(const std::string& path) {
         0x29a0, 0x29c0, 0x29e0, 0x2a00, 0x2a20, 0x2a40, 0x2ad0,
         0x2af0, 0x2b10, 0x2b30, 0x2b50, 0x2b70, 0x2b90, 0x2bb0};
     for (size_t index = 0; index < import_thunks.size(); ++index) {
-        write_u32(bytes, 0x450 + index * sizeof(uint32_t), import_thunks[index]);
+        write_u32(bytes, 0x464 + index * sizeof(uint32_t), import_thunks[index]);
         write_u32(bytes, 0x1000 + index * sizeof(uint32_t), import_thunks[index]);
     }
-    write_u32(bytes, 0x580, 0x2a80);
-    write_u32(bytes, 0x584, 0x2aa0);
-    write_u32(bytes, 0x588, 0x2ac0);
-    write_u32(bytes, 0x1180, 0x2da0);
-    write_u32(bytes, 0x1184, 0x2dc0);
+    write_u32(bytes, 0x5a0, 0x2a80);
+    write_u32(bytes, 0x5a4, 0x2aa0);
+    write_u32(bytes, 0x5a8, 0x2ac0);
+    write_u32(bytes, 0x5c0, 0x2da0);
+    write_u32(bytes, 0x5c4, 0x2dc0);
+    write_u32(bytes, 0x1130, 0x2d88);
+    write_u32(bytes, 0x1134, 0x2ded);
+    write_u32(bytes, 0x1138, 0x2d68);
+    write_u32(bytes, 0x1158, 0x2d88);
+    write_u32(bytes, 0x115c, 0x2ded);
+    write_u32(bytes, 0x1160, 0x2e18);
+    write_u32(bytes, 0x1164, 0x2e00);
+    write_u32(bytes, 0x113c, 0x2e00);
     std::copy_n("KERNEL32.dll", 12, bytes.begin() + 0x11e0);
     std::copy_n("WINMM.dll", 10, bytes.begin() + 0x11d0);
     write_u32(bytes, 0x1120, 0x2a80);
@@ -277,6 +288,10 @@ void write_pe32_fixture(const std::string& path) {
     write_import_name(0xfb0, "VirtualFree");
     write_import_name(0x11a0, "timeBeginPeriod");
     write_import_name(0x11c0, "timeEndPeriod");
+    write_import_name(0x1188, "ConvertThreadToFiber");
+    write_import_name(0x11ed, "IsThreadAFiber");
+    write_import_name(0x1200, "GlobalMemoryStatus");
+    write_import_name(0x1218, "GetLocalTime");
 
     std::ofstream file(path, std::ios::binary | std::ios::trunc);
     require(static_cast<bool>(file), "could not create PE32 fixture");
@@ -304,7 +319,7 @@ int main(int argc, char** argv) {
                     image.entry_point == 0x00401020 &&
                     image.section_count == 2 &&
                     image.import_module_count == 3 &&
-                    image.import_function_count == 76 &&
+                    image.import_function_count == 80 &&
                     image.import_stub_base == 0xf0000000,
                 "PE32 loader returned unexpected image metadata: image=" +
                     std::to_string(image.image_base) + ", size=" +
@@ -358,6 +373,12 @@ int main(int argc, char** argv) {
         require(read_guest_u32(module, "ram", 0x00402d40) == 0xf00004a0 &&
                     read_guest_u32(module, "ram", 0x00402d44) == 0xf00004b0,
                 "WinMM timer IAT slots were not mapped to their guest traps");
+        require(read_guest_u32(module, "ram", 0x00402d30) == 0xf00004c0 &&
+                    read_guest_u32(module, "ram", 0x00402d34) == 0xf00004d0 &&
+                    read_guest_u32(module, "ram", 0x00402d38) == 0xf00004e0,
+                "Kernel32 fiber IAT slots were not mapped to their guest traps");
+        require(read_guest_u32(module, "ram", 0x00402d3c) == 0xf00004f0,
+                "Kernel32 memory-status IAT slot was not mapped to its guest trap");
         require(invoke_import(module, 5, {}) ==
                     static_cast<uint32_t>(syscall(SYS_gettid)),
                 "one-based P-code import ID did not route to its Kernel32 trap");
@@ -1126,6 +1147,61 @@ int main(int argc, char** argv) {
                     read_guest_u16(module, "register", 0x10a2) == 0 &&
                     read_guest_u16(module, "register", 0x10a4) == 0xffff,
                 "PE32 entry point did not receive FINIT x87 state");
+        constexpr uint32_t convert_thread_to_fiber = 0xf00004c0;
+        constexpr uint32_t is_thread_a_fiber = 0xf00004d0;
+        constexpr uint32_t fiber_data = 0x12345678;
+        const uint32_t current_fiber =
+            invoke_import(module, 77, {fiber_data});
+        require(current_fiber == 0x00070000 &&
+                    read_guest_u32(module, "ram", 0x7ffde010) ==
+                        current_fiber &&
+                    read_guest_u32(module, "ram", current_fiber) == fiber_data &&
+                    invoke_import(module, is_thread_a_fiber, {}) == 1,
+                "ConvertThreadToFiber did not establish the current guest fiber and data pointer");
+        require(invoke_import(module, convert_thread_to_fiber, {0}) == 0 &&
+                    invoke_import(module, get_last_error, {}) == 1280 &&
+                    read_guest_u32(module, "ram", 0x7ffde010) == current_fiber,
+                "duplicate ConvertThreadToFiber did not fail with ERROR_ALREADY_FIBER");
+        constexpr uint32_t local_time_address = 0x00033000;
+        (void)invoke_import(module, 79, {local_time_address});
+        const uint16_t local_year =
+            read_guest_u16(module, "ram", local_time_address);
+        const uint16_t local_month =
+            read_guest_u16(module, "ram", local_time_address + 2);
+        const uint16_t local_weekday =
+            read_guest_u16(module, "ram", local_time_address + 4);
+        const uint16_t local_day =
+            read_guest_u16(module, "ram", local_time_address + 6);
+        require(local_year >= 2020 && local_year <= 2100 &&
+                    local_month >= 1 && local_month <= 12 &&
+                    local_weekday <= 6 && local_day >= 1 && local_day <= 31,
+                "GetLocalTime did not write a valid SYSTEMTIME date");
+        constexpr uint32_t memory_status_address = 0x00033020;
+        (void)invoke_import(module, 80, {memory_status_address});
+        const uint32_t memory_status_length =
+            read_guest_u32(module, "ram", memory_status_address);
+        const uint32_t memory_load =
+            read_guest_u32(module, "ram", memory_status_address + 4);
+        const uint32_t total_physical =
+            read_guest_u32(module, "ram", memory_status_address + 8);
+        const uint32_t available_physical =
+            read_guest_u32(module, "ram", memory_status_address + 12);
+        const uint32_t total_page_file =
+            read_guest_u32(module, "ram", memory_status_address + 16);
+        const uint32_t available_page_file =
+            read_guest_u32(module, "ram", memory_status_address + 20);
+        const uint32_t total_virtual =
+            read_guest_u32(module, "ram", memory_status_address + 24);
+        const uint32_t available_virtual =
+            read_guest_u32(module, "ram", memory_status_address + 28);
+        require(memory_status_length == 32 && memory_load <= 100 &&
+                    total_physical > 0 &&
+                    total_physical >= available_physical &&
+                    total_page_file > 0 &&
+                    total_page_file >= available_page_file &&
+                    total_virtual == 0x80000000 &&
+                    available_virtual < total_virtual,
+                "GlobalMemoryStatus wrote an invalid guest MEMORYSTATUS");
         std::array<uint8_t, 4> entry_point_marker{};
         constexpr std::array<uint8_t, 4> expected_entry_point_marker = {
             'S', 'U', 'P', 'P'};
