@@ -28,8 +28,12 @@ It tests the object at `0x0082f3c0` (`[this+0x24] == 0`) and then
 The false path may call a virtual method at offset `0x24c` through the object
 at `[this+0x48]`, then returns false. `0x0050c880` also dispatches through a
 function pointer at `0x00ac59d0`, whose image value points to internal code at
-`0x005460c0`, rather than a Win32 import. The field meanings and whether this
-state gate explains the later return to the scheduler remain unresolved.
+`0x005460c0`, rather than a Win32 import. The history reaches `0x0050c8a9`,
+which is the `[this+0x0c] == 0` path in `0x0050c880`; it then records
+`0x00833670`. That ordering is consistent with the false result continuing to
+the later virtual callback in `0x0050ceb0`, but the history does not record the
+object pointer or return values. The field meanings and whether this state gate
+explains the later return to the scheduler remain unresolved.
 
 The old v66 `Base System` allocator fatal did not recur in v112 or v113 and is
 historical unless observed again. The current software frontier is identifying
