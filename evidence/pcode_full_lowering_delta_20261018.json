@@ -1,0 +1,23 @@
+{
+  "added_functions": 6534,
+  "added_instructions": 799281,
+  "added_pcode_operations": 4630245,
+  "base_build_report_sha256": "a4ce39d03409f134d80cae26ddc0b9b60979e5b9a0ca0e1cd423a8401e87523d",
+  "base_lowerable_functions": 35004,
+  "first_added_function": "0x00401070",
+  "format": "NFSShift.PcodeLoweringSupplementalShard/1",
+  "last_added_function": "0x00d92600",
+  "records": 41538,
+  "rejection_reasons": [],
+  "remaining_rejected_functions": 0,
+  "source": {
+    "address_spaces_sha256": "e922b22ab08ba04109f57197534a2e848b171210a35de795514fe0f3ef8effb0",
+    "corpus_sha256": "bc3f5a5972842f605b0bdd25dbc80b3129b96df30c3584d2dd31222aa5a454bc",
+    "language_id": "x86:LE:32:default",
+    "manifest_sha256": "f3a70bb2e65adafcb72d292e03956a9354e99b9a6b994e2586e91fb14b547074",
+    "program": "SHIFT.exe"
+  },
+  "source_bytes": 1639300830,
+  "source_file": "shift-pcode-delta.c",
+  "source_sha256": "bb4f10c2d0cf7a137d5169c0c7d42c3b894e41529e415cc873687335c26457b7"
+}

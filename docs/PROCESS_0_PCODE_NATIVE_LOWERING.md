@@ -15,12 +15,12 @@ and generic `CALLOTHER` callbacks. Each generated function keeps its language
 userop index and address spaces; the game-specific implementations remain in
 this repository.
 
-The initial 6,534 rejected functions included 65 repeat-string instructions
+At the first repeat-string milestone on 2026-10-18, the initial 6,534 rejected functions included 65 repeat-string instructions
 whose conditional P-code branch targets the same machine instruction even
 though Ghidra labels the machine flow as fallthrough. `revenginstr` PR #126
 adds that exact self-repeat case while still rejecting unrelated branch
-targets. This raises the current lowerable count to **35,069 of 41,538**
-(84.43%); 6,469 still fail closed: 6,440 use 10-byte x87 values, 28 use
+targets. This raised the lowerable count at that milestone to **35,069 of 41,538**
+(84.43%); 6,469 still failed closed: 6,440 use 10-byte x87 values, 28 use
 16-byte values, and one has a computed call terminator whose P-code sequence
 needs further inspection. The 10-byte values include x87 arithmetic and
 conversions, so treating them as C `long double` without target-precision
@@ -84,3 +84,23 @@ persistent artifact directory rather than Git. Linking and the Linux smoke
 test do not provide complete function coverage, the original game's startup
 and platform runtime, a reconstructed game link map, or behavioral parity.
 Full NFS Shift recompilation remains open.
+
+## Full frozen-corpus lowering — 2026-10-18
+
+`revenginstr` PR #128 added the opaque 16-byte operations, final binary80
+conversion, x86 `WAIT`, and computed-call terminator handling needed by the
+remaining frozen corpus. The pinned full audit now reports **41,538 of 41,538
+functions lowerable**, covering all 2,088,152 instructions and 9,600,713 P-code
+operations. Its report is
+[`evidence/pcode_native_lowering_coverage_full_20261018.json`](../evidence/pcode_native_lowering_coverage_full_20261018.json).
+
+The added 6,534 functions were compiled as 66 Linux object shards and linked
+with the existing 35,004-function base into a 64-bit Linux ELF exporting all
+41,538 functions. The `dlopen` smoke harness passed its register, memory-write,
+and call-target checks. Build and delta evidence are
+[`evidence/pcode_full_lowering_linux_build_20261018.json`](../evidence/pcode_full_lowering_linux_build_20261018.json)
+and [`evidence/pcode_full_lowering_delta_20261018.json`](../evidence/pcode_full_lowering_delta_20261018.json).
+
+This closes frozen-corpus lowering and native linking only. The library still
+requires a guest-state callback host; game startup, PE image loading, imported
+platform services, graphics integration, and behavioral parity remain open.
