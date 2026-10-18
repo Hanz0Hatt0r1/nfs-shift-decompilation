@@ -1,0 +1,493 @@
+{
+  "claim_scope": "structural_call_result_to_function_return",
+  "factory_semantics_confirmed": false,
+  "format": "NFS.RevenginstrM23CallReturnReplay/1",
+  "inputs": [
+    {
+      "bytes": 2701,
+      "path": "scan24-exact-root-20261018/callee-pcode-flow-00a1d2c0.tsv",
+      "rows": 32,
+      "sha256": "a163a5a483cf6691ff078106eb628513eb3802c1a3e8641e8c7f877912ed1004"
+    },
+    {
+      "bytes": 5131,
+      "path": "scan24-exact-root-20261018/callee-pcode-flow-00a26ea0.tsv",
+      "rows": 59,
+      "sha256": "a7a64dd640561c2e681769e8fc4bc4cd43b56d2dead0f8ca05b031790ca98a0a"
+    },
+    {
+      "bytes": 5796,
+      "path": "scan24-exact-root-20261018/caller-pcode-flow.tsv",
+      "rows": 69,
+      "sha256": "6d77a4200ca7c909d596169353999930da2b1718fabb4f04713e0f2f1b0f5d06"
+    },
+    {
+      "bytes": 435,
+      "path": "screening-scan16/callee-pcode-flow/00886930.tsv",
+      "rows": 5,
+      "sha256": "1426d4837ebfe25112687864709444c78e255034669a71e7fbb37babe20feae9"
+    },
+    {
+      "bytes": 13393,
+      "path": "screening-scan16/callee-pcode-flow/009f0290.tsv",
+      "rows": 165,
+      "sha256": "41c881a8670b8e0892d76b570d2b9579c9fe6956269493247572988bf545d0cf"
+    },
+    {
+      "bytes": 8257,
+      "path": "screening-scan16/callee-pcode-flow/009f3a40.tsv",
+      "rows": 104,
+      "sha256": "4d9b7a77ec98dfee436d6314a03966e91722ff213ae3f34dfd97cbd47c9c4163"
+    },
+    {
+      "bytes": 6584,
+      "path": "screening-scan16/callee-pcode-flow/009f3af0.tsv",
+      "rows": 81,
+      "sha256": "490199421a414e86c482a290e4fe1d54f003445c4830a1bf177f88e24b1fe621"
+    },
+    {
+      "bytes": 5758,
+      "path": "screening-scan16/callee-pcode-flow/00a04920.tsv",
+      "rows": 72,
+      "sha256": "9e203608c7da6d97e4ed921ffc1693227a235c2fe2753cdc2d16bcf8b0891e3c"
+    },
+    {
+      "bytes": 16050,
+      "path": "screening-scan16/callee-pcode-flow/00a053a0.tsv",
+      "rows": 185,
+      "sha256": "5d00b191b580ac71feaf98f22104910af1f7b7bd79741c6f7043d292a5206cd0"
+    },
+    {
+      "bytes": 5451,
+      "path": "screening-scan16/callee-pcode-flow/00a06290.tsv",
+      "rows": 66,
+      "sha256": "be60ec67d0ae8fcb4da82367aca9e342099a2d7f9a09c11cb463b0e511c8cb8f"
+    },
+    {
+      "bytes": 16742,
+      "path": "screening-scan16/callee-pcode-flow/00a128f0.tsv",
+      "rows": 198,
+      "sha256": "4566d377dd44fc309c03f4843062f1d53eb3e1fe952b2d4d0fc5402a6b3ffa66"
+    },
+    {
+      "bytes": 14884,
+      "path": "screening-scan16/caller-pcode-flow/00a12b20.tsv",
+      "rows": 176,
+      "sha256": "e9d822261938507a4baf7fb9ab14c5b0c8dc30796aec0a948ef41e192a1c3eef"
+    },
+    {
+      "bytes": 11170,
+      "path": "screening-scan16/caller-pcode-flow/00a12c10.tsv",
+      "rows": 139,
+      "sha256": "cc33378592f5c2ac63d4a9f82657d53c057efd7e57ff63d695e92d251b7b0c3b"
+    },
+    {
+      "bytes": 4431,
+      "path": "screening-scan16/caller-pcode-flow/00a39c60.tsv",
+      "rows": 56,
+      "sha256": "c7ba2f2cab43410e33c3a4edd67776d403b9709fba8d32e40ddb336102505ccc"
+    },
+    {
+      "bytes": 6831,
+      "path": "screening-scan17/callee-pcode-flow/009015b0.tsv",
+      "rows": 82,
+      "sha256": "70500231ab0ef1ee2b6ff617ea711e95b573e8684d1f31a945f83f21b25981d2"
+    },
+    {
+      "bytes": 58707,
+      "path": "screening-scan17/callee-pcode-flow/00901960.tsv",
+      "rows": 687,
+      "sha256": "c45759174269d6472fd3e346b51e2274ae07e23bbff7920371a8e4cfadf66a82"
+    },
+    {
+      "bytes": 6968,
+      "path": "screening-scan17/callee-pcode-flow/009f0eb0.tsv",
+      "rows": 83,
+      "sha256": "bdcc2ed2f1deff99841966fa3ccd7de14cb9b11240ce821715179a27b966ab72"
+    },
+    {
+      "bytes": 4584,
+      "path": "screening-scan17/callee-pcode-flow/009feac0.tsv",
+      "rows": 57,
+      "sha256": "ee72129ac17773bc9739123552e220f77436286ae2f92e789a3994b8268443a7"
+    },
+    {
+      "bytes": 1727,
+      "path": "screening-scan17/callee-pcode-flow/00a31bf0.tsv",
+      "rows": 19,
+      "sha256": "3b6f7188263d7bc306e1c424cd81c5ab0a4009f23b98d321d73bdeb2b7345a84"
+    },
+    {
+      "bytes": 2438,
+      "path": "screening-scan17/callee-pcode-flow/00a31c70.tsv",
+      "rows": 27,
+      "sha256": "3f9bbf7df99fd3cf8cee7a4405cc47453f182a15864948f35527afb00c2851f4"
+    },
+    {
+      "bytes": 3685,
+      "path": "screening-scan17/callee-pcode-flow/00a31e00.tsv",
+      "rows": 45,
+      "sha256": "ca88adea96641c29047971c1a478e0dcdce74294aa9eb8b34e23d551a9881266"
+    },
+    {
+      "bytes": 2198,
+      "path": "screening-scan17/callee-pcode-flow/00a35f60.tsv",
+      "rows": 25,
+      "sha256": "07d72f378579a5ba12f0d718729b480ef8ac2d08ebafef13ced4ab29c50bab57"
+    },
+    {
+      "bytes": 1373,
+      "path": "screening-scan17/callee-pcode-flow/00a363d0.tsv",
+      "rows": 15,
+      "sha256": "18e7d314fa4384f3d4a0dc98f3331ace47399dca0f483e5a5e6cbc2a146a6fbd"
+    },
+    {
+      "bytes": 1908,
+      "path": "screening-scan17/callee-pcode-flow/00a36400.tsv",
+      "rows": 23,
+      "sha256": "4745e6e23c036df73aaef1642b5a034f239a7b7683a7e426d20f18985d34658e"
+    },
+    {
+      "bytes": 2105,
+      "path": "screening-scan17/callee-pcode-flow/00a36430.tsv",
+      "rows": 25,
+      "sha256": "bb5cbb770670c29720e5acbdf99a4756c5818c661e3a9c7020ed4ca152565538"
+    },
+    {
+      "bytes": 2597,
+      "path": "screening-scan17/callee-pcode-flow/00a36460.tsv",
+      "rows": 31,
+      "sha256": "bc792d30e1836e54f47ddd4b2666998241ec262d5f2e026bb9d618c42b8966b4"
+    },
+    {
+      "bytes": 3266,
+      "path": "screening-scan17/callee-pcode-flow/00a364a0.tsv",
+      "rows": 37,
+      "sha256": "aadab63fca344767414d81a079146b27393406a1182d1683f8b92914de3e984c"
+    },
+    {
+      "bytes": 2822,
+      "path": "screening-scan17/callee-pcode-flow/00a364f0.tsv",
+      "rows": 31,
+      "sha256": "1b33a245bbce04cac05ade262d05599a6e496c7a1db5b64041645a282b0681b5"
+    },
+    {
+      "bytes": 2597,
+      "path": "screening-scan17/callee-pcode-flow/00a38240.tsv",
+      "rows": 31,
+      "sha256": "4f7e57c44a72e6fc4027cb85d5e2556ccfc490faaf5fb96db396633e881168bb"
+    },
+    {
+      "bytes": 1562,
+      "path": "screening-scan17/callee-pcode-flow/00a3a510.tsv",
+      "rows": 17,
+      "sha256": "121752168c46f1624a460e4bfb047860e371762c80c9b814d5406205c55dca65"
+    },
+    {
+      "bytes": 1995,
+      "path": "screening-scan17/callee-pcode-flow/00a3a540.tsv",
+      "rows": 23,
+      "sha256": "37996aa53da8ad7e9d6f4c6c9d344cef35c604eeb96a1bcf24958c59806b189e"
+    },
+    {
+      "bytes": 2235,
+      "path": "screening-scan17/callee-pcode-flow/00a3a5d0.tsv",
+      "rows": 27,
+      "sha256": "b5e15271fabf068782ca876de45a4898abf43c361abf467558c1705be3017850"
+    },
+    {
+      "bytes": 1976,
+      "path": "screening-scan17/callee-pcode-flow/00a3a600.tsv",
+      "rows": 23,
+      "sha256": "e80e70578a629c0589a52de7433e599ef12538b22575f5f77784cec508fae135"
+    },
+    {
+      "bytes": 5171,
+      "path": "screening-scan17/caller-pcode-flow/00a01a00.tsv",
+      "rows": 65,
+      "sha256": "0dcf4713f5ee7682aec54bbc37e2bbff5fe26635bc173b47bc9f4cf80fa7a73e"
+    },
+    {
+      "bytes": 8970,
+      "path": "screening-scan17/caller-pcode-flow/00a25b30.tsv",
+      "rows": 111,
+      "sha256": "6f15c53a0f549e8f70951c9be1d63134ed9de5f974e82829ec3d89b10667b7f8"
+    },
+    {
+      "bytes": 9470,
+      "path": "screening-scan17/caller-pcode-flow/00a36000.tsv",
+      "rows": 117,
+      "sha256": "af47fa99c4739a4bc3b25a0c8b8939431f7c1351ea0d4475ad86978e1df682da"
+    },
+    {
+      "bytes": 9181,
+      "path": "screening-scan17/caller-pcode-flow/00a360c0.tsv",
+      "rows": 114,
+      "sha256": "1777d11238cd265980f1769fe52a4d1ff3fd026770c48337edef23e86a29cebc"
+    },
+    {
+      "bytes": 9181,
+      "path": "screening-scan17/caller-pcode-flow/00a361c0.tsv",
+      "rows": 114,
+      "sha256": "3e37fbd7008b21227acc4cec81e32ca414c27373aaf85e87d4b1c2ed25c5f070"
+    },
+    {
+      "bytes": 9181,
+      "path": "screening-scan17/caller-pcode-flow/00a36270.tsv",
+      "rows": 114,
+      "sha256": "07a34645758a36077814bab22d3fb5b5648f88e3b5ebe6cda361f032b59d23ac"
+    },
+    {
+      "bytes": 14489,
+      "path": "screening-scan17/caller-pcode-flow/00a3b4e0.tsv",
+      "rows": 171,
+      "sha256": "840e15e951fd233bea75e5a6fe2aed273ade68953d885a544b083daa0f8349d1"
+    },
+    {
+      "bytes": 15981,
+      "path": "screening-scan17/caller-pcode-flow/00a3ba70.tsv",
+      "rows": 191,
+      "sha256": "9797589a06dc1591f352ac74a8474e08b7cfec6543a855ac19d5b8851661357a"
+    },
+    {
+      "bytes": 19938,
+      "path": "screening-scan17/caller-pcode-flow/00a3c350.tsv",
+      "rows": 233,
+      "sha256": "385b090bffafd3707e1b8f75cd730cf806c3feb5bcd7190644da393b9a17c3ed"
+    },
+    {
+      "bytes": 17789,
+      "path": "screening-scan17/caller-pcode-flow/00a3c560.tsv",
+      "rows": 207,
+      "sha256": "5b79fef76d9967da6d85890cfcd07c72df85daf69c3c1d26df022e73dfd58356"
+    },
+    {
+      "bytes": 21627,
+      "path": "screening-scan17/caller-pcode-flow/00a3c8f0.tsv",
+      "rows": 251,
+      "sha256": "3364ff11d7a810cbea1e46b3d0f6ce91e287674f6b3877197ef77458b2cb2fab"
+    },
+    {
+      "bytes": 17063,
+      "path": "screening-scan17/caller-pcode-flow/00a3cb10.tsv",
+      "rows": 198,
+      "sha256": "0999df4f670314fe5c429d22f288d982ad2229813c8d9a4b067a02c4dec9184f"
+    },
+    {
+      "bytes": 16736,
+      "path": "screening-scan17/caller-pcode-flow/00a3cea0.tsv",
+      "rows": 194,
+      "sha256": "a3c0a054ccf9755441b6bbe4f1c7a2c74d205d9107a840067335609dd2d05bf4"
+    },
+    {
+      "bytes": 16260,
+      "path": "screening-scan17/caller-pcode-flow/00a3ef80.tsv",
+      "rows": 197,
+      "sha256": "e9c1da76439ad5495782fb9fe9a7bba96d2d766c1505d48c907ee617b28e0951"
+    },
+    {
+      "bytes": 16222,
+      "path": "screening-scan17/caller-pcode-flow/00a3f140.tsv",
+      "rows": 197,
+      "sha256": "17f204beca588fc2bf53a66309da37df2f67486b7b0cf5d34db245d6b9fc3ad5"
+    },
+    {
+      "bytes": 58707,
+      "path": "screening-scan18/callee-pcode-flow/009042e0.tsv",
+      "rows": 687,
+      "sha256": "056f665840ae18a02f6228282b37f4579e50a5580b64bc39713606153b06eb98"
+    },
+    {
+      "bytes": 560,
+      "path": "screening-scan18/callee-pcode-flow/009eb3f0.tsv",
+      "rows": 6,
+      "sha256": "6f4d7cc0c2ea7a929dcd974e43e176c8f9ed32ff70b3dbf6e83acb2e4e673611"
+    },
+    {
+      "bytes": 2701,
+      "path": "screening-scan18/callee-pcode-flow/00a1d2c0.tsv",
+      "rows": 32,
+      "sha256": "a163a5a483cf6691ff078106eb628513eb3802c1a3e8641e8c7f877912ed1004"
+    },
+    {
+      "bytes": 5131,
+      "path": "screening-scan18/callee-pcode-flow/00a26ea0.tsv",
+      "rows": 59,
+      "sha256": "a7a64dd640561c2e681769e8fc4bc4cd43b56d2dead0f8ca05b031790ca98a0a"
+    },
+    {
+      "bytes": 3328,
+      "path": "screening-scan18/callee-pcode-flow/00a2b690.tsv",
+      "rows": 41,
+      "sha256": "39007461c7d602d6faff8d5fa37adb164188ddaa8a839c689bae25b54a53b49d"
+    },
+    {
+      "bytes": 4114,
+      "path": "screening-scan18/callee-pcode-flow/00a2f460.tsv",
+      "rows": 48,
+      "sha256": "cbd1e5e05304537e9ae5d4d832684b5c6760ebb8704fbf6ca80cbb1e86d2007f"
+    },
+    {
+      "bytes": 38148,
+      "path": "screening-scan18/callee-pcode-flow/00a3d9a0.tsv",
+      "rows": 447,
+      "sha256": "8fdc631bbb469b6b8612d70f9ddba45c78fbd17feb2c4497c9b3f710edb04c9b"
+    },
+    {
+      "bytes": 3510,
+      "path": "screening-scan18/callee-pcode-flow/00a44f40.tsv",
+      "rows": 43,
+      "sha256": "a4fed7bb3d48fb8b02448b207490160fd865b66315d828ce715b24d0adbdba1e"
+    },
+    {
+      "bytes": 5993,
+      "path": "screening-scan18/caller-pcode-flow/00a271a0.tsv",
+      "rows": 75,
+      "sha256": "eb488399d3e1defa76dfc758473ad048386d1e6c4eccf5eccfe8f2eab467a798"
+    },
+    {
+      "bytes": 14154,
+      "path": "screening-scan18/caller-pcode-flow/00a2c5d0.tsv",
+      "rows": 173,
+      "sha256": "e6727b04cc54fc1ab9d622329272dc11560e4a1e6c991f76b13cfd57b6ab3073"
+    },
+    {
+      "bytes": 6800,
+      "path": "screening-scan18/caller-pcode-flow/00a45150.tsv",
+      "rows": 84,
+      "sha256": "88eeee871c5b54c8b4650b7c79339c397376a489c36bdc8ace0e276db1b12958"
+    },
+    {
+      "bytes": 560,
+      "path": "screening-scan22/callee-pcode-flow/009eb3f0.tsv",
+      "rows": 6,
+      "sha256": "6f4d7cc0c2ea7a929dcd974e43e176c8f9ed32ff70b3dbf6e83acb2e4e673611"
+    },
+    {
+      "bytes": 4471,
+      "path": "screening-scan22/callee-pcode-flow/00a20300.tsv",
+      "rows": 54,
+      "sha256": "b4f332ac8ce82aded9a24984a6755e19cf62437a40be9ef9f9e3e396cee785a5"
+    },
+    {
+      "bytes": 2468,
+      "path": "screening-scan22/callee-pcode-flow/00a26db0.tsv",
+      "rows": 30,
+      "sha256": "a08544eadb65dbcaa213a2e11babe745e5baaa24ce126e077ce2a42dc63b5c30"
+    },
+    {
+      "bytes": 5993,
+      "path": "screening-scan22/callee-pcode-flow/00a271a0.tsv",
+      "rows": 75,
+      "sha256": "eb488399d3e1defa76dfc758473ad048386d1e6c4eccf5eccfe8f2eab467a798"
+    },
+    {
+      "bytes": 13597,
+      "path": "screening-scan22/caller-pcode-flow/00a277d0.tsv",
+      "rows": 169,
+      "sha256": "06f8b1197ec3ee104f73d4040751fe794e3e0f934f96cd42da0fbfb86c5f8c0c"
+    }
+  ],
+  "limitations": [
+    "A call result reaching a function return is a structural path, not a factory label.",
+    "The export does not prove execution feasibility, returned object identity, or runtime type.",
+    "CALLIND paths do not identify a statically resolved callee."
+  ],
+  "outputs": [
+    {
+      "bytes": 3223,
+      "input_path": "screening-scan16/callee-pcode-flow/009f0290.tsv",
+      "path": "call-return-paths/screening-scan16/callee-pcode-flow/009f0290.jsonl",
+      "rows": 3,
+      "sha256": "01c50d0a9744495f0a22bc481b315acf69ab33e93a1535cbc53fbc673503a074"
+    },
+    {
+      "bytes": 6302,
+      "input_path": "screening-scan16/callee-pcode-flow/00a053a0.tsv",
+      "path": "call-return-paths/screening-scan16/callee-pcode-flow/00a053a0.jsonl",
+      "rows": 8,
+      "sha256": "a2023195109bdf4303538c6165546cb27b7f14c3d1727d7f3e3921a89fc6a947"
+    },
+    {
+      "bytes": 5796,
+      "input_path": "screening-scan16/callee-pcode-flow/00a128f0.tsv",
+      "path": "call-return-paths/screening-scan16/callee-pcode-flow/00a128f0.jsonl",
+      "rows": 7,
+      "sha256": "f018a3be3a919d557340062e63ec50b068066be48e6b2f2b09bcf61ae869c034"
+    },
+    {
+      "bytes": 784,
+      "input_path": "screening-scan17/callee-pcode-flow/009015b0.tsv",
+      "path": "call-return-paths/screening-scan17/callee-pcode-flow/009015b0.jsonl",
+      "rows": 1,
+      "sha256": "00812b1a7dfa93f02469bb1ba859da13c51bc0e054bbcc22b475fd732d8604f5"
+    },
+    {
+      "bytes": 788,
+      "input_path": "screening-scan17/callee-pcode-flow/00901960.tsv",
+      "path": "call-return-paths/screening-scan17/callee-pcode-flow/00901960.jsonl",
+      "rows": 1,
+      "sha256": "45596973d6c3a4e758558f48200ea37a377710b3ad5464d82a193d3fb2737021"
+    },
+    {
+      "bytes": 788,
+      "input_path": "screening-scan18/callee-pcode-flow/009042e0.tsv",
+      "path": "call-return-paths/screening-scan18/callee-pcode-flow/009042e0.jsonl",
+      "rows": 1,
+      "sha256": "d92683c5dab42a09afab973168ec2c8193dcdcb588300775d0c7000e6742940c"
+    },
+    {
+      "bytes": 2001,
+      "input_path": "screening-scan18/callee-pcode-flow/00a2f460.tsv",
+      "path": "call-return-paths/screening-scan18/callee-pcode-flow/00a2f460.jsonl",
+      "rows": 2,
+      "sha256": "50b10c9f7a1c7496569709f0ca5b71527fc3f3f03441d0e705fa7e783af6f43a"
+    },
+    {
+      "bytes": 5908,
+      "input_path": "screening-scan18/callee-pcode-flow/00a3d9a0.tsv",
+      "path": "call-return-paths/screening-scan18/callee-pcode-flow/00a3d9a0.jsonl",
+      "rows": 4,
+      "sha256": "f1bdac4d4612db77d1d62c94b299e30c31b78893140272ca49baf18ef43df8d5"
+    },
+    {
+      "bytes": 2435,
+      "input_path": "screening-scan18/callee-pcode-flow/00a44f40.tsv",
+      "path": "call-return-paths/screening-scan18/callee-pcode-flow/00a44f40.jsonl",
+      "rows": 2,
+      "sha256": "dcbbf5c531430d3feacdddabe5fc4520665f9a7c37fd6020f7e3d163f96aef66"
+    },
+    {
+      "bytes": 4673,
+      "input_path": "screening-scan18/caller-pcode-flow/00a2c5d0.tsv",
+      "path": "call-return-paths/screening-scan18/caller-pcode-flow/00a2c5d0.jsonl",
+      "rows": 3,
+      "sha256": "7109d8324cd3b44dfcb28830f798152942f76ad1fca1f3dd75f0949dfeb8be97"
+    },
+    {
+      "bytes": 6683,
+      "input_path": "screening-scan18/caller-pcode-flow/00a45150.tsv",
+      "path": "call-return-paths/screening-scan18/caller-pcode-flow/00a45150.jsonl",
+      "rows": 5,
+      "sha256": "13a5fe7c2509cffcfabc80610e582a7ffc1033bfaee7921f78913fb6f393a43e"
+    }
+  ],
+  "program_id": "nfs-shift:SHIFT.exe",
+  "revenginstr_source_commit": "08a31b94c304f8b7a57996974dafe352413f7924",
+  "summary": {
+    "call_return_paths": 37,
+    "functions_with_paths": 11,
+    "paths_by_call_opcode": {
+      "CALL": 28,
+      "CALLIND": 9
+    },
+    "paths_by_scan": {
+      "screening-scan16": 18,
+      "screening-scan17": 2,
+      "screening-scan18": 17
+    },
+    "source_file_count": 64,
+    "source_files_with_paths": 11,
+    "source_rows": 7218
+  }
+}
