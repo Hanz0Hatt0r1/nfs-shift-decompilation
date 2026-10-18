@@ -53,3 +53,7 @@ Scan24 screened the four direct callees of `00a271a0` as a bounded follow-up. Th
 Scan23 screened the last previously unscanned function in this 1,000-row sample that met the same candidate filters, with exactly ten indirect calls. It returned five parameter loads and four general STORE facts, but no parameter-field stores or exact field pairs, so no dominance audit was run. The empty pair export replays byte-for-byte. No additional eligible roots remain in this corpus under these filters. See [`screening-scan23.json`](screening-scan23.json) for the frozen selection and exports.
 
 These are conservative structural audits only. They make no branch-feasibility, runtime value-flow, or semantic-label claim.
+
+See the separate [call-result-to-return replay](../revenginstr_m23_call_return_replay/README.md)
+for 37 additional structural return paths across the frozen scan16–18 P-code exports.
+Those paths do not establish factory semantics.
