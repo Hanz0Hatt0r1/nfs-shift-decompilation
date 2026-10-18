@@ -1,34 +1,70 @@
-# Need for Speed: SHIFT — Full Native Linux Runtime Roadmap
+# Need for Speed: SHIFT — Android Port Roadmap
 
-This roadmap defines the path to the **full execution of the original PC retail 1.02 game on Linux** using the recovered/lowered game code, the original retail resources, and the native Linux runtime.
+This roadmap defines the path to a **native Android/ARM64 port of the original PC retail 1.02 game**.
 
-The previous Silverstone/BMW vertical-slice milestone is no longer a project target. Its documents and evidence remain useful historical research, but they **must not drive task selection or readiness claims**.
+Linux/Vulkan is the project's **bring-up, debugging and validation platform**, not the final product target. The runtime, recovered game code, graphics backend and platform abstractions must therefore be designed so that successful Linux bring-up transfers to Android instead of creating a Linux-only implementation.
 
-The project goal is now:
+The retired Silverstone/BMW vertical slice is not an active milestone. Its code, captures and evidence remain useful research material only.
+
+## Final target
 
 ```text
-original PC retail SHIFT.exe
+original PC retail SHIFT.exe / recovered x86 game code
 +
-complete lowered game-code execution
+complete portable lowered-code execution
 +
-sufficient Win32 / runtime compatibility
+SHIFT-required Win32 compatibility
 +
-original retail initialization
+original retail initialization and game systems
 +
-original resource loading
+SHIFT-specific D3D9 -> Vulkan backend
 +
-original game-system execution
+platform-neutral runtime core
 +
-native Linux graphics / audio / input integration
+ARM64 host support
 +
-menu -> race -> continuous gameplay
+Android Vulkan / input / audio / storage / lifecycle
++
+frontend -> offline race -> continuous gameplay
 =
-full native Linux execution of Need for Speed: SHIFT
+native Android port of Need for Speed: SHIFT
 ```
 
-## Current position — 2026-10-18
+The intended architecture is:
 
-The project has already crossed the basic code-generation boundary:
+```text
+                 original SHIFT game logic
+                           |
+                           v
+                lowered portable game code
+                           |
+                           v
+          guest x86 state + Win32 compatibility
+                           |
+          +----------------+----------------+
+          |                                 |
+          v                                 v
+ original renderer logic             other game systems
+          |
+          v
+ SHIFT D3D9-facing compatibility/backend
+          |
+          v
+ portable Vulkan renderer core
+          |
+     +----+----------------------+
+     |                           |
+     v                           v
+Linux platform layer       Android platform layer
+XCB/Wayland + Vulkan       ANativeWindow + Vulkan
+dev/debug/validation       shipping target
+```
+
+The renderer logic above the D3D9 boundary should remain original wherever possible. The **D3D9 backend itself must be replaced by a native Vulkan implementation of the subset actually used by SHIFT**.
+
+---
+
+## Current position — 2026-10-18
 
 | Area | Current state |
 | --- | --- |
@@ -41,22 +77,27 @@ The project has already crossed the basic code-generation boundary:
 | Original PE32 entry point | **Executable through guest runtime** |
 | Import/IAT dispatch | **Implemented with fail-closed API boundary** |
 | Guest threads | **Cooperative multi-thread scheduling implemented** |
-| Guest host parallelism | **Not implemented / not currently required** |
-| Instruction-level preemption | **Not implemented** |
-| Vulkan runtime shell | **Operational** |
+| Vulkan runtime shell | **Operational on Linux** |
+| D3D9 capture tooling | **Available for retail renderer evidence** |
+| Complete D3D9 -> Vulkan game backend | **Not implemented** |
+| Host-architecture-neutral runtime | **Not yet proven** |
+| ARM64 lowered-runtime execution | **Not yet proven** |
+| Android platform layer | **Not implemented** |
 | Retail entry-point completion | **Not yet proven** |
-| Game initialization completion | **Not yet proven** |
-| Menu | **Not reached** |
-| Race | **Not reached** |
-| Full gameplay | **Not reached** |
+| Game main loop | **Not yet proven** |
+| Retail frontend | **Not reached** |
+| Offline race | **Not reached** |
+| Android gameplay | **Not reached** |
 
-The newest scheduler work changed the immediate frontier. The previous retail probe stalled inside a guest worker because workers were executed synchronously. A cooperative guest scheduler now exists, but the **real retail entry point has not yet been rerun with the complete 41,538-export P-code ELF**.
+The newest startup work added a cooperative guest-thread scheduler. The previous real retail probe predates that scheduler and has not yet been rerun with the complete **41,538-export** lowered P-code ELF.
 
-Therefore the current highest-priority task is:
+The immediate execution frontier remains:
 
-> **Restore or rebuild the complete lowered P-code ELF and rerun the real retail `SHIFT.exe` entry point through the cooperative scheduler until the first new fail-closed blocker is reached.**
+> **Restore/rebuild the complete lowered P-code ELF and rerun the real PC retail 1.02 `SHIFT.exe` through the current cooperative scheduler until the first new deterministic blocker is reached.**
 
-Evidence for the current frontier:
+At the same time, new infrastructure must avoid introducing additional x86-64/Linux-only assumptions.
+
+Primary evidence:
 
 - [`docs/PROCESS_0_PCODE_NATIVE_LOWERING.md`](docs/PROCESS_0_PCODE_NATIVE_LOWERING.md)
 - [`docs/RECOMPILED_PCODE_VULKAN_PE32_LOADER.md`](docs/RECOMPILED_PCODE_VULKAN_PE32_LOADER.md)
@@ -66,553 +107,805 @@ Evidence for the current frontier:
 
 ---
 
-## Stage 0 — Reproducible complete lowered runtime artifact
+## Stage 0 — Reproducible complete lowered artifact
 
 ### Objective
 
-Make the complete lowered retail-code artifact reproducibly available to the runtime and CI/probe environment.
+Make the complete recovered game-code artifact reproducibly buildable/loadable without relying on one developer machine.
 
 ### Required work
 
-- Rebuild or restore the full Linux ELF containing all **41,538** lowered exports.
-- Pin the exact corpus, lowering tool revision, generated source hashes, compiler inputs and linked ELF hash.
-- Make restoration/build instructions deterministic enough that a clean machine can reproduce or fetch the same artifact.
-- Keep multi-gigabyte generated artifacts outside Git while keeping manifests and hashes in Git.
-- Ensure frontier override/supplement modules can be loaded on top of the full base module without ambiguous duplicate resolution.
+- Restore or rebuild the full module containing all **41,538** lowered exports.
+- Pin corpus revision, lowerer revision, generated-source hashes, compiler inputs and resulting module hash.
+- Keep large generated artifacts outside Git while keeping deterministic manifests and hashes in Git.
+- Make base, supplement and override loading deterministic.
+- Document a clean-machine path from authoritative research inputs to a runnable retail probe.
+- Keep generated lowered code free of host-ISA assumptions unless explicitly isolated behind a portability layer.
 
 ### Exit criteria
 
-- The runtime can load the complete base ELF.
-- Export count and hashes match recorded evidence.
-- The retail PE32 image and complete lowered module can be launched together from a documented command.
-- The current retail startup probe is runnable without manually reconstructed local state.
-
-This stage is an infrastructure gate and should be completed before interpreting further startup failures.
+- Complete export count is verified.
+- Retail `SHIFT.exe` and the complete lowered module can be launched from a documented command.
+- The startup probe can be reproduced without hidden local artifacts.
+- The same generated source corpus is suitable for both x86-64 and ARM64 host compilation.
 
 ---
 
-## Stage 1 — Complete the retail PE32 entry point
+## Stage 1 — Make the execution core host-architecture neutral
 
 ### Objective
 
-Run the original retail `SHIFT.exe` entry point to completion under the Linux guest runtime.
+Ensure that the recovered x86 game is represented as **guest semantics**, not as accidental x86-64 host semantics.
 
-### Current method
+The final Android target is ARM64. Any host-x86 shortcut that leaks into game behavior is technical debt that can invalidate the Android port.
 
-Use a strict blocker loop:
+### Required work
+
+Audit and isolate:
+
+- host pointer width assumptions;
+- endianness assumptions;
+- unaligned memory behavior;
+- x86-specific inline assembly/intrinsics;
+- host `CPUID`;
+- x87/binary80 dependencies;
+- host floating-point environment assumptions;
+- atomics and memory-order assumptions;
+- `ucontext` or other platform-specific coroutine implementation details;
+- page size and virtual-memory assumptions;
+- executable/shared-library loading assumptions;
+- ELF loader/runtime symbol behavior.
+
+Guest x86 behavior must remain explicit in the runtime:
+
+- x86 register state;
+- TEB/TLS;
+- x87/SSE semantics where required;
+- 32-bit guest pointers;
+- Win32 ABI;
+- guest atomics/synchronization behavior.
+
+### ARM64 policy
+
+ARM64 portability must not be postponed until the Linux game is fully playable.
+
+As soon as the runtime core can be built independently:
+
+- add an ARM64 compile gate;
+- run fixture tests on ARM64 Linux hardware or an equivalent validated environment;
+- verify the lowered corpus builds for AArch64;
+- add architecture-independent regression fixtures for guest memory, calls, floating-point operations and scheduling.
+
+### Exit criteria
+
+- Core runtime builds on x86-64 and ARM64.
+- Lowered game code builds on x86-64 and ARM64.
+- Fixture behavior is equivalent across both hosts.
+- Known host-specific implementations are isolated behind explicit interfaces.
+- No new subsystem may depend directly on x86-64 behavior without a portability plan.
+
+---
+
+## Stage 2 — Complete retail startup on Linux/Vulkan
+
+### Objective
+
+Use Linux as the fastest observable environment to drive the real retail executable through startup and into persistent game execution.
+
+Linux is the reference bring-up target because it provides strong native debugging, sanitizers, Vulkan validation and fast iteration. Success here is a **portability gate**, not the final project goal.
+
+### Blocker loop
 
 ```text
-run retail entry point
-        |
-        v
-first unsupported state / API / function / synchronization condition
-        |
-        v
-recover exact requirement
-        |
-        v
-implement minimum source-backed behavior
-        |
-        v
-add regression + evidence
-        |
-        v
-rerun from the retail entry point
+run real SHIFT.exe
+      |
+      v
+first deterministic blocker
+      |
+      v
+capture guest PC / call stack / state / input
+      |
+      v
+classify blocker
+      |
+      v
+implement minimum evidence-backed behavior
+      |
+      v
+regression + machine-readable evidence
+      |
+      v
+rerun from original startup path
 ```
+
+### Blocker classes
+
+- missing/recovered P-code function;
+- lowering defect;
+- Win32 import;
+- process/thread state;
+- synchronization;
+- exception/SEH behavior;
+- file-system/resource access;
+- timing;
+- window/input;
+- audio;
+- graphics/D3D9;
+- game-state logic.
 
 Do not implement speculative Windows APIs in bulk.
 
-### Expected blocker classes
+### Scheduler work
 
-#### Missing P-code exports
+Extend the cooperative scheduler only when retail execution proves a requirement:
 
-When execution reaches a function not present in the frozen lowered export set:
-
-- recover its exact instructions/P-code;
-- determine why it is outside the frozen corpus;
-- add a bounded supplemental/frontier export;
-- record provenance and source hashes;
-- prefer fixing the generic corpus/lowering pipeline when the missing export reveals a general extraction problem.
-
-#### Win32 imports
-
-Implement only imports actually reached by retail execution.
-
-Likely remaining families include:
-
-- additional thread/process APIs;
-- event and synchronization semantics;
-- file-system behavior;
-- memory mapping/protection;
-- locale and CRT-adjacent helpers;
-- exception-related APIs;
-- window/input APIs;
-- DirectX-facing imports.
-
-Each implementation must preserve the x86 ABI and fail closed outside its proven scope.
-
-#### Thread scheduling and synchronization
-
-The runtime now has cooperative guest threads. Extend it only as demanded by retail behavior:
-
-- event waits integrated with the scheduler;
-- cross-thread mutex/critical-section ownership;
-- alertable waits/APC behavior if reached;
+- event waits;
+- mutex/critical-section ownership;
+- thread waits;
+- alertable waits/APC if reached;
 - fiber creation/switching if reached;
-- timeout semantics;
-- thread creation/exit/join lifecycle;
-- TLS/TEB state correctness across scheduling;
-- scheduler fairness and deadlock diagnostics.
+- timeout behavior;
+- TLS/TEB restoration;
+- deadlock/starvation diagnostics.
 
-Instruction-level preemption or host-thread parallelism should be added only if retail evidence proves cooperative scheduling is insufficient.
-
-#### Exceptions
-
-Current exception support is intentionally narrow.
-
-If retail startup requires actual SEH:
-
-- recover the exact exception path;
-- model x86 exception records/context;
-- implement required registration/unwind behavior;
-- connect `SetUnhandledExceptionFilter` only when proven necessary;
-- keep unsupported exception forms fail closed.
+Host parallelism and instruction-level preemption are not goals by themselves. Add them only if retail behavior cannot be represented correctly without them.
 
 ### Exit criteria
 
-Stage 1 is complete when:
-
-- the original PE32 entry point returns/completes normally;
-- no startup worker remains permanently blocked due to missing runtime semantics;
-- no unsupported import/function is encountered during that entry-point execution;
-- completion is reproducible in tests/evidence.
-
-This is the first major whole-program milestone.
+- Original PE32 entry point completes.
+- Required startup workers make forward progress.
+- Game initialization continues into the persistent main loop.
+- Startup is reproducible from the original retail path.
+- No test-only state injection is required.
 
 ---
 
-## Stage 2 — Complete Windows/runtime compatibility required by game initialization
+## Stage 3 — Complete SHIFT-required Win32/platform compatibility
 
 ### Objective
 
-Continue execution after the PE entry point until the game's persistent core systems are initialized.
+Implement the Windows behavior actually required by SHIFT while keeping the implementation portable to Linux and Android.
 
-Entry-point completion does **not** imply that the game is initialized.
+This project is **not** building a general Wine replacement.
 
-### Required work
+### Required compatibility areas
 
-Track runtime behavior after startup and close only the compatibility surfaces the game actually consumes.
+As reached by retail execution:
 
-Priority areas:
-
-- process and module state;
-- thread scheduling and synchronization;
-- heap/virtual-memory behavior;
-- file I/O and directory enumeration;
-- registry/configuration behavior if reached;
+- process/module state;
+- threads/TLS/TEB;
+- synchronization;
+- heap and virtual memory;
+- files/directories;
+- configuration/registry equivalents;
 - timing/performance counters;
-- input-device initialization;
-- window creation/message processing;
-- DirectInput/XInput compatibility as required;
-- DirectSound/audio initialization as required;
-- D3D9 initialization surface;
-- remaining CRT/platform glue;
-- persistent guest handles and object lifetime.
+- locale/CRT helpers;
+- exceptions;
+- window/message-facing behavior;
+- input APIs;
+- audio APIs;
+- Direct3D9-facing interfaces.
 
-### Compatibility policy
+### Portability rule
 
-The Linux runtime is **not intended to become a general Wine implementation**.
+Windows-compatible semantics belong in the shared runtime core. Native host operations belong behind platform interfaces.
 
-Only implement the Windows semantics required by this retail executable, but implement those semantics correctly enough for the game to behave as expected.
+For example:
 
-### Exit criteria
+```text
+guest CreateFileA
+      ->
+portable SHIFT file compatibility layer
+      ->
+Linux filesystem backend
+or
+Android storage backend
+```
 
-- Core game managers initialize.
-- Main game loop is entered.
-- Retail resource/bootstrap code begins operating through original control flow.
-- No test-only substitute is needed to force the game into its main loop.
-
----
-
-## Stage 3 — Original retail resource initialization
-
-### Objective
-
-Allow the original game logic to discover, open, decode and instantiate the retail data it expects.
-
-The repository already has a substantial independent BFF/resource reconstruction pipeline. That work becomes supporting evidence and tooling; the primary target is now to make **original game code consume the retail resources during real startup**.
-
-### Required work
-
-- Reproduce the file-system view expected by the game.
-- Verify BFF/package discovery through original code.
-- Support required file handles, seeks, mapping and async behavior.
-- Recover path/config/environment assumptions.
-- Validate package/resource hashes against known retail inputs.
-- Diagnose any original decompression/resource parser failures inside the guest.
-- Reuse existing neutral resource tooling to inspect and verify what the retail code is trying to load.
+The same separation applies to timing, threads, input, audio and graphics presentation.
 
 ### Exit criteria
 
-- Original resource initialization runs through the retail code path.
-- Required packages are discovered and opened.
-- Resource managers reach a stable initialized state.
-- Failures can be correlated to exact retail assets rather than synthetic replacements.
+- Core game managers initialize through original code.
+- Main loop remains alive.
+- Retail resources begin loading through original control flow.
+- Platform-specific host code is isolated from guest/Win32 semantics.
 
 ---
 
-## Stage 4 — Main loop, jobs, timing and stable multi-thread execution
+## Stage 4 — Original retail resources and filesystem model
 
 ### Objective
 
-Run the real game loop continuously without deadlock, uncontrolled spin, or semantic scheduler substitutions.
+Make original game code consume the real retail assets and packages on both development and Android targets.
 
 ### Required work
 
-- Identify the actual main-loop boundary.
-- Recover scheduler/job-worker topology from runtime evidence.
-- Make cooperative guest scheduling support all synchronization primitives actually used.
-- Reproduce required timing relationships without equating host frame timing to retail game timing.
-- Track worker liveness, waits, wakes and ownership.
-- Add diagnostics for:
-  - runnable threads;
-  - blocked threads;
-  - wait objects;
-  - guest PCs/call stacks;
-  - scheduler transitions;
-  - deadlocks and starvation.
+- reproduce the file-system namespace expected by SHIFT;
+- support required open/read/seek/map/enumeration behavior;
+- recover configuration and working-directory assumptions;
+- validate BFF/package discovery through original code;
+- validate known retail resource hashes;
+- use existing resource tooling for diagnosis, not as a replacement game loader;
+- separate logical game paths from physical host paths.
+
+### Android considerations
+
+Do not bake desktop filesystem paths into game logic.
+
+Provide an Android-compatible storage model for user-provided/licensed retail data, including:
+
+- app-accessible game-data root;
+- persistent writable data/config/save root;
+- efficient large-asset reads;
+- no dependency on arbitrary Windows drive letters;
+- no assumption that APK assets behave like seekable desktop files.
 
 ### Exit criteria
 
-- The game loop remains alive for an extended bounded run.
-- Guest workers make forward progress.
-- No known busy-loop is caused by missing scheduling semantics.
-- Timing-sensitive subsystems initialize consistently across repeated runs.
+- Original package/resource managers initialize.
+- Retail assets are resolved by original game logic.
+- The logical resource layout is identical across Linux and Android even when physical storage differs.
 
 ---
 
-## Stage 5 — Original rendering path to Linux Vulkan
+## Stage 5 — Replace the D3D9 backend with portable Vulkan
 
 ### Objective
 
-Make rendering produced by the original game logic visible through the Linux runtime.
+Preserve the original SHIFT renderer logic while replacing its low-level D3D9 execution backend with a **native Vulkan backend designed for both desktop Linux and Android Vulkan drivers**.
 
-The existing native Vulkan scene renderer is useful infrastructure, but the target is no longer a manually assembled Silverstone/BMW scene. The target is **render commands/state driven by the original retail game execution**.
+This is a mandatory core porting stage.
 
-### Required work
+### What stays original
 
-Determine the shortest correct path from the game's original graphics behavior to Vulkan.
+Where practical, retain original game code for:
 
-Likely workstreams:
+- visibility/culling;
+- render queues;
+- materials;
+- animation;
+- LOD decisions;
+- lighting/game render state;
+- world/UI submission;
+- shader/material selection;
+- frame sequencing.
 
-#### D3D9-facing compatibility
+### What must be replaced
 
-- device creation;
-- swap chain/presentation;
-- render targets/depth surfaces;
+Implement the subset of D3D9 semantics actually used by SHIFT:
+
+- Direct3D/device creation;
+- adapter/capability queries needed by the game;
+- swap chains and presentation;
+- device/reset lifecycle;
+- render targets;
+- depth/stencil surfaces;
 - vertex/index buffers;
-- textures;
-- declarations/FVF;
-- shaders;
+- dynamic buffers and locking/update behavior;
+- textures, mipmaps and formats;
+- vertex declarations/FVF;
+- vertex shaders;
+- pixel shaders;
+- shader constants;
 - render states;
-- sampler/texture-stage state;
-- constants;
+- sampler states;
+- texture-stage state where used;
+- viewport/scissor;
+- clears;
 - draw calls;
-- resource lifetime/reset behavior.
+- queries/synchronization if used;
+- resource lifetime/reference behavior.
 
-#### Translation/adaptation
+### D3D9 capture as specification evidence
 
-Map the D3D9 semantics actually used by SHIFT to Vulkan equivalents.
+Use the existing retail D3D9 capture path to determine what SHIFT actually does:
 
-Do not attempt to implement the entire D3D9 API if unused.
+```text
+retail Windows SHIFT
+      ->
+D3D9 capture
+      ->
+used API/state/resource/shader corpus
+      ->
+portable Vulkan backend requirements
+```
 
-#### Shader path
+Do not implement unused D3D9 surface area merely for API completeness.
 
-- recover/consume retail shaders;
-- translate or recompile them where necessary;
-- preserve constant/register semantics;
-- validate render-state interaction.
+### Vulkan architecture
 
-#### Presentation
+The Vulkan renderer core must not depend on XCB or Android directly.
 
-- connect the game's frame boundary to the native XCB/Vulkan presentation loop;
-- handle resize/reset semantics required by the retail code;
-- ensure guest rendering does not depend on test-only scene submission.
+Use a boundary similar to:
+
+```text
+SHIFT D3D9 semantics
+        |
+        v
+portable Vulkan renderer
+        |
+        +----------------------+
+        |                      |
+        v                      v
+Linux Vulkan surface     Android Vulkan surface
+```
+
+Platform-independent code should own:
+
+- Vulkan device/resource abstractions;
+- buffer/image management;
+- descriptor management;
+- pipeline/state translation;
+- shader handling;
+- synchronization strategy;
+- render passes/dynamic rendering strategy;
+- D3D9 state cache;
+- draw translation.
+
+Platform layer should own only what genuinely differs:
+
+- surface creation;
+- window/lifecycle events;
+- presentation integration;
+- platform capabilities and extension selection.
+
+### Shader path
+
+Build a defined retail shader pipeline:
+
+- capture/recover D3D9 shader bytecode;
+- translate to SPIR-V or provide equivalent generated Vulkan shaders;
+- preserve D3D register/constant semantics;
+- map sampler and texture behavior;
+- handle precision explicitly;
+- test on Android-class Vulkan implementations, not only desktop GPUs.
+
+### Android-first constraints
+
+Do not make desktop-only Vulkan features a requirement unless an Android fallback exists.
+
+Track:
+
+- Vulkan feature/extension requirements;
+- texture format support;
+- shader precision;
+- descriptor limits;
+- memory budgets;
+- pipeline cache behavior;
+- synchronization cost;
+- tile-based GPU behavior;
+- render-target transitions;
+- device-loss/lifecycle recreation.
 
 ### Exit criteria
 
-- Original game code creates the graphics device successfully.
-- Original game draw calls reach Vulkan.
-- The first retail-generated visible frame is presented.
-- Synthetic MGEO/triangle rendering is no longer required as proof of game rendering.
-
-This is the second major whole-program milestone.
-
----
-
-## Stage 6 — Reach and operate the frontend/menu
-
-### Objective
-
-Reach a stable, interactive retail frontend.
-
-### Required work
-
-- complete UI resource loading;
-- input routing;
-- text/font rendering;
-- frontend state machines;
-- profile/save handling needed for offline operation;
-- audio initialization needed by frontend flow;
-- video/Bink behavior: implement, substitute safely, or explicitly skip only where the game tolerates it;
-- configuration persistence;
-- controller/keyboard mapping.
-
-Online services, EA account infrastructure and matchmaking are not required for the offline native target unless startup hard-depends on a local stub contract.
-
-### Exit criteria
-
-- Boot reaches the retail menu/front-end.
-- Keyboard/controller input changes menu state.
-- Menu rendering is produced by original game execution.
-- The user can navigate to an offline race setup without debug state injection.
-
-This is the first user-visible usability milestone.
+- Original game code successfully creates its graphics-facing device.
+- Original SHIFT rendering calls are translated to Vulkan.
+- A retail-generated frame is visible on Linux.
+- The same renderer core builds for Android.
+- No XCB/Linux object is referenced by the portable graphics core.
+- Synthetic vertical-slice rendering is no longer required to prove game rendering.
 
 ---
 
-## Stage 7 — Load and start a real offline race
+## Stage 6 — Full Linux reference bring-up
 
 ### Objective
 
-Transition through the original game flow from frontend into a real race using retail resources.
+Reach stable original-game execution on Linux using the same portable core intended for Android.
+
+Linux completion is a **reference milestone**, not project completion.
 
 ### Required work
 
-- track selection;
-- vehicle selection;
-- profile/session state;
-- world/track streaming;
-- vehicle asset initialization;
-- physics initialization;
-- camera initialization;
-- opponent/AI initialization as applicable;
-- HUD;
+- interactive frontend;
+- keyboard/gamepad input;
 - audio;
-- race-state transition;
-- resource lifetime across frontend -> gameplay.
-
-Existing Silverstone/BMW reverse-engineering evidence is useful here for diagnosis, but **must not replace the original retail initialization path**.
-
-### Exit criteria
-
-- An offline race loads through the retail frontend/state machine.
-- Track and vehicle are instantiated by original game code.
-- The race begins without synthetic state injection.
-- Camera, physics, input and rendering all advance continuously.
-
-This is the first **playable original-game milestone**.
-
----
-
-## Stage 8 — Gameplay completeness
-
-### Objective
-
-Move from “a race starts” to a practically playable offline game.
-
-### Required work
-
-Validate and repair:
-
-- steering/throttle/brake/clutch;
-- drivetrain and wheel behavior;
-- collision/contact;
-- suspension;
-- timing and race rules;
+- profile/save support required for offline play;
+- original frontend rendering;
+- frontend -> race transition;
+- world streaming;
+- physics;
+- camera;
+- HUD;
 - AI/opponents;
-- camera modes;
-- HUD;
 - pause/restart;
-- damage;
-- audio;
-- input devices;
-- track loading/streaming;
-- vehicle variants;
-- frontend <-> race transitions;
-- save/profile persistence;
-- repeated race loading without state leaks.
+- repeated race loading.
 
 ### Exit criteria
 
-- Multiple tracks and vehicles can be selected and driven.
-- Race restart and return-to-menu work.
-- No critical subsystem depends on synthetic/test-only state.
-- Extended gameplay runs without deterministic deadlock/crash.
+- Original frontend is interactive.
+- An offline race can be selected and loaded through original game flow.
+- Original renderer feeds the Vulkan backend.
+- Gameplay runs continuously.
+- Return-to-menu/restart works.
+- No Linux-only shortcut is required by game/runtime semantics.
+
+At this point Linux acts as the behavioral reference for Android work.
 
 ---
 
-## Stage 9 — Behavioral parity and hardening
+## Stage 7 — ARM64 parity
 
 ### Objective
 
-Turn a functioning port into an evidence-backed reconstruction with known compatibility boundaries.
+Run the complete portable runtime/game-code stack on an ARM64 host before Android platform complexity is introduced.
+
+Prefer ARM64 Linux for this milestone because it separates **CPU architecture problems** from **Android platform problems**.
 
 ### Required work
 
-- compare important runtime state with PC retail captures;
-- validate timing-sensitive systems;
-- validate physics outputs;
-- validate rendering state and frame behavior;
-- validate resource identities;
-- validate input and camera behavior;
-- remove temporary overrides whose generic source problem has been fixed;
-- reduce special-case API behavior where general retail behavior is understood;
-- improve diagnostics without changing semantics;
-- document unsupported online/media/platform features;
-- improve clean-machine reproducibility.
+Validate:
+
+- complete lowered corpus;
+- PE32 guest execution;
+- scheduler;
+- Win32 compatibility core;
+- resources;
+- floating point;
+- atomics;
+- Vulkan renderer;
+- shaders;
+- game main loop.
+
+Replace or emulate host-specific behavior still blocking AArch64, including any remaining:
+
+- CPUID shortcuts;
+- x87 host dependencies;
+- binary80 assumptions;
+- x86-specific atomics;
+- ABI assumptions;
+- shared-object loader assumptions.
 
 ### Exit criteria
 
-- Known differences from PC retail are explicit and bounded.
-- Core offline gameplay behavior is reproducible.
-- Runtime failures produce actionable guest-state diagnostics.
-- Build/artifact restoration is documented and repeatable.
-- CI covers the stable startup, menu and gameplay smoke paths.
+- Same retail startup path runs on ARM64.
+- Main loop and renderer operate on ARM64.
+- Representative Linux ARM64 gameplay matches x86-64 Linux behavior within defined tolerances.
+- Cross-architecture regressions are part of CI/test evidence.
+
+This is the mandatory gate before declaring the runtime Android-ready.
+
+---
+
+## Stage 8 — Android platform layer
+
+### Objective
+
+Attach the portable runtime/game/Vulkan core to Android without forking game semantics.
+
+### Required work
+
+Implement Android-native adapters for:
+
+#### Application lifecycle
+
+- process/activity startup;
+- pause/resume;
+- surface loss/recreation;
+- background/foreground transitions;
+- suspend-safe runtime state;
+- graceful shutdown.
+
+#### Vulkan presentation
+
+- `ANativeWindow` surface;
+- swapchain creation/recreation;
+- orientation/size changes;
+- Android Vulkan capability selection;
+- GPU/driver diagnostics.
+
+#### Input
+
+- gamepads/controllers;
+- keyboard where present;
+- touch input;
+- optional touch-to-game-control mapping;
+- Android back/navigation behavior where appropriate.
+
+#### Audio
+
+- portable game-facing audio interface;
+- Android low-latency output backend;
+- focus/interruption handling;
+- lifecycle-safe stream recreation.
+
+#### Storage
+
+- retail game-data location;
+- saves/profile/config;
+- cache;
+- scoped-storage-compatible path resolution;
+- efficient large-resource access.
+
+#### Timing/threads
+
+- Android-safe clocks;
+- thread priorities only where appropriate;
+- no dependence on desktop process APIs.
+
+### Exit criteria
+
+- Android app starts the same portable runtime core.
+- Retail data is discovered.
+- Vulkan device/surface initializes.
+- Original game startup executes on ARM64 Android.
+- Lifecycle transitions do not corrupt runtime state.
+
+---
+
+## Stage 9 — First playable Android race
+
+### Objective
+
+Reach the first end-to-end playable race on Android through original SHIFT flow.
+
+### Required work
+
+- frontend rendering;
+- frontend input;
+- track/vehicle selection;
+- loading/streaming;
+- race initialization;
+- physics;
+- controls;
+- camera;
+- HUD;
+- audio;
+- pause/resume;
+- Android lifecycle handling during gameplay.
+
+### Exit criteria
+
+- App launches on supported ARM64 Android hardware.
+- Retail frontend is visible and interactive.
+- User can start an offline race without debug injection.
+- Race renders through Vulkan.
+- Vehicle can be controlled.
+- Physics/camera/HUD/audio continue advancing.
+- Pause/resume survives normal Android lifecycle events.
+
+This is the first **actual Android port milestone**.
+
+---
+
+## Stage 10 — Android performance and device hardening
+
+### Objective
+
+Turn a technically running port into a practical mobile build.
+
+### Required work
+
+Profile and optimize:
+
+- CPU time in lowered game code;
+- guest call/dispatch overhead;
+- scheduler overhead;
+- Vulkan pipeline/state churn;
+- descriptor updates;
+- shader compilation;
+- draw-call overhead;
+- asset streaming;
+- decompression;
+- RAM use;
+- Vulkan memory use;
+- transient render targets;
+- texture residency;
+- thermal behavior;
+- battery load;
+- frame pacing.
+
+### Mobile-specific adaptation
+
+Where required without changing game semantics:
+
+- memory-budget-aware caching;
+- configurable resolution;
+- render scale;
+- texture-quality controls;
+- MSAA/AA alternatives;
+- shadow/effects quality;
+- frame-rate caps;
+- shader/pipeline caches;
+- touch-control UI;
+- controller remapping.
+
+Performance work must not silently replace original gameplay behavior.
+
+### Exit criteria
+
+- Stable gameplay on the defined minimum Android device class.
+- Memory use remains within target budgets.
+- No sustained thermal/performance failure under representative races.
+- Frame pacing is acceptable.
+- Multiple tracks and vehicles load repeatedly.
+- Save/profile persistence survives app restarts.
+
+---
+
+## Stage 11 — Behavioral parity and release hardening
+
+### Objective
+
+Bound remaining differences from PC retail and make the Android port reproducible.
+
+### Required work
+
+- compare important runtime state against PC retail captures;
+- validate physics;
+- validate timing;
+- validate renderer state;
+- validate shaders/materials;
+- validate camera/input;
+- validate resource identities;
+- validate audio behavior;
+- remove temporary frontier overrides once generic fixes exist;
+- document intentionally unsupported online/platform functionality;
+- add deterministic crash diagnostics;
+- define supported Android/Vulkan capability floor;
+- verify clean Android builds.
+
+### Exit criteria
+
+- Core offline behavior is reproducible.
+- Known PC-vs-Android differences are explicit.
+- Critical startup/frontend/race smoke paths are automated where possible.
+- Runtime failures provide actionable guest state.
+- Build instructions and required retail-input hashes are documented.
+
+---
+
+## Parallel workstreams
+
+Not every stage must execute strictly serially.
+
+Three workstreams should proceed in parallel where dependencies allow:
+
+### A — Retail execution frontier
+
+```text
+full lowered artifact
+-> startup blockers
+-> main loop
+-> resources
+-> frontend/race behavior
+```
+
+### B — Graphics backend
+
+```text
+D3D9 capture
+-> used-state inventory
+-> D3D9 compatibility objects
+-> shader translation
+-> Vulkan draw/state translation
+-> retail rendering
+```
+
+The graphics backend does **not** need to wait until startup first calls `Direct3DCreate9` before foundational work begins. Retail D3D9 capture already provides useful evidence for designing the backend.
+
+### C — Portability
+
+```text
+host-neutral runtime
+-> ARM64 compile
+-> ARM64 fixtures
+-> ARM64 Linux runtime
+-> Android platform layer
+```
+
+Every new subsystem must be reviewed against the portability workstream.
 
 ---
 
 ## Work-selection rule
 
-The mandatory question before substantial work is now:
+Before substantial work, answer:
 
-> **Какой конкретный blocker полноценного запуска оригинального SHIFT.exe снимает эта работа?**
+> **Какой конкретный blocker Android-порта снимает эта работа?**
 
-A task should normally be deferred if it does not advance one of these edges:
+Valid answers normally advance at least one of these paths:
 
 ```text
-retail entry point
-    ->
-game initialization
-    ->
-main loop
-    ->
-retail resources
-    ->
-original rendering
-    ->
-frontend
-    ->
-offline race
-    ->
-continuous gameplay
-    ->
-parity / hardening
+retail execution
+graphics D3D9 -> Vulkan
+host portability / ARM64
+Android platform integration
+Android gameplay
+performance/parity
 ```
 
-Do not prioritize work merely because a subsystem is interesting or historically belonged to the vertical slice.
-
----
-
-## Blocker-handling protocol
-
-Every runtime frontier should use the same process:
-
-1. run the freshest retail probe;
-2. stop at the first deterministic blocker;
-3. capture exact guest function, call stack, API/state and relevant inputs;
-4. determine whether the blocker is:
-   - missing code,
-   - lowering defect,
-   - Win32 compatibility,
-   - scheduler/synchronization,
-   - exception behavior,
-   - resource/file-system,
-   - graphics,
-   - audio/input,
-   - game-state logic;
-5. implement the minimum evidence-backed correction;
-6. add regression coverage;
-7. record machine-readable evidence;
-8. rerun from the original retail startup path.
-
-A later blocker is not actionable until earlier execution reaches it naturally.
+A task that only improves the retired vertical slice, or makes the Linux-only implementation more elaborate without helping Android, should normally be deferred.
 
 ---
 
 ## Readiness metrics
 
-Do **not** use historical phase numbers or vertical-slice provider counts as project readiness metrics.
+Historical phase numbers and vertical-slice provider counts are no longer project readiness metrics.
 
-Track whole-program execution milestones instead:
+Track:
 
 | Metric | Meaning |
 | --- | --- |
-| Full P-code export coverage | Can all recovered frozen functions execute as lowered host code? |
+| Full P-code coverage | Is the recovered corpus executable by the portable runtime? |
+| x86-64 host green | Does the reference runtime work on desktop x86-64? |
+| ARM64 host green | Does the same core execute correctly on AArch64? |
 | Retail entry point complete | Does original startup complete? |
 | Main loop reached | Is persistent original game execution active? |
-| Guest threads live | Do required workers schedule and synchronize correctly? |
-| Retail resources initialized | Does original code initialize retail assets/packages? |
-| D3D9 device initialized | Has original graphics startup completed? |
-| First retail frame presented | Has original rendering reached Vulkan/presentation? |
-| Frontend interactive | Can the retail menu be operated? |
-| Offline race started | Has original game flow entered a real race? |
-| Continuous gameplay | Can the race run interactively and stably? |
-| Multi-track/vehicle coverage | Does gameplay generalize beyond one selected case? |
-| Retail parity | Are important differences understood and bounded? |
+| Retail resources initialized | Does original code load required retail packages? |
+| D3D9 usage inventory | Is the SHIFT-specific graphics surface bounded by captures? |
+| Vulkan backend coverage | How much of the used D3D9 surface is translated correctly? |
+| First retail Vulkan frame | Has original game rendering reached Vulkan? |
+| Linux frontend/race | Is the reference build functionally playable? |
+| Android runtime startup | Does the retail path execute on Android ARM64? |
+| Android frontend | Is original frontend interactive on-device? |
+| Android race | Can an offline race start and run? |
+| Device coverage | Which Android/Vulkan capability classes are validated? |
+| Performance | Are CPU/GPU/RAM/frame-pacing targets met? |
+| Retail parity | Are important deviations known and bounded? |
 
-These should eventually be represented by machine-readable evidence and generated status, rather than hand-maintained prose.
+These should migrate toward generated machine-readable status rather than hand-maintained prose.
 
 ---
 
-## CI strategy
+## CI and validation strategy
 
-CI should follow stable capability families rather than historical phase numbers.
-
-Primary gates should evolve toward:
+Stable capability families should evolve toward:
 
 ```text
-lowering / corpus
+corpus/lowering
+portable runtime
+x86-64 fixtures
+ARM64 compile
+ARM64 fixtures
 PE32 loader
-guest ABI + Win32 imports
+Win32 compatibility
 guest scheduler
 retail startup probe
 resource initialization
-graphics translation
-Vulkan validation
-frontend smoke
-offline race smoke
-extended gameplay smoke
+D3D9 capture contracts
+Vulkan backend
+shader translation
+Linux Vulkan validation
+Linux frontend/race smoke
+Android build
+Android Vulkan startup
+Android frontend/race smoke
+performance regression
 ```
 
 Rules:
 
-- add focused pytest/CTest tests for every fixed blocker;
-- retain fail-closed negative tests;
-- preserve a small synthetic fixture path for deterministic infrastructure testing;
-- separately maintain retail-input probes where licensed local inputs are required;
-- do not treat fixture success as retail startup success;
-- do not weaken Vulkan validation or evidence checks to make the probe advance.
+- every fixed blocker gets a focused regression;
+- keep unsupported behavior fail closed;
+- preserve deterministic synthetic fixtures for infrastructure;
+- do not confuse fixture success with retail success;
+- run Vulkan validation on desktop where available;
+- test the portable renderer against Android-class feature limits;
+- prevent new Linux/x86-64-only dependencies from entering shared core code;
+- do not weaken evidence checks merely to advance startup.
 
 ---
 
 ## Evidence policy
 
-The project continues to use PC retail 1.02 as the primary semantic authority.
+PC retail 1.02 remains the semantic authority for original game behavior.
 
-- Successful lowering is not behavioral parity.
-- Successful linking is not game startup.
-- Entry-point completion is not game initialization.
-- A rendered synthetic frame is not a retail-rendered frame.
-- Reaching the menu is not gameplay completeness.
-- Starting one race is not full-game parity.
-- Host behavior must not silently replace unknown guest semantics.
-- Unsupported behavior should fail closed and identify the next blocker.
-- Exact negative evidence is useful when it permanently removes a false hypothesis.
+- 100% lowering is not a working game.
+- Linux success is not Android success.
+- x86-64 host success is not ARM64 correctness.
+- Synthetic Vulkan rendering is not retail rendering.
+- A D3D9 API stub is not a correct Vulkan translation.
+- A visible menu is not gameplay completeness.
+- One working phone is not supported-device coverage.
+- Host shortcuts must not silently redefine guest semantics.
+- Unsupported behavior should fail closed with enough state to identify the next blocker.
 
-Xbox 360 and other builds may be used for navigation/corroboration, but not to override PC retail evidence.
+Xbox 360 and other builds may assist navigation/corroboration but do not override PC retail evidence.
 
-Research-input identities and hashes remain centralized in:
+Research-input hashes and identities remain centralized in:
 
 - [`coordination/research_inputs.lock.json`](coordination/research_inputs.lock.json)
 
@@ -620,49 +913,59 @@ Research-input identities and hashes remain centralized in:
 
 ## Historical vertical-slice material
 
-The old native playable-slice track is **retired as an active project milestone**.
+The old native playable-slice effort is retired as an active project milestone.
 
-Files such as:
+The following remain only as historical/supporting evidence:
 
-- `coordination/PLAYABLE_SLICE_STATUS.md`
-- `evidence/playable_slice_three_process_execution.json`
+- `coordination/PLAYABLE_SLICE_STATUS.md`;
+- `evidence/playable_slice_three_process_execution.json`;
 - P1/P2/P3 coordination contracts;
-- Silverstone/BMW vertical-slice phase documents;
+- Silverstone/BMW vertical-slice documents and evidence;
+- the standalone scene renderer where it provides reusable Vulkan/resource infrastructure.
 
-remain in the repository because they contain useful reverse-engineering evidence and recovered subsystem knowledge.
+They must not determine current priority or readiness.
 
-They are historical/supporting inputs only. They must not be used to decide current work, declare current readiness, or block the whole-program runtime path unless the retail execution path independently reaches the same unresolved semantic surface.
+Reusable implementation may be extracted into the portable renderer/runtime when it fits the Android architecture.
 
 ---
 
 ## Immediate queue
 
-The immediate whole-program queue, in order, is:
+Current priorities are:
 
-1. **Restore/rebuild the complete 41,538-export Linux P-code ELF.**
-2. **Rerun real PC retail 1.02 `SHIFT.exe` with the cooperative guest scheduler from current `main`.**
-3. **Capture the first new deterministic blocker after the scheduler change.**
-4. **Fix that blocker with the minimum evidence-backed implementation and regression.**
-5. **Repeat until the PE32 entry point completes.**
-6. **Continue the same blocker-driven process until the real game main loop and resource initialization are reached.**
-7. **Begin D3D9-to-Vulkan game-rendering integration only when original execution reaches the graphics initialization surface naturally.**
+1. **Restore/rebuild the complete 41,538-export lowered module and make the artifact reproducible.**
+2. **Rerun PC retail 1.02 `SHIFT.exe` on current Linux `main` with the cooperative scheduler and capture the new first blocker.**
+3. **Continue blocker-driven retail startup until the main loop/resource/graphics frontier advances.**
+4. **Audit the shared runtime for x86-64/Linux-only assumptions and establish an ARM64 compile/test gate.**
+5. **Turn existing D3D9 capture data into an explicit inventory of the D3D9 objects, states, formats, shaders and draw paths actually used by SHIFT.**
+6. **Refactor Vulkan infrastructure so renderer core and platform surface/window code are cleanly separated.**
+7. **Build the SHIFT-specific D3D9 -> Vulkan backend against that captured usage surface.**
+8. **Keep Linux as the reference execution/debugging target while continuously checking that shared code remains ARM64/Android-compatible.**
+9. **After Linux retail gameplay and ARM64 runtime parity converge, attach the Android platform layer and drive the same original startup path on-device.**
 
-Until step 2 is completed, speculative subsystem expansion is lower priority than obtaining the new retail execution frontier.
+The priority is not “finish Linux and then start Android.” The priority is:
+
+> **Use Linux to solve game/runtime semantics while continuously building the same codebase toward Android/ARM64.**
 
 ---
 
 ## Definition of success
 
-The project is considered functionally complete when:
+The project is functionally complete when:
 
 ```text
-original SHIFT.exe starts
--> original initialization completes
--> original frontend is interactive
--> an offline race loads through retail game flow
--> original vehicle/input/physics/camera/gameplay logic runs continuously
--> original rendering is presented through Linux Vulkan
--> repeated races and frontend transitions remain stable
+original SHIFT game code
+-> runs through the portable recovered-code runtime
+-> initializes original retail systems/resources
+-> renders through the native Vulkan backend
+-> runs correctly on ARM64
+-> starts inside an Android application
+-> presents the original frontend
+-> loads an offline race through original game flow
+-> accepts Android/controller input
+-> runs physics/camera/HUD/audio continuously
+-> survives Android lifecycle transitions
+-> provides stable repeated gameplay on supported devices
 ```
 
-Behavioral hardening and parity work continue after that point until important differences from PC retail are understood, tested and documented.
+Linux remains the reference/debug build after that point, but **Android/ARM64 gameplay is the project completion target**.
