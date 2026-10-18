@@ -1,7 +1,7 @@
 {
   "format": "NFSShift.RecompiledPcodeKernel32CrtStartup/1",
   "captured_at": "2026-10-18",
-  "base_main_revision": "1d3722e38a5e5ae7ff18bec279e07e31e7e2fab6",
+  "base_main_revision": "40886380b3b78c38250b6d995c729cbdfc3d3058",
   "retail_input": {
     "logical_name": "SHIFT.exe",
     "version": "PC retail 1.02",
@@ -15,11 +15,7 @@
     "exported_functions": 41538
   },
   "runtime_changes": {
-    "kernel32_static_imports": 46,
-    "added_imports": [
-      "KERNEL32.dll!InterlockedDecrement",
-      "KERNEL32.dll!GetModuleFileNameA"
-    ],
+    "kernel32_static_imports": 71,
     "x86_register_bank_bytes": 8192,
     "maximum_register_offset_observed_in_lowered_corpus": "0x13cc",
     "pe32_entrypoint_startup": {
@@ -28,7 +24,17 @@
       "initial_esp": "0x7ffdf000",
       "initial_ebp": "0x00000000",
       "return_slot": "0x00000000"
-    }
+    },
+    "imagehlp_static_imports": 3,
+    "added_runtime_coverage": [
+      "PE32 entrypoint and import/IAT dispatch",
+      "supplemental P-code ELF shards with fail-closed duplicate resolution",
+      "one-based static-IAT import IDs and x86 absolute indirect-jump thunks",
+      "unnamed auto/manual reset events and non-alertable zero/infinite waits",
+      "single-thread InterlockedCompareExchange semantics",
+      "zero-filled synthetic VirtualAlloc regions and MEM_RELEASE VirtualFree",
+      "CPUID, LOCK/UNLOCK, and RDTSC x86 userops"
+    ]
   },
   "focused_validation": {
     "ctest": "shift_runtime_recompiled_pcode_module",
@@ -38,7 +44,13 @@
       "GetModuleFileNameA returns the loaded PE path and follows Windows XP buffer truncation behavior",
       "extended x86 P-code registers are readable and writable",
       "PE32 entry point executes with the initialized guest stack",
-      "a second PE32 entry-point invocation fails closed"
+      "a second PE32 entry-point invocation fails closed",
+      "supplemental function lookup and duplicate export rejection",
+      "CreateEventA/W, SetEvent, ResetEvent, and WaitForSingleObjectEx state",
+      "InterlockedCompareExchange success and compare-failure paths",
+      "VirtualAlloc zero-fill, 64-KiB alignment, and VirtualFree release",
+      "one-based static import IDs resolve to guest IAT traps",
+      "x86 FF 25 thunk dispatch reads its target from guest memory"
     ]
   },
   "native_runtime_build": {
@@ -52,7 +64,7 @@
   },
   "python_evidence_regressions": {
     "command": "python3 -m pytest -q tests/test_recompiled_pcode_pe32_vulkan_runtime.py",
-    "passed": 2,
+    "passed": 3,
     "failed": 0
   },
   "local_linux_vulkan_smoke": {
@@ -72,16 +84,24 @@
   "retail_entrypoint_probe": {
     "entrypoint_invoked": true,
     "guest_stack_initialized": true,
-    "pcode_functions_dispatched": 552,
-    "next_blocker": "missing generated P-code export rvi_00900f48",
+    "pcode_functions_dispatched": 1699,
+    "next_blocker": "KERNEL32.dll!RaiseException",
     "function_address_in_current_pcode_export_corpus": false,
-    "result": "fails closed before game startup completes"
+    "result": "fails closed before game startup completes",
+    "supplemental_function": "0x00918b33",
+    "supplemental_function_instructions": 778,
+    "supplemental_function_pcode_operations": 3919,
+    "next_blocker_caller": "0x00914974",
+    "exception_code": "0xC000008F",
+    "exception_flags": "0x00000000",
+    "exception_argument_count": 1
   },
   "limitations": {
     "complete_windows_process_state": false,
     "retail_game_startup": false,
     "directx_to_vulkan_translation": false,
     "playable_game": false,
-    "behavioral_parity": false
+    "behavioral_parity": false,
+    "structured_exception_handling": false
   }
 }

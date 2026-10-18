@@ -1,6 +1,6 @@
 {
   "format": "NFSShift.RecompiledPcodePe32VulkanRuntime/1",
-  "base_main_revision": "2f8f7fdbc3c4a7a4e5e1fabd21c7a771e5242d7d",
+  "base_main_revision": "40886380b3b78c38250b6d995c729cbdfc3d3058",
   "lowered_library": {
     "format": "ELF64 shared object",
     "exported_functions": 41538,
@@ -16,23 +16,34 @@
     "validates_image_and_section_bounds": true,
     "rejects_overlapping_virtual_sections": true,
     "permits_one_load_attempt_per_guest_address_space": true,
-    "executes_pe_entry_point": false,
+    "executes_pe_entry_point": true,
     "relocations": false,
-    "imports_and_iat_services": false,
+    "imports_and_iat_services": true,
     "tls": false,
-    "guest_page_permissions": false
+    "guest_page_permissions": false,
+    "supplemental_pcode_modules": true,
+    "static_import_fixture_scope": {
+      "KERNEL32.dll": 71,
+      "imagehlp.dll": 3,
+      "total_functions": 74
+    }
   },
   "fixture_validation": {
     "ctest": "shift_runtime_recompiled_pcode_module",
     "result": "passed",
     "mapped_image_base": "0x00400000",
-    "mapped_image_size": 8192,
-    "entry_point": "0x00401010",
-    "section_count": 1,
+    "mapped_image_size": 12288,
+    "entry_point": "0x00401020",
+    "section_count": 2,
     "header_and_raw_section_bytes_verified": true,
     "virtual_tail_zero_fill_verified": true,
     "pcode_read_of_mapped_guest_image_verified": true,
-    "duplicate_load_rejected": true
+    "duplicate_load_rejected": true,
+    "import_module_count": 2,
+    "import_function_count": 74,
+    "supplemental_module_loading_verified": true,
+    "duplicate_pcode_exports_rejected": true,
+    "events_interlocked_and_virtual_memory_verified": true
   },
   "local_linux_vulkan_smoke": {
     "geometry": "synthetic MGEO triangle",
@@ -49,19 +60,47 @@
   },
   "native_runtime_ctest": {
     "passed": 138,
-    "failed": 0
+    "failed": 0,
+    "command": "/usr/bin/ctest --test-dir /tmp/nfs-shift-vulkan-runtime-build --output-on-failure --parallel 4"
   },
   "python_regressions": {
-    "passed": 7518,
-    "skipped": 3,
-    "failed": 0
+    "passed": 3,
+    "skipped": 0,
+    "failed": 0,
+    "scope": "tests/test_recompiled_pcode_pe32_vulkan_runtime.py"
   },
   "limitations": {
-    "retail_pe_tested": false,
+    "retail_pe_tested": true,
     "game_startup": false,
     "platform_imports": false,
     "retail_timing": false,
     "playable_game": false,
-    "behavioral_parity": false
+    "behavioral_parity": false,
+    "structured_exception_handling": false
+  },
+  "latest_local_vulkan_attempt": {
+    "result": "exited_before_first_frame",
+    "frames_rendered": 0,
+    "simulation_steps": 1,
+    "pcode_step_invocations": 1,
+    "pcode_functions_dispatched": 3,
+    "validation_enabled": true,
+    "validation_errors": 0,
+    "process_exit_code": 1,
+    "note": "The runtime loop ended before the first frame; the cause was not established."
+  },
+  "retail_entrypoint_probe": {
+    "entrypoint_invoked": true,
+    "guest_stack_initialized": true,
+    "pcode_functions_dispatched": 1699,
+    "supplemental_function": "0x00918b33",
+    "supplemented_function_pcode_operations": 3919,
+    "next_blocker": "KERNEL32.dll!RaiseException",
+    "caller": "0x00914974",
+    "exception_code": "0xC000008F",
+    "exception_flags": "0x00000000",
+    "exception_argument_count": 1,
+    "function_address_in_full_pcode_export_corpus": false,
+    "result": "fails closed before game startup completes"
   }
 }

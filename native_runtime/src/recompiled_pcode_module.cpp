@@ -2,9 +2,17 @@
 #include "shift_recompiled_pcode_abi.h"
 
 #include <dlfcn.h>
+#include <cerrno>
+#include <fcntl.h>
+#include <filesystem>
+#include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+
+#if defined(__i386__) || defined(__x86_64__)
+#include <cpuid.h>
+#endif
 
 #include <algorithm>
 #include <array>
@@ -36,6 +44,13 @@ constexpr size_t kCopyChunkSize = 64 * 1024;
 constexpr uint32_t kImportStubPreferredBase = 0xf0000000;
 constexpr uint32_t kImportStubStride = 0x10;
 constexpr uint32_t kGuestProcessHeapHandle = 0x00010000;
+constexpr uint32_t kGuestCurrentProcessPseudoHandle = UINT32_MAX;
+constexpr uint32_t kGuestCurrentThreadPseudoHandle = UINT32_MAX - 1;
+constexpr uint32_t kGuestFileHandleBase = 0x00050000;
+constexpr uint32_t kGuestEventHandleBase = 0x00060000;
+constexpr size_t kMaximumGuestFileReadBytes = 64 * 1024 * 1024;
+constexpr uint64_t kMaximumGuestVirtualAllocationSize =
+    UINT64_C(512) * 1024 * 1024;
 constexpr uint32_t kGuestStdInputHandle = 0x00020000;
 constexpr uint32_t kGuestStdOutputHandle = 0x00020004;
 constexpr uint32_t kGuestStdErrorHandle = 0x00020008;
@@ -58,6 +73,7 @@ constexpr uint64_t kX86EaxRegisterOffset = 0;
 constexpr uint64_t kX86EspRegisterOffset = 0x10;
 constexpr uint64_t kX86EbpRegisterOffset = 0x14;
 constexpr uint32_t kGuestInitialStackPointer = 0x7ffdf000;
+constexpr uint32_t kGuestCpuidScratchAddress = 0xfffffff0;
 constexpr size_t kMaximumImportDescriptors = 4096;
 constexpr size_t kMaximumImportThunksPerModule = 65536;
 constexpr size_t kMaximumImportFunctions = 65536;
@@ -328,6 +344,17 @@ struct RecompiledPcodeModule::Impl {
         uint32_t recursion_count = 0;
         uint32_t spin_count = 0;
     };
+    struct GuestMutex {
+        uint32_t recursion_count = 0;
+    };
+    struct GuestFile {
+        int descriptor = -1;
+        uint64_t size = 0;
+    };
+    struct GuestEvent {
+        bool manual_reset = false;
+        bool signaled = false;
+    };
 
     explicit Impl(const std::string& path) {
         static_assert(sizeof(size_t) >= sizeof(uint64_t),
@@ -349,10 +376,18 @@ struct RecompiledPcodeModule::Impl {
                                      std::string(error ? error : "unknown dlopen error"));
         }
         context = {this, &read_callback, &write_callback,
-                   &call_callback, &reject_userop_callback};
+                   &call_callback, &userop_callback};
     }
 
     ~Impl() {
+        for (const auto& [handle, file] : guest_files) {
+            (void)handle;
+            if (file.descriptor >= 0) (void)::close(file.descriptor);
+        }
+        for (auto it = supplemental_modules.rbegin();
+             it != supplemental_modules.rend(); ++it) {
+            if (*it) dlclose(*it);
+        }
         if (module) dlclose(module);
         if (ram) munmap(ram, static_cast<size_t>(kGuestRamSize));
     }
@@ -374,15 +409,69 @@ struct RecompiledPcodeModule::Impl {
         return self ? self->dispatch(target) : -1;
     }
 
-    static int reject_userop_callback(void* opaque, uint32_t index,
-                                      const uint64_t*, const unsigned*, size_t,
-                                      uint64_t*, unsigned) {
+    static int userop_callback(void* opaque, uint32_t index,
+                               const uint64_t* arguments,
+                               const unsigned* argument_sizes,
+                               size_t argument_count, uint64_t* output,
+                               unsigned output_size) {
         auto* self = static_cast<Impl*>(opaque);
-        if (self) {
+        if (!self) return -1;
+        if (index == 17 || index == 18) {
+            if (argument_count != 0 || output != nullptr || output_size != 0) {
+                self->error = "invalid x86 LOCK/UNLOCK P-code userop signature";
+                return -1;
+            }
+            return 0;
+        }
+        if (index == 72) {
+            if (argument_count != 0 || !output || output_size != 8) {
+                self->error = "invalid x86 RDTSC P-code userop signature";
+                return -1;
+            }
+            *output = static_cast<uint64_t>(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch())
+                    .count());
+            return 0;
+        }
+        if (index < 44 || index > 60) {
             self->error = "unhandled P-code userop index " +
                           std::to_string(index);
+            return -1;
         }
+        if (!arguments || !argument_sizes || argument_count != 1 ||
+            argument_sizes[0] != 4 || !output || output_size != 4) {
+            self->error = "invalid CPUID P-code userop signature";
+            return -1;
+        }
+#if defined(__i386__) || defined(__x86_64__)
+        unsigned int eax = static_cast<uint32_t>(arguments[0]);
+        unsigned int ebx = 0;
+        unsigned int ecx = 0;
+        unsigned int edx = 0;
+        (void)__get_cpuid_count(eax, 0, &eax, &ebx, &ecx, &edx);
+        const std::array<uint32_t, 4> registers = {eax, ebx, edx, ecx};
+        std::array<uint8_t, sizeof(registers)> bytes{};
+        for (size_t register_index = 0; register_index < registers.size();
+             ++register_index) {
+            for (size_t byte_index = 0; byte_index < sizeof(uint32_t);
+                 ++byte_index) {
+                bytes[register_index * sizeof(uint32_t) + byte_index] =
+                    static_cast<uint8_t>(registers[register_index] >>
+                                         (byte_index * 8));
+            }
+        }
+        if (!self->write_guest("ram", kGuestCpuidScratchAddress,
+                               bytes.size(), bytes.data())) {
+            self->error = "could not write CPUID P-code result";
+            return -1;
+        }
+        *output = kGuestCpuidScratchAddress;
+        return 0;
+#else
+        self->error = "CPUID P-code userops require an x86 host";
         return -1;
+#endif
     }
 
     PcodeFunction resolve(uint32_t address) {
@@ -391,17 +480,46 @@ struct RecompiledPcodeModule::Impl {
 
         char symbol[16]{};
         std::snprintf(symbol, sizeof(symbol), "rvi_%08x", address);
-        dlerror();
-        void* value = dlsym(module, symbol);
-        const char* lookup_error = dlerror();
-        if (lookup_error || !value) {
+        PcodeFunction function = nullptr;
+        const auto lookup = [&](void* loaded_module) {
+            dlerror();
+            void* value = dlsym(loaded_module, symbol);
+            if (dlerror() || !value) return true;
+            if (function) {
+                error = "duplicate P-code export " + std::string(symbol);
+                return false;
+            }
+            function = reinterpret_cast<PcodeFunction>(value);
+            return true;
+        };
+        if (!lookup(module)) return nullptr;
+        for (void* supplemental : supplemental_modules) {
+            if (!lookup(supplemental)) return nullptr;
+        }
+        if (!function) {
             error = "P-code module has no exported function " +
                     std::string(symbol);
             return nullptr;
         }
-        auto function = reinterpret_cast<PcodeFunction>(value);
         functions.emplace(address, function);
         return function;
+    }
+
+    bool load_supplemental_module(const std::string& path) {
+        error.clear();
+        if (execution_started || call_depth != 0) {
+            error = "cannot load a supplemental P-code module after execution starts";
+            return false;
+        }
+        void* supplemental = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
+        if (!supplemental) {
+            const char* load_error = dlerror();
+            error = "cannot load supplemental P-code module: " +
+                    std::string(load_error ? load_error : "unknown dlopen error");
+            return false;
+        }
+        supplemental_modules.push_back(supplemental);
+        return true;
     }
 
     int dispatch(uint64_t target) {
@@ -413,6 +531,9 @@ struct RecompiledPcodeModule::Impl {
             error = "P-code call depth limit exceeded";
             return -1;
         }
+        const auto import_id =
+            import_id_traps.find(static_cast<uint32_t>(target));
+        if (import_id != import_id_traps.end()) target = import_id->second;
         const auto imported = import_traps.find(
             static_cast<uint32_t>(target));
         if (imported != import_traps.end()) {
@@ -421,6 +542,18 @@ struct RecompiledPcodeModule::Impl {
                 return get_system_time_as_file_time();
             if (name == "KERNEL32.dll!GetCurrentProcessId")
                 return get_current_process_id();
+            if (name == "KERNEL32.dll!GetCurrentProcess")
+                return get_current_process();
+            if (name == "KERNEL32.dll!GetPriorityClass")
+                return get_priority_class();
+            if (name == "KERNEL32.dll!GetCurrentThread")
+                return get_current_thread();
+            if (name == "KERNEL32.dll!GetThreadPriority")
+                return get_thread_priority();
+            if (name == "KERNEL32.dll!SetPriorityClass")
+                return set_priority_class();
+            if (name == "KERNEL32.dll!SetThreadPriority")
+                return set_thread_priority();
             if (name == "KERNEL32.dll!GetCurrentThreadId")
                 return get_current_thread_id();
             if (name == "KERNEL32.dll!GetTickCount")
@@ -433,14 +566,46 @@ struct RecompiledPcodeModule::Impl {
                 return get_startup_info_a();
             if (name == "KERNEL32.dll!GetProcessHeap")
                 return get_process_heap();
+            if (name == "KERNEL32.dll!CreateMutexA")
+                return create_mutex_a();
+            if (name == "KERNEL32.dll!WaitForSingleObject")
+                return wait_for_single_object();
+            if (name == "KERNEL32.dll!WaitForSingleObjectEx")
+                return wait_for_single_object_ex();
+            if (name == "KERNEL32.dll!CreateEventW")
+                return create_event(true);
+            if (name == "KERNEL32.dll!CreateEventA")
+                return create_event(false);
+            if (name == "KERNEL32.dll!SetEvent") return set_event(true);
+            if (name == "KERNEL32.dll!ResetEvent") return set_event(false);
+            if (name == "KERNEL32.dll!InterlockedCompareExchange")
+                return interlocked_compare_exchange();
+            if (name == "KERNEL32.dll!VirtualAlloc")
+                return virtual_alloc();
+            if (name == "KERNEL32.dll!VirtualFree")
+                return virtual_free();
+            if (name == "KERNEL32.dll!ReleaseMutex")
+                return release_mutex();
+            if (name == "KERNEL32.dll!CloseHandle")
+                return close_handle();
+            if (name == "KERNEL32.dll!CreateFileA")
+                return create_file_a();
+            if (name == "KERNEL32.dll!GetFileSize")
+                return get_file_size();
+            if (name == "KERNEL32.dll!ReadFile")
+                return read_file();
             if (name == "KERNEL32.dll!HeapCreate")
                 return heap_create();
             if (name == "KERNEL32.dll!HeapAlloc")
                 return heap_alloc();
+            if (name == "KERNEL32.dll!HeapSize")
+                return heap_size();
             if (name == "KERNEL32.dll!HeapFree")
                 return heap_free();
             if (name == "KERNEL32.dll!GetVersionExA")
                 return get_version_ex_a();
+            if (name == "KERNEL32.dll!SetUnhandledExceptionFilter")
+                return set_unhandled_exception_filter();
             if (name == "KERNEL32.dll!GetModuleHandleA")
                 return get_module_handle_a();
             if (name == "KERNEL32.dll!GetModuleFileNameA")
@@ -484,6 +649,10 @@ struct RecompiledPcodeModule::Impl {
             if (name == "KERNEL32.dll!GetEnvironmentStringsA" ||
                 name == "KERNEL32.dll!GetEnvironmentStrings")
                 return get_environment_strings(false);
+            if (name == "KERNEL32.dll!GetEnvironmentVariableA")
+                return get_environment_variable_a();
+            if (name == "KERNEL32.dll!SetEnvironmentVariableA")
+                return set_environment_variable_a();
             if (name == "KERNEL32.dll!FreeEnvironmentStringsW")
                 return free_environment_strings(true);
             if (name == "KERNEL32.dll!FreeEnvironmentStringsA" ||
@@ -507,6 +676,20 @@ struct RecompiledPcodeModule::Impl {
                 return get_code_page_info();
             if (name == "KERNEL32.dll!GetStringTypeW")
                 return get_string_type_w();
+            if (name == "imagehlp.dll!SymSetOptions")
+                return sym_set_options();
+            if (name == "imagehlp.dll!SymInitialize")
+                return sym_initialize();
+            if (name == "imagehlp.dll!SymCleanup")
+                return sym_cleanup();
+            if (name == "imagehlp.dll!SymFunctionTableAccess64")
+                return sym_function_table_access64();
+            if (name == "imagehlp.dll!SymGetModuleBase64")
+                return sym_get_module_base64();
+            if (name == "imagehlp.dll!SymFromAddr")
+                return sym_from_addr();
+            if (name == "imagehlp.dll!SymGetLineFromAddr64")
+                return sym_get_line_from_addr64();
             error = "unimplemented PE import " + imported->second;
             if (!active_guest_functions.empty()) {
                 char address[48]{};
@@ -534,6 +717,11 @@ struct RecompiledPcodeModule::Impl {
                 error += "]";
             }
             return -1;
+        }
+        int indirect_jump_result = -1;
+        if (dispatch_x86_absolute_indirect_jump(
+                static_cast<uint32_t>(target), indirect_jump_result)) {
+            return indirect_jump_result;
         }
         const auto function = resolve(static_cast<uint32_t>(target));
         if (!function) {
@@ -566,6 +754,41 @@ struct RecompiledPcodeModule::Impl {
             error = message;
         }
         return result;
+    }
+
+    bool dispatch_x86_absolute_indirect_jump(uint32_t address, int& result) {
+        if (pe_image_size == 0 || address < pe_image_base ||
+            static_cast<uint64_t>(address) + 6 >
+                static_cast<uint64_t>(pe_image_base) + pe_image_size) {
+            return false;
+        }
+        std::array<uint8_t, 6> instruction{};
+        if (!read_guest("ram", address, instruction.size(),
+                        instruction.data()) ||
+            instruction[0] != 0xff || instruction[1] != 0x25) {
+            return false;
+        }
+        const uint32_t pointer_address =
+            static_cast<uint32_t>(instruction[2]) |
+            (static_cast<uint32_t>(instruction[3]) << 8) |
+            (static_cast<uint32_t>(instruction[4]) << 16) |
+            (static_cast<uint32_t>(instruction[5]) << 24);
+        uint32_t target = 0;
+        if (!valid_guest_pointer(pointer_address, sizeof(uint32_t)) ||
+            !read_guest_u32("ram", pointer_address, target) || target == 0) {
+            error = "x86 indirect jump thunk has an invalid target pointer";
+            result = -1;
+            return true;
+        }
+        if (indirect_jump_depth >= kMaximumCallDepth) {
+            error = "x86 indirect jump thunk chain exceeded the call limit";
+            result = -1;
+            return true;
+        }
+        ++indirect_jump_depth;
+        result = dispatch(target);
+        --indirect_jump_depth;
+        return true;
     }
 
     bool dispatch_tls_alloc_wrapper(uint32_t address, int& result) {
@@ -723,11 +946,21 @@ struct RecompiledPcodeModule::Impl {
 
     bool is_supported_kernel32_api(const std::string& name) const {
         static const std::unordered_set<std::string> supported = {
-            "GetCurrentProcessId", "GetCurrentThreadId", "GetTickCount",
+            "GetCurrentProcess", "GetPriorityClass", "GetCurrentProcessId",
+            "GetCurrentThread", "GetThreadPriority", "SetPriorityClass",
+            "SetThreadPriority", "GetCurrentThreadId", "GetTickCount",
             "GetSystemTimeAsFileTime", "QueryPerformanceCounter",
             "QueryPerformanceFrequency", "GetStartupInfoA", "GetProcessHeap",
-            "HeapCreate", "HeapAlloc", "HeapFree", "GetVersionExA",
-            "GetModuleHandleA", "GetModuleFileNameA", "GetProcAddress",
+            "CreateMutexA", "WaitForSingleObject", "ReleaseMutex",
+            "WaitForSingleObjectEx", "CreateEventW", "CreateEventA",
+            "SetEvent", "ResetEvent",
+            "InterlockedCompareExchange",
+            "VirtualAlloc", "VirtualFree",
+            "CloseHandle",
+            "CreateFileA", "GetFileSize", "ReadFile",
+            "HeapCreate", "HeapAlloc", "HeapSize", "HeapFree", "GetVersionExA",
+            "SetUnhandledExceptionFilter", "GetModuleHandleA",
+            "GetModuleFileNameA", "GetProcAddress",
             "TlsAlloc", "TlsGetValue",
             "TlsSetValue", "TlsFree",
             "InitializeCriticalSectionAndSpinCount", "InterlockedIncrement",
@@ -738,6 +971,7 @@ struct RecompiledPcodeModule::Impl {
             "GetStdHandle", "GetFileType", "SetHandleCount",
             "GetCommandLineA", "GetEnvironmentStrings",
             "GetEnvironmentStringsA", "GetEnvironmentStringsW",
+            "GetEnvironmentVariableA", "SetEnvironmentVariableA",
             "FreeEnvironmentStrings", "FreeEnvironmentStringsA",
             "FreeEnvironmentStringsW", "WideCharToMultiByte", "GetLastError",
             "SetLastError", "GetACP", "IsValidCodePage", "GetCPInfo",
@@ -825,9 +1059,599 @@ struct RecompiledPcodeModule::Impl {
                                      "KERNEL32.dll!GetCurrentProcessId");
     }
 
+    int get_current_process() {
+        return return_kernel32_dword(kGuestCurrentProcessPseudoHandle,
+                                     "KERNEL32.dll!GetCurrentProcess");
+    }
+
+    int get_priority_class() {
+        constexpr const char* api = "KERNEL32.dll!GetPriorityClass";
+        uint32_t process_handle = 0;
+        if (!read_stack_argument(0, process_handle, api)) return -1;
+        if (process_handle != kGuestCurrentProcessPseudoHandle) {
+            guest_last_error = 6;
+            return return_kernel32_dword(0, api, sizeof(uint32_t));
+        }
+        return return_kernel32_dword(guest_process_priority_class, api,
+                                     sizeof(uint32_t));
+    }
+
+    int get_current_thread() {
+        return return_kernel32_dword(kGuestCurrentThreadPseudoHandle,
+                                     "KERNEL32.dll!GetCurrentThread");
+    }
+
+    int sym_set_options() {
+        constexpr const char* api = "imagehlp.dll!SymSetOptions";
+        if (!read_stack_argument(0, guest_symbol_options, api)) return -1;
+        return return_kernel32_dword(guest_symbol_options, api, 4);
+    }
+
+    int sym_initialize() {
+        constexpr const char* api = "imagehlp.dll!SymInitialize";
+        uint32_t process_handle = 0;
+        uint32_t search_path = 0;
+        uint32_t invade_process = 0;
+        if (!read_stack_argument(0, process_handle, api) ||
+            !read_stack_argument(1, search_path, api) ||
+            !read_stack_argument(2, invade_process, api)) {
+            return -1;
+        }
+        (void)search_path;
+        (void)invade_process;
+        if (process_handle == 0 || guest_symbol_handler_initialized) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 12);
+        }
+        guest_symbol_process_handle = process_handle;
+        guest_symbol_handler_initialized = true;
+        return return_kernel32_dword(1, api, 12);
+    }
+
+    int sym_cleanup() {
+        constexpr const char* api = "imagehlp.dll!SymCleanup";
+        uint32_t process_handle = 0;
+        if (!read_stack_argument(0, process_handle, api)) return -1;
+        if (!guest_symbol_handler_initialized ||
+            process_handle != guest_symbol_process_handle) {
+            guest_last_error = 6;
+            return return_kernel32_dword(0, api, 4);
+        }
+        guest_symbol_handler_initialized = false;
+        guest_symbol_process_handle = 0;
+        return return_kernel32_dword(1, api, 4);
+    }
+
+    int sym_function_table_access64() {
+        constexpr const char* api = "imagehlp.dll!SymFunctionTableAccess64";
+        uint32_t process_handle = 0;
+        uint32_t address_low = 0;
+        uint32_t address_high = 0;
+        if (!read_stack_argument(0, process_handle, api) ||
+            !read_stack_argument(1, address_low, api) ||
+            !read_stack_argument(2, address_high, api)) {
+            return -1;
+        }
+        (void)address_low;
+        (void)address_high;
+        if (!guest_symbol_handler_initialized ||
+            process_handle != guest_symbol_process_handle) {
+            guest_last_error = 6;
+        }
+        return return_kernel32_dword(0, api, 12);
+    }
+
+    int sym_get_module_base64() {
+        constexpr const char* api = "imagehlp.dll!SymGetModuleBase64";
+        uint32_t process_handle = 0;
+        uint32_t address_low = 0;
+        uint32_t address_high = 0;
+        if (!read_stack_argument(0, process_handle, api) ||
+            !read_stack_argument(1, address_low, api) ||
+            !read_stack_argument(2, address_high, api)) {
+            return -1;
+        }
+        if (!guest_symbol_handler_initialized ||
+            process_handle != guest_symbol_process_handle) {
+            guest_last_error = 6;
+            return return_kernel32_dword(0, api, 12);
+        }
+        const uint64_t address = (static_cast<uint64_t>(address_high) << 32) |
+                                 address_low;
+        const uint64_t image_begin = pe_image_base;
+        const uint64_t image_end = image_begin + pe_image_size;
+        const uint32_t module_base =
+            address >= image_begin && address < image_end ? pe_image_base : 0;
+        return return_kernel32_dword(module_base, api, 12);
+    }
+
+    int sym_from_addr() {
+        constexpr const char* api = "imagehlp.dll!SymFromAddr";
+        uint32_t process_handle = 0;
+        uint32_t address_low = 0;
+        uint32_t address_high = 0;
+        uint32_t displacement = 0;
+        uint32_t symbol_info = 0;
+        if (!read_stack_argument(0, process_handle, api) ||
+            !read_stack_argument(1, address_low, api) ||
+            !read_stack_argument(2, address_high, api) ||
+            !read_stack_argument(3, displacement, api) ||
+            !read_stack_argument(4, symbol_info, api)) {
+            return -1;
+        }
+        (void)address_low;
+        (void)address_high;
+        (void)displacement;
+        (void)symbol_info;
+        guest_last_error = process_handle == guest_symbol_process_handle
+                               ? 126
+                               : 6;
+        return return_kernel32_dword(0, api, 20);
+    }
+
+    int sym_get_line_from_addr64() {
+        constexpr const char* api = "imagehlp.dll!SymGetLineFromAddr64";
+        uint32_t process_handle = 0;
+        uint32_t address_low = 0;
+        uint32_t address_high = 0;
+        uint32_t displacement = 0;
+        uint32_t line_info = 0;
+        if (!read_stack_argument(0, process_handle, api) ||
+            !read_stack_argument(1, address_low, api) ||
+            !read_stack_argument(2, address_high, api) ||
+            !read_stack_argument(3, displacement, api) ||
+            !read_stack_argument(4, line_info, api)) {
+            return -1;
+        }
+        (void)address_low;
+        (void)address_high;
+        (void)displacement;
+        (void)line_info;
+        guest_last_error = process_handle == guest_symbol_process_handle
+                               ? 126
+                               : 6;
+        return return_kernel32_dword(0, api, 20);
+    }
+
+    int get_thread_priority() {
+        constexpr const char* api = "KERNEL32.dll!GetThreadPriority";
+        uint32_t thread_handle = 0;
+        if (!read_stack_argument(0, thread_handle, api)) return -1;
+        if (thread_handle != kGuestCurrentThreadPseudoHandle) {
+            guest_last_error = 6;
+            return return_kernel32_dword(0x7fffffffu, api, sizeof(uint32_t));
+        }
+        return return_kernel32_dword(
+            static_cast<uint32_t>(guest_thread_priority), api,
+            sizeof(uint32_t));
+    }
+
+    int set_priority_class() {
+        constexpr const char* api = "KERNEL32.dll!SetPriorityClass";
+        uint32_t process_handle = 0;
+        uint32_t priority_class = 0;
+        if (!read_stack_argument(0, process_handle, api) ||
+            !read_stack_argument(1, priority_class, api)) {
+            return -1;
+        }
+        if (process_handle != kGuestCurrentProcessPseudoHandle) {
+            guest_last_error = 6;
+            return return_kernel32_dword(0, api, 2 * sizeof(uint32_t));
+        }
+        constexpr std::array<uint32_t, 6> valid_classes = {
+            0x00000020, 0x00000040, 0x00000080,
+            0x00000100, 0x00000400, 0x00000800};
+        if (std::find(valid_classes.begin(), valid_classes.end(),
+                      priority_class) == valid_classes.end()) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 2 * sizeof(uint32_t));
+        }
+        guest_process_priority_class = priority_class;
+        return return_kernel32_dword(1, api, 2 * sizeof(uint32_t));
+    }
+
+    int set_thread_priority() {
+        constexpr const char* api = "KERNEL32.dll!SetThreadPriority";
+        uint32_t thread_handle = 0;
+        uint32_t priority_word = 0;
+        if (!read_stack_argument(0, thread_handle, api) ||
+            !read_stack_argument(1, priority_word, api)) {
+            return -1;
+        }
+        if (thread_handle != kGuestCurrentThreadPseudoHandle) {
+            guest_last_error = 6;
+            return return_kernel32_dword(0, api, 2 * sizeof(uint32_t));
+        }
+        const int32_t priority = static_cast<int32_t>(priority_word);
+        constexpr std::array<int32_t, 7> valid_priorities = {
+            -15, -2, -1, 0, 1, 2, 15};
+        if (std::find(valid_priorities.begin(), valid_priorities.end(),
+                      priority) == valid_priorities.end()) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 2 * sizeof(uint32_t));
+        }
+        guest_thread_priority = priority;
+        return return_kernel32_dword(1, api, 2 * sizeof(uint32_t));
+    }
+
     int get_process_heap() {
         return return_kernel32_dword(kGuestProcessHeapHandle,
                                      "KERNEL32.dll!GetProcessHeap");
+    }
+
+    int create_mutex_a() {
+        constexpr const char* api = "KERNEL32.dll!CreateMutexA";
+        uint32_t security_attributes = 0;
+        uint32_t initial_owner = 0;
+        uint32_t name_address = 0;
+        if (!read_stack_argument(0, security_attributes, api) ||
+            !read_stack_argument(1, initial_owner, api) ||
+            !read_stack_argument(2, name_address, api)) {
+            return -1;
+        }
+        (void)security_attributes;
+
+        std::string name;
+        if (name_address != 0 && !read_guest_ascii(name_address, name, api))
+            return -1;
+        if (!name.empty()) {
+            const auto existing = guest_named_mutexes.find(name);
+            if (existing != guest_named_mutexes.end()) {
+                guest_last_error = 183;
+                return return_kernel32_dword(existing->second, api, 12);
+            }
+        }
+        if (next_guest_mutex_handle >
+            std::numeric_limits<uint32_t>::max() - sizeof(uint32_t)) {
+            guest_last_error = 8;
+            return return_kernel32_dword(0, api, 12);
+        }
+        const uint32_t handle =
+            static_cast<uint32_t>(next_guest_mutex_handle);
+        next_guest_mutex_handle += sizeof(uint32_t);
+        guest_mutexes.emplace(
+            handle, GuestMutex{initial_owner == 0 ? 0u : 1u});
+        if (!name.empty()) guest_named_mutexes.emplace(std::move(name), handle);
+        return return_kernel32_dword(handle, api, 12);
+    }
+
+    int wait_for_single_object() {
+        constexpr const char* api = "KERNEL32.dll!WaitForSingleObject";
+        uint32_t handle = 0;
+        uint32_t timeout_ms = 0;
+        if (!read_stack_argument(0, handle, api) ||
+            !read_stack_argument(1, timeout_ms, api)) {
+            return -1;
+        }
+        return return_kernel32_dword(
+            wait_guest_object(handle, timeout_ms, api), api, 8);
+    }
+
+    int wait_for_single_object_ex() {
+        constexpr const char* api = "KERNEL32.dll!WaitForSingleObjectEx";
+        uint32_t handle = 0;
+        uint32_t timeout_ms = 0;
+        uint32_t alertable = 0;
+        if (!read_stack_argument(0, handle, api) ||
+            !read_stack_argument(1, timeout_ms, api) ||
+            !read_stack_argument(2, alertable, api)) {
+            return -1;
+        }
+        if (alertable != 0) {
+            guest_last_error = 50;
+            return return_kernel32_dword(UINT32_MAX, api, 12);
+        }
+        return return_kernel32_dword(
+            wait_guest_object(handle, timeout_ms, api), api, 12);
+    }
+
+    uint32_t wait_guest_object(uint32_t handle, uint32_t timeout_ms,
+                               const char* api) {
+        const auto mutex = guest_mutexes.find(handle);
+        if (mutex != guest_mutexes.end()) {
+            if (mutex->second.recursion_count == UINT32_MAX) {
+                guest_last_error = 298;
+                return UINT32_MAX;
+            }
+            ++mutex->second.recursion_count;
+            return 0;
+        }
+        const auto event = guest_events.find(handle);
+        if (event != guest_events.end()) {
+            if (event->second.signaled) {
+                if (!event->second.manual_reset) event->second.signaled = false;
+                return 0;
+            }
+            if (timeout_ms == UINT32_MAX) {
+                guest_last_error = 50;
+                return UINT32_MAX;
+            }
+            return 0x00000102;
+        }
+        guest_last_error = 6;
+        (void)api;
+        return UINT32_MAX;
+    }
+
+    int create_event(bool wide) {
+        const char* api = wide ? "KERNEL32.dll!CreateEventW"
+                               : "KERNEL32.dll!CreateEventA";
+        uint32_t security_attributes = 0;
+        uint32_t manual_reset = 0;
+        uint32_t initial_state = 0;
+        uint32_t name_address = 0;
+        if (!read_stack_argument(0, security_attributes, api) ||
+            !read_stack_argument(1, manual_reset, api) ||
+            !read_stack_argument(2, initial_state, api) ||
+            !read_stack_argument(3, name_address, api)) {
+            return -1;
+        }
+        (void)security_attributes;
+        if (name_address != 0) {
+            guest_last_error = 50;
+            return return_kernel32_dword(0, api, 16);
+        }
+        if (next_guest_event_handle >
+            std::numeric_limits<uint32_t>::max() - sizeof(uint32_t)) {
+            guest_last_error = 8;
+            return return_kernel32_dword(0, api, 16);
+        }
+        const uint32_t handle = static_cast<uint32_t>(next_guest_event_handle);
+        next_guest_event_handle += sizeof(uint32_t);
+        guest_events.emplace(
+            handle, GuestEvent{manual_reset != 0, initial_state != 0});
+        return return_kernel32_dword(handle, api, 16);
+    }
+
+    int set_event(bool signaled) {
+        const char* api = signaled ? "KERNEL32.dll!SetEvent"
+                                   : "KERNEL32.dll!ResetEvent";
+        uint32_t handle = 0;
+        if (!read_stack_argument(0, handle, api)) return -1;
+        const auto event = guest_events.find(handle);
+        if (event == guest_events.end()) {
+            guest_last_error = 6;
+            return return_kernel32_dword(0, api, 4);
+        }
+        event->second.signaled = signaled;
+        return return_kernel32_dword(1, api, 4);
+    }
+
+    int release_mutex() {
+        constexpr const char* api = "KERNEL32.dll!ReleaseMutex";
+        uint32_t handle = 0;
+        if (!read_stack_argument(0, handle, api)) return -1;
+        const auto mutex = guest_mutexes.find(handle);
+        if (mutex == guest_mutexes.end()) {
+            guest_last_error = 6;
+            return return_kernel32_dword(0, api, 4);
+        }
+        if (mutex->second.recursion_count == 0) {
+            guest_last_error = 288;
+            return return_kernel32_dword(0, api, 4);
+        }
+        --mutex->second.recursion_count;
+        return return_kernel32_dword(1, api, 4);
+    }
+
+    int close_handle() {
+        constexpr const char* api = "KERNEL32.dll!CloseHandle";
+        uint32_t handle = 0;
+        if (!read_stack_argument(0, handle, api)) return -1;
+        const auto file = guest_files.find(handle);
+        if (file != guest_files.end()) {
+            const int descriptor = file->second.descriptor;
+            guest_files.erase(file);
+            if (::close(descriptor) != 0) {
+                guest_last_error = 6;
+                return return_kernel32_dword(0, api, 4);
+            }
+            return return_kernel32_dword(1, api, 4);
+        }
+        const auto event = guest_events.find(handle);
+        if (event != guest_events.end()) {
+            guest_events.erase(event);
+            return return_kernel32_dword(1, api, 4);
+        }
+        if (guest_mutexes.erase(handle) == 0) {
+            guest_last_error = 6;
+            return return_kernel32_dword(0, api, 4);
+        }
+        for (auto name = guest_named_mutexes.begin();
+             name != guest_named_mutexes.end();) {
+            if (name->second == handle) {
+                name = guest_named_mutexes.erase(name);
+            } else {
+                ++name;
+            }
+        }
+        return return_kernel32_dword(1, api, 4);
+    }
+
+    bool resolve_guest_file_path(const std::string& path,
+                                 std::filesystem::path& resolved,
+                                 const char* api) {
+        std::string portable_path = path;
+        std::replace(portable_path.begin(), portable_path.end(), '\\', '/');
+        const std::filesystem::path guest_path(portable_path);
+        if (guest_path.empty() || guest_path.is_absolute() ||
+            guest_path.has_root_name()) {
+            guest_last_error = 5;
+            return false;
+        }
+        for (const auto& component : guest_path) {
+            if (component == "..") {
+                guest_last_error = 5;
+                return false;
+            }
+        }
+        std::error_code error_code;
+        const std::filesystem::path current_directory =
+            std::filesystem::current_path(error_code);
+        if (error_code) {
+            guest_last_error = 5;
+            return false;
+        }
+        const std::filesystem::path root =
+            std::filesystem::canonical(current_directory, error_code);
+        if (error_code) {
+            guest_last_error = 5;
+            return false;
+        }
+        resolved = std::filesystem::canonical(root / guest_path, error_code);
+        if (error_code) {
+            guest_last_error =
+                error_code == std::errc::no_such_file_or_directory ? 2 : 5;
+            return false;
+        }
+        const std::filesystem::path relative = resolved.lexically_relative(root);
+        if (relative.empty() || *relative.begin() == "..") {
+            guest_last_error = 5;
+            return false;
+        }
+        (void)api;
+        return true;
+    }
+
+    int create_file_a() {
+        constexpr const char* api = "KERNEL32.dll!CreateFileA";
+        uint32_t path_address = 0;
+        uint32_t desired_access = 0;
+        uint32_t share_mode = 0;
+        uint32_t security_attributes = 0;
+        uint32_t creation_disposition = 0;
+        uint32_t flags_and_attributes = 0;
+        uint32_t template_file = 0;
+        if (!read_stack_argument(0, path_address, api) ||
+            !read_stack_argument(1, desired_access, api) ||
+            !read_stack_argument(2, share_mode, api) ||
+            !read_stack_argument(3, security_attributes, api) ||
+            !read_stack_argument(4, creation_disposition, api) ||
+            !read_stack_argument(5, flags_and_attributes, api) ||
+            !read_stack_argument(6, template_file, api)) {
+            return -1;
+        }
+        (void)share_mode;
+        (void)flags_and_attributes;
+        if (path_address == 0 || desired_access != 0x80000000 ||
+            security_attributes != 0 || creation_disposition != 3 ||
+            template_file != 0) {
+            guest_last_error = 87;
+            return return_kernel32_dword(UINT32_MAX, api, 28);
+        }
+        std::string guest_path;
+        if (!read_guest_ascii(path_address, guest_path, api)) return -1;
+        std::filesystem::path host_path;
+        if (!resolve_guest_file_path(guest_path, host_path, api))
+            return return_kernel32_dword(UINT32_MAX, api, 28);
+        const int descriptor = ::open(host_path.c_str(), O_RDONLY | O_CLOEXEC);
+        if (descriptor < 0) {
+            guest_last_error = errno == ENOENT ? 2 : errno == EACCES ? 5 : 31;
+            return return_kernel32_dword(UINT32_MAX, api, 28);
+        }
+        struct stat file_status {};
+        if (::fstat(descriptor, &file_status) != 0 ||
+            !S_ISREG(file_status.st_mode) || file_status.st_size < 0) {
+            (void)::close(descriptor);
+            guest_last_error = 5;
+            return return_kernel32_dword(UINT32_MAX, api, 28);
+        }
+        if (next_guest_file_handle >
+            std::numeric_limits<uint32_t>::max() - sizeof(uint32_t)) {
+            (void)::close(descriptor);
+            guest_last_error = 8;
+            return return_kernel32_dword(UINT32_MAX, api, 28);
+        }
+        const uint32_t handle = static_cast<uint32_t>(next_guest_file_handle);
+        next_guest_file_handle += sizeof(uint32_t);
+        guest_files.emplace(handle,
+                            GuestFile{descriptor,
+                                      static_cast<uint64_t>(file_status.st_size)});
+        guest_last_error = 0;
+        return return_kernel32_dword(handle, api, 28);
+    }
+
+    int get_file_size() {
+        constexpr const char* api = "KERNEL32.dll!GetFileSize";
+        uint32_t handle = 0;
+        uint32_t high_part_address = 0;
+        if (!read_stack_argument(0, handle, api) ||
+            !read_stack_argument(1, high_part_address, api)) {
+            return -1;
+        }
+        const auto file = guest_files.find(handle);
+        if (file == guest_files.end()) {
+            guest_last_error = 6;
+            return return_kernel32_dword(UINT32_MAX, api, 8);
+        }
+        if (high_part_address != 0 &&
+            !write_guest_u32("ram", high_part_address,
+                             static_cast<uint32_t>(file->second.size >> 32))) {
+            error = std::string(api) + " cannot write the high-size output";
+            return -1;
+        }
+        return return_kernel32_dword(static_cast<uint32_t>(file->second.size),
+                                     api, 8);
+    }
+
+    int read_file() {
+        constexpr const char* api = "KERNEL32.dll!ReadFile";
+        uint32_t handle = 0;
+        uint32_t output_address = 0;
+        uint32_t bytes_to_read = 0;
+        uint32_t bytes_read_address = 0;
+        uint32_t overlapped = 0;
+        if (!read_stack_argument(0, handle, api) ||
+            !read_stack_argument(1, output_address, api) ||
+            !read_stack_argument(2, bytes_to_read, api) ||
+            !read_stack_argument(3, bytes_read_address, api) ||
+            !read_stack_argument(4, overlapped, api)) {
+            return -1;
+        }
+        const auto file = guest_files.find(handle);
+        if (file == guest_files.end()) {
+            guest_last_error = 6;
+            return return_kernel32_dword(0, api, 20);
+        }
+        if (overlapped != 0 || bytes_read_address == 0 ||
+            bytes_to_read > kMaximumGuestFileReadBytes ||
+            (bytes_to_read != 0 && output_address == 0)) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 20);
+        }
+        std::vector<uint8_t> bytes(bytes_to_read);
+        size_t total_read = 0;
+        while (total_read < bytes.size()) {
+            const ssize_t result = ::read(
+                file->second.descriptor, bytes.data() + total_read,
+                bytes.size() - total_read);
+            if (result < 0 && errno == EINTR) continue;
+            if (result < 0) {
+                guest_last_error = 31;
+                return return_kernel32_dword(0, api, 20);
+            }
+            if (result == 0) break;
+            total_read += static_cast<size_t>(result);
+        }
+        if (total_read != 0 &&
+            !write_guest_bytes(output_address, bytes.data(), total_read, api))
+            return -1;
+        if (!write_guest_u32("ram", bytes_read_address,
+                             static_cast<uint32_t>(total_read))) {
+            error = std::string(api) + " cannot write the byte-count output";
+            return -1;
+        }
+        return return_kernel32_dword(1, api, 20);
+    }
+
+    int set_unhandled_exception_filter() {
+        constexpr const char* api =
+            "KERNEL32.dll!SetUnhandledExceptionFilter";
+        uint32_t filter = 0;
+        if (!read_stack_argument(0, filter, api)) return -1;
+        const uint32_t previous_filter = guest_unhandled_exception_filter;
+        guest_unhandled_exception_filter = filter;
+        return return_kernel32_dword(previous_filter, api, 4);
     }
 
     int get_module_handle_a() {
@@ -1097,6 +1921,32 @@ struct RecompiledPcodeModule::Impl {
         return finish_stdcall(4, api) ? 0 : -1;
     }
 
+    int interlocked_compare_exchange() {
+        constexpr const char* api =
+            "KERNEL32.dll!InterlockedCompareExchange";
+        uint32_t address = 0;
+        uint32_t exchange = 0;
+        uint32_t comparand = 0;
+        if (!read_stack_argument(0, address, api) ||
+            !read_stack_argument(1, exchange, api) ||
+            !read_stack_argument(2, comparand, api)) {
+            return -1;
+        }
+        if (!valid_guest_pointer(address, sizeof(uint32_t))) {
+            error = std::string(api) + " has an invalid operand pointer";
+            return -1;
+        }
+        uint32_t previous = 0;
+        if (!read_guest_u32("ram", address, previous) ||
+            (previous == comparand &&
+             !write_guest_u32("ram", address, exchange)) ||
+            !write_guest_u32("register", kX86EaxRegisterOffset, previous)) {
+            error = std::string(api) + " cannot update its operand";
+            return -1;
+        }
+        return finish_stdcall(12, api) ? 0 : -1;
+    }
+
     int initialize_critical_section() {
         constexpr const char* api = "KERNEL32.dll!InitializeCriticalSection";
         uint32_t address = 0;
@@ -1269,6 +2119,50 @@ struct RecompiledPcodeModule::Impl {
     int get_environment_strings(bool wide) {
         const char* api = wide ? "KERNEL32.dll!GetEnvironmentStringsW"
                                : "KERNEL32.dll!GetEnvironmentStringsA";
+        if (!guest_environment_variables.empty()) {
+            std::vector<std::pair<std::string, std::string>> variables;
+            variables.reserve(guest_environment_variables.size());
+            for (const auto& [key, value] : guest_environment_variables) {
+                (void)key;
+                variables.push_back(value);
+            }
+            std::sort(variables.begin(), variables.end(),
+                      [](const auto& left, const auto& right) {
+                          return lowercase_ascii(left.first) <
+                                 lowercase_ascii(right.first);
+                      });
+            std::vector<uint8_t> bytes;
+            for (const auto& [name, value] : variables) {
+                const std::string entry = name + "=" + value;
+                if (wide) {
+                    for (const unsigned char byte : entry) {
+                        const uint16_t character = decode_windows_1252(byte);
+                        bytes.push_back(static_cast<uint8_t>(character));
+                        bytes.push_back(static_cast<uint8_t>(character >> 8));
+                    }
+                    bytes.insert(bytes.end(), {0, 0});
+                } else {
+                    bytes.insert(bytes.end(), entry.begin(), entry.end());
+                    bytes.push_back(0);
+                }
+            }
+            bytes.insert(bytes.end(), wide ? std::initializer_list<uint8_t>{0, 0}
+                                           : std::initializer_list<uint8_t>{0});
+            uint32_t address = 0;
+            if (!allocate_guest_heap(kGuestProcessHeapHandle, bytes.size(),
+                                     address) ||
+                !write_guest_bytes(address, bytes.data(), bytes.size(), api)) {
+                error = std::string(api) + " cannot create an environment block";
+                return -1;
+            }
+            guest_environment_blocks.emplace(address);
+            if (!write_guest_u32("register", kX86EaxRegisterOffset,
+                                 address)) {
+                error = std::string(api) + " cannot write EAX";
+                return -1;
+            }
+            return finish_stdcall(0, api) ? 0 : -1;
+        }
         const uint32_t address = wide ? kGuestEnvironmentWideAddress
                                       : kGuestEnvironmentAnsiAddress;
         if (!environment_initialized) {
@@ -1297,12 +2191,87 @@ struct RecompiledPcodeModule::Impl {
         if (!read_stack_argument(0, address, api)) return -1;
         const uint32_t expected = wide ? kGuestEnvironmentWideAddress
                                        : kGuestEnvironmentAnsiAddress;
+        uint32_t result = 0;
+        if (address == expected) {
+            result = 1;
+        } else if (guest_environment_blocks.erase(address) != 0) {
+            const auto allocation = heap_allocations.find(address);
+            if (allocation != heap_allocations.end()) {
+                free_heap_blocks.push_back(allocation->second);
+                heap_allocations.erase(allocation);
+                result = 1;
+            }
+        }
         if (!write_guest_u32("register", kX86EaxRegisterOffset,
-                             address == expected ? 1 : 0)) {
+                             result)) {
             error = std::string(api) + " cannot write EAX";
             return -1;
         }
         return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int get_environment_variable_a() {
+        constexpr const char* api = "KERNEL32.dll!GetEnvironmentVariableA";
+        uint32_t name_address = 0;
+        uint32_t output_address = 0;
+        uint32_t output_size = 0;
+        if (!read_stack_argument(0, name_address, api) ||
+            !read_stack_argument(1, output_address, api) ||
+            !read_stack_argument(2, output_size, api)) {
+            return -1;
+        }
+        (void)output_address;
+        (void)output_size;
+        std::string name;
+        if (name_address == 0 || !read_guest_ascii(name_address, name, api))
+            return -1;
+        const auto variable =
+            guest_environment_variables.find(lowercase_ascii(name));
+        if (variable == guest_environment_variables.end()) {
+            guest_last_error = 203;
+            return return_kernel32_dword(0, api, 12);
+        }
+        const std::string& value = variable->second.second;
+        const uint32_t required_size = static_cast<uint32_t>(value.size() + 1);
+        if (output_size < required_size) {
+            guest_last_error = 122;
+            return return_kernel32_dword(required_size, api, 12);
+        }
+        if (output_address == 0 ||
+            !write_guest_bytes(output_address,
+                               reinterpret_cast<const uint8_t*>(value.c_str()),
+                               required_size, api)) {
+            return -1;
+        }
+        return return_kernel32_dword(static_cast<uint32_t>(value.size()), api,
+                                     12);
+    }
+
+    int set_environment_variable_a() {
+        constexpr const char* api = "KERNEL32.dll!SetEnvironmentVariableA";
+        uint32_t name_address = 0;
+        uint32_t value_address = 0;
+        if (!read_stack_argument(0, name_address, api) ||
+            !read_stack_argument(1, value_address, api)) {
+            return -1;
+        }
+        std::string name;
+        if (name_address == 0 || !read_guest_ascii(name_address, name, api))
+            return -1;
+        if (name.empty() || name.find('=') != std::string::npos) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 8);
+        }
+        const std::string key = lowercase_ascii(name);
+        if (value_address == 0) {
+            guest_environment_variables.erase(key);
+        } else {
+            std::string value;
+            if (!read_guest_ascii(value_address, value, api)) return -1;
+            guest_environment_variables[key] = {std::move(name),
+                                                std::move(value)};
+        }
+        return return_kernel32_dword(1, api, 8);
     }
 
     int multi_byte_to_wide_char() {
@@ -1791,6 +2760,18 @@ struct RecompiledPcodeModule::Impl {
                 }
             }
             if (moved_past_import_stub) continue;
+            bool moved_past_virtual_region = false;
+            for (const auto& region : guest_virtual_allocations) {
+                const uint64_t region_begin = region.first;
+                const uint64_t region_end = region_begin + region.second;
+                if (candidate < region_end &&
+                    region_begin < candidate + allocation_size) {
+                    candidate = (region_end + 15) & ~UINT64_C(15);
+                    moved_past_virtual_region = true;
+                    break;
+                }
+            }
+            if (moved_past_virtual_region) continue;
             address = static_cast<uint32_t>(candidate);
             guest_heap_next_address = candidate + allocation_size;
             heap_allocations.emplace(address, GuestHeapBlock{
@@ -1798,6 +2779,103 @@ struct RecompiledPcodeModule::Impl {
             return true;
         }
         return false;
+    }
+
+    int virtual_alloc() {
+        constexpr const char* api = "KERNEL32.dll!VirtualAlloc";
+        uint32_t requested_address = 0;
+        uint32_t size = 0;
+        uint32_t allocation_type = 0;
+        uint32_t protection = 0;
+        if (!read_stack_argument(0, requested_address, api) ||
+            !read_stack_argument(1, size, api) ||
+            !read_stack_argument(2, allocation_type, api) ||
+            !read_stack_argument(3, protection, api)) {
+            return -1;
+        }
+        if (size == 0 || protection == 0 ||
+            (allocation_type & ~UINT32_C(0x3000)) != 0 ||
+            allocation_type == 0) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 16);
+        }
+        if (size > kMaximumGuestVirtualAllocationSize) {
+            guest_last_error = 8;
+            return return_kernel32_dword(0, api, 16);
+        }
+
+        const uint64_t allocation_size =
+            (static_cast<uint64_t>(size) + 0xfff) & ~UINT64_C(0xfff);
+        uint64_t candidate = requested_address == 0
+            ? (guest_virtual_next_address + 0xffff) & ~UINT64_C(0xffff)
+            : static_cast<uint64_t>(requested_address) & ~UINT64_C(0xffff);
+        const auto overlaps = [&](uint64_t begin, uint64_t end) {
+            if (pe_image_size != 0 && begin <
+                    static_cast<uint64_t>(pe_image_base) + pe_image_size &&
+                pe_image_base < end) {
+                return true;
+            }
+            for (const auto& block : heap_allocations) {
+                const uint64_t block_begin = block.first;
+                const uint64_t block_end =
+                    block_begin + block.second.size;
+                if (begin < block_end && block_begin < end) return true;
+            }
+            for (const auto& block : free_heap_blocks) {
+                const uint64_t block_begin = block.address;
+                const uint64_t block_end = block_begin + block.size;
+                if (begin < block_end && block_begin < end) return true;
+            }
+            for (const auto& region : guest_virtual_allocations) {
+                const uint64_t region_begin = region.first;
+                const uint64_t region_end = region_begin + region.second;
+                if (begin < region_end && region_begin < end) return true;
+            }
+            for (const auto& trap : import_traps) {
+                const uint64_t trap_begin = trap.first;
+                const uint64_t trap_end = trap_begin + kImportStubStride;
+                if (begin < trap_end && trap_begin < end) return true;
+            }
+            return false;
+        };
+        while (candidate + allocation_size <= kGuestRamSize &&
+               overlaps(candidate, candidate + allocation_size)) {
+            candidate = (candidate + allocation_size + 0xffff) &
+                        ~UINT64_C(0xffff);
+            if (requested_address != 0) break;
+        }
+        if (candidate + allocation_size > kGuestRamSize ||
+            overlaps(candidate, candidate + allocation_size)) {
+            guest_last_error = 8;
+            return return_kernel32_dword(0, api, 16);
+        }
+        const uint32_t address = static_cast<uint32_t>(candidate);
+        guest_virtual_allocations.emplace(address, allocation_size);
+        if (requested_address == 0)
+            guest_virtual_next_address = candidate + allocation_size;
+        std::memset(static_cast<uint8_t*>(ram) + address, 0,
+                    static_cast<size_t>(allocation_size));
+        return return_kernel32_dword(address, api, 16);
+    }
+
+    int virtual_free() {
+        constexpr const char* api = "KERNEL32.dll!VirtualFree";
+        uint32_t address = 0;
+        uint32_t size = 0;
+        uint32_t free_type = 0;
+        if (!read_stack_argument(0, address, api) ||
+            !read_stack_argument(1, size, api) ||
+            !read_stack_argument(2, free_type, api)) {
+            return -1;
+        }
+        const auto region = guest_virtual_allocations.find(address);
+        if (free_type != 0x8000 || size != 0 ||
+            region == guest_virtual_allocations.end()) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 12);
+        }
+        guest_virtual_allocations.erase(region);
+        return return_kernel32_dword(1, api, 12);
     }
 
     int heap_alloc() {
@@ -1833,6 +2911,34 @@ struct RecompiledPcodeModule::Impl {
             return -1;
         }
         return finish_stdcall(12, api) ? 0 : -1;
+    }
+
+    int heap_size() {
+        constexpr const char* api = "KERNEL32.dll!HeapSize";
+        uint32_t heap = 0;
+        uint32_t flags = 0;
+        uint32_t address = 0;
+        if (!read_stack_argument(0, heap, api) ||
+            !read_stack_argument(1, flags, api) ||
+            !read_stack_argument(2, address, api)) {
+            return -1;
+        }
+        if ((flags & ~UINT32_C(1)) != 0) {
+            guest_last_error = 87;
+            return return_kernel32_dword(UINT32_MAX, api, 12);
+        }
+        if (guest_heap_handles.find(heap) == guest_heap_handles.end()) {
+            guest_last_error = 6;
+            return return_kernel32_dword(UINT32_MAX, api, 12);
+        }
+        const auto allocation = heap_allocations.find(address);
+        if (allocation == heap_allocations.end() ||
+            allocation->second.heap != heap) {
+            guest_last_error = 87;
+            return return_kernel32_dword(UINT32_MAX, api, 12);
+        }
+        return return_kernel32_dword(
+            static_cast<uint32_t>(allocation->second.size), api, 12);
     }
 
     int heap_free() {
@@ -2314,6 +3420,15 @@ struct RecompiledPcodeModule::Impl {
                 index * kImportStubStride);
             import_traps.emplace(stub, unique_imports[index]);
         }
+        // Ghidra's lowered external-call thunks use one-based import indices.
+        for (size_t index = 0; index < imported_thunks.size(); ++index) {
+            const size_t stub_index = import_indices.at(
+                imported_thunks[index].name);
+            const uint32_t stub = static_cast<uint32_t>(
+                static_cast<uint64_t>(import_stub_base) +
+                stub_index * kImportStubStride);
+            import_id_traps.emplace(static_cast<uint32_t>(index + 1), stub);
+        }
         const uint32_t module_handle_base = choose_guest_module_handle_base(
             image_base, image_size, import_stub_base, unique_imports.size(),
             import_modules.size());
@@ -2371,6 +3486,7 @@ struct RecompiledPcodeModule::Impl {
             return -1;
         }
         pe32_entry_point_started = true;
+        execution_started = true;
         if (!write_guest_u32("register", kX86EspRegisterOffset,
                              kGuestInitialStackPointer) ||
             !write_guest_u32("register", kX86EbpRegisterOffset, 0) ||
@@ -2447,7 +3563,9 @@ struct RecompiledPcodeModule::Impl {
     std::array<uint8_t, kRegisterBankSize> registers{};
     RviPcodeContext context{};
     std::unordered_map<uint32_t, PcodeFunction> functions;
+    std::vector<void*> supplemental_modules;
     std::unordered_map<uint32_t, std::string> import_traps;
+    std::unordered_map<uint32_t, uint32_t> import_id_traps;
     std::unordered_map<std::string, uint32_t> guest_module_handles;
     std::unordered_map<uint32_t, std::string> guest_module_names;
     std::unordered_map<uint32_t, GuestHeapBlock> heap_allocations;
@@ -2457,13 +3575,32 @@ struct RecompiledPcodeModule::Impl {
     std::unordered_map<uint32_t, uint32_t> tls_values;
     std::vector<uint32_t> free_tls_indices;
     std::unordered_map<uint32_t, GuestCriticalSection> critical_sections;
+    std::unordered_map<uint32_t, GuestMutex> guest_mutexes;
+    std::unordered_map<uint32_t, GuestFile> guest_files;
+    std::unordered_map<uint32_t, GuestEvent> guest_events;
+    std::unordered_map<uint32_t, uint64_t> guest_virtual_allocations;
+    std::unordered_map<std::string, uint32_t> guest_named_mutexes;
+    std::unordered_map<std::string,
+                       std::pair<std::string, std::string>>
+        guest_environment_variables;
+    std::unordered_set<uint32_t> guest_environment_blocks;
     std::vector<uint32_t> active_guest_functions;
     bool command_line_initialized = false;
     bool environment_initialized = false;
     uint32_t guest_last_error = 0;
+    uint32_t guest_process_priority_class = 0x00000020;
+    int32_t guest_thread_priority = 0;
+    uint32_t guest_symbol_options = 0;
+    uint32_t guest_symbol_process_handle = 0;
+    bool guest_symbol_handler_initialized = false;
+    uint32_t guest_unhandled_exception_filter = 0;
     uint64_t function_count = 0;
     uint64_t guest_heap_next_address = kGuestHeapStartAddress;
+    uint64_t guest_virtual_next_address = UINT64_C(0x20000000);
     uint64_t next_guest_heap_handle = kGuestProcessHeapHandle + 4;
+    uint64_t next_guest_mutex_handle = 0x00030000;
+    uint64_t next_guest_file_handle = kGuestFileHandleBase;
+    uint64_t next_guest_event_handle = kGuestEventHandleBase;
     uint64_t next_dynamic_import_stub_address =
         kGuestDynamicImportStubBase;
     uint32_t next_tls_index = 0;
@@ -2472,8 +3609,10 @@ struct RecompiledPcodeModule::Impl {
     uint32_t pe_image_entry_point = 0;
     std::string pe_image_file_name;
     uint32_t call_depth = 0;
+    uint32_t indirect_jump_depth = 0;
     bool pe_image_load_attempted = false;
     bool pe32_entry_point_started = false;
+    bool execution_started = false;
     std::string error;
 };
 
@@ -2488,6 +3627,7 @@ int RecompiledPcodeModule::call(uint32_t guest_address) {
         impl_->error = "cannot begin a P-code entry call during dispatch";
         return -1;
     }
+    impl_->execution_started = true;
     return impl_->dispatch(guest_address);
 }
 
@@ -2497,6 +3637,11 @@ Pe32ImageInfo RecompiledPcodeModule::load_pe32_image(const std::string& path) {
 
 int RecompiledPcodeModule::call_pe32_entry_point() {
     return impl_->call_pe32_entry_point();
+}
+
+bool RecompiledPcodeModule::load_supplemental_module(
+    const std::string& shared_object_path) {
+    return impl_->load_supplemental_module(shared_object_path);
 }
 
 uint64_t RecompiledPcodeModule::dispatched_function_count() const {

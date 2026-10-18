@@ -489,6 +489,10 @@ if(BUILD_TESTING)
     tests/recompiled_pcode_fixture.c)
   target_include_directories(shift_runtime_test_pcode_module PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  add_library(shift_runtime_test_pcode_supplement_module SHARED
+    tests/recompiled_pcode_supplement_fixture.c)
+  target_include_directories(shift_runtime_test_pcode_supplement_module PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include)
   add_executable(shift_runtime_recompiled_pcode_module_check
     tests/recompiled_pcode_module_check.cpp)
   target_link_libraries(shift_runtime_recompiled_pcode_module_check PRIVATE
@@ -497,6 +501,7 @@ if(BUILD_TESTING)
     NAME shift_runtime_recompiled_pcode_module
     COMMAND shift_runtime_recompiled_pcode_module_check
       $<TARGET_FILE:shift_runtime_test_pcode_module>
+      $<TARGET_FILE:shift_runtime_test_pcode_supplement_module>
       ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_test_image.exe)
 endif()
 

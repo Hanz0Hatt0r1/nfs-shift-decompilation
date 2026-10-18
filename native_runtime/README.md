@@ -50,6 +50,9 @@ and implements the observed Kernel32 startup services exercised by the
 retail entry-point probe. `--recompiled-entrypoint` can invoke the loaded PE
 entry point once before the frame loop with a synthetic stack. `GetStartupInfoA`
 receives an empty startup structure;
+additional P-code ELF shards can be loaded with repeated
+`--recompiled-supplement` options before execution; duplicate exports fail
+closed.
 the guest heap currently supports `GetProcessHeap`, `HeapCreate`, `HeapAlloc`,
 and `HeapFree`; `GetModuleHandleA` resolves the main image and imported modules;
 `GetModuleFileNameA` returns the path used to load the PE image;
