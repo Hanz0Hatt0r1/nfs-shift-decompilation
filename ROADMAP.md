@@ -74,7 +74,7 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 | P-code operations covered | **9,600,713** |
 | Linux lowered module | **Full corpus links as native ELF exports** |
 | Original PE32 image loading | **Implemented** |
-| Original PE32 execution | **v110 reaches 80,626 dispatches / 1,417 unique functions over a 120-frame Vulkan smoke; the main guest thread is still runnable at `0x006472d0`** |
+| Original PE32 execution | **v111 clean Release build reaches 80,626 dispatches / 1,417 unique functions and renders 120 frames with Khronos validation enabled and zero errors** |
 | Import/IAT dispatch | **Implemented with fail-closed API boundary** |
 | Guest threads | **Cooperative multi-thread scheduling implemented** |
 | Vulkan runtime shell | **Operational on Linux** |
@@ -83,17 +83,17 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 | Host-architecture-neutral runtime | **Not yet proven** |
 | ARM64 lowered-runtime execution | **Generic P-code fixture passes; full corpus/runtime not yet proven** |
 | Android platform layer | **Not implemented** |
-| Retail entry-point completion | **The entry-point call remains active while the main guest thread runs; v110 crosses the prior missing-export frontier at `0x0050c8a9`** |
+| Retail entry-point completion | **The entry-point call remains active while the main guest thread runs at `0x006472d0`; v111 crosses the prior missing-export frontier at `0x0050c8a9`** |
 | Game main loop | **Static call path points to the repeated update loop; dynamic loop identity and frontend progress remain unproven** |
 | Retail frontend | **Not reached** |
 | Offline race | **Not reached** |
 | Android gameplay | **Not reached** |
 
-The cooperative guest-thread scheduler has been exercised by the real retail entry point together with the complete lowered P-code ELF. Probe v110 uses **41,539 exports** (the 41,538-function corpus plus the active startup override), 31 supplements, and the retail game-data directory. It crossed the prior missing-export frontier at `0x0050c8a9`, ran 80,626 guest dispatches across 1,417 unique functions, and rendered all 120 requested host Vulkan frames. At the end, the main guest thread remained runnable at `0x006472d0`; four workers were waiting. Ghidra shows that helper updating app/timer state and its callers feed a repeated event loop, but the capture does not establish dynamic call-stack identity, frontend progress, input, or a retail D3D9 frame. See the [v110 probe record](evidence/retail_frontier_20261018/entrypoint_probe_v110.json) and [probe log](evidence/retail_frontier_20261018/shift-probe-v110.log).
+The cooperative guest-thread scheduler has been exercised by the real retail entry point together with the complete lowered P-code ELF. Probe v111 rebuilt `shift_runtime` from this updated `main` in a clean Release directory and enabled `VK_LAYER_KHRONOS_validation`. Using **41,539 exports** (the 41,538-function corpus plus the active startup override) and 31 supplements, it crossed the prior missing-export frontier at `0x0050c8a9`, ran 80,626 guest dispatches across 1,417 unique functions, and rendered all 120 requested host Vulkan frames with zero validation errors. At the end, the main guest thread remained runnable at `0x006472d0`; four workers were waiting. Ghidra shows that helper updating app/timer state and its callers feed a repeated event loop, but the capture does not establish dynamic call-stack identity, frontend progress, input, or a retail D3D9 frame. The full lowered module and supplements still come from the external persistent artifact cache. See the [v111 probe record](evidence/retail_frontier_20261018/entrypoint_probe_v111.json), [probe log](evidence/retail_frontier_20261018/shift-probe-v111-validation.log), and [v110 record](evidence/retail_frontier_20261018/entrypoint_probe_v110.json).
 
 The installed PortProton retail run has a separate D3D9 capture at frame range 0–4309 (308,332 ms; 1,718,778 valid JSON objects). It contains 1,581 draws matching the Silverstone-era target shader inventory, including 537 hits for the crowd-generation shader whose SHA-256 is `d7859cca…00d351a`. The audited report also maps that shader to the proxy trigger signature `ps:b83e3c4ec719e80f`. The capture contains draw-local shader/state evidence, but no vertex/index-buffer payloads, texture snapshots, or exact resource path/SHA pairs, so none of those hits can yet be admitted as a retail mesh in Vulkan. The raw 474 MB capture remains in the external PortProton game directory; its SHA-256 and audit commands are recorded in [the capture audit note](docs/SHIFT_D3D9_CAPTURE_AUDIT_20261018.md). The report records 2,912 duplicate-key lines but zero conflicting duplicate values; duplicate keys still remain a capture-format defect.
 
-The earlier v65-v67 allocator evidence remains useful history, but it is not the latest execution state. The current blockers are proving retail control-flow progress beyond the v110 snapshot and connecting actual D3D9 draw resources to the Vulkan backend. The native Vulkan smoke still uses converted synthetic MGEO geometry. No complete frontend, offline race, or playable retail session has been demonstrated.
+The earlier v65-v67 allocator evidence remains useful history, but it is not the latest execution state. The current blockers are proving retail control-flow progress beyond the v111 snapshot and connecting actual D3D9 draw resources to the Vulkan backend. The native Vulkan smoke still uses converted synthetic MGEO geometry. No complete frontend, offline race, or playable retail session has been demonstrated.
 
 The generic `revenginstr` binary80 lowering now executes a synthetic P-code
 fixture on ARM64 CI (22 passed, one x86-only `FWAIT` test skipped). This covers
@@ -103,7 +103,7 @@ startup. See the [cross-host fixture evidence](evidence/pcode_native_lowering_ar
 
 The current immediate execution frontier is:
 
-> **Reproduce the v110 guest-thread state with a dynamic call trace, verify that the `0x006472d0` path advances through the retail update loop, and wire the first fully captured retail D3D9 draw into the Vulkan translator. Use a resource-triggered capture around `ps:b83e3c4ec719e80f` to collect the bound VB/IB payloads and the minimum texture evidence, then validate identity before admitting that draw.**
+> **Reproduce the v111 guest-thread state with a dynamic call trace, verify that the `0x006472d0` path advances through the retail update loop, and wire the first fully captured retail D3D9 draw into the Vulkan translator. Use a resource-triggered capture around `ps:b83e3c4ec719e80f` to collect the bound VB/IB payloads and the minimum texture evidence, then validate identity before admitting that draw.**
 
 At the same time, new infrastructure must avoid introducing additional x86-64/Linux-only assumptions.
 
@@ -114,6 +114,7 @@ Primary evidence:
 - [`evidence/pcode_native_lowering_coverage_full_20261018.json`](evidence/pcode_native_lowering_coverage_full_20261018.json)
 - [`evidence/recompiled_pcode_vulkan_frontier_20261018.json`](evidence/recompiled_pcode_vulkan_frontier_20261018.json)
 - [`evidence/recompiled_pcode_guest_cooperative_scheduler_20261018.json`](evidence/recompiled_pcode_guest_cooperative_scheduler_20261018.json)
+- [`evidence/retail_frontier_20261018/entrypoint_probe_v111.json`](evidence/retail_frontier_20261018/entrypoint_probe_v111.json)
 - [`docs/SHIFT_D3D9_CAPTURE_AUDIT_20261018.md`](docs/SHIFT_D3D9_CAPTURE_AUDIT_20261018.md)
 - [`evidence/shift_d3d9_capture_audit_20261018.json`](evidence/shift_d3d9_capture_audit_20261018.json)
 - [`evidence/shift_d3d9_capture_provenance_20261018.json`](evidence/shift_d3d9_capture_provenance_20261018.json)

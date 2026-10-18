@@ -1,0 +1,108 @@
+{
+  "format": "NFSShift.RetailEntrypointProbe/1",
+  "captured_at": "2026-10-18",
+  "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+  "branch": "codex/nfs-shift-linux-vulkan-replay-v111-20261018",
+  "base_commit": "785a35f07b5855835dd0053bca568e138ed3f12f",
+  "build": {
+    "local_build_directory": "/tmp/shift-runtime-v111-build",
+    "persistent_artifact_directory": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/linux-build-v111-20261018",
+    "configure_command": "cmake -S native_runtime -B /tmp/shift-runtime-v111-build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON",
+    "build_command": "cmake --build /tmp/shift-runtime-v111-build --target shift_runtime -j2",
+    "compiler": "GNU 16.2.1",
+    "cmake": "4.4.3",
+    "vulkan_loader": "1.4.357",
+    "xcb": "1.17.0",
+    "validation_layer": "VK_LAYER_KHRONOS_validation",
+    "runtime_sha256": "90a8e4299e7095eab3b2ba4435bec35f39b930f2c78b192698bdce5dad84ef6f",
+    "frontier_override_sha256": "317d5cf608bf815bc44a174ae26b28950f03d835c08ade173800bab82f1a0dcb",
+    "vertex_shader_spirv_sha256": "7e912fa5b8ec203f36d9c4a25a2631ba3aa46e955fa27e6b13665570e94940ad",
+    "fragment_shader_spirv_sha256": "bd5abf1270b78fb85d0ec713d328b9e41613d95843886810d644ab77df71b96f"
+  },
+  "inputs": {
+    "pe_image": {
+      "path": "/home/pes/ghidra_projects/shift/SHIFT.exe",
+      "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+    },
+    "game_data_root": "/home/pes/ghidra_projects/shift/Need For Speed.Shift.v 1.02",
+    "startup_pcode_module": {
+      "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/libnfs_shift_pcode_startup_20261018.so",
+      "sha256": "6f8016195fffe4e6b3803929cf50946bdcf96e00436295f0db32a468487207c3",
+      "exports": 41539
+    },
+    "mesh": {
+      "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/meshes/alpental-grid1_02.mgeo",
+      "sha256": "e2b4cda0347d94be3350a8ce158f7c1a1306b003e668ff455d9cd4924739f4ea",
+      "source_archive": "/home/pes/ghidra_projects/shift/Need For Speed.Shift.v 1.02/Pakfiles/Tracks/Alpental.bff",
+      "source_entry": "tracks/alpental/grid1_02.meb",
+      "vertices": 4,
+      "triangles": 2
+    }
+  },
+  "execution": {
+    "command_script": "tools/run_shift_recompiled_entrypoint_probe.sh",
+    "environment": {
+      "SHIFT_ENTRYPOINT_PROBE_FRAMES": 120,
+      "SHIFT_ENTRYPOINT_PROBE_VALIDATION": 1,
+      "SHIFT_ENTRYPOINT_PROBE_MESH": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/meshes/alpental-grid1_02.mgeo"
+    },
+    "exit_code": 0,
+    "persistent_log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v111-validation.log",
+    "log": "evidence/retail_frontier_20261018/shift-probe-v111-validation.log",
+    "log_sha256": "0e75c5462fca5a7b75fa297d137e85a6d758bd7e9180bfe2f1f5bca4069bf529",
+    "bootstrap": {
+      "format": "SHIFT.NativeRuntimeBootstrap/1",
+      "geometry_source": "MGEO",
+      "geometry_vertices": 4,
+      "geometry_indices": 6,
+      "frames_requested": 120
+    },
+    "frame_loop": {
+      "format": "SHIFT.NativeRuntimeFrameLoop/1",
+      "status": "ok",
+      "validation_enabled": true,
+      "validation_errors": 0,
+      "frames_rendered": 120,
+      "loop_exit_reason": "frame_limit",
+      "pe_image_loaded": true,
+      "pe_entry_point": "0x0090488a",
+      "pe_entry_point_invocations": 1,
+      "pe_entry_point_complete": false,
+      "pcode_function_dispatches": 80626,
+      "pcode_unique_functions_dispatched": 1417,
+      "pcode_frozen_corpus_function_count": 41538,
+      "pcode_unique_function_coverage_percent": 3.41133,
+      "supplement_count": 31,
+      "guest_scheduler": {
+        "entry_point_started": true,
+        "entry_point_complete": false,
+        "main_thread_started": true,
+        "main_thread_completed": false,
+        "main_thread_waiting": false,
+        "main_thread_runnable": true,
+        "main_thread_exit_requested": false,
+        "main_thread_wait_handle": "0x0006002c",
+        "main_thread_wait_result": "0x00000000",
+        "main_thread_current_function": "0x006472d0",
+        "ready_thread_count": 1,
+        "worker_thread_count": 4,
+        "worker_waiting_count": 4,
+        "worker_runnable_count": 0,
+        "worker_completed_count": 0
+      },
+      "elapsed_ms": 1910
+    }
+  },
+  "interpretation": {
+    "confirmed": [
+      "A clean Release build of shift_runtime from the updated main commit completed.",
+      "The persisted local build loaded the full startup P-code module, ran the retail entry point, and rendered all 120 requested Vulkan frames.",
+      "VK_LAYER_KHRONOS_validation was enabled and reported zero errors."
+    ],
+    "open": [
+      "The guest main thread remains runnable at 0x006472d0 and the PE entry point remains active.",
+      "The frame loop renders converted MGEO smoke geometry; this run does not demonstrate retail D3D9 rendering, input, a frontend, or playable behavior.",
+      "The full lowered P-code module and startup supplements came from the external persistent artifact cache; a clean-machine rebuild of that 2 GB input is not established."
+    ]
+  }
+}

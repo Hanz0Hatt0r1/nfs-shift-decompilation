@@ -43,3 +43,17 @@ With `rvi_0050c8a9` loaded, the entrypoint probe advanced past the prior missing
 The frame-loop diagnostic now records the main guest thread state and host loop exit reason. It showed the guest scheduler yielding at `0x006472d0`; Ghidra's existing decompilation shows that function begins with `SwitchToThread`. After 120 host frames, the main guest thread remained runnable, with four workers waiting and one ready thread. That is observed scheduler state; the PE entry point remains incomplete.
 
 The 120-frame run initially stopped on `VK_SUBOPTIMAL_KHR`. Vulkan permits the acquired image to be presented in this state, so the runtime now continues through suboptimal acquire/present results and only stops on `VK_ERROR_OUT_OF_DATE_KHR`. The probe then rendered all 120 requested frames with status `ok`, no runtime error, and 80,626 dispatches across 1,417 unique guest functions. This uses converted `Alpental` MGEO as smoke geometry; it does not establish retail D3D9 rendering or a playable game. The complete run record and raw runtime output are `entrypoint_probe_v110.json` and `shift-probe-v110.log`.
+
+## Follow-up: clean Linux build with Vulkan validation
+
+Probe v111 configured and built `shift_runtime` from the merged `main` commit
+in a clean Release build directory, then copied the executable, shader SPIR-V,
+and P-code frontier override into the persistent artifact cache. The probe
+runner's `SHIFT_ENTRYPOINT_PROBE_VALIDATION=1` option enabled
+`VK_LAYER_KHRONOS_validation`. The persisted binary rendered 120 frames with
+status `ok` and zero validation errors while dispatching 80,626 P-code calls
+across 1,417 unique functions. The guest main thread was still runnable at
+`0x006472d0`; geometry remained the four-vertex converted MGEO smoke mesh.
+This confirms the Linux runtime build and Vulkan frame loop, not retail D3D9
+rendering or a playable game. See `entrypoint_probe_v111.json` and
+`shift-probe-v111-validation.log`.

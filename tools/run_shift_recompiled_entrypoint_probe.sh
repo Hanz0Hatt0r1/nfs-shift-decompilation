@@ -16,6 +16,11 @@ if [[ ! "$probe_frames" =~ ^[1-9][0-9]*$ ]]; then
   printf 'SHIFT_ENTRYPOINT_PROBE_FRAMES must be a positive integer\n' >&2
   exit 2
 fi
+validation=${SHIFT_ENTRYPOINT_PROBE_VALIDATION:-0}
+if [[ "$validation" != 0 && "$validation" != 1 ]]; then
+  printf 'SHIFT_ENTRYPOINT_PROBE_VALIDATION must be 0 or 1\n' >&2
+  exit 2
+fi
 
 runtime=$1
 artifact_root=$2
@@ -79,5 +84,9 @@ probe_args=(
   --frames "$probe_frames"
   --recompiled-entrypoint
 )
+
+if [[ "$validation" == 1 ]]; then
+  probe_args+=(--validation)
+fi
 
 timeout "${timeout_seconds}s" "$runtime" "${probe_args[@]}" >"$log_path" 2>&1
