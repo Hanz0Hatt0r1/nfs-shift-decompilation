@@ -1,0 +1,67 @@
+{
+  "format": "NFSShift.RecompiledPcodePe32VulkanRuntime/1",
+  "base_main_revision": "2f8f7fdbc3c4a7a4e5e1fabd21c7a771e5242d7d",
+  "lowered_library": {
+    "format": "ELF64 shared object",
+    "exported_functions": 41538,
+    "sha256": "ee76608bb8c5b6b4b603a747a73378b9c4fb76e6320d7426d000632939984243"
+  },
+  "pe32_guest_loader": {
+    "machine": "I386",
+    "optional_header": "PE32",
+    "load_address": "preferred ImageBase",
+    "maps_headers": true,
+    "maps_raw_sections_at_image_base_plus_rva": true,
+    "zero_fills_virtual_section_tails": true,
+    "validates_image_and_section_bounds": true,
+    "rejects_overlapping_virtual_sections": true,
+    "permits_one_load_attempt_per_guest_address_space": true,
+    "executes_pe_entry_point": false,
+    "relocations": false,
+    "imports_and_iat_services": false,
+    "tls": false,
+    "guest_page_permissions": false
+  },
+  "fixture_validation": {
+    "ctest": "shift_runtime_recompiled_pcode_module",
+    "result": "passed",
+    "mapped_image_base": "0x00400000",
+    "mapped_image_size": 8192,
+    "entry_point": "0x00401010",
+    "section_count": 1,
+    "header_and_raw_section_bytes_verified": true,
+    "virtual_tail_zero_fill_verified": true,
+    "pcode_read_of_mapped_guest_image_verified": true,
+    "duplicate_load_rejected": true
+  },
+  "local_linux_vulkan_smoke": {
+    "geometry": "synthetic MGEO triangle",
+    "pe_image": "synthetic PE32 fixture from the native CTest",
+    "pcode_probe": "0x00404000 reads P32! from guest address 0x00401000",
+    "frames_rendered": 3,
+    "simulation_steps": 3,
+    "pcode_step_invocations": 3,
+    "pcode_functions_dispatched": 6,
+    "status": "ok",
+    "validation_enabled": true,
+    "validation_errors": 0,
+    "host_display": ":1"
+  },
+  "native_runtime_ctest": {
+    "passed": 138,
+    "failed": 0
+  },
+  "python_regressions": {
+    "passed": 7518,
+    "skipped": 3,
+    "failed": 0
+  },
+  "limitations": {
+    "retail_pe_tested": false,
+    "game_startup": false,
+    "platform_imports": false,
+    "retail_timing": false,
+    "playable_game": false,
+    "behavioral_parity": false
+  }
+}

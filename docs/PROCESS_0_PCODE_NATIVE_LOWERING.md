@@ -101,6 +101,9 @@ and call-target checks. Build and delta evidence are
 [`evidence/pcode_full_lowering_linux_build_20261018.json`](../evidence/pcode_full_lowering_linux_build_20261018.json)
 and [`evidence/pcode_full_lowering_delta_20261018.json`](../evidence/pcode_full_lowering_delta_20261018.json).
 
-This closes frozen-corpus lowering and native linking only. The library still
-requires a guest-state callback host; game startup, PE image loading, imported
-platform services, graphics integration, and behavioral parity remain open.
+This closes frozen-corpus lowering and native linking only. The Linux Vulkan
+runtime now has an initial PE32 guest-image loader that maps headers and
+sections at the preferred base; its scope and limits are recorded in
+[`RECOMPILED_PCODE_VULKAN_PE32_LOADER.md`](RECOMPILED_PCODE_VULKAN_PE32_LOADER.md).
+Game startup, relocations, imported platform services, retail initialization,
+and behavioral parity remain open.

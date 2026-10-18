@@ -496,7 +496,8 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_recompiled_pcode_module
     COMMAND shift_runtime_recompiled_pcode_module_check
-      $<TARGET_FILE:shift_runtime_test_pcode_module>)
+      $<TARGET_FILE:shift_runtime_test_pcode_module>
+      ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_test_image.exe)
 endif()
 
 add_executable(shift_runtime src/shift_runtime.cpp)
