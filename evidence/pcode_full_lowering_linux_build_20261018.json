@@ -1,0 +1,747 @@
+{
+  "base": {
+    "build_report_sha256": "a4ce39d03409f134d80cae26ddc0b9b60979e5b9a0ca0e1cd423a8401e87523d",
+    "lowerable_functions": 35004,
+    "object_shards": 71,
+    "report_path": "evidence/pcode_native_lowering_build_20261017.json"
+  },
+  "compiler": {
+    "arguments": [
+      "-std=c11",
+      "-O0",
+      "-fPIC"
+    ],
+    "path": "/usr/bin/clang",
+    "version": "clang version 22.1.8"
+  },
+  "coverage": {
+    "corpus_functions": 41538,
+    "fraction": 1.0,
+    "lowerable_functions": 41538,
+    "rejected_functions": 0,
+    "rejection_reasons": [],
+    "report_path": "evidence/pcode_native_lowering_coverage_full_20261018.json",
+    "report_sha256": "3ab7e4654d4f0f344424a19842568f41ec03266b94de465a2be292a579d1a711"
+  },
+  "delta": {
+    "functions": 6534,
+    "object_shards": 66,
+    "report_path": "evidence/pcode_full_lowering_delta_20261018.json",
+    "report_sha256": "e277f131e385ca58565c1931444f2bf7d71d7e76ba16516052a7f496b6885411",
+    "shards": [
+      {
+        "functions": 100,
+        "object_bytes": 15258584,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00000.o",
+        "object_sha256": "204be3987610d6b2d55bacd67e24488c7f1cc577610f4e7d6af12293c1a0431b",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00000.c",
+        "source_file": "delta-shard-00000.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 7653000,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00001.o",
+        "object_sha256": "d1b09f6a6463bb2dd5f69bc826c3bcdde7bce33e2f8fc3e58d93c8e5058eac69",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00001.c",
+        "source_file": "delta-shard-00001.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 9368696,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00002.o",
+        "object_sha256": "9038a7a973156d0a1de661ce24ccf51ca26150b4f238c89d53ef90146b8073cd",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00002.c",
+        "source_file": "delta-shard-00002.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 27819232,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00003.o",
+        "object_sha256": "8bd68b4c34554acfc2e4591a9273ebb24a4f76729c02877fd91f3c4ca4fc8e6c",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00003.c",
+        "source_file": "delta-shard-00003.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 17050176,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00004.o",
+        "object_sha256": "3254d39344bc277d3a905cdef807eef348a7c54a6572e6de3721e3104349eb9b",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00004.c",
+        "source_file": "delta-shard-00004.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 16816976,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00005.o",
+        "object_sha256": "92a41292b19995affea9f4e673850f70551683907a71596dab915b4d060a0434",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00005.c",
+        "source_file": "delta-shard-00005.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 17238176,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00006.o",
+        "object_sha256": "bdf50a9af896fd850938588244398d1df1413d274f2a555bfffc93c68df23aa2",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00006.c",
+        "source_file": "delta-shard-00006.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 17003768,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00007.o",
+        "object_sha256": "489d77c1dc148ce62f8853848103750897919329a806a3f4922defda83193e18",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00007.c",
+        "source_file": "delta-shard-00007.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 12244560,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00008.o",
+        "object_sha256": "42d2bca5b251b6e12213b2974ca16a3de8f8ca01d4b2acd0e8682c6b9f8ecc3e",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00008.c",
+        "source_file": "delta-shard-00008.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 10500504,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00009.o",
+        "object_sha256": "ec0efa9f3651b9e4d4ebd32b38af1a74344abb9105cf5f886b3579d36918e792",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00009.c",
+        "source_file": "delta-shard-00009.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 14205464,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00010.o",
+        "object_sha256": "899a81c0503113b72989b89d7f463c21492fb3325f9a9ac1188752d62ad196cc",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00010.c",
+        "source_file": "delta-shard-00010.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 18876776,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00011.o",
+        "object_sha256": "bcc66200ad354186521a327cd613b9432fa6a237be27b1404a9d45a2863df8de",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00011.c",
+        "source_file": "delta-shard-00011.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 18243600,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00012.o",
+        "object_sha256": "a7c3f0e39fbf81c88b7a7d1842daff2dbf2d3842fecd3b8562c26fbdee52907d",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00012.c",
+        "source_file": "delta-shard-00012.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 12715584,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00013.o",
+        "object_sha256": "254a00f6db73eb50085ecaa4972833c1b801fa15c82eb39f8a1891cd8417152d",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00013.c",
+        "source_file": "delta-shard-00013.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 5404456,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00014.o",
+        "object_sha256": "7d386f76d06eef9a6fc328dc57bc5871f156c200ba38ca99aa3512b935231e8d",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00014.c",
+        "source_file": "delta-shard-00014.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 4859160,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00015.o",
+        "object_sha256": "b9ddf82a59ba4c26964969dcfe5e872e8e434ed79c827c4e76222a9d60e18948",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00015.c",
+        "source_file": "delta-shard-00015.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 9502256,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00016.o",
+        "object_sha256": "b3b22735b8a9ff8c6980112330085895c2737a4962dbfe841a5b89fed27c481f",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00016.c",
+        "source_file": "delta-shard-00016.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 9287152,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00017.o",
+        "object_sha256": "224ec8d1ba1eaaa5a9edf57c4325cd5022ba4a33fcf54a511c6ccd7b5e2060ab",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00017.c",
+        "source_file": "delta-shard-00017.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 15087984,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00018.o",
+        "object_sha256": "c5a71add303d5d472f5283f9749468df7f4fd3a81e7be1faa3572c60e4079653",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00018.c",
+        "source_file": "delta-shard-00018.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 11699824,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00019.o",
+        "object_sha256": "8ca0e17be9ecc23e6c18e2782832d79737c520da2874175e5f7928eeed87d595",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00019.c",
+        "source_file": "delta-shard-00019.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 14474344,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00020.o",
+        "object_sha256": "7545563f6270d700173a8b6e9dbbee45468edcd054d15b061c79d04884023289",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00020.c",
+        "source_file": "delta-shard-00020.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 7263376,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00021.o",
+        "object_sha256": "5f33468d6bbb557f16544c6347780da0ee1c3e775ede36b98ba89aaaa3ed763c",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00021.c",
+        "source_file": "delta-shard-00021.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 12575184,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00022.o",
+        "object_sha256": "48ab08649cbd2e8b1b380b45ba6db882ca5c4ae192d9d815a5e8fcc0a62c1483",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00022.c",
+        "source_file": "delta-shard-00022.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 19261064,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00023.o",
+        "object_sha256": "87f4cb2a5a9a1b4ddea8020260b888b33a6dea03dabdc4693c1f57cee78e60f0",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00023.c",
+        "source_file": "delta-shard-00023.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 23570968,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00024.o",
+        "object_sha256": "4c90224fce06f107a88ff51b591f447e6ee9c6cf2e7ae5c7b29c009220691cda",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00024.c",
+        "source_file": "delta-shard-00024.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 11696128,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00025.o",
+        "object_sha256": "2588ae90883326f8fbd7a0fc2c21f096b80d08d0d8b1f45e5199fdd71e33a625",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00025.c",
+        "source_file": "delta-shard-00025.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 13404424,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00026.o",
+        "object_sha256": "fb821cb72b7ba59259d3befb3b5c8542e9874df3563009c90a9f3a53f224f654",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00026.c",
+        "source_file": "delta-shard-00026.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 19873568,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00027.o",
+        "object_sha256": "9ebd3f6f839b5fa5fa7c5da53a94f53f7aaaabe7c3d63cdbbb57d31022e7081b",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00027.c",
+        "source_file": "delta-shard-00027.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 7354808,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00028.o",
+        "object_sha256": "341ce4c232a8453e80901aff99a24ad5ea8ae11e90e55c17fdf13c8b9748917c",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00028.c",
+        "source_file": "delta-shard-00028.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 5503096,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00029.o",
+        "object_sha256": "c4abd79816f4732ba946470a39550486fb4a6c39f823c0ea3991f4b1d6310112",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00029.c",
+        "source_file": "delta-shard-00029.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 11024576,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00030.o",
+        "object_sha256": "cc40739acba396e440302c64294855b06ee5f31d03f897ff1f203361f8a8ecf4",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00030.c",
+        "source_file": "delta-shard-00030.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 10288608,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00031.o",
+        "object_sha256": "8d32fb1f159e7d0398073e976de7a866987eb9caa2d3e0f0c8ac892826235326",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00031.c",
+        "source_file": "delta-shard-00031.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 23496800,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00032.o",
+        "object_sha256": "3b1bb2b3f6cddacb537fcf89b01693ba13d6972a2a9cc049fc74fff180a3b528",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00032.c",
+        "source_file": "delta-shard-00032.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 65887024,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00033.o",
+        "object_sha256": "c7d4cd95f267b0c1a2ee89fbc39d666cf04ea3b3a4baf9a00bdf74394163c1af",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00033.c",
+        "source_file": "delta-shard-00033.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 13284528,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00034.o",
+        "object_sha256": "56149c83875c65f90141ccb8918135e94270a5695899787ff3d38aa7b6c3562a",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00034.c",
+        "source_file": "delta-shard-00034.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 37074048,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00035.o",
+        "object_sha256": "4bc09b61ef46578c519d2a61cd8aac1a6e9588780a7ef02d0342795a52a44be6",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00035.c",
+        "source_file": "delta-shard-00035.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 17483960,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00036.o",
+        "object_sha256": "a4355c4e17fdf9e6536a5e4f70f71a38b31be977719d93783409e3967c582846",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00036.c",
+        "source_file": "delta-shard-00036.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 20081664,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00037.o",
+        "object_sha256": "82f180875ed5d5e4fda53538f2e9bdf574f745d7321dcdede75b1c09a1410d4a",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00037.c",
+        "source_file": "delta-shard-00037.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 36428536,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00038.o",
+        "object_sha256": "560126865742ca920759d97622b9773bf9a91f178ce3516af69d93bec214436a",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00038.c",
+        "source_file": "delta-shard-00038.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 18693848,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00039.o",
+        "object_sha256": "89bdb1e94255b42fce8808813c0141b052135c18732103eb349563f2a3687b7b",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00039.c",
+        "source_file": "delta-shard-00039.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 18494792,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00040.o",
+        "object_sha256": "de160b861601cf4209a442f9edb7abe288598435de82f5f8dc5b37c380bba8b0",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00040.c",
+        "source_file": "delta-shard-00040.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 37172624,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00041.o",
+        "object_sha256": "7795203b00ff42db88e1a63785b4f06f02746c9c8e71a9f1f56cb6df15885223",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00041.c",
+        "source_file": "delta-shard-00041.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 22899104,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00042.o",
+        "object_sha256": "e2c6fd1ff88e7c6c50192a984eeacbce50305ca47b27ff66bd81f406944ff650",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00042.c",
+        "source_file": "delta-shard-00042.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 25364056,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00043.o",
+        "object_sha256": "8ba50d74c73c10c0da7fb30705fe79737403752fd523f4a4e2dc2c05a5f4ce1a",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00043.c",
+        "source_file": "delta-shard-00043.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 20161600,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00044.o",
+        "object_sha256": "51cc1cd50047d1ffdddfa955d87582932cb46b300208c173f2ec3ee7b7259378",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00044.c",
+        "source_file": "delta-shard-00044.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 22567072,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00045.o",
+        "object_sha256": "23b9f8ba323a9c01b6c9f858b650f4e21464bbe77d9fd39cc5175f36158feeff",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00045.c",
+        "source_file": "delta-shard-00045.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 22078016,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00046.o",
+        "object_sha256": "b5606bec7866f7d19723884ad800e717b9e190490b82ffe218f22cee9e359e78",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00046.c",
+        "source_file": "delta-shard-00046.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 17246648,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00047.o",
+        "object_sha256": "0acbe05ca24262a1b8281e49b256be114963e37e9f962a78108ca3f7c3ec3edb",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00047.c",
+        "source_file": "delta-shard-00047.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 37002216,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00048.o",
+        "object_sha256": "09fdb856aa5558e31b02cd10177703b9bccb9d832d5b1003af2b0eb5909fe3f8",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00048.c",
+        "source_file": "delta-shard-00048.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 18676016,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00049.o",
+        "object_sha256": "553d00eb76b12c6206ab4bae8979ca3e878a4eee99bbecfddcfe7e61f3bc67a8",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00049.c",
+        "source_file": "delta-shard-00049.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 12126352,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00050.o",
+        "object_sha256": "7c666fcc53a2b4bb313d678070af5f2516c93ee09e26c4ef4e40ff96e135a335",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00050.c",
+        "source_file": "delta-shard-00050.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 11529416,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00051.o",
+        "object_sha256": "2ba28c0d87ff8bc027127e252252006f982369dcdbaefa68e23a573d2241c208",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00051.c",
+        "source_file": "delta-shard-00051.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 9706504,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00052.o",
+        "object_sha256": "20f27ab3d161b9436199e3bb378bb591bdde68f1d174dcd9f8d259923c6d9e8a",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00052.c",
+        "source_file": "delta-shard-00052.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 11509992,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00053.o",
+        "object_sha256": "9f37698a2ed071bea1e1fe1b99f603432e5806d692c62ac478faabe7fa43e538",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00053.c",
+        "source_file": "delta-shard-00053.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 16782488,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00054.o",
+        "object_sha256": "394bdb02192173c613f4d93fdb3c31ccaec997653acf7beb91426dcfdbd33cdb",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00054.c",
+        "source_file": "delta-shard-00054.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 19682688,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00055.o",
+        "object_sha256": "9a9fbb053b23b67c86df79f08366f14eeb51af9bedc82ea0d456c203bc3b9c8d",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00055.c",
+        "source_file": "delta-shard-00055.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 33876272,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00056.o",
+        "object_sha256": "c37abe5acfd6a66d42d921d8a8308504ec87fc0b4635b9b90eb328c5b1bc84db",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00056.c",
+        "source_file": "delta-shard-00056.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 43792928,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00057.o",
+        "object_sha256": "12f984921ec84eeea7458d50566ab8eb6534bf3e4ae50cd3d27b0751d1185ea9",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00057.c",
+        "source_file": "delta-shard-00057.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 32420568,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00058.o",
+        "object_sha256": "b8ff876982314214811b8930ebae5eb1b193cdd6a28be7d1e4482f7579feedea",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00058.c",
+        "source_file": "delta-shard-00058.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 35930992,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00059.o",
+        "object_sha256": "87f460263f964f1e68d122b4010da7311562424d071628c9e3ae9ecde1292159",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00059.c",
+        "source_file": "delta-shard-00059.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 18039728,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00060.o",
+        "object_sha256": "15b2463eb0cae22186ca8e739cce3b19e8eb1b78dd86de5a5dece1995d1202e3",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00060.c",
+        "source_file": "delta-shard-00060.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 18143872,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00061.o",
+        "object_sha256": "36400ee73cf263dcef0336f784881232e64a11c62df15425cb6b3ac0301523d7",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00061.c",
+        "source_file": "delta-shard-00061.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 18131792,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00062.o",
+        "object_sha256": "b4336777c836d1ee6e86470567496276ff6e0d7458defa6dd689b0d9f97ef507",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00062.c",
+        "source_file": "delta-shard-00062.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 27314648,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00063.o",
+        "object_sha256": "7eaa166ada3058fbb8d1c45e73a7b2bd32a03ae0fd0befbb5e722c2acd3d2623",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00063.c",
+        "source_file": "delta-shard-00063.c"
+      },
+      {
+        "functions": 100,
+        "object_bytes": 18571184,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00064.o",
+        "object_sha256": "f01b8cbb5c10fe3b0a961a53db3a1e73abb9323539c8e1d9ec9d18ccd8f848cb",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00064.c",
+        "source_file": "delta-shard-00064.c"
+      },
+      {
+        "functions": 34,
+        "object_bytes": 6975064,
+        "object_file": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00065.o",
+        "object_sha256": "6fe072b0411ee1ed86919f7110cc34a5306d7cb8990291d9fccfc56e7ccff3eb",
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00065.c",
+        "source_file": "delta-shard-00065.c"
+      }
+    ],
+    "source_bytes": 1639300830,
+    "source_sha256": "bb4f10c2d0cf7a137d5169c0c7d42c3b894e41529e415cc873687335c26457b7"
+  },
+  "format": "NFSShift.NativeLinuxPcodeFullLoweringBuild/1",
+  "jobs": 4,
+  "library": {
+    "build_id": "8af5611acf2ad34e25719a849378b79b0627ffeb",
+    "bytes": 1993107952,
+    "exported_pcode_functions": 41538,
+    "format": "ELF64 shared object",
+    "machine": "x86-64",
+    "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/libnfs_shift_pcode_partial.so",
+    "sha256": "ee76608bb8c5b6b4b603a747a73378b9c4fb76e6320d7426d000632939984243"
+  },
+  "limitations": {
+    "behavioral_parity": "not established by full lowering, ELF link, or smoke test",
+    "complete_game": false,
+    "guest_state": "x86-32 represented through RviPcodeContext callbacks",
+    "runtime_startup_and_game_platform_layer": "not implemented by this P-code library"
+  },
+  "link": {
+    "arguments": [
+      "-shared",
+      "-Wl,-z,defs",
+      "-Wl,-soname,libnfs_shift_pcode_partial.so",
+      "-o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/libnfs_shift_pcode_partial.so",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00000.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00001.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00002.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00003.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00004.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00005.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00006.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00007.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00008.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00009.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00010.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00011.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00012.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00013.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00014.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00015.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00016.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00017.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00018.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00019.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00020.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00021.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00022.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00023.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00024.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00025.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00026.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00027.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00028.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00029.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00030.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00031.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00032.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00033.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00034.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00035.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00036.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00037.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00038.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00039.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00040.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00041.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00042.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00043.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00044.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00045.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00046.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00047.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00048.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00049.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00050.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00051.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00052.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00053.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00054.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00055.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00056.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00057.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00058.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00059.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00060.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00061.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00062.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00063.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00064.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00065.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00066.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00067.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00068.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00069.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-shards-20261017/shard-00070.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00000.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00001.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00002.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00003.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00004.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00005.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00006.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00007.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00008.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00009.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00010.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00011.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00012.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00013.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00014.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00015.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00016.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00017.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00018.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00019.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00020.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00021.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00022.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00023.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00024.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00025.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00026.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00027.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00028.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00029.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00030.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00031.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00032.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00033.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00034.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00035.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00036.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00037.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00038.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00039.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00040.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00041.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00042.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00043.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00044.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00045.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00046.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00047.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00048.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00049.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00050.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00051.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00052.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00053.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00054.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00055.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00056.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00057.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00058.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00059.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00060.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00061.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00062.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00063.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00064.o",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/delta-shards/delta-shard-00065.o",
+      "-lm"
+    ],
+    "undefined_references": 0
+  },
+  "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+  "shard_size_limit": 100,
+  "smoke_test": {
+    "call_target": "0x00685700",
+    "eax_after": "0x00020000",
+    "function": "rvi_00401000",
+    "memory_write": "RAM[0x00020000] = 0x00aa99d0",
+    "result": "passed",
+    "runner": "tools/ghidra/smoke_shift_pcode_elf.sh",
+    "stdout": "PASS: rvi_00401000 returned 0, called 0x685700 once, EAX=0x20000, [ESI]=0xaa99d0"
+  },
+  "source": {
+    "address_spaces_sha256": "e922b22ab08ba04109f57197534a2e848b171210a35de795514fe0f3ef8effb0",
+    "corpus_sha256": "bc3f5a5972842f605b0bdd25dbc80b3129b96df30c3584d2dd31222aa5a454bc",
+    "language_id": "x86:LE:32:default",
+    "manifest_sha256": "f3a70bb2e65adafcb72d292e03956a9354e99b9a6b994e2586e91fb14b547074",
+    "program": "SHIFT.exe"
+  }
+}

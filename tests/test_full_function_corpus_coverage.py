@@ -304,12 +304,48 @@ def test_binary80_linux_partial_build_matches_coverage_and_export_evidence() -> 
     assert build["revenginstr_revision"] == "a58d8dcdc6cfa73af360c3f4cb253ad43fe507d7"
     assert build["jobs"] == 4
     assert build["shard_size_limit"] == 100
-    assert "ref: " + build["revenginstr_revision"] in (ROOT / ".github/workflows/ci.yml").read_text()
     assert build["base"]["lowerable_functions"] + build["delta"]["functions"] == 41483
     assert build["delta"]["report_sha256"] == hashlib.sha256(delta_path.read_bytes()).hexdigest()
     assert build["coverage"]["report_sha256"] == hashlib.sha256(coverage_path.read_bytes()).hexdigest()
     assert build["library"]["format"] == "ELF64 shared object"
     assert build["library"]["exported_pcode_functions"] == 41483
+    assert len(build["library"]["sha256"]) == 64
+    assert build["link"]["undefined_references"] == 0
+    assert build["smoke_test"]["result"] == "passed"
+    assert build["limitations"]["complete_game"] is False
+
+
+def test_full_lowering_linux_build_matches_frozen_coverage_and_current_dependency() -> None:
+    coverage_path = ROOT / "evidence/pcode_native_lowering_coverage_full_20261018.json"
+    delta_path = ROOT / "evidence/pcode_full_lowering_delta_20261018.json"
+    build_path = ROOT / "evidence/pcode_full_lowering_linux_build_20261018.json"
+    coverage = json.loads(coverage_path.read_text())
+    delta = json.loads(delta_path.read_text())
+    build = json.loads(build_path.read_text())
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text()
+    assert coverage["functions"] == {
+        "records": 41538, "found": 41538, "missing": 0, "fully_lowerable": 41538, "rejected": 0,
+    }
+    assert coverage["instructions"] == {
+        "total": 2088152, "in_fully_lowerable_functions": 2088152,
+    }
+    assert coverage["pcode_operations"]["in_fully_lowerable_functions"] == 9600713
+    assert delta["format"] == "NFSShift.PcodeLoweringSupplementalShard/1"
+    assert delta["base_lowerable_functions"] == 35004
+    assert delta["added_functions"] == 6534
+    assert delta["remaining_rejected_functions"] == 0
+    assert delta["rejection_reasons"] == []
+    assert delta["source"] == coverage["source"] == build["source"]
+    assert build["format"] == "NFSShift.NativeLinuxPcodeFullLoweringBuild/1"
+    assert build["revenginstr_revision"] == "08a31b94c304f8b7a57996974dafe352413f7924"
+    assert "ref: " + build["revenginstr_revision"] in workflow
+    assert build["coverage"]["lowerable_functions"] == build["coverage"]["corpus_functions"] == 41538
+    assert build["coverage"]["rejected_functions"] == 0
+    assert build["delta"]["functions"] == 6534
+    assert build["delta"]["report_sha256"] == hashlib.sha256(delta_path.read_bytes()).hexdigest()
+    assert build["coverage"]["report_sha256"] == hashlib.sha256(coverage_path.read_bytes()).hexdigest()
+    assert build["library"]["format"] == "ELF64 shared object"
+    assert build["library"]["exported_pcode_functions"] == 41538
     assert len(build["library"]["sha256"]) == 64
     assert build["link"]["undefined_references"] == 0
     assert build["smoke_test"]["result"] == "passed"
