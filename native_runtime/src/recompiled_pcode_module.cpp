@@ -524,6 +524,41 @@ struct RecompiledPcodeModule::Impl {
     explicit Impl(const std::string& path) {
         static_assert(sizeof(size_t) >= sizeof(uint64_t),
                       "the guest RAM reservation requires a 64-bit host");
+        if (const char* provenance =
+                std::getenv("SHIFT_TRACE_GUEST_PROVENANCE");
+            provenance && *provenance && std::strcmp(provenance, "0") != 0) {
+            guest_write_provenance_enabled_flag = true;
+            guest_write_provenance_all_flag =
+                std::strcmp(provenance, "1") == 0 ||
+                std::strcmp(provenance, "all") == 0;
+            if (!guest_write_provenance_all_flag) {
+                std::string text(provenance);
+                size_t offset = 0;
+                while (offset < text.size()) {
+                    const size_t separator =
+                        text.find_first_of(",;", offset);
+                    const size_t end =
+                        separator == std::string::npos
+                            ? text.size()
+                            : separator;
+                    const std::string token =
+                        text.substr(offset, end - offset);
+                    if (!token.empty()) {
+                        char* parse_end = nullptr;
+                        errno = 0;
+                        const unsigned long long value =
+                            std::strtoull(token.c_str(), &parse_end, 0);
+                        if (errno == 0 && parse_end &&
+                            *parse_end == '\0' && value <= UINT32_MAX) {
+                            guest_write_provenance_targets_cache.push_back(
+                                static_cast<uint32_t>(value));
+                        }
+                    }
+                    if (separator == std::string::npos) break;
+                    offset = separator + 1;
+                }
+            }
+        }
         std::error_code cwd_error;
         const std::filesystem::path host_current_directory =
             std::filesystem::current_path(cwd_error);
@@ -1421,43 +1456,15 @@ struct RecompiledPcodeModule::Impl {
     }
 
     bool guest_write_provenance_enabled() const {
-        const char* config = std::getenv("SHIFT_TRACE_GUEST_PROVENANCE");
-        return config && *config && std::strcmp(config, "0") != 0;
+        return guest_write_provenance_enabled_flag;
     }
 
     bool guest_write_provenance_all() const {
-        const char* config = std::getenv("SHIFT_TRACE_GUEST_PROVENANCE");
-        if (!config || !*config) return false;
-        return std::strcmp(config, "1") == 0 ||
-               std::strcmp(config, "all") == 0;
+        return guest_write_provenance_all_flag;
     }
 
-    std::vector<uint32_t> guest_write_provenance_targets() const {
-        std::vector<uint32_t> targets;
-        const char* config = std::getenv("SHIFT_TRACE_GUEST_PROVENANCE");
-        if (!config || !*config || guest_write_provenance_all()) return targets;
-
-        std::string text(config);
-        size_t offset = 0;
-        while (offset < text.size()) {
-            const size_t separator = text.find_first_of(",;", offset);
-            const size_t end =
-                separator == std::string::npos ? text.size() : separator;
-            const std::string token = text.substr(offset, end - offset);
-            if (!token.empty()) {
-                char* parse_end = nullptr;
-                errno = 0;
-                const unsigned long long value =
-                    std::strtoull(token.c_str(), &parse_end, 0);
-                if (errno == 0 && parse_end &&
-                    *parse_end == '\0' && value <= UINT32_MAX) {
-                    targets.push_back(static_cast<uint32_t>(value));
-                }
-            }
-            if (separator == std::string::npos) break;
-            offset = separator + 1;
-        }
-        return targets;
+    const std::vector<uint32_t>& guest_write_provenance_targets() const {
+        return guest_write_provenance_targets_cache;
     }
 
     void record_guest_write_provenance(uint64_t offset, size_t size) {
@@ -6773,6 +6780,9 @@ struct RecompiledPcodeModule::Impl {
     std::vector<void*> override_modules;
     std::unordered_map<uint32_t, std::string> import_traps;
     std::unordered_map<uint32_t, uint32_t> import_id_traps;
+    bool guest_write_provenance_enabled_flag = false;
+    bool guest_write_provenance_all_flag = false;
+    std::vector<uint32_t> guest_write_provenance_targets_cache;
     std::unordered_map<uint32_t, GuestWriteProvenance> guest_last_writers;
     std::unordered_map<std::string, uint32_t> guest_module_handles;
     std::unordered_map<uint32_t, std::string> guest_module_names;
