@@ -46,9 +46,35 @@ fixture so it does not need the multi-gigabyte game library.
 
 This is an execution bridge into the existing Vulkan frame loop, not a complete
 game boot path. It maps PE32 sections and import slots at the preferred base,
-and currently implements only the first startup import observed in the
-hash-locked retail image, `KERNEL32.dll!GetSystemTimeAsFileTime`. Other Win32
-and DirectX services, process initialization, and behavioral parity remain
+and implements the observed Kernel32 startup services exercised by the
+retail entry-point probe. `--recompiled-entrypoint` can invoke the loaded PE
+entry point once before the frame loop with a synthetic stack. `GetStartupInfoA`
+receives an empty startup structure;
+the guest heap currently supports `GetProcessHeap`, `HeapCreate`, `HeapAlloc`,
+and `HeapFree`; `GetModuleHandleA` resolves the main image and imported modules;
+`GetModuleFileNameA` returns the path used to load the PE image;
+`GetProcAddress` resolves the imports it implements; TLS slots are scoped to
+the single guest thread.
+`GetVersionExA` reports a Windows XP SP3 compatibility profile. Performance
+counters use the host monotonic clock with nanosecond frequency.
+`GetStdHandle` returns synthetic guest handles; host standard streams are not
+connected; `GetFileType` classifies these guest handles as character devices.
+`SetHandleCount` returns its requested count and does not change host limits.
+`GetCommandLineA` exposes the static guest string `SHIFT.exe` without arguments.
+The ANSI and UTF-16 environment blocks are empty.
+`MultiByteToWideChar` and `WideCharToMultiByte` convert Windows-1252 text.
+`GetLastError` and `SetLastError` keep a single guest-thread value.
+`GetACP` reports Windows-1252 for the compatibility profile.
+`IsValidCodePage` accepts only Windows-1252.
+`GetCPInfo` returns single-byte Windows-1252 metadata.
+`GetStringTypeW` provides restricted CTYPE1 classification for the supported
+Windows-1252/Latin-1 range.
+`LCMapStringW` maps Windows-1252 uppercase and lowercase characters.
+The x86 critical-section API family maintains recursion for the single guest
+thread; cross-thread locking remains unsupported. `InterlockedIncrement` and
+`InterlockedDecrement` update a guest word for this single-thread execution model.
+Other Win32 and
+DirectX services, process initialization, and behavioral parity remain
 unimplemented; unsupported imports stop with an explicit diagnostic. The
 current scope and entry-point probe are recorded in
 [`docs/RECOMPILED_PCODE_VULKAN_PE32_LOADER.md`](../docs/RECOMPILED_PCODE_VULKAN_PE32_LOADER.md).

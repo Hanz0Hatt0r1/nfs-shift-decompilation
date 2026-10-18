@@ -29,6 +29,7 @@ public:
 
     int call(uint32_t guest_address);
     Pe32ImageInfo load_pe32_image(const std::string& path);
+    int call_pe32_entry_point();
     uint64_t dispatched_function_count() const;
     const std::string& last_error() const;
 

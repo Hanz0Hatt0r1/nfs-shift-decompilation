@@ -1756,6 +1756,7 @@ jobs:
             --pe-image native_runtime/build/recompiled_pcode_test_image.exe \
             --recompiled-module native_runtime/build/libshift_runtime_test_pcode_module.so \
             --recompiled-step 0x00404000 \
+            --recompiled-entrypoint \
             --frames 3 --validation \
             | tee out/vulkan/runtime/scene_set.json
       - name: Assert neutral scene-set runtime output
@@ -1773,13 +1774,14 @@ jobs:
           grep -q '"recompiled_pe_image_base": "0x00400000"' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pe_image_size": 12288' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pe_entry_point": "0x00401010"' out/vulkan/runtime/scene_set.json
+          grep -q '"recompiled_pe_entry_point_invocations": 1' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pe_section_count": 2' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pe_import_module_count": 1' out/vulkan/runtime/scene_set.json
-          grep -q '"recompiled_pe_import_function_count": 3' out/vulkan/runtime/scene_set.json
+          grep -q '"recompiled_pe_import_function_count": 46' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pe_import_stub_base": "0xf0000000"' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pcode_step_address": "0x00404000"' out/vulkan/runtime/scene_set.json
           grep -q '"recompiled_pcode_step_invocations": 3' out/vulkan/runtime/scene_set.json
-          grep -q '"recompiled_pcode_functions_dispatched": 6' out/vulkan/runtime/scene_set.json
+          grep -q '"recompiled_pcode_functions_dispatched": 7' out/vulkan/runtime/scene_set.json
           grep -q '"camera_snapshot_count": 3' out/vulkan/runtime/scene_set.json
           grep -q '"camera_native_updates": 3' out/vulkan/runtime/scene_set.json
           grep -q '"camera_active_buffer": 1' out/vulkan/runtime/scene_set.json

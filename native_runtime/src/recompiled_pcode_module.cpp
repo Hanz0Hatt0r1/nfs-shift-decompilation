@@ -3,10 +3,13 @@
 
 #include <dlfcn.h>
 #include <sys/mman.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -14,13 +17,14 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace shift::runtime {
 namespace {
 
 constexpr uint64_t kGuestRamSize = UINT64_C(1) << 32;
-constexpr size_t kRegisterBankSize = 0x1000;
+constexpr size_t kRegisterBankSize = 0x2000;
 constexpr size_t kMaximumPcodeValueSize = 16;
 constexpr uint32_t kMaximumCallDepth = 256;
 constexpr uint16_t kPeI386 = 0x014c;
@@ -31,13 +35,38 @@ constexpr size_t kPeImportDescriptorSize = 20;
 constexpr size_t kCopyChunkSize = 64 * 1024;
 constexpr uint32_t kImportStubPreferredBase = 0xf0000000;
 constexpr uint32_t kImportStubStride = 0x10;
+constexpr uint32_t kGuestProcessHeapHandle = 0x00010000;
+constexpr uint32_t kGuestStdInputHandle = 0x00020000;
+constexpr uint32_t kGuestStdOutputHandle = 0x00020004;
+constexpr uint32_t kGuestStdErrorHandle = 0x00020008;
+constexpr uint32_t kGuestCommandLineAddress = 0x00031000;
+constexpr uint32_t kGuestEnvironmentAnsiAddress = 0x00031010;
+constexpr uint32_t kGuestEnvironmentWideAddress = 0x00031020;
+constexpr uint32_t kGuestHeapStartAddress = 0x10000000;
+constexpr uint32_t kGuestModuleHandleBase = 0xe0000000;
+constexpr uint32_t kGuestModuleHandleStride = 0x10;
+constexpr uint32_t kGuestDynamicImportStubBase = 0xd0000000;
+constexpr uint32_t kMaximumGuestTlsSlots = 1088;
+constexpr size_t kMaximumWin32TextUnits = 1024 * 1024;
+constexpr size_t kOsVersionInfoABytes = 148;
+constexpr size_t kOsVersionInfoExABytes = 156;
 constexpr uint64_t kWindowsFileTimeUnixEpoch = UINT64_C(116444736000000000);
 constexpr uint64_t kWindowsFileTimeTicksPerSecond = UINT64_C(10000000);
+constexpr uint64_t kWindowsPerformanceCounterFrequency = UINT64_C(1000000000);
+constexpr uint32_t kWindowsAnsiCodePage = 1252;
+constexpr uint64_t kX86EaxRegisterOffset = 0;
 constexpr uint64_t kX86EspRegisterOffset = 0x10;
+constexpr uint64_t kX86EbpRegisterOffset = 0x14;
+constexpr uint32_t kGuestInitialStackPointer = 0x7ffdf000;
 constexpr size_t kMaximumImportDescriptors = 4096;
 constexpr size_t kMaximumImportThunksPerModule = 65536;
 constexpr size_t kMaximumImportFunctions = 65536;
 constexpr size_t kMaximumImportNameSize = 512;
+constexpr std::array<uint16_t, 32> kWindows1252HighCharacters = {
+    0x20ac, 0x0081, 0x201a, 0x0192, 0x201e, 0x2026, 0x2020, 0x2021,
+    0x02c6, 0x2030, 0x0160, 0x2039, 0x0152, 0x008d, 0x017d, 0x008f,
+    0x0090, 0x2018, 0x2019, 0x201c, 0x201d, 0x2022, 0x2013, 0x2014,
+    0x02dc, 0x2122, 0x0161, 0x203a, 0x0153, 0x009d, 0x017e, 0x0178};
 
 using PcodeFunction = int (*)(RviPcodeContext*);
 
@@ -149,6 +178,97 @@ std::string read_import_name(std::ifstream& file, uint64_t file_size,
         "invalid PE32 image: import name is not terminated");
 }
 
+std::string lowercase_ascii(std::string value) {
+    std::transform(value.begin(), value.end(), value.begin(),
+                   [](unsigned char byte) {
+                       return static_cast<char>(std::tolower(byte));
+                   });
+    return value;
+}
+
+uint16_t decode_windows_1252(uint8_t byte) {
+    if (byte < 0x80 || byte >= 0xa0) return byte;
+    return kWindows1252HighCharacters[byte - 0x80];
+}
+
+bool encode_windows_1252(uint16_t character, uint8_t& byte) {
+    if (character < 0x80 || (character >= 0xa0 && character <= 0xff)) {
+        byte = static_cast<uint8_t>(character);
+        return true;
+    }
+    const auto found = std::find(kWindows1252HighCharacters.begin(),
+                                 kWindows1252HighCharacters.end(), character);
+    if (found == kWindows1252HighCharacters.end()) return false;
+    byte = static_cast<uint8_t>(0x80 +
+                                (found - kWindows1252HighCharacters.begin()));
+    return true;
+}
+
+uint16_t classify_windows_ctype1(uint16_t character) {
+    constexpr uint16_t upper = 0x0001;
+    constexpr uint16_t lower = 0x0002;
+    constexpr uint16_t digit = 0x0004;
+    constexpr uint16_t space = 0x0008;
+    constexpr uint16_t punctuation = 0x0010;
+    constexpr uint16_t control = 0x0020;
+    constexpr uint16_t blank = 0x0040;
+    constexpr uint16_t hex_digit = 0x0080;
+    constexpr uint16_t alpha = 0x0100;
+    if (character < 0x20 || character == 0x7f) return control;
+    if (character == 0x20 || character == 0xa0) return space | blank;
+    if (character == '\t') return control | space | blank;
+    if (character == '\n' || character == '\v' || character == '\f' ||
+        character == '\r') {
+        return control | space;
+    }
+    if (character >= '0' && character <= '9')
+        return digit | hex_digit;
+    if ((character >= 'A' && character <= 'Z') || character == 0x0160 ||
+        character == 0x0152 || character == 0x017d || character == 0x0178 ||
+        (character >= 0x00c0 && character <= 0x00d6) ||
+        (character >= 0x00d8 && character <= 0x00de)) {
+        return upper | alpha |
+               ((character >= 'A' && character <= 'F') ? hex_digit : 0);
+    }
+    if ((character >= 'a' && character <= 'z') || character == 0x0192 ||
+        character == 0x0161 || character == 0x0153 || character == 0x017e ||
+        character == 0x00df || character == 0x00ff ||
+        character == 0x00aa || character == 0x00ba ||
+        (character >= 0x00e0 && character <= 0x00f6) ||
+        (character >= 0x00f8 && character <= 0x00fe)) {
+        return lower | alpha |
+               ((character >= 'a' && character <= 'f') ? hex_digit : 0);
+    }
+    return punctuation;
+}
+
+uint16_t map_windows_1252_case(uint16_t character, bool to_lower) {
+    if (to_lower) {
+        if (character >= 'A' && character <= 'Z')
+            return static_cast<uint16_t>(character + 0x20);
+        if ((character >= 0x00c0 && character <= 0x00d6) ||
+            (character >= 0x00d8 && character <= 0x00de)) {
+            return static_cast<uint16_t>(character + 0x20);
+        }
+        if (character == 0x0160) return 0x0161;
+        if (character == 0x0152) return 0x0153;
+        if (character == 0x017d) return 0x017e;
+        if (character == 0x0178) return 0x00ff;
+        return character;
+    }
+    if (character >= 'a' && character <= 'z')
+        return static_cast<uint16_t>(character - 0x20);
+    if ((character >= 0x00e0 && character <= 0x00f6) ||
+        (character >= 0x00f8 && character <= 0x00fe)) {
+        return static_cast<uint16_t>(character - 0x20);
+    }
+    if (character == 0x0161) return 0x0160;
+    if (character == 0x0153) return 0x0152;
+    if (character == 0x017e) return 0x017d;
+    if (character == 0x00ff) return 0x0178;
+    return character;
+}
+
 uint32_t choose_import_stub_base(uint32_t image_base, uint32_t image_size,
                                  size_t unique_import_count) {
     if (unique_import_count == 0) return 0;
@@ -171,9 +291,44 @@ uint32_t choose_import_stub_base(uint32_t image_base, uint32_t image_size,
     return static_cast<uint32_t>(candidate);
 }
 
+uint32_t choose_guest_module_handle_base(uint32_t image_base,
+                                         uint32_t image_size,
+                                         uint32_t import_stub_base,
+                                         size_t import_count,
+                                         size_t module_count) {
+    if (module_count == 0) return 0;
+    const uint64_t span = static_cast<uint64_t>(module_count) *
+                          kGuestModuleHandleStride;
+    const uint64_t image_end = static_cast<uint64_t>(image_base) + image_size;
+    const uint64_t import_end = static_cast<uint64_t>(import_stub_base) +
+                                import_count * kImportStubStride;
+    for (uint64_t candidate = kGuestModuleHandleBase;
+         candidate >= 0x20000000; candidate -= 0x10000000) {
+        const uint64_t end = candidate + span;
+        if (end > kGuestRamSize ||
+            (candidate < image_end && image_base < end) ||
+            (candidate < import_end && import_stub_base < end)) {
+            continue;
+        }
+        return static_cast<uint32_t>(candidate);
+    }
+    throw std::runtime_error(
+        "invalid PE32 image: no address range is available for module handles");
+}
+
 }  // namespace
 
 struct RecompiledPcodeModule::Impl {
+    struct GuestHeapBlock {
+        uint32_t address = 0;
+        size_t size = 0;
+        uint32_t heap = 0;
+    };
+    struct GuestCriticalSection {
+        uint32_t recursion_count = 0;
+        uint32_t spin_count = 0;
+    };
+
     explicit Impl(const std::string& path) {
         static_assert(sizeof(size_t) >= sizeof(uint64_t),
                       "the guest RAM reservation requires a 64-bit host");
@@ -261,19 +416,147 @@ struct RecompiledPcodeModule::Impl {
         const auto imported = import_traps.find(
             static_cast<uint32_t>(target));
         if (imported != import_traps.end()) {
-            if (imported->second ==
-                "KERNEL32.dll!GetSystemTimeAsFileTime") {
+            const auto& name = imported->second;
+            if (name == "KERNEL32.dll!GetSystemTimeAsFileTime")
                 return get_system_time_as_file_time();
+            if (name == "KERNEL32.dll!GetCurrentProcessId")
+                return get_current_process_id();
+            if (name == "KERNEL32.dll!GetCurrentThreadId")
+                return get_current_thread_id();
+            if (name == "KERNEL32.dll!GetTickCount")
+                return get_tick_count();
+            if (name == "KERNEL32.dll!QueryPerformanceCounter")
+                return query_performance_counter();
+            if (name == "KERNEL32.dll!QueryPerformanceFrequency")
+                return query_performance_frequency();
+            if (name == "KERNEL32.dll!GetStartupInfoA")
+                return get_startup_info_a();
+            if (name == "KERNEL32.dll!GetProcessHeap")
+                return get_process_heap();
+            if (name == "KERNEL32.dll!HeapCreate")
+                return heap_create();
+            if (name == "KERNEL32.dll!HeapAlloc")
+                return heap_alloc();
+            if (name == "KERNEL32.dll!HeapFree")
+                return heap_free();
+            if (name == "KERNEL32.dll!GetVersionExA")
+                return get_version_ex_a();
+            if (name == "KERNEL32.dll!GetModuleHandleA")
+                return get_module_handle_a();
+            if (name == "KERNEL32.dll!GetModuleFileNameA")
+                return get_module_file_name_a();
+            if (name == "KERNEL32.dll!GetProcAddress")
+                return get_proc_address();
+            if (name == "KERNEL32.dll!TlsAlloc") return tls_alloc();
+            if (name == "KERNEL32.dll!TlsGetValue") return tls_get_value();
+            if (name == "KERNEL32.dll!TlsSetValue") return tls_set_value();
+            if (name == "KERNEL32.dll!TlsFree") return tls_free();
+            if (name ==
+                "KERNEL32.dll!InitializeCriticalSectionAndSpinCount") {
+                return initialize_critical_section_and_spin_count();
             }
+            if (name == "KERNEL32.dll!InterlockedIncrement")
+                return interlocked_increment();
+            if (name == "KERNEL32.dll!InterlockedDecrement")
+                return interlocked_decrement();
+            if (name == "KERNEL32.dll!EnterCriticalSection")
+                return enter_critical_section(false);
+            if (name == "KERNEL32.dll!TryEnterCriticalSection")
+                return enter_critical_section(true);
+            if (name == "KERNEL32.dll!LeaveCriticalSection")
+                return leave_critical_section();
+            if (name == "KERNEL32.dll!DeleteCriticalSection")
+                return delete_critical_section();
+            if (name == "KERNEL32.dll!InitializeCriticalSection")
+                return initialize_critical_section();
+            if (name == "KERNEL32.dll!SetCriticalSectionSpinCount")
+                return set_critical_section_spin_count();
+            if (name == "KERNEL32.dll!GetStdHandle")
+                return get_std_handle();
+            if (name == "KERNEL32.dll!GetFileType")
+                return get_file_type();
+            if (name == "KERNEL32.dll!SetHandleCount")
+                return set_handle_count();
+            if (name == "KERNEL32.dll!GetCommandLineA")
+                return get_command_line_a();
+            if (name == "KERNEL32.dll!GetEnvironmentStringsW")
+                return get_environment_strings(true);
+            if (name == "KERNEL32.dll!GetEnvironmentStringsA" ||
+                name == "KERNEL32.dll!GetEnvironmentStrings")
+                return get_environment_strings(false);
+            if (name == "KERNEL32.dll!FreeEnvironmentStringsW")
+                return free_environment_strings(true);
+            if (name == "KERNEL32.dll!FreeEnvironmentStringsA" ||
+                name == "KERNEL32.dll!FreeEnvironmentStrings")
+                return free_environment_strings(false);
+            if (name == "KERNEL32.dll!WideCharToMultiByte")
+                return wide_char_to_multi_byte();
+            if (name == "KERNEL32.dll!MultiByteToWideChar")
+                return multi_byte_to_wide_char();
+            if (name == "KERNEL32.dll!LCMapStringW")
+                return locale_map_string_w();
+            if (name == "KERNEL32.dll!GetLastError")
+                return get_last_error();
+            if (name == "KERNEL32.dll!SetLastError")
+                return set_last_error();
+            if (name == "KERNEL32.dll!GetACP")
+                return get_ansi_code_page();
+            if (name == "KERNEL32.dll!IsValidCodePage")
+                return is_valid_code_page();
+            if (name == "KERNEL32.dll!GetCPInfo")
+                return get_code_page_info();
+            if (name == "KERNEL32.dll!GetStringTypeW")
+                return get_string_type_w();
             error = "unimplemented PE import " + imported->second;
+            if (!active_guest_functions.empty()) {
+                char address[48]{};
+                std::snprintf(address, sizeof(address),
+                              " called from 0x%08x",
+                              active_guest_functions.back());
+                error += address;
+            }
+            uint32_t esp = 0;
+            if (read_guest_u32("register", kX86EspRegisterOffset, esp)) {
+                error += " args=[";
+                for (uint32_t index = 0; index < 6; ++index) {
+                    uint32_t argument = 0;
+                    if (!read_guest_u32("ram",
+                                        static_cast<uint64_t>(esp) + 4 +
+                                            index * sizeof(uint32_t),
+                                        argument)) {
+                        break;
+                    }
+                    char value[16]{};
+                    std::snprintf(value, sizeof(value), "%s0x%08x",
+                                  index == 0 ? "" : ",", argument);
+                    error += value;
+                }
+                error += "]";
+            }
             return -1;
         }
         const auto function = resolve(static_cast<uint32_t>(target));
-        if (!function) return -1;
+        if (!function) {
+            const std::string unresolved_error = error;
+            error.clear();
+            int thunk_result = -1;
+            if (dispatch_tls_alloc_wrapper(static_cast<uint32_t>(target),
+                                           thunk_result)) {
+                if (thunk_result == 0)
+                    error.clear();
+                else if (error.empty())
+                    error = unresolved_error;
+                return thunk_result;
+            }
+            error = unresolved_error;
+            return -1;
+        }
 
         ++call_depth;
         ++function_count;
+        active_guest_functions.push_back(static_cast<uint32_t>(target));
         const int result = function(&context);
+        active_guest_functions.pop_back();
         --call_depth;
         if (result != 0 && error.empty()) {
             char message[96]{};
@@ -285,65 +568,1464 @@ struct RecompiledPcodeModule::Impl {
         return result;
     }
 
-    int get_system_time_as_file_time() {
+    bool dispatch_tls_alloc_wrapper(uint32_t address, int& result) {
+        if (pe_image_size == 0 || address < pe_image_base ||
+            static_cast<uint64_t>(address) + 9 >
+                static_cast<uint64_t>(pe_image_base) + pe_image_size) {
+            return false;
+        }
+        std::array<uint8_t, 9> code{};
+        if (!read_guest("ram", address, code.size(), code.data())) return false;
+        if (code[0] != 0xff || code[1] != 0x15 || code[6] != 0xc2 ||
+            code[7] != 0x04 || code[8] != 0x00) {
+            return false;
+        }
+        const uint32_t iat_address =
+            static_cast<uint32_t>(code[2]) |
+            (static_cast<uint32_t>(code[3]) << 8) |
+            (static_cast<uint32_t>(code[4]) << 16) |
+            (static_cast<uint32_t>(code[5]) << 24);
+        uint32_t import_stub = 0;
+        if (!read_guest_u32("ram", iat_address, import_stub)) return false;
+        const auto imported = import_traps.find(import_stub);
+        if (imported == import_traps.end() ||
+            imported->second != "KERNEL32.dll!TlsAlloc") {
+            return false;
+        }
+        uint32_t original_esp = 0;
+        if (!read_guest_u32("register", kX86EspRegisterOffset, original_esp)) {
+            result = -1;
+            return true;
+        }
+        if (original_esp < sizeof(uint32_t)) {
+            error = "KERNEL32.dll!TlsAlloc wrapper has an invalid ESP";
+            result = -1;
+            return true;
+        }
+        const uint32_t nested_esp = original_esp - sizeof(uint32_t);
+        if (!write_guest_u32("ram", nested_esp, address + 6) ||
+            !write_guest_u32("register", kX86EspRegisterOffset,
+                             nested_esp)) {
+            result = -1;
+            return true;
+        }
+        result = dispatch(import_stub);
+        if (result == 0) {
+            if (!write_guest_u32("register", kX86EspRegisterOffset,
+                                 original_esp + 8)) {
+                result = -1;
+                return true;
+            }
+        } else {
+            (void)write_guest_u32("register", kX86EspRegisterOffset,
+                                  original_esp);
+        }
+        return true;
+    }
+
+    bool read_guest_u32(const char* space, uint64_t offset, uint32_t& value) {
         std::array<uint8_t, 4> bytes{};
-        if (!read_guest("register", kX86EspRegisterOffset,
-                        bytes.size(), bytes.data())) {
-            error = "KERNEL32.dll!GetSystemTimeAsFileTime cannot read ESP";
+        if (!read_guest(space, offset, bytes.size(), bytes.data())) return false;
+        value = static_cast<uint32_t>(bytes[0]) |
+                (static_cast<uint32_t>(bytes[1]) << 8) |
+                (static_cast<uint32_t>(bytes[2]) << 16) |
+                (static_cast<uint32_t>(bytes[3]) << 24);
+        return true;
+    }
+
+    bool write_guest_u32(const char* space, uint64_t offset, uint32_t value) {
+        const std::array<uint8_t, 4> bytes = {
+            static_cast<uint8_t>(value), static_cast<uint8_t>(value >> 8),
+            static_cast<uint8_t>(value >> 16),
+            static_cast<uint8_t>(value >> 24)};
+        return write_guest(space, offset, bytes.size(), bytes.data());
+    }
+
+    bool write_guest_u64(const char* space, uint64_t offset, uint64_t value) {
+        std::array<uint8_t, 8> bytes{};
+        for (size_t index = 0; index < bytes.size(); ++index)
+            bytes[index] = static_cast<uint8_t>(value >> (index * 8));
+        return write_guest(space, offset, bytes.size(), bytes.data());
+    }
+
+    bool read_stack_argument(uint32_t index, uint32_t& value,
+                             const char* api) {
+        uint32_t esp = 0;
+        if (!read_guest_u32("register", kX86EspRegisterOffset, esp)) {
+            error = std::string(api) + " cannot read ESP";
+            return false;
+        }
+        if (!read_guest_u32("ram", static_cast<uint64_t>(esp) + 4 +
+                                       static_cast<uint64_t>(index) * 4,
+                            value)) {
+            error = std::string(api) + " has an invalid stack argument";
+            return false;
+        }
+        return true;
+    }
+
+    bool finish_stdcall(uint32_t argument_bytes, const char* api) {
+        uint32_t esp = 0;
+        if (!read_guest_u32("register", kX86EspRegisterOffset, esp)) {
+            error = std::string(api) + " cannot read ESP";
+            return false;
+        }
+        if (!write_guest_u32("register", kX86EspRegisterOffset,
+                             esp + 4 + argument_bytes)) {
+            error = std::string(api) + " cannot restore ESP";
+            return false;
+        }
+        return true;
+    }
+
+    bool valid_guest_pointer(uint32_t address, size_t size) const {
+        return address != 0 && static_cast<uint64_t>(address) + size <=
+                                    kGuestRamSize;
+    }
+
+    bool read_guest_bytes(uint32_t address, uint8_t* output, size_t size,
+                          const char* api) {
+        if (!output || !valid_guest_pointer(address, size)) {
+            error = std::string(api) + " has an invalid input pointer";
+            return false;
+        }
+        for (size_t offset = 0; offset < size;
+             offset += kMaximumPcodeValueSize) {
+            const size_t chunk = std::min(kMaximumPcodeValueSize,
+                                          size - offset);
+            if (!read_guest("ram", static_cast<uint64_t>(address) + offset,
+                            chunk, output + offset)) {
+                error = std::string(api) + " cannot read its input";
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool write_guest_bytes(uint32_t address, const uint8_t* input,
+                           size_t size, const char* api) {
+        if (!input || !valid_guest_pointer(address, size)) {
+            error = std::string(api) + " has an invalid output pointer";
+            return false;
+        }
+        for (size_t offset = 0; offset < size;
+             offset += kMaximumPcodeValueSize) {
+            const size_t chunk = std::min(kMaximumPcodeValueSize,
+                                          size - offset);
+            if (!write_guest("ram", static_cast<uint64_t>(address) + offset,
+                             chunk, input + offset)) {
+                error = std::string(api) + " cannot write its output";
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool is_supported_kernel32_api(const std::string& name) const {
+        static const std::unordered_set<std::string> supported = {
+            "GetCurrentProcessId", "GetCurrentThreadId", "GetTickCount",
+            "GetSystemTimeAsFileTime", "QueryPerformanceCounter",
+            "QueryPerformanceFrequency", "GetStartupInfoA", "GetProcessHeap",
+            "HeapCreate", "HeapAlloc", "HeapFree", "GetVersionExA",
+            "GetModuleHandleA", "GetModuleFileNameA", "GetProcAddress",
+            "TlsAlloc", "TlsGetValue",
+            "TlsSetValue", "TlsFree",
+            "InitializeCriticalSectionAndSpinCount", "InterlockedIncrement",
+            "InterlockedDecrement",
+            "EnterCriticalSection", "TryEnterCriticalSection",
+            "LeaveCriticalSection", "DeleteCriticalSection",
+            "InitializeCriticalSection", "SetCriticalSectionSpinCount",
+            "GetStdHandle", "GetFileType", "SetHandleCount",
+            "GetCommandLineA", "GetEnvironmentStrings",
+            "GetEnvironmentStringsA", "GetEnvironmentStringsW",
+            "FreeEnvironmentStrings", "FreeEnvironmentStringsA",
+            "FreeEnvironmentStringsW", "WideCharToMultiByte", "GetLastError",
+            "SetLastError", "GetACP", "IsValidCodePage", "GetCPInfo",
+            "GetStringTypeW", "MultiByteToWideChar", "LCMapStringW"};
+        return supported.find(name) != supported.end();
+    }
+
+    bool allocate_dynamic_import_stub(const std::string& name,
+                                      uint32_t& address) {
+        uint64_t candidate = next_dynamic_import_stub_address;
+        while (candidate >= 0x10000 &&
+               candidate + kImportStubStride <= kGuestRamSize) {
+            bool available = true;
+            if (pe_image_size != 0) {
+                const uint64_t image_end =
+                    static_cast<uint64_t>(pe_image_base) + pe_image_size;
+                if (candidate < image_end && pe_image_base <
+                                                 candidate + kImportStubStride)
+                    available = false;
+            }
+            if (available) {
+                for (const auto& trap : import_traps) {
+                    const uint64_t trap_begin = trap.first;
+                    const uint64_t trap_end = trap_begin + kImportStubStride;
+                    if (candidate < trap_end && trap_begin <
+                                                   candidate + kImportStubStride) {
+                        available = false;
+                        break;
+                    }
+                }
+            }
+            if (available) {
+                for (const auto& module : guest_module_handles) {
+                    if (candidate <= module.second &&
+                        module.second < candidate + kImportStubStride) {
+                        available = false;
+                        break;
+                    }
+                }
+            }
+            if (available) {
+                address = static_cast<uint32_t>(candidate);
+                next_dynamic_import_stub_address = candidate -
+                                                   kImportStubStride;
+                import_traps.emplace(address, name);
+                return true;
+            }
+            candidate -= kImportStubStride;
+        }
+        return false;
+    }
+
+    bool read_guest_ascii(uint32_t address, std::string& value,
+                          const char* api) {
+        value.clear();
+        for (size_t index = 0; index < kMaximumImportNameSize; ++index) {
+            uint8_t byte = 0;
+            if (!read_guest("ram", static_cast<uint64_t>(address) + index,
+                            sizeof(byte), &byte)) {
+                error = std::string(api) + " received an invalid string pointer";
+                return false;
+            }
+            if (byte == 0) return true;
+            if (byte < 0x20 || byte > 0x7e) {
+                error = std::string(api) + " received a non-ASCII string";
+                return false;
+            }
+            value.push_back(static_cast<char>(byte));
+        }
+        error = std::string(api) + " received an unterminated string";
+        return false;
+    }
+
+    int return_kernel32_dword(uint32_t value, const char* api,
+                              uint32_t argument_bytes = 0) {
+        if (!write_guest_u32("register", kX86EaxRegisterOffset, value)) {
+            error = std::string(api) + " cannot write EAX";
             return -1;
         }
-        const uint32_t esp = static_cast<uint32_t>(bytes[0]) |
-            (static_cast<uint32_t>(bytes[1]) << 8) |
-            (static_cast<uint32_t>(bytes[2]) << 16) |
-            (static_cast<uint32_t>(bytes[3]) << 24);
-        const uint64_t argument_address = static_cast<uint64_t>(esp) + 4;
-        if (!read_guest("ram", argument_address, bytes.size(), bytes.data())) {
-            error = "KERNEL32.dll!GetSystemTimeAsFileTime has an invalid stack argument";
+        return finish_stdcall(argument_bytes, api) ? 0 : -1;
+    }
+
+    int get_current_process_id() {
+        return return_kernel32_dword(static_cast<uint32_t>(getpid()),
+                                     "KERNEL32.dll!GetCurrentProcessId");
+    }
+
+    int get_process_heap() {
+        return return_kernel32_dword(kGuestProcessHeapHandle,
+                                     "KERNEL32.dll!GetProcessHeap");
+    }
+
+    int get_module_handle_a() {
+        constexpr const char* api = "KERNEL32.dll!GetModuleHandleA";
+        uint32_t name_address = 0;
+        if (!read_stack_argument(0, name_address, api)) return -1;
+        uint32_t handle = pe_image_base;
+        if (name_address != 0) {
+            std::string module_name;
+            if (!read_guest_ascii(name_address, module_name, api)) return -1;
+            const auto module = guest_module_handles.find(
+                lowercase_ascii(std::move(module_name)));
+            handle = module == guest_module_handles.end() ? 0 : module->second;
+        }
+        if (!write_guest_u32("register", kX86EaxRegisterOffset, handle)) {
+            error = std::string(api) + " cannot write EAX";
             return -1;
         }
-        const uint32_t output_address = static_cast<uint32_t>(bytes[0]) |
-            (static_cast<uint32_t>(bytes[1]) << 8) |
-            (static_cast<uint32_t>(bytes[2]) << 16) |
-            (static_cast<uint32_t>(bytes[3]) << 24);
-        if (output_address == 0 ||
-            static_cast<uint64_t>(output_address) + sizeof(uint64_t) >
-                kGuestRamSize) {
-            error = "KERNEL32.dll!GetSystemTimeAsFileTime has an invalid output pointer";
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int get_module_file_name_a() {
+        constexpr const char* api = "KERNEL32.dll!GetModuleFileNameA";
+        uint32_t module_handle = 0;
+        uint32_t output_address = 0;
+        uint32_t output_size = 0;
+        if (!read_stack_argument(0, module_handle, api) ||
+            !read_stack_argument(1, output_address, api) ||
+            !read_stack_argument(2, output_size, api)) {
+            return -1;
+        }
+        if (module_handle != 0 && module_handle != pe_image_base) {
+            guest_last_error = 126;
+            return return_kernel32_dword(0, api, 12) ? 0 : -1;
+        }
+        if (output_size == 0) return return_kernel32_dword(0, api, 12);
+
+        const size_t copied_size = std::min<size_t>(
+            pe_image_file_name.size(), output_size);
+        if (copied_size != 0 &&
+            !write_guest_bytes(output_address,
+                               reinterpret_cast<const uint8_t*>(
+                                   pe_image_file_name.data()),
+                               copied_size, api)) {
+            return -1;
+        }
+        if (pe_image_file_name.size() < output_size) {
+            const uint8_t terminator = 0;
+            if (!write_guest_bytes(output_address + copied_size, &terminator,
+                                   sizeof(terminator), api)) {
+                return -1;
+            }
+        }
+        return return_kernel32_dword(static_cast<uint32_t>(copied_size), api,
+                                     12);
+    }
+
+    int get_proc_address() {
+        constexpr const char* api = "KERNEL32.dll!GetProcAddress";
+        uint32_t module_handle = 0;
+        uint32_t procedure = 0;
+        if (!read_stack_argument(0, module_handle, api) ||
+            !read_stack_argument(1, procedure, api)) {
+            return -1;
+        }
+        uint32_t procedure_address = 0;
+        const auto module = guest_module_names.find(module_handle);
+        if (module != guest_module_names.end()) {
+            std::string symbol;
+            if (procedure <= 0xffff) {
+                symbol = "#" + std::to_string(procedure);
+            } else if (!read_guest_ascii(procedure, symbol, api)) {
+                return -1;
+            }
+            for (const auto& trap : import_traps) {
+                const size_t separator = trap.second.find('!');
+                if (separator == std::string::npos) continue;
+                if (lowercase_ascii(trap.second.substr(0, separator)) ==
+                        module->second &&
+                    trap.second.substr(separator + 1) == symbol) {
+                    procedure_address = trap.first;
+                    break;
+                }
+            }
+            if (procedure_address == 0 &&
+                module->second == "kernel32.dll" &&
+                is_supported_kernel32_api(symbol)) {
+                const std::string imported_name =
+                    "KERNEL32.dll!" + symbol;
+                if (!allocate_dynamic_import_stub(imported_name,
+                                                  procedure_address)) {
+                    error = std::string(api) +
+                            " has no address range for a dynamic import trap";
+                    return -1;
+                }
+            }
+        }
+        if (!write_guest_u32("register", kX86EaxRegisterOffset,
+                             procedure_address)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(8, api) ? 0 : -1;
+    }
+
+    int tls_alloc() {
+        constexpr const char* api = "KERNEL32.dll!TlsAlloc";
+        uint32_t index = UINT32_MAX;
+        if (!free_tls_indices.empty()) {
+            index = free_tls_indices.back();
+            free_tls_indices.pop_back();
+        } else if (next_tls_index < kMaximumGuestTlsSlots) {
+            index = next_tls_index++;
+        }
+        if (index != UINT32_MAX) allocated_tls_indices.emplace(index);
+        return return_kernel32_dword(index, api);
+    }
+
+    int tls_get_value() {
+        constexpr const char* api = "KERNEL32.dll!TlsGetValue";
+        uint32_t index = 0;
+        if (!read_stack_argument(0, index, api)) return -1;
+        const auto value = allocated_tls_indices.find(index) ==
+                                   allocated_tls_indices.end()
+                               ? tls_values.end()
+                               : tls_values.find(index);
+        return return_kernel32_dword(
+            value == tls_values.end() ? 0 : value->second, api, 4);
+    }
+
+    int tls_set_value() {
+        constexpr const char* api = "KERNEL32.dll!TlsSetValue";
+        uint32_t index = 0;
+        uint32_t value = 0;
+        if (!read_stack_argument(0, index, api) ||
+            !read_stack_argument(1, value, api)) {
+            return -1;
+        }
+        const bool allocated = allocated_tls_indices.find(index) !=
+                               allocated_tls_indices.end();
+        if (allocated) {
+            if (value != 0)
+                tls_values[index] = value;
+            else
+                tls_values.erase(index);
+        }
+        if (!write_guest_u32("register", kX86EaxRegisterOffset,
+                             allocated ? 1 : 0)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(8, api) ? 0 : -1;
+    }
+
+    int tls_free() {
+        constexpr const char* api = "KERNEL32.dll!TlsFree";
+        uint32_t index = 0;
+        if (!read_stack_argument(0, index, api)) return -1;
+        const auto allocated = allocated_tls_indices.find(index);
+        const bool success = allocated != allocated_tls_indices.end();
+        if (success) {
+            allocated_tls_indices.erase(allocated);
+            tls_values.erase(index);
+            free_tls_indices.push_back(index);
+        }
+        if (!write_guest_u32("register", kX86EaxRegisterOffset,
+                             success ? 1 : 0)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    bool write_critical_section(uint32_t address,
+                                const GuestCriticalSection& section,
+                                const char* api) {
+        const long host_thread_id = syscall(SYS_gettid);
+        if (host_thread_id < 0) {
+            error = std::string(api) + " could not identify the guest thread";
+            return false;
+        }
+        const uint32_t fields[] = {
+            0,
+            section.recursion_count == 0
+                ? UINT32_MAX : section.recursion_count - 1,
+            section.recursion_count,
+            section.recursion_count == 0
+                ? 0 : static_cast<uint32_t>(host_thread_id),
+            0,
+            section.spin_count};
+        for (size_t index = 0; index < std::size(fields); ++index) {
+            if (!write_guest_u32("ram", static_cast<uint64_t>(address) +
+                                            index * 4,
+                                 fields[index])) {
+                error = std::string(api) + " cannot write CRITICAL_SECTION";
+                return false;
+            }
+        }
+        return true;
+    }
+
+    int initialize_critical_section_and_spin_count() {
+        constexpr const char* api =
+            "KERNEL32.dll!InitializeCriticalSectionAndSpinCount";
+        uint32_t address = 0;
+        uint32_t spin_count = 0;
+        if (!read_stack_argument(0, address, api) ||
+            !read_stack_argument(1, spin_count, api)) {
+            return -1;
+        }
+        if (!valid_guest_pointer(address, 24)) {
+            error = std::string(api) + " has an invalid output pointer";
+            return -1;
+        }
+        GuestCriticalSection section;
+        section.spin_count = spin_count;
+        if (!write_critical_section(address, section, api)) return -1;
+        critical_sections[address] = section;
+        if (!write_guest_u32("register", kX86EaxRegisterOffset, 1)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(8, api) ? 0 : -1;
+    }
+
+    int interlocked_increment() {
+        constexpr const char* api = "KERNEL32.dll!InterlockedIncrement";
+        uint32_t address = 0;
+        if (!read_stack_argument(0, address, api)) return -1;
+        if (!valid_guest_pointer(address, sizeof(uint32_t))) {
+            error = std::string(api) + " has an invalid operand pointer";
+            return -1;
+        }
+        uint32_t value = 0;
+        if (!read_guest_u32("ram", address, value)) {
+            error = std::string(api) + " cannot read its operand";
+            return -1;
+        }
+        ++value;
+        if (!write_guest_u32("ram", address, value) ||
+            !write_guest_u32("register", kX86EaxRegisterOffset, value)) {
+            error = std::string(api) + " cannot write its result";
+            return -1;
+        }
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int interlocked_decrement() {
+        constexpr const char* api = "KERNEL32.dll!InterlockedDecrement";
+        uint32_t address = 0;
+        if (!read_stack_argument(0, address, api)) return -1;
+        if (!valid_guest_pointer(address, sizeof(uint32_t))) {
+            error = std::string(api) + " has an invalid operand pointer";
+            return -1;
+        }
+        uint32_t value = 0;
+        if (!read_guest_u32("ram", address, value)) {
+            error = std::string(api) + " cannot read its operand";
+            return -1;
+        }
+        --value;
+        if (!write_guest_u32("ram", address, value) ||
+            !write_guest_u32("register", kX86EaxRegisterOffset, value)) {
+            error = std::string(api) + " cannot write its result";
+            return -1;
+        }
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int initialize_critical_section() {
+        constexpr const char* api = "KERNEL32.dll!InitializeCriticalSection";
+        uint32_t address = 0;
+        if (!read_stack_argument(0, address, api)) return -1;
+        if (!valid_guest_pointer(address, 24)) {
+            error = std::string(api) + " has an invalid output pointer";
+            return -1;
+        }
+        const GuestCriticalSection section{};
+        if (!write_critical_section(address, section, api)) return -1;
+        critical_sections[address] = section;
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int enter_critical_section(bool try_only) {
+        const char* api = try_only
+            ? "KERNEL32.dll!TryEnterCriticalSection"
+            : "KERNEL32.dll!EnterCriticalSection";
+        uint32_t address = 0;
+        if (!read_stack_argument(0, address, api)) return -1;
+        const auto found = critical_sections.find(address);
+        if (found == critical_sections.end()) {
+            error = std::string(api) + " received an uninitialized object";
+            return -1;
+        }
+        if (found->second.recursion_count == UINT32_MAX) {
+            error = std::string(api) + " recursion count overflowed";
+            return -1;
+        }
+        ++found->second.recursion_count;
+        if (!write_critical_section(address, found->second, api)) return -1;
+        if (try_only &&
+            !write_guest_u32("register", kX86EaxRegisterOffset, 1)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int leave_critical_section() {
+        constexpr const char* api = "KERNEL32.dll!LeaveCriticalSection";
+        uint32_t address = 0;
+        if (!read_stack_argument(0, address, api)) return -1;
+        const auto found = critical_sections.find(address);
+        if (found == critical_sections.end() ||
+            found->second.recursion_count == 0) {
+            error = std::string(api) + " received an unowned object";
+            return -1;
+        }
+        --found->second.recursion_count;
+        return write_critical_section(address, found->second, api) &&
+                       finish_stdcall(4, api)
+                   ? 0 : -1;
+    }
+
+    int delete_critical_section() {
+        constexpr const char* api = "KERNEL32.dll!DeleteCriticalSection";
+        uint32_t address = 0;
+        if (!read_stack_argument(0, address, api)) return -1;
+        const auto found = critical_sections.find(address);
+        if (found == critical_sections.end()) {
+            error = std::string(api) + " received an uninitialized object";
+            return -1;
+        }
+        critical_sections.erase(found);
+        std::array<uint8_t, 24> zeroes{};
+        for (size_t offset = 0; offset < zeroes.size();
+             offset += kMaximumPcodeValueSize) {
+            const size_t size = std::min(kMaximumPcodeValueSize,
+                                         zeroes.size() - offset);
+            if (!write_guest("ram", static_cast<uint64_t>(address) + offset,
+                             size, zeroes.data() + offset)) {
+                error = std::string(api) + " cannot clear CRITICAL_SECTION";
+                return -1;
+            }
+        }
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int set_critical_section_spin_count() {
+        constexpr const char* api = "KERNEL32.dll!SetCriticalSectionSpinCount";
+        uint32_t address = 0;
+        uint32_t spin_count = 0;
+        if (!read_stack_argument(0, address, api) ||
+            !read_stack_argument(1, spin_count, api)) {
+            return -1;
+        }
+        const auto found = critical_sections.find(address);
+        if (found == critical_sections.end()) {
+            error = std::string(api) + " received an uninitialized object";
+            return -1;
+        }
+        const uint32_t previous_spin_count = found->second.spin_count;
+        found->second.spin_count = spin_count;
+        if (!write_critical_section(address, found->second, api) ||
+            !write_guest_u32("register", kX86EaxRegisterOffset,
+                             previous_spin_count)) {
+            error = std::string(api) + " cannot write its result";
+            return -1;
+        }
+        return finish_stdcall(8, api) ? 0 : -1;
+    }
+
+    int get_std_handle() {
+        constexpr const char* api = "KERNEL32.dll!GetStdHandle";
+        uint32_t standard_stream = 0;
+        if (!read_stack_argument(0, standard_stream, api)) return -1;
+        uint32_t handle = 0;
+        if (standard_stream == static_cast<uint32_t>(-10))
+            handle = kGuestStdInputHandle;
+        else if (standard_stream == static_cast<uint32_t>(-11))
+            handle = kGuestStdOutputHandle;
+        else if (standard_stream == static_cast<uint32_t>(-12))
+            handle = kGuestStdErrorHandle;
+        if (!write_guest_u32("register", kX86EaxRegisterOffset, handle)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int get_file_type() {
+        constexpr const char* api = "KERNEL32.dll!GetFileType";
+        uint32_t handle = 0;
+        if (!read_stack_argument(0, handle, api)) return -1;
+        uint32_t type = 0;
+        if (handle == kGuestStdInputHandle ||
+            handle == kGuestStdOutputHandle ||
+            handle == kGuestStdErrorHandle) {
+            type = 2;  // FILE_TYPE_CHAR for the synthetic console streams.
+        }
+        if (!write_guest_u32("register", kX86EaxRegisterOffset, type)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int set_handle_count() {
+        constexpr const char* api = "KERNEL32.dll!SetHandleCount";
+        uint32_t count = 0;
+        if (!read_stack_argument(0, count, api)) return -1;
+        if (!write_guest_u32("register", kX86EaxRegisterOffset, count)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int get_command_line_a() {
+        constexpr const char* api = "KERNEL32.dll!GetCommandLineA";
+        static constexpr char command_line[] = "SHIFT.exe";
+        if (!command_line_initialized) {
+            if (!write_guest("ram", kGuestCommandLineAddress,
+                             sizeof(command_line),
+                             reinterpret_cast<const uint8_t*>(command_line))) {
+                error = std::string(api) + " cannot initialize command line";
+                return -1;
+            }
+            command_line_initialized = true;
+        }
+        if (!write_guest_u32("register", kX86EaxRegisterOffset,
+                             kGuestCommandLineAddress)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(0, api) ? 0 : -1;
+    }
+
+    int get_environment_strings(bool wide) {
+        const char* api = wide ? "KERNEL32.dll!GetEnvironmentStringsW"
+                               : "KERNEL32.dll!GetEnvironmentStringsA";
+        const uint32_t address = wide ? kGuestEnvironmentWideAddress
+                                      : kGuestEnvironmentAnsiAddress;
+        if (!environment_initialized) {
+            constexpr std::array<uint8_t, 2> empty_ansi = {0, 0};
+            constexpr std::array<uint8_t, 4> empty_wide = {0, 0, 0, 0};
+            if (!write_guest("ram", kGuestEnvironmentAnsiAddress,
+                             empty_ansi.size(), empty_ansi.data()) ||
+                !write_guest("ram", kGuestEnvironmentWideAddress,
+                             empty_wide.size(), empty_wide.data())) {
+                error = std::string(api) + " cannot initialize environment block";
+                return -1;
+            }
+            environment_initialized = true;
+        }
+        if (!write_guest_u32("register", kX86EaxRegisterOffset, address)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(0, api) ? 0 : -1;
+    }
+
+    int free_environment_strings(bool wide) {
+        const char* api = wide ? "KERNEL32.dll!FreeEnvironmentStringsW"
+                               : "KERNEL32.dll!FreeEnvironmentStringsA";
+        uint32_t address = 0;
+        if (!read_stack_argument(0, address, api)) return -1;
+        const uint32_t expected = wide ? kGuestEnvironmentWideAddress
+                                       : kGuestEnvironmentAnsiAddress;
+        if (!write_guest_u32("register", kX86EaxRegisterOffset,
+                             address == expected ? 1 : 0)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int multi_byte_to_wide_char() {
+        constexpr const char* api = "KERNEL32.dll!MultiByteToWideChar";
+        std::array<uint32_t, 6> arguments{};
+        for (uint32_t index = 0; index < arguments.size(); ++index) {
+            if (!read_stack_argument(index, arguments[index], api)) return -1;
+        }
+        const uint32_t code_page = arguments[0];
+        const uint32_t flags = arguments[1];
+        const uint32_t source = arguments[2];
+        const uint32_t source_count = arguments[3];
+        const uint32_t destination = arguments[4];
+        const uint32_t destination_count = arguments[5];
+        if ((code_page != 0 && code_page != kWindowsAnsiCodePage) ||
+            (flags != 0 && flags != 1) || source == 0) {
+            error = std::string(api) +
+                    " only supports the configured Windows-1252 profile";
             return -1;
         }
 
+        std::vector<uint8_t> input;
+        if (source_count == UINT32_MAX) {
+            input.reserve(256);
+            for (size_t index = 0; index < kMaximumWin32TextUnits; ++index) {
+                uint8_t byte = 0;
+                if (!read_guest("ram", static_cast<uint64_t>(source) + index,
+                                1, &byte)) {
+                    error = std::string(api) + " has an invalid input string";
+                    return -1;
+                }
+                input.push_back(byte);
+                if (byte == 0) break;
+            }
+            if (input.empty() || input.back() != 0) {
+                error = std::string(api) + " input string is not terminated";
+                return -1;
+            }
+        } else {
+            if (source_count == 0 ||
+                source_count > kMaximumWin32TextUnits) {
+                error = std::string(api) + " has an unsupported input length";
+                return -1;
+            }
+            input.resize(source_count);
+            if (!read_guest_bytes(source, input.data(), input.size(), api))
+                return -1;
+        }
+
+        const size_t output_count = input.size();
+        if (destination == 0 && destination_count != 0) {
+            error = std::string(api) + " has an invalid output buffer";
+            return -1;
+        }
+        if (destination != 0 && destination_count != 0) {
+            if (destination_count < output_count) {
+                guest_last_error = 122;
+                if (!write_guest_u32("register", kX86EaxRegisterOffset, 0)) {
+                    error = std::string(api) + " cannot write EAX";
+                    return -1;
+                }
+                return finish_stdcall(24, api) ? 0 : -1;
+            }
+            std::vector<uint8_t> output(output_count * sizeof(uint16_t));
+            for (size_t index = 0; index < input.size(); ++index) {
+                const uint16_t character = decode_windows_1252(input[index]);
+                output[index * 2] = static_cast<uint8_t>(character);
+                output[index * 2 + 1] = static_cast<uint8_t>(character >> 8);
+            }
+            if (!write_guest_bytes(destination, output.data(), output.size(),
+                                   api)) {
+                return -1;
+            }
+        }
+        if (!write_guest_u32("register", kX86EaxRegisterOffset,
+                             static_cast<uint32_t>(output_count))) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(24, api) ? 0 : -1;
+    }
+
+    int wide_char_to_multi_byte() {
+        constexpr const char* api = "KERNEL32.dll!WideCharToMultiByte";
+        std::array<uint32_t, 8> arguments{};
+        for (uint32_t index = 0; index < arguments.size(); ++index) {
+            if (!read_stack_argument(index, arguments[index], api)) return -1;
+        }
+        const uint32_t code_page = arguments[0];
+        const uint32_t flags = arguments[1];
+        const uint32_t source = arguments[2];
+        const uint32_t source_count = arguments[3];
+        const uint32_t destination = arguments[4];
+        const uint32_t destination_size = arguments[5];
+        if ((code_page != 0 && code_page != kWindowsAnsiCodePage) ||
+            flags != 0 || source == 0) {
+            error = std::string(api) +
+                    " only supports the configured Windows-1252 profile";
+            return -1;
+        }
+
+        std::vector<uint8_t> input;
+        if (source_count == UINT32_MAX) {
+            input.reserve(256);
+            for (size_t index = 0; index < kMaximumWin32TextUnits; ++index) {
+                std::array<uint8_t, 2> character{};
+                if (!read_guest("ram", static_cast<uint64_t>(source) +
+                                           index * character.size(),
+                                character.size(), character.data())) {
+                    error = std::string(api) + " has an invalid input string";
+                    return -1;
+                }
+                input.insert(input.end(), character.begin(), character.end());
+                if (character == std::array<uint8_t, 2>{0, 0}) break;
+            }
+            if (input.empty() || input[input.size() - 1] != 0 ||
+                input[input.size() - 2] != 0) {
+                error = std::string(api) + " input string is not terminated";
+                return -1;
+            }
+        } else {
+            if (source_count == 0 ||
+                source_count > kMaximumWin32TextUnits) {
+                error = std::string(api) + " has an unsupported input length";
+                return -1;
+            }
+            input.resize(static_cast<size_t>(source_count) * 2);
+            if (!read_guest_bytes(source, input.data(), input.size(), api))
+                return -1;
+        }
+
+        uint8_t default_character = '?';
+        if (arguments[6] != 0 &&
+            !read_guest("ram", arguments[6], 1, &default_character)) {
+            error = std::string(api) + " has an invalid default character";
+            return -1;
+        }
+        std::vector<uint8_t> output;
+        output.reserve(input.size() / 2);
+        bool used_default = false;
+        for (size_t index = 0; index + 1 < input.size(); index += 2) {
+            const uint16_t character = static_cast<uint16_t>(input[index]) |
+                (static_cast<uint16_t>(input[index + 1]) << 8);
+            uint8_t byte = 0;
+            if (!encode_windows_1252(character, byte)) {
+                byte = default_character;
+                used_default = true;
+                if (character >= 0xd800 && character <= 0xdbff &&
+                    index + 3 < input.size()) {
+                    const uint16_t next =
+                        static_cast<uint16_t>(input[index + 2]) |
+                        (static_cast<uint16_t>(input[index + 3]) << 8);
+                    if (next >= 0xdc00 && next <= 0xdfff) index += 2;
+                }
+            }
+            output.push_back(byte);
+        }
+
+        if (destination == 0 && destination_size != 0) {
+            error = std::string(api) + " has an invalid output buffer";
+            return -1;
+        }
+        if (destination != 0 && destination_size != 0) {
+            if (destination_size < output.size()) {
+                guest_last_error = 122;
+                if (!write_guest_u32("register", kX86EaxRegisterOffset, 0)) {
+                    error = std::string(api) + " cannot write EAX";
+                    return -1;
+                }
+                return finish_stdcall(32, api) ? 0 : -1;
+            }
+            if (!write_guest_bytes(destination, output.data(), output.size(),
+                                   api)) {
+                return -1;
+            }
+            if (arguments[7] != 0 &&
+                !write_guest_u32("ram", arguments[7],
+                                 used_default ? 1 : 0)) {
+                error = std::string(api) + " has an invalid used-default pointer";
+                return -1;
+            }
+        }
+        if (!write_guest_u32("register", kX86EaxRegisterOffset,
+                             static_cast<uint32_t>(output.size()))) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(32, api) ? 0 : -1;
+    }
+
+    int get_last_error() {
+        constexpr const char* api = "KERNEL32.dll!GetLastError";
+        if (!write_guest_u32("register", kX86EaxRegisterOffset,
+                             guest_last_error)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(0, api) ? 0 : -1;
+    }
+
+    int set_last_error() {
+        constexpr const char* api = "KERNEL32.dll!SetLastError";
+        if (!read_stack_argument(0, guest_last_error, api)) return -1;
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int get_ansi_code_page() {
+        return return_kernel32_dword(kWindowsAnsiCodePage,
+                                     "KERNEL32.dll!GetACP");
+    }
+
+    int is_valid_code_page() {
+        constexpr const char* api = "KERNEL32.dll!IsValidCodePage";
+        uint32_t code_page = 0;
+        if (!read_stack_argument(0, code_page, api)) return -1;
+        if (!write_guest_u32("register", kX86EaxRegisterOffset,
+                             code_page == kWindowsAnsiCodePage ? 1 : 0)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int get_code_page_info() {
+        constexpr const char* api = "KERNEL32.dll!GetCPInfo";
+        uint32_t code_page = 0;
+        uint32_t output_address = 0;
+        if (!read_stack_argument(0, code_page, api) ||
+            !read_stack_argument(1, output_address, api)) {
+            return -1;
+        }
+        if (code_page == kWindowsAnsiCodePage &&
+            !valid_guest_pointer(output_address, 20)) {
+            error = std::string(api) + " has an invalid CPINFO pointer";
+            return -1;
+        }
+        if (code_page != kWindowsAnsiCodePage) {
+            if (!write_guest_u32("register", kX86EaxRegisterOffset, 0)) {
+                error = std::string(api) + " cannot write EAX";
+                return -1;
+            }
+            return finish_stdcall(8, api) ? 0 : -1;
+        }
+        std::array<uint8_t, 20> info{};
+        info[0] = 1;
+        info[4] = '?';
+        for (size_t offset = 0; offset < info.size();
+             offset += kMaximumPcodeValueSize) {
+            const size_t size = std::min(kMaximumPcodeValueSize,
+                                         info.size() - offset);
+            if (!write_guest("ram", static_cast<uint64_t>(output_address) +
+                                        offset,
+                             size, info.data() + offset)) {
+                error = std::string(api) + " cannot write CPINFO";
+                return -1;
+            }
+        }
+        if (!write_guest_u32("register", kX86EaxRegisterOffset, 1)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(8, api) ? 0 : -1;
+    }
+
+    int get_string_type_w() {
+        constexpr const char* api = "KERNEL32.dll!GetStringTypeW";
+        uint32_t info_type = 0;
+        uint32_t source = 0;
+        uint32_t character_count = 0;
+        uint32_t output_address = 0;
+        if (!read_stack_argument(0, info_type, api) ||
+            !read_stack_argument(1, source, api) ||
+            !read_stack_argument(2, character_count, api) ||
+            !read_stack_argument(3, output_address, api)) {
+            return -1;
+        }
+        if (info_type != 1 || source == 0 || output_address == 0) {
+            error = std::string(api) +
+                    " only supports CT_CTYPE1 with guest buffers";
+            return -1;
+        }
+        std::vector<uint8_t> input;
+        if (character_count == UINT32_MAX) {
+            input.reserve(64);
+            for (size_t index = 0; index < kMaximumWin32TextUnits; ++index) {
+                std::array<uint8_t, 2> character{};
+                if (!read_guest("ram", static_cast<uint64_t>(source) +
+                                           index * character.size(),
+                                character.size(), character.data())) {
+                    error = std::string(api) + " has an invalid input string";
+                    return -1;
+                }
+                input.insert(input.end(), character.begin(), character.end());
+                if (character == std::array<uint8_t, 2>{0, 0}) break;
+            }
+            if (input.empty() || input[input.size() - 1] != 0 ||
+                input[input.size() - 2] != 0) {
+                error = std::string(api) + " input string is not terminated";
+                return -1;
+            }
+        } else {
+            if (character_count == 0 ||
+                character_count > kMaximumWin32TextUnits) {
+                error = std::string(api) + " has an unsupported input length";
+                return -1;
+            }
+            input.resize(static_cast<size_t>(character_count) * 2);
+            if (!read_guest_bytes(source, input.data(), input.size(), api))
+                return -1;
+        }
+        std::vector<uint8_t> output(input.size());
+        for (size_t index = 0; index + 1 < input.size(); index += 2) {
+            const uint16_t character = static_cast<uint16_t>(input[index]) |
+                (static_cast<uint16_t>(input[index + 1]) << 8);
+            const uint16_t type = classify_windows_ctype1(character);
+            output[index] = static_cast<uint8_t>(type);
+            output[index + 1] = static_cast<uint8_t>(type >> 8);
+        }
+        if (!write_guest_bytes(output_address, output.data(), output.size(),
+                               api) ||
+            !write_guest_u32("register", kX86EaxRegisterOffset, 1)) {
+            if (error.empty()) error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(16, api) ? 0 : -1;
+    }
+
+    int locale_map_string_w() {
+        constexpr const char* api = "KERNEL32.dll!LCMapStringW";
+        std::array<uint32_t, 6> arguments{};
+        for (uint32_t index = 0; index < arguments.size(); ++index) {
+            if (!read_stack_argument(index, arguments[index], api)) return -1;
+        }
+        const uint32_t locale = arguments[0];
+        const uint32_t map_flags = arguments[1];
+        const uint32_t source = arguments[2];
+        const uint32_t source_count = arguments[3];
+        const uint32_t destination = arguments[4];
+        const uint32_t destination_count = arguments[5];
+        if ((locale != 0 && locale != 0x007f && locale != 0x0409) ||
+            (map_flags != 0x100 && map_flags != 0x200) || source == 0) {
+            error = std::string(api) +
+                    " only supports Windows-1252 lowercase and uppercase mapping";
+            return -1;
+        }
+
+        std::vector<uint8_t> input;
+        if (source_count == UINT32_MAX) {
+            input.reserve(64);
+            for (size_t index = 0; index < kMaximumWin32TextUnits; ++index) {
+                std::array<uint8_t, 2> character{};
+                if (!read_guest("ram", static_cast<uint64_t>(source) +
+                                           index * character.size(),
+                                character.size(), character.data())) {
+                    error = std::string(api) + " has an invalid input string";
+                    return -1;
+                }
+                input.insert(input.end(), character.begin(), character.end());
+                if (character == std::array<uint8_t, 2>{0, 0}) break;
+            }
+            if (input.empty() || input[input.size() - 1] != 0 ||
+                input[input.size() - 2] != 0) {
+                error = std::string(api) + " input string is not terminated";
+                return -1;
+            }
+        } else {
+            if (source_count == 0 ||
+                source_count > kMaximumWin32TextUnits) {
+                error = std::string(api) + " has an unsupported input length";
+                return -1;
+            }
+            input.resize(static_cast<size_t>(source_count) * 2);
+            if (!read_guest_bytes(source, input.data(), input.size(), api))
+                return -1;
+        }
+
+        std::vector<uint8_t> output(input.size());
+        for (size_t index = 0; index + 1 < input.size(); index += 2) {
+            const uint16_t character = static_cast<uint16_t>(input[index]) |
+                (static_cast<uint16_t>(input[index + 1]) << 8);
+            const uint16_t mapped = map_windows_1252_case(
+                character, map_flags == 0x100);
+            output[index] = static_cast<uint8_t>(mapped);
+            output[index + 1] = static_cast<uint8_t>(mapped >> 8);
+        }
+
+        if (destination == 0 && destination_count != 0) {
+            error = std::string(api) + " has an invalid output buffer";
+            return -1;
+        }
+        if (destination != 0 && destination_count != 0) {
+            if (destination_count < output.size() / 2) {
+                guest_last_error = 122;
+                if (!write_guest_u32("register", kX86EaxRegisterOffset, 0)) {
+                    error = std::string(api) + " cannot write EAX";
+                    return -1;
+                }
+                return finish_stdcall(24, api) ? 0 : -1;
+            }
+            if (!write_guest_bytes(destination, output.data(), output.size(),
+                                   api)) {
+                return -1;
+            }
+        }
+        if (!write_guest_u32("register", kX86EaxRegisterOffset,
+                             static_cast<uint32_t>(output.size() / 2))) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(24, api) ? 0 : -1;
+    }
+
+    int heap_create() {
+        constexpr const char* api = "KERNEL32.dll!HeapCreate";
+        uint32_t flags = 0;
+        uint32_t initial_size = 0;
+        uint32_t maximum_size = 0;
+        if (!read_stack_argument(0, flags, api) ||
+            !read_stack_argument(1, initial_size, api) ||
+            !read_stack_argument(2, maximum_size, api)) {
+            return -1;
+        }
+        if ((flags & ~UINT32_C(0x00040005)) != 0 ||
+            (maximum_size != 0 && initial_size > maximum_size)) {
+            error = std::string(api) + " received unsupported options or sizes";
+            return -1;
+        }
+        if (next_guest_heap_handle >
+            std::numeric_limits<uint32_t>::max() - sizeof(uint32_t)) {
+            error = std::string(api) + " exhausted guest heap handles";
+            return -1;
+        }
+        const uint32_t heap = static_cast<uint32_t>(next_guest_heap_handle);
+        next_guest_heap_handle += sizeof(uint32_t);
+        guest_heap_handles.emplace(heap);
+        if (!write_guest_u32("register", kX86EaxRegisterOffset, heap)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(12, api) ? 0 : -1;
+    }
+
+    bool allocate_guest_heap(uint32_t heap, size_t requested_size,
+                             uint32_t& address) {
+        const uint64_t minimum_size = std::max<size_t>(requested_size, 1);
+        const uint64_t allocation_size = (minimum_size + 15) & ~UINT64_C(15);
+        for (auto free_block = free_heap_blocks.begin();
+             free_block != free_heap_blocks.end(); ++free_block) {
+            if (free_block->heap != heap ||
+                free_block->size < allocation_size) continue;
+            const uint32_t block_address = free_block->address;
+            const size_t block_size = free_block->size;
+            free_heap_blocks.erase(free_block);
+            if (block_size > allocation_size) {
+                free_heap_blocks.push_back({
+                    static_cast<uint32_t>(block_address + allocation_size),
+                    block_size - static_cast<size_t>(allocation_size), heap});
+            }
+            address = block_address;
+            heap_allocations.emplace(address, GuestHeapBlock{
+                address, static_cast<size_t>(allocation_size), heap});
+            return true;
+        }
+        uint64_t candidate =
+            (static_cast<uint64_t>(guest_heap_next_address) + 15) &
+            ~UINT64_C(15);
+        while (candidate + allocation_size <= kGuestRamSize) {
+            if (pe_image_size != 0) {
+                const uint64_t image_begin = pe_image_base;
+                const uint64_t image_end = image_begin + pe_image_size;
+                if (candidate < image_end && image_begin <
+                                                 candidate + allocation_size) {
+                    candidate = (image_end + 15) & ~UINT64_C(15);
+                    continue;
+                }
+            }
+            bool moved_past_import_stub = false;
+            for (const auto& trap : import_traps) {
+                const uint64_t trap_begin = trap.first;
+                const uint64_t trap_end = trap_begin + kImportStubStride;
+                if (candidate < trap_end && trap_begin <
+                                                candidate + allocation_size) {
+                    candidate = (trap_end + 15) & ~UINT64_C(15);
+                    moved_past_import_stub = true;
+                    break;
+                }
+            }
+            if (moved_past_import_stub) continue;
+            address = static_cast<uint32_t>(candidate);
+            guest_heap_next_address = candidate + allocation_size;
+            heap_allocations.emplace(address, GuestHeapBlock{
+                address, static_cast<size_t>(allocation_size), heap});
+            return true;
+        }
+        return false;
+    }
+
+    int heap_alloc() {
+        constexpr const char* api = "KERNEL32.dll!HeapAlloc";
+        uint32_t heap = 0;
+        uint32_t flags = 0;
+        uint32_t size = 0;
+        if (!read_stack_argument(0, heap, api) ||
+            !read_stack_argument(1, flags, api) ||
+            !read_stack_argument(2, size, api)) {
+            return -1;
+        }
+        if (guest_heap_handles.find(heap) == guest_heap_handles.end()) {
+            error = std::string(api) + " received an unknown guest heap handle";
+            return -1;
+        }
+        if ((flags & ~UINT32_C(0x0d)) != 0) {
+            error = std::string(api) + " received unsupported flags";
+            return -1;
+        }
+        uint32_t address = 0;
+        if (!allocate_guest_heap(heap, size, address)) {
+            if (!write_guest_u32("register", kX86EaxRegisterOffset, 0)) {
+                error = std::string(api) + " cannot write EAX";
+                return -1;
+            }
+            return finish_stdcall(12, api) ? 0 : -1;
+        }
+        if ((flags & 0x8) != 0 && size != 0)
+            std::memset(static_cast<uint8_t*>(ram) + address, 0, size);
+        if (!write_guest_u32("register", kX86EaxRegisterOffset, address)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(12, api) ? 0 : -1;
+    }
+
+    int heap_free() {
+        constexpr const char* api = "KERNEL32.dll!HeapFree";
+        uint32_t heap = 0;
+        uint32_t flags = 0;
+        uint32_t address = 0;
+        if (!read_stack_argument(0, heap, api) ||
+            !read_stack_argument(1, flags, api) ||
+            !read_stack_argument(2, address, api)) {
+            return -1;
+        }
+        if (guest_heap_handles.find(heap) == guest_heap_handles.end()) {
+            error = std::string(api) + " received an unknown guest heap handle";
+            return -1;
+        }
+        if ((flags & ~UINT32_C(1)) != 0) {
+            error = std::string(api) + " received unsupported flags";
+            return -1;
+        }
+        const auto allocation = heap_allocations.find(address);
+        if (allocation == heap_allocations.end() ||
+            allocation->second.heap != heap) {
+            error = std::string(api) + " received an unallocated guest pointer";
+            return -1;
+        }
+        free_heap_blocks.push_back(allocation->second);
+        heap_allocations.erase(allocation);
+        if (!write_guest_u32("register", kX86EaxRegisterOffset, 1)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(12, api) ? 0 : -1;
+    }
+
+    int get_version_ex_a() {
+        constexpr const char* api = "KERNEL32.dll!GetVersionExA";
+        uint32_t output_address = 0;
+        if (!read_stack_argument(0, output_address, api)) return -1;
+        if (!valid_guest_pointer(output_address, sizeof(uint32_t))) {
+            error = std::string(api) + " has an invalid output pointer";
+            return -1;
+        }
+        uint32_t structure_size = 0;
+        if (!read_guest_u32("ram", output_address, structure_size)) {
+            error = std::string(api) + " cannot read OSVERSIONINFOA size";
+            return -1;
+        }
+        if (structure_size != kOsVersionInfoABytes &&
+            structure_size != kOsVersionInfoExABytes) {
+            error = std::string(api) + " received an invalid structure size";
+            return -1;
+        }
+        if (!valid_guest_pointer(output_address, structure_size)) {
+            error = std::string(api) + " has an invalid output pointer";
+            return -1;
+        }
+        std::array<uint8_t, kOsVersionInfoExABytes> version{};
+        const auto put_u32 = [&version](size_t offset, uint32_t value) {
+            for (size_t index = 0; index < 4; ++index)
+                version[offset + index] =
+                    static_cast<uint8_t>(value >> (index * 8));
+        };
+        put_u32(0, structure_size);
+        put_u32(4, 5);     // Windows XP
+        put_u32(8, 1);
+        put_u32(12, 2600);
+        put_u32(16, 2);    // VER_PLATFORM_WIN32_NT
+        constexpr char service_pack[] = "Service Pack 3";
+        std::copy_n(service_pack, sizeof(service_pack), version.begin() + 20);
+        if (structure_size == kOsVersionInfoExABytes) {
+            version[148] = 3; // wServicePackMajor
+            version[154] = 1; // VER_NT_WORKSTATION
+        }
+        for (size_t offset = 0; offset < structure_size;
+             offset += kMaximumPcodeValueSize) {
+            const size_t size = std::min(kMaximumPcodeValueSize,
+                                         structure_size - offset);
+            if (!write_guest("ram", static_cast<uint64_t>(output_address) +
+                                        offset, size,
+                             version.data() + offset)) {
+                error = std::string(api) + " cannot write OSVERSIONINFOA";
+                return -1;
+            }
+        }
+        if (!write_guest_u32("register", kX86EaxRegisterOffset, 1)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int get_current_thread_id() {
+        const long thread_id = syscall(SYS_gettid);
+        if (thread_id < 0) {
+            error = "KERNEL32.dll!GetCurrentThreadId host syscall failed";
+            return -1;
+        }
+        return return_kernel32_dword(static_cast<uint32_t>(thread_id),
+                                     "KERNEL32.dll!GetCurrentThreadId");
+    }
+
+    int get_tick_count() {
+        const auto elapsed = std::chrono::duration_cast<
+            std::chrono::milliseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count();
+        return return_kernel32_dword(static_cast<uint32_t>(elapsed),
+                                     "KERNEL32.dll!GetTickCount");
+    }
+
+    int write_performance_value(uint64_t value, const char* api) {
+        uint32_t output_address = 0;
+        if (!read_stack_argument(0, output_address, api)) return -1;
+        if (!valid_guest_pointer(output_address, sizeof(value))) {
+            error = std::string(api) + " has an invalid output pointer";
+            return -1;
+        }
+        if (!write_guest_u64("ram", output_address, value)) {
+            error = std::string(api) + " cannot write its output value";
+            return -1;
+        }
+        if (!write_guest_u32("register", kX86EaxRegisterOffset, 1)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int query_performance_counter() {
+        const auto ticks = std::chrono::duration_cast<
+            std::chrono::nanoseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count();
+        return write_performance_value(static_cast<uint64_t>(ticks),
+            "KERNEL32.dll!QueryPerformanceCounter");
+    }
+
+    int query_performance_frequency() {
+        return write_performance_value(kWindowsPerformanceCounterFrequency,
+            "KERNEL32.dll!QueryPerformanceFrequency");
+    }
+
+    int get_startup_info_a() {
+        constexpr const char* api = "KERNEL32.dll!GetStartupInfoA";
+        constexpr size_t startup_info_size = 68;
+        uint32_t output_address = 0;
+        if (!read_stack_argument(0, output_address, api)) return -1;
+        if (!valid_guest_pointer(output_address, startup_info_size)) {
+            error = std::string(api) + " has an invalid output pointer";
+            return -1;
+        }
+        std::array<uint8_t, startup_info_size> startup_info{};
+        startup_info[0] = static_cast<uint8_t>(startup_info_size);
+        startup_info[1] = static_cast<uint8_t>(startup_info_size >> 8);
+        startup_info[2] = static_cast<uint8_t>(startup_info_size >> 16);
+        startup_info[3] = static_cast<uint8_t>(startup_info_size >> 24);
+        for (size_t offset = 0; offset < startup_info.size();
+             offset += kMaximumPcodeValueSize) {
+            const size_t size = std::min(kMaximumPcodeValueSize,
+                                         startup_info.size() - offset);
+            if (!write_guest("ram", static_cast<uint64_t>(output_address) +
+                                        offset, size,
+                             startup_info.data() + offset)) {
+                error = std::string(api) + " cannot write STARTUPINFOA";
+                return -1;
+            }
+        }
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int get_system_time_as_file_time() {
+        constexpr const char* api =
+            "KERNEL32.dll!GetSystemTimeAsFileTime";
+        uint32_t output_address = 0;
+        if (!read_stack_argument(0, output_address, api)) return -1;
+        if (!valid_guest_pointer(output_address, sizeof(uint64_t))) {
+            error = std::string(api) + " has an invalid output pointer";
+            return -1;
+        }
         using FileTimeDuration = std::chrono::duration<
             int64_t, std::ratio<1, kWindowsFileTimeTicksPerSecond>>;
         const auto unix_ticks = std::chrono::duration_cast<FileTimeDuration>(
             std::chrono::system_clock::now().time_since_epoch()).count();
         if (unix_ticks < 0) {
-            error = "KERNEL32.dll!GetSystemTimeAsFileTime host clock predates Unix epoch";
+            error = std::string(api) + " host clock predates Unix epoch";
             return -1;
         }
         const uint64_t filetime = kWindowsFileTimeUnixEpoch +
                                   static_cast<uint64_t>(unix_ticks);
-        std::array<uint8_t, sizeof(filetime)> filetime_bytes{};
-        for (size_t index = 0; index < filetime_bytes.size(); ++index) {
-            filetime_bytes[index] =
-                static_cast<uint8_t>(filetime >> (index * 8));
-        }
-        if (!write_guest("ram", output_address, filetime_bytes.size(),
-                         filetime_bytes.data())) {
-            error = "KERNEL32.dll!GetSystemTimeAsFileTime cannot write FILETIME";
+        if (!write_guest_u64("ram", output_address, filetime)) {
+            error = std::string(api) + " cannot write FILETIME";
             return -1;
         }
-
-        const uint32_t caller_esp = esp + 8;
-        for (size_t index = 0; index < bytes.size(); ++index) {
-            bytes[index] =
-                static_cast<uint8_t>(caller_esp >> (index * 8));
-        }
-        if (!write_guest("register", kX86EspRegisterOffset,
-                         bytes.size(), bytes.data())) {
-            error = "KERNEL32.dll!GetSystemTimeAsFileTime cannot restore ESP";
-            return -1;
-        }
-        return 0;
+        return finish_stdcall(4, api) ? 0 : -1;
     }
 
     Pe32ImageInfo load_pe32_image(const std::string& path) {
@@ -632,6 +2314,19 @@ struct RecompiledPcodeModule::Impl {
                 index * kImportStubStride);
             import_traps.emplace(stub, unique_imports[index]);
         }
+        const uint32_t module_handle_base = choose_guest_module_handle_base(
+            image_base, image_size, import_stub_base, unique_imports.size(),
+            import_modules.size());
+        for (size_t index = 0; index < import_modules.size(); ++index) {
+            const uint32_t handle = static_cast<uint32_t>(
+                static_cast<uint64_t>(module_handle_base) +
+                index * kGuestModuleHandleStride);
+            guest_module_handles.emplace(
+                lowercase_ascii(import_modules[index]), handle);
+            guest_module_names.emplace(
+                handle, lowercase_ascii(import_modules[index]));
+        }
+        next_dynamic_import_stub_address = kGuestDynamicImportStubBase;
         for (const auto& thunk : imported_thunks) {
             const size_t index = import_indices.at(thunk.name);
             const uint32_t stub = static_cast<uint32_t>(
@@ -649,12 +2344,41 @@ struct RecompiledPcodeModule::Impl {
                         bytes.data(), bytes.size());
         }
 
+        pe_image_base = image_base;
+        pe_image_size = image_size;
+        pe_image_file_name = path;
+        pe_image_entry_point = entry_rva == 0 ? 0 : image_base + entry_rva;
         return {image_base, image_size,
-                entry_rva == 0 ? 0 : image_base + entry_rva,
+                pe_image_entry_point,
                 section_count,
                 static_cast<uint32_t>(import_modules.size()),
                 static_cast<uint32_t>(imported_thunks.size()),
                 import_stub_base};
+    }
+
+    int call_pe32_entry_point() {
+        error.clear();
+        if (call_depth != 0) {
+            error = "cannot start a PE32 entry point during P-code dispatch";
+            return -1;
+        }
+        if (pe_image_entry_point == 0) {
+            error = "loaded PE32 image has no entry point";
+            return -1;
+        }
+        if (pe32_entry_point_started) {
+            error = "PE32 entry point has already been invoked";
+            return -1;
+        }
+        pe32_entry_point_started = true;
+        if (!write_guest_u32("register", kX86EspRegisterOffset,
+                             kGuestInitialStackPointer) ||
+            !write_guest_u32("register", kX86EbpRegisterOffset, 0) ||
+            !write_guest_u32("ram", kGuestInitialStackPointer, 0)) {
+            error = "cannot initialize PE32 entry-point stack";
+            return -1;
+        }
+        return dispatch(pe_image_entry_point);
     }
 
     bool read_guest(const char* space, uint64_t offset, size_t size,
@@ -694,7 +2418,13 @@ struct RecompiledPcodeModule::Impl {
         if (std::strcmp(space, "register") == 0) {
             if (offset > kRegisterBankSize ||
                 size > kRegisterBankSize - static_cast<size_t>(offset)) {
-                error = "P-code register write is out of range";
+                error = "P-code register write is out of range at offset " +
+                        std::to_string(offset) + " size " +
+                        std::to_string(size);
+                if (!active_guest_functions.empty()) {
+                    error += " from guest function " +
+                             std::to_string(active_guest_functions.back());
+                }
                 return false;
             }
             std::memcpy(registers.data() + offset, input, size);
@@ -718,9 +2448,32 @@ struct RecompiledPcodeModule::Impl {
     RviPcodeContext context{};
     std::unordered_map<uint32_t, PcodeFunction> functions;
     std::unordered_map<uint32_t, std::string> import_traps;
+    std::unordered_map<std::string, uint32_t> guest_module_handles;
+    std::unordered_map<uint32_t, std::string> guest_module_names;
+    std::unordered_map<uint32_t, GuestHeapBlock> heap_allocations;
+    std::vector<GuestHeapBlock> free_heap_blocks;
+    std::unordered_set<uint32_t> guest_heap_handles{kGuestProcessHeapHandle};
+    std::unordered_set<uint32_t> allocated_tls_indices;
+    std::unordered_map<uint32_t, uint32_t> tls_values;
+    std::vector<uint32_t> free_tls_indices;
+    std::unordered_map<uint32_t, GuestCriticalSection> critical_sections;
+    std::vector<uint32_t> active_guest_functions;
+    bool command_line_initialized = false;
+    bool environment_initialized = false;
+    uint32_t guest_last_error = 0;
     uint64_t function_count = 0;
+    uint64_t guest_heap_next_address = kGuestHeapStartAddress;
+    uint64_t next_guest_heap_handle = kGuestProcessHeapHandle + 4;
+    uint64_t next_dynamic_import_stub_address =
+        kGuestDynamicImportStubBase;
+    uint32_t next_tls_index = 0;
+    uint32_t pe_image_base = 0;
+    uint32_t pe_image_size = 0;
+    uint32_t pe_image_entry_point = 0;
+    std::string pe_image_file_name;
     uint32_t call_depth = 0;
     bool pe_image_load_attempted = false;
+    bool pe32_entry_point_started = false;
     std::string error;
 };
 
@@ -740,6 +2493,10 @@ int RecompiledPcodeModule::call(uint32_t guest_address) {
 
 Pe32ImageInfo RecompiledPcodeModule::load_pe32_image(const std::string& path) {
     return impl_->load_pe32_image(path);
+}
+
+int RecompiledPcodeModule::call_pe32_entry_point() {
+    return impl_->call_pe32_entry_point();
 }
 
 uint64_t RecompiledPcodeModule::dispatched_function_count() const {
