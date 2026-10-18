@@ -305,6 +305,81 @@ def test_portable_identity_and_snapshot_are_kept_without_promoting_material_iden
     assert report["boundary"]["material_identity"] == "not claimed"
 
 
+def test_snapshot_root_hashes_artifacts_by_windows_path_basename(tmp_path):
+    payload = b"captured texture bytes"
+    (tmp_path / "diffuse.dds").write_bytes(payload)
+    lines = _base_events()
+    bind = json.loads(lines[-1])
+    bind.update({
+        "snapshot_status": "captured",
+        "snapshot_paths": [r"Z:\capture\textures\diffuse.dds"],
+    })
+    lines[-1] = _line(bind)
+    lines.append(_line({
+        "event": "draw_indexed_primitive",
+        "frame": 2,
+        "event_index": 5,
+        "device_ptr": "0x1",
+    }))
+
+    report = build_target_texture_sampler_evidence(
+        lines,
+        target_inventory=_targets(),
+        snapshot_root=tmp_path,
+    )
+
+    assert report["summary"]["snapshot_root_provided"] is True
+    assert report["summary"]["snapshot_file_identity_count"] == 1
+    assert report["snapshot_file_identities"] == [{
+        "snapshot_file": "diffuse.dds",
+        "status": "hashed-at-analysis-time",
+        "byte_size": len(payload),
+        "sha256": hashlib.sha256(payload).hexdigest(),
+    }]
+    assert report["boundary"]["retail_texture_identity"].startswith("not claimed")
+
+
+def test_snapshot_candidates_do_not_promote_other_binds_in_same_generation():
+    lines = _base_events()
+    bind = json.loads(lines[-1])
+    bind.update({
+        "snapshot_status": "captured",
+        "snapshot_paths": [r"Z:\capture\textures\diffuse.dds"],
+    })
+    lines[-1] = _line(bind)
+    lines.append(_line({
+        "event": "draw_indexed_primitive",
+        "frame": 2,
+        "event_index": 5,
+        "device_ptr": "0x1",
+    }))
+    lines.append(_line({
+        "event": "set_texture",
+        "frame": 3,
+        "event_index": 6,
+        "device_ptr": "0x1",
+        "stage": 0,
+        "texture_ptr": "0x60",
+        "snapshot_status": "deferred-until-trigger",
+    }))
+    lines.append(_line({
+        "event": "draw_indexed_primitive",
+        "frame": 3,
+        "event_index": 7,
+        "device_ptr": "0x1",
+    }))
+
+    report = build_target_texture_sampler_evidence(lines, target_inventory=_targets())
+
+    assert report["summary"]["target_direct_snapshot_sampler_binding_count"] == 1
+    assert report["summary"]["target_draws_with_direct_snapshots"] == 1
+    assert report["summary"]["target_unique_snapshot_files"] == 1
+    assert report["summary"]["target_same_generation_snapshot_candidate_binding_count"] == 1
+    assert report["summary"]["target_ambiguous_same_generation_snapshot_binding_count"] == 0
+    assert report["summary"]["target_no_same_generation_snapshot_binding_count"] == 0
+    assert report["draws"][1]["sampler_bindings"][0]["snapshot_status"] == "deferred-until-trigger"
+
+
 def test_missing_ctab_reflection_falls_back_but_stays_partial():
     raw_ps = bytes.fromhex("0000ffff02000000")
     raw_sha = hashlib.sha256(raw_ps).hexdigest()

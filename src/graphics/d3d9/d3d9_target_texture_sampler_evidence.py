@@ -9,9 +9,10 @@ effect.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from collections import Counter, defaultdict
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, Iterable, Mapping
 
 from d3d9_raw_capture_audit import resolve_input_path
@@ -183,10 +184,36 @@ def _capture_observation(count: int, *, missing_event: str) -> dict[str, Any]:
     }
 
 
+def _snapshot_file_identity(path: str, root: Path) -> dict[str, Any]:
+    name = PureWindowsPath(path).name or Path(path).name
+    if name in {"", ".", ".."}:
+        return {"snapshot_file": name, "status": "invalid-path"}
+    try:
+        root_path = root.resolve()
+        candidate = (root_path / name).resolve(strict=True)
+        if candidate.parent != root_path:
+            return {"snapshot_file": name, "status": "invalid-path"}
+        digest = hashlib.sha256()
+        size = 0
+        with candidate.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+                size += len(chunk)
+    except (OSError, RuntimeError):
+        return {"snapshot_file": name, "status": "missing"}
+    return {
+        "snapshot_file": name,
+        "status": "hashed-at-analysis-time",
+        "byte_size": size,
+        "sha256": digest.hexdigest(),
+    }
+
+
 def build_target_texture_sampler_evidence(
     lines: Iterable[str],
     *,
     target_inventory: Mapping[str, Any],
+    snapshot_root: str | Path | None = None,
 ) -> dict[str, Any]:
     target_hashes, target_families = _target_families(target_inventory)
     if not target_hashes:
@@ -207,6 +234,8 @@ def build_target_texture_sampler_evidence(
     source_line_count = invalid_json_count = non_object_count = 0
     portable_identity_event_count = 0
     captured_snapshot_event_count = 0
+    snapshot_root_path = Path(snapshot_root) if snapshot_root is not None else None
+    snapshot_file_identities: dict[str, dict[str, Any]] = {}
     texture_pointer_reuse_creation_count = 0
     exact_draw_count = 0
     reflected_draw_count = 0
@@ -244,8 +273,20 @@ def build_target_texture_sampler_evidence(
             and row.get("resource_sha256")
         ):
             portable_identity_event_count += 1
-        if row.get("snapshot_status") == "captured" and row.get("snapshot_paths"):
+        snapshot_paths = row.get("snapshot_paths")
+        if (
+            row.get("snapshot_status") == "captured"
+            and isinstance(snapshot_paths, list)
+            and snapshot_paths
+        ):
             captured_snapshot_event_count += 1
+        if snapshot_root_path is not None and isinstance(snapshot_paths, list):
+            for snapshot_path in snapshot_paths:
+                if isinstance(snapshot_path, str) and snapshot_path:
+                    name = PureWindowsPath(snapshot_path).name or Path(snapshot_path).name
+                    if name not in snapshot_file_identities:
+                        identity = _snapshot_file_identity(snapshot_path, snapshot_root_path)
+                        snapshot_file_identities[name] = identity
 
         if event in {"reset", "device_reset"}:
             states[device] = {
@@ -503,6 +544,43 @@ def build_target_texture_sampler_evidence(
         })
 
     target_draw_count = len(draws)
+    snapshots_by_generation: dict[str, set[str]] = defaultdict(set)
+    direct_snapshot_binding_count = 0
+    direct_snapshot_draws: set[int] = set()
+    direct_snapshot_files: set[str] = set()
+    for draw_index, draw in enumerate(draws):
+        for binding in draw["sampler_bindings"]:
+            paths = binding.get("snapshot_paths") or []
+            if binding.get("snapshot_status") != "captured" or not paths:
+                continue
+            direct_snapshot_binding_count += 1
+            direct_snapshot_draws.add(draw_index)
+            names = {
+                PureWindowsPath(path).name or Path(path).name
+                for path in paths
+                if isinstance(path, str) and path
+            }
+            direct_snapshot_files.update(names)
+            generation = binding.get("texture_generation_sha256")
+            if generation:
+                snapshots_by_generation[str(generation)].update(names)
+
+    generation_candidate_binding_count = 0
+    ambiguous_generation_binding_count = 0
+    missing_generation_snapshot_binding_count = 0
+    for draw in draws:
+        for binding in draw["sampler_bindings"]:
+            if binding.get("snapshot_status") == "captured" and binding.get("snapshot_paths"):
+                continue
+            generation = binding.get("texture_generation_sha256")
+            candidates = snapshots_by_generation.get(str(generation), set())
+            if len(candidates) == 1:
+                generation_candidate_binding_count += 1
+            elif candidates:
+                ambiguous_generation_binding_count += 1
+            else:
+                missing_generation_snapshot_binding_count += 1
+
     return {
         "format": FORMAT,
         "version": 1,
@@ -525,7 +603,30 @@ def build_target_texture_sampler_evidence(
             "texture_pointer_reuse_creation_count": texture_pointer_reuse_creation_count,
             "portable_resource_identity_event_count": portable_identity_event_count,
             "captured_snapshot_event_count": captured_snapshot_event_count,
+            "snapshot_root_provided": snapshot_root_path is not None,
+            "target_direct_snapshot_sampler_binding_count": direct_snapshot_binding_count,
+            "target_draws_with_direct_snapshots": len(direct_snapshot_draws),
+            "target_unique_snapshot_files": len(direct_snapshot_files),
+            "target_same_generation_snapshot_candidate_binding_count": generation_candidate_binding_count,
+            "target_ambiguous_same_generation_snapshot_binding_count": ambiguous_generation_binding_count,
+            "target_no_same_generation_snapshot_binding_count": missing_generation_snapshot_binding_count,
+            "snapshot_file_identity_count": sum(
+                row.get("status") == "hashed-at-analysis-time"
+                for row in snapshot_file_identities.values()
+            ),
+            "missing_snapshot_file_count": sum(
+                row.get("status") == "missing"
+                for row in snapshot_file_identities.values()
+            ),
+            "invalid_snapshot_path_count": sum(
+                row.get("status") == "invalid-path"
+                for row in snapshot_file_identities.values()
+            ),
         },
+        "snapshot_file_identities": [
+            snapshot_file_identities[name]
+            for name in sorted(snapshot_file_identities)
+        ],
         "event_counts": dict(sorted(event_counts.items())),
         "capture_observations": {
             "texture_creation_history": _capture_observation(
@@ -563,6 +664,14 @@ def build_target_texture_sampler_evidence(
             "external_texture_classification": "not inferred from absence of a retail path",
             "material_identity": "not claimed",
             "retail_texture_identity": "not claimed without portable path/SHA or another exact payload join",
+            "snapshot_file_identity": (
+                "SHA-256 identifies the stored snapshot file at analysis time; the producer reuses pointer-based paths, "
+                "so this does not prove historical bytes at every earlier bind"
+            ),
+            "same_generation_snapshot_candidate": (
+                "a candidate is observed on another use of the same texture generation; content stability between "
+                "binds is not proven"
+            ),
             "render_admission": False,
         },
     }
@@ -572,11 +681,13 @@ def build_target_texture_sampler_evidence_file(
     capture_path: str | Path,
     *,
     target_inventory: Mapping[str, Any],
+    snapshot_root: str | Path | None = None,
 ) -> dict[str, Any]:
     with Path(capture_path).open("r", encoding="utf-8") as handle:
         return build_target_texture_sampler_evidence(
             handle,
             target_inventory=target_inventory,
+            snapshot_root=snapshot_root,
         )
 
 
@@ -585,6 +696,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("capture_jsonl")
     parser.add_argument("output")
     parser.add_argument("--target-inventory", required=True)
+    parser.add_argument(
+        "--snapshot-root",
+        help="hash referenced snapshot files by basename under this directory",
+    )
     args = parser.parse_args(argv)
 
     capture_path = resolve_input_path(args.capture_jsonl)
@@ -596,6 +711,7 @@ def main(argv: list[str] | None = None) -> int:
     report = build_target_texture_sampler_evidence_file(
         capture_path,
         target_inventory=inventory,
+        snapshot_root=args.snapshot_root,
     )
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
