@@ -23,3 +23,9 @@ int rvi_00401020(RviPcodeContext *ctx) {
     return ctx->write(ctx->opaque, "ram", UINT64_C(0x32c00), sizeof(marker),
                       marker);
 }
+
+int rvi_00685700(RviPcodeContext *ctx) {
+    const uint8_t duplicate[4] = {'D', 'U', 'P', 'L'};
+    return ctx->write(ctx->opaque, "ram", UINT64_C(0x20000),
+                      sizeof(duplicate), duplicate);
+}

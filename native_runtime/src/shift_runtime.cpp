@@ -2994,6 +2994,7 @@ struct Args {
     std::string input_script;
     std::string recompiled_module;
     std::vector<std::string> recompiled_supplement_modules;
+    std::vector<std::string> recompiled_override_modules;
     std::string pe_image;
     uint32_t recompiled_step = 0;
     bool recompiled_step_enabled = false;
@@ -3029,6 +3030,7 @@ Args parse_args(int argc, char** argv) {
             option == "--input-script" ||
             option == "--recompiled-module" ||
             option == "--recompiled-supplement" ||
+            option == "--recompiled-override" ||
             option == "--pe-image" ||
             option == "--recompiled-step" ||
             option == "--frames") {
@@ -3066,6 +3068,8 @@ Args parse_args(int argc, char** argv) {
                 args.recompiled_module = value;
             } else if (option == "--recompiled-supplement") {
                 args.recompiled_supplement_modules.push_back(value);
+            } else if (option == "--recompiled-override") {
+                args.recompiled_override_modules.push_back(value);
             } else if (option == "--pe-image") {
                 args.pe_image = value;
             } else if (option == "--recompiled-step") {
@@ -3096,6 +3100,7 @@ Args parse_args(int argc, char** argv) {
                 << "[--persist-post-solve-body-state] "
                 << "[--input-script FILE] [--frames N] "
                 << "[--recompiled-module ELF [--recompiled-supplement ELF ...] "
+                << "[--recompiled-override ELF ...] "
                 << "[--recompiled-step ADDRESS] "
                 << "[--pe-image PE32 [--recompiled-entrypoint]]] "
                 << "[--continuous] [--validation]\n";
@@ -3121,7 +3126,8 @@ Args parse_args(int argc, char** argv) {
     }
     if (args.recompiled_module.empty() &&
         (args.recompiled_step_enabled || args.recompiled_entrypoint_enabled ||
-         !args.recompiled_supplement_modules.empty())) {
+         !args.recompiled_supplement_modules.empty() ||
+         !args.recompiled_override_modules.empty())) {
         throw std::runtime_error(
             "--recompiled-module is required for P-code execution");
     }
@@ -3159,6 +3165,13 @@ int main(int argc, char** argv) {
             recompiled_module =
                 std::make_unique<shift::runtime::RecompiledPcodeModule>(
                     args.recompiled_module);
+            for (const auto& override_module :
+                 args.recompiled_override_modules) {
+                if (!recompiled_module->load_override_module(override_module)) {
+                    throw std::runtime_error(
+                        recompiled_module->last_error());
+                }
+            }
             for (const auto& supplement : args.recompiled_supplement_modules) {
                 if (!recompiled_module->load_supplemental_module(supplement)) {
                     throw std::runtime_error(

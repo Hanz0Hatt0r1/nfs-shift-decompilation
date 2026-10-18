@@ -52,7 +52,8 @@ entry point once before the frame loop with a synthetic stack. `GetStartupInfoA`
 receives an empty startup structure;
 additional P-code ELF shards can be loaded with repeated
 `--recompiled-supplement` options before execution; duplicate exports fail
-closed.
+closed. An explicit `--recompiled-override` module takes precedence for its
+exports, while duplicate overrides still fail closed.
 the guest heap currently supports `GetProcessHeap`, `HeapCreate`, `HeapAlloc`,
 and `HeapFree`; `GetModuleHandleA` resolves the main image and imported modules;
 `GetModuleFileNameA` returns the path used to load the PE image;
@@ -67,6 +68,10 @@ connected; `GetFileType` classifies these guest handles as character devices.
 The ANSI and UTF-16 environment blocks are empty.
 `MultiByteToWideChar` and `WideCharToMultiByte` convert Windows-1252 text.
 `GetLastError` and `SetLastError` keep a single guest-thread value.
+`SetThreadIdealProcessor` tracks the x86 guest's processor preference and
+query sentinel without changing Linux host scheduling or affinity.
+`ResumeThread` runs guest start routines synchronously without preemption, so
+long-lived retail worker loops can keep the entry-point probe inside a worker.
 `GetACP` reports Windows-1252 for the compatibility profile.
 `IsValidCodePage` accepts only Windows-1252.
 `GetCPInfo` returns single-byte Windows-1252 metadata.
@@ -76,6 +81,8 @@ Windows-1252/Latin-1 range.
 The x86 critical-section API family maintains recursion for the single guest
 thread; cross-thread locking remains unsupported. `InterlockedIncrement` and
 `InterlockedDecrement` update a guest word for this single-thread execution model.
+`InterlockedExchange` and `InterlockedCompareExchange` also use this guest
+memory model; cross-thread atomic ordering is not implemented.
 Other Win32 and
 DirectX services, process initialization, and behavioral parity remain
 unimplemented; unsupported imports stop with an explicit diagnostic. The

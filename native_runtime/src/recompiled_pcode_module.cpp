@@ -385,6 +385,7 @@ struct RecompiledPcodeModule::Impl {
         uint32_t parameter = 0;
         uint32_t suspend_count = 0;
         int32_t priority = 0;
+        uint32_t ideal_processor = 0;
         uint32_t exit_code = 259;
         uint32_t last_error = 0;
         GuestHeapBlock stack;
@@ -421,6 +422,10 @@ struct RecompiledPcodeModule::Impl {
         for (const auto& [handle, file] : guest_files) {
             (void)handle;
             if (file.descriptor >= 0) (void)::close(file.descriptor);
+        }
+        for (auto it = override_modules.rbegin(); it != override_modules.rend();
+             ++it) {
+            if (*it) dlclose(*it);
         }
         for (auto it = supplemental_modules.rbegin();
              it != supplemental_modules.rend(); ++it) {
@@ -553,20 +558,25 @@ struct RecompiledPcodeModule::Impl {
         char symbol[16]{};
         std::snprintf(symbol, sizeof(symbol), "rvi_%08x", address);
         PcodeFunction function = nullptr;
-        const auto lookup = [&](void* loaded_module) {
+        const auto lookup = [&](void* loaded_module, bool reject_duplicate) {
             dlerror();
             void* value = dlsym(loaded_module, symbol);
             if (dlerror() || !value) return true;
-            if (function) {
+            if (function && reject_duplicate) {
                 error = "duplicate P-code export " + std::string(symbol);
                 return false;
             }
             function = reinterpret_cast<PcodeFunction>(value);
             return true;
         };
-        if (!lookup(module)) return nullptr;
-        for (void* supplemental : supplemental_modules) {
-            if (!lookup(supplemental)) return nullptr;
+        for (void* override_module : override_modules) {
+            if (!lookup(override_module, true)) return nullptr;
+        }
+        if (!function) {
+            if (!lookup(module, true)) return nullptr;
+            for (void* supplemental : supplemental_modules) {
+                if (!lookup(supplemental, true)) return nullptr;
+            }
         }
         if (!function) {
             error = "P-code module has no exported function " +
@@ -598,6 +608,23 @@ struct RecompiledPcodeModule::Impl {
             return false;
         }
         supplemental_modules.push_back(supplemental);
+        return true;
+    }
+
+    bool load_override_module(const std::string& path) {
+        error.clear();
+        if (execution_started || call_depth != 0) {
+            error = "cannot load an override P-code module after execution starts";
+            return false;
+        }
+        void* override_module = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
+        if (!override_module) {
+            const char* load_error = dlerror();
+            error = "cannot load override P-code module: " +
+                    std::string(load_error ? load_error : "unknown dlopen error");
+            return false;
+        }
+        override_modules.push_back(override_module);
         return true;
     }
 
@@ -633,6 +660,8 @@ struct RecompiledPcodeModule::Impl {
                 return set_priority_class();
             if (name == "KERNEL32.dll!SetThreadPriority")
                 return set_thread_priority();
+            if (name == "KERNEL32.dll!SetThreadIdealProcessor")
+                return set_thread_ideal_processor();
             if (name == "KERNEL32.dll!CreateThread")
                 return create_thread();
             if (name == "KERNEL32.dll!ResumeThread")
@@ -659,6 +688,8 @@ struct RecompiledPcodeModule::Impl {
                 return time_begin_period();
             if (name == "WINMM.dll!timeEndPeriod")
                 return time_end_period();
+            if (name == "WINMM.dll!timeGetTime")
+                return time_get_time();
             if (name == "KERNEL32.dll!QueryPerformanceCounter")
                 return query_performance_counter();
             if (name == "KERNEL32.dll!QueryPerformanceFrequency")
@@ -681,6 +712,8 @@ struct RecompiledPcodeModule::Impl {
             if (name == "KERNEL32.dll!ResetEvent") return set_event(false);
             if (name == "KERNEL32.dll!InterlockedCompareExchange")
                 return interlocked_compare_exchange();
+            if (name == "KERNEL32.dll!InterlockedExchange")
+                return interlocked_exchange();
             if (name == "KERNEL32.dll!VirtualAlloc")
                 return virtual_alloc();
             if (name == "KERNEL32.dll!VirtualFree")
@@ -771,6 +804,8 @@ struct RecompiledPcodeModule::Impl {
                 return get_last_error();
             if (name == "KERNEL32.dll!SetLastError")
                 return set_last_error();
+            if (name == "KERNEL32.dll!RaiseException")
+                return raise_exception();
             if (name == "KERNEL32.dll!GetACP")
                 return get_ansi_code_page();
             if (name == "KERNEL32.dll!IsValidCodePage")
@@ -1055,7 +1090,8 @@ struct RecompiledPcodeModule::Impl {
         static const std::unordered_set<std::string> supported = {
             "GetCurrentProcess", "GetPriorityClass", "GetCurrentProcessId",
             "GetCurrentThread", "GetThreadPriority", "SetPriorityClass",
-            "SetThreadPriority", "GetCurrentThreadId", "GetTickCount",
+            "SetThreadPriority", "SetThreadIdealProcessor",
+            "GetCurrentThreadId", "GetTickCount",
             "CreateThread", "ResumeThread", "SuspendThread",
             "GetExitCodeThread", "ExitThread",
             "GetLocalTime",
@@ -1067,6 +1103,7 @@ struct RecompiledPcodeModule::Impl {
             "WaitForSingleObjectEx", "CreateEventW", "CreateEventA",
             "SetEvent", "ResetEvent",
             "InterlockedCompareExchange",
+            "InterlockedExchange",
             "VirtualAlloc", "VirtualFree",
             "CloseHandle",
             "CreateFileA", "GetFileSize", "ReadFile",
@@ -1086,7 +1123,7 @@ struct RecompiledPcodeModule::Impl {
             "GetEnvironmentVariableA", "SetEnvironmentVariableA",
             "FreeEnvironmentStrings", "FreeEnvironmentStringsA",
             "FreeEnvironmentStringsW", "WideCharToMultiByte", "GetLastError",
-            "SetLastError", "GetACP", "IsValidCodePage", "GetCPInfo",
+            "SetLastError", "RaiseException", "GetACP", "IsValidCodePage", "GetCPInfo",
             "GetStringTypeW", "MultiByteToWideChar", "LCMapStringW"};
         return supported.find(name) != supported.end();
     }
@@ -1379,6 +1416,11 @@ struct RecompiledPcodeModule::Impl {
         return return_kernel32_dword(result, api, sizeof(uint32_t));
     }
 
+    int time_get_time() {
+        return return_kernel32_dword(
+            monotonic_tick_milliseconds(), "WINMM.dll!timeGetTime");
+    }
+
     int get_current_process_id() {
         return return_kernel32_dword(static_cast<uint32_t>(getpid()),
                                      "KERNEL32.dll!GetCurrentProcessId");
@@ -1609,6 +1651,43 @@ struct RecompiledPcodeModule::Impl {
         return return_kernel32_dword(1, api, 2 * sizeof(uint32_t));
     }
 
+    int set_thread_ideal_processor() {
+        constexpr const char* api =
+            "KERNEL32.dll!SetThreadIdealProcessor";
+        constexpr uint32_t kMaximumProcessors = 32;
+        uint32_t thread_handle = 0;
+        uint32_t requested_processor = 0;
+        if (!read_stack_argument(0, thread_handle, api) ||
+            !read_stack_argument(1, requested_processor, api)) {
+            return -1;
+        }
+
+        uint32_t* ideal_processor = nullptr;
+        if (thread_handle == kGuestCurrentThreadPseudoHandle) {
+            ideal_processor = &guest_thread_ideal_processor;
+        } else {
+            const auto thread = guest_threads.find(thread_handle);
+            if (thread == guest_threads.end()) {
+                guest_last_error = 6;
+                return return_kernel32_dword(UINT32_MAX, api,
+                                             2 * sizeof(uint32_t));
+            }
+            ideal_processor = &thread->second.ideal_processor;
+        }
+
+        const uint32_t previous_processor = *ideal_processor;
+        if (requested_processor != kMaximumProcessors) {
+            if (requested_processor >= kMaximumProcessors) {
+                guest_last_error = 87;
+                return return_kernel32_dword(UINT32_MAX, api,
+                                             2 * sizeof(uint32_t));
+            }
+            *ideal_processor = requested_processor;
+        }
+        return return_kernel32_dword(previous_processor, api,
+                                     2 * sizeof(uint32_t));
+    }
+
     void release_guest_thread_blocks(const GuestThread& thread) {
         for (const auto& block : {thread.stack, thread.teb}) {
             const auto allocation = heap_allocations.find(block.address);
@@ -1650,6 +1729,7 @@ struct RecompiledPcodeModule::Impl {
         const bool saved_exit_requested = current_guest_thread_exit_requested;
         const uint32_t saved_last_error = guest_last_error;
         const int32_t saved_priority = guest_thread_priority;
+        const uint32_t saved_ideal_processor = guest_thread_ideal_processor;
 
         registers.fill(0);
         current_guest_thread_id = thread.id;
@@ -1659,6 +1739,7 @@ struct RecompiledPcodeModule::Impl {
         current_guest_thread_exit_requested = false;
         guest_last_error = thread.last_error;
         guest_thread_priority = thread.priority;
+        guest_thread_ideal_processor = thread.ideal_processor;
 
         const uint32_t stack_top = thread.stack.address +
                                    static_cast<uint32_t>(thread.stack.size);
@@ -1693,6 +1774,7 @@ struct RecompiledPcodeModule::Impl {
                                ? current_guest_thread_exit_code
                                : returned_code;
         thread.last_error = guest_last_error;
+        thread.ideal_processor = guest_thread_ideal_processor;
         thread.completed = true;
         thread.suspend_count = 0;
         const bool close_pending = thread.close_pending;
@@ -1705,6 +1787,7 @@ struct RecompiledPcodeModule::Impl {
         current_guest_thread_exit_requested = saved_exit_requested;
         guest_last_error = saved_last_error;
         guest_thread_priority = saved_priority;
+        guest_thread_ideal_processor = saved_ideal_processor;
         if (close_pending) {
             release_guest_thread_blocks(thread);
             guest_threads.erase(handle);
@@ -2548,6 +2631,28 @@ struct RecompiledPcodeModule::Impl {
         return finish_stdcall(12, api) ? 0 : -1;
     }
 
+    int interlocked_exchange() {
+        constexpr const char* api = "KERNEL32.dll!InterlockedExchange";
+        uint32_t address = 0;
+        uint32_t exchange = 0;
+        if (!read_stack_argument(0, address, api) ||
+            !read_stack_argument(1, exchange, api)) {
+            return -1;
+        }
+        if (!valid_guest_pointer(address, sizeof(uint32_t))) {
+            error = std::string(api) + " has an invalid operand pointer";
+            return -1;
+        }
+        uint32_t previous = 0;
+        if (!read_guest_u32("ram", address, previous) ||
+            !write_guest_u32("ram", address, exchange) ||
+            !write_guest_u32("register", kX86EaxRegisterOffset, previous)) {
+            error = std::string(api) + " cannot update its operand";
+            return -1;
+        }
+        return finish_stdcall(2 * sizeof(uint32_t), api) ? 0 : -1;
+    }
+
     int initialize_critical_section() {
         constexpr const char* api = "KERNEL32.dll!InitializeCriticalSection";
         uint32_t address = 0;
@@ -3077,6 +3182,59 @@ struct RecompiledPcodeModule::Impl {
         constexpr const char* api = "KERNEL32.dll!SetLastError";
         if (!read_stack_argument(0, guest_last_error, api)) return -1;
         return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int raise_exception() {
+        constexpr const char* api = "KERNEL32.dll!RaiseException";
+        uint32_t code = 0;
+        uint32_t flags = 0;
+        uint32_t argument_count = 0;
+        uint32_t arguments_address = 0;
+        if (!read_stack_argument(0, code, api) ||
+            !read_stack_argument(1, flags, api) ||
+            !read_stack_argument(2, argument_count, api) ||
+            !read_stack_argument(3, arguments_address, api)) {
+            return -1;
+        }
+        if (code != UINT32_C(0x406d1388) || flags != 0 ||
+            argument_count != 4) {
+            error = std::string(api) +
+                    " only supports the MSVC thread-name exception";
+            return -1;
+        }
+        if (!valid_guest_pointer(arguments_address, 4 * sizeof(uint32_t))) {
+            error = std::string(api) +
+                    " has an invalid thread-name information pointer";
+            return -1;
+        }
+        std::array<uint8_t, 4 * sizeof(uint32_t)> information{};
+        if (!read_guest("ram", arguments_address, information.size(),
+                        information.data())) {
+            error = std::string(api) +
+                    " cannot read thread-name information";
+            return -1;
+        }
+        const auto word = [&](size_t offset) {
+            return static_cast<uint32_t>(information[offset]) |
+                   (static_cast<uint32_t>(information[offset + 1]) << 8) |
+                   (static_cast<uint32_t>(information[offset + 2]) << 16) |
+                   (static_cast<uint32_t>(information[offset + 3]) << 24);
+        };
+        const uint32_t type = word(0);
+        const uint32_t name_address = word(4);
+        const uint32_t info_flags = word(12);
+        if (type != UINT32_C(0x1000) || name_address == 0 || info_flags != 0) {
+            error = std::string(api) +
+                    " received invalid MSVC thread-name information";
+            return -1;
+        }
+        std::string thread_name;
+        if (!read_guest_ascii(name_address, thread_name, api)) return -1;
+        if (thread_name.empty()) {
+            error = std::string(api) + " received an empty thread name";
+            return -1;
+        }
+        return return_kernel32_dword(0, api, 4 * sizeof(uint32_t));
     }
 
     int get_ansi_code_page() {
@@ -3705,11 +3863,15 @@ struct RecompiledPcodeModule::Impl {
     }
 
     int get_tick_count() {
+        return return_kernel32_dword(monotonic_tick_milliseconds(),
+                                     "KERNEL32.dll!GetTickCount");
+    }
+
+    uint32_t monotonic_tick_milliseconds() const {
         const auto elapsed = std::chrono::duration_cast<
             std::chrono::milliseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()).count();
-        return return_kernel32_dword(static_cast<uint32_t>(elapsed),
-                                     "KERNEL32.dll!GetTickCount");
+        return static_cast<uint32_t>(elapsed);
     }
 
     int write_performance_value(uint64_t value, const char* api) {
@@ -4284,6 +4446,7 @@ struct RecompiledPcodeModule::Impl {
     RviPcodeContext context{};
     std::unordered_map<uint32_t, PcodeFunction> functions;
     std::vector<void*> supplemental_modules;
+    std::vector<void*> override_modules;
     std::unordered_map<uint32_t, std::string> import_traps;
     std::unordered_map<uint32_t, uint32_t> import_id_traps;
     std::unordered_map<std::string, uint32_t> guest_module_handles;
@@ -4313,6 +4476,7 @@ struct RecompiledPcodeModule::Impl {
     uint32_t guest_last_error = 0;
     uint32_t guest_process_priority_class = 0x00000020;
     int32_t guest_thread_priority = 0;
+    uint32_t guest_thread_ideal_processor = 0;
     uint32_t current_guest_thread_id = 0;
     uint32_t current_guest_thread_handle = 0;
     uint32_t current_guest_thread_exit_code = 259;
@@ -4373,6 +4537,11 @@ int RecompiledPcodeModule::call_pe32_entry_point() {
 bool RecompiledPcodeModule::load_supplemental_module(
     const std::string& shared_object_path) {
     return impl_->load_supplemental_module(shared_object_path);
+}
+
+bool RecompiledPcodeModule::load_override_module(
+    const std::string& shared_object_path) {
+    return impl_->load_override_module(shared_object_path);
 }
 
 uint64_t RecompiledPcodeModule::dispatched_function_count() const {
