@@ -35,6 +35,7 @@ public:
     bool load_supplemental_module(const std::string& shared_object_path);
     bool load_override_module(const std::string& shared_object_path);
     uint64_t dispatched_function_count() const;
+    uint64_t unique_dispatched_function_count() const;
     const std::string& last_error() const;
 
     bool read_guest(const char* space, uint64_t offset, size_t size,
