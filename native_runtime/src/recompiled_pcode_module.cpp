@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -30,6 +31,9 @@ constexpr size_t kPeImportDescriptorSize = 20;
 constexpr size_t kCopyChunkSize = 64 * 1024;
 constexpr uint32_t kImportStubPreferredBase = 0xf0000000;
 constexpr uint32_t kImportStubStride = 0x10;
+constexpr uint64_t kWindowsFileTimeUnixEpoch = UINT64_C(116444736000000000);
+constexpr uint64_t kWindowsFileTimeTicksPerSecond = UINT64_C(10000000);
+constexpr uint64_t kX86EspRegisterOffset = 0x10;
 constexpr size_t kMaximumImportDescriptors = 4096;
 constexpr size_t kMaximumImportThunksPerModule = 65536;
 constexpr size_t kMaximumImportFunctions = 65536;
@@ -257,6 +261,10 @@ struct RecompiledPcodeModule::Impl {
         const auto imported = import_traps.find(
             static_cast<uint32_t>(target));
         if (imported != import_traps.end()) {
+            if (imported->second ==
+                "KERNEL32.dll!GetSystemTimeAsFileTime") {
+                return get_system_time_as_file_time();
+            }
             error = "unimplemented PE import " + imported->second;
             return -1;
         }
@@ -275,6 +283,67 @@ struct RecompiledPcodeModule::Impl {
             error = message;
         }
         return result;
+    }
+
+    int get_system_time_as_file_time() {
+        std::array<uint8_t, 4> bytes{};
+        if (!read_guest("register", kX86EspRegisterOffset,
+                        bytes.size(), bytes.data())) {
+            error = "KERNEL32.dll!GetSystemTimeAsFileTime cannot read ESP";
+            return -1;
+        }
+        const uint32_t esp = static_cast<uint32_t>(bytes[0]) |
+            (static_cast<uint32_t>(bytes[1]) << 8) |
+            (static_cast<uint32_t>(bytes[2]) << 16) |
+            (static_cast<uint32_t>(bytes[3]) << 24);
+        const uint64_t argument_address = static_cast<uint64_t>(esp) + 4;
+        if (!read_guest("ram", argument_address, bytes.size(), bytes.data())) {
+            error = "KERNEL32.dll!GetSystemTimeAsFileTime has an invalid stack argument";
+            return -1;
+        }
+        const uint32_t output_address = static_cast<uint32_t>(bytes[0]) |
+            (static_cast<uint32_t>(bytes[1]) << 8) |
+            (static_cast<uint32_t>(bytes[2]) << 16) |
+            (static_cast<uint32_t>(bytes[3]) << 24);
+        if (output_address == 0 ||
+            static_cast<uint64_t>(output_address) + sizeof(uint64_t) >
+                kGuestRamSize) {
+            error = "KERNEL32.dll!GetSystemTimeAsFileTime has an invalid output pointer";
+            return -1;
+        }
+
+        using FileTimeDuration = std::chrono::duration<
+            int64_t, std::ratio<1, kWindowsFileTimeTicksPerSecond>>;
+        const auto unix_ticks = std::chrono::duration_cast<FileTimeDuration>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+        if (unix_ticks < 0) {
+            error = "KERNEL32.dll!GetSystemTimeAsFileTime host clock predates Unix epoch";
+            return -1;
+        }
+        const uint64_t filetime = kWindowsFileTimeUnixEpoch +
+                                  static_cast<uint64_t>(unix_ticks);
+        std::array<uint8_t, sizeof(filetime)> filetime_bytes{};
+        for (size_t index = 0; index < filetime_bytes.size(); ++index) {
+            filetime_bytes[index] =
+                static_cast<uint8_t>(filetime >> (index * 8));
+        }
+        if (!write_guest("ram", output_address, filetime_bytes.size(),
+                         filetime_bytes.data())) {
+            error = "KERNEL32.dll!GetSystemTimeAsFileTime cannot write FILETIME";
+            return -1;
+        }
+
+        const uint32_t caller_esp = esp + 8;
+        for (size_t index = 0; index < bytes.size(); ++index) {
+            bytes[index] =
+                static_cast<uint8_t>(caller_esp >> (index * 8));
+        }
+        if (!write_guest("register", kX86EspRegisterOffset,
+                         bytes.size(), bytes.data())) {
+            error = "KERNEL32.dll!GetSystemTimeAsFileTime cannot restore ESP";
+            return -1;
+        }
+        return 0;
     }
 
     Pe32ImageInfo load_pe32_image(const std::string& path) {

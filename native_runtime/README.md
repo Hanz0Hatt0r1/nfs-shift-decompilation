@@ -45,9 +45,13 @@ this bridge at `rvi_00401000`; CI exercises the same path with a small callback
 fixture so it does not need the multi-gigabyte game library.
 
 This is an execution bridge into the existing Vulkan frame loop, not a complete
-game boot path. It does not load PE sections or imports, implement Win32/DirectX
-services, or establish behavioral parity. Functions that access unavailable
-platform state will stop with an explicit callback error.
+game boot path. It maps PE32 sections and import slots at the preferred base,
+and currently implements only the first startup import observed in the
+hash-locked retail image, `KERNEL32.dll!GetSystemTimeAsFileTime`. Other Win32
+and DirectX services, process initialization, and behavioral parity remain
+unimplemented; unsupported imports stop with an explicit diagnostic. The
+current scope and entry-point probe are recorded in
+[`docs/RECOMPILED_PCODE_VULKAN_PE32_LOADER.md`](../docs/RECOMPILED_PCODE_VULKAN_PE32_LOADER.md).
 
 The runtime accepts a single MGEO mesh, a prepared `SHIFT.BMWVulkanBundle/1`, the historical BMW bundle set, or a Phase 586 prepared `SHIFT.NativeSceneVulkanSet/1` via `--scene-set`. Bundle mode validates the native-submission, SPIR-V and Vulkan-interface gates, preserves the packet vertex layout, loads semantic-aware SVGP v3 geometry (while retaining v1/v2 compatibility), loads the bundle vertex/pixel SPIR-V, uploads the `SVCP` constant buffers plus `SVTP` 2D textures and optional cube, creates descriptor sets 0/1, and submits the prepared shader/material path directly. The frame loop also exposes a fixed 60 Hz simulation boundary through `SHIFT.NativeRuntimeState/1`. Phase 599 executes the recovered CameraManager six-word snapshot plus guarded double-buffer flip/copy on that native boundary; Phase 600 can seed it from recovered camera scalar evidence. Phase 601 adds deterministic `SHIFT.NativeRuntimeInputScript/1` control snapshots that traverse the same vehicle-intent/physics-tick boundary as live keyboard input. Phase 602 additionally accepts `SHIFT.NativePhysicsParticipantBoundary/1` via `--participant-boundary`, admitting only the proven registry/selector ABI while keeping the concrete participant unresolved. Phase 603 adds the native `FUN_007b0f20` builtin sparse numerical backend as `shift_runtime_physics`; it is parity-tested separately and is not yet invoked as a complete vehicle frame. The state layer deliberately does not synthesize unknown retail force/integration semantics. `Esc` or `Q` exits the harness.
 
