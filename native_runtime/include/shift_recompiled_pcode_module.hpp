@@ -32,6 +32,12 @@ struct RecompiledUiStateGateTraceEvent {
     uint64_t gate_state_last_writer_dispatch_count = 0;
     uint32_t gate_state_last_writer_function = 0;
     uint32_t gate_state_last_writer_ecx = 0;
+    uint32_t gate_state_last_writer_caller_function = 0;
+    uint32_t gate_state_last_writer_call_return_address = 0;
+    uint32_t gate_state_last_writer_caller_return_address = 0;
+    uint32_t gate_state_last_writer_ancestor_function = 0;
+    uint32_t gate_state_last_writer_ancestor_caller_function = 0;
+    uint32_t gate_state_last_writer_ancestor_return_address = 0;
     uint32_t gate_state_last_writer_thread_id = 0;
     uint32_t gate_state_last_writer_address = 0;
     uint32_t gate_state_last_writer_size = 0;
@@ -43,6 +49,12 @@ struct RecompiledUiStateGateTraceEvent {
     bool has_gate_callback_object = false;
     bool has_gate_state_last_writer = false;
     bool has_gate_state_last_writer_ecx = false;
+    bool has_gate_state_last_writer_caller_function = false;
+    bool has_gate_state_last_writer_call_return_address = false;
+    bool has_gate_state_last_writer_caller_return_address = false;
+    bool has_gate_state_last_writer_ancestor_function = false;
+    bool has_gate_state_last_writer_ancestor_caller_function = false;
+    bool has_gate_state_last_writer_ancestor_return_address = false;
     bool has_callback_target = false;
     bool has_helper_flag_byte = false;
     bool completed = false;

@@ -1,10 +1,50 @@
+SHIFT.exe x86 instruction slice for the runtime gate caller.
+Input SHA-256: eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1
+Tool: GNU objdump -D -Mintel --start-address=0x0054be00 --stop-address=0x0054bef2
+Ghidra currently has no function definition containing 0x0054be00, so the portable function P-code exporter cannot resolve this entry.
 
 /home/pes/ghidra_projects/shift/SHIFT.exe:     file format pei-i386
 
 
 Disassembly of section .text:
 
-0054be71 <.text+0x14ae71>:
+0054be00 <.text+0x14ae00>:
+  54be00:	53                   	push   ebx
+  54be01:	56                   	push   esi
+  54be02:	8b 35 58 60 c2 00    	mov    esi,DWORD PTR ds:0xc26058
+  54be08:	8b 06                	mov    eax,DWORD PTR [esi]
+  54be0a:	8b 90 1c 01 00 00    	mov    edx,DWORD PTR [eax+0x11c]
+  54be10:	57                   	push   edi
+  54be11:	8b f9                	mov    edi,ecx
+  54be13:	8b ce                	mov    ecx,esi
+  54be15:	ff d2                	call   edx
+  54be17:	8b d8                	mov    ebx,eax
+  54be19:	8b 06                	mov    eax,DWORD PTR [esi]
+  54be1b:	8b 90 2c 01 00 00    	mov    edx,DWORD PTR [eax+0x12c]
+  54be21:	8b ce                	mov    ecx,esi
+  54be23:	ff d2                	call   edx
+  54be25:	8b 8f e0 1e 00 00    	mov    ecx,DWORD PTR [edi+0x1ee0]
+  54be2b:	8b 06                	mov    eax,DWORD PTR [esi]
+  54be2d:	8b 80 38 01 00 00    	mov    eax,DWORD PTR [eax+0x138]
+  54be33:	6a 00                	push   0x0
+  54be35:	6a 00                	push   0x0
+  54be37:	51                   	push   ecx
+  54be38:	6a 00                	push   0x0
+  54be3a:	6a 01                	push   0x1
+  54be3c:	8b d3                	mov    edx,ebx
+  54be3e:	8b ce                	mov    ecx,esi
+  54be40:	ff d0                	call   eax
+  54be42:	8b 0d 58 60 c2 00    	mov    ecx,DWORD PTR ds:0xc26058
+  54be48:	8b 01                	mov    eax,DWORD PTR [ecx]
+  54be4a:	8b 97 e0 1e 00 00    	mov    edx,DWORD PTR [edi+0x1ee0]
+  54be50:	8b 80 44 01 00 00    	mov    eax,DWORD PTR [eax+0x144]
+  54be56:	6a 00                	push   0x0
+  54be58:	ff d0                	call   eax
+  54be5a:	8d 8f ec 1e 00 00    	lea    ecx,[edi+0x1eec]
+  54be60:	e8 0b b9 ed ff       	call   0x427770
+  54be65:	e8 f6 8c 34 00       	call   0x894b60
+  54be6a:	8b c8                	mov    ecx,eax
+  54be6c:	e8 6f 8c 34 00       	call   0x894ae0
   54be71:	e8 1a 9f ff ff       	call   0x545d90
   54be76:	8d 88 08 01 00 00    	lea    ecx,[eax+0x108]
   54be7c:	e8 2f 10 fc ff       	call   0x50ceb0
@@ -36,3 +76,22 @@ Disassembly of section .text:
   54bec2:	6a 00                	push   0x0
   54bec4:	33 d2                	xor    edx,edx
   54bec6:	ff d0                	call   eax
+  54bec8:	8b 06                	mov    eax,DWORD PTR [esi]
+  54beca:	8b 80 3c 01 00 00    	mov    eax,DWORD PTR [eax+0x13c]
+  54bed0:	6a 00                	push   0x0
+  54bed2:	6a 00                	push   0x0
+  54bed4:	6a ff                	push   0xffffffff
+  54bed6:	8b d3                	mov    edx,ebx
+  54bed8:	8b ce                	mov    ecx,esi
+  54beda:	ff d0                	call   eax
+  54bedc:	8b 06                	mov    eax,DWORD PTR [esi]
+  54bede:	8b 80 30 01 00 00    	mov    eax,DWORD PTR [eax+0x130]
+  54bee4:	6a 00                	push   0x0
+  54bee6:	6a 00                	push   0x0
+  54bee8:	33 d2                	xor    edx,edx
+  54beea:	8b ce                	mov    ecx,esi
+  54beec:	ff d0                	call   eax
+  54beee:	5f                   	pop    edi
+  54beef:	5e                   	pop    esi
+  54bef0:	5b                   	pop    ebx
+  54bef1:	c3                   	ret

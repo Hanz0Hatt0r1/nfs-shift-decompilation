@@ -94,6 +94,63 @@ The [v117 machine-readable trace](../evidence/retail_frontier_20261019/entrypoin
 and [writer instruction slice](../evidence/revenginstr_ui_gate_writer_pcode_20261019/0062fde0-instructions.txt)
 preserve the join.
 
+## Constructor and caller-chain follow-up (v119)
+
+The v119 trace records the writer's nested callers and return addresses. It
+again rendered 120 host Vulkan frames with zero Vulkan validation errors and
+484 trace events. All 121 gate calls came from `0x0054be00`; they saw zero at
+`0x00be2534` and returned false. The unique last-writer record was the same
+zero dword store from `0x0062fde0`, now joined to this dynamic path:
+
+```text
+0x0062fde0 <- 0x0062ffd0 <- 0x004e8bc0 <- 0x0050cf10
+  writer return:          0x0062fff6
+  wrapper return:         0x004e8be3
+  constructor return:     0x004eb5b4
+```
+
+The return address `0x004eb5b4` is inside `FUN_004eb550`. Its Revenginstr
+P-code shows a call at `0x004eb5af` to the thunk at `0x0050cf10`, passing the
+receiver at `param_1 + 0x10`, zero, and `0x1f`. The thunk's P-code calls
+`0x0062ffd0`, which reaches `0x0062fde0`; the latter stores zero at
+`this + 0x24` and `this + 0x28`. With runtime writer ECX `0x00be2510`, the
+first store is exactly `0x00be2534`, or gate receiver `0x00be2500 + 0x34`.
+
+A second export confirms `FUN_00545d90` is a lazy singleton getter: it tests
+the initialization bit at `0x00be2560`, constructs the object at
+`0x00be23f8` through `FUN_00545ca0`, and returns that address. `FUN_00545ca0`
+constructs a member at `this + 0x108` through thunk `0x0050d030`, matching the
+runtime gate receiver.
+
+The type context narrows the interpretation. Revenginstr resolves a call in
+`FUN_00545dc0` to `AptInteger::GetInt` on that same `this + 0x108` member, but
+only after the gate succeeds. The exported accessor reads `this + 0x8`; the
+gate-tested word is at `this + 0x34`, so it is internal AptInteger state rather
+than the integer payload. Another method, `FUN_00545d50`, gates the same member;
+on true it calls `FUN_00545a20`, and on false it clears byte `this + 0x15c`
+when set and returns zero. The exact meaning of AptInteger `+0x34` remains
+unknown.
+
+The observed `0x0054be00` routine is not defined as a function in the analyzed
+Ghidra project, so the portable function P-code exporter cannot resolve it.
+The instruction slice shows that a false result skips the local conditional
+call to `FUN_00545dc0` and virtual calls from `0x0054be85` through
+`0x0054bec7`, then continues through common-tail virtual calls at vtable
+offsets `0x13c` and `0x130`. The caller does not exit at the false branch.
+
+The zero is written during member construction, before the gate reads it, and
+the 120-frame trace contains no later write to that address. This shows the
+word is not the AptInteger value itself, but does not establish whether an
+empty internal state is expected or blocks a later frontend transition. The
+field's role and causal connection to frontend or retail draw submission
+remain unestablished.
+
+The [v119 runtime trace record](../evidence/revenginstr_ui_gate_writer_call_chain_20261019/entrypoint_probe_v119_ui_state_writer_call_chain.json),
+[raw runtime log](../evidence/revenginstr_ui_gate_writer_call_chain_20261019/shift-probe-v119-ui-state-writer-call-chain-120-validation.log),
+[Revenginstr P-code exports and manifest](../evidence/revenginstr_ui_gate_writer_call_chain_20261019/manifest.json),
+and [caller instruction slice](../evidence/retail_frontier_20261019/ui-gate-caller-0054be00-branch.txt)
+preserve the new static/runtime join.
+
 The machine-readable [v115 trace record](../evidence/retail_frontier_20261019/entrypoint_probe_v115_ui_gate_trace.json)
 includes counts and hashes. The [captured runtime log](../evidence/retail_frontier_20261019/shift-probe-v115-ui-state-gate-trace-120-validation.log)
 preserves the full trace; the [caller instruction slice](../evidence/retail_frontier_20261019/ui-gate-caller-0054be00-branch.txt)

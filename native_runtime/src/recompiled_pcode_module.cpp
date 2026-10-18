@@ -452,6 +452,18 @@ struct RecompiledPcodeModule::Impl {
         uint32_t writer_function = 0;
         uint32_t writer_ecx = 0;
         bool has_writer_ecx = false;
+        uint32_t writer_caller_function = 0;
+        bool has_writer_caller_function = false;
+        uint32_t writer_call_return_address = 0;
+        bool has_writer_call_return_address = false;
+        uint32_t writer_caller_return_address = 0;
+        bool has_writer_caller_return_address = false;
+        uint32_t writer_ancestor_function = 0;
+        bool has_writer_ancestor_function = false;
+        uint32_t writer_ancestor_caller_function = 0;
+        bool has_writer_ancestor_caller_function = false;
+        uint32_t writer_ancestor_return_address = 0;
+        bool has_writer_ancestor_return_address = false;
         uint32_t thread_id = 0;
         uint32_t write_address = 0;
         uint32_t write_size = 0;
@@ -1199,6 +1211,30 @@ struct RecompiledPcodeModule::Impl {
                                 provenance.writer_ecx;
                             event.has_gate_state_last_writer_ecx =
                                 provenance.has_writer_ecx;
+                            event.gate_state_last_writer_caller_function =
+                                provenance.writer_caller_function;
+                            event.has_gate_state_last_writer_caller_function =
+                                provenance.has_writer_caller_function;
+                            event.gate_state_last_writer_call_return_address =
+                                provenance.writer_call_return_address;
+                            event.has_gate_state_last_writer_call_return_address =
+                                provenance.has_writer_call_return_address;
+                            event.gate_state_last_writer_caller_return_address =
+                                provenance.writer_caller_return_address;
+                            event.has_gate_state_last_writer_caller_return_address =
+                                provenance.has_writer_caller_return_address;
+                            event.gate_state_last_writer_ancestor_function =
+                                provenance.writer_ancestor_function;
+                            event.has_gate_state_last_writer_ancestor_function =
+                                provenance.has_writer_ancestor_function;
+                            event.gate_state_last_writer_ancestor_caller_function =
+                                provenance.writer_ancestor_caller_function;
+                            event.has_gate_state_last_writer_ancestor_caller_function =
+                                provenance.has_writer_ancestor_caller_function;
+                            event.gate_state_last_writer_ancestor_return_address =
+                                provenance.writer_ancestor_return_address;
+                            event.has_gate_state_last_writer_ancestor_return_address =
+                                provenance.has_writer_ancestor_return_address;
                             event.gate_state_last_writer_thread_id =
                                 provenance.thread_id;
                             event.gate_state_last_writer_address =
@@ -1708,9 +1744,42 @@ struct RecompiledPcodeModule::Impl {
             record.dispatch_count = function_count;
             record.writer_function = writer_function;
             if (!active_guest_function_registers.empty()) {
-                record.writer_ecx =
-                    active_guest_function_registers.back().ecx;
+                const auto& writer_frame =
+                    active_guest_function_registers.back();
+                record.writer_ecx = writer_frame.ecx;
                 record.has_writer_ecx = true;
+                record.has_writer_call_return_address =
+                    read_guest_diagnostic_u32(
+                        writer_frame.esp, record.writer_call_return_address);
+            }
+            if (active_guest_functions.size() > 1) {
+                const size_t caller_index = active_guest_functions.size() - 2;
+                record.writer_caller_function =
+                    active_guest_functions[caller_index];
+                record.has_writer_caller_function = true;
+                if (caller_index < active_guest_function_registers.size()) {
+                    record.has_writer_caller_return_address =
+                        read_guest_diagnostic_u32(
+                            active_guest_function_registers[caller_index].esp,
+                            record.writer_caller_return_address);
+                }
+            }
+            if (active_guest_functions.size() > 2) {
+                const size_t ancestor_index = active_guest_functions.size() - 3;
+                record.writer_ancestor_function =
+                    active_guest_functions[ancestor_index];
+                record.has_writer_ancestor_function = true;
+                if (ancestor_index < active_guest_function_registers.size()) {
+                    record.has_writer_ancestor_return_address =
+                        read_guest_diagnostic_u32(
+                            active_guest_function_registers[ancestor_index].esp,
+                            record.writer_ancestor_return_address);
+                }
+            }
+            if (active_guest_functions.size() > 3) {
+                record.writer_ancestor_caller_function =
+                    active_guest_functions[active_guest_functions.size() - 4];
+                record.has_writer_ancestor_caller_function = true;
             }
             record.thread_id = current_guest_thread_id;
             record.write_address = static_cast<uint32_t>(offset);

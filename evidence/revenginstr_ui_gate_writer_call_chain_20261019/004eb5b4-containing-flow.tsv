@@ -1,0 +1,13 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+004eb550	004eb554	9	CALL	-	register:register:00000004:4	0050c820	FUN_0050c820
+004eb550	004eb566	158	PTRADD	def:004eb566:158:4	register:register:00000004:4;const:0x4:4;const:0x4:4	-	-
+004eb550	004eb56b	16	CALL	-	def:004eb566:158:4	007f6690	FUN_007f6690
+004eb550	004eb582	159	PTRADD	def:004eb582:159:4	register:register:00000004:4;const:0x11:4;const:0x4:4	-	-
+004eb550	004eb585	22	CALL	-	def:004eb582:159:4	00533e70	FUN_00533e70
+004eb550	004eb5a9	54	STORE	-	const:0x1a1:4;def:004eb5a9:160:4;const:0x0:4	-	-
+004eb550	004eb5a9	160	PTRADD	def:004eb5a9:160:4	register:register:00000004:4;const:0x12:4;const:0x4:4	-	-
+004eb550	004eb5ac	57	STORE	-	const:0x1a1:4;def:004eb5ac:161:4;const:0x0:4	-	-
+004eb550	004eb5ac	161	PTRADD	def:004eb5ac:161:4	register:register:00000004:4;const:0x13:4;const:0x4:4	-	-
+004eb550	004eb5af	60	CALL	-	def:004eb566:158:4;const:0x0:4;const:0x1f:4	0050cf10	thunk_FUN_004e8bc0
+004eb550	004eb5be	66	COPY	def:004eb5be:66:4	register:register:00000004:4	-	-
+004eb550	004eb5c1	73	RETURN	-	const:0x0:4;def:004eb5be:66:4	-	-

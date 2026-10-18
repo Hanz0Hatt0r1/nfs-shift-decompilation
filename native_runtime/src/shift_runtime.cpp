@@ -121,6 +121,54 @@ std::string format_ui_state_gate_trace(
             } else {
                 text << "null";
             }
+            text << ",\"caller_function\":";
+            if (event.has_gate_state_last_writer_caller_function) {
+                text << '"' << format_guest_address(
+                                    event.gate_state_last_writer_caller_function)
+                     << '"';
+            } else {
+                text << "null";
+            }
+            text << ",\"call_return_address\":";
+            if (event.has_gate_state_last_writer_call_return_address) {
+                text << '"' << format_guest_address(
+                                    event.gate_state_last_writer_call_return_address)
+                     << '"';
+            } else {
+                text << "null";
+            }
+            text << ",\"caller_return_address\":";
+            if (event.has_gate_state_last_writer_caller_return_address) {
+                text << '"' << format_guest_address(
+                                    event.gate_state_last_writer_caller_return_address)
+                     << '"';
+            } else {
+                text << "null";
+            }
+            text << ",\"ancestor_function\":";
+            if (event.has_gate_state_last_writer_ancestor_function) {
+                text << '"' << format_guest_address(
+                                    event.gate_state_last_writer_ancestor_function)
+                     << '"';
+            } else {
+                text << "null";
+            }
+            text << ",\"ancestor_caller_function\":";
+            if (event.has_gate_state_last_writer_ancestor_caller_function) {
+                text << '"' << format_guest_address(
+                                    event.gate_state_last_writer_ancestor_caller_function)
+                     << '"';
+            } else {
+                text << "null";
+            }
+            text << ",\"ancestor_return_address\":";
+            if (event.has_gate_state_last_writer_ancestor_return_address) {
+                text << '"' << format_guest_address(
+                                    event.gate_state_last_writer_ancestor_return_address)
+                     << '"';
+            } else {
+                text << "null";
+            }
             text << ",\"thread_id\":\""
                  << format_guest_address(
                         event.gate_state_last_writer_thread_id)
