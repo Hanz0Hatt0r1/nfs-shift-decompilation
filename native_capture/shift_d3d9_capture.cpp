@@ -1398,6 +1398,11 @@ void append_texture_snapshot_json(
     IDirect3DBaseTexture9* texture) {
     if (!texture_snapshot_stage_enabled(stage) || !texture) return;
 
+    if (trigger_capture_enabled() && !writer().trigger_is_active()) {
+        out << ",\"snapshot_status\":\"deferred-until-trigger\"";
+        return;
+    }
+
     const auto type = texture->GetType();
     const std::string dir = capture_texture_snapshot_dir();
     const std::string pointer_text = CaptureWriter::ptr(texture);
