@@ -42,6 +42,7 @@ constexpr uint32_t kWindowHeight = 720;
 constexpr int kDefaultFrames = 120;
 constexpr size_t kFramesInFlight = 2;
 constexpr double kFixedDt = 1.0 / 60.0;
+constexpr uint64_t kFrozenRetailPcodeFunctionCount = 41538;
 
 uint32_t parse_guest_address(const std::string& text) {
     size_t parsed = 0;
@@ -4004,6 +4005,20 @@ int main(int argc, char** argv) {
             << (recompiled_module
                     ? recompiled_module->dispatched_function_count()
                     : 0)
+            << ",\n"
+            << "  \"recompiled_pcode_unique_functions_dispatched\": "
+            << (recompiled_module
+                    ? recompiled_module->unique_dispatched_function_count()
+                    : 0)
+            << ",\n"
+            << "  \"recompiled_pcode_frozen_corpus_function_count\": "
+            << kFrozenRetailPcodeFunctionCount << ",\n"
+            << "  \"recompiled_pcode_unique_function_coverage_percent\": "
+            << (recompiled_module
+                    ? (100.0 * static_cast<double>(
+                                   recompiled_module->unique_dispatched_function_count()) /
+                       static_cast<double>(kFrozenRetailPcodeFunctionCount))
+                    : 0.0)
             << ",\n"
             << "  \"recompiled_pcode_step_schedule\": \""
             << (args.recompiled_step_enabled
