@@ -1,0 +1,145 @@
+format	row_type	plan_id	callee_entry	parameter_index	direct_caller_functions	caller_functions_decompiled	caller_functions_failed	callers_with_matched_calls	matched_caller_calls	caller_entry	caller_name	caller_call_site	node_id	parent_node_id	input_index	depth	edge_kind	node_token	type_display	pointer_depth	pointee_type_display	constant_value	defining_opcode	defining_address	defining_time	call_target_entry	call_target_name	truncation	status
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25d00	FUN_00a25d00	00a25d32	0	-1	-1	0	root	def:CAST@00a25d29:159:4	int *	1	int	-	CAST	00a25d29	159	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25d00	FUN_00a25d00	00a25d32	1	0	0	1	value	def:LOAD@00a25d29:46:4	undefined4	0	-	-	LOAD	00a25d29	46	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25d00	FUN_00a25d00	00a25d32	2	1	1	2	load_address	input:Stack[0xc]:4	undefined4 *	1	undefined4	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25da0	FUN_00a25da0	00a25e3f	0	-1	-1	0	root	def:LOAD@00a25e36:284:4	int *	1	int	-	LOAD	00a25e36	284	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25da0	FUN_00a25da0	00a25e3f	1	0	1	1	load_address	def:CAST@00a25e36:1014:4	int * *	2	int *	-	CAST	00a25e36	1014	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25da0	FUN_00a25da0	00a25e3f	2	1	0	2	value	def:INT_ADD@00a25e36:283:4	int	0	-	-	INT_ADD	00a25e36	283	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25da0	FUN_00a25da0	00a25e3f	3	2	0	3	base	def:CAST@00a25e36:1013:4	int	0	-	-	CAST	00a25e36	1013	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25da0	FUN_00a25da0	00a25e3f	4	3	0	4	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25da0	FUN_00a25da0	00a25e3f	5	2	1	3	offset	const:0x8:4	int	0	-	0x8	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25da0	FUN_00a25da0	00a25e58	0	-1	-1	0	root	def:LOAD@00a25e36:284:4	int *	1	int	-	LOAD	00a25e36	284	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25da0	FUN_00a25da0	00a25e58	1	0	1	1	load_address	def:CAST@00a25e36:1014:4	int * *	2	int *	-	CAST	00a25e36	1014	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25da0	FUN_00a25da0	00a25e58	2	1	0	2	value	def:INT_ADD@00a25e36:283:4	int	0	-	-	INT_ADD	00a25e36	283	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25da0	FUN_00a25da0	00a25e58	3	2	0	3	base	def:CAST@00a25e36:1013:4	int	0	-	-	CAST	00a25e36	1013	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25da0	FUN_00a25da0	00a25e58	4	3	0	4	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25da0	FUN_00a25da0	00a25e58	5	2	1	3	offset	const:0x8:4	int	0	-	0x8	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25eb0	FUN_00a25eb0	00a25f1a	0	-1	-1	0	root	def:CAST@00a25f11:395:4	int *	1	int	-	CAST	00a25f11	395	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25eb0	FUN_00a25eb0	00a25f1a	1	0	0	1	value	def:LOAD@00a25f11:109:4	undefined4	0	-	-	LOAD	00a25f11	109	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a25eb0	FUN_00a25eb0	00a25f1a	2	1	1	2	load_address	register:register:00000008:4	undefined4 *	1	undefined4	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	0	-1	-1	0	root	def:CAST@00a26732:880:4	int *	1	int	-	CAST	00a26732	880	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	1	0	0	1	value	def:LOAD@00a26732:120:4	int	0	-	-	LOAD	00a26732	120	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	2	1	1	2	load_address	def:CAST@00a26713:874:4	int *	1	int	-	CAST	00a26713	874	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	3	2	0	3	value	def:PTRADD@00a26713:853:4	short *	1	short	-	PTRADD	00a26713	853	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	4	3	0	4	base	def:LOAD@00a266e7:39:4	short *	1	short	-	LOAD	00a266e7	39	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	5	4	1	5	load_address	def:CAST@00a266e7:868:4	short * *	2	short *	-	CAST	00a266e7	868	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	6	5	0	6	value	def:INT_ADD@00a266e7:38:4	int	0	-	-	INT_ADD	00a266e7	38	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	7	6	0	7	base	def:MULTIEQUAL@00a266e1:845:4	int	0	-	-	MULTIEQUAL	00a266e1	845	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	8	7	0	8	value	def:LOAD@00a266d9:26:4	int	0	-	-	LOAD	00a266d9	26	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	9	8	1	9	load_address	def:CAST@00a266d9:866:4	int *	1	int	-	CAST	00a266d9	866	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	10	9	0	10	value	def:INT_ADD@00a266d9:25:4	int	0	-	-	INT_ADD	00a266d9	25	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	11	10	0	11	base	register:register:00000004:4	int	0	-	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	12	10	1	11	offset	const:0x88:4	int	0	-	0x88	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	13	7	1	8	value	def:LOAD@00a267c6:261:4	int	0	-	-	LOAD	00a267c6	261	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	14	13	1	9	load_address	def:CAST@00a267c6:889:4	int *	1	int	-	CAST	00a267c6	889	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	15	14	0	10	value	def:INT_ADD@00a267c6:260:4	int	0	-	-	INT_ADD	00a267c6	260	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	16	15	0	11	base	register:register:00000004:4	int	0	-	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	17	15	1	11	offset	const:0x88:4	int	0	-	0x88	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	18	6	1	7	offset	const:0x4:4	int	0	-	0x4	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	19	3	1	4	offset_index	const:0x6:4	int	0	-	0x6	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a266c0	FUN_00a266c0	00a2673e	20	3	2	4	offset_scale	const:0x2:4	int	0	-	0x2	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27860	0	-1	-1	0	root	def:LOAD@00a27855:169:4	int *	1	int	-	LOAD	00a27855	169	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27860	1	0	1	1	load_address	def:CAST@00a27855:1054:4	int * *	2	int *	-	CAST	00a27855	1054	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27860	2	1	0	2	value	def:INT_ADD@00a27855:168:4	int	0	-	-	INT_ADD	00a27855	168	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27860	3	2	0	3	base	def:CAST@00a27855:1053:4	int	0	-	-	CAST	00a27855	1053	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27860	4	3	0	4	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27860	5	2	1	3	offset	const:0xc:4	int	0	-	0xc	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278a8	0	-1	-1	0	root	def:LOAD@00a27899:343:4	int *	1	int	-	LOAD	00a27899	343	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278a8	1	0	1	1	load_address	def:CAST@00a27899:1046:4	int * *	2	int *	-	CAST	00a27899	1046	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278a8	2	1	0	2	value	def:INT_ADD@00a27899:342:4	int	0	-	-	INT_ADD	00a27899	342	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278a8	3	2	0	3	base	def:CAST@00a27899:1045:4	int	0	-	-	CAST	00a27899	1045	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278a8	4	3	0	4	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278a8	5	2	1	3	offset	const:0xc:4	int	0	-	0xc	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_009eb3f0_arg0	009eb3f0	0	-	-	-	-	-	00a271a0	FUN_00a271a0	00a271c5	0	-1	-1	0	root	input:Stack[0x10]:4	int *	1	int	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	scan22_009eb3f0_arg0	009eb3f0	0	6	6	0	6	8	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg0	00a20300	0	-	-	-	-	-	00a22d80	FUN_00a22d80	00a22df2	0	-1	-1	0	root	const:0xbaa058:4	int	0	-	0xbaa058	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg0	00a20300	0	-	-	-	-	-	00a20780	FUN_00a20780	00a207b2	0	-1	-1	0	root	register:register:00000008:4	int	0	-	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg0	00a20300	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	0	-1	-1	0	root	const:0x0:4	int	0	-	0x0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	scan22_00a20300_arg0	00a20300	0	3	3	0	3	3	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg1	00a20300	1	-	-	-	-	-	00a22d80	FUN_00a22d80	00a22df2	0	-1	-1	0	root	def:CAST@00a22df2:614:4	int *	1	int	-	CAST	00a22df2	614	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg1	00a20300	1	-	-	-	-	-	00a22d80	FUN_00a22d80	00a22df2	1	0	0	1	value	def:PTRSUB@00a22df2:601:4	undefined *	1	undefined	-	PTRSUB	00a22df2	601	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg1	00a20300	1	-	-	-	-	-	00a22d80	FUN_00a22d80	00a22df2	2	1	0	2	base	const:0x0:4	void *	1	void	0x0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg1	00a20300	1	-	-	-	-	-	00a22d80	FUN_00a22d80	00a22df2	3	1	1	2	offset	const:0xbab920:4	int	0	-	0xbab920	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg1	00a20300	1	-	-	-	-	-	00a20780	FUN_00a20780	00a207b2	0	-1	-1	0	root	input:Stack[0x8]:4	int *	1	int	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg1	00a20300	1	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	0	-1	-1	0	root	const:0x0:4	int *	1	int	0x0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	scan22_00a20300_arg1	00a20300	1	3	3	0	3	3	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a22d80	FUN_00a22d80	00a22df2	0	-1	-1	0	root	def:INDIRECT@00a22dc5:566:4	int *	1	int	-	INDIRECT	00a22dc5	566	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a22d80	FUN_00a22d80	00a22df2	1	0	0	1	value	def:INDIRECT@00a22dae:565:4	int *	1	int	-	INDIRECT	00a22dae	565	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a22d80	FUN_00a22d80	00a22df2	2	1	0	2	value	def:INDIRECT@00a22d9c:564:4	int *	1	int	-	INDIRECT	00a22d9c	564	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a22d80	FUN_00a22d80	00a22df2	3	2	0	3	value	def:INDIRECT@00a22d8d:563:4	int *	1	int	-	INDIRECT	00a22d8d	563	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a22d80	FUN_00a22d80	00a22df2	4	3	0	4	value	input:Stack[-0x8]:4	int *	1	int	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a20780	FUN_00a20780	00a207b2	0	-1	-1	0	root	input:Stack[0x4]:4	int *	1	int	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	0	-1	-1	0	root	def:MULTIEQUAL@00a278ad:911:4	int *	1	int	-	MULTIEQUAL	00a278ad	911	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	1	0	0	1	value	def:LOAD@00a27899:343:4	int *	1	int	-	LOAD	00a27899	343	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	2	1	1	2	load_address	def:CAST@00a27899:1046:4	int * *	2	int *	-	CAST	00a27899	1046	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	3	2	0	3	value	def:INT_ADD@00a27899:342:4	int	0	-	-	INT_ADD	00a27899	342	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	4	3	0	4	base	def:CAST@00a27899:1045:4	int	0	-	-	CAST	00a27899	1045	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	5	4	0	5	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	6	3	1	4	offset	const:0xc:4	int	0	-	0xc	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	7	0	1	1	value	def:INDIRECT@00a278a8:897:4	int *	1	int	-	INDIRECT	00a278a8	897	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	8	7	0	2	value	def:LOAD@00a27899:343:4	int *	1	int	-	LOAD	00a27899	343	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	9	8	1	3	load_address	def:CAST@00a27899:1046:4	int * *	2	int *	-	CAST	00a27899	1046	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	10	9	0	4	value	def:INT_ADD@00a27899:342:4	int	0	-	-	INT_ADD	00a27899	342	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	11	10	0	5	base	def:CAST@00a27899:1045:4	int	0	-	-	CAST	00a27899	1045	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	12	11	0	6	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg2	00a20300	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	13	10	1	5	offset	const:0xc:4	int	0	-	0xc	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	scan22_00a20300_arg2	00a20300	2	3	3	0	3	3	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg3	00a20300	3	-	-	-	-	-	00a22d80	FUN_00a22d80	00a22df2	0	-1	-1	0	root	const:0x12345679:4	short *	1	short	0x12345679	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg3	00a20300	3	-	-	-	-	-	00a20780	FUN_00a20780	00a207b2	0	-1	-1	0	root	input:Stack[0xc]:4	short *	1	short	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg3	00a20300	3	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	0	-1	-1	0	root	def:MULTIEQUAL@00a278ad:933:4	short *	1	short	-	MULTIEQUAL	00a278ad	933	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg3	00a20300	3	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	1	0	0	1	value	def:COPY@00a27896:338:4	short *	1	short	-	COPY	00a27896	338	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg3	00a20300	3	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	2	1	0	2	value	const:0x0:4	short *	1	short	0x0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg3	00a20300	3	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	3	0	1	1	value	def:INDIRECT@00a278a8:919:4	short *	1	short	-	INDIRECT	00a278a8	919	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg3	00a20300	3	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	4	3	0	2	value	def:COPY@00a27896:338:4	short *	1	short	-	COPY	00a27896	338	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a20300_arg3	00a20300	3	-	-	-	-	-	00a277d0	FUN_00a277d0	00a278b1	5	4	0	3	value	const:0x0:4	short *	1	short	0x0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	scan22_00a20300_arg3	00a20300	3	3	3	0	3	3	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a26db0_arg0	00a26db0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27882	0	-1	-1	0	root	def:LOAD@00a2787e:217:4	int	0	-	-	LOAD	00a2787e	217	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a26db0_arg0	00a26db0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27882	1	0	1	1	load_address	def:CAST@00a2787e:1061:4	int *	1	int	-	CAST	00a2787e	1061	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a26db0_arg0	00a26db0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27882	2	1	0	2	value	def:INT_ADD@00a2787e:216:4	int	0	-	-	INT_ADD	00a2787e	216	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a26db0_arg0	00a26db0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27882	3	2	0	3	base	def:CAST@00a2787e:1060:4	int	0	-	-	CAST	00a2787e	1060	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a26db0_arg0	00a26db0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27882	4	3	0	4	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a26db0_arg0	00a26db0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27882	5	2	1	3	offset	const:0x10:4	int	0	-	0x10	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a26db0_arg0	00a26db0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a2788f	0	-1	-1	0	root	def:LOAD@00a27889:309:4	int	0	-	-	LOAD	00a27889	309	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a26db0_arg0	00a26db0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a2788f	1	0	1	1	load_address	def:CAST@00a27889:1052:4	int *	1	int	-	CAST	00a27889	1052	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a26db0_arg0	00a26db0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a2788f	2	1	0	2	value	def:INT_ADD@00a27889:308:4	int	0	-	-	INT_ADD	00a27889	308	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a26db0_arg0	00a26db0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a2788f	3	2	0	3	base	def:CAST@00a27889:1051:4	int	0	-	-	CAST	00a27889	1051	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a26db0_arg0	00a26db0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a2788f	4	3	0	4	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a26db0_arg0	00a26db0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a2788f	5	2	1	3	offset	const:0x10:4	int	0	-	0x10	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	scan22_00a26db0_arg0	00a26db0	0	1	1	0	1	2	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg0	00a271a0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	0	-1	-1	0	root	def:CAST@00a2784c:1050:4	void *	1	void	-	CAST	00a2784c	1050	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg0	00a271a0	0	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	1	0	0	1	value	def:CALLIND@00a2784c:153:4	undefined4	0	-	-	CALLIND	00a2784c	153	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	scan22_00a271a0_arg0	00a271a0	0	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg1	00a271a0	1	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	0	-1	-1	0	root	def:CALLIND@00a27874:208:4	undefined4	0	-	-	CALLIND	00a27874	208	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	scan22_00a271a0_arg1	00a271a0	1	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg2	00a271a0	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	0	-1	-1	0	root	def:INDIRECT@00a27874:881:4	undefined4	0	-	-	INDIRECT	00a27874	881	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg2	00a271a0	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	1	0	0	1	value	def:LOAD@00a27868:191:4	undefined4	0	-	-	LOAD	00a27868	191	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg2	00a271a0	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	2	1	1	2	load_address	def:CAST@00a27868:1058:4	undefined4 *	1	undefined4	-	CAST	00a27868	1058	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg2	00a271a0	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	3	2	0	3	value	def:INT_ADD@00a27868:190:4	int	0	-	-	INT_ADD	00a27868	190	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg2	00a271a0	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	4	3	0	4	base	def:CAST@00a27868:1057:4	int	0	-	-	CAST	00a27868	1057	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg2	00a271a0	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	5	4	0	5	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg2	00a271a0	2	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	6	3	1	4	offset	const:0x4:4	int	0	-	0x4	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	scan22_00a271a0_arg2	00a271a0	2	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg3	00a271a0	3	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	0	-1	-1	0	root	def:INDIRECT@00a27874:903:4	undefined4	0	-	-	INDIRECT	00a27874	903	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg3	00a271a0	3	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	1	0	0	1	value	def:LOAD@00a27865:188:4	undefined4	0	-	-	LOAD	00a27865	188	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg3	00a271a0	3	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	2	1	1	2	load_address	def:CAST@00a27865:1056:4	undefined4 *	1	undefined4	-	CAST	00a27865	1056	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg3	00a271a0	3	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	3	2	0	3	value	def:INT_ADD@00a27865:187:4	int	0	-	-	INT_ADD	00a27865	187	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg3	00a271a0	3	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	4	3	0	4	base	def:CAST@00a27865:1055:4	int	0	-	-	CAST	00a27865	1055	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg3	00a271a0	3	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	5	4	0	5	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg3	00a271a0	3	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	6	3	1	4	offset	const:0x8:4	int	0	-	0x8	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	scan22_00a271a0_arg3	00a271a0	3	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg4	00a271a0	4	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	0	-1	-1	0	root	def:INDIRECT@00a27874:925:4	int *	1	int	-	INDIRECT	00a27874	925	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg4	00a271a0	4	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	1	0	0	1	value	def:MULTIEQUAL@00a27865:931:4	int *	1	int	-	MULTIEQUAL	00a27865	931	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg4	00a271a0	4	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	2	1	0	2	value	def:LOAD@00a27855:169:4	int *	1	int	-	LOAD	00a27855	169	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg4	00a271a0	4	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	3	2	1	3	load_address	def:CAST@00a27855:1054:4	int * *	2	int *	-	CAST	00a27855	1054	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg4	00a271a0	4	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	4	3	0	4	value	def:INT_ADD@00a27855:168:4	int	0	-	-	INT_ADD	00a27855	168	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg4	00a271a0	4	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	5	4	0	5	base	def:CAST@00a27855:1053:4	int	0	-	-	CAST	00a27855	1053	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg4	00a271a0	4	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	6	5	0	6	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg4	00a271a0	4	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	7	4	1	5	offset	const:0xc:4	int	0	-	0xc	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg4	00a271a0	4	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	8	1	1	2	value	def:INDIRECT@00a27860:924:4	int *	1	int	-	INDIRECT	00a27860	924	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg4	00a271a0	4	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	9	8	0	3	value	def:LOAD@00a27855:169:4	int *	1	int	-	LOAD	00a27855	169	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg4	00a271a0	4	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	10	9	1	4	load_address	def:CAST@00a27855:1054:4	int * *	2	int *	-	CAST	00a27855	1054	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg4	00a271a0	4	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	11	10	0	5	value	def:INT_ADD@00a27855:168:4	int	0	-	-	INT_ADD	00a27855	168	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg4	00a271a0	4	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	12	11	0	6	base	def:CAST@00a27855:1053:4	int	0	-	-	CAST	00a27855	1053	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg4	00a271a0	4	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	13	12	0	7	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	scan22_00a271a0_arg4	00a271a0	4	-	-	-	-	-	00a277d0	FUN_00a277d0	00a27879	14	11	1	6	offset	const:0xc:4	int	0	-	0xc	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	scan22_00a271a0_arg4	00a271a0	4	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees

@@ -1,6 +1,6 @@
 # M2.3 direct-call audit replay (SHIFT)
 
-This consumer replay freezes thirteen SHIFT functions with 33 exact parameter and field-offset store/load pairs. It uses the retail input SHA-256 recorded in `coordination/research_inputs.lock.json`, read-only Ghidra exports, and `revenginstr` commit `88a30066b79af827de7c7a9cb91c24a9947edee4`.
+The original consumer replay freezes thirteen SHIFT functions with 33 exact parameter and field-offset store/load pairs. It uses the retail input SHA-256 recorded in `coordination/research_inputs.lock.json`, read-only Ghidra exports, and `revenginstr` commit `88a30066b79af827de7c7a9cb91c24a9947edee4`. Later scan22 recapture and scan24 exact-root evidence are separate supplements; they do not rewrite the original frozen package.
 
 Each candidate includes bounded P-code, parameter store/load rows, CFG/3, memory-store facts, paired-field graphs, direct-call effect rows, and the `/1`, `/2`, and `/3` audit outputs. `manifest.json` pins every artifact by byte count, row count, and SHA-256. The replay rebuilds the derived pairs, call effects, and audits byte-for-byte.
 
@@ -14,6 +14,17 @@ python tools/replay_revenginstr_m23_direct_call_audit.py \
 ```
 
 The replay verifies the frozen artifacts, rebuilds field-access pairs and direct-call effects from the committed TSVs, runs the `/1`–`/3` candidate audits and the scan22 transitive-call closure plus `/4` and alias-aware `/5` audits, and compares generated JSONL byte-for-byte. The bounded TSV is split by exact `function_entry`; only direct callees present in the export are supplied to the effect builders.
+
+The supplemental captures replay through the generic commands in the pinned `revenginstr` installation:
+
+```sh
+python tools/replay_revenginstr_m23_scan22_recapture.py \
+  --bin-dir /path/to/revenginstr/.venv/bin
+python tools/replay_revenginstr_m23_scan24_exact_root.py \
+  --bin-dir /path/to/revenginstr/.venv/bin
+```
+
+Each supplemental manifest pins artifact bytes, row counts and SHA-256 hashes. The replay rebuilds the combined CFG, memory-access and exact-root inputs before comparing `/1` and `/5` JSONL byte-for-byte.
 
 ## Results
 
@@ -34,6 +45,10 @@ Scan20 screened eight previously unscanned functions with exactly five indirect 
 Scan21 screened three previously unscanned functions with exactly six indirect calls. The parameter-field exporter returned zero rows; it retained 28 parameter loads and 12 general STORE facts, with no exact field pairs, so no dominance audit was run. The empty pair export replays byte-for-byte. See [`screening-scan21.json`](screening-scan21.json) for the frozen selection and exports.
 
 Scan22 screened one previously unscanned function with exactly nine indirect calls. It produced two parameter-field stores and two exact field pairs, alongside 12 parameter loads and three general STORE facts. The direct-call sidecar and transitive closure each retain six explicit-memory-write sites and nine indirect-call barriers. CFG/2, CFG/3, CFG/4, and the alias-aware `/5` audit agree that both stores do not dominate their paired loads; there are zero status changes from `/4` to `/5` and no unique candidate. The `/5` sidecar contains 12 `unknown_effect` rows and 18 indirect-call barriers across the two pairs. Its frozen inputs have caller P-code/CFG and bounded callee P-code flows, but no exact caller-parameter-root records or callee CFG/memory-access facts; those unknowns remain barriers. All closure and audit rows pin their input hashes and replay byte-for-byte. See [`screening-scan22.json`](screening-scan22.json) for frozen evidence and replay inputs.
+
+The original scan22 package remains frozen with that capture gap. A read-only Ghidra recapture on 2026-10-18 exported the four direct callees' CFG and 12 memory-store facts plus exact argument roots. It found five exact-root rows across callers, but none for the selected `00a277d0`; the expanded replay keeps 18 `indirect_call`, four `possible_aliasing_write`, and eight `unknown_effect` rows, and both `/5` pairs remain `store_not_dominating_load`. The possible-alias rows are conservative may-alias evidence, not proof of runtime writes. See [`scan22-recapture-20261018/manifest.json`](scan22-recapture-20261018/manifest.json).
+
+Scan24 screened the four direct callees of `00a271a0` as a bounded follow-up. The separate `00a20780` negative screen has 69 P-code rows and no parameter-to-field store/load pair. `00a271a0` has four parameter-to-field stores, one matching parameter load and one exact pair at offset zero. Its exact argument roots reach `009eb3f0` and `00a1d2c0`; `00a26ea0` remains unrooted. The four-function closure contains 17 memory-store facts. `/1` reports one `possible_aliasing_write`, three `indirect_call`, and two `unknown_effect` rows; `/5` retains `possible_intervening_memory_effect` and reports no unique CFG store candidate. Unexported nested calls remain barriers. See [`scan24-exact-root-20261018/manifest.json`](scan24-exact-root-20261018/manifest.json) for the hashes, source pins and limitations.
 
 Scan23 screened the last previously unscanned function in this 1,000-row sample that met the same candidate filters, with exactly ten indirect calls. It returned five parameter loads and four general STORE facts, but no parameter-field stores or exact field pairs, so no dominance audit was run. The empty pair export replays byte-for-byte. No additional eligible roots remain in this corpus under these filters. See [`screening-scan23.json`](screening-scan23.json) for the frozen selection and exports.
 
