@@ -14,6 +14,12 @@ The stage consumes the existing JSONL capture only. It does not run SHIFT and it
 does not require another capture to recover texture creation/binding history
 that is already present.
 
+Pass `--snapshot-root` to hash snapshot files already present on disk. The
+report lists each referenced basename, byte size, and SHA-256. These hashes
+identify the stored capture artifacts; they are not the retail asset path/SHA
+and do not reconstruct earlier bytes when the producer reused a pointer-based
+snapshot filename.
+
 ## Evidence chain
 
 For each target draw the extractor follows:
@@ -71,6 +77,11 @@ The `resource_scope` field is evidence-based:
 Absence of a retail path is **not** interpreted as proof that a texture is
 external/runtime-owned.
 
+The report also counts snapshots directly attached to target-draw bindings and
+snapshots observed elsewhere on the same texture generation. The latter remain
+candidates only: the report does not copy them onto a draw or assume the
+texture contents stayed unchanged between binds.
+
 ## CLI
 
 ```bash
@@ -78,6 +89,13 @@ python src/graphics/d3d9/d3d9_target_texture_sampler_evidence.py \
   shift_d3d9_capture.jsonl \
   out/d3d9_target_texture_sampler_evidence.json \
   --target-inventory evidence/silverstone_era3_runtime_shader_targets.json
+
+# Optional: add SHA-256 identities for snapshot files under this directory.
+python src/graphics/d3d9/d3d9_target_texture_sampler_evidence.py \
+  shift_d3d9_capture.jsonl \
+  out/d3d9_target_texture_sampler_evidence.json \
+  --target-inventory evidence/silverstone_era3_runtime_shader_targets.json \
+  --snapshot-root out/textures
 ```
 
 ## Historical Silverstone capture boundary
