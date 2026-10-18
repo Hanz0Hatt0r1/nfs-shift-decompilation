@@ -4,7 +4,7 @@ Evidence-driven reconstruction and recompilation of **Need for Speed: SHIFT (PC 
 
 The project is **not playable yet**, but it has moved well beyond isolated function recovery. The complete frozen PC instruction corpus can now be lowered to native C, linked into a Linux ELF module, loaded beside the original PE32 image, and executed through a growing Win32 guest-runtime bridge inside the Vulkan runtime.
 
-## Current status — 2026-10-18
+## Current status — 2026-10-19
 
 | Area | Status |
 | --- | --- |
@@ -17,7 +17,7 @@ The project is **not playable yet**, but it has moved well beyond isolated funct
 | PE32 entry-point execution | **Implemented** |
 | Guest x86 RAM/register/TEB state | **Implemented for current startup needs** |
 | Import/IAT dispatch | **Implemented, bounded subset of Win32 APIs** |
-| Retail startup probe | **v112 reaches 155,507 guest dispatches / 1,417 unique functions and renders 600 Vulkan frames with validation enabled and zero errors** |
+| Retail startup probe | **v113 reaches 155,506 guest dispatches / 1,417 unique functions and renders 600 Vulkan frames with validation enabled and zero errors; records the last 64 main-thread function entries** |
 | Native Vulkan runtime | **Operational** |
 | Retail resource pipeline | **Operational** |
 | Silverstone + BMW native scene path | **Operational as reconstruction infrastructure** |
@@ -64,7 +64,7 @@ native Linux runtime
         +--> XCB + Vulkan frame loop
 ```
 
-The retail PE entry point has been executed against the real **PC retail 1.02** image with a freshly rebuilt 41,538-export P-code module, cooperative guest scheduler, startup supplements and Linux runtime. Probe v112 lowers all **41,538 functions / 2,088,152 instructions** from the frozen corpus, runs **155,507 guest dispatches across 1,417 unique functions**, and renders 600 Vulkan frames with validation enabled and zero errors. The saved main-thread stack ends at `0x006472d0`, with four worker threads waiting; the entry point is still active and frontend progress is not established. The renderer uses converted MGEO smoke geometry, so this is not retail D3D9 rendering or a playable session. The regenerated multi-gigabyte P-code sources, object shards and ELF remain in the external artifact cache; their hashes and build inputs are recorded in [full-module rebuild evidence](evidence/pcode_full_linux_rebuild_20261018.json). Historical v65-v67 probes also traced a 254,529,224-byte allocator request through `0x00886900` to `FUN_0062f2d0`; see the [request-origin analysis](evidence/recompiled_pcode_android_retail_frontier_v67_pool_request_origin_20261018.md). The retail data directory is available in the PortProton prefix at `/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02`; its `SHIFT.exe` matches the analyzed PE by SHA-256.
+The retail PE entry point has been executed against the real **PC retail 1.02** image with the freshly rebuilt 41,538-export P-code module, cooperative guest scheduler, 32 startup supplements and Linux runtime. Probe v113 runs **155,506 guest dispatches across 1,417 unique functions** and renders 600 Vulkan frames with validation enabled and zero errors. Its 64-entry main-thread history exposes a startup call sequence through `0x00637840`, `0x00508ea0`, `0x0054be00`, `0x0082db70`, `0x00894b60`, `0x00833670` and `0x00807030`; the final stack still ends at `0x006472d0`, with four worker threads waiting. This does not establish frontend progress or a hang. The renderer uses converted MGEO smoke geometry, so this is not retail D3D9 rendering or a playable session. The regenerated multi-gigabyte P-code sources, object shards and ELF remain in the external artifact cache; their hashes and build inputs are recorded in [full-module rebuild evidence](evidence/pcode_full_linux_rebuild_20261018.json). Probe details are in the [v113 record](evidence/retail_frontier_20261019/entrypoint_probe_v113.json) and [captured log](evidence/retail_frontier_20261019/shift-probe-v113-function-history-600-validation.log). Historical v65-v67 probes also traced a 254,529,224-byte allocator request through `0x00886900` to `FUN_0062f2d0`; see the [request-origin analysis](evidence/recompiled_pcode_android_retail_frontier_v67_pool_request_origin_20261018.md). The retail data directory is available in the PortProton prefix at `/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02`; its `SHIFT.exe` matches the analyzed PE by SHA-256.
 
 This is a startup/recompilation frontier, not a completed entry point or playable-game result. The project target and current priorities are defined in [`ROADMAP.md`](ROADMAP.md).
 
@@ -76,6 +76,7 @@ See:
 - [`evidence/recompiled_pcode_pe32_fiber_memory_frontier_20261018.json`](evidence/recompiled_pcode_pe32_fiber_memory_frontier_20261018.json)
 - [`evidence/recompiled_pcode_android_retail_frontier_20261018.json`](evidence/recompiled_pcode_android_retail_frontier_20261018.json)
 - [`evidence/pcode_full_linux_rebuild_20261018.json`](evidence/pcode_full_linux_rebuild_20261018.json)
+- [`evidence/retail_frontier_20261019/entrypoint_probe_v113.json`](evidence/retail_frontier_20261019/entrypoint_probe_v113.json)
 - [`evidence/retail_frontier_20261018/entrypoint_probe_v112.json`](evidence/retail_frontier_20261018/entrypoint_probe_v112.json)
 
 ## Full frozen-corpus recompilation
