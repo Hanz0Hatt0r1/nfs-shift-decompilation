@@ -16,6 +16,7 @@ def test_pe32_vulkan_runtime_evidence_is_explicit_and_bounded() -> None:
     loader = evidence["pe32_guest_loader"]
     fixture = evidence["fixture_validation"]
     smoke = evidence["local_linux_vulkan_smoke"]
+    ci_smoke = evidence["ci_linux_vulkan_smoke"]
     limitations = evidence["limitations"]
 
     assert evidence["format"] == "NFSShift.RecompiledPcodePe32VulkanRuntime/1"
@@ -49,6 +50,15 @@ def test_pe32_vulkan_runtime_evidence_is_explicit_and_bounded() -> None:
     assert smoke["status"] == "ok"
     assert smoke["validation_enabled"] is True
     assert smoke["validation_errors"] == 0
+    assert ci_smoke["conclusion"] == "success"
+    assert ci_smoke["frames_rendered"] == ci_smoke["simulation_steps"] == 3
+    assert ci_smoke["entrypoint_invocations"] == 1
+    assert ci_smoke["supplemental_module_count"] == 1
+    assert ci_smoke["import_function_count"] == 74
+    assert ci_smoke["pcode_step_invocations"] == 3
+    assert ci_smoke["pcode_functions_dispatched"] == 7
+    assert ci_smoke["validation_errors"] == 0
+    assert ci_smoke["status"] == "ok"
     assert evidence["native_runtime_ctest"]["passed"] == 138
     assert evidence["native_runtime_ctest"]["failed"] == 0
     assert evidence["python_regressions"]["scope"] == (
@@ -56,6 +66,13 @@ def test_pe32_vulkan_runtime_evidence_is_explicit_and_bounded() -> None:
     )
     assert evidence["python_regressions"]["passed"] == 3
     assert evidence["python_regressions"]["failed"] == 0
+    full_suite = evidence["python_full_suite"]
+    assert full_suite["passed"] == 7520
+    assert full_suite["skipped"] == 4
+    assert full_suite["failed"] == 0
+    assert full_suite["revenginstr_revision"] == (
+        "a58d8dcdc6cfa73af360c3f4cb253ad43fe507d7"
+    )
     assert evidence["latest_local_vulkan_attempt"] == {
         "result": "exited_before_first_frame",
         "frames_rendered": 0,

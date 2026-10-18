@@ -102,5 +102,34 @@
     "exception_argument_count": 1,
     "function_address_in_full_pcode_export_corpus": false,
     "result": "fails closed before game startup completes"
+  },
+  "ci_linux_vulkan_smoke": {
+    "workflow": "linux-vulkan",
+    "run_id": 39095377820,
+    "job": "vulkan-smoke",
+    "job_id": 117580607086,
+    "conclusion": "success",
+    "artifact": "linux-vulkan-smoke/runtime/scene_set.json",
+    "frames_rendered": 3,
+    "simulation_steps": 3,
+    "entrypoint_invocations": 1,
+    "supplemental_module_count": 1,
+    "pe_image_size": 12288,
+    "import_module_count": 2,
+    "import_function_count": 74,
+    "pcode_step_invocations": 3,
+    "pcode_functions_dispatched": 7,
+    "validation_enabled": true,
+    "validation_errors": 0,
+    "status": "ok"
+  },
+  "python_full_suite": {
+    "command": "python -m pytest -q",
+    "setup": "requirements-dev.txt plus editable revenginstr[test] from the local pinned checkout",
+    "revenginstr_revision": "a58d8dcdc6cfa73af360c3f4cb253ad43fe507d7",
+    "python_version": "3.14.7",
+    "passed": 7520,
+    "skipped": 4,
+    "failed": 0
   }
 }
