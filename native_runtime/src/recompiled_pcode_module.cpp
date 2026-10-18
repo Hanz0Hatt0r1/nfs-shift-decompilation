@@ -76,6 +76,8 @@ constexpr size_t kMaximumGuestFileReadBytes = 64 * 1024 * 1024;
 constexpr uint32_t kGuestAllocationTraceThreshold = 16 * 1024 * 1024;
 constexpr size_t kGuestAllocationObjectTraceSize = 0x130;
 constexpr size_t kGuestAllocationObjectLinkLimit = 12;
+constexpr size_t kGuestAllocationObjectChainLinkLimit = 64;
+constexpr size_t kGuestAllocationLinkNextPointerWordIndex = 0x10 / 4;
 constexpr uint64_t kMaximumGuestVirtualAllocationSize =
     UINT64_C(512) * 1024 * 1024;
 constexpr uint32_t kGuestStdInputHandle = 0x00020000;
@@ -403,7 +405,8 @@ struct RecompiledPcodeModule::Impl {
     };
     struct GuestObjectLinkSnapshot {
         uint32_t address = 0;
-        std::array<uint32_t, 4> memory{};
+        uint32_t parent_address = 0;
+        std::array<uint32_t, 6> memory{};
     };
     struct GuestRegisterSnapshot {
         uint32_t eax = 0;
@@ -426,6 +429,10 @@ struct RecompiledPcodeModule::Impl {
         std::array<GuestObjectLinkSnapshot,
                    kGuestAllocationObjectLinkLimit>
             ecx_object_links{};
+        size_t ecx_object_chain_link_count = 0;
+        std::array<GuestObjectLinkSnapshot,
+                   kGuestAllocationObjectChainLinkLimit>
+            ecx_object_chain_links{};
     };
     struct GuestSemaphore {
         uint32_t count = 0;
@@ -1155,6 +1162,72 @@ struct RecompiledPcodeModule::Impl {
                         }
                         if (complete_snapshot)
                             ++entry_registers.ecx_object_link_count;
+                    }
+                    // The allocator follows linked pool records through the
+                    // dword at +0x10. Snapshot that bounded chain without
+                    // interpreting the other record fields.
+                    const auto add_chain_link = [&](uint32_t parent_address,
+                                                    uint32_t pointer) {
+                        if (entry_registers.ecx_object_chain_link_count >=
+                                entry_registers.ecx_object_chain_links.size() ||
+                            !diagnostic_guest_pointer_mapped(pointer, 24)) {
+                            return;
+                        }
+                        for (size_t direct_index = 0;
+                             direct_index <
+                             entry_registers.ecx_object_link_count;
+                             ++direct_index) {
+                            if (entry_registers.ecx_object_links[direct_index]
+                                    .address == pointer) {
+                                return;
+                            }
+                        }
+                        for (size_t chain_index = 0;
+                             chain_index <
+                             entry_registers.ecx_object_chain_link_count;
+                             ++chain_index) {
+                            if (entry_registers.ecx_object_chain_links
+                                    [chain_index]
+                                    .address == pointer) {
+                                return;
+                            }
+                        }
+                        auto& link = entry_registers.ecx_object_chain_links[
+                            entry_registers.ecx_object_chain_link_count];
+                        link.address = pointer;
+                        link.parent_address = parent_address;
+                        for (size_t word_index = 0;
+                             word_index < link.memory.size(); ++word_index) {
+                            const uint64_t word_address =
+                                static_cast<uint64_t>(pointer) +
+                                word_index * sizeof(uint32_t);
+                            if (!read_guest_diagnostic_u32(
+                                    word_address, link.memory[word_index])) {
+                                return;
+                            }
+                        }
+                        ++entry_registers.ecx_object_chain_link_count;
+                    };
+                    for (size_t link_index = 0;
+                         link_index < entry_registers.ecx_object_link_count;
+                         ++link_index) {
+                        const auto& parent =
+                            entry_registers.ecx_object_links[link_index];
+                        add_chain_link(
+                            parent.address,
+                            parent.memory[
+                                kGuestAllocationLinkNextPointerWordIndex]);
+                    }
+                    for (size_t link_index = 0;
+                         link_index <
+                         entry_registers.ecx_object_chain_link_count;
+                         ++link_index) {
+                        const auto& parent =
+                            entry_registers.ecx_object_chain_links[link_index];
+                        add_chain_link(
+                            parent.address,
+                            parent.memory[
+                                kGuestAllocationLinkNextPointerWordIndex]);
                     }
                 }
             }
@@ -2179,6 +2252,28 @@ struct RecompiledPcodeModule::Impl {
                         std::snprintf(
                             linked_memory, sizeof(linked_memory),
                             "{guest-ecx-link@0x%08x=", link.address);
+                        error += linked_memory;
+                        for (size_t word_index = 0;
+                             word_index < link.memory.size(); ++word_index) {
+                            char word[16]{};
+                            std::snprintf(
+                                word, sizeof(word), "%s%08x",
+                                word_index == 0 ? "" : ",",
+                                link.memory[word_index]);
+                            error += word;
+                        }
+                        error += "}";
+                    }
+                    for (size_t link_index = 0;
+                         link_index < registers.ecx_object_chain_link_count;
+                         ++link_index) {
+                        const auto& link =
+                            registers.ecx_object_chain_links[link_index];
+                        char linked_memory[64]{};
+                        std::snprintf(
+                            linked_memory, sizeof(linked_memory),
+                            "{guest-ecx-next@0x%08x+0x10->0x%08x=",
+                            link.parent_address, link.address);
                         error += linked_memory;
                         for (size_t word_index = 0;
                              word_index < link.memory.size(); ++word_index) {

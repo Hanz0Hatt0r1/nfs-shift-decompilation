@@ -185,11 +185,35 @@
       "dispatches": 61307,
       "unique_functions": 1325,
       "frontier": "bounded linked guest-memory snapshots capture pool block descriptors; allocation still fails closed"
+    },
+    {
+      "version": 61,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "six-word pool-link snapshots expose the selected list head's +0x10 successor"
+    },
+    {
+      "version": 62,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "indirect link snapshots expose another successor, but the pointer candidate limit truncates the chain"
+    },
+    {
+      "version": 63,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "bounded +0x10 successor tracing confirms the selected list's link layout; 12-node trace limit truncates the chain"
+    },
+    {
+      "version": 64,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "selected +0x104 list chain terminates after five nodes; largest compared first dword is below the request"
     }
   ],
   "latest_probe": {
-    "version": 60,
-    "log": "evidence/recompiled_pcode_android_retail_frontier_v60_pool_links_20261018.log",
+    "version": 64,
+    "log": "evidence/recompiled_pcode_android_retail_frontier_v64_pool_successor_chain_20261018.log",
     "dispatches": 61307,
     "unique_functions": 1325,
     "result": "guest process exited with code 1",
@@ -216,7 +240,7 @@
       "0x00907615",
       "0x009074b1"
     ],
-    "interpretation": "Probe v60 reproduces the v55 retail frontier with entry-time register, stack, and bounded guest-memory snapshots. The default pool handle 0 reaches the retail allocator at 0x00638020, which reports a 254529224-byte request (0x0f2bcec8) and pool name Base System. Its object is at 0x10001c18; raw fields at +0x110 and +0x12c are 0x00000c05 and 0x00000100. The object references descriptors in the earlier 0x20000000 VirtualAlloc arena. The linked descriptor words are recorded below without assigning unverified field meanings. No Win32 allocation is attempted for the failed request. This narrows the next work to validating the pool descriptor chain and backing-range eligibility; it does not yet prove why the game expects this request or which range should satisfy it.",
+    "interpretation": "Probe v64 reproduces the same retail frontier with a bounded successor walk. The default pool handle 0 reaches the allocator at 0x00638020 with a 254529224-byte request (0x0f2bcec8) and pool name Base System. Its object is at 0x10001c18; raw fields at +0x110 and +0x12c are 0x00000c05 and 0x00000100. Static disassembly shows flags 0x80 select the list at +0x104, compares each node's first dword with the request, and follows +0x10. The selected list starts at 0x27f87528 and terminates at 0x27f88dbc after five nodes; the largest compared first dword is 0x07beed0c (129953036 bytes), below the request. The raw words and links are preserved below without inferring other field meanings. No Win32 allocation is attempted for the failed request. This explains why the selected list cannot satisfy the request, but does not establish why the request is made or whether another pool or initialization state should provide a larger block.",
     "allocation_failure": {
       "allocator_entry": "0x00638020",
       "fatal_callsite": "0x006381cc",
@@ -289,6 +313,42 @@
           ]
         }
       ],
+      "selected_pool_list_walk_static": {
+        "request_flags": "0x00000080",
+        "selected_pool_head_offset": "+0x104",
+        "head_address": "0x27f87528",
+        "next_pointer_offset": "+0x10",
+        "compared_value_offset": "+0x00",
+        "node_count": 5,
+        "terminal_node_address": "0x27f88dbc",
+        "terminal_next_pointer": "0x00000000",
+        "request_byte_count": 254529224,
+        "largest_compared_value_hex": "0x07beed0c",
+        "largest_compared_value_decimal": 129953036,
+        "selected_list_satisfies_request": false,
+        "raw_nodes": [
+          {
+            "address": "0x27f87528",
+            "words": ["0x00000120", "0x00000000", "0x27f30a48", "0x27f30a50", "0x27f87b2c", "0x00000000"]
+          },
+          {
+            "address": "0x27f87b2c",
+            "words": ["0x00000120", "0x00000000", "0x27ecac88", "0x27ecac90", "0x27f88104", "0x27f87528"]
+          },
+          {
+            "address": "0x27f88104",
+            "words": ["0x000001a4", "0x00000000", "0x27e3c0d0", "0x27e315e8", "0x27f88264", "0x27f87b2c"]
+          },
+          {
+            "address": "0x27f88264",
+            "words": ["0x00000120", "0x00000000", "0x27d9cd40", "0x27d9cd48", "0x27f88dbc", "0x27f88104"]
+          },
+          {
+            "address": "0x27f88dbc",
+            "words": ["0x07beed0c", "0x00000000", "0x2010179c", "0x2006b388", "0x00000000", "0x27f88264"]
+          }
+        ]
+      },
       "descriptor_field_semantics_confirmed": false,
       "large_win32_allocations_before_failure": [
         {

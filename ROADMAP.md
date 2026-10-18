@@ -74,7 +74,7 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 | P-code operations covered | **9,600,713** |
 | Linux lowered module | **Full corpus links as native ELF exports** |
 | Original PE32 image loading | **Implemented** |
-| Original PE32 entry point | **Runs through the guest runtime; v60 reaches 61,307 dispatches / 1,325 unique functions before the `Base System` pool rejects a 254,529,224-byte allocation** |
+| Original PE32 entry point | **Runs through the guest runtime; v64 reaches 61,307 dispatches / 1,325 unique functions before the selected `Base System` list exhausts below a 254,529,224-byte request** |
 | Import/IAT dispatch | **Implemented with fail-closed API boundary** |
 | Guest threads | **Cooperative multi-thread scheduling implemented** |
 | Vulkan runtime shell | **Operational on Linux** |
@@ -83,17 +83,17 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 | Host-architecture-neutral runtime | **Not yet proven** |
 | ARM64 lowered-runtime execution | **Not yet proven** |
 | Android platform layer | **Not implemented** |
-| Retail entry-point completion | **Not yet proven; v60 hits `Unable to allocate %d bytes of memory from the pool (%s)` and exits through `KERNEL32.dll!ExitProcess(1)`** |
+| Retail entry-point completion | **Not yet proven; v64 hits `Unable to allocate %d bytes of memory from the pool (%s)` and exits through `KERNEL32.dll!ExitProcess(1)`** |
 | Game main loop | **Not yet proven** |
 | Retail frontend | **Not reached** |
 | Offline race | **Not reached** |
 | Android gameplay | **Not reached** |
 
-The cooperative guest-thread scheduler has now been exercised by the real retail entry point together with the complete **41,538-export** lowered P-code ELF. Probes v40–v42 added exact instruction/P-code supplements for `rvi_006408e2`, `rvi_00a69220`, and `rvi_006476e0`; probes v43–v44 added the required `DeleteFileA` and `SleepEx` runtime behavior. With the retail game-data directory as the working directory, v60 reached **61,307 guest dispatches across 1,325 unique functions**. The retail `Base System` pool then rejects a **254,529,224-byte (about 242.6 MiB)** request with flags `0x80` and exits through `KERNEL32.dll!ExitProcess(1)`. Four earlier `VirtualAlloc` requests of 128, 64, 160 and 60 MiB all succeed; the failed request does not reach `VirtualAlloc` or `HeapAlloc`. Entry-time snapshots capture the `Base System` pool object at `0x10001c18`, including flags `0xC05`, a `0x100` size threshold, and links into the existing `0x20000000` allocation. The linked block descriptors have been captured as raw guest words, but their field meanings and whether another eligible backing range exists still need validation. See [`evidence/recompiled_pcode_android_retail_frontier_v60_pool_links_20261018.log`](evidence/recompiled_pcode_android_retail_frontier_v60_pool_links_20261018.log) and the machine-readable frontier record at [`evidence/recompiled_pcode_android_retail_frontier_20261018.json`](evidence/recompiled_pcode_android_retail_frontier_20261018.json). This remains a startup frontier: entry-point completion, the main loop, and playable behavior have not been demonstrated. The installed retail data directory is `/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02`; its `SHIFT.exe` SHA-256 matches the analyzed image.
+The cooperative guest-thread scheduler has now been exercised by the real retail entry point together with the complete **41,538-export** lowered P-code ELF. Probes v40–v42 added exact instruction/P-code supplements for `rvi_006408e2`, `rvi_00a69220`, and `rvi_006476e0`; probes v43–v44 added the required `DeleteFileA` and `SleepEx` runtime behavior. With the retail game-data directory as the working directory, v64 reached **61,307 guest dispatches across 1,325 unique functions**. The retail `Base System` pool then rejects a **254,529,224-byte (about 242.74 MiB)** request with flags `0x80` and exits through `KERNEL32.dll!ExitProcess(1)`. Four earlier `VirtualAlloc` requests of 128, 64, 160 and 60 MiB all succeed; the failed request does not reach `VirtualAlloc` or `HeapAlloc`. Entry-time snapshots capture the `Base System` pool object at `0x10001c18`, including flags `0xC05`, a `0x100` threshold, and links into the existing `0x20000000` arena. Static disassembly confirms flag `0x80` selects the list at `+0x104`, compares each node's first dword with the request, and follows the next pointer at `+0x10`. The five-node chain from `0x27f87528` ends at `0x27f88dbc`; its largest compared value is `0x07beed0c` (129,953,036 bytes, about 123.93 MiB), below the request. Other descriptor words remain unclassified. See [`evidence/recompiled_pcode_android_retail_frontier_v64_pool_successor_chain_20261018.log`](evidence/recompiled_pcode_android_retail_frontier_v64_pool_successor_chain_20261018.log) and the machine-readable frontier record at [`evidence/recompiled_pcode_android_retail_frontier_20261018.json`](evidence/recompiled_pcode_android_retail_frontier_20261018.json). This remains a startup frontier: entry-point completion, the main loop, and playable behavior have not been demonstrated. The installed retail data directory is `/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02`; its `SHIFT.exe` SHA-256 matches the analyzed image.
 
 The current immediate execution frontier is:
 
-> **Map the captured `Base System` descriptors to their backing ranges and establish which range is eligible for a 254,529,224-byte request; then correct the first confirmed pool or runtime fault and rerun the original entry point.**
+> **Trace `Base System` pool descriptor creation and backing-range ownership to explain why no node in the `0x80` list reaches the 254,529,224-byte request; then fix the first confirmed pool or initialization fault and rerun the original entry point.**
 
 At the same time, new infrastructure must avoid introducing additional x86-64/Linux-only assumptions.
 
@@ -933,7 +933,7 @@ Reusable implementation may be extracted into the portable renderer/runtime when
 
 The complete P-code module has been restored and the cooperative scheduler has been exercised on the retail entry point. The immediate priorities are now:
 
-1. **Resolve the v60 `Base System` pool failure by validating its captured descriptors against the 254,529,224-byte request, flags and caller state; do not force execution past this retail fatal path.**
+1. **Trace `Base System` pool descriptor creation and backing-range ownership to explain why the selected list tops out at 129,953,036 bytes for a 254,529,224-byte request; do not force execution past this retail fatal path.**
 2. **Keep the compact manifest for the full module, supplements, runtime APIs, retail PE identity, game-data root and probe frontier current; keep generated binaries outside Git.**
 3. **Continue the blocker loop through entry-point completion, required startup workers, resource initialization and the persistent main loop.**
 4. **Audit the shared runtime for x86-64/Linux-only assumptions and establish an ARM64 compile/test gate.**
