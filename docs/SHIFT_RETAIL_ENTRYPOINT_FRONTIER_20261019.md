@@ -2,24 +2,28 @@
 
 ## Evidence
 
-Probe v113 used the retail PE32 image with SHA-256
+Probe v114 used the retail PE32 image with SHA-256
 `eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1` and
-completed 600 host frames with Vulkan validation enabled and zero errors. It
-ran 155,506 guest dispatches across 1,417 unique functions. Its saved main-thread
+completed 1,800 host frames with Vulkan validation enabled and zero errors. It
+ran 342,703 guest dispatches across 1,417 unique functions. Its saved main-thread
 stack ended at `0x0090488a -> 0x009046aa -> 0x00a69160 -> 0x0040ba50 ->
 0x006492d0 -> 0x00647500 -> 0x006472d0`; four worker threads were waiting and
 one thread was ready. The complete machine-readable record and log are
-[`entrypoint_probe_v113.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v113.json)
+[`entrypoint_probe_v114.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v114.json)
 and
-[`shift-probe-v113-function-history-600-validation.log`](../evidence/retail_frontier_20261019/shift-probe-v113-function-history-600-validation.log).
+[`shift-probe-v114-function-history-1800-validation.log`](../evidence/retail_frontier_20261019/shift-probe-v114-function-history-1800-validation.log).
 
-The 64-entry history shows calls through `0x00637840`, `0x00508ea0`,
-`0x0054be00`, `0x0082db70`, `0x00894b60`, `0x00833670` and a cluster around
+The 64-entry history is identical to v113 and shows calls through
+`0x00637840`, `0x00508ea0`, `0x0054be00`, `0x0082db70`, `0x00894b60`, `0x00833670` and a cluster around
 `0x00807030`, followed again by `0x006492d0 -> 0x00647500 -> 0x006472d0`.
 Static disassembly confirms that `0x006472d0` calls `0x00649760`, which jumps
 through the retail `KERNEL32!SwitchToThread` import before updating timer
 fields. The history now supplies an exact call sequence to classify, but it does
-not prove a hang or frontend progress.
+not prove a hang or frontend progress. Extending the probe to 1,800 frames
+increased dispatches to 342,703 without increasing the unique-function count
+or changing any of the 64 recent function addresses. The guest is therefore
+repeating the observed update path over the longer run, though the evidence does
+not identify which state prevents later frontend initialization.
 
 The first branch-level candidate is the state gate at `0x0050ceb0`, called
 from `0x0054be00` on the object at the `0x00545d90` singleton plus `0x108`.
@@ -35,8 +39,8 @@ the later virtual callback in `0x0050ceb0`, but the history does not record the
 object pointer or return values. The field meanings and whether this state gate
 explains the later return to the scheduler remain unresolved.
 
-The old v66 `Base System` allocator fatal did not recur in v112 or v113 and is
-historical unless observed again. The current software frontier is identifying
+The old v66 `Base System` allocator fatal did not recur in v112, v113 or v114
+and is historical unless observed again. The current software frontier is identifying
 which startup helper returns to the yielding update path and whether a missing
 portable runtime service or state transition explains that return.
 
@@ -52,7 +56,7 @@ documents that bounded follow-up in
 
 ## Next engineering step
 
-Continue from the newly identified state gate: resolve the owning object and
+Continue from the repeated v114 update path: resolve the owning object and
 state fields around `0x0050ceb0` / `0x0050c880`, then follow the caller path
 from `0x0054be00` back to `0x006492d0`. The observed gate uses internal PE code,
 so first establish whether its object state or scheduler handoff is wrong before
