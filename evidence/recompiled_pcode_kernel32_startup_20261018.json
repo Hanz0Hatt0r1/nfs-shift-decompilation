@@ -1,0 +1,55 @@
+{
+  "format": "NFSShift.RecompiledPcodeKernel32Startup/1",
+  "captured_at": "2026-10-18",
+  "retail_input": {
+    "logical_name": "SHIFT.exe",
+    "version": "PC retail 1.02",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "image_base": "0x00400000",
+    "entry_point_rva": "0x0050488a",
+    "entry_point_va": "0x0090488a",
+    "base_relocation_directory": {
+      "rva": "0x00000000",
+      "size": "0x00000000"
+    }
+  },
+  "pcode_module": {
+    "coverage_report": "evidence/pcode_native_lowering_coverage_full_20261018.json",
+    "coverage_report_sha256": "3ab7e4654d4f0f344424a19842568f41ec03266b94de465a2be292a579d1a711",
+    "library_report": "evidence/pcode_full_lowering_linux_build_20261018.json",
+    "library_sha256": "ee76608bb8c5b6b4b603a747a73378b9c4fb76e6320d7426d000632939984243",
+    "exported_functions": 41538
+  },
+  "runtime_probe": {
+    "entry_point_invoked": true,
+    "initial_register_bank": "zero-initialized; no Windows process state",
+    "pcode_functions_dispatched": 2,
+    "first_import": {
+      "name": "KERNEL32.dll!GetSystemTimeAsFileTime",
+      "status": "implemented",
+      "contract": "writes eight-byte Windows FILETIME to the guest pointer argument and advances x86 ESP by the return address plus the stdcall argument"
+    },
+    "next_import": {
+      "name": "KERNEL32.dll!GetCurrentProcessId",
+      "status": "fails-closed"
+    },
+    "result": "entry-point probe stopped at the next unsupported import"
+  },
+  "focused_test": {
+    "ctest": "shift_runtime_recompiled_pcode_module",
+    "result": "passed",
+    "assertions": [
+      "guest FILETIME lies between host-clock samples bracketing the API call",
+      "stdcall cleanup restores guest ESP",
+      "null output pointer is rejected without changing ESP",
+      "unsupported Sleep import still fails closed with its name"
+    ]
+  },
+  "limitations": {
+    "game_startup": false,
+    "guest_process_initialization": false,
+    "most_imported_apis": false,
+    "directx_to_vulkan_translation": false,
+    "playable_game": false
+  }
+}

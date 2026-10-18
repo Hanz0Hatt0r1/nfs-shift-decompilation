@@ -19,25 +19,30 @@ and leaves virtual section tails zero-filled. It reports the mapped base, image
 size, entry point, and section count in the runtime JSON.
 
 When the PE32 optional header contains an import directory, the loader reads
-named and ordinal imports and rewrites each IAT slot to a unique guest trap
-address. If P-code calls one of those addresses, dispatch stops with an error
-that identifies the imported `DLL!function` (or ordinal). These trap addresses
-are diagnostic boundaries; they do not emulate Windows APIs.
+named and ordinal imports and rewrites each IAT slot to a unique guest address.
+The runtime implements the hash-locked retail image's first observed startup
+import, `KERNEL32.dll!GetSystemTimeAsFileTime`: it writes an eight-byte Windows
+FILETIME through the guest stack argument and applies the x86 stdcall stack
+cleanup. Other imported APIs still stop with an error naming the `DLL!function`
+or ordinal.
 
 The module currently accepts one image-load attempt per guest address space and
 loads only at the image's preferred base. The configured P-code step is invoked
-by the native fixed-step loop; the PE entry point is reported but not executed.
-Relocations, imported API implementations, TLS, Windows process
-initialization, guest page permissions, retail timing, and game startup are not
-implemented. A missing generated-function export or an unhandled userop still
-fails closed. The Vulkan scene and this P-code loop are therefore a runtime
-integration probe, not a playable NFS Shift build.
+by the native fixed-step loop; the PE entry point is reported but not executed
+automatically. Most imported APIs, TLS, Windows process initialization, guest
+page permissions, retail timing, and game startup are not implemented. A
+missing generated-function export or an unhandled userop still fails closed.
+The Vulkan scene and this P-code loop are therefore a runtime integration
+probe, not a playable NFS Shift build.
 
 The focused fixture test creates a small PE32 image and verifies header/section
-mapping, zero-fill, named and ordinal IAT mapping, diagnostic import dispatch,
+mapping, zero-fill, named and ordinal IAT mapping, FILETIME output and stdcall
+stack cleanup, null-pointer rejection, diagnostic import dispatch,
 duplicate-load rejection, and generated P-code reads from guest memory. The
 Linux Vulkan CI smoke runs the P-code read for three rendered frames and checks
 that Vulkan validation reports zero errors. Results are recorded in
 [`evidence/recompiled_pcode_pe32_vulkan_runtime_20261018.json`](../evidence/recompiled_pcode_pe32_vulkan_runtime_20261018.json)
 and
 [`evidence/recompiled_pcode_pe32_import_boundary_20261018.json`](../evidence/recompiled_pcode_pe32_import_boundary_20261018.json).
+The first retail entry-point API step is recorded in
+[`evidence/recompiled_pcode_kernel32_startup_20261018.json`](../evidence/recompiled_pcode_kernel32_startup_20261018.json).

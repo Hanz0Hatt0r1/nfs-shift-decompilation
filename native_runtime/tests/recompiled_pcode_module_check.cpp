@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -84,10 +85,15 @@ void write_pe32_fixture(const std::string& path) {
     std::copy_n("KERNEL32.dll", 12, bytes.begin() + 0x440);
     write_u32(bytes, 0x460, 0x20a0);
     write_u32(bytes, 0x464, 0x8000007b);
+    write_u32(bytes, 0x468, 0x20b0);
     write_u32(bytes, 0x480, 0x20a0);
     write_u32(bytes, 0x484, 0x8000007b);
+    write_u32(bytes, 0x488, 0x20b0);
     write_u16(bytes, 0x4a0, 0);
     std::copy_n("Sleep", 6, bytes.begin() + 0x4a2);
+    write_u16(bytes, 0x4b0, 0);
+    constexpr char time_api_name[] = "GetSystemTimeAsFileTime";
+    std::copy_n(time_api_name, sizeof(time_api_name), bytes.begin() + 0x4b2);
 
     std::ofstream file(path, std::ios::binary | std::ios::trunc);
     require(static_cast<bool>(file), "could not create PE32 fixture");
@@ -113,7 +119,7 @@ int main(int argc, char** argv) {
                     image.entry_point == 0x00401010 &&
                     image.section_count == 2 &&
                     image.import_module_count == 1 &&
-                    image.import_function_count == 2 &&
+                    image.import_function_count == 3 &&
                     image.import_stub_base == 0xf0000000,
                 "PE32 loader returned unexpected image metadata");
 
@@ -138,6 +144,11 @@ int main(int argc, char** argv) {
                 "could not read ordinal IAT entry");
         require(value == std::array<uint8_t, 4>{0x10, 0, 0, 0xf0},
                 "ordinal import IAT entry was not mapped to its guest trap");
+        require(module.read_guest("ram", 0x00402088, value.size(),
+                                  value.data()),
+                "could not read GetSystemTimeAsFileTime IAT entry");
+        require(value == std::array<uint8_t, 4>{0x20, 0, 0, 0xf0},
+                "GetSystemTimeAsFileTime IAT entry was not mapped to its guest trap");
 
         require(module.call(0x00401000) == 0,
                 "fixture P-code entry call failed: " + module.last_error());
@@ -145,14 +156,54 @@ int main(int argc, char** argv) {
                 "P-code could not read the mapped PE image: " + module.last_error());
         require(module.dispatched_function_count() == 4,
                 "nested P-code functions were not dispatched");
+        const auto filetime_now = [] {
+            using Duration = std::chrono::duration<
+                int64_t, std::ratio<1, 10000000>>;
+            return UINT64_C(116444736000000000) +
+                static_cast<uint64_t>(std::chrono::duration_cast<Duration>(
+                    std::chrono::system_clock::now().time_since_epoch()).count());
+        };
+        const uint64_t filetime_before = filetime_now();
+        require(module.call(0x00406000) == 0,
+                "GetSystemTimeAsFileTime import dispatch failed: " +
+                    module.last_error());
+        const uint64_t filetime_after = filetime_now();
+        std::array<uint8_t, 8> filetime_bytes{};
+        require(module.read_guest("ram", 0x00030100, filetime_bytes.size(),
+                                  filetime_bytes.data()),
+                "could not read guest FILETIME result");
+        uint64_t filetime = 0;
+        for (size_t index = 0; index < filetime_bytes.size(); ++index) {
+            filetime |= static_cast<uint64_t>(filetime_bytes[index]) <<
+                        (index * 8);
+        }
+        require(filetime >= filetime_before && filetime <= filetime_after,
+                "GetSystemTimeAsFileTime returned a value outside the call interval");
+        require(module.dispatched_function_count() == 5,
+                "guest clock API caller was not dispatched");
         require(module.call(0x00405000) != 0,
                 "unimplemented import trap unexpectedly succeeded");
         require(module.last_error().find(
                     "unimplemented PE import KERNEL32.dll!Sleep") !=
                     std::string::npos,
                 "import trap did not report its DLL and function name");
-        require(module.dispatched_function_count() == 5,
+        require(module.dispatched_function_count() == 6,
                 "P-code import caller was not dispatched");
+        require(module.call(0x00407000) != 0,
+                "null FILETIME output pointer unexpectedly succeeded");
+        require(module.last_error().find("invalid output pointer") !=
+                    std::string::npos,
+                "invalid FILETIME output pointer did not fail closed");
+        std::array<uint8_t, 4> esp_after_rejection{};
+        require(module.read_guest("register", 0x10,
+                                  esp_after_rejection.size(),
+                                  esp_after_rejection.data()),
+                "could not read ESP after invalid API call");
+        require(esp_after_rejection ==
+                    std::array<uint8_t, 4>{0x3c, 0x00, 0x03, 0x00},
+                "invalid API call changed the guest stack pointer");
+        require(module.dispatched_function_count() == 7,
+                "invalid FILETIME caller was not dispatched");
 
         require(module.read_guest("register", 0, value.size(), value.data()),
                 "could not read fixture EAX value");
@@ -187,9 +238,9 @@ int main(int argc, char** argv) {
                     std::string::npos,
                 "unhandled P-code userop did not fail with its index");
 
-        std::cout << "PASS: PE32 headers, sections, imports and IAT traps mapped; "
-                     "P-code read the guest image; import dispatch failed "
-                     "closed with its API name\n";
+        std::cout << "PASS: PE32 headers, sections and imports mapped; "
+                     "GetSystemTimeAsFileTime wrote FILETIME and applied "
+                     "stdcall cleanup; unsupported imports failed closed\n";
         return 0;
     } catch (const std::exception& error) {
         std::cerr << "recompiled P-code module check failed: " << error.what()
