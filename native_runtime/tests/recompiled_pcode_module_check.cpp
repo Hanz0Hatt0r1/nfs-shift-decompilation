@@ -83,16 +83,22 @@ uint64_t read_guest_u64(shift::runtime::RecompiledPcodeModule& module,
     return value;
 }
 
-uint32_t invoke_import(shift::runtime::RecompiledPcodeModule& module,
-                       uint32_t address,
-                       const std::vector<uint32_t>& arguments) {
+int call_import(shift::runtime::RecompiledPcodeModule& module,
+                uint32_t address, const std::vector<uint32_t>& arguments) {
     constexpr uint32_t stack_pointer = 0x00032000;
     write_guest_u32(module, "ram", stack_pointer, 0x00401234);
     for (size_t index = 0; index < arguments.size(); ++index)
         write_guest_u32(module, "ram", stack_pointer + 4 + index * 4,
                         arguments[index]);
     write_guest_u32(module, "register", 0x10, stack_pointer);
-    const int result = module.call(address);
+    return module.call(address);
+}
+
+uint32_t invoke_import(shift::runtime::RecompiledPcodeModule& module,
+                       uint32_t address,
+                       const std::vector<uint32_t>& arguments) {
+    constexpr uint32_t stack_pointer = 0x00032000;
+    const int result = call_import(module, address, arguments);
     require(result == 0,
             "Kernel32 import dispatch failed at " +
                 std::to_string(address) + " returned " +
@@ -103,7 +109,9 @@ uint32_t invoke_import(shift::runtime::RecompiledPcodeModule& module,
     return read_guest_u32(module, "register", 0);
 }
 
-void write_pe32_fixture(const std::string& path) {
+void write_pe32_fixture(const std::string& path,
+                        bool raise_exception_import = false,
+                        bool time_get_time_import = false) {
     constexpr size_t file_size = 0x1300;
     constexpr size_t pe_offset = 0x80;
     constexpr size_t optional_offset = pe_offset + 24;
@@ -215,7 +223,8 @@ void write_pe32_fixture(const std::string& path) {
     write_u32(bytes, 0x1120, 0x2a80);
     write_u32(bytes, 0x1124, 0x2aa0);
     write_u32(bytes, 0x1128, 0x2ac0);
-    write_import_name(0x600, "Sleep");
+    write_import_name(0x600,
+                      raise_exception_import ? "RaiseException" : "Sleep");
     write_import_name(0x640, "GetSystemTimeAsFileTime");
     write_import_name(0x660, "GetCurrentProcessId");
     write_import_name(0x680, "GetCurrentThreadId");
@@ -290,7 +299,9 @@ void write_pe32_fixture(const std::string& path) {
     write_import_name(0xf90, "VirtualAlloc");
     write_import_name(0xfb0, "VirtualFree");
     write_import_name(0x11a0, "timeBeginPeriod");
-    write_import_name(0x11c0, "timeEndPeriod");
+    write_import_name(0x11c0, time_get_time_import
+                                   ? "timeGetTime"
+                                   : "timeEndPeriod");
     write_import_name(0x1188, "ConvertThreadToFiber");
     write_import_name(0x11ed, "IsThreadAFiber");
     write_import_name(0x1200, "GlobalMemoryStatus");
@@ -307,17 +318,32 @@ void write_pe32_fixture(const std::string& path) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 4) {
+    if (argc != 7) {
         std::cerr << "usage: shift_runtime_recompiled_pcode_module_check "
-                     "MODULE SUPPLEMENT PE32_FIXTURE_OUT\n";
+                     "MODULE SUPPLEMENT OVERRIDE PE32_FIXTURE_OUT "
+                     "RAISE_EXCEPTION_PE32_OUT TIME_GET_TIME_PE32_OUT\n";
         return 2;
     }
     try {
-        write_pe32_fixture(argv[3]);
+        write_pe32_fixture(argv[4]);
+        write_pe32_fixture(argv[5], true);
+        write_pe32_fixture(argv[6], false, true);
+        shift::runtime::RecompiledPcodeModule duplicate_module(argv[1]);
+        require(duplicate_module.load_supplemental_module(argv[2]),
+                "duplicate-check P-code supplement could not be loaded: " +
+                    duplicate_module.last_error());
+        require(duplicate_module.call(0x00685700) != 0 &&
+                    duplicate_module.last_error().find(
+                        "duplicate P-code export rvi_00685700") !=
+                        std::string::npos,
+                "duplicate P-code exports were not rejected without an override");
+
         shift::runtime::RecompiledPcodeModule module(argv[1]);
         require(module.load_supplemental_module(argv[2]),
                 "P-code supplement could not be loaded: " + module.last_error());
-        const auto image = module.load_pe32_image(argv[3]);
+        require(module.load_override_module(argv[3]),
+                "P-code override could not be loaded: " + module.last_error());
+        const auto image = module.load_pe32_image(argv[4]);
         require(image.image_base == 0x00400000 &&
                     image.image_size == 0x3000 &&
                     image.entry_point == 0x00401020 &&
@@ -396,6 +422,16 @@ int main(int argc, char** argv) {
                     invoke_import(module, time_end_period, {1}) == 97 &&
                     invoke_import(module, time_begin_period, {0}) == 97,
                 "WinMM timer requests did not enforce supported resolution and matching lifetimes");
+        shift::runtime::RecompiledPcodeModule time_module(argv[1]);
+        const auto time_image = time_module.load_pe32_image(argv[6]);
+        const uint32_t time_get_time_stub = read_guest_u32(
+            time_module, "ram", time_image.image_base + 0x2d44);
+        const uint32_t time_get_before = invoke_import(
+            time_module, time_get_time_stub, {});
+        const uint32_t time_get_after = invoke_import(
+            time_module, time_get_time_stub, {});
+        require(time_get_after >= time_get_before,
+                "WINMM timeGetTime did not return monotonic DWORD milliseconds");
         require(invoke_import(module, 0x00401120, {}) ==
                     static_cast<uint32_t>(syscall(SYS_gettid)),
                 "absolute indirect jump thunk did not route through the guest IAT");
@@ -428,7 +464,7 @@ int main(int argc, char** argv) {
                                   {virtual_address, 0, 0x8000}) == 1,
                 "VirtualFree/VirtualAlloc did not release and zero a guest region");
         constexpr uint32_t module_file_name_address = 0x00032b00;
-        const std::string expected_module_path = argv[3];
+        const std::string expected_module_path = argv[4];
         require(invoke_import(module, 0xf00002d0,
                               {0, module_file_name_address, 260}) ==
                     expected_module_path.size(),
@@ -488,8 +524,8 @@ int main(int argc, char** argv) {
                 "fixture did not preserve little-endian EAX bytes");
         require(module.read_guest("ram", 0x20000, value.size(), value.data()),
                 "could not read fixture RAM write");
-        require(value == std::array<uint8_t, 4>{0xd0, 0x99, 0xaa, 0},
-                "nested P-code call wrote unexpected RAM bytes");
+        require(value == std::array<uint8_t, 4>{'O', 'V', 'R', 'D'},
+                "explicit P-code override did not replace the base export");
 
         require(invoke_import(module, 0xf0000030, {}) ==
                     static_cast<uint32_t>(getpid()),
@@ -758,6 +794,20 @@ int main(int argc, char** argv) {
             resolve_kernel32_api("SetThreadPriority");
         const uint32_t get_thread_priority_api =
             resolve_kernel32_api("GetThreadPriority");
+        const uint32_t thread_ideal_processor_api =
+            resolve_kernel32_api("SetThreadIdealProcessor");
+        const uint32_t get_last_error_api = resolve_kernel32_api("GetLastError");
+        const uint32_t set_last_error_api = resolve_kernel32_api("SetLastError");
+        const uint32_t interlocked_exchange_api =
+            resolve_kernel32_api("InterlockedExchange");
+        write_guest_u32(module, "ram", interlocked_operand_address,
+                        0x80000000);
+        require(invoke_import(module, interlocked_exchange_api,
+                              {interlocked_operand_address, 7}) ==
+                    0x80000000 &&
+                    read_guest_u32(module, "ram",
+                                   interlocked_operand_address) == 7,
+                "InterlockedExchange did not return the prior value and store the replacement");
         const uint32_t wait_thread_api =
             resolve_kernel32_api("WaitForSingleObject");
         const uint32_t close_thread_api = resolve_kernel32_api("CloseHandle");
@@ -795,10 +845,36 @@ int main(int argc, char** argv) {
                     read_guest_u32(module, "ram", thread_exit_code_address) ==
                         0xbeef &&
                     invoke_import(module, wait_thread_api,
-                                  {guest_thread, UINT32_MAX}) == 0 &&
-                    invoke_import(module, close_thread_api,
-                                  {guest_thread}) == 1,
+                                  {guest_thread, UINT32_MAX}) == 0,
                 "guest thread resume, return, wait or cleanup failed");
+        require(invoke_import(module, thread_ideal_processor_api,
+                              {guest_thread, 32}) == 0 &&
+                    invoke_import(module, thread_ideal_processor_api,
+                                  {guest_thread, 1}) == 0 &&
+                    invoke_import(module, thread_ideal_processor_api,
+                                  {guest_thread, 32}) == 1 &&
+                    invoke_import(module, thread_ideal_processor_api,
+                                  {guest_thread, 0}) == 1,
+                "SetThreadIdealProcessor did not query and update guest thread state");
+        require(invoke_import(module, thread_ideal_processor_api,
+                              {UINT32_MAX, 0}) == UINT32_MAX &&
+                    invoke_import(module, get_last_error_api, {}) == 6,
+                "SetThreadIdealProcessor accepted an invalid thread handle");
+        (void)invoke_import(module, set_last_error_api, {0});
+        require(invoke_import(module, thread_ideal_processor_api,
+                              {guest_thread, 33}) == UINT32_MAX &&
+                    invoke_import(module, get_last_error_api, {}) == 87,
+                "SetThreadIdealProcessor accepted an invalid processor index");
+        (void)invoke_import(module, set_last_error_api, {0});
+        require(invoke_import(module, thread_ideal_processor_api,
+                              {UINT32_MAX - 1, 3}) == 0 &&
+                    invoke_import(module, thread_ideal_processor_api,
+                                  {UINT32_MAX - 1, 32}) == 3 &&
+                    invoke_import(module, thread_ideal_processor_api,
+                                  {UINT32_MAX - 1, 0}) == 3,
+                "SetThreadIdealProcessor did not track the current guest thread");
+        require(invoke_import(module, close_thread_api, {guest_thread}) == 1,
+                "completed guest thread handle could not be closed");
         constexpr uint32_t exit_thread_id_address = 0x00034210;
         const uint32_t exiting_guest_thread = invoke_import(
             module, create_thread_api,
@@ -1341,7 +1417,7 @@ int main(int argc, char** argv) {
 
         bool duplicate_load_rejected = false;
         try {
-            (void)module.load_pe32_image(argv[3]);
+            (void)module.load_pe32_image(argv[4]);
         } catch (const std::runtime_error& error) {
             duplicate_load_rejected =
                 std::string(error.what()).find("already been attempted") !=
@@ -1354,6 +1430,10 @@ int main(int argc, char** argv) {
                         std::string::npos,
                 "supplemental P-code was allowed to load after execution started");
 
+        require(!module.load_override_module(argv[3]) &&
+                    module.last_error().find("after execution starts") !=
+                        std::string::npos,
+                "override P-code was allowed to load after execution starts");
         require(!module.read_guest("register", 0x2000, 1, value.data()),
                 "out-of-range register read unexpectedly succeeded");
         require(module.call(0x00402000) != 0,
@@ -1392,6 +1472,33 @@ int main(int argc, char** argv) {
         require(module.call(0x00408000) == 0,
                 "x86 CPUID P-code userops did not return readable guest results: " +
                     module.last_error());
+
+        shift::runtime::RecompiledPcodeModule exception_module(argv[1]);
+        (void)exception_module.load_pe32_image(argv[5]);
+        const uint32_t raise_exception_stub =
+            read_guest_u32(exception_module, "ram", 0x00402c00);
+        constexpr uint32_t thread_info_address = 0x00035000;
+        constexpr uint32_t thread_name_address = 0x00035100;
+        write_guest_u32(exception_module, "ram", thread_info_address, 0x1000);
+        write_guest_u32(exception_module, "ram", thread_info_address + 4,
+                        thread_name_address);
+        write_guest_u32(exception_module, "ram", thread_info_address + 8,
+                        UINT32_MAX);
+        write_guest_u32(exception_module, "ram", thread_info_address + 12, 0);
+        constexpr std::array<uint8_t, 11> thread_name = {
+            'M', 'a', 'i', 'n', 'T', 'h', 'r', 'e', 'a', 'd', 0};
+        write_guest_bytes(exception_module, thread_name_address,
+                          thread_name.data(), thread_name.size());
+        require(call_import(exception_module, raise_exception_stub,
+                            {0x12345678, 0, 4, thread_info_address}) != 0 &&
+                    exception_module.last_error().find(
+                        "only supports the MSVC thread-name exception") !=
+                        std::string::npos,
+                "RaiseException accepted an unsupported exception code");
+        require(invoke_import(exception_module, raise_exception_stub,
+                              {0x406d1388, 0, 4, thread_info_address}) == 0,
+                "MSVC thread-name RaiseException pattern was not handled: " +
+                    exception_module.last_error());
 
         std::cout << "PASS: PE32 headers, sections and imports mapped; "
                      "observed Kernel32 startup services wrote outputs and "

@@ -31,6 +31,7 @@ public:
     Pe32ImageInfo load_pe32_image(const std::string& path);
     int call_pe32_entry_point();
     bool load_supplemental_module(const std::string& shared_object_path);
+    bool load_override_module(const std::string& shared_object_path);
     uint64_t dispatched_function_count() const;
     const std::string& last_error() const;
 

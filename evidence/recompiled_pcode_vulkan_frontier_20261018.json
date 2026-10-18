@@ -1,0 +1,131 @@
+{
+  "format": "NFSShift.RecompiledPcodeVulkanFrontier/1",
+  "captured_at": "2026-10-18",
+  "base_main_revision": "18d23acaee987364c533a954fe887f91a1435814",
+  "retail_input": {
+    "logical_name": "SHIFT.exe",
+    "version": "PC retail 1.02",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "entry_point": "0x0090488a"
+  },
+  "generic_pcode_frontier": {
+    "module": "libnfs_shift_pcode_frontier.so",
+    "functions": [
+      {
+        "address": "0x00667170",
+        "source": "native_runtime/pcode_frontier/rvi_00667170.c",
+        "source_sha256": "49e7755ced56fd6c23dbc3c30bc03c1ad7912dcd055c16c4e7501ca860edff1c",
+        "format": "REVENGINSTR.GhidraFunctionInstructions/1",
+        "instructions": 17,
+        "pcode_operations": 50
+      },
+      {
+        "address": "0x0065f0a0",
+        "source": "native_runtime/pcode_frontier/rvi_0065f0a0.c",
+        "source_sha256": "4c2b5f2e6daae46787047374f003287d9f05aba70d9fa49dd3b29af7a7d16190",
+        "format": "REVENGINSTR.GhidraFunctionInstructions/1",
+        "instructions": 31,
+        "pcode_operations": 98
+      },
+      {
+        "address": "0x00907e4f",
+        "source": "native_runtime/pcode_frontier/rvi_00907e4f.c",
+        "source_sha256": "92ec31a77781007fac5e378a9e863a3e7330a8bd67367da8d7b566de46bfe8c5",
+        "format": "REVENGINSTR.GhidraFunctionInstructions/1",
+        "instructions": 39,
+        "pcode_operations": 138
+      }
+    ],
+    "instruction_evidence": {
+      "path": "evidence/recompiled_pcode_vulkan_frontier_instructions_20261018.jsonl",
+      "sha256": "02826e8deb592eb367aa57266215641982f3e0e71d64937743aa5315ddf08325",
+      "schema": "REVENGINSTR.GhidraFunctionInstructions/1"
+    },
+    "computed_tail_jump_lowering": {
+      "repository": "Hanz0Hatt0r1/revenginstr",
+      "branch": "codex/pcode-computed-tail-dispatch-20261018",
+      "behavior": "enumerated internal targets branch locally; external and default computed targets use the runtime call callback",
+      "unit_tests_passed": 22
+    }
+  },
+  "runtime_features": [
+    "repeatable explicit P-code override modules take precedence over base and supplement exports; duplicate overrides fail closed",
+    "SetThreadIdealProcessor keeps a per-guest-thread hint, returns the previous value, and recognizes x86 query sentinel 32",
+    "WINMM timeGetTime shares the monotonic DWORD millisecond clock used by GetTickCount",
+    "InterlockedExchange reads, replaces, and returns a 32-bit guest word in the single-thread execution model",
+    "RaiseException handles only the recognized MSVC thread-name diagnostic pattern and fails closed for other exception codes"
+  ],
+  "validation": {
+    "native_runtime_build": {
+      "command": "cmake --build /tmp/nfs-shift-vulkan-guest-thread-state-build --target shift_runtime_recompiled_pcode_module_check shift_runtime_test_pcode_module shift_runtime_test_pcode_supplement_module shift_runtime_test_pcode_override_module shift_runtime -j 8",
+      "result": "passed"
+    },
+    "native_runtime_ctest": {
+      "command": "/usr/bin/ctest --test-dir /tmp/nfs-shift-vulkan-guest-thread-state-build --output-on-failure --parallel 8",
+      "passed": 138,
+      "failed": 0
+    },
+    "runtime_python_regressions": {
+      "command": "python3 -m pytest -q tests/test_recompiled_pcode_pe32_vulkan_runtime.py",
+      "passed": 6,
+      "failed": 0
+    },
+    "generic_lowerer_regressions": {
+      "command": "PYTHONPATH=src python3 -m pytest -q tests/test_pcode_c_lowering.py",
+      "passed": 22,
+      "failed": 0
+    },
+    "local_linux_vulkan_smoke": {
+      "synthetic_pe_entrypoint_invocations": 1,
+      "frames_rendered": 3,
+      "simulation_steps": 3,
+      "pcode_step_invocations": 3,
+      "pcode_functions_dispatched": 7,
+      "validation_enabled": true,
+      "validation_errors": 0,
+      "validation_warnings": 3,
+      "status": "ok"
+    }
+  },
+  "retail_entrypoint_probe": {
+    "frontier_history": [
+      {
+        "dispatches": 13487,
+        "blocker": "KERNEL32.dll!SetThreadIdealProcessor",
+        "result": "implemented guest-thread-local state and continued"
+      },
+      {
+        "dispatches": 14694,
+        "blocker": "WINMM.dll!timeGetTime",
+        "result": "implemented shared monotonic millisecond counter and continued"
+      },
+      {
+        "dispatches": 14694,
+        "blocker": "KERNEL32.dll!InterlockedExchange",
+        "result": "implemented 32-bit guest memory exchange and continued"
+      }
+    ],
+    "latest_probe": {
+      "result": "timeboxed without a completion or import diagnostic",
+      "timeout_seconds": 90,
+      "debugger_snapshot_guest_function": "0x00403cc0",
+      "guest_thread_start_function_on_call_stack": "0x00907e4f",
+      "scheduler_observation": "ResumeThread executes the guest start routine synchronously; there is no instruction-level preemption for a worker loop"
+    },
+    "entrypoint_completed": false,
+    "playable_game": false
+  },
+  "known_limitations": {
+    "concurrent_guest_thread_scheduling": false,
+    "instruction_level_guest_thread_preemption": false,
+    "retail_game_startup_completed": false,
+    "vulkan_game_rendering_parity": false,
+    "playable_game": false
+  },
+  "api_contract_sources": [
+    "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-setthreadidealprocessor",
+    "https://learn.microsoft.com/en-us/windows/win32/api/timeapi/nf-timeapi-timegettime",
+    "https://learn.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-interlockedexchange",
+    "https://learn.microsoft.com/windows/win32/api/errhandlingapi/nf-errhandlingapi-raiseexception"
+  ]
+}

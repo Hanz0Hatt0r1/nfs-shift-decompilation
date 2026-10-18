@@ -9,6 +9,7 @@ shift_runtime \
   --shader-dir native_runtime/build/shaders \
   --recompiled-module libnfs_shift_pcode.so \
   --recompiled-supplement libnfs_shift_startup_delta.so \
+  --recompiled-override native_runtime/build/libnfs_shift_pcode_frontier.so \
   --pe-image SHIFT.exe \
   --recompiled-entrypoint
 ```
@@ -25,9 +26,14 @@ and `0xffff` respectively, matching `FNINIT`. This does not implement exception
 dispatch or the rest of Windows thread/process startup.
 
 Repeat `--recompiled-supplement ELF` to load additive P-code shards before guest
-execution. Function lookup checks the primary module and then supplements;
-duplicate exports fail closed. Supplements cannot be added after P-code
-execution begins, so all modules are fixed before the PE entry point runs.
+execution. Repeat `--recompiled-override ELF` to load an explicit higher-priority
+module. Its exports take precedence over matching exports in the primary and
+supplemental modules; duplicate exports among overrides still fail closed.
+Without an override, duplicates in the primary module and supplements fail
+closed. All modules must be loaded before P-code execution starts.
+The `shift_runtime_pcode_frontier` CMake target builds the current retail
+frontier functions, including an indirect tail-dispatch override for
+`0x0065f0a0` and the previously missing export `0x00667170`.
 The loader also routes the lowered corpus's one-based static-import IDs to the
 same guest import traps, and recognizes x86 `JMP [absolute]` thunks by reading
 their target from guest memory.
@@ -43,12 +49,14 @@ named and ordinal imports and rewrites each IAT slot to a unique guest address.
 The runtime implements the observed Kernel32 subset reached by the retail
 entry-point probe: `GetSystemTimeAsFileTime`, `GetCurrentProcess`, `GetPriorityClass`, `GetCurrentProcessId`,
 `GetCurrentThread`, `GetThreadPriority`, `SetPriorityClass`, `SetThreadPriority`,
+`SetThreadIdealProcessor`,
 `CreateThread`, `ResumeThread`, `SuspendThread`, `GetExitCodeThread`, `ExitThread`,
 `GetCurrentThreadId`, `GetTickCount`, `GetLocalTime`, `GlobalMemoryStatus`,
 `QueryPerformanceCounter`,
 `QueryPerformanceFrequency`, `GetStartupInfoA`, `GetProcessHeap`, `CreateMutexA`,
 `WaitForSingleObject`, `WaitForSingleObjectEx`, `CreateEventA`, `CreateEventW`,
-`SetEvent`, `ResetEvent`, `InterlockedCompareExchange`, `VirtualAlloc`,
+`SetEvent`, `ResetEvent`, `InterlockedCompareExchange`, `InterlockedExchange`,
+`VirtualAlloc`,
 `VirtualFree`, `ReleaseMutex`,
 `CloseHandle`, `CreateFileA`,
 `GetFileSize`, `ReadFile`, `HeapCreate`,
@@ -77,6 +85,9 @@ context switching are not implemented.
 host physical/page-file snapshot and the modeled 2 GiB x86 user address range;
 available guest virtual memory accounts for the mapped image and active
 `VirtualAlloc` regions.
+`WINMM.dll!timeGetTime` and Kernel32 `GetTickCount` read the same monotonic
+millisecond counter, returned as a wrapping 32-bit value. The shared tick source
+does not emulate Windows' coarse default timer precision.
 `WINMM.dll!timeBeginPeriod` and `timeEndPeriod` track matching single-thread
 guest requests for the supported virtual 1 ms period; they do not change the
 Linux host timer resolution. Other periods and unmatched end requests return
@@ -103,12 +114,19 @@ lead-byte ranges for Windows-1252.
 `GetStringTypeW` provides deterministic restricted CTYPE1 classification for
 the supported Windows-1252/Latin-1 range used by this CRT startup path.
 `LCMapStringW` supports Windows-1252 lowercase and uppercase mappings.
+`SetThreadIdealProcessor` stores a guest-thread scheduling hint, returns the
+previous hint, and treats processor 32 as a query. It does not change Linux
+host scheduling or affinity.
+`ResumeThread` currently runs a guest start routine synchronously and does not
+preempt it. A long-lived worker can keep the retail entry-point probe inside
+that routine.
 `CreateMutexA` returns synthetic handles and reuses a handle for a repeated
 nonempty name within the guest process. `HeapSize` reports the tracked aligned
 size of a live allocation and returns `SIZE_T(-1)` for invalid pointers.
 `WaitForSingleObject` and `ReleaseMutex` model recursive ownership for these
-mutexes in the single guest thread. `InterlockedCompareExchange` uses
-single-thread guest memory semantics. Unnamed events support manual and auto-reset state;
+mutexes in the single guest thread. `InterlockedCompareExchange` and
+`InterlockedExchange` use single-thread guest memory semantics. Unnamed events
+support manual and auto-reset state;
 an unsignaled zero-time wait returns `WAIT_TIMEOUT`, while an unsignaled
 infinite wait fails closed because guest scheduling is single-threaded.
 `WaitForSingleObjectEx` supports non-alertable waits. Named events and alertable
@@ -180,7 +198,9 @@ stdcall stack cleanup, null-pointer rejection, diagnostic import dispatch,
 one-shot entry-point execution from a supplemental module, rejection of late
 supplement loading, duplicate-load rejection, `HeapReAlloc`, a suspended guest
 thread's resume/exit/wait lifecycle, and generated P-code reads from guest
-memory. The Linux Vulkan CI smoke invokes the supplemental fixture entry
+memory. `RaiseException` accepts only the four-argument MSVC thread-name
+diagnostic (`0x406D1388`); other exception codes still fail closed because
+guest SEH dispatch is not implemented. The Linux Vulkan CI smoke invokes the supplemental fixture entry
 point once, runs the P-code read for three rendered frames, and checks that
 Vulkan validation reports zero errors. Results are recorded in
 [`evidence/recompiled_pcode_pe32_vulkan_runtime_20261018.json`](../evidence/recompiled_pcode_pe32_vulkan_runtime_20261018.json)
@@ -188,3 +208,6 @@ and
 [`evidence/recompiled_pcode_pe32_import_boundary_20261018.json`](../evidence/recompiled_pcode_pe32_import_boundary_20261018.json).
 The retail entry-point probe is recorded in
 [`evidence/recompiled_pcode_kernel32_crt_startup_20261018.json`](../evidence/recompiled_pcode_kernel32_crt_startup_20261018.json).
+The current override module, API frontier, validation results, and guest worker
+timebox are recorded in
+[`evidence/recompiled_pcode_vulkan_frontier_20261018.json`](../evidence/recompiled_pcode_vulkan_frontier_20261018.json).

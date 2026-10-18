@@ -484,6 +484,14 @@ target_link_libraries(shift_recompiled_pcode_module PUBLIC ${CMAKE_DL_LIBS})
 target_compile_options(shift_recompiled_pcode_module PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_library(shift_runtime_pcode_frontier MODULE
+  pcode_frontier/rvi_00667170.c
+  pcode_frontier/rvi_0065f0a0.c
+  pcode_frontier/rvi_00907e4f.c)
+set_target_properties(shift_runtime_pcode_frontier PROPERTIES
+  OUTPUT_NAME nfs_shift_pcode_frontier)
+target_link_libraries(shift_runtime_pcode_frontier PRIVATE m)
+
 if(BUILD_TESTING)
   add_library(shift_runtime_test_pcode_module SHARED
     tests/recompiled_pcode_fixture.c)
@@ -492,6 +500,10 @@ if(BUILD_TESTING)
   add_library(shift_runtime_test_pcode_supplement_module SHARED
     tests/recompiled_pcode_supplement_fixture.c)
   target_include_directories(shift_runtime_test_pcode_supplement_module PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  add_library(shift_runtime_test_pcode_override_module SHARED
+    tests/recompiled_pcode_override_fixture.c)
+  target_include_directories(shift_runtime_test_pcode_override_module PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include)
   add_executable(shift_runtime_recompiled_pcode_module_check
     tests/recompiled_pcode_module_check.cpp)
@@ -502,11 +514,14 @@ if(BUILD_TESTING)
     COMMAND shift_runtime_recompiled_pcode_module_check
       $<TARGET_FILE:shift_runtime_test_pcode_module>
       $<TARGET_FILE:shift_runtime_test_pcode_supplement_module>
-      ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_test_image.exe)
+      $<TARGET_FILE:shift_runtime_test_pcode_override_module>
+      ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_test_image.exe
+      ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_raise_exception_test_image.exe
+      ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_time_get_time_test_image.exe)
 endif()
 
 add_executable(shift_runtime src/shift_runtime.cpp)
-add_dependencies(shift_runtime shift_runtime_shaders)
+add_dependencies(shift_runtime shift_runtime_shaders shift_runtime_pcode_frontier)
 target_include_directories(shift_runtime PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../native_vulkan/include

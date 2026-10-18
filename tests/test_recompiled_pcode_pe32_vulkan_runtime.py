@@ -250,3 +250,58 @@ def test_fiber_memory_evidence_tracks_current_retail_frontier() -> None:
     )
     assert evidence["limitations"]["fiber_scheduling"] is False
     assert evidence["limitations"]["playable_game"] is False
+
+
+def test_vulkan_frontier_evidence_is_hashed_and_bounded() -> None:
+    evidence_path = ROOT / "evidence/recompiled_pcode_vulkan_frontier_20261018.json"
+    evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+    frontier = evidence["generic_pcode_frontier"]
+    instruction_source = ROOT / frontier["instruction_evidence"]["path"]
+
+    assert evidence["format"] == "NFSShift.RecompiledPcodeVulkanFrontier/1"
+    assert evidence["base_main_revision"] == (
+        "18d23acaee987364c533a954fe887f91a1435814"
+    )
+    assert hashlib.sha256(instruction_source.read_bytes()).hexdigest() == (
+        frontier["instruction_evidence"]["sha256"]
+    )
+    instruction_rows = {
+        row["resolved_address"]: row
+        for row in map(json.loads, instruction_source.read_text().splitlines())
+    }
+    for function in frontier["functions"]:
+        source = ROOT / function["source"]
+        row = instruction_rows[function["address"]]
+        assert hashlib.sha256(source.read_bytes()).hexdigest() == function[
+            "source_sha256"
+        ]
+        assert function["format"] == row["format"]
+        assert function["instructions"] == row["instruction_count"]
+        assert function["pcode_operations"] == sum(
+            len(instruction["pcode"]) for instruction in row["instructions"]
+        )
+    assert [function["pcode_operations"] for function in frontier["functions"]] == [
+        50,
+        98,
+        138,
+    ]
+
+    validation = evidence["validation"]
+    assert validation["native_runtime_ctest"]["passed"] == 138
+    assert validation["native_runtime_ctest"]["failed"] == 0
+    assert validation["runtime_python_regressions"]["passed"] == 6
+    assert validation["generic_lowerer_regressions"]["passed"] == 22
+    assert validation["local_linux_vulkan_smoke"]["frames_rendered"] == 3
+    assert validation["local_linux_vulkan_smoke"]["validation_errors"] == 0
+    retail = evidence["retail_entrypoint_probe"]
+    assert retail["entrypoint_completed"] is False
+    assert retail["latest_probe"]["result"] == (
+        "timeboxed without a completion or import diagnostic"
+    )
+    assert retail["latest_probe"]["guest_thread_start_function_on_call_stack"] == (
+        "0x00907e4f"
+    )
+    assert (
+        evidence["known_limitations"]["instruction_level_guest_thread_preemption"]
+        is False
+    )
