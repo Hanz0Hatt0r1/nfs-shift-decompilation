@@ -1,0 +1,10 @@
+{
+  "first_mismatch": null,
+  "format": "REVENGINSTR.GhidraJsonlExportParity/1",
+  "left_records": 1,
+  "left_sha256": "7f2d88db01393cd4598f589df57f64a76fe47a48a5a723f6fe84c3f7cac9544f",
+  "right_records": 1,
+  "right_sha256": "7f2d88db01393cd4598f589df57f64a76fe47a48a5a723f6fe84c3f7cac9544f",
+  "same_bytes": true,
+  "same_records": true
+}
