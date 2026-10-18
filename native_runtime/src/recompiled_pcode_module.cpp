@@ -56,11 +56,26 @@ constexpr uint32_t kGuestCurrentProcessPseudoHandle = UINT32_MAX;
 constexpr uint32_t kGuestCurrentThreadPseudoHandle = UINT32_MAX - 1;
 constexpr uint32_t kGuestFileHandleBase = 0x00050000;
 constexpr uint32_t kGuestEventHandleBase = 0x00060000;
+constexpr uint32_t kGuestSemaphoreHandleBase = 0x00070000;
 constexpr uint32_t kGuestTimerPeriodMs = 1;
 constexpr uint32_t kGuestTimerNoError = 0;
 constexpr uint32_t kGuestTimerErrNoCanDo = 97;
+constexpr uint32_t kD3dErrInvalidCall = 0x8876086c;
+constexpr uint32_t kD3dErrNotAvailable = 0x8876086a;
+constexpr uint32_t kD3dErrInvalidDevice = 0x88760870;
+constexpr uint32_t kD3dFormatX8R8G8B8 = 22;
+constexpr size_t kD3dCaps9Size = 304;
+constexpr uint32_t kCsidlPersonal = 5;
+constexpr uint32_t kCsidlFlagCreate = 0x8000;
+constexpr uint32_t kCsidlFlagDontVerify = 0x4000;
+constexpr uint32_t kHresultInvalidArg = 0x80070057;
+constexpr uint32_t kHresultFail = 0x80004005;
+constexpr size_t kWindowsMaxPath = 260;
 constexpr uint32_t kGuestAlreadyFiberError = 1280;
 constexpr size_t kMaximumGuestFileReadBytes = 64 * 1024 * 1024;
+constexpr uint32_t kGuestAllocationTraceThreshold = 16 * 1024 * 1024;
+constexpr size_t kGuestAllocationObjectTraceSize = 0x130;
+constexpr size_t kGuestAllocationObjectLinkLimit = 12;
 constexpr uint64_t kMaximumGuestVirtualAllocationSize =
     UINT64_C(512) * 1024 * 1024;
 constexpr uint32_t kGuestStdInputHandle = 0x00020000;
@@ -82,8 +97,13 @@ constexpr uint64_t kWindowsFileTimeTicksPerSecond = UINT64_C(10000000);
 constexpr uint64_t kWindowsPerformanceCounterFrequency = UINT64_C(1000000000);
 constexpr uint32_t kWindowsAnsiCodePage = 1252;
 constexpr uint64_t kX86EaxRegisterOffset = 0;
+constexpr uint64_t kX86EcxRegisterOffset = 4;
+constexpr uint64_t kX86EdxRegisterOffset = 8;
+constexpr uint64_t kX86EbxRegisterOffset = 0x0c;
 constexpr uint64_t kX86EspRegisterOffset = 0x10;
 constexpr uint64_t kX86EbpRegisterOffset = 0x14;
+constexpr uint64_t kX86EsiRegisterOffset = 0x18;
+constexpr uint64_t kX86EdiRegisterOffset = 0x1c;
 constexpr uint64_t kX86FsBaseRegisterOffset = 0x110;
 constexpr uint64_t kX86X87EnvironmentRegisterOffset = 0x10a0;
 constexpr uint32_t kGuestInitialStackPointer = 0x7ffdf000;
@@ -381,6 +401,40 @@ struct RecompiledPcodeModule::Impl {
         bool manual_reset = false;
         bool signaled = false;
     };
+    struct GuestObjectLinkSnapshot {
+        uint32_t address = 0;
+        std::array<uint32_t, 4> memory{};
+    };
+    struct GuestRegisterSnapshot {
+        uint32_t eax = 0;
+        uint32_t ecx = 0;
+        uint32_t edx = 0;
+        uint32_t ebx = 0;
+        uint32_t esp = 0;
+        uint32_t ebp = 0;
+        uint32_t esi = 0;
+        uint32_t edi = 0;
+        uint32_t stack_return_slot = 0;
+        bool has_stack_arguments = false;
+        std::array<uint32_t, 3> stack_arguments{};
+        std::array<std::array<uint32_t, 4>, 3> stack_argument_memory{};
+        std::array<bool, 3> has_stack_argument_memory{};
+        bool has_ecx_object_memory = false;
+        std::array<uint32_t, kGuestAllocationObjectTraceSize / 4>
+            ecx_object_memory{};
+        size_t ecx_object_link_count = 0;
+        std::array<GuestObjectLinkSnapshot,
+                   kGuestAllocationObjectLinkLimit>
+            ecx_object_links{};
+    };
+    struct GuestSemaphore {
+        uint32_t count = 0;
+        uint32_t maximum_count = 0;
+    };
+    struct GuestD3D9Interface {
+        uint32_t vtable_address = 0;
+        uint32_t references = 1;
+    };
     struct GuestFiber {
         uint32_t data = 0;
     };
@@ -388,6 +442,7 @@ struct RecompiledPcodeModule::Impl {
         std::array<uint8_t, kRegisterBankSize> registers{};
         std::unordered_map<uint32_t, uint32_t> tls_values;
         std::vector<uint32_t> active_functions;
+        std::vector<GuestRegisterSnapshot> active_function_registers;
         uint32_t last_error = 0;
         int32_t priority = 0;
         uint32_t ideal_processor = 0;
@@ -411,6 +466,7 @@ struct RecompiledPcodeModule::Impl {
         size_t coroutine_stack_size = 0;
         uint32_t wait_handle = 0;
         uint32_t wait_result = 0x00000102;
+        uint64_t wait_sequence = 0;
         std::chrono::steady_clock::time_point wait_deadline{};
         bool started = false;
         bool completed = false;
@@ -418,11 +474,27 @@ struct RecompiledPcodeModule::Impl {
         bool coroutine_initialized = false;
         bool runnable = false;
         bool waiting = false;
+        bool wait_alertable = false;
     };
 
     explicit Impl(const std::string& path) {
         static_assert(sizeof(size_t) >= sizeof(uint64_t),
                       "the guest RAM reservation requires a 64-bit host");
+        std::error_code cwd_error;
+        const std::filesystem::path host_current_directory =
+            std::filesystem::current_path(cwd_error);
+        if (cwd_error) {
+            throw std::runtime_error(
+                "cannot read host working directory: " + cwd_error.message());
+        }
+        guest_filesystem_root =
+            std::filesystem::canonical(host_current_directory, cwd_error);
+        if (cwd_error) {
+            throw std::runtime_error(
+                "cannot establish guest filesystem root: " +
+                cwd_error.message());
+        }
+        guest_current_host_directory = guest_filesystem_root;
         ram = mmap(nullptr, static_cast<size_t>(kGuestRamSize),
                    PROT_READ | PROT_WRITE,
                    MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
@@ -653,6 +725,20 @@ struct RecompiledPcodeModule::Impl {
         return true;
     }
 
+    bool set_guest_display_mode(uint32_t width, uint32_t height,
+                                uint32_t refresh_rate, uint32_t format) {
+        if (width == 0 || height == 0) {
+            error = "guest display mode width and height must be nonzero";
+            return false;
+        }
+        guest_display_width = width;
+        guest_display_height = height;
+        guest_display_refresh_rate = refresh_rate;
+        guest_display_format = format;
+        error.clear();
+        return true;
+    }
+
     int dispatch(uint64_t target) {
         if (target > std::numeric_limits<uint32_t>::max()) {
             error = "P-code call target exceeds the x86-32 address space";
@@ -687,6 +773,9 @@ struct RecompiledPcodeModule::Impl {
                 return set_thread_priority();
             if (name == "KERNEL32.dll!SetThreadIdealProcessor")
                 return set_thread_ideal_processor();
+            if (name == "KERNEL32.dll!Sleep") return sleep();
+            if (name == "KERNEL32.dll!SleepEx") return sleep_ex();
+            if (name == "KERNEL32.dll!ExitProcess") return exit_process();
             if (name == "KERNEL32.dll!SwitchToThread")
                 return switch_to_thread();
             if (name == "KERNEL32.dll!CreateThread")
@@ -727,6 +816,10 @@ struct RecompiledPcodeModule::Impl {
                 return get_process_heap();
             if (name == "KERNEL32.dll!CreateMutexA")
                 return create_mutex_a();
+            if (name == "KERNEL32.dll!CreateSemaphoreA")
+                return create_semaphore_a();
+            if (name == "KERNEL32.dll!ReleaseSemaphore")
+                return release_semaphore();
             if (name == "KERNEL32.dll!WaitForSingleObject")
                 return wait_for_single_object();
             if (name == "KERNEL32.dll!WaitForSingleObjectEx")
@@ -751,6 +844,8 @@ struct RecompiledPcodeModule::Impl {
                 return close_handle();
             if (name == "KERNEL32.dll!CreateFileA")
                 return create_file_a();
+            if (name == "KERNEL32.dll!DeleteFileA")
+                return delete_file_a();
             if (name == "KERNEL32.dll!GetFileSize")
                 return get_file_size();
             if (name == "KERNEL32.dll!ReadFile")
@@ -771,6 +866,10 @@ struct RecompiledPcodeModule::Impl {
                 return set_unhandled_exception_filter();
             if (name == "KERNEL32.dll!GetModuleHandleA")
                 return get_module_handle_a();
+            if (name == "KERNEL32.dll!GetCurrentDirectoryA")
+                return get_current_directory_a();
+            if (name == "KERNEL32.dll!SetCurrentDirectoryA")
+                return set_current_directory_a();
             if (name == "KERNEL32.dll!GetModuleFileNameA")
                 return get_module_file_name_a();
             if (name == "KERNEL32.dll!GetProcAddress")
@@ -841,6 +940,40 @@ struct RecompiledPcodeModule::Impl {
                 return get_code_page_info();
             if (name == "KERNEL32.dll!GetStringTypeW")
                 return get_string_type_w();
+            if (name == "USER32.dll!SystemParametersInfoA")
+                return system_parameters_info_a();
+            if (name == "SHELL32.dll!SHGetFolderPathA" ||
+                name == "shell32.dll!SHGetFolderPathA")
+                return sh_get_folder_path_a();
+            if (name == "SHELL32.dll!SHCreateDirectoryExA" ||
+                name == "shell32.dll!SHCreateDirectoryExA")
+                return sh_create_directory_ex_a();
+            if (name == "d3d9.dll!Direct3DCreate9")
+                return direct3d_create9();
+            if (name == "d3d9.dll!D3DPERF_BeginEvent")
+                return d3dperf_begin_event();
+            if (name == "d3d9.dll!D3DPERF_EndEvent")
+                return d3dperf_end_event();
+            if (name == "d3d9.dll!IDirect3D9::AddRef")
+                return d3d9_add_ref();
+            if (name == "d3d9.dll!IDirect3D9::Release")
+                return d3d9_release();
+            if (name == "d3d9.dll!IDirect3D9::GetAdapterCount")
+                return d3d9_get_adapter_count();
+            if (name == "d3d9.dll!IDirect3D9::GetAdapterModeCount")
+                return d3d9_get_adapter_mode_count();
+            if (name == "d3d9.dll!IDirect3D9::CheckDeviceFormat")
+                return d3d9_check_device_format();
+            if (name == "d3d9.dll!IDirect3D9::EnumAdapterModes")
+                return d3d9_enum_adapter_modes();
+            if (name == "d3d9.dll!IDirect3D9::CheckDeviceMultiSampleType")
+                return d3d9_check_device_multisample_type();
+            if (name == "d3d9.dll!IDirect3D9::GetAdapterDisplayMode")
+                return d3d9_get_adapter_display_mode();
+            if (name == "d3d9.dll!IDirect3D9::GetAdapterIdentifier")
+                return d3d9_get_adapter_identifier();
+            if (name == "d3d9.dll!IDirect3D9::GetDeviceCaps")
+                return d3d9_get_device_caps();
             if (name == "imagehlp.dll!SymSetOptions")
                 return sym_set_options();
             if (name == "imagehlp.dll!SymInitialize")
@@ -908,8 +1041,128 @@ struct RecompiledPcodeModule::Impl {
         ++call_depth;
         ++function_count;
         unique_function_addresses.insert(static_cast<uint32_t>(target));
+        GuestRegisterSnapshot entry_registers{};
+        (void)read_guest_u32("register", kX86EaxRegisterOffset,
+                             entry_registers.eax);
+        (void)read_guest_u32("register", kX86EcxRegisterOffset,
+                             entry_registers.ecx);
+        (void)read_guest_u32("register", kX86EdxRegisterOffset,
+                             entry_registers.edx);
+        (void)read_guest_u32("register", kX86EbxRegisterOffset,
+                             entry_registers.ebx);
+        (void)read_guest_u32("register", kX86EspRegisterOffset,
+                             entry_registers.esp);
+        (void)read_guest_u32("register", kX86EbpRegisterOffset,
+                             entry_registers.ebp);
+        (void)read_guest_u32("register", kX86EsiRegisterOffset,
+                             entry_registers.esi);
+        (void)read_guest_u32("register", kX86EdiRegisterOffset,
+                             entry_registers.edi);
+        const char* trace_allocations =
+            std::getenv("SHIFT_TRACE_GUEST_ALLOCATIONS");
+        if (trace_allocations && *trace_allocations &&
+            entry_registers.esp <= UINT32_MAX - 16) {
+            (void)read_guest_diagnostic_u32(
+                entry_registers.esp, entry_registers.stack_return_slot);
+            entry_registers.has_stack_arguments = true;
+            for (size_t argument_index = 0;
+                 argument_index < entry_registers.stack_arguments.size();
+                 ++argument_index) {
+                const uint64_t argument_address =
+                    static_cast<uint64_t>(entry_registers.esp) + 4 +
+                    argument_index * sizeof(uint32_t);
+                if (!read_guest_diagnostic_u32(
+                        argument_address,
+                        entry_registers.stack_arguments[argument_index])) {
+                    entry_registers.has_stack_arguments = false;
+                    break;
+                }
+                const uint32_t pointer =
+                    entry_registers.stack_arguments[argument_index];
+                if (!diagnostic_guest_pointer_mapped(pointer, 16)) continue;
+                bool complete_snapshot = true;
+                for (size_t word_index = 0;
+                     word_index <
+                     entry_registers.stack_argument_memory[argument_index]
+                         .size();
+                     ++word_index) {
+                    const uint64_t word_address =
+                        static_cast<uint64_t>(pointer) +
+                        word_index * sizeof(uint32_t);
+                    if (!read_guest_diagnostic_u32(
+                            word_address,
+                            entry_registers
+                                .stack_argument_memory[argument_index]
+                                     [word_index])) {
+                        complete_snapshot = false;
+                        break;
+                    }
+                }
+                entry_registers.has_stack_argument_memory[argument_index] =
+                    complete_snapshot;
+            }
+            if (diagnostic_guest_pointer_mapped(
+                    entry_registers.ecx, kGuestAllocationObjectTraceSize)) {
+                entry_registers.has_ecx_object_memory = true;
+                for (size_t word_index = 0;
+                     word_index < entry_registers.ecx_object_memory.size();
+                     ++word_index) {
+                    const uint64_t word_address =
+                        static_cast<uint64_t>(entry_registers.ecx) +
+                        word_index * sizeof(uint32_t);
+                    if (!read_guest_diagnostic_u32(
+                            word_address,
+                            entry_registers.ecx_object_memory[word_index])) {
+                        entry_registers.has_ecx_object_memory = false;
+                        break;
+                    }
+                }
+                if (entry_registers.has_ecx_object_memory) {
+                    for (const uint32_t pointer :
+                         entry_registers.ecx_object_memory) {
+                        if (entry_registers.ecx_object_link_count >=
+                            entry_registers.ecx_object_links.size()) {
+                            break;
+                        }
+                        if (!diagnostic_guest_pointer_mapped(pointer, 16))
+                            continue;
+                        bool duplicate = false;
+                        for (size_t link_index = 0;
+                             link_index <
+                             entry_registers.ecx_object_link_count;
+                             ++link_index) {
+                            if (entry_registers.ecx_object_links[link_index]
+                                    .address == pointer) {
+                                duplicate = true;
+                                break;
+                            }
+                        }
+                        if (duplicate) continue;
+                        auto& link = entry_registers.ecx_object_links[
+                            entry_registers.ecx_object_link_count];
+                        link.address = pointer;
+                        bool complete_snapshot = true;
+                        for (size_t word_index = 0;
+                             word_index < link.memory.size(); ++word_index) {
+                            const uint64_t word_address =
+                                static_cast<uint64_t>(pointer) +
+                                word_index * sizeof(uint32_t);
+                            if (!read_guest_diagnostic_u32(
+                                    word_address, link.memory[word_index])) {
+                                complete_snapshot = false;
+                                break;
+                            }
+                        }
+                        if (complete_snapshot)
+                            ++entry_registers.ecx_object_link_count;
+                    }
+                }
+            }
+        }
         active_guest_functions.push_back(static_cast<uint32_t>(target));
+        active_guest_function_registers.push_back(entry_registers);
         const int result = function(&context);
+        active_guest_function_registers.pop_back();
         active_guest_functions.pop_back();
         --call_depth;
         if (current_guest_thread_handle != 0 &&
@@ -1026,6 +1279,16 @@ struct RecompiledPcodeModule::Impl {
         return true;
     }
 
+    bool read_guest_diagnostic_u32(uint64_t offset, uint32_t& value) const {
+        if (!ram || offset + sizeof(uint32_t) > kGuestRamSize) return false;
+        const auto* bytes = static_cast<const uint8_t*>(ram) + offset;
+        value = static_cast<uint32_t>(bytes[0]) |
+                (static_cast<uint32_t>(bytes[1]) << 8) |
+                (static_cast<uint32_t>(bytes[2]) << 16) |
+                (static_cast<uint32_t>(bytes[3]) << 24);
+        return true;
+    }
+
     bool write_guest_u32(const char* space, uint64_t offset, uint32_t value) {
         const std::array<uint8_t, 4> bytes = {
             static_cast<uint8_t>(value), static_cast<uint8_t>(value >> 8),
@@ -1076,6 +1339,29 @@ struct RecompiledPcodeModule::Impl {
                                     kGuestRamSize;
     }
 
+    void trace_guest_allocation(const char* api, uint32_t size,
+                                uint32_t address) const {
+        const char* enabled = std::getenv("SHIFT_TRACE_GUEST_ALLOCATIONS");
+        if (!enabled || !*enabled || size < kGuestAllocationTraceThreshold)
+            return;
+        const uint32_t guest_pc = active_guest_functions.empty()
+                                      ? 0
+                                      : active_guest_functions.back();
+        std::fprintf(stderr,
+                     "shift_runtime: %s size=0x%08x (%u) result=0x%08x "
+                     "guest_pc=0x%08x guest_stack=[",
+                     api, size, size, address, guest_pc);
+        const size_t first = active_guest_functions.size() > 8
+                                 ? active_guest_functions.size() - 8
+                                 : 0;
+        for (size_t index = first;
+             index < active_guest_functions.size(); ++index) {
+            std::fprintf(stderr, "%s0x%08x", index == first ? "" : " -> ",
+                         active_guest_functions[index]);
+        }
+        std::fputs("]\n", stderr);
+    }
+
     bool read_guest_bytes(uint32_t address, uint8_t* output, size_t size,
                           const char* api) {
         if (!output || !valid_guest_pointer(address, size)) {
@@ -1123,19 +1409,21 @@ struct RecompiledPcodeModule::Impl {
             "GetCurrentThreadId", "GetTickCount",
             "CreateThread", "ResumeThread", "SuspendThread",
             "GetExitCodeThread", "ExitThread",
+            "Sleep", "SleepEx", "ExitProcess",
             "GetLocalTime",
             "ConvertThreadToFiber", "IsThreadAFiber",
             "GlobalMemoryStatus",
             "GetSystemTimeAsFileTime", "QueryPerformanceCounter",
             "QueryPerformanceFrequency", "GetStartupInfoA", "GetProcessHeap",
-            "CreateMutexA", "WaitForSingleObject", "ReleaseMutex",
+            "CreateMutexA", "CreateSemaphoreA", "ReleaseSemaphore",
+            "WaitForSingleObject", "ReleaseMutex",
             "WaitForSingleObjectEx", "CreateEventW", "CreateEventA",
             "SetEvent", "ResetEvent",
             "InterlockedCompareExchange",
             "InterlockedExchange",
             "VirtualAlloc", "VirtualFree",
             "CloseHandle",
-            "CreateFileA", "GetFileSize", "ReadFile",
+            "CreateFileA", "DeleteFileA", "GetFileSize", "ReadFile",
             "HeapCreate", "HeapAlloc", "HeapReAlloc", "HeapSize", "HeapFree", "GetVersionExA",
             "SetUnhandledExceptionFilter", "GetModuleHandleA",
             "GetModuleFileNameA", "GetProcAddress",
@@ -1150,6 +1438,7 @@ struct RecompiledPcodeModule::Impl {
             "GetCommandLineA", "GetEnvironmentStrings",
             "GetEnvironmentStringsA", "GetEnvironmentStringsW",
             "GetEnvironmentVariableA", "SetEnvironmentVariableA",
+            "GetCurrentDirectoryA", "SetCurrentDirectoryA",
             "FreeEnvironmentStrings", "FreeEnvironmentStringsA",
             "FreeEnvironmentStringsW", "WideCharToMultiByte", "GetLastError",
             "SetLastError", "RaiseException", "GetACP", "IsValidCodePage", "GetCPInfo",
@@ -1732,6 +2021,229 @@ struct RecompiledPcodeModule::Impl {
                                      api, 0);
     }
 
+    int sleep() {
+        constexpr const char* api = "KERNEL32.dll!Sleep";
+        uint32_t milliseconds = 0;
+        if (!read_stack_argument(0, milliseconds, api)) return -1;
+        return sleep_guest_thread(milliseconds, false, api, sizeof(uint32_t));
+    }
+
+    int sleep_ex() {
+        constexpr const char* api = "KERNEL32.dll!SleepEx";
+        uint32_t milliseconds = 0;
+        uint32_t alertable = 0;
+        if (!read_stack_argument(0, milliseconds, api) ||
+            !read_stack_argument(1, alertable, api)) {
+            return -1;
+        }
+        return sleep_guest_thread(milliseconds, alertable != 0, api,
+                                  2 * sizeof(uint32_t));
+    }
+
+    int sleep_guest_thread(uint32_t milliseconds, bool alertable,
+                           const char* api, uint32_t stack_cleanup) {
+        if (scheduler_context_active && guest_coroutine_active) {
+            GuestThread* thread =
+                guest_execution_state(current_guest_thread_handle);
+            if (!thread) {
+                error = std::string(api) + " has no current guest thread state";
+                return -1;
+            }
+            if (milliseconds == 0) {
+                if (!yield_current_guest_thread(true)) return -1;
+            } else {
+                thread->waiting = true;
+                thread->runnable = false;
+                thread->wait_handle = 0;
+                thread->wait_result = 0;
+                thread->wait_sequence = next_guest_wait_sequence++;
+                thread->wait_alertable = alertable;
+                thread->wait_deadline = milliseconds == UINT32_MAX
+                    ? std::chrono::steady_clock::time_point::max()
+                    : std::chrono::steady_clock::now() +
+                          std::chrono::milliseconds(milliseconds);
+                if (!yield_current_guest_thread(false)) return -1;
+            }
+        } else if (milliseconds == UINT32_MAX) {
+            error = std::string(api) +
+                    " with INFINITE requires the cooperative guest scheduler";
+            return -1;
+        } else if (milliseconds == 0) {
+            std::this_thread::yield();
+        } else {
+            std::this_thread::sleep_for(
+                std::chrono::milliseconds(milliseconds));
+        }
+        return return_kernel32_dword(0, api, stack_cleanup);
+    }
+
+    int exit_process() {
+        constexpr const char* api = "KERNEL32.dll!ExitProcess";
+        uint32_t exit_code = 0;
+        if (!read_stack_argument(0, exit_code, api)) return -1;
+        error = std::string(api) + " terminated the guest process with code " +
+                std::to_string(exit_code);
+        const char* trace_allocations =
+            std::getenv("SHIFT_TRACE_GUEST_ALLOCATIONS");
+        const bool trace_allocation_context =
+            trace_allocations && *trace_allocations;
+        uint32_t guest_edi = 0;
+        if (read_guest_u32("register", kX86EdiRegisterOffset, guest_edi)) {
+            char register_value[64]{};
+            std::snprintf(register_value, sizeof(register_value),
+                          "; guest EDI=0x%08x (%u)", guest_edi, guest_edi);
+            error += register_value;
+        }
+        if (!active_guest_functions.empty()) {
+            error += "; guest call stack=";
+            const size_t first = active_guest_functions.size() > 32
+                                     ? active_guest_functions.size() - 32
+                                     : 0;
+            for (size_t index = first;
+                 index < active_guest_functions.size(); ++index) {
+                char address[256]{};
+                const GuestRegisterSnapshot registers =
+                    index < active_guest_function_registers.size()
+                        ? active_guest_function_registers[index]
+                        : GuestRegisterSnapshot{};
+                std::snprintf(address, sizeof(address),
+                              "%s0x%08x(EAX=0x%08x,ECX=0x%08x,"
+                              "EDX=0x%08x,EBX=0x%08x,ESP=0x%08x,"
+                              "EBP=0x%08x,ESI=0x%08x,EDI=0x%08x)",
+                              index == first ? "[" : " -> ",
+                              active_guest_functions[index], registers.eax,
+                              registers.ecx, registers.edx, registers.ebx,
+                              registers.esp, registers.ebp, registers.esi,
+                              registers.edi);
+                error += address;
+                if (trace_allocation_context &&
+                    registers.has_stack_arguments) {
+                    char arguments[112]{};
+                    std::snprintf(arguments, sizeof(arguments),
+                                  "{stack=0x%08x,args=0x%08x,0x%08x,"
+                                  "0x%08x}",
+                                  registers.stack_return_slot,
+                                  registers.stack_arguments[0],
+                                  registers.stack_arguments[1],
+                                  registers.stack_arguments[2]);
+                    error += arguments;
+                    for (size_t argument_index = 0;
+                         argument_index < registers.stack_arguments.size();
+                         ++argument_index) {
+                        if (!registers
+                                 .has_stack_argument_memory[argument_index])
+                            continue;
+                        const uint32_t pointer =
+                            registers.stack_arguments[argument_index];
+                        char memory[128]{};
+                        std::snprintf(memory, sizeof(memory),
+                                      "{guest-memory@0x%08x=", pointer);
+                        error += memory;
+                        for (size_t word_index = 0; word_index < 4;
+                             ++word_index) {
+                            char word[16]{};
+                            std::snprintf(
+                                word, sizeof(word), "%s%08x",
+                                word_index == 0 ? "" : ",",
+                                registers.stack_argument_memory[argument_index]
+                                                               [word_index]);
+                            error += word;
+                        }
+                        error += "}";
+                    }
+                }
+                if (trace_allocation_context &&
+                    registers.has_ecx_object_memory) {
+                    char object[64]{};
+                    std::snprintf(object, sizeof(object),
+                                  "{guest-ecx-memory@0x%08x=",
+                                  registers.ecx);
+                    error += object;
+                    for (size_t word_index = 0;
+                         word_index < registers.ecx_object_memory.size();
+                         ++word_index) {
+                        char word[16]{};
+                        std::snprintf(
+                            word, sizeof(word), "%s%08x",
+                            word_index == 0 ? "" : ",",
+                            registers.ecx_object_memory[word_index]);
+                        error += word;
+                    }
+                    error += "}";
+                    for (size_t link_index = 0;
+                         link_index < registers.ecx_object_link_count;
+                         ++link_index) {
+                        const auto& link =
+                            registers.ecx_object_links[link_index];
+                        char linked_memory[64]{};
+                        std::snprintf(
+                            linked_memory, sizeof(linked_memory),
+                            "{guest-ecx-link@0x%08x=", link.address);
+                        error += linked_memory;
+                        for (size_t word_index = 0;
+                             word_index < link.memory.size(); ++word_index) {
+                            char word[16]{};
+                            std::snprintf(
+                                word, sizeof(word), "%s%08x",
+                                word_index == 0 ? "" : ",",
+                                link.memory[word_index]);
+                            error += word;
+                        }
+                        error += "}";
+                    }
+                }
+                const std::string ebx_text =
+                    read_diagnostic_guest_ascii(registers.ebx);
+                if (!ebx_text.empty()) {
+                    error += "{EBX-text='" + ebx_text + "'}";
+                }
+            }
+            error += "]";
+        }
+        return -1;
+    }
+
+    std::string read_diagnostic_guest_ascii(uint32_t address) const {
+        if (!ram || address >= kGuestRamSize) return {};
+        const auto* bytes = static_cast<const uint8_t*>(ram);
+        std::string text;
+        for (uint64_t index = 0; index < 64; ++index) {
+            const uint64_t byte_address =
+                static_cast<uint64_t>(address) + index;
+            if (byte_address >= kGuestRamSize) return {};
+            const uint8_t byte = bytes[byte_address];
+            if (byte == 0) return text;
+            if (byte < 0x20 || byte > 0x7e) return {};
+            text.push_back(static_cast<char>(byte));
+        }
+        return {};
+    }
+
+    bool diagnostic_guest_pointer_mapped(uint32_t address,
+                                         size_t size) const {
+        if (address == 0) return false;
+        const uint64_t end = static_cast<uint64_t>(address) + size;
+        if (end > kGuestRamSize) return false;
+        if (pe_image_size != 0 && address >= pe_image_base &&
+            end <= static_cast<uint64_t>(pe_image_base) + pe_image_size) {
+            return true;
+        }
+        for (const auto& region : guest_virtual_allocations) {
+            if (address >= region.first &&
+                end <= static_cast<uint64_t>(region.first) + region.second) {
+                return true;
+            }
+        }
+        for (const auto& allocation : heap_allocations) {
+            if (address >= allocation.first &&
+                end <= static_cast<uint64_t>(allocation.first) +
+                           allocation.second.size) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     void release_guest_thread_blocks(const GuestThread& thread) {
         for (const auto& block : {thread.stack, thread.teb}) {
             const auto allocation = heap_allocations.find(block.address);
@@ -1768,6 +2280,7 @@ struct RecompiledPcodeModule::Impl {
         state.registers = registers;
         state.tls_values = tls_values;
         state.active_functions = active_guest_functions;
+        state.active_function_registers = active_guest_function_registers;
         state.last_error = guest_last_error;
         state.priority = guest_thread_priority;
         state.ideal_processor = guest_thread_ideal_processor;
@@ -1783,6 +2296,7 @@ struct RecompiledPcodeModule::Impl {
         registers = state.registers;
         tls_values = state.tls_values;
         active_guest_functions = state.active_functions;
+        active_guest_function_registers = state.active_function_registers;
         guest_last_error = state.last_error;
         guest_thread_priority = state.priority;
         guest_thread_ideal_processor = state.ideal_processor;
@@ -1919,6 +2433,7 @@ struct RecompiledPcodeModule::Impl {
         auto wake = [&](uint32_t candidate, GuestThread& thread) {
             if (!thread.waiting || thread.wait_handle != handle) return;
             thread.waiting = false;
+            thread.wait_sequence = 0;
             thread.wait_result = 0;
             enqueue_guest_thread(candidate);
         };
@@ -1937,11 +2452,78 @@ struct RecompiledPcodeModule::Impl {
                 return;
             }
             thread.waiting = false;
+            thread.wait_sequence = 0;
             thread.wait_result = 0x00000102;
             enqueue_guest_thread(handle);
         };
         wake(0, main_guest_thread);
         for (auto& [handle, thread] : guest_threads) wake(handle, thread);
+    }
+
+    void wake_guest_event_waiters(uint32_t handle, GuestEvent& event) {
+        auto wake = [&](uint32_t candidate, GuestThread& thread) {
+            if (!thread.waiting || thread.wait_handle != handle) return false;
+            thread.waiting = false;
+            thread.wait_sequence = 0;
+            thread.wait_result = 0;
+            enqueue_guest_thread(candidate);
+            return true;
+        };
+
+        if (event.manual_reset) {
+            wake(0, main_guest_thread);
+            for (auto& [candidate, thread] : guest_threads)
+                wake(candidate, thread);
+            return;
+        }
+
+        uint32_t selected_handle = 0;
+        GuestThread* selected = nullptr;
+        auto consider = [&](uint32_t candidate, GuestThread& thread) {
+            if (!thread.waiting || thread.wait_handle != handle) return;
+            if (!selected || thread.wait_sequence < selected->wait_sequence) {
+                selected_handle = candidate;
+                selected = &thread;
+            }
+        };
+        consider(0, main_guest_thread);
+        for (auto& [candidate, thread] : guest_threads)
+            consider(candidate, thread);
+        if (!selected) return;
+
+        selected->waiting = false;
+        selected->wait_sequence = 0;
+        selected->wait_result = 0;
+        event.signaled = false;
+        enqueue_guest_thread(selected_handle);
+    }
+
+    uint32_t wake_guest_semaphore_waiters(uint32_t handle,
+                                          uint32_t released_count) {
+        std::vector<std::pair<uint64_t, uint32_t>> waiters;
+        auto collect = [&](uint32_t candidate, const GuestThread& thread) {
+            if (thread.waiting && thread.wait_handle == handle) {
+                waiters.emplace_back(thread.wait_sequence, candidate);
+            }
+        };
+        collect(0, main_guest_thread);
+        for (const auto& [candidate, thread] : guest_threads)
+            collect(candidate, thread);
+        std::sort(waiters.begin(), waiters.end());
+
+        const uint32_t wake_count = static_cast<uint32_t>(
+            std::min<size_t>(released_count, waiters.size()));
+        for (uint32_t index = 0; index < wake_count; ++index) {
+            const uint32_t waiter_handle = waiters[index].second;
+            GuestThread* waiter = guest_execution_state(waiter_handle);
+            if (!waiter || !waiter->waiting || waiter->wait_handle != handle)
+                continue;
+            waiter->waiting = false;
+            waiter->wait_sequence = 0;
+            waiter->wait_result = 0;
+            enqueue_guest_thread(waiter_handle);
+        }
+        return wake_count;
     }
 
     bool run_guest_scheduler(size_t max_slices, bool stop_when_entrypoint_done) {
@@ -1963,7 +2545,29 @@ struct RecompiledPcodeModule::Impl {
         while (slices < max_slices) {
             wake_expired_guest_waiters();
             if (stop_when_entrypoint_done && pe32_entry_point_complete) break;
-            if (ready_guest_threads.empty()) break;
+            if (ready_guest_threads.empty()) {
+                auto next_deadline =
+                    std::chrono::steady_clock::time_point::max();
+                auto consider_deadline = [&](const GuestThread& thread) {
+                    if (thread.waiting &&
+                        thread.wait_deadline !=
+                            std::chrono::steady_clock::time_point::max()) {
+                        next_deadline =
+                            std::min(next_deadline, thread.wait_deadline);
+                    }
+                };
+                consider_deadline(main_guest_thread);
+                for (const auto& [waiting_handle, thread] : guest_threads) {
+                    (void)waiting_handle;
+                    consider_deadline(thread);
+                }
+                if (next_deadline ==
+                    std::chrono::steady_clock::time_point::max()) {
+                    break;
+                }
+                std::this_thread::sleep_until(next_deadline);
+                continue;
+            }
 
             const uint32_t handle = ready_guest_threads.front();
             ready_guest_threads.pop_front();
@@ -2016,6 +2620,7 @@ struct RecompiledPcodeModule::Impl {
         registers.fill(0);
         tls_values.clear();
         active_guest_functions.clear();
+        active_guest_function_registers.clear();
         call_depth = 0;
         indirect_jump_depth = 0;
         current_guest_thread_id = thread->id;
@@ -2326,6 +2931,87 @@ struct RecompiledPcodeModule::Impl {
         return return_kernel32_dword(handle, api, 12);
     }
 
+    int create_semaphore_a() {
+        constexpr const char* api = "KERNEL32.dll!CreateSemaphoreA";
+        uint32_t security_attributes = 0;
+        uint32_t initial_count = 0;
+        uint32_t maximum_count = 0;
+        uint32_t name_address = 0;
+        if (!read_stack_argument(0, security_attributes, api) ||
+            !read_stack_argument(1, initial_count, api) ||
+            !read_stack_argument(2, maximum_count, api) ||
+            !read_stack_argument(3, name_address, api)) {
+            return -1;
+        }
+        (void)security_attributes;
+        if (maximum_count == 0 || initial_count > maximum_count) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 16);
+        }
+
+        std::string name;
+        if (name_address != 0 && !read_guest_ascii(name_address, name, api))
+            return -1;
+        if (!name.empty()) {
+            const auto existing = guest_named_semaphores.find(name);
+            if (existing != guest_named_semaphores.end()) {
+                guest_last_error = 183;
+                return return_kernel32_dword(existing->second, api, 16);
+            }
+        }
+        if (next_guest_semaphore_handle >
+            std::numeric_limits<uint32_t>::max() - sizeof(uint32_t)) {
+            guest_last_error = 8;
+            return return_kernel32_dword(0, api, 16);
+        }
+        const uint32_t handle =
+            static_cast<uint32_t>(next_guest_semaphore_handle);
+        next_guest_semaphore_handle += sizeof(uint32_t);
+        guest_semaphores.emplace(
+            handle, GuestSemaphore{initial_count, maximum_count});
+        if (!name.empty())
+            guest_named_semaphores.emplace(std::move(name), handle);
+        return return_kernel32_dword(handle, api, 16);
+    }
+
+    int release_semaphore() {
+        constexpr const char* api = "KERNEL32.dll!ReleaseSemaphore";
+        uint32_t handle = 0;
+        uint32_t release_count = 0;
+        uint32_t previous_count_address = 0;
+        if (!read_stack_argument(0, handle, api) ||
+            !read_stack_argument(1, release_count, api) ||
+            !read_stack_argument(2, previous_count_address, api)) {
+            return -1;
+        }
+        const auto semaphore = guest_semaphores.find(handle);
+        if (semaphore == guest_semaphores.end()) {
+            guest_last_error = 6;
+            return return_kernel32_dword(0, api, 12);
+        }
+        if (release_count == 0 ||
+            release_count > semaphore->second.maximum_count -
+                                semaphore->second.count) {
+            guest_last_error = 298;
+            return return_kernel32_dword(0, api, 12);
+        }
+        const uint32_t previous_count = semaphore->second.count;
+        if (previous_count_address != 0) {
+            if (!valid_guest_pointer(previous_count_address,
+                                    sizeof(previous_count)) ||
+                !write_guest_u32("ram", previous_count_address,
+                                 previous_count)) {
+                error = std::string(api) +
+                        " has an invalid previous-count pointer";
+                return -1;
+            }
+        }
+        const uint32_t woken =
+            wake_guest_semaphore_waiters(handle, release_count);
+        semaphore->second.count += release_count - woken;
+        return return_kernel32_dword(1, api, 12);
+    }
+
     int wait_for_single_object() {
         constexpr const char* api = "KERNEL32.dll!WaitForSingleObject";
         uint32_t handle = 0;
@@ -2348,44 +3034,17 @@ struct RecompiledPcodeModule::Impl {
             !read_stack_argument(2, alertable, api)) {
             return -1;
         }
-        if (alertable != 0) {
-            guest_last_error = 50;
-            return return_kernel32_dword(UINT32_MAX, api, 12);
-        }
         return return_kernel32_dword(
-            wait_guest_object(handle, timeout_ms, api), api, 12);
+            wait_guest_object(handle, timeout_ms, api, alertable != 0), api,
+            12);
     }
 
     uint32_t wait_guest_object(uint32_t handle, uint32_t timeout_ms,
-                               const char* api) {
+                               const char* api, bool alertable = false) {
         const auto thread = guest_threads.find(handle);
         if (thread != guest_threads.end()) {
             if (thread->second.completed) return 0;
-            if (guest_coroutine_active && scheduler_context_active &&
-                timeout_ms != 0) {
-                const uint32_t waiter_handle = current_guest_thread_handle;
-                GuestThread* waiter =
-                    guest_execution_state(waiter_handle);
-                if (!waiter) {
-                    error = std::string(api) +
-                            " has no current guest thread state";
-                    return UINT32_MAX;
-                }
-                waiter->waiting = true;
-                waiter->runnable = false;
-                waiter->wait_handle = handle;
-                waiter->wait_result = 0x00000102;
-                waiter->wait_deadline = timeout_ms == UINT32_MAX
-                    ? std::chrono::steady_clock::time_point::max()
-                    : std::chrono::steady_clock::now() +
-                          std::chrono::milliseconds(timeout_ms);
-                if (!yield_current_guest_thread(false)) return UINT32_MAX;
-                const GuestThread* resumed_waiter =
-                    guest_execution_state(waiter_handle);
-                if (!resumed_waiter) return UINT32_MAX;
-                return resumed_waiter->wait_result;
-            }
-            return 0x00000102;
+            return wait_for_guest_object(handle, timeout_ms, api, alertable);
         }
         const auto mutex = guest_mutexes.find(handle);
         if (mutex != guest_mutexes.end()) {
@@ -2402,15 +3061,544 @@ struct RecompiledPcodeModule::Impl {
                 if (!event->second.manual_reset) event->second.signaled = false;
                 return 0;
             }
+            return wait_for_guest_object(handle, timeout_ms, api, alertable);
+        }
+        const auto semaphore = guest_semaphores.find(handle);
+        if (semaphore != guest_semaphores.end()) {
+            if (semaphore->second.count != 0) {
+                --semaphore->second.count;
+                return 0;
+            }
+            return wait_for_guest_object(handle, timeout_ms, api, alertable);
+        }
+        guest_last_error = 6;
+        (void)api;
+        return UINT32_MAX;
+    }
+
+    uint32_t wait_for_guest_object(uint32_t handle, uint32_t timeout_ms,
+                                   const char* api, bool alertable) {
+        if (timeout_ms == 0) return 0x00000102;
+        if (!guest_coroutine_active || !scheduler_context_active) {
             if (timeout_ms == UINT32_MAX) {
                 guest_last_error = 50;
                 return UINT32_MAX;
             }
             return 0x00000102;
         }
-        guest_last_error = 6;
-        (void)api;
-        return UINT32_MAX;
+
+        const uint32_t waiter_handle = current_guest_thread_handle;
+        GuestThread* waiter = guest_execution_state(waiter_handle);
+        if (!waiter) {
+            error = std::string(api) + " has no current guest thread state";
+            return UINT32_MAX;
+        }
+        waiter->waiting = true;
+        waiter->runnable = false;
+        waiter->wait_handle = handle;
+        waiter->wait_result = 0x00000102;
+        waiter->wait_sequence = next_guest_wait_sequence++;
+        waiter->wait_alertable = alertable;
+        waiter->wait_deadline = timeout_ms == UINT32_MAX
+            ? std::chrono::steady_clock::time_point::max()
+            : std::chrono::steady_clock::now() +
+                  std::chrono::milliseconds(timeout_ms);
+        if (!yield_current_guest_thread(false)) return UINT32_MAX;
+        const GuestThread* resumed_waiter =
+            guest_execution_state(waiter_handle);
+        if (!resumed_waiter) return UINT32_MAX;
+        return resumed_waiter->wait_result;
+    }
+
+    int sh_get_folder_path_a() {
+        constexpr const char* api = "SHELL32.dll!SHGetFolderPathA";
+        uint32_t window = 0;
+        uint32_t csidl = 0;
+        uint32_t token = 0;
+        uint32_t flags = 0;
+        uint32_t output_address = 0;
+        if (!read_stack_argument(0, window, api) ||
+            !read_stack_argument(1, csidl, api) ||
+            !read_stack_argument(2, token, api) ||
+            !read_stack_argument(3, flags, api) ||
+            !read_stack_argument(4, output_address, api)) {
+            return -1;
+        }
+        (void)window;
+        if (!valid_guest_pointer(output_address, kWindowsMaxPath)) {
+            return return_kernel32_dword(kHresultInvalidArg, api, 20);
+        }
+
+        std::array<uint8_t, kWindowsMaxPath> output{};
+        if (!write_guest_bytes(output_address, output.data(), output.size(), api))
+            return -1;
+
+        const uint32_t folder = csidl & 0x3fff;
+        const uint32_t csidl_flags = csidl & ~0x3fff;
+        if (folder != kCsidlPersonal || token != 0 || flags > 1 ||
+            (csidl_flags & ~(kCsidlFlagCreate | kCsidlFlagDontVerify)) != 0) {
+            return return_kernel32_dword(kHresultInvalidArg, api, 20);
+        }
+
+        constexpr char guest_path[] =
+            "C:\\Documents and Settings\\SHIFT\\My Documents";
+        std::filesystem::path folder_path;
+        if (!make_guest_path_candidate(guest_path, folder_path, api))
+            return return_kernel32_dword(kHresultFail, api, 20);
+        std::error_code error_code;
+        if ((csidl_flags & kCsidlFlagCreate) != 0) {
+            std::filesystem::create_directories(folder_path, error_code);
+            if (error_code)
+                return return_kernel32_dword(kHresultFail, api, 20);
+        }
+        folder_path = std::filesystem::canonical(folder_path, error_code);
+        if (error_code) {
+            if ((csidl_flags & kCsidlFlagCreate) == 0 &&
+                error_code == std::errc::no_such_file_or_directory) {
+                return return_kernel32_dword(1, api, 20);
+            }
+            return return_kernel32_dword(kHresultFail, api, 20);
+        }
+        if (!path_is_within_guest_root(folder_path))
+            return return_kernel32_dword(kHresultFail, api, 20);
+        const bool is_directory =
+            std::filesystem::is_directory(folder_path, error_code);
+        if (error_code)
+            return return_kernel32_dword(kHresultFail, api, 20);
+        if (!is_directory) {
+            return return_kernel32_dword(
+                (csidl_flags & kCsidlFlagCreate) == 0 ? 1 : kHresultFail,
+                api, 20);
+        }
+
+        constexpr size_t path_size = sizeof(guest_path) - 1;
+        std::copy_n(reinterpret_cast<const uint8_t*>(guest_path), path_size,
+                    output.begin());
+        if (!write_guest_bytes(output_address, output.data(), path_size + 1,
+                               api)) {
+            return -1;
+        }
+        return return_kernel32_dword(0, api, 20);
+    }
+
+    int sh_create_directory_ex_a() {
+        constexpr const char* api = "SHELL32.dll!SHCreateDirectoryExA";
+        uint32_t window = 0;
+        uint32_t path_address = 0;
+        uint32_t security_attributes = 0;
+        if (!read_stack_argument(0, window, api) ||
+            !read_stack_argument(1, path_address, api) ||
+            !read_stack_argument(2, security_attributes, api)) {
+            return -1;
+        }
+        (void)window;
+        if (security_attributes != 0)
+            return return_kernel32_dword(87, api, 12);
+
+        std::string path;
+        if (!read_guest_ascii(path_address, path, api)) return -1;
+        if (path.size() >= 248) return return_kernel32_dword(206, api, 12);
+        if (path.size() < 3 ||
+            std::tolower(static_cast<unsigned char>(path[0])) != 'c' ||
+            path[1] != ':' || (path[2] != '\\' && path[2] != '/')) {
+            return return_kernel32_dword(161, api, 12);
+        }
+
+        std::filesystem::path folder_path;
+        if (!make_guest_path_candidate(path, folder_path, api))
+            return return_kernel32_dword(guest_last_error, api, 12);
+        std::error_code error_code;
+        const auto current_status =
+            std::filesystem::status(folder_path, error_code);
+        if (!error_code && std::filesystem::exists(current_status)) {
+            return return_kernel32_dword(
+                std::filesystem::is_directory(current_status) ? 183 : 80,
+                api, 12);
+        }
+        if (error_code && error_code != std::errc::no_such_file_or_directory &&
+            error_code != std::errc::not_a_directory) {
+            const uint32_t failure =
+                error_code == std::errc::permission_denied ? 5 : 3;
+            return return_kernel32_dword(failure, api, 12);
+        }
+
+        error_code.clear();
+        std::filesystem::create_directories(folder_path, error_code);
+        if (error_code) {
+            const uint32_t failure =
+                error_code == std::errc::permission_denied ? 5 :
+                error_code == std::errc::filename_too_long ? 206 : 3;
+            return return_kernel32_dword(failure, api, 12);
+        }
+        folder_path = std::filesystem::canonical(folder_path, error_code);
+        if (error_code || !path_is_within_guest_root(folder_path))
+            return return_kernel32_dword(5, api, 12);
+        return return_kernel32_dword(0, api, 12);
+    }
+
+    int direct3d_create9() {
+        constexpr const char* api = "d3d9.dll!Direct3DCreate9";
+        constexpr uint32_t kD3dSdkVersion = 32;
+        static constexpr std::array<const char*, 17> methods = {
+            "QueryInterface", "AddRef", "Release",
+            "RegisterSoftwareDevice", "GetAdapterCount",
+            "GetAdapterIdentifier", "GetAdapterModeCount",
+            "EnumAdapterModes", "GetAdapterDisplayMode",
+            "CheckDeviceType", "CheckDeviceFormat",
+            "CheckDeviceMultiSampleType", "CheckDepthStencilMatch",
+            "CheckDeviceFormatConversion", "GetDeviceCaps",
+            "GetAdapterMonitor", "CreateDevice"};
+        uint32_t sdk_version = 0;
+        if (!read_stack_argument(0, sdk_version, api)) return -1;
+        uint32_t interface_address = 0;
+        if (sdk_version == kD3dSdkVersion) {
+            uint32_t vtable_address = 0;
+            if (!allocate_guest_heap(kGuestProcessHeapHandle,
+                                     methods.size() * sizeof(uint32_t),
+                                     vtable_address) ||
+                !allocate_guest_heap(kGuestProcessHeapHandle,
+                                     sizeof(uint32_t), interface_address)) {
+                interface_address = 0;
+            } else {
+                for (size_t index = 0; index < methods.size(); ++index) {
+                    uint32_t method_stub = 0;
+                    const std::string method_name =
+                        std::string("d3d9.dll!IDirect3D9::") + methods[index];
+                    if (!allocate_dynamic_import_stub(method_name,
+                                                      method_stub) ||
+                        !write_guest_u32("ram", vtable_address + index * 4,
+                                         method_stub)) {
+                        error = std::string(api) +
+                                " could not create its IDirect3D9 vtable";
+                        return -1;
+                    }
+                }
+                if (!write_guest_u32("ram", interface_address,
+                                     vtable_address)) {
+                    error = std::string(api) +
+                            " could not initialize its IDirect3D9 object";
+                    return -1;
+                }
+                guest_d3d9_interfaces.emplace(
+                    interface_address,
+                    GuestD3D9Interface{vtable_address, 1});
+            }
+        }
+        if (!write_guest_u32("register", kX86EaxRegisterOffset,
+                             interface_address)) {
+            error = std::string(api) + " cannot write EAX";
+            return -1;
+        }
+        return finish_stdcall(sizeof(uint32_t), api) ? 0 : -1;
+    }
+
+    int d3dperf_begin_event() {
+        constexpr const char* api = "d3d9.dll!D3DPERF_BeginEvent";
+        uint32_t color = 0;
+        uint32_t name_address = 0;
+        if (!read_stack_argument(0, color, api) ||
+            !read_stack_argument(1, name_address, api)) {
+            return -1;
+        }
+        (void)color;
+        (void)name_address;
+        return return_kernel32_dword(0, api, 2 * sizeof(uint32_t));
+    }
+
+    int d3dperf_end_event() {
+        constexpr const char* api = "d3d9.dll!D3DPERF_EndEvent";
+        return return_kernel32_dword(0, api, 0);
+    }
+
+    int d3d9_add_ref() {
+        constexpr const char* api = "d3d9.dll!IDirect3D9::AddRef";
+        uint32_t interface_address = 0;
+        if (!read_stack_argument(0, interface_address, api)) return -1;
+        const auto interface = guest_d3d9_interfaces.find(interface_address);
+        if (interface == guest_d3d9_interfaces.end()) {
+            error = std::string(api) + " received an invalid interface pointer";
+            return -1;
+        }
+        if (interface->second.references != UINT32_MAX)
+            ++interface->second.references;
+        return return_kernel32_dword(interface->second.references, api, 4);
+    }
+
+    int d3d9_release() {
+        constexpr const char* api = "d3d9.dll!IDirect3D9::Release";
+        uint32_t interface_address = 0;
+        if (!read_stack_argument(0, interface_address, api)) return -1;
+        const auto interface = guest_d3d9_interfaces.find(interface_address);
+        if (interface == guest_d3d9_interfaces.end() ||
+            interface->second.references == 0) {
+            error = std::string(api) + " received an invalid interface pointer";
+            return -1;
+        }
+        const uint32_t remaining = --interface->second.references;
+        if (remaining == 0) {
+            for (uint32_t address : {interface_address,
+                                     interface->second.vtable_address}) {
+                const auto allocation = heap_allocations.find(address);
+                if (allocation == heap_allocations.end()) continue;
+                free_heap_blocks.push_back(allocation->second);
+                heap_allocations.erase(allocation);
+            }
+            guest_d3d9_interfaces.erase(interface);
+        }
+        return return_kernel32_dword(remaining, api, 4);
+    }
+
+    int d3d9_get_adapter_count() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3D9::GetAdapterCount";
+        uint32_t interface_address = 0;
+        if (!read_stack_argument(0, interface_address, api)) return -1;
+        if (guest_d3d9_interfaces.find(interface_address) ==
+            guest_d3d9_interfaces.end()) {
+            error = std::string(api) + " received an invalid interface pointer";
+            return -1;
+        }
+
+        // Expose the one guest display slot that GetAdapterDisplayMode
+        // models. This does not claim that the D3D9 device is usable; device
+        // capability requests still fail until the Vulkan backend exists.
+        return return_kernel32_dword(1, api, 4);
+    }
+
+    int d3d9_get_adapter_mode_count() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3D9::GetAdapterModeCount";
+        uint32_t interface_address = 0;
+        uint32_t adapter = 0;
+        uint32_t format = 0;
+        if (!read_stack_argument(0, interface_address, api) ||
+            !read_stack_argument(1, adapter, api) ||
+            !read_stack_argument(2, format, api)) {
+            return -1;
+        }
+        if (guest_d3d9_interfaces.find(interface_address) ==
+            guest_d3d9_interfaces.end()) {
+            error = std::string(api) + " received an invalid interface pointer";
+            return -1;
+        }
+
+        const uint32_t count =
+            adapter == 0 && format == guest_display_format ? 1 : 0;
+        return return_kernel32_dword(count, api, 12);
+    }
+
+    int d3d9_check_device_format() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3D9::CheckDeviceFormat";
+        uint32_t interface_address = 0;
+        uint32_t adapter = 0;
+        uint32_t device_type = 0;
+        uint32_t adapter_format = 0;
+        uint32_t usage = 0;
+        uint32_t resource_type = 0;
+        uint32_t check_format = 0;
+        if (!read_stack_argument(0, interface_address, api) ||
+            !read_stack_argument(1, adapter, api) ||
+            !read_stack_argument(2, device_type, api) ||
+            !read_stack_argument(3, adapter_format, api) ||
+            !read_stack_argument(4, usage, api) ||
+            !read_stack_argument(5, resource_type, api) ||
+            !read_stack_argument(6, check_format, api)) {
+            return -1;
+        }
+        if (guest_d3d9_interfaces.find(interface_address) ==
+            guest_d3d9_interfaces.end()) {
+            error = std::string(api) + " received an invalid interface pointer";
+            return -1;
+        }
+        if (adapter != 0 || device_type != 1 || resource_type < 1 ||
+            resource_type > 7) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 28);
+        }
+
+        // Format support depends on the not-yet-implemented D3D9-to-Vulkan
+        // device provider. Report valid queries as unsupported so the retail
+        // caller can try another format without receiving invented caps.
+        (void)adapter_format;
+        (void)usage;
+        (void)check_format;
+        return return_kernel32_dword(kD3dErrNotAvailable, api, 28);
+    }
+
+    int d3d9_enum_adapter_modes() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3D9::EnumAdapterModes";
+        uint32_t interface_address = 0;
+        uint32_t adapter = 0;
+        uint32_t format = 0;
+        uint32_t mode_index = 0;
+        uint32_t mode_address = 0;
+        if (!read_stack_argument(0, interface_address, api) ||
+            !read_stack_argument(1, adapter, api) ||
+            !read_stack_argument(2, format, api) ||
+            !read_stack_argument(3, mode_index, api) ||
+            !read_stack_argument(4, mode_address, api)) {
+            return -1;
+        }
+        if (guest_d3d9_interfaces.find(interface_address) ==
+            guest_d3d9_interfaces.end()) {
+            error = std::string(api) + " received an invalid interface pointer";
+            return -1;
+        }
+        if (adapter != 0 || mode_address == 0 ||
+            mode_address > UINT32_MAX - 15) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 20);
+        }
+        if (format != guest_display_format || mode_index != 0) {
+            return return_kernel32_dword(kD3dErrNotAvailable, api, 20);
+        }
+
+        const std::array<uint32_t, 4> mode = {
+            guest_display_width, guest_display_height,
+            guest_display_refresh_rate, guest_display_format};
+        for (size_t index = 0; index < mode.size(); ++index) {
+            if (!write_guest_u32("ram", mode_address + index * 4,
+                                 mode[index])) {
+                return return_kernel32_dword(kD3dErrInvalidCall, api, 20);
+            }
+        }
+        return return_kernel32_dword(0, api, 20);
+    }
+
+    int d3d9_check_device_multisample_type() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3D9::CheckDeviceMultiSampleType";
+        uint32_t interface_address = 0;
+        uint32_t adapter = 0;
+        uint32_t device_type = 0;
+        uint32_t surface_format = 0;
+        uint32_t windowed = 0;
+        uint32_t multisample_type = 0;
+        uint32_t quality_levels_address = 0;
+        if (!read_stack_argument(0, interface_address, api) ||
+            !read_stack_argument(1, adapter, api) ||
+            !read_stack_argument(2, device_type, api) ||
+            !read_stack_argument(3, surface_format, api) ||
+            !read_stack_argument(4, windowed, api) ||
+            !read_stack_argument(5, multisample_type, api) ||
+            !read_stack_argument(6, quality_levels_address, api)) {
+            return -1;
+        }
+        if (guest_d3d9_interfaces.find(interface_address) ==
+            guest_d3d9_interfaces.end()) {
+            error = std::string(api) + " received an invalid interface pointer";
+            return -1;
+        }
+        if (adapter != 0 || multisample_type > 16) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 28);
+        }
+        if (device_type != 1) {
+            return return_kernel32_dword(kD3dErrInvalidDevice, api, 28);
+        }
+        if (quality_levels_address != 0 &&
+            (quality_levels_address > UINT32_MAX - 3 ||
+             !valid_guest_pointer(quality_levels_address, sizeof(uint32_t)))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 28);
+        }
+
+        // Multisample support is a device capability. Without the D3D9
+        // backend, report it unavailable and leave the optional quality-level
+        // output untouched.
+        (void)surface_format;
+        (void)windowed;
+        return return_kernel32_dword(kD3dErrNotAvailable, api, 28);
+    }
+
+    int d3d9_get_adapter_display_mode() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3D9::GetAdapterDisplayMode";
+        uint32_t interface_address = 0;
+        uint32_t adapter = 0;
+        uint32_t mode_address = 0;
+        if (!read_stack_argument(0, interface_address, api) ||
+            !read_stack_argument(1, adapter, api) ||
+            !read_stack_argument(2, mode_address, api)) {
+            return -1;
+        }
+        const auto interface = guest_d3d9_interfaces.find(interface_address);
+        if (interface == guest_d3d9_interfaces.end()) {
+            error = std::string(api) + " received an invalid interface pointer";
+            return -1;
+        }
+        if (adapter != 0 || mode_address == 0 ||
+            mode_address > UINT32_MAX - 15) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+        }
+
+        const std::array<uint32_t, 4> mode = {
+            guest_display_width, guest_display_height,
+            guest_display_refresh_rate, guest_display_format};
+        for (size_t index = 0; index < mode.size(); ++index) {
+            if (!write_guest_u32("ram", mode_address + index * 4,
+                                 mode[index])) {
+                return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+            }
+        }
+        return return_kernel32_dword(0, api, 12);
+    }
+
+    int d3d9_get_device_caps() {
+        constexpr const char* api = "d3d9.dll!IDirect3D9::GetDeviceCaps";
+        uint32_t interface_address = 0;
+        uint32_t adapter = 0;
+        uint32_t device_type = 0;
+        uint32_t caps_address = 0;
+        if (!read_stack_argument(0, interface_address, api) ||
+            !read_stack_argument(1, adapter, api) ||
+            !read_stack_argument(2, device_type, api) ||
+            !read_stack_argument(3, caps_address, api)) {
+            return -1;
+        }
+        const auto interface = guest_d3d9_interfaces.find(interface_address);
+        if (interface == guest_d3d9_interfaces.end()) {
+            error = std::string(api) + " received an invalid interface pointer";
+            return -1;
+        }
+        if (adapter != 0 || caps_address == 0 ||
+            caps_address > UINT32_MAX - (kD3dCaps9Size - 1)) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 16);
+        }
+
+        // No D3D9 capability provider exists until the SHIFT Vulkan backend is
+        // implemented. Report the valid request as unavailable instead of
+        // publishing fabricated device capabilities. The current retail
+        // caller ignores this HRESULT and does not read pCaps.
+        (void)device_type;
+        return return_kernel32_dword(kD3dErrNotAvailable, api, 16);
+    }
+
+    int d3d9_get_adapter_identifier() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3D9::GetAdapterIdentifier";
+        uint32_t interface_address = 0;
+        uint32_t adapter = 0;
+        uint32_t flags = 0;
+        uint32_t identifier_address = 0;
+        if (!read_stack_argument(0, interface_address, api) ||
+            !read_stack_argument(1, adapter, api) ||
+            !read_stack_argument(2, flags, api) ||
+            !read_stack_argument(3, identifier_address, api)) {
+            return -1;
+        }
+        const auto interface = guest_d3d9_interfaces.find(interface_address);
+        if (interface == guest_d3d9_interfaces.end()) {
+            error = std::string(api) + " received an invalid interface pointer";
+            return -1;
+        }
+        if (adapter != 0 || flags != 0 || identifier_address == 0) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 16);
+        }
+
+        // The runtime has no host-adapter identity provider yet. In this
+        // retail path the caller checks the HRESULT and returns before reading
+        // pIdentifier, so expose the missing capability without inventing a
+        // physical adapter identity.
+        return return_kernel32_dword(kD3dErrNotAvailable, api, 16);
     }
 
     int create_event(bool wide) {
@@ -2454,6 +3642,7 @@ struct RecompiledPcodeModule::Impl {
             return return_kernel32_dword(0, api, 4);
         }
         event->second.signaled = signaled;
+        if (signaled) wake_guest_event_waiters(handle, event->second);
         return return_kernel32_dword(1, api, 4);
     }
 
@@ -2503,6 +3692,17 @@ struct RecompiledPcodeModule::Impl {
             guest_events.erase(event);
             return return_kernel32_dword(1, api, 4);
         }
+        if (guest_semaphores.erase(handle) != 0) {
+            for (auto name = guest_named_semaphores.begin();
+                 name != guest_named_semaphores.end();) {
+                if (name->second == handle) {
+                    name = guest_named_semaphores.erase(name);
+                } else {
+                    ++name;
+                }
+            }
+            return return_kernel32_dword(1, api, 4);
+        }
         if (guest_mutexes.erase(handle) == 0) {
             guest_last_error = 6;
             return return_kernel32_dword(0, api, 4);
@@ -2521,41 +3721,97 @@ struct RecompiledPcodeModule::Impl {
     bool resolve_guest_file_path(const std::string& path,
                                  std::filesystem::path& resolved,
                                  const char* api) {
-        std::string portable_path = path;
-        std::replace(portable_path.begin(), portable_path.end(), '\\', '/');
-        const std::filesystem::path guest_path(portable_path);
-        if (guest_path.empty() || guest_path.is_absolute() ||
-            guest_path.has_root_name()) {
-            guest_last_error = 5;
-            return false;
-        }
-        for (const auto& component : guest_path) {
-            if (component == "..") {
-                guest_last_error = 5;
-                return false;
-            }
-        }
+        std::filesystem::path candidate;
+        if (!make_guest_path_candidate(path, candidate, api)) return false;
         std::error_code error_code;
-        const std::filesystem::path current_directory =
-            std::filesystem::current_path(error_code);
-        if (error_code) {
-            guest_last_error = 5;
-            return false;
-        }
-        const std::filesystem::path root =
-            std::filesystem::canonical(current_directory, error_code);
-        if (error_code) {
-            guest_last_error = 5;
-            return false;
-        }
-        resolved = std::filesystem::canonical(root / guest_path, error_code);
+        resolved = std::filesystem::canonical(candidate, error_code);
         if (error_code) {
             guest_last_error =
                 error_code == std::errc::no_such_file_or_directory ? 2 : 5;
             return false;
         }
-        const std::filesystem::path relative = resolved.lexically_relative(root);
-        if (relative.empty() || *relative.begin() == "..") {
+        if (!path_is_within_guest_root(resolved)) {
+            guest_last_error = 5;
+            return false;
+        }
+        (void)api;
+        return true;
+    }
+
+    bool path_is_within_guest_root(
+        const std::filesystem::path& path) const {
+        const std::filesystem::path normalized = path.lexically_normal();
+        const std::filesystem::path relative =
+            normalized.lexically_relative(guest_filesystem_root);
+        return normalized == guest_filesystem_root ||
+               (!relative.empty() && !relative.is_absolute() &&
+                *relative.begin() != "..");
+    }
+
+    bool make_guest_path_candidate(const std::string& path,
+                                   std::filesystem::path& candidate,
+                                   const char* api,
+                                   bool preserve_final_component = false) {
+        if (path.empty()) {
+            guest_last_error = 3;
+            return false;
+        }
+        if (path.size() >= kWindowsMaxPath) {
+            guest_last_error = 206;
+            return false;
+        }
+
+        std::string portable_path = path;
+        std::replace(portable_path.begin(), portable_path.end(), '\\', '/');
+        std::filesystem::path base = guest_current_host_directory;
+        std::string relative_path = portable_path;
+        if (portable_path.size() >= 2 &&
+            std::isalpha(static_cast<unsigned char>(portable_path[0])) &&
+            portable_path[1] == ':') {
+            if (std::tolower(static_cast<unsigned char>(portable_path[0])) !=
+                'c') {
+                guest_last_error = 15;
+                return false;
+            }
+            relative_path.erase(0, 2);
+            if (!relative_path.empty() && relative_path.front() == '/') {
+                base = guest_filesystem_root;
+                relative_path.erase(0, 1);
+            }
+        } else if (!portable_path.empty() && portable_path.front() == '/') {
+            if (portable_path.size() >= 2 && portable_path[1] == '/') {
+                guest_last_error = 123;
+                return false;
+            }
+            base = guest_filesystem_root;
+            relative_path.erase(0, 1);
+        }
+        if (relative_path.find(':') != std::string::npos) {
+            guest_last_error = 123;
+            return false;
+        }
+
+        candidate = (base / std::filesystem::path(relative_path)).lexically_normal();
+        std::error_code error_code;
+        if (preserve_final_component) {
+            const std::filesystem::path parent =
+                std::filesystem::canonical(candidate.parent_path(), error_code);
+            if (!error_code) {
+                const std::filesystem::path filename = candidate.filename();
+                if (filename.empty() || filename == "." || filename == "..") {
+                    guest_last_error = 5;
+                    return false;
+                }
+                candidate = parent / filename;
+            }
+        } else {
+            candidate = std::filesystem::weakly_canonical(candidate, error_code);
+        }
+        if (error_code) {
+            guest_last_error = error_code == std::errc::permission_denied ? 5 : 3;
+            return false;
+        }
+        if (!path_is_within_guest_root(candidate)) {
             guest_last_error = 5;
             return false;
         }
@@ -2619,6 +3875,46 @@ struct RecompiledPcodeModule::Impl {
                                       static_cast<uint64_t>(file_status.st_size)});
         guest_last_error = 0;
         return return_kernel32_dword(handle, api, 28);
+    }
+
+    int delete_file_a() {
+        constexpr const char* api = "KERNEL32.dll!DeleteFileA";
+        uint32_t path_address = 0;
+        if (!read_stack_argument(0, path_address, api)) return -1;
+        if (path_address == 0) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 4);
+        }
+
+        std::string guest_path;
+        if (!read_guest_ascii(path_address, guest_path, api)) return -1;
+        std::filesystem::path host_path;
+        if (!make_guest_path_candidate(guest_path, host_path, api, true))
+            return return_kernel32_dword(0, api, 4);
+
+        struct stat file_status {};
+        if (::lstat(host_path.c_str(), &file_status) != 0) {
+            guest_last_error = errno == ENOENT ? 2 :
+                               errno == ENOTDIR ? 3 :
+                               errno == EACCES || errno == EPERM ? 5 : 31;
+            return return_kernel32_dword(0, api, 4);
+        }
+        if (S_ISDIR(file_status.st_mode) ||
+            (file_status.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0) {
+            guest_last_error = 5;
+            return return_kernel32_dword(0, api, 4);
+        }
+        if (::unlink(host_path.c_str()) != 0) {
+            guest_last_error = errno == ENOENT ? 2 :
+                               errno == ENOTDIR ? 3 :
+                               errno == EACCES || errno == EPERM ||
+                                       errno == EISDIR || errno == EROFS
+                                   ? 5
+                                   : 31;
+            return return_kernel32_dword(0, api, 4);
+        }
+        guest_last_error = 0;
+        return return_kernel32_dword(1, api, 4);
     }
 
     int get_file_size() {
@@ -2723,6 +4019,73 @@ struct RecompiledPcodeModule::Impl {
         return finish_stdcall(4, api) ? 0 : -1;
     }
 
+    int get_current_directory_a() {
+        constexpr const char* api = "KERNEL32.dll!GetCurrentDirectoryA";
+        uint32_t buffer_length = 0;
+        uint32_t output_address = 0;
+        if (!read_stack_argument(0, buffer_length, api) ||
+            !read_stack_argument(1, output_address, api)) {
+            return -1;
+        }
+        const std::string& path = guest_current_directory;
+        const uint32_t required_size = static_cast<uint32_t>(path.size() + 1);
+        if (buffer_length == 0 && output_address == 0)
+            return return_kernel32_dword(required_size, api, 8);
+        if (buffer_length < required_size)
+            return return_kernel32_dword(required_size, api, 8);
+        if (output_address == 0) {
+            error = std::string(api) + " has an invalid output pointer";
+            return -1;
+        }
+        if (!write_guest_bytes(output_address,
+                               reinterpret_cast<const uint8_t*>(path.data()),
+                               path.size(), api)) {
+            return -1;
+        }
+        const uint8_t terminator = 0;
+        if (!write_guest_bytes(output_address + required_size - 1,
+                               &terminator, sizeof(terminator), api)) {
+            return -1;
+        }
+        return return_kernel32_dword(static_cast<uint32_t>(path.size()), api,
+                                     8);
+    }
+
+    int set_current_directory_a() {
+        constexpr const char* api = "KERNEL32.dll!SetCurrentDirectoryA";
+        uint32_t path_address = 0;
+        if (!read_stack_argument(0, path_address, api)) return -1;
+        std::string path;
+        if (!read_guest_ascii(path_address, path, api)) return -1;
+
+        std::filesystem::path candidate;
+        if (!make_guest_path_candidate(path, candidate, api))
+            return return_kernel32_dword(0, api, 4);
+        std::error_code error_code;
+        const std::filesystem::path canonical =
+            std::filesystem::canonical(candidate, error_code);
+        if (error_code || !path_is_within_guest_root(canonical) ||
+            !std::filesystem::is_directory(canonical, error_code) ||
+            error_code) {
+            guest_last_error = error_code == std::errc::permission_denied ? 5 : 3;
+            return return_kernel32_dword(0, api, 4);
+        }
+
+        const std::filesystem::path relative =
+            canonical.lexically_relative(guest_filesystem_root);
+        std::string logical_path = "C:\\";
+        if (!relative.empty() && relative != ".") {
+            for (const auto& component : relative) {
+                if (logical_path.back() != '\\') logical_path.push_back('\\');
+                logical_path += component.string();
+            }
+        }
+        guest_current_host_directory = canonical;
+        guest_current_directory = std::move(logical_path);
+        guest_last_error = 0;
+        return return_kernel32_dword(1, api, 4);
+    }
+
     int get_module_file_name_a() {
         constexpr const char* api = "KERNEL32.dll!GetModuleFileNameA";
         uint32_t module_handle = 0;
@@ -2757,6 +4120,77 @@ struct RecompiledPcodeModule::Impl {
         }
         return return_kernel32_dword(static_cast<uint32_t>(copied_size), api,
                                      12);
+    }
+
+    int system_parameters_info_a() {
+        constexpr const char* api = "USER32.dll!SystemParametersInfoA";
+        uint32_t action = 0;
+        uint32_t parameter = 0;
+        uint32_t buffer_address = 0;
+        uint32_t flags = 0;
+        if (!read_stack_argument(0, action, api) ||
+            !read_stack_argument(1, parameter, api) ||
+            !read_stack_argument(2, buffer_address, api) ||
+            !read_stack_argument(3, flags, api)) {
+            return -1;
+        }
+
+        uint32_t get_action = 0;
+        size_t structure_size = 0;
+        bool setting = false;
+        switch (action) {
+            case 0x0032: get_action = 0x0032; structure_size = 24; break;
+            case 0x0033: get_action = 0x0032; structure_size = 24; setting = true; break;
+            case 0x0034: get_action = 0x0034; structure_size = 8; break;
+            case 0x0035: get_action = 0x0034; structure_size = 8; setting = true; break;
+            case 0x0036: get_action = 0x0036; structure_size = 28; break;
+            case 0x0037: get_action = 0x0036; structure_size = 28; setting = true; break;
+            case 0x003a: get_action = 0x003a; structure_size = 8; break;
+            case 0x003b: get_action = 0x003a; structure_size = 8; setting = true; break;
+            case 0x0042: get_action = 0x0042; structure_size = 12; break;
+            case 0x0043: get_action = 0x0042; structure_size = 12; setting = true; break;
+            default:
+                guest_last_error = 87;
+                return return_kernel32_dword(0, api, 16);
+        }
+        if (parameter != structure_size || buffer_address == 0 ||
+            (setting && flags != 0)) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 16);
+        }
+
+        std::vector<uint8_t> value(structure_size);
+        if (!read_guest_bytes(buffer_address, value.data(), value.size(), api))
+            return -1;
+        const uint32_t structure_bytes =
+            static_cast<uint32_t>(value[0]) |
+            (static_cast<uint32_t>(value[1]) << 8) |
+            (static_cast<uint32_t>(value[2]) << 16) |
+            (static_cast<uint32_t>(value[3]) << 24);
+        if (structure_bytes != structure_size) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 16);
+        }
+
+        if (setting) {
+            guest_accessibility_parameters[get_action] = std::move(value);
+        } else {
+            auto [stored, inserted] =
+                guest_accessibility_parameters.try_emplace(get_action);
+            if (inserted) {
+                stored->second.assign(structure_size, 0);
+                stored->second[0] = static_cast<uint8_t>(structure_size);
+                stored->second[1] = static_cast<uint8_t>(structure_size >> 8);
+                stored->second[2] = static_cast<uint8_t>(structure_size >> 16);
+                stored->second[3] = static_cast<uint8_t>(structure_size >> 24);
+            }
+            if (stored->second.size() != structure_size ||
+                !write_guest_bytes(buffer_address, stored->second.data(),
+                                   stored->second.size(), api)) {
+                return -1;
+            }
+        }
+        return return_kernel32_dword(1, api, 16);
     }
 
     int get_proc_address() {
@@ -3924,10 +5358,12 @@ struct RecompiledPcodeModule::Impl {
             (allocation_type & ~UINT32_C(0x3000)) != 0 ||
             allocation_type == 0) {
             guest_last_error = 87;
+            trace_guest_allocation(api, size, 0);
             return return_kernel32_dword(0, api, 16);
         }
         if (size > kMaximumGuestVirtualAllocationSize) {
             guest_last_error = 8;
+            trace_guest_allocation(api, size, 0);
             return return_kernel32_dword(0, api, 16);
         }
 
@@ -3974,6 +5410,7 @@ struct RecompiledPcodeModule::Impl {
         if (candidate + allocation_size > kGuestRamSize ||
             overlaps(candidate, candidate + allocation_size)) {
             guest_last_error = 8;
+            trace_guest_allocation(api, size, 0);
             return return_kernel32_dword(0, api, 16);
         }
         const uint32_t address = static_cast<uint32_t>(candidate);
@@ -3982,6 +5419,7 @@ struct RecompiledPcodeModule::Impl {
             guest_virtual_next_address = candidate + allocation_size;
         std::memset(static_cast<uint8_t*>(ram) + address, 0,
                     static_cast<size_t>(allocation_size));
+        trace_guest_allocation(api, size, address);
         return return_kernel32_dword(address, api, 16);
     }
 
@@ -4025,6 +5463,7 @@ struct RecompiledPcodeModule::Impl {
         }
         uint32_t address = 0;
         if (!allocate_guest_heap(heap, size, address)) {
+            trace_guest_allocation(api, size, 0);
             if (!write_guest_u32("register", kX86EaxRegisterOffset, 0)) {
                 error = std::string(api) + " cannot write EAX";
                 return -1;
@@ -4033,6 +5472,7 @@ struct RecompiledPcodeModule::Impl {
         }
         if ((flags & 0x8) != 0 && size != 0)
             std::memset(static_cast<uint8_t*>(ram) + address, 0, size);
+        trace_guest_allocation(api, size, address);
         if (!write_guest_u32("register", kX86EaxRegisterOffset, address)) {
             error = std::string(api) + " cannot write EAX";
             return -1;
@@ -4840,7 +6280,16 @@ struct RecompiledPcodeModule::Impl {
     std::unordered_map<uint32_t, GuestCriticalSection> critical_sections;
     std::unordered_map<uint32_t, GuestMutex> guest_mutexes;
     std::unordered_map<uint32_t, GuestFile> guest_files;
+    std::filesystem::path guest_filesystem_root;
+    std::filesystem::path guest_current_host_directory;
+    std::string guest_current_directory = "C:\\";
     std::unordered_map<uint32_t, GuestEvent> guest_events;
+    std::unordered_map<uint32_t, GuestSemaphore> guest_semaphores;
+    std::unordered_map<uint32_t, GuestD3D9Interface> guest_d3d9_interfaces;
+    uint32_t guest_display_width = 1024;
+    uint32_t guest_display_height = 768;
+    uint32_t guest_display_refresh_rate = 0;
+    uint32_t guest_display_format = kD3dFormatX8R8G8B8;
     std::unordered_map<uint32_t, GuestFiber> guest_fibers;
     std::unordered_map<uint32_t, GuestThread> guest_threads;
     GuestThread main_guest_thread;
@@ -4849,11 +6298,15 @@ struct RecompiledPcodeModule::Impl {
     std::unordered_map<uint32_t, uint32_t> guest_timer_period_requests;
     std::unordered_map<uint32_t, uint64_t> guest_virtual_allocations;
     std::unordered_map<std::string, uint32_t> guest_named_mutexes;
+    std::unordered_map<std::string, uint32_t> guest_named_semaphores;
     std::unordered_map<std::string,
                        std::pair<std::string, std::string>>
         guest_environment_variables;
+    std::unordered_map<uint32_t, std::vector<uint8_t>>
+        guest_accessibility_parameters;
     std::unordered_set<uint32_t> guest_environment_blocks;
     std::vector<uint32_t> active_guest_functions;
+    std::vector<GuestRegisterSnapshot> active_guest_function_registers;
     bool command_line_initialized = false;
     bool environment_initialized = false;
     uint32_t guest_last_error = 0;
@@ -4876,6 +6329,8 @@ struct RecompiledPcodeModule::Impl {
     uint64_t next_guest_mutex_handle = 0x00030000;
     uint64_t next_guest_file_handle = kGuestFileHandleBase;
     uint64_t next_guest_event_handle = kGuestEventHandleBase;
+    uint64_t next_guest_semaphore_handle = kGuestSemaphoreHandleBase;
+    uint64_t next_guest_wait_sequence = 1;
     uint32_t next_guest_fiber_handle = kGuestFiberHandleBase;
     uint32_t next_guest_thread_id = 0x00010000;
     uint32_t next_guest_thread_handle = kGuestThreadHandleBase;
@@ -4938,6 +6393,12 @@ bool RecompiledPcodeModule::load_supplemental_module(
 bool RecompiledPcodeModule::load_override_module(
     const std::string& shared_object_path) {
     return impl_->load_override_module(shared_object_path);
+}
+
+bool RecompiledPcodeModule::set_guest_display_mode(
+    uint32_t width, uint32_t height, uint32_t refresh_rate,
+    uint32_t format) {
+    return impl_->set_guest_display_mode(width, height, refresh_rate, format);
 }
 
 uint64_t RecompiledPcodeModule::dispatched_function_count() const {

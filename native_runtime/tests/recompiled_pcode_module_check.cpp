@@ -315,19 +315,171 @@ void write_pe32_fixture(const std::string& path,
     require(static_cast<bool>(file), "could not write PE32 fixture");
 }
 
+void write_system_parameters_info_pe32_fixture(const std::string& path) {
+    constexpr size_t file_size = 0x800;
+    constexpr size_t pe_offset = 0x80;
+    constexpr size_t optional_offset = pe_offset + 24;
+    constexpr size_t section_offset = optional_offset + 0xe0;
+    constexpr size_t import_section_offset = section_offset + 40;
+    std::vector<uint8_t> bytes(file_size, 0);
+    bytes[0] = 'M';
+    bytes[1] = 'Z';
+    write_u32(bytes, 0x3c, pe_offset);
+    bytes[pe_offset] = 'P';
+    bytes[pe_offset + 1] = 'E';
+    write_u16(bytes, pe_offset + 4, 0x014c);
+    write_u16(bytes, pe_offset + 6, 2);
+    write_u16(bytes, pe_offset + 20, 0xe0);
+    write_u16(bytes, optional_offset, 0x010b);
+    write_u32(bytes, optional_offset + 16, 0x1020);
+    write_u32(bytes, optional_offset + 28, 0x00400000);
+    write_u32(bytes, optional_offset + 32, 0x1000);
+    write_u32(bytes, optional_offset + 36, 0x200);
+    write_u32(bytes, optional_offset + 56, 0x3000);
+    write_u32(bytes, optional_offset + 60, 0x200);
+    write_u32(bytes, optional_offset + 92, 16);
+    write_u32(bytes, optional_offset + 104, 0x2000);
+    write_u32(bytes, optional_offset + 108, 40);
+
+    bytes[section_offset] = '.';
+    bytes[section_offset + 1] = 't';
+    bytes[section_offset + 2] = 'e';
+    bytes[section_offset + 3] = 'x';
+    bytes[section_offset + 4] = 't';
+    write_u32(bytes, section_offset + 8, 0x300);
+    write_u32(bytes, section_offset + 12, 0x1000);
+    write_u32(bytes, section_offset + 16, 0x200);
+    write_u32(bytes, section_offset + 20, 0x200);
+    bytes[import_section_offset] = '.';
+    bytes[import_section_offset + 1] = 'i';
+    bytes[import_section_offset + 2] = 'd';
+    bytes[import_section_offset + 3] = 'a';
+    bytes[import_section_offset + 4] = 't';
+    bytes[import_section_offset + 5] = 'a';
+    write_u32(bytes, import_section_offset + 8, 0x400);
+    write_u32(bytes, import_section_offset + 12, 0x2000);
+    write_u32(bytes, import_section_offset + 16, 0x400);
+    write_u32(bytes, import_section_offset + 20, 0x400);
+
+    write_u32(bytes, 0x400, 0x2040);
+    write_u32(bytes, 0x40c, 0x2080);
+    write_u32(bytes, 0x410, 0x2060);
+    write_u32(bytes, 0x440, 0x2090);
+    write_u32(bytes, 0x460, 0x2090);
+    std::copy_n("USER32.dll", 11, bytes.begin() + 0x480);
+    std::copy_n("SystemParametersInfoA", 22, bytes.begin() + 0x492);
+
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+    require(static_cast<bool>(file),
+            "could not create SystemParametersInfoA PE32 fixture");
+    file.write(reinterpret_cast<const char*>(bytes.data()),
+               static_cast<std::streamsize>(bytes.size()));
+    require(static_cast<bool>(file),
+            "could not write SystemParametersInfoA PE32 fixture");
+}
+
+void write_d3d9_pe32_fixture(const std::string& path) {
+    constexpr size_t file_size = 0x800;
+    constexpr size_t pe_offset = 0x80;
+    constexpr size_t optional_offset = pe_offset + 24;
+    constexpr size_t section_offset = optional_offset + 0xe0;
+    constexpr size_t import_section_offset = section_offset + 40;
+    std::vector<uint8_t> bytes(file_size, 0);
+    bytes[0] = 'M';
+    bytes[1] = 'Z';
+    write_u32(bytes, 0x3c, pe_offset);
+    bytes[pe_offset] = 'P';
+    bytes[pe_offset + 1] = 'E';
+    write_u16(bytes, pe_offset + 4, 0x014c);
+    write_u16(bytes, pe_offset + 6, 2);
+    write_u16(bytes, pe_offset + 20, 0xe0);
+    write_u16(bytes, optional_offset, 0x010b);
+    write_u32(bytes, optional_offset + 16, 0x1020);
+    write_u32(bytes, optional_offset + 28, 0x00400000);
+    write_u32(bytes, optional_offset + 32, 0x1000);
+    write_u32(bytes, optional_offset + 36, 0x200);
+    write_u32(bytes, optional_offset + 56, 0x3000);
+    write_u32(bytes, optional_offset + 60, 0x200);
+    write_u32(bytes, optional_offset + 92, 16);
+    write_u32(bytes, optional_offset + 104, 0x2000);
+    write_u32(bytes, optional_offset + 108, 60);
+
+    bytes[section_offset] = '.';
+    bytes[section_offset + 1] = 't';
+    bytes[section_offset + 2] = 'e';
+    bytes[section_offset + 3] = 'x';
+    bytes[section_offset + 4] = 't';
+    write_u32(bytes, section_offset + 8, 0x300);
+    write_u32(bytes, section_offset + 12, 0x1000);
+    write_u32(bytes, section_offset + 16, 0x200);
+    write_u32(bytes, section_offset + 20, 0x200);
+    bytes[import_section_offset] = '.';
+    bytes[import_section_offset + 1] = 'i';
+    bytes[import_section_offset + 2] = 'd';
+    bytes[import_section_offset + 3] = 'a';
+    bytes[import_section_offset + 4] = 't';
+    bytes[import_section_offset + 5] = 'a';
+    write_u32(bytes, import_section_offset + 8, 0x400);
+    write_u32(bytes, import_section_offset + 12, 0x2000);
+    write_u32(bytes, import_section_offset + 16, 0x400);
+    write_u32(bytes, import_section_offset + 20, 0x400);
+
+    write_u32(bytes, 0x400, 0x2040);
+    write_u32(bytes, 0x40c, 0x2080);
+    write_u32(bytes, 0x410, 0x2060);
+    write_u32(bytes, 0x414, 0x2100);
+    write_u32(bytes, 0x420, 0x2120);
+    write_u32(bytes, 0x424, 0x2180);
+    for (size_t index = 0; index < 3; ++index) {
+        const uint32_t name_rva =
+            static_cast<uint32_t>(0x2090 + index * 0x20);
+        write_u32(bytes, 0x440 + index * 4, name_rva);
+        write_u32(bytes, 0x460 + index * 4, name_rva);
+    }
+    std::copy_n("d3d9.dll", 9, bytes.begin() + 0x480);
+    const std::array<const char*, 3> import_names = {
+        "Direct3DCreate9", "D3DPERF_EndEvent", "D3DPERF_BeginEvent"};
+    for (size_t index = 0; index < import_names.size(); ++index) {
+        const size_t offset = 0x490 + index * 0x20;
+        std::copy_n(import_names[index],
+                    std::char_traits<char>::length(import_names[index]) + 1,
+                    bytes.begin() + offset + 2);
+    }
+    write_u32(bytes, 0x500, 0x2130);
+    write_u32(bytes, 0x504, 0x2160);
+    write_u32(bytes, 0x580, 0x2130);
+    write_u32(bytes, 0x584, 0x2160);
+    std::copy_n("SHELL32.dll", 12, bytes.begin() + 0x520);
+    const char folder_path_name[] = "SHGetFolderPathA";
+    std::copy_n(folder_path_name, sizeof(folder_path_name),
+                bytes.begin() + 0x532);
+    const char create_directory_name[] = "SHCreateDirectoryExA";
+    std::copy_n(create_directory_name, sizeof(create_directory_name),
+                bytes.begin() + 0x562);
+
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+    require(static_cast<bool>(file), "could not create D3D9 PE32 fixture");
+    file.write(reinterpret_cast<const char*>(bytes.data()),
+               static_cast<std::streamsize>(bytes.size()));
+    require(static_cast<bool>(file), "could not write D3D9 PE32 fixture");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 7) {
+    if (argc != 9) {
         std::cerr << "usage: shift_runtime_recompiled_pcode_module_check "
                      "MODULE SUPPLEMENT OVERRIDE PE32_FIXTURE_OUT "
-                     "RAISE_EXCEPTION_PE32_OUT TIME_GET_TIME_PE32_OUT\n";
+                     "RAISE_EXCEPTION_PE32_OUT TIME_GET_TIME_PE32_OUT "
+                     "SYSTEM_PARAMETERS_INFO_PE32_OUT D3D9_PE32_OUT\n";
         return 2;
     }
     try {
         write_pe32_fixture(argv[4]);
         write_pe32_fixture(argv[5], true);
         write_pe32_fixture(argv[6], false, true);
+        write_system_parameters_info_pe32_fixture(argv[7]);
+        write_d3d9_pe32_fixture(argv[8]);
         shift::runtime::RecompiledPcodeModule duplicate_module(argv[1]);
         require(duplicate_module.load_supplemental_module(argv[2]),
                 "duplicate-check P-code supplement could not be loaded: " +
@@ -377,6 +529,330 @@ int main(int argc, char** argv) {
                 "could not read PE section virtual tail");
         require(value == std::array<uint8_t, 4>{0, 0, 0, 0},
                 "PE32 virtual section tail was not zero-filled");
+
+        shift::runtime::RecompiledPcodeModule user32_module(argv[1]);
+        const auto user32_image = user32_module.load_pe32_image(argv[7]);
+        require(user32_image.import_module_count == 1 &&
+                    user32_image.import_function_count == 1,
+                "SystemParametersInfoA fixture imports were not parsed");
+        const uint32_t system_parameters_info = read_guest_u32(
+            user32_module, "ram", user32_image.image_base + 0x2060);
+        constexpr uint32_t system_parameters_buffer = 0x00033000;
+        const std::array<std::array<uint32_t, 2>, 5> accessibility_apis =
+            {{{0x0032, 0x0033}, {0x0034, 0x0035}, {0x0036, 0x0037},
+              {0x003a, 0x003b}, {0x0042, 0x0043}}};
+        const std::array<size_t, 5> accessibility_sizes = {24, 8, 28, 8, 12};
+        const auto read_guest_range = [&](uint32_t address, size_t size) {
+            std::vector<uint8_t> result(size);
+            for (size_t offset = 0; offset < size; offset += 16) {
+                const size_t chunk = std::min<size_t>(16, size - offset);
+                require(user32_module.read_guest(
+                            "ram", address + offset, chunk,
+                            result.data() + offset),
+                        "could not read accessibility settings buffer");
+            }
+            return result;
+        };
+        for (size_t index = 0; index < accessibility_apis.size(); ++index) {
+            const size_t size = accessibility_sizes[index];
+            std::vector<uint8_t> initial(size, 0);
+            initial[0] = static_cast<uint8_t>(size);
+            initial[1] = static_cast<uint8_t>(size >> 8);
+            for (size_t byte = 4; byte < size; ++byte)
+                initial[byte] = static_cast<uint8_t>(byte * 13 + index);
+            write_guest_bytes(user32_module, system_parameters_buffer,
+                              initial.data(), initial.size());
+            require(invoke_import(user32_module, system_parameters_info,
+                                  {accessibility_apis[index][0],
+                                   static_cast<uint32_t>(size),
+                                   system_parameters_buffer, 0}) == 1,
+                    "SystemParametersInfoA GET action failed");
+            std::vector<uint8_t> defaults(size, 0);
+            defaults[0] = static_cast<uint8_t>(size);
+            defaults[1] = static_cast<uint8_t>(size >> 8);
+            require(read_guest_range(system_parameters_buffer, size) == defaults,
+                    "SystemParametersInfoA GET did not return zero defaults");
+
+            write_guest_bytes(user32_module, system_parameters_buffer,
+                              initial.data(), initial.size());
+            require(invoke_import(user32_module, system_parameters_info,
+                                  {accessibility_apis[index][1],
+                                   static_cast<uint32_t>(size),
+                                   system_parameters_buffer, 0}) == 1,
+                    "SystemParametersInfoA SET action failed");
+            require(invoke_import(user32_module, system_parameters_info,
+                                  {accessibility_apis[index][0],
+                                   static_cast<uint32_t>(size),
+                                   system_parameters_buffer, 0}) == 1 &&
+                        read_guest_range(system_parameters_buffer, size) ==
+                            initial,
+                    "SystemParametersInfoA did not preserve GET/SET state");
+        }
+        require(invoke_import(user32_module, system_parameters_info,
+                              {0x0043, 12, system_parameters_buffer, 1}) == 0 &&
+                    invoke_import(user32_module, system_parameters_info,
+                                  {0x0042, 8, system_parameters_buffer, 0}) == 0 &&
+                    invoke_import(user32_module, system_parameters_info,
+                                  {0xffff, 0, system_parameters_buffer, 0}) == 0,
+                "SystemParametersInfoA accepted unsupported or malformed input");
+
+        shift::runtime::RecompiledPcodeModule d3d9_module(argv[1]);
+        const auto d3d9_image = d3d9_module.load_pe32_image(argv[8]);
+        require(d3d9_image.import_module_count == 2 &&
+                    d3d9_image.import_function_count == 5,
+                "D3D9 fixture imports were not parsed");
+        const uint32_t direct3d_create9 = read_guest_u32(
+            d3d9_module, "ram", d3d9_image.image_base + 0x2060);
+        const uint32_t d3dperf_end_event = read_guest_u32(
+            d3d9_module, "ram", d3d9_image.image_base + 0x2064);
+        const uint32_t d3dperf_begin_event = read_guest_u32(
+            d3d9_module, "ram", d3d9_image.image_base + 0x2068);
+        const uint32_t sh_get_folder_path = read_guest_u32(
+            d3d9_module, "ram", d3d9_image.image_base + 0x2180);
+        const uint32_t sh_create_directory = read_guest_u32(
+            d3d9_module, "ram", d3d9_image.image_base + 0x2184);
+        constexpr uint32_t folder_path_address = 0x00402c30;
+        require(invoke_import(d3d9_module, sh_get_folder_path,
+                              {0, 0x8005, 0, 0, folder_path_address}) == 0,
+                "SHGetFolderPathA did not create the Documents special folder");
+        std::vector<uint8_t> folder_path_bytes(260);
+        for (size_t offset = 0; offset < folder_path_bytes.size(); offset += 16) {
+            const size_t chunk = std::min<size_t>(16,
+                                                   folder_path_bytes.size() - offset);
+            require(d3d9_module.read_guest("ram", folder_path_address + offset,
+                                           chunk, folder_path_bytes.data() + offset),
+                    "could not read SHGetFolderPathA output");
+        }
+        const std::string folder_path(
+            folder_path_bytes.begin(),
+            std::find(folder_path_bytes.begin(), folder_path_bytes.end(), 0));
+        require(folder_path == "C:\\Documents and Settings\\SHIFT\\My Documents" &&
+                    std::filesystem::is_directory(
+                        std::filesystem::current_path() /
+                        "Documents and Settings/SHIFT/My Documents"),
+                "SHGetFolderPathA returned an unexpected path or skipped creation");
+        constexpr uint32_t create_directory_path_address = 0x00035000;
+        constexpr char create_directory_path[] =
+            "C:\\Documents and Settings\\SHIFT\\My Documents\\SHCreateDirectoryExFixture";
+        write_guest_bytes(
+            d3d9_module, create_directory_path_address,
+            reinterpret_cast<const uint8_t*>(create_directory_path),
+            sizeof(create_directory_path));
+        const std::filesystem::path expected_created_directory =
+            std::filesystem::current_path() /
+            "Documents and Settings/SHIFT/My Documents/SHCreateDirectoryExFixture";
+        require(invoke_import(d3d9_module, sh_create_directory,
+                              {0, create_directory_path_address, 0}) == 0 &&
+                    std::filesystem::is_directory(expected_created_directory) &&
+                    invoke_import(d3d9_module, sh_create_directory,
+                                  {0, create_directory_path_address, 0}) == 183,
+                "SHCreateDirectoryExA did not create directories or report existing paths");
+        constexpr char relative_create_directory_path[] = "relative-path";
+        write_guest_bytes(
+            d3d9_module, create_directory_path_address,
+            reinterpret_cast<const uint8_t*>(relative_create_directory_path),
+            sizeof(relative_create_directory_path));
+        require(invoke_import(d3d9_module, sh_create_directory,
+                              {0, create_directory_path_address, 0}) == 161,
+                "SHCreateDirectoryExA accepted a relative path");
+        constexpr char escaped_create_directory_path[] =
+            "C:\\..\\outside-guest-root";
+        write_guest_bytes(
+            d3d9_module, create_directory_path_address,
+            reinterpret_cast<const uint8_t*>(escaped_create_directory_path),
+            sizeof(escaped_create_directory_path));
+        require(invoke_import(d3d9_module, sh_create_directory,
+                              {0, create_directory_path_address, 0}) == 5,
+                "SHCreateDirectoryExA allowed creation outside the guest root");
+        std::filesystem::remove_all(std::filesystem::current_path() /
+                                    "Documents and Settings");
+        require(invoke_import(d3d9_module, sh_get_folder_path,
+                              {0, 0x8004, 0, 0, folder_path_address}) ==
+                        0x80070057 &&
+                    read_guest_u32(d3d9_module, "ram", folder_path_address) == 0,
+                "SHGetFolderPathA did not reject unsupported CSIDL values");
+        require(d3d9_module.set_guest_display_mode(1366, 768, 60, 22),
+                "could not configure the guest D3D9 display mode");
+        const uint32_t d3d9_interface =
+            invoke_import(d3d9_module, direct3d_create9, {32});
+        require(d3d9_interface != 0 &&
+                    invoke_import(d3d9_module, direct3d_create9, {31}) == 0,
+                "Direct3DCreate9 did not validate the observed SDK version");
+        const uint32_t d3d9_vtable =
+            read_guest_u32(d3d9_module, "ram", d3d9_interface);
+        require(d3d9_vtable != 0 &&
+                    invoke_import(d3d9_module, d3dperf_begin_event,
+                                  {0x44, 0x00033000}) == 0 &&
+                    invoke_import(d3d9_module, d3dperf_end_event, {}) == 0,
+                "D3D9 interface or performance markers were not initialized");
+        const uint32_t add_ref =
+            read_guest_u32(d3d9_module, "ram", d3d9_vtable + 4);
+        const uint32_t release =
+            read_guest_u32(d3d9_module, "ram", d3d9_vtable + 8);
+        const uint32_t get_adapter_count =
+            read_guest_u32(d3d9_module, "ram", d3d9_vtable + 4 * 4);
+        const uint32_t get_adapter_mode_count =
+            read_guest_u32(d3d9_module, "ram", d3d9_vtable + 6 * 4);
+        const uint32_t enum_adapter_modes =
+            read_guest_u32(d3d9_module, "ram", d3d9_vtable + 7 * 4);
+        const uint32_t get_adapter_display_mode =
+            read_guest_u32(d3d9_module, "ram", d3d9_vtable + 8 * 4);
+        const uint32_t display_mode_address = 0x00402c10;
+        constexpr uint32_t enumerated_mode_address = 0x00402c50;
+        require(invoke_import(d3d9_module, get_adapter_count,
+                              {d3d9_interface}) == 1 &&
+                    invoke_import(d3d9_module, get_adapter_mode_count,
+                                  {d3d9_interface, 0, 22}) == 1 &&
+                    invoke_import(d3d9_module, get_adapter_mode_count,
+                                  {d3d9_interface, 0, 23}) == 0 &&
+                    invoke_import(d3d9_module, get_adapter_mode_count,
+                                  {d3d9_interface, 1, 22}) == 0 &&
+                    invoke_import(d3d9_module, get_adapter_display_mode,
+                              {d3d9_interface, 0, display_mode_address}) == 0 &&
+                    read_guest_u32(d3d9_module, "ram", display_mode_address) ==
+                        1366 &&
+                    read_guest_u32(d3d9_module, "ram", display_mode_address + 4) ==
+                        768 &&
+                    read_guest_u32(d3d9_module, "ram", display_mode_address + 8) ==
+                        60 &&
+                    read_guest_u32(d3d9_module, "ram", display_mode_address + 12) ==
+                        22,
+                "GetAdapterDisplayMode did not fill the configured D3DDISPLAYMODE");
+        require(invoke_import(d3d9_module, enum_adapter_modes,
+                              {d3d9_interface, 0, 22, 0,
+                               enumerated_mode_address}) == 0 &&
+                    read_guest_u32(d3d9_module, "ram",
+                                   enumerated_mode_address) == 1366 &&
+                    read_guest_u32(d3d9_module, "ram",
+                                   enumerated_mode_address + 4) == 768 &&
+                    read_guest_u32(d3d9_module, "ram",
+                                   enumerated_mode_address + 8) == 60 &&
+                    read_guest_u32(d3d9_module, "ram",
+                                   enumerated_mode_address + 12) == 22,
+                "EnumAdapterModes did not return the configured guest mode");
+        constexpr uint32_t enumerated_mode_sentinel = 0x6b6b6b6b;
+        write_guest_u32(d3d9_module, "ram", enumerated_mode_address,
+                        enumerated_mode_sentinel);
+        require(invoke_import(d3d9_module, enum_adapter_modes,
+                              {d3d9_interface, 0, 23, 0,
+                               enumerated_mode_address}) == 0x8876086a &&
+                    read_guest_u32(d3d9_module, "ram",
+                                   enumerated_mode_address) ==
+                        enumerated_mode_sentinel &&
+                    invoke_import(d3d9_module, enum_adapter_modes,
+                                  {d3d9_interface, 0, 22, 1,
+                                   enumerated_mode_address}) == 0x8876086a &&
+                    invoke_import(d3d9_module, enum_adapter_modes,
+                                  {d3d9_interface, 1, 22, 0,
+                                   enumerated_mode_address}) == 0x8876086c &&
+                    invoke_import(d3d9_module, enum_adapter_modes,
+                                  {d3d9_interface, 0, 22, 0, 0}) ==
+                        0x8876086c,
+                "EnumAdapterModes did not reject unavailable modes and invalid arguments");
+        require(invoke_import(d3d9_module, get_adapter_display_mode,
+                              {d3d9_interface, 1, display_mode_address}) ==
+                        0x8876086c &&
+                    invoke_import(d3d9_module, get_adapter_display_mode,
+                                  {d3d9_interface, 0, 0}) == 0x8876086c,
+                "GetAdapterDisplayMode did not reject invalid adapter/output");
+        const uint32_t get_device_caps =
+            read_guest_u32(d3d9_module, "ram", d3d9_vtable + 14 * 4);
+        const uint32_t check_device_format =
+            read_guest_u32(d3d9_module, "ram", d3d9_vtable + 10 * 4);
+        const uint32_t check_device_multisample_type =
+            read_guest_u32(d3d9_module, "ram", d3d9_vtable + 11 * 4);
+        constexpr uint32_t caps_address = 0x00402c30;
+        constexpr uint32_t caps_sentinel = 0xa5a5a5a5;
+        write_guest_u32(d3d9_module, "ram", caps_address, caps_sentinel);
+        require(invoke_import(d3d9_module, get_device_caps,
+                              {d3d9_interface, 0, 1, caps_address}) ==
+                        0x8876086a,
+                "GetDeviceCaps did not report the unavailable D3D9 backend");
+        require(read_guest_u32(d3d9_module, "ram", caps_address) ==
+                    caps_sentinel,
+                "GetDeviceCaps wrote fabricated capabilities on failure");
+        require(invoke_import(d3d9_module, get_device_caps,
+                              {d3d9_interface, 1, 1, caps_address}) ==
+                        0x8876086c &&
+                    invoke_import(d3d9_module, get_device_caps,
+                                  {d3d9_interface, 0, 1, 0}) == 0x8876086c &&
+                    invoke_import(d3d9_module, get_device_caps,
+                                  {d3d9_interface, 0, 1, 0xffffff00}) ==
+                        0x8876086c,
+                "GetDeviceCaps did not reject invalid adapter/output");
+        const uint32_t get_adapter_identifier =
+            read_guest_u32(d3d9_module, "ram", d3d9_vtable + 5 * 4);
+        constexpr uint32_t identifier_sentinel = 0x5a5a5a5a;
+        write_guest_u32(d3d9_module, "ram", caps_address,
+                        identifier_sentinel);
+        require(invoke_import(d3d9_module, get_adapter_identifier,
+                              {d3d9_interface, 0, 0, caps_address}) ==
+                        0x8876086a &&
+                    read_guest_u32(d3d9_module, "ram", caps_address) ==
+                        identifier_sentinel,
+                "GetAdapterIdentifier fabricated unavailable adapter data");
+        require(invoke_import(d3d9_module, get_adapter_identifier,
+                              {d3d9_interface, 1, 0, caps_address}) ==
+                        0x8876086c &&
+                    invoke_import(d3d9_module, get_adapter_identifier,
+                                  {d3d9_interface, 0, 1, caps_address}) ==
+                        0x8876086c &&
+                    invoke_import(d3d9_module, get_adapter_identifier,
+                                  {d3d9_interface, 0, 0, 0}) == 0x8876086c,
+                "GetAdapterIdentifier did not reject invalid arguments");
+        require(invoke_import(d3d9_module, check_device_format,
+                              {d3d9_interface, 0, 1, 0, 1, 1, 1}) ==
+                        0x8876086a &&
+                    invoke_import(d3d9_module, check_device_format,
+                                  {d3d9_interface, 1, 1, 0, 1, 1, 1}) ==
+                        0x8876086c &&
+                    invoke_import(d3d9_module, check_device_format,
+                                  {d3d9_interface, 0, 0, 0, 1, 1, 1}) ==
+                        0x8876086c,
+                "CheckDeviceFormat did not fail closed for unsupported formats");
+        constexpr uint32_t quality_levels_address = 0x00402c80;
+        constexpr uint32_t quality_levels_sentinel = 0x7a7a7a7a;
+        write_guest_u32(d3d9_module, "ram", quality_levels_address,
+                        quality_levels_sentinel);
+        require(invoke_import(d3d9_module, check_device_multisample_type,
+                              {d3d9_interface, 0, 1, 22, 0, 2,
+                               quality_levels_address}) == 0x8876086a &&
+                    read_guest_u32(d3d9_module, "ram",
+                                   quality_levels_address) ==
+                        quality_levels_sentinel &&
+                    invoke_import(d3d9_module,
+                                  check_device_multisample_type,
+                                  {d3d9_interface, 0, 1, 22, 0, 2, 0}) ==
+                        0x8876086a &&
+                    invoke_import(d3d9_module,
+                                  check_device_multisample_type,
+                                  {d3d9_interface, 1, 1, 22, 0, 2, 0}) ==
+                        0x8876086c &&
+                    invoke_import(d3d9_module,
+                                  check_device_multisample_type,
+                                  {d3d9_interface, 0, 1, 22, 0, 17, 0}) ==
+                        0x8876086c &&
+                    invoke_import(d3d9_module,
+                                  check_device_multisample_type,
+                                  {d3d9_interface, 0, 2, 22, 0, 2, 0}) ==
+                        0x88760870,
+                "CheckDeviceMultiSampleType fabricated or misclassified device support");
+        require(invoke_import(d3d9_module, add_ref, {d3d9_interface}) == 2 &&
+                    invoke_import(d3d9_module, release, {d3d9_interface}) == 1 &&
+                    invoke_import(d3d9_module, release, {d3d9_interface}) == 0,
+                "IDirect3D9 reference counting did not follow COM lifetime rules");
+        const uint32_t trap_interface =
+            invoke_import(d3d9_module, direct3d_create9, {32});
+        const uint32_t trap_vtable =
+            read_guest_u32(d3d9_module, "ram", trap_interface);
+        const uint32_t register_software_device =
+            read_guest_u32(d3d9_module, "ram", trap_vtable + 3 * 4);
+        require(call_import(d3d9_module, register_software_device,
+                            {trap_interface, 0}) != 0 &&
+                    d3d9_module.last_error().find(
+                        "d3d9.dll!IDirect3D9::RegisterSoftwareDevice") !=
+                        std::string::npos,
+                "unimplemented IDirect3D9 method did not fail closed by name");
         require(module.read_guest("ram", 0x00402c00, value.size(), value.data()),
                 "could not read imported function IAT entry");
         require(value == std::array<uint8_t, 4>{0, 0, 0, 0xf0},
@@ -789,6 +1265,242 @@ int main(int argc, char** argv) {
                     std::string("GetProcAddress did not resolve ") + name);
             return address;
         };
+        const uint32_t get_current_directory_api =
+            resolve_kernel32_api("GetCurrentDirectoryA");
+        const uint32_t set_current_directory_api =
+            resolve_kernel32_api("SetCurrentDirectoryA");
+        constexpr uint32_t current_directory_address = 0x00032c00;
+        constexpr uint32_t current_directory_input_address = 0x00035000;
+        constexpr char guest_root_directory[] = "C:\\";
+        const std::string expected_current_directory = guest_root_directory;
+        const uint32_t required_current_directory_size =
+            static_cast<uint32_t>(expected_current_directory.size() + 1);
+        require(invoke_import(module, get_current_directory_api,
+                              {260, current_directory_address}) ==
+                    expected_current_directory.size(),
+                "GetCurrentDirectoryA returned the wrong path length");
+        std::vector<uint8_t> current_directory_bytes(
+            expected_current_directory.size() + 1);
+        for (size_t offset = 0; offset < current_directory_bytes.size();
+             offset += 16) {
+            const size_t size = std::min<size_t>(
+                16, current_directory_bytes.size() - offset);
+            require(module.read_guest("ram", current_directory_address + offset,
+                                      size,
+                                      current_directory_bytes.data() + offset),
+                    "could not read GetCurrentDirectoryA output");
+        }
+        require(std::string(current_directory_bytes.begin(),
+                            current_directory_bytes.end() - 1) ==
+                        expected_current_directory &&
+                    current_directory_bytes.back() == 0 &&
+                    invoke_import(module, get_current_directory_api, {0, 0}) ==
+                        required_current_directory_size &&
+                    invoke_import(module, get_current_directory_api,
+                                  {1, current_directory_address}) ==
+                        required_current_directory_size,
+                "GetCurrentDirectoryA did not preserve required-size semantics");
+
+        const std::string cwd_fixture_name =
+            "recompiled_pcode_cwd_fixture_" + std::to_string(getpid());
+        const std::filesystem::path cwd_fixture_host_path =
+            std::filesystem::current_path() / cwd_fixture_name;
+        std::filesystem::create_directories(cwd_fixture_host_path);
+        const std::string absolute_cwd_fixture_path =
+            "C:\\" + cwd_fixture_name;
+        write_guest_bytes(
+            module, current_directory_input_address,
+            reinterpret_cast<const uint8_t*>(absolute_cwd_fixture_path.c_str()),
+            absolute_cwd_fixture_path.size() + 1);
+        require(invoke_import(module, set_current_directory_api,
+                              {current_directory_input_address}) == 1,
+                "SetCurrentDirectoryA could not set an absolute guest path");
+        const std::string changed_guest_directory = absolute_cwd_fixture_path;
+        require(invoke_import(module, get_current_directory_api,
+                              {260, current_directory_address}) ==
+                    changed_guest_directory.size(),
+                "GetCurrentDirectoryA did not observe the new guest directory");
+
+        constexpr char relative_guest_file_name[] = "relative-file.dat";
+        constexpr char relative_guest_file_contents[] = "guest-cwd";
+        {
+            std::ofstream file(cwd_fixture_host_path /
+                                   relative_guest_file_name,
+                               std::ios::binary | std::ios::trunc);
+            require(static_cast<bool>(file),
+                    "could not create relative guest file fixture");
+            file.write(relative_guest_file_contents,
+                       sizeof(relative_guest_file_contents) - 1);
+            require(static_cast<bool>(file),
+                    "could not write relative guest file fixture");
+        }
+        constexpr uint32_t relative_guest_file_name_address = 0x00035100;
+        write_guest_bytes(
+            module, relative_guest_file_name_address,
+            reinterpret_cast<const uint8_t*>(relative_guest_file_name),
+            sizeof(relative_guest_file_name));
+        const uint32_t relative_guest_file_handle = invoke_import(
+            module, 0xf00003c0,
+            {relative_guest_file_name_address, 0x80000000, 1, 0, 3, 0x80, 0});
+        require(relative_guest_file_handle != UINT32_MAX &&
+                    invoke_import(module, 0xf0000350,
+                                  {relative_guest_file_handle}) == 1,
+                "CreateFileA did not resolve a path from the guest directory");
+
+        constexpr char missing_guest_directory[] = "missing-guest-directory";
+        write_guest_bytes(
+            module, current_directory_input_address,
+            reinterpret_cast<const uint8_t*>(missing_guest_directory),
+            sizeof(missing_guest_directory));
+        require(invoke_import(module, set_current_directory_api,
+                              {current_directory_input_address}) == 0 &&
+                    invoke_import(module, 0xf0000240, {}) == 3,
+                "SetCurrentDirectoryA did not report a missing directory");
+        constexpr char unsupported_guest_drive[] = "D:\\";
+        write_guest_bytes(
+            module, current_directory_input_address,
+            reinterpret_cast<const uint8_t*>(unsupported_guest_drive),
+            sizeof(unsupported_guest_drive));
+        require(invoke_import(module, set_current_directory_api,
+                              {current_directory_input_address}) == 0 &&
+                    invoke_import(module, 0xf0000240, {}) == 15,
+                "SetCurrentDirectoryA accepted an unsupported drive");
+        constexpr char escaping_guest_path[] = "C:\\..\\..";
+        write_guest_bytes(
+            module, current_directory_input_address,
+            reinterpret_cast<const uint8_t*>(escaping_guest_path),
+            sizeof(escaping_guest_path));
+        require(invoke_import(module, set_current_directory_api,
+                              {current_directory_input_address}) == 0 &&
+                    invoke_import(module, 0xf0000240, {}) == 5,
+                "SetCurrentDirectoryA allowed a path outside the guest root");
+
+        constexpr char guest_root_path[] = "C:\\";
+        write_guest_bytes(
+            module, current_directory_input_address,
+            reinterpret_cast<const uint8_t*>(guest_root_path),
+            sizeof(guest_root_path));
+        require(invoke_import(module, set_current_directory_api,
+                              {current_directory_input_address}) == 1 &&
+                    invoke_import(module, get_current_directory_api,
+                                  {260, current_directory_address}) ==
+                        expected_current_directory.size(),
+                "SetCurrentDirectoryA did not restore the guest root");
+
+        const uint32_t delete_file_api = resolve_kernel32_api("DeleteFileA");
+        const uint32_t delete_file_last_error_api =
+            resolve_kernel32_api("GetLastError");
+        constexpr uint32_t delete_file_path_address = 0x00035200;
+        const std::string delete_file_name =
+            "delete-file-fixture-" + std::to_string(getpid()) + ".dat";
+        const std::filesystem::path delete_file_host_path =
+            std::filesystem::current_path() / delete_file_name;
+        {
+            std::ofstream file(delete_file_host_path,
+                               std::ios::binary | std::ios::trunc);
+            require(static_cast<bool>(file),
+                    "could not create DeleteFileA fixture");
+            file << "delete me";
+            require(static_cast<bool>(file),
+                    "could not write DeleteFileA fixture");
+        }
+        write_guest_bytes(
+            module, delete_file_path_address,
+            reinterpret_cast<const uint8_t*>(delete_file_name.c_str()),
+            delete_file_name.size() + 1);
+        require(invoke_import(module, delete_file_api,
+                              {delete_file_path_address}) == 1 &&
+                    !std::filesystem::exists(delete_file_host_path),
+                "DeleteFileA did not delete a guest-root file");
+
+        constexpr char missing_delete_file[] = "missing-delete-file-fixture";
+        write_guest_bytes(
+            module, delete_file_path_address,
+            reinterpret_cast<const uint8_t*>(missing_delete_file),
+            sizeof(missing_delete_file));
+        require(invoke_import(module, delete_file_api,
+                              {delete_file_path_address}) == 0 &&
+                    invoke_import(module, delete_file_last_error_api, {}) == 2,
+                "DeleteFileA did not report ERROR_FILE_NOT_FOUND");
+
+        const std::string read_only_delete_file_name =
+            "delete-file-read-only-" + std::to_string(getpid()) + ".dat";
+        const std::filesystem::path read_only_delete_file_host_path =
+            std::filesystem::current_path() / read_only_delete_file_name;
+        {
+            std::ofstream file(read_only_delete_file_host_path,
+                               std::ios::binary | std::ios::trunc);
+            require(static_cast<bool>(file),
+                    "could not create read-only DeleteFileA fixture");
+            file << "read only";
+        }
+        std::error_code permissions_error;
+        std::filesystem::permissions(
+            read_only_delete_file_host_path,
+            std::filesystem::perms::owner_read |
+                std::filesystem::perms::group_read |
+                std::filesystem::perms::others_read,
+            std::filesystem::perm_options::replace, permissions_error);
+        require(!permissions_error,
+                "could not mark DeleteFileA fixture read-only");
+        write_guest_bytes(
+            module, delete_file_path_address,
+            reinterpret_cast<const uint8_t*>(read_only_delete_file_name.c_str()),
+            read_only_delete_file_name.size() + 1);
+        require(invoke_import(module, delete_file_api,
+                              {delete_file_path_address}) == 0 &&
+                    invoke_import(module, delete_file_last_error_api, {}) == 5 &&
+                    std::filesystem::exists(read_only_delete_file_host_path),
+                "DeleteFileA did not deny deletion of a read-only file");
+        std::filesystem::permissions(
+            read_only_delete_file_host_path,
+            std::filesystem::perms::owner_all,
+            std::filesystem::perm_options::add, permissions_error);
+        require(!permissions_error,
+                "could not restore DeleteFileA fixture permissions");
+        std::filesystem::remove(read_only_delete_file_host_path, permissions_error);
+        require(!permissions_error,
+                "could not remove read-only DeleteFileA fixture");
+
+        const std::string symlink_target_name =
+            "delete-file-symlink-target-" + std::to_string(getpid()) + ".dat";
+        const std::string symlink_name =
+            "delete-file-symlink-" + std::to_string(getpid()) + ".dat";
+        const std::filesystem::path symlink_target_path =
+            std::filesystem::current_path() / symlink_target_name;
+        const std::filesystem::path symlink_path =
+            std::filesystem::current_path() / symlink_name;
+        {
+            std::ofstream file(symlink_target_path,
+                               std::ios::binary | std::ios::trunc);
+            require(static_cast<bool>(file),
+                    "could not create DeleteFileA symlink target");
+            file << "keep target";
+        }
+        std::filesystem::create_symlink(symlink_target_path, symlink_path);
+        write_guest_bytes(
+            module, delete_file_path_address,
+            reinterpret_cast<const uint8_t*>(symlink_name.c_str()),
+            symlink_name.size() + 1);
+        require(invoke_import(module, delete_file_api,
+                              {delete_file_path_address}) == 1 &&
+                    !std::filesystem::exists(symlink_path) &&
+                    std::filesystem::exists(symlink_target_path),
+                "DeleteFileA did not remove only the guest symlink");
+        std::filesystem::remove(symlink_target_path, permissions_error);
+        require(!permissions_error,
+                "could not remove DeleteFileA symlink target fixture");
+
+        constexpr char escaping_delete_file[] = "C:\\..\\outside-delete-file";
+        write_guest_bytes(
+            module, delete_file_path_address,
+            reinterpret_cast<const uint8_t*>(escaping_delete_file),
+            sizeof(escaping_delete_file));
+        require(invoke_import(module, delete_file_api,
+                              {delete_file_path_address}) == 0 &&
+                    invoke_import(module, delete_file_last_error_api, {}) == 5,
+                "DeleteFileA allowed a path outside the guest root");
+        std::filesystem::remove_all(cwd_fixture_host_path);
         const uint32_t create_thread_api = resolve_kernel32_api("CreateThread");
         const uint32_t suspend_thread_api = resolve_kernel32_api("SuspendThread");
         const uint32_t resume_thread_api = resolve_kernel32_api("ResumeThread");
@@ -802,6 +1514,10 @@ int main(int argc, char** argv) {
             resolve_kernel32_api("SetThreadIdealProcessor");
         const uint32_t get_last_error_api = resolve_kernel32_api("GetLastError");
         const uint32_t set_last_error_api = resolve_kernel32_api("SetLastError");
+        const uint32_t sleep_ex_api = resolve_kernel32_api("SleepEx");
+        require(invoke_import(module, sleep_ex_api, {0, 1}) == 0 &&
+                    invoke_import(module, sleep_ex_api, {1, 0}) == 0,
+                "SleepEx did not return zero after its timeout");
         const uint32_t interlocked_exchange_api =
             resolve_kernel32_api("InterlockedExchange");
         write_guest_u32(module, "ram", interlocked_operand_address,
@@ -1312,12 +2028,9 @@ int main(int argc, char** argv) {
         require(module.dispatched_function_count() == 7,
                 "direct Kernel32 calls changed the P-code function count");
 
-        require(module.call(0x00405000) != 0,
-                "unimplemented import trap unexpectedly succeeded");
-        require(module.last_error().find(
-                    "unimplemented PE import KERNEL32.dll!Sleep") !=
-                    std::string::npos,
-                "import trap did not report its DLL and function name");
+        require(module.call(0x00405000) == 0 && module.last_error().empty(),
+                "Sleep(1) import did not complete outside the guest scheduler: " +
+                    module.last_error());
         require(module.dispatched_function_count() == 8,
                 "P-code import caller was not dispatched");
         require(module.call(0x00407000) != 0,
@@ -1420,7 +2133,16 @@ int main(int argc, char** argv) {
                                   entry_point_marker.data()) &&
                     entry_point_marker == expected_entry_point_marker,
                 "supplemental PE32 entry point did not run its fixture body");
-        require(module.dispatched_function_count() == 11,
+        std::array<uint8_t, 4> event_worker_marker{};
+        constexpr std::array<uint8_t, 4> expected_event_worker_marker = {
+            'E', 'V', 'N', 'T'};
+        require(module.read_guest("ram", 0x00032c20,
+                                  event_worker_marker.size(),
+                                  event_worker_marker.data()) &&
+                    event_worker_marker == expected_event_worker_marker &&
+                    read_guest_u32(module, "ram", 0x00032c28) != 0,
+                "alertable event wait did not resume after its guest worker signaled");
+        require(module.dispatched_function_count() == 13,
                 "supplemental entry point or scheduled worker was not dispatched");
         require(module.call_pe32_entry_point() != 0 &&
                     module.last_error().find("already been invoked") !=
@@ -1511,6 +2233,15 @@ int main(int argc, char** argv) {
                               {0x406d1388, 0, 4, thread_info_address}) == 0,
                 "MSVC thread-name RaiseException pattern was not handled: " +
                     exception_module.last_error());
+
+        const uint32_t exit_process_api = resolve_kernel32_api("ExitProcess");
+        require(call_import(module, exit_process_api, {1}) != 0 &&
+                    module.last_error().find(
+                        "ExitProcess terminated the guest process with code 1") !=
+                        std::string::npos &&
+                    module.last_error().find("guest EDI=0x") !=
+                        std::string::npos,
+                "ExitProcess returned to guest code instead of terminating it");
 
         std::cout << "PASS: PE32 headers, sections and imports mapped; "
                      "observed Kernel32 startup services wrote outputs and "

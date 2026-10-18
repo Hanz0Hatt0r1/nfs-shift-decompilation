@@ -29,8 +29,17 @@ int rvi_00404000(RviPcodeContext *ctx) {
 }
 
 int rvi_00405000(RviPcodeContext *ctx) {
+    const uint32_t stack = UINT32_C(0x00033000);
+    const uint32_t return_address = UINT32_C(0x00405005);
+    const uint32_t milliseconds = 1;
     uint8_t iat[4] = {0};
-    if (ctx->read(ctx->opaque, "ram", UINT64_C(0x00402c00), sizeof(iat),
+    if (ctx->write(ctx->opaque, "ram", stack, sizeof(return_address),
+                   (const uint8_t *)&return_address) != 0 ||
+        ctx->write(ctx->opaque, "ram", stack + 4, sizeof(milliseconds),
+                   (const uint8_t *)&milliseconds) != 0 ||
+        ctx->write(ctx->opaque, "register", UINT64_C(0x10), sizeof(stack),
+                   (const uint8_t *)&stack) != 0 ||
+        ctx->read(ctx->opaque, "ram", UINT64_C(0x00402c00), sizeof(iat),
                   iat) != 0) {
         return -1;
     }

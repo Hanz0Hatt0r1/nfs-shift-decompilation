@@ -1,6 +1,6 @@
-# Need for Speed: SHIFT — decompilation and native Linux runtime
+# Need for Speed: SHIFT — Android port research and native runtime
 
-Evidence-driven reconstruction and recompilation of **Need for Speed: SHIFT (PC retail 1.02)**, with the long-term goal of running the original game logic natively on Linux with a Vulkan-based runtime.
+Evidence-driven reconstruction and recompilation of **Need for Speed: SHIFT (PC retail 1.02)**, targeting a native **Android/ARM64 port**. Linux with Vulkan is the bring-up and debugging platform used to advance the same portable runtime toward Android.
 
 The project is **not playable yet**, but it has moved well beyond isolated function recovery. The complete frozen PC instruction corpus can now be lowered to native C, linked into a Linux ELF module, loaded beside the original PE32 image, and executed through a growing Win32 guest-runtime bridge inside the Vulkan runtime.
 
@@ -17,7 +17,7 @@ The project is **not playable yet**, but it has moved well beyond isolated funct
 | PE32 entry-point execution | **Implemented** |
 | Guest x86 RAM/register/TEB state | **Implemented for current startup needs** |
 | Import/IAT dispatch | **Implemented, bounded subset of Win32 APIs** |
-| Retail startup probe | **Runs thousands of guest function dispatches, then fails closed** |
+| Retail startup probe | **61,307 guest dispatches across 1,325 unique functions in v60; `Base System` rejects a 254,529,224-byte request and calls `ExitProcess(1)`** |
 | Native Vulkan runtime | **Operational** |
 | Retail resource pipeline | **Operational** |
 | Silverstone + BMW native scene path | **Operational as reconstruction infrastructure** |
@@ -64,13 +64,9 @@ native Linux runtime
         +--> XCB + Vulkan frame loop
 ```
 
-The retail PE entry point is executed against the real **PC retail 1.02** image. The latest recorded startup probe passes the currently implemented timer, fiber-identity, time and memory-status frontier and reaches roughly **3,100 guest function dispatches** before failing closed on a missing generated export:
+The retail PE entry point is executed against the real **PC retail 1.02** image with the complete 41,538-export lowered module, cooperative guest scheduler, startup supplements and the current Linux runtime. Probe v60 reaches **61,307 guest function dispatches across 1,325 unique functions**, then the retail `Base System` pool rejects **254,529,224 bytes** (about 242.6 MiB) and calls `KERNEL32.dll!ExitProcess(1)`. Four earlier `VirtualAlloc` requests of 128, 64, 160 and 60 MiB succeed; no Win32 allocation is attempted for the failed request. The v60 trace captures the `Base System` pool object at `0x10001c18`, its flags and size threshold, plus a bounded set of pointers into the existing `0x20000000` arena; the linked block records still need semantic validation. See [`evidence/recompiled_pcode_android_retail_frontier_v60_pool_links_20261018.log`](evidence/recompiled_pcode_android_retail_frontier_v60_pool_links_20261018.log) and the machine-readable frontier record at [`evidence/recompiled_pcode_android_retail_frontier_20261018.json`](evidence/recompiled_pcode_android_retail_frontier_20261018.json). The retail data directory is available in the PortProton prefix at `/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02`; its `SHIFT.exe` matches the analyzed PE by SHA-256.
 
-```text
-rvi_00a74fb0
-```
-
-That is a startup/recompilation frontier, not a playable-game result.
+This is a startup/recompilation frontier, not a completed entry point or playable-game result. The project target and current priorities are defined in [`ROADMAP.md`](ROADMAP.md).
 
 See:
 
@@ -78,6 +74,7 @@ See:
 - [`docs/RECOMPILED_PCODE_VULKAN_PE32_LOADER.md`](docs/RECOMPILED_PCODE_VULKAN_PE32_LOADER.md)
 - [`evidence/pcode_native_lowering_coverage_full_20261018.json`](evidence/pcode_native_lowering_coverage_full_20261018.json)
 - [`evidence/recompiled_pcode_pe32_fiber_memory_frontier_20261018.json`](evidence/recompiled_pcode_pe32_fiber_memory_frontier_20261018.json)
+- [`evidence/recompiled_pcode_android_retail_frontier_20261018.json`](evidence/recompiled_pcode_android_retail_frontier_20261018.json)
 
 ## Full frozen-corpus recompilation
 
@@ -340,7 +337,7 @@ Research-input identities and hashes are centralized in [`coordination/research_
 
 ## Project goal
 
-The target is not merely to produce compilable code. The target is to reach a state where original retail resources and recovered game logic execute on Linux through a documented, testable and evidence-backed runtime.
+The target is not merely to produce compilable code. The target is a native Android/ARM64 game that runs original retail resources and recovered game logic through a documented, testable and evidence-backed runtime. Linux/Vulkan is the reference environment for advancing and validating the shared runtime.
 
 The nearest whole-program milestone is:
 
@@ -355,7 +352,7 @@ retail resource initialization
 +
 native graphics/runtime integration
 =
-first real in-game execution on Linux
+first real in-game execution on Linux, then the same portable path on Android/ARM64
 ```
 
-The final milestone remains a native, playable Linux build with behavior grounded in the PC retail executable and original game resources.
+The first in-game execution on Linux is an intermediate validation milestone. The final milestone is playable Android/ARM64 gameplay grounded in the PC retail executable and original game resources.
