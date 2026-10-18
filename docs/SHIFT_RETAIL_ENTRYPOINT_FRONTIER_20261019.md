@@ -69,6 +69,20 @@ and whether the false branch blocks frontend progress are still unknown. See
 the [v117 trace](../evidence/retail_frontier_20261019/entrypoint_probe_v117_ui_gate_field_writer_ecx.json)
 and [writer P-code manifest](../evidence/revenginstr_ui_gate_writer_pcode_20261019/manifest.json).
 
+The v119 caller-chain trace resolves the write to the `FUN_004eb550`
+constructor path. Revenginstr P-code also shows `FUN_00545d90` lazily
+constructing singleton `0x00be23f8`; its `FUN_00545ca0` constructor initializes
+the member at `this + 0x108`, matching the runtime gate receiver. The
+`FUN_00545dc0` path calls `AptInteger::GetInt` on that member after the gate
+succeeds, and the accessor reads `+0x8`; the gate checks the distinct internal
+word at `+0x34`. In the observed `0x0054be00` routine, false skips only the
+local conditional AptInteger work and then continues through its common tail.
+Ghidra has no function definition for this caller entry, so the slice is
+instruction-level. The v119 trace observed no later write to the checked word.
+Its internal role and effect on frontend progress remain unknown. See the
+[v119 trace and Revenginstr exports](../evidence/revenginstr_ui_gate_writer_call_chain_20261019/manifest.json)
+and [caller instruction slice](../evidence/retail_frontier_20261019/ui-gate-caller-0054be00-branch.txt).
+
 Function-level P-code alone misrepresents two transfers through overlapping
 code entries, so the checked instruction slices remain necessary. The gate
 branch is now known; the frontend transition and retail draw submission remain
@@ -76,8 +90,9 @@ unobserved.
 
 The old v66 `Base System` allocator fatal did not recur in v112, v113 or v114
 and is historical unless observed again. The current frontier is mapping the
-false branch and later callbacks in `0x0054be00` to frontend initialization and
-draw submission; the state field's semantic meaning is still unknown.
+constructor and later lifecycle of the nested member, then following
+`0x0054be00`'s false branch into frontend initialization and retail draw
+submission. The state field's semantic meaning is still unknown.
 
 ## Capture decision
 
@@ -92,13 +107,13 @@ documents that bounded follow-up in
 ## Next engineering step
 
 Treat the PE entry point as an active main loop, not a function that should
-return. Trace the caller and lifecycle that invoke `0x0062fde0`, determine the
-expected role of its `this + 0x24` field, and map the gate's false branch into
-the frontend transition and renderer submission. Check how retail draw
-resources reach the Vulkan backend before changing guest state, scheduler, or
-Win32 services. Implement the smallest correction supported by evidence and
-run another bounded probe. Keep generated binaries and supplements in the
-external artifact cache.
+return. Continue mapping writes and consumers of the AptInteger member's
+internal `+0x34` state, then connect the conditional AptInteger path and the
+common virtual tail in `0x0054be00` to frontend transition and renderer
+submission. Check how retail draw resources reach the Vulkan backend before
+changing guest state, scheduler, or Win32 services. Implement the smallest
+correction supported by evidence and run another bounded probe. Keep generated
+binaries and supplements in the external artifact cache.
 
 The existing race capture still lacks one shared dynamic stream-1 vertex-buffer
 payload. Do not capture it unless renderer-side static analysis shows those

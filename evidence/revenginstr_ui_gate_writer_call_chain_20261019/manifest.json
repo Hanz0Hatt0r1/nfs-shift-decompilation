@@ -1,0 +1,140 @@
+{
+  "format": "NFSShift.UIStateGateWriterCallChainEvidence/1",
+  "date": "2026-10-19",
+  "target": {
+    "program": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "analysis": {
+    "tool": "revenginstr GhidraFunctionPcodeFlow/1",
+    "revenginstr_main_commit": "40cff63745b80398b84fa1a72add3012ceb68c31",
+    "runner_source_commit": "432b528f9c3db36dda50c846aafe5afb3c141204",
+    "runner_and_exporter_match_main": true,
+    "ghidra_version": "12.1.2_DEV",
+    "static_only": true,
+    "export_count": 7,
+    "pcode_row_count": 229,
+    "runner_source_sha256": "c45006222c14f719236ca42a65f10fb58af87719a2b2c884b47ceeb265b7c76d",
+    "exporter_source_sha256": "9e6f686c7b7ad7df6f9004c22513b91f47197a3d4e338ad64abbc944281b17d0",
+    "exports": [
+      {
+        "file": "004eb5b4-containing-flow.tsv",
+        "function_entry": "004eb550",
+        "rows": 12,
+        "sha256": "e33b3e58355808399bf0137abe28689987bd91e84492708278c44b346cb3d1ea"
+      },
+      {
+        "file": "0050cf10-flow.tsv",
+        "function_entry": "0050cf10",
+        "rows": 2,
+        "sha256": "386890b5e8508ba0763e2f9d3c299c45725723190bd511136bf99e0873613934"
+      },
+      {
+        "file": "00545ca0-containing-flow.tsv",
+        "function_entry": "00545ca0",
+        "rows": 20,
+        "sha256": "a4b1d9807bd61b4ef7fae1e1b49f9a781204c3e3272226c9b1e24c7eee533ce5"
+      },
+      {
+        "file": "00545d90-singleton-getter-flow.tsv",
+        "function_entry": "00545d90",
+        "rows": 16,
+        "sha256": "1fdccd4be0902aab1964fa8fed43af2bf1d82a9a4e5857d7a851d56dcd84f797"
+      },
+      {
+        "file": "00545d50-gate-lifecycle-flow.tsv",
+        "function_entry": "00545d50",
+        "rows": 18,
+        "sha256": "4b141e730d259ab78a3d992d053a434b5f3b123d50832c9a92f93bcb137875af"
+      },
+      {
+        "file": "00545dc0-gate-true-work-flow.tsv",
+        "function_entry": "00545dc0",
+        "rows": 156,
+        "sha256": "3e2eee50e697fbb3b4d6e544ac34aa37128c8bdaff735d7446bc34e9aa207b51"
+      },
+      {
+        "file": "0050cd80-apt-integer-get-int-flow.tsv",
+        "function_entry": "0050cd80",
+        "rows": 5,
+        "sha256": "278a61f17dda7e2021f45cdeec0b206f2220e0e3683ecec644bad9da936331cb"
+      }
+    ]
+  },
+  "runtime": {
+    "probe": "v119",
+    "build_base_commit": "23c5eeca633028f5131357fb42bd3ae6f0201c2a",
+    "runtime_sha256": "3e89b0e3bfc29cc47d580c247908df7c2787c6ed723ff22d49ccea7ceb5675d9",
+    "runtime_source_diff_sha256": "ecf0601af81cff3efab7f24980d201b4373f2e5aafbfeba1d0d9d330cd7f4489",
+    "frames_rendered": 120,
+    "validation_errors": 0,
+    "status": "ok",
+    "pcode_function_dispatches": 80585,
+    "pcode_unique_functions_dispatched": 1416,
+    "trace_event_count": 484,
+    "trace_truncated": false,
+    "gate_call_count": 121,
+    "gate_callers": {
+      "0x0054be00": 121
+    },
+    "gate_receiver": "0x00be2500",
+    "gate_state_address": "0x00be2534",
+    "gate_state_word_counts": {
+      "0x00000000": 121
+    },
+    "last_writer_unique_records": 1,
+    "last_writer": {
+      "dispatch_count": 61743,
+      "sequence": 28487362,
+      "function": "0x0062fde0",
+      "ecx_entry": "0x00be2510",
+      "caller_function": "0x0062ffd0",
+      "call_return_address": "0x0062fff6",
+      "caller_return_address": "0x004e8be3",
+      "ancestor_function": "0x004e8bc0",
+      "ancestor_caller_function": "0x0050cf10",
+      "ancestor_return_address": "0x004eb5b4",
+      "thread_id": "0x0014c273",
+      "write_address": "0x00be2534",
+      "write_size": 4,
+      "word_value": "0x00000000"
+    },
+    "main_thread_current_function": "0x006472d0",
+    "pe_entry_point_complete": false,
+    "frontend_ready_state_observed": false,
+    "retail_d3d9_draw_observed": false,
+    "persistent_log": "shift-probe-v119-ui-state-writer-call-chain-120-validation.log",
+    "log_sha256": "74e7b93ee09c471e59301286adee2803c90f4693dbce6f650829b26b1ce0199e"
+  },
+  "static_runtime_join": {
+    "singleton_getter": "FUN_00545d90 tests the init bit at 0x00be2560, constructs the singleton at 0x00be23f8 via FUN_00545ca0, registers its cleanup, and returns the singleton pointer.",
+    "member_construction": "FUN_00545ca0 initializes member this + 0x108 through thunk 0x0050d030; the member address matches the singleton + 0x108 gate receiver observed at runtime.",
+    "writer_path": "The v119 return address 0x004eb5b4 is inside FUN_004eb550. Its P-code calls thunk 0x0050cf10 at 0x004eb5af with receiver param_1 + 0x10; that thunk reaches 0x0062ffd0 and 0x0062fde0.",
+    "apt_integer_identity": "FUN_00545dc0 gates this + 0x108 and then calls AptInteger::GetInt at 0x0050cd80 on that same address. The accessor reads this + 0x8, so the gate-tested this + 0x34 word is a separate internal field, not the integer payload.",
+    "other_gate_lifecycle": "FUN_00545d50 also gates this + 0x108; on true it calls FUN_00545a20, while on false it clears byte this + 0x15c when set and returns zero.",
+    "runtime_caller_branch": "The instruction slice for the unmodeled 0x0054be00 entry shows it calls the singleton gate at 0x0054be7c. A false result skips 0x0054be85-0x0054bec7, including FUN_00545dc0 and virtual calls, then reaches common-tail virtual calls at vtable offsets 0x13c and 0x130."
+  },
+  "interpretation": {
+    "derived": "The gate protects an internal field of the singleton's AptInteger member. The zero writer is part of that member's construction path; the checked field is distinct from the integer value returned by AptInteger::GetInt.",
+    "unknowns": [
+      "The semantic role of AptInteger + 0x34 and the exact buffer/callback state it represents are not established.",
+      "The runtime caller's false branch skips only its local conditional AptInteger processing; the effect of the later virtual calls is unknown.",
+      "The false result remains unproven as the cause of missing frontend state or retail draw submission.",
+      "No transition that populates or changes the field was observed in the 120-frame probe."
+    ],
+    "limits": [
+      "120 host Vulkan frames only",
+      "one runtime gate caller observed",
+      "Ghidra has no function definition for the runtime caller entry 0x0054be00, so only an instruction slice is available for that routine",
+      "the probe renders the converted four-vertex MGEO smoke mesh",
+      "no frontend-ready state or retail D3D9 draw observed"
+    ]
+  },
+  "instruction_slice": {
+    "file": "../retail_frontier_20261019/ui-gate-caller-0054be00-branch.txt",
+    "sha256": "001cb21846e2f77679a34ec6d4cf11325104a4d2307c1791cfcb20dec7dfd552",
+    "tool": "GNU objdump -D -Mintel",
+    "range": "0x0054be00-0x0054bef1",
+    "note": "The analyzed Ghidra project has no function definition at 0x0054be00; bounded function P-code export could not resolve it."
+  }
+}

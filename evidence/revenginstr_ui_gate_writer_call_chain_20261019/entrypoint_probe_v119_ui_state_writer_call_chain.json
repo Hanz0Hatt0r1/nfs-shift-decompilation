@@ -1,0 +1,104 @@
+{
+  "format": "NFSShift.RetailEntrypointProbe/1",
+  "captured_at": "2026-10-19",
+  "probe": "v119",
+  "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+  "branch": "codex/trace-ui-gate-writer-caller-20261019",
+  "base_commit": "23c5eeca633028f5131357fb42bd3ae6f0201c2a",
+  "inputs": {
+    "pe_image": {
+      "path": "/home/pes/ghidra_projects/shift/SHIFT.exe",
+      "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+    },
+    "pcode_module": {
+      "path": "/home/pes/nfs-shift-recompilation-artifacts/libnfs_shift_pcode_full_rebuilt_20261018.so",
+      "sha256": "67b2e74c72b250a168d8276e58d3821f9770f728e6d0c1badc0cf11147799274",
+      "exports": 41538
+    },
+    "mesh": {
+      "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/meshes/alpental-grid1_02.mgeo",
+      "sha256": "e2b4cda0347d94be3350a8ce158f7c1a1306b003e668ff455d9cd4924739f4ea",
+      "vertices": 4,
+      "triangles": 2
+    }
+  },
+  "build": {
+    "local_build_directory": "/tmp/shift-runtime-ui-gate-trace-build",
+    "build_command": "cmake --build /tmp/shift-runtime-ui-gate-trace-build --target shift_runtime -j2",
+    "runtime_sha256": "3e89b0e3bfc29cc47d580c247908df7c2787c6ed723ff22d49ccea7ceb5675d9",
+    "source_base_commit": "23c5eeca633028f5131357fb42bd3ae6f0201c2a",
+    "runtime_source_diff_sha256": "ecf0601af81cff3efab7f24980d201b4373f2e5aafbfeba1d0d9d330cd7f4489"
+  },
+  "execution": {
+    "command_script": "tools/run_shift_recompiled_entrypoint_probe.sh",
+    "environment": {
+      "SHIFT_ENTRYPOINT_PROBE_FRAMES": 120,
+      "SHIFT_ENTRYPOINT_PROBE_VALIDATION": 1,
+      "SHIFT_ENTRYPOINT_PROBE_MESH": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/meshes/alpental-grid1_02.mgeo",
+      "SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE": "/home/pes/nfs-shift-recompilation-artifacts/libnfs_shift_pcode_full_rebuilt_20261018.so",
+      "SHIFT_TRACE_UI_STATE_GATE": 1,
+      "SHIFT_TRACE_GUEST_PROVENANCE": "0x00be2534"
+    },
+    "exit_code": 0,
+    "frames_rendered": 120,
+    "validation_errors": 0,
+    "pcode_function_dispatches": 80585,
+    "pcode_unique_functions_dispatched": 1416,
+    "persistent_log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v119-ui-state-writer-call-chain-120-validation.log",
+    "log": "evidence/revenginstr_ui_gate_writer_call_chain_20261019/shift-probe-v119-ui-state-writer-call-chain-120-validation.log",
+    "log_sha256": "74e7b93ee09c471e59301286adee2803c90f4693dbce6f650829b26b1ce0199e",
+    "pe_entry_point_complete": false,
+    "main_thread_current_function": "0x006472d0",
+    "retail_d3d9_draws_observed": false
+  },
+  "trace": {
+    "enabled": true,
+    "truncated": false,
+    "event_count": 484,
+    "gate_call_count": 121,
+    "gate_callers": {
+      "0x0054be00": 121
+    },
+    "gate_receiver_addresses": [
+      "0x00be2500"
+    ],
+    "gate_state_field_addresses": [
+      "0x00be2534"
+    ],
+    "gate_state_words": {
+      "0x00000000": 121
+    },
+    "gate_return_low_byte": {
+      "0": 121
+    },
+    "field_last_writer_unique_records": 1,
+    "field_last_writer": {
+      "dispatch_count": 61743,
+      "function": "0x0062fde0",
+      "ecx_entry": "0x00be2510",
+      "caller_function": "0x0062ffd0",
+      "call_return_address": "0x0062fff6",
+      "caller_return_address": "0x004e8be3",
+      "ancestor_function": "0x004e8bc0",
+      "ancestor_caller_function": "0x0050cf10",
+      "ancestor_return_address": "0x004eb5b4",
+      "sequence": 28487362,
+      "thread_id": "0x0014c273",
+      "write_address": "0x00be2534",
+      "write_size": 4,
+      "word_value": "0x00000000"
+    }
+  },
+  "interpretation": {
+    "runtime_static_join": "The singleton getter at 0x00545d90 lazily constructs 0x00be23f8. Its AptInteger member at +0x108 matches gate receiver 0x00be2500. The runtime zero writer runs in that member constructor path. AptInteger::GetInt reads the separate +0x8 value; the gate checks internal +0x34.",
+    "observed_path": "All 121 traced gate calls read zero and returned false. The active 0x0054be00 caller skipped its local conditional AptInteger processing, then continued through its common tail; no later write to the checked field was observed.",
+    "limits": [
+      "120 host Vulkan frames only",
+      "the semantic role of AptInteger +0x34 is unknown",
+      "the runtime caller is not a defined Ghidra function, so its P-code could not be exported",
+      "the false branch is not proven to block startup",
+      "no frontend-ready state or retail D3D9 draw observed"
+    ]
+  },
+  "revenginstr_manifest": "evidence/revenginstr_ui_gate_writer_call_chain_20261019/manifest.json"
+}

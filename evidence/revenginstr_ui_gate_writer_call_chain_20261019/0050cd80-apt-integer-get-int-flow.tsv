@@ -1,0 +1,6 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0050cd80	005f1a10	1	PTRADD	def:005f1a10:1:4	register:register:00000004:4;const:0x8:4;const:0x1:4	-	-
+0050cd80	005f1a10	2	LOAD	def:005f1a10:2:4	const:0x1a1:4;def:005f1a10:9:4	-	-
+0050cd80	005f1a10	3	COPY	def:005f1a10:3:4	def:005f1a10:2:4	-	-
+0050cd80	005f1a10	9	CAST	def:005f1a10:9:4	def:005f1a10:1:4	-	-
+0050cd80	005f1a13	6	RETURN	-	const:0x0:4;def:005f1a10:3:4	-	-
