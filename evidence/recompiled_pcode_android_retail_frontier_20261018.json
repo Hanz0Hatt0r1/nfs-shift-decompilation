@@ -2,8 +2,8 @@
   "schema_version": 1,
   "recorded_at": "2026-10-18",
   "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
-  "branch": "codex/android-retail-entrypoint-frontier-20261018",
-  "base_commit": "3fddd813b213c9b3905c1b158a7adb6bdfb899bd",
+  "branch": "codex/trace-retail-pool-fallback-20261018",
+  "base_commit": "f1bfc94b645b6238b70ad776673597b7d25f07be",
   "target": {
     "game": "Need for Speed: SHIFT PC retail 1.02",
     "executable": "/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02/SHIFT.exe",
@@ -209,11 +209,25 @@
       "dispatches": 61307,
       "unique_functions": 1325,
       "frontier": "selected +0x104 list chain terminates after five nodes; largest node first dword is below the raw request"
+    },
+    {
+      "version": 65,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "log": "evidence/recompiled_pcode_android_retail_frontier_v65_pool_fallback_attempts_20261018.log",
+      "frontier": "runtime allocator tracing captured Base System followed by Game, Overflow, and FMOD fallback attempts for the 254529224-byte request"
+    },
+    {
+      "version": 66,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "log": "evidence/recompiled_pcode_android_retail_frontier_v66_pool_fallback_lists_20261018.log",
+      "frontier": "all four candidate pool lists were captured; each selected list had no block large enough for the request"
     }
   ],
   "latest_probe": {
-    "version": 64,
-    "log": "evidence/recompiled_pcode_android_retail_frontier_v64_pool_successor_chain_20261018.log",
+    "version": 66,
+    "log": "evidence/recompiled_pcode_android_retail_frontier_v66_pool_fallback_lists_20261018.log",
     "dispatches": 61307,
     "unique_functions": 1325,
     "result": "guest process exited with code 1",
@@ -240,7 +254,7 @@
       "0x00907615",
       "0x009074b1"
     ],
-    "interpretation": "Probe v64 reproduces the same retail frontier with a bounded successor walk. The default pool handle 0 reaches the allocator at 0x00638020 with a 254529224-byte request (0x0f2bcec8) and pool name Base System. Its object is at 0x10001c18; raw fields at +0x110 and +0x12c are 0x00000c05 and 0x00000100. Static disassembly shows flags 0x80 select the list at +0x104, compares each node's first dword with the allocation requirement derived from the request, and follows +0x10. The selected list starts at 0x27f87528 and terminates at 0x27f88dbc after five nodes; the largest node first dword is 0x07beed0c (129953036 bytes), below even the raw request. The raw words and links are preserved below without inferring other field meanings. No Win32 allocation is attempted for the failed request. This explains why the selected list cannot satisfy the request, but does not establish why the request is made or whether another pool or initialization state should provide a larger block.",
+    "interpretation": "The default Base System pool rejects the 254529224-byte request. The allocator then attempts Game, Overflow, and FMOD; all candidate lists are too small. Static and runtime evidence trace the request to FUN_0062f2d0 through the 0x00886900 wrapper. A null nested-field lead is documented separately; the first initialization/P-code defect is not yet identified.",
     "allocation_failure": {
       "allocator_entry": "0x00638020",
       "fatal_callsite": "0x006381cc",
@@ -330,23 +344,58 @@
         "raw_nodes": [
           {
             "address": "0x27f87528",
-            "words": ["0x00000120", "0x00000000", "0x27f30a48", "0x27f30a50", "0x27f87b2c", "0x00000000"]
+            "words": [
+              "0x00000120",
+              "0x00000000",
+              "0x27f30a48",
+              "0x27f30a50",
+              "0x27f87b2c",
+              "0x00000000"
+            ]
           },
           {
             "address": "0x27f87b2c",
-            "words": ["0x00000120", "0x00000000", "0x27ecac88", "0x27ecac90", "0x27f88104", "0x27f87528"]
+            "words": [
+              "0x00000120",
+              "0x00000000",
+              "0x27ecac88",
+              "0x27ecac90",
+              "0x27f88104",
+              "0x27f87528"
+            ]
           },
           {
             "address": "0x27f88104",
-            "words": ["0x000001a4", "0x00000000", "0x27e3c0d0", "0x27e315e8", "0x27f88264", "0x27f87b2c"]
+            "words": [
+              "0x000001a4",
+              "0x00000000",
+              "0x27e3c0d0",
+              "0x27e315e8",
+              "0x27f88264",
+              "0x27f87b2c"
+            ]
           },
           {
             "address": "0x27f88264",
-            "words": ["0x00000120", "0x00000000", "0x27d9cd40", "0x27d9cd48", "0x27f88dbc", "0x27f88104"]
+            "words": [
+              "0x00000120",
+              "0x00000000",
+              "0x27d9cd40",
+              "0x27d9cd48",
+              "0x27f88dbc",
+              "0x27f88104"
+            ]
           },
           {
             "address": "0x27f88dbc",
-            "words": ["0x07beed0c", "0x00000000", "0x2010179c", "0x2006b388", "0x00000000", "0x27f88264"]
+            "words": [
+              "0x07beed0c",
+              "0x00000000",
+              "0x2010179c",
+              "0x2006b388",
+              "0x00000000",
+              "0x27f88264"
+            ]
           }
         ]
       },
@@ -377,10 +426,81 @@
       "fatal_guest_function": "0x0062de10",
       "exit_status_site": "0x00633d10",
       "exit_status": 1,
-      "size_capture_pending": false
+      "size_capture_pending": false,
+      "fallback_pool_attempts": [
+        {
+          "pool_name": "Base System",
+          "pool_object_address": "0x10001c18",
+          "try_function": "0x00638020",
+          "result": "fatal failure in allocator",
+          "selected_list_head": "0x27f87528",
+          "selected_list_nodes": 5,
+          "selected_list_terminated": true,
+          "largest_compared_first_dword": "0x07beed0c",
+          "largest_compared_first_dword_decimal": 129953036
+        },
+        {
+          "pool_name": "Game",
+          "pool_object_address": "0x100021b8",
+          "try_function": "0x00637f50",
+          "result_eax": "0x00000000",
+          "selected_list_head": "0x36266000",
+          "selected_list_nodes": 1,
+          "largest_compared_first_dword": "0x09f146d8",
+          "largest_compared_first_dword_decimal": 166807256
+        },
+        {
+          "pool_name": "Overflow",
+          "pool_object_address": "0x10002398",
+          "try_function": "0x00637f50",
+          "result_eax": "0x00000000",
+          "selected_list_head": "0x36cd4000",
+          "selected_list_nodes": 1,
+          "largest_compared_first_dword": "0x00993f88",
+          "largest_compared_first_dword_decimal": 10043272
+        },
+        {
+          "pool_name": "FMOD",
+          "pool_object_address": "0x10002578",
+          "try_function": "0x00637f50",
+          "result_eax": "0x00000000",
+          "selected_list_head": "0x3a8d4000",
+          "selected_list_nodes": 1,
+          "largest_compared_first_dword": "0x03b826d8",
+          "largest_compared_first_dword_decimal": 62400216
+        }
+      ]
+    }
+  },
+  "followup_static_analysis": {
+    "based_on_probe_version": 66,
+    "record": "evidence/recompiled_pcode_android_retail_frontier_v67_pool_request_origin_20261018.md",
+    "request_origin_function": "0x0062f2d0",
+    "wrapper_function": "0x00886900",
+    "pool_request_function": "0x006382b0",
+    "pool_allocate_function": "0x00638020",
+    "caller_return_address": "0x0062f352",
+    "request_bytes": "0x0f2bcec8",
+    "request_math_registers_at_wrapper": {
+      "EBX": "0x0a2d6a10",
+      "ESI": "0x04fe64b8",
+      "ECX_request_bytes": "0x0f2bcec8"
     },
-    "playable_game": false,
-    "renderer_connected": false,
-    "android_gameplay": false
+    "request_math_sum_rounded_to_four_bytes": "0x0f2bcec8",
+    "upstream_null_field": {
+      "caller_function": "0x00d8a600",
+      "callee_function": "0x0062f6f0",
+      "object_address": "0x00bdb560",
+      "field_offset": "0x18",
+      "captured_field_value": "0x00000000"
+    },
+    "root_cause_confirmed": false,
+    "low_guest_page_guard": {
+      "minimum_guest_address": "0x00010000",
+      "implemented": true,
+      "native_unit_tested": true,
+      "retail_probe_tested": false
+    },
+    "retail_probe_blocker": "The generated libnfs_shift_pcode_startup_20261018.so is absent from the local workspace; the latest listed Actions artifacts are only Linux smoke and Win32 proxy bundles."
   }
 }

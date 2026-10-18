@@ -40,6 +40,7 @@ namespace shift::runtime {
 namespace {
 
 constexpr uint64_t kGuestRamSize = UINT64_C(1) << 32;
+constexpr uint32_t kGuestMinimumUserAddress = 0x00010000;
 constexpr size_t kRegisterBankSize = 0x2000;
 constexpr size_t kMaximumPcodeValueSize = 16;
 constexpr uint32_t kMaximumCallDepth = 256;
@@ -78,6 +79,9 @@ constexpr size_t kGuestAllocationObjectTraceSize = 0x130;
 constexpr size_t kGuestAllocationObjectLinkLimit = 12;
 constexpr size_t kGuestAllocationObjectChainLinkLimit = 64;
 constexpr size_t kGuestAllocationLinkNextPointerWordIndex = 0x10 / 4;
+constexpr uint32_t kRetailPoolAllocateFunctionAddress = 0x00638020;
+constexpr uint32_t kRetailPoolTryAllocateFunctionAddress = 0x00637f50;
+constexpr size_t kGuestAllocationPoolAttemptLimit = 32;
 constexpr uint64_t kMaximumGuestVirtualAllocationSize =
     UINT64_C(512) * 1024 * 1024;
 constexpr uint32_t kGuestStdInputHandle = 0x00020000;
@@ -433,6 +437,30 @@ struct RecompiledPcodeModule::Impl {
         std::array<GuestObjectLinkSnapshot,
                    kGuestAllocationObjectChainLinkLimit>
             ecx_object_chain_links{};
+    };
+    struct GuestPoolAllocationAttempt {
+        uint64_t sequence = 0;
+        uint32_t function_address = 0;
+        uint32_t return_address = 0;
+        uint32_t pool_address = 0;
+        uint32_t request_size = 0;
+        uint32_t request_flags = 0;
+        uint32_t pool_flags = 0;
+        uint32_t pool_threshold = 0;
+        uint32_t list_head_100 = 0;
+        uint32_t list_head_104 = 0;
+        uint32_t result_eax = 0;
+        bool has_result_eax = false;
+        std::array<char, 32> pool_name{};
+        uint32_t selected_list_head = 0;
+        uint32_t selected_list_next_offset = 0;
+        size_t selected_list_node_count = 0;
+        bool selected_list_terminated = false;
+        bool selected_list_truncated = false;
+        bool selected_list_cycle = false;
+        std::array<GuestObjectLinkSnapshot,
+                   kGuestAllocationObjectChainLinkLimit>
+            selected_list_nodes{};
     };
     struct GuestSemaphore {
         uint32_t count = 0;
@@ -1232,9 +1260,134 @@ struct RecompiledPcodeModule::Impl {
                 }
             }
         }
+        size_t pool_attempt_index = kGuestAllocationPoolAttemptLimit;
+        const bool pool_allocation_target =
+            target == kRetailPoolAllocateFunctionAddress ||
+            target == kRetailPoolTryAllocateFunctionAddress;
+        if (trace_allocations && *trace_allocations &&
+            entry_registers.has_ecx_object_memory &&
+            pool_allocation_target) {
+            pool_attempt_index = guest_pool_allocation_attempt_cursor;
+            guest_pool_allocation_attempt_cursor =
+                (guest_pool_allocation_attempt_cursor + 1) %
+                guest_pool_allocation_attempts.size();
+            guest_pool_allocation_attempt_count = std::min(
+                guest_pool_allocation_attempt_count + 1,
+                guest_pool_allocation_attempts.size());
+            auto& attempt =
+                guest_pool_allocation_attempts[pool_attempt_index];
+            attempt = {};
+            attempt.sequence = ++guest_pool_allocation_attempts_seen;
+            attempt.function_address = static_cast<uint32_t>(target);
+            attempt.return_address = entry_registers.stack_return_slot;
+            attempt.pool_address = entry_registers.ecx;
+            attempt.pool_flags =
+                entry_registers.ecx_object_memory[0x110 / 4];
+            attempt.pool_threshold =
+                entry_registers.ecx_object_memory[0x12c / 4];
+            attempt.list_head_100 =
+                entry_registers.ecx_object_memory[0x100 / 4];
+            attempt.list_head_104 =
+                entry_registers.ecx_object_memory[0x104 / 4];
+            if (target == kRetailPoolAllocateFunctionAddress) {
+                attempt.request_size = entry_registers.edx;
+                if (entry_registers.has_stack_arguments)
+                    attempt.request_flags =
+                        entry_registers.stack_arguments[0];
+            } else if (entry_registers.has_stack_arguments) {
+                attempt.request_size =
+                    entry_registers.stack_arguments[0];
+                attempt.request_flags =
+                    entry_registers.stack_arguments[1];
+            }
+            const std::string pool_name = read_diagnostic_guest_ascii(
+                entry_registers.ecx + 0x30);
+            std::snprintf(attempt.pool_name.data(),
+                          attempt.pool_name.size(), "%s", pool_name.c_str());
+            if (attempt.request_size >= kGuestAllocationTraceThreshold) {
+                const bool use_list_104 =
+                    (attempt.request_flags & 0x80) != 0;
+                attempt.selected_list_head =
+                    use_list_104 ? attempt.list_head_104
+                                 : attempt.list_head_100;
+                attempt.selected_list_next_offset =
+                    use_list_104 ? 0x10 : 0x14;
+                const size_t next_word_index =
+                    attempt.selected_list_next_offset / sizeof(uint32_t);
+                uint32_t parent_address = 0;
+                uint32_t node_address = attempt.selected_list_head;
+                while (attempt.selected_list_node_count <
+                       attempt.selected_list_nodes.size()) {
+                    if (node_address == 0) {
+                        attempt.selected_list_terminated = true;
+                        break;
+                    }
+                    if (!diagnostic_guest_pointer_mapped(node_address, 24)) {
+                        attempt.selected_list_truncated = true;
+                        break;
+                    }
+                    bool duplicate = false;
+                    for (size_t node_index = 0;
+                         node_index <
+                         attempt.selected_list_node_count;
+                         ++node_index) {
+                        if (attempt.selected_list_nodes[node_index].address ==
+                            node_address) {
+                            duplicate = true;
+                            break;
+                        }
+                    }
+                    if (duplicate) {
+                        attempt.selected_list_cycle = true;
+                        break;
+                    }
+                    auto& node = attempt.selected_list_nodes[
+                        attempt.selected_list_node_count];
+                    node.address = node_address;
+                    node.parent_address = parent_address;
+                    bool complete_snapshot = true;
+                    for (size_t word_index = 0;
+                         word_index < node.memory.size(); ++word_index) {
+                        const uint64_t word_address =
+                            static_cast<uint64_t>(node_address) +
+                            word_index * sizeof(uint32_t);
+                        if (!read_guest_diagnostic_u32(
+                                word_address, node.memory[word_index])) {
+                            complete_snapshot = false;
+                            break;
+                        }
+                    }
+                    if (!complete_snapshot) {
+                        attempt.selected_list_truncated = true;
+                        break;
+                    }
+                    ++attempt.selected_list_node_count;
+                    const uint32_t next_address = node.memory[next_word_index];
+                    if (next_address == 0) {
+                        attempt.selected_list_terminated = true;
+                        break;
+                    }
+                    parent_address = node_address;
+                    node_address = next_address;
+                }
+                if (!attempt.selected_list_terminated &&
+                    !attempt.selected_list_truncated &&
+                    !attempt.selected_list_cycle &&
+                    attempt.selected_list_node_count ==
+                        attempt.selected_list_nodes.size()) {
+                    attempt.selected_list_truncated = true;
+                }
+            }
+        }
         active_guest_functions.push_back(static_cast<uint32_t>(target));
         active_guest_function_registers.push_back(entry_registers);
         const int result = function(&context);
+        if (pool_attempt_index < guest_pool_allocation_attempts.size()) {
+            auto& attempt =
+                guest_pool_allocation_attempts[pool_attempt_index];
+            attempt.has_result_eax = read_guest_u32(
+                "register", kX86EaxRegisterOffset, attempt.result_eax);
+        }
         active_guest_function_registers.pop_back();
         active_guest_functions.pop_back();
         --call_depth;
@@ -1408,8 +1561,8 @@ struct RecompiledPcodeModule::Impl {
     }
 
     bool valid_guest_pointer(uint32_t address, size_t size) const {
-        return address != 0 && static_cast<uint64_t>(address) + size <=
-                                    kGuestRamSize;
+        return address >= kGuestMinimumUserAddress &&
+               size <= kGuestRamSize - address;
     }
 
     void trace_guest_allocation(const char* api, uint32_t size,
@@ -2291,6 +2444,82 @@ struct RecompiledPcodeModule::Impl {
                     read_diagnostic_guest_ascii(registers.ebx);
                 if (!ebx_text.empty()) {
                     error += "{EBX-text='" + ebx_text + "'}";
+                }
+            }
+            error += "]";
+        }
+        if (trace_allocation_context &&
+            guest_pool_allocation_attempt_count != 0) {
+            char header[96]{};
+            std::snprintf(
+                header, sizeof(header),
+                "; pool allocation attempts(total=%llu,stored=%zu)=[",
+                static_cast<unsigned long long>(
+                    guest_pool_allocation_attempts_seen),
+                guest_pool_allocation_attempt_count);
+            error += header;
+            const size_t first_attempt =
+                (guest_pool_allocation_attempt_cursor +
+                 guest_pool_allocation_attempts.size() -
+                 guest_pool_allocation_attempt_count) %
+                guest_pool_allocation_attempts.size();
+            for (size_t index = 0;
+                 index < guest_pool_allocation_attempt_count; ++index) {
+                const size_t attempt_index =
+                    (first_attempt + index) %
+                    guest_pool_allocation_attempts.size();
+                const auto& attempt =
+                    guest_pool_allocation_attempts[attempt_index];
+                char record[512]{};
+                char result_eax[24]{};
+                if (attempt.has_result_eax) {
+                    std::snprintf(result_eax, sizeof(result_eax),
+                                  "0x%08x", attempt.result_eax);
+                } else {
+                    std::snprintf(result_eax, sizeof(result_eax),
+                                  "unavailable");
+                }
+                std::snprintf(
+                    record, sizeof(record),
+                    "%s#%llu@0x%08x(return=0x%08x,pool=0x%08x,size=0x%08x,"
+                    "flags=0x%08x,pool_flags=0x%08x,threshold=0x%08x,"
+                    "list100=0x%08x,list104=0x%08x,selected_head=0x%08x,"
+                    "next=+0x%x,nodes=%zu,terminated=%u,truncated=%u,"
+                    "cycle=%u,eax=%s,name='%s')",
+                    index == 0 ? "" : ",",
+                    static_cast<unsigned long long>(attempt.sequence),
+                    attempt.function_address, attempt.return_address,
+                    attempt.pool_address, attempt.request_size,
+                    attempt.request_flags, attempt.pool_flags,
+                    attempt.pool_threshold, attempt.list_head_100,
+                    attempt.list_head_104, attempt.selected_list_head,
+                    attempt.selected_list_next_offset,
+                    attempt.selected_list_node_count,
+                    attempt.selected_list_terminated ? 1u : 0u,
+                    attempt.selected_list_truncated ? 1u : 0u,
+                    attempt.selected_list_cycle ? 1u : 0u, result_eax,
+                    attempt.pool_name.data());
+                error += record;
+                for (size_t node_index = 0;
+                     node_index < attempt.selected_list_node_count;
+                     ++node_index) {
+                    const auto& node =
+                        attempt.selected_list_nodes[node_index];
+                    char node_header[96]{};
+                    std::snprintf(
+                        node_header, sizeof(node_header),
+                        "{guest-pool-node@0x%08x(prev=0x%08x,words=",
+                        node.address, node.parent_address);
+                    error += node_header;
+                    for (size_t word_index = 0;
+                         word_index < node.memory.size(); ++word_index) {
+                        char word[16]{};
+                        std::snprintf(word, sizeof(word), "%s%08x",
+                                      word_index == 0 ? "" : ",",
+                                      node.memory[word_index]);
+                        error += word;
+                    }
+                    error += ")}";
                 }
             }
             error += "]";
@@ -6310,6 +6539,10 @@ struct RecompiledPcodeModule::Impl {
             return true;
         }
         if (std::strcmp(space, "ram") == 0) {
+            if (offset < kGuestMinimumUserAddress) {
+                error = "P-code RAM read touched reserved low memory";
+                return false;
+            }
             if (offset > kGuestRamSize || size > kGuestRamSize - offset) {
                 error = "P-code RAM read is out of range";
                 return false;
@@ -6344,6 +6577,10 @@ struct RecompiledPcodeModule::Impl {
             return true;
         }
         if (std::strcmp(space, "ram") == 0) {
+            if (offset < kGuestMinimumUserAddress) {
+                error = "P-code RAM write touched reserved low memory";
+                return false;
+            }
             if (offset > kGuestRamSize || size > kGuestRamSize - offset) {
                 error = "P-code RAM write is out of range";
                 return false;
@@ -6402,6 +6639,12 @@ struct RecompiledPcodeModule::Impl {
     std::unordered_set<uint32_t> guest_environment_blocks;
     std::vector<uint32_t> active_guest_functions;
     std::vector<GuestRegisterSnapshot> active_guest_function_registers;
+    std::array<GuestPoolAllocationAttempt,
+               kGuestAllocationPoolAttemptLimit>
+        guest_pool_allocation_attempts{};
+    size_t guest_pool_allocation_attempt_count = 0;
+    size_t guest_pool_allocation_attempt_cursor = 0;
+    uint64_t guest_pool_allocation_attempts_seen = 0;
     bool command_line_initialized = false;
     bool environment_initialized = false;
     uint32_t guest_last_error = 0;
