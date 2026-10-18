@@ -289,6 +289,31 @@ def test_resource_signature_trigger_is_stable_and_bind_driven():
     assert "table[object] = signature" in source
 
 
+def test_managed_dxt_texture_snapshots_preserve_dds_blocks_and_mips():
+    source = Path("native_capture/shift_d3d9_capture.cpp").read_text(encoding="utf-8")
+
+    for token in (
+        "write_managed_dxt_texture_dds",
+        "D3DPOOL_MANAGED",
+        "D3DPOOL_SYSTEMMEM",
+        "D3DFMT_DXT1",
+        "D3DFMT_DXT2",
+        "D3DFMT_DXT3",
+        "D3DFMT_DXT4",
+        "D3DFMT_DXT5",
+        "texture->GetLevelCount()",
+        "texture->LockRect(level, &locked, nullptr, D3DLOCK_READONLY)",
+        "header[1] |= 0x00020000u",
+        "header[19] = 0x00000004u",
+        "header[20] = static_cast<std::uint32_t>(top_desc.Format)",
+        "static_cast<std::uint64_t>(locked.Pitch) < row_bytes",
+        'output.write("DDS ", 4)',
+        'CaptureWriter::quote(dds ? "dds" : "ppm")',
+        'std::remove(output_path.c_str())',
+    ):
+        assert token in source
+
+
 def test_resource_trigger_launchers_accept_signature_rules():
     powershell = Path("tools/run_shift_capture.ps1").read_text(encoding="utf-8")
     wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")

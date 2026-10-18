@@ -1291,6 +1291,106 @@ bool write_texture_surface_ppm(
     return ok;
 }
 
+bool dxt_block_size(D3DFORMAT format, UINT& block_size) {
+    switch (format) {
+    case D3DFMT_DXT1:
+        block_size = 8;
+        return true;
+    case D3DFMT_DXT2:
+    case D3DFMT_DXT3:
+    case D3DFMT_DXT4:
+    case D3DFMT_DXT5:
+        block_size = 16;
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool write_managed_dxt_texture_dds(
+    IDirect3DTexture9* texture,
+    const std::string& output_path) {
+    if (!texture) return false;
+
+    D3DSURFACE_DESC top_desc{};
+    if (FAILED(texture->GetLevelDesc(0, &top_desc)) ||
+        (top_desc.Pool != D3DPOOL_MANAGED && top_desc.Pool != D3DPOOL_SYSTEMMEM)) {
+        return false;
+    }
+
+    UINT block_size = 0;
+    if (!dxt_block_size(top_desc.Format, block_size) ||
+        top_desc.Width == 0 || top_desc.Height == 0) {
+        return false;
+    }
+
+    const UINT mip_count = texture->GetLevelCount();
+    if (mip_count == 0) return false;
+
+    // DDS_MAGIC followed by the 124-byte legacy header. DXT1/2/3/4/5 data is
+    // already in the block format Vulkan consumes, so preserve it without a
+    // lossy decode/re-encode step.
+    std::uint32_t header[31]{};
+    header[0] = 124;  // dwSize
+    header[1] = 0x00000001u | 0x00000002u | 0x00000004u |
+                0x00001000u | 0x00080000u;  // CAPS | HEIGHT | WIDTH | PIXELFORMAT | LINEARSIZE
+    if (mip_count > 1) header[1] |= 0x00020000u;  // MIPMAPCOUNT
+    header[2] = top_desc.Height;
+    header[3] = top_desc.Width;
+    header[4] = std::max<UINT>(1, (top_desc.Width + 3) / 4) *
+                std::max<UINT>(1, (top_desc.Height + 3) / 4) * block_size;
+    header[6] = mip_count > 1 ? mip_count : 0;
+    header[18] = 32;  // DDS_PIXELFORMAT.dwSize
+    header[19] = 0x00000004u;  // DDPF_FOURCC
+    header[20] = static_cast<std::uint32_t>(top_desc.Format);
+    header[26] = 0x00001000u;  // DDSCAPS_TEXTURE
+    if (mip_count > 1) header[26] |= 0x00000008u | 0x00400000u;
+
+    std::ofstream output(output_path, std::ios::binary);
+    if (!output.is_open()) return false;
+    output.write("DDS ", 4);
+    output.write(reinterpret_cast<const char*>(header), sizeof(header));
+
+    bool ok = static_cast<bool>(output);
+    for (UINT level = 0; level < mip_count && ok; ++level) {
+        D3DSURFACE_DESC desc{};
+        if (FAILED(texture->GetLevelDesc(level, &desc)) || desc.Format != top_desc.Format) {
+            ok = false;
+            break;
+        }
+
+        D3DLOCKED_RECT locked{};
+        if (FAILED(texture->LockRect(level, &locked, nullptr, D3DLOCK_READONLY))) {
+            ok = false;
+            break;
+        }
+
+        const UINT block_columns = std::max<UINT>(1, (desc.Width + 3) / 4);
+        const UINT block_rows = std::max<UINT>(1, (desc.Height + 3) / 4);
+        const std::uint64_t row_bytes =
+            static_cast<std::uint64_t>(block_columns) * block_size;
+        if (!locked.pBits || locked.Pitch < 0 ||
+            static_cast<std::uint64_t>(locked.Pitch) < row_bytes) {
+            ok = false;
+        } else {
+            const auto* source = static_cast<const unsigned char*>(locked.pBits);
+            for (UINT row = 0; row < block_rows && ok; ++row) {
+                output.write(
+                    reinterpret_cast<const char*>(source +
+                        static_cast<std::size_t>(row) * locked.Pitch),
+                    static_cast<std::streamsize>(row_bytes));
+                ok = static_cast<bool>(output);
+            }
+        }
+        texture->UnlockRect(level);
+    }
+
+    output.close();
+    ok = ok && static_cast<bool>(output);
+    if (!ok) std::remove(output_path.c_str());
+    return ok;
+}
+
 void append_texture_snapshot_json(
     std::ostringstream& out,
     IDirect3DDevice9* device,
@@ -1308,17 +1408,22 @@ void append_texture_snapshot_json(
         auto* tex = static_cast<IDirect3DTexture9*>(texture);
         IDirect3DSurface9* surface = nullptr;
         bool captured = false;
-        if (SUCCEEDED(tex->GetSurfaceLevel(0, &surface))) {
+        std::string snapshot_path = prefix.str() + ".dds";
+        const bool dds = write_managed_dxt_texture_dds(tex, snapshot_path);
+        if (!dds && SUCCEEDED(tex->GetSurfaceLevel(0, &surface))) {
             D3DSURFACE_DESC desc{};
             if (SUCCEEDED(surface->GetDesc(&desc))) {
+                snapshot_path = prefix.str() + ".ppm";
                 captured = write_texture_surface_ppm(
-                    device, surface, desc, prefix.str() + ".ppm");
+                    device, surface, desc, snapshot_path);
             }
             surface->Release();
         }
+        captured = captured || dds;
         out << ",\"snapshot_status\":" << CaptureWriter::quote(captured ? "captured" : "capture-failed");
         if (captured) {
-            out << ",\"snapshot_paths\":[" << CaptureWriter::quote(prefix.str() + ".ppm") << "]";
+            out << ",\"snapshot_format\":" << CaptureWriter::quote(dds ? "dds" : "ppm")
+                << ",\"snapshot_paths\":[" << CaptureWriter::quote(snapshot_path) << "]";
         }
         return;
     }

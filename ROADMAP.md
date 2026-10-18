@@ -78,7 +78,7 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 | Import/IAT dispatch | **Implemented with fail-closed API boundary** |
 | Guest threads | **Cooperative multi-thread scheduling implemented** |
 | Vulkan runtime shell | **Operational on Linux** |
-| D3D9 capture tooling | **Retail capture audited: 4,309 frames and 1,581 Silverstone target draw hits; no VB/IB payloads or resource path/SHA identity yet** |
+| D3D9 capture tooling | **A focused PortProton probe captured 495 DXT snapshots and 610 VB/IB payloads across 11,266 frames; its 51-hash target audit found no renderer target and no resource path/SHA identity** |
 | Complete D3D9 -> Vulkan game backend | **Not implemented** |
 | Host-architecture-neutral runtime | **Not yet proven** |
 | ARM64 lowered-runtime execution | **Generic P-code fixture passes; full corpus/runtime not yet proven** |
@@ -93,6 +93,8 @@ The cooperative guest-thread scheduler has been exercised by the real retail ent
 
 The installed PortProton retail run has a separate D3D9 capture at frame range 0–4309 (308,332 ms; 1,718,778 valid JSON objects). It contains 1,581 draws matching the Silverstone-era target shader inventory, including 537 hits for the crowd-generation shader whose SHA-256 is `d7859cca…00d351a`. The audited report also maps that shader to the proxy trigger signature `ps:b83e3c4ec719e80f`. The capture contains draw-local shader/state evidence, but no vertex/index-buffer payloads, texture snapshots, or exact resource path/SHA pairs, so none of those hits can yet be admitted as a retail mesh in Vulkan. The raw 474 MB capture remains in the external PortProton game directory; its SHA-256 and audit commands are recorded in [the capture audit note](docs/SHIFT_D3D9_CAPTURE_AUDIT_20261018.md). The report records 2,912 duplicate-key lines but zero conflicting duplicate values; duplicate keys still remain a capture-format defect.
 
+A later isolated-copy probe exercised the new lossless DXT DDS path. Its 30,984 JSON events include 495 texture snapshot events, 610 VB/IB payload events and seven trigger windows. All 11 unique DDS paths referenced by those events passed header and mip-payload-size validation. The audit found no match against the 51 supplied Silverstone renderer shader hashes and no `resource_path`/`resource_sha256` identity. The process still had `Movies/Attract.bik` open during the last trigger window, so this is texture-capture evidence rather than race-render evidence. The capture and all texture payloads remain outside Git; see the [DXT snapshot probe note](docs/SHIFT_D3D9_DXT_SNAPSHOT_PROBE_20261018.md) and [machine-readable probe record](evidence/retail_frontier_20261018/d3d9_dxt_snapshot_probe.json).
+
 The earlier v65-v67 allocator evidence remains useful history, but it is not the latest execution state. The current blockers are finding what advances the guest beyond the observed `0x006472d0` update path and connecting actual D3D9 draw resources to the Vulkan backend. The native Vulkan smoke still uses converted MGEO geometry. No complete frontend, offline race, or playable retail session has been demonstrated.
 
 The generic `revenginstr` binary80 lowering now executes a synthetic P-code
@@ -103,7 +105,7 @@ startup. See the [cross-host fixture evidence](evidence/pcode_native_lowering_ar
 
 The current immediate execution frontier is:
 
-> **Use the saved v112 call stack and scheduler state to determine what keeps the retail update loop at `0x006472d0`, then drive and record a frontend transition. In parallel, capture the first complete retail D3D9 draw around `ps:b83e3c4ec719e80f`, including its bound VB/IB payloads and minimum texture evidence, and validate resource identity before admitting that draw to the Vulkan translator.**
+> **Advance the real retail path from the observed `0x006472d0` scheduler loop into the frontend and an offline race. Capture a race-specific D3D9 draw with its VB/IB payloads and lossless texture snapshots, then add exact resource path/SHA attribution before admitting it to the Vulkan translator. The latest capture proves DDS preservation but still contains only attract-video activity and no target shader match.**
 
 At the same time, new infrastructure must avoid introducing additional x86-64/Linux-only assumptions.
 
