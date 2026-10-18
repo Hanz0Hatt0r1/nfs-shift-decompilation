@@ -12,6 +12,7 @@
 #include <limits>
 #include <stdexcept>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace shift::runtime {
@@ -25,7 +26,14 @@ constexpr uint16_t kPeI386 = 0x014c;
 constexpr uint16_t kPe32Magic = 0x010b;
 constexpr uint16_t kMaximumPeSectionCount = 96;
 constexpr size_t kPeSectionHeaderSize = 40;
+constexpr size_t kPeImportDescriptorSize = 20;
 constexpr size_t kCopyChunkSize = 64 * 1024;
+constexpr uint32_t kImportStubPreferredBase = 0xf0000000;
+constexpr uint32_t kImportStubStride = 0x10;
+constexpr size_t kMaximumImportDescriptors = 4096;
+constexpr size_t kMaximumImportThunksPerModule = 65536;
+constexpr size_t kMaximumImportFunctions = 65536;
+constexpr size_t kMaximumImportNameSize = 512;
 
 using PcodeFunction = int (*)(RviPcodeContext*);
 
@@ -38,6 +46,11 @@ struct PeSection {
     uint64_t mapped_size() const {
         return std::max(virtual_size, raw_size);
     }
+};
+
+struct ImportedThunk {
+    uint32_t iat_rva = 0;
+    std::string name;
 };
 
 void require_pe(bool condition, const char* message) {
@@ -81,6 +94,77 @@ uint32_t read_u32(std::ifstream& file, uint64_t file_size, uint64_t offset) {
            (static_cast<uint32_t>(bytes[1]) << 8) |
            (static_cast<uint32_t>(bytes[2]) << 16) |
            (static_cast<uint32_t>(bytes[3]) << 24);
+}
+
+uint64_t file_offset_for_rva(uint32_t rva, size_t size,
+                             uint32_t headers_size,
+                             const std::vector<PeSection>& sections) {
+    if (rva <= headers_size && size <= headers_size - rva) return rva;
+    for (const auto& section : sections) {
+        if (rva < section.virtual_address) continue;
+        const uint64_t delta =
+            static_cast<uint64_t>(rva) - section.virtual_address;
+        if (delta <= section.raw_size && size <= section.raw_size - delta) {
+            return static_cast<uint64_t>(section.raw_offset) + delta;
+        }
+    }
+    throw std::runtime_error(
+        "invalid PE32 image: import RVA has no raw file backing");
+}
+
+uint32_t read_rva_u32(std::ifstream& file, uint64_t file_size, uint32_t rva,
+                      uint32_t headers_size,
+                      const std::vector<PeSection>& sections) {
+    return read_u32(file, file_size,
+                    file_offset_for_rva(rva, sizeof(uint32_t), headers_size,
+                                        sections));
+}
+
+std::string read_import_name(std::ifstream& file, uint64_t file_size,
+                             uint32_t rva, uint32_t headers_size,
+                             const std::vector<PeSection>& sections) {
+    std::string name;
+    name.reserve(32);
+    for (size_t index = 0; index < kMaximumImportNameSize; ++index) {
+        require_pe(static_cast<uint64_t>(rva) + index <=
+                       std::numeric_limits<uint32_t>::max(),
+                   "import name RVA overflows");
+        const uint64_t offset = file_offset_for_rva(
+            rva + static_cast<uint32_t>(index), 1, headers_size, sections);
+        uint8_t byte = 0;
+        read_file_range(file, file_size, offset, &byte, 1);
+        if (byte == 0) {
+            require_pe(!name.empty(), "import name is empty");
+            return name;
+        }
+        require_pe(byte >= 0x20 && byte <= 0x7e,
+                   "import name contains a non-ASCII byte");
+        name.push_back(static_cast<char>(byte));
+    }
+    throw std::runtime_error(
+        "invalid PE32 image: import name is not terminated");
+}
+
+uint32_t choose_import_stub_base(uint32_t image_base, uint32_t image_size,
+                                 size_t unique_import_count) {
+    if (unique_import_count == 0) return 0;
+    const uint64_t span = static_cast<uint64_t>(unique_import_count) *
+                          kImportStubStride;
+    const uint64_t image_end =
+        static_cast<uint64_t>(image_base) + image_size;
+    uint64_t candidate = kImportStubPreferredBase;
+    if (candidate + span > (UINT64_C(1) << 32) ||
+        (candidate < image_end && image_base < candidate + span)) {
+        require_pe(static_cast<uint64_t>(image_base) >= span + 0x10000,
+                   "no guest address range is available for import traps");
+        candidate = (static_cast<uint64_t>(image_base) - span) &
+                    ~static_cast<uint64_t>(kImportStubStride - 1);
+    }
+    require_pe(candidate >= 0x10000 &&
+                   candidate + span <= (UINT64_C(1) << 32) &&
+                   !(candidate < image_end && image_base < candidate + span),
+               "no guest address range is available for import traps");
+    return static_cast<uint32_t>(candidate);
 }
 
 }  // namespace
@@ -170,6 +254,12 @@ struct RecompiledPcodeModule::Impl {
             error = "P-code call depth limit exceeded";
             return -1;
         }
+        const auto imported = import_traps.find(
+            static_cast<uint32_t>(target));
+        if (imported != import_traps.end()) {
+            error = "unimplemented PE import " + imported->second;
+            return -1;
+        }
         const auto function = resolve(static_cast<uint32_t>(target));
         if (!function) return -1;
 
@@ -245,6 +335,19 @@ struct RecompiledPcodeModule::Impl {
             read_u32(file, file_size, optional_offset + 56);
         const uint32_t headers_size =
             read_u32(file, file_size, optional_offset + 60);
+        uint32_t import_directory_rva = 0;
+        uint32_t import_directory_size = 0;
+        const uint32_t data_directory_count = optional_header_size >= 96
+            ? read_u32(file, file_size, optional_offset + 92)
+            : 0;
+        if (data_directory_count > 1) {
+            require_pe(optional_header_size >= 112,
+                       "optional header truncates the import directory");
+            import_directory_rva =
+                read_u32(file, file_size, optional_offset + 104);
+            import_directory_size =
+                read_u32(file, file_size, optional_offset + 108);
+        }
         require_pe(image_size != 0 &&
                        static_cast<uint64_t>(image_base) + image_size <=
                            kGuestRamSize,
@@ -257,6 +360,17 @@ struct RecompiledPcodeModule::Impl {
                    "headers size is inconsistent with the PE tables");
         require_pe(entry_rva == 0 || entry_rva < image_size,
                    "entry point is outside the image");
+        require_pe((import_directory_rva == 0) ==
+                       (import_directory_size == 0),
+                   "import directory RVA and size disagree");
+        if (import_directory_rva != 0) {
+            require_pe(import_directory_size >=
+                           2 * kPeImportDescriptorSize &&
+                           static_cast<uint64_t>(import_directory_rva) +
+                                   import_directory_size <=
+                               image_size,
+                       "import directory exceeds the PE image");
+        }
 
         const uint64_t section_table_offset =
             optional_offset + optional_header_size;
@@ -289,6 +403,111 @@ struct RecompiledPcodeModule::Impl {
             }
             require_file_range(section.raw_offset, section.raw_size, file_size);
             sections.push_back(section);
+        }
+
+        std::vector<ImportedThunk> imported_thunks;
+        std::vector<std::string> import_modules;
+        std::unordered_set<uint32_t> imported_iat_slots;
+        if (import_directory_rva != 0) {
+            require_pe(import_directory_size % kPeImportDescriptorSize == 0,
+                       "import directory size is not descriptor aligned");
+            const size_t descriptor_count =
+                import_directory_size / kPeImportDescriptorSize;
+            require_pe(descriptor_count <= kMaximumImportDescriptors,
+                       "import directory has too many descriptors");
+            bool found_terminator = false;
+            for (size_t descriptor_index = 0;
+                 descriptor_index < descriptor_count; ++descriptor_index) {
+                const uint64_t descriptor_rva =
+                    static_cast<uint64_t>(import_directory_rva) +
+                    descriptor_index * kPeImportDescriptorSize;
+                require_pe(descriptor_rva <=
+                               std::numeric_limits<uint32_t>::max(),
+                           "import descriptor RVA overflows");
+                const uint64_t descriptor_offset = file_offset_for_rva(
+                    static_cast<uint32_t>(descriptor_rva),
+                    kPeImportDescriptorSize, headers_size, sections);
+                const uint32_t lookup_table_rva =
+                    read_u32(file, file_size, descriptor_offset);
+                const uint32_t timestamp =
+                    read_u32(file, file_size, descriptor_offset + 4);
+                const uint32_t forwarder_chain =
+                    read_u32(file, file_size, descriptor_offset + 8);
+                const uint32_t module_name_rva =
+                    read_u32(file, file_size, descriptor_offset + 12);
+                const uint32_t first_thunk_rva =
+                    read_u32(file, file_size, descriptor_offset + 16);
+                if (lookup_table_rva == 0 && timestamp == 0 &&
+                    forwarder_chain == 0 && module_name_rva == 0 &&
+                    first_thunk_rva == 0) {
+                    found_terminator = true;
+                    break;
+                }
+                require_pe(module_name_rva != 0 && first_thunk_rva != 0,
+                           "import descriptor omits a name or IAT");
+                const std::string module_name = read_import_name(
+                    file, file_size, module_name_rva, headers_size, sections);
+                if (std::find(import_modules.begin(), import_modules.end(),
+                              module_name) == import_modules.end()) {
+                    import_modules.push_back(module_name);
+                }
+                const uint32_t thunk_table_rva =
+                    lookup_table_rva != 0 ? lookup_table_rva : first_thunk_rva;
+                bool found_thunk_terminator = false;
+                for (size_t thunk_index = 0;
+                     thunk_index < kMaximumImportThunksPerModule;
+                     ++thunk_index) {
+                    const uint64_t thunk_rva =
+                        static_cast<uint64_t>(thunk_table_rva) +
+                        thunk_index * sizeof(uint32_t);
+                    const uint64_t iat_rva =
+                        static_cast<uint64_t>(first_thunk_rva) +
+                        thunk_index * sizeof(uint32_t);
+                    require_pe(thunk_rva <=
+                                   std::numeric_limits<uint32_t>::max() &&
+                                   thunk_rva + sizeof(uint32_t) <= image_size &&
+                                   iat_rva <=
+                                       std::numeric_limits<uint32_t>::max() &&
+                                   iat_rva + sizeof(uint32_t) <= image_size,
+                               "import thunk exceeds the PE image");
+                    const uint32_t thunk_value = read_rva_u32(
+                        file, file_size, static_cast<uint32_t>(thunk_rva),
+                        headers_size, sections);
+                    if (thunk_value == 0) {
+                        found_thunk_terminator = true;
+                        break;
+                    }
+                    require_pe(imported_thunks.size() <
+                                   kMaximumImportFunctions,
+                               "PE image has too many imported functions");
+                    std::string function_name;
+                    if ((thunk_value & 0x80000000u) != 0) {
+                        require_pe((thunk_value & 0x7fff0000u) == 0,
+                                   "ordinal import has reserved bits set");
+                        function_name = "#" +
+                            std::to_string(thunk_value & 0xffffu);
+                    } else {
+                        require_pe(static_cast<uint64_t>(thunk_value) + 2 <=
+                                       image_size,
+                                   "import-by-name entry exceeds the PE image");
+                        (void)file_offset_for_rva(
+                            thunk_value, 2, headers_size, sections);
+                        function_name = read_import_name(
+                            file, file_size, thunk_value + 2, headers_size,
+                            sections);
+                    }
+                    require_pe(imported_iat_slots.emplace(
+                                   static_cast<uint32_t>(iat_rva)).second,
+                               "multiple imports share one IAT slot");
+                    imported_thunks.push_back({
+                        static_cast<uint32_t>(iat_rva),
+                        module_name + "!" + function_name});
+                }
+                require_pe(found_thunk_terminator,
+                           "import thunk array has no terminator");
+            }
+            require_pe(found_terminator,
+                       "import descriptor table has no terminator");
         }
 
         std::vector<PeSection> virtual_order = sections;
@@ -328,9 +547,45 @@ struct RecompiledPcodeModule::Impl {
                        section.raw_size);
         }
 
+        std::vector<std::string> unique_imports;
+        std::unordered_map<std::string, size_t> import_indices;
+        for (const auto& thunk : imported_thunks) {
+            const size_t index = unique_imports.size();
+            if (import_indices.emplace(thunk.name, index).second) {
+                unique_imports.push_back(thunk.name);
+            }
+        }
+        const uint32_t import_stub_base = choose_import_stub_base(
+            image_base, image_size, unique_imports.size());
+        for (size_t index = 0; index < unique_imports.size(); ++index) {
+            const uint32_t stub = static_cast<uint32_t>(
+                static_cast<uint64_t>(import_stub_base) +
+                index * kImportStubStride);
+            import_traps.emplace(stub, unique_imports[index]);
+        }
+        for (const auto& thunk : imported_thunks) {
+            const size_t index = import_indices.at(thunk.name);
+            const uint32_t stub = static_cast<uint32_t>(
+                static_cast<uint64_t>(import_stub_base) +
+                index * kImportStubStride);
+            const std::array<uint8_t, 4> bytes = {
+                static_cast<uint8_t>(stub),
+                static_cast<uint8_t>(stub >> 8),
+                static_cast<uint8_t>(stub >> 16),
+                static_cast<uint8_t>(stub >> 24),
+            };
+            const uint64_t guest_offset =
+                static_cast<uint64_t>(image_base) + thunk.iat_rva;
+            std::memcpy(static_cast<uint8_t*>(ram) + guest_offset,
+                        bytes.data(), bytes.size());
+        }
+
         return {image_base, image_size,
                 entry_rva == 0 ? 0 : image_base + entry_rva,
-                section_count};
+                section_count,
+                static_cast<uint32_t>(import_modules.size()),
+                static_cast<uint32_t>(imported_thunks.size()),
+                import_stub_base};
     }
 
     bool read_guest(const char* space, uint64_t offset, size_t size,
@@ -393,6 +648,7 @@ struct RecompiledPcodeModule::Impl {
     std::array<uint8_t, kRegisterBankSize> registers{};
     RviPcodeContext context{};
     std::unordered_map<uint32_t, PcodeFunction> functions;
+    std::unordered_map<uint32_t, std::string> import_traps;
     uint64_t function_count = 0;
     uint32_t call_depth = 0;
     bool pe_image_load_attempted = false;

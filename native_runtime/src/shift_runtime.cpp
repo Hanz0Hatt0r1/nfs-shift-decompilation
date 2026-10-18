@@ -3149,7 +3149,10 @@ int main(int argc, char** argv) {
                           << format_guest_address(
                                  recompiled_pe_image_info.entry_point)
                           << " sections="
-                          << recompiled_pe_image_info.section_count << '\n';
+                          << recompiled_pe_image_info.section_count
+                          << " imports="
+                          << recompiled_pe_image_info.import_function_count
+                          << '\n';
             }
         }
 
@@ -3896,6 +3899,17 @@ int main(int argc, char** argv) {
             << "\",\n"
             << "  \"recompiled_pe_section_count\": "
             << recompiled_pe_image_info.section_count << ",\n"
+            << "  \"recompiled_pe_import_module_count\": "
+            << recompiled_pe_image_info.import_module_count << ",\n"
+            << "  \"recompiled_pe_import_function_count\": "
+            << recompiled_pe_image_info.import_function_count << ",\n"
+            << "  \"recompiled_pe_import_stub_base\": \""
+            << (recompiled_pe_image_loaded &&
+                        recompiled_pe_image_info.import_function_count != 0
+                    ? format_guest_address(
+                          recompiled_pe_image_info.import_stub_base)
+                    : std::string())
+            << "\",\n"
             << "  \"recompiled_pcode_step_address\": \""
             << (recompiled_module
                     ? format_guest_address(args.recompiled_step)

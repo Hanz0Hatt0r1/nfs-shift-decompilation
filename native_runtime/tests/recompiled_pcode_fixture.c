@@ -28,6 +28,18 @@ int rvi_00404000(RviPcodeContext *ctx) {
     return ctx->call(ctx->opaque, UINT64_C(0x00685700));
 }
 
+int rvi_00405000(RviPcodeContext *ctx) {
+    uint8_t iat[4] = {0};
+    if (ctx->read(ctx->opaque, "ram", UINT64_C(0x00402080), sizeof(iat),
+                  iat) != 0) {
+        return -1;
+    }
+    const uint32_t target = (uint32_t)iat[0] | ((uint32_t)iat[1] << 8) |
+                           ((uint32_t)iat[2] << 16) |
+                           ((uint32_t)iat[3] << 24);
+    return ctx->call(ctx->opaque, target);
+}
+
 int rvi_00402000(RviPcodeContext *ctx) {
     return ctx->call(ctx->opaque, UINT64_C(0x00deadbeef));
 }
