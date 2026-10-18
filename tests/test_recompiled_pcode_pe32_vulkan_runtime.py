@@ -166,3 +166,44 @@ def test_kernel32_crt_startup_evidence_tracks_vulkan_entrypoint_progress() -> No
     assert retail["supplemental_function"] == "0x00918b33"
     assert retail["exception_code"] == "0xC000008F"
     assert evidence["limitations"]["playable_game"] is False
+
+
+def test_guest_thread_startup_evidence_tracks_retail_import_frontier() -> None:
+    evidence = json.loads(
+        (
+            ROOT
+            / "evidence/recompiled_pcode_pe32_guest_thread_state_20261018.json"
+        ).read_text(encoding="utf-8")
+    )
+    thread = evidence["guest_thread_state"]
+    timer = evidence["winmm_timer_profile"]
+    validation = evidence["validation"]
+    smoke = evidence["local_linux_vulkan_smoke"]
+    retail = evidence["retail_entrypoint_probe"]
+
+    assert evidence["format"] == "NFSShift.RecompiledPcodePe32GuestThreadState/1"
+    assert evidence["base_main_revision"] == (
+        "229e13861ba9aa035ca4c1ce04c9c47939bfc7d5"
+    )
+    assert thread["teb_address"] == "0x7ffde000"
+    assert thread["teb_exception_list"] == "0xffffffff"
+    assert thread["x87_control_word"] == "0x037f"
+    assert thread["image_overlap"] == "fails closed"
+    assert timer["supported_guest_period_ms"] == 1
+    assert timer["request_lifetimes_are_matched"] is True
+    assert timer["host_timer_resolution_is_changed"] is False
+    assert validation["native_runtime_ctest"]["passed"] == 138
+    assert validation["native_runtime_ctest"]["failed"] == 0
+    assert smoke["fixture_import_modules"] == 3
+    assert smoke["fixture_import_functions"] == 76
+    assert smoke["frames_rendered"] == smoke["simulation_steps"] == 3
+    assert smoke["validation_errors"] == 0
+    assert smoke["status"] == "ok"
+    assert retail["pcode_functions_dispatched"] == 1893
+    assert retail["passed_startup_import"] == {
+        "function": "WINMM.dll!timeBeginPeriod",
+        "period_ms": 1,
+    }
+    assert retail["next_blocker"] == "KERNEL32.dll!ConvertThreadToFiber"
+    assert retail["fiber_scheduling_implemented"] is False
+    assert evidence["limitations"]["playable_game"] is False

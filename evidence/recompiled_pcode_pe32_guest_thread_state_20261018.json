@@ -1,0 +1,92 @@
+{
+  "format": "NFSShift.RecompiledPcodePe32GuestThreadState/1",
+  "captured_at": "2026-10-18",
+  "base_main_revision": "229e13861ba9aa035ca4c1ce04c9c47939bfc7d5",
+  "retail_input": {
+    "logical_name": "SHIFT.exe",
+    "version": "PC retail 1.02",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "image_base": "0x00400000",
+    "entry_point": "0x0090488a",
+    "import_function_count": 411
+  },
+  "guest_thread_state": {
+    "fs_base_register_offset": "0x110",
+    "teb_address": "0x7ffde000",
+    "teb_size": 4096,
+    "teb_exception_list": "0xffffffff",
+    "stack_base": "0x7ffdf000",
+    "stack_limit": "0x7ff00000",
+    "teb_self": "0x7ffde000",
+    "x87_initialization": "FNINIT-compatible CW/SW/TW",
+    "x87_control_word": "0x037f",
+    "x87_status_word": "0x0000",
+    "x87_tag_word": "0xffff",
+    "image_overlap": "fails closed"
+  },
+  "winmm_timer_profile": {
+    "functions": [
+      "WINMM.dll!timeBeginPeriod",
+      "WINMM.dll!timeEndPeriod"
+    ],
+    "supported_guest_period_ms": 1,
+    "request_lifetimes_are_matched": true,
+    "host_timer_resolution_is_changed": false,
+    "unsupported_or_unmatched_result": "TIMERR_NOCANDO (97)"
+  },
+  "validation": {
+    "native_runtime_build": {
+      "command": "cmake --build /tmp/nfs-shift-vulkan-guest-thread-state-build --parallel 4",
+      "result": "passed"
+    },
+    "focused_ctest": {
+      "test": "shift_runtime_recompiled_pcode_module",
+      "result": "passed"
+    },
+    "native_runtime_ctest": {
+      "command": "/usr/bin/ctest --test-dir /tmp/nfs-shift-vulkan-guest-thread-state-build --output-on-failure --parallel 4",
+      "passed": 138,
+      "failed": 0
+    }
+  },
+  "local_linux_vulkan_smoke": {
+    "scene": "prepared neutral Vulkan scene-set with one synthetic draw",
+    "fixture_import_modules": 3,
+    "fixture_import_functions": 76,
+    "entrypoint_invocations": 1,
+    "frames_rendered": 3,
+    "simulation_steps": 3,
+    "pcode_step_invocations": 3,
+    "pcode_functions_dispatched": 7,
+    "validation_enabled": true,
+    "validation_errors": 0,
+    "validation_warnings": 3,
+    "status": "ok"
+  },
+  "retail_entrypoint_probe": {
+    "entrypoint_invoked": true,
+    "pcode_functions_dispatched": 1893,
+    "passed_startup_import": {
+      "function": "WINMM.dll!timeBeginPeriod",
+      "period_ms": 1
+    },
+    "next_blocker": "KERNEL32.dll!ConvertThreadToFiber",
+    "caller": "0x00633ca0",
+    "parameter": "0x00000000",
+    "result": "fails closed before game startup completes",
+    "fiber_scheduling_implemented": false
+  },
+  "previous_retail_probe": {
+    "pcode_functions_dispatched": 1699,
+    "blocker": "KERNEL32.dll!RaiseException",
+    "exception_code": "0xC000008F"
+  },
+  "limitations": {
+    "complete_windows_process_or_thread_startup": false,
+    "structured_exception_dispatch": false,
+    "fiber_scheduling": false,
+    "retail_game_startup": false,
+    "playable_game": false,
+    "behavioral_parity": false
+  }
+}

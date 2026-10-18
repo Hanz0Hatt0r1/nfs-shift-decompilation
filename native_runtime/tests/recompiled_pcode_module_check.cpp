@@ -61,6 +61,15 @@ uint32_t read_guest_u32(shift::runtime::RecompiledPcodeModule& module,
            (static_cast<uint32_t>(bytes[3]) << 24);
 }
 
+uint16_t read_guest_u16(shift::runtime::RecompiledPcodeModule& module,
+                        const char* space, uint64_t offset) {
+    std::array<uint8_t, 2> bytes{};
+    require(module.read_guest(space, offset, bytes.size(), bytes.data()),
+            "could not read guest halfword");
+    return static_cast<uint16_t>(bytes[0]) |
+           (static_cast<uint16_t>(bytes[1]) << 8);
+}
+
 uint64_t read_guest_u64(shift::runtime::RecompiledPcodeModule& module,
                         const char* space, uint64_t offset) {
     std::array<uint8_t, 8> bytes{};
@@ -117,7 +126,7 @@ void write_pe32_fixture(const std::string& path) {
     write_u32(bytes, optional_offset + 60, 0x200);
     write_u32(bytes, optional_offset + 92, 16);
     write_u32(bytes, optional_offset + 104, 0x2000);
-    write_u32(bytes, optional_offset + 108, 60);
+    write_u32(bytes, optional_offset + 108, 80);
 
     bytes[section_offset] = '.';
     bytes[section_offset + 1] = 't';
@@ -154,12 +163,14 @@ void write_pe32_fixture(const std::string& path) {
     write_u32(bytes, 0x322, 0x00402c10);
 
     write_u32(bytes, 0x400, 0x2050);
-    write_u32(bytes, 0x40c, 0x2040);
+    write_u32(bytes, 0x40c, 0x2de0);
     write_u32(bytes, 0x410, 0x2c00);
     write_u32(bytes, 0x414, 0x2180);
     write_u32(bytes, 0x420, 0x2a60);
     write_u32(bytes, 0x424, 0x2d20);
-    std::copy_n("KERNEL32.dll", 12, bytes.begin() + 0x440);
+    write_u32(bytes, 0x428, 0x2d80);
+    write_u32(bytes, 0x434, 0x2dd0);
+    write_u32(bytes, 0x438, 0x2d40);
     const auto write_import_name = [&](size_t offset, const char* name) {
         write_u16(bytes, offset, 0);
         std::copy_n(name, std::char_traits<char>::length(name) + 1,
@@ -183,6 +194,10 @@ void write_pe32_fixture(const std::string& path) {
     write_u32(bytes, 0x580, 0x2a80);
     write_u32(bytes, 0x584, 0x2aa0);
     write_u32(bytes, 0x588, 0x2ac0);
+    write_u32(bytes, 0x1180, 0x2da0);
+    write_u32(bytes, 0x1184, 0x2dc0);
+    std::copy_n("KERNEL32.dll", 12, bytes.begin() + 0x11e0);
+    std::copy_n("WINMM.dll", 10, bytes.begin() + 0x11d0);
     write_u32(bytes, 0x1120, 0x2a80);
     write_u32(bytes, 0x1124, 0x2aa0);
     write_u32(bytes, 0x1128, 0x2ac0);
@@ -260,6 +275,8 @@ void write_pe32_fixture(const std::string& path) {
     write_import_name(0xf70, "InterlockedCompareExchange");
     write_import_name(0xf90, "VirtualAlloc");
     write_import_name(0xfb0, "VirtualFree");
+    write_import_name(0x11a0, "timeBeginPeriod");
+    write_import_name(0x11c0, "timeEndPeriod");
 
     std::ofstream file(path, std::ios::binary | std::ios::trunc);
     require(static_cast<bool>(file), "could not create PE32 fixture");
@@ -286,8 +303,8 @@ int main(int argc, char** argv) {
                     image.image_size == 0x3000 &&
                     image.entry_point == 0x00401020 &&
                     image.section_count == 2 &&
-                    image.import_module_count == 2 &&
-                    image.import_function_count == 74 &&
+                    image.import_module_count == 3 &&
+                    image.import_function_count == 76 &&
                     image.import_stub_base == 0xf0000000,
                 "PE32 loader returned unexpected image metadata: image=" +
                     std::to_string(image.image_base) + ", size=" +
@@ -338,9 +355,22 @@ int main(int argc, char** argv) {
                     read_guest_u32(module, "ram", 0x00402d24) == 0xf0000480 &&
                     read_guest_u32(module, "ram", 0x00402d28) == 0xf0000490,
                 "ImageHlp IAT slots were not mapped to their guest traps");
+        require(read_guest_u32(module, "ram", 0x00402d40) == 0xf00004a0 &&
+                    read_guest_u32(module, "ram", 0x00402d44) == 0xf00004b0,
+                "WinMM timer IAT slots were not mapped to their guest traps");
         require(invoke_import(module, 5, {}) ==
                     static_cast<uint32_t>(syscall(SYS_gettid)),
                 "one-based P-code import ID did not route to its Kernel32 trap");
+        constexpr uint32_t time_begin_period = 0xf00004a0;
+        constexpr uint32_t time_end_period = 0xf00004b0;
+        require(invoke_import(module, 75, {1}) == 0 &&
+                    invoke_import(module, time_begin_period, {1}) == 0 &&
+                    invoke_import(module, time_end_period, {2}) == 97 &&
+                    invoke_import(module, 76, {1}) == 0 &&
+                    invoke_import(module, time_end_period, {1}) == 0 &&
+                    invoke_import(module, time_end_period, {1}) == 97 &&
+                    invoke_import(module, time_begin_period, {0}) == 97,
+                "WinMM timer requests did not enforce supported resolution and matching lifetimes");
         require(invoke_import(module, 0x00401120, {}) ==
                     static_cast<uint32_t>(syscall(SYS_gettid)),
                 "absolute indirect jump thunk did not route through the guest IAT");
@@ -647,7 +677,7 @@ int main(int argc, char** argv) {
                     image.image_base,
                 "GetModuleHandleA(NULL) did not return the PE ImageBase");
         require(invoke_import(module, get_module_handle_a,
-                              {image.image_base + 0x2040}) == 0xe0000000,
+                              {image.image_base + 0x2de0}) == 0xe0000000,
                 "GetModuleHandleA did not resolve an imported module name");
         constexpr char missing_module[] = "missing.dll";
         require(module.write_guest("ram", 0x00032300, sizeof(missing_module),
@@ -1086,6 +1116,16 @@ int main(int argc, char** argv) {
         require(module.call_pe32_entry_point() == 0,
                 "supplemental PE32 entry point did not run with an initialized guest stack: " +
                     module.last_error());
+        require(read_guest_u32(module, "register", 0x110) == 0x7ffde000 &&
+                    read_guest_u32(module, "ram", 0x7ffde000) == UINT32_MAX &&
+                    read_guest_u32(module, "ram", 0x7ffde004) == 0x7ffdf000 &&
+                    read_guest_u32(module, "ram", 0x7ffde008) == 0x7ff00000 &&
+                    read_guest_u32(module, "ram", 0x7ffde018) == 0x7ffde000,
+                "PE32 entry point did not receive the initialized x86 TEB/FS base");
+        require(read_guest_u16(module, "register", 0x10a0) == 0x037f &&
+                    read_guest_u16(module, "register", 0x10a2) == 0 &&
+                    read_guest_u16(module, "register", 0x10a4) == 0xffff,
+                "PE32 entry point did not receive FINIT x87 state");
         std::array<uint8_t, 4> entry_point_marker{};
         constexpr std::array<uint8_t, 4> expected_entry_point_marker = {
             'S', 'U', 'P', 'P'};
