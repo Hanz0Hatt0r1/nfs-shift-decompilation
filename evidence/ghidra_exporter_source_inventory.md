@@ -32,7 +32,10 @@ bundle combines several evidence families and project-local interpretations.
 At NFS Shift main `c125488b`, the scalar-use wrapper and its local fallback were
 run against the same analyzed `SHIFT.exe` for scalar `0x374`. Each produced 170
 records with byte-identical adapted `SHIFT.GhidraScalarUses/1` output. The
-hash-only report and reproduction notes are in
-[`evidence/ghidra_exporter_parity/scalar-use-0374/`](ghidra_exporter_parity/scalar-use-0374/README.md).
-This single-query result adds a parity fixture; it does not retire the fallback
-or change the inventory classification.
+targeted function-instruction wrapper and fallback were also byte-identical for
+function `0x00451280`, covering one row with 2,962 instructions. Hash-only
+reports and reproduction notes are in the
+[parity evidence directory](ghidra_exporter_parity/). These results add
+per-format parity fixtures; they do not retire the fallback or change the
+inventory classification. The generic all-functions instruction-corpus mode
+remains outside the compatibility exporter contract.
