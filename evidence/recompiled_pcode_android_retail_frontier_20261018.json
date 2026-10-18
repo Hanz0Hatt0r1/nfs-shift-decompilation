@@ -1,0 +1,386 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-18",
+  "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+  "branch": "codex/android-retail-entrypoint-frontier-20261018",
+  "base_commit": "3fddd813b213c9b3905c1b158a7adb6bdfb899bd",
+  "target": {
+    "game": "Need for Speed: SHIFT PC retail 1.02",
+    "executable": "/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02/SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "analyzed_copy_sha256_matches": true,
+    "game_data_root": "/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02",
+    "observed_asset_directories": [
+      "Pakfiles",
+      "UI",
+      "GUI",
+      "Render",
+      "Audio",
+      "Movies",
+      "Languages"
+    ]
+  },
+  "runtime": {
+    "host": "Linux x86-64",
+    "guest": "PE32 x86",
+    "entry_point": "0x0090488a",
+    "full_lowered_module": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/libnfs_shift_pcode_startup_20261018.so",
+    "full_lowered_module_sha256": "6f8016195fffe4e6b3803929cf50946bdcf96e00436295f0db32a468487207c3",
+    "full_lowered_module_exports": 41538,
+    "startup_supplement_exports": [
+      {
+        "symbol": "rvi_006408e2",
+        "input": "evidence/recompiled_pcode_android_rvi_006408e2_20261018.jsonl",
+        "sha256": "49473a7c45e5bfd79f9f6f8f9f1668fc7176240b9dacc4969b52b30cf74b848c",
+        "evidence": "Secondary epilogue at 0x006408e2 in the Ghidra-owned function beginning at 0x006407b4; exported as an exact six-instruction block."
+      },
+      {
+        "symbol": "rvi_00a69220",
+        "input": "evidence/recompiled_pcode_android_rvi_00a69220_20261018.jsonl",
+        "sha256": "4538fc1c6063a804855f5e3d403158915137b7dd4d86e3e696412527a8bf97db",
+        "evidence": "Exact 22-byte, seven-instruction range verified in Ghidra before export."
+      },
+      {
+        "symbol": "rvi_006476e0",
+        "input": "evidence/recompiled_pcode_android_rvi_006476e0_20261018.jsonl",
+        "sha256": "63af3d3ad44a8308841dd81cb05fbddbf6a1431d83617279fe9f8b7bc811a9c8",
+        "evidence": "Exact 26-byte, seven-instruction range verified in Ghidra before export."
+      }
+    ],
+    "runtime_api_frontier": [
+      "KERNEL32.dll!DeleteFileA",
+      "KERNEL32.dll!SleepEx",
+      "KERNEL32.dll!ExitProcess"
+    ]
+  },
+  "probe_history": [
+    {
+      "version": 39,
+      "dispatches": 49479,
+      "unique_functions": 1202,
+      "frontier": "missing rvi_006408e2"
+    },
+    {
+      "version": 40,
+      "dispatches": 58558,
+      "unique_functions": 1261,
+      "frontier": "missing rvi_00a69220"
+    },
+    {
+      "version": 41,
+      "dispatches": 58559,
+      "unique_functions": 1262,
+      "frontier": "missing rvi_006476e0"
+    },
+    {
+      "version": 42,
+      "dispatches": 58804,
+      "unique_functions": 1270,
+      "frontier": "KERNEL32.dll!DeleteFileA at 0x0065e770"
+    },
+    {
+      "version": 43,
+      "dispatches": 59904,
+      "unique_functions": 1289,
+      "frontier": "KERNEL32.dll!SleepEx at 0x00649780"
+    },
+    {
+      "version": 44,
+      "dispatches": 61226,
+      "unique_functions": 1324,
+      "frontier": "KERNEL32.dll!ExitProcess(1) at 0x009074b1"
+    },
+    {
+      "version": 45,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "KERNEL32.dll!ExitProcess(1) with retail game-data working directory"
+    },
+    {
+      "version": 46,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "KERNEL32.dll!ExitProcess(1); exact guest call stack captured"
+    },
+    {
+      "version": 47,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "ExitProcess(1); guest EDI at the terminal import is zero after CRT cleanup"
+    },
+    {
+      "version": 48,
+      "dispatches": 61225,
+      "unique_functions": 1324,
+      "frontier": "ExitProcess(1); ring-buffer register trace did not retain the allocator frame"
+    },
+    {
+      "version": 49,
+      "dispatches": 61306,
+      "unique_functions": 1325,
+      "frontier": "ExitProcess(1); active-frame EDI capture identifies the allocation size"
+    },
+    {
+      "version": 50,
+      "dispatches": 61306,
+      "unique_functions": 1325,
+      "frontier": "ExitProcess(1); allocator frame identifies pool name Base System"
+    },
+    {
+      "version": 51,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "ExitProcess(1); 128, 64, 160 and 60 MiB VirtualAlloc requests succeed"
+    },
+    {
+      "version": 52,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "ExitProcess(1); same pool fatal while allocator object context is sampled"
+    },
+    {
+      "version": 53,
+      "dispatches": 61306,
+      "unique_functions": 1325,
+      "frontier": "ExitProcess(1); large-allocation trace records guest caller PCs"
+    },
+    {
+      "version": 54,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "ExitProcess(1); large-allocation trace records guest call stacks"
+    },
+    {
+      "version": 55,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "ExitProcess(1); requested 254529224 bytes from Base System with flags 0x80; no matching Win32 allocation call"
+    },
+    {
+      "version": 56,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "same pool failure; exit-time reads of ancestor stack slots were later identified as stale"
+    },
+    {
+      "version": 57,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "entry-time stack snapshots confirm the Base System request; no frontier change"
+    },
+    {
+      "version": 58,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "full guest GPR and entry-stack snapshots; request still reaches the same pool fatal"
+    },
+    {
+      "version": 59,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "Base System pool object captured with flags 0xC05 and threshold 0x100"
+    },
+    {
+      "version": 60,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "bounded linked guest-memory snapshots capture pool block descriptors; allocation still fails closed"
+    },
+    {
+      "version": 61,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "six-word pool-link snapshots expose the selected list head's +0x10 successor"
+    },
+    {
+      "version": 62,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "indirect link snapshots expose another successor, but the pointer candidate limit truncates the chain"
+    },
+    {
+      "version": 63,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "bounded +0x10 successor tracing confirms the selected list's link layout; 12-node trace limit truncates the chain"
+    },
+    {
+      "version": 64,
+      "dispatches": 61307,
+      "unique_functions": 1325,
+      "frontier": "selected +0x104 list chain terminates after five nodes; largest node first dword is below the raw request"
+    }
+  ],
+  "latest_probe": {
+    "version": 64,
+    "log": "evidence/recompiled_pcode_android_retail_frontier_v64_pool_successor_chain_20261018.log",
+    "dispatches": 61307,
+    "unique_functions": 1325,
+    "result": "guest process exited with code 1",
+    "guest_call_stack": [
+      "0x0090488a",
+      "0x009046aa",
+      "0x00a69160",
+      "0x0040d6a0",
+      "0x0040ec70",
+      "0x0054b8b0",
+      "0x00507ed0",
+      "0x00d8b610",
+      "0x005071a0",
+      "0x00d8a600",
+      "0x0062f6f0",
+      "0x0062f2d0",
+      "0x00886900",
+      "0x006382b0",
+      "0x00638020",
+      "0x0062de10",
+      "0x0062ddf0",
+      "0x00633d10",
+      "0x00907708",
+      "0x00907615",
+      "0x009074b1"
+    ],
+    "interpretation": "Probe v64 reproduces the same retail frontier with a bounded successor walk. The default pool handle 0 reaches the allocator at 0x00638020 with a 254529224-byte request (0x0f2bcec8) and pool name Base System. Its object is at 0x10001c18; raw fields at +0x110 and +0x12c are 0x00000c05 and 0x00000100. Static disassembly shows flags 0x80 select the list at +0x104, compares each node's first dword with the allocation requirement derived from the request, and follows +0x10. The selected list starts at 0x27f87528 and terminates at 0x27f88dbc after five nodes; the largest node first dword is 0x07beed0c (129953036 bytes), below even the raw request. The raw words and links are preserved below without inferring other field meanings. No Win32 allocation is attempted for the failed request. This explains why the selected list cannot satisfy the request, but does not establish why the request is made or whether another pool or initialization state should provide a larger block.",
+    "allocation_failure": {
+      "allocator_entry": "0x00638020",
+      "fatal_callsite": "0x006381cc",
+      "message_address": "0x00aec0e8",
+      "message_template": "Unable to allocate %d bytes of memory from the pool (%s)",
+      "requested_byte_count_register": "EDI",
+      "requested_byte_count_hex": "0x0f2bcec8",
+      "requested_byte_count_decimal": 254529224,
+      "pool_name": "Base System",
+      "default_pool_handle": "0x00000000",
+      "allocation_flags": "0x00000080",
+      "pool_object_address": "0x10001c18",
+      "pool_object_raw_fields": {
+        "+0x110_flags": "0x00000c05",
+        "+0x12c_threshold": "0x00000100"
+      },
+      "pool_linked_descriptors_raw": [
+        {
+          "address": "0x20000000",
+          "first_words": [
+            "0x27f87058",
+            "0x524e574f",
+            "0x00000000",
+            "0x00000000"
+          ]
+        },
+        {
+          "address": "0x27f87058",
+          "first_words": [
+            "0x00000c08",
+            "0x00000c00",
+            "0x20000000",
+            "0x20000008"
+          ]
+        },
+        {
+          "address": "0x27f88dbc",
+          "first_words": [
+            "0x07beed0c",
+            "0x00000000",
+            "0x2010179c",
+            "0x2006b388"
+          ]
+        },
+        {
+          "address": "0x27f8702c",
+          "first_words": [
+            "0x00040048",
+            "0x00040040",
+            "0x27f46f88",
+            "0x27f46f90"
+          ]
+        },
+        {
+          "address": "0x27f86fd0",
+          "first_words": [
+            "0x00002c00",
+            "0x00002b49",
+            "0x00079030",
+            "0x27f8744c"
+          ]
+        },
+        {
+          "address": "0x10003a28",
+          "first_words": [
+            "0x00000200",
+            "0x00000200",
+            "0x00005830",
+            "0x10003a58"
+          ]
+        }
+      ],
+      "selected_pool_list_walk_static": {
+        "request_flags": "0x00000080",
+        "selected_pool_head_offset": "+0x104",
+        "head_address": "0x27f87528",
+        "next_pointer_offset": "+0x10",
+        "compared_value_offset": "+0x00",
+        "allocator_comparison_uses_request_derived_requirement": true,
+        "node_count": 5,
+        "terminal_node_address": "0x27f88dbc",
+        "terminal_next_pointer": "0x00000000",
+        "request_byte_count": 254529224,
+        "largest_node_first_dword_hex": "0x07beed0c",
+        "largest_node_first_dword_decimal": 129953036,
+        "all_node_first_dwords_below_raw_request_size": true,
+        "raw_nodes": [
+          {
+            "address": "0x27f87528",
+            "words": ["0x00000120", "0x00000000", "0x27f30a48", "0x27f30a50", "0x27f87b2c", "0x00000000"]
+          },
+          {
+            "address": "0x27f87b2c",
+            "words": ["0x00000120", "0x00000000", "0x27ecac88", "0x27ecac90", "0x27f88104", "0x27f87528"]
+          },
+          {
+            "address": "0x27f88104",
+            "words": ["0x000001a4", "0x00000000", "0x27e3c0d0", "0x27e315e8", "0x27f88264", "0x27f87b2c"]
+          },
+          {
+            "address": "0x27f88264",
+            "words": ["0x00000120", "0x00000000", "0x27d9cd40", "0x27d9cd48", "0x27f88dbc", "0x27f88104"]
+          },
+          {
+            "address": "0x27f88dbc",
+            "words": ["0x07beed0c", "0x00000000", "0x2010179c", "0x2006b388", "0x00000000", "0x27f88264"]
+          }
+        ]
+      },
+      "descriptor_field_semantics_confirmed": false,
+      "large_win32_allocations_before_failure": [
+        {
+          "api": "VirtualAlloc",
+          "size_bytes": 134217728,
+          "result": "0x20000000"
+        },
+        {
+          "api": "VirtualAlloc",
+          "size_bytes": 67108864,
+          "result": "0x28300000"
+        },
+        {
+          "api": "VirtualAlloc",
+          "size_bytes": 167772160,
+          "result": "0x2c300000"
+        },
+        {
+          "api": "VirtualAlloc",
+          "size_bytes": 62914560,
+          "result": "0x36d00000"
+        }
+      ],
+      "win32_allocation_for_failed_request_observed": false,
+      "fatal_guest_function": "0x0062de10",
+      "exit_status_site": "0x00633d10",
+      "exit_status": 1,
+      "size_capture_pending": false
+    },
+    "playable_game": false,
+    "renderer_connected": false,
+    "android_gameplay": false
+  }
+}

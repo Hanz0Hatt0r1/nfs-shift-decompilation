@@ -517,7 +517,9 @@ if(BUILD_TESTING)
       $<TARGET_FILE:shift_runtime_test_pcode_override_module>
       ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_test_image.exe
       ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_raise_exception_test_image.exe
-      ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_time_get_time_test_image.exe)
+      ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_time_get_time_test_image.exe
+      ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_system_parameters_info_test_image.exe
+      ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_d3d9_test_image.exe)
 endif()
 
 add_executable(shift_runtime src/shift_runtime.cpp)

@@ -34,6 +34,8 @@ public:
     bool pe32_entry_point_complete() const;
     bool load_supplemental_module(const std::string& shared_object_path);
     bool load_override_module(const std::string& shared_object_path);
+    bool set_guest_display_mode(uint32_t width, uint32_t height,
+                                uint32_t refresh_rate, uint32_t format);
     uint64_t dispatched_function_count() const;
     uint64_t unique_dispatched_function_count() const;
     const std::string& last_error() const;

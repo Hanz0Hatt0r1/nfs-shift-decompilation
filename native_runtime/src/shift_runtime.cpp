@@ -39,6 +39,7 @@ namespace {
 
 constexpr uint32_t kWindowWidth = 1280;
 constexpr uint32_t kWindowHeight = 720;
+constexpr uint32_t kD3dDisplayFormatX8R8G8B8 = 22;
 constexpr int kDefaultFrames = 120;
 constexpr size_t kFramesInFlight = 2;
 constexpr double kFixedDt = 1.0 / 60.0;
@@ -3166,6 +3167,11 @@ int main(int argc, char** argv) {
             recompiled_module =
                 std::make_unique<shift::runtime::RecompiledPcodeModule>(
                     args.recompiled_module);
+            if (!recompiled_module->set_guest_display_mode(
+                    kWindowWidth, kWindowHeight, 0,
+                    kD3dDisplayFormatX8R8G8B8)) {
+                throw std::runtime_error(recompiled_module->last_error());
+            }
             for (const auto& override_module :
                  args.recompiled_override_modules) {
                 if (!recompiled_module->load_override_module(override_module)) {
@@ -3206,7 +3212,10 @@ int main(int argc, char** argv) {
                         " failed after " +
                         std::to_string(
                             recompiled_module->dispatched_function_count()) +
-                        " P-code function dispatches: " +
+                        " P-code function dispatches across " +
+                        std::to_string(recompiled_module
+                                           ->unique_dispatched_function_count()) +
+                        " unique functions: " +
                         recompiled_module->last_error());
                 }
                 ++recompiled_pe_entry_point_invocations;
@@ -3778,7 +3787,10 @@ int main(int argc, char** argv) {
                         "recompiled guest scheduler failed after " +
                         std::to_string(
                             recompiled_module->dispatched_function_count()) +
-                        " P-code function dispatches: " +
+                        " P-code function dispatches across " +
+                        std::to_string(recompiled_module
+                                           ->unique_dispatched_function_count()) +
+                        " unique functions: " +
                         recompiled_module->last_error());
                 }
             }

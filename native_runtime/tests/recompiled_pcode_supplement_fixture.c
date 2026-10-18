@@ -51,6 +51,70 @@ static int fixture_resolve_kernel32(RviPcodeContext *ctx, const char *name,
     return result;
 }
 
+static int fixture_test_semaphore_counts(RviPcodeContext *ctx) {
+    uint32_t create_semaphore = 0;
+    uint32_t wait_for_single_object = 0;
+    uint32_t release_semaphore = 0;
+    uint32_t close_handle = 0;
+    uint32_t get_last_error = 0;
+    if (fixture_resolve_kernel32(ctx, "CreateSemaphoreA", &create_semaphore) != 0 ||
+        fixture_resolve_kernel32(ctx, "WaitForSingleObject",
+                                 &wait_for_single_object) != 0 ||
+        fixture_resolve_kernel32(ctx, "ReleaseSemaphore", &release_semaphore) != 0 ||
+        fixture_resolve_kernel32(ctx, "CloseHandle", &close_handle) != 0 ||
+        fixture_resolve_kernel32(ctx, "GetLastError", &get_last_error) != 0 ||
+        create_semaphore == 0 || wait_for_single_object == 0 ||
+        release_semaphore == 0 || close_handle == 0 || get_last_error == 0) {
+        return -1;
+    }
+
+    const uint32_t create_arguments[] = {0, 1, 2, 0};
+    uint32_t semaphore = 0;
+    if (fixture_call_import(ctx, create_semaphore, create_arguments, 4,
+                            &semaphore) != 0 || semaphore == 0) {
+        return -2;
+    }
+    const uint32_t wait_arguments[] = {semaphore, 0};
+    uint32_t result = UINT32_MAX;
+    if (fixture_call_import(ctx, wait_for_single_object, wait_arguments, 2,
+                            &result) != 0 || result != 0 ||
+        fixture_call_import(ctx, wait_for_single_object, wait_arguments, 2,
+                            &result) != 0 || result != UINT32_C(0x102)) {
+        return -3;
+    }
+
+    const uint32_t previous_count_address = UINT32_C(0x32c2c);
+    const uint32_t release_one_arguments[] = {
+        semaphore, 1, previous_count_address};
+    if (fixture_call_import(ctx, release_semaphore, release_one_arguments, 3,
+                            &result) != 0 || result != 1 ||
+        ctx->read(ctx->opaque, "ram", previous_count_address, sizeof(result),
+                  (uint8_t *)&result) != 0 || result != 0 ||
+        fixture_call_import(ctx, wait_for_single_object, wait_arguments, 2,
+                            &result) != 0 || result != 0) {
+        return -4;
+    }
+
+    const uint32_t release_two_arguments[] = {semaphore, 2, 0};
+    if (fixture_call_import(ctx, release_semaphore, release_two_arguments, 3,
+                            &result) != 0 || result != 1) {
+        return -5;
+    }
+    const uint32_t release_overflow_arguments[] = {semaphore, 1, 0};
+    if (fixture_call_import(ctx, release_semaphore, release_overflow_arguments,
+                            3, &result) != 0 || result != 0 ||
+        fixture_call_import(ctx, get_last_error, NULL, 0, &result) != 0 ||
+        result != 298) {
+        return -6;
+    }
+    const uint32_t close_arguments[] = {semaphore};
+    if (fixture_call_import(ctx, close_handle, close_arguments, 1, &result) != 0 ||
+        result != 1) {
+        return -7;
+    }
+    return 0;
+}
+
 int rvi_00401020(RviPcodeContext *ctx) {
     const uint8_t expected_esp[4] = {0x00, 0xf0, 0xfd, 0x7f};
     const uint8_t expected_return_address[4] = {0};
@@ -167,6 +231,110 @@ int rvi_00401020(RviPcodeContext *ctx) {
         switched != 0) {
         return -14;
     }
+    if (fixture_test_semaphore_counts(ctx) != 0) return -15;
+    uint32_t create_event = 0;
+    uint32_t wait_for_single_object_ex = 0;
+    uint32_t close_handle = 0;
+    uint32_t create_semaphore = 0;
+    uint32_t wait_for_single_object = 0;
+    if (fixture_resolve_kernel32(ctx, "CreateEventW", &create_event) != 0 ||
+        fixture_resolve_kernel32(ctx, "WaitForSingleObjectEx",
+                                 &wait_for_single_object_ex) != 0 ||
+        fixture_resolve_kernel32(ctx, "CloseHandle", &close_handle) != 0 ||
+        fixture_resolve_kernel32(ctx, "CreateSemaphoreA", &create_semaphore) != 0 ||
+        fixture_resolve_kernel32(ctx, "WaitForSingleObject",
+                                 &wait_for_single_object) != 0 ||
+        create_event == 0 || wait_for_single_object_ex == 0 ||
+        close_handle == 0 || create_semaphore == 0 ||
+        wait_for_single_object == 0) {
+        return -16;
+    }
+    const uint32_t create_event_arguments[] = {0, 0, 0, 0};
+    uint32_t event_handle = 0;
+    if (fixture_call_import(ctx, create_event, create_event_arguments, 4,
+                            &event_handle) != 0 ||
+        event_handle == 0) {
+        return -16;
+    }
+    const uint32_t create_worker_arguments[] = {
+        0, 0, UINT32_C(0x00401060), event_handle, 0, UINT32_C(0x32c28)};
+    uint32_t event_worker = 0;
+    if (fixture_call_import(ctx, create_thread, create_worker_arguments, 6,
+                            &event_worker) != 0 ||
+        event_worker == 0) {
+        return -17;
+    }
+    const uint32_t wait_arguments[] = {event_handle, UINT32_MAX, 1};
+    uint32_t wait_result = UINT32_MAX;
+    if (fixture_call_import(ctx, wait_for_single_object_ex, wait_arguments,
+                            3, &wait_result) != 0 ||
+        wait_result != 0) {
+        return -18;
+    }
+    const uint32_t poll_arguments[] = {event_handle, 0, 1};
+    if (fixture_call_import(ctx, wait_for_single_object_ex, poll_arguments,
+                            3, &wait_result) != 0 ||
+        wait_result != UINT32_C(0x102)) {
+        return -19;
+    }
+
+    const uint32_t create_semaphore_arguments[] = {0, 0, 1, 0};
+    uint32_t semaphore_handle = 0;
+    if (fixture_call_import(ctx, create_semaphore,
+                            create_semaphore_arguments, 4,
+                            &semaphore_handle) != 0 ||
+        semaphore_handle == 0) {
+        return -20;
+    }
+    const uint32_t semaphore_worker_arguments[] = {
+        0, 0, UINT32_C(0x00401080), semaphore_handle, 0,
+        UINT32_C(0x32c30)};
+    uint32_t semaphore_worker = 0;
+    if (fixture_call_import(ctx, create_thread, semaphore_worker_arguments,
+                            6, &semaphore_worker) != 0 ||
+        semaphore_worker == 0) {
+        return -21;
+    }
+    const uint32_t semaphore_wait_arguments[] = {semaphore_handle, UINT32_MAX};
+    if (fixture_call_import(ctx, wait_for_single_object,
+                            semaphore_wait_arguments, 2, &wait_result) != 0 ||
+        wait_result != 0) {
+        return -22;
+    }
+    const uint32_t semaphore_poll_arguments[] = {semaphore_handle, 0};
+    if (fixture_call_import(ctx, wait_for_single_object,
+                            semaphore_poll_arguments, 2, &wait_result) != 0 ||
+        wait_result != UINT32_C(0x102)) {
+        return -23;
+    }
+    const uint8_t semaphore_marker[4] = {'S', 'E', 'M', 'A'};
+    uint8_t observed_semaphore_marker[4] = {0};
+    if (ctx->read(ctx->opaque, "ram", UINT64_C(0x32c30),
+                  sizeof(observed_semaphore_marker),
+                  observed_semaphore_marker) != 0 ||
+        observed_semaphore_marker[0] != semaphore_marker[0] ||
+        observed_semaphore_marker[1] != semaphore_marker[1] ||
+        observed_semaphore_marker[2] != semaphore_marker[2] ||
+        observed_semaphore_marker[3] != semaphore_marker[3]) {
+        return -24;
+    }
+
+    const uint32_t close_event_arguments[] = {event_handle};
+    const uint32_t close_worker_arguments[] = {event_worker};
+    const uint32_t close_semaphore_arguments[] = {semaphore_handle};
+    const uint32_t close_semaphore_worker_arguments[] = {semaphore_worker};
+    if (fixture_call_import(ctx, close_handle, close_event_arguments, 1,
+                            &ignored_result) != 0 ||
+        ignored_result != 1 ||
+        fixture_call_import(ctx, close_handle, close_worker_arguments, 1,
+                            &ignored_result) != 0 || ignored_result != 1 ||
+        fixture_call_import(ctx, close_handle, close_semaphore_arguments, 1,
+                            &ignored_result) != 0 || ignored_result != 1 ||
+        fixture_call_import(ctx, close_handle,
+                            close_semaphore_worker_arguments, 1,
+                            &ignored_result) != 0 || ignored_result != 1) {
+        return -25;
+    }
     return ctx->write(ctx->opaque, "ram", UINT64_C(0x32c00), sizeof(marker),
                       marker);
 }
@@ -196,6 +364,73 @@ int rvi_00401040(RviPcodeContext *ctx) {
         return -4;
     }
     return 1;
+}
+
+int rvi_00401060(RviPcodeContext *ctx) {
+    uint32_t esp = 0;
+    uint32_t event_handle = 0;
+    uint32_t set_event = 0;
+    uint32_t sleep = 0;
+    uint32_t ignored_result = 0;
+    const uint8_t marker[4] = {'E', 'V', 'N', 'T'};
+    if (ctx->read(ctx->opaque, "register", UINT64_C(0x10), sizeof(esp),
+                  (uint8_t *)&esp) != 0 ||
+        ctx->read(ctx->opaque, "ram", esp + 4, sizeof(event_handle),
+                  (uint8_t *)&event_handle) != 0 ||
+        fixture_resolve_kernel32(ctx, "SetEvent", &set_event) != 0 ||
+        fixture_resolve_kernel32(ctx, "Sleep", &sleep) != 0 ||
+        set_event == 0 || sleep == 0) {
+        return -1;
+    }
+    const uint32_t yield_arguments[] = {0};
+    if (fixture_call_import(ctx, sleep, yield_arguments, 1,
+                            &ignored_result) != 0) {
+        return -2;
+    }
+    const uint32_t sleep_arguments[] = {1};
+    if (fixture_call_import(ctx, sleep, sleep_arguments, 1,
+                            &ignored_result) != 0) {
+        return -3;
+    }
+    if (fixture_call_import(ctx, set_event, &event_handle, 1,
+                            &ignored_result) != 0 ||
+        ignored_result != 1 ||
+        ctx->write(ctx->opaque, "ram", UINT64_C(0x32c20), sizeof(marker),
+                   marker) != 0) {
+        return -4;
+    }
+    return 0;
+}
+
+int rvi_00401080(RviPcodeContext *ctx) {
+    uint32_t esp = 0;
+    uint32_t semaphore_handle = 0;
+    uint32_t sleep = 0;
+    uint32_t release_semaphore = 0;
+    uint32_t result = 0;
+    const uint8_t marker[4] = {'S', 'E', 'M', 'A'};
+    if (ctx->read(ctx->opaque, "register", UINT64_C(0x10), sizeof(esp),
+                  (uint8_t *)&esp) != 0 ||
+        ctx->read(ctx->opaque, "ram", esp + 4, sizeof(semaphore_handle),
+                  (uint8_t *)&semaphore_handle) != 0 ||
+        fixture_resolve_kernel32(ctx, "Sleep", &sleep) != 0 ||
+        fixture_resolve_kernel32(ctx, "ReleaseSemaphore",
+                                 &release_semaphore) != 0 ||
+        sleep == 0 || release_semaphore == 0) {
+        return -1;
+    }
+    const uint32_t sleep_arguments[] = {1};
+    if (fixture_call_import(ctx, sleep, sleep_arguments, 1, &result) != 0 ||
+        ctx->write(ctx->opaque, "ram", UINT64_C(0x32c30), sizeof(marker),
+                   marker) != 0) {
+        return -2;
+    }
+    const uint32_t release_arguments[] = {semaphore_handle, 1, 0};
+    if (fixture_call_import(ctx, release_semaphore, release_arguments, 3,
+                            &result) != 0 || result != 1) {
+        return -3;
+    }
+    return 0;
 }
 
 int rvi_00685700(RviPcodeContext *ctx) {
