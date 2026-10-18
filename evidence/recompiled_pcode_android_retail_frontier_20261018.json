@@ -208,7 +208,7 @@
       "version": 64,
       "dispatches": 61307,
       "unique_functions": 1325,
-      "frontier": "selected +0x104 list chain terminates after five nodes; largest compared first dword is below the request"
+      "frontier": "selected +0x104 list chain terminates after five nodes; largest node first dword is below the raw request"
     }
   ],
   "latest_probe": {
@@ -240,7 +240,7 @@
       "0x00907615",
       "0x009074b1"
     ],
-    "interpretation": "Probe v64 reproduces the same retail frontier with a bounded successor walk. The default pool handle 0 reaches the allocator at 0x00638020 with a 254529224-byte request (0x0f2bcec8) and pool name Base System. Its object is at 0x10001c18; raw fields at +0x110 and +0x12c are 0x00000c05 and 0x00000100. Static disassembly shows flags 0x80 select the list at +0x104, compares each node's first dword with the request, and follows +0x10. The selected list starts at 0x27f87528 and terminates at 0x27f88dbc after five nodes; the largest compared first dword is 0x07beed0c (129953036 bytes), below the request. The raw words and links are preserved below without inferring other field meanings. No Win32 allocation is attempted for the failed request. This explains why the selected list cannot satisfy the request, but does not establish why the request is made or whether another pool or initialization state should provide a larger block.",
+    "interpretation": "Probe v64 reproduces the same retail frontier with a bounded successor walk. The default pool handle 0 reaches the allocator at 0x00638020 with a 254529224-byte request (0x0f2bcec8) and pool name Base System. Its object is at 0x10001c18; raw fields at +0x110 and +0x12c are 0x00000c05 and 0x00000100. Static disassembly shows flags 0x80 select the list at +0x104, compares each node's first dword with the allocation requirement derived from the request, and follows +0x10. The selected list starts at 0x27f87528 and terminates at 0x27f88dbc after five nodes; the largest node first dword is 0x07beed0c (129953036 bytes), below even the raw request. The raw words and links are preserved below without inferring other field meanings. No Win32 allocation is attempted for the failed request. This explains why the selected list cannot satisfy the request, but does not establish why the request is made or whether another pool or initialization state should provide a larger block.",
     "allocation_failure": {
       "allocator_entry": "0x00638020",
       "fatal_callsite": "0x006381cc",
@@ -319,13 +319,14 @@
         "head_address": "0x27f87528",
         "next_pointer_offset": "+0x10",
         "compared_value_offset": "+0x00",
+        "allocator_comparison_uses_request_derived_requirement": true,
         "node_count": 5,
         "terminal_node_address": "0x27f88dbc",
         "terminal_next_pointer": "0x00000000",
         "request_byte_count": 254529224,
-        "largest_compared_value_hex": "0x07beed0c",
-        "largest_compared_value_decimal": 129953036,
-        "selected_list_satisfies_request": false,
+        "largest_node_first_dword_hex": "0x07beed0c",
+        "largest_node_first_dword_decimal": 129953036,
+        "all_node_first_dwords_below_raw_request_size": true,
         "raw_nodes": [
           {
             "address": "0x27f87528",
