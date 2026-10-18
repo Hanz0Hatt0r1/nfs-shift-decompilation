@@ -70,6 +70,30 @@ but that exact mapping remains unproven. The state field's semantic meaning is
 also unknown, so the false branch is not yet established as the cause of the
 missing frontend.
 
+## Field-writer follow-up (v117)
+
+The v117 probe enabled targeted guest-write provenance for `0x00be2534` and
+captured the writer frame's entry ECX. Across the same bounded 120-frame run,
+all 121 gate calls reported the same last write: function `0x0062fde0`, entry
+ECX `0x00be2510`, a four-byte zero write at `0x00be2534`. This address equals
+both `writer ECX + 0x24` and `gate ECX + 0x34`.
+
+The Revenginstr High-P-code export for `0x0062fde0` contains a zero `STORE` to
+`this + 0x24` at `0x0062fee8` (and a separate zero store to `this + 0x28`). The
+runtime ECX and write address match that exact member store. Thus the trace
+identifies the writer and subobject offset, rather than merely correlating a
+function address with the word. The semantic name of the member and why this
+initialization path is selected remain unknown; this still does not establish
+that the gate's false branch causes the missing frontend. The v117 run rendered
+120 host Vulkan frames with zero validation errors and observed no frontend-
+ready state or retail D3D9 draw.
+
+The [v117 machine-readable trace](../evidence/retail_frontier_20261019/entrypoint_probe_v117_ui_gate_field_writer_ecx.json),
+[raw runtime log](../evidence/retail_frontier_20261019/shift-probe-v117-ui-state-field-writer-ecx-120-validation.log),
+[writer P-code exports and manifest](../evidence/revenginstr_ui_gate_writer_pcode_20261019/manifest.json),
+and [writer instruction slice](../evidence/revenginstr_ui_gate_writer_pcode_20261019/0062fde0-instructions.txt)
+preserve the join.
+
 The machine-readable [v115 trace record](../evidence/retail_frontier_20261019/entrypoint_probe_v115_ui_gate_trace.json)
 includes counts and hashes. The [captured runtime log](../evidence/retail_frontier_20261019/shift-probe-v115-ui-state-gate-trace-120-validation.log)
 preserves the full trace; the [caller instruction slice](../evidence/retail_frontier_20261019/ui-gate-caller-0054be00-branch.txt)
@@ -101,3 +125,6 @@ D3D9 submissions.
 - [v115 runtime trace record](../evidence/retail_frontier_20261019/entrypoint_probe_v115_ui_gate_trace.json)
 - [v115 runtime log](../evidence/retail_frontier_20261019/shift-probe-v115-ui-state-gate-trace-120-validation.log)
 - [Caller `0x0054be00` branch instructions](../evidence/retail_frontier_20261019/ui-gate-caller-0054be00-branch.txt)
+- [v117 runtime trace with writer ECX](../evidence/retail_frontier_20261019/entrypoint_probe_v117_ui_gate_field_writer_ecx.json)
+- [v117 runtime log](../evidence/retail_frontier_20261019/shift-probe-v117-ui-state-field-writer-ecx-120-validation.log)
+- [v117 writer P-code exports and manifest](../evidence/revenginstr_ui_gate_writer_pcode_20261019/manifest.json)

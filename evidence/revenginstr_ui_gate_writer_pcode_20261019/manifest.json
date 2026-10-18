@@ -1,0 +1,94 @@
+{
+  "format": "NFSShift.UIStateGateWriterEvidence/1",
+  "date": "2026-10-19",
+  "target": {
+    "program": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "analysis": {
+    "tool": "revenginstr GhidraFunctionPcodeFlow/1",
+    "revenginstr_main_commit": "40cff63745b80398b84fa1a72add3012ceb68c31",
+    "runner_source_commit": "432b528f9c3db36dda50c846aafe5afb3c141204",
+    "ghidra_version": "12.1.2_DEV",
+    "export_count": 3,
+    "pcode_row_count": 84,
+    "static_only": true,
+    "exports": [
+      {
+        "file": "0062fde0-flow.tsv",
+        "function_entry": "0062fde0",
+        "rows": 77,
+        "sha256": "eb9a747abb78cf99457ff85b7352f69949d8473d65854068166f98f8646b66c9"
+      },
+      {
+        "file": "0062f520-flow.tsv",
+        "function_entry": "0062f520",
+        "rows": 2,
+        "sha256": "0e62fcc24611f2361a1e68ae38f51808894a7e60fa8412a8f373a29bffa5f581"
+      },
+      {
+        "file": "00457f31-flow.tsv",
+        "function_entry": "00457f31",
+        "rows": 5,
+        "sha256": "aadea878add7ff272ebff252512e3bac13b4bc3fa0f6b84620ec8d8ea1f7e87c"
+      }
+    ],
+    "instruction_slice": {
+      "file": "0062fde0-instructions.txt",
+      "sha256": "f0c6622953da6b02ef501fa8c82089572d4047fccddf3e49f62904e8596be5ec",
+      "tool": "GNU objdump -d -Mintel"
+    },
+    "runner_source_sha256": "c45006222c14f719236ca42a65f10fb58af87719a2b2c884b47ceeb265b7c76d",
+    "exporter_source_sha256": "9e6f686c7b7ad7df6f9004c22513b91f47197a3d4e338ad64abbc944281b17d0"
+  },
+  "runtime": {
+    "probe": "v117",
+    "frames_rendered": 120,
+    "validation_errors": 0,
+    "pcode_function_dispatches": 80584,
+    "trace_event_count": 484,
+    "trace_truncated": false,
+    "gate_call_count": 121,
+    "gate_callers": {
+      "0x0054be00": 121
+    },
+    "gate_receiver": "0x00be2500",
+    "gate_state_address": "0x00be2534",
+    "gate_state_word_counts": {
+      "0x00000000": 121
+    },
+    "gate_return_low_byte_counts": {
+      "0": 121
+    },
+    "last_writer_unique_records": 1,
+    "last_writer": {
+      "dispatch_count": 61742,
+      "ecx_entry": "0x00be2510",
+      "function": "0x0062fde0",
+      "sequence": 28487353,
+      "thread_id": "0x0014a9c7",
+      "word_value": "0x00000000",
+      "write_address": "0x00be2534",
+      "write_size": 4
+    },
+    "address_relation": "writer ECX + 0x24 = write address = gate ECX + 0x34",
+    "caller_branch": "0x0054be00 takes je 0x0054bec8 on each observed false return",
+    "pe_entry_point_complete": false,
+    "main_thread_current_function": "0x006472d0",
+    "retail_d3d9_draws_observed": false,
+    "log_sha256": "267e6b1a99ed6b5b731209e13e56bf6206ef2b0d1194fd99be4bbb49eb988ca9"
+  },
+  "interpretation": {
+    "observation": "0x0062fde0 records a zero dword write at 0x00be2534 from ECX 0x00be2510; static P-code contains a zero store at this+0x24, matching that address.",
+    "derived": "The writer subobject is gate receiver +0x10, and the checked field is that subobject +0x24.",
+    "unknowns": [
+      "The field semantic name and why this function resets it are not established.",
+      "The false branch is observed but not proven to cause the missing frontend or retail draw."
+    ],
+    "limits": [
+      "120 host Vulkan frames only",
+      "one runtime gate caller observed",
+      "no frontend-ready state or retail D3D9 draw observed"
+    ]
+  }
+}

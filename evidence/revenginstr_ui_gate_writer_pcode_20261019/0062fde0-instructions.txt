@@ -1,0 +1,112 @@
+
+/home/pes/ghidra_projects/shift/SHIFT.exe:     file format pei-i386
+
+
+Disassembly of section .text:
+
+0062fde0 <.text+0x22ede0>:
+  62fde0:	55                   	push   ebp
+  62fde1:	8b ec                	mov    ebp,esp
+  62fde3:	51                   	push   ecx
+  62fde4:	56                   	push   esi
+  62fde5:	8b f1                	mov    esi,ecx
+  62fde7:	83 7e 18 00          	cmp    DWORD PTR [esi+0x18],0x0
+  62fdeb:	89 55 fc             	mov    DWORD PTR [ebp-0x4],edx
+  62fdee:	74 09                	je     0x62fdf9
+  62fdf0:	32 c0                	xor    al,al
+  62fdf2:	5e                   	pop    esi
+  62fdf3:	8b e5                	mov    esp,ebp
+  62fdf5:	5d                   	pop    ebp
+  62fdf6:	c2 18 00             	ret    0x18
+  62fdf9:	8b 4d 10             	mov    ecx,DWORD PTR [ebp+0x10]
+  62fdfc:	53                   	push   ebx
+  62fdfd:	8b 5d 14             	mov    ebx,DWORD PTR [ebp+0x14]
+  62fe00:	57                   	push   edi
+  62fe01:	8b fb                	mov    edi,ebx
+  62fe03:	83 e7 1f             	and    edi,0x1f
+  62fe06:	e8 d5 0f 00 00       	call   0x630de0
+  62fe0b:	85 ff                	test   edi,edi
+  62fe0d:	75 05                	jne    0x62fe14
+  62fe0f:	bf 03 00 00 00       	mov    edi,0x3
+  62fe14:	3b f8                	cmp    edi,eax
+  62fe16:	72 05                	jb     0x62fe1d
+  62fe18:	83 ff 1f             	cmp    edi,0x1f
+  62fe1b:	75 02                	jne    0x62fe1f
+  62fe1d:	8b f8                	mov    edi,eax
+  62fe1f:	8b 4d 0c             	mov    ecx,DWORD PTR [ebp+0xc]
+  62fe22:	83 e3 e0             	and    ebx,0xffffffe0
+  62fe25:	0b df                	or     ebx,edi
+  62fe27:	80 7d 18 00          	cmp    BYTE PTR [ebp+0x18],0x0
+  62fe2b:	89 5d 14             	mov    DWORD PTR [ebp+0x14],ebx
+  62fe2e:	74 60                	je     0x62fe90
+  62fe30:	8b 56 10             	mov    edx,DWORD PTR [esi+0x10]
+  62fe33:	f7 c2 00 02 00 00    	test   edx,0x200
+  62fe39:	74 14                	je     0x62fe4f
+  62fe3b:	8b 46 04             	mov    eax,DWORD PTR [esi+0x4]
+  62fe3e:	8b 7e 08             	mov    edi,DWORD PTR [esi+0x8]
+  62fe41:	81 e2 ff fd ff ff    	and    edx,0xfffffdff
+  62fe47:	89 45 fc             	mov    DWORD PTR [ebp-0x4],eax
+  62fe4a:	89 56 10             	mov    DWORD PTR [esi+0x10],edx
+  62fe4d:	eb 44                	jmp    0x62fe93
+  62fe4f:	8b c1                	mov    eax,ecx
+  62fe51:	c1 e0 04             	shl    eax,0x4
+  62fe54:	83 c0 1f             	add    eax,0x1f
+  62fe57:	83 e0 e0             	and    eax,0xffffffe0
+  62fe5a:	99                   	cdq
+  62fe5b:	f7 f9                	idiv   ecx
+  62fe5d:	8b f8                	mov    edi,eax
+  62fe5f:	0f af c1             	imul   eax,ecx
+  62fe62:	3d 00 01 00 00       	cmp    eax,0x100
+  62fe67:	89 7d fc             	mov    DWORD PTR [ebp-0x4],edi
+  62fe6a:	7f 0b                	jg     0x62fe77
+  62fe6c:	b8 00 01 00 00       	mov    eax,0x100
+  62fe71:	99                   	cdq
+  62fe72:	f7 f9                	idiv   ecx
+  62fe74:	89 45 fc             	mov    DWORD PTR [ebp-0x4],eax
+  62fe77:	8b d7                	mov    edx,edi
+  62fe79:	0f af d1             	imul   edx,ecx
+  62fe7c:	81 fa 00 01 00 00    	cmp    edx,0x100
+  62fe82:	7f 0f                	jg     0x62fe93
+  62fe84:	b8 00 01 00 00       	mov    eax,0x100
+  62fe89:	99                   	cdq
+  62fe8a:	f7 f9                	idiv   ecx
+  62fe8c:	8b f8                	mov    edi,eax
+  62fe8e:	eb 03                	jmp    0x62fe93
+  62fe90:	8b 7d 08             	mov    edi,DWORD PTR [ebp+0x8]
+  62fe93:	8b d3                	mov    edx,ebx
+  62fe95:	83 e2 1f             	and    edx,0x1f
+  62fe98:	f6 46 2c 04          	test   BYTE PTR [esi+0x2c],0x4
+  62fe9c:	74 05                	je     0x62fea3
+  62fe9e:	83 ca 40             	or     edx,0x40
+  62fea1:	eb 06                	jmp    0x62fea9
+  62fea3:	81 ca 00 08 00 00    	or     edx,0x800
+  62fea9:	8b 46 10             	mov    eax,DWORD PTR [esi+0x10]
+  62feac:	8b d8                	mov    ebx,eax
+  62feae:	c1 eb 09             	shr    ebx,0x9
+  62feb1:	f6 c3 01             	test   bl,0x1
+  62feb4:	74 08                	je     0x62febe
+  62feb6:	25 ff fd ff ff       	and    eax,0xfffffdff
+  62febb:	89 46 10             	mov    DWORD PTR [esi+0x10],eax
+  62febe:	8b 45 1c             	mov    eax,DWORD PTR [ebp+0x1c]
+  62fec1:	68 28 9a aa 00       	push   0xaa9a28
+  62fec6:	52                   	push   edx
+  62fec7:	8b 55 fc             	mov    edx,DWORD PTR [ebp-0x4]
+  62feca:	50                   	push   eax
+  62fecb:	57                   	push   edi
+  62fecc:	51                   	push   ecx
+  62fecd:	8b ce                	mov    ecx,esi
+  62fecf:	e8 4c f6 ff ff       	call   0x62f520
+  62fed4:	f6 45 14 40          	test   BYTE PTR [ebp+0x14],0x40
+  62fed8:	5f                   	pop    edi
+  62fed9:	5b                   	pop    ebx
+  62feda:	74 05                	je     0x62fee1
+  62fedc:	66 83 4e 2c 02       	or     WORD PTR [esi+0x2c],0x2
+  62fee1:	33 c0                	xor    eax,eax
+  62fee3:	66 83 4e 2c 08       	or     WORD PTR [esi+0x2c],0x8
+  62fee8:	89 46 24             	mov    DWORD PTR [esi+0x24],eax
+  62feeb:	89 46 28             	mov    DWORD PTR [esi+0x28],eax
+  62feee:	b0 01                	mov    al,0x1
+  62fef0:	5e                   	pop    esi
+  62fef1:	8b e5                	mov    esp,ebp
+  62fef3:	5d                   	pop    ebp
+  62fef4:	c2                   	.byte 0xc2

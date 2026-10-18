@@ -59,6 +59,16 @@ stays zero or whether that branch causes the missing frontend. The runtime
 trace record, raw trace log, and caller instruction slice are linked from the
 [evidence report](REVENGINSTR_UI_STATE_GATE_EVIDENCE_20261019.md).
 
+The v117 writer-provenance pass closes the address-level gap: every traced
+gate call saw a prior zero dword write from `0x0062fde0`, whose entry ECX was
+`0x00be2510`. That function's P-code stores zero at `this + 0x24`, exactly the
+same address as gate receiver `+0x34` (`0x00be2534`). The run again rendered
+120 validated Vulkan frames with no frontend-ready state or retail D3D9 draw.
+This identifies how the tested word is reset, but the member's semantic role
+and whether the false branch blocks frontend progress are still unknown. See
+the [v117 trace](../evidence/retail_frontier_20261019/entrypoint_probe_v117_ui_gate_field_writer_ecx.json)
+and [writer P-code manifest](../evidence/revenginstr_ui_gate_writer_pcode_20261019/manifest.json).
+
 Function-level P-code alone misrepresents two transfers through overlapping
 code entries, so the checked instruction slices remain necessary. The gate
 branch is now known; the frontend transition and retail draw submission remain
@@ -82,12 +92,13 @@ documents that bounded follow-up in
 ## Next engineering step
 
 Treat the PE entry point as an active main loop, not a function that should
-return. Trace the frontend transition and renderer submission called during
-that loop; resolve the object state around `0x0050ceb0` / `0x0050c880` and map
-its callers into the UI state machine. Check how those retail draw resources
-reach the Vulkan backend before changing scheduler or Win32 services. Implement
-the smallest correction supported by evidence and run another bounded probe. Keep generated binaries
-and supplements in the external artifact cache.
+return. Trace the caller and lifecycle that invoke `0x0062fde0`, determine the
+expected role of its `this + 0x24` field, and map the gate's false branch into
+the frontend transition and renderer submission. Check how retail draw
+resources reach the Vulkan backend before changing guest state, scheduler, or
+Win32 services. Implement the smallest correction supported by evidence and
+run another bounded probe. Keep generated binaries and supplements in the
+external artifact cache.
 
 The existing race capture still lacks one shared dynamic stream-1 vertex-buffer
 payload. Do not capture it unless renderer-side static analysis shows those

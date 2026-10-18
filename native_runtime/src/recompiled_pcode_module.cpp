@@ -450,6 +450,8 @@ struct RecompiledPcodeModule::Impl {
         uint64_t sequence = 0;
         uint64_t dispatch_count = 0;
         uint32_t writer_function = 0;
+        uint32_t writer_ecx = 0;
+        bool has_writer_ecx = false;
         uint32_t thread_id = 0;
         uint32_t write_address = 0;
         uint32_t write_size = 0;
@@ -1176,9 +1178,37 @@ struct RecompiledPcodeModule::Impl {
                 event.eax_entry = entry_registers.eax;
                 event.esp_entry = entry_registers.esp;
                 if (target == kRetailUiStateGateAddress) {
+                    const uint64_t gate_state_address =
+                        static_cast<uint64_t>(entry_registers.ecx) + 0x34;
                     event.has_gate_state_word = read_guest_diagnostic_u32(
-                        static_cast<uint64_t>(entry_registers.ecx) + 0x34,
-                        event.gate_state_word);
+                        gate_state_address, event.gate_state_word);
+                    if (gate_state_address <= UINT32_MAX) {
+                        const auto last_writer = guest_last_writers.find(
+                            static_cast<uint32_t>(gate_state_address) &
+                            ~UINT32_C(3));
+                        if (last_writer != guest_last_writers.end()) {
+                            const auto& provenance = last_writer->second;
+                            event.has_gate_state_last_writer = true;
+                            event.gate_state_last_writer_sequence =
+                                provenance.sequence;
+                            event.gate_state_last_writer_dispatch_count =
+                                provenance.dispatch_count;
+                            event.gate_state_last_writer_function =
+                                provenance.writer_function;
+                            event.gate_state_last_writer_ecx =
+                                provenance.writer_ecx;
+                            event.has_gate_state_last_writer_ecx =
+                                provenance.has_writer_ecx;
+                            event.gate_state_last_writer_thread_id =
+                                provenance.thread_id;
+                            event.gate_state_last_writer_address =
+                                provenance.write_address;
+                            event.gate_state_last_writer_size =
+                                provenance.write_size;
+                            event.gate_state_last_writer_word_value =
+                                provenance.word_value;
+                        }
+                    }
                     uint32_t callback_vtable = 0;
                     event.has_gate_callback_object =
                         read_guest_diagnostic_u32(
@@ -1677,6 +1707,11 @@ struct RecompiledPcodeModule::Impl {
             record.sequence = sequence;
             record.dispatch_count = function_count;
             record.writer_function = writer_function;
+            if (!active_guest_function_registers.empty()) {
+                record.writer_ecx =
+                    active_guest_function_registers.back().ecx;
+                record.has_writer_ecx = true;
+            }
             record.thread_id = current_guest_thread_id;
             record.write_address = static_cast<uint32_t>(offset);
             record.write_size = static_cast<uint32_t>(size);

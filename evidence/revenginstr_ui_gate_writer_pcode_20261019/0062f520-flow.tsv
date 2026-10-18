@@ -1,0 +1,3 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0062f520	0062f536	40	CALL	-	register:register:00000004:4;input:Stack[0x10]:4	00457f31	FUN_00457f31
+0062f520	0062f536	41	RETURN	-	const:0x0:8	-	-
