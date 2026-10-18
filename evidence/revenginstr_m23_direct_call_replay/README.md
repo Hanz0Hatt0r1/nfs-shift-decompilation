@@ -57,3 +57,7 @@ These are conservative structural audits only. They make no branch-feasibility, 
 See the separate [call-result-to-return replay](../revenginstr_m23_call_return_replay/README.md)
 for 37 additional structural return paths across the frozen scan16–18 P-code exports.
 Those paths do not establish factory semantics.
+
+The [parameter-load-to-return replay](../revenginstr_m23_load_return_replay/README.md)
+freezes three structural paths from scan18. These do not establish getter or
+accessor semantics.

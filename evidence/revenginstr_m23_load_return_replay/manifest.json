@@ -1,0 +1,37 @@
+{
+  "artifact": {
+    "bytes": 6365,
+    "path": "load-return-paths.jsonl",
+    "rows": 3,
+    "sha256": "a377e39867ad76faa5e0c01cee6b200c30dba399f60b6ca33395d16c1f25e17e"
+  },
+  "filtered_parameter_load_rows": 7,
+  "format": "NFS.RevenginstrM23LoadReturnReplay/1",
+  "function_entry": "00a2c5d0",
+  "getter_semantics_confirmed": false,
+  "inputs": [
+    {
+      "bytes": 15533,
+      "path": "evidence/revenginstr_m23_direct_call_replay/screening-scan18/parameter-loads.tsv",
+      "rows": 115,
+      "sha256": "328e1dcbad64e179663a68f337ae74c409c6abd474d2baa7297fd970a932c748"
+    },
+    {
+      "bytes": 14154,
+      "path": "evidence/revenginstr_m23_direct_call_replay/screening-scan18/caller-pcode-flow/00a2c5d0.tsv",
+      "rows": 173,
+      "sha256": "e6727b04cc54fc1ab9d622329272dc11560e4a1e6c991f76b13cfd57b6ab3073"
+    }
+  ],
+  "limitations": [
+    "Parameter-rooted field-load values reaching RETURN are structural paths, not getter/accessor labels.",
+    "The export does not prove branch feasibility, returned object identity, or runtime behavior."
+  ],
+  "program_id": "nfs-shift:SHIFT.exe",
+  "revenginstr_source_commit": "08a31b94c304f8b7a57996974dafe352413f7924",
+  "summary": {
+    "load_return_paths": 3,
+    "parameter_load_rows_for_function": 7,
+    "parameter_load_rows_in_scan18": 115
+  }
+}
