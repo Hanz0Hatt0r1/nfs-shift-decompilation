@@ -54,6 +54,9 @@ constexpr size_t kPeImportDescriptorSize = 20;
 constexpr size_t kCopyChunkSize = 64 * 1024;
 constexpr uint32_t kImportStubPreferredBase = 0xf0000000;
 constexpr uint32_t kImportStubStride = 0x10;
+constexpr uint32_t kRetailUiStateGateAddress = 0x0050ceb0;
+constexpr uint32_t kRetailUiStateGateHelperAddress = 0x0050c880;
+constexpr size_t kRetailUiStateGateTraceLimit = 8192;
 constexpr uint32_t kGuestProcessHeapHandle = 0x00010000;
 constexpr uint32_t kGuestCurrentProcessPseudoHandle = UINT32_MAX;
 constexpr uint32_t kGuestCurrentThreadPseudoHandle = UINT32_MAX - 1;
@@ -528,6 +531,10 @@ struct RecompiledPcodeModule::Impl {
     };
 
     explicit Impl(const std::string& path) {
+        if (const char* enabled = std::getenv("SHIFT_TRACE_UI_STATE_GATE");
+            enabled && *enabled && std::strcmp(enabled, "0") != 0) {
+            ui_state_gate_trace_enabled = true;
+        }
         static_assert(sizeof(size_t) >= sizeof(uint64_t),
                       "the guest RAM reservation requires a 64-bit host");
         if (const char* provenance =
@@ -1144,6 +1151,68 @@ struct RecompiledPcodeModule::Impl {
                              entry_registers.esi);
         (void)read_guest_u32("register", kX86EdiRegisterOffset,
                              entry_registers.edi);
+        const bool inside_ui_state_gate =
+            ui_state_gate_trace_enabled &&
+            std::find(active_guest_functions.begin(),
+                      active_guest_functions.end(),
+                      kRetailUiStateGateAddress) !=
+                active_guest_functions.end();
+        const bool trace_ui_state_gate_call =
+            ui_state_gate_trace_enabled &&
+            (target == kRetailUiStateGateAddress || inside_ui_state_gate);
+        size_t ui_state_gate_trace_index =
+            std::numeric_limits<size_t>::max();
+        if (trace_ui_state_gate_call) {
+            if (ui_state_gate_trace_events.size() <
+                kRetailUiStateGateTraceLimit) {
+                RecompiledUiStateGateTraceEvent event{};
+                event.dispatch_count = function_count;
+                event.thread_id = current_guest_thread_id;
+                event.function = static_cast<uint32_t>(target);
+                event.caller = active_guest_functions.empty()
+                                   ? 0
+                                   : active_guest_functions.back();
+                event.ecx_entry = entry_registers.ecx;
+                event.eax_entry = entry_registers.eax;
+                event.esp_entry = entry_registers.esp;
+                if (target == kRetailUiStateGateAddress) {
+                    event.has_gate_state_word = read_guest_diagnostic_u32(
+                        static_cast<uint64_t>(entry_registers.ecx) + 0x34,
+                        event.gate_state_word);
+                    uint32_t callback_vtable = 0;
+                    event.has_gate_callback_object =
+                        read_guest_diagnostic_u32(
+                            static_cast<uint64_t>(entry_registers.ecx) + 0x48,
+                            event.gate_callback_object);
+                    event.has_callback_target =
+                        event.has_gate_callback_object &&
+                        event.gate_callback_object != 0 &&
+                        read_guest_diagnostic_u32(event.gate_callback_object,
+                                                  callback_vtable) &&
+                        callback_vtable != 0 &&
+                        read_guest_diagnostic_u32(
+                            static_cast<uint64_t>(callback_vtable) + 0x24c,
+                            event.callback_target);
+                } else if (target == kRetailUiStateGateHelperAddress) {
+                    event.has_helper_flag_byte = read_guest_diagnostic_u8(
+                        static_cast<uint64_t>(entry_registers.ecx) + 0x0c,
+                        event.helper_flag_byte);
+                    uint32_t helper_vtable = 0;
+                    event.has_callback_target =
+                        read_guest_diagnostic_u32(entry_registers.ecx,
+                                                  helper_vtable) &&
+                        helper_vtable != 0 &&
+                        read_guest_diagnostic_u32(
+                            static_cast<uint64_t>(helper_vtable) + 4,
+                            event.callback_target);
+                }
+                ui_state_gate_trace_index =
+                    ui_state_gate_trace_events.size();
+                ui_state_gate_trace_events.push_back(event);
+            } else {
+                ui_state_gate_trace_truncated = true;
+            }
+        }
         const char* trace_allocations =
             std::getenv("SHIFT_TRACE_GUEST_ALLOCATIONS");
         if (trace_allocations && *trace_allocations &&
@@ -1525,6 +1594,13 @@ struct RecompiledPcodeModule::Impl {
             attempt.has_result_eax = read_guest_u32(
                 "register", kX86EaxRegisterOffset, attempt.result_eax);
         }
+        if (ui_state_gate_trace_index !=
+            std::numeric_limits<size_t>::max()) {
+            auto& event = ui_state_gate_trace_events[
+                ui_state_gate_trace_index];
+            event.completed = read_guest_u32(
+                "register", kX86EaxRegisterOffset, event.eax_return);
+        }
         if (current_guest_thread_handle != 0 &&
             current_guest_thread_exit_requested) {
             active_guest_function_registers.pop_back();
@@ -1802,6 +1878,12 @@ struct RecompiledPcodeModule::Impl {
                 (static_cast<uint32_t>(bytes[1]) << 8) |
                 (static_cast<uint32_t>(bytes[2]) << 16) |
                 (static_cast<uint32_t>(bytes[3]) << 24);
+        return true;
+    }
+
+    bool read_guest_diagnostic_u8(uint64_t offset, uint8_t& value) const {
+        if (!ram || offset >= kGuestRamSize) return false;
+        value = static_cast<const uint8_t*>(ram)[offset];
         return true;
     }
 
@@ -6851,6 +6933,9 @@ struct RecompiledPcodeModule::Impl {
         snapshot.main_thread_recent_functions.assign(
             main_guest_thread.recent_functions.begin(),
             main_guest_thread.recent_functions.end());
+        snapshot.ui_state_gate_trace_enabled = ui_state_gate_trace_enabled;
+        snapshot.ui_state_gate_trace_truncated = ui_state_gate_trace_truncated;
+        snapshot.ui_state_gate_trace = ui_state_gate_trace_events;
         if (!main_guest_thread.active_functions.empty()) {
             snapshot.main_thread_current_function =
                 main_guest_thread.active_functions.back();
@@ -7093,6 +7178,9 @@ struct RecompiledPcodeModule::Impl {
     uint64_t function_count = 0;
     uint64_t guest_write_provenance_sequence = 0;
     std::unordered_set<uint32_t> unique_function_addresses;
+    bool ui_state_gate_trace_enabled = false;
+    bool ui_state_gate_trace_truncated = false;
+    std::vector<RecompiledUiStateGateTraceEvent> ui_state_gate_trace_events;
     uint64_t guest_heap_next_address = kGuestHeapStartAddress;
     uint64_t guest_virtual_next_address = UINT64_C(0x20000000);
     uint64_t next_guest_heap_handle = kGuestProcessHeapHandle + 4;
