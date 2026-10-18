@@ -314,6 +314,19 @@ def test_managed_dxt_texture_snapshots_preserve_dds_blocks_and_mips():
         assert token in source
 
 
+def test_texture_snapshots_wait_for_trigger_before_writing_files():
+    source = Path("native_capture/shift_d3d9_capture.cpp").read_text(encoding="utf-8")
+    start = source.index("void append_texture_snapshot_json(")
+    end = source.index("\nvoid append_texture_descriptor_json(", start)
+    snapshot = source[start:end]
+
+    gate = "if (trigger_capture_enabled() && !writer().trigger_is_active())"
+    assert gate in snapshot
+    assert snapshot.index(gate) < snapshot.index("write_managed_dxt_texture_dds(")
+    assert snapshot.index(gate) < snapshot.index("write_texture_surface_ppm(")
+    assert '"snapshot_status\\\":\\\"deferred-until-trigger' in snapshot
+
+
 def test_resource_trigger_launchers_accept_signature_rules():
     powershell = Path("tools/run_shift_capture.ps1").read_text(encoding="utf-8")
     wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")

@@ -33,6 +33,10 @@ Binary payloads are separate artifacts referenced by versioned events.
 The DXT DDS path reads the existing compressed blocks directly. Unsupported
 or non-lockable formats keep using the existing PPM readback path where
 available; failed texture snapshots remain explicit in the capture event.
+When trigger capture is enabled, texture snapshot files are not written before
+the trigger fires. Pre-trigger `set_texture` events report
+`deferred-until-trigger`; to avoid startup disk I/O, fire the manual trigger
+after the race has loaded.
 
 When a resource-triggered capture is armed, full-buffer snapshots are retained
 until the trigger fires so payloads created before the target draw can be
