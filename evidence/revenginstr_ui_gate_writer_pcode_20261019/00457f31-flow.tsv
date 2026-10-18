@@ -1,0 +1,6 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+00457f31	00457f31	0	INT_ADD	def:00457f31:0:4	register:register:00000018:4;const:0x14:4	-	-
+00457f31	00457f31	2	STORE	-	const:0x1a1:4;def:00457f31:12:4;const:0x0:4	-	-
+00457f31	00457f31	12	CAST	def:00457f31:12:4	def:00457f31:0:4	-	-
+00457f31	00457f38	3	CALL	-	register:register:00000004:4;register:register:00000008:4	0062f53d	FUN_0062f53d
+00457f31	00457f38	4	RETURN	-	const:0x0:8	-	-

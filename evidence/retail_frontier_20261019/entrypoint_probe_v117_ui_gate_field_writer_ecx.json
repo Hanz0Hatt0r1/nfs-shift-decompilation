@@ -1,0 +1,103 @@
+{
+  "format": "NFSShift.RetailEntrypointProbe/1",
+  "captured_at": "2026-10-19",
+  "probe": "v117",
+  "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+  "branch": "codex/revenginstr-ui-gate-field-writer-20261019",
+  "base_commit": "fd9ff42f37af8ca64d3b6e9984d5836e4b825a44",
+  "inputs": {
+    "pe_image": {
+      "path": "/home/pes/ghidra_projects/shift/SHIFT.exe",
+      "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+    },
+    "pcode_module": {
+      "path": "/home/pes/nfs-shift-recompilation-artifacts/libnfs_shift_pcode_full_rebuilt_20261018.so",
+      "sha256": "67b2e74c72b250a168d8276e58d3821f9770f728e6d0c1badc0cf11147799274",
+      "exports": 41538
+    },
+    "mesh": {
+      "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/meshes/alpental-grid1_02.mgeo",
+      "sha256": "e2b4cda0347d94be3350a8ce158f7c1a1306b003e668ff455d9cd4924739f4ea",
+      "vertices": 4,
+      "triangles": 2
+    }
+  },
+  "build": {
+    "local_build_directory": "/tmp/shift-runtime-ui-gate-trace-build",
+    "build_command": "cmake --build /tmp/shift-runtime-ui-gate-trace-build --target shift_runtime -j2",
+    "runtime_sha256": "26b6baa8bcfa8ef935c617be8652285769841ce8d88a9567eb28de6ab58abf3d",
+    "source_base_commit": "fd9ff42f37af8ca64d3b6e9984d5836e4b825a44",
+    "runtime_source_diff_sha256": "ab422909b7f11a3e870d6592b7516906dd370dea188092238768713e2c74c763"
+  },
+  "execution": {
+    "command_script": "tools/run_shift_recompiled_entrypoint_probe.sh",
+    "environment": {
+      "SHIFT_ENTRYPOINT_PROBE_FRAMES": 120,
+      "SHIFT_ENTRYPOINT_PROBE_VALIDATION": 1,
+      "SHIFT_ENTRYPOINT_PROBE_MESH": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/meshes/alpental-grid1_02.mgeo",
+      "SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE": "/home/pes/nfs-shift-recompilation-artifacts/libnfs_shift_pcode_full_rebuilt_20261018.so",
+      "SHIFT_TRACE_UI_STATE_GATE": 1,
+      "SHIFT_TRACE_GUEST_PROVENANCE": "0x00be2534"
+    },
+    "exit_code": 0,
+    "frames_rendered": 120,
+    "validation_errors": 0,
+    "pcode_function_dispatches": 80584,
+    "persistent_log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v117-ui-state-field-writer-ecx-120-validation.log",
+    "log": "evidence/retail_frontier_20261019/shift-probe-v117-ui-state-field-writer-ecx-120-validation.log",
+    "log_sha256": "267e6b1a99ed6b5b731209e13e56bf6206ef2b0d1194fd99be4bbb49eb988ca9",
+    "pe_entry_point_complete": false,
+    "main_thread_current_function": "0x006472d0",
+    "retail_d3d9_draws_observed": false
+  },
+  "trace": {
+    "enabled": true,
+    "truncated": false,
+    "event_count": 484,
+    "gate_call_count": 121,
+    "gate_callers": {
+      "0x0054be00": 121
+    },
+    "gate_receiver_addresses": [
+      "0x00be2500"
+    ],
+    "gate_state_field_addresses": [
+      "0x00be2534"
+    ],
+    "gate_state_words": {
+      "0x00000000": 121
+    },
+    "gate_return_low_byte": {
+      "0": 121
+    },
+    "field_last_writer": {
+      "dispatch_count": 61742,
+      "ecx_entry": "0x00be2510",
+      "function": "0x0062fde0",
+      "sequence": 28487353,
+      "thread_id": "0x0014a9c7",
+      "word_value": "0x00000000",
+      "write_address": "0x00be2534",
+      "write_size": 4
+    },
+    "caller_branch_crosscheck": {
+      "file": "evidence/retail_frontier_20261019/ui-gate-caller-0054be00-branch.txt",
+      "sha256": "8779e0ff684d90ea64cfffdf8e9a3b01416a7d7d70ab51bad24899c56da9f508",
+      "observed_branch": "je 0x0054bec8 taken on every traced call",
+      "skipped_range": "0x0054be85-0x0054bec7"
+    }
+  },
+  "interpretation": {
+    "writer_field_mapping": "runtime ECX 0x00be2510 + 0x24 = 0x00be2534; gate ECX 0x00be2500 + 0x34 = 0x00be2534",
+    "static_write": "Revenginstr High P-code for 0x0062fde0 contains a STORE of zero to this+0x24; the instruction slice locates it at 0x0062fee8.",
+    "observed_path": "writer sets the checked word to zero; gate returns zero and caller takes its false branch.",
+    "limits": [
+      "120 host Vulkan frames only",
+      "one runtime caller observed (0x0054be00)",
+      "field semantics remain unknown",
+      "no frontend-ready state or retail D3D9 draw observed",
+      "the branch is not yet proven to be the launch blocker"
+    ]
+  },
+  "writer_pcode_manifest": "evidence/revenginstr_ui_gate_writer_pcode_20261019/manifest.json"
+}

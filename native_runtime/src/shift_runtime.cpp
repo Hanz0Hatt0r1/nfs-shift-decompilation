@@ -104,6 +104,38 @@ std::string format_ui_state_gate_trace(
         } else {
             text << "null";
         }
+        text << ",\"gate_state_last_writer\":";
+        if (event.has_gate_state_last_writer) {
+            text << "{\"sequence\":"
+                 << event.gate_state_last_writer_sequence
+                 << ",\"dispatch_count\":"
+                 << event.gate_state_last_writer_dispatch_count
+                 << ",\"function\":\""
+                 << format_guest_address(
+                        event.gate_state_last_writer_function)
+                 << "\",\"ecx_entry\":";
+            if (event.has_gate_state_last_writer_ecx) {
+                text << '"' << format_guest_address(
+                                    event.gate_state_last_writer_ecx)
+                     << '"';
+            } else {
+                text << "null";
+            }
+            text << ",\"thread_id\":\""
+                 << format_guest_address(
+                        event.gate_state_last_writer_thread_id)
+                 << "\",\"write_address\":\""
+                 << format_guest_address(
+                        event.gate_state_last_writer_address)
+                 << "\",\"write_size\":"
+                 << event.gate_state_last_writer_size
+                 << ",\"word_value\":\""
+                 << format_guest_address(
+                        event.gate_state_last_writer_word_value)
+                 << "\"}";
+        } else {
+            text << "null";
+        }
         text << ",\"helper_flag_byte\":";
         if (event.has_helper_flag_byte) {
             text << '"' << "0x" << std::hex << std::setw(2)
