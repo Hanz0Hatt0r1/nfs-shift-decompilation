@@ -31,6 +31,7 @@ if str(_SHADER_DIR) not in sys.path:
 from shader_ir import parse_shader_blobs
 
 FORMAT = "SHIFT.D3D9TargetDrawLocalEvidence/1"
+SUMMARY_FORMAT = "SHIFT.D3D9TargetDrawLocalEvidenceSummary/1"
 _FLOAT_REGISTER_SET = 2
 _SAMPLER_REGISTER_SET = 3
 _TRANSFORM_NAME_RE = re.compile(r"(?:world|model|object|instance)", re.IGNORECASE)
@@ -918,11 +919,37 @@ def build_target_draw_local_evidence_file(
         return build_target_draw_local_evidence(handle, target_inventory=target_inventory)
 
 
+def compact_target_draw_local_evidence(report: Mapping[str, Any]) -> dict[str, Any]:
+    """Keep grouped evidence while omitting large per-draw state records."""
+    return {
+        "format": SUMMARY_FORMAT,
+        "version": 1,
+        "source_format": report["format"],
+        "status": report["status"],
+        "summary": report["summary"],
+        "event_counts": report["event_counts"],
+        "capture_local_gap_counts": report["capture_local_gap_counts"],
+        "capture_requirements": report["capture_requirements"],
+        "geometry_groups": report["geometry_groups"],
+        "boundary": report["boundary"],
+        "draw_records": {
+            "included": False,
+            "omitted_count": len(report["draws"]),
+            "reason": "per-draw constants and bindings are stored in the full evidence report",
+        },
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("capture_jsonl")
     parser.add_argument("output")
     parser.add_argument("--target-inventory", required=True)
+    parser.add_argument(
+        "--compact-summary",
+        action="store_true",
+        help="omit per-draw state records while keeping geometry groups and gates",
+    )
     args = parser.parse_args(argv)
     capture_path = resolve_input_path(args.capture_jsonl)
     inventory_path = resolve_input_path(args.target_inventory)
@@ -930,6 +957,8 @@ def main(argv: list[str] | None = None) -> int:
     if not isinstance(inventory, dict):
         raise ValueError("target inventory must be a JSON object")
     report = build_target_draw_local_evidence_file(capture_path, target_inventory=inventory)
+    if args.compact_summary:
+        report = compact_target_draw_local_evidence(report)
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")

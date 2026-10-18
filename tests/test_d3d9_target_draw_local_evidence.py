@@ -5,6 +5,7 @@ import struct
 from d3d9_target_draw_local_evidence import (
     FORMAT,
     build_target_draw_local_evidence,
+    compact_target_draw_local_evidence,
 )
 
 
@@ -389,3 +390,22 @@ def test_missing_draw_state_stays_partial_and_report_is_deterministic():
     assert "stream0-vertex-buffer-unbound" in draw["missing_capture_local_state"]
     assert "index-buffer-unbound" in draw["missing_capture_local_state"]
     assert "reflected-sampler-unbound" in draw["missing_capture_local_state"]
+
+
+def test_compact_summary_retains_grouped_evidence_without_draw_records():
+    report = build_target_draw_local_evidence(
+        _base_events(), target_inventory=_targets()
+    )
+
+    compact = compact_target_draw_local_evidence(report)
+
+    assert compact["format"] == "SHIFT.D3D9TargetDrawLocalEvidenceSummary/1"
+    assert compact["source_format"] == FORMAT
+    assert compact["summary"] == report["summary"]
+    assert compact["geometry_groups"] == report["geometry_groups"]
+    assert compact["draw_records"] == {
+        "included": False,
+        "omitted_count": len(report["draws"]),
+        "reason": "per-draw constants and bindings are stored in the full evidence report",
+    }
+    assert "draws" not in compact

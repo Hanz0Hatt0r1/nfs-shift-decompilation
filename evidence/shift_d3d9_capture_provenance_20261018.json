@@ -1,0 +1,67 @@
+{
+  "format": "NFSShift.RetailD3D9CaptureProvenance/1",
+  "recorded_at": "2026-10-18",
+  "source": {
+    "game_executable": {
+      "path": "/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02/SHIFT.exe",
+      "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+    },
+    "capture_proxy": {
+      "path": "/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02/d3d9.dll",
+      "sha256": "0316e6b7e799964fb63bd367e96a99d367c42b5edf55aa6789040d53038c0b7f"
+    },
+    "raw_capture": {
+      "path": "/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02/shift_d3d9_capture.jsonl",
+      "sha256": "d3f3076228258eb4c72983dd5d0ea00f3c13af0c39c1a837f81c2371c5b7dcdc",
+      "size_bytes": 496679972,
+      "modified_at": "2026-10-02T07:35:51.325+03:00",
+      "preserved_outside_repository": true
+    }
+  },
+  "target_inventory": {
+    "path": "evidence/silverstone_era3_runtime_shader_targets.json",
+    "sha256": "26620dbe10aa578abe1115f56c642037bd2b06199814a886affcecaa4706650f"
+  },
+  "derived_reports": [
+    {
+      "path": "evidence/shift_d3d9_capture_audit_20261018.json",
+      "sha256": "50b22ac78b16908997ad5187901459836183212e863554e642dc4ad1d66c3ed7"
+    },
+    {
+      "path": "evidence/shift_silverstone_target_draw_local_20261018.json.gz",
+      "sha256": "17f18f2f2859209d46c5292d231b35eafc7529b8d597bb2758148333c39cb4b5",
+      "uncompressed_sha256": "79a81b7bdba75467da0fcdb888d4fe91e0840c03f8ef1b1b665e674756d25690"
+    },
+    {
+      "path": "evidence/shift_silverstone_target_draw_local_summary_20261018.json",
+      "sha256": "8f156f8d760a0737b9911713763c457b93973618c72ca8ee964b456819ab76b8"
+    }
+  ],
+  "capture_summary": {
+    "nonempty_json_object_count": 1718778,
+    "invalid_json_count": 0,
+    "frame_min": 0,
+    "frame_max": 4309,
+    "duration_ms": 308332,
+    "target_pixel_hash_count": 51,
+    "matched_target_pixel_hash_count": 19,
+    "target_draw_count": 1581,
+    "target_draw_hash_count": 9,
+    "duplicate_key_line_count": 2912,
+    "duplicate_key_conflict_line_count": 0
+  },
+  "recommended_target": {
+    "family": "crowdgeninstanced",
+    "pixel_shader_sha256": "d7859ccad24d2884b4e4eebeb2f520ea6fcdfbbd65cdc475c22f86a4200d351a",
+    "existing_draw_hit_count": 537,
+    "resource_trigger_signature": "ps:b83e3c4ec719e80f",
+    "first_draw_frame": 4287,
+    "last_draw_frame": 4308
+  },
+  "evidence_boundary": {
+    "buffer_payloads_observed": false,
+    "texture_snapshots_observed": false,
+    "resource_path_sha_pairs_observed": false,
+    "retail_draw_admitted_to_vulkan": false
+  }
+}

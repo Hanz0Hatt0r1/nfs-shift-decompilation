@@ -1,0 +1,1967 @@
+{
+  "boundary": {
+    "constant_state": "float registers come only from observed Set*ShaderConstantF writes intersected with CTAB ranges",
+    "fxo_permutation_selection": "not claimed",
+    "instance_stream_identity": "non-zero stream pointer generation plus offset/stride is capture-local repeated-instance evidence only",
+    "reflection_policy": "missing CTAB reflection is partial/ambiguous and can never produce strong-capture-local",
+    "render_admission": false,
+    "retail_primitive_identity": "not claimed",
+    "retail_resource_identity": "not claimed",
+    "scene_instance_identity": "not claimed",
+    "shader_pair": "captured VS/PS byte hashes are exact; they do not select an FXO permutation without unique runtime proof",
+    "strong_capture_local": "shader generations, stream-0 VB, IB, CTAB reflection, reflected float constants and sampler bindings all resolved",
+    "target_filter": "draws require a bound pixel-shader byte SHA-256 present in the supplied target inventory",
+    "texture_identity": "CTAB sampler stages preserve texture pointer generations; shared textures do not imply BMT identity",
+    "transform_name_matching": "world/model/object/instance CTAB names are diagnostic only; matrix semantics and scene identity are not inferred"
+  },
+  "capture_local_gap_counts": {},
+  "capture_requirements": {
+    "buffer_payload": {
+      "minimal_missing_event": "buffer_payload",
+      "observed_count": 0,
+      "required_for": "exact VB/IB payload equality against static IMB data",
+      "status": "missing"
+    },
+    "draw_local_pixel_float_constants": {
+      "minimal_missing_event": null,
+      "observed_count": 81929,
+      "required_for": "draw-local pixel/material constant reconstruction",
+      "status": "observed"
+    },
+    "draw_local_vertex_float_constants": {
+      "minimal_missing_event": null,
+      "observed_count": 251130,
+      "required_for": "draw-local vertex constant reconstruction",
+      "status": "observed"
+    },
+    "resource_path_sha_identity": {
+      "minimal_missing_event": "resource_path + resource_sha256 on one resource event",
+      "observed_count": 0,
+      "required_for": "portable runtime-resource path/SHA attribution",
+      "status": "missing"
+    },
+    "shader_creation_use_identity": {
+      "minimal_missing_event": null,
+      "observed_count": 8032,
+      "required_for": "shader byte identity and creation generation",
+      "status": "observed"
+    },
+    "texture_snapshots": {
+      "minimal_missing_event": "set_texture snapshot_status=captured + snapshot_paths",
+      "observed_count": 0,
+      "required_for": "exact captured sampler payload/snapshot correlation",
+      "status": "missing"
+    }
+  },
+  "draw_records": {
+    "included": false,
+    "omitted_count": 1581,
+    "reason": "per-draw constants and bindings are stored in the full evidence report"
+  },
+  "event_counts": {
+    "create_cube_texture": 4,
+    "create_device_begin": 1,
+    "create_device_result": 1,
+    "create_index_buffer": 5162,
+    "create_pixel_shader": 4018,
+    "create_texture": 2908,
+    "create_vertex_buffer": 3509,
+    "create_vertex_declaration": 918,
+    "create_vertex_shader": 4014,
+    "d3d9_hooks": 2,
+    "d3dperf_begin_event": 8,
+    "device_hooks": 1,
+    "direct3dcreate9_result": 2,
+    "draw_indexed_primitive": 201533,
+    "present_result": 22,
+    "proxy_d3d9_backend_selected": 1,
+    "proxy_direct3dcreate9": 1,
+    "proxy_system_d3d9_ready": 1,
+    "set_indices": 194055,
+    "set_pixel_shader": 213318,
+    "set_pixel_shader_constant_f": 81929,
+    "set_stream_source": 204860,
+    "set_texture": 299416,
+    "set_vertex_declaration": 40535,
+    "set_vertex_shader": 211429,
+    "set_vertex_shader_constant_f": 251130
+  },
+  "format": "SHIFT.D3D9TargetDrawLocalEvidenceSummary/1",
+  "geometry_groups": [
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 309,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 24,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348551,
+        "index_buffer_ptr": "0x353ae6a0",
+        "stream0_vertex_buffer_creation_event_index": 1348550,
+        "stream0_vertex_buffer_ptr": "0x353ae620"
+      },
+      "geometry_identity_sha256": "0d2c72b460261f69f716369786ee89e776ee1431a82aaf660ac938142fc851fe",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 309,
+      "unique_instance_stream_identity_count": 136,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 110
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 169,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 480,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348503,
+        "index_buffer_ptr": "0x353a3280",
+        "stream0_vertex_buffer_creation_event_index": 1348502,
+        "stream0_vertex_buffer_ptr": "0x353a3200"
+      },
+      "geometry_identity_sha256": "34b1f32a56c8fe7693d03079489c37e33d6688b0bec05d630a42b593c7da7b2d",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 169,
+      "unique_instance_stream_identity_count": 91,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 143
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 121,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 483,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348515,
+        "index_buffer_ptr": "0x353a9628",
+        "stream0_vertex_buffer_creation_event_index": 1348514,
+        "stream0_vertex_buffer_ptr": "0x353a95a8"
+      },
+      "geometry_identity_sha256": "13d723480e7e03ce8d8f8b6d2570f1b77cea9a38b214bd664a5ab06f2a39b05e",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 121,
+      "unique_instance_stream_identity_count": 76,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 113
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 95,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 538,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348509,
+        "index_buffer_ptr": "0x353a9328",
+        "stream0_vertex_buffer_creation_event_index": 1348508,
+        "stream0_vertex_buffer_ptr": "0x353a92a8"
+      },
+      "geometry_identity_sha256": "a6ecd71aef7ca45eb05fdfd80eac13eb51f56ce9b2f09f418b6786dafec0177a",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 95,
+      "unique_instance_stream_identity_count": 67,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 81
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 66,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 529,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348529,
+        "index_buffer_ptr": "0x353a9d28",
+        "stream0_vertex_buffer_creation_event_index": 1348528,
+        "stream0_vertex_buffer_ptr": "0x353a9ca8"
+      },
+      "geometry_identity_sha256": "814a24afff3cac770a7b25c766aa354384b86c6a39a6bcfdcba2788de0dba4f5",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 66,
+      "unique_instance_stream_identity_count": 41,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 62
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 54,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 534,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348521,
+        "index_buffer_ptr": "0x353a9928",
+        "stream0_vertex_buffer_creation_event_index": 1348520,
+        "stream0_vertex_buffer_ptr": "0x353a98a8"
+      },
+      "geometry_identity_sha256": "4ea76e4f93b26cd6a1aa3bff462e6b009e5f0eb8116301c1c35c185f347ee4f3",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 54,
+      "unique_instance_stream_identity_count": 31,
+      "unique_pixel_constant_signature_count": 18,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 28,
+      "unique_vertex_constant_signature_count": 43
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 32,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 558,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348535,
+        "index_buffer_ptr": "0x353aa028",
+        "stream0_vertex_buffer_creation_event_index": 1348534,
+        "stream0_vertex_buffer_ptr": "0x353a9fa8"
+      },
+      "geometry_identity_sha256": "87e4697e32dd7ce2eefdf8f08fb2185efd3c18e826e7462b06f8525e133677eb",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 32,
+      "unique_instance_stream_identity_count": 24,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 32
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 31,
+      "first_frame": 4289,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 72,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348549,
+        "index_buffer_ptr": "0x353ae5a0",
+        "stream0_vertex_buffer_creation_event_index": 1348548,
+        "stream0_vertex_buffer_ptr": "0x353ae520"
+      },
+      "geometry_identity_sha256": "122c7b03623746a2f399d87398d9d33ebe98d67f9ff098006180404efa6946ff",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 31,
+      "unique_instance_stream_identity_count": 28,
+      "unique_pixel_constant_signature_count": 9,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 18,
+      "unique_vertex_constant_signature_count": 29
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 30,
+      "first_frame": 4289,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 480,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348543,
+        "index_buffer_ptr": "0x353ae2a0",
+        "stream0_vertex_buffer_creation_event_index": 1348542,
+        "stream0_vertex_buffer_ptr": "0x353ae220"
+      },
+      "geometry_identity_sha256": "61afb8b134e33098a44c247b093a08ad6d387ca99570ea152c6ee31ece314d0c",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 30,
+      "unique_instance_stream_identity_count": 26,
+      "unique_pixel_constant_signature_count": 9,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 18,
+      "unique_vertex_constant_signature_count": 28
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 20,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 2,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348545,
+        "index_buffer_ptr": "0x353ae3a0",
+        "stream0_vertex_buffer_creation_event_index": 1348544,
+        "stream0_vertex_buffer_ptr": "0x353ae320"
+      },
+      "geometry_identity_sha256": "152f23dfd6d26583bf02a29c46c2646ad0e091f336f1d1cfc259094f08162c7a",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 20,
+      "unique_instance_stream_identity_count": 15,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 20
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 20,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 2,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348511,
+        "index_buffer_ptr": "0x353a9428",
+        "stream0_vertex_buffer_creation_event_index": 1348510,
+        "stream0_vertex_buffer_ptr": "0x353a93a8"
+      },
+      "geometry_identity_sha256": "1e4f1de685435fc300491b625e4ee53015844d28c849247c92a93c8d211c7f60",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 20,
+      "unique_instance_stream_identity_count": 15,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 20
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 20,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 2,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348517,
+        "index_buffer_ptr": "0x353a9728",
+        "stream0_vertex_buffer_creation_event_index": 1348516,
+        "stream0_vertex_buffer_ptr": "0x353a96a8"
+      },
+      "geometry_identity_sha256": "27490c7332e8c808d38a22a2eba8c28f236ed7c8fa3cfcb7618046083dd26ddf",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 20,
+      "unique_instance_stream_identity_count": 15,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 20
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 20,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 2,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348505,
+        "index_buffer_ptr": "0x353a3380",
+        "stream0_vertex_buffer_creation_event_index": 1348504,
+        "stream0_vertex_buffer_ptr": "0x353a3300"
+      },
+      "geometry_identity_sha256": "60b835364a368a631a0ac4ff36aa20637b1e3e36812de66e218c82c423db1baa",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 20,
+      "unique_instance_stream_identity_count": 15,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 20
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 20,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 18,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348539,
+        "index_buffer_ptr": "0x353ae0a0",
+        "stream0_vertex_buffer_creation_event_index": 1348538,
+        "stream0_vertex_buffer_ptr": "0x353aa1a8"
+      },
+      "geometry_identity_sha256": "6aad3e6e714c0df3d3bdb22a5d21d5f07dcef570804d438dcc65e89bde8e2285",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 20,
+      "unique_instance_stream_identity_count": 15,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 20
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 20,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 30,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348497,
+        "index_buffer_ptr": "0x353a2f80",
+        "stream0_vertex_buffer_creation_event_index": 1348496,
+        "stream0_vertex_buffer_ptr": "0x353a2f00"
+      },
+      "geometry_identity_sha256": "6e1b0059db274ce60f7af42e7d3b6315fec7dbf3de61b2387d09f3f46439cdd1",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 20,
+      "unique_instance_stream_identity_count": 15,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 20
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 20,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 2,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348531,
+        "index_buffer_ptr": "0x353a9e28",
+        "stream0_vertex_buffer_creation_event_index": 1348530,
+        "stream0_vertex_buffer_ptr": "0x353a9da8"
+      },
+      "geometry_identity_sha256": "7271c4488c749d391d6d2fa9fb0bc2a0bad47cddcbe91edb62798b0909fd9a4c",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 20,
+      "unique_instance_stream_identity_count": 14,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 20
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 20,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 40,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348447,
+        "index_buffer_ptr": "0x3539d808",
+        "stream0_vertex_buffer_creation_event_index": 1348446,
+        "stream0_vertex_buffer_ptr": "0x3539d788"
+      },
+      "geometry_identity_sha256": "73f7e39be839eb884a947dc4f42720863dba7479df7d60edf3e88f9cc9c0288a",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 20,
+      "unique_instance_stream_identity_count": 14,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 20
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 20,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 2,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348523,
+        "index_buffer_ptr": "0x353a9a28",
+        "stream0_vertex_buffer_creation_event_index": 1348522,
+        "stream0_vertex_buffer_ptr": "0x353a99a8"
+      },
+      "geometry_identity_sha256": "92702354d9d3020820df478516db16c5076c45695131768abb2b1e20523da610",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 20,
+      "unique_instance_stream_identity_count": 14,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 20
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 20,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 12,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348365,
+        "index_buffer_ptr": "0x3532afd0",
+        "stream0_vertex_buffer_creation_event_index": 1348364,
+        "stream0_vertex_buffer_ptr": "0x3532af50"
+      },
+      "geometry_identity_sha256": "e749f9036fb2ed0c7dbb298493ea02225349590fd6e5ee1d8f1ff1b749d12777",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 20,
+      "unique_instance_stream_identity_count": 14,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 16,
+      "unique_vertex_constant_signature_count": 20
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 20,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 20,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348525,
+        "index_buffer_ptr": "0x353a9b28",
+        "stream0_vertex_buffer_creation_event_index": 1348524,
+        "stream0_vertex_buffer_ptr": "0x353a9aa8"
+      },
+      "geometry_identity_sha256": "ee80187f87628d849e74ee5bea121002102ab13cc8da673e1335c7797b37e134",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 20,
+      "unique_instance_stream_identity_count": 15,
+      "unique_pixel_constant_signature_count": 20,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 32,
+      "unique_vertex_constant_signature_count": 20
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 19,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 84,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348421,
+        "index_buffer_ptr": "0x35399088",
+        "stream0_vertex_buffer_creation_event_index": 1348420,
+        "stream0_vertex_buffer_ptr": "0x35399008"
+      },
+      "geometry_identity_sha256": "0462858d926212378950eb7056aa52f79ea13946812331c2893583315b760ca9",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 19,
+      "unique_instance_stream_identity_count": 14,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 15,
+      "unique_vertex_constant_signature_count": 19
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 19,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 12,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348368,
+        "index_buffer_ptr": "0x3532b150",
+        "stream0_vertex_buffer_creation_event_index": 1348367,
+        "stream0_vertex_buffer_ptr": "0x3532b0d0"
+      },
+      "geometry_identity_sha256": "25d8bc946f71940898ced2b4c87e0792c88c36cc7b94e94027075f405288c3a1",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 19,
+      "unique_instance_stream_identity_count": 14,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 15,
+      "unique_vertex_constant_signature_count": 19
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 19,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 20,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348553,
+        "index_buffer_ptr": "0x353ae7a0",
+        "stream0_vertex_buffer_creation_event_index": 1348552,
+        "stream0_vertex_buffer_ptr": "0x353ae720"
+      },
+      "geometry_identity_sha256": "52efa5836879a55471f47a0bfec002aad84219745d546750dd49f1ea0f137e6e",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 19,
+      "unique_instance_stream_identity_count": 14,
+      "unique_pixel_constant_signature_count": 19,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 30,
+      "unique_vertex_constant_signature_count": 19
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 19,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 2,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348537,
+        "index_buffer_ptr": "0x353aa128",
+        "stream0_vertex_buffer_creation_event_index": 1348536,
+        "stream0_vertex_buffer_ptr": "0x353aa0a8"
+      },
+      "geometry_identity_sha256": "5d246ecd623d6a799e2813ce660b4b81eb5eab7cba480025873e44d4a67062a8",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 19,
+      "unique_instance_stream_identity_count": 14,
+      "unique_pixel_constant_signature_count": 19,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 30,
+      "unique_vertex_constant_signature_count": 19
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 19,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 322,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348559,
+        "index_buffer_ptr": "0x353aeaa0",
+        "stream0_vertex_buffer_creation_event_index": 1348558,
+        "stream0_vertex_buffer_ptr": "0x353aea20"
+      },
+      "geometry_identity_sha256": "7e4a85706e759a72aa766e371b081d561273f791cfbdd391235b55eacc0316f5",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 19,
+      "unique_instance_stream_identity_count": 14,
+      "unique_pixel_constant_signature_count": 15,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 22,
+      "unique_vertex_constant_signature_count": 19
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 19,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 358,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348413,
+        "index_buffer_ptr": "0x35395600",
+        "stream0_vertex_buffer_creation_event_index": 1348412,
+        "stream0_vertex_buffer_ptr": "0x35395580"
+      },
+      "geometry_identity_sha256": "8c656eefd1dad135af510da1c703d4d5a4d67d3711101c3ed17c4922639217e4",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 19,
+      "unique_instance_stream_identity_count": 14,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 15,
+      "unique_vertex_constant_signature_count": 19
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 19,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 12,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348409,
+        "index_buffer_ptr": "0x35395400",
+        "stream0_vertex_buffer_creation_event_index": 1348408,
+        "stream0_vertex_buffer_ptr": "0x35395380"
+      },
+      "geometry_identity_sha256": "a1ccafef1fdcceac502a0b73b4d394b1e82a579d3c325b7fcaddcf05fe8c31ea",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 19,
+      "unique_instance_stream_identity_count": 14,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 15,
+      "unique_vertex_constant_signature_count": 19
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 18,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 2,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348561,
+        "index_buffer_ptr": "0x353aeba0",
+        "stream0_vertex_buffer_creation_event_index": 1348560,
+        "stream0_vertex_buffer_ptr": "0x353aeb20"
+      },
+      "geometry_identity_sha256": "8122702dacadc959cde1dbf2735928e2a5d100582a540992739e1ae34110407b",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 18,
+      "unique_instance_stream_identity_count": 13,
+      "unique_pixel_constant_signature_count": 18,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 28,
+      "unique_vertex_constant_signature_count": 18
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 18,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 12,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348389,
+        "index_buffer_ptr": "0x35394a00",
+        "stream0_vertex_buffer_creation_event_index": 1348388,
+        "stream0_vertex_buffer_ptr": "0x35394980"
+      },
+      "geometry_identity_sha256": "bf5476fabe0395019e2a4810bc92cf8ee5921681e4f40a0c985fcd6b3591623a",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 18,
+      "unique_instance_stream_identity_count": 13,
+      "unique_pixel_constant_signature_count": 18,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 28,
+      "unique_vertex_constant_signature_count": 18
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 17,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 12,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348473,
+        "index_buffer_ptr": "0x3539e508",
+        "stream0_vertex_buffer_creation_event_index": 1348472,
+        "stream0_vertex_buffer_ptr": "0x3539e488"
+      },
+      "geometry_identity_sha256": "1682099b3fda959ec0b97221b2ea08fe311b906dd64ad6e811396ff7e35719c6",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 17,
+      "unique_instance_stream_identity_count": 12,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 13,
+      "unique_vertex_constant_signature_count": 17
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 17,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 12,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348407,
+        "index_buffer_ptr": "0x35395300",
+        "stream0_vertex_buffer_creation_event_index": 1348406,
+        "stream0_vertex_buffer_ptr": "0x35395280"
+      },
+      "geometry_identity_sha256": "2ada841506f38068732eaf73e6cb449341d326897014a756a881ef6ec0b71e49",
+      "incomplete_draw_count": 0,
+      "last_frame": 4307,
+      "unique_draw_evidence_count": 17,
+      "unique_instance_stream_identity_count": 11,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 13,
+      "unique_vertex_constant_signature_count": 17
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 16,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 112,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348451,
+        "index_buffer_ptr": "0x3539da08",
+        "stream0_vertex_buffer_creation_event_index": 1348450,
+        "stream0_vertex_buffer_ptr": "0x3539d988"
+      },
+      "geometry_identity_sha256": "2d4cefd7f20865583ea57e67c6de45d357e99f3d7da3c8806043512b7e6fb7b7",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 16,
+      "unique_instance_stream_identity_count": 11,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 12,
+      "unique_vertex_constant_signature_count": 16
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 16,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 360,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348445,
+        "index_buffer_ptr": "0x35399c88",
+        "stream0_vertex_buffer_creation_event_index": 1348444,
+        "stream0_vertex_buffer_ptr": "0x35399c08"
+      },
+      "geometry_identity_sha256": "b4bd61da46408679110d61e301a108ca4585880f4b2e02405b272a286fbf26b2",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 16,
+      "unique_instance_stream_identity_count": 11,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 12,
+      "unique_vertex_constant_signature_count": 16
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 16,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 12,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348372,
+        "index_buffer_ptr": "0x3532b350",
+        "stream0_vertex_buffer_creation_event_index": 1348371,
+        "stream0_vertex_buffer_ptr": "0x3532b2d0"
+      },
+      "geometry_identity_sha256": "c153607cc421d5d60999c21a42255ae25c12a41b1038963ff3b6abfd40a39322",
+      "incomplete_draw_count": 0,
+      "last_frame": 4305,
+      "unique_draw_evidence_count": 16,
+      "unique_instance_stream_identity_count": 11,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 12,
+      "unique_vertex_constant_signature_count": 16
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 16,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 142,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348459,
+        "index_buffer_ptr": "0x3539de08",
+        "stream0_vertex_buffer_creation_event_index": 1348458,
+        "stream0_vertex_buffer_ptr": "0x3539dd88"
+      },
+      "geometry_identity_sha256": "de1d011cce21b2652834f6ea4b9a88559690146c5207054c833e1a0e38f3aecd",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 16,
+      "unique_instance_stream_identity_count": 11,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 12,
+      "unique_vertex_constant_signature_count": 16
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 15,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 12,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348475,
+        "index_buffer_ptr": "0x3539e608",
+        "stream0_vertex_buffer_creation_event_index": 1348474,
+        "stream0_vertex_buffer_ptr": "0x3539e588"
+      },
+      "geometry_identity_sha256": "5c1a256075954eabf8f10c8aaceac04fc00c8097a2d62a3495cbe96e8f0eb52d",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 15,
+      "unique_instance_stream_identity_count": 10,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 11,
+      "unique_vertex_constant_signature_count": 15
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 14,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 48,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348555,
+        "index_buffer_ptr": "0x353ae8a0",
+        "stream0_vertex_buffer_creation_event_index": 1348554,
+        "stream0_vertex_buffer_ptr": "0x353ae820"
+      },
+      "geometry_identity_sha256": "27ff8938634f8167d20d1750013c13d5955de51d1f22038081aa1812e2c2db17",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 14,
+      "unique_instance_stream_identity_count": 9,
+      "unique_pixel_constant_signature_count": 14,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 20,
+      "unique_vertex_constant_signature_count": 14
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 14,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 12,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348479,
+        "index_buffer_ptr": "0x353a2680",
+        "stream0_vertex_buffer_creation_event_index": 1348478,
+        "stream0_vertex_buffer_ptr": "0x353a2600"
+      },
+      "geometry_identity_sha256": "663d6774f644322a2324ed0614064d02ae4d25a3393f4890ba6713f739f74718",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 14,
+      "unique_instance_stream_identity_count": 9,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 10,
+      "unique_vertex_constant_signature_count": 14
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 14,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 16,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348385,
+        "index_buffer_ptr": "0x35394800",
+        "stream0_vertex_buffer_creation_event_index": 1348384,
+        "stream0_vertex_buffer_ptr": "0x35394780"
+      },
+      "geometry_identity_sha256": "71ea97463e5efb6e72093afafb50936d932c039e4038b9eb8cf42a96c18843d2",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 14,
+      "unique_instance_stream_identity_count": 8,
+      "unique_pixel_constant_signature_count": 14,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 20,
+      "unique_vertex_constant_signature_count": 14
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 14,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 12,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348477,
+        "index_buffer_ptr": "0x353a2580",
+        "stream0_vertex_buffer_creation_event_index": 1348476,
+        "stream0_vertex_buffer_ptr": "0x3539e688"
+      },
+      "geometry_identity_sha256": "78394413cb173eeb722901bc76262f7e285471d28c5e64fb9df0a6182c39eeaf",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 14,
+      "unique_instance_stream_identity_count": 8,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 10,
+      "unique_vertex_constant_signature_count": 14
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 14,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 16,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348397,
+        "index_buffer_ptr": "0x35394e00",
+        "stream0_vertex_buffer_creation_event_index": 1348396,
+        "stream0_vertex_buffer_ptr": "0x35394d80"
+      },
+      "geometry_identity_sha256": "87fb7c39b900a9a7c30af5edbc27d1ad12576a7c887a26666064c4a61552fe16",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 14,
+      "unique_instance_stream_identity_count": 9,
+      "unique_pixel_constant_signature_count": 14,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 20,
+      "unique_vertex_constant_signature_count": 14
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 14,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 32,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348381,
+        "index_buffer_ptr": "0x3532b7d0",
+        "stream0_vertex_buffer_creation_event_index": 1348380,
+        "stream0_vertex_buffer_ptr": "0x3532b750"
+      },
+      "geometry_identity_sha256": "d3bce49e8ea7e9ab0cb62eda3da4c118d5b7adf5f080c2d552807df773248fa6",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 14,
+      "unique_instance_stream_identity_count": 8,
+      "unique_pixel_constant_signature_count": 14,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 20,
+      "unique_vertex_constant_signature_count": 14
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 14,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 126,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348463,
+        "index_buffer_ptr": "0x3539e008",
+        "stream0_vertex_buffer_creation_event_index": 1348462,
+        "stream0_vertex_buffer_ptr": "0x3539df88"
+      },
+      "geometry_identity_sha256": "d656b5cbc909c6c345cd388a34bf15b23d021e6969a6724185bd187ea14fb69f",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 14,
+      "unique_instance_stream_identity_count": 9,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 10,
+      "unique_vertex_constant_signature_count": 14
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 14,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 32,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348393,
+        "index_buffer_ptr": "0x35394c00",
+        "stream0_vertex_buffer_creation_event_index": 1348392,
+        "stream0_vertex_buffer_ptr": "0x35394b80"
+      },
+      "geometry_identity_sha256": "f43ac6f491d29c6a89491536633b59197e6469d58fad65ca5559dfc593f4cf37",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 14,
+      "unique_instance_stream_identity_count": 8,
+      "unique_pixel_constant_signature_count": 14,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 20,
+      "unique_vertex_constant_signature_count": 14
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 12,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 24,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348405,
+        "index_buffer_ptr": "0x35395200",
+        "stream0_vertex_buffer_creation_event_index": 1348404,
+        "stream0_vertex_buffer_ptr": "0x35395180"
+      },
+      "geometry_identity_sha256": "4d31b0fac9a9053e4424e6ea1a28d99e01aa9e8ce35cdf7eb4e3a9b5597bc628",
+      "incomplete_draw_count": 0,
+      "last_frame": 4302,
+      "unique_draw_evidence_count": 12,
+      "unique_instance_stream_identity_count": 7,
+      "unique_pixel_constant_signature_count": 12,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 16,
+      "unique_vertex_constant_signature_count": 12
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 10,
+      "first_frame": 4287,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 419,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348565,
+        "index_buffer_ptr": "0x353aeda0",
+        "stream0_vertex_buffer_creation_event_index": 1348564,
+        "stream0_vertex_buffer_ptr": "0x353aed20"
+      },
+      "geometry_identity_sha256": "cdb40961e76c146acc3793d16f4b942ba00330c9865dfa16ddbb264d255cce33",
+      "incomplete_draw_count": 0,
+      "last_frame": 4304,
+      "unique_draw_evidence_count": 10,
+      "unique_instance_stream_identity_count": 5,
+      "unique_pixel_constant_signature_count": 10,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 12,
+      "unique_vertex_constant_signature_count": 10
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 6,
+      "first_frame": 4289,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 2,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348573,
+        "index_buffer_ptr": "0x35403848",
+        "stream0_vertex_buffer_creation_event_index": 1348572,
+        "stream0_vertex_buffer_ptr": "0x354037c8"
+      },
+      "geometry_identity_sha256": "9ba9b291fd59e441d4b0c3824cbac231838e6e0e9caf2bb6cf8dd4eb448cc42c",
+      "incomplete_draw_count": 0,
+      "last_frame": 4307,
+      "unique_draw_evidence_count": 6,
+      "unique_instance_stream_identity_count": 6,
+      "unique_pixel_constant_signature_count": 6,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 12,
+      "unique_vertex_constant_signature_count": 6
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 5,
+      "first_frame": 4289,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 294,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348429,
+        "index_buffer_ptr": "0x35399488",
+        "stream0_vertex_buffer_creation_event_index": 1348428,
+        "stream0_vertex_buffer_ptr": "0x35399408"
+      },
+      "geometry_identity_sha256": "33b51483e8c60f9ef6afd3f2e01fbc731fe80f5962c85e8e85ca319f6dc3d3f2",
+      "incomplete_draw_count": 0,
+      "last_frame": 4296,
+      "unique_draw_evidence_count": 5,
+      "unique_instance_stream_identity_count": 5,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 5,
+      "unique_vertex_constant_signature_count": 5
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 5,
+      "first_frame": 4289,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 62,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348417,
+        "index_buffer_ptr": "0x35398e88",
+        "stream0_vertex_buffer_creation_event_index": 1348416,
+        "stream0_vertex_buffer_ptr": "0x35398e08"
+      },
+      "geometry_identity_sha256": "35a31ee05c6e4e6068504c2a3cd8fa790d8076004206df997fc1d7c5b539ae04",
+      "incomplete_draw_count": 0,
+      "last_frame": 4296,
+      "unique_draw_evidence_count": 5,
+      "unique_instance_stream_identity_count": 5,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 5,
+      "unique_vertex_constant_signature_count": 5
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 5,
+      "first_frame": 4289,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 296,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348425,
+        "index_buffer_ptr": "0x35399288",
+        "stream0_vertex_buffer_creation_event_index": 1348424,
+        "stream0_vertex_buffer_ptr": "0x35399208"
+      },
+      "geometry_identity_sha256": "3b5aeed8a65de6dc894e55b7c9975ff7c328d6bcaf3e0f2b586da6833813427e",
+      "incomplete_draw_count": 0,
+      "last_frame": 4296,
+      "unique_draw_evidence_count": 5,
+      "unique_instance_stream_identity_count": 5,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 5,
+      "unique_vertex_constant_signature_count": 5
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 5,
+      "first_frame": 4289,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 12,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348370,
+        "index_buffer_ptr": "0x3532b250",
+        "stream0_vertex_buffer_creation_event_index": 1348369,
+        "stream0_vertex_buffer_ptr": "0x3532b1d0"
+      },
+      "geometry_identity_sha256": "8b541b86b02431816e1761859fcb7aed37ea093f0ba8baed94f1638a90fb80c3",
+      "incomplete_draw_count": 0,
+      "last_frame": 4296,
+      "unique_draw_evidence_count": 5,
+      "unique_instance_stream_identity_count": 5,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 5,
+      "unique_vertex_constant_signature_count": 5
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 5,
+      "first_frame": 4289,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 2,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348567,
+        "index_buffer_ptr": "0x353aeea0",
+        "stream0_vertex_buffer_creation_event_index": 1348566,
+        "stream0_vertex_buffer_ptr": "0x353aee20"
+      },
+      "geometry_identity_sha256": "f83d8a9b721ad0adfb2ce96e740fdbd79029d16b2c094c00dc42569d5b8715bd",
+      "incomplete_draw_count": 0,
+      "last_frame": 4296,
+      "unique_draw_evidence_count": 5,
+      "unique_instance_stream_identity_count": 5,
+      "unique_pixel_constant_signature_count": 5,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 10,
+      "unique_vertex_constant_signature_count": 5
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants",
+        "pixel-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 3,
+      "first_frame": 4304,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 823,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348557,
+        "index_buffer_ptr": "0x353ae9a0",
+        "stream0_vertex_buffer_creation_event_index": 1348556,
+        "stream0_vertex_buffer_ptr": "0x353ae920"
+      },
+      "geometry_identity_sha256": "9eb638e891733d1a0cf27405207e5f811b770c7e4c243ef30204beab6bf02f11",
+      "incomplete_draw_count": 0,
+      "last_frame": 4308,
+      "unique_draw_evidence_count": 3,
+      "unique_instance_stream_identity_count": 3,
+      "unique_pixel_constant_signature_count": 2,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 4,
+      "unique_vertex_constant_signature_count": 3
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 2,
+      "first_frame": 4289,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 110,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348433,
+        "index_buffer_ptr": "0x35399688",
+        "stream0_vertex_buffer_creation_event_index": 1348432,
+        "stream0_vertex_buffer_ptr": "0x35399608"
+      },
+      "geometry_identity_sha256": "a8d7f57a1bc1b477c8412dc8ca478091d7ba829b2b1e675dd0f72fc05fc626a2",
+      "incomplete_draw_count": 0,
+      "last_frame": 4290,
+      "unique_draw_evidence_count": 2,
+      "unique_instance_stream_identity_count": 2,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 2,
+      "unique_vertex_constant_signature_count": 2
+    },
+    {
+      "disambiguation_signals": [
+        "instance-stream",
+        "name-suggested-transform-constants",
+        "vertex-float-constants"
+      ],
+      "disambiguation_status": "distinguished-by-existing-capture",
+      "draw_count": 2,
+      "first_frame": 4289,
+      "geometry_identity": {
+        "device_ptr": "0xd46c140",
+        "draw_range": {
+          "base_vertex_index": 0,
+          "primitive_count": 358,
+          "primitive_type": 4,
+          "start_index": 0
+        },
+        "index_buffer_creation_event_index": 1348437,
+        "index_buffer_ptr": "0x35399888",
+        "stream0_vertex_buffer_creation_event_index": 1348436,
+        "stream0_vertex_buffer_ptr": "0x35399808"
+      },
+      "geometry_identity_sha256": "e346dd733e1375df69ade5571f92d61b77e872bb8fc706b378a122fe371680ca",
+      "incomplete_draw_count": 0,
+      "last_frame": 4290,
+      "unique_draw_evidence_count": 2,
+      "unique_instance_stream_identity_count": 2,
+      "unique_pixel_constant_signature_count": 1,
+      "unique_shader_pair_count": 1,
+      "unique_texture_identity_count": 1,
+      "unique_transform_signature_count": 2,
+      "unique_vertex_constant_signature_count": 2
+    }
+  ],
+  "source_format": "SHIFT.D3D9TargetDrawLocalEvidence/1",
+  "status": "observed",
+  "summary": {
+    "captured_texture_snapshot_event_count": 0,
+    "distinguished_repeated_geometry_group_count": 55,
+    "invalid_json_count": 0,
+    "malformed_constant_write_count": 16229,
+    "non_object_count": 0,
+    "partial_capture_local_draw_count": 0,
+    "repeated_geometry_group_count": 55,
+    "resource_identity_pair_event_count": 0,
+    "source_line_count": 1718778,
+    "strong_capture_local_draw_count": 1581,
+    "target_draw_count": 1581,
+    "target_draw_hash_count": 9,
+    "target_hash_count": 51,
+    "unique_geometry_identity_count": 55,
+    "unique_instance_stream_identity_count": 374,
+    "unique_name_suggested_transform_signature_count": 322,
+    "unique_pixel_constant_signature_count": 174,
+    "unique_shader_object_pair_count": 13,
+    "unique_shader_pair_count": 10,
+    "unique_texture_identity_count": 38,
+    "unique_vertex_constant_signature_count": 889
+  },
+  "version": 1
+}
