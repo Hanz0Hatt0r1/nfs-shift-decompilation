@@ -26,3 +26,13 @@ parity for its output contract and a caller review. The specialized persistence,
 native-resolution, topology, and runtime-alias queries remain consumer-owned.
 `ShiftEvidenceExporter` needs a table-by-table contract comparison because its
 bundle combines several evidence families and project-local interpretations.
+
+## Same-input parity follow-up (2026-10-18)
+
+At NFS Shift main `c125488b`, the scalar-use wrapper and its local fallback were
+run against the same analyzed `SHIFT.exe` for scalar `0x374`. Each produced 170
+records with byte-identical adapted `SHIFT.GhidraScalarUses/1` output. The
+hash-only report and reproduction notes are in
+[`evidence/ghidra_exporter_parity/scalar-use-0374/`](ghidra_exporter_parity/scalar-use-0374/README.md).
+This single-query result adds a parity fixture; it does not retire the fallback
+or change the inventory classification.
