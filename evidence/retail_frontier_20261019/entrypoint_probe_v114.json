@@ -183,5 +183,12 @@
       "The Vulkan renderer still uses four-vertex converted MGEO smoke geometry; the run does not demonstrate retail D3D9 rendering, input, an offline race, or playable behavior.",
       "The full lowered ELF and supplements remain in the external artifact cache."
     ]
+  },
+  "static_context": {
+    "authority": "existing Ghidra decompilation of the same SHA-pinned retail PE, cross-checked against direct disassembly",
+    "main_loop_function": "0x0040ba50",
+    "loop_behavior": "exit-controlled do/while; each iteration calls 0x006492d0 and continues while an application virtual exit check returns zero",
+    "timer_update_function": "0x006492d0 -> 0x006472d0 -> KERNEL32!SwitchToThread",
+    "interpretation": "PE entry-point completion is not expected during normal play; the current gap is demonstrated frontend state and retail draw submission on Linux."
   }
 }
