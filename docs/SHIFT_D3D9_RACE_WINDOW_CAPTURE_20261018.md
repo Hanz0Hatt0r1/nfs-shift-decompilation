@@ -1,28 +1,32 @@
 # Retail race-window D3D9 capture — 2026-10-18
 
 The isolated PC retail 1.02 executable was launched through PortProton. After
-the user confirmed that a race had loaded, the manual capture trigger was
-fired. Trigger-mode texture files were deferred before that signal; the
-texture output directory contained zero files before the trigger.
+the user confirmed being in a race, two manual capture triggers recorded short
+render windows. New texture snapshots remained deferred until each trigger;
+the texture output directory was empty before the first trigger.
 
 ## Capture
 
-- Trigger frame: **5867**; configured window: **5865–5869**; completion event:
-  frame **5870**.
-- The raw JSONL contains **105,047 valid objects**, zero malformed lines, and
-  zero duplicate keys. Its frame range is 0–5870 because startup metadata was
-  buffered before the trigger.
-- The capture records **5,721 indexed draws** and **8,168 VB/IB payload events**.
-- **373 draws** match **nine shader hashes** from the 51-hash Silverstone-era
-  target inventory: 41 basic-instanced, 222 crowd-instanced, 69 crowd
-  billboard, 33 foliage-instanced, and eight skin-test-instanced draws.
-- There are **3,031 captured texture-snapshot events** across **508 unique
-  paths**. All paths were found: 499 DDS files and nine PPM files. The DDS
-  headers and mip payload lengths validate; 387 use DXT1 and 112 use DXT5,
-  with one to eleven mip levels.
-- Before the trigger, **5,125** `set_texture` events reported
-  `deferred-until-trigger`; **1,018** snapshots failed and have no file path.
-- The capture bundle totals **212,322,572 bytes** and remains outside Git.
+- First trigger: frame **5867**, window **5865–5869**, completion at frame
+  **5870**. Follow-up trigger: frame **6985**, window **6983–6987**, completion
+  at frame **6988**.
+- The combined raw JSONL contains **202,870 valid objects**, zero malformed
+  lines, and zero duplicate keys. Its frame range is 0–6988; the log includes
+  startup metadata and the two trigger windows.
+- The two windows record **13,069 indexed draws** and **8,252 VB/IB payload
+  events**. The follow-up window alone added 7,348 draws and 84 payloads.
+- **813 draws** match **10 shader hashes** from the 51-hash Silverstone-era
+  target inventory: 131 basic-instanced, 462 crowd-instanced, 134 crowd
+  billboard, 78 foliage-instanced, and eight skin-test-instanced draws. The
+  follow-up window added 440 matches across nine hashes.
+- There are **6,704 captured texture-snapshot records** across **541 unique
+  paths**. All paths were found: 531 DDS files and 10 PPM files. DDS headers
+  and mip payload lengths validate; 408 use DXT1, 120 DXT5, and three DXT3,
+  with one to eleven mip levels. The follow-up trigger added 33 texture files.
+- Across the two trigger windows, **12,285** `set_texture` events reported
+  `deferred-until-trigger`; **2,125** snapshot attempts failed and have no
+  file path.
+- The capture bundle totals **253,861,323 bytes** and remains outside Git.
 
 The full raw JSONL and binary payloads are stored under
 `/home/pes/nfs-shift-recompilation-artifacts/portproton-retail-capture-20261018/retail-race-after-load-20261018/`.
@@ -32,12 +36,12 @@ snapshot validation, target shader matches, and blockers in
 
 ## Limits and next step
 
-The race context was user-confirmed; no screenshot or scene label was captured
-to independently identify the scene. Shader matches are against the supplied
-Silverstone-era inventory and do not prove same-resource or primitive
-identity. The audit found no `resource_path`/`resource_sha256` pairs and no
-six-face cube snapshot. The evidence is from the original retail executable
-under PortProton, not the recompiled Linux runtime.
+The race context was user-confirmed for both triggers; no screenshot or scene
+label was captured to independently identify the scene. Shader matches are
+against the supplied Silverstone-era inventory and do not prove same-resource
+or primitive identity. The audit found no `resource_path`/`resource_sha256`
+pairs and no six-face cube snapshot. The evidence is from the original retail
+executable under PortProton, not the recompiled Linux runtime.
 
 Next, correlate the matched race-window draws with their captured VB/IB
 payloads and textures, then establish exact resource path/SHA identity before
