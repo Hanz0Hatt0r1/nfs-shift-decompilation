@@ -438,6 +438,15 @@ struct RecompiledPcodeModule::Impl {
                    kGuestAllocationObjectChainLinkLimit>
             ecx_object_chain_links{};
     };
+    struct GuestWriteProvenance {
+        uint64_t sequence = 0;
+        uint64_t dispatch_count = 0;
+        uint32_t writer_function = 0;
+        uint32_t thread_id = 0;
+        uint32_t write_address = 0;
+        uint32_t write_size = 0;
+        uint32_t word_value = 0;
+    };
     struct GuestPoolAllocationAttempt {
         uint64_t sequence = 0;
         uint32_t function_address = 0;
@@ -1388,21 +1397,183 @@ struct RecompiledPcodeModule::Impl {
             attempt.has_result_eax = read_guest_u32(
                 "register", kX86EaxRegisterOffset, attempt.result_eax);
         }
+        if (current_guest_thread_handle != 0 &&
+            current_guest_thread_exit_requested) {
+            active_guest_function_registers.pop_back();
+            active_guest_functions.pop_back();
+            --call_depth;
+            return kGuestThreadExitResult;
+        }
+        if (result != 0) {
+            if (error.empty()) {
+                char message[96]{};
+                std::snprintf(message, sizeof(message),
+                              "P-code function 0x%08x returned %d",
+                              static_cast<uint32_t>(target), result);
+                error = message;
+            }
+            append_failure_guest_write_provenance(entry_registers);
+        }
         active_guest_function_registers.pop_back();
         active_guest_functions.pop_back();
         --call_depth;
-        if (current_guest_thread_handle != 0 &&
-            current_guest_thread_exit_requested) {
-            return kGuestThreadExitResult;
-        }
-        if (result != 0 && error.empty()) {
-            char message[96]{};
-            std::snprintf(message, sizeof(message),
-                          "P-code function 0x%08x returned %d",
-                          static_cast<uint32_t>(target), result);
-            error = message;
-        }
         return result;
+    }
+
+    bool guest_write_provenance_enabled() const {
+        const char* config = std::getenv("SHIFT_TRACE_GUEST_PROVENANCE");
+        return config && *config && std::strcmp(config, "0") != 0;
+    }
+
+    bool guest_write_provenance_all() const {
+        const char* config = std::getenv("SHIFT_TRACE_GUEST_PROVENANCE");
+        if (!config || !*config) return false;
+        return std::strcmp(config, "1") == 0 ||
+               std::strcmp(config, "all") == 0;
+    }
+
+    std::vector<uint32_t> guest_write_provenance_targets() const {
+        std::vector<uint32_t> targets;
+        const char* config = std::getenv("SHIFT_TRACE_GUEST_PROVENANCE");
+        if (!config || !*config || guest_write_provenance_all()) return targets;
+
+        std::string text(config);
+        size_t offset = 0;
+        while (offset < text.size()) {
+            const size_t separator = text.find_first_of(",;", offset);
+            const size_t end =
+                separator == std::string::npos ? text.size() : separator;
+            const std::string token = text.substr(offset, end - offset);
+            if (!token.empty()) {
+                char* parse_end = nullptr;
+                errno = 0;
+                const unsigned long long value =
+                    std::strtoull(token.c_str(), &parse_end, 0);
+                if (errno == 0 && parse_end &&
+                    *parse_end == '\0' && value <= UINT32_MAX) {
+                    targets.push_back(static_cast<uint32_t>(value));
+                }
+            }
+            if (separator == std::string::npos) break;
+            offset = separator + 1;
+        }
+        return targets;
+    }
+
+    void record_guest_write_provenance(uint64_t offset, size_t size) {
+        if (!guest_write_provenance_enabled() || !ram || size == 0 ||
+            offset > UINT32_MAX) {
+            return;
+        }
+        const uint64_t end = offset + size;
+        if (end > kGuestRamSize) return;
+
+        const uint64_t first_word = offset & ~UINT64_C(3);
+        const uint64_t last_word = (end - 1) & ~UINT64_C(3);
+        const uint64_t sequence = ++guest_write_provenance_sequence;
+        const uint32_t writer_function =
+            active_guest_functions.empty() ? 0 : active_guest_functions.back();
+
+        for (uint64_t word_address = first_word;
+             word_address <= last_word; word_address += sizeof(uint32_t)) {
+            uint32_t word_value = 0;
+            if (!read_guest_diagnostic_u32(word_address, word_value)) continue;
+            GuestWriteProvenance record{};
+            record.sequence = sequence;
+            record.dispatch_count = function_count;
+            record.writer_function = writer_function;
+            record.thread_id = current_guest_thread_id;
+            record.write_address = static_cast<uint32_t>(offset);
+            record.write_size = static_cast<uint32_t>(size);
+            record.word_value = word_value;
+            guest_last_writers[static_cast<uint32_t>(word_address)] = record;
+        }
+    }
+
+    void append_guest_write_provenance_address(
+        uint32_t address, bool& first_record) {
+        const uint32_t word_address = address & ~UINT32_C(3);
+        uint32_t current_value = 0;
+        const bool current_available =
+            read_guest_diagnostic_u32(word_address, current_value);
+        const auto found = guest_last_writers.find(word_address);
+
+        char record[320]{};
+        if (found == guest_last_writers.end()) {
+            std::snprintf(
+                record, sizeof(record),
+                "%s0x%08x(word=0x%08x,current=%s0x%08x,last_writer=none)",
+                first_record ? "" : ",", address, word_address,
+                current_available ? "" : "unavailable:",
+                current_available ? current_value : 0u);
+        } else {
+            const auto& provenance = found->second;
+            std::snprintf(
+                record, sizeof(record),
+                "%s0x%08x(word=0x%08x,current=%s0x%08x,"
+                "last_writer=0x%08x,thread=0x%08x,dispatch=%llu,"
+                "write_seq=%llu,write=0x%08x+%u,word_value=0x%08x)",
+                first_record ? "" : ",", address, word_address,
+                current_available ? "" : "unavailable:",
+                current_available ? current_value : 0u,
+                provenance.writer_function, provenance.thread_id,
+                static_cast<unsigned long long>(provenance.dispatch_count),
+                static_cast<unsigned long long>(provenance.sequence),
+                provenance.write_address, provenance.write_size,
+                provenance.word_value);
+        }
+        error += record;
+        first_record = false;
+    }
+
+    void append_failure_guest_write_provenance(
+        const GuestRegisterSnapshot& registers_at_entry) {
+        if (!guest_write_provenance_enabled() ||
+            error.find("; guest write provenance=[") != std::string::npos) {
+            return;
+        }
+
+        std::vector<uint32_t> addresses = guest_write_provenance_targets();
+        if (addresses.empty() && guest_write_provenance_all()) {
+            constexpr size_t kAutomaticAddressLimit = 18;
+            const std::array<uint32_t, 3> bases = {
+                registers_at_entry.ecx,
+                registers_at_entry.esi,
+                registers_at_entry.edi,
+            };
+            for (const uint32_t base : bases) {
+                if (base < kGuestMinimumUserAddress ||
+                    !diagnostic_guest_pointer_mapped(base, 0x40)) {
+                    continue;
+                }
+                for (uint32_t field_offset = 0;
+                     field_offset < 0x40 &&
+                     addresses.size() < kAutomaticAddressLimit;
+                     field_offset += sizeof(uint32_t)) {
+                    const uint32_t address = base + field_offset;
+                    if (std::find(addresses.begin(), addresses.end(), address) !=
+                        addresses.end()) {
+                        continue;
+                    }
+                    uint32_t current_value = 0;
+                    if (!read_guest_diagnostic_u32(address, current_value))
+                        continue;
+                    if (current_value == 0 ||
+                        guest_last_writers.find(address) !=
+                            guest_last_writers.end()) {
+                        addresses.push_back(address);
+                    }
+                }
+                if (addresses.size() >= kAutomaticAddressLimit) break;
+            }
+        }
+
+        if (addresses.empty()) return;
+        error += "; guest write provenance=[";
+        bool first_record = true;
+        for (const uint32_t address : addresses)
+            append_guest_write_provenance_address(address, first_record);
+        error += "]";
     }
 
     bool dispatch_x86_absolute_indirect_jump(uint32_t address, int& result) {
@@ -6586,6 +6757,7 @@ struct RecompiledPcodeModule::Impl {
                 return false;
             }
             std::memcpy(static_cast<uint8_t*>(ram) + offset, input, size);
+            record_guest_write_provenance(offset, size);
             return true;
         }
         error = "unsupported P-code address space: " + std::string(space);
@@ -6601,6 +6773,7 @@ struct RecompiledPcodeModule::Impl {
     std::vector<void*> override_modules;
     std::unordered_map<uint32_t, std::string> import_traps;
     std::unordered_map<uint32_t, uint32_t> import_id_traps;
+    std::unordered_map<uint32_t, GuestWriteProvenance> guest_last_writers;
     std::unordered_map<std::string, uint32_t> guest_module_handles;
     std::unordered_map<uint32_t, std::string> guest_module_names;
     std::unordered_map<uint32_t, GuestHeapBlock> heap_allocations;
@@ -6660,6 +6833,7 @@ struct RecompiledPcodeModule::Impl {
     bool guest_symbol_handler_initialized = false;
     uint32_t guest_unhandled_exception_filter = 0;
     uint64_t function_count = 0;
+    uint64_t guest_write_provenance_sequence = 0;
     std::unordered_set<uint32_t> unique_function_addresses;
     uint64_t guest_heap_next_address = kGuestHeapStartAddress;
     uint64_t guest_virtual_next_address = UINT64_C(0x20000000);
