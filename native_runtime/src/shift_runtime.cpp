@@ -2996,6 +2996,7 @@ struct Args {
     std::string pe_image;
     uint32_t recompiled_step = 0;
     bool recompiled_step_enabled = false;
+    bool recompiled_entrypoint_enabled = false;
     int frames = kDefaultFrames;
     bool frames_explicit = false;
     bool continuous = false;
@@ -3007,6 +3008,10 @@ Args parse_args(int argc, char** argv) {
     Args args;
     for (int i = 1; i < argc; ++i) {
         const std::string option = argv[i];
+        if (option == "--recompiled-entrypoint") {
+            args.recompiled_entrypoint_enabled = true;
+            continue;
+        }
         if (option == "--mesh" || option == "--bundle" ||
             option == "--bundle-set" ||
             option == "--scene-set" ||
@@ -3086,8 +3091,8 @@ Args parse_args(int argc, char** argv) {
                 << "[--post-solve-projection FILE] "
                 << "[--persist-post-solve-body-state] "
                 << "[--input-script FILE] [--frames N] "
-                << "[--recompiled-module ELF --recompiled-step ADDRESS "
-                << "[--pe-image PE32]] "
+                << "[--recompiled-module ELF [--recompiled-step ADDRESS] "
+                << "[--pe-image PE32 [--recompiled-entrypoint]]] "
                 << "[--continuous] [--validation]\n";
             std::exit(EXIT_SUCCESS);
         } else {
@@ -3109,13 +3114,23 @@ Args parse_args(int argc, char** argv) {
         throw std::runtime_error(
             "--shader-dir is required");
     }
-    if (args.recompiled_module.empty() != !args.recompiled_step_enabled) {
+    if (args.recompiled_module.empty() &&
+        (args.recompiled_step_enabled || args.recompiled_entrypoint_enabled)) {
         throw std::runtime_error(
-            "--recompiled-module and --recompiled-step must be provided together");
+            "--recompiled-module is required for P-code execution");
+    }
+    if (!args.recompiled_module.empty() && !args.recompiled_step_enabled &&
+        !args.recompiled_entrypoint_enabled) {
+        throw std::runtime_error(
+            "provide --recompiled-step or --recompiled-entrypoint with --recompiled-module");
     }
     if (!args.pe_image.empty() && args.recompiled_module.empty()) {
         throw std::runtime_error(
-            "--pe-image requires --recompiled-module and --recompiled-step");
+            "--pe-image requires --recompiled-module");
+    }
+    if (args.recompiled_entrypoint_enabled && args.pe_image.empty()) {
+        throw std::runtime_error(
+            "--recompiled-entrypoint requires --pe-image");
     }
     return args;
 }
@@ -3133,6 +3148,7 @@ int main(int argc, char** argv) {
             recompiled_module;
         shift::runtime::Pe32ImageInfo recompiled_pe_image_info{};
         bool recompiled_pe_image_loaded = false;
+        uint64_t recompiled_pe_entry_point_invocations = 0;
         if (!args.recompiled_module.empty()) {
             recompiled_module =
                 std::make_unique<shift::runtime::RecompiledPcodeModule>(
@@ -3153,6 +3169,17 @@ int main(int argc, char** argv) {
                           << " imports="
                           << recompiled_pe_image_info.import_function_count
                           << '\n';
+            }
+            if (args.recompiled_entrypoint_enabled) {
+                const int result = recompiled_module->call_pe32_entry_point();
+                if (result != 0) {
+                    throw std::runtime_error(
+                        "recompiled PE32 entry point " +
+                        format_guest_address(
+                            recompiled_pe_image_info.entry_point) +
+                        " failed: " + recompiled_module->last_error());
+                }
+                ++recompiled_pe_entry_point_invocations;
             }
         }
 
@@ -3726,7 +3753,7 @@ int main(int argc, char** argv) {
             intent.steer_left = step_input.steer_left;
             intent.steer_right = step_input.steer_right;
             native_state.fixed_step(intent);
-            if (recompiled_module) {
+            if (recompiled_module && args.recompiled_step_enabled) {
                 const int result = recompiled_module->call(
                     args.recompiled_step);
                 if (result != 0) {
@@ -3897,6 +3924,8 @@ int main(int argc, char** argv) {
                     ? format_guest_address(recompiled_pe_image_info.entry_point)
                     : std::string())
             << "\",\n"
+            << "  \"recompiled_pe_entry_point_invocations\": "
+            << recompiled_pe_entry_point_invocations << ",\n"
             << "  \"recompiled_pe_section_count\": "
             << recompiled_pe_image_info.section_count << ",\n"
             << "  \"recompiled_pe_import_module_count\": "
@@ -3911,7 +3940,7 @@ int main(int argc, char** argv) {
                     : std::string())
             << "\",\n"
             << "  \"recompiled_pcode_step_address\": \""
-            << (recompiled_module
+            << (recompiled_module && args.recompiled_step_enabled
                     ? format_guest_address(args.recompiled_step)
                     : std::string())
             << "\",\n"
@@ -3923,9 +3952,11 @@ int main(int argc, char** argv) {
                     : 0)
             << ",\n"
             << "  \"recompiled_pcode_step_schedule\": \""
-            << (recompiled_module
+            << (args.recompiled_step_enabled
                     ? "one-configured-function-per-native-fixed-step-non-retail"
-                    : "disabled")
+                    : recompiled_pe_entry_point_invocations != 0
+                          ? "PE32-entry-point-once-before-frame-loop"
+                          : "disabled")
             << "\",\n"
             << "  \"simulation_steps\": "
             << simulation_steps << ",\n"

@@ -1,0 +1,87 @@
+{
+  "format": "NFSShift.RecompiledPcodeKernel32CrtStartup/1",
+  "captured_at": "2026-10-18",
+  "base_main_revision": "1d3722e38a5e5ae7ff18bec279e07e31e7e2fab6",
+  "retail_input": {
+    "logical_name": "SHIFT.exe",
+    "version": "PC retail 1.02",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "image_base": "0x00400000",
+    "entry_point": "0x0090488a"
+  },
+  "pcode_module": {
+    "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-pcode-linux-build-full-lowering-20261018/libnfs_shift_pcode_partial.so",
+    "sha256": "ee76608bb8c5b6b4b603a747a73378b9c4fb76e6320d7426d000632939984243",
+    "exported_functions": 41538
+  },
+  "runtime_changes": {
+    "kernel32_static_imports": 46,
+    "added_imports": [
+      "KERNEL32.dll!InterlockedDecrement",
+      "KERNEL32.dll!GetModuleFileNameA"
+    ],
+    "x86_register_bank_bytes": 8192,
+    "maximum_register_offset_observed_in_lowered_corpus": "0x13cc",
+    "pe32_entrypoint_startup": {
+      "opt_in_flag": "--recompiled-entrypoint",
+      "invocation_count": "once before the frame loop",
+      "initial_esp": "0x7ffdf000",
+      "initial_ebp": "0x00000000",
+      "return_slot": "0x00000000"
+    }
+  },
+  "focused_validation": {
+    "ctest": "shift_runtime_recompiled_pcode_module",
+    "result": "passed",
+    "checks": [
+      "InterlockedDecrement stores and returns the 32-bit result including wraparound",
+      "GetModuleFileNameA returns the loaded PE path and follows Windows XP buffer truncation behavior",
+      "extended x86 P-code registers are readable and writable",
+      "PE32 entry point executes with the initialized guest stack",
+      "a second PE32 entry-point invocation fails closed"
+    ]
+  },
+  "native_runtime_build": {
+    "command": "cmake --build /tmp/nfs-shift-vulkan-runtime-build --parallel 4",
+    "result": "passed"
+  },
+  "native_runtime_ctest": {
+    "command": "/usr/bin/ctest --test-dir /tmp/nfs-shift-vulkan-runtime-build --output-on-failure --parallel 4",
+    "passed": 138,
+    "failed": 0
+  },
+  "python_evidence_regressions": {
+    "command": "python3 -m pytest -q tests/test_recompiled_pcode_pe32_vulkan_runtime.py",
+    "passed": 2,
+    "failed": 0
+  },
+  "local_linux_vulkan_smoke": {
+    "scene": "generated offline BMW material bundle with synthetic triangle",
+    "pe_image": "synthetic PE32 loader fixture",
+    "entrypoint_invocations": 1,
+    "frames_rendered": 3,
+    "simulation_steps": 3,
+    "pcode_step_invocations": 3,
+    "pcode_functions_dispatched": 7,
+    "validation_enabled": true,
+    "validation_errors": 0,
+    "validation_warnings": 3,
+    "status": "ok",
+    "host_display": ":1"
+  },
+  "retail_entrypoint_probe": {
+    "entrypoint_invoked": true,
+    "guest_stack_initialized": true,
+    "pcode_functions_dispatched": 552,
+    "next_blocker": "missing generated P-code export rvi_00900f48",
+    "function_address_in_current_pcode_export_corpus": false,
+    "result": "fails closed before game startup completes"
+  },
+  "limitations": {
+    "complete_windows_process_state": false,
+    "retail_game_startup": false,
+    "directx_to_vulkan_translation": false,
+    "playable_game": false,
+    "behavioral_parity": false
+  }
+}
