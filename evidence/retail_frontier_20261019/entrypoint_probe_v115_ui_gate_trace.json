@@ -1,0 +1,128 @@
+{
+  "format": "NFSShift.UIStateGateRuntimeTrace/1",
+  "captured_at": "2026-10-19",
+  "probe": "v115",
+  "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+  "branch": "codex/revenginstr-ui-gate-runtime-trace-20261019",
+  "base_commit": "a95953342489b5d2d740f8d2b36b92d8aaeac33e",
+  "inputs": {
+    "pe_image": {
+      "path": "/home/pes/ghidra_projects/shift/SHIFT.exe",
+      "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+    },
+    "pcode_module": {
+      "path": "/home/pes/nfs-shift-recompilation-artifacts/libnfs_shift_pcode_full_rebuilt_20261018.so",
+      "sha256": "67b2e74c72b250a168d8276e58d3821f9770f728e6d0c1badc0cf11147799274",
+      "exports": 41538
+    },
+    "mesh": {
+      "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/meshes/alpental-grid1_02.mgeo",
+      "sha256": "e2b4cda0347d94be3350a8ce158f7c1a1306b003e668ff455d9cd4924739f4ea",
+      "vertices": 4,
+      "triangles": 2
+    }
+  },
+  "build": {
+    "local_build_directory": "/tmp/shift-runtime-ui-gate-trace-build",
+    "build_command": "cmake --build /tmp/shift-runtime-ui-gate-trace-build --target shift_runtime -j2",
+    "runtime_sha256": "d501080fad93ca50c12b255dad36ca8c940b28d90c17b7306aa25c5d6007ac65",
+    "source_base_commit": "a95953342489b5d2d740f8d2b36b92d8aaeac33e",
+    "runtime_source_diff_sha256": "9685c6f8b8b41330faa5cb5df3aad2e6fc16d071fcff174803edf1caf273f1f4"
+  },
+  "execution": {
+    "command_script": "tools/run_shift_recompiled_entrypoint_probe.sh",
+    "environment": {
+      "SHIFT_ENTRYPOINT_PROBE_FRAMES": 120,
+      "SHIFT_ENTRYPOINT_PROBE_VALIDATION": 1,
+      "SHIFT_TRACE_UI_STATE_GATE": 1
+    },
+    "exit_code": 0,
+    "frames_rendered": 120,
+    "validation_errors": 0,
+    "pcode_function_dispatches": 80626,
+    "pcode_unique_functions_dispatched": 1417,
+    "main_thread_call_stack": [
+      "0x0090488a",
+      "0x009046aa",
+      "0x00a69160",
+      "0x0040ba50",
+      "0x006492d0",
+      "0x00647500",
+      "0x006472d0"
+    ],
+    "persistent_log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v115-ui-state-gate-trace-120-validation.log",
+    "log": "evidence/retail_frontier_20261019/shift-probe-v115-ui-state-gate-trace-120-validation.log",
+    "log_sha256": "7cf4d9bc6722de9dc73c194cbd42044a4f67c4700d05a197cf59cdda84be4a3a",
+    "pe_entry_point_complete": false,
+    "main_thread_current_function": "0x006472d0",
+    "retail_d3d9_draws_observed": false
+  },
+  "trace": {
+    "enabled": true,
+    "truncated": false,
+    "event_count": 484,
+    "function_event_counts": {
+      "0x0050c880": 121,
+      "0x0050c8a9": 121,
+      "0x0050ceb0": 121,
+      "0x0082f3c0": 121
+    },
+    "gate_call_count": 121,
+    "gate_callers": {
+      "0x0054be00": 121
+    },
+    "gate_receiver_addresses": [
+      "0x00be2500"
+    ],
+    "singleton_candidates": [
+      "0x00be23f8"
+    ],
+    "gate_state_field_addresses": [
+      "0x00be2534"
+    ],
+    "gate_state_words": {
+      "0x00000000": 121
+    },
+    "gate_callback_objects": {
+      "0x00000000": 121
+    },
+    "gate_callback_dispatches": 0,
+    "gate_return_low_byte": {
+      "0": 121
+    },
+    "field_zero_predicate_helper_calls": 121,
+    "field_zero_predicate_return_low_byte": {
+      "1": 121
+    },
+    "helper_calls": 121,
+    "helper_flag_bytes": {
+      "0x00": 121
+    },
+    "helper_callback_targets": {
+      "null": 121
+    },
+    "helper_return_low_byte": {
+      "0": 121
+    },
+    "helper_zero_byte_branch_calls": 121
+  },
+  "caller_branch_crosscheck": {
+    "file": "evidence/retail_frontier_20261019/ui-gate-caller-0054be00-branch.txt",
+    "sha256": "8779e0ff684d90ea64cfffdf8e9a3b01416a7d7d70ab51bad24899c56da9f508",
+    "tool": "GNU objdump -d -Mintel",
+    "sequence": "call 0x0050ceb0; test eax,eax; je 0x0054bec8",
+    "observed_branch": "taken on every traced call because gate EAX low byte was zero",
+    "skipped_range": "0x0054be85-0x0054bec7"
+  },
+  "interpretation": {
+    "static_to_runtime_join": "gate ECX 0x00be2500 corresponds to singleton candidate 0x00be23f8 plus 0x108; the tested word is at 0x00be2534 (singleton + 0x13c).",
+    "observed_path": "state word zero -> helper byte +0x0c zero -> helper low-byte result zero -> gate EAX zero -> caller takes the false branch.",
+    "callback": "gate callback-object field at +0x48 is null on every traced call; no gate-descendant virtual callback was observed.",
+    "limits": [
+      "120 host Vulkan frames only",
+      "one runtime caller observed (0x0054be00)",
+      "no frontend-ready state or retail D3D9 draw was observed",
+      "the false branch is established but its semantic role in the launch blocker is not yet proven"
+    ]
+  }
+}

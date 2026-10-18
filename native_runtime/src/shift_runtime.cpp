@@ -71,6 +71,67 @@ std::string format_guest_call_stack(const std::vector<uint32_t>& functions) {
     return text.str();
 }
 
+std::string format_ui_state_gate_trace(
+    const std::vector<shift::runtime::RecompiledUiStateGateTraceEvent>& events) {
+    std::ostringstream text;
+    text << '[';
+    for (size_t index = 0; index < events.size(); ++index) {
+        const auto& event = events[index];
+        if (index != 0) text << ',';
+        text << "{\"dispatch_count\":" << event.dispatch_count
+             << ",\"thread_id\":\""
+             << format_guest_address(event.thread_id)
+             << "\",\"function\":\""
+             << format_guest_address(event.function)
+             << "\",\"caller\":\""
+             << format_guest_address(event.caller)
+             << "\",\"ecx_entry\":\""
+             << format_guest_address(event.ecx_entry)
+             << "\",\"eax_entry\":\""
+             << format_guest_address(event.eax_entry)
+             << "\",\"esp_entry\":\""
+             << format_guest_address(event.esp_entry)
+             << "\",\"gate_state_word\":";
+        if (event.has_gate_state_word) {
+            text << '"' << format_guest_address(event.gate_state_word) << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"gate_callback_object\":";
+        if (event.has_gate_callback_object) {
+            text << '"' << format_guest_address(event.gate_callback_object)
+                 << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"helper_flag_byte\":";
+        if (event.has_helper_flag_byte) {
+            text << '"' << "0x" << std::hex << std::setw(2)
+                 << std::setfill('0')
+                 << static_cast<unsigned>(event.helper_flag_byte) << std::dec
+                 << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"callback_target\":";
+        if (event.has_callback_target) {
+            text << '"' << format_guest_address(event.callback_target) << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"eax_return\":";
+        if (event.completed) {
+            text << '"' << format_guest_address(event.eax_return) << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"completed\":"
+             << (event.completed ? "true" : "false") << '}';
+    }
+    text << ']';
+    return text.str();
+}
+
 #pragma pack(push, 1)
 struct GeometryHeader {
     char magic[4];
@@ -4074,6 +4135,20 @@ int main(int argc, char** argv) {
             << "    \"main_thread_recent_functions\": "
             << format_guest_call_stack(
                    guest_scheduler_state.main_thread_recent_functions)
+            << ",\n"
+            << "    \"ui_state_gate_trace_enabled\": "
+            << (guest_scheduler_state.ui_state_gate_trace_enabled
+                    ? "true"
+                    : "false")
+            << ",\n"
+            << "    \"ui_state_gate_trace_truncated\": "
+            << (guest_scheduler_state.ui_state_gate_trace_truncated
+                    ? "true"
+                    : "false")
+            << ",\n"
+            << "    \"ui_state_gate_trace\": "
+            << format_ui_state_gate_trace(
+                   guest_scheduler_state.ui_state_gate_trace)
             << ",\n"
             << "    \"ready_thread_count\": "
             << guest_scheduler_state.ready_thread_count << ",\n"

@@ -34,33 +34,40 @@ loop is consistent with a running application and is not, by itself, evidence
 of a hang. The missing result is demonstrated frontend state and retail draw
 submission on the Linux renderer.
 
-A hash-pinned Revenginstr P-code pass now covers this gate, the two inspected callers,
-and its direct helpers; the 351 exported rows and instruction-level cross-check
-are recorded in [the UI state-gate evidence report](REVENGINSTR_UI_STATE_GATE_EVIDENCE_20261019.md).
+A hash-pinned Revenginstr P-code pass now covers this gate, the two inspected
+callers, and its direct helpers; the 351 exported rows and instruction-level
+cross-check are recorded in [the UI state-gate evidence report](REVENGINSTR_UI_STATE_GATE_EVIDENCE_20261019.md).
 The two inspected callers, `0x0045c480` and `0x004692e0`, call `0x0050ceb0` on the
 `0x00545d90` singleton plus `0x108`. The gate passes its argument plus `0x10`
 to `0x0082f3c0`, which checks a word at helper argument plus `0x24`; the
 combined state field is singleton plus `0x13c`.
 
-Instruction-level evidence confirms that a nonzero field at gate offset
-`0x34`, or a nonzero result from `0x0050c880`, returns true through
-`0x0048fb36`. A zero helper result can call a virtual method at offset `0x24c`
-through the object at gate offset `0x48`, then returns false. The helper first
-checks its byte at `+0x0c`; if nonzero it calls a virtual method at slot `+4`.
-The history address `0x0050c8a9` is its zero-byte path, which returns zero; a
-following `0x00833670` is consistent with the gate's optional virtual callback.
-The image also contains an indirect call through `0x00ac59d0` on a helper path.
+Instruction-level evidence establishes the gate's true and false branches.
+The v115 runtime trace now resolves its actual path over 120 host Vulkan frames:
+it recorded 121 calls, all from `0x0054be00`, with 484 gate-subtree events and
+no trace truncation. On every call, the gate receiver was `0x00be2500`, the
+`singleton + 0x13c` word at `0x00be2534` was zero, and the callback object at
+gate offset `+0x48` was null. Helper byte `+0x0c` was zero, its return low byte
+was zero, and the gate returned `EAX=0`.
 
-The live field values, callback result, and selected frontend transition remain
-unknown. Function-level P-code alone misrepresents two transfers through
-overlapping code entries, so the checked instruction slices are part of the
-evidence. No captured value yet shows whether this gate prevents frontend
-initialization or retail draw submission.
+At `0x0054be83`, the caller tests EAX and branches to `0x0054bec8`, skipping
+`0x0054be85` through `0x0054bec7`. The gate's optional virtual callback was not
+invoked. The later `0x00833670` entry in v114's bounded history is not a
+gate-descendant callback in this trace; which later caller dispatch produces
+it remains unresolved. This proves the selected branch, but not why the field
+stays zero or whether that branch causes the missing frontend. The runtime
+trace record, raw trace log, and caller instruction slice are linked from the
+[evidence report](REVENGINSTR_UI_STATE_GATE_EVIDENCE_20261019.md).
+
+Function-level P-code alone misrepresents two transfers through overlapping
+code entries, so the checked instruction slices remain necessary. The gate
+branch is now known; the frontend transition and retail draw submission remain
+unobserved.
 
 The old v66 `Base System` allocator fatal did not recur in v112, v113 or v114
-and is historical unless observed again. The current software frontier is identifying which frontend state and draw
-submission should run during the active app loop, and whether the `0x0050ceb0`
-state gate or its surrounding state machine is preventing that transition.
+and is historical unless observed again. The current frontier is mapping the
+false branch and later callbacks in `0x0054be00` to frontend initialization and
+draw submission; the state field's semantic meaning is still unknown.
 
 ## Capture decision
 

@@ -18,6 +18,26 @@ struct Pe32ImageInfo {
     uint32_t import_stub_base = 0;
 };
 
+struct RecompiledUiStateGateTraceEvent {
+    uint64_t dispatch_count = 0;
+    uint32_t thread_id = 0;
+    uint32_t function = 0;
+    uint32_t caller = 0;
+    uint32_t ecx_entry = 0;
+    uint32_t eax_entry = 0;
+    uint32_t esp_entry = 0;
+    uint32_t gate_state_word = 0;
+    uint32_t gate_callback_object = 0;
+    uint32_t callback_target = 0;
+    uint32_t eax_return = 0;
+    uint8_t helper_flag_byte = 0;
+    bool has_gate_state_word = false;
+    bool has_gate_callback_object = false;
+    bool has_callback_target = false;
+    bool has_helper_flag_byte = false;
+    bool completed = false;
+};
+
 struct RecompiledGuestSchedulerSnapshot {
     bool entry_point_started = false;
     bool entry_point_complete = false;
@@ -31,6 +51,9 @@ struct RecompiledGuestSchedulerSnapshot {
     uint32_t main_thread_current_function = 0;
     std::vector<uint32_t> main_thread_call_stack;
     std::vector<uint32_t> main_thread_recent_functions;
+    bool ui_state_gate_trace_enabled = false;
+    bool ui_state_gate_trace_truncated = false;
+    std::vector<RecompiledUiStateGateTraceEvent> ui_state_gate_trace;
     size_t ready_thread_count = 0;
     size_t worker_thread_count = 0;
     size_t worker_waiting_count = 0;

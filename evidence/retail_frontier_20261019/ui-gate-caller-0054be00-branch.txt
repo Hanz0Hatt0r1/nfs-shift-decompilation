@@ -1,0 +1,38 @@
+
+/home/pes/ghidra_projects/shift/SHIFT.exe:     file format pei-i386
+
+
+Disassembly of section .text:
+
+0054be71 <.text+0x14ae71>:
+  54be71:	e8 1a 9f ff ff       	call   0x545d90
+  54be76:	8d 88 08 01 00 00    	lea    ecx,[eax+0x108]
+  54be7c:	e8 2f 10 fc ff       	call   0x50ceb0
+  54be81:	85 c0                	test   eax,eax
+  54be83:	74 43                	je     0x54bec8
+  54be85:	6a 00                	push   0x0
+  54be87:	e8 04 9f ff ff       	call   0x545d90
+  54be8c:	8b c8                	mov    ecx,eax
+  54be8e:	e8 2d 9f ff ff       	call   0x545dc0
+  54be93:	85 c0                	test   eax,eax
+  54be95:	75 31                	jne    0x54bec8
+  54be97:	8b 16                	mov    edx,DWORD PTR [esi]
+  54be99:	8b 82 0c 01 00 00    	mov    eax,DWORD PTR [edx+0x10c]
+  54be9f:	8b ce                	mov    ecx,esi
+  54bea1:	ff d0                	call   eax
+  54bea3:	8b 10                	mov    edx,DWORD PTR [eax]
+  54bea5:	8b c8                	mov    ecx,eax
+  54bea7:	8b 02                	mov    eax,DWORD PTR [edx]
+  54bea9:	ff d0                	call   eax
+  54beab:	84 c0                	test   al,al
+  54bead:	74 19                	je     0x54bec8
+  54beaf:	8b 16                	mov    edx,DWORD PTR [esi]
+  54beb1:	8b 82 0c 01 00 00    	mov    eax,DWORD PTR [edx+0x10c]
+  54beb7:	8b ce                	mov    ecx,esi
+  54beb9:	ff d0                	call   eax
+  54bebb:	8b 38                	mov    edi,DWORD PTR [eax]
+  54bebd:	8b c8                	mov    ecx,eax
+  54bebf:	8b 47 58             	mov    eax,DWORD PTR [edi+0x58]
+  54bec2:	6a 00                	push   0x0
+  54bec4:	33 d2                	xor    edx,edx
+  54bec6:	ff d0                	call   eax

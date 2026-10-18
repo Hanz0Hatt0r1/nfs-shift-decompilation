@@ -43,9 +43,37 @@ Instruction evidence confirms the gate behavior:
   pointer stored at `0x00ac59d0`, and returns zero.
 
 The previously observed history address `0x0050c8a9` is the zero-byte branch
-inside `0x0050c880`; it returns zero. A later `0x00833670` entry is consistent
-with the gate's optional callback, but the history does not capture its object
-pointer, callback target or return value.
+inside `0x0050c880`; it returns zero. The v114 history also showed a later
+`0x00833670` entry, but that bounded history did not prove it was nested under
+the gate.
+
+## Runtime observation
+
+An optional runtime tracepoint, enabled with `SHIFT_TRACE_UI_STATE_GATE=1`,
+recorded 484 gate-subtree function events during 120 host Vulkan frames. The
+run rendered all 120 frames with zero Vulkan validation errors. It observed 121
+gate calls, all from caller `0x0054be00`; every call had the same result:
+
+- Gate receiver `ECX` was `0x00be2500`, so the singleton candidate was
+  `0x00be23f8`; the tested `singleton + 0x13c` word at `0x00be2534` was zero.
+- `0x0082f3c0` returned `AL=1` for the zero word. Helper `0x0050c880` then
+  observed byte `+0x0c == 0` and returned `AL=0`.
+- The gate returned `EAX=0`. Its callback object pointer at `+0x48` was null,
+  and the trace recorded no gate-descendant virtual callback.
+- Caller `0x0054be00` executes `test eax,eax; je 0x0054bec8`; the trace's false
+  result takes that branch and skips `0x0054be85` through `0x0054bec7`.
+
+This resolves the branch taken by the recompiled run and corrects the earlier
+callback inference: the later `0x00833670` history entry was not observed as a
+callback beneath this gate. It may be one of the caller's later dispatches,
+but that exact mapping remains unproven. The state field's semantic meaning is
+also unknown, so the false branch is not yet established as the cause of the
+missing frontend.
+
+The machine-readable [v115 trace record](../evidence/retail_frontier_20261019/entrypoint_probe_v115_ui_gate_trace.json)
+includes counts and hashes. The [captured runtime log](../evidence/retail_frontier_20261019/shift-probe-v115-ui-state-gate-trace-120-validation.log)
+preserves the full trace; the [caller instruction slice](../evidence/retail_frontier_20261019/ui-gate-caller-0054be00-branch.txt)
+cross-checks the branch.
 
 ## Exporter boundary and limits
 
@@ -57,12 +85,12 @@ and jumps into `0x0050c8a3`. These are overlapping code-entry edges; treat the
 P-code function summaries as operation evidence, not as a complete account of
 register setup or ABI returns across those edges.
 
-This static evidence establishes the branch structure and caller-relative
-field offset. It does not establish which branch the recompiled Linux run
-currently takes, the live values at `+0x13c`, `+0x0c` or `+0x48`, or whether the
-selected UI path submits a retail draw. The next useful runtime probe should
-record the gate argument, those field values, callback return values, gate
-return `EAX`, caller address and subsequent UI/draw calls.
+The static and runtime evidence establishes the branch structure, caller-
+relative field offset, and the path selected in this bounded recompiled run.
+It does not establish why the state word remains zero or whether the selected
+caller path submits a retail draw. The next probe should map the false branch's
+skipped calls and subsequent caller dispatches to frontend state and retail
+D3D9 submissions.
 
 ## Artifacts
 
@@ -70,3 +98,6 @@ return `EAX`, caller address and subsequent UI/draw calls.
 - [P-code exports for callers and helpers](../evidence/revenginstr_ui_gate_pcode_20261019/)
 - [Instruction slices used to resolve cross-boundary control flow](../evidence/revenginstr_ui_gate_pcode_20261019/ui_gate_instruction_slices.txt)
 - [Machine-readable provenance and checksums](../evidence/revenginstr_ui_gate_pcode_20261019/manifest.json)
+- [v115 runtime trace record](../evidence/retail_frontier_20261019/entrypoint_probe_v115_ui_gate_trace.json)
+- [v115 runtime log](../evidence/retail_frontier_20261019/shift-probe-v115-ui-state-gate-trace-120-validation.log)
+- [Caller `0x0054be00` branch instructions](../evidence/retail_frontier_20261019/ui-gate-caller-0054be00-branch.txt)
