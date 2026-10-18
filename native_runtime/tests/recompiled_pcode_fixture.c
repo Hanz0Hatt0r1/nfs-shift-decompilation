@@ -14,30 +14,6 @@ int rvi_00401000(RviPcodeContext *ctx) {
     return ctx->call(ctx->opaque, UINT64_C(0x00685700));
 }
 
-int rvi_00401010(RviPcodeContext *ctx) {
-    const uint8_t expected_esp[4] = {0x00, 0xf0, 0xfd, 0x7f};
-    const uint8_t expected_return_address[4] = {0};
-    const uint8_t marker[4] = {'E', 'N', 'T', 'R'};
-    uint8_t esp[4] = {0};
-    uint8_t return_address[4] = {0xff, 0xff, 0xff, 0xff};
-    if (ctx->read(ctx->opaque, "register", UINT64_C(0x10), sizeof(esp),
-                  esp) != 0 ||
-        ctx->read(ctx->opaque, "ram", UINT64_C(0x7ffdf000),
-                  sizeof(return_address), return_address) != 0) {
-        return -1;
-    }
-    if (esp[0] != expected_esp[0] || esp[1] != expected_esp[1] ||
-        esp[2] != expected_esp[2] || esp[3] != expected_esp[3] ||
-        return_address[0] != expected_return_address[0] ||
-        return_address[1] != expected_return_address[1] ||
-        return_address[2] != expected_return_address[2] ||
-        return_address[3] != expected_return_address[3]) {
-        return -2;
-    }
-    return ctx->write(ctx->opaque, "ram", UINT64_C(0x32c00), sizeof(marker),
-                      marker);
-}
-
 int rvi_00404000(RviPcodeContext *ctx) {
     uint8_t value[4] = {0};
     const uint8_t expected[4] = {'P', '3', '2', '!'};
@@ -54,7 +30,7 @@ int rvi_00404000(RviPcodeContext *ctx) {
 
 int rvi_00405000(RviPcodeContext *ctx) {
     uint8_t iat[4] = {0};
-    if (ctx->read(ctx->opaque, "ram", UINT64_C(0x00402140), sizeof(iat),
+    if (ctx->read(ctx->opaque, "ram", UINT64_C(0x00402c00), sizeof(iat),
                   iat) != 0) {
         return -1;
     }
@@ -79,7 +55,7 @@ int rvi_00406000(RviPcodeContext *ctx) {
         return -1;
     }
     uint8_t iat[4] = {0};
-    if (ctx->read(ctx->opaque, "ram", UINT64_C(0x00402148), sizeof(iat),
+    if (ctx->read(ctx->opaque, "ram", UINT64_C(0x00402c08), sizeof(iat),
                   iat) != 0) {
         return -2;
     }
@@ -118,7 +94,7 @@ int rvi_00407000(RviPcodeContext *ctx) {
                    (const uint8_t *)&return_address) != 0 ||
         ctx->write(ctx->opaque, "register", UINT64_C(0x10), 4,
                    (const uint8_t *)&esp) != 0 ||
-        ctx->read(ctx->opaque, "ram", UINT64_C(0x00402148), sizeof(iat),
+        ctx->read(ctx->opaque, "ram", UINT64_C(0x00402c08), sizeof(iat),
                   iat) != 0) {
         return -1;
     }
@@ -135,4 +111,37 @@ int rvi_00402000(RviPcodeContext *ctx) {
 int rvi_00403000(RviPcodeContext *ctx) {
     uint64_t output = 0;
     return ctx->userop(ctx->opaque, 7, NULL, NULL, 0, &output, 4);
+}
+
+static int cpuid_and_check(RviPcodeContext *ctx, uint32_t leaf,
+                           uint32_t userop_index) {
+    const uint64_t arguments[1] = {leaf};
+    const unsigned argument_sizes[1] = {4};
+    uint64_t result_address = 0;
+    uint8_t registers[16] = {0};
+    if (ctx->userop(ctx->opaque, userop_index, arguments, argument_sizes, 1,
+                    &result_address, 4) != 0 ||
+        result_address > UINT32_MAX ||
+        ctx->read(ctx->opaque, "ram", result_address, sizeof(registers),
+                  registers) != 0) {
+        return -1;
+    }
+    return 0;
+}
+
+int rvi_00408000(RviPcodeContext *ctx) {
+    if (cpuid_and_check(ctx, 0, 45) != 0) return -1;
+    return cpuid_and_check(ctx, 1, 46);
+}
+
+int rvi_00409000(RviPcodeContext *ctx) {
+    if (ctx->userop(ctx->opaque, 17, NULL, NULL, 0, NULL, 0) != 0) return -1;
+    return ctx->userop(ctx->opaque, 18, NULL, NULL, 0, NULL, 0);
+}
+
+int rvi_0040a000(RviPcodeContext *ctx) {
+    uint64_t ticks = 0;
+    if (ctx->userop(ctx->opaque, 72, NULL, NULL, 0, &ticks, 8) != 0)
+        return -1;
+    return ticks == 0 ? -2 : 0;
 }

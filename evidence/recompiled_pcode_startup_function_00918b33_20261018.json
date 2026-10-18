@@ -1,0 +1,53 @@
+{
+  "format": "NFSShift.RecompiledPcodeRetailStartupFunction/1",
+  "captured_at": "2026-10-18",
+  "program": "SHIFT.exe",
+  "function": {
+    "entry": "0x00918b33",
+    "name": "FUN_00918b33",
+    "body_start": "0x00918b33",
+    "body_end_inclusive": "0x009194c1",
+    "body_bytes": 2447,
+    "instructions": 778,
+    "pcode_operations": 3919,
+    "lowering": "passed using revenginstr.pcode.c_lowering",
+    "lowerer_revision": "27d5823266cfa9318592dac3a32aa520ce9f879f",
+    "switch_table_address": "0x009194c3",
+    "switch_table_targets": [
+      "0x00918e84",
+      "0x00918ce9",
+      "0x00918d06",
+      "0x00918d53",
+      "0x00918d8d",
+      "0x00918d96",
+      "0x00918dcd",
+      "0x00918ec7"
+    ],
+    "instruction_export": "shift_function_00918b33_instructions_20261018.jsonl",
+    "instruction_export_sha256": "3f4b1899108716fb8ffc34a941d803b0816e1bd921217a982cbe608d1f1eca59"
+  },
+  "temporary_recompiled_supplement": {
+    "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/libnfs_shift_pcode_startup_00918b33_complete.so",
+    "sha256": "ed7829561df29bbd9f3402f931e6ce1d6e741091de2dfa41d6d8deb29b228894",
+    "tracked_in_repository": false,
+    "source_bytes": 1509758
+  },
+  "retail_entrypoint_probe": {
+    "entrypoint": "0x0090488a",
+    "dispatches_before_function": 1272,
+    "dispatches_after_function": 1699,
+    "result": "fails_closed",
+    "next_blocker": "KERNEL32.dll!RaiseException",
+    "caller": "0x00914974",
+    "exception_code": "0xC000008F",
+    "exception_flags": "0x00000000",
+    "exception_argument_count": 1,
+    "exception_arguments": "0x7FFDED04",
+    "playable_game": false
+  },
+  "limitations": [
+    "Ghidra required a body extension for the eight observed switch-table targets.",
+    "The observed RaiseException call needs structured exception dispatch, which this runtime does not implement.",
+    "This evidence establishes startup probe progress only; full game startup and behavioral parity remain unverified."
+  ]
+}

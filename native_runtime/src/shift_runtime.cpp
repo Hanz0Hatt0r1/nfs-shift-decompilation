@@ -2993,6 +2993,7 @@ struct Args {
     std::string shader_dir;
     std::string input_script;
     std::string recompiled_module;
+    std::vector<std::string> recompiled_supplement_modules;
     std::string pe_image;
     uint32_t recompiled_step = 0;
     bool recompiled_step_enabled = false;
@@ -3027,6 +3028,7 @@ Args parse_args(int argc, char** argv) {
             option == "--shader-dir" ||
             option == "--input-script" ||
             option == "--recompiled-module" ||
+            option == "--recompiled-supplement" ||
             option == "--pe-image" ||
             option == "--recompiled-step" ||
             option == "--frames") {
@@ -3062,6 +3064,8 @@ Args parse_args(int argc, char** argv) {
                 args.input_script = value;
             } else if (option == "--recompiled-module") {
                 args.recompiled_module = value;
+            } else if (option == "--recompiled-supplement") {
+                args.recompiled_supplement_modules.push_back(value);
             } else if (option == "--pe-image") {
                 args.pe_image = value;
             } else if (option == "--recompiled-step") {
@@ -3091,7 +3095,8 @@ Args parse_args(int argc, char** argv) {
                 << "[--post-solve-projection FILE] "
                 << "[--persist-post-solve-body-state] "
                 << "[--input-script FILE] [--frames N] "
-                << "[--recompiled-module ELF [--recompiled-step ADDRESS] "
+                << "[--recompiled-module ELF [--recompiled-supplement ELF ...] "
+                << "[--recompiled-step ADDRESS] "
                 << "[--pe-image PE32 [--recompiled-entrypoint]]] "
                 << "[--continuous] [--validation]\n";
             std::exit(EXIT_SUCCESS);
@@ -3115,7 +3120,8 @@ Args parse_args(int argc, char** argv) {
             "--shader-dir is required");
     }
     if (args.recompiled_module.empty() &&
-        (args.recompiled_step_enabled || args.recompiled_entrypoint_enabled)) {
+        (args.recompiled_step_enabled || args.recompiled_entrypoint_enabled ||
+         !args.recompiled_supplement_modules.empty())) {
         throw std::runtime_error(
             "--recompiled-module is required for P-code execution");
     }
@@ -3153,6 +3159,12 @@ int main(int argc, char** argv) {
             recompiled_module =
                 std::make_unique<shift::runtime::RecompiledPcodeModule>(
                     args.recompiled_module);
+            for (const auto& supplement : args.recompiled_supplement_modules) {
+                if (!recompiled_module->load_supplemental_module(supplement)) {
+                    throw std::runtime_error(
+                        recompiled_module->last_error());
+                }
+            }
             if (!args.pe_image.empty()) {
                 recompiled_pe_image_info =
                     recompiled_module->load_pe32_image(args.pe_image);
@@ -3177,7 +3189,11 @@ int main(int argc, char** argv) {
                         "recompiled PE32 entry point " +
                         format_guest_address(
                             recompiled_pe_image_info.entry_point) +
-                        " failed: " + recompiled_module->last_error());
+                        " failed after " +
+                        std::to_string(
+                            recompiled_module->dispatched_function_count()) +
+                        " P-code function dispatches: " +
+                        recompiled_module->last_error());
                 }
                 ++recompiled_pe_entry_point_invocations;
             }
@@ -3910,6 +3926,8 @@ int main(int argc, char** argv) {
             << rendered << ",\n"
             << "  \"recompiled_pcode_module_loaded\": "
             << (recompiled_module ? "true" : "false") << ",\n"
+            << "  \"recompiled_pcode_supplement_count\": "
+            << args.recompiled_supplement_modules.size() << ",\n"
             << "  \"recompiled_pe_image_loaded\": "
             << (recompiled_pe_image_loaded ? "true" : "false") << ",\n"
             << "  \"recompiled_pe_image_base\": \""
