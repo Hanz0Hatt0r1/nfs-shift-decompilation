@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(shift_native_runtime LANGUAGES CXX)
+project(shift_native_runtime LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -476,13 +476,38 @@ endif()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/recent_physics.cmake)
 
+add_library(shift_recompiled_pcode_module STATIC
+  src/recompiled_pcode_module.cpp)
+target_include_directories(shift_recompiled_pcode_module PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(shift_recompiled_pcode_module PUBLIC ${CMAKE_DL_LIBS})
+target_compile_options(shift_recompiled_pcode_module PRIVATE
+  -Wall -Wextra -Wpedantic)
+
+if(BUILD_TESTING)
+  add_library(shift_runtime_test_pcode_module SHARED
+    tests/recompiled_pcode_fixture.c)
+  target_include_directories(shift_runtime_test_pcode_module PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  add_executable(shift_runtime_recompiled_pcode_module_check
+    tests/recompiled_pcode_module_check.cpp)
+  target_link_libraries(shift_runtime_recompiled_pcode_module_check PRIVATE
+    shift_recompiled_pcode_module)
+  add_test(
+    NAME shift_runtime_recompiled_pcode_module
+    COMMAND shift_runtime_recompiled_pcode_module_check
+      $<TARGET_FILE:shift_runtime_test_pcode_module>)
+endif()
+
 add_executable(shift_runtime src/shift_runtime.cpp)
 add_dependencies(shift_runtime shift_runtime_shaders)
 target_include_directories(shift_runtime PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../native_vulkan/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../native_ir/include)
 target_link_libraries(shift_runtime PRIVATE
   shift_ir
+  shift_recompiled_pcode_module
   shift_runtime_physics
   Vulkan::Vulkan
   PkgConfig::XCB)

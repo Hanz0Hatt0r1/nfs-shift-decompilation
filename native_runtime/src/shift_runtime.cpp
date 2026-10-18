@@ -12,6 +12,7 @@
 #include "shift_constraint_relation_reset_frame.hpp"
 #include "shift_post_solve_projection.hpp"
 #include "shift_vulkan_validation.hpp"
+#include "shift_recompiled_pcode_module.hpp"
 
 #include <algorithm>
 #include <array>
@@ -27,6 +28,8 @@
 #include <limits>
 #include <map>
 #include <cctype>
+#include <iomanip>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <sstream>
@@ -39,6 +42,21 @@ constexpr uint32_t kWindowHeight = 720;
 constexpr int kDefaultFrames = 120;
 constexpr size_t kFramesInFlight = 2;
 constexpr double kFixedDt = 1.0 / 60.0;
+
+uint32_t parse_guest_address(const std::string& text) {
+    size_t parsed = 0;
+    const auto value = std::stoull(text, &parsed, 0);
+    if (parsed != text.size() || value > UINT32_MAX) {
+        throw std::runtime_error("invalid x86-32 guest address: " + text);
+    }
+    return static_cast<uint32_t>(value);
+}
+
+std::string format_guest_address(uint32_t address) {
+    std::ostringstream text;
+    text << "0x" << std::hex << std::setw(8) << std::setfill('0') << address;
+    return text.str();
+}
 
 #pragma pack(push, 1)
 struct GeometryHeader {
@@ -2974,6 +2992,9 @@ struct Args {
     std::string post_solve_projection;
     std::string shader_dir;
     std::string input_script;
+    std::string recompiled_module;
+    uint32_t recompiled_step = 0;
+    bool recompiled_step_enabled = false;
     int frames = kDefaultFrames;
     bool frames_explicit = false;
     bool continuous = false;
@@ -2999,6 +3020,8 @@ Args parse_args(int argc, char** argv) {
             option == "--post-solve-projection" ||
             option == "--shader-dir" ||
             option == "--input-script" ||
+            option == "--recompiled-module" ||
+            option == "--recompiled-step" ||
             option == "--frames") {
             if (i + 1 >= argc) {
                 throw std::runtime_error(
@@ -3030,6 +3053,11 @@ Args parse_args(int argc, char** argv) {
                 args.shader_dir = value;
             } else if (option == "--input-script") {
                 args.input_script = value;
+            } else if (option == "--recompiled-module") {
+                args.recompiled_module = value;
+            } else if (option == "--recompiled-step") {
+                args.recompiled_step = parse_guest_address(value);
+                args.recompiled_step_enabled = true;
             } else {
                 args.frames = std::max(1, std::stoi(value));
                 args.frames_explicit = true;
@@ -3054,6 +3082,7 @@ Args parse_args(int argc, char** argv) {
                 << "[--post-solve-projection FILE] "
                 << "[--persist-post-solve-body-state] "
                 << "[--input-script FILE] [--frames N] "
+                << "[--recompiled-module ELF --recompiled-step ADDRESS] "
                 << "[--continuous] [--validation]\n";
             std::exit(EXIT_SUCCESS);
         } else {
@@ -3075,6 +3104,10 @@ Args parse_args(int argc, char** argv) {
         throw std::runtime_error(
             "--shader-dir is required");
     }
+    if (args.recompiled_module.empty() != !args.recompiled_step_enabled) {
+        throw std::runtime_error(
+            "--recompiled-module and --recompiled-step must be provided together");
+    }
     return args;
 }
 
@@ -3087,6 +3120,13 @@ int main(int argc, char** argv) {
     try {
         const Args args = parse_args(argc, argv);
         runtime.validation.enabled = args.validation;
+        std::unique_ptr<shift::runtime::RecompiledPcodeModule>
+            recompiled_module;
+        if (!args.recompiled_module.empty()) {
+            recompiled_module =
+                std::make_unique<shift::runtime::RecompiledPcodeModule>(
+                    args.recompiled_module);
+        }
 
         const bool input_script_mode =
             !args.input_script.empty();
@@ -3294,6 +3334,7 @@ int main(int argc, char** argv) {
 
         int rendered = 0;
         uint64_t simulation_steps = 0;
+        uint64_t recompiled_step_invocations = 0;
         bool quit = false;
         InputState live_input{};
         shift::runtime::NativeRuntimeState native_state{};
@@ -3657,6 +3698,17 @@ int main(int argc, char** argv) {
             intent.steer_left = step_input.steer_left;
             intent.steer_right = step_input.steer_right;
             native_state.fixed_step(intent);
+            if (recompiled_module) {
+                const int result = recompiled_module->call(
+                    args.recompiled_step);
+                if (result != 0) {
+                    throw std::runtime_error(
+                        "recompiled P-code step " +
+                        format_guest_address(args.recompiled_step) +
+                        " failed: " + recompiled_module->last_error());
+                }
+                ++recompiled_step_invocations;
+            }
             if (solver_frame_mode) {
                 if (!native_state.physics.participant_ready ||
                     !native_state.physics.participant_identity_join_proven) {
@@ -3801,6 +3853,25 @@ int main(int argc, char** argv) {
             << "\"SHIFT.NativeRuntimeFrameLoop/1\",\n"
             << "  \"frames_rendered\": "
             << rendered << ",\n"
+            << "  \"recompiled_pcode_module_loaded\": "
+            << (recompiled_module ? "true" : "false") << ",\n"
+            << "  \"recompiled_pcode_step_address\": \""
+            << (recompiled_module
+                    ? format_guest_address(args.recompiled_step)
+                    : std::string())
+            << "\",\n"
+            << "  \"recompiled_pcode_step_invocations\": "
+            << recompiled_step_invocations << ",\n"
+            << "  \"recompiled_pcode_functions_dispatched\": "
+            << (recompiled_module
+                    ? recompiled_module->dispatched_function_count()
+                    : 0)
+            << ",\n"
+            << "  \"recompiled_pcode_step_schedule\": \""
+            << (recompiled_module
+                    ? "one-configured-function-per-native-fixed-step-non-retail"
+                    : "disabled")
+            << "\",\n"
             << "  \"simulation_steps\": "
             << simulation_steps << ",\n"
             << "  \"fixed_dt\": "

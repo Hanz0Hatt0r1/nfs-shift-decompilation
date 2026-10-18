@@ -20,6 +20,35 @@ MGEO → native IR → XCB window → Vulkan swapchain → indexed draw → fram
 
 The renderer consumes normalized native IR. Original BFF parsing remains upstream in the existing Python importer/resource pipeline.
 
+## Recompiled P-code module bridge
+
+`shift_runtime` can optionally load the Linux ELF emitted by the P-code lowerer
+and call a selected guest function once at each native fixed-step boundary:
+
+```bash
+native_runtime/build/shift_runtime \
+  --scene-set out/native-scene-vulkan \
+  --shader-dir native_runtime/build/shaders \
+  --recompiled-module /path/to/libnfs_shift_pcode_partial.so \
+  --recompiled-step 0x00401000 \
+  --frames 120
+```
+
+The bridge resolves `rvi_XXXXXXXX` exports, dispatches nested guest calls,
+provides a 4 GiB sparse virtual `ram` space plus the x86 register bank, and
+reports the selected step and executed function count in the frame-loop JSON.
+Missing exports, unsupported address spaces, and unhandled userops fail closed.
+The selected function runs on the runtime's native 60 Hz fixed-step schedule;
+that schedule is not established as retail timing.
+The full 41,538-export Linux ELF has passed a three-frame Vulkan smoke through
+this bridge at `rvi_00401000`; CI exercises the same path with a small callback
+fixture so it does not need the multi-gigabyte game library.
+
+This is an execution bridge into the existing Vulkan frame loop, not a complete
+game boot path. It does not load PE sections or imports, implement Win32/DirectX
+services, or establish behavioral parity. Functions that access unavailable
+platform state will stop with an explicit callback error.
+
 The runtime accepts a single MGEO mesh, a prepared `SHIFT.BMWVulkanBundle/1`, the historical BMW bundle set, or a Phase 586 prepared `SHIFT.NativeSceneVulkanSet/1` via `--scene-set`. Bundle mode validates the native-submission, SPIR-V and Vulkan-interface gates, preserves the packet vertex layout, loads semantic-aware SVGP v3 geometry (while retaining v1/v2 compatibility), loads the bundle vertex/pixel SPIR-V, uploads the `SVCP` constant buffers plus `SVTP` 2D textures and optional cube, creates descriptor sets 0/1, and submits the prepared shader/material path directly. The frame loop also exposes a fixed 60 Hz simulation boundary through `SHIFT.NativeRuntimeState/1`. Phase 599 executes the recovered CameraManager six-word snapshot plus guarded double-buffer flip/copy on that native boundary; Phase 600 can seed it from recovered camera scalar evidence. Phase 601 adds deterministic `SHIFT.NativeRuntimeInputScript/1` control snapshots that traverse the same vehicle-intent/physics-tick boundary as live keyboard input. Phase 602 additionally accepts `SHIFT.NativePhysicsParticipantBoundary/1` via `--participant-boundary`, admitting only the proven registry/selector ABI while keeping the concrete participant unresolved. Phase 603 adds the native `FUN_007b0f20` builtin sparse numerical backend as `shift_runtime_physics`; it is parity-tested separately and is not yet invoked as a complete vehicle frame. The state layer deliberately does not synthesize unknown retail force/integration semantics. `Esc` or `Q` exits the harness.
 
 ## Build
