@@ -1,0 +1,61 @@
+{
+  "format": "NFSShift.D3D9DxtSnapshotProbe/1",
+  "status": "observed",
+  "captured_at": "2026-10-18",
+  "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+  "branch": "codex/nfs-shift-retail-frame-evidence-20261018",
+  "retail_input": {
+    "logical_name": "SHIFT.exe",
+    "version": "PC retail 1.02",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "isolated_copy_used": true
+  },
+  "capture_proxy": {
+    "sha256": "dc3aac598531b465299408e5b3b18f3a0ff154c0c8e671f8f0e540b685ed3a3c",
+    "native_capture_source": "native_capture/shift_d3d9_capture.cpp"
+  },
+  "capture": {
+    "artifact_path": "/home/pes/nfs-shift-recompilation-artifacts/portproton-retail-capture-20261018/retail-capture-output-dds/capture.jsonl",
+    "sha256": "5b7f50403868c371c9a0d5c2e486080631ec0e076414075a74e59c508979edb0",
+    "size_bytes": 10133086,
+    "valid_json_objects": 30984,
+    "invalid_json_lines": 0,
+    "duplicate_key_lines": 0,
+    "frame_range": [0, 11266],
+    "trigger_count": 7,
+    "indexed_draw_events": 1005,
+    "buffer_payload_events": 610,
+    "captured_texture_snapshot_events": 495
+  },
+  "dds_validation": {
+    "unique_paths_referenced_by_capture": 11,
+    "referenced_paths_found": 11,
+    "referenced_files_with_valid_legacy_header_and_payload_size": 11,
+    "format_counts": {
+      "DXT5": 11
+    },
+    "mip_levels_min": 1,
+    "mip_levels_max": 11,
+    "lossless_block_copy": true
+  },
+  "target_draw_audit": {
+    "target_pixel_shader_hashes_checked": 51,
+    "matched_target_pixel_shader_hashes": 0,
+    "resource_path_events": 0,
+    "resource_sha256_events": 0,
+    "exact_resource_identity_events": 0,
+    "render_admission": false
+  },
+  "runtime_observation": {
+    "movie_open_during_final_trigger_window": "Movies/Attract.bik",
+    "frontend_reached": false,
+    "offline_race_reached": false,
+    "attract_video_is_not_gameplay_evidence": true
+  },
+  "limitations": [
+    "The repeated pointer-based snapshot filenames leave one latest file per unique path, not a historical file per SetTexture event.",
+    "DXT snapshots are not mapped to game resource paths or source-file SHA-256 values.",
+    "No target renderer shader from the supplied 51-hash inventory appeared in this capture.",
+    "DDS payloads, raw capture bytes, and proprietary game assets remain outside Git."
+  ]
+}

@@ -22,12 +22,17 @@ Present is a frame boundary.
 Optional capture paths cover:
 
 - texture LockRect/UnlockRect payloads;
+- managed/system-memory DXT1/2/3/4/5 textures written as lossless DDS files,
+  including every mip level;
 - cube face × mip identity;
 - VB/IB Lock/Unlock payloads;
 - resource creation lifecycle;
 - draw-local state snapshots.
 
 Binary payloads are separate artifacts referenced by versioned events.
+The DXT DDS path reads the existing compressed blocks directly. Unsupported
+or non-lockable formats keep using the existing PPM readback path where
+available; failed texture snapshots remain explicit in the capture event.
 
 When a resource-triggered capture is armed, full-buffer snapshots are retained
 until the trigger fires so payloads created before the target draw can be
