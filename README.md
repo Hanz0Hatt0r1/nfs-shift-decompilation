@@ -1,91 +1,153 @@
 # Need for Speed: SHIFT — decompilation and native Linux runtime
 
-Evidence-driven reconstruction of *Need for Speed: SHIFT* with one practical milestone: a native offline Linux/Vulkan playable slice driven by original retail resources.
+Evidence-driven reconstruction and recompilation of **Need for Speed: SHIFT (PC retail 1.02)**, with the long-term goal of running the original game logic natively on Linux with a Vulkan-based runtime.
 
-The repository already contains a connected retail-resource pipeline, Silverstone scene reconstruction, native Vulkan execution, a continuous runtime shell, persistent BMW physics state, retail scheduler/timing evidence, a proven BMW render/physics frame bridge, and progressively internalized vehicle-physics behavior.
+The project is **not playable yet**, but it has moved well beyond isolated function recovery. The complete frozen PC instruction corpus can now be lowered to native C, linked into a Linux ELF module, loaded beside the original PE32 image, and executed through a growing Win32 guest-runtime bridge inside the Vulkan runtime.
 
-It is **not yet a complete playable native build**. The project deliberately prioritizes the shortest evidence-backed path to the first Silverstone + BMW M3 E36 playable slice instead of attempting to decompile every `SHIFT.exe` function first.
+## Current status — 2026-10-18
 
-## Milestone
+| Area | Status |
+| --- | --- |
+| Frozen PC function corpus discovered | **41,538 functions** |
+| P-code lowering coverage | **41,538 / 41,538 functions (100%)** |
+| Covered machine instructions | **2,088,152 / 2,088,152** |
+| Covered P-code operations | **9,600,713** |
+| Linux native module | **Links and exports all 41,538 lowered functions** |
+| Original `SHIFT.exe` PE32 loading | **Implemented** |
+| PE32 entry-point execution | **Implemented** |
+| Guest x86 RAM/register/TEB state | **Implemented for current startup needs** |
+| Import/IAT dispatch | **Implemented, bounded subset of Win32 APIs** |
+| Retail startup probe | **Runs thousands of guest function dispatches, then fails closed** |
+| Native Vulkan runtime | **Operational** |
+| Retail resource pipeline | **Operational** |
+| Silverstone + BMW native scene path | **Operational as reconstruction infrastructure** |
+| Full retail game startup | **Not complete** |
+| Menu / race / playable game | **Not complete** |
+| Behavioral parity | **Not proven** |
 
-```text
-Silverstone
-+
-real retail BMW M3 E36
-+
-resource-driven bootstrap
-+
-input
-+
-continuous persistent physics
-+
-fresh vehicle world transform
-+
-camera
-+
-Vulkan rendering
-=
-native playable Linux vertical slice
-```
+The most important distinction is:
 
-## Live project status
+> **100% P-code lowering coverage does not mean 100% game reconstruction.**
 
-Do **not** use phase notes, old PR descriptions, or this README as a live task queue.
+All functions in the frozen instruction corpus can be converted into native host code, but the original executable still depends on Windows process/thread behavior, imported APIs, runtime state, scheduling, graphics integration, exception handling, and game-specific initialization that must be reproduced or replaced correctly.
 
-The machine-readable source of truth is:
+## What runs today
 
-- [`evidence/playable_slice_three_process_execution.json`](evidence/playable_slice_three_process_execution.json)
-
-The human-readable status, blocker burndown, active lanes, provider count and parallel-ready work are generated from it:
-
-- [`coordination/PLAYABLE_SLICE_STATUS.md`](coordination/PLAYABLE_SLICE_STATUS.md)
-
-Development ownership and merge rules are defined in:
-
-- [`coordination/DEVELOPMENT_PROCESS_V2.md`](coordination/DEVELOPMENT_PROCESS_V2.md)
-- [`coordination/lane_ownership.json`](coordination/lane_ownership.json)
-- [`PROCESS_INSTRUCTIONS.md`](PROCESS_INSTRUCTIONS.md)
-
-Before substantial work, answer:
-
-> **Какой конкретный blocker первого playable Linux vertical slice снимает эта работа?**
-
-## Development model
-
-The playable slice keeps three semantic ownership domains while exposing the real parallel lanes explicitly:
+The current recompilation path is:
 
 ```text
-P1A-contact   retail contact/collision proof
-P1B-control   retail input/control provenance
-P1D-camera    retail camera-follow provenance
-       |
-       v
-P2-runtime    native physics/runtime consumption
-       |
-       v
-P3-integration resources / scene / Vulkan / bootstrap
-       |
-       v
-native playable Linux vertical slice
+PC retail SHIFT.exe
+        |
+        v
+PE32 guest image loader
+        |
+        +--> original image mapped at preferred ImageBase
+        +--> sections / virtual tails
+        +--> import table -> guest IAT traps
+        +--> x86 register bank / sparse 4 GiB guest RAM
+        +--> TEB / FS base / initial x87 state
+        |
+        v
+lowered P-code functions
+        |
+        +--> 41,538 native host exports
+        +--> direct / computed calls
+        +--> memory callbacks
+        +--> x86 userops
+        |
+        v
+native Linux runtime
+        |
+        +--> guest Win32 compatibility services
+        +--> fixed-step execution
+        +--> resource-backed scene state
+        +--> XCB + Vulkan frame loop
 ```
 
-Processes exchange only explicit fail-closed contracts. Missing semantic ownership is never guessed. When a large proof frontier is explicitly sharded, aggregate queue ownership stays with its integration owner while bounded shard work may be executed by the other P1 lanes under `coordination/lane_ownership.json`.
+The retail PE entry point is executed against the real **PC retail 1.02** image. The latest recorded startup probe passes the currently implemented timer, fiber-identity, time and memory-status frontier and reaches roughly **3,100 guest function dispatches** before failing closed on a missing generated export:
 
-### Current process snapshot — 2026-10-09
+```text
+rvi_00a74fb0
+```
 
-This is a convenience snapshot only. The execution JSON and generated status above remain authoritative if this section ever drifts.
+That is a startup/recompilation frontier, not a playable-game result.
 
-- **Process 1A / P1A-contact:** P1.1 `FUN_00766510/contact_response` proof and P1.2 `FUN_00765c40` ownership proof are complete. In addition, P1A now owns shard **P1.3A**: computed `manager+0x374` paths `0x005292db` and `0x005f4ffa`, plus selected-root provenance for `HDVehicle+0x938` and `HDVehicle+0x13b8`.
-- **Process 1B / P1B-control:** P1B remains the aggregate P1.3 integration owner but now carries only shard **P1.3B**: computed paths `0x005f6eda` and `0x0070f62d`, the final `manager+0x374 -> HDVehicle+0x4330` identity join, and final `0x004b86cf` / slot2 adjudication. It integrates P1.3A/P1.3B/P1.3D into the final handoff for P2.6.
-- **Process 1D / P1D-camera:** P1.4 retail camera-follow provenance is complete. P1D now additionally owns shard **P1.3D**: computed paths `0x0070fb45` and `0x0070fdeb`, selected-root provenance for `HDVehicle+0x28b8`, and the remaining indirect/native APC injection timing closure for the Controller #1 alertable-worker producer chain.
-- **Process 2 / P2-runtime:** P2.3 may now consume the complete `contact_response` handoff; provider count stays at **7** until the external boundary is actually gone. In P2.4, the `FUN_007584f0 -> 0x00783a30` interpolation helper path and `FUN_0075cfb0` commit surface are native-owned, while two positive-load qword producers and wheel-job producer arithmetic/branch predicates remain open. P2.6 remains blocked until the three P1.3 shards are integrated.
-- **Process 3 / P3-integration:** resource, Silverstone/BMW scene, launcher and Vulkan infrastructure are maintained continuously. Final continuous presentation remains blocked on the completed retail control chain and a Process 2 runtime camera feed.
+See:
 
-P1.3 is therefore balanced as **4 work items per P1 lane**: two computed forwarding paths plus two additional provenance/timing items for P1A, P1B and P1D respectively. The current external vehicle-provider count is **7**. The first planned architectural reduction remains `FUN_00766510/contact_response`: **7 -> 6** only after Process 2 removes that boundary from selected production execution.
+- [`docs/PROCESS_0_PCODE_NATIVE_LOWERING.md`](docs/PROCESS_0_PCODE_NATIVE_LOWERING.md)
+- [`docs/RECOMPILED_PCODE_VULKAN_PE32_LOADER.md`](docs/RECOMPILED_PCODE_VULKAN_PE32_LOADER.md)
+- [`evidence/pcode_native_lowering_coverage_full_20261018.json`](evidence/pcode_native_lowering_coverage_full_20261018.json)
+- [`evidence/recompiled_pcode_pe32_fiber_memory_frontier_20261018.json`](evidence/recompiled_pcode_pe32_fiber_memory_frontier_20261018.json)
 
-## What already works
+## Full frozen-corpus recompilation
 
-### Retail resource pipeline
+The repository contains a generic, fail-closed lowering path for the PC retail x86 P-code corpus.
+
+The current pinned corpus contains:
+
+```text
+41,538 functions
+2,088,152 machine instructions
+9,600,713 P-code operations
+```
+
+All **41,538 functions are lowerable**. The generated C is compiled into bounded object shards and linked into a 64-bit Linux ELF shared object that exports the lowered guest functions as `rvi_XXXXXXXX` symbols.
+
+The generated multi-gigabyte sources, object files and linked modules are intentionally kept outside Git. The repository stores the scripts, hashes, manifests and evidence required to reproduce and verify them.
+
+This closes the **frozen-corpus code-generation problem**. It does not close:
+
+- missing functions outside the frozen exported corpus or functions that require supplemental recovery;
+- Windows platform/runtime behavior;
+- complete process, thread and fiber semantics;
+- structured exception handling;
+- all imported DLL services;
+- retail initialization and scheduler behavior;
+- graphics/API equivalence;
+- behavioral parity with the original executable.
+
+## PE32 guest runtime
+
+`shift_runtime` can map the original x86 PE32 executable into guest memory and invoke its entry point through the recompiled function bridge.
+
+Implemented infrastructure includes:
+
+- DOS/PE/I386/PE32 validation;
+- preferred-base image mapping;
+- section loading and zero-filled virtual tails;
+- import-table parsing and IAT trap rewriting;
+- sparse guest memory and x86 register state;
+- initialized FS base and minimal x86 TEB;
+- initialized x87 control/status/tag state;
+- supplemental P-code ELF modules;
+- direct, computed and import-thunk dispatch;
+- selected x86 userops such as CPUID and RDTSC;
+- a growing single-thread Win32 compatibility layer.
+
+The implemented Win32 surface already covers a substantial startup subset including process/thread identity, timing, heap and virtual memory, TLS, critical sections, events, mutexes, files, environment/code-page helpers, WinMM timer-period calls, basic fiber identity, local time and memory-status queries.
+
+The layer remains deliberately **fail-closed**: an unsupported API, impossible guest state or missing generated function stops execution instead of silently inventing behavior.
+
+## What is still blocking retail startup
+
+The project is currently in the stage of extending the real retail entry-point execution frontier.
+
+Major remaining classes of work include:
+
+1. recovering or supplementing missing guest function exports encountered by retail startup;
+2. implementing additional imported Win32 APIs only when the retail execution path proves they are required;
+3. completing process/thread/fiber behavior beyond the current single-thread model;
+4. implementing exception behavior where retail startup actually depends on it;
+5. reproducing the required scheduler/timing semantics;
+6. connecting original game-side graphics behavior to the native Vulkan renderer;
+7. continuing execution far enough to initialize game systems, resources, UI and race state;
+8. validating behavior against PC retail evidence rather than treating successful execution as semantic parity.
+
+The runtime is therefore an **execution bridge and reconstruction platform**, not a Wine replacement and not yet a complete game port.
+
+## Native resource and Vulkan path
+
+In parallel with whole-program recompilation, the repository contains a native reconstruction path for original game resources.
 
 ```text
 BFF
@@ -93,17 +155,11 @@ BFF
   -> typed format analysis
   -> neutral resource IR
   -> scene / render / physics contracts
+  -> native runtime assets
+  -> Vulkan execution
 ```
 
-Main entry point:
-
-```bash
-python shift_importer.py --help
-```
-
-BFF-specific tooling is documented in [`BFF_TOOLS.md`](BFF_TOOLS.md).
-
-### Silverstone and BMW scene path
+The Silverstone/BMW path currently includes:
 
 ```text
 SGB
@@ -115,118 +171,92 @@ SGB
   -> runtime-evidence admission
   -> NativeSceneBundle
   -> NativeSceneVulkanSet
-  -> Vulkan execution
+  -> Vulkan
 ```
 
-The selected BMW render path uses the retail model:
+The selected retail BMW model is:
 
 ```text
 vehicles/bmw_m3_e36/bmw_m3_e36.vhf
 ```
 
-Static VHF object-frame transport remains separate from dynamic vehicle pose.
+Main importer entry point:
 
-### Persistent vehicle runtime
+```bash
+python shift_importer.py --help
+```
 
-The native source-backed path contains substantial pre-PhysX / SDF numerical and vehicle-runtime infrastructure:
+BFF-specific tooling is documented in [`BFF_TOOLS.md`](BFF_TOOLS.md).
+
+## Evidence-driven native playable slice
+
+The repository also retains the earlier hand-reconstructed native vertical-slice program:
 
 ```text
-CDF + EDF + GDF + SDF
-  -> VehiclePhysicsAssetGraph
-  -> participant / selector boundaries
-  -> BODY + JOINT / HINGE / BAR state
-  -> matrix / RHS assembly
-  -> reset / sparse solve
-  -> post-solve BODY projection
-  -> wheel/contact response primitives
-  -> persistent native BODY state
+Silverstone
++
+retail BMW M3 E36
++
+resource-driven bootstrap
++
+input
++
+persistent physics
++
+fresh vehicle transform
++
+camera
++
+Vulkan
+=
+native playable Linux vertical slice
 ```
 
-Closed infrastructure includes persistent BMW BODY state, freshness-gated world-transform publication, selected-session scheduler timing, exact fixed inner execution, source-backed solver kernels, BODY projections, wheel/contact arithmetic, and multiple recovered collision/contact-response paths.
+That track is still incomplete. Its coordination state is maintained separately from the newer whole-program P-code/runtime work.
 
-The current provider count and exact remaining native boundaries are intentionally summarized only in the dated snapshot above; use the generated status page and execution JSON for authoritative live state.
+Canonical files for that track:
 
-### Input and camera transport
+- [`evidence/playable_slice_three_process_execution.json`](evidence/playable_slice_three_process_execution.json)
+- [`coordination/PLAYABLE_SLICE_STATUS.md`](coordination/PLAYABLE_SLICE_STATUS.md)
+- [`coordination/DEVELOPMENT_PROCESS_V2.md`](coordination/DEVELOPMENT_PROCESS_V2.md)
+- [`coordination/lane_ownership.json`](coordination/lane_ownership.json)
 
-Already implemented infrastructure includes live X11 keyboard intent, deterministic scripted input for regressions, CameraManager state transport, guarded camera double-buffer updates, and camera state inside the continuous native session.
+At its current recorded frontier, the native slice still has an open retail control chain, an incomplete runtime camera handoff and external vehicle-provider boundaries. Its final playable smoke test is prepared but not runnable.
 
-Retail camera-follow provenance is now complete. Runtime camera-feed production/consumption remains a separate Process 2 -> Process 3 gate. Retail-semantic control completion remains governed by the integrated P1.3 result rather than by the existence of input transport code.
+The recompilation path and the native vertical-slice path are complementary:
 
-### Continuous runtime
+- the **P-code path** maximizes executable coverage and lets the original retail control flow run against a reconstructed platform layer;
+- the **native slice path** isolates and replaces selected systems with evidence-backed native implementations.
 
-The Linux runtime is an integrated persistent execution shell rather than a one-frame renderer test:
+Neither path is currently a complete playable game.
 
-```text
-resource-backed scene
-  + native runtime state
-  + input
-  + camera state
-  + persistent BMW physics state
-  + admitted retail timing
-  -> continuous native session
-  -> Vulkan frame submission
-```
+## Validation
 
-Host wall-clock pacing remains an execution policy and is not used as a substitute for recovered retail scheduler evidence.
+The repository records reproducible evidence instead of treating local success as proof.
 
-## Native vertical-slice launcher
+Recent recorded validation includes:
 
-The integration runner consumes a profile instead of a long manually assembled command line:
+- **41,538 / 41,538** frozen functions lowerable;
+- Linux ELF exports for the full lowered corpus;
+- native runtime build passing;
+- **138 / 138** native runtime CTests passing at the current PE32 startup frontier;
+- Linux Vulkan smoke rendering **3 frames** with **0 Vulkan validation errors**;
+- a recorded full Python suite with **7,520 passed, 4 skipped, 0 failed**;
+- retail `SHIFT.exe` entry-point execution against the real PC 1.02 image;
+- explicit fail-closed evidence for the current retail startup blocker.
 
-```bash
-python3 tools/run_native_vertical_slice.py \
-  out/vertical_slice/profile.json \
-  --dry-run \
-  --json-out out/vertical_slice/launch_plan.json
-```
+Relevant evidence:
 
-Launch after the canonical profile/runtime gates are ready:
-
-```bash
-python3 tools/run_native_vertical_slice.py \
-  out/vertical_slice/profile.json
-```
-
-A valid launch profile proves structural/runtime admission only; it does not by itself prove gameplay-semantic completeness.
-
-## Evidence policy
-
-The repository deliberately stays fail-closed.
-
-- PC retail is the primary semantic authority.
-- Xbox 360 recompilation may be used as independent navigation/corroboration, not as a replacement for PC proof.
-- Static executable evidence, runtime observations and resource identity remain separate until explicitly joined.
-- Callgraph proximity is not ownership.
-- Equal numeric values are not provenance.
-- Visual similarity is not resource identity.
-- Static VHF transforms are not dynamic vehicle pose.
-- Missing proof remains a blocker instead of being guessed.
-- Host pacing cannot stand in for retail scheduler evidence.
-- Fixtures and test scripts cannot satisfy retail-semantic gates.
-- A native implementation is not automatically treated as recovered retail behavior.
-
-Authoritative external research-input identities and hashes are centralized in [`coordination/research_inputs.lock.json`](coordination/research_inputs.lock.json). A Drive folder, filename, Ghidra index or decompiler output is not semantic authority merely because it exists.
-
-## Ghidra and runtime evidence
-
-Static analysis is exported into machine-readable evidence instead of remaining only inside an interactive Ghidra project. Targeted instruction/p-code exports are used when a blocker needs exact register/value/store provenance.
-
-Typical export:
-
-```bash
-GHIDRA_HOME=/opt/ghidra \
-./tools/ghidra/run_shift_export.sh \
-  /path/to/ghidra_projects/shift \
-  shift \
-  SHIFT.exe \
-  out/shift_ghidra_database
-```
-
-`native_capture/`, `src/graphics/d3d9/` and bounded physics/runtime probes cover runtime evidence that cannot be recovered uniquely from static code. Runtime capture is requested only when the current blocker cannot be closed from static/resource evidence.
+- [`evidence/pcode_full_lowering_linux_build_20261018.json`](evidence/pcode_full_lowering_linux_build_20261018.json)
+- [`evidence/pcode_full_lowering_delta_20261018.json`](evidence/pcode_full_lowering_delta_20261018.json)
+- [`evidence/recompiled_pcode_pe32_vulkan_runtime_20261018.json`](evidence/recompiled_pcode_pe32_vulkan_runtime_20261018.json)
+- [`evidence/recompiled_pcode_kernel32_crt_startup_20261018.json`](evidence/recompiled_pcode_kernel32_crt_startup_20261018.json)
+- [`evidence/recompiled_pcode_pe32_guest_thread_state_20261018.json`](evidence/recompiled_pcode_pe32_guest_thread_state_20261018.json)
+- [`evidence/recompiled_pcode_pe32_fiber_memory_frontier_20261018.json`](evidence/recompiled_pcode_pe32_fiber_memory_frontier_20261018.json)
 
 ## Build and test
 
-### Python
+### Python tooling
 
 ```bash
 ./install_requirements.sh
@@ -242,7 +272,7 @@ make -C tools/shift_live_dump test
 
 ### Native Linux runtime
 
-Dependencies include Vulkan, XCB and `glslangValidator`.
+Dependencies include a C++ toolchain, CMake, Vulkan development files, XCB and `glslangValidator`.
 
 ```bash
 cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
@@ -257,4 +287,75 @@ cmake -S native_vulkan -B native_vulkan/build -DCMAKE_BUILD_TYPE=Release
 cmake --build native_vulkan/build --parallel
 ```
 
-CI uses stable coordination/evidence/full/native/Vulkan gates. New development should add pytest/CTest targets or matrix entries instead of creating another phase-numbered workflow. Historical phase documents remain evidence/history and do not select current work.
+## Running the recompiled guest bridge
+
+The full generated P-code ELF is not committed to Git. After producing or restoring the artifact described by the evidence records, the runtime can load it together with a PE32 image:
+
+```bash
+native_runtime/build/shift_runtime \
+  --scene-set out/native-scene-vulkan \
+  --shader-dir native_runtime/build/shaders \
+  --recompiled-module /path/to/libnfs_shift_pcode_partial.so \
+  --pe-image /path/to/SHIFT.exe \
+  --recompiled-entrypoint
+```
+
+A selected lowered function can also be executed at each native fixed step with `--recompiled-step ADDRESS`.
+
+See [`native_runtime/README.md`](native_runtime/README.md) for the current runtime options and exact limits.
+
+## Evidence policy
+
+This project intentionally separates **what executes** from **what has been proven equivalent**.
+
+- PC retail 1.02 is the primary semantic authority.
+- P-code coverage is not behavioral parity.
+- Successful linking is not successful game startup.
+- Successful startup progress is not a playable build.
+- Static executable evidence, runtime observations and resource identity remain separate until explicitly joined.
+- Xbox 360 material may be used for navigation/corroboration, not as a replacement for PC proof.
+- Callgraph proximity is not ownership.
+- Equal numeric values are not provenance.
+- Visual similarity is not resource identity.
+- Host pacing cannot substitute for recovered retail scheduler evidence.
+- Fixtures and synthetic scenes validate infrastructure, not retail gameplay.
+- Unsupported behavior should fail closed instead of being guessed.
+
+Research-input identities and hashes are centralized in [`coordination/research_inputs.lock.json`](coordination/research_inputs.lock.json).
+
+## Repository map
+
+| Path | Purpose |
+| --- | --- |
+| `native_runtime/` | Linux runtime, guest execution bridge, physics/runtime reconstruction, XCB/Vulkan integration |
+| `native_vulkan/` | Native Vulkan utilities and rendering support |
+| `tools/ghidra/` | Static-analysis exports, corpus generation, lowering and evidence tooling |
+| `evidence/` | Machine-readable proof, coverage and runtime records |
+| `coordination/` | Native playable-slice execution state and development ownership |
+| `docs/` | Technical notes for recovered systems and recompilation/runtime frontiers |
+| `tests/` | Python regression and evidence checks |
+| `native_capture/` | Bounded runtime-capture infrastructure |
+| `src/graphics/d3d9/` | D3D9-oriented reconstruction/capture work |
+| `shift_importer.py` | Retail resource-import pipeline entry point |
+
+## Project goal
+
+The target is not merely to produce compilable code. The target is to reach a state where original retail resources and recovered game logic execute on Linux through a documented, testable and evidence-backed runtime.
+
+The nearest whole-program milestone is:
+
+```text
+real SHIFT.exe
++
+complete required guest startup/runtime services
++
+full lowered game-code dispatch
++
+retail resource initialization
++
+native graphics/runtime integration
+=
+first real in-game execution on Linux
+```
+
+The final milestone remains a native, playable Linux build with behavior grounded in the PC retail executable and original game resources.
