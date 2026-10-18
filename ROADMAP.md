@@ -78,7 +78,7 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 | Import/IAT dispatch | **Implemented with fail-closed API boundary** |
 | Guest threads | **Cooperative multi-thread scheduling implemented** |
 | Vulkan runtime shell | **Operational on Linux** |
-| D3D9 capture tooling | **A focused PortProton probe captured 495 DXT snapshots and 610 VB/IB payloads across 11,266 frames; its 51-hash target audit found no renderer target and no resource path/SHA identity** |
+| D3D9 capture tooling | **A user-confirmed PortProton race capture recorded 5,721 indexed draws, 373 draws matching 9 hashes from the 51-shader inventory, 3,031 texture-snapshot events across 508 files, and 8,168 buffer payloads; exact resource path/SHA identity is still missing** |
 | Complete D3D9 -> Vulkan game backend | **Not implemented** |
 | Host-architecture-neutral runtime | **Not yet proven** |
 | ARM64 lowered-runtime execution | **Generic P-code fixture passes; full corpus/runtime not yet proven** |
@@ -86,7 +86,7 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 | Retail entry-point completion | **Still active; the saved v112 main-thread stack ends at `0x006472d0`, with four workers waiting** |
 | Game main loop | **Static call path points to the repeated update loop; dynamic loop identity and frontend progress remain unproven** |
 | Retail frontend | **Not reached** |
-| Offline race | **Not reached** |
+| Recompiled Linux offline race | **Not reached; original retail SHIFT was manually brought to a race under PortProton** |
 | Android gameplay | **Not reached** |
 
 The cooperative guest-thread scheduler has been exercised by the real retail entry point together with a freshly rebuilt complete lowered P-code ELF. Probe v112 used the 41,538-export module regenerated from the hash-pinned corpus and pinned `revenginstr` lowerer, plus 32 startup supplements. It ran 155,507 guest dispatches across 1,417 unique functions and rendered all 600 requested host Vulkan frames with `VK_LAYER_KHRONOS_validation` enabled and zero errors. The saved main-thread call stack is `0x0090488a -> 0x009046aa -> 0x00a69160 -> 0x0040ba50 -> 0x006492d0 -> 0x00647500 -> 0x006472d0`; four worker threads were waiting. This confirms execution remains in the yielding update path, but does not establish frontend progress, input, or a retail D3D9 frame. The Vulkan geometry remains the four-vertex converted MGEO smoke mesh. Generated code, object shards, the full ELF and supplements stay in the external artifact cache. See the [full-module rebuild evidence](evidence/pcode_full_linux_rebuild_20261018.json), [v112 probe record](evidence/retail_frontier_20261018/entrypoint_probe_v112.json), and [probe log](evidence/retail_frontier_20261018/shift-probe-v112-rebuilt-600-validation.log).
@@ -95,7 +95,9 @@ The installed PortProton retail run has a separate D3D9 capture at frame range 0
 
 A later isolated-copy probe exercised the new lossless DXT DDS path. Its 30,984 JSON events include 495 texture snapshot events, 610 VB/IB payload events and seven trigger windows. All 11 unique DDS paths referenced by those events passed header and mip-payload-size validation. The audit found no match against the 51 supplied Silverstone renderer shader hashes and no `resource_path`/`resource_sha256` identity. The process still had `Movies/Attract.bik` open during the last trigger window, so this is texture-capture evidence rather than race-render evidence. The capture and all texture payloads remain outside Git; see the [DXT snapshot probe note](docs/SHIFT_D3D9_DXT_SNAPSHOT_PROBE_20261018.md) and [machine-readable probe record](evidence/retail_frontier_20261018/d3d9_dxt_snapshot_probe.json).
 
-The earlier v65-v67 allocator evidence remains useful history, but it is not the latest execution state. The current blockers are finding what advances the guest beyond the observed `0x006472d0` update path and connecting actual D3D9 draw resources to the Vulkan backend. The native Vulkan smoke still uses converted MGEO geometry. No complete frontend, offline race, or playable retail session has been demonstrated.
+A subsequent manual-trigger capture followed the user's confirmation that the retail race had loaded. The trigger window covered frames 5865–5869 and produced 105,047 valid JSON events, 8,168 buffer payload events, 508 texture files (499 valid DDS plus nine PPM), and 373 draws matching nine hashes in the supplied Silverstone-era shader inventory. This is race-window evidence from the original retail game under PortProton; it is not evidence that the recompiled Linux runtime reaches a race. The capture still has no `resource_path`/`resource_sha256` pairs, so matching draws cannot yet be admitted to Vulkan. Raw data totaling 212,322,572 bytes remains outside Git. The texture-dump proxy change is merged in [PR #2085](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2085); trigger-mode texture files are now deferred until the manual trigger. See the [race-window capture note](docs/SHIFT_D3D9_RACE_WINDOW_CAPTURE_20261018.md) and [machine-readable audit](evidence/retail_frontier_20261018/d3d9_race_window_capture.json).
+
+The earlier v65-v67 allocator evidence remains useful history, but it is not the latest execution state. The native recompiled path still needs to advance beyond the observed `0x006472d0` update path and connect actual D3D9 draw resources to the Vulkan backend. The native Vulkan smoke still uses converted MGEO geometry. A PortProton race is reachable with the original retail executable, but the recompiled Linux path has not demonstrated its frontend, offline race, or playable session.
 
 The generic `revenginstr` binary80 lowering now executes a synthetic P-code
 fixture on ARM64 CI (22 passed, one x86-only `FWAIT` test skipped). This covers
@@ -105,7 +107,7 @@ startup. See the [cross-host fixture evidence](evidence/pcode_native_lowering_ar
 
 The current immediate execution frontier is:
 
-> **Advance the real retail path from the observed `0x006472d0` scheduler loop into the frontend and an offline race. Capture a race-specific D3D9 draw with its VB/IB payloads and lossless texture snapshots, then add exact resource path/SHA attribution before admitting it to the Vulkan translator. The latest capture proves DDS preservation but still contains only attract-video activity and no target shader match.**
+> **Advance the recompiled Linux path from the observed `0x006472d0` scheduler loop into its frontend and an offline race. Use the new PortProton race-window matches to correlate D3D9 draws with their VB/IB payloads and textures, then add exact resource path/SHA attribution before admitting them to the Vulkan translator.**
 
 At the same time, new infrastructure must avoid introducing additional x86-64/Linux-only assumptions.
 
@@ -120,6 +122,8 @@ Primary evidence:
 - [`evidence/retail_frontier_20261018/entrypoint_probe_v112.json`](evidence/retail_frontier_20261018/entrypoint_probe_v112.json)
 - [`evidence/pcode_full_linux_rebuild_20261018.json`](evidence/pcode_full_linux_rebuild_20261018.json)
 - [`docs/SHIFT_D3D9_CAPTURE_AUDIT_20261018.md`](docs/SHIFT_D3D9_CAPTURE_AUDIT_20261018.md)
+- [`docs/SHIFT_D3D9_RACE_WINDOW_CAPTURE_20261018.md`](docs/SHIFT_D3D9_RACE_WINDOW_CAPTURE_20261018.md)
+- [`evidence/retail_frontier_20261018/d3d9_race_window_capture.json`](evidence/retail_frontier_20261018/d3d9_race_window_capture.json)
 - [`evidence/shift_d3d9_capture_audit_20261018.json`](evidence/shift_d3d9_capture_audit_20261018.json)
 - [`evidence/shift_d3d9_capture_provenance_20261018.json`](evidence/shift_d3d9_capture_provenance_20261018.json)
 - [`evidence/shift_silverstone_target_draw_local_summary_20261018.json`](evidence/shift_silverstone_target_draw_local_summary_20261018.json)

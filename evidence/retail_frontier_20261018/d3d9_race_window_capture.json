@@ -1,0 +1,511 @@
+{
+  "audit": {
+    "blocking_reasons": [
+      "resource-identity:path-sha-pair-not-observed",
+      "sampler-cube-snapshot:six-face-capture-not-observed"
+    ],
+    "boundary": {
+      "phase569_input_only": "shader/draw readiness and target draw hits do not claim an IMB match",
+      "phase590_input_only": "snapshot presence does not claim scene sampler admission",
+      "phase593_input_only": "six captured paths do not claim cube provenance",
+      "phase598_input_only": "raw-input candidate does not replace Phase 595-598 proof gates",
+      "resource_identity_requirement": "resource_path + resource_sha256 on the same capture event",
+      "target_draw_coverage": "counts draws whose currently bound pixel-shader byte hash matches the supplied target inventory; it does not prove resource, primitive or same-instance identity"
+    },
+    "capabilities": {
+      "buffer_payload_input_observed": true,
+      "exact_resource_identity_observed": false,
+      "phase569_shader_prefilter_input": true,
+      "phase590_sampler2d_snapshot_input": true,
+      "phase593_sampler_cube_snapshot_input": false,
+      "phase598_raw_input_candidate": false,
+      "programmable_draw_state_observed": true
+    },
+    "capture_profile": "mixed",
+    "duplicate_key_conflict_counts": {},
+    "duplicate_key_counts": {},
+    "event_counts": {
+      "begin_scene": 51,
+      "buffer_payload": 8168,
+      "capture_trigger": 1,
+      "capture_trigger_complete": 1,
+      "clear": 47,
+      "create_cube_texture": 4,
+      "create_device_begin": 1,
+      "create_device_result": 1,
+      "create_index_buffer": 5051,
+      "create_pixel_shader": 3916,
+      "create_texture": 2880,
+      "create_vertex_buffer": 3500,
+      "create_vertex_declaration": 886,
+      "create_vertex_shader": 3912,
+      "d3d9_hooks": 2,
+      "d3dperf_begin_event": 8,
+      "deferred_buffer_payload_summary": 1,
+      "device_hooks": 1,
+      "direct3dcreate9_backend_call_begin": 2,
+      "direct3dcreate9_result": 2,
+      "draw_indexed_primitive": 5721,
+      "end_scene": 51,
+      "present_result": 27,
+      "proxy_d3d9_backend_selected": 1,
+      "proxy_direct3dcreate9": 1,
+      "proxy_system_d3d9_ready": 1,
+      "set_depth_stencil_surface": 79,
+      "set_indices": 5655,
+      "set_pixel_shader": 5721,
+      "set_pixel_shader_constant_f": 2344,
+      "set_render_state": 12578,
+      "set_render_target": 142,
+      "set_sampler_state": 11730,
+      "set_stream_source": 6502,
+      "set_texture": 9568,
+      "set_vertex_declaration": 1646,
+      "set_vertex_shader": 5721,
+      "set_vertex_shader_constant_f": 9042,
+      "set_viewport": 82
+    },
+    "format": "SHIFT.D3D9RawCaptureAudit/1",
+    "status": "observed",
+    "summary": {
+      "captured_cube_snapshot_event_count": 0,
+      "captured_texture_snapshot_event_count": 3031,
+      "duplicate_key_conflict_line_count": 0,
+      "duplicate_key_line_count": 0,
+      "duration_ms": 188332,
+      "event_index_max": 5273729,
+      "event_index_min": 0,
+      "exact_resource_identity_event_count": 0,
+      "frame_max": 5870,
+      "frame_min": 0,
+      "invalid_json_count": 0,
+      "non_object_count": 0,
+      "nonempty_line_count": 105047,
+      "resource_path_event_count": 0,
+      "resource_sha256_event_count": 0,
+      "resource_signature_event_count": 55164,
+      "tick_max": 85870079,
+      "tick_min": 85681747,
+      "unique_pixel_shader_count": 439,
+      "unique_vertex_shader_count": 243,
+      "valid_object_count": 105047
+    },
+    "target_inventory": {
+      "family_coverage": [
+        {
+          "draw_hit_count": 41,
+          "draw_hit_hash_count": 2,
+          "family": "basicinstanced",
+          "matched_hash_count": 5,
+          "matched_hashes": [
+            "4cf6386d52c5e9472a3a65b49f70342d6171c7577ae190552941a4c91fc63abb",
+            "5af68e3c210e17d51fed7c3229326c7da5564ff91d423df656267cb6de931623",
+            "61da7ba1199459efe0be1cee7a00583154713886c94235d919eb62bb9ff70e72",
+            "adb15d7e73c899c1891b3d0dcd7eedb5447d7c4387da883fda39e534c65f4add",
+            "f71a39ae0431ec04f866343fb47438babd76286cea0a51c843ea989a62ed8bcb"
+          ],
+          "shader_creation_count": 20,
+          "target_hash_count": 11
+        },
+        {
+          "draw_hit_count": 222,
+          "draw_hit_hash_count": 3,
+          "family": "crowdgeninstanced",
+          "matched_hash_count": 6,
+          "matched_hashes": [
+            "102d3a1c93864ddaf9b160c0ebad57fde8458b892166e18dc3d7160d07747c1b",
+            "41121a36bd00d6a364964462aee58f2160e03db2a7d198d7290558611f4acbaf",
+            "a5435523fe10e916e53ac4695c1a1a05f51850d8a24d897bc7239d94fc3c42d4",
+            "d7859ccad24d2884b4e4eebeb2f520ea6fcdfbbd65cdc475c22f86a4200d351a",
+            "eba68ff23ccaf5ff0df4690da7805a7cbd33a09af273099c51b3f801f1c3ff1f",
+            "fdd525360223208a0fa22ae13092eea1405078ab937f7665a640abf522c44bee"
+          ],
+          "shader_creation_count": 48,
+          "target_hash_count": 20
+        },
+        {
+          "draw_hit_count": 69,
+          "draw_hit_hash_count": 2,
+          "family": "crowdgeninstancedbillboard",
+          "matched_hash_count": 4,
+          "matched_hashes": [
+            "0c8a98760e224ee85825d3723409c43f7e611a85c6c715a4f580c9d748d2e75c",
+            "6523e2b1e94245ca9ce1a83eb56dd4edc27d38ae027ab5ea4482b54df78c26a0",
+            "6b1bc99d47aa5257b3fe8a60e8cd46ae7d4c4b9eb6da15862893a881a1e51d62",
+            "8649d5910884460f8b4661318a9628c6c9b16922b5ac5e821e1a597e9e0e9d3a"
+          ],
+          "shader_creation_count": 16,
+          "target_hash_count": 10
+        },
+        {
+          "draw_hit_count": 33,
+          "draw_hit_hash_count": 1,
+          "family": "foliageinstanced",
+          "matched_hash_count": 2,
+          "matched_hashes": [
+            "4c7b4d96853bb13191559a71239eb3d0c7d6f767d603a38018b2c933dd2e5be2",
+            "58cd6cf20a14fe3347dce15fc76fa4ecd85e0e616ea44ce907e747bdea534986"
+          ],
+          "shader_creation_count": 12,
+          "target_hash_count": 5
+        },
+        {
+          "draw_hit_count": 8,
+          "draw_hit_hash_count": 1,
+          "family": "skintestinstanced",
+          "matched_hash_count": 2,
+          "matched_hashes": [
+            "1a1b9679f26eee6234a58cbfc1f052d1bc7dc0a62d45d9e80785e9f4ef3da1d9",
+            "1f84d5947d0dbfc99183e71e19536ae82545f2f3664a29be961eea36ad35f99f"
+          ],
+          "shader_creation_count": 12,
+          "target_hash_count": 5
+        }
+      ],
+      "hash_observations": [
+        {
+          "draw_hit_count": 26,
+          "first_draw_frame": 5865,
+          "last_draw_frame": 5869,
+          "pixel_byte_sha256": "0c8a98760e224ee85825d3723409c43f7e611a85c6c715a4f580c9d748d2e75c",
+          "resource_trigger_signatures": [
+            "ps:327c926756d291e2"
+          ],
+          "shader_creation_count": 4
+        },
+        {
+          "draw_hit_count": 0,
+          "first_draw_frame": null,
+          "last_draw_frame": null,
+          "pixel_byte_sha256": "102d3a1c93864ddaf9b160c0ebad57fde8458b892166e18dc3d7160d07747c1b",
+          "resource_trigger_signatures": [
+            "ps:a0742bccacc36f64"
+          ],
+          "shader_creation_count": 12
+        },
+        {
+          "draw_hit_count": 0,
+          "first_draw_frame": null,
+          "last_draw_frame": null,
+          "pixel_byte_sha256": "1a1b9679f26eee6234a58cbfc1f052d1bc7dc0a62d45d9e80785e9f4ef3da1d9",
+          "resource_trigger_signatures": [
+            "ps:03ddeee6353d3f44"
+          ],
+          "shader_creation_count": 6
+        },
+        {
+          "draw_hit_count": 8,
+          "first_draw_frame": 5865,
+          "last_draw_frame": 5868,
+          "pixel_byte_sha256": "1f84d5947d0dbfc99183e71e19536ae82545f2f3664a29be961eea36ad35f99f",
+          "resource_trigger_signatures": [
+            "ps:bb3d645363af7de6"
+          ],
+          "shader_creation_count": 6
+        },
+        {
+          "draw_hit_count": 2,
+          "first_draw_frame": 5869,
+          "last_draw_frame": 5869,
+          "pixel_byte_sha256": "41121a36bd00d6a364964462aee58f2160e03db2a7d198d7290558611f4acbaf",
+          "resource_trigger_signatures": [
+            "ps:e08df29b69b81944"
+          ],
+          "shader_creation_count": 12
+        },
+        {
+          "draw_hit_count": 33,
+          "first_draw_frame": 5865,
+          "last_draw_frame": 5869,
+          "pixel_byte_sha256": "4c7b4d96853bb13191559a71239eb3d0c7d6f767d603a38018b2c933dd2e5be2",
+          "resource_trigger_signatures": [
+            "ps:018dcf727eb19413"
+          ],
+          "shader_creation_count": 6
+        },
+        {
+          "draw_hit_count": 0,
+          "first_draw_frame": null,
+          "last_draw_frame": null,
+          "pixel_byte_sha256": "4cf6386d52c5e9472a3a65b49f70342d6171c7577ae190552941a4c91fc63abb",
+          "resource_trigger_signatures": [
+            "ps:f53e7132eebd1c37"
+          ],
+          "shader_creation_count": 4
+        },
+        {
+          "draw_hit_count": 0,
+          "first_draw_frame": null,
+          "last_draw_frame": null,
+          "pixel_byte_sha256": "58cd6cf20a14fe3347dce15fc76fa4ecd85e0e616ea44ce907e747bdea534986",
+          "resource_trigger_signatures": [
+            "ps:26df7e01b01fe9f9"
+          ],
+          "shader_creation_count": 6
+        },
+        {
+          "draw_hit_count": 15,
+          "first_draw_frame": 5865,
+          "last_draw_frame": 5869,
+          "pixel_byte_sha256": "5af68e3c210e17d51fed7c3229326c7da5564ff91d423df656267cb6de931623",
+          "resource_trigger_signatures": [
+            "ps:1ad91d5495b54143"
+          ],
+          "shader_creation_count": 4
+        },
+        {
+          "draw_hit_count": 0,
+          "first_draw_frame": null,
+          "last_draw_frame": null,
+          "pixel_byte_sha256": "61da7ba1199459efe0be1cee7a00583154713886c94235d919eb62bb9ff70e72",
+          "resource_trigger_signatures": [
+            "ps:18c05835ca4e01b2"
+          ],
+          "shader_creation_count": 4
+        },
+        {
+          "draw_hit_count": 0,
+          "first_draw_frame": null,
+          "last_draw_frame": null,
+          "pixel_byte_sha256": "6523e2b1e94245ca9ce1a83eb56dd4edc27d38ae027ab5ea4482b54df78c26a0",
+          "resource_trigger_signatures": [
+            "ps:a4afc21b526314ea"
+          ],
+          "shader_creation_count": 4
+        },
+        {
+          "draw_hit_count": 0,
+          "first_draw_frame": null,
+          "last_draw_frame": null,
+          "pixel_byte_sha256": "6b1bc99d47aa5257b3fe8a60e8cd46ae7d4c4b9eb6da15862893a881a1e51d62",
+          "resource_trigger_signatures": [
+            "ps:bf86e428ea5f2772"
+          ],
+          "shader_creation_count": 4
+        },
+        {
+          "draw_hit_count": 43,
+          "first_draw_frame": 5865,
+          "last_draw_frame": 5869,
+          "pixel_byte_sha256": "8649d5910884460f8b4661318a9628c6c9b16922b5ac5e821e1a597e9e0e9d3a",
+          "resource_trigger_signatures": [
+            "ps:7b11b511ce70eb2e"
+          ],
+          "shader_creation_count": 4
+        },
+        {
+          "draw_hit_count": 0,
+          "first_draw_frame": null,
+          "last_draw_frame": null,
+          "pixel_byte_sha256": "a5435523fe10e916e53ac4695c1a1a05f51850d8a24d897bc7239d94fc3c42d4",
+          "resource_trigger_signatures": [
+            "ps:1161dd61cc758120"
+          ],
+          "shader_creation_count": 6
+        },
+        {
+          "draw_hit_count": 0,
+          "first_draw_frame": null,
+          "last_draw_frame": null,
+          "pixel_byte_sha256": "adb15d7e73c899c1891b3d0dcd7eedb5447d7c4387da883fda39e534c65f4add",
+          "resource_trigger_signatures": [
+            "ps:58462f91650cef34"
+          ],
+          "shader_creation_count": 4
+        },
+        {
+          "draw_hit_count": 138,
+          "first_draw_frame": 5865,
+          "last_draw_frame": 5869,
+          "pixel_byte_sha256": "d7859ccad24d2884b4e4eebeb2f520ea6fcdfbbd65cdc475c22f86a4200d351a",
+          "resource_trigger_signatures": [
+            "ps:b83e3c4ec719e80f"
+          ],
+          "shader_creation_count": 6
+        },
+        {
+          "draw_hit_count": 82,
+          "first_draw_frame": 5865,
+          "last_draw_frame": 5869,
+          "pixel_byte_sha256": "eba68ff23ccaf5ff0df4690da7805a7cbd33a09af273099c51b3f801f1c3ff1f",
+          "resource_trigger_signatures": [
+            "ps:0348ca6769d3b307"
+          ],
+          "shader_creation_count": 6
+        },
+        {
+          "draw_hit_count": 26,
+          "first_draw_frame": 5865,
+          "last_draw_frame": 5869,
+          "pixel_byte_sha256": "f71a39ae0431ec04f866343fb47438babd76286cea0a51c843ea989a62ed8bcb",
+          "resource_trigger_signatures": [
+            "ps:bdb10e205fc12aac"
+          ],
+          "shader_creation_count": 4
+        },
+        {
+          "draw_hit_count": 0,
+          "first_draw_frame": null,
+          "last_draw_frame": null,
+          "pixel_byte_sha256": "fdd525360223208a0fa22ae13092eea1405078ab937f7665a640abf522c44bee",
+          "resource_trigger_signatures": [
+            "ps:699d639e6b384480"
+          ],
+          "shader_creation_count": 6
+        }
+      ],
+      "matched_pixel_target_hash_count": 19,
+      "matched_pixel_target_hashes": [
+        "0c8a98760e224ee85825d3723409c43f7e611a85c6c715a4f580c9d748d2e75c",
+        "102d3a1c93864ddaf9b160c0ebad57fde8458b892166e18dc3d7160d07747c1b",
+        "1a1b9679f26eee6234a58cbfc1f052d1bc7dc0a62d45d9e80785e9f4ef3da1d9",
+        "1f84d5947d0dbfc99183e71e19536ae82545f2f3664a29be961eea36ad35f99f",
+        "41121a36bd00d6a364964462aee58f2160e03db2a7d198d7290558611f4acbaf",
+        "4c7b4d96853bb13191559a71239eb3d0c7d6f767d603a38018b2c933dd2e5be2",
+        "4cf6386d52c5e9472a3a65b49f70342d6171c7577ae190552941a4c91fc63abb",
+        "58cd6cf20a14fe3347dce15fc76fa4ecd85e0e616ea44ce907e747bdea534986",
+        "5af68e3c210e17d51fed7c3229326c7da5564ff91d423df656267cb6de931623",
+        "61da7ba1199459efe0be1cee7a00583154713886c94235d919eb62bb9ff70e72",
+        "6523e2b1e94245ca9ce1a83eb56dd4edc27d38ae027ab5ea4482b54df78c26a0",
+        "6b1bc99d47aa5257b3fe8a60e8cd46ae7d4c4b9eb6da15862893a881a1e51d62",
+        "8649d5910884460f8b4661318a9628c6c9b16922b5ac5e821e1a597e9e0e9d3a",
+        "a5435523fe10e916e53ac4695c1a1a05f51850d8a24d897bc7239d94fc3c42d4",
+        "adb15d7e73c899c1891b3d0dcd7eedb5447d7c4387da883fda39e534c65f4add",
+        "d7859ccad24d2884b4e4eebeb2f520ea6fcdfbbd65cdc475c22f86a4200d351a",
+        "eba68ff23ccaf5ff0df4690da7805a7cbd33a09af273099c51b3f801f1c3ff1f",
+        "f71a39ae0431ec04f866343fb47438babd76286cea0a51c843ea989a62ed8bcb",
+        "fdd525360223208a0fa22ae13092eea1405078ab937f7665a640abf522c44bee"
+      ],
+      "pixel_target_hash_count": 51,
+      "supplied": true,
+      "target_pixel_draw_count": 373,
+      "target_pixel_draw_hash_count": 9,
+      "target_pixel_shader_creation_count": 108
+    },
+    "version": 1
+  },
+  "capture_input": {
+    "artifact_path": "/home/pes/nfs-shift-recompilation-artifacts/portproton-retail-capture-20261018/retail-race-after-load-20261018/shift_d3d9_capture.jsonl",
+    "bundle_artifact_path": "/home/pes/nfs-shift-recompilation-artifacts/portproton-retail-capture-20261018/retail-race-after-load-20261018",
+    "bundle_size_bytes": 212322572,
+    "bundle_stored_outside_git": true,
+    "duplicate_key_lines": 0,
+    "duration_ms": 188332,
+    "frame_range": [
+      0,
+      5870
+    ],
+    "invalid_json_lines": 0,
+    "sha256": "b9e6717961cc6239344c9e212e9da8c806b2062ca597ac9e935a51d8fd52d0dd",
+    "size_bytes": 62413516,
+    "valid_json_objects": 105047
+  },
+  "capture_proxy": {
+    "sha256": "f7fea93de294fdf653b8a57d3596fe846d262b6fe09ece71d491a37e7be554a5",
+    "source_commit": "8d317e68424ae318c5a3f7010bb2b7ad5ee5a0e0",
+    "source_pr": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2085"
+  },
+  "captured_at": "2026-10-18",
+  "format": "NFSShift.D3D9RaceWindowCaptureEvidence/1",
+  "limitations": [
+    "The user-confirmed race context was not independently captured in a screenshot or scene label.",
+    "Target shader matches are against the supplied Silverstone-era inventory and do not prove same-resource or primitive identity.",
+    "No exact resource_path/resource_sha256 pairs were observed; the sampled draws are not yet admissible as identified Vulkan resources.",
+    "No six-face cube snapshot was observed.",
+    "This is the original retail executable under PortProton, not the native recompiled Linux game path.",
+    "Raw capture, VB/IB buffers, and texture payloads remain outside Git; only hashes and audit summaries are committed."
+  ],
+  "render_evidence": {
+    "buffer_payload_events": 8168,
+    "draw_indexed_primitive_events": 5721,
+    "family_coverage": [
+      {
+        "draw_hit_count": 41,
+        "draw_hit_hash_count": 2,
+        "family": "basicinstanced",
+        "matched_hash_count": 5,
+        "target_hash_count": 11
+      },
+      {
+        "draw_hit_count": 222,
+        "draw_hit_hash_count": 3,
+        "family": "crowdgeninstanced",
+        "matched_hash_count": 6,
+        "target_hash_count": 20
+      },
+      {
+        "draw_hit_count": 69,
+        "draw_hit_hash_count": 2,
+        "family": "crowdgeninstancedbillboard",
+        "matched_hash_count": 4,
+        "target_hash_count": 10
+      },
+      {
+        "draw_hit_count": 33,
+        "draw_hit_hash_count": 1,
+        "family": "foliageinstanced",
+        "matched_hash_count": 2,
+        "target_hash_count": 5
+      },
+      {
+        "draw_hit_count": 8,
+        "draw_hit_hash_count": 1,
+        "family": "skintestinstanced",
+        "matched_hash_count": 2,
+        "target_hash_count": 5
+      }
+    ],
+    "matched_target_shader_hashes": 19,
+    "target_draw_events": 373,
+    "target_draw_shader_hashes": 9,
+    "target_inventory": "evidence/silverstone_era3_runtime_shader_targets.json",
+    "target_inventory_sha256": "26620dbe10aa578abe1115f56c642037bd2b06199814a886affcecaa4706650f",
+    "target_shader_hashes_checked": 51
+  },
+  "repository": "Hanz0Hatt0r1/nfs-shift-decompilation",
+  "resource_identity": {
+    "exact_path_sha_pairs": false,
+    "resource_path_events": 0,
+    "resource_sha256_events": 0
+  },
+  "runtime_context": {
+    "isolated_copy_used": true,
+    "native_recompiled_linux_build": false,
+    "race_context_basis": "User reported being in the race immediately before firing the manual capture trigger.",
+    "race_loaded": true,
+    "retail_executable": "SHIFT.exe, PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "runtime": "PortProton GE-PROTON11-5-X86_64"
+  },
+  "status": "observed",
+  "texture_snapshots": {
+    "capture_failed_events": 1018,
+    "captured_snapshot_events": 3031,
+    "dds_files": 499,
+    "dds_format_counts": {
+      "DXT1": 387,
+      "DXT5": 112
+    },
+    "invalid_or_missing_files": 0,
+    "mip_levels_max": 11,
+    "mip_levels_min": 1,
+    "ppm_files": 9,
+    "pre_trigger_deferred_events": 5125,
+    "referenced_files_found": 508,
+    "snapshot_payload_bytes": 60874669,
+    "unique_paths": 508,
+    "validated_dds_headers_and_payload_lengths": 499
+  },
+  "trigger_window": {
+    "capture_window_frames": [
+      5865,
+      5869
+    ],
+    "complete_event_frame": 5870,
+    "post_frames": 2,
+    "pre_frames": 2,
+    "texture_snapshot_files_before_trigger": 0,
+    "trigger": "manual capture.trigger file after user-confirmed race load",
+    "trigger_frame": 5867
+  }
+}
