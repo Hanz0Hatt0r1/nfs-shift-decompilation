@@ -1,0 +1,57 @@
+{
+  "format": "NFSShift.RecompiledPcodePe32ImportBoundary/1",
+  "pe_fixture": {
+    "image_base": "0x00400000",
+    "image_size": 12288,
+    "section_count": 2,
+    "import_modules": ["KERNEL32.dll"],
+    "imported_functions": ["KERNEL32.dll!Sleep", "KERNEL32.dll!#123"],
+    "iat_slots": [
+      {
+        "rva": "0x00002080",
+        "guest_value": "0xf0000000",
+        "import": "KERNEL32.dll!Sleep"
+      },
+      {
+        "rva": "0x00002084",
+        "guest_value": "0xf0000010",
+        "import": "KERNEL32.dll!#123"
+      }
+    ],
+    "import_trap_base": "0xf0000000",
+    "import_trap_calls_fail_closed": true,
+    "observed_error": "unimplemented PE import KERNEL32.dll!Sleep",
+    "api_implementation": false
+  },
+  "local_linux_vulkan_smoke": {
+    "geometry": "synthetic MGEO triangle",
+    "mapped_import_modules": 1,
+    "mapped_import_functions": 2,
+    "selected_pcode_step": "0x00404000",
+    "step_reads_loaded_image": true,
+    "frames_requested": 3,
+    "frames_rendered": 3,
+    "simulation_steps": 3,
+    "pcode_step_invocations": 3,
+    "pcode_functions_dispatched": 6,
+    "status": "ok",
+    "validation_enabled": true,
+    "validation_errors": 0
+  },
+  "native_runtime_ctest": {
+    "passed": 138,
+    "failed": 0
+  },
+  "python_regressions": {
+    "passed": 7519,
+    "skipped": 3,
+    "failed": 0
+  },
+  "limitations": {
+    "imported_api_execution": false,
+    "relocations": false,
+    "retail_pe_tested": false,
+    "game_startup": false,
+    "playable_game": false
+  }
+}

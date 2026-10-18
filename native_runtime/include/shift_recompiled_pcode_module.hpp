@@ -12,6 +12,9 @@ struct Pe32ImageInfo {
     uint32_t image_size = 0;
     uint32_t entry_point = 0;
     uint16_t section_count = 0;
+    uint32_t import_module_count = 0;
+    uint32_t import_function_count = 0;
+    uint32_t import_stub_base = 0;
 };
 
 class RecompiledPcodeModule {
