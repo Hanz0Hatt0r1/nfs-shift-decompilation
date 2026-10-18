@@ -64,7 +64,7 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 
 ---
 
-## Current position — 2026-10-18
+## Current position — 2026-10-19
 
 | Area | Current state |
 | --- | --- |
@@ -97,7 +97,7 @@ A later isolated-copy probe exercised the new lossless DXT DDS path. Its 30,984 
 
 Two manual-trigger captures followed the user's confirmation that the retail race had loaded. Their windows covered frames 5865–5869 and 6983–6987; the second added 7,348 indexed draws, 440 draws matching nine inventory hashes, 84 VB/IB payload events, and 33 texture files. Together, the raw log has 202,870 valid JSON events, 13,069 indexed draws, 8,252 buffer payload events, 541 texture files (531 validated DDS plus 10 PPM), and 813 draws matching 10 hashes in the supplied 51-hash Silverstone-era inventory. The target sampler report resolves 3,055 bindings across those draws; all 813 draws have complete capture-local state and explicit sampler-state writes. It directly links 945 bindings across 331 draws to 85 snapshots, and hashes all 541 snapshot files with none missing. Another 1,353 bindings have a snapshot on the same texture generation, but contents between binds are not proven stable; 27 are ambiguous and 730 have no same-generation candidate. Snapshot hashes identify the current stored capture files, not original retail resource paths. This remains evidence from original retail SHIFT under PortProton, not evidence that the recompiled Linux runtime reaches a race. The capture still has no original `resource_path`/`resource_sha256` pairs, so no draw is admitted to Vulkan. Raw data totaling 253,861,323 bytes remains outside Git. The texture-dump proxy change is merged in [PR #2085](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2085); trigger-mode texture files are deferred until a manual trigger. See the [race-window capture note](docs/SHIFT_D3D9_RACE_WINDOW_CAPTURE_20261018.md), [texture snapshot identity analysis](docs/SHIFT_D3D9_RACE_TEXTURE_SNAPSHOT_IDENTITIES_20261018.md), and [machine-readable audit](evidence/retail_frontier_20261018/d3d9_race_window_capture.json).
 
-The earlier v65-v67 allocator evidence remains useful history, but it is not the latest execution state. The native recompiled path still needs to advance beyond the observed `0x006472d0` update path and connect actual D3D9 draw resources to the Vulkan backend. The native Vulkan smoke still uses converted MGEO geometry. A PortProton race is reachable with the original retail executable, but the recompiled Linux path has not demonstrated its frontend, offline race, or playable session.
+The earlier v65-v67 allocator evidence remains useful history, but the v66 `Base System` fatal is not reproduced by the later v112 run and is not the current observed blocker. Static disassembly confirms that `0x006472d0` calls the retail `SwitchToThread` import before updating timer fields; the v112 scheduler snapshot is consistent with a repeated cooperative update path but does not establish frontend progress or a hang. The native recompiled path still needs to advance into the frontend and connect actual D3D9 draw resources to the Vulkan backend. The native Vulkan smoke still uses converted MGEO geometry. A PortProton race is reachable with the original retail executable, but the recompiled Linux path has not demonstrated its frontend, offline race, or playable session. See the [entrypoint frontier follow-up](docs/SHIFT_RETAIL_ENTRYPOINT_FRONTIER_20261019.md).
 
 The generic `revenginstr` binary80 lowering now executes a synthetic P-code
 fixture on ARM64 CI (22 passed, one x86-only `FWAIT` test skipped). This covers
@@ -107,7 +107,7 @@ startup. See the [cross-host fixture evidence](evidence/pcode_native_lowering_ar
 
 The current immediate execution frontier is:
 
-> **Advance the recompiled Linux path from the observed `0x006472d0` scheduler loop into its frontend and an offline race. Hash and associate the captured VB/IB payloads with draw buffer generations, compare them with static IMB resources, and resolve immutable texture snapshot identity before admitting any resources to the Vulkan translator.**
+> **Use the bounded recent-function history in the next retail-entrypoint probe to determine whether the yielding update path advances into frontend/resource initialization. Continue hashing and associating existing VB/IB payloads with draw buffer generations, compare them with static IMB resources, and resolve immutable texture snapshot identity before admitting any resources to the Vulkan translator. The old allocator fatal is historical unless it recurs.**
 
 At the same time, new infrastructure must avoid introducing additional x86-64/Linux-only assumptions.
 
@@ -967,7 +967,7 @@ Reusable implementation may be extracted into the portable renderer/runtime when
 
 The complete P-code module has been restored and the cooperative scheduler has been exercised on the retail entry point. The immediate priorities are now:
 
-1. **Trace `Base System` pool descriptor creation and backing-range ownership to explain why the selected list tops out at 129,953,036 bytes for a 254,529,224-byte request; do not force execution past this retail fatal path.**
+1. **Use the 64-entry guest function history to classify progress through the repeated `SwitchToThread` update path and identify the next frontend/resource blocker. The v66 allocator fatal did not recur in v112; do not spend another retail run on it unless it returns.**
 2. **Keep the compact manifest for the full module, supplements, runtime APIs, retail PE identity, game-data root and probe frontier current; keep generated binaries outside Git.**
 3. **Continue the blocker loop through entry-point completion, required startup workers, resource initialization and the persistent main loop.**
 4. **Audit the shared runtime for x86-64/Linux-only assumptions and establish an ARM64 compile/test gate.**

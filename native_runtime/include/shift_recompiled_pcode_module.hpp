@@ -30,6 +30,7 @@ struct RecompiledGuestSchedulerSnapshot {
     uint32_t main_thread_wait_result = 0;
     uint32_t main_thread_current_function = 0;
     std::vector<uint32_t> main_thread_call_stack;
+    std::vector<uint32_t> main_thread_recent_functions;
     size_t ready_thread_count = 0;
     size_t worker_thread_count = 0;
     size_t worker_waiting_count = 0;
