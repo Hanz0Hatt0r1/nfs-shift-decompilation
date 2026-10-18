@@ -293,6 +293,56 @@ def test_draw_local_evidence_reconstructs_exact_capture_local_state():
     assert report["capture_requirements"]["buffer_payload"]["status"] == "missing"
 
 
+def test_buffer_payload_hashes_join_to_target_draw_buffer_generations(tmp_path):
+    payloads = [
+        ("vertex", "0x40", "vertex_buffer", b"stream zero bytes"),
+        ("index", "0x50", "index_buffer", b"index bytes"),
+    ]
+    lines = _base_events()
+    for event_index, (name, pointer, kind, payload) in enumerate(payloads, 18):
+        (tmp_path / f"{name}.bin").write_bytes(payload)
+        lines.append(_line({
+            "event": "buffer_payload",
+            "frame": 2,
+            "event_index": event_index,
+            "buffer_ptr": pointer,
+            "resource_type_name": kind,
+            "offset": 0,
+            "requested_size": len(payload),
+            "buffer_length": len(payload) if kind == "index_buffer" else len(payload) + 16,
+            "captured_byte_size": len(payload),
+            "capture_scope": "locked-range",
+            "snapshot_status": "captured",
+            "payload_path": f"Z:\\capture\\buffers\\{name}.bin",
+        }))
+
+    report = build_target_draw_local_evidence(
+        lines,
+        target_inventory=_targets(),
+        buffer_payload_root=tmp_path,
+    )
+
+    assert report["summary"]["target_buffer_generation_count"] == 3
+    assert report["summary"]["target_buffer_generations_with_hashed_payload_count"] == 2
+    assert report["summary"]["target_buffer_generations_with_hashed_full_payload_count"] == 1
+    assert report["summary"]["target_buffer_generations_without_payload_count"] == 1
+    assert report["summary"]["target_buffer_generations_without_full_payload_count"] == 2
+    assert report["summary"]["target_buffer_payload_hashed_file_count"] == 2
+    assert report["summary"]["target_draws_with_stream0_and_index_hashed_payloads"] == 1
+    assert report["summary"]["target_draws_with_stream0_and_index_hashed_full_payloads"] == 0
+    by_file = {row["payload_file"]: row for row in report["target_buffer_payload_identities"]}
+    assert by_file["vertex.bin"]["covers_full_buffer"] is False
+    assert by_file["index.bin"]["covers_full_buffer"] is True
+    assert by_file["vertex.bin"]["target_draw_uses"][0]["binding"] == "stream0"
+    assert by_file["vertex.bin"]["target_draw_uses"][0]["payload_frame_relation"] == "same-frame"
+    assert by_file["index.bin"]["target_draw_uses"][0]["binding"] == "indices"
+    assert by_file["vertex.bin"]["sha256"] == hashlib.sha256(b"stream zero bytes").hexdigest()
+    missing = report["target_buffer_generations_without_payload"][0]
+    assert missing["buffer_ptr"] == "0x41"
+    assert missing["target_draw_uses"][0]["binding"] == "stream1"
+    assert report["buffer_payload_identity_boundary"].startswith("payload files are joined")
+
+
 def test_repeated_geometry_is_disambiguated_without_changing_geometry_identity():
     lines = _base_events()
     lines.extend([

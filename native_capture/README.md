@@ -26,6 +26,7 @@ Optional capture paths cover:
   including every mip level;
 - cube face × mip identity;
 - VB/IB Lock/Unlock payloads;
+- opt-in partial VB/IB locked-range payloads with exact byte offsets;
 - resource creation lifecycle;
 - draw-local state snapshots.
 
@@ -38,13 +39,24 @@ the trigger fires. Pre-trigger `set_texture` events report
 `deferred-until-trigger`; to avoid startup disk I/O, fire the manual trigger
 after the race has loaded.
 
-When a resource-triggered capture is armed, full-buffer snapshots are retained
-until the trigger fires so payloads created before the target draw can be
-included. This deferred cache is bounded to 256 MiB by default; oldest
-snapshots are evicted first. Set
+When a resource-triggered capture is armed, buffer snapshots are retained until
+the trigger fires so payloads created before the target draw can be included.
+Full-buffer capture remains the default. Set
+`SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS=1` to also record the exact range
+returned by each successful VB/IB Lock; its event reports `offset`,
+`requested_size`, `captured_byte_size`, `payload_capture_frame`, and whether it
+covers the full buffer or only the locked range. Deferred partial writes keep
+the newest payload for each buffer + offset + byte-size tuple; overlapping
+ranges are not merged and must be checked before reconstructing a whole
+buffer. The deferred cache is bounded to 256 MiB by default; oldest snapshots
+are evicted first. Set
 `SHIFT_D3D9_CAPTURE_DEFERRED_BUFFER_PAYLOAD_MAX_BYTES` to change the limit.
 Each trigger writes a `deferred_buffer_payload_summary` event with retained,
 evicted, and oversized payload counts and byte totals.
+
+The Wine launcher flag `--partial-buffer-payloads` enables both normal buffer
+payload capture and partial locked ranges. It remains opt-in because frequently
+updated dynamic buffers can produce more payload files during an active capture.
 
 To discover the exact trigger value for a target shader, run
 `d3d9_raw_capture_audit.py` with the target inventory. Each matched target's
