@@ -1565,6 +1565,13 @@ bool partial_buffer_payload_capture_enabled() {
         env_enabled("SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS");
 }
 
+bool partial_buffer_payload_length_matches(UINT length) {
+    if (!partial_buffer_payload_capture_enabled()) return false;
+    static const auto filter_length = env_u64(
+        "SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOAD_LENGTH", 0);
+    return filter_length == 0 || filter_length == length;
+}
+
 std::string buffer_payload_dir() {
     const char* directory = std::getenv("SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR");
     std::string value = (directory && *directory) ? directory : ".";
@@ -1752,10 +1759,10 @@ std::size_t buffer_lock_payload_size(
 }
 
 bool should_capture_buffer_lock(UINT offset, UINT size, UINT length) {
+    const bool full_buffer = should_capture_full_buffer(offset, size, length);
     return buffer_payload_capture_enabled()
         && length > 0
-        && (should_capture_full_buffer(offset, size, length)
-            || partial_buffer_payload_capture_enabled());
+        && (full_buffer || partial_buffer_payload_length_matches(length));
 }
 
 void capture_buffer_payload(

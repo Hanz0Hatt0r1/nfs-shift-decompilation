@@ -48,15 +48,20 @@ returned by each successful VB/IB Lock; its event reports `offset`,
 covers the full buffer or only the locked range. Deferred partial writes keep
 the newest payload for each buffer + offset + byte-size tuple; overlapping
 ranges are not merged and must be checked before reconstructing a whole
-buffer. The deferred cache is bounded to 256 MiB by default; oldest snapshots
-are evicted first. Set
+buffer. Set `SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOAD_LENGTH` to a positive
+byte length to restrict partial-range capture to buffers of that size; full
+buffer captures remain unaffected. The deferred cache is bounded to 256 MiB by
+default; oldest snapshots are evicted first. Set
 `SHIFT_D3D9_CAPTURE_DEFERRED_BUFFER_PAYLOAD_MAX_BYTES` to change the limit.
 Each trigger writes a `deferred_buffer_payload_summary` event with retained,
 evicted, and oversized payload counts and byte totals.
 
 The Wine launcher flag `--partial-buffer-payloads` enables both normal buffer
-payload capture and partial locked ranges. It remains opt-in because frequently
-updated dynamic buffers can produce more payload files during an active capture.
+payload capture and partial locked ranges. Add `--partial-buffer-length N` to
+capture partial ranges only for buffers of N bytes; this filter is useful when
+one known dynamic stream is the evidence gap. It remains opt-in because
+frequently updated dynamic buffers can produce more payload files during an
+active capture.
 
 To discover the exact trigger value for a target shader, run
 `d3d9_raw_capture_audit.py` with the target inventory. Each matched target's
