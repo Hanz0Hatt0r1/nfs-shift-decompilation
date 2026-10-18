@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <deque>
+#include <functional>
 #include <fstream>
 #include <iomanip>
 #include <limits>
@@ -1490,6 +1491,8 @@ struct BufferLockState {
     UINT offset = 0;
     UINT requested_size = 0;
     UINT buffer_length = 0;
+    std::size_t capture_byte_size = 0;
+    unsigned long long payload_capture_frame = 0;
     DWORD flags = 0;
     void* bits = nullptr;
     bool full_surface = false;
@@ -1507,10 +1510,38 @@ struct DeferredBufferPayload {
     std::vector<unsigned char> payload;
 };
 
+struct DeferredBufferPayloadKey {
+    const void* buffer = nullptr;
+    UINT offset = 0;
+    std::size_t size = 0;
+
+    bool operator==(const DeferredBufferPayloadKey& other) const {
+        return buffer == other.buffer && offset == other.offset && size == other.size;
+    }
+};
+
+struct DeferredBufferPayloadKeyHash {
+    std::size_t operator()(const DeferredBufferPayloadKey& key) const {
+        std::size_t value = std::hash<const void*>{}(key.buffer);
+        value ^= std::hash<UINT>{}(key.offset) + 0x9e3779b9u + (value << 6) + (value >> 2);
+        value ^= std::hash<std::size_t>{}(key.size) + 0x9e3779b9u + (value << 6) + (value >> 2);
+        return value;
+    }
+};
+
+DeferredBufferPayloadKey deferred_buffer_payload_key(
+    const void* buffer,
+    const BufferLockState& state,
+    std::size_t payload_size) {
+    return DeferredBufferPayloadKey{buffer, state.offset, payload_size};
+}
+
 std::mutex g_deferred_buffer_payload_mutex;
 std::list<DeferredBufferPayload> g_deferred_buffer_payloads;
 std::unordered_map<
-    const void*, std::list<DeferredBufferPayload>::iterator>
+    DeferredBufferPayloadKey,
+    std::list<DeferredBufferPayload>::iterator,
+    DeferredBufferPayloadKeyHash>
     g_deferred_buffer_payload_index;
 std::uint64_t g_deferred_buffer_payload_bytes = 0;
 std::uint64_t g_deferred_buffer_payload_evicted_count = 0;
@@ -1527,6 +1558,11 @@ std::uint64_t deferred_buffer_payload_max_bytes() {
 
 bool buffer_payload_capture_enabled() {
     return env_enabled("SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS");
+}
+
+bool partial_buffer_payload_capture_enabled() {
+    return buffer_payload_capture_enabled() &&
+        env_enabled("SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS");
 }
 
 std::string buffer_payload_dir() {
@@ -1566,6 +1602,9 @@ void emit_buffer_payload(
       << ",\"buffer_length\":" << state.buffer_length
       << ",\"captured_byte_size\":" << payload.size()
       << ",\"flags\":" << state.flags
+      << ",\"payload_capture_frame\":" << state.payload_capture_frame
+      << ",\"capture_scope\":" << CaptureWriter::quote(
+             state.full_surface ? "full-buffer" : "locked-range")
       << ",\"snapshot_status\":" << CaptureWriter::quote(status)
       << ",\"payload_path\":" << CaptureWriter::quote(path);
     writer().write_event("buffer_payload", f.str());
@@ -1599,7 +1638,8 @@ void retain_or_write_buffer_payload(
     if (payload.empty()) return;
     if (trigger_capture_enabled() && !writer().trigger_is_active()) {
         std::lock_guard<std::mutex> lock(g_deferred_buffer_payload_mutex);
-        const auto existing = g_deferred_buffer_payload_index.find(buffer);
+        const auto key = deferred_buffer_payload_key(buffer, state, payload.size());
+        const auto existing = g_deferred_buffer_payload_index.find(key);
         if (existing != g_deferred_buffer_payload_index.end()) {
             g_deferred_buffer_payload_bytes -=
                 existing->second->payload.size();
@@ -1619,7 +1659,8 @@ void retain_or_write_buffer_payload(
                !g_deferred_buffer_payloads.empty()) {
             const auto oldest = g_deferred_buffer_payloads.begin();
             const std::uint64_t oldest_bytes = oldest->payload.size();
-            g_deferred_buffer_payload_index.erase(oldest->buffer);
+            g_deferred_buffer_payload_index.erase(deferred_buffer_payload_key(
+                oldest->buffer, oldest->state, oldest_bytes));
             g_deferred_buffer_payload_bytes -= oldest_bytes;
             g_deferred_buffer_payload_evicted_bytes += oldest_bytes;
             ++g_deferred_buffer_payload_evicted_count;
@@ -1629,7 +1670,7 @@ void retain_or_write_buffer_payload(
         g_deferred_buffer_payloads.push_back(
             DeferredBufferPayload{buffer, state, std::move(payload)});
         const auto inserted = std::prev(g_deferred_buffer_payloads.end());
-        g_deferred_buffer_payload_index[buffer] = inserted;
+        g_deferred_buffer_payload_index[key] = inserted;
         g_deferred_buffer_payload_bytes += payload_bytes;
         return;
     }
@@ -1639,11 +1680,17 @@ void retain_or_write_buffer_payload(
 void discard_deferred_buffer_payload(const void* buffer) {
     if (!buffer) return;
     std::lock_guard<std::mutex> lock(g_deferred_buffer_payload_mutex);
-    const auto it = g_deferred_buffer_payload_index.find(buffer);
-    if (it == g_deferred_buffer_payload_index.end()) return;
-    g_deferred_buffer_payload_bytes -= it->second->payload.size();
-    g_deferred_buffer_payloads.erase(it->second);
-    g_deferred_buffer_payload_index.erase(it);
+    for (auto it = g_deferred_buffer_payloads.begin();
+         it != g_deferred_buffer_payloads.end();) {
+        if (it->buffer != buffer) {
+            ++it;
+            continue;
+        }
+        g_deferred_buffer_payload_bytes -= it->payload.size();
+        g_deferred_buffer_payload_index.erase(deferred_buffer_payload_key(
+            buffer, it->state, it->payload.size()));
+        it = g_deferred_buffer_payloads.erase(it);
+    }
 }
 
 void flush_deferred_buffer_payloads_for_trigger() {
@@ -1693,6 +1740,24 @@ bool should_capture_full_buffer(UINT offset, UINT size, UINT length) {
         && length > 0;
 }
 
+std::size_t buffer_lock_payload_size(
+    UINT offset,
+    UINT requested_size,
+    UINT buffer_length) {
+    if (offset >= buffer_length) return 0;
+    const UINT available = buffer_length - offset;
+    return requested_size == 0
+        ? available
+        : std::min<UINT>(requested_size, available);
+}
+
+bool should_capture_buffer_lock(UINT offset, UINT size, UINT length) {
+    return buffer_payload_capture_enabled()
+        && length > 0
+        && (should_capture_full_buffer(offset, size, length)
+            || partial_buffer_payload_capture_enabled());
+}
+
 void capture_buffer_payload(
     const void* buffer,
     const BufferLockState& state,
@@ -1736,11 +1801,16 @@ HRESULT STDMETHODCALLTYPE hook_vertex_buffer_lock(
         state.offset = offset;
         state.requested_size = size;
         state.buffer_length = have_desc ? desc.Size : size;
+        state.capture_byte_size = buffer_lock_payload_size(
+            offset, size, state.buffer_length);
+        state.payload_capture_frame = g_frame.load();
         state.flags = flags;
         state.bits = *bits;
         state.full_surface = have_desc
             && should_capture_full_buffer(offset, size, desc.Size);
-        state.active = state.full_surface;
+        state.active = have_desc
+            && state.capture_byte_size > 0
+            && should_capture_buffer_lock(offset, size, desc.Size);
         if (state.active) {
             std::lock_guard<std::mutex> lock(g_buffer_lock_state_mutex);
             g_vertex_buffer_lock_states[self] = state;
@@ -1764,7 +1834,7 @@ HRESULT STDMETHODCALLTYPE hook_vertex_buffer_unlock(IDirect3DVertexBuffer9* self
 
     std::vector<unsigned char> payload;
     if (captured) {
-        const std::size_t byte_size = state.buffer_length;
+        const std::size_t byte_size = state.capture_byte_size;
         if (byte_size > 0) {
             payload.assign(
                 static_cast<const unsigned char*>(state.bits),
@@ -1800,11 +1870,16 @@ HRESULT STDMETHODCALLTYPE hook_index_buffer_lock(
         state.offset = offset;
         state.requested_size = size;
         state.buffer_length = have_desc ? desc.Size : size;
+        state.capture_byte_size = buffer_lock_payload_size(
+            offset, size, state.buffer_length);
+        state.payload_capture_frame = g_frame.load();
         state.flags = flags;
         state.bits = *bits;
         state.full_surface = have_desc
             && should_capture_full_buffer(offset, size, desc.Size);
-        state.active = state.full_surface;
+        state.active = have_desc
+            && state.capture_byte_size > 0
+            && should_capture_buffer_lock(offset, size, desc.Size);
         if (state.active) {
             std::lock_guard<std::mutex> lock(g_buffer_lock_state_mutex);
             g_index_buffer_lock_states[self] = state;
@@ -1828,7 +1903,7 @@ HRESULT STDMETHODCALLTYPE hook_index_buffer_unlock(IDirect3DIndexBuffer9* self) 
 
     std::vector<unsigned char> payload;
     if (captured) {
-        const std::size_t byte_size = state.buffer_length;
+        const std::size_t byte_size = state.capture_byte_size;
         if (byte_size > 0) {
             payload.assign(
                 static_cast<const unsigned char*>(state.bits),

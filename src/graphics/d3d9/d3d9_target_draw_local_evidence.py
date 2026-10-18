@@ -7,12 +7,13 @@ to retail scene resource, primitive, instance, BMT or FXO-permutation identity.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import re
 import sys
 from collections import Counter, defaultdict
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, Iterable, Mapping
 
 from d3d9_raw_capture_audit import resolve_input_path
@@ -271,6 +272,54 @@ def _portable_resource_identity(row: Mapping[str, Any] | None) -> dict[str, Any]
     }
 
 
+def _buffer_payload_file_identity(path: str, root: Path) -> dict[str, Any]:
+    name = PureWindowsPath(path).name or Path(path).name
+    if name in {"", ".", ".."}:
+        return {"payload_file": name, "status": "invalid-path"}
+    try:
+        root_path = root.resolve()
+        candidate = (root_path / name).resolve(strict=True)
+        if candidate.parent != root_path:
+            return {"payload_file": name, "status": "invalid-path"}
+        digest = hashlib.sha256()
+        size = 0
+        with candidate.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+                size += len(chunk)
+    except (OSError, RuntimeError):
+        return {"payload_file": name, "status": "missing"}
+    return {
+        "payload_file": name,
+        "status": "hashed-at-analysis-time",
+        "byte_size": size,
+        "sha256": digest.hexdigest(),
+    }
+
+
+def _payload_frame_relation(payload_frame: Any, draw_frame: Any) -> str:
+    if not isinstance(payload_frame, int) or not isinstance(draw_frame, int):
+        return "unknown"
+    if payload_frame == draw_frame:
+        return "same-frame"
+    return "earlier-frame" if payload_frame < draw_frame else "later-frame"
+
+
+def _payload_covers_full_buffer(payload: Mapping[str, Any]) -> bool:
+    if payload.get("snapshot_status") != "captured":
+        return False
+    offset = payload.get("offset")
+    captured_size = payload.get("captured_byte_size")
+    buffer_length = payload.get("buffer_length")
+    if not isinstance(offset, int) or isinstance(offset, bool) or offset != 0:
+        return False
+    if not isinstance(captured_size, int) or isinstance(captured_size, bool) or captured_size <= 0:
+        return False
+    if isinstance(buffer_length, int) and not isinstance(buffer_length, bool) and buffer_length > 0:
+        return captured_size >= buffer_length
+    return payload.get("capture_scope") == "full-buffer" or payload.get("requested_size") == 0
+
+
 def _stream_binding(
     table: Mapping[tuple[str, str], Mapping[str, Any]],
     device: str,
@@ -427,6 +476,7 @@ def build_target_draw_local_evidence(
     lines: Iterable[str],
     *,
     target_inventory: Mapping[str, Any],
+    buffer_payload_root: str | Path | None = None,
 ) -> dict[str, Any]:
     target_hashes, target_families = _target_families(target_inventory)
     if not target_hashes:
@@ -446,6 +496,8 @@ def build_target_draw_local_evidence(
     malformed_constant_write_count = 0
     resource_identity_pair_count = 0
     captured_texture_snapshot_count = 0
+    payload_root_path = Path(buffer_payload_root) if buffer_payload_root is not None else None
+    buffer_payload_events: list[dict[str, Any]] = []
 
     draws: list[dict[str, Any]] = []
     geometry_groups: dict[str, dict[str, Any]] = {}
@@ -535,6 +587,30 @@ def build_target_draw_local_evidence(
                     "creation_event_index": creation_index,
                     **_portable_resource_identity(row),
                 }
+            continue
+        if event == "buffer_payload":
+            pointer = _ptr(row.get("buffer_ptr"))
+            kind = str(row.get("resource_type_name") or "")
+            table = vertex_buffers if kind == "vertex_buffer" else index_buffers
+            buffer_payload_events.append({
+                "buffer_ptr": pointer,
+                "resource_type_name": kind,
+                "buffer_creation_event_index": _creation_event_index(table, device, pointer),
+                "payload_event_index": creation_index,
+                "payload_frame": (
+                    row.get("payload_capture_frame")
+                    if isinstance(row.get("payload_capture_frame"), int)
+                    else row.get("frame") if isinstance(row.get("frame"), int) else None
+                ),
+                "payload_event_frame": row.get("frame") if isinstance(row.get("frame"), int) else None,
+                "offset": row.get("offset"),
+                "requested_size": row.get("requested_size"),
+                "buffer_length": row.get("buffer_length"),
+                "captured_byte_size": row.get("captured_byte_size"),
+                "capture_scope": row.get("capture_scope"),
+                "snapshot_status": row.get("snapshot_status"),
+                "payload_path": row.get("payload_path"),
+            })
             continue
         if event in {"create_texture", "create_cube_texture"}:
             pointer = _ptr(row.get("texture_ptr"))
@@ -860,6 +936,192 @@ def build_target_draw_local_evidence(
         ),
     }
     target_draw_count = len(draws)
+    target_buffer_uses: dict[tuple[str, str, int], list[dict[str, Any]]] = defaultdict(list)
+    for draw in draws:
+        event_index = draw.get("event_index")
+        frame = draw.get("frame")
+        for stream in draw.get("streams") or []:
+            pointer = stream.get("vertex_buffer_ptr")
+            creation = stream.get("vertex_buffer_creation_event_index")
+            if pointer and isinstance(creation, int):
+                key = ("vertex_buffer", str(pointer), creation)
+                target_buffer_uses[key].append({
+                    "frame": frame,
+                    "draw_event_index": event_index,
+                    "binding": f"stream{stream.get('stream')}",
+                })
+        index = draw.get("index_binding") or {}
+        pointer = index.get("index_buffer_ptr")
+        creation = index.get("index_buffer_creation_event_index")
+        if pointer and isinstance(creation, int):
+            key = ("index_buffer", str(pointer), creation)
+            target_buffer_uses[key].append({
+                "frame": frame,
+                "draw_event_index": event_index,
+                "binding": "indices",
+            })
+
+    payload_identity_cache: dict[str, dict[str, Any]] = {}
+    target_buffer_payload_identities = []
+    payloads_by_generation: dict[tuple[str, str, int], list[dict[str, Any]]] = defaultdict(list)
+    for payload in buffer_payload_events:
+        kind = str(payload.get("resource_type_name") or "")
+        pointer = payload.get("buffer_ptr")
+        creation = payload.get("buffer_creation_event_index")
+        key = (kind, str(pointer), creation) if pointer and isinstance(creation, int) else None
+        if key not in target_buffer_uses:
+            continue
+        raw_path = payload.get("payload_path")
+        identity: dict[str, Any] = {"payload_file": None, "status": "not-requested"}
+        if isinstance(raw_path, str) and raw_path:
+            name = PureWindowsPath(raw_path).name or Path(raw_path).name
+            if payload_root_path is not None:
+                if name not in payload_identity_cache:
+                    payload_identity_cache[name] = _buffer_payload_file_identity(
+                        raw_path, payload_root_path
+                    )
+                identity = dict(payload_identity_cache[name])
+            else:
+                identity = {"payload_file": name, "status": "hash-not-requested"}
+        record = {
+            "buffer_ptr": pointer,
+            "resource_type_name": kind,
+            "buffer_creation_event_index": creation,
+            "payload_event_index": payload.get("payload_event_index"),
+            "payload_frame": payload.get("payload_frame"),
+            "payload_event_frame": payload.get("payload_event_frame"),
+            "offset": payload.get("offset"),
+            "requested_size": payload.get("requested_size"),
+            "buffer_length": payload.get("buffer_length"),
+            "captured_byte_size": payload.get("captured_byte_size"),
+            "capture_scope": payload.get("capture_scope"),
+            "snapshot_status": payload.get("snapshot_status"),
+            "covers_full_buffer": _payload_covers_full_buffer(payload),
+            **identity,
+            "target_draw_uses": [
+                {
+                    **use,
+                    "payload_frame_relation": _payload_frame_relation(
+                        payload.get("payload_frame"), use.get("frame")
+                    ),
+                }
+                for use in target_buffer_uses[key]
+            ],
+        }
+        target_buffer_payload_identities.append(record)
+        payloads_by_generation[key].append(record)
+
+    target_draws_with_stream0_and_index_payloads = 0
+    target_draws_with_stream0_and_index_hashed_payloads = 0
+    target_draws_with_stream0_and_index_full_payloads = 0
+    target_draws_with_stream0_and_index_hashed_full_payloads = 0
+    for draw in draws:
+        stream0 = next(
+            (stream for stream in draw.get("streams") or [] if stream.get("stream") == 0),
+            {},
+        )
+        index = draw.get("index_binding") or {}
+        vertex_key = (
+            "vertex_buffer",
+            str(stream0.get("vertex_buffer_ptr")),
+            stream0.get("vertex_buffer_creation_event_index"),
+        )
+        index_key = (
+            "index_buffer",
+            str(index.get("index_buffer_ptr")),
+            index.get("index_buffer_creation_event_index"),
+        )
+        vertex_payloads = payloads_by_generation.get(vertex_key, [])
+        index_payloads = payloads_by_generation.get(index_key, [])
+        if (
+            any(item.get("snapshot_status") == "captured" for item in vertex_payloads)
+            and any(item.get("snapshot_status") == "captured" for item in index_payloads)
+        ):
+            target_draws_with_stream0_and_index_payloads += 1
+        if (
+            any(item.get("status") == "hashed-at-analysis-time" for item in vertex_payloads)
+            and any(item.get("status") == "hashed-at-analysis-time" for item in index_payloads)
+        ):
+            target_draws_with_stream0_and_index_hashed_payloads += 1
+        if (
+            any(item.get("covers_full_buffer") for item in vertex_payloads)
+            and any(item.get("covers_full_buffer") for item in index_payloads)
+        ):
+            target_draws_with_stream0_and_index_full_payloads += 1
+        if (
+            any(
+                item.get("covers_full_buffer")
+                and item.get("status") == "hashed-at-analysis-time"
+                for item in vertex_payloads
+            )
+            and any(
+                item.get("covers_full_buffer")
+                and item.get("status") == "hashed-at-analysis-time"
+                for item in index_payloads
+            )
+        ):
+            target_draws_with_stream0_and_index_hashed_full_payloads += 1
+
+    target_buffer_generations_with_payload = {
+        (row["resource_type_name"], row["buffer_ptr"], row["buffer_creation_event_index"])
+        for row in target_buffer_payload_identities
+        if row.get("snapshot_status") == "captured"
+    }
+    target_buffer_generations_with_hashed_payload = {
+        (row["resource_type_name"], row["buffer_ptr"], row["buffer_creation_event_index"])
+        for row in target_buffer_payload_identities
+        if row.get("snapshot_status") == "captured"
+        and row.get("status") == "hashed-at-analysis-time"
+    }
+    target_buffer_generations_with_full_payload = {
+        (row["resource_type_name"], row["buffer_ptr"], row["buffer_creation_event_index"])
+        for row in target_buffer_payload_identities
+        if row.get("covers_full_buffer")
+    }
+    target_buffer_generations_with_hashed_full_payload = {
+        (row["resource_type_name"], row["buffer_ptr"], row["buffer_creation_event_index"])
+        for row in target_buffer_payload_identities
+        if row.get("covers_full_buffer")
+        and row.get("status") == "hashed-at-analysis-time"
+    }
+    target_buffer_generations_without_payload = [
+        {
+            "resource_type_name": kind,
+            "buffer_ptr": pointer,
+            "buffer_creation_event_index": creation,
+            "target_draw_uses": uses,
+            "observed_payload_statuses": sorted({
+                str(item.get("snapshot_status") or "unknown")
+                for item in payloads_by_generation.get((kind, pointer, creation), [])
+            }),
+        }
+        for (kind, pointer, creation), uses in sorted(target_buffer_uses.items())
+        if not any(
+            item.get("snapshot_status") == "captured"
+            for item in payloads_by_generation.get((kind, pointer, creation), [])
+        )
+    ]
+    target_buffer_generations_without_full_payload = [
+        {
+            "resource_type_name": kind,
+            "buffer_ptr": pointer,
+            "buffer_creation_event_index": creation,
+            "target_draw_uses": uses,
+            "captured_payload_event_count": sum(
+                item.get("snapshot_status") == "captured"
+                for item in payloads_by_generation.get((kind, pointer, creation), [])
+            ),
+            "observed_payload_statuses": sorted({
+                str(item.get("snapshot_status") or "unknown")
+                for item in payloads_by_generation.get((kind, pointer, creation), [])
+            }),
+        }
+        for (kind, pointer, creation), uses in sorted(target_buffer_uses.items())
+        if not any(
+            item.get("covers_full_buffer")
+            for item in payloads_by_generation.get((kind, pointer, creation), [])
+        )
+    ]
     return {
         "format": FORMAT,
         "version": 1,
@@ -886,12 +1148,43 @@ def build_target_draw_local_evidence(
             "malformed_constant_write_count": malformed_constant_write_count,
             "resource_identity_pair_event_count": resource_identity_pair_count,
             "captured_texture_snapshot_event_count": captured_texture_snapshot_count,
+            "buffer_payload_root_provided": payload_root_path is not None,
+            "target_buffer_generation_count": len(target_buffer_uses),
+            "target_buffer_generations_with_payload_count": len(target_buffer_generations_with_payload),
+            "target_buffer_generations_with_hashed_payload_count": len(target_buffer_generations_with_hashed_payload),
+            "target_buffer_generations_with_full_payload_count": len(target_buffer_generations_with_full_payload),
+            "target_buffer_generations_with_hashed_full_payload_count": len(target_buffer_generations_with_hashed_full_payload),
+            "target_buffer_generations_without_payload_count": len(target_buffer_generations_without_payload),
+            "target_buffer_generations_without_full_payload_count": len(target_buffer_generations_without_full_payload),
+            "target_buffer_payload_event_count": len(target_buffer_payload_identities),
+            "target_buffer_payload_hashed_file_count": len({
+                row["payload_file"]
+                for row in target_buffer_payload_identities
+                if row.get("status") == "hashed-at-analysis-time"
+            }),
+            "target_buffer_payload_missing_file_count": sum(
+                row.get("status") == "missing" for row in target_buffer_payload_identities
+            ),
+            "target_buffer_payload_invalid_path_count": sum(
+                row.get("status") == "invalid-path" for row in target_buffer_payload_identities
+            ),
+            "target_draws_with_stream0_and_index_payloads": target_draws_with_stream0_and_index_payloads,
+            "target_draws_with_stream0_and_index_hashed_payloads": target_draws_with_stream0_and_index_hashed_payloads,
+            "target_draws_with_stream0_and_index_full_payloads": target_draws_with_stream0_and_index_full_payloads,
+            "target_draws_with_stream0_and_index_hashed_full_payloads": target_draws_with_stream0_and_index_hashed_full_payloads,
         },
         "event_counts": dict(sorted(event_counts.items())),
         "capture_local_gap_counts": dict(sorted(gap_counts.items())),
         "capture_requirements": requirements,
         "geometry_groups": groups,
         "draws": draws,
+        "target_buffer_payload_identities": target_buffer_payload_identities,
+        "target_buffer_generations_without_payload": target_buffer_generations_without_payload,
+        "target_buffer_generations_without_full_payload": target_buffer_generations_without_full_payload,
+        "buffer_payload_identity_boundary": (
+            "payload files are joined to the buffer COM generation used by target draws; equality with every draw's "
+            "historical byte state is not inferred"
+        ),
         "boundary": {
             "target_filter": "draws require a bound pixel-shader byte SHA-256 present in the supplied target inventory",
             "shader_pair": "captured VS/PS byte hashes are exact; they do not select an FXO permutation without unique runtime proof",
@@ -914,9 +1207,14 @@ def build_target_draw_local_evidence_file(
     capture_path: str | Path,
     *,
     target_inventory: Mapping[str, Any],
+    buffer_payload_root: str | Path | None = None,
 ) -> dict[str, Any]:
     with Path(capture_path).open("r", encoding="utf-8") as handle:
-        return build_target_draw_local_evidence(handle, target_inventory=target_inventory)
+        return build_target_draw_local_evidence(
+            handle,
+            target_inventory=target_inventory,
+            buffer_payload_root=buffer_payload_root,
+        )
 
 
 def compact_target_draw_local_evidence(report: Mapping[str, Any]) -> dict[str, Any]:
@@ -931,6 +1229,10 @@ def compact_target_draw_local_evidence(report: Mapping[str, Any]) -> dict[str, A
         "capture_local_gap_counts": report["capture_local_gap_counts"],
         "capture_requirements": report["capture_requirements"],
         "geometry_groups": report["geometry_groups"],
+        "target_buffer_payload_identities": report["target_buffer_payload_identities"],
+        "target_buffer_generations_without_payload": report["target_buffer_generations_without_payload"],
+        "target_buffer_generations_without_full_payload": report["target_buffer_generations_without_full_payload"],
+        "buffer_payload_identity_boundary": report["buffer_payload_identity_boundary"],
         "boundary": report["boundary"],
         "draw_records": {
             "included": False,
@@ -950,13 +1252,21 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="omit per-draw state records while keeping geometry groups and gates",
     )
+    parser.add_argument(
+        "--buffer-payload-root",
+        help="hash target VB/IB payload files by basename under this directory",
+    )
     args = parser.parse_args(argv)
     capture_path = resolve_input_path(args.capture_jsonl)
     inventory_path = resolve_input_path(args.target_inventory)
     inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
     if not isinstance(inventory, dict):
         raise ValueError("target inventory must be a JSON object")
-    report = build_target_draw_local_evidence_file(capture_path, target_inventory=inventory)
+    report = build_target_draw_local_evidence_file(
+        capture_path,
+        target_inventory=inventory,
+        buffer_payload_root=args.buffer_payload_root,
+    )
     if args.compact_summary:
         report = compact_target_draw_local_evidence(report)
     output = Path(args.output)

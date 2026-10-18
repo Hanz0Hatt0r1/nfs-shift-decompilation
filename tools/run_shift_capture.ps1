@@ -29,6 +29,8 @@ param(
 
     [switch]$CaptureBufferPayloads,
 
+    [switch]$CapturePartialBufferPayloads,
+
     [switch]$CaptureTexturePayloads,
 
     [switch]$TriggerCapture,
@@ -106,7 +108,7 @@ Remove-Item -LiteralPath (Join-Path $out "capture.trigger") -Force -ErrorAction 
 if ($CaptureScreenshots) {
     Remove-Item -LiteralPath (Join-Path $out "frames") -Recurse -Force -ErrorAction SilentlyContinue
 }
-if ($CaptureBufferPayloads) {
+if ($CaptureBufferPayloads -or $CapturePartialBufferPayloads) {
     Remove-Item -LiteralPath (Join-Path $out "buffers") -Recurse -Force -ErrorAction SilentlyContinue
 }
 if ($CaptureTexturePayloads) {
@@ -149,6 +151,7 @@ $oldFrameStart = $env:SHIFT_D3D9_CAPTURE_FRAME_START
 $oldFrameEnd = $env:SHIFT_D3D9_CAPTURE_FRAME_END
 $oldBufferPayloads = $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS
 $oldBufferPayloadDir = $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR
+$oldPartialBufferPayloads = $env:SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS
 $oldTexturePayloads = $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS
 $oldTexturePayloadDir = $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR
 $oldTrigger = $env:SHIFT_D3D9_CAPTURE_TRIGGER
@@ -240,13 +243,18 @@ try {
         $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR = (Join-Path $out "textures")
         New-Item -ItemType Directory -Force -Path $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR | Out-Null
     }
-    if ($CaptureBufferPayloads) {
+    if ($CaptureBufferPayloads -or $CapturePartialBufferPayloads) {
         $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS = "1"
         $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR = (Join-Path $out "buffers")
         New-Item -ItemType Directory -Force -Path $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR | Out-Null
     } else {
         Remove-Item Env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS -ErrorAction SilentlyContinue
         Remove-Item Env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR -ErrorAction SilentlyContinue
+    }
+    if ($CapturePartialBufferPayloads) {
+        $env:SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS = "1"
+    } else {
+        Remove-Item Env:SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS -ErrorAction SilentlyContinue
     }
     if ($CaptureTexturePayloads) {
         $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS = "1"
@@ -271,7 +279,8 @@ try {
         if ($ResourceTrigger) { Write-Host "Resource: $ResourceTrigger" }
         if ($ResourceTriggerRepeat) { Write-Host "Repeat  : enabled" }
     }
-    if ($CaptureBufferPayloads) { Write-Host "Buffers : $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR" }
+    if ($CaptureBufferPayloads -or $CapturePartialBufferPayloads) { Write-Host "Buffers : $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR" }
+    if ($CapturePartialBufferPayloads) { Write-Host "         : includes locked ranges" }
     if ($CaptureTexturePayloads) { Write-Host "Tex raw : $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR" }
     if ($d3dxPath) {
         Write-Host "D3DX9   : $d3dxPath -> $targetD3DX"
@@ -330,6 +339,7 @@ finally {
     if ($null -eq $oldFrameEnd) { Remove-Item Env:SHIFT_D3D9_CAPTURE_FRAME_END -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_FRAME_END = $oldFrameEnd }
     if ($null -eq $oldBufferPayloads) { Remove-Item Env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS = $oldBufferPayloads }
     if ($null -eq $oldBufferPayloadDir) { Remove-Item Env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR = $oldBufferPayloadDir }
+    if ($null -eq $oldPartialBufferPayloads) { Remove-Item Env:SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS = $oldPartialBufferPayloads }
     if ($null -eq $oldTexturePayloads) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS = $oldTexturePayloads }
     if ($null -eq $oldTexturePayloadDir) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR = $oldTexturePayloadDir }
     if ($null -eq $oldTrigger) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TRIGGER = $oldTrigger }

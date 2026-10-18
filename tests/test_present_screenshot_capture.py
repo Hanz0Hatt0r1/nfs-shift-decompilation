@@ -109,6 +109,7 @@ def test_capture_launchers_preserve_backend_and_default_to_diagnostics():
     assert 'SHIFT_D3D9_CAPTURE_FRAME_START' in powershell
     assert 'SHIFT_D3D9_CAPTURE_FRAME_END' in powershell
     assert 'CaptureBufferPayloads' in powershell
+    assert 'CapturePartialBufferPayloads' in powershell
     assert 'CaptureTexturePayloads' in powershell
     assert 'mode="diagnostic"' in wine
     assert 'd3d9.shift_backend.dll' in wine
@@ -119,6 +120,7 @@ def test_capture_launchers_preserve_backend_and_default_to_diagnostics():
     assert '--frame-start' in wine
     assert '--frame-end' in wine
     assert '--buffer-payloads' in wine
+    assert '--partial-buffer-payloads' in wine
     assert '--texture-payloads' in wine
     assert 'WINEDLLOVERRIDES="$filtered_overrides;d3d9=n,b;d3dx9_41=n"' in wine
     assert 'WINEDLLOVERRIDES="d3d9=n,b;d3dx9_41=n"' in wine
@@ -481,6 +483,11 @@ def test_trigger_buffer_payloads_defer_disk_io_until_trigger():
 
     assert "DeferredBufferPayload{buffer, state, std::move(payload)}" in source
     assert "SHIFT_D3D9_CAPTURE_DEFERRED_BUFFER_PAYLOAD_MAX_BYTES" in source
+    assert "SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS" in source
+    assert "struct DeferredBufferPayloadKey" in source
+    assert "buffer_lock_payload_size" in source
+    assert "payload_capture_frame" in source
+    assert "capture_scope" in source
     assert "g_deferred_buffer_payload_bytes" in source
     assert "if (!activate_capture_trigger(g_frame.load())) return false;" in source
     assert "activate_capture_trigger(g_frame.load());" in source

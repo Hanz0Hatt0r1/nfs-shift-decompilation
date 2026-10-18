@@ -11,7 +11,7 @@ Usage:
     [--signature-discovery] \
     [--trigger] [--resource-trigger RULES] [--resource-trigger-repeat] \
     [--pre-frames N] [--post-frames N] \
-    [--screenshots] [--buffer-payloads] [--texture-payloads] \
+    [--screenshots] [--buffer-payloads] [--partial-buffer-payloads] [--texture-payloads] \
     [--wine wine] [-- GAME_ARGS...]
 
 The launcher temporarily installs the proxy beside SHIFT.exe. If a local
@@ -137,6 +137,7 @@ resource_trigger_repeat=0
 pre_frames=2
 post_frames=2
 buffer_payloads=0
+partial_buffer_payloads=0
 texture_payloads=0
 game_args=()
 
@@ -159,6 +160,7 @@ while (($#)); do
     --post-frames) post_frames="${2:?missing value for --post-frames}"; shift 2 ;;
     --screenshots) screenshots=1; shift ;;
     --buffer-payloads) buffer_payloads=1; shift ;;
+    --partial-buffer-payloads) buffer_payloads=1; partial_buffer_payloads=1; shift ;;
     --texture-payloads) texture_payloads=1; shift ;;
     --) shift; game_args=("$@"); break ;;
     -h|--help) usage; exit 0 ;;
@@ -514,9 +516,15 @@ if ((buffer_payloads)); then
   mkdir -p "$buffer_dir"
   export SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS=1
   export SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR="$(to_wine_path "$buffer_dir")"
+  if ((partial_buffer_payloads)); then
+    export SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS=1
+  else
+    unset SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS || true
+  fi
 else
   unset SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS || true
   unset SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR || true
+  unset SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS || true
 fi
 
 if ((texture_payloads)); then

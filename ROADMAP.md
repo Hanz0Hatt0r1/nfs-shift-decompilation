@@ -812,6 +812,14 @@ D3D9 capture
 
 The graphics backend does **not** need to wait until startup first calls `Direct3DCreate9` before foundational work begins. Retail D3D9 capture already provides useful evidence for designing the backend.
 
+The 2026-10-18 post-load race capture now provides hashed stream-0 and index
+payload snapshots for all 813 target draws. One shared 128 KiB dynamic stream-1
+vertex buffer has no payload event, so complete vertex-input evidence still
+needs a short, trigger-based partial-lock capture in a later race session if
+that stream is required by the Vulkan translation. See
+[`docs/SHIFT_D3D9_RACE_BUFFER_PAYLOAD_IDENTITIES_20261018.md`](docs/SHIFT_D3D9_RACE_BUFFER_PAYLOAD_IDENTITIES_20261018.md)
+and its compressed report under `evidence/retail_frontier_20261018/`.
+
 ### C — Portability
 
 ```text

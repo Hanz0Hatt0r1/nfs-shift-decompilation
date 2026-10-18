@@ -97,6 +97,19 @@ This is intended to prevent unnecessary recapture requests. A new capture should
 be considered only for a gate that is reported missing and cannot be supplied by
 existing static evidence.
 
+With `--buffer-payload-root`, the extractor hashes only payload files whose
+buffer pointer and creation event match a target draw's VB/IB generation. The
+compact summary keeps that manifest and lists target generations with no
+captured payload. A same-generation snapshot is a candidate; equality with the
+historical bytes seen by every draw is not inferred.
+The summary distinguishes any captured range from a single payload that covers
+the complete buffer, so a partial Lock range cannot close a full-buffer gap.
+
+The Wine launcher has an opt-in `--partial-buffer-payloads` mode for a future
+capture when locked-range payloads are specifically needed. Keep it on the
+existing trigger workflow and use it only after the race has loaded; full
+process or startup captures are not needed to resolve a target-buffer gap.
+
 ## Historical Silverstone boundary
 
 The existing Silverstone pipeline already established capture-local geometry and
@@ -118,6 +131,13 @@ python src/graphics/d3d9/d3d9_target_draw_local_evidence.py \
   shift_d3d9_capture.jsonl \
   out/d3d9_target_draw_local_evidence.json \
   --target-inventory evidence/silverstone_era3_runtime_shader_targets.json
+
+# Optional: identify target VB/IB payload files already present on disk.
+python src/graphics/d3d9/d3d9_target_draw_local_evidence.py \
+  shift_d3d9_capture.jsonl \
+  out/d3d9_target_draw_local_evidence.json \
+  --target-inventory evidence/silverstone_era3_runtime_shader_targets.json \
+  --buffer-payload-root out/buffers
 ```
 
 The JSON is emitted with sorted keys and all aggregate rows use deterministic
