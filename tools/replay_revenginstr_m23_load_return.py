@@ -128,7 +128,7 @@ def _generate(bin_dir: Path) -> tuple[bytes, dict[str, Any]]:
     if not binary.is_file():
         raise FileNotFoundError(f"missing revenginstr command: {binary}")
     validator = _schema_validator()
-    load_raw, flow_raw = LOAD_PATH.read_bytes(), FLOW_PATH.read_bytes()
+    load_raw = LOAD_PATH.read_bytes()
     filtered_loads, function_load_rows = _filtered_load_bytes(load_raw)
     with tempfile.TemporaryDirectory(prefix="revenginstr-load-return-") as temporary:
         scratch = Path(temporary)
