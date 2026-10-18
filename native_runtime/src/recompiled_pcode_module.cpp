@@ -907,6 +907,7 @@ struct RecompiledPcodeModule::Impl {
 
         ++call_depth;
         ++function_count;
+        unique_function_addresses.insert(static_cast<uint32_t>(target));
         active_guest_functions.push_back(static_cast<uint32_t>(target));
         const int result = function(&context);
         active_guest_functions.pop_back();
@@ -4868,6 +4869,7 @@ struct RecompiledPcodeModule::Impl {
     bool guest_symbol_handler_initialized = false;
     uint32_t guest_unhandled_exception_filter = 0;
     uint64_t function_count = 0;
+    std::unordered_set<uint32_t> unique_function_addresses;
     uint64_t guest_heap_next_address = kGuestHeapStartAddress;
     uint64_t guest_virtual_next_address = UINT64_C(0x20000000);
     uint64_t next_guest_heap_handle = kGuestProcessHeapHandle + 4;
@@ -4940,6 +4942,10 @@ bool RecompiledPcodeModule::load_override_module(
 
 uint64_t RecompiledPcodeModule::dispatched_function_count() const {
     return impl_->function_count;
+}
+
+uint64_t RecompiledPcodeModule::unique_dispatched_function_count() const {
+    return impl_->unique_function_addresses.size();
 }
 
 const std::string& RecompiledPcodeModule::last_error() const {
