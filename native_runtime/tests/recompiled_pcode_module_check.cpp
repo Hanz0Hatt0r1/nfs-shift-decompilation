@@ -493,6 +493,8 @@ int main(int argc, char** argv) {
                 "P-code could not read the mapped PE image: " + module.last_error());
         require(module.dispatched_function_count() == 4,
                 "nested P-code functions were not dispatched");
+        require(module.unique_dispatched_function_count() == 3,
+                "unique P-code function accounting did not deduplicate repeated dispatches");
         const auto filetime_now = [] {
             using Duration = std::chrono::duration<
                 int64_t, std::ratio<1, 10000000>>;
@@ -518,6 +520,8 @@ int main(int argc, char** argv) {
                 "GetSystemTimeAsFileTime returned a value outside the call interval");
         require(module.dispatched_function_count() == 5,
                 "guest clock API caller was not dispatched");
+        require(module.unique_dispatched_function_count() == 4,
+                "unique P-code function accounting did not include the clock caller");
         require(module.read_guest("register", 0, value.size(), value.data()),
                 "could not read fixture EAX value");
         require(value == std::array<uint8_t, 4>{0x34, 0x12, 0, 0},
