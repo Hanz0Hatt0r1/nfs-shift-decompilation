@@ -145,3 +145,44 @@ int rvi_0040a000(RviPcodeContext *ctx) {
         return -1;
     return ticks == 0 ? -2 : 0;
 }
+
+int rvi_0040b000(RviPcodeContext *ctx) {
+    const uint64_t arguments[2] = {
+        UINT64_C(0x8000000000000000), UINT64_C(0x3fff)};
+    const unsigned argument_sizes[1] = {10};
+    uint64_t result[2] = {0};
+    if (ctx->userop(ctx->opaque, 100, arguments, argument_sizes, 1, result,
+                    10) != 0) {
+        return -1;
+    }
+    uint8_t bytes[10];
+    for (size_t index = 0; index < sizeof(bytes); ++index) {
+        bytes[index] = (uint8_t)(result[index / sizeof(uint64_t)] >>
+                                 ((index % sizeof(uint64_t)) * 8));
+    }
+    return ctx->write(ctx->opaque, "ram", UINT64_C(0x1010), sizeof(bytes),
+                      bytes);
+}
+
+int rvi_0040c000(RviPcodeContext *ctx) {
+    uint32_t esp = 0;
+    uint32_t teb = 0;
+    uint32_t teb_self = 0;
+    uint32_t parameter = 0;
+    uint8_t value[4] = {0};
+    const uint8_t result[4] = {0xef, 0xbe, 0, 0};
+    if (ctx->read(ctx->opaque, "register", 0x10, 4,
+                  (uint8_t *)&esp) != 0 ||
+        ctx->read(ctx->opaque, "register", 0x110, 4,
+                  (uint8_t *)&teb) != 0 ||
+        ctx->read(ctx->opaque, "ram", esp + 4, 4, value) != 0 ||
+        ctx->read(ctx->opaque, "ram", teb + 0x18, 4,
+                  (uint8_t *)&teb_self) != 0) {
+        return -1;
+    }
+    parameter = (uint32_t)value[0] | ((uint32_t)value[1] << 8) |
+                ((uint32_t)value[2] << 16) | ((uint32_t)value[3] << 24);
+    if (parameter != UINT32_C(0x12345678) || teb == 0 || teb_self != teb)
+        return -2;
+    return ctx->write(ctx->opaque, "register", 0, sizeof(result), result);
+}

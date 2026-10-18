@@ -43,6 +43,7 @@ named and ordinal imports and rewrites each IAT slot to a unique guest address.
 The runtime implements the observed Kernel32 subset reached by the retail
 entry-point probe: `GetSystemTimeAsFileTime`, `GetCurrentProcess`, `GetPriorityClass`, `GetCurrentProcessId`,
 `GetCurrentThread`, `GetThreadPriority`, `SetPriorityClass`, `SetThreadPriority`,
+`CreateThread`, `ResumeThread`, `SuspendThread`, `GetExitCodeThread`, `ExitThread`,
 `GetCurrentThreadId`, `GetTickCount`, `GetLocalTime`, `GlobalMemoryStatus`,
 `QueryPerformanceCounter`,
 `QueryPerformanceFrequency`, `GetStartupInfoA`, `GetProcessHeap`, `CreateMutexA`,
@@ -51,7 +52,7 @@ entry-point probe: `GetSystemTimeAsFileTime`, `GetCurrentProcess`, `GetPriorityC
 `VirtualFree`, `ReleaseMutex`,
 `CloseHandle`, `CreateFileA`,
 `GetFileSize`, `ReadFile`, `HeapCreate`,
-`HeapAlloc`, `HeapSize`, `HeapFree`, `GetVersionExA`, `SetUnhandledExceptionFilter`,
+`HeapAlloc`, `HeapReAlloc`, `HeapSize`, `HeapFree`, `GetVersionExA`, `SetUnhandledExceptionFilter`,
 `GetModuleHandleA`,
 `GetModuleFileNameA`, and
 `GetProcAddress`, `TlsAlloc`, `TlsGetValue`, `TlsSetValue`, `TlsFree`,
@@ -125,15 +126,18 @@ modeled.
 previous one; guest exceptions still fail closed and do not dispatch that
 callback. The x86 CPUID P-code userops used by this image query the Linux host
 CPU and write the four guest registers to guest RAM. `RDTSC` returns monotonic
-nanosecond ticks as a virtual guest counter. `LOCK` and `UNLOCK` are no-ops for
-the single-thread guest. Other userops still fail closed.
+nanosecond ticks as a virtual guest counter. `LOCK` and `UNLOCK` are no-ops for the current guest scheduler. The x86 `FCOS`
+userop uses host binary80 math on little-endian x86 Linux hosts; unsupported
+host formats fail closed. Other unimplemented userops still fail closed.
 clock APIs use the host system clock or monotonic clock; the performance counter
 reports nanoseconds with a frequency of 1,000,000,000 ticks per second.
 `GetStartupInfoA` returns a zeroed 68-byte
 structure with `cb` set to 68 because this runtime has no Windows process
 creation state. `GetProcessHeap` and `HeapCreate` return guest handles;
 `HeapAlloc` reserves aligned ranges in guest RAM and `HeapFree` returns tracked
-ranges for reuse. `HeapCreate` does not enforce its initial or maximum size.
+ranges for reuse. `HeapReAlloc` preserves the old block on failure, supports
+zeroing the expanded range, and moves growing blocks unless the caller requires
+in-place growth. `HeapCreate` does not enforce its initial or maximum size.
 `GetVersionExA` reports a Windows XP SP3
 compatibility profile in either supported ANSI structure size; this is not a
 Windows subsystem. `GetModuleHandleA(NULL)` returns the guest PE image base;
@@ -142,7 +146,13 @@ names present in the PE import table resolve to synthetic module handles.
 its truncation behavior follows the reported Windows XP compatibility profile.
 `GetProcAddress` resolves imported traps and can create traps for implemented
 Kernel32 functions not present in the static import table; unknown symbols
-return null. TLS slots are currently scoped to the single guest thread.
+return null. `CreateThread` allocates a guest stack and TEB, initializes the
+thread's FS base, and supports the observed `CREATE_SUSPENDED`, resume, suspend,
+priority, exit-code, and close-handle operations. This is a deterministic
+synchronous model: resuming an unscheduled thread executes its entry point
+inline through completion, and waiting on a thread that has not been resumed
+returns `WAIT_TIMEOUT`. It does not provide host parallelism or preemption.
+TLS slots are currently scoped to the main guest thread.
 All implemented calls follow the x86 stdcall stack contract. Other imported
 APIs still stop with an error naming the `DLL!function` or ordinal.
 The tiny retail `TlsAlloc` wrapper thunk is recognized by its exact x86 import-
@@ -163,12 +173,13 @@ The Vulkan scene and this P-code loop are therefore a runtime integration
 probe, not a playable NFS Shift build.
 
 The focused fixture test creates a small PE32 image and verifies header/section
-mapping, zero-fill, all 80 IAT mappings across Kernel32, ImageHlp, and WinMM,
+mapping, zero-fill, all 81 IAT mappings across Kernel32, ImageHlp, and WinMM,
 the implemented import outputs,
 stdcall stack cleanup, null-pointer rejection, diagnostic import dispatch,
 one-shot entry-point execution from a supplemental module, rejection of late
-supplement loading, duplicate-load rejection, and generated P-code reads from
-guest memory. The Linux Vulkan CI smoke invokes the supplemental fixture entry
+supplement loading, duplicate-load rejection, `HeapReAlloc`, a suspended guest
+thread's resume/exit/wait lifecycle, and generated P-code reads from guest
+memory. The Linux Vulkan CI smoke invokes the supplemental fixture entry
 point once, runs the P-code read for three rendered frames, and checks that
 Vulkan validation reports zero errors. Results are recorded in
 [`evidence/recompiled_pcode_pe32_vulkan_runtime_20261018.json`](../evidence/recompiled_pcode_pe32_vulkan_runtime_20261018.json)
