@@ -1,0 +1,38 @@
+{
+  "format": "NFS.GhidraExporterParityEvidence/1",
+  "program": {
+    "name": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "query": {
+    "kind": "compact_instruction_stream",
+    "instruction_count": 2204481,
+    "record_count_including_identity_header": 2204482
+  },
+  "ghidra_version": "12.1.2_DEV",
+  "consumer_source_commit": "2d7b74efe8652e6189016bb0eabc799b3ddef0ef",
+  "revenginstr_source_commit": "0645c5b41443e7e2ef085637017368449fd182be",
+  "parity_tool_source_commit": "2e03135b324e684b1d78900782d33005f802d381",
+  "shared_output_contract": "REVENGINSTR.GhidraCompactInstructionStream/1 adapted to SHIFT.GhidraCompactInstructionStream/1",
+  "fallback_output_contract": "SHIFT.GhidraCompactInstructionStream/1",
+  "outputs": {
+    "shared": {
+      "sha256": "1d9c9764910687a43bd87d101ed46433426e4a35d42b85496445439ff8d79b7e",
+      "records": 2204482,
+      "compression": "gzip"
+    },
+    "fallback": {
+      "sha256": "6350c2a4dc9aff2aedcc1d14f1c77bea0056ac563d1241d3fb44e6f6852eb902",
+      "records": 2204482,
+      "compression": "gzip"
+    }
+  },
+  "parity_report": "report.json",
+  "record_comparison": "ordered JSON objects after gzip decompression and object-key normalization",
+  "fallback_retained": true,
+  "limitations": [
+    "Decompressed ordered JSON records match, while the gzip file byte hashes differ.",
+    "Parity covers this analyzed program and compact-stream contract only.",
+    "This does not establish instruction semantics or justify removing the compatibility fallback."
+  ]
+}

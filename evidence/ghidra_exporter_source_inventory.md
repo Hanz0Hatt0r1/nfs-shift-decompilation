@@ -39,3 +39,15 @@ reports and reproduction notes are in the
 per-format parity fixtures; they do not retire the fallback or change the
 inventory classification. The generic all-functions instruction-corpus mode
 remains outside the compatibility exporter contract.
+
+At NFS Shift main `2d7b74efe8652e6189016bb0eabc799b3ddef0ef`, the shared-first
+global-reference wrapper and fallback were byte-identical for target
+`0x00ab4784` (one row, five references), and the instruction-slice wrapper and
+fallback were byte-identical for `0x00451280:0x20` (one slice). The compact
+whole-program instruction stream covered 2,204,481 instructions in 2,204,482
+JSONL records including its identity header. Its adapted shared and fallback
+exports have identical ordered JSON records after gzip decompression and
+object-key normalization; their compressed byte hashes differ. The generic
+gzip-aware audit tool is pinned to revenginstr PR [#145](https://github.com/Hanz0Hatt0r1/revenginstr/pull/145).
+Hash-only reports are under `ghidra_exporter_parity/`. All three checks keep
+the compatibility fallbacks and apply only to this analyzed program.
