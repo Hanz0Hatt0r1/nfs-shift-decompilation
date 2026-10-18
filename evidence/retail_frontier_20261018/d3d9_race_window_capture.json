@@ -25,11 +25,11 @@
     "duplicate_key_conflict_counts": {},
     "duplicate_key_counts": {},
     "event_counts": {
-      "begin_scene": 51,
-      "buffer_payload": 8168,
-      "capture_trigger": 1,
-      "capture_trigger_complete": 1,
-      "clear": 47,
+      "begin_scene": 111,
+      "buffer_payload": 8252,
+      "capture_trigger": 2,
+      "capture_trigger_complete": 2,
+      "clear": 107,
       "create_cube_texture": 4,
       "create_device_begin": 1,
       "create_device_result": 1,
@@ -41,60 +41,60 @@
       "create_vertex_shader": 3912,
       "d3d9_hooks": 2,
       "d3dperf_begin_event": 8,
-      "deferred_buffer_payload_summary": 1,
+      "deferred_buffer_payload_summary": 2,
       "device_hooks": 1,
       "direct3dcreate9_backend_call_begin": 2,
       "direct3dcreate9_result": 2,
-      "draw_indexed_primitive": 5721,
-      "end_scene": 51,
-      "present_result": 27,
+      "draw_indexed_primitive": 13069,
+      "end_scene": 111,
+      "present_result": 31,
       "proxy_d3d9_backend_selected": 1,
       "proxy_direct3dcreate9": 1,
       "proxy_system_d3d9_ready": 1,
-      "set_depth_stencil_surface": 79,
-      "set_indices": 5655,
-      "set_pixel_shader": 5721,
-      "set_pixel_shader_constant_f": 2344,
-      "set_render_state": 12578,
-      "set_render_target": 142,
-      "set_sampler_state": 11730,
-      "set_stream_source": 6502,
-      "set_texture": 9568,
-      "set_vertex_declaration": 1646,
-      "set_vertex_shader": 5721,
-      "set_vertex_shader_constant_f": 9042,
-      "set_viewport": 82
+      "set_depth_stencil_surface": 159,
+      "set_indices": 12953,
+      "set_pixel_shader": 13069,
+      "set_pixel_shader_constant_f": 5326,
+      "set_render_state": 28292,
+      "set_render_target": 277,
+      "set_sampler_state": 27827,
+      "set_stream_source": 14825,
+      "set_texture": 21888,
+      "set_vertex_declaration": 3827,
+      "set_vertex_shader": 13069,
+      "set_vertex_shader_constant_f": 19340,
+      "set_viewport": 162
     },
     "format": "SHIFT.D3D9RawCaptureAudit/1",
     "status": "observed",
     "summary": {
       "captured_cube_snapshot_event_count": 0,
-      "captured_texture_snapshot_event_count": 3031,
+      "captured_texture_snapshot_event_count": 6704,
       "duplicate_key_conflict_line_count": 0,
       "duplicate_key_line_count": 0,
-      "duration_ms": 188332,
-      "event_index_max": 5273729,
+      "duration_ms": 871098,
+      "event_index_max": 26833744,
       "event_index_min": 0,
       "exact_resource_identity_event_count": 0,
-      "frame_max": 5870,
+      "frame_max": 6988,
       "frame_min": 0,
       "invalid_json_count": 0,
       "non_object_count": 0,
-      "nonempty_line_count": 105047,
+      "nonempty_line_count": 202870,
       "resource_path_event_count": 0,
       "resource_sha256_event_count": 0,
-      "resource_signature_event_count": 55164,
-      "tick_max": 85870079,
+      "resource_signature_event_count": 100182,
+      "tick_max": 86552845,
       "tick_min": 85681747,
       "unique_pixel_shader_count": 439,
       "unique_vertex_shader_count": 243,
-      "valid_object_count": 105047
+      "valid_object_count": 202870
     },
     "target_inventory": {
       "family_coverage": [
         {
-          "draw_hit_count": 41,
-          "draw_hit_hash_count": 2,
+          "draw_hit_count": 131,
+          "draw_hit_hash_count": 3,
           "family": "basicinstanced",
           "matched_hash_count": 5,
           "matched_hashes": [
@@ -108,7 +108,7 @@
           "target_hash_count": 11
         },
         {
-          "draw_hit_count": 222,
+          "draw_hit_count": 462,
           "draw_hit_hash_count": 3,
           "family": "crowdgeninstanced",
           "matched_hash_count": 6,
@@ -124,7 +124,7 @@
           "target_hash_count": 20
         },
         {
-          "draw_hit_count": 69,
+          "draw_hit_count": 134,
           "draw_hit_hash_count": 2,
           "family": "crowdgeninstancedbillboard",
           "matched_hash_count": 4,
@@ -138,7 +138,7 @@
           "target_hash_count": 10
         },
         {
-          "draw_hit_count": 33,
+          "draw_hit_count": 78,
           "draw_hit_hash_count": 1,
           "family": "foliageinstanced",
           "matched_hash_count": 2,
@@ -164,9 +164,9 @@
       ],
       "hash_observations": [
         {
-          "draw_hit_count": 26,
+          "draw_hit_count": 56,
           "first_draw_frame": 5865,
-          "last_draw_frame": 5869,
+          "last_draw_frame": 6987,
           "pixel_byte_sha256": "0c8a98760e224ee85825d3723409c43f7e611a85c6c715a4f580c9d748d2e75c",
           "resource_trigger_signatures": [
             "ps:327c926756d291e2"
@@ -204,9 +204,9 @@
           "shader_creation_count": 6
         },
         {
-          "draw_hit_count": 2,
+          "draw_hit_count": 12,
           "first_draw_frame": 5869,
-          "last_draw_frame": 5869,
+          "last_draw_frame": 6987,
           "pixel_byte_sha256": "41121a36bd00d6a364964462aee58f2160e03db2a7d198d7290558611f4acbaf",
           "resource_trigger_signatures": [
             "ps:e08df29b69b81944"
@@ -214,9 +214,9 @@
           "shader_creation_count": 12
         },
         {
-          "draw_hit_count": 33,
+          "draw_hit_count": 78,
           "first_draw_frame": 5865,
-          "last_draw_frame": 5869,
+          "last_draw_frame": 6987,
           "pixel_byte_sha256": "4c7b4d96853bb13191559a71239eb3d0c7d6f767d603a38018b2c933dd2e5be2",
           "resource_trigger_signatures": [
             "ps:018dcf727eb19413"
@@ -244,9 +244,9 @@
           "shader_creation_count": 6
         },
         {
-          "draw_hit_count": 15,
+          "draw_hit_count": 50,
           "first_draw_frame": 5865,
-          "last_draw_frame": 5869,
+          "last_draw_frame": 6987,
           "pixel_byte_sha256": "5af68e3c210e17d51fed7c3229326c7da5564ff91d423df656267cb6de931623",
           "resource_trigger_signatures": [
             "ps:1ad91d5495b54143"
@@ -284,9 +284,9 @@
           "shader_creation_count": 4
         },
         {
-          "draw_hit_count": 43,
+          "draw_hit_count": 78,
           "first_draw_frame": 5865,
-          "last_draw_frame": 5869,
+          "last_draw_frame": 6987,
           "pixel_byte_sha256": "8649d5910884460f8b4661318a9628c6c9b16922b5ac5e821e1a597e9e0e9d3a",
           "resource_trigger_signatures": [
             "ps:7b11b511ce70eb2e"
@@ -304,9 +304,9 @@
           "shader_creation_count": 6
         },
         {
-          "draw_hit_count": 0,
-          "first_draw_frame": null,
-          "last_draw_frame": null,
+          "draw_hit_count": 5,
+          "first_draw_frame": 6983,
+          "last_draw_frame": 6987,
           "pixel_byte_sha256": "adb15d7e73c899c1891b3d0dcd7eedb5447d7c4387da883fda39e534c65f4add",
           "resource_trigger_signatures": [
             "ps:58462f91650cef34"
@@ -314,9 +314,9 @@
           "shader_creation_count": 4
         },
         {
-          "draw_hit_count": 138,
+          "draw_hit_count": 288,
           "first_draw_frame": 5865,
-          "last_draw_frame": 5869,
+          "last_draw_frame": 6987,
           "pixel_byte_sha256": "d7859ccad24d2884b4e4eebeb2f520ea6fcdfbbd65cdc475c22f86a4200d351a",
           "resource_trigger_signatures": [
             "ps:b83e3c4ec719e80f"
@@ -324,9 +324,9 @@
           "shader_creation_count": 6
         },
         {
-          "draw_hit_count": 82,
+          "draw_hit_count": 162,
           "first_draw_frame": 5865,
-          "last_draw_frame": 5869,
+          "last_draw_frame": 6987,
           "pixel_byte_sha256": "eba68ff23ccaf5ff0df4690da7805a7cbd33a09af273099c51b3f801f1c3ff1f",
           "resource_trigger_signatures": [
             "ps:0348ca6769d3b307"
@@ -334,9 +334,9 @@
           "shader_creation_count": 6
         },
         {
-          "draw_hit_count": 26,
+          "draw_hit_count": 76,
           "first_draw_frame": 5865,
-          "last_draw_frame": 5869,
+          "last_draw_frame": 6987,
           "pixel_byte_sha256": "f71a39ae0431ec04f866343fb47438babd76286cea0a51c843ea989a62ed8bcb",
           "resource_trigger_signatures": [
             "ps:bdb10e205fc12aac"
@@ -378,8 +378,8 @@
       ],
       "pixel_target_hash_count": 51,
       "supplied": true,
-      "target_pixel_draw_count": 373,
-      "target_pixel_draw_hash_count": 9,
+      "target_pixel_draw_count": 813,
+      "target_pixel_draw_hash_count": 10,
       "target_pixel_shader_creation_count": 108
     },
     "version": 1
@@ -387,18 +387,18 @@
   "capture_input": {
     "artifact_path": "/home/pes/nfs-shift-recompilation-artifacts/portproton-retail-capture-20261018/retail-race-after-load-20261018/shift_d3d9_capture.jsonl",
     "bundle_artifact_path": "/home/pes/nfs-shift-recompilation-artifacts/portproton-retail-capture-20261018/retail-race-after-load-20261018",
-    "bundle_size_bytes": 212322572,
+    "bundle_size_bytes": 253861323,
     "bundle_stored_outside_git": true,
     "duplicate_key_lines": 0,
-    "duration_ms": 188332,
+    "duration_ms": 871098,
     "frame_range": [
       0,
-      5870
+      6988
     ],
     "invalid_json_lines": 0,
-    "sha256": "b9e6717961cc6239344c9e212e9da8c806b2062ca597ac9e935a51d8fd52d0dd",
-    "size_bytes": 62413516,
-    "valid_json_objects": 105047
+    "sha256": "d90ede38815242dc4a7ff5771b9d886e26931590621631f16ea4617852276afe",
+    "size_bytes": 94429444,
+    "valid_json_objects": 202870
   },
   "capture_proxy": {
     "sha256": "f7fea93de294fdf653b8a57d3596fe846d262b6fe09ece71d491a37e7be554a5",
@@ -416,32 +416,32 @@
     "Raw capture, VB/IB buffers, and texture payloads remain outside Git; only hashes and audit summaries are committed."
   ],
   "render_evidence": {
-    "buffer_payload_events": 8168,
-    "draw_indexed_primitive_events": 5721,
+    "buffer_payload_events": 8252,
+    "draw_indexed_primitive_events": 13069,
     "family_coverage": [
       {
-        "draw_hit_count": 41,
-        "draw_hit_hash_count": 2,
+        "draw_hit_count": 131,
+        "draw_hit_hash_count": 3,
         "family": "basicinstanced",
         "matched_hash_count": 5,
         "target_hash_count": 11
       },
       {
-        "draw_hit_count": 222,
+        "draw_hit_count": 462,
         "draw_hit_hash_count": 3,
         "family": "crowdgeninstanced",
         "matched_hash_count": 6,
         "target_hash_count": 20
       },
       {
-        "draw_hit_count": 69,
+        "draw_hit_count": 134,
         "draw_hit_hash_count": 2,
         "family": "crowdgeninstancedbillboard",
         "matched_hash_count": 4,
         "target_hash_count": 10
       },
       {
-        "draw_hit_count": 33,
+        "draw_hit_count": 78,
         "draw_hit_hash_count": 1,
         "family": "foliageinstanced",
         "matched_hash_count": 2,
@@ -456,8 +456,8 @@
       }
     ],
     "matched_target_shader_hashes": 19,
-    "target_draw_events": 373,
-    "target_draw_shader_hashes": 9,
+    "target_draw_events": 813,
+    "target_draw_shader_hashes": 10,
     "target_inventory": "evidence/silverstone_era3_runtime_shader_targets.json",
     "target_inventory_sha256": "26620dbe10aa578abe1115f56c642037bd2b06199814a886affcecaa4706650f",
     "target_shader_hashes_checked": 51
@@ -471,7 +471,7 @@
   "runtime_context": {
     "isolated_copy_used": true,
     "native_recompiled_linux_build": false,
-    "race_context_basis": "User reported being in the race immediately before firing the manual capture trigger.",
+    "race_context_basis": "User confirmed being in the race before both manual capture.trigger file signals.",
     "race_loaded": true,
     "retail_executable": "SHIFT.exe, PC retail 1.02",
     "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
@@ -479,33 +479,70 @@
   },
   "status": "observed",
   "texture_snapshots": {
-    "capture_failed_events": 1018,
-    "captured_snapshot_events": 3031,
-    "dds_files": 499,
+    "capture_failed_events": 2125,
+    "captured_snapshot_events": 6704,
+    "dds_files": 531,
     "dds_format_counts": {
-      "DXT1": 387,
-      "DXT5": 112
+      "DXT1": 408,
+      "DXT3": 3,
+      "DXT5": 120
     },
     "invalid_or_missing_files": 0,
     "mip_levels_max": 11,
     "mip_levels_min": 1,
-    "ppm_files": 9,
-    "pre_trigger_deferred_events": 5125,
-    "referenced_files_found": 508,
-    "snapshot_payload_bytes": 60874669,
-    "unique_paths": 508,
-    "validated_dds_headers_and_payload_lengths": 499
+    "ppm_files": 10,
+    "pre_trigger_deferred_events": 12285,
+    "referenced_files_found": 541,
+    "snapshot_payload_bytes": 65643668,
+    "unique_paths": 541,
+    "validated_dds_headers_and_payload_lengths": 531
   },
   "trigger_window": {
     "capture_window_frames": [
       5865,
       5869
     ],
+    "capture_windows": [
+      {
+        "completion_event_frame": 5870,
+        "post_frames": 2,
+        "pre_frames": 2,
+        "race_context_user_confirmed": true,
+        "target_draw_events": 373,
+        "target_draw_hash_count": 9,
+        "texture_snapshot_files_before_trigger": 0,
+        "trigger_frame": 5867,
+        "window_frames": [
+          5865,
+          5869
+        ]
+      },
+      {
+        "buffer_payload_events": 84,
+        "completion_event_frame": 6988,
+        "indexed_draw_events": 7348,
+        "new_texture_files": 33,
+        "post_frames": 2,
+        "pre_frames": 2,
+        "race_context_user_confirmed": true,
+        "target_draw_events": 440,
+        "target_draw_hash_count": 9,
+        "texture_snapshot_files_before_trigger": 508,
+        "trigger_frame": 6985,
+        "window_frames": [
+          6983,
+          6987
+        ]
+      }
+    ],
     "complete_event_frame": 5870,
+    "last_complete_event_frame": 6988,
+    "latest_trigger_frame": 6985,
     "post_frames": 2,
     "pre_frames": 2,
     "texture_snapshot_files_before_trigger": 0,
-    "trigger": "manual capture.trigger file after user-confirmed race load",
+    "trigger": "manual capture.trigger file signals after user-confirmed race context",
+    "trigger_count": 2,
     "trigger_frame": 5867
   }
 }
