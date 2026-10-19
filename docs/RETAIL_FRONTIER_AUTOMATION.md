@@ -293,12 +293,25 @@ through revenginstr advances v278 to `d3dx9_41.dll!D3DXCreateEffect` from
 The v279/v280 diagnostics establish that the D3DX source argument is binary,
 not an ASCII string. It is 0x7c0 bytes and begins with
 `01 09 ff fe 0c 04 00 00`; v280 records the next 24 bytes in the machine
-evidence. This is consistent with the D3DX binary-effect header and offset
-layout. The import returns no effect object, so subsequent effect-interface
-calls and startup remain untested. The probe is still blocked before the host
-frame loop and reports no retail draw or Vulkan submission. Exact probe hashes,
-function evidence, and the effect prefix are in the
-[v275–v280 machine record](../evidence/retail_frontier_20261019/entrypoint_probe_v275_v280_pcode_effect_frontier.json).
+evidence. The v281 one-frame repeat captures the complete 1,984-byte input
+outside Git (SHA-256
+`74901707d164f3014e8dc72da7232b1076d003ae3288535ca7c8376aec923fa9`). Its
+binary effect table describes two parameters, one technique, three shader
+variables, and seven objects. The technique/pass are `ShadowGen`/`Pass0`; the
+resource is `ERMB_RENDER`, with `ps_3_0` and `vs_3_0` shader profiles. The
+captured data is not committed.
+
+v281 reproduces the same blocker at 526,429 dispatches / 2,049 unique
+functions. Static caller analysis shows that `0x0083de30` checks and releases
+the compile-error buffer, then uses the effect pointer at receiver `+0x0c` to
+call `ID3DXEffect::FindNextValidTechnique` at vtable byte offset `0xf4`.
+Successful setup then enumerates techniques, parameters, annotations, and
+passes through helpers `0x0083d470` and `0x0083d850`. Thus a parser that only
+returns a placeholder effect cannot advance this caller; shader creation and
+binding are also required later. The probe remains blocked before the host
+frame loop, with no retail draw or Vulkan submission. See the [v275–v280
+machine record](../evidence/retail_frontier_20261019/entrypoint_probe_v275_v280_pcode_effect_frontier.json)
+and [v281 effect capture record](../evidence/retail_frontier_20261019/entrypoint_probe_v281_d3dx_effect_capture.json).
 For the API contract, Microsoft documents that `D3DXCreateEffect` accepts an
 ASCII or binary effect description and returns an `ID3DXEffect` on success;
 Wine's parser reads the binary tag and offset before its structured effect

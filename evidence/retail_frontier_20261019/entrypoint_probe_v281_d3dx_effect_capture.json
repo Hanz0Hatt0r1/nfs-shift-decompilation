@@ -1,0 +1,76 @@
+{
+  "format": "SHIFT.RetailD3DXEffectFrontier/1",
+  "probe_version": "v281",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "probe": {
+    "status": "blocked",
+    "dispatches": 526429,
+    "unique_functions": 2049,
+    "blocker": "unimplemented PE import d3dx9_41.dll!D3DXCreateEffect",
+    "caller": "0x0083de30",
+    "return_address": "0x0083e3fe",
+    "frames_requested": 1,
+    "timeout_seconds": 180,
+    "validation": true,
+    "synthetic_mesh_fixture": true,
+    "probe_log_sha256": "8d53d896791dde3aea51cae6748261526d50b78141d82cf73cc01a1922b4faf0",
+    "comparison_to_v280": "unchanged"
+  },
+  "effect_input": {
+    "guest_address": "0x2c7eea00",
+    "size_bytes": 1984,
+    "sha256": "74901707d164f3014e8dc72da7232b1076d003ae3288535ca7c8376aec923fa9",
+    "capture": "local external artifact effect-input-v281.bin; not committed",
+    "first_argument_values_hex": [
+      "0x2001b3f4",
+      "0x2c7eea00",
+      "0x000007c0",
+      "0x00000000",
+      "0x00000000",
+      "0x00000800",
+      "0x00000000",
+      "0x27f4e75c"
+    ],
+    "diagnostic_argument_capture_omits_final_stack_argument": true
+  },
+  "binary_effect_structure": {
+    "tag": "0xfeff0901",
+    "effect_table_offset": "0x414",
+    "parameter_count": 2,
+    "technique_count": 1,
+    "shader_variable_count": 3,
+    "object_count": 7,
+    "technique": "ShadowGen",
+    "pass": "Pass0",
+    "parameter_names": ["worldviewproj", "world"],
+    "annotation_names": [
+      "supportsSpecialisedLighting",
+      "preservesGlobalState",
+      "shadowGenBehaviour",
+      "shadowGenTechnique",
+      "shadowGenDeferredID"
+    ],
+    "resource_name": "ERMB_RENDER",
+    "shader_profiles": ["ps_3_0", "vs_3_0"],
+    "shader_bytecode_committed": false
+  },
+  "caller_contract": {
+    "effect_output_field": "caller receiver +0x0c",
+    "compile_error_buffer_checked_and_released": true,
+    "first_effect_method": "ID3DXEffect::FindNextValidTechnique",
+    "first_effect_method_vtable_byte_offset": "0xf4",
+    "additional_enumeration_helpers": ["0x0083d470", "0x0083d850"],
+    "shader_creation_and_binding_required_later": true
+  },
+  "interpretation": {
+    "retail_rendering_proven": false,
+    "host_frame_loop_reached": false,
+    "d3d9_vulkan_bridge": null,
+    "validation_errors": null,
+    "next_frontier": "Implement a real binary effect object and the interface methods the caller enumerates; then trace shader creation/binding before claiming retail rendering."
+  },
+  "external_artifacts": {
+    "root": "local external artifact root; full effect input, shader bytecode, raw logs, PE, and game assets are not committed",
+    "raw_probe_log": "shift-probe-v281-d3dx-effect-full-input-1-validation.log"
+  }
+}

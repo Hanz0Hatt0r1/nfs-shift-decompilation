@@ -89,6 +89,26 @@ class RetailFrontierTests(unittest.TestCase):
         self.assertTrue(all(call["count"] == 121 for call in record["tail_calls"]))
         self.assertIn("does not demonstrate", record["interpretation"])
 
+    def test_v281_effect_capture_records_metadata_without_binary_payload(self):
+        path = ROOT / "evidence/retail_frontier_20261019/entrypoint_probe_v281_d3dx_effect_capture.json"
+        raw = path.read_text(encoding="utf-8")
+        record = json.loads(raw)
+        self.assertEqual(record["format"], "SHIFT.RetailD3DXEffectFrontier/1")
+        self.assertEqual(record["probe"]["status"], "blocked")
+        self.assertEqual(record["probe"]["dispatches"], 526429)
+        self.assertEqual(record["effect_input"]["size_bytes"], 1984)
+        self.assertEqual(
+            record["effect_input"]["sha256"],
+            "74901707d164f3014e8dc72da7232b1076d003ae3288535ca7c8376aec923fa9",
+        )
+        self.assertEqual(record["binary_effect_structure"]["technique"], "ShadowGen")
+        self.assertEqual(
+            record["caller_contract"]["first_effect_method"],
+            "ID3DXEffect::FindNextValidTechnique",
+        )
+        self.assertNotIn("source_hex", raw)
+        self.assertFalse(record["binary_effect_structure"]["shader_bytecode_committed"])
+
     def test_frame_loop_is_not_retail_rendering(self):
         data = {
             "format": "SHIFT.NativeRuntimeFrameLoop/1",
