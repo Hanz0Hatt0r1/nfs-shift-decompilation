@@ -1,0 +1,79 @@
+{
+  "format": "SHIFT.RetailThreadPriorityTraceProbe/1",
+  "probe_version": "v248",
+  "source_revision": "510062a5d49169c7cbca8d313e57ba44d39a9c21",
+  "source_worktree_changes": [
+    "docs/RETAIL_FRONTIER_AUTOMATION.md",
+    "native_runtime/include/shift_recompiled_pcode_module.hpp",
+    "native_runtime/src/recompiled_pcode_module.cpp",
+    "native_runtime/src/shift_runtime.cpp",
+    "native_runtime/tests/recompiled_pcode_fixture.c",
+    "native_runtime/tests/recompiled_pcode_module_check.cpp"
+  ],
+  "runtime_binary_sha256": "eb3a6baa13bca819f15222a06b38a5e780dfc985e413dbef87854b889d31f295",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "probe_log_sha256": "3690076d4a4d709370f22ce0ddda97cd92d710095e637c40d62c8fa2f6d5d3ac",
+  "raw_probe_log": "local external artifact root; not committed",
+  "probe_bounds": {
+    "frames_requested": 120,
+    "timeout_seconds": 180,
+    "validation": true,
+    "synthetic_mesh_fixture": true
+  },
+  "status": "host-frame-loop",
+  "dispatches": 96081,
+  "unique_functions": 1559,
+  "frames_rendered": 120,
+  "worker_waiting_count": 4,
+  "validation_errors": 0,
+  "d3d9_vulkan_bridge": {
+    "clear_requests": 122,
+    "clear_submissions": 120,
+    "present_requests": 121,
+    "present_submissions": 120,
+    "pending_presents": 1,
+    "guest_draw_translation": false
+  },
+  "trace": {
+    "truncated": false,
+    "event_count": 20,
+    "selected_target": "0x00649750",
+    "selected_import": "KERNEL32.dll!SetThreadPriority",
+    "selected_target_calls": 7,
+    "import_call_count": 13,
+    "wake_return": {
+      "dispatch_count": 64641,
+      "thread_id": "0x00010000",
+      "function": "0x00649750",
+      "caller": "0x00655190",
+      "receiver": "0x27f398f0",
+      "target_slot_0x00": "0x00070010",
+      "target_slot_0x44": "0x00080000",
+      "target_slot_0x54": "0x00000000",
+      "eax_return": "0x00000001"
+    },
+    "priority_api_call": {
+      "dispatch_count": 64641,
+      "thread_id": "0x00010000",
+      "import": "KERNEL32.dll!SetThreadPriority",
+      "caller": "0x00649750",
+      "completion_dispatch_count": 64641,
+      "stack_arg_1_thread_handle": "0x00080000",
+      "stack_arg_2_priority": "0x00000000",
+      "eax_return": "0x00000001"
+    }
+  },
+  "static_import_mapping": {
+    "call_address": "0x00649758",
+    "iat_address": "0x00aa62e8",
+    "import": "KERNEL32.dll!SetThreadPriority",
+    "evidence": "objdump PE import table and instruction at 0x00649758"
+  },
+  "static_call_path": {
+    "function_0x00655190": "loads child object at receiver+4, loads its +0x54 priority field, tail-jumps to 0x00649750",
+    "function_0x00649750": "loads child +0x44 thread handle, pushes priority and handle, stores priority in child +0x54, calls KERNEL32.dll!SetThreadPriority, returns"
+  },
+  "interpretation": "The signaled worker wakes and reapplies priority 0 to thread handle 0x00080000 before its next wait. This identifies a worker-priority update, not queue payload delivery, frontend readiness, or game rendering.",
+  "retail_rendering_proven": false,
+  "next_frontier": "Correlate the pending asynchronous request path through 0x0066cc00 and 0x00653480 with worker-visible completion and the 0x00508af0 readiness checks."
+}

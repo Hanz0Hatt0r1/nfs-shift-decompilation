@@ -95,6 +95,28 @@ std::vector<uint32_t> parse_guest_trace_u32_values(const char* input,
     return values;
 }
 
+std::vector<std::string> parse_guest_trace_names(const char* input) {
+    std::vector<std::string> values;
+    if (!input || !*input) return values;
+    const std::string text(input);
+    size_t offset = 0;
+    while (offset < text.size() &&
+           values.size() < kGuestCallTraceSelectionLimit) {
+        const size_t separator = text.find_first_of(",;", offset);
+        const size_t end = separator == std::string::npos
+                               ? text.size()
+                               : separator;
+        const std::string value = text.substr(offset, end - offset);
+        if (!value.empty() &&
+            std::find(values.begin(), values.end(), value) == values.end()) {
+            values.push_back(value);
+        }
+        if (separator == std::string::npos) break;
+        offset = separator + 1;
+    }
+    return values;
+}
+
 // ponytail: use an opaque guest HWND until D3D9 consumes the native window.
 constexpr uint32_t kGuestDesktopWindowHandle = 0x00030000;
 constexpr uint32_t kGuestSyntheticIconHandle = 0x00030004;
@@ -665,14 +687,19 @@ struct RecompiledPcodeModule::Impl {
         }
         guest_call_trace_targets = parse_guest_trace_u32_values(
             std::getenv("SHIFT_TRACE_GUEST_CALL_TARGETS"), false);
+        guest_call_trace_imports = parse_guest_trace_names(
+            std::getenv("SHIFT_TRACE_GUEST_CALL_IMPORTS"));
         guest_call_trace_enabled =
-            guest_call_trace_enabled || !guest_call_trace_targets.empty();
+            guest_call_trace_enabled || !guest_call_trace_targets.empty() ||
+            !guest_call_trace_imports.empty();
         if (guest_call_trace_enabled) {
             guest_call_trace_slot_offsets = parse_guest_trace_u32_values(
                 std::getenv("SHIFT_TRACE_GUEST_CALLER_SLOTS"), true);
             guest_call_trace_target_slot_offsets =
                 parse_guest_trace_u32_values(
                     std::getenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS"), true);
+            guest_call_trace_stack_slot_offsets = parse_guest_trace_u32_values(
+                std::getenv("SHIFT_TRACE_GUEST_CALL_STACK_SLOTS"), true);
         }
         static_assert(sizeof(size_t) >= sizeof(uint64_t),
                       "the guest RAM reservation requires a 64-bit host");
@@ -994,7 +1021,10 @@ struct RecompiledPcodeModule::Impl {
                                          guest_call_trace_targets.begin(),
                                          guest_call_trace_targets.end(), target) !=
                                      guest_call_trace_targets.end();
-        if (!selected_caller && !selected_target) {
+        const bool selected_import = !import_name.empty() && std::find(
+            guest_call_trace_imports.begin(), guest_call_trace_imports.end(),
+            import_name) != guest_call_trace_imports.end();
+        if (!selected_caller && !selected_target && !selected_import) {
             return std::numeric_limits<size_t>::max();
         }
         if (guest_call_trace_events.size() >= kGuestCallTraceLimit) {
@@ -1017,10 +1047,11 @@ struct RecompiledPcodeModule::Impl {
         (void)read_guest_u32("register", kX86EaxRegisterOffset,
                              event.eax_entry);
         (void)read_guest_u32("register", kX86EdxRegisterOffset,
-                             event.edx_entry);
+        event.edx_entry);
         uint32_t stack_pointer = 0;
-        if (read_guest_u32("register", kX86EspRegisterOffset,
-                           stack_pointer)) {
+        const bool has_stack_pointer = read_guest_u32(
+            "register", kX86EspRegisterOffset, stack_pointer);
+        if (has_stack_pointer) {
             event.has_return_address = read_guest_u32(
                 "ram", stack_pointer, event.return_address);
         }
@@ -1078,8 +1109,14 @@ struct RecompiledPcodeModule::Impl {
         };
         event.caller_slots =
             sample_slots(event.caller_ecx, guest_call_trace_slot_offsets);
-        event.target_slots = sample_slots(
-            event.ecx_entry, guest_call_trace_target_slot_offsets);
+        if (!event.is_import) {
+            event.target_slots = sample_slots(
+                event.ecx_entry, guest_call_trace_target_slot_offsets);
+        }
+        if (has_stack_pointer) {
+            event.stack_slots = sample_slots(
+                stack_pointer, guest_call_trace_stack_slot_offsets);
+        }
         guest_call_trace_events.push_back(std::move(event));
         return guest_call_trace_events.size() - 1;
     }
@@ -1087,6 +1124,7 @@ struct RecompiledPcodeModule::Impl {
     void complete_guest_call_trace(size_t index) {
         if (index >= guest_call_trace_events.size()) return;
         auto& event = guest_call_trace_events[index];
+        event.completion_dispatch_count = function_count;
         event.has_eax_return = read_guest_u32(
             "register", kX86EaxRegisterOffset, event.eax_return);
         event.completed = true;
@@ -1108,7 +1146,15 @@ struct RecompiledPcodeModule::Impl {
             static_cast<uint32_t>(target));
         if (imported != import_traps.end()) {
             const auto& name = imported->second;
-            record_guest_call_trace(static_cast<uint32_t>(target), name);
+            struct ImportCallTraceCompletion {
+                Impl* module;
+                size_t index;
+                ~ImportCallTraceCompletion() {
+                    module->complete_guest_call_trace(index);
+                }
+            } trace_completion{
+                this, record_guest_call_trace(static_cast<uint32_t>(target),
+                                              name)};
             if (name == "KERNEL32.dll!GetSystemTimeAsFileTime")
                 return get_system_time_as_file_time();
             if (name == "KERNEL32.dll!GetCurrentProcessId")
@@ -9472,10 +9518,13 @@ struct RecompiledPcodeModule::Impl {
         snapshot.guest_call_trace_truncated = guest_call_trace_truncated;
         snapshot.guest_call_trace_caller = guest_call_trace_caller;
         snapshot.guest_call_trace_targets = guest_call_trace_targets;
+        snapshot.guest_call_trace_imports = guest_call_trace_imports;
         snapshot.guest_call_trace_slot_offsets =
             guest_call_trace_slot_offsets;
         snapshot.guest_call_trace_target_slot_offsets =
             guest_call_trace_target_slot_offsets;
+        snapshot.guest_call_trace_stack_slot_offsets =
+            guest_call_trace_stack_slot_offsets;
         snapshot.guest_call_trace = guest_call_trace_events;
         if (!main_guest_thread.active_functions.empty()) {
             snapshot.main_thread_current_function =
@@ -9833,8 +9882,10 @@ struct RecompiledPcodeModule::Impl {
     bool guest_call_trace_truncated = false;
     uint32_t guest_call_trace_caller = 0;
     std::vector<uint32_t> guest_call_trace_targets;
+    std::vector<std::string> guest_call_trace_imports;
     std::vector<uint32_t> guest_call_trace_slot_offsets;
     std::vector<uint32_t> guest_call_trace_target_slot_offsets;
+    std::vector<uint32_t> guest_call_trace_stack_slot_offsets;
     std::vector<RecompiledGuestCallTraceEvent> guest_call_trace_events;
     uint64_t guest_heap_next_address = kGuestHeapStartAddress;
     uint64_t guest_virtual_next_address = UINT64_C(0x20000000);

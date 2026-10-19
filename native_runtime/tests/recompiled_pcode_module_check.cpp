@@ -717,12 +717,100 @@ int main(int argc, char** argv) {
                     "guest call target trace did not capture a call from an "
                     "unselected caller and its entry receiver slots");
         }
+        require(setenv("SHIFT_TRACE_GUEST_CALL_STACK_SLOTS",
+                       "0x4,0x8,0xffffffff", 1) == 0,
+                "could not configure guest call stack slot trace fixture");
+        {
+            shift::runtime::RecompiledPcodeModule stack_trace_module(argv[1]);
+            require(stack_trace_module.call(0x00406100) == 0,
+                    "guest call stack trace fixture call failed: " +
+                        stack_trace_module.last_error());
+            const auto snapshot =
+                stack_trace_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace_stack_slot_offsets ==
+                        std::vector<uint32_t>{0x4, 0x8, 0xffffffff} &&
+                        snapshot.guest_call_trace.size() == 1 &&
+                        snapshot.guest_call_trace.front().caller ==
+                            0x00406100 &&
+                        snapshot.guest_call_trace.front().stack_slots.size() ==
+                            3 &&
+                        snapshot.guest_call_trace.front().stack_slots[0]
+                                .offset == 0x4 &&
+                        snapshot.guest_call_trace.front().stack_slots[0]
+                                .has_value &&
+                        snapshot.guest_call_trace.front().stack_slots[0]
+                                .value == 0x11223344 &&
+                        snapshot.guest_call_trace.front().stack_slots[1]
+                                .offset == 0x8 &&
+                        snapshot.guest_call_trace.front().stack_slots[1]
+                                .has_value &&
+                        snapshot.guest_call_trace.front().stack_slots[1]
+                                .value == 0x55667788 &&
+                        snapshot.guest_call_trace.front().stack_slots[2]
+                                .offset == 0xffffffff &&
+                        !snapshot.guest_call_trace.front().stack_slots[2]
+                             .has_value,
+                    "guest call trace did not capture target stack arguments");
+        }
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_STACK_SLOTS") == 0,
+                "could not disable guest call stack slot trace fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_PROVENANCE") == 0,
                 "could not disable target slot writer provenance fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS") == 0,
                 "could not disable guest call target slot trace fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGETS") == 0,
                 "could not disable guest call target trace fixture");
+
+        require(setenv("SHIFT_TRACE_GUEST_CALL_IMPORTS",
+                       "KERNEL32.dll!Sleep", 1) == 0,
+                "could not enable guest import trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_STACK_SLOTS", "0x4", 1) == 0,
+                "could not configure guest import stack trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS", "0x0", 1) == 0,
+                "could not configure guest import target trace fixture");
+        {
+            shift::runtime::RecompiledPcodeModule import_trace_module(argv[1]);
+            (void)import_trace_module.load_pe32_image(argv[4]);
+            require(import_trace_module.call(0x00405000) == 0,
+                    "guest import trace fixture call failed: " +
+                        import_trace_module.last_error());
+            const auto snapshot =
+                import_trace_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace_enabled &&
+                        snapshot.guest_call_trace_imports ==
+                            std::vector<std::string>{"KERNEL32.dll!Sleep"} &&
+                        snapshot.guest_call_trace.size() == 1 &&
+                        snapshot.guest_call_trace.front().caller ==
+                            0x00405000 &&
+                        snapshot.guest_call_trace.front().is_import &&
+                        snapshot.guest_call_trace.front().import_name ==
+                            "KERNEL32.dll!Sleep" &&
+                        snapshot.guest_call_trace.front().has_return_address &&
+                        snapshot.guest_call_trace.front().return_address ==
+                            0x00405005 &&
+                        snapshot.guest_call_trace.front().completed &&
+                        snapshot.guest_call_trace.front()
+                                .completion_dispatch_count >=
+                            snapshot.guest_call_trace.front().dispatch_count &&
+                        snapshot.guest_call_trace.front().has_eax_return &&
+                        snapshot.guest_call_trace.front().eax_return == 0 &&
+                        snapshot.guest_call_trace.front().target_slots.empty() &&
+                        snapshot.guest_call_trace.front().stack_slots.size() ==
+                            1 &&
+                        snapshot.guest_call_trace.front().stack_slots.front()
+                                .offset == 0x4 &&
+                        snapshot.guest_call_trace.front().stack_slots.front()
+                                .has_value &&
+                        snapshot.guest_call_trace.front().stack_slots.front()
+                                .value == 1,
+                    "guest call trace did not capture selected import and its stack argument");
+        }
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_STACK_SLOTS") == 0,
+                "could not disable guest import stack trace fixture");
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS") == 0,
+                "could not disable guest import target trace fixture");
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_IMPORTS") == 0,
+                "could not disable guest import trace fixture");
 
         require(setenv("SHIFT_TRACE_UI_STATE_GATE", "1", 1) == 0,
                 "could not enable UI state gate trace fixture");

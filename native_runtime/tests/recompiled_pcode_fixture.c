@@ -27,6 +27,32 @@ int rvi_00403100(RviPcodeContext *ctx) {
     return ctx->call(ctx->opaque, UINT64_C(0x00685700));
 }
 
+int rvi_00406100(RviPcodeContext *ctx) {
+    const uint32_t receiver = UINT32_C(0x00025000);
+    const uint32_t stack = UINT32_C(0x00033000);
+    const uint32_t return_address = UINT32_C(0x00406105);
+    const uint32_t argument1 = UINT32_C(0x11223344);
+    const uint32_t argument2 = UINT32_C(0x55667788);
+    const uint32_t accumulator = UINT32_C(0xaabbccdd);
+    if (ctx->write(ctx->opaque, "register", 4, sizeof(receiver),
+                   (const uint8_t *)&receiver) != 0 ||
+        ctx->write(ctx->opaque, "register", 0, sizeof(accumulator),
+                   (const uint8_t *)&accumulator) != 0 ||
+        ctx->write(ctx->opaque, "register", 0x10, sizeof(stack),
+                   (const uint8_t *)&stack) != 0 ||
+        ctx->write(ctx->opaque, "ram", stack, sizeof(return_address),
+                   (const uint8_t *)&return_address) != 0 ||
+        ctx->write(ctx->opaque, "ram", stack + 4, sizeof(argument1),
+                   (const uint8_t *)&argument1) != 0 ||
+        ctx->write(ctx->opaque, "ram", stack + 8, sizeof(argument2),
+                   (const uint8_t *)&argument2) != 0 ||
+        ctx->write(ctx->opaque, "ram", receiver + 0x10, sizeof(argument1),
+                   (const uint8_t *)&argument1) != 0) {
+        return -1;
+    }
+    return ctx->call(ctx->opaque, UINT64_C(0x00685700));
+}
+
 int rvi_00404000(RviPcodeContext *ctx) {
     uint8_t value[4] = {0};
     const uint8_t expected[4] = {'P', '3', '2', '!'};

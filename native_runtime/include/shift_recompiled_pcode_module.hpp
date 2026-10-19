@@ -91,6 +91,7 @@ struct RecompiledGuestCallTraceMemorySlot {
 
 struct RecompiledGuestCallTraceEvent {
     uint64_t dispatch_count = 0;
+    uint64_t completion_dispatch_count = 0;
     uint32_t thread_id = 0;
     uint32_t function = 0;
     uint32_t caller = 0;
@@ -107,6 +108,7 @@ struct RecompiledGuestCallTraceEvent {
     bool completed = false;
     std::vector<RecompiledGuestCallTraceMemorySlot> caller_slots;
     std::vector<RecompiledGuestCallTraceMemorySlot> target_slots;
+    std::vector<RecompiledGuestCallTraceMemorySlot> stack_slots;
 };
 
 struct RecompiledGuestD3d9PresentationParameters {
@@ -193,8 +195,10 @@ struct RecompiledGuestSchedulerSnapshot {
     bool guest_call_trace_truncated = false;
     uint32_t guest_call_trace_caller = 0;
     std::vector<uint32_t> guest_call_trace_targets;
+    std::vector<std::string> guest_call_trace_imports;
     std::vector<uint32_t> guest_call_trace_slot_offsets;
     std::vector<uint32_t> guest_call_trace_target_slot_offsets;
+    std::vector<uint32_t> guest_call_trace_stack_slot_offsets;
     std::vector<RecompiledGuestCallTraceEvent> guest_call_trace;
     size_t ready_thread_count = 0;
     size_t worker_thread_count = 0;

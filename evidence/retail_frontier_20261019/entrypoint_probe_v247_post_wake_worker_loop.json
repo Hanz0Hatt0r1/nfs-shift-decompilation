@@ -1,0 +1,80 @@
+{
+  "format": "SHIFT.RetailPostWakeWorkerTraceProbe/1",
+  "probe_version": "v247",
+  "source_revision": "510062a5d49169c7cbca8d313e57ba44d39a9c21",
+  "runtime_binary_sha256": "eb3a6baa13bca819f15222a06b38a5e780dfc985e413dbef87854b889d31f295",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "probe_log_sha256": "72d44aafbc1b42067e2069cdb7b576f66d6c7bdf93e3566fc9619cc92e04aafb",
+  "raw_probe_log": "local external artifact root; not committed",
+  "probe_bounds": {
+    "frames_requested": 120,
+    "timeout_seconds": 180,
+    "validation": true,
+    "synthetic_mesh_fixture": true
+  },
+  "status": "host-frame-loop",
+  "dispatches": 96081,
+  "unique_functions": 1559,
+  "frames_rendered": 120,
+  "worker_waiting_count": 4,
+  "validation_errors": 0,
+  "trace": {
+    "truncated": false,
+    "event_count": 17,
+    "targets": ["0x00655150", "0x00655190", "0x00649750", "0x00662880"],
+    "worker_0x00010000": [
+      {
+        "dispatch_count": 19313,
+        "function": "0x00655190",
+        "caller": "0x00667240",
+        "completion_dispatch_count": 19314,
+        "eax_return": "0x00000001"
+      },
+      {
+        "dispatch_count": 19314,
+        "function": "0x00649750",
+        "caller": "0x00655190",
+        "completion_dispatch_count": 19314,
+        "target_slot_0x00": "0x00070010",
+        "target_slot_0x44": "0x00080000",
+        "target_slot_0x54": "0x00000000",
+        "eax_return": "0x00000001"
+      },
+      {
+        "dispatch_count": 19325,
+        "function": "0x00655150",
+        "caller": "0x00667240",
+        "completion_dispatch_count": 64639,
+        "return_address": "0x006674d7"
+      },
+      {
+        "dispatch_count": 64640,
+        "function": "0x00655190",
+        "caller": "0x00667240",
+        "completion_dispatch_count": 64641,
+        "eax_return": "0x00000001"
+      },
+      {
+        "dispatch_count": 64641,
+        "function": "0x00649750",
+        "caller": "0x00655190",
+        "completion_dispatch_count": 64641,
+        "target_slot_0x00": "0x00070010",
+        "target_slot_0x44": "0x00080000",
+        "target_slot_0x54": "0x00000000",
+        "eax_return": "0x00000001"
+      },
+      {
+        "dispatch_count": 65096,
+        "function": "0x00655150",
+        "caller": "0x00667240",
+        "completion_dispatch_count": null,
+        "completed": false,
+        "return_address": "0x006674d7"
+      }
+    ]
+  },
+  "interpretation": "The worker resumes from its wait, runs the 0x00655190 -> 0x00649750 path, then waits again. This probe alone did not identify the indirect API called by 0x00649750 or prove that this path delivered queued work.",
+  "host_rendering_proven": false,
+  "retail_rendering_proven": false
+}

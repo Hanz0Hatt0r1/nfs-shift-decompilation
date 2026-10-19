@@ -387,6 +387,12 @@ std::string format_guest_call_trace(
         } else {
             text << "null";
         }
+        text << ",\"completion_dispatch_count\":";
+        if (event.completed) {
+            text << event.completion_dispatch_count;
+        } else {
+            text << "null";
+        }
         text << ",\"completed\":"
              << (event.completed ? "true" : "false")
              << ",\"edx_entry\":\""
@@ -403,6 +409,8 @@ std::string format_guest_call_trace(
              << format_guest_call_trace_memory_slots(event.caller_slots)
              << ",\"target_slots\":"
              << format_guest_call_trace_memory_slots(event.target_slots)
+             << ",\"stack_slots\":"
+             << format_guest_call_trace_memory_slots(event.stack_slots)
              << '}';
     }
     text << ']';
@@ -416,6 +424,18 @@ std::string format_guest_call_trace_addresses(
     for (size_t index = 0; index < addresses.size(); ++index) {
         if (index != 0) text << ',';
         text << '"' << format_guest_address(addresses[index]) << '"';
+    }
+    text << ']';
+    return text.str();
+}
+
+std::string format_guest_call_trace_imports(
+    const std::vector<std::string>& imports) {
+    std::ostringstream text;
+    text << '[';
+    for (size_t index = 0; index < imports.size(); ++index) {
+        if (index != 0) text << ',';
+        text << format_json_string(imports[index]);
     }
     text << ']';
     return text.str();
@@ -5205,6 +5225,10 @@ int main(int argc, char** argv) {
             << format_guest_call_trace_addresses(
                    guest_scheduler_state.guest_call_trace_targets)
             << ",\n"
+            << "    \"guest_call_trace_imports\": "
+            << format_guest_call_trace_imports(
+                   guest_scheduler_state.guest_call_trace_imports)
+            << ",\n"
             << "    \"guest_call_trace_slot_offsets\": "
             << format_guest_call_trace_addresses(
                    guest_scheduler_state.guest_call_trace_slot_offsets)
@@ -5213,6 +5237,10 @@ int main(int argc, char** argv) {
             << format_guest_call_trace_addresses(
                    guest_scheduler_state
                        .guest_call_trace_target_slot_offsets)
+            << ",\n"
+            << "    \"guest_call_trace_stack_slot_offsets\": "
+            << format_guest_call_trace_addresses(
+                   guest_scheduler_state.guest_call_trace_stack_slot_offsets)
             << ",\n"
             << "    \"guest_call_trace\": "
             << format_guest_call_trace(
