@@ -593,24 +593,95 @@ int main(int argc, char** argv) {
         require(unsetenv("SHIFT_TRACE_GUEST_PROVENANCE") == 0,
                 "could not disable guest write provenance fixture");
 
-        require(setenv("SHIFT_TRACE_GUEST_CALLER", "0x00401000", 1) == 0,
+        require(setenv("SHIFT_TRACE_GUEST_CALLER", "0x00403100", 1) == 0,
                 "could not enable guest caller trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALLER_SLOTS",
+                       "0x10,0x20,0xffffffff", 1) == 0,
+                "could not configure guest caller slot trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_PROVENANCE", "0x00023010", 1) == 0,
+                "could not enable caller slot writer provenance fixture");
         {
             shift::runtime::RecompiledPcodeModule call_trace_module(argv[1]);
-            require(call_trace_module.call(0x00401000) == 0,
+            constexpr uint32_t receiver = 0x00023000;
+            write_guest_u32(call_trace_module, "register", 4, receiver);
+            write_guest_u32(call_trace_module, "ram", receiver + 0x10,
+                            0x12345678);
+            write_guest_u32(call_trace_module, "ram", receiver + 0x20,
+                            0x90abcdef);
+            require(call_trace_module.call(0x00403100) == 0,
                     "guest caller trace fixture call failed: " +
                         call_trace_module.last_error());
             const auto snapshot = call_trace_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace.size() == 1,
+                    "guest caller trace did not capture its nested call");
+            const auto& trace_event = snapshot.guest_call_trace.front();
             require(snapshot.guest_call_trace_enabled &&
                         !snapshot.guest_call_trace_truncated &&
-                        snapshot.guest_call_trace_caller == 0x00401000 &&
-                        snapshot.guest_call_trace.size() == 1 &&
-                        snapshot.guest_call_trace.front().caller == 0x00401000 &&
-                        snapshot.guest_call_trace.front().function == 0x00685700,
+                        snapshot.guest_call_trace_caller == 0x00403100 &&
+                        snapshot.guest_call_trace_slot_offsets ==
+                            std::vector<uint32_t>{0x10, 0x20, 0xffffffff} &&
+                        trace_event.caller == 0x00403100 &&
+                        trace_event.function == 0x00685700 &&
+                        trace_event.ecx_entry == 0x00024000 &&
+                        trace_event.caller_ecx == receiver &&
+                        trace_event.eax_entry == 0x78563412 &&
+                        trace_event.completed &&
+                        trace_event.has_eax_return &&
+                        trace_event.eax_return == 0x78563412 &&
+                        trace_event.caller_slots.size() == 3 &&
+                        trace_event.caller_slots[0].offset == 0x10 &&
+                        trace_event.caller_slots[0].has_value &&
+                        trace_event.caller_slots[0].value == 0x12345678 &&
+                        trace_event.caller_slots[0].has_last_writer &&
+                        trace_event.caller_slots[0].last_writer.function ==
+                            0x00403100 &&
+                        trace_event.caller_slots[0].last_writer.write_address ==
+                            0x00023010 &&
+                        trace_event.caller_slots[0].last_writer.write_size == 4 &&
+                        trace_event.caller_slots[0].last_writer.word_value ==
+                            0x12345678 &&
+                        trace_event.caller_slots[1].offset == 0x20 &&
+                        trace_event.caller_slots[1].has_value &&
+                        trace_event.caller_slots[1].value == 0x90abcdef &&
+                        trace_event.caller_slots[2].offset == 0xffffffff &&
+                        !trace_event.caller_slots[2].has_value,
                     "guest caller trace did not capture its nested P-code call");
         }
+        require(unsetenv("SHIFT_TRACE_GUEST_CALLER_SLOTS") == 0,
+                "could not disable guest caller slot trace fixture");
+        require(unsetenv("SHIFT_TRACE_GUEST_PROVENANCE") == 0,
+                "could not disable caller slot writer provenance fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_CALLER") == 0,
                 "could not disable guest caller trace fixture");
+
+        require(setenv("SHIFT_TRACE_GUEST_CALL_TARGETS", "0x00685700", 1) ==
+                    0,
+                "could not enable guest call target trace fixture");
+        {
+            shift::runtime::RecompiledPcodeModule target_trace_module(argv[1]);
+            require(target_trace_module.call(0x00401000) == 0,
+                    "guest call target trace fixture call failed: " +
+                        target_trace_module.last_error());
+            const auto snapshot =
+                target_trace_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace_enabled &&
+                        snapshot.guest_call_trace_caller == 0 &&
+                        snapshot.guest_call_trace_targets ==
+                            std::vector<uint32_t>{0x00685700} &&
+                        snapshot.guest_call_trace.size() == 1 &&
+                        snapshot.guest_call_trace.front().caller ==
+                            0x00401000 &&
+                        snapshot.guest_call_trace.front().function ==
+                            0x00685700 &&
+                        snapshot.guest_call_trace.front().completed &&
+                        snapshot.guest_call_trace.front().has_eax_return &&
+                        snapshot.guest_call_trace.front().eax_return ==
+                            0x00001234,
+                    "guest call target trace did not capture a call from an "
+                    "unselected caller");
+        }
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGETS") == 0,
+                "could not disable guest call target trace fixture");
 
         require(setenv("SHIFT_TRACE_UI_STATE_GATE", "1", 1) == 0,
                 "could not enable UI state gate trace fixture");

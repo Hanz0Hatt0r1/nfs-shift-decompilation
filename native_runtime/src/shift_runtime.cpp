@@ -309,9 +309,19 @@ std::string format_guest_call_trace(
         }
         text << ",\"ecx_entry\":\""
              << format_guest_address(event.ecx_entry)
+             << "\",\"caller_ecx\":\""
+             << format_guest_address(event.caller_ecx)
              << "\",\"eax_entry\":\""
              << format_guest_address(event.eax_entry)
-             << "\",\"edx_entry\":\""
+             << "\",\"eax_return\":";
+        if (event.has_eax_return) {
+            text << '"' << format_guest_address(event.eax_return) << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"completed\":"
+             << (event.completed ? "true" : "false")
+             << ",\"edx_entry\":\""
              << format_guest_address(event.edx_entry)
              << "\",\"is_import\":"
              << (event.is_import ? "true" : "false")
@@ -321,7 +331,82 @@ std::string format_guest_call_trace(
         } else {
             text << "null";
         }
-        text << '}';
+        text << ",\"caller_slots\":[";
+        for (size_t slot_index = 0;
+             slot_index < event.caller_slots.size(); ++slot_index) {
+            const auto& slot = event.caller_slots[slot_index];
+            if (slot_index != 0) text << ',';
+            text << "{\"offset\":\""
+                 << format_guest_address(slot.offset)
+                 << "\",\"value\":";
+            if (slot.has_value) {
+                text << '"' << format_guest_address(slot.value) << '"';
+            } else {
+                text << "null";
+            }
+            text << ",\"last_writer\":";
+            if (slot.has_last_writer) {
+                const auto& writer = slot.last_writer;
+                text << "{\"sequence\":" << writer.sequence
+                     << ",\"dispatch_count\":" << writer.dispatch_count
+                     << ",\"function\":\""
+                     << format_guest_address(writer.function)
+                     << "\",\"ecx_entry\":";
+                if (writer.has_ecx_entry) {
+                    text << '"' << format_guest_address(writer.ecx_entry)
+                         << '"';
+                } else {
+                    text << "null";
+                }
+                text << ",\"caller_function\":";
+                if (writer.has_caller_function) {
+                    text << '"'
+                         << format_guest_address(writer.caller_function)
+                         << '"';
+                } else {
+                    text << "null";
+                }
+                text << ",\"call_return_address\":";
+                if (writer.has_call_return_address) {
+                    text << '"' << format_guest_address(
+                                        writer.call_return_address)
+                         << '"';
+                } else {
+                    text << "null";
+                }
+                text << ",\"caller_return_address\":";
+                if (writer.has_caller_return_address) {
+                    text << '"' << format_guest_address(
+                                        writer.caller_return_address)
+                         << '"';
+                } else {
+                    text << "null";
+                }
+                text << ",\"thread_id\":\""
+                     << format_guest_address(writer.thread_id)
+                     << "\",\"write_address\":\""
+                     << format_guest_address(writer.write_address)
+                     << "\",\"write_size\":" << writer.write_size
+                     << ",\"word_value\":\""
+                     << format_guest_address(writer.word_value) << "\"}";
+            } else {
+                text << "null";
+            }
+            text << '}';
+        }
+        text << "]}";
+    }
+    text << ']';
+    return text.str();
+}
+
+std::string format_guest_call_trace_addresses(
+    const std::vector<uint32_t>& addresses) {
+    std::ostringstream text;
+    text << '[';
+    for (size_t index = 0; index < addresses.size(); ++index) {
+        if (index != 0) text << ',';
+        text << '"' << format_guest_address(addresses[index]) << '"';
     }
     text << ']';
     return text.str();
@@ -5107,6 +5192,14 @@ int main(int argc, char** argv) {
             << format_guest_address(
                    guest_scheduler_state.guest_call_trace_caller)
             << "\",\n"
+            << "    \"guest_call_trace_targets\": "
+            << format_guest_call_trace_addresses(
+                   guest_scheduler_state.guest_call_trace_targets)
+            << ",\n"
+            << "    \"guest_call_trace_slot_offsets\": "
+            << format_guest_call_trace_addresses(
+                   guest_scheduler_state.guest_call_trace_slot_offsets)
+            << ",\n"
             << "    \"guest_call_trace\": "
             << format_guest_call_trace(
                    guest_scheduler_state.guest_call_trace)

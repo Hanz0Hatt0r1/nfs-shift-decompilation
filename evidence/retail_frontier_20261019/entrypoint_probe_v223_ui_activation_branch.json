@@ -1,0 +1,115 @@
+{
+  "format": "SHIFT.RetailUiActivationBranchProbe/1",
+  "source_base_commit": "99e1bb960cff50eb5be577430a583765495642d4",
+  "runtime_binary_sha256": "51537185371f6ceef27ddf7784c3ecefaccf231390ff54a25fc67e29040ba8e7",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "module_set_evidence": "entrypoint_probe_v215_supplement_replay.json",
+  "probe_bounds": {
+    "frames_requested": 120,
+    "timeout_seconds": 180,
+    "validation": true,
+    "mesh_fixture": "temporary synthetic triangle MGEO; not retail evidence"
+  },
+  "runs": [
+    {
+      "version": "v223",
+      "status": "host-frame-loop",
+      "dispatches": 96082,
+      "unique_functions": 1559,
+      "frames_rendered": 120,
+      "validation_errors": 0,
+      "probe_log_sha256": "92a9a789425d9962d3073621404603dc214a8a8fbd831d8989c13514cd8a919b",
+      "probe_report_sha256": "55f742bd970cf324cd47f42f2ea71a312a17e20b3b61e508f3999417336f2bf6"
+    },
+    {
+      "version": "v225",
+      "status": "host-frame-loop",
+      "dispatches": 96082,
+      "unique_functions": 1559,
+      "frames_rendered": 120,
+      "validation_errors": 0,
+      "probe_log_sha256": "d97d456599511de9810f9d5d113be633bf832a5f09e299c300811f2ad1c61b72",
+      "probe_report_sha256": "0bd0bc7111fe7fe17dd658c46577266d63cf269190efa90ffc3d5b4104f5310e"
+    },
+    {
+      "version": "v226",
+      "status": "host-frame-loop",
+      "dispatches": 96082,
+      "unique_functions": 1559,
+      "frames_rendered": 120,
+      "validation_errors": 0,
+      "probe_log_sha256": "037b0a1b41364ba515d97d3bf225eebfbfbb9a775cdeafb1312fe6242259769d",
+      "probe_report_sha256": "ffea5ae8cb4dbd6a63b711979e02093d260f718e7d74e24ac033579e3eb0f4e0"
+    },
+    {
+      "version": "v228",
+      "status": "host-frame-loop",
+      "dispatches": 96082,
+      "unique_functions": 1559,
+      "frames_rendered": 120,
+      "validation_errors": 0,
+      "probe_log_sha256": "9e02463f6cbcba6eb2765024f11eeed4f0fac9a7194cc522262733c013b5e09b",
+      "probe_report_sha256": "c13858736236ea6690f0eb77266cc1f68234f91adc081e5fe338e0ee2ebd1fa3"
+    }
+  ],
+  "progress_branch": {
+    "caller": "0x0054bb20",
+    "calls_recorded": 968,
+    "calls_per_target": 121,
+    "caller_entry_ecx": "0x27e315e8",
+    "helper_object_ecx": "0x27e315ec",
+    "readiness_checks": {
+      "0x00508ea0": {
+        "return_eax": "0x00000000",
+        "observations": 121
+      },
+      "0x00508e90": {
+        "return_eax": "0x00000000",
+        "observations": 121,
+        "reads_helper_offset": "0x2d",
+        "helper_byte_value": 0
+      },
+      "0x00508ec0": {
+        "calls_observed": 0
+      }
+    }
+  },
+  "helper_update": {
+    "function": "0x005093a0",
+    "observations": 121,
+    "entry_state_offset_0x28": 1,
+    "active_flag_offset_0x2c": 1,
+    "readiness_byte_offset_0x2d": 0,
+    "child_address": "0x27e31d68",
+    "child_state_offset_0xe4": 7,
+    "child_async_pending_offset_0x218": 2,
+    "child_mode_offset_0x340": 1,
+    "readiness_method": {
+      "function": "0x00508af0",
+      "return_eax": "0x2827bd00",
+      "return_low_byte": 0,
+      "observations": 120
+    }
+  },
+  "pending_bit_last_writer": {
+    "address": "0x27e31f80",
+    "function": "0x0066bb50",
+    "ecx_entry": "0x27ed9428",
+    "caller_function": "0x0066cc00",
+    "call_return_address": "0x0066cc3a",
+    "caller_return_address": "0x0065fafe",
+    "dispatch_count": 64488,
+    "write_size": 4,
+    "word_value": "0x00000002",
+    "cleanup_function_static": "0x0066b8d0",
+    "cleanup_clears_bit_1": true,
+    "observed_clear_after_initializer": false
+  },
+  "interpretation": [
+    "The 0x00508e90 byte check prevents the activation route from proceeding to 0x00508ec0.",
+    "A child readiness method remains false with bit 1 pending at child +0x218.",
+    "The pending bit's recorded last writer is the async request initializer; its completion/clear cause remains unresolved.",
+    "The probe remains at host-frame-loop; it does not prove frontend readiness, retail draw translation, or an offline race."
+  ],
+  "raw_logs_retained_outside_git": true
+}
