@@ -19,6 +19,18 @@ import compare_shift_d3d9 as d3d9  # noqa: E402
 
 
 class RetailFrontierTests(unittest.TestCase):
+    def test_default_probe_mesh_is_a_minimal_mgeo(self):
+        env = {}
+        temporary = frontier._ensure_probe_mesh(env)
+        self.assertIsNotNone(temporary)
+        try:
+            mesh = Path(env["SHIFT_ENTRYPOINT_PROBE_MESH"])
+            blob = mesh.read_bytes()
+            self.assertEqual(blob[:4], b"MGEO")
+            self.assertEqual(len(blob), 82)
+        finally:
+            temporary.cleanup()
+
     def test_real_v173_diagnostic(self):
         log = ROOT / "evidence/retail_frontier_20261019/shift-probe-v173-d3dx-device-map.log"
         result = frontier.inspect_log(log.read_text(encoding="utf-8"), 1)
@@ -61,6 +73,21 @@ class RetailFrontierTests(unittest.TestCase):
         self.assertEqual(record["worker_waiting_count"], 4)
         self.assertEqual(len(record["probe_log_sha256"]), 64)
         self.assertFalse(record["retail_rendering_proven"])
+
+    def test_real_v120_maps_ui_gate_common_tail(self):
+        path = ROOT / "evidence/retail_frontier_20261019/ui_gate_common_tail_dispatch.json"
+        record = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(record["format"], "SHIFT.RetailUiGateCommonTailDispatch/1")
+        self.assertEqual(record["probe"]["frames_rendered"], 120)
+        self.assertEqual(record["probe"]["gate_calls"], 121)
+        self.assertEqual(record["probe"]["gate_return_eax"], "0x00000000")
+        self.assertEqual(record["probe"]["calls_per_mapping"], 121)
+        self.assertEqual(
+            [call["target_inner_device_method"] for call in record["tail_calls"]],
+            ["IDirect3DDevice9::EndScene", "IDirect3DDevice9::Present"],
+        )
+        self.assertTrue(all(call["count"] == 121 for call in record["tail_calls"]))
+        self.assertIn("does not demonstrate", record["interpretation"])
 
     def test_frame_loop_is_not_retail_rendering(self):
         data = {
@@ -141,6 +168,8 @@ class RetailFrontierTests(unittest.TestCase):
             runtime.chmod(0o755)
             game_data = folder / "game data"
             game_data.mkdir()
+            mesh = folder / "probe.mgeo"
+            mesh.write_bytes(b"MGEO")
             pe = folder / "SHIFT.exe"
             pe.touch()
             capture = folder / "args.json"
@@ -148,6 +177,7 @@ class RetailFrontierTests(unittest.TestCase):
             env.update({
                 "ARGS_CAPTURE": str(capture),
                 "SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE": str(module),
+                "SHIFT_ENTRYPOINT_PROBE_MESH": str(mesh),
                 "SHIFT_ENTRYPOINT_PROBE_EXTRA_OVERRIDES": "\n".join(map(str, overrides)),
                 "SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS": str(supplements[0]),
                 "SHIFT_ENTRYPOINT_PROBE_FRAMES": "2",

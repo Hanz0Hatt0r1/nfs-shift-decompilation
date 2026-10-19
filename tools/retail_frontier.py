@@ -13,8 +13,10 @@ import json
 import os
 from pathlib import Path
 import re
+import struct
 import subprocess
 import sys
+import tempfile
 
 RETAIL_SHA256 = "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
 FORMAT = "SHIFT.RetailStartupFrontier/1"
@@ -139,6 +141,23 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _ensure_probe_mesh(env: dict[str, str]) -> tempfile.TemporaryDirectory | None:
+    """Use a tiny synthetic MGEO when a retail probe mesh was not supplied."""
+    if env.get("SHIFT_ENTRYPOINT_PROBE_MESH"):
+        return None
+    temporary = tempfile.TemporaryDirectory(prefix="shift-retail-probe-")
+    mesh = Path(temporary.name) / "startup-probe.mgeo"
+    mesh.write_bytes(
+        b"MGEO"
+        + struct.pack("<HHIIIIII", 1, 0, 3, 3, 1, 0, 0, 2)
+        + struct.pack("<9f", 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        + struct.pack("<3I", 0, 1, 2)
+        + b"{}"
+    )
+    env["SHIFT_ENTRYPOINT_PROBE_MESH"] = str(mesh)
+    return temporary
+
+
 def write_report(path: Path, report: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_name(path.name + ".tmp")
@@ -201,7 +220,12 @@ def main(argv=None) -> int:
             str(args.build_dir.resolve()), str(args.pe.resolve()),
             str(args.game_data.resolve()), str(args.log.resolve()),
         ]
-        completed = subprocess.run(command, env=env, check=False)
+        temporary_mesh = _ensure_probe_mesh(env)
+        try:
+            completed = subprocess.run(command, env=env, check=False)
+        finally:
+            if temporary_mesh is not None:
+                temporary_mesh.cleanup()
         if not args.log.exists():
             print("probe did not create a log", file=sys.stderr)
             return 2

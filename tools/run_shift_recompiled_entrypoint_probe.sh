@@ -41,13 +41,15 @@ pcode_module=$(realpath -- "$pcode_module")
 
 cd "$game_data_root"
 
-mesh_source=${SHIFT_ENTRYPOINT_PROBE_MESH:-/dev/null}
+mesh_source=${SHIFT_ENTRYPOINT_PROBE_MESH:-}
+if [[ -z "$mesh_source" ]]; then
+  printf 'set SHIFT_ENTRYPOINT_PROBE_MESH to a valid MGEO file or invoke tools/retail_frontier.py run\n' >&2
+  exit 2
+fi
 if [[ ! -r "$mesh_source" ]]; then
   printf 'probe mesh is not readable: %s\n' "$mesh_source" >&2
   exit 2
 fi
-# /dev/null is enough to isolate guest entry-point behavior. Supply an MGEO
-# file through SHIFT_ENTRYPOINT_PROBE_MESH to continue into the Vulkan loop.
 probe_args=(
   --mesh "$mesh_source"
   --shader-dir "$build_root/shaders"

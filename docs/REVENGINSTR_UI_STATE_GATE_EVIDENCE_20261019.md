@@ -65,10 +65,10 @@ gate calls, all from caller `0x0054be00`; every call had the same result:
 
 This resolves the branch taken by the recompiled run and corrects the earlier
 callback inference: the later `0x00833670` history entry was not observed as a
-callback beneath this gate. It may be one of the caller's later dispatches,
-but that exact mapping remains unproven. The state field's semantic meaning is
-also unknown, so the false branch is not yet established as the cause of the
-missing frontend.
+callback beneath this gate. The v120 caller-call trace later mapped it to the
+common-tail dispatch at return address `0x0054bedc` (see the follow-up below).
+The state field's semantic meaning is also unknown, so the false branch is not
+established as the cause of the missing frontend.
 
 ## Field-writer follow-up (v117)
 
@@ -144,6 +144,31 @@ word is not the AptInteger value itself, but does not establish whether an
 empty internal state is expected or blocks a later frontend transition. The
 field's role and causal connection to frontend or retail draw submission
 remain unestablished.
+
+## Common-tail dispatch follow-up (v120)
+
+The existing v120 `SHIFT_TRACE_GUEST_CALLER=0x0054be00` trace resolves the two
+common-tail virtual calls that were not associated with a target in the earlier
+gate-only trace. Across 120 rendered host frames, the trace recorded 121 calls
+at each site without truncation:
+
+- return address `0x0054bedc` dispatched target `0x00833670` with ECX
+  `0x20019478`; the caller reads vtable offset `+0x13c`.
+- return address `0x0054beee` dispatched target `0x00835d80` with the same ECX;
+  the caller reads vtable offset `+0x130`.
+
+Static instructions in `0x00833670` call the device at `this + 0x478` through
+its vtable offset `+0xa8`, the `IDirect3DDevice9::EndScene` slot. Instructions
+in `0x00835d80` call that device through vtable offset `+0x44`, the
+`IDirect3DDevice9::Present` slot; the observed caller supplies zero for both
+stack arguments and EDX, and the wrapper passes null Present parameters. The
+runtime method table used by the shim lists the corresponding D3D9 method
+ordering in `native_runtime/src/recompiled_pcode_module.cpp`.
+
+This confirms that the false gate branch continues into the guest EndScene and
+Present frame-service path. It does not show a retail draw or explain frontend
+transition. The machine-readable mapping and source log hash are in
+[`ui_gate_common_tail_dispatch.json`](../evidence/retail_frontier_20261019/ui_gate_common_tail_dispatch.json).
 
 The [v119 runtime trace record](../evidence/revenginstr_ui_gate_writer_call_chain_20261019/entrypoint_probe_v119_ui_state_writer_call_chain.json),
 [raw runtime log](../evidence/revenginstr_ui_gate_writer_call_chain_20261019/shift-probe-v119-ui-state-writer-call-chain-120-validation.log),

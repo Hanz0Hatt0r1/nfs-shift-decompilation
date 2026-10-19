@@ -37,6 +37,12 @@ python3 tools/retail_frontier.py run \
 
 The existing tools/run_shift_recompiled_entrypoint_probe.sh determines supplements and accepts additional newline-delimited paths via SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS. Additional override modules can be supplied through SHIFT_ENTRYPOINT_PROBE_EXTRA_OVERRIDES; this supports address-specific corrections that must take precedence over the default frontier module. The full P-code module can be selected with SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE. Paths and versions must match the chosen retail corpus. The launcher validates pinned original PE SHA-256 before execution.
 
+When `tools/retail_frontier.py run` is used without `SHIFT_ENTRYPOINT_PROBE_MESH`,
+it writes a minimal synthetic triangle MGEO into a temporary directory to
+initialize the host renderer. This fixture is not retail evidence and is
+removed after the probe. Direct calls to the shell launcher require a valid
+MGEO path in `SHIFT_ENTRYPOINT_PROBE_MESH`.
+
 The report stores status, guest dispatch counts, unique functions, first failing import, return address, host frame-loop information (when present), and a baseline delta. Analyze an existing log **without running game assets**:
 
 When the native frame-loop report includes `d3d9_vulkan_bridge`, the parser
@@ -45,6 +51,14 @@ retains guest Clear/Present request and Vulkan submission counts. v194 records
 presents in a 120-frame probe, with one Present request still pending and no
 guest draw translation. This proves the bounded clear/queue-present path only;
 it does not prove retail rendering or frontend readiness.
+
+The v120 caller-call trace independently maps the common tail of `0x0054be00`:
+the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the
+`+0x130` call dispatches `0x00835d80` (D3D9 Present path), 121 times each in a
+120-frame probe. The false UI-gate branch therefore reaches frame EndScene and
+Present service calls. This still does not establish retail draw submission or
+frontend readiness; see
+[`ui_gate_common_tail_dispatch.json`](../evidence/retail_frontier_20261019/ui_gate_common_tail_dispatch.json).
 
 ~~~bash
 python3 tools/retail_frontier.py inspect \

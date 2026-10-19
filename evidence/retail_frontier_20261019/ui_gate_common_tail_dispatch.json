@@ -1,0 +1,41 @@
+{
+  "format": "SHIFT.RetailUiGateCommonTailDispatch/1",
+  "provenance": {
+    "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "runtime_log": "shift-probe-v120-caller-call-trace-120-validation.log",
+    "runtime_log_sha256": "f95463bf0a7d2dea72972c8ce9ff5aa2be300df83501af30008ec0c8c3290b04",
+    "runtime_log_path": "evidence/retail_frontier_20261019/shift-probe-v120-caller-call-trace-120-validation.log"
+  },
+  "probe": {
+    "frames_rendered": 120,
+    "guest_call_trace_truncated": false,
+    "caller": "0x0054be00",
+    "thread_id": "0x00150515",
+    "gate_calls": 121,
+    "gate_return_eax": "0x00000000",
+    "calls_per_mapping": 121,
+    "receiver_ecx": "0x20019478"
+  },
+  "tail_calls": [
+    {
+      "caller_vtable_offset": "0x13c",
+      "return_address": "0x0054bedc",
+      "target": "0x00833670",
+      "count": 121,
+      "target_inner_device_vtable_offset": "0xa8",
+      "target_inner_device_method": "IDirect3DDevice9::EndScene",
+      "target_inner_call_address": "0x008336c4"
+    },
+    {
+      "caller_vtable_offset": "0x130",
+      "return_address": "0x0054beee",
+      "target": "0x00835d80",
+      "count": 121,
+      "target_inner_device_vtable_offset": "0x44",
+      "target_inner_device_method": "IDirect3DDevice9::Present",
+      "target_inner_call_address": "0x00835e7c",
+      "present_arguments": "all null"
+    }
+  ],
+  "interpretation": "The false UI-gate branch reaches the caller's common tail, which dispatches guest EndScene and Present service calls each loop. This identifies the frame-service path only; it does not demonstrate a retail draw, frontend readiness, or gameplay."
+}
