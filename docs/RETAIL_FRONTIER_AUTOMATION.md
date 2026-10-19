@@ -52,6 +52,19 @@ presents in a 120-frame probe, with one Present request still pending and no
 guest draw translation. This proves the bounded clear/queue-present path only;
 it does not prove retail rendering or frontend readiness.
 
+The cumulative v215 replay reproduces that same host-frame-loop checkpoint
+from the v210 frontier using two additional overrides and a cumulative set of
+19 supplements. Its five saved reports show the missing-export chain from
+`0x0090a007` through the D3D9 methods before it reaches 120 host frames.
+See
+[`entrypoint_probe_v215_supplement_replay.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v215_supplement_replay.json)
+for the exact module paths, hashes, lowerer revisions, and per-run results.
+`SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS` and
+`SHIFT_ENTRYPOINT_PROBE_EXTRA_OVERRIDES` are the complete extra module lists
+for a run; when extending a frontier, include earlier required modules again.
+Omitting a prior supplement can produce a false earlier missing-export stop.
+The v215 replay still reports no guest draw translation, frontend, or race.
+
 The v120 caller-call trace independently maps the common tail of `0x0054be00`:
 the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the
 `+0x130` call dispatches `0x00835d80` (D3D9 Present path), 121 times each in a
@@ -94,6 +107,7 @@ The stable linux-vulkan GitHub workflow runs these tests, checks the pinned v173
 
 ## Release milestones
 
-Startup frontier metrics cannot stand in for gameplay. v194 establishes the
-bounded retail-requested Vulkan clear and queue-present milestone. The separate
-milestones still to measure are first retail draw, frontend and offline race.
+Startup frontier metrics cannot stand in for gameplay. v194 and its v215 replay
+establish the bounded retail-requested Vulkan clear and queue-present
+milestone. The separate milestones still to measure are first retail draw,
+frontend and offline race.

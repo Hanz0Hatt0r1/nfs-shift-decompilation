@@ -9321,10 +9321,29 @@ struct RecompiledPcodeModule::Impl {
     }
 
     void append_guest_stack() {
-        if (active_guest_functions.empty() ||
-            error.find("; guest_stack=[") != std::string::npos) {
+        if (active_guest_functions.empty()) {
             return;
         }
+        if (guest_call_trace_enabled && !guest_call_trace_events.empty() &&
+            error.find("; guest_call_trace=[") == std::string::npos) {
+            error += "; guest_call_trace=[";
+            for (size_t index = 0; index < guest_call_trace_events.size();
+                 ++index) {
+                const auto& event = guest_call_trace_events[index];
+                char call[192]{};
+                std::snprintf(
+                    call, sizeof(call),
+                    "%s{target=0x%08x,return=0x%08x,ecx=0x%08x,eax=0x%08x,edx=0x%08x%s%s}",
+                    index == 0 ? "" : ",", event.function,
+                    event.has_return_address ? event.return_address : 0,
+                    event.ecx_entry, event.eax_entry, event.edx_entry,
+                    event.is_import ? ",import=" : "",
+                    event.is_import ? event.import_name.c_str() : "");
+                error += call;
+            }
+            error += "]";
+        }
+        if (error.find("; guest_stack=[") != std::string::npos) return;
         error += "; guest_stack=[";
         const size_t first = active_guest_functions.size() > 8
                                  ? active_guest_functions.size() - 8
@@ -9364,6 +9383,24 @@ struct RecompiledPcodeModule::Impl {
                     std::snprintf(value, sizeof(value), "%s%08x",
                                   offset == 0 ? "" : ",", word);
                     error += value;
+                }
+            }
+            uint32_t ecx_first_pointer = 0;
+            if (read_guest_diagnostic_u32(frame.ecx, ecx_first_pointer) &&
+                diagnostic_guest_pointer_mapped(ecx_first_pointer, 8)) {
+                uint32_t first_word = 0;
+                uint32_t second_word = 0;
+                if (read_guest_diagnostic_u32(ecx_first_pointer, first_word) &&
+                    read_guest_diagnostic_u32(
+                        static_cast<uint64_t>(ecx_first_pointer) + 4,
+                        second_word)) {
+                    char pointer_words[112]{};
+                    std::snprintf(
+                        pointer_words, sizeof(pointer_words),
+                        "; guest_entry_ecx_first_pointer@0x%08x="
+                        "[0x%08x,0x%08x]",
+                        ecx_first_pointer, first_word, second_word);
+                    error += pointer_words;
                 }
             }
             if (frame.has_stack_arguments) {
