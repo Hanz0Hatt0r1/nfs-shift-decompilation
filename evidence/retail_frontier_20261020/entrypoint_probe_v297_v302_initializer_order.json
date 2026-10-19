@@ -1,6 +1,6 @@
 {
   "format": "SHIFT.RetailStartupInitializerOrder/1",
-  "probe_versions": ["v297", "v298", "v299", "v300", "v301"],
+  "probe_versions": ["v297", "v298", "v299", "v300", "v301", "v302"],
   "retail_input": {
     "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
     "frontier_module_sha256": "6c5d1126467e047f500f634a34e2769aa24e06cb5ffc7a3538f0a7b095ce0e42",
@@ -93,6 +93,24 @@
       "trace_log_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v301-crt-initializer-trace.log",
       "trace_log_is_external": true,
       "frame_loop_revalidated": false
+    },
+    {
+      "version": "v302",
+      "timeout_seconds": 120,
+      "frames_requested": 1,
+      "exit_code": 124,
+      "status": "timeout",
+      "pe_image_loaded": true,
+      "dispatches": null,
+      "frames_rendered": null,
+      "selected_targets": ["0x00a8d770", "0x00a8d7d0", "0x00a8d800", "0x00a8d860", "0x00a8d900", "0x00a8d920", "0x00a8d940", "0x00a8d980", "0x00a8d990", "0x00a8d9b0", "0x00a8d9c0", "0x00a8d9e0", "0x00a8da00", "0x00a8da10"],
+      "selected_target_live_events": 0,
+      "log_sha256": "67b545cf819c3c242aaec0ac4b83bf9952bd5dd4fa44703c3d2b21731f50586a",
+      "log_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v302-global-init-calltrace.log",
+      "log_is_external": true,
+      "trace_environment": {"SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1", "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x00a8d770,0x00a8d7d0,0x00a8d800,0x00a8d860,0x00a8d900,0x00a8d920,0x00a8d940,0x00a8d980,0x00a8d990,0x00a8d9b0,0x00a8d9c0,0x00a8d9e0,0x00a8da00,0x00a8da10"},
+      "frame_loop_revalidated": false,
+      "interpretation": "The log contains only PE-load and timeout lines, with no selected-target event. The report has no dispatch count, so this run does not place the stall or prove that the complete candidate region was not used."
     }
   ],
   "static_pe_evidence": {
@@ -106,17 +124,20 @@
       "function": "0x00a8d940",
       "global_receiver": "0x00c288cc",
       "operations": ["calls 0x0067cbc0 with ECX=0x00c288cc", "writes 0x10 to receiver fields +0x4 and +0x8", "clears receiver fields +0xc, +0x18, and +0x1c, and clears the global receiver word"],
-      "candidate_pointer_region": {"address": "0x00aa92c0", "initializer_pointer_address": "0x00aa92f0", "initializer_pointer": "0x00a8d940", "ownership_and_dispatch_semantics": "unresolved"}
+      "candidate_pointer_region": {"address": "0x00aa92c0", "initializer_pointer_address": "0x00aa92f0", "initializer_pointer": "0x00a8d940", "ownership_and_dispatch_semantics": "unresolved", "excerpt_targets": ["0x00a8d770", "0x00a8d7d0", "0x00a8d800", "0x00a8d860", "0x00a8d900", "0x00a8d920", "0x00a8d940", "0x00a8d980", "0x00a8d990", "0x00a8d9b0", "0x00a8d9c0", "0x00a8d9e0", "0x00a8da00", "0x00a8da10"], "observation": "The .rdata excerpt contains absolute function VAs with zero padding between many entries. 0x00a8d770 and 0x00a8d800 initialize camera globals; 0x00a8d940 initializes global receiver 0x00c288cc. A byte scan found no literal occurrence of this region base elsewhere in the PE; computed consumers and exact bounds remain unresolved."}
     },
     "crt_startup": {
       "entrypoint": "0x0090488a",
       "startup_body": "0x009046aa",
       "initializer_helper": "0x00915fe8",
       "initializer_helper_bounds": ["0x00b6c15c", "0x00b6c15c"],
-      "v301_observation": "The helper was called once and returned at dispatch 300 with EAX=0x00b6c15c; its observed range is empty. No selected call to 0x0091600c or 0x00a8d940 occurred before timeout."
+      "v301_observation": "The helper was called once and returned at dispatch 300 with EAX=0x00b6c15c; its observed range is empty. No selected call to 0x0091600c or 0x00a8d940 occurred before timeout.",
+      "v302_observation": "A live trace selected 14 function VAs from the candidate pointer region and emitted no selected-target event before timeout. The 120-second report has no dispatch count, so this does not identify the stall location."
     },
     "tls_directory": {"rva": "0x007672ac", "size": "0x18", "callbacks_va": "0x00aa9990", "first_callback": "0x00000000"},
-    "interpretation": "The count zero explains the non-returning allocator call. The global initializer sets the receiver capacity fields before use, but v300/v301 do not show it being called. A skipped global-initialization path is the leading explanation; the intended initializer table/dispatcher and exact loader responsibility remain unproven. Do not bypass the allocator or call the initializer directly without establishing retail order. The fast XMem adapter and v215 D3D9/Vulkan frame-loop checkpoint were not reached or revalidated."
+    "load_configuration_directory": {"rva": "0x00000000", "size": "0x00000000", "guard_cf_table_indicated": false},
+    "runtime_loader_path": "Current load_pe32_image copies PE headers and section raw data and stores the PE entrypoint. call_pe32_entry_point initializes guest thread state and dispatches that entrypoint. This path has no scan of the candidate .rdata region.",
+    "interpretation": "The count zero explains the v299 non-returning allocator call. Static disassembly confirms 0x00a8d940 initializes receiver capacity fields; v301 did not observe it called, and v302 logged no calls to 14 functions from the nearby pointer region but has no dispatch count. CRT helper 0x00915fe8 uses an empty range [0x00b6c15c, 0x00b6c15c). The separate .rdata region contains global-initialization-like function bodies, but its bounds, owner, and dispatch semantics are unresolved; the current runtime path dispatches the PE entrypoint without scanning it. Do not bypass the allocator or call initializers by heuristic until retail order and table ownership are established. XMem and the v215 D3D9/Vulkan frame-loop checkpoint remain unrevalidated."
   },
   "next_step": "Identify the code and table that are supposed to invoke 0x00a8d940, establish whether this is generic PE startup initialization or game-specific initialization, and verify the expected order before implementing a startup fix. Add focused loader/runtime fixtures only after the contract is established."
 }

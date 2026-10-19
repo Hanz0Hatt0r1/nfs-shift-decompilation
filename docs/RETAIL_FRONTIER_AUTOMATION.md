@@ -478,15 +478,27 @@ The v301 trace records one call to CRT helper `0x00915fe8` at dispatch 300; it
 returns immediately with `EAX=0x00b6c15c`. Its PE body iterates the empty range
 `[0x00b6c15c, 0x00b6c15c)`. No call to `0x0091600c` or `0x00a8d940` was
 observed before the 120-second timeout. The PE TLS directory has no callback
-entries. A nearby `.rdata` region at `0x00aa92c0` contains a pointer to
-`0x00a8d940`, but the table's owner and dispatch path are not established.
-These observations make a skipped global-initialization path the leading
-explanation; they do not yet prove which table or runtime mechanism should
-invoke it. Do not fabricate an empty-list allocator return or call this
-initializer directly until its startup contract is established. The fast XMem
-adapter and the later v215 D3D9/Vulkan frame-loop checkpoint are not reached or
-revalidated by these runs. See the
-[v297–v301 machine record](../evidence/retail_frontier_20261020/entrypoint_probe_v297_v301_initializer_order.json).
+entries. The `.rdata` excerpt at `0x00aa92c0` contains absolute pointers to
+functions with global-initialization effects: `0x00a8d770` and `0x00a8d800`
+initialize camera globals, and `0x00a8d940` initializes receiver
+`0x00c288cc`. The region's exact bounds, owner, and dispatch semantics remain
+unresolved. Its base VA is not present as a literal elsewhere in the PE, and
+the PE load-configuration directory is empty, so this evidence does not
+identify it as the standard CRT initializer range or a CFG table.
+
+The v302 bounded replay selected 14 function VAs from that excerpt for live
+call logging. It timed out with only PE-load and timeout lines; the report has
+no dispatch count, so it does not locate the stall or prove that the complete
+region was unused. Runtime inspection shows `load_pe32_image()` copies PE
+sections and records the entrypoint, while `call_pe32_entry_point()` dispatches
+that entrypoint; this path contains no scan of the candidate `.rdata` region.
+The skipped-global-initialization theory remains plausible, but the intended
+table consumer and ordering are still unproven. Do not fabricate an empty-list
+allocator return or invoke initializers by scanning this region until its
+retail startup contract is established. The fast XMem adapter and the later
+v215 D3D9/Vulkan frame-loop checkpoint are not reached or revalidated by these
+runs. See the
+[v297–v302 machine record](../evidence/retail_frontier_20261020/entrypoint_probe_v297_v302_initializer_order.json).
 
 The v120 caller-call trace independently maps the common tail of `0x0054be00`:
 the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the
