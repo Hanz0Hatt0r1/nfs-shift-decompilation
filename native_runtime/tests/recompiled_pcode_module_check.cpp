@@ -490,7 +490,7 @@ void write_d3d9_pe32_fixture(const std::string& path) {
     write_u32(bytes, optional_offset + 60, 0x200);
     write_u32(bytes, optional_offset + 92, 16);
     write_u32(bytes, optional_offset + 104, 0x2000);
-    write_u32(bytes, optional_offset + 108, 60);
+    write_u32(bytes, optional_offset + 108, 80);
 
     bytes[section_offset] = '.';
     bytes[section_offset + 1] = 't';
@@ -512,7 +512,7 @@ void write_d3d9_pe32_fixture(const std::string& path) {
     write_u32(bytes, import_section_offset + 16, 0x400);
     write_u32(bytes, import_section_offset + 20, 0x400);
 
-    write_u32(bytes, 0x400, 0x2040);
+    write_u32(bytes, 0x400, 0x2200);
     write_u32(bytes, 0x40c, 0x2080);
     write_u32(bytes, 0x410, 0x2060);
     write_u32(bytes, 0x414, 0x2100);
@@ -521,7 +521,7 @@ void write_d3d9_pe32_fixture(const std::string& path) {
     for (size_t index = 0; index < 3; ++index) {
         const uint32_t name_rva =
             static_cast<uint32_t>(0x2090 + index * 0x20);
-        write_u32(bytes, 0x440 + index * 4, name_rva);
+        write_u32(bytes, 0x600 + index * 4, name_rva);
         write_u32(bytes, 0x460 + index * 4, name_rva);
     }
     std::copy_n("d3d9.dll", 9, bytes.begin() + 0x480);
@@ -544,12 +544,95 @@ void write_d3d9_pe32_fixture(const std::string& path) {
     const char create_directory_name[] = "SHCreateDirectoryExA";
     std::copy_n(create_directory_name, sizeof(create_directory_name),
                 bytes.begin() + 0x562);
+    write_u32(bytes, 0x428, 0x2240);
+    write_u32(bytes, 0x434, 0x2280);
+    write_u32(bytes, 0x438, 0x2260);
+    write_u32(bytes, 0x640, 0x22a0);
+    write_u32(bytes, 0x660, 0x22a0);
+    std::copy_n("d3dx9_41.dll", 13, bytes.begin() + 0x680);
+    const char create_effect_name[] = "D3DXCreateEffect";
+    std::copy_n(create_effect_name, sizeof(create_effect_name),
+                bytes.begin() + 0x6a2);
 
     std::ofstream file(path, std::ios::binary | std::ios::trunc);
     require(static_cast<bool>(file), "could not create D3D9 PE32 fixture");
     file.write(reinterpret_cast<const char*>(bytes.data()),
                static_cast<std::streamsize>(bytes.size()));
     require(static_cast<bool>(file), "could not write D3D9 PE32 fixture");
+}
+
+std::vector<uint8_t> make_d3dx9_shader_effect() {
+    std::vector<uint8_t> bytes(8, 0);
+    const auto append_u32 = [&bytes](uint32_t value) {
+        const size_t offset = bytes.size();
+        bytes.resize(offset + 4);
+        write_u32(bytes, offset, value);
+    };
+    const auto patch_u32 = [&bytes](size_t offset, uint32_t value) {
+        write_u32(bytes, offset, value);
+    };
+    const auto append_name = [&bytes, &append_u32](const char* name) {
+        const size_t length = std::char_traits<char>::length(name) + 1;
+        const uint32_t offset = static_cast<uint32_t>(bytes.size());
+        append_u32(static_cast<uint32_t>(length));
+        bytes.insert(bytes.end(), name, name + length);
+        return offset;
+    };
+
+    const uint32_t table_offset = static_cast<uint32_t>(bytes.size());
+    append_u32(0);  // Parameters.
+    append_u32(1);  // Techniques.
+    append_u32(1);  // Shader variables.
+    append_u32(1);  // Objects.
+    const size_t technique_name_field = bytes.size();
+    append_u32(0);
+    append_u32(0);  // Technique annotations.
+    append_u32(1);  // Passes.
+    const size_t pass_name_field = bytes.size();
+    append_u32(0);
+    append_u32(0);  // Pass annotations.
+    append_u32(1);  // States.
+    append_u32(0);  // State operation.
+    append_u32(0);  // State index.
+    const size_t type_offset_field = bytes.size();
+    append_u32(0);
+    const size_t value_offset_field = bytes.size();
+    append_u32(0);
+    append_u32(0);  // String objects.
+    append_u32(1);  // Resources.
+    append_u32(0);  // Technique index.
+    append_u32(0);  // Pass index.
+    append_u32(UINT32_MAX);
+    append_u32(0);  // State index.
+    append_u32(0);  // Constant resource.
+    const std::array<uint8_t, 8> shader = {0, 3, 0, 0, 0xff, 0xff, 0, 0};
+    append_u32(static_cast<uint32_t>(shader.size()));
+    bytes.insert(bytes.end(), shader.begin(), shader.end());
+
+    const uint32_t type_offset = static_cast<uint32_t>(bytes.size());
+    append_u32(16);  // D3DXPT_VERTEXSHADER.
+    append_u32(4);   // D3DXPC_OBJECT.
+    const size_t type_name_field = bytes.size();
+    append_u32(0);
+    const size_t semantic_field = bytes.size();
+    append_u32(0);
+    append_u32(0);  // Array elements.
+    const uint32_t value_offset = static_cast<uint32_t>(bytes.size());
+    append_u32(0);  // Object id.
+
+    const uint32_t technique_name = append_name("ShadowGen");
+    const uint32_t pass_name = append_name("Pass0");
+    const uint32_t type_name = append_name("VertexShader");
+    const uint32_t empty_name = append_name("");
+    patch_u32(0, 0xfeff0901);
+    patch_u32(4, table_offset - 8);
+    patch_u32(technique_name_field, technique_name - 8);
+    patch_u32(pass_name_field, pass_name - 8);
+    patch_u32(type_offset_field, type_offset - 8);
+    patch_u32(value_offset_field, value_offset - 8);
+    patch_u32(type_name_field, type_name - 8);
+    patch_u32(semantic_field, empty_name - 8);
+    return bytes;
 }
 
 }  // namespace
@@ -1894,8 +1977,8 @@ int main(int argc, char** argv) {
 
         shift::runtime::RecompiledPcodeModule d3d9_module(argv[1]);
         const auto d3d9_image = d3d9_module.load_pe32_image(argv[8]);
-        require(d3d9_image.import_module_count == 2 &&
-                    d3d9_image.import_function_count == 5,
+        require(d3d9_image.import_module_count == 3 &&
+                    d3d9_image.import_function_count == 6,
                 "D3D9 fixture imports were not parsed");
         const uint32_t direct3d_create9 = read_guest_u32(
             d3d9_module, "ram", d3d9_image.image_base + 0x2060);
@@ -2107,6 +2190,8 @@ int main(int argc, char** argv) {
             d3d9_provider_module.load_pe32_image(argv[8]);
         const uint32_t provider_create9 = read_guest_u32(
             d3d9_provider_module, "ram", provider_image.image_base + 0x2060);
+        const uint32_t provider_d3dx_create_effect = read_guest_u32(
+            d3d9_provider_module, "ram", provider_image.image_base + 0x2260);
         shift::runtime::RecompiledGuestD3d9AdapterInfo adapter_info{};
         for (size_t index = 0; index < adapter_info.caps.size(); ++index) {
             adapter_info.caps[index] = 100 + static_cast<uint32_t>(index);
@@ -2268,6 +2353,86 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", created_device_output_address);
         const uint32_t created_device_vtable = read_guest_u32(
             d3d9_provider_module, "ram", created_device);
+        std::vector<uint8_t> shader_effect = make_d3dx9_shader_effect();
+        if (const char* captured_effect =
+                std::getenv("SHIFT_TEST_D3DX_EFFECT");
+            captured_effect && *captured_effect) {
+            std::ifstream input(captured_effect, std::ios::binary);
+            require(static_cast<bool>(input),
+                    "could not open optional captured D3DX effect");
+            shader_effect.assign(std::istreambuf_iterator<char>(input), {});
+            require(!shader_effect.empty(),
+                    "optional captured D3DX effect was empty");
+        }
+        constexpr uint32_t effect_source_address = 0x00036000;
+        constexpr uint32_t effect_output_address = 0x00037000;
+        constexpr uint32_t effect_errors_address = 0x00037004;
+        constexpr uint32_t effect_next_technique_address = 0x00037008;
+        write_guest_bytes(d3d9_provider_module, effect_source_address,
+                          shader_effect.data(), shader_effect.size());
+        require(invoke_import(
+                    d3d9_provider_module, provider_d3dx_create_effect,
+                    {created_device, effect_source_address,
+                     static_cast<uint32_t>(shader_effect.size()), 0, 0, 0, 0,
+                     effect_output_address, effect_errors_address}) == 0,
+                "D3DXCreateEffect did not accept a shader effect binary");
+        const uint32_t guest_effect = read_guest_u32(
+            d3d9_provider_module, "ram", effect_output_address);
+        constexpr uint32_t malformed_effect_address = 0x00036040;
+        constexpr std::array<uint8_t, 7> malformed_effect{};
+        write_guest_bytes(d3d9_provider_module, malformed_effect_address,
+                          malformed_effect.data(), malformed_effect.size());
+        require(invoke_import(
+                    d3d9_provider_module, provider_d3dx_create_effect,
+                    {created_device, malformed_effect_address,
+                     static_cast<uint32_t>(malformed_effect.size()), 0, 0, 0, 0,
+                     effect_output_address, effect_errors_address}) ==
+                        0x80004005 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_output_address) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_errors_address) == 0,
+                "D3DXCreateEffect accepted truncated input or left stale outputs");
+        const uint32_t guest_effect_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", guest_effect);
+        require(guest_effect != 0 && guest_effect_vtable != 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_errors_address) == 0,
+                "D3DXCreateEffect did not initialize its COM outputs");
+        const uint32_t effect_query_interface = read_guest_u32(
+            d3d9_provider_module, "ram", guest_effect_vtable);
+        const uint32_t effect_add_ref = read_guest_u32(
+            d3d9_provider_module, "ram", guest_effect_vtable + 4);
+        const uint32_t effect_release = read_guest_u32(
+            d3d9_provider_module, "ram", guest_effect_vtable + 8);
+        const uint32_t effect_find_next_valid_technique = read_guest_u32(
+            d3d9_provider_module, "ram", guest_effect_vtable + 61 * 4);
+        constexpr uint32_t effect_iid_address = 0x00037100;
+        constexpr std::array<uint8_t, 16> iid_id3dx_effect = {
+            0xb3, 0xb4, 0xce, 0xf6, 0x4c, 0x4e, 0xdd, 0x40,
+            0xb8, 0x83, 0x8d, 0x8d, 0xe5, 0xea, 0x0c, 0xd5};
+        write_guest_bytes(d3d9_provider_module, effect_iid_address,
+                          iid_id3dx_effect.data(), iid_id3dx_effect.size());
+        require(invoke_import(d3d9_provider_module, effect_query_interface,
+                              {guest_effect, effect_iid_address,
+                               effect_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_output_address) == guest_effect &&
+                    invoke_import(d3d9_provider_module, effect_release,
+                                  {guest_effect}) == 1 &&
+                    invoke_import(
+                        d3d9_provider_module,
+                        effect_find_next_valid_technique,
+                        {guest_effect, 0, effect_next_technique_address}) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_next_technique_address) == 0 &&
+                    invoke_import(d3d9_provider_module, effect_add_ref,
+                                  {guest_effect}) == 2 &&
+                    invoke_import(d3d9_provider_module, effect_release,
+                                  {guest_effect}) == 1 &&
+                    invoke_import(d3d9_provider_module, effect_release,
+                                  {guest_effect}) == 0,
+                "ID3DXEffect COM lifetime or invalid-technique result changed");
         const uint32_t test_cooperative_level = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 3 * 4);
         const uint32_t device_get_device_caps = read_guest_u32(
