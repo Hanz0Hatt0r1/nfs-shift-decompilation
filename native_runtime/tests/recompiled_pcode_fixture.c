@@ -15,7 +15,7 @@ int rvi_00401000(RviPcodeContext *ctx) {
 }
 
 int rvi_00403100(RviPcodeContext *ctx) {
-    const uint8_t ecx[4] = {0x00, 0x40, 0x02, 0x00};
+    const uint8_t ecx[4] = {0x00, 0x30, 0x02, 0x00};
     const uint8_t eax[4] = {0x12, 0x34, 0x56, 0x78};
     const uint8_t value[4] = {0x78, 0x56, 0x34, 0x12};
     if (ctx->write(ctx->opaque, "register", 4, sizeof(ecx), ecx) != 0 ||

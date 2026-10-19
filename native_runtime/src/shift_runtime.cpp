@@ -287,6 +287,74 @@ std::string format_ui_state_gate_trace(
     return text.str();
 }
 
+std::string format_guest_call_trace_memory_slots(
+    const std::vector<shift::runtime::RecompiledGuestCallTraceMemorySlot>&
+        slots) {
+    std::ostringstream text;
+    text << '[';
+    for (size_t slot_index = 0; slot_index < slots.size(); ++slot_index) {
+        const auto& slot = slots[slot_index];
+        if (slot_index != 0) text << ',';
+        text << "{\"offset\":\""
+             << format_guest_address(slot.offset)
+             << "\",\"value\":";
+        if (slot.has_value) {
+            text << '"' << format_guest_address(slot.value) << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"last_writer\":";
+        if (slot.has_last_writer) {
+            const auto& writer = slot.last_writer;
+            text << "{\"sequence\":" << writer.sequence
+                 << ",\"dispatch_count\":" << writer.dispatch_count
+                 << ",\"function\":\""
+                 << format_guest_address(writer.function)
+                 << "\",\"ecx_entry\":";
+            if (writer.has_ecx_entry) {
+                text << '"' << format_guest_address(writer.ecx_entry) << '"';
+            } else {
+                text << "null";
+            }
+            text << ",\"caller_function\":";
+            if (writer.has_caller_function) {
+                text << '"' << format_guest_address(writer.caller_function)
+                     << '"';
+            } else {
+                text << "null";
+            }
+            text << ",\"call_return_address\":";
+            if (writer.has_call_return_address) {
+                text << '"'
+                     << format_guest_address(writer.call_return_address)
+                     << '"';
+            } else {
+                text << "null";
+            }
+            text << ",\"caller_return_address\":";
+            if (writer.has_caller_return_address) {
+                text << '"'
+                     << format_guest_address(writer.caller_return_address)
+                     << '"';
+            } else {
+                text << "null";
+            }
+            text << ",\"thread_id\":\""
+                 << format_guest_address(writer.thread_id)
+                 << "\",\"write_address\":\""
+                 << format_guest_address(writer.write_address)
+                 << "\",\"write_size\":" << writer.write_size
+                 << ",\"word_value\":\""
+                 << format_guest_address(writer.word_value) << "\"}";
+        } else {
+            text << "null";
+        }
+        text << '}';
+    }
+    text << ']';
+    return text.str();
+}
+
 std::string format_guest_call_trace(
     const std::vector<shift::runtime::RecompiledGuestCallTraceEvent>& events) {
     std::ostringstream text;
@@ -331,70 +399,11 @@ std::string format_guest_call_trace(
         } else {
             text << "null";
         }
-        text << ",\"caller_slots\":[";
-        for (size_t slot_index = 0;
-             slot_index < event.caller_slots.size(); ++slot_index) {
-            const auto& slot = event.caller_slots[slot_index];
-            if (slot_index != 0) text << ',';
-            text << "{\"offset\":\""
-                 << format_guest_address(slot.offset)
-                 << "\",\"value\":";
-            if (slot.has_value) {
-                text << '"' << format_guest_address(slot.value) << '"';
-            } else {
-                text << "null";
-            }
-            text << ",\"last_writer\":";
-            if (slot.has_last_writer) {
-                const auto& writer = slot.last_writer;
-                text << "{\"sequence\":" << writer.sequence
-                     << ",\"dispatch_count\":" << writer.dispatch_count
-                     << ",\"function\":\""
-                     << format_guest_address(writer.function)
-                     << "\",\"ecx_entry\":";
-                if (writer.has_ecx_entry) {
-                    text << '"' << format_guest_address(writer.ecx_entry)
-                         << '"';
-                } else {
-                    text << "null";
-                }
-                text << ",\"caller_function\":";
-                if (writer.has_caller_function) {
-                    text << '"'
-                         << format_guest_address(writer.caller_function)
-                         << '"';
-                } else {
-                    text << "null";
-                }
-                text << ",\"call_return_address\":";
-                if (writer.has_call_return_address) {
-                    text << '"' << format_guest_address(
-                                        writer.call_return_address)
-                         << '"';
-                } else {
-                    text << "null";
-                }
-                text << ",\"caller_return_address\":";
-                if (writer.has_caller_return_address) {
-                    text << '"' << format_guest_address(
-                                        writer.caller_return_address)
-                         << '"';
-                } else {
-                    text << "null";
-                }
-                text << ",\"thread_id\":\""
-                     << format_guest_address(writer.thread_id)
-                     << "\",\"write_address\":\""
-                     << format_guest_address(writer.write_address)
-                     << "\",\"write_size\":" << writer.write_size
-                     << ",\"word_value\":\""
-                     << format_guest_address(writer.word_value) << "\"}";
-            } else {
-                text << "null";
-            }
-            text << '}';
-        }
-        text << "]}";
+        text << ",\"caller_slots\":"
+             << format_guest_call_trace_memory_slots(event.caller_slots)
+             << ",\"target_slots\":"
+             << format_guest_call_trace_memory_slots(event.target_slots)
+             << '}';
     }
     text << ']';
     return text.str();
@@ -5199,6 +5208,11 @@ int main(int argc, char** argv) {
             << "    \"guest_call_trace_slot_offsets\": "
             << format_guest_call_trace_addresses(
                    guest_scheduler_state.guest_call_trace_slot_offsets)
+            << ",\n"
+            << "    \"guest_call_trace_target_slot_offsets\": "
+            << format_guest_call_trace_addresses(
+                   guest_scheduler_state
+                       .guest_call_trace_target_slot_offsets)
             << ",\n"
             << "    \"guest_call_trace\": "
             << format_guest_call_trace(

@@ -106,6 +106,7 @@ struct RecompiledGuestCallTraceEvent {
     bool is_import = false;
     bool completed = false;
     std::vector<RecompiledGuestCallTraceMemorySlot> caller_slots;
+    std::vector<RecompiledGuestCallTraceMemorySlot> target_slots;
 };
 
 struct RecompiledGuestD3d9PresentationParameters {
@@ -193,6 +194,7 @@ struct RecompiledGuestSchedulerSnapshot {
     uint32_t guest_call_trace_caller = 0;
     std::vector<uint32_t> guest_call_trace_targets;
     std::vector<uint32_t> guest_call_trace_slot_offsets;
+    std::vector<uint32_t> guest_call_trace_target_slot_offsets;
     std::vector<RecompiledGuestCallTraceEvent> guest_call_trace;
     size_t ready_thread_count = 0;
     size_t worker_thread_count = 0;
