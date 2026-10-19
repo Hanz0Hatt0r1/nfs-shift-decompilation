@@ -37,7 +37,8 @@
   },
   "interpretation": {
     "captured_binary_constructed_as_guest_effect_in_test_harness": true,
-    "retail_probe_rerun": false,
+    "retail_probe_rerun": true,
+    "retail_probe_result": "pinned v215 module set; 300-second timeout after PE load, before a usable frontier report",
     "retail_startup_advanced": false,
     "retail_rendering_proven": false,
     "vulkan_submission_proven": false,

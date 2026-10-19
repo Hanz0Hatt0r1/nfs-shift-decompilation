@@ -1,0 +1,62 @@
+{
+  "format": "SHIFT.RetailD3DXEffectRetailProbe/1",
+  "probe_version": "v284",
+  "runtime_revision": "1b02216ec36235889c9ec6f537a549e5265dd839",
+  "source_capture": {
+    "probe_version": "v281",
+    "sha256": "74901707d164f3014e8dc72da7232b1076d003ae3288535ca7c8376aec923fa9",
+    "location": "external artifact; no binary payload is committed"
+  },
+  "retail_input": {
+    "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "module_set_reference": "entrypoint_probe_v215_supplement_replay.json",
+    "frames_requested": 1,
+    "validation": true,
+    "timeout_seconds": 300
+  },
+  "probe": {
+    "status": "timeout",
+    "exit_code": 124,
+    "pe_image_loaded": true,
+    "dispatches": null,
+    "unique_functions": null,
+    "frames_rendered": null,
+    "d3d9_clear_request": null,
+    "d3d9_vulkan_bridge": null,
+    "log_sha256": "995e5afb959d003e3c48f71228e163fc0a795f830b1642fea3a9cc5ea3bc67d5",
+    "log": "external artifact retail-startup-v283-d3dx-effect-com-pinned-300.log; only the PE-load diagnostic was emitted"
+  },
+  "configuration_diagnostics": [
+    {
+      "module_set": "default launcher set",
+      "status": "blocked_before_comparable_frontier",
+      "blocker": "P-code module has no exported function rvi_005f1820",
+      "dispatches": 17687,
+      "unique_functions": 707
+    },
+    {
+      "module_set": "default launcher plus selected v215 extras",
+      "status": "blocked_before_comparable_frontier",
+      "blocker": "P-code module has no exported function rvi_006475c0",
+      "dispatches": 54822,
+      "unique_functions": 1245
+    }
+  ],
+  "unit_evidence": {
+    "test": "shift_runtime_recompiled_pcode_module",
+    "synthetic_shader_effect": "passed",
+    "captured_v281_effect": "passed",
+    "find_next_valid_technique_without_shader_backend": {
+      "hresult": "S_FALSE",
+      "next_technique": null
+    }
+  },
+  "interpretation": {
+    "retail_d3dx_create_effect_call_established": false,
+    "usable_frontier_report": false,
+    "retail_startup_advanced": false,
+    "retail_rendering_proven": false,
+    "vulkan_submission_proven": false,
+    "next_step": "Rerun the pinned probe with targeted progress tracing or a longer cold-start allowance, then use observed technique/shader calls to drive the D3D9/Vulkan shader backend work."
+  }
+}
