@@ -749,6 +749,8 @@ int main(int argc, char** argv) {
             write_guest_u32(call_trace_module, "register", 4, receiver);
             write_guest_u32(call_trace_module, "register", 0x1c,
                             0x13579bdf);
+            write_guest_u32(call_trace_module, "register", 0x18,
+                            0x2468ace0);
             write_guest_u32(call_trace_module, "ram", receiver + 0x10,
                             0x12345678);
             write_guest_u32(call_trace_module, "ram", receiver + 0x20,
@@ -776,6 +778,11 @@ int main(int argc, char** argv) {
                         trace_event.edi_entry == 0x13579bdf &&
                         trace_event.has_edi_return &&
                         trace_event.edi_return == 0x13579bdf &&
+                        trace_event.esi_entry == 0x2468ace0 &&
+                        trace_event.has_esi_return &&
+                        trace_event.esi_return == 0x2468ace0 &&
+                        trace_event.has_ebp_return &&
+                        trace_event.has_esp_return &&
                         trace_event.caller_slots.size() == 3 &&
                         trace_event.caller_slots[0].offset == 0x10 &&
                         trace_event.caller_slots[0].has_value &&

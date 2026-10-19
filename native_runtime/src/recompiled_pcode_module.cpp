@@ -1081,14 +1081,17 @@ struct RecompiledPcodeModule::Impl {
                              event.eax_entry);
         (void)read_guest_u32("register", kX86EdxRegisterOffset,
                              event.edx_entry);
+        (void)read_guest_u32("register", kX86EsiRegisterOffset,
+                             event.esi_entry);
         (void)read_guest_u32("register", kX86EdiRegisterOffset,
                              event.edi_entry);
-        uint32_t stack_pointer = 0;
+        (void)read_guest_u32("register", kX86EbpRegisterOffset,
+                             event.ebp_entry);
         const bool has_stack_pointer = read_guest_u32(
-            "register", kX86EspRegisterOffset, stack_pointer);
+            "register", kX86EspRegisterOffset, event.esp_entry);
         if (has_stack_pointer) {
             event.has_return_address = read_guest_u32(
-                "ram", stack_pointer, event.return_address);
+                "ram", event.esp_entry, event.return_address);
         }
         const auto sample_slots = [&](uint32_t base,
                                       const std::vector<uint32_t>& offsets) {
@@ -1198,20 +1201,21 @@ struct RecompiledPcodeModule::Impl {
         }
         if (has_stack_pointer) {
             event.stack_slots = sample_slots(
-                stack_pointer, guest_call_trace_stack_slot_offsets);
+                event.esp_entry, guest_call_trace_stack_slot_offsets);
             event.string_slots = sample_string_slots(
-                stack_pointer, guest_call_trace_string_slot_offsets);
+                event.esp_entry, guest_call_trace_string_slot_offsets);
         }
         guest_call_trace_events.push_back(std::move(event));
         if (guest_call_trace_live_log_enabled) {
             const auto& recorded = guest_call_trace_events.back();
             std::fprintf(
                 stderr,
-                "shift_guest_call_trace_entry: dispatch=%llu thread=%u caller=0x%08x target=0x%08x ecx=0x%08x eax=0x%08x edx=0x%08x edi=0x%08x return=",
+                "shift_guest_call_trace_entry: dispatch=%llu thread=%u caller=0x%08x target=0x%08x ecx=0x%08x eax=0x%08x edx=0x%08x esi=0x%08x edi=0x%08x ebp=0x%08x esp=0x%08x return=",
                 static_cast<unsigned long long>(recorded.dispatch_count),
                 recorded.thread_id, recorded.caller, recorded.function,
                 recorded.ecx_entry, recorded.eax_entry, recorded.edx_entry,
-                recorded.edi_entry);
+                recorded.esi_entry, recorded.edi_entry, recorded.ebp_entry,
+                recorded.esp_entry);
             if (recorded.has_return_address) {
                 std::fprintf(stderr, "0x%08x", recorded.return_address);
             } else {
@@ -1245,8 +1249,14 @@ struct RecompiledPcodeModule::Impl {
         event.completion_dispatch_count = function_count;
         event.has_eax_return = read_guest_u32(
             "register", kX86EaxRegisterOffset, event.eax_return);
+        event.has_esi_return = read_guest_u32(
+            "register", kX86EsiRegisterOffset, event.esi_return);
         event.has_edi_return = read_guest_u32(
             "register", kX86EdiRegisterOffset, event.edi_return);
+        event.has_ebp_return = read_guest_u32(
+            "register", kX86EbpRegisterOffset, event.ebp_return);
+        event.has_esp_return = read_guest_u32(
+            "register", kX86EspRegisterOffset, event.esp_return);
         event.completed = true;
         if (guest_call_trace_live_log_enabled) {
             std::fprintf(
@@ -1257,6 +1267,30 @@ struct RecompiledPcodeModule::Impl {
                 event.thread_id, event.caller, event.function);
             if (event.has_eax_return) {
                 std::fprintf(stderr, "0x%08x", event.eax_return);
+            } else {
+                std::fputs("unknown", stderr);
+            }
+            std::fputs(" esi=", stderr);
+            if (event.has_esi_return) {
+                std::fprintf(stderr, "0x%08x", event.esi_return);
+            } else {
+                std::fputs("unknown", stderr);
+            }
+            std::fputs(" edi=", stderr);
+            if (event.has_edi_return) {
+                std::fprintf(stderr, "0x%08x", event.edi_return);
+            } else {
+                std::fputs("unknown", stderr);
+            }
+            std::fputs(" ebp=", stderr);
+            if (event.has_ebp_return) {
+                std::fprintf(stderr, "0x%08x", event.ebp_return);
+            } else {
+                std::fputs("unknown", stderr);
+            }
+            std::fputs(" esp=", stderr);
+            if (event.has_esp_return) {
+                std::fprintf(stderr, "0x%08x", event.esp_return);
             } else {
                 std::fputs("unknown", stderr);
             }
@@ -10270,14 +10304,23 @@ struct RecompiledPcodeModule::Impl {
             for (size_t index = 0; index < guest_call_trace_events.size();
                  ++index) {
                 const auto& event = guest_call_trace_events[index];
-                char call[320]{};
+                char call[512]{};
                 char eax_return[20]{};
+                char esi_return[20]{};
                 char edi_return[20]{};
+                char ebp_return[20]{};
+                char esp_return[20]{};
                 if (event.completed && event.has_eax_return) {
                     std::snprintf(eax_return, sizeof(eax_return),
                                   "0x%08x", event.eax_return);
                 } else {
                     std::snprintf(eax_return, sizeof(eax_return), "pending");
+                }
+                if (event.completed && event.has_esi_return) {
+                    std::snprintf(esi_return, sizeof(esi_return),
+                                  "0x%08x", event.esi_return);
+                } else {
+                    std::snprintf(esi_return, sizeof(esi_return), "pending");
                 }
                 if (event.completed && event.has_edi_return) {
                     std::snprintf(edi_return, sizeof(edi_return),
@@ -10285,13 +10328,27 @@ struct RecompiledPcodeModule::Impl {
                 } else {
                     std::snprintf(edi_return, sizeof(edi_return), "pending");
                 }
+                if (event.completed && event.has_ebp_return) {
+                    std::snprintf(ebp_return, sizeof(ebp_return),
+                                  "0x%08x", event.ebp_return);
+                } else {
+                    std::snprintf(ebp_return, sizeof(ebp_return), "pending");
+                }
+                if (event.completed && event.has_esp_return) {
+                    std::snprintf(esp_return, sizeof(esp_return),
+                                  "0x%08x", event.esp_return);
+                } else {
+                    std::snprintf(esp_return, sizeof(esp_return), "pending");
+                }
                 std::snprintf(
                     call, sizeof(call),
-                    "%s{target=0x%08x,return=0x%08x,ecx=0x%08x,eax=0x%08x,edx=0x%08x,edi=0x%08x,eax_return=%s,edi_return=%s,completed=%u%s%s",
+                    "%s{target=0x%08x,return=0x%08x,ecx=0x%08x,eax=0x%08x,edx=0x%08x,esi=0x%08x,edi=0x%08x,ebp=0x%08x,esp=0x%08x,eax_return=%s,esi_return=%s,edi_return=%s,ebp_return=%s,esp_return=%s,completed=%u%s%s",
                     index == 0 ? "" : ",", event.function,
                     event.has_return_address ? event.return_address : 0,
                     event.ecx_entry, event.eax_entry, event.edx_entry,
-                    event.edi_entry, eax_return, edi_return,
+                    event.esi_entry, event.edi_entry, event.ebp_entry,
+                    event.esp_entry, eax_return, esi_return, edi_return,
+                    ebp_return, esp_return,
                     event.completed ? 1u : 0u,
                     event.is_import ? ",import=" : "",
                     event.is_import ? event.import_name.c_str() : "");

@@ -426,7 +426,31 @@ std::string format_guest_call_trace(
              << (event.completed ? "true" : "false")
              << ",\"edx_entry\":\""
              << format_guest_address(event.edx_entry)
-             << "\",\"is_import\":"
+             << "\",\"esi_entry\":\""
+             << format_guest_address(event.esi_entry)
+             << "\",\"esi_return\":";
+        if (event.has_esi_return) {
+            text << '"' << format_guest_address(event.esi_return) << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"ebp_entry\":\""
+             << format_guest_address(event.ebp_entry)
+             << "\",\"ebp_return\":";
+        if (event.has_ebp_return) {
+            text << '"' << format_guest_address(event.ebp_return) << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"esp_entry\":\""
+             << format_guest_address(event.esp_entry)
+             << "\",\"esp_return\":";
+        if (event.has_esp_return) {
+            text << '"' << format_guest_address(event.esp_return) << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"is_import\":"
              << (event.is_import ? "true" : "false")
              << ",\"import_name\":";
         if (event.is_import) {
