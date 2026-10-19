@@ -29,13 +29,14 @@ python3 tools/retail_frontier.py run \
   --build-dir native_runtime/build \
   --pe /path/to/SHIFT.exe \
   --game-data '/path/to/Need For Speed.Shift.v 1.02' \
+  --module-manifest evidence/retail_frontier_20261019/entrypoint_probe_v215_supplement_replay.json \
   --build-runtime --validation --frames 120 --timeout 180 \
   --baseline evidence/retail_frontier_20261019/shift-probe-v173-d3dx-device-map.log \
   --log artifacts/frontier/current.log \
   --output artifacts/frontier/current.json
 ~~~
 
-The existing tools/run_shift_recompiled_entrypoint_probe.sh determines supplements and accepts additional newline-delimited paths via SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS. Additional override modules can be supplied through SHIFT_ENTRYPOINT_PROBE_EXTRA_OVERRIDES; this supports address-specific corrections that must take precedence over the default frontier module. The full P-code module can be selected with SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE. Paths and versions must match the chosen retail corpus. The launcher validates pinned original PE SHA-256 before execution.
+The optional `--module-manifest` reads `execution_evidence.additional_overrides` and `additional_supplements` from a prior report. It resolves each relative path beneath `--artifacts`, verifies every recorded SHA-256, and adds the modules to the launcher's existing module set. The probe report records the manifest hash and the verified module paths/hashes. Without a manifest, the launcher still accepts newline-delimited paths through `SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS` and `SHIFT_ENTRYPOINT_PROBE_EXTRA_OVERRIDES`; these environment variables can also add modules alongside a manifest. The full P-code module can be selected with `SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE`. Paths and versions must match the chosen retail corpus. The launcher validates pinned original PE SHA-256 before execution.
 
 When `tools/retail_frontier.py run` is used without `SHIFT_ENTRYPOINT_PROBE_MESH`,
 it writes a minimal synthetic triangle MGEO into a temporary directory to
@@ -382,6 +383,28 @@ evidence that execution passed the zero-fill hot path, not a measured frontier
 advance. See the [v286 record](../evidence/retail_frontier_20261019/entrypoint_probe_v286_bulk_fill_frontier.json).
 The next step is to identify and profile the decode path before choosing a
 second optimization; the timeout does not identify an effect or Vulkan fault.
+
+The v290 static inspection pins the same retail PE hash and disassembles the
+decoder wrapper at `0x0066f680`. Its five cdecl arguments are a context, output
+buffer, output-count pointer, input buffer, and input byte length. The wrapper
+reserves the final five input bytes, reads either a two-byte length header for
+`0x8000` output bytes or a five-byte `0xFF` extended header containing
+big-endian output/input lengths, then invokes stateful block decoding. The
+wrapper uses the encoded length as its loop range when it is shorter than the
+remaining bytes; malformed overlong lengths are not characterized. The
+`0x00675420` helper stores the input range and output pointer in the context;
+the nested `0x00679aa0`/`0x00679760` path performs table-driven bit/symbol
+decoding and output writes. This is consistent with LZX-style decompression,
+but does not establish the exact codec or asset type. The current standalone
+`shift_xmem_decompress` framing skips five bytes after each `0xFF` header,
+whereas the guest wrapper reserves five bytes once at the end of its input.
+Do not route the runtime through that helper until a live input/output pair
+confirms framing, state reset, and lookahead behavior. The full v215 module
+manifest was supplied to v289, but that 180-second run emitted only the PE-load
+line; there is no dynamic codec sample. See the [v290 decoder record](../evidence/retail_frontier_20261019/entrypoint_probe_v290_decoder_framing.json).
+The next useful probe must capture one live wrapper call's stack arguments and
+compressed bytes in bounded reads, then compare its decoded output with the
+existing XMem/LZX implementation before any adapter or hot-path optimization.
 
 The v120 caller-call trace independently maps the common tail of `0x0054be00`:
 the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the

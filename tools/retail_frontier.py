@@ -141,6 +141,81 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def load_module_manifest(path: Path, artifact_root: Path) -> dict:
+    """Load and verify the recorded additional P-code modules for a probe."""
+    try:
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"cannot read module manifest {path}: {exc}") from exc
+    if not isinstance(manifest, dict):
+        raise ValueError("module manifest root must be an object")
+    evidence = manifest.get("execution_evidence")
+    if not isinstance(evidence, dict):
+        raise ValueError("module manifest has no execution_evidence object")
+
+    try:
+        artifacts = artifact_root.resolve(strict=True)
+    except OSError as exc:
+        raise ValueError(f"cannot resolve artifact root {artifact_root}: {exc}") from exc
+    loaded = {"overrides": [], "supplements": []}
+    recorded = {"overrides": [], "supplements": []}
+    for key, output_key in (("additional_overrides", "overrides"),
+                            ("additional_supplements", "supplements")):
+        entries = evidence.get(key, [])
+        if not isinstance(entries, list):
+            raise ValueError(f"module manifest {key} must be a list")
+        seen = set()
+        for entry in entries:
+            if not isinstance(entry, dict) or not isinstance(entry.get("path"), str):
+                raise ValueError(f"module manifest {key} entries need a relative path")
+            relative = Path(entry["path"])
+            if relative.is_absolute():
+                raise ValueError(f"module manifest path must be relative: {relative}")
+            try:
+                module = (artifacts / relative).resolve(strict=True)
+                module.relative_to(artifacts)
+            except (OSError, ValueError) as exc:
+                raise ValueError(f"module manifest path escapes or is missing: {relative}") from exc
+            if not module.is_file():
+                raise ValueError(f"module manifest path is not a file: {relative}")
+            digest = entry.get("sha256")
+            try:
+                actual_digest = sha256(module)
+            except OSError as exc:
+                raise ValueError(f"cannot hash module manifest path {relative}: {exc}") from exc
+            if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", digest):
+                raise ValueError(f"module manifest entry has no valid SHA-256: {relative}")
+            if actual_digest.lower() != digest.lower():
+                raise ValueError(f"module manifest SHA-256 mismatch: {relative}")
+            if module not in seen:
+                loaded[output_key].append(str(module))
+                recorded[output_key].append({
+                    "path": relative.as_posix(),
+                    "sha256": actual_digest,
+                })
+                seen.add(module)
+
+    try:
+        manifest_path = path.resolve(strict=True)
+    except OSError as exc:
+        raise ValueError(f"cannot resolve module manifest {path}: {exc}") from exc
+    return {
+        **loaded,
+        "evidence": {
+            "path": str(manifest_path),
+            "sha256": sha256(manifest_path),
+            **recorded,
+        },
+    }
+
+
+def _append_paths(env: dict[str, str], variable: str, paths: list[str]) -> None:
+    values = [value for value in env.get(variable, "").splitlines() if value]
+    values.extend(path for path in paths if path not in values)
+    if values:
+        env[variable] = "\n".join(values)
+
+
 def _ensure_probe_mesh(env: dict[str, str]) -> tempfile.TemporaryDirectory | None:
     """Use a tiny synthetic MGEO when a retail probe mesh was not supplied."""
     if env.get("SHIFT_ENTRYPOINT_PROBE_MESH"):
@@ -182,6 +257,10 @@ def main(argv=None) -> int:
     run.add_argument("--timeout", type=int, default=180)
     run.add_argument("--validation", action="store_true")
     run.add_argument("--build-runtime", action="store_true")
+    run.add_argument(
+        "--module-manifest", type=Path,
+        help="verified execution_evidence additional modules from a prior probe report",
+    )
     for command in (inspect, run):
         command.add_argument("--baseline", type=Path)
         command.add_argument("--output", type=Path, required=True)
@@ -199,6 +278,15 @@ def main(argv=None) -> int:
         if not args.runtime.is_file() and not args.build_runtime:
             parser.error("runtime not found; use --build-runtime or provide a compiled runtime")
         root = Path(__file__).resolve().parents[1]
+        module_manifest = None
+        if args.module_manifest:
+            manifest_path = args.module_manifest
+            if not manifest_path.is_absolute():
+                manifest_path = root / manifest_path
+            try:
+                module_manifest = load_module_manifest(manifest_path, args.artifacts)
+            except ValueError as exc:
+                parser.error(str(exc))
         if args.build_runtime:
             build = subprocess.run([
                 "bash", str(root / "tools/build_shift_runtime_cached.sh"),
@@ -214,6 +302,15 @@ def main(argv=None) -> int:
             "SHIFT_ENTRYPOINT_TIMEOUT_SECONDS": str(args.timeout),
             "SHIFT_ENTRYPOINT_PROBE_VALIDATION": "1" if args.validation else "0",
         })
+        if module_manifest:
+            _append_paths(
+                env, "SHIFT_ENTRYPOINT_PROBE_EXTRA_OVERRIDES",
+                module_manifest["overrides"],
+            )
+            _append_paths(
+                env, "SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS",
+                module_manifest["supplements"],
+            )
         command = [
             "bash", str(root / "tools/run_shift_recompiled_entrypoint_probe.sh"),
             str(args.runtime.resolve()), str(args.artifacts.resolve()),
@@ -233,6 +330,13 @@ def main(argv=None) -> int:
                              completed.returncode)
         result["pe_sha256"] = RETAIL_SHA256
         result["probe_log_sha256"] = sha256(args.log)
+        result["probe_configuration"] = {
+            "frames_requested": args.frames,
+            "timeout_seconds": args.timeout,
+            "validation": args.validation,
+        }
+        if module_manifest:
+            result["probe_configuration"]["module_manifest"] = module_manifest["evidence"]
 
     if args.baseline:
         result["comparison"] = compare(result, load_frontier(args.baseline))

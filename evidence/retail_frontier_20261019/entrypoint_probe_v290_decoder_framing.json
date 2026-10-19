@@ -1,0 +1,92 @@
+{
+  "format": "SHIFT.RetailDecoderFraming/1",
+  "probe_version": "v290",
+  "retail_binary": {
+    "name": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "architecture": "x86",
+    "analysis_type": "static disassembly",
+    "tool": "GNU objdump -D -Mintel"
+  },
+  "wrapper": {
+    "address": "0x0066f680",
+    "calling_convention": "cdecl",
+    "arguments": [
+      "decompressor context",
+      "output buffer",
+      "pointer to produced byte count",
+      "input buffer",
+      "input byte length"
+    ],
+    "state_address": "context + 0x14",
+    "state_initialization": "calls 0x0066f620 when the context initialized flag is clear",
+    "input_framing": {
+      "reserved_trailing_bytes": 5,
+      "short_header_bytes": 2,
+      "short_header_compressed_length": "big-endian 16-bit",
+      "short_header_output_length": 32768,
+      "extended_header_marker": "0xff",
+      "extended_header_bytes_including_marker": 5,
+      "extended_header_output_length": "big-endian 16-bit at bytes 1..2",
+      "extended_header_compressed_length": "big-endian 16-bit at bytes 3..4",
+      "length_range_behavior": "when the encoded block length is smaller than the remaining bytes, the wrapper limits its loop range to the encoded length; malformed overlong lengths are not characterized"
+    }
+  },
+  "decoder_helpers": [
+    {
+      "address": "0x00675420",
+      "observation": "stores the block input pointer, input end at pointer + block length + 4, and output buffer in the state before calling 0x00678480"
+    },
+    {
+      "address": "0x00678480",
+      "observation": "parses persistent block/bitstream state and calls nested decode helpers"
+    },
+    {
+      "address": "0x00679aa0",
+      "observation": "dispatches between a table-driven decoder at 0x00679760 and a short-output helper at 0x00679420"
+    },
+    {
+      "address": "0x00679760",
+      "observation": "reads symbol/bit tables and input bytes from state, then emits decoded output bytes"
+    }
+  ],
+  "native_decoder_comparison": {
+    "path": "native_ir/src/shift_lzx.cpp",
+    "current_extended_header_behavior": "skips five bytes after each 0xff header",
+    "guest_wrapper_behavior": "reserves five bytes once from the total input length and consumes the 0xff header before each block payload",
+    "compatibility": "unverified",
+    "reason": "no live guest input/output pair was captured; the framing and state lifetimes differ"
+  },
+  "runtime_probes": [
+    {
+      "version": "v288",
+      "module_manifest": "omitted",
+      "status": "blocked",
+      "dispatches": 17663,
+      "unique_functions": 706,
+      "blocker": "P-code module has no exported function rvi_005f1820",
+      "comparable_to_v286": false
+    },
+    {
+      "version": "v289",
+      "module_manifest": "entrypoint_probe_v215_supplement_replay.json",
+      "module_manifest_sha256": "7224960e4d4606ac0cc568418d7b7928ea5e56636a34683c9d0d2c15e27153c3",
+      "additional_overrides": 2,
+      "additional_supplements": 19,
+      "frames_requested": 1,
+      "timeout_seconds": 180,
+      "validation": true,
+      "status": "timeout",
+      "pe_image_loaded": true,
+      "dispatches": null,
+      "guest_decoder_breakpoint_hit": false,
+      "probe_log_sha256": "995e5afb959d003e3c48f71228e163fc0a795f830b1642fea3a9cc5ea3bc67d5",
+      "comparable_frontier_advance": false
+    }
+  ],
+  "interpretation": {
+    "static_evidence": "a stateful table-driven compressed-bitstream decoder; framing resembles LZX/XMem but the exact codec and resource type are not established",
+    "adapter_ready": false,
+    "next_step": "capture a live 0x0066f680 call's arguments, bounded input bytes, and produced output, then compare with the existing decoder"
+  }
+}
