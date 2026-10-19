@@ -12,6 +12,14 @@ threads waiting. One of 121 guest Present requests remains pending at the
 120-frame bound. The report classifies this as `host-frame-loop`; it does not
 prove retail draw rendering or frontend readiness.
 
+The cumulative v215 replay independently reproduced the same checkpoint: 120
+host frames, 96,082 dispatches, 1,559 functions, 120 Vulkan clear and present
+submissions, and zero validation errors. It starts from the v210
+missing-export frontier and records two x87 overrides plus 19 extra P-code
+supplements by path and SHA-256. This confirms the probe's supplement chain,
+not gameplay progress. See
+[`entrypoint_probe_v215_supplement_replay.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v215_supplement_replay.json).
+
 The guest requested 122 D3D9 clears and 121 `Present` calls. Clear requests
 were black (`flags=0x7`, depth 1.0), and Present used null source/destination
 rectangles, window override, and dirty region. The runtime queues these
@@ -32,6 +40,18 @@ command stream, so this clear-only path is not retail rendering parity.
 | v189 | 65,530 / 1,550; missing P-code `0x0082db40` |
 | v190 | 65,534 / 1,552; first `Present` call |
 | v191–v193 | Host frame loop; guest main thread remains active in the app loop |
+
+The later v210–v215 cumulative replay records the path from the x87
+classification stop to the same host-frame-loop checkpoint:
+
+| Probe | Observation |
+| --- | --- |
+| v210 | 65,235 dispatches / 1,500 functions; P-code `0x0090a007` returns -1 |
+| v211 | FXAM and FPREM overrides; 65,240 / 1,504; missing P-code `0x0082e980` |
+| v212 | 65,260 / 1,515; missing P-code `0x00853170` |
+| v213 | 65,263 / 1,517; missing P-code `0x00852e00` |
+| v214 | 65,530 / 1,550; missing P-code `0x0082db40` |
+| v215 | 96,082 / 1,559; 120 host frames; zero validation errors; no guest draw translation |
 
 Ghidra exports for `0x00853170`, `0x00852e00`, and `0x0082db40` each lowered
 1/1 with zero rejections using `revenginstr` revision `cc308e2`. Their compact
@@ -75,19 +95,21 @@ The v193 and v194 machine-readable automation results are
 [`entrypoint_probe_v193_automation.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v193_automation.json)
 and
 [`entrypoint_probe_v194_automation.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v194_automation.json).
+The v210–v215 cumulative replay evidence is
+[`entrypoint_probe_v215_supplement_replay.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v215_supplement_replay.json).
 Raw P-code ELF, retail data, and full runtime logs remain in the ignored
 external artifact directory; the tracked report stores the log hash.
 
 ## Next work
 
-1. Trace the UI gate's callback owner and initialization path from
+1. Trace the callback registration and intended UI-gate transition behind
    `0x0062fde0`; do not force the gate value without confirming the expected
    state transition.
 2. Instrument and implement the first guest draw path, including stream and
    index data, shader bindings, render target, and Vulkan command submission.
 3. Measure the separate milestones: first retail draw, frontend, and offline
-   race. The v194 startup probe establishes only a guest-requested Vulkan
-   clear and queue-present path.
+   race. The v194/v215 probes establish only a guest-requested Vulkan clear
+   and queue-present path.
 
 The target-specific cached native build, the `shift_runtime_recompiled_pcode_module`
 CTest, and the retail-frontier Python regressions passed for this update.

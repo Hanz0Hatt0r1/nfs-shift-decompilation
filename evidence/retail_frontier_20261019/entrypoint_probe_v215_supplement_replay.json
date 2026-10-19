@@ -1,0 +1,415 @@
+{
+  "blocker": null,
+  "caller": null,
+  "comparison": {
+    "reason": "more retail code executed",
+    "result": "advanced"
+  },
+  "d3d9_clear_request": {
+    "call_count": 122,
+    "color": "0x00000000",
+    "depth_bits": "0x3f800000",
+    "flags": "0x00000007",
+    "rect_count": 0,
+    "stencil": 0
+  },
+  "d3d9_vulkan_bridge": {
+    "clear_requests": 122,
+    "clear_submissions": 120,
+    "guest_draw_translation": false,
+    "pending_presents": 1,
+    "present_requests": 121,
+    "present_submissions": 120
+  },
+  "dispatches": 96082,
+  "exit_code": 0,
+  "format": "SHIFT.RetailStartupFrontier/1",
+  "frames_rendered": 120,
+  "guest_main_thread_function": "0x006472d0",
+  "pe_image_loaded": true,
+  "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "probe_log_sha256": "771206faafc6b7bc8209a206793d251516a4a23f6d1b3d2b2aaef5fec26c7354",
+  "retail_rendering_proven": false,
+  "return_address": null,
+  "status": "host-frame-loop",
+  "unique_functions": 1559,
+  "validation_errors": 0,
+  "worker_waiting_count": 4,
+  "execution_evidence": {
+    "probe_version": "v215",
+    "source_revision": "e3d5611010f0e51684b820248fb0eb40d553396a",
+    "source_worktree_changes": [
+      "native_runtime/CMakeLists.txt",
+      "native_runtime/src/recompiled_pcode_module.cpp"
+    ],
+    "runtime_binary": "native_runtime/build/shift_runtime",
+    "runtime_binary_sha256": "e5206387ee63dceb7b3ee0c691602f4b525176656da732fe5181f606ba824573",
+    "retail_pe_path": "local pinned PC 1.02 SHIFT.exe; exact SHA-256 is stored in retail_pe_sha256",
+    "retail_game_data_root": "local PortProton retail install; game files remain outside Git",
+    "external_artifact_root": "nfs-shift-recompilation-artifacts/shift-startup-probe-20261018 (local, outside Git)",
+    "probe_report": "frontier/v215-car-state-method.json",
+    "probe_log": "logs/shift-probe-v215-car-state-method-120-validation.log",
+    "baseline_report": "frontier/v210-resource-frontier.json",
+    "probe_bounds": {
+      "frames_requested": 120,
+      "timeout_seconds": 180,
+      "validation": true,
+      "mesh_fixture": "temporary synthetic triangle MGEO created by retail_frontier.py"
+    },
+    "incremental_probe_history": [
+      {
+        "version": "v211",
+        "report": "frontier/v211-fxam-fprem-cumulative.json",
+        "log": "logs/shift-probe-v211-fxam-fprem-cumulative-120-validation.log",
+        "probe_log_sha256": "7eec646a014e9a5d9fa7f0a3a5146f34ba90b4a6dcc90e950f5efed0bbc2f355",
+        "status": "blocked",
+        "blocker": "P-code module has no exported function rvi_0082e980 called from guest function 0x0082f780",
+        "dispatches": 65240,
+        "unique_functions": 1504,
+        "frames_rendered": null,
+        "validation_errors": null,
+        "guest_main_thread_function": null
+      },
+      {
+        "version": "v212",
+        "report": "frontier/v212-x87-object-access.json",
+        "log": "logs/shift-probe-v212-x87-object-access-120-validation.log",
+        "probe_log_sha256": "2943c1552347671829af30cc0d3c178d0af1719b09ed76da727242b3d6cb8c21",
+        "status": "blocked",
+        "blocker": "P-code module has no exported function rvi_00853170 called from guest function 0x0082f780",
+        "dispatches": 65260,
+        "unique_functions": 1515,
+        "frames_rendered": null,
+        "validation_errors": null,
+        "guest_main_thread_function": null
+      },
+      {
+        "version": "v213",
+        "report": "frontier/v213-car-manager-pcode.json",
+        "log": "logs/shift-probe-v213-car-manager-pcode-120-validation.log",
+        "probe_log_sha256": "d329d7ce640e003fe767331f0732fa0f9d24f6bf85cd430a08162ffebd2499f5",
+        "status": "blocked",
+        "blocker": "P-code module has no exported function rvi_00852e00 called from guest function 0x00853170",
+        "dispatches": 65263,
+        "unique_functions": 1517,
+        "frames_rendered": null,
+        "validation_errors": null,
+        "guest_main_thread_function": null
+      },
+      {
+        "version": "v214",
+        "report": "frontier/v214-launch-gate.json",
+        "log": "logs/shift-probe-v214-launch-gate-120-validation.log",
+        "probe_log_sha256": "4612a60b7a8dff373a929f1f87493794f781d1c725671f08d0c22166e92e7a1f",
+        "status": "blocked",
+        "blocker": "P-code module has no exported function rvi_0082db40 called from guest function 0x00835d80",
+        "dispatches": 65530,
+        "unique_functions": 1550,
+        "frames_rendered": null,
+        "validation_errors": null,
+        "guest_main_thread_function": null
+      },
+      {
+        "version": "v215",
+        "report": "frontier/v215-car-state-method.json",
+        "log": "logs/shift-probe-v215-car-state-method-120-validation.log",
+        "probe_log_sha256": "771206faafc6b7bc8209a206793d251516a4a23f6d1b3d2b2aaef5fec26c7354",
+        "status": "host-frame-loop",
+        "blocker": null,
+        "dispatches": 96082,
+        "unique_functions": 1559,
+        "frames_rendered": 120,
+        "validation_errors": 0,
+        "guest_main_thread_function": "0x006472d0"
+      }
+    ],
+    "additional_overrides": [
+      {
+        "role": "additional_override",
+        "path": "function-0090a007-fxam-pcode-20261019-v180/compiled/libnfs_shift_pcode_supplement.so",
+        "sha256": "b4d12cf96dc0ac59a3cb555f0d4cf129806992b8e070ebac110e2b1eca0d1b43",
+        "bytes": 82168,
+        "exports": [
+          "rvi_0090a007"
+        ],
+        "revenginstr_revision": "993f4b6",
+        "instructions": 43,
+        "pcode_operations": 242,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_override",
+        "path": "function-00903294-fprem-status-20261019-v181/compiled/libnfs_shift_pcode_supplement.so",
+        "sha256": "ec26b08d188c5676e1f525aa17f5b0bcb18d3b5c1fe2f2bfa157333b6f5d0d0c",
+        "bytes": 28824,
+        "exports": [
+          "rvi_00903294"
+        ],
+        "revenginstr_revision": "cc308e2",
+        "instructions": 12,
+        "pcode_operations": 49,
+        "rejected_functions": 0
+      }
+    ],
+    "additional_supplements": [
+      {
+        "role": "additional_supplement",
+        "path": "function-0040a100-pcode-20261019/libnfs_shift_pcode_supplement.so",
+        "sha256": "0502310e4bba8ff0d7fe42aed620573a3772bcffc6df678f4aa890a61e50911a",
+        "bytes": 26144,
+        "exports": [
+          "rvi_0040a100"
+        ],
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "instructions": 5,
+        "pcode_operations": 18,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-00910aa5-pcode-20261019/libnfs_shift_pcode_supplement.so",
+        "sha256": "1c2757cc457eb0a846e95a6f542933b649c12a5bb514e7f6fc4f7660eab9710c",
+        "bytes": 730656,
+        "exports": [
+          "rvi_00910aa5"
+        ],
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "instructions": 703,
+        "pcode_operations": 3469,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-005f1820-pcode-20261019-indirect-tail-dispatch/libnfs_shift_pcode_supplement.so",
+        "sha256": "17a87a69163d9a62a9349ff85189ea8eba4d2dcbcd4db6a968d6b5989849443b",
+        "bytes": 26144,
+        "exports": [
+          "rvi_005f1820"
+        ],
+        "revenginstr_revision": "02d2d183a4fb3615ad27624d84db8467bfb9b18b",
+        "instructions": null,
+        "pcode_operations": 5,
+        "rejected_functions": null
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-006475c0-pcode-20261019-main/libnfs_shift_pcode_supplement.so",
+        "sha256": "1cbaecd2bcb6ab7d0bda5bcfd6423b01a454b583f1b0adaad323e13fb7fda8da",
+        "bytes": 26248,
+        "exports": [
+          "rvi_006475c0"
+        ],
+        "revenginstr_revision": "e15b05437a56f0401e7676866d07deecbe384043",
+        "instructions": 3,
+        "pcode_operations": 9,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-006475b0-pcode-20261019-main/libnfs_shift_pcode_supplement.so",
+        "sha256": "ee3031821af374cdcd1a43116dbcc3158b5cfdc4198d7da2b918106fbc08d90c",
+        "bytes": 26248,
+        "exports": [
+          "rvi_006475b0"
+        ],
+        "revenginstr_revision": "e15b05437a56f0401e7676866d07deecbe384043",
+        "instructions": 3,
+        "pcode_operations": 9,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-00886ba0-pcode-20261019-main/libnfs_shift_pcode_supplement.so",
+        "sha256": "e63bb7ad6fcf50df48e0947d2a12773fc338036c0c93746a9361512f499ea5ee",
+        "bytes": 26248,
+        "exports": [
+          "rvi_00886ba0"
+        ],
+        "revenginstr_revision": "e15b05437a56f0401e7676866d07deecbe384043",
+        "instructions": 5,
+        "pcode_operations": 13,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-00886b90-pcode-20261019-recovered/libnfs_shift_pcode_supplement.so",
+        "sha256": "4e6f3a367922492e864fbeb0a07b06631e60334e54956919540624d27ac1c90d",
+        "bytes": 30240,
+        "exports": [
+          "rvi_00886b90"
+        ],
+        "revenginstr_revision": "02d2d183a4fb3615ad27624d84db8467bfb9b18b",
+        "instructions": 11,
+        "pcode_operations": 40,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-008329d0-pcode-20261019-main/libnfs_shift_pcode_supplement.so",
+        "sha256": "3e099256dbb581f4f631c73e4a4370a8583a0ffcf65837e623d29afa7843aae1",
+        "bytes": 26248,
+        "exports": [
+          "rvi_008329d0"
+        ],
+        "revenginstr_revision": "e15b05437a56f0401e7676866d07deecbe384043",
+        "instructions": 2,
+        "pcode_operations": 6,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-00835050-pcode-20261019-main/libnfs_shift_pcode_supplement.so",
+        "sha256": "1182b0ba752f9fd71eeff08be9a90a6876573f263435f3d61c0b957ccf1107e1",
+        "bytes": 42632,
+        "exports": [
+          "rvi_00835050"
+        ],
+        "revenginstr_revision": "e15b05437a56f0401e7676866d07deecbe384043",
+        "instructions": 30,
+        "pcode_operations": 91,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-005e5b00-pcode-20261019/libnfs_shift_pcode_supplement.so",
+        "sha256": "48ac6cd493e09dede094edc1beb5b958486aaf843b7357bd45a0f80052829be4",
+        "bytes": 15736,
+        "exports": [
+          "rvi_005e5b00"
+        ],
+        "revenginstr_revision": "e15b05437a56f0401e7676866d07deecbe384043",
+        "instructions": 2,
+        "pcode_operations": 6,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-0082ddc0-pcode-20261019/libnfs_shift_pcode_supplement.so",
+        "sha256": "bafe4f8c5e5efc13802fc09134f5f3b57ea8f83377333678e7c97cb84bf5cb1d",
+        "bytes": 28248,
+        "exports": [
+          "rvi_0082ddc0"
+        ],
+        "revenginstr_revision": "e15b05437a56f0401e7676866d07deecbe384043",
+        "instructions": 15,
+        "pcode_operations": 59,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-00838360-pcode-20261019-v174/compiled-shift-v2/libnfs_shift_pcode_supplement.so",
+        "sha256": "98ba7b4d6b318aff80597cbd2babd3d17e2a08a5bfc283196d604258b7dbd71a",
+        "bytes": 15768,
+        "exports": [
+          "rvi_00838360"
+        ],
+        "revenginstr_revision": "e15b05437a56f0401e7676866d07deecbe384043",
+        "instructions": 2,
+        "pcode_operations": 4,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-0082dbb0-pcode-20261019-v176/compiled/libnfs_shift_pcode_supplement.so",
+        "sha256": "5f008d3adb69ba6ffab99eb899635c7d6f20d114964694602a121eb7d32b4daf",
+        "bytes": 15736,
+        "exports": [
+          "rvi_0082dbb0"
+        ],
+        "revenginstr_revision": "e15b05437a56f0401e7676866d07deecbe384043",
+        "instructions": 2,
+        "pcode_operations": 6,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-0062f992-pcode-20261019-v177/compiled/libnfs_shift_pcode_supplement.so",
+        "sha256": "94bf53630f33cf7fed03656661fad31104af59c069286d5d73977f23a553f9a9",
+        "bytes": 122536,
+        "exports": [
+          "rvi_0062f992"
+        ],
+        "revenginstr_revision": "e15b05437a56f0401e7676866d07deecbe384043",
+        "instructions": 88,
+        "pcode_operations": 427,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-0090a007-handlers-pcode-20261019-v179/compiled/libnfs_shift_pcode_supplement.so",
+        "sha256": "de31871480df0e206aff2dde5aa60616596b9b8f8da4ef02d3c1fb53c0c5f78c",
+        "bytes": 86488,
+        "exports": [
+          "rvi_00903294",
+          "rvi_0090a0a4",
+          "rvi_0090a0dd",
+          "rvi_0090a0df",
+          "rvi_0090a107",
+          "rvi_0090a146"
+        ],
+        "revenginstr_revision": "e15b05437a56f0401e7676866d07deecbe384043",
+        "instructions": 57,
+        "pcode_operations": 338,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-0082e980-pcode-20261019-v182/compiled/libnfs_shift_pcode_supplement.so",
+        "sha256": "f86de4637a31333b6dc0970cd13595dc6e5f6c12287eaa12aa8110bc27250512",
+        "bytes": 19864,
+        "exports": [
+          "rvi_0082e980"
+        ],
+        "revenginstr_revision": "cc308e2",
+        "instructions": 7,
+        "pcode_operations": 17,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-00853170-pcode-20261019-v185/compiled/libnfs_shift_pcode_supplement.so",
+        "sha256": "93e34841a59372a2e30f554134545dee7c71f179791f45e30fa82421336eb8e8",
+        "bytes": 131272,
+        "exports": [
+          "rvi_00853170"
+        ],
+        "revenginstr_revision": "cc308e2",
+        "instructions": 108,
+        "pcode_operations": 496,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-00852e00-pcode-20261019-v186/compiled/libnfs_shift_pcode_supplement.so",
+        "sha256": "fd8b97cc7439558210777d6f3c0bab7d487b852b259917f7c33c87a6895c3025",
+        "bytes": 15768,
+        "exports": [
+          "rvi_00852e00"
+        ],
+        "revenginstr_revision": "cc308e2",
+        "instructions": 2,
+        "pcode_operations": 4,
+        "rejected_functions": 0
+      },
+      {
+        "role": "additional_supplement",
+        "path": "function-0082db40-pcode-20261019-v189/compiled/libnfs_shift_pcode_supplement.so",
+        "sha256": "0de01d883b367a1ac0f34eb53d91ca56a93f02f4d64121e4cd2e42f956a87373",
+        "bytes": 15736,
+        "exports": [
+          "rvi_0082db40"
+        ],
+        "revenginstr_revision": "cc308e2",
+        "instructions": 2,
+        "pcode_operations": 6,
+        "rejected_functions": 0
+      }
+    ],
+    "interpretation": [
+      "The v215 run reproduces the host-frame-loop checkpoint also reported by v194.",
+      "120 guest clear requests and 120 of 121 guest Present requests reached Vulkan submissions with zero validation errors.",
+      "Guest draw translation is false; this is not proof of retail rendering, frontend readiness, or a playable race.",
+      "All original game files and generated P-code modules remain outside Git; the module paths and hashes are recorded above."
+    ]
+  }
+}

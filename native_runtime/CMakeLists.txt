@@ -522,6 +522,10 @@ if(BUILD_TESTING)
     tests/recompiled_pcode_module_check.cpp)
   target_link_libraries(shift_runtime_recompiled_pcode_module_check PRIVATE
     shift_recompiled_pcode_module)
+  add_dependencies(shift_runtime_recompiled_pcode_module_check
+    shift_runtime_test_pcode_module
+    shift_runtime_test_pcode_supplement_module
+    shift_runtime_test_pcode_override_module)
   add_test(
     NAME shift_runtime_recompiled_pcode_module
     COMMAND shift_runtime_recompiled_pcode_module_check
