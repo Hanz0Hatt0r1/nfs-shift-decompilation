@@ -64,7 +64,7 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 
 ---
 
-## Current position — 2026-10-19
+## Current position — 2026-10-20
 
 | Area | Current state |
 | --- | --- |
@@ -74,7 +74,7 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 | P-code operations covered | **9,600,713** |
 | Linux lowered module | **Full corpus links as native ELF exports** |
 | Original PE32 image loading | **Implemented** |
-| Original PE32 execution | **The pinned v215 replay reaches the host frame loop after 96,082 guest dispatches / 1,559 unique functions; the main thread remains active at `0x006472d0`, with four workers waiting. The v284–v286 post-effect replay has no usable frontier report and times out after PE load. v285's stack was in the guest zero-fill helper; v286 replaces that hot operation with a bounds-checked bulk fill and samples later table-driven decode functions, but still has no dispatch count or frame-loop proof. The exact resource and codec remain unknown.** |
+| Original PE32 execution | **The pinned v215 replay reaches the host frame loop after 96,082 guest dispatches / 1,559 unique functions; the main thread remains active at `0x006472d0`, with four workers waiting. Separate v284–v301 effect/decoder probes have no current frame-loop proof. v296 captured 310 successful calls to decoder `0x0066f680`; the native XMem decoder matches all sampled outputs byte-for-byte. The fast path is implemented, but v297–v301 cold starts time out at a zero-count allocator call before frames. v300/v301 point to a global initialization gap around receiver `0x00c288cc`; the expected initializer dispatch remains unresolved.** |
 | Import/IAT dispatch | **Implemented with fail-closed API boundary** |
 | Guest threads | **Cooperative multi-thread scheduling implemented** |
 | Vulkan runtime shell | **Operational on Linux** |
@@ -84,7 +84,7 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 | Host-architecture-neutral runtime | **Not yet proven** |
 | ARM64 lowered-runtime execution | **Generic P-code fixture passes; full corpus/runtime not yet proven** |
 | Android platform layer | **Not implemented** |
-| Retail main loop | **v114's 1,800-frame, v191–v194's 120-frame, and pinned v215's 120-frame host probes leave the PE entry point active at `0x006472d0` with four workers waiting. The later pinned effect replay, including v286's post-zero-fill decode path, times out before yielding a frame-loop snapshot. Entry-point return is not the completion target.** |
+| Retail main loop | **v114's 1,800-frame, v191–v194's 120-frame, and pinned v215's 120-frame host probes leave the PE entry point active at `0x006472d0` with four workers waiting. Later pinned effect/decoder probes, through v301, stop before yielding a frame-loop snapshot. Entry-point return is not the completion target.** |
 | Frontend and retail rendering | **Not demonstrated by the Linux runtime; guest Clear reaches Vulkan, but no retail D3D9 draw has reached Vulkan** |
 | Retail frontend | **Not reached** |
 | Recompiled Linux offline race | **Not reached; original retail SHIFT was manually brought to a race under PortProton** |
@@ -101,6 +101,8 @@ The v172/v173 call-site probes identify `0x00839b4e` as the retail call into `D3
 Follow-up v174–v194 probes implement the observed texture and vertex-buffer object paths and move through D3D9 render/depth-target state, render state, Begin/EndScene, viewport, and Present. The requested 1024×4096 A8R8G8B8 texture and 128 KiB vertex buffer allocate Vulkan resources. Generic `revenginstr` PRs [#151](https://github.com/Hanz0Hatt0r1/revenginstr/pull/151) and [#152](https://github.com/Hanz0Hatt0r1/revenginstr/pull/152) fixed x87 unnormal binary80 classification and stale FPREM C2 status; three further Ghidra exports each lowered 1/1 with zero rejections. v194 reaches the host frame loop with 96,082 dispatches / 1,559 unique functions; across 120 host frames, 122 guest Clear requests yield 120 Vulkan clear submissions, and 120 of 121 null-argument Present requests are submitted through Vulkan, with zero validation errors. One Present remains pending because the probe is bounded to 120 host frames. Guest frames suppress the synthetic MGEO draw; no guest D3D9 draw reaches Vulkan and retail rendering is not proven. The v192 gate trace remains zero with a null callback object on all 121 gate evaluations, and the main thread remains in `0x006472d0` with four workers waiting. See the [v191–v194 frontier note](docs/SHIFT_RETAIL_D3D9_VULKAN_FRONTIER_20261019.md), [v191 evidence](evidence/retail_frontier_20261019/entrypoint_probe_v191_d3d9_frontier.json), [v192 UI-gate evidence](evidence/retail_frontier_20261019/entrypoint_probe_v192_d3d9_frontier.json), [v193 automation evidence](evidence/retail_frontier_20261019/entrypoint_probe_v193_automation.json), and [v194 automation evidence](evidence/retail_frontier_20261019/entrypoint_probe_v194_automation.json).
 
 The v210–v215 cumulative supplement replay independently reproduces the same bounded host-frame-loop result. After v210 stopped at `0x0090a007`, the v215 run used two x87 overrides and the accumulated startup supplements to advance through `0x0082e980`, `0x00853170`, `0x00852e00`, and `0x0082db40`. It then reached 120 host frames with 96,082 dispatches / 1,559 unique functions and zero Vulkan validation errors. This confirms the P-code supplement chain and probe setup; it adds no gameplay milestone: guest draw translation remains false, and the frontend and offline race remain unproven. The full path/hash manifest and bounded reports are in [v215 replay evidence](evidence/retail_frontier_20261019/entrypoint_probe_v215_supplement_replay.json).
+
+The v281–v296 effect/decoder investigation is a separate cold-start replay and does not supersede the v215 host-loop checkpoint. v296 captured at least 310 completed calls to `0x0066f680` from `0x0066cec0` through dispatch 346,879. For each captured input, the existing `shift_xmem_decompress_auto` implementation produced exactly the retail output bytes; only hashes, sizes, and frame counts are committed. The runtime now has a bounded native XMem override at that address, with a synthetic guest-call fixture covering output bytes and cdecl return state. v296 was intentionally stopped after capture and does not establish a frame-loop result. The next step is a cold-start replay with the new adapter loaded from `native_runtime/build`, followed by examination of its first new blocker or frame-loop state. See the [v290–v296 decoder analysis](docs/RETAIL_FRONTIER_AUTOMATION.md), the [v291 report](evidence/retail_frontier_20261019/entrypoint_probe_v291_decode_call_trace.json), the [v292 live-stack report](evidence/retail_frontier_20261019/entrypoint_probe_v292_decoder_live_stack.json), and the [v296 equivalence record](evidence/retail_frontier_20261020/entrypoint_probe_v296_decoder_equivalence.json).
 
 The v217/v218 follow-up reproduces the same frame-loop checkpoint while tracing the UI helper byte. All 121 gate calls still come from `0x0054be00`; the gate word and callback object remain zero, as does helper byte `0x00be250c`. Its last writer in every event is constructor `0x0050c820`; the v218 targeted call trace records no calls from `0x0049eb30`, the static caller of the positive setter `0x0050cba0`. The v219 exact-byte trace confirms this result on the final instrumentation build and guards against attributing a neighboring-byte store to the flag. This identifies the setter path that would enable the helper but does not explain why the UI activation route is not entered. First retail draw, frontend readiness, and offline race remain unproven. See [v217/v218 trace evidence](evidence/retail_frontier_20261019/entrypoint_probe_v217_v218_ui_helper_flag_writer.json), [v219 exact-byte evidence](evidence/retail_frontier_20261019/entrypoint_probe_v219_ui_helper_exact_writer.json), and the [UI state-gate analysis](docs/REVENGINSTR_UI_STATE_GATE_EVIDENCE_20261019.md).
 
@@ -1008,17 +1010,19 @@ Reusable implementation may be extracted into the portable renderer/runtime when
 
 ## Immediate queue
 
-The complete P-code module has been restored and the cooperative scheduler has been exercised on the retail entry point. The immediate priorities are now:
+The complete P-code module has been restored and the cooperative scheduler has been exercised on the retail entry point. The current cold-start replay no longer reproduces the saved v215 frame-loop checkpoint: v297–v301 time out before frames. Resolve that startup discrepancy before treating later rendering results as current. The immediate priorities are:
 
-1. **Resolve the null D3D resource path through `0x00835050` → `0x00853790` → `0x00838410`, using the retail call sequence and static interface evidence.**
-2. **Keep the compact manifest for the full module, supplements, runtime APIs, retail PE identity, game-data root and probe frontier current; keep generated binaries outside Git.**
-3. **Continue the blocker loop through resource initialization and the frontend transition without treating D3D9 bookkeeping as a renderer.**
-4. **Audit the shared runtime for x86-64/Linux-only assumptions and establish an ARM64 compile/test gate.**
-5. **Turn existing D3D9 capture data into an explicit inventory of the D3D9 objects, states, formats, shaders and draw paths actually used by SHIFT.**
-6. **Refactor Vulkan infrastructure so renderer core and platform surface/window code are cleanly separated.**
-7. **Build the SHIFT-specific D3D9 -> Vulkan backend against that captured usage surface.**
-8. **Keep Linux as the reference execution/debugging target while continuously checking that shared code remains ARM64/Android-compatible.**
-9. **Bring up the same original startup path on Android/ARM64 after the shared execution core and renderer boundaries support it.**
+1. **Restore and verify the retail global-initialization path.** v300/v301 show global receiver `0x00c288cc` used with zero fields before initializer `0x00a8d940` is observed; identify the intended initializer dispatcher and preserve retail order before changing allocator semantics.
+2. **Re-establish the saved v215 host-frame-loop checkpoint from the current native runtime and pinned module set.** Keep the XMem equivalence result separate from boot/rendering evidence.
+3. **Resolve the null D3D resource path through `0x00835050` → `0x00853790` → `0x00838410`, using the retail call sequence and static interface evidence.**
+4. **Keep the compact manifest for the full module, supplements, runtime APIs, retail PE identity, game-data root and probe frontier current; keep generated binaries outside Git.**
+5. **Continue the blocker loop through resource initialization and the frontend transition without treating D3D9 bookkeeping as a renderer.**
+6. **Audit the shared runtime for x86-64/Linux-only assumptions and establish an ARM64 compile/test gate.**
+7. **Turn existing D3D9 capture data into an explicit inventory of the D3D9 objects, states, formats, shaders and draw paths actually used by SHIFT.**
+8. **Refactor Vulkan infrastructure so renderer core and platform surface/window code are cleanly separated.**
+9. **Build the SHIFT-specific D3D9 -> Vulkan backend against that captured usage surface.**
+10. **Keep Linux as the reference execution/debugging target while continuously checking that shared code remains ARM64/Android-compatible.**
+11. **Bring up the same original startup path on Android/ARM64 after the shared execution core and renderer boundaries support it.**
 
 The priority is not “finish Linux and then start Android.” The priority is:
 

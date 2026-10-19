@@ -26,6 +26,25 @@ FAILURE = re.compile(
 )
 ADDRESS = re.compile(r"\breturn_address=(0x[0-9a-fA-F]+)")
 CALLER = re.compile(r"\bcalled from (0x[0-9a-fA-F]+)")
+TIMEOUT_MARKER = re.compile(
+    r"(?m)^retail_probe_timeout: seconds=(?P<seconds>[0-9]+) "
+    r"kill_after_seconds=(?P<kill_after>[0-9]+) exit_code=(?P<exit_code>[0-9]+)$"
+)
+TRACE_ENV_KEYS = (
+    "SHIFT_TRACE_D3D9_RESOURCES",
+    "SHIFT_TRACE_D3D9_TEXTURES",
+    "SHIFT_TRACE_GUEST_ALLOCATIONS",
+    "SHIFT_TRACE_GUEST_CALLER",
+    "SHIFT_TRACE_GUEST_CALLER_SLOTS",
+    "SHIFT_TRACE_GUEST_CALL_IMPORTS",
+    "SHIFT_TRACE_GUEST_CALL_LIVE_LOG",
+    "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS",
+    "SHIFT_TRACE_GUEST_CALL_STRING_SLOTS",
+    "SHIFT_TRACE_GUEST_CALL_TARGETS",
+    "SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS",
+    "SHIFT_TRACE_GUEST_PROVENANCE",
+    "SHIFT_TRACE_UI_STATE_GATE",
+)
 
 
 def _json_objects(log: str):
@@ -48,7 +67,7 @@ def inspect_log(log: str, exit_code: int | None = None) -> dict:
     failures = list(FAILURE.finditer(log))
     last = failures[-1] if failures else None
     status = "unknown"
-    if exit_code == 124:
+    if exit_code == 124 or TIMEOUT_MARKER.search(log):
         status = "timeout"
     elif last:
         status = "blocked"
@@ -255,6 +274,8 @@ def main(argv=None) -> int:
     run.add_argument("--log", type=Path, required=True)
     run.add_argument("--frames", type=int, default=120)
     run.add_argument("--timeout", type=int, default=180)
+    run.add_argument("--kill-after", type=int, default=5,
+                     help="seconds to wait after SIGTERM before killing a timed-out probe")
     run.add_argument("--validation", action="store_true")
     run.add_argument("--build-runtime", action="store_true")
     run.add_argument(
@@ -271,8 +292,8 @@ def main(argv=None) -> int:
                              args.exit_code)
         result["probe_log_sha256"] = sha256(args.log)
     else:
-        if args.frames < 1 or args.timeout < 1:
-            parser.error("--frames and --timeout must be positive")
+        if args.frames < 1 or args.timeout < 1 or args.kill_after < 1:
+            parser.error("--frames, --timeout, and --kill-after must be positive")
         if not args.pe.is_file() or sha256(args.pe) != RETAIL_SHA256:
             parser.error("PE is absent or SHA-256 is not the pinned PC retail 1.02 executable")
         if not args.runtime.is_file() and not args.build_runtime:
@@ -300,6 +321,7 @@ def main(argv=None) -> int:
         env.update({
             "SHIFT_ENTRYPOINT_PROBE_FRAMES": str(args.frames),
             "SHIFT_ENTRYPOINT_TIMEOUT_SECONDS": str(args.timeout),
+            "SHIFT_ENTRYPOINT_PROBE_KILL_AFTER_SECONDS": str(args.kill_after),
             "SHIFT_ENTRYPOINT_PROBE_VALIDATION": "1" if args.validation else "0",
         })
         if module_manifest:
@@ -333,8 +355,14 @@ def main(argv=None) -> int:
         result["probe_configuration"] = {
             "frames_requested": args.frames,
             "timeout_seconds": args.timeout,
+            "kill_after_seconds": args.kill_after,
             "validation": args.validation,
         }
+        trace_environment = {
+            key: env[key] for key in TRACE_ENV_KEYS if env.get(key)
+        }
+        if trace_environment:
+            result["probe_configuration"]["trace_environment"] = trace_environment
         if module_manifest:
             result["probe_configuration"]["module_manifest"] = module_manifest["evidence"]
 

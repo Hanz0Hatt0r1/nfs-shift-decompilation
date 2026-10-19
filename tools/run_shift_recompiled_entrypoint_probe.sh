@@ -11,6 +11,11 @@ if [[ ! "$timeout_seconds" =~ ^[1-9][0-9]*$ ]]; then
   printf 'SHIFT_ENTRYPOINT_TIMEOUT_SECONDS must be a positive integer\n' >&2
   exit 2
 fi
+kill_after_seconds=${SHIFT_ENTRYPOINT_PROBE_KILL_AFTER_SECONDS:-5}
+if [[ ! "$kill_after_seconds" =~ ^[1-9][0-9]*$ ]]; then
+  printf 'SHIFT_ENTRYPOINT_PROBE_KILL_AFTER_SECONDS must be a positive integer\n' >&2
+  exit 2
+fi
 probe_frames=${SHIFT_ENTRYPOINT_PROBE_FRAMES:-120}
 if [[ ! "$probe_frames" =~ ^[1-9][0-9]*$ ]]; then
   printf 'SHIFT_ENTRYPOINT_PROBE_FRAMES must be a positive integer\n' >&2
@@ -121,4 +126,15 @@ if [[ "$validation" == 1 ]]; then
   probe_args+=(--validation)
 fi
 
-timeout "${timeout_seconds}s" "$runtime" "${probe_args[@]}" >"$log_path" 2>&1
+if timeout --kill-after="${kill_after_seconds}s" "${timeout_seconds}s" \
+    "$runtime" "${probe_args[@]}" >"$log_path" 2>&1; then
+  exit 0
+else
+  probe_exit_code=$?
+fi
+
+if [[ "$probe_exit_code" == 124 || "$probe_exit_code" == 137 ]]; then
+  printf 'retail_probe_timeout: seconds=%s kill_after_seconds=%s exit_code=%s\n' \
+    "$timeout_seconds" "$kill_after_seconds" "$probe_exit_code" >>"$log_path"
+fi
+exit "$probe_exit_code"

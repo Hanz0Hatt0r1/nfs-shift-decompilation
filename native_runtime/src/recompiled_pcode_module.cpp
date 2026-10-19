@@ -711,6 +711,12 @@ struct RecompiledPcodeModule::Impl {
         guest_call_trace_enabled =
             guest_call_trace_enabled || !guest_call_trace_targets.empty() ||
             !guest_call_trace_imports.empty();
+        if (const char* live_log =
+                std::getenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG");
+            guest_call_trace_enabled && live_log &&
+            std::strcmp(live_log, "1") == 0) {
+            guest_call_trace_live_log_enabled = true;
+        }
         if (guest_call_trace_enabled) {
             guest_call_trace_slot_offsets = parse_guest_trace_u32_values(
                 std::getenv("SHIFT_TRACE_GUEST_CALLER_SLOTS"), true);
@@ -1197,6 +1203,39 @@ struct RecompiledPcodeModule::Impl {
                 stack_pointer, guest_call_trace_string_slot_offsets);
         }
         guest_call_trace_events.push_back(std::move(event));
+        if (guest_call_trace_live_log_enabled) {
+            const auto& recorded = guest_call_trace_events.back();
+            std::fprintf(
+                stderr,
+                "shift_guest_call_trace_entry: dispatch=%llu thread=%u caller=0x%08x target=0x%08x ecx=0x%08x eax=0x%08x edx=0x%08x edi=0x%08x return=",
+                static_cast<unsigned long long>(recorded.dispatch_count),
+                recorded.thread_id, recorded.caller, recorded.function,
+                recorded.ecx_entry, recorded.eax_entry, recorded.edx_entry,
+                recorded.edi_entry);
+            if (recorded.has_return_address) {
+                std::fprintf(stderr, "0x%08x", recorded.return_address);
+            } else {
+                std::fputs("unknown", stderr);
+            }
+            for (const auto& slot : recorded.stack_slots) {
+                std::fprintf(stderr, " stack+0x%x=", slot.offset);
+                if (slot.has_value) {
+                    std::fprintf(stderr, "0x%08x", slot.value);
+                } else {
+                    std::fputs("unreadable", stderr);
+                }
+            }
+            for (const auto& slot : recorded.target_slots) {
+                std::fprintf(stderr, " target+0x%x=", slot.offset);
+                if (slot.has_value) {
+                    std::fprintf(stderr, "0x%08x", slot.value);
+                } else {
+                    std::fputs("unreadable", stderr);
+                }
+            }
+            std::fputc('\n', stderr);
+            std::fflush(stderr);
+        }
         return guest_call_trace_events.size() - 1;
     }
 
@@ -1209,6 +1248,21 @@ struct RecompiledPcodeModule::Impl {
         event.has_edi_return = read_guest_u32(
             "register", kX86EdiRegisterOffset, event.edi_return);
         event.completed = true;
+        if (guest_call_trace_live_log_enabled) {
+            std::fprintf(
+                stderr,
+                "shift_guest_call_trace_return: dispatch=%llu completion_dispatch=%llu thread=%u caller=0x%08x target=0x%08x eax=",
+                static_cast<unsigned long long>(event.dispatch_count),
+                static_cast<unsigned long long>(event.completion_dispatch_count),
+                event.thread_id, event.caller, event.function);
+            if (event.has_eax_return) {
+                std::fprintf(stderr, "0x%08x", event.eax_return);
+            } else {
+                std::fputs("unknown", stderr);
+            }
+            std::fputc('\n', stderr);
+            std::fflush(stderr);
+        }
     }
 
     int dispatch(uint64_t target) {
@@ -10602,6 +10656,7 @@ struct RecompiledPcodeModule::Impl {
     std::vector<RecompiledUiStateGateTraceEvent> ui_state_gate_trace_events;
     bool guest_call_trace_enabled = false;
     bool guest_call_trace_truncated = false;
+    bool guest_call_trace_live_log_enabled = false;
     uint32_t guest_call_trace_caller = 0;
     std::vector<uint32_t> guest_call_trace_targets;
     std::vector<std::string> guest_call_trace_imports;

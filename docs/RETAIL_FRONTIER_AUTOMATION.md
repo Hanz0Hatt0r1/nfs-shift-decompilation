@@ -30,7 +30,7 @@ python3 tools/retail_frontier.py run \
   --pe /path/to/SHIFT.exe \
   --game-data '/path/to/Need For Speed.Shift.v 1.02' \
   --module-manifest evidence/retail_frontier_20261019/entrypoint_probe_v215_supplement_replay.json \
-  --build-runtime --validation --frames 120 --timeout 180 \
+  --build-runtime --validation --frames 120 --timeout 180 --kill-after 5 \
   --baseline evidence/retail_frontier_20261019/shift-probe-v173-d3dx-device-map.log \
   --log artifacts/frontier/current.log \
   --output artifacts/frontier/current.json
@@ -45,6 +45,14 @@ removed after the probe. Direct calls to the shell launcher require a valid
 MGEO path in `SHIFT_ENTRYPOINT_PROBE_MESH`.
 
 The report stores status, guest dispatch counts, unique functions, first failing import, return address, host frame-loop information (when present), and a baseline delta. Analyze an existing log **without running game assets**:
+
+`--timeout` is a hard launcher wall-clock limit. At expiry, the launcher sends
+SIGTERM and waits `--kill-after` seconds (default 5) before sending SIGKILL,
+then appends a machine-readable timeout marker to the log. The report retains
+both limits and classifies forced termination as `timeout`. Selected
+`SHIFT_TRACE_*` filters are recorded in `probe_configuration.trace_environment`
+so a trace report can be reproduced without recording unrelated environment
+variables.
 
 When the native frame-loop report includes `d3d9_vulkan_bridge`, the parser
 retains guest Clear/Present request and Vulkan submission counts. v194 records
@@ -110,6 +118,11 @@ printable ASCII C strings from selected calls' entry stack arguments. Each
 whether a terminator was seen, and whether the 256-byte sample limit was hit.
 This is opt-in and complements the numeric `stack_slots`; it is intended for
 inspecting paths passed to APIs such as `CreateFileA` without dumping guest RAM.
+For target/caller/import traces, `SHIFT_TRACE_GUEST_CALL_LIVE_LOG=1` writes a
+compact entry line to the probe log before the selected call runs and a return
+line when it completes. This preserves entry registers and sampled stack/target
+slots if the bounded probe later times out; a missing return line means the
+selected call had not completed when execution stopped.
 
 The v217/v218 bounded runs reproduce the same 96,082-dispatch, 1,559-function
 host-frame-loop checkpoint with 120 Vulkan clear and 120 present submissions,
@@ -394,17 +407,86 @@ wrapper uses the encoded length as its loop range when it is shorter than the
 remaining bytes; malformed overlong lengths are not characterized. The
 `0x00675420` helper stores the input range and output pointer in the context;
 the nested `0x00679aa0`/`0x00679760` path performs table-driven bit/symbol
-decoding and output writes. This is consistent with LZX-style decompression,
-but does not establish the exact codec or asset type. The current standalone
-`shift_xmem_decompress` framing skips five bytes after each `0xFF` header,
-whereas the guest wrapper reserves five bytes once at the end of its input.
-Do not route the runtime through that helper until a live input/output pair
-confirms framing, state reset, and lookahead behavior. The full v215 module
-manifest was supplied to v289, but that 180-second run emitted only the PE-load
-line; there is no dynamic codec sample. See the [v290 decoder record](../evidence/retail_frontier_20261019/entrypoint_probe_v290_decoder_framing.json).
-The next useful probe must capture one live wrapper call's stack arguments and
-compressed bytes in bounded reads, then compare its decoded output with the
-existing XMem/LZX implementation before any adapter or hot-path optimization.
+decoding and output writes. The v290 record captured the then-current static
+interpretation, including a hypothesis that the final five bytes were reserved
+once for the whole input. The later live captures supersede that framing
+hypothesis: the XMem decoder's per-`0xFF` five-byte trailer matches the retail
+outputs exactly in 310 sampled calls. See the [v290 decoder record](../evidence/retail_frontier_20261019/entrypoint_probe_v290_decoder_framing.json)
+and the [v296 equivalence record](../evidence/retail_frontier_20261020/entrypoint_probe_v296_decoder_equivalence.json).
+
+The v291 report records only PE loading, with no dispatch count or decoder
+call. Its external runtime did not stop when the requested 300-second SIGTERM
+limit elapsed; the former launcher had no kill-after bound. That report is now
+retained as
+[`entrypoint_probe_v291_decode_call_trace.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v291_decode_call_trace.json).
+An in-flight debugger snapshot placed the main thread in guest function
+`0x00455ba0`; pinned-PE disassembly shows a tail thunk at `0x00427250` and a
+count-dependent aligned allocation followed by 16-byte link initialization.
+This identifies a potentially expensive setup path, but without the entry
+`EDX` value it does not explain the stall or provide decoder input.
+
+The bounded v292 replay used the verified 2-override/19-supplement v215
+manifest and a 120-second wall limit. It loaded the PE but emitted no dispatch
+frontier before timing out. Two GDB snapshots during the live process show the
+guest stack inside `0x0066f680 → 0x00675420 → 0x00678480 → 0x00679aa0 →
+0x00679760`, ending in guest-byte reads/writes. This confirms the decoder
+wrapper is active in the PortProton game-data root; it does not provide the
+wrapper's stack arguments or bytes. The live-stack summary and snapshot hash
+are in
+[`entrypoint_probe_v292_decoder_live_stack.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v292_decoder_live_stack.json).
+The v296 capture uses the current `native_runtime/build` P-code frontier module
+and selects `0x0066f680` calls from `0x0066cec0`. It captured 310 completed
+calls through dispatch 346,879: 817,378 compressed bytes and 5,393,638 decoded
+bytes, with one-, two-, and three-frame inputs. The shared output-count word
+can be overwritten by the next call before an external observer reads it, so
+capture lengths are derived from each input's checked frame headers. Raw pairs
+remain in the external artifact directory; Git stores only hashes and counts.
+The existing `shift_xmem_decompress_auto` result was byte-identical to every
+retail output (310/310), including calls with multiple frames. A fresh native
+decoder state per wrapper call was sufficient for this sample. The probe was
+stopped after collecting the pairs and does not provide a frame-loop or
+rendering result.
+
+The runtime now overrides `0x0066f680` with a fail-closed native XMem adapter.
+It validates the captured cdecl stack contract, bounds compressed and decoded
+sizes, copies guest memory in the runtime's 16-byte access limit, writes the
+decoded-size out parameter, and emulates the observed `EAX=0`, cdecl return.
+A synthetic raw-block fixture verifies decoded bytes, the out parameter,
+callee-saved registers, and `ESP/EIP`. The next retail probe must load this
+frontier module from `native_runtime/build`, then compare startup progress with
+the v215 host-loop checkpoint; decoder equivalence alone is not a boot or
+rendering result.
+
+The bounded v297/v298 cold starts timed out after PE load and produced no
+dispatch/frame report. Two v298 live GDB snapshots showed the main thread in
+the recurring allocator path
+`0x0082de70 → 0x0083f0f0 → 0x004f5e60 → 0x004f5e10 → 0x00d86830 →
+0x00427250 → 0x00455ba0`; those snapshots alone did not establish a hang in
+that function. The v299 live target trace resolves the pending call: 79 of 80
+calls to `0x00455ba0` returned, then the call at dispatch 417,061 entered with
+`EDX=0` and had no return event before the 120-second bound. PE disassembly
+shows this function sizing a 16-byte-node pool from `EDX`, then using an
+unsigned decrement loop; zero underflows to `0xffffffff` and prevents the loop
+from finishing.
+
+The v300 receiver trace shows the zero comes from global receiver
+`0x00c288cc`: the first call from `0x0083f0f0` sees receiver fields `+0x4` and
+`+0x8` both zero, then `0x00d86830` forwards `EDX=0` to the allocator. Static
+PE disassembly of `0x00a8d940` shows it initializes this object, calls
+`0x0067cbc0`, writes `0x10` to `+0x4` and `+0x8`, and clears selected fields.
+The v301 trace records one call to CRT helper `0x00915fe8` at dispatch 300; it
+returns immediately with `EAX=0x00b6c15c`. Its PE body iterates the empty range
+`[0x00b6c15c, 0x00b6c15c)`. No call to `0x0091600c` or `0x00a8d940` was
+observed before the 120-second timeout. The PE TLS directory has no callback
+entries. A nearby `.rdata` region at `0x00aa92c0` contains a pointer to
+`0x00a8d940`, but the table's owner and dispatch path are not established.
+These observations make a skipped global-initialization path the leading
+explanation; they do not yet prove which table or runtime mechanism should
+invoke it. Do not fabricate an empty-list allocator return or call this
+initializer directly until its startup contract is established. The fast XMem
+adapter and the later v215 D3D9/Vulkan frame-loop checkpoint are not reached or
+revalidated by these runs. See the
+[v297–v301 machine record](../evidence/retail_frontier_20261020/entrypoint_probe_v297_v301_initializer_order.json).
 
 The v120 caller-call trace independently maps the common tail of `0x0054be00`:
 the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the
