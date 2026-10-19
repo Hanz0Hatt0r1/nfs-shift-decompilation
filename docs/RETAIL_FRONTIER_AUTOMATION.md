@@ -336,6 +336,18 @@ The capture check accepts an optional external file argument:
 The next runtime change must construct the effect interface from these parsed
 records and route shader creation through the D3D9/Vulkan backend.
 
+The v283 runtime step routes `d3dx9_41.dll!D3DXCreateEffect`, parses the
+captured binary into a guest `ID3DXEffect`, retains its D3D9 device reference,
+and implements `QueryInterface`, `AddRef`, `Release`, and vtable slot 61
+(`FindNextValidTechnique`). A regression test runs both a synthetic shader
+effect and the external v281 capture through this import and COM path. Since
+the runtime still cannot create or bind the effect's shaders, searching from a
+null technique returns `S_FALSE` and a null handle; the remaining effect
+methods are still unimplemented imports. This is API-frontier progress, not a
+retail startup advance: the retail process has not been rerun and no game draw
+or Vulkan submission is established. The v281 capture remains external. See
+the [v283 effect COM record](../evidence/retail_frontier_20261019/entrypoint_probe_v283_d3dx_effect_com.json).
+
 The v120 caller-call trace independently maps the common tail of `0x0054be00`:
 the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the
 `+0x130` call dispatches `0x00835d80` (D3D9 Present path), 121 times each in a

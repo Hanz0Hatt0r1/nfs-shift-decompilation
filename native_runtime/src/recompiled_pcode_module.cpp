@@ -1,5 +1,6 @@
 #include "shift_recompiled_pcode_module.hpp"
 #include "shift_recompiled_pcode_abi.h"
+#include "shift_d3dx9_effect_binary.hpp"
 
 #include <dlfcn.h>
 #include <cerrno>
@@ -135,6 +136,9 @@ constexpr uint32_t kD3dErrInvalidCall = 0x8876086c;
 constexpr uint32_t kD3dErrNotFound = 0x88760866;
 constexpr uint32_t kD3dErrNotAvailable = 0x8876086a;
 constexpr uint32_t kD3dErrInvalidDevice = 0x88760870;
+constexpr uint32_t kEFail = 0x80004005;
+constexpr uint32_t kENoInterface = 0x80004002;
+constexpr uint32_t kEOutOfMemory = 0x8007000e;
 constexpr uint32_t kD3dFormatA8R8G8B8 = 21;
 constexpr uint32_t kD3dUsageRenderTarget = 1;
 constexpr uint32_t kD3dPoolDefault = 0;
@@ -626,6 +630,12 @@ struct RecompiledPcodeModule::Impl {
         uint32_t lock_offset = 0;
         uint32_t lock_size = 0;
         bool locked = false;
+    };
+    struct GuestD3DXEffect {
+        uint32_t vtable_address = 0;
+        uint32_t device_address = 0;
+        uint32_t references = 1;
+        D3dx9BinaryEffect binary;
     };
     struct GuestFiber {
         uint32_t data = 0;
@@ -1548,6 +1558,16 @@ struct RecompiledPcodeModule::Impl {
                 return d3d9_texture_get_level_desc();
             if (name == "d3dx9_41.dll!D3DXCreateTexture")
                 return d3dx_create_texture();
+            if (name == "d3dx9_41.dll!D3DXCreateEffect")
+                return d3dx_create_effect();
+            if (name == "d3dx9_41.dll!ID3DXEffect::QueryInterface")
+                return d3dx_effect_query_interface();
+            if (name == "d3dx9_41.dll!ID3DXEffect::AddRef")
+                return d3dx_effect_add_ref();
+            if (name == "d3dx9_41.dll!ID3DXEffect::Release")
+                return d3dx_effect_release();
+            if (name == "d3dx9_41.dll!ID3DXEffect::FindNextValidTechnique")
+                return d3dx_effect_find_next_valid_technique();
             if (name == "imagehlp.dll!SymSetOptions")
                 return sym_set_options();
             if (name == "imagehlp.dll!SymInitialize")
@@ -5379,16 +5399,11 @@ struct RecompiledPcodeModule::Impl {
         return return_kernel32_dword(device->second.references, api, 4);
     }
 
-    int d3d9_device_release() {
-        constexpr const char* api = "d3d9.dll!IDirect3DDevice9::Release";
-        uint32_t device_address = 0;
-        if (!read_stack_argument(0, device_address, api)) return -1;
+    uint32_t release_guest_d3d9_device_reference(uint32_t device_address) {
         auto device = guest_d3d9_devices.find(device_address);
         if (device == guest_d3d9_devices.end() ||
-            device->second.references == 0) {
-            error = std::string(api) + " received an invalid device pointer";
-            return -1;
-        }
+            device->second.references == 0)
+            return 0;
         const uint32_t remaining = --device->second.references;
         if (remaining == 0) {
             const uint32_t vtable_address = device->second.vtable_address;
@@ -5407,6 +5422,21 @@ struct RecompiledPcodeModule::Impl {
                 --parent->second.references;
             }
         }
+        return remaining;
+    }
+
+    int d3d9_device_release() {
+        constexpr const char* api = "d3d9.dll!IDirect3DDevice9::Release";
+        uint32_t device_address = 0;
+        if (!read_stack_argument(0, device_address, api)) return -1;
+        const auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end() ||
+            device->second.references == 0) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        const uint32_t remaining =
+            release_guest_d3d9_device_reference(device_address);
         return return_kernel32_dword(remaining, api, 4);
     }
 
@@ -6380,6 +6410,244 @@ struct RecompiledPcodeModule::Impl {
             }
         }
         return return_kernel32_dword(0, api, 8);
+    }
+
+    void free_guest_heap_allocation(uint32_t address) {
+        const auto allocation = heap_allocations.find(address);
+        if (allocation == heap_allocations.end()) return;
+        free_heap_blocks.push_back(allocation->second);
+        heap_allocations.erase(allocation);
+    }
+
+    int d3dx_create_effect() {
+        constexpr const char* api = "d3dx9_41.dll!D3DXCreateEffect";
+        std::array<uint32_t, 9> arguments{};
+        for (uint32_t index = 0; index < arguments.size(); ++index) {
+            if (!read_stack_argument(index, arguments[index], api)) return -1;
+        }
+        const uint32_t device_address = arguments[0];
+        const uint32_t source_address = arguments[1];
+        const uint32_t source_size = arguments[2];
+        const uint32_t effect_output = arguments[7];
+        const uint32_t errors_output = arguments[8];
+
+        if (effect_output != 0 &&
+            !valid_guest_pointer(effect_output, sizeof(uint32_t)))
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 36);
+        if (errors_output != 0 &&
+            !valid_guest_pointer(errors_output, sizeof(uint32_t)))
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 36);
+        if (effect_output != 0 &&
+            !write_guest_u32("ram", effect_output, 0))
+            return -1;
+        if (errors_output != 0 &&
+            !write_guest_u32("ram", errors_output, 0))
+            return -1;
+
+        if (device_address == 0 || source_address == 0)
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 36);
+        if (guest_d3d9_devices.find(device_address) ==
+            guest_d3d9_devices.end())
+            return return_kernel32_dword(kD3dErrInvalidDevice, api, 36);
+        if (source_size == 0)
+            return return_kernel32_dword(kEFail, api, 36);
+
+        // D3DX returns success for a null output after validating its basic
+        // arguments, without parsing or retaining an effect.
+        if (effect_output == 0)
+            return return_kernel32_dword(0, api, 36);
+        if (arguments[3] != 0 || arguments[4] != 0 || arguments[6] != 0)
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 36);
+        if (!valid_guest_pointer(source_address, source_size))
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 36);
+
+        std::vector<uint8_t> source(source_size);
+        if (!read_guest_bytes(source_address, source.data(), source.size(), api))
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 36);
+        D3dx9BinaryEffect binary;
+        std::string parse_error;
+        if (!parse_d3dx9_binary_effect(source.data(), source.size(), binary,
+                                       parse_error)) {
+            error = std::string(api) + " rejected its binary effect: " +
+                    parse_error;
+            return return_kernel32_dword(kEFail, api, 36);
+        }
+
+        static constexpr std::array<const char*, 79> methods = {
+            "QueryInterface", "AddRef", "Release", "GetDesc",
+            "GetParameterDesc", "GetTechniqueDesc", "GetPassDesc",
+            "GetFunctionDesc", "GetParameter", "GetParameterByName",
+            "GetParameterBySemantic", "GetParameterElement", "GetTechnique",
+            "GetTechniqueByName", "GetPass", "GetPassByName", "GetFunction",
+            "GetFunctionByName", "GetAnnotation", "GetAnnotationByName",
+            "SetValue", "GetValue", "SetBool", "GetBool", "SetBoolArray",
+            "GetBoolArray", "SetInt", "GetInt", "SetIntArray", "GetIntArray",
+            "SetFloat", "GetFloat", "SetFloatArray", "GetFloatArray",
+            "SetVector", "GetVector", "SetVectorArray", "GetVectorArray",
+            "SetMatrix", "GetMatrix", "SetMatrixArray", "GetMatrixArray",
+            "SetMatrixPointerArray", "GetMatrixPointerArray",
+            "SetMatrixTranspose", "GetMatrixTranspose",
+            "SetMatrixTransposeArray", "GetMatrixTransposeArray",
+            "SetMatrixTransposePointerArray",
+            "GetMatrixTransposePointerArray", "SetString", "GetString",
+            "SetTexture", "GetTexture", "GetPixelShader", "GetVertexShader",
+            "SetArrayRange", "GetPool", "SetTechnique", "GetCurrentTechnique",
+            "ValidateTechnique", "FindNextValidTechnique", "IsParameterUsed",
+            "Begin", "BeginPass", "CommitChanges", "EndPass", "End",
+            "GetDevice", "OnLostDevice", "OnResetDevice", "SetStateManager",
+            "GetStateManager", "BeginParameterBlock", "EndParameterBlock",
+            "ApplyParameterBlock", "DeleteParameterBlock", "CloneEffect",
+            "SetRawValue"};
+        uint32_t vtable_address = 0;
+        uint32_t effect_address = 0;
+        if (!allocate_guest_heap(kGuestProcessHeapHandle,
+                                 methods.size() * sizeof(uint32_t),
+                                 vtable_address) ||
+            !allocate_guest_heap(kGuestProcessHeapHandle, sizeof(uint32_t),
+                                 effect_address)) {
+            free_guest_heap_allocation(vtable_address);
+            free_guest_heap_allocation(effect_address);
+            return return_kernel32_dword(kEOutOfMemory, api, 36);
+        }
+        for (size_t index = 0; index < methods.size(); ++index) {
+            uint32_t method_stub = 0;
+            const std::string method_name =
+                std::string("d3dx9_41.dll!ID3DXEffect::") + methods[index];
+            if (!allocate_dynamic_import_stub(method_name, method_stub) ||
+                !write_guest_u32("ram", vtable_address + index * 4,
+                                 method_stub)) {
+                free_guest_heap_allocation(effect_address);
+                free_guest_heap_allocation(vtable_address);
+                error = std::string(api) + " could not create an ID3DXEffect";
+                return -1;
+            }
+        }
+        if (!write_guest_u32("ram", effect_address, vtable_address)) {
+            free_guest_heap_allocation(effect_address);
+            free_guest_heap_allocation(vtable_address);
+            error = std::string(api) + " could not initialize an ID3DXEffect";
+            return -1;
+        }
+        guest_d3dx_effects.emplace(
+            effect_address,
+            GuestD3DXEffect{vtable_address, device_address, 1,
+                            std::move(binary)});
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device->second.references != UINT32_MAX)
+            ++device->second.references;
+        if (!write_guest_u32("ram", effect_output, effect_address)) {
+            const auto effect = guest_d3dx_effects.find(effect_address);
+            if (effect != guest_d3dx_effects.end())
+                guest_d3dx_effects.erase(effect);
+            free_guest_heap_allocation(effect_address);
+            free_guest_heap_allocation(vtable_address);
+            release_guest_d3d9_device_reference(device_address);
+            error = std::string(api) + " could not write its output pointer";
+            return -1;
+        }
+        return return_kernel32_dword(0, api, 36);
+    }
+
+    int d3dx_effect_query_interface() {
+        constexpr const char* api =
+            "d3dx9_41.dll!ID3DXEffect::QueryInterface";
+        uint32_t effect_address = 0;
+        uint32_t iid_address = 0;
+        uint32_t output_address = 0;
+        if (!read_stack_argument(0, effect_address, api) ||
+            !read_stack_argument(1, iid_address, api) ||
+            !read_stack_argument(2, output_address, api))
+            return -1;
+        const auto effect = guest_d3dx_effects.find(effect_address);
+        if (effect == guest_d3dx_effects.end()) {
+            error = std::string(api) + " received an invalid effect pointer";
+            return -1;
+        }
+        if (iid_address == 0 || output_address == 0 ||
+            !valid_guest_pointer(iid_address, 16) ||
+            !valid_guest_pointer(output_address, sizeof(uint32_t)))
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+
+        std::array<uint8_t, 16> iid{};
+        if (!read_guest_bytes(iid_address, iid.data(), iid.size(), api))
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+        static constexpr std::array<uint8_t, 16> unknown_iid = {
+            0, 0, 0, 0, 0, 0, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0x46};
+        static constexpr std::array<uint8_t, 16> effect_iid = {
+            0xb3, 0xb4, 0xce, 0xf6, 0x4c, 0x4e, 0xdd, 0x40,
+            0xb8, 0x83, 0x8d, 0x8d, 0xe5, 0xea, 0x0c, 0xd5};
+        if (iid != unknown_iid && iid != effect_iid) {
+            if (!write_guest_u32("ram", output_address, 0)) return -1;
+            return return_kernel32_dword(kENoInterface, api, 12);
+        }
+        if (!write_guest_u32("ram", output_address, effect_address))
+            return -1;
+        if (effect->second.references != UINT32_MAX)
+            ++effect->second.references;
+        return return_kernel32_dword(0, api, 12);
+    }
+
+    int d3dx_effect_add_ref() {
+        constexpr const char* api = "d3dx9_41.dll!ID3DXEffect::AddRef";
+        uint32_t effect_address = 0;
+        if (!read_stack_argument(0, effect_address, api)) return -1;
+        auto effect = guest_d3dx_effects.find(effect_address);
+        if (effect == guest_d3dx_effects.end()) {
+            error = std::string(api) + " received an invalid effect pointer";
+            return -1;
+        }
+        if (effect->second.references != UINT32_MAX)
+            ++effect->second.references;
+        return return_kernel32_dword(effect->second.references, api, 4);
+    }
+
+    int d3dx_effect_release() {
+        constexpr const char* api = "d3dx9_41.dll!ID3DXEffect::Release";
+        uint32_t effect_address = 0;
+        if (!read_stack_argument(0, effect_address, api)) return -1;
+        auto effect = guest_d3dx_effects.find(effect_address);
+        if (effect == guest_d3dx_effects.end() ||
+            effect->second.references == 0) {
+            error = std::string(api) + " received an invalid effect pointer";
+            return -1;
+        }
+        const uint32_t remaining = --effect->second.references;
+        if (remaining == 0) {
+            const uint32_t vtable_address = effect->second.vtable_address;
+            const uint32_t device_address = effect->second.device_address;
+            guest_d3dx_effects.erase(effect);
+            free_guest_heap_allocation(effect_address);
+            free_guest_heap_allocation(vtable_address);
+            release_guest_d3d9_device_reference(device_address);
+        }
+        return return_kernel32_dword(remaining, api, 4);
+    }
+
+    int d3dx_effect_find_next_valid_technique() {
+        constexpr const char* api =
+            "d3dx9_41.dll!ID3DXEffect::FindNextValidTechnique";
+        uint32_t effect_address = 0;
+        uint32_t previous_technique = 0;
+        uint32_t next_technique_output = 0;
+        if (!read_stack_argument(0, effect_address, api) ||
+            !read_stack_argument(1, previous_technique, api) ||
+            !read_stack_argument(2, next_technique_output, api))
+            return -1;
+        if (guest_d3dx_effects.find(effect_address) ==
+            guest_d3dx_effects.end()) {
+            error = std::string(api) + " received an invalid effect pointer";
+            return -1;
+        }
+        if (next_technique_output == 0 ||
+            !valid_guest_pointer(next_technique_output, sizeof(uint32_t)))
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+        if (previous_technique != 0)
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+        if (!write_guest_u32("ram", next_technique_output, 0)) return -1;
+
+        // Parsed techniques cannot validate until their vertex and pixel
+        // shaders can be created and bound by the D3D9/Vulkan backend.
+        return return_kernel32_dword(1, api, 12);
     }
 
     int d3dx_create_texture() {
@@ -10220,6 +10488,7 @@ struct RecompiledPcodeModule::Impl {
     std::unordered_map<uint32_t, GuestSemaphore> guest_semaphores;
     std::unordered_map<uint32_t, GuestD3D9Interface> guest_d3d9_interfaces;
     std::unordered_map<uint32_t, GuestD3D9Device> guest_d3d9_devices;
+    std::unordered_map<uint32_t, GuestD3DXEffect> guest_d3dx_effects;
     std::unordered_map<uint32_t, GuestD3D9Surface> guest_d3d9_surfaces;
     std::unordered_map<uint32_t, GuestD3D9Texture> guest_d3d9_textures;
     std::unordered_map<uint32_t, GuestD3D9VertexBuffer>

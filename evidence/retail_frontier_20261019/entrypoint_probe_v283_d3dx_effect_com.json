@@ -1,0 +1,46 @@
+{
+  "format": "SHIFT.RetailD3DXEffectCom/1",
+  "probe_version": "v283",
+  "source_capture": {
+    "probe_version": "v281",
+    "sha256": "74901707d164f3014e8dc72da7232b1076d003ae3288535ca7c8376aec923fa9",
+    "location": "external artifact; no binary payload is committed"
+  },
+  "runtime": {
+    "import": "d3dx9_41.dll!D3DXCreateEffect",
+    "effect_binary_format": "D3DX9 effect binary 9.1",
+    "vtable_slots": 79,
+    "implemented_methods": [
+      "QueryInterface",
+      "AddRef",
+      "Release",
+      "FindNextValidTechnique"
+    ],
+    "retains_d3d9_device_reference": true,
+    "shader_creation_and_binding": false,
+    "other_effect_methods": "unimplemented"
+  },
+  "checks": {
+    "synthetic_shader_effect_import_and_com": "passed",
+    "truncated_input_returns_failure_and_clears_outputs": "passed",
+    "id3dxeffect_query_interface_and_reference_lifetime": "passed",
+    "find_next_valid_technique_without_shader_backend": {
+      "hresult": "S_FALSE",
+      "next_technique": null
+    },
+    "captured_v281_effect_import_and_com": "passed"
+  },
+  "test": {
+    "name": "shift_runtime_recompiled_pcode_module",
+    "command": "SHIFT_TEST_D3DX_EFFECT=/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/effect-input-v281.bin /usr/bin/ctest --test-dir native_runtime/build --output-on-failure -R '^shift_runtime_recompiled_pcode_module$'",
+    "result": "1/1 passed"
+  },
+  "interpretation": {
+    "captured_binary_constructed_as_guest_effect_in_test_harness": true,
+    "retail_probe_rerun": false,
+    "retail_startup_advanced": false,
+    "retail_rendering_proven": false,
+    "vulkan_submission_proven": false,
+    "next_step": "Create the effect vertex and pixel shaders and implement enough effect state/technique methods to apply and bind the captured ShadowGen pass."
+  }
+}
