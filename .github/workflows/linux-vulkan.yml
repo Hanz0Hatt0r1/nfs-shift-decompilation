@@ -28,7 +28,23 @@ jobs:
       - name: Install Vulkan software stack
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake g++ libvulkan-dev glslang-tools mesa-vulkan-drivers vulkan-tools libxcb1-dev xvfb vulkan-validationlayers
+          sudo apt-get install -y cmake g++ ccache libvulkan-dev glslang-tools mesa-vulkan-drivers vulkan-tools libxcb1-dev xvfb vulkan-validationlayers
+      - name: Restore compiler object cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ${{ runner.os }}-shift-native-ccache-${{ github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-shift-native-ccache-
+      - name: Retail frontier tooling regressions (no game assets)
+        run: |
+          bash -n tools/build_shift_runtime_cached.sh
+          python3 -m unittest discover -s tests -p test_retail_frontier_tools.py -v
+          mkdir -p out/vulkan/frontier
+          python3 tools/retail_frontier.py inspect \
+            --log evidence/retail_frontier_20261019/shift-probe-v173-d3dx-device-map.log \
+            --baseline evidence/retail_frontier_20261019/shift-probe-v173-d3dx-device-map.log \
+            --output out/vulkan/frontier/v173-check.json
       - name: Show Vulkan devices
         run: vulkaninfo --summary
       - name: Configure
@@ -75,7 +91,7 @@ jobs:
           fi
           grep -q "native submission gate missing" out/vulkan/blocked/stderr.txt
       - name: Native Linux runtime configure
-        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
       - name: Native Linux runtime build
         run: cmake --build native_runtime/build --config Release --parallel
       - name: Native builtin sparse solver parity
