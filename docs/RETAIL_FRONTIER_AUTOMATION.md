@@ -93,6 +93,16 @@ frame JSON lists selected `guest_call_trace_targets`.
 are relative to the callee receiver. They make state read by a selected method
 observable even when its caller is not known in advance. Offsets are direct
 receiver-relative reads; they do not follow pointer fields.
+`SHIFT_TRACE_GUEST_CALL_STACK_SLOTS=0x4,0x8,0xc` samples words at those offsets
+from the callee-entry ESP for each selected call. Since `[ESP]` holds the return
+address, offset `0x4` is the first 32-bit stack argument. This also exposes
+arguments passed to selected imported calls. The `stack_slots` array has the
+same value and writer fields, with the same 32-offset limit. `dispatch_count`
+marks call entry; `completion_dispatch_count` marks its return and is null while
+the call is still pending.
+`SHIFT_TRACE_GUEST_CALL_IMPORTS=KERNEL32.dll!SetEvent,KERNEL32.dll!ResetEvent`
+selects named imported API calls independent of their synthetic stub addresses;
+import events carry the same caller, return address, and stack slots.
 
 The v217/v218 bounded runs reproduce the same 96,082-dispatch, 1,559-function
 host-frame-loop checkpoint with 120 Vulkan clear and 120 present submissions,
@@ -140,6 +150,38 @@ remains at 96,082 dispatches, 1,559 unique functions, four waiting workers,
 draw translation. This narrows the state-machine path but does not identify a
 completion callback or prove frontend readiness. See the
 [v240 machine record](../evidence/retail_frontier_20261019/entrypoint_probe_v240_consumer_target_slots.json).
+
+The v246 imported-API trace resolves the `0x60004` event sequence. The
+`CreateEventW` call creates it as auto-reset and initially unsignaled. A worker
+enters an infinite `WaitForSingleObjectEx` at dispatch 19324; `SetEvent` on
+that handle succeeds at dispatch 64589, and the original wait returns at
+dispatch 64636. The same worker enters another infinite wait at dispatch 65095,
+which remains pending. No `ResetEvent` call targets `0x60004`. This is a normal
+one-signal/one-waiter sequence: the wake was consumed by the wait already in
+progress, then the worker returned to waiting. The import trace records 127
+events and is not truncated. See the
+[v246 machine record](../evidence/retail_frontier_20261019/entrypoint_probe_v246_import_event_api_completion.json).
+
+The v247 worker trace follows the first wake back through the loop at
+`0x00667284`: the wait completes at dispatch 64639, `0x00655190` runs at
+64640, and `0x00649750` runs at 64641 before the worker enters another wait at
+65096. Static PE disassembly maps the indirect call at `0x00aa62e8` inside
+`0x00649750` to `KERNEL32.dll!SetThreadPriority`. The v248 named-import trace
+confirms that this call receives thread handle `0x00080000` and priority `0`,
+then returns success. `0x00655190` loads the worker object's child and its
+`+0x54` priority field before tail-calling `0x00649750`; this path applies
+thread priority after a wake and does not identify a queue payload consumer.
+The selected trace recorded 13 `SetThreadPriority` calls and seven
+`0x00649750` calls without truncation. See the
+[v247 worker-loop record](../evidence/retail_frontier_20261019/entrypoint_probe_v247_post_wake_worker_loop.json)
+and [v248 priority record](../evidence/retail_frontier_20261019/entrypoint_probe_v248_thread_priority.json).
+
+The readiness update remains unresolved. Continue from the pending request
+path through `0x0066cc00` / `0x00653480` and the readiness checks, correlating
+the request state with worker-visible completion instead of treating this
+priority update as delivered work. These runs remain bounded 120-frame
+host-frame-loop probes with no guest draw translation; they do not establish
+frontend readiness or gameplay rendering.
 
 The v120 caller-call trace independently maps the common tail of `0x0054be00`:
 the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the

@@ -1,0 +1,113 @@
+{
+  "format": "SHIFT.RetailEventApiTraceProbe/1",
+  "probe_version": "v246",
+  "source_revision": "510062a5d49169c7cbca8d313e57ba44d39a9c21",
+  "source_worktree_changes": [
+    "docs/RETAIL_FRONTIER_AUTOMATION.md",
+    "native_runtime/include/shift_recompiled_pcode_module.hpp",
+    "native_runtime/src/recompiled_pcode_module.cpp",
+    "native_runtime/src/shift_runtime.cpp",
+    "native_runtime/tests/recompiled_pcode_fixture.c",
+    "native_runtime/tests/recompiled_pcode_module_check.cpp"
+  ],
+  "runtime_binary_sha256": "eb3a6baa13bca819f15222a06b38a5e780dfc985e413dbef87854b889d31f295",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "startup_pcode_module_sha256": "6f8016195fffe4e6b3803929cf50946bdcf96e00436295f0db32a468487207c3",
+  "module_set_evidence": "entrypoint_probe_v215_supplement_replay.json",
+  "probe_log_sha256": "7f66f2aae71fdaf4f34acfc3603e41a3345eb13f2ae2d209ef7191fb5468a996",
+  "raw_probe_log": "local external artifact root; not committed",
+  "probe_bounds": {
+    "frames_requested": 120,
+    "timeout_seconds": 180,
+    "validation": true,
+    "synthetic_mesh_fixture": true
+  },
+  "status": "host-frame-loop",
+  "dispatches": 96078,
+  "unique_functions": 1559,
+  "frames_rendered": 120,
+  "worker_waiting_count": 4,
+  "validation_errors": 0,
+  "d3d9_vulkan_bridge": {
+    "clear_requests": 122,
+    "clear_submissions": 120,
+    "guest_draw_translation": false,
+    "pending_presents": 1,
+    "present_requests": 121,
+    "present_submissions": 120
+  },
+  "retail_rendering_proven": false,
+  "trace": {
+    "truncated": false,
+    "event_count": 127,
+    "imports": [
+      "KERNEL32.dll!CreateEventA",
+      "KERNEL32.dll!CreateEventW",
+      "KERNEL32.dll!SetEvent",
+      "KERNEL32.dll!ResetEvent",
+      "KERNEL32.dll!WaitForSingleObject",
+      "KERNEL32.dll!WaitForSingleObjectEx"
+    ],
+    "import_call_counts": {
+      "KERNEL32.dll!CreateEventA": 1,
+      "KERNEL32.dll!CreateEventW": 28,
+      "KERNEL32.dll!ResetEvent": 6,
+      "KERNEL32.dll!SetEvent": 9,
+      "KERNEL32.dll!WaitForSingleObject": 1,
+      "KERNEL32.dll!WaitForSingleObjectEx": 33
+    },
+    "stack_slot_offsets": [
+      "0x00000004",
+      "0x00000008",
+      "0x0000000c",
+      "0x00000010"
+    ],
+    "target_slot_offsets": [
+      "0x00000000",
+      "0x00000004",
+      "0x00000008",
+      "0x00000010",
+      "0x00000044",
+      "0x00000074"
+    ],
+    "auto_reset_event_0x60004": {
+      "created": {
+        "dispatch_count": 19161,
+        "manual_reset": "0x00000000",
+        "initial_state": "0x00000000"
+      },
+      "wait_before_signal": {
+        "entry_dispatch_count": 19324,
+        "completion_dispatch_count": 64636,
+        "thread_id": "0x00010000",
+        "result": "0x00000000"
+      },
+      "set_event": {
+        "entry_dispatch_count": 64589,
+        "completion_dispatch_count": 64589,
+        "thread_id": "0x001bedac",
+        "caller": "0x0064f530",
+        "result": "0x00000001"
+      },
+      "next_wait": {
+        "entry_dispatch_count": 65095,
+        "completion_dispatch_count": null,
+        "thread_id": "0x00010000",
+        "completed": false,
+        "timeout": "0xffffffff"
+      },
+      "reset_event_call_count": 0,
+      "interpretation": "The auto-reset signal completes the wait that entered before SetEvent. That wait returns at a later dispatch; the worker then enters a second infinite wait that remains pending. The signal was consumed by a waiting worker, not lost before any waiter could observe it."
+    }
+  },
+  "counter_comparison": {
+    "baseline_probe": "v244-event-import-stack-args.json",
+    "baseline_dispatches": 96081,
+    "current_dispatches": 96078,
+    "dispatch_delta": -3,
+    "unique_functions_unchanged": true,
+    "frames_unchanged": true,
+    "validation_errors_unchanged": true
+  },
+  "next_frontier": "Trace the worker queue-drain/dispatch path after the signal wakes it; this probe does not establish frontend readiness or guest rendering."
+}
