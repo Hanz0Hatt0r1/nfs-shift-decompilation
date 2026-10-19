@@ -87,6 +87,12 @@ to up to 32 selected guest targets from any caller. If caller and target filters
 are both set, either match records the event. Each event carries the actual
 caller, callee-entry registers, return address, and direct-call EAX result. The
 frame JSON lists selected `guest_call_trace_targets`.
+`SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS=0x218,0x340` additionally samples up to
+32 32-bit words at those offsets from each selected target's entry ECX. These
+`target_slots` use the same read and last-writer fields as `caller_slots`, but
+are relative to the callee receiver. They make state read by a selected method
+observable even when its caller is not known in advance. Offsets are direct
+receiver-relative reads; they do not follow pointer fields.
 
 The v217/v218 bounded runs reproduce the same 96,082-dispatch, 1,559-function
 host-frame-loop checkpoint with 120 Vulkan clear and 120 present submissions,
@@ -122,6 +128,18 @@ established as the asynchronous completion callback. The pending request is
 active, but the worker/consumer transition that should update readiness remains
 unresolved. See the [activation-frontier analysis](SHIFT_RETAIL_UI_ACTIVATION_FRONTIER_20261019.md)
 and [machine-readable evidence](../evidence/retail_frontier_20261019/entrypoint_probe_v229_v239_async_request_calls.json).
+
+The v240 target-receiver-slot probe follows the consumer call after
+`0x00653480`. It reaches `0x0066bab0` once, which returns one; its selected state
+checks return `1, 0, 0`, then the path calls `0x006880c0` and `0x00650350`.
+There are still no calls to `0x0066b8d0`. The target-slot samples independently
+confirm that `0x00508af0` is called 120 times with receiver `+0x218 == 2` and
+`+0x340 == 1`, returning a value whose low byte is zero each time. The run
+remains at 96,082 dispatches, 1,559 unique functions, four waiting workers,
+120 Vulkan clear/present submissions, zero validation errors, and no guest
+draw translation. This narrows the state-machine path but does not identify a
+completion callback or prove frontend readiness. See the
+[v240 machine record](../evidence/retail_frontier_20261019/entrypoint_probe_v240_consumer_target_slots.json).
 
 The v120 caller-call trace independently maps the common tail of `0x0054be00`:
 the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the
@@ -165,7 +183,8 @@ The stable linux-vulkan GitHub workflow runs these tests, checks the pinned v173
 
 ## Release milestones
 
-Startup frontier metrics cannot stand in for gameplay. v194 and its v215/v217/v218/v219
-replays establish the bounded retail-requested Vulkan clear and queue-present
-milestone. The separate milestones still to measure are first retail draw,
-frontend and offline race.
+Startup frontier metrics cannot stand in for gameplay. v194 and its
+v215/v217/v218/v219/v240 replays establish the bounded retail-requested Vulkan
+clear and queue-present milestone; v240 also narrows the pending UI consumer
+path. The separate milestones still to measure are first retail draw, frontend
+and offline race.

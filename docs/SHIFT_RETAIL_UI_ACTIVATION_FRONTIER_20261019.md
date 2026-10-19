@@ -73,10 +73,30 @@ zero Vulkan validation errors, and no guest draw translation. The [machine
 record](../evidence/retail_frontier_20261019/entrypoint_probe_v229_v239_async_request_calls.json)
 contains per-run call events and hashes. Raw logs remain outside Git.
 
+## Consumer check (v240)
+
+The v240 target-receiver-slot trace confirms the exact readiness receiver and
+the synchronous consumer branch without forcing UI state. `0x00653480` calls
+`0x0066bab0` once; that method returns one after selected checks at
+`0x006550f0`, `0x00655110` and `0x00655130` return `1`, `0` and `0`. The path
+then calls `0x006880c0` and `0x00650350`. No call to `0x0066b8d0` occurs, so its
+cleanup role remains the best-supported interpretation, not a completion
+callback.
+
+The readiness method `0x00508af0` is called 120 times from `0x00508970` on
+receiver `0x27e31d68`; every sample has `+0x218 == 2`, `+0x340 == 1`, and a
+return value with low byte zero. The bounded run still ends at 96,082
+dispatches/1,559 unique functions with four waiting workers, no guest draw, and
+zero Vulkan validation errors. The consumer branch runs, but it does not
+produce the pending readiness transition. The [v240 machine record](../evidence/retail_frontier_20261019/entrypoint_probe_v240_consumer_target_slots.json)
+contains the selected target calls, receiver-slot values, runtime/PE hashes,
+and raw-log hash; full logs and retail files remain outside Git.
+
 ## Next step
 
-Trace the consumer/worker transition after `0x00653480` and the readiness inputs
-read by `0x00508af0`. Keep the UI gate and readiness byte untouched; treat
+Trace the downstream calls from `0x00650350` (`0x0064fef0`, `0x00650290`, and
+`0x0064f530`) and identify which worker/consumer write is expected to clear the
+pending child state. Keep the UI gate and readiness byte untouched; treat
 `0x0066b8d0` as cleanup unless a call path establishes its completion role.
 After the activation route is reached, continue toward the first guest draw
 with its stream/index data, shader bindings and render target. The current

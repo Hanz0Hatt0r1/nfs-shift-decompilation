@@ -622,7 +622,7 @@ int main(int argc, char** argv) {
                             std::vector<uint32_t>{0x10, 0x20, 0xffffffff} &&
                         trace_event.caller == 0x00403100 &&
                         trace_event.function == 0x00685700 &&
-                        trace_event.ecx_entry == 0x00024000 &&
+                        trace_event.ecx_entry == 0x00023000 &&
                         trace_event.caller_ecx == receiver &&
                         trace_event.eax_entry == 0x78563412 &&
                         trace_event.completed &&
@@ -657,9 +657,18 @@ int main(int argc, char** argv) {
         require(setenv("SHIFT_TRACE_GUEST_CALL_TARGETS", "0x00685700", 1) ==
                     0,
                 "could not enable guest call target trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS",
+                       "0x10,0x20,0xffffffff", 1) == 0,
+                "could not configure guest call target slot trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_PROVENANCE", "0x00023010", 1) ==
+                    0,
+                "could not enable target slot writer provenance fixture");
         {
             shift::runtime::RecompiledPcodeModule target_trace_module(argv[1]);
-            require(target_trace_module.call(0x00401000) == 0,
+            constexpr uint32_t receiver = 0x00023000;
+            write_guest_u32(target_trace_module, "ram", receiver + 0x20,
+                            0x50607080);
+            require(target_trace_module.call(0x00403100) == 0,
                     "guest call target trace fixture call failed: " +
                         target_trace_module.last_error());
             const auto snapshot =
@@ -668,18 +677,50 @@ int main(int argc, char** argv) {
                         snapshot.guest_call_trace_caller == 0 &&
                         snapshot.guest_call_trace_targets ==
                             std::vector<uint32_t>{0x00685700} &&
+                        snapshot.guest_call_trace_target_slot_offsets ==
+                            std::vector<uint32_t>{0x10, 0x20, 0xffffffff} &&
                         snapshot.guest_call_trace.size() == 1 &&
                         snapshot.guest_call_trace.front().caller ==
-                            0x00401000 &&
+                            0x00403100 &&
                         snapshot.guest_call_trace.front().function ==
                             0x00685700 &&
+                        snapshot.guest_call_trace.front().ecx_entry ==
+                            receiver &&
                         snapshot.guest_call_trace.front().completed &&
                         snapshot.guest_call_trace.front().has_eax_return &&
                         snapshot.guest_call_trace.front().eax_return ==
-                            0x00001234,
+                            0x78563412 &&
+                        snapshot.guest_call_trace.front().target_slots.size() ==
+                            3 &&
+                        snapshot.guest_call_trace.front().target_slots[0]
+                                .offset == 0x10 &&
+                        snapshot.guest_call_trace.front().target_slots[0]
+                                .has_value &&
+                        snapshot.guest_call_trace.front().target_slots[0]
+                                .value == 0x12345678 &&
+                        snapshot.guest_call_trace.front().target_slots[0]
+                                .has_last_writer &&
+                        snapshot.guest_call_trace.front().target_slots[0]
+                                .last_writer.function == 0x00403100 &&
+                        snapshot.guest_call_trace.front().target_slots[0]
+                                .last_writer.write_address == 0x00023010 &&
+                        snapshot.guest_call_trace.front().target_slots[1]
+                                .offset == 0x20 &&
+                        snapshot.guest_call_trace.front().target_slots[1]
+                                .has_value &&
+                        snapshot.guest_call_trace.front().target_slots[1]
+                                .value == 0x50607080 &&
+                        snapshot.guest_call_trace.front().target_slots[2]
+                                .offset == 0xffffffff &&
+                        !snapshot.guest_call_trace.front().target_slots[2]
+                             .has_value,
                     "guest call target trace did not capture a call from an "
-                    "unselected caller");
+                    "unselected caller and its entry receiver slots");
         }
+        require(unsetenv("SHIFT_TRACE_GUEST_PROVENANCE") == 0,
+                "could not disable target slot writer provenance fixture");
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS") == 0,
+                "could not disable guest call target slot trace fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGETS") == 0,
                 "could not disable guest call target trace fixture");
 

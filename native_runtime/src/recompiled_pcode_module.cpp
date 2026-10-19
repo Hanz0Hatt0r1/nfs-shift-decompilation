@@ -670,6 +670,9 @@ struct RecompiledPcodeModule::Impl {
         if (guest_call_trace_enabled) {
             guest_call_trace_slot_offsets = parse_guest_trace_u32_values(
                 std::getenv("SHIFT_TRACE_GUEST_CALLER_SLOTS"), true);
+            guest_call_trace_target_slot_offsets =
+                parse_guest_trace_u32_values(
+                    std::getenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS"), true);
         }
         static_assert(sizeof(size_t) >= sizeof(uint64_t),
                       "the guest RAM reservation requires a 64-bit host");
@@ -1021,50 +1024,62 @@ struct RecompiledPcodeModule::Impl {
             event.has_return_address = read_guest_u32(
                 "ram", stack_pointer, event.return_address);
         }
-        event.caller_slots.reserve(guest_call_trace_slot_offsets.size());
-        for (const uint32_t slot_offset : guest_call_trace_slot_offsets) {
-            RecompiledGuestCallTraceMemorySlot slot{};
-            slot.offset = slot_offset;
-            const uint64_t address =
-                static_cast<uint64_t>(event.caller_ecx) + slot_offset;
-            if (address <= UINT32_MAX) {
-                slot.has_value = read_guest_u32("ram", address, slot.value);
-                if (guest_write_provenance_enabled_flag) {
-                    const auto writer = guest_target_last_writers.find(
-                        static_cast<uint32_t>(address));
-                    if (writer != guest_target_last_writers.end()) {
-                        const auto& provenance = writer->second;
-                        slot.has_last_writer = true;
-                        slot.last_writer.sequence = provenance.sequence;
-                        slot.last_writer.dispatch_count =
-                            provenance.dispatch_count;
-                        slot.last_writer.function =
-                            provenance.writer_function;
-                        slot.last_writer.ecx_entry = provenance.writer_ecx;
-                        slot.last_writer.has_ecx_entry =
-                            provenance.has_writer_ecx;
-                        slot.last_writer.caller_function =
-                            provenance.writer_caller_function;
-                        slot.last_writer.has_caller_function =
-                            provenance.has_writer_caller_function;
-                        slot.last_writer.call_return_address =
-                            provenance.writer_call_return_address;
-                        slot.last_writer.has_call_return_address =
-                            provenance.has_writer_call_return_address;
-                        slot.last_writer.caller_return_address =
-                            provenance.writer_caller_return_address;
-                        slot.last_writer.has_caller_return_address =
-                            provenance.has_writer_caller_return_address;
-                        slot.last_writer.thread_id = provenance.thread_id;
-                        slot.last_writer.write_address =
-                            provenance.write_address;
-                        slot.last_writer.write_size = provenance.write_size;
-                        slot.last_writer.word_value = provenance.word_value;
+        const auto sample_slots = [&](uint32_t base,
+                                      const std::vector<uint32_t>& offsets) {
+            std::vector<RecompiledGuestCallTraceMemorySlot> slots;
+            slots.reserve(offsets.size());
+            for (const uint32_t slot_offset : offsets) {
+                RecompiledGuestCallTraceMemorySlot slot{};
+                slot.offset = slot_offset;
+                const uint64_t address =
+                    static_cast<uint64_t>(base) + slot_offset;
+                if (address <= UINT32_MAX) {
+                    slot.has_value =
+                        read_guest_u32("ram", address, slot.value);
+                    if (guest_write_provenance_enabled_flag) {
+                        const auto writer = guest_target_last_writers.find(
+                            static_cast<uint32_t>(address));
+                        if (writer != guest_target_last_writers.end()) {
+                            const auto& provenance = writer->second;
+                            slot.has_last_writer = true;
+                            slot.last_writer.sequence = provenance.sequence;
+                            slot.last_writer.dispatch_count =
+                                provenance.dispatch_count;
+                            slot.last_writer.function =
+                                provenance.writer_function;
+                            slot.last_writer.ecx_entry =
+                                provenance.writer_ecx;
+                            slot.last_writer.has_ecx_entry =
+                                provenance.has_writer_ecx;
+                            slot.last_writer.caller_function =
+                                provenance.writer_caller_function;
+                            slot.last_writer.has_caller_function =
+                                provenance.has_writer_caller_function;
+                            slot.last_writer.call_return_address =
+                                provenance.writer_call_return_address;
+                            slot.last_writer.has_call_return_address =
+                                provenance.has_writer_call_return_address;
+                            slot.last_writer.caller_return_address =
+                                provenance.writer_caller_return_address;
+                            slot.last_writer.has_caller_return_address =
+                                provenance.has_writer_caller_return_address;
+                            slot.last_writer.thread_id = provenance.thread_id;
+                            slot.last_writer.write_address =
+                                provenance.write_address;
+                            slot.last_writer.write_size = provenance.write_size;
+                            slot.last_writer.word_value =
+                                provenance.word_value;
+                        }
                     }
                 }
+                slots.push_back(slot);
             }
-            event.caller_slots.push_back(slot);
-        }
+            return slots;
+        };
+        event.caller_slots =
+            sample_slots(event.caller_ecx, guest_call_trace_slot_offsets);
+        event.target_slots = sample_slots(
+            event.ecx_entry, guest_call_trace_target_slot_offsets);
         guest_call_trace_events.push_back(std::move(event));
         return guest_call_trace_events.size() - 1;
     }
@@ -9459,6 +9474,8 @@ struct RecompiledPcodeModule::Impl {
         snapshot.guest_call_trace_targets = guest_call_trace_targets;
         snapshot.guest_call_trace_slot_offsets =
             guest_call_trace_slot_offsets;
+        snapshot.guest_call_trace_target_slot_offsets =
+            guest_call_trace_target_slot_offsets;
         snapshot.guest_call_trace = guest_call_trace_events;
         if (!main_guest_thread.active_functions.empty()) {
             snapshot.main_thread_current_function =
@@ -9817,6 +9834,7 @@ struct RecompiledPcodeModule::Impl {
     uint32_t guest_call_trace_caller = 0;
     std::vector<uint32_t> guest_call_trace_targets;
     std::vector<uint32_t> guest_call_trace_slot_offsets;
+    std::vector<uint32_t> guest_call_trace_target_slot_offsets;
     std::vector<RecompiledGuestCallTraceEvent> guest_call_trace_events;
     uint64_t guest_heap_next_address = kGuestHeapStartAddress;
     uint64_t guest_virtual_next_address = UINT64_C(0x20000000);
