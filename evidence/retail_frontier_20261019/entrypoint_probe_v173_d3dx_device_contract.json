@@ -1,0 +1,82 @@
+{
+  "format": "NFSShift.RetailEntrypointProbe/1",
+  "captured_at": "2026-10-19",
+  "probe": {
+    "name": "v173-d3dx-create-texture-device-contract",
+    "requested_host_frames": 120,
+    "validation_layer_enabled": true,
+    "retail_image_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "result": {
+      "dispatches": 49065,
+      "unique_functions": 1249,
+      "failure": "unimplemented d3dx9_41.dll!D3DXCreateTexture",
+      "failure_function": "0x008391b0",
+      "return_address": "0x00839b53",
+      "call_instruction": "0x00839b4e",
+      "arguments_x86_32": [
+        "0x2001b3f4",
+        "0x00000400",
+        "0x00001000",
+        "0x00000001",
+        "0x00000001",
+        "0x00000015",
+        "0x00000000",
+        "0x27f4a898"
+      ],
+      "decoded_arguments": {
+        "device": "0x2001b3f4",
+        "width": 1024,
+        "height": 4096,
+        "mip_levels": 1,
+        "usage": "D3DUSAGE_RENDERTARGET (0x1)",
+        "format": "D3DFMT_A8R8G8B8 (21)",
+        "pool": "D3DPOOL_DEFAULT (0)",
+        "output_texture_pointer": "0x27f4a898"
+      }
+    },
+    "device_object": {
+      "passed_guest_wrapper": "0x2001b3f4",
+      "wrapper_first_words": [
+        "0x00b1bba8",
+        "0x00000000",
+        "0x10474790",
+        "0x00000000"
+      ],
+      "wrapper_vtable": "0x00b1bba8",
+      "underlying_runtime_device_at_offset_8": "0x10474790",
+      "matches_runtime_device_object_map_directly": false,
+      "runtime_device_object_map": [
+        {
+          "device": "0x10474790",
+          "vtable": "0x104747a0"
+        }
+      ],
+      "wrapper_create_texture_method": {
+        "vtable_index": 23,
+        "vtable_slot": "0x00b1bc04",
+        "guest_function": "0x0084f680",
+        "forwarding_behavior": "Loads the underlying device from wrapper+8, then calls the underlying IDirect3DDevice9 vtable slot at +0x5c with the original CreateTexture arguments."
+      }
+    },
+    "interpretation": "The D3DX argument is a retail game-owned IDirect3DDevice9 forwarding wrapper, not the runtime's raw device object. The wrapper exposes the D3D9 CreateTexture method and forwards it to the runtime device. The failed import has not yet created a texture.",
+    "limits": [
+      "D3DXCreateTexture remains unimplemented; no guest texture object or Vulkan image was created.",
+      "The requested 120-frame interval did not complete.",
+      "No retail D3D9 draw reached Vulkan."
+    ]
+  },
+  "verification": {
+    "build": "cmake --build /tmp/shift-runtime-ui-gate-trace-build --target shift_runtime shift_runtime_recompiled_pcode_module_check -j4",
+    "targeted_test": {
+      "command": "/usr/bin/ctest --test-dir /tmp/shift-runtime-ui-gate-trace-build -R '^shift_runtime_recompiled_pcode_module$' --output-on-failure",
+      "passed": true,
+      "tests_passed": 1,
+      "tests_failed": 0
+    },
+    "git_diff_check": "passed"
+  },
+  "logs": [
+    "shift-probe-v172-import-callsite.log",
+    "shift-probe-v173-d3dx-device-map.log"
+  ]
+}
