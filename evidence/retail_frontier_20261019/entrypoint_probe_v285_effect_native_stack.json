@@ -1,0 +1,58 @@
+{
+  "format": "SHIFT.RetailD3DXEffectNativeStack/1",
+  "probe_version": "v285",
+  "runtime_revision": "207dc38b0e821f9c735334aace46ccb1d9e38a69",
+  "retail_input": {
+    "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "module_set_reference": "entrypoint_probe_v215_supplement_replay.json",
+    "frames_requested": 1,
+    "timeout_seconds": 120,
+    "validation": true
+  },
+  "probe": {
+    "status": "timeout",
+    "exit_code": 124,
+    "pe_image_loaded": true,
+    "dispatches": null,
+    "unique_functions": null,
+    "frames_rendered": null,
+    "log_sha256": "995e5afb959d003e3c48f71228e163fc0a795f830b1642fea3a9cc5ea3bc67d5",
+    "log": "external artifact retail-startup-v285-effect-stack-120.log; only the PE-load diagnostic was emitted",
+    "report": "external artifact retail-startup-v285-effect-stack-120.json"
+  },
+  "live_native_stack_snapshot": {
+    "main_thread": [
+      "rvi_read_bytes",
+      "rvi_read_value",
+      "rvi_0090e4b6",
+      "RecompiledPcodeModule::Impl::dispatch",
+      "rvi_call",
+      "rvi_0090e50d",
+      "RecompiledPcodeModule::Impl::dispatch",
+      "rvi_call",
+      "rvi_009015b0",
+      "RecompiledPcodeModule::Impl::dispatch",
+      "rvi_call",
+      "rvi_006344c0"
+    ],
+    "other_sampled_threads": "blocked in pthread_cond_timedwait under libnvidia-glcore.so.580.178.04",
+    "capture": "GDB thread backtrace of the live shift_runtime process; 12 native frames retained",
+    "full_guest_caller_chain": false
+  },
+  "environment_observation": {
+    "io_pressure_avg10_percent": 94.99,
+    "io_pressure_avg60_percent": 92.84,
+    "io_pressure_avg300_percent": 95.08,
+    "measured_during": "bounded v285 probe"
+  },
+  "interpretation": {
+    "active_stack_is_in_generated_guest_pcode": true,
+    "d3dx_create_effect_call_or_find_next_call_proven": false,
+    "host_frame_loop_reached": false,
+    "guest_draw_translation_proven": false,
+    "vulkan_guest_submission_proven": false,
+    "nvidia_worker_wait_proves_no_gpu_work": false,
+    "io_pressure_caused_timeout": false,
+    "next_step": "Obtain a deeper guest caller chain or decompile 0x0090e4b6, 0x0090e50d, 0x009015b0, and 0x006344c0 before changing effect or Vulkan semantics."
+  }
+}

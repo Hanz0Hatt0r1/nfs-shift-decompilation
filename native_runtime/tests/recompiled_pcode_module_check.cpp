@@ -1044,6 +1044,80 @@ int main(int argc, char** argv) {
         }
 
         {
+            shift::runtime::RecompiledPcodeModule bulk_fill_module(argv[1]);
+            require(bulk_fill_module.load_override_module(argv[9]),
+                    "0x0090e50d bulk-fill override could not be loaded: " +
+                        bulk_fill_module.last_error());
+            constexpr uint32_t stack = 0x00033000;
+            constexpr uint32_t destination = 0x00050003;
+            constexpr uint32_t size = 0x00020000;
+            constexpr uint32_t return_address = 0x00401234;
+            constexpr uint32_t before = destination - 1;
+            constexpr uint32_t after = destination + size;
+            const uint8_t sentinel = 0x7c;
+            require(bulk_fill_module.write_guest("ram", before, 1, &sentinel) &&
+                        bulk_fill_module.write_guest("ram", after, 1, &sentinel),
+                    "could not seed bulk-fill boundary sentinels");
+            write_guest_u32(bulk_fill_module, "ram", stack, return_address);
+            write_guest_u32(bulk_fill_module, "ram", stack + 4, destination);
+            write_guest_u32(bulk_fill_module, "ram", stack + 8, 0x123456a5);
+            write_guest_u32(bulk_fill_module, "ram", stack + 12, size);
+            write_guest_u32(bulk_fill_module, "register", 0x10, stack);
+            write_guest_u32(bulk_fill_module, "register", 0x14, 0x11223344);
+            write_guest_u32(bulk_fill_module, "register", 0x1c, 0x55667788);
+            require(bulk_fill_module.call(0x0090e50d) == 0,
+                    "0x0090e50d bulk-fill override failed: " +
+                        bulk_fill_module.last_error());
+            uint8_t first = 0;
+            uint8_t middle = 0;
+            uint8_t last = 0;
+            uint8_t before_value = 0;
+            uint8_t after_value = 0;
+            require(bulk_fill_module.read_guest("ram", destination, 1, &first) &&
+                        bulk_fill_module.read_guest("ram", destination + size / 2,
+                                                    1, &middle) &&
+                        bulk_fill_module.read_guest("ram", destination + size - 1,
+                                                    1, &last) &&
+                        bulk_fill_module.read_guest("ram", before, 1,
+                                                    &before_value) &&
+                        bulk_fill_module.read_guest("ram", after, 1,
+                                                    &after_value) &&
+                        first == 0xa5 && middle == 0xa5 && last == 0xa5 &&
+                        before_value == sentinel && after_value == sentinel &&
+                        read_guest_u32(bulk_fill_module, "register", 0) ==
+                            destination &&
+                        read_guest_u32(bulk_fill_module, "register", 0x10) ==
+                            stack + 4 &&
+                        read_guest_u32(bulk_fill_module, "register", 0x14) ==
+                            0x11223344 &&
+                        read_guest_u32(bulk_fill_module, "register", 0x1c) ==
+                            0x55667788 &&
+                        read_guest_u32(bulk_fill_module, "register", 0x284) ==
+                            return_address,
+                    "0x0090e50d changed bytes outside the fill or returned "
+                    "incorrect register/stack state");
+
+            constexpr uint32_t zero_stack = stack + 0x20;
+            constexpr uint32_t zero_destination = destination + size + 0x10;
+            write_guest_u32(bulk_fill_module, "ram", zero_stack,
+                            return_address + 1);
+            write_guest_u32(bulk_fill_module, "ram", zero_stack + 4,
+                            zero_destination);
+            write_guest_u32(bulk_fill_module, "ram", zero_stack + 8, 0x100);
+            write_guest_u32(bulk_fill_module, "ram", zero_stack + 12, 0);
+            write_guest_u32(bulk_fill_module, "register", 0x10, zero_stack);
+            require(bulk_fill_module.call(0x0090e50d) == 0 &&
+                        read_guest_u32(bulk_fill_module, "register", 0) ==
+                            zero_destination &&
+                        read_guest_u32(bulk_fill_module, "register", 0x10) ==
+                            zero_stack + 4 &&
+                        read_guest_u32(bulk_fill_module, "register", 0x284) ==
+                            return_address + 1,
+                    "0x0090e50d rejected a zero-length fill or returned "
+                    "incorrect state");
+        }
+
+        {
             shift::runtime::RecompiledPcodeModule ui_cleanup_module(argv[1]);
             require(ui_cleanup_module.load_override_module(argv[9]),
                     "0x00509689 Ghidra supplement could not be loaded: " +

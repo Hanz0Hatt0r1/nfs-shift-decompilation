@@ -514,7 +514,8 @@ add_library(shift_runtime_pcode_frontier MODULE
   pcode_frontier/rvi_0082d5f0.c
   pcode_frontier/rvi_0082f600.c
   pcode_frontier/rvi_0082f780.c
-  pcode_frontier/rvi_00907e4f.c)
+  pcode_frontier/rvi_00907e4f.c
+  pcode_frontier/rvi_0090e50d.c)
 set_target_properties(shift_runtime_pcode_frontier PROPERTIES
   OUTPUT_NAME nfs_shift_pcode_frontier)
 target_include_directories(shift_runtime_pcode_frontier PRIVATE
