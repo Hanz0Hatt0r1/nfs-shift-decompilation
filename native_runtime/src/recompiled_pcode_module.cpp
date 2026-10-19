@@ -1309,6 +1309,8 @@ struct RecompiledPcodeModule::Impl {
                 return close_handle();
             if (name == "KERNEL32.dll!CreateFileA")
                 return create_file_a();
+            if (name == "KERNEL32.dll!CreateDirectoryA")
+                return create_directory_a();
             if (name == "KERNEL32.dll!DeleteFileA")
                 return delete_file_a();
             if (name == "KERNEL32.dll!GetFileSize")
@@ -1472,6 +1474,8 @@ struct RecompiledPcodeModule::Impl {
                 return d3d9_device_add_ref();
             if (name == "d3d9.dll!IDirect3DDevice9::Release")
                 return d3d9_device_release();
+            if (name == "d3d9.dll!IDirect3DDevice9::TestCooperativeLevel")
+                return d3d9_device_test_cooperative_level();
             if (name == "d3d9.dll!IDirect3DDevice9::GetDeviceCaps")
                 return d3d9_device_get_caps();
             if (name == "d3d9.dll!IDirect3DDevice9::GetNumberOfSwapChains")
@@ -2734,7 +2738,7 @@ struct RecompiledPcodeModule::Impl {
             "InterlockedExchange",
             "VirtualAlloc", "VirtualFree",
             "CloseHandle",
-            "CreateFileA", "DeleteFileA", "GetFileSize", "ReadFile",
+            "CreateFileA", "CreateDirectoryA", "DeleteFileA", "GetFileSize", "ReadFile",
             "ReadFileEx",
             "HeapCreate", "HeapAlloc", "HeapReAlloc", "HeapSize", "HeapFree", "GetVersionExA",
             "SetUnhandledExceptionFilter", "LoadLibraryA", "GetModuleHandleA",
@@ -5406,6 +5410,19 @@ struct RecompiledPcodeModule::Impl {
         return return_kernel32_dword(remaining, api, 4);
     }
 
+    int d3d9_device_test_cooperative_level() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::TestCooperativeLevel";
+        uint32_t device_address = 0;
+        if (!read_stack_argument(0, device_address, api)) return -1;
+        if (guest_d3d9_devices.find(device_address) ==
+            guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        return return_kernel32_dword(0, api, 4);
+    }
+
     int d3d9_device_get_number_of_swap_chains() {
         constexpr const char* api =
             "d3d9.dll!IDirect3DDevice9::GetNumberOfSwapChains";
@@ -7099,6 +7116,47 @@ struct RecompiledPcodeModule::Impl {
                                       static_cast<uint64_t>(file_status.st_size)});
         guest_last_error = 0;
         return return_kernel32_dword(handle, api, 28);
+    }
+
+    int create_directory_a() {
+        constexpr const char* api = "KERNEL32.dll!CreateDirectoryA";
+        uint32_t path_address = 0;
+        uint32_t security_attributes = 0;
+        if (!read_stack_argument(0, path_address, api) ||
+            !read_stack_argument(1, security_attributes, api)) {
+            return -1;
+        }
+        if (path_address == 0 || security_attributes != 0) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 8);
+        }
+
+        std::string guest_path;
+        if (!read_guest_ascii(path_address, guest_path, api)) return -1;
+        std::filesystem::path host_path;
+        if (!make_guest_path_candidate(guest_path, host_path, api, true))
+            return return_kernel32_dword(0, api, 8);
+
+        std::error_code error_code;
+        if (std::filesystem::create_directory(host_path, error_code)) {
+            guest_last_error = 0;
+            return return_kernel32_dword(1, api, 8);
+        }
+        if (!error_code) {
+            guest_last_error = 183;
+        } else if (error_code == std::errc::file_exists) {
+            guest_last_error = 183;
+        } else if (error_code == std::errc::no_such_file_or_directory ||
+                   error_code == std::errc::not_a_directory) {
+            guest_last_error = 3;
+        } else if (error_code == std::errc::permission_denied) {
+            guest_last_error = 5;
+        } else if (error_code == std::errc::filename_too_long) {
+            guest_last_error = 206;
+        } else {
+            guest_last_error = 31;
+        }
+        return return_kernel32_dword(0, api, 8);
     }
 
     int delete_file_a() {
@@ -9897,7 +9955,7 @@ struct RecompiledPcodeModule::Impl {
                 }
                 std::snprintf(
                     call, sizeof(call),
-                    "%s{target=0x%08x,return=0x%08x,ecx=0x%08x,eax=0x%08x,edx=0x%08x,edi=0x%08x,eax_return=%s,edi_return=%s,completed=%u%s%s}",
+                    "%s{target=0x%08x,return=0x%08x,ecx=0x%08x,eax=0x%08x,edx=0x%08x,edi=0x%08x,eax_return=%s,edi_return=%s,completed=%u%s%s",
                     index == 0 ? "" : ",", event.function,
                     event.has_return_address ? event.return_address : 0,
                     event.ecx_entry, event.eax_entry, event.edx_entry,
@@ -9906,6 +9964,27 @@ struct RecompiledPcodeModule::Impl {
                     event.is_import ? ",import=" : "",
                     event.is_import ? event.import_name.c_str() : "");
                 error += call;
+                if (!event.string_slots.empty()) {
+                    error += ",strings={";
+                    for (size_t slot_index = 0;
+                         slot_index < event.string_slots.size(); ++slot_index) {
+                        const auto& slot = event.string_slots[slot_index];
+                        if (slot_index != 0) error += ";";
+                        char slot_info[48]{};
+                        std::snprintf(slot_info, sizeof(slot_info),
+                                      "0x%x@0x%08x=", slot.offset,
+                                      slot.has_address ? slot.address : 0);
+                        error += slot_info;
+                        if (slot.has_value) {
+                            error += slot.value;
+                            if (!slot.terminated) error += "...";
+                        } else {
+                            error += "<unreadable>";
+                        }
+                    }
+                    error += "}";
+                }
+                error += "}";
             }
             error += "]";
         }

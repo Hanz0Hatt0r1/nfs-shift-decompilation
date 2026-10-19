@@ -510,6 +510,8 @@ add_library(shift_runtime_pcode_frontier MODULE
   pcode_frontier/rvi_0065f0a0.c
   pcode_frontier/rvi_0082db70.c
   pcode_frontier/rvi_0082dda0.c
+  pcode_frontier/rvi_0082d5f0.c
+  pcode_frontier/rvi_0082f600.c
   pcode_frontier/rvi_0082f780.c
   pcode_frontier/rvi_00907e4f.c)
 set_target_properties(shift_runtime_pcode_frontier PROPERTIES
@@ -535,6 +537,7 @@ if(BUILD_TESTING)
     pcode_frontier/rvi_005095f0.c
     pcode_frontier/rvi_0050967d.c
     pcode_frontier/rvi_0054b560.c
+    pcode_frontier/rvi_0082d5f0.c
     pcode_frontier/rvi_0085b0b0.c
     tests/recompiled_pcode_frontier_block_fixture.c)
   target_include_directories(shift_runtime_test_pcode_frontier_block PRIVATE

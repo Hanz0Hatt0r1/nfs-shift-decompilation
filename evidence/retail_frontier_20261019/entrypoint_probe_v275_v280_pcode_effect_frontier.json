@@ -1,0 +1,132 @@
+{
+  "format": "SHIFT.RetailPcodeEffectFrontier/1",
+  "probe_versions": ["v275", "v276", "v277", "v278", "v279", "v280"],
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "module_set_evidence": "entrypoint_probe_v215_supplement_replay.json",
+  "raw_probe_logs": "local external artifact root; not committed",
+  "probe_bounds": {
+    "v275_v279_frames_requested": 120,
+    "v280_frames_requested": 1,
+    "timeout_seconds": 180,
+    "validation": true,
+    "synthetic_mesh_fixture": true
+  },
+  "runs": [
+    {
+      "version": "v275",
+      "status": "blocked",
+      "dispatches": 524947,
+      "unique_functions": 2009,
+      "blocker": "unimplemented PE import KERNEL32.dll!CreateDirectoryA",
+      "caller": "0x00a631f0",
+      "return_address": "0x00a631fc",
+      "probe_log_sha256": "d61465c7a12a1871672c93335eadaeadb4ff9371eaf3660b4d06b4c601a399b1",
+      "finding": "The newly lowered 0x0082f600 startup path requests creation of render\\shaders\\cache\\; CreateDirectoryA is the next missing import."
+    },
+    {
+      "version": "v276",
+      "status": "blocked",
+      "dispatches": 525622,
+      "unique_functions": 2037,
+      "blocker": "unimplemented PE import d3d9.dll!IDirect3DDevice9::TestCooperativeLevel",
+      "caller": "0x0084f3b0",
+      "return_address": "0x0084f3c1",
+      "probe_log_sha256": "69cf58aef4cb0307c0848435a8d1a3ff37effa53249daea04683917a68131816",
+      "finding": "CreateDirectoryA receives render\\shaders\\cache\\ and returns false because the nested parent path is absent; startup continues to TestCooperativeLevel."
+    },
+    {
+      "version": "v277",
+      "status": "blocked",
+      "dispatches": 525630,
+      "unique_functions": 2040,
+      "blocker": "P-code module has no exported function rvi_0082d5f0 called from guest function 0x0083de30",
+      "probe_log_sha256": "a6a09ab8295bc89838c9a650cc091de1b95ba70f7b7a2a3d53bf4bc8d281534e",
+      "finding": "TestCooperativeLevel completes for the registered runtime device; the next stop is the exact P-code getter at 0x0082d5f0."
+    },
+    {
+      "version": "v278",
+      "status": "blocked",
+      "dispatches": 526429,
+      "unique_functions": 2049,
+      "blocker": "unimplemented PE import d3dx9_41.dll!D3DXCreateEffect",
+      "caller": "0x0083de30",
+      "return_address": "0x0083e3fe",
+      "probe_log_sha256": "45396fbe2a17c31d988c7eff5a0d429c5afa89fd44bea3c02b15a51d1754ed81",
+      "finding": "The lowered 0x0082d5f0 getter completes and startup reaches D3DXCreateEffect."
+    },
+    {
+      "version": "v279",
+      "status": "blocked",
+      "dispatches": 526429,
+      "unique_functions": 2049,
+      "blocker": "unimplemented PE import d3dx9_41.dll!D3DXCreateEffect",
+      "caller": "0x0083de30",
+      "return_address": "0x0083e3fe",
+      "probe_log_sha256": "36a9abdb39e51cc0567656ab1279a96b1b0150343c226694971df2ecba49806f",
+      "finding": "String-slot diagnostics confirm that the effect source pointer is binary data, so ASCII path/string decoding is not applicable."
+    },
+    {
+      "version": "v280",
+      "status": "blocked",
+      "dispatches": 526429,
+      "unique_functions": 2049,
+      "blocker": "unimplemented PE import d3dx9_41.dll!D3DXCreateEffect",
+      "caller": "0x0083de30",
+      "return_address": "0x0083e3fe",
+      "probe_log_sha256": "a1341a0d177a43637192334ebedbac74e4e485d4c8724d3afbb7e305f6400d13",
+      "effect_source": {
+        "guest_address": "0x2c7eea00",
+        "size": 1984,
+        "prefix_32_bytes_hex": "0109fffe0c040000000000000300000002000000e0000000f400000000000000",
+        "first_argument_values_hex": [
+          "0x2001b3f4",
+          "0x2c7eea00",
+          "0x000007c0",
+          "0x00000000",
+          "0x00000000",
+          "0x00000800",
+          "0x00000000",
+          "0x27f4e75c"
+        ],
+        "diagnostic_argument_capture_omits_final_stack_argument": true
+      },
+      "finding": "The effect input is binary; the probe confirms only its tag/offset prefix. No effect object is created, and its interface behavior remains untested."
+    }
+  ],
+  "lowering_provenance": {
+    "revenginstr_revision": "cc308e244a1fa0548920e13dc773f932491648bb",
+    "functions": [
+      {
+        "address": "0x0082f600",
+        "instruction_count": 49,
+        "pcode_operation_count": 160,
+        "instructions_path": "../revenginstr_pcode_supplements_20261019/function_0082f600_ghidra_instructions.json",
+        "instructions_sha256": "7ae3dc187e00ddf0a845433bb10ba86ffa6a158fb14aba0eea1e95859368458a",
+        "generated_source_path": "../../native_runtime/pcode_frontier/rvi_0082f600.c",
+        "generated_source_sha256": "6a93fb80a72129834895481a5cf3aa3d2bc77f50c8991214fc16ae9a5de57efe"
+      },
+      {
+        "address": "0x0082d5f0",
+        "instruction_count": 2,
+        "pcode_operation_count": 6,
+        "instructions_path": "../revenginstr_pcode_supplements_20261019/function_0082d5f0_ghidra_instructions.json",
+        "instructions_sha256": "cb59503497fc0528a5293f49976dcc478c8c9960b7d2d2f8bd722914893468ff",
+        "generated_source_path": "../../native_runtime/pcode_frontier/rvi_0082d5f0.c",
+        "generated_source_sha256": "c0a58c15a8c730a0348913b78d2f196366b640f258c67a14b07be8ed98260c17",
+        "lowered_elf_sha256": "88c664403f94125cf104029f7502370eb149e3264c3fa08f8b6b87e78b3f100b"
+      }
+    ]
+  },
+  "interpretation": {
+    "retail_rendering_proven": false,
+    "host_frame_loop_reached": false,
+    "d3d9_clear_request": null,
+    "d3d9_vulkan_bridge": null,
+    "validation_errors": null,
+    "next_frontier": "Implement or integrate correct binary D3DX effect creation and the interface behavior exercised by the retail caller, then rerun the pinned bounded probe."
+  },
+  "external_artifacts": {
+    "root": "local external artifact root; raw logs, PE, game assets, and full effect buffers are not committed",
+    "effect_binary_capture": "Only the first 32 bytes from v280 were captured; the complete 1984-byte input is not stored in the repository."
+  }
+}

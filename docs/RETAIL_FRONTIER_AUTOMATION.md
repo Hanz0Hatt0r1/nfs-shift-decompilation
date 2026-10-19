@@ -277,6 +277,37 @@ are in the
 All runs remain bounded startup probes before the host-frame loop. They do not
 establish frontend readiness, retail draw translation, or gameplay rendering.
 
+The v275–v280 sequence follows a later cold-start path. v275 adds the exact
+49-instruction P-code body at `0x0082f600` and stops at
+`KERNEL32.dll!CreateDirectoryA` from `0x00a631f0`; the captured path is
+`render\shaders\cache\`. The bounded `CreateDirectoryA` implementation keeps
+the existing guest-root path confinement and single-directory semantics. Its
+failure to create this nested path when parents are absent returns false, after
+which v276 reaches `IDirect3DDevice9::TestCooperativeLevel` from
+`0x0084f3b0`. The method currently returns `D3D_OK` only for a registered
+runtime device. v277 then identifies missing P-code `0x0082d5f0`; its exact
+two-instruction body loads `[ECX+0x680]` and returns. Lowering that function
+through revenginstr advances v278 to `d3dx9_41.dll!D3DXCreateEffect` from
+`0x0083de30`, at 526,429 dispatches / 2,049 unique functions.
+
+The v279/v280 diagnostics establish that the D3DX source argument is binary,
+not an ASCII string. It is 0x7c0 bytes and begins with
+`01 09 ff fe 0c 04 00 00`; v280 records the next 24 bytes in the machine
+evidence. This is consistent with the D3DX binary-effect header and offset
+layout. The import returns no effect object, so subsequent effect-interface
+calls and startup remain untested. The probe is still blocked before the host
+frame loop and reports no retail draw or Vulkan submission. Exact probe hashes,
+function evidence, and the effect prefix are in the
+[v275–v280 machine record](../evidence/retail_frontier_20261019/entrypoint_probe_v275_v280_pcode_effect_frontier.json).
+For the API contract, Microsoft documents that `D3DXCreateEffect` accepts an
+ASCII or binary effect description and returns an `ID3DXEffect` on success;
+Wine's parser reads the binary tag and offset before its structured effect
+parser ([Microsoft API reference](https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dxcreateeffect),
+[Wine effect parser](https://github.com/wine-mirror/wine/blob/master/dlls/d3dx9_36/effect.c)).
+This confirms that implementing the next step requires effect state and
+interface behavior; returning a fabricated success pointer would not be a
+valid compatibility fix.
+
 The v120 caller-call trace independently maps the common tail of `0x0054be00`:
 the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the
 `+0x130` call dispatches `0x00835d80` (D3D9 Present path), 121 times each in a
