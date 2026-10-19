@@ -1,0 +1,43 @@
+{
+  "format": "SHIFT.RetailD3DXEffectBinaryParse/1",
+  "probe_version": "v282",
+  "source_capture": {
+    "probe_version": "v281",
+    "sha256": "74901707d164f3014e8dc72da7232b1076d003ae3288535ca7c8376aec923fa9",
+    "location": "external artifact; no binary payload is committed"
+  },
+  "parser": {
+    "format": "D3DX9 effect binary 9.1",
+    "bounds_checked": true,
+    "synthetic_ctest": "passed"
+  },
+  "parsed": {
+    "parameters": [
+      {"name": "worldviewproj", "annotations": 3},
+      {"name": "world", "annotations": 4}
+    ],
+    "techniques": [
+      {
+        "name": "ShadowGen",
+        "annotations": 5,
+        "passes": [
+          {"name": "Pass0", "annotations": 0, "states": 6}
+        ]
+      }
+    ],
+    "objects": 7,
+    "object_byte_lengths": [0, 5, 5, 12, 10, 404, 144],
+    "shader_resources": [
+      {"usage": 0, "byte_length": 144},
+      {"usage": 0, "byte_length": 404}
+    ]
+  },
+  "interpretation": {
+    "binary_structure_parsed": true,
+    "effect_com_object_created": false,
+    "shader_created_on_vulkan": false,
+    "retail_probe_advanced": false,
+    "retail_rendering_proven": false,
+    "next_step": "Implement ID3DXEffect state and vtable dispatch, then create and bind shaders through the D3D9/Vulkan backend."
+  }
+}

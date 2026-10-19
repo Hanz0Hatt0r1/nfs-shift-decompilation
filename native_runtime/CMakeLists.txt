@@ -477,7 +477,8 @@ endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/recent_physics.cmake)
 
 add_library(shift_recompiled_pcode_module STATIC
-  src/recompiled_pcode_module.cpp)
+  src/recompiled_pcode_module.cpp
+  src/d3dx9_effect_binary.cpp)
 target_include_directories(shift_recompiled_pcode_module PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(shift_recompiled_pcode_module PUBLIC ${CMAKE_DL_LIBS})
@@ -521,6 +522,16 @@ target_include_directories(shift_runtime_pcode_frontier PRIVATE
 target_link_libraries(shift_runtime_pcode_frontier PRIVATE m)
 
 if(BUILD_TESTING)
+  add_executable(shift_runtime_d3dx9_effect_binary_check
+    tests/d3dx9_effect_binary_check.cpp)
+  target_link_libraries(shift_runtime_d3dx9_effect_binary_check PRIVATE
+    shift_recompiled_pcode_module)
+  target_compile_options(shift_runtime_d3dx9_effect_binary_check PRIVATE
+    -Wall -Wextra -Wpedantic)
+  add_test(
+    NAME shift_runtime_d3dx9_effect_binary
+    COMMAND shift_runtime_d3dx9_effect_binary_check)
+
   add_library(shift_runtime_test_pcode_module SHARED
     tests/recompiled_pcode_fixture.c)
   target_include_directories(shift_runtime_test_pcode_module PRIVATE
