@@ -10,6 +10,13 @@ on:
       - "tools/**"
       - "src/**"
       - "tests/**"
+  workflow_dispatch:
+    inputs:
+      run_retail_frontier:
+        description: "Run real retail startup regression on a provisioned self-hosted runner"
+        required: false
+        type: boolean
+        default: false
   pull_request:
     paths:
       - ".github/workflows/linux-vulkan.yml"
@@ -22,6 +29,7 @@ on:
 
 jobs:
   vulkan-smoke:
+    if: github.event_name != 'workflow_dispatch' || !inputs.run_retail_frontier
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -2810,3 +2818,50 @@ jobs:
         with:
           name: linux-vulkan-smoke
           path: out/vulkan
+
+  retail-startup-regression:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_retail_frontier
+    runs-on: [self-hosted, linux, shift-retail]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify provisioned retail dependencies
+        env:
+          SHIFT_RETAIL_PE: ${{ vars.SHIFT_RETAIL_PE }}
+          SHIFT_RETAIL_DATA_ROOT: ${{ vars.SHIFT_RETAIL_DATA_ROOT }}
+          SHIFT_RETAIL_ARTIFACTS: ${{ vars.SHIFT_RETAIL_ARTIFACTS }}
+          SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE: ${{ vars.SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE }}
+        run: |
+          set -euo pipefail
+          : "${SHIFT_RETAIL_PE:?configure SHIFT_RETAIL_PE repository variable}"
+          : "${SHIFT_RETAIL_DATA_ROOT:?configure SHIFT_RETAIL_DATA_ROOT repository variable}"
+          : "${SHIFT_RETAIL_ARTIFACTS:?configure SHIFT_RETAIL_ARTIFACTS repository variable}"
+          : "${SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE:?configure SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE repository variable}"
+          test -r "$SHIFT_RETAIL_PE"
+          test -r "$SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE"
+          test -d "$SHIFT_RETAIL_DATA_ROOT"
+          test -d "$SHIFT_RETAIL_ARTIFACTS"
+      - name: Build and test native runtime incrementally
+        run: |
+          bash tools/build_shift_runtime_cached.sh --build-dir native_runtime/build
+          ctest --test-dir native_runtime/build --output-on-failure -R '^shift_runtime_recompiled_pcode_module$'
+      - name: Execute bounded retail startup and compare v173
+        env:
+          SHIFT_RETAIL_PE: ${{ vars.SHIFT_RETAIL_PE }}
+          SHIFT_RETAIL_DATA_ROOT: ${{ vars.SHIFT_RETAIL_DATA_ROOT }}
+          SHIFT_RETAIL_ARTIFACTS: ${{ vars.SHIFT_RETAIL_ARTIFACTS }}
+          SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE: ${{ vars.SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE }}
+          SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS: ${{ vars.SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/frontier
+          xvfb-run -a python3 tools/retail_frontier.py run \
+            --runtime native_runtime/build/shift_runtime \
+            --artifacts "$SHIFT_RETAIL_ARTIFACTS" \
+            --build-dir native_runtime/build \
+            --pe "$SHIFT_RETAIL_PE" \
+            --game-data "$SHIFT_RETAIL_DATA_ROOT" \
+            --validation --frames 120 --timeout 180 \
+            --baseline evidence/retail_frontier_20261019/shift-probe-v173-d3dx-device-map.log \
+            --log artifacts/frontier/current.log \
+            --output artifacts/frontier/current.json
