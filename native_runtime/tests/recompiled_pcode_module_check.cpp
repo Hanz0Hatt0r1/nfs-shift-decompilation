@@ -167,7 +167,8 @@ void write_pe32_fixture(const std::string& path,
                         bool raise_exception_import = false,
                         bool time_get_time_import = false,
                         bool unknown_first_import = false,
-                        bool read_file_ex_import = false) {
+                        bool read_file_ex_import = false,
+                        bool create_directory_import = false) {
     constexpr size_t file_size = 0x1300;
     constexpr size_t pe_offset = 0x80;
     constexpr size_t optional_offset = pe_offset + 24;
@@ -285,7 +286,8 @@ void write_pe32_fixture(const std::string& path,
                    : (raise_exception_import ? "RaiseException" : "Sleep"));
     write_import_name(0x640, "GetSystemTimeAsFileTime");
     write_import_name(0x660, "GetCurrentProcessId");
-    write_import_name(0x680, "GetCurrentThreadId");
+    write_import_name(0x680, create_directory_import ? "CreateDirectoryA"
+                                                     : "GetCurrentThreadId");
     write_import_name(0x6a0, "GetTickCount");
     write_import_name(0x6c0, "QueryPerformanceCounter");
     write_import_name(0x6e0, "QueryPerformanceFrequency");
@@ -567,11 +569,18 @@ int main(int argc, char** argv) {
              ("shift-runtime-readfileex-" + std::to_string(getpid()) +
               ".exe"))
                 .string();
+        const std::string create_directory_fixture_path =
+            (std::filesystem::temp_directory_path() /
+             ("shift-runtime-createdirectory-" + std::to_string(getpid()) +
+              ".exe"))
+                .string();
         write_pe32_fixture(argv[4]);
         write_pe32_fixture(argv[5], true);
         write_pe32_fixture(argv[6], false, true);
         write_pe32_fixture(read_file_ex_fixture_path, false, false, false,
                            true);
+        write_pe32_fixture(create_directory_fixture_path, false, false,
+                           false, false, true);
         write_system_parameters_info_pe32_fixture(argv[7]);
         write_d3d9_pe32_fixture(argv[8]);
         shift::runtime::RecompiledPcodeModule duplicate_module(argv[1]);
@@ -875,6 +884,33 @@ int main(int argc, char** argv) {
                 "could not disable guest string argument trace fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGETS") == 0,
                 "could not disable guest string argument target fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALLER", "0x00402100", 1) == 0,
+                "could not enable failed guest string trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_STRING_SLOTS", "0x4", 1) == 0,
+                "could not configure failed guest string trace slots");
+        {
+            shift::runtime::RecompiledPcodeModule failed_string_trace_module(
+                argv[1]);
+            constexpr uint32_t string_address = 0x00035000;
+            constexpr uint32_t stack_argument_address = 0x00033024;
+            constexpr char expected_error_string[] = "effect-source-fixture";
+            write_guest_u32(failed_string_trace_module, "ram",
+                            stack_argument_address, string_address);
+            write_guest_bytes(
+                failed_string_trace_module, string_address,
+                reinterpret_cast<const uint8_t*>(expected_error_string),
+                sizeof(expected_error_string));
+            require(failed_string_trace_module.call(0x00402100) != 0 &&
+                        failed_string_trace_module.last_error().find(
+                            "strings={0x4@0x00035000=effect-source-fixture}") !=
+                            std::string::npos,
+                    "failed guest call omitted its captured string argument: " +
+                        failed_string_trace_module.last_error());
+        }
+        require(unsetenv("SHIFT_TRACE_GUEST_CALLER") == 0,
+                "could not disable failed guest string trace fixture");
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_STRING_SLOTS") == 0,
+                "could not disable failed guest string trace slots");
 
         {
             shift::runtime::RecompiledPcodeModule crc_loop_module(argv[1]);
@@ -1264,6 +1300,28 @@ int main(int argc, char** argv) {
                         read_guest_u32(state_machine_block_module, "register",
                                        0x284) == getter_return_address,
                     "0x0085b0b0 did not preserve EAX high bytes or emulate RET");
+
+            constexpr uint32_t pointer_getter_receiver = 0x0003e000;
+            constexpr uint32_t pointer_getter_stack = 0x0003e100;
+            constexpr uint32_t pointer_getter_return = 0x00408105;
+            constexpr uint32_t pointer_getter_value = 0x27f4e380;
+            write_guest_u32(state_machine_block_module, "ram",
+                            pointer_getter_receiver + 0x680,
+                            pointer_getter_value);
+            write_guest_u32(state_machine_block_module, "register", 0x04,
+                            pointer_getter_receiver);
+            write_guest_u32(state_machine_block_module, "register", 0x10,
+                            pointer_getter_stack);
+            write_guest_u32(state_machine_block_module, "ram",
+                            pointer_getter_stack, pointer_getter_return);
+            require(state_machine_block_module.call(0x0082d5f0) == 0 &&
+                        read_guest_u32(state_machine_block_module, "register",
+                                       0x00) == pointer_getter_value &&
+                        read_guest_u32(state_machine_block_module, "register",
+                                       0x10) == pointer_getter_stack + 4 &&
+                        read_guest_u32(state_machine_block_module, "register",
+                                       0x284) == pointer_getter_return,
+                    "0x0082d5f0 did not load receiver +0x680 and emulate RET");
         }
 
         require(setenv("SHIFT_TRACE_GUEST_CALL_TARGETS", "0x00685700", 1) ==
@@ -1560,6 +1618,62 @@ int main(int argc, char** argv) {
                     std::to_string(image.import_function_count) + ", stubs=" +
                     std::to_string(image.import_stub_base));
 
+        shift::runtime::RecompiledPcodeModule create_directory_module(argv[1]);
+        const auto create_directory_image =
+            create_directory_module.load_pe32_image(
+                create_directory_fixture_path);
+        require(create_directory_image.import_function_count == 81,
+                "CreateDirectoryA fixture imports were not parsed");
+        const uint32_t create_directory_api = read_guest_u32(
+            create_directory_module, "ram",
+            create_directory_image.image_base + 0x2c10);
+        constexpr uint32_t create_directory_path_address = 0x00035000;
+        const std::string create_directory_name =
+            "create-directory-fixture-" + std::to_string(getpid());
+        const std::filesystem::path create_directory_host_path =
+            std::filesystem::current_path() / create_directory_name;
+        std::filesystem::remove_all(create_directory_host_path);
+        const std::string create_directory_guest_path =
+            "C:\\" + create_directory_name;
+        write_guest_bytes(
+            create_directory_module, create_directory_path_address,
+            reinterpret_cast<const uint8_t*>(create_directory_guest_path.c_str()),
+            create_directory_guest_path.size() + 1);
+        require(invoke_import(create_directory_module, create_directory_api,
+                              {create_directory_path_address, 0}) == 1 &&
+                    std::filesystem::is_directory(create_directory_host_path),
+                "CreateDirectoryA did not create one guest-root directory");
+        require(invoke_import(create_directory_module, create_directory_api,
+                              {create_directory_path_address, 0}) == 0 &&
+                    invoke_import(create_directory_module, 0xf0000240, {}) ==
+                        183,
+                "CreateDirectoryA did not report an existing directory");
+
+        const std::string missing_parent_guest_path =
+            "C:\\create-directory-missing-parent-" +
+            std::to_string(getpid()) + "\\child";
+        write_guest_bytes(
+            create_directory_module, create_directory_path_address,
+            reinterpret_cast<const uint8_t*>(missing_parent_guest_path.c_str()),
+            missing_parent_guest_path.size() + 1);
+        require(invoke_import(create_directory_module, create_directory_api,
+                              {create_directory_path_address, 0}) == 0 &&
+                    invoke_import(create_directory_module, 0xf0000240, {}) ==
+                        3,
+                "CreateDirectoryA recursively created missing parents");
+
+        constexpr char escaped_create_directory_path[] = "C:\\..\\outside";
+        write_guest_bytes(
+            create_directory_module, create_directory_path_address,
+            reinterpret_cast<const uint8_t*>(escaped_create_directory_path),
+            sizeof(escaped_create_directory_path));
+        require(invoke_import(create_directory_module, create_directory_api,
+                              {create_directory_path_address, 0}) == 0 &&
+                    invoke_import(create_directory_module, 0xf0000240, {}) ==
+                        5,
+                "CreateDirectoryA allowed a path outside the guest root");
+        std::filesystem::remove_all(create_directory_host_path);
+
         write_guest_u32(module, "register", 0x10ac, 0x12345678);
         require(read_guest_u32(module, "register", 0x10ac) == 0x12345678,
                 "P-code register bank did not cover extended x86 state");
@@ -1813,38 +1927,38 @@ int main(int argc, char** argv) {
                         std::filesystem::current_path() /
                         "Documents and Settings/SHIFT/My Documents"),
                 "SHGetFolderPathA returned an unexpected path or skipped creation");
-        constexpr uint32_t create_directory_path_address = 0x00035000;
+        constexpr uint32_t sh_create_directory_path_address = 0x00035000;
         constexpr char create_directory_path[] =
             "C:\\Documents and Settings\\SHIFT\\My Documents\\SHCreateDirectoryExFixture";
         write_guest_bytes(
-            d3d9_module, create_directory_path_address,
+            d3d9_module, sh_create_directory_path_address,
             reinterpret_cast<const uint8_t*>(create_directory_path),
             sizeof(create_directory_path));
         const std::filesystem::path expected_created_directory =
             std::filesystem::current_path() /
             "Documents and Settings/SHIFT/My Documents/SHCreateDirectoryExFixture";
         require(invoke_import(d3d9_module, sh_create_directory,
-                              {0, create_directory_path_address, 0}) == 0 &&
+                              {0, sh_create_directory_path_address, 0}) == 0 &&
                     std::filesystem::is_directory(expected_created_directory) &&
                     invoke_import(d3d9_module, sh_create_directory,
-                                  {0, create_directory_path_address, 0}) == 183,
+                                  {0, sh_create_directory_path_address, 0}) == 183,
                 "SHCreateDirectoryExA did not create directories or report existing paths");
         constexpr char relative_create_directory_path[] = "relative-path";
         write_guest_bytes(
-            d3d9_module, create_directory_path_address,
+            d3d9_module, sh_create_directory_path_address,
             reinterpret_cast<const uint8_t*>(relative_create_directory_path),
             sizeof(relative_create_directory_path));
         require(invoke_import(d3d9_module, sh_create_directory,
-                              {0, create_directory_path_address, 0}) == 161,
+                              {0, sh_create_directory_path_address, 0}) == 161,
                 "SHCreateDirectoryExA accepted a relative path");
-        constexpr char escaped_create_directory_path[] =
+        constexpr char escaped_sh_create_directory_path[] =
             "C:\\..\\outside-guest-root";
         write_guest_bytes(
-            d3d9_module, create_directory_path_address,
-            reinterpret_cast<const uint8_t*>(escaped_create_directory_path),
-            sizeof(escaped_create_directory_path));
+            d3d9_module, sh_create_directory_path_address,
+            reinterpret_cast<const uint8_t*>(escaped_sh_create_directory_path),
+            sizeof(escaped_sh_create_directory_path));
         require(invoke_import(d3d9_module, sh_create_directory,
-                              {0, create_directory_path_address, 0}) == 5,
+                              {0, sh_create_directory_path_address, 0}) == 5,
                 "SHCreateDirectoryExA allowed creation outside the guest root");
         std::filesystem::remove_all(std::filesystem::current_path() /
                                     "Documents and Settings");
@@ -2154,6 +2268,8 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", created_device_output_address);
         const uint32_t created_device_vtable = read_guest_u32(
             d3d9_provider_module, "ram", created_device);
+        const uint32_t test_cooperative_level = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 3 * 4);
         const uint32_t device_get_device_caps = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 7 * 4);
         const uint32_t created_device_add_ref = read_guest_u32(
@@ -2209,6 +2325,9 @@ int main(int argc, char** argv) {
         write_guest_u32(d3d9_provider_module, "ram", viewport_output_address,
                         0x7a7a7a7a);
         require(created_device != 0 && created_device_vtable != 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  test_cooperative_level,
+                                  {created_device}) == 0 &&
                     invoke_import(d3d9_provider_module,
                                   get_number_of_swap_chains,
                                   {created_device}) == 1 &&
