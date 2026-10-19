@@ -1,0 +1,26 @@
+Loaded PE32 image into P-code guest RAM: base=0x00400000 size=10047488 entry=0x0090488a sections=6 imports=411
+{
+  "format": "SHIFT.NativeRuntimeBootstrap/1",
+  "geometry_source": "MGEO",
+  "geometry_vertices": 3,
+  "geometry_indices": 3,
+  "material_mode": false,
+  "bundle_set_mode": false,
+  "scene_set_mode": false,
+  "material_draws": 0,
+  "world_transform_draws": 0,
+  "affine_world_transform_draws": 0,
+  "input_script_mode": false,
+  "input_script_steps": 0,
+  "continuous_mode": false,
+  "frame_limit_enabled": true,
+  "runtime_loop_schedule": "one-native-fixed-step-per-render-frame-non-retail",
+  "solver_frame_mode": false,
+  "body_solver_export_frame_mode": false,
+  "generated_body_constraint_frame_mode": false,
+  "constraint_sample_relation_frame_mode": false,
+  "constraint_relation_reset_frame_mode": false,
+  "post_solve_projection_mode": false,
+  "frames_requested": 120
+}
+shift_runtime: recompiled PE32 entry point 0x0090488a failed after 48531 P-code function dispatches across 1221 unique functions: P-code RAM read at 0x00000000 size 4 touched reserved low memory; guest_stack=[0x009046aa -> 0x00a69160 -> 0x0040d6a0 -> 0x0040a5d0 -> 0x00832a80 -> 0x00835050 -> 0x00853790 -> 0x00838410]; guest_frame={entry_EAX=0x27f4a770,entry_ECX=0x27f4a590,entry_EDX=0x00000000,entry_ESP=0x7ffde570,entry_ESI=0x27f4a660}; guest_regs={EAX=0x00000000,ECX=0x00000000,EDX=0x00000000,EBX=0x7ffdeea8,ESP=0x7ffde564,EBP=0x7ffde56c,ESI=0x27f4a660,EDI=0x00000000}; guest_esi_memory@0x27f4a660=00b1c320,00000001,00000000,00000500,000002d0,00000015; guest write provenance=[0x00be2534(word=0x00be2534,current=0x00000000,last_writer=none)]

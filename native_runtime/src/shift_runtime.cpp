@@ -71,6 +71,34 @@ std::string format_guest_call_stack(const std::vector<uint32_t>& functions) {
     return text.str();
 }
 
+std::string format_json_string(const std::string& value) {
+    static constexpr char hex[] = "0123456789abcdef";
+    std::string escaped;
+    escaped.reserve(value.size() + 2);
+    escaped.push_back('"');
+    for (unsigned char character : value) {
+        switch (character) {
+            case '"': escaped += "\\\""; break;
+            case '\\': escaped += "\\\\"; break;
+            case '\b': escaped += "\\b"; break;
+            case '\f': escaped += "\\f"; break;
+            case '\n': escaped += "\\n"; break;
+            case '\r': escaped += "\\r"; break;
+            case '\t': escaped += "\\t"; break;
+            default:
+                if (character < 0x20) {
+                    escaped += "\\u00";
+                    escaped.push_back(hex[character >> 4]);
+                    escaped.push_back(hex[character & 0x0f]);
+                } else {
+                    escaped.push_back(static_cast<char>(character));
+                }
+        }
+    }
+    escaped.push_back('"');
+    return escaped;
+}
+
 std::string format_ui_state_gate_trace(
     const std::vector<shift::runtime::RecompiledUiStateGateTraceEvent>& events) {
     std::ostringstream text;
@@ -207,6 +235,46 @@ std::string format_ui_state_gate_trace(
         }
         text << ",\"completed\":"
              << (event.completed ? "true" : "false") << '}';
+    }
+    text << ']';
+    return text.str();
+}
+
+std::string format_guest_call_trace(
+    const std::vector<shift::runtime::RecompiledGuestCallTraceEvent>& events) {
+    std::ostringstream text;
+    text << '[';
+    for (size_t index = 0; index < events.size(); ++index) {
+        const auto& event = events[index];
+        if (index != 0) text << ',';
+        text << "{\"dispatch_count\":" << event.dispatch_count
+             << ",\"thread_id\":\""
+             << format_guest_address(event.thread_id)
+             << "\",\"function\":\""
+             << format_guest_address(event.function)
+             << "\",\"caller\":\""
+             << format_guest_address(event.caller)
+             << "\",\"return_address\":";
+        if (event.has_return_address) {
+            text << '"' << format_guest_address(event.return_address) << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"ecx_entry\":\""
+             << format_guest_address(event.ecx_entry)
+             << "\",\"eax_entry\":\""
+             << format_guest_address(event.eax_entry)
+             << "\",\"edx_entry\":\""
+             << format_guest_address(event.edx_entry)
+             << "\",\"is_import\":"
+             << (event.is_import ? "true" : "false")
+             << ",\"import_name\":";
+        if (event.is_import) {
+            text << format_json_string(event.import_name);
+        } else {
+            text << "null";
+        }
+        text << '}';
     }
     text << ']';
     return text.str();
@@ -1543,6 +1611,8 @@ InputScript load_input_script(const std::string& path) {
 struct Window {
     xcb_connection_t* connection = nullptr;
     xcb_window_t window = XCB_WINDOW_NONE;
+    uint32_t width = kWindowWidth;
+    uint32_t height = kWindowHeight;
 
     void create() {
         int screen_index = 0;
@@ -1600,6 +1670,21 @@ struct Window {
 
         xcb_map_window(connection, window);
         xcb_flush(connection);
+    }
+
+    void resize(uint32_t requested_width, uint32_t requested_height) {
+        if (!connection || window == XCB_WINDOW_NONE ||
+            requested_width == 0 || requested_height == 0 ||
+            requested_width > UINT16_MAX || requested_height > UINT16_MAX) {
+            throw std::runtime_error("invalid guest D3D9 window size");
+        }
+        const uint32_t values[] = {requested_width, requested_height};
+        xcb_configure_window(
+            connection, window,
+            XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, values);
+        xcb_flush(connection);
+        width = requested_width;
+        height = requested_height;
     }
 
     void poll(bool& quit, InputState& input, std::string& quit_reason) {
@@ -1773,6 +1858,8 @@ struct Runtime {
     VkInstance instance = VK_NULL_HANDLE;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkPhysicalDevice physical = VK_NULL_HANDLE;
+    VkPhysicalDeviceProperties physical_properties{};
+    VkPhysicalDeviceFeatures physical_features{};
     VkDevice device = VK_NULL_HANDLE;
     VkQueue graphics_queue = VK_NULL_HANDLE;
     VkQueue present_queue = VK_NULL_HANDLE;
@@ -1782,10 +1869,17 @@ struct Runtime {
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     VkFormat swapchain_format = VK_FORMAT_UNDEFINED;
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT;
+    VkSampleCountFlagBits guest_sample_count = VK_SAMPLE_COUNT_1_BIT;
     VkExtent2D swapchain_extent{};
     std::vector<VkImage> swapchain_images;
     std::vector<VkImageView> swapchain_views;
+    std::vector<Image> multisample_color_images;
     std::vector<Image> depth_images;
+    bool guest_d3d9_device_bound = false;
+    uint32_t guest_d3d9_focus_window = 0;
+    uint32_t guest_d3d9_behavior_flags = 0;
+    shift::runtime::RecompiledGuestD3d9PresentationParameters
+        guest_d3d9_presentation{};
 
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
@@ -1811,6 +1905,217 @@ struct Runtime {
 
     bool material_mode = false;
     std::vector<MaterialDraw> material_draws;
+
+    shift::runtime::RecompiledGuestD3d9AdapterInfo
+    recompiled_d3d9_adapter_info() const {
+        shift::runtime::RecompiledGuestD3d9AdapterInfo adapter_info{};
+        auto& caps = adapter_info.caps;
+        caps[0] = 1;  // D3DDEVTYPE_HAL: this Vulkan physical device.
+        caps[22] = physical_properties.limits.maxImageDimension2D;
+        caps[23] = physical_properties.limits.maxImageDimension2D;
+        caps[24] = physical_properties.limits.maxImageDimension3D;
+        caps[27] = physical_features.samplerAnisotropy
+                       ? static_cast<uint32_t>(std::floor(
+                             physical_properties.limits.maxSamplerAnisotropy))
+                       : 1;
+        const float max_point_size = physical_features.largePoints
+                                         ? physical_properties.limits
+                                               .pointSizeRange[1]
+                                         : 1.0f;
+        std::memcpy(&caps[44], &max_point_size, sizeof(max_point_size));
+        caps[47] = physical_properties.limits.maxVertexInputBindings;
+        caps[48] = physical_properties.limits.maxVertexInputBindingStride;
+        caps[60] = physical_properties.limits.maxColorAttachments;
+        adapter_info.vendor_id = physical_properties.vendorID;
+        adapter_info.device_id = physical_properties.deviceID;
+        adapter_info.description = physical_properties.deviceName;
+        adapter_info.bgra8_sample_count_mask = image_sample_count_mask(
+            VK_FORMAT_B8G8R8A8_UNORM,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        adapter_info.d24s8_sample_count_mask = image_sample_count_mask(
+            VK_FORMAT_D24_UNORM_S8_UINT,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        adapter_info.backend_context = const_cast<Runtime*>(this);
+        adapter_info.create_device =
+            &Runtime::create_guest_d3d9_device_callback;
+        uint32_t surface_format_count = 0;
+        vk_check(vkGetPhysicalDeviceSurfaceFormatsKHR(
+                     physical, surface, &surface_format_count, nullptr),
+                 "surface formats failed while building D3D9 capabilities");
+        std::vector<VkSurfaceFormatKHR> surface_formats(surface_format_count);
+        if (!surface_formats.empty()) {
+            vk_check(vkGetPhysicalDeviceSurfaceFormatsKHR(
+                         physical, surface, &surface_format_count,
+                         surface_formats.data()),
+                     "surface formats failed while building D3D9 capabilities");
+        }
+        const bool bgra8_presentable = std::any_of(
+            surface_formats.begin(), surface_formats.end(),
+            [](const VkSurfaceFormatKHR& format) {
+                return format.format == VK_FORMAT_B8G8R8A8_UNORM &&
+                       format.colorSpace ==
+                           VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+            });
+        VkFormatProperties bgra8_properties{};
+        vkGetPhysicalDeviceFormatProperties(
+            physical, VK_FORMAT_B8G8R8A8_UNORM, &bgra8_properties);
+        adapter_info.supports_bgra8_surface =
+            bgra8_presentable &&
+            (bgra8_properties.optimalTilingFeatures &
+             VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0;
+        return adapter_info;
+    }
+
+    static bool create_guest_d3d9_device_callback(
+        void* context, uint32_t focus_window, uint32_t behavior_flags,
+        shift::runtime::RecompiledGuestD3d9PresentationParameters& parameters,
+        std::string& error) {
+        auto* runtime = static_cast<Runtime*>(context);
+        return runtime && runtime->create_guest_d3d9_device(
+                              focus_window, behavior_flags, parameters,
+                              error);
+    }
+
+    bool image_supports_samples(VkFormat format, VkImageUsageFlags usage,
+                                VkSampleCountFlagBits samples) const {
+        return (image_sample_count_mask(format, usage) & samples) != 0;
+    }
+
+    uint32_t image_sample_count_mask(VkFormat format,
+                                    VkImageUsageFlags usage) const {
+        VkImageFormatProperties properties{};
+        const VkResult result = vkGetPhysicalDeviceImageFormatProperties(
+            physical, format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+            usage, 0, &properties);
+        return result == VK_SUCCESS
+                   ? static_cast<uint32_t>(properties.sampleCounts)
+                   : 0;
+    }
+
+    bool create_guest_d3d9_device(
+        uint32_t focus_window, uint32_t behavior_flags,
+        shift::runtime::RecompiledGuestD3d9PresentationParameters& parameters,
+        std::string& error) {
+        constexpr uint32_t guest_window = 0x00030008;
+        guest_d3d9_focus_window = focus_window;
+        guest_d3d9_behavior_flags = behavior_flags;
+        guest_d3d9_presentation = parameters;
+        if (guest_d3d9_device_bound || !window || !window->connection ||
+            window->window == XCB_WINDOW_NONE || !physical || !device ||
+            surface == VK_NULL_HANDLE) {
+            error = "Vulkan presentation surface is not ready";
+            return false;
+        }
+        if (focus_window != guest_window) {
+            error = "CreateDevice focus window does not match the guest window";
+            return false;
+        }
+        if (parameters.device_window != guest_window) {
+            error = "CreateDevice presentation window does not match the guest window";
+            return false;
+        }
+        if (parameters.windowed > 1) {
+            error = "invalid D3D9 windowed flag";
+            return false;
+        }
+        if (parameters.back_buffer_format != 21 &&
+            parameters.back_buffer_format != 22) {
+            error = "unsupported D3D9 backbuffer format";
+            return false;
+        }
+        if (parameters.back_buffer_count > 1) {
+            error = "D3D9 backbuffer count exceeds the Vulkan profile";
+            return false;
+        }
+        if (parameters.swap_effect != 1) {
+            error = "unsupported D3D9 swap effect";
+            return false;
+        }
+        if (parameters.multisample_quality != 0) {
+            error = "unsupported D3D9 multisample quality";
+            return false;
+        }
+        if (parameters.enable_auto_depth_stencil > 1) {
+            error = "invalid D3D9 auto depth/stencil flag";
+            return false;
+        }
+
+        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
+        if (parameters.multisample_type != 0) {
+            if (parameters.multisample_type == 1 ||
+                parameters.multisample_type > 64 ||
+                (parameters.multisample_type &
+                 (parameters.multisample_type - 1)) != 0) {
+                error = "unsupported D3D9 multisample type";
+                return false;
+            }
+            samples = static_cast<VkSampleCountFlagBits>(
+                parameters.multisample_type);
+        }
+        if (!image_supports_samples(
+                VK_FORMAT_B8G8R8A8_UNORM,
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                    (samples == VK_SAMPLE_COUNT_1_BIT
+                         ? 0
+                         : VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT),
+                samples)) {
+            error = "Vulkan backbuffer format does not support requested MSAA";
+            return false;
+        }
+
+        VkFormat requested_depth_format = depth_format;
+        if (parameters.enable_auto_depth_stencil != 0) {
+            if (parameters.auto_depth_stencil_format != 75) {
+                error = "unsupported retail D3D9 depth/stencil format";
+                return false;
+            }
+            requested_depth_format = VK_FORMAT_D24_UNORM_S8_UINT;
+            if (!image_supports_samples(
+                    requested_depth_format,
+                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, samples)) {
+                error = "Vulkan D24S8 format does not support requested MSAA";
+                return false;
+            }
+        } else if (!image_supports_samples(
+                       requested_depth_format,
+                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                       samples)) {
+            error = "Vulkan depth format does not support requested MSAA";
+            return false;
+        }
+
+        const uint32_t requested_width = parameters.back_buffer_width == 0
+                                             ? window->width
+                                             : parameters.back_buffer_width;
+        const uint32_t requested_height = parameters.back_buffer_height == 0
+                                              ? window->height
+                                              : parameters.back_buffer_height;
+        try {
+            if (requested_width != window->width ||
+                requested_height != window->height) {
+                window->resize(requested_width, requested_height);
+            }
+            if (swapchain == VK_NULL_HANDLE) create_swapchain();
+        } catch (const std::exception& exception) {
+            error = exception.what();
+            return false;
+        }
+        if (swapchain_extent.width == 0 || swapchain_extent.height == 0) {
+            error = "Vulkan swapchain has an empty extent";
+            return false;
+        }
+
+        parameters.back_buffer_width = swapchain_extent.width;
+        parameters.back_buffer_height = swapchain_extent.height;
+        parameters.back_buffer_count =
+            parameters.back_buffer_count == 0 ? 1
+                                               : parameters.back_buffer_count;
+        guest_sample_count = samples;
+        depth_format = requested_depth_format;
+        guest_d3d9_presentation = parameters;
+        guest_d3d9_device_bound = true;
+        return true;
+    }
 
     void create_instance() {
         const std::vector<const char*> extensions = {
@@ -1895,6 +2200,8 @@ struct Runtime {
             throw std::runtime_error(
                 "no Vulkan device supports graphics + XCB presentation");
         }
+        vkGetPhysicalDeviceProperties(physical, &physical_properties);
+        vkGetPhysicalDeviceFeatures(physical, &physical_features);
 
         const float priority = 1.0f;
         std::array<VkDeviceQueueCreateInfo, 2> queue_infos{};
@@ -1920,6 +2227,11 @@ struct Runtime {
         create.pQueueCreateInfos = queue_infos.data();
         create.enabledExtensionCount = 1;
         create.ppEnabledExtensionNames = device_extensions;
+        VkPhysicalDeviceFeatures enabled_features{};
+        enabled_features.samplerAnisotropy =
+            physical_features.samplerAnisotropy;
+        enabled_features.largePoints = physical_features.largePoints;
+        create.pEnabledFeatures = &enabled_features;
 
         vk_check(vkCreateDevice(
                      physical, &create, nullptr, &device),
@@ -2050,7 +2362,8 @@ struct Runtime {
         VkImageCreateFlags flags,
         VkImageUsageFlags usage,
         VkImageAspectFlags aspect,
-        Image& out) {
+        Image& out,
+        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT) {
         VkImageCreateInfo create{};
         create.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         create.flags = flags;
@@ -2059,7 +2372,7 @@ struct Runtime {
         create.extent = {width, height, 1};
         create.mipLevels = 1;
         create.arrayLayers = layers;
-        create.samples = VK_SAMPLE_COUNT_1_BIT;
+        create.samples = samples;
         create.tiling = VK_IMAGE_TILING_OPTIMAL;
         create.usage = usage;
         create.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -2103,10 +2416,32 @@ struct Runtime {
         if ((properties.optimalTilingFeatures &
              VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0u) {
             throw std::runtime_error(
-                "VK_FORMAT_D32_SFLOAT depth attachment unsupported");
+                "selected depth/stencil attachment format is unsupported");
+        }
+
+        if (guest_sample_count != VK_SAMPLE_COUNT_1_BIT) {
+            multisample_color_images.resize(swapchain_views.size());
+            for (auto& image : multisample_color_images) {
+                create_image(
+                    swapchain_extent.width,
+                    swapchain_extent.height,
+                    1,
+                    swapchain_format,
+                    0,
+                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                        VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
+                    VK_IMAGE_ASPECT_COLOR_BIT,
+                    image,
+                    guest_sample_count);
+            }
         }
 
         depth_images.resize(swapchain_views.size());
+        const VkImageAspectFlags depth_aspect =
+            depth_format == VK_FORMAT_D24_UNORM_S8_UINT ||
+                    depth_format == VK_FORMAT_D32_SFLOAT_S8_UINT
+                ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT
+                : VK_IMAGE_ASPECT_DEPTH_BIT;
         for (auto& image : depth_images) {
             create_image(
                 swapchain_extent.width,
@@ -2115,8 +2450,9 @@ struct Runtime {
                 depth_format,
                 0,
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                VK_IMAGE_ASPECT_DEPTH_BIT,
-                image);
+                depth_aspect,
+                image,
+                guest_sample_count);
         }
     }
 
@@ -2479,15 +2815,21 @@ struct Runtime {
     void create_render_pass() {
         if (render_pass != VK_NULL_HANDLE) return;
 
-        VkAttachmentDescription attachments[2]{};
+        const bool multisampled =
+            guest_sample_count != VK_SAMPLE_COUNT_1_BIT;
+        std::array<VkAttachmentDescription, 3> attachments{};
         attachments[0].format = swapchain_format;
-        attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[0].samples = guest_sample_count;
         attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[0].storeOp = multisampled
+                                     ? VK_ATTACHMENT_STORE_OP_DONT_CARE
+                                     : VK_ATTACHMENT_STORE_OP_STORE;
         attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        attachments[0].finalLayout = multisampled
+                                         ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+                                         : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         attachments[1].format = depth_format;
-        attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[1].samples = guest_sample_count;
         attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -2495,6 +2837,14 @@ struct Runtime {
         attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         attachments[1].finalLayout =
             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        if (multisampled) {
+            attachments[2].format = swapchain_format;
+            attachments[2].samples = VK_SAMPLE_COUNT_1_BIT;
+            attachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            attachments[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+            attachments[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            attachments[2].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        }
 
         VkAttachmentReference color_ref{};
         color_ref.attachment = 0;
@@ -2503,11 +2853,15 @@ struct Runtime {
         depth_ref.attachment = 1;
         depth_ref.layout =
             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        VkAttachmentReference resolve_ref{};
+        resolve_ref.attachment = 2;
+        resolve_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         VkSubpassDescription subpass{};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &color_ref;
+        subpass.pResolveAttachments = multisampled ? &resolve_ref : nullptr;
         subpass.pDepthStencilAttachment = &depth_ref;
 
         VkSubpassDependency dependency{};
@@ -2525,8 +2879,8 @@ struct Runtime {
 
         VkRenderPassCreateInfo pass{};
         pass.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        pass.attachmentCount = 2;
-        pass.pAttachments = attachments;
+        pass.attachmentCount = multisampled ? 3 : 2;
+        pass.pAttachments = attachments.data();
         pass.subpassCount = 1;
         pass.pSubpasses = &subpass;
         pass.dependencyCount = 1;
@@ -2668,7 +3022,7 @@ struct Runtime {
         VkPipelineMultisampleStateCreateInfo multisample{};
         multisample.sType =
             VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-        multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        multisample.rasterizationSamples = guest_sample_count;
 
         VkPipelineDepthStencilStateCreateInfo depth_state{};
         depth_state.sType =
@@ -2857,16 +3211,30 @@ struct Runtime {
             throw std::runtime_error(
                 "depth image count does not match swapchain image count");
         }
+        const bool multisampled =
+            guest_sample_count != VK_SAMPLE_COUNT_1_BIT;
+        if (multisampled &&
+            multisample_color_images.size() != swapchain_views.size()) {
+            throw std::runtime_error(
+                "multisample color image count does not match the swapchain");
+        }
         framebuffers.resize(swapchain_views.size());
         for (size_t i = 0; i < swapchain_views.size(); ++i) {
-            const VkImageView attachments[2] = {
-                swapchain_views[i], depth_images[i].view
-            };
+            std::array<VkImageView, 3> attachments{};
+            uint32_t attachment_count = 2;
+            if (multisampled) {
+                attachments = {multisample_color_images[i].view,
+                               depth_images[i].view, swapchain_views[i]};
+                attachment_count = 3;
+            } else {
+                attachments[0] = swapchain_views[i];
+                attachments[1] = depth_images[i].view;
+            }
             VkFramebufferCreateInfo create{};
             create.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
             create.renderPass = render_pass;
-            create.attachmentCount = 2;
-            create.pAttachments = attachments;
+            create.attachmentCount = attachment_count;
+            create.pAttachments = attachments.data();
             create.width = swapchain_extent.width;
             create.height = swapchain_extent.height;
             create.layers = 1;
@@ -2931,14 +3299,15 @@ struct Runtime {
         pass.framebuffer = framebuffers[image_index];
         pass.renderArea.extent = swapchain_extent;
 
-        VkClearValue clear[2]{};
+        std::array<VkClearValue, 3> clear{};
         clear[0].color.float32[0] = 0.018f;
         clear[0].color.float32[1] = 0.022f;
         clear[0].color.float32[2] = 0.032f;
         clear[0].color.float32[3] = 1.0f;
         clear[1].depthStencil.depth = 1.0f;
-        pass.clearValueCount = 2;
-        pass.pClearValues = clear;
+        pass.clearValueCount =
+            guest_sample_count == VK_SAMPLE_COUNT_1_BIT ? 2 : 3;
+        pass.pClearValues = clear.data();
 
         vkCmdBeginRenderPass(
             command, &pass, VK_SUBPASS_CONTENTS_INLINE);
@@ -3109,6 +3478,10 @@ struct Runtime {
             image.destroy();
         }
         depth_images.clear();
+        for (auto& image : multisample_color_images) {
+            image.destroy();
+        }
+        multisample_color_images.clear();
         if (pipeline) {
             vkDestroyPipeline(device, pipeline, nullptr);
         }
@@ -3372,24 +3745,6 @@ int main(int argc, char** argv) {
                           << recompiled_pe_image_info.import_function_count
                           << '\n';
             }
-            if (args.recompiled_entrypoint_enabled) {
-                const int result = recompiled_module->call_pe32_entry_point();
-                if (result != 0) {
-                    throw std::runtime_error(
-                        "recompiled PE32 entry point " +
-                        format_guest_address(
-                            recompiled_pe_image_info.entry_point) +
-                        " failed after " +
-                        std::to_string(
-                            recompiled_module->dispatched_function_count()) +
-                        " P-code function dispatches across " +
-                        std::to_string(recompiled_module
-                                           ->unique_dispatched_function_count()) +
-                        " unique functions: " +
-                        recompiled_module->last_error());
-                }
-                ++recompiled_pe_entry_point_invocations;
-            }
         }
 
         const bool input_script_mode =
@@ -3544,7 +3899,34 @@ int main(int argc, char** argv) {
         runtime.create_instance();
         runtime.create_surface();
         runtime.create_device();
-        runtime.create_swapchain();
+        if (recompiled_module) {
+            const auto adapter_info = runtime.recompiled_d3d9_adapter_info();
+            if (!recompiled_module->set_guest_d3d9_adapter_info(
+                    adapter_info)) {
+                throw std::runtime_error(recompiled_module->last_error());
+            }
+        }
+        if (recompiled_module && args.recompiled_entrypoint_enabled) {
+            const int result = recompiled_module->call_pe32_entry_point();
+            if (result != 0) {
+                throw std::runtime_error(
+                    "recompiled PE32 entry point " +
+                    format_guest_address(
+                        recompiled_pe_image_info.entry_point) +
+                    " failed after " +
+                    std::to_string(
+                        recompiled_module->dispatched_function_count()) +
+                    " P-code function dispatches across " +
+                    std::to_string(recompiled_module
+                                       ->unique_dispatched_function_count()) +
+                    " unique functions: " +
+                    recompiled_module->last_error());
+            }
+            ++recompiled_pe_entry_point_invocations;
+        }
+        if (runtime.swapchain == VK_NULL_HANDLE) {
+            runtime.create_swapchain();
+        }
         runtime.create_depth_resources();
         runtime.create_render_pass();
 
@@ -4176,6 +4558,60 @@ int main(int argc, char** argv) {
                     ? "cooperative-host-coroutines"
                     : "disabled")
             << "\",\n"
+            << "  \"guest_d3d9_device\": {\n"
+            << "    \"bound\": "
+            << (runtime.guest_d3d9_device_bound ? "true" : "false")
+            << ",\n"
+            << "    \"focus_window\": \""
+            << format_guest_address(runtime.guest_d3d9_focus_window)
+            << "\",\n"
+            << "    \"behavior_flags\": "
+            << runtime.guest_d3d9_behavior_flags << ",\n"
+            << "    \"presentation_parameters\": {\n"
+            << "      \"back_buffer_width\": "
+            << runtime.guest_d3d9_presentation.back_buffer_width << ",\n"
+            << "      \"back_buffer_height\": "
+            << runtime.guest_d3d9_presentation.back_buffer_height << ",\n"
+            << "      \"back_buffer_format\": "
+            << runtime.guest_d3d9_presentation.back_buffer_format << ",\n"
+            << "      \"back_buffer_count\": "
+            << runtime.guest_d3d9_presentation.back_buffer_count << ",\n"
+            << "      \"multisample_type\": "
+            << runtime.guest_d3d9_presentation.multisample_type << ",\n"
+            << "      \"multisample_quality\": "
+            << runtime.guest_d3d9_presentation.multisample_quality << ",\n"
+            << "      \"swap_effect\": "
+            << runtime.guest_d3d9_presentation.swap_effect << ",\n"
+            << "      \"device_window\": \""
+            << format_guest_address(
+                   runtime.guest_d3d9_presentation.device_window)
+            << "\",\n"
+            << "      \"windowed\": "
+            << (runtime.guest_d3d9_presentation.windowed != 0
+                    ? "true"
+                    : "false")
+            << ",\n"
+            << "      \"enable_auto_depth_stencil\": "
+            << (runtime.guest_d3d9_presentation.enable_auto_depth_stencil != 0
+                    ? "true"
+                    : "false")
+            << ",\n"
+            << "      \"auto_depth_stencil_format\": "
+            << runtime.guest_d3d9_presentation.auto_depth_stencil_format
+            << ",\n"
+            << "      \"flags\": "
+            << runtime.guest_d3d9_presentation.flags << ",\n"
+            << "      \"fullscreen_refresh_rate\": "
+            << runtime.guest_d3d9_presentation.fullscreen_refresh_rate
+            << ",\n"
+            << "      \"presentation_interval\": "
+            << runtime.guest_d3d9_presentation.presentation_interval << "\n"
+            << "    },\n"
+            << "    \"vulkan_sample_count\": "
+            << static_cast<uint32_t>(runtime.guest_sample_count) << ",\n"
+            << "    \"vulkan_depth_format\": "
+            << static_cast<uint32_t>(runtime.depth_format) << "\n"
+            << "  },\n"
             << "  \"recompiled_guest_scheduler_state\": {\n"
             << "    \"entry_point_started\": "
             << (guest_scheduler_state.entry_point_started ? "true" : "false")
@@ -4229,6 +4665,65 @@ int main(int argc, char** argv) {
             << "    \"ui_state_gate_trace\": "
             << format_ui_state_gate_trace(
                    guest_scheduler_state.ui_state_gate_trace)
+            << ",\n"
+            << "    \"d3d9_create_device_attempted\": "
+            << (guest_scheduler_state.d3d9_create_device_attempted
+                    ? "true"
+                    : "false")
+            << ",\n"
+            << "    \"d3d9_create_device_callback_called\": "
+            << (guest_scheduler_state.d3d9_create_device_callback_called
+                    ? "true"
+                    : "false")
+            << ",\n"
+            << "    \"d3d9_create_device_hresult\": \""
+            << format_guest_address(
+                   guest_scheduler_state.d3d9_create_device_hresult)
+            << "\",\n"
+            << "    \"d3d9_create_device_rejection\": "
+            << format_json_string(
+                   guest_scheduler_state.d3d9_create_device_rejection)
+            << ",\n"
+            << "    \"d3d9_clear_request\": {\"call_count\": "
+            << guest_scheduler_state.d3d9_clear_call_count
+            << ", \"flags\": \""
+            << format_guest_address(
+                   guest_scheduler_state.d3d9_last_clear_flags)
+            << "\", \"color\": \""
+            << format_guest_address(
+                   guest_scheduler_state.d3d9_last_clear_color)
+            << "\", \"depth_bits\": \""
+            << format_guest_address(
+                   guest_scheduler_state.d3d9_last_clear_depth_bits)
+            << "\", \"stencil\": "
+            << guest_scheduler_state.d3d9_last_clear_stencil
+            << ", \"rect_count\": "
+            << guest_scheduler_state.d3d9_last_clear_rect_count << "},\n"
+            << "    \"last_load_library\": {\"name\": "
+            << format_json_string(
+                   guest_scheduler_state.last_load_library_name)
+            << ", \"handle\": \""
+            << format_guest_address(
+                   guest_scheduler_state.last_load_library_handle)
+            << "\", \"last_error\": "
+            << guest_scheduler_state.last_load_library_error << "},\n"
+            << "    \"guest_call_trace_enabled\": "
+            << (guest_scheduler_state.guest_call_trace_enabled
+                    ? "true"
+                    : "false")
+            << ",\n"
+            << "    \"guest_call_trace_truncated\": "
+            << (guest_scheduler_state.guest_call_trace_truncated
+                    ? "true"
+                    : "false")
+            << ",\n"
+            << "    \"guest_call_trace_caller\": \""
+            << format_guest_address(
+                   guest_scheduler_state.guest_call_trace_caller)
+            << "\",\n"
+            << "    \"guest_call_trace\": "
+            << format_guest_call_trace(
+                   guest_scheduler_state.guest_call_trace)
             << ",\n"
             << "    \"ready_thread_count\": "
             << guest_scheduler_state.ready_thread_count << ",\n"

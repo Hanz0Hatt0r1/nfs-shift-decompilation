@@ -57,9 +57,16 @@ constexpr uint32_t kImportStubStride = 0x10;
 constexpr uint32_t kRetailUiStateGateAddress = 0x0050ceb0;
 constexpr uint32_t kRetailUiStateGateHelperAddress = 0x0050c880;
 constexpr size_t kRetailUiStateGateTraceLimit = 8192;
+constexpr size_t kGuestCallTraceLimit = 8192;
 constexpr uint32_t kGuestProcessHeapHandle = 0x00010000;
 constexpr uint32_t kGuestCurrentProcessPseudoHandle = UINT32_MAX;
 constexpr uint32_t kGuestCurrentThreadPseudoHandle = UINT32_MAX - 1;
+// ponytail: use an opaque guest HWND until D3D9 consumes the native window.
+constexpr uint32_t kGuestDesktopWindowHandle = 0x00030000;
+constexpr uint32_t kGuestSyntheticIconHandle = 0x00030004;
+constexpr uint32_t kGuestSyntheticWindowHandle = 0x00030008;
+constexpr uint32_t kGuestSyntheticGdiObjectBase = 0x00030010;
+constexpr uint32_t kGuestSyntheticDisplayDcBase = 0x00030040;
 constexpr uint32_t kGuestFileHandleBase = 0x00050000;
 constexpr uint32_t kGuestEventHandleBase = 0x00060000;
 constexpr uint32_t kGuestSemaphoreHandleBase = 0x00070000;
@@ -67,10 +74,13 @@ constexpr uint32_t kGuestTimerPeriodMs = 1;
 constexpr uint32_t kGuestTimerNoError = 0;
 constexpr uint32_t kGuestTimerErrNoCanDo = 97;
 constexpr uint32_t kD3dErrInvalidCall = 0x8876086c;
+constexpr uint32_t kD3dErrNotFound = 0x88760866;
 constexpr uint32_t kD3dErrNotAvailable = 0x8876086a;
 constexpr uint32_t kD3dErrInvalidDevice = 0x88760870;
 constexpr uint32_t kD3dFormatX8R8G8B8 = 22;
 constexpr size_t kD3dCaps9Size = 304;
+constexpr size_t kD3dAdapterIdentifier9Size = 1100;
+static_assert(kD3dCaps9Size == 76 * sizeof(uint32_t));
 constexpr uint32_t kCsidlPersonal = 5;
 constexpr uint32_t kCsidlFlagCreate = 0x8000;
 constexpr uint32_t kCsidlFlagDontVerify = 0x4000;
@@ -501,6 +511,33 @@ struct RecompiledPcodeModule::Impl {
         uint32_t vtable_address = 0;
         uint32_t references = 1;
     };
+    struct GuestD3D9Device {
+        uint32_t vtable_address = 0;
+        uint32_t direct3d_interface = 0;
+        uint32_t references = 1;
+        uint32_t focus_window = 0;
+        uint32_t behavior_flags = 0;
+        uint32_t vertex_shader_address = 0;
+        uint32_t pixel_shader_address = 0;
+        std::unordered_map<uint32_t, uint32_t> textures;
+        std::unordered_map<uint32_t, uint32_t> render_targets;
+        uint32_t depth_surface_address = 0;
+        std::unordered_map<uint64_t, uint32_t> sampler_states;
+        RecompiledGuestD3d9PresentationParameters presentation;
+        uint32_t clear_call_count = 0;
+        uint32_t last_clear_flags = 0;
+        uint32_t last_clear_color = 0;
+        uint32_t last_clear_depth_bits = 0;
+        uint32_t last_clear_stencil = 0;
+        uint32_t last_clear_rect_count = 0;
+    };
+    struct GuestD3D9Surface {
+        uint32_t vtable_address = 0;
+        uint32_t device_address = 0;
+        uint32_t references = 1;
+        uint32_t render_target_index = 0;
+        bool depth_stencil = false;
+    };
     struct GuestFiber {
         uint32_t data = 0;
     };
@@ -548,6 +585,18 @@ struct RecompiledPcodeModule::Impl {
         if (const char* enabled = std::getenv("SHIFT_TRACE_UI_STATE_GATE");
             enabled && *enabled && std::strcmp(enabled, "0") != 0) {
             ui_state_gate_trace_enabled = true;
+        }
+        if (const char* caller = std::getenv("SHIFT_TRACE_GUEST_CALLER");
+            caller && *caller) {
+            char* parse_end = nullptr;
+            errno = 0;
+            const unsigned long long value =
+                std::strtoull(caller, &parse_end, 0);
+            if (errno == 0 && parse_end && *parse_end == '\0' &&
+                value > 0 && value <= UINT32_MAX) {
+                guest_call_trace_caller = static_cast<uint32_t>(value);
+                guest_call_trace_enabled = true;
+            }
         }
         static_assert(sizeof(size_t) >= sizeof(uint64_t),
                       "the guest RAM reservation requires a 64-bit host");
@@ -845,6 +894,51 @@ struct RecompiledPcodeModule::Impl {
         return true;
     }
 
+    bool set_guest_d3d9_adapter_info(
+        const RecompiledGuestD3d9AdapterInfo& adapter_info) {
+        if (execution_started || call_depth != 0) {
+            error = "cannot configure the guest D3D9 adapter after execution starts";
+            return false;
+        }
+        guest_d3d9_adapter_info = adapter_info;
+        guest_d3d9_adapter_info_available = true;
+        error.clear();
+        return true;
+    }
+
+    void record_guest_call_trace(uint32_t target,
+                                 const std::string& import_name = {}) {
+        if (!guest_call_trace_enabled || active_guest_functions.empty() ||
+            active_guest_functions.back() != guest_call_trace_caller) {
+            return;
+        }
+        if (guest_call_trace_events.size() >= kGuestCallTraceLimit) {
+            guest_call_trace_truncated = true;
+            return;
+        }
+
+        RecompiledGuestCallTraceEvent event{};
+        event.dispatch_count = function_count;
+        event.thread_id = current_guest_thread_id;
+        event.function = target;
+        event.caller = guest_call_trace_caller;
+        event.is_import = !import_name.empty();
+        event.import_name = import_name;
+        (void)read_guest_u32("register", kX86EcxRegisterOffset,
+                             event.ecx_entry);
+        (void)read_guest_u32("register", kX86EaxRegisterOffset,
+                             event.eax_entry);
+        (void)read_guest_u32("register", kX86EdxRegisterOffset,
+                             event.edx_entry);
+        uint32_t stack_pointer = 0;
+        if (read_guest_u32("register", kX86EspRegisterOffset,
+                           stack_pointer)) {
+            event.has_return_address = read_guest_u32(
+                "ram", stack_pointer, event.return_address);
+        }
+        guest_call_trace_events.push_back(std::move(event));
+    }
+
     int dispatch(uint64_t target) {
         if (target > std::numeric_limits<uint32_t>::max()) {
             error = "P-code call target exceeds the x86-32 address space";
@@ -861,6 +955,7 @@ struct RecompiledPcodeModule::Impl {
             static_cast<uint32_t>(target));
         if (imported != import_traps.end()) {
             const auto& name = imported->second;
+            record_guest_call_trace(static_cast<uint32_t>(target), name);
             if (name == "KERNEL32.dll!GetSystemTimeAsFileTime")
                 return get_system_time_as_file_time();
             if (name == "KERNEL32.dll!GetCurrentProcessId")
@@ -970,6 +1065,8 @@ struct RecompiledPcodeModule::Impl {
                 return get_version_ex_a();
             if (name == "KERNEL32.dll!SetUnhandledExceptionFilter")
                 return set_unhandled_exception_filter();
+            if (name == "KERNEL32.dll!LoadLibraryA")
+                return load_library_a();
             if (name == "KERNEL32.dll!GetModuleHandleA")
                 return get_module_handle_a();
             if (name == "KERNEL32.dll!GetCurrentDirectoryA")
@@ -1046,9 +1143,27 @@ struct RecompiledPcodeModule::Impl {
                 return get_code_page_info();
             if (name == "KERNEL32.dll!GetStringTypeW")
                 return get_string_type_w();
+            if (name == "KERNEL32.dll!OutputDebugStringA")
+                return output_debug_string_a();
+            if (name == "USER32.dll!GetDesktopWindow")
+                return return_kernel32_dword(
+                    kGuestDesktopWindowHandle,
+                    "USER32.dll!GetDesktopWindow");
+            if (name == "USER32.dll!LoadIconW") return load_icon_w();
+            if (name == "USER32.dll!RegisterClassExW")
+                return register_class_ex_w();
+            if (name == "USER32.dll!CreateWindowExW")
+                return create_window_ex_w();
+            if (name == "USER32.dll!ClipCursor") return clip_cursor();
+            if (name == "USER32.dll!ShowWindow") return show_window();
             if (name == "USER32.dll!PeekMessageW") return peek_message_w();
             if (name == "USER32.dll!SystemParametersInfoA")
                 return system_parameters_info_a();
+            if (name == "GDI32.dll!CreateDCA") return create_dca();
+            if (name == "GDI32.dll!DeleteDC") return delete_dc();
+            if (name == "GDI32.dll!ExtEscape") return ext_escape();
+            if (name == "GDI32.dll!GetStockObject")
+                return get_stock_object();
             if (name == "SHELL32.dll!SHGetFolderPathA" ||
                 name == "shell32.dll!SHGetFolderPathA")
                 return sh_get_folder_path_a();
@@ -1067,6 +1182,8 @@ struct RecompiledPcodeModule::Impl {
                 return d3d9_release();
             if (name == "d3d9.dll!IDirect3D9::GetAdapterCount")
                 return d3d9_get_adapter_count();
+            if (name == "d3d9.dll!IDirect3D9::CheckDeviceType")
+                return d3d9_check_device_type();
             if (name == "d3d9.dll!IDirect3D9::GetAdapterModeCount")
                 return d3d9_get_adapter_mode_count();
             if (name == "d3d9.dll!IDirect3D9::CheckDeviceFormat")
@@ -1081,6 +1198,38 @@ struct RecompiledPcodeModule::Impl {
                 return d3d9_get_adapter_identifier();
             if (name == "d3d9.dll!IDirect3D9::GetDeviceCaps")
                 return d3d9_get_device_caps();
+            if (name == "d3d9.dll!IDirect3D9::CreateDevice")
+                return d3d9_create_device();
+            if (name == "d3d9.dll!IDirect3DDevice9::AddRef")
+                return d3d9_device_add_ref();
+            if (name == "d3d9.dll!IDirect3DDevice9::Release")
+                return d3d9_device_release();
+            if (name == "d3d9.dll!IDirect3DDevice9::GetNumberOfSwapChains")
+                return d3d9_device_get_number_of_swap_chains();
+            if (name == "d3d9.dll!IDirect3DDevice9::SetPixelShader")
+                return d3d9_device_set_shader(true);
+            if (name == "d3d9.dll!IDirect3DDevice9::SetVertexShader")
+                return d3d9_device_set_shader(false);
+            if (name == "d3d9.dll!IDirect3DDevice9::GetTexture")
+                return d3d9_device_get_texture();
+            if (name == "d3d9.dll!IDirect3DDevice9::GetRenderTarget")
+                return d3d9_device_get_render_target();
+            if (name == "d3d9.dll!IDirect3DDevice9::GetBackBuffer")
+                return d3d9_device_get_back_buffer();
+            if (name == "d3d9.dll!IDirect3DDevice9::GetDepthStencilSurface")
+                return d3d9_device_get_depth_stencil_surface();
+            if (name == "d3d9.dll!IDirect3DDevice9::GetViewport")
+                return d3d9_device_get_viewport();
+            if (name == "d3d9.dll!IDirect3DDevice9::SetSamplerState")
+                return d3d9_device_set_sampler_state();
+            if (name == "d3d9.dll!IDirect3DSurface9::AddRef")
+                return d3d9_surface_add_ref();
+            if (name == "d3d9.dll!IDirect3DSurface9::Release")
+                return d3d9_surface_release();
+            if (name == "d3d9.dll!IDirect3DSurface9::GetDesc")
+                return d3d9_surface_get_desc();
+            if (name == "d3d9.dll!IDirect3DDevice9::Clear")
+                return d3d9_device_clear();
             if (name == "imagehlp.dll!SymSetOptions")
                 return sym_set_options();
             if (name == "imagehlp.dll!SymInitialize")
@@ -1096,6 +1245,16 @@ struct RecompiledPcodeModule::Impl {
             if (name == "imagehlp.dll!SymGetLineFromAddr64")
                 return sym_get_line_from_addr64();
             error = "unimplemented PE import " + imported->second;
+            if (!guest_last_load_library_name.empty()) {
+                char module_result[80]{};
+                std::snprintf(
+                    module_result, sizeof(module_result),
+                    "; last LoadLibraryA(\"%s\") returned 0x%08x (error %u)",
+                    guest_last_load_library_name.c_str(),
+                    guest_last_load_library_handle,
+                    guest_last_load_library_error);
+                error += module_result;
+            }
             if (!active_guest_functions.empty()) {
                 char address[48]{};
                 std::snprintf(address, sizeof(address),
@@ -1106,7 +1265,7 @@ struct RecompiledPcodeModule::Impl {
             uint32_t esp = 0;
             if (read_guest_u32("register", kX86EspRegisterOffset, esp)) {
                 error += " args=[";
-                for (uint32_t index = 0; index < 6; ++index) {
+                for (uint32_t index = 0; index < 8; ++index) {
                     uint32_t argument = 0;
                     if (!read_guest_u32("ram",
                                         static_cast<uint64_t>(esp) + 4 +
@@ -1279,6 +1438,7 @@ struct RecompiledPcodeModule::Impl {
                 ui_state_gate_trace_truncated = true;
             }
         }
+        record_guest_call_trace(static_cast<uint32_t>(target));
         const char* trace_allocations =
             std::getenv("SHIFT_TRACE_GUEST_ALLOCATIONS");
         if (trace_allocations && *trace_allocations &&
@@ -2127,7 +2287,7 @@ struct RecompiledPcodeModule::Impl {
             "CloseHandle",
             "CreateFileA", "DeleteFileA", "GetFileSize", "ReadFile",
             "HeapCreate", "HeapAlloc", "HeapReAlloc", "HeapSize", "HeapFree", "GetVersionExA",
-            "SetUnhandledExceptionFilter", "GetModuleHandleA",
+            "SetUnhandledExceptionFilter", "LoadLibraryA", "GetModuleHandleA",
             "GetModuleFileNameA", "GetProcAddress",
             "TlsAlloc", "TlsGetValue",
             "TlsSetValue", "TlsFree",
@@ -2144,7 +2304,8 @@ struct RecompiledPcodeModule::Impl {
             "FreeEnvironmentStrings", "FreeEnvironmentStringsA",
             "FreeEnvironmentStringsW", "WideCharToMultiByte", "GetLastError",
             "SetLastError", "RaiseException", "GetACP", "IsValidCodePage", "GetCPInfo",
-            "GetStringTypeW", "MultiByteToWideChar", "LCMapStringW"};
+            "GetStringTypeW", "MultiByteToWideChar", "LCMapStringW",
+            "OutputDebugStringA"};
         return supported.find(name) != supported.end();
     }
 
@@ -4187,6 +4348,42 @@ struct RecompiledPcodeModule::Impl {
         return return_kernel32_dword(count, api, 12);
     }
 
+    int d3d9_check_device_type() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3D9::CheckDeviceType";
+        uint32_t interface_address = 0;
+        uint32_t adapter = 0;
+        uint32_t device_type = 0;
+        uint32_t adapter_format = 0;
+        uint32_t back_buffer_format = 0;
+        uint32_t windowed = 0;
+        if (!read_stack_argument(0, interface_address, api) ||
+            !read_stack_argument(1, adapter, api) ||
+            !read_stack_argument(2, device_type, api) ||
+            !read_stack_argument(3, adapter_format, api) ||
+            !read_stack_argument(4, back_buffer_format, api) ||
+            !read_stack_argument(5, windowed, api)) {
+            return -1;
+        }
+        if (guest_d3d9_interfaces.find(interface_address) ==
+            guest_d3d9_interfaces.end()) {
+            error = std::string(api) + " received an invalid interface pointer";
+            return -1;
+        }
+        if (adapter != 0 || device_type != 1 ||
+            (windowed != 0 && windowed != 1)) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 24);
+        }
+        if (!guest_d3d9_adapter_info_available ||
+            !guest_d3d9_adapter_info.supports_bgra8_surface ||
+            adapter_format != kD3dFormatX8R8G8B8 ||
+            (back_buffer_format != 21 &&
+             back_buffer_format != kD3dFormatX8R8G8B8)) {
+            return return_kernel32_dword(kD3dErrNotAvailable, api, 24);
+        }
+        return return_kernel32_dword(0, api, 24);
+    }
+
     int d3d9_check_device_format() {
         constexpr const char* api =
             "d3d9.dll!IDirect3D9::CheckDeviceFormat";
@@ -4289,7 +4486,7 @@ struct RecompiledPcodeModule::Impl {
             error = std::string(api) + " received an invalid interface pointer";
             return -1;
         }
-        if (adapter != 0 || multisample_type > 16) {
+        if (adapter != 0 || multisample_type > 16 || windowed > 1) {
             return return_kernel32_dword(kD3dErrInvalidCall, api, 28);
         }
         if (device_type != 1) {
@@ -4301,12 +4498,32 @@ struct RecompiledPcodeModule::Impl {
             return return_kernel32_dword(kD3dErrInvalidCall, api, 28);
         }
 
-        // Multisample support is a device capability. Without the D3D9
-        // backend, report it unavailable and leave the optional quality-level
-        // output untouched.
-        (void)surface_format;
+        if (!guest_d3d9_adapter_info_available ||
+            !guest_d3d9_adapter_info.supports_bgra8_surface) {
+            return return_kernel32_dword(kD3dErrNotAvailable, api, 28);
+        }
+        uint32_t sample_count_mask = 0;
+        if (surface_format == 21 || surface_format == kD3dFormatX8R8G8B8) {
+            sample_count_mask =
+                guest_d3d9_adapter_info.bgra8_sample_count_mask;
+        } else if (surface_format == 75) {
+            sample_count_mask =
+                guest_d3d9_adapter_info.d24s8_sample_count_mask;
+        }
+        const uint32_t sample_bit = multisample_type == 0
+                                        ? 1
+                                        : multisample_type;
+        if (multisample_type == 1 || sample_bit > 64 ||
+            (sample_bit & (sample_bit - 1)) != 0 ||
+            (sample_count_mask & sample_bit) == 0) {
+            return return_kernel32_dword(kD3dErrNotAvailable, api, 28);
+        }
+        if (quality_levels_address != 0 &&
+            !write_guest_u32("ram", quality_levels_address, 1)) {
+            return -1;
+        }
         (void)windowed;
-        return return_kernel32_dword(kD3dErrNotAvailable, api, 28);
+        return return_kernel32_dword(0, api, 28);
     }
 
     int d3d9_get_adapter_display_mode() {
@@ -4360,16 +4577,723 @@ struct RecompiledPcodeModule::Impl {
             return -1;
         }
         if (adapter != 0 || caps_address == 0 ||
-            caps_address > UINT32_MAX - (kD3dCaps9Size - 1)) {
+            caps_address > UINT32_MAX - (kD3dCaps9Size - 1) ||
+            !valid_guest_pointer(caps_address, kD3dCaps9Size)) {
             return return_kernel32_dword(kD3dErrInvalidCall, api, 16);
         }
+        if (device_type != 1) {
+            return return_kernel32_dword(kD3dErrInvalidDevice, api, 16);
+        }
+        if (!guest_d3d9_adapter_info_available) {
+            return return_kernel32_dword(kD3dErrNotAvailable, api, 16);
+        }
 
-        // No D3D9 capability provider exists until the SHIFT Vulkan backend is
-        // implemented. Report the valid request as unavailable instead of
-        // publishing fabricated device capabilities. The current retail
-        // caller ignores this HRESULT and does not read pCaps.
-        (void)device_type;
-        return return_kernel32_dword(kD3dErrNotAvailable, api, 16);
+        std::array<uint8_t, kD3dCaps9Size> caps_bytes{};
+        for (size_t index = 0;
+             index < guest_d3d9_adapter_info.caps.size(); ++index) {
+            const uint32_t word = guest_d3d9_adapter_info.caps[index];
+            for (size_t byte = 0; byte < sizeof(word); ++byte) {
+                caps_bytes[index * sizeof(word) + byte] =
+                    static_cast<uint8_t>(word >> (byte * 8));
+            }
+        }
+        if (!write_guest_bytes(caps_address, caps_bytes.data(),
+                               caps_bytes.size(), api)) {
+            return -1;
+        }
+        return return_kernel32_dword(0, api, 16);
+    }
+
+    int d3d9_create_device() {
+        constexpr const char* api = "d3d9.dll!IDirect3D9::CreateDevice";
+        constexpr size_t parameter_size = 14 * sizeof(uint32_t);
+        d3d9_create_device_attempted = true;
+        d3d9_create_device_callback_called = false;
+        d3d9_create_device_hresult = UINT32_MAX;
+        d3d9_create_device_rejection.clear();
+        const auto reject = [this, api](uint32_t result,
+                                        const std::string& reason) {
+            d3d9_create_device_hresult = result;
+            d3d9_create_device_rejection = reason;
+            return return_kernel32_dword(result, api, 28);
+        };
+        uint32_t interface_address = 0;
+        uint32_t adapter = 0;
+        uint32_t device_type = 0;
+        uint32_t focus_window = 0;
+        uint32_t behavior_flags = 0;
+        uint32_t parameters_address = 0;
+        uint32_t output_device_address = 0;
+        if (!read_stack_argument(0, interface_address, api) ||
+            !read_stack_argument(1, adapter, api) ||
+            !read_stack_argument(2, device_type, api) ||
+            !read_stack_argument(3, focus_window, api) ||
+            !read_stack_argument(4, behavior_flags, api) ||
+            !read_stack_argument(5, parameters_address, api) ||
+            !read_stack_argument(6, output_device_address, api)) {
+            d3d9_create_device_rejection = "invalid CreateDevice stack arguments";
+            return -1;
+        }
+        if (guest_d3d9_interfaces.find(interface_address) ==
+                guest_d3d9_interfaces.end()) {
+            error = std::string(api) + " received an invalid interface pointer";
+            d3d9_create_device_rejection = "invalid IDirect3D9 interface pointer";
+            return -1;
+        }
+        if (output_device_address == 0 ||
+            !valid_guest_pointer(output_device_address, sizeof(uint32_t)) ||
+            parameters_address == 0 ||
+            !valid_guest_pointer(parameters_address, parameter_size)) {
+            return reject(kD3dErrInvalidCall,
+                          "invalid presentation or output-device pointer");
+        }
+        if (!write_guest_u32("ram", output_device_address, 0)) return -1;
+        if (adapter != 0) {
+            return reject(kD3dErrInvalidCall, "adapter index is not zero");
+        }
+        if (device_type != 1) {
+            return reject(kD3dErrInvalidDevice, "device type is not HAL");
+        }
+
+        std::array<uint32_t, 14> fields{};
+        for (size_t index = 0; index < fields.size(); ++index) {
+            if (!read_guest_u32("ram", parameters_address + index * 4,
+                                fields[index])) {
+                return return_kernel32_dword(kD3dErrInvalidCall, api, 28);
+            }
+        }
+        RecompiledGuestD3d9PresentationParameters parameters{};
+        parameters.back_buffer_width = fields[0];
+        parameters.back_buffer_height = fields[1];
+        parameters.back_buffer_format = fields[2];
+        parameters.back_buffer_count = fields[3];
+        parameters.multisample_type = fields[4];
+        parameters.multisample_quality = fields[5];
+        parameters.swap_effect = fields[6];
+        parameters.device_window = fields[7];
+        parameters.windowed = fields[8];
+        parameters.enable_auto_depth_stencil = fields[9];
+        parameters.auto_depth_stencil_format = fields[10];
+        parameters.flags = fields[11];
+        parameters.fullscreen_refresh_rate = fields[12];
+        parameters.presentation_interval = fields[13];
+        if ((parameters.windowed != 0 && parameters.windowed != 1) ||
+            (parameters.enable_auto_depth_stencil != 0 &&
+             parameters.enable_auto_depth_stencil != 1) ||
+            focus_window == 0 || parameters.device_window == 0) {
+            return reject(kD3dErrInvalidCall,
+                          "invalid window or boolean presentation parameter");
+        }
+        if (!guest_d3d9_adapter_info_available ||
+            !guest_d3d9_adapter_info.supports_bgra8_surface ||
+            guest_d3d9_adapter_info.create_device == nullptr) {
+            return reject(kD3dErrNotAvailable,
+                          "Vulkan adapter lacks BGRA8 surface support or callback");
+        }
+        std::string backend_error;
+        d3d9_create_device_callback_called = true;
+        if (!guest_d3d9_adapter_info.create_device(
+                guest_d3d9_adapter_info.backend_context, focus_window,
+                behavior_flags, parameters, backend_error)) {
+            return reject(kD3dErrNotAvailable,
+                          backend_error.empty()
+                              ? "Vulkan CreateDevice callback rejected request"
+                              : backend_error);
+        }
+        if (!write_guest_u32("ram", parameters_address,
+                             parameters.back_buffer_width) ||
+            !write_guest_u32("ram", parameters_address + 4,
+                             parameters.back_buffer_height) ||
+            !write_guest_u32("ram", parameters_address + 8,
+                             parameters.back_buffer_format) ||
+            !write_guest_u32("ram", parameters_address + 12,
+                             parameters.back_buffer_count) ||
+            !write_guest_u32("ram", parameters_address + 16,
+                             parameters.multisample_type) ||
+            !write_guest_u32("ram", parameters_address + 20,
+                             parameters.multisample_quality) ||
+            !write_guest_u32("ram", parameters_address + 24,
+                             parameters.swap_effect) ||
+            !write_guest_u32("ram", parameters_address + 28,
+                             parameters.device_window) ||
+            !write_guest_u32("ram", parameters_address + 32,
+                             parameters.windowed) ||
+            !write_guest_u32("ram", parameters_address + 36,
+                             parameters.enable_auto_depth_stencil) ||
+            !write_guest_u32("ram", parameters_address + 40,
+                             parameters.auto_depth_stencil_format) ||
+            !write_guest_u32("ram", parameters_address + 44,
+                             parameters.flags) ||
+            !write_guest_u32("ram", parameters_address + 48,
+                             parameters.fullscreen_refresh_rate) ||
+            !write_guest_u32("ram", parameters_address + 52,
+                             parameters.presentation_interval)) {
+            d3d9_create_device_rejection =
+                "failed to write normalized presentation parameters";
+            return -1;
+        }
+
+        static constexpr std::array<const char*, 119> methods = {
+            "QueryInterface", "AddRef", "Release", "TestCooperativeLevel",
+            "GetAvailableTextureMem", "EvictManagedResources", "GetDirect3D",
+            "GetDeviceCaps", "GetDisplayMode", "GetCreationParameters",
+            "SetCursorProperties", "SetCursorPosition", "ShowCursor",
+            "CreateAdditionalSwapChain", "GetSwapChain", "GetNumberOfSwapChains",
+            "Reset", "Present", "GetBackBuffer", "GetRasterStatus",
+            "SetDialogBoxMode", "SetGammaRamp", "GetGammaRamp", "CreateTexture",
+            "CreateVolumeTexture", "CreateCubeTexture", "CreateVertexBuffer",
+            "CreateIndexBuffer", "CreateRenderTarget", "CreateDepthStencilSurface",
+            "UpdateSurface", "UpdateTexture", "GetRenderTargetData",
+            "GetFrontBufferData", "StretchRect", "ColorFill",
+            "CreateOffscreenPlainSurface", "SetRenderTarget", "GetRenderTarget",
+            "SetDepthStencilSurface", "GetDepthStencilSurface", "BeginScene",
+            "EndScene", "Clear", "SetTransform", "GetTransform",
+            "MultiplyTransform", "SetViewport", "GetViewport", "SetMaterial",
+            "GetMaterial", "SetLight", "GetLight", "LightEnable", "GetLightEnable",
+            "SetClipPlane", "GetClipPlane", "SetRenderState", "GetRenderState",
+            "CreateStateBlock", "BeginStateBlock", "EndStateBlock", "SetClipStatus",
+            "GetClipStatus", "GetTexture", "SetTexture", "GetTextureStageState",
+            "SetTextureStageState", "GetSamplerState", "SetSamplerState",
+            "ValidateDevice", "SetPaletteEntries", "GetPaletteEntries",
+            "SetCurrentTexturePalette", "GetCurrentTexturePalette", "SetScissorRect",
+            "GetScissorRect", "SetSoftwareVertexProcessing",
+            "GetSoftwareVertexProcessing", "SetNPatchMode", "GetNPatchMode",
+            "DrawPrimitive", "DrawIndexedPrimitive", "DrawPrimitiveUP",
+            "DrawIndexedPrimitiveUP", "ProcessVertices", "CreateVertexDeclaration",
+            "SetVertexDeclaration", "GetVertexDeclaration", "SetFVF", "GetFVF",
+            "CreateVertexShader", "SetVertexShader", "GetVertexShader",
+            "SetVertexShaderConstantF", "GetVertexShaderConstantF",
+            "SetVertexShaderConstantI", "GetVertexShaderConstantI",
+            "SetVertexShaderConstantB", "GetVertexShaderConstantB", "SetStreamSource",
+            "GetStreamSource", "SetStreamSourceFreq", "GetStreamSourceFreq",
+            "SetIndices", "GetIndices", "CreatePixelShader", "SetPixelShader",
+            "GetPixelShader", "SetPixelShaderConstantF", "GetPixelShaderConstantF",
+            "SetPixelShaderConstantI", "GetPixelShaderConstantI",
+            "SetPixelShaderConstantB", "GetPixelShaderConstantB", "DrawRectPatch",
+            "DrawTriPatch", "DeletePatch", "CreateQuery"};
+        uint32_t vtable_address = 0;
+        uint32_t device_address = 0;
+        if (!allocate_guest_heap(kGuestProcessHeapHandle,
+                                 methods.size() * sizeof(uint32_t),
+                                 vtable_address) ||
+            !allocate_guest_heap(kGuestProcessHeapHandle, sizeof(uint32_t),
+                                 device_address)) {
+            error = std::string(api) + " could not allocate an IDirect3DDevice9";
+            d3d9_create_device_rejection = "failed to allocate IDirect3DDevice9";
+            return -1;
+        }
+        for (size_t index = 0; index < methods.size(); ++index) {
+            uint32_t method_stub = 0;
+            const std::string method_name =
+                std::string("d3d9.dll!IDirect3DDevice9::") + methods[index];
+            if (!allocate_dynamic_import_stub(method_name, method_stub) ||
+                !write_guest_u32("ram", vtable_address + index * 4,
+                                 method_stub)) {
+                error = std::string(api) + " could not create its device vtable";
+                d3d9_create_device_rejection = "failed to create IDirect3DDevice9 vtable";
+                return -1;
+            }
+        }
+        if (!write_guest_u32("ram", device_address, vtable_address) ||
+            !write_guest_u32("ram", output_device_address, device_address)) {
+            error = std::string(api) + " could not initialize its device object";
+            d3d9_create_device_rejection = "failed to initialize IDirect3DDevice9 object";
+            return -1;
+        }
+        auto parent = guest_d3d9_interfaces.find(interface_address);
+        if (parent->second.references != UINT32_MAX) ++parent->second.references;
+        guest_d3d9_devices.emplace(
+            device_address,
+            GuestD3D9Device{vtable_address, interface_address, 1,
+                            focus_window, behavior_flags, 0, 0, {}, {}, 0, {},
+                            parameters});
+        d3d9_create_device_hresult = 0;
+        return return_kernel32_dword(0, api, 28);
+    }
+
+    int d3d9_device_add_ref() {
+        constexpr const char* api = "d3d9.dll!IDirect3DDevice9::AddRef";
+        uint32_t device_address = 0;
+        if (!read_stack_argument(0, device_address, api)) return -1;
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (device->second.references != UINT32_MAX)
+            ++device->second.references;
+        return return_kernel32_dword(device->second.references, api, 4);
+    }
+
+    int d3d9_device_release() {
+        constexpr const char* api = "d3d9.dll!IDirect3DDevice9::Release";
+        uint32_t device_address = 0;
+        if (!read_stack_argument(0, device_address, api)) return -1;
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end() ||
+            device->second.references == 0) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        const uint32_t remaining = --device->second.references;
+        if (remaining == 0) {
+            const uint32_t vtable_address = device->second.vtable_address;
+            const uint32_t parent_address =
+                device->second.direct3d_interface;
+            for (uint32_t address : {device_address, vtable_address}) {
+                const auto allocation = heap_allocations.find(address);
+                if (allocation == heap_allocations.end()) continue;
+                free_heap_blocks.push_back(allocation->second);
+                heap_allocations.erase(allocation);
+            }
+            guest_d3d9_devices.erase(device);
+            auto parent = guest_d3d9_interfaces.find(parent_address);
+            if (parent != guest_d3d9_interfaces.end() &&
+                parent->second.references > 0) {
+                --parent->second.references;
+            }
+        }
+        return return_kernel32_dword(remaining, api, 4);
+    }
+
+    int d3d9_device_get_number_of_swap_chains() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::GetNumberOfSwapChains";
+        uint32_t device_address = 0;
+        if (!read_stack_argument(0, device_address, api)) return -1;
+        if (guest_d3d9_devices.find(device_address) ==
+            guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        return return_kernel32_dword(1, api, 4);
+    }
+
+    int d3d9_device_set_shader(bool pixel_shader) {
+        const char* api = pixel_shader
+            ? "d3d9.dll!IDirect3DDevice9::SetPixelShader"
+            : "d3d9.dll!IDirect3DDevice9::SetVertexShader";
+        uint32_t device_address = 0;
+        uint32_t shader_address = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, shader_address, api)) {
+            return -1;
+        }
+        const auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (shader_address != 0) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 8);
+        }
+        if (pixel_shader) {
+            device->second.pixel_shader_address = 0;
+        } else {
+            device->second.vertex_shader_address = 0;
+        }
+        return return_kernel32_dword(0, api, 8);
+    }
+
+    bool create_guest_d3d9_surface(uint32_t device_address,
+                                   uint32_t render_target_index,
+                                   bool depth_stencil,
+                                   uint32_t& surface_address) {
+        static constexpr std::array<const char*, 17> methods = {
+            "QueryInterface", "AddRef", "Release", "GetDevice",
+            "SetPrivateData", "GetPrivateData", "FreePrivateData",
+            "SetPriority", "GetPriority", "PreLoad", "GetType",
+            "GetContainer", "GetDesc", "LockRect", "UnlockRect",
+            "GetDC", "ReleaseDC"};
+        uint32_t vtable_address = 0;
+        uint32_t object_address = 0;
+        if (!allocate_guest_heap(kGuestProcessHeapHandle,
+                                 methods.size() * sizeof(uint32_t),
+                                 vtable_address) ||
+            !allocate_guest_heap(kGuestProcessHeapHandle, sizeof(uint32_t),
+                                 object_address)) {
+            error = "could not allocate an IDirect3DSurface9";
+            return false;
+        }
+        for (size_t index = 0; index < methods.size(); ++index) {
+            uint32_t method_stub = 0;
+            const std::string method_name =
+                std::string("d3d9.dll!IDirect3DSurface9::") + methods[index];
+            if (!allocate_dynamic_import_stub(method_name, method_stub) ||
+                !write_guest_u32("ram", vtable_address + index * 4,
+                                 method_stub)) {
+                error = "could not create an IDirect3DSurface9 vtable";
+                return false;
+            }
+        }
+        if (!write_guest_u32("ram", object_address, vtable_address)) {
+            error = "could not initialize an IDirect3DSurface9 object";
+            return false;
+        }
+        guest_d3d9_surfaces.emplace(
+            object_address,
+            GuestD3D9Surface{vtable_address, device_address, 1,
+                             render_target_index, depth_stencil});
+        surface_address = object_address;
+        return true;
+    }
+
+    int d3d9_device_get_render_target() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::GetRenderTarget";
+        uint32_t device_address = 0;
+        uint32_t render_target_index = 0;
+        uint32_t output_surface_address = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, render_target_index, api) ||
+            !read_stack_argument(2, output_surface_address, api)) {
+            return -1;
+        }
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (render_target_index > 3 || output_surface_address == 0 ||
+            !valid_guest_pointer(output_surface_address, sizeof(uint32_t))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+        }
+        uint32_t surface_address = 0;
+        auto target = device->second.render_targets.find(render_target_index);
+        if (target == device->second.render_targets.end()) {
+            if (render_target_index != 0) {
+                if (!write_guest_u32("ram", output_surface_address, 0))
+                    return -1;
+                return return_kernel32_dword(kD3dErrNotFound, api, 12);
+            }
+            if (!create_guest_d3d9_surface(device_address,
+                                           render_target_index, false,
+                                           surface_address)) {
+                return -1;
+            }
+            device->second.render_targets.emplace(render_target_index,
+                                                  surface_address);
+        } else {
+            surface_address = target->second;
+        }
+        auto surface = guest_d3d9_surfaces.find(surface_address);
+        if (surface == guest_d3d9_surfaces.end()) {
+            error = std::string(api) + " found an invalid render-target surface";
+            return -1;
+        }
+        if (surface->second.references != UINT32_MAX)
+            ++surface->second.references;
+        if (!write_guest_u32("ram", output_surface_address, surface_address))
+            return -1;
+        return return_kernel32_dword(0, api, 12);
+    }
+
+    int d3d9_device_get_back_buffer() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::GetBackBuffer";
+        uint32_t device_address = 0;
+        uint32_t swap_chain = 0;
+        uint32_t back_buffer = 0;
+        uint32_t type = 0;
+        uint32_t output_surface_address = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, swap_chain, api) ||
+            !read_stack_argument(2, back_buffer, api) ||
+            !read_stack_argument(3, type, api) ||
+            !read_stack_argument(4, output_surface_address, api)) {
+            return -1;
+        }
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (swap_chain != 0 || back_buffer != 0 || type != 0 ||
+            output_surface_address == 0 ||
+            !valid_guest_pointer(output_surface_address, sizeof(uint32_t))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 20);
+        }
+        uint32_t surface_address = 0;
+        auto target = device->second.render_targets.find(0);
+        if (target == device->second.render_targets.end()) {
+            if (!create_guest_d3d9_surface(device_address, 0, false,
+                                           surface_address)) {
+                return -1;
+            }
+            device->second.render_targets.emplace(0, surface_address);
+        } else {
+            surface_address = target->second;
+        }
+        auto surface = guest_d3d9_surfaces.find(surface_address);
+        if (surface == guest_d3d9_surfaces.end()) {
+            error = std::string(api) + " found an invalid backbuffer surface";
+            return -1;
+        }
+        if (surface->second.references != UINT32_MAX)
+            ++surface->second.references;
+        if (!write_guest_u32("ram", output_surface_address, surface_address))
+            return -1;
+        return return_kernel32_dword(0, api, 20);
+    }
+
+    int d3d9_device_get_depth_stencil_surface() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::GetDepthStencilSurface";
+        uint32_t device_address = 0;
+        uint32_t output_surface_address = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, output_surface_address, api)) {
+            return -1;
+        }
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (output_surface_address == 0 ||
+            !valid_guest_pointer(output_surface_address, sizeof(uint32_t))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 8);
+        }
+        if (device->second.presentation.enable_auto_depth_stencil == 0) {
+            if (!write_guest_u32("ram", output_surface_address, 0))
+                return -1;
+            return return_kernel32_dword(kD3dErrNotFound, api, 8);
+        }
+        uint32_t surface_address = device->second.depth_surface_address;
+        if (surface_address == 0) {
+            if (!create_guest_d3d9_surface(device_address, 0, true,
+                                           surface_address)) {
+                return -1;
+            }
+            device->second.depth_surface_address = surface_address;
+        }
+        auto surface = guest_d3d9_surfaces.find(surface_address);
+        if (surface == guest_d3d9_surfaces.end()) {
+            error = std::string(api) + " found an invalid depth surface";
+            return -1;
+        }
+        if (surface->second.references != UINT32_MAX)
+            ++surface->second.references;
+        if (!write_guest_u32("ram", output_surface_address, surface_address))
+            return -1;
+        return return_kernel32_dword(0, api, 8);
+    }
+
+    int d3d9_device_get_viewport() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::GetViewport";
+        uint32_t device_address = 0;
+        uint32_t output_viewport_address = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, output_viewport_address, api)) {
+            return -1;
+        }
+        const auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (output_viewport_address == 0 ||
+            !valid_guest_pointer(output_viewport_address, 6 * sizeof(uint32_t))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 8);
+        }
+        const std::array<uint32_t, 6> viewport = {
+            0, 0, device->second.presentation.back_buffer_width,
+            device->second.presentation.back_buffer_height, 0, 0x3f800000};
+        for (size_t index = 0; index < viewport.size(); ++index) {
+            if (!write_guest_u32("ram", output_viewport_address + index * 4,
+                                 viewport[index])) {
+                return -1;
+            }
+        }
+        return return_kernel32_dword(0, api, 8);
+    }
+
+    int d3d9_device_set_sampler_state() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::SetSamplerState";
+        uint32_t device_address = 0;
+        uint32_t sampler = 0;
+        uint32_t state = 0;
+        uint32_t value = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, sampler, api) ||
+            !read_stack_argument(2, state, api) ||
+            !read_stack_argument(3, value, api)) {
+            return -1;
+        }
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (sampler > 259 || state > 13) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 16);
+        }
+        const uint64_t key = static_cast<uint64_t>(sampler) << 32 | state;
+        device->second.sampler_states[key] = value;
+        return return_kernel32_dword(0, api, 16);
+    }
+
+    int d3d9_surface_add_ref() {
+        constexpr const char* api = "d3d9.dll!IDirect3DSurface9::AddRef";
+        uint32_t surface_address = 0;
+        if (!read_stack_argument(0, surface_address, api)) return -1;
+        auto surface = guest_d3d9_surfaces.find(surface_address);
+        if (surface == guest_d3d9_surfaces.end()) {
+            error = std::string(api) + " received an invalid surface pointer";
+            return -1;
+        }
+        if (surface->second.references != UINT32_MAX)
+            ++surface->second.references;
+        return return_kernel32_dword(surface->second.references, api, 4);
+    }
+
+    int d3d9_surface_release() {
+        constexpr const char* api = "d3d9.dll!IDirect3DSurface9::Release";
+        uint32_t surface_address = 0;
+        if (!read_stack_argument(0, surface_address, api)) return -1;
+        auto surface = guest_d3d9_surfaces.find(surface_address);
+        if (surface == guest_d3d9_surfaces.end() ||
+            surface->second.references == 0) {
+            error = std::string(api) + " received an invalid surface pointer";
+            return -1;
+        }
+        const uint32_t remaining = --surface->second.references;
+        if (remaining == 0) {
+            const uint32_t vtable_address = surface->second.vtable_address;
+            for (uint32_t address : {surface_address, vtable_address}) {
+                const auto allocation = heap_allocations.find(address);
+                if (allocation == heap_allocations.end()) continue;
+                free_heap_blocks.push_back(allocation->second);
+                heap_allocations.erase(allocation);
+            }
+            guest_d3d9_surfaces.erase(surface);
+        }
+        return return_kernel32_dword(remaining, api, 4);
+    }
+
+    int d3d9_surface_get_desc() {
+        constexpr const char* api = "d3d9.dll!IDirect3DSurface9::GetDesc";
+        uint32_t surface_address = 0;
+        uint32_t description_address = 0;
+        if (!read_stack_argument(0, surface_address, api) ||
+            !read_stack_argument(1, description_address, api)) {
+            return -1;
+        }
+        const auto surface = guest_d3d9_surfaces.find(surface_address);
+        if (surface == guest_d3d9_surfaces.end()) {
+            error = std::string(api) + " received an invalid surface pointer";
+            return -1;
+        }
+        if (description_address == 0 ||
+            !valid_guest_pointer(description_address, 8 * sizeof(uint32_t))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 8);
+        }
+        const auto device =
+            guest_d3d9_devices.find(surface->second.device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " found an invalid parent device";
+            return -1;
+        }
+        const auto& presentation = device->second.presentation;
+        // D3DSURFACE_DESC: Format, Type, Usage, Pool, multisample type/quality,
+        // Width, Height. Backbuffer and auto-depth surfaces use D3DPOOL_DEFAULT.
+        const std::array<uint32_t, 8> description = {
+            surface->second.depth_stencil
+                ? presentation.auto_depth_stencil_format
+                : presentation.back_buffer_format,
+            1,
+            surface->second.depth_stencil ? 2u : 1u,
+            0,
+            presentation.multisample_type,
+            presentation.multisample_quality,
+            presentation.back_buffer_width,
+            presentation.back_buffer_height};
+        for (size_t index = 0; index < description.size(); ++index) {
+            if (!write_guest_u32("ram", description_address + index * 4,
+                                 description[index])) {
+                return -1;
+            }
+        }
+        return return_kernel32_dword(0, api, 8);
+    }
+
+    int d3d9_device_clear() {
+        constexpr const char* api = "d3d9.dll!IDirect3DDevice9::Clear";
+        uint32_t device_address = 0;
+        uint32_t rect_count = 0;
+        uint32_t rects_address = 0;
+        uint32_t flags = 0;
+        uint32_t color = 0;
+        uint32_t depth_bits = 0;
+        uint32_t stencil = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, rect_count, api) ||
+            !read_stack_argument(2, rects_address, api) ||
+            !read_stack_argument(3, flags, api) ||
+            !read_stack_argument(4, color, api) ||
+            !read_stack_argument(5, depth_bits, api) ||
+            !read_stack_argument(6, stencil, api)) {
+            return -1;
+        }
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        constexpr uint32_t clear_target = 0x1;
+        constexpr uint32_t clear_zbuffer = 0x2;
+        constexpr uint32_t clear_stencil = 0x4;
+        constexpr uint32_t supported_flags =
+            clear_target | clear_zbuffer | clear_stencil;
+        if (flags == 0 || (flags & ~supported_flags) != 0 ||
+            (rect_count != 0 &&
+             (rects_address == 0 ||
+              rect_count > (UINT32_MAX - rects_address) / 16 ||
+              !valid_guest_pointer(rects_address, rect_count * 16))) ||
+            ((flags & (clear_zbuffer | clear_stencil)) != 0 &&
+             device->second.presentation.enable_auto_depth_stencil == 0)) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 28);
+        }
+        if (device->second.clear_call_count != UINT32_MAX)
+            ++device->second.clear_call_count;
+        device->second.last_clear_flags = flags;
+        device->second.last_clear_color = color;
+        device->second.last_clear_depth_bits = depth_bits;
+        device->second.last_clear_stencil = stencil;
+        device->second.last_clear_rect_count = rect_count;
+        return return_kernel32_dword(0, api, 28);
+    }
+
+    int d3d9_device_get_texture() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::GetTexture";
+        uint32_t device_address = 0;
+        uint32_t stage = 0;
+        uint32_t output_texture_address = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, stage, api) ||
+            !read_stack_argument(2, output_texture_address, api)) {
+            return -1;
+        }
+        const auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (stage > 259 || output_texture_address == 0 ||
+            !valid_guest_pointer(output_texture_address, sizeof(uint32_t))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+        }
+        const auto texture = device->second.textures.find(stage);
+        const uint32_t texture_address =
+            texture == device->second.textures.end() ? 0 : texture->second;
+        if (!write_guest_u32("ram", output_texture_address,
+                             texture_address)) {
+            return -1;
+        }
+        return return_kernel32_dword(0, api, 12);
     }
 
     int d3d9_get_adapter_identifier() {
@@ -4390,15 +5314,35 @@ struct RecompiledPcodeModule::Impl {
             error = std::string(api) + " received an invalid interface pointer";
             return -1;
         }
-        if (adapter != 0 || flags != 0 || identifier_address == 0) {
+        if (adapter != 0 || flags != 0 || identifier_address == 0 ||
+            identifier_address >
+                UINT32_MAX - (kD3dAdapterIdentifier9Size - 1) ||
+            !valid_guest_pointer(identifier_address,
+                                 kD3dAdapterIdentifier9Size)) {
             return return_kernel32_dword(kD3dErrInvalidCall, api, 16);
         }
+        if (!guest_d3d9_adapter_info_available) {
+            return return_kernel32_dword(kD3dErrNotAvailable, api, 16);
+        }
 
-        // The runtime has no host-adapter identity provider yet. In this
-        // retail path the caller checks the HRESULT and returns before reading
-        // pIdentifier, so expose the missing capability without inventing a
-        // physical adapter identity.
-        return return_kernel32_dword(kD3dErrNotAvailable, api, 16);
+        std::array<uint8_t, kD3dAdapterIdentifier9Size> identifier{};
+        const size_t description_size = std::min(
+            guest_d3d9_adapter_info.description.size(), size_t{511});
+        std::copy_n(guest_d3d9_adapter_info.description.data(),
+                    description_size, identifier.data() + 512);
+        const auto store_u32 = [&identifier](size_t offset, uint32_t value) {
+            for (size_t byte = 0; byte < sizeof(value); ++byte) {
+                identifier[offset + byte] =
+                    static_cast<uint8_t>(value >> (byte * 8));
+            }
+        };
+        store_u32(1064, guest_d3d9_adapter_info.vendor_id);
+        store_u32(1068, guest_d3d9_adapter_info.device_id);
+        if (!write_guest_bytes(identifier_address, identifier.data(),
+                               identifier.size(), api)) {
+            return -1;
+        }
+        return return_kernel32_dword(0, api, 16);
     }
 
     int create_event(bool wide) {
@@ -4800,6 +5744,38 @@ struct RecompiledPcodeModule::Impl {
         return return_kernel32_dword(previous_filter, api, 4);
     }
 
+    int load_library_a() {
+        constexpr const char* api = "KERNEL32.dll!LoadLibraryA";
+        uint32_t name_address = 0;
+        if (!read_stack_argument(0, name_address, api)) return -1;
+        guest_last_load_library_name.clear();
+        guest_last_load_library_handle = 0;
+        guest_last_load_library_error = 0;
+        if (name_address == 0) {
+            guest_last_error = 87;
+            guest_last_load_library_error = guest_last_error;
+            return return_kernel32_dword(0, api, 4);
+        }
+        if (!read_guest_ascii(name_address, guest_last_load_library_name, api))
+            return -1;
+        std::string module_name = guest_last_load_library_name;
+        const size_t separator = module_name.find_last_of("/\\");
+        if (separator != std::string::npos)
+            module_name.erase(0, separator + 1);
+        module_name = lowercase_ascii(std::move(module_name));
+        if (module_name.find('.') == std::string::npos)
+            module_name += ".dll";
+        const auto module = guest_module_handles.find(module_name);
+        if (module == guest_module_handles.end()) {
+            guest_last_error = 126;
+            guest_last_load_library_error = guest_last_error;
+            return return_kernel32_dword(0, api, 4);
+        }
+        guest_last_error = 0;
+        guest_last_load_library_handle = module->second;
+        return return_kernel32_dword(module->second, api, 4);
+    }
+
     int get_module_handle_a() {
         constexpr const char* api = "KERNEL32.dll!GetModuleHandleA";
         uint32_t name_address = 0;
@@ -4920,6 +5896,179 @@ struct RecompiledPcodeModule::Impl {
         }
         return return_kernel32_dword(static_cast<uint32_t>(copied_size), api,
                                      12);
+    }
+
+    int load_icon_w() {
+        constexpr const char* api = "USER32.dll!LoadIconW";
+        uint32_t instance = 0;
+        uint32_t resource = 0;
+        if (!read_stack_argument(0, instance, api) ||
+            !read_stack_argument(1, resource, api)) {
+            return -1;
+        }
+        (void)instance;
+        if (resource == 0) return return_kernel32_dword(0, api, 8);
+        if (resource > 0xffff && !valid_guest_pointer(resource, 2)) {
+            error = std::string(api) + " has an invalid icon-name pointer";
+            return -1;
+        }
+        return return_kernel32_dword(kGuestSyntheticIconHandle, api, 8);
+    }
+
+    int create_dca() {
+        constexpr const char* api = "GDI32.dll!CreateDCA";
+        uint32_t driver_address = 0;
+        uint32_t device_address = 0;
+        uint32_t output_address = 0;
+        uint32_t init_data_address = 0;
+        if (!read_stack_argument(0, driver_address, api) ||
+            !read_stack_argument(1, device_address, api) ||
+            !read_stack_argument(2, output_address, api) ||
+            !read_stack_argument(3, init_data_address, api)) {
+            return -1;
+        }
+        (void)device_address;
+        (void)output_address;
+        (void)init_data_address;
+        if (driver_address != 0) {
+            std::string driver;
+            if (!read_guest_ascii(driver_address, driver, api)) return -1;
+            if (lowercase_ascii(std::move(driver)) != "display")
+                return return_kernel32_dword(0, api, 16);
+        }
+        const uint32_t handle = next_guest_display_dc_handle;
+        if (handle < kGuestSyntheticDisplayDcBase ||
+            handle > UINT32_MAX - 4) {
+            error = std::string(api) + " exhausted synthetic display DC handles";
+            return -1;
+        }
+        next_guest_display_dc_handle += 4;
+        guest_display_dc_handles.insert(handle);
+        return return_kernel32_dword(handle, api, 16);
+    }
+
+    int delete_dc() {
+        constexpr const char* api = "GDI32.dll!DeleteDC";
+        uint32_t handle = 0;
+        if (!read_stack_argument(0, handle, api)) return -1;
+        return return_kernel32_dword(
+            guest_display_dc_handles.erase(handle) != 0 ? 1 : 0, api, 4);
+    }
+
+    int ext_escape() {
+        constexpr const char* api = "GDI32.dll!ExtEscape";
+        uint32_t handle = 0;
+        uint32_t escape = 0;
+        uint32_t input_size = 0;
+        uint32_t input_address = 0;
+        uint32_t output_size = 0;
+        uint32_t output_address = 0;
+        if (!read_stack_argument(0, handle, api) ||
+            !read_stack_argument(1, escape, api) ||
+            !read_stack_argument(2, input_size, api) ||
+            !read_stack_argument(3, input_address, api) ||
+            !read_stack_argument(4, output_size, api) ||
+            !read_stack_argument(5, output_address, api)) {
+            return -1;
+        }
+        const bool valid_dc = guest_display_dc_handles.count(handle) != 0;
+        const bool valid_input = input_size == 0 ||
+            (input_address != 0 && valid_guest_pointer(input_address, input_size));
+        const bool valid_output = output_size == 0 ||
+            (output_address != 0 && valid_guest_pointer(output_address, output_size));
+        if (!valid_dc || !valid_input || !valid_output) {
+            return return_kernel32_dword(0, api, 24);
+        }
+        (void)escape;
+        return return_kernel32_dword(0, api, 24);
+    }
+
+    int get_stock_object() {
+        constexpr const char* api = "GDI32.dll!GetStockObject";
+        uint32_t object = 0;
+        if (!read_stack_argument(0, object, api)) return -1;
+        if (object > 17) return return_kernel32_dword(0, api, 4);
+        return return_kernel32_dword(
+            kGuestSyntheticGdiObjectBase + object * 4, api, 4);
+    }
+
+    int register_class_ex_w() {
+        constexpr const char* api = "USER32.dll!RegisterClassExW";
+        uint32_t class_address = 0;
+        if (!read_stack_argument(0, class_address, api)) return -1;
+        uint32_t size = 0;
+        uint32_t window_proc = 0;
+        uint32_t class_name = 0;
+        std::array<uint8_t, 2> first_name_character{};
+        if (!valid_guest_pointer(class_address, 48) ||
+            !read_guest_u32("ram", class_address, size) ||
+            !read_guest_u32("ram", class_address + 8, window_proc) ||
+            !read_guest_u32("ram", class_address + 40, class_name)) {
+            error = std::string(api) + " received an invalid WNDCLASSEXW";
+            return -1;
+        }
+        if (size != 48 || window_proc == 0 ||
+            !valid_guest_pointer(class_name, first_name_character.size())) {
+            return return_kernel32_dword(0, api, 4);
+        }
+        if (!read_guest("ram", class_name, sizeof(first_name_character),
+                        first_name_character.data())) {
+            error = std::string(api) + " could not read the class name";
+            return -1;
+        }
+        if (first_name_character[0] == 0 && first_name_character[1] == 0)
+            return return_kernel32_dword(0, api, 4);
+        // ponytail: return an opaque atom until guest window classes map to the host.
+        return return_kernel32_dword(1, api, 4);
+    }
+
+    int create_window_ex_w() {
+        constexpr const char* api = "USER32.dll!CreateWindowExW";
+        uint32_t class_name = 0;
+        uint32_t window_name = 0;
+        if (!read_stack_argument(1, class_name, api) ||
+            !read_stack_argument(2, window_name, api)) {
+            return -1;
+        }
+        const auto has_text = [this](uint32_t address) {
+            if (address == 0 || !valid_guest_pointer(address, 2)) return false;
+            std::array<uint8_t, 2> first_character{};
+            return read_guest("ram", address, first_character.size(),
+                              first_character.data()) &&
+                   (first_character[0] != 0 || first_character[1] != 0);
+        };
+        if (class_name == 0 ||
+            (class_name > 0xffff && !has_text(class_name)) ||
+            (window_name != 0 && !valid_guest_pointer(window_name, 2))) {
+            return return_kernel32_dword(0, api, 12 * sizeof(uint32_t));
+        }
+        // ponytail: map this opaque HWND to a host window when guest windowing is wired.
+        return return_kernel32_dword(kGuestSyntheticWindowHandle, api,
+                                     12 * sizeof(uint32_t));
+    }
+
+    int clip_cursor() {
+        constexpr const char* api = "USER32.dll!ClipCursor";
+        uint32_t rectangle = 0;
+        if (!read_stack_argument(0, rectangle, api)) return -1;
+        if (rectangle != 0 && !valid_guest_pointer(rectangle, 16))
+            return return_kernel32_dword(0, api, 4);
+        return return_kernel32_dword(1, api, 4);
+    }
+
+    int show_window() {
+        constexpr const char* api = "USER32.dll!ShowWindow";
+        uint32_t window = 0;
+        uint32_t command = 0;
+        if (!read_stack_argument(0, window, api) ||
+            !read_stack_argument(1, command, api)) {
+            return -1;
+        }
+        if (window != kGuestSyntheticWindowHandle)
+            return return_kernel32_dword(0, api, 8);
+        const uint32_t was_visible = guest_synthetic_window_visible ? 1 : 0;
+        guest_synthetic_window_visible = command != 0;
+        return return_kernel32_dword(was_visible, api, 8);
     }
 
     int peek_message_w() {
@@ -5804,6 +6953,16 @@ struct RecompiledPcodeModule::Impl {
         constexpr const char* api = "KERNEL32.dll!SetLastError";
         if (!read_stack_argument(0, guest_last_error, api)) return -1;
         return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int output_debug_string_a() {
+        constexpr const char* api = "KERNEL32.dll!OutputDebugStringA";
+        uint32_t ignored_message_address = 0;
+        if (!read_stack_argument(0, ignored_message_address, api)) return -1;
+        // There is no attached debugger, so Win32's debug-only output has no
+        // observable effect in this runtime.
+        (void)ignored_message_address;
+        return return_kernel32_dword(0, api, sizeof(uint32_t));
     }
 
     int raise_exception() {
@@ -7040,6 +8199,10 @@ struct RecompiledPcodeModule::Impl {
         snapshot.ui_state_gate_trace_enabled = ui_state_gate_trace_enabled;
         snapshot.ui_state_gate_trace_truncated = ui_state_gate_trace_truncated;
         snapshot.ui_state_gate_trace = ui_state_gate_trace_events;
+        snapshot.guest_call_trace_enabled = guest_call_trace_enabled;
+        snapshot.guest_call_trace_truncated = guest_call_trace_truncated;
+        snapshot.guest_call_trace_caller = guest_call_trace_caller;
+        snapshot.guest_call_trace = guest_call_trace_events;
         if (!main_guest_thread.active_functions.empty()) {
             snapshot.main_thread_current_function =
                 main_guest_thread.active_functions.back();
@@ -7052,6 +8215,27 @@ struct RecompiledPcodeModule::Impl {
             snapshot.worker_runnable_count += thread.runnable ? 1u : 0u;
             snapshot.worker_completed_count += thread.completed ? 1u : 0u;
         }
+        snapshot.d3d9_create_device_attempted =
+            d3d9_create_device_attempted;
+        snapshot.d3d9_create_device_callback_called =
+            d3d9_create_device_callback_called;
+        snapshot.d3d9_create_device_hresult = d3d9_create_device_hresult;
+        snapshot.d3d9_create_device_rejection =
+            d3d9_create_device_rejection;
+        if (!guest_d3d9_devices.empty()) {
+            const auto& device = guest_d3d9_devices.begin()->second;
+            snapshot.d3d9_clear_call_count = device.clear_call_count;
+            snapshot.d3d9_last_clear_flags = device.last_clear_flags;
+            snapshot.d3d9_last_clear_color = device.last_clear_color;
+            snapshot.d3d9_last_clear_depth_bits =
+                device.last_clear_depth_bits;
+            snapshot.d3d9_last_clear_stencil = device.last_clear_stencil;
+            snapshot.d3d9_last_clear_rect_count =
+                device.last_clear_rect_count;
+        }
+        snapshot.last_load_library_name = guest_last_load_library_name;
+        snapshot.last_load_library_handle = guest_last_load_library_handle;
+        snapshot.last_load_library_error = guest_last_load_library_error;
         return snapshot;
     }
 
@@ -7223,6 +8407,9 @@ struct RecompiledPcodeModule::Impl {
     std::unordered_map<uint32_t, GuestWriteProvenance> guest_last_writers;
     std::unordered_map<std::string, uint32_t> guest_module_handles;
     std::unordered_map<uint32_t, std::string> guest_module_names;
+    std::string guest_last_load_library_name;
+    uint32_t guest_last_load_library_handle = 0;
+    uint32_t guest_last_load_library_error = 0;
     std::unordered_map<uint32_t, GuestHeapBlock> heap_allocations;
     std::vector<GuestHeapBlock> free_heap_blocks;
     std::unordered_set<uint32_t> guest_heap_handles{kGuestProcessHeapHandle};
@@ -7238,10 +8425,22 @@ struct RecompiledPcodeModule::Impl {
     std::unordered_map<uint32_t, GuestEvent> guest_events;
     std::unordered_map<uint32_t, GuestSemaphore> guest_semaphores;
     std::unordered_map<uint32_t, GuestD3D9Interface> guest_d3d9_interfaces;
+    std::unordered_map<uint32_t, GuestD3D9Device> guest_d3d9_devices;
+    std::unordered_map<uint32_t, GuestD3D9Surface> guest_d3d9_surfaces;
+    bool guest_d3d9_adapter_info_available = false;
+    bool d3d9_create_device_attempted = false;
+    bool d3d9_create_device_callback_called = false;
+    uint32_t d3d9_create_device_hresult = UINT32_MAX;
+    std::string d3d9_create_device_rejection;
+    // ponytail: guest visibility stays headless until HWNDs map to the host window.
+    bool guest_synthetic_window_visible = false;
+    RecompiledGuestD3d9AdapterInfo guest_d3d9_adapter_info;
     uint32_t guest_display_width = 1024;
     uint32_t guest_display_height = 768;
     uint32_t guest_display_refresh_rate = 0;
     uint32_t guest_display_format = kD3dFormatX8R8G8B8;
+    std::unordered_set<uint32_t> guest_display_dc_handles;
+    uint32_t next_guest_display_dc_handle = kGuestSyntheticDisplayDcBase;
     std::unordered_map<uint32_t, GuestFiber> guest_fibers;
     std::unordered_map<uint32_t, GuestThread> guest_threads;
     GuestThread main_guest_thread;
@@ -7285,6 +8484,10 @@ struct RecompiledPcodeModule::Impl {
     bool ui_state_gate_trace_enabled = false;
     bool ui_state_gate_trace_truncated = false;
     std::vector<RecompiledUiStateGateTraceEvent> ui_state_gate_trace_events;
+    bool guest_call_trace_enabled = false;
+    bool guest_call_trace_truncated = false;
+    uint32_t guest_call_trace_caller = 0;
+    std::vector<RecompiledGuestCallTraceEvent> guest_call_trace_events;
     uint64_t guest_heap_next_address = kGuestHeapStartAddress;
     uint64_t guest_virtual_next_address = UINT64_C(0x20000000);
     uint64_t next_guest_heap_handle = kGuestProcessHeapHandle + 4;
@@ -7366,6 +8569,11 @@ bool RecompiledPcodeModule::set_guest_display_mode(
     uint32_t width, uint32_t height, uint32_t refresh_rate,
     uint32_t format) {
     return impl_->set_guest_display_mode(width, height, refresh_rate, format);
+}
+
+bool RecompiledPcodeModule::set_guest_d3d9_adapter_info(
+    const RecompiledGuestD3d9AdapterInfo& adapter_info) {
+    return impl_->set_guest_d3d9_adapter_info(adapter_info);
 }
 
 uint64_t RecompiledPcodeModule::dispatched_function_count() const {
