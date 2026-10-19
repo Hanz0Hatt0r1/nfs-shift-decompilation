@@ -152,16 +152,22 @@ uint32_t invoke_import(shift::runtime::RecompiledPcodeModule& module,
             "Kernel32 import dispatch failed at " +
                 std::to_string(address) + " returned " +
                 std::to_string(result) + ": " + module.last_error());
-    require(read_guest_u32(module, "register", 0x10) ==
-                stack_pointer + 4 + arguments.size() * 4,
-            "Kernel32 import applied incorrect stdcall cleanup");
+    const uint32_t expected_esp = static_cast<uint32_t>(
+        stack_pointer + 4 + arguments.size() * 4);
+    const uint32_t actual_esp = read_guest_u32(module, "register", 0x10);
+    require(actual_esp == expected_esp,
+            "Kernel32 import " + std::to_string(address) +
+                " applied incorrect stdcall cleanup: ESP=" +
+                std::to_string(actual_esp) + " expected=" +
+                std::to_string(expected_esp));
     return read_guest_u32(module, "register", 0);
 }
 
 void write_pe32_fixture(const std::string& path,
                         bool raise_exception_import = false,
                         bool time_get_time_import = false,
-                        bool unknown_first_import = false) {
+                        bool unknown_first_import = false,
+                        bool read_file_ex_import = false) {
     constexpr size_t file_size = 0x1300;
     constexpr size_t pe_offset = 0x80;
     constexpr size_t optional_offset = pe_offset + 24;
@@ -337,7 +343,7 @@ void write_pe32_fixture(const std::string& path,
     write_import_name(0xde0, "SetThreadPriority");
     write_import_name(0xe00, "CreateFileA");
     write_import_name(0xe20, "GetFileSize");
-    write_import_name(0xe40, "ReadFile");
+    write_import_name(0xe40, read_file_ex_import ? "ReadFileEx" : "ReadFile");
     std::copy_n("imagehlp.dll", 13, bytes.begin() + 0xe60);
     write_import_name(0xe80, "SymSetOptions");
     write_import_name(0xea0, "SymInitialize");
@@ -547,17 +553,25 @@ void write_d3d9_pe32_fixture(const std::string& path) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 9) {
+    if (argc != 11) {
         std::cerr << "usage: shift_runtime_recompiled_pcode_module_check "
                      "MODULE SUPPLEMENT OVERRIDE PE32_FIXTURE_OUT "
                      "RAISE_EXCEPTION_PE32_OUT TIME_GET_TIME_PE32_OUT "
-                     "SYSTEM_PARAMETERS_INFO_PE32_OUT D3D9_PE32_OUT\n";
+                     "SYSTEM_PARAMETERS_INFO_PE32_OUT D3D9_PE32_OUT "
+                     "FRONTIER_MODULE BLOCK_TEST_MODULE\n";
         return 2;
     }
     try {
+        const std::string read_file_ex_fixture_path =
+            (std::filesystem::temp_directory_path() /
+             ("shift-runtime-readfileex-" + std::to_string(getpid()) +
+              ".exe"))
+                .string();
         write_pe32_fixture(argv[4]);
         write_pe32_fixture(argv[5], true);
         write_pe32_fixture(argv[6], false, true);
+        write_pe32_fixture(read_file_ex_fixture_path, false, false, false,
+                           true);
         write_system_parameters_info_pe32_fixture(argv[7]);
         write_d3d9_pe32_fixture(argv[8]);
         shift::runtime::RecompiledPcodeModule duplicate_module(argv[1]);
@@ -604,6 +618,8 @@ int main(int argc, char** argv) {
             shift::runtime::RecompiledPcodeModule call_trace_module(argv[1]);
             constexpr uint32_t receiver = 0x00023000;
             write_guest_u32(call_trace_module, "register", 4, receiver);
+            write_guest_u32(call_trace_module, "register", 0x1c,
+                            0x13579bdf);
             write_guest_u32(call_trace_module, "ram", receiver + 0x10,
                             0x12345678);
             write_guest_u32(call_trace_module, "ram", receiver + 0x20,
@@ -628,6 +644,9 @@ int main(int argc, char** argv) {
                         trace_event.completed &&
                         trace_event.has_eax_return &&
                         trace_event.eax_return == 0x78563412 &&
+                        trace_event.edi_entry == 0x13579bdf &&
+                        trace_event.has_edi_return &&
+                        trace_event.edi_return == 0x13579bdf &&
                         trace_event.caller_slots.size() == 3 &&
                         trace_event.caller_slots[0].offset == 0x10 &&
                         trace_event.caller_slots[0].has_value &&
@@ -811,6 +830,668 @@ int main(int argc, char** argv) {
                 "could not disable guest import target trace fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_IMPORTS") == 0,
                 "could not disable guest import trace fixture");
+
+        require(setenv("SHIFT_TRACE_GUEST_CALL_TARGETS", "0x00685700", 1) ==
+                    0,
+                "could not enable guest string argument trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_STRING_SLOTS", "0x4", 1) == 0,
+                "could not configure guest string argument trace fixture");
+        {
+            shift::runtime::RecompiledPcodeModule string_trace_module(argv[1]);
+            constexpr uint32_t string_address = 0x11223344;
+            const std::string expected_string = "C:\\cars\\engine.bin";
+            const std::string terminated_string = expected_string + '\0';
+            write_guest_bytes(
+                string_trace_module, string_address,
+                reinterpret_cast<const uint8_t*>(terminated_string.data()),
+                terminated_string.size());
+            require(string_trace_module.call(0x00406100) == 0,
+                    "guest string argument trace fixture call failed: " +
+                        string_trace_module.last_error());
+            const auto snapshot =
+                string_trace_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace_string_slot_offsets ==
+                        std::vector<uint32_t>{0x4} &&
+                        snapshot.guest_call_trace.size() == 1 &&
+                        snapshot.guest_call_trace.front().string_slots.size() ==
+                            1 &&
+                        snapshot.guest_call_trace.front().string_slots.front()
+                                .offset == 0x4 &&
+                        snapshot.guest_call_trace.front().string_slots.front()
+                                .has_address &&
+                        snapshot.guest_call_trace.front().string_slots.front()
+                                .address == string_address &&
+                        snapshot.guest_call_trace.front().string_slots.front()
+                                .has_value &&
+                        snapshot.guest_call_trace.front().string_slots.front()
+                                .value == expected_string &&
+                        snapshot.guest_call_trace.front().string_slots.front()
+                                .terminated &&
+                        !snapshot.guest_call_trace.front().string_slots.front()
+                             .truncated,
+                    "guest call trace did not capture the bounded string argument");
+        }
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_STRING_SLOTS") == 0,
+                "could not disable guest string argument trace fixture");
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGETS") == 0,
+                "could not disable guest string argument target fixture");
+
+        {
+            shift::runtime::RecompiledPcodeModule crc_loop_module(argv[1]);
+            require(crc_loop_module.load_override_module(argv[9]),
+                    "0x0066caf0 CRC loop supplement could not be loaded: " +
+                        crc_loop_module.last_error());
+            constexpr uint32_t bytes = 0x00038000;
+            constexpr uint32_t stack = 0x00033000;
+            constexpr uint32_t return_address = 0x00406605;
+            constexpr uint32_t saved_esi = 0x0badf00d;
+            constexpr uint32_t saved_ebp = 0x55667788;
+            constexpr uint32_t crc_table_word = 0x00af5250;
+            constexpr uint32_t crc_table_value = 0x00fedcba;
+            const uint8_t input = 0xa6;
+            require(crc_loop_module.write_guest("ram", bytes, 1, &input),
+                    "could not seed 0x0066caf0 CRC input");
+            write_guest_u32(crc_loop_module, "ram", crc_table_word,
+                            crc_table_value);
+            write_guest_u32(crc_loop_module, "register", 0, 0x12345678);
+            write_guest_u32(crc_loop_module, "register", 4, bytes);
+            write_guest_u32(crc_loop_module, "register", 8, 0);
+            write_guest_u32(crc_loop_module, "register", 0x10, stack);
+            write_guest_u32(crc_loop_module, "register", 0x14, 0xdeadbeef);
+            write_guest_u32(crc_loop_module, "register", 0x18, 1);
+            write_guest_u32(crc_loop_module, "ram", stack, saved_esi);
+            write_guest_u32(crc_loop_module, "ram", stack + 4, saved_ebp);
+            write_guest_u32(crc_loop_module, "ram", stack + 8,
+                            return_address);
+            write_guest_u32(crc_loop_module, "ram", stack + 12, 0);
+            require(crc_loop_module.call(0x0066caf0) == 0,
+                    "0x0066caf0 CRC loop supplement failed: " +
+                        crc_loop_module.last_error());
+            require(read_guest_u32(crc_loop_module, "register", 0) ==
+                            (((0x12345678u >> 8) ^ crc_table_value)) &&
+                        read_guest_u32(crc_loop_module, "register", 4) ==
+                            bytes + 1 &&
+                        read_guest_u32(crc_loop_module, "register", 8) == 0xde &&
+                        read_guest_u32(crc_loop_module, "register", 0x10) ==
+                            stack + 16 &&
+                        read_guest_u32(crc_loop_module, "register", 0x14) ==
+                            saved_ebp &&
+                        read_guest_u32(crc_loop_module, "register", 0x18) ==
+                            saved_esi &&
+                        read_guest_u32(crc_loop_module, "register", 0x284) ==
+                            return_address,
+                    "0x0066caf0 did not complete its CRC step and stdcall "
+                    "epilogue with the expected register/stack state");
+        }
+
+        {
+            shift::runtime::RecompiledPcodeModule ui_cleanup_module(argv[1]);
+            require(ui_cleanup_module.load_override_module(argv[9]),
+                    "0x00509689 Ghidra supplement could not be loaded: " +
+                        ui_cleanup_module.last_error());
+            constexpr uint32_t stack = 0x00035000;
+            constexpr uint32_t ebp = stack + 12;
+            constexpr uint32_t receiver = 0x00027000;
+            constexpr uint32_t return_address = 0x00406705;
+            constexpr uint32_t saved_ebx = 0x01024000;
+            constexpr uint32_t saved_esi = 0x22222222;
+            constexpr uint32_t saved_edi = 0x11111111;
+            write_guest_u32(ui_cleanup_module, "register", 4, 0x33333333);
+            write_guest_u32(ui_cleanup_module, "register", 0x0c, receiver);
+            write_guest_u32(ui_cleanup_module, "register", 0x10, stack);
+            write_guest_u32(ui_cleanup_module, "register", 0x14, ebp);
+            write_guest_u32(ui_cleanup_module, "register", 0x18, 0x44444444);
+            write_guest_u32(ui_cleanup_module, "register", 0x1c, 0x55555555);
+            write_guest_u32(ui_cleanup_module, "ram", receiver + 0xad, 0);
+            write_guest_u32(ui_cleanup_module, "ram", receiver + 0x2d, 0);
+            write_guest_u32(ui_cleanup_module, "ram", stack, saved_edi);
+            write_guest_u32(ui_cleanup_module, "ram", stack + 4, saved_esi);
+            write_guest_u32(ui_cleanup_module, "ram", stack + 8, saved_ebx);
+            write_guest_u32(ui_cleanup_module, "ram", ebp, 0x00033000);
+            write_guest_u32(ui_cleanup_module, "ram", ebp + 4,
+                            return_address);
+            write_guest_u32(ui_cleanup_module, "ram", ebp + 8, 0);
+            require(ui_cleanup_module.call(0x00509689) == 0,
+                    "0x00509689 cleanup block failed: " +
+                        ui_cleanup_module.last_error());
+            require(read_guest_u32(ui_cleanup_module, "register", 0) == 0 &&
+                        read_guest_u32(ui_cleanup_module, "register", 4) ==
+                            0x33333333 &&
+                        read_guest_u32(ui_cleanup_module, "register", 0x10) ==
+                            ebp + 8 &&
+                        read_guest_u32(ui_cleanup_module, "register", 0x14) ==
+                            0x00033000 &&
+                        read_guest_u32(ui_cleanup_module, "register", 0x18) ==
+                            saved_esi &&
+                        read_guest_u32(ui_cleanup_module, "register", 0x1c) ==
+                            saved_edi &&
+                        read_guest_u32(ui_cleanup_module, "register", 0x284) ==
+                            return_address &&
+                    read_guest_u32(ui_cleanup_module, "ram", receiver + 0x2d) ==
+                            1,
+                    "0x00509689 did not apply the readiness-byte store and "
+                    "restore its caller frame: eax=" +
+                        std::to_string(read_guest_u32(ui_cleanup_module,
+                                                      "register", 0)) +
+                        " ecx=" +
+                        std::to_string(read_guest_u32(ui_cleanup_module,
+                                                      "register", 4)) +
+                        " esp=" +
+                        std::to_string(read_guest_u32(ui_cleanup_module,
+                                                      "register", 0x10)) +
+                        " ebp=" +
+                        std::to_string(read_guest_u32(ui_cleanup_module,
+                                                      "register", 0x14)) +
+                        " esi=" +
+                        std::to_string(read_guest_u32(ui_cleanup_module,
+                                                      "register", 0x18)) +
+                        " edi=" +
+                        std::to_string(read_guest_u32(ui_cleanup_module,
+                                                      "register", 0x1c)) +
+                        " eip=" +
+                        std::to_string(read_guest_u32(ui_cleanup_module,
+                                                      "register", 0x284)) +
+                        " state=" +
+                        std::to_string(read_guest_u32(ui_cleanup_module,
+                                                      "ram", receiver + 0x2d)));
+        }
+
+        {
+            shift::runtime::RecompiledPcodeModule tail_alias_module(argv[1]);
+            require(tail_alias_module.load_override_module(argv[9]),
+                    "0x00509e60 tail alias could not be loaded: " +
+                        tail_alias_module.last_error());
+            constexpr uint32_t receiver = 0x00038000;
+            constexpr uint32_t stack = 0x00035000;
+            constexpr uint32_t return_address = 0x00406805;
+            const uint8_t pending = 1;
+            const uint32_t operation = 0x12345678;
+            require(tail_alias_module.write_guest("ram", receiver + 4, 1,
+                                                  &pending),
+                    "could not seed 0x00509e60 request state");
+            write_guest_u32(tail_alias_module, "ram", receiver + 0x24,
+                            operation);
+            write_guest_u32(tail_alias_module, "register", 4, receiver);
+            write_guest_u32(tail_alias_module, "register", 8, 0x11223344);
+            write_guest_u32(tail_alias_module, "register", 0x10, stack);
+            write_guest_u32(tail_alias_module, "ram", stack, return_address);
+            require(tail_alias_module.call(0x00509e60) == 0,
+                    "0x00509e60 tail alias failed: " +
+                        tail_alias_module.last_error());
+            require(read_guest_u32(tail_alias_module, "register", 4) ==
+                            receiver &&
+                        read_guest_u32(tail_alias_module, "register", 8) ==
+                            0x11223344 &&
+                        read_guest_u32(tail_alias_module, "register", 0x10) ==
+                            stack &&
+                        read_guest_u32(tail_alias_module, "ram", receiver + 4) ==
+                            0 &&
+                        read_guest_u32(tail_alias_module, "ram", receiver + 0x24) ==
+                            0 &&
+                        read_guest_u32(tail_alias_module, "ram", receiver + 0x2c) ==
+                            4,
+                    "0x00509e60 did not tail-dispatch to 0x00509e40 with "
+                    "guest state intact");
+        }
+
+        {
+            shift::runtime::RecompiledPcodeModule state_machine_block_module(
+                argv[10]);
+            constexpr uint32_t stack = 0x00036000;
+            constexpr uint32_t state = 0x27e31d68;
+            write_guest_u32(state_machine_block_module, "register", 4,
+                            0xaaaaaaaa);
+            write_guest_u32(state_machine_block_module, "register", 0x10,
+                            stack);
+            write_guest_u32(state_machine_block_module, "register", 0x18,
+                            state);
+            write_guest_u32(state_machine_block_module, "ram", stack,
+                            0x00406905);
+            require(state_machine_block_module.call(0x0050967d) == 0,
+                    "0x0050967d Ghidra block failed: " +
+                        state_machine_block_module.last_error());
+            std::array<uint8_t, 12> recorded_state{};
+            require(state_machine_block_module.read_guest(
+                        "ram", 0x00020150, recorded_state.size(),
+                        recorded_state.data()),
+                    "could not read 0x0050967d branch target state");
+            const auto recorded_u32 = [&](size_t offset) {
+                return static_cast<uint32_t>(recorded_state[offset]) |
+                       (static_cast<uint32_t>(recorded_state[offset + 1]) << 8) |
+                       (static_cast<uint32_t>(recorded_state[offset + 2]) << 16) |
+                       (static_cast<uint32_t>(recorded_state[offset + 3]) << 24);
+            };
+            require(read_guest_u32(state_machine_block_module, "register", 4) ==
+                            state &&
+                        read_guest_u32(state_machine_block_module, "register",
+                                       0x10) == stack &&
+                        recorded_u32(0) == state &&
+                        recorded_u32(4) == state &&
+                        recorded_u32(8) == stack,
+                    "0x0050967d did not copy ESI to ECX, return from its call, "
+                    "and tail-dispatch 0x0050958c with the original stack");
+
+            constexpr uint32_t frame_pointer = 0x00037020;
+            constexpr uint32_t active_stack = frame_pointer - 0x18;
+            constexpr uint32_t saved_edi = 0x11112222;
+            constexpr uint32_t saved_esi = 0x33334444;
+            constexpr uint32_t saved_ebx = 0x55556666;
+            constexpr uint32_t saved_ebp = 0x77778888;
+            write_guest_u32(state_machine_block_module, "register", 0x10,
+                            active_stack);
+            write_guest_u32(state_machine_block_module, "register", 0x14,
+                            frame_pointer);
+            write_guest_u32(state_machine_block_module, "register", 0x18,
+                            0x9999aaaa);
+            write_guest_u32(state_machine_block_module, "register", 0x1c,
+                            0xbbbbcccc);
+            write_guest_u32(state_machine_block_module, "register", 0x0c,
+                            0xddddeeee);
+            write_guest_u32(state_machine_block_module, "ram",
+                            frame_pointer - 0x18, saved_edi);
+            write_guest_u32(state_machine_block_module, "ram",
+                            frame_pointer - 0x14, saved_esi);
+            write_guest_u32(state_machine_block_module, "ram",
+                            frame_pointer - 0x10, saved_ebx);
+            write_guest_u32(state_machine_block_module, "ram", frame_pointer,
+                            saved_ebp);
+            require(state_machine_block_module.call(0x0050967d) == 0,
+                    "0x0050967d split-continuation epilogue failed: " +
+                        state_machine_block_module.last_error());
+            require(read_guest_u32(state_machine_block_module, "register", 0) ==
+                            0 &&
+                        read_guest_u32(state_machine_block_module, "register",
+                                       0x0c) == saved_ebx &&
+                        read_guest_u32(state_machine_block_module, "register",
+                                       0x10) == frame_pointer + 8 &&
+                        read_guest_u32(state_machine_block_module, "register",
+                                       0x14) == saved_ebp &&
+                        read_guest_u32(state_machine_block_module, "register",
+                                       0x18) == saved_esi &&
+                        read_guest_u32(state_machine_block_module, "register",
+                                       0x1c) == saved_edi,
+                    "0x0050967d did not execute the saved-register epilogue "
+                    "after 0x0050958c returned at the split continuation");
+
+            constexpr uint32_t owner = 0x00039000;
+            constexpr uint32_t child = 0x00039100;
+            constexpr uint32_t stack_pointer = 0x00039200;
+            constexpr uint32_t block_frame_pointer = 0x00039300;
+            const uint8_t active_owner = 1;
+            write_guest_u32(state_machine_block_module, "register", 0x0c,
+                            owner);
+            write_guest_u32(state_machine_block_module, "register", 0x18,
+                            child);
+            write_guest_u32(state_machine_block_module, "register", 0x10,
+                            stack_pointer);
+            write_guest_u32(state_machine_block_module, "register", 0x14,
+                            block_frame_pointer);
+            require(state_machine_block_module.write_guest(
+                        "ram", owner + 0xad, 1, &active_owner),
+                    "could not seed 0x005095f0 owner flag");
+            require(state_machine_block_module.call(0x005095f0) == 0,
+                    "0x005095f0 owner-active branch failed: " +
+                        state_machine_block_module.last_error());
+            require(read_guest_u32(state_machine_block_module, "ram",
+                                   0x20160) == 0 &&
+                        read_guest_u32(state_machine_block_module, "ram",
+                                       0x20164) == 1 &&
+                        read_guest_u32(state_machine_block_module, "ram",
+                                       0x20168) == child &&
+                        read_guest_u32(state_machine_block_module, "ram",
+                                       stack_pointer - 4) == 0x00509610 &&
+                        read_guest_u32(state_machine_block_module, "register",
+                                       0x10) == stack_pointer &&
+                        read_guest_u32(state_machine_block_module, "ram",
+                                       0x20170) == child &&
+                        read_guest_u32(state_machine_block_module, "ram",
+                                       0x20174) == stack_pointer,
+                    "0x005095f0 did not call 0x00508970 with the correct "
+                    "return address and tail-dispatch to 0x00509588");
+
+            constexpr uint32_t second_stack = 0x00039400;
+            constexpr uint32_t second_frame = 0x00039500;
+            const uint8_t inactive_owner = 0;
+            const uint8_t child_active = 1;
+            require(state_machine_block_module.write_guest(
+                        "ram", owner + 0xad, 1, &inactive_owner) &&
+                        state_machine_block_module.write_guest(
+                            "ram", child + 0xed, 1, &child_active),
+                    "could not seed 0x005095f0 inactive-owner branch");
+            write_guest_u32(state_machine_block_module, "ram", child + 0xe4,
+                            2);
+            write_guest_u32(state_machine_block_module, "register", 0x10,
+                            second_stack);
+            write_guest_u32(state_machine_block_module, "register", 0x14,
+                            second_frame);
+            const uint8_t clear_local = 0;
+            require(state_machine_block_module.write_guest(
+                        "ram", second_frame - 2, 1, &clear_local),
+                    "could not clear the 0x005095f0 local flag");
+            require(state_machine_block_module.call(0x005095f0) == 0,
+                    "0x005095f0 inactive-owner branch failed: " +
+                        state_machine_block_module.last_error());
+            require(read_guest_u32(state_machine_block_module, "ram",
+                                   0x20160) == 1 &&
+                        read_guest_u32(state_machine_block_module, "ram",
+                                       0x20164) == 1 &&
+                        read_guest_u32(state_machine_block_module, "ram",
+                                       0x20170) == child &&
+                        read_guest_u32(state_machine_block_module, "ram",
+                                       0x20174) == second_stack &&
+                        read_guest_u32(state_machine_block_module, "ram",
+                                       second_stack - 4) == 0x00509600 &&
+                        read_guest_u32(state_machine_block_module, "register",
+                                       0x10) == second_stack &&
+                        read_guest_u32(state_machine_block_module, "ram",
+                                       second_frame - 2) == 1,
+                    "0x005095f0 did not preserve the inactive-owner branch, "
+                    "local flag write, or continuation stack");
+
+            constexpr uint32_t initialization_stack = 0x0003a100;
+            constexpr uint32_t initial_esi = 0x0003a111;
+            constexpr uint32_t container = 0x0003b000;
+            constexpr uint32_t global_owner = 0x0003c000;
+            constexpr uint32_t return_address = 0x00407005;
+            write_guest_u32(state_machine_block_module, "register", 0x10,
+                            initialization_stack);
+            write_guest_u32(state_machine_block_module, "register", 0x18,
+                            initial_esi);
+            write_guest_u32(state_machine_block_module, "register", 0x04,
+                            0x12345678);
+            write_guest_u32(state_machine_block_module, "ram",
+                            initialization_stack, return_address);
+            write_guest_u32(state_machine_block_module, "ram", 0x00bbf960,
+                            container);
+            write_guest_u32(state_machine_block_module, "ram", 0x00bc1850,
+                            global_owner);
+            require(state_machine_block_module.call(0x0054b560) == 0,
+                    "Ghidra-lowered 0x0054b560 initializer failed: " +
+                        state_machine_block_module.last_error());
+            constexpr std::array<uint32_t, 8> initialization_calls = {
+                1, 2, 3, 4, 5, 4, 6, 7};
+            bool call_sequence_matches =
+                read_guest_u32(state_machine_block_module, "ram", 0x20180) ==
+                initialization_calls.size();
+            for (size_t i = 0; call_sequence_matches &&
+                               i < initialization_calls.size(); ++i) {
+                call_sequence_matches =
+                    read_guest_u32(state_machine_block_module, "ram",
+                                   0x20184 + i * 4) == initialization_calls[i];
+            }
+            require(call_sequence_matches,
+                    "0x0054b560 called its helper functions out of order");
+            require(read_guest_u32(state_machine_block_module, "ram",
+                                   0x20200 + 4 * 4) == container &&
+                        read_guest_u32(state_machine_block_module, "ram",
+                                       0x20200 + 6 * 4) == container &&
+                        read_guest_u32(state_machine_block_module, "ram",
+                                       0x20200 + 7 * 4) ==
+                            global_owner + 0x1eec,
+                    "0x0054b560 passed an unexpected receiver to a helper");
+            require(read_guest_u32(state_machine_block_module, "register", 0) ==
+                        7,
+                    "0x0054b560 did not return 7 in EAX");
+            require(read_guest_u32(state_machine_block_module, "register",
+                                   0x10) == initialization_stack + 4,
+                    "0x0054b560 did not consume its caller return address");
+            require(read_guest_u32(state_machine_block_module, "register",
+                                   0x18) == initial_esi,
+                    "0x0054b560 did not restore ESI");
+
+            constexpr uint32_t getter_receiver = 0x0003d000;
+            constexpr uint32_t getter_stack = 0x0003d100;
+            constexpr uint32_t getter_return_address = 0x00408005;
+            const uint8_t getter_value = 0xa5;
+            require(state_machine_block_module.write_guest(
+                        "ram", getter_receiver + 0x32f, 1, &getter_value),
+                    "could not seed 0x0085b0b0 byte field");
+            write_guest_u32(state_machine_block_module, "register", 0x00,
+                            0x11223344);
+            write_guest_u32(state_machine_block_module, "register", 0x04,
+                            getter_receiver);
+            write_guest_u32(state_machine_block_module, "register", 0x10,
+                            getter_stack);
+            write_guest_u32(state_machine_block_module, "ram", getter_stack,
+                            getter_return_address);
+            require(state_machine_block_module.call(0x0085b0b0) == 0,
+                    "0x0085b0b0 byte accessor failed: " +
+                        state_machine_block_module.last_error());
+            require(read_guest_u32(state_machine_block_module, "register",
+                                   0x00) == 0x112233a5 &&
+                        read_guest_u32(state_machine_block_module, "register",
+                                       0x10) == getter_stack + 4 &&
+                        read_guest_u32(state_machine_block_module, "register",
+                                       0x284) == getter_return_address,
+                    "0x0085b0b0 did not preserve EAX high bytes or emulate RET");
+        }
+
+        require(setenv("SHIFT_TRACE_GUEST_CALL_TARGETS", "0x00685700", 1) ==
+                    0,
+                "could not enable indirect tail-dispatch trace fixture");
+        {
+            shift::runtime::RecompiledPcodeModule tail_dispatch_module(argv[1]);
+            require(tail_dispatch_module.load_override_module(argv[3]),
+                    "tail-dispatch target fixture could not be loaded: " +
+                        tail_dispatch_module.last_error());
+            require(tail_dispatch_module.load_override_module(argv[9]),
+                    "tail-dispatch frontier override could not be loaded: " +
+                        tail_dispatch_module.last_error());
+            constexpr uint32_t receiver = 0x00024000;
+            constexpr uint32_t vtable = 0x00025000;
+            constexpr uint32_t stack = 0x00033000;
+            constexpr uint32_t return_address = 0x00406205;
+            write_guest_u32(tail_dispatch_module, "register", 4, receiver);
+            write_guest_u32(tail_dispatch_module, "register", 0x10, stack);
+            write_guest_u32(tail_dispatch_module, "ram", receiver, vtable);
+            write_guest_u32(tail_dispatch_module, "ram", vtable + 8,
+                            0x00685700);
+            write_guest_u32(tail_dispatch_module, "ram", stack,
+                            return_address);
+            require(tail_dispatch_module.call(0x005f1830) == 0,
+                    "indirect tail-dispatch override failed: " +
+                        tail_dispatch_module.last_error());
+            std::array<uint8_t, 4> override_bytes{};
+            require(tail_dispatch_module.read_guest(
+                        "ram", 0x00020000, override_bytes.size(),
+                        override_bytes.data()) &&
+                        override_bytes ==
+                            std::array<uint8_t, 4>{'O', 'V', 'R', 'D'} &&
+                        read_guest_u32(tail_dispatch_module, "register", 0) ==
+                            vtable,
+                    "indirect tail-dispatch did not preserve MOV EAX,[ECX] "
+                    "and reach the vtable target");
+            const auto snapshot =
+                tail_dispatch_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace.size() == 1 &&
+                        snapshot.guest_call_trace.front().caller ==
+                            0x005f1830 &&
+                        snapshot.guest_call_trace.front().function ==
+                            0x00685700 &&
+                        snapshot.guest_call_trace.front().has_return_address &&
+                        snapshot.guest_call_trace.front().return_address ==
+                            return_address &&
+                        snapshot.guest_call_trace.front().completed,
+                    "indirect tail-dispatch did not record the selected target");
+        }
+        {
+            shift::runtime::RecompiledPcodeModule vtable_dispatch_module(argv[1]);
+            require(vtable_dispatch_module.load_override_module(argv[9]),
+                    "0x005b0d50 vtable-dispatch override could not be loaded: " +
+                        vtable_dispatch_module.last_error());
+            constexpr uint32_t receiver = 0x00026000;
+            constexpr uint32_t vtable = 0x00027000;
+            constexpr uint32_t stack = 0x00033000;
+            constexpr uint32_t return_address = 0x00406405;
+            write_guest_u32(vtable_dispatch_module, "register", 4, receiver);
+            write_guest_u32(vtable_dispatch_module, "register", 0x10, stack);
+            write_guest_u32(vtable_dispatch_module, "ram", receiver, vtable);
+            write_guest_u32(vtable_dispatch_module, "ram", vtable + 0x48,
+                            0x00685700);
+            write_guest_u32(vtable_dispatch_module, "ram", stack,
+                            return_address);
+            require(vtable_dispatch_module.call(0x005b0d50) == 0,
+                    "0x005b0d50 vtable-dispatch override failed: " +
+                        vtable_dispatch_module.last_error());
+            std::array<uint8_t, 4> dispatched_bytes{};
+            const bool side_effect_read = vtable_dispatch_module.read_guest(
+                "ram", 0x00020000, dispatched_bytes.size(),
+                dispatched_bytes.data());
+            const uint32_t returned_eax =
+                read_guest_u32(vtable_dispatch_module, "register", 0);
+            require(side_effect_read &&
+                        dispatched_bytes ==
+                            std::array<uint8_t, 4>{0xd0, 0x99, 0xaa, 0x00} &&
+                        returned_eax == vtable,
+                    "0x005b0d50 side_effect=" +
+                        std::to_string(side_effect_read) + " bytes=" +
+                        std::to_string(dispatched_bytes[0]) + "," +
+                        std::to_string(dispatched_bytes[1]) + "," +
+                        std::to_string(dispatched_bytes[2]) + "," +
+                        std::to_string(dispatched_bytes[3]) + " EAX=" +
+                        std::to_string(returned_eax));
+            const auto snapshot =
+                vtable_dispatch_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace.size() == 1 &&
+                        snapshot.guest_call_trace.front().caller ==
+                            0x005b0d50 &&
+                        snapshot.guest_call_trace.front().function ==
+                            0x00685700 &&
+                        snapshot.guest_call_trace.front().has_return_address &&
+                        snapshot.guest_call_trace.front().return_address ==
+                            return_address &&
+                        snapshot.guest_call_trace.front().completed,
+                    "0x005b0d50 did not preserve the original return address");
+        }
+        {
+            shift::runtime::RecompiledPcodeModule async_request_module(argv[1]);
+            require(async_request_module.load_override_module(argv[9]),
+                    "0x0066cc70 request-handler override could not be loaded: " +
+                        async_request_module.last_error());
+            constexpr uint32_t receiver = 0x00028000;
+            constexpr uint32_t request = 0x00029000;
+            constexpr uint32_t stack = 0x00033000;
+            constexpr uint32_t return_address = 0x00406505;
+            constexpr uint32_t first_argument = 0x12345678;
+            constexpr uint32_t second_argument = 0x87654321;
+            constexpr uint32_t preserved_value = 0x0002a000;
+            constexpr uint32_t saved_esi = 0x11111111;
+            constexpr uint32_t saved_edi = 0x22222222;
+            write_guest_u32(async_request_module, "register", 4, receiver);
+            write_guest_u32(async_request_module, "register", 8, request);
+            write_guest_u32(async_request_module, "register", 0x10, stack);
+            write_guest_u32(async_request_module, "register", 0x18, saved_esi);
+            write_guest_u32(async_request_module, "register", 0x1c, saved_edi);
+            write_guest_u32(async_request_module, "ram", stack,
+                            return_address);
+            write_guest_u32(async_request_module, "ram", request + 0x10,
+                            first_argument);
+            write_guest_u32(async_request_module, "ram", request + 0x1c,
+                            second_argument);
+            write_guest_u32(async_request_module, "ram", receiver + 0xbc,
+                            preserved_value);
+            require(async_request_module.call(0x0066cc70) == 0,
+                    "0x0066cc70 request-handler override failed: " +
+                        async_request_module.last_error());
+            require(read_guest_u32(async_request_module, "register", 0) == 1 &&
+                        read_guest_u32(async_request_module, "register", 4) ==
+                            receiver + 8 &&
+                        read_guest_u32(async_request_module, "register", 8) ==
+                            preserved_value &&
+                        read_guest_u32(async_request_module, "register", 0x10) ==
+                            stack + 4 &&
+                        read_guest_u32(async_request_module, "register", 0x18) ==
+                            saved_esi &&
+                        read_guest_u32(async_request_module, "register", 0x1c) ==
+                            saved_edi &&
+                        read_guest_u32(async_request_module, "register", 0x284) ==
+                            return_address &&
+                        read_guest_u32(async_request_module, "ram", receiver + 0xbc) ==
+                            preserved_value,
+                    "0x0066cc70 return state eax=" +
+                        std::to_string(read_guest_u32(async_request_module,
+                                                      "register", 0)) +
+                        " ecx=" +
+                        std::to_string(read_guest_u32(async_request_module,
+                                                      "register", 4)) +
+                        " edx=" +
+                        std::to_string(read_guest_u32(async_request_module,
+                                                      "register", 8)) +
+                        " esp=" +
+                        std::to_string(read_guest_u32(async_request_module,
+                                                      "register", 0x10)) +
+                        " esi=" +
+                        std::to_string(read_guest_u32(async_request_module,
+                                                      "register", 0x18)) +
+                        " edi=" +
+                        std::to_string(read_guest_u32(async_request_module,
+                                                      "register", 0x1c)) +
+                        " eip=" +
+                        std::to_string(read_guest_u32(async_request_module,
+                                                      "register", 0x284)) +
+                        " object=" +
+                        std::to_string(read_guest_u32(async_request_module,
+                                                      "ram", receiver + 0xbc)));
+            require(read_guest_u32(async_request_module, "ram", 0x00020120) ==
+                            receiver + 8 &&
+                        read_guest_u32(async_request_module, "ram", 0x00020124) ==
+                            preserved_value &&
+                        read_guest_u32(async_request_module, "ram", 0x00020128) ==
+                            first_argument &&
+                        read_guest_u32(async_request_module, "ram", 0x0002012c) ==
+                            second_argument,
+                    "0x0066cc70 call args=" +
+                        std::to_string(read_guest_u32(async_request_module,
+                                                      "ram", 0x00020120)) +
+                        "," +
+                        std::to_string(read_guest_u32(async_request_module,
+                                                      "ram", 0x00020124)) +
+                        "," +
+                        std::to_string(read_guest_u32(async_request_module,
+                                                      "ram", 0x00020128)) +
+                        "," +
+                        std::to_string(read_guest_u32(async_request_module,
+                                                      "ram", 0x0002012c)));
+        }
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGETS") == 0,
+                "could not disable indirect tail-dispatch trace fixture");
+
+        {
+            shift::runtime::RecompiledPcodeModule corrected_body_module(argv[1]);
+            require(corrected_body_module.load_override_module(argv[9]),
+                    "corrected 0x00652af0 body could not be loaded: " +
+                        corrected_body_module.last_error());
+            constexpr uint32_t receiver = 0x00034000;
+            constexpr uint32_t stack = 0x00033000;
+            constexpr uint32_t saved_ebp = 0x00036000;
+            constexpr uint32_t return_address = 0x00406305;
+            constexpr uint32_t argument = 0x100;
+            write_guest_u32(corrected_body_module, "register", 4, receiver);
+            write_guest_u32(corrected_body_module, "register", 0x10, stack);
+            write_guest_u32(corrected_body_module, "register", 0x14,
+                            saved_ebp);
+            write_guest_u32(corrected_body_module, "ram", stack,
+                            return_address);
+            write_guest_u32(corrected_body_module, "ram", stack + 4,
+                            argument);
+            write_guest_u32(corrected_body_module, "ram", receiver + 0x54,
+                            0x00035200);
+            write_guest_u32(corrected_body_module, "ram", receiver + 0x58,
+                            0x00035100);
+            require(corrected_body_module.call(0x00652af0) == 0,
+                    "corrected 0x00652af0 body failed: " +
+                        corrected_body_module.last_error());
+            require(read_guest_u32(corrected_body_module, "register", 0) ==
+                            argument &&
+                        read_guest_u32(corrected_body_module, "register",
+                                       0x10) == stack + 8 &&
+                        read_guest_u32(corrected_body_module, "register",
+                                       0x14) == saved_ebp &&
+                        read_guest_u32(corrected_body_module, "register",
+                                       0x284) == return_address,
+                    "corrected 0x00652af0 body did not execute its internal "
+                    "0x00652b13 epilogue");
+        }
 
         require(setenv("SHIFT_TRACE_UI_STATE_GATE", "1", 1) == 0,
                 "could not enable UI state gate trace fixture");
@@ -2036,9 +2717,122 @@ int main(int argc, char** argv) {
                     std::equal(guest_file_readback.begin(),
                                guest_file_readback.end(), guest_file_data),
                 "ReadFile returned unexpected guest file contents");
+
+        {
+            shift::runtime::RecompiledPcodeModule read_file_ex_module(argv[1]);
+            const auto read_file_ex_image =
+                read_file_ex_module.load_pe32_image(read_file_ex_fixture_path);
+            require(read_file_ex_image.import_function_count == 81,
+                    "ReadFileEx PE32 fixture import count changed");
+            const uint32_t path_address = 0x00032e00;
+            write_guest_bytes(
+                read_file_ex_module, path_address,
+                reinterpret_cast<const uint8_t*>(guest_file_path.c_str()),
+                guest_file_path.size() + 1);
+            const uint32_t handle = invoke_import(
+                read_file_ex_module, 0xf00003c0,
+                {path_address, 0x80000000, 1, 0, 3, 0x80, 0});
+            require(handle != UINT32_MAX,
+                    "ReadFileEx fixture could not open its input file");
+            constexpr uint32_t buffer_address = 0x00032e40;
+            constexpr uint32_t overlapped_address = 0x00032f00;
+            constexpr uint32_t completion_record = 0x00020100;
+            constexpr uint32_t completion_routine = 0x0040d100;
+            const uint32_t event_handle = invoke_import(
+                read_file_ex_module, 0xf0000400, {0, 0, 0, 0});
+            require(event_handle != 0,
+                    "ReadFileEx fixture could not create its wait event");
+            write_guest_u32(read_file_ex_module, "ram", overlapped_address,
+                            UINT32_MAX);
+            write_guest_u32(read_file_ex_module, "ram",
+                            overlapped_address + 4, UINT32_MAX);
+            write_guest_u32(read_file_ex_module, "ram",
+                            overlapped_address + 8, 8);
+            write_guest_u32(read_file_ex_module, "ram",
+                            overlapped_address + 12, 0);
+            write_guest_u32(read_file_ex_module, "ram",
+                            overlapped_address + 16, 0);
+            require(invoke_import(
+                        read_file_ex_module, 0xf00003e0,
+                        {handle, buffer_address, 5, overlapped_address,
+                         completion_routine}) == 1 &&
+                        read_guest_u32(read_file_ex_module, "ram",
+                                       overlapped_address) == 0 &&
+                        read_guest_u32(read_file_ex_module, "ram",
+                                       overlapped_address + 4) == 5,
+                    "ReadFileEx did not complete the overlapped read");
+            std::array<uint8_t, 5> read_file_ex_bytes{};
+            require(read_file_ex_module.read_guest(
+                        "ram", buffer_address, read_file_ex_bytes.size(),
+                        read_file_ex_bytes.data()) &&
+                        read_file_ex_bytes ==
+                            std::array<uint8_t, 5>{'p', 'r', 'o', 'b', 'e'},
+                    "ReadFileEx did not honor the OVERLAPPED file offset");
+            const uint32_t non_alertable_result = invoke_import(
+                read_file_ex_module, 0xf0000430, {event_handle, 0, 0});
+            const uint32_t callback_before_alertable_wait =
+                read_guest_u32(read_file_ex_module, "ram", completion_record);
+            require(non_alertable_result == 0x102 &&
+                        callback_before_alertable_wait == 0,
+                    "non-alertable wait result=" +
+                        std::to_string(non_alertable_result) +
+                        " callback_error=" +
+                        std::to_string(callback_before_alertable_wait));
+            require(invoke_import(read_file_ex_module, 0xf0000430,
+                                  {event_handle, 0, 1}) == 0x000000c0 &&
+                        read_guest_u32(read_file_ex_module, "ram",
+                                       completion_record) == 0 &&
+                        read_guest_u32(read_file_ex_module, "ram",
+                                       completion_record + 4) == 5 &&
+                        read_guest_u32(read_file_ex_module, "ram",
+                                       completion_record + 8) ==
+                            overlapped_address,
+                    "alertable wait did not dispatch ReadFileEx completion");
+            require(invoke_import(read_file_ex_module, 0xf0000350, {handle}) ==
+                        1,
+                    "ReadFileEx fixture did not close its file handle");
+            require(invoke_import(read_file_ex_module, 0xf0000350,
+                                  {event_handle}) == 1,
+                    "ReadFileEx fixture did not close its wait event");
+        }
         require(invoke_import(module, 0xf0000350, {guest_file_handle}) == 1,
                 "CloseHandle did not close the guest file");
         std::filesystem::remove(guest_file_path);
+
+        const std::string case_path_root =
+            "CaseSensitiveFileFixture-" + std::to_string(getpid());
+        const std::filesystem::path case_path_directory =
+            std::filesystem::current_path() / case_path_root / "Pakfiles";
+        std::filesystem::create_directories(case_path_directory);
+        constexpr char case_path_file[] = "BOOTPERSISTENT.bff";
+        constexpr char case_path_contents[] = "case-folded-path";
+        {
+            std::ofstream file(case_path_directory / case_path_file,
+                               std::ios::binary | std::ios::trunc);
+            require(static_cast<bool>(file),
+                    "could not create mixed-case guest path fixture");
+            file.write(case_path_contents, sizeof(case_path_contents) - 1);
+            require(static_cast<bool>(file),
+                    "could not write mixed-case guest path fixture");
+        }
+        const std::string case_guest_path =
+            "C:\\" + case_path_root + "\\pakfiles\\bootpersistent.bff";
+        constexpr uint32_t case_guest_path_address = 0x00032eb0;
+        write_guest_bytes(
+            module, case_guest_path_address,
+            reinterpret_cast<const uint8_t*>(case_guest_path.c_str()),
+            case_guest_path.size() + 1);
+        const uint32_t case_guest_file_handle = invoke_import(
+            module, 0xf00003c0,
+            {case_guest_path_address, 0x80000000, 1, 0, 3, 0x80, 0});
+        require(case_guest_file_handle != UINT32_MAX &&
+                    invoke_import(module, 0xf00003d0,
+                                  {case_guest_file_handle, 0}) ==
+                        sizeof(case_path_contents) - 1 &&
+                    invoke_import(module, 0xf0000350,
+                                  {case_guest_file_handle}) == 1,
+                "CreateFileA did not resolve Windows-style case-insensitive path components");
+        std::filesystem::remove_all(case_path_directory.parent_path());
         require(invoke_import(module, 0xf0000040, {}) ==
                     static_cast<uint32_t>(syscall(SYS_gettid)),
                 "GetCurrentThreadId returned the wrong thread id");
@@ -3132,6 +3926,29 @@ int main(int argc, char** argv) {
                         "called from guest function 0x00402000") !=
                         std::string::npos,
                 "missing export did not identify the unresolved address and caller");
+        require(setenv("SHIFT_TRACE_GUEST_CALLER", "0x00402100", 1) == 0,
+                "could not enable unresolved guest target trace fixture");
+        {
+            shift::runtime::RecompiledPcodeModule unresolved_trace_module(
+                argv[1]);
+            (void)unresolved_trace_module.load_pe32_image(argv[4]);
+            write_guest_u32(unresolved_trace_module, "register", 0x1c,
+                            0x2468ace0);
+            require(unresolved_trace_module.call(0x00402100) != 0,
+                    "unresolved target trace fixture unexpectedly succeeded");
+            require(unresolved_trace_module.last_error().find(
+                        "target=0xdeadbeef") != std::string::npos &&
+                        unresolved_trace_module.last_error().find(
+                            "return=0x00402105") != std::string::npos &&
+                        unresolved_trace_module.last_error().find(
+                            "edi=0x2468ace0") != std::string::npos &&
+                        unresolved_trace_module.last_error().find(
+                            "completed=0") != std::string::npos,
+                    "unresolved guest call trace missed its target or call site: " +
+                        unresolved_trace_module.last_error());
+        }
+        require(unsetenv("SHIFT_TRACE_GUEST_CALLER") == 0,
+                "could not disable unresolved guest target trace fixture");
         require(module.call(0x00403000) != 0,
                 "unhandled P-code userop unexpectedly succeeded");
         require(module.last_error().find("unhandled P-code userop index 7") !=

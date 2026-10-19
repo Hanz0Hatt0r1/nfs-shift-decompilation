@@ -1,0 +1,79 @@
+{
+  "format": "SHIFT.AsyncFileWorkerFrontier/1",
+  "probe_versions": ["v249", "v250", "v251", "v252"],
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "module_set_evidence": "entrypoint_probe_v215_supplement_replay.json",
+  "raw_probe_logs": "local external artifact root; not committed",
+  "probe_bounds": {
+    "frames_requested": 120,
+    "timeout_seconds": 180,
+    "validation": true,
+    "synthetic_mesh_fixture": true
+  },
+  "runs": [
+    {
+      "version": "v249",
+      "status": "host-frame-loop",
+      "probe_log_sha256": "a9ed494bdf9bdc5b4c700bee71ff42b262afb41252dbb649939425b9a231edfa",
+      "dispatches": 96082,
+      "unique_functions": 1559,
+      "frames_rendered": 120,
+      "worker_waiting_count": 4,
+      "validation_errors": 0,
+      "trace_events": 93,
+      "trace_truncated": false,
+      "finding": "0x00650350 -> 0x0064fef0 -> 0x00650290 -> 0x0064f530; SetEvent(0x60004) succeeds and wakes worker 0x00010000."
+    },
+    {
+      "version": "v250",
+      "status": "host-frame-loop",
+      "probe_log_sha256": "1851a7b070411c791659c80700c784d818a77980123ad72b682fd53c562d7a37",
+      "dispatches": 96080,
+      "unique_functions": 1559,
+      "frames_rendered": 120,
+      "worker_waiting_count": 4,
+      "validation_errors": 0,
+      "trace_events": 90,
+      "trace_truncated": false,
+      "finding": "After wake, worker 0x00010000 dispatches through 0x006671b0 and returns operation status 4."
+    },
+    {
+      "version": "v251",
+      "status": "host-frame-loop",
+      "probe_log_sha256": "c85230561a2cc209cff59578a354c4f391caafd59e8160de87cb99123ccc6186",
+      "dispatches": 96081,
+      "unique_functions": 1559,
+      "frames_rendered": 120,
+      "worker_waiting_count": 4,
+      "validation_errors": 0,
+      "trace_events": 168,
+      "trace_truncated": false,
+      "finding": "Operation 3 invokes 0x00655ab0 on request receiver 0x27ed9284; guard 0x00655440 returns low byte zero, callback returns status 4, readiness is unchanged."
+    },
+    {
+      "version": "v252",
+      "status": "host-frame-loop",
+      "probe_log_sha256": "a073ef0af67ab89379a0e3b5470264bbe6bf31addddf80a97faf2372d186739f",
+      "dispatches": 96082,
+      "unique_functions": 1559,
+      "frames_rendered": 120,
+      "worker_waiting_count": 4,
+      "validation_errors": 0,
+      "trace_events": 458,
+      "trace_truncated": false,
+      "create_file_a": {
+        "dispatch_count": 64823,
+        "thread_id": "0x00010000",
+        "caller": "0x00655440",
+        "path_pointer": "0x28249b16",
+        "desired_access": "0x80000000",
+        "share_mode": "0x00000001",
+        "creation_disposition": "0x00000003",
+        "eax_return": "0xffffffff"
+      },
+      "finding": "CreateFileA fails before any ReadFileEx/WriteFileEx path is reached; callback follows its status-4 path. The path text was not captured."
+    }
+  ],
+  "retail_rendering_proven": false,
+  "next_frontier": "Capture the CreateFileA path with SHIFT_TRACE_GUEST_CALL_STRING_SLOTS=0x4 and determine whether the failure is path resolution, missing data, or access-related."
+}

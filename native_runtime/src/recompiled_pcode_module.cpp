@@ -27,6 +27,7 @@
 #include <cstring>
 #include <ctime>
 #include <fstream>
+#include <iterator>
 #include <limits>
 #include <stdexcept>
 #include <deque>
@@ -59,6 +60,7 @@ constexpr uint32_t kRetailUiStateGateHelperAddress = 0x0050c880;
 constexpr size_t kRetailUiStateGateTraceLimit = 8192;
 constexpr size_t kGuestCallTraceLimit = 8192;
 constexpr size_t kGuestCallTraceSelectionLimit = 32;
+constexpr size_t kGuestCallTraceStringByteLimit = 256;
 constexpr uint32_t kGuestProcessHeapHandle = 0x00010000;
 constexpr uint32_t kGuestCurrentProcessPseudoHandle = UINT32_MAX;
 constexpr uint32_t kGuestCurrentThreadPseudoHandle = UINT32_MAX - 1;
@@ -628,12 +630,19 @@ struct RecompiledPcodeModule::Impl {
     struct GuestFiber {
         uint32_t data = 0;
     };
+    struct GuestIoCompletion {
+        uint32_t routine = 0;
+        uint32_t overlapped = 0;
+        uint32_t error_code = 0;
+        uint32_t bytes_transferred = 0;
+    };
     struct GuestExecutionState {
         std::array<uint8_t, kRegisterBankSize> registers{};
         std::unordered_map<uint32_t, uint32_t> tls_values;
         std::vector<uint32_t> active_functions;
         std::vector<GuestRegisterSnapshot> active_function_registers;
         std::deque<uint32_t> recent_functions;
+        std::deque<GuestIoCompletion> io_completions;
         uint32_t last_error = 0;
         int32_t priority = 0;
         uint32_t ideal_processor = 0;
@@ -700,6 +709,8 @@ struct RecompiledPcodeModule::Impl {
                     std::getenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS"), true);
             guest_call_trace_stack_slot_offsets = parse_guest_trace_u32_values(
                 std::getenv("SHIFT_TRACE_GUEST_CALL_STACK_SLOTS"), true);
+            guest_call_trace_string_slot_offsets = parse_guest_trace_u32_values(
+                std::getenv("SHIFT_TRACE_GUEST_CALL_STRING_SLOTS"), true);
         }
         static_assert(sizeof(size_t) >= sizeof(uint64_t),
                       "the guest RAM reservation requires a 64-bit host");
@@ -1047,7 +1058,9 @@ struct RecompiledPcodeModule::Impl {
         (void)read_guest_u32("register", kX86EaxRegisterOffset,
                              event.eax_entry);
         (void)read_guest_u32("register", kX86EdxRegisterOffset,
-        event.edx_entry);
+                             event.edx_entry);
+        (void)read_guest_u32("register", kX86EdiRegisterOffset,
+                             event.edi_entry);
         uint32_t stack_pointer = 0;
         const bool has_stack_pointer = read_guest_u32(
             "register", kX86EspRegisterOffset, stack_pointer);
@@ -1107,6 +1120,54 @@ struct RecompiledPcodeModule::Impl {
             }
             return slots;
         };
+        const auto sample_string_slots = [&](
+            uint32_t base, const std::vector<uint32_t>& offsets) {
+            std::vector<RecompiledGuestCallTraceStringSlot> slots;
+            slots.reserve(offsets.size());
+            for (const uint32_t slot_offset : offsets) {
+                RecompiledGuestCallTraceStringSlot slot{};
+                slot.offset = slot_offset;
+                const uint64_t slot_address =
+                    static_cast<uint64_t>(base) + slot_offset;
+                if (slot_address <= UINT32_MAX &&
+                    read_guest_diagnostic_u32(slot_address, slot.address)) {
+                    slot.has_address = true;
+                    if (slot.address >= kGuestMinimumUserAddress &&
+                        slot.address < kGuestRamSize) {
+                        slot.has_value = true;
+                        for (size_t index = 0;
+                             index < kGuestCallTraceStringByteLimit; ++index) {
+                            const uint64_t address =
+                                static_cast<uint64_t>(slot.address) + index;
+                            uint8_t byte = 0;
+                            if (address >= kGuestRamSize ||
+                                !read_guest_diagnostic_u8(address, byte)) {
+                                slot.has_value = false;
+                                slot.value.clear();
+                                break;
+                            }
+                            if (byte == 0) {
+                                slot.terminated = true;
+                                break;
+                            }
+                            if (byte < 0x20 || byte > 0x7e) {
+                                slot.has_value = false;
+                                slot.value.clear();
+                                break;
+                            }
+                            slot.value.push_back(static_cast<char>(byte));
+                        }
+                        if (slot.has_value && !slot.terminated &&
+                            slot.value.size() ==
+                                kGuestCallTraceStringByteLimit) {
+                            slot.truncated = true;
+                        }
+                    }
+                }
+                slots.push_back(std::move(slot));
+            }
+            return slots;
+        };
         event.caller_slots =
             sample_slots(event.caller_ecx, guest_call_trace_slot_offsets);
         if (!event.is_import) {
@@ -1116,6 +1177,8 @@ struct RecompiledPcodeModule::Impl {
         if (has_stack_pointer) {
             event.stack_slots = sample_slots(
                 stack_pointer, guest_call_trace_stack_slot_offsets);
+            event.string_slots = sample_string_slots(
+                stack_pointer, guest_call_trace_string_slot_offsets);
         }
         guest_call_trace_events.push_back(std::move(event));
         return guest_call_trace_events.size() - 1;
@@ -1127,6 +1190,8 @@ struct RecompiledPcodeModule::Impl {
         event.completion_dispatch_count = function_count;
         event.has_eax_return = read_guest_u32(
             "register", kX86EaxRegisterOffset, event.eax_return);
+        event.has_edi_return = read_guest_u32(
+            "register", kX86EdiRegisterOffset, event.edi_return);
         event.completed = true;
     }
 
@@ -1250,6 +1315,8 @@ struct RecompiledPcodeModule::Impl {
                 return get_file_size();
             if (name == "KERNEL32.dll!ReadFile")
                 return read_file();
+            if (name == "KERNEL32.dll!ReadFileEx")
+                return read_file_ex();
             if (name == "KERNEL32.dll!HeapCreate")
                 return heap_create();
             if (name == "KERNEL32.dll!HeapAlloc")
@@ -1604,9 +1671,12 @@ struct RecompiledPcodeModule::Impl {
         if (!function) {
             const std::string unresolved_error = error;
             error.clear();
+            const size_t unresolved_trace_index =
+                record_guest_call_trace(static_cast<uint32_t>(target));
             int thunk_result = -1;
             if (dispatch_tls_alloc_wrapper(static_cast<uint32_t>(target),
                                            thunk_result)) {
+                complete_guest_call_trace(unresolved_trace_index);
                 if (thunk_result == 0)
                     error.clear();
                 else if (error.empty())
@@ -2665,6 +2735,7 @@ struct RecompiledPcodeModule::Impl {
             "VirtualAlloc", "VirtualFree",
             "CloseHandle",
             "CreateFileA", "DeleteFileA", "GetFileSize", "ReadFile",
+            "ReadFileEx",
             "HeapCreate", "HeapAlloc", "HeapReAlloc", "HeapSize", "HeapFree", "GetVersionExA",
             "SetUnhandledExceptionFilter", "LoadLibraryA", "GetModuleHandleA",
             "GetModuleFileNameA", "GetProcAddress",
@@ -3284,6 +3355,13 @@ struct RecompiledPcodeModule::Impl {
 
     int sleep_guest_thread(uint32_t milliseconds, bool alertable,
                            const char* api, uint32_t stack_cleanup) {
+        if (alertable) {
+            bool dispatched = false;
+            if (!dispatch_pending_io_completions(dispatched)) return -1;
+            if (dispatched)
+                return return_kernel32_dword(0x000000c0, api,
+                                             stack_cleanup);
+        }
         if (scheduler_context_active && guest_coroutine_active) {
             GuestThread* thread =
                 guest_execution_state(current_guest_thread_handle);
@@ -4381,6 +4459,12 @@ struct RecompiledPcodeModule::Impl {
 
     uint32_t wait_guest_object(uint32_t handle, uint32_t timeout_ms,
                                const char* api, bool alertable = false) {
+        if (alertable) {
+            bool dispatched = false;
+            if (!dispatch_pending_io_completions(dispatched))
+                return UINT32_MAX;
+            if (dispatched) return 0x000000c0;
+        }
         const auto thread = guest_threads.find(handle);
         if (thread != guest_threads.end()) {
             if (thread->second.completed) return 0;
@@ -6851,6 +6935,87 @@ struct RecompiledPcodeModule::Impl {
         }
 
         candidate = (base / std::filesystem::path(relative_path)).lexically_normal();
+        if (!path_is_within_guest_root(candidate)) {
+            guest_last_error = 5;
+            return false;
+        }
+
+        std::filesystem::path case_resolved = guest_filesystem_root;
+        const std::filesystem::path relative_candidate =
+            candidate.lexically_relative(guest_filesystem_root);
+        for (auto component = relative_candidate.begin();
+             component != relative_candidate.end(); ++component) {
+            if (*component == ".") continue;
+            const bool final_component =
+                std::next(component) == relative_candidate.end();
+            std::filesystem::path match = case_resolved / *component;
+            std::error_code component_error;
+            const bool exact_match =
+                std::filesystem::exists(match, component_error) &&
+                !component_error;
+            if (!exact_match) {
+                component_error.clear();
+                std::filesystem::path folded_match;
+                std::filesystem::directory_iterator entry(case_resolved,
+                                                           component_error);
+                const auto fold_ascii = [](std::string value) {
+                    for (char& character : value) {
+                        if (character >= 'A' && character <= 'Z')
+                            character = static_cast<char>(character + ('a' - 'A'));
+                    }
+                    return value;
+                };
+                const std::string wanted = fold_ascii(component->string());
+                for (const std::filesystem::directory_iterator end;
+                     !component_error && entry != end;
+                     entry.increment(component_error)) {
+                    if (fold_ascii(entry->path().filename().string()) != wanted)
+                        continue;
+                    if (!folded_match.empty()) {
+                        guest_last_error = 5;
+                        return false;
+                    }
+                    folded_match = entry->path().filename();
+                }
+                if (component_error) {
+                    match = case_resolved / *component;
+                    for (auto remaining = std::next(component);
+                         remaining != relative_candidate.end(); ++remaining) {
+                        match /= *remaining;
+                    }
+                    case_resolved = std::move(match);
+                    break;
+                }
+                if (!folded_match.empty()) {
+                    match = case_resolved / folded_match;
+                } else if (!preserve_final_component || !final_component) {
+                    for (auto remaining = component;
+                         remaining != relative_candidate.end(); ++remaining) {
+                        case_resolved /= *remaining;
+                    }
+                    break;
+                }
+            }
+
+            if (preserve_final_component && final_component) {
+                case_resolved = std::move(match);
+                continue;
+            }
+            std::filesystem::path canonical_component =
+                std::filesystem::canonical(match, component_error);
+            if (component_error) {
+                guest_last_error = component_error == std::errc::permission_denied
+                                       ? 5
+                                       : 3;
+                return false;
+            }
+            if (!path_is_within_guest_root(canonical_component)) {
+                guest_last_error = 5;
+                return false;
+            }
+            case_resolved = std::move(canonical_component);
+        }
+        candidate = std::move(case_resolved);
         std::error_code error_code;
         if (preserve_final_component) {
             const std::filesystem::path parent =
@@ -7047,6 +7212,147 @@ struct RecompiledPcodeModule::Impl {
             return -1;
         }
         return return_kernel32_dword(1, api, 20);
+    }
+
+    int read_file_ex() {
+        constexpr const char* api = "KERNEL32.dll!ReadFileEx";
+        uint32_t handle = 0;
+        uint32_t output_address = 0;
+        uint32_t bytes_to_read = 0;
+        uint32_t overlapped = 0;
+        uint32_t completion_routine = 0;
+        if (!read_stack_argument(0, handle, api) ||
+            !read_stack_argument(1, output_address, api) ||
+            !read_stack_argument(2, bytes_to_read, api) ||
+            !read_stack_argument(3, overlapped, api) ||
+            !read_stack_argument(4, completion_routine, api)) {
+            return -1;
+        }
+        const auto file = guest_files.find(handle);
+        if (file == guest_files.end() || completion_routine == 0 ||
+            overlapped == 0 || !valid_guest_pointer(overlapped, 20) ||
+            bytes_to_read > kMaximumGuestFileReadBytes ||
+            (bytes_to_read != 0 &&
+             !valid_guest_pointer(output_address, bytes_to_read))) {
+            guest_last_error = file == guest_files.end() ? 6 : 87;
+            return return_kernel32_dword(0, api, 20);
+        }
+
+        GuestThread* thread =
+            guest_execution_state(current_guest_thread_handle);
+        if (!thread || thread->io_completions.size() >= 1024) {
+            error = std::string(api) +
+                    " has no available guest completion queue";
+            return -1;
+        }
+        uint32_t offset_low = 0;
+        uint32_t offset_high = 0;
+        if (!read_guest_u32("ram", static_cast<uint64_t>(overlapped) + 8,
+                            offset_low) ||
+            !read_guest_u32("ram", static_cast<uint64_t>(overlapped) + 12,
+                            offset_high)) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 20);
+        }
+        const uint64_t file_offset =
+            (static_cast<uint64_t>(offset_high) << 32) | offset_low;
+        const uint64_t maximum_offset = static_cast<uint64_t>(
+            std::numeric_limits<off_t>::max());
+        if (file_offset > maximum_offset ||
+            bytes_to_read > maximum_offset - file_offset) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 20);
+        }
+
+        std::vector<uint8_t> bytes(bytes_to_read);
+        size_t total_read = 0;
+        uint32_t completion_error = 0;
+        while (total_read < bytes.size()) {
+            const ssize_t count = ::pread(
+                file->second.descriptor, bytes.data() + total_read,
+                bytes.size() - total_read,
+                static_cast<off_t>(file_offset + total_read));
+            if (count < 0 && errno == EINTR) continue;
+            if (count < 0) {
+                completion_error = 31;
+                break;
+            }
+            if (count == 0) break;
+            total_read += static_cast<size_t>(count);
+        }
+        if (total_read != 0 &&
+            !write_guest_bytes(output_address, bytes.data(), total_read, api))
+            return -1;
+        if (!write_guest_u32("ram", overlapped, completion_error) ||
+            !write_guest_u32("ram", static_cast<uint64_t>(overlapped) + 4,
+                             static_cast<uint32_t>(total_read))) {
+            error = std::string(api) + " cannot update OVERLAPPED status";
+            return -1;
+        }
+        thread->io_completions.push_back(
+            {completion_routine, overlapped, completion_error,
+             static_cast<uint32_t>(total_read)});
+        guest_last_error = 0;
+        return return_kernel32_dword(1, api, 20);
+    }
+
+    bool dispatch_pending_io_completions(bool& dispatched) {
+        dispatched = false;
+        GuestThread* thread =
+            guest_execution_state(current_guest_thread_handle);
+        if (!thread) {
+            error = "alertable guest wait has no thread state";
+            return false;
+        }
+        size_t count = 0;
+        while (!thread->io_completions.empty()) {
+            if (++count > 1024) {
+                error = "guest I/O completion queue exceeded its dispatch limit";
+                return false;
+            }
+            const GuestIoCompletion completion =
+                thread->io_completions.front();
+            thread->io_completions.pop_front();
+            uint32_t esp = 0;
+            if (!read_guest_u32("register", kX86EspRegisterOffset, esp) ||
+                esp < kGuestMinimumUserAddress + 16) {
+                error = "guest I/O completion has no valid callback stack";
+                return false;
+            }
+            const uint32_t callback_esp = esp - 16;
+            if (!write_guest_u32("ram", callback_esp, 0) ||
+                !write_guest_u32("ram", callback_esp + 4,
+                                 completion.error_code) ||
+                !write_guest_u32("ram", callback_esp + 8,
+                                 completion.bytes_transferred) ||
+                !write_guest_u32("ram", callback_esp + 12,
+                                 completion.overlapped)) {
+                error = "cannot prepare guest I/O completion callback stack";
+                return false;
+            }
+
+            const auto saved_registers = registers;
+            const std::string saved_error = error;
+            error.clear();
+            if (!write_guest_u32("register", kX86EspRegisterOffset,
+                                 callback_esp)) {
+                registers = saved_registers;
+                error = "cannot enter guest I/O completion callback";
+                return false;
+            }
+            const int result = dispatch(completion.routine);
+            const std::string callback_error = error;
+            registers = saved_registers;
+            if (result != 0 || !callback_error.empty()) {
+                error = callback_error.empty()
+                            ? "guest I/O completion callback failed"
+                            : callback_error;
+                return false;
+            }
+            error = saved_error;
+            dispatched = true;
+        }
+        return true;
     }
 
     int set_unhandled_exception_filter() {
@@ -9525,6 +9831,8 @@ struct RecompiledPcodeModule::Impl {
             guest_call_trace_target_slot_offsets;
         snapshot.guest_call_trace_stack_slot_offsets =
             guest_call_trace_stack_slot_offsets;
+        snapshot.guest_call_trace_string_slot_offsets =
+            guest_call_trace_string_slot_offsets;
         snapshot.guest_call_trace = guest_call_trace_events;
         if (!main_guest_thread.active_functions.empty()) {
             snapshot.main_thread_current_function =
@@ -9572,13 +9880,29 @@ struct RecompiledPcodeModule::Impl {
             for (size_t index = 0; index < guest_call_trace_events.size();
                  ++index) {
                 const auto& event = guest_call_trace_events[index];
-                char call[192]{};
+                char call[320]{};
+                char eax_return[20]{};
+                char edi_return[20]{};
+                if (event.completed && event.has_eax_return) {
+                    std::snprintf(eax_return, sizeof(eax_return),
+                                  "0x%08x", event.eax_return);
+                } else {
+                    std::snprintf(eax_return, sizeof(eax_return), "pending");
+                }
+                if (event.completed && event.has_edi_return) {
+                    std::snprintf(edi_return, sizeof(edi_return),
+                                  "0x%08x", event.edi_return);
+                } else {
+                    std::snprintf(edi_return, sizeof(edi_return), "pending");
+                }
                 std::snprintf(
                     call, sizeof(call),
-                    "%s{target=0x%08x,return=0x%08x,ecx=0x%08x,eax=0x%08x,edx=0x%08x%s%s}",
+                    "%s{target=0x%08x,return=0x%08x,ecx=0x%08x,eax=0x%08x,edx=0x%08x,edi=0x%08x,eax_return=%s,edi_return=%s,completed=%u%s%s}",
                     index == 0 ? "" : ",", event.function,
                     event.has_return_address ? event.return_address : 0,
                     event.ecx_entry, event.eax_entry, event.edx_entry,
+                    event.edi_entry, eax_return, edi_return,
+                    event.completed ? 1u : 0u,
                     event.is_import ? ",import=" : "",
                     event.is_import ? event.import_name.c_str() : "");
                 error += call;
@@ -9886,6 +10210,7 @@ struct RecompiledPcodeModule::Impl {
     std::vector<uint32_t> guest_call_trace_slot_offsets;
     std::vector<uint32_t> guest_call_trace_target_slot_offsets;
     std::vector<uint32_t> guest_call_trace_stack_slot_offsets;
+    std::vector<uint32_t> guest_call_trace_string_slot_offsets;
     std::vector<RecompiledGuestCallTraceEvent> guest_call_trace_events;
     uint64_t guest_heap_next_address = kGuestHeapStartAddress;
     uint64_t guest_virtual_next_address = UINT64_C(0x20000000);

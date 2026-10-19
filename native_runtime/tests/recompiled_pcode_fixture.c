@@ -1,5 +1,65 @@
 #include "shift_recompiled_pcode_abi.h"
 
+int rvi_005088a0(RviPcodeContext *ctx) {
+    uint8_t esp_bytes[4] = {0};
+    uint8_t return_bytes[4] = {0};
+    uint8_t next_esp_bytes[4] = {0};
+    uint8_t next_eip_bytes[4] = {0};
+    if (ctx->read(ctx->opaque, "register", UINT64_C(0x10), 4,
+                  esp_bytes) != 0) {
+        return -1;
+    }
+    const uint32_t esp = (uint32_t)esp_bytes[0] |
+                         ((uint32_t)esp_bytes[1] << 8) |
+                         ((uint32_t)esp_bytes[2] << 16) |
+                         ((uint32_t)esp_bytes[3] << 24);
+    if (ctx->read(ctx->opaque, "ram", esp, 4, return_bytes) != 0) {
+        return -1;
+    }
+    const uint32_t return_address = (uint32_t)return_bytes[0] |
+                                    ((uint32_t)return_bytes[1] << 8) |
+                                    ((uint32_t)return_bytes[2] << 16) |
+                                    ((uint32_t)return_bytes[3] << 24);
+    const uint32_t next_esp = esp + 4;
+    for (unsigned i = 0; i < 4; ++i) {
+        next_esp_bytes[i] = (uint8_t)(next_esp >> (i * 8));
+        next_eip_bytes[i] = (uint8_t)(return_address >> (i * 8));
+    }
+    if (ctx->write(ctx->opaque, "register", UINT64_C(0x10), 4,
+                   next_esp_bytes) != 0 ||
+        ctx->write(ctx->opaque, "register", UINT64_C(0x284), 4,
+                   next_eip_bytes) != 0) {
+        return -1;
+    }
+    return 0;
+}
+
+int rvi_00509e40(RviPcodeContext *ctx) {
+    uint8_t ecx_bytes[4] = {0};
+    uint8_t receiver_state[1] = {0};
+    uint8_t zero[4] = {0};
+    const uint8_t completed_state[4] = {4, 0, 0, 0};
+    if (ctx->read(ctx->opaque, "register", UINT64_C(0x4), 4, ecx_bytes) !=
+        0) {
+        return -1;
+    }
+    const uint32_t receiver = (uint32_t)ecx_bytes[0] |
+                              ((uint32_t)ecx_bytes[1] << 8) |
+                              ((uint32_t)ecx_bytes[2] << 16) |
+                              ((uint32_t)ecx_bytes[3] << 24);
+    if (ctx->read(ctx->opaque, "ram", receiver + 4, 1, receiver_state) != 0 ||
+        ctx->write(ctx->opaque, "register", UINT64_C(0), 4, zero) != 0) {
+        return -1;
+    }
+    if (receiver_state[0] == 0) return 0;
+    if (ctx->write(ctx->opaque, "ram", receiver + 0x24, 4, zero) != 0 ||
+        ctx->write(ctx->opaque, "ram", receiver + 0x2c, 4,
+                   completed_state) != 0) {
+        return -1;
+    }
+    return ctx->write(ctx->opaque, "ram", receiver + 4, 1, zero);
+}
+
 int rvi_00685700(RviPcodeContext *ctx) {
     const uint8_t value[4] = {0xd0, 0x99, 0xaa, 0x00};
     return ctx->write(ctx->opaque, "ram", UINT64_C(0x20000), sizeof(value),
@@ -156,6 +216,18 @@ int rvi_00402000(RviPcodeContext *ctx) {
     return ctx->call(ctx->opaque, UINT64_C(0x00deadbeef));
 }
 
+int rvi_00402100(RviPcodeContext *ctx) {
+    const uint32_t stack = UINT32_C(0x00033020);
+    const uint32_t return_address = UINT32_C(0x00402105);
+    if (ctx->write(ctx->opaque, "register", UINT64_C(0x10), sizeof(stack),
+                   (const uint8_t *)&stack) != 0 ||
+        ctx->write(ctx->opaque, "ram", stack, sizeof(return_address),
+                   (const uint8_t *)&return_address) != 0) {
+        return -1;
+    }
+    return ctx->call(ctx->opaque, UINT64_C(0x00deadbeef));
+}
+
 int rvi_0050c7f0(RviPcodeContext *ctx) {
     const uint8_t enabled = 1;
     if (ctx->write(ctx->opaque, "ram", UINT64_C(0x00be250c), 1,
@@ -257,6 +329,66 @@ int rvi_0040c000(RviPcodeContext *ctx) {
     if (parameter != UINT32_C(0x12345678) || teb == 0 || teb_self != teb)
         return -2;
     return ctx->write(ctx->opaque, "register", 0, sizeof(result), result);
+}
+
+int rvi_0040d100(RviPcodeContext *ctx) {
+    uint8_t esp[4] = {0};
+    uint8_t arguments[12] = {0};
+    if (ctx->read(ctx->opaque, "register", 0x10, sizeof(esp), esp) != 0)
+        return -1;
+    const uint32_t stack = (uint32_t)esp[0] | ((uint32_t)esp[1] << 8) |
+                           ((uint32_t)esp[2] << 16) |
+                           ((uint32_t)esp[3] << 24);
+    if (ctx->read(ctx->opaque, "ram", (uint64_t)stack + 4,
+                  sizeof(arguments), arguments) != 0)
+        return -1;
+    return ctx->write(ctx->opaque, "ram", UINT64_C(0x20100),
+                      sizeof(arguments), arguments);
+}
+
+static uint32_t fixture_read_u32(const uint8_t bytes[4]) {
+    return (uint32_t)bytes[0] | ((uint32_t)bytes[1] << 8) |
+           ((uint32_t)bytes[2] << 16) | ((uint32_t)bytes[3] << 24);
+}
+
+static void fixture_write_u32(uint8_t bytes[4], uint32_t value) {
+    bytes[0] = (uint8_t)value;
+    bytes[1] = (uint8_t)(value >> 8);
+    bytes[2] = (uint8_t)(value >> 16);
+    bytes[3] = (uint8_t)(value >> 24);
+}
+
+int rvi_0066c700(RviPcodeContext *ctx) {
+    uint8_t esp_bytes[4] = {0};
+    uint8_t ecx[4] = {0};
+    uint8_t edx[4] = {0};
+    uint8_t stack[12] = {0};
+    uint8_t record[16] = {0};
+    uint8_t word[4] = {0};
+    if (ctx->read(ctx->opaque, "register", 0x10, 4, esp_bytes) != 0 ||
+        ctx->read(ctx->opaque, "register", 4, 4, ecx) != 0 ||
+        ctx->read(ctx->opaque, "register", 8, 4, edx) != 0 ||
+        ctx->read(ctx->opaque, "ram", fixture_read_u32(esp_bytes), 12,
+                  stack) != 0) {
+        return -1;
+    }
+    for (size_t index = 0; index < 4; ++index) {
+        record[index] = ecx[index];
+        record[index + 4] = edx[index];
+        record[index + 8] = stack[index + 4];
+        record[index + 12] = stack[index + 8];
+    }
+    fixture_write_u32(word, 1);
+    if (ctx->write(ctx->opaque, "ram", UINT64_C(0x20120), sizeof(record),
+                   record) != 0 ||
+        ctx->write(ctx->opaque, "register", 0, sizeof(word), word) != 0) {
+        return -1;
+    }
+    fixture_write_u32(word, fixture_read_u32(esp_bytes) + 12);
+    if (ctx->write(ctx->opaque, "register", 0x10, sizeof(word), word) != 0)
+        return -1;
+    fixture_write_u32(word, fixture_read_u32(stack));
+    return ctx->write(ctx->opaque, "register", 0x284, sizeof(word), word);
 }
 
 int rvi_0040c100(RviPcodeContext *ctx) {

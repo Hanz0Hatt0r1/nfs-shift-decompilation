@@ -1,0 +1,60 @@
+{
+  "format": "SHIFT.RetailCaseInsensitivePathProbe/1",
+  "probe_versions": ["v253", "v254"],
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "startup_pcode_module_sha256": "6f8016195fffe4e6b3803929cf50946bdcf96e00436295f0db32a468487207c3",
+  "module_set_evidence": "entrypoint_probe_v215_supplement_replay.json",
+  "raw_probe_logs": "local external artifact root; not committed",
+  "guest_path": "C:\\pakfiles\\bootpersistent.bff",
+  "installed_file": "Pakfiles/BOOTPERSISTENT.bff",
+  "installed_file_exists": true,
+  "path_lookup_finding": "The guest path used lower-case ASCII components, while the retail installation uses mixed-case directory and filename components. Linux's case-sensitive lookup caused the v253 CreateFileA failure.",
+  "v253": {
+    "status": "host-frame-loop",
+    "dispatches": 96082,
+    "unique_functions": 1559,
+    "frames_rendered": 120,
+    "worker_waiting_count": 4,
+    "validation_errors": 0,
+    "probe_log_sha256": "70cfb53462df696333de3303c9d888bdbe5f45026d3d416afaa3bdda718e8d4a",
+    "trace_events": 11,
+    "trace_truncated": false,
+    "create_file_a": {
+      "dispatch_count": 64823,
+      "thread_id": "0x00010000",
+      "caller": "0x00655440",
+      "path_pointer": "0x28249b16",
+      "path": "C:\\pakfiles\\bootpersistent.bff",
+      "desired_access": "0x80000000",
+      "share_mode": "0x00000001",
+      "creation_disposition": "0x00000003",
+      "eax_return": "0xffffffff"
+    },
+    "retail_rendering_proven": false
+  },
+  "v254": {
+    "status": "blocked",
+    "exit_code": 1,
+    "dispatches": 71631,
+    "unique_functions": 1510,
+    "blocker": "P-code function 0x005f1830 returned -1",
+    "probe_log_sha256": "3fa7cbf50b61543a7ce37a2cd47f24d8b482f89de3d84024abe39236f5983cd7",
+    "create_file_a": {
+      "dispatch_count": 64823,
+      "caller": "0x00655440",
+      "open_confirmed_by_following_get_file_size": true,
+      "handle_used_by_get_file_size": "0x0005000c",
+      "size_consumed_by_next_guest_call": "0x00156c72",
+      "read_file_before_blocker": false
+    },
+    "runtime_binary_sha256": "9c2c3f32793463144c75d04434075679c2ac23b7e93e938d04ec4b19d6f8b66e",
+    "retail_rendering_proven": false
+  },
+  "casefold_resolver": {
+    "scope": "Existing ASCII path components are matched case-insensitively.",
+    "boundary": "Resolved canonical components must remain within the configured guest filesystem root.",
+    "final_symlink_behavior": "The final component remains uncanonicalized for DeleteFileA so only the symlink is removed.",
+    "regression": "shift_runtime_recompiled_pcode_module covers mixed-case directory and filename lookup and existing symlink deletion."
+  },
+  "next_frontier": "Trace P-code function 0x005f1830 and its callers 0x00652540 / 0x00652d60 to identify why the loaded resource is rejected before ReadFile."
+}

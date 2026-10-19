@@ -1,0 +1,437 @@
+{
+  "format": "SHIFT.RetailPcodeWorkerFrontier/1",
+  "probe_versions": [
+    "v258",
+    "v259",
+    "v260",
+    "v261",
+    "v262",
+    "v263",
+    "v264",
+    "v265",
+    "v266",
+    "v267",
+    "v268",
+    "v269",
+    "v270",
+    "v271",
+    "v272",
+    "v273",
+    "v274"
+  ],
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "module_set_evidence": "entrypoint_probe_v215_supplement_replay.json",
+  "raw_probe_logs": "local external artifact root; not committed",
+  "probe_bounds": {
+    "frames_requested": 120,
+    "timeout_seconds": 180,
+    "validation": true,
+    "synthetic_mesh_fixture": true
+  },
+  "runs": [
+    {
+      "version": "v258",
+      "status": "blocked",
+      "dispatches": 71666,
+      "unique_functions": 1522,
+      "blocker": "P-code module has no exported function rvi_005b0d50 called from guest function 0x00652540",
+      "probe_log_sha256": "1bd5e6817df63313ebd88a5098eff9b8e99097e664324de535c56c86973eb3f2",
+      "finding": "The ReadFileEx alertable-completion path and corrected 0x00652af0 body complete; execution then reaches an unresolved virtual tail dispatcher."
+    },
+    {
+      "version": "v259",
+      "status": "blocked",
+      "dispatches": 71667,
+      "unique_functions": 1523,
+      "blocker": "P-code module has no exported function rvi_0066cc70 called from guest function 0x005b0d50",
+      "probe_log_sha256": "6d331cd646f3ec1ae4ac4b21a3f5afb4df286b5ffea56a1a232b73a0a4c38e",
+      "finding": "The exact virtual dispatcher at 0x005b0d50 reaches slot target 0x0066cc70."
+    },
+    {
+      "version": "v260",
+      "status": "blocked",
+      "dispatches": 71798,
+      "unique_functions": 1531,
+      "blocker": "P-code module has no exported function rvi_0066caf0 called from guest function 0x0066cafb",
+      "probe_log_sha256": "ef1c0049c0ec25e827af1642f25375c5aecb2e5ce3ae1ec517529590995333da",
+      "finding": "Ghidra-lowered 0x0066cc70 executes the request handler and advances to the retail CRC32 loop."
+    },
+    {
+      "version": "v261",
+      "status": "blocked",
+      "dispatches": 457430,
+      "unique_functions": 1727,
+      "blocker": "P-code module has no exported function rvi_00509689 called from guest function 0x005095d4",
+      "probe_log_sha256": "00b8d95f9054b8bfa5c47dab61c6333d2789f5e73e3d984890deb4905e070f84",
+      "guest_stack": [
+        "0x00509551",
+        "0x0050966b",
+        "0x00509588",
+        "0x00509551",
+        "0x0050966b",
+        "0x00509588",
+        "0x0042c9cc",
+        "0x005095d4"
+      ],
+      "finding": "The CRC32 path completes without the recursive-dispatch failure; the next stop is 0x00509689. No host-frame loop or retail rendering is reached."
+    },
+    {
+      "version": "v262",
+      "status": "blocked",
+      "dispatches": 463504,
+      "unique_functions": 1735,
+      "blocker": "P-code module has no exported function rvi_00509e60 called from guest function 0x00637530",
+      "probe_log_sha256": "94be15a02d6a1dc69ce2847415b21961542ecfc60bf1e3bdbc20814e7437f54d",
+      "finding": "The 0x00509689 cleanup block completes and execution advances to a new call site at 0x00637530. The host-frame loop is not reached."
+    },
+    {
+      "version": "v263",
+      "status": "blocked",
+      "dispatches": 515847,
+      "unique_functions": 1747,
+      "blocker": "P-code module has no exported function rvi_0050967d called from guest function 0x005093a0",
+      "probe_log_sha256": "ec33da147e5c2bbb8e3ead7b1a097a98612595b3aee12ee60ab609f70207c4e3",
+      "finding": "The 0x00509e60 -> 0x00509e40 tail alias completes and advances to a neighboring state-machine block at 0x0050967d. The host-frame loop is not reached."
+    },
+    {
+      "version": "v264",
+      "status": "blocked",
+      "dispatches": 515860,
+      "unique_functions": 1751,
+      "blocker": "P-code module has no exported function rvi_27f30a50 called from guest function 0x0040ba50",
+      "probe_log_sha256": "82bb01ef588d20bd17b1a277b3461da5cf8caf7ff2148e7baabcbfbef9eb72dc",
+      "guest_stack": [
+        "0x0090488a",
+        "0x009046aa",
+        "0x00a69160",
+        "0x0040ba50"
+      ],
+      "guest_registers_at_stop": {
+        "EAX": "0x27f30a50",
+        "ECX": "0x27f30a98",
+        "EDX": "0x27f30a88",
+        "ESI": "0x27e31278",
+        "EDI": "0x27f30a98"
+      },
+      "finding": "The 0x0050967d block and 0x0050958c path complete. The next call target is a guest-heap address; static/runtime evidence has not established it as executable code."
+    },
+    {
+      "version": "v265",
+      "status": "blocked",
+      "dispatches": 515861,
+      "unique_functions": 1751,
+      "blocker": "P-code module has no exported function rvi_27f30a50 called from guest function 0x0040ba50",
+      "probe_log_sha256": "e0169ef88a81abab32fb808d6bb278d9bcf64acb479d8d6a5d66ecc52b92e9fd",
+      "finding": "The apparent 0x27f30a8c candidate is a doubly linked-list prev field. It is not executable code; the actual pointer slot under investigation is 0x27f30a90."
+    },
+    {
+      "version": "v266",
+      "status": "blocked",
+      "dispatches": 515862,
+      "unique_functions": 1751,
+      "blocker": "P-code module has no exported function rvi_27f30a50 called from guest function 0x0040ba50",
+      "probe_log_sha256": "6e3be15357cc51696a4d42646bb078b6f018ef4decd56443791360afe1a6d61e",
+      "finding": "The trace records return address 0x0040bb04, identifying CALL EAX at 0x0040bb02 as the unresolved indirect call.",
+      "call_return_address": "0x0040bb04",
+      "failing_call_instruction": "0x0040bb02"
+    },
+    {
+      "version": "v267",
+      "status": "blocked",
+      "dispatches": 515862,
+      "unique_functions": 1751,
+      "blocker": "P-code module has no exported function rvi_27f30a50 called from guest function 0x0040ba50",
+      "probe_log_sha256": "1508b2d144bf13cefa82aafb812bb47851ea64f98b299afe69318ef6524ef27d",
+      "finding": "Allocator 0x00427330 wrote 0x27f30a50 into slot 0x27f30a90. The target starts with word 0x0b, proving this is pool data rather than an executable target.",
+      "target_pointer_slot": "0x27f30a90",
+      "slot_last_writer": "0x00427330",
+      "target_first_word": "0x0000000b"
+    },
+    {
+      "version": "v268",
+      "status": "blocked",
+      "dispatches": 515861,
+      "unique_functions": 1751,
+      "blocker": "P-code module has no exported function rvi_27f30a50 called from guest function 0x0040ba50",
+      "probe_log_sha256": "de5d8c416e71c3d0c73b3c67de2895689cb7bb2394a738a49c29b0aaa8efc539",
+      "finding": "Register tracing sees EDI drift in the nested 0x0054bb20 path; the one-dispatch count variation is instrumentation noise, not a new frontier."
+    },
+    {
+      "version": "v269",
+      "status": "blocked",
+      "dispatches": 515862,
+      "unique_functions": 1751,
+      "blocker": "P-code module has no exported function rvi_27f30a50 called from guest function 0x0040ba50",
+      "probe_log_sha256": "52d4b27dc62b85378b9d4be89edf177ebccf934068fcedcdb508fe0c2c20a7c4",
+      "finding": "Isolating 0x005093a0 shows EAX returns 3 while EDI changes from 0x27e31278 to 0x27f30a98."
+    },
+    {
+      "version": "v270",
+      "status": "blocked",
+      "dispatches": 515861,
+      "unique_functions": 1751,
+      "blocker": "P-code module has no exported function rvi_27f30a50 called from guest function 0x0040ba50",
+      "probe_log_sha256": "21329f830b6721dcdcf381f801d37b17f9467a718f7644992acc399f6b0282f4",
+      "finding": "0x005089c0 preserves EDI. The split continuation 0x0050958c changes EDI from 0x27f30a88 to 0x27f30a98 and returns EAX=3 before the shared epilogue."
+    },
+    {
+      "version": "v271",
+      "status": "blocked",
+      "dispatches": 516250,
+      "unique_functions": 1751,
+      "blocker": "P-code module has no exported function rvi_005095f0 called from guest function 0x00509551",
+      "probe_log_sha256": "c7befec8ffba6a9d45fb642e4e36b45df704af579c112608587bb2794f47333a",
+      "finding": "The guarded 0x0050967d epilogue repair advances execution to missing export 0x005095f0 from 0x00509551."
+    },
+    {
+      "version": "v272",
+      "status": "blocked",
+      "dispatches": 516254,
+      "unique_functions": 1752,
+      "blocker": "P-code module has no exported function rvi_0054b560 called from guest function 0x005088e0",
+      "probe_log_sha256": "2bc05dd777e4aa305e279fc7e86952ce8556ca9af2b4c05cf780efaa5593851a",
+      "finding": "The 0x005095f0 state-3 adapter advances execution to missing initializer 0x0054b560 from 0x005088e0."
+    },
+    {
+      "version": "v273",
+      "status": "blocked",
+      "dispatches": 518457,
+      "unique_functions": 1789,
+      "blocker": "P-code module has no exported function rvi_0085b0b0 called from guest function 0x0040e630",
+      "probe_log_sha256": "04c0a0d5cf988b84f9bce875d2c3030d94bcfe0e3d4aa5a44274edd120e04efc",
+      "finding": "The 0x0054b560 initializer completes. Execution reaches missing export 0x0085b0b0 from 0x0040e630; entry ESI is 0x00bbf960 and EAX/ECX both identify that object. The host-frame loop is still not reached.",
+      "guest_stack": [
+        "0x005093a0",
+        "0x0050967d",
+        "0x0050958c",
+        "0x00509551",
+        "0x005095f0",
+        "0x005088e0",
+        "0x0054b560",
+        "0x0040e630"
+      ],
+      "guest_registers_at_stop": {
+        "EAX": "0x0085b0b0",
+        "ECX": "0x2001d6b8",
+        "EDX": "0x00b1d508",
+        "EBX": "0x00000001",
+        "ESP": "0x7ffdee5c",
+        "EBP": "0x7ffdeed0",
+        "ESI": "0x00bbf960",
+        "EDI": "0x27f30a98"
+      },
+      "entry_registers_for_initializer": {
+        "EAX": "0x00bbf960",
+        "ECX": "0x00bbf960",
+        "EDX": "0x0000005d",
+        "ESI": "0x27e31278"
+      }
+    },
+    {
+      "version": "v274",
+      "status": "blocked",
+      "dispatches": 524846,
+      "unique_functions": 2006,
+      "blocker": "P-code module has no exported function rvi_0082f600 called from guest function 0x0040d910",
+      "probe_log_sha256": "a8016e05901da5bedbcb099c5a101153c50d1a7e95b39bb94a8adce1436cbb80",
+      "comparison": {
+        "reason": "more retail code executed",
+        "result": "advanced"
+      },
+      "finding": "The exact two-instruction getter 0x0085b0b0 executes and returns EAX=0x0085b000 from entry EAX=0x0085b0b0, confirming byte [ECX+0x32f] was zero. Execution advances to missing 0x0082f600 from 0x0040d910.",
+      "guest_call_trace": {
+        "target": "0x0085b0b0",
+        "return_address": "0x0040e6ca",
+        "ecx": "0x2001d6b8",
+        "eax_entry": "0x0085b0b0",
+        "eax_return": "0x0085b000",
+        "edi_entry": "0x27f30a98",
+        "edi_return": "0x27f30a98",
+        "completed": true
+      },
+      "memory_provenance": {
+        "sampled_address": "0x2001d9e7",
+        "word_value": "0x00000000",
+        "last_writer": "0x0085cd20",
+        "last_write": "0x2001d9e5+1"
+      },
+      "guest_stack": [
+        "0x0050967d",
+        "0x0050958c",
+        "0x00509551",
+        "0x005095f0",
+        "0x005088e0",
+        "0x0054b560",
+        "0x0040e630",
+        "0x0040d910"
+      ],
+      "guest_registers_at_stop": {
+        "EAX": "0x0082f600",
+        "ECX": "0x20019478",
+        "EDX": "0x7ffdee44",
+        "EBX": "0x00000001",
+        "ESP": "0x7ffdee1c",
+        "EBP": "0x7ffdee58",
+        "ESI": "0x20019478",
+        "EDI": "0x00bbf960"
+      }
+    }
+  ],
+  "lowering_provenance": {
+    "revenginstr_revision": "cc308e244a1fa0548920e13dc773f932491648bb",
+    "ghidra_version": "12.1.2",
+    "functions": {
+      "0x005f1830": {
+        "source": "native_runtime/pcode_frontier/rvi_005f1830.c",
+        "semantics": "MOV EAX,[ECX]; load [EAX+8] as external target and dispatch without changing the guest stack."
+      },
+      "0x005b0d50": {
+        "source": "native_runtime/pcode_frontier/rvi_005b0d50.c",
+        "semantics": "MOV EAX,[ECX]; JMP [EAX+0x48].",
+        "static_instructions": 3
+      },
+      "0x0066cc70": {
+        "source": "native_runtime/pcode_frontier/rvi_0066cc70.c",
+        "generated_source_sha256": "0b6ddc9268fed25a16c4938e48483369d001e6fe8d8a40cfaee5ca695d396aee",
+        "static_instructions": 25,
+        "pcode_operations": 81
+      },
+      "0x0066caf0": {
+        "source": "native_runtime/pcode_frontier/rvi_0066caf0.c",
+        "generated_source_sha256": "9e3f6459db2deb501011bdb8b7f09819460c92bd759de035de46cdb2dddcfc0c",
+        "checked_in_source_sha256": "6da38f316c953807219db6d3143b02214edaf4e2294bf07e5ff94eb206347725",
+        "static_instructions": 12,
+        "pcode_operations": 93,
+        "external_build_report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-0066caf0-pcode-20261019/build-report.json",
+        "adaptation": "Flatten 0x0066caf0 -> 0x0041a946 -> 0x0066cafb into a single P-code body, preserving the table lookup, back-edge, register effects and stdcall epilogue without recursive runtime dispatch per byte."
+      },
+      "0x00509689": {
+        "source": "native_runtime/pcode_frontier/rvi_00509689.c",
+        "generated_source_sha256": "27e96578c6a51603971deef270f475d76d167f257d616a85b4b56afa00bb42f6",
+        "checked_in_source_sha256": "254eab2cff45b96db04d169ae0931ffb962d32ff7df81abc38bef30ac21606d6",
+        "static_instructions": 17,
+        "pcode_operations": 71,
+        "external_build_report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-00509689-pcode-20261019/build-report.json",
+        "semantics": "Calls 0x005088a0; conditionally sets receiver+0x2d; conditionally dispatches the receiver virtual method; restores EDI/ESI/EBX/EBP and returns."
+      },
+      "0x00509e60": {
+        "source": "native_runtime/pcode_frontier/rvi_00509e60.c",
+        "checked_in_source_sha256": "3c858794397abfe58e3ac1e3dcaf6ef8c4b4ad632f09798cd3942dc8ec534841",
+        "static_instructions": 1,
+        "semantics": "Tail-dispatches unchanged guest state to the already exported primary function 0x00509e40 (Ghidra instruction: JMP 0x00509e40).",
+        "fixture": "The native fixture verifies the target receives the original ECX/EDX/ESP and applies the observed request-state clear."
+      },
+      "0x0050967d": {
+        "source": "native_runtime/pcode_frontier/rvi_0050967d.c",
+        "generated_source_sha256": "8556d5d0d637f0faaa2031b8b6651f3fc72edc3838041b822763dd62580a0cfc",
+        "checked_in_source_sha256": "2ae2b578159c928d5b837115706cbadefed83ed3003b7467a73075f1063c0b56",
+        "static_instructions": 3,
+        "pcode_operations": 5,
+        "external_build_report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-0050967d-pcode-20261019/build-report.json",
+        "semantics": "MOV ECX,ESI; CALL 0x005089c0; JMP 0x0050958c.",
+        "fixture": "Separate frontier-block fixture verifies the CALL return-address cleanup, ESI-to-ECX copy, tail dispatch, and preserved guest ESP.",
+        "epilogue_repair": "After 0x0050958c, restore saved EDI/ESI/EBX/EBP and return only when ESP == EBP - 0x18; this reproduces the shared epilogue for the split continuation."
+      },
+      "0x005095f0": {
+        "source": "native_runtime/pcode_frontier/rvi_005095f0.c",
+        "checked_in_source_sha256": "fb3a9b38c1824b165f5021ef6a4c31a9a009d925e2475dc44e0e204f7eccd5e4",
+        "static_instructions": 12,
+        "semantics": "Implements the observed owner-byte/state-3 branch, preserves the receiver and stack contract, calls 0x005088e0 and conditionally 0x00508970, then tail-dispatches to 0x00509588.",
+        "fixture": "Verifies both branches, guest return addresses, local flag update, and stdcall cleanup."
+      },
+      "0x0054b560": {
+        "source": "native_runtime/pcode_frontier/rvi_0054b560.c",
+        "generated_source_sha256": "d6df8544c6878370e5a391aa5554bc999a39661423ed444abbd8d1a78e694db1",
+        "instruction_corpus_sha256": "5066afb765f5aa408ce7136107d747477a9500cd1f0408314ec3f58b778b5db4",
+        "static_instructions": 20,
+        "pcode_operations": 48,
+        "semantics": "Ghidra/ revenginstr lowering of the UI initializer. Calls 0x00631740, 0x00507f80, 0x00507340, 0x0040b870, 0x0040e630, 0x0040b870, 0x0040e390, and 0x004277a0; returns 7 and preserves ESI.",
+        "calling_convention": "Guest return-address/stack cleanup for 0x00631740 and 0x00507340 is modeled as RET 4; the other observed helper 0x00507f80 uses plain RET.",
+        "fixture": "Verifies helper call sequence, ECX receiver values, RET 4 stack cleanup, ESI preservation, and EAX=7."
+      },
+      "0x0085b0b0": {
+        "source": "native_runtime/pcode_frontier/rvi_0085b0b0.c",
+        "checked_in_source_sha256": "a17f6167aa2d1342e11715e24093782655351557f5991f2f0facbe463adf0260",
+        "source_evidence": {
+          "artifact": "pinned SHIFT.exe",
+          "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+          "method": "GNU objdump -D -Mintel at virtual address 0x0085b0b0",
+          "bytes": "8a 81 2f 03 00 00 c3",
+          "instructions": [
+            "MOV AL, byte ptr [ECX+0x32f]",
+            "RET"
+          ]
+        },
+        "semantics": "Loads one receiver-relative byte into AL, preserves the upper 24 bits of EAX, and returns with plain RET; flags are unchanged.",
+        "fixture": "Checks byte-to-AL behavior, preservation of EAX high bytes, and guest EIP/ESP return semantics."
+      }
+    }
+  },
+  "v261_artifacts": {
+    "runtime_binary_sha256": "66dcf07e8a06d4e170a06e0c534af566652fd4f0b939a8635aedd3c42cd51c8b",
+    "frontier_module_sha256": "91677b770fcc1bca7893f69da615fbc7cbe8484a2ce7711449012122ff518193",
+    "retail_report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/retail-frontier-v261-crc-loop-pcode.json"
+  },
+  "interpretation": [
+    "The cumulative path models ReadFileEx, virtual dispatch, request handling, CRC32, recovered continuation blocks, the UI initializer, and the 0x0085b0b0 byte getter.",
+    "The apparent 0x27f30a50 indirect target was allocator pool data, not code; no adapter was added for it.",
+    "The bounded probe reaches 524846 dispatches and 2006 unique functions, then stops at missing 0x0082f600 from 0x0040d910.",
+    "No v258-v274 run reaches the host-frame loop; these probes do not establish frontend readiness, retail draw translation, Vulkan parity, or gameplay."
+  ],
+  "next_frontier": "Recover the complete body and calling convention for 0x0082f600 from the pinned SHIFT.exe, then implement only its observed state transition and helper call contracts. v274 stopped at this export from 0x0040d910; do not infer its behavior from the receiver fields alone.",
+  "v262_artifacts": {
+    "runtime_binary_sha256": "66dcf07e8a06d4e170a06e0c534af566652fd4f0b939a8635aedd3c42cd51c8b",
+    "frontier_module_sha256": "dab5e0b1494c9c6493028becbddaeb480febf633d6061fd08fd70c83d539f695",
+    "retail_report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/retail-frontier-v262-ui-cleanup-pcode.json"
+  },
+  "v263_artifacts": {
+    "runtime_binary_sha256": "66dcf07e8a06d4e170a06e0c534af566652fd4f0b939a8635aedd3c42cd51c8b",
+    "frontier_module_sha256": "517ee3833f7e4c837714bd5716c41d93a3423c84030c1c2a54bd8e7b9f297bb5",
+    "retail_report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/retail-frontier-v263-request-tail-alias.json"
+  },
+  "v264_artifacts": {
+    "runtime_binary_sha256": "66dcf07e8a06d4e170a06e0c534af566652fd4f0b939a8635aedd3c42cd51c8b",
+    "frontier_module_sha256": "0fed89d339b333576531af355a18510dba632ab60e9256160515f51db479cf88",
+    "retail_report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/retail-frontier-v264-state-machine-entry.json"
+  },
+  "analysis_notes": [
+    {
+      "versions": "v265-v267",
+      "finding": "Resolved the apparent heap target as allocator pool data. The slot at 0x27f30a90 is written by 0x00427330; 0x27f30a50 begins with 0x0b. Do not add a P-code export for this address."
+    },
+    {
+      "versions": "v268-v270",
+      "finding": "Separated the EDI transition from the shared epilogue. The 0x0050967d adapter now performs a stack-shape-guarded epilogue restore for the continuation path, with a fixture."
+    },
+    {
+      "versions": "v271-v272",
+      "finding": "Recovered the 0x005095f0 state branch and 0x0054b560 initializer using Ghidra 12.1.2 and revenginstr revision cc308e244a1fa0548920e13dc773f932491648bb."
+    },
+    {
+      "version": "v273",
+      "finding": "The new frontier is 0x0085b0b0 called from 0x0040e630. The call is inside the 0x0054b560 initializer; the pre-call state shows ESI/EAX/ECX reference object 0x00bbf960. Function semantics have not yet been decompiled."
+    },
+    {
+      "version": "v274",
+      "finding": "The 0x0085b0b0 getter is validated against pinned PE bytes and a completed retail trace. It reads a zero byte at [0x2001d6b8+0x32f], leaves EDI unchanged, and returns normally. The next 0x0082f600 body is stateful and remains under Ghidra analysis."
+    }
+  ],
+  "v271_artifacts": {
+    "frontier_module_sha256": "53fc066576977776e2bf97fe0662dc4774a20fcb0d49218a50ea9619826e82fd",
+    "retail_report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/retail-frontier-v271-split-continuation-epilogue.json"
+  },
+  "v272_artifacts": {
+    "frontier_module_sha256": "e1ab1ee1a8b370ca303e1a8f8026e929ff77f4f3fd00e74c3f981506f33bde67",
+    "retail_report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/retail-frontier-v272-case3-state-block.json"
+  },
+  "v273_artifacts": {
+    "runtime_binary_sha256": "2bb1b22e5b25665abdf1ae205ce26f7fa90b3d74bd35ac07a16df0d68be59d77",
+    "frontier_module_sha256": "c5449c90d25c2097a5a0d2dbed565d4c12ae79cc2713d4ae0dc6c69df8986f87",
+    "retail_report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/retail-frontier-v273-ui-initializer-pcode.json"
+  },
+  "v274_artifacts": {
+    "runtime_binary_sha256": "2bb1b22e5b25665abdf1ae205ce26f7fa90b3d74bd35ac07a16df0d68be59d77",
+    "frontier_module_sha256": "0a6c614449a9fb8b9c7bd0182b86cdab41088667ff6082e6a06f66ec08a599ba",
+    "retail_report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/retail-frontier-v274-getter-byte-accessor-cumulative.json"
+  }
+}

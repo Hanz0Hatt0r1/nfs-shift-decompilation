@@ -355,6 +355,35 @@ std::string format_guest_call_trace_memory_slots(
     return text.str();
 }
 
+std::string format_guest_call_trace_string_slots(
+    const std::vector<shift::runtime::RecompiledGuestCallTraceStringSlot>&
+        slots) {
+    std::ostringstream text;
+    text << '[';
+    for (size_t index = 0; index < slots.size(); ++index) {
+        const auto& slot = slots[index];
+        if (index != 0) text << ',';
+        text << "{\"offset\":\"" << format_guest_address(slot.offset)
+             << "\",\"address\":";
+        if (slot.has_address) {
+            text << '"' << format_guest_address(slot.address) << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"value\":";
+        if (slot.has_value) {
+            text << format_json_string(slot.value);
+        } else {
+            text << "null";
+        }
+        text << ",\"terminated\":" << (slot.terminated ? "true" : "false")
+             << ",\"truncated\":" << (slot.truncated ? "true" : "false")
+             << '}';
+    }
+    text << ']';
+    return text.str();
+}
+
 std::string format_guest_call_trace(
     const std::vector<shift::runtime::RecompiledGuestCallTraceEvent>& events) {
     std::ostringstream text;
@@ -411,6 +440,8 @@ std::string format_guest_call_trace(
              << format_guest_call_trace_memory_slots(event.target_slots)
              << ",\"stack_slots\":"
              << format_guest_call_trace_memory_slots(event.stack_slots)
+             << ",\"string_slots\":"
+             << format_guest_call_trace_string_slots(event.string_slots)
              << '}';
     }
     text << ']';
@@ -5241,6 +5272,10 @@ int main(int argc, char** argv) {
             << "    \"guest_call_trace_stack_slot_offsets\": "
             << format_guest_call_trace_addresses(
                    guest_scheduler_state.guest_call_trace_stack_slot_offsets)
+            << ",\n"
+            << "    \"guest_call_trace_string_slot_offsets\": "
+            << format_guest_call_trace_addresses(
+                   guest_scheduler_state.guest_call_trace_string_slot_offsets)
             << ",\n"
             << "    \"guest_call_trace\": "
             << format_guest_call_trace(

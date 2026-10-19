@@ -1,0 +1,75 @@
+{
+  "format": "SHIFT.IndirectTailDispatchFrontier/1",
+  "probe_versions": ["v256", "v257"],
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "module_set_evidence": "entrypoint_probe_v215_supplement_replay.json",
+  "raw_probe_logs": "local external artifact root; not committed",
+  "runtime_binary_sha256": "a67522d9146009491dd9cd41b536cc57a16328d845bc6c358ff3d584a6c1bb9f",
+  "v256": {
+    "status": "blocked",
+    "dispatches": 71631,
+    "unique_functions": 1510,
+    "blocker": "P-code function 0x005f1830 returned -1",
+    "probe_log_sha256": "4d99a9766a02d2cf0d61be860a9f9c473189fa975a7c6a5d0e060fed049e1e5b",
+    "finding": "The vtable third slot at 0x00af01c0 contains 0x0066cd60, but the generated rvi_005f1830 only accepts two intra-function branch targets and returns -1 for the external target. The generated function does not call the runtime dispatch callback.",
+    "retail_rendering_proven": false
+  },
+  "v257": {
+    "status": "blocked",
+    "dispatches": 71640,
+    "unique_functions": 1517,
+    "blocker": "P-code module has no exported function rvi_00652b13 called from guest function 0x00652af0",
+    "probe_log_sha256": "6a78d8883acd4aa5481beeb3d41354ec517a264e4ae2526644bdd23a44d21894",
+    "frontier_module_sha256": "3cf72f93d97bff61ec2141dd50991a94120536ef49439c4df92ba4024480f710",
+    "override": {
+      "function": "0x005f1830",
+      "source": "native_runtime/pcode_frontier/rvi_005f1830.c",
+      "semantics": "Read [ECX] into EAX, read [EAX+8] as the indirect tail target, then dispatch that target with guest registers and stack intact.",
+      "fixture": "The native fixture verifies EAX receives the vtable pointer, the selected target is dispatched from 0x005f1830, the original return address remains on the guest stack, and the target's side effect completes.",
+      "trace": {
+        "0x005f1830": {
+          "caller": "0x00652540",
+          "eax_return": "0x00000000",
+          "completed": true
+        },
+        "0x0066cd60": {
+          "caller": "0x005f1830",
+          "ecx_entry": "0x27ed9420",
+          "eax_entry": "0x00af01b8",
+          "eax_return": "0x00000000",
+          "completed": true
+        },
+        "0x0066bbf0": {
+          "caller": "0x0066cd60",
+          "ecx_entry": "0x27ed9428",
+          "eax_return": "0x27cebce0",
+          "completed": true
+        },
+        "0x0066ccc0": {
+          "caller": "0x0066cd60",
+          "ecx_entry": "0x27ed9420",
+          "eax_entry": "0x27cebce0",
+          "eax_return": "0x00300000",
+          "completed": true
+        },
+        "0x00652d60": {
+          "caller": "0x00655ab0",
+          "eax_return": "0x20110001",
+          "completed": true
+        }
+      }
+    },
+    "retail_rendering_proven": false
+  },
+  "probe_bounds": {
+    "frames_requested": 120,
+    "timeout_seconds": 180,
+    "validation": true,
+    "synthetic_mesh_fixture": true
+  },
+  "interpretation": [
+    "The override moves execution past the unsupported indirect tail dispatch and through 0x0066cd60, including calls to 0x0066bbf0 and 0x0066ccc0.",
+    "The next observed stop is an unresolved P-code export at 0x00652b13 from 0x00652af0.",
+    "Neither run reaches the saved host-frame-loop checkpoint; this evidence does not establish frontend readiness, rendering, or gameplay."
+  ]
+}
