@@ -612,6 +612,51 @@ int main(int argc, char** argv) {
         require(unsetenv("SHIFT_TRACE_GUEST_CALLER") == 0,
                 "could not disable guest caller trace fixture");
 
+        require(setenv("SHIFT_TRACE_UI_STATE_GATE", "1", 1) == 0,
+                "could not enable UI state gate trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_PROVENANCE", "0x00be250c", 1) == 0,
+                "could not enable helper flag provenance fixture");
+        {
+            shift::runtime::RecompiledPcodeModule gate_trace_module(argv[1]);
+            write_guest_u32(gate_trace_module, "register", 4, 0x00be2500);
+            require(gate_trace_module.call(0x0050c7f0) == 0,
+                    "helper flag writer fixture failed: " +
+                        gate_trace_module.last_error());
+            require(gate_trace_module.call(0x0050c7e0) == 0,
+                    "adjacent helper byte writer fixture failed: " +
+                        gate_trace_module.last_error());
+            require(gate_trace_module.call(0x0050ceb0) == 0,
+                    "UI state gate fixture failed: " +
+                        gate_trace_module.last_error());
+            const auto snapshot = gate_trace_module.guest_scheduler_snapshot();
+            require(snapshot.ui_state_gate_trace_enabled &&
+                        !snapshot.ui_state_gate_trace_truncated &&
+                        snapshot.ui_state_gate_trace.size() == 2,
+                    "UI state gate trace missed the gate/helper calls");
+            const auto& helper = snapshot.ui_state_gate_trace.back();
+            const auto& writer = helper.helper_flag_last_writer;
+            require(helper.function == 0x0050c880,
+                    "UI helper trace captured the wrong function");
+            require(helper.has_helper_flag_byte &&
+                        helper.helper_flag_byte == 1,
+                    "UI helper trace missed the enabled flag byte");
+            require(helper.has_helper_flag_last_writer,
+                    "UI helper trace missed the flag byte's last writer");
+            require(writer.function == 0x0050c7f0,
+                    "UI helper trace identified the wrong flag writer");
+            require(writer.has_ecx_entry &&
+                        writer.ecx_entry == 0x00be2500,
+                    "UI helper trace lost the writer ECX receiver");
+            require(writer.write_address == 0x00be250c &&
+                        writer.write_size == 1 &&
+                        writer.word_value == 0x00000001,
+                    "UI helper trace reported the wrong byte write");
+        }
+        require(unsetenv("SHIFT_TRACE_GUEST_PROVENANCE") == 0,
+                "could not disable helper flag provenance fixture");
+        require(unsetenv("SHIFT_TRACE_UI_STATE_GATE") == 0,
+                "could not disable UI state gate trace fixture");
+
         shift::runtime::RecompiledPcodeModule module(argv[1]);
         require(module.load_supplemental_module(argv[2]),
                 "P-code supplement could not be loaded: " + module.last_error());

@@ -117,6 +117,30 @@ int rvi_00402000(RviPcodeContext *ctx) {
     return ctx->call(ctx->opaque, UINT64_C(0x00deadbeef));
 }
 
+int rvi_0050c7f0(RviPcodeContext *ctx) {
+    const uint8_t enabled = 1;
+    if (ctx->write(ctx->opaque, "ram", UINT64_C(0x00be250c), 1,
+                   &enabled) != 0) {
+        return -1;
+    }
+    return 0;
+}
+
+int rvi_0050c7e0(RviPcodeContext *ctx) {
+    const uint8_t neighbor = 0;
+    return ctx->write(ctx->opaque, "ram", UINT64_C(0x00be250d), 1,
+                      &neighbor);
+}
+
+int rvi_0050ceb0(RviPcodeContext *ctx) {
+    return ctx->call(ctx->opaque, UINT64_C(0x0050c880));
+}
+
+int rvi_0050c880(RviPcodeContext *ctx) {
+    (void)ctx;
+    return 0;
+}
+
 int rvi_00403000(RviPcodeContext *ctx) {
     uint64_t output = 0;
     return ctx->userop(ctx->opaque, 7, NULL, NULL, 0, &output, 4);

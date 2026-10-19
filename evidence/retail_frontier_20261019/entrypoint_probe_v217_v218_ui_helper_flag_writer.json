@@ -1,0 +1,107 @@
+{
+  "format": "SHIFT.RetailUiHelperFlagWriterProbe/1",
+  "source_base_commit": "ecbb2be7580231f3be6ea1857a8044df1b9f6731",
+  "source_worktree_changes": [
+    "native_runtime/include/shift_recompiled_pcode_module.hpp",
+    "native_runtime/src/recompiled_pcode_module.cpp",
+    "native_runtime/src/shift_runtime.cpp",
+    "native_runtime/tests/recompiled_pcode_fixture.c",
+    "native_runtime/tests/recompiled_pcode_module_check.cpp"
+  ],
+  "runtime_binary_sha256": "3a4f006f3a9c6f35cbb0977d6d32e513276f4a8a775d99960631aea25c2fe65a",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "module_set_evidence": "entrypoint_probe_v215_supplement_replay.json",
+  "probe_bounds": {
+    "frames_requested": 120,
+    "timeout_seconds": 180,
+    "validation": true,
+    "mesh_fixture": "temporary synthetic triangle MGEO; not retail evidence"
+  },
+  "runs": [
+    {
+      "version": "v217",
+      "status": "host-frame-loop",
+      "dispatches": 96082,
+      "unique_functions": 1559,
+      "frames_rendered": 120,
+      "validation_errors": 0,
+      "guest_main_thread_function": "0x006472d0",
+      "worker_waiting_count": 4,
+      "d3d9_clear_requests": 122,
+      "vulkan_clear_submissions": 120,
+      "d3d9_present_requests": 121,
+      "vulkan_present_submissions": 120,
+      "guest_draw_translation": false,
+      "probe_report": "artifacts/frontier/v217-ui-helper-writers.json",
+      "probe_report_sha256": "0d378724633a3ae139b5e3658cd3d36e0a9b7f557c7b3249f74f7cdee2264544",
+      "probe_log": "artifacts/frontier/v217-ui-helper-writers-120-validation.log",
+      "probe_log_sha256": "e6c4ef3548e77aaaacc9ac3407abae9f8973b300ce0ae494205a3dd761eff67a"
+    },
+    {
+      "version": "v218",
+      "status": "host-frame-loop",
+      "dispatches": 96082,
+      "unique_functions": 1559,
+      "frames_rendered": 120,
+      "validation_errors": 0,
+      "guest_main_thread_function": "0x006472d0",
+      "worker_waiting_count": 4,
+      "ui_helper_activation_caller": "0x0049eb30",
+      "calls_from_activation_caller": 0,
+      "probe_report": "artifacts/frontier/v218-ui-helper-activation-callers.json",
+      "probe_report_sha256": "ebcf5eaa0a27c290eb5373e6cc41f9a6b8d536b9ef2411dda06591cd73a3921f",
+      "probe_log": "artifacts/frontier/v218-ui-helper-activation-callers-120-validation.log",
+      "probe_log_sha256": "303650d52c365e01e1378490a0e3d0c3dd5a11531eb0b2d40b07a5f2b75b2951"
+    }
+  ],
+  "ui_gate_trace": {
+    "gate_function": "0x0050ceb0",
+    "gate_calls": 121,
+    "gate_callers": {
+      "0x0054be00": 121
+    },
+    "gate_state_word_values": {
+      "0x00000000": 121
+    },
+    "callback_object_values": {
+      "0x00000000": 121
+    },
+    "helper_function": "0x0050c880",
+    "helper_calls": 121,
+    "helper_flag_byte_values": {
+      "0x00": 121
+    },
+    "helper_flag_last_writer": {
+      "function": "0x0050c820",
+      "ecx_entry": "0x00be2500",
+      "caller_function": "0x004eb550",
+      "call_return_address": "0x004eb559",
+      "caller_return_address": "0x00545cd5",
+      "thread_id": "0x001a4cbf",
+      "write_address": "0x00be250c",
+      "write_size": 1,
+      "word_value": "0x00000000",
+      "observations": 121
+    },
+    "activation_call_trace": {
+      "caller_function": "0x0049eb30",
+      "events": 0
+    }
+  },
+  "static_analysis": {
+    "helper_flag_initialization": "0x0050c820 stores zero at object +0x0c",
+    "helper_flag_positive_setter": "0x0050cba0 stores one at object +0x0c after its resource callback returns nonzero",
+    "setter_call_path": [
+      "0x0050d610",
+      "0x00500970",
+      "0x0049eb30",
+      "0x0050cba0"
+    ],
+    "execution_status": "The bounded retail probe did not observe a store from the positive setter path; helper byte remained at its constructor value."
+  },
+  "interpretation": [
+    "v217 and v218 reproduce the v194/v215 host-frame-loop checkpoint; the baseline comparison does not represent a new gameplay milestone.",
+    "The current gate path remains false and the helper callback flag remains disabled; the intended UI state transition is still not reached in this probe.",
+    "Clear and Present submissions remain bounded Vulkan plumbing evidence. Guest draw translation, frontend readiness, and an offline race remain unproven."
+  ]
+}

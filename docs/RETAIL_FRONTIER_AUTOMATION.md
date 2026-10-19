@@ -47,10 +47,11 @@ The report stores status, guest dispatch counts, unique functions, first failing
 
 When the native frame-loop report includes `d3d9_vulkan_bridge`, the parser
 retains guest Clear/Present request and Vulkan submission counts. v194 records
-120 guest-requested full color/depth/stencil clears and 120 Vulkan swapchain
-presents in a 120-frame probe, with one Present request still pending and no
-guest draw translation. This proves the bounded clear/queue-present path only;
-it does not prove retail rendering or frontend readiness.
+122 guest Clear requests and 121 Present requests across a 120-frame probe;
+120 clear submissions and 120 Vulkan swapchain presents completed, with one
+Present request still pending and no guest draw translation. This proves the
+bounded clear/queue-present path only; it does not prove retail rendering or
+frontend readiness.
 
 The cumulative v215 replay reproduces that same host-frame-loop checkpoint
 from the v210 frontier using two additional overrides and a cumulative set of
@@ -64,6 +65,31 @@ for the exact module paths, hashes, lowerer revisions, and per-run results.
 for a run; when extending a frontier, include earlier required modules again.
 Omitting a prior supplement can produce a false earlier missing-export stop.
 The v215 replay still reports no guest draw translation, frontend, or race.
+
+For a UI-gate probe, set `SHIFT_TRACE_UI_STATE_GATE=1` and
+`SHIFT_TRACE_GUEST_PROVENANCE=0x00be250c,0x00be2534`. Each `0x0050c880` trace
+event then includes exact-byte `helper_flag_last_writer` provenance, with the
+last P-code writer's function, receiver, caller, return addresses, and store
+details when available.
+`SHIFT_TRACE_GUEST_CALLER=0x0049eb30` records calls from the helper activation
+path. These fields are runtime diagnostics: an omitted writer means the probe
+did not record a P-code store overlapping the configured address, and synthetic MGEO or
+other host-side state is not retail evidence.
+
+The v217/v218 bounded runs reproduce the same 96,082-dispatch, 1,559-function
+host-frame-loop checkpoint with 120 Vulkan clear and 120 present submissions,
+zero validation errors, and no guest draw translation. Across 121 gate/helper
+evaluations, the state word and helper byte remain zero and the helper byte's
+last writer is constructor `0x0050c820`. A call trace from `0x0049eb30` records
+no activation calls. See
+[`entrypoint_probe_v217_v218_ui_helper_flag_writer.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v217_v218_ui_helper_flag_writer.json)
+and the [UI state-gate evidence](REVENGINSTR_UI_STATE_GATE_EVIDENCE_20261019.md).
+
+The v219 repetition uses exact-byte last-writer tracking and confirms the same
+121 zero-valued helper calls with the final instrumentation build. Its fixture
+also verifies that a later write to an adjacent byte cannot replace the
+target byte's writer record. See
+[`entrypoint_probe_v219_ui_helper_exact_writer.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v219_ui_helper_exact_writer.json).
 
 The v120 caller-call trace independently maps the common tail of `0x0054be00`:
 the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the
@@ -107,7 +133,7 @@ The stable linux-vulkan GitHub workflow runs these tests, checks the pinned v173
 
 ## Release milestones
 
-Startup frontier metrics cannot stand in for gameplay. v194 and its v215 replay
-establish the bounded retail-requested Vulkan clear and queue-present
+Startup frontier metrics cannot stand in for gameplay. v194 and its v215/v217/v218/v219
+replays establish the bounded retail-requested Vulkan clear and queue-present
 milestone. The separate milestones still to measure are first retail draw,
 frontend and offline race.
