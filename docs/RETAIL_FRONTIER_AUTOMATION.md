@@ -339,14 +339,18 @@ records and route shader creation through the D3D9/Vulkan backend.
 The v283 runtime step routes `d3dx9_41.dll!D3DXCreateEffect`, parses the
 captured binary into a guest `ID3DXEffect`, retains its D3D9 device reference,
 and implements `QueryInterface`, `AddRef`, `Release`, and vtable slot 61
-(`FindNextValidTechnique`). A regression test runs both a synthetic shader
+(`FindNextValidTechnique`) in the 79-slot D3DX9_41 table. A regression test runs both a synthetic shader
 effect and the external v281 capture through this import and COM path. Since
 the runtime still cannot create or bind the effect's shaders, searching from a
 null technique returns `S_FALSE` and a null handle; the remaining effect
-methods are still unimplemented imports. This is API-frontier progress, not a
-retail startup advance: the retail process has not been rerun and no game draw
+methods are still unimplemented imports. A bounded retail probe was rerun with
+the v215 pinned module set, but timed out after PE load at 300 seconds without
+a usable frontier report. Earlier runs with the launcher's default module set
+stopped on missing P-code exports and are not comparable to v281. The capture
+test confirms the COM import path only; no retail startup advance, game draw,
 or Vulkan submission is established. The v281 capture remains external. See
-the [v283 effect COM record](../evidence/retail_frontier_20261019/entrypoint_probe_v283_d3dx_effect_com.json).
+the [v283 effect COM record](../evidence/retail_frontier_20261019/entrypoint_probe_v283_d3dx_effect_com.json)
+and [v284 retail probe record](../evidence/retail_frontier_20261019/entrypoint_probe_v284_d3dx_effect_retail_timeout.json).
 
 The v120 caller-call trace independently maps the common tail of `0x0054be00`:
 the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the
