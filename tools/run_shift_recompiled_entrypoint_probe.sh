@@ -91,6 +91,18 @@ probe_args=(
   --recompiled-entrypoint
 )
 
+if [[ -n "${SHIFT_ENTRYPOINT_PROBE_EXTRA_OVERRIDES:-}" ]]; then
+  mapfile -t extra_overrides <<< "$SHIFT_ENTRYPOINT_PROBE_EXTRA_OVERRIDES"
+  for override in "${extra_overrides[@]}"; do
+    [[ -z "$override" ]] && continue
+    if [[ ! -r "$override" ]]; then
+      printf 'extra P-code override is not readable: %s\n' "$override" >&2
+      exit 2
+    fi
+    probe_args+=(--recompiled-override "$override")
+  done
+fi
+
 if [[ -n "${SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS:-}" ]]; then
   mapfile -t extra_supplements <<< "$SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS"
   for supplement in "${extra_supplements[@]}"; do

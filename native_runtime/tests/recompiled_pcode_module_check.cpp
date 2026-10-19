@@ -1224,6 +1224,18 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", created_device_vtable + 22 * 4);
         const uint32_t set_sampler_state = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 69 * 4);
+        const uint32_t device_present = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 17 * 4);
+        const uint32_t device_begin_scene = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 41 * 4);
+        const uint32_t device_end_scene = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 42 * 4);
+        const uint32_t set_render_state = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 57 * 4);
+        const uint32_t get_render_state = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 58 * 4);
+        const uint32_t set_viewport = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 47 * 4);
         constexpr uint32_t texture_output_address = 0x00405140;
         constexpr uint32_t render_target_output_address = 0x00405144;
         constexpr uint32_t back_buffer_output_address = 0x0040514c;
@@ -1290,6 +1302,65 @@ int main(int argc, char** argv) {
                         adapter_info.caps[index],
                     "IDirect3DDevice9::GetDeviceCaps changed a D3DCAPS9 word");
         }
+        constexpr uint32_t render_state_output_address = 0x004052f0;
+        write_guest_u32(d3d9_provider_module, "ram",
+                        render_state_output_address, 0x7a7a7a7a);
+        require(invoke_import(d3d9_provider_module, set_render_state,
+                              {created_device, 0xa8, 0x0f}) == 0 &&
+                    invoke_import(d3d9_provider_module, get_render_state,
+                                  {created_device, 0xa8,
+                                   render_state_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   render_state_output_address) == 0x0f &&
+                    invoke_import(d3d9_provider_module, set_render_state,
+                                  {created_device, 0, 0}) == 0x8876086c,
+                "IDirect3DDevice9 render-state methods did not preserve validated state");
+        constexpr uint32_t viewport_input_address = 0x00405300;
+        constexpr std::array<uint32_t, 6> custom_viewport = {
+            10, 20, 320, 240, 0x3e4ccccd, 0x3f4ccccd};
+        for (size_t index = 0; index < custom_viewport.size(); ++index) {
+            write_guest_u32(d3d9_provider_module, "ram",
+                            viewport_input_address + index * 4,
+                            custom_viewport[index]);
+        }
+        require(invoke_import(d3d9_provider_module, set_viewport,
+                              {created_device, viewport_input_address}) == 0 &&
+                    invoke_import(d3d9_provider_module, get_viewport,
+                                  {created_device,
+                                   viewport_output_address}) == 0,
+                "IDirect3DDevice9 viewport methods did not accept a valid viewport");
+        for (size_t index = 0; index < custom_viewport.size(); ++index) {
+            require(read_guest_u32(d3d9_provider_module, "ram",
+                                   viewport_output_address + index * 4) ==
+                        custom_viewport[index],
+                    "IDirect3DDevice9::GetViewport changed viewport state");
+        }
+        write_guest_u32(d3d9_provider_module, "ram",
+                        viewport_input_address + 8, 0);
+        require(invoke_import(d3d9_provider_module, set_viewport,
+                              {created_device, viewport_input_address}) ==
+                    0x8876086c &&
+                    invoke_import(d3d9_provider_module, get_viewport,
+                                  {created_device,
+                                   viewport_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   viewport_output_address + 8) == 320,
+                "IDirect3DDevice9 rejected an invalid viewport or changed saved state");
+        require(invoke_import(d3d9_provider_module, device_begin_scene,
+                              {created_device}) == 0 &&
+                    invoke_import(d3d9_provider_module, device_begin_scene,
+                                  {created_device}) == 0x8876086c &&
+                    invoke_import(d3d9_provider_module, device_end_scene,
+                                  {created_device}) == 0 &&
+                    invoke_import(d3d9_provider_module, device_end_scene,
+                                  {created_device}) == 0x8876086c,
+                "IDirect3DDevice9 BeginScene/EndScene state was not validated");
+        require(invoke_import(d3d9_provider_module, device_present,
+                              {created_device, 0, 0, 0, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module, device_present,
+                                  {created_device, 1, 0, 0, 0}) ==
+                        0x8876086a,
+                "IDirect3DDevice9::Present accepted an unsupported request");
         std::array<uint8_t, 3 * 256 * sizeof(uint16_t)> gamma_ramp_sentinel{};
         gamma_ramp_sentinel.fill(0xa5);
         write_guest_bytes(d3d9_provider_module, gamma_ramp_output_address,

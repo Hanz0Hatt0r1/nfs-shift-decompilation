@@ -1,0 +1,68 @@
+{
+  "format": "NFSShift.RetailFrontierEvidence/1",
+  "guest_clear_requests": {
+    "call_count": 122,
+    "color": "0x00000000",
+    "depth_bits": "0x3f800000",
+    "flags": "0x00000007",
+    "rect_count": 0,
+    "stencil": 0
+  },
+  "guest_dispatches": 96082,
+  "guest_entrypoint_complete": false,
+  "guest_main_thread_call_stack": [
+    "0x0090488a",
+    "0x009046aa",
+    "0x00a69160",
+    "0x0040ba50",
+    "0x006492d0",
+    "0x00647500",
+    "0x006472d0"
+  ],
+  "guest_main_thread_function": "0x006472d0",
+  "guest_present_optional_arguments": "all null",
+  "guest_present_requests": 121,
+  "host_frames_rendered": 120,
+  "interpretation": "The guest remains in its app/UI loop. Host Vulkan frames render the synthetic MGEO harness; guest Clear and Present calls are accepted or recorded without retail Vulkan rendering.",
+  "present_vulkan_frame_transfer": false,
+  "probe": "v192",
+  "probe_log_retained_at": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v192-d3dx-texture-pcode-forwarder.log",
+  "probe_log_sha256": "5736280a95ca66c9c6689a51bb4c075c2cc7113905d67ccb6ddc65a2912ea558",
+  "retail_frontier_report": {
+    "blocker": null,
+    "caller": null,
+    "comparison": {
+      "reason": "more retail code executed",
+      "result": "advanced"
+    },
+    "dispatches": 96082,
+    "exit_code": 0,
+    "format": "SHIFT.RetailStartupFrontier/1",
+    "frames_rendered": 120,
+    "pe_image_loaded": true,
+    "retail_rendering_proven": false,
+    "return_address": null,
+    "status": "host-frame-loop",
+    "unique_functions": 1559,
+    "validation_errors": 0
+  },
+  "retail_rendering_proven": false,
+  "runtime_status": "ok",
+  "ui_state_gate_trace": {
+    "events": 484,
+    "gate_caller": "0x0054be00",
+    "gate_evaluations": 121,
+    "gate_function": "0x0050ceb0",
+    "gate_state_values": {
+      "0x00000000": 121
+    },
+    "helper_flag_values": {
+      "0x00": 121
+    },
+    "last_writer_in_this_trace": null,
+    "null_callback_object_evaluations": 121
+  },
+  "unique_guest_functions": 1559,
+  "validation_errors": 0,
+  "worker_threads_waiting": 4
+}

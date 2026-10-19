@@ -1,0 +1,54 @@
+{
+  "format": "NFSShift.RetailFrontierEvidence/1",
+  "guest_clear_requests": {
+    "call_count": 122,
+    "color": "0x00000000",
+    "depth_bits": "0x3f800000",
+    "flags": "0x00000007",
+    "rect_count": 0,
+    "stencil": 0
+  },
+  "guest_dispatches": 96081,
+  "guest_entrypoint_complete": false,
+  "guest_main_thread_call_stack": [
+    "0x0090488a",
+    "0x009046aa",
+    "0x00a69160",
+    "0x0040ba50",
+    "0x006492d0",
+    "0x00647500",
+    "0x006472d0"
+  ],
+  "guest_main_thread_function": "0x006472d0",
+  "guest_present_optional_arguments": "all null",
+  "guest_present_requests": 121,
+  "host_frames_rendered": 120,
+  "interpretation": "The guest remains in its app/UI loop. Host Vulkan frames render the synthetic MGEO harness; guest Clear and Present calls are accepted or recorded without retail Vulkan rendering.",
+  "present_vulkan_frame_transfer": false,
+  "probe": "v191",
+  "probe_log_retained_at": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v191-d3dx-texture-pcode-forwarder.log",
+  "probe_log_sha256": "3749c0dd1ffd93a0e9ccb1f901be1f775a122d55806ed2220eeb5da63fda8db3",
+  "retail_frontier_report": {
+    "blocker": null,
+    "caller": null,
+    "comparison": {
+      "reason": "more retail code executed",
+      "result": "advanced"
+    },
+    "dispatches": 96081,
+    "exit_code": 0,
+    "format": "SHIFT.RetailStartupFrontier/1",
+    "frames_rendered": 120,
+    "pe_image_loaded": true,
+    "retail_rendering_proven": false,
+    "return_address": null,
+    "status": "host-frame-loop",
+    "unique_functions": 1559,
+    "validation_errors": 0
+  },
+  "retail_rendering_proven": false,
+  "runtime_status": "ok",
+  "unique_guest_functions": 1559,
+  "validation_errors": 0,
+  "worker_threads_waiting": 4
+}

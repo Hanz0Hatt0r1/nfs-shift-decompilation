@@ -96,6 +96,21 @@ using RecompiledGuestD3d9CreateDeviceCallback = bool (*) (
     void* context, uint32_t focus_window, uint32_t behavior_flags,
     RecompiledGuestD3d9PresentationParameters& parameters,
     std::string& error);
+using RecompiledGuestD3d9CreateTextureCallback = bool (*) (
+    void* context, uint32_t guest_texture, uint32_t guest_device,
+    uint32_t width, uint32_t height, uint32_t levels, uint32_t usage,
+    uint32_t format, uint32_t pool, std::string& error);
+using RecompiledGuestD3d9ReleaseTextureCallback = void (*) (
+    void* context, uint32_t guest_texture);
+using RecompiledGuestD3d9CreateVertexBufferCallback = bool (*) (
+    void* context, uint32_t guest_buffer, uint32_t guest_device,
+    uint32_t size, uint32_t usage, uint32_t fvf, uint32_t pool,
+    std::string& error);
+using RecompiledGuestD3d9UpdateVertexBufferCallback = bool (*) (
+    void* context, uint32_t guest_buffer, uint32_t offset,
+    const uint8_t* data, size_t size, std::string& error);
+using RecompiledGuestD3d9ReleaseVertexBufferCallback = void (*) (
+    void* context, uint32_t guest_buffer);
 
 struct RecompiledGuestD3d9AdapterInfo {
     // D3DCAPS9 is 76 little-endian 32-bit words, including its float fields.
@@ -110,6 +125,11 @@ struct RecompiledGuestD3d9AdapterInfo {
     uint32_t d24s8_sample_count_mask = 0;
     void* backend_context = nullptr;
     RecompiledGuestD3d9CreateDeviceCallback create_device = nullptr;
+    RecompiledGuestD3d9CreateTextureCallback create_texture = nullptr;
+    RecompiledGuestD3d9ReleaseTextureCallback release_texture = nullptr;
+    RecompiledGuestD3d9CreateVertexBufferCallback create_vertex_buffer = nullptr;
+    RecompiledGuestD3d9UpdateVertexBufferCallback update_vertex_buffer = nullptr;
+    RecompiledGuestD3d9ReleaseVertexBufferCallback release_vertex_buffer = nullptr;
 };
 
 struct RecompiledGuestSchedulerSnapshot {
