@@ -5,6 +5,7 @@ Runs without SHIFT.exe, retail data, a display, Vulkan, or a multi-GB P-code ELF
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -27,6 +28,17 @@ class RetailFrontierTests(unittest.TestCase):
         self.assertEqual(result["return_address"], "0x00839b53")
         self.assertIn("D3DXCreateTexture", result["blocker"])
         self.assertFalse(result["retail_rendering_proven"])
+
+    def test_real_v193_remains_a_host_frame_loop(self):
+        path = ROOT / "evidence/retail_frontier_20261019/entrypoint_probe_v193_automation.json"
+        record = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(record["report"]["status"], "host-frame-loop")
+        self.assertEqual(record["report"]["comparison"]["result"], "advanced")
+        self.assertEqual(record["guest_present_requests"], 121)
+        self.assertEqual(record["host_frames_rendered"], 120)
+        self.assertEqual(record["validation_errors"], 0)
+        self.assertFalse(record["present_vulkan_frame_transfer"])
+        self.assertFalse(record["retail_rendering_proven"])
 
     def test_frame_loop_is_not_retail_rendering(self):
         data = {
@@ -83,6 +95,52 @@ class RetailFrontierTests(unittest.TestCase):
             wrong.write_text('{"format":"unrelated"}', encoding="utf-8")
             with self.assertRaises(ValueError):
                 frontier.load_frontier(wrong)
+
+    def test_probe_launcher_forwards_extra_overrides(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            artifacts = folder / "retail artifacts"
+            artifacts.mkdir()
+            module = artifacts / "startup.so"
+            module.touch()
+            overrides = [folder / "fxam.so", folder / "fprem.so"]
+            supplements = [folder / "helper.so"]
+            for path in [*overrides, *supplements]:
+                path.touch()
+            runtime = folder / "fake runtime.py"
+            runtime.write_text(
+                "#!/usr/bin/env python3\n"
+                "import json, os, sys\n"
+                "open(os.environ['ARGS_CAPTURE'], 'w').write(json.dumps(sys.argv[1:]))\n",
+                encoding="utf-8",
+            )
+            runtime.chmod(0o755)
+            game_data = folder / "game data"
+            game_data.mkdir()
+            pe = folder / "SHIFT.exe"
+            pe.touch()
+            capture = folder / "args.json"
+            env = os.environ.copy()
+            env.update({
+                "ARGS_CAPTURE": str(capture),
+                "SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE": str(module),
+                "SHIFT_ENTRYPOINT_PROBE_EXTRA_OVERRIDES": "\n".join(map(str, overrides)),
+                "SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS": str(supplements[0]),
+                "SHIFT_ENTRYPOINT_PROBE_FRAMES": "2",
+                "SHIFT_ENTRYPOINT_TIMEOUT_SECONDS": "5",
+            })
+            result = subprocess.run(
+                ["bash", str(ROOT / "tools/run_shift_recompiled_entrypoint_probe.sh"),
+                 str(runtime), str(artifacts), str(folder / "build"), str(pe),
+                 str(game_data), str(folder / "probe.log")],
+                env=env, capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            args = json.loads(capture.read_text(encoding="utf-8"))
+            selected = [args[index + 1] for index, arg in enumerate(args[:-1])
+                        if arg == "--recompiled-override"]
+            self.assertEqual(selected[-2:], list(map(str, overrides)))
+            self.assertIn(str(supplements[0]), args)
 
 
 class D3D9ComparisonTests(unittest.TestCase):

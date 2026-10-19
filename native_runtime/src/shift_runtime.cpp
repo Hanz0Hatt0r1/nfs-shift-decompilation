@@ -1875,6 +1875,9 @@ struct Runtime {
     std::vector<VkImageView> swapchain_views;
     std::vector<Image> multisample_color_images;
     std::vector<Image> depth_images;
+    std::unordered_map<uint32_t, Image> guest_texture_images;
+    std::unordered_map<uint32_t, Buffer> guest_vertex_buffers;
+    std::unordered_map<uint32_t, uint32_t> guest_vertex_buffer_sizes;
     bool guest_d3d9_device_bound = false;
     uint32_t guest_d3d9_focus_window = 0;
     uint32_t guest_d3d9_behavior_flags = 0;
@@ -1938,6 +1941,16 @@ struct Runtime {
         adapter_info.backend_context = const_cast<Runtime*>(this);
         adapter_info.create_device =
             &Runtime::create_guest_d3d9_device_callback;
+        adapter_info.create_texture =
+            &Runtime::create_guest_d3d9_texture_callback;
+        adapter_info.release_texture =
+            &Runtime::release_guest_d3d9_texture_callback;
+        adapter_info.create_vertex_buffer =
+            &Runtime::create_guest_d3d9_vertex_buffer_callback;
+        adapter_info.update_vertex_buffer =
+            &Runtime::update_guest_d3d9_vertex_buffer_callback;
+        adapter_info.release_vertex_buffer =
+            &Runtime::release_guest_d3d9_vertex_buffer_callback;
         uint32_t surface_format_count = 0;
         vk_check(vkGetPhysicalDeviceSurfaceFormatsKHR(
                      physical, surface, &surface_format_count, nullptr),
@@ -1983,6 +1996,202 @@ struct Runtime {
         return runtime && runtime->create_guest_d3d9_device(
                               focus_window, behavior_flags, parameters,
                               error);
+    }
+
+    static bool create_guest_d3d9_texture_callback(
+        void* context, uint32_t guest_texture, uint32_t guest_device,
+        uint32_t width, uint32_t height, uint32_t levels, uint32_t usage,
+        uint32_t format, uint32_t pool, std::string& error) {
+        auto* runtime = static_cast<Runtime*>(context);
+        return runtime && runtime->create_guest_d3d9_texture(
+                              guest_texture, guest_device, width, height,
+                              levels, usage, format, pool, error);
+    }
+
+    static void release_guest_d3d9_texture_callback(void* context,
+                                                   uint32_t guest_texture) {
+        auto* runtime = static_cast<Runtime*>(context);
+        if (!runtime) return;
+        const auto image = runtime->guest_texture_images.find(guest_texture);
+        if (image == runtime->guest_texture_images.end()) return;
+        image->second.destroy();
+        runtime->guest_texture_images.erase(image);
+    }
+
+    bool create_guest_d3d9_texture(
+        uint32_t guest_texture, uint32_t guest_device, uint32_t width,
+        uint32_t height, uint32_t levels, uint32_t usage, uint32_t format,
+        uint32_t pool, std::string& error) {
+        if (!guest_d3d9_device_bound || guest_texture == 0 ||
+            guest_device == 0 || width == 0 || height == 0 || levels != 1 ||
+            usage != 1 || format != 21 || pool != 0) {
+            error = "unsupported retail D3D9 texture description";
+            return false;
+        }
+        if (guest_texture_images.find(guest_texture) !=
+            guest_texture_images.end()) {
+            error = "guest D3D9 texture address is already allocated";
+            return false;
+        }
+        constexpr VkFormat vk_format = VK_FORMAT_B8G8R8A8_UNORM;
+        constexpr VkImageUsageFlags image_usage =
+            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        VkFormatProperties format_properties{};
+        vkGetPhysicalDeviceFormatProperties(physical, vk_format,
+                                            &format_properties);
+        const VkFormatFeatureFlags required_features =
+            VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT |
+            VK_FORMAT_FEATURE_TRANSFER_SRC_BIT |
+            VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+        if ((format_properties.optimalTilingFeatures & required_features) !=
+            required_features) {
+            error = "Vulkan BGRA8 texture format lacks required features";
+            return false;
+        }
+        VkImageFormatProperties image_properties{};
+        const VkResult support = vkGetPhysicalDeviceImageFormatProperties(
+            physical, vk_format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+            image_usage, 0, &image_properties);
+        if (support != VK_SUCCESS ||
+            width > image_properties.maxExtent.width ||
+            height > image_properties.maxExtent.height) {
+            error = "Vulkan cannot allocate the requested BGRA8 texture";
+            return false;
+        }
+        Image image;
+        try {
+            create_image(width, height, 1, vk_format, 0, image_usage,
+                         VK_IMAGE_ASPECT_COLOR_BIT, image);
+        } catch (const std::exception& exception) {
+            image.destroy();
+            error = exception.what();
+            return false;
+        }
+        const auto [inserted_image, inserted] =
+            guest_texture_images.emplace(guest_texture, std::move(image));
+        if (!inserted) {
+            image.destroy();
+            error = "guest D3D9 texture was concurrently allocated";
+            return false;
+        }
+        (void)inserted_image;
+        const char* trace = std::getenv("SHIFT_TRACE_D3D9_RESOURCES");
+        if (!trace || !*trace) trace = std::getenv("SHIFT_TRACE_D3D9_TEXTURES");
+        if (trace && *trace) {
+            std::fprintf(stderr,
+                         "shift_runtime: guest D3D9 Vulkan image created "
+                         "texture=0x%08x device=0x%08x extent=%ux%u "
+                         "format=%u levels=%u usage=0x%x pool=%u\n",
+                         guest_texture, guest_device, width, height, format,
+                         levels, usage, pool);
+        }
+        return true;
+    }
+
+    static bool create_guest_d3d9_vertex_buffer_callback(
+        void* context, uint32_t guest_buffer, uint32_t guest_device,
+        uint32_t size, uint32_t usage, uint32_t fvf, uint32_t pool,
+        std::string& error) {
+        auto* runtime = static_cast<Runtime*>(context);
+        return runtime && runtime->create_guest_d3d9_vertex_buffer(
+                              guest_buffer, guest_device, size, usage, fvf,
+                              pool, error);
+    }
+
+    static bool update_guest_d3d9_vertex_buffer_callback(
+        void* context, uint32_t guest_buffer, uint32_t offset,
+        const uint8_t* data, size_t size, std::string& error) {
+        auto* runtime = static_cast<Runtime*>(context);
+        return runtime && runtime->update_guest_d3d9_vertex_buffer(
+                              guest_buffer, offset, data, size, error);
+    }
+
+    static void release_guest_d3d9_vertex_buffer_callback(
+        void* context, uint32_t guest_buffer) {
+        auto* runtime = static_cast<Runtime*>(context);
+        if (!runtime) return;
+        const auto buffer = runtime->guest_vertex_buffers.find(guest_buffer);
+        if (buffer == runtime->guest_vertex_buffers.end()) return;
+        buffer->second.destroy();
+        runtime->guest_vertex_buffers.erase(buffer);
+        runtime->guest_vertex_buffer_sizes.erase(guest_buffer);
+    }
+
+    bool create_guest_d3d9_vertex_buffer(
+        uint32_t guest_buffer, uint32_t guest_device, uint32_t size,
+        uint32_t usage, uint32_t fvf, uint32_t pool, std::string& error) {
+        if (!guest_d3d9_device_bound || guest_buffer == 0 || guest_device == 0 ||
+            size == 0 || pool != 0) {
+            error = "unsupported retail D3D9 vertex buffer description";
+            return false;
+        }
+        if (guest_vertex_buffers.find(guest_buffer) !=
+            guest_vertex_buffers.end()) {
+            error = "guest D3D9 vertex buffer address is already allocated";
+            return false;
+        }
+        Buffer buffer;
+        try {
+            create_buffer(nullptr, size,
+                          VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+                              VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
+                              VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                          buffer);
+        } catch (const std::exception& exception) {
+            buffer.destroy();
+            error = exception.what();
+            return false;
+        }
+        const auto [inserted_buffer, inserted] =
+            guest_vertex_buffers.emplace(guest_buffer, std::move(buffer));
+        if (!inserted) {
+            buffer.destroy();
+            error = "guest D3D9 vertex buffer was concurrently allocated";
+            return false;
+        }
+        guest_vertex_buffer_sizes.emplace(guest_buffer, size);
+        (void)inserted_buffer;
+        const char* trace = std::getenv("SHIFT_TRACE_D3D9_RESOURCES");
+        if (trace && *trace) {
+            std::fprintf(stderr,
+                         "shift_runtime: guest D3D9 Vulkan vertex buffer "
+                         "created buffer=0x%08x device=0x%08x size=%u "
+                         "usage=0x%x fvf=0x%x pool=%u\n",
+                         guest_buffer, guest_device, size, usage, fvf, pool);
+        }
+        return true;
+    }
+
+    bool update_guest_d3d9_vertex_buffer(
+        uint32_t guest_buffer, uint32_t offset, const uint8_t* data,
+        size_t size, std::string& error) {
+        const auto buffer = guest_vertex_buffers.find(guest_buffer);
+        const auto buffer_size = guest_vertex_buffer_sizes.find(guest_buffer);
+        if (buffer == guest_vertex_buffers.end() ||
+            buffer_size == guest_vertex_buffer_sizes.end() || !data || size == 0 ||
+            offset > buffer_size->second || size > buffer_size->second - offset) {
+            error = "invalid guest D3D9 vertex buffer update";
+            return false;
+        }
+        void* mapped = nullptr;
+        const VkResult map_result = vkMapMemory(
+            device, buffer->second.memory, 0, VK_WHOLE_SIZE, 0, &mapped);
+        if (map_result != VK_SUCCESS) {
+            error = "could not map guest D3D9 vertex buffer memory";
+            return false;
+        }
+        std::memcpy(static_cast<uint8_t*>(mapped) + offset, data, size);
+        vkUnmapMemory(device, buffer->second.memory);
+        const char* trace = std::getenv("SHIFT_TRACE_D3D9_RESOURCES");
+        if (trace && *trace) {
+            std::fprintf(stderr,
+                         "shift_runtime: guest D3D9 vertex buffer updated "
+                         "buffer=0x%08x offset=%u size=%zu\n",
+                         guest_buffer, offset, size);
+        }
+        return true;
     }
 
     bool image_supports_samples(VkFormat format, VkImageUsageFlags usage,
@@ -3163,7 +3372,7 @@ struct Runtime {
         vk_check(vkMapMemory(
                      device, out.memory, 0, size, 0, &mapped),
                  "vkMapMemory failed");
-        std::memcpy(mapped, data, static_cast<size_t>(size));
+        if (data) std::memcpy(mapped, data, static_cast<size_t>(size));
         vkUnmapMemory(device, out.memory);
     }
 
@@ -3491,6 +3700,17 @@ struct Runtime {
             image.destroy();
         }
         multisample_color_images.clear();
+        for (auto& [guest_texture, image] : guest_texture_images) {
+            (void)guest_texture;
+            image.destroy();
+        }
+        guest_texture_images.clear();
+        for (auto& [guest_buffer, buffer] : guest_vertex_buffers) {
+            (void)guest_buffer;
+            buffer.destroy();
+        }
+        guest_vertex_buffers.clear();
+        guest_vertex_buffer_sizes.clear();
         if (pipeline) {
             vkDestroyPipeline(device, pipeline, nullptr);
         }
