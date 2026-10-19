@@ -59,9 +59,9 @@ else
 fi
 
 configure+=("-DCMAKE_C_COMPILER_LAUNCHER=$launcher" "-DCMAKE_CXX_COMPILER_LAUNCHER=$launcher")
-"configure[@]"
-build=(cmake --build "$build_dir" --target "targets[@]" --parallel)
+"${configure[@]}"
+build=(cmake --build "$build_dir" --target "${targets[@]}" --parallel)
 if [[ -n "$jobs" ]]; then
   build+=("$jobs")
 fi
-"build[@]"
+"${build[@]}"
