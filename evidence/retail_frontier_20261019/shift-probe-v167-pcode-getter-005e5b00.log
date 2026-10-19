@@ -1,0 +1,26 @@
+Loaded PE32 image into P-code guest RAM: base=0x00400000 size=10047488 entry=0x0090488a sections=6 imports=411
+{
+  "format": "SHIFT.NativeRuntimeBootstrap/1",
+  "geometry_source": "MGEO",
+  "geometry_vertices": 4,
+  "geometry_indices": 6,
+  "material_mode": false,
+  "bundle_set_mode": false,
+  "scene_set_mode": false,
+  "material_draws": 0,
+  "world_transform_draws": 0,
+  "affine_world_transform_draws": 0,
+  "input_script_mode": false,
+  "input_script_steps": 0,
+  "continuous_mode": false,
+  "frame_limit_enabled": true,
+  "runtime_loop_schedule": "one-native-fixed-step-per-render-frame-non-retail",
+  "solver_frame_mode": false,
+  "body_solver_export_frame_mode": false,
+  "generated_body_constraint_frame_mode": false,
+  "constraint_sample_relation_frame_mode": false,
+  "constraint_relation_reset_frame_mode": false,
+  "post_solve_projection_mode": false,
+  "frames_requested": 120
+}
+shift_runtime: recompiled PE32 entry point 0x0090488a failed after 48591 P-code function dispatches across 1229 unique functions: unimplemented PE import d3d9.dll!IDirect3DDevice9::GetGammaRamp; last LoadLibraryA("nvapi.dll") returned 0x00000000 (error 126) called from 0x0084f660 args=[0x10474790,0x00000000,0x20019b9a,0x7ffdee88,0x008333fa,0x2001b3f4,0x00000000,0x20019b9a]; guest_stack=[0x0090488a -> 0x009046aa -> 0x00a69160 -> 0x0040d6a0 -> 0x0040a5d0 -> 0x00832a80 -> 0x0084f660]; guest_frame={entry_EAX=0x0084f660,entry_ECX=0x00b1bba8,entry_EDX=0x20019b9a,entry_ESP=0x7ffde5cc,entry_ESI=0x20019478}; guest_entry_ecx_memory@0x00b1bba8=0084e520,0084e550,0084e570,0084f3b0,0084f3d0,0084f3f0,0084f410,0084f430,0084f450,0084f470,0084f490,0084f4c0,0084f4f0,0084f510,0084f540,0084f570,0084ff70; guest_regs={EAX=0xcffffc80,ECX=0x104747a0,EDX=0x00000000,EBX=0x7ffdeea8,ESP=0x7ffde5b8,EBP=0x7ffde5c8,ESI=0x20019478,EDI=0x00000000}; guest_esi_memory@0x20019478=00b18d38,00b18d14,10261610,2006af30,00000001,00000000,00000001,00000500,000002d0,00000000,00000016,4449564e,47204149,726f4665,47206563,39205854,00003035
