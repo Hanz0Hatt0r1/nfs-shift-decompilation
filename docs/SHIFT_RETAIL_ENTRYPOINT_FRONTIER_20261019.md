@@ -52,11 +52,14 @@ was zero, and the gate returned `EAX=0`.
 
 At `0x0054be83`, the caller tests EAX and branches to `0x0054bec8`, skipping
 `0x0054be85` through `0x0054bec7`. The gate's optional virtual callback was not
-invoked. The later `0x00833670` entry in v114's bounded history is not a
-gate-descendant callback in this trace; which later caller dispatch produces
-it remains unresolved. This proves the selected branch, but not why the field
-stays zero or whether that branch causes the missing frontend. The runtime
-trace record, raw trace log, and caller instruction slice are linked from the
+invoked. The v114 history alone did not associate its later `0x00833670` entry
+with a callsite. The v120 caller-call trace now maps the common tail: return
+`0x0054bedc` dispatches `0x00833670`, and return `0x0054beee` dispatches
+`0x00835d80`. Static instructions show those helpers call D3D9 EndScene and
+Present respectively. This proves the false branch continues through the
+frame-service tail, but not why the field stays zero or whether the branch
+causes the missing frontend. The runtime trace, callsite mapping, raw log, and
+caller instruction slice are linked from the
 [evidence report](REVENGINSTR_UI_STATE_GATE_EVIDENCE_20261019.md).
 
 The v117 writer-provenance pass closes the address-level gap: every traced
@@ -108,12 +111,13 @@ documents that bounded follow-up in
 
 Treat the PE entry point as an active main loop, not a function that should
 return. Continue mapping writes and consumers of the AptInteger member's
-internal `+0x34` state, then connect the conditional AptInteger path and the
-common virtual tail in `0x0054be00` to frontend transition and renderer
-submission. Check how retail draw resources reach the Vulkan backend before
-changing guest state, scheduler, or Win32 services. Implement the smallest
-correction supported by evidence and run another bounded probe. Keep generated
-binaries and supplements in the external artifact cache.
+internal `+0x34` state only as needed to explain frontend transition. The
+common tail is now mapped to D3D9 EndScene and Present; next trace the calls
+that lead to the first guest draw and verify how its resources reach the
+Vulkan backend. Do not change guest state, scheduler, or Win32 services without
+evidence for that correction. Implement the smallest supported change and run
+another bounded probe. Keep generated binaries and supplements in the external
+artifact cache.
 
 The existing race capture still lacks one shared dynamic stream-1 vertex-buffer
 payload. Do not capture it unless renderer-side static analysis shows those

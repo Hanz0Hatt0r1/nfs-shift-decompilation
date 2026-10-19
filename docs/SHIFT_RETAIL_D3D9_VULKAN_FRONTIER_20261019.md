@@ -62,6 +62,15 @@ but the callback registration and frontend-transition role remain unresolved.
 See [`entrypoint_probe_v192_d3d9_frontier.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v192_d3d9_frontier.json)
 and [`entrypoint_probe_v117_ui_gate_field_writer_ecx.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v117_ui_gate_field_writer_ecx.json).
 
+The v120 caller-call trace resolves the common-tail methods: `0x0054be00` calls
+`0x00833670` through vtable offset `+0x13c`, then `0x00835d80` through
+`+0x130`, 121 times each over 120 frames. Static code shows the first calls
+D3D9 EndScene and the second calls D3D9 Present with null parameters. Thus the
+false gate branch still reaches frame completion and presentation; it does not
+submit a retail draw. See
+[`ui_gate_common_tail_dispatch.json`](../evidence/retail_frontier_20261019/ui_gate_common_tail_dispatch.json)
+and the [detailed gate evidence report](REVENGINSTR_UI_STATE_GATE_EVIDENCE_20261019.md).
+
 The v193 and v194 machine-readable automation results are
 [`entrypoint_probe_v193_automation.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v193_automation.json)
 and
