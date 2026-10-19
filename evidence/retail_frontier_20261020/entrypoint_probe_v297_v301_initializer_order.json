@@ -1,0 +1,122 @@
+{
+  "format": "SHIFT.RetailStartupInitializerOrder/1",
+  "probe_versions": ["v297", "v298", "v299", "v300", "v301"],
+  "retail_input": {
+    "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "frontier_module_sha256": "6c5d1126467e047f500f634a34e2769aa24e06cb5ffc7a3538f0a7b095ce0e42",
+    "module_set_reference": "entrypoint_probe_v215_supplement_replay.json",
+    "module_manifest_sha256": "7224960e4d4606ac0cc568418d7b7928ea5e56636a34683c9d0d2c15e27153c3"
+  },
+  "probes": [
+    {
+      "version": "v297",
+      "timeout_seconds": 120,
+      "exit_code": 124,
+      "status": "timeout",
+      "pe_image_loaded": true,
+      "dispatches": null,
+      "frames_rendered": null,
+      "log_sha256": "67b545cf819c3c242aaec0ac4b83bf9952bd5dd4fa44703c3d2b21731f50586a",
+      "log_is_external": true
+    },
+    {
+      "version": "v298",
+      "timeout_seconds": 120,
+      "exit_code": 124,
+      "status": "timeout",
+      "pe_image_loaded": true,
+      "dispatches": null,
+      "frames_rendered": null,
+      "log_sha256": "67b545cf819c3c242aaec0ac4b83bf9952bd5dd4fa44703c3d2b21731f50586a",
+      "log_is_external": true,
+      "live_stack_samples": [
+        ["rvi_read_value", "rvi_00455ba0", "RecompiledPcodeModule::Impl::dispatch", "rvi_call", "rvi_00427250", "RecompiledPcodeModule::Impl::dispatch", "rvi_call", "rvi_00d86830", "RecompiledPcodeModule::Impl::dispatch", "rvi_call", "rvi_004f5e10", "RecompiledPcodeModule::Impl::dispatch", "rvi_call", "rvi_004f5e60", "RecompiledPcodeModule::Impl::dispatch", "rvi_call", "rvi_0083f0f0"],
+        ["rvi_write_value", "rvi_00455ba0", "RecompiledPcodeModule::Impl::dispatch", "rvi_call", "rvi_00427250", "RecompiledPcodeModule::Impl::dispatch", "rvi_call", "rvi_00d86830", "RecompiledPcodeModule::Impl::dispatch", "rvi_call", "rvi_004f5e10", "RecompiledPcodeModule::Impl::dispatch", "rvi_call", "rvi_004f5e60", "RecompiledPcodeModule::Impl::dispatch", "rvi_call", "rvi_0083f0f0", "RecompiledPcodeModule::Impl::dispatch", "rvi_call", "rvi_0082de70"]
+      ]
+    },
+    {
+      "version": "v299",
+      "timeout_seconds": 120,
+      "exit_code": 124,
+      "status": "timeout",
+      "pe_image_loaded": true,
+      "dispatches": null,
+      "frames_rendered": null,
+      "target": "0x00455ba0",
+      "target_call_entries": 80,
+      "target_call_returns": 79,
+      "last_entry_dispatch": 417061,
+      "last_entry_registers": {
+        "ecx": "0x00c288cc",
+        "edx": "0x00000000",
+        "return_address": "0x00d8687b"
+      },
+      "last_entry_had_return_event": false,
+      "trace_log_sha256": "65f8e07ee9b649880160fa09cf2c330376265613e5b98e35f5017ca9d328fa67",
+      "trace_log_is_external": true
+    },
+    {
+      "version": "v300",
+      "timeout_seconds": 120,
+      "exit_code": 124,
+      "status": "timeout",
+      "pe_image_loaded": true,
+      "target_calls": {
+        "0x004f5e60": {"entries": 632, "returns": 631, "pending_dispatch": 417034},
+        "0x00d86830": {"entries": 49, "returns": 48, "pending_dispatch": 417036}
+      },
+      "first_uninitialized_receiver_use": {
+        "dispatch": 417034,
+        "caller": "0x0083f0f0",
+        "target": "0x004f5e60",
+        "receiver": "0x00c288cc",
+        "receiver_slots": {"+0x4": "0x00000000", "+0x8": "0x00000000", "+0xc": "0x00000000", "+0x14": "0x00000000", "+0x18": "0x00000000", "+0x1c": "0x00000000"},
+        "followup_allocator_call": {"dispatch": 417036, "target": "0x00d86830", "edx": "0x00000000", "returned": false}
+      },
+      "trace_log_sha256": "bb5d65fabe1199e1dfab2439d5bdd48b56a02e9a8c1bcecf6ec7aab55a8303c4",
+      "trace_log_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v300-allocator-receiver-trace.log",
+      "trace_log_is_external": true
+    },
+    {
+      "version": "v301",
+      "timeout_seconds": 120,
+      "frames_requested": 1,
+      "exit_code": 124,
+      "status": "timeout",
+      "pe_image_loaded": true,
+      "selected_target_calls": {
+        "0x00915fe8": {"entries": 1, "returns": 1, "entry_dispatch": 300, "completion_dispatch": 300, "return_eax": "0x00b6c15c"},
+        "0x0091600c": {"entries": 0, "returns": 0},
+        "0x00a8d940": {"entries": 0, "returns": 0}
+      },
+      "trace_log_sha256": "7af8d998db071e21673b95052ced1df030546cc95cec2bb19c761892b03980b9",
+      "trace_log_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v301-crt-initializer-trace.log",
+      "trace_log_is_external": true,
+      "frame_loop_revalidated": false
+    }
+  ],
+  "static_pe_evidence": {
+    "allocator_function": "0x00455ba0",
+    "thunk": "0x00427250 -> 0x00455ba0",
+    "allocation_size": "16 * EDX + 0x18",
+    "zero_count_behavior": "EDX is copied to EBX, EBX is decremented before an unsigned JBE check, then a decrement/JNE link-initialization loop runs. With EDX=0, the initial decrement wraps to 0xffffffff and the loop does not terminate within the bounded probe.",
+    "caller_chain": ["0x0082de70", "0x0083f0f0", "0x004f5e60", "0x004f5e10 (tail jump)", "0x00d86830", "0x00427250 (tail jump)", "0x00455ba0"],
+    "caller_field_flow": "0x004f5e60 loads the count from [ESI+0x4]; 0x00d86830 stores incoming EDX at [ESI+0x4] and reloads it before the allocator call.",
+    "global_initializer": {
+      "function": "0x00a8d940",
+      "global_receiver": "0x00c288cc",
+      "operations": ["calls 0x0067cbc0 with ECX=0x00c288cc", "writes 0x10 to receiver fields +0x4 and +0x8", "clears receiver fields +0xc, +0x18, and +0x1c, and clears the global receiver word"],
+      "candidate_pointer_region": {"address": "0x00aa92c0", "initializer_pointer_address": "0x00aa92f0", "initializer_pointer": "0x00a8d940", "ownership_and_dispatch_semantics": "unresolved"}
+    },
+    "crt_startup": {
+      "entrypoint": "0x0090488a",
+      "startup_body": "0x009046aa",
+      "initializer_helper": "0x00915fe8",
+      "initializer_helper_bounds": ["0x00b6c15c", "0x00b6c15c"],
+      "v301_observation": "The helper was called once and returned at dispatch 300 with EAX=0x00b6c15c; its observed range is empty. No selected call to 0x0091600c or 0x00a8d940 occurred before timeout."
+    },
+    "tls_directory": {"rva": "0x007672ac", "size": "0x18", "callbacks_va": "0x00aa9990", "first_callback": "0x00000000"},
+    "interpretation": "The count zero explains the non-returning allocator call. The global initializer sets the receiver capacity fields before use, but v300/v301 do not show it being called. A skipped global-initialization path is the leading explanation; the intended initializer table/dispatcher and exact loader responsibility remain unproven. Do not bypass the allocator or call the initializer directly without establishing retail order. The fast XMem adapter and v215 D3D9/Vulkan frame-loop checkpoint were not reached or revalidated."
+  },
+  "next_step": "Identify the code and table that are supposed to invoke 0x00a8d940, establish whether this is generic PE startup initialization or game-specific initialization, and verify the expected order before implementing a startup fix. Add focused loader/runtime fixtures only after the contract is established."
+}

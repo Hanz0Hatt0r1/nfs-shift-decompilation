@@ -490,6 +490,8 @@ add_library(shift_runtime_pcode_frontier MODULE
   pcode_frontier/rvi_004d1f10.c
   pcode_frontier/rvi_005f1830.c
   pcode_frontier/rvi_005b0d50.c
+  pcode_frontier/rvi_0066f680.c
+  ../native_ir/src/shift_lzx.cpp
   pcode_frontier/rvi_00509689.c
   pcode_frontier/rvi_0050967d.c
   pcode_frontier/rvi_00509e60.c
@@ -519,7 +521,8 @@ add_library(shift_runtime_pcode_frontier MODULE
 set_target_properties(shift_runtime_pcode_frontier PROPERTIES
   OUTPUT_NAME nfs_shift_pcode_frontier)
 target_include_directories(shift_runtime_pcode_frontier PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../native_ir/include)
 target_link_libraries(shift_runtime_pcode_frontier PRIVATE m)
 
 if(BUILD_TESTING)

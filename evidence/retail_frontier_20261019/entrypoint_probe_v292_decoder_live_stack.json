@@ -1,0 +1,56 @@
+{
+  "format": "SHIFT.RetailDecoderLiveStack/1",
+  "probe": {
+    "version": 292,
+    "status": "timeout",
+    "exit_code": 124,
+    "frames_requested": 1,
+    "timeout_seconds": 120,
+    "kill_after_seconds": 5,
+    "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "runtime_sha256": "bd35a414af97781a93ad504e2334f4923a4ac968fa50c094f7d8647493910ce9",
+    "probe_log_sha256": "67b545cf819c3c242aaec0ac4b83bf9952bd5dd4fa44703c3d2b21731f50586a",
+    "probe_report_sha256": "346a861408e037442229712c032c512e22f953f4db684ed2bbc86bfb0724d06d",
+    "module_manifest_sha256": "7224960e4d4606ac0cc568418d7b7928ea5e56636a34683c9d0d2c15e27153c3",
+    "trace_environment": {
+      "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x00455ba0",
+      "SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS": "0x14,0x18,0x1c",
+      "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8,0xc,0x10,0x14"
+    },
+    "guest_dispatch_count": null,
+    "retail_rendering_proven": false
+  },
+  "live_snapshot": {
+    "method": "GDB attach; main thread backtrace; detach",
+    "artifact_path": "artifacts/frontier/v292-main-thread-stack.txt",
+    "artifact_sha256": "111045b7860f5dc017eb6207f06bc6d83aa9a9500b45b56dd1fe1ac03dd3d7b6",
+    "outer_to_inner_guest_functions": [
+      "0x00907e4f",
+      "0x00907e0e",
+      "0x00649b10",
+      "0x0066b650",
+      "0x0066b5d0",
+      "0x0066b120",
+      "0x00648a20",
+      "0x00662adf",
+      "0x0066cec0",
+      "0x0066f680",
+      "0x00675420",
+      "0x00678480",
+      "0x00679aa0",
+      "0x00679760"
+    ],
+    "innermost_host_helpers": ["rvi_read_value", "rvi_write_value", "rvi_write_bytes"],
+    "snapshot_hash_is_external_artifact": true
+  },
+  "interpretation": {
+    "decoder_wrapper_active": true,
+    "stack_arguments_captured": false,
+    "compressed_bytes_captured": false,
+    "decoded_output_captured": false,
+    "codec_identified": false,
+    "frontend_ready": false,
+    "offline_gameplay_proven": false,
+    "next_action": "Trace target 0x0066f680 with live entry logging and stack slots 0x4..0x14, then add a bounded external byte capture only after pointer and length values are observed."
+  }
+}

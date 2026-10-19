@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -21,6 +22,42 @@ namespace {
 void require(bool condition, const std::string& message) {
     if (!condition) throw std::runtime_error(message);
 }
+
+class StderrCapture {
+public:
+    StderrCapture() : file_(std::tmpfile()), saved_fd_(dup(STDERR_FILENO)) {
+        require(file_ != nullptr && saved_fd_ >= 0,
+                "could not create stderr capture fixture");
+        std::fflush(stderr);
+        require(dup2(fileno(file_), STDERR_FILENO) >= 0,
+                "could not redirect stderr for trace fixture");
+    }
+
+    ~StderrCapture() {
+        std::fflush(stderr);
+        if (saved_fd_ >= 0) {
+            (void)dup2(saved_fd_, STDERR_FILENO);
+            close(saved_fd_);
+        }
+        if (file_) std::fclose(file_);
+    }
+
+    std::string text() {
+        std::fflush(stderr);
+        std::rewind(file_);
+        std::string result;
+        char buffer[512];
+        size_t count = 0;
+        while ((count = std::fread(buffer, 1, sizeof(buffer), file_)) != 0) {
+            result.append(buffer, count);
+        }
+        return result;
+    }
+
+private:
+    std::FILE* file_ = nullptr;
+    int saved_fd_ = -1;
+};
 
 void write_u16(std::vector<uint8_t>& bytes, size_t offset, uint16_t value) {
     bytes.at(offset) = static_cast<uint8_t>(value);
@@ -774,7 +811,11 @@ int main(int argc, char** argv) {
         require(setenv("SHIFT_TRACE_GUEST_PROVENANCE", "0x00023010", 1) ==
                     0,
                 "could not enable target slot writer provenance fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG", "1", 1) == 0,
+                "could not enable live guest call trace fixture");
+        std::string live_trace;
         {
+            StderrCapture capture;
             shift::runtime::RecompiledPcodeModule target_trace_module(argv[1]);
             constexpr uint32_t receiver = 0x00023000;
             write_guest_u32(target_trace_module, "ram", receiver + 0x20,
@@ -827,7 +868,20 @@ int main(int argc, char** argv) {
                              .has_value,
                     "guest call target trace did not capture a call from an "
                     "unselected caller and its entry receiver slots");
+            live_trace = capture.text();
         }
+        require(live_trace.find(
+                    "shift_guest_call_trace_entry:") !=
+                    std::string::npos &&
+                    live_trace.find("caller=0x00403100 target=0x00685700") !=
+                        std::string::npos &&
+                    live_trace.find("shift_guest_call_trace_return:") !=
+                        std::string::npos &&
+                    live_trace.find("eax=0x78563412") != std::string::npos,
+                "live guest call trace did not persist entry and return events: " +
+                    live_trace);
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG") == 0,
+                "could not disable live guest call trace fixture");
         require(setenv("SHIFT_TRACE_GUEST_CALL_STACK_SLOTS",
                        "0x4,0x8,0xffffffff", 1) == 0,
                 "could not configure guest call stack slot trace fixture");
@@ -1041,6 +1095,77 @@ int main(int argc, char** argv) {
                             return_address,
                     "0x0066caf0 did not complete its CRC step and stdcall "
                     "epilogue with the expected register/stack state");
+        }
+
+        {
+            shift::runtime::RecompiledPcodeModule xmem_module(argv[1]);
+            require(xmem_module.load_override_module(argv[9]),
+                    "0x0066f680 XMem override could not be loaded: " +
+                        xmem_module.last_error());
+            constexpr uint32_t stack = 0x00033000;
+            constexpr uint32_t context = 0x12345678;
+            constexpr uint32_t input = 0x00100000;
+            constexpr uint32_t output = 0x00200000;
+            constexpr uint32_t output_size_ptr = 0x00052000;
+            constexpr uint32_t return_address = 0x00406905;
+            std::vector<uint8_t> expected(0x8000);
+            for (size_t index = 0; index < expected.size(); ++index)
+                expected[index] = static_cast<uint8_t>(index * 37 + 11);
+            std::vector<uint8_t> packed = {
+                0x80, 0x10, 0x08, 0x30, 0x00, 0x00, 1, 0, 0, 0,
+                1,    0,    0,    0,    1,    0,    0,    0};
+            packed.insert(packed.end(), expected.begin(), expected.end());
+            write_guest_bytes(xmem_module, input, packed.data(), packed.size());
+            write_guest_u32(xmem_module, "ram", stack, return_address);
+            write_guest_u32(xmem_module, "ram", stack + 4, context);
+            write_guest_u32(xmem_module, "ram", stack + 8, output);
+            write_guest_u32(xmem_module, "ram", stack + 12,
+                            output_size_ptr);
+            write_guest_u32(xmem_module, "ram", stack + 16, input);
+            write_guest_u32(xmem_module, "ram", stack + 20,
+                            static_cast<uint32_t>(packed.size()));
+            write_guest_u32(xmem_module, "register", 0x00, output);
+            write_guest_u32(xmem_module, "register", 0x04, context);
+            write_guest_u32(xmem_module, "register", 0x08, 0x89abcdef);
+            write_guest_u32(xmem_module, "register", 0x10, stack);
+            write_guest_u32(xmem_module, "register", 0x18, 0x10293847);
+            write_guest_u32(xmem_module, "register", 0x1c, 0x56473829);
+            write_guest_u32(xmem_module, "register", 0x20, 0x76543210);
+            write_guest_u32(xmem_module, "register", 0x24, 0x44332211);
+            require(xmem_module.call(0x0066f680) == 0,
+                    "0x0066f680 XMem override failed: " +
+                        xmem_module.last_error());
+            std::vector<uint8_t> decoded(expected.size());
+            for (size_t offset = 0; offset < decoded.size(); offset += 16) {
+                const size_t chunk =
+                    std::min<size_t>(16, decoded.size() - offset);
+                require(xmem_module.read_guest(
+                            "ram", output + offset, chunk,
+                            decoded.data() + offset),
+                        "could not read synthetic XMem output");
+            }
+            require(decoded == expected &&
+                        read_guest_u32(xmem_module, "ram", output_size_ptr) ==
+                            expected.size() &&
+                        read_guest_u32(xmem_module, "register", 0x00) == 0 &&
+                        read_guest_u32(xmem_module, "register", 0x04) ==
+                            context &&
+                        read_guest_u32(xmem_module, "register", 0x08) ==
+                            0x89abcdef &&
+                        read_guest_u32(xmem_module, "register", 0x10) ==
+                            stack + 4 &&
+                        read_guest_u32(xmem_module, "register", 0x18) ==
+                            0x10293847 &&
+                        read_guest_u32(xmem_module, "register", 0x1c) ==
+                            0x56473829 &&
+                        read_guest_u32(xmem_module, "register", 0x20) ==
+                            0x76543210 &&
+                        read_guest_u32(xmem_module, "register", 0x24) ==
+                            0x44332211 &&
+                        read_guest_u32(xmem_module, "register", 0x284) ==
+                            return_address,
+                    "0x0066f680 did not decode XMem or preserve its cdecl "
+                    "register/return state");
         }
 
         {

@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <stdexcept>
 #include <unordered_map>
 #include <vector>
@@ -250,6 +251,37 @@ struct LZXState {
     }
 };
 
+int xmem_output_size(const std::uint8_t* src, std::size_t src_size,
+                     std::size_t* output_size) {
+    if (!src || !output_size) return 1;
+    std::size_t pos = 0, total = 0;
+    while (pos < src_size) {
+        const std::uint8_t high = src[pos++];
+        std::size_t block_output = 0, block_input = 0, trailer = 0;
+        if (high == 0xFF) {
+            if (src_size - pos < 4) return 1;
+            block_output = (std::size_t(src[pos]) << 8) | src[pos + 1];
+            block_input = (std::size_t(src[pos + 2]) << 8) | src[pos + 3];
+            pos += 4;
+            trailer = 5;
+        } else {
+            if (pos >= src_size) return 1;
+            block_output = 0x8000;
+            block_input = (std::size_t(high) << 8) | src[pos++];
+        }
+        if (block_output == 0 || block_output > 0x8000 || block_input == 0 ||
+            block_input > src_size - pos ||
+            trailer > src_size - pos - block_input ||
+            block_output > std::numeric_limits<std::size_t>::max() - total)
+            return 1;
+        total += block_output;
+        pos += block_input + trailer;
+    }
+    if (total == 0) return 1;
+    *output_size = total;
+    return 0;
+}
+
 int run(const std::uint8_t* src,std::size_t src_size,std::uint8_t* dst,std::size_t cap,std::size_t expected) {
     if (!src || !dst || expected>cap) return 1;
     try {
@@ -275,4 +307,24 @@ extern "C" int shift_xmem_decompress(const std::uint8_t* src, std::size_t src_si
                                      std::uint8_t* dst, std::size_t dst_capacity,
                                      std::size_t expected_size) {
     return run(src,src_size,dst,dst_capacity,expected_size);
+}
+
+extern "C" int shift_xmem_decompressed_size(const std::uint8_t* src,
+                                            std::size_t src_size,
+                                            std::size_t* decoded_size) {
+    return xmem_output_size(src, src_size, decoded_size);
+}
+
+extern "C" int shift_xmem_decompress_auto(const std::uint8_t* src,
+                                          std::size_t src_size,
+                                          std::uint8_t* dst,
+                                          std::size_t dst_capacity,
+                                          std::size_t* decoded_size) {
+    std::size_t expected_size = 0;
+    if (shift_xmem_decompressed_size(src, src_size, &expected_size) != 0 || !dst ||
+        expected_size > dst_capacity)
+        return 1;
+    const int status = run(src, src_size, dst, dst_capacity, expected_size);
+    if (status == 0 && decoded_size) *decoded_size = expected_size;
+    return status;
 }

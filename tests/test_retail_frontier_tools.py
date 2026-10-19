@@ -7,6 +7,8 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -120,6 +122,39 @@ class RetailFrontierTests(unittest.TestCase):
         self.assertEqual(record["runtime_probes"][1]["status"], "timeout")
         self.assertFalse(record["runtime_probes"][1]["guest_decoder_breakpoint_hit"])
         self.assertFalse(record["interpretation"]["adapter_ready"])
+
+    def test_v291_records_no_frontier_before_manual_kill(self):
+        path = ROOT / "evidence/retail_frontier_20261019/entrypoint_probe_v291_decode_call_trace.json"
+        record = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(record["format"], "SHIFT.RetailStartupFrontier/1")
+        self.assertEqual(record["status"], "unknown")
+        self.assertEqual(record["exit_code"], 137)
+        self.assertTrue(record["pe_image_loaded"])
+        self.assertIsNone(record["dispatches"])
+        self.assertEqual(record["comparison"]["result"], "unverified")
+
+    def test_v292_records_live_decoder_stack_without_claiming_capture(self):
+        path = ROOT / "evidence/retail_frontier_20261019/entrypoint_probe_v292_decoder_live_stack.json"
+        record = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(record["format"], "SHIFT.RetailDecoderLiveStack/1")
+        self.assertEqual(record["probe"]["status"], "timeout")
+        self.assertEqual(record["probe"]["exit_code"], 124)
+        self.assertIsNone(record["probe"]["guest_dispatch_count"])
+        self.assertTrue(record["live_snapshot"]["artifact_sha256"])
+        self.assertTrue(record["interpretation"]["decoder_wrapper_active"])
+        self.assertFalse(record["interpretation"]["stack_arguments_captured"])
+        self.assertFalse(record["interpretation"]["compressed_bytes_captured"])
+        self.assertFalse(record["interpretation"]["offline_gameplay_proven"])
+
+    def test_timeout_marker_classifies_forced_kill_as_timeout(self):
+        log = (
+            "Loaded PE32 image into P-code guest RAM\n"
+            "retail_probe_timeout: seconds=30 kill_after_seconds=5 exit_code=137\n"
+        )
+        result = frontier.inspect_log(log, 137)
+        self.assertEqual(result["status"], "timeout")
+        self.assertTrue(result["pe_image_loaded"])
+        self.assertIsNone(result["dispatches"])
 
     def test_frame_loop_is_not_retail_rendering(self):
         data = {
@@ -270,6 +305,7 @@ class RetailFrontierTests(unittest.TestCase):
 
             def fake_run(command, env, check=False):
                 captured["supplements"] = env["SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS"]
+                captured["kill_after"] = env["SHIFT_ENTRYPOINT_PROBE_KILL_AFTER_SECONDS"]
                 Path(command[-1]).write_text(
                     '{"format":"SHIFT.NativeRuntimeFrameLoop/1",'
                     '"frames_rendered":1,"validation_errors":0}\n',
@@ -278,7 +314,13 @@ class RetailFrontierTests(unittest.TestCase):
                 return SimpleNamespace(returncode=0)
 
             with patch.object(frontier, "RETAIL_SHA256", frontier.sha256(pe)), \
-                    patch.object(frontier.subprocess, "run", side_effect=fake_run):
+                    patch.object(frontier.subprocess, "run", side_effect=fake_run), \
+                    patch.dict(os.environ, {
+                        "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x00455ba0",
+                        "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8",
+                        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+                        "SHIFT_TRACE_UNRECOGNIZED_TEST_VALUE": "must-not-be-copied",
+                    }):
                 result = frontier.main([
                     "run", "--runtime", str(runtime), "--artifacts", str(artifacts),
                     "--build-dir", str(folder / "build"), "--pe", str(pe),
@@ -289,10 +331,69 @@ class RetailFrontierTests(unittest.TestCase):
 
             self.assertEqual(result, 0)
             self.assertEqual(captured["supplements"], str(supplement.resolve()))
+            self.assertEqual(captured["kill_after"], "5")
             report = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(report["probe_configuration"]["module_manifest"]["supplements"], [{
                 "path": "supplement.so", "sha256": frontier.sha256(supplement),
             }])
+            self.assertEqual(report["probe_configuration"]["kill_after_seconds"], 5)
+            self.assertEqual(report["probe_configuration"]["trace_environment"], {
+                "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x00455ba0",
+                "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8",
+                "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+            })
+
+    def test_probe_launcher_kills_runtime_that_ignores_sigterm(self):
+        if not shutil.which("timeout"):
+            self.skipTest("GNU timeout is required by the Linux retail launcher")
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            artifacts = folder / "artifacts"
+            artifacts.mkdir()
+            script = ROOT / "tools/run_shift_recompiled_entrypoint_probe.sh"
+            shell = script.read_text(encoding="utf-8")
+            for relative in re.findall(r'\$artifact_root/([^" ]+\.so)', shell):
+                module = artifacts / relative
+                module.parent.mkdir(parents=True, exist_ok=True)
+                module.touch()
+            build = folder / "build"
+            build.mkdir()
+            (build / "libnfs_shift_pcode_frontier.so").touch()
+            game_data = folder / "game-data"
+            game_data.mkdir()
+            mesh = folder / "probe.mgeo"
+            mesh.write_bytes(b"MGEO")
+            pe = folder / "SHIFT.exe"
+            pe.touch()
+            runtime = folder / "ignores-term"
+            runtime.write_text(
+                "#!/usr/bin/env python3\n"
+                "import signal, time\n"
+                "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
+                "while True: time.sleep(0.1)\n",
+                encoding="utf-8",
+            )
+            runtime.chmod(0o755)
+            log = folder / "probe.log"
+            env = os.environ.copy()
+            env.update({
+                "SHIFT_ENTRYPOINT_TIMEOUT_SECONDS": "1",
+                "SHIFT_ENTRYPOINT_PROBE_KILL_AFTER_SECONDS": "1",
+                "SHIFT_ENTRYPOINT_PROBE_FRAMES": "1",
+                "SHIFT_ENTRYPOINT_PROBE_MESH": str(mesh),
+                "SHIFT_ENTRYPOINT_PROBE_PCODE_MODULE": str(
+                    artifacts / "libnfs_shift_pcode_startup_20261018.so"
+                ),
+            })
+            completed = subprocess.run(
+                ["bash", str(script), str(runtime), str(artifacts), str(build),
+                 str(pe), str(game_data), str(log)],
+                env=env, capture_output=True, text=True, timeout=10,
+            )
+            self.assertEqual(completed.returncode, 137, completed.stderr)
+            report = frontier.inspect_log(log.read_text(encoding="utf-8"),
+                                          completed.returncode)
+            self.assertEqual(report["status"], "timeout")
 
     def test_probe_launcher_forwards_extra_overrides(self):
         with tempfile.TemporaryDirectory() as directory:
