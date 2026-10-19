@@ -1,0 +1,4 @@
+plan_id	callee_entry	parameter_index	caller_entry
+looped-offset	00638020	0	006382b0
+direct-intermediate	006382b0	0	008868c0
+stack-derived-outer	008868c0	0	00806ef0

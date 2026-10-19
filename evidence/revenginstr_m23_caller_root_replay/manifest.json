@@ -1,0 +1,107 @@
+{
+  "artifacts": [
+    {
+      "bytes": 164,
+      "contract": "REVENGINSTR.GhidraCallerArgumentSubtreePlan/1",
+      "path": "replay-plan.tsv",
+      "rows": 3,
+      "sha256": "c1a56684583dc20b29907615355bd71b0da711a94b3614e8bb40ea840beb95a4"
+    },
+    {
+      "bytes": 5929,
+      "contract": "REVENGINSTR.GhidraCallerArgumentSubtree/1",
+      "path": "caller-argument-subtrees.tsv",
+      "rows": 28,
+      "sha256": "f2707051c22086b7b0e23f70bf34ef810c8588366c12154df89d4c6c979ca2af"
+    },
+    {
+      "bytes": 244,
+      "contract": "REVENGINSTR.GhidraCallerArgumentParameterRoot/1",
+      "path": "parameter-roots-v1.tsv",
+      "rows": 1,
+      "sha256": "74891027c2797bc04a6a5b1aa62c047bef7174f97a21fc0d79a94ee2c6d228b1"
+    },
+    {
+      "bytes": 287,
+      "contract": "REVENGINSTR.GhidraCallerArgumentParameterRoot/2",
+      "path": "parameter-offset-roots-v2.tsv",
+      "rows": 1,
+      "sha256": "a66935eac45f302fef10281e3e939c7a6e24cab99cb79f835f98006894d79cdc"
+    },
+    {
+      "bytes": 1551,
+      "contract": "REVENGINSTR.GhidraFunctionPcodeFlow/1",
+      "path": "caller-006382b0-pcode-flow.tsv",
+      "rows": 19,
+      "sha256": "f5ed7bd9d00ebedbc056a6357f7e919baabd4e3286eb7a2b3bb369e3d7f757d4"
+    },
+    {
+      "bytes": 21015,
+      "contract": "REVENGINSTR.GhidraFunctionPcodeFlow/1",
+      "path": "callee-00638020-pcode-flow.tsv",
+      "rows": 237,
+      "sha256": "fe23817799cf055d43354ee2b270734568e2d3ac7d8343de5fb2ce197a2947e8"
+    }
+  ],
+  "caller_root_replay": {
+    "caller_functions_decompiled": 3,
+    "caller_functions_failed": 0,
+    "exact_positive_plan": "direct-intermediate",
+    "explicit_abstentions": [
+      "looped-offset",
+      "stack-derived-outer"
+    ],
+    "parameter_root_v1_rows": 1,
+    "parameter_root_v2_rows": 1,
+    "plans": 3
+  },
+  "created": "2026-10-19",
+  "format": "NFS.REVENGINSTRCallerArgumentRootReplay/1",
+  "ghidra": {
+    "analysis_during_subtree_export": false,
+    "parameter_id_java": "26.0.2.1",
+    "subtree_export": "read_only",
+    "version": "12.1.2-DEV"
+  },
+  "parameter_id": {
+    "passes": [
+      {
+        "change": "return type undefined4 * to void *",
+        "changed_functions": [
+          "00806ef0"
+        ],
+        "functions": 5,
+        "pass": 1,
+        "state": "complete"
+      },
+      {
+        "changed_functions": [],
+        "functions": 5,
+        "pass": 2,
+        "state": "complete"
+      }
+    ],
+    "project_mode": "writable disposable copy",
+    "selected_functions_callee_before_caller": [
+      "0062e1a0",
+      "00638020",
+      "006382b0",
+      "008868c0",
+      "00806ef0"
+    ]
+  },
+  "program": "SHIFT.exe",
+  "project_snapshots": {
+    "prepared_copy_tree_sha256": "4d83340be3558c85fb246699a3fe0bf47bced9a65719d06038673b36caa6d512",
+    "source_tree_sha256": "41aa43ee068228ebea5ba678e44dfb406f9b14caa7dc33d485eaf55116d52b9a",
+    "tree_hash_algorithm": "SHA-256 over sorted relative entries in shift.gpr and shift.rep; include D/F marker, relative path, and for files byte size plus file bytes"
+  },
+  "revenginstr": {
+    "caller_subtree_exporter_sha256": "a12cb4be8c98854e2064597c3962a25621d0256a6e407b13f7ceda456afe0c79",
+    "caller_subtree_runner_sha256": "8bed683e45cced3318308fa227965dcd5a7ffd0a3c866dc8fc968c4985828015",
+    "preparation_runner_sha256": "6a1b179e0f1e2bf946c7b9a1841aaecefa11a7713e0060cba2dd7c9984dbd555",
+    "preparation_script_sha256": "7a28c03d47e85ad0f6157fa681f424fd6ea52dff128b6f68cef9dd36d0a3dc05",
+    "pull_request": "https://github.com/Hanz0Hatt0r1/revenginstr/pull/147",
+    "revision": "1b8285c28c0e7b32923e5e451d6c803688c7f912"
+  }
+}
