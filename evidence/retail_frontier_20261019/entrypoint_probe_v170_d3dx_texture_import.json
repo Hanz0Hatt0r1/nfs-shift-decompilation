@@ -1,0 +1,112 @@
+{
+  "format": "NFSShift.RetailEntrypointProbe/1",
+  "captured_at": "2026-10-19",
+  "probe": {
+    "name": "v167-v170-retail-startup-frontier",
+    "requested_host_frames": 120,
+    "validation_layer_enabled": true,
+    "retail_image": {
+      "path": "/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02/SHIFT.exe",
+      "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+    },
+    "results": [
+      {
+        "version": 166,
+        "dispatches": 48527,
+        "unique_functions": 1220,
+        "failure": "null guest resource read in 0x00838410"
+      },
+      {
+        "version": 167,
+        "dispatches": 48591,
+        "unique_functions": 1229,
+        "failure": "unimplemented d3d9.dll!IDirect3DDevice9::GetGammaRamp"
+      },
+      {
+        "version": 168,
+        "dispatches": 48602,
+        "unique_functions": 1234,
+        "failure": "P-code module has no exported function rvi_0082ddc0"
+      },
+      {
+        "version": 169,
+        "dispatches": 48964,
+        "unique_functions": 1247,
+        "failure": "unimplemented d3d9.dll!IDirect3DDevice9::GetDeviceCaps"
+      },
+      {
+        "version": 170,
+        "dispatches": 49064,
+        "unique_functions": 1249,
+        "failure": "unimplemented d3dx9_41.dll!D3DXCreateTexture",
+        "failure_function": "0x008391b0",
+        "arguments_x86_32": [
+          "0x2001b3f4",
+          "0x00000400",
+          "0x00001000",
+          "0x00000001",
+          "0x00000001",
+          "0x00000015",
+          "0x00000000",
+          "0x27f4a898"
+        ],
+        "decoded_arguments": {
+          "device_candidate": "0x2001b3f4",
+          "width": 1024,
+          "height": 4096,
+          "mip_levels": 1,
+          "usage": "D3DUSAGE_RENDERTARGET (0x1)",
+          "format": "D3DFMT_A8R8G8B8 (21)",
+          "pool": "D3DPOOL_DEFAULT (0)",
+          "output_texture_pointer": "0x27f4a898"
+        }
+      }
+    ],
+    "revenginstr": {
+      "revision": "e15b05437a56f0401e7676866d07deecbe384043",
+      "supplements": [
+        {
+          "function": "0x005e5b00",
+          "instructions": 2,
+          "pcode_operations": 6,
+          "lowered_functions": 1,
+          "rejected_functions": 0,
+          "build_report": "../revenginstr_pcode_supplements_20261019/function_005e5b00_build_report.json",
+          "instruction_export": "../revenginstr_pcode_supplements_20261019/function_005e5b00_ghidra_instructions.json"
+        },
+        {
+          "function": "0x0082ddc0",
+          "instructions": 15,
+          "pcode_operations": 59,
+          "lowered_functions": 1,
+          "rejected_functions": 0,
+          "build_report": "../revenginstr_pcode_supplements_20261019/function_0082ddc0_build_report.json",
+          "instruction_export": "../revenginstr_pcode_supplements_20261019/function_0082ddc0_ghidra_instructions.json"
+        }
+      ],
+      "dispatch_delta_from_v166_to_v170": 537,
+      "unique_function_delta_from_v166_to_v170": 29
+    }
+  },
+  "limits": [
+    "The retail entry point still exits on this unsupported import before the requested host-frame interval completes.",
+    "The D3DXCreateTexture output has not been verified as a valid IDirect3DDevice9 pointer and no texture object was created.",
+    "No retail D3D9 draw was translated into Vulkan; host Vulkan smoke geometry remains separate from retail rendering."
+  ],
+  "verification": {
+    "build": "cmake --build /tmp/shift-runtime-ui-gate-trace-build --target shift_runtime shift_runtime_recompiled_pcode_module_check -j4",
+    "targeted_test": {
+      "command": "/usr/bin/ctest --test-dir /tmp/shift-runtime-ui-gate-trace-build -R ^shift_runtime_recompiled_pcode_module$ --output-on-failure",
+      "passed": true,
+      "tests_passed": 1,
+      "tests_failed": 0
+    },
+    "git_diff_check": "passed"
+  },
+  "logs": [
+    "shift-probe-v167-pcode-getter-005e5b00.log",
+    "shift-probe-v168-pcode-getter-005e5b00.log",
+    "shift-probe-v169-pcode-getter-005e5b00.log",
+    "shift-probe-v170-pcode-getter-005e5b00.log"
+  ]
+}

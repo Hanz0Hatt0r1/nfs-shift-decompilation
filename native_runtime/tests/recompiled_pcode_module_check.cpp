@@ -1045,6 +1045,8 @@ int main(int argc, char** argv) {
         adapter_info.device_id = 0x1234;
         adapter_info.description = "fixture adapter";
         adapter_info.supports_bgra8_surface = true;
+        adapter_info.supports_bgra8_texture = true;
+        adapter_info.supports_d24s8_depth_stencil = true;
         adapter_info.bgra8_sample_count_mask = 1 | 2 | 4;
         adapter_info.d24s8_sample_count_mask = 1 | 2;
         D3d9BackendFixture d3d9_backend_fixture{};
@@ -1062,6 +1064,10 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", provider_vtable + 5 * 4);
         const uint32_t provider_check_device_type = read_guest_u32(
             d3d9_provider_module, "ram", provider_vtable + 9 * 4);
+        const uint32_t provider_check_device_format = read_guest_u32(
+            d3d9_provider_module, "ram", provider_vtable + 10 * 4);
+        const uint32_t provider_check_depth_stencil_match = read_guest_u32(
+            d3d9_provider_module, "ram", provider_vtable + 12 * 4);
         const uint32_t provider_check_multisample = read_guest_u32(
             d3d9_provider_module, "ram", provider_vtable + 11 * 4);
         const uint32_t provider_create_device = read_guest_u32(
@@ -1089,6 +1095,36 @@ int main(int argc, char** argv) {
                                   {provider_interface, 0, 1, 22, 23, 0}) ==
                         0x8876086a,
                 "CheckDeviceType did not honor the Vulkan surface format");
+        require(invoke_import(d3d9_provider_module,
+                              provider_check_device_format,
+                              {provider_interface, 0, 1, 22, 0, 3, 21}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  provider_check_device_format,
+                                  {provider_interface, 0, 1, 22, 5, 3, 21}) ==
+                        0 &&
+                    invoke_import(d3d9_provider_module,
+                                  provider_check_device_format,
+                                  {provider_interface, 0, 1, 22, 2, 3, 75}) ==
+                        0 &&
+                    invoke_import(d3d9_provider_module,
+                                  provider_check_device_format,
+                                  {provider_interface, 0, 1, 22, 2, 3, 21}) ==
+                        0x8876086a &&
+                    invoke_import(d3d9_provider_module,
+                                  provider_check_device_format,
+                                  {provider_interface, 0, 1, 22, 0, 3, 23}) ==
+                        0x8876086a,
+                "CheckDeviceFormat did not expose only Vulkan-backed formats");
+        require(invoke_import(
+                    d3d9_provider_module,
+                    provider_check_depth_stencil_match,
+                    {provider_interface, 0, 1, 22, 21, 75}) == 0 &&
+                    invoke_import(
+                        d3d9_provider_module,
+                        provider_check_depth_stencil_match,
+                        {provider_interface, 0, 1, 22, 21, 77}) ==
+                        0x8876086a,
+                "CheckDepthStencilMatch did not honor Vulkan-backed formats");
         constexpr uint32_t provider_quality_levels = 0x00402c80;
         require(invoke_import(d3d9_provider_module,
                               provider_check_multisample,
@@ -1159,6 +1195,8 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", created_device_output_address);
         const uint32_t created_device_vtable = read_guest_u32(
             d3d9_provider_module, "ram", created_device);
+        const uint32_t device_get_device_caps = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 7 * 4);
         const uint32_t created_device_add_ref = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 4);
         const uint32_t created_device_release = read_guest_u32(
@@ -1179,6 +1217,8 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", created_device_vtable + 40 * 4);
         const uint32_t get_viewport = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 48 * 4);
+        const uint32_t get_gamma_ramp = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 22 * 4);
         const uint32_t set_sampler_state = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 69 * 4);
         constexpr uint32_t texture_output_address = 0x00405140;
@@ -1186,6 +1226,7 @@ int main(int argc, char** argv) {
         constexpr uint32_t back_buffer_output_address = 0x0040514c;
         constexpr uint32_t depth_surface_output_address = 0x00405148;
         constexpr uint32_t viewport_output_address = 0x00405150;
+        constexpr uint32_t gamma_ramp_output_address = 0x00405200;
         write_guest_u32(d3d9_provider_module, "ram", texture_output_address,
                         0x7a7a7a7a);
         write_guest_u32(d3d9_provider_module, "ram", render_target_output_address,
@@ -1237,6 +1278,37 @@ int main(int argc, char** argv) {
                     invoke_import(d3d9_provider_module, set_pixel_shader,
                                   {created_device, 0}) == 0,
                 "CreateDevice did not create a usable device vtable");
+        require(invoke_import(d3d9_provider_module, device_get_device_caps,
+                              {created_device, caps_address}) == 0,
+                "IDirect3DDevice9::GetDeviceCaps did not return successfully");
+        for (size_t index = 0; index < adapter_info.caps.size(); ++index) {
+            require(read_guest_u32(d3d9_provider_module, "ram",
+                                   caps_address + index * 4) ==
+                        adapter_info.caps[index],
+                    "IDirect3DDevice9::GetDeviceCaps changed a D3DCAPS9 word");
+        }
+        std::array<uint8_t, 3 * 256 * sizeof(uint16_t)> gamma_ramp_sentinel{};
+        gamma_ramp_sentinel.fill(0xa5);
+        write_guest_bytes(d3d9_provider_module, gamma_ramp_output_address,
+                          gamma_ramp_sentinel.data(),
+                          gamma_ramp_sentinel.size());
+        require(call_import(d3d9_provider_module, get_gamma_ramp,
+                            {created_device, 0, gamma_ramp_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "register", 0x10) ==
+                        0x32010,
+                "IDirect3DDevice9::GetGammaRamp did not return normally");
+        for (size_t channel = 0; channel < 3; ++channel) {
+            for (const size_t sample : {size_t{0}, size_t{1}, size_t{128},
+                                         size_t{255}}) {
+                const uint16_t expected =
+                    static_cast<uint16_t>(sample * 257);
+                const uint64_t address = gamma_ramp_output_address +
+                    (channel * 256 + sample) * sizeof(uint16_t);
+                require(read_guest_u16(d3d9_provider_module, "ram", address) ==
+                            expected,
+                        "IDirect3DDevice9::GetGammaRamp did not return an identity ramp");
+            }
+        }
         const uint32_t render_target_surface = read_guest_u32(
             d3d9_provider_module, "ram", render_target_output_address);
         const uint32_t surface_vtable = read_guest_u32(

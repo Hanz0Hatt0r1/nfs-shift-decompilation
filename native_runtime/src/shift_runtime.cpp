@@ -1959,10 +1959,19 @@ struct Runtime {
         VkFormatProperties bgra8_properties{};
         vkGetPhysicalDeviceFormatProperties(
             physical, VK_FORMAT_B8G8R8A8_UNORM, &bgra8_properties);
+        adapter_info.supports_bgra8_texture =
+            (bgra8_properties.optimalTilingFeatures &
+             VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0;
         adapter_info.supports_bgra8_surface =
             bgra8_presentable &&
             (bgra8_properties.optimalTilingFeatures &
              VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0;
+        VkFormatProperties d24s8_properties{};
+        vkGetPhysicalDeviceFormatProperties(
+            physical, VK_FORMAT_D24_UNORM_S8_UINT, &d24s8_properties);
+        adapter_info.supports_d24s8_depth_stencil =
+            (d24s8_properties.optimalTilingFeatures &
+             VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
         return adapter_info;
     }
 

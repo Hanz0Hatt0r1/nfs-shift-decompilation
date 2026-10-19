@@ -1188,6 +1188,8 @@ struct RecompiledPcodeModule::Impl {
                 return d3d9_get_adapter_mode_count();
             if (name == "d3d9.dll!IDirect3D9::CheckDeviceFormat")
                 return d3d9_check_device_format();
+            if (name == "d3d9.dll!IDirect3D9::CheckDepthStencilMatch")
+                return d3d9_check_depth_stencil_match();
             if (name == "d3d9.dll!IDirect3D9::EnumAdapterModes")
                 return d3d9_enum_adapter_modes();
             if (name == "d3d9.dll!IDirect3D9::CheckDeviceMultiSampleType")
@@ -1204,6 +1206,8 @@ struct RecompiledPcodeModule::Impl {
                 return d3d9_device_add_ref();
             if (name == "d3d9.dll!IDirect3DDevice9::Release")
                 return d3d9_device_release();
+            if (name == "d3d9.dll!IDirect3DDevice9::GetDeviceCaps")
+                return d3d9_device_get_caps();
             if (name == "d3d9.dll!IDirect3DDevice9::GetNumberOfSwapChains")
                 return d3d9_device_get_number_of_swap_chains();
             if (name == "d3d9.dll!IDirect3DDevice9::SetPixelShader")
@@ -1220,6 +1224,8 @@ struct RecompiledPcodeModule::Impl {
                 return d3d9_device_get_depth_stencil_surface();
             if (name == "d3d9.dll!IDirect3DDevice9::GetViewport")
                 return d3d9_device_get_viewport();
+            if (name == "d3d9.dll!IDirect3DDevice9::GetGammaRamp")
+                return d3d9_device_get_gamma_ramp();
             if (name == "d3d9.dll!IDirect3DDevice9::SetSamplerState")
                 return d3d9_device_set_sampler_state();
             if (name == "d3d9.dll!IDirect3DSurface9::AddRef")
@@ -4413,13 +4419,72 @@ struct RecompiledPcodeModule::Impl {
             return return_kernel32_dword(kD3dErrInvalidCall, api, 28);
         }
 
-        // Format support depends on the not-yet-implemented D3D9-to-Vulkan
-        // device provider. Report valid queries as unsupported so the retail
-        // caller can try another format without receiving invented caps.
-        (void)adapter_format;
-        (void)usage;
-        (void)check_format;
+        if (!guest_d3d9_adapter_info_available ||
+            !guest_d3d9_adapter_info.supports_bgra8_surface ||
+            (adapter_format != 21 && adapter_format != kD3dFormatX8R8G8B8)) {
+            return return_kernel32_dword(kD3dErrNotAvailable, api, 28);
+        }
+
+        // The Vulkan host exposes BGRA8 as a sampled color format and, when
+        // presentable, as a render target. SHIFT's depth-format probe asks
+        // for D24S8 as a depth/stencil surface or texture. Keep this table
+        // narrow so D3D9 does not advertise formats the host cannot back.
+        const bool surface_or_texture =
+            resource_type == 1 || resource_type == 3;
+        const bool bgra8_format = check_format == 21 ||
+                                  check_format == kD3dFormatX8R8G8B8;
+        if (surface_or_texture && bgra8_format &&
+            (usage == 0 || usage == 1 || usage == 5) &&
+            ((usage & 1) != 0
+                 ? guest_d3d9_adapter_info.supports_bgra8_surface
+                 : guest_d3d9_adapter_info.supports_bgra8_texture)) {
+            return return_kernel32_dword(0, api, 28);
+        }
+        if (surface_or_texture && check_format == 75 && usage == 2 &&
+            guest_d3d9_adapter_info.supports_d24s8_depth_stencil &&
+            (guest_d3d9_adapter_info.d24s8_sample_count_mask & 1) != 0) {
+            return return_kernel32_dword(0, api, 28);
+        }
         return return_kernel32_dword(kD3dErrNotAvailable, api, 28);
+    }
+
+    int d3d9_check_depth_stencil_match() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3D9::CheckDepthStencilMatch";
+        uint32_t interface_address = 0;
+        uint32_t adapter = 0;
+        uint32_t device_type = 0;
+        uint32_t adapter_format = 0;
+        uint32_t render_target_format = 0;
+        uint32_t depth_stencil_format = 0;
+        if (!read_stack_argument(0, interface_address, api) ||
+            !read_stack_argument(1, adapter, api) ||
+            !read_stack_argument(2, device_type, api) ||
+            !read_stack_argument(3, adapter_format, api) ||
+            !read_stack_argument(4, render_target_format, api) ||
+            !read_stack_argument(5, depth_stencil_format, api)) {
+            return -1;
+        }
+        if (guest_d3d9_interfaces.find(interface_address) ==
+            guest_d3d9_interfaces.end()) {
+            error = std::string(api) + " received an invalid interface pointer";
+            return -1;
+        }
+        if (adapter != 0 || (device_type != 1) ||
+            (adapter_format != 21 &&
+             adapter_format != kD3dFormatX8R8G8B8) ||
+            (render_target_format != 21 &&
+             render_target_format != kD3dFormatX8R8G8B8)) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 24);
+        }
+        if (!guest_d3d9_adapter_info_available ||
+            !guest_d3d9_adapter_info.supports_bgra8_surface ||
+            !guest_d3d9_adapter_info.supports_d24s8_depth_stencil ||
+            (guest_d3d9_adapter_info.d24s8_sample_count_mask & 1) == 0 ||
+            depth_stencil_format != 75) {
+            return return_kernel32_dword(kD3dErrNotAvailable, api, 24);
+        }
+        return return_kernel32_dword(0, api, 24);
     }
 
     int d3d9_enum_adapter_modes() {
@@ -4559,6 +4624,20 @@ struct RecompiledPcodeModule::Impl {
         return return_kernel32_dword(0, api, 12);
     }
 
+    bool write_d3d9_caps(uint32_t caps_address, const char* api) {
+        std::array<uint8_t, kD3dCaps9Size> caps_bytes{};
+        for (size_t index = 0;
+             index < guest_d3d9_adapter_info.caps.size(); ++index) {
+            const uint32_t word = guest_d3d9_adapter_info.caps[index];
+            for (size_t byte = 0; byte < sizeof(word); ++byte) {
+                caps_bytes[index * sizeof(word) + byte] =
+                    static_cast<uint8_t>(word >> (byte * 8));
+            }
+        }
+        return write_guest_bytes(caps_address, caps_bytes.data(),
+                                 caps_bytes.size(), api);
+    }
+
     int d3d9_get_device_caps() {
         constexpr const char* api = "d3d9.dll!IDirect3D9::GetDeviceCaps";
         uint32_t interface_address = 0;
@@ -4588,20 +4667,34 @@ struct RecompiledPcodeModule::Impl {
             return return_kernel32_dword(kD3dErrNotAvailable, api, 16);
         }
 
-        std::array<uint8_t, kD3dCaps9Size> caps_bytes{};
-        for (size_t index = 0;
-             index < guest_d3d9_adapter_info.caps.size(); ++index) {
-            const uint32_t word = guest_d3d9_adapter_info.caps[index];
-            for (size_t byte = 0; byte < sizeof(word); ++byte) {
-                caps_bytes[index * sizeof(word) + byte] =
-                    static_cast<uint8_t>(word >> (byte * 8));
-            }
-        }
-        if (!write_guest_bytes(caps_address, caps_bytes.data(),
-                               caps_bytes.size(), api)) {
+        if (!write_d3d9_caps(caps_address, api)) return -1;
+        return return_kernel32_dword(0, api, 16);
+    }
+
+    int d3d9_device_get_caps() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::GetDeviceCaps";
+        uint32_t device_address = 0;
+        uint32_t caps_address = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, caps_address, api)) {
             return -1;
         }
-        return return_kernel32_dword(0, api, 16);
+        if (guest_d3d9_devices.find(device_address) ==
+            guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (caps_address == 0 ||
+            caps_address > UINT32_MAX - (kD3dCaps9Size - 1) ||
+            !valid_guest_pointer(caps_address, kD3dCaps9Size)) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 8);
+        }
+        if (!guest_d3d9_adapter_info_available) {
+            return return_kernel32_dword(kD3dErrNotAvailable, api, 8);
+        }
+        if (!write_d3d9_caps(caps_address, api)) return -1;
+        return return_kernel32_dword(0, api, 8);
     }
 
     int d3d9_create_device() {
@@ -5107,6 +5200,44 @@ struct RecompiledPcodeModule::Impl {
             }
         }
         return return_kernel32_dword(0, api, 8);
+    }
+
+    int d3d9_device_get_gamma_ramp() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::GetGammaRamp";
+        uint32_t device_address = 0;
+        uint32_t swap_chain = 0;
+        uint32_t ramp_address = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, swap_chain, api) ||
+            !read_stack_argument(2, ramp_address, api)) {
+            return -1;
+        }
+        if (guest_d3d9_devices.find(device_address) ==
+            guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        constexpr size_t kRampByteSize = 3 * 256 * sizeof(uint16_t);
+        if (swap_chain != 0 || ramp_address == 0 ||
+            !valid_guest_pointer(ramp_address, kRampByteSize)) {
+            error = std::string(api) +
+                    " received an unsupported swap chain or invalid ramp pointer";
+            return -1;
+        }
+
+        std::array<uint8_t, kRampByteSize> ramp{};
+        for (size_t channel = 0; channel < 3; ++channel) {
+            for (size_t sample = 0; sample < 256; ++sample) {
+                const uint16_t value = static_cast<uint16_t>(sample * 257);
+                const size_t offset = (channel * 256 + sample) * 2;
+                ramp[offset] = static_cast<uint8_t>(value);
+                ramp[offset + 1] = static_cast<uint8_t>(value >> 8);
+            }
+        }
+        if (!write_guest_bytes(ramp_address, ramp.data(), ramp.size(), api))
+            return -1;
+        return finish_stdcall(3 * sizeof(uint32_t), api) ? 0 : -1;
     }
 
     int d3d9_device_set_sampler_state() {
@@ -8266,6 +8397,35 @@ struct RecompiledPcodeModule::Impl {
                 "entry_EDX=0x%08x,entry_ESP=0x%08x,entry_ESI=0x%08x}",
                 frame.eax, frame.ecx, frame.edx, frame.esp, frame.esi);
             error += guest_frame;
+            if (diagnostic_guest_pointer_mapped(frame.ecx, 0x44)) {
+                char object_header[64]{};
+                std::snprintf(object_header, sizeof(object_header),
+                              "; guest_entry_ecx_memory@0x%08x=",
+                              frame.ecx);
+                error += object_header;
+                for (size_t offset = 0; offset < 0x44; offset += 4) {
+                    uint32_t word = 0;
+                    if (!read_guest_diagnostic_u32(
+                            static_cast<uint64_t>(frame.ecx) + offset,
+                            word)) {
+                        break;
+                    }
+                    char value[16]{};
+                    std::snprintf(value, sizeof(value), "%s%08x",
+                                  offset == 0 ? "" : ",", word);
+                    error += value;
+                }
+            }
+            if (frame.has_stack_arguments) {
+                char arguments[96]{};
+                std::snprintf(
+                    arguments, sizeof(arguments),
+                    "; guest_entry_stack={return=0x%08x,args=0x%08x,"
+                    "0x%08x,0x%08x}",
+                    frame.stack_return_slot, frame.stack_arguments[0],
+                    frame.stack_arguments[1], frame.stack_arguments[2]);
+                error += arguments;
+            }
         }
         const auto register_value = [this](size_t offset) {
             uint32_t value = 0;
@@ -8287,12 +8447,12 @@ struct RecompiledPcodeModule::Impl {
             register_value(kX86EdiRegisterOffset));
         error += guest_registers;
         uint32_t guest_esi = register_value(kX86EsiRegisterOffset);
-        if (diagnostic_guest_pointer_mapped(guest_esi, 6 * sizeof(uint32_t))) {
-            char object_memory[128]{};
+        if (diagnostic_guest_pointer_mapped(guest_esi, 0x44)) {
+            char object_memory[256]{};
             size_t length = static_cast<size_t>(std::snprintf(
                 object_memory, sizeof(object_memory),
                 "; guest_esi_memory@0x%08x=", guest_esi));
-            for (size_t index = 0; index < 6; ++index) {
+            for (size_t index = 0; index < 0x44 / sizeof(uint32_t); ++index) {
                 uint32_t value = 0;
                 if (!read_guest_diagnostic_u32(
                         guest_esi + static_cast<uint32_t>(index * 4), value))

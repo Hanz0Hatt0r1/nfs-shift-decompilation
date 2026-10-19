@@ -104,6 +104,8 @@ struct RecompiledGuestD3d9AdapterInfo {
     uint32_t device_id = 0;
     std::string description;
     bool supports_bgra8_surface = false;
+    bool supports_bgra8_texture = false;
+    bool supports_d24s8_depth_stencil = false;
     uint32_t bgra8_sample_count_mask = 0;
     uint32_t d24s8_sample_count_mask = 0;
     void* backend_context = nullptr;
