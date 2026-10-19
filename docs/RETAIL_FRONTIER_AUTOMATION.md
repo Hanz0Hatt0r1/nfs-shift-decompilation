@@ -321,6 +321,21 @@ This confirms that implementing the next step requires effect state and
 interface behavior; returning a fabricated success pointer would not be a
 valid compatibility fix.
 
+The v282 implementation adds a bounds-checked parser for D3DX9 binary effect
+version 9.1, including parameter types and values, annotations, techniques,
+passes, states, and resource blobs. A synthetic CTest covers a shader state,
+resource-to-object association, and truncated input. Running that checker
+against the external v281 capture parses 2 parameters, 1 `ShadowGen` technique,
+1 `Pass0`, 7 objects, and 2 shader resources of 144 and 404 bytes. This is
+format parsing evidence only: `D3DXCreateEffect` still has no runtime COM
+implementation, the shader bytecode is not translated or created on Vulkan,
+and the retail startup probe has not advanced. The capture and its payloads
+remain outside Git. See the [v282 parser record](../evidence/retail_frontier_20261019/entrypoint_probe_v282_d3dx_effect_binary_parse.json).
+The capture check accepts an optional external file argument:
+`native_runtime/build/shift_runtime_d3dx9_effect_binary_check /path/to/effect.bin`.
+The next runtime change must construct the effect interface from these parsed
+records and route shader creation through the D3D9/Vulkan backend.
+
 The v120 caller-call trace independently maps the common tail of `0x0054be00`:
 the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the
 `+0x130` call dispatches `0x00835d80` (D3D9 Present path), 121 times each in a
