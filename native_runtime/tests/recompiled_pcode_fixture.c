@@ -14,6 +14,19 @@ int rvi_00401000(RviPcodeContext *ctx) {
     return ctx->call(ctx->opaque, UINT64_C(0x00685700));
 }
 
+int rvi_00403100(RviPcodeContext *ctx) {
+    const uint8_t ecx[4] = {0x00, 0x40, 0x02, 0x00};
+    const uint8_t eax[4] = {0x12, 0x34, 0x56, 0x78};
+    const uint8_t value[4] = {0x78, 0x56, 0x34, 0x12};
+    if (ctx->write(ctx->opaque, "register", 4, sizeof(ecx), ecx) != 0 ||
+        ctx->write(ctx->opaque, "register", 0, sizeof(eax), eax) != 0 ||
+        ctx->write(ctx->opaque, "ram", UINT64_C(0x00023010),
+                   sizeof(value), value) != 0) {
+        return -1;
+    }
+    return ctx->call(ctx->opaque, UINT64_C(0x00685700));
+}
+
 int rvi_00404000(RviPcodeContext *ctx) {
     uint8_t value[4] = {0};
     const uint8_t expected[4] = {'P', '3', '2', '!'};

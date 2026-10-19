@@ -81,18 +81,31 @@ struct RecompiledUiStateGateTraceEvent {
     bool completed = false;
 };
 
+struct RecompiledGuestCallTraceMemorySlot {
+    uint32_t offset = 0;
+    uint32_t value = 0;
+    RecompiledGuestWriteTrace last_writer{};
+    bool has_value = false;
+    bool has_last_writer = false;
+};
+
 struct RecompiledGuestCallTraceEvent {
     uint64_t dispatch_count = 0;
     uint32_t thread_id = 0;
     uint32_t function = 0;
     uint32_t caller = 0;
+    uint32_t caller_ecx = 0;
     uint32_t return_address = 0;
     uint32_t ecx_entry = 0;
     uint32_t eax_entry = 0;
+    uint32_t eax_return = 0;
     uint32_t edx_entry = 0;
     std::string import_name;
     bool has_return_address = false;
+    bool has_eax_return = false;
     bool is_import = false;
+    bool completed = false;
+    std::vector<RecompiledGuestCallTraceMemorySlot> caller_slots;
 };
 
 struct RecompiledGuestD3d9PresentationParameters {
@@ -178,6 +191,8 @@ struct RecompiledGuestSchedulerSnapshot {
     bool guest_call_trace_enabled = false;
     bool guest_call_trace_truncated = false;
     uint32_t guest_call_trace_caller = 0;
+    std::vector<uint32_t> guest_call_trace_targets;
+    std::vector<uint32_t> guest_call_trace_slot_offsets;
     std::vector<RecompiledGuestCallTraceEvent> guest_call_trace;
     size_t ready_thread_count = 0;
     size_t worker_thread_count = 0;

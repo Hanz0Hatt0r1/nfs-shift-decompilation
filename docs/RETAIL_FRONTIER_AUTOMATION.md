@@ -72,9 +72,21 @@ event then includes exact-byte `helper_flag_last_writer` provenance, with the
 last P-code writer's function, receiver, caller, return addresses, and store
 details when available.
 `SHIFT_TRACE_GUEST_CALLER=0x0049eb30` records calls from the helper activation
-path. These fields are runtime diagnostics: an omitted writer means the probe
-did not record a P-code store overlapping the configured address, and synthetic MGEO or
-other host-side state is not retail evidence.
+path. For a selected caller, `SHIFT_TRACE_GUEST_CALLER_SLOTS=0x1ef8,0x1efc`
+samples 32-bit words at those offsets from the caller's entry ECX. Events keep
+`ecx_entry` for the child callee and `caller_ecx` for the selected caller's
+entry receiver. Direct P-code calls also record their return EAX and completion
+status. If a sampled absolute address is included in
+`SHIFT_TRACE_GUEST_PROVENANCE`, its `last_writer` records the last overlapping
+P-code store. At most 32 offsets and 8,192 call events are retained. An omitted
+writer means the probe did not record a P-code store overlapping that address;
+synthetic MGEO or other host-side state is not retail evidence.
+
+`SHIFT_TRACE_GUEST_CALL_TARGETS=0x0066bb50,0x0066b8d0` instead records calls
+to up to 32 selected guest targets from any caller. If caller and target filters
+are both set, either match records the event. Each event carries the actual
+caller, callee-entry registers, return address, and direct-call EAX result. The
+frame JSON lists selected `guest_call_trace_targets`.
 
 The v217/v218 bounded runs reproduce the same 96,082-dispatch, 1,559-function
 host-frame-loop checkpoint with 120 Vulkan clear and 120 present submissions,
@@ -90,6 +102,26 @@ The v219 repetition uses exact-byte last-writer tracking and confirms the same
 also verifies that a later write to an adjacent byte cannot replace the
 target byte's writer record. See
 [`entrypoint_probe_v219_ui_helper_exact_writer.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v219_ui_helper_exact_writer.json).
+
+The v223/v225/v226/v228 activation trace narrows the next UI gate. Across the
+same 120-frame host-loop checkpoint, `0x00508ea0` and `0x00508e90` each return
+zero 121 times from `0x0054bb20`; `0x00508ec0` is never called. Ghidra maps
+`0x00508e90` to the helper object's `+0x2d` byte, which remains zero. The
+`0x005093a0` update leaves a child in state 7; its `0x00508af0` readiness method
+returns a zero low byte while `+0x218` is 2 and `+0x340` is 1. Exact-byte
+provenance attributes the pending `+0x218` value to `0x0066bb50`, called from
+`0x0066cc00` during the request path through `0x0065fa60`. Follow-up caller
+traces v229–v239 expose the setup path and distinguish the active flag from
+cleanup. In v237, a target-wide trace sees one call to `0x0066bb50` from
+`0x0066cc00`, but no call to `0x0066b8d0` in the 120-frame guest call stream.
+In v238, owner byte `+0xb8` is zero on entry to `0x0066cc00`; v239 shows that
+function setting it to one before the following `0x00653480` call. Static PE
+disassembly shows `0x0066cc00` calls `0x0066cb60` only if the byte is already
+set, and `0x0066cb60` conditionally calls `0x0066b8d0`. That cleanup is not
+established as the asynchronous completion callback. The pending request is
+active, but the worker/consumer transition that should update readiness remains
+unresolved. See the [activation-frontier analysis](SHIFT_RETAIL_UI_ACTIVATION_FRONTIER_20261019.md)
+and [machine-readable evidence](../evidence/retail_frontier_20261019/entrypoint_probe_v229_v239_async_request_calls.json).
 
 The v120 caller-call trace independently maps the common tail of `0x0054be00`:
 the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the

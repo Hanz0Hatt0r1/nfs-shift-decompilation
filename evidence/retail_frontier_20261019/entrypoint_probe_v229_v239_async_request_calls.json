@@ -1,0 +1,1539 @@
+{
+  "authority": "controlled-replay",
+  "confidence": "observed",
+  "format": "SHIFT.RetailAsyncRequestCallTrace/1",
+  "observations": [
+    "Across selected caller probes, 0x0065fa60 calls 0x00653140, 0x00652190, 0x0066cc00, then 0x00653480. 0x0066cc00 returns 0x00010000 and 0x00653480 returns zero. The later 0x0066bab0 path returns one and continues through 0x0048c777, 0x0066bada, 0x006880c0, and 0x00650350.",
+    "The v237 target-wide guest-call filter observed one call to 0x0066bb50 from 0x0066cc00 and no calls to 0x0066b8d0 in the bounded 120-frame run.",
+    "The v238 caller trace records owner +0xb8 as zero on entry to 0x0066cc00, last written by 0x0065fd90 from 0x0065ee60. The v239 trace observes +0xb8 set to one by 0x0066cc00 before its parent calls 0x00653480.",
+    "Static disassembly shows 0x0066cc00 calls 0x0066cb60 only when owner +0xb8 is already nonzero; 0x0066cb60 conditionally calls 0x0066b8d0. That cleanup is not established as the asynchronous completion callback.",
+    "The v237-v239 runs retained 96,082 dispatches, 1,559 unique functions, 120 host frames, 120 clear and present submissions, zero Vulkan validation errors, four waiting workers, and no guest draw translation. v229 and v238 each report 96,080 dispatches; this small variation is recorded without inferring a gameplay regression."
+  ],
+  "probe_bounds": {
+    "guest_state_forcing": false,
+    "host_frames": 120,
+    "raw_logs_committed": false,
+    "vulkan_validation": true
+  },
+  "probes": [
+    {
+      "frontier": {
+        "clear_submissions": 120,
+        "dispatches": 96080,
+        "frames_rendered": 120,
+        "guest_draw_translation": false,
+        "present_submissions": 120,
+        "status": "host-frame-loop",
+        "unique_functions": 1559,
+        "validation_errors": 0,
+        "worker_waiting_count": 4
+      },
+      "log_file": "v229-async-request-calls-120-validation.log",
+      "log_sha256": "0c64db0a8248a5ea302bc96622c4ea4712a74e0fa6950f958fcad3374991aeb5",
+      "run": "v229",
+      "runtime_sha256": "51537185371f6ceef27ddf7784c3ecefaccf231390ff54a25fc67e29040ba8e7",
+      "trace_events": [
+        {
+          "caller": "0x0066cc00",
+          "caller_ecx": "0x27ed9420",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000e4",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64486,
+          "eax_entry": "0x00000005",
+          "eax_return": "0x00000000",
+          "ecx_entry": "0x27ed9428",
+          "edx_entry": "0x27eeaac0",
+          "function": "0x0066bb50",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0066cc3a",
+          "thread_id": "0x001af625"
+        }
+      ],
+      "trace_filter": {
+        "caller": "0x0066cc00",
+        "slot_offsets": [
+          "0x00000004",
+          "0x00000008",
+          "0x000000e4",
+          "0x000000f8",
+          "0x00000218",
+          "0x00000340"
+        ],
+        "targets": []
+      }
+    },
+    {
+      "frontier": {
+        "clear_submissions": 120,
+        "dispatches": 96082,
+        "frames_rendered": 120,
+        "guest_draw_translation": false,
+        "present_submissions": 120,
+        "status": "host-frame-loop",
+        "unique_functions": 1559,
+        "validation_errors": 0,
+        "worker_waiting_count": 4
+      },
+      "log_file": "v230-async-parent-calls-120-validation.log",
+      "log_sha256": "fce71161cb66a2c1d7ec67e59495103beea4b0c6456c835a6a63af506254c68f",
+      "run": "v230",
+      "runtime_sha256": "51537185371f6ceef27ddf7784c3ecefaccf231390ff54a25fc67e29040ba8e7",
+      "trace_events": [
+        {
+          "caller": "0x0065fa60",
+          "caller_ecx": "0x27ed9220",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x2827bee6"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000e4",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64425,
+          "eax_entry": "0x00000002",
+          "eax_return": "0x2827bf76",
+          "ecx_entry": "0x27ed9284",
+          "edx_entry": "0x27ed9228",
+          "function": "0x00653140",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0065fadb",
+          "thread_id": "0x001afbe2"
+        },
+        {
+          "caller": "0x0065fa60",
+          "caller_ecx": "0x27ed9220",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x2827bee6"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000e4",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64486,
+          "eax_entry": "0x2827bf76",
+          "eax_return": "0x2827bf76",
+          "ecx_entry": "0x27ed9284",
+          "edx_entry": "0x27ed9420",
+          "function": "0x00652190",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0065fae8",
+          "thread_id": "0x001afbe2"
+        },
+        {
+          "caller": "0x0065fa60",
+          "caller_ecx": "0x27ed9220",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x2827bee6"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000e4",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x27ed9420"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64487,
+          "eax_entry": "0x27e31e88",
+          "eax_return": "0x00010000",
+          "ecx_entry": "0x27ed9420",
+          "edx_entry": "0x27eeaac0",
+          "function": "0x0066cc00",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0065fafe",
+          "thread_id": "0x001afbe2"
+        },
+        {
+          "caller": "0x0065fa60",
+          "caller_ecx": "0x27ed9220",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x2827bee6"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000e4",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x27ed9420"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64574,
+          "eax_entry": "0x00010000",
+          "eax_return": "0x00000000",
+          "ecx_entry": "0x27ed9284",
+          "edx_entry": "0x00000000",
+          "function": "0x00653480",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0065fb12",
+          "thread_id": "0x001afbe2"
+        }
+      ],
+      "trace_filter": {
+        "caller": "0x0065fa60",
+        "slot_offsets": [
+          "0x00000004",
+          "0x00000008",
+          "0x000000e4",
+          "0x000000f8",
+          "0x00000218",
+          "0x00000340"
+        ],
+        "targets": []
+      }
+    },
+    {
+      "frontier": {
+        "clear_submissions": 120,
+        "dispatches": 96082,
+        "frames_rendered": 120,
+        "guest_draw_translation": false,
+        "present_submissions": 120,
+        "status": "host-frame-loop",
+        "unique_functions": 1559,
+        "validation_errors": 0,
+        "worker_waiting_count": 4
+      },
+      "log_file": "v231-async-resource-path-120-validation.log",
+      "log_sha256": "72f7a4fb0eb84f635d852b88bdfbd52dbdd8dd646a9836714d9fd618596fbca3",
+      "run": "v231",
+      "runtime_sha256": "51537185371f6ceef27ddf7784c3ecefaccf231390ff54a25fc67e29040ba8e7",
+      "trace_events": [
+        {
+          "caller": "0x00653480",
+          "caller_ecx": "0x27ed9284",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x2827bf76"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000e4",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64575,
+          "eax_entry": "0x00010000",
+          "eax_return": "0x00000000",
+          "ecx_entry": "0x27ed928c",
+          "edx_entry": "0x00000000",
+          "function": "0x00635e40",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x006534a7",
+          "thread_id": "0x001afd97"
+        },
+        {
+          "caller": "0x00653480",
+          "caller_ecx": "0x27ed9284",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x2827bf76"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000e4",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64576,
+          "eax_entry": "0x005b0d50",
+          "eax_return": "0x27f48c80",
+          "ecx_entry": "0x00000000",
+          "edx_entry": "0x00000000",
+          "function": "0x0065f490",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x00653539",
+          "thread_id": "0x001afd97"
+        },
+        {
+          "caller": "0x00653480",
+          "caller_ecx": "0x27ed9284",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x2827bf76"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000e4",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64578,
+          "eax_entry": "0x27f48c80",
+          "eax_return": "0x00000001",
+          "ecx_entry": "0x27f48c80",
+          "edx_entry": "0x00000003",
+          "function": "0x0066bab0",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x00653545",
+          "thread_id": "0x001afd97"
+        }
+      ],
+      "trace_filter": {
+        "caller": "0x00653480",
+        "slot_offsets": [
+          "0x00000004",
+          "0x00000008",
+          "0x000000e4",
+          "0x000000f8",
+          "0x00000218",
+          "0x00000340"
+        ],
+        "targets": []
+      }
+    },
+    {
+      "frontier": {
+        "clear_submissions": 120,
+        "dispatches": 96082,
+        "frames_rendered": 120,
+        "guest_draw_translation": false,
+        "present_submissions": 120,
+        "status": "host-frame-loop",
+        "unique_functions": 1559,
+        "validation_errors": 0,
+        "worker_waiting_count": 4
+      },
+      "log_file": "v232-async-factory-120-validation.log",
+      "log_sha256": "4a04a19e82574ab1821dcc86cde466ec53a4b5ee5976faf5d6bedb064a18723e",
+      "run": "v232",
+      "runtime_sha256": "51537185371f6ceef27ddf7784c3ecefaccf231390ff54a25fc67e29040ba8e7",
+      "trace_events": [
+        {
+          "caller": "0x0066bab0",
+          "caller_ecx": "0x27f48c80",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000000",
+              "value": "0x00af386c"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x27f398f0"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x27f48d70"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000fc",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000100",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x00b20998"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64579,
+          "eax_entry": "0x27f48c80",
+          "eax_return": "0x00000001",
+          "ecx_entry": "0x27f48c80",
+          "edx_entry": "0x00000003",
+          "function": "0x006550f0",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0066babe",
+          "thread_id": "0x001b006a"
+        },
+        {
+          "caller": "0x0066bab0",
+          "caller_ecx": "0x27f48c80",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000000",
+              "value": "0x00af386c"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x27f398f0"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x27f48d70"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000fc",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000100",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x00b20998"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64580,
+          "eax_entry": "0x00000001",
+          "eax_return": "0x00000000",
+          "ecx_entry": "0x27f48c80",
+          "edx_entry": "0x00000003",
+          "function": "0x00655110",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0066bac9",
+          "thread_id": "0x001b006a"
+        },
+        {
+          "caller": "0x0066bab0",
+          "caller_ecx": "0x27f48c80",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000000",
+              "value": "0x00af386c"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x27f398f0"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x27f48d70"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000fc",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000100",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x00b20998"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64581,
+          "eax_entry": "0x27f48d70",
+          "eax_return": "0x00000001",
+          "ecx_entry": "0x27f48c80",
+          "edx_entry": "0x00000003",
+          "function": "0x0048c777",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x00000000",
+          "thread_id": "0x001b006a"
+        }
+      ],
+      "trace_filter": {
+        "caller": "0x0066bab0",
+        "slot_offsets": [
+          "0x00000000",
+          "0x00000004",
+          "0x00000008",
+          "0x000000f8",
+          "0x000000fc",
+          "0x00000100",
+          "0x00000218",
+          "0x00000340"
+        ],
+        "targets": []
+      }
+    },
+    {
+      "frontier": {
+        "clear_submissions": 120,
+        "dispatches": 96082,
+        "frames_rendered": 120,
+        "guest_draw_translation": false,
+        "present_submissions": 120,
+        "status": "host-frame-loop",
+        "unique_functions": 1559,
+        "validation_errors": 0,
+        "worker_waiting_count": 4
+      },
+      "log_file": "v233-async-completion-callback-120-validation.log",
+      "log_sha256": "aca664801915a15735320fccb902ad59301dfc026a43e3c2b882681f96c69d86",
+      "run": "v233",
+      "runtime_sha256": "51537185371f6ceef27ddf7784c3ecefaccf231390ff54a25fc67e29040ba8e7",
+      "trace_events": [
+        {
+          "caller": "0x0048c777",
+          "caller_ecx": "0x27f48c80",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000000",
+              "value": "0x00af386c"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x27f398f0"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x27f48d70"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000018",
+              "value": "0x088d9a25"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x0000002c",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x00b20998"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64582,
+          "eax_entry": "0x27f48d70",
+          "eax_return": "0x00000001",
+          "ecx_entry": "0x27f48c80",
+          "edx_entry": "0x00000003",
+          "function": "0x0066bada",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x00000000",
+          "thread_id": "0x001b0213"
+        }
+      ],
+      "trace_filter": {
+        "caller": "0x0048c777",
+        "slot_offsets": [
+          "0x00000000",
+          "0x00000004",
+          "0x00000008",
+          "0x00000018",
+          "0x0000002c",
+          "0x00000218",
+          "0x00000340"
+        ],
+        "targets": []
+      }
+    },
+    {
+      "frontier": {
+        "clear_submissions": 120,
+        "dispatches": 96082,
+        "frames_rendered": 120,
+        "guest_draw_translation": false,
+        "present_submissions": 120,
+        "status": "host-frame-loop",
+        "unique_functions": 1559,
+        "validation_errors": 0,
+        "worker_waiting_count": 4
+      },
+      "log_file": "v234-async-inner-tail-120-validation.log",
+      "log_sha256": "db780d218677f01be21001fea652aabcdc6d14d7c1e7e270f78c4635ffaa8ea1",
+      "run": "v234",
+      "runtime_sha256": "51537185371f6ceef27ddf7784c3ecefaccf231390ff54a25fc67e29040ba8e7",
+      "trace_events": [
+        {
+          "caller": "0x0066bada",
+          "caller_ecx": "0x27f48c80",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000000",
+              "value": "0x00af386c"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x27f398f0"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x27f48d70"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x00b20998"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64583,
+          "eax_entry": "0x27f48d70",
+          "eax_return": "0x00000000",
+          "ecx_entry": "0x27f48c80",
+          "edx_entry": "0x00000003",
+          "function": "0x00655130",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0066bae3",
+          "thread_id": "0x001b0419"
+        },
+        {
+          "caller": "0x0066bada",
+          "caller_ecx": "0x27f48c80",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000000",
+              "value": "0x00af386c"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x27f398f0"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x27f48d70"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x00b20998"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64584,
+          "eax_entry": "0x27ed9284",
+          "eax_return": "0x00000001",
+          "ecx_entry": "0x27f48d70",
+          "edx_entry": "0x00000003",
+          "function": "0x006880c0",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0066baf5",
+          "thread_id": "0x001b0419"
+        }
+      ],
+      "trace_filter": {
+        "caller": "0x0066bada",
+        "slot_offsets": [
+          "0x00000000",
+          "0x00000004",
+          "0x00000008",
+          "0x000000f8",
+          "0x00000218",
+          "0x00000340"
+        ],
+        "targets": []
+      }
+    },
+    {
+      "frontier": {
+        "clear_submissions": 120,
+        "dispatches": 96082,
+        "frames_rendered": 120,
+        "guest_draw_translation": false,
+        "present_submissions": 120,
+        "status": "host-frame-loop",
+        "unique_functions": 1559,
+        "validation_errors": 0,
+        "worker_waiting_count": 4
+      },
+      "log_file": "v235-async-callback-tail-120-validation.log",
+      "log_sha256": "8bde5b593d187eb2d1d4b644137b454b38a8a42a6419d6097da466745a6faffd",
+      "run": "v235",
+      "runtime_sha256": "51537185371f6ceef27ddf7784c3ecefaccf231390ff54a25fc67e29040ba8e7",
+      "trace_events": [
+        {
+          "caller": "0x006880c0",
+          "caller_ecx": "0x27f48d70",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000000",
+              "value": "0x00aee99c"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000010",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000018",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x0000002c",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x4d53574f"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x27f30c8c"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64585,
+          "eax_entry": "0x27ed9284",
+          "eax_return": "0x00000001",
+          "ecx_entry": "0x27f48d70",
+          "edx_entry": "0x00000003",
+          "function": "0x00650350",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x006880d4",
+          "thread_id": "0x001b06ef"
+        }
+      ],
+      "trace_filter": {
+        "caller": "0x006880c0",
+        "slot_offsets": [
+          "0x00000000",
+          "0x00000004",
+          "0x00000008",
+          "0x00000010",
+          "0x00000018",
+          "0x0000002c",
+          "0x000000f8",
+          "0x00000218",
+          "0x00000340"
+        ],
+        "targets": []
+      }
+    },
+    {
+      "frontier": {
+        "clear_submissions": 120,
+        "dispatches": 96082,
+        "frames_rendered": 120,
+        "guest_draw_translation": false,
+        "present_submissions": 120,
+        "status": "host-frame-loop",
+        "unique_functions": 1559,
+        "validation_errors": 0,
+        "worker_waiting_count": 4
+      },
+      "log_file": "v236-async-final-callback-120-validation.log",
+      "log_sha256": "2268fd2cc596cfb39fc3692c14cc93a96b4c2436494901f6fdd8feb000302e92",
+      "run": "v236",
+      "runtime_sha256": "51537185371f6ceef27ddf7784c3ecefaccf231390ff54a25fc67e29040ba8e7",
+      "trace_events": [
+        {
+          "caller": "0x00650350",
+          "caller_ecx": "0x27f48d70",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000000",
+              "value": "0x00aee99c"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x0000002c",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x4d53574f"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x27f30c8c"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64586,
+          "eax_entry": "0x27ed9420",
+          "eax_return": "0x27ed53b0",
+          "ecx_entry": "0x27f48d70",
+          "edx_entry": "0x7ffdee10",
+          "function": "0x0064fef0",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x00650372",
+          "thread_id": "0x001b091a"
+        },
+        {
+          "caller": "0x00650350",
+          "caller_ecx": "0x27f48d70",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000000",
+              "value": "0x00aee99c"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x0000002c",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x4d53574f"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x27f30c8c"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64591,
+          "eax_entry": "0x27ed53b0",
+          "eax_return": "0x27ed53b0",
+          "ecx_entry": "0x27f48d70",
+          "edx_entry": "0x7ffdee10",
+          "function": "0x00650290",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0065037c",
+          "thread_id": "0x001b091a"
+        },
+        {
+          "caller": "0x00650350",
+          "caller_ecx": "0x27f48d70",
+          "caller_slots": [
+            {
+              "last_writer": null,
+              "offset": "0x00000000",
+              "value": "0x00aee99c"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000004",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000008",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x0000002c",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x4d53574f"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x27f30c8c"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000340",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64593,
+          "eax_entry": "0x27ed53b0",
+          "eax_return": "0x00000001",
+          "ecx_entry": "0x27f48db0",
+          "edx_entry": "0x27f48d90",
+          "function": "0x0064f530",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0065038d",
+          "thread_id": "0x001b091a"
+        }
+      ],
+      "trace_filter": {
+        "caller": "0x00650350",
+        "slot_offsets": [
+          "0x00000000",
+          "0x00000004",
+          "0x00000008",
+          "0x0000002c",
+          "0x000000f8",
+          "0x00000218",
+          "0x00000340"
+        ],
+        "targets": []
+      }
+    },
+    {
+      "frontier": {
+        "clear_submissions": 120,
+        "dispatches": 96082,
+        "frames_rendered": 120,
+        "guest_draw_translation": false,
+        "present_submissions": 120,
+        "status": "host-frame-loop",
+        "unique_functions": 1559,
+        "validation_errors": 0,
+        "worker_waiting_count": 4
+      },
+      "log_file": "v237-async-target-filter-120-validation.log",
+      "log_sha256": "d714eccaa278c562d527fd01c86d054fcdbca2c58f535b884f1a1f3f0b65ccef",
+      "matched_targets": [
+        "0x0066bb50"
+      ],
+      "run": "v237-targets",
+      "runtime_sha256": "b9d38e055ba6f1cd6df1dcb22b6d41c07f829f24bcb333aa2091f232cea9f834",
+      "trace_events": [
+        {
+          "caller": "0x0066cc00",
+          "caller_ecx": "0x27ed9420",
+          "caller_slots": [],
+          "completed": true,
+          "dispatch_count": 64488,
+          "eax_entry": "0x00000005",
+          "eax_return": "0x00000000",
+          "ecx_entry": "0x27ed9428",
+          "edx_entry": "0x27eeaac0",
+          "function": "0x0066bb50",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0066cc3a",
+          "thread_id": "0x001b187c"
+        }
+      ],
+      "trace_filter": {
+        "caller": null,
+        "slot_offsets": [],
+        "targets": [
+          "0x0066bb50",
+          "0x0066b8d0"
+        ]
+      },
+      "unmatched_targets": [
+        "0x0066b8d0"
+      ]
+    },
+    {
+      "frontier": {
+        "clear_submissions": 120,
+        "dispatches": 96080,
+        "frames_rendered": 120,
+        "guest_draw_translation": false,
+        "present_submissions": 120,
+        "status": "host-frame-loop",
+        "unique_functions": 1559,
+        "validation_errors": 0,
+        "worker_waiting_count": 4
+      },
+      "log_file": "v238-async-cleanup-guard-120-validation.log",
+      "log_sha256": "69f37fb9745ee822fd37e826e4da06a5c50c3dbfb5c619c940f0a3ad95834d72",
+      "run": "v238",
+      "runtime_sha256": "b9d38e055ba6f1cd6df1dcb22b6d41c07f829f24bcb333aa2091f232cea9f834",
+      "trace_events": [
+        {
+          "caller": "0x0066cc00",
+          "caller_ecx": "0x27ed9420",
+          "caller_slots": [
+            {
+              "last_writer": {
+                "call_return_address": "0x0065ee96",
+                "caller_function": "0x0065ee60",
+                "caller_return_address": "0x0065ef58",
+                "dispatch_count": 63935,
+                "ecx_entry": "0x27ed9220",
+                "function": "0x0065fd90",
+                "sequence": 28502461,
+                "thread_id": "0x001b1fcd",
+                "word_value": "0x00000000",
+                "write_address": "0x27ed94d8",
+                "write_size": 1
+              },
+              "offset": "0x000000b8",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000bc",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x000000f8",
+              "value": "0x00000000"
+            },
+            {
+              "last_writer": null,
+              "offset": "0x00000218",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64486,
+          "eax_entry": "0x00000005",
+          "eax_return": "0x00000000",
+          "ecx_entry": "0x27ed9428",
+          "edx_entry": "0x27eeaac0",
+          "function": "0x0066bb50",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0066cc3a",
+          "thread_id": "0x001b1fcd"
+        }
+      ],
+      "trace_filter": {
+        "caller": "0x0066cc00",
+        "slot_offsets": [
+          "0x000000b8",
+          "0x000000bc",
+          "0x000000f8",
+          "0x00000218"
+        ],
+        "targets": []
+      }
+    },
+    {
+      "frontier": {
+        "clear_submissions": 120,
+        "dispatches": 96082,
+        "frames_rendered": 120,
+        "guest_draw_translation": false,
+        "present_submissions": 120,
+        "status": "host-frame-loop",
+        "unique_functions": 1559,
+        "validation_errors": 0,
+        "worker_waiting_count": 4
+      },
+      "log_file": "v239-async-status-after-setup-120-validation.log",
+      "log_sha256": "c5fda97c7462f1fcc8db2267b5106daf878947d074d2303774222e067edb9000",
+      "run": "v239",
+      "runtime_sha256": "b9d38e055ba6f1cd6df1dcb22b6d41c07f829f24bcb333aa2091f232cea9f834",
+      "trace_events": [
+        {
+          "caller": "0x0065fa60",
+          "caller_ecx": "0x27ed9220",
+          "caller_slots": [
+            {
+              "last_writer": {
+                "call_return_address": "0x0065ee96",
+                "caller_function": "0x0065ee60",
+                "caller_return_address": "0x0065ef58",
+                "dispatch_count": 63937,
+                "ecx_entry": "0x27ed9220",
+                "function": "0x0065fd90",
+                "sequence": 28502479,
+                "thread_id": "0x001b2205",
+                "word_value": "0x00000000",
+                "write_address": "0x27ed94d8",
+                "write_size": 1
+              },
+              "offset": "0x000002b8",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64425,
+          "eax_entry": "0x00000002",
+          "eax_return": "0x2827bf76",
+          "ecx_entry": "0x27ed9284",
+          "edx_entry": "0x27ed9228",
+          "function": "0x00653140",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0065fadb",
+          "thread_id": "0x001b2205"
+        },
+        {
+          "caller": "0x0065fa60",
+          "caller_ecx": "0x27ed9220",
+          "caller_slots": [
+            {
+              "last_writer": {
+                "call_return_address": "0x0065ee96",
+                "caller_function": "0x0065ee60",
+                "caller_return_address": "0x0065ef58",
+                "dispatch_count": 63937,
+                "ecx_entry": "0x27ed9220",
+                "function": "0x0065fd90",
+                "sequence": 28502479,
+                "thread_id": "0x001b2205",
+                "word_value": "0x00000000",
+                "write_address": "0x27ed94d8",
+                "write_size": 1
+              },
+              "offset": "0x000002b8",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64486,
+          "eax_entry": "0x2827bf76",
+          "eax_return": "0x2827bf76",
+          "ecx_entry": "0x27ed9284",
+          "edx_entry": "0x27ed9420",
+          "function": "0x00652190",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0065fae8",
+          "thread_id": "0x001b2205"
+        },
+        {
+          "caller": "0x0065fa60",
+          "caller_ecx": "0x27ed9220",
+          "caller_slots": [
+            {
+              "last_writer": {
+                "call_return_address": "0x0065ee96",
+                "caller_function": "0x0065ee60",
+                "caller_return_address": "0x0065ef58",
+                "dispatch_count": 63937,
+                "ecx_entry": "0x27ed9220",
+                "function": "0x0065fd90",
+                "sequence": 28502479,
+                "thread_id": "0x001b2205",
+                "word_value": "0x00000000",
+                "write_address": "0x27ed94d8",
+                "write_size": 1
+              },
+              "offset": "0x000002b8",
+              "value": "0x00000000"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64487,
+          "eax_entry": "0x27e31e88",
+          "eax_return": "0x00010000",
+          "ecx_entry": "0x27ed9420",
+          "edx_entry": "0x27eeaac0",
+          "function": "0x0066cc00",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0065fafe",
+          "thread_id": "0x001b2205"
+        },
+        {
+          "caller": "0x0065fa60",
+          "caller_ecx": "0x27ed9220",
+          "caller_slots": [
+            {
+              "last_writer": {
+                "call_return_address": "0x0065fafe",
+                "caller_function": "0x0065fa60",
+                "caller_return_address": "0x0065ec8f",
+                "dispatch_count": 64573,
+                "ecx_entry": "0x27ed9420",
+                "function": "0x0066cc00",
+                "sequence": 28505306,
+                "thread_id": "0x001b2205",
+                "word_value": "0x00000001",
+                "write_address": "0x27ed94d8",
+                "write_size": 1
+              },
+              "offset": "0x000002b8",
+              "value": "0x00000001"
+            }
+          ],
+          "completed": true,
+          "dispatch_count": 64574,
+          "eax_entry": "0x00010000",
+          "eax_return": "0x00000000",
+          "ecx_entry": "0x27ed9284",
+          "edx_entry": "0x00000000",
+          "function": "0x00653480",
+          "import_name": null,
+          "is_import": false,
+          "return_address": "0x0065fb12",
+          "thread_id": "0x001b2205"
+        }
+      ],
+      "trace_filter": {
+        "caller": "0x0065fa60",
+        "slot_offsets": [
+          "0x000002b8"
+        ],
+        "targets": []
+      }
+    }
+  ],
+  "source_revision": "99e1bb960cff50eb5be577430a583765495642d4",
+  "source_worktree_changes": [
+    "caller entry-register/slot and direct-call return capture",
+    "target-wide guest call filter"
+  ],
+  "static_disassembly": {
+    "authority": "shipped-artifact",
+    "commands": [
+      "objdump -D -Mintel --start-address=0x0066bb50 --stop-address=0x0066bd20 SHIFT.exe",
+      "objdump -D -Mintel --start-address=0x0066b8d0 --stop-address=0x0066bb50 SHIFT.exe",
+      "objdump -D -Mintel --start-address=0x0066cb20 --stop-address=0x0066cc20 SHIFT.exe"
+    ],
+    "confidence": "observed",
+    "instructions": [
+      {
+        "address": "0x0066bb6a",
+        "text": "or DWORD PTR [eax+0xf8],0x2"
+      },
+      {
+        "address": "0x0066b993",
+        "text": "and DWORD PTR [esi+0xf8],0xfffffffd"
+      },
+      {
+        "address": "0x0066bb33",
+        "text": "call 0x0066b8d0"
+      },
+      {
+        "address": "0x0066cc07",
+        "text": "cmp BYTE PTR [esi+0xb8],0x0"
+      },
+      {
+        "address": "0x0066cc13",
+        "text": "call 0x0066cb60 (taken only when +0xb8 is nonzero)"
+      },
+      {
+        "address": "0x0066cc35",
+        "text": "call 0x0066bb50"
+      },
+      {
+        "address": "0x0066cc52",
+        "text": "mov BYTE PTR [esi+0xb8],0x1"
+      },
+      {
+        "address": "0x0066cb63",
+        "text": "cmp BYTE PTR [esi+0xb8],0x0"
+      },
+      {
+        "address": "0x0066cb6f",
+        "text": "call 0x0066b8d0 (taken only when +0xb8 is nonzero)"
+      }
+    ],
+    "target_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "tool": "GNU objdump 2.47"
+  },
+  "supplement_manifest": "entrypoint_probe_v215_supplement_replay.json",
+  "target": {
+    "identity": "PC retail SHIFT 1.02",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "unknowns": [
+    "The reason the request consumer/worker does not advance readiness remains unresolved; absence of a cleanup call is bounded to the recorded guest call stream and probe window.",
+    "The selected call traces do not establish that the asynchronous request completion callback is reached on a worker thread.",
+    "No frontend readiness, retail draw, race, or playable session is established."
+  ]
+}
