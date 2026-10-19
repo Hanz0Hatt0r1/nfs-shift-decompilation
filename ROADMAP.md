@@ -74,7 +74,7 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 | P-code operations covered | **9,600,713** |
 | Linux lowered module | **Full corpus links as native ELF exports** |
 | Original PE32 image loading | **Implemented** |
-| Original PE32 execution | **The pinned v215 replay reaches the host frame loop after 96,082 guest dispatches / 1,559 unique functions; the main thread remains active at `0x006472d0`, with four workers waiting. Separate v284–v302 effect/decoder probes have no current frame-loop proof. v296 captured 310 successful calls to decoder `0x0066f680`; the native XMem decoder matches all sampled outputs byte-for-byte. The fast path is implemented, but v297–v302 cold starts time out before frames; v299 identifies the zero-count allocator call. v300–v302 point to an unresolved global-initialization gap around receiver `0x00c288cc`.** |
+| Original PE32 execution | **The pinned v215 replay reaches the host frame loop after 96,082 guest dispatches / 1,559 unique functions; the main thread remains active at `0x006472d0`, with four workers waiting. Separate v284–v310 effect/decoder/initializer probes have no current frame-loop proof. v296 captured 310 successful calls to decoder `0x0066f680`; the native XMem decoder matches all sampled outputs byte-for-byte. v297–v310 cold starts time out before frames; v299 identifies the zero-count allocator call, and the v303–v310 mismatch now points to incomplete frozen function coverage for initializer `0x0050f010` (188 instructions, no RET), not a proven generic runtime defect.** |
 | Import/IAT dispatch | **Implemented with fail-closed API boundary** |
 | Guest threads | **Cooperative multi-thread scheduling implemented** |
 | Vulkan runtime shell | **Operational on Linux** |
@@ -84,7 +84,7 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 | Host-architecture-neutral runtime | **Not yet proven** |
 | ARM64 lowered-runtime execution | **Generic P-code fixture passes; full corpus/runtime not yet proven** |
 | Android platform layer | **Not implemented** |
-| Retail main loop | **v114's 1,800-frame, v191–v194's 120-frame, and pinned v215's 120-frame host probes leave the PE entry point active at `0x006472d0` with four workers waiting. Later pinned effect/decoder probes, through v302, stop before yielding a frame-loop snapshot. Entry-point return is not the completion target.** |
+| Retail main loop | **v114's 1,800-frame, v191–v194's 120-frame, and pinned v215's 120-frame host probes leave the PE entry point active at `0x006472d0` with four workers waiting. Later pinned effect/decoder/initializer probes, through v310, stop before yielding a frame-loop snapshot. Entry-point return is not the completion target.** |
 | Frontend and retail rendering | **Not demonstrated by the Linux runtime; guest Clear reaches Vulkan, but no retail D3D9 draw has reached Vulkan** |
 | Retail frontend | **Not reached** |
 | Recompiled Linux offline race | **Not reached; original retail SHIFT was manually brought to a race under PortProton** |
@@ -1010,9 +1010,9 @@ Reusable implementation may be extracted into the portable renderer/runtime when
 
 ## Immediate queue
 
-The complete P-code module has been restored and the cooperative scheduler has been exercised on the retail entry point. The current cold-start replay no longer reproduces the saved v215 frame-loop checkpoint: v297–v302 time out before frames. Resolve that startup discrepancy before treating later rendering results as current. The immediate priorities are:
+The complete P-code module has been restored and the cooperative scheduler has been exercised on the retail entry point. The current cold-start replay no longer reproduces the saved v215 frame-loop checkpoint: v297–v310 time out before frames. Resolve that startup discrepancy before treating later rendering results as current. The immediate priorities are:
 
-1. **Restore and verify the retail global-initialization path.** v300/v301 show global receiver `0x00c288cc` used with zero fields before initializer `0x00a8d940` is observed. v302 confirms that nearby `.rdata` entries point to several global-initialization-like functions, while the CRT `_initterm` range is empty and the current loader only dispatches the PE entrypoint. Identify the table consumer and ordering before changing allocator semantics or invoking entries.
+1. **Repair the frozen instruction record for CRT initializer `0x0050f010`.** The record used by the current frontier module contains 188 instructions and ends at NOP `0x0050f3f3`; it omits the pinned PE return block at `0x0050f478`–`0x0050f481`. Recover and verify the complete Ghidra function body/CFG, rebuild its P-code export, then confirm ESI/EBP/ESP restoration and that `__cinit` reaches `0x00a8d940` to initialize receiver `0x00c288cc`. Do not change generic runtime behavior until the complete instruction body is present. See [the initializer trace](docs/RETAIL_FRONTIER_AUTOMATION.md) and [machine record](evidence/retail_frontier_20261020/entrypoint_probe_v303_v310_cinit_esi_stack.json).
 2. **Re-establish the saved v215 host-frame-loop checkpoint from the current native runtime and pinned module set.** Keep the XMem equivalence result separate from boot/rendering evidence.
 3. **Resolve the null D3D resource path through `0x00835050` → `0x00853790` → `0x00838410`, using the retail call sequence and static interface evidence.**
 4. **Keep the compact manifest for the full module, supplements, runtime APIs, retail PE identity, game-data root and probe frontier current; keep generated binaries outside Git.**

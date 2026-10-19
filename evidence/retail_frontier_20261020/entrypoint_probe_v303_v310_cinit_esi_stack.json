@@ -1,0 +1,260 @@
+{
+  "format": "SHIFT.RetailStartupCinitRegisterFrontier/1",
+  "date": "2026-10-20",
+  "retail_input": {
+    "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "module_manifest": "entrypoint_probe_v215_supplement_replay.json",
+    "module_manifest_sha256": "7224960e4d4606ac0cc568418d7b7928ea5e56636a34683c9d0d2c15e27153c3",
+    "frontier_module_sha256": "6c5d1126467e047f500f634a34e2769aa24e06cb5ffc7a3538f0a7b095ce0e42",
+    "frozen_instruction_corpus": {
+      "external_artifact": "full-function-corpus-20261017/shift-pc-retail-1.02-function-instructions.jsonl.gz",
+      "sha256": "bc3f5a5972842f605b0bdd25dbc80b3129b96df30c3584d2dd31222aa5a454bc",
+      "format": "REVENGINSTR.GhidraFunctionInstructions/1",
+      "function_row": {
+        "address": "0x0050f010",
+        "name": "FUN_0050f010",
+        "declared_size_bytes": 531,
+        "instruction_count": 188,
+        "first_instruction": "0x0050f010",
+        "last_instruction": "0x0050f3f3",
+        "last_mnemonic": "NOP",
+        "return_flow_instruction_addresses": []
+      },
+      "full_corpus_epilogue_address_scan": {
+        "scope": "all instruction rows in the frozen corpus",
+        "addresses": {
+          "0x0050f47d": [],
+          "0x0050f47e": [],
+          "0x0050f480": [],
+          "0x0050f481": []
+        }
+      }
+    }
+  },
+  "static_pe_evidence": {
+    "crt_entry_path": [
+      "0x009046aa",
+      "0x00907583"
+    ],
+    "cinit": "0x00907583",
+    "error_initializer_range": {
+      "start": "0x00aa996c",
+      "end_exclusive": "0x00aa9988",
+      "consumer": "0x009074f0",
+      "nonzero_callbacks": [
+        "0x00900f48",
+        "0x00909dcd",
+        "0x0090b883",
+        "0x00916b2d",
+        "0x0091bf62",
+        "0x0091577e"
+      ]
+    },
+    "cpp_initializer_range": {
+      "start": "0x00aa66d4",
+      "end_exclusive": "0x00aa9968",
+      "stride": 4,
+      "iterator_register": "ESI",
+      "limit_register": "EDI",
+      "relevant_slots": {
+        "0x00aa6828": "0x00a75c40",
+        "0x00aa685c": "0x00a75c70",
+        "0x00aa92f0": "0x00a8d940"
+      }
+    },
+    "initializer_0x00a75c40": {
+      "calls": [
+        "0x0063a210",
+        "0x0041d7b0",
+        "0x00900fb3"
+      ],
+      "thunk": "0x0041d7b0 jumps to 0x0050f010",
+      "0x0050f010_epilogue": [
+        "pop esi",
+        "mov esp, ebp",
+        "pop ebp",
+        "ret"
+      ]
+    },
+    "initializer_0x0050f010_return_block": [
+      {
+        "address": "0x0050f478",
+        "bytes": "b801000000",
+        "instruction": "mov eax, 1"
+      },
+      {
+        "address": "0x0050f47d",
+        "bytes": "5e",
+        "instruction": "pop esi"
+      },
+      {
+        "address": "0x0050f47e",
+        "bytes": "8be5",
+        "instruction": "mov esp, ebp"
+      },
+      {
+        "address": "0x0050f480",
+        "bytes": "5d",
+        "instruction": "pop ebp"
+      },
+      {
+        "address": "0x0050f481",
+        "bytes": "c3",
+        "instruction": "ret"
+      }
+    ]
+  },
+  "probes": [
+    {
+      "version": "v303",
+      "timeout_seconds": 120,
+      "exit_code": 124,
+      "pe_image_loaded": true,
+      "dispatches": null,
+      "frames_rendered": null,
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x009074f0",
+        "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x00907583,0x009074f0,0x00900f48,0x00909dcd,0x0090b883,0x00916b2d,0x0091bf62,0x0091577e,0x00a8d940",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "observed": "Entrypoint called __cinit; all six error-init callbacks returned EAX=0; no 0x00a8d940 event before timeout.",
+      "log_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v303-init-dispatcher-trace.log",
+      "log_sha256": "723c43ceff33a0be8fa6361708033ed0cb5444ef475a39188d3e1fd73e572f39",
+      "log_is_external": true
+    },
+    {
+      "version": "v304",
+      "timeout_seconds": 120,
+      "exit_code": 124,
+      "pe_image_loaded": true,
+      "dispatches": null,
+      "frames_rendered": null,
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00907583",
+        "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x00a8d770,0x00a8d800,0x00a8d940",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "observed": "The initializer list reaches 0x00a75c40, then no later initializer event is logged.",
+      "log_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v304-cinit-targets.log",
+      "log_sha256": "4f5628d234dca65184f543b88d446cd739d0f40707ff6b93cf1f8017",
+      "log_is_external": true
+    },
+    {
+      "version": "v305",
+      "timeout_seconds": 120,
+      "exit_code": 124,
+      "pe_image_loaded": true,
+      "dispatches": null,
+      "frames_rendered": null,
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00907583",
+        "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x00a75c40,0x00a75c70,0x00a8d770,0x00a8d800,0x00a8d940",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "0x00a75c40_registers": {
+        "esi_entry": "0x00aa6828",
+        "esi_return": "0x27f48c20",
+        "edi_entry": "0x00aa9968",
+        "edi_return": "0x00aa9968"
+      },
+      "log_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v305-cinit-esi.log",
+      "log_sha256": "be6b15c695b5301bc8b5be7c48766f08534daa200836cb170c9ce7e70cf4c221",
+      "log_is_external": true
+    },
+    {
+      "version": "v306",
+      "timeout_seconds": 35,
+      "exit_code": 124,
+      "pe_image_loaded": true,
+      "dispatches": null,
+      "frames_rendered": null,
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00a75c40",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "observed": "0x0063a210 preserved ESI; 0x0041d7b0 entered with 0x00aa6828 and returned with 0x27f48c20; atexit then received the changed ESI.",
+      "log_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v306-cinit-nested-esi.log",
+      "log_sha256": "6b6b03eff662552dc67c00b82df70cd268d70490cf9e1345cce7a55295490eb0",
+      "log_is_external": true
+    },
+    {
+      "version": "v307",
+      "timeout_seconds": 35,
+      "exit_code": 124,
+      "pe_image_loaded": true,
+      "dispatches": null,
+      "frames_rendered": null,
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x0041d7b0",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "observed": "0x0050f010 returned with ESI=0x27f48c20 after entering with ESI=0x00aa6828.",
+      "log_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v307-thunk-nested-esi.log",
+      "log_sha256": "5f3ab85ae2aa3b3eaee45847a0b49b29cff2a76633bb87c244169d1b7f294dd4",
+      "log_is_external": true
+    },
+    {
+      "version": "v308",
+      "timeout_seconds": 35,
+      "exit_code": 124,
+      "pe_image_loaded": true,
+      "dispatches": null,
+      "frames_rendered": null,
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x0050f010",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "observed": "All 27 traced direct guest calls preserved their entry ESI value.",
+      "log_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v308-global-ctor-inner-calls.log",
+      "log_sha256": "690c504cfcc61df59af7e0ac480b76c2a543aa5f7fe57a21e71a7f130cec3b9e",
+      "log_is_external": true
+    },
+    {
+      "version": "v309",
+      "timeout_seconds": 35,
+      "exit_code": 124,
+      "pe_image_loaded": true,
+      "dispatches": null,
+      "frames_rendered": null,
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x0041d7b0",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "0x0050f010_registers": {
+        "esi_entry": "0x00aa6828",
+        "esi_return": "0x27f48c20",
+        "ebp_entry": "0x7ffdeffc",
+        "ebp_return": "0x7ffdef60",
+        "esp_entry": "0x7ffdef64",
+        "esp_return": "0x7ffdef44"
+      },
+      "log_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v309-thunk-stack-esi.log",
+      "log_sha256": "509c1d9f585a6425df182dc7ce04b7ce64500e579ae168c8ec8bf8e02dd8874c",
+      "log_is_external": true
+    },
+    {
+      "version": "v310",
+      "timeout_seconds": 35,
+      "exit_code": 124,
+      "pe_image_loaded": true,
+      "dispatches": null,
+      "frames_rendered": null,
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x0050f010",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "observed": "All 27 traced direct guest calls returned with their observed ESI preserved; the parent 0x0050f010 still returns with a stack/register mismatch.",
+      "log_path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v310-global-ctor-stack-calls.log",
+      "log_sha256": "99d36c0d8632e6e87febf1ad094a7ec7a99814e4a4172ae490d6a9091eeba836",
+      "log_is_external": true
+    }
+  ],
+  "interpretation": {
+    "status": "frozen_instruction_record_truncated_before_return_epilogue",
+    "global_initializer_0x00a8d940_reached": false,
+    "frames_rendered": false,
+    "cause": "The v303-v310 register/stack mismatch is observed at 0x0050f010, but the frozen instruction row used by the frontier module has only 188 instructions and ends at NOP 0x0050f3f3. It contains no RET/return flow and omits the pinned PE return block at 0x0050f478-0x0050f481. This makes incomplete Ghidra function-body/CFG coverage the leading explanation; the probes do not prove a generic lowerer/runtime defect.",
+    "unresolved": "Why the frozen Ghidra instruction export omitted the function return block, and whether a complete re-export alone restores the expected caller state."
+  },
+  "next_step": "Recover and verify the complete Ghidra body/CFG for 0x0050f010, rebuild its P-code export and frontier module, then replay startup. Confirm ESI/EBP/ESP restoration and that __cinit reaches 0x00a8d940 before investigating the allocator again. Do not add a loader-side initializer scan or generic runtime workaround."
+}

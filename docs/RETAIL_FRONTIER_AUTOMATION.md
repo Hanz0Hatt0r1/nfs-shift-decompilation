@@ -476,29 +476,46 @@ PE disassembly of `0x00a8d940` shows it initializes this object, calls
 `0x0067cbc0`, writes `0x10` to `+0x4` and `+0x8`, and clears selected fields.
 The v301 trace records one call to CRT helper `0x00915fe8` at dispatch 300; it
 returns immediately with `EAX=0x00b6c15c`. Its PE body iterates the empty range
-`[0x00b6c15c, 0x00b6c15c)`. No call to `0x0091600c` or `0x00a8d940` was
-observed before the 120-second timeout. The PE TLS directory has no callback
-entries. The `.rdata` excerpt at `0x00aa92c0` contains absolute pointers to
-functions with global-initialization effects: `0x00a8d770` and `0x00a8d800`
-initialize camera globals, and `0x00a8d940` initializes receiver
-`0x00c288cc`. The region's exact bounds, owner, and dispatch semantics remain
-unresolved. Its base VA is not present as a literal elsewhere in the PE, and
-the PE load-configuration directory is empty, so this evidence does not
-identify it as the standard CRT initializer range or a CFG table.
+`[0x00b6c15c, 0x00b6c15c)`. This is distinct from the non-empty C++ global
+initializer list later traversed by CRT `__cinit`. The PE TLS directory has no
+callback entries. The `.rdata` excerpt at `0x00aa92c0` contains absolute
+pointers to functions with global-initialization effects: `0x00a8d770` and
+`0x00a8d800` initialize camera globals, and `0x00a8d940` initializes receiver
+`0x00c288cc`.
 
-The v302 bounded replay selected 14 function VAs from that excerpt for live
-call logging. It timed out with only PE-load and timeout lines; the report has
-no dispatch count, so it does not locate the stall or prove that the complete
-region was unused. Runtime inspection shows `load_pe32_image()` copies PE
-sections and records the entrypoint, while `call_pe32_entry_point()` dispatches
-that entrypoint; this path contains no scan of the candidate `.rdata` region.
-The skipped-global-initialization theory remains plausible, but the intended
-table consumer and ordering are still unproven. Do not fabricate an empty-list
-allocator return or invoke initializers by scanning this region until its
-retail startup contract is established. The fast XMem adapter and the later
-v215 D3D9/Vulkan frame-loop checkpoint are not reached or revalidated by these
-runs. See the
-[v297–v302 machine record](../evidence/retail_frontier_20261020/entrypoint_probe_v297_v302_initializer_order.json).
+The v302 bounded replay selected 14 function VAs from the nearby `.rdata`
+excerpt for live call logging. It timed out with only PE-load and timeout
+lines, so it did not locate the stall. Static disassembly then resolved the
+consumer: entrypoint startup calls CRT `__cinit` at `0x00907583`, which calls
+`__initterm_e` over `[0x00aa996c, 0x00aa9988)` and, on success, walks the C++
+initializer list `[0x00aa66d4, 0x00aa9968)` in four-byte steps. The list contains
+`0x00a75c40` at `0x00aa6828` and `0x00a8d940` at `0x00aa92f0`.
+
+v303 observed the startup call into `__cinit`, all six nonzero error-init
+callbacks returning `EAX=0`, and the return from `__initterm_e`. v304 then
+recorded C++ initializer calls through `0x00a75c40`; it saw no later list
+entries. The v305 register trace explains why: `0x00a75c40` enters with
+`ESI=0x00aa6828` and returns with `ESI=0x27f48c20`, while the upper bound in
+`EDI` remains `0x00aa9968`. Its next loop iteration therefore reads outside
+the initializer list. v306 traces the change through `0x0041d7b0`, a jump thunk
+to `0x0050f010`; the preceding call to `0x0063a210` preserves ESI.
+
+v307–v310 locate the observed register/stack mismatch at `0x0050f010`, but an
+audit of the exact frozen instruction corpus used by the frontier module
+changes the diagnosis. Its `0x0050f010` row declares a 531-byte function but
+contains only 188 instructions, ends at NOP `0x0050f3f3`, and has no RET or
+return-flow instruction. In the pinned PE, the function's return block is at
+`0x0050f478`–`0x0050f481`: it sets EAX to 1, restores ESI/ESP/EBP, then RETs.
+None of the epilogue instruction addresses appears in any row of the frozen
+corpus. This makes incomplete function-body/CFG export the leading cause of
+the mismatch; the traces do not establish a defect in the shared P-code
+lowerer or native runtime. Recover and verify the complete Ghidra body, rebuild
+the function export/module, and replay startup before changing generic runtime
+behavior. Do not add a loader-side initializer scan or allocator workaround.
+The fast XMem adapter and v215 D3D9/Vulkan frame-loop checkpoint are still not
+revalidated. See the
+[v297–v302 machine record](../evidence/retail_frontier_20261020/entrypoint_probe_v297_v302_initializer_order.json)
+and [v303–v310 initializer trace](../evidence/retail_frontier_20261020/entrypoint_probe_v303_v310_cinit_esi_stack.json).
 
 The v120 caller-call trace independently maps the common tail of `0x0054be00`:
 the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the
