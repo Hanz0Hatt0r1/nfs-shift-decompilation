@@ -40,6 +40,28 @@ class RetailFrontierTests(unittest.TestCase):
         self.assertFalse(record["present_vulkan_frame_transfer"])
         self.assertFalse(record["retail_rendering_proven"])
 
+    def test_real_v194_queues_guest_clear_and_present(self):
+        path = ROOT / "evidence/retail_frontier_20261019/entrypoint_probe_v194_automation.json"
+        record = json.loads(path.read_text(encoding="utf-8"))
+        bridge = record["d3d9_vulkan_bridge"]
+        self.assertEqual(record["status"], "host-frame-loop")
+        self.assertEqual(record["frames_rendered"], 120)
+        self.assertEqual(record["validation_errors"], 0)
+        self.assertEqual(bridge["clear_requests"], 122)
+        self.assertEqual(bridge["present_requests"], 121)
+        self.assertEqual(bridge["clear_submissions"], 120)
+        self.assertEqual(bridge["present_submissions"], 120)
+        self.assertEqual(bridge["pending_presents"], 1)
+        self.assertFalse(bridge["guest_draw_translation"])
+        clear = record["d3d9_clear_request"]
+        self.assertEqual(clear["flags"], "0x00000007")
+        self.assertEqual(clear["color"], "0x00000000")
+        self.assertEqual(clear["depth_bits"], "0x3f800000")
+        self.assertEqual(record["guest_main_thread_function"], "0x006472d0")
+        self.assertEqual(record["worker_waiting_count"], 4)
+        self.assertEqual(len(record["probe_log_sha256"]), 64)
+        self.assertFalse(record["retail_rendering_proven"])
+
     def test_frame_loop_is_not_retail_rendering(self):
         data = {
             "format": "SHIFT.NativeRuntimeFrameLoop/1",
@@ -48,10 +70,12 @@ class RetailFrontierTests(unittest.TestCase):
             "recompiled_pe_image_loaded": True,
             "recompiled_pcode_functions_dispatched": 342703,
             "recompiled_pcode_unique_functions_dispatched": 1417,
+            "d3d9_vulkan_bridge": {"present_submissions": 3},
         }
         report = frontier.inspect_log(json.dumps(data) + "\n", 0)
         self.assertEqual(report["status"], "host-frame-loop")
         self.assertEqual(report["frames_rendered"], 1800)
+        self.assertEqual(report["d3d9_vulkan_bridge"]["present_submissions"], 3)
         self.assertFalse(report["retail_rendering_proven"])
 
     def test_comparison_advancement_and_regression(self):

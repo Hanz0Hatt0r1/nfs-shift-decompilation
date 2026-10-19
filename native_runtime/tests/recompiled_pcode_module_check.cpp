@@ -57,6 +57,13 @@ struct D3d9BackendFixture {
     bool called = false;
     uint32_t focus_window = 0;
     uint32_t behavior_flags = 0;
+    uint32_t clear_calls = 0;
+    uint32_t clear_flags = 0;
+    uint32_t clear_color = 0;
+    uint32_t clear_depth_bits = 0;
+    uint32_t clear_stencil = 0;
+    uint32_t clear_rect_count = 0;
+    uint32_t present_calls = 0;
     shift::runtime::RecompiledGuestD3d9PresentationParameters parameters{};
 };
 
@@ -70,6 +77,27 @@ bool create_d3d9_fixture_device(
     fixture->focus_window = focus_window;
     fixture->behavior_flags = behavior_flags;
     fixture->parameters = parameters;
+    return true;
+}
+
+bool clear_d3d9_fixture(void* context, uint32_t flags, uint32_t color,
+                        uint32_t depth_bits, uint32_t stencil,
+                        uint32_t rect_count, std::string&) {
+    auto* fixture = static_cast<D3d9BackendFixture*>(context);
+    if (!fixture) return false;
+    ++fixture->clear_calls;
+    fixture->clear_flags = flags;
+    fixture->clear_color = color;
+    fixture->clear_depth_bits = depth_bits;
+    fixture->clear_stencil = stencil;
+    fixture->clear_rect_count = rect_count;
+    return true;
+}
+
+bool present_d3d9_fixture(void* context, std::string&) {
+    auto* fixture = static_cast<D3d9BackendFixture*>(context);
+    if (!fixture) return false;
+    ++fixture->present_calls;
     return true;
 }
 
@@ -1055,6 +1083,8 @@ int main(int argc, char** argv) {
         D3d9BackendFixture d3d9_backend_fixture{};
         adapter_info.backend_context = &d3d9_backend_fixture;
         adapter_info.create_device = &create_d3d9_fixture_device;
+        adapter_info.clear = &clear_d3d9_fixture;
+        adapter_info.present = &present_d3d9_fixture;
         require(d3d9_provider_module.set_guest_d3d9_adapter_info(adapter_info),
                 "could not configure the fixture Vulkan adapter snapshot");
         const uint32_t provider_interface =
@@ -1359,7 +1389,8 @@ int main(int argc, char** argv) {
                               {created_device, 0, 0, 0, 0}) == 0 &&
                     invoke_import(d3d9_provider_module, device_present,
                                   {created_device, 1, 0, 0, 0}) ==
-                        0x8876086a,
+                        0x8876086a &&
+                    d3d9_backend_fixture.present_calls == 1,
                 "IDirect3DDevice9::Present accepted an unsupported request");
         std::array<uint8_t, 3 * 256 * sizeof(uint16_t)> gamma_ramp_sentinel{};
         gamma_ramp_sentinel.fill(0xa5);
@@ -1430,6 +1461,13 @@ int main(int argc, char** argv) {
                     clear_snapshot.d3d9_last_clear_stencil == 0 &&
                     clear_snapshot.d3d9_last_clear_rect_count == 0,
                 "IDirect3DDevice9::Clear did not preserve its accepted request");
+        require(d3d9_backend_fixture.clear_calls == 1 &&
+                    d3d9_backend_fixture.clear_flags == 7 &&
+                    d3d9_backend_fixture.clear_color == 0 &&
+                    d3d9_backend_fixture.clear_depth_bits == 0x3f800000 &&
+                    d3d9_backend_fixture.clear_stencil == 0 &&
+                    d3d9_backend_fixture.clear_rect_count == 0,
+                "IDirect3DDevice9::Clear did not forward its request to the backend");
         require(invoke_import(d3d9_provider_module,
                               created_device_add_ref,
                               {created_device}) == 2 &&

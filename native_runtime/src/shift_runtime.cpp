@@ -1883,6 +1883,13 @@ struct Runtime {
     uint32_t guest_d3d9_behavior_flags = 0;
     shift::runtime::RecompiledGuestD3d9PresentationParameters
         guest_d3d9_presentation{};
+    uint64_t guest_d3d9_clear_request_count = 0;
+    uint64_t guest_d3d9_present_request_count = 0;
+    uint64_t guest_d3d9_vulkan_clear_submission_count = 0;
+    uint64_t guest_d3d9_vulkan_present_submission_count = 0;
+    uint32_t guest_d3d9_clear_color = 0;
+    uint32_t guest_d3d9_clear_depth_bits = 0;
+    uint32_t guest_d3d9_clear_stencil = 0;
 
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
@@ -1951,6 +1958,8 @@ struct Runtime {
             &Runtime::update_guest_d3d9_vertex_buffer_callback;
         adapter_info.release_vertex_buffer =
             &Runtime::release_guest_d3d9_vertex_buffer_callback;
+        adapter_info.clear = &Runtime::clear_guest_d3d9_callback;
+        adapter_info.present = &Runtime::present_guest_d3d9_callback;
         uint32_t surface_format_count = 0;
         vk_check(vkGetPhysicalDeviceSurfaceFormatsKHR(
                      physical, surface, &surface_format_count, nullptr),
@@ -1996,6 +2005,55 @@ struct Runtime {
         return runtime && runtime->create_guest_d3d9_device(
                               focus_window, behavior_flags, parameters,
                               error);
+    }
+
+    static bool clear_guest_d3d9_callback(
+        void* context, uint32_t flags, uint32_t color, uint32_t depth_bits,
+        uint32_t stencil, uint32_t rect_count, std::string& error) {
+        auto* runtime = static_cast<Runtime*>(context);
+        return runtime && runtime->queue_guest_d3d9_clear(
+                              flags, color, depth_bits, stencil, rect_count,
+                              error);
+    }
+
+    static bool present_guest_d3d9_callback(void* context,
+                                             std::string& error) {
+        auto* runtime = static_cast<Runtime*>(context);
+        return runtime && runtime->queue_guest_d3d9_present(error);
+    }
+
+    bool queue_guest_d3d9_clear(uint32_t flags, uint32_t color,
+                                uint32_t depth_bits, uint32_t stencil,
+                                uint32_t rect_count, std::string& error) {
+        constexpr uint32_t full_color_depth_stencil_clear = 0x7;
+        if (flags != full_color_depth_stencil_clear || rect_count != 0) {
+            error = "only a full color/depth/stencil clear is supported";
+            return false;
+        }
+        float depth = 0.0f;
+        std::memcpy(&depth, &depth_bits, sizeof(depth));
+        if (!std::isfinite(depth) || depth < 0.0f || depth > 1.0f) {
+            error = "D3D9 clear depth is outside [0, 1]";
+            return false;
+        }
+        if (guest_d3d9_clear_request_count == UINT64_MAX) {
+            error = "D3D9 clear request counter is exhausted";
+            return false;
+        }
+        guest_d3d9_clear_color = color;
+        guest_d3d9_clear_depth_bits = depth_bits;
+        guest_d3d9_clear_stencil = stencil;
+        ++guest_d3d9_clear_request_count;
+        return true;
+    }
+
+    bool queue_guest_d3d9_present(std::string& error) {
+        if (guest_d3d9_present_request_count == UINT64_MAX) {
+            error = "D3D9 present request counter is exhausted";
+            return false;
+        }
+        ++guest_d3d9_present_request_count;
+        return true;
     }
 
     static bool create_guest_d3d9_texture_callback(
@@ -3050,7 +3108,13 @@ struct Runtime {
         attachments[1].samples = guest_sample_count;
         attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        const bool has_stencil =
+            depth_format == VK_FORMAT_D16_UNORM_S8_UINT ||
+            depth_format == VK_FORMAT_D24_UNORM_S8_UINT ||
+            depth_format == VK_FORMAT_D32_SFLOAT_S8_UINT;
+        attachments[1].stencilLoadOp = has_stencil
+                                           ? VK_ATTACHMENT_LOAD_OP_CLEAR
+                                           : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         attachments[1].finalLayout =
@@ -3504,7 +3568,8 @@ struct Runtime {
         }
     }
 
-    void record(VkCommandBuffer command, uint32_t image_index) {
+    void record(VkCommandBuffer command, uint32_t image_index,
+                bool guest_d3d9_frame, bool guest_d3d9_clear) {
         VkCommandBufferBeginInfo begin{};
         begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         vk_check(vkBeginCommandBuffer(
@@ -3518,11 +3583,28 @@ struct Runtime {
         pass.renderArea.extent = swapchain_extent;
 
         std::array<VkClearValue, 3> clear{};
-        clear[0].color.float32[0] = 0.018f;
-        clear[0].color.float32[1] = 0.022f;
-        clear[0].color.float32[2] = 0.032f;
-        clear[0].color.float32[3] = 1.0f;
-        clear[1].depthStencil.depth = 1.0f;
+        if (guest_d3d9_clear) {
+            clear[0].color.float32[0] =
+                static_cast<float>((guest_d3d9_clear_color >> 16) & 0xff) /
+                255.0f;
+            clear[0].color.float32[1] =
+                static_cast<float>((guest_d3d9_clear_color >> 8) & 0xff) /
+                255.0f;
+            clear[0].color.float32[2] =
+                static_cast<float>(guest_d3d9_clear_color & 0xff) / 255.0f;
+            clear[0].color.float32[3] =
+                static_cast<float>((guest_d3d9_clear_color >> 24) & 0xff) /
+                255.0f;
+            std::memcpy(&clear[1].depthStencil.depth,
+                        &guest_d3d9_clear_depth_bits, sizeof(float));
+            clear[1].depthStencil.stencil = guest_d3d9_clear_stencil;
+        } else {
+            clear[0].color.float32[0] = 0.018f;
+            clear[0].color.float32[1] = 0.022f;
+            clear[0].color.float32[2] = 0.032f;
+            clear[0].color.float32[3] = 1.0f;
+            clear[1].depthStencil.depth = 1.0f;
+        }
         pass.clearValueCount =
             guest_sample_count == VK_SAMPLE_COUNT_1_BIT ? 2 : 3;
         pass.pClearValues = clear.data();
@@ -3530,7 +3612,9 @@ struct Runtime {
         vkCmdBeginRenderPass(
             command, &pass, VK_SUBPASS_CONTENTS_INLINE);
 
-        if (material_mode) {
+        if (guest_d3d9_frame) {
+            // Guest draw calls are not translated yet; present the queued clear.
+        } else if (material_mode) {
             for (const MaterialDraw& draw : material_draws) {
                 vkCmdBindPipeline(
                     command,
@@ -3620,7 +3704,15 @@ struct Runtime {
                      command_buffers[slot], 0),
                  "vkResetCommandBuffer failed");
 
-        record(command_buffers[slot], image_index);
+        const bool guest_d3d9_frame =
+            guest_d3d9_vulkan_present_submission_count <
+            guest_d3d9_present_request_count;
+        const bool guest_d3d9_clear =
+            guest_d3d9_frame &&
+            guest_d3d9_vulkan_clear_submission_count <
+                guest_d3d9_clear_request_count;
+        record(command_buffers[slot], image_index, guest_d3d9_frame,
+               guest_d3d9_clear);
 
         const VkPipelineStageFlags wait_stage =
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -3637,6 +3729,9 @@ struct Runtime {
         vk_check(vkQueueSubmit(
                      graphics_queue, 1, &submit, fences[slot]),
                  "vkQueueSubmit failed");
+        if (guest_d3d9_clear) {
+            ++guest_d3d9_vulkan_clear_submission_count;
+        }
 
         VkPresentInfoKHR present{};
         present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -3656,6 +3751,9 @@ struct Runtime {
         }
         if (present_result != VK_SUBOPTIMAL_KHR) {
             vk_check(present_result, "vkQueuePresentKHR failed");
+        }
+        if (guest_d3d9_frame) {
+            ++guest_d3d9_vulkan_present_submission_count;
         }
         return true;
     }
@@ -4928,6 +5026,18 @@ int main(int argc, char** argv) {
             << guest_scheduler_state.d3d9_last_clear_stencil
             << ", \"rect_count\": "
             << guest_scheduler_state.d3d9_last_clear_rect_count << "},\n"
+            << "    \"d3d9_vulkan_bridge\": {\"clear_requests\": "
+            << runtime.guest_d3d9_clear_request_count
+            << ", \"present_requests\": "
+            << runtime.guest_d3d9_present_request_count
+            << ", \"clear_submissions\": "
+            << runtime.guest_d3d9_vulkan_clear_submission_count
+            << ", \"present_submissions\": "
+            << runtime.guest_d3d9_vulkan_present_submission_count
+            << ", \"pending_presents\": "
+            << (runtime.guest_d3d9_present_request_count -
+                runtime.guest_d3d9_vulkan_present_submission_count)
+            << ", \"guest_draw_translation\": false},\n"
             << "    \"last_load_library\": {\"name\": "
             << format_json_string(
                    guest_scheduler_state.last_load_library_name)

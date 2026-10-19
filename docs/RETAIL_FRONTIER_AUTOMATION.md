@@ -39,6 +39,13 @@ The existing tools/run_shift_recompiled_entrypoint_probe.sh determines supplemen
 
 The report stores status, guest dispatch counts, unique functions, first failing import, return address, host frame-loop information (when present), and a baseline delta. Analyze an existing log **without running game assets**:
 
+When the native frame-loop report includes `d3d9_vulkan_bridge`, the parser
+retains guest Clear/Present request and Vulkan submission counts. v194 records
+120 guest-requested full color/depth/stencil clears and 120 Vulkan swapchain
+presents in a 120-frame probe, with one Present request still pending and no
+guest draw translation. This proves the bounded clear/queue-present path only;
+it does not prove retail rendering or frontend readiness.
+
 ~~~bash
 python3 tools/retail_frontier.py inspect \
   --log evidence/retail_frontier_20261019/shift-probe-v173-d3dx-device-map.log \
@@ -73,4 +80,6 @@ The stable linux-vulkan GitHub workflow runs these tests, checks the pinned v173
 
 ## Release milestones
 
-Startup frontier metrics cannot stand in for gameplay. Separate explicitly measured milestones remain: real retail Vulkan clear, first retail draw, frontend and offline race.
+Startup frontier metrics cannot stand in for gameplay. v194 establishes the
+bounded retail-requested Vulkan clear and queue-present milestone. The separate
+milestones still to measure are first retail draw, frontend and offline race.

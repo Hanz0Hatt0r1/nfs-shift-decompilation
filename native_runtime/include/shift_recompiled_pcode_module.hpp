@@ -111,6 +111,11 @@ using RecompiledGuestD3d9UpdateVertexBufferCallback = bool (*) (
     const uint8_t* data, size_t size, std::string& error);
 using RecompiledGuestD3d9ReleaseVertexBufferCallback = void (*) (
     void* context, uint32_t guest_buffer);
+using RecompiledGuestD3d9ClearCallback = bool (*) (
+    void* context, uint32_t flags, uint32_t color, uint32_t depth_bits,
+    uint32_t stencil, uint32_t rect_count, std::string& error);
+using RecompiledGuestD3d9PresentCallback = bool (*) (
+    void* context, std::string& error);
 
 struct RecompiledGuestD3d9AdapterInfo {
     // D3DCAPS9 is 76 little-endian 32-bit words, including its float fields.
@@ -130,6 +135,8 @@ struct RecompiledGuestD3d9AdapterInfo {
     RecompiledGuestD3d9CreateVertexBufferCallback create_vertex_buffer = nullptr;
     RecompiledGuestD3d9UpdateVertexBufferCallback update_vertex_buffer = nullptr;
     RecompiledGuestD3d9ReleaseVertexBufferCallback release_vertex_buffer = nullptr;
+    RecompiledGuestD3d9ClearCallback clear = nullptr;
+    RecompiledGuestD3d9PresentCallback present = nullptr;
 };
 
 struct RecompiledGuestSchedulerSnapshot {
