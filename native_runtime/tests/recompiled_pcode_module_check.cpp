@@ -53,6 +53,26 @@ void write_guest_bytes(shift::runtime::RecompiledPcodeModule& module,
     }
 }
 
+struct D3d9BackendFixture {
+    bool called = false;
+    uint32_t focus_window = 0;
+    uint32_t behavior_flags = 0;
+    shift::runtime::RecompiledGuestD3d9PresentationParameters parameters{};
+};
+
+bool create_d3d9_fixture_device(
+    void* context, uint32_t focus_window, uint32_t behavior_flags,
+    shift::runtime::RecompiledGuestD3d9PresentationParameters& parameters,
+    std::string&) {
+    auto* fixture = static_cast<D3d9BackendFixture*>(context);
+    if (!fixture) return false;
+    fixture->called = true;
+    fixture->focus_window = focus_window;
+    fixture->behavior_flags = behavior_flags;
+    fixture->parameters = parameters;
+    return true;
+}
+
 uint32_t read_guest_u32(shift::runtime::RecompiledPcodeModule& module,
                         const char* space, uint64_t offset) {
     std::array<uint8_t, 4> bytes{};
@@ -340,7 +360,7 @@ void write_system_parameters_info_pe32_fixture(const std::string& path) {
     write_u32(bytes, optional_offset + 60, 0x200);
     write_u32(bytes, optional_offset + 92, 16);
     write_u32(bytes, optional_offset + 104, 0x2000);
-    write_u32(bytes, optional_offset + 108, 40);
+    write_u32(bytes, optional_offset + 108, 60);
 
     bytes[section_offset] = '.';
     bytes[section_offset + 1] = 't';
@@ -362,16 +382,41 @@ void write_system_parameters_info_pe32_fixture(const std::string& path) {
     write_u32(bytes, import_section_offset + 16, 0x400);
     write_u32(bytes, import_section_offset + 20, 0x400);
 
-    write_u32(bytes, 0x400, 0x2040);
+    write_u32(bytes, 0x400, 0x2200);
     write_u32(bytes, 0x40c, 0x2080);
     write_u32(bytes, 0x410, 0x2060);
-    write_u32(bytes, 0x440, 0x2090);
-    write_u32(bytes, 0x444, 0x20b0);
+    write_u32(bytes, 0x600, 0x2090);
+    write_u32(bytes, 0x604, 0x20b0);
+    write_u32(bytes, 0x608, 0x20d0);
+    write_u32(bytes, 0x60c, 0x20f0);
+    write_u32(bytes, 0x610, 0x2170);
+    write_u32(bytes, 0x614, 0x21a0);
+    write_u32(bytes, 0x618, 0x21d0);
+    write_u32(bytes, 0x61c, 0x21e0);
     write_u32(bytes, 0x460, 0x2090);
     write_u32(bytes, 0x464, 0x20b0);
+    write_u32(bytes, 0x468, 0x20d0);
+    write_u32(bytes, 0x46c, 0x20f0);
+    write_u32(bytes, 0x470, 0x2170);
+    write_u32(bytes, 0x474, 0x21a0);
+    write_u32(bytes, 0x478, 0x21d0);
+    write_u32(bytes, 0x47c, 0x21e0);
+    write_u32(bytes, 0x414, 0x2100);
+    write_u32(bytes, 0x420, 0x2140);
+    write_u32(bytes, 0x424, 0x2120);
+    write_u32(bytes, 0x500, 0x2150);
+    write_u32(bytes, 0x520, 0x2150);
     std::copy_n("USER32.dll", 11, bytes.begin() + 0x480);
     std::copy_n("SystemParametersInfoA", 22, bytes.begin() + 0x492);
     std::copy_n("PeekMessageW", 13, bytes.begin() + 0x4b2);
+    std::copy_n("GetDesktopWindow", 17, bytes.begin() + 0x4d2);
+    std::copy_n("LoadIconW", 10, bytes.begin() + 0x4f2);
+    std::copy_n("GDI32.dll", 10, bytes.begin() + 0x540);
+    std::copy_n("GetStockObject", 15, bytes.begin() + 0x552);
+    std::copy_n("RegisterClassExW", 17, bytes.begin() + 0x572);
+    std::copy_n("CreateWindowExW", 16, bytes.begin() + 0x5a2);
+    std::copy_n("ClipCursor", 11, bytes.begin() + 0x5d2);
+    std::copy_n("ShowWindow", 11, bytes.begin() + 0x5e2);
 
     std::ofstream file(path, std::ios::binary | std::ios::trunc);
     require(static_cast<bool>(file),
@@ -517,6 +562,25 @@ int main(int argc, char** argv) {
         require(unsetenv("SHIFT_TRACE_GUEST_PROVENANCE") == 0,
                 "could not disable guest write provenance fixture");
 
+        require(setenv("SHIFT_TRACE_GUEST_CALLER", "0x00401000", 1) == 0,
+                "could not enable guest caller trace fixture");
+        {
+            shift::runtime::RecompiledPcodeModule call_trace_module(argv[1]);
+            require(call_trace_module.call(0x00401000) == 0,
+                    "guest caller trace fixture call failed: " +
+                        call_trace_module.last_error());
+            const auto snapshot = call_trace_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace_enabled &&
+                        !snapshot.guest_call_trace_truncated &&
+                        snapshot.guest_call_trace_caller == 0x00401000 &&
+                        snapshot.guest_call_trace.size() == 1 &&
+                        snapshot.guest_call_trace.front().caller == 0x00401000 &&
+                        snapshot.guest_call_trace.front().function == 0x00685700,
+                    "guest caller trace did not capture its nested P-code call");
+        }
+        require(unsetenv("SHIFT_TRACE_GUEST_CALLER") == 0,
+                "could not disable guest caller trace fixture");
+
         shift::runtime::RecompiledPcodeModule module(argv[1]);
         require(module.load_supplemental_module(argv[2]),
                 "P-code supplement could not be loaded: " + module.last_error());
@@ -597,13 +661,91 @@ int main(int argc, char** argv) {
 
         shift::runtime::RecompiledPcodeModule user32_module(argv[1]);
         const auto user32_image = user32_module.load_pe32_image(argv[7]);
-        require(user32_image.import_module_count == 1 &&
-                    user32_image.import_function_count == 2,
-                "USER32 fixture imports were not parsed");
+        require(user32_image.import_module_count == 2 &&
+                    user32_image.import_function_count == 9,
+                "USER32/GDI32 fixture imports were not parsed");
         const uint32_t system_parameters_info = read_guest_u32(
             user32_module, "ram", user32_image.image_base + 0x2060);
         const uint32_t peek_message_w = read_guest_u32(
             user32_module, "ram", user32_image.image_base + 0x2064);
+        const uint32_t get_desktop_window = read_guest_u32(
+            user32_module, "ram", user32_image.image_base + 0x2068);
+        const uint32_t load_icon_w = read_guest_u32(
+            user32_module, "ram", user32_image.image_base + 0x206c);
+        const uint32_t get_stock_object = read_guest_u32(
+            user32_module, "ram", user32_image.image_base + 0x2120);
+        const uint32_t register_class_ex = read_guest_u32(
+            user32_module, "ram", user32_image.image_base + 0x2070);
+        const uint32_t create_window_ex = read_guest_u32(
+            user32_module, "ram", user32_image.image_base + 0x2074);
+        const uint32_t clip_cursor = read_guest_u32(
+            user32_module, "ram", user32_image.image_base + 0x2078);
+        const uint32_t show_window = read_guest_u32(
+            user32_module, "ram", user32_image.image_base + 0x207c);
+        const uint32_t desktop_window =
+            invoke_import(user32_module, get_desktop_window, {});
+        require(desktop_window != 0 &&
+                    invoke_import(user32_module, get_desktop_window, {}) ==
+                        desktop_window,
+                "GetDesktopWindow did not return a stable guest HWND");
+        const uint32_t icon_handle = invoke_import(
+            user32_module, load_icon_w, {user32_image.image_base, 0x65});
+        require(icon_handle != 0 &&
+                    invoke_import(user32_module, load_icon_w,
+                                  {user32_image.image_base, 0x65}) ==
+                        icon_handle,
+                "LoadIconW did not return a stable guest icon handle");
+        const uint32_t stock_object =
+            invoke_import(user32_module, get_stock_object, {5});
+        require(stock_object == 0x00030024 &&
+                    invoke_import(user32_module, get_stock_object, {5}) ==
+                        stock_object &&
+                    invoke_import(user32_module, get_stock_object, {18}) == 0,
+                "GetStockObject did not preserve guest stock-handle semantics");
+        constexpr uint32_t window_class_address = 0x00033800;
+        constexpr uint32_t window_class_name_address = 0x00033900;
+        constexpr uint32_t window_title_address = 0x00033920;
+        write_guest_u32(user32_module, "ram", window_class_address, 48);
+        write_guest_u32(user32_module, "ram", window_class_address + 8,
+                        user32_image.image_base + 0x1000);
+        write_guest_u32(user32_module, "ram", window_class_address + 20,
+                        user32_image.image_base);
+        write_guest_u32(user32_module, "ram", window_class_address + 32,
+                        stock_object);
+        write_guest_u32(user32_module, "ram", window_class_address + 40,
+                        window_class_name_address);
+        const std::array<uint8_t, 2> class_name = {'S', 0};
+        write_guest_bytes(user32_module, window_class_name_address,
+                          class_name.data(), class_name.size());
+        const std::array<uint8_t, 2> empty_title = {0, 0};
+        write_guest_bytes(user32_module, window_title_address,
+                          empty_title.data(), empty_title.size());
+        require(invoke_import(user32_module, register_class_ex,
+                              {window_class_address}) == 1,
+                "RegisterClassExW rejected a valid guest class");
+        write_guest_u32(user32_module, "ram", window_class_address, 40);
+        require(invoke_import(user32_module, register_class_ex,
+                              {window_class_address}) == 0,
+                "RegisterClassExW accepted a malformed class size");
+        const std::vector<uint32_t> create_window_arguments = {
+            8, window_class_name_address, window_title_address, 0x80000000,
+            0, 0, 640, 480, desktop_window, 0, user32_image.image_base, 0};
+        const uint32_t window = invoke_import(
+            user32_module, create_window_ex, create_window_arguments);
+        require(window != 0 &&
+                    invoke_import(user32_module, create_window_ex,
+                                  create_window_arguments) == window,
+                "CreateWindowExW did not return a stable guest HWND");
+        require(invoke_import(user32_module, clip_cursor, {0x00033a00}) == 1 &&
+                    invoke_import(user32_module, clip_cursor, {0}) == 1 &&
+                    invoke_import(user32_module, clip_cursor, {0x00000001}) ==
+                        0,
+                "ClipCursor did not validate and accept guest RECT input");
+        require(invoke_import(user32_module, show_window, {window, 5}) == 0 &&
+                    invoke_import(user32_module, show_window, {window, 5}) == 1 &&
+                    invoke_import(user32_module, show_window, {window, 0}) == 1 &&
+                    invoke_import(user32_module, show_window, {window, 5}) == 0,
+                "ShowWindow did not return and update guest visibility state");
         constexpr uint32_t peek_message_output = 0x00032f00;
         std::array<uint8_t, 28> initial_message{};
         initial_message.fill(0xa5);
@@ -780,6 +922,8 @@ int main(int argc, char** argv) {
             read_guest_u32(d3d9_module, "ram", d3d9_vtable + 7 * 4);
         const uint32_t get_adapter_display_mode =
             read_guest_u32(d3d9_module, "ram", d3d9_vtable + 8 * 4);
+        const uint32_t check_device_type =
+            read_guest_u32(d3d9_module, "ram", d3d9_vtable + 9 * 4);
         const uint32_t display_mode_address = 0x00402c10;
         constexpr uint32_t enumerated_mode_address = 0x00402c50;
         require(invoke_import(d3d9_module, get_adapter_count,
@@ -832,6 +976,10 @@ int main(int argc, char** argv) {
                                   {d3d9_interface, 0, 22, 0, 0}) ==
                         0x8876086c,
                 "EnumAdapterModes did not reject unavailable modes and invalid arguments");
+        require(invoke_import(d3d9_module, check_device_type,
+                              {d3d9_interface, 0, 1, 22, 21, 0}) ==
+                    0x8876086a,
+                "CheckDeviceType claimed support without a Vulkan surface");
         require(invoke_import(d3d9_module, get_adapter_display_mode,
                               {d3d9_interface, 1, display_mode_address}) ==
                         0x8876086c &&
@@ -883,6 +1031,269 @@ int main(int argc, char** argv) {
                     invoke_import(d3d9_module, get_adapter_identifier,
                                   {d3d9_interface, 0, 0, 0}) == 0x8876086c,
                 "GetAdapterIdentifier did not reject invalid arguments");
+        shift::runtime::RecompiledPcodeModule d3d9_provider_module(argv[1]);
+        const auto provider_image =
+            d3d9_provider_module.load_pe32_image(argv[8]);
+        const uint32_t provider_create9 = read_guest_u32(
+            d3d9_provider_module, "ram", provider_image.image_base + 0x2060);
+        shift::runtime::RecompiledGuestD3d9AdapterInfo adapter_info{};
+        for (size_t index = 0; index < adapter_info.caps.size(); ++index) {
+            adapter_info.caps[index] = 100 + static_cast<uint32_t>(index);
+        }
+        adapter_info.caps[0] = 1;
+        adapter_info.vendor_id = 0x10de;
+        adapter_info.device_id = 0x1234;
+        adapter_info.description = "fixture adapter";
+        adapter_info.supports_bgra8_surface = true;
+        adapter_info.bgra8_sample_count_mask = 1 | 2 | 4;
+        adapter_info.d24s8_sample_count_mask = 1 | 2;
+        D3d9BackendFixture d3d9_backend_fixture{};
+        adapter_info.backend_context = &d3d9_backend_fixture;
+        adapter_info.create_device = &create_d3d9_fixture_device;
+        require(d3d9_provider_module.set_guest_d3d9_adapter_info(adapter_info),
+                "could not configure the fixture Vulkan adapter snapshot");
+        const uint32_t provider_interface =
+            invoke_import(d3d9_provider_module, provider_create9, {32});
+        const uint32_t provider_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", provider_interface);
+        const uint32_t provider_get_caps = read_guest_u32(
+            d3d9_provider_module, "ram", provider_vtable + 14 * 4);
+        const uint32_t provider_get_identifier = read_guest_u32(
+            d3d9_provider_module, "ram", provider_vtable + 5 * 4);
+        const uint32_t provider_check_device_type = read_guest_u32(
+            d3d9_provider_module, "ram", provider_vtable + 9 * 4);
+        const uint32_t provider_check_multisample = read_guest_u32(
+            d3d9_provider_module, "ram", provider_vtable + 11 * 4);
+        const uint32_t provider_create_device = read_guest_u32(
+            d3d9_provider_module, "ram", provider_vtable + 16 * 4);
+        constexpr uint32_t provider_caps_address = 0x00403000;
+        require(invoke_import(d3d9_provider_module, provider_get_caps,
+                              {provider_interface, 0, 1,
+                               provider_caps_address}) == 0,
+                "GetDeviceCaps did not return the configured adapter snapshot");
+        for (size_t index = 0; index < adapter_info.caps.size(); ++index) {
+            require(read_guest_u32(d3d9_provider_module, "ram",
+                                   provider_caps_address + index * 4) ==
+                        adapter_info.caps[index],
+                    "GetDeviceCaps changed a D3DCAPS9 word");
+        }
+        require(invoke_import(d3d9_provider_module, provider_get_caps,
+                              {provider_interface, 0, 2,
+                               provider_caps_address}) == 0x88760870,
+                "GetDeviceCaps accepted an unsupported device type");
+        require(invoke_import(d3d9_provider_module,
+                              provider_check_device_type,
+                              {provider_interface, 0, 1, 22, 21, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  provider_check_device_type,
+                                  {provider_interface, 0, 1, 22, 23, 0}) ==
+                        0x8876086a,
+                "CheckDeviceType did not honor the Vulkan surface format");
+        constexpr uint32_t provider_quality_levels = 0x00402c80;
+        require(invoke_import(d3d9_provider_module,
+                              provider_check_multisample,
+                              {provider_interface, 0, 1, 22, 1, 2,
+                               provider_quality_levels}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   provider_quality_levels) == 1 &&
+                    invoke_import(d3d9_provider_module,
+                                  provider_check_multisample,
+                                  {provider_interface, 0, 1, 75, 1, 2, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  provider_check_multisample,
+                                  {provider_interface, 0, 1, 75, 1, 4, 0}) ==
+                        0x8876086a,
+                "CheckDeviceMultiSampleType did not honor Vulkan sample support");
+        constexpr uint32_t provider_identifier_address = 0x00404000;
+        require(invoke_import(d3d9_provider_module, provider_get_identifier,
+                              {provider_interface, 0, 0,
+                               provider_identifier_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   provider_identifier_address + 1064) ==
+                        adapter_info.vendor_id &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   provider_identifier_address + 1068) ==
+                        adapter_info.device_id,
+                "GetAdapterIdentifier did not return Vulkan adapter identity");
+        std::array<uint8_t, 16> provider_description{};
+        require(d3d9_provider_module.read_guest(
+                    "ram", provider_identifier_address + 512,
+                    provider_description.size(), provider_description.data()) &&
+                    std::string(provider_description.begin(),
+                                std::find(provider_description.begin(),
+                                          provider_description.end(), 0)) ==
+                        adapter_info.description,
+                "GetAdapterIdentifier did not return its adapter description");
+        constexpr uint32_t presentation_parameters_address = 0x00405000;
+        constexpr uint32_t created_device_output_address = 0x00405100;
+        const std::array<uint32_t, 14> retail_presentation_parameters = {
+            800, 600, 21, 1, 2, 0, 1, 0x00030008, 1, 1, 75, 0, 0,
+            0x80000000};
+        for (size_t index = 0;
+             index < retail_presentation_parameters.size(); ++index) {
+            write_guest_u32(d3d9_provider_module, "ram",
+                            presentation_parameters_address + index * 4,
+                            retail_presentation_parameters[index]);
+        }
+        require(invoke_import(d3d9_provider_module, provider_create_device,
+                              {provider_interface, 0, 1, 0x00030008, 0x50,
+                               presentation_parameters_address,
+                               created_device_output_address}) == 0 &&
+                    d3d9_backend_fixture.called &&
+                    d3d9_backend_fixture.focus_window == 0x00030008 &&
+                    d3d9_backend_fixture.behavior_flags == 0x50 &&
+                    d3d9_backend_fixture.parameters.back_buffer_width == 800 &&
+                    d3d9_backend_fixture.parameters.back_buffer_height == 600 &&
+                    d3d9_backend_fixture.parameters.multisample_type == 2 &&
+                    d3d9_backend_fixture.parameters.auto_depth_stencil_format ==
+                        75,
+                "CreateDevice did not pass retail parameters to the Vulkan host");
+        const auto create_device_snapshot =
+            d3d9_provider_module.guest_scheduler_snapshot();
+        require(create_device_snapshot.d3d9_create_device_attempted &&
+                    create_device_snapshot.d3d9_create_device_callback_called &&
+                    create_device_snapshot.d3d9_create_device_hresult == 0 &&
+                    create_device_snapshot.d3d9_create_device_rejection.empty(),
+                "CreateDevice result diagnostics did not record success");
+        const uint32_t created_device = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_output_address);
+        const uint32_t created_device_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", created_device);
+        const uint32_t created_device_add_ref = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 4);
+        const uint32_t created_device_release = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 8);
+        const uint32_t get_number_of_swap_chains = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 15 * 4);
+        const uint32_t set_vertex_shader = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 92 * 4);
+        const uint32_t set_pixel_shader = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 107 * 4);
+        const uint32_t get_texture = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 64 * 4);
+        const uint32_t get_render_target = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 38 * 4);
+        const uint32_t get_back_buffer = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 18 * 4);
+        const uint32_t get_depth_stencil_surface = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 40 * 4);
+        const uint32_t get_viewport = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 48 * 4);
+        const uint32_t set_sampler_state = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 69 * 4);
+        constexpr uint32_t texture_output_address = 0x00405140;
+        constexpr uint32_t render_target_output_address = 0x00405144;
+        constexpr uint32_t back_buffer_output_address = 0x0040514c;
+        constexpr uint32_t depth_surface_output_address = 0x00405148;
+        constexpr uint32_t viewport_output_address = 0x00405150;
+        write_guest_u32(d3d9_provider_module, "ram", texture_output_address,
+                        0x7a7a7a7a);
+        write_guest_u32(d3d9_provider_module, "ram", render_target_output_address,
+                        0x7a7a7a7a);
+        write_guest_u32(d3d9_provider_module, "ram", back_buffer_output_address,
+                        0x7a7a7a7a);
+        write_guest_u32(d3d9_provider_module, "ram", depth_surface_output_address,
+                        0x7a7a7a7a);
+        write_guest_u32(d3d9_provider_module, "ram", viewport_output_address,
+                        0x7a7a7a7a);
+        require(created_device != 0 && created_device_vtable != 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  get_number_of_swap_chains,
+                                  {created_device}) == 1 &&
+                    invoke_import(d3d9_provider_module, get_texture,
+                                  {created_device, 0,
+                                   texture_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   texture_output_address) == 0 &&
+                    invoke_import(d3d9_provider_module, get_render_target,
+                                  {created_device, 0,
+                                   render_target_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   render_target_output_address) != 0 &&
+                    invoke_import(d3d9_provider_module, get_back_buffer,
+                                  {created_device, 0, 0, 0,
+                                   back_buffer_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   back_buffer_output_address) ==
+                        read_guest_u32(d3d9_provider_module, "ram",
+                                       render_target_output_address) &&
+                    invoke_import(d3d9_provider_module,
+                                  get_depth_stencil_surface,
+                                  {created_device,
+                                   depth_surface_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   depth_surface_output_address) != 0 &&
+                    invoke_import(d3d9_provider_module, get_viewport,
+                                  {created_device,
+                                   viewport_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   viewport_output_address + 8) == 800 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   viewport_output_address + 12) == 600 &&
+                    invoke_import(d3d9_provider_module, set_sampler_state,
+                                  {created_device, 0, 1, 1}) == 0 &&
+                    invoke_import(d3d9_provider_module, set_vertex_shader,
+                                  {created_device, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module, set_pixel_shader,
+                                  {created_device, 0}) == 0,
+                "CreateDevice did not create a usable device vtable");
+        const uint32_t render_target_surface = read_guest_u32(
+            d3d9_provider_module, "ram", render_target_output_address);
+        const uint32_t surface_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", render_target_surface);
+        const uint32_t surface_get_desc = read_guest_u32(
+            d3d9_provider_module, "ram", surface_vtable + 12 * 4);
+        constexpr uint32_t surface_desc_address = 0x00405160;
+        require(invoke_import(d3d9_provider_module, surface_get_desc,
+                              {render_target_surface,
+                               surface_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   surface_desc_address) == 21 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   surface_desc_address + 4) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   surface_desc_address + 8) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   surface_desc_address + 12) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   surface_desc_address + 16) == 2 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   surface_desc_address + 24) == 800 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   surface_desc_address + 28) == 600 &&
+                    invoke_import(d3d9_provider_module, surface_get_desc,
+                                  {render_target_surface, 0}) ==
+                        0x8876086c,
+                "IDirect3DSurface9::GetDesc returned an invalid backbuffer description");
+        const uint32_t device_clear = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 43 * 4);
+        require(invoke_import(d3d9_provider_module, device_clear,
+                              {created_device, 0, 0, 7, 0,
+                               0x3f800000, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module, device_clear,
+                                  {created_device, 0, 0, 8, 0, 0, 0}) ==
+                        0x8876086c,
+                "IDirect3DDevice9::Clear did not validate and accept the retail clear flags");
+        const auto clear_snapshot =
+            d3d9_provider_module.guest_scheduler_snapshot();
+        require(clear_snapshot.d3d9_clear_call_count == 1 &&
+                    clear_snapshot.d3d9_last_clear_flags == 7 &&
+                    clear_snapshot.d3d9_last_clear_color == 0 &&
+                    clear_snapshot.d3d9_last_clear_depth_bits ==
+                        0x3f800000 &&
+                    clear_snapshot.d3d9_last_clear_stencil == 0 &&
+                    clear_snapshot.d3d9_last_clear_rect_count == 0,
+                "IDirect3DDevice9::Clear did not preserve its accepted request");
+        require(invoke_import(d3d9_provider_module,
+                              created_device_add_ref,
+                              {created_device}) == 2 &&
+                    invoke_import(d3d9_provider_module,
+                                  created_device_release,
+                                  {created_device}) == 1 &&
+                    invoke_import(d3d9_provider_module,
+                                  created_device_release,
+                                  {created_device}) == 0,
+                "CreateDevice did not create a reference-counted device vtable");
         require(invoke_import(d3d9_module, check_device_format,
                               {d3d9_interface, 0, 1, 0, 1, 1, 1}) ==
                         0x8876086a &&
@@ -1597,6 +2008,17 @@ int main(int argc, char** argv) {
             resolve_kernel32_api("SetThreadIdealProcessor");
         const uint32_t get_last_error_api = resolve_kernel32_api("GetLastError");
         const uint32_t set_last_error_api = resolve_kernel32_api("SetLastError");
+        const uint32_t output_debug_string_api =
+            resolve_kernel32_api("OutputDebugStringA");
+        constexpr char debug_string[] = "P-code debug output fixture";
+        constexpr uint32_t debug_string_address = 0x00035500;
+        write_guest_bytes(
+            module, debug_string_address,
+            reinterpret_cast<const uint8_t*>(debug_string),
+            sizeof(debug_string));
+        require(invoke_import(module, output_debug_string_api,
+                              {debug_string_address}) == 0,
+                "OutputDebugStringA did not complete with no debugger attached");
         const uint32_t sleep_ex_api = resolve_kernel32_api("SleepEx");
         require(invoke_import(module, sleep_ex_api, {0, 1}) == 0 &&
                     invoke_import(module, sleep_ex_api, {1, 0}) == 0,

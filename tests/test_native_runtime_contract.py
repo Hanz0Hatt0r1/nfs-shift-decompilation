@@ -197,7 +197,7 @@ def test_native_runtime_uses_per_swapchain_depth_buffers():
     assert "create_depth_resources()" in source
     assert "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT" in source
     assert "VK_IMAGE_ASPECT_DEPTH_BIT" in source
-    assert "VK_FORMAT_D32_SFLOAT depth attachment unsupported" in source
+    assert "selected depth/stencil attachment format is unsupported" in source
     assert "pDepthStencilAttachment = &depth_ref" in source
     assert "depth_state.depthTestEnable =" in source
     assert "material_pipeline_state.depth_test_enable" in source

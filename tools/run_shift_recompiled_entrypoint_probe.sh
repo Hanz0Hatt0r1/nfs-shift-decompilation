@@ -69,7 +69,7 @@ probe_args=(
   --recompiled-supplement "$artifact_root/function-00886c80-pcode-20261018/libnfs_shift_pcode_supplement.so"
   --recompiled-supplement "$artifact_root/function-00a69220-pcode-20261018/libnfs_shift_pcode_supplement.so"
   --recompiled-supplement "$artifact_root/libnfs_shift_pcode_rvi_00909dcd.so"
-  --recompiled-supplement "$artifact_root/libnfs_shift_pcode_rvi_00900f48.so"
+  # rvi_00900f48 is already exported by libnfs_shift_pcode_startup_20261018.so.
   --recompiled-supplement "$artifact_root/libnfs_shift_pcode_rvi_0091577e.so"
   --recompiled-supplement "$artifact_root/libnfs_shift_pcode_rvi_00916b2d.so"
   --recompiled-supplement "$artifact_root/libnfs_shift_pcode_rvi_0091bf62.so"
@@ -90,6 +90,18 @@ probe_args=(
   --frames "$probe_frames"
   --recompiled-entrypoint
 )
+
+if [[ -n "${SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS:-}" ]]; then
+  mapfile -t extra_supplements <<< "$SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS"
+  for supplement in "${extra_supplements[@]}"; do
+    [[ -z "$supplement" ]] && continue
+    if [[ ! -r "$supplement" ]]; then
+      printf 'extra P-code supplement is not readable: %s\n' "$supplement" >&2
+      exit 2
+    fi
+    probe_args+=(--recompiled-supplement "$supplement")
+  done
+fi
 
 if [[ "$validation" == 1 ]]; then
   probe_args+=(--validation)

@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "probe_id": "shift-probe-v162-d3d9-clear-snapshot-120-validation",
+  "date": "2026-10-19",
+  "game_image": "Need For Speed: SHIFT retail 1.02 SHIFT.exe",
+  "probe_frames": 120,
+  "vulkan_validation": true,
+  "result": "stopped_on_guest_null_resource_read",
+  "guest_dispatches": 48532,
+  "unique_guest_functions": 1221,
+  "runtime_error": "P-code RAM read at 0x00000000 size 4 touched reserved low memory",
+  "guest_call_stack": [
+    "0x009046aa",
+    "0x00a69160",
+    "0x0040d6a0",
+    "0x0040a5d0",
+    "0x00832a80",
+    "0x00835050",
+    "0x00853790",
+    "0x00838410"
+  ],
+  "recovered_guest_functions": [
+    {
+      "address": "0x008329d0",
+      "revenginstr_revision": "e15b05437a56f0401e7676866d07deecbe384043",
+      "lowered_functions": 1,
+      "requested_functions": 1,
+      "rejections": 0,
+      "instruction_records_sha256": "cc0b210331161245c0685697a959ea07eac93ec2bffa2068213dc13266952b7b",
+      "supplement_sha256": "3e099256dbb581f4f631c73e4a4370a8583a0ffcf65837e623d29afa7843aae1",
+      "pcode_operations": 6,
+      "observed_next_frontier": "IDirect3DSurface9::GetDesc"
+    },
+    {
+      "address": "0x00835050",
+      "revenginstr_revision": "e15b05437a56f0401e7676866d07deecbe384043",
+      "lowered_functions": 1,
+      "requested_functions": 1,
+      "rejections": 0,
+      "instruction_records_sha256": "36337744b6897f145fa1e8fe375c9e3d241cd3890e30b5f47e793e86d2ff8df8",
+      "supplement_sha256": "1182b0ba752f9fd71eeff08be9a90a6876573f263435f3d61c0b957ccf1107e1",
+      "pcode_operations": 91,
+      "observed_next_frontier": "null resource pointer passed to 0x00838410"
+    }
+  ],
+  "d3d9_startup": {
+    "create_device_request_accepted": true,
+    "guest_calls_observed": [
+      "SetPixelShader(null)",
+      "SetVertexShader(null)",
+      "GetTexture",
+      "GetRenderTarget",
+      "GetDepthStencilSurface",
+      "GetViewport",
+      "SetSamplerState",
+      "GetBackBuffer",
+      "IDirect3DSurface9::GetDesc",
+      "IDirect3DDevice9::Clear"
+    ],
+    "clear_submitted_to_vulkan": false,
+    "retail_draw_reached_vulkan": false
+  },
+  "static_analysis": {
+    "function_0x00853790": "Populates resource arrays, then calls 0x00838410 with an array element.",
+    "function_0x00838410": "Reads resource wrapper fields at +0x18 and +0x8; one branch calls a method at vtable slot +0x48.",
+    "unresolved": "The exact semantics of the factory virtual slot +0x234 and the reason its resource result is null are unknown."
+  },
+  "tests": {
+    "targets_built": [
+      "shift_runtime",
+      "shift_runtime_recompiled_pcode_module_check"
+    ],
+    "focused_ctest": "shift_runtime_recompiled_pcode_module",
+    "passed": 1,
+    "failed": 0
+  },
+  "limitations": [
+    "The host Vulkan frame still uses converted MGEO smoke geometry.",
+    "No retail D3D9 draw, frontend, or offline race has been demonstrated.",
+    "The D3D9 Clear wrapper records guest inputs but does not issue a Vulkan clear command.",
+    "Function lowering coverage does not prove game readiness or correct resource semantics."
+  ],
+  "raw_log": "shift-probe-v162-d3d9-clear-snapshot-120-validation.log"
+}

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -60,6 +61,55 @@ struct RecompiledUiStateGateTraceEvent {
     bool completed = false;
 };
 
+struct RecompiledGuestCallTraceEvent {
+    uint64_t dispatch_count = 0;
+    uint32_t thread_id = 0;
+    uint32_t function = 0;
+    uint32_t caller = 0;
+    uint32_t return_address = 0;
+    uint32_t ecx_entry = 0;
+    uint32_t eax_entry = 0;
+    uint32_t edx_entry = 0;
+    std::string import_name;
+    bool has_return_address = false;
+    bool is_import = false;
+};
+
+struct RecompiledGuestD3d9PresentationParameters {
+    uint32_t back_buffer_width = 0;
+    uint32_t back_buffer_height = 0;
+    uint32_t back_buffer_format = 0;
+    uint32_t back_buffer_count = 0;
+    uint32_t multisample_type = 0;
+    uint32_t multisample_quality = 0;
+    uint32_t swap_effect = 0;
+    uint32_t device_window = 0;
+    uint32_t windowed = 0;
+    uint32_t enable_auto_depth_stencil = 0;
+    uint32_t auto_depth_stencil_format = 0;
+    uint32_t flags = 0;
+    uint32_t fullscreen_refresh_rate = 0;
+    uint32_t presentation_interval = 0;
+};
+
+using RecompiledGuestD3d9CreateDeviceCallback = bool (*) (
+    void* context, uint32_t focus_window, uint32_t behavior_flags,
+    RecompiledGuestD3d9PresentationParameters& parameters,
+    std::string& error);
+
+struct RecompiledGuestD3d9AdapterInfo {
+    // D3DCAPS9 is 76 little-endian 32-bit words, including its float fields.
+    std::array<uint32_t, 76> caps{};
+    uint32_t vendor_id = 0;
+    uint32_t device_id = 0;
+    std::string description;
+    bool supports_bgra8_surface = false;
+    uint32_t bgra8_sample_count_mask = 0;
+    uint32_t d24s8_sample_count_mask = 0;
+    void* backend_context = nullptr;
+    RecompiledGuestD3d9CreateDeviceCallback create_device = nullptr;
+};
+
 struct RecompiledGuestSchedulerSnapshot {
     bool entry_point_started = false;
     bool entry_point_complete = false;
@@ -76,11 +126,28 @@ struct RecompiledGuestSchedulerSnapshot {
     bool ui_state_gate_trace_enabled = false;
     bool ui_state_gate_trace_truncated = false;
     std::vector<RecompiledUiStateGateTraceEvent> ui_state_gate_trace;
+    bool guest_call_trace_enabled = false;
+    bool guest_call_trace_truncated = false;
+    uint32_t guest_call_trace_caller = 0;
+    std::vector<RecompiledGuestCallTraceEvent> guest_call_trace;
     size_t ready_thread_count = 0;
     size_t worker_thread_count = 0;
     size_t worker_waiting_count = 0;
     size_t worker_runnable_count = 0;
     size_t worker_completed_count = 0;
+    bool d3d9_create_device_attempted = false;
+    bool d3d9_create_device_callback_called = false;
+    uint32_t d3d9_create_device_hresult = UINT32_MAX;
+    std::string d3d9_create_device_rejection;
+    uint32_t d3d9_clear_call_count = 0;
+    uint32_t d3d9_last_clear_flags = 0;
+    uint32_t d3d9_last_clear_color = 0;
+    uint32_t d3d9_last_clear_depth_bits = 0;
+    uint32_t d3d9_last_clear_stencil = 0;
+    uint32_t d3d9_last_clear_rect_count = 0;
+    std::string last_load_library_name;
+    uint32_t last_load_library_handle = 0;
+    uint32_t last_load_library_error = 0;
 };
 
 class RecompiledPcodeModule {
@@ -103,6 +170,8 @@ public:
     bool load_override_module(const std::string& shared_object_path);
     bool set_guest_display_mode(uint32_t width, uint32_t height,
                                 uint32_t refresh_rate, uint32_t format);
+    bool set_guest_d3d9_adapter_info(
+        const RecompiledGuestD3d9AdapterInfo& adapter_info);
     uint64_t dispatched_function_count() const;
     uint64_t unique_dispatched_function_count() const;
     const std::string& last_error() const;
