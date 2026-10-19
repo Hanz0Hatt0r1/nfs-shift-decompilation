@@ -132,7 +132,8 @@ uint32_t invoke_import(shift::runtime::RecompiledPcodeModule& module,
 
 void write_pe32_fixture(const std::string& path,
                         bool raise_exception_import = false,
-                        bool time_get_time_import = false) {
+                        bool time_get_time_import = false,
+                        bool unknown_first_import = false) {
     constexpr size_t file_size = 0x1300;
     constexpr size_t pe_offset = 0x80;
     constexpr size_t optional_offset = pe_offset + 24;
@@ -244,8 +245,10 @@ void write_pe32_fixture(const std::string& path,
     write_u32(bytes, 0x1120, 0x2a80);
     write_u32(bytes, 0x1124, 0x2aa0);
     write_u32(bytes, 0x1128, 0x2ac0);
-    write_import_name(0x600,
-                      raise_exception_import ? "RaiseException" : "Sleep");
+    write_import_name(
+        0x600, unknown_first_import
+                   ? "UnknownApi"
+                   : (raise_exception_import ? "RaiseException" : "Sleep"));
     write_import_name(0x640, "GetSystemTimeAsFileTime");
     write_import_name(0x660, "GetCurrentProcessId");
     write_import_name(0x680, "GetCurrentThreadId");
@@ -2838,6 +2841,20 @@ int main(int argc, char** argv) {
                               {0x406d1388, 0, 4, thread_info_address}) == 0,
                 "MSVC thread-name RaiseException pattern was not handled: " +
                     exception_module.last_error());
+
+        write_pe32_fixture(argv[5], false, false, true);
+        shift::runtime::RecompiledPcodeModule unsupported_import_module(argv[1]);
+        (void)unsupported_import_module.load_pe32_image(argv[5]);
+        const uint32_t unsupported_import_stub =
+            read_guest_u32(unsupported_import_module, "ram", 0x00402c00);
+        require(call_import(unsupported_import_module,
+                            unsupported_import_stub, {}) != 0 &&
+                    unsupported_import_module.last_error().find(
+                        "unimplemented PE import KERNEL32.dll!UnknownApi") !=
+                        std::string::npos &&
+                    unsupported_import_module.last_error().find(
+                        "return_address=0x00401234") != std::string::npos,
+                "unsupported import error omitted its guest return address");
 
         const uint32_t exit_process_api = resolve_kernel32_api("ExitProcess");
         require(call_import(module, exit_process_api, {1}) != 0 &&

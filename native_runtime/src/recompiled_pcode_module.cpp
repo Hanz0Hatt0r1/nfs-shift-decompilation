@@ -1270,6 +1270,72 @@ struct RecompiledPcodeModule::Impl {
             }
             uint32_t esp = 0;
             if (read_guest_u32("register", kX86EspRegisterOffset, esp)) {
+                uint32_t return_address = 0;
+                if (read_guest_u32("ram", esp, return_address)) {
+                    char call_site[48]{};
+                    std::snprintf(call_site, sizeof(call_site),
+                                  " return_address=0x%08x", return_address);
+                    error += call_site;
+                }
+                if (imported->second ==
+                    "d3dx9_41.dll!D3DXCreateTexture") {
+                    uint32_t device_address = 0;
+                    if (read_guest_u32("ram",
+                                       static_cast<uint64_t>(esp) + 4,
+                                       device_address)) {
+                        const auto runtime_device =
+                            guest_d3d9_devices.find(device_address);
+                        char device_info[112]{};
+                        std::snprintf(
+                            device_info, sizeof(device_info),
+                            " d3dx_device=0x%08x runtime_device=%s",
+                            device_address,
+                            runtime_device == guest_d3d9_devices.end()
+                                ? "no"
+                                : "yes");
+                        error += device_info;
+                        if (runtime_device != guest_d3d9_devices.end()) {
+                            char vtable[32]{};
+                            std::snprintf(vtable, sizeof(vtable),
+                                          " runtime_vtable=0x%08x",
+                                          runtime_device->second.vtable_address);
+                            error += vtable;
+                        }
+                        error += " guest_words=[";
+                        if (valid_guest_pointer(
+                                device_address, 4 * sizeof(uint32_t))) {
+                            for (uint32_t index = 0; index < 4; ++index) {
+                                uint32_t word = 0;
+                                if (!read_guest_u32(
+                                        "ram",
+                                        static_cast<uint64_t>(device_address) +
+                                            index * sizeof(uint32_t),
+                                        word)) {
+                                    break;
+                                }
+                                char value[16]{};
+                                std::snprintf(
+                                    value, sizeof(value), "%s0x%08x",
+                                    index == 0 ? "" : ",", word);
+                                error += value;
+                            }
+                        }
+                        error += "] runtime_devices=[";
+                        size_t listed_devices = 0;
+                        for (const auto& [address, device] :
+                             guest_d3d9_devices) {
+                            if (listed_devices == 8) break;
+                            char value[40]{};
+                            std::snprintf(value, sizeof(value),
+                                          "%s0x%08x/0x%08x",
+                                          listed_devices == 0 ? "" : ",",
+                                          address, device.vtable_address);
+                            error += value;
+                            ++listed_devices;
+                        }
+                        error += "]";
+                    }
+                }
                 error += " args=[";
                 for (uint32_t index = 0; index < 8; ++index) {
                     uint32_t argument = 0;
