@@ -5612,11 +5612,21 @@ struct RecompiledPcodeModule::Impl {
             return -1;
         }
         // The current retail startup probe presents only the default full
-        // backbuffer. Accept that request so initialization can continue, but
-        // do not imply that this transfers guest D3D9 rendering to Vulkan.
+        // backbuffer. Other presentation parameters remain unsupported.
         if (arguments[1] != 0 || arguments[2] != 0 || arguments[3] != 0 ||
             arguments[4] != 0) {
             return return_kernel32_dword(kD3dErrNotAvailable, api, 20);
+        }
+        if (guest_d3d9_adapter_info.present != nullptr) {
+            std::string callback_error;
+            if (!guest_d3d9_adapter_info.present(
+                    guest_d3d9_adapter_info.backend_context,
+                    callback_error)) {
+                if (!callback_error.empty()) {
+                    error = std::string(api) + ": " + callback_error;
+                }
+                return return_kernel32_dword(kD3dErrNotAvailable, api, 20);
+            }
         }
         if (device->second.present_request_count != UINT32_MAX)
             ++device->second.present_request_count;
@@ -5624,8 +5634,11 @@ struct RecompiledPcodeModule::Impl {
             trace != nullptr && *trace != '\0') {
             std::fprintf(stderr,
                          "shift_runtime: guest D3D9 Present request count=%u "
-                         "device=0x%08x (no Vulkan frame transfer)\n",
-                         device->second.present_request_count, arguments[0]);
+                         "device=0x%08x (%s)\n",
+                         device->second.present_request_count, arguments[0],
+                         guest_d3d9_adapter_info.present != nullptr
+                             ? "queued for Vulkan frame"
+                             : "accepted without Vulkan callback");
         }
         return return_kernel32_dword(0, api, 20);
     }
@@ -6312,6 +6325,17 @@ struct RecompiledPcodeModule::Impl {
             ((flags & (clear_zbuffer | clear_stencil)) != 0 &&
              device->second.presentation.enable_auto_depth_stencil == 0)) {
             return return_kernel32_dword(kD3dErrInvalidCall, api, 28);
+        }
+        if (guest_d3d9_adapter_info.clear != nullptr) {
+            std::string callback_error;
+            if (!guest_d3d9_adapter_info.clear(
+                    guest_d3d9_adapter_info.backend_context, flags, color,
+                    depth_bits, stencil, rect_count, callback_error)) {
+                if (!callback_error.empty()) {
+                    error = std::string(api) + ": " + callback_error;
+                }
+                return return_kernel32_dword(kD3dErrNotAvailable, api, 28);
+            }
         }
         if (device->second.clear_call_count != UINT32_MAX)
             ++device->second.clear_call_count;

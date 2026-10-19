@@ -63,6 +63,7 @@ def inspect_log(log: str, exit_code: int | None = None) -> dict:
     addr = ADDRESS.search(text_after)
     caller = CALLER.search(text_after)
     validation = frame.get("validation_errors") if frame else None
+    scheduler = frame.get("recompiled_guest_scheduler_state", {}) if frame else {}
     return {
         "format": FORMAT,
         "status": status,
@@ -74,6 +75,16 @@ def inspect_log(log: str, exit_code: int | None = None) -> dict:
         "return_address": addr.group(1).lower() if addr else None,
         "frames_rendered": frame.get("frames_rendered") if frame else None,
         "validation_errors": validation,
+        "d3d9_vulkan_bridge": (
+            frame.get("d3d9_vulkan_bridge", scheduler.get("d3d9_vulkan_bridge"))
+            if frame else None
+        ),
+        "d3d9_clear_request": (
+            frame.get("d3d9_clear_request", scheduler.get("d3d9_clear_request"))
+            if frame else None
+        ),
+        "guest_main_thread_function": scheduler.get("main_thread_current_function"),
+        "worker_waiting_count": scheduler.get("worker_waiting_count"),
         "pe_image_loaded": frame.get("recompiled_pe_image_loaded") if frame else (
             "Loaded PE32 image" in log
         ),
@@ -160,6 +171,7 @@ def main(argv=None) -> int:
     if args.operation == "inspect":
         result = inspect_log(args.log.read_text(encoding="utf-8", errors="replace"),
                              args.exit_code)
+        result["probe_log_sha256"] = sha256(args.log)
     else:
         if args.frames < 1 or args.timeout < 1:
             parser.error("--frames and --timeout must be positive")
@@ -196,6 +208,7 @@ def main(argv=None) -> int:
         result = inspect_log(args.log.read_text(encoding="utf-8", errors="replace"),
                              completed.returncode)
         result["pe_sha256"] = RETAIL_SHA256
+        result["probe_log_sha256"] = sha256(args.log)
 
     if args.baseline:
         result["comparison"] = compare(result, load_frontier(args.baseline))

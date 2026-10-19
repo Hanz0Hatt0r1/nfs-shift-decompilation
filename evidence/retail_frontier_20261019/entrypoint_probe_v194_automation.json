@@ -1,0 +1,37 @@
+{
+  "blocker": null,
+  "caller": null,
+  "comparison": {
+    "reason": "more retail code executed",
+    "result": "advanced"
+  },
+  "d3d9_clear_request": {
+    "call_count": 122,
+    "color": "0x00000000",
+    "depth_bits": "0x3f800000",
+    "flags": "0x00000007",
+    "rect_count": 0,
+    "stencil": 0
+  },
+  "d3d9_vulkan_bridge": {
+    "clear_requests": 122,
+    "clear_submissions": 120,
+    "guest_draw_translation": false,
+    "pending_presents": 1,
+    "present_requests": 121,
+    "present_submissions": 120
+  },
+  "dispatches": 96082,
+  "exit_code": 0,
+  "format": "SHIFT.RetailStartupFrontier/1",
+  "frames_rendered": 120,
+  "guest_main_thread_function": "0x006472d0",
+  "pe_image_loaded": true,
+  "probe_log_sha256": "05d5152f461026d1a85d89c5cc0f1314004e47b1e89828f9ca69a2dda5f0049e",
+  "retail_rendering_proven": false,
+  "return_address": null,
+  "status": "host-frame-loop",
+  "unique_functions": 1559,
+  "validation_errors": 0,
+  "worker_waiting_count": 4
+}

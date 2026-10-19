@@ -2,20 +2,23 @@
 
 ## Result
 
-The bounded original-PE probe now reaches and stays in the guest application
-loop. The v193 run used `tools/retail_frontier.py run`, the pinned PC 1.02 PE,
-the 41,538-function P-code module, and the retained startup supplements. It
-executed 96,082 guest function dispatches across 1,559 functions, rendered 120
-host Vulkan frames with zero validation errors, and remained active at
-`0x006472d0` with four worker threads waiting. The report classifies this as an
-advanced `host-frame-loop`; it explicitly does not prove retail rendering.
+The bounded original-PE probe reaches and stays in the guest application loop.
+The v194 run used `tools/retail_frontier.py run`, the pinned PC 1.02 PE, the
+41,538-function P-code module, and the retained startup supplements. It
+executed 96,082 guest function dispatches across 1,559 functions, submitted
+120 guest-requested Vulkan clears and 120 swapchain presents with zero
+validation errors, and remained active at `0x006472d0` with four worker
+threads waiting. One of 121 guest Present requests remains pending at the
+120-frame bound. The report classifies this as `host-frame-loop`; it does not
+prove retail draw rendering or frontend readiness.
 
 The guest requested 122 D3D9 clears and 121 `Present` calls. Clear requests
 were black (`flags=0x7`, depth 1.0), and Present used null source/destination
-rectangles, window override, and dirty region. The current guest shims accept
-these calls to continue startup, but neither submits the guest clear nor
-transfers a guest frame to Vulkan. The 120 host frames still draw the synthetic
-MGEO probe mesh. No retail draw has reached the Vulkan command stream.
+rectangles, window override, and dirty region. The runtime queues these
+requests, submits 120 full color/depth/stencil clears, and presents each
+corresponding Vulkan swapchain frame. During those guest-requested frames it
+suppresses the synthetic MGEO draw. No D3D9 draw call has reached the Vulkan
+command stream, so this clear-only path is not retail rendering parity.
 
 ## Startup frontier advances
 
@@ -59,8 +62,10 @@ but the callback registration and frontend-transition role remain unresolved.
 See [`entrypoint_probe_v192_d3d9_frontier.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v192_d3d9_frontier.json)
 and [`entrypoint_probe_v117_ui_gate_field_writer_ecx.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v117_ui_gate_field_writer_ecx.json).
 
-The v193 machine-readable automation result is
-[`entrypoint_probe_v193_automation.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v193_automation.json).
+The v193 and v194 machine-readable automation results are
+[`entrypoint_probe_v193_automation.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v193_automation.json)
+and
+[`entrypoint_probe_v194_automation.json`](../evidence/retail_frontier_20261019/entrypoint_probe_v194_automation.json).
 Raw P-code ELF, retail data, and full runtime logs remain in the ignored
 external artifact directory; the tracked report stores the log hash.
 
@@ -69,13 +74,11 @@ external artifact directory; the tracked report stores the log hash.
 1. Trace the UI gate's callback owner and initialization path from
    `0x0062fde0`; do not force the gate value without confirming the expected
    state transition.
-2. Connect guest D3D9 `Clear` and `Present` to Vulkan swapchain commands, with
-   resource and lifetime evidence. The present shim is limited to the observed
-   null-argument request and is not a rendered frame.
-3. Instrument and implement the first guest draw path, including stream and
+2. Instrument and implement the first guest draw path, including stream and
    index data, shader bindings, render target, and Vulkan command submission.
-4. Measure the separate milestones: first retail Vulkan clear, first retail
-   draw, frontend, and offline race.
+3. Measure the separate milestones: first retail draw, frontend, and offline
+   race. The v194 startup probe establishes only a guest-requested Vulkan
+   clear and queue-present path.
 
 The target-specific cached native build, the `shift_runtime_recompiled_pcode_module`
 CTest, and the retail-frontier Python regressions passed for this update.
