@@ -198,6 +198,38 @@ caller path submits a retail draw. The next probe should map the false branch's
 skipped calls and subsequent caller dispatches to frontend state and retail
 D3D9 submissions.
 
+## Helper activation writer (v217–v219)
+
+The `0x0050c820` constructor initializes the helper byte at `object + 0x0c` to
+zero, and cleanup `0x0050c830` also clears it. Static decompilation identifies
+`0x0050cba0` as the positive setter: after the device methods at vtable offsets
+`0x11c` and `0x1c4` succeed and the latter returns a nonzero value, it stores
+one at `object + 0x0c`. The observed static call path is
+`0x0050d610 -> 0x00500970 -> 0x0049eb30 -> 0x0050cba0`.
+
+The runtime trace was extended to attach last-writer provenance to each
+`0x0050c880` helper event. The v217 and v218 probes again rendered 120 host
+frames with zero Vulkan validation errors. Across 121 gate evaluations, all
+from `0x0054be00`, the state word at `0x00be2534`, callback object at
+`0x00be2548`, and helper byte at `0x00be250c` remained zero. Every helper-byte
+record identified the same constructor write: `0x0050c820`, receiver
+`0x00be2500`, caller `0x004eb550`, one byte written at `0x00be250c`. A v218
+call trace configured for caller `0x0049eb30` recorded zero calls.
+
+The v219 run repeated this observation with exact-byte rather than word-level
+last-writer retention. Its fixture writes a neighboring byte after the flag
+and confirms that the target byte's writer remains correctly attributed to
+`0x0050c820`. The v219 trace again records 121 zero helper bytes and no calls
+from `0x0049eb30`.
+
+This bounds the current observation: the sampled gate keeps reaching its
+disabled helper, while the activation route was not observed in these bounded
+runs. It does not show why the UI path is not entered or establish that this
+state prevents frontend progress. The machine-readable results and external
+log hashes are in the
+[v217/v218 evidence](../evidence/retail_frontier_20261019/entrypoint_probe_v217_v218_ui_helper_flag_writer.json)
+and [v219 exact-byte evidence](../evidence/retail_frontier_20261019/entrypoint_probe_v219_ui_helper_exact_writer.json).
+
 ## Artifacts
 
 - [P-code export for the gate](../evidence/revenginstr_ui_gate_pcode_20261019/0050ceb0-flow.tsv)
@@ -210,3 +242,5 @@ D3D9 submissions.
 - [v117 runtime trace with writer ECX](../evidence/retail_frontier_20261019/entrypoint_probe_v117_ui_gate_field_writer_ecx.json)
 - [v117 runtime log](../evidence/retail_frontier_20261019/shift-probe-v117-ui-state-field-writer-ecx-120-validation.log)
 - [v117 writer P-code exports and manifest](../evidence/revenginstr_ui_gate_writer_pcode_20261019/manifest.json)
+- [v217/v218 helper-byte writer trace](../evidence/retail_frontier_20261019/entrypoint_probe_v217_v218_ui_helper_flag_writer.json)
+- [v219 exact-byte helper writer trace](../evidence/retail_frontier_20261019/entrypoint_probe_v219_ui_helper_exact_writer.json)

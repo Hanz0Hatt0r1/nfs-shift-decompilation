@@ -1564,9 +1564,60 @@ struct RecompiledPcodeModule::Impl {
                             static_cast<uint64_t>(callback_vtable) + 0x24c,
                             event.callback_target);
                 } else if (target == kRetailUiStateGateHelperAddress) {
+                    const uint64_t helper_flag_address =
+                        static_cast<uint64_t>(entry_registers.ecx) + 0x0c;
                     event.has_helper_flag_byte = read_guest_diagnostic_u8(
-                        static_cast<uint64_t>(entry_registers.ecx) + 0x0c,
+                        helper_flag_address,
                         event.helper_flag_byte);
+                    if (helper_flag_address <= UINT32_MAX) {
+                        const GuestWriteProvenance* last_writer = nullptr;
+                        const auto target_last_writer =
+                            guest_target_last_writers.find(
+                                static_cast<uint32_t>(helper_flag_address));
+                        if (target_last_writer !=
+                            guest_target_last_writers.end()) {
+                            last_writer = &target_last_writer->second;
+                        } else if (guest_write_provenance_all()) {
+                            const auto word_writer = guest_last_writers.find(
+                                static_cast<uint32_t>(helper_flag_address) &
+                                ~UINT32_C(3));
+                            if (word_writer != guest_last_writers.end() &&
+                                word_writer->second.write_address <=
+                                    helper_flag_address &&
+                                helper_flag_address <
+                                    static_cast<uint64_t>(
+                                        word_writer->second.write_address) +
+                                        word_writer->second.write_size) {
+                                last_writer = &word_writer->second;
+                            }
+                        }
+                        if (last_writer != nullptr) {
+                            const auto& provenance = *last_writer;
+                            auto& trace = event.helper_flag_last_writer;
+                            event.has_helper_flag_last_writer = true;
+                            trace.sequence = provenance.sequence;
+                            trace.dispatch_count = provenance.dispatch_count;
+                            trace.function = provenance.writer_function;
+                            trace.ecx_entry = provenance.writer_ecx;
+                            trace.has_ecx_entry = provenance.has_writer_ecx;
+                            trace.caller_function =
+                                provenance.writer_caller_function;
+                            trace.has_caller_function =
+                                provenance.has_writer_caller_function;
+                            trace.call_return_address =
+                                provenance.writer_call_return_address;
+                            trace.has_call_return_address =
+                                provenance.has_writer_call_return_address;
+                            trace.caller_return_address =
+                                provenance.writer_caller_return_address;
+                            trace.has_caller_return_address =
+                                provenance.has_writer_caller_return_address;
+                            trace.thread_id = provenance.thread_id;
+                            trace.write_address = provenance.write_address;
+                            trace.write_size = provenance.write_size;
+                            trace.word_value = provenance.word_value;
+                        }
+                    }
                     uint32_t helper_vtable = 0;
                     event.has_callback_target =
                         read_guest_diagnostic_u32(entry_registers.ecx,
@@ -2091,6 +2142,18 @@ struct RecompiledPcodeModule::Impl {
             record.write_size = static_cast<uint32_t>(size);
             record.word_value = word_value;
             guest_last_writers[static_cast<uint32_t>(word_address)] = record;
+            if (!guest_write_provenance_all()) {
+                for (const uint32_t target : targets) {
+                    if (target < offset || target >= end) continue;
+                    if (guest_target_last_writers.size() >=
+                            kGuestWriteProvenanceWordLimit &&
+                        guest_target_last_writers.find(target) ==
+                            guest_target_last_writers.end()) {
+                        guest_target_last_writers.clear();
+                    }
+                    guest_target_last_writers[target] = record;
+                }
+            }
         }
     }
 
@@ -9552,6 +9615,8 @@ struct RecompiledPcodeModule::Impl {
     bool guest_write_provenance_all_flag = false;
     std::vector<uint32_t> guest_write_provenance_targets_cache;
     std::unordered_map<uint32_t, GuestWriteProvenance> guest_last_writers;
+    std::unordered_map<uint32_t, GuestWriteProvenance>
+        guest_target_last_writers;
     std::unordered_map<std::string, uint32_t> guest_module_handles;
     std::unordered_map<uint32_t, std::string> guest_module_names;
     std::string guest_last_load_library_name;

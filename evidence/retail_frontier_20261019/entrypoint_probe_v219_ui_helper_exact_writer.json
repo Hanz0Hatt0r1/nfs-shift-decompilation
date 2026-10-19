@@ -1,0 +1,75 @@
+{
+  "format": "SHIFT.RetailUiHelperFlagWriterProbe/1",
+  "source_base_commit": "ecbb2be7580231f3be6ea1857a8044df1b9f6731",
+  "runtime_binary_sha256": "6320ff0b2c9450a35c0e91b13b303f640f7a2a19159bb8a0c0a751ee4e324cbb",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "module_set_evidence": "entrypoint_probe_v215_supplement_replay.json",
+  "probe_bounds": {
+    "frames_requested": 120,
+    "timeout_seconds": 180,
+    "validation": true,
+    "mesh_fixture": "temporary synthetic triangle MGEO; not retail evidence"
+  },
+  "run": {
+    "status": "host-frame-loop",
+    "dispatches": 96082,
+    "unique_functions": 1559,
+    "frames_rendered": 120,
+    "validation_errors": 0,
+    "guest_main_thread_function": "0x006472d0",
+    "worker_waiting_count": 4,
+    "d3d9_clear_requests": 122,
+    "vulkan_clear_submissions": 120,
+    "d3d9_present_requests": 121,
+    "vulkan_present_submissions": 120,
+    "guest_draw_translation": false,
+    "probe_report": "artifacts/frontier/v219-ui-helper-exact-writer.json",
+    "probe_report_sha256": "7dca3b05d06a56ddf798b13df16031d8556387a935f509796993a4ef21fae3ed",
+    "probe_log": "artifacts/frontier/v219-ui-helper-exact-writer-120-validation.log",
+    "probe_log_sha256": "527419b9a56d15530daca8c9b412d5e43e190d3aca3fc9c90a1c3bd862922c77"
+  },
+  "ui_gate_trace": {
+    "trace_events": 484,
+    "gate_function": "0x0050ceb0",
+    "gate_calls": 121,
+    "gate_callers": {
+      "0x0054be00": 121
+    },
+    "gate_state_word_values": {
+      "0x00000000": 121
+    },
+    "callback_object_values": {
+      "0x00000000": 121
+    },
+    "helper_function": "0x0050c880",
+    "helper_calls": 121,
+    "helper_flag_byte_values": {
+      "0x00": 121
+    },
+    "helper_flag_last_writer": {
+      "function": "0x0050c820",
+      "ecx_entry": "0x00be2500",
+      "caller_function": "0x004eb550",
+      "call_return_address": "0x004eb559",
+      "caller_return_address": "0x00545cd5",
+      "write_address": "0x00be250c",
+      "write_size": 1,
+      "word_value": "0x00000000",
+      "observations": 121
+    },
+    "activation_call_trace": {
+      "caller_function": "0x0049eb30",
+      "events": 0
+    }
+  },
+  "instrumentation_regression": {
+    "test": "shift_runtime_recompiled_pcode_module",
+    "result": "passed",
+    "adjacent_byte_write_does_not_replace_target_byte_provenance": true
+  },
+  "interpretation": [
+    "The exact-byte writer trace confirms the v217/v218 observation with the final instrumentation build.",
+    "The state word and helper byte remain zero; the only observed helper-byte writer is its constructor, and no calls from the static activation caller were recorded.",
+    "The probe remains at the host-frame-loop checkpoint. Retail rendering, frontend readiness, and an offline race remain unproven."
+  ]
+}

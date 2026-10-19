@@ -212,6 +212,53 @@ std::string format_ui_state_gate_trace(
         } else {
             text << "null";
         }
+        text << ",\"helper_flag_last_writer\":";
+        if (event.has_helper_flag_last_writer) {
+            const auto& writer = event.helper_flag_last_writer;
+            text << "{\"sequence\":" << writer.sequence
+                 << ",\"dispatch_count\":" << writer.dispatch_count
+                 << ",\"function\":\""
+                 << format_guest_address(writer.function)
+                 << "\",\"ecx_entry\":";
+            if (writer.has_ecx_entry) {
+                text << '\"' << format_guest_address(writer.ecx_entry)
+                     << '\"';
+            } else {
+                text << "null";
+            }
+            text << ",\"caller_function\":";
+            if (writer.has_caller_function) {
+                text << '\"' << format_guest_address(writer.caller_function)
+                     << '\"';
+            } else {
+                text << "null";
+            }
+            text << ",\"call_return_address\":";
+            if (writer.has_call_return_address) {
+                text << '\"'
+                     << format_guest_address(writer.call_return_address)
+                     << '\"';
+            } else {
+                text << "null";
+            }
+            text << ",\"caller_return_address\":";
+            if (writer.has_caller_return_address) {
+                text << '\"'
+                     << format_guest_address(writer.caller_return_address)
+                     << '\"';
+            } else {
+                text << "null";
+            }
+            text << ",\"thread_id\":\""
+                 << format_guest_address(writer.thread_id)
+                 << "\",\"write_address\":\""
+                 << format_guest_address(writer.write_address)
+                 << "\",\"write_size\":" << writer.write_size
+                 << ",\"word_value\":\""
+                 << format_guest_address(writer.word_value) << "\"}";
+        } else {
+            text << "null";
+        }
         text << ",\"helper_flag_byte\":";
         if (event.has_helper_flag_byte) {
             text << '"' << "0x" << std::hex << std::setw(2)

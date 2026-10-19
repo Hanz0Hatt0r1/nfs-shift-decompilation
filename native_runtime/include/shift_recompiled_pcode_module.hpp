@@ -19,6 +19,24 @@ struct Pe32ImageInfo {
     uint32_t import_stub_base = 0;
 };
 
+struct RecompiledGuestWriteTrace {
+    uint64_t sequence = 0;
+    uint64_t dispatch_count = 0;
+    uint32_t function = 0;
+    uint32_t ecx_entry = 0;
+    uint32_t caller_function = 0;
+    uint32_t call_return_address = 0;
+    uint32_t caller_return_address = 0;
+    uint32_t thread_id = 0;
+    uint32_t write_address = 0;
+    uint32_t write_size = 0;
+    uint32_t word_value = 0;
+    bool has_ecx_entry = false;
+    bool has_caller_function = false;
+    bool has_call_return_address = false;
+    bool has_caller_return_address = false;
+};
+
 struct RecompiledUiStateGateTraceEvent {
     uint64_t dispatch_count = 0;
     uint32_t thread_id = 0;
@@ -45,6 +63,7 @@ struct RecompiledUiStateGateTraceEvent {
     uint32_t gate_state_last_writer_word_value = 0;
     uint32_t callback_target = 0;
     uint32_t eax_return = 0;
+    RecompiledGuestWriteTrace helper_flag_last_writer{};
     uint8_t helper_flag_byte = 0;
     bool has_gate_state_word = false;
     bool has_gate_callback_object = false;
@@ -58,6 +77,7 @@ struct RecompiledUiStateGateTraceEvent {
     bool has_gate_state_last_writer_ancestor_return_address = false;
     bool has_callback_target = false;
     bool has_helper_flag_byte = false;
+    bool has_helper_flag_last_writer = false;
     bool completed = false;
 };
 
