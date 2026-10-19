@@ -89,6 +89,16 @@ struct RecompiledGuestCallTraceMemorySlot {
     bool has_last_writer = false;
 };
 
+struct RecompiledGuestCallTraceStringSlot {
+    uint32_t offset = 0;
+    uint32_t address = 0;
+    std::string value;
+    bool has_address = false;
+    bool has_value = false;
+    bool terminated = false;
+    bool truncated = false;
+};
+
 struct RecompiledGuestCallTraceEvent {
     uint64_t dispatch_count = 0;
     uint64_t completion_dispatch_count = 0;
@@ -101,14 +111,18 @@ struct RecompiledGuestCallTraceEvent {
     uint32_t eax_entry = 0;
     uint32_t eax_return = 0;
     uint32_t edx_entry = 0;
+    uint32_t edi_entry = 0;
+    uint32_t edi_return = 0;
     std::string import_name;
     bool has_return_address = false;
     bool has_eax_return = false;
+    bool has_edi_return = false;
     bool is_import = false;
     bool completed = false;
     std::vector<RecompiledGuestCallTraceMemorySlot> caller_slots;
     std::vector<RecompiledGuestCallTraceMemorySlot> target_slots;
     std::vector<RecompiledGuestCallTraceMemorySlot> stack_slots;
+    std::vector<RecompiledGuestCallTraceStringSlot> string_slots;
 };
 
 struct RecompiledGuestD3d9PresentationParameters {
@@ -199,6 +213,7 @@ struct RecompiledGuestSchedulerSnapshot {
     std::vector<uint32_t> guest_call_trace_slot_offsets;
     std::vector<uint32_t> guest_call_trace_target_slot_offsets;
     std::vector<uint32_t> guest_call_trace_stack_slot_offsets;
+    std::vector<uint32_t> guest_call_trace_string_slot_offsets;
     std::vector<RecompiledGuestCallTraceEvent> guest_call_trace;
     size_t ready_thread_count = 0;
     size_t worker_thread_count = 0;

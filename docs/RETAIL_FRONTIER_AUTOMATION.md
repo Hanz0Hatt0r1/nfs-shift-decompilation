@@ -103,6 +103,12 @@ the call is still pending.
 `SHIFT_TRACE_GUEST_CALL_IMPORTS=KERNEL32.dll!SetEvent,KERNEL32.dll!ResetEvent`
 selects named imported API calls independent of their synthetic stub addresses;
 import events carry the same caller, return address, and stack slots.
+`SHIFT_TRACE_GUEST_CALL_STRING_SLOTS=0x4` additionally samples bounded
+printable ASCII C strings from selected calls' entry stack arguments. Each
+`string_slots` item records its stack offset, guest pointer, captured value,
+whether a terminator was seen, and whether the 256-byte sample limit was hit.
+This is opt-in and complements the numeric `stack_slots`; it is intended for
+inspecting paths passed to APIs such as `CreateFileA` without dumping guest RAM.
 
 The v217/v218 bounded runs reproduce the same 96,082-dispatch, 1,559-function
 host-frame-loop checkpoint with 120 Vulkan clear and 120 present submissions,
@@ -176,12 +182,100 @@ The selected trace recorded 13 `SetThreadPriority` calls and seven
 [v247 worker-loop record](../evidence/retail_frontier_20261019/entrypoint_probe_v247_post_wake_worker_loop.json)
 and [v248 priority record](../evidence/retail_frontier_20261019/entrypoint_probe_v248_thread_priority.json).
 
-The readiness update remains unresolved. Continue from the pending request
-path through `0x0066cc00` / `0x00653480` and the readiness checks, correlating
-the request state with worker-visible completion instead of treating this
-priority update as delivered work. These runs remain bounded 120-frame
-host-frame-loop probes with no guest draw translation; they do not establish
-frontend readiness or gameplay rendering.
+The v249–v252 probes follow the request through the worker queue. In v249,
+`0x00650350` calls `0x0064fef0`, `0x00650290`, and `0x0064f530`; the last call
+successfully signals auto-reset event `0x60004`. The async-file worker
+(`0x00010000`) wakes from its pending wait and dispatches operation 3 through
+`0x006671b0` to callback `0x00655ab0` on receiver `0x27ed9284` (v250/v251).
+The callback returns status 4. Its guard `0x00655440` calls `CreateFileA` with
+read-only access, but the API returns `0xffffffff`; the worker then takes its
+status-4 path, and readiness fields remain unchanged (v252). This explains why
+the event wake alone did not complete the UI request. The file path pointer
+`0x28249b16` was visible, but its string was not captured in v252. The next
+probe uses the opt-in string-slot trace to record that path and identify the
+resource lookup failure. See the [v249–v252 worker evidence](../evidence/retail_frontier_20261019/entrypoint_probe_v249_v252_async_file_frontier.json)
+and the [activation-frontier analysis](SHIFT_RETAIL_UI_ACTIVATION_FRONTIER_20261019.md).
+All four probes remain bounded 120-frame host-frame-loop runs with no guest
+draw translation; they do not establish frontend readiness or gameplay
+rendering.
+
+The v253/v254 follow-up captures the file path and fixes the resulting generic
+Linux path lookup gap. The worker passes `C:\\pakfiles\\bootpersistent.bff`;
+the installed retail file is `Pakfiles/BOOTPERSISTENT.bff`. Before the fix,
+`CreateFileA` returned `0xffffffff`. The guest path resolver now resolves
+existing ASCII path components without case sensitivity, while keeping the
+resolved canonical path inside the game-data root. The mixed-case fixture
+regression passes. In v254, `CreateFileA` opens the retail file and the caller
+consumes `GetFileSize` result `0x00156c72`, then P-code function `0x005f1830`
+returns `-1` at 71,631 dispatches. This advances the file path but does not
+reach the bounded host-frame loop; no frontend or rendering claim follows.
+See the [case-folded file lookup evidence](../evidence/retail_frontier_20261019/entrypoint_probe_v253_v254_casefold_file_lookup.json).
+
+The v256 failure trace exposes a second P-code lowering boundary. Static PE
+evidence and the sampled guest vtable agree that `0x005f1830` loads the vtable
+from `[ECX]` and tail-dispatches through `[EAX+8]` to `0x0066cd60`. The
+generated function only accepts its two internal branch addresses and returns
+`-1` for this external target. A tested address-specific override in the
+frontier module now preserves that instruction sequence and hands the target
+to the runtime dispatcher. In v257, `0x0066cd60`, `0x0066bbf0` and
+`0x0066ccc0` all complete; execution advances nine dispatches and seven unique
+functions before stopping at missing export `0x00652b13`, called from
+`0x00652af0`. The probe still does not reach the host-frame loop, and proves
+neither frontend readiness nor rendering. See the [v256/v257 machine record](../evidence/retail_frontier_20261019/entrypoint_probe_v256_v257_indirect_tail_frontier.json).
+
+The v258–v273 cumulative sequence resolves the async-file and P-code chain, then
+separates a bad indirect target from a split-continuation return. `ReadFileEx`
+uses the `OVERLAPPED` offset and queues its callback for the initiating guest
+thread's alertable wait. The path then reaches the exact virtual dispatcher
+`0x005b0d50`, request handler `0x0066cc70`, and CRC32 worker `0x0066caf0`.
+Flattening the CRC worker's direct-jump loop avoids one nested runtime dispatch
+per input byte. v261 reaches 457,430 dispatches / 1,727 unique functions and
+stops at `0x00509689`; the subsequent recovered blocks `0x00509e60` and
+`0x0050967d` advance to 515,860 / 1,751.
+
+v264 stops at indirect call target `0x27f30a50` from `0x0040ba50`. The runtime
+now traces unresolved targets: v266 records return address `0x0040bb04`, which
+places the failing `CALL EAX` at `0x0040bb02`. v267 provenance identifies the
+actual table slot at `0x27f30a90`: allocator `0x00427330` wrote pool address
+`0x27f30a50` there. The first word at that target is `0x0b`; this is pool data,
+not a P-code function address. Do not add a dynamic-code adapter for it.
+
+The selected-call trace then shows a separate register issue. In v268–v270,
+`0x0054bb20` returns with `EDI` changed from `0x27e31278` to `0x27f30a98`.
+v269 narrows the change to nested `0x005093a0`; v270 shows `0x005089c0`
+preserves `EDI`, while the `0x0050958c` continuation returns with `EDI` changed
+and `EAX == 3`. Ghidra shows that this continuation belongs to the active
+`0x005093a0` frame and reaches a shared callee-saved-register epilogue. The
+separately dispatched continuation can return before that epilogue, leaving
+the parent frame active. The `0x0050967d` adapter now completes that epilogue
+only when `ESP == EBP - 0x18`, restoring saved `EDI`/`ESI`/`EBX`/`EBP`, the
+expected `ESP`, and the function's zero return value. Its fixture covers both
+the tail continuation and this active-frame case.
+
+v271 advances to missing export `0x005095f0`, called from `0x00509551`, at
+516,250 dispatches / 1,751 unique functions. This confirms the previous
+heap-address stop was caused by the incomplete continuation return; it does
+not reach the host-frame loop. One-dispatch fluctuations in v267–v270 keep the
+same blocker and unique-function count, so they are treated as probe noise.
+The `0x005095f0` state-3 adapter advances v272 to missing initializer
+`0x0054b560`, called from `0x005088e0`, at 516,254 / 1,752. Ghidra 12.1.2
+instructions lowered through revenginstr produce a 20-instruction, 48-op
+initializer body; its fixture verifies helper order, receiver values, `RET 4`
+cleanup, ESI preservation, and return value 7.
+
+v273 executes that initializer and reaches missing export `0x0085b0b0` from
+`0x0040e630`, at 518,457 dispatches / 1,789 unique functions. Byte-level
+disassembly of the pinned PE shows the exact two-instruction body:
+`MOV AL,[ECX+0x32f]; RET`. Its adapter preserves EAX's high bytes and models the
+guest return. The cumulative v274 trace confirms entry EAX=`0x0085b0b0`,
+return EAX=`0x0085b000`, and unchanged EDI; the sampled receiver byte is zero.
+The run advances to missing export `0x0082f600` from `0x0040d910`, at 524,846
+dispatches / 2,006 unique functions. That stateful body is the next recovery
+target. Exact per-run hashes, lowering provenance, and object/register evidence
+are in the
+[v258–v274 machine record](../evidence/retail_frontier_20261019/entrypoint_probe_v258_v274_pcode_worker_frontier.json).
+All runs remain bounded startup probes before the host-frame loop. They do not
+establish frontend readiness, retail draw translation, or gameplay rendering.
 
 The v120 caller-call trace independently maps the common tail of `0x0054be00`:
 the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the

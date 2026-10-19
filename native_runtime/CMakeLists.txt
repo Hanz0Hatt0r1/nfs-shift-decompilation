@@ -487,11 +487,22 @@ target_compile_options(shift_recompiled_pcode_module PRIVATE
 add_library(shift_runtime_pcode_frontier MODULE
   pcode_frontier/rvi_0040ec70.c
   pcode_frontier/rvi_004d1f10.c
+  pcode_frontier/rvi_005f1830.c
+  pcode_frontier/rvi_005b0d50.c
+  pcode_frontier/rvi_00509689.c
+  pcode_frontier/rvi_0050967d.c
+  pcode_frontier/rvi_00509e60.c
+  pcode_frontier/rvi_00652af0.c
+  pcode_frontier/rvi_0066caf0.c
+  pcode_frontier/rvi_0066cc70.c
+  pcode_frontier/rvi_0085b0b0.c
   pcode_frontier/rvi_00509551.c
+  pcode_frontier/rvi_005095f0.c
   pcode_frontier/rvi_00509588.c
   pcode_frontier/rvi_0050958c.c
   pcode_frontier/rvi_0050968e.c
   pcode_frontier/rvi_0050c8a9.c
+  pcode_frontier/rvi_0054b560.c
   pcode_frontier/rvi_0054be00.c
   pcode_frontier/rvi_006470e0.c
   pcode_frontier/rvi_00647d80.c
@@ -503,6 +514,8 @@ add_library(shift_runtime_pcode_frontier MODULE
   pcode_frontier/rvi_00907e4f.c)
 set_target_properties(shift_runtime_pcode_frontier PROPERTIES
   OUTPUT_NAME nfs_shift_pcode_frontier)
+target_include_directories(shift_runtime_pcode_frontier PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(shift_runtime_pcode_frontier PRIVATE m)
 
 if(BUILD_TESTING)
@@ -518,6 +531,15 @@ if(BUILD_TESTING)
     tests/recompiled_pcode_override_fixture.c)
   target_include_directories(shift_runtime_test_pcode_override_module PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  add_library(shift_runtime_test_pcode_frontier_block SHARED
+    pcode_frontier/rvi_005095f0.c
+    pcode_frontier/rvi_0050967d.c
+    pcode_frontier/rvi_0054b560.c
+    pcode_frontier/rvi_0085b0b0.c
+    tests/recompiled_pcode_frontier_block_fixture.c)
+  target_include_directories(shift_runtime_test_pcode_frontier_block PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  target_link_libraries(shift_runtime_test_pcode_frontier_block PRIVATE m)
   add_executable(shift_runtime_recompiled_pcode_module_check
     tests/recompiled_pcode_module_check.cpp)
   target_link_libraries(shift_runtime_recompiled_pcode_module_check PRIVATE
@@ -525,7 +547,9 @@ if(BUILD_TESTING)
   add_dependencies(shift_runtime_recompiled_pcode_module_check
     shift_runtime_test_pcode_module
     shift_runtime_test_pcode_supplement_module
-    shift_runtime_test_pcode_override_module)
+    shift_runtime_test_pcode_override_module
+    shift_runtime_test_pcode_frontier_block
+    shift_runtime_pcode_frontier)
   add_test(
     NAME shift_runtime_recompiled_pcode_module
     COMMAND shift_runtime_recompiled_pcode_module_check
@@ -536,7 +560,9 @@ if(BUILD_TESTING)
       ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_raise_exception_test_image.exe
       ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_time_get_time_test_image.exe
       ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_system_parameters_info_test_image.exe
-      ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_d3d9_test_image.exe)
+      ${CMAKE_CURRENT_BINARY_DIR}/recompiled_pcode_d3d9_test_image.exe
+      $<TARGET_FILE:shift_runtime_pcode_frontier>
+      $<TARGET_FILE:shift_runtime_test_pcode_frontier_block>)
 endif()
 
 add_executable(shift_runtime src/shift_runtime.cpp)
