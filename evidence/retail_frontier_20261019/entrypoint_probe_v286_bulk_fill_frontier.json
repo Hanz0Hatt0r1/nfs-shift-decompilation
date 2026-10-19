@@ -1,0 +1,99 @@
+{
+  "format": "SHIFT.RetailStartupBulkFillFrontier/1",
+  "probe_version": "v286",
+  "runtime_revision": "207dc38b0e821f9c735334aace46ccb1d9e38a69",
+  "runtime_worktree_changes": [
+    "native_runtime/include/shift_recompiled_pcode_abi.h",
+    "native_runtime/src/recompiled_pcode_module.cpp",
+    "native_runtime/pcode_frontier/rvi_0090e50d.c",
+    "native_runtime/CMakeLists.txt",
+    "native_runtime/tests/recompiled_pcode_module_check.cpp"
+  ],
+  "change": {
+    "guest_function": "0x0090e50d",
+    "semantics": "bounds-checked byte fill with cdecl return state",
+    "implementation": "checked runtime fill callback using host memset",
+    "selected_write_provenance": "records only targeted words overlapping a bulk fill",
+    "regression": "200 KiB unaligned fill, boundary sentinels, register preservation, and zero-length call pass"
+  },
+  "retail_input": {
+    "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "module_set_reference": "entrypoint_probe_v215_supplement_replay.json",
+    "frames_requested": 1,
+    "timeout_seconds": 120,
+    "validation": true
+  },
+  "probe": {
+    "status": "timeout",
+    "exit_code": 124,
+    "pe_image_loaded": true,
+    "dispatches": null,
+    "unique_functions": null,
+    "frames_rendered": null,
+    "log_sha256": "995e5afb959d003e3c48f71228e163fc0a795f830b1642fea3a9cc5ea3bc67d5",
+    "log": "external artifact retail-startup-v286-bulk-fill-1-validation.log; only the PE-load diagnostic was emitted",
+    "report": "external artifact frontier/v286-bulk-fill.json"
+  },
+  "live_native_stack_snapshots": [
+    {
+      "main_thread": [
+        "rvi_read_value",
+        "rvi_00678e70",
+        "RecompiledPcodeModule::Impl::dispatch",
+        "rvi_call",
+        "rvi_006793d0",
+        "RecompiledPcodeModule::Impl::dispatch",
+        "rvi_call",
+        "rvi_00678480",
+        "RecompiledPcodeModule::Impl::dispatch",
+        "rvi_call",
+        "rvi_00675420",
+        "RecompiledPcodeModule::Impl::dispatch",
+        "rvi_call",
+        "rvi_0066f680"
+      ],
+      "capture": "GDB backtrace of live shift_runtime process"
+    },
+    {
+      "main_thread": [
+        "rvi_read_bytes",
+        "rvi_read_space",
+        "rvi_00679760",
+        "RecompiledPcodeModule::Impl::dispatch",
+        "rvi_call",
+        "rvi_00679aa0",
+        "RecompiledPcodeModule::Impl::dispatch",
+        "rvi_call",
+        "rvi_00678480",
+        "RecompiledPcodeModule::Impl::dispatch",
+        "rvi_call",
+        "rvi_00675420",
+        "RecompiledPcodeModule::Impl::dispatch",
+        "rvi_call",
+        "rvi_0066f680"
+      ],
+      "capture": "GDB backtrace of live shift_runtime process near the timeout"
+    }
+  ],
+  "static_analysis": {
+    "addresses": [
+      "0x0066f680",
+      "0x00675420",
+      "0x00678480",
+      "0x00679760",
+      "0x00679aa0"
+    ],
+    "observation": "The caller processes input in blocks; its nested routines access bit/symbol tables and emit output bytes.",
+    "interpretation": "The stack is consistent with a table-driven compressed-stream decode path; the exact resource and codec have not been established."
+  },
+  "interpretation": {
+    "previous_zero_fill_stack_present": false,
+    "guest_execution_advanced_past_0090e50d": true,
+    "dispatch_count_or_frontier_advance_measured": false,
+    "host_frame_loop_reached": false,
+    "guest_draw_translation_proven": false,
+    "vulkan_guest_submission_proven": false,
+    "d3dx_effect_call_or_find_next_call_proven": false,
+    "next_step": "Profile and identify the table-driven guest decode path, then optimize only a verified hot helper; do not infer effect or Vulkan failure from this timeout."
+  }
+}

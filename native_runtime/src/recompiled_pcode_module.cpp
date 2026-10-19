@@ -791,7 +791,7 @@ struct RecompiledPcodeModule::Impl {
                                      std::string(error ? error : "unknown dlopen error"));
         }
         context = {this, &read_callback, &write_callback,
-                   &call_callback, &userop_callback};
+                   &call_callback, &userop_callback, &fill_callback};
     }
 
     ~Impl() {
@@ -821,6 +821,12 @@ struct RecompiledPcodeModule::Impl {
                               size_t size, const uint8_t* input) {
         auto* self = static_cast<Impl*>(opaque);
         return self && self->write_guest(space, offset, size, input) ? 0 : -1;
+    }
+
+    static int fill_callback(void* opaque, const char* space, uint64_t offset,
+                             uint8_t value, size_t size) {
+        auto* self = static_cast<Impl*>(opaque);
+        return self && self->fill_guest(space, offset, value, size) ? 0 : -1;
     }
 
     static int call_callback(void* opaque, uint64_t target) {
@@ -2330,7 +2336,8 @@ struct RecompiledPcodeModule::Impl {
             return;
         }
         const auto& targets = guest_write_provenance_targets();
-        if (!guest_write_provenance_all() && targets.empty()) return;
+        const bool all = guest_write_provenance_all();
+        if (!all && targets.empty()) return;
         const uint64_t end = offset + size;
         if (end > kGuestRamSize) return;
 
@@ -2340,17 +2347,8 @@ struct RecompiledPcodeModule::Impl {
         const uint32_t writer_function =
             active_guest_functions.empty() ? 0 : active_guest_functions.back();
 
-        for (uint64_t word_address = first_word;
-             word_address <= last_word; word_address += sizeof(uint32_t)) {
-            if (!guest_write_provenance_all() &&
-                std::none_of(targets.begin(), targets.end(),
-                             [word_address](uint32_t address) {
-                                 return (address & ~UINT32_C(3)) ==
-                                        word_address;
-                             })) {
-                continue;
-            }
-            if (guest_write_provenance_all() &&
+        const auto record_word = [&](uint64_t word_address) {
+            if (all &&
                 guest_last_writers.size() >=
                     kGuestWriteProvenanceWordLimit &&
                 guest_last_writers.find(
@@ -2359,7 +2357,7 @@ struct RecompiledPcodeModule::Impl {
                 guest_last_writers.clear();
             }
             uint32_t word_value = 0;
-            if (!read_guest_diagnostic_u32(word_address, word_value)) continue;
+            if (!read_guest_diagnostic_u32(word_address, word_value)) return;
             GuestWriteProvenance record{};
             record.sequence = sequence;
             record.dispatch_count = function_count;
@@ -2407,7 +2405,7 @@ struct RecompiledPcodeModule::Impl {
             record.write_size = static_cast<uint32_t>(size);
             record.word_value = word_value;
             guest_last_writers[static_cast<uint32_t>(word_address)] = record;
-            if (!guest_write_provenance_all()) {
+            if (!all) {
                 for (const uint32_t target : targets) {
                     if (target < offset || target >= end) continue;
                     if (guest_target_last_writers.size() >=
@@ -2419,6 +2417,18 @@ struct RecompiledPcodeModule::Impl {
                     guest_target_last_writers[target] = record;
                 }
             }
+        };
+        if (all) {
+            for (uint64_t word_address = first_word;
+                 word_address <= last_word; word_address += sizeof(uint32_t)) {
+                record_word(word_address);
+            }
+            return;
+        }
+        for (const uint32_t target : targets) {
+            const uint64_t word_address = target & ~UINT32_C(3);
+            if (word_address >= first_word && word_address <= last_word)
+                record_word(word_address);
         }
     }
 
@@ -10449,6 +10459,46 @@ struct RecompiledPcodeModule::Impl {
             return true;
         }
         error = "unsupported P-code address space: " + std::string(space);
+        return false;
+    }
+
+    bool fill_guest(const char* space, uint64_t offset, uint8_t value,
+                    size_t size) {
+        if (!space) {
+            error = "invalid P-code memory fill request";
+            return false;
+        }
+        if (std::strcmp(space, "register") == 0) {
+            if (offset > kRegisterBankSize ||
+                size > kRegisterBankSize - static_cast<size_t>(offset)) {
+                error = "P-code register fill is out of range";
+                return false;
+            }
+            if (size != 0)
+                std::memset(registers.data() + offset, value, size);
+            return true;
+        }
+        if (std::strcmp(space, "ram") == 0) {
+            if (size == 0) return true;
+            if (offset < kGuestMinimumUserAddress) {
+                char access[112]{};
+                std::snprintf(
+                    access, sizeof(access),
+                    "P-code RAM fill at 0x%08x size %zu touched reserved low memory",
+                    static_cast<uint32_t>(offset), size);
+                error = access;
+                append_guest_stack();
+                return false;
+            }
+            if (offset > kGuestRamSize || size > kGuestRamSize - offset) {
+                error = "P-code RAM fill is out of range";
+                return false;
+            }
+            std::memset(static_cast<uint8_t*>(ram) + offset, value, size);
+            record_guest_write_provenance(offset, size);
+            return true;
+        }
+        error = "unsupported P-code fill address space: " + std::string(space);
         return false;
     }
 

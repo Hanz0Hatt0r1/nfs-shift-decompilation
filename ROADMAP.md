@@ -74,17 +74,17 @@ The renderer logic above the D3D9 boundary should remain original wherever possi
 | P-code operations covered | **9,600,713** |
 | Linux lowered module | **Full corpus links as native ELF exports** |
 | Original PE32 image loading | **Implemented** |
-| Original PE32 execution | **v194 and the cumulative v215/v217/v218 probes reach the host frame loop after 96,082 guest dispatches / 1,559 unique functions; the main thread remains active at `0x006472d0`, with four workers waiting. Across 120 host frames, 120 of 122 guest Clear requests and 120 of 121 Present requests were submitted through Vulkan with zero validation errors. The report remains `host-frame-loop`; no retail draw or frontend is proven.** |
+| Original PE32 execution | **The pinned v215 replay reaches the host frame loop after 96,082 guest dispatches / 1,559 unique functions; the main thread remains active at `0x006472d0`, with four workers waiting. The v284–v286 post-effect replay has no usable frontier report and times out after PE load. v285's stack was in the guest zero-fill helper; v286 replaces that hot operation with a bounds-checked bulk fill and samples later table-driven decode functions, but still has no dispatch count or frame-loop proof. The exact resource and codec remain unknown.** |
 | Import/IAT dispatch | **Implemented with fail-closed API boundary** |
 | Guest threads | **Cooperative multi-thread scheduling implemented** |
 | Vulkan runtime shell | **Operational on Linux** |
-| D3D9 startup compatibility | **The observed 1024×4096 render-target texture and 128 KiB vertex buffer allocate Vulkan resources. Clear now drives a Vulkan color/depth/stencil clear, and the observed null-argument Present queues a Vulkan swapchain frame. Guest draw calls are not translated.** |
+| D3D9 startup compatibility | **The observed 1024×4096 render-target texture and 128 KiB vertex buffer allocate Vulkan resources. Clear now drives a Vulkan color/depth/stencil clear, and the observed null-argument Present queues a Vulkan swapchain frame. The captured D3DX9 effect binary parses and is wrapped by a partial `ID3DXEffect` COM object; shader creation/binding and effect technique application remain unavailable. Guest draw calls are not translated.** |
 | D3D9 capture tooling | **The 2026-10-18 windows recorded 13,069 indexed draws and 813 target draws; a 2026-10-19 bounded follow-up added 119 draws and 1,806 stream-1 payload events for a separate 128 KiB generation, with 109/119 spatial input ranges covered. The adjacent game-owned replay cache records 16 participants across five vehicle IDs, but does not identify a model per draw. The older generation's payload, original retail resource paths, and per-bind immutable texture identity remain unproven** |
 | Complete D3D9 -> Vulkan game backend | **Not implemented** |
 | Host-architecture-neutral runtime | **Not yet proven** |
 | ARM64 lowered-runtime execution | **Generic P-code fixture passes; full corpus/runtime not yet proven** |
 | Android platform layer | **Not implemented** |
-| Retail main loop | **v114's 1,800-frame and v191–v194's 120-frame host probes leave the PE entry point active at `0x006472d0` with four workers waiting. Entry-point return is not the completion target.** |
+| Retail main loop | **v114's 1,800-frame, v191–v194's 120-frame, and pinned v215's 120-frame host probes leave the PE entry point active at `0x006472d0` with four workers waiting. The later pinned effect replay, including v286's post-zero-fill decode path, times out before yielding a frame-loop snapshot. Entry-point return is not the completion target.** |
 | Frontend and retail rendering | **Not demonstrated by the Linux runtime; guest Clear reaches Vulkan, but no retail D3D9 draw has reached Vulkan** |
 | Retail frontend | **Not reached** |
 | Recompiled Linux offline race | **Not reached; original retail SHIFT was manually brought to a race under PortProton** |

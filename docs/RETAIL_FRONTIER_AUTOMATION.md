@@ -352,6 +352,37 @@ or Vulkan submission is established. The v281 capture remains external. See
 the [v283 effect COM record](../evidence/retail_frontier_20261019/entrypoint_probe_v283_d3dx_effect_com.json)
 and [v284 retail probe record](../evidence/retail_frontier_20261019/entrypoint_probe_v284_d3dx_effect_retail_timeout.json).
 
+The v285 repeat used the same pinned v215 module set, one host frame, Vulkan
+validation, and a 120-second bound. It again timed out after the PE-load
+diagnostic; the parser produced no dispatch count or frame-loop report. A GDB
+snapshot taken while the process was live placed its main thread in generated
+P-code exports `0x0090e4b6`, `0x0090e50d`, `0x009015b0`, and `0x006344c0`.
+The other sampled threads were waiting inside the NVIDIA driver. This locates
+the active native stack in guest P-code, but the bounded snapshot does not
+identify the owning guest call chain, prove that `FindNextValidTechnique` was
+called, or establish that Vulkan is the cause. System I/O pressure was above
+94% during the run, which may have affected timing but does not explain the
+guest stack. See the [v285 stack record](../evidence/retail_frontier_20261019/entrypoint_probe_v285_effect_native_stack.json).
+The subsequent v286 work decompiled the zero-fill helpers and samples the next
+guest path; see the next record before changing effect semantics.
+
+The v286 change implements the exact cdecl byte-fill behavior of
+`0x0090e50d` through a bounds-checked runtime `memset` callback. The
+address-specific P-code adapter retains guest return state, and selected-write
+provenance records only watched words overlapped by the fill. Its fixture
+passes an unaligned 200 KiB fill, boundary sentinels, register-preservation,
+and zero-length cases. The pinned one-frame retail probe still times out at
+120 seconds and emits only the PE-load message, so there is no dispatch-count
+or frame-loop proof. GDB snapshots no longer show the previous
+`0x0090e50d` zero-fill chain; they show `0x0066f680 → 0x00675420 → 0x00678480`
+and nested `0x00679aa0/0x00679760`. Static disassembly shows table-driven
+bit/symbol reads and output-byte writes, consistent with compressed-stream
+decoding, although the exact resource and codec are not established. This is
+evidence that execution passed the zero-fill hot path, not a measured frontier
+advance. See the [v286 record](../evidence/retail_frontier_20261019/entrypoint_probe_v286_bulk_fill_frontier.json).
+The next step is to identify and profile the decode path before choosing a
+second optimization; the timeout does not identify an effect or Vulkan fault.
+
 The v120 caller-call trace independently maps the common tail of `0x0054be00`:
 the `+0x13c` virtual call dispatches `0x00833670` (D3D9 EndScene path), and the
 `+0x130` call dispatches `0x00835d80` (D3D9 Present path), 121 times each in a
