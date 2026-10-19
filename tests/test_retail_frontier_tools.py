@@ -11,6 +11,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
@@ -109,6 +111,16 @@ class RetailFrontierTests(unittest.TestCase):
         self.assertNotIn("source_hex", raw)
         self.assertFalse(record["binary_effect_structure"]["shader_bytecode_committed"])
 
+    def test_v290_decoder_record_keeps_static_and_runtime_evidence_separate(self):
+        path = ROOT / "evidence/retail_frontier_20261019/entrypoint_probe_v290_decoder_framing.json"
+        record = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(record["format"], "SHIFT.RetailDecoderFraming/1")
+        self.assertEqual(record["wrapper"]["address"], "0x0066f680")
+        self.assertEqual(record["wrapper"]["input_framing"]["reserved_trailing_bytes"], 5)
+        self.assertEqual(record["runtime_probes"][1]["status"], "timeout")
+        self.assertFalse(record["runtime_probes"][1]["guest_decoder_breakpoint_hit"])
+        self.assertFalse(record["interpretation"]["adapter_ready"])
+
     def test_frame_loop_is_not_retail_rendering(self):
         data = {
             "format": "SHIFT.NativeRuntimeFrameLoop/1",
@@ -166,6 +178,121 @@ class RetailFrontierTests(unittest.TestCase):
             wrong.write_text('{"format":"unrelated"}', encoding="utf-8")
             with self.assertRaises(ValueError):
                 frontier.load_frontier(wrong)
+
+    def test_module_manifest_verifies_paths_and_hashes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            artifacts = root / "artifacts"
+            artifacts.mkdir()
+            override = artifacts / "override.so"
+            supplement = artifacts / "nested" / "supplement.so"
+            supplement.parent.mkdir()
+            override.write_bytes(b"override fixture")
+            supplement.write_bytes(b"supplement fixture")
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({
+                "execution_evidence": {
+                    "additional_overrides": [{
+                        "path": "override.so", "sha256": frontier.sha256(override),
+                    }],
+                    "additional_supplements": [{
+                        "path": "nested/supplement.so",
+                        "sha256": frontier.sha256(supplement),
+                    }],
+                },
+            }), encoding="utf-8")
+
+            loaded = frontier.load_module_manifest(manifest, artifacts)
+            self.assertEqual(loaded["overrides"], [str(override.resolve())])
+            self.assertEqual(loaded["supplements"], [str(supplement.resolve())])
+            self.assertEqual(loaded["evidence"]["overrides"][0]["path"], "override.so")
+            self.assertEqual(loaded["evidence"]["supplements"][0]["path"],
+                             "nested/supplement.so")
+
+            (artifacts / "override.so").write_bytes(b"changed override")
+            with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+                frontier.load_module_manifest(manifest, artifacts)
+
+    def test_module_manifest_rejects_paths_outside_artifacts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            artifacts = root / "artifacts"
+            artifacts.mkdir()
+            outside = root / "outside.so"
+            outside.write_bytes(b"outside")
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({
+                "execution_evidence": {
+                    "additional_supplements": [{
+                        "path": "../outside.so", "sha256": frontier.sha256(outside),
+                    }],
+                },
+            }), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "escapes or is missing"):
+                frontier.load_module_manifest(manifest, artifacts)
+
+    def test_manifest_modules_append_without_discarding_existing_probe_modules(self):
+        env = {"SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS": "/external/already-selected.so"}
+        frontier._append_paths(
+            env, "SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS",
+            ["/external/new.so", "/external/already-selected.so"],
+        )
+        self.assertEqual(
+            env["SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS"].splitlines(),
+            ["/external/already-selected.so", "/external/new.so"],
+        )
+
+    def test_run_cli_loads_manifest_modules_and_records_configuration(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            artifacts = folder / "artifacts"
+            artifacts.mkdir()
+            supplement = artifacts / "supplement.so"
+            supplement.write_bytes(b"supplement fixture")
+            manifest = folder / "manifest.json"
+            manifest.write_text(json.dumps({
+                "execution_evidence": {
+                    "additional_supplements": [{
+                        "path": "supplement.so",
+                        "sha256": frontier.sha256(supplement),
+                    }],
+                },
+            }), encoding="utf-8")
+            runtime = folder / "shift_runtime"
+            runtime.touch()
+            pe = folder / "SHIFT.exe"
+            pe.write_bytes(b"retail fixture")
+            game_data = folder / "game-data"
+            game_data.mkdir()
+            log = folder / "probe.log"
+            output = folder / "report.json"
+            captured = {}
+
+            def fake_run(command, env, check=False):
+                captured["supplements"] = env["SHIFT_ENTRYPOINT_PROBE_EXTRA_SUPPLEMENTS"]
+                Path(command[-1]).write_text(
+                    '{"format":"SHIFT.NativeRuntimeFrameLoop/1",'
+                    '"frames_rendered":1,"validation_errors":0}\n',
+                    encoding="utf-8",
+                )
+                return SimpleNamespace(returncode=0)
+
+            with patch.object(frontier, "RETAIL_SHA256", frontier.sha256(pe)), \
+                    patch.object(frontier.subprocess, "run", side_effect=fake_run):
+                result = frontier.main([
+                    "run", "--runtime", str(runtime), "--artifacts", str(artifacts),
+                    "--build-dir", str(folder / "build"), "--pe", str(pe),
+                    "--game-data", str(game_data), "--module-manifest", str(manifest),
+                    "--frames", "1", "--timeout", "1", "--log", str(log),
+                    "--output", str(output),
+                ])
+
+            self.assertEqual(result, 0)
+            self.assertEqual(captured["supplements"], str(supplement.resolve()))
+            report = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(report["probe_configuration"]["module_manifest"]["supplements"], [{
+                "path": "supplement.so", "sha256": frontier.sha256(supplement),
+            }])
 
     def test_probe_launcher_forwards_extra_overrides(self):
         with tempfile.TemporaryDirectory() as directory:
