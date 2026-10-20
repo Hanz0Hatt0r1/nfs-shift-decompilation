@@ -48,7 +48,11 @@ jobs:
         run: |
           bash -n tools/build_shift_runtime_cached.sh
           python3 -m unittest discover -s tests -p test_retail_frontier_tools.py -v
+          python3 -m unittest discover -s tests -p test_pcode_audit_and_capture_scope.py -v
           mkdir -p out/vulkan/frontier
+          python3 tools/d3d9_capture_scope.py \
+            --audit evidence/retail_frontier_20261018/d3d9_race_window_capture.json \
+            --output out/vulkan/frontier/d3d9-captured-scope.json
           python3 tools/retail_frontier.py inspect \
             --log evidence/retail_frontier_20261019/shift-probe-v173-d3dx-device-map.log \
             --baseline evidence/retail_frontier_20261019/shift-probe-v173-d3dx-device-map.log \

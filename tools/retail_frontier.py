@@ -278,6 +278,12 @@ def main(argv=None) -> int:
                      help="seconds to wait after SIGTERM before killing a timed-out probe")
     run.add_argument("--validation", action="store_true")
     run.add_argument("--build-runtime", action="store_true")
+    run.add_argument("--preflight-corpus", type=Path,
+                     help="audit the instruction corpus and verified return bytes before boot")
+    run.add_argument("--preflight-requirements", type=Path,
+                     help="verified instruction requirements (defaults to pinned 2026-10-20 list)")
+    run.add_argument("--preflight-ctest", action="store_true",
+                     help="run the focused guest P-code CTest before the retail probe")
     run.add_argument(
         "--module-manifest", type=Path,
         help="verified execution_evidence additional modules from a prior probe report",
@@ -299,6 +305,27 @@ def main(argv=None) -> int:
         if not args.runtime.is_file() and not args.build_runtime:
             parser.error("runtime not found; use --build-runtime or provide a compiled runtime")
         root = Path(__file__).resolve().parents[1]
+        if args.preflight_requirements and not args.preflight_corpus:
+            parser.error("--preflight-requirements requires --preflight-corpus")
+        preflight = {}
+        if args.preflight_corpus:
+            requirements = args.preflight_requirements or (
+                root / "evidence/pcode_verified_terminators_20261020.json"
+            )
+            audit_output = args.output.with_name(args.output.stem + "-pcode-audit.json")
+            audit_command = [
+                sys.executable, str(root / "tools/ghidra/audit_pcode_corpus.py"),
+                "--corpus", str(args.preflight_corpus),
+                "--requirements", str(requirements),
+                "--pe", str(args.pe),
+                "--expected-pe-sha256", RETAIL_SHA256,
+                "--output", str(audit_output),
+            ]
+            if subprocess.run(audit_command, check=False).returncode:
+                print("P-code export audit failed; retail probe was not launched",
+                      file=sys.stderr)
+                return 2
+            preflight["pcode_audit_report"] = str(audit_output)
         module_manifest = None
         if args.module_manifest:
             manifest_path = args.module_manifest
@@ -316,6 +343,17 @@ def main(argv=None) -> int:
             if build.returncode:
                 print("native runtime build failed", file=sys.stderr)
                 return 2
+        if args.preflight_ctest:
+            result_ctest = subprocess.run([
+                "ctest", "--test-dir", str(args.build_dir),
+                "--output-on-failure", "-R",
+                "^shift_runtime_recompiled_pcode_module$",
+            ], check=False)
+            if result_ctest.returncode:
+                print("guest P-code fixture CTest failed; retail probe was not launched",
+                      file=sys.stderr)
+                return 2
+            preflight["guest_pcode_ctest"] = "passed"
         args.log.parent.mkdir(parents=True, exist_ok=True)
         env = os.environ.copy()
         env.update({
@@ -357,6 +395,7 @@ def main(argv=None) -> int:
             "timeout_seconds": args.timeout,
             "kill_after_seconds": args.kill_after,
             "validation": args.validation,
+            "preflight": preflight,
         }
         trace_environment = {
             key: env[key] for key in TRACE_ENV_KEYS if env.get(key)
