@@ -1,5 +1,8 @@
 # Automated retail startup frontier (Linux)
 
+For verified Ghidra-epilogue auditing, opt-in preflight checks and the captured
+D3D9-only implementation scope, see [Linux acceleration](LINUX_RETAIL_ACCELERATION.md).
+
 This tooling shortens the **build → bounded original-PE probe → classification → regression** cycle. It does not assert gameplay, frontend readiness or D3D9/Vulkan semantic parity.
 
 ## Scope and safety
