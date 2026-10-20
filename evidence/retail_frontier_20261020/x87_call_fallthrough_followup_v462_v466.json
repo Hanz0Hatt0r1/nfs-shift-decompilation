@@ -1,0 +1,175 @@
+{
+  "format": "NFSShift.RetailFrontierFollowupEvidence/1",
+  "topic": "x86 call fallthrough and x87 helper export follow-up after PR #2123",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "runtime_changes": {
+    "pcode_userops": {
+      "97": "F2XM1",
+      "105": "FSCALE",
+      "111": "LOG2"
+    },
+    "fixture_check": "passed"
+  },
+  "preflight": {
+    "focused_pcode_ctest": "passed",
+    "runtime_build": "passed"
+  },
+  "probes": [
+    {
+      "probe": "v462-x87-entry-callstack",
+      "status": "blocked",
+      "comparison": {
+        "reason": "fewer dispatches or unique functions",
+        "result": "regressed"
+      },
+      "dispatches": 1038194,
+      "unique_functions": 4545,
+      "blocker": "P-code module has no exported function rvi_0090a259 called from guest function 0x00902e9d",
+      "probe_log_sha256": "e80173dfd462cf44c4891ccc4ae55edfc2cc24a011fdd548275fadaeb0068473",
+      "module_manifest_sha256": "1be322b630e394389a920ab10707553f7a0d35b8c7a319fa55bb988958bd0695"
+    },
+    {
+      "probe": "v463-entry-0090a259",
+      "status": "blocked",
+      "comparison": {
+        "reason": "more retail code executed",
+        "result": "advanced"
+      },
+      "dispatches": 1042112,
+      "unique_functions": 4570,
+      "blocker": "P-code module has no exported function rvi_007f30d0 called from guest function 0x007d8930",
+      "probe_log_sha256": "7380d4d12b811084e28f8f572db716e8065bb094733b700a50c94b7c2604be7e",
+      "module_manifest_sha256": "2106a6af40b4bc380264ebe072e410d1b048d8e09040351d7c324371ee627fe6"
+    },
+    {
+      "probe": "v464-entry-007f30d0",
+      "status": "blocked",
+      "comparison": {
+        "reason": "more retail code executed",
+        "result": "advanced"
+      },
+      "dispatches": 1045474,
+      "unique_functions": 4618,
+      "blocker": "P-code module has no exported function rvi_007e92c0 called from guest function 0x007d8930",
+      "probe_log_sha256": "872548a64da09e9b1918a5559dcff46ecfa004d8d41aeed761dffa09f8da117d",
+      "module_manifest_sha256": "a156f8c22cb292bc0fdd4916cecca977efe0fdba46fa3aee9fed3e6262e8b15f"
+    },
+    {
+      "probe": "v465-entry-007e92c0",
+      "status": "blocked",
+      "comparison": {
+        "reason": "more retail code executed",
+        "result": "advanced"
+      },
+      "dispatches": 1045480,
+      "unique_functions": 4620,
+      "blocker": "P-code module has no exported function rvi_007e92b0 called from guest function 0x007ebbe0",
+      "probe_log_sha256": "83b4baa4fc20b6e0842567f1c1b5da2c739eb163f64487e303150fdc350c10b5",
+      "module_manifest_sha256": "c35009855b61535bc96b4f512a77c8026abe317a2917a18ef1d1af5036e35727"
+    },
+    {
+      "probe": "v466-entry-007e92b0",
+      "status": "blocked",
+      "comparison": {
+        "reason": "more retail code executed",
+        "result": "advanced"
+      },
+      "dispatches": 1045483,
+      "unique_functions": 4621,
+      "blocker": "P-code module has no exported function rvi_0085ed60 called from guest function 0x007ebbe0",
+      "probe_log_sha256": "847d3733faffa9ba5547a99a09f87bf2e49f7969eac6cc4160743e6695dc646b",
+      "module_manifest_sha256": "6a43a4a5071df6e05d2b41365818f6fbac89c83bc556508fc6f9a3427f020088"
+    }
+  ],
+  "compiled_modules": [
+    {
+      "artifact": "function-call-stack-v462-x87-entry-callstack/libnfs_shift_pcode_supplement.so",
+      "sha256": "d6d37d163f147b529f23642bab19f07a8579d41061b52926b31a517cdd3b5d2f",
+      "exports": [
+        "rvi_00902e40",
+        "rvi_00902e9d",
+        "rvi_0090a170"
+      ],
+      "instructions": 155,
+      "pcode_operations": 862,
+      "rejected_functions": 0,
+      "revenginstr_revision": "bccd456+dirty-call-fallthrough-entry"
+    },
+    {
+      "artifact": "function-call-stack-v463-entry-0090a259/libnfs_shift_pcode_supplement.so",
+      "sha256": "26e2d38b194894367cba9cdcca3dc849f42a248106fff1003bccf4b2eb523470",
+      "exports": [
+        "rvi_0090a259"
+      ],
+      "instructions": 54,
+      "pcode_operations": 285,
+      "rejected_functions": 0,
+      "revenginstr_revision": "bccd456+dirty-entry-export"
+    },
+    {
+      "artifact": "function-call-stack-v464-entry-007f30d0/libnfs_shift_pcode_supplement.so",
+      "sha256": "7acaada1592703146cd82dbf1c50b3c1c6ee9e1f1e6ece8d91b83ab062517e79",
+      "exports": [
+        "rvi_007f30d0"
+      ],
+      "instructions": 2,
+      "pcode_operations": 16,
+      "rejected_functions": 0,
+      "revenginstr_revision": "bccd456+dirty-entry-export"
+    },
+    {
+      "artifact": "function-call-stack-v465-entry-007e92c0/libnfs_shift_pcode_supplement.so",
+      "sha256": "f41b030ceda6f992c98382b8ce6c303dd0ac64c741050c1f153ffa796af490cd",
+      "exports": [
+        "rvi_007e92c0"
+      ],
+      "instructions": 1,
+      "pcode_operations": 1,
+      "rejected_functions": 0,
+      "revenginstr_revision": "bccd456+dirty-entry-export"
+    },
+    {
+      "artifact": "function-call-stack-v466-entry-007e92b0/libnfs_shift_pcode_supplement.so",
+      "sha256": "fad76d40f38949ace15dbffcc1ce96628cbb30784787a7098a7dc808ef8a37a0",
+      "exports": [
+        "rvi_007e92b0"
+      ],
+      "instructions": 2,
+      "pcode_operations": 5,
+      "rejected_functions": 0,
+      "revenginstr_revision": "bccd456+dirty-entry-export"
+    }
+  ],
+  "instruction_exports": [
+    {
+      "artifact": "function-call-stack-v462-x87-entry-callstack.jsonl",
+      "sha256": "993956bb298a124ddf4085153d66f1c4705c95aa3f707ae223a04a8e5d95d232"
+    },
+    {
+      "artifact": "function-call-stack-v461-raw-entry-0090a170.jsonl",
+      "sha256": "9adb45a4a038e06967396dbe8d33c5cd75f91c93e898f662af86f15cf7ccff90"
+    },
+    {
+      "artifact": "function-call-stack-v463-raw-entry-0090a259.jsonl",
+      "sha256": "267614353dd13f747a95b92ebff941a1d1d9fef3b42a925430c26fbadddd9829"
+    },
+    {
+      "artifact": "function-call-stack-v464-target-007f30d0.jsonl",
+      "sha256": "16de0fc4c4a924560105998a8b73663c56f74c0f69da2ef1f06db8e492a0093c"
+    },
+    {
+      "artifact": "function-call-stack-v465-target-007e92c0.jsonl",
+      "sha256": "72da770fe67b6380fb89e178446d256e7fa3bfb37539694cf7762d5e6716e593"
+    },
+    {
+      "artifact": "function-call-stack-v466-target-007e92b0.jsonl",
+      "sha256": "71eff939f1a8922713f5b2a5fb0231bdb65c3e3145cf15cbf5d43936ef5f83f6"
+    }
+  ],
+  "interpretation": [
+    "All five probes stopped before frontend, race, or a retail draw.",
+    "v463-v466 were classified advanced by retail_frontier.py and executed more guest code than the baseline.",
+    "P-code module exports are stored under the local ignored artifact root and are not committed."
+  ],
+  "local_artifact_root": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018"
+}

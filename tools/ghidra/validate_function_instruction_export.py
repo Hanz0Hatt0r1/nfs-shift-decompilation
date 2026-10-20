@@ -19,6 +19,8 @@ _FUNCTION = re.compile(r"^FUN_([0-9a-fA-F]+)$", re.IGNORECASE)
 
 def normalize_target(value: str) -> str:
     token = value.strip()
+    if token.lower().startswith("entry:"):
+        token = token.split(":", 1)[1].strip()
     match = _FUNCTION.fullmatch(token)
     if match:
         token = match.group(1)
