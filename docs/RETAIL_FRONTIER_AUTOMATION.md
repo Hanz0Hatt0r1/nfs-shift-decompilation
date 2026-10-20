@@ -90,6 +90,16 @@ missing export is `0x0082db10`. See the
 [`v467–v474 follow-up`](../evidence/retail_frontier_20261020/x87_call_fallthrough_followup_v467_v474.json)
 for per-run and module hashes.
 
+PR #2123's corpus and focused-CTest preflights were used before the v506–v512
+retail probes. The corrected frozen corpus passed with 41,552 functions,
+2,089,743 instructions, and 312 byte-verified instruction boundaries. Current
+P-code overrides advanced the frontier to a 234-byte body at `0x005a8870`;
+the v512 replay and a bounded trace diagnostic timed out without proving that
+the target call ran. The recorded frontier remains before frontend, race, or
+retail drawing. See the
+[`post-PR #2123 v506–v512 evidence`](../evidence/retail_frontier_20261020/post_pr2123_v506_v512.json)
+for report, log, corpus, requirements, and module hashes.
+
 For a UI-gate probe, set `SHIFT_TRACE_UI_STATE_GATE=1` and
 `SHIFT_TRACE_GUEST_PROVENANCE=0x00be250c,0x00be2534`. Each `0x0050c880` trace
 event then includes exact-byte `helper_flag_last_writer` provenance, with the

@@ -1,0 +1,170 @@
+{
+  "format": "NFSShift.RetailFrontierFollowupEvidence/1",
+  "topic": "Retail startup frontier after PR #2123 preflight acceleration",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "accelerator": {
+    "pr_url": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2123",
+    "state": "merged",
+    "merged_at": "2026-10-20T11:41:27Z",
+    "preflight_corpus": "passed",
+    "preflight_focused_ctest": "passed",
+    "runtime_build": "passed"
+  },
+  "frozen_pcode_preflight": {
+    "status": "passed",
+    "functions": 41552,
+    "instructions": 2089743,
+    "verified_instruction_boundaries": 312,
+    "corpus_sha256": "d048edb7b4fdfd3727b10c1594b3837bf751e8de2eb6715c86d499a1347aa835",
+    "requirements_sha256": "586b55a84f1cc0013b1ab0033725da7330d80dfd4d8aae140bd02cc863220bde",
+    "requirements_file_sha256": "586b55a84f1cc0013b1ab0033725da7330d80dfd4d8aae140bd02cc863220bde",
+    "audit_report_sha256": "f66ed67bdea22c09b0628e44f88417817e38d0d5057b45aa4d4d4405030ab262",
+    "problem_count": 0
+  },
+  "probes": [
+    {
+      "probe": "v506",
+      "status": "blocked",
+      "dispatches": 2164377,
+      "unique_functions": 4921,
+      "blocker": "P-code module has no exported function rvi_00664e40 called from guest function 0x0064a080",
+      "report_sha256": "6aeb0e80b123af39532c16cc75d7932b886b57a7925fd3db6c07136ae57d552c",
+      "probe_log_sha256": "e5bcfc020b8b1ab1c97b3db07404cc2743035a4dda0119efa1dcc6899916bfd0",
+      "retail_rendering_proven": false,
+      "module_manifest_sha256": "3c2411f6c7761013350846ff00dc02fa15102eb7864476acaf6844c26de09c18"
+    },
+    {
+      "probe": "v507",
+      "status": "blocked",
+      "dispatches": 2164415,
+      "unique_functions": 4923,
+      "blocker": "P-code function 0x0064a080 returned -1",
+      "report_sha256": "8794facfbabe93664a8466b8501fb64e71241acff1e9f033252e001dfde443d3",
+      "probe_log_sha256": "e50b717b78889aa7eee571a2fa5b8c7bed234c63f623f93b19d2ae6291f61182",
+      "retail_rendering_proven": false,
+      "module_manifest_sha256": "7c572586b27088a7b900d47816279a22c350dc91555611303b9b08ca71121a92"
+    },
+    {
+      "probe": "v508",
+      "status": "blocked",
+      "dispatches": 2164418,
+      "unique_functions": 4923,
+      "blocker": "P-code function 0x0064a080 returned -1",
+      "report_sha256": "1f3947089dc3830a12b76c0bbf81efee1874574aa843e08291139ebadfbfb905",
+      "probe_log_sha256": "2df9b3d5559471a71e02264c36afdfce90d13b46a7bfd5692ecfaea4f3b83e59",
+      "retail_rendering_proven": false,
+      "module_manifest_sha256": "e1ca1bf611e0c9604fb1d95ca8318a2a2337938a9c4e7608b5fff96797da405c"
+    },
+    {
+      "probe": "v509-experiment",
+      "status": "blocked",
+      "dispatches": 2164417,
+      "unique_functions": 4923,
+      "blocker": "duplicate P-code export rvi_00664650",
+      "report_sha256": "452d35435bff3cdf8e226ca9be844498f5e736ac99e27b00ea209d76693dabfd",
+      "probe_log_sha256": "2e38c440b9f82fe62e119b6fbe7cf511ffdb6fd20e7ad8245b15d318aafd2f97",
+      "retail_rendering_proven": false,
+      "module_manifest_sha256": "99b7a349020ccf55f5e399b457eba0f3bf8e3292b854f046c6d6609c873af6e9"
+    },
+    {
+      "probe": "v510",
+      "status": "blocked",
+      "dispatches": 2169557,
+      "unique_functions": 4933,
+      "blocker": "P-code function 0x00649fa0 returned -1",
+      "report_sha256": "cc1b5d167af7ad8c6ba0378ebce6fe6ca7d903a3f7ad08657ebec09af4b1d42c",
+      "probe_log_sha256": "3c40acc061ca4024b50ec731070939e2e600bed8de45c7403c10557959fbf2cd",
+      "retail_rendering_proven": false,
+      "module_manifest_sha256": "2cf57ec07d368ca8ba138ae8d6ea1747bc54c3ee22d556e83e0d99829fbd0a23"
+    },
+    {
+      "probe": "v511",
+      "status": "blocked",
+      "dispatches": 6974808,
+      "unique_functions": 5076,
+      "blocker": "P-code module has no exported function rvi_005a8870 called from guest function 0x0064879e",
+      "report_sha256": "c288f2ac6a7db7cc38bf9b46707dbe82d82d07406508fcaa58b9eb71409026f1",
+      "probe_log_sha256": "0e53d705c063bd5644f26e84a862b3746da18952f1ce21a696e0f25077f20514",
+      "retail_rendering_proven": false,
+      "module_manifest_sha256": "74cc941934a3e30bb2c5b87726bfb34926cbb6fd02e9d20c47b17bd5a24a869b"
+    },
+    {
+      "probe": "v512",
+      "status": "timeout",
+      "dispatches": null,
+      "unique_functions": null,
+      "blocker": null,
+      "report_sha256": "7068ea566144c0e5b8052853e219df9391848e2f92420e0e9b0a0f98fdc3ab5f",
+      "probe_log_sha256": "6431ea09ca32818865562204cca6b3a21f9bec9f9c8a3988d2d6090c602ac1cd",
+      "retail_rendering_proven": false,
+      "module_manifest_sha256": "e74fa6db4d03eeb0a0969352c92de7f1e82e61843fed3ae86245f7c81796dac5",
+      "timeout_seconds": 180,
+      "trace_event_note": "Timed out without a usable frontier."
+    },
+    {
+      "probe": "v512-diagnostic",
+      "status": "timeout",
+      "dispatches": null,
+      "unique_functions": null,
+      "blocker": null,
+      "report_sha256": "de47146456d157169ffbd560edeb2ff69a4da6fd9aa391638bfc01273644a414",
+      "probe_log_sha256": "9eb24c9a3d61eb3a7c531b9ab19d19557a988b30ec2b6e5207c471a9acdace6f",
+      "retail_rendering_proven": false,
+      "timeout_seconds": 120,
+      "trace_event_note": "No matching target/caller trace events were recorded; target invocation remains undetermined."
+    }
+  ],
+  "recovered_functions": [
+    {
+      "address": "0x00664e00",
+      "bytes": 49,
+      "instructions": 22,
+      "pcode_operations": 69,
+      "rejected_functions": 0,
+      "module_sha256": "81377d47a3ae0e70cf531969b9a35ff20ad6f3c36d1804b954e79cfee5212474"
+    },
+    {
+      "address": "0x00664e40",
+      "bytes": 49,
+      "instructions": 22,
+      "pcode_operations": 69,
+      "rejected_functions": 0,
+      "module_sha256": "0ac72b89a0437484f1977221e7121cb0fe610f23fad9274698413fea3eadd68f"
+    },
+    {
+      "address": "0x0064a080",
+      "bytes": 62,
+      "instructions": 29,
+      "pcode_operations": 94,
+      "rejected_functions": 0,
+      "role": "override using current BRANCHIND lowering",
+      "module_sha256": "30a3e2f2dca91c8e356b4dbba368331f5557edd9a39ff6617bbf5b543fda091d"
+    },
+    {
+      "address": "0x00649fa0",
+      "bytes": 14,
+      "instructions": 5,
+      "pcode_operations": 9,
+      "rejected_functions": 0,
+      "role": "computed-jump thunk, current BRANCHIND lowering",
+      "module_sha256": "5f5e96d2106992a232217f31eedafdc5f90920279af51ab7844dd1069c4a16c9"
+    },
+    {
+      "address": "0x005a8870",
+      "bytes": 234,
+      "instructions": 64,
+      "pcode_operations": 234,
+      "rejected_functions": 0,
+      "calling_convention": "__thiscall",
+      "module_sha256": "eed5be2c87e9f6a6f15966f12b9da9700bf2183c7f6125a9bbc45c3171daf4b2"
+    }
+  ],
+  "findings": [
+    "The 0x00664650 body is already exported by the base P-code module; the duplicate supplement experiment was rejected and removed from the active manifest.",
+    "Re-lowering 0x0064a080 and the 0x00649fa0 computed-jump thunk advanced the frontier to 0x005a8870 from guest caller 0x0064879e.",
+    "The 0x005a8870 body was defined from exact retail bytes in a copied Ghidra project and passed frozen-corpus byte/instruction audit.",
+    "The v512 replay and 120-second trace diagnostic timed out. The diagnostic recorded no matching call events, so invocation of 0x005a8870 remains undetermined.",
+    "No checkpoint proves frontend readiness, race entry, a retail D3D9 draw, or retail rendering."
+  ],
+  "local_artifact_root": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018"
+}

@@ -126,6 +126,7 @@ constexpr uint32_t kGuestSyntheticIconHandle = 0x00030004;
 constexpr uint32_t kGuestSyntheticWindowHandle = 0x00030008;
 constexpr uint32_t kGuestSyntheticGdiObjectBase = 0x00030010;
 constexpr uint32_t kGuestSyntheticDisplayDcBase = 0x00030040;
+constexpr uint32_t kGuestSyntheticDeviceNotificationHandle = 0x00030050;
 constexpr uint32_t kGuestFileHandleBase = 0x00050000;
 constexpr uint32_t kGuestEventHandleBase = 0x00060000;
 constexpr uint32_t kGuestSemaphoreHandleBase = 0x00070000;
@@ -185,6 +186,8 @@ constexpr uint32_t kMaximumGuestTlsSlots = 1088;
 constexpr size_t kMaximumWin32TextUnits = 1024 * 1024;
 constexpr size_t kOsVersionInfoABytes = 148;
 constexpr size_t kOsVersionInfoExABytes = 156;
+constexpr size_t kOsVersionInfoWBytes = 276;
+constexpr size_t kOsVersionInfoExWBytes = 284;
 constexpr uint64_t kWindowsFileTimeUnixEpoch = UINT64_C(116444736000000000);
 constexpr uint64_t kWindowsFileTimeTicksPerSecond = UINT64_C(10000000);
 constexpr uint64_t kWindowsPerformanceCounterFrequency = UINT64_C(1000000000);
@@ -988,13 +991,16 @@ struct RecompiledPcodeModule::Impl {
             }
             return 0;
         }
-        if (index == 97 || index == 100 || index == 104 || index == 105 ||
-            index == 111) {
+        if (index == 97 || index == 100 || index == 103 || index == 104 ||
+            index == 105 || index == 106 || index == 111) {
             const char* operation = index == 97 ? "F2XM1" :
                                     index == 100 ? "FCOS" :
+                                    index == 103 ? "FPATAN" :
                                     index == 104 ? "FPTAN" :
-                                    index == 105 ? "FSCALE" : "LOG2";
-            const unsigned expected_arguments = index == 105 ? 2 : 1;
+                                    index == 105 ? "FSCALE" :
+                                    index == 106 ? "FSIN" : "LOG2";
+            const unsigned expected_arguments =
+                index == 103 || index == 105 ? 2 : 1;
             if (!arguments || !argument_sizes ||
                 argument_count != expected_arguments || argument_sizes[0] != 10 ||
                 (expected_arguments == 2 && argument_sizes[1] != 10) ||
@@ -1022,6 +1028,8 @@ struct RecompiledPcodeModule::Impl {
             long double result = 0.0L;
             if (index == 97) result = std::exp2(input) - 1.0L;
             else if (index == 100) result = std::cos(input);
+            else if (index == 103)
+                result = std::atan2(read_binary80(arguments, 2), input);
             else if (index == 104) result = std::tan(input);
             else if (index == 105) {
                 const long double scale = std::trunc(read_binary80(arguments, 2));
@@ -1032,7 +1040,8 @@ struct RecompiledPcodeModule::Impl {
                 } else {
                     result = std::scalbn(input, static_cast<int>(scale));
                 }
-            } else result = std::log2(input);
+            } else if (index == 106) result = std::sin(input);
+            else result = std::log2(input);
             std::array<uint8_t, 10> result_bytes{};
             std::memcpy(result_bytes.data(), &result, result_bytes.size());
             std::memcpy(output, result_bytes.data(), result_bytes.size());
@@ -1603,12 +1612,18 @@ struct RecompiledPcodeModule::Impl {
                 return heap_free();
             if (name == "KERNEL32.dll!GetVersionExA")
                 return get_version_ex_a();
+            if (name == "KERNEL32.dll!GetVersionExW")
+                return get_version_ex_w();
+            if (name == "DINPUT8.dll!DirectInput8Create")
+                return direct_input8_create();
             if (name == "KERNEL32.dll!SetUnhandledExceptionFilter")
                 return set_unhandled_exception_filter();
             if (name == "KERNEL32.dll!LoadLibraryA")
                 return load_library_a();
             if (name == "KERNEL32.dll!GetModuleHandleA")
                 return get_module_handle_a();
+            if (name == "KERNEL32.dll!GetModuleHandleW")
+                return get_module_handle_w();
             if (name == "KERNEL32.dll!GetCurrentDirectoryA")
                 return get_current_directory_a();
             if (name == "KERNEL32.dll!SetCurrentDirectoryA")
@@ -1689,6 +1704,14 @@ struct RecompiledPcodeModule::Impl {
                 return return_kernel32_dword(
                     kGuestDesktopWindowHandle,
                     "USER32.dll!GetDesktopWindow");
+            if (name == "USER32.dll!FindWindowW")
+                return find_window_w();
+            if (name == "USER32.dll!RegisterDeviceNotificationW")
+                return register_device_notification_w();
+            if (name == "USER32.dll!UnregisterDeviceNotification")
+                return unregister_device_notification();
+            if (name == "ADVAPI32.dll!RegOpenKeyExW")
+                return reg_open_key_ex_w();
             if (name == "USER32.dll!LoadIconW") return load_icon_w();
             if (name == "USER32.dll!RegisterClassExW")
                 return register_class_ex_w();
@@ -3152,7 +3175,9 @@ struct RecompiledPcodeModule::Impl {
             "WriteFile",
             "ReadFileEx",
             "HeapCreate", "HeapAlloc", "HeapReAlloc", "HeapSize", "HeapFree", "GetVersionExA",
+            "GetVersionExW",
             "SetUnhandledExceptionFilter", "LoadLibraryA", "GetModuleHandleA",
+            "GetModuleHandleW",
             "GetModuleFileNameA", "GetProcAddress",
             "TlsAlloc", "TlsGetValue",
             "TlsSetValue", "TlsFree",
@@ -10709,6 +10734,46 @@ struct RecompiledPcodeModule::Impl {
         return finish_stdcall(4, api) ? 0 : -1;
     }
 
+    int get_module_handle_w() {
+        constexpr const char* api = "KERNEL32.dll!GetModuleHandleW";
+        uint32_t name_address = 0;
+        if (!read_stack_argument(0, name_address, api)) return -1;
+        uint32_t handle = pe_image_base;
+        if (name_address != 0) {
+            std::string module_name;
+            bool terminated = false;
+            for (size_t index = 0; index < kMaximumImportNameSize; ++index) {
+                std::array<uint8_t, 2> code_unit{};
+                const uint64_t address = static_cast<uint64_t>(name_address) +
+                                         index * code_unit.size();
+                if (!read_guest("ram", address, code_unit.size(),
+                                code_unit.data())) {
+                    error = std::string(api) + " received an invalid string pointer";
+                    return -1;
+                }
+                const uint16_t character = static_cast<uint16_t>(code_unit[0]) |
+                                          (static_cast<uint16_t>(code_unit[1]) << 8);
+                if (character == 0) {
+                    terminated = true;
+                    break;
+                }
+                if (character < 0x20 || character > 0x7e) {
+                    guest_last_error = 126;
+                    return return_kernel32_dword(0, api, sizeof(uint32_t));
+                }
+                module_name.push_back(static_cast<char>(character));
+            }
+            if (!terminated) {
+                error = std::string(api) + " received an unterminated string";
+                return -1;
+            }
+            const auto module = guest_module_handles.find(
+                lowercase_ascii(std::move(module_name)));
+            handle = module == guest_module_handles.end() ? 0 : module->second;
+        }
+        return return_kernel32_dword(handle, api, sizeof(uint32_t));
+    }
+
     int get_current_directory_a() {
         constexpr const char* api = "KERNEL32.dll!GetCurrentDirectoryA";
         uint32_t buffer_length = 0;
@@ -10934,6 +10999,129 @@ struct RecompiledPcodeModule::Impl {
             return return_kernel32_dword(0, api, 4);
         // ponytail: return an opaque atom until guest window classes map to the host.
         return return_kernel32_dword(1, api, 4);
+    }
+
+    int find_window_w() {
+        constexpr const char* api = "USER32.dll!FindWindowW";
+        uint32_t class_name = 0;
+        uint32_t window_name = 0;
+        if (!read_stack_argument(0, class_name, api) ||
+            !read_stack_argument(1, window_name, api)) {
+            return -1;
+        }
+        const auto valid_name = [this](uint32_t address) {
+            return address == 0 || address <= 0xffff ||
+                   valid_guest_pointer(address, sizeof(uint16_t));
+        };
+        if (!valid_name(class_name) || !valid_name(window_name)) {
+            error = std::string(api) + " received an invalid window name";
+            return -1;
+        }
+        // The Linux runtime has no host Windows top-level windows to find.
+        return return_kernel32_dword(0, api, 2 * sizeof(uint32_t));
+    }
+
+    int reg_open_key_ex_w() {
+        constexpr const char* api = "ADVAPI32.dll!RegOpenKeyExW";
+        uint32_t root_key = 0;
+        uint32_t subkey_address = 0;
+        uint32_t options = 0;
+        uint32_t desired_access = 0;
+        uint32_t output_address = 0;
+        if (!read_stack_argument(0, root_key, api) ||
+            !read_stack_argument(1, subkey_address, api) ||
+            !read_stack_argument(2, options, api) ||
+            !read_stack_argument(3, desired_access, api) ||
+            !read_stack_argument(4, output_address, api)) {
+            return -1;
+        }
+        (void)desired_access;
+        (void)output_address;
+        if (root_key < 0x80000000 || root_key > 0x80000005 || options != 0 ||
+            subkey_address == 0) {
+            return return_kernel32_dword(87, api, 5 * sizeof(uint32_t));
+        }
+        std::array<uint8_t, sizeof(uint16_t)> code_unit{};
+        for (size_t index = 0; index < kWindowsMaxPath; ++index) {
+            const uint64_t address = static_cast<uint64_t>(subkey_address) +
+                                     index * code_unit.size();
+            if (!read_guest("ram", address, code_unit.size(),
+                            code_unit.data())) {
+                error = std::string(api) + " could not read the subkey";
+                return -1;
+            }
+            if (code_unit[0] == 0 && code_unit[1] == 0)
+                return return_kernel32_dword(2, api, 5 * sizeof(uint32_t));
+        }
+        return return_kernel32_dword(87, api, 5 * sizeof(uint32_t));
+    }
+
+    int register_device_notification_w() {
+        constexpr const char* api = "USER32.dll!RegisterDeviceNotificationW";
+        uint32_t recipient = 0;
+        uint32_t filter_address = 0;
+        uint32_t flags = 0;
+        if (!read_stack_argument(0, recipient, api) ||
+            !read_stack_argument(1, filter_address, api) ||
+            !read_stack_argument(2, flags, api)) {
+            return -1;
+        }
+        uint32_t filter_size = 0;
+        uint32_t device_type = 0;
+        uint32_t reserved = 0;
+        if (recipient != kGuestSyntheticWindowHandle || flags != 0 ||
+            !valid_guest_pointer(filter_address, 28) ||
+            !read_guest_u32("ram", filter_address, filter_size) ||
+            !read_guest_u32("ram", filter_address + 4, device_type) ||
+            !read_guest_u32("ram", filter_address + 8, reserved) ||
+            filter_size < 28 || filter_size > 4096 || device_type != 5 ||
+            reserved != 0 || !valid_guest_pointer(filter_address, filter_size)) {
+            guest_last_error = 87;
+            return return_kernel32_dword(0, api, 3 * sizeof(uint32_t));
+        }
+        // ponytail: accept the guest registration without forwarding host device events.
+        return return_kernel32_dword(
+            kGuestSyntheticDeviceNotificationHandle, api,
+            3 * sizeof(uint32_t));
+    }
+
+    int unregister_device_notification() {
+        constexpr const char* api = "USER32.dll!UnregisterDeviceNotification";
+        uint32_t notification = 0;
+        if (!read_stack_argument(0, notification, api)) return -1;
+        const uint32_t success =
+            notification == kGuestSyntheticDeviceNotificationHandle ? 1 : 0;
+        if (!success) guest_last_error = 6;
+        return return_kernel32_dword(success, api, sizeof(uint32_t));
+    }
+
+    int direct_input8_create() {
+        constexpr const char* api = "DINPUT8.dll!DirectInput8Create";
+        uint32_t instance = 0;
+        uint32_t version = 0;
+        uint32_t interface_id = 0;
+        uint32_t output_address = 0;
+        uint32_t outer = 0;
+        if (!read_stack_argument(0, instance, api) ||
+            !read_stack_argument(1, version, api) ||
+            !read_stack_argument(2, interface_id, api) ||
+            !read_stack_argument(3, output_address, api) ||
+            !read_stack_argument(4, outer, api)) {
+            return -1;
+        }
+        (void)instance;
+        (void)version;
+        (void)outer;
+        if (!valid_guest_pointer(interface_id, 16) ||
+            !valid_guest_pointer(output_address, sizeof(uint32_t))) {
+            return return_kernel32_dword(0x80070057, api, 5 * sizeof(uint32_t));
+        }
+        if (!write_guest_u32("ram", output_address, 0)) {
+            error = std::string(api) + " cannot clear its output interface";
+            return -1;
+        }
+        // ponytail: fail cleanly until the Linux runtime has an input provider.
+        return return_kernel32_dword(kEFail, api, 5 * sizeof(uint32_t));
     }
 
     int create_window_ex_w() {
@@ -12494,7 +12682,16 @@ struct RecompiledPcodeModule::Impl {
     }
 
     int get_version_ex_a() {
-        constexpr const char* api = "KERNEL32.dll!GetVersionExA";
+        return get_version_ex(false);
+    }
+
+    int get_version_ex_w() {
+        return get_version_ex(true);
+    }
+
+    int get_version_ex(bool wide) {
+        const char* api = wide ? "KERNEL32.dll!GetVersionExW"
+                               : "KERNEL32.dll!GetVersionExA";
         uint32_t output_address = 0;
         if (!read_stack_argument(0, output_address, api)) return -1;
         if (!valid_guest_pointer(output_address, sizeof(uint32_t))) {
@@ -12506,8 +12703,11 @@ struct RecompiledPcodeModule::Impl {
             error = std::string(api) + " cannot read OSVERSIONINFOA size";
             return -1;
         }
-        if (structure_size != kOsVersionInfoABytes &&
-            structure_size != kOsVersionInfoExABytes) {
+        const size_t base_size = wide ? kOsVersionInfoWBytes
+                                      : kOsVersionInfoABytes;
+        const size_t extended_size = wide ? kOsVersionInfoExWBytes
+                                          : kOsVersionInfoExABytes;
+        if (structure_size != base_size && structure_size != extended_size) {
             error = std::string(api) + " received an invalid structure size";
             return -1;
         }
@@ -12515,7 +12715,7 @@ struct RecompiledPcodeModule::Impl {
             error = std::string(api) + " has an invalid output pointer";
             return -1;
         }
-        std::array<uint8_t, kOsVersionInfoExABytes> version{};
+        std::array<uint8_t, kOsVersionInfoExWBytes> version{};
         const auto put_u32 = [&version](size_t offset, uint32_t value) {
             for (size_t index = 0; index < 4; ++index)
                 version[offset + index] =
@@ -12527,10 +12727,19 @@ struct RecompiledPcodeModule::Impl {
         put_u32(12, 2600);
         put_u32(16, 2);    // VER_PLATFORM_WIN32_NT
         constexpr char service_pack[] = "Service Pack 3";
-        std::copy_n(service_pack, sizeof(service_pack), version.begin() + 20);
-        if (structure_size == kOsVersionInfoExABytes) {
-            version[148] = 3; // wServicePackMajor
-            version[154] = 1; // VER_NT_WORKSTATION
+        if (wide) {
+            for (size_t index = 0; index < sizeof(service_pack); ++index)
+                version[20 + index * 2] =
+                    static_cast<uint8_t>(service_pack[index]);
+        } else {
+            std::copy_n(service_pack, sizeof(service_pack),
+                        version.begin() + 20);
+        }
+        if (structure_size == extended_size) {
+            const size_t service_pack_major_offset = wide ? 276 : 148;
+            const size_t product_type_offset = wide ? 282 : 154;
+            version[service_pack_major_offset] = 3; // wServicePackMajor
+            version[product_type_offset] = 1;       // VER_NT_WORKSTATION
         }
         for (size_t offset = 0; offset < structure_size;
              offset += kMaximumPcodeValueSize) {
@@ -13322,11 +13531,14 @@ struct RecompiledPcodeModule::Impl {
             std::memcpy(&value, registers.data() + offset, sizeof(value));
             return value;
         };
+        const auto register_byte = [this](size_t offset) {
+            return static_cast<unsigned>(registers[offset]);
+        };
         char guest_registers[192]{};
         std::snprintf(
             guest_registers, sizeof(guest_registers),
             "; guest_regs={EAX=0x%08x,ECX=0x%08x,EDX=0x%08x,EBX=0x%08x,"
-            "ESP=0x%08x,EBP=0x%08x,ESI=0x%08x,EDI=0x%08x}",
+            "ESP=0x%08x,EBP=0x%08x,ESI=0x%08x,EDI=0x%08x,ZF=0x%02x}",
             register_value(kX86EaxRegisterOffset),
             register_value(kX86EcxRegisterOffset),
             register_value(kX86EdxRegisterOffset),
@@ -13334,7 +13546,8 @@ struct RecompiledPcodeModule::Impl {
             register_value(kX86EspRegisterOffset),
             register_value(kX86EbpRegisterOffset),
             register_value(kX86EsiRegisterOffset),
-            register_value(kX86EdiRegisterOffset));
+            register_value(kX86EdiRegisterOffset),
+            register_byte(0x206));
         error += guest_registers;
         uint32_t guest_esi = register_value(kX86EsiRegisterOffset);
         if (diagnostic_guest_pointer_mapped(guest_esi, 0x44)) {
