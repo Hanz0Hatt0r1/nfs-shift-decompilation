@@ -319,7 +319,8 @@ void write_pe32_fixture(const std::string& path,
                         bool unknown_first_import = false,
                         bool read_file_ex_import = false,
                         bool create_directory_import = false,
-                        bool write_file_import = false) {
+                        bool write_file_import = false,
+                        bool get_version_ex_w_import = false) {
     constexpr size_t file_size = 0x1300;
     constexpr size_t pe_offset = 0x80;
     constexpr size_t optional_offset = pe_offset + 24;
@@ -445,7 +446,8 @@ void write_pe32_fixture(const std::string& path,
     write_import_name(0x700, "GetStartupInfoA");
     write_import_name(0x720, "GetProcessHeap");
     write_import_name(0x740, "HeapAlloc");
-    write_import_name(0x760, "GetVersionExA");
+    write_import_name(0x760, get_version_ex_w_import ? "GetVersionExW"
+                                                     : "GetVersionExA");
     write_import_name(0x780, "HeapFree");
     write_import_name(0x7a0, "HeapCreate");
     write_import_name(0x7c0, "GetProcAddress");
@@ -528,7 +530,18 @@ void write_pe32_fixture(const std::string& path,
     require(static_cast<bool>(file), "could not write PE32 fixture");
 }
 
-void write_system_parameters_info_pe32_fixture(const std::string& path) {
+void write_system_parameters_info_pe32_fixture(
+    const std::string& path, bool find_window_w_import = false,
+    bool reg_open_key_ex_w_import = false,
+    bool register_device_notification_w_import = false,
+    bool unregister_device_notification_import = false,
+    bool direct_input8_create_import = false) {
+    if (static_cast<unsigned>(find_window_w_import) +
+            static_cast<unsigned>(reg_open_key_ex_w_import) +
+            static_cast<unsigned>(register_device_notification_w_import) +
+            static_cast<unsigned>(unregister_device_notification_import) +
+            static_cast<unsigned>(direct_input8_create_import) > 1)
+        throw std::invalid_argument("fixture imports must be mutually exclusive");
     constexpr size_t file_size = 0x800;
     constexpr size_t pe_offset = 0x80;
     constexpr size_t optional_offset = pe_offset + 24;
@@ -598,8 +611,28 @@ void write_system_parameters_info_pe32_fixture(const std::string& path) {
     write_u32(bytes, 0x424, 0x2120);
     write_u32(bytes, 0x500, 0x2150);
     write_u32(bytes, 0x520, 0x2150);
-    std::copy_n("USER32.dll", 11, bytes.begin() + 0x480);
-    std::copy_n("SystemParametersInfoA", 22, bytes.begin() + 0x492);
+    const char* first_import_module =
+        reg_open_key_ex_w_import
+            ? "ADVAPI32.dll"
+            : direct_input8_create_import ? "DINPUT8.dll" : "USER32.dll";
+    std::copy_n(first_import_module,
+                std::char_traits<char>::length(first_import_module) + 1,
+                bytes.begin() + 0x480);
+    const char* first_import =
+        reg_open_key_ex_w_import
+            ? "RegOpenKeyExW"
+            : find_window_w_import
+                  ? "FindWindowW"
+                  : register_device_notification_w_import
+                        ? "RegisterDeviceNotificationW"
+                  : unregister_device_notification_import
+                        ? "UnregisterDeviceNotification"
+                        : direct_input8_create_import
+                              ? "DirectInput8Create"
+                              : "SystemParametersInfoA";
+    std::copy_n(first_import,
+                std::char_traits<char>::length(first_import) + 1,
+                bytes.begin() + 0x492);
     std::copy_n("PeekMessageW", 13, bytes.begin() + 0x4b2);
     std::copy_n("GetDesktopWindow", 17, bytes.begin() + 0x4d2);
     std::copy_n("LoadIconW", 10, bytes.begin() + 0x4f2);
@@ -1064,6 +1097,36 @@ int main(int argc, char** argv) {
              ("shift-runtime-writefile-" + std::to_string(getpid()) +
               ".exe"))
                 .string();
+        const std::string get_version_ex_w_fixture_path =
+            (std::filesystem::temp_directory_path() /
+             ("shift-runtime-getversionexw-" + std::to_string(getpid()) +
+              ".exe"))
+                .string();
+        const std::string find_window_w_fixture_path =
+            (std::filesystem::temp_directory_path() /
+             ("shift-runtime-findwindoww-" + std::to_string(getpid()) +
+              ".exe"))
+                .string();
+        const std::string reg_open_key_ex_w_fixture_path =
+            (std::filesystem::temp_directory_path() /
+             ("shift-runtime-regopenkeyexw-" + std::to_string(getpid()) +
+              ".exe"))
+                .string();
+        const std::string register_device_notification_w_fixture_path =
+            (std::filesystem::temp_directory_path() /
+             ("shift-runtime-registerdevicenotificationw-" +
+              std::to_string(getpid()) + ".exe"))
+                .string();
+        const std::string unregister_device_notification_fixture_path =
+            (std::filesystem::temp_directory_path() /
+             ("shift-runtime-unregisterdevicenotification-" +
+              std::to_string(getpid()) + ".exe"))
+                .string();
+        const std::string direct_input8_create_fixture_path =
+            (std::filesystem::temp_directory_path() /
+             ("shift-runtime-directinput8create-" + std::to_string(getpid()) +
+              ".exe"))
+                .string();
         write_pe32_fixture(argv[4]);
         write_pe32_fixture(argv[5], true);
         write_pe32_fixture(argv[6], false, true);
@@ -1073,7 +1136,21 @@ int main(int argc, char** argv) {
                            false, false, true);
         write_pe32_fixture(write_file_fixture_path, false, false, false,
                            false, false, true);
+        write_pe32_fixture(get_version_ex_w_fixture_path, false, false, false,
+                           false, false, false, true);
         write_system_parameters_info_pe32_fixture(argv[7]);
+        write_system_parameters_info_pe32_fixture(find_window_w_fixture_path,
+                                                   true);
+        write_system_parameters_info_pe32_fixture(
+            reg_open_key_ex_w_fixture_path, false, true);
+        write_system_parameters_info_pe32_fixture(
+            register_device_notification_w_fixture_path, false, false, true);
+        write_system_parameters_info_pe32_fixture(
+            unregister_device_notification_fixture_path, false, false, false,
+            true);
+        write_system_parameters_info_pe32_fixture(
+            direct_input8_create_fixture_path, false, false, false, false,
+            true);
         write_d3d9_pe32_fixture(argv[8]);
         shift::runtime::RecompiledPcodeModule duplicate_module(argv[1]);
         require(duplicate_module.load_supplemental_module(argv[2]),
@@ -2405,6 +2482,137 @@ int main(int argc, char** argv) {
         require(user32_image.import_module_count == 2 &&
                     user32_image.import_function_count == 9,
                 "USER32/GDI32 fixture imports were not parsed");
+        shift::runtime::RecompiledPcodeModule find_window_w_module(argv[1]);
+        const auto find_window_w_image =
+            find_window_w_module.load_pe32_image(find_window_w_fixture_path);
+        require(find_window_w_image.import_function_count == 9,
+                "FindWindowW fixture imports were not parsed");
+        const uint32_t find_window_w = read_guest_u32(
+            find_window_w_module, "ram",
+            find_window_w_image.image_base + 0x2060);
+        constexpr uint32_t find_window_class_name_address = 0x00033b00;
+        constexpr uint32_t find_window_title_address = 0x00033b20;
+        const std::array<uint8_t, 4> find_window_class_name = {
+            'L', 0, 0, 0};
+        const std::array<uint8_t, 2> empty_window_title = {0, 0};
+        write_guest_bytes(find_window_w_module, find_window_class_name_address,
+                          find_window_class_name.data(),
+                          find_window_class_name.size());
+        write_guest_bytes(find_window_w_module, find_window_title_address,
+                          empty_window_title.data(),
+                          empty_window_title.size());
+        require(invoke_import(find_window_w_module, find_window_w,
+                              {find_window_class_name_address, 0}) == 0 &&
+                    invoke_import(find_window_w_module, find_window_w,
+                                  {0, find_window_title_address}) == 0,
+                "FindWindowW found a host window in the headless runtime");
+        shift::runtime::RecompiledPcodeModule reg_open_key_ex_w_module(
+            argv[1]);
+        const auto reg_open_key_ex_w_image =
+            reg_open_key_ex_w_module.load_pe32_image(
+                reg_open_key_ex_w_fixture_path);
+        require(reg_open_key_ex_w_image.import_module_count == 2 &&
+                    reg_open_key_ex_w_image.import_function_count == 9,
+                "ADVAPI32 registry fixture imports were not parsed");
+        const uint32_t reg_open_key_ex_w = read_guest_u32(
+            reg_open_key_ex_w_module, "ram",
+            reg_open_key_ex_w_image.image_base + 0x2060);
+        constexpr uint32_t registry_subkey_address = 0x00033c00;
+        constexpr uint32_t registry_output_address = 0x00033d00;
+        constexpr char16_t logitech_registry_subkey[] =
+            u"Software\\Logitech\\Gaming Software";
+        static_assert(sizeof(char16_t) == 2);
+        write_guest_bytes(
+            reg_open_key_ex_w_module, registry_subkey_address,
+            reinterpret_cast<const uint8_t*>(logitech_registry_subkey),
+            sizeof(logitech_registry_subkey));
+        write_guest_u32(reg_open_key_ex_w_module, "ram",
+                        registry_output_address, 0x11223344);
+        require(invoke_import(
+                    reg_open_key_ex_w_module, reg_open_key_ex_w,
+                    {0x80000002, registry_subkey_address, 0, 0x20019,
+                     registry_output_address}) == 2 &&
+                    read_guest_u32(reg_open_key_ex_w_module, "ram",
+                                   registry_output_address) == 0x11223344,
+                "RegOpenKeyExW did not report the absent Logitech registry key");
+        shift::runtime::RecompiledPcodeModule register_device_notification_w_module(
+            argv[1]);
+        const auto register_device_notification_w_image =
+            register_device_notification_w_module.load_pe32_image(
+                register_device_notification_w_fixture_path);
+        require(register_device_notification_w_image.import_module_count == 2 &&
+                    register_device_notification_w_image.import_function_count ==
+                        9,
+                "RegisterDeviceNotificationW fixture imports were not parsed");
+        const uint32_t register_device_notification_w = read_guest_u32(
+            register_device_notification_w_module, "ram",
+            register_device_notification_w_image.image_base + 0x2060);
+        constexpr uint32_t device_notification_filter_address = 0x00033e00;
+        write_guest_u32(register_device_notification_w_module, "ram",
+                        device_notification_filter_address, 32);
+        write_guest_u32(register_device_notification_w_module, "ram",
+                        device_notification_filter_address + 4, 5);
+        write_guest_u32(register_device_notification_w_module, "ram",
+                        device_notification_filter_address + 8, 0);
+        require(invoke_import(
+                    register_device_notification_w_module,
+                    register_device_notification_w,
+                    {0x00030008, device_notification_filter_address, 0}) ==
+                    0x00030050,
+                "RegisterDeviceNotificationW did not create a guest handle");
+        write_guest_u32(register_device_notification_w_module, "ram",
+                        device_notification_filter_address, 27);
+        require(invoke_import(
+                    register_device_notification_w_module,
+                    register_device_notification_w,
+                    {0x00030008, device_notification_filter_address, 0}) == 0 &&
+                    invoke_import(
+                        register_device_notification_w_module,
+                        register_device_notification_w,
+                        {0x00030008, 0xfffffff0, 0}) == 0,
+                "RegisterDeviceNotificationW accepted an invalid filter");
+        shift::runtime::RecompiledPcodeModule unregister_device_notification_module(
+            argv[1]);
+        const auto unregister_device_notification_image =
+            unregister_device_notification_module.load_pe32_image(
+                unregister_device_notification_fixture_path);
+        const uint32_t unregister_device_notification = read_guest_u32(
+            unregister_device_notification_module, "ram",
+            unregister_device_notification_image.image_base + 0x2060);
+        require(invoke_import(unregister_device_notification_module,
+                              unregister_device_notification,
+                              {0x00030050}) == 1 &&
+                    invoke_import(unregister_device_notification_module,
+                                  unregister_device_notification,
+                                  {0x00030054}) == 0,
+                "UnregisterDeviceNotification mishandled the guest handle");
+        shift::runtime::RecompiledPcodeModule direct_input8_create_module(
+            argv[1]);
+        const auto direct_input8_create_image =
+            direct_input8_create_module.load_pe32_image(
+                direct_input8_create_fixture_path);
+        require(direct_input8_create_image.import_module_count == 2 &&
+                    direct_input8_create_image.import_function_count == 9,
+                "DirectInput8Create fixture imports were not parsed");
+        const uint32_t direct_input8_create = read_guest_u32(
+            direct_input8_create_module, "ram",
+            direct_input8_create_image.image_base + 0x2060);
+        constexpr uint32_t direct_input8_iid_address = 0x00033e80;
+        constexpr uint32_t direct_input8_output_address = 0x00033f00;
+        const std::array<uint8_t, 16> direct_input8_iid{};
+        write_guest_bytes(direct_input8_create_module,
+                          direct_input8_iid_address,
+                          direct_input8_iid.data(), direct_input8_iid.size());
+        write_guest_u32(direct_input8_create_module, "ram",
+                        direct_input8_output_address, 0x12345678);
+        require(invoke_import(
+                    direct_input8_create_module, direct_input8_create,
+                    {direct_input8_create_image.image_base, 0x800,
+                     direct_input8_iid_address, direct_input8_output_address,
+                     0}) == 0x80004005 &&
+                    read_guest_u32(direct_input8_create_module, "ram",
+                                   direct_input8_output_address) == 0,
+                "DirectInput8Create did not report the missing headless input provider");
         const uint32_t system_parameters_info = read_guest_u32(
             user32_module, "ram", user32_image.image_base + 0x2060);
         const uint32_t peek_message_w = read_guest_u32(
@@ -5106,6 +5314,28 @@ int main(int argc, char** argv) {
                     std::string("GetProcAddress did not resolve ") + name);
             return address;
         };
+        const uint32_t get_module_handle_w =
+            resolve_kernel32_api("GetModuleHandleW");
+        constexpr uint32_t wide_module_name_address = 0x00035400;
+        constexpr char16_t kernel32_module_name[] = u"KERNEL32.DLL";
+        constexpr char16_t missing_wide_module_name[] = u"missing.dll";
+        static_assert(sizeof(char16_t) == 2);
+        write_guest_bytes(
+            module, wide_module_name_address,
+            reinterpret_cast<const uint8_t*>(kernel32_module_name),
+            sizeof(kernel32_module_name));
+        require(invoke_import(module, get_module_handle_w, {0}) ==
+                        image.image_base &&
+                    invoke_import(module, get_module_handle_w,
+                                  {wide_module_name_address}) == 0xe0000000,
+                "GetModuleHandleW did not resolve the image and imported module");
+        write_guest_bytes(
+            module, wide_module_name_address,
+            reinterpret_cast<const uint8_t*>(missing_wide_module_name),
+            sizeof(missing_wide_module_name));
+        require(invoke_import(module, get_module_handle_w,
+                              {wide_module_name_address}) == 0,
+                "GetModuleHandleW resolved a module absent from the PE imports");
         const uint32_t get_current_directory_api =
             resolve_kernel32_api("GetCurrentDirectoryA");
         const uint32_t set_current_directory_api =
@@ -5877,6 +6107,63 @@ int main(int argc, char** argv) {
                     read_guest_u32(module, "ram", version_info_address + 152) ==
                         0x00010000,
                 "GetVersionExA did not fill OSVERSIONINFOEXA fields");
+
+        shift::runtime::RecompiledPcodeModule get_version_ex_w_module(argv[1]);
+        const auto get_version_ex_w_image =
+            get_version_ex_w_module.load_pe32_image(
+                get_version_ex_w_fixture_path);
+        require(get_version_ex_w_image.import_function_count == 81,
+                "GetVersionExW fixture imports were not parsed");
+        constexpr uint32_t version_info_w_address = 0x00032300;
+        write_guest_u32(get_version_ex_w_module, "ram",
+                        version_info_w_address, 276);
+        require(invoke_import(get_version_ex_w_module, 0xf00000b0,
+                              {version_info_w_address}) == 1 &&
+                    read_guest_u32(get_version_ex_w_module, "ram",
+                                   version_info_w_address + 4) == 5 &&
+                    read_guest_u32(get_version_ex_w_module, "ram",
+                                   version_info_w_address + 8) == 1 &&
+                    read_guest_u32(get_version_ex_w_module, "ram",
+                                   version_info_w_address + 12) == 2600 &&
+                    read_guest_u32(get_version_ex_w_module, "ram",
+                                   version_info_w_address + 16) == 2,
+                "GetVersionExW returned unexpected Windows XP profile fields");
+        std::array<uint8_t, 16> service_pack_w_first{};
+        std::array<uint8_t, 14> service_pack_w_last{};
+        require(get_version_ex_w_module.read_guest(
+                    "ram", version_info_w_address + 20,
+                    service_pack_w_first.size(), service_pack_w_first.data()) &&
+                    get_version_ex_w_module.read_guest(
+                        "ram", version_info_w_address + 20 +
+                                   service_pack_w_first.size(),
+                        service_pack_w_last.size(), service_pack_w_last.data()),
+                "could not read GetVersionExW service pack string");
+        constexpr char expected_service_pack_w[] = "Service Pack 3";
+        for (size_t index = 0; index < sizeof(expected_service_pack_w); ++index) {
+            const size_t offset = index * 2;
+            const uint8_t low = offset < service_pack_w_first.size()
+                                    ? service_pack_w_first[offset]
+                                    : service_pack_w_last[
+                                          offset - service_pack_w_first.size()];
+            const uint8_t high = offset + 1 < service_pack_w_first.size()
+                                     ? service_pack_w_first[offset + 1]
+                                     : service_pack_w_last[
+                                           offset + 1 -
+                                           service_pack_w_first.size()];
+            require(low == static_cast<uint8_t>(expected_service_pack_w[index]) &&
+                        high == 0,
+                    "GetVersionExW returned an unexpected service pack string");
+        }
+        write_guest_u32(get_version_ex_w_module, "ram",
+                        version_info_w_address, 284);
+        require(invoke_import(get_version_ex_w_module, 0xf00000b0,
+                              {version_info_w_address}) == 1 &&
+                    read_guest_u32(get_version_ex_w_module, "ram",
+                                   version_info_w_address + 276) == 3 &&
+                    read_guest_u32(get_version_ex_w_module, "ram",
+                                   version_info_w_address + 280) ==
+                        0x00010000,
+                "GetVersionExW did not fill OSVERSIONINFOEXW fields");
         require(module.dispatched_function_count() == 7,
                 "direct Kernel32 calls changed the P-code function count");
 
@@ -6142,6 +6429,28 @@ int main(int argc, char** argv) {
         std::memcpy(&fscale_result, fscale_bytes.data(), fscale_bytes.size());
         require(std::fabs(fscale_result - 12.0L) < 1e-18L,
                 "x86 FSCALE result differed from binary80 3 * 2^2");
+        require(module.call(0x0040b500) == 0,
+                "x86 FPATAN userop did not compute in binary80: " +
+                    module.last_error());
+        std::array<uint8_t, 10> fpatan_bytes{};
+        require(module.read_guest("ram", 0x110a0, fpatan_bytes.size(),
+                                  fpatan_bytes.data()),
+                "x86 FPATAN result was not written to guest memory");
+        long double fpatan_result = 0.0L;
+        std::memcpy(&fpatan_result, fpatan_bytes.data(), fpatan_bytes.size());
+        require(std::fabs(fpatan_result - std::atan2(2.0L, 1.0L)) < 1e-18L,
+                "x86 FPATAN result differed from binary80 atan2(ST1, ST0)");
+        require(module.call(0x0040b600) == 0,
+                "x86 FSIN userop did not compute in binary80: " +
+                    module.last_error());
+        std::array<uint8_t, 10> fsin_bytes{};
+        require(module.read_guest("ram", 0x110b0, fsin_bytes.size(),
+                                  fsin_bytes.data()),
+                "x86 FSIN result was not written to guest memory");
+        long double fsin_result = 0.0L;
+        std::memcpy(&fsin_result, fsin_bytes.data(), fsin_bytes.size());
+        require(std::fabs(fsin_result - std::sin(1.0L)) < 1e-18L,
+                "x86 FSIN result differed from binary80 sin(1)");
         require(module.call(0x0040e000) == 0,
                 "x86 MINPS userop did not process four packed lanes: " +
                     module.last_error());
@@ -6181,6 +6490,8 @@ int main(int argc, char** argv) {
                     module.last_error().find("guest_stack=[0x0040d000]") !=
                         std::string::npos &&
                     module.last_error().find("guest_regs={EAX=") !=
+                        std::string::npos &&
+                    module.last_error().find("ZF=0x") !=
                         std::string::npos,
                 "low-memory write error omitted its address, stack, or registers");
 
@@ -6234,6 +6545,9 @@ int main(int argc, char** argv) {
                         std::string::npos,
                 "ExitProcess returned to guest code instead of terminating it");
 
+        std::filesystem::remove(get_version_ex_w_fixture_path);
+        std::filesystem::remove(find_window_w_fixture_path);
+        std::filesystem::remove(reg_open_key_ex_w_fixture_path);
         std::cout << "PASS: PE32 headers, sections and imports mapped; "
                      "observed Kernel32 startup services wrote outputs and "
                      "applied stdcall cleanup; unsupported imports failed closed\n";

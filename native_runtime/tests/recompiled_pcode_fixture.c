@@ -381,6 +381,43 @@ int rvi_0040b400(RviPcodeContext *ctx) {
                       bytes);
 }
 
+int rvi_0040b500(RviPcodeContext *ctx) {
+    const uint64_t arguments[4] = {
+        UINT64_C(0x8000000000000000), UINT64_C(0x3fff),
+        UINT64_C(0x8000000000000000), UINT64_C(0x4000)};
+    const unsigned argument_sizes[2] = {10, 10};
+    uint64_t result[2] = {0};
+    if (ctx->userop(ctx->opaque, 103, arguments, argument_sizes, 2, result,
+                    10) != 0) {
+        return -1;
+    }
+    uint8_t bytes[10];
+    for (size_t index = 0; index < sizeof(bytes); ++index) {
+        bytes[index] = (uint8_t)(result[index / sizeof(uint64_t)] >>
+                                 ((index % sizeof(uint64_t)) * 8));
+    }
+    return ctx->write(ctx->opaque, "ram", UINT64_C(0x110a0), sizeof(bytes),
+                      bytes);
+}
+
+int rvi_0040b600(RviPcodeContext *ctx) {
+    const uint64_t arguments[2] = {
+        UINT64_C(0x8000000000000000), UINT64_C(0x3fff)};
+    const unsigned argument_sizes[1] = {10};
+    uint64_t result[2] = {0};
+    if (ctx->userop(ctx->opaque, 106, arguments, argument_sizes, 1, result,
+                    10) != 0) {
+        return -1;
+    }
+    uint8_t bytes[10];
+    for (size_t index = 0; index < sizeof(bytes); ++index) {
+        bytes[index] = (uint8_t)(result[index / sizeof(uint64_t)] >>
+                                 ((index % sizeof(uint64_t)) * 8));
+    }
+    return ctx->write(ctx->opaque, "ram", UINT64_C(0x110b0), sizeof(bytes),
+                      bytes);
+}
+
 static int minmaxps_and_write(RviPcodeContext *ctx, uint32_t userop_index,
                               uint64_t first_low, uint64_t first_high,
                               uint64_t second_low, uint64_t second_high,
