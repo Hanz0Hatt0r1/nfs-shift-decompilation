@@ -84,6 +84,11 @@ fallthrough plus bounded entrypoint trampolines. Probes v463–v466 advanced the
 guest frontier through 4,621 unique functions; they still stop before frontend
 or retail rendering. Compact hashes and blockers are recorded in
 [`x87_call_fallthrough_followup_v462_v466.json`](../evidence/retail_frontier_20261020/x87_call_fallthrough_followup_v462_v466.json).
+The continued chain through v474 reached 4,656 unique guest functions; a
+fresh `0x00427770` override cleared the generic failure, and the current
+missing export is `0x0082db10`. See the
+[`v467–v474 follow-up`](../evidence/retail_frontier_20261020/x87_call_fallthrough_followup_v467_v474.json)
+for per-run and module hashes.
 
 For a UI-gate probe, set `SHIFT_TRACE_UI_STATE_GATE=1` and
 `SHIFT_TRACE_GUEST_PROVENANCE=0x00be250c,0x00be2534`. Each `0x0050c880` trace
