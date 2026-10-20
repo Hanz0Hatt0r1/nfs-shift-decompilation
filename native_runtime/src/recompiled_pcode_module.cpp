@@ -48,6 +48,7 @@ constexpr size_t kGuestFunctionHistoryLimit = 64;
 constexpr size_t kRegisterBankSize = 0x2000;
 constexpr size_t kMaximumPcodeValueSize = 16;
 constexpr uint32_t kMaximumCallDepth = 256;
+constexpr uint32_t kGuestDispatchReturnQuantum = 64;
 constexpr uint16_t kPeI386 = 0x014c;
 constexpr uint16_t kPe32Magic = 0x010b;
 constexpr uint16_t kMaximumPeSectionCount = 96;
@@ -736,6 +737,7 @@ struct RecompiledPcodeModule::Impl {
         uint32_t current_exit_code = 259;
         uint32_t call_depth = 0;
         uint32_t indirect_jump_depth = 0;
+        uint32_t dispatch_returns_since_quantum = 0;
         bool exit_requested = false;
     };
 
@@ -913,7 +915,27 @@ struct RecompiledPcodeModule::Impl {
 
     static int call_callback(void* opaque, uint64_t target) {
         auto* self = static_cast<Impl*>(opaque);
-        return self ? self->dispatch(target) : -1;
+        if (!self) return -1;
+        const int result = self->dispatch(target);
+        if (result != 0 || !self->scheduler_context_active ||
+            !self->guest_coroutine_active) {
+            return result;
+        }
+        GuestThread* thread =
+            self->guest_execution_state(self->current_guest_thread_handle);
+        if (!thread) {
+            self->error = "active guest thread context disappeared";
+            return -1;
+        }
+        if (++thread->dispatch_returns_since_quantum >=
+            kGuestDispatchReturnQuantum) {
+            thread->dispatch_returns_since_quantum = 0;
+            if (!self->ready_guest_threads.empty() &&
+                !self->yield_current_guest_thread(true)) {
+                return -1;
+            }
+        }
+        return result;
     }
 
     static int userop_callback(void* opaque, uint32_t index,
