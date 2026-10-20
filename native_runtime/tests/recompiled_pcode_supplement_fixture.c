@@ -197,15 +197,22 @@ int rvi_00401020(RviPcodeContext *ctx) {
         thread_status != 1) {
         return -9;
     }
-    if (fixture_call_import(ctx, switch_to_thread, NULL, 0, &switched) != 0 ||
-        switched != 1) {
-        return -10;
-    }
     uint8_t worker_marker[4] = {0};
     const uint8_t expected_worker_marker[4] = {0x34, 0x12, 0, 0};
-    if (ctx->read(ctx->opaque, "ram", UINT64_C(0x32c10),
-                  sizeof(worker_marker), worker_marker) != 0 ||
-        worker_marker[0] != expected_worker_marker[0] ||
+    for (uint32_t poll = 0; poll < 1024; ++poll) {
+        if (ctx->call(ctx->opaque, UINT32_C(0x004010a0)) != 0 ||
+            ctx->read(ctx->opaque, "ram", UINT64_C(0x32c10),
+                      sizeof(worker_marker), worker_marker) != 0) {
+            return -10;
+        }
+        if (worker_marker[0] == expected_worker_marker[0] &&
+            worker_marker[1] == expected_worker_marker[1] &&
+            worker_marker[2] == expected_worker_marker[2] &&
+            worker_marker[3] == expected_worker_marker[3]) {
+            break;
+        }
+    }
+    if (worker_marker[0] != expected_worker_marker[0] ||
         worker_marker[1] != expected_worker_marker[1] ||
         worker_marker[2] != expected_worker_marker[2] ||
         worker_marker[3] != expected_worker_marker[3]) {
@@ -430,6 +437,11 @@ int rvi_00401080(RviPcodeContext *ctx) {
                             &result) != 0 || result != 1) {
         return -3;
     }
+    return 0;
+}
+
+int rvi_004010a0(RviPcodeContext *ctx) {
+    (void)ctx;
     return 0;
 }
 

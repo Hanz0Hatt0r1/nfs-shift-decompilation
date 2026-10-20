@@ -1,0 +1,81 @@
+{
+  "format": "SHIFT.Process1SchedulerReturnQuantum/1",
+  "base": {
+    "branch": "work/retail-runtime",
+    "initial_main": "c7ba518d7a36751c2587a1bd3be032f8a0a7dfcc",
+    "latest_main_checked": "7927297f162823ad6814cc0742f77114df4214bd",
+    "latest_main_change_scope": "Process 2 D3D9 draw translation; no Process 1 files"
+  },
+  "retail_image": {
+    "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/probe-cwd-v46-game-root/SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "prior_evidence": {
+    "v520": {
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v520-caller-006496f0.json",
+      "report_sha256": "c9db174b528f52fe2b6823186c07ebd54e24b3b4f19c2bf00b47263328d1a0e2",
+      "observation": "ResumeThread returned 1; subsequent worker write of predicate bit 2 was unidentified"
+    },
+    "v523": {
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v523-controller-worker-and-poll.log",
+      "log_sha256": "92eb9b893d25828f8fec63e9e69671b1bd3b939e5628b228012faa8c43046376",
+      "observation": "caller 0x005ab6c0 repeatedly called 0x006550f0; EAX remained 0 and target word remained 0x00000002"
+    },
+    "v524": {
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v524-scheduler-return-quantum.json",
+      "report_sha256": "c7d62bd9f66e65a4f394f7d209cdee1c19a3d802729b5007e7f530bddf59f85d",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v524-scheduler-return-quantum.log",
+      "log_sha256": "f770fcb4e6025f35f05adeb76dcb36b1e229be6e26b51d98ccb58f668a6a0187",
+      "status": "host-frame-loop",
+      "frames_rendered": 120,
+      "guest_draw_translation": false,
+      "entrypoint_complete": false
+    }
+  },
+  "baseline_replay": {
+    "runtime_source": "main before this change",
+    "output": "/tmp/process1-retail-runtime-evidence/main-v524-replay.json",
+    "output_sha256": "85fd2323c46c9f6190a4534eab531fab14618075a5b07ea5d42479b3e98e5164",
+    "log": "/tmp/process1-retail-runtime-evidence/main-v524-replay.log",
+    "log_sha256": "9e941ae40a8f1c3c01c772c8a25ec871ae5b44431ada767904c35f7a900fd14f",
+    "last_observed_dispatch": 6983183,
+    "termination": "manually stopped after repeated identical poll observations; not a game timeout or game-launch result"
+  },
+  "change": {
+    "dispatch_return_quantum": 64,
+    "unit": "successful guest-call dispatch returns per guest thread",
+    "yield_condition": "cooperative guest scheduler active and another guest thread runnable",
+    "guest_memory_or_api_result_modified": false
+  },
+  "verification": {
+    "build_command": "bash tools/build_shift_runtime_cached.sh --build-dir /tmp/process1-retail-runtime-build --jobs 8",
+    "runtime_sha256": "92e86d84b9f5765a7e7c65ddb36eebe15bec8696ad52dbacfa1cb47f93f60a3b",
+    "focused_ctest": {
+      "name": "shift_runtime_recompiled_pcode_module",
+      "result": "passed"
+    },
+    "retail_replay": {
+      "output": "/tmp/process1-retail-runtime-evidence/quantum-v524-replay.json",
+      "output_sha256": "21e6b2bca12e4bdcade490add16ecb69a4a0ed5a0ebab99907420360c5333f0c",
+      "log": "/tmp/process1-retail-runtime-evidence/quantum-v524-replay.log",
+      "log_sha256": "853e8e905ea2cfb9adb4ca7f3e8400585ea2d4bd47d582bea1cc7bf8d176d953",
+      "same_pe_and_v512_module_manifest": true,
+      "status": "host-frame-loop",
+      "exit_code": 0,
+      "dispatches": 815322,
+      "unique_functions": 3930,
+      "frames_rendered": 120,
+      "main_thread_current_function": "0x00633a50",
+      "entrypoint_complete": false,
+      "validation_errors": 0,
+      "guest_draw_translation": false,
+      "retail_rendering_proven": false,
+      "frontend_or_race_proven": false
+    }
+  },
+  "limitations": [
+    "The post-change trace selection did not capture caller 0x005ab6c0, so it does not prove that the exact predicate bit 2 was set.",
+    "A host-frame-loop result is not evidence of a playable launch, frontend readiness, a race, or retail draw submission.",
+    "The dispatch-return quantum approximates preemptive scheduling at safe guest-call boundaries; it is not cycle-accurate Windows scheduling."
+  ]
+}

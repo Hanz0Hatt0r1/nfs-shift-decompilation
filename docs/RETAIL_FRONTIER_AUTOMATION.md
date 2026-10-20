@@ -118,6 +118,34 @@ D3D9 draw, or retail rendering is proven. See the
 [`post-PR #2123 follow-up evidence`](../evidence/retail_frontier_20261020/post_pr2123_retail_frontier_followup.json)
 for report, log, corpus, requirements, and module hashes.
 
+Process 1 replayed the v520 call chain on the current runtime before changing
+scheduler behavior. The pinned PE repeatedly called `0x006550f0` from
+`0x005ab6c0`; the call returned `EAX=0` while `[0x27f39bf0+0x74]` stayed
+`0x00000002`, and the diagnostic was stopped manually after dispatch
+6,983,183 to avoid continuing the same poll. The latest available external
+frontier artifacts were v523 and v524 (Oct 21): v523 retained that poll, while
+v524 reported a 120-frame host loop with no retail draw translation and an
+incomplete PE entrypoint. The return-quantum implementation now lets ready
+guest threads run after 64 successful nested guest-call dispatch returns, at a
+guest call boundary. It changes no guest memory or API result and only yields
+when the cooperative scheduler has another runnable thread; this is a
+host-neutral scheduling approximation, not a cycle-accurate Windows time
+slice. A focused fixture now busy-polls a marker written by a resumed worker
+and passes without calling `SwitchToThread` in that polling interval.
+
+The rebuilt runtime passed `shift_runtime_recompiled_pcode_module` and a
+120-frame replay using the same pinned PE and v512 cumulative module manifest.
+The replay status was `host-frame-loop`, with 815,322 dispatches, 3,930 unique
+functions, main-thread snapshot at `0x00633a50`, and zero validation errors.
+The PE entrypoint remained incomplete; the runtime submitted 120 host frames,
+but guest draw translation, frontend readiness, a race, and retail rendering
+remain unproven. The selected trace did not include caller `0x005ab6c0`, so this
+result must not be read as proof that its exact predicate bit was observed set.
+See the
+[`Process 1 scheduler-quantum evidence`](../evidence/retail_frontier_20261021/process1_scheduler_return_quantum.json)
+for hashes, commands, and limits. The newer main commit #2128 was checked and
+contains Process 2 D3D9 draw work; it is outside this Process 1 change.
+
 For a UI-gate probe, set `SHIFT_TRACE_UI_STATE_GATE=1` and
 `SHIFT_TRACE_GUEST_PROVENANCE=0x00be250c,0x00be2534`. Each `0x0050c880` trace
 event then includes exact-byte `helper_flag_last_writer` provenance, with the
