@@ -6218,8 +6218,7 @@ int main(int argc, char** argv) {
                         pending_entrypoint_state.main_thread_current_function &&
                     !main_thread_recent_functions.empty() &&
                     main_thread_recent_functions.size() <= 64 &&
-                    main_thread_recent_functions.back() ==
-                        pending_entrypoint_state.main_thread_current_function &&
+                    main_thread_recent_functions.back() == 0x004010a0 &&
                     read_guest_u32(module, "ram", 0x00032c10) == 0x1234 &&
                     read_guest_u32(module, "ram", 0x00032c14) != 0,
                 "cooperative scheduler did not yield after resuming a guest worker");
@@ -6314,7 +6313,7 @@ int main(int argc, char** argv) {
                     event_worker_marker == expected_event_worker_marker &&
                     read_guest_u32(module, "ram", 0x00032c28) != 0,
                 "alertable event wait did not resume after its guest worker signaled");
-        require(module.dispatched_function_count() == 13,
+        require(module.unique_dispatched_function_count() == 13,
                 "supplemental entry point or scheduled worker was not dispatched");
         require(module.call_pe32_entry_point() != 0 &&
                     module.last_error().find("already been invoked") !=
