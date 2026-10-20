@@ -23,8 +23,10 @@ COMPARE = {
 
 CULL = {
     1: "NONE",
-    2: "FRONT",
-    3: "BACK",
+    # D3DCULL_CW rejects clockwise faces; with a CCW Vulkan front face those
+    # are Vulkan back faces. D3DCULL_CCW is the converse.
+    2: "BACK",
+    3: "FRONT",
 }
 
 ADDRESS = {
