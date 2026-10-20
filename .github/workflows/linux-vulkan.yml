@@ -1777,6 +1777,7 @@ jobs:
         run: |
           python3 -m pip install -r requirements-dev.txt
           python3 -m pytest -q tests/test_recompiled_pcode_pe32_vulkan_runtime.py
+          python3 -m pytest -q tests/test_vulkan_d3d9_draw.py
       - name: Native Linux runtime neutral scene-set frame loop
         run: |
           set -o pipefail

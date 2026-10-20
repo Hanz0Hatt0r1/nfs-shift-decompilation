@@ -1,0 +1,93 @@
+{
+  "format": "SHIFT.D3D9VulkanDrawParameterEvidence/1",
+  "version": 1,
+  "capture": {
+    "game_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "raw_capture_sha256": "d3f3076228258eb4c72983dd5d0ea00f3c13af0c39c1a837f81c2371c5b7dcdc",
+    "raw_capture_path": "/home/pes/PortProton/data/prefixes/DEFAULT/drive_c/GOG Games/Need For Speed.Shift.v 1.02/shift_d3d9_capture.jsonl",
+    "audit_path": "evidence/shift_d3d9_capture_audit_20261018.json",
+    "target_draw_local_path": "evidence/shift_silverstone_target_draw_local_20261018.json.gz"
+  },
+  "coverage": {
+    "target_draw_count": 1581,
+    "target_primitive_type": 4,
+    "target_index_format": 101,
+    "target_draws_with_these_values": 1581,
+    "d3d9_primitive_type_name": "D3DPT_TRIANGLELIST",
+    "d3d9_index_format_name": "D3DFMT_INDEX16"
+  },
+  "draws": [
+    {
+      "role": "first-captured-retail-indexed-draw",
+      "draw_event": {
+        "event_index": 1110,
+        "frame": 344,
+        "event": "draw_indexed_primitive",
+        "device_ptr": "0xd46c140",
+        "primitive_type": 4,
+        "base_vertex_index": 0,
+        "min_vertex_index": 0,
+        "num_vertices": 4,
+        "start_index": 0,
+        "primitive_count": 2
+      },
+      "index_binding": {
+        "index_buffer_ptr": "0x229f1500",
+        "creation_event_index": 1067,
+        "descriptor": {
+          "format": 101,
+          "length": 12
+        }
+      },
+      "expected_vulkan_draw": {
+        "topology": "VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
+        "index_type": "VK_INDEX_TYPE_UINT16",
+        "index_count": 6,
+        "instance_count": 1,
+        "first_index": 0,
+        "vertex_offset": 0,
+        "first_instance": 0
+      }
+    },
+    {
+      "role": "captured-race-target-draw",
+      "draw_event": {
+        "event_index": 1474620,
+        "frame": 4287,
+        "event": "draw_indexed_primitive",
+        "device_ptr": "0xd46c140",
+        "primitive_type": 4,
+        "base_vertex_index": 0,
+        "min_vertex_index": 0,
+        "num_vertices": 423,
+        "start_index": 0,
+        "primitive_count": 538
+      },
+      "index_binding": {
+        "index_buffer_ptr": "0x353a9328",
+        "creation_event_index": 1348509,
+        "descriptor": {
+          "format": 101,
+          "length": 3228
+        }
+      },
+      "pixel_shader_sha256": "d7859ccad24d2884b4e4eebeb2f520ea6fcdfbbd65cdc475c22f86a4200d351a",
+      "expected_vulkan_draw": {
+        "topology": "VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
+        "index_type": "VK_INDEX_TYPE_UINT16",
+        "index_count": 1614,
+        "instance_count": 1,
+        "first_index": 0,
+        "vertex_offset": 0,
+        "first_instance": 0
+      }
+    }
+  ],
+  "boundary": {
+    "source_capture_buffer_payloads_observed": false,
+    "source_capture_texture_snapshots_observed": false,
+    "source_capture_portable_resource_path_sha_pairs_observed": false,
+    "translation_submits_to_vulkan": false,
+    "retail_render_parity_proven": false
+  }
+}
