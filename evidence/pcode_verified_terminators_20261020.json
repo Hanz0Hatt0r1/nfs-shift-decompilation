@@ -1,0 +1,29 @@
+{
+  "format": "SHIFT.PcodeVerifiedInstructionRequirements/1",
+  "source": "evidence/retail_frontier_20261020/entrypoint_probe_v303_v310_cinit_esi_stack.json",
+  "note": "PE32 retail 1.02 verified return block of 0x0050f010. Required addresses must be exported as instructions, not inferred from contiguity. This manifest intentionally FAILS against the frozen 2026-10-17 corpus.",
+  "functions": {
+    "0x0050f010": [
+      {
+        "address": "0x0050f478",
+        "bytes": "b801000000"
+      },
+      {
+        "address": "0x0050f47d",
+        "bytes": "5e"
+      },
+      {
+        "address": "0x0050f47e",
+        "bytes": "8be5"
+      },
+      {
+        "address": "0x0050f480",
+        "bytes": "5d"
+      },
+      {
+        "address": "0x0050f481",
+        "bytes": "c3"
+      }
+    ]
+  }
+}
