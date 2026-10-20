@@ -452,6 +452,8 @@ std::string format_guest_call_trace(
         }
         text << ",\"is_import\":"
              << (event.is_import ? "true" : "false")
+             << ",\"target_resolved\":"
+             << (event.target_resolved ? "true" : "false")
              << ",\"import_name\":";
         if (event.is_import) {
             text << format_json_string(event.import_name);

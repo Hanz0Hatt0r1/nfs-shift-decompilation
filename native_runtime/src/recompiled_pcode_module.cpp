@@ -1381,6 +1381,10 @@ struct RecompiledPcodeModule::Impl {
             } else {
                 std::fputs("unknown", stderr);
             }
+            if (recorded.is_import) {
+                std::fprintf(stderr, " import=%s",
+                             recorded.import_name.c_str());
+            }
             for (const auto& slot : recorded.stack_slots) {
                 std::fprintf(stderr, " stack+0x%x=", slot.offset);
                 if (slot.has_value) {
@@ -1395,6 +1399,15 @@ struct RecompiledPcodeModule::Impl {
                     std::fprintf(stderr, "0x%08x", slot.value);
                 } else {
                     std::fputs("unreadable", stderr);
+                }
+                if (slot.has_last_writer) {
+                    const auto& writer = slot.last_writer;
+                    std::fprintf(
+                        stderr,
+                        " writer=0x%08x write=0x%08x/%u value=0x%08x dispatch=%llu",
+                        writer.function, writer.write_address,
+                        writer.write_size, writer.word_value,
+                        static_cast<unsigned long long>(writer.dispatch_count));
                 }
             }
             for (const auto& slot : recorded.string_slots) {
@@ -1440,6 +1453,9 @@ struct RecompiledPcodeModule::Impl {
                 static_cast<unsigned long long>(event.dispatch_count),
                 static_cast<unsigned long long>(event.completion_dispatch_count),
                 event.thread_id, event.caller, event.function);
+            if (event.is_import) {
+                std::fprintf(stderr, " import=%s", event.import_name.c_str());
+            }
             if (event.has_eax_return) {
                 std::fprintf(stderr, "0x%08x", event.eax_return);
             } else {
@@ -1470,6 +1486,21 @@ struct RecompiledPcodeModule::Impl {
                 std::fputs("unknown", stderr);
             }
             std::fputc('\n', stderr);
+            std::fflush(stderr);
+        }
+    }
+
+    void mark_guest_call_trace_unresolved(size_t index,
+                                          const std::string& reason) {
+        if (index >= guest_call_trace_events.size()) return;
+        auto& event = guest_call_trace_events[index];
+        event.target_resolved = false;
+        if (guest_call_trace_live_log_enabled) {
+            std::fprintf(
+                stderr,
+                "shift_guest_call_trace_unresolved: dispatch=%llu thread=%u caller=0x%08x target=0x%08x reason=%s\n",
+                static_cast<unsigned long long>(event.dispatch_count),
+                event.thread_id, event.caller, event.function, reason.c_str());
             std::fflush(stderr);
         }
     }
@@ -2116,6 +2147,8 @@ struct RecompiledPcodeModule::Impl {
                     error = unresolved_error;
                 return thunk_result;
             }
+            mark_guest_call_trace_unresolved(unresolved_trace_index,
+                                             unresolved_error);
             error = unresolved_error;
             return -1;
         }
@@ -13420,13 +13453,13 @@ struct RecompiledPcodeModule::Impl {
                 }
                 std::snprintf(
                     call, sizeof(call),
-                    "%s{target=0x%08x,return=0x%08x,ecx=0x%08x,eax=0x%08x,edx=0x%08x,esi=0x%08x,edi=0x%08x,ebp=0x%08x,esp=0x%08x,eax_return=%s,esi_return=%s,edi_return=%s,ebp_return=%s,esp_return=%s,completed=%u%s%s",
+                    "%s{target=0x%08x,return=0x%08x,ecx=0x%08x,eax=0x%08x,edx=0x%08x,esi=0x%08x,edi=0x%08x,ebp=0x%08x,esp=0x%08x,eax_return=%s,esi_return=%s,edi_return=%s,ebp_return=%s,esp_return=%s,resolved=%u,completed=%u%s%s",
                     index == 0 ? "" : ",", event.function,
                     event.has_return_address ? event.return_address : 0,
                     event.ecx_entry, event.eax_entry, event.edx_entry,
                     event.esi_entry, event.edi_entry, event.ebp_entry,
                     event.esp_entry, eax_return, esi_return, edi_return,
-                    ebp_return, esp_return,
+                    ebp_return, esp_return, event.target_resolved ? 1u : 0u,
                     event.completed ? 1u : 0u,
                     event.is_import ? ",import=" : "",
                     event.is_import ? event.import_name.c_str() : "");

@@ -1292,6 +1292,7 @@ int main(int argc, char** argv) {
                             0x00403100 &&
                         snapshot.guest_call_trace.front().function ==
                             0x00685700 &&
+                        snapshot.guest_call_trace.front().target_resolved &&
                         snapshot.guest_call_trace.front().ecx_entry ==
                             receiver &&
                         snapshot.guest_call_trace.front().completed &&
@@ -1332,8 +1333,9 @@ int main(int argc, char** argv) {
                     live_trace.find("caller=0x00403100 target=0x00685700") !=
                         std::string::npos &&
                     live_trace.find("shift_guest_call_trace_return:") !=
-                        std::string::npos &&
-                    live_trace.find("eax=0x78563412") != std::string::npos,
+                    std::string::npos &&
+                    live_trace.find("eax=0x78563412") != std::string::npos &&
+                    live_trace.find("writer=0x00403100") != std::string::npos,
                 "live guest call trace did not persist entry and return events: " +
                     live_trace);
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG") == 0,
@@ -1389,7 +1391,11 @@ int main(int argc, char** argv) {
                 "could not configure guest import stack trace fixture");
         require(setenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS", "0x0", 1) == 0,
                 "could not configure guest import target trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG", "1", 1) == 0,
+                "could not enable guest import live trace fixture");
+        std::string import_live_trace;
         {
+            StderrCapture capture;
             shift::runtime::RecompiledPcodeModule import_trace_module(argv[1]);
             (void)import_trace_module.load_pe32_image(argv[4]);
             require(import_trace_module.call(0x00405000) == 0,
@@ -1425,7 +1431,14 @@ int main(int argc, char** argv) {
                         snapshot.guest_call_trace.front().stack_slots.front()
                                 .value == 1,
                     "guest call trace did not capture selected import and its stack argument");
+            import_live_trace = capture.text();
         }
+        require(import_live_trace.find(
+                    "import=KERNEL32.dll!Sleep") != std::string::npos,
+                "live guest call trace omitted the imported API name: " +
+                    import_live_trace);
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG") == 0,
+                "could not disable guest import live trace fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_STACK_SLOTS") == 0,
                 "could not disable guest import stack trace fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS") == 0,
@@ -6339,7 +6352,11 @@ int main(int argc, char** argv) {
                 "missing export did not identify the unresolved address and caller");
         require(setenv("SHIFT_TRACE_GUEST_CALLER", "0x00402100", 1) == 0,
                 "could not enable unresolved guest target trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG", "1", 1) == 0,
+                "could not enable unresolved live guest target trace fixture");
+        std::string unresolved_live_trace;
         {
+            StderrCapture capture;
             shift::runtime::RecompiledPcodeModule unresolved_trace_module(
                 argv[1]);
             (void)unresolved_trace_module.load_pe32_image(argv[4]);
@@ -6357,7 +6374,22 @@ int main(int argc, char** argv) {
                             "completed=0") != std::string::npos,
                     "unresolved guest call trace missed its target or call site: " +
                         unresolved_trace_module.last_error());
+            const auto snapshot =
+                unresolved_trace_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace.size() == 1 &&
+                        !snapshot.guest_call_trace.front().target_resolved &&
+                        !snapshot.guest_call_trace.front().completed &&
+                        unresolved_trace_module.last_error().find(
+                            "resolved=0") != std::string::npos,
+                    "unresolved guest call trace did not distinguish an absent export");
+            unresolved_live_trace = capture.text();
         }
+        require(unresolved_live_trace.find(
+                    "shift_guest_call_trace_unresolved:") != std::string::npos,
+                "live guest call trace did not mark an unresolved target: " +
+                    unresolved_live_trace);
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG") == 0,
+                "could not disable unresolved live guest target trace fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_CALLER") == 0,
                 "could not disable unresolved guest target trace fixture");
         require(module.call(0x00403000) != 0,

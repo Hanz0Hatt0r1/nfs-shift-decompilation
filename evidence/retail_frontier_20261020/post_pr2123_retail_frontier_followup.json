@@ -1,0 +1,484 @@
+{
+  "format": "NFSShift.RetailFrontierFollowupEvidence/1",
+  "topic": "Retail startup frontier after PR #2123 preflight acceleration",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "accelerator": {
+    "pr_url": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2123",
+    "state": "merged",
+    "merged_at": "2026-10-20T11:41:27Z",
+    "preflight_corpus": "passed",
+    "preflight_focused_ctest": "passed",
+    "runtime_build": "passed"
+  },
+  "frozen_pcode_preflight": {
+    "status": "passed",
+    "functions": 41552,
+    "instructions": 2089743,
+    "corpus_sha256": "d048edb7b4fdfd3727b10c1594b3837bf751e8de2eb6715c86d499a1347aa835",
+    "requirements_sha256": "586b55a84f1cc0013b1ab0033725da7330d80dfd4d8aae140bd02cc863220bde",
+    "requirements_file_sha256": "586b55a84f1cc0013b1ab0033725da7330d80dfd4d8aae140bd02cc863220bde",
+    "audit_report_sha256": "f66ed67bdea22c09b0628e44f88417817e38d0d5057b45aa4d4d4405030ab262",
+    "problem_count": 0,
+    "instruction_boundary_requirements": 256,
+    "requirement_checks": 312
+  },
+  "probes": [
+    {
+      "probe": "v506",
+      "status": "blocked",
+      "dispatches": 2164377,
+      "unique_functions": 4921,
+      "blocker": "P-code module has no exported function rvi_00664e40 called from guest function 0x0064a080",
+      "report_sha256": "6aeb0e80b123af39532c16cc75d7932b886b57a7925fd3db6c07136ae57d552c",
+      "probe_log_sha256": "e5bcfc020b8b1ab1c97b3db07404cc2743035a4dda0119efa1dcc6899916bfd0",
+      "retail_rendering_proven": false,
+      "module_manifest_sha256": "3c2411f6c7761013350846ff00dc02fa15102eb7864476acaf6844c26de09c18"
+    },
+    {
+      "probe": "v507",
+      "status": "blocked",
+      "dispatches": 2164415,
+      "unique_functions": 4923,
+      "blocker": "P-code function 0x0064a080 returned -1",
+      "report_sha256": "8794facfbabe93664a8466b8501fb64e71241acff1e9f033252e001dfde443d3",
+      "probe_log_sha256": "e50b717b78889aa7eee571a2fa5b8c7bed234c63f623f93b19d2ae6291f61182",
+      "retail_rendering_proven": false,
+      "module_manifest_sha256": "7c572586b27088a7b900d47816279a22c350dc91555611303b9b08ca71121a92"
+    },
+    {
+      "probe": "v508",
+      "status": "blocked",
+      "dispatches": 2164418,
+      "unique_functions": 4923,
+      "blocker": "P-code function 0x0064a080 returned -1",
+      "report_sha256": "1f3947089dc3830a12b76c0bbf81efee1874574aa843e08291139ebadfbfb905",
+      "probe_log_sha256": "2df9b3d5559471a71e02264c36afdfce90d13b46a7bfd5692ecfaea4f3b83e59",
+      "retail_rendering_proven": false,
+      "module_manifest_sha256": "e1ca1bf611e0c9604fb1d95ca8318a2a2337938a9c4e7608b5fff96797da405c"
+    },
+    {
+      "probe": "v509-experiment",
+      "status": "blocked",
+      "dispatches": 2164417,
+      "unique_functions": 4923,
+      "blocker": "duplicate P-code export rvi_00664650",
+      "report_sha256": "452d35435bff3cdf8e226ca9be844498f5e736ac99e27b00ea209d76693dabfd",
+      "probe_log_sha256": "2e38c440b9f82fe62e119b6fbe7cf511ffdb6fd20e7ad8245b15d318aafd2f97",
+      "retail_rendering_proven": false,
+      "module_manifest_sha256": "99b7a349020ccf55f5e399b457eba0f3bf8e3292b854f046c6d6609c873af6e9"
+    },
+    {
+      "probe": "v510",
+      "status": "blocked",
+      "dispatches": 2169557,
+      "unique_functions": 4933,
+      "blocker": "P-code function 0x00649fa0 returned -1",
+      "report_sha256": "cc1b5d167af7ad8c6ba0378ebce6fe6ca7d903a3f7ad08657ebec09af4b1d42c",
+      "probe_log_sha256": "3c40acc061ca4024b50ec731070939e2e600bed8de45c7403c10557959fbf2cd",
+      "retail_rendering_proven": false,
+      "module_manifest_sha256": "2cf57ec07d368ca8ba138ae8d6ea1747bc54c3ee22d556e83e0d99829fbd0a23"
+    },
+    {
+      "probe": "v511",
+      "status": "blocked",
+      "dispatches": 6974808,
+      "unique_functions": 5076,
+      "blocker": "P-code module has no exported function rvi_005a8870 called from guest function 0x0064879e",
+      "report_sha256": "c288f2ac6a7db7cc38bf9b46707dbe82d82d07406508fcaa58b9eb71409026f1",
+      "probe_log_sha256": "0e53d705c063bd5644f26e84a862b3746da18952f1ce21a696e0f25077f20514",
+      "retail_rendering_proven": false,
+      "module_manifest_sha256": "74cc941934a3e30bb2c5b87726bfb34926cbb6fd02e9d20c47b17bd5a24a869b"
+    },
+    {
+      "probe": "v512",
+      "status": "timeout",
+      "dispatches": null,
+      "unique_functions": null,
+      "blocker": null,
+      "report_sha256": "7068ea566144c0e5b8052853e219df9391848e2f92420e0e9b0a0f98fdc3ab5f",
+      "probe_log_sha256": "6431ea09ca32818865562204cca6b3a21f9bec9f9c8a3988d2d6090c602ac1cd",
+      "retail_rendering_proven": false,
+      "module_manifest_sha256": "e74fa6db4d03eeb0a0969352c92de7f1e82e61843fed3ae86245f7c81796dac5",
+      "timeout_seconds": 180,
+      "trace_event_note": "Timed out without a usable frontier."
+    },
+    {
+      "probe": "v512-diagnostic",
+      "status": "timeout",
+      "dispatches": null,
+      "unique_functions": null,
+      "blocker": null,
+      "report_sha256": "de47146456d157169ffbd560edeb2ff69a4da6fd9aa391638bfc01273644a414",
+      "probe_log_sha256": "9eb24c9a3d61eb3a7c531b9ab19d19557a988b30ec2b6e5207c471a9acdace6f",
+      "retail_rendering_proven": false,
+      "timeout_seconds": 120,
+      "trace_event_note": "Logged call attempts: dispatch 6974809 from 0x0064879e to 0x005a8870 (ECX=0x00be4820, return=0x0064882f), then dispatch 6974810 from 0x005a8870 to 0x0057ddf0 (ECX=0x00bbd100, return=0x005a8891). Entry events alone do not prove target resolution or body execution.",
+      "trace_events": [
+        {
+          "dispatch": 6974809,
+          "caller": "0x0064879e",
+          "target": "0x005a8870",
+          "ecx": "0x00be4820",
+          "return_address": "0x0064882f",
+          "interpretation": "call attempt"
+        },
+        {
+          "dispatch": 6974810,
+          "caller": "0x005a8870",
+          "target": "0x0057ddf0",
+          "ecx": "0x00bbd100",
+          "return_address": "0x005a8891",
+          "interpretation": "call attempt"
+        }
+      ],
+      "base_module": {
+        "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/libnfs_shift_pcode_startup_20261018.so",
+        "sha256": "6f8016195fffe4e6b3803929cf50946bdcf96e00436295f0db32a468487207c3",
+        "exports": [
+          "rvi_0057ddf0"
+        ]
+      }
+    },
+    {
+      "probe": "v513-caller-0057ddf0",
+      "status": "timeout",
+      "timeout_seconds": 180,
+      "dispatches": null,
+      "unique_functions": null,
+      "blocker": null,
+      "retail_rendering_proven": false,
+      "report_sha256": "511829bf43063e550ff61e42bffe8ee09a22b2fd6977e8bce49a4d95d03229a0",
+      "probe_log_sha256": "bc4e9cb629d808b39047eb6d4dc7aa94f7d250e896244b14980779ff0e1949d0",
+      "pcode_audit_sha256": "f66ed67bdea22c09b0628e44f88417817e38d0d5057b45aa4d4d4405030ab262",
+      "requirements_sha256": "586b55a84f1cc0013b1ab0033725da7330d80dfd4d8aae140bd02cc863220bde",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x0057ddf0"
+      },
+      "trace_summary": {
+        "returned_calls": [
+          "0x00533e70 (6 calls)",
+          "0x0057eb00",
+          "0x008868c0",
+          "0x005ab4f0"
+        ],
+        "last_call_attempt": {
+          "target": "0x005ab740",
+          "dispatch": 6974928,
+          "return_address": "0x0057de73",
+          "returned_before_timeout": false
+        }
+      }
+    },
+    {
+      "probe": "v514-target-005ab6c0",
+      "status": "timeout",
+      "timeout_seconds": 180,
+      "dispatches": null,
+      "unique_functions": null,
+      "blocker": null,
+      "retail_rendering_proven": false,
+      "report_sha256": "c3a14df5e4b67acc05e5479490ede9fc90249915bfb9278360efdac2f5b737d4",
+      "probe_log_sha256": "35ae61aa60331e49c4cab97b56cc88bd09684c6bced60a9512f225b696b1bc85",
+      "pcode_audit_sha256": "57fbb4ba7173430be6a8b1302e5db29bd7c11b8953d22dfab4e44c67e80305e3",
+      "requirements_sha256": "057f6e71be3308928a65ec58599b5f0f6e1ba95cd8350ced41eda0a32857e97f",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x005ab6c0",
+        "SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS": "0xa80,0xa81,0xa84"
+      },
+      "trace_event": {
+        "dispatch": 6974929,
+        "caller": "0x005ab740",
+        "target": "0x005ab6c0",
+        "ecx": "0x24219ac0",
+        "return_address": "0x005ab745",
+        "target_slots": {
+          "+0xa80": "0x20000000",
+          "+0xa81": "0x20200000",
+          "+0xa84": "0x20202020"
+        },
+        "interpretation": "call attempt only; this run did not record child calls or a return"
+      }
+    },
+    {
+      "probe": "v516-caller-005ab6c0",
+      "status": "timeout",
+      "timeout_seconds": 180,
+      "dispatches": null,
+      "unique_functions": null,
+      "blocker": "0x005ab6c0 repeatedly calls 0x006550f0, which returns EAX=0; 0x00655110 is not reached",
+      "retail_rendering_proven": false,
+      "report_sha256": "4db8d9ccd7865d35f37c75f8d705dcd9e01818e23e9678bd594bf1d779be3f65",
+      "probe_log_sha256": "d945f6d277a25e567f91e154e693848b681c49af81ee607237c1c5ec489a92c9",
+      "pcode_audit_sha256": "57fbb4ba7173430be6a8b1302e5db29bd7c11b8953d22dfab4e44c67e80305e3",
+      "requirements_sha256": "057f6e71be3308928a65ec58599b5f0f6e1ba95cd8350ced41eda0a32857e97f",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x005ab6c0",
+        "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8,0xc"
+      },
+      "resolved_execution_evidence": [
+        {
+          "dispatch": 6974930,
+          "target": "0x00649cb0",
+          "eax_return": "0x008f3d01",
+          "completion_dispatch": 6975021
+        },
+        {
+          "dispatch": 6975022,
+          "target": "0x00655040",
+          "eax_return": "0x00000001",
+          "completion_dispatch": 6975023
+        },
+        {
+          "dispatch_range": [
+            6975024,
+            6983213
+          ],
+          "target": "0x006550f0",
+          "eax_return": "0x00000000",
+          "return_address": "0x005ab6f7",
+          "interpretation": "repeatedly executes loop condition at 0x005ab6f7"
+        }
+      ]
+    },
+    {
+      "probe": "v517-caller-005ab6c0-slots-004-074",
+      "status": "timeout",
+      "timeout_seconds": 180,
+      "dispatches": null,
+      "unique_functions": null,
+      "blocker": null,
+      "retail_rendering_proven": false,
+      "report_sha256": "87e1beb30aa0ee16623fd6fda6ab4aff497a2fba06005eb0b89b3f3cfedcc731",
+      "probe_log_sha256": "9eb98f6aa28bb044a1be4148789e07217f75bac234c6eeeb3f432d575ee04993",
+      "pcode_audit_sha256": "d9188f3a15b88c9d09a5909f0b976487a751c6d22a50cb2284fec7dc85f3754a",
+      "requirements_sha256": "5484ed2be4751a6386ec4a1f0493d050fab0de57010a6ea83d464d0c8e941cd8",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x005ab6c0",
+        "SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS": "0x4,0x74"
+      },
+      "trace_sample": {
+        "caller": "0x005ab6c0",
+        "target": "0x006550f0",
+        "dispatch": 6975025,
+        "return_address": "0x005ab6f7",
+        "ecx": "0x24219ac0",
+        "eax_return": "0x00000000",
+        "target_slots": {
+          "+0x4": "0x27f39bf0",
+          "+0x74": "0x53657669"
+        },
+        "interpretation": "FUN_006550f0 loads a pointer from ECX+4 and reads that pointer+0x74; the logged ECX+0x74 value is not the dereferenced predicate field."
+      },
+      "indirect_predicate_field_address_candidate": "0x27f39c64",
+      "indirect_predicate_field_value": "not sampled in v517"
+    },
+    {
+      "probe": "v518-caller-005ab6c0-indirect-flag",
+      "status": "timeout",
+      "timeout_seconds": 180,
+      "dispatches": null,
+      "unique_functions": null,
+      "blocker": "poll predicate remains false because the word at 0x27f39c64 is 0x2 and bit 2 is clear",
+      "retail_rendering_proven": false,
+      "report_sha256": "fa604000dafc69f450218c738d0aba6a18ac28e2956e27e1c38a6be3388d533d",
+      "probe_log_sha256": "825a87019a4e4c174c2aa3f067464ae10f6216177c0143000ce343c421e7bbbc",
+      "pcode_audit_sha256": "d9188f3a15b88c9d09a5909f0b976487a751c6d22a50cb2284fec7dc85f3754a",
+      "requirements_sha256": "5484ed2be4751a6386ec4a1f0493d050fab0de57010a6ea83d464d0c8e941cd8",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x005ab6c0",
+        "SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS": "0x4,0x03d201a4",
+        "SHIFT_TRACE_GUEST_PROVENANCE": "0x27f39c64"
+      },
+      "trace_sample": {
+        "dispatch": 6975025,
+        "caller": "0x005ab6c0",
+        "target": "0x006550f0",
+        "return_address": "0x005ab6f7",
+        "ecx": "0x24219ac0",
+        "eax_return": "0x00000000",
+        "target_slots": {
+          "+0x4": "0x27f39bf0",
+          "+0x03d201a4": "0x00000002"
+        },
+        "interpretation": "The target reads bit 2 of the 0x27f39bf0+0x74 word; the sampled value is 2, so the predicate returns false."
+      },
+      "provenance_result": "No final scheduler frame was emitted after timeout, so no last-writer record was available in this run."
+    },
+    {
+      "probe": "v519-caller-005ab6c0-indirect-flag-provenance",
+      "status": "timeout",
+      "timeout_seconds": 180,
+      "dispatches": null,
+      "unique_functions": null,
+      "blocker": "the indirect predicate word stays 0x2 after FUN_006496f0 writes it; bit 2 remains clear",
+      "retail_rendering_proven": false,
+      "report_sha256": "b8eca43bdda9b604155990664821eafff66898c33f8f78b2525298d91488c885",
+      "probe_log_sha256": "3e00c97c1ab3846607dd0386eb87babdd3c62505f5ba7a0f6acdf7f3e2fc15d4",
+      "pcode_audit_sha256": "d9188f3a15b88c9d09a5909f0b976487a751c6d22a50cb2284fec7dc85f3754a",
+      "requirements_sha256": "5484ed2be4751a6386ec4a1f0493d050fab0de57010a6ea83d464d0c8e941cd8",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x005ab6c0",
+        "SHIFT_TRACE_GUEST_PROVENANCE": "0x27f39c64"
+      },
+      "trace_sample": {
+        "dispatch": 6975024,
+        "caller": "0x005ab6c0",
+        "target": "0x006550f0",
+        "return_address": "0x005ab6f7",
+        "target_ecx": "0x24219ac0",
+        "predicate_word_address": "0x27f39c64",
+        "predicate_word_value": "0x00000002",
+        "last_writer": {
+          "function": "0x006496f0",
+          "dispatch": 6975023,
+          "write_address": "0x27f39c64",
+          "write_size_bytes": 4,
+          "word_value": "0x00000002"
+        }
+      },
+      "path_fact": "FUN_00655040 tail-dispatches to FUN_006496f0; the latter clears bit 3 of [ECX+0x74] and calls the indirect pointer at 0x00aa62b8."
+    },
+    {
+      "probe": "v520-caller-006496f0",
+      "status": "timeout",
+      "timeout_seconds": 180,
+      "dispatches": null,
+      "unique_functions": null,
+      "blocker": "the poll predicate still waits for bit 2 at 0x27f39c64",
+      "retail_rendering_proven": false,
+      "probe_log_sha256": "40ea4e1340b49cb730774e80c3d46e27ee41698e11320cbb9c59af60f8e30896",
+      "pcode_audit_sha256": "eab97b01aba17673d8ee60df26c31e8da04dc4c1a3973eef2b8dc06fe8ed6c74",
+      "requirements_sha256": "90a64dfc6c11a7a53030e67a33d78400f3960cae8c524143de7c61549c4caf07",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x006496f0",
+        "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8,0xc",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "trace_sample": {
+        "dispatch": 6975024,
+        "caller": "0x006496f0",
+        "target": "0xf0000b30",
+        "resolved_import": "KERNEL32.dll!ResumeThread",
+        "return_address": "0x00649711",
+        "thread_handle_argument": "0x00080060",
+        "eax_return": "0x00000001",
+        "interpretation": "The indirect callback is the retail PE's ResumeThread import, and it returns success (one thread resumed). The log does not identify which later worker action should set predicate bit 2."
+      },
+      "report_note": "The 180-second bounded run produced a live trace log and P-code audit, but no consolidated probe report."
+    }
+  ],
+  "recovered_functions": [
+    {
+      "address": "0x00664e00",
+      "bytes": 49,
+      "instructions": 22,
+      "pcode_operations": 69,
+      "rejected_functions": 0,
+      "module_sha256": "81377d47a3ae0e70cf531969b9a35ff20ad6f3c36d1804b954e79cfee5212474"
+    },
+    {
+      "address": "0x00664e40",
+      "bytes": 49,
+      "instructions": 22,
+      "pcode_operations": 69,
+      "rejected_functions": 0,
+      "module_sha256": "0ac72b89a0437484f1977221e7121cb0fe610f23fad9274698413fea3eadd68f"
+    },
+    {
+      "address": "0x0064a080",
+      "bytes": 62,
+      "instructions": 29,
+      "pcode_operations": 94,
+      "rejected_functions": 0,
+      "role": "override using current BRANCHIND lowering",
+      "module_sha256": "30a3e2f2dca91c8e356b4dbba368331f5557edd9a39ff6617bbf5b543fda091d"
+    },
+    {
+      "address": "0x00649fa0",
+      "bytes": 14,
+      "instructions": 5,
+      "pcode_operations": 9,
+      "rejected_functions": 0,
+      "role": "computed-jump thunk, current BRANCHIND lowering",
+      "module_sha256": "5f5e96d2106992a232217f31eedafdc5f90920279af51ab7844dd1069c4a16c9"
+    },
+    {
+      "address": "0x005a8870",
+      "bytes": 234,
+      "instructions": 64,
+      "pcode_operations": 234,
+      "rejected_functions": 0,
+      "calling_convention": "__thiscall",
+      "module_sha256": "eed5be2c87e9f6a6f15966f12b9da9700bf2183c7f6125a9bbc45c3171daf4b2"
+    },
+    {
+      "address": "0x005ab6c0",
+      "bytes": 81,
+      "instructions": 32,
+      "calling_convention": "__fastcall",
+      "runtime_observed": true,
+      "role": "wait-loop body on the v516 caller trace"
+    },
+    {
+      "address": "0x006550f0",
+      "bytes": 19,
+      "instructions": 9,
+      "calling_convention": "__fastcall",
+      "runtime_observed": true,
+      "role": "poll predicate repeatedly returning false on the v516 trace"
+    },
+    {
+      "address": "0x0057ddf0",
+      "bytes": 151,
+      "instructions": 39,
+      "calling_convention": "__fastcall",
+      "runtime_observed": true,
+      "role": "caller body on the v513 trace"
+    },
+    {
+      "address": "0x006496f0",
+      "bytes": 40,
+      "instructions": 16,
+      "calling_convention": "__fastcall",
+      "runtime_observed": true,
+      "role": "writes polling status word before calling indirect callback"
+    },
+    {
+      "address": "0x00655040",
+      "bytes": 15,
+      "instructions": 6,
+      "calling_convention": "__fastcall",
+      "runtime_observed": true,
+      "role": "tail-dispatch wrapper to FUN_006496f0"
+    }
+  ],
+  "findings": [
+    "The 0x00664650 body is already exported by the base P-code module; the duplicate supplement experiment was rejected and removed from the active manifest.",
+    "Re-lowering 0x0064a080 and the 0x00649fa0 computed-jump thunk advanced the frontier to 0x005a8870 from guest caller 0x0064879e.",
+    "The 0x005a8870 body was defined from exact retail bytes in a copied Ghidra project and passed frozen-corpus byte/instruction audit.",
+    "No checkpoint proves frontend readiness, race entry, a retail D3D9 draw, or retail rendering.",
+    "The v512 trace logged two call attempts, but its entry records alone do not prove target resolution or body execution.",
+    "The v513 caller-scoped trace proves FUN_0057ddf0 executed multiple child calls and reached the 0x005ab740 callsite; 0x005ab740 itself was only an attempted call in that run.",
+    "The v516 caller-scoped trace proves FUN_005ab6c0 executed: its call to 0x00649cb0 returned 0x008f3d01, and its call to 0x00655040 returned 1. It then repeatedly called FUN_006550f0, which returned 0 at return address 0x005ab6f7; FUN_00655110 was not reached before timeout.",
+    "The repeated false result pins the current frontier to the wait loop in FUN_005ab6c0. The trigger/state source for FUN_006550f0 remains to be identified; no frontend, race, D3D9 draw, or retail rendering is proven.",
+    "The v517 preflight passed against 336 pinned function-boundary records (392 requirement checks across corpus rows), with zero audit problems and the focused P-code CTest passing.",
+    "The v517 slot sample found [ECX+4]=0x27f39bf0 for FUN_006550f0. Its predicate reads bit 2 at pointer+0x74 (candidate address 0x27f39c64); v517 did not sample that indirect field, so its value and writer remain unknown.",
+    "The v518 targeted sample read the indirect predicate word at 0x27f39c64 as 0x00000002; bit 2 is clear and FUN_006550f0 returns 0. The timed-out runtime emitted no final scheduler frame, so its configured write provenance did not yield a last-writer record.",
+    "The v519 provenance trace identifies FUN_006496f0 as the writer: at dispatch 6975023 it stored 0x00000002 to 0x27f39c64. The following FUN_006550f0 calls repeatedly read the same word and return false. Frozen P-code shows FUN_00655040 tail-dispatches to FUN_006496f0, which clears bit 3 and then calls the indirect pointer at 0x00aa62b8.",
+    "The v520 PR #2123 preflight passed with 358 pinned boundary records (414 checks across repeated corpus rows), zero audit problems, and the focused P-code CTest passing. The v520 live trace resolves the 0x006496f0 callback at 0xf0000b30 to KERNEL32.dll!ResumeThread; it returned 1, but the later worker action that should set predicate bit 2 remains unidentified."
+  ],
+  "local_artifact_root": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018",
+  "followup_pcode_preflight": {
+    "status": "passed",
+    "functions": 41552,
+    "instructions": 2089743,
+    "instruction_boundary_requirements": 358,
+    "requirement_checks": 414,
+    "corpus_sha256": "d048edb7b4fdfd3727b10c1594b3837bf751e8de2eb6715c86d499a1347aa835",
+    "requirements_sha256": "90a64dfc6c11a7a53030e67a33d78400f3960cae8c524143de7c61549c4caf07",
+    "audit_report_sha256": "eab97b01aba17673d8ee60df26c31e8da04dc4c1a3973eef2b8dc06fe8ed6c74",
+    "problem_count": 0,
+    "focused_ctest": "passed",
+    "behavioral_parity_proven": false
+  }
+}

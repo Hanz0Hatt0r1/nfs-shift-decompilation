@@ -127,6 +127,7 @@ struct RecompiledGuestCallTraceEvent {
     bool has_ebp_return = false;
     bool has_esp_return = false;
     bool is_import = false;
+    bool target_resolved = true;
     bool completed = false;
     std::vector<RecompiledGuestCallTraceMemorySlot> caller_slots;
     std::vector<RecompiledGuestCallTraceMemorySlot> target_slots;
