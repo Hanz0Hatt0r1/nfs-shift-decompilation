@@ -133,18 +133,31 @@ host-neutral scheduling approximation, not a cycle-accurate Windows time
 slice. A focused fixture now busy-polls a marker written by a resumed worker
 and passes without calling `SwitchToThread` in that polling interval.
 
-The rebuilt runtime passed `shift_runtime_recompiled_pcode_module` and a
-120-frame replay using the same pinned PE and v512 cumulative module manifest.
-The replay status was `host-frame-loop`, with 815,322 dispatches, 3,930 unique
-functions, main-thread snapshot at `0x00633a50`, and zero validation errors.
-The PE entrypoint remained incomplete; the runtime submitted 120 host frames,
-but guest draw translation, frontend readiness, a race, and retail rendering
-remain unproven. The selected trace did not include caller `0x005ab6c0`, so this
-result must not be read as proof that its exact predicate bit was observed set.
-See the
+The rebuilt runtime passed `shift_runtime_recompiled_pcode_module`. A
+120-frame replay using the pinned PE and v512 cumulative module manifest
+reached the host frame loop, but ended before caller `0x005ab6c0` ran. A
+caller-only trace with a 2,000-frame bound then captured the retail wait-loop
+transition: `0x006550f0` returned `EAX=1`, the following calls to `0x00655110`
+and `0x005ab560` executed, and the failure snapshot recorded a write of
+`0x00000006` to predicate word `0x27f39c64` by `0x00649b10` on worker thread
+`0x00010006`. This confirms bit 2 became set and the poll loop was passed.
+
+The retail frontier was then advanced with exact P-code exported from a
+read-only working copy of the pinned Ghidra project. Ghidra 12.1.2_DEV and the
+repository's targeted instruction exporters ran under OpenJDK 21. Functions
+missing from the project were created only in `/tmp/process1-ghidra-copy`; the
+original project and pinned PE were left untouched. The exports were lowered
+with the pinned RevEngInstr snapshot `08a31b94c304f8b7a57996974dafe352413f7924`.
+Across v527–v542, replay progressed through the missing-export chain from
+`0x0057da20` to the `0x00587xxx` class accessors. In v542, Ghidra-confirmed
+`0x00587c20` (`MOV EAX, 0x00ad5598; RET`) returned that exact pointer; the next
+retail call from `0x00587790` stopped at the still-missing
+`rvi_005879f0`. The PE entrypoint remains incomplete. Guest draw translation,
+frontend readiness, a race, and retail rendering remain unproven. See the
 [`Process 1 scheduler-quantum evidence`](../evidence/retail_frontier_20261021/process1_scheduler_return_quantum.json)
-for hashes, commands, and limits. The newer main commit #2128 was checked and
-contains Process 2 D3D9 draw work; it is outside this Process 1 change.
+for the full frontier chain, hashes, commands, and limits. Latest main is
+`91dc61e5` (#2130), which adds captured D3D9 draw replay through Vulkan in
+Process 2; it changes no Process 1 files.
 
 For a UI-gate probe, set `SHIFT_TRACE_UI_STATE_GATE=1` and
 `SHIFT_TRACE_GUEST_PROVENANCE=0x00be250c,0x00be2534`. Each `0x0050c880` trace

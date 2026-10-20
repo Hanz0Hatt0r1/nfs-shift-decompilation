@@ -3,8 +3,8 @@
   "base": {
     "branch": "work/retail-runtime",
     "initial_main": "c7ba518d7a36751c2587a1bd3be032f8a0a7dfcc",
-    "latest_main_checked": "7927297f162823ad6814cc0742f77114df4214bd",
-    "latest_main_change_scope": "Process 2 D3D9 draw translation; no Process 1 files"
+    "latest_main_checked": "91dc61e57424d6892dac0fe2ddaa0dc808a156d5",
+    "latest_main_change_scope": "Process 2 captured D3D9 draw replay through Vulkan (#2130); no Process 1 files"
   },
   "retail_image": {
     "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/probe-cwd-v46-game-root/SHIFT.exe",
@@ -52,9 +52,52 @@
     "runtime_sha256": "92e86d84b9f5765a7e7c65ddb36eebe15bec8696ad52dbacfa1cb47f93f60a3b",
     "focused_ctest": {
       "name": "shift_runtime_recompiled_pcode_module",
-      "result": "passed"
+      "result": "passed",
+      "build_dir": "/home/pes/.codex/worktrees/nfs-shift-decompilation-retail-runtime/native_runtime/build"
     },
     "retail_replay": {
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v542-missing-005879f0.json",
+      "report_sha256": "6baa52d00cbd0541c820bf5aa776989f5fa68aa9e3342f60a9ebd882aeb87c3f",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v542-missing-005879f0.log",
+      "log_sha256": "183007efdea27dbd809c9d00cc754c05bd1b8e07b980b5b8027b4310ceafc2d3",
+      "module_manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v526-missing-00587c20/module-manifest-v527-00587c20.json",
+      "module_manifest_sha256": "63ff68245bc650288ca1468f394e1b572447b0c4480f9f2b35e6c31738fba2fd",
+      "status": "blocked-at-next-missing-export",
+      "frames_requested": 2000,
+      "exit_code": 1,
+      "entrypoint_complete": false,
+      "frontend_or_race_proven": false,
+      "guest_draw_translation": false,
+      "retail_rendering_proven": false,
+      "last_resolved_call": {
+        "caller": "0x00587790",
+        "target": "0x00587c20",
+        "return_address": "0x005877ba",
+        "eax_return": "0x00ad5598",
+        "completed": true
+      },
+      "next_missing_export": {
+        "called_from": "0x00587790",
+        "symbol": "rvi_005879f0"
+      },
+      "dispatches_diagnostic_only": 7929989,
+      "unique_functions_diagnostic_only": 5125
+    },
+    "ghidra_exporter": {
+      "ghidra_version": "12.1.2_DEV",
+      "java_runtime": "OpenJDK 21.0.12.1",
+      "project": "/home/pes/ghidra_projects/shift_startup_probe_00900f48",
+      "working_copy": "/tmp/process1-ghidra-copy",
+      "pinned_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+      "result": "targeted function and instruction-slice exporters passed; missing boundaries were created only in the temporary project copy"
+    },
+    "local_neutral_scene_set": {
+      "result": "passed",
+      "workflow_assertions": 49,
+      "pcode_dispatch_count": 61,
+      "note": "The count includes 51 scheduler-poll fixture calls; the resumed worker marker was observed."
+    },
+    "retail_replay_120_frame_smoke": {
       "output": "/tmp/process1-retail-runtime-evidence/quantum-v524-replay.json",
       "output_sha256": "21e6b2bca12e4bdcade490add16ecb69a4a0ed5a0ebab99907420360c5333f0c",
       "log": "/tmp/process1-retail-runtime-evidence/quantum-v524-replay.log",
@@ -62,8 +105,8 @@
       "same_pe_and_v512_module_manifest": true,
       "status": "host-frame-loop",
       "exit_code": 0,
-      "dispatches": 815322,
-      "unique_functions": 3930,
+      "dispatches_diagnostic_only": 815322,
+      "unique_functions_diagnostic_only": 3930,
       "frames_rendered": 120,
       "main_thread_current_function": "0x00633a50",
       "entrypoint_complete": false,
@@ -71,11 +114,201 @@
       "guest_draw_translation": false,
       "retail_rendering_proven": false,
       "frontend_or_race_proven": false
+    },
+    "retail_replay_v527_predicate_transition": {
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v527-missing-0057da20.json",
+      "report_sha256": "8338148203c6e51b6d887ee53e41d659727058287983be875b2ed0bfded2e3a9",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v527-missing-0057da20.log",
+      "log_sha256": "878b5fcbfd7efcc19ef261caa26c49186040aa4288a1978dc1bc06264fb65f1a",
+      "status": "blocked-at-next-missing-export",
+      "frames_requested": 2000,
+      "exit_code": 1,
+      "same_pinned_pe_and_v512_module_manifest": true,
+      "predicate_transition": {
+        "poll_caller": "0x005ab6c0",
+        "poll_function": "0x006550f0",
+        "poll_return_eax": "0x00000001",
+        "predicate_word_address": "0x27f39c64",
+        "predicate_word_value": "0x00000006",
+        "predicate_bit_2": true,
+        "last_writer_function": "0x00649b10",
+        "last_writer_thread": "0x00010006",
+        "subsequent_calls": [
+          "0x00655110",
+          "0x005ab560"
+        ]
+      },
+      "next_missing_export": {
+        "called_from": "0x00590d60",
+        "symbol": "rvi_0057da20"
+      },
+      "frontend_or_race_proven": false,
+      "guest_draw_translation": false,
+      "retail_rendering_proven": false
+    },
+    "supplement_v527": {
+      "function": "0x00587c20",
+      "retail_bytes": "MOV EAX, 0x00ad5598; RET",
+      "instruction_count": 2,
+      "pcode_operations": 4,
+      "ghidra_export": "/tmp/process1-retail-runtime-evidence/function-00587c20.jsonl",
+      "ghidra_export_sha256": "288c2987d3bbc5cfdabfa3e0d25e4fcb0073925aa7207134d09cbb6d74b1bc26",
+      "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+      "library": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v526-missing-00587c20/compiled/libnfs_shift_pcode_supplement.so",
+      "library_sha256": "5da2b7138ad5ec38e40fc1571ff0a814084c53d6e8787348b10150385d733db3",
+      "rejected_functions": 0
     }
   },
   "limitations": [
-    "The post-change trace selection did not capture caller 0x005ab6c0, so it does not prove that the exact predicate bit 2 was set.",
-    "A host-frame-loop result is not evidence of a playable launch, frontend readiness, a race, or retail draw submission.",
-    "The dispatch-return quantum approximates preemptive scheduling at safe guest-call boundaries; it is not cycle-accurate Windows scheduling."
+    "The return quantum approximates preemptive scheduling at safe guest-call boundaries; it is not cycle-accurate Windows scheduling.",
+    "The v542 retail replay is blocked at missing P-code export rvi_005879f0 from guest caller 0x00587790; the PE entrypoint remains incomplete.",
+    "The v527 predicate transition proves the worker set bit 2 and passed the wait loop, but does not prove frontend readiness, race entry, guest draw translation, or retail rendering.",
+    "Host-frame-loop smoke and P-code dispatch counts are diagnostic only and do not prove a playable game launch."
+  ],
+  "retail_frontier_progress": [
+    {
+      "version": 527,
+      "missing_export": "rvi_0057da20",
+      "caller": "0x00590d60",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v527-missing-0057da20.json",
+      "report_sha256": "8338148203c6e51b6d887ee53e41d659727058287983be875b2ed0bfded2e3a9",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v527-missing-0057da20.log",
+      "log_sha256": "878b5fcbfd7efcc19ef261caa26c49186040aa4288a1978dc1bc06264fb65f1a"
+    },
+    {
+      "version": 528,
+      "missing_export": "rvi_00584540",
+      "caller": "0x005926f0",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v528-missing-00584540.json",
+      "report_sha256": "087a69610a787d3f13bda26da38dbde60ae6a630a58660a4cd2309a16372a0e7",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v528-missing-00584540.log",
+      "log_sha256": "0d6eca4dbd21a9bf5b0e80777c6877f935c3abcb86ac88857842937fc9650725"
+    },
+    {
+      "version": 529,
+      "missing_export": "rvi_00585bd0",
+      "caller": "0x0057e380",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v529-missing-00585bd0.json",
+      "report_sha256": "bf41256dc0866485e1dd3e4d4275f5b973b8005f8025f4566a8e21fda97814bc",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v529-missing-00585bd0.log",
+      "log_sha256": "2f590c19d0aea023ad9ecb325f631549d2fd337e3a2a7fafe00aeb1d7f7e4b8d"
+    },
+    {
+      "version": 530,
+      "missing_export": "rvi_0058e0e0",
+      "caller": "0x0059ca50",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v530-missing-0058e0e0.json",
+      "report_sha256": "63f163540540f62f6950424b9a16629e0202b0f1fff707d7e6bcb1d43240a5a6",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v530-missing-0058e0e0.log",
+      "log_sha256": "263d00a38d40db756944541ef9c6ed1f395237d4d3fa4dda8630c9f69ff9fc4a"
+    },
+    {
+      "version": 531,
+      "missing_export": "rvi_0058e100",
+      "caller": "0x0059ca50",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v531-missing-0058e100.json",
+      "report_sha256": "131487d98abf1082364c32674ed844c0f9ee547186fec5a50b3a4fc66bae6e14",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v531-missing-0058e100.log",
+      "log_sha256": "23b3529cf9733603c63cf65ecf82928f45398ec7d851f98b31902770d520656c"
+    },
+    {
+      "version": 532,
+      "missing_export": "rvi_00586e90",
+      "caller": "0x0059ca50",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v532-missing-00586e90.json",
+      "report_sha256": "831bdace657f9cc94075450cf0bc4d83f1d50eb607d52955cddb2315382f1ec2",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v532-missing-00586e90.log",
+      "log_sha256": "cd59476e9cf6a856a31b4b0c2c98464ba93e5124e7dcc858e10519f74dade380"
+    },
+    {
+      "version": 533,
+      "missing_export": "rvi_00587080",
+      "caller": "0x0059ca50",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v533-missing-00587080.json",
+      "report_sha256": "580ba04c58ccdc6bef7548210a4f67dc14e2bd1589b05c5ae9f7c54adda93916",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v533-missing-00587080.log",
+      "log_sha256": "9bc533cf71825bbcf39f869d71d13c2246ba7f96d7885e4f53a2fdd2e904c28b"
+    },
+    {
+      "version": 534,
+      "missing_export": "rvi_00587450",
+      "caller": "0x00587310",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v534-missing-00587450.json",
+      "report_sha256": "e44cb8dc3a967aabace4836c1f8aa6ff49c9a2b6f7aeb1888bd03493b454ee8e",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v534-missing-00587450.log",
+      "log_sha256": "3cb72ac8c98e24d01f2928917e1b97eb02584e037fa8624a0ce9785997b2564b"
+    },
+    {
+      "version": 535,
+      "missing_export": "rvi_00587490",
+      "caller": "0x00587310",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v535-missing-00587490.json",
+      "report_sha256": "5747fa7b5499a345f27155be3d1f966e2b6e49c8a43d53a3d528a7ae8ec77e9c",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v535-missing-00587490.log",
+      "log_sha256": "379c10c89b5af96c052831db2ac09fa7c820d048168628af3c2d20f9c5825c74"
+    },
+    {
+      "version": 536,
+      "missing_export": "rvi_005874d0",
+      "caller": "0x00587310",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v536-missing-005874d0.json",
+      "report_sha256": "4f25a999883274aab5ea85414bcbdcc588491ee81a276dead13b1c294c0b3ee4",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v536-missing-005874d0.log",
+      "log_sha256": "d8b9815a42cf7cc1eb2dea491df417dbbed93ea4fc5530bdeb72bb2414d4bf5b"
+    },
+    {
+      "version": 537,
+      "missing_export": "rvi_00587410",
+      "caller": "0x00587310",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v537-missing-00587410.json",
+      "report_sha256": "4bd30b118bf68c092c35907da883d3ed9b247092d1ee413ca6310ad3fb993000",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v537-missing-00587410.log",
+      "log_sha256": "afb875d157e7e4ff69d0bf0faa45d601414a02328149385949f96f035746f4b5"
+    },
+    {
+      "version": 538,
+      "missing_export": "rvi_00597310",
+      "caller": "0x005ae340",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v538-missing-00597310.json",
+      "report_sha256": "bde0d69a4f978f96d16090a2efa4eed7f79308bd9b87835389a5a922d978cdf2",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v538-missing-00597310.log",
+      "log_sha256": "f5f3c05bff49e9e30419bd6725754fb8c6bb7ca2d37493729fe431f524ecd99c"
+    },
+    {
+      "version": 539,
+      "missing_export": "rvi_0058e1f0",
+      "caller": "0x005ae340",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v539-missing-0058e1f0.json",
+      "report_sha256": "006bca7e2d1292b8bdc40ee0ea725e11d99bb81e41750b3e1ed8d68c7e6ea45d",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v539-missing-0058e1f0.log",
+      "log_sha256": "909fa5e2476a638c5665eca2b8a1ee4b0f34bcd850cf889259ee02901c936ef2"
+    },
+    {
+      "version": 540,
+      "missing_export": "rvi_00597350",
+      "caller": "0x005ae340",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v540-missing-00597350.json",
+      "report_sha256": "ccb5c211b543ab738648dc280038ff374d2053bea0a5c0a62f680884feed8b2d",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v540-missing-00597350.log",
+      "log_sha256": "16c2deca5020f271578ffd8fb98553d007071554c4272d8c3b64435ec64c5197"
+    },
+    {
+      "version": 541,
+      "missing_export": "rvi_00587c20",
+      "caller": "0x00587790",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v541-missing-00587c20.json",
+      "report_sha256": "d24ff7e846895f0cc8a6ab76a7f3530d270a994ef5dc882297e947811222bffe",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v541-missing-00587c20.log",
+      "log_sha256": "424d361184a5ac9b7d268ba98227b09de031f44be0db2020f3a17f88e19d6f7a"
+    },
+    {
+      "version": 542,
+      "missing_export": "rvi_005879f0",
+      "caller": "0x00587790",
+      "report": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/frontier/v542-missing-005879f0.json",
+      "report_sha256": "6baa52d00cbd0541c820bf5aa776989f5fa68aa9e3342f60a9ebd882aeb87c3f",
+      "log": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/logs/shift-probe-v542-missing-005879f0.log",
+      "log_sha256": "183007efdea27dbd809c9d00cc754c05bd1b8e07b980b5b8027b4310ceafc2d3"
+    }
   ]
 }
