@@ -9,6 +9,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
@@ -16,6 +18,7 @@ sys.path.insert(0, str(ROOT / "tools/ghidra"))
 
 import audit_pcode_corpus as pcode  # noqa: E402
 import d3d9_capture_scope as scope  # noqa: E402
+import retail_frontier as frontier  # noqa: E402
 
 
 def instruction(addr, data, mnemonic="MOV", flow="FALL_THROUGH"):
@@ -190,6 +193,79 @@ class CaptureScopeTests(unittest.TestCase):
         ], capture_output=True, text=True, check=False)
         self.assertEqual(result.returncode, 2)
         self.assertIn("mismatch", result.stderr)
+
+
+
+class ProbePreflightTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.folder = Path(self.temp.name)
+        self.runtime = self.folder / "shift_runtime"
+        self.runtime.touch()
+        self.pe = self.folder / "SHIFT.exe"
+        self.pe.write_bytes(b"standalone mock fixture")
+        self.corpus = self.folder / "corpus.jsonl"
+        self.corpus.write_text("", encoding="utf-8")
+        self.artifacts = self.folder / "artifacts"
+        self.artifacts.mkdir()
+        self.log = self.folder / "probe.log"
+        self.output = self.folder / "report.json"
+
+    def arguments(self):
+        return [
+            "run", "--runtime", str(self.runtime), "--artifacts", str(self.artifacts),
+            "--build-dir", str(self.folder / "build"), "--pe", str(self.pe),
+            "--game-data", str(self.folder), "--frames", "1", "--timeout", "1",
+            "--log", str(self.log), "--output", str(self.output),
+        ]
+
+    def test_bad_export_prevents_launch(self):
+        called = []
+
+        def fake_run(command, check=False, **kwargs):
+            called.append(command[0])
+            return SimpleNamespace(returncode=1)
+
+        with patch.object(frontier, "RETAIL_SHA256", frontier.sha256(self.pe)), \
+             patch.object(frontier.subprocess, "run", side_effect=fake_run):
+            exit_code = frontier.main(self.arguments() + [
+                "--preflight-corpus", str(self.corpus),
+            ])
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(called, [sys.executable])
+        self.assertFalse(self.log.exists())
+
+    def test_ctest_gate_precedes_retail_launcher(self):
+        called = []
+
+        def fake_run(command, check=False, env=None):
+            called.append(command[0])
+            if command[0] == "ctest":
+                return SimpleNamespace(returncode=0)
+            self.log.write_text(
+                '{"format":"SHIFT.NativeRuntimeFrameLoop/1",'
+                '"frames_rendered":1,"validation_errors":0}\n'
+            )
+            return SimpleNamespace(returncode=0)
+
+        with patch.object(frontier, "RETAIL_SHA256", frontier.sha256(self.pe)), \
+             patch.object(frontier.subprocess, "run", side_effect=fake_run):
+            exit_code = frontier.main(self.arguments() + ["--preflight-ctest"])
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(called, ["ctest", "bash"])
+        report = json.loads(self.output.read_text(encoding="utf-8"))
+        self.assertEqual(report["probe_configuration"]["preflight"]["guest_pcode_ctest"],
+                         "passed")
+
+    def test_failed_ctest_prevents_retail_launcher(self):
+        with patch.object(frontier, "RETAIL_SHA256", frontier.sha256(self.pe)), \
+             patch.object(frontier.subprocess, "run",
+                          return_value=SimpleNamespace(returncode=1)) as run:
+            exit_code = frontier.main(self.arguments() + ["--preflight-ctest"])
+        self.assertEqual(exit_code, 2)
+        self.assertEqual(run.call_count, 1)
+        self.assertFalse(self.log.exists())
 
 
 if __name__ == "__main__":
