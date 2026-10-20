@@ -1,0 +1,215 @@
+{
+  "format": "NFSShift.RetailFrontierFollowupEvidence/1",
+  "topic": "x86 startup call frontier after generic exporter and x87 runtime updates",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "preflight": {
+    "cached_runtime_build": "passed",
+    "focused_pcode_ctest": "passed"
+  },
+  "probes": [
+    {
+      "probe": "v467-entry-0085ed60",
+      "status": "blocked",
+      "comparison": {
+        "reason": "more retail code executed",
+        "result": "advanced"
+      },
+      "dispatches": 1049228,
+      "unique_functions": 4630,
+      "blocker": "P-code module has no exported function rvi_007ebb70 called from guest function 0x007d9780",
+      "probe_log_sha256": "f0b27f34013160c5bef530abaf457a91e1e9a907296663ffb8ce288cc2bebdf2",
+      "module_manifest_sha256": "290d112e50988a41c6b47c21ea84d3163c9825ad6b2e5892b8b929f2cb657ec4",
+      "trace_environment": null
+    },
+    {
+      "probe": "v468-entry-007ebb70",
+      "status": "blocked",
+      "comparison": {
+        "reason": "more retail code executed",
+        "result": "advanced"
+      },
+      "dispatches": 1049689,
+      "unique_functions": 4651,
+      "blocker": "P-code function 0x00427770 returned -1",
+      "probe_log_sha256": "5c655278643d1782e4658bcb3f9d2b2b50693a40feb62b737e5230ede0c746d6",
+      "module_manifest_sha256": "f869212d2abe85ef6d4409c2fee4e2aeac53f985d80c9eb71fcb7cf92a2672d5",
+      "trace_environment": null
+    },
+    {
+      "probe": "v468-trace-00427770",
+      "status": "blocked",
+      "comparison": {
+        "reason": "more retail code executed",
+        "result": "advanced"
+      },
+      "dispatches": 1049689,
+      "unique_functions": 4651,
+      "blocker": "P-code function 0x00427770 returned -1",
+      "probe_log_sha256": "d550f5f2a0833ae9bea67c273e966df21a61361e6e757aaf702c1e1ec1ab2c80",
+      "module_manifest_sha256": "f869212d2abe85ef6d4409c2fee4e2aeac53f985d80c9eb71fcb7cf92a2672d5",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00427770"
+      }
+    },
+    {
+      "probe": "v471-lowered-007dc990",
+      "status": "blocked",
+      "comparison": {
+        "reason": "same frontier and stop",
+        "result": "unchanged"
+      },
+      "dispatches": 1049689,
+      "unique_functions": 4651,
+      "blocker": "P-code function 0x00427770 returned -1",
+      "probe_log_sha256": "5c655278643d1782e4658bcb3f9d2b2b50693a40feb62b737e5230ede0c746d6",
+      "module_manifest_sha256": "b484b485cbf21eb9afa732ae620eb4f7644fb8d26071d2ad3ff1663e8e440347",
+      "trace_environment": null
+    },
+    {
+      "probe": "v472-lowered-00427770",
+      "status": "blocked",
+      "comparison": {
+        "reason": "more retail code executed",
+        "result": "advanced"
+      },
+      "dispatches": 1049691,
+      "unique_functions": 4653,
+      "blocker": "P-code module has no exported function rvi_0082dae0 called from guest function 0x007e3580",
+      "probe_log_sha256": "9656f502d86d37e2438a7d9eaa77a6dd41d303df6d626677f210df22701b5955",
+      "module_manifest_sha256": "a4bf0127e6bc80d54dd8c479a1b63f721c7c64d8e542cab053907f6c515fdcbf",
+      "trace_environment": null
+    },
+    {
+      "probe": "v473-entry-0082dae0",
+      "status": "blocked",
+      "comparison": {
+        "reason": "more retail code executed",
+        "result": "advanced"
+      },
+      "dispatches": 1049693,
+      "unique_functions": 4654,
+      "blocker": "P-code module has no exported function rvi_0082daf0 called from guest function 0x007e3580",
+      "probe_log_sha256": "d034efbc5216a343f866cd85e1d5c62e2e20ca0ed790d418f58f4a9f4e4db17c",
+      "module_manifest_sha256": "ecd770e6a2681f5345a68f2af2f84746de61f43b2f6dd652001db316c800f0be",
+      "trace_environment": null
+    },
+    {
+      "probe": "v474-entry-0082daf0",
+      "status": "blocked",
+      "comparison": {
+        "reason": "more retail code executed",
+        "result": "advanced"
+      },
+      "dispatches": 1049696,
+      "unique_functions": 4656,
+      "blocker": "P-code module has no exported function rvi_0082db10 called from guest function 0x007e36b0",
+      "probe_log_sha256": "d887408ba6dfe6fbe94e8b54d5dc7cc7bf428271d451e5415e4fb2adc309f178",
+      "module_manifest_sha256": "fbb47380c921c479843db151cccd62ec6b079f223cb4c517b78d8fd09b12c9eb",
+      "trace_environment": null
+    }
+  ],
+  "compiled_modules": [
+    {
+      "artifact": "function-call-stack-v467-entry-0085ed60/libnfs_shift_pcode_supplement.so",
+      "sha256": "30238ea29ec13272370ea5d599e9033342fa88a114ef6cdf2b3df0ac3363644e",
+      "exports": [
+        "rvi_0085ed60"
+      ],
+      "instructions": 2,
+      "pcode_operations": 6,
+      "rejected_functions": 0,
+      "revenginstr_revision": "641b36e"
+    },
+    {
+      "artifact": "function-call-stack-v468-entry-007ebb70/libnfs_shift_pcode_supplement.so",
+      "sha256": "037f5d8d44db9dd2d7f56611f343564fe647309f3223f7f1a522ea1982c410dd",
+      "exports": [
+        "rvi_007ebb70"
+      ],
+      "instructions": 1,
+      "pcode_operations": 1,
+      "rejected_functions": 0,
+      "revenginstr_revision": "641b36e"
+    },
+    {
+      "artifact": "function-call-stack-v471-lowered-007dc990/libnfs_shift_pcode_supplement.so",
+      "sha256": "3d8f589803bb074d1ee56d8da6afbe88757ad0ab70b8fa905568c862b532eba9",
+      "exports": [
+        "rvi_007dc990"
+      ],
+      "instructions": 92,
+      "pcode_operations": 505,
+      "rejected_functions": 0,
+      "revenginstr_revision": "641b36e"
+    },
+    {
+      "artifact": "function-call-stack-v472-lowered-00427770/libnfs_shift_pcode_supplement.so",
+      "sha256": "837856ef8c5c6a7653310b61c08cf6f79f9383ff5a3c2063baf9f34d2c4d11e4",
+      "exports": [
+        "rvi_00427770"
+      ],
+      "instructions": 18,
+      "pcode_operations": 61,
+      "rejected_functions": 0,
+      "revenginstr_revision": "641b36e"
+    },
+    {
+      "artifact": "function-call-stack-v473-entry-0082dae0/libnfs_shift_pcode_supplement.so",
+      "sha256": "1a5e329ff7c0997f9c14be542d34695a7e20ec24b3d07b1997ca2e9ba2a81cff",
+      "exports": [
+        "rvi_0082dae0"
+      ],
+      "instructions": 2,
+      "pcode_operations": 6,
+      "rejected_functions": 0,
+      "revenginstr_revision": "641b36e"
+    },
+    {
+      "artifact": "function-call-stack-v474-entry-0082daf0/libnfs_shift_pcode_supplement.so",
+      "sha256": "f6db8e7f2bf0e7bd2f40af275ce5a85473c10e7adb668b470a0a4a333f309156",
+      "exports": [
+        "rvi_0082daf0"
+      ],
+      "instructions": 6,
+      "pcode_operations": 31,
+      "rejected_functions": 0,
+      "revenginstr_revision": "641b36e"
+    }
+  ],
+  "instruction_exports": [
+    {
+      "artifact": "function-call-stack-v467-target-0085ed60.jsonl",
+      "sha256": "297be8f39cdc7601a21deea98000fca240fed535e0ca5d39db8b57a2e4d90d38"
+    },
+    {
+      "artifact": "function-call-stack-v468-target-007ebb70.jsonl",
+      "sha256": "11444791a11e79cc1e4b174b58b203c5c2906575d49b0a330e0fea2f65a66a6e"
+    },
+    {
+      "artifact": "function-call-stack-v469-function-00427770.jsonl",
+      "sha256": "346fee48107a06f360af262363dfce9b5fd4e83542b78c5a7dac637d626bfe50"
+    },
+    {
+      "artifact": "function-call-stack-v470-function-007e9080.jsonl",
+      "sha256": "74aa9dba344db507d2beb2949b862a6f0f3d3656de54841ec42941d667ab6404"
+    },
+    {
+      "artifact": "function-call-stack-v471-entry-007dc990.jsonl",
+      "sha256": "6abd7afe487a074e16118623b14858529230d14c76d111b6622aee6bf7821860"
+    },
+    {
+      "artifact": "function-call-stack-v473-entry-0082dae0.jsonl",
+      "sha256": "e6f0c6c7570f2baa037e7ce85ae7486a1bdf230d2ea897b8585a1ad6d8c56505"
+    },
+    {
+      "artifact": "function-call-stack-v474-entry-0082daf0.jsonl",
+      "sha256": "5081bc6b8fca753baf2022032ff3af08cf8c5ba4f4b1d3006bac863998663f63"
+    }
+  ],
+  "findings": [
+    "A refreshed P-code override for 0x00427770 moved the frontier from a generic returned -1 to the next missing export at 0x0082dae0; the prior 0x007dc990-only override did not change the frontier.",
+    "The v474 checkpoint reached a missing 0x0082db10 export from 0x007e36b0 after 4,656 unique guest functions.",
+    "All checkpoints remain before the frontend, race, and retail draw; no retail rendering is proven."
+  ],
+  "local_artifact_root": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018"
+}
