@@ -80,8 +80,7 @@ def pe_bytes(path: Path, addresses: list[tuple[int, bytes]]) -> dict[int, bytes]
         raise ValueError("truncated PE sections")
     for index in range(number):
         off = section_offset + index * 40
-        raw_size, rva, raw_pointer = struct.unpack_from("<III", blob, off + 16)
-        virtual_size = struct.unpack_from("<I", blob, off + 8)[0]
+        virtual_size, rva, raw_size, raw_pointer = struct.unpack_from("<IIII", blob, off + 8)
         sections.append((rva, max(raw_size, virtual_size), raw_size, raw_pointer))
     observed = {}
     for va, expected in addresses:
@@ -126,8 +125,9 @@ def audit(corpus: Path, requirements: dict[int, dict[int, str]],
             entry = address(function["address"])
             counters["functions"] += 1
             if row.get("instruction_count") != len(instructions):
-                problems.append({"function": f"0x{entry:08x}", "kind": "count_mismatch",
-                                 "line": line_no})
+                if len(problems) < sample_limit:
+                    problems.append({"function": f"0x{entry:08x}", "kind": "count_mismatch",
+                                     "line": line_no})
                 counters["count_mismatch"] += 1
             if entry in missing_requirements:
                 missing_requirements.remove(entry)
