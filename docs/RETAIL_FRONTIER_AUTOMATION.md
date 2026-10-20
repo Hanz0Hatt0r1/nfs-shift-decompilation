@@ -90,14 +90,32 @@ missing export is `0x0082db10`. See the
 [`v467–v474 follow-up`](../evidence/retail_frontier_20261020/x87_call_fallthrough_followup_v467_v474.json)
 for per-run and module hashes.
 
-PR #2123's corpus and focused-CTest preflights were used before the v506–v512
-retail probes. The corrected frozen corpus passed with 41,552 functions,
-2,089,743 instructions, and 312 byte-verified instruction boundaries. Current
-P-code overrides advanced the frontier to a 234-byte body at `0x005a8870`;
-the v512 replay and a bounded trace diagnostic timed out without proving that
-the target call ran. The recorded frontier remains before frontend, race, or
-retail drawing. See the
-[`post-PR #2123 v506–v512 evidence`](../evidence/retail_frontier_20261020/post_pr2123_v506_v512.json)
+PR #2123's corpus and focused-CTest preflights were used before the v506–v520
+retail probes. The frozen corpus contains 41,552 functions and 2,089,743
+instructions; the active requirements contain 358 function-boundary records
+(414 audit checks across repeated corpus rows) and pin the complete instruction
+bodies of `0x0057ddf0`, `0x005ab6c0`, `0x00655040`, `0x006550f0`, and
+`0x006496f0` in addition to earlier
+frontier boundaries.
+
+The v512 diagnostic logged call attempts from `0x0064879e` to `0x005a8870` and
+from `0x005a8870` to `0x0057ddf0`. Those entry records do not by themselves
+prove that the target bodies resolved or executed. The v513 caller-scoped trace
+then proved `0x0057ddf0` executed several returning calls and reached its
+`0x005ab740` callsite. In v516, a caller-scoped trace proved `0x005ab6c0`
+executed: `0x00649cb0` returned `0x008f3d01`, `0x00655040` returned `1`, and
+`0x006550f0` repeatedly returned `0` at return address `0x005ab6f7`. The loop
+therefore remained active and `0x00655110` was not reached before timeout.
+The v517 sample found `[ECX+4]=0x27f39bf0`; `0x006550f0` then reads bit 2
+from the indirect field at `[0x27f39bf0+0x74]` (candidate address
+`0x27f39c64`). v518 sampled the word as `0x00000002`, leaving bit 2 clear.
+The v519 live provenance trace identified `0x006496f0` as the writer of that
+value. `0x00655040` tail-dispatches to it; the body clears bit 3, then calls
+the indirect pointer at `0x00aa62b8`. v520 resolves that callback to
+`KERNEL32.dll!ResumeThread`, which returns `1`; the subsequent worker action
+that should set predicate bit 2 is still unknown. No frontend, race, retail
+D3D9 draw, or retail rendering is proven. See the
+[`post-PR #2123 follow-up evidence`](../evidence/retail_frontier_20261020/post_pr2123_retail_frontier_followup.json)
 for report, log, corpus, requirements, and module hashes.
 
 For a UI-gate probe, set `SHIFT_TRACE_UI_STATE_GATE=1` and
@@ -110,7 +128,10 @@ path. For a selected caller, `SHIFT_TRACE_GUEST_CALLER_SLOTS=0x1ef8,0x1efc`
 samples 32-bit words at those offsets from the caller's entry ECX. Events keep
 `ecx_entry` for the child callee and `caller_ecx` for the selected caller's
 entry receiver. Direct P-code calls also record their return EAX and completion
-status. If a sampled absolute address is included in
+status. A call `entry` is an attempted dispatch; it can appear for a missing
+export. The trace now records `target_resolved`, and unresolved targets emit a
+`shift_guest_call_trace_unresolved` event with the missing-export reason. If a
+sampled absolute address is included in
 `SHIFT_TRACE_GUEST_PROVENANCE`, its `last_writer` records the last overlapping
 P-code store. At most 32 offsets and 8,192 call events are retained. An omitted
 writer means the probe did not record a P-code store overlapping that address;
@@ -145,9 +166,10 @@ This is opt-in and complements the numeric `stack_slots`; it is intended for
 inspecting paths passed to APIs such as `CreateFileA` without dumping guest RAM.
 For target/caller/import traces, `SHIFT_TRACE_GUEST_CALL_LIVE_LOG=1` writes a
 compact entry line to the probe log before the selected call runs and a return
-line when it completes. This preserves entry registers and sampled stack/target
-slots if the bounded probe later times out; a missing return line means the
-selected call had not completed when execution stopped.
+line when it completes. Imported calls include their resolved API name in both
+lines. This preserves entry registers and sampled stack/target slots if the
+bounded probe later times out; a missing return line means the selected call
+had not completed when execution stopped.
 
 The v217/v218 bounded runs reproduce the same 96,082-dispatch, 1,559-function
 host-frame-loop checkpoint with 120 Vulkan clear and 120 present submissions,

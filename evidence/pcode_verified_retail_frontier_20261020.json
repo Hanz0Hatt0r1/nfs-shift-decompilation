@@ -63,6 +63,164 @@
         "bytes": "c3"
       }
     ],
+    "0x0057ddf0": [
+      {
+        "address": "0x0057ddf0",
+        "bytes": "56"
+      },
+      {
+        "address": "0x0057ddf1",
+        "bytes": "8bf1"
+      },
+      {
+        "address": "0x0057ddf3",
+        "bytes": "8d4e28"
+      },
+      {
+        "address": "0x0057ddf6",
+        "bytes": "c70600000000"
+      },
+      {
+        "address": "0x0057ddfc",
+        "bytes": "e86f60fbff"
+      },
+      {
+        "address": "0x0057de01",
+        "bytes": "8d4e40"
+      },
+      {
+        "address": "0x0057de04",
+        "bytes": "e8f70c0000"
+      },
+      {
+        "address": "0x0057de09",
+        "bytes": "8d8e800a0000"
+      },
+      {
+        "address": "0x0057de0f",
+        "bytes": "e85c60fbff"
+      },
+      {
+        "address": "0x0057de14",
+        "bytes": "8d8e840a0000"
+      },
+      {
+        "address": "0x0057de1a",
+        "bytes": "e85160fbff"
+      },
+      {
+        "address": "0x0057de1f",
+        "bytes": "8d8e880a0000"
+      },
+      {
+        "address": "0x0057de25",
+        "bytes": "e84660fbff"
+      },
+      {
+        "address": "0x0057de2a",
+        "bytes": "8d8e8c0a0000"
+      },
+      {
+        "address": "0x0057de30",
+        "bytes": "e83b60fbff"
+      },
+      {
+        "address": "0x0057de35",
+        "bytes": "8d8e900a0000"
+      },
+      {
+        "address": "0x0057de3b",
+        "bytes": "e83060fbff"
+      },
+      {
+        "address": "0x0057de40",
+        "bytes": "68a00a0000"
+      },
+      {
+        "address": "0x0057de45",
+        "bytes": "c7463000000000"
+      },
+      {
+        "address": "0x0057de4c",
+        "bytes": "c786700a000000000000"
+      },
+      {
+        "address": "0x0057de56",
+        "bytes": "e8658a3000"
+      },
+      {
+        "address": "0x0057de5b",
+        "bytes": "83c404"
+      },
+      {
+        "address": "0x0057de5e",
+        "bytes": "85c0"
+      },
+      {
+        "address": "0x0057de60",
+        "bytes": "7415"
+      },
+      {
+        "address": "0x0057de62",
+        "bytes": "8bc8"
+      },
+      {
+        "address": "0x0057de64",
+        "bytes": "e887d60200"
+      },
+      {
+        "address": "0x0057de69",
+        "bytes": "8bc8"
+      },
+      {
+        "address": "0x0057de6b",
+        "bytes": "89462c"
+      },
+      {
+        "address": "0x0057de6e",
+        "bytes": "e8cdd80200"
+      },
+      {
+        "address": "0x0057de73",
+        "bytes": "8bc6"
+      },
+      {
+        "address": "0x0057de75",
+        "bytes": "5e"
+      },
+      {
+        "address": "0x0057de76",
+        "bytes": "c3"
+      },
+      {
+        "address": "0x0057de77",
+        "bytes": "33c0"
+      },
+      {
+        "address": "0x0057de79",
+        "bytes": "8bc8"
+      },
+      {
+        "address": "0x0057de7b",
+        "bytes": "89462c"
+      },
+      {
+        "address": "0x0057de7e",
+        "bytes": "e8bdd80200"
+      },
+      {
+        "address": "0x0057de83",
+        "bytes": "8bc6"
+      },
+      {
+        "address": "0x0057de85",
+        "bytes": "5e"
+      },
+      {
+        "address": "0x0057de86",
+        "bytes": "c3"
+      }
+    ],
     "0x005a8870": [
       {
         "address": "0x005a8870",
@@ -321,6 +479,136 @@
         "bytes": "c3"
       }
     ],
+    "0x005ab6c0": [
+      {
+        "address": "0x005ab6c0",
+        "bytes": "56"
+      },
+      {
+        "address": "0x005ab6c1",
+        "bytes": "8bf1"
+      },
+      {
+        "address": "0x005ab6c3",
+        "bytes": "80be810a000000"
+      },
+      {
+        "address": "0x005ab6ca",
+        "bytes": "753a"
+      },
+      {
+        "address": "0x005ab6cc",
+        "bytes": "6a00"
+      },
+      {
+        "address": "0x005ab6ce",
+        "bytes": "6a00"
+      },
+      {
+        "address": "0x005ab6d0",
+        "bytes": "8bd6"
+      },
+      {
+        "address": "0x005ab6d2",
+        "bytes": "b9709ead00"
+      },
+      {
+        "address": "0x005ab6d7",
+        "bytes": "e8d4e50900"
+      },
+      {
+        "address": "0x005ab6dc",
+        "bytes": "84c0"
+      },
+      {
+        "address": "0x005ab6de",
+        "bytes": "7502"
+      },
+      {
+        "address": "0x005ab6e0",
+        "bytes": "5e"
+      },
+      {
+        "address": "0x005ab6e1",
+        "bytes": "c3"
+      },
+      {
+        "address": "0x005ab6e2",
+        "bytes": "8b06"
+      },
+      {
+        "address": "0x005ab6e4",
+        "bytes": "8b4010"
+      },
+      {
+        "address": "0x005ab6e7",
+        "bytes": "33d2"
+      },
+      {
+        "address": "0x005ab6e9",
+        "bytes": "8bce"
+      },
+      {
+        "address": "0x005ab6eb",
+        "bytes": "ffd0"
+      },
+      {
+        "address": "0x005ab6ed",
+        "bytes": "8d4900"
+      },
+      {
+        "address": "0x005ab6f0",
+        "bytes": "8bce"
+      },
+      {
+        "address": "0x005ab6f2",
+        "bytes": "e8f9990a00"
+      },
+      {
+        "address": "0x005ab6f7",
+        "bytes": "84c0"
+      },
+      {
+        "address": "0x005ab6f9",
+        "bytes": "74f5"
+      },
+      {
+        "address": "0x005ab6fb",
+        "bytes": "8bce"
+      },
+      {
+        "address": "0x005ab6fd",
+        "bytes": "e80e9a0a00"
+      },
+      {
+        "address": "0x005ab702",
+        "bytes": "84c0"
+      },
+      {
+        "address": "0x005ab704",
+        "bytes": "75ea"
+      },
+      {
+        "address": "0x005ab706",
+        "bytes": "8bce"
+      },
+      {
+        "address": "0x005ab708",
+        "bytes": "e853feffff"
+      },
+      {
+        "address": "0x005ab70d",
+        "bytes": "b001"
+      },
+      {
+        "address": "0x005ab70f",
+        "bytes": "5e"
+      },
+      {
+        "address": "0x005ab710",
+        "bytes": "c3"
+      }
+    ],
     "0x005b6d30": [
       {
         "address": "0x005b6d58",
@@ -375,6 +663,72 @@
       {
         "address": "0x0064882d",
         "bytes": "ffd2"
+      }
+    ],
+    "0x006496f0": [
+      {
+        "address": "0x006496f0",
+        "bytes": "8b4174"
+      },
+      {
+        "address": "0x006496f3",
+        "bytes": "a802"
+      },
+      {
+        "address": "0x006496f5",
+        "bytes": "7507"
+      },
+      {
+        "address": "0x006496f7",
+        "bytes": "a804"
+      },
+      {
+        "address": "0x006496f9",
+        "bytes": "7403"
+      },
+      {
+        "address": "0x006496fb",
+        "bytes": "32c0"
+      },
+      {
+        "address": "0x006496fd",
+        "bytes": "c3"
+      },
+      {
+        "address": "0x006496fe",
+        "bytes": "83e0f7"
+      },
+      {
+        "address": "0x00649701",
+        "bytes": "894174"
+      },
+      {
+        "address": "0x00649704",
+        "bytes": "8b4144"
+      },
+      {
+        "address": "0x00649707",
+        "bytes": "50"
+      },
+      {
+        "address": "0x00649708",
+        "bytes": "89514c"
+      },
+      {
+        "address": "0x0064970b",
+        "bytes": "ff15b862aa00"
+      },
+      {
+        "address": "0x00649711",
+        "bytes": "83f8ff"
+      },
+      {
+        "address": "0x00649714",
+        "bytes": "0f95c0"
+      },
+      {
+        "address": "0x00649717",
+        "bytes": "c3"
       }
     ],
     "0x00649fa0": [
@@ -521,6 +875,70 @@
       {
         "address": "0x0064b99e",
         "bytes": "ff5508"
+      }
+    ],
+    "0x00655040": [
+      {
+        "address": "0x00655040",
+        "bytes": "8b4904"
+      },
+      {
+        "address": "0x00655043",
+        "bytes": "85c9"
+      },
+      {
+        "address": "0x00655045",
+        "bytes": "7405"
+      },
+      {
+        "address": "0x00655047",
+        "bytes": "e9a446ffff"
+      },
+      {
+        "address": "0x0065504c",
+        "bytes": "32c0"
+      },
+      {
+        "address": "0x0065504e",
+        "bytes": "c3"
+      }
+    ],
+    "0x006550f0": [
+      {
+        "address": "0x006550f0",
+        "bytes": "8b4104"
+      },
+      {
+        "address": "0x006550f3",
+        "bytes": "85c0"
+      },
+      {
+        "address": "0x006550f5",
+        "bytes": "7409"
+      },
+      {
+        "address": "0x006550f7",
+        "bytes": "8b4074"
+      },
+      {
+        "address": "0x006550fa",
+        "bytes": "c1e802"
+      },
+      {
+        "address": "0x006550fd",
+        "bytes": "2401"
+      },
+      {
+        "address": "0x006550ff",
+        "bytes": "c3"
+      },
+      {
+        "address": "0x00655100",
+        "bytes": "32c0"
+      },
+      {
+        "address": "0x00655102",
+        "bytes": "c3"
       }
     ],
     "0x0065c050": [
@@ -1078,6 +1496,6 @@
       }
     ]
   },
-  "note": "Requirements cover instruction boundaries and reachable callsites. The 0x0065c050 body is an exact 5-byte computed-jump thunk; 0x007c06f0 is a 54-byte constructor callback. The default PR #2123 terminator requirements remain unchanged. Requirements now pin the 0x0064882d indirect-call instruction and both boundaries of 0x0057c610. Requirements pin the 0x004320a0 method entry and RET boundary. Requirements pin the 0x006418d9 entry, the 0x006418c6 block, and all three observed back-branches. Requirements pin the 0x004d1e30 getter entry and RET boundary. The v496 follow-up pins the Ghidra CFG body and return for the scanner implementation at 0x0090c00f, plus the retail pointer/call at 0x00901433/0x00901438. The v497 follow-up pins the virtual dispatch in FUN_0064879e and verified method body FUN_0042aab0. The v498 follow-up pins the cross-function branch from FUN_00664d60 to the 0x00664df6 epilogue shared with FUN_00664de5. The v505 follow-up pins every instruction byte in the Ghidra-defined 49-byte FUN_00664e00 body, reached through the indirect dispatch in 0x0064a080. The v506 follow-up pins every instruction byte in the Ghidra-defined 49-byte FUN_00664e40 body, reached through the indirect dispatch in 0x0064a080. The v507 follow-up pins every instruction byte in Ghidra function FUN_00664650, reached through the tail dispatch at 0x0064a0bc. The v508 follow-up pins every instruction byte in the Ghidra-exported 62-byte FUN_0064a080 body; its computed tail jump is lowered through rvi_call. The v510 follow-up pins all five instruction bytes in the 14-byte FUN_00649fa0 computed-jump thunk. The v511 follow-up pins all 64 instruction boundaries in the Ghidra-defined 234-byte FUN_005a8870 body.",
-  "source": "Required instruction bytes are verified against the pinned retail 1.02 PE and Ghidra Listing. Runtime evidence includes the cinit repairs, constructor callbacks, and the indirect-call path 0x0064b930 -> 0x0065c050 observed at v484. The v491 retail frontier also followed the indirect call in 0x0064879e to the 167-byte callback at 0x0057c610. The v493 trace reached vtable method 0x004320a0 through the object vtable at 0x00ab15a0. The v494 frontier enters block 0x006418c6 through three branches from 0x006418d9; these shared-code instructions are in the replacement P-code corpus row. The v495 retail frame identified virtual method 0x004d1e30 in guest EDX while 0x00641470 was active. The v496 frontier reached indirect scanner implementation 0x0090c00f from the 0x00901423 wrapper; Ghidra defined a 3,149-byte reachable body ending at RET 0x0090cc5b (1,061 instructions), then shared RevEngInstr lowering accepted the full function with zero rejects. The v497 trace reached 0x0042aab0 with EDX=0x0042aab0 from guest function 0x0064879e; Ghidra confirms the method pointer reference at 0x00aaffb4 and the 44-byte body ending in RET at 0x0042aadb. The v498 frontier shows guest function 0x00664d60 branching to 0x00664df6. Ghidra assigns 0x00664df6 to overlapping helper FUN_00664de5; a merged 67-instruction P-code export provides both entry labels while preserving the verified byte streams. The v505 retail frontier reached FUN_00664e00 from guest function 0x0064a080. Ghidra defined the exact 49-byte body (22 instructions); RevEngInstr lowered all 69 P-code operations with zero rejects. The v506 retail frontier reached FUN_00664e40 from guest function 0x0064a080. Ghidra defined the exact 49-byte body (22 instructions); RevEngInstr lowered all 69 P-code operations with zero rejects. The v507 caller trace followed the tail dispatch from 0x0064a080 to FUN_00664650. Ghidra exported the 137-byte body (56 instructions); RevEngInstr lowered it with zero rejects. The v508 trace reached FUN_0064a080 from the retail startup path. Re-exporting with Ghidra confirmed all 29 instruction boundaries; the current RevEngInstr lowering emits a dispatcher-backed computed tail jump and accepts the function with zero rejects. The v510 frontier reached the computed jump at 0x00649fac from 0x00889b80, targeting the base-module export 0x00664550. The 14-byte thunk is now re-lowered with the current dispatcher-backed BRANCHIND implementation. The v511 retail frontier reached 0x005a8870 from 0x0064879e. Ghidra defines the exact 234-byte method (64 instructions) as __thiscall; RevEngInstr lowers all 234 P-code operations with zero rejects."
+  "note": "Requirements cover instruction boundaries and reachable callsites. The 0x0065c050 body is an exact 5-byte computed-jump thunk; 0x007c06f0 is a 54-byte constructor callback. The default PR #2123 terminator requirements remain unchanged. Requirements now pin the 0x0064882d indirect-call instruction and both boundaries of 0x0057c610. Requirements pin the 0x004320a0 method entry and RET boundary. Requirements pin the 0x006418d9 entry, the 0x006418c6 block, and all three observed back-branches. Requirements pin the 0x004d1e30 getter entry and RET boundary. The v496 follow-up pins the Ghidra CFG body and return for the scanner implementation at 0x0090c00f, plus the retail pointer/call at 0x00901433/0x00901438. The v497 follow-up pins the virtual dispatch in FUN_0064879e and verified method body FUN_0042aab0. The v498 follow-up pins the cross-function branch from FUN_00664d60 to the 0x00664df6 epilogue shared with FUN_00664de5. The v505 follow-up pins every instruction byte in the Ghidra-defined 49-byte FUN_00664e00 body, reached through the indirect dispatch in 0x0064a080. The v506 follow-up pins every instruction byte in the Ghidra-defined 49-byte FUN_00664e40 body, reached through the indirect dispatch in 0x0064a080. The v507 follow-up pins every instruction byte in Ghidra function FUN_00664650, reached through the tail dispatch at 0x0064a0bc. The v508 follow-up pins every instruction byte in the Ghidra-exported 62-byte FUN_0064a080 body; its computed tail jump is lowered through rvi_call. The v510 follow-up pins all five instruction bytes in the 14-byte FUN_00649fa0 computed-jump thunk. The v511 follow-up pins all 64 instruction boundaries in the Ghidra-defined 234-byte FUN_005a8870 body. Requirements pin all 39 instruction boundaries in FUN_0057ddf0, reached from 0x005a8870. The v516 follow-up pins all 32 instruction boundaries in FUN_005ab6c0 and all 9 boundaries in FUN_006550f0, observed on the active polling path. The v519 follow-up pins all instruction boundaries in FUN_006496f0 and FUN_00655040, the polling-state writer and its wrapper.",
+  "source": "Required instruction bytes are verified against the pinned retail 1.02 PE and Ghidra Listing. Runtime evidence includes the cinit repairs, constructor callbacks, and the indirect-call path 0x0064b930 -> 0x0065c050 observed at v484. The v491 retail frontier also followed the indirect call in 0x0064879e to the 167-byte callback at 0x0057c610. The v493 trace reached vtable method 0x004320a0 through the object vtable at 0x00ab15a0. The v494 frontier enters block 0x006418c6 through three branches from 0x006418d9; these shared-code instructions are in the replacement P-code corpus row. The v495 retail frame identified virtual method 0x004d1e30 in guest EDX while 0x00641470 was active. The v496 frontier reached indirect scanner implementation 0x0090c00f from the 0x00901423 wrapper; Ghidra defined a 3,149-byte reachable body ending at RET 0x0090cc5b (1,061 instructions), then shared RevEngInstr lowering accepted the full function with zero rejects. The v497 trace reached 0x0042aab0 with EDX=0x0042aab0 from guest function 0x0064879e; Ghidra confirms the method pointer reference at 0x00aaffb4 and the 44-byte body ending in RET at 0x0042aadb. The v498 frontier shows guest function 0x00664d60 branching to 0x00664df6. Ghidra assigns 0x00664df6 to overlapping helper FUN_00664de5; a merged 67-instruction P-code export provides both entry labels while preserving the verified byte streams. The v505 retail frontier reached FUN_00664e00 from guest function 0x0064a080. Ghidra defined the exact 49-byte body (22 instructions); RevEngInstr lowered all 69 P-code operations with zero rejects. The v506 retail frontier reached FUN_00664e40 from guest function 0x0064a080. Ghidra defined the exact 49-byte body (22 instructions); RevEngInstr lowered all 69 P-code operations with zero rejects. The v507 caller trace followed the tail dispatch from 0x0064a080 to FUN_00664650. Ghidra exported the 137-byte body (56 instructions); RevEngInstr lowered it with zero rejects. The v508 trace reached FUN_0064a080 from the retail startup path. Re-exporting with Ghidra confirmed all 29 instruction boundaries; the current RevEngInstr lowering emits a dispatcher-backed computed tail jump and accepts the function with zero rejects. The v510 frontier reached the computed jump at 0x00649fac from 0x00889b80, targeting the base-module export 0x00664550. The 14-byte thunk is now re-lowered with the current dispatcher-backed BRANCHIND implementation. The v511 retail frontier reached 0x005a8870 from 0x0064879e. Ghidra defines the exact 234-byte method (64 instructions) as __thiscall; RevEngInstr lowers all 234 P-code operations with zero rejects. The v512/v513 live trace reached FUN_0057ddf0 from 0x005a8870; v513 observed it return from its initial calls and enter 0x005ab740, which did not return before timeout. The v516 caller-scoped trace proves FUN_005ab6c0 executed its child calls; FUN_006550f0 repeatedly returned EAX=0, so the loop at 0x005ab6f7 remained active and FUN_00655110 was not reached. The v519 call trace identifies FUN_006496f0 as the writer of 0x00000002 to the indirect predicate word at 0x27f39c64; FUN_00655040 tail-dispatches to that writer."
 }
