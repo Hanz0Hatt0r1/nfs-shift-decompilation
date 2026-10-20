@@ -75,6 +75,7 @@ def test_normalizes_supported_target_spellings():
     assert module.normalize_target("0x00886900") == "0x00886900"
     assert module.normalize_target("00886900") == "0x00886900"
     assert module.normalize_target("FUN_00886900") == "0x00886900"
+    assert module.normalize_target("entry:0090a170") == "0x0090a170"
 
 
 def test_validates_exact_target_set_and_instruction_count(tmp_path):

@@ -2094,6 +2094,8 @@ struct Runtime {
     std::unordered_map<uint32_t, Image> guest_texture_images;
     std::unordered_map<uint32_t, Buffer> guest_vertex_buffers;
     std::unordered_map<uint32_t, uint32_t> guest_vertex_buffer_sizes;
+    std::unordered_map<uint32_t, Buffer> guest_index_buffers;
+    std::unordered_map<uint32_t, uint32_t> guest_index_buffer_sizes;
     bool guest_d3d9_device_bound = false;
     uint32_t guest_d3d9_focus_window = 0;
     uint32_t guest_d3d9_behavior_flags = 0;
@@ -2174,6 +2176,12 @@ struct Runtime {
             &Runtime::update_guest_d3d9_vertex_buffer_callback;
         adapter_info.release_vertex_buffer =
             &Runtime::release_guest_d3d9_vertex_buffer_callback;
+        adapter_info.create_index_buffer =
+            &Runtime::create_guest_d3d9_index_buffer_callback;
+        adapter_info.update_index_buffer =
+            &Runtime::update_guest_d3d9_index_buffer_callback;
+        adapter_info.release_index_buffer =
+            &Runtime::release_guest_d3d9_index_buffer_callback;
         adapter_info.clear = &Runtime::clear_guest_d3d9_callback;
         adapter_info.present = &Runtime::present_guest_d3d9_callback;
         uint32_t surface_format_count = 0;
@@ -2393,11 +2401,41 @@ struct Runtime {
         runtime->guest_vertex_buffer_sizes.erase(guest_buffer);
     }
 
+    static bool create_guest_d3d9_index_buffer_callback(
+        void* context, uint32_t guest_buffer, uint32_t guest_device,
+        uint32_t size, uint32_t usage, uint32_t format, uint32_t pool,
+        std::string& error) {
+        auto* runtime = static_cast<Runtime*>(context);
+        return runtime && runtime->create_guest_d3d9_index_buffer(
+                              guest_buffer, guest_device, size, usage, format,
+                              pool, error);
+    }
+
+    static bool update_guest_d3d9_index_buffer_callback(
+        void* context, uint32_t guest_buffer, uint32_t offset,
+        const uint8_t* data, size_t size, std::string& error) {
+        auto* runtime = static_cast<Runtime*>(context);
+        return runtime && runtime->update_guest_d3d9_index_buffer(
+                              guest_buffer, offset, data, size, error);
+    }
+
+    static void release_guest_d3d9_index_buffer_callback(
+        void* context, uint32_t guest_buffer) {
+        auto* runtime = static_cast<Runtime*>(context);
+        if (!runtime) return;
+        const auto buffer = runtime->guest_index_buffers.find(guest_buffer);
+        if (buffer == runtime->guest_index_buffers.end()) return;
+        buffer->second.destroy();
+        runtime->guest_index_buffers.erase(buffer);
+        runtime->guest_index_buffer_sizes.erase(guest_buffer);
+    }
+
     bool create_guest_d3d9_vertex_buffer(
         uint32_t guest_buffer, uint32_t guest_device, uint32_t size,
         uint32_t usage, uint32_t fvf, uint32_t pool, std::string& error) {
         if (!guest_d3d9_device_bound || guest_buffer == 0 || guest_device == 0 ||
-            size == 0 || pool != 0) {
+            size == 0 || (pool != 0 && pool != 1) ||
+            (pool == 1 && (usage & 0x200) != 0)) {
             error = "unsupported retail D3D9 vertex buffer description";
             return false;
         }
@@ -2462,6 +2500,83 @@ struct Runtime {
         if (trace && *trace) {
             std::fprintf(stderr,
                          "shift_runtime: guest D3D9 vertex buffer updated "
+                         "buffer=0x%08x offset=%u size=%zu\n",
+                         guest_buffer, offset, size);
+        }
+        return true;
+    }
+
+    bool create_guest_d3d9_index_buffer(
+        uint32_t guest_buffer, uint32_t guest_device, uint32_t size,
+        uint32_t usage, uint32_t format, uint32_t pool, std::string& error) {
+        if (!guest_d3d9_device_bound || guest_buffer == 0 || guest_device == 0 ||
+            size == 0 || (format != 101 && format != 102) ||
+            (pool != 0 && pool != 1) ||
+            (pool == 1 && (usage & 0x200) != 0)) {
+            error = "unsupported retail D3D9 index buffer description";
+            return false;
+        }
+        if (guest_index_buffers.find(guest_buffer) !=
+            guest_index_buffers.end()) {
+            error = "guest D3D9 index buffer address is already allocated";
+            return false;
+        }
+        Buffer buffer;
+        try {
+            create_buffer(nullptr, size,
+                          VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
+                              VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
+                              VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                          buffer);
+        } catch (const std::exception& exception) {
+            buffer.destroy();
+            error = exception.what();
+            return false;
+        }
+        const auto [inserted_buffer, inserted] =
+            guest_index_buffers.emplace(guest_buffer, std::move(buffer));
+        if (!inserted) {
+            buffer.destroy();
+            error = "guest D3D9 index buffer was concurrently allocated";
+            return false;
+        }
+        guest_index_buffer_sizes.emplace(guest_buffer, size);
+        (void)inserted_buffer;
+        const char* trace = std::getenv("SHIFT_TRACE_D3D9_RESOURCES");
+        if (trace && *trace) {
+            std::fprintf(stderr,
+                         "shift_runtime: guest D3D9 Vulkan index buffer "
+                         "created buffer=0x%08x device=0x%08x size=%u "
+                         "usage=0x%x format=%u pool=%u\n",
+                         guest_buffer, guest_device, size, usage, format, pool);
+        }
+        return true;
+    }
+
+    bool update_guest_d3d9_index_buffer(
+        uint32_t guest_buffer, uint32_t offset, const uint8_t* data,
+        size_t size, std::string& error) {
+        const auto buffer = guest_index_buffers.find(guest_buffer);
+        const auto buffer_size = guest_index_buffer_sizes.find(guest_buffer);
+        if (buffer == guest_index_buffers.end() ||
+            buffer_size == guest_index_buffer_sizes.end() || !data || size == 0 ||
+            offset > buffer_size->second || size > buffer_size->second - offset) {
+            error = "invalid guest D3D9 index buffer update";
+            return false;
+        }
+        void* mapped = nullptr;
+        const VkResult map_result = vkMapMemory(
+            device, buffer->second.memory, 0, VK_WHOLE_SIZE, 0, &mapped);
+        if (map_result != VK_SUCCESS) {
+            error = "could not map guest D3D9 index buffer memory";
+            return false;
+        }
+        std::memcpy(static_cast<uint8_t*>(mapped) + offset, data, size);
+        vkUnmapMemory(device, buffer->second.memory);
+        const char* trace = std::getenv("SHIFT_TRACE_D3D9_RESOURCES");
+        if (trace && *trace) {
+            std::fprintf(stderr,
+                         "shift_runtime: guest D3D9 index buffer updated "
                          "buffer=0x%08x offset=%u size=%zu\n",
                          guest_buffer, offset, size);
         }
@@ -4025,6 +4140,12 @@ struct Runtime {
         }
         guest_vertex_buffers.clear();
         guest_vertex_buffer_sizes.clear();
+        for (auto& [guest_buffer, buffer] : guest_index_buffers) {
+            (void)guest_buffer;
+            buffer.destroy();
+        }
+        guest_index_buffers.clear();
+        guest_index_buffer_sizes.clear();
         if (pipeline) {
             vkDestroyPipeline(device, pipeline, nullptr);
         }

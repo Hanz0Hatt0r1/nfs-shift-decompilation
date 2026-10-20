@@ -78,6 +78,13 @@ for a run; when extending a frontier, include earlier required modules again.
 Omitting a prior supplement can produce a false earlier missing-export stop.
 The v215 replay still reports no guest draw translation, frontend, or race.
 
+The follow-up after PR #2123 adds binary80 `LOG2`, `F2XM1`, and `FSCALE`
+userops and uses the shared RevEngInstr exporter to recover a missing x86 call
+fallthrough plus bounded entrypoint trampolines. Probes v463–v466 advanced the
+guest frontier through 4,621 unique functions; they still stop before frontend
+or retail rendering. Compact hashes and blockers are recorded in
+[`x87_call_fallthrough_followup_v462_v466.json`](../evidence/retail_frontier_20261020/x87_call_fallthrough_followup_v462_v466.json).
+
 For a UI-gate probe, set `SHIFT_TRACE_UI_STATE_GATE=1` and
 `SHIFT_TRACE_GUEST_PROVENANCE=0x00be250c,0x00be2534`. Each `0x0050c880` trace
 event then includes exact-byte `helper_flag_last_writer` provenance, with the

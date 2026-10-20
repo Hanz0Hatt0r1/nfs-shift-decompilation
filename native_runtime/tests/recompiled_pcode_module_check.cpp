@@ -1,4 +1,5 @@
 #include "shift_recompiled_pcode_module.hpp"
+#include "shift_d3dx9_effect_binary.hpp"
 
 #include <algorithm>
 #include <array>
@@ -101,6 +102,30 @@ struct D3d9BackendFixture {
     uint32_t clear_stencil = 0;
     uint32_t clear_rect_count = 0;
     uint32_t present_calls = 0;
+    bool vertex_buffer_create_called = false;
+    bool vertex_buffer_update_called = false;
+    bool vertex_buffer_release_called = false;
+    uint32_t vertex_buffer_address = 0;
+    uint32_t vertex_buffer_device = 0;
+    uint32_t vertex_buffer_size = 0;
+    uint32_t vertex_buffer_usage = 0;
+    uint32_t vertex_buffer_fvf = 0;
+    uint32_t vertex_buffer_pool = 0;
+    uint32_t vertex_buffer_update_offset = 0;
+    size_t vertex_buffer_update_size = 0;
+    std::array<uint8_t, 64> vertex_buffer_update_data{};
+    bool index_buffer_create_called = false;
+    bool index_buffer_update_called = false;
+    bool index_buffer_release_called = false;
+    uint32_t index_buffer_address = 0;
+    uint32_t index_buffer_device = 0;
+    uint32_t index_buffer_size = 0;
+    uint32_t index_buffer_usage = 0;
+    uint32_t index_buffer_format = 0;
+    uint32_t index_buffer_pool = 0;
+    uint32_t index_buffer_update_offset = 0;
+    size_t index_buffer_update_size = 0;
+    std::array<uint8_t, 64> index_buffer_update_data{};
     shift::runtime::RecompiledGuestD3d9PresentationParameters parameters{};
 };
 
@@ -136,6 +161,94 @@ bool present_d3d9_fixture(void* context, std::string&) {
     if (!fixture) return false;
     ++fixture->present_calls;
     return true;
+}
+
+bool create_d3d9_fixture_vertex_buffer(
+    void* context, uint32_t guest_buffer, uint32_t guest_device,
+    uint32_t size, uint32_t usage, uint32_t fvf, uint32_t pool,
+    std::string& error) {
+    auto* fixture = static_cast<D3d9BackendFixture*>(context);
+    if (!fixture || size > fixture->vertex_buffer_update_data.size()) {
+        error = "fixture vertex buffer is too large";
+        return false;
+    }
+    fixture->vertex_buffer_create_called = true;
+    fixture->vertex_buffer_address = guest_buffer;
+    fixture->vertex_buffer_device = guest_device;
+    fixture->vertex_buffer_size = size;
+    fixture->vertex_buffer_usage = usage;
+    fixture->vertex_buffer_fvf = fvf;
+    fixture->vertex_buffer_pool = pool;
+    return true;
+}
+
+bool update_d3d9_fixture_vertex_buffer(
+    void* context, uint32_t guest_buffer, uint32_t offset,
+    const uint8_t* data, size_t size, std::string& error) {
+    auto* fixture = static_cast<D3d9BackendFixture*>(context);
+    if (!fixture || guest_buffer != fixture->vertex_buffer_address || !data ||
+        offset > fixture->vertex_buffer_size ||
+        size > fixture->vertex_buffer_size - offset ||
+        size > fixture->vertex_buffer_update_data.size()) {
+        error = "fixture vertex buffer update is out of range";
+        return false;
+    }
+    fixture->vertex_buffer_update_called = true;
+    fixture->vertex_buffer_update_offset = offset;
+    fixture->vertex_buffer_update_size = size;
+    std::copy_n(data, size, fixture->vertex_buffer_update_data.begin());
+    return true;
+}
+
+void release_d3d9_fixture_vertex_buffer(void* context,
+                                        uint32_t guest_buffer) {
+    auto* fixture = static_cast<D3d9BackendFixture*>(context);
+    if (fixture && fixture->vertex_buffer_address == guest_buffer)
+        fixture->vertex_buffer_release_called = true;
+}
+
+bool create_d3d9_fixture_index_buffer(
+    void* context, uint32_t guest_buffer, uint32_t guest_device,
+    uint32_t size, uint32_t usage, uint32_t format, uint32_t pool,
+    std::string& error) {
+    auto* fixture = static_cast<D3d9BackendFixture*>(context);
+    if (!fixture || size > fixture->index_buffer_update_data.size()) {
+        error = "fixture index buffer is too large";
+        return false;
+    }
+    fixture->index_buffer_create_called = true;
+    fixture->index_buffer_address = guest_buffer;
+    fixture->index_buffer_device = guest_device;
+    fixture->index_buffer_size = size;
+    fixture->index_buffer_usage = usage;
+    fixture->index_buffer_format = format;
+    fixture->index_buffer_pool = pool;
+    return true;
+}
+
+bool update_d3d9_fixture_index_buffer(
+    void* context, uint32_t guest_buffer, uint32_t offset,
+    const uint8_t* data, size_t size, std::string& error) {
+    auto* fixture = static_cast<D3d9BackendFixture*>(context);
+    if (!fixture || guest_buffer != fixture->index_buffer_address || !data ||
+        offset > fixture->index_buffer_size ||
+        size > fixture->index_buffer_size - offset ||
+        size > fixture->index_buffer_update_data.size()) {
+        error = "fixture index buffer update is out of range";
+        return false;
+    }
+    fixture->index_buffer_update_called = true;
+    fixture->index_buffer_update_offset = offset;
+    fixture->index_buffer_update_size = size;
+    std::copy_n(data, size, fixture->index_buffer_update_data.begin());
+    return true;
+}
+
+void release_d3d9_fixture_index_buffer(void* context,
+                                       uint32_t guest_buffer) {
+    auto* fixture = static_cast<D3d9BackendFixture*>(context);
+    if (fixture && fixture->index_buffer_address == guest_buffer)
+        fixture->index_buffer_release_called = true;
 }
 
 uint32_t read_guest_u32(shift::runtime::RecompiledPcodeModule& module,
@@ -205,7 +318,8 @@ void write_pe32_fixture(const std::string& path,
                         bool time_get_time_import = false,
                         bool unknown_first_import = false,
                         bool read_file_ex_import = false,
-                        bool create_directory_import = false) {
+                        bool create_directory_import = false,
+                        bool write_file_import = false) {
     constexpr size_t file_size = 0x1300;
     constexpr size_t pe_offset = 0x80;
     constexpr size_t optional_offset = pe_offset + 24;
@@ -382,7 +496,9 @@ void write_pe32_fixture(const std::string& path,
     write_import_name(0xde0, "SetThreadPriority");
     write_import_name(0xe00, "CreateFileA");
     write_import_name(0xe20, "GetFileSize");
-    write_import_name(0xe40, read_file_ex_import ? "ReadFileEx" : "ReadFile");
+    write_import_name(0xe40, write_file_import
+                                 ? "WriteFile"
+                                 : read_file_ex_import ? "ReadFileEx" : "ReadFile");
     std::copy_n("imagehlp.dll", 13, bytes.begin() + 0xe60);
     write_import_name(0xe80, "SymSetOptions");
     write_import_name(0xea0, "SymInitialize");
@@ -585,11 +701,34 @@ void write_d3d9_pe32_fixture(const std::string& path) {
     write_u32(bytes, 0x434, 0x2280);
     write_u32(bytes, 0x438, 0x2260);
     write_u32(bytes, 0x640, 0x22a0);
+    write_u32(bytes, 0x644, 0x2300);
+    write_u32(bytes, 0x648, 0x2340);
+    write_u32(bytes, 0x64c, 0x23a0);
+    write_u32(bytes, 0x650, 0x23c6);
     write_u32(bytes, 0x660, 0x22a0);
+    write_u32(bytes, 0x664, 0x2300);
+    write_u32(bytes, 0x668, 0x2340);
+    write_u32(bytes, 0x66c, 0x23a0);
+    write_u32(bytes, 0x670, 0x23c6);
     std::copy_n("d3dx9_41.dll", 13, bytes.begin() + 0x680);
     const char create_effect_name[] = "D3DXCreateEffect";
     std::copy_n(create_effect_name, sizeof(create_effect_name),
                 bytes.begin() + 0x6a2);
+    const char effect_compiler_name[] =
+        "D3DXCreateEffectCompilerFromFileA";
+    std::copy_n(effect_compiler_name, sizeof(effect_compiler_name),
+                bytes.begin() + 0x702);
+    const char create_line_name[] = "D3DXCreateLine";
+    std::copy_n(create_line_name, sizeof(create_line_name),
+                bytes.begin() + 0x742);
+    const char image_info_name[] = "D3DXGetImageInfoFromFileInMemory";
+    std::copy_n(image_info_name, sizeof(image_info_name),
+                bytes.begin() + 0x7a2);
+    const char create_texture_from_memory_name[] =
+        "D3DXCreateTextureFromFileInMemoryEx";
+    std::copy_n(create_texture_from_memory_name,
+                sizeof(create_texture_from_memory_name),
+                bytes.begin() + 0x7c8);
 
     std::ofstream file(path, std::ios::binary | std::ios::trunc);
     require(static_cast<bool>(file), "could not create D3D9 PE32 fixture");
@@ -598,7 +737,7 @@ void write_d3d9_pe32_fixture(const std::string& path) {
     require(static_cast<bool>(file), "could not write D3D9 PE32 fixture");
 }
 
-std::vector<uint8_t> make_d3dx9_shader_effect() {
+std::vector<uint8_t> make_d3dx9_shader_effect(bool include_pixel_shader = false) {
     std::vector<uint8_t> bytes(8, 0);
     const auto append_u32 = [&bytes](uint32_t value) {
         const size_t offset = bytes.size();
@@ -617,58 +756,284 @@ std::vector<uint8_t> make_d3dx9_shader_effect() {
     };
 
     const uint32_t table_offset = static_cast<uint32_t>(bytes.size());
-    append_u32(0);  // Parameters.
+    append_u32(include_pixel_shader ? 2 : 0);  // Parameters.
     append_u32(1);  // Techniques.
-    append_u32(1);  // Shader variables.
-    append_u32(1);  // Objects.
+    append_u32(include_pixel_shader ? 3 : 1);  // Shader variables.
+    append_u32(include_pixel_shader ? 3 : 1);  // Objects.
+    size_t parameter_type_offset_field = 0;
+    size_t parameter_value_offset_field = 0;
+    size_t texture_parameter_type_offset_field = 0;
+    size_t texture_parameter_value_offset_field = 0;
+    if (include_pixel_shader) {
+        parameter_type_offset_field = bytes.size();
+        append_u32(0);
+        parameter_value_offset_field = bytes.size();
+        append_u32(0);
+        append_u32(0);  // Parameter flags.
+        append_u32(0);  // Parameter annotations.
+        texture_parameter_type_offset_field = bytes.size();
+        append_u32(0);
+        texture_parameter_value_offset_field = bytes.size();
+        append_u32(0);
+        append_u32(0);  // Parameter flags.
+        append_u32(0);  // Parameter annotations.
+    }
     const size_t technique_name_field = bytes.size();
     append_u32(0);
-    append_u32(0);  // Technique annotations.
+    append_u32(include_pixel_shader ? 3 : 0);  // Technique annotations.
     append_u32(1);  // Passes.
+    size_t technique_annotation_type_field = 0;
+    size_t technique_annotation_value_field = 0;
+    size_t integer_annotation_type_field = 0;
+    size_t integer_annotation_value_field = 0;
+    size_t string_annotation_type_field = 0;
+    size_t string_annotation_value_field = 0;
+    if (include_pixel_shader) {
+        technique_annotation_type_field = bytes.size();
+        append_u32(0);
+        technique_annotation_value_field = bytes.size();
+        append_u32(0);
+        integer_annotation_type_field = bytes.size();
+        append_u32(0);
+        integer_annotation_value_field = bytes.size();
+        append_u32(0);
+        string_annotation_type_field = bytes.size();
+        append_u32(0);
+        string_annotation_value_field = bytes.size();
+        append_u32(0);
+    }
     const size_t pass_name_field = bytes.size();
     append_u32(0);
     append_u32(0);  // Pass annotations.
-    append_u32(1);  // States.
-    append_u32(0);  // State operation.
-    append_u32(0);  // State index.
-    const size_t type_offset_field = bytes.size();
+    append_u32(include_pixel_shader ? 2 : 1);  // States.
+    append_u32(146);  // Vertex-shader state.
+    append_u32(0);    // State index.
+    const size_t vertex_type_offset_field = bytes.size();
     append_u32(0);
-    const size_t value_offset_field = bytes.size();
+    const size_t vertex_value_offset_field = bytes.size();
     append_u32(0);
-    append_u32(0);  // String objects.
-    append_u32(1);  // Resources.
+    size_t pixel_type_offset_field = 0;
+    size_t pixel_value_offset_field = 0;
+    if (include_pixel_shader) {
+        append_u32(147);  // Pixel-shader state.
+        append_u32(0);    // State index.
+        pixel_type_offset_field = bytes.size();
+        append_u32(0);
+        pixel_value_offset_field = bytes.size();
+        append_u32(0);
+    }
+    append_u32(include_pixel_shader ? 1 : 0);  // String objects.
+    append_u32(include_pixel_shader ? 2 : 1);  // Resources.
+    if (include_pixel_shader) {
+        append_u32(2);  // String annotation object id.
+        constexpr char test_string[] = "road";
+        append_u32(sizeof(test_string));
+        bytes.insert(bytes.end(), test_string, test_string + sizeof(test_string));
+        while ((bytes.size() & 3) != 0) bytes.push_back(0);
+    }
     append_u32(0);  // Technique index.
     append_u32(0);  // Pass index.
     append_u32(UINT32_MAX);
     append_u32(0);  // State index.
     append_u32(0);  // Constant resource.
-    const std::array<uint8_t, 8> shader = {0, 3, 0, 0, 0xff, 0xff, 0, 0};
-    append_u32(static_cast<uint32_t>(shader.size()));
-    bytes.insert(bytes.end(), shader.begin(), shader.end());
+    const std::array<uint8_t, 8> vertex_shader = {
+        0, 3, 0xfe, 0xff, 0xff, 0xff, 0, 0};
+    append_u32(static_cast<uint32_t>(vertex_shader.size()));
+    bytes.insert(bytes.end(), vertex_shader.begin(), vertex_shader.end());
+    if (include_pixel_shader) {
+        append_u32(0);  // Technique index.
+        append_u32(0);  // Pass index.
+        append_u32(UINT32_MAX);
+        append_u32(1);  // State index.
+        append_u32(0);  // Constant resource.
+        const std::array<uint8_t, 8> pixel_shader = {
+            0, 3, 0xff, 0xff, 0xff, 0xff, 0, 0};
+        append_u32(static_cast<uint32_t>(pixel_shader.size()));
+        bytes.insert(bytes.end(), pixel_shader.begin(), pixel_shader.end());
+    }
 
-    const uint32_t type_offset = static_cast<uint32_t>(bytes.size());
+    const uint32_t vertex_type_offset = static_cast<uint32_t>(bytes.size());
     append_u32(16);  // D3DXPT_VERTEXSHADER.
     append_u32(4);   // D3DXPC_OBJECT.
-    const size_t type_name_field = bytes.size();
+    const size_t vertex_type_name_field = bytes.size();
     append_u32(0);
-    const size_t semantic_field = bytes.size();
+    const size_t vertex_semantic_field = bytes.size();
     append_u32(0);
     append_u32(0);  // Array elements.
-    const uint32_t value_offset = static_cast<uint32_t>(bytes.size());
+    const uint32_t vertex_value_offset = static_cast<uint32_t>(bytes.size());
     append_u32(0);  // Object id.
+
+    uint32_t pixel_type_offset = 0;
+    size_t pixel_type_name_field = 0;
+    size_t pixel_semantic_field = 0;
+    uint32_t pixel_value_offset = 0;
+    if (include_pixel_shader) {
+        pixel_type_offset = static_cast<uint32_t>(bytes.size());
+        append_u32(15);  // D3DXPT_PIXELSHADER.
+        append_u32(4);   // D3DXPC_OBJECT.
+        pixel_type_name_field = bytes.size();
+        append_u32(0);
+        pixel_semantic_field = bytes.size();
+        append_u32(0);
+        append_u32(0);  // Array elements.
+        pixel_value_offset = static_cast<uint32_t>(bytes.size());
+        append_u32(1);  // Object id.
+    }
+
+    uint32_t annotation_type_offset = 0;
+    size_t annotation_type_name_field = 0;
+    size_t annotation_semantic_field = 0;
+    uint32_t annotation_value_offset = 0;
+    uint32_t integer_annotation_type_offset = 0;
+    size_t integer_annotation_type_name_field = 0;
+    size_t integer_annotation_semantic_field = 0;
+    uint32_t integer_annotation_value_offset = 0;
+    uint32_t string_annotation_type_offset = 0;
+    size_t string_annotation_type_name_field = 0;
+    size_t string_annotation_semantic_field = 0;
+    uint32_t string_annotation_value_offset = 0;
+    if (include_pixel_shader) {
+        annotation_type_offset = static_cast<uint32_t>(bytes.size());
+        append_u32(1);  // D3DXPT_BOOL.
+        append_u32(0);  // D3DXPC_SCALAR.
+        annotation_type_name_field = bytes.size();
+        append_u32(0);
+        annotation_semantic_field = bytes.size();
+        append_u32(0);
+        append_u32(0);  // Array elements.
+        append_u32(1);  // Scalar rows.
+        append_u32(1);  // Scalar columns.
+        annotation_value_offset = static_cast<uint32_t>(bytes.size());
+        append_u32(0);  // supportsSpecialisedLighting is false.
+
+        integer_annotation_type_offset = static_cast<uint32_t>(bytes.size());
+        append_u32(2);  // D3DXPT_INT.
+        append_u32(0);  // D3DXPC_SCALAR.
+        integer_annotation_type_name_field = bytes.size();
+        append_u32(0);
+        integer_annotation_semantic_field = bytes.size();
+        append_u32(0);
+        append_u32(0);  // Array elements.
+        append_u32(1);  // Scalar rows.
+        append_u32(1);  // Scalar columns.
+        integer_annotation_value_offset = static_cast<uint32_t>(bytes.size());
+        append_u32(1);  // testIntegerAnnotation is true.
+
+        string_annotation_type_offset = static_cast<uint32_t>(bytes.size());
+        append_u32(4);  // D3DXPT_STRING.
+        append_u32(4);  // D3DXPC_OBJECT.
+        string_annotation_type_name_field = bytes.size();
+        append_u32(0);
+        string_annotation_semantic_field = bytes.size();
+        append_u32(0);
+        append_u32(0);  // Array elements.
+        string_annotation_value_offset =
+            static_cast<uint32_t>(bytes.size());
+        append_u32(2);  // String object id.
+    }
+
+    uint32_t parameter_type_offset = 0;
+    size_t parameter_type_name_field = 0;
+    size_t parameter_semantic_field = 0;
+    uint32_t parameter_value_offset = 0;
+    if (include_pixel_shader) {
+        parameter_type_offset = static_cast<uint32_t>(bytes.size());
+        append_u32(3);  // D3DXPT_FLOAT.
+        append_u32(0);  // D3DXPC_SCALAR.
+        parameter_type_name_field = bytes.size();
+        append_u32(0);
+        parameter_semantic_field = bytes.size();
+        append_u32(0);
+        append_u32(0);  // Array elements.
+        append_u32(1);  // Scalar rows.
+        append_u32(1);  // Scalar columns.
+        parameter_value_offset = static_cast<uint32_t>(bytes.size());
+        append_u32(0x3f800000);  // 1.0f.
+    }
+
+    uint32_t texture_parameter_type_offset = 0;
+    size_t texture_parameter_type_name_field = 0;
+    size_t texture_parameter_semantic_field = 0;
+    uint32_t texture_parameter_value_offset = 0;
+    if (include_pixel_shader) {
+        texture_parameter_type_offset = static_cast<uint32_t>(bytes.size());
+        append_u32(5);  // D3DXPT_TEXTURE.
+        append_u32(4);  // D3DXPC_OBJECT.
+        texture_parameter_type_name_field = bytes.size();
+        append_u32(0);
+        texture_parameter_semantic_field = bytes.size();
+        append_u32(0);
+        append_u32(0);  // Array elements.
+        texture_parameter_value_offset =
+            static_cast<uint32_t>(bytes.size());
+        append_u32(0);  // Initial object id.
+    }
 
     const uint32_t technique_name = append_name("ShadowGen");
     const uint32_t pass_name = append_name("Pass0");
-    const uint32_t type_name = append_name("VertexShader");
+    const uint32_t vertex_type_name = append_name("VertexShader");
+    const uint32_t pixel_type_name =
+        include_pixel_shader ? append_name("PixelShader") : 0;
     const uint32_t empty_name = append_name("");
+    const uint32_t annotation_type_name =
+        include_pixel_shader ? append_name("supportsSpecialisedLighting") : 0;
+    const uint32_t integer_annotation_type_name =
+        include_pixel_shader ? append_name("testIntegerAnnotation") : 0;
+    const uint32_t string_annotation_type_name =
+        include_pixel_shader ? append_name("testStringAnnotation") : 0;
+    const uint32_t parameter_type_name =
+        include_pixel_shader ? append_name("ShadowParameter") : 0;
+    const uint32_t parameter_semantic_name =
+        include_pixel_shader ? append_name("World") : 0;
+    const uint32_t texture_parameter_type_name =
+        include_pixel_shader ? append_name("TextureParameter") : 0;
     patch_u32(0, 0xfeff0901);
     patch_u32(4, table_offset - 8);
     patch_u32(technique_name_field, technique_name - 8);
+    if (include_pixel_shader) {
+        patch_u32(parameter_type_offset_field, parameter_type_offset - 8);
+        patch_u32(parameter_value_offset_field, parameter_value_offset - 8);
+        patch_u32(parameter_type_name_field, parameter_type_name - 8);
+        patch_u32(parameter_semantic_field, parameter_semantic_name - 8);
+        patch_u32(texture_parameter_type_offset_field,
+                  texture_parameter_type_offset - 8);
+        patch_u32(texture_parameter_value_offset_field,
+                  texture_parameter_value_offset - 8);
+        patch_u32(texture_parameter_type_name_field,
+                  texture_parameter_type_name - 8);
+        patch_u32(texture_parameter_semantic_field, empty_name - 8);
+        patch_u32(technique_annotation_type_field,
+                  annotation_type_offset - 8);
+        patch_u32(technique_annotation_value_field,
+                  annotation_value_offset - 8);
+        patch_u32(integer_annotation_type_field,
+                  integer_annotation_type_offset - 8);
+        patch_u32(integer_annotation_value_field,
+                  integer_annotation_value_offset - 8);
+        patch_u32(string_annotation_type_field,
+                  string_annotation_type_offset - 8);
+        patch_u32(string_annotation_value_field,
+                  string_annotation_value_offset - 8);
+        patch_u32(annotation_type_name_field, annotation_type_name - 8);
+        patch_u32(annotation_semantic_field, empty_name - 8);
+        patch_u32(integer_annotation_type_name_field,
+                  integer_annotation_type_name - 8);
+        patch_u32(integer_annotation_semantic_field, empty_name - 8);
+        patch_u32(string_annotation_type_name_field,
+                  string_annotation_type_name - 8);
+        patch_u32(string_annotation_semantic_field, empty_name - 8);
+    }
     patch_u32(pass_name_field, pass_name - 8);
-    patch_u32(type_offset_field, type_offset - 8);
-    patch_u32(value_offset_field, value_offset - 8);
-    patch_u32(type_name_field, type_name - 8);
-    patch_u32(semantic_field, empty_name - 8);
+    patch_u32(vertex_type_offset_field, vertex_type_offset - 8);
+    patch_u32(vertex_value_offset_field, vertex_value_offset - 8);
+    patch_u32(vertex_type_name_field, vertex_type_name - 8);
+    patch_u32(vertex_semantic_field, empty_name - 8);
+    if (include_pixel_shader) {
+        patch_u32(pixel_type_offset_field, pixel_type_offset - 8);
+        patch_u32(pixel_value_offset_field, pixel_value_offset - 8);
+        patch_u32(pixel_type_name_field, pixel_type_name - 8);
+        patch_u32(pixel_semantic_field, empty_name - 8);
+    }
     return bytes;
 }
 
@@ -694,12 +1059,19 @@ int main(int argc, char** argv) {
              ("shift-runtime-createdirectory-" + std::to_string(getpid()) +
               ".exe"))
                 .string();
+        const std::string write_file_fixture_path =
+            (std::filesystem::temp_directory_path() /
+             ("shift-runtime-writefile-" + std::to_string(getpid()) +
+              ".exe"))
+                .string();
         write_pe32_fixture(argv[4]);
         write_pe32_fixture(argv[5], true);
         write_pe32_fixture(argv[6], false, true);
         write_pe32_fixture(read_file_ex_fixture_path, false, false, false,
                            true);
         write_pe32_fixture(create_directory_fixture_path, false, false,
+                           false, false, true);
+        write_pe32_fixture(write_file_fixture_path, false, false, false,
                            false, false, true);
         write_system_parameters_info_pe32_fixture(argv[7]);
         write_d3d9_pe32_fixture(argv[8]);
@@ -989,7 +1361,10 @@ int main(int argc, char** argv) {
                 "could not enable guest string argument trace fixture");
         require(setenv("SHIFT_TRACE_GUEST_CALL_STRING_SLOTS", "0x4", 1) == 0,
                 "could not configure guest string argument trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG", "1", 1) == 0,
+                "could not enable guest string live trace fixture");
         {
+            StderrCapture capture;
             shift::runtime::RecompiledPcodeModule string_trace_module(argv[1]);
             constexpr uint32_t string_address = 0x11223344;
             const std::string expected_string = "C:\\cars\\engine.bin";
@@ -1023,7 +1398,13 @@ int main(int argc, char** argv) {
                         !snapshot.guest_call_trace.front().string_slots.front()
                              .truncated,
                     "guest call trace did not capture the bounded string argument");
+            require(capture.text().find(
+                        "string+0x4=\"C:\\\\cars\\\\engine.bin\"") !=
+                        std::string::npos,
+                    "live guest call trace omitted its captured string argument");
         }
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG") == 0,
+                "could not disable guest string live trace fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_STRING_SLOTS") == 0,
                 "could not disable guest string argument trace fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGETS") == 0,
@@ -2184,7 +2565,7 @@ int main(int argc, char** argv) {
         shift::runtime::RecompiledPcodeModule d3d9_module(argv[1]);
         const auto d3d9_image = d3d9_module.load_pe32_image(argv[8]);
         require(d3d9_image.import_module_count == 3 &&
-                    d3d9_image.import_function_count == 6,
+                    d3d9_image.import_function_count == 10,
                 "D3D9 fixture imports were not parsed");
         const uint32_t direct3d_create9 = read_guest_u32(
             d3d9_module, "ram", d3d9_image.image_base + 0x2060);
@@ -2398,6 +2779,16 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", provider_image.image_base + 0x2060);
         const uint32_t provider_d3dx_create_effect = read_guest_u32(
             d3d9_provider_module, "ram", provider_image.image_base + 0x2260);
+        const uint32_t provider_d3dx_effect_compiler_from_file =
+            read_guest_u32(d3d9_provider_module, "ram",
+                           provider_image.image_base + 0x2264);
+        const uint32_t provider_d3dx_create_line = read_guest_u32(
+            d3d9_provider_module, "ram", provider_image.image_base + 0x2268);
+        const uint32_t provider_d3dx_get_image_info = read_guest_u32(
+            d3d9_provider_module, "ram", provider_image.image_base + 0x226c);
+        const uint32_t provider_d3dx_create_texture_from_memory_ex =
+            read_guest_u32(d3d9_provider_module, "ram",
+                           provider_image.image_base + 0x2270);
         shift::runtime::RecompiledGuestD3d9AdapterInfo adapter_info{};
         for (size_t index = 0; index < adapter_info.caps.size(); ++index) {
             adapter_info.caps[index] = 100 + static_cast<uint32_t>(index);
@@ -2414,6 +2805,18 @@ int main(int argc, char** argv) {
         D3d9BackendFixture d3d9_backend_fixture{};
         adapter_info.backend_context = &d3d9_backend_fixture;
         adapter_info.create_device = &create_d3d9_fixture_device;
+        adapter_info.create_vertex_buffer =
+            &create_d3d9_fixture_vertex_buffer;
+        adapter_info.update_vertex_buffer =
+            &update_d3d9_fixture_vertex_buffer;
+        adapter_info.release_vertex_buffer =
+            &release_d3d9_fixture_vertex_buffer;
+        adapter_info.create_index_buffer =
+            &create_d3d9_fixture_index_buffer;
+        adapter_info.update_index_buffer =
+            &update_d3d9_fixture_index_buffer;
+        adapter_info.release_index_buffer =
+            &release_d3d9_fixture_index_buffer;
         adapter_info.clear = &clear_d3d9_fixture;
         adapter_info.present = &present_d3d9_fixture;
         require(d3d9_provider_module.set_guest_d3d9_adapter_info(adapter_info),
@@ -2559,6 +2962,542 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", created_device_output_address);
         const uint32_t created_device_vtable = read_guest_u32(
             d3d9_provider_module, "ram", created_device);
+        const uint32_t provider_device_release = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 2 * 4);
+        const uint32_t create_texture = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 23 * 4);
+        const uint32_t create_vertex_buffer = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 26 * 4);
+        const uint32_t create_index_buffer = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 27 * 4);
+        const uint32_t create_vertex_declaration = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 86 * 4);
+        constexpr uint32_t managed_texture_output_address = 0x00405120;
+        require(invoke_import(
+                    d3d9_provider_module, create_texture,
+                    {created_device, 2, 2, 1, 0, 21, 1,
+                     managed_texture_output_address, 0}) == 0,
+                "CreateTexture rejected a small managed A8R8G8B8 texture");
+        const uint32_t managed_texture = read_guest_u32(
+            d3d9_provider_module, "ram", managed_texture_output_address);
+        const uint32_t managed_texture_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", managed_texture);
+        const uint32_t managed_texture_get_level_count = read_guest_u32(
+            d3d9_provider_module, "ram", managed_texture_vtable + 13 * 4);
+        const uint32_t managed_texture_get_level_desc = read_guest_u32(
+            d3d9_provider_module, "ram", managed_texture_vtable + 17 * 4);
+        const uint32_t managed_texture_lock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", managed_texture_vtable + 19 * 4);
+        const uint32_t managed_texture_unlock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", managed_texture_vtable + 20 * 4);
+        constexpr uint32_t managed_texture_desc_address = 0x00405140;
+        constexpr uint32_t managed_texture_locked_rect_address = 0x00405160;
+        require(managed_texture != 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  managed_texture_get_level_count,
+                                  {managed_texture}) == 1 &&
+                    invoke_import(d3d9_provider_module,
+                                  managed_texture_get_level_desc,
+                                  {managed_texture, 0,
+                                   managed_texture_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   managed_texture_desc_address) == 21 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   managed_texture_desc_address + 12) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   managed_texture_desc_address + 24) == 2 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   managed_texture_desc_address + 28) == 2 &&
+                    invoke_import(d3d9_provider_module,
+                                  managed_texture_lock_rect,
+                                  {managed_texture, 0,
+                                   managed_texture_locked_rect_address, 0,
+                                   0}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   managed_texture_locked_rect_address) == 8,
+                "managed texture level description or lock data was incorrect");
+        const uint32_t managed_texture_pixels = read_guest_u32(
+            d3d9_provider_module, "ram",
+            managed_texture_locked_rect_address + 4);
+        write_guest_u32(d3d9_provider_module, "ram",
+                        managed_texture_pixels, 0xff204060);
+        require(invoke_import(d3d9_provider_module,
+                              managed_texture_unlock_rect,
+                              {managed_texture, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  read_guest_u32(
+                                      d3d9_provider_module, "ram",
+                                      managed_texture_vtable + 2 * 4),
+                                  {managed_texture}) == 0,
+                "managed texture unlock or release failed");
+        constexpr uint32_t vertex_buffer_output_address = 0x00405190;
+        require(invoke_import(
+                    d3d9_provider_module, create_vertex_buffer,
+                    {created_device, 24, 0, 0, 1,
+                     vertex_buffer_output_address, 0}) == 0 &&
+                    d3d9_backend_fixture.vertex_buffer_create_called &&
+                    d3d9_backend_fixture.vertex_buffer_device == created_device &&
+                    d3d9_backend_fixture.vertex_buffer_size == 24 &&
+                    d3d9_backend_fixture.vertex_buffer_usage == 0 &&
+                    d3d9_backend_fixture.vertex_buffer_fvf == 0 &&
+                    d3d9_backend_fixture.vertex_buffer_pool == 1,
+                "CreateVertexBuffer did not accept a static managed buffer");
+        const uint32_t vertex_buffer = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_buffer_output_address);
+        const uint32_t vertex_buffer_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_buffer);
+        const uint32_t vertex_buffer_release = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_buffer_vtable + 2 * 4);
+        const uint32_t vertex_buffer_lock = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_buffer_vtable + 11 * 4);
+        const uint32_t vertex_buffer_unlock = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_buffer_vtable + 12 * 4);
+        const uint32_t vertex_buffer_get_desc = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_buffer_vtable + 13 * 4);
+        constexpr uint32_t vertex_buffer_desc_address = 0x004051b0;
+        require(invoke_import(d3d9_provider_module, vertex_buffer_get_desc,
+                              {vertex_buffer,
+                               vertex_buffer_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_buffer_desc_address) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_buffer_desc_address + 4) == 6 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_buffer_desc_address + 12) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_buffer_desc_address + 16) == 24,
+                "managed vertex buffer description was incorrect");
+        constexpr uint32_t vertex_buffer_locked_pointer_address = 0x004051d0;
+        require(invoke_import(d3d9_provider_module, vertex_buffer_lock,
+                              {vertex_buffer, 8, 8,
+                               vertex_buffer_locked_pointer_address, 0}) == 0,
+                "managed vertex buffer Lock rejected a valid range");
+        const uint32_t vertex_buffer_locked_data = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_buffer_locked_pointer_address);
+        write_guest_u32(d3d9_provider_module, "ram", vertex_buffer_locked_data,
+                        0x11223344);
+        write_guest_u32(d3d9_provider_module, "ram", vertex_buffer_locked_data + 4,
+                        0x55667788);
+        require(invoke_import(d3d9_provider_module, vertex_buffer_unlock,
+                              {vertex_buffer}) == 0 &&
+                    d3d9_backend_fixture.vertex_buffer_update_called &&
+                    d3d9_backend_fixture.vertex_buffer_update_offset == 8 &&
+                    d3d9_backend_fixture.vertex_buffer_update_size == 8 &&
+                    d3d9_backend_fixture.vertex_buffer_update_data[0] == 0x44 &&
+                    d3d9_backend_fixture.vertex_buffer_update_data[7] == 0x55 &&
+                    invoke_import(d3d9_provider_module, vertex_buffer_release,
+                                  {vertex_buffer}) == 0 &&
+                    d3d9_backend_fixture.vertex_buffer_release_called,
+                "managed vertex buffer unlock or release failed");
+        write_guest_u32(d3d9_provider_module, "ram", vertex_buffer_output_address,
+                        0x77777777);
+        require(invoke_import(
+                    d3d9_provider_module, create_vertex_buffer,
+                    {created_device, 24, 0x200, 0, 1,
+                     vertex_buffer_output_address, 0}) == 0x8876086a &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_buffer_output_address) == 0,
+                "CreateVertexBuffer accepted a dynamic managed buffer");
+        constexpr uint32_t index_buffer_output_address = 0x004051a0;
+        require(invoke_import(
+                    d3d9_provider_module, create_index_buffer,
+                    {created_device, 24, 0x20, 101, 0,
+                     index_buffer_output_address, 0}) == 0 &&
+                    d3d9_backend_fixture.index_buffer_create_called &&
+                    d3d9_backend_fixture.index_buffer_device == created_device &&
+                    d3d9_backend_fixture.index_buffer_size == 24 &&
+                    d3d9_backend_fixture.index_buffer_usage == 0x20 &&
+                    d3d9_backend_fixture.index_buffer_format == 101 &&
+                    d3d9_backend_fixture.index_buffer_pool == 0,
+                "CreateIndexBuffer did not pass its description to the Vulkan host");
+        const uint32_t index_buffer = read_guest_u32(
+            d3d9_provider_module, "ram", index_buffer_output_address);
+        const uint32_t index_buffer_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", index_buffer);
+        const uint32_t index_buffer_add_ref = read_guest_u32(
+            d3d9_provider_module, "ram", index_buffer_vtable + 1 * 4);
+        const uint32_t index_buffer_release = read_guest_u32(
+            d3d9_provider_module, "ram", index_buffer_vtable + 2 * 4);
+        const uint32_t index_buffer_get_device = read_guest_u32(
+            d3d9_provider_module, "ram", index_buffer_vtable + 3 * 4);
+        const uint32_t index_buffer_lock = read_guest_u32(
+            d3d9_provider_module, "ram", index_buffer_vtable + 11 * 4);
+        const uint32_t index_buffer_unlock = read_guest_u32(
+            d3d9_provider_module, "ram", index_buffer_vtable + 12 * 4);
+        const uint32_t index_buffer_get_desc = read_guest_u32(
+            d3d9_provider_module, "ram", index_buffer_vtable + 13 * 4);
+        constexpr uint32_t index_buffer_desc_address = 0x004051c0;
+        require(index_buffer != 0 &&
+                    invoke_import(d3d9_provider_module, index_buffer_get_desc,
+                                  {index_buffer,
+                                   index_buffer_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   index_buffer_desc_address) == 101 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   index_buffer_desc_address + 4) == 7 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   index_buffer_desc_address + 8) == 0x20 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   index_buffer_desc_address + 12) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   index_buffer_desc_address + 16) == 24,
+                "IDirect3DIndexBuffer9::GetDesc returned incorrect fields");
+        constexpr uint32_t index_buffer_locked_pointer_address = 0x004051e0;
+        require(invoke_import(d3d9_provider_module, index_buffer_lock,
+                              {index_buffer, 4, 8,
+                               index_buffer_locked_pointer_address, 0}) == 0,
+                "IDirect3DIndexBuffer9::Lock rejected a valid range");
+        const uint32_t index_buffer_locked_data = read_guest_u32(
+            d3d9_provider_module, "ram", index_buffer_locked_pointer_address);
+        write_guest_u32(d3d9_provider_module, "ram", index_buffer_locked_data,
+                        0x12345678);
+        write_guest_u32(d3d9_provider_module, "ram", index_buffer_locked_data + 4,
+                        0x9abcdef0);
+        require(invoke_import(d3d9_provider_module, index_buffer_unlock,
+                              {index_buffer}) == 0 &&
+                    d3d9_backend_fixture.index_buffer_update_called &&
+                    d3d9_backend_fixture.index_buffer_update_offset == 4 &&
+                    d3d9_backend_fixture.index_buffer_update_size == 8 &&
+                    d3d9_backend_fixture.index_buffer_update_data[0] == 0x78 &&
+                    d3d9_backend_fixture.index_buffer_update_data[3] == 0x12 &&
+                    d3d9_backend_fixture.index_buffer_update_data[4] == 0xf0 &&
+                    d3d9_backend_fixture.index_buffer_update_data[7] == 0x9a,
+                "IDirect3DIndexBuffer9::Unlock did not upload the written bytes");
+        constexpr uint32_t index_buffer_device_output_address = 0x004051f0;
+        require(invoke_import(d3d9_provider_module, index_buffer_add_ref,
+                              {index_buffer}) == 2 &&
+                    invoke_import(d3d9_provider_module, index_buffer_get_device,
+                                  {index_buffer,
+                                   index_buffer_device_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   index_buffer_device_output_address) ==
+                        created_device &&
+                    invoke_import(d3d9_provider_module, provider_device_release,
+                                  {created_device}) == 2 &&
+                    invoke_import(d3d9_provider_module, index_buffer_release,
+                                  {index_buffer}) == 1 &&
+                    invoke_import(d3d9_provider_module, index_buffer_release,
+                                  {index_buffer}) == 0 &&
+                    d3d9_backend_fixture.index_buffer_release_called,
+                "IDirect3DIndexBuffer9 COM lifetime was incorrect");
+        constexpr uint32_t managed_index_buffer_output_address = 0x004051b0;
+        require(invoke_import(
+                    d3d9_provider_module, create_index_buffer,
+                    {created_device, 12, 0, 101, 1,
+                     managed_index_buffer_output_address, 0}) == 0 &&
+                    d3d9_backend_fixture.index_buffer_size == 12 &&
+                    d3d9_backend_fixture.index_buffer_usage == 0 &&
+                    d3d9_backend_fixture.index_buffer_pool == 1,
+                "CreateIndexBuffer rejected a static managed buffer");
+        const uint32_t managed_index_buffer = read_guest_u32(
+            d3d9_provider_module, "ram", managed_index_buffer_output_address);
+        constexpr uint32_t dynamic_managed_index_buffer_output_address =
+            0x004051b4;
+        require(managed_index_buffer != 0 &&
+                    invoke_import(
+                        d3d9_provider_module, create_index_buffer,
+                        {created_device, 12, 0x200, 101, 1,
+                         dynamic_managed_index_buffer_output_address, 0}) ==
+                        0x8876086a &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dynamic_managed_index_buffer_output_address) ==
+                        0 &&
+                    d3d9_backend_fixture.index_buffer_size == 12 &&
+                    d3d9_backend_fixture.index_buffer_usage == 0 &&
+                    d3d9_backend_fixture.index_buffer_pool == 1,
+                "CreateIndexBuffer accepted a dynamic managed buffer");
+        const uint32_t managed_index_buffer_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", managed_index_buffer);
+        const uint32_t managed_index_buffer_release = read_guest_u32(
+            d3d9_provider_module, "ram", managed_index_buffer_vtable + 2 * 4);
+        require(invoke_import(d3d9_provider_module, managed_index_buffer_release,
+                              {managed_index_buffer}) == 0,
+                "managed index buffer release failed");
+        constexpr uint32_t vertex_declaration_elements_address = 0x00405200;
+        constexpr uint32_t vertex_declaration_output_address = 0x00405220;
+        write_guest_u32(d3d9_provider_module, "ram",
+                        vertex_declaration_elements_address, 0);
+        write_guest_u32(d3d9_provider_module, "ram",
+                        vertex_declaration_elements_address + 4, 2);
+        write_guest_u32(d3d9_provider_module, "ram",
+                        vertex_declaration_elements_address + 8, 0xff);
+        write_guest_u32(d3d9_provider_module, "ram",
+                        vertex_declaration_elements_address + 12, 17);
+        require(invoke_import(
+                    d3d9_provider_module, create_vertex_declaration,
+                    {created_device, vertex_declaration_elements_address,
+                     vertex_declaration_output_address}) == 0,
+                "CreateVertexDeclaration rejected a position element");
+        const uint32_t vertex_declaration = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_declaration_output_address);
+        const uint32_t vertex_declaration_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_declaration);
+        const uint32_t vertex_declaration_query_interface = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_declaration_vtable);
+        const uint32_t vertex_declaration_add_ref = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_declaration_vtable + 1 * 4);
+        const uint32_t vertex_declaration_release = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_declaration_vtable + 2 * 4);
+        const uint32_t vertex_declaration_get_device = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_declaration_vtable + 3 * 4);
+        const uint32_t vertex_declaration_get_declaration = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_declaration_vtable + 4 * 4);
+        constexpr uint32_t vertex_declaration_count_address = 0x00405240;
+        write_guest_u32(d3d9_provider_module, "ram",
+                        vertex_declaration_count_address, 0);
+        require(vertex_declaration != 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  vertex_declaration_get_declaration,
+                                  {vertex_declaration, 0,
+                                   vertex_declaration_count_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_declaration_count_address) == 2,
+                "GetDeclaration did not report element and terminator count");
+        constexpr uint32_t vertex_declaration_copy_address = 0x00405260;
+        write_guest_u32(d3d9_provider_module, "ram",
+                        vertex_declaration_count_address, 2);
+        constexpr uint32_t iunknown_iid_address = 0x00405280;
+        constexpr std::array<uint8_t, 16> iunknown_iid = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46};
+        write_guest_bytes(d3d9_provider_module, iunknown_iid_address,
+                          iunknown_iid.data(), iunknown_iid.size());
+        constexpr uint32_t vertex_declaration_query_output_address =
+            0x004052a0;
+        require(invoke_import(d3d9_provider_module,
+                              vertex_declaration_get_declaration,
+                              {vertex_declaration,
+                               vertex_declaration_copy_address,
+                               vertex_declaration_count_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_declaration_copy_address) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_declaration_copy_address + 4) == 2 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_declaration_copy_address + 8) == 0xff &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_declaration_copy_address + 12) == 17 &&
+                    invoke_import(d3d9_provider_module,
+                                  vertex_declaration_query_interface,
+                                  {vertex_declaration, iunknown_iid_address,
+                                   vertex_declaration_query_output_address}) ==
+                        0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_declaration_query_output_address) ==
+                        vertex_declaration &&
+                    invoke_import(d3d9_provider_module,
+                                  vertex_declaration_release,
+                                  {vertex_declaration}) == 1,
+                "GetDeclaration or QueryInterface returned wrong data");
+        constexpr uint32_t vertex_declaration_device_output_address =
+            0x004052c0;
+        require(invoke_import(d3d9_provider_module,
+                              vertex_declaration_add_ref,
+                              {vertex_declaration}) == 2 &&
+                    invoke_import(d3d9_provider_module,
+                                  vertex_declaration_get_device,
+                                  {vertex_declaration,
+                                   vertex_declaration_device_output_address}) ==
+                        0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_declaration_device_output_address) ==
+                        created_device &&
+                    invoke_import(d3d9_provider_module,
+                                  provider_device_release,
+                                  {created_device}) == 2 &&
+                    invoke_import(d3d9_provider_module,
+                                  vertex_declaration_release,
+                                  {vertex_declaration}) == 1 &&
+                    invoke_import(d3d9_provider_module,
+                                  vertex_declaration_release,
+                                  {vertex_declaration}) == 0,
+                "IDirect3DVertexDeclaration9 COM lifetime was incorrect");
+        constexpr uint32_t image_source_address = 0x00035800;
+        constexpr uint32_t image_info_address = 0x00035880;
+        std::vector<uint8_t> dds_header(208, 0);
+        std::copy_n("DDS ", 4, dds_header.begin());
+        write_u32(dds_header, 4, 124);
+        write_u32(dds_header, 8, 0x000a1007);
+        write_u32(dds_header, 12, 4);
+        write_u32(dds_header, 16, 8);
+        write_u32(dds_header, 20, 32);
+        write_u32(dds_header, 28, 4);
+        write_u32(dds_header, 76, 32);
+        write_u32(dds_header, 80, 4);
+        write_u32(dds_header, 84, 0x35545844);  // DXT5.
+        write_guest_bytes(d3d9_provider_module, image_source_address,
+                          dds_header.data(), dds_header.size());
+        require(invoke_import(
+                    d3d9_provider_module, provider_d3dx_get_image_info,
+                    {image_source_address,
+                     static_cast<uint32_t>(dds_header.size()),
+                     image_info_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   image_info_address) == 8 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   image_info_address + 4) == 4 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   image_info_address + 8) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   image_info_address + 12) == 4 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   image_info_address + 16) == 0x35545844 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   image_info_address + 20) == 3 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   image_info_address + 24) == 4,
+                "D3DX image info did not report the DDS metadata");
+        std::vector<uint8_t> a1r5g5b5_dds(214, 0);
+        std::copy_n("DDS ", 4, a1r5g5b5_dds.begin());
+        write_u32(a1r5g5b5_dds, 4, 124);
+        write_u32(a1r5g5b5_dds, 8, 0x0002100f);
+        write_u32(a1r5g5b5_dds, 12, 4);
+        write_u32(a1r5g5b5_dds, 16, 8);
+        write_u32(a1r5g5b5_dds, 20, 16);
+        write_u32(a1r5g5b5_dds, 28, 4);
+        write_u32(a1r5g5b5_dds, 76, 32);
+        write_u32(a1r5g5b5_dds, 80, 0x41);
+        write_u32(a1r5g5b5_dds, 88, 16);
+        write_u32(a1r5g5b5_dds, 92, 0x7c00);
+        write_u32(a1r5g5b5_dds, 96, 0x03e0);
+        write_u32(a1r5g5b5_dds, 100, 0x001f);
+        write_u32(a1r5g5b5_dds, 104, 0x8000);
+        for (size_t index = 128; index < a1r5g5b5_dds.size(); ++index)
+            a1r5g5b5_dds[index] = static_cast<uint8_t>(index ^ 0xa5);
+        write_guest_bytes(d3d9_provider_module, image_source_address,
+                          a1r5g5b5_dds.data(), a1r5g5b5_dds.size());
+        require(invoke_import(
+                    d3d9_provider_module, provider_d3dx_get_image_info,
+                    {image_source_address,
+                     static_cast<uint32_t>(a1r5g5b5_dds.size()),
+                     image_info_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   image_info_address + 16) == 25 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   image_info_address + 24) == 4,
+                "D3DX image info did not decode uncompressed DDS masks");
+        write_guest_u32(d3d9_provider_module, "ram", image_info_address,
+                        0x5a5a5a5a);
+        require(invoke_import(
+                    d3d9_provider_module, provider_d3dx_get_image_info,
+                    {image_source_address, 127, image_info_address}) ==
+                    0x8876086c &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   image_info_address) == 0x5a5a5a5a,
+                "D3DX image info accepted a truncated DDS header");
+
+        constexpr uint32_t d3dx_device_wrapper_address = 0x00035900;
+        constexpr uint32_t d3dx_device_wrapper_vtable = 0x00035920;
+        constexpr uint32_t d3dx_source_address = 0x00035a00;
+        constexpr uint32_t d3dx_texture_output_address = 0x00035940;
+        constexpr uint32_t d3dx_source_info_address = 0x00035950;
+        write_guest_bytes(d3d9_provider_module, d3dx_source_address,
+                          a1r5g5b5_dds.data(), a1r5g5b5_dds.size());
+        write_guest_u32(d3d9_provider_module, "ram",
+                        d3dx_device_wrapper_address,
+                        d3dx_device_wrapper_vtable);
+        write_guest_u32(d3d9_provider_module, "ram",
+                        d3dx_device_wrapper_address + 4, 0);
+        write_guest_u32(d3d9_provider_module, "ram",
+                        d3dx_device_wrapper_address + 8, created_device);
+        require(invoke_import(
+                    d3d9_provider_module,
+                    provider_d3dx_create_texture_from_memory_ex,
+                    {d3dx_device_wrapper_address, d3dx_source_address,
+                     static_cast<uint32_t>(a1r5g5b5_dds.size()), UINT32_MAX,
+                     UINT32_MAX, 4, 0, 0, 1, 1, 1, 0,
+                     d3dx_source_info_address, 0,
+                     d3dx_texture_output_address}) == 0,
+                "D3DXCreateTextureFromFileInMemoryEx rejected the retail DDS path");
+        const uint32_t d3dx_texture = read_guest_u32(
+            d3d9_provider_module, "ram", d3dx_texture_output_address);
+        const uint32_t d3dx_texture_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", d3dx_texture);
+        const uint32_t d3dx_texture_get_level_count = read_guest_u32(
+            d3d9_provider_module, "ram", d3dx_texture_vtable + 13 * 4);
+        const uint32_t d3dx_texture_get_level_desc = read_guest_u32(
+            d3d9_provider_module, "ram", d3dx_texture_vtable + 17 * 4);
+        const uint32_t d3dx_texture_lock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", d3dx_texture_vtable + 19 * 4);
+        const uint32_t d3dx_texture_unlock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", d3dx_texture_vtable + 20 * 4);
+        const uint32_t d3dx_texture_release = read_guest_u32(
+            d3d9_provider_module, "ram", d3dx_texture_vtable + 2 * 4);
+        constexpr uint32_t d3dx_texture_desc_address = 0x00035970;
+        constexpr uint32_t d3dx_texture_locked_rect_address = 0x00035990;
+        require(d3dx_texture != 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   d3dx_source_info_address) == 8 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   d3dx_source_info_address + 4) == 4 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   d3dx_source_info_address + 12) == 4 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   d3dx_source_info_address + 16) == 25 &&
+                    invoke_import(d3d9_provider_module,
+                                  d3dx_texture_get_level_count,
+                                  {d3dx_texture}) == 4 &&
+                    invoke_import(d3d9_provider_module,
+                                  d3dx_texture_get_level_desc,
+                                  {d3dx_texture, 3,
+                                   d3dx_texture_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   d3dx_texture_desc_address) == 25 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   d3dx_texture_desc_address + 24) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   d3dx_texture_desc_address + 28) == 1,
+                "D3DX texture metadata or mip descriptions were incorrect");
+        require(invoke_import(d3d9_provider_module, d3dx_texture_lock_rect,
+                              {d3dx_texture, 0,
+                               d3dx_texture_locked_rect_address, 0, 0}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   d3dx_texture_locked_rect_address) == 16,
+                "D3DX texture base mip pitch was incorrect");
+        const uint32_t d3dx_texture_pixels = read_guest_u32(
+            d3d9_provider_module, "ram",
+            d3dx_texture_locked_rect_address + 4);
+        std::array<uint8_t, 4> copied_base_pixels{};
+        require(d3d9_provider_module.read_guest(
+                    "ram", d3dx_texture_pixels, copied_base_pixels.size(),
+                    copied_base_pixels.data()),
+                "D3DX texture base mip pointer could not be read");
+        require(copied_base_pixels[0] == a1r5g5b5_dds[128] &&
+                    copied_base_pixels[3] == a1r5g5b5_dds[131],
+                "D3DX texture base mip data mismatch: got " +
+                    std::to_string(copied_base_pixels[0]) + "," +
+                    std::to_string(copied_base_pixels[3]) + " expected " +
+                    std::to_string(a1r5g5b5_dds[128]) + "," +
+                    std::to_string(a1r5g5b5_dds[131]) + " at " +
+                    std::to_string(d3dx_texture_pixels));
+        require(invoke_import(d3d9_provider_module,
+                              d3dx_texture_unlock_rect,
+                              {d3dx_texture, 0}) == 0,
+                "D3DX texture base mip unlock failed");
+        require(invoke_import(d3d9_provider_module,
+                              d3dx_texture_lock_rect,
+                              {d3dx_texture, 3,
+                               d3dx_texture_locked_rect_address, 0, 0}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   d3dx_texture_locked_rect_address) == 2,
+                "D3DX texture final mip lock or pitch was incorrect");
+        const uint32_t d3dx_texture_mip3_pixels = read_guest_u32(
+            d3d9_provider_module, "ram",
+            d3dx_texture_locked_rect_address + 4);
+        std::array<uint8_t, 2> copied_mip3_pixel{};
+        require(d3d9_provider_module.read_guest(
+                    "ram", d3dx_texture_mip3_pixels,
+                    copied_mip3_pixel.size(), copied_mip3_pixel.data()) &&
+                    copied_mip3_pixel[0] == a1r5g5b5_dds[212] &&
+                    copied_mip3_pixel[1] == a1r5g5b5_dds[213] &&
+                    invoke_import(d3d9_provider_module,
+                                  d3dx_texture_unlock_rect,
+                                  {d3dx_texture, 3}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  d3dx_texture_release,
+                                  {d3dx_texture}) == 0,
+                "D3DX texture final mip or release was incorrect");
+
         std::vector<uint8_t> shader_effect = make_d3dx9_shader_effect();
         if (const char* captured_effect =
                 std::getenv("SHIFT_TEST_D3DX_EFFECT");
@@ -2574,6 +3513,7 @@ int main(int argc, char** argv) {
         constexpr uint32_t effect_output_address = 0x00037000;
         constexpr uint32_t effect_errors_address = 0x00037004;
         constexpr uint32_t effect_next_technique_address = 0x00037008;
+        constexpr uint32_t effect_desc_address = 0x00037010;
         write_guest_bytes(d3d9_provider_module, effect_source_address,
                           shader_effect.data(), shader_effect.size());
         require(invoke_import(
@@ -2582,6 +3522,30 @@ int main(int argc, char** argv) {
                      static_cast<uint32_t>(shader_effect.size()), 0, 0, 0, 0,
                      effect_output_address, effect_errors_address}) == 0,
                 "D3DXCreateEffect did not accept a shader effect binary");
+        constexpr uint32_t missing_effect_path_address = 0x00039000;
+        constexpr uint32_t compiler_output_address = 0x00039080;
+        constexpr uint32_t compiler_errors_address = 0x00039084;
+        constexpr char missing_effect_path[] =
+            "C:\\no-such-shift-runtime-test-dir\\missing.fx";
+        write_guest_bytes(
+            d3d9_provider_module, missing_effect_path_address,
+            reinterpret_cast<const uint8_t*>(missing_effect_path),
+            sizeof(missing_effect_path));
+        write_guest_u32(d3d9_provider_module, "ram", compiler_output_address,
+                        0x7a7a7a7a);
+        write_guest_u32(d3d9_provider_module, "ram", compiler_errors_address,
+                        0x7a7a7a7a);
+        require(invoke_import(
+                    d3d9_provider_module,
+                    provider_d3dx_effect_compiler_from_file,
+                    {missing_effect_path_address, 0, 0, 0x10000,
+                     compiler_output_address, compiler_errors_address}) ==
+                        0x8876086c &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   compiler_output_address) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   compiler_errors_address) == 0,
+                "D3DX effect compiler did not fail with clear outputs for a missing file");
         const uint32_t guest_effect = read_guest_u32(
             d3d9_provider_module, "ram", effect_output_address);
         constexpr uint32_t malformed_effect_address = 0x00036040;
@@ -2611,8 +3575,43 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", guest_effect_vtable + 4);
         const uint32_t effect_release = read_guest_u32(
             d3d9_provider_module, "ram", guest_effect_vtable + 8);
+        const uint32_t effect_get_desc = read_guest_u32(
+            d3d9_provider_module, "ram", guest_effect_vtable + 3 * 4);
+        const uint32_t effect_get_device = read_guest_u32(
+            d3d9_provider_module, "ram", guest_effect_vtable + 68 * 4);
         const uint32_t effect_find_next_valid_technique = read_guest_u32(
             d3d9_provider_module, "ram", guest_effect_vtable + 61 * 4);
+        shift::runtime::D3dx9BinaryEffect expected_effect_desc;
+        std::string effect_desc_parse_error;
+        require(shift::runtime::parse_d3dx9_binary_effect(
+                    shader_effect.data(), shader_effect.size(),
+                    expected_effect_desc, effect_desc_parse_error),
+                "could not parse effect fixture for GetDesc expectations: " +
+                    effect_desc_parse_error);
+        require(invoke_import(d3d9_provider_module, effect_get_desc,
+                              {guest_effect, effect_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_desc_address) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_desc_address + 4) ==
+                        expected_effect_desc.parameters.size() &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_desc_address + 8) ==
+                        expected_effect_desc.techniques.size() &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_desc_address + 12) == 0,
+                "ID3DXEffect::GetDesc returned incorrect effect counts");
+        constexpr uint32_t effect_device_output_address = 0x0003700c;
+        require(invoke_import(d3d9_provider_module, effect_get_device,
+                              {guest_effect, effect_device_output_address}) ==
+                        0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_device_output_address) ==
+                        created_device &&
+                    invoke_import(d3d9_provider_module,
+                                  provider_device_release,
+                                  {created_device}) == 2,
+                "ID3DXEffect::GetDevice did not return and retain its device");
         constexpr uint32_t effect_iid_address = 0x00037100;
         constexpr std::array<uint8_t, 16> iid_id3dx_effect = {
             0xb3, 0xb4, 0xce, 0xf6, 0x4c, 0x4e, 0xdd, 0x40,
@@ -2639,6 +3638,558 @@ int main(int argc, char** argv) {
                     invoke_import(d3d9_provider_module, effect_release,
                                   {guest_effect}) == 0,
                 "ID3DXEffect COM lifetime or invalid-technique result changed");
+        constexpr uint32_t effect_texture_output_address = 0x00405180;
+        require(invoke_import(
+                    d3d9_provider_module, create_texture,
+                    {created_device, 2, 2, 1, 0, 21, 1,
+                     effect_texture_output_address, 0}) == 0,
+                "CreateTexture failed to create the effect binding fixture");
+        const uint32_t effect_texture = read_guest_u32(
+            d3d9_provider_module, "ram", effect_texture_output_address);
+        const uint32_t effect_texture_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", effect_texture);
+        const uint32_t effect_texture_add_ref = read_guest_u32(
+            d3d9_provider_module, "ram", effect_texture_vtable + 1 * 4);
+        const uint32_t effect_texture_release = read_guest_u32(
+            d3d9_provider_module, "ram", effect_texture_vtable + 2 * 4);
+        std::vector<uint8_t> complete_shader_effect =
+            make_d3dx9_shader_effect(true);
+        shift::runtime::D3dx9BinaryEffect parsed_complete_shader_effect;
+        std::string complete_shader_effect_parse_error;
+        require(shift::runtime::parse_d3dx9_binary_effect(
+                    complete_shader_effect.data(), complete_shader_effect.size(),
+                    parsed_complete_shader_effect,
+                    complete_shader_effect_parse_error),
+                "complete shader effect fixture was invalid: " +
+                    complete_shader_effect_parse_error);
+        require(parsed_complete_shader_effect.parameters.size() == 2 &&
+                    parsed_complete_shader_effect.parameters[1].type.name ==
+                        "TextureParameter" &&
+                    parsed_complete_shader_effect.parameters[1].type.type == 5,
+                "complete shader effect fixture lost its texture parameter metadata");
+        write_guest_bytes(d3d9_provider_module, effect_source_address,
+                          complete_shader_effect.data(),
+                          complete_shader_effect.size());
+        require(invoke_import(
+                    d3d9_provider_module, provider_d3dx_create_effect,
+                    {created_device, effect_source_address,
+                     static_cast<uint32_t>(complete_shader_effect.size()),
+                     0, 0, 0, 0, effect_output_address,
+                     effect_errors_address}) == 0,
+                "D3DXCreateEffect rejected a complete vertex/pixel effect");
+        const uint32_t complete_effect = read_guest_u32(
+            d3d9_provider_module, "ram", effect_output_address);
+        const uint32_t complete_effect_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect);
+        const uint32_t complete_find_next = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 61 * 4);
+        const uint32_t complete_get_technique = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 12 * 4);
+        const uint32_t complete_get_technique_desc = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 5 * 4);
+        const uint32_t complete_set_technique = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 58 * 4);
+        const uint32_t complete_get_current_technique = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 59 * 4);
+        const uint32_t complete_begin = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 63 * 4);
+        const uint32_t complete_begin_pass = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 64 * 4);
+        const uint32_t complete_commit_changes = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 65 * 4);
+        const uint32_t complete_end_pass = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 66 * 4);
+        const uint32_t complete_end = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 67 * 4);
+        const uint32_t complete_get_annotation_by_name = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 19 * 4);
+        const uint32_t complete_get_annotation = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 18 * 4);
+        const uint32_t complete_get_parameter_desc = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 4 * 4);
+        const uint32_t complete_get_parameter = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 8 * 4);
+        const uint32_t complete_get_parameter_by_name = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 9 * 4);
+        const uint32_t complete_get_parameter_by_semantic = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 10 * 4);
+        const uint32_t complete_get_bool = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 23 * 4);
+        const uint32_t complete_get_int = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 27 * 4);
+        const uint32_t complete_get_string = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 51 * 4);
+        const uint32_t complete_set_texture = read_guest_u32(
+            d3d9_provider_module, "ram", complete_effect_vtable + 52 * 4);
+        require(invoke_import(d3d9_provider_module, complete_find_next,
+                              {complete_effect, 0,
+                               effect_next_technique_address}) == 0,
+                "FindNextValidTechnique rejected a complete shader technique");
+        const uint32_t technique_handle = read_guest_u32(
+            d3d9_provider_module, "ram", effect_next_technique_address);
+        std::array<uint8_t, 10> technique_name{};
+        require(technique_handle != 0 &&
+                    d3d9_provider_module.read_guest(
+                        "ram", technique_handle, technique_name.size(),
+                        technique_name.data()) &&
+                    std::equal(technique_name.begin(), technique_name.end(),
+                               "ShadowGen"),
+                "FindNextValidTechnique did not return its guest technique handle");
+        require(invoke_import(d3d9_provider_module, complete_get_technique,
+                              {complete_effect, 0}) == technique_handle &&
+                    invoke_import(d3d9_provider_module,
+                                  complete_get_technique,
+                                  {complete_effect, 1}) == 0,
+                "ID3DXEffect::GetTechnique returned an incorrect indexed handle");
+        require(invoke_import(d3d9_provider_module,
+                              complete_get_current_technique,
+                              {complete_effect}) == technique_handle &&
+                    invoke_import(d3d9_provider_module, complete_set_technique,
+                                  {complete_effect, technique_handle}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                 complete_get_current_technique,
+                                 {complete_effect}) == technique_handle &&
+                    invoke_import(d3d9_provider_module, complete_set_technique,
+                                  {complete_effect, UINT32_MAX}) ==
+                        0x8876086c,
+                "ID3DXEffect technique selection did not validate or update the current handle");
+        constexpr uint32_t effect_pass_count_address = 0x00037180;
+        require(invoke_import(d3d9_provider_module, complete_begin,
+                              {complete_effect, effect_pass_count_address,
+                               0x3}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_pass_count_address) == 1 &&
+                    invoke_import(d3d9_provider_module, complete_begin_pass,
+                                  {complete_effect, 1}) == 0x8876086c &&
+                    invoke_import(d3d9_provider_module, complete_begin_pass,
+                                  {complete_effect, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  complete_commit_changes,
+                                  {complete_effect}) == 0 &&
+                    invoke_import(d3d9_provider_module, complete_end_pass,
+                                  {complete_effect}) == 0 &&
+                    invoke_import(d3d9_provider_module, complete_end,
+                                  {complete_effect}) == 0 &&
+                    invoke_import(d3d9_provider_module, complete_end,
+                                  {complete_effect}) == 0x8876086c,
+                "ID3DXEffect Begin/Pass/Commit/End state sequence was invalid");
+        const uint32_t parameter_handle = invoke_import(
+            d3d9_provider_module, complete_get_parameter,
+            {complete_effect, 0, 0});
+        const uint32_t texture_parameter_handle = invoke_import(
+            d3d9_provider_module, complete_get_parameter,
+            {complete_effect, 0, 1});
+        std::array<uint8_t, 16> parameter_name{};
+        require(parameter_handle != 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  complete_get_parameter,
+                                  {complete_effect, 0, 2}) == 0 &&
+                    d3d9_provider_module.read_guest(
+                        "ram", parameter_handle, parameter_name.size(),
+                        parameter_name.data()) &&
+                    std::equal(parameter_name.begin(), parameter_name.end(),
+                               "ShadowParameter") &&
+                    texture_parameter_handle != 0,
+                "ID3DXEffect::GetParameter returned an incorrect indexed handle");
+        constexpr uint32_t texture_parameter_name_address = 0x00037120;
+        constexpr char texture_parameter_name[] = "TextureParameter";
+        write_guest_bytes(
+            d3d9_provider_module, texture_parameter_name_address,
+            reinterpret_cast<const uint8_t*>(texture_parameter_name),
+            sizeof(texture_parameter_name));
+        require(invoke_import(d3d9_provider_module,
+                              complete_get_parameter_by_name,
+                              {complete_effect, 0,
+                               texture_parameter_name_address}) ==
+                    texture_parameter_handle,
+                "ID3DXEffect::GetParameterByName missed the texture parameter");
+        constexpr uint32_t parameter_semantic_address = 0x00037090;
+        constexpr char parameter_semantic[] = "World";
+        write_guest_bytes(
+            d3d9_provider_module, parameter_semantic_address,
+            reinterpret_cast<const uint8_t*>(parameter_semantic),
+            sizeof(parameter_semantic));
+        require(invoke_import(
+                    d3d9_provider_module,
+                    complete_get_parameter_by_semantic,
+                    {complete_effect, 0, parameter_semantic_address}) ==
+                    parameter_handle,
+                "ID3DXEffect::GetParameterBySemantic returned an incorrect handle");
+        constexpr uint32_t parameter_desc_address = 0x00037240;
+        require(invoke_import(d3d9_provider_module,
+                              complete_get_parameter_desc,
+                              {complete_effect, parameter_handle,
+                               parameter_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   parameter_desc_address) == parameter_handle &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   parameter_desc_address + 12) == 3 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   parameter_desc_address + 16) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   parameter_desc_address + 20) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   parameter_desc_address + 36) == 4,
+                "ID3DXEffect::GetParameterDesc returned an invalid parameter descriptor");
+        require(invoke_import(d3d9_provider_module, complete_set_texture,
+                              {complete_effect, texture_parameter_handle,
+                               effect_texture}) == 0 &&
+                    invoke_import(d3d9_provider_module, complete_set_texture,
+                                  {complete_effect, parameter_handle,
+                                   effect_texture}) == 0x8876086c,
+                "ID3DXEffect::SetTexture accepted an invalid parameter type");
+        require(invoke_import(d3d9_provider_module, effect_texture_add_ref,
+                              {effect_texture}) == 3 &&
+                    invoke_import(d3d9_provider_module,
+                                  effect_texture_release,
+                                  {effect_texture}) == 2,
+                "ID3DXEffect::SetTexture did not retain its texture");
+        require(invoke_import(d3d9_provider_module,
+                              complete_get_technique_desc,
+                              {complete_effect, technique_handle,
+                               effect_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_desc_address) == technique_handle &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_desc_address + 4) == 3 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_desc_address + 8) == 1,
+                "ID3DXEffect::GetTechniqueDesc returned an incorrect descriptor");
+        constexpr uint32_t annotation_name_address = 0x00037050;
+        constexpr uint32_t annotation_value_address = 0x00037070;
+        constexpr char annotation_name[] = "supportsSpecialisedLighting";
+        write_guest_bytes(
+            d3d9_provider_module, annotation_name_address,
+            reinterpret_cast<const uint8_t*>(annotation_name),
+            sizeof(annotation_name));
+        const uint32_t annotation_handle = invoke_import(
+            d3d9_provider_module, complete_get_annotation_by_name,
+            {complete_effect, technique_handle, annotation_name_address});
+        require(annotation_handle != 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  complete_get_annotation,
+                                  {complete_effect, technique_handle, 0}) ==
+                        annotation_handle &&
+                    invoke_import(d3d9_provider_module,
+                                  complete_get_annotation,
+                                  {complete_effect, technique_handle, 5}) == 0 &&
+                    invoke_import(
+                        d3d9_provider_module, complete_get_annotation_by_name,
+                        {complete_effect, technique_handle,
+                         annotation_name_address + 1}) == 0 &&
+                    invoke_import(d3d9_provider_module, complete_get_bool,
+                                  {complete_effect, annotation_handle,
+                                   annotation_value_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   annotation_value_address) == 0,
+                "ID3DXEffect annotation lookup or BOOL retrieval changed");
+        constexpr uint32_t annotation_desc_address = 0x00037200;
+        require(invoke_import(d3d9_provider_module,
+                              complete_get_parameter_desc,
+                              {complete_effect, annotation_handle,
+                               annotation_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   annotation_desc_address) ==
+                        annotation_handle &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   annotation_desc_address + 8) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   annotation_desc_address + 12) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   annotation_desc_address + 16) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   annotation_desc_address + 20) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   annotation_desc_address + 36) == 4,
+                "ID3DXEffect::GetParameterDesc returned an invalid annotation descriptor");
+        constexpr uint32_t integer_annotation_name_address = 0x00037120;
+        constexpr uint32_t integer_annotation_value_address = 0x00037140;
+        constexpr char integer_annotation_name[] = "testIntegerAnnotation";
+        write_guest_bytes(
+            d3d9_provider_module, integer_annotation_name_address,
+            reinterpret_cast<const uint8_t*>(integer_annotation_name),
+            sizeof(integer_annotation_name));
+        const uint32_t integer_annotation_handle = invoke_import(
+            d3d9_provider_module, complete_get_annotation_by_name,
+            {complete_effect, technique_handle,
+             integer_annotation_name_address});
+        require(integer_annotation_handle != 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  complete_get_annotation,
+                                  {complete_effect, technique_handle, 1}) ==
+                        integer_annotation_handle &&
+                    invoke_import(d3d9_provider_module, complete_get_int,
+                                  {complete_effect, integer_annotation_handle,
+                                   integer_annotation_value_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   integer_annotation_value_address) == 1 &&
+                    invoke_import(d3d9_provider_module, complete_get_int,
+                                  {complete_effect, annotation_handle,
+                                   integer_annotation_value_address}) ==
+                        0x8876086c &&
+                    invoke_import(d3d9_provider_module, complete_get_int,
+                                  {complete_effect, parameter_handle,
+                                   integer_annotation_value_address}) ==
+                        0x8876086c,
+                "ID3DXEffect::GetInt accepted the wrong type or lost the annotation value");
+        constexpr uint32_t integer_annotation_desc_address = 0x00037260;
+        require(invoke_import(d3d9_provider_module,
+                              complete_get_parameter_desc,
+                              {complete_effect, integer_annotation_handle,
+                               integer_annotation_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   integer_annotation_desc_address + 12) == 2 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   integer_annotation_desc_address + 36) == 4,
+                "integer effect annotation descriptor had the wrong type or size");
+        constexpr uint32_t string_annotation_name_address = 0x00037120;
+        constexpr uint32_t string_output_address = 0x00037160;
+        constexpr char string_annotation_name[] = "testStringAnnotation";
+        write_guest_bytes(
+            d3d9_provider_module, string_annotation_name_address,
+            reinterpret_cast<const uint8_t*>(string_annotation_name),
+            sizeof(string_annotation_name));
+        const uint32_t string_annotation_handle = invoke_import(
+            d3d9_provider_module, complete_get_annotation_by_name,
+            {complete_effect, technique_handle,
+             string_annotation_name_address});
+        require(string_annotation_handle != 0 &&
+                    invoke_import(d3d9_provider_module, complete_get_annotation,
+                                  {complete_effect, technique_handle, 2}) ==
+                        string_annotation_handle &&
+                    invoke_import(d3d9_provider_module, complete_get_string,
+                                  {complete_effect, string_annotation_handle,
+                                   string_output_address}) == 0,
+                "ID3DXEffect::GetString rejected a string annotation");
+        const uint32_t returned_string_address = read_guest_u32(
+            d3d9_provider_module, "ram", string_output_address);
+        std::array<uint8_t, 5> returned_string{};
+        require(returned_string_address != 0 &&
+                    d3d9_provider_module.read_guest(
+                        "ram", returned_string_address,
+                        returned_string.size(), returned_string.data()) &&
+                    std::equal(returned_string.begin(), returned_string.end(),
+                               "road") &&
+                    invoke_import(d3d9_provider_module, complete_get_string,
+                                  {complete_effect, string_annotation_handle,
+                                   string_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   string_output_address) ==
+                        returned_string_address &&
+                    invoke_import(d3d9_provider_module, complete_get_string,
+                                  {complete_effect, integer_annotation_handle,
+                                   string_output_address}) == 0x8876086c &&
+                    invoke_import(d3d9_provider_module, complete_get_string,
+                                  {complete_effect, parameter_handle,
+                                   string_output_address}) == 0x8876086c,
+                "ID3DXEffect::GetString returned unstable data or accepted another type");
+        constexpr uint32_t string_annotation_desc_address = 0x00037300;
+        require(invoke_import(d3d9_provider_module,
+                              complete_get_parameter_desc,
+                              {complete_effect, string_annotation_handle,
+                               string_annotation_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   string_annotation_desc_address + 12) == 4 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   string_annotation_desc_address + 36) == 4,
+                "string effect annotation descriptor had the wrong type or size");
+        require(invoke_import(d3d9_provider_module, complete_find_next,
+                              {complete_effect, technique_handle,
+                               effect_next_technique_address}) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_next_technique_address) == 0 &&
+                    invoke_import(d3d9_provider_module, complete_find_next,
+                                  {complete_effect, UINT32_MAX,
+                                   effect_next_technique_address}) ==
+                        0x8876086c &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   effect_next_technique_address) == 0 &&
+                    invoke_import(d3d9_provider_module, effect_release,
+                                  {complete_effect}) == 0,
+                "FindNextValidTechnique did not stop after the last valid technique");
+        require(invoke_import(d3d9_provider_module, effect_texture_release,
+                              {effect_texture}) == 0,
+                "ID3DXEffect::Release did not release its retained texture");
+        constexpr uint32_t device_wrapper_address = 0x00038000;
+        constexpr uint32_t device_wrapper_vtable = 0x00038100;
+        constexpr uint32_t wrapped_effect_output_address = 0x00038020;
+        constexpr uint32_t wrapped_device_output_address = 0x00038024;
+        write_guest_u32(d3d9_provider_module, "ram", device_wrapper_address,
+                        device_wrapper_vtable);
+        write_guest_u32(d3d9_provider_module, "ram", device_wrapper_address + 4,
+                        0);
+        write_guest_u32(d3d9_provider_module, "ram", device_wrapper_address + 8,
+                        created_device);
+        require(invoke_import(
+                    d3d9_provider_module, provider_d3dx_create_effect,
+                    {device_wrapper_address, effect_source_address,
+                     static_cast<uint32_t>(complete_shader_effect.size()),
+                     0, 0, 0, 0,
+                     wrapped_effect_output_address, effect_errors_address}) == 0,
+                "D3DXCreateEffect rejected the game device forwarding object");
+        const uint32_t wrapped_effect = read_guest_u32(
+            d3d9_provider_module, "ram", wrapped_effect_output_address);
+        const uint32_t wrapped_effect_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", wrapped_effect);
+        const uint32_t wrapped_effect_get_device = read_guest_u32(
+            d3d9_provider_module, "ram", wrapped_effect_vtable + 68 * 4);
+        require(invoke_import(d3d9_provider_module, wrapped_effect_get_device,
+                              {wrapped_effect, wrapped_device_output_address}) ==
+                        0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   wrapped_device_output_address) ==
+                        device_wrapper_address &&
+                    invoke_import(d3d9_provider_module,
+                                  provider_device_release,
+                                  {created_device}) == 2 &&
+                    invoke_import(d3d9_provider_module,
+                                  read_guest_u32(
+                                      d3d9_provider_module, "ram",
+                                      wrapped_effect_vtable + 2 * 4),
+                                  {wrapped_effect}) == 0,
+                "D3DX effect did not preserve its forwarding device identity");
+        constexpr uint32_t line_output_address = 0x00038340;
+        constexpr uint32_t line_iid_address = 0x00038350;
+        constexpr uint32_t line_query_output_address = 0x00038360;
+        constexpr uint32_t line_device_output_address = 0x00038364;
+        write_guest_u32(d3d9_provider_module, "ram", line_output_address,
+                        0x7a7a7a7a);
+        require(invoke_import(d3d9_provider_module,
+                              provider_d3dx_create_line,
+                              {0, line_output_address}) == 0x88760870 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   line_output_address) == 0,
+                "D3DXCreateLine did not clear output for an invalid device");
+        require(invoke_import(d3d9_provider_module,
+                              provider_d3dx_create_line,
+                              {device_wrapper_address, line_output_address}) == 0,
+                "D3DXCreateLine rejected a valid forwarding device");
+        const uint32_t guest_line = read_guest_u32(
+            d3d9_provider_module, "ram", line_output_address);
+        const uint32_t guest_line_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line);
+        require(guest_line != 0 && guest_line_vtable != 0,
+                "D3DXCreateLine did not initialize its COM object");
+        const uint32_t line_query_interface = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line_vtable);
+        const uint32_t line_add_ref = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line_vtable + 4);
+        const uint32_t line_release = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line_vtable + 8);
+        const uint32_t line_get_device = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line_vtable + 3 * 4);
+        require(invoke_import(d3d9_provider_module, line_add_ref,
+                              {guest_line}) == 2,
+                "ID3DXLine::AddRef did not retain the object");
+        constexpr std::array<uint8_t, 16> iid_unknown = {
+            0, 0, 0, 0, 0, 0, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0x46};
+        write_guest_bytes(d3d9_provider_module, line_iid_address,
+                          iid_unknown.data(), iid_unknown.size());
+        require(invoke_import(d3d9_provider_module, line_query_interface,
+                              {guest_line, line_iid_address,
+                               line_query_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   line_query_output_address) == guest_line &&
+                    invoke_import(d3d9_provider_module, line_release,
+                                  {guest_line}) == 2,
+                "ID3DXLine::QueryInterface did not support IUnknown");
+        constexpr std::array<uint8_t, 16> iid_d3dx_line = {
+            0x7f, 0xba, 0x79, 0xd3, 0x42, 0x90, 0xc4, 0x4a,
+            0x9f, 0x5e, 0x58, 0x19, 0x2a, 0x4c, 0x6b, 0xd8};
+        write_guest_bytes(d3d9_provider_module, line_iid_address,
+                          iid_d3dx_line.data(), iid_d3dx_line.size());
+        require(invoke_import(d3d9_provider_module, line_query_interface,
+                              {guest_line, line_iid_address,
+                               line_query_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   line_query_output_address) == guest_line &&
+                    invoke_import(d3d9_provider_module, line_release,
+                                  {guest_line}) == 2,
+                "ID3DXLine::QueryInterface rejected its own IID");
+        constexpr std::array<uint8_t, 16> iid_unsupported = {
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        write_guest_bytes(d3d9_provider_module, line_iid_address,
+                          iid_unsupported.data(), iid_unsupported.size());
+        write_guest_u32(d3d9_provider_module, "ram", line_query_output_address,
+                        0x7a7a7a7a);
+        require(invoke_import(d3d9_provider_module, line_query_interface,
+                              {guest_line, line_iid_address,
+                               line_query_output_address}) == 0x80004002 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   line_query_output_address) == 0,
+                "ID3DXLine::QueryInterface accepted an unknown interface");
+        require(invoke_import(d3d9_provider_module, line_get_device,
+                              {guest_line, line_device_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   line_device_output_address) ==
+                        device_wrapper_address,
+                "ID3DXLine::GetDevice lost the forwarding device identity");
+        const uint32_t line_set_pattern = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line_vtable + 7 * 4);
+        const uint32_t line_get_pattern = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line_vtable + 8 * 4);
+        const uint32_t line_set_width = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line_vtable + 11 * 4);
+        const uint32_t line_get_width = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line_vtable + 12 * 4);
+        const uint32_t line_set_antialias = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line_vtable + 13 * 4);
+        const uint32_t line_get_antialias = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line_vtable + 14 * 4);
+        const uint32_t line_begin = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line_vtable + 4 * 4);
+        const uint32_t line_draw = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line_vtable + 5 * 4);
+        const uint32_t line_end = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line_vtable + 17 * 4);
+        const uint32_t line_lost_device = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line_vtable + 18 * 4);
+        const uint32_t line_reset_device = read_guest_u32(
+            d3d9_provider_module, "ram", guest_line_vtable + 19 * 4);
+        require(invoke_import(d3d9_provider_module, line_set_pattern,
+                              {guest_line, 0x00ff00ff}) == 0 &&
+                    invoke_import(d3d9_provider_module, line_get_pattern,
+                                  {guest_line}) == 0x00ff00ff &&
+                    invoke_import(d3d9_provider_module, line_set_width,
+                                  {guest_line, 0x40200000}) == 0 &&
+                    invoke_import(d3d9_provider_module, line_get_width,
+                                  {guest_line}) == 0,
+                "ID3DXLine pattern or width state did not round-trip");
+        std::array<uint8_t, 10> expected_x87_width = {
+            0, 0, 0, 0, 0, 0, 0, 0xa0, 0, 0x40};
+        std::array<uint8_t, 10> actual_x87_width{};
+        require(d3d9_provider_module.read_guest(
+                    "register", 0x1100, actual_x87_width.size(),
+                    actual_x87_width.data()) &&
+                    actual_x87_width == expected_x87_width &&
+                    invoke_import(d3d9_provider_module, line_set_antialias,
+                                  {guest_line, 1}) == 0 &&
+                    invoke_import(d3d9_provider_module, line_get_antialias,
+                                  {guest_line}) == 1 &&
+                    invoke_import(d3d9_provider_module, line_begin,
+                                  {guest_line}) == 0 &&
+                    invoke_import(d3d9_provider_module, line_begin,
+                                  {guest_line}) == 0x8876086c &&
+                    invoke_import(d3d9_provider_module, line_draw,
+                                  {guest_line, 0x00038400, 2, 0xffffffff}) ==
+                        0x8876086a &&
+                    invoke_import(d3d9_provider_module, line_end,
+                                  {guest_line}) == 0 &&
+                    invoke_import(d3d9_provider_module, line_end,
+                                  {guest_line}) == 0x8876086c &&
+                    invoke_import(d3d9_provider_module, line_lost_device,
+                                  {guest_line}) == 0 &&
+                    invoke_import(d3d9_provider_module, line_reset_device,
+                                  {guest_line}) == 0,
+                "ID3DXLine state, x87 float return, or drawing contract failed");
+        require(invoke_import(d3d9_provider_module, line_release,
+                              {guest_line}) == 1 &&
+                    invoke_import(d3d9_provider_module, line_release,
+                                  {guest_line}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  provider_device_release,
+                                  {created_device}) >= 1,
+                "ID3DXLine did not release its device/object references");
         const uint32_t test_cooperative_level = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 3 * 4);
         const uint32_t device_get_device_caps = read_guest_u32(
@@ -3209,6 +4760,62 @@ int main(int argc, char** argv) {
                 "ReadFile returned unexpected guest file contents");
 
         {
+            shift::runtime::RecompiledPcodeModule write_file_module(argv[1]);
+            const auto write_file_image =
+                write_file_module.load_pe32_image(write_file_fixture_path);
+            require(write_file_image.import_function_count == 81,
+                    "WriteFile PE32 fixture import count changed");
+            std::array<uint8_t, 0x58> write_file_buffer{};
+            for (size_t index = 0; index < write_file_buffer.size(); ++index)
+                write_file_buffer[index] = static_cast<uint8_t>(index);
+            write_guest_bytes(write_file_module, 0x00032e40,
+                              write_file_buffer.data(),
+                              write_file_buffer.size());
+            require(invoke_import(
+                        write_file_module, 0xf00003e0,
+                        {UINT32_MAX, 0x00032e40,
+                         static_cast<uint32_t>(write_file_buffer.size()),
+                         0x00032e80, 0}) == 0 &&
+                        invoke_import(write_file_module, 0xf0000240, {}) == 6,
+                    "WriteFile did not report INVALID_HANDLE_VALUE");
+            const std::string guest_write_file_path =
+                "recompiled_pcode_writefile_fixture_" +
+                std::to_string(getpid()) + ".dat";
+            std::filesystem::remove(guest_write_file_path);
+            write_guest_bytes(
+                write_file_module, 0x00032e00,
+                reinterpret_cast<const uint8_t*>(guest_write_file_path.c_str()),
+                guest_write_file_path.size() + 1);
+            const uint32_t writable_handle = invoke_import(
+                write_file_module, 0xf00003c0,
+                {0x00032e00, 0xc0000000, 1, 0, 4, 0x80, 0});
+            require(writable_handle != UINT32_MAX,
+                    "CreateFileA did not create an OPEN_ALWAYS read/write file");
+            require(invoke_import(
+                        write_file_module, 0xf00003e0,
+                        {writable_handle, 0x00032e40,
+                         static_cast<uint32_t>(write_file_buffer.size()),
+                         0x00032e80, 0}) == 1 &&
+                        read_guest_u32(write_file_module, "ram", 0x00032e80) ==
+                            write_file_buffer.size(),
+                    "WriteFile did not write and report the guest byte count");
+            std::ifstream written_file(guest_write_file_path,
+                                       std::ios::binary);
+            std::vector<uint8_t> written_bytes(
+                std::istreambuf_iterator<char>(written_file), {});
+            require(written_file.good() || written_file.eof(),
+                    "could not read back the guest WriteFile fixture");
+            require(written_bytes == std::vector<uint8_t>(
+                                         write_file_buffer.begin(),
+                                         write_file_buffer.end()),
+                    "WriteFile produced unexpected host file bytes");
+            require(invoke_import(write_file_module, 0xf0000350,
+                                  {writable_handle}) == 1,
+                    "CloseHandle did not close the writable guest file");
+            std::filesystem::remove(guest_write_file_path);
+        }
+
+        {
             shift::runtime::RecompiledPcodeModule read_file_ex_module(argv[1]);
             const auto read_file_ex_image =
                 read_file_ex_module.load_pe32_image(read_file_ex_fixture_path);
@@ -3288,6 +4895,33 @@ int main(int argc, char** argv) {
         require(invoke_import(module, 0xf0000350, {guest_file_handle}) == 1,
                 "CloseHandle did not close the guest file");
         std::filesystem::remove(guest_file_path);
+
+        const std::string guest_directory_path =
+            "recompiled_pcode_directory_fixture_" + std::to_string(getpid());
+        require(std::filesystem::create_directory(guest_directory_path),
+                "could not create guest directory API fixture");
+        write_guest_bytes(
+            module, guest_file_name_address,
+            reinterpret_cast<const uint8_t*>(guest_directory_path.c_str()),
+            guest_directory_path.size() + 1);
+        const uint32_t guest_directory_handle = invoke_import(
+            module, 0xf00003c0,
+            {guest_file_name_address, 0, 1, 0, 3, 0x02000003, 0});
+        require(guest_directory_handle != UINT32_MAX,
+                "CreateFileA could not open a directory with backup semantics");
+        require(invoke_import(module, 0xf00003d0,
+                              {guest_directory_handle, 0}) == 0,
+                "GetFileSize did not return the directory handle size");
+        require(invoke_import(
+                    module, 0xf00003e0,
+                    {guest_directory_handle, guest_file_buffer_address, 1,
+                     guest_file_bytes_read_address, 0}) == 0 &&
+                    invoke_import(module, 0xf0000240, {}) == 5,
+                "ReadFile did not reject a directory handle with access denied");
+        require(invoke_import(module, 0xf0000350,
+                              {guest_directory_handle}) == 1,
+                "CloseHandle did not close the guest directory");
+        std::filesystem::remove(guest_directory_path);
 
         const std::string case_path_root =
             "CaseSensitiveFileFixture-" + std::to_string(getpid());
@@ -4464,6 +6098,80 @@ int main(int argc, char** argv) {
         std::memcpy(&fcos_result, fcos_bytes.data(), fcos_bytes.size());
         require(std::fabs(fcos_result - std::cos(1.0L)) < 1e-18L,
                 "x86 FCOS result differed from binary80 cos(1)");
+        require(module.call(0x0040b100) == 0,
+                "x86 FPTAN userop did not compute in binary80: " +
+                    module.last_error());
+        std::array<uint8_t, 10> fptan_bytes{};
+        require(module.read_guest("ram", 0x11020, fptan_bytes.size(),
+                                  fptan_bytes.data()),
+                "x86 FPTAN result was not written to guest memory");
+        long double fptan_result = 0.0L;
+        std::memcpy(&fptan_result, fptan_bytes.data(), fptan_bytes.size());
+        require(std::fabs(fptan_result - std::tan(1.0L)) < 1e-18L,
+                "x86 FPTAN result differed from binary80 tan(1)");
+        require(module.call(0x0040b200) == 0,
+                "x86 LOG2 userop did not compute in binary80: " +
+                    module.last_error());
+        std::array<uint8_t, 10> log2_bytes{};
+        require(module.read_guest("ram", 0x11070, log2_bytes.size(),
+                                  log2_bytes.data()),
+                "x86 LOG2 result was not written to guest memory");
+        long double log2_result = 0.0L;
+        std::memcpy(&log2_result, log2_bytes.data(), log2_bytes.size());
+        require(std::fabs(log2_result - 1.0L) < 1e-18L,
+                "x86 LOG2 result differed from binary80 log2(2)");
+        require(module.call(0x0040b300) == 0,
+                "x86 F2XM1 userop did not compute in binary80: " +
+                    module.last_error());
+        std::array<uint8_t, 10> f2xm1_bytes{};
+        require(module.read_guest("ram", 0x11080, f2xm1_bytes.size(),
+                                  f2xm1_bytes.data()),
+                "x86 F2XM1 result was not written to guest memory");
+        long double f2xm1_result = 0.0L;
+        std::memcpy(&f2xm1_result, f2xm1_bytes.data(), f2xm1_bytes.size());
+        require(std::fabs(f2xm1_result - (std::sqrt(2.0L) - 1.0L)) < 1e-18L,
+                "x86 F2XM1 result differed from binary80 2^0.5 - 1");
+        require(module.call(0x0040b400) == 0,
+                "x86 FSCALE userop did not compute in binary80: " +
+                    module.last_error());
+        std::array<uint8_t, 10> fscale_bytes{};
+        require(module.read_guest("ram", 0x11090, fscale_bytes.size(),
+                                  fscale_bytes.data()),
+                "x86 FSCALE result was not written to guest memory");
+        long double fscale_result = 0.0L;
+        std::memcpy(&fscale_result, fscale_bytes.data(), fscale_bytes.size());
+        require(std::fabs(fscale_result - 12.0L) < 1e-18L,
+                "x86 FSCALE result differed from binary80 3 * 2^2");
+        require(module.call(0x0040e000) == 0,
+                "x86 MINPS userop did not process four packed lanes: " +
+                    module.last_error());
+        require(read_guest_u32(module, "ram", 0x11030) == 0x3f800000U &&
+                    read_guest_u32(module, "ram", 0x11034) == 0xc0400000U &&
+                    read_guest_u32(module, "ram", 0x11038) == 0x80000000U &&
+                    read_guest_u32(module, "ram", 0x1103c) == 0x40800000U,
+                "MINPS result did not select lane minima, source NaN, or signed zero");
+        require(read_guest_u32(module, "ram", 0x11040) == 0x40800000U &&
+                    read_guest_u32(module, "ram", 0x11044) == 0x7fc54321U &&
+                    read_guest_u32(module, "ram", 0x11048) == 0x00000000U &&
+                    read_guest_u32(module, "ram", 0x1104c) == 0x80000000U,
+                "MINPS did not forward the second NaN or signed-zero operand");
+        require(module.call(0x0040e100) == 0,
+                "x86 MAXPS userop did not process four packed lanes: " +
+                    module.last_error());
+        require(read_guest_u32(module, "ram", 0x11050) == 0x40000000U &&
+                    read_guest_u32(module, "ram", 0x11054) == 0xc0000000U &&
+                    read_guest_u32(module, "ram", 0x11058) == 0x80000000U &&
+                    read_guest_u32(module, "ram", 0x1105c) == 0x40800000U &&
+                    read_guest_u32(module, "ram", 0x11060) == 0x40800000U &&
+                    read_guest_u32(module, "ram", 0x11064) == 0x7fc54321U &&
+                    read_guest_u32(module, "ram", 0x11068) == 0x00000000U &&
+                    read_guest_u32(module, "ram", 0x1106c) == 0x80000000U,
+                "MAXPS did not select lane maxima, source NaN, or signed zero");
+        require(module.call(0x0040e200) != 0 &&
+                    module.last_error().find(
+                        "invalid x86 MINPS P-code userop signature") !=
+                        std::string::npos,
+                "MINPS accepted an invalid operand signature");
         require(module.call(0x00408000) == 0,
                 "x86 CPUID P-code userops did not return readable guest results: " +
                     module.last_error());
