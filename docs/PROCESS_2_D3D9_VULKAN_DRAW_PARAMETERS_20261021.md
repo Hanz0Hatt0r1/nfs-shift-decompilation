@@ -27,13 +27,15 @@ handoff contract. Its result explicitly remains ineligible for submission.
 
 ## Boundary
 
-The audited base capture has no VB/IB payload events, texture snapshots, or
-portable resource path+SHA pairs for these exact draws. This change therefore
-does not submit an original SHIFT draw and proves no retail image parity. The
-next native submission step needs exact bound resource bytes, shader modules,
-render state, target, and a separately integrated runtime handoff. The
-parameter contract is platform-neutral; ARM64/Android native integration has
-not been run.
+The audited base capture has no VB/IB payload events or texture snapshots for
+these exact draws, so event 1110 remains unavailable for replay. A separate,
+richer retail capture does contain complete capture-local snapshots for a
+later draw. The resulting native Vulkan replay and its limitations are recorded
+in [`PROCESS_2_D3D9_VULKAN_CAPTURE_REPLAY_20261021.md`](PROCESS_2_D3D9_VULKAN_CAPTURE_REPLAY_20261021.md).
+That replay proves one captured draw can reach Vulkan; it does not close the
+event-1110 resource gap, integrate with the game runtime, or prove retail image
+parity. The parameter contract is platform-neutral; an ARM64/Android build has
+not been run because this host has no Android NDK.
 
 ## Verification
 

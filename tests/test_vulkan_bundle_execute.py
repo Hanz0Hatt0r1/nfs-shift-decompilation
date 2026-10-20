@@ -41,6 +41,16 @@ def test_native_vulkan_bundle_executor_contract():
     assert "struct LegacyGeometryAttribute" in source
     assert "uint32_t property_id;" in source
     assert "geometry.header.version != 3" in source
+    assert "geometry.header.version != 4" in source
+    assert "VK_INDEX_TYPE_UINT16" in source
+    assert "VK_FORMAT_R32_SFLOAT" in source
+    assert "VK_FORMAT_D24_UNORM_S8_UINT" in source
+    assert "VK_FORMAT_FEATURE_TRANSFER_SRC_BIT" in source
+    assert "d3d_render_target_format" in source
+    assert "render_target.clear_stencil" in source
+    assert "CaptureGeometryMetadata" in source
+    assert "app.apiVersion = VK_API_VERSION_1_1" in source
+    assert "viewport.height = static_cast<float>(render_target.d3d9_y_down" in source
     assert "legacy.location == 0u ? 200u : 0u" in source
     assert "attribute.property_id != 200u" in source
 

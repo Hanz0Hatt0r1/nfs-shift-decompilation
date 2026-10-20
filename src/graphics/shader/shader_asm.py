@@ -267,16 +267,56 @@ def _relative_index_expr(o:Operand, stage:str)->str:
     sign='+' if off>=0 else '-'
     return f'({rel_expr}{sign}{abs(off)})'
 
-def _glsl_reg(o:Operand, stage:str)->str:
+def _constant_instance(stage:str)->str:
+    return {
+        'vertex':'shift_vs_constants',
+        'pixel':'shift_ps_constants',
+    }.get(stage,'shift_d3d9_constants')
+
+def _constant_definition_name(stage:str, reg_type:int, index:int)->str:
+    bank={2:'c',11:'c2',12:'c3',13:'c4'}[reg_type]
+    return f'{_constant_instance(stage)}_def_{bank}{index}'
+
+def _constant_register_ref(
+    reg_type:int,
+    index:int,
+    stage:str,
+    definitions:dict[tuple[int,int],tuple[float,...]],
+    relative_expr:str|None=None,
+)->str:
+    bank=f'{_constant_instance(stage)}.'+{2:'c',11:'c2',12:'c3',13:'c4'}[reg_type]
+    if relative_expr is None:
+        return _constant_definition_name(stage,reg_type,index) if (reg_type,index) in definitions else f'{bank}[{index}]'
+    result=f'{bank}[{relative_expr}]'
+    for (defined_type,defined_index),_ in definitions.items():
+        if defined_type==reg_type:
+            name=_constant_definition_name(stage,defined_type,defined_index)
+            result=f'(({relative_expr})=={defined_index}?{name}:{result})'
+    return result
+
+def _glsl_float(value:float)->str:
+    if not math.isfinite(value):
+        raise ValueError('shader DEF contains a non-finite float')
+    text=format(value,'.9g')
+    if '.' not in text and 'e' not in text.lower():
+        text += '.0'
+    return text
+
+def _glsl_reg(
+    o:Operand,
+    stage:str,
+    definitions:dict[tuple[int,int],tuple[float,...]]|None=None,
+)->str:
     rt=o.reg_type; idx=o.index or 0
+    definitions=definitions or {}
     if rt==0: base=f'r{idx}'
     elif rt==1: base=f'in_{idx}'
     elif rt in (2,11,12,13):
-        bank={2:'c',11:'c2',12:'c3',13:'c4'}[rt]
         if o.relative:
-            base=f'{bank}[{_relative_index_expr(o,stage)}]'
+            base=_constant_register_ref(
+                rt,idx,stage,definitions,_relative_index_expr(o,stage))
         else:
-            base=f'{bank}[{idx}]'
+            base=_constant_register_ref(rt,idx,stage,definitions)
     elif rt==3:
         base=f'a{idx}' if stage=='vertex' else f'tex{idx}'
     elif rt==4: base=f'vsRastOut{idx}'
@@ -294,7 +334,16 @@ def _glsl_reg(o:Operand, stage:str)->str:
     else: base=f'reg_{rt}_{idx}'
     if o.kind=='source':
         sw=o.swizzle or 'xyzw'
-        if sw!='xyzw': base += '.'+sw
+        # D3D shader swizzles always describe four result lanes. The compact
+        # spelling "x" means xxxx, not a scalar result.
+        if len(sw)==1:
+            result_type = (
+                'bvec4' if rt in (14,19) else
+                'ivec4' if rt==15 or (rt==3 and stage=='vertex') else
+                'vec4'
+            )
+            base=f'{result_type}({base}.{sw})'
+        elif sw!='xyzw': base += '.'+sw
         mod=o.source_modifier or 0
         if mod==1: base='-'+base
         elif mod==2: base=f'({base}-0.5)'
@@ -309,8 +358,17 @@ def _glsl_reg(o:Operand, stage:str)->str:
         elif mod==13: base=f'!({base})'
     return base
 
-def _assign(dst:Operand, expr:str, stage:str='vertex', predicate:Operand|None=None)->str:
-    lhs=_glsl_reg(dst,stage)
+def _assign(
+    dst:Operand,
+    expr:str,
+    stage:str='vertex',
+    predicate:Operand|None=None,
+    position_output_registers:frozenset[int]=frozenset(),
+)->str:
+    if stage=='vertex' and dst.reg_type==6 and (dst.index or 0) in position_output_registers:
+        lhs='gl_Position'
+    else:
+        lhs=_glsl_reg(dst,stage)
     mask=dst.write_mask or 'xyzw'
     rhs_expr=expr
     if dst.result_modifier==1:
@@ -320,10 +378,11 @@ def _assign(dst:Operand, expr:str, stage:str='vertex', predicate:Operand|None=No
         if mask!='xyzw':
             lhs_sw=f'{lhs}.{mask}'
             pred_sw=f'{pred_expr}.{mask}'
-            return f'{lhs_sw} = mix({lhs_sw},{rhs_expr}.{mask},{pred_sw});'
+            return f'{lhs_sw} = mix({lhs_sw},({rhs_expr}).{mask},{pred_sw});'
         return f'{lhs} = mix({lhs},{rhs_expr},{pred_expr});'
     if mask!='xyzw':
         lhs += '.'+mask
+        rhs_expr=f'({rhs_expr}).{mask}'
     return f'{lhs} = {rhs_expr};'
 
 def _cmp_expr(a:str,b:str,controls:int)->str:
@@ -349,8 +408,13 @@ def _bool_condition(o:Operand,stage:str)->str:
         return f'({x})'
     return f'all({x})'
 
-def _tex_coord(coord:Operand, sampler:Operand, program:ShaderProgram)->str:
-    c=_glsl_reg(coord,program.stage)
+def _tex_coord(
+    coord:Operand,
+    sampler:Operand,
+    program:ShaderProgram,
+    definitions:dict[tuple[int,int],tuple[float,...]]|None=None,
+)->str:
+    c=_glsl_reg(coord,program.stage,definitions)
     st=program.sampler_types.get(sampler.index or 0,'sampler2D')
     if st=='sampler1D':
         return f'{c}.x'
@@ -379,14 +443,28 @@ def _written_registers(program:ShaderProgram, reg_type:int)->set[int]:
             result.add(dst.index or 0)
     return result
 
-def _emit_matrix(dst:Operand, src:Operand, mat:Operand, rows:int, cols:int, stage:str)->str:
-    v=_glsl_reg(src,stage)
-    bank={2:'c',11:'c2',12:'c3',13:'c4'}.get(mat.reg_type or 2,'c')
+def _emit_matrix(
+    dst:Operand,
+    src:Operand,
+    mat:Operand,
+    rows:int,
+    cols:int,
+    stage:str,
+    definitions:dict[tuple[int,int],tuple[float,...]]|None=None,
+)->str:
+    definitions=definitions or {}
+    v=_glsl_reg(src,stage,definitions)
     base=_signed11(mat.index or 0) if mat.relative else (mat.index or 0)
-    rel=f'[{_relative_index_expr(mat,stage)}]' if mat.relative else '[0]'
     comps=[]
     for row in range(rows):
-        mref=f'{bank}[{base+row}]' if not mat.relative else f'{bank}[{_relative_index_expr(mat,stage)}+{row}]'
+        mref=(
+            _constant_register_ref(
+                mat.reg_type or 2,base+row,stage,definitions)
+            if not mat.relative else
+            _constant_register_ref(
+                mat.reg_type or 2,base+row,stage,definitions,
+                f'{_relative_index_expr(mat,stage)}+{row}')
+        )
         comps.append(f'dot({v}.{"xyz" if cols==3 else "xyzw"},{mref}.{"xyz" if cols==3 else "xyzw"})')
     expr='vec4('+','.join(comps)+')'
     return _assign(dst,expr,stage,getattr(dst,'predicate',None))
@@ -398,6 +476,7 @@ def to_glsl(
     input_locations: dict[int, int] | None = None,
     output_locations: dict[int, int] | None = None,
     constant_binding: int = 14,
+    constant_block_name: str = "ShiftD3D9Constants",
     target: str = "gles",
     strict: bool = True,
 )->str:
@@ -406,6 +485,17 @@ def to_glsl(
     if program.unsupported_opcodes and strict:
         values=', '.join(str(value) for value in sorted(program.unsupported_opcodes))
         raise ValueError(f"unsupported shader opcode(s): {values}")
+    constant_definitions:dict[tuple[int,int],tuple[float,...]]={}
+    for instruction in program.instructions:
+        if instruction.name!='DEF' or not instruction.operands:
+            continue
+        destination=instruction.operands[0]
+        if destination.kind!='dest' or destination.reg_type not in (2,11,12,13):
+            continue
+        values=tuple(float(value.value) for value in instruction.operands[1:])
+        if len(values)!=4:
+            raise ValueError('shader DEF must define four float components')
+        constant_definitions[(destination.reg_type,destination.index or 0)]=values
     lines = (
         ['#version 450']
         if target == "vulkan"
@@ -419,13 +509,18 @@ def to_glsl(
         raise ValueError("constant UBO binding must be non-negative")
     lines.insert(
         2,
-        f'layout(std140, binding = {constant_binding}) uniform ShiftD3D9Constants {{'
+        f'layout(std140, binding = {constant_binding}) uniform {constant_block_name} {{'
     )
     lines.insert(3, f'    vec4 c[{_bank_size(program,2)}];')
     lines.insert(4, f'    vec4 c2[{_bank_size(program,11)}];')
     lines.insert(5, f'    vec4 c3[{_bank_size(program,12)}];')
     lines.insert(6, f'    vec4 c4[{_bank_size(program,13)}];')
-    lines.insert(7, '};')
+    lines.insert(7, f'}} {_constant_instance(program.stage)};')
+    lines.extend(
+        f'const vec4 {_constant_definition_name(program.stage,reg_type,index)} = '
+        f'vec4({", ".join(_glsl_float(value) for value in values)});'
+        for (reg_type,index),values in sorted(constant_definitions.items())
+    )
     # Integer/bool banks remain local until their exact upload ABI is proven.
     lines.append(f'ivec4 i[{max(1,max(program.const_ints+[0])+1)}];')
     lines.append(f'bvec4 b[{max(1,max(program.const_bools+[0])+1)}];')
@@ -439,6 +534,25 @@ def to_glsl(
             lines.append(f'layout(binding={s}) uniform {sampler_type} tex{s};')
     input_locations = input_locations or {}
     output_locations = output_locations or {}
+    position_output_registers=frozenset(
+        int(match.group(1))
+        for item in program.outputs
+        if str(item.get('usage','')).upper()=='POSITION'
+        for match in [re.search(r'(?:oT|oC|oD|oDepth)(\d+)',str(item.get('register','')))]
+        if match is not None
+    ) if program.stage=='vertex' else frozenset()
+
+    def emit_assign(
+        dst:Operand,
+        expr:str,
+        stage:str='vertex',
+        predicate:Operand|None=None,
+    )->str:
+        return _assign(dst,expr,stage,predicate,position_output_registers)
+
+    def glsl_reg(operand:Operand,stage:str|None=None)->str:
+        return _glsl_reg(operand,stage or program.stage,constant_definitions)
+
     for x in program.inputs:
         reg=str(x.get('register','v0'))
         try: loc=int(reg.split('v',1)[1].split('.',1)[0])
@@ -451,6 +565,8 @@ def to_glsl(
             reg=str(x.get('register','oT0'))
             match=re.search(r'(?:oT|oC|oD|oDepth)(\d+)',reg)
             reg_index=int(match.group(1)) if match else int(x.get("index",0))
+            if str(x.get('usage','')).upper()=='POSITION':
+                continue
             if reg_index in declared:
                 continue
             glsl_loc=output_locations.get(reg_index,int(x.get("index",0)))
@@ -459,6 +575,8 @@ def to_glsl(
         # SM3 shaders can legally write o# without DCL output declarations. Make
         # those writes explicit instead of returning syntactically invalid GLSL.
         for reg_index in sorted(_written_registers(program,6) - declared):
+            if reg_index in position_output_registers:
+                continue
             glsl_loc=output_locations.get(reg_index,reg_index)
             lines.append(f'layout(location={glsl_loc}) out vec4 out_{reg_index};')
     else:
@@ -478,110 +596,119 @@ def to_glsl(
             if n in ('NOP','DCL','DEF','DEFI','DEFB','LABEL','COMMENT','PHASE'):
                 continue
             if n=='MOV' and len(o)>=2:
-                lines.append('  '+_assign(o[0],_glsl_reg(o[1],program.stage),program.stage,pred))
-            elif n=='ADD' and len(o)>=3: lines.append('  '+_assign(o[0],f'({_glsl_reg(o[1],program.stage)}+{_glsl_reg(o[2],program.stage)})',program.stage,pred))
-            elif n=='SUB' and len(o)>=3: lines.append('  '+_assign(o[0],f'({_glsl_reg(o[1],program.stage)}-{_glsl_reg(o[2],program.stage)})',program.stage,pred))
-            elif n=='MUL' and len(o)>=3: lines.append('  '+_assign(o[0],f'({_glsl_reg(o[1],program.stage)}*{_glsl_reg(o[2],program.stage)})',program.stage,pred))
-            elif n=='MAD' and len(o)>=4: lines.append('  '+_assign(o[0],f'(({_glsl_reg(o[1],program.stage)}*{_glsl_reg(o[2],program.stage)})+{_glsl_reg(o[3],program.stage)})',program.stage,pred))
-            elif n=='DP3' and len(o)>=3: lines.append('  '+_assign(o[0],f'vec4(dot({_glsl_reg(o[1],program.stage)}.xyz,{_glsl_reg(o[2],program.stage)}.xyz))',program.stage,pred))
-            elif n=='DP4' and len(o)>=3: lines.append('  '+_assign(o[0],f'vec4(dot({_glsl_reg(o[1],program.stage)},{_glsl_reg(o[2],program.stage)}))',program.stage,pred))
-            elif n=='MIN' and len(o)>=3: lines.append('  '+_assign(o[0],f'min({_glsl_reg(o[1],program.stage)},{_glsl_reg(o[2],program.stage)})',program.stage,pred))
-            elif n=='MAX' and len(o)>=3: lines.append('  '+_assign(o[0],f'max({_glsl_reg(o[1],program.stage)},{_glsl_reg(o[2],program.stage)})',program.stage,pred))
-            elif n=='SLT' and len(o)>=3: lines.append('  '+_assign(o[0],f'mix(vec4(0.0),vec4(1.0),lessThan({_glsl_reg(o[1],program.stage)},{_glsl_reg(o[2],program.stage)}))',program.stage,pred))
-            elif n=='SGE' and len(o)>=3: lines.append('  '+_assign(o[0],f'mix(vec4(0.0),vec4(1.0),greaterThanEqual({_glsl_reg(o[1],program.stage)},{_glsl_reg(o[2],program.stage)}))',program.stage,pred))
-            elif n=='EXP' and len(o)>=2: lines.append('  '+_assign(o[0],f'vec4(exp2({_glsl_reg(o[1],program.stage)}))',program.stage,pred))
-            elif n=='EXPP' and len(o)>=2: lines.append('  '+_assign(o[0],f'vec4(exp2({_glsl_reg(o[1],program.stage)}))',program.stage,pred))
-            elif n=='LOG' and len(o)>=2: lines.append('  '+_assign(o[0],f'vec4(log2({_glsl_reg(o[1],program.stage)}))',program.stage,pred))
-            elif n=='LOGP' and len(o)>=2: lines.append('  '+_assign(o[0],f'vec4(log2({_glsl_reg(o[1],program.stage)}))',program.stage,pred))
+                lines.append('  '+emit_assign(o[0],glsl_reg(o[1],program.stage),program.stage,pred))
+            elif n=='ADD' and len(o)>=3: lines.append('  '+emit_assign(o[0],f'({glsl_reg(o[1],program.stage)}+{glsl_reg(o[2],program.stage)})',program.stage,pred))
+            elif n=='SUB' and len(o)>=3: lines.append('  '+emit_assign(o[0],f'({glsl_reg(o[1],program.stage)}-{glsl_reg(o[2],program.stage)})',program.stage,pred))
+            elif n=='MUL' and len(o)>=3: lines.append('  '+emit_assign(o[0],f'({glsl_reg(o[1],program.stage)}*{glsl_reg(o[2],program.stage)})',program.stage,pred))
+            elif n=='MAD' and len(o)>=4: lines.append('  '+emit_assign(o[0],f'(({glsl_reg(o[1],program.stage)}*{glsl_reg(o[2],program.stage)})+{glsl_reg(o[3],program.stage)})',program.stage,pred))
+            elif n=='DP3' and len(o)>=3: lines.append('  '+emit_assign(o[0],f'vec4(dot({glsl_reg(o[1],program.stage)}.xyz,{glsl_reg(o[2],program.stage)}.xyz))',program.stage,pred))
+            elif n=='DP4' and len(o)>=3: lines.append('  '+emit_assign(o[0],f'vec4(dot({glsl_reg(o[1],program.stage)},{glsl_reg(o[2],program.stage)}))',program.stage,pred))
+            elif n=='MIN' and len(o)>=3: lines.append('  '+emit_assign(o[0],f'min({glsl_reg(o[1],program.stage)},{glsl_reg(o[2],program.stage)})',program.stage,pred))
+            elif n=='MAX' and len(o)>=3: lines.append('  '+emit_assign(o[0],f'max({glsl_reg(o[1],program.stage)},{glsl_reg(o[2],program.stage)})',program.stage,pred))
+            elif n=='SLT' and len(o)>=3: lines.append('  '+emit_assign(o[0],f'mix(vec4(0.0),vec4(1.0),lessThan({glsl_reg(o[1],program.stage)},{glsl_reg(o[2],program.stage)}))',program.stage,pred))
+            elif n=='SGE' and len(o)>=3: lines.append('  '+emit_assign(o[0],f'mix(vec4(0.0),vec4(1.0),greaterThanEqual({glsl_reg(o[1],program.stage)},{glsl_reg(o[2],program.stage)}))',program.stage,pred))
+            elif n=='EXP' and len(o)>=2: lines.append('  '+emit_assign(o[0],f'vec4(exp2({glsl_reg(o[1],program.stage)}))',program.stage,pred))
+            elif n=='EXPP' and len(o)>=2: lines.append('  '+emit_assign(o[0],f'vec4(exp2({glsl_reg(o[1],program.stage)}))',program.stage,pred))
+            elif n=='LOG' and len(o)>=2: lines.append('  '+emit_assign(o[0],f'vec4(log2({glsl_reg(o[1],program.stage)}))',program.stage,pred))
+            elif n=='LOGP' and len(o)>=2: lines.append('  '+emit_assign(o[0],f'vec4(log2({glsl_reg(o[1],program.stage)}))',program.stage,pred))
             elif n=='LIT' and len(o)>=2:
-                x=_glsl_reg(o[1],program.stage)
+                x=glsl_reg(o[1],program.stage)
                 expr=f'vec4(1.0,max({x}.x,0.0),(({x}.y>0.0)?pow(max({x}.y,0.0),clamp({x}.w,-128.0,128.0)):0.0),1.0)'
-                lines.append('  '+_assign(o[0],expr,program.stage,pred))
+                lines.append('  '+emit_assign(o[0],expr,program.stage,pred))
             elif n=='DST' and len(o)>=3:
-                a=_glsl_reg(o[1],program.stage); b_= _glsl_reg(o[2],program.stage)
-                lines.append('  '+_assign(o[0],f'vec4(1.0,{a}.y*{b_}.y,{a}.z,{b_}.w)',program.stage,pred))
+                a=glsl_reg(o[1],program.stage); b_= glsl_reg(o[2],program.stage)
+                lines.append('  '+emit_assign(o[0],f'vec4(1.0,{a}.y*{b_}.y,{a}.z,{b_}.w)',program.stage,pred))
             elif n=='LRP' and len(o)>=4:
-                lines.append('  '+_assign(o[0],f'mix({_glsl_reg(o[3],program.stage)},{_glsl_reg(o[2],program.stage)},{_glsl_reg(o[1],program.stage)})',program.stage,pred))
-            elif n=='FRC' and len(o)>=2: lines.append('  '+_assign(o[0],f'fract({_glsl_reg(o[1],program.stage)})',program.stage,pred))
-            elif n in ('RCP',) and len(o)>=2: lines.append('  '+_assign(o[0],f'(1.0/{_glsl_reg(o[1],program.stage)})',program.stage,pred))
-            elif n=='RSQ' and len(o)>=2: lines.append('  '+_assign(o[0],f'(1.0/sqrt(abs({_glsl_reg(o[1],program.stage)})))',program.stage,pred))
-            elif n=='NRM' and len(o)>=2: lines.append('  '+_assign(o[0],f'normalize({_glsl_reg(o[1],program.stage)})',program.stage,pred))
-            elif n=='ABS' and len(o)>=2: lines.append('  '+_assign(o[0],f'abs({_glsl_reg(o[1],program.stage)})',program.stage,pred))
-            elif n=='DSX' and len(o)>=2: lines.append('  '+_assign(o[0],f'dFdx({_glsl_reg(o[1],program.stage)})',program.stage,pred))
-            elif n=='DSY' and len(o)>=2: lines.append('  '+_assign(o[0],f'dFdy({_glsl_reg(o[1],program.stage)})',program.stage,pred))
-            elif n=='POW' and len(o)>=3: lines.append('  '+_assign(o[0],f'pow({_glsl_reg(o[1],program.stage)},{_glsl_reg(o[2],program.stage)})',program.stage,pred))
-            elif n=='CRS' and len(o)>=3: lines.append('  '+_assign(o[0],f'vec4(cross({_glsl_reg(o[1],program.stage)}.xyz,{_glsl_reg(o[2],program.stage)}.xyz),0.0)',program.stage,pred))
-            elif n=='SGN' and len(o)>=2: lines.append('  '+_assign(o[0],f'sign({_glsl_reg(o[1],program.stage)})',program.stage,pred))
+                lines.append('  '+emit_assign(o[0],f'mix({glsl_reg(o[3],program.stage)},{glsl_reg(o[2],program.stage)},{glsl_reg(o[1],program.stage)})',program.stage,pred))
+            elif n=='FRC' and len(o)>=2: lines.append('  '+emit_assign(o[0],f'fract({glsl_reg(o[1],program.stage)})',program.stage,pred))
+            elif n in ('RCP',) and len(o)>=2: lines.append('  '+emit_assign(o[0],f'(1.0/{glsl_reg(o[1],program.stage)})',program.stage,pred))
+            elif n=='RSQ' and len(o)>=2: lines.append('  '+emit_assign(o[0],f'(1.0/sqrt(abs({glsl_reg(o[1],program.stage)})))',program.stage,pred))
+            elif n=='NRM' and len(o)>=2: lines.append('  '+emit_assign(o[0],f'normalize({glsl_reg(o[1],program.stage)})',program.stage,pred))
+            elif n=='ABS' and len(o)>=2: lines.append('  '+emit_assign(o[0],f'abs({glsl_reg(o[1],program.stage)})',program.stage,pred))
+            elif n=='DSX' and len(o)>=2: lines.append('  '+emit_assign(o[0],f'dFdx({glsl_reg(o[1],program.stage)})',program.stage,pred))
+            elif n=='DSY' and len(o)>=2: lines.append('  '+emit_assign(o[0],f'dFdy({glsl_reg(o[1],program.stage)})',program.stage,pred))
+            elif n=='POW' and len(o)>=3: lines.append('  '+emit_assign(o[0],f'pow({glsl_reg(o[1],program.stage)},{glsl_reg(o[2],program.stage)})',program.stage,pred))
+            elif n=='CRS' and len(o)>=3: lines.append('  '+emit_assign(o[0],f'vec4(cross({glsl_reg(o[1],program.stage)}.xyz,{glsl_reg(o[2],program.stage)}.xyz),0.0)',program.stage,pred))
+            elif n=='SGN' and len(o)>=2: lines.append('  '+emit_assign(o[0],f'sign({glsl_reg(o[1],program.stage)})',program.stage,pred))
             elif n=='SINCOS' and len(o)>=2:
-                x=_glsl_reg(o[1],program.stage)
-                lines.append('  '+_assign(o[0],f'vec4(sin({x}),cos({x}),0.0,0.0)',program.stage,pred))
+                x=glsl_reg(o[1],program.stage)
+                lines.append('  '+emit_assign(o[0],f'vec4(sin({x}),cos({x}),0.0,0.0)',program.stage,pred))
             elif n in ('M4x4','M4x3','M3x4','M3x3','M3x2') and len(o)>=3:
                 dims={'M4x4':(4,4),'M4x3':(4,3),'M3x4':(3,4),'M3x3':(3,3),'M3x2':(3,2)}[n]
                 dst=o[0]; src=o[1]; mat=o[2]
                 rows,cols=dims
-                v=_glsl_reg(src,program.stage)
-                bank={2:'c',11:'c2',12:'c3',13:'c4'}.get(mat.reg_type or 2,'c')
+                v=glsl_reg(src,program.stage)
+                reg_type=mat.reg_type or 2
+                base=_signed11(mat.index or 0) if mat.relative else (mat.index or 0)
                 if mat.relative:
-                    refs=[f'{bank}[{_relative_index_expr(mat,program.stage)}+{r}]' for r in range(rows)]
+                    refs=[
+                        _constant_register_ref(
+                            reg_type,base+r,program.stage,constant_definitions,
+                            f'{_relative_index_expr(mat,program.stage)}+{r}')
+                        for r in range(rows)
+                    ]
                 else:
-                    base=mat.index or 0
-                    refs=[f'{bank}[{base+r}]' for r in range(rows)]
+                    refs=[
+                        _constant_register_ref(
+                            reg_type,base+r,program.stage,constant_definitions)
+                        for r in range(rows)
+                    ]
                 vv=f'{v}.xyz' if cols==3 else f'{v}.xyzw'
                 parts=[f'dot({vv},{m}.{"xyz" if cols==3 else "xyzw"})' for m in refs]
                 expr=('vec4('+','.join(parts)+')') if len(parts)==4 else ('vec3('+','.join(parts)+')' if len(parts)==3 else 'vec2('+','.join(parts)+')')
-                lines.append('  '+_assign(dst,expr,program.stage,pred))
+                lines.append('  '+emit_assign(dst,expr,program.stage,pred))
             elif n=='CMP' and len(o)>=4:
-                lines.append('  '+_assign(o[0],f'mix({_glsl_reg(o[3],program.stage)},{_glsl_reg(o[2],program.stage)},greaterThanEqual({_glsl_reg(o[1],program.stage)},vec4(0.0)))',program.stage,pred))
+                lines.append('  '+emit_assign(o[0],f'mix({glsl_reg(o[3],program.stage)},{glsl_reg(o[2],program.stage)},greaterThanEqual({glsl_reg(o[1],program.stage)},vec4(0.0)))',program.stage,pred))
             elif n=='DP2ADD' and len(o)>=4:
-                a=_glsl_reg(o[1],program.stage); b_= _glsl_reg(o[2],program.stage); c_= _glsl_reg(o[3],program.stage)
-                lines.append('  '+_assign(o[0],f'vec4(dot({a}.xy,{b_}.xy)+{c_}.x)',program.stage,pred))
+                a=glsl_reg(o[1],program.stage); b_= glsl_reg(o[2],program.stage); c_= glsl_reg(o[3],program.stage)
+                lines.append('  '+emit_assign(o[0],f'vec4(dot({a}.xy,{b_}.xy)+{c_}.x)',program.stage,pred))
             elif n=='TEX' and len(o)>=3:
-                coord=_tex_coord(o[1],o[2],program)
-                lines.append('  '+_assign(o[0],f'texture({_glsl_reg(o[2],program.stage)},{coord})',program.stage,pred))
+                coord=_tex_coord(o[1],o[2],program,constant_definitions)
+                lines.append('  '+emit_assign(o[0],f'texture({glsl_reg(o[2],program.stage)},{coord})',program.stage,pred))
             elif n=='TEXLDD' and len(o)>=5:
-                coord=_tex_coord(o[1],o[2],program)
-                lines.append('  '+_assign(o[0],f'textureGrad({_glsl_reg(o[2],program.stage)},{coord},{_glsl_reg(o[3],program.stage)}.xy,{_glsl_reg(o[4],program.stage)}.xy)',program.stage,pred))
+                coord=_tex_coord(o[1],o[2],program,constant_definitions)
+                lines.append('  '+emit_assign(o[0],f'textureGrad({glsl_reg(o[2],program.stage)},{coord},{glsl_reg(o[3],program.stage)}.xy,{glsl_reg(o[4],program.stage)}.xy)',program.stage,pred))
             elif n=='TEXLDL' and len(o)>=3:
-                coord=_tex_coord(o[1],o[2],program)
-                fullcoord=_glsl_reg(o[1],program.stage)
-                lines.append('  '+_assign(o[0],f'textureLod({_glsl_reg(o[2],program.stage)},{coord},{fullcoord}.w)',program.stage,pred))
+                coord=_tex_coord(o[1],o[2],program,constant_definitions)
+                fullcoord=glsl_reg(o[1],program.stage)
+                lines.append('  '+emit_assign(o[0],f'textureLod({glsl_reg(o[2],program.stage)},{coord},{fullcoord}.w)',program.stage,pred))
             elif n=='TEXKILL' and len(o)>=1:
-                x=_glsl_reg(o[0],program.stage)
+                x=glsl_reg(o[0],program.stage)
                 lines.append(f'  if(any(lessThan({x}.xyz,vec3(0.0))) ) discard;')
             elif n=='SETP' and len(o)>=3:
-                cmp=_cmp_expr(_glsl_reg(o[1],program.stage),_glsl_reg(o[2],program.stage),ins.controls)
-                lines.append('  '+_assign(o[0],cmp,program.stage))
+                cmp=_cmp_expr(glsl_reg(o[1],program.stage),glsl_reg(o[2],program.stage),ins.controls)
+                lines.append('  '+emit_assign(o[0],cmp,program.stage))
             elif n=='IF' and len(o)>=1:
                 lines.append(f'  if {_bool_condition(o[0],program.stage)} {{')
             elif n=='IFC' and len(o)>=2:
-                cmp=_cmp_expr(_glsl_reg(o[0],program.stage),_glsl_reg(o[1],program.stage),ins.controls)
+                cmp=_cmp_expr(glsl_reg(o[0],program.stage),glsl_reg(o[1],program.stage),ins.controls)
                 lines.append(f'  if(all({cmp})) {{')
             elif n=='ELSE': lines.append('  } else {')
             elif n=='ENDIF': lines.append('  }')
             elif n=='BREAK': lines.append('  break;')
             elif n=='BREAKC' and len(o)>=2:
-                cmp=_cmp_expr(_glsl_reg(o[0],program.stage),_glsl_reg(o[1],program.stage),ins.controls)
+                cmp=_cmp_expr(glsl_reg(o[0],program.stage),glsl_reg(o[1],program.stage),ins.controls)
                 lines.append(f'  if(all({cmp})) break;')
             elif n=='BREAKP' and len(o)>=1:
                 lines.append(f'  if({_bool_condition(o[0],program.stage)}) break;')
             elif n=='LOOP' and len(o)>=1:
-                src=_glsl_reg(o[0],program.stage)
+                src=glsl_reg(o[0],program.stage)
                 loop_depth+=1
                 lines.append(f'  for(int shift_loop=int(round({src}.y)), shift_iter=0; shift_iter<int(round({src}.x)); ++shift_iter, shift_loop+=int(round({src}.z))) {{')
             elif n=='ENDLOOP':
                 loop_depth=max(0,loop_depth-1)
                 lines.append('  }')
             elif n=='REP' and len(o)>=1:
-                src=_glsl_reg(o[0],program.stage)
+                src=glsl_reg(o[0],program.stage)
                 rep_depth+=1
                 lines.append(f'  for(int shift_rep{rep_depth}=0; shift_rep{rep_depth}<int({src}.x); ++shift_rep{rep_depth}) {{')
             elif n=='ENDREP':
                 lines.append('  }')
                 rep_depth=max(0,rep_depth-1)
             elif n=='MOVA' and len(o)>=2:
-                lhs=_glsl_reg(o[0],program.stage)
+                lhs=glsl_reg(o[0],program.stage)
                 mask=o[0].write_mask or 'xyzw'
-                rhs=f'ivec4(round({_glsl_reg(o[1],program.stage)}))'
+                rhs=f'ivec4(round({glsl_reg(o[1],program.stage)}))'
                 if mask!='xyzw':
                     lhs += '.'+mask
                     rhs += '.'+mask

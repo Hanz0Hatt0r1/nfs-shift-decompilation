@@ -1,0 +1,132 @@
+{
+  "format": "SHIFT.D3D9CaptureVulkanReplayEvidence/1",
+  "capture": {
+    "file": "shift_d3d9_capture.jsonl",
+    "sha256": "d90ede38815242dc4a7ff5771b9d886e26931590621631f16ea4617852276afe"
+  },
+  "separate_audit": {
+    "evidence_file": "shift_d3d9_vulkan_draw_parameters_20261021.json",
+    "first_draw_event": 1110,
+    "first_draw_has_required_buffer_snapshots": false
+  },
+  "draw": {
+    "event_index": 5245407,
+    "frame": 5868,
+    "device_ptr": "0xd3f4700",
+    "d3d9_primitive_type": "D3DPT_TRIANGLELIST",
+    "primitive_count": 36,
+    "vertex_count": 38,
+    "start_index": 0,
+    "base_vertex_index": 0,
+    "vulkan_index_count": 108,
+    "vulkan_index_type": "VK_INDEX_TYPE_UINT16"
+  },
+  "resources": {
+    "vertex_buffer": {
+      "pointer": "0x38a4f0a8",
+      "create_event": 4548370,
+      "snapshot_event": 5237100,
+      "sha256": "ca110169e4b66b4582e3c2e72f3e3d5c7255eee899e43287a9974a164ebdf040"
+    },
+    "index_buffer": {
+      "pointer": "0x38a4f128",
+      "create_event": 4548371,
+      "snapshot_event": 5237101,
+      "sha256": "14e9d14bf584b64b7d40ba90b50e59d7d512ca33907c5d4132cf0f939e697661"
+    },
+    "vertex_declaration_signature": "decl:4d72a65b7e5e7a42",
+    "vertex_shader_signature": "vs:2e273f1a068be9db",
+    "pixel_shader_signature": "ps:50c96726a57ba5c0",
+    "vertex_declaration": {
+      "stride": 36,
+      "elements": [
+        {"semantic": "POSITION0", "type": "FLOAT3", "offset": 0},
+        {"semantic": "COLOR0", "type": "D3DCOLOR", "offset": 12},
+        {"semantic": "TEXCOORD0", "type": "FLOAT2", "offset": 28}
+      ]
+    },
+    "texture": {
+      "path_relative_to_capture_artifact": "textures/shift_d3d9_s0_0x38a7b530.dds",
+      "sha256": "e69c113c5ce7f13726f76de03f0f5fd4e1613a454a939508c3b4fb0f62570b55",
+      "width": 1024,
+      "height": 256
+    }
+  },
+  "constants": {
+    "vertex_registers_updated": 228,
+    "pixel_registers_updated": 43
+  },
+  "sampler0": {
+    "address_u": "D3DTADDRESS_WRAP",
+    "address_v": "D3DTADDRESS_WRAP",
+    "min_filter": "D3DTEXF_LINEAR",
+    "mag_filter": "D3DTEXF_LINEAR"
+  },
+  "d3d9_render_states": {
+    "z_enable_state7": 1,
+    "z_write_state14": 0,
+    "source_blend_state19": 5,
+    "destination_blend_state20": 6,
+    "cull_mode_state22": 1,
+    "z_function_state23": 4,
+    "alpha_blend_state27": 0,
+    "color_write_state168": 15,
+    "blend_operation_state171": 1
+  },
+  "render_target": {
+    "signature": "rt:800x600:114",
+    "d3d_format": "D3DFMT_R32F (114)",
+    "surface_format": 114,
+    "vulkan_format": "VK_FORMAT_R32_SFLOAT",
+    "width": 800,
+    "height": 600,
+    "viewport": [0, 0, 800, 600],
+    "clear_color_argb": 0,
+    "clear_depth": 1.0,
+    "clear_stencil": 0,
+    "clear_flags": 7,
+    "d3d9_y_down": true,
+    "depth_surface_signature": "depth:800x600:75",
+    "d3d_depth_format": "D3DFMT_D24S8 (75)",
+    "depth_surface_format": 75,
+    "vulkan_depth_format": "VK_FORMAT_D24_UNORM_S8_UINT"
+  },
+  "shader_validation": {
+    "validator": "glslangValidator",
+    "vertex_compile": true,
+    "pixel_compile": true,
+    "stage_link": true
+  },
+  "native_vulkan_execution": {
+    "executor": "shift_vulkan_bundle_execute",
+    "requested_api_version": "Vulkan 1.1",
+    "validation_enabled": true,
+    "validation_runs": [
+      {"device": "NVIDIA GeForce GTX 950", "validation_errors": 0},
+      {"device": "llvmpipe (LLVM 22.1.8, 256 bits)", "validation_errors": 0}
+    ],
+    "draw_index_count": 108,
+    "index_type": "VK_INDEX_TYPE_UINT16",
+    "target": [800, 600],
+    "target_formats": ["VK_FORMAT_R32_SFLOAT", "VK_FORMAT_D24_UNORM_S8_UINT"],
+    "texture_count": 1,
+    "readback": {
+      "format": "P6 PPM",
+      "sha256": "83d86adee666fcfdde43a1e55a87ef9b3de30408bc3bf8e45946d036544b500c",
+      "pixels": 480000,
+      "nonblack_pixels": 74133,
+      "observed_rgb_values": [[0, 0, 0], [255, 255, 255]],
+      "display_mapping": "R32F readback clamped to 0..1 and shown as 8-bit grayscale"
+    }
+  },
+  "limitations": {
+    "buffer_payloads_are_capture_local_com_generation_snapshots": true,
+    "vb_ib_lock_unlock_updates_are_not_recorded": true,
+    "original_render_target_pixels_are_not_captured": true,
+    "single_draw_replay_only": true,
+    "retail_image_parity_proven": false,
+    "separate_audit_event_1110_has_required_buffer_snapshots": false,
+    "game_runtime_handoff_integrated": false,
+    "android_arm64_cross_build_run": false
+  }
+}

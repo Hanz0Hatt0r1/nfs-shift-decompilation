@@ -27,6 +27,12 @@ def test_render_state_translation_blocks_unknown_modes():
     assert "d3d9-vulkan-state:unsupported-cullmode:999" in result["blocking_reasons"]
 
 
+def test_d3d_cull_values_map_to_opposite_vulkan_face_flags():
+    assert translate_render_states({22: 1})["raster"]["cull_mode"] == "NONE"
+    assert translate_render_states({22: 2})["raster"]["cull_mode"] == "BACK"
+    assert translate_render_states({22: 3})["raster"]["cull_mode"] == "FRONT"
+
+
 def test_sampler_state_translation_is_explicit():
     result = translate_sampler_state(1, {
         1: 1,

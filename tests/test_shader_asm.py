@@ -62,6 +62,103 @@ def test_glsl_cmp_lrp_preserve_d3d9_semantics():
     assert "mix(r3,r2,r1)" in lrp_glsl
 
 
+def test_scalar_swizzles_replicate_and_masked_results_select_written_lanes():
+    from shader_asm import Operand, Instruction, ShaderProgram, _glsl_reg, to_glsl
+
+    dst = Operand(token=0, kind="dest", reg_type=0, index=0, write_mask="z")
+    left = Operand(token=0, kind="source", reg_type=0, index=1, swizzle="xyzw")
+    right = Operand(token=0, kind="source", reg_type=0, index=2, swizzle="xyzw")
+    scalar_x = Operand(token=0, kind="source", reg_type=0, index=1, swizzle="x")
+    program = ShaderProgram(
+        0, 0, "pixel", 3, 0,
+        [
+            Instruction(0, 8, "DP3", 0, 3, 0, False, [dst, left, right]),
+            Instruction(3, 1, "MOV", 0, 2, 0, False, [
+                Operand(token=0, kind="dest", reg_type=0, index=3, write_mask="z"),
+                scalar_x,
+            ]),
+        ],
+        [], [], [], [], [0, 1, 2, 3], [], [], [], {}
+    )
+
+    glsl = to_glsl(program, target="vulkan")
+
+    assert "r1.xyz" in glsl
+    assert "r0.z = (vec4(dot(r1.xyz,r2.xyz))).z;" in glsl
+    assert "r3.z = (vec4(r1.x)).z;" in glsl
+    assert _glsl_reg(
+        Operand(token=0, kind="source", reg_type=14, index=0, swizzle="x"),
+        "pixel",
+    ) == "bvec4(b[0].x)"
+    assert _glsl_reg(
+        Operand(token=0, kind="source", reg_type=3, index=0, swizzle="x"),
+        "vertex",
+    ) == "ivec4(a0.x)"
+
+
+def test_vertex_position_semantic_uses_gl_position():
+    from shader_asm import Operand, Instruction, ShaderProgram, to_glsl
+
+    position = Operand(token=0, kind="dest", reg_type=6, index=0)
+    varying = Operand(token=0, kind="dest", reg_type=6, index=1)
+    source = Operand(token=0, kind="source", reg_type=1, index=0)
+    program = ShaderProgram(
+        0, 0, "vertex", 3, 0,
+        [
+            Instruction(0, 1, "MOV", 0, 2, 0, False, [position, source]),
+            Instruction(2, 1, "MOV", 0, 2, 0, False, [varying, source]),
+        ],
+        [], [
+            {"usage": "POSITION", "index": 0, "register": "oT0"},
+            {"usage": "TEXCOORD", "index": 0, "register": "oT1"},
+        ], [], [], [0], [], [], [], {}
+    )
+
+    glsl = to_glsl(program, target="vulkan", output_locations={1: 0})
+
+    assert "gl_Position = in_0;" in glsl
+    assert "out vec4 out_0" not in glsl
+    assert "out vec4 out_1" in glsl
+
+
+def test_shader_def_float_constants_are_embedded_in_translated_glsl():
+    from shader_asm import Operand, Instruction, ShaderProgram, to_glsl
+
+    destination = Operand(token=0, kind="dest", reg_type=2, index=12)
+    literals = [
+        Operand(token=0, kind="literal", value=value)
+        for value in (0.5, -1.0, 2.0, 0.0)
+    ]
+    temp = Operand(token=0, kind="dest", reg_type=0, index=0)
+    constant = Operand(token=0, kind="source", reg_type=2, index=12, swizzle="xyzw")
+    program = ShaderProgram(
+        offset=0,
+        end=0,
+        stage="vertex",
+        major=3,
+        minor=0,
+        instructions=[
+            Instruction(0, 81, "DEF", 0, 5, 0, False, [destination, *literals]),
+            Instruction(5, 1, "MOV", 0, 2, 0, False, [temp, constant]),
+        ],
+        inputs=[],
+        outputs=[],
+        samplers=[],
+        constants=[12],
+        temps=[0],
+        unsupported_opcodes=[],
+        const_ints=[],
+        const_bools=[],
+        sampler_types={},
+    )
+
+    glsl = to_glsl(program, target="vulkan")
+
+    assert "const vec4 shift_vs_constants_def_c12 = vec4(0.5, -1.0, 2.0, 0.0);" in glsl
+    assert "r0 = shift_vs_constants_def_c12;" in glsl
+    assert "shift_vs_constants.c[12]" not in glsl
+
+
 def test_predication_is_preserved_in_ir():
     from shader_asm import Operand, Instruction, ShaderProgram, to_glsl
     dst = Operand(token=0x80000000, kind="dest", reg_type=0, index=0, write_mask="xyzw")
@@ -88,8 +185,8 @@ def test_glsl_translation_covers_abs_and_d3d9_derivatives():
 def test_glsl_float_constants_use_shift_d3d9_ubo():
     glsl = to_glsl(_program_with(1, "MOV"))
     assert "layout(std140, binding = 14) uniform ShiftD3D9Constants" in glsl
-    assert "    vec4 c[" in glsl
-    assert "vec4 c[" not in glsl.split("ShiftD3D9Constants", 1)[1].split("};", 1)[1]
+    assert glsl.count("vec4 c[") == 1
+    assert "} shift_ps_constants;" in glsl
 
 
 def test_d3d9_opcode_table_preserves_authoritative_numeric_holes():

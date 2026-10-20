@@ -1,6 +1,7 @@
 #include <vulkan/vulkan.h>
 #include "shift_vulkan_validation.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <cmath>
 #include <cstddef>
@@ -42,6 +43,12 @@ struct GeometryAttribute {
     uint32_t offset;
     uint32_t stride;
     uint32_t property_id;
+};
+struct CaptureGeometryMetadata {
+    uint32_t index_format_bits;
+    uint32_t draw_index_count;
+    int32_t base_vertex;
+    uint32_t vertex_buffer_offset;
 };
 struct ConstantHeader {
     char magic[4];
@@ -87,6 +94,7 @@ struct WorldTransformHeader {
 static_assert(sizeof(GeometryHeader) == 44);
 static_assert(sizeof(LegacyGeometryAttribute) == 16);
 static_assert(sizeof(GeometryAttribute) == 20);
+static_assert(sizeof(CaptureGeometryMetadata) == 16);
 static_assert(sizeof(ConstantHeader) == 28);
 static_assert(sizeof(TextureHeader) == 20);
 static_assert(sizeof(TextureRecord) == 24);
@@ -96,8 +104,8 @@ static_assert(sizeof(WorldTransformHeader) == 16);
 namespace {
 
 constexpr uint32_t kConstantBytes = 4096;
-constexpr uint32_t kRenderWidth = 800;
-constexpr uint32_t kRenderHeight = 450;
+constexpr uint32_t kDefaultRenderWidth = 800;
+constexpr uint32_t kDefaultRenderHeight = 450;
 
 struct PipelineState {
     VkCullModeFlags cull_mode = VK_CULL_MODE_NONE;
@@ -111,6 +119,28 @@ struct PipelineState {
     VkBlendFactor src_alpha_blend_factor = VK_BLEND_FACTOR_ONE;
     VkBlendFactor dst_alpha_blend_factor = VK_BLEND_FACTOR_ZERO;
     VkBlendOp alpha_blend_op = VK_BLEND_OP_ADD;
+};
+
+struct RenderTargetState {
+    uint32_t width = kDefaultRenderWidth;
+    uint32_t height = kDefaultRenderHeight;
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkFormat depth_format = VK_FORMAT_D32_SFLOAT;
+    VkImageAspectFlags depth_aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
+    uint32_t d3d_color_format = 0;
+    uint32_t d3d_depth_format = 0;
+    int32_t viewport_x = 0;
+    int32_t viewport_y = 0;
+    uint32_t viewport_width = kDefaultRenderWidth;
+    uint32_t viewport_height = kDefaultRenderHeight;
+    float min_depth = 0.0f;
+    float max_depth = 1.0f;
+    bool d3d9_y_down = false;
+    bool captured = false;
+    uint32_t clear_color_argb = 0;
+    float clear_depth = 1.0f;
+    uint32_t clear_stencil = 0;
+    uint32_t clear_flags = 0;
 };
 
 void check(VkResult result, const char* message) {
@@ -158,8 +188,12 @@ struct Image {
 
 struct Geometry {
     GeometryHeader header{};
+    CaptureGeometryMetadata capture{};
+    VkIndexType index_type = VK_INDEX_TYPE_UINT32;
+    uint32_t draw_index_count = 0;
     std::vector<GeometryAttribute> attributes;
     std::vector<uint8_t> vertices;
+    std::vector<uint8_t> index_data;
     std::vector<uint32_t> indices;
 };
 
@@ -233,7 +267,7 @@ void create_context(Context& context, shift::vulkan::Validation& validation) {
     app.applicationVersion = 1;
     app.pEngineName = "SHIFT";
     app.engineVersion = 1;
-    app.apiVersion = VK_API_VERSION_1_0;
+    app.apiVersion = VK_API_VERSION_1_1;
 
     VkInstanceCreateInfo instance{};
     instance.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -253,6 +287,9 @@ void create_context(Context& context, shift::vulkan::Validation& validation) {
         "vkEnumeratePhysicalDevices(data) failed");
 
     for (VkPhysicalDevice candidate : devices) {
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(candidate, &properties);
+        if (properties.apiVersion < VK_API_VERSION_1_1) continue;
         uint32_t family_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(
             candidate, &family_count, nullptr);
@@ -328,7 +365,8 @@ Geometry load_geometry(const std::filesystem::path& path) {
     if (std::memcmp(geometry.header.magic, "SVGP", 4) != 0 ||
         (geometry.header.version != 1 &&
          geometry.header.version != 2 &&
-         geometry.header.version != 3)) {
+         geometry.header.version != 3 &&
+         geometry.header.version != 4)) {
         throw std::runtime_error("unsupported geometry packet");
     }
     if (geometry.header.vertex_count == 0 ||
@@ -336,7 +374,8 @@ Geometry load_geometry(const std::filesystem::path& path) {
         geometry.header.stride == 0 ||
         geometry.header.attribute_count == 0 ||
         geometry.header.attribute_count > 16 ||
-        geometry.header.index_count % 3 != 0) {
+        (geometry.header.version != 4 &&
+         geometry.header.index_count % 3 != 0)) {
         throw std::runtime_error("invalid geometry packet counts");
     }
 
@@ -347,14 +386,46 @@ Geometry load_geometry(const std::filesystem::path& path) {
     const size_t attribute_bytes =
         static_cast<size_t>(geometry.header.attribute_count) *
         attribute_record_bytes;
+    const size_t metadata_offset = sizeof(GeometryHeader) + attribute_bytes;
+    size_t metadata_bytes = 0;
+    size_t index_element_bytes = sizeof(uint32_t);
+    if (geometry.header.version == 4) {
+        metadata_bytes = sizeof(CaptureGeometryMetadata);
+        if (data.size() < metadata_offset + metadata_bytes) {
+            throw std::runtime_error("capture geometry metadata truncated");
+        }
+        std::memcpy(
+            &geometry.capture,
+            data.data() + metadata_offset,
+            sizeof(geometry.capture));
+        if (geometry.capture.index_format_bits == 16u) {
+            geometry.index_type = VK_INDEX_TYPE_UINT16;
+            index_element_bytes = sizeof(uint16_t);
+        } else if (geometry.capture.index_format_bits == 32u) {
+            geometry.index_type = VK_INDEX_TYPE_UINT32;
+        } else {
+            throw std::runtime_error("unsupported capture index width");
+        }
+        if (geometry.capture.draw_index_count == 0u ||
+            geometry.capture.draw_index_count % 3u != 0u ||
+            geometry.header.first_index > geometry.header.index_count ||
+            geometry.capture.draw_index_count >
+                geometry.header.index_count - geometry.header.first_index) {
+            throw std::runtime_error("invalid capture draw index range");
+        }
+        geometry.draw_index_count = geometry.capture.draw_index_count;
+    } else {
+        geometry.draw_index_count = geometry.header.index_count;
+    }
     const size_t vertex_bytes =
-        static_cast<size_t>(geometry.header.vertex_count) *
-        geometry.header.stride;
+        (static_cast<size_t>(geometry.header.vertex_count) *
+             geometry.header.stride) +
+        geometry.capture.vertex_buffer_offset;
     const size_t index_bytes =
         static_cast<size_t>(geometry.header.index_count) *
-        sizeof(uint32_t);
+        index_element_bytes;
     const size_t expected =
-        sizeof(GeometryHeader) + attribute_bytes + vertex_bytes + index_bytes;
+        metadata_offset + metadata_bytes + vertex_bytes + index_bytes;
     if (expected != data.size()) {
         throw std::runtime_error("geometry packet size mismatch");
     }
@@ -395,17 +466,33 @@ Geometry load_geometry(const std::filesystem::path& path) {
         geometry.attributes[0].format = 2;
     }
 
-    const size_t vertices_offset =
-        sizeof(GeometryHeader) + attribute_bytes;
+    const size_t vertices_offset = metadata_offset + metadata_bytes;
     const size_t indices_offset = vertices_offset + vertex_bytes;
     geometry.vertices.assign(
         data.begin() + static_cast<std::ptrdiff_t>(vertices_offset),
         data.begin() + static_cast<std::ptrdiff_t>(indices_offset));
     geometry.indices.resize(geometry.header.index_count);
-    std::memcpy(
-        geometry.indices.data(),
-        data.data() + indices_offset,
-        index_bytes);
+    geometry.index_data.assign(
+        data.begin() + static_cast<std::ptrdiff_t>(indices_offset), data.end());
+    if (geometry.header.version == 4 &&
+        geometry.capture.index_format_bits == 16u) {
+        for (uint32_t index = 0;
+             index < geometry.header.index_count;
+             ++index) {
+            uint16_t value = 0;
+            std::memcpy(
+                &value,
+                geometry.index_data.data() +
+                    static_cast<size_t>(index) * sizeof(value),
+                sizeof(value));
+            geometry.indices[index] = value;
+        }
+    } else {
+        std::memcpy(
+            geometry.indices.data(),
+            geometry.index_data.data(),
+            index_bytes);
+    }
 
     bool position_seen = false;
     auto attribute_size = [](uint32_t format) -> uint32_t {
@@ -427,14 +514,15 @@ Geometry load_geometry(const std::filesystem::path& path) {
             attribute.stride != geometry.header.stride) {
             throw std::runtime_error("invalid vertex attribute");
         }
-        if (geometry.header.version >= 3 &&
+        if (geometry.header.version == 3 &&
             attribute.property_id == 0u) {
             throw std::runtime_error(
                 "SVGP v3 attribute is missing SHIFT property identity");
         }
         if (attribute.location == 0) {
             if (attribute.format != 2 || position_seen ||
-                attribute.property_id != 200u) {
+                (geometry.header.version != 4 &&
+                 attribute.property_id != 200u)) {
                 throw std::runtime_error(
                     "POSITION0 must be FLOAT3 property 200 at location 0");
             }
@@ -444,9 +532,16 @@ Geometry load_geometry(const std::filesystem::path& path) {
     if (!position_seen) {
         throw std::runtime_error("geometry packet has no POSITION0");
     }
-    for (uint32_t index : geometry.indices) {
-        if (index >= geometry.header.vertex_count) {
-            throw std::runtime_error("geometry index exceeds vertex count");
+    for (uint32_t draw_index = 0;
+         draw_index < geometry.draw_index_count;
+         ++draw_index) {
+        const uint32_t index = geometry.indices[
+            geometry.header.first_index + draw_index];
+        const int64_t vertex =
+            static_cast<int64_t>(index) + geometry.capture.base_vertex;
+        if (vertex < 0 ||
+            vertex >= static_cast<int64_t>(geometry.header.vertex_count)) {
+            throw std::runtime_error("draw index exceeds vertex range");
         }
     }
     return geometry;
@@ -1023,6 +1118,124 @@ void require_native_submission_gate(const std::filesystem::path& root) {
     }
 }
 
+double json_number(const std::string& contents, const char* field) {
+    const std::string key = "\"" + std::string(field) + "\"";
+    const size_t key_pos = contents.find(key);
+    if (key_pos == std::string::npos) {
+        throw std::runtime_error(
+            "render target field is missing: " + std::string(field));
+    }
+    const size_t colon = contents.find(':', key_pos + key.size());
+    if (colon == std::string::npos) {
+        throw std::runtime_error("invalid render target JSON");
+    }
+    size_t end = 0;
+    const double value = std::stod(contents.substr(colon + 1), &end);
+    if (end == 0 || !std::isfinite(value)) {
+        throw std::runtime_error(
+            "invalid render target number: " + std::string(field));
+    }
+    return value;
+}
+
+uint32_t json_u32(const std::string& contents, const char* field) {
+    const double value = json_number(contents, field);
+    if (value < 0.0 || value > std::numeric_limits<uint32_t>::max() ||
+        std::floor(value) != value) {
+        throw std::runtime_error(
+            "invalid render target integer: " + std::string(field));
+    }
+    return static_cast<uint32_t>(value);
+}
+
+int32_t json_i32(const std::string& contents, const char* field) {
+    const double value = json_number(contents, field);
+    if (value < std::numeric_limits<int32_t>::min() ||
+        value > std::numeric_limits<int32_t>::max() ||
+        std::floor(value) != value) {
+        throw std::runtime_error(
+            "invalid render target integer: " + std::string(field));
+    }
+    return static_cast<int32_t>(value);
+}
+
+RenderTargetState load_render_target(
+    const std::filesystem::path& root) {
+    RenderTargetState out{};
+    out.viewport_width = out.width;
+    out.viewport_height = out.height;
+    const std::filesystem::path state_path = root / "render_target.json";
+    if (!std::filesystem::is_regular_file(state_path)) return out;
+
+    std::ifstream input(state_path, std::ios::binary);
+    if (!input) {
+        throw std::runtime_error(
+            "cannot open render target state: " + state_path.string());
+    }
+    const std::string contents(
+        (std::istreambuf_iterator<char>(input)),
+        std::istreambuf_iterator<char>());
+    if (contents.find("\"format\": \"SHIFT.D3D9CaptureRenderTarget/1\"") ==
+            std::string::npos ||
+        contents.find("\"ready\": true") == std::string::npos ||
+        contents.find("\"d3d9_y_down\": true") == std::string::npos) {
+        throw std::runtime_error("capture render target state is invalid");
+    }
+    out.width = json_u32(contents, "target_width");
+    out.height = json_u32(contents, "target_height");
+    out.viewport_x = json_i32(contents, "viewport_x");
+    out.viewport_y = json_i32(contents, "viewport_y");
+    out.viewport_width = json_u32(contents, "viewport_width");
+    out.viewport_height = json_u32(contents, "viewport_height");
+    out.d3d_color_format = json_u32(contents, "surface_format");
+    if (out.d3d_color_format == 114u) {
+        out.color_format = VK_FORMAT_R32_SFLOAT;
+    } else {
+        throw std::runtime_error(
+            "unsupported captured D3D9 render-target format: " +
+            std::to_string(out.d3d_color_format));
+    }
+    out.d3d_depth_format = json_u32(contents, "depth_surface_format");
+    if (out.d3d_depth_format == 75u) {
+        out.depth_format = VK_FORMAT_D24_UNORM_S8_UINT;
+        out.depth_aspect =
+            VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    } else if (out.d3d_depth_format != 0u) {
+        throw std::runtime_error(
+            "unsupported captured D3D9 depth format: " +
+            std::to_string(out.d3d_depth_format));
+    }
+    if (out.d3d_depth_format != 0u &&
+        (json_u32(contents, "depth_surface_width") != out.width ||
+         json_u32(contents, "depth_surface_height") != out.height)) {
+        throw std::runtime_error(
+            "captured color and depth surface dimensions do not match");
+    }
+    out.min_depth = static_cast<float>(json_number(contents, "min_depth"));
+    out.max_depth = static_cast<float>(json_number(contents, "max_depth"));
+    out.d3d9_y_down = true;
+    out.captured = true;
+    out.clear_color_argb = json_u32(contents, "clear_color_argb");
+    out.clear_depth = static_cast<float>(json_number(contents, "clear_depth"));
+    out.clear_stencil = json_u32(contents, "clear_stencil");
+    out.clear_flags = json_u32(contents, "clear_flags");
+    if (out.width == 0 || out.height == 0 ||
+        out.viewport_width == 0 || out.viewport_height == 0 ||
+        out.viewport_x < 0 || out.viewport_y < 0 ||
+        static_cast<uint64_t>(out.viewport_x) + out.viewport_width > out.width ||
+        static_cast<uint64_t>(out.viewport_y) + out.viewport_height > out.height ||
+        out.min_depth < 0.0f || out.max_depth > 1.0f ||
+        out.min_depth > out.max_depth ||
+        out.clear_depth < 0.0f || out.clear_depth > 1.0f ||
+        (out.clear_flags & 0x3u) != 0x3u ||
+        out.width > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()) ||
+        out.height > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()) ||
+        out.viewport_height > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())) {
+        throw std::runtime_error("capture render target bounds are invalid");
+    }
+    return out;
+}
+
 PipelineState load_pipeline_state(
     const std::filesystem::path& root) {
     PipelineState out{};
@@ -1152,18 +1365,38 @@ VkCullModeFlags load_pipeline_cull_mode(
 
 void write_ppm(
     const std::filesystem::path& path,
-    const std::vector<uint8_t>& rgba) {
+    const std::vector<uint8_t>& texels,
+    uint32_t width,
+    uint32_t height,
+    VkFormat format) {
 
-    if (rgba.size() != static_cast<size_t>(kRenderWidth) * kRenderHeight * 4) {
+    if (texels.size() != static_cast<size_t>(width) * height * 4) {
         throw std::runtime_error("readback size mismatch");
     }
     std::ofstream output(path, std::ios::binary);
     if (!output) throw std::runtime_error("cannot open output PPM");
-    output << "P6\n" << kRenderWidth << " " << kRenderHeight << "\n255\n";
-    for (size_t i = 0; i < rgba.size(); i += 4) {
-        output.put(static_cast<char>(rgba[i]));
-        output.put(static_cast<char>(rgba[i + 1]));
-        output.put(static_cast<char>(rgba[i + 2]));
+    output << "P6\n" << width << " " << height << "\n255\n";
+    if (format == VK_FORMAT_R32_SFLOAT) {
+        for (size_t i = 0; i < texels.size(); i += sizeof(float)) {
+            float value = 0.0f;
+            std::memcpy(&value, texels.data() + i, sizeof(value));
+            const uint8_t display = std::isfinite(value)
+                ? static_cast<uint8_t>(std::lround(
+                      std::clamp(value, 0.0f, 1.0f) * 255.0f))
+                : 0u;
+            output.put(static_cast<char>(display));
+            output.put(static_cast<char>(display));
+            output.put(static_cast<char>(display));
+        }
+        return;
+    }
+    if (format != VK_FORMAT_R8G8B8A8_UNORM) {
+        throw std::runtime_error("unsupported PPM readback format");
+    }
+    for (size_t i = 0; i < texels.size(); i += 4) {
+        output.put(static_cast<char>(texels[i]));
+        output.put(static_cast<char>(texels[i + 1]));
+        output.put(static_cast<char>(texels[i + 2]));
     }
 }
 
@@ -1237,6 +1470,7 @@ int main(int argc, char** argv) {
         require_native_submission_gate(root);
         const PipelineState pipeline_state =
             load_pipeline_state(root);
+        const RenderTargetState render_target = load_render_target(root);
         Geometry geometry = load_geometry(root / "geometry.svpk");
         const WorldTransformExecution world_transform =
             apply_world_transform_affine(root, geometry);
@@ -1266,7 +1500,7 @@ int main(int argc, char** argv) {
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             vertex_buffer);
         create_buffer(
-            ctx, geometry.indices.size() * sizeof(uint32_t),
+            ctx, geometry.index_data.size(),
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             index_buffer);
@@ -1288,12 +1522,10 @@ int main(int argc, char** argv) {
 
         check(vkMapMemory(
             ctx.device, index_buffer.memory, 0,
-            geometry.indices.size() * sizeof(uint32_t), 0, &mapped),
+            geometry.index_data.size(), 0, &mapped),
             "map index buffer failed");
         std::memcpy(
-            mapped,
-            geometry.indices.data(),
-            geometry.indices.size() * sizeof(uint32_t));
+            mapped, geometry.index_data.data(), geometry.index_data.size());
         vkUnmapMemory(ctx.device, index_buffer.memory);
 
         check(vkMapMemory(
@@ -1534,36 +1766,53 @@ int main(int argc, char** argv) {
                 nullptr);
         }
 
+        VkFormatProperties color_props{};
+        vkGetPhysicalDeviceFormatProperties(
+            ctx.physical, render_target.color_format, &color_props);
+        const VkFormatFeatureFlags color_features =
+            VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT |
+            VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
+        if ((color_props.optimalTilingFeatures & color_features) !=
+            color_features) {
+            throw std::runtime_error(
+                "captured color format lacks attachment/readback support");
+        }
         create_image(
-            ctx, kRenderWidth, kRenderHeight, 1, VK_FORMAT_R8G8B8A8_UNORM, 0,
+            ctx, render_target.width, render_target.height, 1,
+            render_target.color_format, 0,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
             color);
 
-        const VkFormat depth_format = VK_FORMAT_D32_SFLOAT;
         VkFormatProperties depth_props{};
         vkGetPhysicalDeviceFormatProperties(
-            ctx.physical, depth_format, &depth_props);
+            ctx.physical, render_target.depth_format, &depth_props);
         if ((depth_props.optimalTilingFeatures &
              VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
-            throw std::runtime_error("VK_FORMAT_D32_SFLOAT depth attachment unsupported");
+            throw std::runtime_error(
+                "captured depth format is not a supported attachment");
         }
         create_image(
-            ctx, kRenderWidth, kRenderHeight, 1, depth_format, 0,
+            ctx, render_target.width, render_target.height, 1,
+            render_target.depth_format, 0,
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-            depth, VK_IMAGE_ASPECT_DEPTH_BIT);
+            depth, render_target.depth_aspect);
 
         VkAttachmentDescription attachments[2]{};
-        attachments[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+        attachments[0].format = render_target.color_format;
         attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
         attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         attachments[0].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        attachments[1].format = depth_format;
+        attachments[1].format = render_target.depth_format;
         attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
         attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[1].stencilLoadOp =
+            (render_target.depth_aspect & VK_IMAGE_ASPECT_STENCIL_BIT) != 0 &&
+                    (render_target.clear_flags & 4u) != 0
+                ? VK_ATTACHMENT_LOAD_OP_CLEAR
+                : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -1616,8 +1865,8 @@ int main(int argc, char** argv) {
         framebuffer_info.renderPass = render_pass;
         framebuffer_info.attachmentCount = 2;
         framebuffer_info.pAttachments = framebuffer_attachments;
-        framebuffer_info.width = kRenderWidth;
-        framebuffer_info.height = kRenderHeight;
+        framebuffer_info.width = render_target.width;
+        framebuffer_info.height = render_target.height;
         framebuffer_info.layers = 1;
         check(vkCreateFramebuffer(
             ctx.device, &framebuffer_info, nullptr, &framebuffer),
@@ -1675,12 +1924,28 @@ int main(int argc, char** argv) {
         input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
         VkViewport viewport{};
-        viewport.width = static_cast<float>(kRenderWidth);
-        viewport.height = static_cast<float>(kRenderHeight);
-        viewport.maxDepth = 1.0f;
+        viewport.x = static_cast<float>(render_target.viewport_x);
+        viewport.y = static_cast<float>(
+            render_target.viewport_y +
+            (render_target.d3d9_y_down
+                 ? static_cast<int32_t>(render_target.viewport_height)
+                 : 0));
+        viewport.width = static_cast<float>(render_target.viewport_width);
+        viewport.height = static_cast<float>(render_target.d3d9_y_down
+            ? -static_cast<int32_t>(render_target.viewport_height)
+            : static_cast<int32_t>(render_target.viewport_height));
+        viewport.minDepth = render_target.min_depth;
+        viewport.maxDepth = render_target.max_depth;
 
         VkRect2D scissor{};
-        scissor.extent = {kRenderWidth, kRenderHeight};
+        scissor.offset = {
+            render_target.viewport_x,
+            render_target.viewport_y,
+        };
+        scissor.extent = {
+            render_target.viewport_width,
+            render_target.viewport_height,
+        };
 
         VkPipelineViewportStateCreateInfo viewport_state{};
         viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -1719,8 +1984,10 @@ int main(int argc, char** argv) {
             pipeline_state.dst_alpha_blend_factor;
         blend_attachment.alphaBlendOp = pipeline_state.alpha_blend_op;
         blend_attachment.colorWriteMask =
-            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-            VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+            render_target.color_format == VK_FORMAT_R32_SFLOAT
+                ? VK_COLOR_COMPONENT_R_BIT
+                : VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                      VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
         VkPipelineColorBlendStateCreateInfo blend{};
         blend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -1754,7 +2021,7 @@ int main(int argc, char** argv) {
             "vkCreateGraphicsPipelines failed");
 
         create_buffer(
-            ctx, static_cast<VkDeviceSize>(kRenderWidth) * kRenderHeight * 4u,
+            ctx, static_cast<VkDeviceSize>(render_target.width) * render_target.height * 4u,
             VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             readback);
@@ -1849,25 +2116,37 @@ int main(int argc, char** argv) {
         pass.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         pass.renderPass = render_pass;
         pass.framebuffer = framebuffer;
-        pass.renderArea.extent = {kRenderWidth, kRenderHeight};
+        pass.renderArea.extent = {render_target.width, render_target.height};
 
         VkClearValue clear[2]{};
-        clear[0].color.float32[0] = 0.02f;
-        clear[0].color.float32[1] = 0.02f;
-        clear[0].color.float32[2] = 0.02f;
-        clear[0].color.float32[3] = 1.0f;
-        clear[1].depthStencil.depth = 1.0f;
+        if (render_target.captured) {
+            clear[0].color.float32[0] =
+                static_cast<float>((render_target.clear_color_argb >> 16) & 0xffu) / 255.0f;
+            clear[0].color.float32[1] =
+                static_cast<float>((render_target.clear_color_argb >> 8) & 0xffu) / 255.0f;
+            clear[0].color.float32[2] =
+                static_cast<float>(render_target.clear_color_argb & 0xffu) / 255.0f;
+            clear[0].color.float32[3] =
+                static_cast<float>((render_target.clear_color_argb >> 24) & 0xffu) / 255.0f;
+        } else {
+            clear[0].color.float32[0] = 0.02f;
+            clear[0].color.float32[1] = 0.02f;
+            clear[0].color.float32[2] = 0.02f;
+            clear[0].color.float32[3] = 1.0f;
+        }
+        clear[1].depthStencil.depth = render_target.clear_depth;
+        clear[1].depthStencil.stencil = render_target.clear_stencil;
         pass.clearValueCount = 2;
         pass.pClearValues = clear;
 
         vkCmdBeginRenderPass(command, &pass, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(
             command, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-        VkDeviceSize offset = 0;
+        VkDeviceSize offset = geometry.capture.vertex_buffer_offset;
         vkCmdBindVertexBuffers(
             command, 0, 1, &vertex_buffer.handle, &offset);
         vkCmdBindIndexBuffer(
-            command, index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
+            command, index_buffer.handle, 0, geometry.index_type);
         vkCmdBindDescriptorSets(
             command, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
             0, 1, &set0, 0, nullptr);
@@ -1878,17 +2157,17 @@ int main(int argc, char** argv) {
         }
         vkCmdDrawIndexed(
             command,
-            geometry.header.index_count,
+            geometry.draw_index_count,
             1,
             geometry.header.first_index,
-            0,
+            geometry.capture.base_vertex,
             0);
         vkCmdEndRenderPass(command);
 
         VkBufferImageCopy read{};
         read.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         read.imageSubresource.layerCount = 1;
-        read.imageExtent = {kRenderWidth, kRenderHeight, 1};
+        read.imageExtent = {render_target.width, render_target.height, 1};
         vkCmdCopyImageToBuffer(
             command,
             color.handle,
@@ -1908,7 +2187,7 @@ int main(int argc, char** argv) {
         check(vkQueueWaitIdle(ctx.queue), "vkQueueWaitIdle failed");
 
         std::vector<uint8_t> rgba(
-            static_cast<size_t>(kRenderWidth) * kRenderHeight * 4u);
+            static_cast<size_t>(render_target.width) * render_target.height * 4u);
         check(vkMapMemory(
             ctx.device, readback.memory, 0, rgba.size(), 0, &mapped),
             "map readback failed");
@@ -1917,7 +2196,9 @@ int main(int argc, char** argv) {
         if (!output.parent_path().empty()) {
             std::filesystem::create_directories(output.parent_path());
         }
-        write_ppm(output, rgba);
+        write_ppm(
+            output, rgba, render_target.width, render_target.height,
+            render_target.color_format);
 
         VkPhysicalDeviceProperties props{};
         vkGetPhysicalDeviceProperties(ctx.physical, &props);
@@ -1960,6 +2241,27 @@ int main(int argc, char** argv) {
         std::cout << "  \"device\": \"" << props.deviceName << "\",\n";
         std::cout << "  \"vertex_count\": " << geometry.header.vertex_count << ",\n";
         std::cout << "  \"index_count\": " << geometry.header.index_count << ",\n";
+        std::cout << "  \"draw_index_count\": " << geometry.draw_index_count << ",\n";
+        std::cout << "  \"index_type\": \""
+                  << (geometry.index_type == VK_INDEX_TYPE_UINT16
+                          ? "VK_INDEX_TYPE_UINT16"
+                          : "VK_INDEX_TYPE_UINT32") << "\",\n";
+        std::cout << "  \"first_index\": " << geometry.header.first_index << ",\n";
+        std::cout << "  \"base_vertex\": " << geometry.capture.base_vertex << ",\n";
+        std::cout << "  \"render_target_width\": " << render_target.width << ",\n";
+        std::cout << "  \"render_target_height\": " << render_target.height << ",\n";
+        std::cout << "  \"d3d_render_target_format\": "
+                  << render_target.d3d_color_format << ",\n";
+        std::cout << "  \"render_target_format\": \""
+                  << (render_target.color_format == VK_FORMAT_R32_SFLOAT
+                          ? "VK_FORMAT_R32_SFLOAT"
+                          : "VK_FORMAT_R8G8B8A8_UNORM") << "\",\n";
+        std::cout << "  \"d3d_depth_format\": "
+                  << render_target.d3d_depth_format << ",\n";
+        std::cout << "  \"depth_attachment_format\": \""
+                  << (render_target.depth_format == VK_FORMAT_D24_UNORM_S8_UINT
+                          ? "VK_FORMAT_D24_UNORM_S8_UINT"
+                          : "VK_FORMAT_D32_SFLOAT") << "\",\n";
         std::cout << "  \"texture_count\": " << textures.size() << ",\n";
         std::cout << "  \"has_cube\": " << (has_cube ? "true" : "false") << ",\n";
         std::cout << "  \"world_transform_present\": "
