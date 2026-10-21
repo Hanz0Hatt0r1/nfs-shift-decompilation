@@ -1,3 +1,4 @@
+import hashlib
 import json
 import struct
 import sys
@@ -8,6 +9,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src" / "render" / "vulkan"))
 import vulkan_d3d9_capture_bundle as capture_bundle
+from vulkan_texture_packet import HEADER as SVTP_HEADER, RECORD as SVTP_RECORD
 from vulkan_d3d9_capture_bundle import (
     CAPTURE_GEOMETRY,
     GEOMETRY_ATTRIBUTE,
@@ -201,6 +203,98 @@ def test_capture_pipeline_preserves_separate_alpha_blend_factors():
 def test_capture_rejects_unknown_mip_filter():
     with pytest.raises(ValueError, match="sampler value is unsupported"):
         _sampler_state({1: 1, 2: 1, 5: 2, 6: 2, 7: 6})
+
+
+
+def test_managed_dxt3_retail_shape_transcodes_to_vulkan_rgba8_packet(tmp_path):
+    # Synthetic block contents, retail-observed storage geometry (event 37037):
+    # DXT3 512x512, block-row pitch 2048, byte_size 262144, one mip.
+    # This does NOT reconstruct or verify the retail payload SHA-256.
+    width = height = 512
+    block_pitch = (width // 4) * 16
+    compressed_size = block_pitch * (height // 4)
+    assert block_pitch == 2048
+    assert compressed_size == 262144
+    block = bytes([0x8F] * 8) + struct.pack(
+        "<HHI", 0x001F, 0x07E0, 0xFFFFFFFF
+    )
+    payload = block * (compressed_size // len(block))
+    assert len(payload) == compressed_size
+
+    header = bytearray(128)
+    header[:4] = b"DDS "
+    for offset, value in (
+        (4, 124), (8, 0xA1007), (12, height), (16, width),
+        (20, compressed_size), (28, 1), (76, 32), (80, 4),
+        (84, 0x33545844), (108, 0x1000),
+    ):
+        struct.pack_into("<I", header, offset, value)
+    dds = bytes(header) + payload
+
+    root = tmp_path / "guest"
+    (root / "textures").mkdir(parents=True)
+    (root / "textures" / "dxt3.dds").write_bytes(dds)
+    state = {
+        "textures": {0: {
+            "snapshot_status": "captured",
+            "snapshot_paths": ["textures/dxt3.dds"],
+        }},
+        "sampler_states": {0: {
+            1: 1, 2: 1, 5: 2, 6: 2, 7: 0, 11: 1,
+        }},
+    }
+    output = tmp_path / "textures.svtp"
+    result, provenance, samplers = _capture_texture_packet(
+        state, root,
+        SimpleNamespace(samplers=[0], sampler_types={0: "sampler2D"}),
+        output,
+    )
+
+    assert result["texture_count"] == 1
+    assert provenance[0]["texture_sha256"] == hashlib.sha256(dds).hexdigest()
+    assert provenance[0]["texture_mipmaps"] == 1
+    assert samplers[0]["srgb"] is True
+    packet = output.read_bytes()
+    assert SVTP_HEADER.unpack_from(packet)[:4] == (b"SVTP", 1, 1, 1)
+    register, w, h, offset, size, mode = SVTP_RECORD.unpack_from(
+        packet, SVTP_HEADER.size
+    )
+    assert (register, w, h, offset, size, mode) == (
+        0, 512, 512, SVTP_HEADER.size + SVTP_RECORD.size, 512 * 512 * 4, 10
+    )
+    # BC2/DXT3 must use the four-color palette even when endpoint0 < endpoint1.
+    # Alpha nibbles 0xF and 0x8 survive the RGBA8 transcode.
+    assert packet[offset:offset + 8] == bytes(
+        (0, 170, 85, 255, 0, 170, 85, 136)
+    )
+    assert len(packet) == offset + size
+
+
+def test_managed_dxt3_truncated_payload_fails_before_vulkan_packet(tmp_path):
+    header = bytearray(128)
+    header[:4] = b"DDS "
+    for offset, value in (
+        (4, 124), (12, 4), (16, 4), (28, 1),
+        (76, 32), (80, 4), (84, 0x33545844),
+    ):
+        struct.pack_into("<I", header, offset, value)
+    root = tmp_path / "guest"
+    (root / "textures").mkdir(parents=True)
+    (root / "textures" / "partial.dds").write_bytes(bytes(header) + bytes(15))
+    output = tmp_path / "partial.svtp"
+    with pytest.raises(ValueError, match="block-compressed pixel payload is truncated"):
+        _capture_texture_packet(
+            {"textures": {0: {
+                "snapshot_status": "captured",
+                "snapshot_paths": ["textures/partial.dds"],
+            }}, "sampler_states": {0: {
+                1: 1, 2: 1, 5: 2, 6: 2, 7: 0,
+            }}},
+            root,
+            SimpleNamespace(samplers=[0], sampler_types={0: "sampler2D"}),
+            output,
+        )
+    assert not output.exists()
 
 
 def test_capture_texture_packet_preserves_all_used_pixel_sampler_registers(tmp_path, monkeypatch):
