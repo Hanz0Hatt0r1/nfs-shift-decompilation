@@ -166,6 +166,14 @@ std::vector<uint8_t> dds_bytes(const runtime::RecompiledGuestD3d9TextureBinding&
     if (!compressed && bytes_per_pixel == 0) {
         throw std::runtime_error("unsupported guest texture format in Vulkan packet adapter");
     }
+    uint32_t full_mip_count = 1;
+    for (uint32_t dimension = std::max(texture.width, texture.height);
+         dimension > 1; dimension >>= 1) {
+        ++full_mip_count;
+    }
+    if (texture.levels > full_mip_count) {
+        throw std::runtime_error("guest texture has more than a full mip chain");
+    }
 
     std::vector<uint8_t> pixels;
     uint32_t expected_width = texture.width;
@@ -197,6 +205,10 @@ std::vector<uint8_t> dds_bytes(const runtime::RecompiledGuestD3d9TextureBinding&
                 throw std::runtime_error("guest texture top mip exceeds DDS size fields");
             }
             top_size = static_cast<uint32_t>(mip.bytes.size());
+        }
+        constexpr size_t kMaxGuestTextureSnapshot = 64ull * 1024ull * 1024ull;
+        if (mip.bytes.size() > kMaxGuestTextureSnapshot - pixels.size()) {
+            throw std::runtime_error("guest managed texture exceeds P1 snapshot ceiling");
         }
         pixels.insert(pixels.end(), mip.bytes.begin(), mip.bytes.end());
         expected_width = std::max(1u, expected_width >> 1);
