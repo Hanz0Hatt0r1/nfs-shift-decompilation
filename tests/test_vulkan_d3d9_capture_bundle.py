@@ -157,6 +157,28 @@ def test_packet_float_constant_dwords_and_masks_survive_capture_packet(tmp_path)
     assert draw["vertex_float_constant_set_mask"][0] == 1
 
 
+
+def test_hresult_only_packet_keeps_exact_float_bits_without_fabricating_writes(
+    tmp_path
+):
+    vertex_bits = [0x7fc12345, 0x80000000, 0, 0] + [0] * (256 * 4 - 4)
+    pixel_bits = [0] * (224 * 4)
+    capture = tmp_path / "capture.jsonl"
+    capture.write_text(json.dumps({
+        "event": "draw_indexed_primitive", "event_index": 0, "frame": 0,
+        "process_id": 1, "device_ptr": "dev",
+        "vertex_float_constants_bits": vertex_bits,
+        "pixel_float_constants_bits": pixel_bits,
+    }) + "\n", encoding="utf-8")
+    draw, state = _read_events(capture, 0)
+    assert draw["vertex_float_constants_bits"][:2] == vertex_bits[:2]
+    assert state["packet_constant_snapshot"]["vertex"]["values_bits"][:2] == vertex_bits[:2]
+    assert state["packet_constant_snapshot"]["vertex"]["set_mask"] is None
+    assert state["constant_registers"]["vertex"] == set()
+    with pytest.raises(ValueError, match="validity masks are missing"):
+        capture_bundle.build_vulkan_capture_bundle(capture, 0, tmp_path / "bundle")
+
+
 def test_capture_bundle_uses_deferred_buffer_payload_captured_before_draw(tmp_path):
     rows = [
         {"event_index": 0, "frame": 2, "process_id": 1, "event": "create_vertex_buffer", "vertex_buffer_ptr": "vb"},
