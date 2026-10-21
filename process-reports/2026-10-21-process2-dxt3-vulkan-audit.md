@@ -76,5 +76,5 @@ For **render admission / actual DIP** additionally need, together in **one order
 - `src/render/texture_reference.py` (`_decode_dxt1_block`, `_decode_dxt3_block`, `_decode_dxt5_block`, `decode_dds`)
 - `src/render/vulkan/vulkan_d3d9_capture_bundle.py` (`_capture_texture_packet`, clear/constant gates)
 - `src/render/vulkan/vulkan_texture_packet.py` (SVTP/1 RGBA8 serialization)
-- `native_vulkan/include/shift_vulkan_texture_sampler.hpp`, `native_vulkan/src/vulkan_bundle_execute.cpp` (Vulkan RGBA8 UNORM/SRGB consumer)
+- `native_vulkan/src/vulkan_texture_sampler.hpp`, `native_vulkan/src/vulkan_bundle_execute.cpp` (Vulkan RGBA8 UNORM/SRGB consumer)
 - `tests/test_texture_reference.py`, `tests/test_vulkan_d3d9_capture_bundle.py` (P2 regressions)
