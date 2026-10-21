@@ -44,6 +44,8 @@ def test_native_vulkan_bundle_executor_contract():
     assert "geometry.header.version != 4" in source
     assert "VK_INDEX_TYPE_UINT16" in source
     assert "VK_FORMAT_R32_SFLOAT" in source
+    assert "VK_FORMAT_B8G8R8A8_UNORM" in source
+    assert "VK_FORMAT_R16G16B16A16_SFLOAT" in source
     assert "VK_FORMAT_D24_UNORM_S8_UINT" in source
     assert "VK_FORMAT_FEATURE_TRANSFER_SRC_BIT" in source
     assert "d3d_render_target_format" in source

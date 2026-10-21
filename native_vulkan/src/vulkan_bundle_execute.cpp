@@ -1188,7 +1188,11 @@ RenderTargetState load_render_target(
     out.viewport_width = json_u32(contents, "viewport_width");
     out.viewport_height = json_u32(contents, "viewport_height");
     out.d3d_color_format = json_u32(contents, "surface_format");
-    if (out.d3d_color_format == 114u) {
+    if (out.d3d_color_format == 21u) {
+        out.color_format = VK_FORMAT_B8G8R8A8_UNORM;
+    } else if (out.d3d_color_format == 113u) {
+        out.color_format = VK_FORMAT_R16G16B16A16_SFLOAT;
+    } else if (out.d3d_color_format == 114u) {
         out.color_format = VK_FORMAT_R32_SFLOAT;
     } else {
         throw std::runtime_error(
@@ -1363,6 +1367,54 @@ VkCullModeFlags load_pipeline_cull_mode(
     return load_pipeline_state(root).cull_mode;
 }
 
+uint32_t readback_bytes_per_pixel(VkFormat format) {
+    switch (format) {
+    case VK_FORMAT_R32_SFLOAT:
+    case VK_FORMAT_R8G8B8A8_UNORM:
+    case VK_FORMAT_B8G8R8A8_UNORM:
+        return 4;
+    case VK_FORMAT_R16G16B16A16_SFLOAT:
+        return 8;
+    default:
+        throw std::runtime_error("unsupported render-target readback format");
+    }
+}
+
+const char* render_target_format_name(VkFormat format) {
+    switch (format) {
+    case VK_FORMAT_R32_SFLOAT: return "VK_FORMAT_R32_SFLOAT";
+    case VK_FORMAT_R8G8B8A8_UNORM: return "VK_FORMAT_R8G8B8A8_UNORM";
+    case VK_FORMAT_B8G8R8A8_UNORM: return "VK_FORMAT_B8G8R8A8_UNORM";
+    case VK_FORMAT_R16G16B16A16_SFLOAT:
+        return "VK_FORMAT_R16G16B16A16_SFLOAT";
+    default: return "VK_FORMAT_UNDEFINED";
+    }
+}
+
+float half_to_float(uint16_t half) {
+    const float sign = (half & 0x8000u) != 0 ? -1.0f : 1.0f;
+    const uint32_t exponent = (half >> 10) & 0x1fu;
+    const uint32_t mantissa = half & 0x03ffu;
+    if (exponent == 0) {
+        return sign * std::ldexp(static_cast<float>(mantissa), -24);
+    }
+    if (exponent == 0x1fu) {
+        return mantissa == 0
+            ? sign * std::numeric_limits<float>::infinity()
+            : std::numeric_limits<float>::quiet_NaN();
+    }
+    return sign * std::ldexp(
+        static_cast<float>(0x0400u + mantissa),
+        static_cast<int>(exponent) - 25);
+}
+
+uint8_t display_channel(float value) {
+    return std::isfinite(value)
+        ? static_cast<uint8_t>(std::lround(
+              std::clamp(value, 0.0f, 1.0f) * 255.0f))
+        : 0u;
+}
+
 void write_ppm(
     const std::filesystem::path& path,
     const std::vector<uint8_t>& texels,
@@ -1370,33 +1422,39 @@ void write_ppm(
     uint32_t height,
     VkFormat format) {
 
-    if (texels.size() != static_cast<size_t>(width) * height * 4) {
+    const size_t pixel_count = static_cast<size_t>(width) * height;
+    if (texels.size() != pixel_count * readback_bytes_per_pixel(format)) {
         throw std::runtime_error("readback size mismatch");
     }
     std::ofstream output(path, std::ios::binary);
     if (!output) throw std::runtime_error("cannot open output PPM");
     output << "P6\n" << width << " " << height << "\n255\n";
     if (format == VK_FORMAT_R32_SFLOAT) {
-        for (size_t i = 0; i < texels.size(); i += sizeof(float)) {
+        for (size_t i = 0; i < pixel_count; ++i) {
             float value = 0.0f;
-            std::memcpy(&value, texels.data() + i, sizeof(value));
-            const uint8_t display = std::isfinite(value)
-                ? static_cast<uint8_t>(std::lround(
-                      std::clamp(value, 0.0f, 1.0f) * 255.0f))
-                : 0u;
+            std::memcpy(&value, texels.data() + i * sizeof(float), sizeof(value));
+            const uint8_t display = display_channel(value);
             output.put(static_cast<char>(display));
             output.put(static_cast<char>(display));
             output.put(static_cast<char>(display));
         }
         return;
     }
-    if (format != VK_FORMAT_R8G8B8A8_UNORM) {
-        throw std::runtime_error("unsupported PPM readback format");
-    }
-    for (size_t i = 0; i < texels.size(); i += 4) {
-        output.put(static_cast<char>(texels[i]));
-        output.put(static_cast<char>(texels[i + 1]));
-        output.put(static_cast<char>(texels[i + 2]));
+    for (size_t pixel = 0; pixel < pixel_count; ++pixel) {
+        if (format == VK_FORMAT_R16G16B16A16_SFLOAT) {
+            const auto offset = texels.data() + pixel * 8;
+            for (size_t channel = 0; channel < 3; ++channel) {
+                uint16_t half = 0;
+                std::memcpy(&half, offset + channel * sizeof(half), sizeof(half));
+                output.put(static_cast<char>(display_channel(half_to_float(half))));
+            }
+        } else {
+            const auto offset = texels.data() + pixel * 4;
+            const bool bgra = format == VK_FORMAT_B8G8R8A8_UNORM;
+            output.put(static_cast<char>(offset[bgra ? 2 : 0]));
+            output.put(static_cast<char>(offset[1]));
+            output.put(static_cast<char>(offset[bgra ? 0 : 2]));
+        }
     }
 }
 
@@ -2020,8 +2078,11 @@ int main(int argc, char** argv) {
             ctx.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline),
             "vkCreateGraphicsPipelines failed");
 
+        const VkDeviceSize readback_size =
+            static_cast<VkDeviceSize>(render_target.width) * render_target.height *
+            readback_bytes_per_pixel(render_target.color_format);
         create_buffer(
-            ctx, static_cast<VkDeviceSize>(render_target.width) * render_target.height * 4u,
+            ctx, readback_size,
             VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             readback);
@@ -2186,18 +2247,17 @@ int main(int argc, char** argv) {
             "vkQueueSubmit failed");
         check(vkQueueWaitIdle(ctx.queue), "vkQueueWaitIdle failed");
 
-        std::vector<uint8_t> rgba(
-            static_cast<size_t>(render_target.width) * render_target.height * 4u);
+        std::vector<uint8_t> readback_bytes(static_cast<size_t>(readback_size));
         check(vkMapMemory(
-            ctx.device, readback.memory, 0, rgba.size(), 0, &mapped),
+            ctx.device, readback.memory, 0, readback_size, 0, &mapped),
             "map readback failed");
-        std::memcpy(rgba.data(), mapped, rgba.size());
+        std::memcpy(readback_bytes.data(), mapped, readback_bytes.size());
         vkUnmapMemory(ctx.device, readback.memory);
         if (!output.parent_path().empty()) {
             std::filesystem::create_directories(output.parent_path());
         }
         write_ppm(
-            output, rgba, render_target.width, render_target.height,
+            output, readback_bytes, render_target.width, render_target.height,
             render_target.color_format);
 
         VkPhysicalDeviceProperties props{};
@@ -2253,9 +2313,7 @@ int main(int argc, char** argv) {
         std::cout << "  \"d3d_render_target_format\": "
                   << render_target.d3d_color_format << ",\n";
         std::cout << "  \"render_target_format\": \""
-                  << (render_target.color_format == VK_FORMAT_R32_SFLOAT
-                          ? "VK_FORMAT_R32_SFLOAT"
-                          : "VK_FORMAT_R8G8B8A8_UNORM") << "\",\n";
+                  << render_target_format_name(render_target.color_format) << "\",\n";
         std::cout << "  \"d3d_depth_format\": "
                   << render_target.d3d_depth_format << ",\n";
         std::cout << "  \"depth_attachment_format\": \""
