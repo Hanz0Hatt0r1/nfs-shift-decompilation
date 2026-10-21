@@ -16,6 +16,7 @@ from vulkan_d3d9_capture_bundle import (
     _captured_buffer_range,
     _captured_depth_surface,
     _captured_surface_formats,
+    _capture_constants,
     _draw_bool_constants,
     _captured_shader_inputs,
     _captured_stream_frequency_contract,
@@ -60,6 +61,68 @@ def test_draw_bool_constants_require_successful_exact_state_capture():
             "pixel",
             program,
         )
+
+
+def test_packet_bool_constants_use_set_mask_and_dword_truth_value():
+    from shader_asm import Instruction, Operand, ShaderProgram
+
+    program = ShaderProgram(
+        0, 0, "pixel", 3, 0,
+        [Instruction(0, 40, "IF", 0, 1, 0, False, [
+            Operand(token=0, kind="source", reg_type=14, index=0, swizzle="xxxx")
+        ])],
+        inputs=[], outputs=[], samplers=[], constants=[], temps=[],
+        unsupported_opcodes=[], const_ints=[], const_bools=[0], sampler_types={},
+    )
+    packet_draw = {
+        "pixel_bool_constants": [0xffffffff] + [0] * 15,
+        "pixel_bool_constant_set_mask": 1,
+    }
+    assert _draw_bool_constants(packet_draw, "pixel", program) == {0: True}
+
+    packet_draw["pixel_bool_constant_set_mask"] = 0
+    with pytest.raises(ValueError, match="no written pixel boolean register b0"):
+        _draw_bool_constants(packet_draw, "pixel", program)
+
+
+def test_packet_float_constant_dwords_and_masks_survive_capture_packet(tmp_path):
+    vertex_bits = [0x7fc12345, 0x80000000, 0, 0] + [0] * (256 * 4 - 4)
+    pixel_bits = [0] * (224 * 4)
+    rows = [
+        {
+            "event_index": 0,
+            "frame": 0,
+            "process_id": 1,
+            "device_ptr": "dev",
+            "event": "set_vertex_shader_constant_f",
+            "start_register": 0,
+            "vector4f_count": 1,
+            "values_bits": vertex_bits[:4],
+        },
+        {
+            "event_index": 1,
+            "frame": 0,
+            "process_id": 1,
+            "device_ptr": "dev",
+            "event": "draw_indexed_primitive",
+            "vertex_float_constants_bits": vertex_bits,
+            "vertex_float_constant_set_mask": [1] + [0] * 7,
+            "pixel_float_constants_bits": pixel_bits,
+            "pixel_float_constant_set_mask": [0] * 8,
+        },
+    ]
+    capture = tmp_path / "capture.jsonl"
+    capture.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+
+    draw, state = _read_events(capture, 1)
+    assert state["constant_register_bits"]["vertex"][:4] == vertex_bits[:4]
+    assert state["packet_constant_snapshot"]["vertex"]["set_mask"] == [1] + [0] * 7
+    output = tmp_path / "constants.svcp"
+    report = _capture_constants(state, output)
+    payload = output.read_bytes()
+    assert report["vertex_populated"] == 1
+    assert payload[28:44] == struct.pack("<4I", *vertex_bits[:4])
+    assert draw["vertex_float_constant_set_mask"][0] == 1
 
 
 def test_capture_bundle_uses_deferred_buffer_payload_captured_before_draw(tmp_path):
