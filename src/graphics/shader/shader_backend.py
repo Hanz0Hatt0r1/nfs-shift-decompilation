@@ -1,5 +1,6 @@
 from __future__ import annotations
 import json
+import re
 import shutil
 import subprocess
 import tempfile
@@ -146,6 +147,13 @@ def validate_vulkan_glsl_pair(vertex_glsl: str, pixel_glsl: str) -> dict:
         stage_valid = all(value["valid"] for value in stages.values())
         link = {"valid": None, "returncode": None, "stdout": "", "stderr": ""}
         if stage_valid:
+            # Vulkan matches stage interfaces by location, but glslang's source
+            # linker also expects matching identifiers. Normalize only the
+            # temporary linker inputs; the emitted GLSL and SPIR-V stay intact.
+            linked_vertex = _canonicalize_vulkan_interface_names(vertex_glsl, "out")
+            linked_pixel = _canonicalize_vulkan_interface_names(pixel_glsl, "in")
+            vertex_path.write_text(linked_vertex, encoding="utf-8")
+            pixel_path.write_text(linked_pixel, encoding="utf-8")
             linked = subprocess.run(
                 [validator, "-V", "-l", str(vertex_path), str(pixel_path)],
                 text=True,
@@ -177,6 +185,22 @@ def validate_vulkan_glsl_pair(vertex_glsl: str, pixel_glsl: str) -> dict:
         "link": link,
         "blocking_reasons": reasons,
     }
+
+
+def _canonicalize_vulkan_interface_names(glsl: str, direction: str) -> str:
+    """Give matching location-based Vulkan varyings the same linker-only name."""
+    declaration = re.compile(
+        r"(?m)^\s*layout\s*\(\s*location\s*=\s*(?P<location>\d+)\s*\)\s+"
+        r"(?:flat\s+|smooth\s+|noperspective\s+)?(?P<direction>in|out)\s+"
+        r"\w+\s+(?P<name>\w+)\s*;"
+    )
+    for match in list(declaration.finditer(glsl)):
+        if match.group("direction") != direction:
+            continue
+        location = match.group("location")
+        name = match.group("name")
+        glsl = re.sub(rf"\b{re.escape(name)}\b", f"shift_varying_{location}", glsl)
+    return glsl
 
 
 def validate_linked_shader_pair_vulkan(linked_pair: dict) -> dict:
@@ -232,11 +256,36 @@ def translate_pair(
     vertex_properties: list[str | dict] | tuple[str | dict, ...] = (),
 ) -> dict:
     """Translate a matched D3D9 VS/PS pair into a shared GLSL interface."""
-    from shader_interface import build_vertex_input_locations
+    from shader_interface import build_vertex_input_locations, register_index
 
     linkage = build_varying_locations(vertex, pixel)
     if not linkage["valid"]:
         raise ValueError("cannot translate unmatched VS/PS pair to a linked GLSL interface")
+
+    vertex_output_locations = dict(linkage["vertex_output_locations"])
+    position_outputs = {
+        register_index(output.get("register"))
+        for output in vertex.outputs
+        if str(output.get("usage", "")).upper() == "POSITION"
+    }
+    extra_output_registers = {
+        register_index(output.get("register"))
+        for output in vertex.outputs
+        if str(output.get("usage", "")).upper() != "POSITION"
+    }
+    extra_output_registers.update(
+        operand.index
+        for instruction in vertex.instructions
+        for operand in instruction.operands[:1]
+        if operand.kind == "dest" and operand.reg_type == 6
+    )
+    extra_output_registers.discard(None)
+    extra_output_registers.difference_update(position_outputs)
+    extra_output_registers.difference_update(vertex_output_locations)
+    next_output_location = max(vertex_output_locations.values(), default=-1) + 1
+    for register in sorted(extra_output_registers):
+        vertex_output_locations[register] = next_output_location
+        next_output_location += 1
 
     input_linkage = (
         build_vertex_input_locations(vertex, vertex_properties)
@@ -257,7 +306,7 @@ def translate_pair(
         "vertex_glsl": to_glsl(
             vertex,
             input_locations=input_linkage["input_locations"],
-            output_locations=linkage["vertex_output_locations"],
+            output_locations=vertex_output_locations,
             constant_binding=14,
             constant_block_name="ShiftD3D9VertexConstants",
         ),
@@ -270,7 +319,7 @@ def translate_pair(
         "vulkan_vertex_glsl": to_glsl(
             vertex,
             input_locations=input_linkage["input_locations"],
-            output_locations=linkage["vertex_output_locations"],
+            output_locations=vertex_output_locations,
             constant_binding=14,
             constant_block_name="ShiftD3D9VertexConstants",
             target="vulkan",
