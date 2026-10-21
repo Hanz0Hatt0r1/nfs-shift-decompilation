@@ -4951,6 +4951,238 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", created_device_vtable + 92 * 4);
         const uint32_t set_pixel_shader = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 107 * 4);
+        const uint32_t create_vertex_shader = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 91 * 4);
+        const uint32_t get_vertex_shader = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 93 * 4);
+        const uint32_t create_pixel_shader = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 106 * 4);
+        const uint32_t get_pixel_shader = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 108 * 4);
+        constexpr uint32_t vertex_shader_function_address = 0x00406000;
+        constexpr uint32_t pixel_shader_function_address = 0x00406040;
+        constexpr uint32_t vertex_shader_output_address = 0x00406100;
+        constexpr uint32_t pixel_shader_output_address = 0x00406104;
+        constexpr uint32_t shader_get_output_address = 0x00406108;
+        constexpr uint32_t shader_iid_address = 0x00406110;
+        constexpr uint32_t shader_query_output_address = 0x00406120;
+        constexpr uint32_t shader_device_output_address = 0x00406124;
+        constexpr uint32_t shader_function_size_address = 0x00406128;
+        constexpr uint32_t shader_function_output_address = 0x00406140;
+        constexpr std::array<uint32_t, 6> vertex_shader_function = {
+            0xfffe0300, 0x0002fffe, 0x54414243, 0x0000ffff, 0x00000000,
+            0x0000ffff};
+        constexpr std::array<uint32_t, 4> pixel_shader_function = {
+            0xffff0300, 0x0001fffe, 0x54414243, 0x0000ffff};
+        for (size_t index = 0; index < vertex_shader_function.size(); ++index) {
+            write_guest_u32(d3d9_provider_module, "ram",
+                            vertex_shader_function_address + index * 4,
+                            vertex_shader_function[index]);
+        }
+        for (size_t index = 0; index < pixel_shader_function.size(); ++index) {
+            write_guest_u32(d3d9_provider_module, "ram",
+                            pixel_shader_function_address + index * 4,
+                            pixel_shader_function[index]);
+        }
+        write_guest_u32(d3d9_provider_module, "ram",
+                        vertex_shader_output_address, 0x7a7a7a7a);
+        require(invoke_import(d3d9_provider_module, create_vertex_shader,
+                              {created_device, pixel_shader_function_address,
+                               vertex_shader_output_address}) == 0x8876086c &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_shader_output_address) == 0,
+                "CreateVertexShader accepted pixel-stage bytecode or kept a stale output");
+        write_guest_u32(d3d9_provider_module, "ram",
+                        vertex_shader_output_address, 0x7a7a7a7a);
+        write_guest_u32(d3d9_provider_module, "ram",
+                        vertex_shader_function_address, 0);
+        require(invoke_import(d3d9_provider_module, create_vertex_shader,
+                              {created_device, vertex_shader_function_address,
+                               vertex_shader_output_address}) == 0x8876086c &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_shader_output_address) == 0,
+                "CreateVertexShader accepted a malformed version token");
+        write_guest_u32(d3d9_provider_module, "ram",
+                        vertex_shader_function_address,
+                        vertex_shader_function[0]);
+        require(invoke_import(d3d9_provider_module, create_vertex_shader,
+                              {created_device, vertex_shader_function_address,
+                               0xfffffffd}) == 0x8876086c,
+                "CreateVertexShader accepted an out-of-range guest output pointer");
+        require(invoke_import(d3d9_provider_module, create_vertex_shader,
+                              {created_device, vertex_shader_function_address,
+                               vertex_shader_output_address}) == 0 &&
+                    invoke_import(d3d9_provider_module, create_pixel_shader,
+                                  {created_device, pixel_shader_function_address,
+                                   pixel_shader_output_address}) == 0,
+                "D3D9 shader creation rejected bounded SM3 token streams");
+        const uint32_t vertex_shader = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_shader_output_address);
+        const uint32_t pixel_shader = read_guest_u32(
+            d3d9_provider_module, "ram", pixel_shader_output_address);
+        const uint32_t vertex_shader_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_shader);
+        const uint32_t pixel_shader_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", pixel_shader);
+        require(vertex_shader != 0 && pixel_shader != 0 &&
+                    vertex_shader_vtable != 0 && pixel_shader_vtable != 0,
+                "D3D9 shader creation did not initialize both COM objects");
+        const uint32_t vertex_shader_query_interface = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_shader_vtable);
+        const uint32_t vertex_shader_add_ref = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_shader_vtable + 4);
+        const uint32_t vertex_shader_release = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_shader_vtable + 8);
+        const uint32_t vertex_shader_get_device = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_shader_vtable + 3 * 4);
+        const uint32_t vertex_shader_get_function = read_guest_u32(
+            d3d9_provider_module, "ram", vertex_shader_vtable + 4 * 4);
+        const uint32_t pixel_shader_get_function = read_guest_u32(
+            d3d9_provider_module, "ram", pixel_shader_vtable + 4 * 4);
+        const uint32_t pixel_shader_release = read_guest_u32(
+            d3d9_provider_module, "ram", pixel_shader_vtable + 8);
+        require(invoke_import(d3d9_provider_module, vertex_shader_add_ref,
+                              {vertex_shader}) == 2 &&
+                    invoke_import(d3d9_provider_module, vertex_shader_release,
+                                  {vertex_shader}) == 1,
+                "IDirect3DVertexShader9 reference count did not round-trip");
+        constexpr std::array<uint8_t, 16> iid_vertex_shader = {
+            0x7e, 0x55, 0xc5, 0xef, 0x65, 0x62, 0x13, 0x46,
+            0x8a, 0x94, 0x43, 0x85, 0x78, 0x89, 0xeb, 0x36};
+        write_guest_bytes(d3d9_provider_module, shader_iid_address,
+                          iid_vertex_shader.data(), iid_vertex_shader.size());
+        write_guest_u32(d3d9_provider_module, "ram",
+                        shader_query_output_address, 0x7a7a7a7a);
+        require(invoke_import(d3d9_provider_module,
+                              vertex_shader_query_interface,
+                              {vertex_shader, shader_iid_address,
+                               shader_query_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   shader_query_output_address) == vertex_shader &&
+                    invoke_import(d3d9_provider_module, vertex_shader_release,
+                                  {vertex_shader}) == 1,
+                "IDirect3DVertexShader9::QueryInterface rejected its own IID");
+        constexpr std::array<uint8_t, 16> iid_shader_unknown = {
+            0, 0, 0, 0, 0, 0, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0x46};
+        write_guest_bytes(d3d9_provider_module, shader_iid_address,
+                          iid_shader_unknown.data(),
+                          iid_shader_unknown.size());
+        write_guest_u32(d3d9_provider_module, "ram",
+                        shader_query_output_address, 0x7a7a7a7a);
+        require(invoke_import(d3d9_provider_module,
+                              vertex_shader_query_interface,
+                              {vertex_shader, shader_iid_address,
+                               shader_query_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   shader_query_output_address) == vertex_shader &&
+                    invoke_import(d3d9_provider_module, vertex_shader_release,
+                                  {vertex_shader}) == 1,
+                "IDirect3DVertexShader9::QueryInterface did not support IUnknown");
+        write_guest_u32(d3d9_provider_module, "ram", shader_function_size_address,
+                        0);
+        require(invoke_import(d3d9_provider_module, vertex_shader_get_function,
+                              {vertex_shader, 0, shader_function_size_address}) ==
+                        0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   shader_function_size_address) ==
+                        vertex_shader_function.size() * sizeof(uint32_t),
+                "GetFunction did not report the stored token stream size");
+        const uint32_t vertex_shader_function_size = read_guest_u32(
+            d3d9_provider_module, "ram", shader_function_size_address);
+        write_guest_u32(d3d9_provider_module, "ram", shader_function_size_address,
+                        vertex_shader_function_size);
+        require(invoke_import(d3d9_provider_module, vertex_shader_get_function,
+                              {vertex_shader, shader_function_output_address,
+                               shader_function_size_address}) == 0,
+                "GetFunction did not copy the stored token stream");
+        for (size_t index = 0; index < vertex_shader_function.size(); ++index) {
+            require(read_guest_u32(d3d9_provider_module, "ram",
+                                   shader_function_output_address + index * 4) ==
+                        vertex_shader_function[index],
+                    "GetFunction changed a shader token during round-trip");
+        }
+        write_guest_u32(d3d9_provider_module, "ram", shader_function_size_address,
+                        vertex_shader_function_size - sizeof(uint32_t));
+        require(invoke_import(d3d9_provider_module, vertex_shader_get_function,
+                              {vertex_shader, shader_function_output_address,
+                               shader_function_size_address}) == 0x8876086c,
+                "GetFunction accepted an undersized output buffer");
+        require(invoke_import(d3d9_provider_module, vertex_shader_get_device,
+                              {vertex_shader, shader_device_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   shader_device_output_address) == created_device &&
+                    invoke_import(d3d9_provider_module, provider_device_release,
+                                  {created_device}) >= 1,
+                "IDirect3DVertexShader9::GetDevice lost its parent device");
+        write_guest_u32(d3d9_provider_module, "ram", shader_function_size_address,
+                        0);
+        require(invoke_import(d3d9_provider_module, pixel_shader_get_function,
+                              {pixel_shader, 0, shader_function_size_address}) ==
+                        0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   shader_function_size_address) ==
+                        pixel_shader_function.size() * sizeof(uint32_t),
+                "pixel GetFunction did not report its token stream size");
+        const uint32_t pixel_shader_function_size = read_guest_u32(
+            d3d9_provider_module, "ram", shader_function_size_address);
+        write_guest_u32(d3d9_provider_module, "ram", shader_function_size_address,
+                        pixel_shader_function_size);
+        constexpr uint32_t pixel_shader_function_output_address = 0x00406160;
+        require(invoke_import(d3d9_provider_module, pixel_shader_get_function,
+                              {pixel_shader,
+                               pixel_shader_function_output_address,
+                               shader_function_size_address}) == 0,
+                "pixel GetFunction did not copy the token stream");
+        for (size_t index = 0; index < pixel_shader_function.size(); ++index) {
+            require(read_guest_u32(
+                        d3d9_provider_module, "ram",
+                        pixel_shader_function_output_address + index * 4) ==
+                        pixel_shader_function[index],
+                    "pixel GetFunction changed a shader token during round-trip");
+        }
+        write_guest_u32(d3d9_provider_module, "ram", shader_get_output_address,
+                        0x7a7a7a7a);
+        require(invoke_import(d3d9_provider_module, set_vertex_shader,
+                              {created_device, vertex_shader}) == 0 &&
+                    invoke_import(d3d9_provider_module, set_vertex_shader,
+                                  {created_device, vertex_shader}) == 0 &&
+                    invoke_import(d3d9_provider_module, set_pixel_shader,
+                                  {created_device, vertex_shader}) == 0x8876086c &&
+                    invoke_import(d3d9_provider_module, get_vertex_shader,
+                                  {created_device, shader_get_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   shader_get_output_address) == vertex_shader &&
+                    invoke_import(d3d9_provider_module, vertex_shader_release,
+                                  {vertex_shader}) == 2,
+                "vertex shader binding, stage validation, or getter ownership failed");
+        require(invoke_import(d3d9_provider_module, vertex_shader_release,
+                              {vertex_shader}) == 1 &&
+                    invoke_import(d3d9_provider_module, set_vertex_shader,
+                                  {created_device, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module, get_vertex_shader,
+                                  {created_device, shader_get_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   shader_get_output_address) == 0,
+                "vertex shader NULL unbind or final Release failed");
+        write_guest_u32(d3d9_provider_module, "ram", shader_get_output_address,
+                        0x7a7a7a7a);
+        require(invoke_import(d3d9_provider_module, set_pixel_shader,
+                              {created_device, pixel_shader}) == 0 &&
+                    invoke_import(d3d9_provider_module, get_pixel_shader,
+                                  {created_device, shader_get_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   shader_get_output_address) == pixel_shader &&
+                    invoke_import(d3d9_provider_module, pixel_shader_release,
+                                  {pixel_shader}) == 2 &&
+                    invoke_import(d3d9_provider_module, pixel_shader_release,
+                                  {pixel_shader}) == 1 &&
+                    invoke_import(d3d9_provider_module, set_pixel_shader,
+                                  {created_device, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module, get_pixel_shader,
+                                  {created_device, shader_get_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   shader_get_output_address) == 0,
+                "pixel shader binding, getter ownership, or NULL unbind failed");
         const uint32_t get_texture = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 64 * 4);
         const uint32_t get_render_target = read_guest_u32(

@@ -1,5 +1,5 @@
 {
-  "format": "SHIFT.Process1D3D9GuestStateEvidence/1",
+  "format": "SHIFT.Process1D3D9GuestStateEvidence/2",
   "date": "2026-10-21",
   "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
   "source_capture": {
@@ -49,6 +49,29 @@
       "primitive_count": 2
     }
   ],
+  "retail_shader_creates": {
+    "frame": 14,
+    "pixel_shader_events": 610,
+    "vertex_shader_events": 598,
+    "distinct_shader_signatures_across_events": 261,
+    "samples": [
+      {
+        "event_index": 368,
+        "stage": "pixel",
+        "resource_signature": "ps:3dcf6b377727e7d6",
+        "byte_length": 144,
+        "version_token": "0xffff0300"
+      },
+      {
+        "event_index": 369,
+        "stage": "vertex",
+        "resource_signature": "vs:bcb0ed2497fbc0d3",
+        "byte_length": 404,
+        "version_token": "0xfffe0300"
+      }
+    ],
+    "interpretation": "The native retail capture records SM3.0 shader token streams for both stages. Event counts include repeated creates and are not counts of unique shader programs; full bytecode is not copied into this repository."
+  },
   "interpretation": "The retail call order exercises the three guest-device state setters before an indexed draw. This is original-game capture evidence, not proof that the recompiled P-code path reached the draw.",
   "pcode_frontier": {
     "v520": {
@@ -71,6 +94,19 @@
       "dispatches": 973437,
       "validation_errors": 0
     },
+    "v664": {
+      "status": "host-frame-loop",
+      "blocker": null,
+      "frames_rendered": 180,
+      "dispatches": 972900,
+      "unique_functions": 3939,
+      "guest_main_thread_function": "0x006472d0",
+      "worker_waiting_count": 2,
+      "validation_errors": 0,
+      "guest_draw_translation": false,
+      "retail_rendering_proven": false,
+      "note": "Compared with v662, the raw dispatch count is lower by 537 while frame and unique-function counts match; the retail frontier comparison labels this as a counter decrease, but dispatch totals are not gameplay evidence."
+    },
     "v663": {
       "status": "timeout",
       "blocker": null,
@@ -78,6 +114,9 @@
     }
   },
   "boundary": {
+    "guest_shader_token_stream_preservation_implemented": true,
+    "shader_compilation_or_translation_implemented": false,
+    "latest_pcode_frontier": "v664 host-frame-loop; frontend/race not confirmed",
     "pcode_frontend_confirmed": false,
     "pcode_race_confirmed": false,
     "dispatch_counts_are_gameplay_evidence": false,

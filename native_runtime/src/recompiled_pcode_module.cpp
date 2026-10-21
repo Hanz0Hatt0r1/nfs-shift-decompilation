@@ -665,6 +665,13 @@ struct RecompiledPcodeModule::Impl {
         uint32_t lock_size = 0;
         bool locked = false;
     };
+    struct GuestD3D9Shader {
+        uint32_t vtable_address = 0;
+        uint32_t device_address = 0;
+        uint32_t references = 1;
+        bool pixel_shader = false;
+        std::vector<uint32_t> function_tokens;
+    };
     struct GuestD3D9VertexDeclaration {
         uint32_t vtable_address = 0;
         uint32_t device_address = 0;
@@ -1849,6 +1856,14 @@ struct RecompiledPcodeModule::Impl {
                 return d3d9_device_set_shader(true);
             if (name == "d3d9.dll!IDirect3DDevice9::SetVertexShader")
                 return d3d9_device_set_shader(false);
+            if (name == "d3d9.dll!IDirect3DDevice9::CreatePixelShader")
+                return d3d9_device_create_shader(true);
+            if (name == "d3d9.dll!IDirect3DDevice9::CreateVertexShader")
+                return d3d9_device_create_shader(false);
+            if (name == "d3d9.dll!IDirect3DDevice9::GetPixelShader")
+                return d3d9_device_get_shader(true);
+            if (name == "d3d9.dll!IDirect3DDevice9::GetVertexShader")
+                return d3d9_device_get_shader(false);
             if (name == "d3d9.dll!IDirect3DDevice9::SetVertexDeclaration")
                 return d3d9_device_set_vertex_declaration();
             if (name == "d3d9.dll!IDirect3DDevice9::GetVertexDeclaration")
@@ -1943,6 +1958,26 @@ struct RecompiledPcodeModule::Impl {
                 return d3d9_vertex_declaration_get_device();
             if (name == "d3d9.dll!IDirect3DVertexDeclaration9::GetDeclaration")
                 return d3d9_vertex_declaration_get_declaration();
+            if (name == "d3d9.dll!IDirect3DVertexShader9::QueryInterface" ||
+                name == "d3d9.dll!IDirect3DPixelShader9::QueryInterface")
+                return d3d9_shader_query_interface(
+                    name == "d3d9.dll!IDirect3DPixelShader9::QueryInterface");
+            if (name == "d3d9.dll!IDirect3DVertexShader9::AddRef" ||
+                name == "d3d9.dll!IDirect3DPixelShader9::AddRef")
+                return d3d9_shader_add_ref(
+                    name == "d3d9.dll!IDirect3DPixelShader9::AddRef");
+            if (name == "d3d9.dll!IDirect3DVertexShader9::Release" ||
+                name == "d3d9.dll!IDirect3DPixelShader9::Release")
+                return d3d9_shader_release(
+                    name == "d3d9.dll!IDirect3DPixelShader9::Release");
+            if (name == "d3d9.dll!IDirect3DVertexShader9::GetDevice" ||
+                name == "d3d9.dll!IDirect3DPixelShader9::GetDevice")
+                return d3d9_shader_get_device(
+                    name == "d3d9.dll!IDirect3DPixelShader9::GetDevice");
+            if (name == "d3d9.dll!IDirect3DVertexShader9::GetFunction" ||
+                name == "d3d9.dll!IDirect3DPixelShader9::GetFunction")
+                return d3d9_shader_get_function(
+                    name == "d3d9.dll!IDirect3DPixelShader9::GetFunction");
             if (name == "d3d9.dll!IDirect3DTexture9::AddRef")
                 return d3d9_texture_add_ref();
             if (name == "d3d9.dll!IDirect3DTexture9::Release")
@@ -6200,6 +6235,173 @@ struct RecompiledPcodeModule::Impl {
         return return_kernel32_dword(1, api, 4);
     }
 
+    bool read_guest_d3d9_shader_function(
+        uint32_t function_address, bool pixel_shader,
+        std::vector<uint32_t>& function_tokens) const {
+        constexpr size_t max_shader_tokens = 1u << 18;
+        constexpr uint32_t d3d_shader_comment = 0xfffe;
+        constexpr uint32_t d3d_shader_end = 0xffff;
+        constexpr uint32_t d3d_shader_defb = 47;
+        constexpr uint32_t d3d_shader_defi = 48;
+        constexpr uint32_t d3d_shader_def = 81;
+        if (function_address < kGuestMinimumUserAddress) return false;
+
+        uint32_t version = 0;
+        if (!read_guest_diagnostic_u32(function_address, version)) return false;
+        const uint32_t version_prefix = version >> 16;
+        if (version_prefix != (pixel_shader ? 0xffffu : 0xfffeu))
+            return false;
+        const uint32_t major_version = (version >> 8) & 0xff;
+        if (major_version == 0 || major_version > 3) return false;
+
+        function_tokens.clear();
+        function_tokens.push_back(version);
+        size_t cursor = 1;
+        while (cursor < max_shader_tokens) {
+            const uint64_t token_address =
+                static_cast<uint64_t>(function_address) + cursor * 4;
+            uint32_t token = 0;
+            if (!read_guest_diagnostic_u32(token_address, token)) return false;
+            function_tokens.push_back(token);
+            ++cursor;
+
+            const uint32_t opcode = token & 0xffff;
+            if (token == d3d_shader_end)
+                return function_tokens.size() > 1;
+
+            size_t additional_tokens = 0;
+            if (opcode == d3d_shader_comment) {
+                additional_tokens = (token >> 16) & 0x7fff;
+            } else if (major_version >= 2) {
+                additional_tokens = (token >> 24) & 0x0f;
+            } else if (opcode == d3d_shader_def ||
+                       opcode == d3d_shader_defi) {
+                additional_tokens = 4;
+            } else if (opcode == d3d_shader_defb) {
+                additional_tokens = 1;
+            }
+            if (additional_tokens > max_shader_tokens - cursor) return false;
+            for (size_t index = 0; index < additional_tokens; ++index) {
+                const uint64_t operand_address =
+                    static_cast<uint64_t>(function_address) + cursor * 4;
+                uint32_t operand = 0;
+                if (!read_guest_diagnostic_u32(operand_address, operand))
+                    return false;
+                function_tokens.push_back(operand);
+                ++cursor;
+            }
+        }
+        return false;
+    }
+
+    bool release_guest_d3d9_shader_reference(uint32_t shader_address,
+                                              uint32_t& remaining) {
+        auto shader = guest_d3d9_shaders.find(shader_address);
+        if (shader == guest_d3d9_shaders.end() ||
+            shader->second.references == 0) {
+            return false;
+        }
+        remaining = --shader->second.references;
+        if (remaining != 0) return true;
+
+        const uint32_t device_address = shader->second.device_address;
+        const uint32_t vtable_address = shader->second.vtable_address;
+        const bool pixel_shader = shader->second.pixel_shader;
+        guest_d3d9_shaders.erase(shader);
+        free_guest_heap_address(shader_address);
+        free_guest_heap_address(vtable_address);
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device != guest_d3d9_devices.end()) {
+            uint32_t& current_shader = pixel_shader
+                                           ? device->second.pixel_shader_address
+                                           : device->second.vertex_shader_address;
+            if (current_shader == shader_address) current_shader = 0;
+            if (device->second.references > 0) --device->second.references;
+        }
+        return true;
+    }
+
+    int d3d9_device_create_shader(bool pixel_shader) {
+        const char* api = pixel_shader
+            ? "d3d9.dll!IDirect3DDevice9::CreatePixelShader"
+            : "d3d9.dll!IDirect3DDevice9::CreateVertexShader";
+        uint32_t device_address = 0;
+        uint32_t function_address = 0;
+        uint32_t output_shader_address = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, function_address, api) ||
+            !read_stack_argument(2, output_shader_address, api)) {
+            return -1;
+        }
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (output_shader_address == 0 ||
+            !valid_guest_pointer(output_shader_address, sizeof(uint32_t))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+        }
+        if (!write_guest_u32("ram", output_shader_address, 0)) return -1;
+        std::vector<uint32_t> function_tokens;
+        if (!read_guest_d3d9_shader_function(function_address, pixel_shader,
+                                             function_tokens)) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+        }
+
+        static constexpr std::array<const char*, 5> methods = {
+            "QueryInterface", "AddRef", "Release", "GetDevice",
+            "GetFunction"};
+        const char* interface_name = pixel_shader
+            ? "IDirect3DPixelShader9"
+            : "IDirect3DVertexShader9";
+        uint32_t vtable_address = 0;
+        uint32_t shader_address = 0;
+        if (!allocate_guest_heap(kGuestProcessHeapHandle,
+                                 methods.size() * sizeof(uint32_t),
+                                 vtable_address) ||
+            !allocate_guest_heap(kGuestProcessHeapHandle, sizeof(uint32_t),
+                                 shader_address)) {
+            error = std::string(api) + " could not allocate its guest object";
+            free_guest_heap_address(shader_address);
+            free_guest_heap_address(vtable_address);
+            return return_kernel32_dword(kD3dErrNotAvailable, api, 12);
+        }
+        for (size_t index = 0; index < methods.size(); ++index) {
+            uint32_t method_stub = 0;
+            const std::string method_name =
+                std::string("d3d9.dll!") + interface_name + "::" + methods[index];
+            if (!allocate_dynamic_import_stub(method_name, method_stub) ||
+                !write_guest_u32("ram", vtable_address + index * 4,
+                                 method_stub)) {
+                error = std::string(api) + " could not build its guest vtable";
+                free_guest_heap_address(shader_address);
+                free_guest_heap_address(vtable_address);
+                return return_kernel32_dword(kD3dErrNotAvailable, api, 12);
+            }
+        }
+        if (!write_guest_u32("ram", shader_address, vtable_address)) {
+            error = std::string(api) + " could not initialize its guest object";
+            free_guest_heap_address(shader_address);
+            free_guest_heap_address(vtable_address);
+            return return_kernel32_dword(kD3dErrNotAvailable, api, 12);
+        }
+        if (device->second.references != UINT32_MAX)
+            ++device->second.references;
+        guest_d3d9_shaders.emplace(
+            shader_address,
+            GuestD3D9Shader{vtable_address, device_address, 1, pixel_shader,
+                            std::move(function_tokens)});
+        if (!write_guest_u32("ram", output_shader_address, shader_address)) {
+            guest_d3d9_shaders.erase(shader_address);
+            free_guest_heap_address(shader_address);
+            free_guest_heap_address(vtable_address);
+            if (device->second.references > 0) --device->second.references;
+            return -1;
+        }
+        return return_kernel32_dword(0, api, 12);
+    }
+
     int d3d9_device_set_shader(bool pixel_shader) {
         const char* api = pixel_shader
             ? "d3d9.dll!IDirect3DDevice9::SetPixelShader"
@@ -6210,20 +6412,253 @@ struct RecompiledPcodeModule::Impl {
             !read_stack_argument(1, shader_address, api)) {
             return -1;
         }
-        const auto device = guest_d3d9_devices.find(device_address);
+        auto device = guest_d3d9_devices.find(device_address);
         if (device == guest_d3d9_devices.end()) {
             error = std::string(api) + " received an invalid device pointer";
             return -1;
         }
+        uint32_t& current_shader = pixel_shader
+                                       ? device->second.pixel_shader_address
+                                       : device->second.vertex_shader_address;
         if (shader_address != 0) {
-            return return_kernel32_dword(kD3dErrInvalidCall, api, 8);
+            const auto shader = guest_d3d9_shaders.find(shader_address);
+            if (shader == guest_d3d9_shaders.end() ||
+                shader->second.device_address != device_address ||
+                shader->second.pixel_shader != pixel_shader) {
+                return return_kernel32_dword(kD3dErrInvalidCall, api, 8);
+            }
         }
-        if (pixel_shader) {
-            device->second.pixel_shader_address = 0;
-        } else {
-            device->second.vertex_shader_address = 0;
+        const uint32_t previous_shader = current_shader;
+        if (previous_shader == shader_address)
+            return return_kernel32_dword(0, api, 8);
+        if (shader_address != 0) {
+            auto shader = guest_d3d9_shaders.find(shader_address);
+            if (shader->second.references != UINT32_MAX)
+                ++shader->second.references;
+        }
+        current_shader = shader_address;
+        if (previous_shader != 0) {
+            uint32_t remaining = 0;
+            if (!release_guest_d3d9_shader_reference(previous_shader,
+                                                      remaining)) {
+                error = std::string(api) + " lost the previous shader";
+                return -1;
+            }
         }
         return return_kernel32_dword(0, api, 8);
+    }
+
+    int d3d9_device_get_shader(bool pixel_shader) {
+        const char* api = pixel_shader
+            ? "d3d9.dll!IDirect3DDevice9::GetPixelShader"
+            : "d3d9.dll!IDirect3DDevice9::GetVertexShader";
+        uint32_t device_address = 0;
+        uint32_t output_shader_address = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, output_shader_address, api)) {
+            return -1;
+        }
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (output_shader_address == 0 ||
+            !valid_guest_pointer(output_shader_address, sizeof(uint32_t))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 8);
+        }
+        uint32_t shader_address = pixel_shader
+                                      ? device->second.pixel_shader_address
+                                      : device->second.vertex_shader_address;
+        if (shader_address != 0) {
+            auto shader = guest_d3d9_shaders.find(shader_address);
+            if (shader == guest_d3d9_shaders.end() ||
+                shader->second.pixel_shader != pixel_shader) {
+                shader_address = 0;
+                if (pixel_shader)
+                    device->second.pixel_shader_address = 0;
+                else
+                    device->second.vertex_shader_address = 0;
+            } else if (shader->second.references != UINT32_MAX) {
+                ++shader->second.references;
+            }
+        }
+        if (!write_guest_u32("ram", output_shader_address, shader_address))
+            return -1;
+        return return_kernel32_dword(0, api, 8);
+    }
+
+    int d3d9_shader_query_interface(bool pixel_shader) {
+        const char* api = pixel_shader
+            ? "d3d9.dll!IDirect3DPixelShader9::QueryInterface"
+            : "d3d9.dll!IDirect3DVertexShader9::QueryInterface";
+        uint32_t shader_address = 0;
+        uint32_t iid_address = 0;
+        uint32_t output_address = 0;
+        if (!read_stack_argument(0, shader_address, api) ||
+            !read_stack_argument(1, iid_address, api) ||
+            !read_stack_argument(2, output_address, api)) {
+            return -1;
+        }
+        auto shader = guest_d3d9_shaders.find(shader_address);
+        if (shader == guest_d3d9_shaders.end() ||
+            shader->second.pixel_shader != pixel_shader) {
+            error = std::string(api) + " received an invalid shader pointer";
+            return -1;
+        }
+        if (iid_address == 0 || output_address == 0 ||
+            !valid_guest_pointer(iid_address, 16) ||
+            !valid_guest_pointer(output_address, sizeof(uint32_t))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+        }
+        if (!write_guest_u32("ram", output_address, 0)) return -1;
+        std::array<uint8_t, 16> iid{};
+        if (!read_guest("ram", iid_address, iid.size(), iid.data())) return -1;
+        static constexpr std::array<uint8_t, 16> iunknown_iid = {
+            0, 0, 0, 0, 0, 0, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0x46};
+        static constexpr std::array<uint8_t, 16> vertex_shader_iid = {
+            0x7e, 0x55, 0xc5, 0xef, 0x65, 0x62, 0x13, 0x46,
+            0x8a, 0x94, 0x43, 0x85, 0x78, 0x89, 0xeb, 0x36};
+        static constexpr std::array<uint8_t, 16> pixel_shader_iid = {
+            0xdc, 0xdb, 0x3b, 0x6d, 0x02, 0x5b, 0x15, 0x44,
+            0xb8, 0x52, 0xce, 0x5e, 0x8b, 0xcc, 0xb2, 0x89};
+        if (iid != iunknown_iid &&
+            iid != (pixel_shader ? pixel_shader_iid : vertex_shader_iid)) {
+            return return_kernel32_dword(kENoInterface, api, 12);
+        }
+        if (!write_guest_u32("ram", output_address, shader_address))
+            return -1;
+        if (shader->second.references != UINT32_MAX)
+            ++shader->second.references;
+        return return_kernel32_dword(0, api, 12);
+    }
+
+    int d3d9_shader_add_ref(bool pixel_shader) {
+        const char* api = pixel_shader
+            ? "d3d9.dll!IDirect3DPixelShader9::AddRef"
+            : "d3d9.dll!IDirect3DVertexShader9::AddRef";
+        uint32_t shader_address = 0;
+        if (!read_stack_argument(0, shader_address, api)) return -1;
+        auto shader = guest_d3d9_shaders.find(shader_address);
+        if (shader == guest_d3d9_shaders.end() ||
+            shader->second.pixel_shader != pixel_shader) {
+            error = std::string(api) + " received an invalid shader pointer";
+            return -1;
+        }
+        if (shader->second.references != UINT32_MAX)
+            ++shader->second.references;
+        return return_kernel32_dword(shader->second.references, api, 4);
+    }
+
+    int d3d9_shader_release(bool pixel_shader) {
+        const char* api = pixel_shader
+            ? "d3d9.dll!IDirect3DPixelShader9::Release"
+            : "d3d9.dll!IDirect3DVertexShader9::Release";
+        uint32_t shader_address = 0;
+        if (!read_stack_argument(0, shader_address, api)) return -1;
+        const auto shader = guest_d3d9_shaders.find(shader_address);
+        if (shader == guest_d3d9_shaders.end() ||
+            shader->second.pixel_shader != pixel_shader) {
+            error = std::string(api) + " received an invalid shader pointer";
+            return -1;
+        }
+        uint32_t remaining = 0;
+        if (!release_guest_d3d9_shader_reference(shader_address, remaining)) {
+            error = std::string(api) + " could not release its shader";
+            return -1;
+        }
+        return return_kernel32_dword(remaining, api, 4);
+    }
+
+    int d3d9_shader_get_device(bool pixel_shader) {
+        const char* api = pixel_shader
+            ? "d3d9.dll!IDirect3DPixelShader9::GetDevice"
+            : "d3d9.dll!IDirect3DVertexShader9::GetDevice";
+        uint32_t shader_address = 0;
+        uint32_t output_device_address = 0;
+        if (!read_stack_argument(0, shader_address, api) ||
+            !read_stack_argument(1, output_device_address, api)) {
+            return -1;
+        }
+        const auto shader = guest_d3d9_shaders.find(shader_address);
+        if (shader == guest_d3d9_shaders.end() ||
+            shader->second.pixel_shader != pixel_shader) {
+            error = std::string(api) + " received an invalid shader pointer";
+            return -1;
+        }
+        if (output_device_address == 0 ||
+            !valid_guest_pointer(output_device_address, sizeof(uint32_t))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 8);
+        }
+        auto device = guest_d3d9_devices.find(shader->second.device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " found an invalid parent device";
+            return -1;
+        }
+        if (!write_guest_u32("ram", output_device_address,
+                             shader->second.device_address)) {
+            return -1;
+        }
+        if (device->second.references != UINT32_MAX)
+            ++device->second.references;
+        return return_kernel32_dword(0, api, 8);
+    }
+
+    int d3d9_shader_get_function(bool pixel_shader) {
+        const char* api = pixel_shader
+            ? "d3d9.dll!IDirect3DPixelShader9::GetFunction"
+            : "d3d9.dll!IDirect3DVertexShader9::GetFunction";
+        uint32_t shader_address = 0;
+        uint32_t output_data_address = 0;
+        uint32_t output_size_address = 0;
+        if (!read_stack_argument(0, shader_address, api) ||
+            !read_stack_argument(1, output_data_address, api) ||
+            !read_stack_argument(2, output_size_address, api)) {
+            return -1;
+        }
+        const auto shader = guest_d3d9_shaders.find(shader_address);
+        if (shader == guest_d3d9_shaders.end() ||
+            shader->second.pixel_shader != pixel_shader) {
+            error = std::string(api) + " received an invalid shader pointer";
+            return -1;
+        }
+        if (output_size_address == 0 ||
+            !valid_guest_pointer(output_size_address, sizeof(uint32_t))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+        }
+        const uint64_t required_size =
+            shader->second.function_tokens.size() * sizeof(uint32_t);
+        uint32_t supplied_size = 0;
+        if (!read_guest_u32("ram", output_size_address, supplied_size))
+            return -1;
+        if (output_data_address == 0) {
+            if (!write_guest_u32("ram", output_size_address,
+                                 static_cast<uint32_t>(required_size))) {
+                return -1;
+            }
+            return return_kernel32_dword(0, api, 12);
+        }
+        if (supplied_size < required_size ||
+            !valid_guest_pointer(output_data_address,
+                                 static_cast<size_t>(required_size))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+        }
+        std::vector<uint8_t> function_bytes(required_size);
+        for (size_t index = 0;
+             index < shader->second.function_tokens.size(); ++index) {
+            const uint32_t token = shader->second.function_tokens[index];
+            for (size_t byte = 0; byte < sizeof(token); ++byte) {
+                function_bytes[index * sizeof(token) + byte] =
+                    static_cast<uint8_t>(token >> (byte * 8));
+            }
+        }
+        if (!write_guest_bytes(output_data_address, function_bytes.data(),
+                               function_bytes.size(), api) ||
+            !write_guest_u32("ram", output_size_address,
+                             static_cast<uint32_t>(required_size))) {
+            return -1;
+        }
+        return return_kernel32_dword(0, api, 12);
     }
 
     int d3d9_device_set_vertex_declaration() {
@@ -14566,6 +15001,7 @@ struct RecompiledPcodeModule::Impl {
         guest_d3d9_vertex_buffers;
     std::unordered_map<uint32_t, GuestD3D9IndexBuffer>
         guest_d3d9_index_buffers;
+    std::unordered_map<uint32_t, GuestD3D9Shader> guest_d3d9_shaders;
     std::unordered_map<uint32_t, GuestD3D9VertexDeclaration>
         guest_d3d9_vertex_declarations;
     bool guest_d3d9_adapter_info_available = false;
