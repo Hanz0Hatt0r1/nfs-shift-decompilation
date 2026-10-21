@@ -56,6 +56,11 @@ default; oldest snapshots are evicted first. Set
 `SHIFT_D3D9_CAPTURE_DEFERRED_BUFFER_PAYLOAD_MAX_BYTES` to change the limit.
 Each trigger writes a `deferred_buffer_payload_summary` event with retained,
 evicted, and oversized payload counts and byte totals.
+The `device_hooks` event records whether full and partial buffer payload
+capture were enabled and the partial-buffer length filter, so replay can reject
+captures whose Lock history was not fully tracked.
+The partial-payload environment option requires
+`SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS=1`; the launcher flag below sets both.
 
 The Wine launcher flag `--partial-buffer-payloads` enables both normal buffer
 payload capture and partial locked ranges. Add `--partial-buffer-length N` to

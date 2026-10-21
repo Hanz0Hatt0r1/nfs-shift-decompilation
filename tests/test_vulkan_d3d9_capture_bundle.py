@@ -22,6 +22,12 @@ from vulkan_d3d9_capture_bundle import (
     encode_capture_geometry,
 )
 
+PARTIAL_BUFFER_CAPTURE_OPTIONS = {
+    "buffer_payload_capture_enabled": True,
+    "partial_buffer_payload_capture_enabled": True,
+    "partial_buffer_payload_length_filter": 0,
+}
+
 
 def test_capture_bundle_uses_deferred_buffer_payload_captured_before_draw(tmp_path):
     rows = [
@@ -108,6 +114,10 @@ def test_captured_surface_formats_cover_mobile_targets_and_existing_r32f():
     assert _captured_surface_formats(114, 75, True) == (
         "VK_FORMAT_R32_SFLOAT",
         "VK_FORMAT_D24_UNORM_S8_UINT",
+    )
+    assert _captured_surface_formats(21, 80, True) == (
+        "VK_FORMAT_B8G8R8A8_UNORM",
+        "VK_FORMAT_D16_UNORM",
     )
     with pytest.raises(ValueError, match="render-target format"):
         _captured_surface_formats(22, 75, True)
@@ -199,6 +209,7 @@ def test_capture_buffer_payload_ranges_reconstruct_full_buffer_in_capture_order(
         rows,
         {"event_index": 1, "frame": 0},
         {"event_index": 50, "frame": 5},
+        PARTIAL_BUFFER_CAPTURE_OPTIONS,
         4,
         "vertex",
     )
@@ -227,6 +238,7 @@ def test_capture_buffer_payload_ranges_reject_incomplete_coverage(tmp_path):
             [row],
             {"event_index": 1, "frame": 0},
             {"event_index": 50, "frame": 5},
+            PARTIAL_BUFFER_CAPTURE_OPTIONS,
             4,
             "index",
         )
@@ -265,6 +277,7 @@ def test_capture_buffer_payload_discard_invalidates_older_ranges(tmp_path):
             rows,
             {"event_index": 1, "frame": 0},
             {"event_index": 50, "frame": 5},
+            PARTIAL_BUFFER_CAPTURE_OPTIONS,
             4,
             "vertex",
         )
@@ -287,6 +300,72 @@ def test_capture_buffer_payload_rejects_ambiguous_same_frame_order(tmp_path):
             [row],
             {"event_index": 1, "frame": 0},
             {"event_index": 50, "frame": 5},
+            PARTIAL_BUFFER_CAPTURE_OPTIONS,
             4,
             "vertex",
         )
+
+
+@pytest.mark.parametrize(
+    ("capture_options", "error"),
+    [
+        (
+            {**PARTIAL_BUFFER_CAPTURE_OPTIONS, "partial_buffer_payload_capture_enabled": False},
+            "requires confirmed partial Lock-range capture",
+        ),
+        (
+            {**PARTIAL_BUFFER_CAPTURE_OPTIONS, "partial_buffer_payload_length_filter": 8},
+            "excluded by the partial payload length filter",
+        ),
+    ],
+)
+def test_capture_buffer_payload_rejects_untracked_lock_history(tmp_path, capture_options, error):
+    buffer_dir = tmp_path / "buffers"
+    buffer_dir.mkdir()
+    (buffer_dir / "full.bin").write_bytes(b"abcd")
+    full_payload = {
+        "event_index": 2,
+        "payload_capture_frame": 1,
+        "buffer_length": 4,
+        "offset": 0,
+        "captured_byte_size": 4,
+        "snapshot_status": "captured",
+        "payload_path": r"C:\capture\buffers\full.bin",
+    }
+
+    with pytest.raises(ValueError, match=error):
+        _captured_buffer_bytes(
+            tmp_path,
+            [full_payload],
+            {"event_index": 1, "frame": 0},
+            {"event_index": 50, "frame": 5},
+            capture_options,
+            4,
+            "vertex",
+        )
+
+
+def test_read_events_retains_capture_payload_mode_for_the_draw_device(tmp_path):
+    rows = [
+        {
+            "event_index": 0,
+            "frame": 0,
+            "process_id": 1,
+            "device_ptr": "dev",
+            "event": "device_hooks",
+            **PARTIAL_BUFFER_CAPTURE_OPTIONS,
+        },
+        {
+            "event_index": 1,
+            "frame": 0,
+            "process_id": 1,
+            "device_ptr": "dev",
+            "event": "draw_indexed_primitive",
+        },
+    ]
+    capture = tmp_path / "capture.jsonl"
+    capture.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+
+    _, state = _read_events(capture, 1)
+
+    assert state["capture_options"]["partial_buffer_payload_capture_enabled"] is True

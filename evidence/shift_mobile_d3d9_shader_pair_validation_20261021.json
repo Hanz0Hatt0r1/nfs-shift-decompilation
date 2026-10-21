@@ -162,6 +162,16 @@
     "retail_image_parity_proven": false,
     "android_vulkan_replay_proven": false
   },
+  "target_depth_format_smoke": {
+    "device": "NVIDIA GeForce GTX 950",
+    "d3d_depth_format": 80,
+    "vulkan_depth_format": "VK_FORMAT_D16_UNORM",
+    "validation_enabled": true,
+    "validation_errors": 0,
+    "synthetic_material_bundle": true,
+    "retail_draw": false,
+    "retail_image_parity_proven": false
+  },
   "target_shader_draw_count": 186,
   "target_shader_draw_frames": [
     1569,
@@ -217,7 +227,9 @@
       "rejects_same_frame_post_draw_order_ambiguity": true,
       "invalidates_older_ranges_after_d3dlock_discard": true,
       "deferred_capture_preserves_discard_boundaries": true,
-      "regressions": 4
+      "requires_explicit_partial_capture_mode": true,
+      "rejects_unknown_or_excluding_length_filter": true,
+      "regressions": 6
     },
     "next_capture": {
       "trigger_resource_signature": "ps:58462f91650cef34",
@@ -225,6 +237,14 @@
       "trigger_set_pixel_shader_event_index": 4926411,
       "first_target_draw_event_index": 4926423,
       "first_target_draw_frame": 1569,
+      "first_target_draw_depth_surface_format": 80,
+      "first_target_draw_depth_surface_format_name": "D3DFMT_D16",
+      "first_target_draw_vulkan_depth_format": "VK_FORMAT_D16_UNORM",
+      "first_target_draw_bundle_attempt": {
+        "event_index": 4926423,
+        "result": "blocked",
+        "blocking_reason": "captured vertex has no matching Lock-range payloads"
+      },
       "target_shader_draw_frames": [
         1569,
         1571
@@ -237,6 +257,7 @@
         "SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS": "1",
         "SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS": "1"
       },
+      "existing_capture_partial_mode_metadata": "not present in device_hooks",
       "prior_trigger": "Present in frame 1571, after the target draws in frames 1569–1571",
       "basis": "Resource-triggering on the first target pixel shader starts snapshot capture before the SetTexture calls; target shader bindings in the trace rebind every used sampler stage after SetPixelShader."
     }

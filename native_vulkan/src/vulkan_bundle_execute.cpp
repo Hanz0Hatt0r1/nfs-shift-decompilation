@@ -1204,6 +1204,9 @@ RenderTargetState load_render_target(
         out.depth_format = VK_FORMAT_D24_UNORM_S8_UINT;
         out.depth_aspect =
             VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    } else if (out.d3d_depth_format == 80u) {
+        out.depth_format = VK_FORMAT_D16_UNORM;
+        out.depth_aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
     } else if (out.d3d_depth_format != 0u) {
         throw std::runtime_error(
             "unsupported captured D3D9 depth format: " +
@@ -1387,6 +1390,15 @@ const char* render_target_format_name(VkFormat format) {
     case VK_FORMAT_B8G8R8A8_UNORM: return "VK_FORMAT_B8G8R8A8_UNORM";
     case VK_FORMAT_R16G16B16A16_SFLOAT:
         return "VK_FORMAT_R16G16B16A16_SFLOAT";
+    default: return "VK_FORMAT_UNDEFINED";
+    }
+}
+
+const char* depth_format_name(VkFormat format) {
+    switch (format) {
+    case VK_FORMAT_D32_SFLOAT: return "VK_FORMAT_D32_SFLOAT";
+    case VK_FORMAT_D24_UNORM_S8_UINT: return "VK_FORMAT_D24_UNORM_S8_UINT";
+    case VK_FORMAT_D16_UNORM: return "VK_FORMAT_D16_UNORM";
     default: return "VK_FORMAT_UNDEFINED";
     }
 }
@@ -2317,9 +2329,7 @@ int main(int argc, char** argv) {
         std::cout << "  \"d3d_depth_format\": "
                   << render_target.d3d_depth_format << ",\n";
         std::cout << "  \"depth_attachment_format\": \""
-                  << (render_target.depth_format == VK_FORMAT_D24_UNORM_S8_UINT
-                          ? "VK_FORMAT_D24_UNORM_S8_UINT"
-                          : "VK_FORMAT_D32_SFLOAT") << "\",\n";
+                  << depth_format_name(render_target.depth_format) << "\",\n";
         std::cout << "  \"texture_count\": " << textures.size() << ",\n";
         std::cout << "  \"has_cube\": " << (has_cube ? "true" : "false") << ",\n";
         std::cout << "  \"world_transform_present\": "
