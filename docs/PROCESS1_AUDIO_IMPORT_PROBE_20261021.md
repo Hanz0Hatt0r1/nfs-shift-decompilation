@@ -26,11 +26,20 @@ The selected APIs and report fields are recorded in
 - `guest_draw_translation=false` and `retail_rendering_proven=false`.
 
 For this bounded replay, the missing WinMM/MSACM handlers are not a blocker
-before the 360-frame host loop. This does not rule them out on a later path and
-does not explain or disprove the separate v520 worker/predicate bit-2
-observation: this run did not trace that predicate's exact reader/writer chain
-or establish a causal edge from an audio result to the bit. The audio
-hypothesis remains unproven for v520.
+before the 360-frame host loop. The separate v520 worker stall has later
+evidence: v527 records guest worker `0x00010006` writing `0x00000006` to
+predicate word `0x27f39c64` (writer `0x00649b10`, dispatch 7,930,667), after
+which `0x006550f0` returned 1 and execution reached `0x00655110` and
+`0x005ab560`. The run then stopped at missing P-code export `rvi_0057da20`;
+it did not prove frontend, race, or rendered gameplay. The scheduler audit
+concludes this is consistent with the existing guest-call return quantum
+letting a worker run while the main thread polls. It is stronger evidence for
+the v520-local stall than the audio hypothesis, but it does not prove audio
+irrelevant on later paths. The v667 probe itself did not trace the predicate's
+exact reader/writer chain or establish any audio-to-bit causal edge. The
+v527 frontier report and scheduler audit are linked in
+`evidence/retail_frontier_20261021/process1_scheduler_return_quantum.json` and
+the Process 3 report on branch `work/process-reports`.
 
 This is guest P-code execution from the retail PE, not proof that the original
 Windows game reached its frontend, race, or rendered a retail frame.

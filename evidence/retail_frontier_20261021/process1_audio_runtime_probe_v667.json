@@ -43,6 +43,28 @@
     },
     "retail_rendering_proven": false
   },
+  "v520_scheduler_followup": {
+    "source": "v527 P-code replay; not a native Windows SHIFT.exe execution",
+    "status": "blocked",
+    "next_blocker": "P-code module has no exported function rvi_0057da20 called from guest function 0x00590d60",
+    "dispatches_at_blocker": 7931139,
+    "unique_functions_at_blocker": 5096,
+    "predicate_write": {
+      "address": "0x27f39c64",
+      "before": "0x00000002",
+      "after": "0x00000006",
+      "writer": "0x00649b10",
+      "guest_thread_id": "0x00010006",
+      "dispatch": 7930667
+    },
+    "poll_return": {
+      "function": "0x006550f0",
+      "eax": "0x00000001"
+    },
+    "continuation": ["0x00655110", "0x005ab560"],
+    "report_sha256": "8338148203c6e51b6d887ee53e41d659727058287983be875b2ed0bfded2e3a9",
+    "probe_log_sha256": "878b5fcbfd7efcc19ef261caa26c49186040aa4288a1978dc1bc06264fb65f1a"
+  },
   "probe_log_sha256": "da5cde6b0bdbddf2649b4bec339141098d36a103cbe077669cad2190a28be3ed",
-  "interpretation": "No selected WinMM or MSACM import was reached before this bounded host-frame loop. This does not establish or rule out a causal relationship with the separate v520 worker/predicate bit-2 observation."
+  "interpretation": "No selected WinMM or MSACM import was reached before this bounded host-frame loop. A later v527 P-code replay records the worker writing bit 2 and passing the poll after the guest-call return quantum; that is evidence for scheduler starvation as the v520-local issue, not audio causality. Audio use on later paths remains untested."
 }
