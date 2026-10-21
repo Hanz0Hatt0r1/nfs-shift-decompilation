@@ -1,0 +1,85 @@
+{
+  "format": "NFSShift.OriginalRetailControlledWineSample/1",
+  "captured_at": "2026-10-21T12:15:00+03:00",
+  "program": {
+    "path_outside_repository": "/home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/game-root/SHIFT.exe",
+    "image_type": "PE32 GUI, Intel i386",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "execution": {
+    "host": "Linux x86_64",
+    "compatibility_layer": "system Wine 11.17",
+    "prefix": "/home/pes/.wine",
+    "display": ":1",
+    "working_directory": "/home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/game-root",
+    "entrypoint": "original SHIFT.exe launched directly under WineDbg GDB proxy; not the recompiled runtime",
+    "launch_command": "WINEDEBUG=-all winedbg --gdb ./SHIFT.exe",
+    "host_pid": 892097,
+    "wine_pid": "012c",
+    "observed_duration_seconds": 117,
+    "shutdown": "The launched inferior was terminated by GDB after the sample."
+  },
+  "observations": {
+    "retail_pe_loaded": true,
+    "thread_count": 22,
+    "main_thread": {
+      "gdb_thread": 1,
+      "wine_thread": "0130",
+      "instruction_pointer_at_stop": "0x7bc8d2b0",
+      "stack": [
+        "ntdll.dll wait at 0x7bc8d2b0",
+        "kernelbase.dll at 0x7b581a3c",
+        "wined3d.dll at 0x7988f2c7",
+        "d3d9.dll at 0x7b379766",
+        "SHIFT.exe GeckoFnl at 0x0084fcdf",
+        "SHIFT.exe GeckoFnl at 0x00835e7e"
+      ]
+    },
+    "wine_gl_thread": {
+      "gdb_thread": 18,
+      "wine_thread": "0174",
+      "stack": [
+        "opengl32.dll at 0x784dca85",
+        "wined3d.dll at 0x797bb44d",
+        "wined3d.dll at 0x7984b326",
+        "wined3d.dll at 0x7984df2c",
+        "kernel32.dll at 0x7bacfc44",
+        "ntdll.dll at 0x7bc8e477"
+      ]
+    },
+    "gecko_worker_thread": {
+      "gdb_thread": 11,
+      "wine_thread": "0198",
+      "stack": [
+        "ntdll.dll wait at 0x7bc8d5b0",
+        "kernelbase.dll at 0x7b572163",
+        "SHIFT.exe GeckoFnl AptValue::getGCMark at 0x005d5f69"
+      ]
+    },
+    "known_gecko_null_array_breakpoint": {
+      "address": "0x0083a006",
+      "condition": "$ecx == 0",
+      "configured": true,
+      "stop_observed": false
+    },
+    "x11_client_list": [
+      "0x1200004"
+    ],
+    "separate_game_window_observed": false,
+    "frontend_confirmed": false,
+    "race_confirmed": false,
+    "debugger_interrupt": {
+      "signal": "SIGSEGV",
+      "instruction_pointer": "0xffbb113c",
+      "wine_thread": "01d8",
+      "classification": "Debugger stop after Ctrl-C in a Wine/preloader address outside SHIFT.exe; not evidence of a retail-game fault."
+    },
+    "interpretation": "The original retail process reached a Gecko-to-D3D9-to-WineD3D call path while a Wine OpenGL worker was active. This identifies a useful original-game graphics and thread state, but the run showed no separate game window, frontend, or race. The known Gecko null-array stop did not recur during this sample."
+  },
+  "limitations": [
+    "Observed under system Wine 11.17, not native Windows.",
+    "The game had no separate X11 client window during the recorded sample.",
+    "The GDB Ctrl-C stop in Wine preloader code must not be attributed to SHIFT.exe.",
+    "This is original retail execution evidence and is separate from P-code replay evidence."
+  ]
+}
