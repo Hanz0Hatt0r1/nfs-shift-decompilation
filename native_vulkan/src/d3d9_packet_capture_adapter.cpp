@@ -186,10 +186,13 @@ std::vector<uint8_t> dds_bytes(const runtime::RecompiledGuestD3d9TextureBinding&
         const uint64_t expected_size = static_cast<uint64_t>(mip.pitch) * rows;
         if (minimum_pitch > std::numeric_limits<uint32_t>::max() ||
             expected_size > std::numeric_limits<size_t>::max() ||
-            mip.pitch < minimum_pitch || mip.bytes.size() != expected_size) {
+            mip.pitch != minimum_pitch || mip.bytes.size() != expected_size) {
             throw std::runtime_error("guest texture mip byte count does not match its pitch");
         }
         if (level == 0) {
+            if (texture.pitch != mip.pitch) {
+                throw std::runtime_error("guest texture top mip pitch differs from binding");
+            }
             if (mip.bytes.size() > std::numeric_limits<uint32_t>::max()) {
                 throw std::runtime_error("guest texture top mip exceeds DDS size fields");
             }
@@ -958,6 +961,7 @@ bool D3d9PacketCaptureAdapter::capture_draw(const Packet& packet, std::string& e
             {"last_clear_stencil", json_u32(packet.last_clear_stencil)},
             {"last_clear_rect_count", json_u32(packet.last_clear_rect_count)},
             {"last_clear_target_proven", "false"},
+            {"viewport_dwords", json_u32_array(packet.viewport)},
             {"vertex_shader_ptr", json_string(vs_id)},
             {"pixel_shader_ptr", json_string(ps_id)},
             {"index_buffer_ptr", json_string(ib_id)},
