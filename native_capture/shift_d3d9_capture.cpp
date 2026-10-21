@@ -1514,9 +1514,11 @@ struct DeferredBufferPayloadKey {
     const void* buffer = nullptr;
     UINT offset = 0;
     std::size_t size = 0;
+    bool discard = false;
 
     bool operator==(const DeferredBufferPayloadKey& other) const {
-        return buffer == other.buffer && offset == other.offset && size == other.size;
+        return buffer == other.buffer && offset == other.offset &&
+            size == other.size && discard == other.discard;
     }
 };
 
@@ -1525,6 +1527,7 @@ struct DeferredBufferPayloadKeyHash {
         std::size_t value = std::hash<const void*>{}(key.buffer);
         value ^= std::hash<UINT>{}(key.offset) + 0x9e3779b9u + (value << 6) + (value >> 2);
         value ^= std::hash<std::size_t>{}(key.size) + 0x9e3779b9u + (value << 6) + (value >> 2);
+        value ^= std::hash<bool>{}(key.discard) + 0x9e3779b9u + (value << 6) + (value >> 2);
         return value;
     }
 };
@@ -1533,7 +1536,9 @@ DeferredBufferPayloadKey deferred_buffer_payload_key(
     const void* buffer,
     const BufferLockState& state,
     std::size_t payload_size) {
-    return DeferredBufferPayloadKey{buffer, state.offset, payload_size};
+    return DeferredBufferPayloadKey{
+        buffer, state.offset, payload_size,
+        (state.flags & D3DLOCK_DISCARD) != 0};
 }
 
 std::mutex g_deferred_buffer_payload_mutex;

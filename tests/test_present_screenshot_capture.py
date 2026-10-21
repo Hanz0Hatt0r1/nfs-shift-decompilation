@@ -485,6 +485,9 @@ def test_trigger_buffer_payloads_defer_disk_io_until_trigger():
     assert "SHIFT_D3D9_CAPTURE_DEFERRED_BUFFER_PAYLOAD_MAX_BYTES" in source
     assert "SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS" in source
     assert "struct DeferredBufferPayloadKey" in source
+    assert "bool discard = false;" in source
+    assert "size == other.size && discard == other.discard" in source
+    assert "(state.flags & D3DLOCK_DISCARD) != 0" in source
     assert "buffer_lock_payload_size" in source
     assert "payload_capture_frame" in source
     assert "capture_scope" in source
