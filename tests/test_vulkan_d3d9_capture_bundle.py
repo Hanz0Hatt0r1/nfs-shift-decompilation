@@ -63,6 +63,38 @@ def test_draw_bool_constants_require_successful_exact_state_capture():
         )
 
 
+
+def test_bool_hresult_packet_fallback_accepts_nonzero_dword():
+    program = SimpleNamespace(const_bools=[0], instructions=[])
+    draw = {"pixel_bool_constants_hr": 0, "pixel_bool_constants": [0xffffffff] + [0] * 15}
+    assert _draw_bool_constants(draw, "pixel", program) == {0: True}
+    draw["pixel_bool_constants_hr"] = -1
+    with pytest.raises(ValueError, match="no successful pixel boolean-constant query"):
+        _draw_bool_constants(draw, "pixel", program)
+
+
+def test_guest_last_clear_without_target_proof_does_not_become_replay_clear(
+    monkeypatch, tmp_path
+):
+    draw = {"primitive_type": 4}
+    state = {
+        "streams": {0: {"vertex_buffer_ptr": "vb"}},
+        "indices": {"index_buffer_ptr": "ib"},
+        "declaration": {"declaration_ptr": "decl"},
+        "vertex_shader": {"shader_ptr": "vs"},
+        "pixel_shader": {"shader_ptr": "ps"},
+        "viewport": {"x": 0},
+        "render_target": {"resource_signature": "rt"},
+        "clear": {"guest_packet_last_clear_unproven_target": True},
+        "clear_render_target": "rt",
+    }
+    monkeypatch.setattr(capture_bundle, "_read_events", lambda *_: (draw, state))
+    with pytest.raises(ValueError, match="no target identity or ordering proof"):
+        capture_bundle.build_vulkan_capture_bundle(
+            tmp_path / "unused.jsonl", 7, tmp_path / "bundle"
+        )
+
+
 def test_packet_bool_constants_use_set_mask_and_dword_truth_value():
     from shader_asm import Instruction, Operand, ShaderProgram
 
