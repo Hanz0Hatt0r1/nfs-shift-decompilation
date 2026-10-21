@@ -98,3 +98,75 @@ reader. `tests/test_vulkan_d3d9_capture_bundle.py`,
 `tests/test_shader_backend.py`, and `tests/test_vulkan_d3d9_draw.py` pass (52
 tests). These checks do not claim a P1 runtime draw, Vulkan validation of the
 new packet adapter path, or retail frame parity.
+
+## Follow-up contract audit (P1 packet v1)
+
+The consumer is now transport-compatible with the two public variants currently
+in circulation, **but they are not the same ABI definition**. The packet
+reproduced in the Process 2 handoff has
+`vertex_bool_constants_hresult` / `pixel_bool_constants_hresult` and
+no float/boolean set masks. The header in P1 PR #2140 instead defines
+`vertex_float_constant_set_mask[8]`,
+`pixel_float_constant_set_mask[8]`, and the two 16-bit boolean
+set masks; it does not define those HRESULT members. The graphics adapter
+uses compile-time member detection, retaining the exact boolean HRESULTs
+when present and retaining the masks when present. The packet version
+number is 1 in both variants and is therefore **not** sufficient to
+identify validity-mask semantics across separately compiled binaries.
+Build both sides from one exact header, not from independently declared C++
+structs.
+
+The adapter preserves P1 `SetTexture` keys through stage 259, including
+vertex-texture sampler stages 256–259, without confusing them with
+pixel-sampler s0–s15. The existing *replay executor* still only translates
+the supported active pixel samplers; unsupported active stages remain an
+explicit replay gate rather than dropped source state. Render/sampler
+state records and render-target bindings now retain the packet vector order;
+repeated state writes consequently preserve last-write-wins behavior.
+Top-level texture pitch is serialized in addition to DDS mip bytes.
+
+The packet stores the **last clear parameters** but no proof of the
+surface bound at that clear or its event order relative to target rebinds.
+The diagnostic capture preserves those fields and marks the synthetic
+clear with `guest_packet_last_clear_unproven_target: true`.
+The bundle builder now refuses to treat such a record as an established
+clear of the current render target. An actual render-ready ordered trace
+requires a clear event with target identity and sequence (or an equivalent
+explicit, current-target clear state proven by the producer).
+
+The handoff's HRESULT-only flavor has no per-register float write-validity
+bitmap. Its float DWORD arrays are still copied into the ordered draw event
+without inventing historical `Set*ShaderConstantF` calls. The bundle
+reader cannot prove every shader-consumed register was populated from that
+flavor; the P1 PR mask-bearing flavor provides that evidence. On the
+HRESULT-only flavor, Boolean values retain full 32-bit DWORDs and are
+interpreted as nonzero=true only after a successful HRESULT. Null/default
+constants and HRESULT failure remain explicit instead of guessed.
+
+**Additional producer information required for unrestricted live replay:**
+
+- A stable, authoritative per-resource generation/lifetime ID if 32-bit
+  guest addresses can be reused while a submitted/queued draw is alive.
+  The adapter currently follows create/update/release callback identities
+  and stores byte copies, but it does not invent generation numbers.
+- D3DLOCK flags or an atomic full post-unlock VB/IB snapshot for dynamic
+  partial updates, to distinguish DISCARD from preserving writes.
+- Validity/write masks or an explicit *complete current-state* guarantee
+  for float registers when using the HRESULT-only packet variant.
+- Target identity and time/order for the clear snapshot; packet-only last
+  clear flags/color/depth/stencil cannot prove the current render target was
+  cleared at that time.
+- Exact availability/coverage of active vertex-texture stage data (256–259)
+  when shader bytecode consumes those samplers; the current replay path
+  admits only supported pixel sampler2D bindings.
+- If strict image parity is required, draw-local render-target/depth
+  contents or an ordered preceding rendering history. Surface descriptions
+  alone cannot reconstruct either.
+
+The snapshot is an ordered **guest draw event**, not a proof of executable
+runtime progress. Capture count and sequence dispatch count are diagnostic
+only. P1 still must install the callback table in the live runtime and
+provide a verified real draw; the new P2 adapter must then pass a complete
+bundle admission and native Vulkan submission test before integration
+is called render-ready. The focused retail capture replay is independent
+evidence of a separate offline Vulkan submission, not P1 guest execution.
