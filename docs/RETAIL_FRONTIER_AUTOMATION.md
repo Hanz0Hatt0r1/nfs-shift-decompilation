@@ -232,10 +232,12 @@ launch and does not confirm frontend or race entry; see the
 A separate controlled launch on 2026-10-21 ran the same original PE32 under
 WineDbg/GDB for 117 seconds. The main retail thread entered a Gecko → D3D9 →
 WineD3D call path while a Wine OpenGL thread was active; 22 guest threads were
-listed. The known conditional stop at `0x0083a006` did not recur, and no
-separate game window, frontend, or race was observed. GDB's Ctrl-C stopped a
-different thread at a Wine/preloader address; that is not classified as a game
-fault. See the [controlled retail sample](../evidence/retail_frontier_20261021/original_shift_controlled_wine_sample_20261021.json).
+listed. The known conditional stop at `0x0083a006` did not recur. The X11 root
+client list showed the Wine Desktop container; its nested window tree was not
+enumerated, so game-window presence is unconfirmed. Frontend and race entry
+were not confirmed. GDB's Ctrl-C stopped a different thread at a
+Wine/preloader address; that is not classified as a game fault. See the
+[controlled retail sample](../evidence/retail_frontier_20261021/original_shift_controlled_wine_sample_20261021.json).
 
 The v621–v632 P-code continuation merged the exact `0x0049f2c0` body,
 preserved lower-address Ghidra blocks while honoring each declared entrypoint,

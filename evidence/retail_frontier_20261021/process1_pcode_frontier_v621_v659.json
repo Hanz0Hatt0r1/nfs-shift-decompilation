@@ -2034,7 +2034,7 @@
     },
     "controlled_wine_sample": {
       "evidence": "evidence/retail_frontier_20261021/original_shift_controlled_wine_sample_20261021.json",
-      "result": "A fresh original PE32 launch under WineDbg/GDB ran for 117 seconds. Its Gecko main thread entered D3D9/WineD3D while a Wine OpenGL thread was active; 22 guest threads were listed. The known null-array breakpoint did not recur, but no separate game window, frontend, or race was observed."
+      "result": "A fresh original PE32 launch under WineDbg/GDB ran for 117 seconds. Its Gecko main thread entered D3D9/WineD3D while a Wine OpenGL thread was active; 22 guest threads were listed. The known null-array breakpoint did not recur. The X11 root client list showed the Wine Desktop container, but its nested window tree was not enumerated; game-window presence, frontend, and race entry remain unconfirmed."
     },
     "wine": {
       "evidence": "evidence/retail_frontier_20261021/original_shift_wine_crash.json",

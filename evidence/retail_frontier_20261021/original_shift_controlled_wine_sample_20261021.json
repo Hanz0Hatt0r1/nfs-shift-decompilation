@@ -62,10 +62,11 @@
       "configured": true,
       "stop_observed": false
     },
-    "x11_client_list": [
+    "x11_root_client_list": [
       "0x1200004"
     ],
-    "separate_game_window_observed": false,
+    "nested_window_tree_enumerated": false,
+    "game_window_status": "unconfirmed; only the top-level X11 client list was inspected",
     "frontend_confirmed": false,
     "race_confirmed": false,
     "debugger_interrupt": {
@@ -74,11 +75,11 @@
       "wine_thread": "01d8",
       "classification": "Debugger stop after Ctrl-C in a Wine/preloader address outside SHIFT.exe; not evidence of a retail-game fault."
     },
-    "interpretation": "The original retail process reached a Gecko-to-D3D9-to-WineD3D call path while a Wine OpenGL worker was active. This identifies a useful original-game graphics and thread state, but the run showed no separate game window, frontend, or race. The known Gecko null-array stop did not recur during this sample."
+    "interpretation": "The original retail process reached a Gecko-to-D3D9-to-WineD3D call path while a Wine OpenGL worker was active. This identifies a useful original-game graphics and thread state. The X11 root client list showed only the Wine Desktop container; its nested window tree was not enumerated, so game-window presence is unconfirmed. Frontend and race entry were not confirmed. The known Gecko null-array stop did not recur during this sample."
   },
   "limitations": [
     "Observed under system Wine 11.17, not native Windows.",
-    "The game had no separate X11 client window during the recorded sample.",
+    "Only the X11 root client list was inspected; nested Wine Desktop windows were not enumerated.",
     "The GDB Ctrl-C stop in Wine preloader code must not be attributed to SHIFT.exe.",
     "This is original retail execution evidence and is separate from P-code replay evidence."
   ]
