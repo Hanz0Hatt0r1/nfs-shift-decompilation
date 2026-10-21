@@ -46,9 +46,10 @@ Full-buffer capture remains the default. Set
 returned by each successful VB/IB Lock; its event reports `offset`,
 `requested_size`, `captured_byte_size`, `payload_capture_frame`, and whether it
 covers the full buffer or only the locked range. Deferred partial writes keep
-the newest payload for each buffer + offset + byte-size tuple; overlapping
-ranges are not merged and must be checked before reconstructing a whole
-buffer. Set `SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOAD_LENGTH` to a positive
+the newest payload for each buffer + offset + byte-size + discard-mode tuple,
+preserving a `D3DLOCK_DISCARD` boundary when later writes use the same range.
+Overlapping ranges are not merged and must be checked before reconstructing a
+whole buffer. Set `SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOAD_LENGTH` to a positive
 byte length to restrict partial-range capture to buffers of that size; full
 buffer captures remain unaffected. The deferred cache is bounded to 256 MiB by
 default; oldest snapshots are evicted first. Set

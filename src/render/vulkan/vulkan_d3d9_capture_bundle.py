@@ -30,6 +30,7 @@ GEOMETRY_ATTRIBUTE = struct.Struct("<IIIII")
 CAPTURE_GEOMETRY = struct.Struct("<IIiI")
 CONSTANT_HEADER = struct.Struct("<4sIIIIII")
 MAX_CONSTANTS = 256
+D3DLOCK_DISCARD = 0x2000
 
 _SEMANTIC_PROPERTY = {
     (0, 0): "200",
@@ -144,13 +145,7 @@ def _read_events(capture_path: Path, event_index: int) -> tuple[dict[str, Any], 
 
     def retain_payload(row: dict[str, Any]) -> None:
         pointer = row.get("buffer_ptr")
-        capture_frame = int(row.get("payload_capture_frame", row.get("frame", -1)))
-        previous = objects["payload"].get(pointer)
-        previous_frame = int(previous.get("payload_capture_frame", previous.get("frame", -1))) if previous else -1
-        if previous is None or (capture_frame, int(row.get("event_index", -1))) > (
-            previous_frame, int(previous.get("event_index", -1))
-        ):
-            objects["payload"][pointer] = row
+        objects["payload"].setdefault(pointer, []).append(row)
 
     for line in capture_path.open(encoding="utf-8"):
         row = json.loads(line)
@@ -230,6 +225,68 @@ def _resource_file(root: Path, path_value: str, directory: str) -> Path:
     if not path.is_file():
         raise ValueError(f"capture payload is missing: {path}")
     return path
+
+
+def _captured_buffer_bytes(
+    capture_root: Path,
+    payload_rows: list[dict[str, Any]],
+    buffer_create: dict[str, Any],
+    draw: dict[str, Any],
+    buffer_length: int,
+    resource_name: str,
+) -> tuple[bytes, list[dict[str, Any]]]:
+    if buffer_length <= 0:
+        raise ValueError(f"captured {resource_name} has an invalid buffer length")
+
+    create_event = int(buffer_create["event_index"])
+    create_frame = int(buffer_create.get("frame", -1))
+    draw_frame = int(draw.get("frame", 0))
+    draw_event = int(draw.get("event_index", -1))
+    candidates: list[tuple[int, int, int, bytes, dict[str, Any]]] = []
+    for row in payload_rows:
+        event_index = int(row.get("event_index", -1))
+        capture_frame = int(row.get("payload_capture_frame", row.get("frame", -1)))
+        if event_index <= create_event or capture_frame < create_frame:
+            continue
+        if capture_frame > draw_frame:
+            continue
+        if capture_frame == draw_frame and event_index > draw_event:
+            raise ValueError(f"captured {resource_name} payload order is ambiguous within the draw frame")
+        if not _payload_precedes_draw(row, draw):
+            continue
+        if row.get("snapshot_status") != "captured":
+            raise ValueError(f"captured {resource_name} buffer payload failed")
+        if int(row.get("buffer_length", -1)) != buffer_length:
+            raise ValueError(f"captured {resource_name} payload has a different buffer length")
+        offset = int(row.get("offset", -1))
+        byte_size = int(row.get("captured_byte_size", -1))
+        if offset < 0 or byte_size <= 0 or offset + byte_size > buffer_length:
+            raise ValueError(f"captured {resource_name} payload range is invalid")
+        path = _resource_file(capture_root, str(row.get("payload_path") or ""), "buffers")
+        payload = path.read_bytes()
+        if len(payload) != byte_size:
+            raise ValueError(f"captured {resource_name} payload size does not match its event")
+        candidates.append((capture_frame, event_index, offset, payload, row))
+
+    data = bytearray(buffer_length)
+    covered = bytearray(buffer_length)
+    used_rows: list[dict[str, Any]] = []
+    for _, _, offset, payload, row in sorted(candidates, key=lambda item: item[:2]):
+        if int(row.get("flags", 0)) & D3DLOCK_DISCARD:
+            data[:] = b"\0" * buffer_length
+            covered[:] = b"\0" * buffer_length
+        end = offset + len(payload)
+        data[offset:end] = payload
+        covered[offset:end] = b"\1" * len(payload)
+        used_rows.append(row)
+
+    if 0 in covered:
+        first_missing = covered.find(b"\0")
+        raise ValueError(
+            f"captured {resource_name} payload ranges do not cover the full buffer "
+            f"(first missing byte {first_missing})"
+        )
+    return bytes(data), used_rows
 
 
 def _shader_program(row: dict[str, Any], stage: str) -> Any:
@@ -551,39 +608,35 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
     ib_ptr = indices_state.get("index_buffer_ptr")
     vertex_create = objects["vertex_buffer"].get(vb_ptr)
     index_create = objects["index_buffer"].get(ib_ptr)
-    vertex_payload = objects["payload"].get(vb_ptr)
-    index_payload = objects["payload"].get(ib_ptr)
-    if not all((vertex_create, index_create, vertex_payload, index_payload)):
-        raise ValueError("captured draw lacks a create record or buffer payload snapshot")
-    if int(vertex_payload["event_index"]) <= int(vertex_create["event_index"]):
-        raise ValueError("vertex payload is outside its COM resource generation")
-    if int(index_payload["event_index"]) <= int(index_create["event_index"]):
-        raise ValueError("index payload is outside its COM resource generation")
-    if not _payload_precedes_draw(vertex_payload, draw):
-        raise ValueError("vertex payload capture is not proven to precede the draw")
-    if not _payload_precedes_draw(index_payload, draw):
-        raise ValueError("index payload capture is not proven to precede the draw")
-    if int(vertex_payload.get("payload_capture_frame", vertex_payload.get("frame", -1))) < int(vertex_create.get("frame", -1)):
-        raise ValueError("vertex payload predates its COM resource generation")
-    if int(index_payload.get("payload_capture_frame", index_payload.get("frame", -1))) < int(index_create.get("frame", -1)):
-        raise ValueError("index payload predates its COM resource generation")
+    if not vertex_create or not index_create:
+        raise ValueError("captured draw lacks a vertex or index buffer create record")
     if vertex_create.get("pool") != 1 or vertex_create.get("usage") != 0:
         raise ValueError("capture replay currently requires a static managed vertex buffer")
     if index_create.get("format") != 101:
         raise ValueError("capture replay requires D3DFMT_INDEX16")
-    if int(stream.get("stride", 0)) <= 0 or int(vertex_create.get("length", -1)) != int(vertex_payload.get("buffer_length", -2)):
-        raise ValueError("captured vertex stream metadata does not match its full snapshot")
-    if int(index_create.get("length", -1)) != int(index_payload.get("buffer_length", -2)):
-        raise ValueError("captured index metadata does not match its full snapshot")
-    if int(vertex_payload.get("offset", -1)) != 0 or int(vertex_payload.get("captured_byte_size", -1)) != int(vertex_payload.get("buffer_length", -2)):
-        raise ValueError("captured vertex payload is not a complete offset-zero snapshot")
-    if int(index_payload.get("offset", -1)) != 0 or int(index_payload.get("captured_byte_size", -1)) != int(index_payload.get("buffer_length", -2)):
-        raise ValueError("captured index payload is not a complete offset-zero snapshot")
-
-    vertex_path = _resource_file(capture_path.parent, str(vertex_payload["payload_path"]), "buffers")
-    index_path = _resource_file(capture_path.parent, str(index_payload["payload_path"]), "buffers")
-    vertex_bytes = bytearray(vertex_path.read_bytes())
-    index_bytes = index_path.read_bytes()
+    vertex_length = int(vertex_create.get("length", -1))
+    index_length = int(index_create.get("length", -1))
+    vertex_bytes, vertex_payload_rows = _captured_buffer_bytes(
+        capture_path.parent,
+        objects["payload"].get(vb_ptr, []),
+        vertex_create,
+        draw,
+        vertex_length,
+        "vertex",
+    )
+    index_bytes, index_payload_rows = _captured_buffer_bytes(
+        capture_path.parent,
+        objects["payload"].get(ib_ptr, []),
+        index_create,
+        draw,
+        index_length,
+        "index",
+    )
+    vertex_payload_sha256 = hashlib.sha256(vertex_bytes).hexdigest()
+    index_payload_sha256 = hashlib.sha256(index_bytes).hexdigest()
+    vertex_bytes = bytearray(vertex_bytes)
+    if int(stream.get("stride", 0)) <= 0:
+        raise ValueError("captured vertex stream has an invalid stride")
     stride = int(stream["stride"])
     stream_offset = int(stream.get("offset_in_bytes", 0))
     declaration = _declaration(bytes.fromhex(str(objects["declaration"].get(declaration_state["declaration_ptr"], {}).get("bytes_hex") or "")))
@@ -700,12 +753,20 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
         "resources": {
             "vertex_buffer_ptr": vb_ptr,
             "vertex_buffer_create_event": int(vertex_create["event_index"]),
-            "vertex_payload_event": int(vertex_payload["event_index"]),
-            "vertex_payload_sha256": hashlib.sha256(vertex_path.read_bytes()).hexdigest(),
+            "vertex_payload_events": [int(row["event_index"]) for row in vertex_payload_rows],
+            "vertex_payload_ranges": [
+                {"offset": int(row["offset"]), "byte_size": int(row["captured_byte_size"])}
+                for row in vertex_payload_rows
+            ],
+            "vertex_payload_sha256": vertex_payload_sha256,
             "index_buffer_ptr": ib_ptr,
             "index_buffer_create_event": int(index_create["event_index"]),
-            "index_payload_event": int(index_payload["event_index"]),
-            "index_payload_sha256": hashlib.sha256(index_path.read_bytes()).hexdigest(),
+            "index_payload_events": [int(row["event_index"]) for row in index_payload_rows],
+            "index_payload_ranges": [
+                {"offset": int(row["offset"]), "byte_size": int(row["captured_byte_size"])}
+                for row in index_payload_rows
+            ],
+            "index_payload_sha256": index_payload_sha256,
             "vertex_declaration_signature": declaration_state.get("resource_signature"),
             "vertex_shader_signature": vertex_shader_row.get("resource_signature"),
             "pixel_shader_signature": pixel_shader_row.get("resource_signature"),

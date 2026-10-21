@@ -210,6 +210,35 @@
       "validation_errors": 0,
       "retail_draw": false,
       "retail_image_parity_proven": false
+    },
+    "buffer_payload_range_reconstruction": {
+      "supported": true,
+      "requires_complete_byte_coverage": true,
+      "rejects_same_frame_post_draw_order_ambiguity": true,
+      "invalidates_older_ranges_after_d3dlock_discard": true,
+      "deferred_capture_preserves_discard_boundaries": true,
+      "regressions": 4
+    },
+    "next_capture": {
+      "trigger_resource_signature": "ps:58462f91650cef34",
+      "trigger_pixel_shader_sha256": "adb15d7e73c899c1891b3d0d7eedb5447d7c4387da883fda39e534c65f4add",
+      "trigger_set_pixel_shader_event_index": 4926411,
+      "first_target_draw_event_index": 4926423,
+      "first_target_draw_frame": 1569,
+      "target_shader_draw_frames": [
+        1569,
+        1571
+      ],
+      "target_draws_with_all_used_texture_stages_rebound_after_set_pixel_shader": 186,
+      "recommended_trigger_pre_frames": 2,
+      "recommended_trigger_post_frames": 2,
+      "recommended_buffer_payload_mode": "--partial-buffer-payloads",
+      "buffer_payload_mode_environment": {
+        "SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS": "1",
+        "SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS": "1"
+      },
+      "prior_trigger": "Present in frame 1571, after the target draws in frames 1569–1571",
+      "basis": "Resource-triggering on the first target pixel shader starts snapshot capture before the SetTexture calls; target shader bindings in the trace rebind every used sampler stage after SetPixelShader."
     }
   }
 }

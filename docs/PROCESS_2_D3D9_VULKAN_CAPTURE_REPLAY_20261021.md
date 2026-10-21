@@ -44,10 +44,13 @@ target image.
   multi-level texture fails closed because the native executor uploads one mip.
 
 These are translation and command-submission results, not a comparison against
-the original frame. The capture does not log VB/IB lock and unlock updates, so
-the complete payloads are COM-generation snapshots rather than proven
-draw-local bytes. It also has no original render-target image. The evidence is
-explicitly marked `retail_image_parity_proven: false`.
+the original frame. The proxy emits buffer payload events from successful
+Lock/Unlock writes, but this capture contains only full-buffer snapshots, not
+an ordered set of partial ranges establishing every byte version at each draw.
+The Vulkan bundle now reconstructs draw-local bytes only from ordered ranges
+with complete coverage; older full snapshots remain generation snapshots, not
+proven draw-local bytes. This capture also has no original render-target image.
+The evidence is explicitly marked `retail_image_parity_proven: false`.
 
 The separate audited first DIP, event 1110/frame 344, still has no VB/IB
 payloads or texture snapshots and is not submitted by this change. This

@@ -65,6 +65,21 @@ This phone capture does not produce a replay bundle:
   multi-register change is descriptor-binding support, not complete replay of
   those captured sampler contracts.
 
+The phone capture triggered at `Present` in frame 1571, after target draws from
+frames 1569–1571 had already executed. Their `SetTexture` rows therefore kept
+`snapshot_status=deferred-until-trigger`. The first target draw can be captured
+earlier by resource-triggering on its pixel shader, `ps:58462f91650cef34`:
+that `SetPixelShader` is event 4926411/frame 1569, before the first target draw
+at event 4926423. Across all 186 target draws, each shader-used texture stage
+is rebound after its `SetPixelShader` call, so the early trigger activates
+texture snapshots before those `SetTexture` calls. The next capture should
+also pass `--partial-buffer-payloads` to the capture launcher. The Vulkan
+bundle reconstructs a buffer only when ordered captured ranges cover every
+byte. The proxy keeps deferred discard writes separate from normal writes,
+and the bundle applies ranges in capture order, invalidates older ranges after
+`D3DLOCK_DISCARD`, and rejects holes or same-frame ordering ambiguity. The
+exact trigger and range-mode facts are recorded in the evidence JSON.
+
 The native Vulkan executor also passed a format smoke for 21 and 113 on a GTX
 950 with zero validation errors. It used the existing synthetic material bundle
 to exercise attachment creation and readback; it is not an NFS SHIFT draw or
@@ -82,9 +97,8 @@ The large phone log and payloads remain local rather than being added to Git.
 ## Verification
 
 - 65 focused capture, shader, bundle, and Vulkan shader tests passed before the
-  multi-register change. The focused capture and texture-packet tests passed
-  (18 tests); including native executor contract tests, the post-change set
-  passed 21 tests.
+  multi-register change. The current targeted bundle, sampler, executor, and
+  native capture-proxy regression set passed 59 tests.
 - All native Vulkan CMake targets built on Linux.
 - The 11 focused bundle-format and native executor contract tests passed; the
   synthetic format smoke passed for both mobile target formats.
@@ -93,3 +107,6 @@ The large phone log and payloads remain local rather than being added to Git.
   errors. The general Linux Vulkan smoke also rendered and prepared its
   two-draw bundle set. Both are executor checks, not captured SHIFT renders or
   retail-image parity evidence.
+- Partial buffer payload reconstruction passed regressions for out-of-order
+  ranges, overlapping later writes, missing coverage, discard invalidation,
+  and ambiguous ordering.

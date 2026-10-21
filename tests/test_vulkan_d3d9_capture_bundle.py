@@ -12,6 +12,7 @@ from vulkan_d3d9_capture_bundle import (
     CAPTURE_GEOMETRY,
     GEOMETRY_ATTRIBUTE,
     GEOMETRY_HEADER,
+    _captured_buffer_bytes,
     _captured_surface_formats,
     _capture_texture_packet,
     _payload_precedes_draw,
@@ -34,7 +35,7 @@ def test_capture_bundle_uses_deferred_buffer_payload_captured_before_draw(tmp_pa
     capture.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
 
     draw, state = _read_events(capture, 2)
-    payload = state["objects"]["payload"]["vb"]
+    payload = state["objects"]["payload"]["vb"][0]
     assert payload["event_index"] == 3
     assert _payload_precedes_draw(payload, draw)
 
@@ -49,7 +50,7 @@ def test_capture_bundle_rejects_same_frame_deferred_buffer_payload(tmp_path):
     capture.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
 
     draw, state = _read_events(capture, 2)
-    payload = state["objects"]["payload"]["vb"]
+    payload = state["objects"]["payload"]["vb"][0]
     assert not _payload_precedes_draw(payload, draw)
 
 
@@ -173,4 +174,119 @@ def test_capture_texture_packet_fails_closed_for_missing_used_sampler_binding(tm
             tmp_path,
             SimpleNamespace(samplers=[4], sampler_types={}),
             tmp_path / "textures.svtp",
+        )
+
+
+def test_capture_buffer_payload_ranges_reconstruct_full_buffer_in_capture_order(tmp_path):
+    buffer_dir = tmp_path / "buffers"
+    buffer_dir.mkdir()
+    chunks = (("first.bin", b"ab", 0, 2), ("second.bin", b"cd", 2, 3), ("update.bin", b"XY", 1, 4))
+    rows = []
+    for event_index, (name, payload, offset, frame) in enumerate(chunks, 20):
+        (buffer_dir / name).write_bytes(payload)
+        rows.append({
+            "event_index": event_index,
+            "payload_capture_frame": frame,
+            "buffer_length": 4,
+            "offset": offset,
+            "captured_byte_size": len(payload),
+            "snapshot_status": "captured",
+            "payload_path": fr"C:\capture\buffers\{name}",
+        })
+
+    data, used_rows = _captured_buffer_bytes(
+        tmp_path,
+        rows,
+        {"event_index": 1, "frame": 0},
+        {"event_index": 50, "frame": 5},
+        4,
+        "vertex",
+    )
+
+    assert data == b"aXYd"
+    assert [row["event_index"] for row in used_rows] == [20, 21, 22]
+
+
+def test_capture_buffer_payload_ranges_reject_incomplete_coverage(tmp_path):
+    buffer_dir = tmp_path / "buffers"
+    buffer_dir.mkdir()
+    (buffer_dir / "left.bin").write_bytes(b"ab")
+    row = {
+        "event_index": 20,
+        "payload_capture_frame": 2,
+        "buffer_length": 4,
+        "offset": 0,
+        "captured_byte_size": 2,
+        "snapshot_status": "captured",
+        "payload_path": r"C:\capture\buffers\left.bin",
+    }
+
+    with pytest.raises(ValueError, match="do not cover the full buffer"):
+        _captured_buffer_bytes(
+            tmp_path,
+            [row],
+            {"event_index": 1, "frame": 0},
+            {"event_index": 50, "frame": 5},
+            4,
+            "index",
+        )
+
+
+def test_capture_buffer_payload_discard_invalidates_older_ranges(tmp_path):
+    buffer_dir = tmp_path / "buffers"
+    buffer_dir.mkdir()
+    (buffer_dir / "whole.bin").write_bytes(b"abcd")
+    (buffer_dir / "discard.bin").write_bytes(b"XY")
+    rows = [
+        {
+            "event_index": 20,
+            "payload_capture_frame": 2,
+            "buffer_length": 4,
+            "offset": 0,
+            "captured_byte_size": 4,
+            "snapshot_status": "captured",
+            "payload_path": r"C:\capture\buffers\whole.bin",
+        },
+        {
+            "event_index": 21,
+            "payload_capture_frame": 3,
+            "buffer_length": 4,
+            "offset": 1,
+            "captured_byte_size": 2,
+            "flags": 0x2000,
+            "snapshot_status": "captured",
+            "payload_path": r"C:\capture\buffers\discard.bin",
+        },
+    ]
+
+    with pytest.raises(ValueError, match="do not cover the full buffer"):
+        _captured_buffer_bytes(
+            tmp_path,
+            rows,
+            {"event_index": 1, "frame": 0},
+            {"event_index": 50, "frame": 5},
+            4,
+            "vertex",
+        )
+
+
+def test_capture_buffer_payload_rejects_ambiguous_same_frame_order(tmp_path):
+    row = {
+        "event_index": 51,
+        "frame": 5,
+        "payload_capture_frame": 5,
+        "buffer_length": 4,
+        "offset": 0,
+        "captured_byte_size": 4,
+        "snapshot_status": "captured",
+    }
+
+    with pytest.raises(ValueError, match="ambiguous within the draw frame"):
+        _captured_buffer_bytes(
+            tmp_path,
+            [row],
+            {"event_index": 1, "frame": 0},
+            {"event_index": 50, "frame": 5},
+            4,
+            "vertex",
         )
