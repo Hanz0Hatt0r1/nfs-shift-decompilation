@@ -579,7 +579,7 @@ void write_wsa_startup_pe32_fixture(const std::string& path) {
     write_u32(bytes, optional_offset + 60, 0x200);
     write_u32(bytes, optional_offset + 92, 16);
     write_u32(bytes, optional_offset + 104, 0x2000);
-    write_u32(bytes, optional_offset + 108, 0x3c);
+    write_u32(bytes, optional_offset + 108, 0x78);
 
     std::copy_n(".text", 5, bytes.begin() + section_offset);
     write_u32(bytes, section_offset + 8, 0x300);
@@ -593,26 +593,61 @@ void write_wsa_startup_pe32_fixture(const std::string& path) {
     write_u32(bytes, idata_section_offset + 20, 0x400);
     std::copy_n("P32!", 4, bytes.begin() + 0x200);
 
-    write_u32(bytes, 0x400, 0x2040);
-    write_u32(bytes, 0x40c, 0x2060);
-    write_u32(bytes, 0x410, 0x2080);
-    write_u32(bytes, 0x414, 0x20c0);
-    write_u32(bytes, 0x420, 0x20e0);
-    write_u32(bytes, 0x424, 0x2100);
-    write_u32(bytes, 0x440, 0x80000073);
-    write_u32(bytes, 0x444, 0x80000074);
-    write_u32(bytes, 0x448, 0x20a0);
-    write_u32(bytes, 0x480, 0x80000073);
-    write_u32(bytes, 0x484, 0x80000074);
-    write_u32(bytes, 0x488, 0x20a0);
-    std::copy_n("WS2_32.dll", 11, bytes.begin() + 0x460);
-    write_u16(bytes, 0x4a0, 0);
-    std::copy_n("WSAWaitForMultipleEvents", 25, bytes.begin() + 0x4a2);
-    write_u32(bytes, 0x4c0, 0x2140);
-    write_u32(bytes, 0x500, 0x2140);
-    std::copy_n("KERNEL32.dll", 13, bytes.begin() + 0x4e0);
-    write_u16(bytes, 0x540, 0);
-    std::copy_n("CreateEventW", 13, bytes.begin() + 0x542);
+    write_u32(bytes, 0x400, 0x2080);
+    write_u32(bytes, 0x40c, 0x21a0);
+    write_u32(bytes, 0x410, 0x20d0);
+    write_u32(bytes, 0x414, 0x2120);
+    write_u32(bytes, 0x420, 0x21b0);
+    write_u32(bytes, 0x424, 0x2170);
+    write_u32(bytes, 0x428, 0x2128);
+    write_u32(bytes, 0x434, 0x21c0);
+    write_u32(bytes, 0x438, 0x2178);
+    write_u32(bytes, 0x43c, 0x2130);
+    write_u32(bytes, 0x448, 0x21d0);
+    write_u32(bytes, 0x44c, 0x2180);
+    write_u32(bytes, 0x450, 0x2140);
+    write_u32(bytes, 0x45c, 0x21e0);
+    write_u32(bytes, 0x460, 0x2190);
+    const std::array<uint32_t, 17> winsock_thunks = {
+        0x80000073, 0x80000074, 0x2220, 0x80000017, 0x80000004,
+        0x8000006f, 0x80000008, 0x80000009, 0x2240, 0x2260,
+        0x2280, 0x22a0, 0x22c0, 0x22e0, 0x2300, 0x2320, 0x2340};
+    for (size_t index = 0; index < winsock_thunks.size(); ++index)
+        write_u32(bytes, 0x480 + index * 4, winsock_thunks[index]);
+    write_u32(bytes, 0x480 + winsock_thunks.size() * 4, 0);
+    write_u32(bytes, 0x520, 0x2360);
+    write_u32(bytes, 0x524, 0);
+    write_u32(bytes, 0x528, 0x2380);
+    write_u32(bytes, 0x52c, 0);
+    write_u32(bytes, 0x530, 0x8000000a);
+    write_u32(bytes, 0x534, 0x80000067);
+    write_u32(bytes, 0x538, 0x8000006c);
+    write_u32(bytes, 0x53c, 0);
+    write_u32(bytes, 0x540, 0x23a0);
+    write_u32(bytes, 0x544, 0);
+    std::copy_n("WS2_32.dll", 11, bytes.begin() + 0x5a0);
+    std::copy_n("KERNEL32.dll", 13, bytes.begin() + 0x5b0);
+    std::copy_n("NETAPI32.dll", 13, bytes.begin() + 0x5c0);
+    std::copy_n("WSOCK32.dll", 12, bytes.begin() + 0x5d0);
+    std::copy_n("Secur32.dll", 12, bytes.begin() + 0x5e0);
+    const auto write_import = [&bytes](size_t offset, const char* name,
+                                       size_t length) {
+        write_u16(bytes, offset, 0);
+        std::copy_n(name, length, bytes.begin() + offset + 2);
+    };
+    write_import(0x620, "WSAWaitForMultipleEvents", 25);
+    write_import(0x640, "getaddrinfo", 12);
+    write_import(0x660, "freeaddrinfo", 13);
+    write_import(0x680, "WSARecv", 8);
+    write_import(0x6a0, "WSAIoctl", 9);
+    write_import(0x6c0, "WSACreateEvent", 15);
+    write_import(0x6e0, "WSASetEvent", 12);
+    write_import(0x700, "WSAResetEvent", 13);
+    write_import(0x720, "WSACloseEvent", 14);
+    write_import(0x740, "WSAGetOverlappedResult", 23);
+    write_import(0x760, "CreateEventW", 13);
+    write_import(0x780, "Netbios", 8);
+    write_import(0x7a0, "AcquireCredentialsHandleA", 26);
 
     std::ofstream file(path, std::ios::binary | std::ios::trunc);
     require(static_cast<bool>(file), "could not create Winsock PE32 fixture");
@@ -2644,28 +2679,92 @@ int main(int argc, char** argv) {
         shift::runtime::RecompiledPcodeModule winsock_module(argv[1]);
         const auto winsock_image =
             winsock_module.load_pe32_image(wsa_startup_fixture_path);
-        require(winsock_image.import_module_count == 2 &&
-                    winsock_image.import_function_count == 4,
+        require(winsock_image.import_module_count == 5 &&
+                    winsock_image.import_function_count == 23,
                 "Winsock fixture imports were not parsed");
-        const uint32_t wsa_startup_stub = read_guest_u32(
-            winsock_module, "ram", winsock_image.image_base + 0x2080);
-        const uint32_t wsa_cleanup_stub = read_guest_u32(
-            winsock_module, "ram", winsock_image.image_base + 0x2084);
-        const uint32_t wsa_wait_stub = read_guest_u32(
-            winsock_module, "ram", winsock_image.image_base + 0x2088);
+        const auto winsock_import = [&](size_t index) {
+            return read_guest_u32(winsock_module, "ram",
+                                  winsock_image.image_base + 0x20d0 +
+                                      index * sizeof(uint32_t));
+        };
+        const uint32_t wsa_startup_stub = winsock_import(0);
+        const uint32_t wsa_cleanup_stub = winsock_import(1);
+        const uint32_t wsa_wait_stub = winsock_import(2);
+        const uint32_t socket_stub = winsock_import(3);
+        const uint32_t connect_stub = winsock_import(4);
+        const uint32_t wsa_get_last_error_stub = winsock_import(5);
+        const uint32_t htonl_stub = winsock_import(6);
+        const uint32_t htons_stub = winsock_import(7);
+        const uint32_t getaddrinfo_stub = winsock_import(8);
+        const uint32_t freeaddrinfo_stub = winsock_import(9);
+        const uint32_t wsa_recv_stub = winsock_import(10);
+        const uint32_t wsa_ioctl_stub = winsock_import(11);
+        const uint32_t wsa_create_event_stub = winsock_import(12);
+        const uint32_t wsa_set_event_stub = winsock_import(13);
+        const uint32_t wsa_reset_event_stub = winsock_import(14);
+        const uint32_t wsa_close_event_stub = winsock_import(15);
+        const uint32_t wsa_overlapped_result_stub = winsock_import(16);
+        const uint32_t netbios_stub = read_guest_u32(
+            winsock_module, "ram", winsock_image.image_base + 0x2178);
+        const uint32_t wsock_inet_addr_stub = read_guest_u32(
+            winsock_module, "ram", winsock_image.image_base + 0x2180);
+        const uint32_t wsock_async_gethost_stub = read_guest_u32(
+            winsock_module, "ram", winsock_image.image_base + 0x2184);
+        const uint32_t wsock_cancel_async_stub = read_guest_u32(
+            winsock_module, "ram", winsock_image.image_base + 0x2188);
         const uint32_t create_event_stub = read_guest_u32(
-            winsock_module, "ram", winsock_image.image_base + 0x2100);
+            winsock_module, "ram", winsock_image.image_base + 0x2170);
+        const uint32_t acquire_credentials_stub = read_guest_u32(
+            winsock_module, "ram", winsock_image.image_base + 0x2190);
         require(wsa_startup_stub == 0xf0000000 &&
                     wsa_cleanup_stub == 0xf0000010 &&
                     wsa_wait_stub == 0xf0000020 &&
-                    create_event_stub == 0xf0000030,
-                "Winsock or Kernel32 imports were not mapped to their traps");
-        const uint32_t wsadata_address = winsock_image.image_base + 0x2200;
-        const uint32_t event_array_address = winsock_image.image_base + 0x23a0;
+                    socket_stub == 0xf0000030 &&
+                    connect_stub == 0xf0000040 &&
+                    wsa_get_last_error_stub == 0xf0000050 &&
+                    htonl_stub == 0xf0000060 && htons_stub == 0xf0000070 &&
+                    getaddrinfo_stub == 0xf0000080 &&
+                    freeaddrinfo_stub == 0xf0000090 &&
+                    wsa_recv_stub == 0xf00000a0 &&
+                    wsa_ioctl_stub == 0xf00000b0 &&
+                    wsa_create_event_stub == 0xf00000c0 &&
+                    wsa_set_event_stub == 0xf00000d0 &&
+                    wsa_reset_event_stub == 0xf00000e0 &&
+                    wsa_close_event_stub == 0xf00000f0 &&
+                    wsa_overlapped_result_stub == 0xf0000100 &&
+                    create_event_stub == 0xf0000110 &&
+                    netbios_stub == 0xf0000120 &&
+                    wsock_inet_addr_stub == 0xf0000130 &&
+                    wsock_async_gethost_stub == 0xf0000140 &&
+                    wsock_cancel_async_stub == 0xf0000150 &&
+                    acquire_credentials_stub == 0xf0000160,
+                "network and security imports were not mapped to their traps");
+        const uint32_t wsadata_address = winsock_image.image_base + 0x2500;
+        const uint32_t event_array_address = winsock_image.image_base + 0x25a0;
+        const uint32_t resolver_result_address = winsock_image.image_base + 0x25c0;
+        constexpr uint32_t ncb_address = 0x00035000;
+        write_guest_u32(winsock_module, "ram", ncb_address, 0);
+        write_guest_u32(winsock_module, "ram", ncb_address + 4, 0);
         write_guest_u32(winsock_module, "ram", event_array_address, 0);
         require(invoke_import(winsock_module, wsa_wait_stub,
                               {1, event_array_address, 0, 0, 0}) == UINT32_MAX,
                 "WSAWaitForMultipleEvents succeeded before WSAStartup");
+        require(invoke_import(winsock_module, socket_stub,
+                              {2, 1, 6}) == UINT32_MAX &&
+                    invoke_import(winsock_module, wsa_get_last_error_stub,
+                                  {}) == 10093,
+                "socket stub did not fail as uninitialized before WSAStartup");
+        require(invoke_import(winsock_module, netbios_stub,
+                              {ncb_address}) == 0x34,
+                "offline Netbios call did not return NRC_ENVNOTDEF");
+        std::array<uint8_t, 1> ncb_status{};
+        require(winsock_module.read_guest("ram", ncb_address + 1, 1,
+                                          ncb_status.data()) &&
+                    ncb_status[0] == 0x34 &&
+                    winsock_module.read_guest("ram", ncb_address + 49, 1,
+                                              ncb_status.data()) &&
+                    ncb_status[0] == 0x34,
+                "offline Netbios call did not update NCB completion status");
         require(invoke_import(winsock_module, wsa_startup_stub,
                               {0x0002, wsadata_address}) == 0,
                 "WSAStartup did not accept Winsock 2.0");
@@ -2686,6 +2785,57 @@ int main(int argc, char** argv) {
                                     wsadata.data() + 0x105)) ==
                         "Running",
                 "WSAStartup returned incorrect WSADATA fields");
+        require(invoke_import(winsock_module, socket_stub,
+                              {2, 1, 6}) == UINT32_MAX &&
+                    invoke_import(winsock_module, wsa_get_last_error_stub,
+                                  {}) == 10050 &&
+                    invoke_import(winsock_module, connect_stub,
+                                  {1, 0, 16}) == UINT32_MAX &&
+                    invoke_import(winsock_module, wsa_get_last_error_stub,
+                                  {}) == 10050,
+                "offline socket or connect did not report WSAENETDOWN");
+        require(invoke_import(winsock_module, acquire_credentials_stub,
+                              {0, 0, 0, 0, 0, 0, 0, 0, 0}) ==
+                    0x80090302,
+                "online Secur32 credentials path did not fail offline");
+        require(invoke_import(winsock_module, htonl_stub,
+                              {0x11223344}) == 0x44332211 &&
+                    invoke_import(winsock_module, htons_stub,
+                                  {0x00001234}) == 0x00003412,
+                "Winsock byte-order helpers did not preserve host semantics");
+        require(invoke_import(winsock_module, wsock_inet_addr_stub,
+                              {0}) == UINT32_MAX &&
+                    invoke_import(winsock_module, wsock_async_gethost_stub,
+                                  {0, 0, 0, 0, 0}) == 0 &&
+                    invoke_import(winsock_module, wsa_get_last_error_stub,
+                                  {}) == 11001 &&
+                    invoke_import(winsock_module, wsock_cancel_async_stub,
+                                  {0}) == 0,
+                "legacy Winsock async/name stubs did not fail offline");
+        write_guest_u32(winsock_module, "ram", resolver_result_address,
+                        0x12345678);
+        require(invoke_import(winsock_module, getaddrinfo_stub,
+                              {0, 0, 0, resolver_result_address}) == 11001 &&
+                    read_guest_u32(winsock_module, "ram",
+                                   resolver_result_address) == 0 &&
+                    invoke_import(winsock_module, freeaddrinfo_stub,
+                                  {resolver_result_address}) == 0,
+                "getaddrinfo did not fail offline with a cleared result");
+        require(invoke_import(winsock_module, wsa_recv_stub,
+                              {1, 0, 1, 0, 0, 0, 0}) == UINT32_MAX &&
+                    invoke_import(winsock_module, wsa_get_last_error_stub,
+                                  {}) == 10050 &&
+                    invoke_import(winsock_module, wsa_ioctl_stub,
+                                  {1, 0, 0, 0, 0, 0, 0, 0, 0}) ==
+                        UINT32_MAX &&
+                    invoke_import(winsock_module, wsa_get_last_error_stub,
+                                  {}) == 10050 &&
+                    invoke_import(winsock_module,
+                                  wsa_overlapped_result_stub,
+                                  {1, 0, 0, 0, 0}) == 0 &&
+                    invoke_import(winsock_module, wsa_get_last_error_stub,
+                                  {}) == 10050,
+                "Winsock receive/overlapped stubs did not fail offline");
         require(invoke_import(winsock_module, wsa_startup_stub,
                               {0x0001, wsadata_address}) == 0,
                 "WSAStartup did not accept Winsock 1.0");
@@ -2707,19 +2857,28 @@ int main(int argc, char** argv) {
                     invoke_import(winsock_module, wsa_cleanup_stub, {}) == 0,
                 "WSAStartup negotiated Winsock 2.2 incorrectly");
         const uint32_t signaled_event = invoke_import(
-            winsock_module, create_event_stub, {0, 1, 1, 0});
+            winsock_module, wsa_create_event_stub, {});
         const uint32_t unsignaled_event = invoke_import(
             winsock_module, create_event_stub, {0, 1, 0, 0});
+        require(invoke_import(winsock_module, wsa_set_event_stub,
+                              {signaled_event}) == 1,
+                "WSASetEvent did not signal its guest event");
         write_guest_u32(winsock_module, "ram", event_array_address,
                         signaled_event);
         require(invoke_import(winsock_module, wsa_wait_stub,
                               {1, event_array_address, 0, 0, 0}) == 0,
                 "WSAWaitForMultipleEvents missed a signaled event");
+        require(invoke_import(winsock_module, wsa_reset_event_stub,
+                              {signaled_event}) == 1,
+                "WSAResetEvent did not reset its guest event");
         write_guest_u32(winsock_module, "ram", event_array_address,
                         unsignaled_event);
         require(invoke_import(winsock_module, wsa_wait_stub,
                               {1, event_array_address, 0, 0, 0}) == 0x102,
                 "WSAWaitForMultipleEvents did not return its zero-timeout status");
+        require(invoke_import(winsock_module, wsa_close_event_stub,
+                              {signaled_event}) == 1,
+                "WSACloseEvent did not close its guest event");
         write_guest_u32(winsock_module, "ram", event_array_address, 0);
         require(invoke_import(winsock_module, wsa_wait_stub,
                               {1, event_array_address, 0, 0, 0}) == UINT32_MAX,

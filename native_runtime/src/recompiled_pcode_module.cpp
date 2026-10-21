@@ -1831,6 +1831,88 @@ struct RecompiledPcodeModule::Impl {
                 return time_get_time();
             if (name == "WS2_32.dll!#115") return wsa_startup();
             if (name == "WS2_32.dll!#116") return wsa_cleanup();
+            if (name == "WS2_32.dll!#111") return wsa_get_last_error();
+            if (name == "WS2_32.dll!#112") return wsa_set_last_error();
+            if (name == "WS2_32.dll!#1")
+                return winsock_offline_failure(name.c_str(), 12);
+            if (name == "WS2_32.dll!#2")
+                return winsock_offline_failure(name.c_str(), 12);
+            if (name == "WS2_32.dll!#3")
+                return winsock_offline_failure(name.c_str(), 4);
+            if (name == "WS2_32.dll!#4")
+                return winsock_offline_failure(name.c_str(), 12);
+            if (name == "WS2_32.dll!#5")
+                return winsock_offline_failure(name.c_str(), 12);
+            if (name == "WS2_32.dll!#6")
+                return winsock_offline_failure(name.c_str(), 12);
+            if (name == "WS2_32.dll!#7")
+                return winsock_offline_failure(name.c_str(), 20);
+            if (name == "WS2_32.dll!#8") return winsock_byte_order(name, true);
+            if (name == "WS2_32.dll!#9") return winsock_byte_order(name, false);
+            if (name == "WS2_32.dll!#10")
+                return winsock_offline_failure(name.c_str(), 12);
+            if (name == "WS2_32.dll!#11" ||
+                name == "WSOCK32.dll!#10")
+                return winsock_inet_addr_unavailable(name.c_str());
+            if (name == "WS2_32.dll!#13")
+                return winsock_offline_failure(name.c_str(), 8);
+            if (name == "WS2_32.dll!#14") return winsock_byte_order(name, true);
+            if (name == "WS2_32.dll!#15") return winsock_byte_order(name, false);
+            if (name == "WS2_32.dll!#16")
+                return winsock_offline_failure(name.c_str(), 16);
+            if (name == "WS2_32.dll!#17")
+                return winsock_offline_failure(name.c_str(), 24);
+            if (name == "WS2_32.dll!#18")
+                return winsock_offline_failure(name.c_str(), 20);
+            if (name == "WS2_32.dll!#19")
+                return winsock_offline_failure(name.c_str(), 16);
+            if (name == "WS2_32.dll!#20")
+                return winsock_offline_failure(name.c_str(), 24);
+            if (name == "WS2_32.dll!#21")
+                return winsock_offline_failure(name.c_str(), 20);
+            if (name == "WS2_32.dll!#22")
+                return winsock_offline_failure(name.c_str(), 8);
+            if (name == "WS2_32.dll!#23")
+                return winsock_offline_failure(name.c_str(), 12);
+            if (name == "WS2_32.dll!#52")
+                return winsock_name_lookup_failure(name.c_str(), 4);
+            if (name == "WS2_32.dll!#57")
+                return winsock_offline_failure(name.c_str(), 8);
+            if (name == "WSOCK32.dll!#103")
+                return winsock_name_lookup_failure(name.c_str(), 20);
+            if (name == "WSOCK32.dll!#108")
+                return return_kernel32_dword(0, name.c_str(), 4);
+            if (name == "WS2_32.dll!getaddrinfo") return wsa_getaddrinfo();
+            if (name == "WS2_32.dll!freeaddrinfo") return wsa_freeaddrinfo();
+            if (name == "WS2_32.dll!WSARecv")
+                return winsock_offline_failure(name.c_str(), 28);
+            if (name == "WS2_32.dll!WSARecvFrom")
+                return winsock_offline_failure(name.c_str(), 36);
+            if (name == "WS2_32.dll!WSAIoctl")
+                return winsock_offline_failure(name.c_str(), 36);
+            if (name == "WS2_32.dll!WSAGetOverlappedResult")
+                return winsock_offline_failure(name.c_str(), 20, 0);
+            if (name == "WS2_32.dll!WSACreateEvent") return wsa_create_event();
+            if (name == "WS2_32.dll!WSASetEvent") return set_event(true);
+            if (name == "WS2_32.dll!WSAResetEvent") return set_event(false);
+            if (name == "WS2_32.dll!WSACloseEvent") return wsa_close_event();
+            if (name == "NETAPI32.dll!Netbios")
+                return netbios_offline_failure();
+            if (name == "Secur32.dll!AcquireCredentialsHandleA")
+                return online_security_failure(name.c_str(), 36);
+            if (name == "Secur32.dll!InitializeSecurityContextA")
+                return online_security_failure(name.c_str(), 48);
+            if (name == "Secur32.dll!ApplyControlToken")
+                return online_security_failure(name.c_str(), 8);
+            if (name == "Secur32.dll!EncryptMessage" ||
+                name == "Secur32.dll!DecryptMessage")
+                return online_security_failure(name.c_str(), 16);
+            if (name == "Secur32.dll!QueryContextAttributesA")
+                return online_security_failure(name.c_str(), 12);
+            if (name == "Secur32.dll!DeleteSecurityContext" ||
+                name == "Secur32.dll!FreeCredentialsHandle" ||
+                name == "Secur32.dll!FreeContextBuffer")
+                return return_kernel32_dword(0, name.c_str(), 4);
             if (name == "WS2_32.dll!WSAWaitForMultipleEvents")
                 return wsa_wait_for_multiple_events();
             if (name == "KERNEL32.dll!QueryPerformanceCounter")
@@ -3911,6 +3993,150 @@ struct RecompiledPcodeModule::Impl {
         if (guest_winsock_startup_count != UINT32_MAX)
             ++guest_winsock_startup_count;
         return return_kernel32_dword(0, api, 8);
+    }
+
+    int winsock_offline_failure(const char* api, uint32_t argument_bytes,
+                                uint32_t result = UINT32_MAX) {
+        constexpr uint32_t kWsaNotInitialized = 10093;
+        constexpr uint32_t kWsaNetworkDown = 10050;
+        guest_last_error = guest_winsock_startup_count == 0
+                               ? kWsaNotInitialized
+                               : kWsaNetworkDown;
+        return return_kernel32_dword(result, api, argument_bytes);
+    }
+
+    int online_security_failure(const char* api, uint32_t argument_bytes) {
+        constexpr uint32_t kSecEUnsupportedFunction = 0x80090302;
+        return return_kernel32_dword(kSecEUnsupportedFunction, api,
+                                     argument_bytes);
+    }
+
+    int winsock_name_lookup_failure(const char* api,
+                                    uint32_t argument_bytes) {
+        constexpr uint32_t kWsaNotInitialized = 10093;
+        constexpr uint32_t kWsaHostNotFound = 11001;
+        guest_last_error = guest_winsock_startup_count == 0
+                               ? kWsaNotInitialized
+                               : kWsaHostNotFound;
+        return return_kernel32_dword(0, api, argument_bytes);
+    }
+
+    int winsock_byte_order(const std::string& import_name, bool dword) {
+        uint32_t value = 0;
+        if (!read_stack_argument(0, value, import_name.c_str())) return -1;
+        const uint32_t converted = dword
+            ? ((value & 0x000000ffu) << 24) |
+                  ((value & 0x0000ff00u) << 8) |
+                  ((value & 0x00ff0000u) >> 8) |
+                  ((value & 0xff000000u) >> 24)
+            : (((value & 0x000000ffu) << 8) |
+               ((value & 0x0000ff00u) >> 8));
+        return return_kernel32_dword(converted, import_name.c_str(), 4);
+    }
+
+    int winsock_inet_addr_unavailable(const char* api) {
+        uint32_t address = 0;
+        if (!read_stack_argument(0, address, api)) return -1;
+        (void)address;
+        return return_kernel32_dword(UINT32_MAX, api, 4);
+    }
+
+    int wsa_get_last_error() {
+        return return_kernel32_dword(guest_last_error,
+                                     "WS2_32.dll!#111");
+    }
+
+    int wsa_set_last_error() {
+        constexpr const char* api = "WS2_32.dll!#112";
+        if (!read_stack_argument(0, guest_last_error, api)) return -1;
+        return finish_stdcall(4, api) ? 0 : -1;
+    }
+
+    int wsa_getaddrinfo() {
+        constexpr const char* api = "WS2_32.dll!getaddrinfo";
+        constexpr uint32_t kWsaNotInitialized = 10093;
+        constexpr uint32_t kWsaHostNotFound = 11001;
+        uint32_t result_address = 0;
+        if (!read_stack_argument(3, result_address, api)) return -1;
+        if (result_address != 0 &&
+            (!valid_guest_pointer(result_address, sizeof(uint32_t)) ||
+             !write_guest_u32("ram", result_address, 0))) {
+            error = std::string(api) + " cannot clear its result pointer";
+            return -1;
+        }
+        return return_kernel32_dword(
+            guest_winsock_startup_count == 0 ? kWsaNotInitialized
+                                             : kWsaHostNotFound,
+            api, 16);
+    }
+
+    int wsa_freeaddrinfo() {
+        return return_kernel32_dword(0, "WS2_32.dll!freeaddrinfo", 4);
+    }
+
+    int wsa_create_event() {
+        constexpr const char* api = "WS2_32.dll!WSACreateEvent";
+        if (next_guest_event_handle >
+            std::numeric_limits<uint32_t>::max() - sizeof(uint32_t)) {
+            guest_last_error = 8;
+            return return_kernel32_dword(0, api);
+        }
+        const uint32_t handle = static_cast<uint32_t>(next_guest_event_handle);
+        next_guest_event_handle += sizeof(uint32_t);
+        guest_events.emplace(handle, GuestEvent{true, false});
+        return return_kernel32_dword(handle, api);
+    }
+
+    int wsa_close_event() {
+        constexpr const char* api = "WS2_32.dll!WSACloseEvent";
+        uint32_t handle = 0;
+        if (!read_stack_argument(0, handle, api)) return -1;
+        if (guest_events.erase(handle) == 0) {
+            guest_last_error = 6;
+            return return_kernel32_dword(0, api, 4);
+        }
+        return return_kernel32_dword(1, api, 4);
+    }
+
+    int netbios_offline_failure() {
+        constexpr const char* api = "NETAPI32.dll!Netbios";
+        constexpr uint8_t kNrcBadNcb = 0x07;
+        constexpr uint8_t kNrcEnvironmentNotDefined = 0x34;
+        constexpr uint32_t kNcbCompletionOffset = 49;
+        constexpr uint32_t kNcbEventOffset = 60;
+        uint32_t ncb_address = 0;
+        if (!read_stack_argument(0, ncb_address, api)) return -1;
+        if (!valid_guest_pointer(ncb_address, kNcbCompletionOffset + 1)) {
+            return return_kernel32_dword(kNrcBadNcb, api, 4);
+        }
+
+        uint8_t command = 0;
+        if (!read_guest_bytes(ncb_address, &command, sizeof(command), api))
+            return -1;
+        if (!write_guest_bytes(ncb_address + 1,
+                               &kNrcEnvironmentNotDefined,
+                               sizeof(kNrcEnvironmentNotDefined), api) ||
+            !write_guest_bytes(ncb_address + kNcbCompletionOffset,
+                               &kNrcEnvironmentNotDefined,
+                               sizeof(kNrcEnvironmentNotDefined), api)) {
+            return -1;
+        }
+        if ((command & 0x80u) != 0 &&
+            valid_guest_pointer(ncb_address + kNcbEventOffset,
+                                sizeof(uint32_t))) {
+            uint32_t event_handle = 0;
+            if (!read_guest_u32("ram", ncb_address + kNcbEventOffset,
+                                event_handle)) {
+                error = std::string(api) + " cannot read its event handle";
+                return -1;
+            }
+            const auto event = guest_events.find(event_handle);
+            if (event != guest_events.end()) {
+                event->second.signaled = true;
+                wake_guest_event_waiters(event_handle, event->second);
+            }
+        }
+        return return_kernel32_dword(kNrcEnvironmentNotDefined, api, 4);
     }
 
     int wsa_wait_for_multiple_events() {
