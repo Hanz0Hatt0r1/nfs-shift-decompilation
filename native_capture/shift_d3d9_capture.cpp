@@ -8,6 +8,7 @@
 #include "capture_helpers.h"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cmath>
 #include <cstdio>
