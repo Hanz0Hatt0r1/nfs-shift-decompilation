@@ -35,6 +35,22 @@
       },
       "linked": true
     },
+    "pixel_shader_regression_fixture": {
+      "file": "tests/fixtures/d3d9/shift_frame_12613_ps_da32197956d1cb89.bin",
+      "source_create_event_index": 831,
+      "draw_event_index": 13640309,
+      "bytecode_bytes": 448,
+      "bytecode_sha256": "c7378d4462603bbe9fcce35ee6f1d397c9bf97879d726bfb1c4f6c38cfe6baa3",
+      "version_token": "0xffff0300",
+      "regression_opcode": {
+        "name": "IF",
+        "value": 40,
+        "source": "b0",
+        "expected_glsl": "if (all(b[0])) {"
+      },
+      "test": "tests/test_shader_backend.py::test_vulkan_if_bool_register_emits_valid_condition_from_frame_12613",
+      "vulkan_fragment_compile": "passed"
+    },
     "texture_gate": {
       "sampler_register": 0,
       "d3d9_format": "D3DFMT_DXT1",
@@ -47,6 +63,18 @@
       "status": "blocked",
       "vulkan_draw_submitted": false,
       "retail_image_parity_proven": false
+    },
+    "same_pixel_shader_vulkan_replay": {
+      "capture_event_index": 7435,
+      "frame": 536,
+      "pixel_shader_signature": "ps:da32197956d1cb89",
+      "pixel_bytecode_sha256": "c7378d4462603bbe9fcce35ee6f1d397c9bf97879d726bfb1c4f6c38cfe6baa3",
+      "native_executor": "shift_vulkan_bundle_execute",
+      "device": "NVIDIA GeForce GTX 950",
+      "validation_enabled": true,
+      "validation_errors": 0,
+      "rerun_output_ppm_sha256": "9b749b063d4a184ebb3088b8330a34f25abad2a521005a7a01376f2e2738710a",
+      "relation": "separate captured draw using the identical retail PS bytecode; event 13640309 still lacks its DXT1 snapshot"
     }
   },
   "translator_change": {
@@ -54,8 +82,8 @@
     "construct": "D3D9 IF condition emission",
     "before": "if all(b[0])",
     "after": "if (all(b[0]))",
-    "regression": "tests/test_shader_backend.py::test_vulkan_if_bool_register_emits_valid_condition",
-    "fixture_contains_retail_shader_bytes": false
+    "regression": "tests/test_shader_backend.py::test_vulkan_if_bool_register_emits_valid_condition_from_frame_12613",
+    "fixture_contains_retail_shader_bytes": true
   },
   "control_draw": {
     "event_index": 13647233,
@@ -69,8 +97,8 @@
   },
   "limits": [
     "The capture trigger fired after event 13640309, so its active texture snapshot was not retained.",
-    "The test fixture is a minimal synthetic shader-token regression; actual retail shader bytes remain outside the repository.",
-    "Only event 13647233 completed Vulkan submission; this is not a full-frame replay.",
+    "The raw capture remains outside Git; the target 448-byte pixel shader token stream is kept as a focused regression fixture.",
+    "Frame-12613 event 13640309 remains blocked on its missing DXT1 snapshot; separate same-shader event 7435 submitted one draw, not a full frame.",
     "This capture replay does not integrate with Process 1's runtime or prove retail image parity."
   ]
 }

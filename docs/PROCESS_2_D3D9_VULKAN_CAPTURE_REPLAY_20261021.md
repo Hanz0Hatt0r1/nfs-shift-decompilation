@@ -119,6 +119,14 @@ draws still require captured snapshots for every active sampler.
 
 ## Translation fixes exercised by the capture
 
+- The frame 12613 pixel shader uses D3D9 `IF b0` (opcode 40). GLSL emission
+  wraps the bool condition in parentheses; the regression now parses the exact
+  448-byte PS token stream for draw event 13640309 and compiles the generated
+  fragment shader with `glslangValidator -V`. The raw JSONL remains outside
+  Git, while the small shader token stream is pinned at
+  [`tests/fixtures/d3d9/shift_frame_12613_ps_da32197956d1cb89.bin`](../tests/fixtures/d3d9/shift_frame_12613_ps_da32197956d1cb89.bin).
+  This test covers shader translation only; the draw still lacks its captured
+  DXT1 `s0` snapshot and is not submitted.
 - D3D scalar source swizzles replicate to four lanes; masked writes apply the
   destination mask to the right-hand value.
 - Immediate `DEF` constants are embedded in translated GLSL.
@@ -178,6 +186,11 @@ parity is not claimed.
   submitted three times on a GTX 950 with validation enabled and zero errors;
   all three output PPM hashes matched. The earlier live-race event 13640309
   remains blocked on its missing DXT1 snapshot.
+- The exact 448-byte pixel shader from live-race event 13640309 now backs the
+  `IF b0` regression; the targeted shader suite passed 64 tests. I reran the
+  captured event 7435 bundle, which uses the same pixel bytecode, on the GTX
+  950 with validation enabled: zero errors and the prior PPM SHA-256 matched.
+  This verifies one separate captured draw, not frame 12613 or retail parity.
 - The sampler regression suite passed 9 tests; event 5245407 was rebuilt from
   its retail capture and executed on the GTX 950 with validation enabled and
   zero errors.

@@ -1,3 +1,4 @@
+import hashlib
 import shutil
 import struct
 import subprocess
@@ -115,33 +116,54 @@ def test_vulkan_loop_reads_iteration_control_from_integer_register():
     assert validation["status"] == "valid", validation
 
 
-def test_vulkan_if_bool_register_emits_valid_condition():
-    words = [
-        0xFFFF0300,  # ps_3_0
-        (1 << 24) | 40,  # if b0
-        0xE0E40800,  # b0
-        (2 << 24) | 1,  # mov oC0, c0
-        0x800F0800,
-        0xA0E40000,
-        42,  # else
-        (2 << 24) | 1,  # mov oC0, c0
-        0x800F0800,
-        0xA0E40000,
-        43,  # endif
-        0xFFFF,
+def test_vulkan_if_bool_register_emits_valid_condition_from_frame_12613(tmp_path):
+    fixture_dir = Path(__file__).parent / "fixtures" / "d3d9"
+    pixel_bytes = (fixture_dir / "shift_frame_12613_ps_da32197956d1cb89.bin").read_bytes()
+
+    # Exact PS token stream bound at retail DrawIndexedPrimitive event
+    # 13640309/frame 12613; capture SHA-256:
+    # 82f21548b1bad937e7ee8d6253d27a8fabe4f8223574180eb3a697ec57bbcab4.
+    assert hashlib.sha256(pixel_bytes).hexdigest() == (
+        "c7378d4462603bbe9fcce35ee6f1d397c9bf97879d726bfb1c4f6c38cfe6baa3"
+    )
+    assert pixel_bytes[:4] == struct.pack("<I", 0xFFFF0300)
+
+    pixel_program = parse_program(pixel_bytes, stage="pixel")
+    if_instructions = [
+        (instruction.name, instruction.opcode)
+        for instruction in pixel_program.instructions
+        if instruction.name == "IF"
     ]
+    assert if_instructions == [("IF", 40)]
+
     pixel = to_glsl(
-        parse_program(struct.pack("<" + "I" * len(words), *words)),
+        pixel_program,
         target="vulkan",
+        constant_binding=15,
         bool_constants={0: True},
     )
-
     assert "if (all(b[0])) {" in pixel
     assert "b[0]=bvec4(true);" in pixel
-    validation = validate_vulkan_glsl_pair(
-        "#version 450\nvoid main(){gl_Position=vec4(0.0);}", pixel
+    validator = shutil.which("glslangValidator")
+    if validator is None:
+        pytest.skip("glslangValidator is not installed")
+    pixel_path = tmp_path / "retail_frame_12613.frag"
+    pixel_path.write_text(pixel, encoding="utf-8")
+    validation = subprocess.run(
+        [
+            validator,
+            "-V",
+            "-S",
+            "frag",
+            "-o",
+            str(tmp_path / "retail_frame_12613.spv"),
+            str(pixel_path),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
     )
-    assert validation["status"] == "valid", validation
+    assert validation.returncode == 0, validation.stdout + validation.stderr
 
 
 def test_unset_bool_registers_are_initialized_before_vulkan_if():
