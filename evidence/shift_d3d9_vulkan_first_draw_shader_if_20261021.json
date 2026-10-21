@@ -36,12 +36,17 @@
       "linked": true
     },
     "pixel_shader_regression_fixture": {
-      "file": "tests/fixtures/d3d9/shift_frame_12613_ps_da32197956d1cb89.bin",
-      "source_create_event_index": 831,
+      "vertex_shader_file": "tests/fixtures/d3d9/shift_frame_12613_vs_1af4a5f282f4b9fb.bin",
+      "vertex_source_create_event_index": 808,
+      "vertex_bytecode_bytes": 2048,
+      "vertex_bytecode_sha256": "ae534ddc04f4b5170d60b74112173e76e6cb1a6e3f72aab48cac09fd8b7d4a30",
+      "vertex_version_token": "0xfffe0300",
+      "pixel_shader_file": "tests/fixtures/d3d9/shift_frame_12613_ps_da32197956d1cb89.bin",
+      "pixel_source_create_event_index": 831,
       "draw_event_index": 13640309,
-      "bytecode_bytes": 448,
-      "bytecode_sha256": "c7378d4462603bbe9fcce35ee6f1d397c9bf97879d726bfb1c4f6c38cfe6baa3",
-      "version_token": "0xffff0300",
+      "pixel_bytecode_bytes": 448,
+      "pixel_bytecode_sha256": "c7378d4462603bbe9fcce35ee6f1d397c9bf97879d726bfb1c4f6c38cfe6baa3",
+      "pixel_version_token": "0xffff0300",
       "regression_opcode": {
         "name": "IF",
         "value": 40,
@@ -49,7 +54,7 @@
         "expected_glsl": "if (all(b[0])) {"
       },
       "test": "tests/test_shader_backend.py::test_vulkan_if_bool_register_emits_valid_condition_from_frame_12613",
-      "vulkan_fragment_compile": "passed"
+      "vulkan_pair_compile_and_link": "passed"
     },
     "texture_gate": {
       "sampler_register": 0,

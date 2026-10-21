@@ -120,13 +120,14 @@ draws still require captured snapshots for every active sampler.
 ## Translation fixes exercised by the capture
 
 - The frame 12613 pixel shader uses D3D9 `IF b0` (opcode 40). GLSL emission
-  wraps the bool condition in parentheses; the regression now parses the exact
-  448-byte PS token stream for draw event 13640309 and compiles the generated
-  fragment shader with `glslangValidator -V`. The raw JSONL remains outside
-  Git, while the small shader token stream is pinned at
-  [`tests/fixtures/d3d9/shift_frame_12613_ps_da32197956d1cb89.bin`](../tests/fixtures/d3d9/shift_frame_12613_ps_da32197956d1cb89.bin).
-  This test covers shader translation only; the draw still lacks its captured
-  DXT1 `s0` snapshot and is not submitted.
+  wraps the bool condition in parentheses; the regression parses the exact VS/PS
+  token streams bound at draw event 13640309 and compiles and links them through
+  the semantic Vulkan pair translator. The 448-byte PS is pinned at
+  [`tests/fixtures/d3d9/shift_frame_12613_ps_da32197956d1cb89.bin`](../tests/fixtures/d3d9/shift_frame_12613_ps_da32197956d1cb89.bin),
+  with its matching VS at
+  [`tests/fixtures/d3d9/shift_frame_12613_vs_1af4a5f282f4b9fb.bin`](../tests/fixtures/d3d9/shift_frame_12613_vs_1af4a5f282f4b9fb.bin).
+  The raw JSONL remains outside Git. The draw still lacks its captured DXT1
+  `s0` snapshot and is not submitted.
 - D3D scalar source swizzles replicate to four lanes; masked writes apply the
   destination mask to the right-hand value.
 - Immediate `DEF` constants are embedded in translated GLSL.
