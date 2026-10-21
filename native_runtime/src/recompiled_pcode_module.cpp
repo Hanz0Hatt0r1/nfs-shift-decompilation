@@ -1363,9 +1363,10 @@ struct RecompiledPcodeModule::Impl {
                              event.ebp_entry);
         const bool has_stack_pointer = read_guest_u32(
             "register", kX86EspRegisterOffset, event.esp_entry);
-        if (has_stack_pointer) {
-            event.has_return_address = read_guest_u32(
-                "ram", event.esp_entry, event.return_address);
+        if (has_stack_pointer &&
+            event.esp_entry >= kGuestMinimumUserAddress) {
+            event.has_return_address = read_guest_diagnostic_u32(
+                event.esp_entry, event.return_address);
         }
         const auto sample_slots = [&](uint32_t base,
                                       const std::vector<uint32_t>& offsets) {
@@ -1376,9 +1377,10 @@ struct RecompiledPcodeModule::Impl {
                 slot.offset = slot_offset;
                 const uint64_t address =
                     static_cast<uint64_t>(base) + slot_offset;
-                if (address <= UINT32_MAX) {
+                if (address >= kGuestMinimumUserAddress &&
+                    address <= UINT32_MAX) {
                     slot.has_value =
-                        read_guest_u32("ram", address, slot.value);
+                        read_guest_diagnostic_u32(address, slot.value);
                     if (guest_write_provenance_enabled_flag) {
                         const auto writer = guest_target_last_writers.find(
                             static_cast<uint32_t>(address));

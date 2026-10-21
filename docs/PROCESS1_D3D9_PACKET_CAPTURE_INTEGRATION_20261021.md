@@ -109,6 +109,46 @@ retail image. The raw log remains outside Git (8,332,993 bytes; SHA-256
 summary records the trace-cap caveat and the v670/v671 binary mismatch in
 [`process1_pcode_frontier_v672_display_list_trace_summary.json`](../evidence/retail_frontier_20261021/process1_pcode_frontier_v672_display_list_trace_summary.json).
 
+### v675-v678 queue trace and diagnostic correction
+
+v674 first recorded `FUN_00831380` 288 times from `FUN_00835590` and once
+from `FUN_007ee360`, but did not sample its receiver fields. v675 attempted
+that read-only sampling and stopped at dispatch 463,068 with a reserved-low-
+memory error. The trace code itself had used the normal guest RAM reader for
+receiver slots and the return address, so observing a call with low/null
+addresses could set the runtime error. P1 now uses diagnostic reads for trace
+slots and return addresses and marks addresses below `0x10000` unavailable.
+A fixture with `ECX=0`, `ESP=0`, and selected low receiver slots covers this
+case.
+
+The focused `shift_runtime_recompiled_pcode_module` CTest passed after the
+fix. A P1-only runtime replay then passed the trace-failure point and stopped
+later at the known `unsupported D3D9 managed texture description` because
+that build did not contain P2's DXT3 capability commit; it is not a new P1
+gameplay blocker. The integrated P1/P2 build with the trace fix completed 360
+bounded host frames.
+
+v678 selected only `FUN_00831380`, so the call trace did not truncate. It
+recorded 664 entries and returns: 663 calls from `FUN_00835590`, each with
+`AL=1`, and one call from `FUN_007ee360` with `AL=0`. For the 663 calls from
+`FUN_00835590`, the sampled DWORD at receiver `+0x24` was 1, 2, or 3, exactly
+221 times each. The first captured receiver field at `+0x1c` was written by
+`FUN_0062f53d`; `+0x24` was written by `FUN_004cb900`. Later values 2 and 1
+at `+0x24` have last writer `0x00d699b0`. The output slot was sampled only on
+entry, and the nested `+0x14` value was not captured; no object type is
+inferred from these addresses.
+
+This later complete target-filtered window shows that the v672 prefix was
+incomplete: `FUN_00831380` returns items later in the bounded path. It still
+does not link those items or the following virtual calls to a guest `Draw*`
+call. v678
+reports `guest_draw_translation=false` and `retail_rendering_proven=false`.
+The raw log remains outside Git (1,561,961 bytes; SHA-256
+`bf9ce21ed77e7cec9776feacb51f4f7b13ec58d0b3f5c3822ab19c99b6a6c134`). The
+run summary, intermediate trace failure, build distinction, and scope limits
+are recorded in
+[`process1_pcode_frontier_v675_v678_trace_regression_summary.json`](../evidence/retail_frontier_20261021/process1_pcode_frontier_v675_v678_trace_regression_summary.json).
+
 Separately, Process 1's original-retail evidence PR [#2134](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2134)
 records that the user navigated the original retail executable to the main
 menu and an active cockpit race under system Wine 11.17. That confirms
@@ -122,7 +162,9 @@ handoff remains unproven.
 
 - A clean Release build of `shift_runtime` and
   `shift_runtime_recompiled_pcode_module_check` succeeded.
-- The focused `shift_runtime_recompiled_pcode_module` CTest passed (1/1).
+- After the trace fix, an incremental runtime/test build succeeded and the
+  focused `shift_runtime_recompiled_pcode_module` CTest passed (1/1), including
+  the new null-ECX/ESP trace regression.
 - New P1 DXT3 checks cover independent capability rejection, the captured
   512×512 pitch of 2048, block-aligned subrect addressing, and DXT3 DDS byte
   preservation; they pass in the focused CTest.

@@ -1454,6 +1454,32 @@ int main(int argc, char** argv) {
                     live_trace.find("writer=0x00403100") != std::string::npos,
                 "live guest call trace did not persist entry and return events: " +
                     live_trace);
+        {
+            shift::runtime::RecompiledPcodeModule null_receiver_trace_module(
+                argv[1]);
+            (void)null_receiver_trace_module.call(0x00403200);
+            require(null_receiver_trace_module.last_error().empty(),
+                    "guest trace slot sampling changed null-ECX guest calls: " +
+                        null_receiver_trace_module.last_error());
+            const auto snapshot =
+                null_receiver_trace_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace.size() == 1 &&
+                        snapshot.guest_call_trace.front().function ==
+                            0x00685700 &&
+                        snapshot.guest_call_trace.front().ecx_entry == 0 &&
+                        !snapshot.guest_call_trace.front()
+                             .has_return_address &&
+                        snapshot.guest_call_trace.front().completed &&
+                        snapshot.guest_call_trace.front().target_slots.size() ==
+                            3 &&
+                        !snapshot.guest_call_trace.front().target_slots[0]
+                             .has_value &&
+                        !snapshot.guest_call_trace.front().target_slots[1]
+                             .has_value &&
+                        !snapshot.guest_call_trace.front().target_slots[2]
+                             .has_value,
+                    "guest target trace did not safely mark reserved/null slots unreadable");
+        }
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG") == 0,
                 "could not disable live guest call trace fixture");
         require(setenv("SHIFT_TRACE_GUEST_CALL_STACK_SLOTS",
