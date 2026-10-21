@@ -1,0 +1,58 @@
+{
+  "format": "NFSShift.Process1PcodeTargetTrace/1",
+  "collected_at": "2026-10-21T13:27:15Z",
+  "probe": {
+    "version": "v663 targeted trace with cumulative v659 manifest",
+    "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "frames_requested": 1600,
+    "timeout_seconds": 300,
+    "validation": true,
+    "manifest": {
+      "path_outside_repository": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v659-missing-005a0ef0/module-manifest-v659-005a0ef0.json",
+      "sha256": "6977898b7ff79edfb84f9b6f6d9e5ff98d8e073d17d88f345e8a1edb77e73a0e"
+    },
+    "target_supplement": {
+      "path_outside_repository": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v543-missing-00587b90/compiled/libnfs_shift_pcode_supplement.so",
+      "export": "rvi_00587b90",
+      "instructions": 2,
+      "pcode_operations": 4,
+      "sha256": "4fea893726135e4611928c3c08d54f95919840fb570e2b09fba90f2a8371cd2d"
+    }
+  },
+  "target_function": {
+    "address": "0x00587b90",
+    "observed_executions": 9,
+    "callers": [
+      "0x00587790",
+      "0x005878a0"
+    ],
+    "dispatches": [
+      7929636,
+      7929638,
+      7929661,
+      7929683,
+      7929707,
+      7929733,
+      7929761,
+      7929791,
+      7931225
+    ],
+    "returned_eax": "0x00ad5574",
+    "all_calls_completed": true
+  },
+  "result": {
+    "status": "timeout_after_target_completed",
+    "next_blocker": null,
+    "frames_rendered": null,
+    "dispatches": null,
+    "retail_rendering_proven": false,
+    "counts_are_gameplay_proof": false
+  },
+  "verification": {
+    "probe_log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v663-target-00587b90.log",
+    "probe_log_sha256": "0cac56b0ed42e2f7dedf84056d227c96f4dc2fc80a7ede949d15186b09993f48",
+    "probe_report_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v663-target-00587b90.json",
+    "probe_report_sha256": "d02814962c73909364e789f0c8d4c4e8a458b2cccbb9131a6003fdab984a37d0"
+  },
+  "interpretation": "The v659 cumulative manifest contains the exact supplement for rvi_00587b90. The targeted trace observed nine successful calls, each returning EAX=0x00ad5574. The 1600-frame probe timed out at its 300-second limit before yielding final frame or dispatch totals; this clears the identified missing-export blocker on the observed path but does not establish the full requested replay or gameplay."
+}
