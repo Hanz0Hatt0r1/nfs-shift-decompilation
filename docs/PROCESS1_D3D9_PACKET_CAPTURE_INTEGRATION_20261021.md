@@ -61,6 +61,34 @@ recompiled runtime replay of the retail PE, not a native Windows `SHIFT.exe`
 launch. The selected run data and log hash are recorded in
 `evidence/retail_frontier_20261021/process1_pcode_frontier_v666_dxt3_trace_summary.json`.
 
+### D3D9 import trace after v666
+
+The v668 360-frame probe selected 19 D3D9 methods, including the four draw
+entry points. It recorded 1,108 Clear calls, 1,107 each for SetRenderTarget,
+BeginScene, EndScene, and Present, 17 CreateVertexBuffer calls, 16
+CreateIndexBuffer calls, one CreateTexture, one CreateDevice, and one each for
+SetPixelShader and SetVertexShader. No selected Draw* entry was recorded in
+5,573 call-trace entries. The run completed its host-frame loop with 1,734,402
+P-code dispatches, 4,728 unique functions, five waiting workers, no validation
+errors, and `guest_draw_translation=false`. Its D3D9 bridge submitted 360
+clears and presents and retained 747 pending presents. This means this trace
+did not reach the P1 `DrawIndexedPrimitive` packet callback; it does not
+identify why the guest did not submit a draw.
+
+The raw live log is 9,653,915 bytes and remains outside Git; its SHA-256 is
+`9630914c79a0816f453580f0bc884480df3f2f144cf158e4e735a7887a41cf37`. The
+durable counts, probe configuration, and scope limits are recorded in
+[`process1_d3d9_calltrace_v668_summary.json`](../evidence/retail_frontier_20261021/process1_d3d9_calltrace_v668_summary.json).
+
+Separately, Process 1's original-retail evidence PR [#2134](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2134)
+records that the user navigated the original retail executable to the main
+menu and an active cockpit race under system Wine 11.17. That confirms
+frontend and gameplay for original retail PE execution under Wine; it does not
+establish native Windows behavior or progress in the recompiled P-code runtime.
+The v668 no-Draw result belongs only to the latter path. Until that runtime
+reaches a guest draw callback with a captured packet, the P1-to-P2 renderer
+handoff remains unproven.
+
 ## Checks
 
 - A clean Release build of `shift_runtime` and
