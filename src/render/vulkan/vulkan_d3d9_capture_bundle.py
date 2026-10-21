@@ -86,7 +86,10 @@ _RENDER_TARGET_FORMAT = {
     113: "VK_FORMAT_R16G16B16A16_SFLOAT",
     114: "VK_FORMAT_R32_SFLOAT",
 }
-_DEPTH_FORMAT = {75: "VK_FORMAT_D24_UNORM_S8_UINT"}
+_DEPTH_FORMAT = {
+    75: "VK_FORMAT_D24_UNORM_S8_UINT",
+    80: "VK_FORMAT_D16_UNORM",
+}
 
 
 def _captured_surface_formats(
@@ -201,6 +204,8 @@ def _read_events(capture_path: Path, event_index: int) -> tuple[dict[str, Any], 
             state["render_target"] = row
         elif event == "set_depth_stencil_surface":
             state["depth_stencil_surface"] = row
+        elif event == "device_hooks":
+            state["capture_options"] = row
         elif event == "clear":
             state["clear"] = row
             state["clear_render_target"] = state.get("render_target", {}).get("resource_signature")
@@ -232,11 +237,21 @@ def _captured_buffer_bytes(
     payload_rows: list[dict[str, Any]],
     buffer_create: dict[str, Any],
     draw: dict[str, Any],
+    capture_options: dict[str, Any],
     buffer_length: int,
     resource_name: str,
 ) -> tuple[bytes, list[dict[str, Any]]]:
     if buffer_length <= 0:
         raise ValueError(f"captured {resource_name} has an invalid buffer length")
+    if not payload_rows:
+        raise ValueError(f"captured {resource_name} has no matching Lock-range payloads")
+    if not capture_options.get("buffer_payload_capture_enabled") or not capture_options.get(
+        "partial_buffer_payload_capture_enabled"
+    ):
+        raise ValueError(f"captured {resource_name} requires confirmed partial Lock-range capture")
+    filter_length = int(capture_options.get("partial_buffer_payload_length_filter", -1))
+    if filter_length not in (0, buffer_length):
+        raise ValueError(f"captured {resource_name} is excluded by the partial payload length filter")
 
     create_event = int(buffer_create["event_index"])
     create_frame = int(buffer_create.get("frame", -1))
@@ -621,6 +636,7 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
         objects["payload"].get(vb_ptr, []),
         vertex_create,
         draw,
+        state.get("capture_options", {}),
         vertex_length,
         "vertex",
     )
@@ -629,6 +645,7 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
         objects["payload"].get(ib_ptr, []),
         index_create,
         draw,
+        state.get("capture_options", {}),
         index_length,
         "index",
     )
@@ -759,6 +776,17 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
                 for row in vertex_payload_rows
             ],
             "vertex_payload_sha256": vertex_payload_sha256,
+            "buffer_capture_options": {
+                "buffer_payload_capture_enabled": bool(
+                    state["capture_options"].get("buffer_payload_capture_enabled")
+                ),
+                "partial_buffer_payload_capture_enabled": bool(
+                    state["capture_options"].get("partial_buffer_payload_capture_enabled")
+                ),
+                "partial_buffer_payload_length_filter": int(
+                    state["capture_options"].get("partial_buffer_payload_length_filter", -1)
+                ),
+            },
             "index_buffer_ptr": ib_ptr,
             "index_buffer_create_event": int(index_create["event_index"]),
             "index_payload_events": [int(row["event_index"]) for row in index_payload_rows],
@@ -776,7 +804,6 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
         "shader_validation": validation,
         "render_target": viewport_state,
         "snapshot_limitations": [
-            "buffer payload is a capture-local COM-generation snapshot; the capture does not record VB/IB lock and unlock updates",
             "the original render-target pixels are not captured; output is a single-draw replay on the captured clear color and depth",
             "this bundle does not claim image parity with the retail frame",
         ],

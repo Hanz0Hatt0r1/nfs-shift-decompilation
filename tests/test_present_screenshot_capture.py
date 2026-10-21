@@ -488,6 +488,8 @@ def test_trigger_buffer_payloads_defer_disk_io_until_trigger():
     assert "bool discard = false;" in source
     assert "size == other.size && discard == other.discard" in source
     assert "(state.flags & D3DLOCK_DISCARD) != 0" in source
+    assert "\\\"partial_buffer_payload_capture_enabled\\\":" in source
+    assert "\\\"partial_buffer_payload_length_filter\\\":" in source
     assert "buffer_lock_payload_size" in source
     assert "payload_capture_frame" in source
     assert "capture_scope" in source

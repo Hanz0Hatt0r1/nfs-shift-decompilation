@@ -1570,10 +1570,15 @@ bool partial_buffer_payload_capture_enabled() {
         env_enabled("SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOADS");
 }
 
-bool partial_buffer_payload_length_matches(UINT length) {
-    if (!partial_buffer_payload_capture_enabled()) return false;
+unsigned long long partial_buffer_payload_length_filter() {
     static const auto filter_length = env_u64(
         "SHIFT_D3D9_CAPTURE_BUFFER_PARTIAL_PAYLOAD_LENGTH", 0);
+    return filter_length;
+}
+
+bool partial_buffer_payload_length_matches(UINT length) {
+    if (!partial_buffer_payload_capture_enabled()) return false;
+    const auto filter_length = partial_buffer_payload_length_filter();
     return filter_length == 0 || filter_length == length;
 }
 
@@ -3535,6 +3540,9 @@ void patch_device(IDirect3DDevice9* device) {
            << ",\"resource_trigger_enabled\":" << (resource_trigger_enabled() ? "true" : "false")
            << ",\"resource_trigger_rule_count\":" << resource_trigger_rules().size()
            << ",\"resource_trigger_repeat\":" << (resource_trigger_repeat_enabled() ? "true" : "false")
+           << ",\"buffer_payload_capture_enabled\":" << (buffer_payload_capture_enabled() ? "true" : "false")
+           << ",\"partial_buffer_payload_capture_enabled\":" << (partial_buffer_payload_capture_enabled() ? "true" : "false")
+           << ",\"partial_buffer_payload_length_filter\":" << partial_buffer_payload_length_filter()
            << ",\"signature_discovery\":" << (signature_discovery_enabled() ? "true" : "false");
     writer().write_event("device_hooks", fields.str());
 }

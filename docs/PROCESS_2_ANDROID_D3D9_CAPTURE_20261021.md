@@ -44,6 +44,9 @@ This phone capture does not produce a replay bundle:
 
 - None of the 186 target draws has both a matching captured vertex-buffer and
   index-buffer payload.
+- After the D16 mapping, the bundle builder reaches the first target draw
+  (event 4926423) and rejects it because its vertex buffer has no matching
+  captured Lock-range payload.
 - The capture contains zero 2D or cube texture snapshots.
 - The proxy does not capture integer shader-constant updates, so the loop
   control values used by some compiled shaders are not available for execution.
@@ -78,13 +81,24 @@ bundle reconstructs a buffer only when ordered captured ranges cover every
 byte. The proxy keeps deferred discard writes separate from normal writes,
 and the bundle applies ranges in capture order, invalidates older ranges after
 `D3DLOCK_DISCARD`, and rejects holes or same-frame ordering ambiguity. The
-exact trigger and range-mode facts are recorded in the evidence JSON.
+bundle also requires `device_hooks` to confirm partial capture and a length
+filter that includes each buffer; complete-looking bytes from an older
+full-only capture cannot prove that no later partial Lock was missed. The exact
+trigger and range-mode facts are recorded in the evidence JSON.
+
+The first target draw's depth surface is D3DFMT_D16 (80), mapped to Vulkan
+`VK_FORMAT_D16_UNORM` with a depth-only image aspect. Microsoft lists 80 as
+D3DFMT_D16, and Khronos defines D16_UNORM as a 16-bit normalized depth format
+([D3DFORMAT](https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dformat),
+[Vulkan format reference](https://docs.vulkan.org/refpages/latest/refpages/source/VkFormat.html)).
 
 The native Vulkan executor also passed a format smoke for 21 and 113 on a GTX
 950 with zero validation errors. It used the existing synthetic material bundle
 to exercise attachment creation and readback; it is not an NFS SHIFT draw or
 retail-image evidence. PPM output converts half-float channels to clamped
-8-bit RGB and swizzles BGRA for inspection only.
+8-bit RGB and swizzles BGRA for inspection only. A synthetic D16 depth-attachment
+smoke also rendered with zero Vulkan validation errors; it validates the
+attachment mapping, not the captured SHIFT draw.
 
 The existing retail replay evidence remains the separate PC capture documented
 in [PROCESS_2_D3D9_VULKAN_CAPTURE_REPLAY_20261021.md](PROCESS_2_D3D9_VULKAN_CAPTURE_REPLAY_20261021.md):
@@ -98,7 +112,7 @@ The large phone log and payloads remain local rather than being added to Git.
 
 - 65 focused capture, shader, bundle, and Vulkan shader tests passed before the
   multi-register change. The current targeted bundle, sampler, executor, and
-  native capture-proxy regression set passed 59 tests.
+  native capture-proxy regression set passed 62 tests.
 - All native Vulkan CMake targets built on Linux.
 - The 11 focused bundle-format and native executor contract tests passed; the
   synthetic format smoke passed for both mobile target formats.

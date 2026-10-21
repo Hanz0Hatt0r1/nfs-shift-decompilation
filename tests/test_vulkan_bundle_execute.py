@@ -47,6 +47,9 @@ def test_native_vulkan_bundle_executor_contract():
     assert "VK_FORMAT_B8G8R8A8_UNORM" in source
     assert "VK_FORMAT_R16G16B16A16_SFLOAT" in source
     assert "VK_FORMAT_D24_UNORM_S8_UINT" in source
+    assert "VK_FORMAT_D16_UNORM" in source
+    assert "out.d3d_depth_format == 80u" in source
+    assert "out.depth_aspect = VK_IMAGE_ASPECT_DEPTH_BIT;" in source
     assert "VK_FORMAT_FEATURE_TRANSFER_SRC_BIT" in source
     assert "d3d_render_target_format" in source
     assert "render_target.clear_stencil" in source
