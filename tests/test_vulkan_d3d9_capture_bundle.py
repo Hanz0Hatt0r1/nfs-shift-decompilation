@@ -10,6 +10,8 @@ from vulkan_d3d9_capture_bundle import (
     GEOMETRY_ATTRIBUTE,
     GEOMETRY_HEADER,
     _captured_surface_formats,
+    _sampler_state,
+    _validate_texture_mip_filter,
     encode_capture_geometry,
 )
 
@@ -65,3 +67,16 @@ def test_captured_surface_formats_keep_r32f_and_d24s8_contract():
         _captured_surface_formats(113, 75, True)
     with pytest.raises(ValueError, match="depth format"):
         _captured_surface_formats(114, 71, True)
+
+
+def test_capture_mip_filter_is_preserved_and_checked_against_texture_levels():
+    sampler = _sampler_state({1: 1, 2: 1, 5: 2, 6: 2, 7: 2})
+    assert sampler["mip_filter"] == "LINEAR"
+    _validate_texture_mip_filter(1, sampler)
+    with pytest.raises(ValueError, match="mip-chain support"):
+        _validate_texture_mip_filter(2, sampler)
+
+
+def test_capture_rejects_unknown_mip_filter():
+    with pytest.raises(ValueError, match="sampler value is unsupported"):
+        _sampler_state({1: 1, 2: 1, 5: 2, 6: 2, 7: 6})

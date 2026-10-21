@@ -19,6 +19,10 @@ The captured color format is D3DFMT_R32F (114), and the captured depth/stencil
 format is D3DFMT_D24S8 (75); the executor uses `VK_FORMAT_R32_SFLOAT` and
 `VK_FORMAT_D24_UNORM_S8_UINT` for those attachments. The format identifiers are
 listed in [Microsoft's D3DFORMAT reference](https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dformat).
+The captured sampler has linear minification, magnification, and mip filtering.
+Its DDS contains one mip level, so mip filtering has no level-selection effect.
+Replay records that state and rejects active mip filtering on multi-level DDS
+textures until the native packet and executor support mip chains.
 The compiled vertex and pixel stages link successfully. The native submission
 ran on both a GTX 950 and Mesa llvmpipe with Vulkan validation enabled and zero
 validation errors on each device. The PPM preview maps the R32F channel to
@@ -36,6 +40,8 @@ target image.
 - Captured `D3DCULL_CW`/`D3DCULL_CCW` values map against the renderer's CCW
   Vulkan front face. The D3D9 downward viewport uses a negative Vulkan
   viewport height, available in core Vulkan 1.1.
+- Captured `D3DSAMP_MIPFILTER` is preserved; active mip filtering on a
+  multi-level texture fails closed because the native executor uploads one mip.
 
 These are translation and command-submission results, not a comparison against
 the original frame. The capture does not log VB/IB lock and unlock updates, so
@@ -67,3 +73,6 @@ parity is not claimed.
   reported zero errors.
 - The captured event 5245407 bundle compiled both shader stages, linked them,
   and completed native Vulkan validation with zero errors.
+- The sampler regression suite passed 9 tests; event 5245407 was rebuilt from
+  its retail capture and executed on the GTX 950 with validation enabled and
+  zero errors.

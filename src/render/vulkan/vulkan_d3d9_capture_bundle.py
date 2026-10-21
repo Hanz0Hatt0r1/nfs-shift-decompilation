@@ -49,6 +49,7 @@ _SAMPLER_ADDRESS = {
     3: "CLAMP_TO_EDGE",
 }
 _SAMPLER_FILTER = {1: "NEAREST", 2: "LINEAR"}
+_MIP_FILTER = {0: "NONE", 1: "POINT", 2: "LINEAR"}
 _BLEND_FACTOR = {
     1: "VK_BLEND_FACTOR_ZERO",
     2: "VK_BLEND_FACTOR_ONE",
@@ -393,7 +394,7 @@ def _pipeline_state(states: dict[int, int]) -> dict[str, Any]:
 
 
 def _sampler_state(states: dict[int, int]) -> dict[str, str]:
-    required = (1, 2, 5, 6)
+    required = (1, 2, 5, 6, 7)
     missing = [state for state in required if state not in states]
     if missing:
         raise ValueError("captured sampler state is incomplete")
@@ -402,11 +403,25 @@ def _sampler_state(states: dict[int, int]) -> dict[str, str]:
         v = _SAMPLER_ADDRESS[states[2]]
         min_filter = _SAMPLER_FILTER[states[6]]
         mag_filter = _SAMPLER_FILTER[states[5]]
+        mip_filter = _MIP_FILTER[states[7]]
     except KeyError as exc:
         raise ValueError(f"captured sampler value is unsupported: {exc.args[0]}") from exc
     if u != v:
         raise ValueError("Vulkan replay requires matching captured U/V address modes")
-    return {"address_u": u, "address_v": v, "min_filter": min_filter, "mag_filter": mag_filter}
+    return {
+        "address_u": u,
+        "address_v": v,
+        "min_filter": min_filter,
+        "mag_filter": mag_filter,
+        "mip_filter": mip_filter,
+    }
+
+
+def _validate_texture_mip_filter(mipmaps: int, sampler: dict[str, str]) -> None:
+    if mipmaps <= 0:
+        raise ValueError("captured texture has an invalid mip count")
+    if mipmaps > 1 and sampler["mip_filter"] != "NONE":
+        raise ValueError("captured mip filtering requires native mip-chain support")
 
 
 def _write_json(path: Path, value: dict[str, Any]) -> None:
@@ -521,6 +536,7 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
         raise ValueError("active texture has no captured DDS snapshot")
     texture_path = _resource_file(capture_path.parent, str(snapshot_paths[0]), "textures")
     texture = decode_dds(texture_path.read_bytes())
+    _validate_texture_mip_filter(int(texture["mipmaps"]), sampler)
     texture_command = {
         "format": "SHIFT.RenderCommand/1",
         "submeshes": [{"textures": [{
@@ -620,7 +636,9 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
             "pixel_shader_signature": pixel_shader_row.get("resource_signature"),
             "texture_path": f"textures/{texture_path.name}",
             "texture_sha256": hashlib.sha256(texture_path.read_bytes()).hexdigest(),
+            "texture_mipmaps": int(texture["mipmaps"]),
         },
+        "sampler0": sampler,
         "shader_validation": validation,
         "render_target": viewport_state,
         "snapshot_limitations": [
