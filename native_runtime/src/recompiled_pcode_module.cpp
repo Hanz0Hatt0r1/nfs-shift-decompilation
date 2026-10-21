@@ -1,6 +1,7 @@
 #include "shift_recompiled_pcode_module.hpp"
 #include "shift_recompiled_pcode_abi.h"
 #include "shift_d3dx9_effect_binary.hpp"
+#include "shift_d3dx9_retail_effects.hpp"
 
 #include <dlfcn.h>
 #include <cerrno>
@@ -713,6 +714,12 @@ struct RecompiledPcodeModule::Impl {
         bool antialias = false;
         bool gl_lines = false;
         bool drawing = false;
+    };
+    struct GuestD3DXBuffer {
+        uint32_t vtable_address = 0;
+        uint32_t data_address = 0;
+        uint32_t references = 1;
+        uint32_t size = 0;
     };
     struct GuestFiber {
         uint32_t data = 0;
@@ -1603,6 +1610,10 @@ struct RecompiledPcodeModule::Impl {
                 return time_end_period();
             if (name == "WINMM.dll!timeGetTime")
                 return time_get_time();
+            if (name == "WS2_32.dll!#115") return wsa_startup();
+            if (name == "WS2_32.dll!#116") return wsa_cleanup();
+            if (name == "WS2_32.dll!WSAWaitForMultipleEvents")
+                return wsa_wait_for_multiple_events();
             if (name == "KERNEL32.dll!QueryPerformanceCounter")
                 return query_performance_counter();
             if (name == "KERNEL32.dll!QueryPerformanceFrequency")
@@ -1647,6 +1658,8 @@ struct RecompiledPcodeModule::Impl {
                 return delete_file_a();
             if (name == "KERNEL32.dll!GetFileSize")
                 return get_file_size();
+            if (name == "KERNEL32.dll!SetFilePointer")
+                return set_file_pointer();
             if (name == "KERNEL32.dll!ReadFile")
                 return read_file();
             if (name == "KERNEL32.dll!WriteFile")
@@ -1936,6 +1949,18 @@ struct RecompiledPcodeModule::Impl {
                 return d3dx_create_texture_from_file_in_memory_ex();
             if (name == "d3dx9_41.dll!D3DXCreateLine")
                 return d3dx_create_line();
+            if (name == "d3dx9_41.dll!D3DXCreateBuffer")
+                return d3dx_create_buffer();
+            if (name == "d3dx9_41.dll!ID3DXBuffer::QueryInterface")
+                return d3dx_buffer_query_interface();
+            if (name == "d3dx9_41.dll!ID3DXBuffer::AddRef")
+                return d3dx_buffer_add_ref();
+            if (name == "d3dx9_41.dll!ID3DXBuffer::Release")
+                return d3dx_buffer_release();
+            if (name == "d3dx9_41.dll!ID3DXBuffer::GetBufferPointer")
+                return d3dx_buffer_get_pointer();
+            if (name == "d3dx9_41.dll!ID3DXBuffer::GetBufferSize")
+                return d3dx_buffer_get_size();
             if (name == "d3dx9_41.dll!ID3DXLine::QueryInterface")
                 return d3dx_line_query_interface();
             if (name == "d3dx9_41.dll!ID3DXLine::AddRef")
@@ -2032,6 +2057,8 @@ struct RecompiledPcodeModule::Impl {
                 return d3dx_effect_find_next_valid_technique();
             if (name == "imagehlp.dll!SymSetOptions")
                 return sym_set_options();
+            if (name == "imagehlp.dll!StackWalk64")
+                return stack_walk64();
             if (name == "imagehlp.dll!SymInitialize")
                 return sym_initialize();
             if (name == "imagehlp.dll!SymCleanup")
@@ -3226,7 +3253,8 @@ struct RecompiledPcodeModule::Impl {
             "InterlockedExchange",
             "VirtualAlloc", "VirtualFree",
             "CloseHandle",
-            "CreateFileA", "CreateDirectoryA", "DeleteFileA", "GetFileSize", "ReadFile",
+            "CreateFileA", "CreateDirectoryA", "DeleteFileA", "GetFileSize",
+            "SetFilePointer", "ReadFile",
             "WriteFile",
             "ReadFileEx",
             "HeapCreate", "HeapAlloc", "HeapReAlloc", "HeapSize", "HeapFree", "GetVersionExA",
@@ -3547,6 +3575,130 @@ struct RecompiledPcodeModule::Impl {
             monotonic_tick_milliseconds(), "WINMM.dll!timeGetTime");
     }
 
+    int wsa_startup() {
+        constexpr const char* api = "WS2_32.dll!#115";
+        constexpr uint32_t kWsaVersionNotSupported = 10092;
+        constexpr uint32_t kWsaFault = 10014;
+        constexpr size_t kWsadataSize = 0x190;
+        uint32_t requested_version = 0;
+        uint32_t data_address = 0;
+        if (!read_stack_argument(0, requested_version, api) ||
+            !read_stack_argument(1, data_address, api)) {
+            return -1;
+        }
+
+        const uint8_t major = static_cast<uint8_t>(requested_version);
+        const uint8_t minor = static_cast<uint8_t>(requested_version >> 8);
+        struct WinsockVersion {
+            uint8_t major;
+            uint8_t minor;
+        };
+        constexpr WinsockVersion kSupportedVersions[] = {
+            {1, 0}, {1, 1}, {2, 0}, {2, 1}, {2, 2},
+        };
+        uint16_t selected_version = 0;
+        for (const WinsockVersion version : kSupportedVersions) {
+            if (version.major < major ||
+                (version.major == major && version.minor <= minor)) {
+                selected_version = static_cast<uint16_t>(version.major) |
+                    (static_cast<uint16_t>(version.minor) << 8);
+            }
+        }
+
+        if (selected_version == 0)
+            return return_kernel32_dword(kWsaVersionNotSupported, api, 8);
+        if (data_address == 0 ||
+            !valid_guest_pointer(data_address, kWsadataSize))
+            return return_kernel32_dword(kWsaFault, api, 8);
+
+        std::array<uint8_t, kWsadataSize> data{};
+        const auto store_word = [&data](size_t offset, uint16_t value) {
+            data[offset] = static_cast<uint8_t>(value);
+            data[offset + 1] = static_cast<uint8_t>(value >> 8);
+        };
+        store_word(0, selected_version);
+        store_word(2, 0x0202);
+        constexpr char description[] = "WinSock 2.0";
+        constexpr char status[] = "Running";
+        std::copy_n(description, sizeof(description), data.begin() + 4);
+        std::copy_n(status, sizeof(status), data.begin() + 0x105);
+        if (!write_guest_bytes(data_address, data.data(), data.size(), api))
+            return -1;
+
+        if (guest_winsock_startup_count != UINT32_MAX)
+            ++guest_winsock_startup_count;
+        return return_kernel32_dword(0, api, 8);
+    }
+
+    int wsa_wait_for_multiple_events() {
+        constexpr const char* api = "WS2_32.dll!WSAWaitForMultipleEvents";
+        constexpr uint32_t kWsaWaitFailed = UINT32_MAX;
+        constexpr uint32_t kWsaWaitTimeout = 0x00000102;
+        constexpr uint32_t kWsaWaitIoCompletion = 0x000000c0;
+        constexpr uint32_t kWsaNotInitialized = 10093;
+        constexpr uint32_t kWsaFault = 10014;
+        constexpr uint32_t kWsaInvalidParameter = 87;
+        constexpr uint32_t kWsaInvalidHandle = 6;
+        uint32_t event_count = 0;
+        uint32_t events_address = 0;
+        uint32_t wait_all = 0;
+        uint32_t timeout_ms = 0;
+        uint32_t alertable = 0;
+        if (!read_stack_argument(0, event_count, api) ||
+            !read_stack_argument(1, events_address, api) ||
+            !read_stack_argument(2, wait_all, api) ||
+            !read_stack_argument(3, timeout_ms, api) ||
+            !read_stack_argument(4, alertable, api)) {
+            return -1;
+        }
+        (void)wait_all;
+        if (guest_winsock_startup_count == 0) {
+            guest_last_error = kWsaNotInitialized;
+            return return_kernel32_dword(kWsaWaitFailed, api, 20);
+        }
+        if (event_count == 0 || event_count > 64) {
+            guest_last_error = kWsaInvalidParameter;
+            return return_kernel32_dword(kWsaWaitFailed, api, 20);
+        }
+        if (event_count != 1) {
+            guest_last_error = kWsaInvalidParameter;
+            return return_kernel32_dword(kWsaWaitFailed, api, 20);
+        }
+        if (events_address == 0 ||
+            !valid_guest_pointer(events_address, sizeof(uint32_t))) {
+            guest_last_error = kWsaFault;
+            return return_kernel32_dword(kWsaWaitFailed, api, 20);
+        }
+
+        uint32_t event_handle = 0;
+        if (!read_guest_u32("ram", events_address, event_handle)) {
+            guest_last_error = kWsaFault;
+            return return_kernel32_dword(kWsaWaitFailed, api, 20);
+        }
+        if (guest_events.find(event_handle) == guest_events.end()) {
+            guest_last_error = kWsaInvalidHandle;
+            return return_kernel32_dword(kWsaWaitFailed, api, 20);
+        }
+        const uint32_t result = wait_guest_object(
+            event_handle, timeout_ms, api, alertable != 0);
+        if (result == 0 || result == kWsaWaitTimeout ||
+            result == kWsaWaitIoCompletion || result == kWsaWaitFailed) {
+            return return_kernel32_dword(result, api, 20);
+        }
+        guest_last_error = kWsaInvalidParameter;
+        return return_kernel32_dword(kWsaWaitFailed, api, 20);
+    }
+
+    int wsa_cleanup() {
+        constexpr const char* api = "WS2_32.dll!#116";
+        if (guest_winsock_startup_count == 0) {
+            guest_last_error = 10093;
+            return return_kernel32_dword(UINT32_MAX, api);
+        }
+        --guest_winsock_startup_count;
+        return return_kernel32_dword(0, api);
+    }
+
     int get_current_process_id() {
         return return_kernel32_dword(static_cast<uint32_t>(getpid()),
                                      "KERNEL32.dll!GetCurrentProcessId");
@@ -3613,6 +3765,99 @@ struct RecompiledPcodeModule::Impl {
         guest_symbol_handler_initialized = false;
         guest_symbol_process_handle = 0;
         return return_kernel32_dword(1, api, 4);
+    }
+
+    int stack_walk64() {
+        constexpr const char* api = "imagehlp.dll!StackWalk64";
+        uint32_t machine_type = 0;
+        uint32_t process_handle = 0;
+        uint32_t thread_handle = 0;
+        uint32_t stack_frame = 0;
+        uint32_t read_memory_routine = 0;
+        if (!read_stack_argument(0, machine_type, api) ||
+            !read_stack_argument(1, process_handle, api) ||
+            !read_stack_argument(2, thread_handle, api) ||
+            !read_stack_argument(3, stack_frame, api) ||
+            !read_stack_argument(5, read_memory_routine, api)) {
+            return -1;
+        }
+
+        // This guest is PE32/I386. Its default memory reader operates on the
+        // same guest RAM exposed to the caller, and x86 stack walking needs
+        // only the initialized STACKFRAME64 PC, frame, and stack addresses.
+        // FPO metadata and caller-supplied memory readers are not modeled.
+        if (machine_type != 0x014c ||
+            process_handle != kGuestCurrentProcessPseudoHandle ||
+            (thread_handle != kGuestCurrentThreadPseudoHandle &&
+             guest_threads.find(thread_handle) == guest_threads.end()) ||
+            stack_frame == 0 || !valid_guest_pointer(stack_frame, 0x40) ||
+            read_memory_routine != 0) {
+            return return_kernel32_dword(0, api, 36);
+        }
+
+        constexpr uint32_t kAddrPcOffset = 0x00;
+        constexpr uint32_t kAddrPcMode = 0x0c;
+        constexpr uint32_t kAddrReturnOffset = 0x10;
+        constexpr uint32_t kAddrFrameOffset = 0x20;
+        constexpr uint32_t kAddrFrameMode = 0x2c;
+        constexpr uint32_t kAddrStackOffset = 0x30;
+        constexpr uint32_t kAddrStackMode = 0x3c;
+        constexpr uint32_t kAddrModeFlat = 3;
+
+        const auto read_address = [&](uint32_t offset, uint32_t& address) {
+            uint32_t high = 0;
+            return read_guest_u32("ram", stack_frame + offset, address) &&
+                   read_guest_u32("ram", stack_frame + offset + 4, high) &&
+                   high == 0;
+        };
+        uint32_t pc = 0;
+        uint32_t frame_pointer = 0;
+        uint32_t stack_pointer = 0;
+        uint32_t pc_mode = 0;
+        uint32_t frame_mode = 0;
+        uint32_t stack_mode = 0;
+        if (!read_address(kAddrPcOffset, pc) ||
+            !read_address(kAddrFrameOffset, frame_pointer) ||
+            !read_address(kAddrStackOffset, stack_pointer) ||
+            !read_guest_u32("ram", stack_frame + kAddrPcMode, pc_mode) ||
+            !read_guest_u32("ram", stack_frame + kAddrFrameMode,
+                            frame_mode) ||
+            !read_guest_u32("ram", stack_frame + kAddrStackMode,
+                            stack_mode) ||
+            pc == 0 || frame_pointer == 0 || stack_pointer == 0 ||
+            stack_pointer > frame_pointer ||
+            pc_mode != kAddrModeFlat || frame_mode != kAddrModeFlat ||
+            stack_mode != kAddrModeFlat) {
+            return return_kernel32_dword(0, api, 36);
+        }
+
+        uint32_t caller_frame = 0;
+        uint32_t return_address = 0;
+        if (frame_pointer > UINT32_MAX - 8 ||
+            !read_guest_u32("ram", frame_pointer, caller_frame) ||
+            !read_guest_u32("ram", frame_pointer + 4, return_address) ||
+            caller_frame <= frame_pointer || return_address == 0 ||
+            caller_frame > UINT32_MAX - 8) {
+            return return_kernel32_dword(0, api, 36);
+        }
+
+        uint32_t caller_return_address = 0;
+        if (!read_guest_u32("ram", caller_frame + 4,
+                            caller_return_address)) {
+            return return_kernel32_dword(0, api, 36);
+        }
+        const auto write_address = [&](uint32_t offset, uint32_t address) {
+            return write_guest_u32("ram", stack_frame + offset, address) &&
+                   write_guest_u32("ram", stack_frame + offset + 4, 0);
+        };
+        if (!write_address(kAddrPcOffset, return_address) ||
+            !write_address(kAddrReturnOffset, caller_return_address) ||
+            !write_address(kAddrFrameOffset, caller_frame) ||
+            !write_address(kAddrStackOffset, caller_frame + 8)) {
+            error = std::string(api) + " cannot update STACKFRAME64";
+            return -1;
+        }
+        return return_kernel32_dword(1, api, 36);
     }
 
     int sym_function_table_access64() {
@@ -7663,9 +7908,24 @@ struct RecompiledPcodeModule::Impl {
         std::string parse_error;
         if (!parse_d3dx9_binary_effect(source.data(), source.size(), binary,
                                        parse_error)) {
-            error = std::string(api) + " rejected its binary effect: " +
-                    parse_error;
-            return return_kernel32_dword(kEFail, api, 36);
+            const auto retail_source =
+                detail::kRetailDefaultEffectSource;
+            const bool is_retail_default_effect =
+                source.size() == retail_source.size() &&
+                std::equal(source.begin(), source.end(),
+                           retail_source.begin());
+            std::string cached_effect_error;
+            if (!is_retail_default_effect ||
+                !parse_d3dx9_binary_effect(
+                    detail::kRetailDefaultEffectBinary.data(),
+                    detail::kRetailDefaultEffectBinary.size(), binary,
+                    cached_effect_error)) {
+                error = std::string(api) +
+                        " rejected its binary effect or unsupported text source: " +
+                        (cached_effect_error.empty() ? parse_error
+                                                     : cached_effect_error);
+                return return_kernel32_dword(kEFail, api, 36);
+            }
         }
 
         static constexpr std::array<const char*, 79> methods = {
@@ -9279,6 +9539,152 @@ struct RecompiledPcodeModule::Impl {
         return return_kernel32_dword(0, api, 8);
     }
 
+    int d3dx_create_buffer() {
+        constexpr const char* api = "d3dx9_41.dll!D3DXCreateBuffer";
+        uint32_t size = 0;
+        uint32_t output_address = 0;
+        if (!read_stack_argument(0, size, api) ||
+            !read_stack_argument(1, output_address, api))
+            return -1;
+        if (output_address == 0 ||
+            !valid_guest_pointer(output_address, sizeof(uint32_t)))
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 8);
+        if (!write_guest_u32("ram", output_address, 0)) return -1;
+
+        static constexpr std::array<const char*, 5> methods = {
+            "QueryInterface", "AddRef", "Release", "GetBufferPointer",
+            "GetBufferSize"};
+        uint32_t vtable_address = 0;
+        uint32_t buffer_address = 0;
+        uint32_t data_address = 0;
+        if (!allocate_guest_heap(kGuestProcessHeapHandle,
+                                 methods.size() * sizeof(uint32_t),
+                                 vtable_address) ||
+            !allocate_guest_heap(kGuestProcessHeapHandle, sizeof(uint32_t),
+                                 buffer_address) ||
+            !allocate_guest_heap(kGuestProcessHeapHandle, size,
+                                 data_address)) {
+            free_guest_heap_allocation(data_address);
+            free_guest_heap_allocation(buffer_address);
+            free_guest_heap_allocation(vtable_address);
+            return return_kernel32_dword(kEOutOfMemory, api, 8);
+        }
+        for (size_t index = 0; index < methods.size(); ++index) {
+            uint32_t stub = 0;
+            const std::string method_name =
+                std::string("d3dx9_41.dll!ID3DXBuffer::") + methods[index];
+            if (!allocate_dynamic_import_stub(method_name, stub) ||
+                !write_guest_u32("ram", vtable_address + index * 4, stub)) {
+                free_guest_heap_allocation(data_address);
+                free_guest_heap_allocation(buffer_address);
+                free_guest_heap_allocation(vtable_address);
+                error = std::string(api) + " could not create an ID3DXBuffer";
+                return -1;
+            }
+        }
+        if (!write_guest_u32("ram", buffer_address, vtable_address) ||
+            !write_guest_u32("ram", output_address, buffer_address)) {
+            free_guest_heap_allocation(data_address);
+            free_guest_heap_allocation(buffer_address);
+            free_guest_heap_allocation(vtable_address);
+            error = std::string(api) + " could not initialize its output";
+            return -1;
+        }
+        guest_d3dx_buffers.emplace(
+            buffer_address,
+            GuestD3DXBuffer{vtable_address, data_address, 1, size});
+        return return_kernel32_dword(0, api, 8);
+    }
+
+    GuestD3DXBuffer* find_guest_d3dx_buffer(uint32_t address,
+                                            const char* api) {
+        const auto buffer = guest_d3dx_buffers.find(address);
+        if (buffer == guest_d3dx_buffers.end()) {
+            error = std::string(api) + " received an invalid buffer pointer";
+            return nullptr;
+        }
+        return &buffer->second;
+    }
+
+    int d3dx_buffer_query_interface() {
+        constexpr const char* api =
+            "d3dx9_41.dll!ID3DXBuffer::QueryInterface";
+        uint32_t address = 0, iid_address = 0, output_address = 0;
+        if (!read_stack_argument(0, address, api) ||
+            !read_stack_argument(1, iid_address, api) ||
+            !read_stack_argument(2, output_address, api))
+            return -1;
+        GuestD3DXBuffer* buffer = find_guest_d3dx_buffer(address, api);
+        if (!buffer) return -1;
+        if (iid_address == 0 || output_address == 0 ||
+            !valid_guest_pointer(iid_address, 16) ||
+            !valid_guest_pointer(output_address, sizeof(uint32_t)))
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+        std::array<uint8_t, 16> iid{};
+        if (!read_guest_bytes(iid_address, iid.data(), iid.size(), api))
+            return -1;
+        static constexpr std::array<uint8_t, 16> unknown_iid = {
+            0, 0, 0, 0, 0, 0, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0x46};
+        static constexpr std::array<uint8_t, 16> buffer_iid = {
+            0x08, 0xfb, 0xa5, 0x8b, 0x95, 0x51, 0xe2, 0x40,
+            0xac, 0x58, 0x0d, 0x98, 0x9c, 0x3a, 0x01, 0x02};
+        if (iid != unknown_iid && iid != buffer_iid) {
+            if (!write_guest_u32("ram", output_address, 0)) return -1;
+            return return_kernel32_dword(kENoInterface, api, 12);
+        }
+        if (!write_guest_u32("ram", output_address, address)) return -1;
+        if (buffer->references != UINT32_MAX) ++buffer->references;
+        return return_kernel32_dword(0, api, 12);
+    }
+
+    int d3dx_buffer_add_ref() {
+        constexpr const char* api = "d3dx9_41.dll!ID3DXBuffer::AddRef";
+        uint32_t address = 0;
+        if (!read_stack_argument(0, address, api)) return -1;
+        GuestD3DXBuffer* buffer = find_guest_d3dx_buffer(address, api);
+        if (!buffer) return -1;
+        if (buffer->references != UINT32_MAX) ++buffer->references;
+        return return_kernel32_dword(buffer->references, api, 4);
+    }
+
+    int d3dx_buffer_release() {
+        constexpr const char* api = "d3dx9_41.dll!ID3DXBuffer::Release";
+        uint32_t address = 0;
+        if (!read_stack_argument(0, address, api)) return -1;
+        GuestD3DXBuffer* buffer = find_guest_d3dx_buffer(address, api);
+        if (!buffer || buffer->references == 0) return -1;
+        const uint32_t remaining = --buffer->references;
+        if (remaining == 0) {
+            const uint32_t vtable_address = buffer->vtable_address;
+            const uint32_t data_address = buffer->data_address;
+            guest_d3dx_buffers.erase(address);
+            free_guest_heap_allocation(address);
+            free_guest_heap_allocation(vtable_address);
+            free_guest_heap_allocation(data_address);
+        }
+        return return_kernel32_dword(remaining, api, 4);
+    }
+
+    int d3dx_buffer_get_pointer() {
+        constexpr const char* api =
+            "d3dx9_41.dll!ID3DXBuffer::GetBufferPointer";
+        uint32_t address = 0;
+        if (!read_stack_argument(0, address, api)) return -1;
+        GuestD3DXBuffer* buffer = find_guest_d3dx_buffer(address, api);
+        if (!buffer) return -1;
+        return return_kernel32_dword(buffer->data_address, api, 4);
+    }
+
+    int d3dx_buffer_get_size() {
+        constexpr const char* api =
+            "d3dx9_41.dll!ID3DXBuffer::GetBufferSize";
+        uint32_t address = 0;
+        if (!read_stack_argument(0, address, api)) return -1;
+        GuestD3DXBuffer* buffer = find_guest_d3dx_buffer(address, api);
+        if (!buffer) return -1;
+        return return_kernel32_dword(buffer->size, api, 4);
+    }
+
     GuestD3DXLine* find_guest_d3dx_line(uint32_t address,
                                         const char* api) {
         const auto line = guest_d3dx_lines.find(address);
@@ -10457,6 +10863,67 @@ struct RecompiledPcodeModule::Impl {
         }
         return return_kernel32_dword(static_cast<uint32_t>(file->second.size),
                                      api, 8);
+    }
+
+    int set_file_pointer() {
+        constexpr const char* api = "KERNEL32.dll!SetFilePointer";
+        uint32_t handle = 0;
+        uint32_t distance_low = 0;
+        uint32_t distance_high_address = 0;
+        uint32_t move_method = 0;
+        if (!read_stack_argument(0, handle, api) ||
+            !read_stack_argument(1, distance_low, api) ||
+            !read_stack_argument(2, distance_high_address, api) ||
+            !read_stack_argument(3, move_method, api)) {
+            return -1;
+        }
+        const auto file = guest_files.find(handle);
+        if (file == guest_files.end()) {
+            guest_last_error = 6;
+            return return_kernel32_dword(UINT32_MAX, api, 16);
+        }
+        if (file->second.is_directory) {
+            guest_last_error = 5;
+            return return_kernel32_dword(UINT32_MAX, api, 16);
+        }
+        int whence = SEEK_SET;
+        switch (move_method) {
+            case 0: whence = SEEK_SET; break;
+            case 1: whence = SEEK_CUR; break;
+            case 2: whence = SEEK_END; break;
+            default:
+                guest_last_error = 87;
+                return return_kernel32_dword(UINT32_MAX, api, 16);
+        }
+
+        int64_t distance = static_cast<int32_t>(distance_low);
+        if (distance_high_address != 0) {
+            uint32_t distance_high = 0;
+            if (!read_guest_u32("ram", distance_high_address, distance_high)) {
+                guest_last_error = 998;
+                return return_kernel32_dword(UINT32_MAX, api, 16);
+            }
+            distance = static_cast<int64_t>(static_cast<int32_t>(distance_high)) *
+                           INT64_C(4294967296) +
+                       distance_low;
+        }
+
+        const off_t position = ::lseek(file->second.descriptor,
+                                       static_cast<off_t>(distance), whence);
+        if (position < 0) {
+            guest_last_error = errno == EBADF ? 6 :
+                               errno == EACCES || errno == EPERM ? 5 :
+                               errno == EINVAL && distance < 0 ? 131 : 25;
+            return return_kernel32_dword(UINT32_MAX, api, 16);
+        }
+        if (distance_high_address != 0 &&
+            !write_guest_u32("ram", distance_high_address,
+                             static_cast<uint32_t>(
+                                 static_cast<uint64_t>(position) >> 32))) {
+            guest_last_error = 998;
+            return return_kernel32_dword(UINT32_MAX, api, 16);
+        }
+        return return_kernel32_dword(static_cast<uint32_t>(position), api, 16);
     }
 
     int read_file() {
@@ -13788,6 +14255,7 @@ struct RecompiledPcodeModule::Impl {
     std::unordered_map<uint32_t, GuestD3D9Device> guest_d3d9_devices;
     std::unordered_map<uint32_t, GuestD3DXEffect> guest_d3dx_effects;
     std::unordered_map<uint32_t, GuestD3DXLine> guest_d3dx_lines;
+    std::unordered_map<uint32_t, GuestD3DXBuffer> guest_d3dx_buffers;
     std::unordered_map<uint32_t, GuestD3D9Surface> guest_d3d9_surfaces;
     std::unordered_map<uint32_t, GuestD3D9Texture> guest_d3d9_textures;
     std::unordered_map<uint32_t, GuestD3D9VertexBuffer>
@@ -13836,6 +14304,7 @@ struct RecompiledPcodeModule::Impl {
     bool command_line_initialized = false;
     bool environment_initialized = false;
     uint32_t guest_last_error = 0;
+    uint32_t guest_winsock_startup_count = 0;
     uint32_t guest_process_priority_class = 0x00000020;
     int32_t guest_thread_priority = 0;
     uint32_t guest_thread_ideal_processor = 0;

@@ -1,0 +1,78 @@
+{
+  "format": "SHIFT.Process1D3DXRetailAsciiEffect/1",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "pcode_probe": {
+    "version": 597,
+    "status": "blocked",
+    "dispatches_diagnostic_only": 8107593,
+    "unique_functions_diagnostic_only": 5474,
+    "blocker": "P-code RAM read at 0x00000018 size 4 touched reserved low memory",
+    "report_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v597-effect-init-path.json",
+    "report_sha256": "584b373bf93453d486be579007a466c71bc3a58eab854bced8bf15719ca1bb5a",
+    "log_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v597-effect-init-path.log",
+    "log_sha256": "a2e303ea7a69bf30028d0f6d01417a70881d93af5db3c2702d93d39c4febece6",
+    "call": {
+      "caller": "0x0083dc50",
+      "return_address": "0x0083dcac",
+      "import": "d3dx9_41.dll!D3DXCreateEffect",
+      "dispatch": 8107451,
+      "thread_id": "0x000b32ec",
+      "source_address": "0x00b8e988",
+      "source_size": 773,
+      "hresult": "0x80004005",
+      "effect_output": "0",
+      "register_note": "Ghidra decompilation at 0x0083dc50 passes &DAT_00b8e988 and strlen-derived size; the logged EDX=0x00b8e989 is a volatile register value, not the stdcall source argument."
+    },
+    "preceding_retail_write": {
+      "function": "0x00839f30",
+      "address": "0x2429c48c",
+      "value": "0x00000000",
+      "dispatch": 8107450,
+      "thread_id": "0x000b32ec"
+    },
+    "interpretation": "Retail passes an ASCII HLSL effect to D3DXCreateEffect. The runtime accepted binary effects only, so it returned E_FAIL, the caller skipped 0x83d470/0x83d850, and the later guest getter read through the still-null inner+0x3c field. This is a D3DX input-compatibility gap, not a scheduler race."
+  },
+  "source_artifact": {
+    "path_outside_repository": "/tmp/process1-retail-runtime-evidence/retail-default-effect-20261021.fx",
+    "embedded_virtual_address": "0x00b8e988",
+    "size_bytes": 773,
+    "sha256": "9fa76844ab49cade593eb0fb7e81893dd679ad158c169c1522e012017c764917",
+    "kind": "ASCII D3DX effect source with DefaultVS/DefaultPS and technique Default"
+  },
+  "compiler_reference": {
+    "api": "D3DXCreateEffectCompiler followed by ID3DXEffectCompiler::CompileEffect(flags=0)",
+    "runtime": "PortProton bundled 32-bit d3dx9_41.dll and d3dcompiler_41.dll, executed under isolated Wine prefix",
+    "d3dx9_41_sha256": "6ac4df203af419d3f3b7d9a99e14a3490ea3ad307c474bfe36baea642b1421f6",
+    "d3dcompiler_41_sha256": "69ddadf8f5be24f10382706480b55e2492008d102001779f976608e880c65aab",
+    "compiled_effect_size_bytes": 1140,
+    "compiled_effect_sha256": "bba5a71bd6248466035be3018b021730333fb2c84f6df82654404bcb465ee159",
+    "parsed_metadata": {
+      "parameters": [
+        "worldViewProj"
+      ],
+      "techniques": [
+        {
+          "name": "Default",
+          "annotations": 3,
+          "passes": 1
+        }
+      ],
+      "pass_states": 2,
+      "objects": 5,
+      "resource_shader_sizes_bytes": [
+        124,
+        400
+      ]
+    }
+  },
+  "runtime_change": {
+    "scope": "Exact byte-for-byte cache for the single effect embedded in the pinned retail image; other binary and text input semantics are unchanged.",
+    "rejects_mutated_source": true,
+    "renderer_files_changed": false,
+    "host_neutral": true
+  },
+  "diagnostic_limits": [
+    "The v597 dispatch count is diagnostic only and does not establish frontend or race entry.",
+    "The compiled blob was produced from the exact retail source using the matching packaged D3DX9_41 compiler; this does not implement general ASCII HLSL effect compilation."
+  ]
+}

@@ -1,0 +1,2047 @@
+{
+  "base": {
+    "branch": "work/retail-runtime",
+    "date": "2026-10-21",
+    "main_commit": "380f0283",
+    "pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2129",
+    "scope": "Original retail SHIFT.exe execution, P-code, Ghidra export, and guest runtime compatibility. No Process 2 renderer files."
+  },
+  "changes": [
+    {
+      "result": "Generated P-code keeps the runtime target fallback when Ghidra static flow data is incomplete; target-specific body merging is still required for jumps into internal blocks.",
+      "topic": "BRANCHIND preservation"
+    },
+    {
+      "result": "Generated C jumps to the declared function entry when sorted Ghidra body instructions start at a lower-address block; this preserves local P-code scratch initialization.",
+      "topic": "Declared entrypoint preservation"
+    },
+    {
+      "result": "tests/test_shift_pcode_supplement_builder.py covers dynamic BRANCHIND fallback and lower-address body blocks for entries 0x00906240, 0x00906246, and 0x00d6fecc.",
+      "topic": "Regression tests"
+    },
+    {
+      "result": "v653 merges the exact 0x0088a0e0 body under entry 0x0088a2c0; the direct JMP remains an internal goto. A targeted regression checks the declared entry and that the tail target is not emitted as a nested guest call.",
+      "topic": "Internal tail-jump preservation"
+    }
+  ],
+  "format": "NFSShift.Process1RetailPcodeFrontier/1",
+  "frontier": [
+    {
+      "event": "merged exact Ghidra body for 0x0049f2c0; 233 instructions, 758 P-code operations.",
+      "module": {
+        "instructions": 233,
+        "label": "merged 0x0049f2c0",
+        "path": "function-call-stack-v621-override-0049f2c0/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 758,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "725e30ca861148995d2ca40d13386e765497acd6b59d70c7ca2496f5789d7858",
+        "source_sha256": "c4ff6c7da60c2c9f14307931c0c37b3cc6f6aeac67bbd3ab91d55db4a081878e"
+      },
+      "result": {
+        "blocker": "P-code module has no exported function rvi_00906230 called from guest function 0x00906240",
+        "comparison": {
+          "reason": "fewer dispatches or unique functions",
+          "result": "regressed"
+        },
+        "dispatches": 12242357,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 5939
+      },
+      "version": "v621"
+    },
+    {
+      "event": "0x00906240 strchr-like body exported with its lower internal block; entrypoint fix prevents executing the lower block first.",
+      "module": {
+        "instructions": 89,
+        "label": "0x00906240 declared-entry fix",
+        "path": "function-call-stack-v625-override-00906240-entryfix/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 517,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "e6fb6d0e4d381c8c847379b5df0a708254d19c465ffe27f4cbcbab87dfb98b50",
+        "source_sha256": "c1f147e904f1c549ad64d86294e40a2a05c94b6f2c4fecf9009b9b4f408a1f96"
+      },
+      "result": {
+        "blocker": "P-code module has no exported function rvi_00906246 called from guest function 0x00901470",
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 18866725,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6030
+      },
+      "version": "v625"
+    },
+    {
+      "completed_calls": 2,
+      "event": "Ghidra confirmed 0x00906246 is an alias entry into the 0x00901470 body. The alias executed twice and returned 0x28009f02 and 0x28009f50.",
+      "module": {
+        "instructions": 87,
+        "label": "0x00906246 alias",
+        "path": "function-call-stack-v627-override-00906246-alias/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 505,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "0fe942249a4b060978dccd8dce2d12fefb9830f5ce1bc0e419eecadbf5ca0e9d",
+        "source_sha256": "12b69d3f8f4e4949653da5ade56717d29f0e38ef0068b40b77a904d2186f7c47"
+      },
+      "result": {
+        "blocker": "P-code module has no exported function rvi_00911429 called from guest function 0x00902864",
+        "comparison": {
+          "reason": "fewer dispatches or unique functions",
+          "result": "regressed"
+        },
+        "dispatches": 18866451,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6042
+      },
+      "version": "v627"
+    },
+    {
+      "event": "Initial exact Ghidra export for 0x00911429 had 113 instructions and 541 P-code operations; it entered but stopped at 0x00911542, a switch-table target omitted from the Ghidra function body.",
+      "module": {
+        "instructions": 113,
+        "label": "initial 0x00911429 export",
+        "path": "function-call-stack-v628-override-00911429/compiled-v1/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 541,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "b7a57eb9580e0353d95fb60c135bbe0ef529eda0998f745b8da3ed1755535750",
+        "source_sha256": "81062bcf182a56f087d762efd7d9e834116cc0e836ff9230c0f51cab76cad359"
+      },
+      "result": {
+        "blocker": "P-code module has no exported function rvi_00911542 called from guest function 0x00911429",
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 18866802,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6043
+      },
+      "version": "v628"
+    },
+    {
+      "completed_call_returns": [
+        {
+          "completion_dispatch": "18866410",
+          "dispatch": "18866291",
+          "eax": "0x00000010"
+        },
+        {
+          "completion_dispatch": "18866993",
+          "dispatch": "18866902",
+          "eax": "0x0000000c"
+        },
+        {
+          "completion_dispatch": "18867382",
+          "dispatch": "18867354",
+          "eax": "0x00000003"
+        }
+      ],
+      "event": "Decoded all 8 switch-table entries and expanded 0x00911429 body to 709 instructions / 3514 P-code operations, preserving each case as an intra-function branch. Three calls returned EAX 0x10, 0x0c, and 0x03.",
+      "module": {
+        "instructions": 709,
+        "label": "0x00911429 jump-table body",
+        "path": "function-call-stack-v629-override-00911429-jumptable/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 3514,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "79916f4c950b9f7a7c1ece7357e63d02bb3e20bebc6474aaadeef0ff6937a24d",
+        "source_sha256": "162b767654bc9778df434f33f7f2433e804de7df42f8331d1a655f64d63ff6fb"
+      },
+      "result": {
+        "blocker": "P-code module has no exported function rvi_00d6fcbb called from guest function 0x00d6fecc",
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 18889115,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6045
+      },
+      "version": "v629"
+    },
+    {
+      "event": "Merged the 0x00d6fcbb internal loop blocks into entry 0x00d6fecc (158 instructions / 437 P-code operations). A 360-second traced replay timed out after 72 target entries and no recorded returns; this is unverified progress, not a successful function result.",
+      "last_trace_dispatch": 37993055,
+      "module": {
+        "instructions": 158,
+        "label": "0x00d6fecc merged body alias",
+        "path": "function-call-stack-v631-override-00d6fecc-alias/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 437,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "a5642f5a9e68677b7e1dab913abf957916eae517ef2db4670be108e47232199b",
+        "source_sha256": "d90c3299330e8338fc37087cc301f29b26a0767bd58787708ba2c938b1b5276f"
+      },
+      "result": {
+        "blocker": null,
+        "comparison": {
+          "reason": "probe did not yield a usable frontier",
+          "result": "unverified"
+        },
+        "dispatches": null,
+        "retail_rendering_proven": false,
+        "status": "timeout",
+        "unique_functions": null
+      },
+      "trace_entries": 72,
+      "trace_returns": 0,
+      "version": "v631"
+    },
+    {
+      "event": "The longer untraced replay passed the 0x00d6fecc loop and stopped at the exact RET instruction 0x00403cbb reached from 0x0046ffd1.",
+      "interpretation": "The diagnostic counts are not a function-success or gameplay proof. Ghidra shows 0x00403cbb is the single-byte RET at the end of the small 0x00403cb0 function body; 0x0046ffd1 loads EAX=0x00aa9b60 then jumps to this RET.",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v632-d6fecc-untraced-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_00403cbb called from guest function 0x0046ffd1",
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 39431025,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6072
+      },
+      "version": "v632"
+    },
+    {
+      "analysis": "Ghidra shows 0x006d8d90 is a five-instruction virtual dispatch: CALL 0x006d8d30; load vtable; load slot +0x34 into EAX; JMP EAX (BRANCHIND with no static flow targets). EAX at the return-failure snapshot is 0x006d9680. Both rvi_006d8d90 and rvi_006d9680 are present in the base ELF. This points to the base function\u2019s incomplete dynamic-branch path; v634 supplies an exact Ghidra override using the runtime-target fallback.",
+      "event": "The exact single-byte RET alias at 0x00403cbb cleared the previous missing-export stop. The replay then stopped when existing P-code function 0x006d8d90 returned -1.",
+      "failure_snapshot": {
+        "EAX": "0x006d9680",
+        "ECX": "0x00c0ddc0",
+        "EDX": "0x00afd4d0",
+        "guest_stack": [
+          "0x0054af30",
+          "0x0040e460",
+          "0x00427600",
+          "0x004cf800",
+          "0x00427560",
+          "0x00d42f90",
+          "0x00427500",
+          "0x006d8d90"
+        ]
+      },
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v633-403cbb-ret-alias-replay.json",
+      "result": {
+        "blocker": "P-code function 0x006d8d90 returned -1",
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 39435420,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6090
+      },
+      "version": "v633"
+    },
+    {
+      "completed_call_returns": [
+        {
+          "completion_dispatch": "39432308",
+          "dispatch": "39432306",
+          "eax": "0x00c0ddc0",
+          "target": "0x006d8d30"
+        },
+        {
+          "completion_dispatch": "39432348",
+          "dispatch": "39432309",
+          "eax": "0x00c0e080",
+          "target": "0x006d9680"
+        },
+        {
+          "completion_dispatch": "39432447",
+          "dispatch": "39432445",
+          "eax": "0x00c0ddc0",
+          "target": "0x006d8d30"
+        },
+        {
+          "completion_dispatch": "39432448",
+          "dispatch": "39432448",
+          "eax": "0x00c0e080",
+          "target": "0x006d9680"
+        }
+      ],
+      "event": "The exact dynamic BRANCHIND override for 0x006d8d90 called 0x006d9680 twice; both calls and both 0x006d8d30 calls returned successfully. Execution advanced to 0x006d8de0, whose own virtual dispatch returned -1.",
+      "failure_snapshot": {
+        "EAX": "0x006d9800",
+        "ECX": "0x00c0ddc0",
+        "EDX": "0x00afd4d0",
+        "guest_stack": [
+          "0x00509551",
+          "0x0050967d",
+          "0x0050958c",
+          "0x00509551",
+          "0x005088e0",
+          "0x0054af30",
+          "0x0040e460",
+          "0x006d8de0"
+        ]
+      },
+      "module": {
+        "instructions": 5,
+        "path": "function-call-stack-v634-override-006d8d90-dynamic-branch/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 10,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "5223fbf08ef8f2c27065755c2c70bebb76113b82cfa6a82af74a72aa1408a23f",
+        "source_sha256": "bc35a6a37d4df2ea90ec9be0894e277098d76888c42e8ed11bd7519a09c7dfb6"
+      },
+      "probe_log_sha256": "ec738cd58d6cbdefaccdd81ea914be4efed0b5901b82a5b21441bc1483429b13",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v634-006d8d90-dynamic-branch-replay.json",
+      "result": {
+        "blocker": "P-code function 0x006d8de0 returned -1",
+        "comparison": {
+          "reason": "fewer dispatches or unique functions",
+          "result": "regressed"
+        },
+        "dispatches": 39432642,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6103
+      },
+      "status": "blocked",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x006d8d90",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+        "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8,0xc,0x10,0x14"
+      },
+      "version": "v634"
+    },
+    {
+      "completed_call_returns": [
+        {
+          "completion_dispatch": "39432264",
+          "dispatch": "39432262",
+          "eax": "0x00c0ddc0",
+          "target": "0x006d8d30"
+        },
+        {
+          "completion_dispatch": "39432287",
+          "dispatch": "39432265",
+          "eax": "0x00c0e550",
+          "target": "0x006d9800"
+        }
+      ],
+      "event": "The vtable thunk 0x006d8de0 forwarded the runtime target to 0x006d9800; both its 0x006d8d30 helper and 0x006d9800 returned. The next caller 0x006dede0 attempted the unexported getter 0x006dcf20.",
+      "failure_snapshot": {
+        "EAX": "0x006dcf20",
+        "ECX": "0x00c0e080",
+        "EDX": "0x00afda30",
+        "guest_stack": [
+          "0x00509551",
+          "0x0050967d",
+          "0x0050958c",
+          "0x00509551",
+          "0x005088e0",
+          "0x0054af30",
+          "0x0040e460",
+          "0x006dede0"
+        ]
+      },
+      "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v635-override-006d8de0-dynamic-branch/module-manifest-v635-006d8de0-dynamic-branch.json",
+      "module": {
+        "instructions": 5,
+        "path": "function-call-stack-v635-override-006d8de0-dynamic-branch/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 10,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "77a28a6f7746acd86460ae6f7965798cc12001a87678e55e1363b9bd2d2208f1",
+        "source_sha256": "6050e8bfa0034e788710382b42b2bf702bc62412d75e1b2a1dd8e4365a1d4018"
+      },
+      "probe_log_sha256": "ef1ee2143573c25a63f6634ab42505f2cdb30bc181e0a489efd857270a56656c",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v635-006d8de0-dynamic-branch-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_006dcf20 called from guest function 0x006dede0",
+        "comparison": {
+          "reason": "fewer dispatches or unique functions",
+          "result": "regressed"
+        },
+        "dispatches": 39432300,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6108
+      },
+      "status": "blocked",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x006d8de0",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+        "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8,0xc,0x10,0x14"
+      },
+      "version": "v635"
+    },
+    {
+      "completed_call_returns": [
+        {
+          "completion_dispatch": "39431684",
+          "dispatch": "39431679",
+          "eax": "0x00c0e080",
+          "target": "0x006da7c0"
+        },
+        {
+          "completion_dispatch": "39431689",
+          "dispatch": "39431685",
+          "eax": "0x00c0e080",
+          "target": "0x006d8d90"
+        },
+        {
+          "completion_dispatch": "39431690",
+          "dispatch": "39431690",
+          "eax": "0x00c0e220",
+          "target": "0x006dcf20"
+        },
+        {
+          "completion_dispatch": "39431691",
+          "dispatch": "39431691",
+          "eax": "0x00000000",
+          "target": "0x007f1eb0"
+        },
+        {
+          "completion_dispatch": "39431692",
+          "dispatch": "39431692",
+          "eax": "0x00c0e588",
+          "target": "0x00632920"
+        },
+        {
+          "completion_dispatch": "39431693",
+          "dispatch": "39431693",
+          "eax": "0x00c0e58c",
+          "target": "0x00632920"
+        }
+      ],
+      "event": "The exact Ghidra-derived getter 0x006dcf20 returned EAX=0x00c0e220. The surrounding constructor path then reached 0x0052b380, whose conditional branch targeted the unexported success epilogue 0x0052b3c5.",
+      "failure_snapshot": {
+        "EAX": "0x00000000",
+        "EBX": "0x27a322f0",
+        "ECX": "0xffffffff",
+        "EDI": "0x27ad98b0",
+        "EDX": "0x00ac840c",
+        "ESI": "0x00ac840c",
+        "guest_stack": [
+          "0x00531d80",
+          "0x00531d00",
+          "0x005319c0",
+          "0x0052edb0",
+          "0x0052c580",
+          "0x0052bf10",
+          "0x0052b730",
+          "0x0052b380"
+        ]
+      },
+      "instructions_export": "/tmp/process1-retail-runtime-evidence/v636-006dcf20-instructions.jsonl",
+      "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v636-override-006dcf20-exact/module-manifest-v636-006dcf20-exact.json",
+      "module": {
+        "instructions": 2,
+        "path": "function-call-stack-v636-override-006dcf20-exact/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 5,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "37f2bba0ee5522b14084ab536c86cb02fb3ee1b0746c9c98f02ab4f5f2e4fc16",
+        "source_sha256": "3ce84356edf0019664db0b5c9984f733f81327515ff1b2f2d08b71b534916468"
+      },
+      "probe_log_sha256": "5ed4862d10166262da970e6fd60b8249e93b044849f6e56323d97464731bbbea",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v636-006dcf20-exact-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_0052b3c5 called from guest function 0x0052b380",
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 41198237,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6157
+      },
+      "status": "blocked",
+      "version": "v636"
+    },
+    {
+      "completed_call_returns": [
+        {
+          "completion_dispatch": "41199769",
+          "dispatch": "41199768",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41199784",
+          "dispatch": "41199783",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41199787",
+          "dispatch": "41199786",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200000",
+          "dispatch": "41199997",
+          "eax": "0x27ad9ea0",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200019",
+          "dispatch": "41200001",
+          "eax": "0x00000001",
+          "target": "0x00430096"
+        },
+        {
+          "completion_dispatch": "41200034",
+          "dispatch": "41200033",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200037",
+          "dispatch": "41200036",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200176",
+          "dispatch": "41200175",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200204",
+          "dispatch": "41200203",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200207",
+          "dispatch": "41200206",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200349",
+          "dispatch": "41200348",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200390",
+          "dispatch": "41200387",
+          "eax": "0x27ada7c0",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200411",
+          "dispatch": "41200391",
+          "eax": "0x00000001",
+          "target": "0x00430096"
+        },
+        {
+          "completion_dispatch": "41200414",
+          "dispatch": "41200413",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200561",
+          "dispatch": "41200560",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200600",
+          "dispatch": "41200599",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200603",
+          "dispatch": "41200602",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200755",
+          "dispatch": "41200754",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200770",
+          "dispatch": "41200769",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200775",
+          "dispatch": "41200772",
+          "eax": "0x27adae20",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200794",
+          "dispatch": "41200776",
+          "eax": "0x00000101",
+          "target": "0x00430096"
+        },
+        {
+          "completion_dispatch": "41200951",
+          "dispatch": "41200950",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200966",
+          "dispatch": "41200965",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        },
+        {
+          "completion_dispatch": "41200969",
+          "dispatch": "41200968",
+          "eax": "0x00000000",
+          "target": "0x0063c6d0"
+        }
+      ],
+      "event": "The merged 0x0052b380 body executed its branch and exact success epilogue, then the runtime advanced to 0x0052bad0. That function has a second conditional branch to an omitted success epilogue at 0x0052bb34.",
+      "instructions_export": "/tmp/process1-retail-runtime-evidence/v637-0052b380-0052b3c5-instructions.jsonl",
+      "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v637-override-0052b380-merged-exit/module-manifest-v637-0052b380-merged-exit.json",
+      "module": {
+        "instructions": 20,
+        "path": "function-call-stack-v637-override-0052b380-merged-exit/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 59,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "7084ec4d7a27bf3894ba176eb6b06f398279a3da2a9e08d4fba3613edd7cd8c8",
+        "source_sha256": "d16165515fe2bea4bc5781f27b2135d7017ca75fb26b5c70c7289b46ddc3c9d0"
+      },
+      "probe_log_sha256": "06ae8b3ad55b045ef19eddf42a44e4af576531be91fb5d732b37b9ce2c836d01",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v637-0052b380-merged-exit-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_0052bb34 called from guest function 0x0052bad0",
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 41201300,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6182
+      },
+      "status": "blocked",
+      "version": "v637"
+    },
+    {
+      "event": "Merged the exact Ghidra instructions for 0x0052bad0 and its conditional success epilogue at 0x0052bb34 into a single P-code function body. Generated C keeps the branch as an internal goto; replay is in progress. The 900-second replay was stopped at 5m34s after a debugger sample showed deep guest-call nesting and no live frontier trace; this is diagnostic only, not a confirmed failure.",
+      "instructions_export": "/tmp/process1-retail-runtime-evidence/v638-0052bad0-0052bb34-instructions.jsonl",
+      "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v638-override-0052bad0-merged-exit/module-manifest-v638-0052bad0-merged-exit.json",
+      "module": {
+        "instructions": 18,
+        "path": "function-call-stack-v638-override-0052bad0-merged-exit/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 54,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "1f5135def52425ac78a32af5ad15bb208a81a16723595428e7d4f0c5e54f6fc0",
+        "source_sha256": "cb9be0e9ed8bb2396986f42436ac479bdc1fc73c6e8eb8f020e4280ec56e55c2"
+      },
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v638-0052bad0-merged-exit-replay.json",
+      "result": {
+        "detail": "Stopped after debugger inspection; no failure address or frontier result was captured.",
+        "exit_code": 143,
+        "probe_log_sha256": "995e5afb959d003e3c48f71228e163fc0a795f830b1642fea3a9cc5ea3bc67d5",
+        "status": "unknown"
+      },
+      "status": "stopped_diagnostic",
+      "version": "v638"
+    },
+    {
+      "event": "A 180-second replay with a trace filter for 0x00d6fecc did not reach that caller and yielded no usable frontier. It timed out normally.",
+      "probe_log_sha256": "459d7a104c6cb2942da434c1d7307f97d41486833fca1067b744289db2521adf",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v639-00d6fecc-trace-replay.json",
+      "result": {
+        "blocker": null,
+        "dispatches": null,
+        "exit_code": 124,
+        "status": "timeout",
+        "unique_functions": null
+      },
+      "status": "timeout",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00d6fecc",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "version": "v639"
+    },
+    {
+      "event": "A 90-second targeted trace from 0x00509551 recorded repeating calls to 0x0040b870, 0x00427240, and 0x0050966b with changing ESI values. 8,192 call entries and 8,192 returns were logged before timeout; this is traversal evidence only and proves neither an error nor successful game startup.",
+      "probe_log_sha256": "a0b1a5a4697b3dbc9b5338542abc461d8630aaf5b58ebe572ece959e13d4157c",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v640-00509551-trace-replay.json",
+      "result": {
+        "blocker": null,
+        "dispatches": null,
+        "exit_code": 124,
+        "logged_call_entries": 8192,
+        "logged_call_returns": 8192,
+        "status": "timeout",
+        "target_counts": {
+          "0x0040b870": 2731,
+          "0x00427240": 2731,
+          "0x0050966b": 2730
+        },
+        "unique_functions": null
+      },
+      "status": "timeout",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00509551",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "version": "v640"
+    },
+    {
+      "event": "The full replay of the merged 0x0052bad0 body advanced beyond that function and reached the next confirmed missing P-code export. Its 41,586,453 dispatches and 6,392 unique functions are diagnostic only.",
+      "module": {
+        "instructions": 18,
+        "path": "function-call-stack-v638-override-0052bad0-merged-exit/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 54,
+        "sha256": "1f5135def52425ac78a32af5ad15bb208a81a16723595428e7d4f0c5e54f6fc0"
+      },
+      "probe_log_sha256": "3fabe6d20cf9e15f2eaada8ad6f65a8afc9e51dc292f30134a35f0ae67c852ea",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v641-0052bad0-merged-exit-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_00515970 called from guest function 0x00514760",
+        "caller": "0x00514760",
+        "dispatches": 41586453,
+        "exit_code": 1,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6392
+      },
+      "status": "blocked",
+      "version": "v641"
+    },
+    {
+      "event": "The exact 0x00515970 getter returned EAX=0x00bdcf68. The same caller then requested the next missing P-code export at 0x00515a60.",
+      "instructions_export": "/tmp/process1-retail-runtime-evidence/v642-00515970-instructions.jsonl",
+      "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v641-missing-00515970/module-manifest-v642-00515970.json",
+      "module": {
+        "instructions": 4,
+        "path": "function-call-stack-v641-missing-00515970/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 18,
+        "sha256": "ed165998112b8a06b210f6ab5bec1cd0f32546fef892e19044efb60d25ec4a44"
+      },
+      "probe_log_sha256": "8cf5e7c5b3feea088341c2d0febe65698e19d3ab923c36646d54b1c0a26977bf",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v642-00515970-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_00515a60 called from guest function 0x00514760",
+        "caller": "0x00514760",
+        "dispatches": 41589526,
+        "exit_code": 1,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6393
+      },
+      "status": "blocked",
+      "trace": {
+        "entries": [
+          {
+            "dispatch": "41589519",
+            "ecx": "0x27a28170",
+            "return_address": "0x00514771",
+            "stack_slots": [
+              "0x00000004",
+              "0x00524215",
+              "0x00c0e550",
+              "0x00be1604",
+              "0x27dfa5fc"
+            ],
+            "target": "0x00515970",
+            "target_slots": [
+              "0x00ac6220",
+              "0x00bdfae4",
+              "0x00000000",
+              "0x00bdfae4",
+              "0x00000008",
+              "0x0000000a"
+            ]
+          }
+        ],
+        "returns": [
+          {
+            "completion_dispatch": "41589520",
+            "dispatch": "41589519",
+            "eax": "0x00bdcf68",
+            "target": "0x00515970"
+          }
+        ],
+        "unresolved": [
+          {
+            "dispatch": "41589526",
+            "reason": "P-code module has no exported function rvi_00515a60 called from guest function 0x00514760",
+            "target": "0x00515a60"
+          }
+        ]
+      },
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00514760",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "version": "v642"
+    },
+    {
+      "event": "The exact 0x00515a60 getter returned EAX=0x00bdcff8, and caller 0x00514760 then requested the next missing P-code export at 0x00515b80. The generic report comparison marked fewer dispatches as regressed; the caller trace confirms the later missing target, while counts remain diagnostic only.",
+      "instructions_export": "/tmp/process1-retail-runtime-evidence/v643-00515a60-instructions.jsonl",
+      "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v642-missing-00515a60/module-manifest-v643-00515a60.json",
+      "module": {
+        "instructions": 4,
+        "path": "function-call-stack-v642-missing-00515a60/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 18,
+        "sha256": "ae30fab2e20b76a588888cc473abfd1a906da288ba9a554991ad86e018a6eed2"
+      },
+      "probe_log_sha256": "0b6db2bc769911d726f6bc0f5fbeabc0563ea95868ecd9b86ccb9240fc6d5a8c",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v643-00515a60-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_00515b80 called from guest function 0x00514760",
+        "caller": "0x00514760",
+        "comparison": {
+          "reason": "fewer dispatches or unique functions",
+          "result": "regressed"
+        },
+        "dispatches": 41589140,
+        "exit_code": 1,
+        "interpretation": "The per-run counter comparison is not used as proof of code regression; the targeted trace shows a successful 0x00515a60 return followed by the later unresolved address 0x00515b80.",
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6394
+      },
+      "status": "blocked",
+      "trace": {
+        "entries": [
+          {
+            "dispatch": "41589133",
+            "ecx": "0x279809d0",
+            "return_address": "0x00514771",
+            "stack_slots": [
+              "0x00000005",
+              "0x00524215",
+              "0x00c0e550",
+              "0x00be1604",
+              "0x27dfa5fc"
+            ],
+            "target": "0x00515a60",
+            "target_slots": [
+              "0x00ac6268",
+              "0x00bdfae4",
+              "0x00540000",
+              "0x00bdfae4",
+              "0x00000005",
+              "0x0000001b"
+            ]
+          }
+        ],
+        "returns": [
+          {
+            "completion_dispatch": "41589134",
+            "dispatch": "41589133",
+            "eax": "0x00bdcff8",
+            "target": "0x00515a60"
+          }
+        ],
+        "unresolved": [
+          {
+            "dispatch": "41589140",
+            "reason": "P-code module has no exported function rvi_00515b80 called from guest function 0x00514760",
+            "target": "0x00515b80"
+          }
+        ]
+      },
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00514760",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "version": "v643"
+    },
+    {
+      "event": "The exact 0x00515b80 getter returned EAX=0x00bdd088, and caller 0x00514760 continued through the next member accessor before requesting the missing P-code export at 0x00515d80. Ghidra exported the exact 14-byte body for v645. The generic report comparison marked fewer dispatches as regressed; the caller trace confirms the later unresolved target, while counts remain diagnostic only.",
+      "instructions_export": "/tmp/process1-retail-runtime-evidence/v644-00515b80-instructions.jsonl",
+      "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v643-missing-00515b80/module-manifest-v644-00515b80.json",
+      "module": {
+        "instructions": 4,
+        "path": "function-call-stack-v643-missing-00515b80/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 18,
+        "sha256": "94287328fabaee9a90002103132635b7bc951d90b414716e5e4d8bfa5c03a3f5"
+      },
+      "probe_log_sha256": "d9bdb2aa8d01343c67a35e307f78067ad0e24893f5ebd967ce5a404953dec1b1",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v644-00515b80-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_00515d80 called from guest function 0x00514760",
+        "caller": "0x00514760",
+        "comparison": {
+          "reason": "fewer dispatches or unique functions",
+          "result": "regressed"
+        },
+        "dispatches": 41588123,
+        "exit_code": 1,
+        "interpretation": "The per-run counter comparison is not used as proof of code regression; the targeted trace shows a successful 0x00515b80 return followed by the later unresolved address 0x00515d80.",
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6395
+      },
+      "status": "blocked",
+      "trace": {
+        "entries": [
+          {
+            "dispatch": "41588123",
+            "ecx": "0x27a282d0",
+            "return_address": "0x00514771",
+            "stack_slots": [
+              "0x00000008",
+              "0x00524215",
+              "0x00c0e550",
+              "0x00be1604",
+              "0x27dfa5fc"
+            ],
+            "target": "0x00515d80",
+            "target_slots": [
+              "0x00ac63a8",
+              "0x00bdfae4",
+              "0x00000000",
+              "0x00bdfae4",
+              "0x0000000e",
+              "0x0000001b"
+            ]
+          }
+        ],
+        "returns": [
+          {
+            "completion_dispatch": "41588113",
+            "dispatch": "41588112",
+            "eax": "0x00bdd088",
+            "target": "0x00515b80"
+          }
+        ],
+        "unresolved": [
+          {
+            "dispatch": "41588123",
+            "reason": "P-code module has no exported function rvi_00515d80 called from guest function 0x00514760",
+            "target": "0x00515d80"
+          }
+        ]
+      },
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00514760",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "version": "v644"
+    },
+    {
+      "event": "The exact 0x00515d80 getter returned EAX=0x00bdd1bc, and caller 0x00514760 then requested the next missing P-code export at 0x00516120. The generic report comparison marked fewer dispatches as regressed; the caller trace confirms the later unresolved target, while counts remain diagnostic only.",
+      "instructions_export": "/tmp/process1-retail-runtime-evidence/v645-00515d80-instructions.jsonl",
+      "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v644-missing-00515d80/module-manifest-v645-00515d80.json",
+      "module": {
+        "instructions": 4,
+        "path": "function-call-stack-v644-missing-00515d80/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 18,
+        "sha256": "20b353a1ecc7db4b3e994fd2fad889586ee5a962afeda59c5c3a9d9123c96bb3"
+      },
+      "probe_log_sha256": "d46501f0a87afca240c10c650329a6255755c05d60668fe2fc9d07386fbf483e",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v645-00515d80-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_00516120 called from guest function 0x00514760",
+        "caller": "0x00514760",
+        "comparison": {
+          "reason": "fewer dispatches or unique functions",
+          "result": "regressed"
+        },
+        "dispatches": 41586373,
+        "exit_code": 1,
+        "interpretation": "The per-run counter comparison is not used as proof of code regression; the targeted trace shows a successful 0x00515d80 return followed by the later unresolved address 0x00516120.",
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6396
+      },
+      "status": "blocked",
+      "trace": {
+        "entries": [
+          {
+            "dispatch": "41586373",
+            "ecx": "0x27a28330",
+            "return_address": "0x00514771",
+            "stack_slots": [
+              "0x00000009",
+              "0x00524215",
+              "0x00c0e550",
+              "0x00be1604",
+              "0x27dfa5fc"
+            ],
+            "target": "0x00516120",
+            "target_slots": [
+              "0x00ac64b8",
+              "0x00bdfae4",
+              "0x00000000",
+              "0x00bdfae4",
+              "0x00000011",
+              "0x0000001b"
+            ]
+          }
+        ],
+        "returns": [
+          {
+            "completion_dispatch": "41586367",
+            "dispatch": "41586366",
+            "eax": "0x00bdd1bc",
+            "target": "0x00515d80"
+          }
+        ],
+        "unresolved": [
+          {
+            "dispatch": "41586373",
+            "reason": "P-code module has no exported function rvi_00516120 called from guest function 0x00514760",
+            "target": "0x00516120"
+          }
+        ]
+      },
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00514760",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "version": "v645"
+    },
+    {
+      "event": "The exact 0x00516120 getter returned EAX=0x00bdd258, and caller 0x00514760 continued to its next missing method, 0x00515ee0. The generic comparison reports an advance, consistent with the caller-scoped return/unresolved trace.",
+      "instructions_export": "/tmp/process1-retail-runtime-evidence/v646-00516120-instructions.jsonl",
+      "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v645-missing-00516120/module-manifest-v646-00516120.json",
+      "module": {
+        "instructions": 4,
+        "path": "function-call-stack-v645-missing-00516120/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 18,
+        "sha256": "5d957eba251b736fc2eab6a5c7ffcfc372318f647f6c681e7a0595fc57c17ec8"
+      },
+      "probe_log_sha256": "a030e1dc3ddacb3fdc2586f698ef7c035a989335da65381aa4baaa75ac91eefb",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v646-00516120-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_00515ee0 called from guest function 0x00514760",
+        "caller": "0x00514760",
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 41589692,
+        "exit_code": 1,
+        "interpretation": "The targeted trace proves a successful 0x00516120 return followed by the later unresolved address 0x00515ee0.",
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6397
+      },
+      "status": "blocked",
+      "trace": {
+        "entries": [
+          {
+            "dispatch": "41589692",
+            "ecx": "0x27a28390",
+            "return_address": "0x00514771",
+            "stack_slots": [
+              "0x0000000a",
+              "0x00524215",
+              "0x00c0e550",
+              "0x00be1604",
+              "0x27dfa5fc"
+            ],
+            "target": "0x00515ee0",
+            "target_slots": [
+              "0x00ac6408",
+              "0x00bdfae4",
+              "0x00c60000",
+              "0x00bdfae4",
+              "0x00000010",
+              "0x0000001b"
+            ]
+          }
+        ],
+        "returns": [
+          {
+            "completion_dispatch": "41589686",
+            "dispatch": "41589685",
+            "eax": "0x00bdd258",
+            "target": "0x00516120"
+          }
+        ],
+        "unresolved": [
+          {
+            "dispatch": "41589692",
+            "reason": "P-code module has no exported function rvi_00515ee0 called from guest function 0x00514760",
+            "target": "0x00515ee0"
+          }
+        ]
+      },
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00514760",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "version": "v646"
+    },
+    {
+      "canonicalized_export": "/tmp/process1-retail-runtime-evidence/v647-getter-suffix-instructions-canonical.jsonl",
+      "event": "Caller 0x00514760 completed getter returns from 0x00515970, 0x00515a60, 0x00515b80, 0x00515d80, 0x00516120, and 0x00515ee0; the last returned EAX=0x00bdd2f4. It then reached the next missing export at 0x005136a0. The six observed successful getter calls are caller-trace evidence; aggregate dispatch totals do not establish global function success.",
+      "exported_functions": [
+        "0x00515ee0",
+        "0x00516030",
+        "0x005163e0",
+        "0x005166b0",
+        "0x00516b30",
+        "0x00517230",
+        "0x00517560",
+        "0x005176c0",
+        "0x00517800",
+        "0x00517eb0",
+        "0x005182b0",
+        "0x005184f0",
+        "0x00518550",
+        "0x00518850",
+        "0x00518b80"
+      ],
+      "instructions_export": "/tmp/process1-retail-runtime-evidence/v647-getter-suffix-instructions.jsonl",
+      "module": {
+        "functions": 15,
+        "instructions": 60,
+        "path": "function-call-stack-v646-missing-00516120-getter-suffix/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 270,
+        "sha256": "c8dfe346a5629f6c9ba4673932f61d7bc34e1ce7bcc544a486b3baf5dccf917b"
+      },
+      "module_manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v646-missing-00516120-getter-suffix/module-manifest-v647-getter-suffix.json",
+      "probe_log_sha256": "26392715bd06c9f1a14daeea339bf474ed90c3aef408f88470f04348927e8715",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v647-getter-suffix-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_005136a0 called from guest function 0x00514760",
+        "caller": "0x00514760",
+        "comparison": {
+          "reason": "fewer dispatches or unique functions",
+          "result": "regressed"
+        },
+        "dispatches": 41586253,
+        "exit_code": 1,
+        "interpretation": "The generic counters marked this run as regressed, but caller trace verifies six getter returns and the subsequent unresolved address 0x005136a0.",
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6398
+      },
+      "status": "blocked",
+      "trace": {
+        "successful_getter_returns": [
+          {
+            "completion_dispatch": "41586199",
+            "dispatch": "41586198",
+            "eax": "0x00bdcf68",
+            "target": "0x00515970"
+          },
+          {
+            "completion_dispatch": "41586207",
+            "dispatch": "41586206",
+            "eax": "0x00bdcff8",
+            "target": "0x00515a60"
+          },
+          {
+            "completion_dispatch": "41586215",
+            "dispatch": "41586214",
+            "eax": "0x00bdd088",
+            "target": "0x00515b80"
+          },
+          {
+            "completion_dispatch": "41586227",
+            "dispatch": "41586226",
+            "eax": "0x00bdd1bc",
+            "target": "0x00515d80"
+          },
+          {
+            "completion_dispatch": "41586235",
+            "dispatch": "41586234",
+            "eax": "0x00bdd258",
+            "target": "0x00516120"
+          },
+          {
+            "completion_dispatch": "41586243",
+            "dispatch": "41586242",
+            "eax": "0x00bdd2f4",
+            "target": "0x00515ee0"
+          }
+        ],
+        "unresolved": [
+          {
+            "dispatch": "41586253",
+            "entry": {
+              "ecx": "0x27a283f0",
+              "return_address": "0x00514771",
+              "stack_slots": [
+                "0x0000000c",
+                "0x00524215",
+                "0x00c0e550",
+                "0x00be1604",
+                "0x27dfa5fc"
+              ],
+              "target_slots": [
+                "0x00ac6060",
+                "0x00bdfae4",
+                "0x27a28300",
+                "0x00bdfae4",
+                "0x00000001",
+                "0x0000001b"
+              ]
+            },
+            "reason": "P-code module has no exported function rvi_005136a0 called from guest function 0x00514760",
+            "target": "0x005136a0"
+          }
+        ]
+      },
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00514760",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "version": "v647"
+    },
+    {
+      "canonicalized_export": "/tmp/process1-retail-runtime-evidence/v648-prefix-getter-instructions-canonical.jsonl",
+      "event": "Caller 0x00514760 completed ten distinct getter calls, including four additional exact wrappers from the two batch supplements. Startup then advanced to caller 0x00505c90, which requested missing P-code export 0x0082d280. The caller transition and ten explicit returns are the verified progress; counters are diagnostic.",
+      "exported_functions": [
+        "0x005136a0",
+        "0x005137e0",
+        "0x00514000",
+        "0x00514b40"
+      ],
+      "instructions_export": "/tmp/process1-retail-runtime-evidence/v648-prefix-getter-instructions.jsonl",
+      "module": {
+        "functions": 4,
+        "instructions": 16,
+        "path": "function-call-stack-v647-missing-005136a0-getter-prefix/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 72,
+        "sha256": "e66b3e17e00a68307d4fd4626e4876f8e561bd5b88851b83ec17fe78e5274dc6"
+      },
+      "module_manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v647-missing-005136a0-getter-prefix/module-manifest-v648-getter-prefix.json",
+      "probe_log_sha256": "2e7998a398a4499bd08ac53bee5f0d10c083e71ec8d691f9267cc30c0a42d70c",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v648-getter-prefix-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_0082d280 called from guest function 0x00505c90",
+        "caller": "0x00505c90",
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 42541505,
+        "exit_code": 1,
+        "interpretation": "The run completed the 00514760 getter sequence and reached a new missing P-code target from 0x00505c90. No frontend or rendering was proven.",
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6522
+      },
+      "status": "blocked",
+      "trace": {
+        "next_unresolved": {
+          "caller": "0x00505c90",
+          "target": "0x0082d280"
+        },
+        "successful_getter_returns": [
+          {
+            "completion_dispatch": "41587307",
+            "dispatch": "41587306",
+            "eax": "0x00bdcf68",
+            "target": "0x00515970"
+          },
+          {
+            "completion_dispatch": "41587315",
+            "dispatch": "41587314",
+            "eax": "0x00bdcff8",
+            "target": "0x00515a60"
+          },
+          {
+            "completion_dispatch": "41587323",
+            "dispatch": "41587322",
+            "eax": "0x00bdd088",
+            "target": "0x00515b80"
+          },
+          {
+            "completion_dispatch": "41587335",
+            "dispatch": "41587334",
+            "eax": "0x00bdd1bc",
+            "target": "0x00515d80"
+          },
+          {
+            "completion_dispatch": "41587343",
+            "dispatch": "41587342",
+            "eax": "0x00bdd258",
+            "target": "0x00516120"
+          },
+          {
+            "completion_dispatch": "41587351",
+            "dispatch": "41587350",
+            "eax": "0x00bdd2f4",
+            "target": "0x00515ee0"
+          },
+          {
+            "completion_dispatch": "41587363",
+            "dispatch": "41587362",
+            "eax": "0x00bdd390",
+            "target": "0x005136a0"
+          },
+          {
+            "completion_dispatch": "41587383",
+            "dispatch": "41587382",
+            "eax": "0x00bdd61c",
+            "target": "0x005176c0"
+          },
+          {
+            "completion_dispatch": "41587395",
+            "dispatch": "41587394",
+            "eax": "0x00bdd77c",
+            "target": "0x00517560"
+          },
+          {
+            "completion_dispatch": "41587415",
+            "dispatch": "41587414",
+            "eax": "0x00bdd9f0",
+            "target": "0x005184f0"
+          }
+        ]
+      },
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00514760",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1"
+      },
+      "version": "v648"
+    },
+    {
+      "event": "The exact 0x0082d280 P-code returned to caller 0x00505c90. Its trace shows target+0x1348 changing from 0x10001c18 at entry to 0x100021b8 at the next call. The caller then stopped at missing export 0x008329e0.",
+      "instructions_export": "/tmp/process1-retail-runtime-evidence/v649-0082d280-instructions.jsonl",
+      "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v648-missing-0082d280/module-manifest-v649-0082d280.json",
+      "module": {
+        "instructions": 2,
+        "path": "function-call-stack-v648-missing-0082d280/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 6,
+        "sha256": "4c47f6d283fed1783bc7f15135d5fdc237a1989de304cfbaeb2da308732cda9f"
+      },
+      "probe_log_sha256": "8173da50b9680ddcd5d27b56a4ad2f8dfebbe6f44d10b69b0799b696c21a4b1d",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v649-0082d280-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_008329e0 called from guest function 0x00505c90",
+        "caller": "0x00505c90",
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 42541591,
+        "exit_code": 1,
+        "interpretation": "The targeted trace confirms the store at [ECX+0x1348] and a successful return from 0x0082d280 before the next unresolved target 0x008329e0.",
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6523
+      },
+      "status": "blocked",
+      "trace": {
+        "entries": [
+          {
+            "dispatch": "42541591",
+            "ecx": "0x2002b698",
+            "edx": "0x100021b8",
+            "return_address": "0x00505cb0",
+            "target": "0x0082d280",
+            "target_slots": [
+              "0x10001c18"
+            ]
+          }
+        ],
+        "post_store_observation": {
+          "address": "0x0082d280",
+          "field": "ECX+0x1348",
+          "next_target": "0x008329e0",
+          "source": "next caller target entry",
+          "value_after_store": "0x100021b8"
+        },
+        "returns": [
+          {
+            "completion_dispatch": "42541591",
+            "dispatch": "42541591",
+            "eax": "0x0082d280",
+            "target": "0x0082d280"
+          }
+        ],
+        "unresolved": [
+          {
+            "caller": "0x00505c90",
+            "dispatch": "42541591",
+            "reason": "P-code module has no exported function rvi_008329e0 called from guest function 0x00505c90",
+            "target": "0x008329e0"
+          }
+        ]
+      },
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00505c90",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+        "SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS": "0x1348"
+      },
+      "version": "v649"
+    },
+    {
+      "event": "Caller 0x00505c90 returned from both exact field setters and five subsequent direct calls. Trace confirmed [ECX+0x1348] changed from 0x10001c18 to 0x100021b8; at 0x008329e0, EDX and the observed [ECX+0x690] value were both 0x00bdb238. Startup then reached a new missing export 0x00894da0 from caller 0x00647d80. The generic counter comparison says regressed, while the caller and return traces prove the later frontier.",
+      "instructions_export": "/tmp/process1-retail-runtime-evidence/v650-008329e0-instructions.jsonl",
+      "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v649-missing-008329e0/module-manifest-v650-008329e0.json",
+      "module": {
+        "instructions": 2,
+        "path": "function-call-stack-v649-missing-008329e0/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 6,
+        "sha256": "56a3fc39f56dcbdd921069c274c347b26d7b340c4a867474afa88bfce5323950"
+      },
+      "probe_log_sha256": "c656b52c30da3fedb10a89effb3dfced53ad5f8f972c63a66cb120049ed7992a",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v650-008329e0-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_00894da0 called from guest function 0x00647d80",
+        "caller": "0x00647d80",
+        "comparison": {
+          "reason": "fewer dispatches or unique functions",
+          "result": "regressed"
+        },
+        "dispatches": 42541077,
+        "exit_code": 1,
+        "interpretation": "The counter comparison is not treated as a code regression: the exact caller trace proves both field-setter returns, five later calls from 0x00505c90, and a subsequent unresolved target in caller 0x00647d80.",
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6529
+      },
+      "status": "blocked",
+      "trace": {
+        "completed_calls_from_00505c90": [
+          {
+            "completion_dispatch": "42540296",
+            "dispatch": "42540296",
+            "eax": "0x0082d280",
+            "target": "0x0082d280"
+          },
+          {
+            "completion_dispatch": "42540297",
+            "dispatch": "42540297",
+            "eax": "0x008329e0",
+            "target": "0x008329e0"
+          },
+          {
+            "completion_dispatch": "42540299",
+            "dispatch": "42540298",
+            "eax": "0x00bff0e0",
+            "target": "0x00695e30"
+          },
+          {
+            "completion_dispatch": "42540301",
+            "dispatch": "42540300",
+            "eax": "0x00000001",
+            "target": "0x00695fa0"
+          },
+          {
+            "completion_dispatch": "42540304",
+            "dispatch": "42540302",
+            "eax": "0x00c0a9a0",
+            "target": "0x006bbe00"
+          },
+          {
+            "completion_dispatch": "42540305",
+            "dispatch": "42540305",
+            "eax": "0x100021b8",
+            "target": "0x006bb550"
+          },
+          {
+            "completion_dispatch": "42540306",
+            "dispatch": "42540306",
+            "eax": "0x00000001",
+            "target": "0x007e6320"
+          }
+        ],
+        "next_unresolved": {
+          "caller": "0x00647d80",
+          "target": "0x00894da0"
+        },
+        "store_observations": [
+          {
+            "edx_value": "0x100021b8",
+            "entry_value": "0x10001c18",
+            "field": "ECX+0x1348",
+            "return_eax": "0x0082d280",
+            "target": "0x0082d280"
+          },
+          {
+            "edx_value": "0x00bdb238",
+            "entry_value": "0x00bdb238",
+            "field": "ECX+0x690",
+            "return_eax": "0x008329e0",
+            "target": "0x008329e0"
+          }
+        ]
+      },
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00505c90",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+        "SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS": "0x690,0x1348"
+      },
+      "version": "v650"
+    },
+    {
+      "diagnostic_result": {
+        "dispatches": null,
+        "exit_code": 143,
+        "reason": "broad caller filter generated high-volume unrelated calls before target 0x00894da0",
+        "repeated_caller_events": {
+          "0x00506d30": 1621,
+          "0x0065bf80": 1621
+        },
+        "status": "unknown",
+        "target_events": 0,
+        "trace_log_bytes": 1939965,
+        "trace_log_lines": 6485,
+        "unique_functions": null
+      },
+      "event": "The first v651 run enabled caller-wide tracing on 0x00647d80 and quickly produced 1,621 repeated calls each to 0x00506d30 and 0x0065bf80 (6,485 lines / 1,939,965 bytes in about 67 seconds); it had not reached target 0x00894da0. The diagnostic run was stopped with SIGTERM, classified unknown, and is not treated as a failure or frontier result. A target-only trace is used for v652.",
+      "instructions_export": "/tmp/process1-retail-runtime-evidence/v651-00894da0-instructions.jsonl",
+      "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v650-missing-00894da0/module-manifest-v651-00894da0.json",
+      "module": {
+        "instructions": 77,
+        "path": "function-call-stack-v650-missing-00894da0/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 302,
+        "sha256": "b75cb7493b315bebfb6d4ef2435fb4e876795ec5398ff43e21ad8eb65f18622d"
+      },
+      "probe_log": "/tmp/process1-retail-runtime-evidence/quantum-v651-00894da0-replay.log",
+      "probe_log_sha256": "a238cb5fa77822d918cdffd582223be368c07eca68a3a18dda59625ec6c0853d",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v651-00894da0-replay.json",
+      "status": "diagnostic_stopped",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x00647d80",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+        "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x00894da0"
+      },
+      "version": "v651"
+    },
+    {
+      "baseline": "/tmp/process1-retail-runtime-evidence/quantum-v650-008329e0-replay.json",
+      "completed_call_returns": [
+        {
+          "completion_dispatch": 42541325,
+          "dispatch": 42541323,
+          "eax": "0x00000000",
+          "target": "0x00894da0"
+        }
+      ],
+      "event": "The exact Ghidra body for 0x00894da0 returned EAX=0 to caller 0x00647d80. The next call from that caller was the unresolved 0x0088a2c0.",
+      "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v650-missing-00894da0/module-manifest-v651-00894da0.json",
+      "module": {
+        "instructions": 77,
+        "path": "function-call-stack-v650-missing-00894da0/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 302,
+        "sha256": "b75cb7493b315bebfb6d4ef2435fb4e876795ec5398ff43e21ad8eb65f18622d"
+      },
+      "probe_log_sha256": "cdd7324b243f08940b74126737dab575a6dd2f8fc4bc7f79961e1f3bbc533a77",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v652-00894da0-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_0088a2c0 called from guest function 0x00647d80",
+        "caller": "0x00647d80",
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 42541490,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6538
+      },
+      "status": "blocked",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+        "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x00894da0"
+      },
+      "version": "v652"
+    },
+    {
+      "event": "Merged the exact Ghidra blocks at 0x0088a0e0 and 0x0088a2c0 under the retail entry 0x0088a2c0. The generated direct tail jump is an internal goto, preserving the original return address. The target entered but had no recorded return before a nested missing export.",
+      "interpretation": "A selected call-entry trace proves 0x0088a2c0 was reached, but its return is pending. The same run later stopped at 0x007d6570; aggregate dispatch counts do not prove the merged function returned or the game reached frontend.",
+      "module": {
+        "instructions": 133,
+        "label": "merged 0x0088a2c0",
+        "path": "function-call-stack-v652-missing-0088a2c0/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 599,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "26174599965c5731364eba74082b90448086583d10382a26c54590e55ee47c64",
+        "source_sha256": "6584f31d068ec7dd75093d17384edebe536f24224e5b427542bba8935aed33ca"
+      },
+      "probe_log_sha256": "9d4bd4d9c96ef7bb22f6a5b294e00f274353034f44cc20e797374f466891b50e",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v653-0088a2c0-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_007d6570 called from guest function 0x007d5f10",
+        "caller": "0x007d5f10",
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 42543173,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6561
+      },
+      "status": "blocked",
+      "target_entry": {
+        "caller": "0x00647d80",
+        "completed": false,
+        "dispatch": 42542680,
+        "ecx": "0x00c29640",
+        "resolved": true,
+        "return_address": "0x0064850a",
+        "target": "0x0088a2c0",
+        "target_slot_0x97c": "0x00000000"
+      },
+      "version": "v653"
+    },
+    {
+      "baseline": "/tmp/process1-retail-runtime-evidence/quantum-v653-0088a2c0-replay.json",
+      "event": "The exact Ghidra body for 0x007d6570 entered from 0x007d5f10 and called the already-exported helper 0x007d6470. Neither selected call returned before the nested chain stopped at 0x00698390 from 0x0064879e.",
+      "interpretation": "Selected entry events prove the 0x007d6570 method and its 0x007d6470 helper were dispatched, but no return was recorded before the nested unresolved target. Do not count either function as completed.",
+      "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v653-missing-007d6570/module-manifest-v654-007d6570.json",
+      "module": {
+        "instructions": 27,
+        "label": "exact Ghidra body 0x007d6570",
+        "path": "function-call-stack-v653-missing-007d6570/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 109,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "4e0defd60bf865c0d2c419f7c74a5cc07b1bc6449baf67b59cea1439a990569a",
+        "source_sha256": "ed273421ba120fad8b937a3b5c41820641e00cd32c5b27cda8065397e8f4389b"
+      },
+      "probe_log_sha256": "f5ee50d8652133f15ff9b67405355a13264b37476baa759afbb2bcf306738b6a",
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v654-007d6570-replay.json",
+      "result": {
+        "blocker": "P-code module has no exported function rvi_00698390 called from guest function 0x0064879e",
+        "caller": "0x0064879e",
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 42549651,
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "unique_functions": 6571
+      },
+      "status": "blocked",
+      "target_entries": [
+        {
+          "caller": "0x007d5f10",
+          "completed": false,
+          "dispatch": 42549310,
+          "ecx": "0x00c23db0",
+          "resolved": true,
+          "return_address": "0x007d5f2a",
+          "target": "0x007d6570"
+        },
+        {
+          "caller": "0x007d6570",
+          "completed": false,
+          "dispatch": 42549311,
+          "ecx": "0x00c23db0",
+          "resolved": true,
+          "return_address": "0x007d657d",
+          "target": "0x007d6470"
+        }
+      ],
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+        "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x007d6570,0x007d6470,0x007d6550",
+        "SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS": "0x4"
+      },
+      "version": "v654"
+    },
+    {
+      "baseline": "/tmp/process1-retail-runtime-evidence/quantum-v654-007d6570-replay.json",
+      "event": "Caller-scoped v655 traces confirmed normal returns from 0x00698390 (EAX=0), its helper 0x00647860 (EAX=0x11), 0x007d6470 (EAX=0), and 0x007d6570 (EAX=0xfffffff9). Startup then stopped when 0x00888f70 returned -1; its failure snapshot had EAX=0x0040ae20 after the retail thunk loaded [ECX+0x958].",
+      "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v654-missing-00698390/module-manifest-v655-00698390.json",
+      "module": {
+        "instructions": 7,
+        "label": "exact Ghidra body 0x00698390",
+        "path": "function-call-stack-v654-missing-00698390/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 48,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "a846e93262d2ccb76f6e5fa3f4b44865bbb83b87a248ab0efcd5da90893a58fa",
+        "source_sha256": "77aef7b308a06532f962e997701de2cc262024ca346ffb27d5a0db106a5a9248"
+      },
+      "report": "/tmp/process1-retail-runtime-evidence/quantum-v655-00698390-replay.json",
+      "result": {
+        "blocker": "P-code function 0x00888f70 returned -1",
+        "caller": "0x0088a2c0",
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 42550090,
+        "exit_code": 1,
+        "failure_snapshot_eax": "0x0040ae20",
+        "probe_log_sha256": "a9eff60b77f2ff000e7874fec344d04f3cd589f0362bcac00bb0fcab85fb9dbb",
+        "retail_rendering_proven": false,
+        "selected_call_returns": [
+          {
+            "caller": "0x0064879e",
+            "completed": true,
+            "eax": "0x00000000",
+            "target": "0x00698390"
+          },
+          {
+            "caller": "0x00698390",
+            "completed": true,
+            "eax": "0x00000011",
+            "target": "0x00647860"
+          },
+          {
+            "caller": "0x007d6570",
+            "completed": true,
+            "eax": "0x00000000",
+            "target": "0x007d6470"
+          },
+          {
+            "caller": "0x007d5f10",
+            "completed": true,
+            "eax": "0xfffffff9",
+            "target": "0x007d6570"
+          }
+        ],
+        "status": "blocked",
+        "unique_functions": 6586
+      },
+      "status": "in_progress",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+        "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8",
+        "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x007d6570,0x007d6470,0x007d6550,0x00698390,0x00647860",
+        "SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS": "0x4"
+      },
+      "version": "v655"
+    },
+    {
+      "event": "The caller-scoped trace confirmed that the exact override for 0x00888f70 preserved its dynamic JMP EAX and reached target 0x0040ae20 from [ECX+0x958]. The selected 0x00698390, 0x00647860, 0x007d6470 and 0x007d6570 calls returned; the replay then stopped because 0x0040ae20 had no P-code export.",
+      "module": {
+        "instructions": 6,
+        "path": "function-call-stack-v656-override-00888f70/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 26,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "ec980f2cf46f95d4e0e014472b034a01bc7d017b7844aea958d24e387855d8a0"
+      },
+      "result": {
+        "blocker": "P-code module has no exported function rvi_0040ae20 called from guest function 0x00888f70",
+        "caller": "0x00888f70",
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 42560210,
+        "exit_code": 1,
+        "indirect_jump": {
+          "function": "0x00888f70",
+          "slot": "[ECX+0x958]",
+          "target": "0x0040ae20",
+          "target_resolved": false
+        },
+        "probe_log_sha256": "4398b47bf0312a52fbf853c8527e071c1630744325bff21df103b77ea41f2a56",
+        "retail_rendering_proven": false,
+        "selected_call_returns": [
+          {
+            "caller": "0x0064879e",
+            "completed": true,
+            "eax": "0x00000000",
+            "target": "0x00698390"
+          },
+          {
+            "caller": "0x00698390",
+            "completed": true,
+            "eax": "0x00000011",
+            "target": "0x00647860"
+          },
+          {
+            "caller": "0x007d6570",
+            "completed": true,
+            "eax": "0x00000000",
+            "target": "0x007d6470"
+          },
+          {
+            "caller": "0x007d5f10",
+            "completed": true,
+            "eax": "0xfffffff9",
+            "target": "0x007d6570"
+          }
+        ],
+        "status": "blocked",
+        "unique_functions": 6586
+      },
+      "version": "v656"
+    },
+    {
+      "event": "Exact traces confirmed 0x00888f70 took its dynamic target 0x0040ae20; that getter called 0x00489ad0 (EAX=0x00bc9fc0) and returned EAX=0xffffffff through the original null-field branch. Startup then reached the next unresolved export 0x005ab3f0 from 0x00647d80. The aggregate counter comparison marked fewer dispatches, so it is not treated as regression evidence.",
+      "module": {
+        "instructions": 8,
+        "path": "function-call-stack-v657-missing-0040ae20/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 35,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "e3eff70ec06b7db4be957ff4e9a0442287bd575ebd6f02efe79d79e3bbde54a8"
+      },
+      "result": {
+        "blocker": "P-code module has no exported function rvi_005ab3f0 called from guest function 0x00647d80",
+        "caller": "0x00647d80",
+        "comparison": {
+          "reason": "fewer dispatches or unique functions",
+          "result": "regressed"
+        },
+        "dispatches": 42549064,
+        "exit_code": 1,
+        "interpretation": "Caller-scoped target and return traces confirm the later retail frontier; aggregate counts are diagnostic only.",
+        "probe_log_sha256": "5695fdc84f4a2fbd9b26ec3a441745e85d2a30f0dbeef9f30bbc5278a8cb0599",
+        "retail_rendering_proven": false,
+        "selected_call_returns": [
+          {
+            "caller": "0x0064879e",
+            "completed": true,
+            "eax": "0x00000000",
+            "target": "0x00698390"
+          },
+          {
+            "caller": "0x00698390",
+            "completed": true,
+            "eax": "0x00000011",
+            "target": "0x00647860"
+          },
+          {
+            "caller": "0x007d6570",
+            "completed": true,
+            "eax": "0x00000000",
+            "target": "0x007d6470"
+          },
+          {
+            "caller": "0x007d5f10",
+            "completed": true,
+            "eax": "0xfffffff9",
+            "target": "0x007d6570"
+          },
+          {
+            "caller": "0x0088a2c0",
+            "completed": true,
+            "eax": "0xffffffff",
+            "target": "0x00888f70"
+          },
+          {
+            "caller": "0x00888f70",
+            "completed": true,
+            "eax": "0xffffffff",
+            "target": "0x0040ae20"
+          },
+          {
+            "caller": "0x0040ae20",
+            "completed": true,
+            "eax": "0x00bc9fc0",
+            "target": "0x00489ad0"
+          }
+        ],
+        "status": "blocked",
+        "unique_functions": 6591
+      },
+      "version": "v657"
+    },
+    {
+      "event": "The exact 30-instruction Ghidra body for 0x005ab3f0 entered from 0x00647d80. The call path reached 0x005ab230 and then stopped at its dynamic target 0x005a0ef0; the trace_return EAX=0x005a0ef0 is not counted as a normal function return because the exact body ends with EAX=0 and the failure snapshot retains the nested unresolved call.",
+      "module": {
+        "instructions": 30,
+        "label": "0x005ab3f0 exact Ghidra body",
+        "path": "function-call-stack-v658-missing-005ab3f0/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 119,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "535769373f90007dc8abc7e606b8019277165d0dcc07567a4f2671629a48328a",
+        "source_sha256": "a0f00de43b95d71b663c008c51f1124b440410d6eea55ea034348b9d14b2059c"
+      },
+      "result": {
+        "blocker": "P-code module has no exported function rvi_005a0ef0 called from guest function 0x005ab230",
+        "caller": "0x005ab230",
+        "comparison": {
+          "reason": "fewer dispatches or unique functions",
+          "result": "regressed"
+        },
+        "dispatches": 42548863,
+        "probe_log_sha256": "e453370b44aed8a061a461954c91b7e73a81d0d5dc390d07bfe5d9f75f7d9f35",
+        "probe_report_sha256": "254b15aeaafe5b7d4afb1e4dcdb7c99f1d68b51ab48d1f0b80c68cf8bb9cc71f",
+        "retail_rendering_proven": false,
+        "status": "blocked",
+        "trace_entry": {
+          "caller": "0x00647d80",
+          "ecx": "0x00be4820",
+          "return_address": "0x0064850a",
+          "target": "0x005ab3f0"
+        },
+        "trace_return_event": {
+          "eax": "0x005a0ef0",
+          "normal_ret_confirmed": false
+        },
+        "unique_functions": 6596
+      },
+      "version": "v658"
+    },
+    {
+      "event": "The exact getter 0x005a0ef0 returned EAX=0 on 701 traced calls; 0x005ab230 and 0x005ab3f0 each also returned EAX=0 on 701 calls. The bounded P-code replay completed 1,440 host frames with no P-code blocker and entered the host frame loop. This does not prove frontend/race readiness; guest draw translation remained false.",
+      "module": {
+        "instructions": 2,
+        "label": "0x005a0ef0 exact Ghidra getter",
+        "path": "function-call-stack-v659-missing-005a0ef0/compiled/libnfs_shift_pcode_supplement.so",
+        "pcode_operations": 6,
+        "rejected_functions": 0,
+        "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924",
+        "sha256": "1fcb541b83a0733f811a1ca32637c687c2871ea92ba5560cb78f4391bb1256fa"
+      },
+      "result": {
+        "blocker": null,
+        "caller": null,
+        "comparison": {
+          "reason": "more retail code executed",
+          "result": "advanced"
+        },
+        "dispatches": 44961092,
+        "frontend_confirmed": false,
+        "guest_main_thread_function": "0x007d7620",
+        "host_frame_loop_frames": 1440,
+        "host_graphics_bridge": {
+          "clear_requests": 2323,
+          "clear_submissions": 1440,
+          "guest_draw_translation": false,
+          "pending_presents": 881,
+          "present_requests": 2321,
+          "present_submissions": 1440
+        },
+        "probe_log_sha256": "234c34b1848faa0f2c2dae24b8ef3ca42fe18c6a0ed6142c94c3664f452f1ff9",
+        "probe_report_sha256": "f9fe9e986549d6b044beea3c393ba0821654afdcb75906ad9c77c74492452620",
+        "race_confirmed": false,
+        "retail_rendering_proven": false,
+        "selected_call_returns": [
+          {
+            "calls": 701,
+            "eax_histogram": {
+              "0x00000000": 701
+            },
+            "target": "0x005a0ef0"
+          },
+          {
+            "calls": 701,
+            "eax_histogram": {
+              "0x00000000": 701
+            },
+            "target": "0x005ab230"
+          },
+          {
+            "calls": 701,
+            "eax_histogram": {
+              "0x00000000": 701
+            },
+            "target": "0x005ab3f0"
+          },
+          {
+            "calls": 701,
+            "eax_histogram": {
+              "0xffffffff": 701
+            },
+            "target": "0x0040ae20"
+          },
+          {
+            "calls": 701,
+            "eax_histogram": {
+              "0xffffffff": 701
+            },
+            "target": "0x00888f70"
+          },
+          {
+            "calls": 703,
+            "eax_histogram": {
+              "0x00bc9fc0": 703
+            },
+            "target": "0x00489ad0"
+          },
+          {
+            "calls": 8,
+            "eax_histogram": {
+              "0x00000011": 7,
+              "0x00000021": 1
+            },
+            "target": "0x00647860"
+          },
+          {
+            "calls": 1,
+            "eax_histogram": {
+              "0x00000000": 1
+            },
+            "target": "0x00698390"
+          },
+          {
+            "calls": 1,
+            "eax_histogram": {
+              "0x00000000": 1
+            },
+            "target": "0x007d6470"
+          },
+          {
+            "calls": 1,
+            "eax_histogram": {
+              "0xfffffff9": 1
+            },
+            "target": "0x007d6570"
+          }
+        ],
+        "status": "host-frame-loop",
+        "unique_functions": 6625,
+        "validation_errors": 0,
+        "worker_waiting_count": 10
+      },
+      "version": "v659"
+    }
+  ],
+  "latest_confirmed_blocker": {
+    "address": null,
+    "caller": null,
+    "detail": "No P-code missing-export or P-code execution failure occurred in the bounded 1,440-frame replay; guest main-thread function 0x007d7620 reached the host frame loop. The replay does not prove frontend or race readiness, and guest draw translation was false. Separate original retail Wine/PortProton runs remain without confirmed frontend or race.",
+    "version": "v659"
+  },
+  "limitations": [
+    "No frontend or race was reached by the current recompiled P-code replay.",
+    "The Wine original-game run stopped at the retail null-field read; GE-Proton showed original-code execution but a black window.",
+    "The successful Wine/PortProton launches were of the pinned retail SHIFT.exe PE32, not the recompiled runtime; they provide compatibility observations but no frontend/race proof.",
+    "A count of unique dispatched guest functions does not equal a count of functions proven to return without error.",
+    "Unique function and dispatch counts are diagnostic only; they do not establish that every function returned without error, or that frontend/gameplay rendered.",
+    "v651 broad caller trace was manually stopped before its target and is unknown, not a failure.",
+    "v653 entered 0x0088a2c0 but its selected trace had no return before a nested unresolved target.",
+    "v654 entered 0x007d6570 and its helper 0x007d6470, but neither return was captured before the next unresolved export; do not count them as completed functions."
+  ],
+  "original_game_launches": {
+    "ge_proton": {
+      "evidence": "evidence/retail_frontier_20261021/original_shift_portproton_run.json",
+      "result": "Original PE stayed alive about 480 seconds and executed Gecko/Scaleform code; two captures showed a black window. No frontend or race confirmed."
+    },
+    "interpretation": "These are original-game runtime observations, separate from the recompiled P-code replay. The Wine path matches the retail read but does not explain the null field or establish Windows behavior.",
+    "wine": {
+      "evidence": "evidence/retail_frontier_20261021/original_shift_wine_crash.json",
+      "result": "Original PE stopped at 0x0083a006 reading address 0x18 after nested [inner+0x3c] was null."
+    }
+  },
+  "retail_image": {
+    "file": "SHIFT.exe PE32 retail 1.02",
+    "path": "/home/pes/ghidra_projects/SHIFT-retail-analysis.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "verification": {
+    "builder_python_tests": "8 passed (python3 -m pytest tests/test_shift_pcode_supplement_builder.py -q)",
+    "dispatch_counts": "Diagnostic only; not evidence of frontend, race, or successful completion of every dispatched function.",
+    "focused_ctest": "passed (1/1; /usr/bin/ctest --test-dir /tmp/process1-retail-runtime-final-build -R ^shift_runtime_recompiled_pcode_module$)",
+    "git_diff_check": "passed; JSON evidence parses",
+    "runtime_build": "passed (cached build verified; Ninja reported no work to do in /tmp/process1-retail-runtime-final-build)"
+  }
+}
