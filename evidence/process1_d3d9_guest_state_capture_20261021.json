@@ -1,0 +1,65 @@
+{
+  "format": "SHIFT.Process1D3D9GuestStateEvidence/1",
+  "date": "2026-10-21",
+  "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "source_capture": {
+    "sha256": "2a2892872f2893548d0925ff79c619de8c4b01f40a56804b0f681b934999ed9c",
+    "local_path": "/home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/original-native-d3dx-20261021/retail-capture-output/capture.jsonl",
+    "availability": "local retail artifact; not checked into the repository"
+  },
+  "frame": 14483,
+  "observed_calls": [
+    {
+      "event_index": 9694765,
+      "event": "set_vertex_declaration",
+      "device_ptr": "0xd4e45c0",
+      "declaration_ptr": "0x28433a30"
+    },
+    {
+      "event_index": 9694766,
+      "event": "set_stream_source",
+      "device_ptr": "0xd4e45c0",
+      "vertex_buffer_ptr": "0x28433930",
+      "stream": 0,
+      "offset_in_bytes": 0,
+      "stride": 24
+    },
+    {
+      "event_index": 9694767,
+      "event": "set_indices",
+      "device_ptr": "0xd4e45c0",
+      "index_buffer_ptr": "0x284339b0"
+    },
+    {
+      "event_index": 9694795,
+      "event": "draw_indexed_primitive",
+      "device_ptr": "0xd4e45c0",
+      "primitive_type": 4,
+      "base_vertex_index": 0,
+      "min_vertex_index": 0,
+      "num_vertices": 6,
+      "start_index": 0,
+      "primitive_count": 2
+    }
+  ],
+  "interpretation": "The retail call order exercises the three guest-device state setters before an indexed draw. This is original-game capture evidence, not proof that the recompiled P-code path reached the draw.",
+  "pcode_frontier": {
+    "v662": {
+      "status": "host-frame-loop",
+      "blocker": null,
+      "dispatches": 973437,
+      "validation_errors": 0
+    },
+    "v663": {
+      "status": "timeout",
+      "blocker": null,
+      "detail": "Targeted 0x00587b90 trace exceeded 300 seconds after recording successful returns; no final frame-run metrics were produced."
+    }
+  },
+  "boundary": {
+    "pcode_frontend_confirmed": false,
+    "pcode_race_confirmed": false,
+    "dispatch_counts_are_gameplay_evidence": false,
+    "process2_renderer_modified": false
+  }
+}

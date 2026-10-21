@@ -611,6 +611,10 @@ struct RecompiledPcodeModule::Impl {
         uint32_t last_clear_depth_bits = 0;
         uint32_t last_clear_stencil = 0;
         uint32_t last_clear_rect_count = 0;
+        std::array<uint32_t, 16> stream_buffers{};
+        std::array<uint32_t, 16> stream_offsets{};
+        std::array<uint32_t, 16> stream_strides{};
+        uint32_t index_buffer_address = 0;
     };
     struct GuestD3D9Surface {
         uint32_t vtable_address = 0;
@@ -1845,6 +1849,18 @@ struct RecompiledPcodeModule::Impl {
                 return d3d9_device_set_shader(true);
             if (name == "d3d9.dll!IDirect3DDevice9::SetVertexShader")
                 return d3d9_device_set_shader(false);
+            if (name == "d3d9.dll!IDirect3DDevice9::SetVertexDeclaration")
+                return d3d9_device_set_vertex_declaration();
+            if (name == "d3d9.dll!IDirect3DDevice9::GetVertexDeclaration")
+                return d3d9_device_get_vertex_declaration();
+            if (name == "d3d9.dll!IDirect3DDevice9::SetStreamSource")
+                return d3d9_device_set_stream_source();
+            if (name == "d3d9.dll!IDirect3DDevice9::GetStreamSource")
+                return d3d9_device_get_stream_source();
+            if (name == "d3d9.dll!IDirect3DDevice9::SetIndices")
+                return d3d9_device_set_indices();
+            if (name == "d3d9.dll!IDirect3DDevice9::GetIndices")
+                return d3d9_device_get_indices();
             if (name == "d3d9.dll!IDirect3DDevice9::GetTexture")
                 return d3d9_device_get_texture();
             if (name == "d3d9.dll!IDirect3DDevice9::GetRenderTarget")
@@ -6208,6 +6224,206 @@ struct RecompiledPcodeModule::Impl {
         return return_kernel32_dword(0, api, 8);
     }
 
+    int d3d9_device_set_vertex_declaration() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::SetVertexDeclaration";
+        uint32_t device_address = 0;
+        uint32_t declaration_address = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, declaration_address, api)) {
+            return -1;
+        }
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (declaration_address != 0) {
+            const auto declaration =
+                guest_d3d9_vertex_declarations.find(declaration_address);
+            if (declaration == guest_d3d9_vertex_declarations.end() ||
+                declaration->second.device_address != device_address) {
+                return return_kernel32_dword(kD3dErrInvalidCall, api, 8);
+            }
+        }
+        device->second.vertex_declaration_address = declaration_address;
+        return return_kernel32_dword(0, api, 8);
+    }
+
+    int d3d9_device_get_vertex_declaration() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::GetVertexDeclaration";
+        uint32_t device_address = 0;
+        uint32_t output_declaration_address = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, output_declaration_address, api)) {
+            return -1;
+        }
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (output_declaration_address == 0 ||
+            !valid_guest_pointer(output_declaration_address, sizeof(uint32_t))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 8);
+        }
+        const uint32_t declaration_address =
+            device->second.vertex_declaration_address;
+        if (declaration_address != 0) {
+            auto declaration =
+                guest_d3d9_vertex_declarations.find(declaration_address);
+            if (declaration == guest_d3d9_vertex_declarations.end()) {
+                device->second.vertex_declaration_address = 0;
+            } else if (declaration->second.references != UINT32_MAX) {
+                ++declaration->second.references;
+            }
+        }
+        if (!write_guest_u32("ram", output_declaration_address,
+                             device->second.vertex_declaration_address)) {
+            return -1;
+        }
+        return return_kernel32_dword(0, api, 8);
+    }
+
+    int d3d9_device_set_stream_source() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::SetStreamSource";
+        std::array<uint32_t, 5> arguments{};
+        for (uint32_t index = 0; index < arguments.size(); ++index) {
+            if (!read_stack_argument(index, arguments[index], api)) return -1;
+        }
+        const uint32_t device_address = arguments[0];
+        const uint32_t stream = arguments[1];
+        const uint32_t buffer_address = arguments[2];
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (stream >= device->second.stream_buffers.size()) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 20);
+        }
+        if (buffer_address != 0) {
+            const auto buffer =
+                guest_d3d9_vertex_buffers.find(buffer_address);
+            if (buffer == guest_d3d9_vertex_buffers.end() ||
+                buffer->second.device_address != device_address) {
+                return return_kernel32_dword(kD3dErrInvalidCall, api, 20);
+            }
+        }
+        device->second.stream_buffers[stream] = buffer_address;
+        device->second.stream_offsets[stream] = arguments[3];
+        device->second.stream_strides[stream] = arguments[4];
+        return return_kernel32_dword(0, api, 20);
+    }
+
+    int d3d9_device_get_stream_source() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::GetStreamSource";
+        std::array<uint32_t, 5> arguments{};
+        for (uint32_t index = 0; index < arguments.size(); ++index) {
+            if (!read_stack_argument(index, arguments[index], api)) return -1;
+        }
+        const uint32_t device_address = arguments[0];
+        const uint32_t stream = arguments[1];
+        const uint32_t output_buffer_address = arguments[2];
+        const uint32_t output_offset_address = arguments[3];
+        const uint32_t output_stride_address = arguments[4];
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (stream >= device->second.stream_buffers.size() ||
+            output_buffer_address == 0 || output_offset_address == 0 ||
+            output_stride_address == 0 ||
+            !valid_guest_pointer(output_buffer_address, sizeof(uint32_t)) ||
+            !valid_guest_pointer(output_offset_address, sizeof(uint32_t)) ||
+            !valid_guest_pointer(output_stride_address, sizeof(uint32_t))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 20);
+        }
+        const uint32_t buffer_address =
+            device->second.stream_buffers[stream];
+        if (buffer_address != 0) {
+            auto buffer = guest_d3d9_vertex_buffers.find(buffer_address);
+            if (buffer == guest_d3d9_vertex_buffers.end()) {
+                device->second.stream_buffers[stream] = 0;
+                device->second.stream_offsets[stream] = 0;
+                device->second.stream_strides[stream] = 0;
+            } else if (buffer->second.references != UINT32_MAX) {
+                ++buffer->second.references;
+            }
+        }
+        if (!write_guest_u32("ram", output_buffer_address,
+                             device->second.stream_buffers[stream]) ||
+            !write_guest_u32("ram", output_offset_address,
+                             device->second.stream_offsets[stream]) ||
+            !write_guest_u32("ram", output_stride_address,
+                             device->second.stream_strides[stream])) {
+            return -1;
+        }
+        return return_kernel32_dword(0, api, 20);
+    }
+
+    int d3d9_device_set_indices() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::SetIndices";
+        uint32_t device_address = 0;
+        uint32_t buffer_address = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, buffer_address, api)) {
+            return -1;
+        }
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (buffer_address != 0) {
+            const auto buffer = guest_d3d9_index_buffers.find(buffer_address);
+            if (buffer == guest_d3d9_index_buffers.end() ||
+                buffer->second.device_address != device_address) {
+                return return_kernel32_dword(kD3dErrInvalidCall, api, 8);
+            }
+        }
+        device->second.index_buffer_address = buffer_address;
+        return return_kernel32_dword(0, api, 8);
+    }
+
+    int d3d9_device_get_indices() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::GetIndices";
+        uint32_t device_address = 0;
+        uint32_t output_buffer_address = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, output_buffer_address, api)) {
+            return -1;
+        }
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (output_buffer_address == 0 ||
+            !valid_guest_pointer(output_buffer_address, sizeof(uint32_t))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 8);
+        }
+        uint32_t buffer_address = device->second.index_buffer_address;
+        if (buffer_address != 0) {
+            auto buffer = guest_d3d9_index_buffers.find(buffer_address);
+            if (buffer == guest_d3d9_index_buffers.end()) {
+                device->second.index_buffer_address = 0;
+                buffer_address = 0;
+            } else if (buffer->second.references != UINT32_MAX) {
+                ++buffer->second.references;
+            }
+        }
+        if (!write_guest_u32("ram", output_buffer_address, buffer_address))
+            return -1;
+        return return_kernel32_dword(0, api, 8);
+    }
+
     bool create_guest_d3d9_surface(uint32_t device_address,
                                    uint32_t render_target_index,
                                    bool depth_stencil,
@@ -7100,9 +7316,17 @@ struct RecompiledPcodeModule::Impl {
             free_guest_heap_address(buffer_address);
             free_guest_heap_address(vtable_address);
             const auto device = guest_d3d9_devices.find(device_address);
-            if (device != guest_d3d9_devices.end() &&
-                device->second.references > 0) {
-                --device->second.references;
+            if (device != guest_d3d9_devices.end()) {
+                for (size_t stream = 0;
+                     stream < device->second.stream_buffers.size(); ++stream) {
+                    if (device->second.stream_buffers[stream] == buffer_address) {
+                        device->second.stream_buffers[stream] = 0;
+                        device->second.stream_offsets[stream] = 0;
+                        device->second.stream_strides[stream] = 0;
+                    }
+                }
+                if (device->second.references > 0)
+                    --device->second.references;
             }
         }
         return return_kernel32_dword(remaining, api, 4);
@@ -7401,9 +7625,11 @@ struct RecompiledPcodeModule::Impl {
             free_guest_heap_address(buffer_address);
             free_guest_heap_address(vtable_address);
             const auto device = guest_d3d9_devices.find(device_address);
-            if (device != guest_d3d9_devices.end() &&
-                device->second.references > 0) {
-                --device->second.references;
+            if (device != guest_d3d9_devices.end()) {
+                if (device->second.index_buffer_address == buffer_address)
+                    device->second.index_buffer_address = 0;
+                if (device->second.references > 0)
+                    --device->second.references;
             }
         }
         return return_kernel32_dword(remaining, api, 4);

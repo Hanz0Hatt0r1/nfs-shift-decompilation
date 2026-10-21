@@ -3379,6 +3379,18 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", created_device);
         const uint32_t provider_device_release = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 2 * 4);
+        const uint32_t device_set_vertex_declaration = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 87 * 4);
+        const uint32_t device_get_vertex_declaration = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 88 * 4);
+        const uint32_t device_set_stream_source = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 100 * 4);
+        const uint32_t device_get_stream_source = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 101 * 4);
+        const uint32_t device_set_indices = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 104 * 4);
+        const uint32_t device_get_indices = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 105 * 4);
         const uint32_t create_texture = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 23 * 4);
         const uint32_t create_vertex_buffer = read_guest_u32(
@@ -3499,11 +3511,51 @@ int main(int argc, char** argv) {
                     d3d9_backend_fixture.vertex_buffer_update_offset == 8 &&
                     d3d9_backend_fixture.vertex_buffer_update_size == 8 &&
                     d3d9_backend_fixture.vertex_buffer_update_data[0] == 0x44 &&
-                    d3d9_backend_fixture.vertex_buffer_update_data[7] == 0x55 &&
-                    invoke_import(d3d9_provider_module, vertex_buffer_release,
-                                  {vertex_buffer}) == 0 &&
+                    d3d9_backend_fixture.vertex_buffer_update_data[7] == 0x55,
+                "managed vertex buffer Unlock did not preserve written bytes");
+        constexpr uint32_t stream_buffer_output_address = 0x00405300;
+        constexpr uint32_t stream_offset_output_address = 0x00405304;
+        constexpr uint32_t stream_stride_output_address = 0x00405308;
+        const uint32_t set_stream_result = invoke_import(
+            d3d9_provider_module, device_set_stream_source,
+            {created_device, 0, vertex_buffer, 8, 4});
+        require(set_stream_result == 0,
+                "SetStreamSource rejected a valid guest buffer: " +
+                    std::to_string(set_stream_result));
+        const uint32_t get_stream_result = invoke_import(
+            d3d9_provider_module, device_get_stream_source,
+            {created_device, 0, stream_buffer_output_address,
+             stream_offset_output_address, stream_stride_output_address});
+        require(get_stream_result == 0,
+                "GetStreamSource rejected valid output pointers: " +
+                    std::to_string(get_stream_result));
+        require(read_guest_u32(d3d9_provider_module, "ram",
+                               stream_buffer_output_address) == vertex_buffer &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   stream_offset_output_address) == 8 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   stream_stride_output_address) == 4,
+                "GetStreamSource changed buffer, offset, or stride");
+        const uint32_t stream_get_ref_release_result = invoke_import(
+            d3d9_provider_module, vertex_buffer_release, {vertex_buffer});
+        require(stream_get_ref_release_result == 1,
+                "GetStreamSource did not AddRef its returned buffer");
+        const uint32_t stream_unbind_result = invoke_import(
+            d3d9_provider_module, device_set_stream_source,
+            {created_device, 0, 0, 0, 0});
+        require(stream_unbind_result == 0,
+                "SetStreamSource rejected a null buffer");
+        const uint32_t stream_final_release_result = invoke_import(
+            d3d9_provider_module, vertex_buffer_release, {vertex_buffer});
+        require(stream_final_release_result == 0 &&
                     d3d9_backend_fixture.vertex_buffer_release_called,
-                "managed vertex buffer unlock or release failed");
+                "unbound vertex buffer was not released");
+        const uint32_t invalid_stream_result = invoke_import(
+            d3d9_provider_module, device_set_stream_source,
+            {created_device, 16, 0, 0, 0});
+        require(invalid_stream_result == 0x8876086c,
+                "SetStreamSource accepted stream index 16: " +
+                    std::to_string(invalid_stream_result));
         write_guest_u32(d3d9_provider_module, "ram", vertex_buffer_output_address,
                         0x77777777);
         require(invoke_import(
@@ -3557,6 +3609,18 @@ int main(int argc, char** argv) {
                     read_guest_u32(d3d9_provider_module, "ram",
                                    index_buffer_desc_address + 16) == 24,
                 "IDirect3DIndexBuffer9::GetDesc returned incorrect fields");
+        constexpr uint32_t indices_output_address = 0x00405310;
+        require(invoke_import(d3d9_provider_module, device_set_indices,
+                              {created_device, index_buffer}) == 0 &&
+                    invoke_import(d3d9_provider_module, device_get_indices,
+                                  {created_device, indices_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   indices_output_address) == index_buffer &&
+                    invoke_import(d3d9_provider_module, index_buffer_release,
+                                  {index_buffer}) == 1 &&
+                    invoke_import(d3d9_provider_module, device_set_indices,
+                                  {created_device, 0}) == 0,
+                "SetIndices/GetIndices did not preserve the index buffer binding");
         constexpr uint32_t index_buffer_locked_pointer_address = 0x004051e0;
         require(invoke_import(d3d9_provider_module, index_buffer_lock,
                               {index_buffer, 4, 8,
@@ -3657,6 +3721,31 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", vertex_declaration_vtable + 3 * 4);
         const uint32_t vertex_declaration_get_declaration = read_guest_u32(
             d3d9_provider_module, "ram", vertex_declaration_vtable + 4 * 4);
+        constexpr uint32_t vertex_declaration_binding_output_address =
+            0x00405314;
+        require(invoke_import(d3d9_provider_module,
+                              device_set_vertex_declaration,
+                              {created_device, vertex_declaration}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  device_get_vertex_declaration,
+                                  {created_device,
+                                   vertex_declaration_binding_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_declaration_binding_output_address) ==
+                        vertex_declaration &&
+                    invoke_import(d3d9_provider_module,
+                                  vertex_declaration_release,
+                                  {vertex_declaration}) == 1 &&
+                    invoke_import(d3d9_provider_module,
+                                  device_set_vertex_declaration,
+                                  {created_device, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  device_get_vertex_declaration,
+                                  {created_device,
+                                   vertex_declaration_binding_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   vertex_declaration_binding_output_address) == 0,
+                "SetVertexDeclaration/GetVertexDeclaration lost binding state");
         constexpr uint32_t vertex_declaration_count_address = 0x00405240;
         write_guest_u32(d3d9_provider_module, "ram",
                         vertex_declaration_count_address, 0);
