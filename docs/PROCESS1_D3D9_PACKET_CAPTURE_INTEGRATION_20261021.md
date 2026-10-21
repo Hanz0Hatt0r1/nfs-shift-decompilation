@@ -9,11 +9,10 @@ used and no packet-capture adapter is installed.
 The capture adapter stays owned by `Runtime` for as long as the P-code module
 can call its callbacks. It forwards resource callbacks to the existing runtime
 backend and records supported `DrawIndexedPrimitive` packets. Its first-draw
-limit is one. The capture adapter enables managed DXT5 snapshots so the guest
-can provide the raw compressed mip bytes; Process 1 now has a separate DXT3
-capability for the same guest-memory path. Process 2 must set that new bit in
-its capture adapter before retail DXT3 textures can pass through the integrated
-capture path. Neither bit enables compressed-texture upload in live Vulkan.
+limit is one. The capture adapter enables managed DXT5 and DXT3 snapshots so
+the guest can provide raw compressed mip bytes; DXT3 has its own capability
+bit in both the P1 producer and P2 capture adapter (P2 PR #2143). Neither bit
+enables compressed-texture upload in live Vulkan.
 
 The output is an offline capture input for Process 2's bundle builder. This
 integration does not submit the captured guest draw through the runtime's live
@@ -50,8 +49,17 @@ P1 now represents DXT3 with its own adapter capability, uses the same 4×4,
 16-byte block layout as DXT5, and carries those bytes through managed
 `CreateTexture`, DDS loading, mip sizing, and block-aligned `LockRect`. DXT1,
 DXT2, and DXT4 remain unsupported by the managed runtime path. The new
-capability defaults to false; Process 2's capture adapter still needs its
-matching change before the packet capture run can exercise this path.
+capability defaults to false; P2's capture adapter opts into DXT3 in PR #2143.
+
+With those changes combined, v666 completed the recompiled guest P-code
+host-frame loop using the original retail PE: 1,440 requested/rendered host
+frames, 44,964,062 dispatches, and 6,625 unique guest functions. The run
+reported no blocker and `guest_draw_translation=false`; it therefore crossed
+the previous managed-texture stop under this configuration, but did not prove
+a retail guest draw, frontend, race, or rendered retail image. This is a
+recompiled runtime replay of the retail PE, not a native Windows `SHIFT.exe`
+launch. The selected run data and log hash are recorded in
+`evidence/retail_frontier_20261021/process1_pcode_frontier_v666_dxt3_trace_summary.json`.
 
 ## Checks
 
@@ -61,8 +69,8 @@ matching change before the packet capture run can exercise this path.
 - New P1 DXT3 checks cover independent capability rejection, the captured
   512×512 pitch of 2048, block-aligned subrect addressing, and DXT3 DDS byte
   preservation; they pass in the focused CTest.
-- Process 2's `shift_vulkan_d3d9_packet_capture_adapter` CTest passed (1/1),
-  including its existing assertion that DXT5 is enabled on the capture
-  adapter. Process 2's matching DXT3 assertion is pending its GitHub patch.
-- This integration was not launched against the retail executable, so it does
-  not add new frontend, race, or live Vulkan draw evidence.
+- Process 2's `shift_vulkan_d3d9_packet_capture_adapter` CTest passed (1/1)
+  with the DXT3 capture capability enabled in PR #2143.
+- The v666 replay loaded the original retail PE into the recompiled runtime;
+  it was not a native Windows `SHIFT.exe` process and does not add frontend,
+  race, or live Vulkan draw evidence.

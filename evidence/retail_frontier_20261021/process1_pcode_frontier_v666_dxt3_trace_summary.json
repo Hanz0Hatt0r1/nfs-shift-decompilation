@@ -1,0 +1,49 @@
+{
+  "format": "SHIFT.Process1RetailFrontierSummary/1",
+  "run": "v666-dxt3-trace",
+  "date": "2026-10-21",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "execution_kind": "recompiled guest P-code runtime using the original retail PE; not a native Windows SHIFT.exe process",
+  "runtime_code": {
+    "process1_commit": "e6f674a6b394065586e5c5905e2511dcdb9aff0e",
+    "process2_commit": "1fef18a8fdc8308365761a901b5e47db91af7e20"
+  },
+  "probe": {
+    "frames_requested": 1440,
+    "timeout_seconds": 900,
+    "module_manifest": "reconstructed from the v659 execution evidence",
+    "trace_targets": [
+      "0x005a0ef0",
+      "0x005ab230",
+      "0x005ab3f0",
+      "0x005a0ec0",
+      "0x005a0ed0",
+      "0x005a0ee0"
+    ],
+    "target_slots": ["0x9c", "0xa4", "0xa8", "0xb8"],
+    "stack_slots": ["0x4", "0x8"],
+    "live_call_log": true
+  },
+  "result": {
+    "status": "host-frame-loop",
+    "blocker": null,
+    "exit_code": 0,
+    "frames_rendered": 1440,
+    "dispatches": 44964062,
+    "unique_functions": 6625,
+    "guest_main_thread_function": "0x00675a90",
+    "worker_waiting_count": 11,
+    "validation_errors": 0,
+    "d3d9_bridge": {
+      "clear_requests": 2324,
+      "clear_submissions": 1440,
+      "present_requests": 2323,
+      "present_submissions": 1440,
+      "pending_presents": 883,
+      "guest_draw_translation": false
+    },
+    "retail_rendering_proven": false
+  },
+  "probe_log_sha256": "79b4c428a307e234cd7dce178ed95c920f87f52841ea40d7fbb105aaeebdd9c3",
+  "interpretation": "The v666 runtime replay passed the previous managed-texture frontier under the combined P1/P2 DXT3 capture configuration. The host-frame loop and dispatch counts do not prove guest draw translation, frontend, race, original-game launch, or retail rendering."
+}
