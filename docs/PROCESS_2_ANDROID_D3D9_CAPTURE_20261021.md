@@ -50,8 +50,20 @@ This phone capture does not produce a replay bundle:
 - Target draws use render-target formats 113 (161 draws) and 21 (25 draws).
   The Vulkan bundle now maps 113 to `VK_FORMAT_R16G16B16A16_SFLOAT` and 21 to
   `VK_FORMAT_B8G8R8A8_UNORM`; format 114 (`VK_FORMAT_R32_SFLOAT`) remains
-  supported for the separate PC capture. The target shaders use between two
-  and five samplers, while the current bundle supports one sampler at s0.
+  supported for the separate PC capture. The capture bundle now collects each
+  active 2D sampler register separately; the shared packet and native executor
+  accept s0–s15. The target shaders use s0–s4, and a regression serializes all
+  five registers into one packet.
+- All 186 target draws have their shader-used texture stages bound and have the
+  five sampler-state values currently required by the converter. They still
+  have no texture snapshots. The captured sampler values also expose follow-up
+  Vulkan work: 126/186 draws use D3D9 border addressing on s0 (address mode 4,
+  with captured border colors 0x00000000 or 0xffffffff), and 10/186 use
+  anisotropic min/mag filtering on s1 with max anisotropy 6. The capture also
+  records a 1.0 mip LOD bias and sRGB-texture enablement on some stages; the
+  current packet converter does not preserve those states or mip chains. The
+  multi-register change is descriptor-binding support, not complete replay of
+  those captured sampler contracts.
 
 The native Vulkan executor also passed a format smoke for 21 and 113 on a GTX
 950 with zero validation errors. It used the existing synthetic material bundle
@@ -69,10 +81,15 @@ The large phone log and payloads remain local rather than being added to Git.
 
 ## Verification
 
-- 65 focused capture, shader, bundle, and Vulkan shader tests passed.
+- 65 focused capture, shader, bundle, and Vulkan shader tests passed before the
+  multi-register change. The focused capture and texture-packet tests passed
+  (18 tests); including native executor contract tests, the post-change set
+  passed 21 tests.
 - All native Vulkan CMake targets built on Linux.
 - The 11 focused bundle-format and native executor contract tests passed; the
   synthetic format smoke passed for both mobile target formats.
-- The Vulkan validation smoke completed on the GTX 950 with zero validation
-  errors and prepared a two-draw bundle set. This generic smoke checks the
-  executor only; it is not an NFS SHIFT render or retail-parity evidence.
+- A separate synthetic five-sampler packet rendered on the GTX 950 with
+  validation enabled, five texture descriptors bound, and zero validation
+  errors. The general Linux Vulkan smoke also rendered and prepared its
+  two-draw bundle set. Both are executor checks, not captured SHIFT renders or
+  retail-image parity evidence.

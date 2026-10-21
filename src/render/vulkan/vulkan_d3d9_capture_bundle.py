@@ -454,6 +454,60 @@ def _validate_texture_mip_filter(mipmaps: int, sampler: dict[str, str]) -> None:
         raise ValueError("captured mip filtering requires native mip-chain support")
 
 
+def _capture_texture_packet(
+    state: dict[str, Any],
+    capture_root: Path,
+    pixel_program: Any,
+    output_path: Path,
+) -> tuple[dict[str, Any], list[dict[str, Any]], dict[int, dict[str, str]]]:
+    registers = sorted(set(pixel_program.samplers))
+    if not registers:
+        raise ValueError("capture replay requires at least one active pixel sampler")
+
+    textures: dict[int, dict[str, Any]] = {}
+    texture_rows: list[dict[str, Any]] = []
+    sampler_states: dict[int, dict[str, str]] = {}
+    command_rows: list[dict[str, Any]] = []
+    for register in registers:
+        if register < 0 or register > 15:
+            raise ValueError(f"captured pixel sampler is outside s0-s15: s{register}")
+        sampler_type = pixel_program.sampler_types.get(register, "sampler2D")
+        if sampler_type != "sampler2D":
+            raise ValueError(f"capture replay does not support {sampler_type} at s{register}")
+
+        texture_state = state.get("textures", {}).get(register)
+        if not texture_state:
+            raise ValueError(f"active pixel sampler s{register} has no captured texture binding")
+        snapshot_paths = texture_state.get("snapshot_paths") or []
+        if texture_state.get("snapshot_status") != "captured" or not snapshot_paths:
+            raise ValueError(f"active texture at s{register} has no captured DDS snapshot")
+        texture_path = _resource_file(capture_root, str(snapshot_paths[0]), "textures")
+        texture_bytes = texture_path.read_bytes()
+        texture = decode_dds(texture_bytes)
+        sampler = _sampler_state(state["sampler_states"].get(register, {}))
+        _validate_texture_mip_filter(int(texture["mipmaps"]), sampler)
+
+        textures[register] = texture
+        sampler_states[register] = sampler
+        texture_rows.append({
+            "register": register,
+            "texture_path": f"textures/{texture_path.name}",
+            "texture_sha256": hashlib.sha256(texture_bytes).hexdigest(),
+            "texture_mipmaps": int(texture["mipmaps"]),
+        })
+        command_rows.append({
+            "d3d9_sampler_register": register,
+            "sampler_state": sampler,
+        })
+
+    texture_command = {
+        "format": "SHIFT.RenderCommand/1",
+        "submeshes": [{"textures": command_rows}],
+    }
+    report = build_vulkan_texture_packet(texture_command, textures, output_path)
+    return report, texture_rows, sampler_states
+
+
 def _write_json(path: Path, value: dict[str, Any]) -> None:
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -471,12 +525,11 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
     declaration_state = state.get("declaration")
     vertex_state = state.get("vertex_shader")
     pixel_state = state.get("pixel_shader")
-    texture_state = state.get("textures", {}).get(0)
     viewport = state.get("viewport")
     target = state.get("render_target")
     depth_target = state.get("depth_stencil_surface")
     clear = state.get("clear")
-    if not all((stream, indices_state, declaration_state, vertex_state, pixel_state, texture_state, viewport, target, clear)):
+    if not all((stream, indices_state, declaration_state, vertex_state, pixel_state, viewport, target, clear)):
         raise ValueError("captured draw is missing a required bound resource or state")
     if state.get("clear_render_target") != target.get("resource_signature"):
         raise ValueError("the captured clear does not belong to the draw render target")
@@ -568,24 +621,8 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
     (output / "geometry.svpk").write_bytes(geometry)
 
     _capture_constants(state, output / "constants.svcp")
-    sampler = _sampler_state(state["sampler_states"].get(0, {}))
-    snapshot_paths = texture_state.get("snapshot_paths") or []
-    if texture_state.get("snapshot_status") != "captured" or not snapshot_paths:
-        raise ValueError("active texture has no captured DDS snapshot")
-    texture_path = _resource_file(capture_path.parent, str(snapshot_paths[0]), "textures")
-    texture = decode_dds(texture_path.read_bytes())
-    _validate_texture_mip_filter(int(texture["mipmaps"]), sampler)
-    texture_command = {
-        "format": "SHIFT.RenderCommand/1",
-        "submeshes": [{"textures": [{
-            "d3d9_sampler_register": 0,
-            "sampler_state": sampler,
-        }]}],
-    }
-    texture_report = build_vulkan_texture_packet(
-        texture_command, {0: texture}, output / "textures.svtp")
-    if pixel_program.samplers != [0]:
-        raise ValueError("capture replay currently supports one active pixel sampler at s0")
+    texture_report, texture_rows, samplers = _capture_texture_packet(
+        state, capture_path.parent, pixel_program, output / "textures.svtp")
 
     render_states = state["render_states"]
     pipeline_state = _pipeline_state(render_states)
@@ -672,11 +709,9 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
             "vertex_declaration_signature": declaration_state.get("resource_signature"),
             "vertex_shader_signature": vertex_shader_row.get("resource_signature"),
             "pixel_shader_signature": pixel_shader_row.get("resource_signature"),
-            "texture_path": f"textures/{texture_path.name}",
-            "texture_sha256": hashlib.sha256(texture_path.read_bytes()).hexdigest(),
-            "texture_mipmaps": int(texture["mipmaps"]),
+            "textures": texture_rows,
         },
-        "sampler0": sampler,
+        "samplers": {str(register): sampler for register, sampler in samplers.items()},
         "shader_validation": validation,
         "render_target": viewport_state,
         "snapshot_limitations": [

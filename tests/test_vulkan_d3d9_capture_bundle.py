@@ -1,16 +1,19 @@
+import json
 import struct
 import sys
-import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src" / "render" / "vulkan"))
+import vulkan_d3d9_capture_bundle as capture_bundle
 from vulkan_d3d9_capture_bundle import (
     CAPTURE_GEOMETRY,
     GEOMETRY_ATTRIBUTE,
     GEOMETRY_HEADER,
     _captured_surface_formats,
+    _capture_texture_packet,
     _payload_precedes_draw,
     _read_events,
     _sampler_state,
@@ -122,3 +125,52 @@ def test_capture_mip_filter_is_preserved_and_checked_against_texture_levels():
 def test_capture_rejects_unknown_mip_filter():
     with pytest.raises(ValueError, match="sampler value is unsupported"):
         _sampler_state({1: 1, 2: 1, 5: 2, 6: 2, 7: 6})
+
+
+def test_capture_texture_packet_preserves_all_used_pixel_sampler_registers(tmp_path, monkeypatch):
+    capture_root = tmp_path / "capture"
+    texture_dir = capture_root / "textures"
+    texture_dir.mkdir(parents=True)
+    texture_states = {}
+    sampler_states = {}
+    for register in range(5):
+        name = f"s{register}.dds"
+        (texture_dir / name).write_bytes(bytes([register]))
+        texture_states[register] = {
+            "snapshot_status": "captured",
+            "snapshot_paths": [fr"C:\capture\textures\{name}"],
+        }
+        sampler_states[register] = {1: 1, 2: 1, 5: 2, 6: 2, 7: 2}
+
+    monkeypatch.setattr(
+        capture_bundle,
+        "decode_dds",
+        lambda _: {
+            "format": "SHIFT.ReferenceTexture/1",
+            "width": 1,
+            "height": 1,
+            "pixel_format": "RGBA8",
+            "pixels": [1, 2, 3, 255],
+            "mipmaps": 1,
+        },
+    )
+    report, resources, samplers = _capture_texture_packet(
+        {"textures": texture_states, "sampler_states": sampler_states},
+        capture_root,
+        SimpleNamespace(samplers=list(range(5)), sampler_types={}),
+        tmp_path / "textures.svtp",
+    )
+
+    assert [row["register"] for row in report["textures"]] == [0, 1, 2, 3, 4]
+    assert [row["register"] for row in resources] == [0, 1, 2, 3, 4]
+    assert set(samplers) == {0, 1, 2, 3, 4}
+
+
+def test_capture_texture_packet_fails_closed_for_missing_used_sampler_binding(tmp_path):
+    with pytest.raises(ValueError, match="s4 has no captured texture binding"):
+        _capture_texture_packet(
+            {"textures": {}, "sampler_states": {}},
+            tmp_path,
+            SimpleNamespace(samplers=[4], sampler_types={}),
+            tmp_path / "textures.svtp",
+        )

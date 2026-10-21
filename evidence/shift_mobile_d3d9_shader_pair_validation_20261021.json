@@ -167,5 +167,49 @@
     1569,
     1571
   ],
-  "validated_shader_pair_count": 10
+  "validated_shader_pair_count": 10,
+  "multi_sampler_bundle": {
+    "format": "SHIFT.D3D9CaptureVulkanMultiSamplerAudit/1",
+    "implementation": "serializes every active captured sampler2D register separately",
+    "packet_register_range": [
+      0,
+      15
+    ],
+    "target_shader_registers": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "target_draws_with_all_used_texture_stages_bound": 186,
+    "target_draws_with_required_sampler_state_values": 186,
+    "target_draws_with_all_required_texture_snapshots": 0,
+    "captured_sampler_state_followups": {
+      "draws_using_border_addressing_on_s0": 126,
+      "border_address_mode": 4,
+      "captured_border_color_argb_values": [
+        0,
+        4294967295
+      ],
+      "draws_using_anisotropic_min_or_mag_on_s1": 10,
+      "max_anisotropy": 6,
+      "mip_lod_bias": 1.0,
+      "srgb_texture_enable_values": [
+        0,
+        1
+      ],
+      "mip_chain_upload_and_sampling": "not implemented in the capture bundle"
+    },
+    "android_vulkan_replay_proven": false,
+    "retail_image_parity_proven": false,
+    "synthetic_vulkan_validation": {
+      "device": "NVIDIA GeForce GTX 950",
+      "texture_count": 5,
+      "validation_enabled": true,
+      "validation_errors": 0,
+      "retail_draw": false,
+      "retail_image_parity_proven": false
+    }
+  }
 }
