@@ -1,0 +1,246 @@
+{
+  "format": "SHIFT.Process1PcodeIndirectFieldTrace/1",
+  "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "runtime_integration": {
+    "used_for_v704_and_v707": "temporary P1 diagnostic build plus the existing Process 2 managed-DXT3 capture capability from PR #2143",
+    "p1_worktree_renderer_files_changed": false,
+    "native_retail_launch": false
+  },
+  "runs": {
+    "v703": {
+      "status": "host-frame-loop",
+      "dispatches": 1751232,
+      "unique_functions": 4729,
+      "frames_rendered": 360,
+      "validation_errors": 0,
+      "worker_waiting_count": 4,
+      "main_thread_current_function_at_snapshot": "0x0082f710",
+      "guest_draw_translation": false,
+      "retail_rendering_proven": false,
+      "clear_requests": 1121,
+      "present_requests": 1120,
+      "runtime_sha256": "5b09462119feba8119b3d66a6a90c2fe0b0cf2f3e2c1a7a363b0de548ca4a021",
+      "report_sha256": "c35b92091f0beb7bee2ae83e2dfeafb8cf6a7f652f302a1c77b048aad356a57f",
+      "log_bytes": 7119366,
+      "log_sha256": "eb5f1d2f5b8792821202681f790feb9b443cf81e5a53d63303c971794f5eb7e0",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALLER": "0x0082be30",
+        "SHIFT_TRACE_GUEST_CALLER_SLOTS": "0x14,0x18",
+        "SHIFT_TRACE_GUEST_CALL_INDIRECT_FIELD": "0x14,0x18",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+        "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8,0xc,0x10,0x14,0x18",
+        "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x008353e0",
+        "SHIFT_TRACE_GUEST_PROVENANCE": "all"
+      }
+    },
+    "v704": {
+      "status": "host-frame-loop",
+      "dispatches": 1731689,
+      "unique_functions": 4728,
+      "frames_rendered": 360,
+      "validation_errors": 0,
+      "worker_waiting_count": 4,
+      "main_thread_current_function_at_snapshot": "0x0054bb20",
+      "guest_draw_translation": false,
+      "retail_rendering_proven": false,
+      "clear_requests": 1105,
+      "present_requests": 1104,
+      "runtime_sha256": "453eb1fa569f84d30d7710f6ee0333a6b64719c8a72fa20d6e80a231858d5f39",
+      "report_sha256": "a0ce51b98358c78e85461ffe8a41064fb82420a47dc9afcde7a9fe8010a68443",
+      "log_bytes": 7476451,
+      "log_sha256": "b80a489623349b4f579febb406a8b9e581e2cd3616937e0ac1f2cbfe5a619181",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALL_INDIRECT_FIELD": "0x14,0x18,1",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+        "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8,0xc,0x10,0x14,0x18",
+        "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x0082b150,0x0082be30",
+        "SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS": "0xc,0x14,0x18",
+        "SHIFT_TRACE_GUEST_PROVENANCE": "all"
+      }
+    },
+    "v707": {
+      "status": "host-frame-loop",
+      "dispatches": 1749701,
+      "unique_functions": 4729,
+      "frames_rendered": 360,
+      "validation_errors": 0,
+      "worker_waiting_count": 3,
+      "main_thread_current_function_at_snapshot": "0x007f3af0",
+      "guest_draw_translation": false,
+      "retail_rendering_proven": false,
+      "clear_requests": 1120,
+      "present_requests": 1118,
+      "runtime_sha256": "453eb1fa569f84d30d7710f6ee0333a6b64719c8a72fa20d6e80a231858d5f39",
+      "report_sha256": "e3f21e5a169b8ece466188bcc75b69a4f435dba0eb114b7495c83380c9400573",
+      "log_bytes": 7981306,
+      "log_sha256": "56fcbd074faefea9c7cebf081c308065474004c47beb4549774e94e979c6d992",
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALL_INDIRECT_FIELD": "0x14,0x18,1",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+        "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8,0xc,0x10,0x14,0x18",
+        "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x0082b150,0x0082be30",
+        "SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS": "0xc,0x14,0x18",
+        "SHIFT_TRACE_GUEST_PROVENANCE": "all"
+      }
+    },
+    "v708": {
+      "status": "host-frame-loop",
+      "frames_rendered": 360,
+      "validation_errors": 0,
+      "worker_waiting_count": 3,
+      "guest_draw_translation": false,
+      "retail_rendering_proven": false,
+      "runtime_sha256": "453eb1fa569f84d30d7710f6ee0333a6b64719c8a72fa20d6e80a231858d5f39",
+      "dispatches": 1751549,
+      "unique_functions": 4729,
+      "main_thread_current_function_at_snapshot": "0x0064f270",
+      "clear_requests": 1121,
+      "present_requests": 1120,
+      "report_sha256": "851541cc210a8d3bebbbebbd81a18ea7f1d96e2548c667ca4dc4fec4dea51c4b",
+      "log_bytes": 16109146,
+      "log_sha256": "624d9afdb7074210357be10400b5d4fa7bf4c6e8f8ccbab791e7b4cfb2920ebf",
+      "trace_environment": {
+        "SHIFT_D3D9_PACKET_CAPTURE_DIR": "/tmp/process1-retail-runtime-evidence/ui-event-path-v708-capture",
+        "SHIFT_TRACE_GUEST_CALLER": "0x0082b840",
+        "SHIFT_TRACE_GUEST_CALLER_SLOTS": "0xc,0x14,0x18",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+        "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8,0xc,0x10,0x14,0x18",
+        "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x0082b840,0x0064fda0",
+        "SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS": "0xc,0x14,0x18",
+        "SHIFT_TRACE_GUEST_PROVENANCE": "all"
+      },
+      "trace_limit_reached": true
+    },
+    "v709": {
+      "status": "host-frame-loop",
+      "frames_rendered": 360,
+      "validation_errors": 0,
+      "worker_waiting_count": 3,
+      "guest_draw_translation": false,
+      "retail_rendering_proven": false,
+      "runtime_sha256": "453eb1fa569f84d30d7710f6ee0333a6b64719c8a72fa20d6e80a231858d5f39",
+      "dispatches": 1749437,
+      "unique_functions": 4729,
+      "main_thread_current_function_at_snapshot": "0x007f3af0",
+      "clear_requests": 1120,
+      "present_requests": 1118,
+      "report_sha256": "762d37dcf0d3238bcff73d6dc01e03b15b2dd9ce13ff5b7d1737824ddd6e0504",
+      "log_bytes": 16654118,
+      "log_sha256": "7d3ecce910c44d991a39da3997859c2342e8fec535fe9c14faa28dec1f2f1eab",
+      "trace_environment": {
+        "SHIFT_D3D9_PACKET_CAPTURE_DIR": "/tmp/process1-retail-runtime-evidence/ui-event-path-v709-capture",
+        "SHIFT_TRACE_GUEST_CALLER": "0x0082b840",
+        "SHIFT_TRACE_GUEST_CALLER_SLOTS": "0xc,0x14,0x18",
+        "SHIFT_TRACE_GUEST_CALL_INDIRECT_FIELD": "0x14,0x18,1",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+        "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8,0xc,0x10,0x14,0x18",
+        "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x0082b840,0x0064fda0",
+        "SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS": "0xc,0x14,0x18",
+        "SHIFT_TRACE_GUEST_PROVENANCE": "all"
+      },
+      "trace_limit_reached": false
+    }
+  },
+  "function_count_comparison": {
+    "v703_to_v704": {
+      "from": 4729,
+      "to": 4728,
+      "validation_errors_both": 0
+    },
+    "same_runtime_repeat_v704_to_v707": {
+      "from": 4728,
+      "to": 4729,
+      "validation_errors_both": 0
+    },
+    "conclusion": "Per-run unique-function cardinality varied; it is not monotonic and does not by itself establish a regression or a game launch.",
+    "same_runtime_repeat_v704_to_v709": {
+      "from": 4728,
+      "to": 4729,
+      "validation_errors_both": 0
+    }
+  },
+  "retail_static_evidence": {
+    "caller": "0x007e3e20",
+    "setter_vtable_slots": {
+      "0x0082b840": "slot +0x70; four-dword copy for type 7, or four-to-two-dword conversion for type 0xb",
+      "0x0082b150": "slot +0x98; byte write",
+      "0x0082be30": "slot +0x60; object-like dword setter"
+    },
+    "ghidra_source": "/home/pes/ghidra_projects/shift/SHIFT.exe.c",
+    "note": "v708: both 0x0082b840 calls are from FUN_007e3e20 (return 0x007e3e9f/index 11 and 0x007e4527/index 10); nested container helpers returned length 15 and type 7 in 1,374 calls, and the setter returned 0x27f86a01. v709: both index table entries were zero, so both four-dword setters computed field address 0x27f86a00. Initializer provenance is unresolved."
+  },
+  "v704_trace_event_counts": {
+    "0x0082b150": 1278,
+    "0x0082be30": 639
+  },
+  "v704_field_observations": [
+    {
+      "target": "0x0082b150",
+      "index": "0x0000000d",
+      "field_address": "0x27f86a00",
+      "field_value_at_call_entry": "0x3f800000",
+      "last_writer": "0x0082b840",
+      "last_write_size": 4,
+      "last_writer_word_value": "0x3f800000",
+      "events": 639
+    },
+    {
+      "target": "0x0082b150",
+      "index": "0x0000000e",
+      "field_address": "0x27f86a00",
+      "field_value_at_call_entry": "0x3f800000",
+      "last_writer": "0x0082b150",
+      "last_write_size": 1,
+      "last_writer_word_value": "0x3f800000",
+      "events": 213
+    },
+    {
+      "target": "0x0082b150",
+      "index": "0x0000000e",
+      "field_address": "0x27f86a00",
+      "field_value_at_call_entry": "0x3f800001",
+      "last_writer": "0x0082b150",
+      "last_write_size": 1,
+      "last_writer_word_value": "0x3f800001",
+      "events": 426
+    },
+    {
+      "target": "0x0082be30",
+      "index": "0x00000000",
+      "field_address": "0x27f86a00",
+      "field_value_at_call_entry": "0x3f800000",
+      "last_writer": "0x0082b150",
+      "last_write_size": 1,
+      "last_writer_word_value": "0x3f800000",
+      "events": 639
+    }
+  ],
+  "interpretation_limits": [
+    "The sampled field values are call-entry snapshots with last-writer provenance.",
+    "Indices 0, 13, and 14 shared the sampled field address because the observed table entries were zero; whether this is intentional overlay or a type/offset defect remains unresolved.",
+    "No P-code semantic defect has been demonstrated by these setter observations.",
+    "All runs ended at a 360-host-frame bound with guest_draw_translation=false and retail_rendering_proven=false."
+  ],
+  "v709_typed_setter_field_observation": {
+    "trace_events": 1364,
+    "callsites": [
+      {
+        "return_site": "0x007e3e9f",
+        "index": "0x0000000b",
+        "table_entry_address": "0x27f869cc",
+        "table_entry_value": "0x00000000",
+        "computed_field_address": "0x27f86a00",
+        "calls": 682
+      },
+      {
+        "return_site": "0x007e4527",
+        "index": "0x0000000a",
+        "table_entry_address": "0x27f869c8",
+        "table_entry_value": "0x00000000",
+        "computed_field_address": "0x27f86a00",
+        "calls": 682
+      }
+    ],
+    "interpretation": "Both type-7 four-dword setter calls alias the same field in this runtime object. Input words and initializer provenance are not established by this observation."
+  }
+}

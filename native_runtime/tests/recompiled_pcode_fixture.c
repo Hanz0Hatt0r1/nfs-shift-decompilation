@@ -126,13 +126,22 @@ int rvi_00401000(RviPcodeContext *ctx) {
 }
 
 int rvi_00403100(RviPcodeContext *ctx) {
+    const uint32_t first = UINT32_C(0x00023100);
+    const uint32_t table = UINT32_C(0x00023200);
     const uint8_t ecx[4] = {0x00, 0x30, 0x02, 0x00};
     const uint8_t eax[4] = {0x12, 0x34, 0x56, 0x78};
     const uint8_t value[4] = {0x78, 0x56, 0x34, 0x12};
     if (ctx->write(ctx->opaque, "register", 4, sizeof(ecx), ecx) != 0 ||
         ctx->write(ctx->opaque, "register", 0, sizeof(eax), eax) != 0 ||
         ctx->write(ctx->opaque, "ram", UINT64_C(0x00023010),
-                   sizeof(value), value) != 0) {
+                   sizeof(value), value) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", UINT32_C(0x00023050), first) !=
+            0 ||
+        fixture_guest_write_u32(ctx, "ram", first + 0x50, table) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", table + 0x28,
+                                UINT32_C(0x11223344)) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", table + 0x2c,
+                                UINT32_C(0x55667788)) != 0) {
         return -1;
     }
     return ctx->call(ctx->opaque, UINT64_C(0x00685700));
@@ -206,6 +215,65 @@ int rvi_00406300(RviPcodeContext *ctx) {
         return -1;
     }
     return ctx->call(ctx->opaque, UINT64_C(0x00685b00));
+}
+
+int rvi_00685bd0(RviPcodeContext *ctx) {
+    const uint32_t child_receiver = UINT32_C(0x00035000);
+    const uint32_t child_edx = 1;
+    const uint32_t trace_stack = UINT32_C(0x00036000);
+    if (fixture_guest_write_u32(ctx, "ram", trace_stack + 4,
+                                child_receiver) != 0 ||
+        fixture_guest_write_u32(ctx, "register", 0x10, trace_stack) != 0 ||
+        fixture_guest_write_u32(ctx, "register", 4, child_receiver) != 0 ||
+        fixture_guest_write_u32(ctx, "register", 8, child_edx) != 0) {
+        return -1;
+    }
+    return ctx->call(ctx->opaque, UINT64_C(0x00685c00));
+}
+
+int rvi_00685c00(RviPcodeContext *ctx) {
+    (void)ctx;
+    return 0;
+}
+
+int rvi_00406400(RviPcodeContext *ctx) {
+    const uint32_t receiver = UINT32_C(0x00034000);
+    const uint32_t table = UINT32_C(0x00034100);
+    const uint32_t data_base = UINT32_C(0x00034200);
+    const uint32_t child_table = UINT32_C(0x00035100);
+    const uint32_t child_data_base = UINT32_C(0x00035200);
+    const uint32_t child_inner = UINT32_C(0x00037000);
+    const uint32_t field_offset = 0x60;
+    const uint32_t child_field_offset = 0x40;
+    const uint32_t index = 2;
+    if (fixture_guest_write_u32(ctx, "ram", receiver + 0x14, table) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", receiver + 0x18, data_base) !=
+            0 ||
+        fixture_guest_write_u32(ctx, "ram", table + index * 4,
+                                field_offset) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", data_base + field_offset,
+                                UINT32_C(0x3f800000)) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", 0x00035014, child_table) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", 0x00035018,
+                                child_data_base) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", 0x00035050, child_inner) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", child_inner + 0x14,
+                                child_table) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", child_inner + 0x18,
+                                child_data_base) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", child_table + 4,
+                                child_field_offset) != 0 ||
+        fixture_guest_write_u32(ctx, "ram",
+                                child_data_base + child_field_offset,
+                                UINT32_C(0xabcdef01)) != 0 ||
+        fixture_guest_write_u32(
+            ctx, "ram", child_data_base + child_field_offset * 0x50 + 0x10,
+            UINT32_C(0xabcdef01)) != 0 ||
+        fixture_guest_write_u32(ctx, "register", 4, receiver) != 0 ||
+        fixture_guest_write_u32(ctx, "register", 8, index) != 0) {
+        return -1;
+    }
+    return ctx->call(ctx->opaque, UINT64_C(0x00685bd0));
 }
 
 int rvi_00404000(RviPcodeContext *ctx) {

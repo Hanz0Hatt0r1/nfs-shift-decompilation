@@ -103,6 +103,27 @@ struct RecompiledGuestCallTraceIndexedSource {
     bool has_source_address = false;
 };
 
+struct RecompiledGuestCallTraceIndirectField {
+    uint32_t table_pointer_offset = 0;
+    uint32_t data_base_offset = 0;
+    uint32_t receiver_pointer_offset = 0;
+    uint32_t record_stride = 1;
+    uint32_t record_field_offset = 0;
+    uint32_t index = 0;
+    uint32_t table_entry_address = 0;
+    uint32_t field_address = 0;
+    RecompiledGuestCallTraceMemorySlot table_pointer;
+    RecompiledGuestCallTraceMemorySlot data_base;
+    RecompiledGuestCallTraceMemorySlot table_entry;
+    RecompiledGuestCallTraceMemorySlot field_value;
+    bool uses_target_registers = false;
+    bool uses_target_pointer_receiver = false;
+    bool uses_stack_pointer_receiver = false;
+    uint32_t stack_pointer_offset = 0;
+    bool has_table_entry_address = false;
+    bool has_field_address = false;
+};
+
 struct RecompiledGuestCallTraceStringSlot {
     uint32_t offset = 0;
     uint32_t address = 0;
@@ -145,11 +166,15 @@ struct RecompiledGuestCallTraceEvent {
     bool completed = false;
     std::vector<RecompiledGuestCallTraceMemorySlot> caller_slots;
     std::vector<RecompiledGuestCallTraceMemorySlot> target_slots;
+    std::vector<RecompiledGuestCallTraceMemorySlot> target_dereference_chain;
+    std::vector<RecompiledGuestCallTraceMemorySlot> target_dereferenced_slots;
     std::vector<RecompiledGuestCallTraceMemorySlot> stack_slots;
     RecompiledGuestCallTraceMemorySlot edx_entry_slot;
     RecompiledGuestCallTraceMemorySlot edx_return_slot;
     RecompiledGuestCallTraceIndexedSource indexed_source;
     bool has_indexed_source = false;
+    RecompiledGuestCallTraceIndirectField indirect_field;
+    bool has_indirect_field = false;
     std::vector<RecompiledGuestCallTraceStringSlot> string_slots;
 };
 
@@ -352,6 +377,8 @@ struct RecompiledGuestSchedulerSnapshot {
     std::vector<std::string> guest_call_trace_imports;
     std::vector<uint32_t> guest_call_trace_slot_offsets;
     std::vector<uint32_t> guest_call_trace_target_slot_offsets;
+    std::vector<uint32_t> guest_call_trace_target_dereference_chain;
+    std::vector<uint32_t> guest_call_trace_indirect_field_offsets;
     std::vector<uint32_t> guest_call_trace_stack_slot_offsets;
     std::vector<uint32_t> guest_call_trace_string_slot_offsets;
     std::vector<RecompiledGuestCallTraceEvent> guest_call_trace;

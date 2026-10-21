@@ -133,7 +133,8 @@ bool calculate_tightly_packed_mip_chain_size(uint32_t width, uint32_t height,
 }
 
 std::vector<uint32_t> parse_guest_trace_u32_values(const char* input,
-                                                    bool allow_zero) {
+                                                    bool allow_zero,
+                                                    bool deduplicate = true) {
     std::vector<uint32_t> values;
     if (!input || !*input) return values;
     const std::string text(input);
@@ -153,7 +154,8 @@ std::vector<uint32_t> parse_guest_trace_u32_values(const char* input,
             *parse_end == '\0' && value <= UINT32_MAX &&
             (allow_zero || value != 0)) {
             const uint32_t parsed = static_cast<uint32_t>(value);
-            if (std::find(values.begin(), values.end(), parsed) ==
+            if (!deduplicate ||
+                std::find(values.begin(), values.end(), parsed) ==
                 values.end()) {
                 values.push_back(parsed);
             }
@@ -893,12 +895,55 @@ struct RecompiledPcodeModule::Impl {
             guest_call_trace_target_slot_offsets =
                 parse_guest_trace_u32_values(
                     std::getenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS"), true);
+            guest_call_trace_target_dereference_chain =
+                parse_guest_trace_u32_values(std::getenv(
+                    "SHIFT_TRACE_GUEST_CALL_TARGET_DEREFERENCE_CHAIN"), true,
+                    false);
             guest_call_trace_indexed_source_layout =
                 parse_guest_trace_u32_values(
                     std::getenv("SHIFT_TRACE_GUEST_CALL_INDEXED_SOURCE"),
                     true);
             if (guest_call_trace_indexed_source_layout.size() != 4) {
                 guest_call_trace_indexed_source_layout.clear();
+            }
+            guest_call_trace_indirect_field_offsets =
+                parse_guest_trace_u32_values(
+                    std::getenv("SHIFT_TRACE_GUEST_CALL_INDIRECT_FIELD"),
+                    true, false);
+            if (guest_call_trace_indirect_field_offsets.size() < 2 ||
+                (guest_call_trace_indirect_field_offsets.size() != 2 &&
+                 guest_call_trace_indirect_field_offsets.size() != 3 &&
+                 guest_call_trace_indirect_field_offsets.size() != 5 &&
+                 guest_call_trace_indirect_field_offsets.size() != 6) ||
+                (guest_call_trace_indirect_field_offsets.size() == 3 &&
+                 guest_call_trace_indirect_field_offsets[2] > 1) ||
+                (guest_call_trace_indirect_field_offsets.size() == 5 &&
+                 guest_call_trace_indirect_field_offsets[2] != 2) ||
+                (guest_call_trace_indirect_field_offsets.size() == 6 &&
+                 guest_call_trace_indirect_field_offsets[2] != 3)) {
+                guest_call_trace_indirect_field_offsets.clear();
+            }
+            guest_call_trace_indirect_field_uses_target_registers =
+                (guest_call_trace_indirect_field_offsets.size() == 3 &&
+                 guest_call_trace_indirect_field_offsets[2] == 1) ||
+                guest_call_trace_indirect_field_offsets.size() == 6;
+            guest_call_trace_indirect_field_uses_stack_pointer =
+                guest_call_trace_indirect_field_offsets.size() == 5;
+            guest_call_trace_indirect_field_uses_target_pointer_receiver =
+                guest_call_trace_indirect_field_offsets.size() == 6;
+            if (guest_call_trace_indirect_field_uses_stack_pointer) {
+                guest_call_trace_indirect_field_stack_pointer_offset =
+                    guest_call_trace_indirect_field_offsets[3];
+                guest_call_trace_indirect_field_fixed_index =
+                    guest_call_trace_indirect_field_offsets[4];
+            }
+            if (guest_call_trace_indirect_field_uses_target_pointer_receiver) {
+                guest_call_trace_indirect_field_receiver_pointer_offset =
+                    guest_call_trace_indirect_field_offsets[3];
+                guest_call_trace_indirect_field_record_stride =
+                    guest_call_trace_indirect_field_offsets[4];
+                guest_call_trace_indirect_field_record_field_offset =
+                    guest_call_trace_indirect_field_offsets[5];
             }
             guest_call_trace_stack_slot_offsets = parse_guest_trace_u32_values(
                 std::getenv("SHIFT_TRACE_GUEST_CALL_STACK_SLOTS"), true);
@@ -1330,34 +1375,43 @@ struct RecompiledPcodeModule::Impl {
         if (address >= kGuestMinimumUserAddress && address <= UINT32_MAX) {
             slot.has_value = read_guest_diagnostic_u32(address, slot.value);
             if (guest_write_provenance_enabled_flag) {
-                const auto writer = guest_target_last_writers.find(
+                const GuestWriteProvenance* provenance = nullptr;
+                const auto target_writer = guest_target_last_writers.find(
                     static_cast<uint32_t>(address));
-                if (writer != guest_target_last_writers.end()) {
-                    const auto& provenance = writer->second;
+                if (target_writer != guest_target_last_writers.end()) {
+                    provenance = &target_writer->second;
+                } else {
+                    const auto word_writer = guest_last_writers.find(
+                        static_cast<uint32_t>(address) & ~UINT32_C(3));
+                    if (word_writer != guest_last_writers.end()) {
+                        provenance = &word_writer->second;
+                    }
+                }
+                if (provenance != nullptr) {
                     slot.has_last_writer = true;
-                    slot.last_writer.sequence = provenance.sequence;
+                    slot.last_writer.sequence = provenance->sequence;
                     slot.last_writer.dispatch_count =
-                        provenance.dispatch_count;
-                    slot.last_writer.function = provenance.writer_function;
-                    slot.last_writer.ecx_entry = provenance.writer_ecx;
+                        provenance->dispatch_count;
+                    slot.last_writer.function = provenance->writer_function;
+                    slot.last_writer.ecx_entry = provenance->writer_ecx;
                     slot.last_writer.has_ecx_entry =
-                        provenance.has_writer_ecx;
+                        provenance->has_writer_ecx;
                     slot.last_writer.caller_function =
-                        provenance.writer_caller_function;
+                        provenance->writer_caller_function;
                     slot.last_writer.has_caller_function =
-                        provenance.has_writer_caller_function;
+                        provenance->has_writer_caller_function;
                     slot.last_writer.call_return_address =
-                        provenance.writer_call_return_address;
+                        provenance->writer_call_return_address;
                     slot.last_writer.has_call_return_address =
-                        provenance.has_writer_call_return_address;
+                        provenance->has_writer_call_return_address;
                     slot.last_writer.caller_return_address =
-                        provenance.writer_caller_return_address;
+                        provenance->writer_caller_return_address;
                     slot.last_writer.has_caller_return_address =
-                        provenance.has_writer_caller_return_address;
-                    slot.last_writer.thread_id = provenance.thread_id;
-                    slot.last_writer.write_address = provenance.write_address;
-                    slot.last_writer.write_size = provenance.write_size;
-                    slot.last_writer.word_value = provenance.word_value;
+                        provenance->has_writer_caller_return_address;
+                    slot.last_writer.thread_id = provenance->thread_id;
+                    slot.last_writer.write_address = provenance->write_address;
+                    slot.last_writer.write_size = provenance->write_size;
+                    slot.last_writer.word_value = provenance->word_value;
                 }
             }
         }
@@ -1414,6 +1468,57 @@ struct RecompiledPcodeModule::Impl {
         source.source_value = sample_guest_call_trace_slot(
             source.source_address, 0);
         return source;
+    }
+
+    RecompiledGuestCallTraceIndirectField
+    sample_guest_call_trace_indirect_field(uint32_t receiver,
+        uint32_t index, uint32_t record_stride = 1,
+        uint32_t record_field_offset = 0) const {
+        RecompiledGuestCallTraceIndirectField field{};
+        if (guest_call_trace_indirect_field_offsets.size() < 2 ||
+            (guest_call_trace_indirect_field_offsets.size() != 2 &&
+             guest_call_trace_indirect_field_offsets.size() != 3 &&
+             guest_call_trace_indirect_field_offsets.size() != 5 &&
+             guest_call_trace_indirect_field_offsets.size() != 6)) {
+            return field;
+        }
+
+        field.table_pointer_offset =
+            guest_call_trace_indirect_field_offsets[0];
+        field.data_base_offset =
+            guest_call_trace_indirect_field_offsets[1];
+        field.index = index;
+        field.record_stride = record_stride;
+        field.record_field_offset = record_field_offset;
+        field.table_pointer = sample_guest_call_trace_slot(
+            static_cast<uint64_t>(receiver) + field.table_pointer_offset,
+            field.table_pointer_offset);
+        field.data_base = sample_guest_call_trace_slot(
+            static_cast<uint64_t>(receiver) + field.data_base_offset,
+            field.data_base_offset);
+        if (!field.table_pointer.has_value || !field.data_base.has_value) {
+            return field;
+        }
+
+        const uint64_t item_address =
+            static_cast<uint64_t>(field.table_pointer.value) +
+            static_cast<uint64_t>(index) * sizeof(uint32_t);
+        if (item_address > UINT32_MAX) return field;
+        field.table_entry_address = static_cast<uint32_t>(item_address);
+        field.has_table_entry_address = true;
+        field.table_entry = sample_guest_call_trace_slot(
+            item_address, index * sizeof(uint32_t));
+        if (!field.table_entry.has_value) return field;
+
+        const uint64_t field_address =
+            static_cast<uint64_t>(field.data_base.value) +
+            static_cast<uint64_t>(field.table_entry.value) * record_stride +
+            record_field_offset;
+        if (field_address > UINT32_MAX) return field;
+        field.field_address = static_cast<uint32_t>(field_address);
+        field.has_field_address = true;
+        field.field_value = sample_guest_call_trace_slot(field_address, 0);
+        return field;
     }
 
     size_t record_guest_call_trace(uint32_t target,
@@ -1524,10 +1629,89 @@ struct RecompiledPcodeModule::Impl {
         if (!event.is_import) {
             event.target_slots = sample_guest_call_trace_slots(
                 event.ecx_entry, guest_call_trace_target_slot_offsets);
+            uint32_t dereference_base = event.ecx_entry;
+            for (const uint32_t pointer_offset :
+                 guest_call_trace_target_dereference_chain) {
+                auto pointer = sample_guest_call_trace_slot(
+                    static_cast<uint64_t>(dereference_base) + pointer_offset,
+                    pointer_offset);
+                event.target_dereference_chain.push_back(pointer);
+                if (!pointer.has_value) break;
+                dereference_base = pointer.value;
+            }
+            if (!guest_call_trace_target_dereference_chain.empty() &&
+                event.target_dereference_chain.size() ==
+                    guest_call_trace_target_dereference_chain.size() &&
+                (event.target_dereference_chain.empty() ||
+                 event.target_dereference_chain.back().has_value)) {
+                event.target_dereferenced_slots =
+                    sample_guest_call_trace_slots(
+                        dereference_base, guest_call_trace_target_slot_offsets);
+            }
             if (!guest_call_trace_indexed_source_layout.empty()) {
                 event.indexed_source =
                     sample_guest_call_trace_indexed_source(event.ecx_entry);
                 event.has_indexed_source = true;
+            }
+            if (!active_guest_function_registers.empty() &&
+                !guest_call_trace_indirect_field_offsets.empty()) {
+                const auto& caller_registers =
+                    active_guest_function_registers.back();
+                uint32_t field_receiver = 0;
+                uint32_t field_index = 0;
+                bool has_field_receiver = true;
+                if (guest_call_trace_indirect_field_uses_stack_pointer) {
+                    const uint64_t receiver_pointer_address =
+                        static_cast<uint64_t>(event.esp_entry) +
+                        guest_call_trace_indirect_field_stack_pointer_offset;
+                    has_field_receiver =
+                        receiver_pointer_address <= UINT32_MAX &&
+                        read_guest_diagnostic_u32(
+                            receiver_pointer_address, field_receiver);
+                    field_index =
+                        guest_call_trace_indirect_field_fixed_index;
+                } else if (
+                    guest_call_trace_indirect_field_uses_target_pointer_receiver) {
+                    const uint64_t receiver_pointer_address =
+                        static_cast<uint64_t>(event.ecx_entry) +
+                        guest_call_trace_indirect_field_receiver_pointer_offset;
+                    has_field_receiver =
+                        receiver_pointer_address <= UINT32_MAX &&
+                        read_guest_diagnostic_u32(
+                            receiver_pointer_address, field_receiver);
+                    field_index = event.edx_entry;
+                } else {
+                    field_receiver =
+                        guest_call_trace_indirect_field_uses_target_registers
+                            ? event.ecx_entry
+                            : caller_registers.ecx;
+                    field_index =
+                        guest_call_trace_indirect_field_uses_target_registers
+                            ? event.edx_entry
+                            : caller_registers.edx;
+                }
+                if (has_field_receiver) {
+                    event.indirect_field =
+                        sample_guest_call_trace_indirect_field(
+                            field_receiver, field_index,
+                            guest_call_trace_indirect_field_uses_target_pointer_receiver
+                                ? guest_call_trace_indirect_field_record_stride
+                                : 1,
+                            guest_call_trace_indirect_field_uses_target_pointer_receiver
+                                ? guest_call_trace_indirect_field_record_field_offset
+                                : 0);
+                }
+                event.indirect_field.uses_target_registers =
+                    guest_call_trace_indirect_field_uses_target_registers;
+                event.indirect_field.uses_stack_pointer_receiver =
+                    guest_call_trace_indirect_field_uses_stack_pointer;
+                event.indirect_field.uses_target_pointer_receiver =
+                    guest_call_trace_indirect_field_uses_target_pointer_receiver;
+                event.indirect_field.stack_pointer_offset =
+                    guest_call_trace_indirect_field_stack_pointer_offset;
+                event.indirect_field.receiver_pointer_offset =
+                    guest_call_trace_indirect_field_receiver_pointer_offset;
+                event.has_indirect_field = true;
             }
         }
         if (has_stack_pointer) {
@@ -1573,6 +1757,40 @@ struct RecompiledPcodeModule::Impl {
             }
             for (const auto& slot : recorded.target_slots) {
                 std::fprintf(stderr, " target+0x%x=", slot.offset);
+                if (slot.has_value) {
+                    std::fprintf(stderr, "0x%08x", slot.value);
+                } else {
+                    std::fputs("unreadable", stderr);
+                }
+                if (slot.has_last_writer) {
+                    const auto& writer = slot.last_writer;
+                    std::fprintf(
+                        stderr,
+                        " writer=0x%08x write=0x%08x/%u value=0x%08x dispatch=%llu",
+                        writer.function, writer.write_address,
+                        writer.write_size, writer.word_value,
+                        static_cast<unsigned long long>(writer.dispatch_count));
+                }
+            }
+            for (const auto& slot : recorded.target_dereference_chain) {
+                std::fprintf(stderr, " target-deref+0x%x=", slot.offset);
+                if (slot.has_value) {
+                    std::fprintf(stderr, "0x%08x", slot.value);
+                } else {
+                    std::fputs("unreadable", stderr);
+                }
+                if (slot.has_last_writer) {
+                    const auto& writer = slot.last_writer;
+                    std::fprintf(
+                        stderr,
+                        " writer=0x%08x write=0x%08x/%u value=0x%08x dispatch=%llu",
+                        writer.function, writer.write_address,
+                        writer.write_size, writer.word_value,
+                        static_cast<unsigned long long>(writer.dispatch_count));
+                }
+            }
+            for (const auto& slot : recorded.target_dereferenced_slots) {
+                std::fprintf(stderr, " deref-target+0x%x=", slot.offset);
                 if (slot.has_value) {
                     std::fprintf(stderr, "0x%08x", slot.value);
                 } else {
@@ -1638,6 +1856,72 @@ struct RecompiledPcodeModule::Impl {
                             source.source_value.last_writer.word_value,
                             static_cast<unsigned long long>(
                                 source.source_value.last_writer.dispatch_count));
+                    }
+                }
+            }
+            if (recorded.has_indirect_field) {
+                const auto& field = recorded.indirect_field;
+                if (field.uses_stack_pointer_receiver) {
+                    std::fprintf(stderr,
+                                 " indirect-field(stack+0x%x)=table+0x%x=",
+                                 field.stack_pointer_offset,
+                                 field.table_pointer_offset);
+                } else if (field.uses_target_pointer_receiver) {
+                    std::fprintf(stderr,
+                                 " indirect-field(target+0x%x)=table+0x%x=",
+                                 field.receiver_pointer_offset,
+                                 field.table_pointer_offset);
+                } else {
+                    std::fprintf(stderr, " indirect-field%s=table+0x%x=",
+                                 field.uses_target_registers ? "(target)" :
+                                                               "",
+                                 field.table_pointer_offset);
+                }
+                if (field.table_pointer.has_value) {
+                    std::fprintf(stderr, "0x%08x",
+                                 field.table_pointer.value);
+                } else {
+                    std::fputs("unreadable", stderr);
+                }
+                std::fprintf(stderr, " index=0x%08x entry=", field.index);
+                if (field.has_table_entry_address &&
+                    field.table_entry.has_value) {
+                    std::fprintf(stderr, "0x%08x:0x%08x",
+                                 field.table_entry_address,
+                                 field.table_entry.value);
+                } else {
+                    std::fputs("unreadable", stderr);
+                }
+                std::fprintf(stderr, " data-base+0x%x=",
+                             field.data_base_offset);
+                if (field.data_base.has_value) {
+                    std::fprintf(stderr, "0x%08x",
+                                 field.data_base.value);
+                } else {
+                    std::fputs("unreadable", stderr);
+                }
+                if (field.has_field_address) {
+                    std::fprintf(stderr, " field=0x%08x:",
+                                 field.field_address);
+                    if (field.field_value.has_value) {
+                        std::fprintf(stderr, "0x%08x",
+                                     field.field_value.value);
+                    } else {
+                        std::fputs("unreadable", stderr);
+                    }
+                    if (field.field_value.has_last_writer) {
+                        const auto& writer = field.field_value.last_writer;
+                        std::fprintf(
+                            stderr,
+                            " writer=0x%08x write=0x%08x/%u value=0x%08x",
+                            writer.function, writer.write_address,
+                            writer.write_size, writer.word_value);
+                    }
+                    if (field.uses_target_pointer_receiver) {
+                        std::fprintf(stderr,
+                                     " record-stride=0x%x field-offset=0x%x",
+                                     field.record_stride,
+                                     field.record_field_offset);
                     }
                 }
             }
@@ -10327,8 +10611,8 @@ struct RecompiledPcodeModule::Impl {
             type->element_count,
             annotations,
             struct_members,
-            byte_size,
-            flags};
+            flags,
+            byte_size};
         for (size_t field = 0; field < desc.size(); ++field) {
             if (!write_guest_u32("ram", desc_address + field * 4,
                                  desc[field]))
@@ -15615,6 +15899,10 @@ struct RecompiledPcodeModule::Impl {
             guest_call_trace_slot_offsets;
         snapshot.guest_call_trace_target_slot_offsets =
             guest_call_trace_target_slot_offsets;
+        snapshot.guest_call_trace_target_dereference_chain =
+            guest_call_trace_target_dereference_chain;
+        snapshot.guest_call_trace_indirect_field_offsets =
+            guest_call_trace_indirect_field_offsets;
         snapshot.guest_call_trace_stack_slot_offsets =
             guest_call_trace_stack_slot_offsets;
         snapshot.guest_call_trace_string_slot_offsets =
@@ -16093,7 +16381,17 @@ struct RecompiledPcodeModule::Impl {
     std::vector<std::string> guest_call_trace_imports;
     std::vector<uint32_t> guest_call_trace_slot_offsets;
     std::vector<uint32_t> guest_call_trace_target_slot_offsets;
+    std::vector<uint32_t> guest_call_trace_target_dereference_chain;
     std::vector<uint32_t> guest_call_trace_indexed_source_layout;
+    std::vector<uint32_t> guest_call_trace_indirect_field_offsets;
+    bool guest_call_trace_indirect_field_uses_target_registers = false;
+    bool guest_call_trace_indirect_field_uses_stack_pointer = false;
+    bool guest_call_trace_indirect_field_uses_target_pointer_receiver = false;
+    uint32_t guest_call_trace_indirect_field_stack_pointer_offset = 0;
+    uint32_t guest_call_trace_indirect_field_fixed_index = 0;
+    uint32_t guest_call_trace_indirect_field_receiver_pointer_offset = 0;
+    uint32_t guest_call_trace_indirect_field_record_stride = 1;
+    uint32_t guest_call_trace_indirect_field_record_field_offset = 0;
     std::vector<uint32_t> guest_call_trace_stack_slot_offsets;
     std::vector<uint32_t> guest_call_trace_string_slot_offsets;
     std::vector<RecompiledGuestCallTraceEvent> guest_call_trace_events;

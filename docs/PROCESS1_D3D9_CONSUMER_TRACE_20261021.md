@@ -53,6 +53,96 @@ step is producer/type provenance and, if available, a page-validity-aware
 comparison against the original process; do not rewrite the branch or substitute
 a value from this evidence alone.
 
+## v703–v707 indirect field and function-count checks
+
+The earlier trace could not resolve a field computed as
+`data_base + table[index]`, so Process 1 added an opt-in, read-only call trace
+for that formula and its last writer. A focused fixture covers caller-entry and
+target-entry registers, the computed address/value, and writer provenance.
+The trace does not alter guest memory, return values, or scheduling policy.
+
+The retail PE's `FUN_007e3e20` reaches setter methods at vtable slots `+0x70`,
+`+0x98`, and `+0x60`, implemented at `0x0082b840`, `0x0082b150`, and
+`0x0082be30` respectively. Ghidra shows `0x0082b840` copies four dwords for
+type 7 and converts four inputs into two dwords for type `0xb`; `0x0082b150`
+writes one byte; and `0x0082be30` stores an object-like dword. These are
+retail setter semantics, not inferred P-code behavior.
+
+In v704, 1,278 calls to `0x0082b150` and 639 calls to `0x0082be30` sampled the
+same computed field address, `0x27f86a00`, because the sampled table entries
+for indices 0, 13, and 14 were zero. The trace records `0x0082b840` as the
+last full-width writer of `0x3f800000`; subsequent one-byte writes from
+`0x0082b150` expose values `0x3f800001` and `0x3f800000`. This is a real
+low-byte mutation. The apparent overlap between a four-byte value, one-byte
+flags, and the object setter at the same address could be an intentional
+storage overlay or a type/offset problem; current evidence does not establish
+a P-code defect.
+
+Follow-up v708 captured the missing context: both `0x0082b840` calls come from
+`FUN_007e3e20`, at return sites `0x007e3e9f` (index 11) and `0x007e4527`
+(index 10). For all 1,374 traced calls, the nested container helpers returned
+length 15 and type 7, and the setter returned `0x27f86a01` (success). This
+confirms the four-dword-copy branch from retail code is used at both callsites.
+
+The v709 trace sampled the indirect field for those calls. Both table entries
+were zero: `0x27f869cc` for index 11 and `0x27f869c8` for index 10. Thus both
+four-dword writes compute the same destination, `0x27f86a00`; values at that
+address vary across calls. This establishes the alias at runtime, but not
+whether the zero entries are intended object-layout overlays or were produced
+by an earlier P-code/object-initialization defect. Do not change setter
+semantics on this evidence alone; table initialization and producer provenance
+remain the next checks.
+
+The function-count decrease from v703 to v704 is run-to-run variation, not a
+lost function implementation. v703 and v704 both completed 360 host frames
+with zero validation errors. A repeated run, v707, used the same integrated
+runtime binary and trace settings as v704 and returned to 4,729 unique
+functions (v704 had 4,728). Dispatch totals, D3D9 clear/present requests, and
+the active function at the final scheduler snapshot also varied. The count is
+the number of unique functions touched in that run; the runs do not provide
+the address sets needed to identify which one was absent from v704. The
+frontier comparator now marks lower counters for review instead of treating
+them alone as a regression.
+
+These bounded recompiled-P-code runs used the existing DXT3 packet-capture
+adapter capability from Process 2 PR #2143 so they could pass the managed DXT3
+check. They are not native Windows executions. All three report
+`guest_draw_translation=false` and `retail_rendering_proven=false`; they do
+not demonstrate a retail draw, frontend, race, or rendered frame. Compact run
+metrics and hashes are in
+[`process1_pcode_frontier_v703_v709_indirect_field_summary.json`](../evidence/retail_frontier_20261021/process1_pcode_frontier_v703_v709_indirect_field_summary.json).
+
+## D3DX parameter descriptor ABI correction (v719)
+
+The v715–v718 traces narrowed the zero values at record offset `+0x10` to the
+`GetParameterDesc` output assembled by the P1 D3DX proxy. The retail constructor
+at `0x0083d850` copies `D3DXPARAMETER_DESC.Bytes` into each `0x50`-byte record.
+The [documented PE32 structure](https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dxparameter-desc)
+places `Flags` at byte offset `0x24` and `Bytes` at byte offset `0x28`. The
+proxy had written these final two fields in reverse order, so retail code read
+the parameter flags as the size. This explained the
+zero values seen in v718; it was an ABI mismatch in the guest compatibility
+layer, not a defect in `0x0083a640` or the effect binary parser.
+
+The proxy now writes `Flags` before `Bytes`. Its focused fixture uses a
+four-byte parameter with a nonzero `0x40` flags sentinel and checks that the
+guest descriptor returns `0x40` at `+0x24` and `4` at `+0x28`; annotation
+descriptors check `Flags=0` and `Bytes=4` as well.
+
+The rebuilt P1 runtime passed the focused module check and the 23 retail-frontier
+tool tests. A bounded v719 replay with the retail PE (SHA-256
+`eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1`) returned
+`0x10` from `0x0083a640` for both indices 10 and 11. The corresponding fields
+were `0x241d8d24` and `0x241d8d74`, both written by retail `0x0083d850`.
+This confirms that the corrected descriptor size reaches the retail record
+builder. The replay then stopped at `unsupported D3D9 managed texture
+description` after 1,305,017 dispatches; it did not complete the requested host
+frames, and `retail_rendering_proven` remained false. The next blocking
+capability is managed DXT3 texture capture, owned by Process 2.
+
+Full compact evidence, focused test commands, and artifact hashes are in
+[`process1_d3dx_parameter_desc_abi_v719.json`](../evidence/retail_frontier_20261021/process1_d3dx_parameter_desc_abi_v719.json).
+
 ## Audio hypothesis
 
 This v692 trace specifically targeted D3D9 Draw* imports; it is not an audio

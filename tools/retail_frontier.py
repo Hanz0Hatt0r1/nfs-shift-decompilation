@@ -43,7 +43,9 @@ TRACE_ENV_KEYS = (
     "SHIFT_TRACE_GUEST_CALL_STRING_SLOTS",
     "SHIFT_TRACE_GUEST_CALL_TARGETS",
     "SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS",
+    "SHIFT_TRACE_GUEST_CALL_TARGET_DEREFERENCE_CHAIN",
     "SHIFT_TRACE_GUEST_CALL_INDEXED_SOURCE",
+    "SHIFT_TRACE_GUEST_CALL_INDIRECT_FIELD",
     "SHIFT_TRACE_GUEST_PROVENANCE",
     "SHIFT_TRACE_UI_STATE_GATE",
 )
@@ -131,7 +133,10 @@ def compare(current: dict, baseline: dict) -> dict:
         isinstance(unique, int) and isinstance(previous_unique, int)
         and unique < previous_unique
     ):
-        return {"result": "regressed", "reason": "fewer dispatches or unique functions"}
+        return {
+            "result": "changed",
+            "reason": "lower counters; inspect frontier and scheduler evidence before calling a regression",
+        }
     if count > previous_count or (
         isinstance(unique, int) and isinstance(previous_unique, int)
         and unique > previous_unique

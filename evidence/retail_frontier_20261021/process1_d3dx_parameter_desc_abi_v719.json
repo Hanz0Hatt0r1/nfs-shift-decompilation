@@ -1,0 +1,91 @@
+{
+  "format": "SHIFT.Process1D3dxParameterDescAbi/1",
+  "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "runtime_sha256": "464be37f6a633a57d58563f7daa3756a7c707fcca96553a7cb0caed82c3911ae",
+  "api_contract": {
+    "name": "D3DXPARAMETER_DESC",
+    "documentation": "https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dxparameter-desc",
+    "pe32_size": 44,
+    "flags_offset": "0x24",
+    "bytes_offset": "0x28"
+  },
+  "defect": {
+    "component": "P1 guest d3dx9_41.dll ID3DXEffect::GetParameterDesc compatibility proxy",
+    "before": "Wrote Bytes at offset 0x24 and Flags at offset 0x28",
+    "after": "Writes Flags at offset 0x24 and Bytes at offset 0x28",
+    "retail_consumer": "0x0083d850 copies D3DXPARAMETER_DESC.Bytes into record offset +0x10",
+    "v718_observation": "For EDX indices 10 and 11 the record field was zero, last written by 0x0083d850; the reversed descriptor layout exposed zero parameter flags as Bytes."
+  },
+  "regression_fixture": {
+    "parameter_flags_sentinel": "0x40",
+    "parameter_value_bytes": 4,
+    "expected_descriptor_flags_offset_0x24": "0x40",
+    "expected_descriptor_bytes_offset_0x28": 4,
+    "annotation_flags": 0,
+    "annotation_bytes": 4
+  },
+  "v719_replay": {
+    "probe_configuration": {
+      "frames_requested": 360,
+      "timeout_seconds": 180,
+      "validation": true,
+      "trace_environment": {
+        "SHIFT_TRACE_GUEST_CALL_INDIRECT_FIELD": "0x50,0x44,3,0x50,0x50,0x10",
+        "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+        "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8",
+        "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x0083a640",
+        "SHIFT_TRACE_GUEST_PROVENANCE": "all"
+      }
+    },
+    "status": "blocked",
+    "blocker": "unsupported D3D9 managed texture description",
+    "exit_code": 1,
+    "dispatches": 1305017,
+    "unique_functions": 4714,
+    "frames_rendered": null,
+    "validation_errors": null,
+    "retail_rendering_proven": false,
+    "trace_observations": [
+      {
+        "target": "0x0083a640",
+        "index": 10,
+        "field_address": "0x241d8d24",
+        "field_value_bytes": 16,
+        "last_writer": "0x0083d850"
+      },
+      {
+        "target": "0x0083a640",
+        "index": 11,
+        "field_address": "0x241d8d74",
+        "field_value_bytes": 16,
+        "last_writer": "0x0083d850"
+      }
+    ],
+    "raw_log_path": "/tmp/process1-retail-runtime-evidence/ui-event-path-v719.log",
+    "raw_log_bytes": 4080094,
+    "raw_log_sha256": "df128414ad525aa7e777a7c506e93f4b8f64bac22d37857438666c0f8436f3a1",
+    "report_path": "/tmp/process1-retail-runtime-evidence/ui-event-path-v719.json",
+    "report_sha256": "cb4ecbd139c49fd6a348fec679a0f4ecb7975105068bf41b54ba5c410b7667e6",
+    "limitation": "Recompiled P-code execution over the retail PE; this bounded probe did not complete its host-frame request and does not prove original native launch, frontend, draw translation, or rendering."
+  },
+  "verification": {
+    "runtime_build": "cmake --build native_runtime/build --target shift_runtime shift_runtime_recompiled_pcode_module_check -j 4",
+    "focused_check_command": [
+      "native_runtime/build/shift_runtime_recompiled_pcode_module_check",
+      "native_runtime/build/libshift_runtime_test_pcode_module.so",
+      "native_runtime/build/libshift_runtime_test_pcode_supplement_module.so",
+      "native_runtime/build/libshift_runtime_test_pcode_override_module.so",
+      "native_runtime/build/recompiled_pcode_test_image.exe",
+      "native_runtime/build/recompiled_pcode_raise_exception_test_image.exe",
+      "native_runtime/build/recompiled_pcode_time_get_time_test_image.exe",
+      "native_runtime/build/recompiled_pcode_system_parameters_info_test_image.exe",
+      "native_runtime/build/recompiled_pcode_d3d9_test_image.exe",
+      "native_runtime/build/libnfs_shift_pcode_frontier.so",
+      "native_runtime/build/libshift_runtime_test_pcode_frontier_block.so"
+    ],
+    "focused_check_result": "passed",
+    "retail_frontier_tool_tests": "23 passed",
+    "git_diff_check": "passed"
+  },
+  "next_blocker_owner": "Process 2: managed DXT3 texture capture capability for the P1 D3D9 boundary"
+}

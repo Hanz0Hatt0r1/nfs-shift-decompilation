@@ -933,7 +933,7 @@ std::vector<uint8_t> make_d3dx9_shader_effect(bool include_pixel_shader = false)
         append_u32(0);
         parameter_value_offset_field = bytes.size();
         append_u32(0);
-        append_u32(0);  // Parameter flags.
+        append_u32(0x40);  // Parameter flags.
         append_u32(0);  // Parameter annotations.
         texture_parameter_type_offset_field = bytes.size();
         append_u32(0);
@@ -1415,6 +1415,9 @@ int main(int argc, char** argv) {
         require(setenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS",
                        "0x10,0x20,0xffffffff", 1) == 0,
                 "could not configure guest call target slot trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_TARGET_DEREFERENCE_CHAIN",
+                       "0x50,0x50", 1) == 0,
+                "could not configure target pointer chain trace fixture");
         require(setenv("SHIFT_TRACE_GUEST_PROVENANCE", "0x00023010", 1) ==
                     0,
                 "could not enable target slot writer provenance fixture");
@@ -1438,6 +1441,8 @@ int main(int argc, char** argv) {
                             std::vector<uint32_t>{0x00685700} &&
                         snapshot.guest_call_trace_target_slot_offsets ==
                             std::vector<uint32_t>{0x10, 0x20, 0xffffffff} &&
+                        snapshot.guest_call_trace_target_dereference_chain ==
+                            std::vector<uint32_t>{0x50, 0x50} &&
                         snapshot.guest_call_trace.size() == 1 &&
                         snapshot.guest_call_trace.front().caller ==
                             0x00403100 &&
@@ -1475,7 +1480,8 @@ int main(int argc, char** argv) {
                         !snapshot.guest_call_trace.front().target_slots[2]
                              .has_value,
                     "guest call target trace did not capture a call from an "
-                    "unselected caller and its entry receiver slots");
+                    "unselected caller and its entry receiver slots: " +
+                        capture.text());
             live_trace = capture.text();
         }
         require(live_trace.find(
@@ -1489,6 +1495,59 @@ int main(int argc, char** argv) {
                     live_trace.find("writer=0x00403100") != std::string::npos,
                 "live guest call trace did not persist entry and return events: " +
                     live_trace);
+        require(setenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS",
+                       "0x28,0x2c", 1) == 0,
+                "could not configure dereferenced target slots");
+        require(setenv("SHIFT_TRACE_GUEST_PROVENANCE", "all", 1) == 0,
+                "could not enable dereferenced target writer provenance");
+        std::string target_dereference_trace;
+        {
+            StderrCapture capture;
+            shift::runtime::RecompiledPcodeModule target_dereference_module(
+                argv[1]);
+            require(target_dereference_module.call(0x00403100) == 0,
+                    "guest target pointer chain fixture call failed: " +
+                        target_dereference_module.last_error());
+            const auto snapshot =
+                target_dereference_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace.size() == 1,
+                    "target pointer chain fixture missed its call");
+            const auto& event = snapshot.guest_call_trace.front();
+            require(event.target_dereference_chain.size() == 2 &&
+                        event.target_dereference_chain[0].has_value &&
+                        event.target_dereference_chain[0].value == 0x00023100 &&
+                        event.target_dereference_chain[1].has_value &&
+                        event.target_dereference_chain[1].value == 0x00023200 &&
+                        event.target_dereferenced_slots.size() == 2 &&
+                        event.target_dereferenced_slots[0].value ==
+                            0x11223344 &&
+                        event.target_dereferenced_slots[0].has_last_writer &&
+                        event.target_dereferenced_slots[0].last_writer.function ==
+                            0x00403100 &&
+                        event.target_dereferenced_slots[1].value ==
+                            0x55667788,
+                    "target pointer chain trace did not capture nested values and writers");
+            target_dereference_trace = capture.text();
+        }
+        require(target_dereference_trace.find(
+                    "target-deref+0x50=0x00023100") != std::string::npos &&
+                    target_dereference_trace.find(
+                        "target-deref+0x50=0x00023200") !=
+                        std::string::npos &&
+                    target_dereference_trace.find(
+                        "deref-target+0x28=0x11223344") !=
+                        std::string::npos &&
+                    target_dereference_trace.find(
+                        "deref-target+0x2c=0x55667788") !=
+                        std::string::npos,
+                "live trace omitted dereferenced target values: " +
+                    target_dereference_trace);
+        require(setenv("SHIFT_TRACE_GUEST_PROVENANCE", "0x00023010", 1) ==
+                    0,
+                "could not restore target slot writer provenance fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS",
+                       "0x10,0x20,0xffffffff", 1) == 0,
+                "could not restore target slot trace fixture");
         {
             shift::runtime::RecompiledPcodeModule null_receiver_trace_module(
                 argv[1]);
@@ -1517,6 +1576,8 @@ int main(int argc, char** argv) {
         }
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG") == 0,
                 "could not disable live guest call trace fixture");
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGET_DEREFERENCE_CHAIN") == 0,
+                "could not disable target pointer chain trace fixture");
         require(setenv("SHIFT_TRACE_GUEST_CALL_STACK_SLOTS",
                        "0x4,0x8,0xffffffff", 1) == 0,
                 "could not configure guest call stack slot trace fixture");
@@ -1681,6 +1742,185 @@ int main(int argc, char** argv) {
                 "could not disable indexed source trace fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGETS") == 0,
                 "could not disable indexed source target trace fixture");
+
+        require(setenv("SHIFT_TRACE_GUEST_CALL_TARGETS", "0x00685c00", 1) ==
+                    0,
+                "could not enable indirect field trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_INDIRECT_FIELD",
+                       "0x14,0x18", 1) == 0,
+                "could not configure indirect field trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_PROVENANCE", "all", 1) == 0,
+                "could not enable indirect field writer provenance fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG", "1", 1) == 0,
+                "could not enable indirect field live trace fixture");
+        std::string indirect_field_trace;
+        {
+            StderrCapture capture;
+            shift::runtime::RecompiledPcodeModule indirect_field_module(
+                argv[1]);
+            require(indirect_field_module.call(0x00406400) == 0,
+                    "guest indirect field trace fixture call failed: " +
+                        indirect_field_module.last_error());
+            const auto snapshot =
+                indirect_field_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace.size() == 1,
+                    "guest indirect field trace did not capture its nested call");
+            const auto& trace_event = snapshot.guest_call_trace.front();
+            const auto& field = trace_event.indirect_field;
+            require(snapshot.guest_call_trace_indirect_field_offsets ==
+                            std::vector<uint32_t>{0x14, 0x18} &&
+                        trace_event.caller == 0x00685bd0 &&
+                        trace_event.function == 0x00685c00 &&
+                        trace_event.caller_ecx == 0x00034000 &&
+                        trace_event.edx_entry == 1 &&
+                        trace_event.has_indirect_field && field.index == 2 &&
+                        !field.uses_target_registers &&
+                        field.table_pointer.has_value &&
+                        field.table_pointer.value == 0x00034100 &&
+                        field.data_base.has_value &&
+                        field.data_base.value == 0x00034200 &&
+                        field.has_table_entry_address &&
+                        field.table_entry_address == 0x00034108 &&
+                        field.table_entry.has_value &&
+                        field.table_entry.value == 0x60 &&
+                        field.has_field_address &&
+                        field.field_address == 0x00034260 &&
+                        field.field_value.has_value &&
+                        field.field_value.value == 0x3f800000 &&
+                        field.field_value.has_last_writer &&
+                        field.field_value.last_writer.function ==
+                            0x00406400 &&
+                        field.field_value.last_writer.write_address ==
+                            0x00034260,
+                    "guest indirect field trace did not resolve the caller's indexed field and writer");
+            indirect_field_trace = capture.text();
+        }
+        require(indirect_field_trace.find(
+                    "indirect-field=table+0x14=0x00034100 index=0x00000002 entry=0x00034108:0x00000060 data-base+0x18=0x00034200 field=0x00034260:0x3f800000 writer=0x00406400 write=0x00034260/4 value=0x3f800000") !=
+                    std::string::npos,
+                "live guest call trace omitted the indirect field and writer: " +
+                    indirect_field_trace);
+
+        require(setenv("SHIFT_TRACE_GUEST_CALL_INDIRECT_FIELD",
+                       "0x14,0x18,1", 1) == 0,
+                "could not select target registers for indirect field tracing");
+        {
+            shift::runtime::RecompiledPcodeModule target_register_module(
+                argv[1]);
+            require(target_register_module.call(0x00406400) == 0,
+                    "guest target-register indirect field fixture failed: " +
+                        target_register_module.last_error());
+            const auto snapshot =
+                target_register_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace.size() == 1,
+                    "guest target-register indirect field trace missed its call");
+            const auto& target_field =
+                snapshot.guest_call_trace.front().indirect_field;
+        require(snapshot.guest_call_trace_indirect_field_offsets ==
+                        std::vector<uint32_t>{0x14, 0x18, 1} &&
+                        target_field.uses_target_registers &&
+                        target_field.index == 1 &&
+                        target_field.table_pointer.value == 0x00035100 &&
+                        target_field.data_base.value == 0x00035200 &&
+                        target_field.table_entry_address == 0x00035104 &&
+                        target_field.table_entry.value == 0x40 &&
+                        target_field.field_address == 0x00035240 &&
+                        target_field.field_value.value == 0xabcdef01 &&
+                        target_field.field_value.has_last_writer &&
+                        target_field.field_value.last_writer.function ==
+                            0x00406400,
+                    "indirect field target mode did not use the traced callee's entry registers");
+        }
+        require(setenv("SHIFT_TRACE_GUEST_CALL_INDIRECT_FIELD",
+                       "0x14,0x18,3,0x50,0x50,0x10", 1) == 0,
+                "could not select target pointer record tracing");
+        {
+            shift::runtime::RecompiledPcodeModule target_pointer_module(
+                argv[1]);
+            require(target_pointer_module.call(0x00406400) == 0,
+                    "guest target pointer record fixture failed: " +
+                        target_pointer_module.last_error());
+            const auto snapshot =
+                target_pointer_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace.size() == 1,
+                    "guest target pointer record trace missed its call");
+            const auto& trace_event = snapshot.guest_call_trace.front();
+            const auto& field = trace_event.indirect_field;
+            require(snapshot.guest_call_trace_indirect_field_offsets ==
+                            std::vector<uint32_t>{0x14, 0x18, 3, 0x50, 0x50,
+                                                  0x10} &&
+                        field.uses_target_pointer_receiver &&
+                        field.receiver_pointer_offset == 0x50 &&
+                        field.record_stride == 0x50 &&
+                        field.record_field_offset == 0x10 &&
+                        field.index == 1 &&
+                        field.table_pointer.value == 0x00035100 &&
+                        field.data_base.value == 0x00035200 &&
+                        field.table_entry.value == 0x40 &&
+                        field.field_address == 0x00036610 &&
+                        field.field_value.value == 0xabcdef01 &&
+                        field.field_value.has_last_writer &&
+                        field.field_value.last_writer.function ==
+                            0x00406400,
+                    "target pointer record trace did not resolve the nested indexed record");
+        }
+        require(setenv("SHIFT_TRACE_GUEST_CALL_INDIRECT_FIELD",
+                       "0x14,0x18,2,0x4,0x1", 1) == 0,
+                "could not select stack-pointer indirect field tracing");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_STACK_SLOTS", "0x4", 1) ==
+                    0,
+                "could not configure stack-pointer trace fixture");
+        std::string stack_indirect_field_trace;
+        {
+            StderrCapture capture;
+            shift::runtime::RecompiledPcodeModule stack_pointer_module(
+                argv[1]);
+            require(stack_pointer_module.call(0x00406400) == 0,
+                    "guest stack-pointer indirect field fixture failed: " +
+                        stack_pointer_module.last_error());
+            const auto snapshot =
+                stack_pointer_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace.size() == 1,
+                    "guest stack-pointer indirect field trace missed its call");
+            const auto& stack_field =
+                snapshot.guest_call_trace.front().indirect_field;
+            const auto& stack_slots =
+                snapshot.guest_call_trace.front().stack_slots;
+            require(snapshot.guest_call_trace_indirect_field_offsets ==
+                            std::vector<uint32_t>{0x14, 0x18, 2, 0x4, 1} &&
+                        stack_slots.size() == 1 &&
+                        stack_slots.front().has_value &&
+                        stack_slots.front().value == 0x00035000 &&
+                        stack_field.uses_stack_pointer_receiver &&
+                        !stack_field.uses_target_registers &&
+                        stack_field.stack_pointer_offset == 0x4 &&
+                        stack_field.index == 1 &&
+                        stack_field.table_pointer.value == 0x00035100 &&
+                        stack_field.data_base.value == 0x00035200 &&
+                        stack_field.table_entry_address == 0x00035104 &&
+                        stack_field.table_entry.value == 0x40 &&
+                        stack_field.field_address == 0x00035240 &&
+                        stack_field.field_value.value == 0xabcdef01,
+                    "stack-pointer indirect field mode did not follow the selected guest stack argument: " +
+                        capture.text());
+            stack_indirect_field_trace = capture.text();
+        }
+        require(stack_indirect_field_trace.find(
+                    "indirect-field(stack+0x4)=table+0x14=0x00035100 index=0x00000001 entry=0x00035104:0x00000040 data-base+0x18=0x00035200 field=0x00035240:0xabcdef01") !=
+                    std::string::npos,
+                "live guest call trace omitted the stack-pointer indirect field: " +
+                    stack_indirect_field_trace);
+        require(setenv("SHIFT_TRACE_GUEST_CALL_INDIRECT_FIELD",
+                       "0x14,0x18", 1) == 0,
+                "could not restore caller registers for indirect field tracing");
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG") == 0,
+                "could not disable indirect field live trace fixture");
+        require(unsetenv("SHIFT_TRACE_GUEST_PROVENANCE") == 0,
+                "could not disable indirect field writer provenance fixture");
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_INDIRECT_FIELD") == 0,
+                "could not disable indirect field trace fixture");
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGETS") == 0,
+                "could not disable indirect field target trace fixture");
 
         require(setenv("SHIFT_TRACE_GUEST_CALL_IMPORTS",
                        "KERNEL32.dll!Sleep", 1) == 0,
@@ -5069,7 +5309,9 @@ int main(int argc, char** argv) {
                     read_guest_u32(d3d9_provider_module, "ram",
                                    parameter_desc_address + 20) == 1 &&
                     read_guest_u32(d3d9_provider_module, "ram",
-                                   parameter_desc_address + 36) == 4,
+                                   parameter_desc_address + 36) == 0x40 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   parameter_desc_address + 40) == 4,
                 "ID3DXEffect::GetParameterDesc returned an invalid parameter descriptor");
         require(invoke_import(d3d9_provider_module, complete_set_texture,
                               {complete_effect, texture_parameter_handle,
@@ -5140,7 +5382,9 @@ int main(int argc, char** argv) {
                     read_guest_u32(d3d9_provider_module, "ram",
                                    annotation_desc_address + 20) == 1 &&
                     read_guest_u32(d3d9_provider_module, "ram",
-                                   annotation_desc_address + 36) == 4,
+                                   annotation_desc_address + 36) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   annotation_desc_address + 40) == 4,
                 "ID3DXEffect::GetParameterDesc returned an invalid annotation descriptor");
         constexpr uint32_t integer_annotation_name_address = 0x00037120;
         constexpr uint32_t integer_annotation_value_address = 0x00037140;
@@ -5180,7 +5424,9 @@ int main(int argc, char** argv) {
                     read_guest_u32(d3d9_provider_module, "ram",
                                    integer_annotation_desc_address + 12) == 2 &&
                     read_guest_u32(d3d9_provider_module, "ram",
-                                   integer_annotation_desc_address + 36) == 4,
+                                   integer_annotation_desc_address + 36) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   integer_annotation_desc_address + 40) == 4,
                 "integer effect annotation descriptor had the wrong type or size");
         constexpr uint32_t string_annotation_name_address = 0x00037120;
         constexpr uint32_t string_output_address = 0x00037160;
@@ -5231,7 +5477,9 @@ int main(int argc, char** argv) {
                     read_guest_u32(d3d9_provider_module, "ram",
                                    string_annotation_desc_address + 12) == 4 &&
                     read_guest_u32(d3d9_provider_module, "ram",
-                                   string_annotation_desc_address + 36) == 4,
+                                   string_annotation_desc_address + 36) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   string_annotation_desc_address + 40) == 4,
                 "string effect annotation descriptor had the wrong type or size");
         require(invoke_import(d3d9_provider_module, complete_find_next,
                               {complete_effect, technique_handle,
