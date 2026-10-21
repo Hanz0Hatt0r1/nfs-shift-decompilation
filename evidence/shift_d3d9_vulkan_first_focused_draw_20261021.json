@@ -1,0 +1,122 @@
+{
+  "format": "SHIFT.Process2FirstFocusedDrawVulkanReplay/2",
+  "date": "2026-10-21",
+  "retail_executable": {
+    "filename": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "capture": {
+    "kind": "PortProton Wine D3D9 resource-trigger capture with draw-local shader-bool queries",
+    "raw_capture_committed": false,
+    "raw_capture_bytes": 934391,
+    "raw_capture_sha256": "aee876739bb160b8b990b0d2322dac68177e3f50b5f0ceaa1f9cec516be5a987",
+    "trigger_signature": "ps:da32197956d1cb89",
+    "capture_options": {
+      "buffer_payload_capture_enabled": true,
+      "partial_buffer_payload_capture_enabled": true,
+      "partial_buffer_payload_length_filter": 0,
+      "texture_snapshot_stages": [0],
+      "draw_local_vertex_bool_query": "GetVertexShaderConstantB(0, 16)",
+      "draw_local_pixel_bool_query": "GetPixelShaderConstantB(0, 16)"
+    },
+    "bool_queries_timed_before_draw": true,
+    "capture_profile_restored": true,
+    "retail_executable_unchanged": true,
+    "ppdb_restored_sha256": "8c9ad3198291b6328024b26656caf5c129857a4b12e44c62275ae76e2a1d0d54"
+  },
+  "draw": {
+    "capture_event_index": 7435,
+    "frame": 536,
+    "primitive_type": "D3DPT_TRIANGLELIST",
+    "primitive_count": 2,
+    "vertex_count": 4,
+    "index_count": 6,
+    "index_format": "INDEX16",
+    "base_vertex_index": 0,
+    "start_index": 0,
+    "vertex_declaration_signature": "decl:0630222d31f8d899",
+    "vertex_shader_signature": "vs:1af4a5f282f4b9fb",
+    "pixel_shader_signature": "ps:da32197956d1cb89",
+    "shader_bool_query_hresult": "S_OK",
+    "pixel_bool_registers_used": {"b0": true},
+    "same_capture_following_dips_b0": [false, true, true, false, true],
+    "vertex_payload_scope": "full-buffer Lock payload; 48-byte lock covers the entire resource",
+    "vertex_payload_sha256": "fc1294b7178afd5457ea2d75a97cab6d23703f54aaf687dd709c42fe38986b5d",
+    "index_payload_scope": "full-buffer Lock payload; 12-byte lock covers the entire resource",
+    "index_payload_sha256": "769df21c80974149d13f85ca9f01b8361bfe89e3fcadf7aac71e3c59c247ef7b"
+  },
+  "texture": {
+    "sampler": "s0",
+    "d3d9_format": "D3DFMT_A8R8G8B8",
+    "width": 1024,
+    "height": 256,
+    "mip_levels": 1,
+    "pool": "D3DPOOL_MANAGED",
+    "snapshot_format": "uncompressed DDS",
+    "snapshot_bytes": 1048704,
+    "snapshot_sha256": "52503e1fbd39105d5020ac519aea983f8bcd1509fa8b1065693eff581f14fcfb",
+    "sampler_state": {
+      "min_filter": "LINEAR",
+      "mag_filter": "LINEAR",
+      "mip_filter": "NONE",
+      "address_u": "CLAMP_TO_BORDER",
+      "address_v": "CLAMP_TO_BORDER",
+      "border_color": "TRANSPARENT_BLACK",
+      "srgb": true,
+      "svtp_mode": 14
+    }
+  },
+  "pipeline_state": {
+    "separate_alpha_blend_enable": true,
+    "src_color_blend_factor": "VK_BLEND_FACTOR_SRC_ALPHA",
+    "dst_color_blend_factor": "VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA",
+    "color_blend_op": "VK_BLEND_OP_ADD",
+    "src_alpha_blend_factor": "VK_BLEND_FACTOR_ONE",
+    "dst_alpha_blend_factor": "VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA",
+    "alpha_blend_op": "VK_BLEND_OP_ADD"
+  },
+  "shader_validation": {
+    "vertex_glsl_to_spirv": "passed",
+    "pixel_glsl_to_spirv": "passed",
+    "stage_link": "passed"
+  },
+  "render_target": {
+    "width": 800,
+    "height": 600,
+    "d3d9_color_format": "D3DFMT_A8R8G8B8",
+    "vulkan_color_format": "VK_FORMAT_B8G8R8A8_UNORM",
+    "d3d9_depth_format": "D3DFMT_D24S8",
+    "vulkan_depth_format": "VK_FORMAT_D24_UNORM_S8_UINT",
+    "captured_clear_color_argb": 0,
+    "captured_clear_depth": 1.0
+  },
+  "native_execution": {
+    "executor": "shift_vulkan_bundle_execute",
+    "vulkan_api_version": "1.1",
+    "device": "NVIDIA GeForce GTX 950",
+    "validation_enabled": true,
+    "validation_errors": 0,
+    "texture_count": 1,
+    "repeated_same_bundle_runs": 3,
+    "repeated_output_ppm_sha256": "9b749b063d4a184ebb3088b8330a34f25abad2a521005a7a01376f2e2738710a",
+    "repeated_runs_validation_errors": [0, 0, 0],
+    "previous_uninitialized_bool_replays": "produced different pixel data across repeated runs"
+  },
+  "claims": {
+    "retail_draw_submitted": true,
+    "draw_local_shader_bool_state_captured": true,
+    "same_capture_b0_changes_between_draws": true,
+    "same_bundle_replay_deterministic": true,
+    "single_draw_only": true,
+    "retail_frame_image_parity_proven": false,
+    "process1_runtime_integration_proven": false,
+    "earlier_live_race_event_13640309_submitted": false
+  },
+  "limits": [
+    "The raw JSONL capture and DDS snapshot remain external to Git; their hashes and draw-local packet evidence are recorded here.",
+    "Bool constants are queried at each successful captured DIP because the retail shader changes b0 between draws; the Vulkan GLSL initializes the captured value before shader execution.",
+    "The output image is one captured draw over the captured clear state, not the full retail frame.",
+    "This does not integrate the guest DrawIndexedPrimitive call path into Process 1's runtime.",
+    "The earlier live-race draw event 13640309 uses the same shader pair but still lacks its captured DXT1 texture snapshot."
+  ]
+}

@@ -40,6 +40,7 @@ _SAMPLER_ADDRESS = {
     1: "REPEAT",
     2: "MIRRORED_REPEAT",
     3: "CLAMP_TO_EDGE",
+    4: "CLAMP_TO_BORDER",
 }
 _SAMPLER_FILTER = {1: "NEAREST", 2: "LINEAR"}
 _MIP_FILTER = {0: "NONE", 1: "POINT", 2: "LINEAR"}
@@ -107,6 +108,34 @@ def _payload_precedes_draw(payload: dict[str, Any], draw: dict[str, Any]) -> boo
         return True
     capture_frame = payload.get("payload_capture_frame")
     return isinstance(capture_frame, int) and capture_frame < int(draw.get("frame", 0))
+
+
+def _draw_bool_constants(
+    draw: dict[str, Any], stage: str, program: Any
+) -> dict[int, bool]:
+    definitions = {
+        int(instruction.operands[0].index or 0)
+        for instruction in program.instructions
+        if instruction.name == "DEFB"
+        and instruction.operands
+        and instruction.operands[0].kind == "dest"
+        and instruction.operands[0].reg_type == 14
+    }
+    required = set(program.const_bools) - definitions
+    if not required:
+        return {}
+    field = f"{stage}_bool_constants"
+    values = draw.get(field)
+    result_hr = draw.get(f"{field}_hr")
+    if not isinstance(result_hr, int) or result_hr != 0:
+        raise ValueError(f"captured draw has no successful {stage} boolean-constant query")
+    if not isinstance(values, list) or len(values) != 16:
+        raise ValueError(f"captured draw has incomplete {stage} boolean constants")
+    if any(value not in (0, 1, False, True) for value in values):
+        raise ValueError(f"captured draw has invalid {stage} boolean constants")
+    if max(required) >= len(values):
+        raise ValueError(f"captured draw does not include {stage} boolean register b{max(required)}")
+    return {register: bool(values[register]) for register in required}
 
 
 def _captured_stream_frequency_contract(
@@ -623,10 +652,16 @@ def _pipeline_state(states: dict[int, int]) -> dict[str, Any]:
         raise ValueError("captured draw lacks required render states: " + ", ".join(map(str, missing)))
     if states[168] != 0xF:
         raise ValueError("partial D3D9 color-write masks are not supported in this replay")
-    if states[206] != 0:
-        raise ValueError("separate alpha blend state is not supported in this replay")
+    if states[206] not in {0, 1}:
+        raise ValueError("captured separate-alpha-blend state is invalid")
     if states[27] not in {0, 1} or states[7] not in {0, 1} or states[14] not in {0, 1}:
         raise ValueError("captured boolean render state is invalid")
+    separate_alpha = bool(states[206])
+    if separate_alpha and (207 not in states or 208 not in states):
+        raise ValueError("captured separate alpha blend factors are incomplete")
+    alpha_source = states[207] if separate_alpha else states[19]
+    alpha_destination = states[208] if separate_alpha else states[20]
+    alpha_operation = states.get(209, 1 if separate_alpha else states[171])
     try:
         return {
             "format": "SHIFT.MaterialPipelineState/1",
@@ -638,9 +673,9 @@ def _pipeline_state(states: dict[int, int]) -> dict[str, Any]:
             "src_color_blend_factor": _BLEND_FACTOR[states[19]],
             "dst_color_blend_factor": _BLEND_FACTOR[states[20]],
             "color_blend_op": _BLEND_OP[states[171]],
-            "src_alpha_blend_factor": _BLEND_FACTOR[states[19]],
-            "dst_alpha_blend_factor": _BLEND_FACTOR[states[20]],
-            "alpha_blend_op": _BLEND_OP[states[171]],
+            "src_alpha_blend_factor": _BLEND_FACTOR[alpha_source],
+            "dst_alpha_blend_factor": _BLEND_FACTOR[alpha_destination],
+            "alpha_blend_op": _BLEND_OP[alpha_operation],
             "vulkan_cull_mode": {1: "VK_CULL_MODE_NONE", 2: "VK_CULL_MODE_BACK_BIT", 3: "VK_CULL_MODE_FRONT_BIT"}[states[22]],
             "captured_d3d9_render_states": {str(k): v for k, v in sorted(states.items())},
             "front_face_mapping": "CCW with negative viewport height preserving D3D9 screen orientation",
@@ -649,7 +684,7 @@ def _pipeline_state(states: dict[int, int]) -> dict[str, Any]:
         raise ValueError(f"captured D3D9 render state has unsupported value: {exc.args[0]}") from exc
 
 
-def _sampler_state(states: dict[int, int]) -> dict[str, str]:
+def _sampler_state(states: dict[int, int]) -> dict[str, Any]:
     required = (1, 2, 5, 6, 7)
     missing = [state for state in required if state not in states]
     if missing:
@@ -664,16 +699,26 @@ def _sampler_state(states: dict[int, int]) -> dict[str, str]:
         raise ValueError(f"captured sampler value is unsupported: {exc.args[0]}") from exc
     if u != v:
         raise ValueError("Vulkan replay requires matching captured U/V address modes")
-    return {
+    srgb_value = states.get(11, 0)
+    if srgb_value not in (0, 1):
+        raise ValueError(f"captured sampler value is unsupported: {srgb_value}")
+    result: dict[str, Any] = {
         "address_u": u,
         "address_v": v,
         "min_filter": min_filter,
         "mag_filter": mag_filter,
         "mip_filter": mip_filter,
+        "srgb": bool(srgb_value),
     }
+    if u == "CLAMP_TO_BORDER":
+        border_color = states.get(4, 0)
+        if border_color != 0:
+            raise ValueError(f"captured D3D9 border color is unsupported: 0x{border_color:08X}")
+        result["border_color"] = "TRANSPARENT_BLACK"
+    return result
 
 
-def _validate_texture_mip_filter(mipmaps: int, sampler: dict[str, str]) -> None:
+def _validate_texture_mip_filter(mipmaps: int, sampler: dict[str, Any]) -> None:
     if mipmaps <= 0:
         raise ValueError("captured texture has an invalid mip count")
     if mipmaps > 1 and sampler["mip_filter"] != "NONE":
@@ -809,7 +854,14 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
     instance_count, instance_streams, stream_frequencies = (
         _captured_stream_frequency_contract(draw, state.get("capture_options", {}))
     )
-    linked = translate_pair(vertex_program, pixel_program)
+    vertex_bool_constants = _draw_bool_constants(draw, "vertex", vertex_program)
+    pixel_bool_constants = _draw_bool_constants(draw, "pixel", pixel_program)
+    linked = translate_pair(
+        vertex_program,
+        pixel_program,
+        vertex_bool_constants=vertex_bool_constants,
+        pixel_bool_constants=pixel_bool_constants,
+    )
     validation = validate_linked_shader_pair_vulkan(linked)
     if validation.get("status") != "valid":
         raise ValueError("captured VS/PS pair failed Vulkan compile/link validation")
@@ -1035,6 +1087,10 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
         },
         "samplers": {str(register): sampler for register, sampler in samplers.items()},
         "shader_validation": validation,
+        "bool_constants": {
+            "vertex": {str(register): value for register, value in vertex_bool_constants.items()},
+            "pixel": {str(register): value for register, value in pixel_bool_constants.items()},
+        },
         "render_target": viewport_state,
         "snapshot_limitations": [
             "the original render-target pixels are not captured; output is a single-draw replay on the captured clear color and depth",

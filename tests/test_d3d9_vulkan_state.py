@@ -48,6 +48,19 @@ def test_sampler_state_translation_is_explicit():
     assert result["filter"]["mag"] == "VK_FILTER_LINEAR"
 
 
-def test_sampler_state_blocks_border_address_mode():
-    result = translate_sampler_state(3, {1: 4})
-    assert result["ready"] is False
+def test_sampler_state_accepts_captured_transparent_border_and_srgb():
+    result = translate_sampler_state(3, {1: 4, 2: 4, 3: 3, 4: 0, 11: 1})
+    assert result["ready"] is True
+    assert result["address_mode"]["u"] == "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER"
+    assert result["border_color"] == "VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK"
+    assert result["srgb_texture"] is True
+
+
+def test_sampler_state_blocks_unproven_or_unsupported_border_modes():
+    missing_color = translate_sampler_state(3, {1: 4})
+    assert missing_color["ready"] is False
+    assert "d3d9-vulkan-state:border-address-requires-proven-color:s3" in missing_color["blocking_reasons"]
+
+    custom_color = translate_sampler_state(3, {1: 4, 4: 0xFF000000})
+    assert custom_color["ready"] is False
+    assert "d3d9-vulkan-state:unsupported-border-color:s3:4278190080" in custom_color["blocking_reasons"]

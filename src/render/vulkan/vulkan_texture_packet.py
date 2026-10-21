@@ -17,6 +17,8 @@ MODE_NEAREST_REPEAT = 1
 MODE_LINEAR_REPEAT = 2
 MODE_NEAREST_CLAMP = 3
 MODE_LINEAR_CLAMP = 4
+MODE_NEAREST_BORDER = 5
+MODE_LINEAR_BORDER = 6
 
 
 def _load(path: str | Path) -> dict[str, Any]:
@@ -32,19 +34,33 @@ def _sampler_mode(state: Mapping[str, Any] | None) -> int:
     mag_filter = str(state.get("mag_filter") or "NEAREST").upper()
     address_u = str(state.get("address_u") or "REPEAT").upper()
     address_v = str(state.get("address_v") or "REPEAT").upper()
+    srgb = bool(state.get("srgb", False))
 
-    if address_u != address_v or address_u not in {"REPEAT", "CLAMP_TO_EDGE"}:
-        raise ValueError("Vulkan texture packet requires matching REPEAT or CLAMP_TO_EDGE addressing")
+    if address_u != address_v or address_u not in {
+        "REPEAT", "CLAMP_TO_EDGE", "CLAMP_TO_BORDER",
+    }:
+        raise ValueError(
+            "Vulkan texture packet requires matching REPEAT, CLAMP_TO_EDGE, "
+            "or CLAMP_TO_BORDER addressing"
+        )
     if min_filter not in {"NEAREST", "LINEAR"} or mag_filter not in {"NEAREST", "LINEAR"}:
         raise ValueError("Vulkan texture packet supports only NEAREST/LINEAR filtering")
+    if (
+        address_u == "CLAMP_TO_BORDER"
+        and state.get("border_color", "TRANSPARENT_BLACK") != "TRANSPARENT_BLACK"
+    ):
+        raise ValueError("Vulkan texture packet supports only transparent-black border color")
     linear = min_filter == "LINEAR" or mag_filter == "LINEAR"
-    if linear and address_u == "REPEAT":
-        return MODE_LINEAR_REPEAT
-    if linear and address_u == "CLAMP_TO_EDGE":
-        return MODE_LINEAR_CLAMP
-    if address_u == "CLAMP_TO_EDGE":
-        return MODE_NEAREST_CLAMP
-    return MODE_NEAREST_REPEAT
+    modes = {
+        ("REPEAT", False): MODE_NEAREST_REPEAT,
+        ("REPEAT", True): MODE_LINEAR_REPEAT,
+        ("CLAMP_TO_EDGE", False): MODE_NEAREST_CLAMP,
+        ("CLAMP_TO_EDGE", True): MODE_LINEAR_CLAMP,
+        ("CLAMP_TO_BORDER", False): MODE_NEAREST_BORDER,
+        ("CLAMP_TO_BORDER", True): MODE_LINEAR_BORDER,
+    }
+    mode = modes[(address_u, linear)]
+    return mode + 8 if srgb else mode
 
 
 def _pixels(image: Mapping[str, Any]) -> bytes:

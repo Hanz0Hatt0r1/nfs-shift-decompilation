@@ -133,13 +133,53 @@ def test_vulkan_if_bool_register_emits_valid_condition():
     pixel = to_glsl(
         parse_program(struct.pack("<" + "I" * len(words), *words)),
         target="vulkan",
+        bool_constants={0: True},
     )
 
     assert "if (all(b[0])) {" in pixel
+    assert "b[0]=bvec4(true);" in pixel
     validation = validate_vulkan_glsl_pair(
         "#version 450\nvoid main(){gl_Position=vec4(0.0);}", pixel
     )
     assert validation["status"] == "valid", validation
+
+
+def test_unset_bool_registers_are_initialized_before_vulkan_if():
+    words = [
+        0xFFFF0300,
+        (1 << 24) | 40,
+        0xE0E40800,
+        42,
+        43,
+        0xFFFF,
+    ]
+    pixel = to_glsl(
+        parse_program(struct.pack("<" + "I" * len(words), *words)),
+        target="vulkan",
+    )
+
+    assert "b[0]=bvec4(false);" in pixel
+
+
+def test_shader_defb_overrides_draw_state_for_defined_bool_register():
+    words = [
+        0xFFFF0300,
+        (2 << 24) | 47,  # defb b0, true
+        0xE0000800,
+        1,
+        (1 << 24) | 40,  # if b0
+        0xE0E40800,
+        42,
+        43,
+        0xFFFF,
+    ]
+    pixel = to_glsl(
+        parse_program(struct.pack("<" + "I" * len(words), *words)),
+        target="vulkan",
+        bool_constants={0: False},
+    )
+
+    assert "b[0]=bvec4(true);" in pixel
 
 
 def test_sampler_type_and_relative_addressing_are_preserved():

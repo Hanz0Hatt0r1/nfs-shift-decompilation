@@ -254,6 +254,8 @@ def translate_pair(
     pixel: ShaderProgram,
     *,
     vertex_properties: list[str | dict] | tuple[str | dict, ...] = (),
+    vertex_bool_constants: dict[int, bool] | None = None,
+    pixel_bool_constants: dict[int, bool] | None = None,
 ) -> dict:
     """Translate a matched D3D9 VS/PS pair into a shared GLSL interface."""
     from shader_interface import build_vertex_input_locations, register_index
@@ -309,12 +311,14 @@ def translate_pair(
             output_locations=vertex_output_locations,
             constant_binding=14,
             constant_block_name="ShiftD3D9VertexConstants",
+            bool_constants=vertex_bool_constants,
         ),
         "pixel_glsl": to_glsl(
             pixel,
             input_locations=linkage["pixel_input_locations"],
             constant_binding=15,
             constant_block_name="ShiftD3D9PixelConstants",
+            bool_constants=pixel_bool_constants,
         ),
         "vulkan_vertex_glsl": to_glsl(
             vertex,
@@ -323,6 +327,7 @@ def translate_pair(
             constant_binding=14,
             constant_block_name="ShiftD3D9VertexConstants",
             target="vulkan",
+            bool_constants=vertex_bool_constants,
         ),
         "vulkan_pixel_glsl": to_glsl(
             pixel,
@@ -330,6 +335,7 @@ def translate_pair(
             constant_binding=15,
             constant_block_name="ShiftD3D9PixelConstants",
             target="vulkan",
+            bool_constants=pixel_bool_constants,
         ),
     }
 

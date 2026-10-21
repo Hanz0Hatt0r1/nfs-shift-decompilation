@@ -145,6 +145,9 @@ def test_d3d9_capture_supports_bounded_replay_state_stream():
     assert 'SHIFT_D3D9_CAPTURE_FRAME_END' in source
     assert 'capture_frame_active()' in source
     assert 'bounded_capture_enabled()' in source
+    assert 'GetVertexShaderConstantB' in source
+    assert 'GetPixelShaderConstantB' in source
+    assert 'pixel_bool_constants_hr' in source
 
     for event in (
         'set_render_target',
@@ -314,6 +317,38 @@ def test_managed_dxt_texture_snapshots_preserve_dds_blocks_and_mips():
         'std::remove(output_path.c_str())',
     ):
         assert token in source
+
+
+def test_managed_uncompressed_texture_snapshots_preserve_dds_bytes():
+    source = Path("native_capture/shift_d3d9_capture.cpp").read_text(encoding="utf-8")
+    start = source.index("bool write_managed_uncompressed_texture_dds(")
+    end = source.index("\nbool dxt_block_size(", start)
+    snapshot = source[start:end]
+
+    for token in (
+        "D3DPOOL_MANAGED",
+        "D3DPOOL_SYSTEMMEM",
+        "D3DFMT_A8R8G8B8",
+        "D3DFMT_X8R8G8B8",
+        "texture->GetLevelCount()",
+        "texture->LockRect(level, &locked, nullptr, D3DLOCK_READONLY)",
+        "static_cast<std::uint64_t>(locked.Pitch) < row_bytes",
+        "texture->UnlockRect(level)",
+        "? 0x00000041u",
+        ": 0x00000040u;",
+        "header[22] = 0x00ff0000u",
+        "header[23] = 0x0000ff00u",
+        "header[24] = 0x000000ffu",
+        'image.write("DDS ", 4)',
+    ):
+        assert token in snapshot
+
+    append_start = source.index("void append_texture_snapshot_json(")
+    append_end = source.index("\nvoid append_texture_descriptor_json(", append_start)
+    append = source[append_start:append_end]
+    direct = "write_managed_uncompressed_texture_dds(tex, snapshot_path)"
+    fallback = "write_texture_surface_ppm("
+    assert append.index(direct) < append.index(fallback)
 
 
 def test_texture_snapshots_wait_for_trigger_before_writing_files():

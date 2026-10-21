@@ -1,4 +1,5 @@
 #include <vulkan/vulkan.h>
+#include "vulkan_texture_sampler.hpp"
 
 #include <cstdint>
 #include <cstdlib>
@@ -211,7 +212,7 @@ Packet parse_packet(const std::string& path) {
             record.pixel_bytes != static_cast<uint32_t>(expected_bytes) ||
             record.pixel_offset < pixel_base ||
             static_cast<uint64_t>(record.pixel_offset) + record.pixel_bytes > data.size() ||
-            record.sampler_mode < 1 || record.sampler_mode > 4) {
+            !shift::vulkan::texture_sampler_mode_valid(record.sampler_mode)) {
             throw std::runtime_error("invalid texture packet record");
         }
         if (record.register_index == 1) sampler_s1_seen = true;
@@ -272,7 +273,7 @@ void create_texture(Context& ctx, const TextureRecord& record, const Packet& pac
     VkImageCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     info.imageType = VK_IMAGE_TYPE_2D;
-    info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    info.format = shift::vulkan::texture_sampler_format(record.sampler_mode);
     info.extent = {out.width, out.height, 1};
     info.mipLevels = 1;
     info.arrayLayers = 1;
@@ -298,7 +299,7 @@ void create_texture(Context& ctx, const TextureRecord& record, const Packet& pac
     view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     view.image = out.image;
     view.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    view.format = VK_FORMAT_R8G8B8A8_UNORM;
+    view.format = info.format;
     view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     view.subresourceRange.levelCount = 1;
     view.subresourceRange.layerCount = 1;
@@ -307,14 +308,15 @@ void create_texture(Context& ctx, const TextureRecord& record, const Packet& pac
 
     VkSamplerCreateInfo sampler{};
     sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    const bool linear = record.sampler_mode == 2 || record.sampler_mode == 4;
-    const bool clamp = record.sampler_mode == 3 || record.sampler_mode == 4;
+    const bool linear = shift::vulkan::texture_sampler_mode_linear(record.sampler_mode);
+    const auto address_mode = shift::vulkan::texture_sampler_address_mode(record.sampler_mode);
     sampler.magFilter = linear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
     sampler.minFilter = linear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
     sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    sampler.addressModeU = clamp ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler.addressModeV = clamp ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler.addressModeU = address_mode;
+    sampler.addressModeV = address_mode;
     sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
     sampler.maxLod = 1.0f;
     check(vkCreateSampler(ctx.device, &sampler, nullptr, &out.sampler),
           "vkCreateSampler failed");

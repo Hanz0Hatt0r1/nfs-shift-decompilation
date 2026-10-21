@@ -63,9 +63,43 @@ def test_vulkan_texture_packet_rejects_unsupported_sampler_addressing(tmp_path):
     try:
         build_vulkan_texture_packet(command, {"1": _texture()}, tmp_path / "bad.svtp")
     except ValueError as error:
-        assert "matching REPEAT or CLAMP_TO_EDGE" in str(error)
+        assert "matching REPEAT, CLAMP_TO_EDGE, or CLAMP_TO_BORDER" in str(error)
     else:
         raise AssertionError("unsupported sampler addressing must be blocked")
+
+
+def test_vulkan_texture_packet_encodes_border_and_srgb_modes(tmp_path):
+    command = _command()
+    sampler = command["submeshes"][0]["textures"][0]["sampler_state"]
+    sampler.update({
+        "min_filter": "LINEAR",
+        "mag_filter": "LINEAR",
+        "address_u": "CLAMP_TO_BORDER",
+        "address_v": "CLAMP_TO_BORDER",
+        "border_color": "TRANSPARENT_BLACK",
+        "srgb": True,
+    })
+    output = tmp_path / "border-srgb.svtp"
+    result = build_vulkan_texture_packet(command, {"1": _texture()}, output)
+
+    assert result["textures"][0]["sampler_mode"] == 14
+    assert RECORD.unpack_from(output.read_bytes(), HEADER.size)[5] == 14
+
+
+def test_vulkan_texture_packet_rejects_nonzero_border_color(tmp_path):
+    command = _command()
+    sampler = command["submeshes"][0]["textures"][0]["sampler_state"]
+    sampler.update({
+        "address_u": "CLAMP_TO_BORDER",
+        "address_v": "CLAMP_TO_BORDER",
+        "border_color": "0xFF000000",
+    })
+    try:
+        build_vulkan_texture_packet(command, {"1": _texture()}, tmp_path / "bad-border.svtp")
+    except ValueError as error:
+        assert "transparent-black border color" in str(error)
+    else:
+        raise AssertionError("unsupported Vulkan border colors must be blocked")
 
 
 def test_vulkan_texture_packet_rejects_missing_sampler_source(tmp_path):

@@ -16,11 +16,13 @@ from vulkan_d3d9_capture_bundle import (
     _captured_buffer_range,
     _captured_depth_surface,
     _captured_surface_formats,
+    _draw_bool_constants,
     _captured_shader_inputs,
     _captured_stream_frequency_contract,
     _capture_texture_packet,
     _interleave_vertex_streams,
     _payload_precedes_draw,
+    _pipeline_state,
     _read_events,
     _sampler_state,
     _validate_texture_mip_filter,
@@ -32,6 +34,32 @@ PARTIAL_BUFFER_CAPTURE_OPTIONS = {
     "partial_buffer_payload_capture_enabled": True,
     "partial_buffer_payload_length_filter": 0,
 }
+
+
+def test_draw_bool_constants_require_successful_exact_state_capture():
+    from shader_asm import Instruction, Operand, ShaderProgram
+
+    program = ShaderProgram(
+        0, 0, "pixel", 3, 0,
+        [Instruction(0, 40, "IF", 0, 1, 0, False, [
+            Operand(token=0, kind="source", reg_type=14, index=0, swizzle="xxxx")
+        ])],
+        inputs=[], outputs=[], samplers=[], constants=[], temps=[],
+        unsupported_opcodes=[], const_ints=[], const_bools=[0], sampler_types={},
+    )
+    captured = {"pixel_bool_constants_hr": 0, "pixel_bool_constants": [1] + [0] * 15}
+
+    assert _draw_bool_constants(captured, "pixel", program) == {0: True}
+
+    with pytest.raises(ValueError, match="no successful pixel boolean-constant query"):
+        _draw_bool_constants({"pixel_bool_constants": [0] * 16}, "pixel", program)
+
+    with pytest.raises(ValueError, match="incomplete pixel boolean constants"):
+        _draw_bool_constants(
+            {"pixel_bool_constants_hr": 0, "pixel_bool_constants": [0]},
+            "pixel",
+            program,
+        )
 
 
 def test_capture_bundle_uses_deferred_buffer_payload_captured_before_draw(tmp_path):
@@ -139,9 +167,35 @@ def test_null_depth_stencil_binding_is_not_a_surface():
 def test_capture_mip_filter_is_preserved_and_checked_against_texture_levels():
     sampler = _sampler_state({1: 1, 2: 1, 5: 2, 6: 2, 7: 2})
     assert sampler["mip_filter"] == "LINEAR"
+    assert sampler["srgb"] is False
     _validate_texture_mip_filter(1, sampler)
     with pytest.raises(ValueError, match="mip-chain support"):
         _validate_texture_mip_filter(2, sampler)
+
+
+def test_capture_sampler_preserves_border_color_and_srgb_state():
+    sampler = _sampler_state({1: 4, 2: 4, 4: 0, 5: 2, 6: 2, 7: 0, 11: 1})
+    assert sampler["address_u"] == "CLAMP_TO_BORDER"
+    assert sampler["address_v"] == "CLAMP_TO_BORDER"
+    assert sampler["border_color"] == "TRANSPARENT_BLACK"
+    assert sampler["srgb"] is True
+
+
+def test_capture_sampler_rejects_unsupported_border_color():
+    with pytest.raises(ValueError, match="border color is unsupported"):
+        _sampler_state({1: 4, 2: 4, 4: 0xFF000000, 5: 2, 6: 2, 7: 0})
+
+
+def test_capture_pipeline_preserves_separate_alpha_blend_factors():
+    pipeline = _pipeline_state({
+        7: 0, 14: 0, 23: 8, 27: 1, 19: 5, 20: 6, 22: 3,
+        168: 0xF, 171: 1, 206: 1, 207: 2, 208: 6,
+    })
+    assert pipeline["src_color_blend_factor"] == "VK_BLEND_FACTOR_SRC_ALPHA"
+    assert pipeline["dst_color_blend_factor"] == "VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA"
+    assert pipeline["src_alpha_blend_factor"] == "VK_BLEND_FACTOR_ONE"
+    assert pipeline["dst_alpha_blend_factor"] == "VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA"
+    assert pipeline["alpha_blend_op"] == "VK_BLEND_OP_ADD"
 
 
 def test_capture_rejects_unknown_mip_filter():
