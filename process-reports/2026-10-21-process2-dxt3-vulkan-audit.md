@@ -39,7 +39,7 @@ Draft P2 PR **#2144** fixes this via an explicit four-color switch for BC2/BC3 w
 2. A synthetic but **retail-shaped** 512×512 / pitch 2048 / 262144-byte one-mip DXT3 DDS fed through the real `_capture_texture_packet` to `SVTP/1`. The test checks binding s0, decoded RGBA8 size 1048576, BC2 RGB+alpha result, sRGB sampler mode and raw DDS provenance hash generated from that **synthetic** fixture.
 3. Fail-closed truncation regression. **It does not verify the original retail payload hash** because the original compressed payload is not present in the GitHub inputs.
 
-The new tests have been committed through GitHub only. No local Python test execution, native CTest, GPU validation or original-retail-draw execution is claimed; GitHub CI for PR #2144 is the next validation gate. The previous P2 focused replay evidence proves other selected original draws can reach Vulkan, but not the P1 DXT3 packet path.
+The new tests were committed through GitHub only. GitHub Actions on PR #2144 head `3e6b6eb4a3d9c32dddd51a6b998ac4f0ed0e8dbe` completed successfully: `CI`, `linux-vulkan` and `shift-live-dump`; CI's `python` job reports a successful **Run complete Python suite** step (so the newly added Python regression tests are covered by that suite). `linux-vulkan` also reports a successful software-stack build and existing headless Vulkan probes. None of those results is a native Vulkan submission of a P1 DXT3 guest draw or a comparison against the original retail payload. No separate local execution, P1 live guest callback or retail image parity is claimed. The previous P2 focused replay evidence proves other selected original draws can reach Vulkan, but not the P1 DXT3 packet path.
 
 ## Minimal missing capture fields to prove an actual DXT3 draw
 
@@ -64,7 +64,7 @@ For **render admission / actual DIP** additionally need, together in **one order
 
 ## Exactly next actions
 
-1. **P2:** Let PR #2144 CI complete and review the BC2 four-color regression. Keep PR #2143 unchanged; preserve it as the independent guest managed-capture capability.
+1. **P2:** Review PR #2144's successful CI run and BC2 four-color regression. Keep PR #2143 unchanged; preserve it as the independent guest managed-capture capability.
 2. **P1 → P2 boundary:** Capture one *actual* synchronous DIP packet with DXT3 bound to a shader-used pixel sampler and with full, current buffer/shader/state/mip evidence. Preserve the exact raw mip payload hash and the callback sequence.
 3. **P2 after positive packet:** Import the packet DDS as `DXT3`, verify identity and raw payload, transcode `RGBA8`, construct the SVTP/1 bundle, then perform native Vulkan 1.1 validation/submission. Only then claim **DXT3 resource-and-draw execution**; assess retail image parity separately.
 
