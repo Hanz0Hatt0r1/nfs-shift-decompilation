@@ -181,6 +181,106 @@ using RecompiledGuestD3d9ClearCallback = bool (*) (
 using RecompiledGuestD3d9PresentCallback = bool (*) (
     void* context, std::string& error);
 
+struct RecompiledGuestD3d9VertexStream {
+    uint32_t guest_buffer = 0;
+    uint32_t offset = 0;
+    uint32_t stride = 0;
+    uint32_t frequency = 1;
+    uint32_t size = 0;
+    uint32_t usage = 0;
+    uint32_t fvf = 0;
+    uint32_t pool = 0;
+};
+
+struct RecompiledGuestD3d9TextureMip {
+    uint32_t width = 0;
+    uint32_t height = 0;
+    uint32_t pitch = 0;
+    std::vector<uint8_t> bytes;
+};
+
+struct RecompiledGuestD3d9TextureBinding {
+    uint32_t stage = 0;
+    uint32_t guest_texture = 0;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    uint32_t levels = 0;
+    uint32_t usage = 0;
+    uint32_t format = 0;
+    uint32_t pool = 0;
+    uint32_t pitch = 0;
+    bool backend_owned = false;
+    // One owned byte vector per level when this is guest-owned memory.
+    // The callback may inspect or copy them during the call and must not retain
+    // references to this packet or its vectors after returning.
+    std::vector<RecompiledGuestD3d9TextureMip> mip_data;
+};
+
+struct RecompiledGuestD3d9StateValue {
+    uint32_t object = 0;
+    uint32_t state = 0;
+    uint32_t value = 0;
+};
+
+struct RecompiledGuestD3d9SurfaceBinding {
+    uint32_t index = 0;
+    uint32_t guest_surface = 0;
+    std::array<uint32_t, 8> description{};
+};
+
+// Version 1 is a backend-neutral snapshot of one guest DrawIndexedPrimitive.
+// Resource addresses identify objects created through the adapter callbacks;
+// vector data is owned by this packet and is only valid for the callback call.
+struct RecompiledGuestD3d9DrawIndexedPrimitivePacket {
+    uint32_t version = 1;
+    uint32_t guest_device = 0;
+    uint32_t sequence = 0;
+    uint32_t primitive_type = 0;
+    int32_t base_vertex_index = 0;
+    uint32_t min_vertex_index = 0;
+    uint32_t num_vertices = 0;
+    uint32_t start_index = 0;
+    uint32_t primitive_count = 0;
+    std::array<RecompiledGuestD3d9VertexStream, 16> streams{};
+    uint32_t guest_index_buffer = 0;
+    uint32_t index_buffer_size = 0;
+    uint32_t index_buffer_usage = 0;
+    uint32_t index_buffer_format = 0;
+    uint32_t index_buffer_pool = 0;
+    uint32_t guest_vertex_declaration = 0;
+    std::vector<std::array<uint32_t, 2>> vertex_declaration_elements;
+    uint32_t guest_vertex_shader = 0;
+    std::vector<uint32_t> vertex_shader_tokens;
+    uint32_t guest_pixel_shader = 0;
+    std::vector<uint32_t> pixel_shader_tokens;
+    std::array<uint32_t, 256 * 4> vertex_float_constants{};
+    std::array<uint32_t, 224 * 4> pixel_float_constants{};
+    // Bit n marks register n as written through the matching D3D9 Set API.
+    std::array<uint32_t, 8> vertex_float_constant_set_mask{};
+    std::array<uint32_t, 8> pixel_float_constant_set_mask{};
+    std::array<uint32_t, 16> vertex_bool_constants{};
+    std::array<uint32_t, 16> pixel_bool_constants{};
+    uint32_t vertex_bool_constant_set_mask = 0;
+    uint32_t pixel_bool_constant_set_mask = 0;
+    std::vector<RecompiledGuestD3d9TextureBinding> textures;
+    std::vector<RecompiledGuestD3d9StateValue> render_states;
+    std::vector<RecompiledGuestD3d9StateValue> sampler_states;
+    std::array<uint32_t, 6> viewport{};
+    std::vector<RecompiledGuestD3d9SurfaceBinding> render_targets;
+    bool has_depth_surface = false;
+    RecompiledGuestD3d9SurfaceBinding depth_surface{};
+    uint32_t last_clear_flags = 0;
+    uint32_t last_clear_color = 0;
+    uint32_t last_clear_depth_bits = 0;
+    uint32_t last_clear_stencil = 0;
+    uint32_t last_clear_rect_count = 0;
+};
+
+using RecompiledGuestD3d9DrawIndexedPrimitiveCallback = bool (*) (
+    void* context,
+    const RecompiledGuestD3d9DrawIndexedPrimitivePacket& packet,
+    std::string& error);
+
 struct RecompiledGuestD3d9AdapterInfo {
     // D3DCAPS9 is 76 little-endian 32-bit words, including its float fields.
     std::array<uint32_t, 76> caps{};
@@ -204,6 +304,8 @@ struct RecompiledGuestD3d9AdapterInfo {
     RecompiledGuestD3d9ReleaseVertexBufferCallback release_index_buffer = nullptr;
     RecompiledGuestD3d9ClearCallback clear = nullptr;
     RecompiledGuestD3d9PresentCallback present = nullptr;
+    RecompiledGuestD3d9DrawIndexedPrimitiveCallback draw_indexed_primitive =
+        nullptr;
 };
 
 struct RecompiledGuestSchedulerSnapshot {

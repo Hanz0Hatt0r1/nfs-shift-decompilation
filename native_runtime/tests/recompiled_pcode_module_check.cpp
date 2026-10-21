@@ -114,7 +114,7 @@ struct D3d9BackendFixture {
     uint32_t vertex_buffer_pool = 0;
     uint32_t vertex_buffer_update_offset = 0;
     size_t vertex_buffer_update_size = 0;
-    std::array<uint8_t, 64> vertex_buffer_update_data{};
+    std::array<uint8_t, 1024> vertex_buffer_update_data{};
     bool index_buffer_create_called = false;
     bool index_buffer_update_called = false;
     bool index_buffer_release_called = false;
@@ -127,6 +127,10 @@ struct D3d9BackendFixture {
     uint32_t index_buffer_update_offset = 0;
     size_t index_buffer_update_size = 0;
     std::array<uint8_t, 64> index_buffer_update_data{};
+    bool draw_called = false;
+    uint32_t draw_calls = 0;
+    bool draw_result = true;
+    shift::runtime::RecompiledGuestD3d9DrawIndexedPrimitivePacket draw_packet{};
     shift::runtime::RecompiledGuestD3d9PresentationParameters parameters{};
 };
 
@@ -162,6 +166,22 @@ bool present_d3d9_fixture(void* context, std::string&) {
     if (!fixture) return false;
     ++fixture->present_calls;
     return true;
+}
+
+bool draw_d3d9_fixture(
+    void* context,
+    const shift::runtime::RecompiledGuestD3d9DrawIndexedPrimitivePacket& packet,
+    std::string& error) {
+    auto* fixture = static_cast<D3d9BackendFixture*>(context);
+    if (!fixture) {
+        error = "fixture draw callback has no context";
+        return false;
+    }
+    fixture->draw_called = true;
+    ++fixture->draw_calls;
+    fixture->draw_packet = packet;
+    if (!fixture->draw_result) error = "fixture rejected draw";
+    return fixture->draw_result;
 }
 
 bool create_d3d9_fixture_vertex_buffer(
@@ -3234,6 +3254,7 @@ int main(int argc, char** argv) {
             &release_d3d9_fixture_index_buffer;
         adapter_info.clear = &clear_d3d9_fixture;
         adapter_info.present = &present_d3d9_fixture;
+        adapter_info.draw_indexed_primitive = &draw_d3d9_fixture;
         require(d3d9_provider_module.set_guest_d3d9_adapter_info(adapter_info),
                 "could not configure the fixture Vulkan adapter snapshot");
         const uint32_t provider_interface =
@@ -3387,10 +3408,32 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", created_device_vtable + 100 * 4);
         const uint32_t device_get_stream_source = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 101 * 4);
+        const uint32_t device_set_stream_source_freq = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 102 * 4);
+        const uint32_t device_get_stream_source_freq = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 103 * 4);
         const uint32_t device_set_indices = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 104 * 4);
         const uint32_t device_get_indices = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 105 * 4);
+        const uint32_t device_draw_indexed_primitive = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 82 * 4);
+        const uint32_t device_set_vertex_shader_constant_f = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 94 * 4);
+        const uint32_t device_get_vertex_shader_constant_f = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 95 * 4);
+        const uint32_t device_set_vertex_shader_constant_b = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 98 * 4);
+        const uint32_t device_get_vertex_shader_constant_b = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 99 * 4);
+        const uint32_t device_set_pixel_shader_constant_f = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 109 * 4);
+        const uint32_t device_get_pixel_shader_constant_f = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 110 * 4);
+        const uint32_t device_set_pixel_shader_constant_b = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 113 * 4);
+        const uint32_t device_get_pixel_shader_constant_b = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 114 * 4);
         const uint32_t device_get_texture = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 64 * 4);
         const uint32_t device_set_texture = read_guest_u32(
@@ -3949,6 +3992,25 @@ int main(int argc, char** argv) {
                 "D3DXCreateTextureFromFileInMemoryEx rejected the retail DDS path");
         const uint32_t d3dx_texture = read_guest_u32(
             d3d9_provider_module, "ram", d3dx_texture_output_address);
+        auto overflowing_mip_dds = a1r5g5b5_dds;
+        write_u32(overflowing_mip_dds, 12, 3'748'832'529);
+        write_u32(overflowing_mip_dds, 16, 1'845'248'881);
+        write_u32(overflowing_mip_dds, 28, 32);
+        constexpr uint32_t overflowing_mip_dds_address = 0x00048000;
+        constexpr uint32_t overflowing_mip_output_address = 0x00035948;
+        write_guest_bytes(d3d9_provider_module, overflowing_mip_dds_address,
+                          overflowing_mip_dds.data(),
+                          overflowing_mip_dds.size());
+        require(invoke_import(
+                    d3d9_provider_module,
+                    provider_d3dx_create_texture_from_memory_ex,
+                    {d3dx_device_wrapper_address, overflowing_mip_dds_address,
+                     64 * 1024 * 1024, UINT32_MAX, UINT32_MAX, 32, 0, 0, 1,
+                     1, 1, 0, 0, 0, overflowing_mip_output_address}) ==
+                        0x8876086c &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   overflowing_mip_output_address) == 0,
+                "D3DX texture accepted a mip-size sum that wraps uint64");
         const uint32_t d3dx_texture_vtable = read_guest_u32(
             d3d9_provider_module, "ram", d3dx_texture);
         const uint32_t d3dx_texture_get_level_count = read_guest_u32(
@@ -5414,6 +5476,412 @@ int main(int argc, char** argv) {
                     d3d9_backend_fixture.clear_stencil == 0 &&
                     d3d9_backend_fixture.clear_rect_count == 0,
                 "IDirect3DDevice9::Clear did not forward its request to the backend");
+
+        constexpr uint32_t draw_vertex_buffer_output = 0x00406300;
+        constexpr uint32_t draw_index_buffer_output = 0x00406304;
+        constexpr uint32_t draw_texture_output = 0x00406308;
+        constexpr uint32_t draw_declaration_output = 0x0040630c;
+        constexpr uint32_t draw_vertex_shader_output = 0x00406310;
+        constexpr uint32_t draw_pixel_shader_output = 0x00406314;
+        constexpr uint32_t draw_lock_output = 0x00406318;
+        constexpr uint32_t draw_texture_lock_output = 0x0040631c;
+        constexpr uint32_t draw_vertex_data = 0x00406400;
+        constexpr uint32_t draw_index_data = 0x00406500;
+        constexpr uint32_t draw_texture_data = 0x00406540;
+        constexpr uint32_t draw_declaration_data = 0x00406580;
+        constexpr uint32_t draw_vertex_constants = 0x00406600;
+        constexpr uint32_t draw_vertex_constants_out = 0x00406620;
+        constexpr uint32_t draw_pixel_constants = 0x00406640;
+        constexpr uint32_t draw_pixel_constants_out = 0x00406660;
+        constexpr uint32_t draw_bool_constants = 0x00406680;
+        constexpr uint32_t draw_bool_constants_out = 0x004066a0;
+        constexpr uint32_t draw_pixel_bool_constants = 0x004066c0;
+        constexpr uint32_t draw_pixel_bool_constants_out = 0x004066e0;
+
+        require(invoke_import(
+                    d3d9_provider_module, create_vertex_buffer,
+                    {created_device, 144, 0, 0, 1,
+                     draw_vertex_buffer_output, 0}) == 0 &&
+                    invoke_import(
+                        d3d9_provider_module, create_index_buffer,
+                        {created_device, 12, 0, 101, 1,
+                         draw_index_buffer_output, 0}) == 0 &&
+                    invoke_import(
+                        d3d9_provider_module, create_texture,
+                        {created_device, 2, 2, 1, 0, 21, 1,
+                         draw_texture_output, 0}) == 0,
+                "could not create bounded guest resources for indexed draw capture");
+        const uint32_t draw_vertex_buffer = read_guest_u32(
+            d3d9_provider_module, "ram", draw_vertex_buffer_output);
+        const uint32_t draw_index_buffer = read_guest_u32(
+            d3d9_provider_module, "ram", draw_index_buffer_output);
+        const uint32_t draw_texture = read_guest_u32(
+            d3d9_provider_module, "ram", draw_texture_output);
+        const uint32_t draw_vertex_buffer_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", draw_vertex_buffer);
+        const uint32_t draw_index_buffer_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", draw_index_buffer);
+        const uint32_t draw_texture_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", draw_texture);
+        const uint32_t draw_vertex_buffer_lock = read_guest_u32(
+            d3d9_provider_module, "ram", draw_vertex_buffer_vtable + 11 * 4);
+        const uint32_t draw_vertex_buffer_unlock = read_guest_u32(
+            d3d9_provider_module, "ram", draw_vertex_buffer_vtable + 12 * 4);
+        const uint32_t draw_index_buffer_lock = read_guest_u32(
+            d3d9_provider_module, "ram", draw_index_buffer_vtable + 11 * 4);
+        const uint32_t draw_index_buffer_unlock = read_guest_u32(
+            d3d9_provider_module, "ram", draw_index_buffer_vtable + 12 * 4);
+        const uint32_t draw_texture_lock = read_guest_u32(
+            d3d9_provider_module, "ram", draw_texture_vtable + 19 * 4);
+        const uint32_t draw_texture_unlock = read_guest_u32(
+            d3d9_provider_module, "ram", draw_texture_vtable + 20 * 4);
+        require(invoke_import(d3d9_provider_module, draw_vertex_buffer_lock,
+                              {draw_vertex_buffer, 0, 144, draw_lock_output,
+                               0}) == 0,
+                "indexed draw vertex buffer did not lock");
+        const uint32_t draw_vertex_data_address = read_guest_u32(
+            d3d9_provider_module, "ram", draw_lock_output);
+        std::array<uint8_t, 144> draw_vertices{};
+        for (size_t index = 0; index < draw_vertices.size(); ++index)
+            draw_vertices[index] = static_cast<uint8_t>(index);
+        write_guest_bytes(d3d9_provider_module, draw_vertex_data_address,
+                          draw_vertices.data(), draw_vertices.size());
+        require(invoke_import(d3d9_provider_module,
+                              draw_vertex_buffer_unlock,
+                              {draw_vertex_buffer}) == 0,
+                "indexed draw vertex bytes were not uploaded");
+        require(invoke_import(d3d9_provider_module, draw_index_buffer_lock,
+                              {draw_index_buffer, 0, 12, draw_lock_output,
+                               0}) == 0,
+                "indexed draw index buffer did not lock");
+        const uint32_t draw_index_data_address = read_guest_u32(
+            d3d9_provider_module, "ram", draw_lock_output);
+        const std::array<uint8_t, 12> draw_indices = {
+            0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0};
+        write_guest_bytes(d3d9_provider_module, draw_index_data_address,
+                          draw_indices.data(), draw_indices.size());
+        require(invoke_import(d3d9_provider_module,
+                              draw_index_buffer_unlock,
+                              {draw_index_buffer}) == 0,
+                "indexed draw index bytes were not uploaded");
+        require(invoke_import(d3d9_provider_module, draw_texture_lock,
+                              {draw_texture, 0, draw_texture_lock_output, 0,
+                               0}) == 0,
+                "indexed draw managed texture did not lock");
+        const uint32_t draw_texture_data_address = read_guest_u32(
+            d3d9_provider_module, "ram", draw_texture_lock_output + 4);
+        const std::array<uint32_t, 4> draw_texels = {
+            0xff112233, 0xff445566, 0xff778899, 0xffaabbcc};
+        for (size_t index = 0; index < draw_texels.size(); ++index) {
+            write_guest_u32(d3d9_provider_module, "ram",
+                            draw_texture_data_address + index * 4,
+                            draw_texels[index]);
+        }
+        require(invoke_import(d3d9_provider_module, draw_texture_unlock,
+                              {draw_texture, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module, device_set_texture,
+                                  {created_device, 0, draw_texture}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  device_set_stream_source,
+                                  {created_device, 0, draw_vertex_buffer, 0,
+                                   24}) == 0 &&
+                    invoke_import(d3d9_provider_module, device_set_indices,
+                                  {created_device, draw_index_buffer}) == 0,
+                "indexed draw resource bindings were rejected");
+
+        constexpr std::array<uint32_t, 4> draw_vs_float_words = {
+            0x3f800000, 0xc0000000, 0x40400000, 0x3f000000};
+        constexpr std::array<uint32_t, 4> draw_ps_float_words = {
+            0x3e800000, 0x3f400000, 0x3fc00000, 0x40000000};
+        constexpr std::array<uint32_t, 1> draw_vs_bool_words = {0xffffffff};
+        constexpr std::array<uint32_t, 2> draw_ps_bool_words = {1, 0};
+        for (size_t index = 0; index < draw_vs_float_words.size(); ++index) {
+            write_guest_u32(d3d9_provider_module, "ram",
+                            draw_vertex_constants + index * 4,
+                            draw_vs_float_words[index]);
+            write_guest_u32(d3d9_provider_module, "ram",
+                            draw_pixel_constants + index * 4,
+                            draw_ps_float_words[index]);
+        }
+        write_guest_u32(d3d9_provider_module, "ram", draw_bool_constants,
+                        draw_vs_bool_words[0]);
+        write_guest_u32(d3d9_provider_module, "ram",
+                        draw_pixel_bool_constants, draw_ps_bool_words[0]);
+        write_guest_u32(d3d9_provider_module, "ram",
+                        draw_pixel_bool_constants + 4, draw_ps_bool_words[1]);
+        require(invoke_import(d3d9_provider_module,
+                              device_set_vertex_shader_constant_f,
+                              {created_device, 3, draw_vertex_constants, 1}) ==
+                        0 &&
+                    invoke_import(d3d9_provider_module,
+                                  device_get_vertex_shader_constant_f,
+                                  {created_device, 3,
+                                   draw_vertex_constants_out, 1}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  device_set_pixel_shader_constant_f,
+                                  {created_device, 223, draw_pixel_constants,
+                                   1}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  device_get_pixel_shader_constant_f,
+                                  {created_device, 223,
+                                   draw_pixel_constants_out, 1}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  device_set_vertex_shader_constant_b,
+                                  {created_device, 15, draw_bool_constants,
+                                   1}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  device_get_vertex_shader_constant_b,
+                                  {created_device, 15,
+                                   draw_bool_constants_out, 1}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  device_set_pixel_shader_constant_b,
+                                  {created_device, 0,
+                                   draw_pixel_bool_constants, 2}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  device_get_pixel_shader_constant_b,
+                                  {created_device, 0,
+                                   draw_pixel_bool_constants_out, 2}) == 0,
+                "D3D9 float and boolean shader constants did not round-trip");
+        for (size_t index = 0; index < draw_vs_float_words.size(); ++index) {
+            require(read_guest_u32(d3d9_provider_module, "ram",
+                                   draw_vertex_constants_out + index * 4) ==
+                            draw_vs_float_words[index] &&
+                        read_guest_u32(d3d9_provider_module, "ram",
+                                       draw_pixel_constants_out + index * 4) ==
+                            draw_ps_float_words[index],
+                    "D3D9 shader float constant bits changed during round-trip");
+        }
+        require(read_guest_u32(d3d9_provider_module, "ram",
+                               draw_bool_constants_out) == 0xffffffff &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   draw_pixel_bool_constants_out) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   draw_pixel_bool_constants_out + 4) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  device_set_vertex_shader_constant_f,
+                                  {created_device, 256, draw_vertex_constants,
+                                   1}) == 0x8876086c &&
+                    invoke_import(d3d9_provider_module,
+                                  device_set_pixel_shader_constant_f,
+                                  {created_device, 224, draw_pixel_constants,
+                                   1}) == 0x8876086c &&
+                    invoke_import(d3d9_provider_module,
+                                  device_set_vertex_shader_constant_b,
+                                  {created_device, 16, draw_bool_constants,
+                                   1}) == 0x8876086c,
+                "D3D9 shader constant bounds were not enforced");
+
+        constexpr uint32_t draw_stream_frequency = 0x40000003;
+        constexpr uint32_t draw_stream_frequency_output = 0x004066f0;
+        require(invoke_import(d3d9_provider_module,
+                              device_set_stream_source_freq,
+                              {created_device, 0,
+                               draw_stream_frequency}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  device_get_stream_source_freq,
+                                  {created_device, 0,
+                                   draw_stream_frequency_output}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   draw_stream_frequency_output) ==
+                        draw_stream_frequency &&
+                    invoke_import(d3d9_provider_module,
+                                  device_get_stream_source_freq,
+                                  {created_device, 16,
+                                   draw_stream_frequency_output}) ==
+                        0x8876086c,
+                "D3D9 stream source frequency did not preserve the guest value");
+
+        constexpr std::array<uint32_t, 4> draw_vertex_elements = {
+            0, 2, 0xff, 17};
+        for (size_t index = 0; index < draw_vertex_elements.size(); ++index)
+            write_guest_u32(d3d9_provider_module, "ram",
+                            draw_declaration_data + index * 4,
+                            draw_vertex_elements[index]);
+        require(invoke_import(d3d9_provider_module,
+                              create_vertex_declaration,
+                              {created_device, draw_declaration_data,
+                               draw_declaration_output}) == 0,
+                "CreateVertexDeclaration rejected draw capture declaration");
+        const uint32_t draw_declaration = read_guest_u32(
+            d3d9_provider_module, "ram", draw_declaration_output);
+        require(invoke_import(d3d9_provider_module,
+                              device_set_vertex_declaration,
+                              {created_device, draw_declaration}) == 0,
+                "SetVertexDeclaration rejected draw capture declaration");
+
+        for (size_t index = 0; index < vertex_shader_function.size(); ++index) {
+            write_guest_u32(d3d9_provider_module, "ram",
+                            vertex_shader_function_address + index * 4,
+                            vertex_shader_function[index]);
+        }
+        for (size_t index = 0; index < pixel_shader_function.size(); ++index) {
+            write_guest_u32(d3d9_provider_module, "ram",
+                            pixel_shader_function_address + index * 4,
+                            pixel_shader_function[index]);
+        }
+        require(invoke_import(d3d9_provider_module, create_vertex_shader,
+                              {created_device, vertex_shader_function_address,
+                               draw_vertex_shader_output}) == 0 &&
+                    invoke_import(d3d9_provider_module, create_pixel_shader,
+                                  {created_device,
+                                   pixel_shader_function_address,
+                                   draw_pixel_shader_output}) == 0,
+                "D3D9 draw capture shader objects could not be created");
+        const uint32_t draw_vertex_shader = read_guest_u32(
+            d3d9_provider_module, "ram", draw_vertex_shader_output);
+        const uint32_t draw_pixel_shader = read_guest_u32(
+            d3d9_provider_module, "ram", draw_pixel_shader_output);
+        require(invoke_import(d3d9_provider_module, set_vertex_shader,
+                              {created_device, draw_vertex_shader}) == 0 &&
+                    invoke_import(d3d9_provider_module, set_pixel_shader,
+                                  {created_device, draw_pixel_shader}) == 0 &&
+                    invoke_import(d3d9_provider_module, get_render_target,
+                                  {created_device, 0,
+                                   render_target_output_address}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  get_depth_stencil_surface,
+                                  {created_device,
+                                   depth_surface_output_address}) == 0,
+                "D3D9 draw capture state setup failed");
+        const std::vector<uint32_t> retail_draw_arguments = {
+            created_device, 4, 0, 0, 6, 0, 2};
+        d3d9_backend_fixture.draw_called = false;
+        d3d9_backend_fixture.draw_calls = 0;
+        require(invoke_import(d3d9_provider_module,
+                              device_draw_indexed_primitive,
+                              retail_draw_arguments) == 0x8876086c &&
+                    !d3d9_backend_fixture.draw_called &&
+                    d3d9_backend_fixture.draw_calls == 0,
+                "DrawIndexedPrimitive was accepted outside BeginScene/EndScene");
+        require(invoke_import(d3d9_provider_module, device_begin_scene,
+                              {created_device}) == 0,
+                "D3D9 draw capture could not begin a scene");
+        d3d9_backend_fixture.draw_called = false;
+        d3d9_backend_fixture.draw_calls = 0;
+        require(invoke_import(d3d9_provider_module,
+                              device_draw_indexed_primitive,
+                              retail_draw_arguments) == 0 &&
+                    d3d9_backend_fixture.draw_called &&
+                    d3d9_backend_fixture.draw_calls == 1,
+                "DrawIndexedPrimitive did not reach the guest adapter");
+        const auto& draw_packet = d3d9_backend_fixture.draw_packet;
+        require(draw_packet.version == 1 &&
+                    draw_packet.sequence == 0 &&
+                    draw_packet.guest_device == created_device &&
+                    draw_packet.primitive_type == 4 &&
+                    draw_packet.base_vertex_index == 0 &&
+                    draw_packet.min_vertex_index == 0 &&
+                    draw_packet.num_vertices == 6 &&
+                    draw_packet.start_index == 0 &&
+                    draw_packet.primitive_count == 2 &&
+                    draw_packet.guest_index_buffer == draw_index_buffer &&
+                    draw_packet.index_buffer_format == 101 &&
+                    draw_packet.streams[0].guest_buffer ==
+                        draw_vertex_buffer &&
+                    draw_packet.streams[0].stride == 24 &&
+                    draw_packet.streams[0].frequency ==
+                        draw_stream_frequency &&
+                    draw_packet.guest_vertex_declaration ==
+                        draw_declaration &&
+                    draw_packet.vertex_declaration_elements.size() == 2 &&
+                    draw_packet.guest_vertex_shader == draw_vertex_shader &&
+                    draw_packet.vertex_shader_tokens ==
+                        std::vector<uint32_t>(vertex_shader_function.begin(),
+                                              vertex_shader_function.end()) &&
+                    draw_packet.guest_pixel_shader == draw_pixel_shader &&
+                    draw_packet.pixel_shader_tokens ==
+                        std::vector<uint32_t>(pixel_shader_function.begin(),
+                                              pixel_shader_function.end()),
+                "DrawIndexedPrimitive packet lost arguments, bindings, declaration, or shaders");
+        require(draw_packet.vertex_float_constants[3 * 4] ==
+                        draw_vs_float_words[0] &&
+                    draw_packet.vertex_float_constants[3 * 4 + 3] ==
+                        draw_vs_float_words[3] &&
+                    draw_packet.pixel_float_constants[223 * 4] ==
+                        draw_ps_float_words[0] &&
+                    draw_packet.vertex_bool_constants[15] == 0xffffffff &&
+                    draw_packet.pixel_bool_constants[0] == 1 &&
+                    draw_packet.pixel_bool_constants[1] == 0 &&
+                    draw_packet.vertex_float_constant_set_mask[0] == (1u << 3) &&
+                    draw_packet.pixel_float_constant_set_mask[6] == (1u << 31) &&
+                    draw_packet.vertex_bool_constant_set_mask == (1u << 15) &&
+                    draw_packet.pixel_bool_constant_set_mask == 3,
+                "DrawIndexedPrimitive packet lost shader constants or set masks");
+        require(draw_packet.textures.size() == 1 &&
+                    draw_packet.textures[0].stage == 0 &&
+                    draw_packet.textures[0].guest_texture == draw_texture &&
+                    draw_packet.textures[0].mip_data.size() == 1 &&
+                    draw_packet.textures[0].mip_data[0].width == 2 &&
+                    draw_packet.textures[0].mip_data[0].height == 2 &&
+                    draw_packet.textures[0].mip_data[0].pitch == 8 &&
+                    draw_packet.textures[0].mip_data[0].bytes.size() == 16 &&
+                    draw_packet.render_targets.size() == 1 &&
+                    draw_packet.render_targets[0].description[0] == 21 &&
+                    draw_packet.render_targets[0].description[6] == 800 &&
+                    draw_packet.has_depth_surface &&
+                    draw_packet.depth_surface.description[0] == 75 &&
+                    draw_packet.viewport[2] == 320 &&
+                    draw_packet.viewport[3] == 240 &&
+                    draw_packet.last_clear_flags == 7,
+                "DrawIndexedPrimitive packet lost guest textures or surface state");
+        d3d9_backend_fixture.draw_result = false;
+        require(invoke_import(d3d9_provider_module,
+                              device_draw_indexed_primitive,
+                              retail_draw_arguments) == 0x8876086a &&
+                    d3d9_backend_fixture.draw_calls == 2 &&
+                    d3d9_backend_fixture.draw_packet.sequence == 1 &&
+                    invoke_import(d3d9_provider_module,
+                                  device_draw_indexed_primitive,
+                                  {created_device, 1, 0, 0, 6, 0, 2}) ==
+                        0x8876086c &&
+                    d3d9_backend_fixture.draw_calls == 2 &&
+                    invoke_import(d3d9_provider_module, device_end_scene,
+                                  {created_device}) == 0,
+                "DrawIndexedPrimitive did not preserve backend failure and D3D9 validation");
+        d3d9_backend_fixture.draw_result = true;
+        require(invoke_import(d3d9_provider_module, device_set_texture,
+                              {created_device, 0, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  device_set_stream_source,
+                                  {created_device, 0, 0, 0, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module, device_set_indices,
+                                  {created_device, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module, set_vertex_shader,
+                                  {created_device, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module, set_pixel_shader,
+                                  {created_device, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  managed_texture_release,
+                                  {draw_texture}) == 0 &&
+                    invoke_import(d3d9_provider_module, vertex_buffer_release,
+                                  {draw_vertex_buffer}) == 0 &&
+                    invoke_import(d3d9_provider_module, index_buffer_release,
+                                  {draw_index_buffer}) == 0 &&
+                    invoke_import(d3d9_provider_module, vertex_shader_release,
+                                  {draw_vertex_shader}) == 0 &&
+                    invoke_import(d3d9_provider_module, pixel_shader_release,
+                                  {draw_pixel_shader}) == 0,
+                "DrawIndexedPrimitive fixture resources did not release cleanly");
+        const uint32_t draw_declaration_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", draw_declaration);
+        const uint32_t draw_declaration_release = read_guest_u32(
+            d3d9_provider_module, "ram", draw_declaration_vtable + 2 * 4);
+        const uint32_t draw_render_target_surface = read_guest_u32(
+            d3d9_provider_module, "ram", render_target_output_address);
+        const uint32_t draw_depth_surface = read_guest_u32(
+            d3d9_provider_module, "ram", depth_surface_output_address);
+        const uint32_t draw_render_target_surface_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", draw_render_target_surface);
+        const uint32_t draw_surface_release = read_guest_u32(
+            d3d9_provider_module, "ram",
+            draw_render_target_surface_vtable + 2 * 4);
+        require(invoke_import(d3d9_provider_module, draw_declaration_release,
+                              {draw_declaration}) == 0 &&
+                    invoke_import(d3d9_provider_module, draw_surface_release,
+                                  {draw_render_target_surface}) >= 1 &&
+                    invoke_import(d3d9_provider_module, draw_surface_release,
+                                  {draw_depth_surface}) >= 1,
+                "DrawIndexedPrimitive fixture state did not release cleanly");
         require(invoke_import(d3d9_provider_module,
                               created_device_add_ref,
                               {created_device}) == 2 &&
