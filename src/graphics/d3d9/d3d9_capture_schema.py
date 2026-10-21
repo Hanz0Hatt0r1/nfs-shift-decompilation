@@ -9,6 +9,7 @@ EVENT_SPECS = {
     'create_vertex_declaration': {'pointer':'declaration_ptr'},
     'set_vertex_declaration': {'pointer':'declaration_ptr'},
     'set_stream_source': {'pointer':'vertex_buffer_ptr'},
+    'set_stream_source_freq': {'pointer':None},
     'set_indices': {'pointer':'index_buffer_ptr'},
     'set_texture': {'pointer':'texture_ptr', 'allow_null': True},
     'create_texture': {'pointer':'texture_ptr'},
@@ -157,12 +158,37 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
             reasons.append('stream-offset:invalid')
         if not isinstance(row.get('stride'), int) or int(row.get('stride')) <= 0:
             reasons.append('stream-stride:invalid')
+    if event == 'set_stream_source_freq':
+        if not isinstance(row.get('stream'), int) or int(row.get('stream')) < 0:
+            reasons.append('stream-freq:stream-invalid')
+        if not isinstance(row.get('setting'), int) or not 0 <= int(row.get('setting')) <= 0xffffffff:
+            reasons.append('stream-freq:setting-invalid')
     if event == 'draw_indexed_primitive':
         for key in ('primitive_count','start_index','base_vertex_index'):
             if key in row and not isinstance(row.get(key), int):
                 reasons.append(f'draw:{key}:invalid')
         if isinstance(row.get('primitive_count'), int) and row['primitive_count'] < 0:
             reasons.append('draw:primitive-count-negative')
+        frequencies = row.get('stream_source_frequencies')
+        if frequencies is not None:
+            if not isinstance(frequencies, list):
+                reasons.append('draw:stream-frequencies-invalid')
+            else:
+                seen_streams = set()
+                for item in frequencies:
+                    if not isinstance(item, Mapping):
+                        reasons.append('draw:stream-frequency-entry-invalid')
+                        continue
+                    stream = item.get('stream')
+                    setting = item.get('setting')
+                    if not isinstance(stream, int) or stream < 0:
+                        reasons.append('draw:stream-frequency-stream-invalid')
+                    elif stream in seen_streams:
+                        reasons.append('draw:stream-frequency-duplicate')
+                    else:
+                        seen_streams.add(stream)
+                    if not isinstance(setting, int) or not 0 <= setting <= 0xffffffff:
+                        reasons.append('draw:stream-frequency-setting-invalid')
     if event in {'set_vertex_shader_constant_f','set_pixel_shader_constant_f'}:
         start=row.get('start_register')
         count=row.get('vector4f_count', row.get('register_count'))

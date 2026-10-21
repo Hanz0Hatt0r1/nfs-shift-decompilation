@@ -44,6 +44,47 @@ def test_capture_producer_rejects_invalid_stream_stride():
     row["stride"]=0
     assert "stream-stride:invalid" in validate_capture_event(row)
 
+def test_capture_schema_accepts_stream_frequency_instancing_state():
+    assert validate_capture_event({
+        "event": "set_stream_source_freq",
+        "frame": 4,
+        "stream": 0,
+        "setting": 0x40000009,
+    }) == []
+    assert validate_capture_event({
+        "event": "draw_indexed_primitive",
+        "frame": 4,
+        "primitive_count": 16,
+        "stream_source_frequencies": [
+            {"stream": 0, "setting": 0x40000009},
+            {"stream": 1, "setting": 0x80000001},
+        ],
+    }) == []
+
+def test_capture_schema_rejects_ambiguous_stream_frequency_state():
+    row = {
+        "event": "draw_indexed_primitive",
+        "frame": 4,
+        "stream_source_frequencies": [
+            {"stream": 1, "setting": 1},
+            {"stream": 1, "setting": 0x80000001},
+        ],
+    }
+    assert "draw:stream-frequency-duplicate" in validate_capture_event(row)
+
+def test_successful_device_reset_clears_cached_stream_frequencies():
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "native_capture"
+        / "shift_d3d9_capture.cpp"
+    ).read_text(encoding="utf-8")
+    reset = source.split("HRESULT STDMETHODCALLTYPE hook_reset(", 1)[1].split(
+        "HRESULT STDMETHODCALLTYPE hook_begin_scene(", 1
+    )[0]
+
+    assert "if (SUCCEEDED(hr))" in reset
+    assert "g_stream_source_frequencies.erase(self)" in reset
+
 def test_create_texture_events_avoid_duplicate_descriptor_keys():
     source = (
         Path(__file__).resolve().parents[1]
@@ -72,4 +113,3 @@ def test_capture_schema_accepts_explicit_shader_unbinds():
         **base,
         "event": "set_pixel_shader",
     }) == []
-

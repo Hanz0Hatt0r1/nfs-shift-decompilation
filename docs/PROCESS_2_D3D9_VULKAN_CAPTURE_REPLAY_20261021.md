@@ -29,6 +29,44 @@ validation errors on each device. The PPM preview maps the R32F channel to
 grayscale for inspection; it is not a replacement for the uncaptured retail
 target image.
 
+## Latest live-race draw
+
+A second capture was taken from a live race through the isolated `SHIFT_PROBE`
+prefix and its `proc2` save. The raw 41,309,728-byte JSONL stays outside Git;
+its SHA-256 and the exact retail executable hash are pinned in
+[`shift_d3d9_vulkan_live_draw_proc2_20261021.json`](../evidence/shift_d3d9_vulkan_live_draw_proc2_20261021.json).
+The capture retained three frames (12613–12615); the manual trigger fired on
+12615 while the game was paused, so it contains no post-trigger frames.
+
+Captured event 13647233/frame 12613 is an original triangle-list
+`DrawIndexedPrimitive`: 97 vertices, 102 primitives, 306 INDEX16 indices, and
+default stream frequencies for streams 0 and 1. Full-buffer VB and IB payloads
+were recorded at frame 11849, before the draw at frame 12613; the capture has
+no later payload update for either buffer. The captured VS/PS
+pair compiles and links to SPIR-V. The draw targets an 800×600 D3DFMT_R32F
+surface with D3DFMT_D24S8 depth; its pixel shader has no active samplers, so
+the bundle correctly omits `textures.svtp`. `shift_vulkan_bundle_execute`
+submitted the captured draw on a GTX 950 with Vulkan validation enabled and
+zero errors.
+
+This captured live-race draw completed native Vulkan submission. It is one
+draw after the captured clear, not a reconstruction of the surrounding frame.
+The PPM is diagnostic output and
+does not establish retail image parity. The selected R32F shader writes a
+single-channel value, which further limits visual comparison.
+
+The new capture contract records `SetStreamSourceFreq` state with each indexed
+draw. Microsoft defines indexed-data and instance-data settings through
+[`SetStreamSourceFreq`](https://learn.microsoft.com/en-us/windows/win32/api/d3d9/nf-d3d9-idirect3ddevice9-setstreamsourcefreq).
+The replay builder resolves shader inputs across captured source streams,
+assembles only the draw's byte ranges from ordered partial payloads, applies
+discard invalidation, and flattens a captured single instance into the vertex
+packet. It rejects missing frequency evidence, uncovered byte ranges,
+ambiguous same-frame deferred writes, and multi-instance draws. A null
+`SetDepthStencilSurface` binding is treated as no depth surface. Pixel shaders
+with no sampled textures no longer require an empty texture packet; textured
+draws still require captured snapshots for every active sampler.
+
 ## Translation fixes exercised by the capture
 
 - D3D scalar source swizzles replicate to four lanes; masked writes apply the
@@ -79,3 +117,13 @@ parity is not claimed.
 - The sampler regression suite passed 9 tests; event 5245407 was rebuilt from
   its retail capture and executed on the GTX 950 with validation enabled and
   zero errors.
+- The follow-up stream-frequency, multi-stream, draw-local partial-range,
+  null-depth, and untextured-shader regressions passed with the D3D9 capture
+  and Vulkan shader suites: 113 passed.
+- The complete repository test suite passed: 7,631 passed, 3 skipped. It used
+  the exact `revenginstr` commit pinned by CI and the declared development
+  dependencies.
+- Every `native_vulkan` CMake target built. The native smoke script completed
+  its two-draw material bundle-set path with validation enabled. The new live
+  SHIFT draw also completed native submission with zero Vulkan validation
+  errors on the GTX 950.

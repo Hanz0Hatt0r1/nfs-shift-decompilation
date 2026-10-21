@@ -1,0 +1,119 @@
+{
+  "format": "SHIFT.D3D9VulkanCapturedDrawEvidence/1",
+  "date": "2026-10-21",
+  "game": {
+    "title": "Need for Speed: SHIFT PC retail 1.02",
+    "executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "capture": {
+    "environment": "PortProton with GE-Proton 11-5 and DXVK 2.7.1",
+    "profile_scope": "isolated SHIFT_PROBE copy; the proc2 career save was selected",
+    "scene": "live race with pause menu open; the roadway and cockpit were visible",
+    "artifact": "/tmp/shift-process2-retail-target-capture-20261021/shift_d3d9_capture.jsonl (kept outside Git)",
+    "sha256": "82f21548b1bad937e7ee8d6253d27a8fabe4f8223574180eb3a697ec57bbcab4",
+    "size_bytes": 41309728,
+    "event_count": 70976,
+    "draw_frame_range": [
+      12613,
+      12615
+    ],
+    "stream_source_freq_capture": true,
+    "trigger": {
+      "frame": 12615,
+      "pre_frames": 2,
+      "post_frames_requested": 4,
+      "completed": false,
+      "note": "Capture was stopped while paused; the selected draw is in the retained pre-trigger ring."
+    }
+  },
+  "draw": {
+    "event_index": 13647233,
+    "frame": 12613,
+    "api": "IDirect3DDevice9::DrawIndexedPrimitive",
+    "primitive_type": "D3DPT_TRIANGLELIST",
+    "primitive_count": 102,
+    "vertex_count": 97,
+    "index_count": 306,
+    "index_format": "D3DFMT_INDEX16",
+    "base_vertex_index": 0,
+    "start_index": 0,
+    "instance_count": 1,
+    "stream_source_frequencies": [
+      {
+        "stream": 0,
+        "setting": 1
+      },
+      {
+        "stream": 1,
+        "setting": 1
+      }
+    ]
+  },
+  "resources": {
+    "vertex_buffer_length": 3492,
+    "vertex_stride": 36,
+    "vertex_payload_ranges": [
+      {
+        "offset": 0,
+        "byte_size": 3492
+      }
+    ],
+    "vertex_payload_sha256": "6ad450319290770e723766c11aa4f84cb1a0df2ef4cbba18bacd9db7f4e10129",
+    "index_buffer_length": 612,
+    "index_payload_ranges": [
+      {
+        "offset": 0,
+        "byte_size": 612
+      }
+    ],
+    "index_payload_sha256": "0773826e5a4271e364c4775808d17b18841b9a8bf3ecdf5ccf049097a13b6bac",
+    "vertex_shader_signature": "vs:e458e4f3cb6d1c3f",
+    "pixel_shader_signature": "ps:3dcf6b377727e7d6",
+    "active_pixel_samplers": [],
+    "texture_packet": "not-required",
+    "color_target": {
+      "signature": "rt:800x600:114",
+      "size": [
+        800,
+        600
+      ],
+      "d3d9_format": 114,
+      "vulkan_format": "VK_FORMAT_R32_SFLOAT"
+    },
+    "depth_target": {
+      "signature": "depth:800x600:75",
+      "size": [
+        800,
+        600
+      ],
+      "d3d9_format": 75,
+      "vulkan_format": "VK_FORMAT_D24_UNORM_S8_UINT"
+    },
+    "vertex_payload_event_index": 13692515,
+    "vertex_payload_capture_frame": 11849,
+    "index_payload_event_index": 13692516,
+    "index_payload_capture_frame": 11849
+  },
+  "shader_validation": {
+    "tool": "glslangValidator",
+    "status": "valid",
+    "vertex_spirv_sha256": "f37225478c785b6b59a1ead9c2869004ed63c1081c49032657a131f83bf0ec5a",
+    "pixel_spirv_sha256": "d00845a314b4807d0e46e75bc3402bd07a5bee9121aa3027d06a48c7384e651a"
+  },
+  "native_vulkan_submission": {
+    "executable": "shift_vulkan_bundle_execute",
+    "device": "NVIDIA GeForce GTX 950",
+    "validation_enabled": true,
+    "validation_errors": 0,
+    "draw_index_count": 306,
+    "texture_count": 0,
+    "output_sha256": "64a47e4083893787543d6da986490ed2419aea0ccbcdef3c7b89692f6881cdc9"
+  },
+  "limits": [
+    "This submits one captured original draw after the captured clear; it does not replay the full frame or retain prior render-target contents.",
+    "The Vulkan PPM is a diagnostic output for the isolated draw and is not a retail image-parity result.",
+    "The capture contains only three pre-trigger frames because the game was paused when stopped.",
+    "Multi-instance D3D9 draws remain unsupported and are rejected; only a single captured instance is flattened."
+  ],
+  "retail_image_parity_proven": false
+}

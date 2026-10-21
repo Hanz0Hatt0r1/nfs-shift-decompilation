@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT / "src" / "animation"))
 
 from shader_asm import parse_program
 from shader_backend import translate_pair, validate_linked_shader_pair_vulkan
-from shader_interface import D3D9_DECL_USAGE, build_vertex_input_locations
+from shader_interface import D3D9_DECL_USAGE, register_index
 from shader_ir import parse_shader_blobs
 from texture_reference import decode_dds
 from vulkan_texture_packet import build_vulkan_texture_packet
@@ -31,18 +31,10 @@ CAPTURE_GEOMETRY = struct.Struct("<IIiI")
 CONSTANT_HEADER = struct.Struct("<4sIIIIII")
 MAX_CONSTANTS = 256
 D3DLOCK_DISCARD = 0x2000
+D3DSTREAMSOURCE_INDEXEDDATA = 0x40000000
+D3DSTREAMSOURCE_INSTANCEDATA = 0x80000000
+D3DSTREAMSOURCE_FREQUENCY_MASK = 0x3FFFFFFF
 
-_SEMANTIC_PROPERTY = {
-    (0, 0): "200",
-    (10, 0): "460",
-    (10, 1): "461",
-    (3, 0): "220",
-    (6, 0): "240",
-    (7, 0): "250",
-    (1, 0): "310",
-    (2, 0): "580",
-}
-_SEMANTIC_PROPERTY.update({(5, index): str(130 + index) for index in range(5)})
 _D3D_FORMAT = {1: 1, 2: 2, 3: 3, 4: 4}
 _SAMPLER_ADDRESS = {
     1: "REPEAT",
@@ -106,11 +98,60 @@ def _captured_surface_formats(
     return _RENDER_TARGET_FORMAT[color_format], _DEPTH_FORMAT.get(depth_format, "")
 
 
+def _captured_depth_surface(row: dict[str, Any] | None) -> dict[str, Any] | None:
+    return row if row and row.get("surface_ptr") else None
+
+
 def _payload_precedes_draw(payload: dict[str, Any], draw: dict[str, Any]) -> bool:
     if int(payload.get("event_index", -1)) <= int(draw.get("event_index", -1)):
         return True
     capture_frame = payload.get("payload_capture_frame")
     return isinstance(capture_frame, int) and capture_frame < int(draw.get("frame", 0))
+
+
+def _captured_stream_frequency_contract(
+    draw: dict[str, Any], capture_options: dict[str, Any]
+) -> tuple[int, set[int], dict[int, int]]:
+    if capture_options.get("stream_source_freq_capture") is not True:
+        raise ValueError("capture does not prove SetStreamSourceFreq state")
+    rows = draw.get("stream_source_frequencies")
+    if not isinstance(rows, list):
+        raise ValueError("captured draw has no stream-source frequency state")
+    frequencies: dict[int, int] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("captured stream-source frequency entry is invalid")
+        stream = int(row.get("stream", -1))
+        setting = int(row.get("setting", -1))
+        if stream < 0 or setting < 0 or setting > 0xFFFFFFFF or stream in frequencies:
+            raise ValueError("captured stream-source frequency entry is invalid")
+        frequencies[stream] = setting
+
+    indexed = []
+    instance_streams = set()
+    for stream, setting in frequencies.items():
+        flags = setting & (D3DSTREAMSOURCE_INDEXEDDATA | D3DSTREAMSOURCE_INSTANCEDATA)
+        rate = setting & D3DSTREAMSOURCE_FREQUENCY_MASK
+        if flags == D3DSTREAMSOURCE_INDEXEDDATA:
+            if stream != 0 or rate == 0:
+                raise ValueError("D3D9 indexed-data frequency is invalid")
+            indexed.append(rate)
+        elif flags == D3DSTREAMSOURCE_INSTANCEDATA:
+            if stream == 0 or rate == 0:
+                raise ValueError("D3D9 instance-data frequency is invalid")
+            instance_streams.add(stream)
+        elif flags or setting != 1:
+            raise ValueError("captured D3D9 stream frequency is unsupported")
+
+    if not indexed and not instance_streams:
+        return 1, set(), frequencies
+    if len(indexed) != 1 or not instance_streams:
+        raise ValueError("captured D3D9 instancing state is incomplete")
+    if indexed[0] != 1:
+        raise ValueError(
+            f"captured D3D9 draw uses {indexed[0]} instances; multi-instance packets are not supported"
+        )
+    return 1, instance_streams, frequencies
 
 
 def _read_events(capture_path: Path, event_index: int) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -241,22 +282,39 @@ def _captured_buffer_bytes(
     buffer_length: int,
     resource_name: str,
 ) -> tuple[bytes, list[dict[str, Any]]]:
+    return _captured_buffer_range(
+        capture_root, payload_rows, buffer_create, draw, capture_options,
+        buffer_length, 0, buffer_length, resource_name,
+    )
+
+
+def _captured_buffer_range(
+    capture_root: Path,
+    payload_rows: list[dict[str, Any]],
+    buffer_create: dict[str, Any],
+    draw: dict[str, Any],
+    capture_options: dict[str, Any],
+    buffer_length: int,
+    required_offset: int,
+    required_size: int,
+    resource_name: str,
+) -> tuple[bytes, list[dict[str, Any]]]:
     if buffer_length <= 0:
         raise ValueError(f"captured {resource_name} has an invalid buffer length")
     if not payload_rows:
-        raise ValueError(f"captured {resource_name} has no matching Lock-range payloads")
+        raise ValueError(f"captured {resource_name} has no matching payloads")
+    if required_offset < 0 or required_size <= 0 or required_offset + required_size > buffer_length:
+        raise ValueError(f"captured {resource_name} draw range exceeds its buffer")
     if not capture_options.get("buffer_payload_capture_enabled") or not capture_options.get(
         "partial_buffer_payload_capture_enabled"
     ):
         raise ValueError(f"captured {resource_name} requires confirmed partial Lock-range capture")
     filter_length = int(capture_options.get("partial_buffer_payload_length_filter", -1))
-    if filter_length not in (0, buffer_length):
-        raise ValueError(f"captured {resource_name} is excluded by the partial payload length filter")
 
     create_event = int(buffer_create["event_index"])
     create_frame = int(buffer_create.get("frame", -1))
     draw_frame = int(draw.get("frame", 0))
-    draw_event = int(draw.get("event_index", -1))
+    required_end = required_offset + required_size
     candidates: list[tuple[int, int, int, bytes, dict[str, Any]]] = []
     for row in payload_rows:
         event_index = int(row.get("event_index", -1))
@@ -265,41 +323,58 @@ def _captured_buffer_bytes(
             continue
         if capture_frame > draw_frame:
             continue
-        if capture_frame == draw_frame and event_index > draw_event:
-            raise ValueError(f"captured {resource_name} payload order is ambiguous within the draw frame")
         if not _payload_precedes_draw(row, draw):
+            # Trigger-deferred payloads keep their source frame but receive a
+            # later event index. Never consume them for a same-frame draw.
+            continue
+        scope = row.get("capture_scope", "locked-range")
+        offset = int(row.get("offset", -1))
+        byte_size = int(row.get("captured_byte_size", -1))
+        if offset < 0 or byte_size <= 0 or offset + byte_size > buffer_length:
+            raise ValueError(f"captured {resource_name} payload range is invalid")
+        discard = bool(int(row.get("flags", 0)) & D3DLOCK_DISCARD)
+        overlaps = offset < required_end and offset + byte_size > required_offset
+        if not overlaps and not discard:
             continue
         if row.get("snapshot_status") != "captured":
             raise ValueError(f"captured {resource_name} buffer payload failed")
         if int(row.get("buffer_length", -1)) != buffer_length:
             raise ValueError(f"captured {resource_name} payload has a different buffer length")
-        offset = int(row.get("offset", -1))
-        byte_size = int(row.get("captured_byte_size", -1))
-        if offset < 0 or byte_size <= 0 or offset + byte_size > buffer_length:
-            raise ValueError(f"captured {resource_name} payload range is invalid")
+        if scope == "full-buffer" and (offset != 0 or byte_size != buffer_length):
+            raise ValueError(f"captured {resource_name} full-buffer snapshot is incomplete")
+        if scope != "full-buffer" and filter_length not in (0, buffer_length):
+            raise ValueError(f"captured {resource_name} is excluded by the partial payload length filter")
         path = _resource_file(capture_root, str(row.get("payload_path") or ""), "buffers")
-        payload = path.read_bytes()
-        if len(payload) != byte_size:
+        payload = path.read_bytes() if overlaps else b""
+        if overlaps and len(payload) != byte_size:
             raise ValueError(f"captured {resource_name} payload size does not match its event")
         candidates.append((capture_frame, event_index, offset, payload, row))
 
-    data = bytearray(buffer_length)
-    covered = bytearray(buffer_length)
+    data = bytearray(required_size)
+    covered = bytearray(required_size)
     used_rows: list[dict[str, Any]] = []
     for _, _, offset, payload, row in sorted(candidates, key=lambda item: item[:2]):
         if int(row.get("flags", 0)) & D3DLOCK_DISCARD:
-            data[:] = b"\0" * buffer_length
-            covered[:] = b"\0" * buffer_length
-        end = offset + len(payload)
-        data[offset:end] = payload
-        covered[offset:end] = b"\1" * len(payload)
+            data[:] = b"\0" * required_size
+            covered[:] = b"\0" * required_size
+        if not payload:
+            continue
+        overlap_start = max(offset, required_offset)
+        overlap_end = min(offset + len(payload), required_end)
+        if overlap_start >= overlap_end:
+            continue
+        source_start = overlap_start - offset
+        destination_start = overlap_start - required_offset
+        byte_count = overlap_end - overlap_start
+        data[destination_start:destination_start + byte_count] = payload[source_start:source_start + byte_count]
+        covered[destination_start:destination_start + byte_count] = b"\1" * byte_count
         used_rows.append(row)
 
     if 0 in covered:
         first_missing = covered.find(b"\0")
         raise ValueError(
-            f"captured {resource_name} payload ranges do not cover the full buffer "
-            f"(first missing byte {first_missing})"
+            f"captured {resource_name} payload ranges do not cover the required draw range "
+            f"(first missing byte {required_offset + first_missing})"
         )
     return bytes(data), used_rows
 
@@ -326,7 +401,6 @@ def _declaration(data: bytes) -> list[dict[str, int | str]]:
             break
         if method != 0:
             raise ValueError("captured vertex declaration uses an unsupported method")
-        property_id = _SEMANTIC_PROPERTY.get((usage, usage_index))
         elements.append({
             "stream": stream,
             "offset": element_offset,
@@ -334,7 +408,6 @@ def _declaration(data: bytes) -> list[dict[str, int | str]]:
             "method": method,
             "usage": usage,
             "usage_index": usage_index,
-            "property_id": property_id or f"unknown-{usage}-{usage_index}-{len(elements)}",
         })
     else:
         raise ValueError("captured vertex declaration has no D3DDECL_END")
@@ -343,11 +416,11 @@ def _declaration(data: bytes) -> list[dict[str, int | str]]:
     return elements
 
 
-def _shader_inputs(program: Any, elements: list[dict[str, int | str]], stride: int) -> tuple[list[str], list[dict[str, Any]]]:
-    properties = [str(element["property_id"]) for element in elements]
-    linkage = build_vertex_input_locations(program, properties)
-    if not linkage["valid"]:
-        raise ValueError("captured D3D9 vertex declaration does not cover shader inputs")
+def _captured_shader_inputs(
+    program: Any,
+    elements: list[dict[str, int | str]],
+    streams: dict[int, dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     element_by_semantic = {
         (int(element["usage"]), int(element["usage_index"])): element
         for element in elements
@@ -355,42 +428,123 @@ def _shader_inputs(program: Any, elements: list[dict[str, int | str]], stride: i
     if len(element_by_semantic) != len(elements):
         raise ValueError("captured vertex declaration repeats a semantic")
     attributes = []
-    for binding in linkage["bindings"]:
-        usage_name = str(binding["semantic"]["usage"]).upper()
+    bindings = []
+    for shader_input in program.inputs:
+        usage_name = str(shader_input.get("usage", "")).upper()
         usage = next((key for key, value in D3D9_DECL_USAGE.items() if value == usage_name), None)
         if usage is None:
             raise ValueError(f"unsupported vertex shader semantic {usage_name}")
-        element = element_by_semantic.get((usage, int(binding["semantic"]["index"])))
+        usage_index = int(shader_input.get("index", 0))
+        element = element_by_semantic.get((usage, usage_index))
         if element is None:
-            raise ValueError(f"vertex declaration is missing {usage_name}{binding['semantic']['index']}")
+            raise ValueError(f"vertex declaration is missing {usage_name}{usage_index}")
         format_code = _D3D_FORMAT.get(int(element["type"]))
         if format_code is None:
             raise ValueError(f"unsupported captured D3DDECLTYPE {element['type']}")
-        property_id = str(element["property_id"])
-        expected_types = {
-            "200": 2, "460": 4, "461": 4,
-            "220": 2, "240": 2, "250": 2,
-            "310": 3, "580": 5,
-            **{str(130 + index): 1 for index in range(5)},
-        }
-        if expected_types.get(property_id) != int(element["type"]):
-            raise ValueError(
-                f"captured semantic {property_id} has an unsupported D3DDECLTYPE"
-            )
         element_size = {1: 8, 2: 12, 3: 16, 4: 4}[format_code]
-        if int(element["offset"]) + element_size > stride:
+        stream = int(element["stream"])
+        stream_state = streams.get(stream)
+        if stream_state is None:
+            raise ValueError(f"captured vertex declaration stream {stream} is not bound")
+        source_stride = int(stream_state.get("stride", 0))
+        source_offset = int(element["offset"])
+        if source_stride <= 0 or source_offset + element_size > source_stride:
             raise ValueError("captured vertex element exceeds stream stride")
+        location = register_index(shader_input.get("register"))
+        if location is None or location < 0 or location > 31:
+            raise ValueError("captured vertex shader input has an unsupported register")
         attributes.append({
-            "location": int(binding["target_location"]),
+            "location": location,
             "format": format_code,
-            "offset": int(element["offset"]),
-            "stride": stride,
+            "offset": 0,
+            "stride": 0,
             "property_id": 0,
             "d3d_type": int(element["type"]),
+            "source_stream": stream,
+            "source_offset": source_offset,
+            "source_stride": source_stride,
+            "source_stream_offset": int(stream_state.get("offset_in_bytes", 0)),
         })
-    if not attributes or not any(row["location"] == 0 and row["format"] == 2 for row in attributes):
+        bindings.append({
+            "register": str(shader_input.get("register")),
+            "location": location,
+            "semantic": {"usage": usage_name, "index": usage_index},
+            "stream": stream,
+            "source_offset": source_offset,
+            "source_stride": source_stride,
+            "source_stream_offset": int(stream_state.get("offset_in_bytes", 0)),
+            "d3d_decl_type": int(element["type"]),
+        })
+    if len({row["location"] for row in attributes}) != len(attributes):
+        raise ValueError("captured vertex shader inputs share a register location")
+    if not any(
+        row["location"] == 0 and row["format"] == 2
+        and next(binding for binding in bindings if binding["location"] == 0)["semantic"]
+        == {"usage": "POSITION", "index": 0}
+        for row in attributes
+    ):
         raise ValueError("captured vertex declaration has no FLOAT3 POSITION0 at location 0")
-    return properties, attributes
+    return attributes, bindings
+
+
+def _interleave_vertex_streams(
+    attributes: list[dict[str, Any]],
+    stream_data: dict[int, tuple[int, bytes]],
+    min_vertex: int,
+    max_vertex: int,
+    instance_streams: set[int] | None = None,
+) -> tuple[bytes, int, list[dict[str, Any]]]:
+    if not attributes or min_vertex < 0 or max_vertex < min_vertex:
+        raise ValueError("captured vertex stream range is invalid")
+    element_sizes = {1: 8, 2: 12, 3: 16, 4: 4}
+    output_attributes = []
+    stride = 0
+    for attribute in attributes:
+        size = element_sizes[attribute["format"]]
+        output_attributes.append({
+            **attribute,
+            "offset": stride,
+            "source_size": size,
+        })
+        stride += size
+    for attribute in output_attributes:
+        attribute["stride"] = stride
+
+    vertex_count = max_vertex - min_vertex + 1
+    vertices = bytearray(vertex_count * stride)
+    instance_streams = instance_streams or set()
+    for vertex_index in range(min_vertex, max_vertex + 1):
+        destination_base = (vertex_index - min_vertex) * stride
+        for attribute in output_attributes:
+            source_stream = int(attribute["source_stream"])
+            source = stream_data.get(source_stream)
+            if source is None:
+                raise ValueError(f"captured vertex stream {source_stream} has no payload")
+            source_base, payload = source
+            element_index = 0 if source_stream in instance_streams else vertex_index
+            relative = (
+                int(attribute["source_stream_offset"])
+                + element_index * int(attribute["source_stride"])
+                + int(attribute["source_offset"])
+                - source_base
+            )
+            size = int(attribute["source_size"])
+            if relative < 0 or relative + size > len(payload):
+                raise ValueError("captured vertex element exceeds its snapshotted stream range")
+            destination = destination_base + int(attribute["offset"])
+            vertices[destination:destination + size] = payload[relative:relative + size]
+            if int(attribute["d3d_type"]) == 4:
+                vertices[destination], vertices[destination + 2] = (
+                    vertices[destination + 2], vertices[destination]
+                )
+    for attribute in output_attributes:
+        attribute.pop("source_size")
+        attribute.pop("source_stride")
+        attribute.pop("source_stream")
+        attribute.pop("source_offset")
+        attribute.pop("source_stream_offset")
+        attribute.pop("d3d_type")
+    return bytes(vertices), stride, output_attributes
 
 
 def encode_capture_geometry(
@@ -534,7 +688,11 @@ def _capture_texture_packet(
 ) -> tuple[dict[str, Any], list[dict[str, Any]], dict[int, dict[str, str]]]:
     registers = sorted(set(pixel_program.samplers))
     if not registers:
-        raise ValueError("capture replay requires at least one active pixel sampler")
+        return {
+            "format": "SHIFT.VulkanTexturePacket/1",
+            "status": "not-required",
+            "texture_count": 0,
+        }, [], {}
 
     textures: dict[int, dict[str, Any]] = {}
     texture_rows: list[dict[str, Any]] = []
@@ -592,16 +750,16 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
     if int(draw.get("primitive_type", -1)) != 4:
         raise ValueError("only captured D3DPT_TRIANGLELIST is supported")
 
-    stream = state.get("streams", {}).get(0)
+    streams = state.get("streams", {})
     indices_state = state.get("indices")
     declaration_state = state.get("declaration")
     vertex_state = state.get("vertex_shader")
     pixel_state = state.get("pixel_shader")
     viewport = state.get("viewport")
     target = state.get("render_target")
-    depth_target = state.get("depth_stencil_surface")
+    depth_target = _captured_depth_surface(state.get("depth_stencil_surface"))
     clear = state.get("clear")
-    if not all((stream, indices_state, declaration_state, vertex_state, pixel_state, viewport, target, clear)):
+    if not all((streams, indices_state, declaration_state, vertex_state, pixel_state, viewport, target, clear)):
         raise ValueError("captured draw is missing a required bound resource or state")
     if state.get("clear_render_target") != target.get("resource_signature"):
         raise ValueError("the captured clear does not belong to the draw render target")
@@ -619,27 +777,13 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
         raise ValueError("captured color and depth targets have different dimensions")
 
     objects = state["objects"]
-    vb_ptr = stream.get("vertex_buffer_ptr")
     ib_ptr = indices_state.get("index_buffer_ptr")
-    vertex_create = objects["vertex_buffer"].get(vb_ptr)
     index_create = objects["index_buffer"].get(ib_ptr)
-    if not vertex_create or not index_create:
-        raise ValueError("captured draw lacks a vertex or index buffer create record")
-    if vertex_create.get("pool") != 1 or vertex_create.get("usage") != 0:
-        raise ValueError("capture replay currently requires a static managed vertex buffer")
+    if not index_create:
+        raise ValueError("captured draw lacks an index buffer create record")
     if index_create.get("format") != 101:
         raise ValueError("capture replay requires D3DFMT_INDEX16")
-    vertex_length = int(vertex_create.get("length", -1))
     index_length = int(index_create.get("length", -1))
-    vertex_bytes, vertex_payload_rows = _captured_buffer_bytes(
-        capture_path.parent,
-        objects["payload"].get(vb_ptr, []),
-        vertex_create,
-        draw,
-        state.get("capture_options", {}),
-        vertex_length,
-        "vertex",
-    )
     index_bytes, index_payload_rows = _captured_buffer_bytes(
         capture_path.parent,
         objects["payload"].get(ib_ptr, []),
@@ -649,16 +793,8 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
         index_length,
         "index",
     )
-    vertex_payload_sha256 = hashlib.sha256(vertex_bytes).hexdigest()
     index_payload_sha256 = hashlib.sha256(index_bytes).hexdigest()
-    vertex_bytes = bytearray(vertex_bytes)
-    if int(stream.get("stride", 0)) <= 0:
-        raise ValueError("captured vertex stream has an invalid stride")
-    stride = int(stream["stride"])
-    stream_offset = int(stream.get("offset_in_bytes", 0))
     declaration = _declaration(bytes.fromhex(str(objects["declaration"].get(declaration_state["declaration_ptr"], {}).get("bytes_hex") or "")))
-    if any(int(element["stream"]) != 0 for element in declaration):
-        raise ValueError("captured draw uses a vertex declaration outside stream0")
     vertex_shader_row = objects["vertex_shader"].get(vertex_state.get("shader_ptr"))
     pixel_shader_row = objects["pixel_shader"].get(pixel_state.get("shader_ptr"))
     if not vertex_shader_row or not pixel_shader_row:
@@ -667,26 +803,113 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
         raise ValueError("active shader identity does not match its captured bytecode")
     vertex_program = _shader_program(vertex_shader_row, "vertex")
     pixel_program = _shader_program(pixel_shader_row, "pixel")
-    properties, attributes = _shader_inputs(vertex_program, declaration, stride)
-    linked = translate_pair(vertex_program, pixel_program, vertex_properties=properties)
+    source_attributes, vertex_input_bindings = _captured_shader_inputs(
+        vertex_program, declaration, streams
+    )
+    instance_count, instance_streams, stream_frequencies = (
+        _captured_stream_frequency_contract(draw, state.get("capture_options", {}))
+    )
+    linked = translate_pair(vertex_program, pixel_program)
     validation = validate_linked_shader_pair_vulkan(linked)
     if validation.get("status") != "valid":
         raise ValueError("captured VS/PS pair failed Vulkan compile/link validation")
 
-    for attribute in attributes:
-        if attribute["d3d_type"] == 4:
-            for vertex in range((len(vertex_bytes) - stream_offset) // stride):
-                offset = stream_offset + vertex * stride + attribute["offset"]
-                vertex_bytes[offset], vertex_bytes[offset + 2] = vertex_bytes[offset + 2], vertex_bytes[offset]
-        attribute.pop("d3d_type")
     primitive_count = int(draw.get("primitive_count", 0))
     draw_index_count = primitive_count * 3
+    first_index = int(draw.get("start_index", -1))
+    if draw_index_count <= 0 or first_index < 0 or (first_index + draw_index_count) * 2 > len(index_bytes):
+        raise ValueError("captured triangle-list draw range exceeds its index buffer")
+    raw_indices = [
+        struct.unpack_from("<H", index_bytes, index * 2)[0]
+        for index in range(first_index, first_index + draw_index_count)
+    ]
+    original_base_vertex = int(draw.get("base_vertex_index", 0))
+    effective_indices = [index + original_base_vertex for index in raw_indices]
+    if not effective_indices or min(effective_indices) < 0:
+        raise ValueError("captured draw has an invalid effective vertex index")
+    min_vertex = min(effective_indices)
+    max_vertex = max(effective_indices)
+    if max_vertex - min_vertex > 0xffff:
+        raise ValueError("captured draw vertex range exceeds its index format")
+
+    stream_data: dict[int, tuple[int, bytes]] = {}
+    stream_evidence = []
+    stream_resources = {}
+    for stream_index in sorted({int(row["source_stream"]) for row in source_attributes}):
+        stream = streams[stream_index]
+        vb_ptr = stream.get("vertex_buffer_ptr")
+        vertex_create = objects["vertex_buffer"].get(vb_ptr)
+        if not vertex_create:
+            raise ValueError(f"captured vertex stream {stream_index} has no buffer create record")
+        vertex_length = int(vertex_create.get("length", -1))
+        stream_stride = int(stream.get("stride", 0))
+        stream_offset = int(stream.get("offset_in_bytes", 0))
+        if stream_stride <= 0:
+            raise ValueError(f"captured vertex stream {stream_index} has an invalid stride")
+        if stream_index in instance_streams:
+            range_offset = stream_offset
+            range_size = stream_stride
+        else:
+            range_offset = stream_offset + min_vertex * stream_stride
+            range_size = (max_vertex - min_vertex + 1) * stream_stride
+        payload, payload_rows = _captured_buffer_range(
+            capture_path.parent,
+            objects["payload"].get(vb_ptr, []),
+            vertex_create,
+            draw,
+            state.get("capture_options", {}),
+            vertex_length,
+            range_offset,
+            range_size,
+            f"vertex stream {stream_index}",
+        )
+        stream_data[stream_index] = (range_offset, payload)
+        stream_resources[stream_index] = {
+            "vertex_buffer_ptr": vb_ptr,
+            "vertex_create": vertex_create,
+            "payload_rows": payload_rows,
+            "payload_sha256": hashlib.sha256(payload).hexdigest(),
+            "range_offset": range_offset,
+            "range_size": range_size,
+            "stride": stream_stride,
+            "stream_offset_in_bytes": stream_offset,
+        }
+        stream_evidence.append({
+            "stream": stream_index,
+            "vertex_buffer_ptr": vb_ptr,
+            "resource_signature": stream.get("resource_signature"),
+            "vertex_buffer_create_event": int(vertex_create["event_index"]),
+            "usage": int(vertex_create.get("usage", 0)),
+            "pool": int(vertex_create.get("pool", -1)),
+            "buffer_length": vertex_length,
+            "stream_offset_in_bytes": stream_offset,
+            "stride": stream_stride,
+            "captured_range": {"offset": range_offset, "byte_size": range_size},
+            "payload_events": [int(row["event_index"]) for row in payload_rows],
+            "payload_ranges": [
+                {"offset": int(row["offset"]), "byte_size": int(row["captured_byte_size"])}
+                for row in payload_rows
+            ],
+            "payload_sha256": hashlib.sha256(payload).hexdigest(),
+        })
+
+    primary_stream = stream_resources.get(0) or stream_resources[min(stream_resources)]
+    vb_ptr = primary_stream["vertex_buffer_ptr"]
+    vertex_create = primary_stream["vertex_create"]
+    vertex_payload_rows = primary_stream["payload_rows"]
+    vertex_bytes, stride, attributes = _interleave_vertex_streams(
+        source_attributes, stream_data, min_vertex, max_vertex,
+        instance_streams=instance_streams,
+    )
+    vertex_payload_sha256 = hashlib.sha256(vertex_bytes).hexdigest()
+    rebased_indices = [index - min_vertex for index in effective_indices]
+    packed_index_bytes = b"".join(struct.pack("<H", index) for index in rebased_indices)
     geometry = encode_capture_geometry(
-        bytes(vertex_bytes), index_bytes, stride=stride, attributes=attributes,
-        index_format_bits=16, first_index=int(draw.get("start_index", -1)),
+        vertex_bytes, packed_index_bytes, stride=stride, attributes=attributes,
+        index_format_bits=16, first_index=0,
         draw_index_count=draw_index_count,
-        base_vertex=int(draw.get("base_vertex_index", 0)),
-        vertex_buffer_offset=stream_offset,
+        base_vertex=0,
+        vertex_buffer_offset=0,
     )
     (output / "geometry.svpk").write_bytes(geometry)
 
@@ -764,8 +987,11 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
             "num_vertices": int(draw["num_vertices"]),
             "start_index": int(draw["start_index"]),
             "primitive_count": primitive_count,
+            "instance_count": instance_count,
             "vk_index_count": draw_index_count,
             "vk_index_type": "VK_INDEX_TYPE_UINT16",
+            "packed_vertex_count": max_vertex - min_vertex + 1,
+            "packed_base_vertex": 0,
         },
         "resources": {
             "vertex_buffer_ptr": vb_ptr,
@@ -776,6 +1002,13 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
                 for row in vertex_payload_rows
             ],
             "vertex_payload_sha256": vertex_payload_sha256,
+            "vertex_streams": stream_evidence,
+            "vertex_input_bindings": vertex_input_bindings,
+            "stream_source_frequencies": [
+                {"stream": stream, "setting": setting}
+                for stream, setting in sorted(stream_frequencies.items())
+            ],
+            "flattened_single_instance_streams": sorted(instance_streams),
             "buffer_capture_options": {
                 "buffer_payload_capture_enabled": bool(
                     state["capture_options"].get("buffer_payload_capture_enabled")
@@ -805,6 +1038,7 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
         "render_target": viewport_state,
         "snapshot_limitations": [
             "the original render-target pixels are not captured; output is a single-draw replay on the captured clear color and depth",
+            "multi-instance D3D9 draws are rejected; single-instance instance-rate streams are flattened into the captured vertex packet",
             "this bundle does not claim image parity with the retail frame",
         ],
         "native_submission_ready": True,
