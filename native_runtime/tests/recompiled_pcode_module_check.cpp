@@ -3686,11 +3686,6 @@ int main(int argc, char** argv) {
         const uint32_t dxt3_texture_data_address = read_guest_u32(
             d3d9_provider_module, "ram",
             dxt3_texture_locked_rect_address + 4);
-        std::array<uint8_t, 32> dxt3_texture_bytes{};
-        for (size_t index = 0; index < dxt3_texture_bytes.size(); ++index)
-            dxt3_texture_bytes[index] = static_cast<uint8_t>(255 - index);
-        write_guest_bytes(d3d9_provider_module, dxt3_texture_data_address,
-                          dxt3_texture_bytes.data(), dxt3_texture_bytes.size());
         require(invoke_import(d3d9_provider_module,
                               dxt3_texture_unlock_rect,
                               {dxt3_texture, 0}) == 0,
@@ -3711,11 +3706,20 @@ int main(int argc, char** argv) {
                         dxt3_texture_data_address + 2048 + 16 &&
                     invoke_import(d3d9_provider_module,
                                   dxt3_texture_unlock_rect,
-                                  {dxt3_texture, 0}) == 0 &&
-                    invoke_import(d3d9_provider_module,
-                                  dxt3_texture_release,
-                                  {dxt3_texture}) == 0,
+                                  {dxt3_texture, 0}) == 0,
                 "managed DXT3 subrect did not use 4x4 block addressing");
+        const std::array<int32_t, 4> dxt3_misaligned_rect = {2, 4, 8, 8};
+        write_guest_bytes(d3d9_provider_module, dxt3_texture_rect_address,
+                          reinterpret_cast<const uint8_t*>(
+                              dxt3_misaligned_rect.data()),
+                          sizeof(dxt3_misaligned_rect));
+        require(invoke_import(d3d9_provider_module, dxt3_texture_lock_rect,
+                              {dxt3_texture, 0,
+                               dxt3_texture_locked_rect_address,
+                               dxt3_texture_rect_address, 0}) == 0x8876086c &&
+                    invoke_import(d3d9_provider_module, dxt3_texture_release,
+                                  {dxt3_texture}) == 0,
+                "managed DXT3 texture accepted a misaligned lock");
         require(invoke_import(d3d9_provider_module, device_set_texture,
                               {created_device, 260, 0}) == 0x8876086c,
                 "SetTexture accepted stage 260");
