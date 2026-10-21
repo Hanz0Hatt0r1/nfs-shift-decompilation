@@ -92,13 +92,21 @@ def test_capture_geometry_rejects_out_of_range_or_non_triangle_draw(first_index,
         )
 
 
-def test_captured_surface_formats_keep_r32f_and_d24s8_contract():
+def test_captured_surface_formats_cover_mobile_targets_and_existing_r32f():
+    assert _captured_surface_formats(21, 75, True) == (
+        "VK_FORMAT_B8G8R8A8_UNORM",
+        "VK_FORMAT_D24_UNORM_S8_UINT",
+    )
+    assert _captured_surface_formats(113, 75, True) == (
+        "VK_FORMAT_R16G16B16A16_SFLOAT",
+        "VK_FORMAT_D24_UNORM_S8_UINT",
+    )
     assert _captured_surface_formats(114, 75, True) == (
         "VK_FORMAT_R32_SFLOAT",
         "VK_FORMAT_D24_UNORM_S8_UINT",
     )
     with pytest.raises(ValueError, match="render-target format"):
-        _captured_surface_formats(113, 75, True)
+        _captured_surface_formats(22, 75, True)
     with pytest.raises(ValueError, match="depth format"):
         _captured_surface_formats(114, 71, True)
 

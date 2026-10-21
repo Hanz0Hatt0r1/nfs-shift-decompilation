@@ -47,10 +47,17 @@ This phone capture does not produce a replay bundle:
 - The capture contains zero 2D or cube texture snapshots.
 - The proxy does not capture integer shader-constant updates, so the loop
   control values used by some compiled shaders are not available for execution.
-- Target draws use render-target formats 113 (161 draws) and 21 (25 draws),
-  while the current bundle contract supports only format 114. The target
-  shaders also use between two and five samplers; the current bundle contract
-  supports one sampler at s0.
+- Target draws use render-target formats 113 (161 draws) and 21 (25 draws).
+  The Vulkan bundle now maps 113 to `VK_FORMAT_R16G16B16A16_SFLOAT` and 21 to
+  `VK_FORMAT_B8G8R8A8_UNORM`; format 114 (`VK_FORMAT_R32_SFLOAT`) remains
+  supported for the separate PC capture. The target shaders use between two
+  and five samplers, while the current bundle supports one sampler at s0.
+
+The native Vulkan executor also passed a format smoke for 21 and 113 on a GTX
+950 with zero validation errors. It used the existing synthetic material bundle
+to exercise attachment creation and readback; it is not an NFS SHIFT draw or
+retail-image evidence. PPM output converts half-float channels to clamped
+8-bit RGB and swizzles BGRA for inspection only.
 
 The existing retail replay evidence remains the separate PC capture documented
 in [PROCESS_2_D3D9_VULKAN_CAPTURE_REPLAY_20261021.md](PROCESS_2_D3D9_VULKAN_CAPTURE_REPLAY_20261021.md):
@@ -64,6 +71,8 @@ The large phone log and payloads remain local rather than being added to Git.
 
 - 65 focused capture, shader, bundle, and Vulkan shader tests passed.
 - All native Vulkan CMake targets built on Linux.
+- The 11 focused bundle-format and native executor contract tests passed; the
+  synthetic format smoke passed for both mobile target formats.
 - The Vulkan validation smoke completed on the GTX 950 with zero validation
   errors and prepared a two-draw bundle set. This generic smoke checks the
   executor only; it is not an NFS SHIFT render or retail-parity evidence.

@@ -150,6 +150,18 @@
     "113": 161,
     "21": 25
   },
+  "target_render_target_vulkan_formats": {
+    "21": "VK_FORMAT_B8G8R8A8_UNORM",
+    "113": "VK_FORMAT_R16G16B16A16_SFLOAT"
+  },
+  "target_render_target_format_smoke": {
+    "device": "NVIDIA GeForce GTX 950",
+    "formats": [21, 113],
+    "synthetic_material_bundle": true,
+    "validation_errors": 0,
+    "retail_image_parity_proven": false,
+    "android_vulkan_replay_proven": false
+  },
   "target_shader_draw_count": 186,
   "target_shader_draw_frames": [
     1569,
