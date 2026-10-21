@@ -831,3 +831,36 @@ v215/v217/v218/v219/v240 replays establish the bounded retail-requested Vulkan
 clear and queue-present milestone; v240 also narrows the pending UI consumer
 path. The separate milestones still to measure are first retail draw, frontend
 and offline race.
+
+## Latest original-retail checkpoint — 2026-10-21
+
+The user navigated the original retail executable past its title screen under
+Wine 11.17 using an isolated copy of the game root and Wine prefix. The copied
+game's broken `d3dx9_41.dll` link was repaired to an available native 32-bit
+DLL only inside that copy. The original PE and native D3DX module loaded,
+WineD3D compiled shaders, and a live capture showed the cockpit race HUD at
+00:41.570, 108 km/h, gear 3. A later capture showed the main menu with Career,
+Quick Race, Online, Car Garage, and Options. This confirms both an active race
+scene and the original frontend. The race frame came from a compositor capture
+that unexpectedly included the desktop; the later main-menu image was captured
+directly from the game's X11 window. The user's input sequence was not
+recorded, and the screenshots are separate captures, not continuous video.
+This does not establish P-code gameplay or native Windows behavior. A
+separate GDB run captured eight successful UI-readiness returns and a
+successful `D3DXCreateEffect` call.
+See the [interactive original-game evidence](../evidence/retail_frontier_20261021/original_shift_native_d3dx_gameplay_20261021.json)
+and its [race capture](../evidence/retail_frontier_20261021/original_shift_native_d3dx_gameplay_20261021.png)
+and [main-menu capture](../evidence/retail_frontier_20261021/original_shift_native_d3dx_main_menu_20261021.png).
+
+The v659 bounded P-code replay remains at 1,440 host frames with no P-code
+execution or missing-export blocker, but guest draw translation is still
+false. The original retail race and main menu are confirmed; the recompiled
+P-code runtime has not reached either milestone. The earlier cockpit-looking
+debugger capture was an intro cinematic, so it is separately labeled and is
+not used as race evidence. Process 1 leaves the guest-draw renderer work to
+Process 2.
+
+A 2,880-frame extension with a 300-second wall limit timed out after loading
+the PE and before producing frame or dispatch totals. It yields no new P-code
+blocker and is unverified, not a successful frontier. See the
+[v660 extended-probe record](../evidence/retail_frontier_20261021/process1_pcode_frontier_v660_extended_probe.json).
