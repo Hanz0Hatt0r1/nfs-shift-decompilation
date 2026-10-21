@@ -151,11 +151,23 @@ with the pinned RevEngInstr snapshot `08a31b94c304f8b7a57996974dafe352413f7924`.
 Across v527–v542, replay progressed through the missing-export chain from
 `0x0057da20` to the `0x00587xxx` class accessors. In v542, Ghidra-confirmed
 `0x00587c20` (`MOV EAX, 0x00ad5598; RET`) returned that exact pointer; the next
-retail call from `0x00587790` stopped at the still-missing
-`rvi_005879f0`. The PE entrypoint remains incomplete. Guest draw translation,
-frontend readiness, a race, and retail rendering remain unproven. See the
+retail call from `0x00587790` stopped at `rvi_005879f0`. That describes the
+v542 snapshot, not the later P1 frontier. The v543 exact Ghidra supplement
+exported `rvi_005879f0`; a focused v661 replay traced the retail call from
+`0x00587790` and confirmed its return value `EAX=0x00ad5488`. Execution then
+stopped at the next missing export, `rvi_00587b90`. See the
 [`Process 1 scheduler-quantum evidence`](../evidence/retail_frontier_20261021/process1_scheduler_return_quantum.json)
-for the full frontier chain, hashes, commands, and limits. Latest main is `380f0283` (#2133), which updates captured mobile D3D9 target formats in the Vulkan bridge; it changes no Process 1 files.
+for the v527–v542 history and the
+[`v661 target trace`](../evidence/retail_frontier_20261021/process1_pcode_target_v661_005879f0.json)
+for the exact function/module/report hashes and targeted call evidence. The
+later cumulative v659 replay included this supplement and reached the host
+frame loop for 1,440 frames without a P-code execution or missing-export
+failure; guest draw translation remained false. That replay and the
+inconclusive 2,880-frame timeout are recorded in the
+[`v621–v659 frontier`](../evidence/retail_frontier_20261021/process1_pcode_frontier_v621_v659.json)
+and [v660 extended-probe record](../evidence/retail_frontier_20261021/process1_pcode_frontier_v660_extended_probe.json).
+Current main is `201364e9` (#2138); those later merges are renderer-side and do
+not change the P-code evidence above.
 
 The v569–v576 follow-up adds exact missing accessors from the pinned retail
 PE, preserves unknown runtime targets for Ghidra BRANCHIND, and overrides
