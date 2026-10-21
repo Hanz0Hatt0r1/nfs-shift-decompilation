@@ -148,15 +148,15 @@ def _draw_bool_constants(
         return {register: values[register] != 0 for register in required}
 
     result_hr = draw.get(f"{field}_hr")
-    if not isinstance(result_hr, int) or result_hr != 0:
+    if isinstance(result_hr, bool) or not isinstance(result_hr, int) or result_hr != 0:
         raise ValueError(f"captured draw has no successful {stage} boolean-constant query")
     if not isinstance(values, list) or len(values) != 16:
         raise ValueError(f"captured draw has incomplete {stage} boolean constants")
-    if any(value not in (0, 1, False, True) for value in values):
-        raise ValueError(f"captured draw has invalid {stage} boolean constants")
+    if any(isinstance(value, bool) or not isinstance(value, int) or value < 0 or value > 0xFFFFFFFF for value in values):
+        raise ValueError(f"captured draw has invalid {stage} boolean DWORD constants")
     if max(required) >= len(values):
         raise ValueError(f"captured draw does not include {stage} boolean register b{max(required)}")
-    return {register: bool(values[register]) for register in required}
+    return {register: values[register] != 0 for register in required}
 
 
 def _captured_stream_frequency_contract(
@@ -939,6 +939,8 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
     clear = state.get("clear")
     if not all((streams, indices_state, declaration_state, vertex_state, pixel_state, viewport, target, clear)):
         raise ValueError("captured draw is missing a required bound resource or state")
+    if clear.get("guest_packet_last_clear_unproven_target") is True:
+        raise ValueError("P1 packet last_clear has no target identity or ordering proof; refusing synthetic clear")
     if state.get("clear_render_target") != target.get("resource_signature"):
         raise ValueError("the captured clear does not belong to the draw render target")
     target_format = int(target.get("surface_format", -1))
