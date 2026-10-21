@@ -12,6 +12,7 @@
 #include "shift_constraint_relation_reset_frame.hpp"
 #include "shift_post_solve_projection.hpp"
 #include "shift_vulkan_validation.hpp"
+#include "shift_vulkan_d3d9_packet_capture.hpp"
 #include "shift_recompiled_pcode_module.hpp"
 
 #include <algorithm>
@@ -2110,6 +2111,8 @@ struct Runtime {
     uint32_t guest_d3d9_clear_color = 0;
     uint32_t guest_d3d9_clear_depth_bits = 0;
     uint32_t guest_d3d9_clear_stencil = 0;
+    std::unique_ptr<shift::vulkan::D3d9PacketCaptureAdapter>
+        guest_d3d9_packet_capture;
 
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
@@ -2137,7 +2140,7 @@ struct Runtime {
     std::vector<MaterialDraw> material_draws;
 
     shift::runtime::RecompiledGuestD3d9AdapterInfo
-    recompiled_d3d9_adapter_info() const {
+    recompiled_d3d9_adapter_info() {
         shift::runtime::RecompiledGuestD3d9AdapterInfo adapter_info{};
         auto& caps = adapter_info.caps;
         caps[0] = 1;  // D3DDEVTYPE_HAL: this Vulkan physical device.
@@ -2220,6 +2223,19 @@ struct Runtime {
         adapter_info.supports_d24s8_depth_stencil =
             (d24s8_properties.optimalTilingFeatures &
              VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
+        const char* capture_dir =
+            std::getenv("SHIFT_D3D9_PACKET_CAPTURE_DIR");
+        if (capture_dir != nullptr && capture_dir[0] != '\0') {
+            guest_d3d9_packet_capture =
+                std::make_unique<shift::vulkan::D3d9PacketCaptureAdapter>(
+                    capture_dir);
+            std::string error;
+            if (!guest_d3d9_packet_capture->install(adapter_info, error)) {
+                guest_d3d9_packet_capture.reset();
+                throw std::runtime_error(
+                    "could not install D3D9 packet capture: " + error);
+            }
+        }
         return adapter_info;
     }
 
