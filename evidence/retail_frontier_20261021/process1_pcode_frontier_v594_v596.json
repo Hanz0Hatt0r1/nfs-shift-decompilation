@@ -1,0 +1,97 @@
+{
+  "format": "SHIFT.Process1PcodeFrontier/1",
+  "base": {
+    "branch": "work/retail-runtime",
+    "head_before_this_evidence_update": "3fcd8f4114e5d346ae4774f7083a747742168536",
+    "latest_main_sha": "380f0283de8cbf810582c96351e5bd419c9216fd",
+    "latest_main_scope": "Process 2 D3D9/Vulkan support for captured mobile target formats; no Process 1 paths changed"
+  },
+  "runtime_binary_sha256": "a7b6f9813f5decf0a3f89e8c98a48b8ced807326303f600dfcbf877dabf44875",
+  "retail_image_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "runs": [
+    {
+      "version": 594,
+      "purpose": "trace nested field provenance for the 0x18 read",
+      "status": "blocked",
+      "blocker": "P-code RAM read at 0x00000018 size 4 touched reserved low memory",
+      "dispatches_diagnostic_only": 8147457,
+      "unique_functions_diagnostic_only": 5474,
+      "report_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v594-nested-provenance.json",
+      "report_sha256": "da68a8aba9df2b6d877e7660631a949a10a979a8932958773cf5e1e0ad58cf2e",
+      "log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v594-nested-provenance.log",
+      "log_sha256": "74034a8c935876e5b1b59512128f2a146478aa3228484ab710db7ae970f06b79",
+      "last_writer": {
+        "address": "0x2429c48c",
+        "function": "0x00839f30",
+        "thread_id": "0x000b088e",
+        "dispatch": 8147314,
+        "value": "0x00000000",
+        "interpretation": "The retail constructor explicitly zeros inner+0x3c. This is original initialization, not evidence of a P-code write mismatch."
+      }
+    },
+    {
+      "version": 595,
+      "purpose": "trace constructor and getter calls live to distinguish thread ordering",
+      "status": "blocked",
+      "blocker": "P-code RAM read at 0x00000018 size 4 touched reserved low memory",
+      "dispatches_diagnostic_only": 8107324,
+      "unique_functions_diagnostic_only": 5474,
+      "report_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v595-thread-origin.json",
+      "report_sha256": "8d8364dc552bda2028161d60109efded4ed94e45c8aa5fc620a8df16b4a3461b",
+      "log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v595-thread-origin.log",
+      "log_sha256": "76642e53bbf45a42885532369350e7426bc68e0a8d3bb09f00cde1ca075a34d2",
+      "observed_calls": [
+        {
+          "target": "0x00839f30",
+          "return_address": "0x0083dc6a",
+          "ecx": "0x2429c450",
+          "thread_id": "0x000b0f68"
+        },
+        {
+          "target": "0x0083a5c0",
+          "return_address": "0x0082c439",
+          "ecx": "0x2429c3c0",
+          "thread_id": "0x000b0f68"
+        }
+      ],
+      "conclusion": "The constructor write and failing getter call have the same recorded guest thread ID; this trace does not support a scheduler race."
+    },
+    {
+      "version": 596,
+      "purpose": "repeat the bounded P-code probe with the full copied retail game-data root",
+      "status": "blocked",
+      "blocker": "P-code RAM read at 0x00000018 size 4 touched reserved low memory",
+      "dispatches_diagnostic_only": 8107771,
+      "unique_functions_diagnostic_only": 5474,
+      "report_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v596-full-retail-data.json",
+      "report_sha256": "f9ed5597b60497721b9a1e3955befccb13225eb7e9695337d26fac8ce7ad5e7e",
+      "log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v596-full-retail-data.log",
+      "log_sha256": "3c39519df448e2216afcf8f7484115018b34ac50983e96fc37f983bd0c53816c",
+      "game_data_root_outside_repository": "/home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/pcode-game-data",
+      "replaycache_sha256": "b23e10d905b7be64318164ffda81d5c228301ba6db0f8e3b0a9a094e7523774a",
+      "timeout_seconds": 180,
+      "frames_requested": 1440,
+      "interpretation": "Using the full copied retail data root did not change the first failing read. Dispatch totals are diagnostic only and do not establish game launch."
+    }
+  ],
+  "retail_code_path": {
+    "constructor": "0x00839f30",
+    "constructor_callsite": "0x0083dc65",
+    "constructor_store": "0x00839f4c: mov [esi+0x3c], ebx (EBX=0)",
+    "getter_thunk": "0x0083a5c0: mov ecx, [ecx+0x50]; jmp 0x0083a000",
+    "getter_read": "0x0083a000 loads ECX from [inner+0x3c]; 0x0083a006 reads [ECX+EDX*4+0x18]",
+    "entry_state": {
+      "outer_plus_0x50": "0x2429c450",
+      "inner_plus_0x3c": "0x00000000",
+      "edx": "0x00000000",
+      "fault_address": "0x00000018"
+    },
+    "interpretation": "The source P-code follows the retail instructions into a null nested array pointer. No compatibility shim or semantic substitution was added for this read."
+  },
+  "module_manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v590-missing-00699230/module-manifest-v591-00699230.json",
+  "limitations": [
+    "The state that should populate inner+0x3c has not been identified.",
+    "The PortProton original-game run below is separate from these recompiled P-code probes.",
+    "No claim of frontend readiness, race entry, or retail rendering follows from dispatch counts."
+  ]
+}

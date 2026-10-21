@@ -1,0 +1,72 @@
+{
+  "captured_at": "2026-10-21T12:04:45+03:00",
+  "debugger": {
+    "gdb_exit_code": 0,
+    "limitation": "GDB warned that its i386:x86-64 architecture did not match the Wine i386:x64-32 target; frames resolved to wine-preloader addresses, not guest SHIFT.exe instruction pointers.",
+    "log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/original-shift-live-backtrace-20261021.log",
+    "log_sha256": "ba420015834a79e5fa4fd4f830945527804792589ec806ee16a15cba6d576ad5",
+    "method": "native GDB attach, thread list and backtraces, followed by detach"
+  },
+  "execution": {
+    "compatibility_layer": "system Wine",
+    "display": ":1",
+    "entrypoint": "original SHIFT.exe; not the recompiled runtime",
+    "host": "Linux x86_64",
+    "prefix": "/home/pes/.wine"
+  },
+  "format": "NFSShift.OriginalRetailLiveWineObservation/1",
+  "limitations": [
+    "The process was already running when observed; this record is not a new controlled launch.",
+    "The captured game window was partly clipped by the Wine Desktop position.",
+    "The GDB attach did not recover guest instruction pointers.",
+    "Native Windows behavior remains unverified."
+  ],
+  "observations": {
+    "binkw32_loaded": true,
+    "d3dx9_41_loaded": true,
+    "frontend_confirmed": false,
+    "game_window_created": true,
+    "interpretation": "A read-only observation of an already-running original retail process. It remained alive, with the game window black; this does not confirm frontend or race entry.",
+    "race_confirmed": false,
+    "retail_pe_mapped": true,
+    "wined3d_loaded": true
+  },
+  "process": {
+    "command": "858192 Wed Oct 21 10:42:57 2026    01:21:48 00:05:02 SNsl  6.1   11 SHIFT.exe",
+    "linux_executable": "/usr/lib/wine/x86_64-unix/wine-preloader",
+    "linux_pid": 858192,
+    "loaded_image_and_compatibility_modules": [
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/probe-cwd-v46-game-root/SHIFT.exe",
+      "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/probe-cwd-v46-game-root/binkw32.dll",
+      "/usr/lib/libvulkan.so.1.4.357",
+      "/usr/lib/wine/i386-windows/d3dx9_41.dll",
+      "/usr/lib/wine/i386-windows/d3dxof.dll",
+      "/usr/lib/wine/i386-windows/wined3d.dll",
+      "/usr/lib/wine/i386-windows/winex11.drv"
+    ],
+    "state_after_capture": "still alive after GDB detach",
+    "threads": 11,
+    "working_directory": "/home/pes/.codex/worktrees/nfs-shift-decompilation-retail-runtime"
+  },
+  "program": {
+    "image_type": "PE32 GUI, Intel i386",
+    "path_outside_repository": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/probe-cwd-v46-game-root/SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "window": {
+    "capture_geometry": [
+      1920,
+      959
+    ],
+    "capture_path_outside_repository": "/tmp/process1-retail-runtime-evidence/original-shift-live-window-20261021.png",
+    "capture_sha256": "0fc1e1def26276086c8ac136cdb8ddad93c41d73a04e33b51c4f3bd2c9756414",
+    "class": "shift.exe",
+    "client_geometry": [
+      1920,
+      1080
+    ],
+    "container_window": "0x1200004 (Wine Desktop)",
+    "visible_contents": "black",
+    "x11_window": "0x2200005"
+  }
+}

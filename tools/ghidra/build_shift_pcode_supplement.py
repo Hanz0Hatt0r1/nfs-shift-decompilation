@@ -17,6 +17,10 @@ SHIFT_FORMAT = "SHIFT.GhidraFunctionInstructions/2"
 SHIFT_SLICE_FORMAT = "SHIFT.GhidraInstructionSlice/1"
 FUNCTION = re.compile(r"\bint rvi_([0-9a-f]{8})\(RviPcodeContext \*ctx\)")
 EXPORT = re.compile(r"\b[TtWw]\s+(rvi_[0-9a-f]{8})$")
+INDIRECT_BRANCH_FALLBACK = re.compile(
+    r"(switch \(rvi_(\d+)_branch_target_value\) \{.*?\n\s*)default: return -1;",
+    re.DOTALL,
+)
 
 
 def digest(path: Path) -> str:
@@ -84,6 +88,47 @@ def runtime_header(runtime_source: str, address: str) -> str:
     return runtime_source[first_line:function_start]
 
 
+def preserve_dynamic_branchind_targets(function_source: str) -> str:
+    """Keep runtime targets that Ghidra's static flow list could not resolve."""
+    def replace_default(match: re.Match[str]) -> str:
+        prefix, sequence = match.groups()
+        return (
+            prefix
+            + f"default: if (rvi_call(ctx, rvi_{sequence}_branch_target_value) != 0) "
+            + "return -1; return 0;"
+        )
+
+    adapted, replacements = INDIRECT_BRANCH_FALLBACK.subn(replace_default, function_source)
+    if "branch_target_value" in function_source and replacements == 0:
+        raise ValueError("BRANCHIND output has no dynamic-target fallback site")
+    return adapted
+
+
+def preserve_function_entrypoint(function_source: str, row: dict) -> str:
+    """Start generated C at the function entry, even when its body has a lower block."""
+    function = row["function"]
+    entry = int(function["address"], 16)
+    instructions = row.get("instructions")
+    if (not instructions or not isinstance(instructions[0], dict) or
+            not isinstance(instructions[0].get("address"), str)):
+        return function_source
+    if int(instructions[0]["address"], 16) == entry:
+        return function_source
+
+    entry_label = f"rvi_label_{entry:016x}"
+    marker = f"int rvi_{entry:08x}(RviPcodeContext *ctx) {{"
+    function_start = function_source.find(marker)
+    if function_start < 0 or f"{entry_label}:" not in function_source:
+        raise ValueError("non-first function entry has no matching lowerer label")
+    body_start = function_start + len(marker)
+    first_block = re.search(r"\nrvi_label_[0-9a-f]{16}: ;", function_source[body_start:])
+    if first_block is None:
+        raise ValueError("non-first function entry has no lowerer block labels")
+    insert_at = body_start + first_block.start() + 1
+    return (function_source[:insert_at] + f"    goto {entry_label};\n" +
+            function_source[insert_at:])
+
+
 def emit_source(instructions_path: Path, spaces: dict, source_path: Path,
                 compile_function: Callable, corpus_format: str,
                 lowering_error: type[Exception]) -> dict:
@@ -105,6 +150,8 @@ def emit_source(instructions_path: Path, spaces: dict, source_path: Path,
                     raise ValueError(f"duplicate function address {address}")
                 seen.add(numeric_address)
                 function_source, operations = compile_function(adapted, spaces, include_runtime=False)
+                function_source = preserve_dynamic_branchind_targets(function_source)
+                function_source = preserve_function_entrypoint(function_source, adapted)
             except lowering_error as error:
                 rejected[str(error)] += 1
                 continue

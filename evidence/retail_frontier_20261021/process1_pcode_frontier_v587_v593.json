@@ -1,0 +1,225 @@
+{
+  "format": "SHIFT.Process1PcodeFrontier/1",
+  "base": {
+    "branch": "work/retail-runtime",
+    "latest_main_sha": "5a7ea55f78b6ccb374686b95769f5fe66387a8ca",
+    "latest_main_scope": "Process 2 shader translation fix; no Process 1 files changed"
+  },
+  "retail_image": {
+    "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/probe-cwd-v46-game-root/SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "changes": {
+    "pcode_supplements": [
+      {
+        "address": "0x00839ee0",
+        "sha256": "6db319357f8536dc41f12261b47b95294d8d92c1a5c9dc71b98d0ac6e223e18b",
+        "source": "Ghidra exact slice"
+      },
+      {
+        "address": "0x00824100",
+        "sha256": "1b9704300948855ffd130736167020f4970ac56cd447ac39e2e9ca7bc1187193",
+        "source": "Ghidra exact slice"
+      },
+      {
+        "address": "0x008240e0",
+        "sha256": "fbb53d1c18697deaefde6b1fe9e7de81bb3ccc251063087d74f0b6a0af207901",
+        "source": "Ghidra exact slice"
+      },
+      {
+        "address": "0x00699230",
+        "sha256": "7f9dfeb3d41085c8fb68c3ee562cdf556a314a03316cbb3866ff6a9458f2de36",
+        "source": "Ghidra 119-instruction function"
+      }
+    ],
+    "stack_walk64": {
+      "api": "imagehlp.dll!StackWalk64",
+      "behavior": "I386 guest frame-pointer chain walking through guest RAM; validates pseudo handles, initialized flat PC/frame/stack addresses, and stdcall argument cleanup",
+      "limits": [
+        "FPO/unwind metadata is not modeled",
+        "caller-supplied memory reader callbacks are not modeled"
+      ],
+      "regression_test": "initialized I386 frame chain advances addresses; uninitialized AddrStack returns FALSE; 36-byte stdcall cleanup"
+    },
+    "branchind_builder": "Preserves statically recovered targets and retains dynamic guest targets when Ghidra static flow is incomplete; regression test added."
+  },
+  "frontier": [
+    {
+      "version": 587,
+      "status": "blocked",
+      "blocker": "P-code module has no exported function rvi_00839ee0 called from guest function 0x0083dd20",
+      "caller": null,
+      "return_address": null,
+      "dispatches_diagnostic_only": 8053521,
+      "unique_functions_diagnostic_only": 5371,
+      "comparison": {
+        "reason": "more retail code executed",
+        "result": "advanced"
+      },
+      "report_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v587-ui-gate-trace.json",
+      "report_sha256": "c82473e55369f486b03176b97eb5f2a682381b331d212f458459d1039f2348fd",
+      "log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v587-ui-gate-trace.log",
+      "log_sha256": "79785da3ddabf241044acdae09269e426a957cb51dfe5c7000fb43493cf8b3c1"
+    },
+    {
+      "version": 588,
+      "status": "blocked",
+      "blocker": "P-code module has no exported function rvi_00824100 called from guest function 0x0069b1c0",
+      "caller": null,
+      "return_address": null,
+      "dispatches_diagnostic_only": 8073388,
+      "unique_functions_diagnostic_only": 5425,
+      "comparison": {
+        "reason": "more retail code executed",
+        "result": "advanced"
+      },
+      "report_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v588-ui-gate-trace.json",
+      "report_sha256": "cc4f60910d714fe31c713e1a1acfa55426bfb540d39844fc9ac7168b47ccdef8",
+      "log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v588-ui-gate-trace.log",
+      "log_sha256": "568b3d36aadf3539e1fba4eb43afa5d2d4ae218bc10fa7a18ffb46ec3e53252b"
+    },
+    {
+      "version": 589,
+      "status": "blocked",
+      "blocker": "P-code module has no exported function rvi_008240e0 called from guest function 0x0069b1c0",
+      "caller": null,
+      "return_address": null,
+      "dispatches_diagnostic_only": 8066501,
+      "unique_functions_diagnostic_only": 5430,
+      "comparison": {
+        "reason": "fewer dispatches or unique functions",
+        "result": "regressed"
+      },
+      "report_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v589-ui-gate-trace.json",
+      "report_sha256": "eb14c25396e3b80c36d47f8743da8789ba96d71a24064bce82bbc088f9f824d2",
+      "log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v589-ui-gate-trace.log",
+      "log_sha256": "cadcab73cd5bf9ae5b32f6bd50402ce0e55d709e14432dd514bf82cbde6560c8"
+    },
+    {
+      "version": 590,
+      "status": "blocked",
+      "blocker": "P-code module has no exported function rvi_00699230 called from guest function 0x004e4f30",
+      "caller": null,
+      "return_address": null,
+      "dispatches_diagnostic_only": 8063537,
+      "unique_functions_diagnostic_only": 5438,
+      "comparison": {
+        "reason": "fewer dispatches or unique functions",
+        "result": "regressed"
+      },
+      "report_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v590-ui-gate-trace.json",
+      "report_sha256": "3beb7b59a7baee518acb9dce9058d412a5f23f84d2e41e356f9229db7868c764",
+      "log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v590-ui-gate-trace.log",
+      "log_sha256": "7f24c6f42e13d43472cfed969ce46dbb24b1ae10682ee8983a2f8e2c1265b9ac"
+    },
+    {
+      "version": 591,
+      "status": "blocked",
+      "blocker": "unimplemented PE import imagehlp.dll!StackWalk64",
+      "caller": "0x00656da0",
+      "return_address": "0x00656e9b",
+      "dispatches_diagnostic_only": 8090047,
+      "unique_functions_diagnostic_only": 5461,
+      "comparison": {
+        "reason": "more retail code executed",
+        "result": "advanced"
+      },
+      "report_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v591-ui-gate-trace.json",
+      "report_sha256": "cbf0f07cc2d09915613a4683b9eb421321dbff6e1623ce9ce44ac62c1047f338",
+      "log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v591-ui-gate-trace.log",
+      "log_sha256": "ca904ea5a91d8777f764ef3b5a8dd304c31ed4103d8d15f74de3e8c37d5cfb63"
+    },
+    {
+      "version": 592,
+      "status": "blocked",
+      "blocker": "P-code RAM read at 0x00000018 size 4 touched reserved low memory",
+      "caller": null,
+      "return_address": null,
+      "dispatches_diagnostic_only": 8111169,
+      "unique_functions_diagnostic_only": 5474,
+      "comparison": {
+        "reason": "more retail code executed",
+        "result": "advanced"
+      },
+      "report_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v592-ui-gate-trace.json",
+      "report_sha256": "12309785ed36c8e043ac4c3421cba0880dcd85d71e9d67a9ee6b4b56793806fd",
+      "log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v592-ui-gate-trace.log",
+      "log_sha256": "2d991b9cfebce99f4fd08c574cd531d1595f29123e34f635eb8d143fb9cc0d2b"
+    },
+    {
+      "version": 593,
+      "status": "blocked",
+      "blocker": "P-code RAM read at 0x00000018 size 4 touched reserved low memory",
+      "caller": null,
+      "return_address": null,
+      "dispatches_diagnostic_only": 8108649,
+      "unique_functions_diagnostic_only": 5474,
+      "comparison": {
+        "reason": "fewer dispatches or unique functions",
+        "result": "regressed"
+      },
+      "report_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v593-ui-gate-trace.json",
+      "report_sha256": "814fbefa00fb8c099b4f47cc30fc9944a3cbb307196e630a7a236b1cae9e2455",
+      "log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/quantum-v593-ui-gate-trace.log",
+      "log_sha256": "de1e7d9d52110e3167a97e1d7583855202fb2c1284ae389b92ebff4cd8884ba2"
+    }
+  ],
+  "invalid_probe_note": "v586 was rejected: duplicate P-code export; it is excluded from the frontier chain.",
+  "latest": {
+    "version": 593,
+    "report": "/tmp/process1-retail-runtime-evidence/quantum-v593-ui-gate-trace.json",
+    "log": "/tmp/process1-retail-runtime-evidence/quantum-v593-ui-gate-trace.log",
+    "module_manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v590-missing-00699230/module-manifest-v591-00699230.json",
+    "module_manifest_sha256": "a4e6216837aa4065f76eea27eda3c9ed4b2d622f30c17f56a3d85d861d478308",
+    "blocker": "P-code RAM read at 0x00000018 size 4 touched reserved low memory",
+    "guest_call_chain": [
+      "0x00832a50",
+      "0x00831940",
+      "0x0085aac0",
+      "0x00859800",
+      "0x0082c050",
+      "0x0082dec0",
+      "0x0082c310",
+      "0x0083a5c0"
+    ],
+    "selected_call": {
+      "caller": "0x0082c310",
+      "target": "0x0083a5c0",
+      "return_address": "0x0082c439",
+      "outer_plus_0x50": "0x2429c450"
+    },
+    "pcode_dispatches_diagnostic_only": 8108649,
+    "unique_functions_diagnostic_only": 5474,
+    "frames_rendered": null,
+    "frontend_confirmed": false,
+    "race_confirmed": false,
+    "retail_rendering_proven": false
+  },
+  "original_retail_comparison": {
+    "evidence": "original_shift_wine_crash.json",
+    "observation": "Original retail PE32 under Wine stops at 0x0083a006 before the same read; its outer +0x50 record has a null inner +0x3c array pointer and EDX=0.",
+    "interpretation": "The runtime low-memory read agrees with the original retail instruction on this path. This is not evidence that the fault is caused by P-code translation or that native Windows behaves the same."
+  },
+  "verification": {
+    "build_command": "bash tools/build_shift_runtime_cached.sh --build-dir native_runtime/build --jobs 8",
+    "runtime_path": "/home/pes/.codex/worktrees/nfs-shift-decompilation-retail-runtime/native_runtime/build/shift_runtime",
+    "runtime_sha256": "a7b6f9813f5decf0a3f89e8c98a48b8ced807326303f600dfcbf877dabf44875",
+    "focused_ctest": {
+      "name": "shift_runtime_recompiled_pcode_module",
+      "passed": true,
+      "command": "/usr/bin/ctest --test-dir native_runtime/build --output-on-failure -R '^shift_runtime_recompiled_pcode_module$'"
+    },
+    "generator_pytest": {
+      "passed": true,
+      "tests_passed": 4,
+      "command": "python3 -m pytest -q tests/test_shift_pcode_supplement_builder.py"
+    },
+    "diff_check": "passed"
+  },
+  "limitations": [
+    "P-code execution still stops on the 0x18 read; no frontend or race is confirmed.",
+    "The original launch was under Wine 11.17 on Linux x86_64; native Windows behavior is unverified.",
+    "Dispatch and unique-function totals are diagnostic execution counters and are not evidence of game launch, frontend readiness, or race entry.",
+    "No Process 2 graphics source was modified."
+  ]
+}

@@ -1,0 +1,223 @@
+{
+  "format": "SHIFT.Process1PcodeFrontier/1",
+  "base": {
+    "branch": "work/retail-runtime",
+    "latest_main_sha": "5a7ea55f78b6ccb374686b95769f5fe66387a8ca",
+    "latest_main_scope": "Process 2 shader translation fix; no Process 1 files changed"
+  },
+  "retail_image": {
+    "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/probe-cwd-v46-game-root/SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "toolchain": {
+    "ghidra": "12.1.2_DEV",
+    "java": "OpenJDK 21.0.12.1",
+    "revenginstr_revision": "08a31b94c304f8b7a57996974dafe352413f7924"
+  },
+  "changes": {
+    "runtime_imports": [
+      "WS2_32.dll ordinal 115 (WSAStartup)",
+      "WS2_32.dll ordinal 116 (WSACleanup)",
+      "WS2_32.dll WSAWaitForMultipleEvents"
+    ],
+    "dynamic_branchind": {
+      "source": "tools/ghidra/build_shift_pcode_supplement.py",
+      "behavior": "Keep Ghidra static BRANCHIND cases and route unlisted runtime targets through the guest-call dispatcher",
+      "regression_test": "test_indirect_branch_keeps_runtime_target_when_static_flow_is_incomplete"
+    },
+    "retail_supplements": [
+      {
+        "address": "0x005AA6D0",
+        "instructions": 3,
+        "pcode_operations": 10,
+        "artifact": "function-call-stack-v569-missing-005aa6d0/compiled/libnfs_shift_pcode_supplement.so",
+        "sha256": "5596a62cc62faac80f284ac3feecd3e4f2ab52cc1fcfa327b389252faae23f87"
+      },
+      {
+        "address": "0x005AA6F0",
+        "instructions": 3,
+        "pcode_operations": 10,
+        "artifact": "function-call-stack-v570-missing-005aa6f0/compiled/libnfs_shift_pcode_supplement.so",
+        "sha256": "c8f3f05a3bd2969d12cae89a7cfcfcf939a57ed8d95a030e91877b1baea71713"
+      },
+      {
+        "address": "0x005AA880",
+        "instructions": 5,
+        "pcode_operations": 16,
+        "artifact": "function-call-stack-v571-missing-005aa880/compiled/libnfs_shift_pcode_supplement.so",
+        "sha256": "15158d2a01dfa7085ce77d3ff50e5d22d0b61f6f0a7e957f53662a95a327a905"
+      },
+      {
+        "address": "0x005AA840",
+        "instructions": 3,
+        "pcode_operations": 10,
+        "artifact": "function-call-stack-v572-missing-005aa840/compiled/libnfs_shift_pcode_supplement.so",
+        "sha256": "479458bdd663ebf728fffb08d5c4a1699fd5f2ff9ad930853703878ac0d92b1f"
+      },
+      {
+        "address": "0x006BB560",
+        "instructions": 33,
+        "pcode_operations": 101,
+        "artifact": "function-call-stack-v573-missing-006bb560/compiled/libnfs_shift_pcode_supplement.so",
+        "sha256": "15217606217ac25407a3e9455103e0e5489d8239a5e523d6fa0402b22b9d9a92"
+      },
+      {
+        "address": "0x0043D650",
+        "instructions": 16,
+        "pcode_operations": 49,
+        "artifact": "function-call-stack-v574-missing-0043d650/compiled/libnfs_shift_pcode_supplement.so",
+        "sha256": "168d60124e028688912d616901c840a7fcde3a2be2d037043dc1c891ba4ac4c9"
+      }
+    ],
+    "exact_override": {
+      "address": "0x0063C670",
+      "instructions": 21,
+      "pcode_operations": 78,
+      "artifact": "function-call-stack-v575-override-0063c670/compiled-exact-v1/libnfs_shift_pcode_supplement.so",
+      "sha256": "501b7c2a85a0e6ca726cf39c983a4504e91398268fbac0442ea45d274cc307a4",
+      "observation": "Exact Ghidra P-code override cleared the prior returned -1 without changing the guest function's return semantics"
+    }
+  },
+  "frontier": [
+    {
+      "version": 569,
+      "status": "blocked",
+      "blocker": "rvi_005aa6d0 from 0x005A8870",
+      "dispatches": 7938176,
+      "unique_functions_diagnostic_only": 5272,
+      "report_sha256": "fafdd41294162685faf4a1cf4b889b41f5250cfd93fd4a85138d2cec1f90e430",
+      "log_sha256": "e875193556d0088f4c8e7bc865e3066842e7f202756017badb06ef93ff78c6f0"
+    },
+    {
+      "version": 570,
+      "status": "blocked",
+      "blocker": "rvi_005aa6f0 from 0x005A8870",
+      "dispatches": 7937364,
+      "unique_functions_diagnostic_only": 5273,
+      "report_sha256": "730e554d5c5aab3fd12e2d9eea7c89d1b836fd4fb241f2fc5c1566f5ba3e96e6",
+      "log_sha256": "fda1438f49e1dbb7a8f1d7a5fc504cd91053fc3b5a4438da3e51fa29524ebe64"
+    },
+    {
+      "version": 571,
+      "mode": "untraced",
+      "status": "host-frame-loop",
+      "dispatches": 704282,
+      "unique_functions_diagnostic_only": 3930,
+      "frames_rendered": 79,
+      "validation_errors": 0,
+      "report_sha256": "7f3f08179ba6af44f4c37defd894761e04a265af9e46c46dae2813a822dbc13a",
+      "log_sha256": "c0daaa780b1b6d1d0ff807e8231e03ddbf85f13b5ede59dde327c02d967b6c7b"
+    },
+    {
+      "version": 571,
+      "mode": "ui-gate-trace",
+      "status": "blocked",
+      "blocker": "rvi_005aa880 from 0x005A8870",
+      "dispatches": 7937523,
+      "unique_functions_diagnostic_only": 5274,
+      "report_sha256": "f69df35a3c85e69cfe96f2ea8df1ebacf56c36d874f8b9085c5b1397cb43d684",
+      "log_sha256": "58cb80beedde166e22976303d685b0199fe6d07858be569751b5ed9f7ab0dcb0"
+    },
+    {
+      "version": 572,
+      "status": "blocked",
+      "blocker": "rvi_005aa840 from 0x005A8870",
+      "dispatches": 7939010,
+      "unique_functions_diagnostic_only": 5275,
+      "report_sha256": "5c7263e33b35fed941d4d6231f5e6496e82f14c1809f4b6b05367e6d2e9e9f38",
+      "log_sha256": "4674e7a58b8911a64d8e672ed136d556eb3e717b83abf9c2e9bf564066c619a9"
+    },
+    {
+      "version": 573,
+      "status": "blocked",
+      "blocker": "rvi_006bb560 from 0x0064879e",
+      "dispatches": 7937421,
+      "unique_functions_diagnostic_only": 5276,
+      "report_sha256": "f0111a32ba9b858715a348eeb45431e1b3146209580e81a9122079c534c8adc5",
+      "log_sha256": "6ecfc8119c483a2e971b8a12f72bc223fd1b03ffe926836d79d4fa1999740814"
+    },
+    {
+      "version": 574,
+      "status": "blocked",
+      "blocker": "rvi_0043d650 from 0x0064879e",
+      "dispatches": 7995447,
+      "unique_functions_diagnostic_only": 5298,
+      "report_sha256": "d7c53a363a92c3e550e2ea07b273864177cad9004d931613ffb422756353749f",
+      "log_sha256": "11ac14cc7b314938733b5e4dc7b308b436a75f6dbd1d3cb06d6c75987453439e"
+    },
+    {
+      "version": 575,
+      "status": "blocked",
+      "blocker": "P-code function 0x0063c670 returned -1",
+      "dispatches": 8001191,
+      "unique_functions_diagnostic_only": 5310,
+      "report_sha256": "2021c56a8dcfeee05d4766806ba2bf137256539a74262c9e5893e2f5a73b28d4",
+      "log_sha256": "d1791ffb5484a64ec5ad789bcd0c3553c9665efe95e249be43d49905f96a0456"
+    },
+    {
+      "version": 576,
+      "mode": "ui-gate-trace",
+      "status": "host-frame-loop",
+      "blocker": null,
+      "dispatches": 7937284,
+      "unique_functions_diagnostic_only": 5211,
+      "frames_rendered": 715,
+      "validation_errors": 0,
+      "report_sha256": "4d6bf84026d73942949f8281cace64c12d6e20cc373b40dcc47386724cc8bf32",
+      "log_sha256": "d29aa79e035a8dea1f0d9f3d6c0b1a11b9bb1f9aec972e123f35e686f0998a44"
+    }
+  ],
+  "latest": {
+    "version": 576,
+    "report": "/tmp/process1-retail-runtime-evidence/quantum-v576-ui-gate-trace.json",
+    "log": "/tmp/process1-retail-runtime-evidence/quantum-v576-ui-gate-trace.log",
+    "manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v575-override-0063c670/module-manifest-v576-0063c670.json",
+    "manifest_sha256": "40f04756231ce7a1eed24820fbca403be2d67a04020c464f092520f87dfb4afd",
+    "pcode_unique_functions_diagnostic_only": 5211,
+    "pcode_dispatches_diagnostic_only": 7937284,
+    "frames_rendered": 715,
+    "main_thread_current_function": "0x005845d0",
+    "worker_waiting_count": 5,
+    "validation_errors": 0,
+    "guest_draw_translation": false,
+    "retail_rendering_proven": false,
+    "frontend_gate_trace": {
+      "events": 6476,
+      "gate_calls": 1619,
+      "gate_state_word_all_zero": true,
+      "callback_object_all_zero": true,
+      "helper_flag_all_zero": true,
+      "guest_call_trace_events_for_0x0049eb30": 0,
+      "helper_flag_last_writer": {
+        "function": "0x0050c820",
+        "address": "0x00be250c",
+        "value": "0x00"
+      },
+      "callback_object_last_writer": {
+        "function": "0x0062fde0",
+        "address": "0x00be2534",
+        "value": "0x00000000"
+      }
+    }
+  },
+  "verification": {
+    "build_command": "bash tools/build_shift_runtime_cached.sh --build-dir native_runtime/build --jobs 8",
+    "runtime_sha256": "7c3e8353a5d6b1c31097b21f66c933a1b3fa0541d24bed4f31e09a52b3e7873b",
+    "focused_ctest": {
+      "name": "shift_runtime_recompiled_pcode_module",
+      "passed": true,
+      "command": "/usr/bin/ctest --test-dir native_runtime/build --output-on-failure -R '^shift_runtime_recompiled_pcode_module$'"
+    },
+    "generator_pytest": {
+      "command": "python3 -m pytest -q tests/test_shift_pcode_supplement_builder.py",
+      "passed": true,
+      "tests_passed": 4
+    }
+  },
+  "limitations": [
+    "The 5,211 count is the unique-function diagnostic for v576 and is not a count of all implemented functions or proof that every function returns successfully in every path.",
+    "The host-frame-loop fixture uses a synthetic MGEO; the 715 frames and Vulkan validation do not prove retail rendering.",
+    "The observed frontend gate remains closed, guest draw translation is false, and frontend readiness or race entry is not proven.",
+    "No Process 2 renderer source was modified."
+  ]
+}

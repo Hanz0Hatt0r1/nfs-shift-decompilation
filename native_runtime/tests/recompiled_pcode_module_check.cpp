@@ -1,5 +1,6 @@
 #include "shift_recompiled_pcode_module.hpp"
 #include "shift_d3dx9_effect_binary.hpp"
+#include "shift_d3dx9_retail_effects.hpp"
 
 #include <algorithm>
 #include <array>
@@ -299,14 +300,14 @@ uint32_t invoke_import(shift::runtime::RecompiledPcodeModule& module,
     constexpr uint32_t stack_pointer = 0x00032000;
     const int result = call_import(module, address, arguments);
     require(result == 0,
-            "Kernel32 import dispatch failed at " +
+            "guest import dispatch failed at " +
                 std::to_string(address) + " returned " +
                 std::to_string(result) + ": " + module.last_error());
     const uint32_t expected_esp = static_cast<uint32_t>(
         stack_pointer + 4 + arguments.size() * 4);
     const uint32_t actual_esp = read_guest_u32(module, "register", 0x10);
     require(actual_esp == expected_esp,
-            "Kernel32 import " + std::to_string(address) +
+            "PE import " + std::to_string(address) +
                 " applied incorrect stdcall cleanup: ESP=" +
                 std::to_string(actual_esp) + " expected=" +
                 std::to_string(expected_esp));
@@ -320,7 +321,9 @@ void write_pe32_fixture(const std::string& path,
                         bool read_file_ex_import = false,
                         bool create_directory_import = false,
                         bool write_file_import = false,
-                        bool get_version_ex_w_import = false) {
+                        bool get_version_ex_w_import = false,
+                        bool set_file_pointer_import = false,
+                        bool stack_walk64_import = false) {
     constexpr size_t file_size = 0x1300;
     constexpr size_t pe_offset = 0x80;
     constexpr size_t optional_offset = pe_offset + 24;
@@ -497,14 +500,16 @@ void write_pe32_fixture(const std::string& path,
     write_import_name(0xdc0, "SetPriorityClass");
     write_import_name(0xde0, "SetThreadPriority");
     write_import_name(0xe00, "CreateFileA");
-    write_import_name(0xe20, "GetFileSize");
+    write_import_name(0xe20, set_file_pointer_import ? "SetFilePointer"
+                                                     : "GetFileSize");
     write_import_name(0xe40, write_file_import
                                  ? "WriteFile"
                                  : read_file_ex_import ? "ReadFileEx" : "ReadFile");
     std::copy_n("imagehlp.dll", 13, bytes.begin() + 0xe60);
     write_import_name(0xe80, "SymSetOptions");
     write_import_name(0xea0, "SymInitialize");
-    write_import_name(0xec0, "SymCleanup");
+    write_import_name(0xec0,
+                      stack_walk64_import ? "StackWalk64" : "SymCleanup");
     write_import_name(0xed0, "CreateEventW");
     write_import_name(0xef0, "CreateEventA");
     write_import_name(0xf10, "SetEvent");
@@ -528,6 +533,72 @@ void write_pe32_fixture(const std::string& path,
     file.write(reinterpret_cast<const char*>(bytes.data()),
                static_cast<std::streamsize>(bytes.size()));
     require(static_cast<bool>(file), "could not write PE32 fixture");
+}
+
+void write_wsa_startup_pe32_fixture(const std::string& path) {
+    constexpr size_t file_size = 0x800;
+    constexpr size_t pe_offset = 0x80;
+    constexpr size_t optional_offset = pe_offset + 24;
+    constexpr size_t section_offset = optional_offset + 0xe0;
+    constexpr size_t idata_section_offset = section_offset + 40;
+    std::vector<uint8_t> bytes(file_size, 0);
+    bytes[0] = 'M';
+    bytes[1] = 'Z';
+    write_u32(bytes, 0x3c, pe_offset);
+    bytes[pe_offset] = 'P';
+    bytes[pe_offset + 1] = 'E';
+    write_u16(bytes, pe_offset + 4, 0x014c);
+    write_u16(bytes, pe_offset + 6, 2);
+    write_u16(bytes, pe_offset + 20, 0xe0);
+    write_u16(bytes, optional_offset, 0x010b);
+    write_u32(bytes, optional_offset + 16, 0x1020);
+    write_u32(bytes, optional_offset + 28, 0x00400000);
+    write_u32(bytes, optional_offset + 32, 0x1000);
+    write_u32(bytes, optional_offset + 36, 0x200);
+    write_u32(bytes, optional_offset + 56, 0x3000);
+    write_u32(bytes, optional_offset + 60, 0x200);
+    write_u32(bytes, optional_offset + 92, 16);
+    write_u32(bytes, optional_offset + 104, 0x2000);
+    write_u32(bytes, optional_offset + 108, 0x3c);
+
+    std::copy_n(".text", 5, bytes.begin() + section_offset);
+    write_u32(bytes, section_offset + 8, 0x300);
+    write_u32(bytes, section_offset + 12, 0x1000);
+    write_u32(bytes, section_offset + 16, 0x200);
+    write_u32(bytes, section_offset + 20, 0x200);
+    std::copy_n(".idata", 6, bytes.begin() + idata_section_offset);
+    write_u32(bytes, idata_section_offset + 8, 0x400);
+    write_u32(bytes, idata_section_offset + 12, 0x2000);
+    write_u32(bytes, idata_section_offset + 16, 0x400);
+    write_u32(bytes, idata_section_offset + 20, 0x400);
+    std::copy_n("P32!", 4, bytes.begin() + 0x200);
+
+    write_u32(bytes, 0x400, 0x2040);
+    write_u32(bytes, 0x40c, 0x2060);
+    write_u32(bytes, 0x410, 0x2080);
+    write_u32(bytes, 0x414, 0x20c0);
+    write_u32(bytes, 0x420, 0x20e0);
+    write_u32(bytes, 0x424, 0x2100);
+    write_u32(bytes, 0x440, 0x80000073);
+    write_u32(bytes, 0x444, 0x80000074);
+    write_u32(bytes, 0x448, 0x20a0);
+    write_u32(bytes, 0x480, 0x80000073);
+    write_u32(bytes, 0x484, 0x80000074);
+    write_u32(bytes, 0x488, 0x20a0);
+    std::copy_n("WS2_32.dll", 11, bytes.begin() + 0x460);
+    write_u16(bytes, 0x4a0, 0);
+    std::copy_n("WSAWaitForMultipleEvents", 25, bytes.begin() + 0x4a2);
+    write_u32(bytes, 0x4c0, 0x2140);
+    write_u32(bytes, 0x500, 0x2140);
+    std::copy_n("KERNEL32.dll", 13, bytes.begin() + 0x4e0);
+    write_u16(bytes, 0x540, 0);
+    std::copy_n("CreateEventW", 13, bytes.begin() + 0x542);
+
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+    require(static_cast<bool>(file), "could not create Winsock PE32 fixture");
+    file.write(reinterpret_cast<const char*>(bytes.data()),
+               static_cast<std::streamsize>(bytes.size()));
+    require(static_cast<bool>(file), "could not write Winsock PE32 fixture");
 }
 
 void write_system_parameters_info_pe32_fixture(
@@ -735,14 +806,16 @@ void write_d3d9_pe32_fixture(const std::string& path) {
     write_u32(bytes, 0x438, 0x2260);
     write_u32(bytes, 0x640, 0x22a0);
     write_u32(bytes, 0x644, 0x2300);
-    write_u32(bytes, 0x648, 0x2340);
+    write_u32(bytes, 0x648, 0x2360);
     write_u32(bytes, 0x64c, 0x23a0);
     write_u32(bytes, 0x650, 0x23c6);
+    write_u32(bytes, 0x654, 0x2330);
     write_u32(bytes, 0x660, 0x22a0);
     write_u32(bytes, 0x664, 0x2300);
-    write_u32(bytes, 0x668, 0x2340);
+    write_u32(bytes, 0x668, 0x2360);
     write_u32(bytes, 0x66c, 0x23a0);
     write_u32(bytes, 0x670, 0x23c6);
+    write_u32(bytes, 0x674, 0x2330);
     std::copy_n("d3dx9_41.dll", 13, bytes.begin() + 0x680);
     const char create_effect_name[] = "D3DXCreateEffect";
     std::copy_n(create_effect_name, sizeof(create_effect_name),
@@ -753,7 +826,10 @@ void write_d3d9_pe32_fixture(const std::string& path) {
                 bytes.begin() + 0x702);
     const char create_line_name[] = "D3DXCreateLine";
     std::copy_n(create_line_name, sizeof(create_line_name),
-                bytes.begin() + 0x742);
+                bytes.begin() + 0x762);
+    const char create_buffer_name[] = "D3DXCreateBuffer";
+    std::copy_n(create_buffer_name, sizeof(create_buffer_name),
+                bytes.begin() + 0x732);
     const char image_info_name[] = "D3DXGetImageInfoFromFileInMemory";
     std::copy_n(image_info_name, sizeof(image_info_name),
                 bytes.begin() + 0x7a2);
@@ -1097,6 +1173,11 @@ int main(int argc, char** argv) {
              ("shift-runtime-writefile-" + std::to_string(getpid()) +
               ".exe"))
                 .string();
+        const std::string set_file_pointer_fixture_path =
+            (std::filesystem::temp_directory_path() /
+             ("shift-runtime-setfilepointer-" + std::to_string(getpid()) +
+              ".exe"))
+                .string();
         const std::string get_version_ex_w_fixture_path =
             (std::filesystem::temp_directory_path() /
              ("shift-runtime-getversionexw-" + std::to_string(getpid()) +
@@ -1127,6 +1208,16 @@ int main(int argc, char** argv) {
              ("shift-runtime-directinput8create-" + std::to_string(getpid()) +
               ".exe"))
                 .string();
+        const std::string wsa_startup_fixture_path =
+            (std::filesystem::temp_directory_path() /
+             ("shift-runtime-wsastartup-" + std::to_string(getpid()) +
+              ".exe"))
+                .string();
+        const std::string stack_walk64_fixture_path =
+            (std::filesystem::temp_directory_path() /
+             ("shift-runtime-stackwalk64-" + std::to_string(getpid()) +
+              ".exe"))
+                .string();
         write_pe32_fixture(argv[4]);
         write_pe32_fixture(argv[5], true);
         write_pe32_fixture(argv[6], false, true);
@@ -1138,6 +1229,10 @@ int main(int argc, char** argv) {
                            false, false, true);
         write_pe32_fixture(get_version_ex_w_fixture_path, false, false, false,
                            false, false, false, true);
+        write_pe32_fixture(set_file_pointer_fixture_path, false, false, false,
+                           false, false, false, false, true);
+        write_pe32_fixture(stack_walk64_fixture_path, false, false, false,
+                           false, false, false, false, false, true);
         write_system_parameters_info_pe32_fixture(argv[7]);
         write_system_parameters_info_pe32_fixture(find_window_w_fixture_path,
                                                    true);
@@ -1151,6 +1246,7 @@ int main(int argc, char** argv) {
         write_system_parameters_info_pe32_fixture(
             direct_input8_create_fixture_path, false, false, false, false,
             true);
+        write_wsa_startup_pe32_fixture(wsa_startup_fixture_path);
         write_d3d9_pe32_fixture(argv[8]);
         shift::runtime::RecompiledPcodeModule duplicate_module(argv[1]);
         require(duplicate_module.load_supplemental_module(argv[2]),
@@ -2378,6 +2474,102 @@ int main(int argc, char** argv) {
                     std::to_string(image.import_function_count) + ", stubs=" +
                     std::to_string(image.import_stub_base));
 
+        shift::runtime::RecompiledPcodeModule winsock_module(argv[1]);
+        const auto winsock_image =
+            winsock_module.load_pe32_image(wsa_startup_fixture_path);
+        require(winsock_image.import_module_count == 2 &&
+                    winsock_image.import_function_count == 4,
+                "Winsock fixture imports were not parsed");
+        const uint32_t wsa_startup_stub = read_guest_u32(
+            winsock_module, "ram", winsock_image.image_base + 0x2080);
+        const uint32_t wsa_cleanup_stub = read_guest_u32(
+            winsock_module, "ram", winsock_image.image_base + 0x2084);
+        const uint32_t wsa_wait_stub = read_guest_u32(
+            winsock_module, "ram", winsock_image.image_base + 0x2088);
+        const uint32_t create_event_stub = read_guest_u32(
+            winsock_module, "ram", winsock_image.image_base + 0x2100);
+        require(wsa_startup_stub == 0xf0000000 &&
+                    wsa_cleanup_stub == 0xf0000010 &&
+                    wsa_wait_stub == 0xf0000020 &&
+                    create_event_stub == 0xf0000030,
+                "Winsock or Kernel32 imports were not mapped to their traps");
+        const uint32_t wsadata_address = winsock_image.image_base + 0x2200;
+        const uint32_t event_array_address = winsock_image.image_base + 0x23a0;
+        write_guest_u32(winsock_module, "ram", event_array_address, 0);
+        require(invoke_import(winsock_module, wsa_wait_stub,
+                              {1, event_array_address, 0, 0, 0}) == UINT32_MAX,
+                "WSAWaitForMultipleEvents succeeded before WSAStartup");
+        require(invoke_import(winsock_module, wsa_startup_stub,
+                              {0x0002, wsadata_address}) == 0,
+                "WSAStartup did not accept Winsock 2.0");
+        std::array<uint8_t, 0x190> wsadata{};
+        for (size_t offset = 0; offset < wsadata.size(); offset += 16) {
+            const size_t size = std::min<size_t>(16, wsadata.size() - offset);
+            require(winsock_module.read_guest(
+                        "ram", wsadata_address + offset, size,
+                        wsadata.data() + offset),
+                    "could not read WSAStartup's WSADATA output");
+        }
+        require(wsadata[0] == 2 && wsadata[1] == 0 && wsadata[2] == 2 &&
+                    wsadata[3] == 2 &&
+                    std::string(reinterpret_cast<const char*>(
+                                    wsadata.data() + 4)) ==
+                        "WinSock 2.0" &&
+                    std::string(reinterpret_cast<const char*>(
+                                    wsadata.data() + 0x105)) ==
+                        "Running",
+                "WSAStartup returned incorrect WSADATA fields");
+        require(invoke_import(winsock_module, wsa_startup_stub,
+                              {0x0001, wsadata_address}) == 0,
+                "WSAStartup did not accept Winsock 1.0");
+        require(winsock_module.read_guest("ram", wsadata_address, 4,
+                                          wsadata.data()),
+                "could not read negotiated Winsock 1.0 version");
+        require(wsadata[0] == 1 && wsadata[1] == 0 && wsadata[2] == 2 &&
+                    wsadata[3] == 2 &&
+                    invoke_import(winsock_module, wsa_cleanup_stub, {}) == 0,
+                "WSAStartup negotiated Winsock 1.0 incorrectly");
+        require(invoke_import(winsock_module, wsa_startup_stub,
+                              {0x0003, wsadata_address}) == 0,
+                "WSAStartup did not negotiate a newer request down to 2.2");
+        require(winsock_module.read_guest("ram", wsadata_address, 4,
+                                          wsadata.data()),
+                "could not read negotiated Winsock 2.2 version");
+        require(wsadata[0] == 2 && wsadata[1] == 2 && wsadata[2] == 2 &&
+                    wsadata[3] == 2 &&
+                    invoke_import(winsock_module, wsa_cleanup_stub, {}) == 0,
+                "WSAStartup negotiated Winsock 2.2 incorrectly");
+        const uint32_t signaled_event = invoke_import(
+            winsock_module, create_event_stub, {0, 1, 1, 0});
+        const uint32_t unsignaled_event = invoke_import(
+            winsock_module, create_event_stub, {0, 1, 0, 0});
+        write_guest_u32(winsock_module, "ram", event_array_address,
+                        signaled_event);
+        require(invoke_import(winsock_module, wsa_wait_stub,
+                              {1, event_array_address, 0, 0, 0}) == 0,
+                "WSAWaitForMultipleEvents missed a signaled event");
+        write_guest_u32(winsock_module, "ram", event_array_address,
+                        unsignaled_event);
+        require(invoke_import(winsock_module, wsa_wait_stub,
+                              {1, event_array_address, 0, 0, 0}) == 0x102,
+                "WSAWaitForMultipleEvents did not return its zero-timeout status");
+        write_guest_u32(winsock_module, "ram", event_array_address, 0);
+        require(invoke_import(winsock_module, wsa_wait_stub,
+                              {1, event_array_address, 0, 0, 0}) == UINT32_MAX,
+                "WSAWaitForMultipleEvents accepted an invalid event handle");
+        require(invoke_import(winsock_module, wsa_startup_stub,
+                              {0, wsadata_address}) == 10092 &&
+                    invoke_import(winsock_module, wsa_startup_stub,
+                                  {0x0002, 0}) == 10014,
+                "WSAStartup did not return Winsock version or pointer errors");
+        require(invoke_import(winsock_module, wsa_cleanup_stub, {}) == 0 &&
+                    invoke_import(winsock_module, wsa_cleanup_stub, {}) ==
+                        UINT32_MAX,
+                "WSACleanup did not balance the WSAStartup reference count");
+        require(invoke_import(winsock_module, wsa_wait_stub,
+                              {1, event_array_address, 0, 0, 0}) == UINT32_MAX,
+                "WSAWaitForMultipleEvents succeeded after WSACleanup");
+
         shift::runtime::RecompiledPcodeModule create_directory_module(argv[1]);
         const auto create_directory_image =
             create_directory_module.load_pe32_image(
@@ -2786,7 +2978,7 @@ int main(int argc, char** argv) {
         shift::runtime::RecompiledPcodeModule d3d9_module(argv[1]);
         const auto d3d9_image = d3d9_module.load_pe32_image(argv[8]);
         require(d3d9_image.import_module_count == 3 &&
-                    d3d9_image.import_function_count == 10,
+                    d3d9_image.import_function_count == 11,
                 "D3D9 fixture imports were not parsed");
         const uint32_t direct3d_create9 = read_guest_u32(
             d3d9_module, "ram", d3d9_image.image_base + 0x2060);
@@ -3010,6 +3202,8 @@ int main(int argc, char** argv) {
         const uint32_t provider_d3dx_create_texture_from_memory_ex =
             read_guest_u32(d3d9_provider_module, "ram",
                            provider_image.image_base + 0x2270);
+        const uint32_t provider_d3dx_create_buffer = read_guest_u32(
+            d3d9_provider_module, "ram", provider_image.image_base + 0x2274);
         shift::runtime::RecompiledGuestD3d9AdapterInfo adapter_info{};
         for (size_t index = 0; index < adapter_info.caps.size(); ++index) {
             adapter_info.caps[index] = 100 + static_cast<uint32_t>(index);
@@ -4266,9 +4460,86 @@ int main(int argc, char** argv) {
                     invoke_import(d3d9_provider_module,
                                   read_guest_u32(
                                       d3d9_provider_module, "ram",
-                                      wrapped_effect_vtable + 2 * 4),
+                                  wrapped_effect_vtable + 2 * 4),
                                   {wrapped_effect}) == 0,
                 "D3DX effect did not preserve its forwarding device identity");
+        constexpr uint32_t retail_effect_source_address = 0x0003a000;
+        constexpr uint32_t retail_effect_output_address = 0x0003b000;
+        constexpr uint32_t retail_effect_errors_address = 0x0003b004;
+        constexpr uint32_t retail_effect_desc_address = 0x0003b010;
+        const auto retail_effect_source =
+            shift::runtime::detail::kRetailDefaultEffectSource;
+        write_guest_bytes(
+            d3d9_provider_module, retail_effect_source_address,
+            reinterpret_cast<const uint8_t*>(retail_effect_source.data()),
+            retail_effect_source.size());
+        require(invoke_import(
+                    d3d9_provider_module, provider_d3dx_create_effect,
+                    {created_device, retail_effect_source_address,
+                     static_cast<uint32_t>(retail_effect_source.size()), 0, 0,
+                     0, 0, retail_effect_output_address,
+                     retail_effect_errors_address}) == 0,
+                "D3DXCreateEffect rejected the exact embedded retail ASCII effect");
+        const uint32_t retail_effect = read_guest_u32(
+            d3d9_provider_module, "ram", retail_effect_output_address);
+        const uint32_t retail_effect_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", retail_effect);
+        const uint32_t retail_effect_get_desc = read_guest_u32(
+            d3d9_provider_module, "ram", retail_effect_vtable + 3 * 4);
+        const uint32_t retail_effect_get_technique = read_guest_u32(
+            d3d9_provider_module, "ram", retail_effect_vtable + 12 * 4);
+        const uint32_t retail_effect_get_technique_desc = read_guest_u32(
+            d3d9_provider_module, "ram", retail_effect_vtable + 5 * 4);
+        require(retail_effect != 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  retail_effect_get_desc,
+                                  {retail_effect,
+                                   retail_effect_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   retail_effect_desc_address + 4) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   retail_effect_desc_address + 8) == 1,
+                "retail ASCII effect metadata did not report one parameter and technique");
+        const uint32_t retail_technique = invoke_import(
+            d3d9_provider_module, retail_effect_get_technique,
+            {retail_effect, 0});
+        require(retail_technique != 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  retail_effect_get_technique_desc,
+                                  {retail_effect, retail_technique,
+                                   retail_effect_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   retail_effect_desc_address + 4) == 3 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   retail_effect_desc_address + 8) == 1,
+                "retail ASCII effect technique annotations or pass count changed");
+        auto changed_retail_effect_source =
+            std::vector<uint8_t>(retail_effect_source.begin(),
+                                 retail_effect_source.end());
+        changed_retail_effect_source[0] ^= 1;
+        write_guest_bytes(d3d9_provider_module, retail_effect_source_address,
+                          changed_retail_effect_source.data(),
+                          changed_retail_effect_source.size());
+        write_guest_u32(d3d9_provider_module, "ram",
+                        retail_effect_output_address, 0x7a7a7a7a);
+        write_guest_u32(d3d9_provider_module, "ram",
+                        retail_effect_errors_address, 0x7a7a7a7a);
+        require(invoke_import(
+                    d3d9_provider_module, provider_d3dx_create_effect,
+                    {created_device, retail_effect_source_address,
+                     static_cast<uint32_t>(changed_retail_effect_source.size()),
+                     0, 0, 0, 0, retail_effect_output_address,
+                     retail_effect_errors_address}) == 0x80004005 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   retail_effect_output_address) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   retail_effect_errors_address) == 0 &&
+                    invoke_import(
+                        d3d9_provider_module,
+                        read_guest_u32(d3d9_provider_module, "ram",
+                                       retail_effect_vtable + 2 * 4),
+                        {retail_effect}) == 0,
+                "ASCII effect cache accepted altered source or leaked its effect");
         constexpr uint32_t line_output_address = 0x00038340;
         constexpr uint32_t line_iid_address = 0x00038350;
         constexpr uint32_t line_query_output_address = 0x00038360;
@@ -4411,6 +4682,138 @@ int main(int argc, char** argv) {
                                   provider_device_release,
                                   {created_device}) >= 1,
                 "ID3DXLine did not release its device/object references");
+
+        constexpr uint32_t buffer_output_address = 0x00038380;
+        constexpr uint32_t buffer_iid_address = 0x00038390;
+        constexpr uint32_t buffer_query_output_address = 0x000383a0;
+        constexpr uint32_t unsupported_iid_address = 0x000383b0;
+        constexpr uint32_t unsupported_query_output_address = 0x000383c0;
+        write_guest_u32(d3d9_provider_module, "ram", buffer_output_address,
+                        UINT32_MAX);
+        require(invoke_import(d3d9_provider_module,
+                              provider_d3dx_create_buffer,
+                              {16, buffer_output_address}) == 0,
+                "D3DXCreateBuffer did not create a 16-byte buffer");
+        const uint32_t guest_buffer = read_guest_u32(
+            d3d9_provider_module, "ram", buffer_output_address);
+        const uint32_t guest_buffer_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", guest_buffer);
+        require(guest_buffer != 0 && guest_buffer_vtable != 0,
+                "D3DXCreateBuffer did not initialize its COM object");
+        const uint32_t buffer_query_interface = read_guest_u32(
+            d3d9_provider_module, "ram", guest_buffer_vtable);
+        const uint32_t buffer_add_ref = read_guest_u32(
+            d3d9_provider_module, "ram", guest_buffer_vtable + 4);
+        const uint32_t buffer_release = read_guest_u32(
+            d3d9_provider_module, "ram", guest_buffer_vtable + 8);
+        const uint32_t buffer_get_pointer = read_guest_u32(
+            d3d9_provider_module, "ram", guest_buffer_vtable + 3 * 4);
+        const uint32_t buffer_get_size = read_guest_u32(
+            d3d9_provider_module, "ram", guest_buffer_vtable + 4 * 4);
+        const uint32_t guest_buffer_data = invoke_import(
+            d3d9_provider_module, buffer_get_pointer, {guest_buffer});
+        require(guest_buffer_data != 0 &&
+                    invoke_import(d3d9_provider_module, buffer_get_size,
+                                  {guest_buffer}) == 16,
+                "ID3DXBuffer did not expose its storage and size");
+        constexpr std::array<uint8_t, 8> buffer_pattern = {
+            0x53, 0x48, 0x49, 0x46, 0x54, 0x00, 0x9a, 0xff};
+        write_guest_bytes(d3d9_provider_module, guest_buffer_data,
+                          buffer_pattern.data(), buffer_pattern.size());
+        std::array<uint8_t, 8> buffer_readback{};
+        require(d3d9_provider_module.read_guest(
+                    "ram", guest_buffer_data, buffer_readback.size(),
+                    buffer_readback.data()) &&
+                    buffer_readback == buffer_pattern,
+                "ID3DXBuffer storage did not preserve guest writes");
+        require(invoke_import(d3d9_provider_module, buffer_add_ref,
+                              {guest_buffer}) == 2,
+                "ID3DXBuffer::AddRef did not retain the object");
+        constexpr std::array<uint8_t, 16> buffer_iid_unknown = {
+            0, 0, 0, 0, 0, 0, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0x46};
+        constexpr std::array<uint8_t, 16> iid_d3dx_buffer = {
+            0x08, 0xfb, 0xa5, 0x8b, 0x95, 0x51, 0xe2, 0x40,
+            0xac, 0x58, 0x0d, 0x98, 0x9c, 0x3a, 0x01, 0x02};
+        write_guest_bytes(d3d9_provider_module, buffer_iid_address,
+                          iid_d3dx_buffer.data(), iid_d3dx_buffer.size());
+        require(invoke_import(d3d9_provider_module, buffer_query_interface,
+                              {guest_buffer, buffer_iid_address,
+                               buffer_query_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   buffer_query_output_address) == guest_buffer,
+                "ID3DXBuffer::QueryInterface did not return ID3DXBuffer");
+        write_guest_bytes(d3d9_provider_module, unsupported_iid_address,
+                          buffer_iid_unknown.data(),
+                          buffer_iid_unknown.size());
+        require(invoke_import(d3d9_provider_module, buffer_query_interface,
+                              {guest_buffer, unsupported_iid_address,
+                               unsupported_query_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   unsupported_query_output_address) ==
+                        guest_buffer,
+                "ID3DXBuffer::QueryInterface did not support IUnknown");
+        constexpr std::array<uint8_t, 16> buffer_iid_unsupported = {
+            0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x40,
+            0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
+        write_guest_bytes(d3d9_provider_module, unsupported_iid_address,
+                          buffer_iid_unsupported.data(),
+                          buffer_iid_unsupported.size());
+        write_guest_u32(d3d9_provider_module, "ram",
+                        unsupported_query_output_address, UINT32_MAX);
+        require(invoke_import(d3d9_provider_module, buffer_query_interface,
+                              {guest_buffer, unsupported_iid_address,
+                               unsupported_query_output_address}) ==
+                        0x80004002 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   unsupported_query_output_address) == 0,
+                "ID3DXBuffer::QueryInterface accepted an unsupported IID");
+        require(invoke_import(d3d9_provider_module, buffer_release,
+                              {guest_buffer}) == 3 &&
+                    invoke_import(d3d9_provider_module, buffer_release,
+                                  {guest_buffer}) == 2 &&
+                    invoke_import(d3d9_provider_module, buffer_release,
+                                  {guest_buffer}) == 1 &&
+                    invoke_import(d3d9_provider_module, buffer_release,
+                                  {guest_buffer}) == 0,
+                "ID3DXBuffer::Release did not free the object at refcount zero");
+        write_guest_u32(d3d9_provider_module, "ram", buffer_output_address,
+                        UINT32_MAX);
+        require(invoke_import(d3d9_provider_module,
+                              provider_d3dx_create_buffer,
+                              {0, buffer_output_address}) == 0,
+                "D3DXCreateBuffer rejected a zero-length buffer");
+        const uint32_t empty_buffer = read_guest_u32(
+            d3d9_provider_module, "ram", buffer_output_address);
+        const uint32_t empty_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", empty_buffer);
+        require(empty_buffer != 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  read_guest_u32(d3d9_provider_module, "ram",
+                                                 empty_vtable + 3 * 4),
+                                  {empty_buffer}) != 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  read_guest_u32(d3d9_provider_module, "ram",
+                                                 empty_vtable + 4 * 4),
+                                  {empty_buffer}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  read_guest_u32(d3d9_provider_module, "ram",
+                                                 empty_vtable + 8),
+                                  {empty_buffer}) == 0,
+                "zero-length ID3DXBuffer did not retain valid object semantics");
+        require(invoke_import(d3d9_provider_module,
+                              provider_d3dx_create_buffer,
+                              {16, 0}) == 0x8876086c,
+                "D3DXCreateBuffer accepted a null output pointer");
+        write_guest_u32(d3d9_provider_module, "ram", buffer_output_address,
+                        UINT32_MAX);
+        require(invoke_import(d3d9_provider_module,
+                              provider_d3dx_create_buffer,
+                              {UINT32_MAX, buffer_output_address}) ==
+                        0x8007000e &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   buffer_output_address) == 0,
+                "D3DXCreateBuffer did not clear output on allocation failure");
+
         const uint32_t test_cooperative_level = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 3 * 4);
         const uint32_t device_get_device_caps = read_guest_u32(
@@ -4902,6 +5305,52 @@ int main(int argc, char** argv) {
                                   {UINT32_MAX, 0, 1}) == 1 &&
                     invoke_import(module, 0xf00004a0, {UINT32_MAX}) == 1,
                 "ImageHlp symbol-handler setup/cleanup did not succeed");
+        {
+            shift::runtime::RecompiledPcodeModule stack_walk64_module(argv[1]);
+            (void)stack_walk64_module.load_pe32_image(stack_walk64_fixture_path);
+            constexpr uint32_t stack_walk64 = 0xf00004a0;
+            constexpr uint32_t stack_frame = 0x00070000;
+            constexpr uint32_t frame_pointer = 0x00072000;
+            write_guest_u32(stack_walk64_module, "ram", stack_frame + 0x00,
+                            0x00401100);
+            write_guest_u32(stack_walk64_module, "ram", stack_frame + 0x04, 0);
+            write_guest_u32(stack_walk64_module, "ram", stack_frame + 0x0c, 3);
+            write_guest_u32(stack_walk64_module, "ram", stack_frame + 0x20,
+                            frame_pointer);
+            write_guest_u32(stack_walk64_module, "ram", stack_frame + 0x24, 0);
+            write_guest_u32(stack_walk64_module, "ram", stack_frame + 0x2c, 3);
+            write_guest_u32(stack_walk64_module, "ram", stack_frame + 0x30,
+                            0x00071f00);
+            write_guest_u32(stack_walk64_module, "ram", stack_frame + 0x34, 0);
+            write_guest_u32(stack_walk64_module, "ram", stack_frame + 0x3c, 3);
+            write_guest_u32(stack_walk64_module, "ram", frame_pointer,
+                            frame_pointer + 0x20);
+            write_guest_u32(stack_walk64_module, "ram", frame_pointer + 4,
+                            0x00401234);
+            write_guest_u32(stack_walk64_module, "ram", frame_pointer + 0x24,
+                            0x00405678);
+            require(invoke_import(stack_walk64_module, stack_walk64,
+                                  {0x014c, UINT32_MAX, UINT32_MAX - 1,
+                                   stack_frame, 0, 0, 0, 0, 0}) == 1 &&
+                        read_guest_u32(stack_walk64_module, "ram",
+                                       stack_frame + 0x00) == 0x00401234 &&
+                        read_guest_u32(stack_walk64_module, "ram",
+                                       stack_frame + 0x10) == 0x00405678 &&
+                        read_guest_u32(stack_walk64_module, "ram",
+                                       stack_frame + 0x20) ==
+                            frame_pointer + 0x20 &&
+                        read_guest_u32(stack_walk64_module, "ram",
+                                       stack_frame + 0x30) ==
+                            frame_pointer + 0x28,
+                    "StackWalk64 did not advance an initialized I386 frame-pointer chain");
+            write_guest_u32(stack_walk64_module, "ram", stack_frame + 0x30, 0);
+            require(invoke_import(stack_walk64_module, stack_walk64,
+                                  {0x014c, UINT32_MAX, UINT32_MAX - 1,
+                                   stack_frame, 0, 0, 0, 0, 0}) == 0 &&
+                        read_guest_u32(stack_walk64_module, "ram",
+                                       stack_frame + 0x00) == 0x00401234,
+                    "StackWalk64 did not fail cleanly when AddrStack was uninitialized");
+        }
         constexpr uint32_t wait_for_single_object_ex = 0xf0000430;
         constexpr uint32_t manual_event = 0x00060000;
         require(invoke_import(module, 0xf00003f0, {0, 1, 1, 0}) ==
@@ -4979,6 +5428,84 @@ int main(int argc, char** argv) {
                     std::equal(guest_file_readback.begin(),
                                guest_file_readback.end(), guest_file_data),
                 "ReadFile returned unexpected guest file contents");
+
+        {
+            shift::runtime::RecompiledPcodeModule set_file_pointer_module(
+                argv[1]);
+            const auto image = set_file_pointer_module.load_pe32_image(
+                set_file_pointer_fixture_path);
+            require(image.import_function_count == 81,
+                    "SetFilePointer PE32 fixture import count changed");
+            write_guest_bytes(
+                set_file_pointer_module, guest_file_name_address,
+                reinterpret_cast<const uint8_t*>(guest_file_path.c_str()),
+                guest_file_path.size() + 1);
+            const uint32_t handle = invoke_import(
+                set_file_pointer_module, 0xf00003c0,
+                {guest_file_name_address, 0x80000000, 1, 0, 3, 0x80, 0});
+            require(handle != UINT32_MAX,
+                    "SetFilePointer fixture could not open its input file");
+            constexpr uint32_t high_part_address = 0x00032ec0;
+            constexpr uint32_t read_buffer_address = 0x00032e40;
+            constexpr uint32_t bytes_read_address = 0x00032e80;
+            write_guest_u32(set_file_pointer_module, "ram", high_part_address,
+                            0);
+            require(invoke_import(set_file_pointer_module, 0xf00003d0,
+                                  {handle, 7, high_part_address, 0}) == 7 &&
+                        read_guest_u32(set_file_pointer_module, "ram",
+                                       high_part_address) == 0 &&
+                        invoke_import(set_file_pointer_module, 0xf00003e0,
+                                      {handle, read_buffer_address, 6,
+                                       bytes_read_address, 0}) == 1,
+                    "SetFilePointer did not seek from FILE_BEGIN");
+            std::array<uint8_t, 6> seek_readback{};
+            require(set_file_pointer_module.read_guest(
+                        "ram", read_buffer_address, seek_readback.size(),
+                        seek_readback.data()) &&
+                        seek_readback ==
+                            std::array<uint8_t, 6>{'-', 'p', 'r', 'o', 'b', 'e'},
+                    "SetFilePointer FILE_BEGIN seek returned wrong bytes");
+            require(invoke_import(set_file_pointer_module, 0xf00003d0,
+                                  {handle, UINT32_MAX - 1, 0, 1}) == 11 &&
+                        invoke_import(set_file_pointer_module, 0xf00003e0,
+                                      {handle, read_buffer_address, 2,
+                                       bytes_read_address, 0}) == 1,
+                    "SetFilePointer did not apply a negative FILE_CURRENT offset");
+            std::array<uint8_t, 2> current_readback{};
+            require(set_file_pointer_module.read_guest(
+                        "ram", read_buffer_address, current_readback.size(),
+                        current_readback.data()) &&
+                        current_readback == std::array<uint8_t, 2>{'b', 'e'},
+                    "SetFilePointer FILE_CURRENT seek returned wrong bytes");
+            require(invoke_import(set_file_pointer_module, 0xf00003d0,
+                                  {handle, UINT32_MAX - 3, 0, 2}) == 9 &&
+                        invoke_import(set_file_pointer_module, 0xf00003e0,
+                                      {handle, read_buffer_address, 4,
+                                       bytes_read_address, 0}) == 1,
+                    "SetFilePointer did not seek backward from FILE_END");
+            std::array<uint8_t, 4> end_readback{};
+            require(set_file_pointer_module.read_guest(
+                        "ram", read_buffer_address, end_readback.size(),
+                        end_readback.data()) &&
+                        end_readback == std::array<uint8_t, 4>{'r', 'o', 'b', 'e'},
+                    "SetFilePointer FILE_END seek returned wrong bytes");
+            require(invoke_import(set_file_pointer_module, 0xf00003d0,
+                                  {handle, UINT32_MAX, 0, 0}) == UINT32_MAX &&
+                        invoke_import(set_file_pointer_module, 0xf0000240,
+                                      {}) == 131 &&
+                        invoke_import(set_file_pointer_module, 0xf00003d0,
+                                      {UINT32_MAX, 0, 0, 0}) == UINT32_MAX &&
+                        invoke_import(set_file_pointer_module, 0xf0000240,
+                                      {}) == 6 &&
+                        invoke_import(set_file_pointer_module, 0xf00003d0,
+                                      {handle, 0, 0, 3}) == UINT32_MAX &&
+                        invoke_import(set_file_pointer_module, 0xf0000240,
+                                      {}) == 87,
+                    "SetFilePointer errors did not preserve Win32 error codes");
+            require(invoke_import(set_file_pointer_module, 0xf0000350,
+                                  {handle}) == 1,
+                    "SetFilePointer fixture did not close its file handle");
+        }
 
         {
             shift::runtime::RecompiledPcodeModule write_file_module(argv[1]);
@@ -6218,8 +6745,7 @@ int main(int argc, char** argv) {
                         pending_entrypoint_state.main_thread_current_function &&
                     !main_thread_recent_functions.empty() &&
                     main_thread_recent_functions.size() <= 64 &&
-                    main_thread_recent_functions.back() ==
-                        pending_entrypoint_state.main_thread_current_function &&
+                    main_thread_recent_functions.back() == 0x004010a0 &&
                     read_guest_u32(module, "ram", 0x00032c10) == 0x1234 &&
                     read_guest_u32(module, "ram", 0x00032c14) != 0,
                 "cooperative scheduler did not yield after resuming a guest worker");
@@ -6314,7 +6840,7 @@ int main(int argc, char** argv) {
                     event_worker_marker == expected_event_worker_marker &&
                     read_guest_u32(module, "ram", 0x00032c28) != 0,
                 "alertable event wait did not resume after its guest worker signaled");
-        require(module.dispatched_function_count() == 13,
+        require(module.unique_dispatched_function_count() == 13,
                 "supplemental entry point or scheduled worker was not dispatched");
         require(module.call_pe32_entry_point() != 0 &&
                     module.last_error().find("already been invoked") !=
@@ -6580,6 +7106,8 @@ int main(int argc, char** argv) {
         std::filesystem::remove(get_version_ex_w_fixture_path);
         std::filesystem::remove(find_window_w_fixture_path);
         std::filesystem::remove(reg_open_key_ex_w_fixture_path);
+        std::filesystem::remove(wsa_startup_fixture_path);
+        std::filesystem::remove(stack_walk64_fixture_path);
         std::cout << "PASS: PE32 headers, sections and imports mapped; "
                      "observed Kernel32 startup services wrote outputs and "
                      "applied stdcall cleanup; unsupported imports failed closed\n";

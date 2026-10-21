@@ -118,6 +118,216 @@ D3D9 draw, or retail rendering is proven. See the
 [`post-PR #2123 follow-up evidence`](../evidence/retail_frontier_20261020/post_pr2123_retail_frontier_followup.json)
 for report, log, corpus, requirements, and module hashes.
 
+Process 1 replayed the v520 call chain on the current runtime before changing
+scheduler behavior. The pinned PE repeatedly called `0x006550f0` from
+`0x005ab6c0`; the call returned `EAX=0` while `[0x27f39bf0+0x74]` stayed
+`0x00000002`, and the diagnostic was stopped manually after dispatch
+6,983,183 to avoid continuing the same poll. The latest available external
+frontier artifacts were v523 and v524 (Oct 21): v523 retained that poll, while
+v524 reported a 120-frame host loop with no retail draw translation and an
+incomplete PE entrypoint. The return-quantum implementation now lets ready
+guest threads run after 64 successful nested guest-call dispatch returns, at a
+guest call boundary. It changes no guest memory or API result and only yields
+when the cooperative scheduler has another runnable thread; this is a
+host-neutral scheduling approximation, not a cycle-accurate Windows time
+slice. A focused fixture now busy-polls a marker written by a resumed worker
+and passes without calling `SwitchToThread` in that polling interval.
+
+The rebuilt runtime passed `shift_runtime_recompiled_pcode_module`. A
+120-frame replay using the pinned PE and v512 cumulative module manifest
+reached the host frame loop, but ended before caller `0x005ab6c0` ran. A
+caller-only trace with a 2,000-frame bound then captured the retail wait-loop
+transition: `0x006550f0` returned `EAX=1`, the following calls to `0x00655110`
+and `0x005ab560` executed, and the failure snapshot recorded a write of
+`0x00000006` to predicate word `0x27f39c64` by `0x00649b10` on worker thread
+`0x00010006`. This confirms bit 2 became set and the poll loop was passed.
+
+The retail frontier was then advanced with exact P-code exported from a
+read-only working copy of the pinned Ghidra project. Ghidra 12.1.2_DEV and the
+repository's targeted instruction exporters ran under OpenJDK 21. Functions
+missing from the project were created only in `/tmp/process1-ghidra-copy`; the
+original project and pinned PE were left untouched. The exports were lowered
+with the pinned RevEngInstr snapshot `08a31b94c304f8b7a57996974dafe352413f7924`.
+Across v527–v542, replay progressed through the missing-export chain from
+`0x0057da20` to the `0x00587xxx` class accessors. In v542, Ghidra-confirmed
+`0x00587c20` (`MOV EAX, 0x00ad5598; RET`) returned that exact pointer; the next
+retail call from `0x00587790` stopped at the still-missing
+`rvi_005879f0`. The PE entrypoint remains incomplete. Guest draw translation,
+frontend readiness, a race, and retail rendering remain unproven. See the
+[`Process 1 scheduler-quantum evidence`](../evidence/retail_frontier_20261021/process1_scheduler_return_quantum.json)
+for the full frontier chain, hashes, commands, and limits. Latest main is `380f0283` (#2133), which updates captured mobile D3D9 target formats in the Vulkan bridge; it changes no Process 1 files.
+
+The v569–v576 follow-up adds exact missing accessors from the pinned retail
+PE, preserves unknown runtime targets for Ghidra BRANCHIND, and overrides
+0x0063c670 with exact Ghidra P-code after the previous version returned -1.
+The v576 UI-gate trace reaches the host frame loop with 5,211 unique functions
+in that run, 715 frames, and zero Vulkan validation errors. This is a per-run
+diagnostic count, not proof of frontend readiness or a race. The same trace
+records 1,619 gate calls with the state word, callback object, and helper flag
+still zero; guest draw translation and retail rendering remain unproven. See
+the [v569–v576 Process 1 P-code evidence](../evidence/retail_frontier_20261021/process1_pcode_frontier_v569_v576.json)
+for per-run reports, module hashes, and the remaining frontend limitation.
+
+The v577–v593 continuation added exact P-code slices for the new retail
+frontier and implemented the I386 `imagehlp.dll!StackWalk64` import. The API
+fixture checks a valid frame-pointer chain, an uninitialized stack address,
+and x86 stdcall cleanup. v591 advanced past the missing import; v592 reached a
+P-code read at address `0x18`. v593 repeats that blocker with selected-call
+tracing. Its dispatch totals vary and are diagnostic only. The complete
+frontier, report/log hashes, module manifest, and test results are in the
+[`v587–v593 evidence`](../evidence/retail_frontier_20261021/process1_pcode_frontier_v587_v593.json).
+
+To distinguish a translation fault from original retail behavior, the original
+PE32 `SHIFT.exe` was launched directly under Wine 11.17 and stopped in the same
+retail code at `0x0083a006`. A conditional WineDbg breakpoint captured the
+receiver chain: thunk `0x0083a5c0` loads a nested record from outer `+0x50`,
+then `0x0083a000` loads a null array pointer from nested `+0x3c`; with `EDX=0`,
+the retail instruction reads `0x18`. The recompiled path reports that same
+reserved-low-memory address. This shows the current P-code stop follows the
+original read on this Wine run; it does not explain why the retail record is
+null, prove native Windows behavior, or confirm frontend/race entry. The
+[original retail evidence](../evidence/retail_frontier_20261021/original_shift_wine_crash.json)
+records the exact debugger logs and limits.
+
+The v594–v596 provenance follow-up sampled the nested array field directly.
+Retail constructor `0x00839f30` stores zero at `inner+0x3c`; the later getter
+thunk `0x0083a5c0` reaches `0x0083a006` with that field and `EDX` both zero.
+The live v595 trace records the constructor and getter on the same guest thread
+ID, so it does not support a scheduler race. Repeating the bounded probe with
+the full copied retail game-data root did not change the first failing read.
+No zero substitution or other guest semantic workaround was added because the
+read follows the original instructions and the expected field population path
+is still unidentified. See the [v594–v596 P-code evidence](../evidence/retail_frontier_20261021/process1_pcode_frontier_v594_v596.json).
+
+The v597 trace found the missing initialization branch. Retail function
+`0x0083dc50` passes the exact ASCII effect embedded at `0x00b8e988` to
+`D3DXCreateEffect`; the compatibility layer accepted binary effects only and
+returned `E_FAIL`. The retail caller then skipped `0x0083d470` and
+`0x0083d850`, leaving its constructor-cleared `inner+0x3c` field null before
+the getter read. A 32-bit D3DX9_41/D3DCompiler_41 compiler accepted the exact
+retail source and produced a 1,140-byte effect with one `worldViewProj`
+parameter, one `Default` technique and one pass. The runtime now uses that
+compiled record only when the input matches the embedded retail source
+byte-for-byte; altered text still returns `E_FAIL`. The focused test checks
+both paths. This compatibility fix does not implement general ASCII HLSL
+effect compilation or Vulkan shader binding. See the
+[v597 trace and compiler evidence](../evidence/retail_frontier_20261021/process1_pcode_frontier_v597_d3dx_ascii_effect.json).
+
+The original `SHIFT.exe` was also launched through PortProton GE-Proton 11-5
+from a copy-on-write game-root and prefix clone. The process remained alive
+for about eight minutes and GDB samples showed execution at three different
+Gecko/Scaleform functions, while two screenshots showed a black game window.
+That confirms original code execution, but not frontend or race readiness. It
+is separate from the successful, user-confirmed race capture on 2026-10-18.
+The [PortProton run evidence](../evidence/retail_frontier_20261021/original_shift_portproton_run.json)
+records the image hash, cloned paths, screenshots, and limits. A separate
+read-only observation of an already-running original retail process under
+system Wine confirmed an X11 game window with Bink, D3DX9_41, and WineD3D
+loaded; the visible capture was black and the process remained alive after
+detach. Native GDB could not recover guest instruction pointers because of
+the Wine i386:x64-32 target architecture. This was not a fresh controlled
+launch and does not confirm frontend or race entry; see the
+[live process evidence](../evidence/retail_frontier_20261021/original_shift_live_wine_observation.json).
+
+The v621–v632 P-code continuation merged the exact `0x0049f2c0` body,
+preserved lower-address Ghidra blocks while honoring each declared entrypoint,
+and recovered all eight indirect switch targets in `0x00911429`. Caller-scoped
+traces prove two completed calls to `0x00906246` and three completed returns
+from `0x00911429`; the next confirmed stop was the internal block
+`0x00d6fcbb` reached from entry `0x00d6fecc`. v631 merged that block under the
+correct entrypoint, but its 360-second traced replay timed out. A 900-second
+untraced v632 replay passed that loop and stopped at the exact RET instruction
+`0x00403cbb` reached from `0x0046ffd1`; v633 exported that RET as a one-byte
+alias. v634 then corrected the dynamic `BRANCHIND` path in `0x006d8d90` and
+captured two successful calls each to `0x006d8d30` and `0x006d9680` before the
+next virtual dispatch at `0x006d8de0` stopped with `-1`. v635 applied the same
+Ghidra-derived dynamic-target fallback to that thunk and captured a successful
+call to `0x006d9800`; its caller then stopped at an unexported two-instruction
+getter, `0x006dcf20`. Ghidra had not marked that address as a function, so the
+exact retail LEA/RET body was defined in an isolated project copy and exported
+as v636. That run passed the getter and reached `0x0052b380`, where a
+conditional branch targets a non-contiguous success epilogue at `0x0052b3c5`.
+v637 merged the exact Ghidra-exported epilogue into the same function body; the
+generated code kept the conditional path as an internal branch and the replay
+passed that function. The next function, `0x0052bad0`, has the same omitted
+success-epilogue shape at `0x0052bb34`; v638 merged that block into its parent
+body.
+v638 produced no frontier result and was stopped for debugger inspection;
+v639/v640 also timed out without a confirmed failure. The full v641 replay
+advanced to the next missing export, `0x00515970`, called by `0x00514760`.
+Ghidra had not marked that address as a function. In an isolated project copy,
+Ghidra defined the exact 14-byte retail body and exported four instructions
+(18 P-code operations) for v642. Its trace confirmed a return with `EAX=0x00bdcf68`
+and exposed the next missing getter at `0x00515a60`. v643 returned from that
+getter with `EAX=0x00bdcff8`, then reached `0x00515b80`. Its generic comparison
+marked fewer dispatches as regressed; the caller-scoped trace proves the later
+unresolved target, and dispatch counts remain diagnostic. Ghidra exported the
+exact `0x00515b80` body as four instructions and 18 P-code operations for v644.
+Its replay returned `EAX=0x00bdd088`, then reached `0x00515d80`; the generic
+comparison marked fewer dispatches as regressed, while the caller trace proves
+the later target. Ghidra exported the exact 14-byte `0x00515d80` body for v645
+(four instructions, 18 P-code operations), and its replay is running against a
+fresh runtime build with caller-scoped tracing. v645 returned from `0x00515d80`
+with `EAX=0x00bdd1bc`, then reached `0x00516120`; again, the exact trace
+confirms progress despite the counter comparison. Ghidra exported the exact
+`0x00516120` body for v646 (four instructions, 18 P-code operations). Its
+replay returned `EAX=0x00bdd258` and reached `0x00515ee0`. A retail `.text`
+scan then found 15 more exact 14-byte wrappers around the same lookup; Ghidra
+exported all 15 together and a single supplement carries their exact P-code.
+The v647 replay returned from six distinct getter functions in the traced caller,
+including `0x00515ee0` with `EAX=0x00bdd2f4`, then reached `0x005136a0`. The
+remaining four wrappers at the start of this method family were exported as an
+exact Ghidra batch for v648. The six returns are specific call evidence, not a
+global count of all functions. Current evidence is tracked in
+[`process1_pcode_frontier_v621_v659.json`](../evidence/retail_frontier_20261021/process1_pcode_frontier_v621_v659.json).
+These call returns are function-specific evidence. Per-run dispatch and unique
+function counts remain diagnostics and do not prove that the frontend or a race
+was reached.
+
+The v649/v650 continuation returned from two exact state setters and reached
+`0x00894da0`; v652 exported that function and its selected trace recorded a
+normal return with `EAX=0`. The next missing export, `0x0088a2c0`, was a flag
+clear followed by a direct tail jump to `0x0088a0e0`. v653 merged both exact
+Ghidra bodies under entry `0x0088a2c0`; generated C keeps the tail jump as an
+internal `goto`, and a targeted regression covers this shape. The trace proves
+entry but no return before a nested call reached the next missing target,
+`0x007d6570` from `0x007d5f10`. Ghidra had not marked that retail address as a
+function. An isolated copy of the pinned Ghidra project defined the exact
+77-byte body through `0x007d65bc`. v654 recorded entries into `0x007d6570` and
+its helper `0x007d6470`, then stopped at the nested missing export
+`0x00698390` from `0x0064879e`. Ghidra had not marked that address as a
+function either; the exact 20-byte retail body ending at `0x006983a3` was
+defined and exported for v655. Caller-scoped traces then confirmed returns
+from `0x00698390` (EAX `0`), `0x00647860` (EAX `0x11`), `0x007d6470` (EAX `0`),
+and `0x007d6570` (EAX `0xfffffff9`). The next P-code failure was at the retail
+indirect-jump thunk `0x00888f70`; its failure snapshot retained EAX
+`0x0040ae20`, loaded from `[ECX+0x958]`. v656 exports the exact Ghidra body
+for that thunk and applies the builder's tested runtime `BRANCHIND` fallback,
+preserving its conditional `JMP EAX` semantics. Its caller-scoped trace then
+proved that the runtime reached the exact dynamic target `0x0040ae20`, where
+the next missing P-code export stopped execution. Ghidra had not marked that
+target as a function; the exact 26-byte body through `0x0040ae39` was defined
+in an isolated Ghidra copy and lowered for v657 (eight instructions, 35
+P-code operations, no rejected instructions). v657 then proved that
+`0x00888f70`, `0x0040ae20`, and its helper `0x00489ad0` all returned; the getter
+took its exact null-field path and returned `EAX=0xffffffff`. v658 exported the exact 116-byte body of `0x005ab3f0` from the pinned retail
+Ghidra project (30 instructions, 119 P-code operations, zero rejected). The
+replay entered it from `0x00647d80`, then reached `0x005ab230` and stopped at
+that method's dynamic target `0x005a0ef0`. A trace-return event showed
+`EAX=0x005a0ef0`, but the failure snapshot retained the nested unresolved call
+and the retail body's terminal path explicitly returns zero, so this is not
+counted as a normal return. v659 exported the exact two-instruction getter at `0x005a0ef0` (`MOV
+EAX,[ECX+0xb8]; RET`, six P-code operations). Its caller-scoped replay
+confirmed 701 returns each from `0x005a0ef0`, `0x005ab230`, and `0x005ab3f0`,
+all with `EAX=0`. The bounded run completed 1,440 host frames and reached the
+host frame loop with no P-code blocker; `guest_main_thread_function` was
+`0x007d7620`. This is recompiled-runtime evidence, separate from the original
+retail launches. It does not confirm frontend/race readiness, and the bridge
+recorded no guest draw translation. The current frontier and per-run hashes
+are in
+[`process1_pcode_frontier_v621_v659.json`](../evidence/retail_frontier_20261021/process1_pcode_frontier_v621_v659.json).
+Dispatch totals remain diagnostic; they do not prove game startup.
+
 For a UI-gate probe, set `SHIFT_TRACE_UI_STATE_GATE=1` and
 `SHIFT_TRACE_GUEST_PROVENANCE=0x00be250c,0x00be2534`. Each `0x0050c880` trace
 event then includes exact-byte `helper_flag_last_writer` provenance, with the

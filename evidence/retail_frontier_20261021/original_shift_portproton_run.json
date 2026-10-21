@@ -1,0 +1,70 @@
+{
+  "format": "NFSShift.OriginalRetailPortProtonRun/1",
+  "captured_at": "2026-10-21T05:21:26+03:00",
+  "program": {
+    "path_outside_repository": "/home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/game-root/SHIFT.exe",
+    "image_type": "PE32 GUI, Intel i386",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "execution": {
+    "host": "Linux x86_64",
+    "launcher": "PortProton CLI",
+    "compatibility_layer": "GE-PROTON11-5-X86_64",
+    "prefix_clone": "/home/pes/PortProton/data/prefixes/SHIFT_PROBE_20261021",
+    "prefix_source": "/home/pes/PortProton/data/prefixes/DEFAULT",
+    "game_root_clone": "/home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/game-root",
+    "game_root_source": "/home/pes/nfs-shift-recompilation-artifacts/portproton-retail-capture-20261018",
+    "display": ":1",
+    "dxvk": "2.7.1-509",
+    "process_id": 720391,
+    "observed_duration_seconds": 480,
+    "shutdown": "The cloned game process was terminated after observation; source game files and DEFAULT prefix were not modified.",
+    "log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/original-shift-portproton-20261021.log",
+    "log_bytes": 8761,
+    "log_sha256": "c6ca3e60f290dbcbf32730cc9170fe16fe1cc52ab051a722394b6dc0ab276a23",
+    "screenshot_files": [
+      {
+        "path_outside_repository": "/tmp/process1-retail-runtime-evidence/original-shift-portproton-screen-20261021.png",
+        "width": 4651,
+        "height": 1382,
+        "sha256": "0e428e553857423106238fb8ff4b3dbe9a6f5099bd94e0cf00466f7099bea3be"
+      },
+      {
+        "path_outside_repository": "/tmp/process1-retail-runtime-evidence/original-shift-portproton-screen-20261021-later.png",
+        "width": 4651,
+        "height": 1382,
+        "sha256": "f741e15ee8efe18b2afea3ca3c52cee53ca98a5e355e1d5945cfc49362fd0897"
+      }
+    ]
+  },
+  "observations": {
+    "retail_pe_loaded": true,
+    "window_created": true,
+    "window_title": "Need for Speed SHIFT",
+    "window_contents": "black in both sampled screenshots",
+    "process_crashed": false,
+    "frontend_confirmed": false,
+    "race_confirmed": false,
+    "execution_samples": [
+      {
+        "instruction_pointer": "0x008438b4",
+        "symbol": "GeckoFnl!AptPrototype::GetSuperConstructor+46388"
+      },
+      {
+        "instruction_pointer": "0x009f0455",
+        "symbol": "GeckoFnl!AptAnimationTarget::AddFunctionFront+14677"
+      },
+      {
+        "instruction_pointer": "0x008f88be",
+        "symbol": "GeckoFnl!AptFrameStack::GetHashSize+19150"
+      }
+    ],
+    "sample_method": "Interactive GDB attach to the original PortProton process; samples came from different Gecko addresses and were not saved as a standalone trace.",
+    "interpretation": "The original game remained alive and executed embedded Gecko/Scaleform code, but this launch did not display a frontend or race. This is distinct from the separate Wine 11.17 run that stopped at 0x0083a006 and from the user-confirmed retail race capture on 2026-10-18."
+  },
+  "limitations": [
+    "A black window does not establish that UI initialization completed.",
+    "Interactive GDB samples were not saved as a standalone log.",
+    "The user-confirmed race evidence from 2026-10-18 is separate and remains the positive retail gameplay checkpoint."
+  ]
+}

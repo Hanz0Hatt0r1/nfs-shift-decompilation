@@ -1,0 +1,178 @@
+{
+  "format": "NFSShift.OriginalRetailWineRun/1",
+  "captured_at": "2026-10-21T04:11:12+03:00",
+  "program": {
+    "path_outside_repository": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/probe-cwd-v46-game-root/SHIFT.exe",
+    "image_type": "PE32 GUI, Intel i386",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "execution": {
+    "host": "Linux x86_64",
+    "compatibility_layer": "Wine 11.17",
+    "prefix": "/home/pes/.wine",
+    "display": ":1",
+    "entrypoint": "original SHIFT.exe; not the recompiled runtime",
+    "timeout_seconds": 90,
+    "log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/original-shift-wine-20261021.log",
+    "log_bytes": 2301283,
+    "log_sha256": "a2367052d68569473e61b6202b5ab8dd8121422c43b95e8a0ca6633a52b7e102"
+  },
+  "observations": {
+    "retail_pe_loaded": true,
+    "binkw32_loaded": true,
+    "d3dx_effect_validation_reached": true,
+    "frontend_confirmed": false,
+    "race_confirmed": false,
+    "exception": {
+      "kind": "EXCEPTION_ACCESS_VIOLATION",
+      "code": "0xc0000005",
+      "instruction_pointer": "0x0083a006",
+      "access": "read",
+      "fault_address": "0x00000018",
+      "eax": "0x00000000",
+      "ecx": "0x00000000",
+      "edx": "0x00000000"
+    },
+    "disassembly": [
+      "0x0083a000: mov ecx, [ecx+0x3c]",
+      "0x0083a003: lea eax, [edx+edx*8]",
+      "0x0083a006: mov eax, [ecx+eax*4+0x18]",
+      "0x0083a00a: ret"
+    ],
+    "analysis": "The original retail process reaches the 0x0083a5c0 thunk and then faults in 0x0083a000 under Wine. The thunk loads an inner record pointer from [outer+0x50]; the target loads ECX from [inner+0x3c], yielding zero. With EDX=0, the next instruction reads address 0x18. This does not identify why the inner record field is null or establish native Windows behavior.",
+    "call_stack": {
+      "capture_method": "WineDbg GDB proxy, conditional breakpoint at 0x0083a006 when ECX == 0; stop is before the faulting instruction executes",
+      "frames": [
+        {
+          "frame": 0,
+          "address": "0x0083a006",
+          "debugger_symbol": "GeckoFnl!?GetSuperConstructor@AptPrototype@@QBEPAVAptValue@@XZ+7302"
+        },
+        {
+          "frame": 1,
+          "address": "0x0082c439",
+          "debugger_symbol": "GeckoFnl!?c_cih@AptValue@@QBEPAVAptCIH@@_N@Z"
+        },
+        {
+          "frame": 2,
+          "address": "0x0a916d70",
+          "classification": "unresolved non-image return address"
+        },
+        {
+          "frame": 3,
+          "address": "0x0082ded9",
+          "debugger_symbol": "GeckoFnl!?c_cih@AptValue@@QBEPAVAptCIH@@_N@Z"
+        },
+        {
+          "frame": 4,
+          "address": "0x0a916d70",
+          "classification": "unresolved non-image return address"
+        },
+        {
+          "frame": 5,
+          "address": "0x008527b4",
+          "debugger_symbol": "GeckoFnl!?GetSuperConstructor@AptPrototype@@QBEPAVAptValue@@XZ"
+        },
+        {
+          "frame": 6,
+          "address": "0x0a916d70",
+          "classification": "unresolved non-image return address"
+        },
+        {
+          "frame": 7,
+          "address": "0x004dc5d3",
+          "debugger_symbol": "GeckoFnl!?GetMaxScroll@AptCharacterTextInst@@QBEIXZ"
+        }
+      ],
+      "registers_at_conditional_breakpoint": {
+        "eip": "0x0083a006",
+        "eax": "0x00000000",
+        "ecx": "0x00000000",
+        "edx": "0x00000000",
+        "esp": "0x129fcfc",
+        "ebp": "0x129fdc0"
+      },
+      "caller_instruction": {
+        "address": "0x0082c437",
+        "instruction": "call eax",
+        "return_address": "0x0082c439"
+      },
+      "stack_words_at_esp": [
+        "0x0082c439",
+        "0x0a916d70",
+        "0x0129fde4",
+        "0x00000002"
+      ],
+      "faulting_instruction": "mov eax, [ecx + eax*4 + 0x18]",
+      "interpretation": "At the conditional stop, ECX=0 and EDX=0 at 0x0083a006. The caller passes an outer receiver to 0x0083a5c0; that thunk loads an inner record from [outer+0x50] and jumps to 0x0083a000. The nested capture confirms [inner+0x3c] is zero. An earlier partial dump of the outer receiver showed its own +0x3c as zero, but that is not the field consumed by 0x0083a000.",
+      "receiver_chain": {
+        "capture_method": "WineDbg GDB proxy, breakpoint at 0x0083a006 conditional on ECX == 0; stop is before the faulting instruction executes",
+        "registers_at_stop": {
+          "eip": "0x0083a006",
+          "ecx": "0x00000000",
+          "edx": "0x00000000"
+        },
+        "outer_receiver": {
+          "address": "0x0a686660",
+          "vtable_pointer": "0x00b19e28",
+          "pointer_at_offset_0x50": "0x0a686a20",
+          "note": "The outer receiver +0x3c is unrelated to the array pointer consumed by 0x0083a000."
+        },
+        "inner_record": {
+          "address": "0x0a686a20",
+          "first_word": "0x00000000",
+          "word_at_offset_0x20": "0x00000003",
+          "array_pointer_at_offset_0x3c": "0x00000000"
+        },
+        "instructions": [
+          "0x0083a5c0: mov ecx, [ecx+0x50]",
+          "0x0083a5c3: jmp 0x0083a000",
+          "0x0083a000: mov ecx, [ecx+0x3c]",
+          "0x0083a003: lea eax, [edx+edx*8]",
+          "0x0083a006: mov eax, [ecx+eax*4+0x18]"
+        ],
+        "interpretation": "The retail inner record has a null +0x3c array pointer at this invocation. With EDX=0, the original instruction attempts a read at 0x18. The inner record type and the path that should populate it remain unidentified."
+      }
+    },
+    "call_stack_recovered": true
+  },
+  "limitations": [
+    "The game did not reach a confirmed frontend or race.",
+    "This is one original-game launch under Wine; behavior on native Windows is not established.",
+    "The complete Wine log remains outside the repository."
+  ],
+  "debugger_follow_up": {
+    "execution": "WineDbg GDB-proxy launch of the same original retail SHIFT.exe; not the recompiled runtime",
+    "gdb_log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/original-shift-gdb-20261021.log",
+    "gdb_log_bytes": 4184,
+    "gdb_log_sha256": "11c9012acfb1f4e4b98f0bb4c660c765018bc444917c9888eb9cf17ebb8718f4",
+    "winedbg_log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/original-shift-winedbg-20261021.log",
+    "winedbg_log_bytes": 23186,
+    "winedbg_log_sha256": "31c578a5cc9ca32b294c6963e038cacf7345ae94e7718b96d455d218b37023df",
+    "same_fault_address": "0x0083a006",
+    "conditional_breakpoint": "break *0x0083a006 if $ecx == 0",
+    "object_snapshot_log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/original-shift-gdb-object-20261021.log",
+    "object_snapshot_log_bytes": 3342,
+    "object_snapshot_log_sha256": "52230f744441db8e50d08fa734f7b700479cebef86a9b0fdb2a77cd44c81f1f3",
+    "nested_snapshot": {
+      "captured_at": "2026-10-21T05:04:03+03:00",
+      "execution": "Original retail SHIFT.exe under Wine 11.17 via WineDbg GDB proxy; not the recompiled runtime",
+      "gdb_log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/original-shift-gdb-nested-20261021.log",
+      "gdb_log_bytes": 2920,
+      "gdb_log_sha256": "8b7fe24d92915632d5d33922b3d7da7bf3060bbcffc5f47088209633c8fba135",
+      "winedbg_log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/original-shift-winedbg-nested-20261021.log",
+      "winedbg_log_bytes": 9946,
+      "winedbg_log_sha256": "2d71f01d0d1773263aa82cd8d6731c47600bf363779f4c60de9356089dbb29f4",
+      "breakpoint": "break *0x0083a006 if $ecx == 0",
+      "outer_receiver": "0x0a686660",
+      "outer_plus_0x50": "0x0a686a20",
+      "inner_plus_0x3c": "0x00000000",
+      "stop_registers": {
+        "eip": "0x0083a006",
+        "ecx": "0x00000000",
+        "edx": "0x00000000"
+      },
+      "debuggee_terminated_after_capture": true
+    }
+  }
+}
