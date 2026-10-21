@@ -680,7 +680,7 @@ def to_glsl(
                 cmp=_cmp_expr(glsl_reg(o[1],program.stage),glsl_reg(o[2],program.stage),ins.controls)
                 lines.append('  '+emit_assign(o[0],cmp,program.stage))
             elif n=='IF' and len(o)>=1:
-                lines.append(f'  if {_bool_condition(o[0],program.stage)} {{')
+                lines.append(f'  if ({_bool_condition(o[0],program.stage)}) {{')
             elif n=='IFC' and len(o)>=2:
                 cmp=_cmp_expr(glsl_reg(o[0],program.stage),glsl_reg(o[1],program.stage),ins.controls)
                 lines.append(f'  if(all({cmp})) {{')

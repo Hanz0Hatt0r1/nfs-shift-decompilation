@@ -55,6 +55,25 @@ The PPM is diagnostic output and
 does not establish retail image parity. The selected R32F shader writes a
 single-channel value, which further limits visual comparison.
 
+## First draw's shader blocker
+
+The first `DrawIndexedPrimitive` in captured frame 12613 is event 13640309.
+Its VS/PS pair (`vs:1af4a5f282f4b9fb` / `ps:da32197956d1cb89`) includes a
+pixel-shader `IF b0`. The shader translator previously emitted
+`if all(b[0])`, which is invalid GLSL. It now emits the parenthesized condition;
+both translated stages compile and link against Vulkan GLSL. A small token-level
+regression covers the conditional form without checking retail shader bytes
+into the repository.
+
+Rebuilding this first draw now advances past shader validation but correctly
+stops at its active `s0`: the capture records a 128×128, eight-mip DXT1 texture
+as `deferred-until-trigger` and has no DDS snapshot. The trigger fired on frame
+12615, after this draw in frame 12613. No Vulkan draw was submitted for event
+13640309. The untextured event 13647233 remains the validated real-draw control;
+this change therefore expands shader coverage, not frame or retail-image
+parity. The exact hashes, gate result, and limits are in
+[`shift_d3d9_vulkan_first_draw_shader_if_20261021.json`](../evidence/shift_d3d9_vulkan_first_draw_shader_if_20261021.json).
+
 The new capture contract records `SetStreamSourceFreq` state with each indexed
 draw. Microsoft defines indexed-data and instance-data settings through
 [`SetStreamSourceFreq`](https://learn.microsoft.com/en-us/windows/win32/api/d3d9/nf-d3d9-idirect3ddevice9-setstreamsourcefreq).
@@ -114,6 +133,10 @@ parity is not claimed.
   reported zero errors.
 - The captured event 5245407 bundle compiled both shader stages, linked them,
   and completed native Vulkan validation with zero errors.
+- The first draw's captured VS/PS pair compiled and linked after the `IF b0`
+  fix. Its bundle remains blocked on the absent texture snapshot; the existing
+  untextured control draw was rebuilt and resubmitted with validation enabled
+  and zero errors.
 - The sampler regression suite passed 9 tests; event 5245407 was rebuilt from
   its retail capture and executed on the GTX 950 with validation enabled and
   zero errors.

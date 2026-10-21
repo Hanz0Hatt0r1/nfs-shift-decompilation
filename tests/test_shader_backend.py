@@ -115,6 +115,33 @@ def test_vulkan_loop_reads_iteration_control_from_integer_register():
     assert validation["status"] == "valid", validation
 
 
+def test_vulkan_if_bool_register_emits_valid_condition():
+    words = [
+        0xFFFF0300,  # ps_3_0
+        (1 << 24) | 40,  # if b0
+        0xE0E40800,  # b0
+        (2 << 24) | 1,  # mov oC0, c0
+        0x800F0800,
+        0xA0E40000,
+        42,  # else
+        (2 << 24) | 1,  # mov oC0, c0
+        0x800F0800,
+        0xA0E40000,
+        43,  # endif
+        0xFFFF,
+    ]
+    pixel = to_glsl(
+        parse_program(struct.pack("<" + "I" * len(words), *words)),
+        target="vulkan",
+    )
+
+    assert "if (all(b[0])) {" in pixel
+    validation = validate_vulkan_glsl_pair(
+        "#version 450\nvoid main(){gl_Position=vec4(0.0);}", pixel
+    )
+    assert validation["status"] == "valid", validation
+
+
 def test_sampler_type_and_relative_addressing_are_preserved():
     # vs_3_0, dcl_cube s0, mov r0, c[a0.x+2]
     version = 0xFFFE0300
