@@ -89,6 +89,20 @@ struct RecompiledGuestCallTraceMemorySlot {
     bool has_last_writer = false;
 };
 
+struct RecompiledGuestCallTraceIndexedSource {
+    uint32_t pointer_offset = 0;
+    uint32_t base_offset = 0;
+    uint32_t count_offset = 0;
+    uint32_t stride_offset = 0;
+    uint32_t source_address = 0;
+    RecompiledGuestCallTraceMemorySlot list_pointer;
+    RecompiledGuestCallTraceMemorySlot source_base;
+    RecompiledGuestCallTraceMemorySlot source_count;
+    RecompiledGuestCallTraceMemorySlot element_stride;
+    RecompiledGuestCallTraceMemorySlot source_value;
+    bool has_source_address = false;
+};
+
 struct RecompiledGuestCallTraceStringSlot {
     uint32_t offset = 0;
     uint32_t address = 0;
@@ -132,6 +146,10 @@ struct RecompiledGuestCallTraceEvent {
     std::vector<RecompiledGuestCallTraceMemorySlot> caller_slots;
     std::vector<RecompiledGuestCallTraceMemorySlot> target_slots;
     std::vector<RecompiledGuestCallTraceMemorySlot> stack_slots;
+    RecompiledGuestCallTraceMemorySlot edx_entry_slot;
+    RecompiledGuestCallTraceMemorySlot edx_return_slot;
+    RecompiledGuestCallTraceIndexedSource indexed_source;
+    bool has_indexed_source = false;
     std::vector<RecompiledGuestCallTraceStringSlot> string_slots;
 };
 

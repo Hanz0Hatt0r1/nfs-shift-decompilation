@@ -893,6 +893,13 @@ struct RecompiledPcodeModule::Impl {
             guest_call_trace_target_slot_offsets =
                 parse_guest_trace_u32_values(
                     std::getenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS"), true);
+            guest_call_trace_indexed_source_layout =
+                parse_guest_trace_u32_values(
+                    std::getenv("SHIFT_TRACE_GUEST_CALL_INDEXED_SOURCE"),
+                    true);
+            if (guest_call_trace_indexed_source_layout.size() != 4) {
+                guest_call_trace_indexed_source_layout.clear();
+            }
             guest_call_trace_stack_slot_offsets = parse_guest_trace_u32_values(
                 std::getenv("SHIFT_TRACE_GUEST_CALL_STACK_SLOTS"), true);
             guest_call_trace_string_slot_offsets = parse_guest_trace_u32_values(
@@ -1316,6 +1323,99 @@ struct RecompiledPcodeModule::Impl {
         return true;
     }
 
+    RecompiledGuestCallTraceMemorySlot sample_guest_call_trace_slot(
+        uint64_t address, uint32_t slot_offset) const {
+        RecompiledGuestCallTraceMemorySlot slot{};
+        slot.offset = slot_offset;
+        if (address >= kGuestMinimumUserAddress && address <= UINT32_MAX) {
+            slot.has_value = read_guest_diagnostic_u32(address, slot.value);
+            if (guest_write_provenance_enabled_flag) {
+                const auto writer = guest_target_last_writers.find(
+                    static_cast<uint32_t>(address));
+                if (writer != guest_target_last_writers.end()) {
+                    const auto& provenance = writer->second;
+                    slot.has_last_writer = true;
+                    slot.last_writer.sequence = provenance.sequence;
+                    slot.last_writer.dispatch_count =
+                        provenance.dispatch_count;
+                    slot.last_writer.function = provenance.writer_function;
+                    slot.last_writer.ecx_entry = provenance.writer_ecx;
+                    slot.last_writer.has_ecx_entry =
+                        provenance.has_writer_ecx;
+                    slot.last_writer.caller_function =
+                        provenance.writer_caller_function;
+                    slot.last_writer.has_caller_function =
+                        provenance.has_writer_caller_function;
+                    slot.last_writer.call_return_address =
+                        provenance.writer_call_return_address;
+                    slot.last_writer.has_call_return_address =
+                        provenance.has_writer_call_return_address;
+                    slot.last_writer.caller_return_address =
+                        provenance.writer_caller_return_address;
+                    slot.last_writer.has_caller_return_address =
+                        provenance.has_writer_caller_return_address;
+                    slot.last_writer.thread_id = provenance.thread_id;
+                    slot.last_writer.write_address = provenance.write_address;
+                    slot.last_writer.write_size = provenance.write_size;
+                    slot.last_writer.word_value = provenance.word_value;
+                }
+            }
+        }
+        return slot;
+    }
+
+    std::vector<RecompiledGuestCallTraceMemorySlot>
+    sample_guest_call_trace_slots(
+        uint32_t base, const std::vector<uint32_t>& offsets) const {
+        std::vector<RecompiledGuestCallTraceMemorySlot> slots;
+        slots.reserve(offsets.size());
+        for (const uint32_t slot_offset : offsets) {
+            slots.push_back(sample_guest_call_trace_slot(
+                static_cast<uint64_t>(base) + slot_offset, slot_offset));
+        }
+        return slots;
+    }
+
+    RecompiledGuestCallTraceIndexedSource
+    sample_guest_call_trace_indexed_source(uint32_t receiver) const {
+        RecompiledGuestCallTraceIndexedSource source{};
+        if (guest_call_trace_indexed_source_layout.size() != 4) return source;
+
+        source.pointer_offset = guest_call_trace_indexed_source_layout[0];
+        source.base_offset = guest_call_trace_indexed_source_layout[1];
+        source.count_offset = guest_call_trace_indexed_source_layout[2];
+        source.stride_offset = guest_call_trace_indexed_source_layout[3];
+        source.list_pointer = sample_guest_call_trace_slot(
+            static_cast<uint64_t>(receiver) + source.pointer_offset,
+            source.pointer_offset);
+        if (!source.list_pointer.has_value) return source;
+
+        const uint32_t list = source.list_pointer.value;
+        source.source_base = sample_guest_call_trace_slot(
+            static_cast<uint64_t>(list) + source.base_offset,
+            source.base_offset);
+        source.source_count = sample_guest_call_trace_slot(
+            static_cast<uint64_t>(list) + source.count_offset,
+            source.count_offset);
+        source.element_stride = sample_guest_call_trace_slot(
+            static_cast<uint64_t>(receiver) + source.stride_offset,
+            source.stride_offset);
+        if (!source.source_base.has_value ||
+            !source.source_count.has_value ||
+            !source.element_stride.has_value ||
+            source.source_count.value == 0) {
+            return source;
+        }
+
+        const uint32_t last_index = source.source_count.value - 1;
+        source.source_address = source.source_base.value +
+                                last_index * source.element_stride.value;
+        source.has_source_address = true;
+        source.source_value = sample_guest_call_trace_slot(
+            source.source_address, 0);
+        return source;
+    }
+
     size_t record_guest_call_trace(uint32_t target,
                                    const std::string& import_name = {}) {
         if (!guest_call_trace_enabled || active_guest_functions.empty()) {
@@ -1355,6 +1455,8 @@ struct RecompiledPcodeModule::Impl {
                              event.eax_entry);
         (void)read_guest_u32("register", kX86EdxRegisterOffset,
                              event.edx_entry);
+        event.edx_entry_slot =
+            sample_guest_call_trace_slot(event.edx_entry, 0);
         (void)read_guest_u32("register", kX86EsiRegisterOffset,
                              event.esi_entry);
         (void)read_guest_u32("register", kX86EdiRegisterOffset,
@@ -1368,59 +1470,6 @@ struct RecompiledPcodeModule::Impl {
             event.has_return_address = read_guest_diagnostic_u32(
                 event.esp_entry, event.return_address);
         }
-        const auto sample_slots = [&](uint32_t base,
-                                      const std::vector<uint32_t>& offsets) {
-            std::vector<RecompiledGuestCallTraceMemorySlot> slots;
-            slots.reserve(offsets.size());
-            for (const uint32_t slot_offset : offsets) {
-                RecompiledGuestCallTraceMemorySlot slot{};
-                slot.offset = slot_offset;
-                const uint64_t address =
-                    static_cast<uint64_t>(base) + slot_offset;
-                if (address >= kGuestMinimumUserAddress &&
-                    address <= UINT32_MAX) {
-                    slot.has_value =
-                        read_guest_diagnostic_u32(address, slot.value);
-                    if (guest_write_provenance_enabled_flag) {
-                        const auto writer = guest_target_last_writers.find(
-                            static_cast<uint32_t>(address));
-                        if (writer != guest_target_last_writers.end()) {
-                            const auto& provenance = writer->second;
-                            slot.has_last_writer = true;
-                            slot.last_writer.sequence = provenance.sequence;
-                            slot.last_writer.dispatch_count =
-                                provenance.dispatch_count;
-                            slot.last_writer.function =
-                                provenance.writer_function;
-                            slot.last_writer.ecx_entry =
-                                provenance.writer_ecx;
-                            slot.last_writer.has_ecx_entry =
-                                provenance.has_writer_ecx;
-                            slot.last_writer.caller_function =
-                                provenance.writer_caller_function;
-                            slot.last_writer.has_caller_function =
-                                provenance.has_writer_caller_function;
-                            slot.last_writer.call_return_address =
-                                provenance.writer_call_return_address;
-                            slot.last_writer.has_call_return_address =
-                                provenance.has_writer_call_return_address;
-                            slot.last_writer.caller_return_address =
-                                provenance.writer_caller_return_address;
-                            slot.last_writer.has_caller_return_address =
-                                provenance.has_writer_caller_return_address;
-                            slot.last_writer.thread_id = provenance.thread_id;
-                            slot.last_writer.write_address =
-                                provenance.write_address;
-                            slot.last_writer.write_size = provenance.write_size;
-                            slot.last_writer.word_value =
-                                provenance.word_value;
-                        }
-                    }
-                }
-                slots.push_back(slot);
-            }
-            return slots;
-        };
         const auto sample_string_slots = [&](
             uint32_t base, const std::vector<uint32_t>& offsets) {
             std::vector<RecompiledGuestCallTraceStringSlot> slots;
@@ -1470,13 +1519,19 @@ struct RecompiledPcodeModule::Impl {
             return slots;
         };
         event.caller_slots =
-            sample_slots(event.caller_ecx, guest_call_trace_slot_offsets);
+            sample_guest_call_trace_slots(
+                event.caller_ecx, guest_call_trace_slot_offsets);
         if (!event.is_import) {
-            event.target_slots = sample_slots(
+            event.target_slots = sample_guest_call_trace_slots(
                 event.ecx_entry, guest_call_trace_target_slot_offsets);
+            if (!guest_call_trace_indexed_source_layout.empty()) {
+                event.indexed_source =
+                    sample_guest_call_trace_indexed_source(event.ecx_entry);
+                event.has_indexed_source = true;
+            }
         }
         if (has_stack_pointer) {
-            event.stack_slots = sample_slots(
+            event.stack_slots = sample_guest_call_trace_slots(
                 event.esp_entry, guest_call_trace_stack_slot_offsets);
             event.string_slots = sample_string_slots(
                 event.esp_entry, guest_call_trace_string_slot_offsets);
@@ -1509,6 +1564,13 @@ struct RecompiledPcodeModule::Impl {
                     std::fputs("unreadable", stderr);
                 }
             }
+            std::fputs(" edx*=", stderr);
+            if (recorded.edx_entry_slot.has_value) {
+                std::fprintf(stderr, "0x%08x",
+                             recorded.edx_entry_slot.value);
+            } else {
+                std::fputs("unreadable", stderr);
+            }
             for (const auto& slot : recorded.target_slots) {
                 std::fprintf(stderr, " target+0x%x=", slot.offset);
                 if (slot.has_value) {
@@ -1524,6 +1586,59 @@ struct RecompiledPcodeModule::Impl {
                         writer.function, writer.write_address,
                         writer.write_size, writer.word_value,
                         static_cast<unsigned long long>(writer.dispatch_count));
+                }
+            }
+            if (recorded.has_indexed_source) {
+                const auto& source = recorded.indexed_source;
+                std::fprintf(stderr, " indexed-source=list+0x%x=",
+                             source.pointer_offset);
+                if (source.list_pointer.has_value) {
+                    std::fprintf(stderr, "0x%08x",
+                                 source.list_pointer.value);
+                } else {
+                    std::fputs("unreadable", stderr);
+                }
+                std::fprintf(stderr, " base+0x%x=", source.base_offset);
+                if (source.source_base.has_value) {
+                    std::fprintf(stderr, "0x%08x",
+                                 source.source_base.value);
+                } else {
+                    std::fputs("unreadable", stderr);
+                }
+                std::fprintf(stderr, " count+0x%x=", source.count_offset);
+                if (source.source_count.has_value) {
+                    std::fprintf(stderr, "0x%08x",
+                                 source.source_count.value);
+                } else {
+                    std::fputs("unreadable", stderr);
+                }
+                std::fprintf(stderr, " stride+0x%x=", source.stride_offset);
+                if (source.element_stride.has_value) {
+                    std::fprintf(stderr, "0x%08x",
+                                 source.element_stride.value);
+                } else {
+                    std::fputs("unreadable", stderr);
+                }
+                if (source.has_source_address) {
+                    std::fprintf(stderr, " source=0x%08x:",
+                                 source.source_address);
+                    if (source.source_value.has_value) {
+                        std::fprintf(stderr, "0x%08x",
+                                     source.source_value.value);
+                    } else {
+                        std::fputs("unreadable", stderr);
+                    }
+                    if (source.source_value.has_last_writer) {
+                        std::fprintf(
+                            stderr,
+                            " writer=0x%08x write=0x%08x/%u value=0x%08x dispatch=%llu",
+                            source.source_value.last_writer.function,
+                            source.source_value.last_writer.write_address,
+                            source.source_value.last_writer.write_size,
+                            source.source_value.last_writer.word_value,
+                            static_cast<unsigned long long>(
+                                source.source_value.last_writer.dispatch_count));
+                    }
                 }
             }
             for (const auto& slot : recorded.string_slots) {
@@ -1561,6 +1676,8 @@ struct RecompiledPcodeModule::Impl {
             "register", kX86EbpRegisterOffset, event.ebp_return);
         event.has_esp_return = read_guest_u32(
             "register", kX86EspRegisterOffset, event.esp_return);
+        event.edx_return_slot =
+            sample_guest_call_trace_slot(event.edx_entry, 0);
         event.completed = true;
         if (guest_call_trace_live_log_enabled) {
             std::fprintf(
@@ -1600,6 +1717,21 @@ struct RecompiledPcodeModule::Impl {
                 std::fprintf(stderr, "0x%08x", event.esp_return);
             } else {
                 std::fputs("unknown", stderr);
+            }
+            std::fputs(" edx*=", stderr);
+            if (event.edx_return_slot.has_value) {
+                std::fprintf(stderr, "0x%08x", event.edx_return_slot.value);
+            } else {
+                std::fputs("unreadable", stderr);
+            }
+            if (event.edx_return_slot.has_last_writer) {
+                const auto& writer = event.edx_return_slot.last_writer;
+                std::fprintf(
+                    stderr,
+                    " writer=0x%08x write=0x%08x/%u value=0x%08x dispatch=%llu",
+                    writer.function, writer.write_address, writer.write_size,
+                    writer.word_value,
+                    static_cast<unsigned long long>(writer.dispatch_count));
             }
             std::fputc('\n', stderr);
             std::fflush(stderr);
@@ -15735,6 +15867,7 @@ struct RecompiledPcodeModule::Impl {
     std::vector<std::string> guest_call_trace_imports;
     std::vector<uint32_t> guest_call_trace_slot_offsets;
     std::vector<uint32_t> guest_call_trace_target_slot_offsets;
+    std::vector<uint32_t> guest_call_trace_indexed_source_layout;
     std::vector<uint32_t> guest_call_trace_stack_slot_offsets;
     std::vector<uint32_t> guest_call_trace_string_slot_offsets;
     std::vector<RecompiledGuestCallTraceEvent> guest_call_trace_events;

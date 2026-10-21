@@ -1519,12 +1519,133 @@ int main(int argc, char** argv) {
         }
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_STACK_SLOTS") == 0,
                 "could not disable guest call stack slot trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_TARGETS", "0x00685a00", 1) ==
+                    0,
+                "could not enable guest call return-slot trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_PROVENANCE", "0x00033010", 1) ==
+                    0,
+                "could not enable guest call return-slot provenance fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG", "1", 1) == 0,
+                "could not enable live guest call return-slot trace fixture");
+        std::string stack_return_trace;
+        {
+            StderrCapture capture;
+            shift::runtime::RecompiledPcodeModule stack_return_trace_module(
+                argv[1]);
+            require(stack_return_trace_module.call(0x00406200) == 0,
+                    "guest call return-slot trace fixture call failed: " +
+                        stack_return_trace_module.last_error());
+            const auto snapshot =
+                stack_return_trace_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace.size() == 1 &&
+                        snapshot.guest_call_trace.front().function ==
+                            0x00685a00 &&
+                        snapshot.guest_call_trace.front().completed &&
+                        snapshot.guest_call_trace.front().edx_entry_slot
+                                .has_value &&
+                        snapshot.guest_call_trace.front().edx_entry_slot
+                                .value == 0 &&
+                        snapshot.guest_call_trace.front().edx_return_slot
+                                .has_value &&
+                        snapshot.guest_call_trace.front().edx_return_slot
+                                .value == 0x27cc0908 &&
+                        snapshot.guest_call_trace.front().edx_return_slot
+                                .has_last_writer &&
+                        snapshot.guest_call_trace.front().edx_return_slot
+                                .last_writer.function == 0x00685a00 &&
+                        snapshot.guest_call_trace.front().edx_return_slot
+                                .last_writer.write_address == 0x00033010,
+                    "guest call trace did not capture the output slot and its writer at return");
+            stack_return_trace = capture.text();
+        }
+        require(stack_return_trace.find(
+                    "edx*=0x27cc0908 writer=0x00685a00") !=
+                    std::string::npos,
+                "live guest call trace omitted its return-slot value: " +
+                    stack_return_trace);
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG") == 0,
+                "could not disable live guest call return-slot trace fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_PROVENANCE") == 0,
-                "could not disable target slot writer provenance fixture");
+                "could not disable guest call return-slot provenance fixture");
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGETS") == 0,
+                "could not disable guest call return-slot trace fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS") == 0,
                 "could not disable guest call target slot trace fixture");
+
+        require(setenv("SHIFT_TRACE_GUEST_CALL_TARGETS", "0x00685b00", 1) ==
+                    0,
+                "could not enable indexed source trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_INDEXED_SOURCE",
+                       "0x1c,0x4,0x14,0x0", 1) == 0,
+                "could not configure indexed source trace fixture");
+        require(setenv("SHIFT_TRACE_GUEST_PROVENANCE",
+                       "0x34000,0x3401c,0x34104,0x34114,0x34208,0x33010",
+                       1) == 0,
+                "could not enable indexed source provenance fixture");
+        require(setenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG", "1", 1) == 0,
+                "could not enable indexed source live trace fixture");
+        std::string indexed_source_trace;
+        {
+            StderrCapture capture;
+            shift::runtime::RecompiledPcodeModule indexed_source_module(
+                argv[1]);
+            require(indexed_source_module.call(0x00406300) == 0,
+                    "guest indexed source trace fixture call failed: " +
+                        indexed_source_module.last_error());
+            const auto snapshot =
+                indexed_source_module.guest_scheduler_snapshot();
+            require(snapshot.guest_call_trace.size() == 1 &&
+                        snapshot.guest_call_trace.front().function ==
+                            0x00685b00 &&
+                        snapshot.guest_call_trace.front().has_indexed_source &&
+                        snapshot.guest_call_trace.front()
+                                .indexed_source.list_pointer.has_value &&
+                        snapshot.guest_call_trace.front()
+                                .indexed_source.list_pointer.value ==
+                            0x00034100 &&
+                        snapshot.guest_call_trace.front()
+                                .indexed_source.source_base.value ==
+                            0x00034200 &&
+                        snapshot.guest_call_trace.front()
+                                .indexed_source.source_count.value == 3 &&
+                        snapshot.guest_call_trace.front()
+                                .indexed_source.element_stride.value == 4 &&
+                        snapshot.guest_call_trace.front()
+                                .indexed_source.has_source_address &&
+                        snapshot.guest_call_trace.front()
+                                .indexed_source.source_address ==
+                            0x00034208 &&
+                        snapshot.guest_call_trace.front()
+                                .indexed_source.source_value.has_value &&
+                        snapshot.guest_call_trace.front()
+                                .indexed_source.source_value.value ==
+                            0x27cc0908 &&
+                        snapshot.guest_call_trace.front()
+                                .indexed_source.source_value.has_last_writer &&
+                        snapshot.guest_call_trace.front()
+                                .indexed_source.source_value.last_writer
+                                .function == 0x00406300 &&
+                        snapshot.guest_call_trace.front()
+                                .indexed_source.source_value.last_writer
+                                .write_address == 0x00034208 &&
+                        snapshot.guest_call_trace.front().edx_return_slot
+                                .value == 0x27cc0908,
+                    "guest trace did not capture the computed indexed source and its writer");
+            indexed_source_trace = capture.text();
+        }
+        require(indexed_source_trace.find(
+                    "indexed-source=list+0x1c=0x00034100 base+0x4=0x00034200 count+0x14=0x00000003 stride+0x0=0x00000004 source=0x00034208:0x27cc0908 writer=0x00406300") !=
+                    std::string::npos,
+                "live guest call trace omitted the indexed source and writer: " +
+                    indexed_source_trace);
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_LIVE_LOG") == 0,
+                "could not disable indexed source live trace fixture");
+        require(unsetenv("SHIFT_TRACE_GUEST_PROVENANCE") == 0,
+                "could not disable indexed source provenance fixture");
+        require(unsetenv("SHIFT_TRACE_GUEST_CALL_INDEXED_SOURCE") == 0,
+                "could not disable indexed source trace fixture");
         require(unsetenv("SHIFT_TRACE_GUEST_CALL_TARGETS") == 0,
-                "could not disable guest call target trace fixture");
+                "could not disable indexed source target trace fixture");
 
         require(setenv("SHIFT_TRACE_GUEST_CALL_IMPORTS",
                        "KERNEL32.dll!Sleep", 1) == 0,

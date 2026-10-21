@@ -1,5 +1,24 @@
 #include "shift_recompiled_pcode_abi.h"
 
+static int fixture_guest_read_u32(RviPcodeContext *ctx, const char *space,
+                                  uint64_t address, uint32_t *value) {
+    uint8_t bytes[4] = {0};
+    if (ctx->read(ctx->opaque, space, address, sizeof(bytes), bytes) != 0) {
+        return -1;
+    }
+    *value = (uint32_t)bytes[0] | ((uint32_t)bytes[1] << 8) |
+             ((uint32_t)bytes[2] << 16) | ((uint32_t)bytes[3] << 24);
+    return 0;
+}
+
+static int fixture_guest_write_u32(RviPcodeContext *ctx, const char *space,
+                                   uint64_t address, uint32_t value) {
+    const uint8_t bytes[4] = {(uint8_t)value, (uint8_t)(value >> 8),
+                              (uint8_t)(value >> 16),
+                              (uint8_t)(value >> 24)};
+    return ctx->write(ctx->opaque, space, address, sizeof(bytes), bytes);
+}
+
 int rvi_005088a0(RviPcodeContext *ctx) {
     uint8_t esp_bytes[4] = {0};
     uint8_t return_bytes[4] = {0};
@@ -66,6 +85,38 @@ int rvi_00685700(RviPcodeContext *ctx) {
                       value);
 }
 
+int rvi_00685a00(RviPcodeContext *ctx) {
+    const uint32_t value = UINT32_C(0x27cc0908);
+    return ctx->write(ctx->opaque, "ram", UINT64_C(0x00033010),
+                      sizeof(value), (const uint8_t *)&value);
+}
+
+int rvi_00685b00(RviPcodeContext *ctx) {
+    uint32_t receiver = 0;
+    uint32_t output = 0;
+    uint32_t stride = 0;
+    uint32_t list = 0;
+    uint32_t base = 0;
+    uint32_t count = 0;
+    uint32_t value = 0;
+    if (fixture_guest_read_u32(ctx, "register", UINT64_C(4), &receiver) != 0 ||
+        fixture_guest_read_u32(ctx, "register", UINT64_C(8), &output) != 0 ||
+        fixture_guest_read_u32(ctx, "ram", receiver, &stride) != 0 ||
+        fixture_guest_read_u32(ctx, "ram", receiver + 0x1c, &list) != 0 ||
+        fixture_guest_read_u32(ctx, "ram", list + 4, &base) != 0 ||
+        fixture_guest_read_u32(ctx, "ram", list + 0x14, &count) != 0 ||
+        count == 0) {
+        return -1;
+    }
+    const uint32_t source = base + (count - 1) * stride;
+    if (fixture_guest_read_u32(ctx, "ram", source, &value) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", output, value) != 0 ||
+        fixture_guest_write_u32(ctx, "register", 0, 1) != 0) {
+        return -1;
+    }
+    return 0;
+}
+
 int rvi_00401000(RviPcodeContext *ctx) {
     const uint8_t eax[4] = {0x34, 0x12, 0x00, 0x00};
     if (ctx->write(ctx->opaque, "register", 0, sizeof(eax), eax) != 0) {
@@ -119,6 +170,42 @@ int rvi_00406100(RviPcodeContext *ctx) {
         return -1;
     }
     return ctx->call(ctx->opaque, UINT64_C(0x00685700));
+}
+
+int rvi_00406200(RviPcodeContext *ctx) {
+    const uint32_t stack = UINT32_C(0x00033000);
+    const uint32_t return_address = UINT32_C(0x00406205);
+    const uint32_t output = UINT32_C(0x00033010);
+    const uint32_t empty_output = 0;
+    if (ctx->write(ctx->opaque, "register", UINT64_C(0x08), sizeof(output),
+                   (const uint8_t *)&output) != 0 ||
+        ctx->write(ctx->opaque, "register", UINT64_C(0x10), sizeof(stack),
+                   (const uint8_t *)&stack) != 0 ||
+        ctx->write(ctx->opaque, "ram", stack, sizeof(return_address),
+                   (const uint8_t *)&return_address) != 0 ||
+        ctx->write(ctx->opaque, "ram", output, sizeof(empty_output),
+                   (const uint8_t *)&empty_output) != 0) {
+        return -1;
+    }
+    return ctx->call(ctx->opaque, UINT64_C(0x00685a00));
+}
+
+int rvi_00406300(RviPcodeContext *ctx) {
+    const uint32_t receiver = UINT32_C(0x00034000);
+    const uint32_t list = UINT32_C(0x00034100);
+    const uint32_t base = UINT32_C(0x00034200);
+    const uint32_t output = UINT32_C(0x00033010);
+    if (fixture_guest_write_u32(ctx, "ram", receiver, 4) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", receiver + 0x1c, list) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", list + 4, base) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", list + 0x14, 3) != 0 ||
+        fixture_guest_write_u32(ctx, "ram", base + 8,
+                                UINT32_C(0x27cc0908)) != 0 ||
+        fixture_guest_write_u32(ctx, "register", 4, receiver) != 0 ||
+        fixture_guest_write_u32(ctx, "register", 8, output) != 0) {
+        return -1;
+    }
+    return ctx->call(ctx->opaque, UINT64_C(0x00685b00));
 }
 
 int rvi_00404000(RviPcodeContext *ctx) {
