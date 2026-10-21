@@ -390,9 +390,10 @@ bool D3d9PacketCaptureAdapter::install(
         return false;
     }
     downstream_ = adapter;
-    // This adapter captures managed DXT5 bytes from guest memory; it does not
-    // advertise DXT5 support on the live Vulkan texture-upload path.
+    // This adapter captures guest-managed DXT3/DXT5 bytes; neither capability
+    // advertises support on the live Vulkan texture-upload path.
     adapter.supports_dxt5_texture = true;
+    adapter.supports_dxt3_texture = true;
     adapter.backend_context = this;
     adapter.create_device = &create_device_callback;
     adapter.create_texture = &create_texture_callback;

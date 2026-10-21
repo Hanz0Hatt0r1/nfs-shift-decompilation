@@ -165,6 +165,8 @@ int main() {
     require(info.backend_context != &downstream, "adapter owns the callback context");
     require(info.supports_dxt5_texture,
             "capture adapter enables guest-managed DXT5 packet snapshots");
+    require(info.supports_dxt3_texture,
+            "capture adapter enables guest-managed DXT3 packet snapshots");
 
     std::vector<uint8_t> vertex_bytes(96);
     for (size_t i = 0; i < vertex_bytes.size(); ++i) vertex_bytes[i] = static_cast<uint8_t>(i + 1);
