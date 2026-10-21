@@ -5,16 +5,18 @@
 **Отчётная ветка:** `work/process-reports`  
 **Файл:** `process-reports/2026-10-21-process1-audio-runtime-audit.md`  
 **Исходный PE:** `SHIFT.exe`, PC retail 1.02, PE32 x86, SHA-256 `eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1`  
-**Статус:** **plausible but unproven** (возможный, но не доказанный blocker).  
+**Статус после v667:** **v520: plausible but unproven**; **bounded v667 host-frame path: отсутствие выбранных аудиоимпортов в live trace, audio compatibility не объясняет этот наблюдаемый путь**.  
 **Ограничения:** исключительно предоставленный пользователем evidence и файлы GitHub. Локальный диск, процесс, исходный PE и Ghidra-проект не открывались. Ни runtime, ни renderer не изменялись. Файл отчёта — единственное запрошенное изменение.
 
 ## 1. Постановка и краткий вердикт
 
 Вопрос: может ли неполная эмуляция оригинальных WinMM/DirectSound API объяснить наблюдение v520, при котором `ResumeThread` завершился успешно, но в наблюдаемом guest-объекте **worker/predicate bit 2** не был установлен?
 
-**Да, это технически возможная причинная цепь, но существующий evidence не подтверждает, что она произошла.** Неподдержанный непосредственный PE import обычно приводит к ошибке dispatch, отсутствующий динамически разрешаемый аудиосимвол — к нулевому указателю, а отказ `LoadLibraryA` — к NULL/126. Любой из этих исходов потенциально может изменить инициализацию гостевого worker, выбор ветки, сигнализацию события или ожидание. Однако **нет трассы**, устанавливающей одновременно (1) фактическое достижение конкретного аудио API в данном replay, (2) его результат, (3) consumption этого результата/вызов callback, (4) связь с конкретным writer или gate бита 2.
+**Для отдельного наблюдения v520 аудио остаётся возможной, но недоказанной причинной цепью.** Неподдержанный непосредственный PE import приводит к ошибке dispatch; отсутствующий динамический аудиосимвол может разрешиться в ноль, а `LoadLibraryA` — вернуть NULL/126. Но нет связанных друг с другом наблюдений вызова аудио API, использования результата/обратного вызова и writer/reader worker bit 2.
 
-Нельзя присвоить статус `confirmed blocker`: известен только статический call surface и несовершенный host compatibility contract, а не наблюдаемая зависимость worker bit от аудио. Статус `ruled out by evidence` также невозможен.
+**Новый bounded v667 меняет оценку другого, конкретно измеренного пути:** 360 host frames завершились `host-frame-loop` без blocker; в live trace **нет выбранных WinMM/MSACM32 вызовов**, аудио-загрузок и audio-related `GetProcAddress` queries. Следовательно, отсутствие их реализации **не объясняет достигнутый v667 host-frame путь**. Это не доказывает запуск retail gameplay, полноценный рендеринг или отсутствие аудиозависимости в иным образом устроенном v520 predicate frontier (подробности в §9).
+
+Статус `confirmed blocker` для v520 недостижим из этих данных. Глобальный `ruled out by evidence` для v520 тоже был бы неверным.
 
 ## 2. Полный релевантный runtime evidence (из задачи)
 
@@ -174,6 +176,100 @@ timeSetEvent((UINT)uVar5,uResolution,fptc,dwUser,fuEvent);
 
 **Недоступно и не выдумано:** фактическая PE import table и DSOUND imports/exports, реальный исход любого аудиовызова v520/v662/v665/v666, writer/readers бита 2, классы/типы по адресам, guest callbacks/timer firing, точная причина timeout v665, финальный исход v666.
 
-**Вердикт: `plausible but unproven`.** Неполная audio compatibility способна объяснить отсутствие worker progress **при доказанной зависимости**, но из текущего evidence следует только техническая возможность; ни необходимая runtime reachability аудиовызова, ни causal chain к биту 2 не продемонстрированы. `confirmed blocker` и `ruled out by evidence` — обе преждевременные классификации.
+**Исторический вердикт до v667: `plausible but unproven` по v520.** Для нового bounded v667 это уточнено §9 ниже: отсутствующие наблюдаемые аудиовызовы не являются установленной преградой его host-frame пути. Предыдущие главы сохраняют первоначальный evidence и ограниченный вывод своего времени.
 
-**Публикация:** создать этот отдельный документ в существующей ветке `work/process-reports`; точный commit SHA определяется ответом GitHub create-file и доступен в истории файла — не вставляется в собственное содержимое создающего коммита.
+## 9. Дополнение: независимое runtime evidence v667 (полный предоставленный результат)
+
+**Происхождение:** сведения о выполнении/trace v667 предоставлены пользователем; в этой редакции не выполнялся replay, не открывались локальные логи и не проверялся указанный SHA содержимого лога. Предыдущий статический обзор GitHub остаётся отдельной проверкой кода. Это **recompiled guest P-code runtime с оригинальным retail PE**, **не** нативный Windows процесс `SHIFT.exe`.
+
+### 9.1 Provenance и bounded outcome
+
+| Поле | v667 |
+| --- | --- |
+| Оригинальный PE | SHIFT.exe PC retail 1.02, PE32 x86, SHA-256 `eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1` |
+| P1 production source | `e6f674a6` |
+| P2 DXT3 capture adapter | `1fef18a8` |
+| Game data | `pcode-game-data-v661` |
+| Module manifest | реконструирован из evidence v659 |
+| Probe | **360 requested frames**, **420 s timeout**, **live import call trace** |
+| Exit | **0** |
+| Status / blocker | `status=host-frame-loop` / `blocker=null` |
+| Host frame result | **360 rendered host frames** |
+| P-code dispatches | **1,736,499** |
+| Unique functions | **4,728** |
+| Main thread function | `0x00832160` |
+| Worker waiting | `worker_waiting_count=5` |
+| Validation errors | **0** |
+| Probe log SHA-256 | `da5cde6b0bdbddf2649b4bec339141098d36a103cbe077669cad2190a28be3ed` |
+
+**D3D9 bridge:** **1,110 clear requests / 360 submissions**, **1,108 present requests / 360 submissions**, **748 pending presents**; `guest_draw_translation=false`, `retail_rendering_proven=false`.
+
+Следовательно, `exit=0` и 360 host frames **подтверждают прохождение именно ограниченного host-frame-loop в recompiled runtime**, а не доказанную реализацию графики/guest draw, обычный native retail Windows запуск или полноценный игровой прогресс. Число dispatches и unique functions — показатели выполнения P-code, **не** доказательство игрового запуска. Пять ожидающих workers не отождествляются без trace с тем worker/predicate bit 2, который наблюдался в v520.
+
+### 9.2 Полная selection import trace (32 имени) и фактические наблюдения
+
+В live import trace были выбраны 32 API (имена ниже сохранены в том виде, в котором они даны для selection; unqualified suffixes продолжают предшествующий указанный модуль внутри списка):
+
+~~~text
+WINMM.dll!waveOutOpen
+waveOutClose
+waveOutWrite
+waveOutReset
+waveOutPrepareHeader
+waveOutUnprepareHeader
+waveOutGetPosition
+waveOutGetNumDevs
+waveOutGetDevCapsA
+waveOutSetVolume
+waveInOpen
+waveInClose
+waveInStart
+waveInStop
+waveInReset
+waveInAddBuffer
+waveInPrepareHeader
+waveInUnprepareHeader
+waveInGetPosition
+waveInGetNumDevs
+timeSetEvent
+timeKillEvent
+mciSendCommandA
+MSACM32.dll!acmStreamOpen
+acmStreamUnprepareHeader
+acmFormatSuggest
+acmStreamSize
+acmStreamPrepareHeader
+acmStreamConvert
+KERNEL32.dll!LoadLibraryA
+GetProcAddress
+FreeLibrary
+~~~
+
+**Наблюдения v667:** ни одного выбранного вызова `WINMM.dll!` или `MSACM32.dll!` не записано. Два записанных вызова `LoadLibraryA` запрашивали **`kernel32.dll`** и **`nvapi.dll`**; запросов загрузки DirectSound/WinMM/MSACM-модулей и audio-related `GetProcAddress` не было. Диагностического `unimplemented PE import` не зафиксировано. Отсутствуют свидетельства исполнения выбранных audio callsites на этом ограниченном пути.
+
+**Граница отрицательного результата:** это не утверждение о *всех* API, динамических вызовах, непросмотренных `timeBeginPeriod`/`timeGetTime` или COM/vtable-инструкциях; селекция ограничена перечисленными именами и конкретным интервалом до 360 host frames. Отсутствие записи в выбранном import trace не доказывает, что весь аудиодвижок не работал или что никогда не будет вызвано аудио API. Не следует задним числом приписывать этот результат v520 либо другим версиям.
+
+### 9.3 Обновлённая причинная оценка v667 против v520
+
+| Гипотеза/вывод | После v667 | Причина |
+| --- | --- | --- |
+| Нереализованный выбранный WinMM/MSACM импорт блокирует **bounded v667 host-frame path** | **Не объясняет наблюдаемый путь** | Прогон вышел с кодом 0 и `blocker=null`; ни одного выбранного аудиовызова/`unimplemented PE import` в live trace |
+| Аудио через неизвестный, не выбранный route никогда не понадобится | **Не доказано** | Live trace ограничен 32 именами и 360 host frames; DirectSound/COM и неперечисленные timing APIs не покрываются данным отрицанием |
+| v667 доказал retail gameplay/rendering | **Нет** | `guest_draw_translation=false`, `retail_rendering_proven=false`, pending presents 748; речь о host-frame loop |
+| Отсутствие аудио-семантики вызвало **v520 bit 2 не установлен** | **Plausible but unproven** | v667 не воспроизводил точные predicate reader/writer, worker causal chain и execution state v520 |
+| Аудиопричинность v520 исключена | **Нет** | Нельзя переносить отсутствие выбранных вызовов из v667 в отдельный v520 frontier |
+| v667 доказывает отсутствие scheduler/worker проблемы | **Нет** | `worker_waiting_count=5` — агрегат; нет correlation к конкретным handle, wait result, predicate bit 2 |
+
+**Актуальный вердикт для исходного вопроса о v520 — `plausible but unproven`.** Вместе с тем **неполная audio compatibility больше не является объяснением конкретно достигнутого bounded v667 host-frame path**, поскольку соответствующие выбранные audio imports там не вызывались, а явного unsupported import blocker не обнаружено. Эти две формулировки не противоречат друг другу: разные probes проверяют разные frontier и причинные связи.
+
+### 9.4 Самый узкий следующий P1 probe
+
+Без изменения guest audio/timer/callback семантики сделать **в одном воспроизводимом прогоне вокруг v520 frontier** коррелированный, read-only trace:
+
+1. `ResumeThread`: вызывающий guest PC, handle, guest thread ID, previous/new suspend count, mode synchronous/enqueued, first scheduled guest EIP и status worker (`started/runnable/waiting/completed`).
+2. Target worker: wait callsite/EIP/ESP, event handle, `WaitForSingleObject(Ex)` timeout/alertable/result, `SetEvent` source TID и состояние `signaled`; если relevant — отдельные audio `LoadLibraryA/GetProcAddress`, selected WinMM/MSACM и observed DSOUND/COM targets с args/returns/callback addresses.
+3. **Конкретный адрес predicate word**: снимки значения маски `0x4` до ResumeThread, при входе worker, до/после event/wait, на каждом фактическом writer, при decisive reader/branch; writer EIP, TID, old/new, last-writer provenance.
+
+Сопоставить эти точки с первым graphics/present/host pacing yield **в том же прогоне**. Только установленная цепь `audio result → branch/wait/callback → конкретный predicate writer` может повысить v520 до `confirmed blocker`. Пока такая связь не представлена, не менять runtime audio API и не моделировать `waveInOpen/timeSetEvent` фиктивным успехом.
+
+**Update scope:** это дополнение к существующему отчёту в `work/process-reports`, не отдельный файл. Код runtime/renderer неизменён.
