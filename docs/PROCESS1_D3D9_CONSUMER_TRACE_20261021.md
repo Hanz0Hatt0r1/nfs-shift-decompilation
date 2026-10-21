@@ -137,8 +137,36 @@ were `0x241d8d24` and `0x241d8d74`, both written by retail `0x0083d850`.
 This confirms that the corrected descriptor size reaches the retail record
 builder. The replay then stopped at `unsupported D3D9 managed texture
 description` after 1,305,017 dispatches; it did not complete the requested host
-frames, and `retail_rendering_proven` remained false. The next blocking
-capability is managed DXT3 texture capture, owned by Process 2.
+frames, and `retail_rendering_proven` remained false. At that point the replay
+report did not record whether the optional D3D9 packet-capture adapter was
+installed, so the exact cause of the texture stop was not yet established.
+
+### Managed DXT3 capture boundary (v722-v723)
+
+A v722 replay enabled `SHIFT_D3D9_PACKET_CAPTURE_DIR` and used the cumulative
+v659 P-code manifest. The diagnostic record for the failing retail request was
+`1024x512`, one level, usage 0, FOURCC `0x33545844` (DXT3), managed pool 1.
+The active P1 branch reported adapter capabilities `DXT3=0, DXT5=1`; it then
+stopped at the same managed-texture validation after 1,303,399 dispatches.
+This identifies the missing DXT3 capability at the P1/P2 capture boundary; it
+does not require changing the retail request or its semantics.
+
+For v723, a temporary integration build added only Process 2 commit
+`1fef18a8` from PR #2143 to the P1 v719 source, then rebuilt the runtime. The
+same retail request reported `DXT3=1, DXT5=1`; the probe completed 360 host
+frames with 1,735,292 P-code dispatches, 4,726 unique functions, five waiting
+workers, and zero Vulkan validation errors. The scheduler snapshot was at
+`0x00633a50`; the bridge submitted 360 clears and 360 presents. The probe still
+reported `guest_draw_translation=false` and `retail_rendering_proven=false`,
+and produced no D3D9 packet capture because no guest draw was reached. This is
+evidence that the DXT3 stop is crossed when the adapter capability is present,
+not evidence of a retail menu, race, or rendered frame. The temporary
+integration was not pushed into either PR.
+
+PR #2143 remains the owner of the adapter capability change; the current P1
+branch does not contain commit `1fef18a8`. The compact logs, exact descriptor,
+source revisions, and limitations are recorded in
+[`process1_d3dx_dxt3_capture_integration_v723.json`](../evidence/retail_frontier_20261021/process1_d3dx_dxt3_capture_integration_v723.json).
 
 Full compact evidence, focused test commands, and artifact hashes are in
 [`process1_d3dx_parameter_desc_abi_v719.json`](../evidence/retail_frontier_20261021/process1_d3dx_parameter_desc_abi_v719.json).

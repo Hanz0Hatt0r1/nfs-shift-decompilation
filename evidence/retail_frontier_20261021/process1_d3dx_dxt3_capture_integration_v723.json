@@ -1,0 +1,91 @@
+{
+  "format": "SHIFT.Process1D3dxDxt3CaptureIntegration/1",
+  "collected_at": "2026-10-22",
+  "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "p1_source_head": "f170c5ad35905126ea6f6ecfba9dc6bfaa2d1aee",
+  "p2_dependency": {
+    "pr": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2143",
+    "pr_state": "OPEN",
+    "pr_head": "121f29537daf4dd5a0098319ebcef370c9510b83",
+    "capability_commit": "1fef18a8",
+    "temporary_integration_head": "f4147f33",
+    "note": "Only the DXT3 capture-capability commit was cherry-picked into a disposable integration worktree; neither PR branch was merged or pushed."
+  },
+  "probe_configuration": {
+    "frames_requested": 360,
+    "timeout_seconds": 180,
+    "validation": true,
+    "module_manifest": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v659-missing-005a0ef0/module-manifest-v659-005a0ef0.json",
+    "module_manifest_sha256": "6977898b7ff79edfb84f9b6f6d9e5ff98d8e073d17d88f345e8a1edb77e73a0e",
+    "capture_environment": "SHIFT_D3D9_PACKET_CAPTURE_DIR set to a per-run temporary directory",
+    "diagnostic_environment": "SHIFT_TRACE_D3D9_RESOURCES=1"
+  },
+  "failing_request": {
+    "device": "0x10476ed0",
+    "width": 1024,
+    "height": 512,
+    "levels": 1,
+    "usage": "0x00000000",
+    "format": "0x33545844",
+    "format_name": "DXT3",
+    "pool": 1,
+    "pool_name": "managed"
+  },
+  "v722_p1_only": {
+    "adapter_capabilities_at_request": {
+      "dxt3": false,
+      "dxt5": true
+    },
+    "status": "blocked",
+    "blocker": "unsupported D3D9 managed texture description",
+    "dispatches": 1303399,
+    "unique_functions": 4714,
+    "frames_rendered": null,
+    "runtime_sha256": "4980a7fcd97093642f0f331ae08b4ef097742f473f6ed11437bb4dfb167eb0ad",
+    "log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/ui-event-path-v722.log",
+    "log_bytes": 95482,
+    "log_sha256": "95aa9face5d4d7719c43da7d08a03fbff381fa0c8dd6957751b5f17072e8b027",
+    "report_sha256": "5202f9784f3402f6e969f3b2e0c92f606a20bee8b8251f4aad34079ab9eb026c"
+  },
+  "v723_integrated": {
+    "adapter_capabilities_at_request": {
+      "dxt3": true,
+      "dxt5": true
+    },
+    "status": "host-frame-loop",
+    "blocker": null,
+    "dispatches": 1735292,
+    "unique_functions": 4726,
+    "frames_rendered": 360,
+    "validation_errors": 0,
+    "worker_waiting_count": 5,
+    "main_thread_current_function_at_snapshot": "0x00633a50",
+    "clear_requests": 1128,
+    "clear_submissions": 360,
+    "present_requests": 1127,
+    "present_submissions": 360,
+    "guest_draw_translation": false,
+    "retail_rendering_proven": false,
+    "runtime_sha256": "8d0a5937e02f124600be7aaac95eb5a50db9eba9f143931e879ef7597446f2f8",
+    "log_path_outside_repository": "/tmp/process1-retail-runtime-evidence/ui-event-path-v723.log",
+    "log_bytes": 127929,
+    "log_sha256": "d4a19a90bc67ac31b82cb6e9dda8234594263114eb3a6b5d8b7381df3ad38968",
+    "report_sha256": "5947cf48880674982c9faf10c5db602e7eb0ae45cce4cefc786dfa1279f13895",
+    "capture_output_directory_created": false
+  },
+  "verification": {
+    "temporary_runtime_build": "passed",
+    "p1_focused_ctest": {
+      "command": "/usr/bin/ctest --test-dir /tmp/nfs-shift-dxt3-integration-20261022/native_runtime/build --output-on-failure -R ^shift_runtime_recompiled_pcode_module$",
+      "passed": 1,
+      "failed": 0
+    },
+    "p2_pr_checks_at_collection": "all reported checks passed"
+  },
+  "interpretation": "The P1-only capture adapter did not advertise managed DXT3; adding P2 commit 1fef18a8 enabled the exact retail texture request and removed that stop. The integrated replay reached its host-frame bound but still produced no guest draw or retail rendering.",
+  "limitations": [
+    "This is recompiled P-code execution over the pinned retail PE, not an original native SHIFT.exe Linux launch.",
+    "Host-frame completion, dispatch counts, and unique-function counts do not prove menu, race, or game rendering.",
+    "The integration was temporary and is not present in the P1 branch; PR #2143 remains open."
+  ]
+}
