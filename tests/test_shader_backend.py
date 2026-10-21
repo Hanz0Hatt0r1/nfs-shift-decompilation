@@ -9,7 +9,13 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parents[1]))
 
 from shader_asm import parse_program
-from shader_backend import program_to_ir, to_glsl, translate_pair
+from shader_backend import (
+    program_to_ir,
+    to_glsl,
+    translate_pair,
+    validate_linked_shader_pair_vulkan,
+    validate_vulkan_glsl_pair,
+)
 
 
 def _shader(stage: str) -> bytes:
@@ -69,6 +75,44 @@ def test_backend_reuses_canonical_glsl_lowering():
     assert to_glsl is shader_asm.to_glsl
 
 
+def test_vulkan_sincos_lowering_uses_scalar_components():
+    validator = shutil.which("glslangValidator")
+    if validator is None:
+        pytest.skip("glslangValidator is not installed")
+
+    words = list(struct.unpack("<" + "I" * (len(_shader("vertex")) // 4), _shader("vertex")))
+    words[-1:-1] = [
+        (2 << 24) | 37,  # sincos r0.xy, r1.x
+        0x80030000,
+        0x80000001,
+    ]
+    vertex = to_glsl(parse_program(struct.pack("<" + "I" * len(words), *words)), target="vulkan")
+    pixel = to_glsl(parse_program(_shader("pixel")), target="vulkan")
+
+    assert "vec4(sin(vec4(r1.x)).x,cos(vec4(r1.x)).x,0.0,0.0)" in vertex
+    assert validate_vulkan_glsl_pair(vertex, pixel)["status"] == "valid"
+
+
+def test_vulkan_loop_reads_iteration_control_from_integer_register():
+    validator = shutil.which("glslangValidator")
+    if validator is None:
+        pytest.skip("glslangValidator is not installed")
+
+    source_words = _shader("vertex")
+    words = list(struct.unpack("<" + "I" * (len(source_words) // 4), source_words))
+    words[-1:-1] = [
+        (2 << 24) | 27,  # loop aL0, i0
+        0xF0E40800,
+        0xF0E40000,
+        29,  # endloop
+    ]
+    vertex = to_glsl(parse_program(struct.pack("<" + "I" * len(words), *words)), target="vulkan")
+    pixel = to_glsl(parse_program(_shader("pixel")), target="vulkan")
+
+    assert "for(int shift_loop=i[0].y, shift_iter=0; shift_iter<i[0].x" in vertex
+    assert validate_vulkan_glsl_pair(vertex, pixel)["status"] == "valid"
+
+
 def test_sampler_type_and_relative_addressing_are_preserved():
     # vs_3_0, dcl_cube s0, mov r0, c[a0.x+2]
     version = 0xFFFE0300
@@ -93,7 +137,7 @@ def test_sampler_type_and_relative_addressing_are_preserved():
 
 
 def _shader_pair_with_different_varying_registers() -> tuple:
-    # VS: dcl_texcoord5 oT1; PS: dcl_texcoord5 v0.
+    # VS: dcl_texcoord5 oT1 plus unused texcoord0 oT2; PS: texcoord5 v0.
     version_v = 0xFFFE0300
     version_p = 0xFFFF0300
     dcl = (2 << 24) | 31
@@ -103,6 +147,7 @@ def _shader_pair_with_different_varying_registers() -> tuple:
         version_v,
         dcl, 0 | (0 << 16), 0x80000000 | 0 | (15 << 16) | (1 << 28),
         dcl, 5 | (5 << 16), out_t1,
+        dcl, 5 | (0 << 16), 0x80000000 | 2 | (15 << 16) | (6 << 28),
         0xFFFF,
     ]
     words_p = [version_p, dcl, 5 | (5 << 16), in_v0, 0xFFFF]
@@ -122,7 +167,9 @@ def test_linked_glsl_translation_shares_varying_locations_by_semantic():
     linked = translate_pair(vs, ps)
     assert linked["format"] == "SHIFT.LinkedShaderPair/1"
     assert "layout(location=0) out vec4 out_1;" in linked["vertex_glsl"]
+    assert "layout(location=1) out vec4 out_2;" in linked["vertex_glsl"]
     assert "layout(location=0) in vec4 in_0;" in linked["pixel_glsl"]
+    assert validate_linked_shader_pair_vulkan(linked)["status"] == "valid"
 
 
 def test_linked_glsl_translation_maps_vertex_inputs_to_target_layout_locations():

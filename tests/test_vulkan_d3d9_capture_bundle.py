@@ -1,5 +1,6 @@
 import struct
 import sys
+import json
 from pathlib import Path
 
 import pytest
@@ -10,10 +11,43 @@ from vulkan_d3d9_capture_bundle import (
     GEOMETRY_ATTRIBUTE,
     GEOMETRY_HEADER,
     _captured_surface_formats,
+    _payload_precedes_draw,
+    _read_events,
     _sampler_state,
     _validate_texture_mip_filter,
     encode_capture_geometry,
 )
+
+
+def test_capture_bundle_uses_deferred_buffer_payload_captured_before_draw(tmp_path):
+    rows = [
+        {"event_index": 0, "frame": 2, "process_id": 1, "event": "create_vertex_buffer", "vertex_buffer_ptr": "vb"},
+        {"event_index": 1, "frame": 2, "process_id": 1, "event": "create_index_buffer", "index_buffer_ptr": "ib"},
+        {"event_index": 2, "frame": 8, "process_id": 1, "device_ptr": "dev", "event": "draw_indexed_primitive"},
+        {"event_index": 3, "frame": 8, "process_id": 1, "event": "buffer_payload", "buffer_ptr": "vb", "payload_capture_frame": 7},
+        {"event_index": 4, "frame": 8, "process_id": 1, "event": "buffer_payload", "buffer_ptr": "ib", "payload_capture_frame": 7},
+    ]
+    capture = tmp_path / "capture.jsonl"
+    capture.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+
+    draw, state = _read_events(capture, 2)
+    payload = state["objects"]["payload"]["vb"]
+    assert payload["event_index"] == 3
+    assert _payload_precedes_draw(payload, draw)
+
+
+def test_capture_bundle_rejects_same_frame_deferred_buffer_payload(tmp_path):
+    rows = [
+        {"event_index": 0, "frame": 2, "process_id": 1, "event": "create_vertex_buffer", "vertex_buffer_ptr": "vb"},
+        {"event_index": 2, "frame": 8, "process_id": 1, "device_ptr": "dev", "event": "draw_indexed_primitive"},
+        {"event_index": 3, "frame": 8, "process_id": 1, "event": "buffer_payload", "buffer_ptr": "vb", "payload_capture_frame": 8},
+    ]
+    capture = tmp_path / "capture.jsonl"
+    capture.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+
+    draw, state = _read_events(capture, 2)
+    payload = state["objects"]["payload"]["vb"]
+    assert not _payload_precedes_draw(payload, draw)
 
 
 def test_capture_geometry_preserves_index16_and_draw_parameters():

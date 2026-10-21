@@ -322,6 +322,7 @@ def _glsl_reg(
     elif rt==4: base=f'vsRastOut{idx}'
     elif rt==5: base=f'vsAttrOut{idx}'
     elif rt==6: base=f'out_{idx}'
+    elif rt==7: base=f'i[{idx}]'
     elif rt==8: base=f'fragColor{idx}'
     elif rt==9: base='gl_FragDepth'
     elif rt==10: base=f'tex{idx}'
@@ -632,7 +633,7 @@ def to_glsl(
             elif n=='SGN' and len(o)>=2: lines.append('  '+emit_assign(o[0],f'sign({glsl_reg(o[1],program.stage)})',program.stage,pred))
             elif n=='SINCOS' and len(o)>=2:
                 x=glsl_reg(o[1],program.stage)
-                lines.append('  '+emit_assign(o[0],f'vec4(sin({x}),cos({x}),0.0,0.0)',program.stage,pred))
+                lines.append('  '+emit_assign(o[0],f'vec4(sin({x}).x,cos({x}).x,0.0,0.0)',program.stage,pred))
             elif n in ('M4x4','M4x3','M3x4','M3x3','M3x2') and len(o)>=3:
                 dims={'M4x4':(4,4),'M4x3':(4,3),'M3x4':(3,4),'M3x3':(3,3),'M3x2':(3,2)}[n]
                 dst=o[0]; src=o[1]; mat=o[2]
@@ -691,10 +692,10 @@ def to_glsl(
                 lines.append(f'  if(all({cmp})) break;')
             elif n=='BREAKP' and len(o)>=1:
                 lines.append(f'  if({_bool_condition(o[0],program.stage)}) break;')
-            elif n=='LOOP' and len(o)>=1:
-                src=glsl_reg(o[0],program.stage)
+            elif n=='LOOP' and len(o)>=2:
+                src=glsl_reg(o[1],program.stage)
                 loop_depth+=1
-                lines.append(f'  for(int shift_loop=int(round({src}.y)), shift_iter=0; shift_iter<int(round({src}.x)); ++shift_iter, shift_loop+=int(round({src}.z))) {{')
+                lines.append(f'  for(int shift_loop={src}.y, shift_iter=0; shift_iter<{src}.x; ++shift_iter, shift_loop+={src}.z) {{')
             elif n=='ENDLOOP':
                 loop_depth=max(0,loop_depth-1)
                 lines.append('  }')

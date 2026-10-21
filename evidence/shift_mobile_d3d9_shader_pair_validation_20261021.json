@@ -1,0 +1,159 @@
+{
+  "android_vulkan_replay_proven": false,
+  "capture": {
+    "buffer_payload_bytes": 15062414,
+    "buffer_payload_event_count": 2124,
+    "buffer_payload_file_count": 2124,
+    "byte_size": 50889175,
+    "captured_integer_shader_constant_update_event_count": 0,
+    "captured_texture_snapshot_event_count": 0,
+    "indexed_draw_count": 2783,
+    "sha256": "71ec43893e5706c696757934e47d4cceb5a18b4699f10be589d1c1cd383f6ffb",
+    "valid_event_count": 71634
+  },
+  "format": "SHIFT.MobileD3D9ShaderPairValidation/1",
+  "retail_image_parity_proven": false,
+  "shader_pair_count": 10,
+  "shader_pairs": [
+    {
+      "blocking_reasons": [],
+      "draw_count": 50,
+      "pixel_byte_sha256": "4c7b4d96853bb13191559a71239eb3d0c7d6f767d603a38018b2c933dd2e5be2",
+      "pixel_sampler_registers": [
+        0,
+        1
+      ],
+      "vertex_byte_sha256": "105a58b74e05039c2f8f2266724556410a0db2fac470bbad4d7293f3fe7ea806",
+      "vulkan_validation_status": "valid"
+    },
+    {
+      "blocking_reasons": [],
+      "draw_count": 6,
+      "pixel_byte_sha256": "1f84d5947d0dbfc99183e71e19536ae82545f2f3664a29be961eea36ad35f99f",
+      "pixel_sampler_registers": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "vertex_byte_sha256": "51fa7d3802ba6983a33e85b077199c5058d0cb5927d45e49607755a6431b1a2d",
+      "vulkan_validation_status": "valid"
+    },
+    {
+      "blocking_reasons": [],
+      "draw_count": 3,
+      "pixel_byte_sha256": "41121a36bd00d6a364964462aee58f2160e03db2a7d198d7290558611f4acbaf",
+      "pixel_sampler_registers": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "vertex_byte_sha256": "815423bb1aeb8ef456bbb0c2a46678025d238a853165f87eff002e73e2455284",
+      "vulkan_validation_status": "valid"
+    },
+    {
+      "blocking_reasons": [],
+      "draw_count": 45,
+      "pixel_byte_sha256": "d7859ccad24d2884b4e4eebeb2f520ea6fcdfbbd65cdc475c22f86a4200d351a",
+      "pixel_sampler_registers": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "vertex_byte_sha256": "815423bb1aeb8ef456bbb0c2a46678025d238a853165f87eff002e73e2455284",
+      "vulkan_validation_status": "valid"
+    },
+    {
+      "blocking_reasons": [],
+      "draw_count": 3,
+      "pixel_byte_sha256": "41121a36bd00d6a364964462aee58f2160e03db2a7d198d7290558611f4acbaf",
+      "pixel_sampler_registers": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "vertex_byte_sha256": "b1d4a63bcc46d38bbe0399719bd304cd7d98ea47cb77f29dc2683f34a5fec0ba",
+      "vulkan_validation_status": "valid"
+    },
+    {
+      "blocking_reasons": [],
+      "draw_count": 32,
+      "pixel_byte_sha256": "eba68ff23ccaf5ff0df4690da7805a7cbd33a09af273099c51b3f801f1c3ff1f",
+      "pixel_sampler_registers": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "vertex_byte_sha256": "b1d4a63bcc46d38bbe0399719bd304cd7d98ea47cb77f29dc2683f34a5fec0ba",
+      "vulkan_validation_status": "valid"
+    },
+    {
+      "blocking_reasons": [],
+      "draw_count": 5,
+      "pixel_byte_sha256": "5af68e3c210e17d51fed7c3229326c7da5564ff91d423df656267cb6de931623",
+      "pixel_sampler_registers": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "vertex_byte_sha256": "b515e18589746484d5ba85777c39aaa23247d7c1808ea5894025230ce551c4e6",
+      "vulkan_validation_status": "valid"
+    },
+    {
+      "blocking_reasons": [],
+      "draw_count": 10,
+      "pixel_byte_sha256": "adb15d7e73c899c1891b3d0dcd7eedb5447d7c4387da883fda39e534c65f4add",
+      "pixel_sampler_registers": [
+        0,
+        1,
+        2
+      ],
+      "vertex_byte_sha256": "b515e18589746484d5ba85777c39aaa23247d7c1808ea5894025230ce551c4e6",
+      "vulkan_validation_status": "valid"
+    },
+    {
+      "blocking_reasons": [],
+      "draw_count": 13,
+      "pixel_byte_sha256": "0c8a98760e224ee85825d3723409c43f7e611a85c6c715a4f580c9d748d2e75c",
+      "pixel_sampler_registers": [
+        0,
+        1,
+        2
+      ],
+      "vertex_byte_sha256": "d068f319cacf5b2c1bfab2d7cd32a7dea5829c5509adae8507e26ee93c1573c0",
+      "vulkan_validation_status": "valid"
+    },
+    {
+      "blocking_reasons": [],
+      "draw_count": 19,
+      "pixel_byte_sha256": "8649d5910884460f8b4661318a9628c6c9b16922b5ac5e821e1a597e9e0e9d3a",
+      "pixel_sampler_registers": [
+        0,
+        1,
+        2
+      ],
+      "vertex_byte_sha256": "d068f319cacf5b2c1bfab2d7cd32a7dea5829c5509adae8507e26ee93c1573c0",
+      "vulkan_validation_status": "valid"
+    }
+  ],
+  "target_draws_with_both_buffer_payloads": 0,
+  "target_inventory_sha256": "26620dbe10aa578abe1115f56c642037bd2b06199814a886affcecaa4706650f",
+  "target_render_target_format_distribution": {
+    "113": 161,
+    "21": 25
+  },
+  "target_shader_draw_count": 186,
+  "target_shader_draw_frames": [
+    1569,
+    1571
+  ],
+  "validated_shader_pair_count": 10
+}

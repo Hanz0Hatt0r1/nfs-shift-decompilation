@@ -232,11 +232,36 @@ def translate_pair(
     vertex_properties: list[str | dict] | tuple[str | dict, ...] = (),
 ) -> dict:
     """Translate a matched D3D9 VS/PS pair into a shared GLSL interface."""
-    from shader_interface import build_vertex_input_locations
+    from shader_interface import build_vertex_input_locations, register_index
 
     linkage = build_varying_locations(vertex, pixel)
     if not linkage["valid"]:
         raise ValueError("cannot translate unmatched VS/PS pair to a linked GLSL interface")
+
+    vertex_output_locations = dict(linkage["vertex_output_locations"])
+    position_outputs = {
+        register_index(output.get("register"))
+        for output in vertex.outputs
+        if str(output.get("usage", "")).upper() == "POSITION"
+    }
+    extra_output_registers = {
+        register_index(output.get("register"))
+        for output in vertex.outputs
+        if str(output.get("usage", "")).upper() != "POSITION"
+    }
+    extra_output_registers.update(
+        operand.index
+        for instruction in vertex.instructions
+        for operand in instruction.operands[:1]
+        if operand.kind == "dest" and operand.reg_type == 6
+    )
+    extra_output_registers.discard(None)
+    extra_output_registers.difference_update(position_outputs)
+    extra_output_registers.difference_update(vertex_output_locations)
+    next_output_location = max(vertex_output_locations.values(), default=-1) + 1
+    for register in sorted(extra_output_registers):
+        vertex_output_locations[register] = next_output_location
+        next_output_location += 1
 
     input_linkage = (
         build_vertex_input_locations(vertex, vertex_properties)
@@ -257,7 +282,7 @@ def translate_pair(
         "vertex_glsl": to_glsl(
             vertex,
             input_locations=input_linkage["input_locations"],
-            output_locations=linkage["vertex_output_locations"],
+            output_locations=vertex_output_locations,
             constant_binding=14,
             constant_block_name="ShiftD3D9VertexConstants",
         ),
@@ -270,7 +295,7 @@ def translate_pair(
         "vulkan_vertex_glsl": to_glsl(
             vertex,
             input_locations=input_linkage["input_locations"],
-            output_locations=linkage["vertex_output_locations"],
+            output_locations=vertex_output_locations,
             constant_binding=14,
             constant_block_name="ShiftD3D9VertexConstants",
             target="vulkan",

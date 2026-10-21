@@ -98,6 +98,13 @@ def _captured_surface_formats(
     return _RENDER_TARGET_FORMAT[color_format], _DEPTH_FORMAT.get(depth_format, "")
 
 
+def _payload_precedes_draw(payload: dict[str, Any], draw: dict[str, Any]) -> bool:
+    if int(payload.get("event_index", -1)) <= int(draw.get("event_index", -1)):
+        return True
+    capture_frame = payload.get("payload_capture_frame")
+    return isinstance(capture_frame, int) and capture_frame < int(draw.get("frame", 0))
+
+
 def _read_events(capture_path: Path, event_index: int) -> tuple[dict[str, Any], dict[str, Any]]:
     draw = None
     for line in capture_path.open(encoding="utf-8"):
@@ -129,11 +136,30 @@ def _read_events(capture_path: Path, event_index: int) -> tuple[dict[str, Any], 
     }
     device = draw.get("device_ptr")
     process_id = draw.get("process_id")
+    draw_frame = int(draw.get("frame", 0))
+
+    def retain_payload(row: dict[str, Any]) -> None:
+        pointer = row.get("buffer_ptr")
+        capture_frame = int(row.get("payload_capture_frame", row.get("frame", -1)))
+        previous = objects["payload"].get(pointer)
+        previous_frame = int(previous.get("payload_capture_frame", previous.get("frame", -1))) if previous else -1
+        if previous is None or (capture_frame, int(row.get("event_index", -1))) > (
+            previous_frame, int(previous.get("event_index", -1))
+        ):
+            objects["payload"][pointer] = row
+
     for line in capture_path.open(encoding="utf-8"):
         row = json.loads(line)
         current_event = int(row.get("event_index", -1))
         if current_event > event_index:
-            break
+            if (
+                row.get("event") == "buffer_payload"
+                and row.get("process_id") == process_id
+                and isinstance(row.get("payload_capture_frame"), int)
+                and row["payload_capture_frame"] <= draw_frame
+            ):
+                retain_payload(row)
+            continue
         event = row.get("event")
         pointer_fields = {
             "create_vertex_shader": ("vertex_shader", "shader_ptr"),
@@ -147,7 +173,7 @@ def _read_events(capture_path: Path, event_index: int) -> tuple[dict[str, Any], 
             category, key = pointer_fields[event]
             objects[category][row.get(key)] = row
         if event == "buffer_payload" and row.get("process_id") == process_id:
-            objects["payload"][row.get("buffer_ptr")] = row
+            retain_payload(row)
 
         if row.get("device_ptr") != device:
             continue
@@ -472,10 +498,18 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
     index_payload = objects["payload"].get(ib_ptr)
     if not all((vertex_create, index_create, vertex_payload, index_payload)):
         raise ValueError("captured draw lacks a create record or buffer payload snapshot")
-    if int(vertex_payload["event_index"]) <= int(vertex_create["event_index"]) or int(vertex_payload["event_index"]) > event_index:
+    if int(vertex_payload["event_index"]) <= int(vertex_create["event_index"]):
         raise ValueError("vertex payload is outside its COM resource generation")
-    if int(index_payload["event_index"]) <= int(index_create["event_index"]) or int(index_payload["event_index"]) > event_index:
+    if int(index_payload["event_index"]) <= int(index_create["event_index"]):
         raise ValueError("index payload is outside its COM resource generation")
+    if not _payload_precedes_draw(vertex_payload, draw):
+        raise ValueError("vertex payload capture is not proven to precede the draw")
+    if not _payload_precedes_draw(index_payload, draw):
+        raise ValueError("index payload capture is not proven to precede the draw")
+    if int(vertex_payload.get("payload_capture_frame", vertex_payload.get("frame", -1))) < int(vertex_create.get("frame", -1)):
+        raise ValueError("vertex payload predates its COM resource generation")
+    if int(index_payload.get("payload_capture_frame", index_payload.get("frame", -1))) < int(index_create.get("frame", -1)):
+        raise ValueError("index payload predates its COM resource generation")
     if vertex_create.get("pool") != 1 or vertex_create.get("usage") != 0:
         raise ValueError("capture replay currently requires a static managed vertex buffer")
     if index_create.get("format") != 101:
