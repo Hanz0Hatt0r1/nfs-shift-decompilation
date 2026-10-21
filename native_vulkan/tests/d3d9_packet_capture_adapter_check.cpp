@@ -127,15 +127,21 @@ runtime::RecompiledGuestD3d9DrawIndexedPrimitivePacket make_packet() {
         {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}});
     packet.textures.push_back(dxt5_texture);
 
+    auto vertex_sampler_texture = render_target_texture;
+    vertex_sampler_texture.stage = 256;
+    vertex_sampler_texture.guest_texture = 0x63;
+    packet.textures.push_back(vertex_sampler_texture);
+
     packet.render_states = {
-        {0x42, 7, 1}, {0x42, 14, 1}, {0x42, 23, 4}, {0x42, 27, 0},
+        {0x42, 7, 0}, {0x42, 7, 1}, {0x42, 14, 1}, {0x42, 23, 4}, {0x42, 27, 0},
         {0x42, 19, 1}, {0x42, 20, 2}, {0x42, 22, 1}, {0x42, 168, 15},
         {0x42, 171, 1}, {0x42, 206, 0},
     };
     packet.sampler_states = {
-        {0, 1, 1}, {0, 2, 1}, {0, 5, 2}, {0, 6, 2}, {0, 7, 0}, {0, 11, 1},
+        {0, 1, 3}, {0, 1, 1}, {0, 2, 1}, {0, 5, 2}, {0, 6, 2}, {0, 7, 0}, {0, 11, 1},
     };
     packet.viewport = {0, 0, 800, 600, 0, 0x3f800000};
+    packet.render_targets.push_back({1, 0x72, {21, 1, 1, 0, 0, 0, 800, 600}});
     packet.render_targets.push_back({0, 0x70, {21, 1, 1, 0, 0, 0, 800, 600}});
     packet.has_depth_surface = true;
     packet.depth_surface = {0, 0x71, {75, 1, 2, 0, 0, 0, 800, 600}};
@@ -211,6 +217,23 @@ int main() {
             "all stream frequency settings reach the consumer event");
     require(capture.find("\"surface_width\":800") != std::string::npos,
             "surface descriptor dimensions are serialized");
+
+    require(capture.find("\"stage\":256") != std::string::npos,
+            "vertex sampler stage 256 is preserved");
+    const auto render_before = capture.find("\"state\":7,\"value\":0");
+    const auto render_after = capture.find("\"state\":7,\"value\":1");
+    require(render_before != std::string::npos && render_after > render_before,
+            "render states keep producer ordering");
+    const auto sampler_before = capture.find("\"state\":1,\"value\":3");
+    const auto sampler_after = capture.find("\"state\":1,\"value\":1");
+    require(sampler_before != std::string::npos && sampler_after > sampler_before,
+            "sampler states keep producer ordering");
+    const auto rt1 = capture.find("\"render_target_index\":1");
+    const auto rt0 = capture.find("\"render_target_index\":0");
+    require(rt1 != std::string::npos && rt0 > rt1,
+            "render targets keep producer ordering");
+    require(capture.find("\"guest_packet_last_clear_unproven_target\":true") != std::string::npos,
+            "last clear is explicitly marked as unproven for current target");
 
     require(read_bytes(draw_dir / "buffers/00000010_vb.bin") == expected_vertex_bytes,
             "buffer update bytes are copied before the callback returns");
