@@ -8,8 +8,9 @@
 wraps and forwards the existing D3D9 callbacks, caches vertex/index buffer
 updates by guest resource ID, and writes each selected draw into an isolated
 `SHIFT.D3D9RuntimeCaptureSchema/1` JSONL directory. The existing
-`vulkan_d3d9_capture_bundle.py` then converts that capture into the native
-Vulkan bundle format.
+`vulkan_d3d9_capture_bundle.py` can consume that capture, but it admits a
+native bundle only when the packet supplies enough independently provable
+state (in particular, it rejects a synthetic clear lacking target provenance).
 
 One directory is written per packet as
 `draw_<guest-device>_<sequence>/capture.jsonl`. `event_index` is local to that
@@ -100,6 +101,15 @@ tests). These checks do not claim a P1 runtime draw, Vulkan validation of the
 new packet adapter path, or retail frame parity.
 
 ## Follow-up contract audit (P1 packet v1)
+
+
+The handoff excerpt of `RecompiledGuestD3d9AdapterInfo` stops at
+`present` without showing `draw_indexed_primitive`. The graphics wrapper
+**requires** the latter callback-table member; it exists in the actual P1
+PR #2140 header. If the excerpt is intended as the exact complete adapter
+table, there is no supported callable draw entrypoint and integration cannot
+compile until P1 supplies it. This document does not silently add that field
+or alter P1's ABI.
 
 The consumer is now transport-compatible with the two public variants currently
 in circulation, **but they are not the same ABI definition**. The packet
