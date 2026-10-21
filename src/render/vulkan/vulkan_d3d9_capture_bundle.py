@@ -368,15 +368,17 @@ def _read_events(capture_path: Path, event_index: int) -> tuple[dict[str, Any], 
                         or value > 0xFFFFFFFF
                         for value in values_bits
                     )
-                    or not isinstance(set_mask, list)
-                    or len(set_mask) != 8
-                    or any(
-                        isinstance(value, bool)
-                        or not isinstance(value, int)
-                        or value < 0
-                        or value > 0xFFFFFFFF
-                        for value in set_mask
-                    )
+                    or (set_mask is not None and (
+                        not isinstance(set_mask, list)
+                        or len(set_mask) != 8
+                        or any(
+                            isinstance(value, bool)
+                            or not isinstance(value, int)
+                            or value < 0
+                            or value > 0xFFFFFFFF
+                            for value in set_mask
+                        )
+                    ))
                 ):
                     raise ValueError(f"captured {stage} packet constant snapshot is invalid")
                 snapshot[stage] = {"values_bits": values_bits, "set_mask": set_mask}
@@ -387,6 +389,9 @@ def _read_events(capture_path: Path, event_index: int) -> tuple[dict[str, Any], 
             written = set(state["constant_registers"][stage])
             bits = snapshot["values_bits"]
             mask = snapshot["set_mask"]
+            if mask is None:
+                # Preserve raw bits, but do not infer the provenance of Set*ConstantF.
+                continue
             register_count = 256 if stage == "vertex" else 224
             packet_written = {
                 register
@@ -925,6 +930,11 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
     output = Path(output_dir).resolve()
     output.mkdir(parents=True, exist_ok=True)
     draw, state = _read_events(capture_path, event_index)
+    if any(
+        bank["set_mask"] is None
+        for bank in (state.get("packet_constant_snapshot") or {}).values()
+    ):
+        raise ValueError("P1 guest float constant validity masks are missing; raw DWORDs are preserved but replay is unproven")
     if int(draw.get("primitive_type", -1)) != 4:
         raise ValueError("only captured D3DPT_TRIANGLELIST is supported")
 
