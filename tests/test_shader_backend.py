@@ -90,7 +90,8 @@ def test_vulkan_sincos_lowering_uses_scalar_components():
     pixel = to_glsl(parse_program(_shader("pixel")), target="vulkan")
 
     assert "vec4(sin(vec4(r1.x)).x,cos(vec4(r1.x)).x,0.0,0.0)" in vertex
-    assert validate_vulkan_glsl_pair(vertex, pixel)["status"] == "valid"
+    validation = validate_vulkan_glsl_pair(vertex, pixel)
+    assert validation["status"] == "valid", validation
 
 
 def test_vulkan_loop_reads_iteration_control_from_integer_register():
@@ -110,7 +111,8 @@ def test_vulkan_loop_reads_iteration_control_from_integer_register():
     pixel = to_glsl(parse_program(_shader("pixel")), target="vulkan")
 
     assert "for(int shift_loop=i[0].y, shift_iter=0; shift_iter<i[0].x" in vertex
-    assert validate_vulkan_glsl_pair(vertex, pixel)["status"] == "valid"
+    validation = validate_vulkan_glsl_pair(vertex, pixel)
+    assert validation["status"] == "valid", validation
 
 
 def test_sampler_type_and_relative_addressing_are_preserved():
@@ -169,7 +171,8 @@ def test_linked_glsl_translation_shares_varying_locations_by_semantic():
     assert "layout(location=0) out vec4 out_1;" in linked["vertex_glsl"]
     assert "layout(location=1) out vec4 out_2;" in linked["vertex_glsl"]
     assert "layout(location=0) in vec4 in_0;" in linked["pixel_glsl"]
-    assert validate_linked_shader_pair_vulkan(linked)["status"] == "valid"
+    validation = validate_linked_shader_pair_vulkan(linked)
+    assert validation["status"] == "valid", validation
 
 
 def test_linked_glsl_translation_maps_vertex_inputs_to_target_layout_locations():
