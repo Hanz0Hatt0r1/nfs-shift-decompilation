@@ -3491,8 +3491,8 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive(
     UINT start_index,
     UINT primitive_count) {
     const bool capture_state = capture_render_event_active();
-    std::array<WINBOOL, 16> vertex_bool_constants{};
-    std::array<WINBOOL, 16> pixel_bool_constants{};
+    std::array<BOOL, 16> vertex_bool_constants{};
+    std::array<BOOL, 16> pixel_bool_constants{};
     HRESULT vertex_bool_hr = E_FAIL;
     HRESULT pixel_bool_hr = E_FAIL;
     if (capture_state) {
