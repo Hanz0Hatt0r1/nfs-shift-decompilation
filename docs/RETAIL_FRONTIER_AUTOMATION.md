@@ -865,12 +865,20 @@ and its [race capture](../evidence/retail_frontier_20261021/original_shift_nativ
 and [main-menu capture](../evidence/retail_frontier_20261021/original_shift_native_d3dx_main_menu_20261021.png).
 
 The v659 bounded P-code replay remains at 1,440 host frames with no P-code
-execution or missing-export blocker, but guest draw translation is still
-false. The original retail race and main menu are confirmed; the recompiled
-P-code runtime has not reached either milestone. The earlier cockpit-looking
-debugger capture was an intro cinematic, so it is separately labeled and is
-not used as race evidence. Process 1 leaves the guest-draw renderer work to
-Process 2.
+execution or missing-export blocker. Its cumulative manifest includes the
+exact supplements for `rvi_005879f0` and `rvi_00587b90`. A targeted v663 trace
+observed nine successful calls to `rvi_00587b90`, each returning
+`EAX=0x00ad5574`, including calls from `0x00587790` and `0x005878a0`. This
+clears that identified missing-export blocker on the observed path. The v663
+1,600-frame window timed out at 300 seconds before producing final frame or
+dispatch totals; it is not a complete replay. See the
+[v663 target trace record](../evidence/retail_frontier_20261021/process1_pcode_target_v663_00587b90.json).
+
+Guest draw translation remains false. The original retail race and main menu
+are confirmed; the recompiled P-code runtime has not reached either milestone.
+The earlier cockpit-looking debugger capture was an intro cinematic, so it is
+separately labeled and is not used as race evidence. Process 1 leaves the
+guest-draw renderer work to Process 2.
 
 A 2,880-frame extension with a 300-second wall limit timed out after loading
 the PE and before producing frame or dispatch totals. It yields no new P-code
