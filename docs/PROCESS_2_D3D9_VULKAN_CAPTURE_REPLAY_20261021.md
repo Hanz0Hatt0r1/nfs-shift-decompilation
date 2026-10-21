@@ -55,6 +55,56 @@ The PPM is diagnostic output and
 does not establish retail image parity. The selected R32F shader writes a
 single-channel value, which further limits visual comparison.
 
+## First focused retail draw submitted through Vulkan
+
+The live-race capture's first draw (event 13640309/frame 12613) uses shader
+pair `vs:1af4a5f282f4b9fb` / `ps:da32197956d1cb89`, whose pixel shader contains
+`IF b0`. The translator now emits valid parenthesized GLSL; both shader stages
+compile and link. That older race capture still lacks the draw's DXT1 `s0`
+snapshot, so event 13640309 itself remains blocked.
+
+A fresh focused capture of the same retail shader pair records its first
+`DrawIndexedPrimitive` as event 7435/frame 536: a triangle list with 4 vertices,
+2 primitives, and 6 INDEX16 indices. The proxy queries all 16 vertex and pixel
+boolean constants immediately before each successful draw. The target draw reads `b0=true`;
+subsequent draws in the same capture read `false`, then `true`, proving this is
+draw-local state rather than a shader-wide constant. The capture's queried
+values now flow into the generated GLSL before the shader executes.
+
+Its actual target resources and state are sufficient to build the native bundle:
+
+- The vertex and index payloads cover their draw ranges and are recorded in
+  the capture with partial Lock-range tracking enabled.
+- The active `s0` is a 1024×256 managed D3DFMT_A8R8G8B8 texture. The capture
+  proxy now snapshots lockable managed A8R8G8B8/X8R8G8B8 levels directly into
+  uncompressed DDS, preserving row bytes and mip levels without a GPU
+  `StretchRect` readback. Vulkan's existing DDS decoder verifies this snapshot.
+- Captured sampler state uses linear filtering, `CLAMP_TO_BORDER` on U/V,
+  transparent-black border color, and D3D9 sRGB texture sampling. `SVTP/1`
+  retains its existing record layout; sampler modes 5–6 add transparent-black
+  border modes, and adding 8 selects sRGB. Other border colors still fail
+  closed.
+- Separate alpha blending is enabled with captured ONE / ONE_MINUS_SRC_ALPHA
+  factors and ADD operation; these are passed independently from the color
+  blend factors into the Vulkan pipeline.
+
+The bundle builder validates and links both SPIR-V shader stages, and
+`shift_vulkan_bundle_execute --validation` submits this captured draw on a GTX
+950 with Vulkan validation enabled and zero errors. Three executions of the
+same bundle produced identical PPM hashes; before `b0` was initialized, repeat
+executions produced different pixel data. The executor reports the captured
+800×600 D3DFMT_A8R8G8B8 / D3DFMT_D24S8 target pair. Exact hashes and draw-local
+state are in
+[`shift_d3d9_vulkan_first_focused_draw_20261021.json`](../evidence/shift_d3d9_vulkan_first_focused_draw_20261021.json).
+
+This proves one retail D3D9 draw can be translated, packaged, and submitted by
+the Vulkan executor with its actual draw-local `b0` value. It does not compare
+the result with the original frame, replay the surrounding frame, or connect
+Process 1's guest runtime to the renderer. The older event 13640309 still needs
+its original DXT1 snapshot; the new capture is a separate draw using the same
+shader pair. The temporary PortProton capture profile was restored and the
+retail executable hash remained unchanged.
+
 The new capture contract records `SetStreamSourceFreq` state with each indexed
 draw. Microsoft defines indexed-data and instance-data settings through
 [`SetStreamSourceFreq`](https://learn.microsoft.com/en-us/windows/win32/api/d3d9/nf-d3d9-idirect3ddevice9-setstreamsourcefreq).
@@ -69,9 +119,21 @@ draws still require captured snapshots for every active sampler.
 
 ## Translation fixes exercised by the capture
 
+- The frame 12613 pixel shader uses D3D9 `IF b0` (opcode 40). GLSL emission
+  wraps the bool condition in parentheses; the regression parses the exact VS/PS
+  token streams bound at draw event 13640309 and compiles and links them through
+  the semantic Vulkan pair translator. The 448-byte PS is pinned at
+  [`tests/fixtures/d3d9/shift_frame_12613_ps_da32197956d1cb89.bin`](../tests/fixtures/d3d9/shift_frame_12613_ps_da32197956d1cb89.bin),
+  with its matching VS at
+  [`tests/fixtures/d3d9/shift_frame_12613_vs_1af4a5f282f4b9fb.bin`](../tests/fixtures/d3d9/shift_frame_12613_vs_1af4a5f282f4b9fb.bin).
+  The raw JSONL remains outside Git. The draw still lacks its captured DXT1
+  `s0` snapshot and is not submitted.
 - D3D scalar source swizzles replicate to four lanes; masked writes apply the
   destination mask to the right-hand value.
 - Immediate `DEF` constants are embedded in translated GLSL.
+- `DEFB` definitions remain shader-local, while external `b#` values come
+  from successful draw-local D3D9 constant queries. The bundle builder rejects
+  a shader with an external bool register when that query is absent.
 - A declared vertex `POSITION` output writes `gl_Position`.
 - Vertex and pixel constant blocks use distinct instances and Vulkan bindings
   14 and 15.
@@ -106,6 +168,12 @@ parity is not claimed.
 
 ## Verification
 
+- This focused change passed 263 shader, D3D9 capture, texture, and Vulkan
+  regressions; the MinGW x86 capture proxy and all native Vulkan CMake targets
+  built successfully.
+- `tools/run_linux_vulkan_smoke.py` rendered its material bundle and prepared
+  its two-draw bundle set. The first focused SHIFT draw also passed native
+  Vulkan validation on the GTX 950 with zero errors.
 - 75 focused Python tests passed across shader translation, D3D9/Vulkan state,
   draw packets, native bundle contracts, and Linux/Android surface contracts.
 - Every `native_vulkan` CMake target built successfully.
@@ -114,6 +182,16 @@ parity is not claimed.
   reported zero errors.
 - The captured event 5245407 bundle compiled both shader stages, linked them,
   and completed native Vulkan validation with zero errors.
+- The first focused draw using the repaired retail shader pair was packaged
+  with its real texture, draw-local bool state, and other captured state, then
+  submitted three times on a GTX 950 with validation enabled and zero errors;
+  all three output PPM hashes matched. The earlier live-race event 13640309
+  remains blocked on its missing DXT1 snapshot.
+- The exact 448-byte pixel shader from live-race event 13640309 now backs the
+  `IF b0` regression; the targeted shader suite passed 64 tests. I reran the
+  captured event 7435 bundle, which uses the same pixel bytecode, on the GTX
+  950 with validation enabled: zero errors and the prior PPM SHA-256 matched.
+  This verifies one separate captured draw, not frame 12613 or retail parity.
 - The sampler regression suite passed 9 tests; event 5245407 was rebuilt from
   its retail capture and executed on the GTX 950 with validation enabled and
   zero errors.

@@ -1,3 +1,4 @@
+import hashlib
 import shutil
 import struct
 import subprocess
@@ -113,6 +114,82 @@ def test_vulkan_loop_reads_iteration_control_from_integer_register():
     assert "for(int shift_loop=i[0].y, shift_iter=0; shift_iter<i[0].x" in vertex
     validation = validate_vulkan_glsl_pair(vertex, pixel)
     assert validation["status"] == "valid", validation
+
+
+def test_vulkan_if_bool_register_emits_valid_condition_from_frame_12613():
+    fixture_dir = Path(__file__).parent / "fixtures" / "d3d9"
+    vertex_bytes = (fixture_dir / "shift_frame_12613_vs_1af4a5f282f4b9fb.bin").read_bytes()
+    pixel_bytes = (fixture_dir / "shift_frame_12613_ps_da32197956d1cb89.bin").read_bytes()
+
+    # Exact VS/PS token streams bound at retail DrawIndexedPrimitive event
+    # 13640309/frame 12613; capture SHA-256:
+    # 82f21548b1bad937e7ee8d6253d27a8fabe4f8223574180eb3a697ec57bbcab4.
+    assert hashlib.sha256(vertex_bytes).hexdigest() == (
+        "ae534ddc04f4b5170d60b74112173e76e6cb1a6e3f72aab48cac09fd8b7d4a30"
+    )
+    assert hashlib.sha256(pixel_bytes).hexdigest() == (
+        "c7378d4462603bbe9fcce35ee6f1d397c9bf97879d726bfb1c4f6c38cfe6baa3"
+    )
+    assert vertex_bytes[:4] == struct.pack("<I", 0xFFFE0300)
+    assert pixel_bytes[:4] == struct.pack("<I", 0xFFFF0300)
+
+    vertex_program = parse_program(vertex_bytes, stage="vertex")
+    pixel_program = parse_program(pixel_bytes, stage="pixel")
+    if_instructions = [
+        (instruction.name, instruction.opcode)
+        for instruction in pixel_program.instructions
+        if instruction.name == "IF"
+    ]
+    assert if_instructions == [("IF", 40)]
+
+    linked_pair = translate_pair(
+        vertex_program,
+        pixel_program,
+        pixel_bool_constants={0: True},
+    )
+    pixel = linked_pair["vulkan_pixel_glsl"]
+    assert "if (all(b[0])) {" in pixel
+    assert "b[0]=bvec4(true);" in pixel
+    validation = validate_linked_shader_pair_vulkan(linked_pair)
+    assert validation["status"] == "valid", validation
+
+
+def test_unset_bool_registers_are_initialized_before_vulkan_if():
+    words = [
+        0xFFFF0300,
+        (1 << 24) | 40,
+        0xE0E40800,
+        42,
+        43,
+        0xFFFF,
+    ]
+    pixel = to_glsl(
+        parse_program(struct.pack("<" + "I" * len(words), *words)),
+        target="vulkan",
+    )
+
+    assert "b[0]=bvec4(false);" in pixel
+
+
+def test_shader_defb_overrides_draw_state_for_defined_bool_register():
+    words = [
+        0xFFFF0300,
+        (2 << 24) | 47,  # defb b0, true
+        0xE0000800,
+        1,
+        (1 << 24) | 40,  # if b0
+        0xE0E40800,
+        42,
+        43,
+        0xFFFF,
+    ]
+    pixel = to_glsl(
+        parse_program(struct.pack("<" + "I" * len(words), *words)),
+        target="vulkan",
+        bool_constants={0: False},
+    )
+
+    assert "b[0]=bvec4(true);" in pixel
 
 
 def test_sampler_type_and_relative_addressing_are_preserved():

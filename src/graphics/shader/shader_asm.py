@@ -480,6 +480,7 @@ def to_glsl(
     constant_block_name: str = "ShiftD3D9Constants",
     target: str = "gles",
     strict: bool = True,
+    bool_constants: dict[int, bool] | None = None,
 )->str:
     if target not in {"gles", "vulkan"}:
         raise ValueError("unsupported GLSL target")
@@ -522,7 +523,8 @@ def to_glsl(
         f'vec4({", ".join(_glsl_float(value) for value in values)});'
         for (reg_type,index),values in sorted(constant_definitions.items())
     )
-    # Integer/bool banks remain local until their exact upload ABI is proven.
+    # Integer constants remain local; bundle translation supplies draw-local
+    # boolean values for every bool register used by the captured shader.
     lines.append(f'ivec4 i[{max(1,max(program.const_ints+[0])+1)}];')
     lines.append(f'bvec4 b[{max(1,max(program.const_bools+[0])+1)}];')
     lines.append('ivec4 a0=ivec4(0);')
@@ -587,6 +589,22 @@ def to_glsl(
         for reg_index in sorted(color_outputs):
             lines.append(f'layout(location={reg_index}) out vec4 fragColor{reg_index};')
     lines.append('void main(){')
+
+    bool_definitions: dict[int, bool] = {}
+    for instruction in program.instructions:
+        if instruction.name != 'DEFB' or len(instruction.operands) < 2:
+            continue
+        destination = instruction.operands[0]
+        if destination.kind == 'dest' and destination.reg_type == 14:
+            bool_definitions[destination.index or 0] = bool(
+                instruction.operands[1].value
+            )
+    for register in program.const_bools:
+        value = bool_definitions.get(
+            register,
+            bool((bool_constants or {}).get(register, False)),
+        )
+        lines.append(f'  b[{register}]=bvec4({str(value).lower()});')
 
     rep_depth=0
     loop_depth=0
@@ -680,7 +698,7 @@ def to_glsl(
                 cmp=_cmp_expr(glsl_reg(o[1],program.stage),glsl_reg(o[2],program.stage),ins.controls)
                 lines.append('  '+emit_assign(o[0],cmp,program.stage))
             elif n=='IF' and len(o)>=1:
-                lines.append(f'  if {_bool_condition(o[0],program.stage)} {{')
+                lines.append(f'  if ({_bool_condition(o[0],program.stage)}) {{')
             elif n=='IFC' and len(o)>=2:
                 cmp=_cmp_expr(glsl_reg(o[0],program.stage),glsl_reg(o[1],program.stage),ins.controls)
                 lines.append(f'  if(all({cmp})) {{')

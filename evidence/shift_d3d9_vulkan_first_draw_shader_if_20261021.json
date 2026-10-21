@@ -1,0 +1,109 @@
+{
+  "format": "SHIFT.D3D9VulkanFirstDrawShaderEvidence/1",
+  "date": "2026-10-21",
+  "game": {
+    "title": "Need for Speed: SHIFT PC retail 1.02",
+    "executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "capture": {
+    "artifact": "/tmp/shift-process2-retail-target-capture-20261021/shift_d3d9_capture.jsonl",
+    "sha256": "82f21548b1bad937e7ee8d6253d27a8fabe4f8223574180eb3a697ec57bbcab4",
+    "size_bytes": 41309728,
+    "event_count": 70976,
+    "scope": "three retained live-race frames; frame 12613 has 1275 indexed draws"
+  },
+  "draw": {
+    "event_index": 13640309,
+    "frame": 12613,
+    "first_indexed_draw_in_frame": true,
+    "primitive_type": "D3DPT_TRIANGLELIST",
+    "primitive_count": 2,
+    "vertex_count": 4,
+    "shader_pair": {
+      "vertex": {
+        "signature": "vs:1af4a5f282f4b9fb",
+        "bytecode_bytes": 2048,
+        "bytecode_sha256": "ae534ddc04f4b5170d60b74112173e76e6cb1a6e3f72aab48cac09fd8b7d4a30",
+        "vulkan_compile_valid": true
+      },
+      "pixel": {
+        "signature": "ps:da32197956d1cb89",
+        "bytecode_bytes": 448,
+        "bytecode_sha256": "c7378d4462603bbe9fcce35ee6f1d397c9bf97879d726bfb1c4f6c38cfe6baa3",
+        "vulkan_compile_valid": true,
+        "observed_construct": "IF b0 / ELSE / ENDIF"
+      },
+      "linked": true
+    },
+    "pixel_shader_regression_fixture": {
+      "vertex_shader_file": "tests/fixtures/d3d9/shift_frame_12613_vs_1af4a5f282f4b9fb.bin",
+      "vertex_source_create_event_index": 808,
+      "vertex_bytecode_bytes": 2048,
+      "vertex_bytecode_sha256": "ae534ddc04f4b5170d60b74112173e76e6cb1a6e3f72aab48cac09fd8b7d4a30",
+      "vertex_version_token": "0xfffe0300",
+      "pixel_shader_file": "tests/fixtures/d3d9/shift_frame_12613_ps_da32197956d1cb89.bin",
+      "pixel_source_create_event_index": 831,
+      "draw_event_index": 13640309,
+      "pixel_bytecode_bytes": 448,
+      "pixel_bytecode_sha256": "c7378d4462603bbe9fcce35ee6f1d397c9bf97879d726bfb1c4f6c38cfe6baa3",
+      "pixel_version_token": "0xffff0300",
+      "regression_opcode": {
+        "name": "IF",
+        "value": 40,
+        "source": "b0",
+        "expected_glsl": "if (all(b[0])) {"
+      },
+      "test": "tests/test_shader_backend.py::test_vulkan_if_bool_register_emits_valid_condition_from_frame_12613",
+      "vulkan_pair_compile_and_link": "passed"
+    },
+    "texture_gate": {
+      "sampler_register": 0,
+      "d3d9_format": "D3DFMT_DXT1",
+      "size": [128, 128],
+      "mip_levels": 8,
+      "snapshot_status": "deferred-until-trigger",
+      "blocking_reason": "active texture at s0 has no captured DDS snapshot"
+    },
+    "submission": {
+      "status": "blocked",
+      "vulkan_draw_submitted": false,
+      "retail_image_parity_proven": false
+    },
+    "same_pixel_shader_vulkan_replay": {
+      "capture_event_index": 7435,
+      "frame": 536,
+      "pixel_shader_signature": "ps:da32197956d1cb89",
+      "pixel_bytecode_sha256": "c7378d4462603bbe9fcce35ee6f1d397c9bf97879d726bfb1c4f6c38cfe6baa3",
+      "native_executor": "shift_vulkan_bundle_execute",
+      "device": "NVIDIA GeForce GTX 950",
+      "validation_enabled": true,
+      "validation_errors": 0,
+      "rerun_output_ppm_sha256": "9b749b063d4a184ebb3088b8330a34f25abad2a521005a7a01376f2e2738710a",
+      "relation": "separate captured draw using the identical retail PS bytecode; event 13640309 still lacks its DXT1 snapshot"
+    }
+  },
+  "translator_change": {
+    "file": "src/graphics/shader/shader_asm.py",
+    "construct": "D3D9 IF condition emission",
+    "before": "if all(b[0])",
+    "after": "if (all(b[0]))",
+    "regression": "tests/test_shader_backend.py::test_vulkan_if_bool_register_emits_valid_condition_from_frame_12613",
+    "fixture_contains_retail_shader_bytes": true
+  },
+  "control_draw": {
+    "event_index": 13647233,
+    "frame": 12613,
+    "index_count": 306,
+    "index_type": "VK_INDEX_TYPE_UINT16",
+    "texture_count": 0,
+    "validation_enabled": true,
+    "validation_errors": 0,
+    "ppm_sha256": "64a47e4083893787543d6da986490ed2419aea0ccbcdef3c7b89692f6881cdc9"
+  },
+  "limits": [
+    "The capture trigger fired after event 13640309, so its active texture snapshot was not retained.",
+    "The raw capture remains outside Git; the target 448-byte pixel shader token stream is kept as a focused regression fixture.",
+    "Frame-12613 event 13640309 remains blocked on its missing DXT1 snapshot; separate same-shader event 7435 submitted one draw, not a full frame.",
+    "This capture replay does not integrate with Process 1's runtime or prove retail image parity."
+  ]
+}

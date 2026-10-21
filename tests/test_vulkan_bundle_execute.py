@@ -60,6 +60,18 @@ def test_native_vulkan_bundle_executor_contract():
     assert "attribute.property_id != 200u" in source
 
 
+def test_bundle_executor_consumes_border_and_srgb_texture_modes():
+    source = Path("native_vulkan/src/vulkan_bundle_execute.cpp").read_text(encoding="utf-8")
+    sampler = Path("native_vulkan/src/vulkan_texture_sampler.hpp").read_text(encoding="utf-8")
+
+    assert "texture_sampler_mode_valid(record.sampler_mode)" in source
+    assert "texture_sampler_format(record.sampler_mode)" in source
+    assert "texture_sampler_address_mode(mode)" in source
+    assert "VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK" in source
+    assert "VK_FORMAT_R8G8B8A8_SRGB" in sampler
+    assert "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER" in sampler
+
+
 def test_vulkan_bundle_runner_contract():
     source = Path("src/render/vulkan/vulkan_bundle_run.py").read_text(encoding="utf-8")
     assert "compile_bmw_vulkan_bundle" in source

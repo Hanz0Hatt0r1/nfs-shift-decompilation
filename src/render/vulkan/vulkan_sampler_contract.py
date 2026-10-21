@@ -1,8 +1,8 @@
 """Lossless sampler-state sidecar for the Vulkan bundle boundary.
 
-The binary SVTP/1 packet intentionally remains unchanged. This module preserves the
-full normalized D3D9-FX sampler contract so later native stages can consume it without
-reconstructing state from the four-value sampler_mode enum.
+This module preserves the full normalized D3D9-FX sampler contract so later native
+stages can consume it without reconstructing sRGB, border color, or address state from
+the compact SVTP/1 sampler_mode value.
 """
 from __future__ import annotations
 

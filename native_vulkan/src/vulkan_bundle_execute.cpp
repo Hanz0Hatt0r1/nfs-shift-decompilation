@@ -1,5 +1,6 @@
 #include <vulkan/vulkan.h>
 #include "shift_vulkan_validation.hpp"
+#include "vulkan_texture_sampler.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -883,7 +884,7 @@ TexturePacket load_texture_packet(const std::filesystem::path& path) {
             record.pixel_bytes != static_cast<uint32_t>(expected_pixels) ||
             record.pixel_offset < pixels ||
             static_cast<uint64_t>(record.pixel_offset) + record.pixel_bytes > data.size() ||
-            record.sampler_mode < 1 || record.sampler_mode > 4) {
+            !shift::vulkan::texture_sampler_mode_valid(record.sampler_mode)) {
             throw std::runtime_error("invalid texture packet record");
         }
     }
@@ -1046,19 +1047,18 @@ void create_image(
 }
 
 VkSampler sampler_for_mode(Context& ctx, uint32_t mode) {
-    const bool linear = mode == 2 || mode == 4;
-    const bool clamp = mode == 3 || mode == 4;
+    const bool linear = shift::vulkan::texture_sampler_mode_linear(mode);
+    const auto address_mode = shift::vulkan::texture_sampler_address_mode(mode);
 
     VkSamplerCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     info.magFilter = linear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
     info.minFilter = linear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
     info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    info.addressModeU = clamp ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE :
-                                VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    info.addressModeV = clamp ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE :
-                                VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    info.addressModeU = address_mode;
+    info.addressModeV = address_mode;
     info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    info.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
     info.maxLod = 1.0f;
 
     VkSampler sampler = VK_NULL_HANDLE;
@@ -1630,7 +1630,8 @@ int main(int argc, char** argv) {
 
             textures[i].record = record;
             create_image(
-                ctx, record.width, record.height, 1, VK_FORMAT_R8G8B8A8_UNORM, 0,
+                ctx, record.width, record.height, 1,
+                shift::vulkan::texture_sampler_format(record.sampler_mode), 0,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                 textures[i].image);
             textures[i].sampler = sampler_for_mode(ctx, record.sampler_mode);

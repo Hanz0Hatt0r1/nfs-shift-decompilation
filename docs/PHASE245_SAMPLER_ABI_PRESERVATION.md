@@ -7,4 +7,8 @@ Phase 245 keeps the binary `SHIFT.VulkanTexturePacket/1` wire format unchanged w
 
 The preserved state includes min/mag/mip filters, address U/V/W, anisotropy, LOD bias, and sRGB/linear color-space selection where supplied.
 
-The current native executor still consumes only the existing four-way `sampler_mode` field from `SVTP/1`; the sidecar explicitly reports `preserved-not-consumed` rather than claiming sampler parity. Missing runtime state such as the shadow-map `s0` remains explicit rather than synthesized.
+The native executor consumes the compact `sampler_mode` field from `SVTP/1` for
+repeat, edge clamp, transparent-black border, and sRGB sampling. The sampler sidecar
+still reports `preserved-not-consumed` for state that the packet does not encode,
+including anisotropy, LOD bias, and arbitrary border colors. Missing runtime state
+such as the shadow-map `s0` remains explicit rather than synthesized.

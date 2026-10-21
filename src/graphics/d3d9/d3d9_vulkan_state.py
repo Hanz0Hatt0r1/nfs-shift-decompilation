@@ -136,6 +136,9 @@ def translate_sampler_state(
     address_w = _value(states, 3)
     min_filter = _value(states, 6)
     mag_filter = _value(states, 5)
+    border_color = _value(states, 4)
+    srgb_texture = _value(states, 11)
+    uses_border = 4 in (address_u, address_v, address_w)
 
     for name, value, table in (
         ("address_u", address_u, ADDRESS),
@@ -148,10 +151,18 @@ def translate_sampler_state(
             blockers.append(
                 f"d3d9-vulkan-state:unsupported-{name}:s{sampler_register}:{value}"
             )
-        elif name.startswith("address_") and value == 4:
-            blockers.append(
-                f"d3d9-vulkan-state:border-address-requires-proven-color:s{sampler_register}:{name}"
-            )
+    if uses_border and border_color is None:
+        blockers.append(
+            f"d3d9-vulkan-state:border-address-requires-proven-color:s{sampler_register}"
+        )
+    elif uses_border and border_color != 0:
+        blockers.append(
+            f"d3d9-vulkan-state:unsupported-border-color:s{sampler_register}:{border_color}"
+        )
+    if srgb_texture is not None and srgb_texture not in {0, 1}:
+        blockers.append(
+            f"d3d9-vulkan-state:unsupported-srgb-texture:s{sampler_register}:{srgb_texture}"
+        )
 
     return {
         "format": FORMAT,
@@ -168,8 +179,13 @@ def translate_sampler_state(
             "min": FILTER.get(min_filter),
             "mag": FILTER.get(mag_filter),
         },
+        "border_color": (
+            "VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK"
+            if uses_border and border_color == 0 else None
+        ),
+        "srgb_texture": bool(srgb_texture) if srgb_texture is not None else None,
         "policy": {
-            "border_color": "unsupported-until-captured-and-proven",
+            "border_color": "captured-transparent-black-only",
             "allows_inference": False,
         },
     }

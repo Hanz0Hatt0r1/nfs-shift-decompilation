@@ -8,6 +8,7 @@
 #include "capture_helpers.h"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cmath>
 #include <cstdio>
@@ -1298,6 +1299,87 @@ bool write_texture_surface_ppm(
     return ok;
 }
 
+bool write_managed_uncompressed_texture_dds(
+    IDirect3DTexture9* texture,
+    const std::string& output_path) {
+    if (!texture) return false;
+
+    D3DSURFACE_DESC top_desc{};
+    if (FAILED(texture->GetLevelDesc(0, &top_desc)) ||
+        (top_desc.Pool != D3DPOOL_MANAGED && top_desc.Pool != D3DPOOL_SYSTEMMEM) ||
+        (top_desc.Format != D3DFMT_A8R8G8B8 &&
+         top_desc.Format != D3DFMT_X8R8G8B8) ||
+        top_desc.Width == 0 || top_desc.Height == 0) {
+        return false;
+    }
+
+    const UINT mip_count = texture->GetLevelCount();
+    if (mip_count == 0) return false;
+
+    std::uint32_t header[31]{};
+    header[0] = 124;
+    header[1] = 0x00000001u | 0x00000002u | 0x00000004u |
+                0x00000008u | 0x00001000u;
+    if (mip_count > 1) header[1] |= 0x00020000u;
+    header[2] = top_desc.Height;
+    header[3] = top_desc.Width;
+    header[4] = top_desc.Width * 4;
+    header[6] = mip_count > 1 ? mip_count : 0;
+    header[18] = 32;
+    header[19] = top_desc.Format == D3DFMT_A8R8G8B8
+        ? 0x00000041u  // DDPF_RGB | DDPF_ALPHAPIXELS
+        : 0x00000040u; // DDPF_RGB
+    header[21] = 32;
+    header[22] = 0x00ff0000u;
+    header[23] = 0x0000ff00u;
+    header[24] = 0x000000ffu;
+    header[25] = top_desc.Format == D3DFMT_A8R8G8B8 ? 0xff000000u : 0;
+    header[26] = 0x00001000u;
+    if (mip_count > 1) header[26] |= 0x00000008u | 0x00400000u;
+
+    std::ofstream image(output_path, std::ios::binary);
+    if (!image.is_open()) return false;
+    image.write("DDS ", 4);
+    image.write(reinterpret_cast<const char*>(header), sizeof(header));
+
+    bool ok = static_cast<bool>(image);
+    for (UINT level = 0; level < mip_count && ok; ++level) {
+        D3DSURFACE_DESC desc{};
+        if (FAILED(texture->GetLevelDesc(level, &desc)) ||
+            desc.Format != top_desc.Format || desc.Width == 0 || desc.Height == 0) {
+            ok = false;
+            break;
+        }
+
+        D3DLOCKED_RECT locked{};
+        if (FAILED(texture->LockRect(level, &locked, nullptr, D3DLOCK_READONLY))) {
+            ok = false;
+            break;
+        }
+
+        const auto row_bytes = static_cast<std::uint64_t>(desc.Width) * 4;
+        if (!locked.pBits || locked.Pitch < 0 ||
+            static_cast<std::uint64_t>(locked.Pitch) < row_bytes) {
+            ok = false;
+        } else {
+            const auto* source = static_cast<const unsigned char*>(locked.pBits);
+            for (UINT row = 0; row < desc.Height && ok; ++row) {
+                image.write(
+                    reinterpret_cast<const char*>(source +
+                        static_cast<std::size_t>(row) * locked.Pitch),
+                    static_cast<std::streamsize>(row_bytes));
+                ok = static_cast<bool>(image);
+            }
+        }
+        texture->UnlockRect(level);
+    }
+
+    image.close();
+    ok = ok && static_cast<bool>(image);
+    if (!ok) std::remove(output_path.c_str());
+    return ok;
+}
+
 bool dxt_block_size(D3DFORMAT format, UINT& block_size) {
     switch (format) {
     case D3DFMT_DXT1:
@@ -1421,7 +1503,8 @@ void append_texture_snapshot_json(
         IDirect3DSurface9* surface = nullptr;
         bool captured = false;
         std::string snapshot_path = prefix.str() + ".dds";
-        const bool dds = write_managed_dxt_texture_dds(tex, snapshot_path);
+        bool dds = write_managed_dxt_texture_dds(tex, snapshot_path);
+        if (!dds) dds = write_managed_uncompressed_texture_dds(tex, snapshot_path);
         if (!dds && SUCCEEDED(tex->GetSurfaceLevel(0, &surface))) {
             D3DSURFACE_DESC desc{};
             if (SUCCEEDED(surface->GetDesc(&desc))) {
@@ -3408,6 +3491,19 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive(
     UINT num_vertices,
     UINT start_index,
     UINT primitive_count) {
+    const bool capture_state = capture_render_event_active();
+    std::array<BOOL, 16> vertex_bool_constants{};
+    std::array<BOOL, 16> pixel_bool_constants{};
+    HRESULT vertex_bool_hr = E_FAIL;
+    HRESULT pixel_bool_hr = E_FAIL;
+    if (capture_state) {
+        vertex_bool_hr = self->GetVertexShaderConstantB(
+            0, vertex_bool_constants.data(),
+            static_cast<UINT>(vertex_bool_constants.size()));
+        pixel_bool_hr = self->GetPixelShaderConstantB(
+            0, pixel_bool_constants.data(),
+            static_cast<UINT>(pixel_bool_constants.size()));
+    }
     const auto original = original_method_for<DrawIndexedPrimitiveFn>(
         self, SLOT_DRAW_INDEXED_PRIMITIVE, g_real_draw_indexed_primitive);
     const HRESULT hr = original
@@ -3415,7 +3511,7 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive(
             self, primitive_type, base_vertex_index, min_vertex_index,
             num_vertices, start_index, primitive_count)
         : E_FAIL;
-    if (SUCCEEDED(hr) && capture_render_event_active()) {
+    if (SUCCEEDED(hr) && capture_state) {
         std::ostringstream f;
         std::vector<std::pair<UINT, UINT>> stream_frequencies;
         {
@@ -3434,6 +3530,21 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive(
           << ",\"num_vertices\":" << num_vertices
           << ",\"start_index\":" << start_index
           << ",\"primitive_count\":" << primitive_count
+          << ",\"vertex_bool_constants_hr\":"
+          << static_cast<uint32_t>(vertex_bool_hr)
+          << ",\"vertex_bool_constants\":[";
+        for (std::size_t i = 0; i < vertex_bool_constants.size(); ++i) {
+            if (i) f << ',';
+            f << (vertex_bool_constants[i] ? 1 : 0);
+        }
+        f << "],\"pixel_bool_constants_hr\":"
+          << static_cast<uint32_t>(pixel_bool_hr)
+          << ",\"pixel_bool_constants\":[";
+        for (std::size_t i = 0; i < pixel_bool_constants.size(); ++i) {
+            if (i) f << ',';
+            f << (pixel_bool_constants[i] ? 1 : 0);
+        }
+        f << ']'
           << ",\"stream_source_frequencies\":[";
         for (std::size_t i = 0; i < stream_frequencies.size(); ++i) {
             if (i) f << ',';
