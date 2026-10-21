@@ -1863,6 +1863,8 @@ struct RecompiledPcodeModule::Impl {
                 return d3d9_device_get_indices();
             if (name == "d3d9.dll!IDirect3DDevice9::GetTexture")
                 return d3d9_device_get_texture();
+            if (name == "d3d9.dll!IDirect3DDevice9::SetTexture")
+                return d3d9_device_set_texture();
             if (name == "d3d9.dll!IDirect3DDevice9::GetRenderTarget")
                 return d3d9_device_get_render_target();
             if (name == "d3d9.dll!IDirect3DDevice9::SetRenderTarget")
@@ -10188,9 +10190,17 @@ struct RecompiledPcodeModule::Impl {
         free_guest_heap_address(vtable_address);
         free_guest_heap_address(data_address);
         const auto device = guest_d3d9_devices.find(device_address);
-        if (device != guest_d3d9_devices.end() &&
-            device->second.references > 0)
-            --device->second.references;
+        if (device != guest_d3d9_devices.end()) {
+            for (auto stage = device->second.textures.begin();
+                 stage != device->second.textures.end();) {
+                if (stage->second == texture_address)
+                    stage = device->second.textures.erase(stage);
+                else
+                    ++stage;
+            }
+            if (device->second.references > 0)
+                --device->second.references;
+        }
         return true;
     }
 
@@ -10523,6 +10533,61 @@ struct RecompiledPcodeModule::Impl {
         return return_kernel32_dword(0, api, 28);
     }
 
+    int d3d9_device_set_texture() {
+        constexpr const char* api =
+            "d3d9.dll!IDirect3DDevice9::SetTexture";
+        uint32_t device_address = 0;
+        uint32_t stage = 0;
+        uint32_t texture_address = 0;
+        if (!read_stack_argument(0, device_address, api) ||
+            !read_stack_argument(1, stage, api) ||
+            !read_stack_argument(2, texture_address, api)) {
+            return -1;
+        }
+        auto device = guest_d3d9_devices.find(device_address);
+        if (device == guest_d3d9_devices.end()) {
+            error = std::string(api) + " received an invalid device pointer";
+            return -1;
+        }
+        if (stage > 259) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+        }
+        if (texture_address != 0) {
+            const auto texture = guest_d3d9_textures.find(texture_address);
+            if (texture == guest_d3d9_textures.end() ||
+                texture->second.device_address != device_address) {
+                return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+            }
+        }
+
+        const auto current = device->second.textures.find(stage);
+        const uint32_t previous_texture =
+            current == device->second.textures.end() ? 0 : current->second;
+        if (previous_texture == texture_address)
+            return return_kernel32_dword(0, api, 12);
+
+        if (texture_address != 0) {
+            uint32_t references = 0;
+            if (!add_guest_d3d9_texture_reference(texture_address,
+                                                  references)) {
+                return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
+            }
+            device->second.textures[stage] = texture_address;
+        } else if (current != device->second.textures.end()) {
+            device->second.textures.erase(current);
+        }
+        if (previous_texture != 0) {
+            uint32_t references = 0;
+            if (!release_guest_d3d9_texture_reference(previous_texture,
+                                                       references)) {
+                error = std::string(api) +
+                        " lost the previous stage texture";
+                return -1;
+            }
+        }
+        return return_kernel32_dword(0, api, 12);
+    }
+
     int d3d9_device_get_texture() {
         constexpr const char* api =
             "d3d9.dll!IDirect3DDevice9::GetTexture";
@@ -10543,11 +10608,24 @@ struct RecompiledPcodeModule::Impl {
             !valid_guest_pointer(output_texture_address, sizeof(uint32_t))) {
             return return_kernel32_dword(kD3dErrInvalidCall, api, 12);
         }
-        const auto texture = device->second.textures.find(stage);
-        const uint32_t texture_address =
+        auto texture = device->second.textures.find(stage);
+        uint32_t texture_address =
             texture == device->second.textures.end() ? 0 : texture->second;
+        if (texture_address != 0) {
+            uint32_t references = 0;
+            if (!add_guest_d3d9_texture_reference(texture_address,
+                                                  references)) {
+                device->second.textures.erase(texture);
+                texture_address = 0;
+            }
+        }
         if (!write_guest_u32("ram", output_texture_address,
                              texture_address)) {
+            if (texture_address != 0) {
+                uint32_t references = 0;
+                (void)release_guest_d3d9_texture_reference(texture_address,
+                                                            references);
+            }
             return -1;
         }
         return return_kernel32_dword(0, api, 12);

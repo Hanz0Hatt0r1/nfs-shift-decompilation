@@ -3391,6 +3391,10 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", created_device_vtable + 104 * 4);
         const uint32_t device_get_indices = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 105 * 4);
+        const uint32_t device_get_texture = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 64 * 4);
+        const uint32_t device_set_texture = read_guest_u32(
+            d3d9_provider_module, "ram", created_device_vtable + 65 * 4);
         const uint32_t create_texture = read_guest_u32(
             d3d9_provider_module, "ram", created_device_vtable + 23 * 4);
         const uint32_t create_vertex_buffer = read_guest_u32(
@@ -3409,6 +3413,8 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", managed_texture_output_address);
         const uint32_t managed_texture_vtable = read_guest_u32(
             d3d9_provider_module, "ram", managed_texture);
+        const uint32_t managed_texture_release = read_guest_u32(
+            d3d9_provider_module, "ram", managed_texture_vtable + 2 * 4);
         const uint32_t managed_texture_get_level_count = read_guest_u32(
             d3d9_provider_module, "ram", managed_texture_vtable + 13 * 4);
         const uint32_t managed_texture_get_level_desc = read_guest_u32(
@@ -3450,13 +3456,41 @@ int main(int argc, char** argv) {
                         managed_texture_pixels, 0xff204060);
         require(invoke_import(d3d9_provider_module,
                               managed_texture_unlock_rect,
-                              {managed_texture, 0}) == 0 &&
-                    invoke_import(d3d9_provider_module,
-                                  read_guest_u32(
-                                      d3d9_provider_module, "ram",
-                                      managed_texture_vtable + 2 * 4),
-                                  {managed_texture}) == 0,
-                "managed texture unlock or release failed");
+                              {managed_texture, 0}) == 0,
+                "managed texture unlock failed");
+        constexpr uint32_t device_texture_output_address = 0x00405318;
+        require(invoke_import(d3d9_provider_module, device_set_texture,
+                              {created_device, 0, managed_texture}) == 0 &&
+                    invoke_import(d3d9_provider_module, device_set_texture,
+                                  {created_device, 0, managed_texture}) == 0 &&
+                    invoke_import(d3d9_provider_module, device_get_texture,
+                                  {created_device, 0,
+                                   device_texture_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   device_texture_output_address) == managed_texture &&
+                    invoke_import(d3d9_provider_module, managed_texture_release,
+                                  {managed_texture}) == 2 &&
+                    invoke_import(d3d9_provider_module, managed_texture_release,
+                                  {managed_texture}) == 1,
+                "SetTexture/GetTexture failed to retain the bound texture");
+        require(invoke_import(d3d9_provider_module, device_get_texture,
+                              {created_device, 0,
+                               device_texture_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   device_texture_output_address) == managed_texture &&
+                    invoke_import(d3d9_provider_module, managed_texture_release,
+                                  {managed_texture}) == 1 &&
+                    invoke_import(d3d9_provider_module, device_set_texture,
+                                  {created_device, 0, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module, device_get_texture,
+                                  {created_device, 0,
+                                   device_texture_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   device_texture_output_address) == 0,
+                "SetTexture null unbind did not release and clear the texture");
+        require(invoke_import(d3d9_provider_module, device_set_texture,
+                              {created_device, 260, 0}) == 0x8876086c,
+                "SetTexture accepted stage 260");
         constexpr uint32_t vertex_buffer_output_address = 0x00405190;
         require(invoke_import(
                     d3d9_provider_module, create_vertex_buffer,
