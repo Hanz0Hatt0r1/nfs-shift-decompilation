@@ -290,6 +290,7 @@ struct RecompiledGuestD3d9AdapterInfo {
     std::string description;
     bool supports_bgra8_surface = false;
     bool supports_bgra8_texture = false;
+    bool supports_dxt3_texture = false;
     bool supports_dxt5_texture = false;
     bool supports_d24s8_depth_stencil = false;
     uint32_t bgra8_sample_count_mask = 0;

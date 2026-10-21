@@ -70,7 +70,18 @@ constexpr uint32_t kGuestCurrentThreadPseudoHandle = UINT32_MAX - 1;
 constexpr uint64_t kMaximumManagedD3d9TextureBytes = 64ull * 1024 * 1024;
 constexpr uint32_t kD3dFormatA8R8G8B8 = 21;
 constexpr uint32_t kD3dFormatA1R5G5B5 = 25;
+constexpr uint32_t kD3dFormatDxt3 = 0x33545844;
 constexpr uint32_t kD3dFormatDxt5 = 0x35545844;
+
+bool is_dxt_compressed_format(uint32_t format) {
+    return format == kD3dFormatDxt3 || format == kD3dFormatDxt5;
+}
+
+bool guest_d3d9_supports_compressed_texture(
+    const RecompiledGuestD3d9AdapterInfo& adapter, uint32_t format) {
+    return (format == kD3dFormatDxt3 && adapter.supports_dxt3_texture) ||
+           (format == kD3dFormatDxt5 && adapter.supports_dxt5_texture);
+}
 
 bool calculate_tightly_packed_mip_level_layout(uint32_t width,
                                                uint32_t height,
@@ -86,7 +97,7 @@ bool calculate_tightly_packed_mip_level_layout(uint32_t width,
         const uint64_t bytes_per_pixel =
             format == kD3dFormatA8R8G8B8 ? 4 : 2;
         row_pitch = level_width * bytes_per_pixel;
-    } else if (format == kD3dFormatDxt5) {
+    } else if (is_dxt_compressed_format(format)) {
         const uint64_t block_columns = (level_width - 1) / 4 + 1;
         row_count = (level_height - 1) / 4 + 1;
         row_pitch = block_columns * 16;
@@ -5776,8 +5787,9 @@ struct RecompiledPcodeModule::Impl {
             return return_kernel32_dword(0, api, 28);
         }
         if (resource_type == 3 && usage == 0 &&
-            check_format == kD3dFormatDxt5 &&
-            guest_d3d9_adapter_info.supports_dxt5_texture) {
+            is_dxt_compressed_format(check_format) &&
+            guest_d3d9_supports_compressed_texture(guest_d3d9_adapter_info,
+                                                   check_format)) {
             return return_kernel32_dword(0, api, 28);
         }
         if (surface_or_texture && check_format == 75 && usage == 2 &&
@@ -8082,12 +8094,13 @@ struct RecompiledPcodeModule::Impl {
             backend_owned = true;
         } else if (usage == 0 && pool == kD3dPoolManaged && width != 0 &&
                    height != 0 && levels != 0) {
-            const bool dxt5_format = format == kD3dFormatDxt5;
+            const bool dxt_compressed_format = is_dxt_compressed_format(format);
             const bool supported_format =
                 format == kD3dFormatA8R8G8B8 ||
                 format == kD3dFormatA1R5G5B5 ||
-                (dxt5_format &&
-                 guest_d3d9_adapter_info.supports_dxt5_texture);
+                (dxt_compressed_format &&
+                 guest_d3d9_supports_compressed_texture(
+                     guest_d3d9_adapter_info, format));
             uint32_t full_mip_count = 1;
             for (uint32_t dimension = std::max(width, height); dimension > 1;
                  dimension >>= 1) {
@@ -8097,7 +8110,8 @@ struct RecompiledPcodeModule::Impl {
             uint64_t base_level_size = 0;
             if (!supported_format || levels > full_mip_count ||
                 (format == kD3dFormatA8R8G8B8 && levels != 1) ||
-                (dxt5_format && ((width & 3u) != 0 || (height & 3u) != 0)) ||
+                (dxt_compressed_format &&
+                 ((width & 3u) != 0 || (height & 3u) != 0)) ||
                 !calculate_tightly_packed_mip_level_layout(
                     width, height, format, base_pitch, base_level_size) ||
                 base_pitch > UINT32_MAX) {
@@ -8192,8 +8206,9 @@ struct RecompiledPcodeModule::Impl {
         const bool managed_texture =
             usage == 0 &&
             (format == kD3dFormatA8R8G8B8 ||
-             (format == kD3dFormatDxt5 &&
-              guest_d3d9_adapter_info.supports_dxt5_texture)) &&
+             (is_dxt_compressed_format(format) &&
+              guest_d3d9_supports_compressed_texture(
+                  guest_d3d9_adapter_info, format))) &&
             pool == kD3dPoolManaged;
         const bool render_target =
             usage == kD3dUsageRenderTarget &&
@@ -10634,9 +10649,9 @@ struct RecompiledPcodeModule::Impl {
             read_u32(100) == 0x001f && read_u32(104) == 0x8000) {
             dds_format = kD3dFormatA1R5G5B5;
         } else if (read_u32(80) == 0x4 &&
-                   read_u32(84) == kD3dFormatDxt5 &&
+                   is_dxt_compressed_format(read_u32(84)) &&
                    (width & 3u) == 0 && (height & 3u) == 0) {
-            dds_format = kD3dFormatDxt5;
+            dds_format = read_u32(84);
         } else {
             return return_kernel32_dword(kD3dErrInvalidCall, api, 60);
         }
@@ -11409,9 +11424,9 @@ struct RecompiledPcodeModule::Impl {
         if (left == right || top == bottom)
             return return_kernel32_dword(kD3dErrInvalidCall, api, 20);
         (void)flags;
-        const bool dxt5_format =
-            texture->second.format == kD3dFormatDxt5;
-        if (dxt5_format &&
+        const bool dxt_compressed_format =
+            is_dxt_compressed_format(texture->second.format);
+        if (dxt_compressed_format &&
             ((left & 3u) != 0 || (top & 3u) != 0 ||
              ((right & 3u) != 0 && right != level_width) ||
              ((bottom & 3u) != 0 && bottom != level_height))) {
@@ -11440,7 +11455,7 @@ struct RecompiledPcodeModule::Impl {
             level_offset += prior_size;
         }
         const uint64_t offset_in_level =
-            dxt5_format
+            dxt_compressed_format
                 ? static_cast<uint64_t>(top / 4) * level_pitch +
                       static_cast<uint64_t>(left / 4) * 16
                 : static_cast<uint64_t>(top) * level_pitch +

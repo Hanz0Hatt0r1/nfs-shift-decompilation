@@ -3234,6 +3234,7 @@ int main(int argc, char** argv) {
         adapter_info.description = "fixture adapter";
         adapter_info.supports_bgra8_surface = true;
         adapter_info.supports_bgra8_texture = true;
+        adapter_info.supports_dxt3_texture = true;
         adapter_info.supports_dxt5_texture = true;
         adapter_info.supports_d24s8_depth_stencil = true;
         adapter_info.bgra8_sample_count_mask = 1 | 2 | 4;
@@ -3316,6 +3317,10 @@ int main(int argc, char** argv) {
                                    0x35545844}) == 0 &&
                     invoke_import(d3d9_provider_module,
                                   provider_check_device_format,
+                                  {provider_interface, 0, 1, 22, 0, 3,
+                                   0x33545844}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  provider_check_device_format,
                                   {provider_interface, 0, 1, 22, 2, 3, 21}) ==
                         0x8876086a &&
                     invoke_import(d3d9_provider_module,
@@ -3323,6 +3328,36 @@ int main(int argc, char** argv) {
                                   {provider_interface, 0, 1, 22, 0, 3, 23}) ==
                         0x8876086a,
                 "CheckDeviceFormat did not expose only Vulkan-backed formats");
+        shift::runtime::RecompiledPcodeModule dxt3_unsupported_module(argv[1]);
+        const auto dxt3_unsupported_image =
+            dxt3_unsupported_module.load_pe32_image(argv[8]);
+        const uint32_t dxt3_unsupported_create9 = read_guest_u32(
+            dxt3_unsupported_module, "ram",
+            dxt3_unsupported_image.image_base + 0x2060);
+        shift::runtime::RecompiledGuestD3d9AdapterInfo
+            dxt3_unsupported_adapter{};
+        dxt3_unsupported_adapter.supports_bgra8_surface = true;
+        dxt3_unsupported_adapter.supports_bgra8_texture = true;
+        dxt3_unsupported_adapter.supports_dxt5_texture = true;
+        require(dxt3_unsupported_module.set_guest_d3d9_adapter_info(
+                    dxt3_unsupported_adapter),
+                "could not configure the DXT3-negative adapter fixture");
+        const uint32_t dxt3_unsupported_interface = invoke_import(
+            dxt3_unsupported_module, dxt3_unsupported_create9, {32});
+        const uint32_t dxt3_unsupported_vtable = read_guest_u32(
+            dxt3_unsupported_module, "ram", dxt3_unsupported_interface);
+        const uint32_t dxt3_unsupported_check_format = read_guest_u32(
+            dxt3_unsupported_module, "ram",
+            dxt3_unsupported_vtable + 10 * 4);
+        require(invoke_import(dxt3_unsupported_module,
+                              dxt3_unsupported_check_format,
+                              {dxt3_unsupported_interface, 0, 1, 22, 0, 3,
+                               0x33545844}) == 0x8876086a &&
+                    invoke_import(dxt3_unsupported_module,
+                                  dxt3_unsupported_check_format,
+                                  {dxt3_unsupported_interface, 0, 1, 22, 0, 3,
+                                   0x35545844}) == 0,
+                "CheckDeviceFormat did not gate DXT3 independently of DXT5");
         require(invoke_import(
                     d3d9_provider_module,
                     provider_check_depth_stencil_match,
@@ -3623,6 +3658,64 @@ int main(int argc, char** argv) {
                                   dxt5_texture_release,
                                   {dxt5_texture}) == 0,
                 "managed DXT5 texture accepted a misaligned lock or did not release");
+        constexpr uint32_t dxt3_texture_output_address = 0x00407100;
+        constexpr uint32_t dxt3_texture_locked_rect_address = 0x00407120;
+        constexpr uint32_t dxt3_texture_rect_address = 0x00407130;
+        require(invoke_import(
+                    d3d9_provider_module, create_texture,
+                    {created_device, 512, 512, 1, 0, 0x33545844, 1,
+                     dxt3_texture_output_address, 0}) == 0,
+                "CreateTexture rejected a supported managed DXT3 texture");
+        const uint32_t dxt3_texture = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_texture_output_address);
+        const uint32_t dxt3_texture_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_texture);
+        const uint32_t dxt3_texture_release = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_texture_vtable + 2 * 4);
+        const uint32_t dxt3_texture_lock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_texture_vtable + 19 * 4);
+        const uint32_t dxt3_texture_unlock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_texture_vtable + 20 * 4);
+        require(invoke_import(d3d9_provider_module,
+                              dxt3_texture_lock_rect,
+                              {dxt3_texture, 0,
+                               dxt3_texture_locked_rect_address, 0, 0}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_locked_rect_address) == 2048,
+                "managed DXT3 LockRect did not expose its 512x512 block pitch");
+        const uint32_t dxt3_texture_data_address = read_guest_u32(
+            d3d9_provider_module, "ram",
+            dxt3_texture_locked_rect_address + 4);
+        std::array<uint8_t, 32> dxt3_texture_bytes{};
+        for (size_t index = 0; index < dxt3_texture_bytes.size(); ++index)
+            dxt3_texture_bytes[index] = static_cast<uint8_t>(255 - index);
+        write_guest_bytes(d3d9_provider_module, dxt3_texture_data_address,
+                          dxt3_texture_bytes.data(), dxt3_texture_bytes.size());
+        require(invoke_import(d3d9_provider_module,
+                              dxt3_texture_unlock_rect,
+                              {dxt3_texture, 0}) == 0,
+                "managed DXT3 texture unlock failed");
+        const std::array<int32_t, 4> dxt3_aligned_rect = {4, 4, 8, 8};
+        write_guest_bytes(d3d9_provider_module, dxt3_texture_rect_address,
+                          reinterpret_cast<const uint8_t*>(
+                              dxt3_aligned_rect.data()),
+                          sizeof(dxt3_aligned_rect));
+        require(invoke_import(d3d9_provider_module, dxt3_texture_lock_rect,
+                              {dxt3_texture, 0,
+                               dxt3_texture_locked_rect_address,
+                               dxt3_texture_rect_address, 0}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_locked_rect_address) == 2048 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_locked_rect_address + 4) ==
+                        dxt3_texture_data_address + 2048 + 16 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt3_texture_unlock_rect,
+                                  {dxt3_texture, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt3_texture_release,
+                                  {dxt3_texture}) == 0,
+                "managed DXT3 subrect did not use 4x4 block addressing");
         require(invoke_import(d3d9_provider_module, device_set_texture,
                               {created_device, 260, 0}) == 0x8876086c,
                 "SetTexture accepted stage 260");
@@ -4151,6 +4244,64 @@ int main(int argc, char** argv) {
                     invoke_import(d3d9_provider_module, dxt5_dds_release,
                                   {dxt5_dds_texture}) == 0,
                 "D3DX DXT5 mip bytes did not preserve the source blocks");
+        auto dxt3_dds = dds_header;
+        write_u32(dxt3_dds, 84, 0x33545844);  // DXT3.
+        dxt3_dds[128] = 0x36;
+        dxt3_dds[159] = 0xc9;
+        constexpr uint32_t dxt3_dds_source_address = 0x00049200;
+        constexpr uint32_t dxt3_dds_output_address = 0x00035a20;
+        constexpr uint32_t dxt3_dds_info_address = 0x00035a30;
+        constexpr uint32_t dxt3_dds_locked_rect_address = 0x00035a50;
+        write_guest_bytes(d3d9_provider_module, dxt3_dds_source_address,
+                          dxt3_dds.data(), dxt3_dds.size());
+        require(invoke_import(
+                    d3d9_provider_module,
+                    provider_d3dx_create_texture_from_memory_ex,
+                    {d3dx_device_wrapper_address, dxt3_dds_source_address,
+                     static_cast<uint32_t>(dxt3_dds.size()), UINT32_MAX,
+                     UINT32_MAX, 4, 0, 0x33545844, 1, 1, 1, 0,
+                     dxt3_dds_info_address, 0,
+                     dxt3_dds_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_dds_info_address + 16) == 0x33545844,
+                "D3DX texture loader rejected a complete DXT3 DDS mip chain");
+        const uint32_t dxt3_dds_texture = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_dds_output_address);
+        const uint32_t dxt3_dds_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_dds_texture);
+        const uint32_t dxt3_dds_lock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_dds_vtable + 19 * 4);
+        const uint32_t dxt3_dds_unlock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_dds_vtable + 20 * 4);
+        const uint32_t dxt3_dds_release = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_dds_vtable + 2 * 4);
+        require(invoke_import(d3d9_provider_module, dxt3_dds_lock_rect,
+                              {dxt3_dds_texture, 0,
+                               dxt3_dds_locked_rect_address, 0, 0}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_dds_locked_rect_address) == 32,
+                "D3DX DXT3 mip chain did not preserve its compressed pitch");
+        const uint32_t dxt3_dds_payload_address = read_guest_u32(
+            d3d9_provider_module, "ram",
+            dxt3_dds_locked_rect_address + 4);
+        std::array<uint8_t, 16> dxt3_dds_first_block_row{};
+        std::array<uint8_t, 16> dxt3_dds_second_block_row{};
+        require(d3d9_provider_module.read_guest(
+                    "ram", dxt3_dds_payload_address,
+                    dxt3_dds_first_block_row.size(),
+                    dxt3_dds_first_block_row.data()) &&
+                    d3d9_provider_module.read_guest(
+                        "ram", dxt3_dds_payload_address + 16,
+                        dxt3_dds_second_block_row.size(),
+                        dxt3_dds_second_block_row.data()) &&
+                    dxt3_dds_first_block_row.front() == dxt3_dds[128] &&
+                    dxt3_dds_second_block_row.back() == dxt3_dds[159],
+                "D3DX DXT3 texture did not preserve the DDS block bytes");
+        require(invoke_import(d3d9_provider_module, dxt3_dds_unlock_rect,
+                              {dxt3_dds_texture, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module, dxt3_dds_release,
+                                  {dxt3_dds_texture}) == 0,
+                "D3DX DXT3 texture did not unlock or release");
         auto overflowing_mip_dds = a1r5g5b5_dds;
         write_u32(overflowing_mip_dds, 12, 3'748'832'529);
         write_u32(overflowing_mip_dds, 16, 1'845'248'881);
