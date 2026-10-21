@@ -2019,7 +2019,8 @@
     "Unique function and dispatch counts are diagnostic only; they do not establish that every function returned without error, or that frontend/gameplay rendered.",
     "v651 broad caller trace was manually stopped before its target and is unknown, not a failure.",
     "v653 entered 0x0088a2c0 but its selected trace had no return before a nested unresolved target.",
-    "v654 entered 0x007d6570 and its helper 0x007d6470, but neither return was captured before the next unresolved export; do not count them as completed functions."
+    "v654 entered 0x007d6570 and its helper 0x007d6470, but neither return was captured before the next unresolved export; do not count them as completed functions.",
+    "The additional live Wine process observation was not a fresh controlled launch; native GDB architecture mismatch prevented guest instruction-pointer recovery."
   ],
   "original_game_launches": {
     "ge_proton": {
@@ -2027,6 +2028,10 @@
       "result": "Original PE stayed alive about 480 seconds and executed Gecko/Scaleform code; two captures showed a black window. No frontend or race confirmed."
     },
     "interpretation": "These are original-game runtime observations, separate from the recompiled P-code replay. The Wine path matches the retail read but does not explain the null field or establish Windows behavior.",
+    "live_wine_observation": {
+      "evidence": "evidence/retail_frontier_20261021/original_shift_live_wine_observation.json",
+      "result": "An already-running pinned retail PE32 process under system Wine had an X11 game window and loaded Bink, D3DX9_41, and WineD3D. A read-only window capture was black; the process remained alive after detach. Native GDB could not recover guest instruction pointers."
+    },
     "wine": {
       "evidence": "evidence/retail_frontier_20261021/original_shift_wine_crash.json",
       "result": "Original PE stopped at 0x0083a006 reading address 0x18 after nested [inner+0x3c] was null."
@@ -2041,7 +2046,7 @@
     "builder_python_tests": "8 passed (python3 -m pytest tests/test_shift_pcode_supplement_builder.py -q)",
     "dispatch_counts": "Diagnostic only; not evidence of frontend, race, or successful completion of every dispatched function.",
     "focused_ctest": "passed (1/1; /usr/bin/ctest --test-dir /tmp/process1-retail-runtime-final-build -R ^shift_runtime_recompiled_pcode_module$)",
-    "git_diff_check": "passed; JSON evidence parses",
+    "git_diff_check": "passed; JSON evidence parses after live original-process observation",
     "runtime_build": "passed (cached build verified; Ninja reported no work to do in /tmp/process1-retail-runtime-final-build)"
   }
 }

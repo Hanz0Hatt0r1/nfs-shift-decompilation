@@ -220,7 +220,14 @@ Gecko/Scaleform functions, while two screenshots showed a black game window.
 That confirms original code execution, but not frontend or race readiness. It
 is separate from the successful, user-confirmed race capture on 2026-10-18.
 The [PortProton run evidence](../evidence/retail_frontier_20261021/original_shift_portproton_run.json)
-records the image hash, cloned paths, screenshots, and limits.
+records the image hash, cloned paths, screenshots, and limits. A separate
+read-only observation of an already-running original retail process under
+system Wine confirmed an X11 game window with Bink, D3DX9_41, and WineD3D
+loaded; the visible capture was black and the process remained alive after
+detach. Native GDB could not recover guest instruction pointers because of
+the Wine i386:x64-32 target architecture. This was not a fresh controlled
+launch and does not confirm frontend or race entry; see the
+[live process evidence](../evidence/retail_frontier_20261021/original_shift_live_wine_observation.json).
 
 The v621–v632 P-code continuation merged the exact `0x0049f2c0` body,
 preserved lower-address Ghidra blocks while honoring each declared entrypoint,
