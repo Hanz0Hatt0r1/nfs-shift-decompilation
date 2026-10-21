@@ -37,17 +37,25 @@ value array without a matching set bit is not claimed as an original device
 default. This preserves which values were explicitly written; Direct3D 9's
 shader reference says `Get***ShaderConstant*` retrieves values set through the
 matching `Set***ShaderConstant*` methods.
-Managed texture pixels are copied into tightly packed mip-level vectors.
+Managed texture data is copied into tightly packed mip-level vectors. DXT5
+levels preserve their original compressed bytes: each mip uses
+`ceil(width/4) * ceil(height/4) * 16` bytes, and its pitch is the byte count
+for one block row. DXT5 base dimensions must be multiples of four. Guest
+`LockRect` accepts block-aligned regions and returns the byte offset of the
+first covered block. These rules follow Microsoft's [D3D format reference](https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dformat),
+[D3DLOCKED_RECT pitch definition](https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dlocked-rect),
+and [resource-locking rules](https://learn.microsoft.com/en-us/windows/win32/direct3d9/locking-resources).
 Surface descriptions use the D3DSURFACE_DESC field order: Format, Type, Usage,
 Pool, MultiSampleType, MultiSampleQuality, Width, Height. Backend-owned render
 target textures carry their resource ID and description; their pixels are not
 guest-readable and are not copied into the packet.
 
-The mip-size calculation now rejects overflow before allocating guest memory or
-copying DDS payloads. The regression uses an A1R5G5B5 DDS with width
-1,845,248,881, height 3,748,832,529, and 32 levels: its exact byte count exceeds
-`uint64_t`, while unchecked wraparound produced only 39,535,162 bytes. The
-bounded calculator rejects that chain before any payload read or allocation.
+Mip sizing now checks each level and the cumulative total before allocating
+guest memory or copying DDS payloads. The A1R5G5B5 regression uses width
+1,845,248,881, height 3,748,832,529, and 32 levels. Its full byte count is
+larger than `uint64_t`; the runtime's stricter 32-bit allocation bound rejects
+the first level before accumulating the chain or reading payload bytes. A
+separate DXT5 case rejects a block payload above that same bound.
 
 ## Verification
 
@@ -61,8 +69,9 @@ git diff --check
 ~~~
 
 The test covers guest ABI stack cleanup, stream frequencies, constant
-round-trips and range failures, packet snapshots, callback errors, invalid
-point-list draws, and the overflowing DDS regression.
+round-trips and range failures, DXT5 creation and DDS mip loading, compressed
+LockRect alignment and pitch, raw packet bytes, callback errors, invalid
+point-list draws, and uncompressed and DXT5 overflow regressions.
 
 Latest P-code evidence remains v664: 180 host frames, 3,939 unique guest
 functions, no recorded validation errors, and no guest draw translation. The
@@ -86,13 +95,21 @@ on current main.
 - This handles indexed draws only. `DrawPrimitive`, `DrawPrimitiveUP`,
   `DrawIndexedPrimitiveUP`, and integer shader-constant methods remain outside
   this packet path.
-- Managed texture snapshot support is limited to formats accepted by the
-  current guest texture implementation. A8R8G8B8 is four bytes per pixel and
-  A1R5G5B5 is two; X8R8G8B8 (format 22) is not currently accepted for this
-  managed-memory path. Render-target textures are backend-owned.
+- Managed texture snapshots support A8R8G8B8 (4 bytes per pixel), A1R5G5B5
+  (2 bytes per pixel), and DXT5 (16 bytes per 4×4 block). X8R8G8B8 (format 22)
+  is not accepted for this managed-memory path. DXT5 creation and format
+  advertisement require the adapter's `supports_dxt5_texture` capability;
+  the current Process 2 live Vulkan adapter leaves it false until it has a
+  DXT5 upload or decode path. Render-target textures remain backend-owned.
 - Managed texture levels are restricted by the existing 64 MiB allocation
   ceiling. Shader constant arrays represent the current SM3-sized register
   ranges; this is not a complete D3D9 capability-driven implementation.
+- The vertex/index update callbacks report byte offset and payload but omit
+  D3DLOCK flags. The Process 2 bridge fails closed for ambiguous partial
+  updates to dynamic buffers until the guest side supplies lock flags or a
+  post-unlock full-buffer snapshot. The frame-14483 retail event records its
+  bound VB and stride but not its creation or lock history, so this limitation
+  has not been shown to affect that draw.
 - No P-code frontend, retail rendering parity, or race launch is proven by the
   focused native regression or by dispatch counts.
 

@@ -3234,6 +3234,7 @@ int main(int argc, char** argv) {
         adapter_info.description = "fixture adapter";
         adapter_info.supports_bgra8_surface = true;
         adapter_info.supports_bgra8_texture = true;
+        adapter_info.supports_dxt5_texture = true;
         adapter_info.supports_d24s8_depth_stencil = true;
         adapter_info.bgra8_sample_count_mask = 1 | 2 | 4;
         adapter_info.d24s8_sample_count_mask = 1 | 2;
@@ -3309,6 +3310,10 @@ int main(int argc, char** argv) {
                                   provider_check_device_format,
                                   {provider_interface, 0, 1, 22, 2, 3, 75}) ==
                         0 &&
+                    invoke_import(d3d9_provider_module,
+                                  provider_check_device_format,
+                                  {provider_interface, 0, 1, 22, 0, 3,
+                                   0x35545844}) == 0 &&
                     invoke_import(d3d9_provider_module,
                                   provider_check_device_format,
                                   {provider_interface, 0, 1, 22, 2, 3, 21}) ==
@@ -3531,6 +3536,93 @@ int main(int argc, char** argv) {
                     read_guest_u32(d3d9_provider_module, "ram",
                                    device_texture_output_address) == 0,
                 "SetTexture null unbind did not release and clear the texture");
+        constexpr uint32_t dxt5_texture_output_address = 0x00407000;
+        constexpr uint32_t dxt5_texture_description_address = 0x00407020;
+        constexpr uint32_t dxt5_texture_locked_rect_address = 0x00407040;
+        constexpr uint32_t dxt5_texture_rect_address = 0x00407050;
+        require(invoke_import(
+                    d3d9_provider_module, create_texture,
+                    {created_device, 8, 4, 1, 0, 0x35545844, 1,
+                     dxt5_texture_output_address, 0}) == 0,
+                "CreateTexture rejected a supported managed DXT5 texture");
+        const uint32_t dxt5_texture = read_guest_u32(
+            d3d9_provider_module, "ram", dxt5_texture_output_address);
+        const uint32_t dxt5_texture_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", dxt5_texture);
+        const uint32_t dxt5_texture_release = read_guest_u32(
+            d3d9_provider_module, "ram", dxt5_texture_vtable + 2 * 4);
+        const uint32_t dxt5_texture_get_level_desc = read_guest_u32(
+            d3d9_provider_module, "ram", dxt5_texture_vtable + 17 * 4);
+        const uint32_t dxt5_texture_lock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt5_texture_vtable + 19 * 4);
+        const uint32_t dxt5_texture_unlock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt5_texture_vtable + 20 * 4);
+        require(invoke_import(d3d9_provider_module,
+                              dxt5_texture_get_level_desc,
+                              {dxt5_texture, 0,
+                               dxt5_texture_description_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt5_texture_description_address) ==
+                        0x35545844 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt5_texture_description_address + 24) == 8 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt5_texture_description_address + 28) == 4 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt5_texture_lock_rect,
+                                  {dxt5_texture, 0,
+                                   dxt5_texture_locked_rect_address, 0, 0}) ==
+                        0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt5_texture_locked_rect_address) == 32,
+                "managed DXT5 description or block-row pitch was incorrect");
+        const uint32_t dxt5_texture_data_address = read_guest_u32(
+            d3d9_provider_module, "ram",
+            dxt5_texture_locked_rect_address + 4);
+        std::array<uint8_t, 32> dxt5_texture_bytes{};
+        for (size_t index = 0; index < dxt5_texture_bytes.size(); ++index)
+            dxt5_texture_bytes[index] = static_cast<uint8_t>(index + 1);
+        write_guest_bytes(d3d9_provider_module, dxt5_texture_data_address,
+                          dxt5_texture_bytes.data(), dxt5_texture_bytes.size());
+        require(invoke_import(d3d9_provider_module,
+                              dxt5_texture_unlock_rect,
+                              {dxt5_texture, 0}) == 0,
+                "managed DXT5 texture unlock failed");
+        const std::array<int32_t, 4> dxt5_aligned_rect = {4, 0, 8, 4};
+        write_guest_bytes(d3d9_provider_module,
+                          dxt5_texture_rect_address,
+                          reinterpret_cast<const uint8_t*>(
+                              dxt5_aligned_rect.data()),
+                          sizeof(dxt5_aligned_rect));
+        require(invoke_import(d3d9_provider_module,
+                              dxt5_texture_lock_rect,
+                              {dxt5_texture, 0,
+                               dxt5_texture_locked_rect_address,
+                               dxt5_texture_rect_address, 0}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt5_texture_locked_rect_address) == 32 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt5_texture_locked_rect_address + 4) ==
+                        dxt5_texture_data_address + 16 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt5_texture_unlock_rect,
+                                  {dxt5_texture, 0}) == 0,
+                "managed DXT5 subrect did not point at its first block");
+        const std::array<int32_t, 4> dxt5_misaligned_rect = {2, 0, 8, 4};
+        write_guest_bytes(d3d9_provider_module,
+                          dxt5_texture_rect_address,
+                          reinterpret_cast<const uint8_t*>(
+                              dxt5_misaligned_rect.data()),
+                          sizeof(dxt5_misaligned_rect));
+        require(invoke_import(d3d9_provider_module,
+                              dxt5_texture_lock_rect,
+                              {dxt5_texture, 0,
+                               dxt5_texture_locked_rect_address,
+                               dxt5_texture_rect_address, 0}) == 0x8876086c &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt5_texture_release,
+                                  {dxt5_texture}) == 0,
+                "managed DXT5 texture accepted a misaligned lock or did not release");
         require(invoke_import(d3d9_provider_module, device_set_texture,
                               {created_device, 260, 0}) == 0x8876086c,
                 "SetTexture accepted stage 260");
@@ -3992,6 +4084,73 @@ int main(int argc, char** argv) {
                 "D3DXCreateTextureFromFileInMemoryEx rejected the retail DDS path");
         const uint32_t d3dx_texture = read_guest_u32(
             d3d9_provider_module, "ram", d3dx_texture_output_address);
+        constexpr uint32_t dxt5_dds_source_address = 0x00049000;
+        constexpr uint32_t dxt5_dds_output_address = 0x000359a0;
+        constexpr uint32_t dxt5_dds_info_address = 0x000359b0;
+        constexpr uint32_t dxt5_dds_desc_address = 0x000359d0;
+        constexpr uint32_t dxt5_dds_locked_rect_address = 0x000359f0;
+        write_guest_bytes(d3d9_provider_module, dxt5_dds_source_address,
+                          dds_header.data(), dds_header.size());
+        require(invoke_import(
+                    d3d9_provider_module,
+                    provider_d3dx_create_texture_from_memory_ex,
+                    {d3dx_device_wrapper_address, dxt5_dds_source_address,
+                     static_cast<uint32_t>(dds_header.size()), UINT32_MAX,
+                     UINT32_MAX, 4, 0, 0x35545844, 1, 1, 1, 0,
+                     dxt5_dds_info_address, 0,
+                     dxt5_dds_output_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt5_dds_info_address + 16) == 0x35545844,
+                "D3DX texture loader rejected a complete DXT5 DDS mip chain");
+        const uint32_t dxt5_dds_texture = read_guest_u32(
+            d3d9_provider_module, "ram", dxt5_dds_output_address);
+        const uint32_t dxt5_dds_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", dxt5_dds_texture);
+        const uint32_t dxt5_dds_get_level_count = read_guest_u32(
+            d3d9_provider_module, "ram", dxt5_dds_vtable + 13 * 4);
+        const uint32_t dxt5_dds_get_level_desc = read_guest_u32(
+            d3d9_provider_module, "ram", dxt5_dds_vtable + 17 * 4);
+        const uint32_t dxt5_dds_lock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt5_dds_vtable + 19 * 4);
+        const uint32_t dxt5_dds_unlock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt5_dds_vtable + 20 * 4);
+        const uint32_t dxt5_dds_release = read_guest_u32(
+            d3d9_provider_module, "ram", dxt5_dds_vtable + 2 * 4);
+        require(invoke_import(d3d9_provider_module,
+                              dxt5_dds_get_level_count,
+                              {dxt5_dds_texture}) == 4 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt5_dds_get_level_desc,
+                                  {dxt5_dds_texture, 3,
+                                   dxt5_dds_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt5_dds_desc_address) == 0x35545844 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt5_dds_desc_address + 24) == 1 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt5_dds_desc_address + 28) == 1 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt5_dds_lock_rect,
+                                  {dxt5_dds_texture, 3,
+                                   dxt5_dds_locked_rect_address, 0, 0}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt5_dds_locked_rect_address) == 16,
+                "D3DX DXT5 mip chain lost its level layout or block pitch");
+        const uint32_t dxt5_dds_final_mip_address = read_guest_u32(
+            d3d9_provider_module, "ram",
+            dxt5_dds_locked_rect_address + 4);
+        std::array<uint8_t, 16> dxt5_dds_final_mip{};
+        require(d3d9_provider_module.read_guest(
+                    "ram", dxt5_dds_final_mip_address,
+                    dxt5_dds_final_mip.size(), dxt5_dds_final_mip.data()) &&
+                    dxt5_dds_final_mip.front() == dds_header[192] &&
+                    dxt5_dds_final_mip.back() == dds_header[207] &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt5_dds_unlock_rect,
+                                  {dxt5_dds_texture, 3}) == 0 &&
+                    invoke_import(d3d9_provider_module, dxt5_dds_release,
+                                  {dxt5_dds_texture}) == 0,
+                "D3DX DXT5 mip bytes did not preserve the source blocks");
         auto overflowing_mip_dds = a1r5g5b5_dds;
         write_u32(overflowing_mip_dds, 12, 3'748'832'529);
         write_u32(overflowing_mip_dds, 16, 1'845'248'881);
@@ -4010,7 +4169,27 @@ int main(int argc, char** argv) {
                         0x8876086c &&
                     read_guest_u32(d3d9_provider_module, "ram",
                                    overflowing_mip_output_address) == 0,
-                "D3DX texture accepted a mip-size sum that wraps uint64");
+                "D3DX texture accepted a DDS mip chain above the bounded size limit");
+        auto overflowing_dxt5_dds = dds_header;
+        write_u32(overflowing_dxt5_dds, 12, 4'294'967'292);
+        write_u32(overflowing_dxt5_dds, 16, 4'294'967'292);
+        write_u32(overflowing_dxt5_dds, 28, 1);
+        constexpr uint32_t overflowing_dxt5_address = 0x00049100;
+        constexpr uint32_t overflowing_dxt5_output_address = 0x00035ab0;
+        write_guest_bytes(d3d9_provider_module, overflowing_dxt5_address,
+                          overflowing_dxt5_dds.data(),
+                          overflowing_dxt5_dds.size());
+        require(invoke_import(
+                    d3d9_provider_module,
+                    provider_d3dx_create_texture_from_memory_ex,
+                    {d3dx_device_wrapper_address, overflowing_dxt5_address,
+                     static_cast<uint32_t>(overflowing_dxt5_dds.size()),
+                     UINT32_MAX, UINT32_MAX, 1, 0, 0x35545844, 1, 1, 1, 0,
+                     0, 0, overflowing_dxt5_output_address}) ==
+                        0x8876086c &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   overflowing_dxt5_output_address) == 0,
+                "D3DX DXT5 texture accepted a payload exceeding 32-bit size bounds");
         const uint32_t d3dx_texture_vtable = read_guest_u32(
             d3d9_provider_module, "ram", d3dx_texture);
         const uint32_t d3dx_texture_get_level_count = read_guest_u32(
@@ -5485,6 +5664,7 @@ int main(int argc, char** argv) {
         constexpr uint32_t draw_pixel_shader_output = 0x00406314;
         constexpr uint32_t draw_lock_output = 0x00406318;
         constexpr uint32_t draw_texture_lock_output = 0x0040631c;
+        constexpr uint32_t draw_dxt5_texture_output = 0x00406320;
         constexpr uint32_t draw_vertex_data = 0x00406400;
         constexpr uint32_t draw_index_data = 0x00406500;
         constexpr uint32_t draw_texture_data = 0x00406540;
@@ -5509,7 +5689,11 @@ int main(int argc, char** argv) {
                     invoke_import(
                         d3d9_provider_module, create_texture,
                         {created_device, 2, 2, 1, 0, 21, 1,
-                         draw_texture_output, 0}) == 0,
+                         draw_texture_output, 0}) == 0 &&
+                    invoke_import(
+                        d3d9_provider_module, create_texture,
+                        {created_device, 8, 4, 1, 0, 0x35545844, 1,
+                         draw_dxt5_texture_output, 0}) == 0,
                 "could not create bounded guest resources for indexed draw capture");
         const uint32_t draw_vertex_buffer = read_guest_u32(
             d3d9_provider_module, "ram", draw_vertex_buffer_output);
@@ -5517,12 +5701,16 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", draw_index_buffer_output);
         const uint32_t draw_texture = read_guest_u32(
             d3d9_provider_module, "ram", draw_texture_output);
+        const uint32_t draw_dxt5_texture = read_guest_u32(
+            d3d9_provider_module, "ram", draw_dxt5_texture_output);
         const uint32_t draw_vertex_buffer_vtable = read_guest_u32(
             d3d9_provider_module, "ram", draw_vertex_buffer);
         const uint32_t draw_index_buffer_vtable = read_guest_u32(
             d3d9_provider_module, "ram", draw_index_buffer);
         const uint32_t draw_texture_vtable = read_guest_u32(
             d3d9_provider_module, "ram", draw_texture);
+        const uint32_t draw_dxt5_texture_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", draw_dxt5_texture);
         const uint32_t draw_vertex_buffer_lock = read_guest_u32(
             d3d9_provider_module, "ram", draw_vertex_buffer_vtable + 11 * 4);
         const uint32_t draw_vertex_buffer_unlock = read_guest_u32(
@@ -5535,6 +5723,15 @@ int main(int argc, char** argv) {
             d3d9_provider_module, "ram", draw_texture_vtable + 19 * 4);
         const uint32_t draw_texture_unlock = read_guest_u32(
             d3d9_provider_module, "ram", draw_texture_vtable + 20 * 4);
+        const uint32_t draw_dxt5_texture_lock = read_guest_u32(
+            d3d9_provider_module, "ram",
+            draw_dxt5_texture_vtable + 19 * 4);
+        const uint32_t draw_dxt5_texture_unlock = read_guest_u32(
+            d3d9_provider_module, "ram",
+            draw_dxt5_texture_vtable + 20 * 4);
+        const uint32_t draw_dxt5_texture_release = read_guest_u32(
+            d3d9_provider_module, "ram",
+            draw_dxt5_texture_vtable + 2 * 4);
         require(invoke_import(d3d9_provider_module, draw_vertex_buffer_lock,
                               {draw_vertex_buffer, 0, 144, draw_lock_output,
                                0}) == 0,
@@ -5579,8 +5776,26 @@ int main(int argc, char** argv) {
         }
         require(invoke_import(d3d9_provider_module, draw_texture_unlock,
                               {draw_texture, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  draw_dxt5_texture_lock,
+                                  {draw_dxt5_texture, 0,
+                                   dxt5_texture_locked_rect_address, 0,
+                                   0}) == 0,
+                "indexed draw managed texture data could not be prepared");
+        const uint32_t draw_dxt5_texture_data_address = read_guest_u32(
+            d3d9_provider_module, "ram",
+            dxt5_texture_locked_rect_address + 4);
+        write_guest_bytes(d3d9_provider_module,
+                          draw_dxt5_texture_data_address,
+                          dxt5_texture_bytes.data(),
+                          dxt5_texture_bytes.size());
+        require(invoke_import(d3d9_provider_module,
+                              draw_dxt5_texture_unlock,
+                              {draw_dxt5_texture, 0}) == 0 &&
                     invoke_import(d3d9_provider_module, device_set_texture,
                                   {created_device, 0, draw_texture}) == 0 &&
+                    invoke_import(d3d9_provider_module, device_set_texture,
+                                  {created_device, 1, draw_dxt5_texture}) == 0 &&
                     invoke_import(d3d9_provider_module,
                                   device_set_stream_source,
                                   {created_device, 0, draw_vertex_buffer, 0,
@@ -5807,7 +6022,7 @@ int main(int argc, char** argv) {
                     draw_packet.vertex_bool_constant_set_mask == (1u << 15) &&
                     draw_packet.pixel_bool_constant_set_mask == 3,
                 "DrawIndexedPrimitive packet lost shader constants or set masks");
-        require(draw_packet.textures.size() == 1 &&
+        require(draw_packet.textures.size() == 2 &&
                     draw_packet.textures[0].stage == 0 &&
                     draw_packet.textures[0].guest_texture == draw_texture &&
                     draw_packet.textures[0].mip_data.size() == 1 &&
@@ -5815,6 +6030,17 @@ int main(int argc, char** argv) {
                     draw_packet.textures[0].mip_data[0].height == 2 &&
                     draw_packet.textures[0].mip_data[0].pitch == 8 &&
                     draw_packet.textures[0].mip_data[0].bytes.size() == 16 &&
+                    draw_packet.textures[1].stage == 1 &&
+                    draw_packet.textures[1].guest_texture ==
+                        draw_dxt5_texture &&
+                    draw_packet.textures[1].format == 0x35545844 &&
+                    draw_packet.textures[1].mip_data.size() == 1 &&
+                    draw_packet.textures[1].mip_data[0].width == 8 &&
+                    draw_packet.textures[1].mip_data[0].height == 4 &&
+                    draw_packet.textures[1].mip_data[0].pitch == 32 &&
+                    draw_packet.textures[1].mip_data[0].bytes ==
+                        std::vector<uint8_t>(dxt5_texture_bytes.begin(),
+                                             dxt5_texture_bytes.end()) &&
                     draw_packet.render_targets.size() == 1 &&
                     draw_packet.render_targets[0].description[0] == 21 &&
                     draw_packet.render_targets[0].description[6] == 800 &&
@@ -5841,6 +6067,8 @@ int main(int argc, char** argv) {
         d3d9_backend_fixture.draw_result = true;
         require(invoke_import(d3d9_provider_module, device_set_texture,
                               {created_device, 0, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module, device_set_texture,
+                                  {created_device, 1, 0}) == 0 &&
                     invoke_import(d3d9_provider_module,
                                   device_set_stream_source,
                                   {created_device, 0, 0, 0, 0}) == 0 &&
@@ -5853,6 +6081,9 @@ int main(int argc, char** argv) {
                     invoke_import(d3d9_provider_module,
                                   managed_texture_release,
                                   {draw_texture}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  draw_dxt5_texture_release,
+                                  {draw_dxt5_texture}) == 0 &&
                     invoke_import(d3d9_provider_module, vertex_buffer_release,
                                   {draw_vertex_buffer}) == 0 &&
                     invoke_import(d3d9_provider_module, index_buffer_release,
