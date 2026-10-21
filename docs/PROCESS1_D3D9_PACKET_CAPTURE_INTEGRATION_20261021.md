@@ -80,6 +80,35 @@ The raw live log is 9,653,915 bytes and remains outside Git; its SHA-256 is
 durable counts, probe configuration, and scope limits are recorded in
 [`process1_d3d9_calltrace_v668_summary.json`](../evidence/retail_frontier_20261021/process1_d3d9_calltrace_v668_summary.json).
 
+### v672 display-list path probe
+
+The v670/v671 retries were made with a runtime binary that did not include
+Process 2's DXT3 capture-capability commit `1fef18a8`; setting
+`SHIFT_D3D9_PACKET_CAPTURE_DIR` alone did not advertise managed DXT3 support.
+The v671 retry therefore stopped at the same managed-texture check. v672 used
+the integrated binary containing P1 commits `e6f674a6` and `1a25ef48` plus P2
+commit `1fef18a8`; it crossed that check and completed the 360-host-frame
+bound. The v672 runtime binary SHA-256 is
+`230a92c641305c1f7c84938a4c52d3def17f59914f40886616bd5e5942866b1b`.
+
+The targeted v672 call trace recorded `FUN_00835590` 264 times from
+`FUN_00835d80`, returning `EAX=1` each time. In that captured prefix,
+`FUN_00835590` called `FUN_0082f3c0` 5,544 times, with every recorded return
+equal to 1; the selected trace had no `FUN_00831380` entry before its 8,192
+entry-event limit. The supplied Ghidra body for `FUN_0082f3c0` returns one
+when the DWORD at `param_1+0x24` is zero. This proves the predicate result for
+those calls, but not why that field was zero, whether the associated state
+work should have been queued, or what happened after trace truncation.
+
+The bounded run still reports `guest_draw_translation=false`; the snapshot
+function was `0x00843ed0`, worker-waiting count was 3, and there were no
+validation errors. Clear and Present submission counts remain host bridge
+activity. This trace does not establish a retail menu, race, guest Draw*, or
+retail image. The raw log remains outside Git (8,332,993 bytes; SHA-256
+`c96f00890cf4509b73b93c8f3e855880f2883ab8f9e665fa2efe2fd8f470b90e`). Its
+summary records the trace-cap caveat and the v670/v671 binary mismatch in
+[`process1_pcode_frontier_v672_display_list_trace_summary.json`](../evidence/retail_frontier_20261021/process1_pcode_frontier_v672_display_list_trace_summary.json).
+
 Separately, Process 1's original-retail evidence PR [#2134](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2134)
 records that the user navigated the original retail executable to the main
 menu and an active cockpit race under system Wine 11.17. That confirms
