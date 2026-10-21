@@ -11,6 +11,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 namespace shift::vulkan {
@@ -334,6 +335,63 @@ void emit_float_constant_events(
             {"values_bits", json_u32_array(bits)},
         });
         start = end;
+    }
+}
+
+
+template <typename T, typename = void> struct HasFloatConstantMasks : std::false_type {};
+template <typename T>
+struct HasFloatConstantMasks<T, std::void_t<
+    decltype(std::declval<const T&>().vertex_float_constant_set_mask),
+    decltype(std::declval<const T&>().pixel_float_constant_set_mask)>> : std::true_type {};
+
+template <typename T, typename = void> struct HasBoolConstantMasks : std::false_type {};
+template <typename T>
+struct HasBoolConstantMasks<T, std::void_t<
+    decltype(std::declval<const T&>().vertex_bool_constant_set_mask),
+    decltype(std::declval<const T&>().pixel_bool_constant_set_mask)>> : std::true_type {};
+
+template <typename T, typename = void> struct HasBoolQueryHresults : std::false_type {};
+template <typename T>
+struct HasBoolQueryHresults<T, std::void_t<
+    decltype(std::declval<const T&>().vertex_bool_constants_hresult),
+    decltype(std::declval<const T&>().pixel_bool_constants_hresult)>> : std::true_type {};
+
+template <typename T>
+void emit_proven_float_constant_events(CaptureWriter& writer, const T& packet) {
+    if constexpr (HasFloatConstantMasks<T>::value) {
+        emit_float_constant_events(writer, "set_vertex_shader_constant_f",
+            packet.vertex_float_constants, packet.vertex_float_constant_set_mask, 256);
+        emit_float_constant_events(writer, "set_pixel_shader_constant_f",
+            packet.pixel_float_constants, packet.pixel_float_constant_set_mask, 224);
+    }
+    // Raw DWORD arrays still reach the draw event without validity masks;
+    // never invent Set*ConstantF write history.
+}
+
+template <typename T>
+void append_constant_provenance(Fields& draw, const T& packet) {
+    if constexpr (HasFloatConstantMasks<T>::value) {
+        draw.emplace_back("vertex_float_constant_set_mask",
+                          json_u32_array(packet.vertex_float_constant_set_mask));
+        draw.emplace_back("pixel_float_constant_set_mask",
+                          json_u32_array(packet.pixel_float_constant_set_mask));
+    }
+    if constexpr (HasBoolConstantMasks<T>::value) {
+        draw.emplace_back("vertex_bool_constant_set_mask",
+                          json_u32(packet.vertex_bool_constant_set_mask));
+        draw.emplace_back("pixel_bool_constant_set_mask",
+                          json_u32(packet.pixel_bool_constant_set_mask));
+    }
+    if constexpr (HasBoolQueryHresults<T>::value) {
+        draw.emplace_back("vertex_bool_constants_hresult",
+                          json_i32(packet.vertex_bool_constants_hresult));
+        draw.emplace_back("pixel_bool_constants_hresult",
+                          json_i32(packet.pixel_bool_constants_hresult));
+        draw.emplace_back("vertex_bool_constants_hr",
+                          json_i32(packet.vertex_bool_constants_hresult));
+        draw.emplace_back("pixel_bool_constants_hr",
+                          json_i32(packet.pixel_bool_constants_hresult));
     }
 }
 
@@ -777,7 +835,7 @@ bool D3d9PacketCaptureAdapter::capture_draw(const Packet& packet, std::string& e
         });
 
         for (const auto& texture : packet.textures) {
-            if (texture.stage > 15) throw std::runtime_error("guest texture stage is outside D3D9 s0-s15");
+            if (texture.stage > 259) throw std::runtime_error("guest texture stage exceeds P1 SetTexture range");
             const std::string texture_id = texture.guest_texture == 0
                 ? "null" : json_string(pointer_id(texture.guest_texture));
             const std::string signature = resource_signature("tex", texture.guest_texture);
@@ -802,6 +860,7 @@ bool D3d9PacketCaptureAdapter::capture_draw(const Packet& packet, std::string& e
                 {"usage", json_u32(texture.usage)},
                 {"format", json_u32(texture.format)},
                 {"pool", json_u32(texture.pool)},
+                {"pitch", json_u32(texture.pitch)},
                 {"resource_type", "3"},
                 {"resource_type_name", json_string("texture2d")},
                 {"resource_descriptor_status", json_string("observed")},
@@ -819,6 +878,8 @@ bool D3d9PacketCaptureAdapter::capture_draw(const Packet& packet, std::string& e
                 {"height", json_u32(texture.height)},
                 {"format", json_u32(texture.format)},
                 {"pool", json_u32(texture.pool)},
+                {"usage", json_u32(texture.usage)},
+                {"pitch", json_u32(texture.pitch)},
                 {"level_count", json_u32(texture.levels)},
                 {"snapshot_status", json_string(snapshot_status)},
                 {"snapshot_paths", snapshot_paths},
@@ -826,22 +887,14 @@ bool D3d9PacketCaptureAdapter::capture_draw(const Packet& packet, std::string& e
             });
         }
 
-        std::vector<runtime::RecompiledGuestD3d9StateValue> render_states = packet.render_states;
-        std::sort(render_states.begin(), render_states.end(), [](const auto& a, const auto& b) {
-            return std::tie(a.object, a.state, a.value) < std::tie(b.object, b.state, b.value);
-        });
-        for (const auto& state : render_states) {
+        for (const auto& state : packet.render_states) {
             writer.event("set_render_state", {
                 {"object", json_u32(state.object)},
                 {"state", json_u32(state.state)},
                 {"value", json_u32(state.value)},
             });
         }
-        std::vector<runtime::RecompiledGuestD3d9StateValue> sampler_states = packet.sampler_states;
-        std::sort(sampler_states.begin(), sampler_states.end(), [](const auto& a, const auto& b) {
-            return std::tie(a.object, a.state, a.value) < std::tie(b.object, b.state, b.value);
-        });
-        for (const auto& state : sampler_states) {
+        for (const auto& state : packet.sampler_states) {
             writer.event("set_sampler_state", {
                 {"object", json_u32(state.object)},
                 {"sampler", json_u32(state.object)},
@@ -850,10 +903,7 @@ bool D3d9PacketCaptureAdapter::capture_draw(const Packet& packet, std::string& e
             });
         }
 
-        emit_float_constant_events(writer, "set_vertex_shader_constant_f",
-            packet.vertex_float_constants, packet.vertex_float_constant_set_mask, 256);
-        emit_float_constant_events(writer, "set_pixel_shader_constant_f",
-            packet.pixel_float_constants, packet.pixel_float_constant_set_mask, 224);
+        emit_proven_float_constant_events(writer, packet);
 
         Fields viewport = {
             {"x", json_u32(packet.viewport[0])},
@@ -865,12 +915,9 @@ bool D3d9PacketCaptureAdapter::capture_draw(const Packet& packet, std::string& e
         };
         writer.event("set_viewport", viewport);
 
-        std::vector<runtime::RecompiledGuestD3d9SurfaceBinding> targets = packet.render_targets;
-        std::sort(targets.begin(), targets.end(), [](const auto& a, const auto& b) {
-            return a.index < b.index;
-        });
+        const auto& targets = packet.render_targets;
         for (const auto& target : targets) {
-                auto fields = surface_fields(target);
+            auto fields = surface_fields(target);
             fields.emplace_back("render_target_index", json_u32(target.index));
             writer.event("set_render_target", fields);
         }
@@ -889,6 +936,7 @@ bool D3d9PacketCaptureAdapter::capture_draw(const Packet& packet, std::string& e
             {"depth", json_float(float_from_bits(packet.last_clear_depth_bits))},
             {"stencil", json_u32(packet.last_clear_stencil)},
             {"resource_signature", json_string(clear_signature)},
+            {"guest_packet_last_clear_unproven_target", "true"},
         });
 
         Fields draw = {
@@ -902,12 +950,14 @@ bool D3d9PacketCaptureAdapter::capture_draw(const Packet& packet, std::string& e
             {"stream_source_frequencies", "[]"},
             {"vertex_float_constants_bits", json_u32_array(packet.vertex_float_constants)},
             {"pixel_float_constants_bits", json_u32_array(packet.pixel_float_constants)},
-            {"vertex_float_constant_set_mask", json_u32_array(packet.vertex_float_constant_set_mask)},
-            {"pixel_float_constant_set_mask", json_u32_array(packet.pixel_float_constant_set_mask)},
             {"vertex_bool_constants", json_u32_array(packet.vertex_bool_constants)},
             {"pixel_bool_constants", json_u32_array(packet.pixel_bool_constants)},
-            {"vertex_bool_constant_set_mask", json_u32(packet.vertex_bool_constant_set_mask)},
-            {"pixel_bool_constant_set_mask", json_u32(packet.pixel_bool_constant_set_mask)},
+            {"last_clear_flags", json_u32(packet.last_clear_flags)},
+            {"last_clear_color", json_u32(packet.last_clear_color)},
+            {"last_clear_depth_bits", json_u32(packet.last_clear_depth_bits)},
+            {"last_clear_stencil", json_u32(packet.last_clear_stencil)},
+            {"last_clear_rect_count", json_u32(packet.last_clear_rect_count)},
+            {"last_clear_target_proven", "false"},
             {"vertex_shader_ptr", json_string(vs_id)},
             {"pixel_shader_ptr", json_string(ps_id)},
             {"index_buffer_ptr", json_string(ib_id)},
@@ -919,6 +969,7 @@ bool D3d9PacketCaptureAdapter::capture_draw(const Packet& packet, std::string& e
                            ",\"setting\":" + json_u32(packet.streams[i].frequency) + "}";
         }
         frequencies += ']';
+        append_constant_provenance(draw, packet);
         for (auto& field : draw) if (field.first == "stream_source_frequencies") field.second = frequencies;
         writer.event("draw_indexed_primitive", draw);
 
