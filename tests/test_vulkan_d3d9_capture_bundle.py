@@ -13,8 +13,13 @@ from vulkan_d3d9_capture_bundle import (
     GEOMETRY_ATTRIBUTE,
     GEOMETRY_HEADER,
     _captured_buffer_bytes,
+    _captured_buffer_range,
+    _captured_depth_surface,
     _captured_surface_formats,
+    _captured_shader_inputs,
+    _captured_stream_frequency_contract,
     _capture_texture_packet,
+    _interleave_vertex_streams,
     _payload_precedes_draw,
     _read_events,
     _sampler_state,
@@ -125,6 +130,12 @@ def test_captured_surface_formats_cover_mobile_targets_and_existing_r32f():
         _captured_surface_formats(114, 71, True)
 
 
+def test_null_depth_stencil_binding_is_not_a_surface():
+    assert _captured_depth_surface({"surface_ptr": None, "surface_descriptor_status": "null"}) is None
+    surface = {"surface_ptr": "0x1234", "surface_width": 128, "surface_height": 128}
+    assert _captured_depth_surface(surface) is surface
+
+
 def test_capture_mip_filter_is_preserved_and_checked_against_texture_levels():
     sampler = _sampler_state({1: 1, 2: 1, 5: 2, 6: 2, 7: 2})
     assert sampler["mip_filter"] == "LINEAR"
@@ -187,6 +198,19 @@ def test_capture_texture_packet_fails_closed_for_missing_used_sampler_binding(tm
         )
 
 
+def test_capture_texture_packet_is_omitted_for_untextured_pixel_shader(tmp_path):
+    output = tmp_path / "textures.svtp"
+    report, resources, samplers = _capture_texture_packet(
+        {}, tmp_path, SimpleNamespace(samplers=[], sampler_types={}), output
+    )
+
+    assert report["status"] == "not-required"
+    assert report["texture_count"] == 0
+    assert resources == []
+    assert samplers == {}
+    assert not output.exists()
+
+
 def test_capture_buffer_payload_ranges_reconstruct_full_buffer_in_capture_order(tmp_path):
     buffer_dir = tmp_path / "buffers"
     buffer_dir.mkdir()
@@ -232,7 +256,7 @@ def test_capture_buffer_payload_ranges_reject_incomplete_coverage(tmp_path):
         "payload_path": r"C:\capture\buffers\left.bin",
     }
 
-    with pytest.raises(ValueError, match="do not cover the full buffer"):
+    with pytest.raises(ValueError, match="do not cover the required draw range"):
         _captured_buffer_bytes(
             tmp_path,
             [row],
@@ -271,7 +295,7 @@ def test_capture_buffer_payload_discard_invalidates_older_ranges(tmp_path):
         },
     ]
 
-    with pytest.raises(ValueError, match="do not cover the full buffer"):
+    with pytest.raises(ValueError, match="do not cover the required draw range"):
         _captured_buffer_bytes(
             tmp_path,
             rows,
@@ -283,7 +307,7 @@ def test_capture_buffer_payload_discard_invalidates_older_ranges(tmp_path):
         )
 
 
-def test_capture_buffer_payload_rejects_ambiguous_same_frame_order(tmp_path):
+def test_capture_buffer_payload_skips_late_same_frame_payload(tmp_path):
     row = {
         "event_index": 51,
         "frame": 5,
@@ -294,7 +318,7 @@ def test_capture_buffer_payload_rejects_ambiguous_same_frame_order(tmp_path):
         "snapshot_status": "captured",
     }
 
-    with pytest.raises(ValueError, match="ambiguous within the draw frame"):
+    with pytest.raises(ValueError, match="do not cover the required draw range"):
         _captured_buffer_bytes(
             tmp_path,
             [row],
@@ -331,7 +355,8 @@ def test_capture_buffer_payload_rejects_untracked_lock_history(tmp_path, capture
         "captured_byte_size": 4,
         "snapshot_status": "captured",
         "payload_path": r"C:\capture\buffers\full.bin",
-    }
+        "capture_scope": "locked-range",
+        }
 
     with pytest.raises(ValueError, match=error):
         _captured_buffer_bytes(
@@ -342,6 +367,188 @@ def test_capture_buffer_payload_rejects_untracked_lock_history(tmp_path, capture
             capture_options,
             4,
             "vertex",
+        )
+
+
+def test_capture_buffer_payload_accepts_full_snapshot_outside_partial_filter(tmp_path):
+    buffer_dir = tmp_path / "buffers"
+    buffer_dir.mkdir()
+    (buffer_dir / "full.bin").write_bytes(b"abcd")
+    row = {
+        "event_index": 2,
+        "payload_capture_frame": 1,
+        "buffer_length": 4,
+        "offset": 0,
+        "captured_byte_size": 4,
+        "snapshot_status": "captured",
+        "capture_scope": "full-buffer",
+        "payload_path": r"C:\capture\buffers\full.bin",
+    }
+
+    data, used_rows = _captured_buffer_bytes(
+        tmp_path,
+        [row],
+        {"event_index": 1, "frame": 0},
+        {"event_index": 50, "frame": 5},
+        {**PARTIAL_BUFFER_CAPTURE_OPTIONS, "partial_buffer_payload_length_filter": 131072},
+        4,
+        "vertex",
+    )
+
+    assert data == b"abcd"
+    assert used_rows == [row]
+
+
+def test_capture_buffer_range_reconstructs_only_a_locked_slice(tmp_path):
+    buffer_dir = tmp_path / "buffers"
+    buffer_dir.mkdir()
+    (buffer_dir / "first.bin").write_bytes(b"abcdef")
+    (buffer_dir / "second.bin").write_bytes(b"gh")
+    rows = [
+        {
+            "event_index": 2,
+            "payload_capture_frame": 1,
+            "buffer_length": 16,
+            "offset": 0,
+            "captured_byte_size": 6,
+            "snapshot_status": "captured",
+            "capture_scope": "locked-range",
+            "payload_path": r"C:\capture\buffers\first.bin",
+        },
+        {
+            "event_index": 3,
+            "payload_capture_frame": 2,
+            "buffer_length": 16,
+            "offset": 6,
+            "captured_byte_size": 2,
+            "snapshot_status": "captured",
+            "capture_scope": "locked-range",
+            "payload_path": r"C:\capture\buffers\second.bin",
+        },
+    ]
+
+    data, used_rows = _captured_buffer_range(
+        tmp_path,
+        rows,
+        {"event_index": 1, "frame": 0},
+        {"event_index": 50, "frame": 5},
+        {**PARTIAL_BUFFER_CAPTURE_OPTIONS, "partial_buffer_payload_length_filter": 16},
+        16,
+        2,
+        6,
+        "vertex stream 1",
+    )
+
+    assert data == b"cdefgh"
+    assert [row["event_index"] for row in used_rows] == [2, 3]
+
+
+def test_captured_vertex_inputs_map_extra_texcoords_to_second_stream():
+    program = SimpleNamespace(inputs=[
+        {"usage": "POSITION", "index": 0, "register": "v0"},
+        {"usage": "TEXCOORD", "index": 8, "register": "v1"},
+    ])
+    elements = [
+        {"stream": 0, "offset": 0, "type": 2, "usage": 0, "usage_index": 0},
+        {"stream": 1, "offset": 0, "type": 3, "usage": 5, "usage_index": 8},
+    ]
+    streams = {0: {"stride": 12}, 1: {"stride": 16, "offset_in_bytes": 64}}
+
+    attributes, bindings = _captured_shader_inputs(program, elements, streams)
+
+    assert [(row["location"], row["source_stream"]) for row in attributes] == [(0, 0), (1, 1)]
+    assert bindings[1]["semantic"] == {"usage": "TEXCOORD", "index": 8}
+    assert bindings[1]["source_stream_offset"] == 64
+
+
+def test_interleave_vertex_streams_preserves_per_stream_offsets():
+    attributes = [
+        {
+            "location": 0,
+            "format": 2,
+            "property_id": 0,
+            "d3d_type": 2,
+            "source_stream": 0,
+            "source_offset": 0,
+            "source_stride": 12,
+            "source_stream_offset": 0,
+        },
+        {
+            "location": 1,
+            "format": 3,
+            "property_id": 0,
+            "d3d_type": 3,
+            "source_stream": 1,
+            "source_offset": 0,
+            "source_stride": 16,
+            "source_stream_offset": 16,
+        },
+    ]
+
+    vertices, stride, output_attributes = _interleave_vertex_streams(
+        attributes,
+        {
+            0: (0, b"abcdefghijklmnopqrstuvwx"),
+            1: (16, b"1234567890abcdefABCDEFGHIJKLMNOP"),
+        },
+        0,
+        1,
+    )
+
+    assert stride == 28
+    assert [row["offset"] for row in output_attributes] == [0, 12]
+    assert vertices == (
+        b"abcdefghijkl" + b"1234567890abcdef"
+        + b"mnopqrstuvwx" + b"ABCDEFGHIJKLMNOP"
+    )
+
+
+def test_single_instance_stream_is_repeated_for_each_indexed_vertex():
+    attributes = [
+        {"location": 0, "format": 2, "d3d_type": 2, "source_stream": 0,
+         "source_offset": 0, "source_stride": 12, "source_stream_offset": 0},
+        {"location": 1, "format": 3, "d3d_type": 3, "source_stream": 1,
+         "source_offset": 0, "source_stride": 16, "source_stream_offset": 0},
+    ]
+    vertices, stride, _ = _interleave_vertex_streams(
+        attributes,
+        {0: (0, b"abcdefghijklmnopqrstuvwx"), 1: (0, b"1234567890abcdef")},
+        0,
+        1,
+        instance_streams={1},
+    )
+    assert stride == 28
+    assert vertices == (
+        b"abcdefghijkl1234567890abcdef"
+        + b"mnopqrstuvwx1234567890abcdef"
+    )
+
+
+def test_captured_stream_frequency_contract_accepts_single_instance():
+    draw = {"stream_source_frequencies": [
+        {"stream": 0, "setting": 0x40000001},
+        {"stream": 1, "setting": 0x80000001},
+    ]}
+    assert _captured_stream_frequency_contract(
+        draw, {"stream_source_freq_capture": True}
+    ) == (1, {1}, {0: 0x40000001, 1: 0x80000001})
+
+
+def test_captured_stream_frequency_contract_rejects_multidraw_instancing():
+    draw = {"stream_source_frequencies": [
+        {"stream": 0, "setting": 0x40000009},
+        {"stream": 1, "setting": 0x80000001},
+    ]}
+    with pytest.raises(ValueError, match="uses 9 instances"):
+        _captured_stream_frequency_contract(
+            draw, {"stream_source_freq_capture": True}
+        )
+
+
+def test_captured_stream_frequency_contract_requires_capture_capability():
+    with pytest.raises(ValueError, match="does not prove SetStreamSourceFreq"):
+        _captured_stream_frequency_contract(
+            {"stream_source_frequencies": []}, {}
         )
 
 

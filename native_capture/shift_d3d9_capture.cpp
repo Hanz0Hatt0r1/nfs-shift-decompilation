@@ -70,6 +70,7 @@ constexpr std::size_t SLOT_SET_VERTEX_DECLARATION = 87;
 constexpr std::size_t SLOT_SET_VERTEX_SHADER = 92;
 constexpr std::size_t SLOT_SET_VERTEX_SHADER_CONSTANT_F = 94;
 constexpr std::size_t SLOT_SET_STREAM_SOURCE = 100;
+constexpr std::size_t SLOT_SET_STREAM_SOURCE_FREQ = 102;
 constexpr std::size_t SLOT_SET_INDICES = 104;
 constexpr std::size_t SLOT_CREATE_PIXEL_SHADER = 106;
 constexpr std::size_t SLOT_SET_PIXEL_SHADER = 107;
@@ -124,6 +125,8 @@ using SetVertexDeclarationFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, IDirect3DVertexDeclaration9*);
 using SetStreamSourceFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, UINT, IDirect3DVertexBuffer9*, UINT, UINT);
+using SetStreamSourceFreqFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, UINT, UINT);
 using SetIndicesFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, IDirect3DIndexBuffer9*);
 using SetTextureFn = HRESULT (STDMETHODCALLTYPE*)(
@@ -216,6 +219,7 @@ TextureUnlockRectFn g_real_texture_unlock_rect = nullptr;
 CubeTextureLockRectFn g_real_cube_texture_lock_rect = nullptr;
 CubeTextureUnlockRectFn g_real_cube_texture_unlock_rect = nullptr;
 SetStreamSourceFn g_real_set_stream_source = nullptr;
+SetStreamSourceFreqFn g_real_set_stream_source_freq = nullptr;
 SetIndicesFn g_real_set_indices = nullptr;
 SetTextureFn g_real_set_texture = nullptr;
 CreateVertexShaderFn g_real_create_vertex_shader = nullptr;
@@ -227,6 +231,8 @@ SetPixelShaderConstantFFn g_real_set_pixel_shader_constant_f = nullptr;
 DrawIndexedPrimitiveFn g_real_draw_indexed_primitive = nullptr;
 
 std::mutex g_hook_mutex;
+std::mutex g_stream_source_freq_mutex;
+std::unordered_map<void*, std::unordered_map<UINT, UINT>> g_stream_source_frequencies;
 
 struct PatchedVtableSlot {
     void* original = nullptr;
@@ -2518,6 +2524,10 @@ HRESULT STDMETHODCALLTYPE hook_reset(
     const auto original = original_method_for<ResetFn>(
         self, SLOT_RESET, g_real_reset);
     const HRESULT hr = original ? original(self, params) : E_FAIL;
+    if (SUCCEEDED(hr)) {
+        std::lock_guard<std::mutex> lock(g_stream_source_freq_mutex);
+        g_stream_source_frequencies.erase(self);
+    }
     {
         std::ostringstream fields;
         fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
@@ -2861,6 +2871,29 @@ HRESULT STDMETHODCALLTYPE hook_set_stream_source(
             f << ",\"resource_signature\":" << CaptureWriter::quote(signature);
         }
         writer().write_render_event("set_stream_source", f.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_set_stream_source_freq(
+    IDirect3DDevice9* self,
+    UINT stream,
+    UINT setting) {
+    const auto original = original_method_for<SetStreamSourceFreqFn>(
+        self, SLOT_SET_STREAM_SOURCE_FREQ, g_real_set_stream_source_freq);
+    const HRESULT hr = original ? original(self, stream, setting) : E_FAIL;
+    if (SUCCEEDED(hr)) {
+        {
+            std::lock_guard<std::mutex> lock(g_stream_source_freq_mutex);
+            g_stream_source_frequencies[self][stream] = setting;
+        }
+        if (capture_render_event_active()) {
+            std::ostringstream f;
+            f << "\"device_ptr\":" << CaptureWriter::ptr(self)
+              << ",\"stream\":" << stream
+              << ",\"setting\":" << setting;
+            writer().write_render_event("set_stream_source_freq", f.str());
+        }
     }
     return hr;
 }
@@ -3384,13 +3417,30 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive(
         : E_FAIL;
     if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
+        std::vector<std::pair<UINT, UINT>> stream_frequencies;
+        {
+            std::lock_guard<std::mutex> lock(g_stream_source_freq_mutex);
+            const auto device_it = g_stream_source_frequencies.find(self);
+            if (device_it != g_stream_source_frequencies.end()) {
+                stream_frequencies.assign(
+                    device_it->second.begin(), device_it->second.end());
+            }
+        }
+        std::sort(stream_frequencies.begin(), stream_frequencies.end());
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"primitive_type\":" << static_cast<unsigned>(primitive_type)
           << ",\"base_vertex_index\":" << base_vertex_index
           << ",\"min_vertex_index\":" << min_vertex_index
           << ",\"num_vertices\":" << num_vertices
           << ",\"start_index\":" << start_index
-          << ",\"primitive_count\":" << primitive_count;
+          << ",\"primitive_count\":" << primitive_count
+          << ",\"stream_source_frequencies\":[";
+        for (std::size_t i = 0; i < stream_frequencies.size(); ++i) {
+            if (i) f << ',';
+            f << "{\"stream\":" << stream_frequencies[i].first
+              << ",\"setting\":" << stream_frequencies[i].second << '}';
+        }
+        f << ']';
         writer().write_render_event("draw_indexed_primitive", f.str());
     }
     return hr;
@@ -3466,6 +3516,9 @@ void patch_device(IDirect3DDevice9* device) {
              reinterpret_cast<void**>(&g_real_set_vertex_declaration)},
             {SLOT_SET_STREAM_SOURCE, reinterpret_cast<void*>(&hook_set_stream_source),
              reinterpret_cast<void**>(&g_real_set_stream_source)},
+            {SLOT_SET_STREAM_SOURCE_FREQ,
+             reinterpret_cast<void*>(&hook_set_stream_source_freq),
+             reinterpret_cast<void**>(&g_real_set_stream_source_freq)},
             {SLOT_SET_INDICES, reinterpret_cast<void*>(&hook_set_indices),
              reinterpret_cast<void**>(&g_real_set_indices)},
             {SLOT_SET_TEXTURE, reinterpret_cast<void*>(&hook_set_texture),
@@ -3534,6 +3587,7 @@ void patch_device(IDirect3DDevice9* device) {
            << ",\"capture_frame_start\":" << capture_frame_start()
            << ",\"capture_frame_end\":" << capture_frame_end()
            << ",\"trigger_capture\":" << (trigger_capture_enabled() ? "true" : "false")
+           << ",\"stream_source_freq_capture\":true"
            << ",\"trigger_pre_frames\":" << trigger_pre_frames()
            << ",\"trigger_post_frames\":" << trigger_post_frames()
            << ",\"trigger_virtual_key\":" << trigger_virtual_key()
