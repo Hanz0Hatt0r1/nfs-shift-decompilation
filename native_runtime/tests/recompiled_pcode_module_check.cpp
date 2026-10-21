@@ -661,7 +661,8 @@ void write_system_parameters_info_pe32_fixture(
     bool reg_open_key_ex_w_import = false,
     bool register_device_notification_w_import = false,
     bool unregister_device_notification_import = false,
-    bool direct_input8_create_import = false) {
+    bool direct_input8_create_import = false,
+    bool window_message_imports = false) {
     if (static_cast<unsigned>(find_window_w_import) +
             static_cast<unsigned>(reg_open_key_ex_w_import) +
             static_cast<unsigned>(register_device_notification_w_import) +
@@ -683,7 +684,8 @@ void write_system_parameters_info_pe32_fixture(
     write_u16(bytes, pe_offset + 6, 2);
     write_u16(bytes, pe_offset + 20, 0xe0);
     write_u16(bytes, optional_offset, 0x010b);
-    write_u32(bytes, optional_offset + 16, 0x1020);
+    write_u32(bytes, optional_offset + 16,
+              window_message_imports ? 0x1140 : 0x1020);
     write_u32(bytes, optional_offset + 28, 0x00400000);
     write_u32(bytes, optional_offset + 32, 0x1000);
     write_u32(bytes, optional_offset + 36, 0x200);
@@ -743,7 +745,7 @@ void write_system_parameters_info_pe32_fixture(
             : direct_input8_create_import ? "DINPUT8.dll" : "USER32.dll";
     std::copy_n(first_import_module,
                 std::char_traits<char>::length(first_import_module) + 1,
-                bytes.begin() + 0x480);
+                bytes.begin() + (window_message_imports ? 0x790 : 0x480));
     const char* first_import =
         reg_open_key_ex_w_import
             ? "RegOpenKeyExW"
@@ -768,6 +770,33 @@ void write_system_parameters_info_pe32_fixture(
     std::copy_n("CreateWindowExW", 16, bytes.begin() + 0x5a2);
     std::copy_n("ClipCursor", 11, bytes.begin() + 0x5d2);
     std::copy_n("ShowWindow", 11, bytes.begin() + 0x5e2);
+    if (window_message_imports) {
+        write_u32(bytes, 0x40c, 0x2390);
+        write_u32(bytes, 0x460, 0x22c0);
+        write_u32(bytes, 0x600, 0x22c0);
+        write_u32(bytes, 0x480, 0x2240);
+        write_u32(bytes, 0x484, 0x2260);
+        write_u32(bytes, 0x488, 0x2280);
+        write_u32(bytes, 0x48c, 0x22a0);
+        write_u32(bytes, 0x490, 0);
+        write_u32(bytes, 0x620, 0x2240);
+        write_u32(bytes, 0x624, 0x2260);
+        write_u32(bytes, 0x628, 0x2280);
+        write_u32(bytes, 0x62c, 0x22a0);
+        write_u32(bytes, 0x630, 0);
+        write_u16(bytes, 0x640, 0);
+        std::copy_n("DispatchMessageW", 17, bytes.begin() + 0x642);
+        write_u16(bytes, 0x660, 0);
+        std::copy_n("TranslateMessage", 17, bytes.begin() + 0x662);
+        write_u16(bytes, 0x680, 0);
+        std::copy_n("GetMessageW", 12, bytes.begin() + 0x682);
+        write_u16(bytes, 0x6a0, 0);
+        std::copy_n("DefWindowProcW", 15, bytes.begin() + 0x6a2);
+        write_u16(bytes, 0x6c0, 0);
+        std::copy_n(first_import,
+                    std::char_traits<char>::length(first_import) + 1,
+                    bytes.begin() + 0x6c2);
+    }
 
     std::ofstream file(path, std::ios::binary | std::ios::trunc);
     require(static_cast<bool>(file),
@@ -1288,7 +1317,8 @@ int main(int argc, char** argv) {
                            false, false, false, false, true);
         write_pe32_fixture(stack_walk64_fixture_path, false, false, false,
                            false, false, false, false, false, true);
-        write_system_parameters_info_pe32_fixture(argv[7]);
+        write_system_parameters_info_pe32_fixture(argv[7], false, false,
+                                                  false, false, false, true);
         write_system_parameters_info_pe32_fixture(find_window_w_fixture_path,
                                                    true);
         write_system_parameters_info_pe32_fixture(
@@ -3251,7 +3281,7 @@ int main(int argc, char** argv) {
         shift::runtime::RecompiledPcodeModule user32_module(argv[1]);
         const auto user32_image = user32_module.load_pe32_image(argv[7]);
         require(user32_image.import_module_count == 2 &&
-                    user32_image.import_function_count == 9,
+                    user32_image.import_function_count == 13,
                 "USER32/GDI32 fixture imports were not parsed");
         shift::runtime::RecompiledPcodeModule find_window_w_module(argv[1]);
         const auto find_window_w_image =
@@ -3402,6 +3432,12 @@ int main(int argc, char** argv) {
             user32_module, "ram", user32_image.image_base + 0x2078);
         const uint32_t show_window = read_guest_u32(
             user32_module, "ram", user32_image.image_base + 0x207c);
+        const uint32_t dispatch_message_w = read_guest_u32(
+            user32_module, "ram", user32_image.image_base + 0x2080);
+        const uint32_t translate_message = read_guest_u32(
+            user32_module, "ram", user32_image.image_base + 0x2084);
+        const uint32_t get_message_w = read_guest_u32(
+            user32_module, "ram", user32_image.image_base + 0x2088);
         const uint32_t desktop_window =
             invoke_import(user32_module, get_desktop_window, {});
         require(desktop_window != 0 &&
@@ -3427,7 +3463,7 @@ int main(int argc, char** argv) {
         constexpr uint32_t window_title_address = 0x00033920;
         write_guest_u32(user32_module, "ram", window_class_address, 48);
         write_guest_u32(user32_module, "ram", window_class_address + 8,
-                        user32_image.image_base + 0x1000);
+                        user32_image.image_base + 0x7100);
         write_guest_u32(user32_module, "ram", window_class_address + 20,
                         user32_image.image_base);
         write_guest_u32(user32_module, "ram", window_class_address + 32,
@@ -3482,6 +3518,121 @@ int main(int argc, char** argv) {
                         message_after_peek.data() + 16) &&
                     message_after_peek == initial_message,
                 "PeekMessageW modified MSG when no queued message existed");
+        constexpr uint32_t key_data = 1 | (0x1e << 16);
+        user32_module.post_guest_window_message(0x0100, 'A', key_data);
+        require(invoke_import(user32_module, peek_message_w,
+                              {peek_message_output, window, 0x0101, 0x0101,
+                               0}) == 0,
+                "PeekMessageW ignored the message-id filter");
+        require(invoke_import(user32_module, peek_message_w,
+                              {peek_message_output, window, 0x0100, 0x0100,
+                               0}) == 1 &&
+                    read_guest_u32(user32_module, "ram",
+                                   peek_message_output) == window &&
+                    read_guest_u32(user32_module, "ram",
+                                   peek_message_output + 4) == 0x0100 &&
+                    read_guest_u32(user32_module, "ram",
+                                   peek_message_output + 8) == 'A' &&
+                    read_guest_u32(user32_module, "ram",
+                                   peek_message_output + 12) == key_data,
+                "PeekMessageW did not serialize the queued x86 MSG fields");
+        require(invoke_import(user32_module, peek_message_w,
+                              {peek_message_output, window, 0, 0, 0}) == 1 &&
+                    invoke_import(user32_module, peek_message_w,
+                                  {peek_message_output, window, 0, 0, 0}) == 1,
+                "PeekMessageW with PM_NOREMOVE consumed the event");
+        require(invoke_import(user32_module, peek_message_w,
+                              {peek_message_output, window, 0, 0, 1}) == 1,
+                "PeekMessageW with PM_REMOVE did not return the event");
+        require(invoke_import(user32_module, translate_message,
+                              {peek_message_output}) == 1 &&
+                    invoke_import(user32_module, peek_message_w,
+                                  {peek_message_output, window, 0x0102,
+                                   0x0102, 1}) == 1 &&
+                    read_guest_u32(user32_module, "ram",
+                                   peek_message_output + 4) == 0x0102 &&
+                    read_guest_u32(user32_module, "ram",
+                                   peek_message_output + 8) == 'a',
+                "TranslateMessage did not queue a WM_CHAR for an ASCII key");
+        const uint32_t expected_wndproc_result =
+            window ^ 0x0102 ^ static_cast<uint32_t>('a') ^ key_data;
+        require(invoke_import(user32_module, dispatch_message_w,
+                              {peek_message_output}) ==
+                    expected_wndproc_result,
+                "DispatchMessageW did not invoke the registered guest WndProc");
+        require(invoke_import(user32_module, peek_message_w,
+                              {peek_message_output, 0, 0, 0, 1}) == 0,
+                "PeekMessageW left a translated event in the queue");
+        constexpr uint32_t get_message_key = 'Q';
+        user32_module.post_guest_window_message(0x0100, get_message_key,
+                                                key_data);
+        require(invoke_import(user32_module, get_message_w,
+                              {peek_message_output, window, 0x0100, 0x0100}) ==
+                    1 &&
+                    read_guest_u32(user32_module, "ram",
+                                   peek_message_output) == window &&
+                    read_guest_u32(user32_module, "ram",
+                                   peek_message_output + 4) == 0x0100 &&
+                    read_guest_u32(user32_module, "ram",
+                                   peek_message_output + 8) ==
+                        get_message_key &&
+                    read_guest_u32(user32_module, "ram",
+                                   peek_message_output + 12) == key_data,
+                "GetMessageW did not remove and return the matching message");
+        user32_module.post_guest_window_message(0x0012, 0, 0);
+        require(invoke_import(user32_module, get_message_w,
+                              {peek_message_output, window, 0x0100, 0x0100}) ==
+                    0 &&
+                    read_guest_u32(user32_module, "ram",
+                                   peek_message_output) == 0 &&
+                    read_guest_u32(user32_module, "ram",
+                                   peek_message_output + 4) == 0x0012,
+                "GetMessageW did not return WM_QUIT independently of filters");
+        shift::runtime::RecompiledPcodeModule get_message_wait_module(argv[1]);
+        require(get_message_wait_module.load_supplemental_module(argv[2]),
+                "GetMessageW wait fixture supplement did not load: " +
+                    get_message_wait_module.last_error());
+        const auto get_message_wait_image =
+            get_message_wait_module.load_pe32_image(argv[7]);
+        require(get_message_wait_image.entry_point == 0x00401140 &&
+                    get_message_wait_image.import_function_count == 13,
+                "GetMessageW wait fixture has unexpected PE metadata");
+        require(get_message_wait_module.call_pe32_entry_point() == 0,
+                "GetMessageW did not suspend its empty guest queue: " +
+                    get_message_wait_module.last_error());
+        const auto waiting_message_state =
+            get_message_wait_module.guest_scheduler_snapshot();
+        require(waiting_message_state.main_thread_waiting &&
+                    !waiting_message_state.main_thread_completed &&
+                    !waiting_message_state.entry_point_complete,
+                "empty GetMessageW did not park the main guest thread");
+        const uint32_t resumed_key_data = 1 | (0x20 << 16);
+        get_message_wait_module.post_guest_window_message(0x0100, 'D',
+                                                          resumed_key_data);
+        require(get_message_wait_module.run_guest_threads() == 0 &&
+                    get_message_wait_module.pe32_entry_point_complete() &&
+                    read_guest_u32(get_message_wait_module, "ram",
+                                   peek_message_output) == window &&
+                    read_guest_u32(get_message_wait_module, "ram",
+                                   peek_message_output + 4) == 0x0100 &&
+                    read_guest_u32(get_message_wait_module, "ram",
+                                   peek_message_output + 8) == 'D' &&
+                    read_guest_u32(get_message_wait_module, "ram",
+                                   peek_message_output + 12) ==
+                        resumed_key_data,
+                "posted input did not wake GetMessageW and complete the guest entry point: " +
+                    get_message_wait_module.last_error());
+        const uint32_t def_window_proc_w = read_guest_u32(
+            user32_module, "ram", user32_image.image_base + 0x208c);
+        require(invoke_import(user32_module, def_window_proc_w,
+                              {window, 0x0100, 0x0026, 0x01480001}) == 0,
+                "DefWindowProcW did not return zero for the retail WM_KEYDOWN path");
+        require(invoke_import(user32_module, def_window_proc_w,
+                              {window, 0x0101, 0x0026, 0xc1480001}) == 0,
+                "DefWindowProcW did not return zero for WM_KEYUP");
+        require(invoke_import(user32_module, def_window_proc_w,
+                              {window, 0x0102, 0x000d, 0x001c0001}) == 0,
+                "DefWindowProcW did not return zero for WM_CHAR");
         constexpr uint32_t system_parameters_buffer = 0x00033000;
         const std::array<std::array<uint32_t, 2>, 5> accessibility_apis =
             {{{0x0032, 0x0033}, {0x0034, 0x0035}, {0x0036, 0x0037},

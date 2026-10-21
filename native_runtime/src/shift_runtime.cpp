@@ -1951,22 +1951,67 @@ struct Window {
         height = requested_height;
     }
 
-    void poll(bool& quit, InputState& input, std::string& quit_reason) {
+    void poll(bool& quit, InputState& input, std::string& quit_reason,
+              shift::runtime::RecompiledPcodeModule* guest_module = nullptr) {
         while (xcb_generic_event_t* raw = xcb_poll_for_event(connection)) {
             const uint8_t type = raw->response_type & 0x7f;
             if (type == XCB_KEY_PRESS || type == XCB_KEY_RELEASE) {
                 const auto* event =
                     reinterpret_cast<const xcb_key_press_event_t*>(raw);
                 const bool pressed = type == XCB_KEY_PRESS;
+                uint32_t virtual_key = 0;
+                uint32_t scan_code = 0;
+                bool extended = false;
+                switch (event->detail) {
+                    case 9: virtual_key = 0x1b; scan_code = 0x01; break;
+                    case 24: virtual_key = 'Q'; scan_code = 0x10; break;
+                    case 111:
+                        virtual_key = 0x26;
+                        scan_code = 0x48;
+                        extended = true;
+                        break;
+                    case 25: virtual_key = 'W'; scan_code = 0x11; break;
+                    case 116:
+                        virtual_key = 0x28;
+                        scan_code = 0x50;
+                        extended = true;
+                        break;
+                    case 39: virtual_key = 'S'; scan_code = 0x1f; break;
+                    case 113:
+                        virtual_key = 0x25;
+                        scan_code = 0x4b;
+                        extended = true;
+                        break;
+                    case 38: virtual_key = 'A'; scan_code = 0x1e; break;
+                    case 114:
+                        virtual_key = 0x27;
+                        scan_code = 0x4d;
+                        extended = true;
+                        break;
+                    case 40: virtual_key = 'D'; scan_code = 0x20; break;
+                    case 36: virtual_key = 0x0d; scan_code = 0x1c; break;
+                    case 65: virtual_key = 0x20; scan_code = 0x39; break;
+                    case 22: virtual_key = 0x08; scan_code = 0x0e; break;
+                    case 23: virtual_key = 0x09; scan_code = 0x0f; break;
+                    default: break;
+                }
+                if (guest_module && virtual_key != 0) {
+                    uint32_t message = pressed ? 0x0100 : 0x0101;
+                    uint32_t key_data = 1 | (scan_code << 16);
+                    if (extended) key_data |= 1u << 24;
+                    if (!pressed) key_data |= (1u << 30) | (1u << 31);
+                    guest_module->post_guest_window_message(
+                        message, virtual_key, key_data);
+                }
                 switch (event->detail) {
                     case 9:
-                        if (pressed) {
+                        if (pressed && !guest_module) {
                             quit = true;
                             quit_reason = "escape_key";
                         }
                         break;
                     case 24:
-                        if (pressed) {
+                        if (pressed && !guest_module) {
                             quit = true;
                             quit_reason = "q_key";
                         }
@@ -5058,7 +5103,11 @@ int main(int argc, char** argv) {
             std::chrono::steady_clock::now();
 
         while (loop_policy.should_continue(quit, rendered)) {
-            window.poll(quit, live_input, quit_reason);
+            window.poll(
+                quit, live_input, quit_reason,
+                recompiled_module && args.recompiled_entrypoint_enabled
+                    ? recompiled_module.get()
+                    : nullptr);
 
             if (recompiled_module && args.recompiled_entrypoint_enabled) {
                 const int result = recompiled_module->run_guest_threads();

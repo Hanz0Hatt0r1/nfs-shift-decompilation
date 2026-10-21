@@ -445,6 +445,28 @@ int rvi_004010a0(RviPcodeContext *ctx) {
     return 0;
 }
 
+int rvi_00401140(RviPcodeContext *ctx) {
+    uint8_t import_bytes[4] = {0};
+    if (ctx->read(ctx->opaque, "ram", UINT64_C(0x00402088),
+                  sizeof(import_bytes), import_bytes) != 0) {
+        return -1;
+    }
+    const uint32_t get_message = (uint32_t)import_bytes[0] |
+                                 ((uint32_t)import_bytes[1] << 8) |
+                                 ((uint32_t)import_bytes[2] << 16) |
+                                 ((uint32_t)import_bytes[3] << 24);
+    const uint32_t arguments[] = {
+        UINT32_C(0x00032f00), 0, 0, 0};
+    uint32_t result = UINT32_MAX;
+    if (fixture_call_import(ctx, get_message, arguments,
+                            sizeof(arguments) / sizeof(arguments[0]),
+                            &result) != 0 ||
+        result != 1) {
+        return -2;
+    }
+    return 0;
+}
+
 int rvi_00685700(RviPcodeContext *ctx) {
     const uint8_t duplicate[4] = {'D', 'U', 'P', 'L'};
     return ctx->write(ctx->opaque, "ram", UINT64_C(0x20000),

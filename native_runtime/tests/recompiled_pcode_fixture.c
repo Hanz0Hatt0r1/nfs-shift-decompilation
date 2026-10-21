@@ -19,6 +19,23 @@ static int fixture_guest_write_u32(RviPcodeContext *ctx, const char *space,
     return ctx->write(ctx->opaque, space, address, sizeof(bytes), bytes);
 }
 
+int rvi_00407100(RviPcodeContext *ctx) {
+    uint32_t esp = 0;
+    uint32_t window = 0;
+    uint32_t message = 0;
+    uint32_t wparam = 0;
+    uint32_t lparam = 0;
+    if (fixture_guest_read_u32(ctx, "register", UINT64_C(0x10), &esp) != 0 ||
+        fixture_guest_read_u32(ctx, "ram", esp + 4, &window) != 0 ||
+        fixture_guest_read_u32(ctx, "ram", esp + 8, &message) != 0 ||
+        fixture_guest_read_u32(ctx, "ram", esp + 12, &wparam) != 0 ||
+        fixture_guest_read_u32(ctx, "ram", esp + 16, &lparam) != 0) {
+        return -1;
+    }
+    return fixture_guest_write_u32(ctx, "register", UINT64_C(0),
+                                   window ^ message ^ wparam ^ lparam);
+}
+
 int rvi_005088a0(RviPcodeContext *ctx) {
     uint8_t esp_bytes[4] = {0};
     uint8_t return_bytes[4] = {0};

@@ -416,6 +416,8 @@ public:
     Pe32ImageInfo load_pe32_image(const std::string& path);
     int call_pe32_entry_point();
     int run_guest_threads();
+    void post_guest_window_message(uint32_t message, uint32_t wparam,
+                                   uint32_t lparam);
     bool pe32_entry_point_complete() const;
     RecompiledGuestSchedulerSnapshot guest_scheduler_snapshot() const;
     bool load_supplemental_module(const std::string& shared_object_path);
