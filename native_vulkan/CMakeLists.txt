@@ -4,6 +4,43 @@ project(shift_vulkan_probe LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# The P2 packet consumer follows the Process 1 public runtime contract. Keep
+# its focused check independent of Vulkan so it also runs on headless hosts.
+set(
+  SHIFT_RECOMPILED_RUNTIME_INCLUDE_DIR
+  "${CMAKE_CURRENT_SOURCE_DIR}/../native_runtime/include"
+  CACHE PATH "Directory containing shift_recompiled_pcode_module.hpp"
+)
+set(SHIFT_RECOMPILED_RUNTIME_HEADER
+    "${SHIFT_RECOMPILED_RUNTIME_INCLUDE_DIR}/shift_recompiled_pcode_module.hpp")
+if(EXISTS "${SHIFT_RECOMPILED_RUNTIME_HEADER}")
+  file(READ "${SHIFT_RECOMPILED_RUNTIME_HEADER}" SHIFT_RECOMPILED_RUNTIME_HEADER_TEXT)
+  if(SHIFT_RECOMPILED_RUNTIME_HEADER_TEXT MATCHES
+     "RecompiledGuestD3d9DrawIndexedPrimitivePacket")
+    add_executable(
+      shift_vulkan_d3d9_packet_capture_check
+      tests/d3d9_packet_capture_adapter_check.cpp
+      src/d3d9_packet_capture_adapter.cpp
+    )
+    target_include_directories(
+      shift_vulkan_d3d9_packet_capture_check
+      PRIVATE
+      include
+      "${SHIFT_RECOMPILED_RUNTIME_INCLUDE_DIR}"
+    )
+    target_compile_options(
+      shift_vulkan_d3d9_packet_capture_check
+      PRIVATE
+      -Wall -Wextra -Wpedantic
+    )
+    enable_testing()
+    add_test(
+      NAME shift_vulkan_d3d9_packet_capture_adapter
+      COMMAND shift_vulkan_d3d9_packet_capture_check
+    )
+  endif()
+endif()
+
 find_package(Vulkan QUIET)
 
 if(NOT Vulkan_FOUND)

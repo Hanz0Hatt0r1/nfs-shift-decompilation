@@ -126,6 +126,27 @@ def _draw_bool_constants(
         return {}
     field = f"{stage}_bool_constants"
     values = draw.get(field)
+    set_mask = draw.get(f"{stage}_bool_constant_set_mask")
+    if isinstance(set_mask, int) and not isinstance(set_mask, bool):
+        if set_mask < 0 or set_mask > 0xFFFF:
+            raise ValueError(f"captured {stage} boolean-constant set mask is invalid")
+        if not isinstance(values, list) or len(values) != 16:
+            raise ValueError(f"captured draw has incomplete {stage} boolean constants")
+        for register in required:
+            if not (set_mask & (1 << register)):
+                raise ValueError(
+                    f"captured draw has no written {stage} boolean register b{register}"
+                )
+        if any(
+            isinstance(value, bool)
+            or not isinstance(value, int)
+            or value < 0
+            or value > 0xFFFFFFFF
+            for value in values
+        ):
+            raise ValueError(f"captured {stage} boolean constants are not DWORD values")
+        return {register: values[register] != 0 for register in required}
+
     result_hr = draw.get(f"{field}_hr")
     if not isinstance(result_hr, int) or result_hr != 0:
         raise ValueError(f"captured draw has no successful {stage} boolean-constant query")
@@ -201,7 +222,12 @@ def _read_events(capture_path: Path, event_index: int) -> tuple[dict[str, Any], 
         "streams": {},
         "vertex_constants": [[0.0] * 4 for _ in range(MAX_CONSTANTS)],
         "pixel_constants": [[0.0] * 4 for _ in range(MAX_CONSTANTS)],
+        "constant_register_bits": {
+            "vertex": [0] * (MAX_CONSTANTS * 4),
+            "pixel": [0] * (MAX_CONSTANTS * 4),
+        },
         "constant_registers": {"vertex": set(), "pixel": set()},
+        "packet_constant_snapshot": None,
     }
     objects: dict[str, dict[str, Any]] = {
         "vertex_shader": {},
@@ -282,15 +308,102 @@ def _read_events(capture_path: Path, event_index: int) -> tuple[dict[str, Any], 
         elif event in {"set_vertex_shader_constant_f", "set_pixel_shader_constant_f"}:
             stage = "vertex" if event.startswith("set_vertex") else "pixel"
             values = row.get("values") or []
+            values_bits = row.get("values_bits")
             start = int(row["start_register"])
             count = int(row["vector4f_count"])
-            if len(values) != count * 4 or start < 0 or start + count > MAX_CONSTANTS:
+            register_limit = MAX_CONSTANTS if stage == "vertex" else 224
+            if start < 0 or count <= 0 or start + count > register_limit:
                 raise ValueError(f"invalid {stage} float-constant update at event {current_event}")
+            if isinstance(values_bits, list):
+                if (
+                    len(values_bits) != count * 4
+                    or any(
+                        isinstance(value, bool)
+                        or not isinstance(value, int)
+                        or value < 0
+                        or value > 0xFFFFFFFF
+                        for value in values_bits
+                    )
+                ):
+                    raise ValueError(f"invalid {stage} float-constant DWORDs at event {current_event}")
+                bits = values_bits
+                values = [
+                    struct.unpack("<f", struct.pack("<I", value))[0]
+                    for value in values_bits
+                ]
+            else:
+                if len(values) != count * 4 or not all(
+                    isinstance(value, (int, float)) and not isinstance(value, bool)
+                    for value in values
+                ):
+                    raise ValueError(f"invalid {stage} float-constant update at event {current_event}")
+                bits = [
+                    struct.unpack("<I", struct.pack("<f", float(value)))[0]
+                    for value in values
+                ]
             bank = state[f"{stage}_constants"]
             for index in range(count):
                 register = start + index
                 bank[register] = [float(x) for x in values[index * 4:index * 4 + 4]]
                 state["constant_registers"][stage].add(register)
+                state["constant_register_bits"][stage][register * 4:register * 4 + 4] = bits[
+                    index * 4:index * 4 + 4
+                ]
+        elif event == "draw_indexed_primitive":
+            snapshot = {}
+            for stage, register_count in (("vertex", 256), ("pixel", 224)):
+                value_key = f"{stage}_float_constants_bits"
+                mask_key = f"{stage}_float_constant_set_mask"
+                values_bits = row.get(value_key)
+                set_mask = row.get(mask_key)
+                if values_bits is None and set_mask is None:
+                    continue
+                if (
+                    not isinstance(values_bits, list)
+                    or len(values_bits) != register_count * 4
+                    or any(
+                        isinstance(value, bool)
+                        or not isinstance(value, int)
+                        or value < 0
+                        or value > 0xFFFFFFFF
+                        for value in values_bits
+                    )
+                    or not isinstance(set_mask, list)
+                    or len(set_mask) != 8
+                    or any(
+                        isinstance(value, bool)
+                        or not isinstance(value, int)
+                        or value < 0
+                        or value > 0xFFFFFFFF
+                        for value in set_mask
+                    )
+                ):
+                    raise ValueError(f"captured {stage} packet constant snapshot is invalid")
+                snapshot[stage] = {"values_bits": values_bits, "set_mask": set_mask}
+            state["packet_constant_snapshot"] = snapshot or None
+    packet_snapshot = state["packet_constant_snapshot"]
+    if packet_snapshot is not None:
+        for stage, snapshot in packet_snapshot.items():
+            written = set(state["constant_registers"][stage])
+            bits = snapshot["values_bits"]
+            mask = snapshot["set_mask"]
+            register_count = 256 if stage == "vertex" else 224
+            packet_written = {
+                register
+                for register in range(register_count)
+                if (mask[register // 32] >> (register % 32)) & 1
+            }
+            if any(
+                (mask[register // 32] >> (register % 32)) & 1
+                for register in range(register_count, len(mask) * 32)
+            ):
+                raise ValueError(f"captured {stage} float-constant set mask exceeds the register bank")
+            if packet_written != written:
+                raise ValueError(f"{stage} float-constant events do not match the packet set mask")
+            for register in written:
+                start = register * 4
+                if state["constant_register_bits"][stage][start:start + 4] != bits[start:start + 4]:
+                    raise ValueError(f"{stage} float-constant event bits differ from the packet snapshot")
     return draw, {**state, "objects": objects}
 
 
@@ -420,6 +533,26 @@ def _shader_program(row: dict[str, Any], stage: str) -> Any:
     if program.unsupported_opcodes:
         raise ValueError(f"captured {stage} shader has unsupported opcodes")
     return program
+
+
+def _validate_float_constant_set(
+    program: Any,
+    state: dict[str, Any],
+    stage: str,
+) -> None:
+    defined = {
+        int(instruction.operands[0].index or 0)
+        for instruction in program.instructions
+        if instruction.name == "DEF"
+        and instruction.operands
+        and instruction.operands[0].kind == "dest"
+        and instruction.operands[0].reg_type == 2
+    }
+    required = {int(register) for register in program.constants} - defined
+    missing = required - set(state["constant_registers"][stage])
+    if missing:
+        registers = ", ".join(f"c{register}" for register in sorted(missing))
+        raise ValueError(f"captured draw has no written {stage} float constants: {registers}")
 
 
 def _declaration(data: bytes) -> list[dict[str, int | str]]:
@@ -634,8 +767,8 @@ def _capture_constants(state: dict[str, Any], output: Path) -> dict[str, Any]:
     )
     body = bytearray()
     for stage in ("vertex", "pixel"):
-        for values in state[f"{stage}_constants"]:
-            body.extend(struct.pack("<4f", *values))
+        for bits in state["constant_register_bits"][stage]:
+            body.extend(struct.pack("<I", bits))
     output.write_bytes(header + body)
     return {
         "path": output.name,
@@ -848,6 +981,8 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
         raise ValueError("active shader identity does not match its captured bytecode")
     vertex_program = _shader_program(vertex_shader_row, "vertex")
     pixel_program = _shader_program(pixel_shader_row, "pixel")
+    _validate_float_constant_set(vertex_program, state, "vertex")
+    _validate_float_constant_set(pixel_program, state, "pixel")
     source_attributes, vertex_input_bindings = _captured_shader_inputs(
         vertex_program, declaration, streams
     )
@@ -1090,6 +1225,16 @@ def build_vulkan_capture_bundle(capture: str | Path, event_index: int, output_di
         "bool_constants": {
             "vertex": {str(register): value for register, value in vertex_bool_constants.items()},
             "pixel": {str(register): value for register, value in pixel_bool_constants.items()},
+        },
+        "constant_capture": {
+            "vertex_float_written_registers": sorted(state["constant_registers"]["vertex"]),
+            "pixel_float_written_registers": sorted(state["constant_registers"]["pixel"]),
+            "vertex_float_set_mask": draw.get("vertex_float_constant_set_mask"),
+            "pixel_float_set_mask": draw.get("pixel_float_constant_set_mask"),
+            "vertex_bool_values_dwords": draw.get("vertex_bool_constants"),
+            "pixel_bool_values_dwords": draw.get("pixel_bool_constants"),
+            "vertex_bool_set_mask": draw.get("vertex_bool_constant_set_mask"),
+            "pixel_bool_set_mask": draw.get("pixel_bool_constant_set_mask"),
         },
         "render_target": viewport_state,
         "snapshot_limitations": [
