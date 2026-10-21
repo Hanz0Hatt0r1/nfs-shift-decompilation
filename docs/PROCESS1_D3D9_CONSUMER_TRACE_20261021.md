@@ -171,6 +171,52 @@ source revisions, and limitations are recorded in
 Full compact evidence, focused test commands, and artifact hashes are in
 [`process1_d3dx_parameter_desc_abi_v719.json`](../evidence/retail_frontier_20261021/process1_d3dx_parameter_desc_abi_v719.json).
 
+## Renderer readiness gate and display consumer queue (v730–v735)
+
+The v730 provenance trace initially saw byte `[0x2002b698+0x694]` as zero,
+written by `0x008323d0`, and later saw it as one, written by `0x0082f710`.
+The focused v735 replay resolves this as a changing state flag, not a stuck
+gate: `0x0082f710` was entered 1,115 times from `0x0054be00`; its `+0x478`
+field was nonzero (`0x2002d614`) and all sampled returns had `AL=1`. The
+`0x008353e0` calls sampled the same object: five early entries saw `+0x694=0`,
+then 445 entries from `0x0082be30` saw `+0x694=1`, with the latest writer
+`0x0082f710`. A later sampled zero write came from `0x00835d80`. These
+transitions match the retail instructions and do not justify changing the
+gate's semantics.
+
+The v734 full trace is the nearer unresolved consumer frontier. It recorded
+1,118 calls from `0x00835d80` to `0x00835590`; all returned `AL=1`. None of
+those calls reached `0x00831380`. The sole `0x00831380` call in the run came
+from `0x007ee360` and returned `AL=0`. The four selected D3D9 Draw* imports
+had no entries, and the host bridge still had `guest_draw_translation=false`.
+The trace was not truncated, so those are bounded observations for the full
+360-host-frame replay.
+
+In a separate one-host-frame v727 probe, the queue-count predicate
+`0x0082f3c0` ran 88 times. All 84 calls from `0x00835590` sampled
+`receiver+0x24=0` and returned `AL=1`, which is the helper's true result for
+the zero-count check. This supports an empty queue on those sampled entries;
+because v727 and v734 are distinct runs, their receiver instances are not
+joined by this observation.
+
+The same v734 replay recorded three calls from `0x007eeba0` to the generic
+container insertion helper `0x004cb900`, but this does not prove the display
+consumer queue was populated. Those insertions used receiver `0x27bc217c` in
+the sampled events; earlier v727 empty-predicate calls from `0x00835590` used
+other `0x2002dxxx` receiver objects. The current evidence does not join these
+containers or identify the missing display-list producer. No queue count or
+flag was forced.
+
+The compact per-probe settings, counts, sampled register fields, trace hashes,
+and limits are in
+[`process1_renderer_gate_queue_v730_v735.json`](../evidence/retail_frontier_20261022/process1_renderer_gate_queue_v730_v735.json).
+These runs used a temporary runtime build with Process 2's DXT3 capability
+commit `1fef18a8` and a read-only trace patch. They are not native original-game
+launches and still do not prove frontend, race, or rendered output. The next
+retail analysis should follow the `0x00835d80` frame call into the empty
+`0x00835590` consumer and identify the actual producer path before any runtime
+semantics are changed.
+
 ## Audio hypothesis
 
 This v692 trace specifically targeted D3D9 Draw* imports; it is not an audio

@@ -1,0 +1,250 @@
+{
+  "format": "SHIFT.Process1RendererGateQueueTrace/1",
+  "collected_at": "2026-10-22",
+  "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "p1_source_head": "8476d60bed8657db778cc36d3e8d8d9a6efa6d61",
+  "runtime": {
+    "sha256": "8d0a5937e02f124600be7aaac95eb5a50db9eba9f143931e879ef7597446f2f8",
+    "temporary_integration_head": "f4147f33e69b6c24ca8c43efb486738e8f0d56ac",
+    "p2_dependency": {
+      "pr": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2143",
+      "commit": "1fef18a8",
+      "description": "Managed DXT3 capture capability"
+    },
+    "local_diagnostic_patch": "Read-only guest-call field and writer tracing in native_runtime/src/recompiled_pcode_module.cpp; not committed or pushed."
+  },
+  "module_manifest": {
+    "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v659-missing-005a0ef0/module-manifest-v659-005a0ef0.json",
+    "sha256": "6977898b7ff79edfb84f9b6f6d9e5ff98d8e073d17d88f345e8a1edb77e73a0e"
+  },
+  "probes": [
+    {
+      "id": "v727",
+      "frames_requested": 1,
+      "status": "host-frame-loop",
+      "dispatches": 464886,
+      "unique_functions": 3891,
+      "worker_waiting_count": 3,
+      "validation_errors": 0,
+      "trace_targets": ["0x0082f3c0", "0x00831380", "0x005e1d50", "0x008352f0"],
+      "caller_filter": "0x00835590",
+      "target_slots": ["0x1c", "0x24"],
+      "trace_truncated": false,
+      "trace_counts": {
+        "0x0082f3c0": {
+          "entries": 88,
+          "returns": 88,
+          "callers": {"0x00835590": 84, "0x0050ceb0": 4},
+          "target_plus_0x24": 0,
+          "return_al": 1
+        }
+      },
+      "log": {
+        "path_outside_repository": "/tmp/process1-retail-runtime-evidence/ui-event-path-v727.log",
+        "bytes": 157997,
+        "sha256": "f826c3c101442b6462d16e2b4ffbbe3cf7154b47f429a68d12b088ad42644b82"
+      }
+    },
+    {
+      "id": "v730",
+      "frames_requested": 360,
+      "status": "host-frame-loop",
+      "dispatches": 1736720,
+      "unique_functions": 4726,
+      "worker_waiting_count": 5,
+      "validation_errors": 0,
+      "trace_targets": ["0x008353e0", "0x0082dbb0"],
+      "trace_truncated": false,
+      "trace_entries": {
+        "0x008353e0": 479,
+        "0x0082dbb0": 2
+      },
+      "gate_observations": [
+        {
+          "dispatch": 432440,
+          "function": "0x008353e0",
+          "caller": "0x00832a80",
+          "receiver": "0x2002b698",
+          "receiver_plus_0x694": 0,
+          "last_writer": "0x008323d0",
+          "writer_dispatch": 405662
+        },
+        {
+          "dispatch": 1305120,
+          "function": "0x008353e0",
+          "caller": "0x0082be30",
+          "receiver": "0x2002b698",
+          "receiver_plus_0x694": 1,
+          "last_writer": "0x0082f710",
+          "writer_dispatch": 1304810
+        }
+      ],
+      "d3d9_vulkan_bridge": {
+        "clear_requests": 1130,
+        "clear_submissions": 360,
+        "present_requests": 1128,
+        "present_submissions": 360,
+        "guest_draw_translation": false
+      },
+      "log": {
+        "path_outside_repository": "/tmp/process1-retail-runtime-evidence/ui-event-path-v730.log",
+        "bytes": 935430,
+        "sha256": "29d89dc90e6040748b50ff2561003b928eb0c50f7ed649b7ee5e42057c3eb8c5"
+      }
+    },
+    {
+      "id": "v733",
+      "frames_requested": 360,
+      "status": "host-frame-loop",
+      "dispatches": 1724733,
+      "unique_functions": 4726,
+      "worker_waiting_count": 5,
+      "validation_errors": 0,
+      "trace_targets": ["0x0082f710", "0x008353e0", "0x004cb900", "0x008323d0"],
+      "draw_imports_selected": [
+        "d3d9.dll!IDirect3DDevice9::DrawPrimitive",
+        "d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitive",
+        "d3d9.dll!IDirect3DDevice9::DrawPrimitiveUP",
+        "d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitiveUP"
+      ],
+      "trace_truncated": false,
+      "trace_counts": {
+        "0x0082f710": {"entries": 1119, "returns": 1119, "caller": "0x0054be00", "return_eax": "0x00000001 on all sampled returns"},
+        "0x008353e0": {"entries": 460, "returns": 460, "callers": {"0x0082be30": 455, "0x00832a80": 2, "0x0085cd20": 2, "0x00828840": 1}},
+        "0x004cb900": {"entries": 32, "returns": 32, "calls_from_0x008353e0": 0, "calls_from_0x007eeba0": 3},
+        "0x008323d0": {"entries": 1, "caller": "0x00823cf0", "dispatch": 405181}
+      },
+      "draw_import_entries": 0,
+      "d3d9_vulkan_bridge": {
+        "clear_requests": 1120,
+        "clear_submissions": 360,
+        "present_requests": 1118,
+        "present_submissions": 360,
+        "guest_draw_translation": false
+      },
+      "log": {
+        "path_outside_repository": "/tmp/process1-retail-runtime-evidence/ui-event-path-v733.log",
+        "bytes": 1992598,
+        "sha256": "047aa43e8365b16833857e720bd3a3514b6ecc4bcf7ffb7e0ac3e8f03492751b"
+      }
+    },
+    {
+      "id": "v734",
+      "frames_requested": 360,
+      "status": "host-frame-loop",
+      "dispatches": 1724204,
+      "unique_functions": 4726,
+      "worker_waiting_count": 4,
+      "validation_errors": 0,
+      "trace_targets": ["0x00831380", "0x00835590", "0x007eeba0", "0x004cb900"],
+      "draw_imports_selected": [
+        "d3d9.dll!IDirect3DDevice9::DrawPrimitive",
+        "d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitive",
+        "d3d9.dll!IDirect3DDevice9::DrawPrimitiveUP",
+        "d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitiveUP"
+      ],
+      "trace_truncated": false,
+      "trace_counts": {
+        "0x00835590": {"entries": 1118, "returns": 1118, "caller": "0x00835d80", "return_eax": "0x00000001 on all sampled returns"},
+        "0x00831380": {"entries": 1, "returns": 1, "caller": "0x007ee360", "return_eax": "0x27bc2100", "return_al": 0},
+        "0x007eeba0": {"entries": 3, "returns": 3, "caller": "0x007ef440"},
+        "0x004cb900": {"entries": 32, "returns": 32, "calls_from_0x007eeba0": 3}
+      },
+      "draw_import_entries": 0,
+      "d3d9_vulkan_bridge": {
+        "clear_requests": 1119,
+        "clear_submissions": 360,
+        "present_requests": 1118,
+        "present_submissions": 360,
+        "guest_draw_translation": false
+      },
+      "log": {
+        "path_outside_repository": "/tmp/process1-retail-runtime-evidence/ui-event-path-v734.log",
+        "bytes": 1410301,
+        "sha256": "6657ca521c6dcc68b32706d938612e021344f8e430e0d9a18e621353940f8252"
+      }
+    },
+    {
+      "id": "v735",
+      "frames_requested": 360,
+      "status": "host-frame-loop",
+      "dispatches": 1719510,
+      "unique_functions": 4726,
+      "worker_waiting_count": 5,
+      "validation_errors": 0,
+      "trace_targets": ["0x0082f710", "0x008353e0"],
+      "target_slots": ["0x478", "0x694"],
+      "trace_truncated": false,
+      "trace_counts": {
+        "0x0082f710": {
+          "entries": 1115,
+          "returns": 1115,
+          "caller": "0x0054be00",
+          "entry_plus_0x478": "0x2002d614 on all entries",
+          "entry_plus_0x694": 0,
+          "return_al": 1
+        },
+        "0x008353e0": {
+          "entries": 450,
+          "returns": 450,
+          "callers": {"0x0082be30": 445, "0x00832a80": 2, "0x0085cd20": 2, "0x00828840": 1},
+          "entry_plus_0x694": {"0": 5, "1": 445},
+          "return_al": 1
+        }
+      },
+      "writer_samples": [
+        {
+          "function": "0x008323d0",
+          "address": "0x2002bd2c",
+          "size": 1,
+          "value": 0,
+          "dispatch": 405662
+        },
+        {
+          "function": "0x0082f710",
+          "address": "0x2002bd2c",
+          "size": 1,
+          "value": 1,
+          "dispatch": 1305797
+        },
+        {
+          "function": "0x00835d80",
+          "address": "0x2002bd2c",
+          "size": 1,
+          "value": 0,
+          "dispatch": 1717051
+        }
+      ],
+      "d3d9_vulkan_bridge": {
+        "clear_requests": 1116,
+        "clear_submissions": 360,
+        "present_requests": 1114,
+        "present_submissions": 360,
+        "guest_draw_translation": false
+      },
+      "log": {
+        "path_outside_repository": "/tmp/process1-retail-runtime-evidence/ui-event-path-v735.log",
+        "bytes": 2768435,
+        "sha256": "dc9c2768ef953eb7187dbcc23ec330adcdbb802acd08a0eafc2e4ace2289a08b"
+      }
+    }
+  ],
+  "excluded_probes": [
+    {
+      "id": "v732",
+      "reason": "Trace selected the high-volume 0x0082f3c0 predicate and exceeded the 8192-event trace limit; it is not used to support any negative call-count claim."
+    }
+  ],
+  "interpretation": [
+    "The byte at object 0x2002b698+0x694 is a live state gate: 0x008323d0 wrote zero, 0x0082f710 wrote one, 0x008353e0 subsequently observed one, and 0x00835d80 later cleared it. This is a state transition, not evidence of a stuck flag.",
+    "In the complete v734 trace, 0x00835590 ran 1118 times and returned AL=1, but 0x00831380 was never called from it. The only 0x00831380 invocation was from 0x007ee360 and returned AL=0.",
+    "The observed 0x004cb900 insertions do not establish that the 0x00835590 consumer queue was populated: 0x007eeba0 used receiver 0x27bc217c in the sampled insertions, while the earlier v727 0x00835590->0x0082f3c0 checks used separate 0x2002dxxx receiver objects. No object identity or causal link between these paths is established.",
+    "None of these recompiled-P-code runs observed a selected D3D9 Draw* import; guest_draw_translation and retail_rendering_proven remained false."
+  ],
+  "limitations": [
+    "These are bounded recompiled-P-code runs over the pinned retail PE, not native execution of SHIFT.exe under Wine or on Linux.",
+    "The evidence does not establish why 0x00831380 is skipped by 0x00835590 or which producer should populate the consumer's actual queue.",
+    "The temporary DXT3 integration and diagnostic patch are not present in the P1 branch; PR #2143 remains open.",
+    "Dispatch, host-frame, and unique-function counts are not proof of menu, race, or rendered-game execution."
+  ]
+}
