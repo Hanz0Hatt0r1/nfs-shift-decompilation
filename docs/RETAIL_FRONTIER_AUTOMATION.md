@@ -904,3 +904,13 @@ bounded static negative result, not proof of whole-program unreachability. The
 v757 replay independently had no selected Begin/End/forwarder events. The next
 bounded provenance target is getter `0x0082E110` and its immediate consumers.
 See the [full caller audit](../evidence/retail_frontier_20261022/process1_adapter_beginstateblock_callsite_0084fbc0.md).
+
+The `0x0082E110` audit found 187 exact direct callers. None of their bounded
+immediate windows accesses a literal vtable `+0xF0` slot. A verified
+initialized-wrapper path returns the primary adapter, but inspected consumers
+use `+0xE4` or pass that pointer to helper `0x0084D1A0`, whose local path uses
+`+0x5C` and then resource-object slots `+0x4C/+0x50/+0x08`. This does not close
+global BeginStateBlock reachability: aliases outside the immediate windows and
+computed or later dispatches remain unresolved. No new replay was run. The next
+bounded target is `0x0084D1A0`. See the
+[full getter-consumer report](../evidence/retail_frontier_20261022/process1_wrapper_adapter_getter_0082e110.md).
