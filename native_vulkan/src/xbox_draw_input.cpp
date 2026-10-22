@@ -16,6 +16,23 @@ constexpr uint32_t kIndexCountMask = 0x00FFFFFFu;
 constexpr uint32_t kDmaSwapModeMask = 0xC0000000u;
 constexpr size_t kCapturedPacketBytes = 20;
 
+uint64_t tiled_2d_offset_32bpp(uint32_t x, uint32_t y, uint32_t pitch_pixels) {
+    const uint64_t outer_blocks =
+        ((static_cast<uint64_t>(y >> 5) * (pitch_pixels >> 5)) + (x >> 5)) << 6;
+    const uint64_t inner_blocks = (((y >> 1) & 0x7u) << 3) | (x & 0x7u);
+    const uint64_t outer_inner_bytes = (outer_blocks | inner_blocks) << 2;
+    const uint32_t bank = (y >> 4) & 1u;
+    const uint32_t pipe = ((x >> 3) & 3u) ^ (((y >> 3) & 1u) << 1);
+
+    return (static_cast<uint64_t>(y & 1u) << 4) |
+           (static_cast<uint64_t>(pipe) << 6) |
+           (static_cast<uint64_t>(bank) << 11) |
+           (outer_inner_bytes & 0xFu) |
+           (((outer_inner_bytes >> 4) & 1u) << 5) |
+           (((outer_inner_bytes >> 5) & 7u) << 8) |
+           (outer_inner_bytes >> 8 << 12);
+}
+
 uint32_t read_be32(const uint8_t* bytes) {
     return (static_cast<uint32_t>(bytes[0]) << 24) |
            (static_cast<uint32_t>(bytes[1]) << 16) |
@@ -159,6 +176,7 @@ bool decode_captured_texture_fetch(
         endian_mode,
         width,
         height,
+        ((descriptor_words[0] >> 22) & 0x1FFu) << 5,
         static_cast<uint32_t>(byte_length),
         dimension,
         (descriptor_words[3] >> 1) & 0xFFFu,
@@ -168,6 +186,50 @@ bool decode_captured_texture_fetch(
         (descriptor_words[3] >> 25) & 0x7u,
         tiled != 0,
     };
+    if (error) {
+        error->clear();
+    }
+    return true;
+}
+
+bool untile_captured_texture_2d(
+    const CapturedTextureFetch& texture,
+    const uint8_t* guest_bytes,
+    size_t byte_length,
+    std::vector<uint8_t>* vulkan_bytes,
+    std::string* error) {
+    if (!guest_bytes || !vulkan_bytes || texture.format != 6 ||
+        texture.endian_mode != 2 || texture.dimension != 1 || !texture.tiled ||
+        !texture.width || !texture.height || texture.pitch != texture.width ||
+        (texture.width & 31u) != 0 || (texture.height & 31u) != 0) {
+        return fail("unsupported captured texture layout", error);
+    }
+
+    const uint64_t expected_bytes =
+        static_cast<uint64_t>(texture.width) * texture.height * 4;
+    if (expected_bytes > std::numeric_limits<uint32_t>::max() ||
+        texture.byte_length != expected_bytes || byte_length != expected_bytes) {
+        return fail("captured texture byte range does not match its dimensions", error);
+    }
+
+    std::vector<uint8_t> linear(static_cast<size_t>(expected_bytes));
+    for (uint32_t y = 0; y < texture.height; ++y) {
+        for (uint32_t x = 0; x < texture.width; ++x) {
+            const size_t source = static_cast<size_t>(
+                tiled_2d_offset_32bpp(x, y, texture.pitch));
+            const size_t destination =
+                (static_cast<size_t>(y) * texture.width + x) * 4;
+            if (source + 4 > byte_length) {
+                return fail("captured tiled texture address exceeds its byte range", error);
+            }
+            linear[destination] = guest_bytes[source + 3];
+            linear[destination + 1] = guest_bytes[source + 2];
+            linear[destination + 2] = guest_bytes[source + 1];
+            linear[destination + 3] = guest_bytes[source];
+        }
+    }
+
+    *vulkan_bytes = std::move(linear);
     if (error) {
         error->clear();
     }

@@ -15,8 +15,15 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
 - BMW material→DDS→Vulkan adapter;
 - separately tested, bounded decoding of the captured Xbox `PM4_DRAW_INDX`
   and vertex/texture fetch descriptors, plus normalization for the captured
-  index/vertex byte orders. It is not yet wired to Vulkan submission, the
-  texture is not untiled, and it does not emulate a Xenos GPU;
+  index/vertex byte orders. The captured 1024x256, format-6, tiled 2D texture
+  can also be converted to linear texel order with its 8-in-32 byte swap. The
+  untile path rejects other pitches, formats, dimensions, and layouts. Its
+  address mapping is cross-checked against the public
+  [Xenia `Tiled2D` implementation](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/texture_address.h);
+  this project has no Xenia runtime dependency and does not emulate a Xenos GPU;
+- the Xbox packet and resource inputs are not yet wired to Vulkan draw
+  submission. Texture swizzle/sampler execution, Xbox shader translation, and
+  retail parity remain unimplemented;
 - Linux CI coverage for native smoke paths.
 
 ## Rules

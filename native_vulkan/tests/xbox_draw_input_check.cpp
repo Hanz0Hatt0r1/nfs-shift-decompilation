@@ -22,6 +22,12 @@ const uint8_t kCapturedPacket[] = {
     0x40, 0x00, 0x00, 0x06,
 };
 
+uint32_t read_be32(const uint8_t* bytes) {
+    return (static_cast<uint32_t>(bytes[0]) << 24) |
+           (static_cast<uint32_t>(bytes[1]) << 16) |
+           (static_cast<uint32_t>(bytes[2]) << 8) | bytes[3];
+}
+
 }  // namespace
 
 int main() {
@@ -61,12 +67,64 @@ int main() {
                 texture_fetch.endian_mode == 2,
             "captured texture resource identity changed");
     require(texture_fetch.width == 1024 && texture_fetch.height == 256 &&
+                texture_fetch.pitch == 1024 &&
                 texture_fetch.byte_length == 1024u * 256u * 4u && texture_fetch.tiled,
             "captured texture dimensions or layout changed");
     require(texture_fetch.dimension == 1 && texture_fetch.swizzle == 0x60Au &&
                 texture_fetch.mag_filter == 1 && texture_fetch.min_filter == 1 &&
                 texture_fetch.mip_filter == 2 && texture_fetch.aniso_filter == 0,
             "captured texture sampling fields changed");
+
+    std::vector<uint8_t> tiled_texture(texture_fetch.byte_length);
+    const size_t texture_pixels = texture_fetch.byte_length / 4;
+    for (size_t pixel = 0; pixel < texture_pixels; ++pixel) {
+        tiled_texture[pixel * 4] = static_cast<uint8_t>(pixel);
+        tiled_texture[pixel * 4 + 1] = static_cast<uint8_t>(pixel >> 8);
+        tiled_texture[pixel * 4 + 2] = static_cast<uint8_t>(pixel >> 16);
+        tiled_texture[pixel * 4 + 3] = static_cast<uint8_t>(pixel >> 24);
+    }
+    std::vector<uint8_t> linear_texture;
+    require(shift::xbox::untile_captured_texture_2d(
+                texture_fetch, tiled_texture.data(), tiled_texture.size(),
+                &linear_texture, &error),
+            "captured tiled texture bytes were rejected");
+    require(linear_texture.size() == texture_fetch.byte_length,
+            "untiled texture byte length changed");
+
+    std::vector<bool> seen_texture_pixels(texture_pixels, false);
+    for (size_t pixel = 0; pixel < texture_pixels; ++pixel) {
+        const uint32_t source_pixel = read_be32(linear_texture.data() + pixel * 4);
+        require(source_pixel < texture_pixels && !seen_texture_pixels[source_pixel],
+                "untile mapping duplicated or exceeded a source texel");
+        seen_texture_pixels[source_pixel] = true;
+    }
+    for (bool seen : seen_texture_pixels) {
+        require(seen, "untile mapping skipped a source texel");
+    }
+    const auto require_texture_source_pixel = [&](uint32_t x, uint32_t y,
+                                                  uint32_t expected) {
+        const size_t pixel = static_cast<size_t>(y) * texture_fetch.width + x;
+        require(read_be32(linear_texture.data() + pixel * 4) == expected,
+                "captured Xenos tiled address or 8-in-32 byte order changed");
+    };
+    require_texture_source_pixel(0, 0, 0);
+    require_texture_source_pixel(4, 0, 8);
+    require_texture_source_pixel(0, 2, 64);
+    require_texture_source_pixel(0, 16, 512);
+    require_texture_source_pixel(32, 0, 1024);
+    require_texture_source_pixel(0, 32, 32768);
+    require_texture_source_pixel(1023, 255, 262111);
+
+    shift::xbox::CapturedTextureFetch unsupported_texture_layout = texture_fetch;
+    unsupported_texture_layout.pitch -= 32;
+    require(!shift::xbox::untile_captured_texture_2d(
+                unsupported_texture_layout, tiled_texture.data(), tiled_texture.size(),
+                &linear_texture, &error),
+            "uncaptured texture pitch was accepted");
+    require(!shift::xbox::untile_captured_texture_2d(
+                texture_fetch, tiled_texture.data(), tiled_texture.size() - 1,
+                &linear_texture, &error),
+            "truncated captured texture was accepted");
 
     const uint8_t captured_indices[] = {
         0x00, 0x00, 0x00, 0x01, 0x00, 0x02,

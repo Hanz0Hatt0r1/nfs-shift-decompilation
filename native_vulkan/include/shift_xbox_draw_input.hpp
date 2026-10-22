@@ -33,6 +33,7 @@ struct CapturedTextureFetch {
     uint32_t endian_mode;
     uint32_t width;
     uint32_t height;
+    uint32_t pitch;
     uint32_t byte_length;
     uint32_t dimension;
     uint32_t swizzle;
@@ -62,6 +63,15 @@ bool decode_captured_vertex_fetch(
 bool decode_captured_texture_fetch(
     const uint32_t descriptor_words[6],
     CapturedTextureFetch* output,
+    std::string* error);
+
+// Untiles the captured 8_8_8_8, 8-in-32, tiled 2D texture into linear texel
+// order while applying the captured per-dword byte swap. Other layouts fail.
+bool untile_captured_texture_2d(
+    const CapturedTextureFetch& texture,
+    const uint8_t* guest_bytes,
+    size_t byte_length,
+    std::vector<uint8_t>* vulkan_bytes,
     std::string* error);
 
 // Converts only the two guest byte orders observed on this captured draw:
