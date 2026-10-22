@@ -1,0 +1,866 @@
+{
+  "blocker": null,
+  "caller": null,
+  "comparison": {
+    "reason": "more retail code executed",
+    "result": "advanced"
+  },
+  "d3d9_clear_request": {
+    "call_count": 1120,
+    "color": "0x00000000",
+    "depth_bits": "0x3f800000",
+    "flags": "0x00000007",
+    "rect_count": 0,
+    "stencil": 0
+  },
+  "d3d9_vulkan_bridge": {
+    "clear_requests": 1120,
+    "clear_submissions": 360,
+    "guest_draw_translation": false,
+    "pending_presents": 759,
+    "present_requests": 1119,
+    "present_submissions": 360
+  },
+  "dispatches": 1750173,
+  "exit_code": 0,
+  "format": "SHIFT.RetailStartupFrontier/1",
+  "frames_rendered": 360,
+  "guest_main_thread_function": "0x006472d0",
+  "pe_image_loaded": true,
+  "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "probe_configuration": {
+    "frames_requested": 360,
+    "kill_after_seconds": 5,
+    "module_manifest": {
+      "overrides": [
+        {
+          "path": "function-0090a007-fxam-pcode-20261019-v180/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "b4d12cf96dc0ac59a3cb555f0d4cf129806992b8e070ebac110e2b1eca0d1b43"
+        },
+        {
+          "path": "function-00903294-fprem-status-20261019-v181/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "ec26b08d188c5676e1f525aa17f5b0bcb18d3b5c1fe2f2bfa157333b6f5d0d0c"
+        },
+        {
+          "path": "function-0050f010-full-pcode-20261020/lowered-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "966823f0caf2f115195e72633c7324fef300ec96450ee002f1915891418e1c8d"
+        },
+        {
+          "path": "function-0050f010-full-pcode-20261020/lowered-d5bd30-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "b5715bceee1aae9390a6fb431578011f3eaf97d1d1a6ca06e7efd4f871acf9e0"
+        },
+        {
+          "path": "function-0050f010-full-pcode-20261020/lowered-a9a8b8-entryfix-v2/libnfs_shift_pcode_supplement.so",
+          "sha256": "6493c885f5ccce798e640ed7d67e6299bdab9d9275dc369635e95ddaca9f56a7"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-00649e20-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "082a1b0aacf08023da9748999a1850b0a8c212ccadbb844d01810b25d7bf581b"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-0040e630-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "fce75b2c8055c6ab672d0fc67c17b7f0decd7f993b38a2da31b08804b9719328"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-0040d910-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "3aafd62f115f3538b96a8cf991c43f77fcf0b98de80eded8463f8fce4c857129"
+        },
+        {
+          "path": "function-00837ec0-full-pcode-20261020/lowered-00837ec0-full-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "c33dbba577ff60ce7e7def713a2cf205e79277d3c42eb48ea0cc35994d5fd51e"
+        },
+        {
+          "path": "function-00837ec0-full-pcode-20261020/lowered-0083a620-v2/libnfs_shift_pcode_supplement.so",
+          "sha256": "ddee080d21881ec2caa2e3e39fd14cc666109c2f8a66b2b65c32bcbee61bf282"
+        },
+        {
+          "path": "function-00837ec0-full-pcode-20261020/lowered-0083a090-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "410337e4f0af22b622b1fce1a9835ae74f47d22ffc47ded2b35f1af66fad5b93"
+        },
+        {
+          "path": "function-call-stack-v462-x87-entry-callstack/libnfs_shift_pcode_supplement.so",
+          "sha256": "d6d37d163f147b529f23642bab19f07a8579d41061b52926b31a517cdd3b5d2f"
+        },
+        {
+          "path": "function-call-stack-v444-slot-reuse/lowered-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "d9928e8068585688d1aa79d47ba47e3e829f2e3f1d2d2dd7d0b0305f25793c1a"
+        },
+        {
+          "path": "function-0065e6f6-call-stack-v432/lowered-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "242a40fc71a440a1f3d1e24782899b35f4c65901f41c2997c5ee3a811d7df084"
+        },
+        {
+          "path": "function-0065e72d-call-stack-v433/lowered-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "b04e4ce3fa18aad1751ae890b73f1e97ebd00fab1183438bdd656064fb147e1b"
+        },
+        {
+          "path": "function-call-stack-v463-entry-0090a259/libnfs_shift_pcode_supplement.so",
+          "sha256": "26e2d38b194894367cba9cdcca3dc849f42a248106fff1003bccf4b2eb523470"
+        },
+        {
+          "path": "function-call-stack-v464-entry-007f30d0/libnfs_shift_pcode_supplement.so",
+          "sha256": "7acaada1592703146cd82dbf1c50b3c1c6ee9e1f1e6ece8d91b83ab062517e79"
+        },
+        {
+          "path": "function-call-stack-v465-entry-007e92c0/libnfs_shift_pcode_supplement.so",
+          "sha256": "f41b030ceda6f992c98382b8ce6c303dd0ac64c741050c1f153ffa796af490cd"
+        },
+        {
+          "path": "function-call-stack-v466-entry-007e92b0/libnfs_shift_pcode_supplement.so",
+          "sha256": "fad76d40f38949ace15dbffcc1ce96628cbb30784787a7098a7dc808ef8a37a0"
+        },
+        {
+          "path": "function-call-stack-v467-entry-0085ed60/libnfs_shift_pcode_supplement.so",
+          "sha256": "30238ea29ec13272370ea5d599e9033342fa88a114ef6cdf2b3df0ac3363644e"
+        },
+        {
+          "path": "function-call-stack-v468-entry-007ebb70/libnfs_shift_pcode_supplement.so",
+          "sha256": "037f5d8d44db9dd2d7f56611f343564fe647309f3223f7f1a522ea1982c410dd"
+        },
+        {
+          "path": "function-call-stack-v471-lowered-007dc990/libnfs_shift_pcode_supplement.so",
+          "sha256": "3d8f589803bb074d1ee56d8da6afbe88757ad0ab70b8fa905568c862b532eba9"
+        },
+        {
+          "path": "function-call-stack-v472-lowered-00427770/libnfs_shift_pcode_supplement.so",
+          "sha256": "837856ef8c5c6a7653310b61c08cf6f79f9383ff5a3c2063baf9f34d2c4d11e4"
+        },
+        {
+          "path": "function-call-stack-v473-entry-0082dae0/libnfs_shift_pcode_supplement.so",
+          "sha256": "1a5e329ff7c0997f9c14be542d34695a7e20ec24b3d07b1997ca2e9ba2a81cff"
+        },
+        {
+          "path": "function-call-stack-v474-entry-0082daf0/libnfs_shift_pcode_supplement.so",
+          "sha256": "f6db8e7f2bf0e7bd2f40af275ce5a85473c10e7adb668b470a0a4a333f309156"
+        },
+        {
+          "path": "function-call-stack-v475-entry-0082db10/libnfs_shift_pcode_supplement.so",
+          "sha256": "e0e3b529bfabff243236b403058ae089c1a1322bb4be2d573b1cd04aa2a104ad"
+        },
+        {
+          "path": "function-call-stack-v476-entry-009027c8/libnfs_shift_pcode_supplement.so",
+          "sha256": "3c2630b51bb0a2258e0e435b7f4e949833292c53d10679f7b7bd1c97aa967c19"
+        },
+        {
+          "path": "function-call-stack-v477-entry-00900c98/libnfs_shift_pcode_supplement.so",
+          "sha256": "5ee49e8388c28ce40742ce0000ff4bab5203b416877b57ae3d5b457e4cfbc15e"
+        },
+        {
+          "path": "function-call-stack-v478-entry-007e3680/libnfs_shift_pcode_supplement.so",
+          "sha256": "308334311d6cc8e3d0ee9114f76d867db4f2badd8466d561e3ee73ebdda5278c"
+        },
+        {
+          "path": "function-call-stack-v479-entry-0082d910/libnfs_shift_pcode_supplement.so",
+          "sha256": "cf420c43b2facaa1eeb65f831ca28fe1c11edfdcdc63621c30cba216c4e0bca5"
+        },
+        {
+          "path": "function-call-stack-v482-entry-00508bf0/libnfs_shift_pcode_supplement.so",
+          "sha256": "a7f35f09847908850cab8f7837be017d4a2f706fa63f1ddb2118c677860008a6"
+        },
+        {
+          "path": "function-call-stack-v484-entry-0054aa80/libnfs_shift_pcode_supplement.so",
+          "sha256": "4bd767e59c074287c0f33e4c178fb105793f2b0f8aef7b63b12ad36c55b436fd"
+        },
+        {
+          "path": "function-call-stack-v485-entry-0065c050/build-v2/libnfs_shift_pcode_supplement.so",
+          "sha256": "98a4a9e1dd0b83fab1bf07eb406f925658f36ceebc0b4108f0f2e7ac10186056"
+        },
+        {
+          "path": "function-call-stack-v486-investigation/build-0063c110-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "717bf7ddfd2beef2e0574d408f8c04c920f20aa4775b00b66f376c7877955661"
+        },
+        {
+          "path": "function-call-stack-v488-missing-branch/build-0064d910-944-merged-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "a4e543735e56259dc6f8feea6eb7d41f8f1d86ed5b54bb56fefc96a18567cd65"
+        },
+        {
+          "path": "function-call-stack-v494-missing-006418c6/build-006418d9-merged-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "b9ad4bb6556f72f6f2d5911c7de1dbf00748cad964b9fef80ea6e09cf4ac1ce5"
+        },
+        {
+          "path": "function-call-stack-v498-missing-00664df6/build-00664df6-merged-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "6da1f268c1e9340e9eb329da4af22a455a0c7a1824c6036a14bae8407cb34dc9"
+        },
+        {
+          "path": "function-call-stack-v508-override-0064a080/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "30a3e2f2dca91c8e356b4dbba368331f5557edd9a39ff6617bbf5b543fda091d"
+        },
+        {
+          "path": "function-call-stack-v510-override-00649fa0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "5f5e96d2106992a232217f31eedafdc5f90920279af51ab7844dd1069c4a16c9"
+        },
+        {
+          "path": "function-call-stack-v575-override-0063c670/compiled-exact-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "501b7c2a85a0e6ca726cf39c983a4504e91398268fbac0442ea45d274cc307a4"
+        },
+        {
+          "path": "function-call-stack-v579-override-0063c770/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "349336855d940519f7f4835d4db26350b7e3604f6ff450af145eaa4d59d78ee4"
+        },
+        {
+          "path": "function-call-stack-v586-missing-006ae2a0/compiled-dynamic-v2/libnfs_shift_pcode_supplement.so",
+          "sha256": "eeeb078b7231c374bcbc49cce62b022fcfe01293fe7ac357f0aecad7ab697d99"
+        },
+        {
+          "path": "function-call-stack-v621-override-0049f2c0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "725e30ca861148995d2ca40d13386e765497acd6b59d70c7ca2496f5789d7858"
+        },
+        {
+          "path": "function-call-stack-v625-override-00906240-entryfix/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "e6fb6d0e4d381c8c847379b5df0a708254d19c465ffe27f4cbcbab87dfb98b50"
+        },
+        {
+          "path": "function-call-stack-v627-override-00906246-alias/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "0fe942249a4b060978dccd8dce2d12fefb9830f5ce1bc0e419eecadbf5ca0e9d"
+        },
+        {
+          "path": "function-call-stack-v629-override-00911429-jumptable/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "79916f4c950b9f7a7c1ece7357e63d02bb3e20bebc6474aaadeef0ff6937a24d"
+        },
+        {
+          "path": "function-call-stack-v631-override-00d6fecc-alias/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "a5642f5a9e68677b7e1dab913abf957916eae517ef2db4670be108e47232199b"
+        },
+        {
+          "path": "function-call-stack-v633-override-00403cbb-ret-alias/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "659b430ca7cdb88b8ed6d64ce3f1c8801772c0e3ec409d07c72af8c905655103"
+        },
+        {
+          "path": "function-call-stack-v634-override-006d8d90-dynamic-branch/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "5223fbf08ef8f2c27065755c2c70bebb76113b82cfa6a82af74a72aa1408a23f"
+        },
+        {
+          "path": "function-call-stack-v635-override-006d8de0-dynamic-branch/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "77a28a6f7746acd86460ae6f7965798cc12001a87678e55e1363b9bd2d2208f1"
+        },
+        {
+          "path": "function-call-stack-v636-override-006dcf20-exact/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "37f2bba0ee5522b14084ab536c86cb02fb3ee1b0746c9c98f02ab4f5f2e4fc16"
+        },
+        {
+          "path": "function-call-stack-v637-override-0052b380-merged-exit/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "7084ec4d7a27bf3894ba176eb6b06f398279a3da2a9e08d4fba3613edd7cd8c8"
+        },
+        {
+          "path": "function-call-stack-v638-override-0052bad0-merged-exit/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "1f5135def52425ac78a32af5ad15bb208a81a16723595428e7d4f0c5e54f6fc0"
+        },
+        {
+          "path": "function-call-stack-v656-override-00888f70/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "ec980f2cf46f95d4e0e014472b034a01bc7d017b7844aea958d24e387855d8a0"
+        }
+      ],
+      "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v659-missing-005a0ef0/module-manifest-v659-005a0ef0.json",
+      "sha256": "6977898b7ff79edfb84f9b6f6d9e5ff98d8e073d17d88f345e8a1edb77e73a0e",
+      "supplements": [
+        {
+          "path": "function-0040a100-pcode-20261019/libnfs_shift_pcode_supplement.so",
+          "sha256": "0502310e4bba8ff0d7fe42aed620573a3772bcffc6df678f4aa890a61e50911a"
+        },
+        {
+          "path": "function-00910aa5-pcode-20261019/libnfs_shift_pcode_supplement.so",
+          "sha256": "1c2757cc457eb0a846e95a6f542933b649c12a5bb514e7f6fc4f7660eab9710c"
+        },
+        {
+          "path": "function-005f1820-pcode-20261019-indirect-tail-dispatch/libnfs_shift_pcode_supplement.so",
+          "sha256": "17a87a69163d9a62a9349ff85189ea8eba4d2dcbcd4db6a968d6b5989849443b"
+        },
+        {
+          "path": "function-006475c0-pcode-20261019-main/libnfs_shift_pcode_supplement.so",
+          "sha256": "1cbaecd2bcb6ab7d0bda5bcfd6423b01a454b583f1b0adaad323e13fb7fda8da"
+        },
+        {
+          "path": "function-006475b0-pcode-20261019-main/libnfs_shift_pcode_supplement.so",
+          "sha256": "ee3031821af374cdcd1a43116dbcc3158b5cfdc4198d7da2b918106fbc08d90c"
+        },
+        {
+          "path": "function-00886ba0-pcode-20261019-main/libnfs_shift_pcode_supplement.so",
+          "sha256": "e63bb7ad6fcf50df48e0947d2a12773fc338036c0c93746a9361512f499ea5ee"
+        },
+        {
+          "path": "function-00886b90-pcode-20261019-recovered/libnfs_shift_pcode_supplement.so",
+          "sha256": "4e6f3a367922492e864fbeb0a07b06631e60334e54956919540624d27ac1c90d"
+        },
+        {
+          "path": "function-008329d0-pcode-20261019-main/libnfs_shift_pcode_supplement.so",
+          "sha256": "3e099256dbb581f4f631c73e4a4370a8583a0ffcf65837e623d29afa7843aae1"
+        },
+        {
+          "path": "function-00835050-pcode-20261019-main/libnfs_shift_pcode_supplement.so",
+          "sha256": "1182b0ba752f9fd71eeff08be9a90a6876573f263435f3d61c0b957ccf1107e1"
+        },
+        {
+          "path": "function-005e5b00-pcode-20261019/libnfs_shift_pcode_supplement.so",
+          "sha256": "48ac6cd493e09dede094edc1beb5b958486aaf843b7357bd45a0f80052829be4"
+        },
+        {
+          "path": "function-0082ddc0-pcode-20261019/libnfs_shift_pcode_supplement.so",
+          "sha256": "bafe4f8c5e5efc13802fc09134f5f3b57ea8f83377333678e7c97cb84bf5cb1d"
+        },
+        {
+          "path": "function-00838360-pcode-20261019-v174/compiled-shift-v2/libnfs_shift_pcode_supplement.so",
+          "sha256": "98ba7b4d6b318aff80597cbd2babd3d17e2a08a5bfc283196d604258b7dbd71a"
+        },
+        {
+          "path": "function-0082dbb0-pcode-20261019-v176/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "5f008d3adb69ba6ffab99eb899635c7d6f20d114964694602a121eb7d32b4daf"
+        },
+        {
+          "path": "function-0062f992-pcode-20261019-v177/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "94bf53630f33cf7fed03656661fad31104af59c069286d5d73977f23a553f9a9"
+        },
+        {
+          "path": "function-0090a007-handlers-pcode-20261019-v179/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "de31871480df0e206aff2dde5aa60616596b9b8f8da4ef02d3c1fb53c0c5f78c"
+        },
+        {
+          "path": "function-0082e980-pcode-20261019-v182/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "f86de4637a31333b6dc0970cd13595dc6e5f6c12287eaa12aa8110bc27250512"
+        },
+        {
+          "path": "function-00853170-pcode-20261019-v185/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "93e34841a59372a2e30f554134545dee7c71f179791f45e30fa82421336eb8e8"
+        },
+        {
+          "path": "function-00852e00-pcode-20261019-v186/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "fd8b97cc7439558210777d6f3c0bab7d487b852b259917f7c33c87a6895c3025"
+        },
+        {
+          "path": "function-0082db40-pcode-20261019-v189/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "0de01d883b367a1ac0f34eb53d91ca56a93f02f4d64121e4cd2e42f956a87373"
+        },
+        {
+          "path": "function-0050f010-full-pcode-20261020/lowered-5b6e00-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "617294d57a7a3ba3e54f962f55be3ff61e23f9ec68d9447c855c123b80a30053"
+        },
+        {
+          "path": "function-0050f010-full-pcode-20261020/lowered-7bf2c0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "ee47db6e47cfe17c56800739c75bb98b60a138fb38d8a5a47717419a69cf7767"
+        },
+        {
+          "path": "function-0050f010-full-pcode-20261020/lowered-7892b0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "d864507e334dc7ae6aa7669c129c1790e90b037ff05cdc27005631436387b1a3"
+        },
+        {
+          "path": "function-0050f010-full-pcode-20261020/lowered-7c06f0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "1f1191e9549f892cc6f89210486db68820279c8461b1d0988062710cdb5837fb"
+        },
+        {
+          "path": "function-0050f010-full-pcode-20261020/lowered-7c29f0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "725520c90177e1e2613dca4a0853f4ad21851197719ca2a713d1a41246647671"
+        },
+        {
+          "path": "function-0050f010-full-pcode-20261020/lowered-407dd0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "c33269bfdbd5c8e992895ebe07e9e222498f219f528196cc13f8d3fb0d4850e5"
+        },
+        {
+          "path": "function-0050f010-full-pcode-20261020/lowered-82dec0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "9ad3068fa30b1751a14af0f6e54cd9ed0cd0eb1a0ba400d009d8e9bb4a75d1d5"
+        },
+        {
+          "path": "function-0050f010-full-pcode-20261020/lowered-82df00-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "e5ecb81cfab3dddab525632af9dd0c64a6b0817bdcc9d4bf934a56c7b22cb47b"
+        },
+        {
+          "path": "function-0050f010-full-pcode-20261020/lowered-83a5c0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "5fc8bd77f214c5b7fae36c0212d769ea01869184799b9fd80e6e4489cb22cbb3"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered/libnfs_shift_pcode_supplement.so",
+          "sha256": "40b1e9a2b4fa9fe2db000c6be07d38034a9a93350db3fb3ccaac4cdc44e91f75"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-82db90/libnfs_shift_pcode_supplement.so",
+          "sha256": "1d37c9b7c03444c72429f331c0d55df71e2f791948f68011858b185a9c704117"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-83a640-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "122eccfe920ca77f46eb4e5a277677704b36d66bc1579642287a05941e1b2ce4"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-82d9c0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "cef9f74b42eb0efe55444eb6dc930677edf66ce155ea21b63e0d74c86da5a9c8"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-82d540-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "3701b143dd1fc281f60a490052c13892e046b2ac0853fa486981b8fe903463fc"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-82d2b0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "2c6b6cdc01e8eed888599ee9a4754fc57a57024d7e356873e7e126a83bc77422"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-854150-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "456bcfce52d05b60df3b04a73a4e3e59f03918609428c07a5cfb695b80d8708c"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-854160-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "f2dfd88ce0fe4639b6b56720e3d74d026bd3f2ff2590f009f197e0266a76b71f"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-854140-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "a04bd68f6d696c432ef2d42c2aaaf01b9830ebae2eb3066af916956c8a7a8247"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-8541c0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "cadbb310e8c8b2522e1f05213661288009664d20319014af391bfda6da282956"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-8541e0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "e6ac8211044f3da6dfc98b7dbbdebc9cd92f8a0c780aff2186001eaaf5ef262f"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-82dee0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "3d90b91bac510a12fa26b305911b468fb4a9d6f3dbf6c2e03e07f10914c1e5fe"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-82df30-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "11bb8be9db8881b579a4d8fa08919c1087a6e47fa2de72dd84eacf1fac7effc4"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-83a630-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "98a5423dc6dfe8d21dfa078e39e24560b0b963808b7a3aaf3ce104ca6b945548"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-846790-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "2fc87908082838ef2cf4a45837642229fee87a943128114c3e7d5d4f7db11417"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-854200-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "a8a13da5b89bb4f7eaf2c850f6a58696ba2eeae8c118c302f602c978f2fc1906"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-83a5a0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "dc705cd4f27cd5e9809e97704f12b5b8c8a5b8cce25c0fde37e9e5d1383a0d60"
+        },
+        {
+          "path": "function-0083a610-pcode-20261020/lowered-0060f495-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "184b42e3449361e6ce4fc45da2f905d6517e028652e1ef2e144bb68ef453e133"
+        },
+        {
+          "path": "function-008329c0-pcode-20261020/lowered-008329c0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "383d1817cb8d1a3022441994ff57c7cfaeb06ddf3677c8e24e023c72a42661e5"
+        },
+        {
+          "path": "function-0083d220-pcode-20261020/lowered-0083d220-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "f4c642d49b62d9274dd73661d36bfdf466990878b363adff3ba2e1355d574f13"
+        },
+        {
+          "path": "function-007dc8c0-rvi007d9780-v419/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "110c4acfde12057804737e757043bdd1e656f555c0fb7da3127186acad9dc896"
+        },
+        {
+          "path": "function-007d9eb0-v420/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "6872da83cbd0286baaad050088a24594ec4c0ec820e6d0f6859a49c13aabab75"
+        },
+        {
+          "path": "function-007f30c0-v421/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "5c2dc8053d9a49f4f68431e8fd23d2d825b8f35224ff437d7462a25507abbdd3"
+        },
+        {
+          "path": "function-006623f0-writefile-v435/lowered-v2/libnfs_shift_pcode_supplement.so",
+          "sha256": "c30621d7431fff900d522c0726f27740581d9b46514b722e6dd9548b78a8b44a"
+        },
+        {
+          "path": "function-call-stack-v491-missing-0057c610/build-0057c610-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "03342a08a7f6eeb5f92c3d249113d84a0a793fdb8c314534944603b38df185e1"
+        },
+        {
+          "path": "function-call-stack-v493-missing-004320a0/build-004320a0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "cc7800fd59d397e587b0ab3054ae695712978ce2f959f4b77312ba59ba2d604c"
+        },
+        {
+          "path": "function-call-stack-v495-missing-004d1e30/build-004d1e30-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "555af338cf393f6d0f64c54d1e382eb2abb3977c14336498e39d03ca7105e2f2"
+        },
+        {
+          "path": "function-call-stack-v496-missing-0090c00f/build-0090c00f-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "31565fbe5457fe0252c2339a828f47b38f5cc70a3e488568c3024647a06e1ae2"
+        },
+        {
+          "path": "function-call-stack-v497-missing-0042aab0/build-0042aab0-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "8b8f88c932e4bacb82760361a4030d54db3a1dc58145280df87c06e6d040616f"
+        },
+        {
+          "path": "function-call-stack-v505-missing-00664e00/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "81377d47a3ae0e70cf531969b9a35ff20ad6f3c36d1804b954e79cfee5212474"
+        },
+        {
+          "path": "function-call-stack-v506-missing-00664e40/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "0ac72b89a0437484f1977221e7121cb0fe610f23fad9274698413fea3eadd68f"
+        },
+        {
+          "path": "function-call-stack-v511-missing-005a8870/compiled-v2/libnfs_shift_pcode_supplement.so",
+          "sha256": "eed5be2c87e9f6a6f15966f12b9da9700bf2183c7f6125a9bbc45c3171daf4b2"
+        },
+        {
+          "path": "function-call-stack-v512-missing-0057da20/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "422334c8547a6a673b493a6d8fb01d019d0bf4864a896d8ef829ab6d726892d6"
+        },
+        {
+          "path": "function-call-stack-v513-missing-00584540/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "1f9cbb6464737be639bc117f95462bab7ac3c33e29b916ae70cbd9bcac593a52"
+        },
+        {
+          "path": "function-call-stack-v514-missing-00585bd0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "a755c3b1f86932075276662856dc8829160d20803b0388d38bffa5c21abfdadd"
+        },
+        {
+          "path": "function-call-stack-v515-missing-0058e0e0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "f93e84e3bd7ba172784a7f175bfb361ddfff19646e391b3bfcba4d9a5556b272"
+        },
+        {
+          "path": "function-call-stack-v516-missing-0058e100/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "226b748ba47e75964f209632585c41f40c498333fbbb20d090ce156d7d52b419"
+        },
+        {
+          "path": "function-call-stack-v517-missing-00586e90/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "e584b9e3bd5e158d70431310f02262455db0308efb4217fe10d30a7309fdc63f"
+        },
+        {
+          "path": "function-call-stack-v518-missing-00587080/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "23d47ba15732dc6ff49287c6e8a5fe1ce61e634a7902c5638c24512d51a62999"
+        },
+        {
+          "path": "function-call-stack-v519-missing-00587450/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "49acf70485a133bc4f280a404cb895921e2495653f5e9db88a233fad487ddc36"
+        },
+        {
+          "path": "function-call-stack-v520-missing-00587490/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "08faaeec1cdab8a8f7194c3729c6ff44dc101c0607a6b2a9af7236fd53b86e4f"
+        },
+        {
+          "path": "function-call-stack-v521-missing-005874d0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "19abc13f8a5f6bdf30d0ebec374e4bc18aa6683ba308598fc8911ed1c3184d6d"
+        },
+        {
+          "path": "function-call-stack-v522-missing-00587410/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "03b5e520d7791c627f499615c84d3e5c6bc4135c724650853549ae1ebdfb0c59"
+        },
+        {
+          "path": "function-call-stack-v523-missing-00597310/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "5031108aa0304cc86d7dd7c40daa0cdf9303a35f151e7613f7e9ac30bff82c8c"
+        },
+        {
+          "path": "function-call-stack-v524-missing-0058e1f0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "c9c80e4d3960a3ef8d5d85b5cdd8c34761fb736d605405df95bb5789ef869a28"
+        },
+        {
+          "path": "function-call-stack-v525-missing-00597350/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "e969587f397bd62f05f2b61b728939fec583569ee5d2f7768c36ca70099df187"
+        },
+        {
+          "path": "function-call-stack-v526-missing-00587c20/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "5da2b7138ad5ec38e40fc1571ff0a814084c53d6e8787348b10150385d733db3"
+        },
+        {
+          "path": "function-call-stack-v542-missing-005879f0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "831512b517de69174714c40af95fc3cc0688b2ce295172ef99ad8b24dad864c0"
+        },
+        {
+          "path": "function-call-stack-v543-missing-00587b90/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "4fea893726135e4611928c3c08d54f95919840fb570e2b09fba90f2a8371cd2d"
+        },
+        {
+          "path": "function-call-stack-v544-missing-00587c80/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "a3bf7c726b9fce3b8a0c4cd4ddfaa9ce2429a70cf5445e328692b9a974f9c8d3"
+        },
+        {
+          "path": "function-call-stack-v545-missing-00587a30/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "817dcf68698426aa88b1baadf33fe8cbeaac96a52dce510c8dc2db10ff570a0b"
+        },
+        {
+          "path": "function-call-stack-v546-missing-00587ab0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "92a4d32f285fc8d3207015595f2792ac90eb282965b96e20600538fb4e0802eb"
+        },
+        {
+          "path": "function-call-stack-v547-missing-00587b30/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "da4cde255ab056a551e017930a52226dba78818c9729c565255b63e082472150"
+        },
+        {
+          "path": "function-call-stack-v548-missing-00587a70/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "5f5ca68c804a2bb3e694c1d8075ed2bd11653e5257fcebab155660e4e688d368"
+        },
+        {
+          "path": "function-call-stack-v549-missing-00587af0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "8792c214951c279066d40539373a136a838ee1da5d425a9d9ee41cfbbb236a04"
+        },
+        {
+          "path": "function-call-stack-v550-missing-0058e360/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "cb175a217fbcafbab0efb4bc2837dad1032cb6e147e3b2bfde7d41b52c8b5f10"
+        },
+        {
+          "path": "function-call-stack-v551-missing-00597320/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "2c1f0fb4557c47f114b2e24f4b31519e84c56c90feb55051ce7f367433204d2b"
+        },
+        {
+          "path": "function-call-stack-v552-missing-00584570/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "73138ad59299030acfe34faff9a75ea5424e71e309ec53c38f29ebdaa5596347"
+        },
+        {
+          "path": "function-call-stack-v553-missing-0057da50/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "f30462707bab43a3c89726817dd5092d4e7e58d076ee88097f072ec58286270a"
+        },
+        {
+          "path": "function-call-stack-v554-missing-00404278/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "660a16daa5af6f258758c6fc7cb616f870043066378c6a7bb362c85b4147d322"
+        },
+        {
+          "path": "function-call-stack-v555-missing-005b0810/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "0f52e2fff34af53b5821cc7138f4e15657c417896b33244ba8182e1c011ac04c"
+        },
+        {
+          "path": "function-call-stack-v557-missing-005d5f40/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "0a83c1ff8fb55f9cebb77284aa5629c9003fd1c6e56b452d3abfdbb67c97b5cf"
+        },
+        {
+          "path": "function-call-stack-v558-missing-005fdd70/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "036c97498324958f7514c99de9d9e289a1381228356175f4d4894ff92b6a15cc"
+        },
+        {
+          "path": "function-call-stack-v560-missing-0058e370/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "603946fe1321ccb6b6f92e9288a554c10cc0891fe2864b6ed33019a32562a4ea"
+        },
+        {
+          "path": "function-call-stack-v562-missing-0058e330/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "5b1bfa1f197344fcea64b27c098f6150259e4f2dc6336c9038371732317d8778"
+        },
+        {
+          "path": "function-call-stack-v563-missing-0058e350/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "357a3600d94ff3dbab1ebbf9a98b45cc07f95ed25cb3837d4b4f1640e71b37ee"
+        },
+        {
+          "path": "function-call-stack-v564-missing-005b4e90/compiled-v2/libnfs_shift_pcode_supplement.so",
+          "sha256": "d1c9896c996c20033da7d68647f812f85bcdf63bc585835099cb3dc976318e8d"
+        },
+        {
+          "path": "function-call-stack-v565-missing-005f3200/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "16812d812a60f43a7c4fd3a1cf8f0bc91326277c9fc439c95aacda5bb54af2b3"
+        },
+        {
+          "path": "function-call-stack-v566-missing-005f44b0/compiled-dynamic-branch-v1/libnfs_shift_pcode_supplement.so",
+          "sha256": "aa7d059f1ac96efa1585b60c26d85a04f5056b28f848f73cfb08a07bf8ca5c3e"
+        },
+        {
+          "path": "function-call-stack-v567-missing-005f3e50/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "f11552980f1c5b6604bc7f1b78471505aa6c9f344f286e1897ef3485ef66f722"
+        },
+        {
+          "path": "function-call-stack-v569-missing-005aa6d0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "5596a62cc62faac80f284ac3feecd3e4f2ab52cc1fcfa327b389252faae23f87"
+        },
+        {
+          "path": "function-call-stack-v570-missing-005aa6f0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "c8f3f05a3bd2969d12cae89a7cfcfcf939a57ed8d95a030e91877b1baea71713"
+        },
+        {
+          "path": "function-call-stack-v571-missing-005aa880/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "15158d2a01dfa7085ce77d3ff50e5d22d0b61f6f0a7e957f53662a95a327a905"
+        },
+        {
+          "path": "function-call-stack-v572-missing-005aa840/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "479458bdd663ebf728fffb08d5c4a1699fd5f2ff9ad930853703878ac0d92b1f"
+        },
+        {
+          "path": "function-call-stack-v573-missing-006bb560/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "15217606217ac25407a3e9455103e0e5489d8239a5e523d6fa0402b22b9d9a92"
+        },
+        {
+          "path": "function-call-stack-v574-missing-0043d650/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "168d60124e028688912d616901c840a7fcde3a2be2d037043dc1c891ba4ac4c9"
+        },
+        {
+          "path": "function-call-stack-v580-missing-0048d9d0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "e6774b7f16f7f8cef8c54e63a8ee6aa4aadb09c0c45cc6e99d58d545b0c46a53"
+        },
+        {
+          "path": "function-call-stack-v581-missing-004b1770/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "ff122b9d3b344e407ca889be8e3206b3eadc36a5fdacc8b0c0de7201de07a88e"
+        },
+        {
+          "path": "function-call-stack-v582-missing-004fdf30/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "a007560911fb458f067fc05309700ea576d3974b579d4fa831d4e3cf5f47cd0a"
+        },
+        {
+          "path": "function-call-stack-v587-missing-00839ee0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "6db319357f8536dc41f12261b47b95294d8d92c1a5c9dc71b98d0ac6e223e18b"
+        },
+        {
+          "path": "function-call-stack-v588-missing-00824100/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "1b9704300948855ffd130736167020f4970ac56cd447ac39e2e9ca7bc1187193"
+        },
+        {
+          "path": "function-call-stack-v589-missing-008240e0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "fbb53d1c18697deaefde6b1fe9e7de81bb3ccc251063087d74f0b6a0af207901"
+        },
+        {
+          "path": "function-call-stack-v590-missing-00699230/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "7f9dfeb3d41085c8fb68c3ee562cdf556a314a03316cbb3866ff6a9458f2de36"
+        },
+        {
+          "path": "function-call-stack-v599-missing-0082e810/compiled-retry/libnfs_shift_pcode_supplement.so",
+          "sha256": "7c7c97480323f94d3d5dcf8b0b07562b172eaa09b1cb018643c9a8233f3bc2a4"
+        },
+        {
+          "path": "function-call-stack-v600-missing-00846470/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "355bdbf6415653b36f4fffd4eb4d3769c9a5997ec4f3b21ef4fd7b2fe266604f"
+        },
+        {
+          "path": "function-call-stack-v601-missing-00853ec0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "083d47e96ac03e2da18feaec0f091ac6d6b8f79422baa51ab17c04070edc8595"
+        },
+        {
+          "path": "function-call-stack-v602-missing-00846670/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "5c33bbb7a4d75860e568f99ba5f7f8444b1b8c75bfa1ef3394716073337908f0"
+        },
+        {
+          "path": "function-call-stack-v603-missing-00853dd0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "8036e493dd75578c0fa35ad319e17ad42b83eab7fcaf31850898755475e45f6d"
+        },
+        {
+          "path": "function-call-stack-v604-missing-00846610/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "bb160697e1719c12f81f6c0d63688e4d512c98af3a3ecac6853ee90b33b60348"
+        },
+        {
+          "path": "function-call-stack-v605-missing-006369bc/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "924392e319233674700bd64f54aa596f8833a45993a6271371e4616c36109c2d"
+        },
+        {
+          "path": "function-call-stack-v606-missing-0067c565/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "66a6ab90a0d7af280ca1b75394378c4c53734fc8f9723af562b565f431079454"
+        },
+        {
+          "path": "function-call-stack-v607-missing-00853e60/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "d6686dc057ba50fb7b9bfe7d439d63658483d47667bef5a49c0dbd266998f60b"
+        },
+        {
+          "path": "function-call-stack-v608-missing-006ab760/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "5b6be0c4252934fd53b475a1d6b2420268fd3e37e9fed1cdcbee3908783c0e99"
+        },
+        {
+          "path": "function-call-stack-v609-missing-00823db0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "7fe4e91931ee18a03a7eda9fcea44bd7874d058308c7d7e0934b5c6dc294f391"
+        },
+        {
+          "path": "function-call-stack-v610-missing-006aaed0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "9d1dd6431703808bed5056e558c1dbf8cbddbc4ae08dd2303ea8eff4a99ae1db"
+        },
+        {
+          "path": "function-call-stack-v611-missing-0082dc90/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "ecbad17d294f3f637ce5a4a5e1921d97ad4b912bebbf3bc26a0da8d7de0242e5"
+        },
+        {
+          "path": "function-call-stack-v612-missing-006288b0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "c42b6fbf0147450df52ae8c2059dadbe66b29aa82198de8eef040e658ac0e176"
+        },
+        {
+          "path": "function-call-stack-v613-missing-00625da0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "63f3946ec190376028e2ec35e798b07551ae539034bdb2c58ce062d6e33d6eb0"
+        },
+        {
+          "path": "function-call-stack-v614-missing-00429d90/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "27a91fb0d04a604f512d6e92219f5c57311c9e45061da66b5a4b3dbad1ae980a"
+        },
+        {
+          "path": "function-call-stack-v615-missing-006397b0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "29fe12d256a8f27724dbbeb569d0f08ec893b70940c6f332e167e992ffa85118"
+        },
+        {
+          "path": "function-call-stack-v616-missing-00548070/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "76dd2e5899a5804bfb3269ef33ab829746ff5f6fb800cd181712f3a54957b4b4"
+        },
+        {
+          "path": "function-call-stack-v617-missing-00702e80/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "4275b98e061fa5baaaaf82e47d353eda3566d0be816d5931096e25e6dc54b0d4"
+        },
+        {
+          "path": "function-call-stack-v618-missing-00639b20/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "16e33881dd59548b0e9aefa06e180d3e7fcd3d153d7b189e682488733a0dc27e"
+        },
+        {
+          "path": "function-call-stack-v619-missing-006383e0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "67bedd1e91b29156188dc3f7d9b2f847458f6e0e69cb18fd8c869229322d24d4"
+        },
+        {
+          "path": "function-call-stack-v641-missing-00515970/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "ed165998112b8a06b210f6ab5bec1cd0f32546fef892e19044efb60d25ec4a44"
+        },
+        {
+          "path": "function-call-stack-v642-missing-00515a60/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "ae30fab2e20b76a588888cc473abfd1a906da288ba9a554991ad86e018a6eed2"
+        },
+        {
+          "path": "function-call-stack-v643-missing-00515b80/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "94287328fabaee9a90002103132635b7bc951d90b414716e5e4d8bfa5c03a3f5"
+        },
+        {
+          "path": "function-call-stack-v644-missing-00515d80/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "20b353a1ecc7db4b3e994fd2fad889586ee5a962afeda59c5c3a9d9123c96bb3"
+        },
+        {
+          "path": "function-call-stack-v645-missing-00516120/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "5d957eba251b736fc2eab6a5c7ffcfc372318f647f6c681e7a0595fc57c17ec8"
+        },
+        {
+          "path": "function-call-stack-v646-missing-00516120-getter-suffix/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "c8dfe346a5629f6c9ba4673932f61d7bc34e1ce7bcc544a486b3baf5dccf917b"
+        },
+        {
+          "path": "function-call-stack-v647-missing-005136a0-getter-prefix/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "e66b3e17e00a68307d4fd4626e4876f8e561bd5b88851b83ec17fe78e5274dc6"
+        },
+        {
+          "path": "function-call-stack-v648-missing-0082d280/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "4c47f6d283fed1783bc7f15135d5fdc237a1989de304cfbaeb2da308732cda9f"
+        },
+        {
+          "path": "function-call-stack-v649-missing-008329e0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "56a3fc39f56dcbdd921069c274c347b26d7b340c4a867474afa88bfce5323950"
+        },
+        {
+          "path": "function-call-stack-v650-missing-00894da0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "b75cb7493b315bebfb6d4ef2435fb4e876795ec5398ff43e21ad8eb65f18622d"
+        },
+        {
+          "path": "function-call-stack-v652-missing-0088a2c0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "26174599965c5731364eba74082b90448086583d10382a26c54590e55ee47c64"
+        },
+        {
+          "path": "function-call-stack-v653-missing-007d6570/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "4e0defd60bf865c0d2c419f7c74a5cc07b1bc6449baf67b59cea1439a990569a"
+        },
+        {
+          "path": "function-call-stack-v654-missing-00698390/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "a846e93262d2ccb76f6e5fa3f4b44865bbb83b87a248ab0efcd5da90893a58fa"
+        },
+        {
+          "path": "function-call-stack-v657-missing-0040ae20/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "e3eff70ec06b7db4be957ff4e9a0442287bd575ebd6f02efe79d79e3bbde54a8"
+        },
+        {
+          "path": "function-call-stack-v658-missing-005ab3f0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "535769373f90007dc8abc7e606b8019277165d0dcc07567a4f2671629a48328a"
+        },
+        {
+          "path": "function-call-stack-v659-missing-005a0ef0/compiled/libnfs_shift_pcode_supplement.so",
+          "sha256": "1fcb541b83a0733f811a1ca32637c687c2871ea92ba5560cb78f4391bb1256fa"
+        }
+      ]
+    },
+    "preflight": {},
+    "timeout_seconds": 180,
+    "trace_environment": {
+      "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x005092F0,0x005093A0,0x005088A0",
+      "SHIFT_TRACE_GUEST_CALL_TARGET_SLOTS": "0x14,0x28,0x2d,0xac,0xad,0x110",
+      "SHIFT_TRACE_GUEST_PROVENANCE": "0x27DFA629"
+    },
+    "validation": true
+  },
+  "probe_log_sha256": "1b83f1b60c30882712a16150864cca513b8b0274acfdbdff01a3416a333c2441",
+  "retail_rendering_proven": false,
+  "return_address": null,
+  "status": "host-frame-loop",
+  "unique_functions": 4733,
+  "validation_errors": 0,
+  "worker_waiting_count": 4
+}
