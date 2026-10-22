@@ -21,8 +21,11 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   modes, border code, filters, and anisotropy to semantic values; they are not
   yet applied to a Vulkan view or sampler. The captured black border code has
   unresolved alpha, so the backend does not guess a Vulkan border color. The
-  untile path rejects other pitches, formats, dimensions, and layouts. Its
-  address mapping is cross-checked against the public
+  captured color/depth target, viewport, and screen/window scissor are also
+  decoded into a bounded neutral state contract. This does not map Xenos EDRAM
+  tiles to Vulkan images or create a pipeline. All these capture decoders
+  reject unsupported forms. The untile path rejects other pitches, formats,
+  dimensions, and layouts. Its address mapping is cross-checked against the public
   [Xenia `Tiled2D` implementation](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/texture_address.h);
   descriptor enum meanings are cross-checked against the public
   [Xenos register definitions](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h).

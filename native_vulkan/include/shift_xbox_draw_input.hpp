@@ -118,6 +118,52 @@ struct CapturedTextureSampling {
     bool border_alpha_known;
 };
 
+enum class CapturedColorTargetFormat : uint8_t {
+    Rgba8Gamma,
+};
+
+enum class CapturedDepthTargetFormat : uint8_t {
+    D24S8,
+};
+
+struct CapturedRasterRegisters {
+    uint32_t surface_info;
+    uint32_t color_info;
+    uint32_t depth_info;
+    uint32_t mode_control;
+    uint32_t depth_control;
+    uint32_t color_mask;
+    uint32_t viewport_x_scale;
+    uint32_t viewport_x_offset;
+    uint32_t viewport_y_scale;
+    uint32_t viewport_y_offset;
+    uint32_t screen_scissor_tl;
+    uint32_t screen_scissor_br;
+    uint32_t window_offset;
+    uint32_t window_scissor_tl;
+    uint32_t window_scissor_br;
+};
+
+struct CapturedRasterState {
+    uint32_t width;
+    uint32_t height;
+    uint32_t sample_count;
+    uint32_t color_base_tiles;
+    CapturedColorTargetFormat color_format;
+    uint32_t depth_base_tiles;
+    CapturedDepthTargetFormat depth_format;
+    uint32_t color_write_mask;
+    bool viewport_y_flipped;
+    bool depth_test_enabled;
+    bool depth_write_enabled;
+    bool stencil_test_enabled;
+    uint32_t scissor_x0;
+    uint32_t scissor_y0;
+    uint32_t scissor_x1;
+    uint32_t scissor_y1;
+    bool scissor_has_area;
+};
+
 // Translates only the captured PM4_DRAW_INDX form. This decodes the guest
 // command into renderer inputs; it does not execute or emulate Xenos state.
 bool decode_captured_draw_indx(
@@ -144,6 +190,14 @@ bool decode_captured_texture_fetch(
 bool decode_captured_texture_sampling(
     const CapturedTextureFetch& texture,
     CapturedTextureSampling* output,
+    std::string* error);
+
+// Decodes only the captured color/depth target, viewport, and scissor form.
+// This maps observed registers to neutral render state; it does not emulate
+// register writes or Xenos rasterization.
+bool decode_captured_raster_state(
+    const CapturedRasterRegisters& registers,
+    CapturedRasterState* output,
     std::string* error);
 
 // Untiles the captured 8_8_8_8, 8-in-32, tiled 2D texture into linear texel

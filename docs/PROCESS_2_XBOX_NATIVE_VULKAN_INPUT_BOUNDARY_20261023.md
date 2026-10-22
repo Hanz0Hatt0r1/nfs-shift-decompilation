@@ -11,10 +11,11 @@ boundary which translates the title's actual draw inputs into the existing
 neutral render contract. The production path must not load or depend on
 `rexgpu-xenos` or another Xenos GPU emulator.
 
-This report does not add a packet format from guesswork. No raw ring capture or
-confirmed XEX-originated indexed draw is available in the evidence reviewed
-here, so shader, register, resource, and draw semantics are not yet safe to
-implement.
+The evidence below now contains one correlated XEX-originated `PM4_DRAW_INDX`
+packet, its resources, shaders, and a register-file snapshot. The project-owned
+frontend decodes only those captured packet, descriptor, texture-layout,
+sampler, and target/scissor forms. It still does not translate the captured
+shaders, allocate a native target, or submit this draw.
 
 ## Source and branch baseline
 
@@ -158,6 +159,20 @@ draw, rather than merely nearby active-looking registers:
   `5fda214bf53b3f88909fa90c014b9c42de0a3278138df24049af918344489f28`); its
   texture fetch references descriptor 0.
 
+The register snapshot is a little-endian register-file image. Using the public
+Xenia register map and field definitions to name the captured addresses, the
+observed target state is `RB_SURFACE_INFO=0x14000500`,
+`RB_COLOR_INFO=0x00010000`, `RB_DEPTH_INFO=0x000002d0`,
+`RB_MODECONTROL=4`, `RB_DEPTHCONTROL=0x00700770`, and `RB_COLOR_MASK=0xf`.
+The viewport words decode to X scale/offset 640/640 and Y scale/offset
+-360/360, so the target extent is 1280x720 with inverted Y. The window scissor
+registers are `PA_SC_WINDOW_SCISSOR_TL=0` and
+`PA_SC_WINDOW_SCISSOR_BR=0x02d00500`, or (0,0)-(1280,720); the screen scissor
+is (0,0)-(8192,8192). The captured scissor therefore has area. Register names
+are cross-checked against the public [Xenia register map](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/register_table.inc)
+and [register fields](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/registers.h),
+documentation only, with no Xenia runtime dependency.
+
 Read-only disassembly of that captured pair narrows the independent translator
 needed for this draw:
 
@@ -190,8 +205,12 @@ normalizer handles only the two captured buffer orders (8-in-16 indices and
 8-in-32 vertex words). The exact 1024x256 texture layout is untiled to linear
 texel order with its captured 8-in-32 byte swap. The sampling decoder maps the
 captured swizzle, channel signs, clamps, filters, anisotropy, and border code
-to semantic values; it rejects reserved selector values. Border code 0 has
-unresolved alpha, so the Vulkan border color is not guessed. Regressions cover
+to semantic values; it rejects reserved selector values. A bounded raster
+decoder maps the captured single-sample 1280x720 gamma RGBA8/D24S8 target,
+centered viewport, write/depth enables, and intersected scissor. It does not
+map Xenos EDRAM tile storage to a Vulkan image or create a pipeline. Border
+code 0 has unresolved alpha, so the Vulkan border color is not guessed.
+Regressions cover
 the captured packet and descriptors, layout boundaries, byte order, sampling
 semantics, and unsupported or truncated inputs. The code does not interpret a
 general Xenos register stream, translate shaders, or issue Vulkan commands.
@@ -207,7 +226,8 @@ claim.
 ## Local checks
 
 - `shift_xbox_draw_input_check`: passed; covers the captured packet, mismatched
-  binding, unsupported opcode/layout/sampling values, and truncated input.
+  binding, target format/viewport/scissor state, unsupported opcode/layout/
+  sampling values, non-zero window offsets, and truncated input.
 - The C++ check passed in the host build and as an arm64-v8a binary on a Redmi
   Note 8 Pro (Android API 33).
 - `tools/run_linux_vulkan_smoke.py ... --validation`: the neutral synthetic BMW
@@ -216,8 +236,8 @@ claim.
 
 ## Next native-renderer work
 
-Next, resolve the remaining captured texture-view/sampler semantics and render
-target/pipeline state, then translate the exact guest shader pair to
+Next, resolve the captured texture's Vulkan view/sampler conversion and the
+EDRAM target-to-image contract, then translate the exact guest shader pair to
 project-owned Vulkan 1.1 SPIR-V. Connect only those verified inputs to the
 Vulkan core and submit this captured draw. Unsupported packet forms, resource
 formats, state, and shader instructions must fail closed. The product consumes

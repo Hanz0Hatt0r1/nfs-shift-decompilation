@@ -1,5 +1,8 @@
 #include "shift_xbox_draw_input.hpp"
 
+#include <algorithm>
+#include <cmath>
+#include <cstring>
 #include <limits>
 #include <utility>
 
@@ -45,6 +48,25 @@ bool fail(const char* message, std::string* error) {
         *error = message;
     }
     return false;
+}
+
+float register_float(uint32_t bits) {
+    static_assert(sizeof(float) == sizeof(bits), "32-bit register float required");
+    float value;
+    std::memcpy(&value, &bits, sizeof(value));
+    return value;
+}
+
+bool viewport_dimension(float half_extent, uint32_t* extent) {
+    if (!std::isfinite(half_extent) || half_extent <= 0.0f) {
+        return false;
+    }
+    const double pixels = std::round(static_cast<double>(half_extent) * 2.0);
+    if (pixels < 1.0 || pixels > std::numeric_limits<uint32_t>::max()) {
+        return false;
+    }
+    *extent = static_cast<uint32_t>(pixels);
+    return static_cast<double>(half_extent) * 2.0 == pixels;
 }
 
 }  // namespace
@@ -268,6 +290,88 @@ bool decode_captured_texture_sampling(
         static_cast<TextureAnisotropy>(texture.aniso_filter),
         static_cast<TextureBorderColor>(texture.border_color),
         texture.border_color == 1,
+    };
+    if (error) {
+        error->clear();
+    }
+    return true;
+}
+
+bool decode_captured_raster_state(
+    const CapturedRasterRegisters& registers,
+    CapturedRasterState* output,
+    std::string* error) {
+    if (!output) {
+        return fail("invalid captured raster-state output", error);
+    }
+
+    const uint32_t surface_pitch = registers.surface_info & 0x3FFFu;
+    const uint32_t msaa_samples = (registers.surface_info >> 16) & 0x3u;
+    const uint32_t color_format = (registers.color_info >> 16) & 0xFu;
+    const uint32_t depth_format = (registers.depth_info >> 16) & 0x1u;
+    if (registers.mode_control != 4 || msaa_samples != 0 ||
+        color_format != 1 || depth_format != 0 ||
+        (registers.color_info & ~0x000F0FFFu) != 0 ||
+        (registers.depth_info & ~0x00010FFFu) != 0 ||
+        (registers.color_mask & ~0xFu) != 0 || registers.window_offset != 0) {
+        return fail("unsupported captured target or raster state", error);
+    }
+
+    const float x_scale = register_float(registers.viewport_x_scale);
+    const float x_offset = register_float(registers.viewport_x_offset);
+    const float y_scale = register_float(registers.viewport_y_scale);
+    const float y_offset = register_float(registers.viewport_y_offset);
+    uint32_t width = 0;
+    uint32_t height = 0;
+    if (!viewport_dimension(x_scale, &width) || !viewport_dimension(-y_scale, &height) ||
+        x_offset != x_scale || y_offset != -y_scale || surface_pitch != width) {
+        return fail("unsupported captured viewport or surface pitch", error);
+    }
+
+    // The screen scissor uses signed 15-bit coordinates. The window scissor
+    // uses unsigned 14-bit coordinates and may add a signed offset. This
+    // captured form has only non-negative screen bounds and a zero offset.
+    constexpr uint32_t kScreenReservedOrNegative = 0xC000C000u;
+    constexpr uint32_t kWindowTlReserved = 0x4000C000u;
+    constexpr uint32_t kWindowBrReserved = 0xC000C000u;
+    if ((registers.screen_scissor_tl & kScreenReservedOrNegative) != 0 ||
+        (registers.screen_scissor_br & kScreenReservedOrNegative) != 0 ||
+        (registers.window_scissor_tl & kWindowTlReserved) != 0 ||
+        (registers.window_scissor_br & kWindowBrReserved) != 0) {
+        return fail("unsupported captured scissor encoding", error);
+    }
+
+    uint32_t x0 = std::max(registers.screen_scissor_tl & 0x7FFFu,
+                           registers.window_scissor_tl & 0x3FFFu);
+    uint32_t y0 = std::max((registers.screen_scissor_tl >> 16) & 0x7FFFu,
+                           (registers.window_scissor_tl >> 16) & 0x3FFFu);
+    uint32_t x1 = std::min(registers.screen_scissor_br & 0x7FFFu,
+                           registers.window_scissor_br & 0x3FFFu);
+    uint32_t y1 = std::min((registers.screen_scissor_br >> 16) & 0x7FFFu,
+                           (registers.window_scissor_br >> 16) & 0x3FFFu);
+    x0 = std::min(x0, width);
+    y0 = std::min(y0, height);
+    x1 = std::max(x0, std::min(x1, width));
+    y1 = std::max(y0, std::min(y1, height));
+
+    *output = CapturedRasterState{
+        width,
+        height,
+        1,
+        registers.color_info & 0xFFFu,
+        CapturedColorTargetFormat::Rgba8Gamma,
+        registers.depth_info & 0xFFFu,
+        CapturedDepthTargetFormat::D24S8,
+        registers.color_mask & 0xFu,
+        y_scale < 0.0f,
+        ((registers.depth_control >> 1) & 1u) != 0,
+        ((registers.depth_control >> 2) & 1u) != 0,
+        (registers.depth_control & 1u) != 0,
+        x0,
+        y0,
+        x1,
+        y1,
+        x1 > x0 && y1 > y0,
     };
     if (error) {
         error->clear();

@@ -111,6 +111,39 @@ int main() {
                 !texture_sampling.border_alpha_known,
             "captured texture sampler interpretation changed");
 
+    const shift::xbox::CapturedRasterRegisters captured_raster_registers{
+        0x14000500u, 0x00010000u, 0x000002D0u, 0x00000004u,
+        0x00700770u, 0x0000000Fu, 0x44200000u, 0x44200000u,
+        0xC3B40000u, 0x43B40000u, 0x00000000u, 0x20002000u,
+        0x00000000u, 0x00000000u, 0x02D00500u,
+    };
+    shift::xbox::CapturedRasterState raster_state{};
+    require(shift::xbox::decode_captured_raster_state(
+                captured_raster_registers, &raster_state, &error),
+            "captured Xbox target and raster state was rejected");
+    require(raster_state.width == 1280 && raster_state.height == 720 &&
+                raster_state.sample_count == 1 && raster_state.color_base_tiles == 0 &&
+                raster_state.color_format ==
+                    shift::xbox::CapturedColorTargetFormat::Rgba8Gamma &&
+                raster_state.depth_base_tiles == 720 &&
+                raster_state.depth_format ==
+                    shift::xbox::CapturedDepthTargetFormat::D24S8,
+            "captured Xbox render target interpretation changed");
+    require(raster_state.color_write_mask == 0xFu && raster_state.viewport_y_flipped &&
+                !raster_state.depth_test_enabled && !raster_state.depth_write_enabled &&
+                !raster_state.stencil_test_enabled,
+            "captured Xbox depth or color write state changed");
+    require(raster_state.scissor_x0 == 0 && raster_state.scissor_y0 == 0 &&
+                raster_state.scissor_x1 == 1280 && raster_state.scissor_y1 == 720 &&
+                raster_state.scissor_has_area,
+            "captured Xbox scissor bounds changed");
+
+    shift::xbox::CapturedRasterRegisters unsupported_raster = captured_raster_registers;
+    unsupported_raster.window_offset = 1;
+    require(!shift::xbox::decode_captured_raster_state(
+                unsupported_raster, &raster_state, &error),
+            "uncaptured non-zero window offset was accepted");
+
     shift::xbox::CapturedTextureFetch white_border_texture = texture_fetch;
     white_border_texture.border_color = 1;
     require(shift::xbox::decode_captured_texture_sampling(
