@@ -24,7 +24,7 @@ Do not assume that the PC `SHIFT.exe` shares addresses, call conventions, resour
 
 ## Why ReXGlue, and what it does not guarantee
 
-ReXGlue is an upstream, early-development PPC AOT project with Xbox 360 runtime infrastructure and an Xenos/Vulkan graphics backend. The SDK includes Linux x86-64/ARM64 build targets and Android-related platform interfaces; this is **not** proof that an NFS SHIFT Android executable builds, launches, renders or plays. Upstream versions may change APIs; lock a tested commit before importing headers or code.
+ReXGlue is an upstream, early-development PPC AOT project with Xbox 360 runtime infrastructure and an Xenos/Vulkan graphics backend. The local Linux AMD64 package is linked to the official v0.10.0 source commit `f5337cdc947ff6d4c4196737e2c807a48f2a1fc2`; this diagnostic pin is recorded in the ledger but is not yet a checked-in build integration. The SDK includes Linux x86-64/ARM64 build targets and Android-related platform interfaces; this is **not** proof that an NFS SHIFT Android executable builds, launches, renders or plays. Future SDK changes must be separately versioned and audited.
 
 References:
 - https://github.com/rexglue/rexglue-sdk
