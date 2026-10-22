@@ -32,7 +32,7 @@ This is the **register-receiver / no-explicit-stack-argument** ABI proven by byt
 
 ## 2. Complete code path, direct reads, branches and nested-call ABI
 
-The **entire original 20-instruction function** is reproduced unchanged in Appendix A. It contains only one nested direct call and no other outgoing calls or loops.
+The **entire original 17-instruction function** is reproduced unchanged in Appendix A. It contains only one nested direct call and no other outgoing calls or loops.
 
 ### 2.1 First guard and zero constant
 
@@ -151,7 +151,7 @@ The outer routine's new values are not proof that its nested helper was run, nor
 
 ## 5. Evidence separation and finite runtime limit
 
-**Original retail PE facts (directly verified):** original SHA; direct callsite **`0x00474D7F → 0x00508E40`** and return address `0x00474D84`; exact 22 original decoded instructions in Appendix A; ECX=O; incoming EDX overwritten with `[O+0x30]`; no explicit stack args; branch on old +0x30, then byte +0x3C; conditional outgoing **`CALL 0x0064F250`** with ECX=old `DWORD[O+0x38]`; conditional zero store +0x30 and unconditional zero stores +0x34/+0x38; preserved EBX/ESI; plain RET; unconstrained EAX return.
+**Original retail PE facts (directly verified):** original SHA; direct callsite **`0x00474D7F → 0x00508E40`** and return address `0x00474D84`; exact 17 original decoded instructions in Appendix A; ECX=O; incoming EDX overwritten with `[O+0x30]`; no explicit stack args; branch on old +0x30, then byte +0x3C; conditional outgoing **`CALL 0x0064F250`** with ECX=old `DWORD[O+0x38]`; conditional zero store +0x30 and unconditional zero stores +0x34/+0x38; preserved EBX/ESI; plain RET; unconstrained EAX return.
 
 **Runtime supplied in context, not reproduced here:** v791 was a bounded replay of the **original PE under Linux P-code guest execution**, with count `DWORD[O+0x14]=9`, later guard AL=0 and writer zero store `BYTE[O+0x2D]=0`. No provided trace proves **`0x00508E40` was reached**, whether its old +0x30 was nonzero, or whether `0x0064F250` ran; thus **no live cleanup occurrence** is claimed. No native Windows/Wine launch or rendered menu/race is claimed; the previous replay did not establish guest draw translation or retail rendering.
 
