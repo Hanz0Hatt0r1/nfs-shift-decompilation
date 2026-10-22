@@ -23,25 +23,35 @@
     "X0": {
       "key": "xbox360_retail_input",
       "status": "verified",
-      "evidence": ["evidence/xbox360_rexglue_preflight_20261022.md#xex-identity"],
+      "evidence": [
+        "evidence/xbox360_rexglue_preflight_20261022.md#xex-identity"
+      ],
       "note": "User-provided external retail XEX hash and title identity verified; no game binary or assets are tracked"
     },
     "X1": {
       "key": "rexglue_ppc_codegen",
       "status": "in_progress",
-      "evidence": ["evidence/xbox360_rexglue_preflight_20261022.md#compiler-preflight"],
-      "note": "SDK 0.10.0 is pinned to its official source tag; PPC image mapping and lowering diagnostics remain unresolved"
+      "evidence": [
+        "evidence/xbox360_rexglue_preflight_20261022.md#compiler-preflight",
+        "evidence/xbox360_function_8264f580.json"
+      ],
+      "note": "SDK v0.10.0 is pinned; live memory proves the missing vtable thunk and a function-discovery override plus static regression are recorded. Forced codegen remains blocked by SIGBUS during guest shared-memory initialization."
     },
     "X2": {
       "key": "linux_x86_64_guest_boot",
       "status": "in_progress",
-      "evidence": ["evidence/xbox360_rexglue_preflight_20261022.md#linux-runtime-evidence"],
-      "note": "Original guest execution reached GPU startup, then trapped on indirect target 0x8264F580"
+      "evidence": [
+        "evidence/xbox360_rexglue_preflight_20261022.md#linux-runtime-evidence",
+        "evidence/xbox360_function_8264f580.json"
+      ],
+      "note": "The startup target 0x8264F580 is an observed two-instruction thunk to 0x8264D9D0. A local generated-source equivalent compiled and linked, but its runtime rerun SIGBUSed before guest function-table initialization; no advancement is claimed."
     },
     "X3": {
       "key": "xenos_vulkan_retail_frame",
       "status": "in_progress",
-      "evidence": ["evidence/xbox360_rexglue_preflight_20261022.md#linux-runtime-evidence"],
+      "evidence": [
+        "evidence/xbox360_rexglue_preflight_20261022.md#linux-runtime-evidence"
+      ],
       "note": "Xenos/Vulkan pipeline lookup occurred, but async placeholder handling skipped the real guest draw and frame presentation"
     },
     "X4": {
@@ -59,7 +69,9 @@
     "X6": {
       "key": "vulkan_1_1_compatibility",
       "status": "in_progress",
-      "evidence": ["evidence/xbox360_rexglue_preflight_20261022.md#sdk-source-pin-and-vulkan-1.1-audit"],
+      "evidence": [
+        "evidence/xbox360_rexglue_preflight_20261022.md#sdk-source-pin-and-vulkan-1.1-audit"
+      ],
       "note": "Source audit found a Vulkan 1.1 path but three optional feature bits are hard requirements; device feature probe and retail draw/present proof are pending"
     }
   }
