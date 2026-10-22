@@ -66,6 +66,11 @@ Only scalar rows satisfying all of these are promoted into the Ghidra literal-wr
 - operand 0 is a memory expression containing an exact positive `+0x374` term and a 32-bit GPR base/index;
 - the instruction mnemonic is in the same explicit write/RMW family used by the raw-retail whole-image probe.
 
+The operand parser accepts Ghidra's typed aliases (`float ptr`, `double ptr`, and
+`long double ptr`) as well as x86 size names such as `DWORD PTR`. Ghidra emits
+`float ptr` for x87 `FSTP` destinations that raw objdump renders as `DWORD PTR`;
+excluding that spelling creates a false missing-writer mismatch.
+
 First-memory forms with the same displacement but a mnemonic outside the write allowlist are retained separately. LEA/address arithmetic and other non-destination scalar uses are counted but not promoted.
 
 The reconciliation is complete only when the Ghidra candidate site set equals the raw-retail literal writer site set exactly. Missing and extra sites are emitted separately; `--fail-on-mismatch` returns a non-zero exit status for either condition.
@@ -94,6 +99,31 @@ external_provider_count = 7
 
 A Ghidra/raw site-set match is a decoder/export consistency result, not Participants Manager identity.
 
+## Retail reconciliation result (2026-10-22)
+
+The pinned analyzed Ghidra `SHIFT.exe` export for exact scalar `0x374` produced
+170 rows. With the typed-operand parser fix, it yields 25 literal writer
+candidates; the raw-retail inventory also contains 25. The intersection is 25,
+with no missing or extra sites. In particular, the x87 stores at `0x004826a6`,
+`0x00865013`, and `0x00a44ac5` now reconcile as `FSTP float ptr [...]`.
+
+The seven other first-operand memory forms remain non-writes (`CMP`). The output
+is preserved as
+`evidence/p1b_manager374_ghidra_plus374_reconciliation_20261022.json`.
+Input identities for this run:
+
+```text
+scalar-use JSONL SHA-256: 204ac152800019db021a1c0c7f584b68c7978d468dc5fbe28df5115d2d877ef1
+Ghidra binary.json SHA-256: 709a287ca9eec0599252baefe6abf356f2e4e04652ade140a1f10d381e5865df
+raw retail inventory SHA-256: 95ab9638e2925a339a01d2893eed88430a88f136136539ebc06d5711221248b8
+reconciliation JSON SHA-256: e07849a60ed41501c767eee6304d25b3b1bc9289710e38e9734b25fc2a18bfe0
+```
+
+Regression coverage is in
+`tests/test_process1b_manager374_ghidra_plus374_writer_reconciliation.py`.
+All semantic receiver/root gates remain false and the external provider count
+remains 7; this result only verifies Ghidra/raw instruction-site agreement.
+
 ## Limits
 
 This reconciliation covers literal destination `+0x374` stores/RMWs only. Address-materialized stores are owned by the already merged materialized/computed contracts. Helper-returned roots, externally/runtime initialized memory, non-vtable indirect setters, generated/self-modifying code and arbitrary process mutation remain separate surfaces.
@@ -102,4 +132,4 @@ No numeric offset equality is used as object identity.
 
 ## Next
 
-Run the reconciliation on the pinned Ghidra project. If it matches the 25-site raw-retail inventory, reuse the Ghidra listing path for narrowly targeted unknown-root/helper investigations while preserving the existing raw-retail contracts as semantic authority. The final manager/HDVehicle identity and `0x004b86cf` slot2 adjudication remain blocked until those surviving origin/setter classes close.
+Use the verified Ghidra listing path for narrowly targeted unknown-root/helper investigations while preserving the existing raw-retail contracts as semantic authority. The final manager/HDVehicle identity and `0x004b86cf` slot2 adjudication remain blocked until those surviving origin/setter classes close.

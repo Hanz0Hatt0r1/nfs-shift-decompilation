@@ -36,7 +36,7 @@ WRITE_MNEMONICS = {
 }
 
 MEM = re.compile(
-    r"^(?:(?:byte|word|dword|qword|xmmword|tbyte)\s+ptr\s+)?"
+    r"^(?:(?:byte|word|dword|qword|xmmword|tbyte|float|double|long\s+double)\s+ptr\s+)?"
     r"(?:(?:cs|ds|es|fs|gs|ss):)?\[([^\]]+)\]$",
     re.I,
 )
@@ -244,9 +244,8 @@ def build_payload(rows: list[dict], binary: dict, raw_inventory: dict, raw_sites
             "Numeric offset equality is never Participants Manager or HDVehicle identity."
         ],
         "next_step": (
-            "Run ShiftScalarUseExporter.java for scalar 0x374 on the pinned analyzed SHIFT.exe, "
-            "reconcile against the 25-site raw-retail inventory, then use any mismatch only as a decoder/export audit issue; "
-            "continue root-origin/helper-setter closure separately."
+            "The pinned Ghidra exact-scalar export now reconciles all 25 literal +0x374 writer sites with the raw-retail inventory. "
+            "Continue root-origin/helper-setter closure separately; this decoder cross-check does not establish receiver identity."
         ),
     }
 
