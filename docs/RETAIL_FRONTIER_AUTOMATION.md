@@ -914,3 +914,13 @@ global BeginStateBlock reachability: aliases outside the immediate windows and
 computed or later dispatches remain unresolved. No new replay was run. The next
 bounded target is `0x0084D1A0`. See the
 [full getter-consumer report](../evidence/retail_frontier_20261022/process1_wrapper_adapter_getter_0082e110.md).
+
+The bounded v798 worker trace observed four original state words set to `2`
+by `0x00649CB0`, and two subsequent `0x006550F0` predicates returned `1`
+with those checked state bits set. A separate v801 import trace observed four
+`CreateThread` results, four successful `ResumeThread` returns, and a completed
+120-frame host loop. This means the older v520 “resumed but bit 2 clear” symptom
+did not recur on those observed objects; it does not establish complete worker
+lifecycle correctness, frontend readiness, or race entry. An earlier low-memory
+read at `0x75` came from ECX-relative trace sampling on `Sleep(1)` with `ECX=1`
+and was instrumentation-induced. See the [v798–v801 worker evidence](../evidence/retail_frontier_20261022/process1_worker_scheduler_v798_v801.md).
