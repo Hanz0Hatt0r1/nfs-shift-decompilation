@@ -1,4 +1,4 @@
-# Retail no-draw and P-code frontier: v747–v756
+# Retail no-draw and P-code frontier: v747–v757
 
 **Date:** 2026-10-22. **Scope:** original retail SHIFT.exe through the P-code runtime. This records runtime evidence only; it does not establish a completed game launch or race.
 
@@ -23,6 +23,7 @@
 | v754 | 120 frames; `0x0040BA50`, `0x0054BE00`, `0x00835D80`, `0x00409FF0`; sample `this+0x140D` | `0x0040BA50` entered once from `0x00A69160` with `ECX=0x00BBF960` and remained active at the probe snapshot. Its sampled DWORD at offset `0x140D` was `0x28000000`; the byte read by the retail branch is the low byte, `0x00`, so the branch at `0x0040BA70` was skipped. `0x0054BE00` ran 584 times and `0x00835D80` 584 times; all four draw imports remained empty. | `fe5673a928997932b2bda9b34c5429c0c6ea9a672637f8a60639c507558383bb` |
 | v755 | Same main-loop trace as v754 plus write provenance for `0x00BBFD6D` (`0x00BBF960+0x140D`) | The sampled byte remained zero and had no recorded P-code last writer in this bounded run. The main loop, frame-stage counts, no-draw imports, and clear/present behavior were consistent with v754. This does not establish the field's semantic name or prove it causes the missing frontend. | `c0add9c7ab94877347af3e21bd3fdd4272fdd2a1a1392036c91d93cbcffe6443` |
 | v756 | 120 frames; call traces for `0x0054BE00`, `0x0082F780`, `0x00853620`, `0x00853170`; renderer slots and all four draw imports | The primary renderer vtable slot `+0x138` entered `0x0082F780` 584 times from `0x0054BE00`; `0x0082F780` returned AL=1 and called `0x00853620` and `0x00853170` 584 times each, both returning AL=1. At `0x0082F780` entry, `[renderer+0x478]=0x2002D614` (device pointer) and `[renderer+0x694]=1`. The device/frame method ran, but Draw/DrawUP imports still had no events and capture remained empty. | `efe73c5ef8ee58a786dc43fe02229b0bdfc496ec1f8e20ca939b209deaf6e1e7` |
+| v757 | 120 frames; non-truncated call trace for the `0x0040BA50` frame path and its renderer children | `0x0040BA50` entered once from `0x00A69160` with ECX=`0x00BBF960` and was still active at the snapshot. It called `0x006492D0`, `0x00647EF0`, and `0x00405DA0` 585 times each; their observed EAX returns were respectively `0x00BFB4A0`, `0`, and `0`. `0x00409FF0` ran 585 times and returned `0x27DFA5F8`. From that object, `0x0054BE00` ran 585 times (584 completed with AL=1); the observed main-thread stack ended `0x0040BA50 -> 0x0054BE00 -> 0x0082F780 -> 0x00853170`. The renderer children completed as in v756. The 6,457-event call trace was not truncated; v757 did not select Draw/DrawUP import tracing, so it adds no new evidence about draw ingress. 120 frames, exit 0, 811,848 dispatches, 3,930 unique functions, and zero validation errors. | `194010bf1e870f6d08c46813189776341ea637edd3f5bccf2b4c07280f1f788d` |
 
 ## Evidence interpretation
 
@@ -36,6 +37,8 @@ The v753–v755 trace establishes the runtime path `0x00A69160 -> 0x0040BA50 -> 
 
 v756 establishes that the renderer's primary vtable slot `+0x138` reaches `0x0082F780` with a nonzero device pointer and in-frame byte set. This active setup path and its two children still produced no D3D9 Draw import entry. It narrows the frontier to later content/submission work without proving which guest function should submit a draw.
 
+The v757 call trace extends the active path one level outward. It confirms that the persistent `0x0040BA50` frame function repeatedly calls `0x00405DA0`, `0x00647EF0`, and the `0x00409FF0`-provided object before reaching the same renderer frame-stage path. The zero returns from `0x00405DA0` and `0x00647EF0` are observations only; their contracts and effect on frontend progress are not established. This run did not produce a Draw/DrawUP call or capture. Its 3,930 unique-function count is run telemetry and is not compared with other runs that may use different supplemental P-code manifests.
+
 ### v751 receiver and write provenance
 
 The wrapper entry was dispatch 462,712 (`caller=0x004E8BC0`, `return=0x004E8BE3`, `ECX=0x00BE2510`). Its nested initializer entry was dispatch 462,713 (`caller=0x0062FFD0`, `return=0x0062FFF6`, `ECX=0x00BE2510`); both returned `EAX=1`. The six initializer stack arguments were `0, 0x44, 4, 0x1f, 0, 0`, establishing a 0x44-byte element stride for this initialized container. At completion dispatch 462,758, the provenance record identified `0x0062FDE0` writing a four-byte zero to `0x00BE2534`. The v751 call trace and UI-gate trace were enabled and not truncated. Across 585 subsequent gate samples, that same write remained the last writer, so no later P-code write to the exact address occurred in this run.
@@ -44,4 +47,6 @@ Process 2's report `process-reports/2026-10-22-process2-v743-no-draw-frontier.md
 
 ## Next evidence target
 
-Finish Process 1's analysis of candidate add function `0x004CB900` against the v751 receiver/stride evidence. Then analyze the executed retail frame-stage function `0x0082F780` and its `0x00853620` / `0x00853170` path using complete blocks and v756 receiver/register evidence. Also resolve the role and initializer of `[0x00BBF960+0x140D]` from `0x0040BA50`; do not force either field or claim causality until the retail state transition is identified.
+Finish Process 1's analysis of candidate add function `0x004CB900` against the v751 receiver/stride evidence. Next, analyze the now-confirmed per-frame call `0x00405DA0` against the v757 receiver and arguments, then use its actual contract to decide whether `0x00647EF0` or another caller is the next useful target. The v757 run also reproduces the `0x0082F780` / `0x00853620` / `0x00853170` frame-stage path. Resolve the role and initializer of `[0x00BBF960+0x140D]` from `0x0040BA50` only if subsequent evidence connects it to frontend progress; do not force fields or claim causality.
+
+The v757 pinned runtime SHA-256 is `dc66d4b3f7d6a10ca101d71fb1e1e7503653757e3b4606bf7e65bdb88bc023f7`; its report SHA-256 is `6304183f0e9119291a46df6e29af17a742055ea67c3c2790e862f611c50d2418`. The full log and report are retained outside the repository at `/tmp/process1-retail-runtime-evidence/quantum-v757-frame-path.log` and `quantum-v757-frame-path.json`.
