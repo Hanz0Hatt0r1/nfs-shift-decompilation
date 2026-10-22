@@ -31,6 +31,13 @@ struct CapturedTextureFetch {
     uint32_t guest_address;
     uint32_t format;
     uint32_t endian_mode;
+    uint32_t sign_x;
+    uint32_t sign_y;
+    uint32_t sign_z;
+    uint32_t sign_w;
+    uint32_t clamp_x;
+    uint32_t clamp_y;
+    uint32_t clamp_z;
     uint32_t width;
     uint32_t height;
     uint32_t pitch;
@@ -41,6 +48,9 @@ struct CapturedTextureFetch {
     uint32_t min_filter;
     uint32_t mip_filter;
     uint32_t aniso_filter;
+    bool integer_format;
+    uint32_t border_color;
+    bool border_size;
     bool tiled;
 };
 

@@ -74,6 +74,12 @@ int main() {
                 texture_fetch.mag_filter == 1 && texture_fetch.min_filter == 1 &&
                 texture_fetch.mip_filter == 2 && texture_fetch.aniso_filter == 0,
             "captured texture sampling fields changed");
+    require(texture_fetch.sign_x == 3 && texture_fetch.sign_y == 3 &&
+                texture_fetch.sign_z == 3 && texture_fetch.sign_w == 0 &&
+                texture_fetch.clamp_x == 6 && texture_fetch.clamp_y == 6 &&
+                texture_fetch.clamp_z == 0 && !texture_fetch.integer_format &&
+                texture_fetch.border_color == 0 && !texture_fetch.border_size,
+            "captured texture channel or clamp state changed");
 
     std::vector<uint8_t> tiled_texture(texture_fetch.byte_length);
     const size_t texture_pixels = texture_fetch.byte_length / 4;

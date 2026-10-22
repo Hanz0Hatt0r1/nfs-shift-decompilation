@@ -174,6 +174,13 @@ bool decode_captured_texture_fetch(
         ((descriptor_words[1] >> 12) & 0xFFFFFu) << 12,
         format,
         endian_mode,
+        (descriptor_words[0] >> 2) & 0x3u,
+        (descriptor_words[0] >> 4) & 0x3u,
+        (descriptor_words[0] >> 6) & 0x3u,
+        (descriptor_words[0] >> 8) & 0x3u,
+        (descriptor_words[0] >> 10) & 0x7u,
+        (descriptor_words[0] >> 13) & 0x7u,
+        (descriptor_words[0] >> 16) & 0x7u,
         width,
         height,
         ((descriptor_words[0] >> 22) & 0x1FFu) << 5,
@@ -184,6 +191,9 @@ bool decode_captured_texture_fetch(
         (descriptor_words[3] >> 21) & 0x3u,
         (descriptor_words[3] >> 23) & 0x3u,
         (descriptor_words[3] >> 25) & 0x7u,
+        (descriptor_words[3] & 0x1u) != 0,
+        descriptor_words[5] & 0x3u,
+        (descriptor_words[3] >> 31) != 0,
         tiled != 0,
     };
     if (error) {

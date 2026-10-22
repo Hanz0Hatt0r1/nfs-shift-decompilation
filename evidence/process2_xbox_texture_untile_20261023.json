@@ -16,11 +16,23 @@
       "guest_address": "0x09d57000",
       "format": 6,
       "endian_mode": 2,
+      "channel_signs_xyzw": [3, 3, 3, 0],
+      "clamp_xyz": [6, 6, 0],
       "dimension": 1,
       "width": 1024,
       "height": 256,
       "pitch": 1024,
       "tiled": true,
+      "integer_format": false,
+      "border_color": 0,
+      "border_size": false,
+      "swizzle": "0x60a",
+      "filters": {
+        "mag": 1,
+        "min": 1,
+        "mip": 2,
+        "aniso": 0
+      },
       "mip_min_level": 0,
       "mip_max_level": 0
     }
