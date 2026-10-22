@@ -274,6 +274,10 @@ public:
     bool load_override_module(const std::string& shared_object_path);
     bool set_guest_display_mode(uint32_t width, uint32_t height,
                                 uint32_t refresh_rate, uint32_t format);
+    bool post_guest_key_event(uint32_t virtual_key, uint32_t scan_code,
+                              bool extended, bool key_down,
+                              bool shift_down, bool caps_locked,
+                              int32_t client_x, int32_t client_y);
     bool set_guest_d3d9_adapter_info(
         const RecompiledGuestD3d9AdapterInfo& adapter_info);
     uint64_t dispatched_function_count() const;

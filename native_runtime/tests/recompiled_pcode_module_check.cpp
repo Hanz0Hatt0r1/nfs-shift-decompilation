@@ -606,7 +606,8 @@ void write_system_parameters_info_pe32_fixture(
     bool reg_open_key_ex_w_import = false,
     bool register_device_notification_w_import = false,
     bool unregister_device_notification_import = false,
-    bool direct_input8_create_import = false) {
+    bool direct_input8_create_import = false,
+    bool message_pump_imports = false) {
     if (static_cast<unsigned>(find_window_w_import) +
             static_cast<unsigned>(reg_open_key_ex_w_import) +
             static_cast<unsigned>(register_device_notification_w_import) +
@@ -660,7 +661,7 @@ void write_system_parameters_info_pe32_fixture(
 
     write_u32(bytes, 0x400, 0x2200);
     write_u32(bytes, 0x40c, 0x2080);
-    write_u32(bytes, 0x410, 0x2060);
+    write_u32(bytes, 0x410, message_pump_imports ? 0x2300 : 0x2060);
     write_u32(bytes, 0x600, 0x2090);
     write_u32(bytes, 0x604, 0x20b0);
     write_u32(bytes, 0x608, 0x20d0);
@@ -713,6 +714,32 @@ void write_system_parameters_info_pe32_fixture(
     std::copy_n("CreateWindowExW", 16, bytes.begin() + 0x5a2);
     std::copy_n("ClipCursor", 11, bytes.begin() + 0x5d2);
     std::copy_n("ShowWindow", 11, bytes.begin() + 0x5e2);
+    if (message_pump_imports) {
+        const std::array<std::pair<const char*, uint32_t>, 4> extra_imports =
+            {{{"GetMessageW", 0x2240},
+              {"TranslateMessage", 0x2260},
+              {"DispatchMessageW", 0x2280},
+              {"DefWindowProcW", 0x22a0}}};
+        for (size_t index = 0; index < extra_imports.size(); ++index) {
+            const size_t thunk_offset = 0x620 + index * sizeof(uint32_t);
+            const size_t iat_offset =
+                0x700 + (8 + index) * sizeof(uint32_t);
+            const size_t name_offset = 0x640 + index * 0x20;
+            write_u32(bytes, thunk_offset, extra_imports[index].second);
+            write_u32(bytes, iat_offset, extra_imports[index].second);
+            write_u16(bytes, name_offset, 0);
+            const char* name = extra_imports[index].first;
+            std::copy_n(name, std::char_traits<char>::length(name) + 1,
+                        bytes.begin() + name_offset + 2);
+        }
+        constexpr std::array<uint32_t, 8> base_import_names = {
+            0x2090, 0x20b0, 0x20d0, 0x20f0,
+            0x2170, 0x21a0, 0x21d0, 0x21e0};
+        for (size_t index = 0; index < 8; ++index) {
+            write_u32(bytes, 0x700 + index * sizeof(uint32_t),
+                      base_import_names[index]);
+        }
+    }
 
     std::ofstream file(path, std::ios::binary | std::ios::trunc);
     require(static_cast<bool>(file),
@@ -1208,6 +1235,11 @@ int main(int argc, char** argv) {
              ("shift-runtime-directinput8create-" + std::to_string(getpid()) +
               ".exe"))
                 .string();
+        const std::string message_pump_fixture_path =
+            (std::filesystem::temp_directory_path() /
+             ("shift-runtime-user32-messagepump-" + std::to_string(getpid()) +
+              ".exe"))
+                .string();
         const std::string wsa_startup_fixture_path =
             (std::filesystem::temp_directory_path() /
              ("shift-runtime-wsastartup-" + std::to_string(getpid()) +
@@ -1245,6 +1277,9 @@ int main(int argc, char** argv) {
             true);
         write_system_parameters_info_pe32_fixture(
             direct_input8_create_fixture_path, false, false, false, false,
+            true);
+        write_system_parameters_info_pe32_fixture(
+            message_pump_fixture_path, false, false, false, false, false,
             true);
         write_wsa_startup_pe32_fixture(wsa_startup_fixture_path);
         write_d3d9_pe32_fixture(argv[8]);
@@ -2936,6 +2971,137 @@ int main(int argc, char** argv) {
                         message_after_peek.data() + 16) &&
                     message_after_peek == initial_message,
                 "PeekMessageW modified MSG when no queued message existed");
+
+        shift::runtime::RecompiledPcodeModule message_pump_module(argv[1]);
+        const auto message_pump_image =
+            message_pump_module.load_pe32_image(message_pump_fixture_path);
+        require(message_pump_image.import_module_count == 2 &&
+                    message_pump_image.import_function_count == 13,
+                "Win32 message-pump fixture imports were not parsed");
+        const uint32_t message_pump_iat =
+            message_pump_image.image_base + 0x2300;
+        const uint32_t message_peek =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 4);
+        const uint32_t register_class =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 16);
+        const uint32_t create_window =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 20);
+        const uint32_t show_window_import =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 28);
+        const uint32_t get_message =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 32);
+        const uint32_t translate_message =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 36);
+        const uint32_t dispatch_message =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 40);
+        const uint32_t def_window_proc =
+            read_guest_u32(message_pump_module, "ram", message_pump_iat + 44);
+        constexpr uint32_t message_class_address = 0x00034000;
+        constexpr uint32_t message_class_name_address = 0x00034100;
+        constexpr uint32_t message_window_title_address = 0x00034120;
+        constexpr uint32_t message_output_address = 0x00034200;
+        write_guest_u32(message_pump_module, "ram", message_class_address, 48);
+        write_guest_u32(message_pump_module, "ram", message_class_address + 8,
+                        def_window_proc);
+        write_guest_u32(message_pump_module, "ram", message_class_address + 40,
+                        message_class_name_address);
+        const std::array<uint8_t, 4> message_class_name = {'M', 0, 0, 0};
+        const std::array<uint8_t, 2> message_window_title = {0, 0};
+        write_guest_bytes(message_pump_module, message_class_name_address,
+                          message_class_name.data(),
+                          message_class_name.size());
+        write_guest_bytes(message_pump_module,
+                          message_window_title_address,
+                          message_window_title.data(),
+                          message_window_title.size());
+        require(invoke_import(message_pump_module, register_class,
+                              {message_class_address}) == 1,
+                "message-pump fixture could not register its guest WndProc");
+        const std::vector<uint32_t> message_create_arguments = {
+            0, message_class_name_address, message_window_title_address,
+            0x80000000, 0, 0, 640, 480, 0, 0,
+            message_pump_image.image_base, 0};
+        const uint32_t message_window = invoke_import(
+            message_pump_module, create_window, message_create_arguments);
+        require(message_window == 0x00030008 &&
+                    invoke_import(message_pump_module, show_window,
+                                  {message_window, 5}) == 0,
+                "message-pump fixture did not create and show its HWND");
+        require(message_pump_module.post_guest_key_event(
+                    'A', 0x1e, false, true, false, false, 17, 29),
+                "host key event was not queued for the guest window");
+        const auto message_contents = [&](uint32_t address) {
+            std::array<uint32_t, 7> words{};
+            auto* bytes = reinterpret_cast<uint8_t*>(words.data());
+            require(message_pump_module.read_guest("ram", address, 16,
+                                                   bytes) &&
+                        message_pump_module.read_guest(
+                            "ram", address + 16, sizeof(words) - 16,
+                            bytes + 16),
+                    "could not read guest MSG fixture");
+            return words;
+        };
+        require(invoke_import(message_pump_module, message_peek,
+                              {message_output_address, message_window,
+                               0, 0, 0}) == 1 &&
+                    message_contents(message_output_address)[1] == 0x0100,
+                "PeekMessageW did not observe the queued WM_KEYDOWN");
+        require(invoke_import(message_pump_module, message_peek,
+                              {message_output_address, message_window,
+                               0, 0, 0}) == 1,
+                "PM_NOREMOVE unexpectedly removed the queued key message");
+        require(invoke_import(message_pump_module, get_message,
+                              {message_output_address, message_window,
+                               0, 0}) == 1,
+                "GetMessageW did not remove the queued key message");
+        const auto key_down_message = message_contents(message_output_address);
+        require(key_down_message[0] == message_window &&
+                    key_down_message[1] == 0x0100 &&
+                    key_down_message[2] == 'A' &&
+                    key_down_message[3] == 0x001e0001 &&
+                    key_down_message[5] == 17 && key_down_message[6] == 29,
+                "guest WM_KEYDOWN fields did not match the posted key event");
+        require(invoke_import(message_pump_module, translate_message,
+                              {message_output_address}) == 1,
+                "TranslateMessage did not enqueue the matching WM_CHAR");
+        require(invoke_import(message_pump_module, dispatch_message,
+                              {message_output_address}) == 0,
+                "DispatchMessageW did not invoke the guest window procedure");
+        require(invoke_import(message_pump_module, message_peek,
+                              {message_output_address, message_window,
+                               0x0102, 0x0102, 1}) == 1,
+                "PeekMessageW did not return the translated WM_CHAR");
+        const auto character_message =
+            message_contents(message_output_address);
+        require(character_message[1] == 0x0102 &&
+                    character_message[2] == 'a' &&
+                    invoke_import(message_pump_module, translate_message,
+                                  {message_output_address}) == 0 &&
+                    invoke_import(message_pump_module, dispatch_message,
+                                  {message_output_address}) == 0,
+                "translated WM_CHAR did not preserve message-pump semantics");
+        std::array<uint8_t, 28> empty_queue_message{};
+        empty_queue_message.fill(0x5a);
+        write_guest_bytes(message_pump_module, message_output_address,
+                          empty_queue_message.data(),
+                          empty_queue_message.size());
+        require(invoke_import(message_pump_module, message_peek,
+                              {message_output_address, message_window,
+                               0, 0, 0}) == 0 &&
+                    message_contents(message_output_address) ==
+                        std::array<uint32_t, 7>{
+                            0x5a5a5a5a, 0x5a5a5a5a, 0x5a5a5a5a,
+                            0x5a5a5a5a, 0x5a5a5a5a, 0x5a5a5a5a,
+                            0x5a5a5a5a},
+                "empty PeekMessageW modified the caller's MSG");
+        require(message_pump_module.post_guest_key_event(
+                    'A', 0x1e, false, false, false, false, 17, 29) &&
+                    invoke_import(message_pump_module, message_peek,
+                                  {message_output_address, message_window,
+                                   0x0101, 0x0101, 1}) == 1 &&
+                    (message_contents(message_output_address)[3] &
+                     0xc0000000) == 0xc0000000,
+                "guest WM_KEYUP transition bits or range filtering failed");
         constexpr uint32_t system_parameters_buffer = 0x00033000;
         const std::array<std::array<uint32_t, 2>, 5> accessibility_apis =
             {{{0x0032, 0x0033}, {0x0034, 0x0035}, {0x0036, 0x0037},

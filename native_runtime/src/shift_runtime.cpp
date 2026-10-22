@@ -1940,20 +1940,105 @@ struct Window {
         height = requested_height;
     }
 
-    void poll(bool& quit, InputState& input, std::string& quit_reason) {
+    void poll(bool& quit, InputState& input, std::string& quit_reason,
+              shift::runtime::RecompiledPcodeModule* guest_module) {
         while (xcb_generic_event_t* raw = xcb_poll_for_event(connection)) {
             const uint8_t type = raw->response_type & 0x7f;
             if (type == XCB_KEY_PRESS || type == XCB_KEY_RELEASE) {
                 const auto* event =
                     reinterpret_cast<const xcb_key_press_event_t*>(raw);
                 const bool pressed = type == XCB_KEY_PRESS;
+                uint32_t virtual_key = 0;
+                uint32_t scan_code = 0;
+                bool extended = false;
                 switch (event->detail) {
-                    case 9:
-                        if (pressed) {
-                            quit = true;
-                            quit_reason = "escape_key";
-                        }
+                    case 9: virtual_key = 0x1b; scan_code = 0x01; break;
+                    case 10: virtual_key = '1'; scan_code = 0x02; break;
+                    case 11: virtual_key = '2'; scan_code = 0x03; break;
+                    case 12: virtual_key = '3'; scan_code = 0x04; break;
+                    case 13: virtual_key = '4'; scan_code = 0x05; break;
+                    case 14: virtual_key = '5'; scan_code = 0x06; break;
+                    case 15: virtual_key = '6'; scan_code = 0x07; break;
+                    case 16: virtual_key = '7'; scan_code = 0x08; break;
+                    case 17: virtual_key = '8'; scan_code = 0x09; break;
+                    case 18: virtual_key = '9'; scan_code = 0x0a; break;
+                    case 19: virtual_key = '0'; scan_code = 0x0b; break;
+                    case 22: virtual_key = 0x08; scan_code = 0x0e; break;
+                    case 23: virtual_key = 0x09; scan_code = 0x0f; break;
+                    case 24: virtual_key = 'Q'; scan_code = 0x10; break;
+                    case 25: virtual_key = 'W'; scan_code = 0x11; break;
+                    case 26: virtual_key = 'E'; scan_code = 0x12; break;
+                    case 27: virtual_key = 'R'; scan_code = 0x13; break;
+                    case 28: virtual_key = 'T'; scan_code = 0x14; break;
+                    case 29: virtual_key = 'Y'; scan_code = 0x15; break;
+                    case 30: virtual_key = 'U'; scan_code = 0x16; break;
+                    case 31: virtual_key = 'I'; scan_code = 0x17; break;
+                    case 32: virtual_key = 'O'; scan_code = 0x18; break;
+                    case 33: virtual_key = 'P'; scan_code = 0x19; break;
+                    case 36: virtual_key = 0x0d; scan_code = 0x1c; break;
+                    case 37: virtual_key = 0x11; scan_code = 0x1d; break;
+                    case 38: virtual_key = 'A'; scan_code = 0x1e; break;
+                    case 39: virtual_key = 'S'; scan_code = 0x1f; break;
+                    case 40: virtual_key = 'D'; scan_code = 0x20; break;
+                    case 41: virtual_key = 'F'; scan_code = 0x21; break;
+                    case 42: virtual_key = 'G'; scan_code = 0x22; break;
+                    case 43: virtual_key = 'H'; scan_code = 0x23; break;
+                    case 44: virtual_key = 'J'; scan_code = 0x24; break;
+                    case 45: virtual_key = 'K'; scan_code = 0x25; break;
+                    case 46: virtual_key = 'L'; scan_code = 0x26; break;
+                    case 50: virtual_key = 0x10; scan_code = 0x2a; break;
+                    case 52: virtual_key = 'Z'; scan_code = 0x2c; break;
+                    case 53: virtual_key = 'X'; scan_code = 0x2d; break;
+                    case 54: virtual_key = 'C'; scan_code = 0x2e; break;
+                    case 55: virtual_key = 'V'; scan_code = 0x2f; break;
+                    case 56: virtual_key = 'B'; scan_code = 0x30; break;
+                    case 57: virtual_key = 'N'; scan_code = 0x31; break;
+                    case 58: virtual_key = 'M'; scan_code = 0x32; break;
+                    case 62: virtual_key = 0x10; scan_code = 0x36; break;
+                    case 65: virtual_key = 0x20; scan_code = 0x39; break;
+                    case 66: virtual_key = 0x14; scan_code = 0x3a; break;
+                    case 64: virtual_key = 0x12; scan_code = 0x38; break;
+                    case 105:
+                        virtual_key = 0x11;
+                        scan_code = 0x1d;
+                        extended = true;
                         break;
+                    case 108:
+                        virtual_key = 0x12;
+                        scan_code = 0x38;
+                        extended = true;
+                        break;
+                    case 111:
+                        virtual_key = 0x26;
+                        scan_code = 0x48;
+                        extended = true;
+                        break;
+                    case 113:
+                        virtual_key = 0x25;
+                        scan_code = 0x4b;
+                        extended = true;
+                        break;
+                    case 114:
+                        virtual_key = 0x27;
+                        scan_code = 0x4d;
+                        extended = true;
+                        break;
+                    case 116:
+                        virtual_key = 0x28;
+                        scan_code = 0x50;
+                        extended = true;
+                        break;
+                    default:
+                        break;
+                }
+                if (guest_module && virtual_key != 0) {
+                    (void)guest_module->post_guest_key_event(
+                        virtual_key, scan_code, extended, pressed,
+                        (event->state & XCB_MOD_MASK_SHIFT) != 0,
+                        (event->state & XCB_MOD_MASK_LOCK) != 0,
+                        event->event_x, event->event_y);
+                }
+                switch (event->detail) {
                     case 24:
                         if (pressed) {
                             quit = true;
@@ -5032,7 +5117,8 @@ int main(int argc, char** argv) {
             std::chrono::steady_clock::now();
 
         while (loop_policy.should_continue(quit, rendered)) {
-            window.poll(quit, live_input, quit_reason);
+            window.poll(quit, live_input, quit_reason,
+                        recompiled_module.get());
 
             if (recompiled_module && args.recompiled_entrypoint_enabled) {
                 const int result = recompiled_module->run_guest_threads();
