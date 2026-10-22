@@ -13,6 +13,9 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
 - cubemap packet;
 - SPIR-V reflection and interface gates;
 - BMW material→DDS→Vulkan adapter;
+- a separately tested, bounded decoder for the captured Xbox `PM4_DRAW_INDX`
+  form. It is not yet wired to Vulkan submission and does not emulate a Xenos
+  GPU;
 - Linux CI coverage for native smoke paths.
 
 ## Rules
@@ -32,6 +35,7 @@ The backend is not yet a complete production renderer. Full BMW shader/material 
 ```bash
 cmake -S native_vulkan -B native_vulkan/build
 cmake --build native_vulkan/build --config Release
+ctest --test-dir native_vulkan/build --output-on-failure
 ./native_vulkan/build/shift_vulkan_probe
 ./native_vulkan/build/shift_vulkan_headless_clear out/shift_vulkan_headless.ppm
 ```

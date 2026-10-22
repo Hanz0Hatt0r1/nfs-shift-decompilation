@@ -4,6 +4,15 @@ project(shift_vulkan_probe LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+enable_testing()
+
+add_library(shift_xbox_draw_input STATIC src/xbox_draw_input.cpp)
+target_include_directories(shift_xbox_draw_input PUBLIC include)
+
+add_executable(shift_xbox_draw_input_check tests/xbox_draw_input_check.cpp)
+target_link_libraries(shift_xbox_draw_input_check PRIVATE shift_xbox_draw_input)
+add_test(NAME shift_xbox_draw_input_check COMMAND shift_xbox_draw_input_check)
+
 find_package(Vulkan QUIET)
 
 if(NOT Vulkan_FOUND)
