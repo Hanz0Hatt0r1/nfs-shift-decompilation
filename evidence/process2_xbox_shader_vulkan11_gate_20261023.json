@@ -1,0 +1,46 @@
+{
+  "format": "SHIFT.Process2XboxShaderVulkan11GateEvidence/1",
+  "diagnostic_modules": {
+    "source": "temporary SPIR-V emitted by the external Xenos plugin for the captured VS/PS pair; used only as an oracle",
+    "vertex_sha256": "d27ca93242a83ccb67613b53243bd4531fbf56783770bc14adc71cfd2791ad29",
+    "pixel_sha256": "6c0ec0128dddd1522492363c8f68bc0648798af4544d97033fdad13284a78a7d",
+    "stored_in_repository": false,
+    "product_dependency": false
+  },
+  "tool": {
+    "name": "SPIRV-Tools spirv-val / spirv-as",
+    "version": "2026.3 vulkan-sdk-1.4.357.0"
+  },
+  "checks": [
+    {
+      "input": "original SPIR-V 1.5 diagnostic vertex and pixel modules",
+      "target": "vulkan1.1",
+      "result": "rejected",
+      "reason": "SPIR-V 1.5 is above the Vulkan 1.1 core target's accepted SPIR-V 1.3 version"
+    },
+    {
+      "input": "temporary copies with only the SPIR-V version word changed to 1.3",
+      "target": "vulkan1.1",
+      "result": "rejected",
+      "reason": "SignedZeroInfNanPreserve capability is not allowed by the Vulkan 1.1 core target"
+    },
+    {
+      "input": "temporary SPIR-V 1.3 assembly with SPV_KHR_float_controls declared",
+      "target": "vulkan1.1spv1.4",
+      "result": "rejected",
+      "reason": "header-only downgrade retains Uniform-storage variables in OpEntryPoint interfaces, which SPIR-V 1.3 does not permit"
+    }
+  ],
+  "interpretation": {
+    "header_only_downgrade_is_valid_translation": false,
+    "project_owned_shader_translation_required": true,
+    "vulkan11_portability_rule": "emit a legal Vulkan 1.1 SPIR-V module and gate optional float-control execution modes on advertised device support",
+    "float_controls_reference": "https://github.com/KhronosGroup/Vulkan-Docs/blob/main/appendices/VK_KHR_shader_float_controls.adoc",
+    "spirv_extension_reference": "https://github.khronos.org/SPIRV-Registry/extensions/KHR/SPV_KHR_float_controls.html"
+  },
+  "limitations": [
+    "No shader translator or product SPIR-V was emitted by this check.",
+    "The external diagnostic modules remain outside the product path and repository.",
+    "No captured Xbox Vulkan draw or retail-image parity is claimed."
+  ]
+}

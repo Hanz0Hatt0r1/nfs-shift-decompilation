@@ -30,9 +30,127 @@ uint32_t read_be32(const uint8_t* bytes) {
            (static_cast<uint32_t>(bytes[2]) << 8) | bytes[3];
 }
 
+void write_be32(uint8_t* bytes, uint32_t value) {
+    bytes[0] = static_cast<uint8_t>(value >> 24);
+    bytes[1] = static_cast<uint8_t>(value >> 16);
+    bytes[2] = static_cast<uint8_t>(value >> 8);
+    bytes[3] = static_cast<uint8_t>(value);
+}
+
 }  // namespace
 
 int main() {
+    const uint8_t shader_control_flow[] = {
+        0x00, 0x01, 0x10, 0x02, 0x00, 0x02, 0x10, 0x00, 0xC4, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x10, 0x02, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    std::vector<shift::xbox::CapturedShaderControlFlow> control_flow;
+    std::string error;
+    require(shift::xbox::decode_captured_shader_control_flow(
+                shader_control_flow, sizeof(shader_control_flow), &control_flow, &error),
+            "bounded shader control-flow prefix was rejected");
+    require(control_flow.size() == 4, "shader control-flow slot count changed");
+    require(control_flow[0].instruction_index == 0 &&
+                control_flow[0].opcode == shift::xbox::ShaderControlFlowOpcode::Exec &&
+                control_flow[0].address == 2 && control_flow[0].instruction_count == 1 &&
+                control_flow[0].sequence == 1,
+            "shader exec scheduling fields changed");
+    require(control_flow[1].instruction_index == 1 &&
+                control_flow[1].opcode == shift::xbox::ShaderControlFlowOpcode::Allocate &&
+                control_flow[1].allocation_size == 2 &&
+                control_flow[1].allocation_type == 2,
+            "shader export allocation fields changed");
+    require(control_flow[2].opcode == shift::xbox::ShaderControlFlowOpcode::ExecEnd &&
+                control_flow[2].address == 2 && control_flow[2].instruction_count == 1,
+            "shader exec-end fields changed");
+    require(control_flow[3].opcode == shift::xbox::ShaderControlFlowOpcode::Nop,
+            "shader control-flow NOP changed");
+
+    const uint8_t shader_branch_control_flow[] = {
+        0x00, 0x00, 0x10, 0x04, 0x00, 0x02, 0x10, 0x00, 0xB6, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x20, 0x03, 0x10, 0x04, 0xB0, 0x00, 0x20, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    std::vector<shift::xbox::CapturedShaderControlFlow> branch_control_flow;
+    require(shift::xbox::decode_captured_shader_control_flow(
+                shader_branch_control_flow, sizeof(shader_branch_control_flow),
+                &branch_control_flow, &error),
+            "shader control-flow branches were rejected");
+    require(branch_control_flow.size() == 8 &&
+                branch_control_flow[1].opcode ==
+                    shift::xbox::ShaderControlFlowOpcode::ConditionalJump &&
+                branch_control_flow[1].address == 2 &&
+                branch_control_flow[1].bool_constant == 128 &&
+                branch_control_flow[1].condition &&
+                !branch_control_flow[1].unconditional &&
+                branch_control_flow[2].opcode ==
+                    shift::xbox::ShaderControlFlowOpcode::ConditionalJump &&
+                branch_control_flow[2].address == 3 &&
+                branch_control_flow[2].unconditional,
+            "shader conditional and unconditional jump fields changed");
+
+    uint8_t vertex_shader_fetch_bytes[12];
+    write_be32(vertex_shader_fetch_bytes, 0x82343840u);
+    write_be32(vertex_shader_fetch_bytes + 4, 0x00070123u);
+    write_be32(vertex_shader_fetch_bytes + 8, 0x7FFFFE05u);
+    uint8_t texture_shader_fetch_bytes[12];
+    write_be32(texture_shader_fetch_bytes, 0x0C702081u);
+    write_be32(texture_shader_fetch_bytes + 4, 0x00000555u);
+    write_be32(texture_shader_fetch_bytes + 8, 0x80004000u);
+    shift::xbox::CapturedShaderFetchInstruction fetch{};
+    require(shift::xbox::decode_captured_shader_fetch_instruction(
+                vertex_shader_fetch_bytes, sizeof(vertex_shader_fetch_bytes), &fetch, &error),
+            "captured vfetch_full instruction was rejected");
+    require(fetch.kind == shift::xbox::CapturedShaderFetchKind::VertexFull &&
+                fetch.fetch_constant_index == 10 && fetch.source_register == 2 &&
+                fetch.destination_register == 3 && fetch.source_swizzle == 2 &&
+                fetch.destination_swizzle == 0x123 && fetch.vertex_format == 7 &&
+                fetch.vertex_stride == 5 && fetch.vertex_offset == -2 &&
+                fetch.source_relative && fetch.destination_relative,
+            "vfetch_full fields changed");
+    require(shift::xbox::decode_captured_shader_fetch_instruction(
+                texture_shader_fetch_bytes, sizeof(texture_shader_fetch_bytes), &fetch, &error),
+            "captured tfetch2D instruction was rejected");
+    require(fetch.kind == shift::xbox::CapturedShaderFetchKind::Texture2D &&
+                fetch.fetch_constant_index == 7 && fetch.texture_dimension == 1 &&
+                fetch.source_register == 4 && fetch.destination_register == 2 &&
+                fetch.source_swizzle == 3 && fetch.destination_swizzle == 0x555 &&
+                fetch.predicate_condition,
+            "tfetch2D fields changed");
+    require(!shift::xbox::decode_captured_shader_fetch_instruction(
+                vertex_shader_fetch_bytes, sizeof(vertex_shader_fetch_bytes) - 1,
+                &fetch, &error),
+            "truncated shader fetch instruction was accepted");
+    uint8_t unsupported_shader_fetch[sizeof(vertex_shader_fetch_bytes)];
+    std::copy(vertex_shader_fetch_bytes,
+              vertex_shader_fetch_bytes + sizeof(vertex_shader_fetch_bytes),
+              unsupported_shader_fetch);
+    unsupported_shader_fetch[3] = 0x42;
+    require(!shift::xbox::decode_captured_shader_fetch_instruction(
+                unsupported_shader_fetch, sizeof(unsupported_shader_fetch), &fetch, &error),
+            "unsupported shader fetch opcode was accepted");
+
+    std::vector<shift::xbox::CapturedShaderControlFlow> unchanged_control_flow = control_flow;
+    require(!shift::xbox::decode_captured_shader_control_flow(
+                shader_control_flow, sizeof(shader_control_flow) - 4,
+                &control_flow, &error),
+            "truncated shader control-flow input was accepted");
+    require(control_flow.size() == unchanged_control_flow.size(),
+            "failed shader decode partially replaced its output");
+    uint8_t unsupported_shader_control_flow[sizeof(shader_control_flow)];
+    std::copy(shader_control_flow, shader_control_flow + sizeof(shader_control_flow),
+              unsupported_shader_control_flow);
+    unsupported_shader_control_flow[6] = 0xF0;
+    require(!shift::xbox::decode_captured_shader_control_flow(
+                unsupported_shader_control_flow, sizeof(unsupported_shader_control_flow),
+                &control_flow, &error),
+            "unsupported shader control-flow opcode was accepted");
+    require(control_flow.size() == unchanged_control_flow.size(),
+            "unsupported shader decode partially replaced its output");
+
     const uint8_t framed_stream[] = {
         0x00, 0x00, 0x00, 0x01, 0xAA, 0xBB, 0xCC, 0xDD, // type 0
         0x40, 0x00, 0x00, 0x00, 0x11, 0x22, 0x33, 0x44, // type 1
@@ -44,7 +162,6 @@ int main() {
         0x40, 0x00, 0x00, 0x06,                         // type 3 DRAW_INDX
     };
     std::vector<shift::xbox::PacketSpan> packet_spans;
-    std::string error;
     require(shift::xbox::scan_captured_packet_stream(
                 framed_stream, sizeof(framed_stream), &packet_spans, &error),
             "well-formed PM4 packet stream was rejected");

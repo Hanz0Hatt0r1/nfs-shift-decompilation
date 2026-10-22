@@ -37,6 +37,52 @@ struct PacketSpan {
     uint32_t opcode;
 };
 
+enum class ShaderControlFlowOpcode : uint8_t {
+    Nop = 0,
+    Exec = 1,
+    ExecEnd = 2,
+    ConditionalJump = 11,
+    Allocate = 12,
+};
+
+struct CapturedShaderControlFlow {
+    uint32_t instruction_index;
+    ShaderControlFlowOpcode opcode;
+    uint32_t address;
+    uint32_t instruction_count;
+    uint32_t sequence;
+    uint32_t bool_constant;
+    bool condition;
+    bool unconditional;
+    bool predicated;
+    bool jump_direction;
+    uint32_t allocation_size;
+    uint32_t allocation_type;
+    bool allocation_unserialized;
+};
+
+enum class CapturedShaderFetchKind : uint8_t {
+    VertexFull,
+    Texture2D,
+};
+
+struct CapturedShaderFetchInstruction {
+    CapturedShaderFetchKind kind;
+    uint32_t source_register;
+    uint32_t destination_register;
+    uint32_t source_swizzle;
+    uint32_t destination_swizzle;
+    uint32_t fetch_constant_index;
+    uint32_t vertex_format;
+    uint32_t vertex_stride;
+    int32_t vertex_offset;
+    uint32_t texture_dimension;
+    bool source_relative;
+    bool destination_relative;
+    bool predicated;
+    bool predicate_condition;
+};
+
 struct CapturedVertexFetch {
     uint32_t guest_address;
     uint32_t endian_mode;
@@ -196,6 +242,23 @@ bool scan_captured_packet_stream(
     const uint8_t* stream_bytes,
     size_t byte_length,
     std::vector<PacketSpan>* output,
+    std::string* error);
+
+// Decodes the bounded control-flow prefix of the captured Xbox shader format.
+// It preserves instruction scheduling and branch inputs but does not execute
+// shader instructions or translate them to SPIR-V.
+bool decode_captured_shader_control_flow(
+    const uint8_t* shader_bytes,
+    size_t byte_length,
+    std::vector<CapturedShaderControlFlow>* output,
+    std::string* error);
+
+// Decodes only the captured vfetch_full and tfetch2D 96-bit instruction forms.
+// It reads instruction bytes but does not perform a fetch or translate them.
+bool decode_captured_shader_fetch_instruction(
+    const uint8_t* instruction_bytes,
+    size_t byte_length,
+    CapturedShaderFetchInstruction* output,
     std::string* error);
 
 // Translates only the captured PM4_DRAW_INDX form. This decodes the guest

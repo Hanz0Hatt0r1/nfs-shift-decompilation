@@ -205,7 +205,36 @@ them because Vulkan 1.1 accepts SPIR-V only through 1.3. These temporary
 reference modules were kept outside the repository and are not an acceptable
 product dependency. The project needs its own shader translation that emits
 Vulkan 1.1-compatible SPIR-V and consumes project-owned resource/state
-contracts.
+contracts. Header-only downgrade probes are also invalid: changing the version
+to 1.3 exposes the optional `SignedZeroInfNanPreserve` float-control
+requirement. Adding `SPV_KHR_float_controls` still leaves SPIR-V 1.3 interface
+rules violated by the diagnostic module's Uniform variables in `OpEntryPoint`.
+Vulkan 1.1 can
+expose float-control modes through the optional
+[`VK_KHR_shader_float_controls` extension](https://github.com/KhronosGroup/Vulkan-Docs/blob/main/appendices/VK_KHR_shader_float_controls.adoc),
+so a project-owned emitter must generate a valid module and gate those modes on
+the target device's advertised support. Probe details are in
+`evidence/process2_xbox_shader_vulkan11_gate_20261023.json`.
+
+The project-owned shader-input decoder now also frames the bounded control-flow
+prefix of this exact Xbox bytecode. It unpacks two 64-bit control-flow records
+from each 96-bit big-endian triplet, using the first `exec`-family address as
+the same documented upper-bound heuristic used by the public Xenia
+[`ucode.h`](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/ucode.h)
+decoder.
+The captured VS yields 10 slots (five `exec` clauses, two output allocations,
+`exece`, and `cnop`); the PS yields eight slots (three conditional jumps,
+three `exec` clauses, color allocation, and `exece`). The PS jump records retain
+the captured `b128` / `b129` predicates and the unconditional jump to slot 6.
+This remains input parsing only: other instruction-body forms (including ALU)
+are not decoded or translated, and no shader is executed. Exact raw-byte hashes
+and decoded fields are recorded in
+`evidence/process2_xbox_shader_control_flow_20261023.json`.
+The first scheduled fetch instructions are separately decoded: VS address 5
+resolves to `vfetch_full` descriptor 95 (format `0x39`, three dwords stride),
+and PS address 4 resolves to `tfetch2D` descriptor 0 with a 2D dimension. The
+fetch decoder reads fields only; it does not access guest memory. Its evidence
+is in `evidence/process2_xbox_shader_fetch_20261023.json`.
 
 The project now has a narrow C++ decoder for this captured `PM4_DRAW_INDX`
 form. It reads topology, DMA source, 16-bit index format, guest address,
@@ -258,19 +287,25 @@ claim.
 
 - `shift_xbox_draw_input_check`: passed; covers the captured packet, mismatched
   binding, target format/viewport/scissor state, shader constant addressing and
-  branch values, unsupported opcode/layout/sampling values, non-zero window
-  offsets, and truncated input.
-- The C++ check passed in the host build and as an arm64-v8a binary on a Redmi
-  Note 8 Pro (Android API 33).
+  branch values, bounded shader control-flow and captured fetch-instruction
+  decode, unsupported opcode/layout/sampling values, non-zero window offsets,
+  and truncated input.
+- The new CF decoder passed on the exact private VS/PS byte captures; observed
+  opcodes and decoded fields match their diagnostic disassembly. No shader-body
+  translation was tested.
+- The input decoder, shader control-flow parser, and captured fetch-instruction
+  parser passed as an arm64-v8a binary on the connected Redmi Note 8 Pro
+  (Android API 33; binary built with API 29 minimum).
 - `tools/run_linux_vulkan_smoke.py ... --validation`: the neutral synthetic BMW
   bundle ran on a GeForce GTX 950 with Vulkan 1.1 validation enabled and zero
   validation errors. It is not the captured Xbox draw and is not retail parity.
 
 ## Next native-renderer work
 
-Next, connect the existing ReXGlue guest graphics-service boundary to a
-project-owned ring consumer, then add evidence-backed register/resource state
-tracking for the scanned span. A diagnostic run with `gpu_plugin` unset ignores
+Next, add project-owned decoding for the captured shader instruction body, then
+connect the existing ReXGlue guest graphics-service boundary to a project-owned
+ring consumer and add evidence-backed register/resource state tracking for the
+scanned span. A diagnostic run with `gpu_plugin` unset ignores
 guest ring setup services, so this project path still needs an adapter that
 loads in ReXGlue and consumes guest ring memory. The adapter must call the
 project's packet scanner and native Vulkan frontend directly; it must not route

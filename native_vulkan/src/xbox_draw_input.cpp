@@ -119,6 +119,174 @@ bool scan_captured_packet_stream(
     return true;
 }
 
+bool decode_captured_shader_control_flow(
+    const uint8_t* shader_bytes,
+    size_t byte_length,
+    std::vector<CapturedShaderControlFlow>* output,
+    std::string* error) {
+    constexpr uint32_t kControlFlowNop = 0;
+    constexpr uint32_t kControlFlowExec = 1;
+    constexpr uint32_t kControlFlowExecEnd = 2;
+    constexpr uint32_t kControlFlowConditionalJump = 11;
+    constexpr uint32_t kControlFlowAllocate = 12;
+    constexpr uint32_t kControlFlowTripletBytes = 12;
+
+    if (!shader_bytes || !output || byte_length == 0 ||
+        (byte_length % kControlFlowTripletBytes) != 0 ||
+        byte_length / kControlFlowTripletBytes >
+            std::numeric_limits<uint32_t>::max()) {
+        return fail("invalid captured shader bytecode size", error);
+    }
+
+    const uint32_t triplet_count =
+        static_cast<uint32_t>(byte_length / kControlFlowTripletBytes);
+    uint32_t control_flow_triplet_count = triplet_count;
+    for (uint32_t triplet = 0; triplet < control_flow_triplet_count; ++triplet) {
+        const uint8_t* bytes = shader_bytes + triplet * kControlFlowTripletBytes;
+        const uint32_t dword0 = read_be32(bytes);
+        const uint32_t dword1 = read_be32(bytes + 4);
+        const uint32_t dword2 = read_be32(bytes + 8);
+        const uint32_t words[4] = {
+            dword0,
+            dword1 & 0xFFFFu,
+            (dword1 >> 16) | (dword2 << 16),
+            dword2 >> 16,
+        };
+
+        for (uint32_t slot = 0; slot < 2; ++slot) {
+            const uint32_t opcode = (words[slot * 2 + 1] >> 12) & 0xFu;
+            if (opcode == kControlFlowExec || opcode == kControlFlowExecEnd) {
+                control_flow_triplet_count = std::min(
+                    control_flow_triplet_count, words[slot * 2] & 0xFFFu);
+            }
+        }
+    }
+    if (control_flow_triplet_count == 0 ||
+        control_flow_triplet_count >= triplet_count) {
+        return fail("captured shader has no bounded control-flow prefix", error);
+    }
+
+    std::vector<CapturedShaderControlFlow> instructions;
+    instructions.reserve(control_flow_triplet_count * 2);
+    for (uint32_t triplet = 0; triplet < control_flow_triplet_count; ++triplet) {
+        const uint8_t* bytes = shader_bytes + triplet * kControlFlowTripletBytes;
+        const uint32_t dword0 = read_be32(bytes);
+        const uint32_t dword1 = read_be32(bytes + 4);
+        const uint32_t dword2 = read_be32(bytes + 8);
+        const uint32_t words[4] = {
+            dword0,
+            dword1 & 0xFFFFu,
+            (dword1 >> 16) | (dword2 << 16),
+            dword2 >> 16,
+        };
+
+        for (uint32_t slot = 0; slot < 2; ++slot) {
+            const uint32_t word0 = words[slot * 2];
+            const uint32_t word1 = words[slot * 2 + 1];
+            const uint32_t raw_opcode = (word1 >> 12) & 0xFu;
+            if (raw_opcode != kControlFlowNop && raw_opcode != kControlFlowExec &&
+                raw_opcode != kControlFlowExecEnd &&
+                raw_opcode != kControlFlowConditionalJump &&
+                raw_opcode != kControlFlowAllocate) {
+                return fail("unsupported captured shader control-flow opcode", error);
+            }
+
+            CapturedShaderControlFlow decoded{};
+            decoded.instruction_index = triplet * 2 + slot;
+            decoded.opcode = static_cast<ShaderControlFlowOpcode>(raw_opcode);
+            if (raw_opcode == kControlFlowExec || raw_opcode == kControlFlowExecEnd) {
+                decoded.address = word0 & 0xFFFu;
+                decoded.instruction_count = (word0 >> 12) & 0x7u;
+                decoded.sequence = (word0 >> 16) & 0xFFFu;
+                if (decoded.instruction_count == 0 ||
+                    static_cast<uint64_t>(decoded.address) + decoded.instruction_count >
+                        triplet_count) {
+                    return fail("captured shader exec range is invalid", error);
+                }
+            } else if (raw_opcode == kControlFlowConditionalJump) {
+                decoded.address = word0 & 0x1FFFu;
+                decoded.unconditional = ((word0 >> 13) & 1u) != 0;
+                decoded.predicated = ((word0 >> 14) & 1u) != 0;
+                decoded.jump_direction = ((word1 >> 1) & 1u) != 0;
+                decoded.bool_constant = (word1 >> 2) & 0xFFu;
+                decoded.condition = ((word1 >> 10) & 1u) != 0;
+                if (static_cast<uint64_t>(decoded.address) >=
+                    static_cast<uint64_t>(control_flow_triplet_count) * 2) {
+                    return fail("captured shader jump target is out of range", error);
+                }
+            } else if (raw_opcode == kControlFlowAllocate) {
+                decoded.allocation_size = word0 & 0x7u;
+                decoded.allocation_unserialized = ((word1 >> 8) & 1u) != 0;
+                decoded.allocation_type = (word1 >> 9) & 0x3u;
+            }
+            instructions.push_back(decoded);
+        }
+    }
+
+    *output = std::move(instructions);
+    if (error) {
+        error->clear();
+    }
+    return true;
+}
+
+bool decode_captured_shader_fetch_instruction(
+    const uint8_t* instruction_bytes,
+    size_t byte_length,
+    CapturedShaderFetchInstruction* output,
+    std::string* error) {
+    if (!instruction_bytes || !output || byte_length != 12) {
+        return fail("captured shader fetch instruction must be 96 bits", error);
+    }
+
+    const uint32_t word0 = read_be32(instruction_bytes);
+    const uint32_t word1 = read_be32(instruction_bytes + 4);
+    const uint32_t word2 = read_be32(instruction_bytes + 8);
+    const uint32_t opcode = word0 & 0x1Fu;
+    CapturedShaderFetchInstruction decoded{};
+    decoded.source_register = (word0 >> 5) & 0x3Fu;
+    decoded.source_relative = ((word0 >> 11) & 1u) != 0;
+    decoded.destination_register = (word0 >> 12) & 0x3Fu;
+    decoded.destination_relative = ((word0 >> 18) & 1u) != 0;
+    decoded.destination_swizzle = word1 & 0xFFFu;
+    decoded.predicated = ((word1 >> 31) & 1u) != 0;
+    decoded.predicate_condition = ((word2 >> 31) & 1u) != 0;
+
+    if (opcode == 0) {
+        if (((word1 >> 30) & 1u) != 0) {
+            return fail("captured mini vertex fetch is unsupported", error);
+        }
+        decoded.kind = CapturedShaderFetchKind::VertexFull;
+        decoded.fetch_constant_index =
+            ((word0 >> 20) & 0x1Fu) * 3 + ((word0 >> 25) & 0x3u);
+        decoded.source_swizzle = (word0 >> 30) & 0x3u;
+        decoded.vertex_format = (word1 >> 16) & 0x3Fu;
+        decoded.vertex_stride = word2 & 0xFFu;
+        const uint32_t raw_offset = (word2 >> 8) & 0x7FFFFFu;
+        decoded.vertex_offset = (raw_offset & 0x400000u)
+                                    ? static_cast<int32_t>(
+                                          static_cast<int64_t>(raw_offset) -
+                                          (int64_t{1} << 23))
+                                    : static_cast<int32_t>(raw_offset);
+    } else if (opcode == 1) {
+        decoded.kind = CapturedShaderFetchKind::Texture2D;
+        decoded.fetch_constant_index = (word0 >> 20) & 0x1Fu;
+        decoded.source_swizzle = (word0 >> 26) & 0x3Fu;
+        decoded.texture_dimension = (word2 >> 14) & 0x3u;
+        if (decoded.texture_dimension != 1) {
+            return fail("captured texture fetch is not 2D", error);
+        }
+    } else {
+        return fail("unsupported captured shader fetch opcode", error);
+    }
+
+    *output = decoded;
+    if (error) {
+        error->clear();
+    }
+    return true;
+}
+
 bool decode_captured_draw_indx(
     const uint8_t* packet_bytes,
     size_t byte_length,
