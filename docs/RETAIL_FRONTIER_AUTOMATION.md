@@ -842,3 +842,14 @@ candidate `0x00852760` and all four D3D9 Draw/DrawUP imports; none were reached
 in that bounded replay. This is not a proof of unreachability in other UI
 states. See the [v753 evidence](../evidence/retail_frontier_20261022/process1_ui_gate_nested_draw_candidate_v753.md)
 and [machine-readable trace](../evidence/retail_frontier_20261022/process1_ui_gate_nested_draw_candidate_v753.json).
+
+A byte-level Process 1 analysis then established a conditional retail path from
+the UI rendering method `0x00852760` through nested methods `0x00850F10`,
+`0x00851730`, and `0x008521F0` to D3D9 `DrawIndexedPrimitive`. The evidence
+resolves the concrete adapter vtable and traces the created device pointer
+through adapter `0x0084FD60` to the underlying device's COM slot. This proves
+that the original PE contains the draw path; it does not prove that the P-code
+replay entered it. In the v753 run, neither `0x00852760` nor the selected
+Draw* imports were observed. The next controlled replay targets the forwarding
+adapter `0x0084FD60` to determine whether that concrete path is reached without
+changing guest state. See the [full static analysis](../evidence/retail_frontier_20261022/process1_nested_draw_static_00852760.md).
