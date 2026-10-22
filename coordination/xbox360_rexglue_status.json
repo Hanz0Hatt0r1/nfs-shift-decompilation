@@ -76,17 +76,19 @@
         "evidence/xbox360_function_8233d128.json",
         "evidence/xbox360_function_8233d0f8.json",
         "evidence/xbox360_function_823270d0.json",
-        "evidence/xbox360_frontier_82341198.json"
+        "evidence/xbox360_frontier_82341198.json",
+        "evidence/xbox360_runtime_queue_probe_20261023.json"
       ],
-      "note": "An earlier regenerated Linux AMD64 run executed the full conditional dispatchers at 0x8233D128, 0x8233D0F8, and 0x823270D0; observed r5==3 at 0x823270D0 selected vtable slot +0x80, and the next InvalidFunctionTrap was 0x82341198 from return address 0x8232C39C. The 68-byte 0x82341198 override passes codegen and build. A post-build run entered xstart but did not reach 0x82341198 within 180 seconds; its main guest stack remained in the 0x823A0310 startup chain and no InvalidFunctionTrap, vkCmdDraw*, or vkQueuePresentKHR hit. A separate earlier-build repeat stalled in VulkanSubmissionTracker::AwaitSubmissionCompletion. The user reports seeing the original loading screen without a correlated runtime hash; main menu, retail draw/present, and race remain unverified."
+      "note": "The 68-byte 0x82341198 dispatcher passes ReXGlue codegen and the Linux AMD64 build, but the latest controlled run still did not reach it. A new queue probe shows the guest waiting in 0x823A0310 with cursors 1/21; the runtime log confirms VdSetGraphicsInterruptCallback, VdInitializeRingBuffer, and VdEnableRingBufferRPtrWriteBack were ignored because gpu_plugin was not set. Treat this as an unconfigured Xenos graphics path, not a proven PPC/P-code defect; repeat after Process 2's plugin integration. The user's loading-screen observation remains uncorrelated to a binary hash."
     },
     "X3": {
       "key": "xenos_vulkan_retail_frame",
       "status": "in_progress",
       "evidence": [
-        "evidence/xbox360_rexglue_preflight_20261022.md#linux-runtime-evidence"
+        "evidence/xbox360_rexglue_preflight_20261022.md#linux-runtime-evidence",
+        "evidence/xbox360_runtime_queue_probe_20261023.json"
       ],
-      "note": "Process 2 traced the placeholder skip to external ReXGlue Xenos code. With --no-async_shader_compilation, logs show many synchronous pipeline-state requests and no placeholder-skip warning. The latest repeat stopped in VulkanSubmissionTracker::AwaitSubmissionCompletion; neither a vkCmdDraw* call nor successful Vulkan present is verified, and Process 2 already owns this follow-up."
+      "note": "The latest Linux AMD64 run used ReXGlue 0.10.0 without gpu_plugin. Its log shows the three XEX Vd graphics/ring calls were ignored. At the later guest queue wait, head/tail remained 1/21 for 45 seconds and the 0x02 predicate bit was clear. This is consistent with the missing Xenos plugin preventing ring progress; it is not proof of retail draw/present or of a PPC/P-code failure. Process 2 owns plugin setup and the next graphics validation."
     },
     "X4": {
       "key": "linux_frontend_offline_race",
