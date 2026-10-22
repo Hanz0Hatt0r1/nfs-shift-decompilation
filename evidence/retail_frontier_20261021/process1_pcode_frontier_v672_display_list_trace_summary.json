@@ -1,0 +1,92 @@
+{
+  "format": "SHIFT.Process1RetailPcodeDisplayListTrace/1",
+  "run": "v672-display-list-call-trace",
+  "date": "2026-10-21",
+  "execution_kind": "recompiled guest P-code runtime using the original retail PE; not a native Windows SHIFT.exe process",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "runtime_binary_sha256": "230a92c641305c1f7c84938a4c52d3def17f59914f40886616bd5e5942866b1b",
+  "runtime_code": {
+    "process1_dxt3_commit": "e6f674a6b394065586e5c5905e2511dcdb9aff0e",
+    "process1_packet_capture_integration_commit": "1a25ef4895878b7ebe186fd3ddd5fbe44e1a9595",
+    "process2_dxt3_capture_capability_commit": "1fef18a8fdc8308365761a901b5e47db91af7e20"
+  },
+  "probe": {
+    "frames_requested": 360,
+    "timeout_seconds": 420,
+    "kill_after_seconds": 5,
+    "validation": false,
+    "packet_capture_adapter_enabled": true,
+    "verified_module_override_count": 54,
+    "selected_guest_targets": [
+      "0x00835590",
+      "0x0082f3c0",
+      "0x00831380",
+      "0x00835d80"
+    ],
+    "selected_guest_caller": "0x00835d80",
+    "trace_live_log": true,
+    "trace_slot_sampling": false
+  },
+  "result": {
+    "status": "host-frame-loop",
+    "blocker": null,
+    "exit_code": 0,
+    "frames_rendered": 360,
+    "dispatches": 1737380,
+    "unique_functions": 4728,
+    "guest_main_thread_function_snapshot": "0x00843ed0",
+    "worker_waiting_count": 3,
+    "validation_errors": 0,
+    "d3d9_bridge": {
+      "clear_requests": 1110,
+      "clear_submissions": 360,
+      "present_requests": 1108,
+      "present_submissions": 360,
+      "pending_presents": 748,
+      "guest_draw_translation": false
+    },
+    "retail_rendering_proven": false
+  },
+  "call_trace": {
+    "entry_event_limit": 8192,
+    "entry_record_count": 8192,
+    "return_record_count": 8192,
+    "truncated": true,
+    "observed_target_entries": {
+      "0x00835590": 264,
+      "0x0082f3c0_from_0x00835590": 5544,
+      "0x00831380": 0,
+      "0x00835d80": 265
+    },
+    "observed_returns": {
+      "0x00835590_eax_1": 264,
+      "0x0082f3c0_from_0x00835590_eax_1": 5544,
+      "0x00835d80_eax_1": 265
+    },
+    "first_display_dispatch": 463038,
+    "last_display_dispatch": 613063,
+    "log_sha256": "c96f00890cf4509b73b93c8f3e855880f2883ab8f9e665fa2efe2fd8f470b90e",
+    "log_bytes": 8332993,
+    "local_log_path": "/tmp/process1-retail-runtime-evidence/ui-event-path-v672.log",
+    "raw_log_committed": false
+  },
+  "interpretation": "In the captured prefix, FUN_00835590 returned EAX=1 on all 264 recorded calls, and all 5,544 recorded calls from it to FUN_0082f3c0 returned EAX=1. The supplied Ghidra body for FUN_0082f3c0 returns one exactly when *(param_1+0x24)==0. No FUN_00831380 entry was recorded before the trace cap. This does not establish why those fields were zero, whether their associated work queues should have been populated, or whether FUN_00831380 remained absent after truncation. No Draw* call or retail rendering was proven.",
+  "comparison_runs": {
+    "v670": {
+      "runtime_binary_sha256": "505716cf3d9b3ad3e11a80acd16e7122b478de1e545f15c0cd9cf75727612a1b",
+      "blocker": "unsupported D3D9 managed texture description",
+      "dispatches": 1302657,
+      "unique_functions": 4716,
+      "log_sha256": "f4279ccce12278040ee2d9e74ddbcd5c16c52ea681e6038cb668e640e23dcf6f"
+    },
+    "v671": {
+      "runtime_binary_sha256": "505716cf3d9b3ad3e11a80acd16e7122b478de1e545f15c0cd9cf75727612a1b",
+      "packet_capture_environment_set": true,
+      "blocker": "unsupported D3D9 managed texture description",
+      "dispatches": 1303119,
+      "unique_functions": 4716,
+      "log_sha256": "a72324c35520b4846484312714624878c006b8ed7830311504a19493bfbb3ca1"
+    },
+    "diagnosis": "The v670/v671 binary was built from P1 commits without P2 capture capability commit 1fef18a8; setting the packet-capture directory alone could not advertise DXT3. The integrated v672 binary includes that adapter capability and crossed the managed-texture stop."
+  }
+}

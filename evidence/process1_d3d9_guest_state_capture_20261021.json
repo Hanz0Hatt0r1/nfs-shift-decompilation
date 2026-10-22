@@ -1,0 +1,125 @@
+{
+  "format": "SHIFT.Process1D3D9GuestStateEvidence/2",
+  "date": "2026-10-21",
+  "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "source_capture": {
+    "sha256": "2a2892872f2893548d0925ff79c619de8c4b01f40a56804b0f681b934999ed9c",
+    "local_path": "/home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/original-native-d3dx-20261021/retail-capture-output/capture.jsonl",
+    "availability": "local retail artifact; not checked into the repository"
+  },
+  "frame": 14483,
+  "observed_calls": [
+    {
+      "event_index": 9694765,
+      "event": "set_vertex_declaration",
+      "device_ptr": "0xd4e45c0",
+      "declaration_ptr": "0x28433a30"
+    },
+    {
+      "event_index": 9694766,
+      "event": "set_stream_source",
+      "device_ptr": "0xd4e45c0",
+      "vertex_buffer_ptr": "0x28433930",
+      "stream": 0,
+      "offset_in_bytes": 0,
+      "stride": 24
+    },
+    {
+      "event_index": 9694767,
+      "event": "set_indices",
+      "device_ptr": "0xd4e45c0",
+      "index_buffer_ptr": "0x284339b0"
+    },
+    {
+      "event_index": 9694786,
+      "event": "set_texture",
+      "device_ptr": "0xd4e45c0",
+      "texture_ptr": "0x2ebecb98",
+      "stage": 0
+    },
+    {
+      "event_index": 9694795,
+      "event": "draw_indexed_primitive",
+      "device_ptr": "0xd4e45c0",
+      "primitive_type": 4,
+      "base_vertex_index": 0,
+      "min_vertex_index": 0,
+      "num_vertices": 6,
+      "start_index": 0,
+      "primitive_count": 2
+    }
+  ],
+  "retail_shader_creates": {
+    "frame": 14,
+    "pixel_shader_events": 610,
+    "vertex_shader_events": 598,
+    "distinct_shader_signatures_across_events": 261,
+    "samples": [
+      {
+        "event_index": 368,
+        "stage": "pixel",
+        "resource_signature": "ps:3dcf6b377727e7d6",
+        "byte_length": 144,
+        "version_token": "0xffff0300"
+      },
+      {
+        "event_index": 369,
+        "stage": "vertex",
+        "resource_signature": "vs:bcb0ed2497fbc0d3",
+        "byte_length": 404,
+        "version_token": "0xfffe0300"
+      }
+    ],
+    "interpretation": "The native retail capture records SM3.0 shader token streams for both stages. Event counts include repeated creates and are not counts of unique shader programs; full bytecode is not copied into this repository."
+  },
+  "interpretation": "The retail call order exercises the three guest-device state setters before an indexed draw. This is original-game capture evidence, not proof that the recompiled P-code path reached the draw.",
+  "pcode_frontier": {
+    "v520": {
+      "resume_thread_result": 1,
+      "predicate_bit_2": "not identified in that trace"
+    },
+    "v527": {
+      "poll_caller": "0x005ab6c0",
+      "poll_function": "0x006550f0",
+      "poll_return_eax": "0x00000001",
+      "predicate_word_address": "0x27f39c64",
+      "predicate_word_value": "0x00000006",
+      "predicate_bit_2": true,
+      "last_writer_function": "0x00649b10",
+      "last_writer_thread": "0x00010006"
+    },
+    "v662": {
+      "status": "host-frame-loop",
+      "blocker": null,
+      "dispatches": 973437,
+      "validation_errors": 0
+    },
+    "v664": {
+      "status": "host-frame-loop",
+      "blocker": null,
+      "frames_rendered": 180,
+      "dispatches": 972900,
+      "unique_functions": 3939,
+      "guest_main_thread_function": "0x006472d0",
+      "worker_waiting_count": 2,
+      "validation_errors": 0,
+      "guest_draw_translation": false,
+      "retail_rendering_proven": false,
+      "note": "Compared with v662, the raw dispatch count is lower by 537 while frame and unique-function counts match; the retail frontier comparison labels this as a counter decrease, but dispatch totals are not gameplay evidence."
+    },
+    "v663": {
+      "status": "timeout",
+      "blocker": null,
+      "detail": "Targeted 0x00587b90 trace exceeded 300 seconds after recording successful returns; no final frame-run metrics were produced."
+    }
+  },
+  "boundary": {
+    "guest_shader_token_stream_preservation_implemented": true,
+    "shader_compilation_or_translation_implemented": false,
+    "latest_pcode_frontier": "v664 host-frame-loop; frontend/race not confirmed",
+    "pcode_frontend_confirmed": false,
+    "pcode_race_confirmed": false,
+    "dispatch_counts_are_gameplay_evidence": false,
+    "process2_renderer_modified": false
+  }
+}

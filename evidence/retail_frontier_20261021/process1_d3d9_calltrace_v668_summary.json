@@ -1,0 +1,86 @@
+{
+  "format": "SHIFT.Process1RetailD3D9CallTraceSummary/1",
+  "run": "v668-d3d9-calltrace",
+  "date": "2026-10-21",
+  "execution_kind": "recompiled guest P-code runtime using the original retail PE; not a native Windows SHIFT.exe process",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "runtime_code": {
+    "process1_commit": "e6f674a6b394065586e5c5905e2511dcdb9aff0e",
+    "process2_capture_adapter_commit": "1fef18a8fdc8308365761a901b5e47db91af7e20"
+  },
+  "probe": {
+    "frames_requested": 360,
+    "timeout_seconds": 420,
+    "kill_after_seconds": 5,
+    "validation": false,
+    "trace_live_log": true,
+    "trace_stack_slots": ["0x4", "0x8", "0xc", "0x10", "0x14", "0x18", "0x1c"],
+    "selected_imports": [
+      "d3d9.dll!IDirect3DDevice9::DrawPrimitive",
+      "d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitive",
+      "d3d9.dll!IDirect3DDevice9::DrawPrimitiveUP",
+      "d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitiveUP",
+      "d3d9.dll!IDirect3DDevice9::CreateVertexBuffer",
+      "d3d9.dll!IDirect3DDevice9::CreateIndexBuffer",
+      "d3d9.dll!IDirect3DDevice9::CreateTexture",
+      "d3d9.dll!IDirect3DDevice9::BeginScene",
+      "d3d9.dll!IDirect3DDevice9::EndScene",
+      "d3d9.dll!IDirect3DDevice9::Clear",
+      "d3d9.dll!IDirect3DDevice9::Present",
+      "d3d9.dll!IDirect3DDevice9::SetTexture",
+      "d3d9.dll!IDirect3DDevice9::SetVertexDeclaration",
+      "d3d9.dll!IDirect3DDevice9::SetStreamSource",
+      "d3d9.dll!IDirect3DDevice9::SetIndices",
+      "d3d9.dll!IDirect3DDevice9::SetVertexShader",
+      "d3d9.dll!IDirect3DDevice9::SetPixelShader",
+      "d3d9.dll!IDirect3DDevice9::SetRenderTarget",
+      "d3d9.dll!IDirect3D9::CreateDevice"
+    ]
+  },
+  "result": {
+    "status": "host-frame-loop",
+    "blocker": null,
+    "exit_code": 0,
+    "frames_rendered": 360,
+    "dispatches": 1734402,
+    "unique_functions": 4728,
+    "guest_main_thread_function": "0x00835590",
+    "worker_waiting_count": 5,
+    "validation_errors": 0,
+    "d3d9_bridge": {
+      "clear_requests": 1108,
+      "clear_submissions": 360,
+      "present_requests": 1107,
+      "present_submissions": 360,
+      "pending_presents": 747,
+      "guest_draw_translation": false
+    },
+    "retail_rendering_proven": false
+  },
+  "call_trace": {
+    "entry_record_count": 5573,
+    "entry_counts_by_import": {
+      "d3d9.dll!IDirect3DDevice9::Clear": 1108,
+      "d3d9.dll!IDirect3DDevice9::SetRenderTarget": 1107,
+      "d3d9.dll!IDirect3DDevice9::BeginScene": 1107,
+      "d3d9.dll!IDirect3DDevice9::EndScene": 1107,
+      "d3d9.dll!IDirect3DDevice9::Present": 1107,
+      "d3d9.dll!IDirect3DDevice9::CreateVertexBuffer": 17,
+      "d3d9.dll!IDirect3DDevice9::CreateIndexBuffer": 16,
+      "d3d9.dll!IDirect3DDevice9::CreateTexture": 1,
+      "d3d9.dll!IDirect3D9::CreateDevice": 1,
+      "d3d9.dll!IDirect3DDevice9::SetPixelShader": 1,
+      "d3d9.dll!IDirect3DDevice9::SetVertexShader": 1
+    },
+    "selected_draw_import_entries": 0,
+    "log_sha256": "9630914c79a0816f453580f0bc884480df3f2f144cf158e4e735a7887a41cf37",
+    "log_bytes": 9653915,
+    "local_log_path": "/tmp/process1-retail-runtime-evidence/d3d9-calltrace-v668.log",
+    "raw_log_committed": false
+  },
+  "interpretation": "The selected D3D9 CreateDevice, scene, clear, present, and resource methods were observed, but no selected Draw* import entry was recorded. This run therefore did not reach the P1 indexed-draw packet callback. The counters do not prove frontend, race, guest draw translation, or retail rendering.",
+  "separate_original_retail_progress": {
+    "evidence_pr": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2134",
+    "result": "The original retail executable was interactively navigated to the main menu and an active cockpit race under system Wine 11.17. This is original retail PE execution under Wine, separate from the recompiled P-code replay, and is not native Windows evidence."
+  }
+}

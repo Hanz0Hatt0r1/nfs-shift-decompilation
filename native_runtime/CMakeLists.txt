@@ -583,7 +583,10 @@ if(BUILD_TESTING)
       $<TARGET_FILE:shift_runtime_test_pcode_frontier_block>)
 endif()
 
-add_executable(shift_runtime src/shift_runtime.cpp)
+add_executable(
+  shift_runtime
+  src/shift_runtime.cpp
+  ../native_vulkan/src/d3d9_packet_capture_adapter.cpp)
 add_dependencies(shift_runtime shift_runtime_shaders shift_runtime_pcode_frontier)
 target_include_directories(shift_runtime PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include

@@ -1,0 +1,70 @@
+{
+  "format": "SHIFT.Process1AudioImportProbe/1",
+  "run": "v667-audio-import-trace",
+  "date": "2026-10-21",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "execution_kind": "recompiled guest P-code runtime using the original retail PE; not a native Windows SHIFT.exe process",
+  "runtime_code": {
+    "process1_commit": "e6f674a6b394065586e5c5905e2511dcdb9aff0e",
+    "process2_commit": "1fef18a8fdc8308365761a901b5e47db91af7e20"
+  },
+  "probe": {
+    "frames_requested": 360,
+    "timeout_seconds": 420,
+    "module_manifest": "reconstructed from the v659 execution evidence",
+    "trace_environment": {
+      "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+      "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8,0xc,0x10,0x14,0x18",
+      "SHIFT_TRACE_GUEST_CALL_STRING_SLOTS": "0x4,0x8",
+      "SHIFT_TRACE_GUEST_CALL_IMPORTS": "WINMM.dll!waveOutOpen,WINMM.dll!waveOutClose,WINMM.dll!waveOutWrite,WINMM.dll!waveOutReset,WINMM.dll!waveOutPrepareHeader,WINMM.dll!waveOutUnprepareHeader,WINMM.dll!waveOutGetPosition,WINMM.dll!waveOutGetNumDevs,WINMM.dll!waveOutGetDevCapsA,WINMM.dll!waveOutSetVolume,WINMM.dll!waveInOpen,WINMM.dll!waveInClose,WINMM.dll!waveInStart,WINMM.dll!waveInStop,WINMM.dll!waveInReset,WINMM.dll!waveInAddBuffer,WINMM.dll!waveInPrepareHeader,WINMM.dll!waveInUnprepareHeader,WINMM.dll!waveInGetPosition,WINMM.dll!waveInGetNumDevs,WINMM.dll!timeSetEvent,WINMM.dll!timeKillEvent,WINMM.dll!mciSendCommandA,MSACM32.dll!acmStreamOpen,MSACM32.dll!acmStreamUnprepareHeader,MSACM32.dll!acmFormatSuggest,MSACM32.dll!acmStreamSize,MSACM32.dll!acmStreamPrepareHeader,MSACM32.dll!acmStreamConvert,KERNEL32.dll!LoadLibraryA,KERNEL32.dll!GetProcAddress,KERNEL32.dll!FreeLibrary"
+    }
+  },
+  "result": {
+    "status": "host-frame-loop",
+    "blocker": null,
+    "exit_code": 0,
+    "frames_rendered": 360,
+    "dispatches": 1736499,
+    "unique_functions": 4728,
+    "guest_main_thread_function": "0x00832160",
+    "worker_waiting_count": 5,
+    "validation_errors": 0,
+    "selected_winmm_or_msacm_calls": 0,
+    "load_library_names": ["kernel32.dll", "nvapi.dll"],
+    "audio_module_or_procedure_lookup_observed": false,
+    "unimplemented_pe_import_message": false,
+    "d3d9_bridge": {
+      "clear_requests": 1110,
+      "clear_submissions": 360,
+      "present_requests": 1108,
+      "present_submissions": 360,
+      "pending_presents": 748,
+      "guest_draw_translation": false
+    },
+    "retail_rendering_proven": false
+  },
+  "v520_scheduler_followup": {
+    "source": "v527 P-code replay; not a native Windows SHIFT.exe execution",
+    "status": "blocked",
+    "next_blocker": "P-code module has no exported function rvi_0057da20 called from guest function 0x00590d60",
+    "dispatches_at_blocker": 7931139,
+    "unique_functions_at_blocker": 5096,
+    "predicate_write": {
+      "address": "0x27f39c64",
+      "before": "0x00000002",
+      "after": "0x00000006",
+      "writer": "0x00649b10",
+      "guest_thread_id": "0x00010006",
+      "dispatch": 7930667
+    },
+    "poll_return": {
+      "function": "0x006550f0",
+      "eax": "0x00000001"
+    },
+    "continuation": ["0x00655110", "0x005ab560"],
+    "report_sha256": "8338148203c6e51b6d887ee53e41d659727058287983be875b2ed0bfded2e3a9",
+    "probe_log_sha256": "878b5fcbfd7efcc19ef261caa26c49186040aa4288a1978dc1bc06264fb65f1a"
+  },
+  "probe_log_sha256": "da5cde6b0bdbddf2649b4bec339141098d36a103cbe077669cad2190a28be3ed",
+  "interpretation": "No selected WinMM or MSACM import was reached before this bounded host-frame loop. A later v527 P-code replay records the worker writing bit 2 and passing the poll after the guest-call return quantum; that is evidence for scheduler starvation as the v520-local issue, not audio causality. Audio use on later paths remains untested."
+}

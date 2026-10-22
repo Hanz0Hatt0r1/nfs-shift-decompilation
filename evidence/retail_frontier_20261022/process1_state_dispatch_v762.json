@@ -1,0 +1,41 @@
+{
+  "capture_mode": true,
+  "dispatches": 1732082,
+  "exit_code": 0,
+  "format": "SHIFT.Process1StateDispatchProbe/1",
+  "frames_rendered": 360,
+  "frames_requested": 360,
+  "full_probe_report_sha256": "cdfa3ba3bf31e77c56a6e3ebc965ad51597e1887c8a020c148af9b344b7398fa",
+  "guest_main_thread_function": "0x00832160",
+  "pcode_manifest": {
+    "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v659-missing-005a0ef0/module-manifest-v659-005a0ef0.json",
+    "sha256": "6977898b7ff79edfb84f9b6f6d9e5ff98d8e073d17d88f345e8a1edb77e73a0e"
+  },
+  "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "probe_log_sha256": "507e2e37531360141cb5d193dfc62fc2f3e73774c135b9721976cd03fb9489c6",
+  "retail_rendering_proven": false,
+  "run": "v762",
+  "runtime_sha256": "dc66d4b3f7d6a10ca101d71fb1e1e7503653757e3b4606bf7e65bdb88bc023f7",
+  "status": "host-frame-loop",
+  "trace": {
+    "enabled": true,
+    "event_count": 0,
+    "imports": [
+      "d3d9.dll!IDirect3DDevice9::DrawPrimitive",
+      "d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitive",
+      "d3d9.dll!IDirect3DDevice9::DrawPrimitiveUP",
+      "d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitiveUP"
+    ],
+    "targets": [
+      "0x004692e0",
+      "0x0045c000",
+      "0x004052b0",
+      "0x004049d0",
+      "0x0045b530"
+    ],
+    "truncated": false
+  },
+  "unique_functions": 4726,
+  "validation_errors": 0,
+  "worker_waiting_count": 4
+}

@@ -1,0 +1,139 @@
+{
+  "format": "SHIFT.Process1PcodeCallTraceRegression/1",
+  "date": "2026-10-21",
+  "retail_pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "trace_regression": {
+    "v675": {
+      "status": "blocked",
+      "dispatches": 463068,
+      "unique_functions": 3891,
+      "blocker": "P-code RAM read at 0x00000028 size 4 touched reserved low memory",
+      "runtime_binary_sha256": "230a92c641305c1f7c84938a4c52d3def17f59914f40886616bd5e5942866b1b",
+      "log_sha256": "fa36cbb073651e649ed7eb878d983d9c4ab0e40056aca7d658c26585b7c3848c",
+      "log_bytes": 9502,
+      "local_log_path": "/tmp/process1-retail-runtime-evidence/ui-event-path-v675.log"
+    },
+    "root_cause": "Guest call trace slot and return-address sampling used the faulting P-code RAM reader. A selected call with null ECX attempted to sample target+0x28; a regression fixture also exposed a return-address read at ESP=0. Both paths could set the runtime error while observing a call.",
+    "fix": "Call-trace slots now reject addresses below 0x00010000 and use diagnostic reads. Return-address sampling uses the diagnostic reader only for user-space ESP. Unavailable slots and return addresses are marked unavailable without changing guest execution.",
+    "regression_test": {
+      "fixture_entry": "0x00403200",
+      "target": "0x00685700",
+      "entry_ecx": "0x00000000",
+      "entry_esp": "0x00000000",
+      "target_slots": ["0x10", "0x20", "0xffffffff"],
+      "expected": "call completes without a runtime error; invalid target slots and return address are marked unreadable"
+    }
+  },
+  "intermediate_runs": {
+    "v676": {
+      "status": "blocked",
+      "dispatches": 1303056,
+      "unique_functions": 4716,
+      "blocker": "unsupported D3D9 managed texture description",
+      "runtime_binary_sha256": "e6dec7c9f0499723f912207383ac9c0fa9e67a6b0cdea9f5ae8ab60b40d1e063",
+      "runtime_did_not_include_p2_dxt3_capability": true,
+      "log_sha256": "c511d0156dbb7d8c71090e733bb2f75d09685dbe9a1873c68acab87b8925ff2b",
+      "log_bytes": 4008305,
+      "captured_queue_calls_before_expected_texture_blocker": 4,
+      "local_log_path": "/tmp/process1-retail-runtime-evidence/ui-event-path-v676.log"
+    },
+    "v677": {
+      "status": "host-frame-loop",
+      "frames_rendered": 360,
+      "dispatches": 1743906,
+      "unique_functions": 4729,
+      "trace_entries": 8192,
+      "trace_returns": 8192,
+      "trace_truncated": true,
+      "captured_00831380_entries": 289,
+      "log_sha256": "d55ce2ede690398f6caabf63357c1a7f0145f4df55004135e3bb444c98e3a947",
+      "log_bytes": 12552428,
+      "local_log_path": "/tmp/process1-retail-runtime-evidence/ui-event-path-v677.log"
+    }
+  },
+  "v678": {
+    "execution_kind": "recompiled guest P-code runtime using the original retail PE; not a native Windows SHIFT.exe process",
+    "runtime_binary_sha256": "8a86d6cc80206b6abf9540349ee23bfb2cde3c624a310740913b25a4581cf85b",
+    "runtime_includes_p1_trace_fix": true,
+    "runtime_includes_p2_dxt3_capability": true,
+    "probe": {
+      "frames_requested": 360,
+      "timeout_seconds": 420,
+      "validation": false,
+      "selected_guest_target": "0x00831380",
+      "target_slot_offsets": ["0x0", "0x4", "0x1c", "0x20", "0x24", "0x28"],
+      "stack_slot_offsets": ["0x10"],
+      "provenance_addresses": ["0x2002d534", "0x2002d53c"],
+      "trace_truncated": false
+    },
+    "result": {
+      "status": "host-frame-loop",
+      "exit_code": 0,
+      "frames_rendered": 360,
+      "dispatches": 1740859,
+      "unique_functions": 4729,
+      "worker_waiting_count": 5,
+      "validation_errors": 0,
+      "blocker": null,
+      "guest_draw_translation": false,
+      "retail_rendering_proven": false
+    },
+    "call_trace": {
+      "entry_count": 664,
+      "return_count": 664,
+      "callers": {
+        "0x00835590": 663,
+        "0x007ee360": 1
+      },
+      "0x00835590_return_al_true": 663,
+      "0x007ee360_return_al_false": 1,
+      "0x00835590_target_plus_0x24_histogram": {
+        "0x00000001": 221,
+        "0x00000002": 221,
+        "0x00000003": 221
+      },
+      "0x007ee360_target_plus_0x24": "0x00000000",
+      "first_sample": {
+        "dispatch": 1302928,
+        "caller": "0x00835590",
+        "ecx": "0x2002d518",
+        "edx": "0x7ffdeefc",
+        "esp": "0x7ffdeeec",
+        "target_plus_0x1c": "0x27cc0908",
+        "target_plus_0x1c_writer": "0x0062f53d",
+        "target_plus_0x1c_writer_dispatch": 434489,
+        "target_plus_0x24": "0x00000003",
+        "target_plus_0x24_writer": "0x004cb900",
+        "target_plus_0x24_writer_dispatch": 1302810,
+        "return_al": 1
+      },
+      "last_samples": [
+        {
+          "dispatch": 1740541,
+          "target_plus_0x24": "0x00000002",
+          "target_plus_0x24_writer": "0x00d699b0",
+          "target_plus_0x24_writer_dispatch": 1740538
+        },
+        {
+          "dispatch": 1740546,
+          "target_plus_0x24": "0x00000001",
+          "target_plus_0x24_writer": "0x00d699b0",
+          "target_plus_0x24_writer_dispatch": 1740543,
+          "return_al": 1
+        }
+      ],
+      "output_slot_after_call_captured": false,
+      "nested_plus_0x14_value_captured": false
+    },
+    "interpretation": "Within this bounded run, FUN_00831380 was repeatedly entered from FUN_00835590 and returned true in every recorded call. This disproves the claim that the sampled v672 empty-prefix alone describes the later bounded path. The sampled field values and writers are evidence about memory changes only; they do not identify the object type or prove a Draw* predecessor. No guest draw translation or retail image was proven.",
+    "log_sha256": "bf9ce21ed77e7cec9776feacb51f4f7b13ec58d0b3f5c3822ab19c99b6a6c134",
+    "log_bytes": 1561961,
+    "local_log_path": "/tmp/process1-retail-runtime-evidence/ui-event-path-v678.log",
+    "raw_log_committed": false
+  },
+  "build_and_test": {
+    "runtime_build": "passed",
+    "focused_ctest": "passed (1/1): shift_runtime_recompiled_pcode_module",
+    "p2_files_modified": false
+  }
+}

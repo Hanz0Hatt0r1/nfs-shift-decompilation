@@ -1,0 +1,42 @@
+{
+  "format": "SHIFT.Process1OfflineNetworkStubs/1",
+  "date": "2026-10-21",
+  "retail_pe": {
+    "path": "/home/pes/ghidra_projects/shift/SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "edition": "PC retail 1.02 PE32"
+  },
+  "scope": {
+    "network_session_imports_stubbed": true,
+    "all_online_related_imports_stubbed": false,
+    "network_transport_implemented": false,
+    "host_network_calls_performed": false,
+    "modules_covered": ["WS2_32.dll", "WSOCK32.dll", "NETAPI32.dll", "Secur32.dll"],
+    "behavior": {
+      "winsock_socket_io_after_startup": "fails with WSAENETDOWN (10050)",
+      "winsock_calls_before_startup": "fails with WSANOTINITIALISED (10093)",
+      "name_lookup_after_startup": "fails with WSAHOST_NOT_FOUND (11001)",
+      "netbios": "returns NRC_ENVNOTDEF (0x34) and completes NCB status bytes",
+      "sspi_setup_and_record_calls": "fails with SEC_E_UNSUPPORTED_FUNCTION (0x80090302)",
+      "sspi_cleanup": "success no-op",
+      "guest_event_and_byte_order_apis": "compatibility behavior preserved"
+    },
+    "not_stubbed_or_bypassed": [
+      "CRYPT32 certificate-chain/message imports",
+      "WINTRUST WinVerifyTrust",
+      "ImageHlp certificate enumeration imports"
+    ],
+    "coverage_limit": "The target PE import table was inspected, but call sites and offline-path relevance for certificate imports were not established."
+  },
+  "verification": {
+    "build_directory": "/tmp/nfs-shift-retail-runtime-build",
+    "runtime_sha256": "51f98a376ecfbe87aeaf4f94e3a3f7b7fd302da9ea6bf23bff4dcf947f7ea8eb",
+    "focused_test": "shift_runtime_recompiled_pcode_module",
+    "focused_test_result": "passed (1/1)",
+    "test_executable_sha256": "7ece2fe1876036b5ad13c932c0606a6519171e5efbe94815aa8386593d731a7d",
+    "diff_check": "passed",
+    "retail_pcode_replay": "not run; matching full P-code module set unavailable in searched evidence locations",
+    "gameplay_or_frontend_claim": false
+  },
+  "interpretation": "Synthetic PE32 coverage verifies import dispatch and representative offline stub behavior only. It does not show that retail execution reaches these imports or that the frontend, race, or online features work."
+}

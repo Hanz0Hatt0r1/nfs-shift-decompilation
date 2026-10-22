@@ -1,0 +1,82 @@
+{
+  "format": "SHIFT.Process1StateWriterProbe/1",
+  "run": "v766",
+  "status": "host-frame-loop",
+  "capture_mode": false,
+  "frames_requested": 360,
+  "frames_rendered": 360,
+  "exit_code": 0,
+  "validation_errors": 0,
+  "dispatches": 1753703,
+  "unique_functions": 4727,
+  "guest_main_thread_function": "0x0082e980",
+  "worker_waiting_count": 4,
+  "retail_rendering_proven": false,
+  "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "runtime_sha256": "545c9eadd76f7183b64e8a8dd12a51a88c480b31f857b76ed01af170626f1f3f",
+  "source": {
+    "p1_base_commit": "89a019991f53885d85f85ae572b34bfd18d6ef77",
+    "p2_integration_commit": "de0737734af2138bf9852436c276e64091aeabee",
+    "p2_pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2145"
+  },
+  "pcode_manifest": {
+    "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v659-missing-005a0ef0/module-manifest-v659-005a0ef0.json",
+    "sha256": "6977898b7ff79edfb84f9b6f6d9e5ff98d8e073d17d88f345e8a1edb77e73a0e"
+  },
+  "d3d9_vulkan_bridge": {
+    "clear_requests": 1144,
+    "present_requests": 1143,
+    "clear_submissions": 360,
+    "present_submissions": 360,
+    "pending_presents": 783,
+    "guest_draw_translation": false
+  },
+  "provenance_target": {
+    "address": "0x27dfc7d0",
+    "object": "0x27dfc520",
+    "field_offset": "0x2b0",
+    "sample_phase": "constructor entry, before its own store",
+    "sampled_value": "0x00000000",
+    "last_writer_record": {
+      "function": "0x0090e50d",
+      "caller_function": "0x009015b0",
+      "dispatch_count": 1077,
+      "write_address": "0x20000000",
+      "write_size": 134217728,
+      "word_value": "0x00000000"
+    },
+    "interpretation": "The recorded writer is a broad prior zero-initialization range that covers the target address. This sample is not after the constructor's store at 0x0045f0d6 and does not prove that the field stayed zero later."
+  },
+  "trace": {
+    "enabled": true,
+    "truncated": false,
+    "event_count": 1,
+    "targets": [
+      "0x0045ef50",
+      "0x00462e20",
+      "0x0045b1e0",
+      "0x004692e0",
+      "0x0045c000",
+      "0x004052b0",
+      "0x004049d0",
+      "0x0045b530"
+    ],
+    "imports": [
+      "d3d9.dll!IDirect3DDevice9::DrawPrimitive",
+      "d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitive",
+      "d3d9.dll!IDirect3DDevice9::DrawPrimitiveUP",
+      "d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitiveUP"
+    ],
+    "constructor_call": {
+      "function": "0x0045ef50",
+      "caller": "0x00d36210",
+      "return_address": "0x00d362de",
+      "ecx_entry": "0x27dfc520",
+      "eax_return": "0x27dfc520",
+      "completed": true
+    },
+    "state_setter_dispatcher_producer_and_draw_events": 0
+  },
+  "probe_log_sha256": "4d71c1cbaf663d332694636b2a7ab55409d134ffa37af199fc349bb17bbdd8a2",
+  "full_probe_report_sha256": "943b052bba6b4389fca8965b6eeb746969407a2521d03b728f011ddfabf80999"
+}

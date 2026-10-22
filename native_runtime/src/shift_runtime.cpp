@@ -12,6 +12,7 @@
 #include "shift_constraint_relation_reset_frame.hpp"
 #include "shift_post_solve_projection.hpp"
 #include "shift_vulkan_validation.hpp"
+#include "shift_vulkan_d3d9_packet_capture.hpp"
 #include "shift_recompiled_pcode_module.hpp"
 
 #include <algorithm>
@@ -287,71 +288,105 @@ std::string format_ui_state_gate_trace(
     return text.str();
 }
 
+std::string format_guest_call_trace_memory_slot(
+    const shift::runtime::RecompiledGuestCallTraceMemorySlot& slot) {
+    std::ostringstream text;
+    text << "{\"offset\":\""
+         << format_guest_address(slot.offset)
+         << "\",\"value\":";
+    if (slot.has_value) {
+        text << '"' << format_guest_address(slot.value) << '"';
+    } else {
+        text << "null";
+    }
+    text << ",\"last_writer\":";
+    if (slot.has_last_writer) {
+        const auto& writer = slot.last_writer;
+        text << "{\"sequence\":" << writer.sequence
+             << ",\"dispatch_count\":" << writer.dispatch_count
+             << ",\"function\":\""
+             << format_guest_address(writer.function)
+             << "\",\"ecx_entry\":";
+        if (writer.has_ecx_entry) {
+            text << '"' << format_guest_address(writer.ecx_entry) << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"caller_function\":";
+        if (writer.has_caller_function) {
+            text << '"' << format_guest_address(writer.caller_function)
+                 << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"call_return_address\":";
+        if (writer.has_call_return_address) {
+            text << '"' << format_guest_address(writer.call_return_address)
+                 << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"caller_return_address\":";
+        if (writer.has_caller_return_address) {
+            text << '"' << format_guest_address(writer.caller_return_address)
+                 << '"';
+        } else {
+            text << "null";
+        }
+        text << ",\"thread_id\":\""
+             << format_guest_address(writer.thread_id)
+             << "\",\"write_address\":\""
+             << format_guest_address(writer.write_address)
+             << "\",\"write_size\":" << writer.write_size
+             << ",\"word_value\":\""
+             << format_guest_address(writer.word_value) << "\"}";
+    } else {
+        text << "null";
+    }
+    text << '}';
+    return text.str();
+}
+
 std::string format_guest_call_trace_memory_slots(
     const std::vector<shift::runtime::RecompiledGuestCallTraceMemorySlot>&
         slots) {
     std::ostringstream text;
     text << '[';
-    for (size_t slot_index = 0; slot_index < slots.size(); ++slot_index) {
-        const auto& slot = slots[slot_index];
-        if (slot_index != 0) text << ',';
-        text << "{\"offset\":\""
-             << format_guest_address(slot.offset)
-             << "\",\"value\":";
-        if (slot.has_value) {
-            text << '"' << format_guest_address(slot.value) << '"';
-        } else {
-            text << "null";
-        }
-        text << ",\"last_writer\":";
-        if (slot.has_last_writer) {
-            const auto& writer = slot.last_writer;
-            text << "{\"sequence\":" << writer.sequence
-                 << ",\"dispatch_count\":" << writer.dispatch_count
-                 << ",\"function\":\""
-                 << format_guest_address(writer.function)
-                 << "\",\"ecx_entry\":";
-            if (writer.has_ecx_entry) {
-                text << '"' << format_guest_address(writer.ecx_entry) << '"';
-            } else {
-                text << "null";
-            }
-            text << ",\"caller_function\":";
-            if (writer.has_caller_function) {
-                text << '"' << format_guest_address(writer.caller_function)
-                     << '"';
-            } else {
-                text << "null";
-            }
-            text << ",\"call_return_address\":";
-            if (writer.has_call_return_address) {
-                text << '"'
-                     << format_guest_address(writer.call_return_address)
-                     << '"';
-            } else {
-                text << "null";
-            }
-            text << ",\"caller_return_address\":";
-            if (writer.has_caller_return_address) {
-                text << '"'
-                     << format_guest_address(writer.caller_return_address)
-                     << '"';
-            } else {
-                text << "null";
-            }
-            text << ",\"thread_id\":\""
-                 << format_guest_address(writer.thread_id)
-                 << "\",\"write_address\":\""
-                 << format_guest_address(writer.write_address)
-                 << "\",\"write_size\":" << writer.write_size
-                 << ",\"word_value\":\""
-                 << format_guest_address(writer.word_value) << "\"}";
-        } else {
-            text << "null";
-        }
-        text << '}';
+    for (size_t index = 0; index < slots.size(); ++index) {
+        if (index != 0) text << ',';
+        text << format_guest_call_trace_memory_slot(slots[index]);
     }
     text << ']';
+    return text.str();
+}
+
+std::string format_guest_call_trace_indexed_source(
+    const shift::runtime::RecompiledGuestCallTraceIndexedSource& source) {
+    std::ostringstream text;
+    text << "{\"pointer_offset\":\""
+         << format_guest_address(source.pointer_offset)
+         << "\",\"list_pointer\":"
+         << format_guest_call_trace_memory_slot(source.list_pointer)
+         << ",\"base_offset\":\""
+         << format_guest_address(source.base_offset)
+         << "\",\"source_base\":"
+         << format_guest_call_trace_memory_slot(source.source_base)
+         << ",\"count_offset\":\""
+         << format_guest_address(source.count_offset)
+         << "\",\"source_count\":"
+         << format_guest_call_trace_memory_slot(source.source_count)
+         << ",\"stride_offset\":\""
+         << format_guest_address(source.stride_offset)
+         << "\",\"element_stride\":"
+         << format_guest_call_trace_memory_slot(source.element_stride)
+         << ",\"source_address\":";
+    if (source.has_source_address) {
+        text << '"' << format_guest_address(source.source_address) << '"';
+    } else {
+        text << "null";
+    }
+    text << ",\"source_value\":"
+         << format_guest_call_trace_memory_slot(source.source_value) << '}';
     return text.str();
 }
 
@@ -466,6 +501,17 @@ std::string format_guest_call_trace(
              << format_guest_call_trace_memory_slots(event.target_slots)
              << ",\"stack_slots\":"
              << format_guest_call_trace_memory_slots(event.stack_slots)
+             << ",\"indexed_source\":";
+        if (event.has_indexed_source) {
+            text << format_guest_call_trace_indexed_source(
+                event.indexed_source);
+        } else {
+            text << "null";
+        }
+        text << ",\"edx_return_slot\":"
+             << format_guest_call_trace_memory_slot(event.edx_return_slot)
+             << ",\"edx_entry_slot\":"
+             << format_guest_call_trace_memory_slot(event.edx_entry_slot)
              << ",\"string_slots\":"
              << format_guest_call_trace_string_slots(event.string_slots)
              << '}';
@@ -1905,22 +1951,67 @@ struct Window {
         height = requested_height;
     }
 
-    void poll(bool& quit, InputState& input, std::string& quit_reason) {
+    void poll(bool& quit, InputState& input, std::string& quit_reason,
+              shift::runtime::RecompiledPcodeModule* guest_module = nullptr) {
         while (xcb_generic_event_t* raw = xcb_poll_for_event(connection)) {
             const uint8_t type = raw->response_type & 0x7f;
             if (type == XCB_KEY_PRESS || type == XCB_KEY_RELEASE) {
                 const auto* event =
                     reinterpret_cast<const xcb_key_press_event_t*>(raw);
                 const bool pressed = type == XCB_KEY_PRESS;
+                uint32_t virtual_key = 0;
+                uint32_t scan_code = 0;
+                bool extended = false;
+                switch (event->detail) {
+                    case 9: virtual_key = 0x1b; scan_code = 0x01; break;
+                    case 24: virtual_key = 'Q'; scan_code = 0x10; break;
+                    case 111:
+                        virtual_key = 0x26;
+                        scan_code = 0x48;
+                        extended = true;
+                        break;
+                    case 25: virtual_key = 'W'; scan_code = 0x11; break;
+                    case 116:
+                        virtual_key = 0x28;
+                        scan_code = 0x50;
+                        extended = true;
+                        break;
+                    case 39: virtual_key = 'S'; scan_code = 0x1f; break;
+                    case 113:
+                        virtual_key = 0x25;
+                        scan_code = 0x4b;
+                        extended = true;
+                        break;
+                    case 38: virtual_key = 'A'; scan_code = 0x1e; break;
+                    case 114:
+                        virtual_key = 0x27;
+                        scan_code = 0x4d;
+                        extended = true;
+                        break;
+                    case 40: virtual_key = 'D'; scan_code = 0x20; break;
+                    case 36: virtual_key = 0x0d; scan_code = 0x1c; break;
+                    case 65: virtual_key = 0x20; scan_code = 0x39; break;
+                    case 22: virtual_key = 0x08; scan_code = 0x0e; break;
+                    case 23: virtual_key = 0x09; scan_code = 0x0f; break;
+                    default: break;
+                }
+                if (guest_module && virtual_key != 0) {
+                    uint32_t message = pressed ? 0x0100 : 0x0101;
+                    uint32_t key_data = 1 | (scan_code << 16);
+                    if (extended) key_data |= 1u << 24;
+                    if (!pressed) key_data |= (1u << 30) | (1u << 31);
+                    guest_module->post_guest_window_message(
+                        message, virtual_key, key_data);
+                }
                 switch (event->detail) {
                     case 9:
-                        if (pressed) {
+                        if (pressed && !guest_module) {
                             quit = true;
                             quit_reason = "escape_key";
                         }
                         break;
                     case 24:
-                        if (pressed) {
+                        if (pressed && !guest_module) {
                             quit = true;
                             quit_reason = "q_key";
                         }
@@ -2110,6 +2201,8 @@ struct Runtime {
     uint32_t guest_d3d9_clear_color = 0;
     uint32_t guest_d3d9_clear_depth_bits = 0;
     uint32_t guest_d3d9_clear_stencil = 0;
+    std::unique_ptr<shift::vulkan::D3d9PacketCaptureAdapter>
+        guest_d3d9_packet_capture;
 
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
@@ -2137,7 +2230,7 @@ struct Runtime {
     std::vector<MaterialDraw> material_draws;
 
     shift::runtime::RecompiledGuestD3d9AdapterInfo
-    recompiled_d3d9_adapter_info() const {
+    recompiled_d3d9_adapter_info() {
         shift::runtime::RecompiledGuestD3d9AdapterInfo adapter_info{};
         auto& caps = adapter_info.caps;
         caps[0] = 1;  // D3DDEVTYPE_HAL: this Vulkan physical device.
@@ -2220,6 +2313,19 @@ struct Runtime {
         adapter_info.supports_d24s8_depth_stencil =
             (d24s8_properties.optimalTilingFeatures &
              VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
+        const char* capture_dir =
+            std::getenv("SHIFT_D3D9_PACKET_CAPTURE_DIR");
+        if (capture_dir != nullptr && capture_dir[0] != '\0') {
+            guest_d3d9_packet_capture =
+                std::make_unique<shift::vulkan::D3d9PacketCaptureAdapter>(
+                    capture_dir);
+            std::string error;
+            if (!guest_d3d9_packet_capture->install(adapter_info, error)) {
+                guest_d3d9_packet_capture.reset();
+                throw std::runtime_error(
+                    "could not install D3D9 packet capture: " + error);
+            }
+        }
         return adapter_info;
     }
 
@@ -4997,7 +5103,11 @@ int main(int argc, char** argv) {
             std::chrono::steady_clock::now();
 
         while (loop_policy.should_continue(quit, rendered)) {
-            window.poll(quit, live_input, quit_reason);
+            window.poll(
+                quit, live_input, quit_reason,
+                recompiled_module && args.recompiled_entrypoint_enabled
+                    ? recompiled_module.get()
+                    : nullptr);
 
             if (recompiled_module && args.recompiled_entrypoint_enabled) {
                 const int result = recompiled_module->run_guest_threads();

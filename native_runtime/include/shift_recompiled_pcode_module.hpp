@@ -89,6 +89,41 @@ struct RecompiledGuestCallTraceMemorySlot {
     bool has_last_writer = false;
 };
 
+struct RecompiledGuestCallTraceIndexedSource {
+    uint32_t pointer_offset = 0;
+    uint32_t base_offset = 0;
+    uint32_t count_offset = 0;
+    uint32_t stride_offset = 0;
+    uint32_t source_address = 0;
+    RecompiledGuestCallTraceMemorySlot list_pointer;
+    RecompiledGuestCallTraceMemorySlot source_base;
+    RecompiledGuestCallTraceMemorySlot source_count;
+    RecompiledGuestCallTraceMemorySlot element_stride;
+    RecompiledGuestCallTraceMemorySlot source_value;
+    bool has_source_address = false;
+};
+
+struct RecompiledGuestCallTraceIndirectField {
+    uint32_t table_pointer_offset = 0;
+    uint32_t data_base_offset = 0;
+    uint32_t receiver_pointer_offset = 0;
+    uint32_t record_stride = 1;
+    uint32_t record_field_offset = 0;
+    uint32_t index = 0;
+    uint32_t table_entry_address = 0;
+    uint32_t field_address = 0;
+    RecompiledGuestCallTraceMemorySlot table_pointer;
+    RecompiledGuestCallTraceMemorySlot data_base;
+    RecompiledGuestCallTraceMemorySlot table_entry;
+    RecompiledGuestCallTraceMemorySlot field_value;
+    bool uses_target_registers = false;
+    bool uses_target_pointer_receiver = false;
+    bool uses_stack_pointer_receiver = false;
+    uint32_t stack_pointer_offset = 0;
+    bool has_table_entry_address = false;
+    bool has_field_address = false;
+};
+
 struct RecompiledGuestCallTraceStringSlot {
     uint32_t offset = 0;
     uint32_t address = 0;
@@ -131,7 +166,15 @@ struct RecompiledGuestCallTraceEvent {
     bool completed = false;
     std::vector<RecompiledGuestCallTraceMemorySlot> caller_slots;
     std::vector<RecompiledGuestCallTraceMemorySlot> target_slots;
+    std::vector<RecompiledGuestCallTraceMemorySlot> target_dereference_chain;
+    std::vector<RecompiledGuestCallTraceMemorySlot> target_dereferenced_slots;
     std::vector<RecompiledGuestCallTraceMemorySlot> stack_slots;
+    RecompiledGuestCallTraceMemorySlot edx_entry_slot;
+    RecompiledGuestCallTraceMemorySlot edx_return_slot;
+    RecompiledGuestCallTraceIndexedSource indexed_source;
+    bool has_indexed_source = false;
+    RecompiledGuestCallTraceIndirectField indirect_field;
+    bool has_indirect_field = false;
     std::vector<RecompiledGuestCallTraceStringSlot> string_slots;
 };
 
@@ -181,6 +224,107 @@ using RecompiledGuestD3d9ClearCallback = bool (*) (
 using RecompiledGuestD3d9PresentCallback = bool (*) (
     void* context, std::string& error);
 
+struct RecompiledGuestD3d9VertexStream {
+    uint32_t guest_buffer = 0;
+    uint32_t offset = 0;
+    uint32_t stride = 0;
+    uint32_t frequency = 1;
+    uint32_t size = 0;
+    uint32_t usage = 0;
+    uint32_t fvf = 0;
+    uint32_t pool = 0;
+};
+
+struct RecompiledGuestD3d9TextureMip {
+    uint32_t width = 0;
+    uint32_t height = 0;
+    // Byte pitch for uncompressed rows or compressed block rows.
+    uint32_t pitch = 0;
+    std::vector<uint8_t> bytes;
+};
+
+struct RecompiledGuestD3d9TextureBinding {
+    uint32_t stage = 0;
+    uint32_t guest_texture = 0;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    uint32_t levels = 0;
+    uint32_t usage = 0;
+    uint32_t format = 0;
+    uint32_t pool = 0;
+    uint32_t pitch = 0;
+    bool backend_owned = false;
+    // One owned byte vector per level when this is guest-owned memory.
+    // The callback may inspect or copy them during the call and must not retain
+    // references to this packet or its vectors after returning.
+    std::vector<RecompiledGuestD3d9TextureMip> mip_data;
+};
+
+struct RecompiledGuestD3d9StateValue {
+    uint32_t object = 0;
+    uint32_t state = 0;
+    uint32_t value = 0;
+};
+
+struct RecompiledGuestD3d9SurfaceBinding {
+    uint32_t index = 0;
+    uint32_t guest_surface = 0;
+    std::array<uint32_t, 8> description{};
+};
+
+// Version 1 is a backend-neutral snapshot of one guest DrawIndexedPrimitive.
+// Resource addresses identify objects created through the adapter callbacks;
+// vector data is owned by this packet and is only valid for the callback call.
+struct RecompiledGuestD3d9DrawIndexedPrimitivePacket {
+    uint32_t version = 1;
+    uint32_t guest_device = 0;
+    uint32_t sequence = 0;
+    uint32_t primitive_type = 0;
+    int32_t base_vertex_index = 0;
+    uint32_t min_vertex_index = 0;
+    uint32_t num_vertices = 0;
+    uint32_t start_index = 0;
+    uint32_t primitive_count = 0;
+    std::array<RecompiledGuestD3d9VertexStream, 16> streams{};
+    uint32_t guest_index_buffer = 0;
+    uint32_t index_buffer_size = 0;
+    uint32_t index_buffer_usage = 0;
+    uint32_t index_buffer_format = 0;
+    uint32_t index_buffer_pool = 0;
+    uint32_t guest_vertex_declaration = 0;
+    std::vector<std::array<uint32_t, 2>> vertex_declaration_elements;
+    uint32_t guest_vertex_shader = 0;
+    std::vector<uint32_t> vertex_shader_tokens;
+    uint32_t guest_pixel_shader = 0;
+    std::vector<uint32_t> pixel_shader_tokens;
+    std::array<uint32_t, 256 * 4> vertex_float_constants{};
+    std::array<uint32_t, 224 * 4> pixel_float_constants{};
+    // Bit n marks register n as written through the matching D3D9 Set API.
+    std::array<uint32_t, 8> vertex_float_constant_set_mask{};
+    std::array<uint32_t, 8> pixel_float_constant_set_mask{};
+    std::array<uint32_t, 16> vertex_bool_constants{};
+    std::array<uint32_t, 16> pixel_bool_constants{};
+    uint32_t vertex_bool_constant_set_mask = 0;
+    uint32_t pixel_bool_constant_set_mask = 0;
+    std::vector<RecompiledGuestD3d9TextureBinding> textures;
+    std::vector<RecompiledGuestD3d9StateValue> render_states;
+    std::vector<RecompiledGuestD3d9StateValue> sampler_states;
+    std::array<uint32_t, 6> viewport{};
+    std::vector<RecompiledGuestD3d9SurfaceBinding> render_targets;
+    bool has_depth_surface = false;
+    RecompiledGuestD3d9SurfaceBinding depth_surface{};
+    uint32_t last_clear_flags = 0;
+    uint32_t last_clear_color = 0;
+    uint32_t last_clear_depth_bits = 0;
+    uint32_t last_clear_stencil = 0;
+    uint32_t last_clear_rect_count = 0;
+};
+
+using RecompiledGuestD3d9DrawIndexedPrimitiveCallback = bool (*) (
+    void* context,
+    const RecompiledGuestD3d9DrawIndexedPrimitivePacket& packet,
+    std::string& error);
+
 struct RecompiledGuestD3d9AdapterInfo {
     // D3DCAPS9 is 76 little-endian 32-bit words, including its float fields.
     std::array<uint32_t, 76> caps{};
@@ -189,6 +333,8 @@ struct RecompiledGuestD3d9AdapterInfo {
     std::string description;
     bool supports_bgra8_surface = false;
     bool supports_bgra8_texture = false;
+    bool supports_dxt3_texture = false;
+    bool supports_dxt5_texture = false;
     bool supports_d24s8_depth_stencil = false;
     uint32_t bgra8_sample_count_mask = 0;
     uint32_t d24s8_sample_count_mask = 0;
@@ -204,6 +350,8 @@ struct RecompiledGuestD3d9AdapterInfo {
     RecompiledGuestD3d9ReleaseVertexBufferCallback release_index_buffer = nullptr;
     RecompiledGuestD3d9ClearCallback clear = nullptr;
     RecompiledGuestD3d9PresentCallback present = nullptr;
+    RecompiledGuestD3d9DrawIndexedPrimitiveCallback draw_indexed_primitive =
+        nullptr;
 };
 
 struct RecompiledGuestSchedulerSnapshot {
@@ -229,6 +377,8 @@ struct RecompiledGuestSchedulerSnapshot {
     std::vector<std::string> guest_call_trace_imports;
     std::vector<uint32_t> guest_call_trace_slot_offsets;
     std::vector<uint32_t> guest_call_trace_target_slot_offsets;
+    std::vector<uint32_t> guest_call_trace_target_dereference_chain;
+    std::vector<uint32_t> guest_call_trace_indirect_field_offsets;
     std::vector<uint32_t> guest_call_trace_stack_slot_offsets;
     std::vector<uint32_t> guest_call_trace_string_slot_offsets;
     std::vector<RecompiledGuestCallTraceEvent> guest_call_trace;
@@ -266,6 +416,8 @@ public:
     Pe32ImageInfo load_pe32_image(const std::string& path);
     int call_pe32_entry_point();
     int run_guest_threads();
+    void post_guest_window_message(uint32_t message, uint32_t wparam,
+                                   uint32_t lparam);
     bool pe32_entry_point_complete() const;
     RecompiledGuestSchedulerSnapshot guest_scheduler_snapshot() const;
     bool load_supplemental_module(const std::string& shared_object_path);
