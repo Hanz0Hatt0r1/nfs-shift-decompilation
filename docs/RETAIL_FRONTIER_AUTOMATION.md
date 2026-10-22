@@ -821,3 +821,17 @@ v215/v217/v218/v219/v240 replays establish the bounded retail-requested Vulkan
 clear and queue-present milestone; v240 also narrows the pending UI consumer
 path. The separate milestones still to measure are first retail draw, frontend
 and offline race.
+
+## 2026-10-22 — v751 UI callback gate provenance
+
+The v751 controlled P-code replay requested 120 host frames and completed the
+host-frame loop without a runtime blocker. Across 594 calls to `0x0050CEB0`,
+the state word at `parent+0x34`, callback pointer at `parent+0x48`, and gate
+return were all zero. The last traced writer to the callback pointer in every
+gate event was constructor `0x004EB550`, which wrote zero; the helper byte at
+`parent+0x0c` remained zero from base initializer `0x0050C820`, so
+`0x0050C880` returned zero and the gate skipped its wait loop. This explains
+the observed state but does not prove that no registration/setter path exists
+in other UI states. Retail draw translation, frontend readiness, and race
+entry remain unproven. See the [v751 provenance report](../evidence/retail_frontier_20261022/process1_ui_callback_pointer_provenance_v751.md)
+and its [machine-readable evidence](../evidence/retail_frontier_20261022/process1_ui_callback_pointer_provenance_v751.json).

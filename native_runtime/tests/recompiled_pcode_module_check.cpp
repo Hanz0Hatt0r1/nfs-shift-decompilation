@@ -2409,13 +2409,17 @@ int main(int argc, char** argv) {
 
         require(setenv("SHIFT_TRACE_UI_STATE_GATE", "1", 1) == 0,
                 "could not enable UI state gate trace fixture");
-        require(setenv("SHIFT_TRACE_GUEST_PROVENANCE", "0x00be250c", 1) == 0,
-                "could not enable helper flag provenance fixture");
+        require(setenv("SHIFT_TRACE_GUEST_PROVENANCE",
+                       "0x00be250c,0x00be2548", 1) == 0,
+                "could not enable UI state provenance fixture");
         {
             shift::runtime::RecompiledPcodeModule gate_trace_module(argv[1]);
             write_guest_u32(gate_trace_module, "register", 4, 0x00be2500);
             require(gate_trace_module.call(0x0050c7f0) == 0,
                     "helper flag writer fixture failed: " +
+                        gate_trace_module.last_error());
+            require(gate_trace_module.call(0x0050c7d0) == 0,
+                    "callback pointer writer fixture failed: " +
                         gate_trace_module.last_error());
             require(gate_trace_module.call(0x0050c7e0) == 0,
                     "adjacent helper byte writer fixture failed: " +
@@ -2430,6 +2434,7 @@ int main(int argc, char** argv) {
                     "UI state gate trace missed the gate/helper calls");
             const auto& helper = snapshot.ui_state_gate_trace.back();
             const auto& writer = helper.helper_flag_last_writer;
+            const auto& gate = snapshot.ui_state_gate_trace.front();
             require(helper.function == 0x0050c880,
                     "UI helper trace captured the wrong function");
             require(helper.has_helper_flag_byte &&
@@ -2446,6 +2451,21 @@ int main(int argc, char** argv) {
                         writer.write_size == 1 &&
                         writer.word_value == 0x00000001,
                     "UI helper trace reported the wrong byte write");
+            require(gate.function == 0x0050ceb0 &&
+                        gate.has_gate_callback_object &&
+                        gate.gate_callback_object == 0x00be2600,
+                    "UI gate trace missed the callback pointer value");
+            require(gate.has_gate_callback_pointer_last_writer,
+                    "UI gate trace missed the callback pointer's last writer");
+            const auto& callback_writer =
+                gate.gate_callback_pointer_last_writer;
+            require(callback_writer.function == 0x0050c7d0 &&
+                        callback_writer.has_ecx_entry &&
+                        callback_writer.ecx_entry == 0x00be2500 &&
+                        callback_writer.write_address == 0x00be2548 &&
+                        callback_writer.write_size == 4 &&
+                        callback_writer.word_value == 0x00be2600,
+                    "UI gate trace reported the wrong callback pointer writer");
         }
         require(unsetenv("SHIFT_TRACE_GUEST_PROVENANCE") == 0,
                 "could not disable helper flag provenance fixture");

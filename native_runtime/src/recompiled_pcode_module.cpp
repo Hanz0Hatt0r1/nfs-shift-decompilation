@@ -2303,10 +2303,62 @@ struct RecompiledPcodeModule::Impl {
                         }
                     }
                     uint32_t callback_vtable = 0;
+                    const uint64_t callback_pointer_address =
+                        static_cast<uint64_t>(entry_registers.ecx) + 0x48;
                     event.has_gate_callback_object =
                         read_guest_diagnostic_u32(
-                            static_cast<uint64_t>(entry_registers.ecx) + 0x48,
+                            callback_pointer_address,
                             event.gate_callback_object);
+                    if (callback_pointer_address <= UINT32_MAX) {
+                        const GuestWriteProvenance* last_writer = nullptr;
+                        const auto target_last_writer =
+                            guest_target_last_writers.find(
+                                static_cast<uint32_t>(callback_pointer_address));
+                        if (target_last_writer !=
+                            guest_target_last_writers.end()) {
+                            last_writer = &target_last_writer->second;
+                        } else if (guest_write_provenance_all()) {
+                            const auto word_writer = guest_last_writers.find(
+                                static_cast<uint32_t>(callback_pointer_address) &
+                                ~UINT32_C(3));
+                            if (word_writer != guest_last_writers.end() &&
+                                word_writer->second.write_address <=
+                                    callback_pointer_address &&
+                                callback_pointer_address <
+                                    static_cast<uint64_t>(
+                                        word_writer->second.write_address) +
+                                        word_writer->second.write_size) {
+                                last_writer = &word_writer->second;
+                            }
+                        }
+                        if (last_writer != nullptr) {
+                            const auto& provenance = *last_writer;
+                            auto& trace =
+                                event.gate_callback_pointer_last_writer;
+                            event.has_gate_callback_pointer_last_writer = true;
+                            trace.sequence = provenance.sequence;
+                            trace.dispatch_count = provenance.dispatch_count;
+                            trace.function = provenance.writer_function;
+                            trace.ecx_entry = provenance.writer_ecx;
+                            trace.has_ecx_entry = provenance.has_writer_ecx;
+                            trace.caller_function =
+                                provenance.writer_caller_function;
+                            trace.has_caller_function =
+                                provenance.has_writer_caller_function;
+                            trace.call_return_address =
+                                provenance.writer_call_return_address;
+                            trace.has_call_return_address =
+                                provenance.has_writer_call_return_address;
+                            trace.caller_return_address =
+                                provenance.writer_caller_return_address;
+                            trace.has_caller_return_address =
+                                provenance.has_writer_caller_return_address;
+                            trace.thread_id = provenance.thread_id;
+                            trace.write_address = provenance.write_address;
+                            trace.write_size = provenance.write_size;
+                            trace.word_value = provenance.word_value;
+                        }
+                    }
                     event.has_callback_target =
                         event.has_gate_callback_object &&
                         event.gate_callback_object != 0 &&

@@ -132,6 +132,41 @@ std::string format_ui_state_gate_trace(
         } else {
             text << "null";
         }
+        text << ",\"gate_callback_pointer_last_writer\":";
+        if (event.has_gate_callback_pointer_last_writer) {
+            const auto& writer = event.gate_callback_pointer_last_writer;
+            text << "{\"sequence\":" << writer.sequence
+                 << ",\"dispatch_count\":" << writer.dispatch_count
+                 << ",\"function\":\""
+                 << format_guest_address(writer.function)
+                 << "\",\"ecx_entry\":";
+            if (writer.has_ecx_entry) {
+                text << '"' << format_guest_address(writer.ecx_entry) << '"';
+            } else {
+                text << "null";
+            }
+            text << ",\"caller_function\":";
+            if (writer.has_caller_function) {
+                text << '"' << format_guest_address(writer.caller_function)
+                     << '"';
+            } else {
+                text << "null";
+            }
+            text << ",\"call_return_address\":";
+            if (writer.has_call_return_address) {
+                text << '"' << format_guest_address(writer.call_return_address)
+                     << '"';
+            } else {
+                text << "null";
+            }
+            text << ",\"write_address\":\""
+                 << format_guest_address(writer.write_address)
+                 << "\",\"write_size\":" << writer.write_size
+                 << ",\"word_value\":\""
+                 << format_guest_address(writer.word_value) << "\"}";
+        } else {
+            text << "null";
+        }
         text << ",\"gate_state_last_writer\":";
         if (event.has_gate_state_last_writer) {
             text << "{\"sequence\":"

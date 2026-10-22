@@ -47,6 +47,7 @@ struct RecompiledUiStateGateTraceEvent {
     uint32_t esp_entry = 0;
     uint32_t gate_state_word = 0;
     uint32_t gate_callback_object = 0;
+    RecompiledGuestWriteTrace gate_callback_pointer_last_writer{};
     uint64_t gate_state_last_writer_sequence = 0;
     uint64_t gate_state_last_writer_dispatch_count = 0;
     uint32_t gate_state_last_writer_function = 0;
@@ -67,6 +68,7 @@ struct RecompiledUiStateGateTraceEvent {
     uint8_t helper_flag_byte = 0;
     bool has_gate_state_word = false;
     bool has_gate_callback_object = false;
+    bool has_gate_callback_pointer_last_writer = false;
     bool has_gate_state_last_writer = false;
     bool has_gate_state_last_writer_ecx = false;
     bool has_gate_state_last_writer_caller_function = false;
