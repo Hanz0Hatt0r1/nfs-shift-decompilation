@@ -15,6 +15,9 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
 - BMW material→DDS→Vulkan adapter;
 - Linux CI coverage for native smoke paths.
 
+All renderer entrypoints request Vulkan 1.1. The standalone device probe is the
+exception: it negotiates the loader version to report device capabilities.
+
 ## Rules
 
 1. RenderCommand/1 is the source contract.
@@ -26,6 +29,11 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
 ## Current limitation
 
 The backend is not yet a complete production renderer. Full BMW shader/material execution and full RenderCommand submission remain bounded by shader/reference coverage and runtime evidence.
+
+This backend has no Xbox 360/Xenos frontend: it consumes D3D9 capture bundles
+and neutral SHIFT render packets, not PM4 ring-buffer commands or Xenos shader
+microcode. It cannot replace the external Xenos GPU plugin until those inputs
+are decoded and translated into this renderer's resource and draw contracts.
 
 ## Commands
 

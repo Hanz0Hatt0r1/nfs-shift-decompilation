@@ -114,7 +114,7 @@ Context create_context() {
     app.applicationVersion = 1;
     app.pEngineName = "SHIFT";
     app.engineVersion = 1;
-    app.apiVersion = VK_API_VERSION_1_0;
+    app.apiVersion = VK_API_VERSION_1_1;
 
     VkInstanceCreateInfo instance_info{};
     instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;

@@ -17,7 +17,7 @@ extern "C" int shift_vulkan_surface_probe_backend(
     app.applicationVersion = 1;
     app.pEngineName = "SHIFT";
     app.engineVersion = 1;
-    app.apiVersion = VK_API_VERSION_1_0;
+    app.apiVersion = VK_API_VERSION_1_1;
 
     VkInstanceCreateInfo instance_create{};
     instance_create.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -59,7 +59,15 @@ extern "C" int shift_vulkan_surface_probe_backend(
     }
 
     bool compatible_queue = false;
+    bool found_vulkan_1_1_device = false;
     for (VkPhysicalDevice physical : devices) {
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(physical, &properties);
+        if (properties.apiVersion < VK_API_VERSION_1_1) {
+            continue;
+        }
+        found_vulkan_1_1_device = true;
+
         uint32_t queue_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(
             physical, &queue_count, nullptr);
@@ -86,7 +94,10 @@ extern "C" int shift_vulkan_surface_probe_backend(
 
     vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
-    return compatible_queue
-        ? SHIFT_VULKAN_SURFACE_PROBE_OK
-        : SHIFT_VULKAN_SURFACE_PROBE_QUEUE_FAMILY_FAILURE;
+    if (compatible_queue) {
+        return SHIFT_VULKAN_SURFACE_PROBE_OK;
+    }
+    return found_vulkan_1_1_device
+        ? SHIFT_VULKAN_SURFACE_PROBE_QUEUE_FAMILY_FAILURE
+        : SHIFT_VULKAN_SURFACE_PROBE_API_VERSION_FAILURE;
 }
