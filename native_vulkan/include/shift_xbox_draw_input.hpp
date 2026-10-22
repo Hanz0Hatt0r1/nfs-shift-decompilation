@@ -164,6 +164,16 @@ struct CapturedRasterState {
     bool scissor_has_area;
 };
 
+struct CapturedShaderConstants {
+    std::array<std::array<uint32_t, 4>, 6> vertex_c64_to_c69;
+    std::array<uint32_t, 4> vertex_c254;
+    std::array<uint32_t, 4> vertex_c255;
+    std::array<uint32_t, 4> pixel_c0;
+    std::array<uint32_t, 4> pixel_c255;
+    bool pixel_b128;
+    bool pixel_b129;
+};
+
 // Translates only the captured PM4_DRAW_INDX form. This decodes the guest
 // command into renderer inputs; it does not execute or emulate Xenos state.
 bool decode_captured_draw_indx(
@@ -198,6 +208,18 @@ bool decode_captured_texture_sampling(
 bool decode_captured_raster_state(
     const CapturedRasterRegisters& registers,
     CapturedRasterState* output,
+    std::string* error);
+
+// Resolves only the constants read by the captured VS/PS pair. The float bank
+// is indexed as 512 float4 registers; the bool bank is eight packed dwords.
+bool decode_captured_shader_constants(
+    const uint32_t* float_bank_words,
+    size_t float_word_count,
+    const uint32_t* bool_bank_words,
+    size_t bool_word_count,
+    uint32_t vertex_constant_control,
+    uint32_t pixel_constant_control,
+    CapturedShaderConstants* output,
     std::string* error);
 
 // Untiles the captured 8_8_8_8, 8-in-32, tiled 2D texture into linear texel

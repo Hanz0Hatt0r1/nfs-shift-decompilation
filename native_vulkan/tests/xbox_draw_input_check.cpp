@@ -1,5 +1,6 @@
 #include "shift_xbox_draw_input.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cstdlib>
 #include <iostream>
@@ -143,6 +144,51 @@ int main() {
     require(!shift::xbox::decode_captured_raster_state(
                 unsupported_raster, &raster_state, &error),
             "uncaptured non-zero window offset was accepted");
+
+    std::array<uint32_t, 512 * 4> captured_float_constants{};
+    const auto set_float4 = [&](uint32_t index, std::array<uint32_t, 4> value) {
+        std::copy(value.begin(), value.end(), captured_float_constants.begin() + index * 4);
+    };
+    set_float4(64, {0x3F47FFFFu, 0x00000000u, 0x00000000u, 0xC3F9FFFFu});
+    set_float4(65, {0x00000000u, 0x3FB1C71Cu, 0x00000000u, 0xC3F9FFFFu});
+    set_float4(66, {0x00000000u, 0x00000000u, 0x3F8020C5u, 0xBF8020C5u});
+    set_float4(67, {0x00000000u, 0x00000000u, 0x3F800000u, 0x00000000u});
+    set_float4(68, {0x3EB14000u, 0x00000000u, 0x00000000u, 0x3EB14000u});
+    set_float4(69, {0x00000000u, 0x3EB00000u, 0x00000000u, 0x3EB00000u});
+    set_float4(254, {0x00000000u, 0x3F800000u, 0xBF800000u, 0x40800000u});
+    set_float4(255, {0x43FA0000u, 0x00000000u, 0x00000000u, 0x00000000u});
+    set_float4(256, {0x3F800000u, 0x3F800000u, 0x3F800000u, 0x3F800000u});
+    set_float4(511, {0x3F800000u, 0x00000000u, 0x00000000u, 0x00000000u});
+    std::array<uint32_t, 8> captured_bool_constants{};
+    captured_bool_constants[4] = 0x00000001u;
+    shift::xbox::CapturedShaderConstants shader_constants{};
+    require(shift::xbox::decode_captured_shader_constants(
+                captured_float_constants.data(), captured_float_constants.size(),
+                captured_bool_constants.data(), captured_bool_constants.size(),
+                0x000FF000u, 0x000FF100u, &shader_constants, &error),
+            "captured Xbox shader constant banks were rejected");
+    require(shader_constants.vertex_c64_to_c69[0][0] == 0x3F47FFFFu &&
+                shader_constants.vertex_c64_to_c69[5][3] == 0x3EB00000u &&
+                shader_constants.vertex_c254[2] == 0xBF800000u &&
+                shader_constants.vertex_c255[0] == 0x43FA0000u,
+            "captured Xbox vertex shader constants changed");
+    require(shader_constants.pixel_c0 ==
+                std::array<uint32_t, 4>{0x3F800000u, 0x3F800000u,
+                                        0x3F800000u, 0x3F800000u} &&
+                shader_constants.pixel_c255 ==
+                std::array<uint32_t, 4>{0x3F800000u, 0, 0, 0} &&
+                shader_constants.pixel_b128 && !shader_constants.pixel_b129,
+            "captured Xbox pixel constants or conditional path changed");
+    require(!shift::xbox::decode_captured_shader_constants(
+                captured_float_constants.data(), captured_float_constants.size() - 1,
+                captured_bool_constants.data(), captured_bool_constants.size(),
+                0x000FF000u, 0x000FF100u, &shader_constants, &error),
+            "truncated captured shader constant bank was accepted");
+    require(!shift::xbox::decode_captured_shader_constants(
+                captured_float_constants.data(), captured_float_constants.size(),
+                captured_bool_constants.data(), captured_bool_constants.size(),
+                0x000FF000u, 0x000FE100u, &shader_constants, &error),
+            "shader constant range too short for the captured pair was accepted");
 
     shift::xbox::CapturedTextureFetch white_border_texture = texture_fetch;
     white_border_texture.border_color = 1;

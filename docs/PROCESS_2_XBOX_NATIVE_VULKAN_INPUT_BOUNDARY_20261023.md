@@ -173,6 +173,20 @@ are cross-checked against the public [Xenia register map](https://github.com/xen
 and [register fields](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/registers.h),
 documentation only, with no Xenia runtime dependency.
 
+The same snapshot also retains the constants required by the exact shader pair.
+`SQ_VS_CONST=0x000ff000` sets the VS base to float4 0; `SQ_PS_CONST=0x000ff100`
+sets the PS base to float4 256. Thus the PS's `c0` and `c255` refer to physical
+float-bank entries 256 and 511. The packed bool bank has
+`0x4904=0x00000001`, which resolves `b128=true` and `b129=false`. Combined with
+the captured PS disassembly, the `!b128` jump is not taken (the texture fetch
+runs), and the `!b129` jump is taken to label L4. The project-owned constants
+decoder now resolves only the captured pair's `c64-c69`, `c254-c255`, PS
+`c0/c255`, and `b128/b129`; it emits no shader code. The bank mapping and
+conditional-jump fields are cross-checked against public Xenia
+[`command_processor.cc`](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/command_processor.cc)
+and [`ucode.h`](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/ucode.h),
+documentation only.
+
 Read-only disassembly of that captured pair narrows the independent translator
 needed for this draw:
 
@@ -207,10 +221,12 @@ texel order with its captured 8-in-32 byte swap. The sampling decoder maps the
 captured swizzle, channel signs, clamps, filters, anisotropy, and border code
 to semantic values; it rejects reserved selector values. A bounded raster
 decoder maps the captured single-sample 1280x720 gamma RGBA8/D24S8 target,
-centered viewport, write/depth enables, and intersected scissor. It does not
-map Xenos EDRAM tile storage to a Vulkan image or create a pipeline. Border
-code 0 has unresolved alpha, so the Vulkan border color is not guessed.
-Regressions cover
+centered viewport, write/depth enables, and intersected scissor. A shader
+constant decoder applies the captured VS/PS constant bases and resolves the
+constants read by this shader pair, including its pixel-shader branch values.
+It does not map Xenos EDRAM tile storage to a Vulkan image, create a pipeline,
+translate microcode, or emit SPIR-V. Border code 0 has unresolved alpha, so the
+Vulkan border color is not guessed. Regressions cover
 the captured packet and descriptors, layout boundaries, byte order, sampling
 semantics, and unsupported or truncated inputs. The code does not interpret a
 general Xenos register stream, translate shaders, or issue Vulkan commands.
@@ -226,8 +242,9 @@ claim.
 ## Local checks
 
 - `shift_xbox_draw_input_check`: passed; covers the captured packet, mismatched
-  binding, target format/viewport/scissor state, unsupported opcode/layout/
-  sampling values, non-zero window offsets, and truncated input.
+  binding, target format/viewport/scissor state, shader constant addressing and
+  branch values, unsupported opcode/layout/sampling values, non-zero window
+  offsets, and truncated input.
 - The C++ check passed in the host build and as an arm64-v8a binary on a Redmi
   Note 8 Pro (Android API 33).
 - `tools/run_linux_vulkan_smoke.py ... --validation`: the neutral synthetic BMW

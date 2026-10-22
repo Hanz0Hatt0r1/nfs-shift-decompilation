@@ -379,6 +379,59 @@ bool decode_captured_raster_state(
     return true;
 }
 
+bool decode_captured_shader_constants(
+    const uint32_t* float_bank_words,
+    size_t float_word_count,
+    const uint32_t* bool_bank_words,
+    size_t bool_word_count,
+    uint32_t vertex_constant_control,
+    uint32_t pixel_constant_control,
+    CapturedShaderConstants* output,
+    std::string* error) {
+    constexpr size_t kFloatBankWords = 512u * 4u;
+    constexpr size_t kBoolBankWords = 8;
+    constexpr uint32_t kControlReservedMask = 0xFFE00E00u;
+    if (!float_bank_words || !bool_bank_words || !output ||
+        float_word_count < kFloatBankWords || bool_word_count < kBoolBankWords) {
+        return fail("truncated captured shader constant banks", error);
+    }
+
+    const auto valid_control = [](uint32_t control) {
+        const uint32_t base = control & 0x1FFu;
+        const uint32_t size = ((control >> 12) & 0x1FFu) + 1;
+        return (control & kControlReservedMask) == 0 && size >= 256 &&
+               base + size <= 512;
+    };
+    if (!valid_control(vertex_constant_control) ||
+        !valid_control(pixel_constant_control)) {
+        return fail("captured shader constant range does not cover required registers", error);
+    }
+
+    const uint32_t vertex_base = vertex_constant_control & 0x1FFu;
+    const uint32_t pixel_base = pixel_constant_control & 0x1FFu;
+    const auto read_float4 = [float_bank_words](uint32_t base, uint32_t index) {
+        std::array<uint32_t, 4> value{};
+        std::copy_n(float_bank_words + (base + index) * 4, 4, value.begin());
+        return value;
+    };
+
+    CapturedShaderConstants decoded{};
+    for (uint32_t i = 0; i < decoded.vertex_c64_to_c69.size(); ++i) {
+        decoded.vertex_c64_to_c69[i] = read_float4(vertex_base, 64 + i);
+    }
+    decoded.vertex_c254 = read_float4(vertex_base, 254);
+    decoded.vertex_c255 = read_float4(vertex_base, 255);
+    decoded.pixel_c0 = read_float4(pixel_base, 0);
+    decoded.pixel_c255 = read_float4(pixel_base, 255);
+    decoded.pixel_b128 = (bool_bank_words[128 / 32] & (1u << (128 % 32))) != 0;
+    decoded.pixel_b129 = (bool_bank_words[129 / 32] & (1u << (129 % 32))) != 0;
+    *output = decoded;
+    if (error) {
+        error->clear();
+    }
+    return true;
+}
+
 bool untile_captured_texture_2d(
     const CapturedTextureFetch& texture,
     const uint8_t* guest_bytes,
