@@ -1,0 +1,61 @@
+{
+  "schema": "shift.xbox360.rexglue.function-entry.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "guest_address": "0x8233D0F8",
+  "entry_bytes_hex": "816300402b0b0000419a00185563003e81630000814b015c7d4903a64e80042081630000814b01a87d4903a64e800420",
+  "capture_length_bytes": 48,
+  "runtime_trap": {
+    "function": "0x8233C810",
+    "indirect_call_instruction": "0x8233C860",
+    "indirect_call_return_address": "0x8233C864",
+    "indirect_target": "0x8233D0F8",
+    "trap": "rex::runtime::InvalidFunctionTrap",
+    "caller_chain": [
+      "0x8233C810",
+      "0x823F9EB0",
+      "0x823F3BC8",
+      "0x82327830",
+      "0x8231AEE0",
+      "0x822D6EA8",
+      "0x822D68C8",
+      "0x822EF7B0",
+      "0x822BD0C0",
+      "0x82FD5658",
+      "0x82FC1880",
+      "0x82D30380",
+      "xstart"
+    ]
+  },
+  "memory_capture": "GDB read 64 bytes from host address 0x18233D0F8 while PPCContext.ctr and last_indirect_target both contained 0x8233D0F8; the first 48 bytes are the complete retail function.",
+  "function_length_bytes": 48,
+  "semantics": "Null-conditional virtual dispatch: load the pointer at object offset +0x40; if non-null, dispatch through vtable slot +0x15C; if null, dispatch through the original object's vtable slot +0x1A8.",
+  "decoded_instructions": [
+    "lwz r11,0x40(r3)",
+    "cmplwi cr6,r11,0",
+    "beq cr6,0x8233D118",
+    "rotlwi r3,r11,0",
+    "lwz r11,0(r3)",
+    "lwz r10,0x15C(r11)",
+    "mtctr r10",
+    "bctr",
+    "loc_8233D118: lwz r11,0(r3)",
+    "lwz r10,0x1A8(r11)",
+    "mtctr r10",
+    "bctr"
+  ],
+  "runtime_context": {
+    "guest_code_base": "0x100000000",
+    "host_capture_address": "0x18233D0F8",
+    "user_visual_observation": "The user reports seeing the original game's loading screen; no screenshot was captured."
+  },
+  "confidence": "full_live_guest_capture_codegen_build_runtime_verified",
+  "limitations": [
+    "Runtime execution passed this entry and reached the next unregistered guest target 0x823270D0; its full live capture is recorded separately.",
+    "No screenshot, main-menu state, completed retail draw/present, or race has been verified."
+  ],
+  "runtime_validation": {
+    "result": "ReXGlue v0.10.0 generated and registered the complete 48-byte dispatcher; the Linux AMD64 runtime linked successfully.",
+    "execution": "GDB hit 0x8233D0F8, continued through its dispatcher, and next trapped on 0x823270D0 from guest call instruction 0x823FA1D4.",
+    "renderer_limit": "No vkCmdDraw, vkCmdDrawIndexed, or vkQueuePresentKHR breakpoint was hit before the trap."
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "schema": "shift.xbox360.rexglue.function-entry.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "guest_address": "0x82D365A0",
+  "entry_bytes_hex": "814400007c8b23787c641b787d635b78816a005c7d6903a64e800420",
+  "decoded_instructions": [
+    "lwz r10,0(r4)",
+    "mr r11,r4",
+    "mr r4,r3",
+    "mr r3,r11",
+    "lwz r11,0x5C(r10)",
+    "mtctr r11",
+    "bctr"
+  ],
+  "function_length_bytes": 28,
+  "semantics": "Load the callback from object vtable slot +0x5C, rearrange r3/r4 to match the retail call convention, and tail-dispatch through ctr.",
+  "runtime_fatal": {
+    "function": "0x823F3BC8",
+    "indirect_call_instruction": "0x823F3C00",
+    "indirect_call_return_address": "0x823F3C04",
+    "indirect_target": "0x82D365A0",
+    "trap": "rex::runtime::InvalidFunctionTrap",
+    "caller_chain": [
+      "0x823F3BC8",
+      "0x82327830",
+      "0x8231AEE0",
+      "0x822D6EA8",
+      "0x822D68C8",
+      "0x822EF7B0",
+      "0x822BD0C0",
+      "0x8301DEC8",
+      "0x82FC1880",
+      "0x82D30380",
+      "xstart"
+    ]
+  },
+  "memory_capture": "GDB read 16 bytes from host address 0x182D365A0 while PPCContext.ctr and last_indirect_target both contained 0x82D365A0.",
+  "full_memory_capture": "A later GDB run read all 28 bytes at host address 0x182D365A0 when the generated entry was reached.",
+  "dispatched_indirect_target": "0x8265BE68",
+  "runtime_validation": {
+    "codegen": "ReXGlue v0.10.0 inferred a 28-byte indirect-dispatch thunk and registered 0x82D365A0.",
+    "build": "The Linux AMD64 nfs_shift target linked successfully.",
+    "execution": "GDB reached the function and captured its full 28-byte body; the function dispatched through the live vtable to 0x8265BE68.",
+    "next_runtime_trap": "0x8265BE68 from indirect call instruction 0x8264B4F4"
+  },
+  "prior_frontier": "The same rebuilt runtime reached 0x8233BBE0 and returned through its registered generated function before trapping here.",
+  "user_visual_observation": "The user reports seeing the original game's loading screen; no screenshot was captured.",
+  "confidence": "observed_entry_bytes",
+  "limitations": [
+    "No screenshot, main-menu state, completed retail draw/present, or race has been verified."
+  ]
+}

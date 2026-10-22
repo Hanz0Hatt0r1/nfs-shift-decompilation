@@ -1,0 +1,65 @@
+{
+  "schema": "shift.xbox360.rexglue.frontier-capture.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "runtime_binary_sha256": "d3702554b63906d626bb0a1c9405cdaeb7554b5e00970946b033b7107a58972c",
+  "guest_address": "0x82341198",
+  "capture_length_bytes": 64,
+  "entry_bytes_hex": "816300082b0b00034d9900207d6903a62f0b0000405a000c405a0010409a000c388000144bfeabcc3d60831b38800000816b300c2b0b0000419a00084bfeafac",
+  "runtime_observation": {
+    "trap": "rex::runtime::InvalidFunctionTrap",
+    "target_was_executed": false,
+    "host_capture_address": "0x182341198",
+    "guest_code_base": "0x100000000",
+    "caller": "0x8232C370",
+    "call_instruction": "0x8232C398",
+    "return_address": "0x8232C39C",
+    "caller_chain": [
+      "0x8232C370",
+      "0x8232BE18",
+      "0x8233D630",
+      "0x8233CD08",
+      "0x8233CD08",
+      "0x8233C428",
+      "0x823282B0",
+      "0x823FA1A0",
+      "0x823F3BC8",
+      "0x82327830",
+      "0x8231AEE0",
+      "0x822D6EA8",
+      "0x822D68C8",
+      "0x822EF7B0",
+      "0x822BD0C0",
+      "0x82FD5658",
+      "0x82FC1880"
+    ],
+    "renderer_breakpoints": "No vkCmdDraw, vkCmdDrawIndexed, or vkQueuePresentKHR breakpoint was hit before this trap."
+  },
+  "decoded_instructions": [
+    "0x82341198: lwz r11,8(r3)",
+    "0x8234119C: cmplwi cr6,r11,3",
+    "0x823411A0: bclr 12,25",
+    "0x823411A4: mtctr r11",
+    "0x823411A8: cmpwi cr6,r11,0",
+    "0x823411AC: bdzf 26,0x823411B8",
+    "0x823411B0: bdzf 26,0x823411C0",
+    "0x823411B4: bf 26,0x823411C0",
+    "0x823411B8: li r4,20",
+    "0x823411BC: b 0x8232BD8C",
+    "0x823411C0: lis r11,0x831B",
+    "0x823411C4: li r4,0",
+    "0x823411C8: lwz r11,0x300C(r11)",
+    "0x823411CC: cmplwi cr6,r11,0",
+    "0x823411D0: bt 26,0x823411D8",
+    "0x823411D4: b 0x8232C184"
+  ],
+  "capture_limitations": [
+    "The branch at 0x823411D0 targets 0x823411D8, beyond the 64 captured bytes; the full function extent and that path are unresolved.",
+    "The indirect target trapped before any instruction at 0x82341198 executed; this is live memory evidence, not path execution evidence.",
+    "The local extracted default.pe artifact (extraction provenance unverified; SHA-256 23844dbba0cf72bc11512821b90008ea5d2b06ee886d921f416ca6caae43a628) is not byte-equivalent: its mapped byte at 0x82341198 is 0x90 while this exact retail XEX live capture begins with 0x81."
+  ],
+  "independent_decode": {
+    "decoder": "LLVM MC, powerpc64-unknown-linux-gnu, big-endian byte order",
+    "result": "All sixteen captured words decode; control flow exits to 0x8232BD8C and 0x8232C184, and one conditional branch targets the uncaptured address 0x823411D8."
+  },
+  "status": "unresolved_frontier_no_override"
+}

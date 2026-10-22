@@ -1,0 +1,47 @@
+{
+  "schema": "shift.xbox360.rexglue.function-thunk.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "guest_address": "0x82D1BB90",
+  "bytes_hex": "806301984bfff15c",
+  "decoded": [
+    "lwz r3,0x198(r3)",
+    "b 0x82D1ACF0"
+  ],
+  "semantics": "Load the 32-bit guest field at object offset +0x198 into r3, then tail-branch to the registered helper at 0x82D1ACF0.",
+  "branch_target": "0x82D1ACF0",
+  "runtime_fatal": {
+    "function": "0x82324338",
+    "indirect_call_instruction": "0x823246E4",
+    "indirect_call_return_address": "0x823246E8",
+    "indirect_target": "0x82D1BB90",
+    "trap": "rex::runtime::InvalidFunctionTrap",
+    "caller_chain": [
+      "0x82324338",
+      "0x823242A0",
+      "0x8231ACD0",
+      "0x82FBD948",
+      "0x82DD8540",
+      "0x82E336B8",
+      "0x82E32640",
+      "0x8301DEC8",
+      "0x82FC1880",
+      "0x82D30380",
+      "xstart"
+    ]
+  },
+  "memory_capture": "GDB read guest bytes at host address 0x182D1BB90 while PPCContext.ctr and last_indirect_target both contained 0x82D1BB90.",
+  "registered_branch_target": "0x82D1ACF0 is present in generated/default/nfs_shift_register.cpp and the linked runtime.",
+  "prior_frontier": "The same rebuilt runtime reached 0x82C8C5F8 after six earlier registered/runtime-verified entries, then trapped here.",
+  "user_visual_observation": "The user reports seeing the original game's loading screen during a run; no screenshot was captured.",
+  "confidence": "observed",
+  "limitations": [
+    "The exact retail XEX has no Ghidra load specification; bytes were captured from its live ReXGlue guest mapping.",
+    "The loading screen is a user report; no screenshot, main-menu state, completed retail draw/present, or race is verified."
+  ],
+  "runtime_validation": {
+    "codegen": "ReXGlue v0.10.0 codegen completed and registered 0x82D1BB90.",
+    "build": "The Linux AMD64 nfs_shift target linked successfully.",
+    "execution": "GDB reached 0x82D1BB90 and returned through registered tail helper 0x82D1ACF0.",
+    "next_runtime_trap": "0x8233BBE0 from indirect call instruction 0x8234095C"
+  }
+}

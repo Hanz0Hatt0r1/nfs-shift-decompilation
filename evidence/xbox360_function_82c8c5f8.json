@@ -1,0 +1,47 @@
+{
+  "schema": "shift.xbox360.rexglue.function-thunk.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "guest_address": "0x82C8C5F8",
+  "bytes_hex": "38a000014bffac94",
+  "decoded": [
+    "li r5,1",
+    "b 0x82C87290"
+  ],
+  "branch_target": "0x82C87290",
+  "runtime_fatal": {
+    "function": "0x82C997C0",
+    "indirect_call_instruction": "0x82C99994",
+    "indirect_call_return_address": "0x82C99998",
+    "indirect_target": "0x82C8C5F8",
+    "trap": "rex::runtime::InvalidFunctionTrap",
+    "caller_chain": [
+      "0x82C997C0",
+      "0x82C9A900",
+      "0x82503658",
+      "0x825040F0",
+      "0x82503F50",
+      "0x82F983C8",
+      "0x82DD8540",
+      "0x82E336B8",
+      "0x82E32640",
+      "0x8301DEC8",
+      "0x82FC1880",
+      "0x82D30380",
+      "xstart"
+    ]
+  },
+  "memory_capture": "GDB read 16 bytes at host address 0x182C8C5F8 through the live guest mapping while PPCContext.last_indirect_target was 0x82C8C5F8.",
+  "registered_branch_target": "0x82C87290 is present in generated/default/nfs_shift_register.cpp and the linked runtime.",
+  "runtime_validation": {
+    "codegen": "ReXGlue v0.10.0 completed; the generated register table contains 0x82C8C5F8.",
+    "build": "The Linux AMD64 nfs_shift target linked successfully.",
+    "execution": "GDB reached 0x82C8C5F8 after the preceding retail startup entries.",
+    "next_runtime_trap": "0x82D1BB90, called from instruction 0x823246E4"
+  },
+  "confidence": "observed",
+  "limitations": [
+    "The exact retail XEX has no Ghidra load specification; the instruction bytes are from its live ReXGlue guest mapping.",
+    "The runtime stopped at the next unregistered retail target, 0x82D1BB90.",
+    "The user's loading-screen observation has no captured screenshot; main-menu state, completed retail draw/present, and race remain unverified."
+  ]
+}
