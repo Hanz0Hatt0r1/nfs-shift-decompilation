@@ -956,3 +956,16 @@ prove a permanent hang or an incorrect scheduler/event implementation. The
 runtime's clear/present submissions and diagnostic `guest_draw_translation`
 field do not prove retail rendering or game readiness. See the [v806 wait
 evidence](../evidence/retail_frontier_20261022/process1_worker_wait_v806.md).
+
+v807 repeated 600 frames with event-owner and queue-insertion tracing. Worker
+`0x00010002` again waited on `0x60018`, stored at `+0x40` of owner
+`0x27f7cd00`; the sampled `+0xc0` flags were `0xf`, and `+0xb4/+0xb8` were
+zero. No selected `SetEvent` targeted `0x60018`, and no retained
+`0x00650350` queue-insertion call used that owner. The same trace observed
+queue insertion and event signals on separate owners `0x27f7c290` and
+`0x27f7c780` for handles `0x6000c` and `0x60010`. This narrows the observation
+to an unsignaled owner queue while showing activity on other worker queues;
+it does not prove owner `0x27f7cd00` should have pending work or that the
+scheduler is defective. The bounded run reached 600 frames with 2,421,409
+dispatches, 4,738 unique functions, zero validation errors, four waiting
+workers and no guest draw translation. See the [v807 owner trace evidence](../evidence/retail_frontier_20261022/process1_worker_event_owner_v807.md).
