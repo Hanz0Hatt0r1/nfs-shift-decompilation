@@ -1,4 +1,4 @@
-# Retail no-draw and UI-gate frontier: v747–v751
+# Retail no-draw and P-code frontier: v747–v752
 
 **Date:** 2026-10-22. **Scope:** original retail SHIFT.exe through the P-code runtime. This records runtime evidence only; it does not establish a completed game launch or race.
 
@@ -6,7 +6,7 @@
 
 - Retail PE32 x86, PC retail 1.02, image base `0x00400000`, SHA-256 `eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1`.
 - Runtime executable SHA-256 `dc66d4b3f7d6a10ca101d71fb1e1e7503653757e3b4606bf7e65bdb88bc023f7`.
-- Runs v747–v751 used the DXT3 capture integration snapshot at P2 commit `f4147f33`. The P1 sources `recompiled_pcode_module.cpp` and `shift_runtime.cpp` match the PR #2140 branch byte-for-byte; `recompiled_pcode_module.cpp` SHA-256 is `914ef04f89d19fb51f0231c9589a17e8ee202602015374cb74a1bcde6ecd082a` in both trees. No renderer source was changed for these probes.
+- Runs v747–v752 used the DXT3 capture integration snapshot at P2 commit `f4147f33`. The P1 sources `recompiled_pcode_module.cpp` and `shift_runtime.cpp` match the PR #2140 branch byte-for-byte; `recompiled_pcode_module.cpp` SHA-256 is `914ef04f89d19fb51f0231c9589a17e8ee202602015374cb74a1bcde6ecd082a` in both trees. No renderer source was changed for these probes.
 - Full retail logs are retained outside the repository under `/tmp/process1-retail-runtime-evidence/`; the hashes below pin each log. Packet-capture directories were empty.
 
 ## Probe results
@@ -18,6 +18,7 @@
 | v749 | 120 frames; same draw/gate traces plus provenance for `0x00BE2534` | 584 gate calls read zero. Their last-writer provenance consistently identified `0x0062FDE0`, with ECX `0x00BE2510`, storing zero to `0x00BE2534`. The caller chain included `0x0062FFD0 -> 0x004E8BC0 -> 0x0050CF10`; no later write appeared in the window. No draw-import events; capture directory empty. | `db2322f373af01e24625680534a1bbb0903d0348f73b95853b8f3d93d1b9edf6` |
 | v750 | 120 frames; same traces plus Win32, DirectInput and XInput imports; Up key press/release sent to guest window `0x01000000` | 584 gate calls still saw zero; all four draw-import traces had no events and were not truncated. The key messages reached WndProc `0x0040D040`, which called `DefWindowProcW` for WM_KEYDOWN (`0x0100`, VK_UP `0x26`) and WM_KEYUP (`0x0101`, VK_UP `0x26`). Counts: 586 `PeekMessageW`, two each `GetMessageW`, `TranslateMessage`, `DispatchMessageW`, and `DefWindowProcW`. Selected `DirectInput8Create`, XInput ordinals #2/#3/#5, `GetCursorPos`, and `SetCursorPos` imports were not called in this window. | `0017fcddc1c7b9a38a7ab7e2e690f247aac0c0d158aeb97c3b4df0135d4467c1` |
 | v751 | 120 frames; call traces for `0x0062FDE0/0x0062FFD0`, provenance for `0x00BE2534`, UI gate and all four draw imports | Targeted trace captured `0x004E8BC0 -> 0x0062FFD0 -> 0x0062FDE0` with receiver `0x00BE2510`; initializer returned AL=1 and wrote zero to `0x00BE2534`. Across 585 later `0x0050CEB0` samples (dispatches 462,839–811,880), the gate word remained zero and the last writer stayed the same initialization store (sequence 2,378,600). Thus no later guest write to this exact address was observed during the bounded run. Draw imports had no events and were not truncated; capture directory empty. | `8e496862c5e106e527d7d494b13c0bfa4f6164a4c8b8af14b926b896ca6c6375` |
+| v752 | 120 frames; call traces for `0x0082A690`, `0x0083D2E0`, `0x0083D2F0`, `0x0083B670`; all four draw imports | `host-frame-loop`, exit 0, validation errors 0. The call trace was enabled and not truncated, but none of the four selected retail effect/material targets or any D3D9 Draw/DrawUP import was entered; capture directory empty. Clear/present submissions continued (120 each). These selected P1 paths and P2 draw ingress were not reached in this bounded run. | `58e542fc538374810937f84dedaa6f70f8d196f865513d3af490c758599c28db` |
 
 ## Evidence interpretation
 
@@ -35,4 +36,4 @@ Process 2's report `process-reports/2026-10-22-process2-v743-no-draw-frontier.md
 
 ## Next evidence target
 
-Find the retail producer that can add a record to the 68-byte container at `0x00BE2510`, then trace only its exact receiver and caller chain. The v751 provenance probe already shows that no later write to `0x00BE2534` occurred in the bounded window; the next step is to identify the producer/callsite from retail code, without forcing state or treating the zero count as a rendering switch.
+Find the retail producer that can add a record to the 68-byte container at `0x00BE2510`, then trace only its exact receiver and caller chain. Process 1 is checking candidate `0x004CB900` against the v751 receiver/stride evidence. v752 also found no entry to the material/effect pass targets. Neither result authorizes forcing container state or treating the zero count as a rendering switch.
