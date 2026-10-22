@@ -49,6 +49,25 @@ int main() {
                 vertex_fetch.byte_length == 48,
             "captured vertex-fetch shape changed");
 
+    const uint32_t captured_texture_descriptor[] = {
+        0x8800D8FEu, 0x09D57086u, 0x001FE3FFu,
+        0x01280C14u, 0x00000003u, 0x00000A10u,
+    };
+    shift::xbox::CapturedTextureFetch texture_fetch{};
+    require(shift::xbox::decode_captured_texture_fetch(
+                captured_texture_descriptor, &texture_fetch, &error),
+            "captured texture-fetch descriptor was rejected");
+    require(texture_fetch.guest_address == 0x09D57000u && texture_fetch.format == 6 &&
+                texture_fetch.endian_mode == 2,
+            "captured texture resource identity changed");
+    require(texture_fetch.width == 1024 && texture_fetch.height == 256 &&
+                texture_fetch.byte_length == 1024u * 256u * 4u && texture_fetch.tiled,
+            "captured texture dimensions or layout changed");
+    require(texture_fetch.dimension == 1 && texture_fetch.swizzle == 0x60Au &&
+                texture_fetch.mag_filter == 1 && texture_fetch.min_filter == 1 &&
+                texture_fetch.mip_filter == 2 && texture_fetch.aniso_filter == 0,
+            "captured texture sampling fields changed");
+
     const uint8_t captured_indices[] = {
         0x00, 0x00, 0x00, 0x01, 0x00, 0x02,
         0x00, 0x02, 0x00, 0x01, 0x00, 0x03,
@@ -95,6 +114,16 @@ int main() {
     require(!shift::xbox::decode_captured_vertex_fetch(
                 unsupported_vertex_descriptor, &vertex_fetch, &error),
             "texture-fetch descriptor was accepted as a vertex buffer");
+
+    uint32_t unsupported_texture_descriptor[6];
+    for (size_t i = 0; i < 6; ++i) {
+        unsupported_texture_descriptor[i] = captured_texture_descriptor[i];
+    }
+    unsupported_texture_descriptor[1] =
+        (unsupported_texture_descriptor[1] & ~0x3Fu) | 5u;
+    require(!shift::xbox::decode_captured_texture_fetch(
+                unsupported_texture_descriptor, &texture_fetch, &error),
+            "uncaptured texture format was accepted");
 
     uint8_t unsupported[sizeof(kCapturedPacket)];
     for (size_t i = 0; i < sizeof(kCapturedPacket); ++i) {

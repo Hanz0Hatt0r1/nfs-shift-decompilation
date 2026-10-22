@@ -147,6 +147,8 @@ draw, rather than merely nearby active-looking registers:
   tiled texture storage at guest address `0x09D57000`; the captured 1 MiB
   payload SHA-256 is
   `89ee6d3ffcbeeb27a6b76c70699de59e1037f7e387fe7a487b84ed65c11ca4c4`;
+  descriptor words are `8800d8fe 09d57086 001fe3ff 01280c14 00000003
+  00000a10`, with 8-in-32 endian mode and packed swizzle `0x60A`;
 - the captured 12-byte index payload SHA-256 is
   `a305c49db5906a669149e9889c39043ec60e071b423c97f8df2b75cc33cc274c`;
 - the draw's VS microcode is 105 dwords at `0x09D568E0` (SHA-256
@@ -181,10 +183,11 @@ form. It reads topology, DMA source, 16-bit index format, guest address,
 count, and swap mode directly from the packet; it does not need the
 `IndexBufferInfo` object produced by the diagnostic plugin. It requires the
 initiator and DMA counts to agree and emits neutral triangle-list/index-buffer
-parameters. A bounded descriptor decoder reads the captured vertex fetch 95
-directly from its two register words and checks the observed vertex type,
-8-in-32 mode, address, and 48-byte range. A second helper normalizes only the
-two captured buffer byte orders (8-in-16 indices and 8-in-32 vertex words).
+parameters. Bounded descriptor decoders read the captured vertex fetch 95 and
+texture fetch 0 directly from their register words and check the observed
+address, format, dimensions, tiling, endian mode, and sampling fields. A byte
+normalizer handles only the two captured buffer orders (8-in-16 indices and
+8-in-32 vertex words); the texture parser does not untile the image yet.
 Regressions cover packet/descriptor fields, unsupported variants, and captured
 index/vertex byte prefixes. The code does not interpret a general Xenos
 register stream, translate shaders, or issue Vulkan commands.
