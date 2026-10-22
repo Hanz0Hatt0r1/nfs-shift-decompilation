@@ -17,16 +17,20 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   and vertex/texture fetch descriptors, plus normalization for the captured
   index/vertex byte orders. The captured 1024x256, format-6, tiled 2D texture
   can also be converted to linear texel order with its 8-in-32 byte swap. The
-  descriptor decoder preserves the captured per-channel sign, X/Y/Z clamp,
-  border, swizzle, and filter fields; those fields are not yet applied to a
-  Vulkan view or sampler. The untile path rejects other pitches, formats,
-  dimensions, and layouts. Its
+  descriptor decoder maps the captured channel selectors, signs, X/Y/Z clamp
+  modes, border code, filters, and anisotropy to semantic values; they are not
+  yet applied to a Vulkan view or sampler. The captured black border code has
+  unresolved alpha, so the backend does not guess a Vulkan border color. The
+  untile path rejects other pitches, formats, dimensions, and layouts. Its
   address mapping is cross-checked against the public
   [Xenia `Tiled2D` implementation](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/texture_address.h);
-  this project has no Xenia runtime dependency and does not emulate a Xenos GPU;
+  descriptor enum meanings are cross-checked against the public
+  [Xenos register definitions](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h).
+  These are documentation cross-checks only: this project has no Xenia runtime
+  dependency and does not emulate a Xenos GPU;
 - the Xbox packet and resource inputs are not yet wired to Vulkan draw
-  submission. Texture swizzle/sampler execution, Xbox shader translation, and
-  retail parity remain unimplemented;
+  submission. Vulkan texture view/sampler creation, Xbox shader translation,
+  and retail parity remain unimplemented;
 - Linux CI coverage for native smoke paths.
 
 ## Rules

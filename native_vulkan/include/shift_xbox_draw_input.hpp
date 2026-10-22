@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -54,6 +55,69 @@ struct CapturedTextureFetch {
     bool tiled;
 };
 
+enum class TextureComponent : uint8_t {
+    X,
+    Y,
+    Z,
+    W,
+    Zero,
+    One,
+};
+
+enum class TextureSign : uint8_t {
+    Unsigned,
+    Signed,
+    UnsignedBiased,
+    Gamma,
+};
+
+enum class TextureClamp : uint8_t {
+    Repeat,
+    MirroredRepeat,
+    ClampToEdge,
+    MirrorClampToEdge,
+    ClampToHalfway,
+    MirrorClampToHalfway,
+    ClampToBorder,
+    MirrorClampToBorder,
+};
+
+enum class TextureFilter : uint8_t {
+    Point,
+    Linear,
+    BaseMap,
+    FetchConstant,
+};
+
+enum class TextureAnisotropy : uint8_t {
+    Disabled,
+    Max1To1,
+    Max2To1,
+    Max4To1,
+    Max8To1,
+    Max16To1,
+    FetchConstant = 7,
+};
+
+enum class TextureBorderColor : uint8_t {
+    AbgrBlack,
+    AbgrWhite,
+    AcbycrBlack,
+    AcbcryBlack,
+};
+
+struct CapturedTextureSampling {
+    std::array<TextureComponent, 4> swizzle;
+    std::array<TextureSign, 4> signs;
+    std::array<TextureClamp, 3> clamps;
+    TextureFilter mag_filter;
+    TextureFilter min_filter;
+    TextureFilter mip_filter;
+    TextureAnisotropy anisotropy;
+    TextureBorderColor border_color;
+    bool border_alpha_known;
+};
+
 // Translates only the captured PM4_DRAW_INDX form. This decodes the guest
 // command into renderer inputs; it does not execute or emulate Xenos state.
 bool decode_captured_draw_indx(
@@ -73,6 +137,13 @@ bool decode_captured_vertex_fetch(
 bool decode_captured_texture_fetch(
     const uint32_t descriptor_words[6],
     CapturedTextureFetch* output,
+    std::string* error);
+
+// Gives the captured descriptor fields semantic names without choosing a
+// Vulkan format or sampler policy. Unknown/reserved selector values fail.
+bool decode_captured_texture_sampling(
+    const CapturedTextureFetch& texture,
+    CapturedTextureSampling* output,
     std::string* error);
 
 // Untiles the captured 8_8_8_8, 8-in-32, tiled 2D texture into linear texel

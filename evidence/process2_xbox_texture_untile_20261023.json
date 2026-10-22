@@ -37,6 +37,24 @@
       "mip_max_level": 0
     }
   },
+  "sampling_contract": {
+    "implementation": "native_vulkan/src/xbox_draw_input.cpp:decode_captured_texture_sampling",
+    "raw_swizzle": "0x60a",
+    "decoded_swizzle_xyzw": ["Z", "Y", "X", "W"],
+    "decoded_signs_xyzw": ["gamma", "gamma", "gamma", "unsigned"],
+    "decoded_clamps_xyz": ["clamp_to_border", "clamp_to_border", "repeat"],
+    "decoded_filters": {
+      "mag": "linear",
+      "min": "linear",
+      "mip": "base_map",
+      "anisotropy": "disabled"
+    },
+    "border_color_code": 0,
+    "border_alpha": "unresolved; no Vulkan border color is selected",
+    "vulkan_view_or_sampler_created": false,
+    "enum_crosscheck": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h",
+    "xenia_runtime_dependency": false
+  },
   "conversion": {
     "implementation": "native_vulkan/src/xbox_draw_input.cpp:untile_captured_texture_2d",
     "address_mapping": "Xenos tiled 2D, 32bpp; cross-checked against the public Xenia Tiled2D mapping",
@@ -51,9 +69,21 @@
       "every source texel is mapped exactly once",
       "known offsets across microtile, bank, macro-tile, and texture-edge boundaries",
       "8-in-32 byte order",
-      "unsupported pitch and truncated input rejection"
+      "unsupported pitch and truncated input rejection",
+      "captured channel selector, sign, clamp, and filter interpretation",
+      "reserved swizzle and anisotropy value rejection"
     ],
     "ctest": "passed"
+  },
+  "linux_vulkan_validation_smoke": {
+    "executor": "shift_vulkan_bundle_execute",
+    "device": "NVIDIA GeForce GTX 950",
+    "vulkan_api_version": "1.1",
+    "validation_enabled": true,
+    "validation_errors": 0,
+    "input": "neutral synthetic BMW bundle",
+    "captured_xbox_draw_submitted": false,
+    "retail_parity_claimed": false
   },
   "android_arm64_device_check": {
     "device": "Redmi Note 8 Pro",
@@ -69,7 +99,7 @@
   },
   "limitations": [
     "No Vulkan image upload or draw submission is implemented by this conversion.",
-    "Captured texture swizzle and sampler behavior are not yet applied.",
+    "Captured texture swizzle and sampler behavior are decoded but not yet applied.",
     "Xbox shader translation and original-draw visual parity are not verified.",
     "The device checks validate ARM64 execution, Vulkan 1.1 instance creation, and surface presentation support only; no captured Xbox draw ran on the phone.",
     "This path translates one bounded captured resource layout; it does not emulate Xenos rendering."

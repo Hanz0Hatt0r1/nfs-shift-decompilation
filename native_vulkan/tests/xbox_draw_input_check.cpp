@@ -1,5 +1,6 @@
 #include "shift_xbox_draw_input.hpp"
 
+#include <array>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -80,6 +81,53 @@ int main() {
                 texture_fetch.clamp_z == 0 && !texture_fetch.integer_format &&
                 texture_fetch.border_color == 0 && !texture_fetch.border_size,
             "captured texture channel or clamp state changed");
+
+    shift::xbox::CapturedTextureSampling texture_sampling{};
+    require(shift::xbox::decode_captured_texture_sampling(
+                texture_fetch, &texture_sampling, &error),
+            "captured texture sampling state was rejected");
+    require(texture_sampling.swizzle == std::array<shift::xbox::TextureComponent, 4>{
+                shift::xbox::TextureComponent::Z,
+                shift::xbox::TextureComponent::Y,
+                shift::xbox::TextureComponent::X,
+                shift::xbox::TextureComponent::W},
+            "captured texture swizzle selectors changed");
+    require(texture_sampling.signs == std::array<shift::xbox::TextureSign, 4>{
+                shift::xbox::TextureSign::Gamma,
+                shift::xbox::TextureSign::Gamma,
+                shift::xbox::TextureSign::Gamma,
+                shift::xbox::TextureSign::Unsigned},
+            "captured texture channel encodings changed");
+    require(texture_sampling.clamps == std::array<shift::xbox::TextureClamp, 3>{
+                shift::xbox::TextureClamp::ClampToBorder,
+                shift::xbox::TextureClamp::ClampToBorder,
+                shift::xbox::TextureClamp::Repeat},
+            "captured texture clamp modes changed");
+    require(texture_sampling.mag_filter == shift::xbox::TextureFilter::Linear &&
+                texture_sampling.min_filter == shift::xbox::TextureFilter::Linear &&
+                texture_sampling.mip_filter == shift::xbox::TextureFilter::BaseMap &&
+                texture_sampling.anisotropy == shift::xbox::TextureAnisotropy::Disabled &&
+                texture_sampling.border_color == shift::xbox::TextureBorderColor::AbgrBlack &&
+                !texture_sampling.border_alpha_known,
+            "captured texture sampler interpretation changed");
+
+    shift::xbox::CapturedTextureFetch white_border_texture = texture_fetch;
+    white_border_texture.border_color = 1;
+    require(shift::xbox::decode_captured_texture_sampling(
+                white_border_texture, &texture_sampling, &error) &&
+                texture_sampling.border_color == shift::xbox::TextureBorderColor::AbgrWhite &&
+                texture_sampling.border_alpha_known,
+            "known opaque-white border color lost its alpha contract");
+    shift::xbox::CapturedTextureFetch reserved_swizzle = texture_fetch;
+    reserved_swizzle.swizzle = (reserved_swizzle.swizzle & ~0x7u) | 6u;
+    require(!shift::xbox::decode_captured_texture_sampling(
+                reserved_swizzle, &texture_sampling, &error),
+            "reserved texture swizzle selector was accepted");
+    shift::xbox::CapturedTextureFetch reserved_anisotropy = texture_fetch;
+    reserved_anisotropy.aniso_filter = 6;
+    require(!shift::xbox::decode_captured_texture_sampling(
+                reserved_anisotropy, &texture_sampling, &error),
+            "reserved texture anisotropy value was accepted");
 
     std::vector<uint8_t> tiled_texture(texture_fetch.byte_length);
     const size_t texture_pixels = texture_fetch.byte_length / 4;

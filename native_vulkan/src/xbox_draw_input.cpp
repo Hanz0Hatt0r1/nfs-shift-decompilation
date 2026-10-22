@@ -202,6 +202,79 @@ bool decode_captured_texture_fetch(
     return true;
 }
 
+bool decode_captured_texture_sampling(
+    const CapturedTextureFetch& texture,
+    CapturedTextureSampling* output,
+    std::string* error) {
+    if (!output) {
+        return fail("invalid captured texture sampling output", error);
+    }
+
+    const uint32_t selectors[] = {
+        texture.swizzle & 0x7u,
+        (texture.swizzle >> 3) & 0x7u,
+        (texture.swizzle >> 6) & 0x7u,
+        (texture.swizzle >> 9) & 0x7u,
+    };
+    const uint32_t signs[] = {
+        texture.sign_x, texture.sign_y, texture.sign_z, texture.sign_w,
+    };
+    const uint32_t clamps[] = {
+        texture.clamp_x, texture.clamp_y, texture.clamp_z,
+    };
+    const uint32_t filters[] = {
+        texture.mag_filter, texture.min_filter, texture.mip_filter,
+    };
+    for (uint32_t selector : selectors) {
+        if (selector > static_cast<uint32_t>(TextureComponent::One)) {
+            return fail("unsupported captured texture swizzle selector", error);
+        }
+    }
+    for (uint32_t sign : signs) {
+        if (sign > static_cast<uint32_t>(TextureSign::Gamma)) {
+            return fail("unsupported captured texture channel sign", error);
+        }
+    }
+    for (uint32_t clamp : clamps) {
+        if (clamp > static_cast<uint32_t>(TextureClamp::MirrorClampToBorder)) {
+            return fail("unsupported captured texture clamp mode", error);
+        }
+    }
+    for (uint32_t filter : filters) {
+        if (filter > static_cast<uint32_t>(TextureFilter::FetchConstant)) {
+            return fail("unsupported captured texture filter", error);
+        }
+    }
+    if (texture.aniso_filter == 6 || texture.aniso_filter > 7 ||
+        texture.border_color > 3) {
+        return fail("unsupported captured texture sampler field", error);
+    }
+
+    *output = CapturedTextureSampling{
+        {static_cast<TextureComponent>(selectors[0]),
+         static_cast<TextureComponent>(selectors[1]),
+         static_cast<TextureComponent>(selectors[2]),
+         static_cast<TextureComponent>(selectors[3])},
+        {static_cast<TextureSign>(signs[0]),
+         static_cast<TextureSign>(signs[1]),
+         static_cast<TextureSign>(signs[2]),
+         static_cast<TextureSign>(signs[3])},
+        {static_cast<TextureClamp>(clamps[0]),
+         static_cast<TextureClamp>(clamps[1]),
+         static_cast<TextureClamp>(clamps[2])},
+        static_cast<TextureFilter>(filters[0]),
+        static_cast<TextureFilter>(filters[1]),
+        static_cast<TextureFilter>(filters[2]),
+        static_cast<TextureAnisotropy>(texture.aniso_filter),
+        static_cast<TextureBorderColor>(texture.border_color),
+        texture.border_color == 1,
+    };
+    if (error) {
+        error->clear();
+    }
+    return true;
+}
+
 bool untile_captured_texture_2d(
     const CapturedTextureFetch& texture,
     const uint8_t* guest_bytes,
