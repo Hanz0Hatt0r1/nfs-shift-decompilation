@@ -167,7 +167,7 @@ On ordinary well-balanced return from calls with pushed arguments and no caller 
 0064f2e7: 8b 46 0c              mov    eax,DWORD PTR [esi+0xc]
 0064f2ea: 83 e8 08              sub    eax,0x8
 0064f2ed: c7 40 04 00 00 00 00  mov    DWORD PTR [eax+0x4],0x0
-0064f2f4: c7 00 00 00 00        mov    DWORD PTR [eax],0x0
+0064f2f4: c7 00 00 00 00 00     mov    DWORD PTR [eax],0x0
 0064f2fa: 66 81 66 28 df ff     and    WORD PTR [esi+0x28],0xffdf
 0064f300: 56                    push   esi
 0064f301: 8b cf                 mov    ecx,edi
