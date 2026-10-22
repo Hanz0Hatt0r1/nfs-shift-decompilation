@@ -937,3 +937,9 @@ imports. The worker set event `0x60014`, passed through `Sleep(1)`, then entered
 the probe ended. No `SetEvent(0x60018)` occurred in the selected v804 trace.
 This localizes the bounded wait but does not prove a permanent hang or identify
 who should signal it. See the [v803–v804 worker wait evidence](../evidence/retail_frontier_20261022/process1_worker_wait_v803_v804.md).
+
+v805 selected event creation as well: worker 65538 created handle `0x60018`
+with all-zero `CreateEventW` arguments, then waited on that handle with
+`WaitForSingleObjectEx(..., INFINITE, TRUE)`. No `SetEvent(0x60018)` appeared
+in the bounded run. This identifies the observed wait object, not the intended
+signal producer or proof of a scheduler defect. See the [v805 event evidence](../evidence/retail_frontier_20261022/process1_worker_event_creation_v805.md).
