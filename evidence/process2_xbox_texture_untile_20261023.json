@@ -43,10 +43,23 @@
     ],
     "ctest": "passed"
   },
+  "android_arm64_device_check": {
+    "device": "Redmi Note 8 Pro",
+    "abi": "arm64-v8a",
+    "android_api_level": 33,
+    "xbox_draw_input_check": "passed on device",
+    "vulkan_loader_api": "1.3.0",
+    "vulkan_device": "Mali-G76 MC4",
+    "vulkan_device_api": "1.1.131",
+    "vulkan_1_1_instance_creation": "passed",
+    "native_window_surface_probe": "passed; status=0",
+    "probe_cleanup": "temporary probe package stopped and uninstalled"
+  },
   "limitations": [
     "No Vulkan image upload or draw submission is implemented by this conversion.",
     "Captured texture swizzle and sampler behavior are not yet applied.",
     "Xbox shader translation and original-draw visual parity are not verified.",
+    "The device checks validate ARM64 execution, Vulkan 1.1 instance creation, and surface presentation support only; no captured Xbox draw ran on the phone.",
     "This path translates one bounded captured resource layout; it does not emulate Xenos rendering."
   ]
 }
