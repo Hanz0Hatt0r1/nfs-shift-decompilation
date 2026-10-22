@@ -187,10 +187,14 @@ parameters. Bounded descriptor decoders read the captured vertex fetch 95 and
 texture fetch 0 directly from their register words and check the observed
 address, format, dimensions, tiling, endian mode, and sampling fields. A byte
 normalizer handles only the two captured buffer orders (8-in-16 indices and
-8-in-32 vertex words); the texture parser does not untile the image yet.
-Regressions cover packet/descriptor fields, unsupported variants, and captured
-index/vertex byte prefixes. The code does not interpret a general Xenos
-register stream, translate shaders, or issue Vulkan commands.
+8-in-32 vertex words). The exact 1024x256 texture layout is untiled to linear
+texel order with its captured 8-in-32 byte swap. The sampling decoder maps the
+captured swizzle, channel signs, clamps, filters, anisotropy, and border code
+to semantic values; it rejects reserved selector values. Border code 0 has
+unresolved alpha, so the Vulkan border color is not guessed. Regressions cover
+the captured packet and descriptors, layout boundaries, byte order, sampling
+semantics, and unsupported or truncated inputs. The code does not interpret a
+general Xenos register stream, translate shaders, or issue Vulkan commands.
 
 This is the first confirmed XEX-originated indexed draw input. Its fetch
 metadata indicates a textured resource, but the draw is not identified as a
@@ -203,26 +207,24 @@ claim.
 ## Local checks
 
 - `shift_xbox_draw_input_check`: passed; covers the captured packet, mismatched
-  binding, unsupported opcode, and truncated packet.
-- Existing `tools/run_linux_vulkan_smoke.py ... --validation`: rendered the
-  neutral bundle on a GeForce GTX 950 with validation enabled and zero
-  validation errors. The layer reported three warnings for unused vertex
-  attributes 1–3 in that existing smoke shader.
-- These checks validate packet decoding and the existing neutral Vulkan path;
-  the smoke bundle is not the captured Xbox draw and is not retail parity.
+  binding, unsupported opcode/layout/sampling values, and truncated input.
+- The C++ check passed in the host build and as an arm64-v8a binary on a Redmi
+  Note 8 Pro (Android API 33).
+- `tools/run_linux_vulkan_smoke.py ... --validation`: the neutral synthetic BMW
+  bundle ran on a GeForce GTX 950 with Vulkan 1.1 validation enabled and zero
+  validation errors. It is not the captured Xbox draw and is not retail parity.
 
 ## Next native-renderer work
 
-Next, use the retained 8-in-32 vertex payload and tiled texture descriptor to
-close fetch-format and image-layout decoding, then correlate the guest shader
-pair to an independent project-owned SPIR-V translation. Connect only those
-validated resources and the bounded packet decoder to the existing Vulkan
-1.1 core. Unsupported packet forms, resource formats, and shader instructions
-must fail closed. The product consumes captured Xbox draw inputs and submits
-native Vulkan commands; it must not ship or call a Xenos GPU emulator. Keep
-XCB/Wayland/Android surface integration outside the shared core. Vulkan
-validation proves API correctness; image and runtime comparisons must
-separately establish retail behavior.
+Next, resolve the remaining captured texture-view/sampler semantics and render
+target/pipeline state, then translate the exact guest shader pair to
+project-owned Vulkan 1.1 SPIR-V. Connect only those verified inputs to the
+Vulkan core and submit this captured draw. Unsupported packet forms, resource
+formats, state, and shader instructions must fail closed. The product consumes
+captured Xbox draw inputs and submits native Vulkan commands; it must not ship
+or call a Xenos GPU emulator. Keep XCB/Wayland/Android surface integration
+outside the shared core. Vulkan validation proves API correctness; image and
+runtime comparisons must separately establish retail behavior.
 
 ## Portability and ownership
 
