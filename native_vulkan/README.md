@@ -13,9 +13,10 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
 - cubemap packet;
 - SPIR-V reflection and interface gates;
 - BMW material→DDS→Vulkan adapter;
-- a separately tested, bounded decoder for the captured Xbox `PM4_DRAW_INDX`
-  form. It is not yet wired to Vulkan submission and does not emulate a Xenos
-  GPU;
+- separately tested, bounded decoding of the captured Xbox `PM4_DRAW_INDX`
+  and vertex-fetch descriptor, plus normalization for the captured
+  index/vertex byte orders. It is not yet wired to Vulkan submission and does
+  not emulate a Xenos GPU;
 - Linux CI coverage for native smoke paths.
 
 ## Rules
