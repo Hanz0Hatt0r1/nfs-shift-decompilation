@@ -133,6 +133,38 @@ int main() {
                 unsupported_shader_fetch, sizeof(unsupported_shader_fetch), &fetch, &error),
             "unsupported shader fetch opcode was accepted");
 
+    uint8_t alu_instruction_bytes[12];
+    const uint32_t alu_word0 =
+        1u | (1u << 6) | (1u << 7) | (2u << 8) | (1u << 14) | (1u << 15) |
+        (0xAu << 16) | (5u << 20) | (1u << 24) | (37u << 26);
+    const uint32_t alu_word1 = 0xFF563412u;
+    const uint32_t alu_word2 = 0xBC010203u;
+    write_be32(alu_instruction_bytes, alu_word0);
+    write_be32(alu_instruction_bytes + 4, alu_word1);
+    write_be32(alu_instruction_bytes + 8, alu_word2);
+    shift::xbox::CapturedShaderAluInstruction alu{};
+    require(shift::xbox::decode_captured_shader_alu_instruction(
+                alu_instruction_bytes, sizeof(alu_instruction_bytes), &alu, &error),
+            "96-bit shader ALU instruction was rejected");
+    require(alu.vector_opcode == 28 && alu.scalar_opcode == 37 &&
+                alu.vector_destination == 1 && alu.scalar_destination == 2 &&
+                alu.vector_write_mask == 0xA && alu.scalar_write_mask == 5 &&
+                alu.export_data && alu.vector_destination_relative &&
+                alu.scalar_destination_relative && alu.absolute_constants &&
+                alu.vector_clamp && !alu.scalar_clamp && alu.predicated &&
+                alu.predicate_condition && alu.const0_relative && alu.const1_relative &&
+                alu.const_address_register_relative &&
+                alu.source_registers[0] == 1 && alu.source_registers[1] == 2 &&
+                alu.source_registers[2] == 3 && alu.source_swizzles[0] == 0x56 &&
+                alu.source_swizzles[1] == 0x34 && alu.source_swizzles[2] == 0x12 &&
+                alu.source_is_temporary[0] && !alu.source_is_temporary[1] &&
+                alu.source_is_temporary[2] && alu.source_negate[0] &&
+                alu.source_negate[1] && alu.source_negate[2],
+            "shader ALU bit fields changed");
+    require(!shift::xbox::decode_captured_shader_alu_instruction(
+                alu_instruction_bytes, sizeof(alu_instruction_bytes) - 1, &alu, &error),
+            "truncated shader ALU instruction was accepted");
+
     std::vector<shift::xbox::CapturedShaderControlFlow> unchanged_control_flow = control_flow;
     require(!shift::xbox::decode_captured_shader_control_flow(
                 shader_control_flow, sizeof(shader_control_flow) - 4,

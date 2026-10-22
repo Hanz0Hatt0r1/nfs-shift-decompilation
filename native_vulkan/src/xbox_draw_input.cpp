@@ -287,6 +287,51 @@ bool decode_captured_shader_fetch_instruction(
     return true;
 }
 
+bool decode_captured_shader_alu_instruction(
+    const uint8_t* instruction_bytes,
+    size_t byte_length,
+    CapturedShaderAluInstruction* output,
+    std::string* error) {
+    if (!instruction_bytes || !output || byte_length != 12) {
+        return fail("captured shader ALU instruction must be 96 bits", error);
+    }
+
+    const uint32_t word0 = read_be32(instruction_bytes);
+    const uint32_t word1 = read_be32(instruction_bytes + 4);
+    const uint32_t word2 = read_be32(instruction_bytes + 8);
+    CapturedShaderAluInstruction decoded{};
+    decoded.vector_opcode = (word2 >> 24) & 0x1Fu;
+    decoded.scalar_opcode = (word0 >> 26) & 0x3Fu;
+    decoded.vector_destination = word0 & 0x3Fu;
+    decoded.vector_destination_relative = ((word0 >> 6) & 1u) != 0;
+    decoded.absolute_constants = ((word0 >> 7) & 1u) != 0;
+    decoded.scalar_destination = (word0 >> 8) & 0x3Fu;
+    decoded.scalar_destination_relative = ((word0 >> 14) & 1u) != 0;
+    decoded.export_data = ((word0 >> 15) & 1u) != 0;
+    decoded.vector_write_mask = (word0 >> 16) & 0xFu;
+    decoded.scalar_write_mask = (word0 >> 20) & 0xFu;
+    decoded.vector_clamp = ((word0 >> 24) & 1u) != 0;
+    decoded.scalar_clamp = ((word0 >> 25) & 1u) != 0;
+    decoded.predicated = ((word1 >> 28) & 1u) != 0;
+    decoded.predicate_condition = ((word1 >> 27) & 1u) != 0;
+    decoded.const_address_register_relative = ((word1 >> 29) & 1u) != 0;
+    decoded.const1_relative = ((word1 >> 30) & 1u) != 0;
+    decoded.const0_relative = ((word1 >> 31) & 1u) != 0;
+    for (uint32_t source = 0; source < 3; ++source) {
+        const uint32_t shift = 16 - source * 8;
+        decoded.source_registers[source] = (word2 >> shift) & 0xFFu;
+        decoded.source_swizzles[source] = (word1 >> shift) & 0xFFu;
+        decoded.source_is_temporary[source] = ((word2 >> (31 - source)) & 1u) != 0;
+        decoded.source_negate[source] = ((word1 >> (26 - source)) & 1u) != 0;
+    }
+
+    *output = decoded;
+    if (error) {
+        error->clear();
+    }
+    return true;
+}
+
 bool decode_captured_draw_indx(
     const uint8_t* packet_bytes,
     size_t byte_length,

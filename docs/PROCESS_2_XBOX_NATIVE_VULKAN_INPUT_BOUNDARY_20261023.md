@@ -226,8 +226,8 @@ The captured VS yields 10 slots (five `exec` clauses, two output allocations,
 `exece`, and `cnop`); the PS yields eight slots (three conditional jumps,
 three `exec` clauses, color allocation, and `exece`). The PS jump records retain
 the captured `b128` / `b129` predicates and the unconditional jump to slot 6.
-This remains input parsing only: other instruction-body forms (including ALU)
-are not decoded or translated, and no shader is executed. Exact raw-byte hashes
+This remains input parsing only: ALU fields are decoded, but their operations
+are not interpreted or translated, and no shader is executed. Exact raw-byte hashes
 and decoded fields are recorded in
 `evidence/process2_xbox_shader_control_flow_20261023.json`.
 The first scheduled fetch instructions are separately decoded: VS address 5
@@ -235,6 +235,11 @@ resolves to `vfetch_full` descriptor 95 (format `0x39`, three dwords stride),
 and PS address 4 resolves to `tfetch2D` descriptor 0 with a 2D dimension. The
 fetch decoder reads fields only; it does not access guest memory. Its evidence
 is in `evidence/process2_xbox_shader_fetch_20261023.json`.
+The project also extracts raw fields from the scheduled ALU triplets: 28 in the
+VS and four in the PS. The record includes raw vector/scalar opcodes,
+destinations, masks, sources, swizzles, and predicate bits. These opcodes have
+not been assigned execution semantics or translated; the field histograms are
+in `evidence/process2_xbox_shader_alu_fields_20261023.json`.
 
 The project now has a narrow C++ decoder for this captured `PM4_DRAW_INDX`
 form. It reads topology, DMA source, 16-bit index format, guest address,
@@ -287,22 +292,22 @@ claim.
 
 - `shift_xbox_draw_input_check`: passed; covers the captured packet, mismatched
   binding, target format/viewport/scissor state, shader constant addressing and
-  branch values, bounded shader control-flow and captured fetch-instruction
-  decode, unsupported opcode/layout/sampling values, non-zero window offsets,
-  and truncated input.
+  branch values, bounded shader control-flow, fetch-instruction, and raw ALU
+  field decode, unsupported opcode/layout/sampling values, non-zero window
+  offsets, and truncated input.
 - The new CF decoder passed on the exact private VS/PS byte captures; observed
-  opcodes and decoded fields match their diagnostic disassembly. No shader-body
-  translation was tested.
-- The input decoder, shader control-flow parser, and captured fetch-instruction
-  parser passed as an arm64-v8a binary on the connected Redmi Note 8 Pro
-  (Android API 33; binary built with API 29 minimum).
+  CF/fetch/ALU fields match their diagnostic disassembly. This validates parsing
+  only; no shader-body translation was tested.
+- The input decoder, shader control-flow parser, captured fetch-instruction
+  parser, and raw ALU-field parser passed as an arm64-v8a binary on the connected
+  Redmi Note 8 Pro (Android API 33; binary built with API 29 minimum).
 - `tools/run_linux_vulkan_smoke.py ... --validation`: the neutral synthetic BMW
   bundle ran on a GeForce GTX 950 with Vulkan 1.1 validation enabled and zero
   validation errors. It is not the captured Xbox draw and is not retail parity.
 
 ## Next native-renderer work
 
-Next, add project-owned decoding for the captured shader instruction body, then
+Next, translate the captured shader's ALU operations into project-owned SPIR-V, then
 connect the existing ReXGlue guest graphics-service boundary to a project-owned
 ring consumer and add evidence-backed register/resource state tracking for the
 scanned span. A diagnostic run with `gpu_plugin` unset ignores

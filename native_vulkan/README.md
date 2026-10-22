@@ -27,8 +27,8 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   only the float and packed-bool registers read by the exact captured VS/PS
   pair, including its observed PS branch values. A bounded decoder now parses
   the captured VS/PS control-flow slots and their first `vfetch_full` and
-  `tfetch2D` instructions, but not ALU instructions and not to SPIR-V. It emits
-  no shader code. The
+  `tfetch2D` instructions, plus raw fields from the scheduled ALU instructions.
+  It does not interpret ALU operations or emit SPIR-V. The
   packet scanner frames contiguous big-endian type 0/1/2/3 PM4 packets and
   reports type-3 opcodes without applying state or executing commands. It
   consumed the private 19,784-byte capture as 247 packets and identified four

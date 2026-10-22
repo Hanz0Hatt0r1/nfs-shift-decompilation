@@ -83,6 +83,30 @@ struct CapturedShaderFetchInstruction {
     bool predicate_condition;
 };
 
+struct CapturedShaderAluInstruction {
+    uint32_t vector_opcode;
+    uint32_t scalar_opcode;
+    uint32_t vector_destination;
+    uint32_t scalar_destination;
+    uint32_t vector_write_mask;
+    uint32_t scalar_write_mask;
+    uint32_t source_registers[3];
+    uint32_t source_swizzles[3];
+    bool source_is_temporary[3];
+    bool source_negate[3];
+    bool export_data;
+    bool vector_destination_relative;
+    bool scalar_destination_relative;
+    bool absolute_constants;
+    bool vector_clamp;
+    bool scalar_clamp;
+    bool predicated;
+    bool predicate_condition;
+    bool const0_relative;
+    bool const1_relative;
+    bool const_address_register_relative;
+};
+
 struct CapturedVertexFetch {
     uint32_t guest_address;
     uint32_t endian_mode;
@@ -259,6 +283,14 @@ bool decode_captured_shader_fetch_instruction(
     const uint8_t* instruction_bytes,
     size_t byte_length,
     CapturedShaderFetchInstruction* output,
+    std::string* error);
+
+// Decodes the raw ALU fields from one 96-bit instruction. Opcode semantics and
+// shader execution are intentionally outside this parser.
+bool decode_captured_shader_alu_instruction(
+    const uint8_t* instruction_bytes,
+    size_t byte_length,
+    CapturedShaderAluInstruction* output,
     std::string* error);
 
 // Translates only the captured PM4_DRAW_INDX form. This decodes the guest

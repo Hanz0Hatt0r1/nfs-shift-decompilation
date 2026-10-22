@@ -1,0 +1,36 @@
+{
+  "format": "SHIFT.Process2XboxShaderAluFieldEvidence/1",
+  "inputs": {
+    "vertex_shader_sha256": "d448760823568068b6f70d903fde9a1faca73c6cfaca7cab59fe73713f1712bc",
+    "pixel_shader_sha256": "5fda214bf53b3f88909fa90c014b9c42de0a3278138df24049af918344489f28",
+    "stored_in_repository": false
+  },
+  "decoder": {
+    "implementation": "native_vulkan/src/xbox_draw_input.cpp::decode_captured_shader_alu_instruction",
+    "format_reference": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/ucode.h",
+    "scope": "extracts raw fields from one 96-bit ALU instruction; does not interpret opcodes"
+  },
+  "vertex_shader": {
+    "scheduled_alu_addresses": "6..33",
+    "decoded_instruction_count": 28,
+    "vector_opcode_histogram": {"1": 4, "2": 4, "6": 1, "11": 12, "12": 1, "15": 4, "17": 2},
+    "scalar_opcode_histogram": {"12": 1, "23": 2, "42": 2, "50": 23}
+  },
+  "pixel_shader": {
+    "scheduled_alu_addresses": "5..8",
+    "decoded_instruction_count": 4,
+    "vector_opcode_histogram": {"1": 1, "2": 3},
+    "scalar_opcode_histogram": {"5": 1, "50": 3}
+  },
+  "checks": {
+    "host_ctest": "passed: synthetic field fixture and shift_xbox_draw_input_check",
+    "private_capture_harness": "passed: decoded all 28 scheduled VS and four PS ALU slots using addresses from the captured CF schedule",
+    "android_arm64": "passed on Redmi Note 8 Pro (API 33); binary built for arm64-v8a with Android API 29 minimum"
+  },
+  "limits": [
+    "Vector/scalar opcode meanings and arithmetic are not implemented.",
+    "No control-flow execution or shader translation is performed.",
+    "No SPIR-V is emitted and no Vulkan draw is submitted.",
+    "Diagnostic disassembly is used only as a field cross-check; no GPU emulator is in the product path."
+  ]
+}
