@@ -854,7 +854,13 @@ Draw* imports were observed. A v755 replay then selected forwarding adapter
 `0x0084FD60` and all four Draw* imports. Its full, untruncated trace contained
 zero events over 360 host frames; this remains a bounded negative observation
 and does not contradict the static path or prove unreachability in another UI
-state. The Vulkan bridge still reports `guest_draw_translation=false`. See the
+state. A second v756 trace also selected all three nested methods
+`0x00850F10`, `0x00851730`, and `0x008521F0`; it observed none of them, the
+parent, the adapter, or the Draw* imports during its 360-frame interval. This
+narrows only the observed frontier for that run. The Vulkan bridge still
+reports `guest_draw_translation=false`. See the
 [full static analysis](../evidence/retail_frontier_20261022/process1_nested_draw_static_00852760.md),
 [v755 report](../evidence/retail_frontier_20261022/process1_drawindexed_forwarder_v755.md),
-and [machine-readable trace](../evidence/retail_frontier_20261022/process1_drawindexed_forwarder_v755.json).
+its [machine-readable trace](../evidence/retail_frontier_20261022/process1_drawindexed_forwarder_v755.json),
+the [v756 report](../evidence/retail_frontier_20261022/process1_nested_draw_v756.md),
+and [machine-readable trace](../evidence/retail_frontier_20261022/process1_nested_draw_v756.json).
