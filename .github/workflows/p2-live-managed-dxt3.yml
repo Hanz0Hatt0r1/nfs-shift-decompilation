@@ -1,0 +1,29 @@
+name: p2-live-managed-dxt3
+
+on:
+  push:
+    paths:
+      - ".github/workflows/p2-live-managed-dxt3.yml"
+      - "native_vulkan/include/shift_vulkan_d3d9_managed_texture_capability.hpp"
+      - "native_vulkan/tests/d3d9_live_managed_dxt3_capability_check.cpp"
+      - "native_vulkan/CMakeLists.txt"
+      - "native_runtime/src/shift_runtime.cpp"
+  pull_request:
+    paths:
+      - ".github/workflows/p2-live-managed-dxt3.yml"
+      - "native_vulkan/include/shift_vulkan_d3d9_managed_texture_capability.hpp"
+      - "native_vulkan/tests/d3d9_live_managed_dxt3_capability_check.cpp"
+      - "native_vulkan/CMakeLists.txt"
+      - "native_runtime/src/shift_runtime.cpp"
+
+jobs:
+  managed-dxt3-capability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure focused P2 tests
+        run: cmake -S native_vulkan -B native_vulkan/build -DCMAKE_BUILD_TYPE=Release
+      - name: Build live managed DXT3 regression
+        run: cmake --build native_vulkan/build --target shift_vulkan_d3d9_live_managed_dxt3_capability_check --parallel
+      - name: Run live managed DXT3 regression
+        run: ctest --test-dir native_vulkan/build --output-on-failure --no-tests=error -R '^shift_vulkan_d3d9_live_managed_dxt3_capability$'
