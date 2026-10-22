@@ -38,6 +38,26 @@ if(EXISTS "${SHIFT_RECOMPILED_RUNTIME_HEADER}")
       NAME shift_vulkan_d3d9_packet_capture_adapter
       COMMAND shift_vulkan_d3d9_packet_capture_check
     )
+    add_executable(
+      shift_vulkan_d3d9_live_managed_dxt3_capability_check
+      tests/d3d9_live_managed_dxt3_capability_check.cpp
+      src/d3d9_packet_capture_adapter.cpp
+    )
+    target_include_directories(
+      shift_vulkan_d3d9_live_managed_dxt3_capability_check
+      PRIVATE
+      include
+      "${SHIFT_RECOMPILED_RUNTIME_INCLUDE_DIR}"
+    )
+    target_compile_options(
+      shift_vulkan_d3d9_live_managed_dxt3_capability_check
+      PRIVATE
+      -Wall -Wextra -Wpedantic
+    )
+    add_test(
+      NAME shift_vulkan_d3d9_live_managed_dxt3_capability
+      COMMAND shift_vulkan_d3d9_live_managed_dxt3_capability_check
+    )
   endif()
 endif()
 
