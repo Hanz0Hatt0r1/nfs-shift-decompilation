@@ -924,3 +924,9 @@ did not recur on those observed objects; it does not establish complete worker
 lifecycle correctness, frontend readiness, or race entry. An earlier low-memory
 read at `0x75` came from ECX-relative trace sampling on `Sleep(1)` with `ECX=1`
 and was instrumentation-induced. See the [v798–v801 worker evidence](../evidence/retail_frontier_20261022/process1_worker_scheduler_v798_v801.md).
+
+The follow-up v802 selected the complete `0x006B0F60` wait-path helpers and
+Win32 `Sleep` import. One worker returned from `Sleep(1)` and then entered
+three post-wait helpers; the last helper had no paired return before the
+120-frame bound. This does not prove a hang, worker exit, frontend readiness,
+or race entry. See the [v802 worker trace](../evidence/retail_frontier_20261022/process1_worker_wait_v802.md).
