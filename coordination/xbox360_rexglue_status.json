@@ -30,7 +30,7 @@
       "key": "rexglue_ppc_codegen",
       "status": "in_progress",
       "evidence": ["evidence/xbox360_rexglue_preflight_20261022.md#compiler-preflight"],
-      "note": "SDK 0.10.0 codegen ran, but upstream commit is unpinned and PPC diagnostics remain unresolved"
+      "note": "SDK 0.10.0 codegen ran, but upstream commit, PPC image mapping, and lowering diagnostics remain unresolved"
     },
     "X2": {
       "key": "linux_x86_64_guest_boot",
