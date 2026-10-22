@@ -1,0 +1,69 @@
+{
+  "format": "SHIFT.P1.DrawIndexedForwarderProbe/1",
+  "date": "2026-10-22",
+  "run": "v755-p1-dip-forwarder",
+  "execution_kind": "Original retail PE32 loaded in the Linux P-code guest runtime; not a native Windows/Wine launch.",
+  "inputs": {
+    "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "runtime_sha256": "0a310cf6be5b4934d021cdf56cbc8f2cd6e5b66278700708c29935076117124c",
+    "module_manifest": "module-manifest-v659-005a0ef0.json",
+    "module_manifest_sha256": "6977898b7ff79edfb84f9b6f6d9e5ff98d8e073d17d88f345e8a1edb77e73a0e",
+    "game_data": "pcode-game-data-v661",
+    "log_sha256": "a1511eff968080c79ef35960c5c387332d3c906b573a203ae566e083624e989a"
+  },
+  "configuration": {
+    "frames_requested": 360,
+    "timeout_seconds": 180,
+    "kill_after_seconds": 5,
+    "validation": false,
+    "trace_environment": {
+      "SHIFT_TRACE_GUEST_CALL_TARGETS": "0x0084FD60",
+      "SHIFT_TRACE_GUEST_CALL_IMPORTS": "d3d9.dll!IDirect3DDevice9::DrawPrimitive,d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitive,d3d9.dll!IDirect3DDevice9::DrawPrimitiveUP,d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitiveUP",
+      "SHIFT_TRACE_GUEST_CALL_LIVE_LOG": "1",
+      "SHIFT_TRACE_GUEST_CALL_STACK_SLOTS": "0x4,0x8,0xc,0x10,0x14,0x18,0x1c,0x20"
+    }
+  },
+  "outcome": {
+    "status": "host-frame-loop",
+    "blocker": null,
+    "exit_code": 0,
+    "frames_rendered": 360,
+    "validation_errors": 0,
+    "guest_main_thread_function": "0x0082e980",
+    "dispatches_context_only": 1752425,
+    "unique_functions_context_only": 4729
+  },
+  "guest_call_trace": {
+    "enabled": true,
+    "truncated": false,
+    "caller_filter": "0x00000000",
+    "targets": [
+      "0x0084fd60"
+    ],
+    "imports": [
+      "d3d9.dll!IDirect3DDevice9::DrawPrimitive",
+      "d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitive",
+      "d3d9.dll!IDirect3DDevice9::DrawPrimitiveUP",
+      "d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitiveUP"
+    ],
+    "stack_slot_offsets": [
+      "0x00000004",
+      "0x00000008",
+      "0x0000000c",
+      "0x00000010",
+      "0x00000014",
+      "0x00000018",
+      "0x0000001c",
+      "0x00000020"
+    ],
+    "events": 0
+  },
+  "d3d9_vulkan_bridge": {
+    "clear_requests": 1123,
+    "clear_submissions": 360,
+    "present_requests": 1121,
+    "present_submissions": 360,
+    "guest_draw_translation": false
+  },
+  "interpretation": "Bounded negative observation only: no entry to 0x0084FD60 or selected D3D9 Draw* imports was observed in this 360-frame run. It does not prove the retail path is unreachable in other UI states. Dispatch and frame counts are not evidence of game launch or retail drawing."
+}

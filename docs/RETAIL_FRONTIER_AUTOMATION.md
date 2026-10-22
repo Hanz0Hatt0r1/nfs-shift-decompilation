@@ -850,6 +850,11 @@ resolves the concrete adapter vtable and traces the created device pointer
 through adapter `0x0084FD60` to the underlying device's COM slot. This proves
 that the original PE contains the draw path; it does not prove that the P-code
 replay entered it. In the v753 run, neither `0x00852760` nor the selected
-Draw* imports were observed. The next controlled replay targets the forwarding
-adapter `0x0084FD60` to determine whether that concrete path is reached without
-changing guest state. See the [full static analysis](../evidence/retail_frontier_20261022/process1_nested_draw_static_00852760.md).
+Draw* imports were observed. A v755 replay then selected forwarding adapter
+`0x0084FD60` and all four Draw* imports. Its full, untruncated trace contained
+zero events over 360 host frames; this remains a bounded negative observation
+and does not contradict the static path or prove unreachability in another UI
+state. The Vulkan bridge still reports `guest_draw_translation=false`. See the
+[full static analysis](../evidence/retail_frontier_20261022/process1_nested_draw_static_00852760.md),
+[v755 report](../evidence/retail_frontier_20261022/process1_drawindexed_forwarder_v755.md),
+and [machine-readable trace](../evidence/retail_frontier_20261022/process1_drawindexed_forwarder_v755.json).
