@@ -4,7 +4,7 @@
 
 On 2026-10-22 the project selected the Xbox 360 retail version of Need for Speed: SHIFT as the **primary proposed** source for a native Linux / Android ARM64 port. ReXGlue SDK is the first-choice AOT compiler/runtime foundation. The older PC 1.02 P-code recompilation is preserved and moved to a research/maintenance role.
 
-This is a **planning and repository reorganization**, not a successful XEX conversion. No local Xbox SHIFT XEX or launch trace is recorded in the new gate ledger.
+This remains a **pre-playability migration**, not a successful port. A user-provided retail XEX and an initial Linux guest/GPU trace are now recorded as metadata-only evidence in the gate ledger; no frontend, real retail frame, or race has been verified.
 
 ## Proposed pipeline
 
