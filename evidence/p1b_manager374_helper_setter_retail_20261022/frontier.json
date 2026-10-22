@@ -1,0 +1,80 @@
+{
+  "adjudication": {
+    "external_or_unknown_origin_outer_alias_surface_complete": false,
+    "external_provider_count": 7,
+    "global_helper_non_vtable_indirect_setter_surface_complete": false,
+    "global_manager_root_origin_surface_complete": false,
+    "helper_returned_materialized_address_surface_complete": false,
+    "helper_returned_target_non_stack_persistence_complete": false,
+    "helper_setter_write_candidates_classified": false,
+    "independent_unnamed_opaque_or_external_runtime_root_synthesis_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "materialized_helper_mediated_setter_surface_complete": false,
+    "p1_3_control_producer_complete": false,
+    "retail_helper_setter_candidate_frontier_composed": true,
+    "retail_helper_setter_probe_bundle_execution_complete": true,
+    "unrecognized_runtime_transform_root_origin_surface_complete": false
+  },
+  "authority": {
+    "decoded_instruction_count": 2847884,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "single_shared_instruction_stream": true
+  },
+  "format": "SHIFT.P1B.Manager374HelperSetterRetailFrontier/1",
+  "inputs": {
+    "direct_call_argument": "SHIFT.P1B.Manager374MaterializedDirectCallSetterProbe/1",
+    "helper_return_immediate": "SHIFT.P1B.Manager374HelperReturnedMaterializedTargetProbe/1",
+    "helper_return_stack": "SHIFT.P1B.Manager374HelperReturnedTargetStackPersistenceProbe/1"
+  },
+  "limits": [
+    "This bundle composes only three bounded decoded-image helper-setter transports: materialized target passed to a direct helper, direct helper returning arg+0x374 with immediate GPR use, and stack spill/reload of that qualified returned target.",
+    "A zero resolved candidate union does not close indirect helper calls, unresolved/external direct helpers, non-stack persistence of returned targets, unrelated opaque synthesis, generated code, or external process mutation.",
+    "Open-boundary counts are acquisition frontiers, not proof that every boundary can produce a manager+0x374 write.",
+    "No receiver or object identity is inferred from numeric +0x374 equality or from an ABI argument channel."
+  ],
+  "next_step": "Classify every positive write candidate and every nonzero open-boundary class from this single retail run. Close only empty or fully adjudicated bounded transports before considering the broader helper/non-vtable setter gate.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "bounded_frontier_empty": false,
+    "helper_return_counts": {
+      "post_return_stack_scan_count": 0,
+      "qualified_helper_return_callsite_count": 0,
+      "qualified_helper_return_target_count": 0
+    },
+    "open_boundary_count": 669,
+    "open_boundary_count_by_class": {
+      "helper_return_non_stack_persistence_escapes": 0,
+      "helper_return_unresolved_direct_targets": 669,
+      "materialized_target_indirect_call_argument_boundaries": 0,
+      "materialized_target_unresolved_direct_targets": 0
+    },
+    "probe_count": 3,
+    "resolved_write_candidate_union_empty": false,
+    "write_candidate_count_by_probe": {
+      "direct_call_argument": 1,
+      "helper_return_immediate": 0,
+      "helper_return_stack": 0
+    },
+    "write_candidate_record_count": 1,
+    "write_candidate_records": [
+      {
+        "address_register": "eax",
+        "argument_channel": "ecx",
+        "callee_instruction_index": 1,
+        "callsite": "0x0070fb4f",
+        "materializer_site": "0x0070fb45",
+        "mnemonic": "mov",
+        "operands": "DWORD PTR [eax],0x0",
+        "receiver_register": "esi",
+        "site": "0x00533e72",
+        "source_probe": "direct_call_argument",
+        "target": "0x00533e70",
+        "transport_class": "materialized-target-direct-helper-argument"
+      }
+    ]
+  },
+  "version": 1
+}

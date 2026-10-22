@@ -10,6 +10,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOL = ROOT / "tools" / "ghidra" / "run_p1b_manager374_helper_setter_ghidra_frontier.py"
+BOUNDARY_AUDIT = ROOT / "tools" / "ghidra" / "audit_p1b_ghidra_retail_call_boundaries.py"
 EXPORTER = ROOT / "tools" / "ghidra" / "ShiftCompactInstructionStreamExporter.java"
 FORMAT = "SHIFT.GhidraCompactInstructionStream/1"
 
@@ -174,3 +175,37 @@ def test_exporter_is_whole_program_identity_pinned_and_supports_gzip():
     assert "listing.getInstructions(true)" in source
     assert "instruction.getFlows()" in source
     assert "GZIPOutputStream" in source
+
+
+def test_retail_boundary_audit_flags_ghidra_call_inside_retail_instruction():
+    spec = importlib.util.spec_from_file_location("p1b_call_boundary_audit", BOUNDARY_AUDIT)
+    assert spec and spec.loader
+    audit = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(audit)
+    parse_target = lambda text: int(text, 16) if text.startswith("0x") else None
+
+    result = audit.audit_rows(
+        [
+            (0x1002, "CALL", "0x00003000"),
+            (0x2000, "CALL", "0x00004000"),
+            (0x3000, "CALL", "EAX"),
+        ],
+        [
+            (0x1000, 3, "lea", "edx,[ebp-0x18]"),
+            (0x2000, 5, "call", "0x00004000"),
+        ],
+        parse_target,
+    )
+
+    assert result["confirmed_retail_direct_call_count"] == 1
+    assert result["ghidra_direct_call_boundary_mismatch_count"] == 1
+    mismatch = result["ghidra_direct_call_boundary_mismatches"][0]
+    assert mismatch["callsite"] == "0x00001002"
+    assert mismatch["ghidra_target"] == "0x00003000"
+    assert mismatch["reason"] == "inside_retail_instruction"
+    assert mismatch["retail_instruction"] == {
+        "address": "0x00001000",
+        "length": 3,
+        "mnemonic": "lea",
+        "operands": "edx,[ebp-0x18]",
+    }

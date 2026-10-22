@@ -1,0 +1,1913 @@
+{
+  "authority": {
+    "ghidra_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "ghidra_function_export_sha256": "9ce066a5e706bbf0977076e60db8af10491e41a685da4240775e64904c1d8a0a",
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1B.Manager374HelperSetterCandidateFunctions/1",
+  "functions": [
+    {
+      "found": true,
+      "function": {
+        "address": "0x0070fae0",
+        "calling_convention": "__fastcall",
+        "name": "FUN_0070fae0",
+        "size": 896
+      },
+      "instruction_count": 177,
+      "instructions": [
+        {
+          "address": "0x0070fae0",
+          "bytes": "55",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "PUSH",
+          "references": [],
+          "text": "PUSH EBP"
+        },
+        {
+          "address": "0x0070fae1",
+          "bytes": "8bec",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV EBP,ESP"
+        },
+        {
+          "address": "0x0070fae3",
+          "bytes": "6aff",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "PUSH",
+          "references": [],
+          "text": "PUSH -0x1"
+        },
+        {
+          "address": "0x0070fae5",
+          "bytes": "68b2d0a600",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "PUSH",
+          "references": [
+            {
+              "to": "0x00a6d0b2",
+              "type": "DATA"
+            }
+          ],
+          "text": "PUSH 0xa6d0b2"
+        },
+        {
+          "address": "0x0070faea",
+          "bytes": "64a100000000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0xffdff000",
+              "type": "READ"
+            }
+          ],
+          "text": "MOV EAX,FS:[0x0]"
+        },
+        {
+          "address": "0x0070faf0",
+          "bytes": "50",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "PUSH",
+          "references": [],
+          "text": "PUSH EAX"
+        },
+        {
+          "address": "0x0070faf1",
+          "bytes": "64892500000000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0xffdff000",
+              "type": "WRITE"
+            }
+          ],
+          "text": "MOV dword ptr FS:[0x0],ESP"
+        },
+        {
+          "address": "0x0070faf8",
+          "bytes": "83ec08",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "SUB",
+          "references": [],
+          "text": "SUB ESP,0x8"
+        },
+        {
+          "address": "0x0070fafb",
+          "bytes": "53",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "PUSH",
+          "references": [],
+          "text": "PUSH EBX"
+        },
+        {
+          "address": "0x0070fafc",
+          "bytes": "56",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "PUSH",
+          "references": [],
+          "text": "PUSH ESI"
+        },
+        {
+          "address": "0x0070fafd",
+          "bytes": "8bf1",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV ESI,ECX"
+        },
+        {
+          "address": "0x0070faff",
+          "bytes": "57",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "PUSH",
+          "references": [],
+          "text": "PUSH EDI"
+        },
+        {
+          "address": "0x0070fb00",
+          "bytes": "8975ec",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0xStack[-0x18]",
+              "type": "WRITE"
+            }
+          ],
+          "text": "MOV dword ptr [EBP + -0x14],ESI"
+        },
+        {
+          "address": "0x0070fb03",
+          "bytes": "e8087ff3ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x00647a10"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x00647a10",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x00647a10"
+        },
+        {
+          "address": "0x0070fb08",
+          "bytes": "33db",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "XOR",
+          "references": [],
+          "text": "XOR EBX,EBX"
+        },
+        {
+          "address": "0x0070fb0a",
+          "bytes": "8d8ebc020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "LEA",
+          "references": [],
+          "text": "LEA ECX,[ESI + 0x2bc]"
+        },
+        {
+          "address": "0x0070fb10",
+          "bytes": "895dfc",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0xStack[-0x8]",
+              "type": "WRITE"
+            }
+          ],
+          "text": "MOV dword ptr [EBP + -0x4],EBX"
+        },
+        {
+          "address": "0x0070fb13",
+          "bytes": "c7062445b000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0x00b04524",
+              "type": "DATA"
+            }
+          ],
+          "text": "MOV dword ptr [ESI],0xb04524"
+        },
+        {
+          "address": "0x0070fb19",
+          "bytes": "899e88020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x288],EBX"
+        },
+        {
+          "address": "0x0070fb1f",
+          "bytes": "899e8c020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x28c],EBX"
+        },
+        {
+          "address": "0x0070fb25",
+          "bytes": "899e90020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x290],EBX"
+        },
+        {
+          "address": "0x0070fb2b",
+          "bytes": "899e98020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x298],EBX"
+        },
+        {
+          "address": "0x0070fb31",
+          "bytes": "e89ac0d4ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x0045bbd0"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x0045bbd0",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x0045bbd0"
+        },
+        {
+          "address": "0x0070fb36",
+          "bytes": "8d8e70030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "LEA",
+          "references": [],
+          "text": "LEA ECX,[ESI + 0x370]"
+        },
+        {
+          "address": "0x0070fb3c",
+          "bytes": "c645fc01",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0xStack[-0x8]",
+              "type": "WRITE"
+            }
+          ],
+          "text": "MOV byte ptr [EBP + -0x4],0x1"
+        },
+        {
+          "address": "0x0070fb40",
+          "bytes": "e82b43e2ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x00533e70"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x00533e70",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x00533e70"
+        },
+        {
+          "address": "0x0070fb45",
+          "bytes": "8d8e74030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "LEA",
+          "references": [],
+          "text": "LEA ECX,[ESI + 0x374]"
+        },
+        {
+          "address": "0x0070fb4b",
+          "bytes": "c645fc02",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0xStack[-0x8]",
+              "type": "WRITE"
+            }
+          ],
+          "text": "MOV byte ptr [EBP + -0x4],0x2"
+        },
+        {
+          "address": "0x0070fb4f",
+          "bytes": "e81c43e2ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x00533e70"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x00533e70",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x00533e70"
+        },
+        {
+          "address": "0x0070fb54",
+          "bytes": "8d8e78030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "LEA",
+          "references": [],
+          "text": "LEA ECX,[ESI + 0x378]"
+        },
+        {
+          "address": "0x0070fb5a",
+          "bytes": "c645fc03",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0xStack[-0x8]",
+              "type": "WRITE"
+            }
+          ],
+          "text": "MOV byte ptr [EBP + -0x4],0x3"
+        },
+        {
+          "address": "0x0070fb5e",
+          "bytes": "e80d43e2ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x00533e70"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x00533e70",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x00533e70"
+        },
+        {
+          "address": "0x0070fb63",
+          "bytes": "8d8e7c030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "LEA",
+          "references": [],
+          "text": "LEA ECX,[ESI + 0x37c]"
+        },
+        {
+          "address": "0x0070fb69",
+          "bytes": "c645fc04",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0xStack[-0x8]",
+              "type": "WRITE"
+            }
+          ],
+          "text": "MOV byte ptr [EBP + -0x4],0x4"
+        },
+        {
+          "address": "0x0070fb6d",
+          "bytes": "e8fe42e2ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x00533e70"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x00533e70",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x00533e70"
+        },
+        {
+          "address": "0x0070fb72",
+          "bytes": "8dbe80030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "LEA",
+          "references": [],
+          "text": "LEA EDI,[ESI + 0x380]"
+        },
+        {
+          "address": "0x0070fb78",
+          "bytes": "8bcf",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV ECX,EDI"
+        },
+        {
+          "address": "0x0070fb7a",
+          "bytes": "c645fc05",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0xStack[-0x8]",
+              "type": "WRITE"
+            }
+          ],
+          "text": "MOV byte ptr [EBP + -0x4],0x5"
+        },
+        {
+          "address": "0x0070fb7e",
+          "bytes": "e8ed42e2ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x00533e70"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x00533e70",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x00533e70"
+        },
+        {
+          "address": "0x0070fb83",
+          "bytes": "8d8e84030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "LEA",
+          "references": [],
+          "text": "LEA ECX,[ESI + 0x384]"
+        },
+        {
+          "address": "0x0070fb89",
+          "bytes": "c645fc06",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0xStack[-0x8]",
+              "type": "WRITE"
+            }
+          ],
+          "text": "MOV byte ptr [EBP + -0x4],0x6"
+        },
+        {
+          "address": "0x0070fb8d",
+          "bytes": "e8de42e2ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x00533e70"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x00533e70",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x00533e70"
+        },
+        {
+          "address": "0x0070fb92",
+          "bytes": "d9ee",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "FLDZ",
+          "references": [],
+          "text": "FLDZ"
+        },
+        {
+          "address": "0x0070fb94",
+          "bytes": "ba8045b000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0x00b04580",
+              "type": "DATA"
+            }
+          ],
+          "text": "MOV EDX,0xb04580"
+        },
+        {
+          "address": "0x0070fb99",
+          "bytes": "dd9e40040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "FSTP",
+          "references": [],
+          "text": "FSTP double ptr [ESI + 0x440]"
+        },
+        {
+          "address": "0x0070fb9f",
+          "bytes": "8bce",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV ECX,ESI"
+        },
+        {
+          "address": "0x0070fba1",
+          "bytes": "c645fc07",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0xStack[-0x8]",
+              "type": "WRITE"
+            }
+          ],
+          "text": "MOV byte ptr [EBP + -0x4],0x7"
+        },
+        {
+          "address": "0x0070fba5",
+          "bytes": "e8767cf3ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x00647820"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x00647820",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x00647820"
+        },
+        {
+          "address": "0x0070fbaa",
+          "bytes": "d9ee",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "FLDZ",
+          "references": [],
+          "text": "FLDZ"
+        },
+        {
+          "address": "0x0070fbac",
+          "bytes": "899e84020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x284],EBX"
+        },
+        {
+          "address": "0x0070fbb2",
+          "bytes": "899e94020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x294],EBX"
+        },
+        {
+          "address": "0x0070fbb8",
+          "bytes": "889e80020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x280],BL"
+        },
+        {
+          "address": "0x0070fbbe",
+          "bytes": "889ea8020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2a8],BL"
+        },
+        {
+          "address": "0x0070fbc4",
+          "bytes": "889ea9020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2a9],BL"
+        },
+        {
+          "address": "0x0070fbca",
+          "bytes": "889eab020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2ab],BL"
+        },
+        {
+          "address": "0x0070fbd0",
+          "bytes": "889eac020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2ac],BL"
+        },
+        {
+          "address": "0x0070fbd6",
+          "bytes": "889ead020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2ad],BL"
+        },
+        {
+          "address": "0x0070fbdc",
+          "bytes": "889eae020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2ae],BL"
+        },
+        {
+          "address": "0x0070fbe2",
+          "bytes": "889eaf020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2af],BL"
+        },
+        {
+          "address": "0x0070fbe8",
+          "bytes": "889eb0020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2b0],BL"
+        },
+        {
+          "address": "0x0070fbee",
+          "bytes": "889eaa020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2aa],BL"
+        },
+        {
+          "address": "0x0070fbf4",
+          "bytes": "889eb3020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2b3],BL"
+        },
+        {
+          "address": "0x0070fbfa",
+          "bytes": "889eb4020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2b4],BL"
+        },
+        {
+          "address": "0x0070fc00",
+          "bytes": "889eb5020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2b5],BL"
+        },
+        {
+          "address": "0x0070fc06",
+          "bytes": "889eb6020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2b6],BL"
+        },
+        {
+          "address": "0x0070fc0c",
+          "bytes": "889eb7020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2b7],BL"
+        },
+        {
+          "address": "0x0070fc12",
+          "bytes": "889eb2020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2b2],BL"
+        },
+        {
+          "address": "0x0070fc18",
+          "bytes": "889eb8020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2b8],BL"
+        },
+        {
+          "address": "0x0070fc1e",
+          "bytes": "899ea4020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x2a4],EBX"
+        },
+        {
+          "address": "0x0070fc24",
+          "bytes": "c686b102000001",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2b1],0x1"
+        },
+        {
+          "address": "0x0070fc2b",
+          "bytes": "889eb9020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x2b9],BL"
+        },
+        {
+          "address": "0x0070fc31",
+          "bytes": "d9962c040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "FST",
+          "references": [],
+          "text": "FST float ptr [ESI + 0x42c]"
+        },
+        {
+          "address": "0x0070fc37",
+          "bytes": "d99630040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "FST",
+          "references": [],
+          "text": "FST float ptr [ESI + 0x430]"
+        },
+        {
+          "address": "0x0070fc3d",
+          "bytes": "68b4000000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "PUSH",
+          "references": [],
+          "text": "PUSH 0xb4"
+        },
+        {
+          "address": "0x0070fc42",
+          "bytes": "d99634040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "FST",
+          "references": [],
+          "text": "FST float ptr [ESI + 0x434]"
+        },
+        {
+          "address": "0x0070fc48",
+          "bytes": "889e38040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x438],BL"
+        },
+        {
+          "address": "0x0070fc4e",
+          "bytes": "d9961c040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "FST",
+          "references": [],
+          "text": "FST float ptr [ESI + 0x41c]"
+        },
+        {
+          "address": "0x0070fc54",
+          "bytes": "889e28040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV byte ptr [ESI + 0x428],BL"
+        },
+        {
+          "address": "0x0070fc5a",
+          "bytes": "d99620040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "FST",
+          "references": [],
+          "text": "FST float ptr [ESI + 0x420]"
+        },
+        {
+          "address": "0x0070fc60",
+          "bytes": "8bce",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV ECX,ESI"
+        },
+        {
+          "address": "0x0070fc62",
+          "bytes": "d99e24040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "FSTP",
+          "references": [],
+          "text": "FSTP float ptr [ESI + 0x424]"
+        },
+        {
+          "address": "0x0070fc68",
+          "bytes": "e803f5ffff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x0070f170"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x0070f170",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x0070f170"
+        },
+        {
+          "address": "0x0070fc6d",
+          "bytes": "33c0",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "XOR",
+          "references": [],
+          "text": "XOR EAX,EAX"
+        },
+        {
+          "address": "0x0070fc6f",
+          "bytes": "898698030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x398],EAX"
+        },
+        {
+          "address": "0x0070fc75",
+          "bytes": "89869c030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x39c],EAX"
+        },
+        {
+          "address": "0x0070fc7b",
+          "bytes": "8986a0030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3a0],EAX"
+        },
+        {
+          "address": "0x0070fc81",
+          "bytes": "8986a4030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3a4],EAX"
+        },
+        {
+          "address": "0x0070fc87",
+          "bytes": "8986a8030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3a8],EAX"
+        },
+        {
+          "address": "0x0070fc8d",
+          "bytes": "8986ac030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3ac],EAX"
+        },
+        {
+          "address": "0x0070fc93",
+          "bytes": "8986b0030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3b0],EAX"
+        },
+        {
+          "address": "0x0070fc99",
+          "bytes": "8986b4030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3b4],EAX"
+        },
+        {
+          "address": "0x0070fc9f",
+          "bytes": "8986b8030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3b8],EAX"
+        },
+        {
+          "address": "0x0070fca5",
+          "bytes": "8986bc030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3bc],EAX"
+        },
+        {
+          "address": "0x0070fcab",
+          "bytes": "8986c0030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3c0],EAX"
+        },
+        {
+          "address": "0x0070fcb1",
+          "bytes": "8986c4030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3c4],EAX"
+        },
+        {
+          "address": "0x0070fcb7",
+          "bytes": "8986c8030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3c8],EAX"
+        },
+        {
+          "address": "0x0070fcbd",
+          "bytes": "8986cc030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3cc],EAX"
+        },
+        {
+          "address": "0x0070fcc3",
+          "bytes": "8986d0030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3d0],EAX"
+        },
+        {
+          "address": "0x0070fcc9",
+          "bytes": "8986d4030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3d4],EAX"
+        },
+        {
+          "address": "0x0070fccf",
+          "bytes": "8986d8030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3d8],EAX"
+        },
+        {
+          "address": "0x0070fcd5",
+          "bytes": "8986dc030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3dc],EAX"
+        },
+        {
+          "address": "0x0070fcdb",
+          "bytes": "8986e0030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3e0],EAX"
+        },
+        {
+          "address": "0x0070fce1",
+          "bytes": "8986e4030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3e4],EAX"
+        },
+        {
+          "address": "0x0070fce7",
+          "bytes": "8986e8030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3e8],EAX"
+        },
+        {
+          "address": "0x0070fced",
+          "bytes": "8986ec030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3ec],EAX"
+        },
+        {
+          "address": "0x0070fcf3",
+          "bytes": "8986f0030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3f0],EAX"
+        },
+        {
+          "address": "0x0070fcf9",
+          "bytes": "8986f4030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3f4],EAX"
+        },
+        {
+          "address": "0x0070fcff",
+          "bytes": "8986f8030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3f8],EAX"
+        },
+        {
+          "address": "0x0070fd05",
+          "bytes": "8986fc030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x3fc],EAX"
+        },
+        {
+          "address": "0x0070fd0b",
+          "bytes": "898600040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x400],EAX"
+        },
+        {
+          "address": "0x0070fd11",
+          "bytes": "898604040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x404],EAX"
+        },
+        {
+          "address": "0x0070fd17",
+          "bytes": "898608040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x408],EAX"
+        },
+        {
+          "address": "0x0070fd1d",
+          "bytes": "89860c040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x40c],EAX"
+        },
+        {
+          "address": "0x0070fd23",
+          "bytes": "898610040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x410],EAX"
+        },
+        {
+          "address": "0x0070fd29",
+          "bytes": "898614040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x414],EAX"
+        },
+        {
+          "address": "0x0070fd2f",
+          "bytes": "899e18040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x418],EBX"
+        },
+        {
+          "address": "0x0070fd35",
+          "bytes": "b802000000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV EAX,0x2"
+        },
+        {
+          "address": "0x0070fd3a",
+          "bytes": "898650040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x450],EAX"
+        },
+        {
+          "address": "0x0070fd40",
+          "bytes": "899e68040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x468],EBX"
+        },
+        {
+          "address": "0x0070fd46",
+          "bytes": "899e6c040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x46c],EBX"
+        },
+        {
+          "address": "0x0070fd4c",
+          "bytes": "899e94040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x494],EBX"
+        },
+        {
+          "address": "0x0070fd52",
+          "bytes": "899e70040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x470],EBX"
+        },
+        {
+          "address": "0x0070fd58",
+          "bytes": "899e98040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x498],EBX"
+        },
+        {
+          "address": "0x0070fd5e",
+          "bytes": "899e74040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x474],EBX"
+        },
+        {
+          "address": "0x0070fd64",
+          "bytes": "899e9c040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x49c],EBX"
+        },
+        {
+          "address": "0x0070fd6a",
+          "bytes": "899e78040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x478],EBX"
+        },
+        {
+          "address": "0x0070fd70",
+          "bytes": "899ea0040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x4a0],EBX"
+        },
+        {
+          "address": "0x0070fd76",
+          "bytes": "899e7c040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x47c],EBX"
+        },
+        {
+          "address": "0x0070fd7c",
+          "bytes": "899ea4040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x4a4],EBX"
+        },
+        {
+          "address": "0x0070fd82",
+          "bytes": "b904000000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV ECX,0x4"
+        },
+        {
+          "address": "0x0070fd87",
+          "bytes": "898690040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x490],EAX"
+        },
+        {
+          "address": "0x0070fd8d",
+          "bytes": "898658040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x458],EAX"
+        },
+        {
+          "address": "0x0070fd93",
+          "bytes": "89865c040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x45c],EAX"
+        },
+        {
+          "address": "0x0070fd99",
+          "bytes": "898e80040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x480],ECX"
+        },
+        {
+          "address": "0x0070fd9f",
+          "bytes": "898e84040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x484],ECX"
+        },
+        {
+          "address": "0x0070fda5",
+          "bytes": "898e88040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x488],ECX"
+        },
+        {
+          "address": "0x0070fdab",
+          "bytes": "b803000000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV EAX,0x3"
+        },
+        {
+          "address": "0x0070fdb0",
+          "bytes": "c7868c04000005000000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x48c],0x5"
+        },
+        {
+          "address": "0x0070fdba",
+          "bytes": "898660040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x460],EAX"
+        },
+        {
+          "address": "0x0070fdc0",
+          "bytes": "898664040000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x464],EAX"
+        },
+        {
+          "address": "0x0070fdc6",
+          "bytes": "687045b000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "PUSH",
+          "references": [
+            {
+              "to": "0x00b04570",
+              "type": "DATA"
+            }
+          ],
+          "text": "PUSH 0xb04570"
+        },
+        {
+          "address": "0x0070fdcb",
+          "bytes": "8d8e70030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "LEA",
+          "references": [],
+          "text": "LEA ECX,[ESI + 0x370]"
+        },
+        {
+          "address": "0x0070fdd1",
+          "bytes": "c7869c02000001000000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x29c],0x1"
+        },
+        {
+          "address": "0x0070fddb",
+          "bytes": "899ea0020000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [ESI + 0x2a0],EBX"
+        },
+        {
+          "address": "0x0070fde1",
+          "bytes": "e8fa2bf2ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x006329e0"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x006329e0",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x006329e0"
+        },
+        {
+          "address": "0x0070fde6",
+          "bytes": "685850ab00",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "PUSH",
+          "references": [
+            {
+              "to": "0x00ab5058",
+              "type": "DATA"
+            }
+          ],
+          "text": "PUSH 0xab5058"
+        },
+        {
+          "address": "0x0070fdeb",
+          "bytes": "8d8e74030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "LEA",
+          "references": [],
+          "text": "LEA ECX,[ESI + 0x374]"
+        },
+        {
+          "address": "0x0070fdf1",
+          "bytes": "e8ea2bf2ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x006329e0"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x006329e0",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x006329e0"
+        },
+        {
+          "address": "0x0070fdf6",
+          "bytes": "686445b000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "PUSH",
+          "references": [
+            {
+              "to": "0x00b04564",
+              "type": "DATA"
+            }
+          ],
+          "text": "PUSH 0xb04564"
+        },
+        {
+          "address": "0x0070fdfb",
+          "bytes": "8d8e78030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "LEA",
+          "references": [],
+          "text": "LEA ECX,[ESI + 0x378]"
+        },
+        {
+          "address": "0x0070fe01",
+          "bytes": "e8da2bf2ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x006329e0"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x006329e0",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x006329e0"
+        },
+        {
+          "address": "0x0070fe06",
+          "bytes": "685845b000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "PUSH",
+          "references": [
+            {
+              "to": "0x00b04558",
+              "type": "DATA"
+            }
+          ],
+          "text": "PUSH 0xb04558"
+        },
+        {
+          "address": "0x0070fe0b",
+          "bytes": "8d8e7c030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "LEA",
+          "references": [],
+          "text": "LEA ECX,[ESI + 0x37c]"
+        },
+        {
+          "address": "0x0070fe11",
+          "bytes": "e8ca2bf2ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x006329e0"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x006329e0",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x006329e0"
+        },
+        {
+          "address": "0x0070fe16",
+          "bytes": "685445b000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "PUSH",
+          "references": [
+            {
+              "to": "0x00b04554",
+              "type": "DATA"
+            }
+          ],
+          "text": "PUSH 0xb04554"
+        },
+        {
+          "address": "0x0070fe1b",
+          "bytes": "8bcf",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV ECX,EDI"
+        },
+        {
+          "address": "0x0070fe1d",
+          "bytes": "e8be2bf2ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x006329e0"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x006329e0",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x006329e0"
+        },
+        {
+          "address": "0x0070fe22",
+          "bytes": "684845b000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "PUSH",
+          "references": [
+            {
+              "to": "0x00b04548",
+              "type": "DATA"
+            }
+          ],
+          "text": "PUSH 0xb04548"
+        },
+        {
+          "address": "0x0070fe27",
+          "bytes": "8bd7",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV EDX,EDI"
+        },
+        {
+          "address": "0x0070fe29",
+          "bytes": "8d4df0",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "LEA",
+          "references": [
+            {
+              "to": "0xStack[-0x14]",
+              "type": "DATA"
+            }
+          ],
+          "text": "LEA ECX,[EBP + -0x10]"
+        },
+        {
+          "address": "0x0070fe2c",
+          "bytes": "e83f2ef2ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x00632c70"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x00632c70",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x00632c70"
+        },
+        {
+          "address": "0x0070fe31",
+          "bytes": "50",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "PUSH",
+          "references": [],
+          "text": "PUSH EAX"
+        },
+        {
+          "address": "0x0070fe32",
+          "bytes": "8d8e84030000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "LEA",
+          "references": [],
+          "text": "LEA ECX,[ESI + 0x384]"
+        },
+        {
+          "address": "0x0070fe38",
+          "bytes": "c645fc08",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0xStack[-0x8]",
+              "type": "WRITE"
+            }
+          ],
+          "text": "MOV byte ptr [EBP + -0x4],0x8"
+        },
+        {
+          "address": "0x0070fe3c",
+          "bytes": "e8df2af2ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x00632920"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x00632920",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x00632920"
+        },
+        {
+          "address": "0x0070fe41",
+          "bytes": "8d4df0",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "LEA",
+          "references": [
+            {
+              "to": "0xStack[-0x14]",
+              "type": "DATA"
+            }
+          ],
+          "text": "LEA ECX,[EBP + -0x10]"
+        },
+        {
+          "address": "0x0070fe44",
+          "bytes": "c645fc07",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0xStack[-0x8]",
+              "type": "WRITE"
+            }
+          ],
+          "text": "MOV byte ptr [EBP + -0x4],0x7"
+        },
+        {
+          "address": "0x0070fe48",
+          "bytes": "e87312f2ff",
+          "flow_type": "UNCONDITIONAL_CALL",
+          "flows": [
+            "0x006310c0"
+          ],
+          "mnemonic": "CALL",
+          "references": [
+            {
+              "to": "0x006310c0",
+              "type": "UNCONDITIONAL_CALL"
+            }
+          ],
+          "text": "CALL 0x006310c0"
+        },
+        {
+          "address": "0x0070fe4d",
+          "bytes": "8b4df4",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0xStack[-0x10]",
+              "type": "READ"
+            }
+          ],
+          "text": "MOV ECX,dword ptr [EBP + -0xc]"
+        },
+        {
+          "address": "0x0070fe50",
+          "bytes": "5f",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "POP",
+          "references": [],
+          "text": "POP EDI"
+        },
+        {
+          "address": "0x0070fe51",
+          "bytes": "8bc6",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV EAX,ESI"
+        },
+        {
+          "address": "0x0070fe53",
+          "bytes": "5e",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "POP",
+          "references": [],
+          "text": "POP ESI"
+        },
+        {
+          "address": "0x0070fe54",
+          "bytes": "5b",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "POP",
+          "references": [],
+          "text": "POP EBX"
+        },
+        {
+          "address": "0x0070fe55",
+          "bytes": "64890d00000000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [
+            {
+              "to": "0xffdff000",
+              "type": "WRITE"
+            }
+          ],
+          "text": "MOV dword ptr FS:[0x0],ECX"
+        },
+        {
+          "address": "0x0070fe5c",
+          "bytes": "8be5",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV ESP,EBP"
+        },
+        {
+          "address": "0x0070fe5e",
+          "bytes": "5d",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "POP",
+          "references": [],
+          "text": "POP EBP"
+        },
+        {
+          "address": "0x0070fe5f",
+          "bytes": "c3",
+          "flow_type": "TERMINATOR",
+          "flows": [],
+          "mnemonic": "RET",
+          "references": [],
+          "text": "RET"
+        }
+      ],
+      "requested": "0x0070fae0"
+    },
+    {
+      "found": true,
+      "function": {
+        "address": "0x00533e70",
+        "calling_convention": "__fastcall",
+        "name": "FUN_00533e70",
+        "size": 9
+      },
+      "instruction_count": 3,
+      "instructions": [
+        {
+          "address": "0x00533e70",
+          "bytes": "8bc1",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV EAX,ECX"
+        },
+        {
+          "address": "0x00533e72",
+          "bytes": "c70000000000",
+          "flow_type": "FALL_THROUGH",
+          "flows": [],
+          "mnemonic": "MOV",
+          "references": [],
+          "text": "MOV dword ptr [EAX],0x0"
+        },
+        {
+          "address": "0x00533e78",
+          "bytes": "c3",
+          "flow_type": "TERMINATOR",
+          "flows": [],
+          "mnemonic": "RET",
+          "references": [],
+          "text": "RET"
+        }
+      ],
+      "requested": "0x00533e70"
+    }
+  ]
+}

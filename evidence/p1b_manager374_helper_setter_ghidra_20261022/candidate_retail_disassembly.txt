@@ -1,0 +1,212 @@
+FUN_0070fae0 full 0x380-byte constructor body
+
+/home/pes/ghidra_projects/shift/SHIFT.exe:     file format pei-i386
+
+
+Disassembly of section .text:
+
+0070fae0 <.text+0x30eae0>:
+  70fae0:	55                   	push   ebp
+  70fae1:	8b ec                	mov    ebp,esp
+  70fae3:	6a ff                	push   0xffffffff
+  70fae5:	68 b2 d0 a6 00       	push   0xa6d0b2
+  70faea:	64 a1 00 00 00 00    	mov    eax,fs:0x0
+  70faf0:	50                   	push   eax
+  70faf1:	64 89 25 00 00 00 00 	mov    DWORD PTR fs:0x0,esp
+  70faf8:	83 ec 08             	sub    esp,0x8
+  70fafb:	53                   	push   ebx
+  70fafc:	56                   	push   esi
+  70fafd:	8b f1                	mov    esi,ecx
+  70faff:	57                   	push   edi
+  70fb00:	89 75 ec             	mov    DWORD PTR [ebp-0x14],esi
+  70fb03:	e8 08 7f f3 ff       	call   0x647a10
+  70fb08:	33 db                	xor    ebx,ebx
+  70fb0a:	8d 8e bc 02 00 00    	lea    ecx,[esi+0x2bc]
+  70fb10:	89 5d fc             	mov    DWORD PTR [ebp-0x4],ebx
+  70fb13:	c7 06 24 45 b0 00    	mov    DWORD PTR [esi],0xb04524
+  70fb19:	89 9e 88 02 00 00    	mov    DWORD PTR [esi+0x288],ebx
+  70fb1f:	89 9e 8c 02 00 00    	mov    DWORD PTR [esi+0x28c],ebx
+  70fb25:	89 9e 90 02 00 00    	mov    DWORD PTR [esi+0x290],ebx
+  70fb2b:	89 9e 98 02 00 00    	mov    DWORD PTR [esi+0x298],ebx
+  70fb31:	e8 9a c0 d4 ff       	call   0x45bbd0
+  70fb36:	8d 8e 70 03 00 00    	lea    ecx,[esi+0x370]
+  70fb3c:	c6 45 fc 01          	mov    BYTE PTR [ebp-0x4],0x1
+  70fb40:	e8 2b 43 e2 ff       	call   0x533e70
+  70fb45:	8d 8e 74 03 00 00    	lea    ecx,[esi+0x374]
+  70fb4b:	c6 45 fc 02          	mov    BYTE PTR [ebp-0x4],0x2
+  70fb4f:	e8 1c 43 e2 ff       	call   0x533e70
+  70fb54:	8d 8e 78 03 00 00    	lea    ecx,[esi+0x378]
+  70fb5a:	c6 45 fc 03          	mov    BYTE PTR [ebp-0x4],0x3
+  70fb5e:	e8 0d 43 e2 ff       	call   0x533e70
+  70fb63:	8d 8e 7c 03 00 00    	lea    ecx,[esi+0x37c]
+  70fb69:	c6 45 fc 04          	mov    BYTE PTR [ebp-0x4],0x4
+  70fb6d:	e8 fe 42 e2 ff       	call   0x533e70
+  70fb72:	8d be 80 03 00 00    	lea    edi,[esi+0x380]
+  70fb78:	8b cf                	mov    ecx,edi
+  70fb7a:	c6 45 fc 05          	mov    BYTE PTR [ebp-0x4],0x5
+  70fb7e:	e8 ed 42 e2 ff       	call   0x533e70
+  70fb83:	8d 8e 84 03 00 00    	lea    ecx,[esi+0x384]
+  70fb89:	c6 45 fc 06          	mov    BYTE PTR [ebp-0x4],0x6
+  70fb8d:	e8 de 42 e2 ff       	call   0x533e70
+  70fb92:	d9 ee                	fldz
+  70fb94:	ba 80 45 b0 00       	mov    edx,0xb04580
+  70fb99:	dd 9e 40 04 00 00    	fstp   QWORD PTR [esi+0x440]
+  70fb9f:	8b ce                	mov    ecx,esi
+  70fba1:	c6 45 fc 07          	mov    BYTE PTR [ebp-0x4],0x7
+  70fba5:	e8 76 7c f3 ff       	call   0x647820
+  70fbaa:	d9 ee                	fldz
+  70fbac:	89 9e 84 02 00 00    	mov    DWORD PTR [esi+0x284],ebx
+  70fbb2:	89 9e 94 02 00 00    	mov    DWORD PTR [esi+0x294],ebx
+  70fbb8:	88 9e 80 02 00 00    	mov    BYTE PTR [esi+0x280],bl
+  70fbbe:	88 9e a8 02 00 00    	mov    BYTE PTR [esi+0x2a8],bl
+  70fbc4:	88 9e a9 02 00 00    	mov    BYTE PTR [esi+0x2a9],bl
+  70fbca:	88 9e ab 02 00 00    	mov    BYTE PTR [esi+0x2ab],bl
+  70fbd0:	88 9e ac 02 00 00    	mov    BYTE PTR [esi+0x2ac],bl
+  70fbd6:	88 9e ad 02 00 00    	mov    BYTE PTR [esi+0x2ad],bl
+  70fbdc:	88 9e ae 02 00 00    	mov    BYTE PTR [esi+0x2ae],bl
+  70fbe2:	88 9e af 02 00 00    	mov    BYTE PTR [esi+0x2af],bl
+  70fbe8:	88 9e b0 02 00 00    	mov    BYTE PTR [esi+0x2b0],bl
+  70fbee:	88 9e aa 02 00 00    	mov    BYTE PTR [esi+0x2aa],bl
+  70fbf4:	88 9e b3 02 00 00    	mov    BYTE PTR [esi+0x2b3],bl
+  70fbfa:	88 9e b4 02 00 00    	mov    BYTE PTR [esi+0x2b4],bl
+  70fc00:	88 9e b5 02 00 00    	mov    BYTE PTR [esi+0x2b5],bl
+  70fc06:	88 9e b6 02 00 00    	mov    BYTE PTR [esi+0x2b6],bl
+  70fc0c:	88 9e b7 02 00 00    	mov    BYTE PTR [esi+0x2b7],bl
+  70fc12:	88 9e b2 02 00 00    	mov    BYTE PTR [esi+0x2b2],bl
+  70fc18:	88 9e b8 02 00 00    	mov    BYTE PTR [esi+0x2b8],bl
+  70fc1e:	89 9e a4 02 00 00    	mov    DWORD PTR [esi+0x2a4],ebx
+  70fc24:	c6 86 b1 02 00 00 01 	mov    BYTE PTR [esi+0x2b1],0x1
+  70fc2b:	88 9e b9 02 00 00    	mov    BYTE PTR [esi+0x2b9],bl
+  70fc31:	d9 96 2c 04 00 00    	fst    DWORD PTR [esi+0x42c]
+  70fc37:	d9 96 30 04 00 00    	fst    DWORD PTR [esi+0x430]
+  70fc3d:	68 b4 00 00 00       	push   0xb4
+  70fc42:	d9 96 34 04 00 00    	fst    DWORD PTR [esi+0x434]
+  70fc48:	88 9e 38 04 00 00    	mov    BYTE PTR [esi+0x438],bl
+  70fc4e:	d9 96 1c 04 00 00    	fst    DWORD PTR [esi+0x41c]
+  70fc54:	88 9e 28 04 00 00    	mov    BYTE PTR [esi+0x428],bl
+  70fc5a:	d9 96 20 04 00 00    	fst    DWORD PTR [esi+0x420]
+  70fc60:	8b ce                	mov    ecx,esi
+  70fc62:	d9 9e 24 04 00 00    	fstp   DWORD PTR [esi+0x424]
+  70fc68:	e8 03 f5 ff ff       	call   0x70f170
+  70fc6d:	33 c0                	xor    eax,eax
+  70fc6f:	89 86 98 03 00 00    	mov    DWORD PTR [esi+0x398],eax
+  70fc75:	89 86 9c 03 00 00    	mov    DWORD PTR [esi+0x39c],eax
+  70fc7b:	89 86 a0 03 00 00    	mov    DWORD PTR [esi+0x3a0],eax
+  70fc81:	89 86 a4 03 00 00    	mov    DWORD PTR [esi+0x3a4],eax
+  70fc87:	89 86 a8 03 00 00    	mov    DWORD PTR [esi+0x3a8],eax
+  70fc8d:	89 86 ac 03 00 00    	mov    DWORD PTR [esi+0x3ac],eax
+  70fc93:	89 86 b0 03 00 00    	mov    DWORD PTR [esi+0x3b0],eax
+  70fc99:	89 86 b4 03 00 00    	mov    DWORD PTR [esi+0x3b4],eax
+  70fc9f:	89 86 b8 03 00 00    	mov    DWORD PTR [esi+0x3b8],eax
+  70fca5:	89 86 bc 03 00 00    	mov    DWORD PTR [esi+0x3bc],eax
+  70fcab:	89 86 c0 03 00 00    	mov    DWORD PTR [esi+0x3c0],eax
+  70fcb1:	89 86 c4 03 00 00    	mov    DWORD PTR [esi+0x3c4],eax
+  70fcb7:	89 86 c8 03 00 00    	mov    DWORD PTR [esi+0x3c8],eax
+  70fcbd:	89 86 cc 03 00 00    	mov    DWORD PTR [esi+0x3cc],eax
+  70fcc3:	89 86 d0 03 00 00    	mov    DWORD PTR [esi+0x3d0],eax
+  70fcc9:	89 86 d4 03 00 00    	mov    DWORD PTR [esi+0x3d4],eax
+  70fccf:	89 86 d8 03 00 00    	mov    DWORD PTR [esi+0x3d8],eax
+  70fcd5:	89 86 dc 03 00 00    	mov    DWORD PTR [esi+0x3dc],eax
+  70fcdb:	89 86 e0 03 00 00    	mov    DWORD PTR [esi+0x3e0],eax
+  70fce1:	89 86 e4 03 00 00    	mov    DWORD PTR [esi+0x3e4],eax
+  70fce7:	89 86 e8 03 00 00    	mov    DWORD PTR [esi+0x3e8],eax
+  70fced:	89 86 ec 03 00 00    	mov    DWORD PTR [esi+0x3ec],eax
+  70fcf3:	89 86 f0 03 00 00    	mov    DWORD PTR [esi+0x3f0],eax
+  70fcf9:	89 86 f4 03 00 00    	mov    DWORD PTR [esi+0x3f4],eax
+  70fcff:	89 86 f8 03 00 00    	mov    DWORD PTR [esi+0x3f8],eax
+  70fd05:	89 86 fc 03 00 00    	mov    DWORD PTR [esi+0x3fc],eax
+  70fd0b:	89 86 00 04 00 00    	mov    DWORD PTR [esi+0x400],eax
+  70fd11:	89 86 04 04 00 00    	mov    DWORD PTR [esi+0x404],eax
+  70fd17:	89 86 08 04 00 00    	mov    DWORD PTR [esi+0x408],eax
+  70fd1d:	89 86 0c 04 00 00    	mov    DWORD PTR [esi+0x40c],eax
+  70fd23:	89 86 10 04 00 00    	mov    DWORD PTR [esi+0x410],eax
+  70fd29:	89 86 14 04 00 00    	mov    DWORD PTR [esi+0x414],eax
+  70fd2f:	89 9e 18 04 00 00    	mov    DWORD PTR [esi+0x418],ebx
+  70fd35:	b8 02 00 00 00       	mov    eax,0x2
+  70fd3a:	89 86 50 04 00 00    	mov    DWORD PTR [esi+0x450],eax
+  70fd40:	89 9e 68 04 00 00    	mov    DWORD PTR [esi+0x468],ebx
+  70fd46:	89 9e 6c 04 00 00    	mov    DWORD PTR [esi+0x46c],ebx
+  70fd4c:	89 9e 94 04 00 00    	mov    DWORD PTR [esi+0x494],ebx
+  70fd52:	89 9e 70 04 00 00    	mov    DWORD PTR [esi+0x470],ebx
+  70fd58:	89 9e 98 04 00 00    	mov    DWORD PTR [esi+0x498],ebx
+  70fd5e:	89 9e 74 04 00 00    	mov    DWORD PTR [esi+0x474],ebx
+  70fd64:	89 9e 9c 04 00 00    	mov    DWORD PTR [esi+0x49c],ebx
+  70fd6a:	89 9e 78 04 00 00    	mov    DWORD PTR [esi+0x478],ebx
+  70fd70:	89 9e a0 04 00 00    	mov    DWORD PTR [esi+0x4a0],ebx
+  70fd76:	89 9e 7c 04 00 00    	mov    DWORD PTR [esi+0x47c],ebx
+  70fd7c:	89 9e a4 04 00 00    	mov    DWORD PTR [esi+0x4a4],ebx
+  70fd82:	b9 04 00 00 00       	mov    ecx,0x4
+  70fd87:	89 86 90 04 00 00    	mov    DWORD PTR [esi+0x490],eax
+  70fd8d:	89 86 58 04 00 00    	mov    DWORD PTR [esi+0x458],eax
+  70fd93:	89 86 5c 04 00 00    	mov    DWORD PTR [esi+0x45c],eax
+  70fd99:	89 8e 80 04 00 00    	mov    DWORD PTR [esi+0x480],ecx
+  70fd9f:	89 8e 84 04 00 00    	mov    DWORD PTR [esi+0x484],ecx
+  70fda5:	89 8e 88 04 00 00    	mov    DWORD PTR [esi+0x488],ecx
+  70fdab:	b8 03 00 00 00       	mov    eax,0x3
+  70fdb0:	c7 86 8c 04 00 00 05 	mov    DWORD PTR [esi+0x48c],0x5
+  70fdb7:	00 00 00
+  70fdba:	89 86 60 04 00 00    	mov    DWORD PTR [esi+0x460],eax
+  70fdc0:	89 86 64 04 00 00    	mov    DWORD PTR [esi+0x464],eax
+  70fdc6:	68 70 45 b0 00       	push   0xb04570
+  70fdcb:	8d 8e 70 03 00 00    	lea    ecx,[esi+0x370]
+  70fdd1:	c7 86 9c 02 00 00 01 	mov    DWORD PTR [esi+0x29c],0x1
+  70fdd8:	00 00 00
+  70fddb:	89 9e a0 02 00 00    	mov    DWORD PTR [esi+0x2a0],ebx
+  70fde1:	e8 fa 2b f2 ff       	call   0x6329e0
+  70fde6:	68 58 50 ab 00       	push   0xab5058
+  70fdeb:	8d 8e 74 03 00 00    	lea    ecx,[esi+0x374]
+  70fdf1:	e8 ea 2b f2 ff       	call   0x6329e0
+  70fdf6:	68 64 45 b0 00       	push   0xb04564
+  70fdfb:	8d 8e 78 03 00 00    	lea    ecx,[esi+0x378]
+  70fe01:	e8 da 2b f2 ff       	call   0x6329e0
+  70fe06:	68 58 45 b0 00       	push   0xb04558
+  70fe0b:	8d 8e 7c 03 00 00    	lea    ecx,[esi+0x37c]
+  70fe11:	e8 ca 2b f2 ff       	call   0x6329e0
+  70fe16:	68 54 45 b0 00       	push   0xb04554
+  70fe1b:	8b cf                	mov    ecx,edi
+  70fe1d:	e8 be 2b f2 ff       	call   0x6329e0
+  70fe22:	68 48 45 b0 00       	push   0xb04548
+  70fe27:	8b d7                	mov    edx,edi
+  70fe29:	8d 4d f0             	lea    ecx,[ebp-0x10]
+  70fe2c:	e8 3f 2e f2 ff       	call   0x632c70
+  70fe31:	50                   	push   eax
+  70fe32:	8d 8e 84 03 00 00    	lea    ecx,[esi+0x384]
+  70fe38:	c6 45 fc 08          	mov    BYTE PTR [ebp-0x4],0x8
+  70fe3c:	e8 df 2a f2 ff       	call   0x632920
+  70fe41:	8d 4d f0             	lea    ecx,[ebp-0x10]
+  70fe44:	c6 45 fc 07          	mov    BYTE PTR [ebp-0x4],0x7
+  70fe48:	e8 73 12 f2 ff       	call   0x6310c0
+  70fe4d:	8b 4d f4             	mov    ecx,DWORD PTR [ebp-0xc]
+  70fe50:	5f                   	pop    edi
+  70fe51:	8b c6                	mov    eax,esi
+  70fe53:	5e                   	pop    esi
+  70fe54:	5b                   	pop    ebx
+  70fe55:	64 89 0d 00 00 00 00 	mov    DWORD PTR fs:0x0,ecx
+  70fe5c:	8b e5                	mov    esp,ebp
+  70fe5e:	5d                   	pop    ebp
+  70fe5f:	c3                   	ret
+
+FUN_00533e70 full 9-byte helper body
+
+/home/pes/ghidra_projects/shift/SHIFT.exe:     file format pei-i386
+
+
+Disassembly of section .text:
+
+00533e70 <.text+0x132e70>:
+  533e70:	8b c1                	mov    eax,ecx
+  533e72:	c7 00 00 00 00 00    	mov    DWORD PTR [eax],0x0
+  533e78:	c3                   	ret
+
+Physics Manager vtable and adjacent class-name data
+
+/home/pes/ghidra_projects/shift/SHIFT.exe:     file format pei-i386
+
+Contents of section .rdata:
+ b04524 60fe7000 700a7100 f0fe7000 20f37000  `.p.p.q...p. .p.
+ b04534 80f67000 30a85a00 501b7100 b0ff7000  ..p.0.Z.P.q...p.
+ b04544 30a85a00 44726976 6572732f 00000000  0.Z.Drivers/....
+ b04554 41492f00 50687973 6963732f 00000000  AI/.Physics/....
+ b04564 76656869 636c6573 2f000000 54726163  vehicles/...Trac
+ b04574 6b732f5f 44617461 2f000000 50687973  ks/_Data/...Phys
+ b04584 69637320 4d616e61 67657200 55550542  ics Manager.UU.B
