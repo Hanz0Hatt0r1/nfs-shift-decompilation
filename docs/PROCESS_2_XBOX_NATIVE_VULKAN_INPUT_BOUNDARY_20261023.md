@@ -114,7 +114,7 @@ The diagnostic process later faulted in generated guest code at
 `sub_823A5958` (`nfs_shift_recomp.176.cpp:5091`). That is a separate runtime
 failure and is outside this renderer task; no Process 1 source was changed.
 
-## First confirmed retail indexed draw: still diagnostic evidence
+## First confirmed retail indexed draw: captured inputs, still diagnostic evidence
 
 A bounded debugger run correlated a guest ring packet with
 `VulkanCommandProcessor::IssueDraw` on the GPU command thread. The ring span at
@@ -124,23 +124,31 @@ packet dispatch identified it as `PM4_DRAW_INDX`. Reading these Xbox ring bytes
 as big-endian dwords gives `c0032201 00000000 00060004 0975d7b0 40000006`.
 The parsed draw arguments were primitive 4
 (`TRIANGLE_LIST`), six 16-bit indices, guest index base `0x0975D7B0`, and a
-12-byte index range. The retained index-memory dump currently contains zeros
-because the first capture selected the wrong shared-memory alias; index
-contents and vertex payload bytes are therefore not claimed as reproducible
-evidence yet.
+12-byte index range. A corrected, bounded GDB run read the guest shared-memory
+mapping at `0x200000000 + guest_address` and retained the actual bytes outside
+the repository. The six raw index values are
+`00 00 00 01 00 02 00 02 00 01 00 03`; this draw's captured 8-in-16 endian mode
+normalizes them to Vulkan UInt16 indices `[0, 1, 2, 2, 1, 3]`.
 
 The same GPU-thread capture records the state and resources consumed by this
 draw, rather than merely nearby active-looking registers:
 
-- register-file snapshot SHA-256:
-  `fdf06f5a6be53a2077f24ecaebb00931b36d10a98b1786131f6f2bb7c8604f0e`;
+- latest register-file snapshot SHA-256:
+  `a0718a1b2044da9698c3f715c4ff319ae7a8d785fb8809c46f090beff9a19225`;
 - `VGT_DRAW_INITIATOR=0x00060004`, `VGT_DMA_BASE=0x0975D7B0`, and
   `VGT_DMA_SIZE=0x40000006`;
-- vertex fetch descriptor 95 resolves to guest address `0x0975DFD0`, with a
-  48-byte fetch range; the retained memory dump did not preserve its payload;
+- vertex fetch descriptor 95 has raw words `0x0975DFD3, 0x10000032`: guest
+  address `0x0975DFD0`, 8-in-32 endian mode, and 12 words (48 bytes). The
+  retained payload SHA-256 is
+  `5616b2becd40c3011eb1ab0c28a8a3b194fe8c966aec84c056915353a6f31c2d`; its
+  bytes decode to four float3 positions `(-1,-1,0)`, `(1,-1,0)`, `(-1,1,0)`,
+  `(1,1,0)`;
 - texture fetch descriptor 0 resolves to format 6 (`8_8_8_8`), 1024×256,
-  tiled texture storage at guest address `0x09D57000`; texture payload bytes
-  are not preserved in the retained capture;
+  tiled texture storage at guest address `0x09D57000`; the captured 1 MiB
+  payload SHA-256 is
+  `89ee6d3ffcbeeb27a6b76c70699de59e1037f7e387fe7a487b84ed65c11ca4c4`;
+- the captured 12-byte index payload SHA-256 is
+  `a305c49db5906a669149e9889c39043ec60e071b423c97f8df2b75cc33cc274c`;
 - the draw's VS microcode is 105 dwords at `0x09D568E0` (SHA-256
   `d448760823568068b6f70d903fde9a1faca73c6cfaca7cab59fe73713f1712bc`); its
   fetch instructions reference vertex descriptor 95;
@@ -149,12 +157,17 @@ draw, rather than merely nearby active-looking registers:
   texture fetch references descriptor 0.
 
 The project now has a narrow C++ decoder for this captured `PM4_DRAW_INDX`
-form. It checks the exact type/opcode/length, requires the initiator and DMA
-index counts to agree, matches the observed index binding, and emits neutral
-triangle-list/index-buffer parameters. Its regression uses the five captured
-ring dwords and the `IssueDraw` binding. It does not interpret a general Xenos
-register stream, transform index bytes, translate shaders, or issue Vulkan
-commands.
+form. It reads topology, DMA source, 16-bit index format, guest address,
+count, and swap mode directly from the packet; it does not need the
+`IndexBufferInfo` object produced by the diagnostic plugin. It requires the
+initiator and DMA counts to agree and emits neutral triangle-list/index-buffer
+parameters. A bounded descriptor decoder reads the captured vertex fetch 95
+directly from its two register words and checks the observed vertex type,
+8-in-32 mode, address, and 48-byte range. A second helper normalizes only the
+two captured buffer byte orders (8-in-16 indices and 8-in-32 vertex words).
+Regressions cover packet/descriptor fields, unsupported variants, and captured
+index/vertex byte prefixes. The code does not interpret a general Xenos
+register stream, translate shaders, or issue Vulkan commands.
 
 This is the first confirmed XEX-originated indexed draw input. Its fetch
 metadata indicates a textured resource, but the draw is not identified as a
@@ -177,15 +190,16 @@ claim.
 
 ## Next native-renderer work
 
-Next, preserve correct index/vertex/texture bytes and correlate the guest
-shader pair to an independent project-owned SPIR-V translation. Then connect
-the bounded decoder to buffer/resource preparation and the existing Vulkan
+Next, use the retained 8-in-32 vertex payload and tiled texture descriptor to
+close fetch-format and image-layout decoding, then correlate the guest shader
+pair to an independent project-owned SPIR-V translation. Connect only those
+validated resources and the bounded packet decoder to the existing Vulkan
 1.1 core. Unsupported packet forms, resource formats, and shader instructions
-must fail closed. This is command translation to Vulkan, not shipping an Xenos
-command processor or rendering emulator. Keep XCB/Wayland/Android surface
-integration outside the shared core. Vulkan validation can prove API
-correctness; image and runtime comparisons must separately establish retail
-behavior.
+must fail closed. The product consumes captured Xbox draw inputs and submits
+native Vulkan commands; it must not ship or call a Xenos GPU emulator. Keep
+XCB/Wayland/Android surface integration outside the shared core. Vulkan
+validation proves API correctness; image and runtime comparisons must
+separately establish retail behavior.
 
 ## Portability and ownership
 
