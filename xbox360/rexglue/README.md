@@ -12,6 +12,10 @@ ReXGlue is **not vendored or bundled** by this migration. The SDK is evolving an
 4. Enumerate unresolved functions, imports, relocations, indirect targets, vector/FPU semantics, memory/endianness and initialization dependencies.
 5. Only then define the first SHIFT-specific build target / configuration and host integration.
 
+## Current retail function override
+
+The startup run reached vtable target `0x8264F580`, which ReXGlue had not registered. Live guest-memory bytes show the exact thunk `li r6,1; b 0x8264D9D0`; [the override snippet](nfs_shift_retail_function_overrides.toml) records the entry for the external project’s `[functions]` table. Merge it into the local override include used by the manifest. The focused check is `python3 tools/xbox360/test_function_override_8264f580.py`. This proves the static bytes and config entry only; the patched runtime still needs to execute past the target.
+
 ## Renderer note
 
 ReXGlue has Xenos/Vulkan implementation components, but the complete device capability requirements for **Vulkan 1.1** and for SHIFT have **not** been proven. A newer API/extension cannot be presumed available on a Vulkan 1.1-only Android GPU. Track this in gate X6.
