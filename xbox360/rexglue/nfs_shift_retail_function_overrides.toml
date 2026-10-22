@@ -6,6 +6,8 @@
 "0x823270D0" = {}
 # Runtime captured a null/state helper entry (function extent pending codegen).
 "0x8233D128" = {}
+# The full live control-flow block is captured in evidence/xbox360_frontier_82341198.json.
+"0x82341198" = {}
 # Runtime captured a pointer-adjusting retail thunk.
 "0x82B9DD08" = {}
 # Runtime captured another indirect retail entry (function extent pending codegen).

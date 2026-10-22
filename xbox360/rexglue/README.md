@@ -14,7 +14,7 @@ ReXGlue is **not vendored or bundled** by this migration. The SDK is evolving an
 
 ## Current retail function override
 
-Seventeen missing retail entries are recorded in [the override snippet](nfs_shift_retail_function_overrides.toml). ReXGlue codegen, build, and live runtime execution now pass the 60-byte conditional dispatcher at `0x823270D0`; its observed `r5==3` path selected vtable slot `+0x80`. The next missing retail target is `0x82341198`. The `--no-async_shader_compilation` diagnostic removes the placeholder-skip warning and creates pipeline states synchronously, but no retail draw or present has been verified. Focused regressions cover captured instruction bytes and override entries; they do not prove frontend or race execution.
+Eighteen missing retail entries are recorded in [the override snippet](nfs_shift_retail_function_overrides.toml). ReXGlue codegen and the Linux runtime build accept the complete 68-byte dispatcher at `0x82341198`; its exact branch paths and registered tail targets are preserved in [the capture evidence](../../evidence/xbox360_frontier_82341198.json). The rebuilt binary entered `xstart` but did not reach `0x82341198` during a 180-second controlled run, so execution of the override is unverified. An earlier binary executed the 60-byte conditional dispatcher at `0x823270D0` and then trapped at `0x82341198`. The `--no-async_shader_compilation` diagnostic removes the placeholder-skip warning and creates pipeline states synchronously, but no retail draw or present has been verified. Focused regressions cover captured instruction bytes and override entries; they do not prove frontend or race execution.
 
 ## Renderer note
 

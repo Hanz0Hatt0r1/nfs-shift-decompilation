@@ -3,8 +3,17 @@
   "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
   "runtime_binary_sha256": "d3702554b63906d626bb0a1c9405cdaeb7554b5e00970946b033b7107a58972c",
   "guest_address": "0x82341198",
-  "capture_length_bytes": 64,
-  "entry_bytes_hex": "816300082b0b00034d9900207d6903a62f0b0000405a000c405a0010409a000c388000144bfeabcc3d60831b38800000816b300c2b0b0000419a00084bfeafac",
+  "capture_length_bytes": 68,
+  "function_extent_verified": true,
+  "entry_bytes_hex": "816300082b0b00034d9900207d6903a62f0b0000405a000c405a0010409a000c388000144bfeabcc3d60831b38800000816b300c2b0b0000419a00084bfeafac4bfeaf68",
+  "capture_provenance": {
+    "source": "Read-only retained Xenia guest-memory backing from the exact XEX runtime mapping.",
+    "backing_file_basename": "xenia_memory_211626715821872",
+    "corroborating_backing_copies": 9,
+    "gdb_prefix_match_bytes": 64,
+    "all_68_bytes_match_across_backings": true,
+    "backings_modified": false
+  },
   "runtime_observation": {
     "trap": "rex::runtime::InvalidFunctionTrap",
     "target_was_executed": false,
@@ -44,22 +53,87 @@
     "0x823411B0: bdzf 26,0x823411C0",
     "0x823411B4: bf 26,0x823411C0",
     "0x823411B8: li r4,20",
-    "0x823411BC: b 0x8232BD8C",
+    "0x823411BC: b 0x8232BD88",
     "0x823411C0: lis r11,0x831B",
     "0x823411C4: li r4,0",
     "0x823411C8: lwz r11,0x300C(r11)",
     "0x823411CC: cmplwi cr6,r11,0",
     "0x823411D0: bt 26,0x823411D8",
-    "0x823411D4: b 0x8232C184"
+    "0x823411D4: b 0x8232C180",
+    "0x823411D8: b 0x8232C140"
   ],
+  "control_flow": {
+    "state_field": "unsigned 32-bit value at object offset +8",
+    "state_greater_than_3": "return to LR",
+    "states_0_or_1": {
+      "r4": 20,
+      "tail_target": "0x8232BD88"
+    },
+    "states_2_or_3": {
+      "r4": 0,
+      "selector_address": "0x831B300C",
+      "selector_zero_tail_target": "0x8232C140",
+      "selector_nonzero_tail_target": "0x8232C180"
+    },
+    "tail_branches_set_link_register": false,
+    "all_entry_paths_resolved_in_capture": true,
+    "tail_targets_registered_in_matching_codegen_partition": [
+      "0x8232BD88",
+      "0x8232C140",
+      "0x8232C180"
+    ]
+  },
+  "codegen_validation": {
+    "manifest": "nfs_shift_manifest.toml",
+    "codegen_summary": {
+      "written": 75,
+      "unchanged": 430,
+      "deleted": 0
+    },
+    "generated_symbol": "sub_82341198",
+    "generated_source": "generated/default/nfs_shift_recomp.108.cpp",
+    "partition_index": 108,
+    "next_registered_entry": "0x823411DC",
+    "generated_control_flow_matches_capture": true
+  },
+  "build_validation": {
+    "command": "cmake --build out/build/linux-amd64-release --target nfs_shift --parallel 2",
+    "result": "success",
+    "built_runtime_binary_sha256": "e0b0320715497a94b261f4ccaa6de4de3c9c311c9d4aaf5d1a40b9399b7670f1",
+    "runtime_symbol_registered": "sub_82341198"
+  },
+  "postbuild_runtime_attempt": {
+    "runtime_binary_sha256": "e0b0320715497a94b261f4ccaa6de4de3c9c311c9d4aaf5d1a40b9399b7670f1",
+    "duration_limit_seconds": 180,
+    "entered_xstart": true,
+    "entered_82341198": false,
+    "hit_invalid_function_trap": false,
+    "renderer_breakpoints": "No vkCmdDraw, vkCmdDrawIndexed, or vkQueuePresentKHR breakpoint was hit.",
+    "main_guest_thread_stack_at_interrupt": [
+      "__savegprlr_29",
+      "0x823A0310",
+      "0x823B34A0",
+      "0x823A4E48",
+      "0x823A5610",
+      "0x8264F868",
+      "0x8301DB18",
+      "0x82FC1880",
+      "0x82D30380",
+      "xstart"
+    ],
+    "ui_host_thread_stack": "SDLWindowedAppContext::RunMainMessageLoop",
+    "termination": "Timeout interrupted GDB at 180 seconds; the inferior reported no trap or crash.",
+    "host_log": "/tmp/nfs_shift_82341198_postbuild.log"
+  },
   "capture_limitations": [
-    "The branch at 0x823411D0 targets 0x823411D8, beyond the 64 captured bytes; the full function extent and that path are unresolved.",
-    "The indirect target trapped before any instruction at 0x82341198 executed; this is live memory evidence, not path execution evidence.",
-    "The local extracted default.pe artifact (extraction provenance unverified; SHA-256 23844dbba0cf72bc11512821b90008ea5d2b06ee886d921f416ca6caae43a628) is not byte-equivalent: its mapped byte at 0x82341198 is 0x90 while this exact retail XEX live capture begins with 0x81."
+    "The invalid-function trap occurred before any instruction at 0x82341198 executed; these bytes establish the live mapping and control flow, not the values or selected path in that run.",
+    "The local extracted default.pe artifact (extraction provenance unverified; SHA-256 23844dbba0cf72bc11512821b90008ea5d2b06ee886d921f416ca6caae43a628) is not byte-equivalent: its mapped byte at 0x82341198 is 0x90 while this exact retail XEX live capture begins with 0x81.",
+    "Codegen/build registration are verified. The post-build launch entered xstart but did not reach 0x82341198 within 180 seconds; the selected retail path and next runtime frontier remain unknown.",
+    "The user's loading-screen report is not correlated with this built binary because that run's runtime hash was not recorded."
   ],
   "independent_decode": {
-    "decoder": "LLVM MC, powerpc64-unknown-linux-gnu, big-endian byte order",
-    "result": "All sixteen captured words decode; control flow exits to 0x8232BD8C and 0x8232C184, and one conditional branch targets the uncaptured address 0x823411D8."
+    "decoder": "LLVM MC/objdump, powerpc-unknown-linux-gnu, big-endian instruction words",
+    "result": "All 17 captured words decode; the conditional CTR/CR branches split states 0-1 from 2-3, and the three tail destinations resolve to 0x8232BD88, 0x8232C140, and 0x8232C180."
   },
-  "status": "unresolved_frontier_no_override"
+  "status": "codegen_build_verified_runtime_execution_pending"
 }
