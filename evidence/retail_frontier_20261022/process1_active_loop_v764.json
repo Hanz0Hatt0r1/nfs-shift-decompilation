@@ -1,0 +1,81 @@
+{
+  "format": "SHIFT.Process1ActiveLoopProbe/1",
+  "run": "v764",
+  "status": "host-frame-loop",
+  "capture_mode": false,
+  "frames_requested": 360,
+  "frames_rendered": 360,
+  "exit_code": 0,
+  "validation_errors": 0,
+  "dispatches": 1746184,
+  "unique_functions": 4727,
+  "guest_main_thread_function": "0x007e3580",
+  "worker_waiting_count": 3,
+  "retail_rendering_proven": false,
+  "pe_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+  "runtime_sha256": "545c9eadd76f7183b64e8a8dd12a51a88c480b31f857b76ed01af170626f1f3f",
+  "source": {
+    "p1_base_commit": "89a019991f53885d85f85ae572b34bfd18d6ef77",
+    "p2_integration_commit": "de0737734af2138bf9852436c276e64091aeabee",
+    "p2_pull_request": "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2145"
+  },
+  "pcode_manifest": {
+    "path": "/home/pes/nfs-shift-recompilation-artifacts/shift-startup-probe-20261018/function-call-stack-v659-missing-005a0ef0/module-manifest-v659-005a0ef0.json",
+    "sha256": "6977898b7ff79edfb84f9b6f6d9e5ff98d8e073d17d88f345e8a1edb77e73a0e"
+  },
+  "d3d9_vulkan_bridge": {
+    "clear_requests": 1139,
+    "present_requests": 1137,
+    "clear_submissions": 360,
+    "present_submissions": 360,
+    "pending_presents": 777,
+    "guest_draw_translation": false
+  },
+  "trace": {
+    "enabled": true,
+    "truncated": true,
+    "saved_event_count": 8192,
+    "caller": "0x0054bb20",
+    "targets": [
+      "0x004692e0",
+      "0x0045c000",
+      "0x004052b0",
+      "0x004049d0",
+      "0x0045b530",
+      "0x00633980",
+      "0x00633a50"
+    ],
+    "imports": [
+      "d3d9.dll!IDirect3DDevice9::DrawPrimitive",
+      "d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitive",
+      "d3d9.dll!IDirect3DDevice9::DrawPrimitiveUP",
+      "d3d9.dll!IDirect3DDevice9::DrawIndexedPrimitiveUP"
+    ],
+    "observed_calls_in_saved_prefix": [
+      {
+        "caller": "0x0054bb20",
+        "function": "0x00633980",
+        "return_address": "0x0054bb45",
+        "ecx_entry": "0x00bbf960",
+        "eax_return": "0x00bf9b29",
+        "observed_count": 1010,
+        "all_completed": true
+      },
+      {
+        "caller": "0x0054bb20",
+        "function": "0x00633a50",
+        "return_address": "0x0054bb4c",
+        "ecx_entry": "0x00bf9b29",
+        "eax_return": "0x00000000",
+        "observed_count": 1010,
+        "all_completed": true
+      }
+    ],
+    "saved_dispatcher_and_draw_import_events": 0
+  },
+  "tests": {
+    "runtime_build": "passed"
+  },
+  "probe_log_sha256": "db8ae622460e53e7d2bea901448b36e41c704fd318b6f97c6f8690f0dcb0b9fb",
+  "full_probe_report_sha256": "8910cbe564b6c58080e494ef85baa1b9448886ae9d9c330ed7b2c87acccc845c"
+}
