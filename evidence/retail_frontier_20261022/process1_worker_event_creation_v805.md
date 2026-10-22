@@ -51,3 +51,9 @@ indefinitely. The runtime trace does not establish whether this handshake is
 normal, whether another callback should signal it later, or whether any
 wait-state mismatch is caused by guest scheduling. Do not add a synthetic
 signal or alter original Win32 semantics based on this bounded evidence.
+
+The existing focused `shift_runtime_recompiled_pcode_module` regression
+includes an alertable event wait that resumes after a guest worker signals it;
+it passed in this checkout, as did `shift_runtime_body_feedback_scheduler`.
+That verifies the fixture's scheduler/event path, not the retail producer for
+handle `0x60018`.
