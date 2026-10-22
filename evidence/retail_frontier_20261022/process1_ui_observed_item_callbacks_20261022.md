@@ -99,6 +99,6 @@ The other three targets each initialize fields relative to their own ECX receive
 
 The static bodies match the v789 return-value observation. The helper and these four callback bodies contain no direct store to original owner readiness `O+0x2D` or list count `O+0x14`; only the three nontrivial callbacks directly update fields of their item receiver. This does **not** prove the helper callees have no aliased or asynchronous effects, does not explain why the count remains 9, and does not identify a positive writer for `O+0x2D`.
 
-**One next target: `0x00508C70`.** v790/v791 observed it through the post-traversal query helper `0x005088A0`; it returned 5 and that result was stored to an item's `+0xE4`. Its exact status semantics remain unknown, making its complete body the narrowest next test of whether item state can affect the readiness lifecycle.
+**One next target: `0x00508C70`.** In v790, one post-traversal query through `0x005088A0` entered `0x00508C70` and returned 5; v791 separately recorded five `0x005088A0` queries returning 5, without recording their nested targets. `0x005088A0` stores its returned EAX into an item's `+0xE4`. The status semantics remain unknown, making `0x00508C70` the narrowest next test of whether item state can affect the readiness lifecycle.
 
 No guest state was forced. No native launch, visible menu, retail draw, or race is claimed.
