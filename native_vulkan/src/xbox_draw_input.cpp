@@ -739,13 +739,10 @@ bool decode_captured_shader_constants(
     };
 
     CapturedShaderConstants decoded{};
-    for (uint32_t i = 0; i < decoded.vertex_c64_to_c69.size(); ++i) {
-        decoded.vertex_c64_to_c69[i] = read_float4(vertex_base, 64 + i);
+    for (uint32_t i = 0; i < decoded.vertex_float_constants.size(); ++i) {
+        decoded.vertex_float_constants[i] = read_float4(vertex_base, i);
+        decoded.pixel_float_constants[i] = read_float4(pixel_base, i);
     }
-    decoded.vertex_c254 = read_float4(vertex_base, 254);
-    decoded.vertex_c255 = read_float4(vertex_base, 255);
-    decoded.pixel_c0 = read_float4(pixel_base, 0);
-    decoded.pixel_c255 = read_float4(pixel_base, 255);
     decoded.pixel_b128 = (bool_bank_words[128 / 32] & (1u << (128 % 32))) != 0;
     decoded.pixel_b129 = (bool_bank_words[129 / 32] & (1u << (129 % 32))) != 0;
     *output = decoded;

@@ -24,8 +24,9 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   captured color/depth target, viewport, and screen/window scissor are also
   decoded into a bounded neutral state contract. This does not map Xenos EDRAM
   tiles to Vulkan images or create a pipeline. The constants decoder resolves
-  only the float and packed-bool registers read by the exact captured VS/PS
-  pair, including its observed PS branch values. A bounded decoder now parses
+  each stage's 256-register float window and the observed PS branch bools,
+  including the VS a0-indexed c0-c3 window.
+  A bounded decoder now parses
   the captured VS/PS control-flow slots and their first `vfetch_full` and
   `tfetch2D` instructions, plus scheduled ALU operands, temporary-register
   addressing flags, scalar source selectors, and component-relative swizzles.

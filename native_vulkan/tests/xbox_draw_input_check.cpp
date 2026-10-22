@@ -402,6 +402,10 @@ int main() {
     const auto set_float4 = [&](uint32_t index, std::array<uint32_t, 4> value) {
         std::copy(value.begin(), value.end(), captured_float_constants.begin() + index * 4);
     };
+    set_float4(0, {0x43B14000u, 0, 0, 0x44200000u});
+    set_float4(1, {0, 0x42B00000u, 0, 0x43B3C000u});
+    set_float4(2, {0, 0, 0x3F800000u, 0});
+    set_float4(3, {0, 0, 0, 0x3F800000u});
     set_float4(64, {0x3F47FFFFu, 0x00000000u, 0x00000000u, 0xC3F9FFFFu});
     set_float4(65, {0x00000000u, 0x3FB1C71Cu, 0x00000000u, 0xC3F9FFFFu});
     set_float4(66, {0x00000000u, 0x00000000u, 0x3F8020C5u, 0xBF8020C5u});
@@ -420,15 +424,21 @@ int main() {
                 captured_bool_constants.data(), captured_bool_constants.size(),
                 0x000FF000u, 0x000FF100u, &shader_constants, &error),
             "captured Xbox shader constant banks were rejected");
-    require(shader_constants.vertex_c64_to_c69[0][0] == 0x3F47FFFFu &&
-                shader_constants.vertex_c64_to_c69[5][3] == 0x3EB00000u &&
-                shader_constants.vertex_c254[2] == 0xBF800000u &&
-                shader_constants.vertex_c255[0] == 0x43FA0000u,
+    require(shader_constants.vertex_float_constants[0] ==
+                std::array<uint32_t, 4>{0x43B14000u, 0, 0, 0x44200000u} &&
+                shader_constants.vertex_float_constants[1] ==
+                std::array<uint32_t, 4>{0, 0x42B00000u, 0, 0x43B3C000u} &&
+                shader_constants.vertex_float_constants[2][2] == 0x3F800000u &&
+                shader_constants.vertex_float_constants[3][3] == 0x3F800000u &&
+                shader_constants.vertex_float_constants[64][0] == 0x3F47FFFFu &&
+                shader_constants.vertex_float_constants[69][3] == 0x3EB00000u &&
+                shader_constants.vertex_float_constants[254][2] == 0xBF800000u &&
+                shader_constants.vertex_float_constants[255][0] == 0x43FA0000u,
             "captured Xbox vertex shader constants changed");
-    require(shader_constants.pixel_c0 ==
+    require(shader_constants.pixel_float_constants[0] ==
                 std::array<uint32_t, 4>{0x3F800000u, 0x3F800000u,
                                         0x3F800000u, 0x3F800000u} &&
-                shader_constants.pixel_c255 ==
+                shader_constants.pixel_float_constants[255] ==
                 std::array<uint32_t, 4>{0x3F800000u, 0, 0, 0} &&
                 shader_constants.pixel_b128 && !shader_constants.pixel_b129,
             "captured Xbox pixel constants or conditional path changed");

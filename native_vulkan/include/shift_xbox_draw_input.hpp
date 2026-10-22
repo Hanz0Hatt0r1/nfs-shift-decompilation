@@ -276,11 +276,8 @@ struct CapturedRasterState {
 };
 
 struct CapturedShaderConstants {
-    std::array<std::array<uint32_t, 4>, 6> vertex_c64_to_c69;
-    std::array<uint32_t, 4> vertex_c254;
-    std::array<uint32_t, 4> vertex_c255;
-    std::array<uint32_t, 4> pixel_c0;
-    std::array<uint32_t, 4> pixel_c255;
+    std::array<std::array<uint32_t, 4>, 256> vertex_float_constants;
+    std::array<std::array<uint32_t, 4>, 256> pixel_float_constants;
     bool pixel_b128;
     bool pixel_b129;
 };
@@ -362,8 +359,9 @@ bool decode_captured_raster_state(
     CapturedRasterState* output,
     std::string* error);
 
-// Resolves only the constants read by the captured VS/PS pair. The float bank
-// is indexed as 512 float4 registers; the bool bank is eight packed dwords.
+// Resolves the stage-relative 256-register VS/PS float windows and the packed
+// bool values used by the captured PS branch. The float bank is 512 float4
+// registers; the bool bank is eight packed dwords.
 bool decode_captured_shader_constants(
     const uint32_t* float_bank_words,
     size_t float_word_count,
