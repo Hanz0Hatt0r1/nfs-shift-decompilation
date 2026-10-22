@@ -1,7 +1,7 @@
 # Process 2 — ReXGlue 0.10.0 Xenos GPU plugin boundary
 
 Date: 2026-10-22
-Scope: Xbox 360/Xenos graphics integration in the generated ReXGlue app only. No Process 1 trap, P-code, scheduler, or guest-runtime analysis is included. This is a report-only task.
+Scope: Xbox 360/Xenos graphics integration in the generated ReXGlue app only. P1-supplied guest runtime observations are used solely to classify graphics API boundaries; no P1 waiter implementation, trap, P-code, or scheduler code is inspected or changed. This is a report-only task.
 
 ## Finding
 
@@ -83,13 +83,27 @@ For this XEX, the already observed guest initialization values are:
 
 These resources and calls are enough to identify the first host/guest GPU handoff boundary. They do not reveal the ring contents, a PM4 draw packet, shader inputs, render-target data, or a frame boundary. After plugin selection and staging, the first runtime criterion is that plugin loading and SetupGuestGpu succeed and the three no-plugin warnings disappear. The next criterion is observable ring consumption and packet/resource provenance. Only a guest-originated Xenos draw followed by its resolve/flip and same-frame host Vulkan submission/present proves the first retail frame.
 
+## New P1 display-path evidence: PersistDisplay is not Present
+
+P1 supplied a GDB chain from this XEX: guest function 0x823A4E48 calls the VdPersistDisplay import at instruction 0x823A5518 (guest LR 0x823A551C), then execution reaches 0x823B34A0 and waiter 0x823A0310. The live waiter object was reported as 0xB7365F00 with the consumer-pointer field at obj+10896 equal to 1, producer field at obj+10908 equal to 21, and target index 3. These are P1-observed values; this report does not infer queue meaning from them.
+
+The call name can be misleading. The local SDK 0.10.0 runtime exports rex::kernel::xboxkrnl::VdPersistDisplay_entry at host address 0x5A2FB0 (size 0x8A). Its local x86-64 disassembly conditionally obtains a kernel heap, allocates a 64-byte block with 32-byte alignment, stores the resulting guest pointer, and returns 1. It does not call the GPU graphics system or command processor. Upstream xboxkrnl_video.cpp describes the output pointer as a value later passed to MmFreePhysicalMemory(1, *ptr), and the implementation is the same allocation shim. Consequently this observed VdPersistDisplay call is not a Xenos command, buffer swap, D3D draw, or presentation event. It is serviced by the Xbox kernel compatibility layer even when gpu_plugin is unset.
+
+ReXGlue's actual Xbox swap entry is VdSwap_entry. The upstream implementation takes a primary-ring buffer location, a six-dword frontbuffer texture-header fetch, frontbuffer address/format/colorspace/dimensions, converts the frontbuffer virtual address to a physical address, and writes a PM4_XE_SWAP packet plus signature, address, width, and height into the reserved ring area. The Xenos packet parser dispatches PM4_XE_SWAP to ExecutePacketType3_XE_SWAP, which advances the read pointer and invokes IssueSwap. The Vulkan implementation of IssueSwap requires a presenter and begins a host GPU submission; if no presenter is available it logs XELOG_GPU PRESENT: NO PRESENTER. That is the concrete ReXGlue display route that the Xenos plugin is meant to service.
+
+Static XEX evidence gives a useful next breakpoint: generated/default/nfs_shift_recomp.173.cpp has a VdSwap import call at guest instruction 0x823A5114 (LR 0x823A5118), statically inside sub_823A4E48. The same function has the later VdPersistDisplay call at 0x823A5518. This static callsite does not prove the earlier branch executed in P1's run. P1's supplied GDB chain reports a hit at VdPersistDisplay, not a hit at VdSwap. Therefore it still does not establish that ReXGlue's swap packet path ran, much less that a draw or screen present occurred.
+
+The Xenos plugin should service the ring-buffer and VdSwap-to-PM4_XE_SWAP path once loaded: the SDK's VdInitializeRingBuffer and VdEnableRingBufferRPtrWriteBack exports forward to IGraphicsSystem, which forwards to its CommandProcessor; that processor handles PM4_XE_SWAP through the backend's IssueSwap. It should not be expected to service VdPersistDisplay, which is a kernel memory-allocation compatibility entrypoint. Whether completion interrupts from the GPU unblock the reported game waiter is not established by the supplied evidence.
+
+**Minimal next check for this evidence:** keep the ABI-v1 Xenos plugin selected and staged as described above, then put a GDB breakpoint at guest VdSwap callsite 0x823A5114 (or its VdSwap import entry). If hit, preserve the call arguments and the 64-dword buffer after VdSwap returns; confirm PM4_XE_SWAP and its signature/address/dimensions reach the Xenos command processor, then confirm Vulkan IssueSwap has a presenter and reaches host presentation. If this callsite is not hit, the reported VdPersistDisplay/waiter chain still has no demonstrated connection to presentation. A visible frame and a game draw remain separate claims requiring their own capture evidence.
+
 ## Facts, inferences, and limits
 
 **Confirmed from the installed SDK and local app:** ABI v1 contract; matching plugin ABI return value; factory exports; the single Xenos plugin target in this Linux package; plugin lookup from the executable directory; CMake staging behavior; empty gpu_plugin semantics; app CMake/hook state; current no-plugin warnings; and observed XEX Vd arguments.
 
 **Inference:** enabling and staging this matching plugin should route these guest services into ReXGlue Xenos GraphicsSystem/CommandProcessor. The guest ring allocation/arguments make that the next bounded integration experiment.
 
-**Not established:** successful LoadGpuPlugin invocation by nfs_shift; successful Vulkan device or Wayland surface creation; successful SetupGuestGpu; guest command writes or read-pointer progress; first PM4 packet; DrawIndexedPrimitive-equivalent Xenos packet; resolve/flip; menu; Vulkan present; retail visual parity; or why Core 2/0:Main was busy. Do not infer any of these from the ABI probe, package contents, or thread CPU percentage.
+**Not established:** successful LoadGpuPlugin invocation by nfs_shift; successful Vulkan device or Wayland surface creation; successful SetupGuestGpu; guest command writes or read-pointer progress; execution of the static VdSwap callsite at 0x823A5114; PM4_XE_SWAP consumption; any DrawIndexedPrimitive-equivalent Xenos packet; resolve/flip; menu; Vulkan present; retail visual parity; or why Core 2/0:Main was busy. Do not infer any of these from the ABI probe, package contents, static callsite, or thread CPU percentage.
 
 No renderer/runtime files were changed, and no plugin-enabled game run or Vulkan validation was performed. The ABI probe only loaded the installed shared library and read its version export.
 
@@ -106,6 +120,10 @@ Official upstream source navigation:
 - [ReXApp setup hooks](https://github.com/rexglue/rexglue-sdk/blob/main/include/rex/rex_app.h)
 - [App setup and CVar application](https://github.com/rexglue/rexglue-sdk/blob/main/src/ui/rex_app.cpp)
 - [CVar CLI binding](https://github.com/rexglue/rexglue-sdk/blob/main/include/rex/cvar_cli.h)
+- [Xbox video imports, including VdPersistDisplay and VdSwap](https://github.com/rexglue/rexglue-sdk/blob/main/src/kernel/xboxkrnl/xboxkrnl_video.cpp)
+- [Xenos swap packet decode and IssueSwap dispatch](https://github.com/rexglue/rexglue-sdk/blob/main/src/graphics/command_processor.cpp)
+- [Vulkan IssueSwap and presenter requirement](https://github.com/rexglue/rexglue-sdk/blob/main/src/graphics/vulkan/command_processor.cpp)
+- [PM4_XE_SWAP packet constant](https://github.com/rexglue/rexglue-sdk/blob/main/include/rex/graphics/xenos.h)
 - [CMake plugin staging](https://github.com/rexglue/rexglue-sdk/blob/main/cmake/rexglue_helpers.cmake)
 
-Direct raw-GitHub retrieval timed out during this run. Therefore version-specific statements above are based on the locally installed SDK 0.10.0 headers, CMake metadata, runtime/plugin binaries, and local logs; upstream links are provided for review, not used to claim that this installed package matches the current main branch byte-for-byte.
+Upstream main source was retrieved for call-routing cross-checks. The exact source commit corresponding to the installed SDK 0.10.0 package was not identified. Version-specific ABI and PersistDisplay evidence therefore comes from the installed 0.10.0 headers, CMake metadata, runtime/plugin binaries and local disassembly; upstream source establishes the current documented route but is not claimed to be byte-for-byte identical to the installed package.
