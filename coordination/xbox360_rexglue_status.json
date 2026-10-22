@@ -6,40 +6,43 @@
   "required_vulkan": "1.1",
   "input": {
     "expected_name": "default.xex",
-    "sha256": null,
-    "title_id": null,
-    "build": null,
+    "sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3",
     "source": "user-provided lawful dump, kept outside git"
   },
   "sdk": {
     "repository": "https://github.com/rexglue/rexglue-sdk",
+    "version": "0.10.0",
+    "platform": "linux-amd64",
     "commit_sha": null,
     "integrated": false
   },
   "gates": {
     "X0": {
       "key": "xbox360_retail_input",
-      "status": "blocked",
-      "evidence": [],
-      "note": "Original Xbox 360 SHIFT default.xex not supplied or SHA-256 verified"
+      "status": "verified",
+      "evidence": ["evidence/xbox360_rexglue_preflight_20261022.md#xex-identity"],
+      "note": "User-provided external retail XEX hash and title identity verified; no game binary or assets are tracked"
     },
     "X1": {
       "key": "rexglue_ppc_codegen",
-      "status": "not_started",
-      "evidence": [],
-      "note": "No pinned SDK/recompiled SHIFT XEX coverage report"
+      "status": "in_progress",
+      "evidence": ["evidence/xbox360_rexglue_preflight_20261022.md#compiler-preflight"],
+      "note": "SDK 0.10.0 codegen ran, but upstream commit is unpinned and PPC diagnostics remain unresolved"
     },
     "X2": {
       "key": "linux_x86_64_guest_boot",
-      "status": "not_started",
-      "evidence": [],
-      "note": "No recompiled Xbox SHIFT guest entrypoint execution"
+      "status": "in_progress",
+      "evidence": ["evidence/xbox360_rexglue_preflight_20261022.md#linux-runtime-evidence"],
+      "note": "Original guest execution reached GPU startup, then trapped on indirect target 0x8264F580"
     },
     "X3": {
       "key": "xenos_vulkan_retail_frame",
-      "status": "not_started",
-      "evidence": [],
-      "note": "No original Xbox SHIFT GPU draw or frame"
+      "status": "in_progress",
+      "evidence": ["evidence/xbox360_rexglue_preflight_20261022.md#linux-runtime-evidence"],
+      "note": "Xenos/Vulkan pipeline lookup occurred, but async placeholder handling skipped the real guest draw and frame presentation"
     },
     "X4": {
       "key": "linux_frontend_offline_race",
@@ -55,9 +58,9 @@
     },
     "X6": {
       "key": "vulkan_1_1_compatibility",
-      "status": "not_started",
+      "status": "in_progress",
       "evidence": [],
-      "note": "No 1.1 capability audit or runtime proof"
+      "note": "Process 2 is auditing the Xenos backend; no Vulkan 1.1 capability proof exists yet"
     }
   }
 }
