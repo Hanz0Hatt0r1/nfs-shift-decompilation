@@ -987,3 +987,12 @@ The v789–v796 observations are separate runs and do not prove which branch or
 item status caused v796's zero byte. No guest state was changed; the next
 useful trace is the same owner's list/status sequence and the state-5 callback
 target/return. See the [static original-byte analysis](../evidence/retail_frontier_20261022/process1_ui_readiness_list_gate_static.md).
+
+The v809/v810 follow-up identifies the observed state-5 virtual target as
+`0x004D1F10`. v810 sampled its input `item+0x11C`: the recurring value 2
+returns 5 under the original callback bytes. Exact-address write provenance
+for item `0x27DFAD78` attributes that value to `0x00D8CB90` writing 2 at
+`item+0x11C` through an embedded subobject. This establishes why the callback
+repeats 5 for that sampled state; it does not establish what event should
+advance the field. The bounded v810 trace did not prove a retail-rendered menu
+or race. See the [v810 item-state trace](../evidence/retail_frontier_20261022/process1_ui_item_state_011c_v810.md).
