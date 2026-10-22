@@ -976,3 +976,14 @@ trace or establish that this worker should have received work. v807 reached
 errors, four waiting workers and no guest draw translation. See the [v807
 owner trace](../evidence/retail_frontier_20261022/process1_worker_event_owner_v807.md)
 and [v808 queue-field evidence](../evidence/retail_frontier_20261022/process1_worker_queue_head_tail_v808.md).
+
+A static follow-up to the UI readiness traces checked the original bytes in
+`0x005093A0`. Its ordinary `owner+0x2D=1` store is skipped after any item-loop
+iteration; an item in state 5 calls virtual slot `+0x10` and clears a local
+condition that bypasses the alternate completion branch. The function also
+has a separate `0x0042C9CC` branch that can write the readiness byte when
+`owner+0xAD` is nonzero, so list occupancy alone is not a global explanation.
+The v789–v796 observations are separate runs and do not prove which branch or
+item status caused v796's zero byte. No guest state was changed; the next
+useful trace is the same owner's list/status sequence and the state-5 callback
+target/return. See the [static original-byte analysis](../evidence/retail_frontier_20261022/process1_ui_readiness_list_gate_static.md).
