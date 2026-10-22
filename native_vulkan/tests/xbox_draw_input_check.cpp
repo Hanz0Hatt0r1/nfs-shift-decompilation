@@ -33,8 +33,57 @@ uint32_t read_be32(const uint8_t* bytes) {
 }  // namespace
 
 int main() {
-    shift::xbox::DecodedIndexedDraw input{};
+    const uint8_t framed_stream[] = {
+        0x00, 0x00, 0x00, 0x01, 0xAA, 0xBB, 0xCC, 0xDD, // type 0
+        0x40, 0x00, 0x00, 0x00, 0x11, 0x22, 0x33, 0x44, // type 1
+        0x55, 0x66, 0x77, 0x88,
+        0x80, 0x00, 0x00, 0x00,                         // type 2
+        0x00, 0x00, 0x00, 0x00,                         // single-dword zero NOP
+        0xC0, 0x03, 0x22, 0x01, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x06, 0x00, 0x04, 0x09, 0x75, 0xD7, 0xB0,
+        0x40, 0x00, 0x00, 0x06,                         // type 3 DRAW_INDX
+    };
+    std::vector<shift::xbox::PacketSpan> packet_spans;
     std::string error;
+    require(shift::xbox::scan_captured_packet_stream(
+                framed_stream, sizeof(framed_stream), &packet_spans, &error),
+            "well-formed PM4 packet stream was rejected");
+    require(packet_spans.size() == 5, "PM4 packet scanner returned the wrong packet count");
+    require(packet_spans[0].type == shift::xbox::PacketType::Type0 &&
+                packet_spans[0].byte_offset == 0 && packet_spans[0].byte_length == 8,
+            "type-0 framing changed");
+    require(packet_spans[1].type == shift::xbox::PacketType::Type1 &&
+                packet_spans[1].byte_offset == 8 && packet_spans[1].byte_length == 12,
+            "type-1 framing changed");
+    require(packet_spans[2].type == shift::xbox::PacketType::Type2 &&
+                packet_spans[2].byte_offset == 20 && packet_spans[2].byte_length == 4,
+            "type-2 framing changed");
+    require(packet_spans[3].type == shift::xbox::PacketType::ZeroNop &&
+                packet_spans[3].byte_offset == 24 && packet_spans[3].byte_length == 4,
+            "zero-dword NOP framing changed");
+    require(packet_spans[4].type == shift::xbox::PacketType::Type3 &&
+                packet_spans[4].byte_offset == 28 && packet_spans[4].byte_length == 20 &&
+                packet_spans[4].opcode == 0x22,
+            "type-3 DRAW_INDX framing changed");
+    shift::xbox::DecodedIndexedDraw framed_draw{};
+    require(shift::xbox::decode_captured_draw_indx(
+                framed_stream + packet_spans[4].byte_offset,
+                packet_spans[4].byte_length, &framed_draw, &error),
+            "framed DRAW_INDX did not reach the bounded draw decoder");
+
+    std::vector<shift::xbox::PacketSpan> unchanged_spans = packet_spans;
+    require(!shift::xbox::scan_captured_packet_stream(
+                framed_stream, sizeof(framed_stream) - 1, &packet_spans, &error),
+            "unaligned PM4 stream was accepted");
+    require(packet_spans.size() == unchanged_spans.size(),
+            "failed PM4 scan partially replaced its output");
+    require(!shift::xbox::scan_captured_packet_stream(
+                framed_stream, sizeof(framed_stream) - 4, &packet_spans, &error),
+            "truncated PM4 packet stream was accepted");
+    require(packet_spans.size() == unchanged_spans.size(),
+            "truncated PM4 scan partially replaced its output");
+
+    shift::xbox::DecodedIndexedDraw input{};
     require(shift::xbox::decode_captured_draw_indx(
                 kCapturedPacket, sizeof(kCapturedPacket), &input, &error),
             "captured retail packet was rejected");

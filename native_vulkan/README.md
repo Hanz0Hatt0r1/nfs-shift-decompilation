@@ -26,6 +26,10 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   tiles to Vulkan images or create a pipeline. The constants decoder resolves
   only the float and packed-bool registers read by the exact captured VS/PS
   pair, including its observed PS branch values. It emits no shader code. The
+  packet scanner frames contiguous big-endian type 0/1/2/3 PM4 packets and
+  reports type-3 opcodes without applying state or executing commands. It
+  consumed the private 19,784-byte capture as 247 packets and identified four
+  bounded `DRAW_INDX` packets. This is not a live guest-ring consumer. The
   capture decoders reject unsupported forms. The untile path rejects other pitches, formats,
   dimensions, and layouts. Its address mapping is cross-checked against the public
   [Xenia `Tiled2D` implementation](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/texture_address.h);
@@ -35,7 +39,9 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   dependency and does not emulate a Xenos GPU;
 - the Xbox packet and resource inputs are not yet wired to Vulkan draw
   submission. Vulkan texture view/sampler creation, Xbox shader translation,
-  and retail parity remain unimplemented;
+  and retail parity remain unimplemented. The product path must use a
+  project-owned ReXGlue graphics frontend and must not load `rexgpu-xenos` or
+  another GPU emulator;
 - Linux CI coverage for native smoke paths.
 
 ## Rules

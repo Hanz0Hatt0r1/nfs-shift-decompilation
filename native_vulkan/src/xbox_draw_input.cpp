@@ -71,6 +71,54 @@ bool viewport_dimension(float half_extent, uint32_t* extent) {
 
 }  // namespace
 
+bool scan_captured_packet_stream(
+    const uint8_t* stream_bytes,
+    size_t byte_length,
+    std::vector<PacketSpan>* output,
+    std::string* error) {
+    if (!output || (byte_length && !stream_bytes)) {
+        return fail("invalid PM4 packet stream input", error);
+    }
+    if ((byte_length & 3u) != 0) {
+        return fail("PM4 packet stream is not dword-aligned", error);
+    }
+
+    std::vector<PacketSpan> packets;
+    size_t offset = 0;
+    while (offset < byte_length) {
+        const uint32_t header = read_be32(stream_bytes + offset);
+        const uint32_t type = header >> 30;
+        uint64_t packet_words = 1;
+        if (header == 0) {
+            // A zero dword is the command processor's single-dword NOP.
+        } else if (type == 0 || type == 3) {
+            // Type-0 and type-3 count fields encode payload_dwords - 1.
+            packet_words = static_cast<uint64_t>((header >> 16) & 0x3FFFu) + 2;
+        } else if (type == 1) {
+            packet_words = 3;
+        }
+
+        const uint64_t packet_bytes = packet_words * sizeof(uint32_t);
+        if (packet_bytes > byte_length - offset) {
+            return fail("truncated PM4 packet in stream", error);
+        }
+
+        packets.push_back(PacketSpan{
+            header == 0 ? PacketType::ZeroNop : static_cast<PacketType>(type),
+            offset,
+            static_cast<size_t>(packet_bytes),
+            type == 3 ? (header & kPacketOpcodeMask) >> 8 : 0u,
+        });
+        offset += static_cast<size_t>(packet_bytes);
+    }
+
+    *output = std::move(packets);
+    if (error) {
+        error->clear();
+    }
+    return true;
+}
+
 bool decode_captured_draw_indx(
     const uint8_t* packet_bytes,
     size_t byte_length,

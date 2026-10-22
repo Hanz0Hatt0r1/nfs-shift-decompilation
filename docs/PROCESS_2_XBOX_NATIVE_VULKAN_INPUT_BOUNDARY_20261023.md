@@ -231,6 +231,21 @@ the captured packet and descriptors, layout boundaries, byte order, sampling
 semantics, and unsupported or truncated inputs. The code does not interpret a
 general Xenos register stream, translate shaders, or issue Vulkan commands.
 
+The contiguous 19,784-byte ring snapshot was then scanned with project-owned
+packet framing. It consumes all 247 packets (162 type 0, zero type 1, 21 type 2,
+64 type 3) and finds four `PM4_DRAW_INDX` spans at `0x2c64`, `0x3614`, `0x3fec`,
+and `0x49ec`. Each span passes the bounded draw decoder: the first three use six
+indices at guest address `0x0975D7B0`; the fourth uses 60 indices at
+`0x09D55170`. The captured stream SHA-256 is
+`8797c590bda56ab0cd76837832c1eea6519a161a60c54f6a0f2f32396cba7379`. The raw
+ring remains outside the repository. This scanner reports packet framing and
+type-3 opcodes only; it does not apply register writes, synchronize a live ring,
+or emulate the GPU. Packet framing, including zero-dword NOP handling, is
+cross-checked against public Xenia
+[`command_processor.cc`](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/command_processor.cc)
+for documentation only; no Xenia runtime code is used. Evidence is recorded in
+`evidence/process2_xbox_pm4_stream_20261023.json`.
+
 This is the first confirmed XEX-originated indexed draw input. Its fetch
 metadata indicates a textured resource, but the draw is not identified as a
 vehicle draw. The shader, resource and state were observed while the external
@@ -253,15 +268,20 @@ claim.
 
 ## Next native-renderer work
 
-Next, resolve the captured texture's Vulkan view/sampler conversion and the
-EDRAM target-to-image contract, then translate the exact guest shader pair to
-project-owned Vulkan 1.1 SPIR-V. Connect only those verified inputs to the
-Vulkan core and submit this captured draw. Unsupported packet forms, resource
-formats, state, and shader instructions must fail closed. The product consumes
-captured Xbox draw inputs and submits native Vulkan commands; it must not ship
-or call a Xenos GPU emulator. Keep XCB/Wayland/Android surface integration
-outside the shared core. Vulkan validation proves API correctness; image and
-runtime comparisons must separately establish retail behavior.
+Next, connect the existing ReXGlue guest graphics-service boundary to a
+project-owned ring consumer, then add evidence-backed register/resource state
+tracking for the scanned span. A diagnostic run with `gpu_plugin` unset ignores
+guest ring setup services, so this project path still needs an adapter that
+loads in ReXGlue and consumes guest ring memory. The adapter must call the
+project's packet scanner and native Vulkan frontend directly; it must not route
+the product through `rexgpu-xenos` or another GPU emulator. After ring progress
+and draw state are consumed natively, resolve the captured texture's Vulkan
+view/sampler conversion and EDRAM target mapping, translate the exact guest
+shader pair to project-owned Vulkan 1.1-compatible SPIR-V, and submit the draw.
+Unsupported packet forms, resource formats, state, and shader instructions
+must fail closed. Keep XCB/Wayland/Android surface integration outside the
+shared core. Vulkan validation proves API correctness; image and runtime
+comparisons must separately establish retail behavior.
 
 ## Portability and ownership
 
@@ -275,8 +295,8 @@ Ghidra, or guest-scheduler source was changed for this report.
 ## Limits
 
 This report records a confirmed XEX-originated indexed draw and diagnostic
-input evidence. It adds a narrow draw-input decoder, not a complete production
-Xbox frontend, and makes no claim of a native Vulkan submission for this draw,
-phone rendering, or retail-image parity. The existing native backend remains a
-D3D9/neutral-contract renderer until the captured resources and shaders are
-translated by project-owned code.
+input evidence. It adds bounded packet framing and draw-input decoders, not a
+live ring consumer or a complete production Xbox frontend, and makes no claim
+of a native Vulkan submission for this draw, phone rendering, or retail-image
+parity. The existing native backend remains a D3D9/neutral-contract renderer
+until the captured resources and shaders are translated by project-owned code.

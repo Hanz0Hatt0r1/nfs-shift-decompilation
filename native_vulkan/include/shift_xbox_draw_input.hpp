@@ -21,6 +21,22 @@ struct DecodedIndexedDraw {
     uint32_t index_byte_length;
 };
 
+enum class PacketType : uint8_t {
+    Type0,
+    Type1,
+    Type2,
+    Type3,
+    ZeroNop,
+};
+
+struct PacketSpan {
+    PacketType type;
+    size_t byte_offset;
+    size_t byte_length;
+    // Valid only for type-3 packets. Other packet spans use 0.
+    uint32_t opcode;
+};
+
 struct CapturedVertexFetch {
     uint32_t guest_address;
     uint32_t endian_mode;
@@ -173,6 +189,14 @@ struct CapturedShaderConstants {
     bool pixel_b128;
     bool pixel_b129;
 };
+
+// Scans big-endian packet framing only. It does not interpret register writes
+// or execute packets.
+bool scan_captured_packet_stream(
+    const uint8_t* stream_bytes,
+    size_t byte_length,
+    std::vector<PacketSpan>* output,
+    std::string* error);
 
 // Translates only the captured PM4_DRAW_INDX form. This decodes the guest
 // command into renderer inputs; it does not execute or emulate Xenos state.
