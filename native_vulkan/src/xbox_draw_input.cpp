@@ -332,6 +332,53 @@ bool decode_captured_shader_alu_instruction(
     return true;
 }
 
+bool schedule_captured_shader_instructions(
+    const std::vector<CapturedShaderControlFlow>& control_flow,
+    size_t shader_byte_length,
+    std::vector<CapturedShaderInstructionSchedule>* output,
+    std::string* error) {
+    constexpr size_t kInstructionBytes = 12;
+    constexpr uint32_t kMaxSequenceInstructions = 6;
+    if (!output || shader_byte_length == 0 ||
+        (shader_byte_length % kInstructionBytes) != 0) {
+        return fail("invalid captured shader schedule input", error);
+    }
+
+    const size_t instruction_count = shader_byte_length / kInstructionBytes;
+    std::vector<CapturedShaderInstructionSchedule> scheduled;
+    for (const CapturedShaderControlFlow& clause : control_flow) {
+        if (clause.opcode != ShaderControlFlowOpcode::Exec &&
+            clause.opcode != ShaderControlFlowOpcode::ExecEnd) {
+            continue;
+        }
+        if (clause.instruction_count == 0 ||
+            clause.instruction_count > kMaxSequenceInstructions ||
+            static_cast<uint64_t>(clause.address) + clause.instruction_count >
+                instruction_count) {
+            return fail("captured shader exec clause is outside its instruction stream", error);
+        }
+        for (uint32_t offset = 0; offset < clause.instruction_count; ++offset) {
+            const uint32_t sequence_bits = (clause.sequence >> (offset * 2)) & 0x3u;
+            scheduled.push_back({
+                clause.address + offset,
+                clause.instruction_index,
+                (sequence_bits & 1u) != 0 ? ShaderScheduledInstructionKind::Fetch
+                                          : ShaderScheduledInstructionKind::Alu,
+                (sequence_bits & 2u) != 0,
+            });
+        }
+    }
+    if (scheduled.empty()) {
+        return fail("captured shader has no supported exec clauses", error);
+    }
+
+    *output = std::move(scheduled);
+    if (error) {
+        error->clear();
+    }
+    return true;
+}
+
 bool decode_captured_draw_indx(
     const uint8_t* packet_bytes,
     size_t byte_length,

@@ -240,6 +240,11 @@ VS and four in the PS. The record includes raw vector/scalar opcodes,
 destinations, masks, sources, swizzles, and predicate bits. These opcodes have
 not been assigned execution semantics or translated; the field histograms are
 in `evidence/process2_xbox_shader_alu_fields_20261023.json`.
+The schedule expansion is project-owned: it emits 29 VS instruction addresses
+and five PS addresses from the captured `exec` clauses, classifies their ALU or
+fetch slots, and retains the serialized bit. It leaves conditional jumps
+unevaluated, so the PS branch alternatives remain separate clauses. Details
+are in `evidence/process2_xbox_shader_schedule_20261023.json`.
 
 The project now has a narrow C++ decoder for this captured `PM4_DRAW_INDX`
 form. It reads topology, DMA source, 16-bit index format, guest address,
@@ -292,9 +297,9 @@ claim.
 
 - `shift_xbox_draw_input_check`: passed; covers the captured packet, mismatched
   binding, target format/viewport/scissor state, shader constant addressing and
-  branch values, bounded shader control-flow, fetch-instruction, and raw ALU
-  field decode, unsupported opcode/layout/sampling values, non-zero window
-  offsets, and truncated input.
+  branch values, bounded shader control-flow, instruction schedule, fetch, and
+  raw ALU-field decode, unsupported opcode/layout/sampling values, non-zero
+  window offsets, and truncated input.
 - The new CF decoder passed on the exact private VS/PS byte captures; observed
   CF/fetch/ALU fields match their diagnostic disassembly. This validates parsing
   only; no shader-body translation was tested.

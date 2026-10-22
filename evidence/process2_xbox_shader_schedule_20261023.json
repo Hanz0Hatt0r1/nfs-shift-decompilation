@@ -1,0 +1,37 @@
+{
+  "format": "SHIFT.Process2XboxShaderScheduleEvidence/1",
+  "inputs": {
+    "vertex_shader_sha256": "d448760823568068b6f70d903fde9a1faca73c6cfaca7cab59fe73713f1712bc",
+    "pixel_shader_sha256": "5fda214bf53b3f88909fa90c014b9c42de0a3278138df24049af918344489f28",
+    "stored_in_repository": false
+  },
+  "decoder": {
+    "implementation": "native_vulkan/src/xbox_draw_input.cpp::schedule_captured_shader_instructions",
+    "reference": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/ucode.h",
+    "scope": "expands each captured exec clause into addresses classified by the two-bit sequence field; does not evaluate control flow"
+  },
+  "vertex_shader": {
+    "scheduled_slots": 29,
+    "fetch_slots": [{"address": 5, "descriptor": 95}],
+    "alu_slot_count": 28,
+    "serialized_slots": []
+  },
+  "pixel_shader": {
+    "scheduled_slots": 5,
+    "fetch_slots": [{"address": 4, "descriptor": 0}],
+    "alu_addresses": [5, 6, 7, 8],
+    "serialized_alu_addresses": [5],
+    "control_flow_note": "Addresses 6 and 7 are both listed from distinct exec clauses. Their branch relationship is preserved in the CF records; this schedule does not claim both execute on one path."
+  },
+  "checks": {
+    "host_ctest": "passed: schedule kind, address range, serialization, and output-preservation regression",
+    "private_capture_harness": "passed: project decoder produced the schedules from captured CF records, then decoded the scheduled fetch and ALU fields",
+    "android_arm64": "passed on Redmi Note 8 Pro (API 33); binary built for arm64-v8a with Android API 29 minimum"
+  },
+  "limits": [
+    "Conditional jumps are not evaluated and branch paths are not executed.",
+    "ALU opcodes are not interpreted; no shader code is translated.",
+    "No SPIR-V is emitted and no Vulkan draw is submitted.",
+    "Diagnostic plugin output remains a format cross-check only, outside the product path."
+  ]
+}

@@ -24,7 +24,7 @@
   },
   "checks": {
     "host_ctest": "passed: synthetic field fixture and shift_xbox_draw_input_check",
-    "private_capture_harness": "passed: decoded all 28 scheduled VS and four PS ALU slots using addresses from the captured CF schedule",
+    "private_capture_harness": "passed: project scheduler expanded captured CF records and the decoder parsed all 28 VS and four PS ALU slots",
     "android_arm64": "passed on Redmi Note 8 Pro (API 33); binary built for arm64-v8a with Android API 29 minimum"
   },
   "limits": [

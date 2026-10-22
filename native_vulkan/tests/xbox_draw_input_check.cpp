@@ -92,6 +92,45 @@ int main() {
                 branch_control_flow[2].unconditional,
             "shader conditional and unconditional jump fields changed");
 
+    shift::xbox::CapturedShaderControlFlow fetch_clause{};
+    fetch_clause.instruction_index = 4;
+    fetch_clause.opcode = shift::xbox::ShaderControlFlowOpcode::Exec;
+    fetch_clause.address = 2;
+    fetch_clause.instruction_count = 2;
+    fetch_clause.sequence = 9;
+    shift::xbox::CapturedShaderControlFlow branch_clause{};
+    branch_clause.instruction_index = 5;
+    branch_clause.opcode = shift::xbox::ShaderControlFlowOpcode::ConditionalJump;
+    shift::xbox::CapturedShaderControlFlow end_clause{};
+    end_clause.instruction_index = 6;
+    end_clause.opcode = shift::xbox::ShaderControlFlowOpcode::ExecEnd;
+    end_clause.address = 4;
+    end_clause.instruction_count = 1;
+    end_clause.sequence = 2;
+    const std::vector<shift::xbox::CapturedShaderControlFlow> scheduled_control_flow = {
+        fetch_clause, branch_clause, end_clause,
+    };
+    std::vector<shift::xbox::CapturedShaderInstructionSchedule> instruction_schedule;
+    require(shift::xbox::schedule_captured_shader_instructions(
+                scheduled_control_flow, 6 * 12, &instruction_schedule, &error),
+            "shader exec clauses did not produce an instruction schedule");
+    require(instruction_schedule.size() == 3 && instruction_schedule[0].address == 2 &&
+                instruction_schedule[0].kind ==
+                    shift::xbox::ShaderScheduledInstructionKind::Fetch &&
+                instruction_schedule[0].control_flow_index == 4 &&
+                instruction_schedule[1].address == 3 &&
+                instruction_schedule[1].kind ==
+                    shift::xbox::ShaderScheduledInstructionKind::Alu &&
+                instruction_schedule[1].serialized && instruction_schedule[2].address == 4 &&
+                instruction_schedule[2].serialized,
+            "shader sequence kind/serialization fields changed");
+    const auto unchanged_schedule = instruction_schedule;
+    require(!shift::xbox::schedule_captured_shader_instructions(
+                scheduled_control_flow, 4 * 12, &instruction_schedule, &error) &&
+                instruction_schedule.size() == unchanged_schedule.size() &&
+                instruction_schedule[0].address == unchanged_schedule[0].address,
+            "out-of-range shader schedule was accepted or changed its output");
+
     uint8_t vertex_shader_fetch_bytes[12];
     write_be32(vertex_shader_fetch_bytes, 0x82343840u);
     write_be32(vertex_shader_fetch_bytes + 4, 0x00070123u);

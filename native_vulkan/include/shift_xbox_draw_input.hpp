@@ -61,6 +61,18 @@ struct CapturedShaderControlFlow {
     bool allocation_unserialized;
 };
 
+enum class ShaderScheduledInstructionKind : uint8_t {
+    Alu,
+    Fetch,
+};
+
+struct CapturedShaderInstructionSchedule {
+    uint32_t address;
+    uint32_t control_flow_index;
+    ShaderScheduledInstructionKind kind;
+    bool serialized;
+};
+
 enum class CapturedShaderFetchKind : uint8_t {
     VertexFull,
     Texture2D,
@@ -291,6 +303,14 @@ bool decode_captured_shader_alu_instruction(
     const uint8_t* instruction_bytes,
     size_t byte_length,
     CapturedShaderAluInstruction* output,
+    std::string* error);
+
+// Expands captured exec clauses into addressed ALU/fetch slots. Branches are
+// retained in the CF input and are not evaluated here.
+bool schedule_captured_shader_instructions(
+    const std::vector<CapturedShaderControlFlow>& control_flow,
+    size_t shader_byte_length,
+    std::vector<CapturedShaderInstructionSchedule>* output,
     std::string* error);
 
 // Translates only the captured PM4_DRAW_INDX form. This decodes the guest
