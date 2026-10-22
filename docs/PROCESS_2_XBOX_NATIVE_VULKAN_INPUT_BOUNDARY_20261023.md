@@ -156,6 +156,26 @@ draw, rather than merely nearby active-looking registers:
   `5fda214bf53b3f88909fa90c014b9c42de0a3278138df24049af918344489f28`); its
   texture fetch references descriptor 0.
 
+Read-only disassembly of that captured pair narrows the independent translator
+needed for this draw:
+
+- the VS fetches descriptor 95 as `FMT_32_32_32_FLOAT`, stride 3, then computes
+  clip position from float constants 64–67 and interpolator 0 from constants
+  68–69;
+- the PS executes `tfetch2D` from descriptor 0 and writes color through the
+  captured conditional path (`b128`/`b129`).
+
+For comparison only, the external Xenos plugin's `EnsureShadersTranslated`
+boundary produced SPIR-V modules with SHA-256
+`d27ca93242a83ccb67613b53243bd4531fbf56783770bc14adc71cfd2791ad29` (VS) and
+`6c0ec0128dddd1522492363c8f68bc0648798af4544d97033fdad13284a78a7d` (PS).
+Both modules declare SPIR-V 1.5; `spirv-val --target-env vulkan1.1` rejects
+them because Vulkan 1.1 accepts SPIR-V only through 1.3. These temporary
+reference modules were kept outside the repository and are not an acceptable
+product dependency. The project needs its own shader translation that emits
+Vulkan 1.1-compatible SPIR-V and consumes project-owned resource/state
+contracts.
+
 The project now has a narrow C++ decoder for this captured `PM4_DRAW_INDX`
 form. It reads topology, DMA source, 16-bit index format, guest address,
 count, and swap mode directly from the packet; it does not need the
