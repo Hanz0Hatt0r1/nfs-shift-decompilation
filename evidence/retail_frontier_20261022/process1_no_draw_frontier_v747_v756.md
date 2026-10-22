@@ -1,4 +1,4 @@
-# Retail no-draw and P-code frontier: v747–v752
+# Retail no-draw and P-code frontier: v747–v756
 
 **Date:** 2026-10-22. **Scope:** original retail SHIFT.exe through the P-code runtime. This records runtime evidence only; it does not establish a completed game launch or race.
 
@@ -6,7 +6,7 @@
 
 - Retail PE32 x86, PC retail 1.02, image base `0x00400000`, SHA-256 `eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1`.
 - Runtime executable SHA-256 `dc66d4b3f7d6a10ca101d71fb1e1e7503653757e3b4606bf7e65bdb88bc023f7`.
-- Runs v747–v752 used the DXT3 capture integration snapshot at P2 commit `f4147f33`. The P1 sources `recompiled_pcode_module.cpp` and `shift_runtime.cpp` match the PR #2140 branch byte-for-byte; `recompiled_pcode_module.cpp` SHA-256 is `914ef04f89d19fb51f0231c9589a17e8ee202602015374cb74a1bcde6ecd082a` in both trees. No renderer source was changed for these probes.
+- Runs v747–v756 used the DXT3 capture integration snapshot at P2 commit `f4147f33`. The P1 sources `recompiled_pcode_module.cpp` and `shift_runtime.cpp` match the PR #2140 branch byte-for-byte; `recompiled_pcode_module.cpp` SHA-256 is `914ef04f89d19fb51f0231c9589a17e8ee202602015374cb74a1bcde6ecd082a` in both trees. No renderer source was changed for these probes.
 - Full retail logs are retained outside the repository under `/tmp/process1-retail-runtime-evidence/`; the hashes below pin each log. Packet-capture directories were empty.
 
 ## Probe results
@@ -19,6 +19,10 @@
 | v750 | 120 frames; same traces plus Win32, DirectInput and XInput imports; Up key press/release sent to guest window `0x01000000` | 584 gate calls still saw zero; all four draw-import traces had no events and were not truncated. The key messages reached WndProc `0x0040D040`, which called `DefWindowProcW` for WM_KEYDOWN (`0x0100`, VK_UP `0x26`) and WM_KEYUP (`0x0101`, VK_UP `0x26`). Counts: 586 `PeekMessageW`, two each `GetMessageW`, `TranslateMessage`, `DispatchMessageW`, and `DefWindowProcW`. Selected `DirectInput8Create`, XInput ordinals #2/#3/#5, `GetCursorPos`, and `SetCursorPos` imports were not called in this window. | `0017fcddc1c7b9a38a7ab7e2e690f247aac0c0d158aeb97c3b4df0135d4467c1` |
 | v751 | 120 frames; call traces for `0x0062FDE0/0x0062FFD0`, provenance for `0x00BE2534`, UI gate and all four draw imports | Targeted trace captured `0x004E8BC0 -> 0x0062FFD0 -> 0x0062FDE0` with receiver `0x00BE2510`; initializer returned AL=1 and wrote zero to `0x00BE2534`. Across 585 later `0x0050CEB0` samples (dispatches 462,839–811,880), the gate word remained zero and the last writer stayed the same initialization store (sequence 2,378,600). Thus no later guest write to this exact address was observed during the bounded run. Draw imports had no events and were not truncated; capture directory empty. | `8e496862c5e106e527d7d494b13c0bfa4f6164a4c8b8af14b926b896ca6c6375` |
 | v752 | 120 frames; call traces for `0x0082A690`, `0x0083D2E0`, `0x0083D2F0`, `0x0083B670`; all four draw imports | `host-frame-loop`, exit 0, validation errors 0. The call trace was enabled and not truncated, but none of the four selected retail effect/material targets or any D3D9 Draw/DrawUP import was entered; capture directory empty. Clear/present submissions continued (120 each). These selected P1 paths and P2 draw ingress were not reached in this bounded run. | `58e542fc538374810937f84dedaa6f70f8d196f865513d3af490c758599c28db` |
+| v753 | 120 frames; `0x0054BE00`, `0x00835D80`, `0x0050CEB0`, singleton getter, four draw imports | `0x0054BE00` ran 586 times from `0x0040BA50`; each call entered `0x00835D80` and returned AL=1. Gate `0x0050CEB0` ran 586 times and returned zero. Draw imports had no events; trace not truncated; capture directory empty. | `6c94c470f06bc65e62df04de602accd311d1a1870cb07ee3bbd912abae814d56` |
+| v754 | 120 frames; `0x0040BA50`, `0x0054BE00`, `0x00835D80`, `0x00409FF0`; sample `this+0x140D` | `0x0040BA50` entered once from `0x00A69160` with `ECX=0x00BBF960` and remained active at the probe snapshot. Its sampled DWORD at offset `0x140D` was `0x28000000`; the byte read by the retail branch is the low byte, `0x00`, so the branch at `0x0040BA70` was skipped. `0x0054BE00` ran 584 times and `0x00835D80` 584 times; all four draw imports remained empty. | `fe5673a928997932b2bda9b34c5429c0c6ea9a672637f8a60639c507558383bb` |
+| v755 | Same main-loop trace as v754 plus write provenance for `0x00BBFD6D` (`0x00BBF960+0x140D`) | The sampled byte remained zero and had no recorded P-code last writer in this bounded run. The main loop, frame-stage counts, no-draw imports, and clear/present behavior were consistent with v754. This does not establish the field's semantic name or prove it causes the missing frontend. | `c0add9c7ab94877347af3e21bd3fdd4272fdd2a1a1392036c91d93cbcffe6443` |
+| v756 | 120 frames; call traces for `0x0054BE00`, `0x0082F780`, `0x00853620`, `0x00853170`; renderer slots and all four draw imports | The primary renderer vtable slot `+0x138` entered `0x0082F780` 584 times from `0x0054BE00`; `0x0082F780` returned AL=1 and called `0x00853620` and `0x00853170` 584 times each, both returning AL=1. At `0x0082F780` entry, `[renderer+0x478]=0x2002D614` (device pointer) and `[renderer+0x694]=1`. The device/frame method ran, but Draw/DrawUP imports still had no events and capture remained empty. | `efe73c5ef8ee58a786dc43fe02229b0bdfc496ec1f8e20ca939b209deaf6e1e7` |
 
 ## Evidence interpretation
 
@@ -28,6 +32,10 @@ Static inspection of retail `0x0082F3C0` shows it returns whether `[ECX+0x24] ==
 
 The input probe establishes delivery through the Win32 message queue and the game's WndProc default path for Up. It does not establish that all keyboard/mouse input is unused. The selected DirectInput/XInput/cursor imports were simply not observed in this bounded window.
 
+The v753–v755 trace establishes the runtime path `0x00A69160 -> 0x0040BA50 -> 0x0054BE00 -> 0x00835D80` for this bounded startup loop. `0x0040BA50`'s byte check at `[this+0x140D]` was zero for receiver `0x00BBF960`; no guest P-code writer to address `0x00BBFD6D` was recorded. This is a concrete inactive branch to analyze, not yet a proven frontend or rendering gate. The loop still performed frame-stage calls, while no selected D3D9 Draw import was entered.
+
+v756 establishes that the renderer's primary vtable slot `+0x138` reaches `0x0082F780` with a nonzero device pointer and in-frame byte set. This active setup path and its two children still produced no D3D9 Draw import entry. It narrows the frontier to later content/submission work without proving which guest function should submit a draw.
+
 ### v751 receiver and write provenance
 
 The wrapper entry was dispatch 462,712 (`caller=0x004E8BC0`, `return=0x004E8BE3`, `ECX=0x00BE2510`). Its nested initializer entry was dispatch 462,713 (`caller=0x0062FFD0`, `return=0x0062FFF6`, `ECX=0x00BE2510`); both returned `EAX=1`. The six initializer stack arguments were `0, 0x44, 4, 0x1f, 0, 0`, establishing a 0x44-byte element stride for this initialized container. At completion dispatch 462,758, the provenance record identified `0x0062FDE0` writing a four-byte zero to `0x00BE2534`. The v751 call trace and UI-gate trace were enabled and not truncated. Across 585 subsequent gate samples, that same write remained the last writer, so no later P-code write to the exact address occurred in this run.
@@ -36,4 +44,4 @@ Process 2's report `process-reports/2026-10-22-process2-v743-no-draw-frontier.md
 
 ## Next evidence target
 
-Find the retail producer that can add a record to the 68-byte container at `0x00BE2510`, then trace only its exact receiver and caller chain. Process 1 is checking candidate `0x004CB900` against the v751 receiver/stride evidence. v752 also found no entry to the material/effect pass targets. Neither result authorizes forcing container state or treating the zero count as a rendering switch.
+Finish Process 1's analysis of candidate add function `0x004CB900` against the v751 receiver/stride evidence. Then analyze the executed retail frame-stage function `0x0082F780` and its `0x00853620` / `0x00853170` path using complete blocks and v756 receiver/register evidence. Also resolve the role and initializer of `[0x00BBF960+0x140D]` from `0x0040BA50`; do not force either field or claim causality until the retail state transition is identified.
