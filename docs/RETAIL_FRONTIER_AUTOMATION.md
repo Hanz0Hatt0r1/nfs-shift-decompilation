@@ -877,3 +877,12 @@ block is active, then restores `+4` from `+5`. The source of a nonzero `+5`
 value remains unproven, so this does not yet explain an active draw path.
 The bounded v755 trace had no events for the forwarder or Draw* imports and
 did not select `0x0084F000` directly. See the [full helper report](../evidence/retail_frontier_20261022/process1_adapter_state_sync_0084f000.md).
+
+The v757 controlled replay then selected adapter Begin/EndStateBlock methods
+`0x0084FBC0`/`0x0084FBF0`, forwarder `0x0084FD60`, and corresponding D3D9
+Begin/EndStateBlock and DrawIndexedPrimitive imports. It completed 360 host
+frames with zero selected events and `guest_draw_translation=false`; the log
+was not truncated and validation errors were zero. The main-thread stop PC
+differed from v756, so this is another bounded observation, not proof of
+unreachability or a launch. See the [v757 report](../evidence/retail_frontier_20261022/process1_stateblock_adapter_v757.md)
+and [machine-readable record](../evidence/retail_frontier_20261022/process1_stateblock_adapter_v757.json).
