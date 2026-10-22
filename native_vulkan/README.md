@@ -27,7 +27,8 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   only the float and packed-bool registers read by the exact captured VS/PS
   pair, including its observed PS branch values. A bounded decoder now parses
   the captured VS/PS control-flow slots and their first `vfetch_full` and
-  `tfetch2D` instructions, plus raw fields from the scheduled ALU instructions.
+  `tfetch2D` instructions, plus scheduled ALU operands, temporary-register
+  addressing flags, scalar source selectors, and component-relative swizzles.
   It expands `exec` clauses and retains fetch/ALU and serialization bits without
   evaluating branch paths. It does not interpret ALU operations or emit SPIR-V.
   The

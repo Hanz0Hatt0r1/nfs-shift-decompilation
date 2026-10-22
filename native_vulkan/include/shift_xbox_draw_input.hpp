@@ -103,9 +103,15 @@ struct CapturedShaderAluInstruction {
     uint32_t vector_write_mask;
     uint32_t scalar_write_mask;
     uint32_t source_registers[3];
+    uint32_t source_temporary_registers[3];
     uint32_t source_swizzles[3];
     bool source_is_temporary[3];
+    bool source_temporary_relative[3];
+    bool source_temporary_absolute[3];
     bool source_negate[3];
+    uint32_t scalar_temporary_register;
+    uint32_t scalar_temporary_component;
+    uint32_t scalar_constant_component;
     bool export_data;
     bool vector_destination_relative;
     bool scalar_destination_relative;
@@ -118,6 +124,13 @@ struct CapturedShaderAluInstruction {
     bool const1_relative;
     bool const_address_register_relative;
 };
+
+// Xenos ALU swizzles store a component-relative offset for each lane.
+constexpr uint32_t captured_alu_source_component(
+    uint32_t swizzle,
+    uint32_t component) {
+    return ((swizzle >> (2 * component)) + component) & 3u;
+}
 
 struct CapturedVertexFetch {
     uint32_t guest_address;

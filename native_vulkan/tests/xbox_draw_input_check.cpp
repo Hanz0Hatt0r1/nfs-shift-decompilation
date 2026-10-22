@@ -177,7 +177,7 @@ int main() {
         1u | (1u << 6) | (1u << 7) | (2u << 8) | (1u << 14) | (1u << 15) |
         (0xAu << 16) | (5u << 20) | (1u << 24) | (37u << 26);
     const uint32_t alu_word1 = 0xFF563412u;
-    const uint32_t alu_word2 = 0xBC010203u;
+    const uint32_t alu_word2 = 0xBCC18243u;
     write_be32(alu_instruction_bytes, alu_word0);
     write_be32(alu_instruction_bytes + 4, alu_word1);
     write_be32(alu_instruction_bytes + 8, alu_word2);
@@ -193,13 +193,29 @@ int main() {
                 alu.vector_clamp && !alu.scalar_clamp && alu.predicated &&
                 alu.predicate_condition && alu.const0_relative && alu.const1_relative &&
                 alu.const_address_register_relative &&
-                alu.source_registers[0] == 1 && alu.source_registers[1] == 2 &&
-                alu.source_registers[2] == 3 && alu.source_swizzles[0] == 0x56 &&
+                alu.source_registers[0] == 0xC1 && alu.source_registers[1] == 0x82 &&
+                alu.source_registers[2] == 0x43 && alu.source_temporary_registers[0] == 1 &&
+                alu.source_temporary_registers[1] == 2 && alu.source_temporary_registers[2] == 3 &&
+                alu.source_temporary_relative[0] && !alu.source_temporary_relative[1] &&
+                alu.source_temporary_relative[2] && alu.source_temporary_absolute[0] &&
+                !alu.source_temporary_absolute[1] && !alu.source_temporary_absolute[2] &&
+                alu.scalar_temporary_register == 19 &&
+                alu.scalar_temporary_component == 2 &&
+                alu.scalar_constant_component == 3 && alu.source_swizzles[0] == 0x56 &&
                 alu.source_swizzles[1] == 0x34 && alu.source_swizzles[2] == 0x12 &&
                 alu.source_is_temporary[0] && !alu.source_is_temporary[1] &&
                 alu.source_is_temporary[2] && alu.source_negate[0] &&
                 alu.source_negate[1] && alu.source_negate[2],
             "shader ALU bit fields changed");
+    require(shift::xbox::captured_alu_source_component(0x1Bu, 0) == 3 &&
+                shift::xbox::captured_alu_source_component(0x1Bu, 1) == 3 &&
+                shift::xbox::captured_alu_source_component(0x1Bu, 2) == 3 &&
+                shift::xbox::captured_alu_source_component(0x1Bu, 3) == 3 &&
+                shift::xbox::captured_alu_source_component(0xAAu, 0) == 2 &&
+                shift::xbox::captured_alu_source_component(0xAAu, 1) == 3 &&
+                shift::xbox::captured_alu_source_component(0xAAu, 2) == 0 &&
+                shift::xbox::captured_alu_source_component(0xAAu, 3) == 1,
+            "component-relative ALU swizzles changed");
     require(!shift::xbox::decode_captured_shader_alu_instruction(
                 alu_instruction_bytes, sizeof(alu_instruction_bytes) - 1, &alu, &error),
             "truncated shader ALU instruction was accepted");

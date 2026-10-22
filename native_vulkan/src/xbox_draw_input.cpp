@@ -322,8 +322,23 @@ bool decode_captured_shader_alu_instruction(
         decoded.source_registers[source] = (word2 >> shift) & 0xFFu;
         decoded.source_swizzles[source] = (word1 >> shift) & 0xFFu;
         decoded.source_is_temporary[source] = ((word2 >> (31 - source)) & 1u) != 0;
+        decoded.source_temporary_registers[source] =
+            decoded.source_registers[source] & 0x3Fu;
+        decoded.source_temporary_relative[source] =
+            decoded.source_is_temporary[source] &&
+            (decoded.source_registers[source] & 0x40u) != 0;
+        decoded.source_temporary_absolute[source] =
+            decoded.source_is_temporary[source] &&
+            (decoded.source_registers[source] & 0x80u) != 0;
         decoded.source_negate[source] = ((word1 >> (26 - source)) & 1u) != 0;
     }
+    decoded.scalar_temporary_register =
+        (decoded.scalar_opcode & 1u) |
+        (((word2 >> 29) & 1u) << 1) |
+        (decoded.source_swizzles[2] & 0x3Cu);
+    decoded.scalar_temporary_component = decoded.source_swizzles[2] & 0x3u;
+    decoded.scalar_constant_component =
+        (3u + ((decoded.source_swizzles[2] >> 6) & 0x3u)) & 0x3u;
 
     *output = decoded;
     if (error) {
