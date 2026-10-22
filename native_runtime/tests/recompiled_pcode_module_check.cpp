@@ -837,16 +837,21 @@ void write_d3d9_pe32_fixture(const std::string& path) {
     write_u32(bytes, 0x64c, 0x23a0);
     write_u32(bytes, 0x650, 0x23c6);
     write_u32(bytes, 0x654, 0x2330);
+    write_u32(bytes, 0x658, 0x22c0);
     write_u32(bytes, 0x660, 0x22a0);
     write_u32(bytes, 0x664, 0x2300);
     write_u32(bytes, 0x668, 0x2360);
     write_u32(bytes, 0x66c, 0x23a0);
     write_u32(bytes, 0x670, 0x23c6);
     write_u32(bytes, 0x674, 0x2330);
+    write_u32(bytes, 0x678, 0x22c0);
     std::copy_n("d3dx9_41.dll", 13, bytes.begin() + 0x680);
     const char create_effect_name[] = "D3DXCreateEffect";
     std::copy_n(create_effect_name, sizeof(create_effect_name),
                 bytes.begin() + 0x6a2);
+    const char create_texture_name[] = "D3DXCreateTexture";
+    std::copy_n(create_texture_name, sizeof(create_texture_name),
+                bytes.begin() + 0x6c2);
     const char effect_compiler_name[] =
         "D3DXCreateEffectCompilerFromFileA";
     std::copy_n(effect_compiler_name, sizeof(effect_compiler_name),
@@ -3194,7 +3199,7 @@ int main(int argc, char** argv) {
         shift::runtime::RecompiledPcodeModule d3d9_module(argv[1]);
         const auto d3d9_image = d3d9_module.load_pe32_image(argv[8]);
         require(d3d9_image.import_module_count == 3 &&
-                    d3d9_image.import_function_count == 11,
+                    d3d9_image.import_function_count == 12,
                 "D3D9 fixture imports were not parsed");
         const uint32_t direct3d_create9 = read_guest_u32(
             d3d9_module, "ram", d3d9_image.image_base + 0x2060);
@@ -3406,6 +3411,8 @@ int main(int argc, char** argv) {
             d3d9_provider_module.load_pe32_image(argv[8]);
         const uint32_t provider_create9 = read_guest_u32(
             d3d9_provider_module, "ram", provider_image.image_base + 0x2060);
+        const uint32_t provider_d3dx_create_texture = read_guest_u32(
+            d3d9_provider_module, "ram", provider_image.image_base + 0x2278);
         const uint32_t provider_d3dx_create_effect = read_guest_u32(
             d3d9_provider_module, "ram", provider_image.image_base + 0x2260);
         const uint32_t provider_d3dx_effect_compiler_from_file =
@@ -3661,6 +3668,170 @@ int main(int argc, char** argv) {
                                       managed_texture_vtable + 2 * 4),
                                   {managed_texture}) == 0,
                 "managed texture unlock or release failed");
+        constexpr uint32_t dxt3_format = 0x33545844;
+        constexpr uint32_t dxt3_texture_output_address = 0x00405400;
+        constexpr uint32_t dxt3_texture_desc_address = 0x00405420;
+        constexpr uint32_t dxt3_texture_locked_rect_address = 0x00405440;
+        constexpr uint32_t dxt3_device_wrapper_address = 0x00405500;
+        write_guest_u32(d3d9_provider_module, "ram",
+                        dxt3_device_wrapper_address, 0x00405520);
+        write_guest_u32(d3d9_provider_module, "ram",
+                        dxt3_device_wrapper_address + 8, created_device);
+        require(invoke_import(
+                    d3d9_provider_module, provider_d3dx_create_texture,
+                    {dxt3_device_wrapper_address, 512, 512, 1, 0,
+                     dxt3_format, 1,
+                     dxt3_texture_output_address}) == 0,
+                "D3DXCreateTexture rejected the captured managed DXT3 texture");
+        const uint32_t dxt3_texture = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_texture_output_address);
+        const uint32_t dxt3_texture_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_texture);
+        const uint32_t dxt3_texture_get_level_desc = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_texture_vtable + 17 * 4);
+        const uint32_t dxt3_texture_lock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_texture_vtable + 19 * 4);
+        const uint32_t dxt3_texture_unlock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_texture_vtable + 20 * 4);
+        require(dxt3_texture != 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt3_texture_get_level_desc,
+                                  {dxt3_texture, 0,
+                                   dxt3_texture_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_desc_address) == dxt3_format &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_desc_address + 24) == 512 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_desc_address + 28) == 512 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt3_texture_lock_rect,
+                                  {dxt3_texture, 0,
+                                   dxt3_texture_locked_rect_address, 0,
+                                   0}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_locked_rect_address) == 2048,
+                "managed DXT3 level description or block pitch was incorrect");
+        const uint32_t dxt3_texture_pixels = read_guest_u32(
+            d3d9_provider_module, "ram",
+            dxt3_texture_locked_rect_address + 4);
+        const std::array<uint8_t, 1> dxt3_last_byte = {0x5a};
+        std::array<uint8_t, 1> dxt3_last_byte_read{};
+        require(d3d9_provider_module.write_guest(
+                    "ram", static_cast<uint64_t>(dxt3_texture_pixels) +
+                               512 * 512 - 1,
+                    dxt3_last_byte.size(), dxt3_last_byte.data()) &&
+                    d3d9_provider_module.read_guest(
+                        "ram", static_cast<uint64_t>(dxt3_texture_pixels) +
+                                   512 * 512 - 1,
+                        dxt3_last_byte_read.size(),
+                        dxt3_last_byte_read.data()) &&
+                    dxt3_last_byte_read == dxt3_last_byte &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt3_texture_unlock_rect,
+                                  {dxt3_texture, 0}) == 0,
+                "managed DXT3 block storage did not cover the full level");
+        constexpr uint32_t dxt3_rect_address = 0x00405460;
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address, 2);
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address + 4, 0);
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address + 8, 6);
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address + 12, 4);
+        require(invoke_import(d3d9_provider_module,
+                              dxt3_texture_lock_rect,
+                              {dxt3_texture, 0,
+                               dxt3_texture_locked_rect_address,
+                               dxt3_rect_address, 0}) == 0x8876086c,
+                "managed DXT3 LockRect accepted a non-block-aligned region");
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address, 4);
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address + 4, 4);
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address + 8, 8);
+        write_guest_u32(d3d9_provider_module, "ram", dxt3_rect_address + 12, 8);
+        require(invoke_import(d3d9_provider_module,
+                              dxt3_texture_lock_rect,
+                              {dxt3_texture, 0,
+                               dxt3_texture_locked_rect_address,
+                               dxt3_rect_address, 0}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_locked_rect_address) == 2048 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_locked_rect_address + 4) ==
+                        dxt3_texture_pixels + 2048 + 16 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt3_texture_unlock_rect,
+                                  {dxt3_texture, 0}) == 0,
+                "managed DXT3 subrect did not address the correct block");
+        require(invoke_import(
+                    d3d9_provider_module,
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_vtable + 2 * 4),
+                    {dxt3_texture}) == 0,
+                "managed DXT3 texture release failed");
+
+        constexpr uint32_t dxt3_mip_texture_output_address = 0x00405480;
+        constexpr uint32_t dxt3_mip_texture_locked_rect_address = 0x004054a0;
+        require(invoke_import(
+                    d3d9_provider_module, create_texture,
+                    {created_device, 7, 5, 1, 0, dxt3_format, 1,
+                     dxt3_mip_texture_output_address, 0}) == 0x8876086a &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_mip_texture_output_address) == 0,
+                "CreateTexture accepted DXT3 dimensions not divisible by 4");
+        require(invoke_import(
+                    d3d9_provider_module, create_texture,
+                    {created_device, 8, 8, 2, 0, dxt3_format, 1,
+                     dxt3_mip_texture_output_address, 0}) == 0,
+                "CreateTexture rejected managed DXT3 mip levels");
+        const uint32_t dxt3_mip_texture = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_mip_texture_output_address);
+        const uint32_t dxt3_mip_texture_vtable = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_mip_texture);
+        const uint32_t dxt3_mip_texture_get_level_desc = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_mip_texture_vtable + 17 * 4);
+        const uint32_t dxt3_mip_texture_lock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_mip_texture_vtable + 19 * 4);
+        const uint32_t dxt3_mip_texture_unlock_rect = read_guest_u32(
+            d3d9_provider_module, "ram", dxt3_mip_texture_vtable + 20 * 4);
+        require(invoke_import(d3d9_provider_module,
+                              dxt3_mip_texture_get_level_desc,
+                              {dxt3_mip_texture, 1,
+                               dxt3_texture_desc_address}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_desc_address + 24) == 4 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_texture_desc_address + 28) == 4 &&
+                    invoke_import(d3d9_provider_module,
+                              dxt3_mip_texture_lock_rect,
+                              {dxt3_mip_texture, 0,
+                               dxt3_mip_texture_locked_rect_address, 0, 0}) ==
+                    0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_mip_texture_locked_rect_address) == 32,
+                "managed DXT3 base mip pitch was incorrect");
+        const uint32_t dxt3_mip_base = read_guest_u32(
+            d3d9_provider_module, "ram",
+            dxt3_mip_texture_locked_rect_address + 4);
+        require(invoke_import(d3d9_provider_module,
+                              dxt3_mip_texture_unlock_rect,
+                              {dxt3_mip_texture, 0}) == 0 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt3_mip_texture_lock_rect,
+                                  {dxt3_mip_texture, 1,
+                                   dxt3_mip_texture_locked_rect_address, 0,
+                                   0}) == 0 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_mip_texture_locked_rect_address) == 16 &&
+                    read_guest_u32(d3d9_provider_module, "ram",
+                                   dxt3_mip_texture_locked_rect_address + 4) ==
+                        dxt3_mip_base + 64 &&
+                    invoke_import(d3d9_provider_module,
+                                  dxt3_mip_texture_unlock_rect,
+                                  {dxt3_mip_texture, 1}) == 0 &&
+                    invoke_import(
+                        d3d9_provider_module,
+                        read_guest_u32(d3d9_provider_module, "ram",
+                                       dxt3_mip_texture_vtable + 2 * 4),
+                        {dxt3_mip_texture}) == 0,
+                "managed DXT3 mip offset or pitch was incorrect");
         constexpr uint32_t vertex_buffer_output_address = 0x00405190;
         require(invoke_import(
                     d3d9_provider_module, create_vertex_buffer,

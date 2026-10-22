@@ -143,6 +143,7 @@ constexpr uint32_t kEFail = 0x80004005;
 constexpr uint32_t kENoInterface = 0x80004002;
 constexpr uint32_t kEOutOfMemory = 0x8007000e;
 constexpr uint32_t kD3dFormatA8R8G8B8 = 21;
+constexpr uint32_t kD3dFormatDxt3 = 0x33545844;
 constexpr uint32_t kD3dUsageRenderTarget = 1;
 constexpr uint32_t kD3dPoolDefault = 0;
 constexpr uint32_t kD3dPoolManaged = 1;
@@ -162,6 +163,37 @@ constexpr size_t kWindowsMaxPath = 260;
 constexpr uint32_t kGuestAlreadyFiberError = 1280;
 constexpr size_t kMaximumGuestFileReadBytes = 64 * 1024 * 1024;
 constexpr uint32_t kGuestAllocationTraceThreshold = 16 * 1024 * 1024;
+
+struct D3d9TextureLevelLayout {
+    uint64_t pitch = 0;
+    uint64_t size = 0;
+};
+
+bool d3d9_texture_level_layout(uint32_t width, uint32_t height,
+                               uint32_t format,
+                               D3d9TextureLevelLayout& layout) {
+    if (width == 0 || height == 0) return false;
+    if (format == kD3dFormatDxt3) {
+        const uint64_t block_columns =
+            (static_cast<uint64_t>(width) + 3) / 4;
+        const uint64_t block_rows =
+            (static_cast<uint64_t>(height) + 3) / 4;
+        layout.pitch = block_columns * 16;
+        if (block_rows != 0 &&
+            layout.pitch > UINT64_MAX / block_rows) {
+            return false;
+        }
+        layout.size = layout.pitch * block_rows;
+        return true;
+    }
+    const uint32_t bytes_per_pixel =
+        format == kD3dFormatA8R8G8B8 ? 4 : format == 25 ? 2 : 0;
+    if (bytes_per_pixel == 0) return false;
+    layout.pitch = static_cast<uint64_t>(width) * bytes_per_pixel;
+    if (height != 0 && layout.pitch > UINT64_MAX / height) return false;
+    layout.size = layout.pitch * height;
+    return true;
+}
 constexpr size_t kGuestAllocationObjectTraceSize = 0x130;
 constexpr size_t kGuestAllocationObjectLinkLimit = 12;
 constexpr size_t kGuestAllocationObjectChainLinkLimit = 64;
@@ -6899,27 +6931,39 @@ struct RecompiledPcodeModule::Impl {
             backend_owned = true;
         } else if (usage == 0 && pool == kD3dPoolManaged && width != 0 &&
                    height != 0 && levels != 0) {
-            const uint32_t bytes_per_pixel =
-                format == kD3dFormatA8R8G8B8 ? 4 : format == 25 ? 2 : 0;
+            const bool supported_format =
+                format == kD3dFormatA8R8G8B8 || format == 25 ||
+                format == kD3dFormatDxt3;
             uint32_t full_mip_count = 1;
             for (uint32_t dimension = std::max(width, height); dimension > 1;
                  dimension >>= 1) {
                 ++full_mip_count;
             }
-            if (bytes_per_pixel == 0 || levels > full_mip_count ||
+            if (!supported_format || levels > full_mip_count ||
                 (format == kD3dFormatA8R8G8B8 && levels != 1) ||
-                width > UINT32_MAX / bytes_per_pixel) {
+                (format == kD3dFormatDxt3 &&
+                 ((width & 3u) != 0 || (height & 3u) != 0))) {
                 error = "unsupported D3D9 managed texture description";
                 free_guest_heap_address(object_address);
                 free_guest_heap_address(vtable_address);
                 return false;
             }
-            pitch = width * bytes_per_pixel;
             uint64_t total_size = 0;
             for (uint32_t level = 0; level < levels; ++level) {
-                const uint64_t level_width = std::max(1u, width >> level);
-                const uint64_t level_height = std::max(1u, height >> level);
-                total_size += level_width * level_height * bytes_per_pixel;
+                const uint32_t level_width = std::max(1u, width >> level);
+                const uint32_t level_height = std::max(1u, height >> level);
+                D3d9TextureLevelLayout layout;
+                if (!d3d9_texture_level_layout(level_width, level_height,
+                                               format, layout) ||
+                    layout.pitch > UINT32_MAX ||
+                    layout.size > 64ull * 1024 * 1024 - total_size) {
+                    error = "D3D9 managed texture exceeds the allocation limit";
+                    free_guest_heap_address(object_address);
+                    free_guest_heap_address(vtable_address);
+                    return false;
+                }
+                if (level == 0) pitch = static_cast<uint32_t>(layout.pitch);
+                total_size += layout.size;
             }
             if (total_size == 0 || total_size > 64ull * 1024 * 1024) {
                 error = "D3D9 managed texture exceeds the allocation limit";
@@ -6998,13 +7042,16 @@ struct RecompiledPcodeModule::Impl {
             return -1;
         }
         if (shared_handle_address != 0 || width == 0 || height == 0 ||
-            levels != 1)
+            levels == 0)
             return return_kernel32_dword(kD3dErrNotAvailable, api, 36);
         const bool managed_texture =
-            usage == 0 && format == kD3dFormatA8R8G8B8 && pool == 1;
+            usage == 0 && pool == kD3dPoolManaged &&
+            ((format == kD3dFormatA8R8G8B8 && levels == 1) ||
+             format == kD3dFormatDxt3);
         const bool render_target =
             usage == kD3dUsageRenderTarget &&
-            format == kD3dFormatA8R8G8B8 && pool == kD3dPoolDefault;
+            format == kD3dFormatA8R8G8B8 && pool == kD3dPoolDefault &&
+            levels == 1;
         if (!managed_texture && !render_target)
             return return_kernel32_dword(kD3dErrNotAvailable, api, 36);
         uint32_t texture_address = 0;
@@ -9524,13 +9571,22 @@ struct RecompiledPcodeModule::Impl {
                 guest_d3d9_devices.end()) {
             return return_kernel32_dword(kD3dErrInvalidDevice, api, 32);
         }
-        if (width == 0 || height == 0 || levels != 1 ||
-            usage != kD3dUsageRenderTarget ||
-            format != kD3dFormatA8R8G8B8 || pool != kD3dPoolDefault) {
+        if (width == 0 || height == 0 || levels == 0) {
             return return_kernel32_dword(kD3dErrNotAvailable, api, 32);
         }
-        if (guest_d3d9_adapter_info.create_texture == nullptr ||
-            guest_d3d9_adapter_info.release_texture == nullptr) {
+        const bool managed_dxt3 =
+            usage == 0 && format == kD3dFormatDxt3 &&
+            pool == kD3dPoolManaged;
+        const bool render_target =
+            levels == 1 && usage == kD3dUsageRenderTarget &&
+            format == kD3dFormatA8R8G8B8 &&
+            pool == kD3dPoolDefault;
+        if (!managed_dxt3 && !render_target) {
+            return return_kernel32_dword(kD3dErrNotAvailable, api, 32);
+        }
+        if (render_target &&
+            (guest_d3d9_adapter_info.create_texture == nullptr ||
+             guest_d3d9_adapter_info.release_texture == nullptr)) {
             return return_kernel32_dword(kD3dErrNotAvailable, api, 32);
         }
         uint32_t texture_address = 0;
@@ -10191,27 +10247,50 @@ struct RecompiledPcodeModule::Impl {
         if (left == right || top == bottom)
             return return_kernel32_dword(kD3dErrInvalidCall, api, 20);
         (void)flags;
-        const uint32_t bytes_per_pixel =
-            texture->second.format == kD3dFormatA8R8G8B8
-                ? 4
-                : texture->second.format == 25 ? 2 : 0;
-        if (bytes_per_pixel == 0)
+        D3d9TextureLevelLayout level_layout;
+        if (!d3d9_texture_level_layout(level_width, level_height,
+                                       texture->second.format,
+                                       level_layout) ||
+            level_layout.pitch > UINT32_MAX) {
             return return_kernel32_dword(kD3dErrNotAvailable, api, 20);
+        }
+        const bool block_compressed =
+            texture->second.format == kD3dFormatDxt3;
+        if (block_compressed &&
+            ((left & 3u) != 0 || (top & 3u) != 0 ||
+             ((right & 3u) != 0 && right != level_width) ||
+             ((bottom & 3u) != 0 && bottom != level_height))) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 20);
+        }
         uint64_t level_offset = 0;
         for (uint32_t prior_level = 0; prior_level < level; ++prior_level) {
-            level_offset +=
-                static_cast<uint64_t>(
-                    std::max(1u, texture->second.width >> prior_level)) *
-                std::max(1u, texture->second.height >> prior_level) *
-                bytes_per_pixel;
+            D3d9TextureLevelLayout prior_layout;
+            if (!d3d9_texture_level_layout(
+                    std::max(1u, texture->second.width >> prior_level),
+                    std::max(1u, texture->second.height >> prior_level),
+                    texture->second.format, prior_layout) ||
+                prior_layout.size > texture->second.data_size - level_offset) {
+                return return_kernel32_dword(kD3dErrInvalidCall, api, 20);
+            }
+            level_offset += prior_layout.size;
         }
-        const uint32_t level_pitch = level_width * bytes_per_pixel;
-        const uint32_t pixel_address = texture->second.data_address +
-                                       static_cast<uint32_t>(level_offset) +
-                                       top * level_pitch +
-                                       left * bytes_per_pixel;
+        const uint64_t region_offset = block_compressed
+            ? static_cast<uint64_t>(top / 4) * level_layout.pitch +
+                  static_cast<uint64_t>(left / 4) * 16
+            : static_cast<uint64_t>(top) * level_layout.pitch +
+                  static_cast<uint64_t>(left) *
+                      (texture->second.format == kD3dFormatA8R8G8B8 ? 4 : 2);
+        if (level_offset > texture->second.data_size ||
+            region_offset >= level_layout.size ||
+            region_offset > texture->second.data_size - level_offset ||
+            texture->second.data_address > UINT32_MAX - level_offset -
+                                               region_offset) {
+            return return_kernel32_dword(kD3dErrInvalidCall, api, 20);
+        }
+        const uint32_t pixel_address = static_cast<uint32_t>(
+            texture->second.data_address + level_offset + region_offset);
         if (!write_guest_u32("ram", locked_rect_address,
-                             level_pitch) ||
+                             static_cast<uint32_t>(level_layout.pitch)) ||
             !write_guest_u32("ram", locked_rect_address + 4,
                              pixel_address))
             return -1;
