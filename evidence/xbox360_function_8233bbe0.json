@@ -1,0 +1,51 @@
+{
+  "schema": "shift.xbox360.rexglue.function-block.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "guest_address": "0x8233BBE0",
+  "bytes_hex": "386000164e800020",
+  "decoded": [
+    "li r3,22",
+    "blr"
+  ],
+  "semantics": "Return the constant 22 in r3.",
+  "runtime_fatal": {
+    "function": "0x82340910",
+    "indirect_call_instruction": "0x8234095C",
+    "indirect_call_return_address": "0x82340960",
+    "indirect_target": "0x8233BBE0",
+    "trap": "rex::runtime::InvalidFunctionTrap",
+    "caller_chain": [
+      "0x82340910",
+      "0x8233C0A8",
+      "0x82327928",
+      "0x8231BF70",
+      "0x8232FD50",
+      "0x82330A58",
+      "0x8231DB48",
+      "0x8231DAE0",
+      "0x8231AEE0",
+      "0x822D6EA8",
+      "0x822D68C8",
+      "0x822EF7B0",
+      "0x822BD0C0",
+      "0x8301DEC8",
+      "0x82FC1880",
+      "0x82D30380",
+      "xstart"
+    ]
+  },
+  "memory_capture": "GDB read guest bytes at host address 0x18233BBE0 while PPCContext.ctr and last_indirect_target both contained 0x8233BBE0.",
+  "prior_frontier": "The same rebuilt runtime reached 0x82D1BB90 and its registered tail helper before trapping here.",
+  "user_visual_observation": "The user reports seeing the original game's loading screen; no screenshot was captured.",
+  "confidence": "observed",
+  "limitations": [
+    "Bytes were captured from the live ReXGlue guest mapping of the exact XEX; no Ghidra load specification is available for the XEX.",
+    "No screenshot, main-menu state, completed retail draw/present, or race has been verified."
+  ],
+  "runtime_validation": {
+    "codegen": "ReXGlue v0.10.0 codegen completed and registered 0x8233BBE0.",
+    "build": "The Linux AMD64 nfs_shift target linked successfully.",
+    "execution": "GDB reached 0x8233BBE0; generated code returned the retail constant in r3.",
+    "next_runtime_trap": "0x82D365A0 from indirect call instruction 0x823F3C00"
+  }
+}

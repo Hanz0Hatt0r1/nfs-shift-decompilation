@@ -1,3 +1,37 @@
 # Merge this entry into the local ReXGlue override include for this retail XEX.
 [functions]
+# Runtime captured a null-conditional virtual dispatcher; 48 live bytes verified.
+"0x8233D0F8" = {}
+# Runtime captured a 60-byte conditional virtual dispatcher with two live paths.
+"0x823270D0" = {}
+# Runtime captured a null/state helper entry (function extent pending codegen).
+"0x8233D128" = {}
+# Runtime captured a pointer-adjusting retail thunk.
+"0x82B9DD08" = {}
+# Runtime captured another indirect retail entry (function extent pending codegen).
+"0x82BA3188" = {}
+# Runtime captured a field-load thunk to a registered helper.
+"0x8265BE68" = {}
+# Runtime captured a retail startup callback entry (function extent pending codegen).
+"0x82D365A0" = {}
+# Runtime captured a constant-return retail leaf helper.
+"0x8233BBE0" = {}
+# Runtime captured a field-load thunk to a registered helper.
+"0x82D1BB90" = {}
+# Runtime captured a one-argument virtual thunk to a registered helper.
+"0x82C8C5F8" = {}
+# Runtime captured a zero-argument virtual thunk to a registered helper.
+"0x82C9A888" = {}
+# Runtime captured a conditional status helper at this indirect target.
+"0x82BED948" = {}
+# Runtime captured this indirect store-and-return helper in the guest object.
+"0x82648438" = {}
+# Runtime captured an indirect call here; live XEX bytes perform the object's
+# flag update and return.
+"0x8230A2B8" = {}
+# Runtime trapped on this indirect retail target during Xbox startup. Live XEX
+# bytes show a four-instruction adjustor thunk ending in a direct tail branch.
+"0x8264F560" = {}
+# The next live runtime trap was the adjacent adjustor with its own branch target.
+"0x8264F570" = {}
 "0x8264F580" = {}

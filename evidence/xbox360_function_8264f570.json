@@ -1,0 +1,38 @@
+{
+  "schema": "shift.xbox360.rexglue.function-thunk.v1",
+  "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+  "guest_address": "0x8264F570",
+  "bytes_hex": "1d6408a07d6b1a14386b1110480126cc",
+  "decoded": [
+    "mulli r11,r4,0x08a0",
+    "add r11,r11,r3",
+    "addi r3,r11,0x1110",
+    "b 0x82661C48"
+  ],
+  "branch_target": "0x82661C48",
+  "runtime_fatal": {
+    "function": "0x82D74D60",
+    "indirect_call_instruction": "0x82D74DD8",
+    "indirect_call_return_address": "0x82D74DDC",
+    "indirect_target": "0x8264F570",
+    "trap": "rex::runtime::InvalidFunctionTrap",
+    "caller_chain": [
+      "0x82D74D60",
+      "0x82D6C6D0",
+      "0x82F9CB10",
+      "0x8301DB18",
+      "0x82FC1880",
+      "0x82D30380",
+      "xstart"
+    ]
+  },
+  "runtime_capture": "GDB stopped at InvalidFunctionTrap. PPCContext.ctr and PPCContext.last_indirect_target both held 0x8264F570; PPCContext.lr held 0x82D74DDC. The same run reached the previously registered 0x8264F560 thunk and 0x82661C28 branch target.",
+  "memory_capture": "Read-only guest mapping at host address 0x18264F570 in a live run of the XEX with SHA-256 above; bytes are big-endian PowerPC instructions.",
+  "registered_branch_target": "0x82661C48 is present in generated/default/nfs_shift_register.cpp and the linked runtime.",
+  "confidence": "observed",
+  "limitations": [
+    "The exact retail XEX has no Ghidra load specification; the byte evidence is from its live ReXGlue guest mapping.",
+    "The 0x8264F570 override has not yet been passed through ReXGlue codegen or a rebuilt runtime.",
+    "The runtime has not reached a visible frontend menu, a completed retail draw, or a race."
+  ]
+}

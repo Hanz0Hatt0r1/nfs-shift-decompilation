@@ -1,6 +1,6 @@
 {
   "schema": "shift.xbox360.rexglue.status.v1",
-  "updated_on": "2026-10-22",
+  "updated_on": "2026-10-23",
   "strategy": "xbox360-rexglue-primary",
   "reference_workstream": "pc-retail-1.02",
   "required_vulkan": "1.1",
@@ -33,18 +33,52 @@
       "status": "in_progress",
       "evidence": [
         "evidence/xbox360_rexglue_preflight_20261022.md#compiler-preflight",
-        "evidence/xbox360_function_8264f580.json"
+        "evidence/xbox360_function_8264f580.json",
+        "evidence/xbox360_function_8264f560.json",
+        "evidence/xbox360_function_8264f570.json",
+        "evidence/xbox360_function_8230a2b8.json",
+        "evidence/xbox360_function_82648438.json",
+        "evidence/xbox360_function_82bed948.json",
+        "evidence/xbox360_function_82c9a888.json",
+        "evidence/xbox360_function_82c8c5f8.json",
+        "evidence/xbox360_function_82d1bb90.json",
+        "evidence/xbox360_function_8233bbe0.json",
+        "evidence/xbox360_function_82d365a0.json",
+        "evidence/xbox360_function_8265be68.json",
+        "evidence/xbox360_function_82ba3188.json",
+        "evidence/xbox360_function_82b9dd08.json",
+        "evidence/xbox360_function_8233d128.json",
+        "evidence/xbox360_function_8233d0f8.json",
+        "evidence/xbox360_function_823270d0.json",
+        "evidence/xbox360_frontier_82341198.json"
       ],
-      "note": "SDK v0.10.0 is pinned; live memory proves the missing vtable thunk and a function-discovery override plus static regression are recorded. Forced codegen remains blocked by SIGBUS during guest shared-memory initialization."
+      "note": "SDK v0.10.0 is pinned; seventeen live-memory-derived function entries have focused static regressions. ReXGlue codegen/build/runtime checks execute through the 60-byte 0x823270D0 dispatcher; 0x82341198 is the current retail frontier, and the broader PPC/import/lowering report remains open."
     },
     "X2": {
       "key": "linux_x86_64_guest_boot",
       "status": "in_progress",
       "evidence": [
         "evidence/xbox360_rexglue_preflight_20261022.md#linux-runtime-evidence",
-        "evidence/xbox360_function_8264f580.json"
+        "evidence/xbox360_function_8264f580.json",
+        "evidence/xbox360_function_8264f560.json",
+        "evidence/xbox360_function_8264f570.json",
+        "evidence/xbox360_function_8230a2b8.json",
+        "evidence/xbox360_function_82648438.json",
+        "evidence/xbox360_function_82bed948.json",
+        "evidence/xbox360_function_82c9a888.json",
+        "evidence/xbox360_function_82c8c5f8.json",
+        "evidence/xbox360_function_82d1bb90.json",
+        "evidence/xbox360_function_8233bbe0.json",
+        "evidence/xbox360_function_82d365a0.json",
+        "evidence/xbox360_function_8265be68.json",
+        "evidence/xbox360_function_82ba3188.json",
+        "evidence/xbox360_function_82b9dd08.json",
+        "evidence/xbox360_function_8233d128.json",
+        "evidence/xbox360_function_8233d0f8.json",
+        "evidence/xbox360_function_823270d0.json",
+        "evidence/xbox360_frontier_82341198.json"
       ],
-      "note": "The startup target 0x8264F580 is an observed two-instruction thunk to 0x8264D9D0. A local generated-source equivalent compiled and linked, but its runtime rerun SIGBUSed before guest function-table initialization; no advancement is claimed."
+      "note": "One regenerated Linux AMD64 run executed the full conditional dispatchers at 0x8233D128, 0x8233D0F8, and 0x823270D0; observed r5==3 at 0x823270D0 selected vtable slot +0x80, and the next InvalidFunctionTrap was 0x82341198 from return address 0x8232C39C. A later repeat stalled in VulkanSubmissionTracker::AwaitSubmissionCompletion before reaching that guest frontier. The user reports seeing the original loading screen; main menu, retail draw/present, and race remain unverified."
     },
     "X3": {
       "key": "xenos_vulkan_retail_frame",
@@ -52,13 +86,15 @@
       "evidence": [
         "evidence/xbox360_rexglue_preflight_20261022.md#linux-runtime-evidence"
       ],
-      "note": "Xenos/Vulkan pipeline lookup occurred, but async placeholder handling skipped the real guest draw and frame presentation"
+      "note": "Process 2 traced the placeholder skip to external ReXGlue Xenos code. With --no-async_shader_compilation, logs show many synchronous pipeline-state requests and no placeholder-skip warning. The latest repeat stopped in VulkanSubmissionTracker::AwaitSubmissionCompletion; neither a vkCmdDraw* call nor successful Vulkan present is verified, and Process 2 already owns this follow-up."
     },
     "X4": {
       "key": "linux_frontend_offline_race",
-      "status": "not_started",
-      "evidence": [],
-      "note": "No original Xbox SHIFT frontend or gameplay trace"
+      "status": "in_progress",
+      "evidence": [
+        "evidence/xbox360_rexglue_preflight_20261022.md#linux-runtime-evidence"
+      ],
+      "note": "The user observed the original game's loading screen during the latest Linux run. The main menu and an offline race remain unverified."
     },
     "X5": {
       "key": "linux_arm64_android_arm64",
