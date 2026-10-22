@@ -17,13 +17,21 @@ The hash was computed from the user-provided local retail file and matches the X
 
 ## Compiler preflight
 
-The local Linux AMD64 installation is ReXGlue SDK `0.10.0`. Its exact upstream source commit has not been established, so this package is not yet pinned for a reproducible project build.
+The local Linux AMD64 installation is ReXGlue SDK `0.10.0`, now linked to the official v0.10.0 source tag below. The diagnostic pin is recorded in the ledger; a checked-in app/build integration still does not exist.
 
 A clean codegen run against the external `default.xex` completed in 175.3 seconds. The CLI summary reported 505 generated output units (`505 written, 0 unchanged, 0 deleted`); this is an output-file summary, not a count of successfully executed game functions. The run also reported an unresolved branch target from `0x826F0E60` to `0x826FF380` and repeated `Unexpected float16_4 pack instruction` diagnostics. The generated output and logs remain outside Git.
 
 The current generated C++ does not contain a registered function at `0x8264F580`, which the runtime later calls indirectly during startup. Nearby generated functions include `0x8264F588`. The exact guest bytes for the live runtime image have not yet been captured. An extracted PE artifact with matching title/media metadata disagrees with generated code at nearby addresses; its extraction provenance and address mapping are unverified, so do not use it to define an override until that discrepancy is reconciled.
 
 A local Ghidra import of that PE artifact exited successfully but selected the `Old-style DOS Executable (MZ)` loader and `x86:LE:16:Real Mode`, so it did not validate PPC instructions. The earlier direct XEX import also had no load spec. A successful Ghidra job status alone is therefore not evidence for the target's PPC bytes.
+
+## SDK source pin and Vulkan 1.1 audit
+
+The official ReXGlue `v0.10.0` release tag resolves to source commit `f5337cdc947ff6d4c4196737e2c807a48f2a1fc2`. The local Xenos plugin hash is `09745cbdda1b30b91df8c371c8141a57a41be499eab745b12f4a3041561729f7`, and the installed `include/rex/version.h` hash is `653ec46fee7084a85fde4ea95b9464bcefb9e22f994a2b00f764a2735a482550`; both match the official Linux AMD64 v0.10.0 release asset described in the [Process 2 audit](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/work/process-reports/process-reports/2026-10-22-process2-xenos-vulkan11-audit.md). The release archive's published SHA-256 is `0388edb3f8fb1444f1b0ad5d440cb02d9690ac20a76b04fd6b7dcc19f59328a6`.
+
+The pinned source contains a Vulkan 1.1 shader path: on a 1.1 device without `VK_KHR_spirv_1_4`, Xenos guest shaders use SPIR-V 1.3. Dynamic rendering is optional and the backend falls back to conventional render passes. Vulkan 1.1 alone does not guarantee `independentBlend`, `fragmentStoresAndAtomics`, or `vertexPipelineStoresAndAtomics`; ReXGlue v0.10.0 rejects Xenos GPU emulation if any is missing. Linux and Android also require `geometryShader` and `fillModeNonSolid` by default, although disabling those requirements permits fallback paths with unverified SHIFT parity and known rendering limitations.
+
+This audit does not pass X6. No physical Vulkan 1.1 device has yet been queried, and no completed retail SHIFT draw or present has been shown on Vulkan 1.1. A Redmi Note 8 Pro is connected to the local host; Process 2 has started a read-only feature-profile probe. Android runtime/build and ARM64 execution remain separate open gates.
 
 ## Linux runtime evidence
 
@@ -42,9 +50,9 @@ The latest debugger attempts did not reach guest startup: they received `SIGBUS`
 ## Gate interpretation and next work
 
 - X0 is verified for this exact external XEX hash and title ID.
-- X1 remains in progress until the SDK source commit is pinned and the codegen output, unresolved PPC targets, imports, and lowering diagnostics are reproducibly recorded.
+- X1 remains in progress: the SDK source commit is pinned and codegen ran, but PPC image mapping, unresolved targets, imports, and lowering diagnostics still need a reproducible report.
 - X2 remains in progress: original guest code ran on Linux AMD64, but startup stops at an unresolved indirect target.
 - X3 remains in progress: Xenos/Vulkan initialization and pipeline lookup occurred, but the real guest draw and frame presentation did not.
-- X4 through X6 remain open; in particular, frontend/race execution, ARM64/Android execution, and Vulkan 1.1 capability proof are absent.
+- X4 through X6 remain open; in particular, frontend/race execution and ARM64/Android execution are absent, while Vulkan 1.1 device qualification and a retail present remain pending.
 
 Dispatch counts, generated output counts, pipeline lookup counts, and swapchain creation are not evidence of a playable game.

@@ -7,7 +7,7 @@ ReXGlue is **not vendored or bundled** by this migration. The SDK is evolving an
 ## Preconditions
 
 1. Verify and hash-lock the Xbox 360 SHIFT `default.xex` (no proprietary bytes in Git).
-2. Select a specific upstream ReXGlue SDK revision and record its commit SHA, compiler version, platform and CLI/config syntax from that revision.
+2. The local diagnostic package is linked to official ReXGlue `v0.10.0` commit `f5337cdc947ff6d4c4196737e2c807a48f2a1fc2`; record the exact compiler/platform/CLI configuration in any future checked-in build integration.
 3. Produce a reproducible real-game XEX parsing and PPC→C++ lowering report. Keep generated game code and SDK build outputs outside Git.
 4. Enumerate unresolved functions, imports, relocations, indirect targets, vector/FPU semantics, memory/endianness and initialization dependencies.
 5. Only then define the first SHIFT-specific build target / configuration and host integration.

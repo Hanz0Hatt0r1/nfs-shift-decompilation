@@ -16,7 +16,7 @@
     "repository": "https://github.com/rexglue/rexglue-sdk",
     "version": "0.10.0",
     "platform": "linux-amd64",
-    "commit_sha": null,
+    "commit_sha": "f5337cdc947ff6d4c4196737e2c807a48f2a1fc2",
     "integrated": false
   },
   "gates": {
@@ -30,7 +30,7 @@
       "key": "rexglue_ppc_codegen",
       "status": "in_progress",
       "evidence": ["evidence/xbox360_rexglue_preflight_20261022.md#compiler-preflight"],
-      "note": "SDK 0.10.0 codegen ran, but upstream commit, PPC image mapping, and lowering diagnostics remain unresolved"
+      "note": "SDK 0.10.0 is pinned to its official source tag; PPC image mapping and lowering diagnostics remain unresolved"
     },
     "X2": {
       "key": "linux_x86_64_guest_boot",
@@ -59,8 +59,8 @@
     "X6": {
       "key": "vulkan_1_1_compatibility",
       "status": "in_progress",
-      "evidence": [],
-      "note": "Process 2 is auditing the Xenos backend; no Vulkan 1.1 capability proof exists yet"
+      "evidence": ["evidence/xbox360_rexglue_preflight_20261022.md#sdk-source-pin-and-vulkan-1.1-audit"],
+      "note": "Source audit found a Vulkan 1.1 path but three optional feature bits are hard requirements; device feature probe and retail draw/present proof are pending"
     }
   }
 }
