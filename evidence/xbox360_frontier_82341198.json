@@ -129,7 +129,7 @@
     "The invalid-function trap occurred before any instruction at 0x82341198 executed; these bytes establish the live mapping and control flow, not the values or selected path in that run.",
     "The local extracted default.pe artifact (extraction provenance unverified; SHA-256 23844dbba0cf72bc11512821b90008ea5d2b06ee886d921f416ca6caae43a628) is not byte-equivalent: its mapped byte at 0x82341198 is 0x90 while this exact retail XEX live capture begins with 0x81.",
     "Codegen/build registration are verified. The post-build launch entered xstart but did not reach 0x82341198 within 180 seconds; the selected retail path and next runtime frontier remain unknown.",
-    "The user's loading-screen report is not correlated with this built binary because that run's runtime hash was not recorded."
+    "The user confirmed that the loading screen appeared during a ReXGlue Xbox run, but the exact process/build hash was not recorded and the screen is no longer visible. It is not correlated to this controlled binary."
   ],
   "independent_decode": {
     "decoder": "LLVM MC/objdump, powerpc-unknown-linux-gnu, big-endian instruction words",
