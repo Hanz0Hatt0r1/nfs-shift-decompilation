@@ -964,8 +964,15 @@ zero. No selected `SetEvent` targeted `0x60018`, and no retained
 `0x00650350` queue-insertion call used that owner. The same trace observed
 queue insertion and event signals on separate owners `0x27f7c290` and
 `0x27f7c780` for handles `0x6000c` and `0x60010`. This narrows the observation
-to an unsignaled owner queue while showing activity on other worker queues;
-it does not prove owner `0x27f7cd00` should have pending work or that the
-scheduler is defective. The bounded run reached 600 frames with 2,421,409
-dispatches, 4,738 unique functions, zero validation errors, four waiting
-workers and no guest draw translation. See the [v807 owner trace evidence](../evidence/retail_frontier_20261022/process1_worker_event_owner_v807.md).
+to an unsignaled owner queue while showing activity on other worker queues.
+The v808 retail-code review identifies `+0xb4/+0xb8` as the queue head/tail:
+`0x00650290` appends nodes and `0x00650230` clears both fields. Therefore the
+queue was empty when the worker entered its wait at dispatch 412,840; the
+bounded trace gives no evidence of a lost wake or a scheduler defect. v808
+sampled the same owner fields and found no `0x00650350` enqueue for it during
+120 frames. These runs do not rule out other producers outside the selected
+trace or establish that this worker should have received work. v807 reached
+600 frames with 2,421,409 dispatches, 4,738 unique functions, zero validation
+errors, four waiting workers and no guest draw translation. See the [v807
+owner trace](../evidence/retail_frontier_20261022/process1_worker_event_owner_v807.md)
+and [v808 queue-field evidence](../evidence/retail_frontier_20261022/process1_worker_queue_head_tail_v808.md).
