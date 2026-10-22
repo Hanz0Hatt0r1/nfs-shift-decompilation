@@ -11718,12 +11718,12 @@ struct RecompiledPcodeModule::Impl {
 
     int create_window_ex_w() {
         constexpr const char* api = "USER32.dll!CreateWindowExW";
-        uint32_t class_name = 0;
-        uint32_t window_name = 0;
-        if (!read_stack_argument(1, class_name, api) ||
-            !read_stack_argument(2, window_name, api)) {
-            return -1;
+        std::array<uint32_t, 12> arguments{};
+        for (size_t index = 0; index < arguments.size(); ++index) {
+            if (!read_stack_argument(index, arguments[index], api)) return -1;
         }
+        const uint32_t class_name = arguments[1];
+        const uint32_t window_name = arguments[2];
         const auto has_text = [this](uint32_t address) {
             if (address == 0 || !valid_guest_pointer(address, 2)) return false;
             std::array<uint8_t, 2> first_character{};
@@ -11736,8 +11736,107 @@ struct RecompiledPcodeModule::Impl {
             (window_name != 0 && !valid_guest_pointer(window_name, 2))) {
             return return_kernel32_dword(0, api, 12 * sizeof(uint32_t));
         }
+
+        if (guest_synthetic_window_created) {
+            return return_kernel32_dword(kGuestSyntheticWindowHandle, api,
+                                         12 * sizeof(uint32_t));
+        }
+
+        uint32_t create_struct_address = 0;
+        uint32_t nonclient_calculation_address = 0;
+        if (!allocate_guest_heap(kGuestProcessHeapHandle, 12 * sizeof(uint32_t),
+                                 create_struct_address) ||
+            !allocate_guest_heap(kGuestProcessHeapHandle,
+                                 20 * sizeof(uint32_t),
+                                 nonclient_calculation_address)) {
+            if (create_struct_address != 0)
+                free_guest_heap_address(create_struct_address);
+            guest_last_error = 8;
+            return return_kernel32_dword(0, api, 12 * sizeof(uint32_t));
+        }
+
+        const int32_t x = static_cast<int32_t>(arguments[4]);
+        const int32_t y = static_cast<int32_t>(arguments[5]);
+        const auto dimension = [](uint32_t value, uint32_t fallback) {
+            const int32_t signed_value = static_cast<int32_t>(value);
+            return signed_value > 0
+                       ? static_cast<uint32_t>(std::min(signed_value, 0xffff))
+                       : fallback;
+        };
+        const uint32_t width = dimension(arguments[6], guest_display_width);
+        const uint32_t height = dimension(arguments[7], guest_display_height);
+        const auto edge = [](int32_t origin, uint32_t extent) {
+            const int64_t value = static_cast<int64_t>(origin) + extent;
+            return static_cast<uint32_t>(std::clamp<int64_t>(
+                value, std::numeric_limits<int32_t>::min(),
+                std::numeric_limits<int32_t>::max()));
+        };
+        const std::array<uint32_t, 12> create_struct = {
+            arguments[11], arguments[10], arguments[9], arguments[8],
+            height, width, static_cast<uint32_t>(y), static_cast<uint32_t>(x),
+            arguments[3], window_name, class_name, arguments[0]};
+        const std::array<uint32_t, 20> nonclient_calculation = {
+            static_cast<uint32_t>(x), static_cast<uint32_t>(y), edge(x, width),
+            edge(y, height), 0, 0, 0, 0,
+            static_cast<uint32_t>(x), static_cast<uint32_t>(y), edge(x, width),
+            edge(y, height), nonclient_calculation_address + 52,
+            kGuestSyntheticWindowHandle, 0, static_cast<uint32_t>(x),
+            static_cast<uint32_t>(y), width, height, 0};
+        for (size_t index = 0; index < create_struct.size(); ++index) {
+            if (!write_guest_u32("ram", create_struct_address + index * 4,
+                                 create_struct[index])) {
+                free_guest_heap_address(nonclient_calculation_address);
+                free_guest_heap_address(create_struct_address);
+                return -1;
+            }
+        }
+        for (size_t index = 0; index < nonclient_calculation.size(); ++index) {
+            if (!write_guest_u32("ram",
+                                 nonclient_calculation_address + index * 4,
+                                 nonclient_calculation[index])) {
+                free_guest_heap_address(nonclient_calculation_address);
+                free_guest_heap_address(create_struct_address);
+                return -1;
+            }
+        }
+
         guest_synthetic_window_created = true;
         guest_synthetic_window_thread_id = current_guest_thread_id;
+        guest_synthetic_window_x = x;
+        guest_synthetic_window_y = y;
+        guest_synthetic_window_width = width;
+        guest_synthetic_window_height = height;
+
+        uint32_t window_proc_result = 0;
+        const auto dispatch_creation_message =
+            [this, &window_proc_result](uint32_t message, uint32_t wparam,
+                                       uint32_t lparam) {
+                return dispatch_guest_window_proc(
+                    guest_synthetic_window_proc,
+                    {kGuestSyntheticWindowHandle, message, wparam, lparam},
+                    window_proc_result);
+            };
+        const bool creation_messages_dispatched =
+            dispatch_creation_message(0x0081, 0, create_struct_address) &&
+            window_proc_result != 0 &&
+            dispatch_creation_message(0x0083, 1,
+                                      nonclient_calculation_address) &&
+            dispatch_creation_message(0x0001, 0, create_struct_address) &&
+            window_proc_result != UINT32_MAX;
+        free_guest_heap_address(nonclient_calculation_address);
+        free_guest_heap_address(create_struct_address);
+        if (!creation_messages_dispatched) {
+            guest_synthetic_window_created = false;
+            guest_synthetic_window_thread_id = 0;
+            if (error.empty()) guest_last_error = 0;
+            if (!error.empty()) return -1;
+            return return_kernel32_dword(0, api, 12 * sizeof(uint32_t));
+        }
+        if ((arguments[3] & 0x10000000) != 0) {
+            guest_synthetic_window_visible = true;
+            if (!dispatch_guest_window_visibility(true, 1)) return -1;
+        }
+
         return return_kernel32_dword(kGuestSyntheticWindowHandle, api,
                                      12 * sizeof(uint32_t));
     }
@@ -11762,8 +11861,44 @@ struct RecompiledPcodeModule::Impl {
         if (window != kGuestSyntheticWindowHandle)
             return return_kernel32_dword(0, api, 8);
         const uint32_t was_visible = guest_synthetic_window_visible ? 1 : 0;
-        guest_synthetic_window_visible = command != 0;
+        const bool visible = command != 0;
+        guest_synthetic_window_visible = visible;
+        if ((was_visible != 0) != visible &&
+            !dispatch_guest_window_visibility(visible, command))
+            return -1;
         return return_kernel32_dword(was_visible, api, 8);
+    }
+
+    bool dispatch_guest_window_visibility(bool visible, uint32_t command) {
+        uint32_t result = 0;
+        if (!dispatch_guest_window_proc(
+                guest_synthetic_window_proc,
+                {kGuestSyntheticWindowHandle, 0x0018, visible ? 1u : 0u, 0},
+                result)) {
+            return false;
+        }
+        if (!visible) return true;
+
+        uint32_t size_type = 0;
+        if (command == 2 || command == 6 || command == 7 || command == 11)
+            size_type = 1;
+        else if (command == 3)
+            size_type = 2;
+        const uint32_t packed_size =
+            (guest_synthetic_window_height << 16) |
+            (guest_synthetic_window_width & 0xffff);
+        const uint32_t packed_position =
+            (static_cast<uint32_t>(guest_synthetic_window_y) << 16) |
+            (static_cast<uint32_t>(guest_synthetic_window_x) & 0xffff);
+        return dispatch_guest_window_proc(
+                   guest_synthetic_window_proc,
+                   {kGuestSyntheticWindowHandle, 0x0005, size_type,
+                    packed_size},
+                   result) &&
+               dispatch_guest_window_proc(
+                   guest_synthetic_window_proc,
+                   {kGuestSyntheticWindowHandle, 0x0003, 0, packed_position},
+                   result);
     }
 
     uint32_t translated_guest_character(uint32_t virtual_key,
@@ -14662,6 +14797,10 @@ struct RecompiledPcodeModule::Impl {
     bool guest_synthetic_window_created = false;
     uint32_t guest_synthetic_window_proc = 0;
     uint32_t guest_synthetic_window_thread_id = 0;
+    int32_t guest_synthetic_window_x = 0;
+    int32_t guest_synthetic_window_y = 0;
+    uint32_t guest_synthetic_window_width = 1024;
+    uint32_t guest_synthetic_window_height = 768;
     std::deque<GuestWindowMessage> guest_window_messages;
     std::unordered_map<uint32_t, uint32_t>
         guest_message_translation_characters;
