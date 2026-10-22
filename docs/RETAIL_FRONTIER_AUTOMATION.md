@@ -930,3 +930,10 @@ Win32 `Sleep` import. One worker returned from `Sleep(1)` and then entered
 three post-wait helpers; the last helper had no paired return before the
 120-frame bound. This does not prove a hang, worker exit, frontend readiness,
 or race entry. See the [v802 worker trace](../evidence/retail_frontier_20261022/process1_worker_wait_v802.md).
+
+v803/v804 repeated the worker trace at 360 frames and selected Win32 wait/event
+imports. The worker set event `0x60014`, passed through `Sleep(1)`, then entered
+`WaitForSingleObjectEx(0x60018, INFINITE, TRUE)` with no return observed before
+the probe ended. No `SetEvent(0x60018)` occurred in the selected v804 trace.
+This localizes the bounded wait but does not prove a permanent hang or identify
+who should signal it. See the [v803–v804 worker wait evidence](../evidence/retail_frontier_20261022/process1_worker_wait_v803_v804.md).
