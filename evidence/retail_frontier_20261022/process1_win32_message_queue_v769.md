@@ -1,4 +1,4 @@
-# Process 1 — Win32 guest message queue and keyboard delivery, v769
+# Process 1 — Win32 guest message queue and keyboard delivery, v769–v772
 
 ## Scope
 
@@ -62,15 +62,22 @@ successful `PeekMessageW`.
   `e23028238e9ec2a09eff84d1ada7b36b7ccf59021e9dcae1b35eaf782ae54891`.
   It observed the class/window/show calls and 1,121 empty `PeekMessageW`
   returns. This no-input run did not observe a retail message.
-- A second bounded live-input run sent X11 key A to the mapped runtime window
-  after the retail synthetic window was visible. In the v771 trace,
-  `PeekMessageW` returned 1 three times, `GetMessageW` returned 1 three times,
-  `TranslateMessage` returned 1 once, and `DispatchMessageW` returned 0 three
-  times; guest dispatch advanced during those callbacks. This proves that a
-  host key reached the retail guest message pump and WndProc path. The 1,200
-  frame run hit its 120 second bound before a final frame-loop summary; it does
-  not establish menu advancement, a retail draw, or gameplay. Trace log
-  SHA-256: `24d1738f47785c65456f2ee830bbd8ea37ceed4b09f7df83c14a08d8606529fa`.
+- A v771 live-input run sent X11 key A and saw the full message-pump path, but
+  its 1,200 frame request hit the 120 second bound before a final summary. A
+  shorter v772 run then sent X11 key A to the mapped runtime window after the
+  retail queue loop began and completed 360 host frames with exit 0 and zero
+  validation errors. The selected WndProc `0x00634870` received exactly these
+  messages in the trace: `WM_KEYDOWN` (`wParam=0x41`, `lParam=0x001e0001`),
+  `WM_KEYUP` (`wParam=0x41`, `lParam=0xc01e0001`), and `WM_CHAR`
+  (`wParam=0x61`, `lParam=0x001e0001`). Each returned zero and guest dispatch
+  advanced through the callback. `PeekMessageW`/`GetMessageW` returned success
+  for the queued input and `TranslateMessage` returned success for the
+  character. This proves host-to-retail-WndProc keyboard delivery. The trace
+  selected `DINPUT8.dll!DirectInput8Create`, `GetAsyncKeyState`,
+  `GetKeyboardState`, and `GetRawInputData`, but recorded no invocation of
+  these imports in this bounded run. v772 did not prove menu advancement, a
+  retail draw, or gameplay. Trace log SHA-256:
+  `fe55422568366dd7005e1994d9c271ec9617abe90b090eead95e23ab7d778ff3`.
   The 1,749,992 dispatches and 4,729 unique functions in the completed v769
   run are execution counters only.
 
