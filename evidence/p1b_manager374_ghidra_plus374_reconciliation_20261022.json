@@ -1,0 +1,498 @@
+{
+  "adjudication": {
+    "all_plus_374_candidate_receivers_classified": false,
+    "external_provider_count": 7,
+    "ghidra_literal_plus_0x374_writer_site_reconciliation_complete": true,
+    "ghidra_program_identity_pinned": true,
+    "global_helper_non_vtable_indirect_setter_surface_complete": false,
+    "global_manager_root_origin_surface_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "raw_retail_literal_inventory_identity_pinned": true,
+    "unknown_or_unrelated_manager_root_alias_surface_complete": false
+  },
+  "authority": {
+    "ghidra_program_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "image_base": "0x00400000",
+    "language_id": "x86:LE:32:default",
+    "platform": "PC retail 1.02",
+    "pointer_size": 4,
+    "program": "SHIFT.exe",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+  },
+  "format": "SHIFT.P1B.Manager374GhidraPlus374WriterReconciliation/1",
+  "inputs": {
+    "binary_format": "SHIFT.GhidraEvidenceDatabase/1",
+    "raw_inventory_format": "SHIFT.HDVehicle64e8Manager374LiteralStoreInventory/1",
+    "scalar_use_format": "SHIFT.GhidraScalarUses/1",
+    "target_scalar": "0x374"
+  },
+  "limits": [
+    "This reconciles Ghidra exact-scalar rows against the already authoritative raw-retail literal +0x374 writer inventory; it is not a new semantic receiver proof.",
+    "Only first-operand exact +0x374 memory forms with an explicit write/RMW mnemonic are promoted to the Ghidra write candidate set.",
+    "Address-materialization followed by zero-displacement stores remains covered by separate materialized/computed contracts, not by this reconciliation.",
+    "Helper-returned roots, opaque/runtime-initialized memory, non-vtable indirect setters and arbitrary process mutation remain outside this contract.",
+    "Numeric offset equality is never Participants Manager or HDVehicle identity."
+  ],
+  "next_step": "The pinned Ghidra exact-scalar export now reconciles all 25 literal +0x374 writer sites with the raw-retail inventory. Continue root-origin/helper-setter closure separately; this decoder cross-check does not establish receiver identity.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "extra_in_ghidra": [],
+    "ghidra_exact_plus_374_other_first_memory_operand_count": 11,
+    "ghidra_exact_plus_374_other_first_memory_operands": [
+      {
+        "destination": "dword ptr [EAX + 0x374]",
+        "expression": "eax+0x374",
+        "function_address": "0x00451280",
+        "function_name": "FUN_00451280",
+        "mnemonic": "cmp",
+        "registers": [
+          "eax"
+        ],
+        "site": "0x0045357b",
+        "text": "CMP dword ptr [EAX + 0x374],0x0"
+      },
+      {
+        "destination": "float ptr [EDI + 0x374]",
+        "expression": "edi+0x374",
+        "function_address": "0x00481e20",
+        "function_name": "FUN_00481e20",
+        "mnemonic": "fld",
+        "registers": [
+          "edi"
+        ],
+        "site": "0x004826a0",
+        "text": "FLD float ptr [EDI + 0x374]"
+      },
+      {
+        "destination": "dword ptr [EAX + 0x374]",
+        "expression": "eax+0x374",
+        "function_address": "0x004d5f30",
+        "function_name": "FUN_004d5f30",
+        "mnemonic": "cmp",
+        "registers": [
+          "eax"
+        ],
+        "site": "0x004d60aa",
+        "text": "CMP dword ptr [EAX + 0x374],0x0"
+      },
+      {
+        "destination": "dword ptr [EAX + 0x374]",
+        "expression": "eax+0x374",
+        "function_address": "0x00555910",
+        "function_name": "FUN_00555910",
+        "mnemonic": "cmp",
+        "registers": [
+          "eax"
+        ],
+        "site": "0x00555929",
+        "text": "CMP dword ptr [EAX + 0x374],0x0"
+      },
+      {
+        "destination": "dword ptr [EAX + 0x374]",
+        "expression": "eax+0x374",
+        "function_address": "0x0056fc00",
+        "function_name": "FUN_0056fc00",
+        "mnemonic": "cmp",
+        "registers": [
+          "eax"
+        ],
+        "site": "0x0056fc0b",
+        "text": "CMP dword ptr [EAX + 0x374],0x0"
+      },
+      {
+        "destination": "float ptr [EDX + 0x374]",
+        "expression": "edx+0x374",
+        "function_address": "0x007189a0",
+        "function_name": "FUN_007189a0",
+        "mnemonic": "fsub",
+        "registers": [
+          "edx"
+        ],
+        "site": "0x00718b5a",
+        "text": "FSUB float ptr [EDX + 0x374]"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x0081a3f0",
+        "function_name": "FUN_0081a3f0",
+        "mnemonic": "cmp",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x0081a3fd",
+        "text": "CMP dword ptr [ESI + 0x374],0x0"
+      },
+      {
+        "destination": "float ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x0087e920",
+        "function_name": "FUN_0087e920",
+        "mnemonic": "fld",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x0087ea11",
+        "text": "FLD float ptr [ESI + 0x374]"
+      },
+      {
+        "destination": "float ptr [EBP + 0x374]",
+        "expression": "ebp+0x374",
+        "function_address": "0x00a44a50",
+        "function_name": "FUN_00a44a50",
+        "mnemonic": "fld",
+        "registers": [
+          "ebp"
+        ],
+        "site": "0x00a44abe",
+        "text": "FLD float ptr [EBP + 0x374]"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x00d4a880",
+        "function_name": "FUN_00d4a880",
+        "mnemonic": "cmp",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x00d4a912",
+        "text": "CMP dword ptr [ESI + 0x374],0x0"
+      },
+      {
+        "destination": "dword ptr [EAX + 0x374]",
+        "expression": "eax+0x374",
+        "function_address": "0x00d52c90",
+        "function_name": "FUN_00d52c90",
+        "mnemonic": "cmp",
+        "registers": [
+          "eax"
+        ],
+        "site": "0x00d52cc2",
+        "text": "CMP dword ptr [EAX + 0x374],0x0"
+      }
+    ],
+    "ghidra_exact_plus_374_write_candidate_count": 25,
+    "ghidra_exact_plus_374_write_candidates": [
+      {
+        "destination": "float ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x00481e20",
+        "function_name": "FUN_00481e20",
+        "mnemonic": "fstp",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x004826a6",
+        "text": "FSTP float ptr [ESI + 0x374]"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x00488dc0",
+        "function_name": "FUN_00488dc0",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x00488e33",
+        "text": "MOV dword ptr [ESI + 0x374],EBX"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x0051efa0",
+        "function_name": "FUN_0051efa0",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x0051effd",
+        "text": "MOV dword ptr [ESI + 0x374],EAX"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x005dec70",
+        "function_name": "FUN_005dec70",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x005ded7e",
+        "text": "MOV dword ptr [ESI + 0x374],EBP"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x00748280",
+        "function_name": "FUN_00748280",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x0074874b",
+        "text": "MOV dword ptr [ESI + 0x374],EAX"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x007c0db0",
+        "function_name": "FUN_007c0db0",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x007c0fa0",
+        "text": "MOV dword ptr [ESI + 0x374],EBX"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x007c19c0",
+        "function_name": "FUN_007c19c0",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x007c1ace",
+        "text": "MOV dword ptr [ESI + 0x374],EAX"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x008167f0",
+        "function_name": "FUN_008167f0",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x008169c3",
+        "text": "MOV dword ptr [ESI + 0x374],EBX"
+      },
+      {
+        "destination": "dword ptr [ECX + 0x374]",
+        "expression": "ecx+0x374",
+        "function_address": "0x00816c70",
+        "function_name": "FUN_00816c70",
+        "mnemonic": "add",
+        "registers": [
+          "ecx"
+        ],
+        "site": "0x00816c9c",
+        "text": "ADD dword ptr [ECX + 0x374],0x1"
+      },
+      {
+        "destination": "dword ptr [EBX + 0x374]",
+        "expression": "ebx+0x374",
+        "function_address": "0x00818000",
+        "function_name": "FUN_00818000",
+        "mnemonic": "mov",
+        "registers": [
+          "ebx"
+        ],
+        "site": "0x00818157",
+        "text": "MOV dword ptr [EBX + 0x374],ESI"
+      },
+      {
+        "destination": "dword ptr [EBX + 0x374]",
+        "expression": "ebx+0x374",
+        "function_address": "0x00833760",
+        "function_name": "FUN_00833760",
+        "mnemonic": "mov",
+        "registers": [
+          "ebx"
+        ],
+        "site": "0x00833972",
+        "text": "MOV dword ptr [EBX + 0x374],ECX"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x00844320",
+        "function_name": "FUN_00844320",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x00844343",
+        "text": "MOV dword ptr [ESI + 0x374],0x0"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x008446a0",
+        "function_name": "FUN_008446a0",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x008446cb",
+        "text": "MOV dword ptr [ESI + 0x374],0x0"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x008446a0",
+        "function_name": "FUN_008446a0",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x008446e3",
+        "text": "MOV dword ptr [ESI + 0x374],EBX"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x008446a0",
+        "function_name": "FUN_008446a0",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x008446f8",
+        "text": "MOV dword ptr [ESI + 0x374],0x0"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x00844a20",
+        "function_name": "FUN_00844a20",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x00844b67",
+        "text": "MOV dword ptr [ESI + 0x374],EAX"
+      },
+      {
+        "destination": "float ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x00864c10",
+        "function_name": "FUN_00864c10",
+        "mnemonic": "fstp",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x00865013",
+        "text": "FSTP float ptr [ESI + 0x374]"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x0097d8c4",
+        "function_name": "FUN_0097d8c4",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x0097da09",
+        "text": "MOV dword ptr [ESI + 0x374],EAX"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x0097d8c4",
+        "function_name": "FUN_0097d8c4",
+        "mnemonic": "add",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x0097daf8",
+        "text": "ADD dword ptr [ESI + 0x374],EAX"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x0097d8c4",
+        "function_name": "FUN_0097d8c4",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x0097dc63",
+        "text": "MOV dword ptr [ESI + 0x374],EAX"
+      },
+      {
+        "destination": "dword ptr [EAX + 0x374]",
+        "expression": "eax+0x374",
+        "function_address": "0x0097eacc",
+        "function_name": "FUN_0097eacc",
+        "mnemonic": "mov",
+        "registers": [
+          "eax"
+        ],
+        "site": "0x0097ed06",
+        "text": "MOV dword ptr [EAX + 0x374],EBX"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x00a38959",
+        "function_name": "FUN_00a38959",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x00a38974",
+        "text": "MOV dword ptr [ESI + 0x374],EBX"
+      },
+      {
+        "destination": "float ptr [EBX + 0x374]",
+        "expression": "ebx+0x374",
+        "function_address": "0x00a44a50",
+        "function_name": "FUN_00a44a50",
+        "mnemonic": "fstp",
+        "registers": [
+          "ebx"
+        ],
+        "site": "0x00a44ac5",
+        "text": "FSTP float ptr [EBX + 0x374]"
+      },
+      {
+        "destination": "dword ptr [EDI + 0x374]",
+        "expression": "edi+0x374",
+        "function_address": "0x00d60660",
+        "function_name": "FUN_00d60660",
+        "mnemonic": "mov",
+        "registers": [
+          "edi"
+        ],
+        "site": "0x00d606f3",
+        "text": "MOV dword ptr [EDI + 0x374],EBX"
+      },
+      {
+        "destination": "dword ptr [ESI + 0x374]",
+        "expression": "esi+0x374",
+        "function_address": "0x00d7f040",
+        "function_name": "FUN_00d7f040",
+        "mnemonic": "mov",
+        "registers": [
+          "esi"
+        ],
+        "site": "0x00d7f104",
+        "text": "MOV dword ptr [ESI + 0x374],EAX"
+      }
+    ],
+    "ghidra_exact_scalar_use_count": 170,
+    "ghidra_other_first_memory_mnemonic_counts": {
+      "cmp": 7,
+      "fld": 3,
+      "fsub": 1
+    },
+    "ghidra_skipped_non_destination_or_non_exact_memory_use_count": 134,
+    "ghidra_write_mnemonic_counts": {
+      "add": 2,
+      "fstp": 3,
+      "mov": 20
+    },
+    "missing_from_ghidra": [],
+    "raw_retail_literal_write_site_count": 25,
+    "site_intersection_count": 25
+  },
+  "version": 1
+}

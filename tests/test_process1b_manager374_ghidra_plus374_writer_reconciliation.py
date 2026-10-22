@@ -152,6 +152,30 @@ def test_reconciliation_surfaces_missing_and_extra_sites(tmp_path: Path) -> None
     assert payload["adjudication"]["ghidra_literal_plus_0x374_writer_site_reconciliation_complete"] is False
 
 
+def test_ghidra_float_ptr_x87_writes_reconcile_with_retail_sites(tmp_path: Path) -> None:
+    tool = load_tool()
+    sites = ["0x004826a6", "0x00865013", "0x00a44ac5"]
+    paths = prepare(
+        tmp_path,
+        [
+            row(site, "FSTP", "float ptr [ESI + 0x374]")
+            for site in sites[:2]
+        ]
+        + [row(sites[2], "FSTP", "float ptr [EBX + 0x374]")],
+        sites,
+    )
+
+    payload = tool.analyze(*paths)
+    surface = payload["surface"]
+    assert surface["ghidra_exact_plus_374_write_candidate_count"] == 3
+    assert [item["site"] for item in surface["ghidra_exact_plus_374_write_candidates"]] == sites
+    assert surface["ghidra_write_mnemonic_counts"] == {"fstp": 3}
+    assert surface["missing_from_ghidra"] == []
+    assert surface["extra_in_ghidra"] == []
+    assert payload["adjudication"]["ghidra_literal_plus_0x374_writer_site_reconciliation_complete"] is True
+    assert payload["adjudication"]["manager_374_join_to_hdvehicle_4330_complete"] is False
+
+
 def test_program_identity_drift_fails_closed(tmp_path: Path) -> None:
     tool = load_tool()
     paths = prepare(
