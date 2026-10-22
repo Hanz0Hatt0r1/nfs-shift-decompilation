@@ -127,6 +127,29 @@ runtime::RecompiledGuestD3d9DrawIndexedPrimitivePacket make_packet() {
         {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}});
     packet.textures.push_back(dxt5_texture);
 
+    // BC2/DXT3 is 16 bytes per 4x4 block. Exercise a two-level managed
+    // snapshot so pitch, DDS FourCC, mip count and exact bytes are checked.
+    runtime::RecompiledGuestD3d9TextureBinding dxt3_texture{};
+    dxt3_texture.stage = 3;
+    dxt3_texture.guest_texture = 0x63;
+    dxt3_texture.width = 8;
+    dxt3_texture.height = 8;
+    dxt3_texture.levels = 2;
+    dxt3_texture.format = 0x33545844;
+    dxt3_texture.pool = 1;
+    dxt3_texture.pitch = 32;
+    std::vector<uint8_t> dxt3_top(64);
+    std::vector<uint8_t> dxt3_next(16);
+    for (size_t i = 0; i < dxt3_top.size(); ++i) {
+        dxt3_top[i] = static_cast<uint8_t>(i + 1);
+    }
+    for (size_t i = 0; i < dxt3_next.size(); ++i) {
+        dxt3_next[i] = static_cast<uint8_t>(0xa0 + i);
+    }
+    dxt3_texture.mip_data.push_back({8, 8, 32, dxt3_top});
+    dxt3_texture.mip_data.push_back({4, 4, 16, dxt3_next});
+    packet.textures.push_back(dxt3_texture);
+
     packet.render_states = {
         {0x42, 7, 1}, {0x42, 14, 1}, {0x42, 23, 4}, {0x42, 27, 0},
         {0x42, 19, 1}, {0x42, 20, 2}, {0x42, 22, 1}, {0x42, 168, 15},
@@ -165,6 +188,8 @@ int main() {
     require(info.backend_context != &downstream, "adapter owns the callback context");
     require(info.supports_dxt5_texture,
             "capture adapter enables guest-managed DXT5 packet snapshots");
+    require(info.supports_dxt3_texture,
+            "capture adapter enables guest-managed DXT3 packet snapshots");
 
     std::vector<uint8_t> vertex_bytes(96);
     for (size_t i = 0; i < vertex_bytes.size(); ++i) vertex_bytes[i] = static_cast<uint8_t>(i + 1);
@@ -185,6 +210,19 @@ int main() {
             "existing resource callbacks are forwarded");
 
     auto packet = make_packet();
+    const auto expected_dxt3_top = packet.textures.back().mip_data[0].bytes;
+    const auto expected_dxt3_next = packet.textures.back().mip_data[1].bytes;
+    auto bad_dxt3_packet = packet;
+    bad_dxt3_packet.textures.back().mip_data[1].pitch = 8;
+    require(!info.draw_indexed_primitive(info.backend_context, bad_dxt3_packet, error) &&
+                error.find("guest texture mip byte count does not match its pitch") !=
+                    std::string::npos,
+            "invalid managed DXT3 mip pitch fails closed");
+    require(adapter.captured_draw_count() == 0,
+            "invalid DXT3 snapshot is not counted as a captured draw");
+    require(!std::filesystem::exists(root / "draw_00000042_1.tmp"),
+            "invalid DXT3 snapshot leaves no partial capture directory");
+    error.clear();
     if (!info.draw_indexed_primitive(info.backend_context, packet, error)) {
         std::cerr << "packet capture adapter detail: " << error << '\n';
         require(false, "capture typed draw packet");
@@ -194,6 +232,9 @@ int main() {
     std::fill(index_bytes.begin(), index_bytes.end(), 0xee);
     std::fill(packet.textures[0].mip_data[0].bytes.begin(),
               packet.textures[0].mip_data[0].bytes.end(), 0xee);
+    for (auto& mip : packet.textures.back().mip_data) {
+        std::fill(mip.bytes.begin(), mip.bytes.end(), 0xee);
+    }
 
     const auto draw_dir = root / "draw_00000042_1";
     const std::string capture = read_text(draw_dir / "capture.jsonl");
@@ -228,6 +269,21 @@ int main() {
                     std::vector<uint8_t>({1, 2, 3, 4, 5, 6, 7, 8,
                         9, 10, 11, 12, 13, 14, 15, 16}),
             "managed DXT5 mip blocks are copied without decompression");
+    const auto dxt3_dds = read_bytes(draw_dir / "textures/00000063_s3.dds");
+    require(dxt3_dds.size() == 128 + 64 + 16 &&
+                std::string(dxt3_dds.begin(), dxt3_dds.begin() + 4) == "DDS " &&
+                std::string(dxt3_dds.begin() + 84, dxt3_dds.begin() + 88) == "DXT3" &&
+                dxt3_dds[20] == 64 && dxt3_dds[21] == 0 &&
+                dxt3_dds[28] == 2 && dxt3_dds[29] == 0,
+            "managed DXT3 DDS retains FourCC, top mip byte size and level count");
+    require(std::equal(expected_dxt3_top.begin(), expected_dxt3_top.end(),
+                       dxt3_dds.begin() + 128) &&
+                std::equal(expected_dxt3_next.begin(), expected_dxt3_next.end(),
+                           dxt3_dds.begin() + 128 + 64),
+            "managed DXT3 mip bytes are synchronously snapshotted without conversion");
+    require(capture.find("\"snapshot_paths\":[\"textures/00000063_s3.dds\"]") !=
+                std::string::npos,
+            "managed DXT3 DDS path is associated with packet capture");
     require(info.draw_indexed_primitive(info.backend_context, packet, error),
             "draws beyond capture limit continue downstream");
     require(adapter.captured_draw_count() == 1 &&

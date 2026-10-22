@@ -63,6 +63,8 @@ jobs:
         run: cmake -S native_vulkan -B native_vulkan/build
       - name: Build
         run: cmake --build native_vulkan/build --config Release --parallel
+      - name: Managed DXT3 packet capture regression
+        run: ctest --test-dir native_vulkan/build --output-on-failure --no-tests=error -R '^shift_vulkan_d3d9_packet_capture_adapter$'
       - name: Headless Vulkan probe
         run: native_vulkan/build/shift_vulkan_probe
       - name: Headless clear
