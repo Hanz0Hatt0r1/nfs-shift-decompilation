@@ -79,7 +79,7 @@
         "evidence/xbox360_frontier_82341198.json",
         "evidence/xbox360_runtime_queue_probe_20261023.json"
       ],
-      "note": "The 68-byte 0x82341198 dispatcher passes ReXGlue codegen and the Linux AMD64 build, but the latest controlled run still did not reach it. A new queue probe shows the guest waiting in 0x823A0310 with cursors 1/21; the runtime log confirms VdSetGraphicsInterruptCallback, VdInitializeRingBuffer, and VdEnableRingBufferRPtrWriteBack were ignored because gpu_plugin was not set. Treat this as an unconfigured Xenos graphics path, not a proven PPC/P-code defect; repeat after Process 2's plugin integration. The user's loading-screen observation remains uncorrelated to a binary hash."
+      "note": "The 68-byte 0x82341198 dispatcher passes ReXGlue codegen and the Linux AMD64 build, but the latest controlled run still did not reach it. A new queue probe shows the guest waiting in 0x823A0310 with cursors 1/21; the runtime log confirms VdSetGraphicsInterruptCallback, VdInitializeRingBuffer, and VdEnableRingBufferRPtrWriteBack were ignored because gpu_plugin was not set. Treat this as an unconfigured Xenos graphics path, not a proven PPC/P-code defect; repeat after Process 2's plugin integration. The user confirmed that the loading screen appeared in a ReXGlue Xbox run, but the exact process/build hash is unknown and the screen is no longer visible, so this is not correlated to the controlled runtime."
     },
     "X3": {
       "key": "xenos_vulkan_retail_frame",
@@ -96,7 +96,7 @@
       "evidence": [
         "evidence/xbox360_rexglue_preflight_20261022.md#linux-runtime-evidence"
       ],
-      "note": "The user observed the original game's loading screen during the latest Linux run. The main menu and an offline race remain unverified."
+      "note": "The user confirmed that the original game's loading screen appeared during a ReXGlue Xbox run. The exact process/build hash was not recorded and the screen is no longer visible. The main menu, retail frame, and offline race remain unverified."
     },
     "X5": {
       "key": "linux_arm64_android_arm64",

@@ -51,5 +51,5 @@
     "not_proven": "This does not prove that the ignored Vd calls caused the queue wait, establish a PPC/P-code or guest scheduler defect, or prove a retail draw/Vulkan present.",
     "next_owner": "Process 2 owns loading and validating the Xenos GPU plugin. Repeat this probe after plugin setup before classifying the guest queue wait as a runtime defect."
   },
-  "user_visual_observation": "The user reported seeing the game's loading screen, but that visual observation is not correlated to this runtime binary hash."
+  "user_visual_observation": "The user confirmed that the game's loading screen appeared during a ReXGlue Xbox run, but the exact process/build hash was not recorded and the screen is no longer visible. This observation is not correlated to this controlled runtime binary."
 }
