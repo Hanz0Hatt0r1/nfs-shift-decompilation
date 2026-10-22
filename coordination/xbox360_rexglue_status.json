@@ -1,0 +1,63 @@
+{
+  "schema": "shift.xbox360.rexglue.status.v1",
+  "updated_on": "2026-10-22",
+  "strategy": "xbox360-rexglue-primary",
+  "reference_workstream": "pc-retail-1.02",
+  "required_vulkan": "1.1",
+  "input": {
+    "expected_name": "default.xex",
+    "sha256": null,
+    "title_id": null,
+    "build": null,
+    "source": "user-provided lawful dump, kept outside git"
+  },
+  "sdk": {
+    "repository": "https://github.com/rexglue/rexglue-sdk",
+    "commit_sha": null,
+    "integrated": false
+  },
+  "gates": {
+    "X0": {
+      "key": "xbox360_retail_input",
+      "status": "blocked",
+      "evidence": [],
+      "note": "Original Xbox 360 SHIFT default.xex not supplied or SHA-256 verified"
+    },
+    "X1": {
+      "key": "rexglue_ppc_codegen",
+      "status": "not_started",
+      "evidence": [],
+      "note": "No pinned SDK/recompiled SHIFT XEX coverage report"
+    },
+    "X2": {
+      "key": "linux_x86_64_guest_boot",
+      "status": "not_started",
+      "evidence": [],
+      "note": "No recompiled Xbox SHIFT guest entrypoint execution"
+    },
+    "X3": {
+      "key": "xenos_vulkan_retail_frame",
+      "status": "not_started",
+      "evidence": [],
+      "note": "No original Xbox SHIFT GPU draw or frame"
+    },
+    "X4": {
+      "key": "linux_frontend_offline_race",
+      "status": "not_started",
+      "evidence": [],
+      "note": "No original Xbox SHIFT frontend or gameplay trace"
+    },
+    "X5": {
+      "key": "linux_arm64_android_arm64",
+      "status": "not_started",
+      "evidence": [],
+      "note": "No SHIFT Xbox runtime execution on target architectures"
+    },
+    "X6": {
+      "key": "vulkan_1_1_compatibility",
+      "status": "not_started",
+      "evidence": [],
+      "note": "No 1.1 capability audit or runtime proof"
+    }
+  }
+}
