@@ -894,3 +894,13 @@ The constructor initializes `+4` to zero, and this bounded class audit found
 no independent nonzero source for `+5` or ordered external Begin→End caller.
 The v757 trace now independently shows no Begin/End adapter calls in its tested
 interval. See the [full EndStateBlock audit](../evidence/retail_frontier_20261022/process1_adapter_endstateblock_0084fbf0.md).
+
+A full executable-section scan for incoming adapter BeginStateBlock dispatch
+found no callsite that could be tied to the primary adapter vptr with the
+required one-argument ABI. The plausible `+0xF0` windows inspected either had
+the wrong ABI or lacked proof that their receiver was this adapter; the scan
+also found no bounded local nonzero write to `BYTE[adapter+4]`. This is a
+bounded static negative result, not proof of whole-program unreachability. The
+v757 replay independently had no selected Begin/End/forwarder events. The next
+bounded provenance target is getter `0x0082E110` and its immediate consumers.
+See the [full caller audit](../evidence/retail_frontier_20261022/process1_adapter_beginstateblock_callsite_0084fbc0.md).
