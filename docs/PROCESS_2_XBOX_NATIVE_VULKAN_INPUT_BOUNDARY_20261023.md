@@ -81,55 +81,111 @@ so a green result from them cannot validate an Xbox frontend.
 
 ## Latest Xbox run: diagnostic evidence only
 
-The Linux XEX run `nfs_shift_073.log` is tied to the retail XEX SHA-256
+The Linux XEX run `nfs_shift_073.log` used retail XEX SHA-256
 `8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58`. Its log
 SHA-256 is
 `47750ab5d9e78f4c91b790cfaacb7b9513b440b813aac5727d699e66e2457ea8`.
-It selects an NVIDIA GeForce GTX 950 and creates 24 graphics-pipeline-state
-requests. These requests show activity in the external Xenos/Vulkan diagnostic
-path; they do not establish a guest draw, its input resources, a successful
-Vulkan draw command, or a presented retail frame. This path was used only to
-inspect the current stopping point and is not the intended renderer
-architecture.
+It selected an NVIDIA GeForce GTX 950 and created 24 graphics-pipeline-state
+requests. Those requests alone did not establish a guest draw.
 
-In the timeout debugger snapshot, breakpoints on `vkCmdDrawIndexed`,
-`vkCmdDraw`, and `vkQueuePresentKHR` resolved but were not hit. The UI thread
-was waiting in `VulkanSubmissionTracker::AwaitSubmissionCompletion`; the
-observed stack alone does not identify which of the presenter's several waits
-was active. The previous debugger run did not instrument `vkQueueSubmit`, so it
-cannot distinguish a successfully submitted presenter-only command buffer
-from a missing submit, a stalled fence, or a draw on another command path.
+A later diagnostic run, `nfs_shift_082.log` (SHA-256
+`911fdac9f31d6c073c28200b133063dc94ad5268d804b655d8190bcb2257b463`), resolved
+Vulkan function pointers through `vkGetDeviceProcAddr` and traced dispatch
+calls. `vkQueueSubmit` and `vkQueuePresentKHR` returned `VK_SUCCESS`; the
+observed `vkWaitForFences` calls also returned `VK_SUCCESS`. This corrects the
+earlier timeout snapshot: that single wait was not evidence of a general
+renderer deadlock.
 
-The source trace narrows that diagnostic:
+The same trace saw twelve `vkCmdDraw` calls on the `GPU Commands` thread and no
+`vkCmdDrawIndexed` call. The first call used `vertexCount=3`,
+`instanceCount=1`, `firstVertex=0`, and `firstInstance=0`. Its stack was:
+`DeferredCommandBuffer::Execute` → `VulkanCommandProcessor::EndSubmission` →
+the `IssueSwap` callback → `VulkanPresenter::RefreshGuestOutputImpl` →
+`VulkanCommandProcessor::IssueSwap` →
+`CommandProcessor::ExecutePacketType3_XE_SWAP`. This establishes that a
+deferred Vulkan draw was replayed while the Xenos command processor was
+handling a guest `XE_SWAP`. It does **not** identify which earlier guest packet
+recorded that deferred draw, prove that it came from `DRAW_INDX`, or establish
+its buffers, shader, state, or retail-frame parity. The external Xenos plugin
+was used only as a diagnostic oracle here; it is excluded from the intended
+product renderer.
 
-- `VulkanSubmissionTracker::AwaitSubmissionCompletion` may call
-  `vkWaitForFences` with `UINT64_MAX` on a pending submission fence.
-- `VulkanPresenter::PaintAndPresentImpl` has several waits; it submits its own
-  swapchain command buffer at `vkQueueSubmit` and calls `vkQueuePresentKHR`
-  later in the function.
-- The stack snapshot does not establish the active wait site or connect the
-  waited fence to a guest-originated draw.
+The diagnostic process later faulted in generated guest code at
+`sub_823A5958` (`nfs_shift_recomp.176.cpp:5091`). That is a separate runtime
+failure and is outside this renderer task; no Process 1 source was changed.
 
-Therefore the timeout is not evidence that pipeline compilation deadlocked,
-that the guest drew successfully, or that the GPU is stuck on a retail draw.
+## First confirmed retail indexed draw: still diagnostic evidence
 
-## Next discriminating capture
+A bounded debugger run correlated a guest ring packet with
+`VulkanCommandProcessor::IssueDraw` on the GPU command thread. The ring span at
+offset `0x2c64` begins with the 20 bytes
+`c0 03 22 01 00 00 00 00 00 06 00 04 09 75 d7 b0 40 00 00 06`;
+packet dispatch identified it as `PM4_DRAW_INDX`. Reading these Xbox ring bytes
+as big-endian dwords gives `c0032201 00000000 00060004 0975d7b0 40000006`.
+The parsed draw arguments were primitive 4
+(`TRIANGLE_LIST`), six 16-bit indices, guest index base `0x0975D7B0`, and a
+12-byte index range. The retained index-memory dump currently contains zeros
+because the first capture selected the wrong shared-memory alias; index
+contents and vertex payload bytes are therefore not claimed as reproducible
+evidence yet.
 
-On a diagnostic run, capture one correlated timeline for
-`vkQueueSubmit`, `vkWaitForFences`/`vkGetFenceStatus`, and
-`vkQueuePresentKHR`, including timestamp, host thread, queue, fence, result,
-and the stack at each call. If a fence wait is reached, identify the matching
-submit and its command-buffer count. This will classify the current presenter
-wait without changing Process 1 files or modifying the user's SDK worktree.
+The same GPU-thread capture records the state and resources consumed by this
+draw, rather than merely nearby active-looking registers:
 
-In parallel, the first renderer-input acceptance artifact must be a
-guest-originated command-ring snapshot correlated to a real indexed draw. It
-must retain the raw packet span and source provenance, index/vertex fetch
-inputs, shader microcode and constants, texture/resource bytes, render-target
-and depth state, viewport/scissor, and the associated swap/resolve boundary.
-Only then should a minimal `XenosDrawSnapshot/1`-style bridge be made a stable
-contract and translated into existing neutral Vulkan inputs. Synthetic draws
-and Xenos-emulator pipeline requests do not satisfy that acceptance check.
+- register-file snapshot SHA-256:
+  `fdf06f5a6be53a2077f24ecaebb00931b36d10a98b1786131f6f2bb7c8604f0e`;
+- `VGT_DRAW_INITIATOR=0x00060004`, `VGT_DMA_BASE=0x0975D7B0`, and
+  `VGT_DMA_SIZE=0x40000006`;
+- vertex fetch descriptor 95 resolves to guest address `0x0975DFD0`, with a
+  48-byte fetch range; the retained memory dump did not preserve its payload;
+- texture fetch descriptor 0 resolves to format 6 (`8_8_8_8`), 1024×256,
+  tiled texture storage at guest address `0x09D57000`; texture payload bytes
+  are not preserved in the retained capture;
+- the draw's VS microcode is 105 dwords at `0x09D568E0` (SHA-256
+  `d448760823568068b6f70d903fde9a1faca73c6cfaca7cab59fe73713f1712bc`); its
+  fetch instructions reference vertex descriptor 95;
+- its PS microcode is 30 dwords at `0x09D50460` (SHA-256
+  `5fda214bf53b3f88909fa90c014b9c42de0a3278138df24049af918344489f28`); its
+  texture fetch references descriptor 0.
+
+The project now has a narrow C++ decoder for this captured `PM4_DRAW_INDX`
+form. It checks the exact type/opcode/length, requires the initiator and DMA
+index counts to agree, matches the observed index binding, and emits neutral
+triangle-list/index-buffer parameters. Its regression uses the five captured
+ring dwords and the `IssueDraw` binding. It does not interpret a general Xenos
+register stream, transform index bytes, translate shaders, or issue Vulkan
+commands.
+
+This is the first confirmed XEX-originated indexed draw input. Its fetch
+metadata indicates a textured resource, but the draw is not identified as a
+vehicle draw. The shader, resource and state were observed while the external
+Xenos plugin interpreted the ring. That plugin was used only as a diagnostic
+oracle and is not part of the product architecture. There is still no
+project-owned Vulkan submission of this draw, phone result, or retail parity
+claim.
+
+## Local checks
+
+- `shift_xbox_draw_input_check`: passed; covers the captured packet, mismatched
+  binding, unsupported opcode, and truncated packet.
+- Existing `tools/run_linux_vulkan_smoke.py ... --validation`: rendered the
+  neutral bundle on a GeForce GTX 950 with validation enabled and zero
+  validation errors. The layer reported three warnings for unused vertex
+  attributes 1–3 in that existing smoke shader.
+- These checks validate packet decoding and the existing neutral Vulkan path;
+  the smoke bundle is not the captured Xbox draw and is not retail parity.
+
+## Next native-renderer work
+
+Next, preserve correct index/vertex/texture bytes and correlate the guest
+shader pair to an independent project-owned SPIR-V translation. Then connect
+the bounded decoder to buffer/resource preparation and the existing Vulkan
+1.1 core. Unsupported packet forms, resource formats, and shader instructions
+must fail closed. This is command translation to Vulkan, not shipping an Xenos
+command processor or rendering emulator. Keep XCB/Wayland/Android surface
+integration outside the shared core. Vulkan validation can prove API
+correctness; image and runtime comparisons must separately establish retail
+behavior.
 
 ## Portability and ownership
 
@@ -142,8 +198,9 @@ Ghidra, or guest-scheduler source was changed for this report.
 
 ## Limits
 
-This report records an architecture boundary and diagnostic plan. It adds no
-Xenos packet translator and makes no claim of an Xbox guest draw, Vulkan draw
-submission, phone rendering, or retail-image parity. The existing native
-backend remains a D3D9/neutral-contract renderer until the Xbox draw inputs are
-captured and translated.
+This report records a confirmed XEX-originated indexed draw and diagnostic
+input evidence. It adds a narrow draw-input decoder, not a complete production
+Xbox frontend, and makes no claim of a native Vulkan submission for this draw,
+phone rendering, or retail-image parity. The existing native backend remains a
+D3D9/neutral-contract renderer until the captured resources and shaders are
+translated by project-owned code.
