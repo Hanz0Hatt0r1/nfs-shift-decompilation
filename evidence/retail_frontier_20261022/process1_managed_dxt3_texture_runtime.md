@@ -50,7 +50,32 @@ non-block-aligned subrect, and verifies an aligned subrect pointer. A second
 level-1 data offset through COM `CreateTexture`; a 7×5 descriptor is rejected.
 
 The runtime executable and regression target build successfully; the focused
-test passes. The full Linux retail launch was not rerun for this change.
+test passes.
+
+### Post-change original-PE P-code probe
+
+On 2026-10-22, the updated runtime ran the original PE for 360 host frames
+with game data `pcode-game-data-v661`, the v659 startup module manifest
+(SHA-256 `6977898b7ff79edfb84f9b6f6d9e5ff98d8e073d17d88f345e8a1edb77e73a0e`),
+Vulkan validation, and `SHIFT_TRACE_D3D9_RESOURCES=1`. PE SHA-256 matched the
+retail hash above; runtime SHA-256 was
+`135c2452d882da91a249fb01acd9e5a3deedab42bde826097e43d9eb6aaff54e`.
+
+The bounded replay ended at the host-frame-loop checkpoint with exit code 0
+and zero Vulkan validation errors. Its bridge report still says
+`guest_draw_translation=false` and `retail_rendering_proven=false`. The trace
+contains one actual guest Vulkan render-target texture creation (A8R8G8B8,
+1024×4096) and no `D3DXCreateTexture` managed-texture call or DXT3 LockRect
+event. Therefore this replay **did not exercise the DXT3 fix** and proves no
+menu, retail draw, or race entry. Host-frame and dispatch totals are not used
+as evidence that the game launched successfully.
+
+The external run artifacts are
+`/home/pes/nfs-shift-recompilation-artifacts/retail-run-20261021/p1-managed-dxt3-probe-20261022/shift-dxt3-p1-runtime-v1.log`
+and its companion JSON. Log SHA-256:
+`8e70cb7334714e20247b30feabe267f9429b4ccf9bf8822069644e0cd82b325b`;
+JSON SHA-256:
+`853f36b6f95507950f2cfa38922c8f45fcf4d009ed135a049469f4a8ca936557`.
 
 ## Remaining limits
 
