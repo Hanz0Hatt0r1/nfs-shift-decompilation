@@ -886,3 +886,11 @@ was not truncated and validation errors were zero. The main-thread stop PC
 differed from v756, so this is another bounded observation, not proof of
 unreachability or a launch. See the [v757 report](../evidence/retail_frontier_20261022/process1_stateblock_adapter_v757.md)
 and [machine-readable record](../evidence/retail_frontier_20261022/process1_stateblock_adapter_v757.json).
+
+Process 1's subsequent byte-level audit confirms the exact wrapper ABI and
+field flow: Begin saves old `adapter+4` into `+5`, clears `+4`, and calls the
+underlying device; End copies `+5` back to `+4` before calling the device.
+The constructor initializes `+4` to zero, and this bounded class audit found
+no independent nonzero source for `+5` or ordered external Begin→End caller.
+The v757 trace now independently shows no Begin/End adapter calls in its tested
+interval. See the [full EndStateBlock audit](../evidence/retail_frontier_20261022/process1_adapter_endstateblock_0084fbf0.md).
