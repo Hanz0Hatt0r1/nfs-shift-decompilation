@@ -837,4 +837,8 @@ entry remain unproven. See the [v751 provenance report](../evidence/retail_front
 and its [machine-readable evidence](../evidence/retail_frontier_20261022/process1_ui_callback_pointer_provenance_v751.json).
 The v752 360-frame replay extended this observation to 1,123 gate calls; the
 same constructor remained the last observed writer, and no guest draw
-translation appeared.
+translation appeared. A v753 360-frame targeted trace selected the nested
+candidate `0x00852760` and all four D3D9 Draw/DrawUP imports; none were reached
+in that bounded replay. This is not a proof of unreachability in other UI
+states. See the [v753 evidence](../evidence/retail_frontier_20261022/process1_ui_gate_nested_draw_candidate_v753.md)
+and [machine-readable trace](../evidence/retail_frontier_20261022/process1_ui_gate_nested_draw_candidate_v753.json).
