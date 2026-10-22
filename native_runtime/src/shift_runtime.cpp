@@ -13,6 +13,7 @@
 #include "shift_post_solve_projection.hpp"
 #include "shift_vulkan_validation.hpp"
 #include "shift_vulkan_d3d9_packet_capture.hpp"
+#include "shift_vulkan_d3d9_managed_texture_capability.hpp"
 #include "shift_recompiled_pcode_module.hpp"
 
 #include <algorithm>
@@ -2313,6 +2314,10 @@ struct Runtime {
         adapter_info.supports_d24s8_depth_stencil =
             (d24s8_properties.optimalTilingFeatures &
              VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
+        // P1 stores managed DXT3 blocks in guest RAM; no live Vulkan BC2
+        // texture image is allocated at CreateTexture. Accept this managed
+        // format independently of the optional packet-capture wrapper.
+        shift::vulkan::enable_guest_managed_dxt3_capability(adapter_info);
         const char* capture_dir =
             std::getenv("SHIFT_D3D9_PACKET_CAPTURE_DIR");
         if (capture_dir != nullptr && capture_dir[0] != '\0') {
