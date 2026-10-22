@@ -23,6 +23,8 @@ A clean codegen run against the external `default.xex` completed in 175.3 second
 
 The current generated C++ does not contain a registered function at `0x8264F580`, which the runtime later calls indirectly during startup. Nearby generated functions include `0x8264F588`. The exact guest bytes for the live runtime image have not yet been captured. An extracted PE artifact with matching title/media metadata disagrees with generated code at nearby addresses; its extraction provenance and address mapping are unverified, so do not use it to define an override until that discrepancy is reconciled.
 
+A local Ghidra import of that PE artifact exited successfully but selected the `Old-style DOS Executable (MZ)` loader and `x86:LE:16:Real Mode`, so it did not validate PPC instructions. The earlier direct XEX import also had no load spec. A successful Ghidra job status alone is therefore not evidence for the target's PPC bytes.
+
 ## Linux runtime evidence
 
 The ReXGlue `0.10.0` Linux AMD64 app ran the original XEX with the Xenos GPU plugin staged beside the executable. In the plugin-enabled run:
