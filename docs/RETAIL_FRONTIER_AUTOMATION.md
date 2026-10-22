@@ -864,3 +864,16 @@ reports `guest_draw_translation=false`. See the
 its [machine-readable trace](../evidence/retail_frontier_20261022/process1_drawindexed_forwarder_v755.json),
 the [v756 report](../evidence/retail_frontier_20261022/process1_nested_draw_v756.md),
 and [machine-readable trace](../evidence/retail_frontier_20261022/process1_nested_draw_v756.json).
+
+## 2026-10-22 — Process 1 adapter state sync and `+4` save/restore
+
+Process 1's byte-level report classifies adapter helper `0x0084F000` as a
+state/cache synchronizer. Its twelve indirect calls update D3D9 device state
+and bindings; the helper itself contains no Draw* call and does not read or
+write `BYTE[adapter+4]`. The caller `0x0084FD60` gates the helper with that
+byte, then forwards `DrawIndexedPrimitive` independently. A separate adapter
+vtable pair at `+0xF0/+0xF4` saves `+4` into `+5`, clears `+4` while the state
+block is active, then restores `+4` from `+5`. The source of a nonzero `+5`
+value remains unproven, so this does not yet explain an active draw path.
+The bounded v755 trace had no events for the forwarder or Draw* imports and
+did not select `0x0084F000` directly. See the [full helper report](../evidence/retail_frontier_20261022/process1_adapter_state_sync_0084f000.md).
