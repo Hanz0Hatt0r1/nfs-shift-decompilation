@@ -71,5 +71,48 @@
       "write_size": 4,
       "word_value": "0x00000000"
     }
+  },
+  "extended_horizon_v752": {
+    "runtime_sha256": "0a310cf6be5b4934d021cdf56cbc8f2cd6e5b66278700708c29935076117124c",
+    "log_sha256": "80d77f3c9853c6c90d9bad28f0d8226be14b9dd88721f621ae35a6e728ba3699",
+    "frames_requested": 360,
+    "frames_rendered": 360,
+    "status": "host-frame-loop",
+    "blocker": null,
+    "gate_calls": 1123,
+    "gate_state_word_values": [
+      "0x00000000"
+    ],
+    "gate_callback_object_values": [
+      "0x00000000"
+    ],
+    "gate_return_values": [
+      "0x00000000"
+    ],
+    "wait_helper_calls": 1123,
+    "wait_helper_return_values": [
+      "0x00be2300"
+    ],
+    "wait_helper_flag_values": [
+      "0x00"
+    ],
+    "callback_pointer_last_writer": {
+      "sequence": 2378372,
+      "dispatch_count": 462710,
+      "function": "0x004eb550",
+      "ecx_entry": "0x00be2500",
+      "caller_function": "0x0050d030",
+      "call_return_address": "0x00545cd5",
+      "write_address": "0x00be2548",
+      "write_size": 4,
+      "word_value": "0x00000000"
+    },
+    "clear_requests": 1125,
+    "clear_submissions": 360,
+    "present_requests": 1123,
+    "present_submissions": 360,
+    "guest_draw_translation": false,
+    "guest_main_thread_function": "0x00401610",
+    "worker_waiting_count": 4
   }
 }

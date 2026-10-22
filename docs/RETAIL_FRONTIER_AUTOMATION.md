@@ -835,3 +835,6 @@ the observed state but does not prove that no registration/setter path exists
 in other UI states. Retail draw translation, frontend readiness, and race
 entry remain unproven. See the [v751 provenance report](../evidence/retail_frontier_20261022/process1_ui_callback_pointer_provenance_v751.md)
 and its [machine-readable evidence](../evidence/retail_frontier_20261022/process1_ui_callback_pointer_provenance_v751.json).
+The v752 360-frame replay extended this observation to 1,123 gate calls; the
+same constructor remained the last observed writer, and no guest draw
+translation appeared.

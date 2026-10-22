@@ -24,3 +24,9 @@ The retail instructions explain the observed zero return without changing guest 
 The trace proves that the constructor remained the latest writer to these fields in this run. It does not prove that no later setter or registration path exists elsewhere, nor that such a path is unreachable in other UI states. Do not force either field nonzero based on this evidence.
 
 The run reached the host-frame loop but did not prove frontend readiness, retail draw translation, or an offline race. Its dispatch and unique-function counts are runtime diagnostics, not evidence that gameplay launched. The machine-readable summary is [process1_ui_callback_pointer_provenance_v751.json](process1_ui_callback_pointer_provenance_v751.json).
+
+## Longer-horizon replay — v752
+
+The same runtime, PE, v659 module manifest, v661 game data, and provenance targets were replayed for 360 host frames. The run completed the host-frame loop without a runtime blocker. Across 1,123 calls to `0x0050CEB0`, the state word, callback pointer, and gate return remained zero. The helper returned `0x00BE2300` with byte `0` on all 1,123 calls. The callback pointer's last writer remained constructor `0x004EB550`, with the same zero dword at `0x00BE2548` as in v751.
+
+The bridge reported 1,125 clear requests and 1,123 present requests, with 360 submissions of each and `guest_draw_translation=false`. The run's log SHA-256 is `80d77f3c9853c6c90d9bad28f0d8226be14b9dd88721f621ae35a6e728ba3699`. This longer interval found no later field transition or retail draw; it still does not establish that the setter is unreachable in other states or that the original game reached its frontend.
