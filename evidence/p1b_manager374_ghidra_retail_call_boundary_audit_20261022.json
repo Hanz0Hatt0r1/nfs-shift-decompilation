@@ -1,0 +1,449 @@
+{
+  "authority": {
+    "canonical_instruction_stream_sha256": "92618e32680f2f137028019136318fa6926b2e5b2b276254b136c0ce222642ff",
+    "ghidra_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "ghidra_instruction_count": 2204481,
+    "platform": "PC retail 1.02",
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "retail_objdump_instruction_count": 2847884
+  },
+  "format": "SHIFT.P1B.GhidraRetailDirectCallBoundaryAudit/1",
+  "limits": [
+    "This cross-check validates direct CALL instruction starts and targets only; it does not merge or replace either decoder stream.",
+    "A mismatch identifies a Ghidra-only direct CALL boundary in this retail objdump listing; it does not by itself classify callees or global pointer provenance.",
+    "External modules, runtime-generated code, and other decoder disagreements remain outside this bounded audit."
+  ],
+  "ready": true,
+  "surface": {
+    "confirmed_retail_direct_call_count": 182626,
+    "ghidra_direct_call_boundary_mismatch_count": 39,
+    "ghidra_direct_call_boundary_mismatches": [
+      {
+        "callsite": "0x004064aa",
+        "ghidra_target": "0x006310c0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x004064a9",
+          "length": 2,
+          "mnemonic": "mov",
+          "operands": "gs,eax"
+        }
+      },
+      {
+        "callsite": "0x00428443",
+        "ghidra_target": "0x0067cbc0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x0042843e",
+          "length": 6,
+          "mnemonic": "fild",
+          "operands": "DWORD PTR [edx-0x170e74aa]"
+        }
+      },
+      {
+        "callsite": "0x0043e403",
+        "ghidra_target": "0x00647a10",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x0043e3fe",
+          "length": 6,
+          "mnemonic": "les",
+          "operands": "ecx,FWORD PTR [eax-0x170e74aa]"
+        }
+      },
+      {
+        "callsite": "0x004467ac",
+        "ghidra_target": "0x00533e70",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x004467ab",
+          "length": 2,
+          "mnemonic": "adc",
+          "operands": "al,0xe8"
+        }
+      },
+      {
+        "callsite": "0x00453ebb",
+        "ghidra_target": "0x004ecfe0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x00453eb9",
+          "length": 3,
+          "mnemonic": "add",
+          "operands": "DWORD PTR [eax-0x18],edx"
+        }
+      },
+      {
+        "callsite": "0x00457c9a",
+        "ghidra_target": "0x00900dea",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x00457c98",
+          "length": 3,
+          "mnemonic": "and",
+          "operands": "BYTE PTR [ecx-0x18],dl"
+        }
+      },
+      {
+        "callsite": "0x00460041",
+        "ghidra_target": "0xe9427dcf",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x0046003f",
+          "length": 3,
+          "mnemonic": "lea",
+          "operands": "edx,[ebp-0x18]"
+        }
+      },
+      {
+        "callsite": "0x0046247a",
+        "ghidra_target": "0x009e76e0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x00462477",
+          "length": 4,
+          "mnemonic": "shl",
+          "operands": "BYTE PTR [ecx+esi*1-0x18],cl"
+        }
+      },
+      {
+        "callsite": "0x0047a9ad",
+        "ghidra_target": "0x004094e0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x0047a9a9",
+          "length": 5,
+          "mnemonic": "mov",
+          "operands": "edi,0xe8f18b00"
+        }
+      },
+      {
+        "callsite": "0x00481708",
+        "ghidra_target": "0x00489ad0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x00481706",
+          "length": 3,
+          "mnemonic": "add",
+          "operands": "BYTE PTR [edi-0x18],dl"
+        }
+      },
+      {
+        "callsite": "0x0048187d",
+        "ghidra_target": "0x004094e0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x00481879",
+          "length": 5,
+          "mnemonic": "mov",
+          "operands": "edi,0xe8f18b00"
+        }
+      },
+      {
+        "callsite": "0x00486a21",
+        "ghidra_target": "0x0042c740",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x00486a1f",
+          "length": 5,
+          "mnemonic": "xor",
+          "operands": "eax,0x5d1ae851"
+        }
+      },
+      {
+        "callsite": "0x0048bf9a",
+        "ghidra_target": "0x004094e0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x0048bf98",
+          "length": 5,
+          "mnemonic": "mov",
+          "operands": "esp,0xd541e800"
+        }
+      },
+      {
+        "callsite": "0x0049b94d",
+        "ghidra_target": "0x004094e0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x0049b949",
+          "length": 5,
+          "mnemonic": "mov",
+          "operands": "edi,0xe8f18b00"
+        }
+      },
+      {
+        "callsite": "0x0049eec3",
+        "ghidra_target": "0x00489ad0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x0049eebf",
+          "length": 5,
+          "mnemonic": "mov",
+          "operands": "eax,0xe8f18b56"
+        }
+      },
+      {
+        "callsite": "0x004aa803",
+        "ghidra_target": "0x0063be30",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x004aa7fe",
+          "length": 7,
+          "mnemonic": "imul",
+          "operands": "edx,DWORD PTR [eax-0x170e74aa],0x191628"
+        }
+      },
+      {
+        "callsite": "0x004ba3d0",
+        "ghidra_target": "0x00694b70",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x004ba3ce",
+          "length": 5,
+          "mnemonic": "sbb",
+          "operands": "eax,0xa79be8c4"
+        }
+      },
+      {
+        "callsite": "0x00504493",
+        "ghidra_target": "0x00518de0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x0050448f",
+          "length": 5,
+          "mnemonic": "mov",
+          "operands": "esp,0xe8f18b56"
+        }
+      },
+      {
+        "callsite": "0x00505d90",
+        "ghidra_target": "0x006fdf70",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x00505d8f",
+          "length": 2,
+          "mnemonic": "sbb",
+          "operands": "ebp,eax"
+        }
+      },
+      {
+        "callsite": "0x0051899d",
+        "ghidra_target": "0x00533d90",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x0051899c",
+          "length": 2,
+          "mnemonic": "xor",
+          "operands": "ebp,eax"
+        }
+      },
+      {
+        "callsite": "0x0052adb4",
+        "ghidra_target": "0x007f6690",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x0052adb3",
+          "length": 2,
+          "mnemonic": "adc",
+          "operands": "al,0xe8"
+        }
+      },
+      {
+        "callsite": "0x005360c3",
+        "ghidra_target": "0x0063d7c0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x005360c2",
+          "length": 6,
+          "mnemonic": "addr16",
+          "operands": "call 0x63d7c0"
+        }
+      },
+      {
+        "callsite": "0x005b0439",
+        "ghidra_target": "0x00584590",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x005b0434",
+          "length": 6,
+          "mnemonic": "or",
+          "operands": "ecx,DWORD PTR [ebx-0x17ebdb8c]"
+        }
+      },
+      {
+        "callsite": "0x005e07f4",
+        "ghidra_target": "0x005e07a0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x005e07f2",
+          "length": 3,
+          "mnemonic": "or",
+          "operands": "BYTE PTR [eax-0x18],dl"
+        }
+      },
+      {
+        "callsite": "0x005eb43d",
+        "ghidra_target": "0x005842d0",
+        "reason": "no_retail_objdump_instruction_at_callsite",
+        "retail_instruction": null
+      },
+      {
+        "callsite": "0x005f65f1",
+        "ghidra_target": "0x00886980",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x005f65eb",
+          "length": 7,
+          "mnemonic": "mov",
+          "operands": "ss,WORD PTR [eax+eax*1-0x17a90000]"
+        }
+      },
+      {
+        "callsite": "0x00607986",
+        "ghidra_target": "0x00607450",
+        "reason": "retail_boundary_is_not_matching_direct_call",
+        "retail_instruction": {
+          "address": "0x00607986",
+          "length": 2,
+          "mnemonic": "fa",
+          "operands": ""
+        }
+      },
+      {
+        "callsite": "0x0062abe9",
+        "ghidra_target": "0x00624930",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x0062abe8",
+          "length": 5,
+          "mnemonic": "sbb",
+          "operands": "eax,0xff9d42e8"
+        }
+      },
+      {
+        "callsite": "0x0062eb46",
+        "ghidra_target": "0x008f3df0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x0062eb43",
+          "length": 5,
+          "mnemonic": "mov",
+          "operands": "esp,0xa5e800ae"
+        }
+      },
+      {
+        "callsite": "0x0063fd33",
+        "ghidra_target": "0x00533e70",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x0063fd32",
+          "length": 5,
+          "mnemonic": "or",
+          "operands": "eax,0xef4138e8"
+        }
+      },
+      {
+        "callsite": "0x0063fd41",
+        "ghidra_target": "0x00403c90",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x0063fd3f",
+          "length": 3,
+          "mnemonic": "add",
+          "operands": "BYTE PTR [eax-0x18],dl"
+        }
+      },
+      {
+        "callsite": "0x006d3391",
+        "ghidra_target": "0x006be360",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x006d3390",
+          "length": 6,
+          "mnemonic": "bnd",
+          "operands": "call 0x6be360"
+        }
+      },
+      {
+        "callsite": "0x006f22cf",
+        "ghidra_target": "0x006f1e70",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x006f22ce",
+          "length": 2,
+          "mnemonic": "shr",
+          "operands": "al,1"
+        }
+      },
+      {
+        "callsite": "0x00741dfd",
+        "ghidra_target": "0x004094e0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x00741df9",
+          "length": 5,
+          "mnemonic": "mov",
+          "operands": "edi,0xe8f18b00"
+        }
+      },
+      {
+        "callsite": "0x00741e0e",
+        "ghidra_target": "0x004094e0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x00741e0a",
+          "length": 5,
+          "mnemonic": "mov",
+          "operands": "edi,0xe8ce8b00"
+        }
+      },
+      {
+        "callsite": "0x0076eb73",
+        "ghidra_target": "0x0070fe90",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x0076eb6f",
+          "length": 5,
+          "mnemonic": "jmp",
+          "operands": "0xe8e85fcb"
+        }
+      },
+      {
+        "callsite": "0x008c59c2",
+        "ghidra_target": "0x008a1ae0",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x008c59be",
+          "length": 5,
+          "mnemonic": "add",
+          "operands": "eax,0xe8196acc"
+        }
+      },
+      {
+        "callsite": "0x00981eae",
+        "ghidra_target": "0x0098171c",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x00981ead",
+          "length": 2,
+          "mnemonic": "add",
+          "operands": "al,ch"
+        }
+      },
+      {
+        "callsite": "0x009a9f42",
+        "ghidra_target": "0x009a977f",
+        "reason": "inside_retail_instruction",
+        "retail_instruction": {
+          "address": "0x009a9f3c",
+          "length": 7,
+          "mnemonic": "call",
+          "operands": "0xe800:0x9a9e0400"
+        }
+      }
+    ],
+    "ghidra_direct_call_count": 182665
+  },
+  "version": 1
+}

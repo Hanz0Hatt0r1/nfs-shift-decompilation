@@ -1,0 +1,53 @@
+{
+  "adjudication": {
+    "external_or_unknown_origin_outer_alias_surface_complete": false,
+    "external_provider_count": 7,
+    "global_helper_non_vtable_indirect_setter_surface_complete": false,
+    "global_manager_root_origin_surface_complete": false,
+    "helper_returned_materialized_address_surface_complete": false,
+    "helper_returned_target_non_stack_persistence_complete": false,
+    "helper_returned_target_stack_persistence_subset_scanned": true,
+    "helper_returned_target_stack_reload_write_candidates_classified": false,
+    "independent_unnamed_opaque_or_external_runtime_root_synthesis_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "unrecognized_runtime_transform_root_origin_surface_complete": false
+  },
+  "authority": {
+    "acquisition_source": "SHIFT.GhidraCompactInstructionStream/1",
+    "canonical_instruction_stream_sha256": "92618e32680f2f137028019136318fa6926b2e5b2b276254b136c0ce222642ff",
+    "decoded_instruction_count": 2204481,
+    "ghidra_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "ghidra_image_base": "0x00400000",
+    "ghidra_language_id": "x86:LE:32:default",
+    "ghidra_pointer_size": 4,
+    "ghidra_program": "SHIFT.exe",
+    "known_retail_sha256_cross_pin": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "platform": "PC retail 1.02",
+    "raw_executable_sha256_verified_in_this_run": false,
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "single_shared_instruction_stream": true
+  },
+  "format": "SHIFT.P1B.Manager374HelperReturnedTargetStackPersistenceProbe/1",
+  "limits": [
+    "Seeds only qualified direct-local helper returns proven by SHIFT.P1B.Manager374HelperReturnedMaterializedTargetProbe/1 semantics.",
+    "Tracks caller-side exact GPR copies plus EBP-relative and ESP-normalized stack spill/reload for at most 64 instructions after the helper call.",
+    "A new write candidate must pass through an actual stack reload; direct EAX/GPR writes remain owned by the immediate post-return probe.",
+    "EBP-relative persistence is syntactic fixed-base persistence and requires later candidate classification; the probe does not infer that every EBP use is a canonical stack frame.",
+    "Non-stack memory persistence is inventoried as an escape but not followed. Calls/control boundaries, dynamic stack adjustment, persisted-return helper chaining, runtime patching and external mutation remain outside scope."
+  ],
+  "next_step": "Run on authoritative PC retail 1.02 SHIFT.exe; classify stack-reload write candidates and non-stack persistence escapes, then extend only a positive surviving persisted-return carrier class.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "non_stack_persistence_escape_count": 0,
+    "non_stack_persistence_escapes": [],
+    "post_return_stack_scan_count": 0,
+    "post_return_stack_scans": [],
+    "qualified_helper_callsite_count": 0,
+    "stack_reload_derived_write_candidate_count": 0,
+    "stack_reload_derived_write_candidates": []
+  },
+  "version": 1
+}

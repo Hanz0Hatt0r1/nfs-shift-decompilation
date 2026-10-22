@@ -1,0 +1,471 @@
+{
+  "adjudication": {
+    "external_or_unknown_origin_outer_alias_surface_complete": false,
+    "external_provider_count": 7,
+    "global_helper_non_vtable_indirect_setter_surface_complete": false,
+    "global_manager_root_origin_surface_complete": false,
+    "helper_returned_materialized_address_surface_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "materialized_helper_mediated_setter_surface_complete": false,
+    "materialized_plus_374_direct_call_argument_subset_scanned": true,
+    "materialized_plus_374_direct_callee_write_through_candidates_classified": false,
+    "p1_3_control_producer_complete": false
+  },
+  "authority": {
+    "acquisition_source": "SHIFT.GhidraCompactInstructionStream/1",
+    "canonical_instruction_stream_sha256": "92618e32680f2f137028019136318fa6926b2e5b2b276254b136c0ce222642ff",
+    "decoded_instruction_count": 2204481,
+    "ghidra_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "ghidra_image_base": "0x00400000",
+    "ghidra_language_id": "x86:LE:32:default",
+    "ghidra_pointer_size": 4,
+    "ghidra_program": "SHIFT.exe",
+    "known_retail_sha256_cross_pin": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "platform": "PC retail 1.02",
+    "raw_executable_sha256_verified_in_this_run": false,
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "single_shared_instruction_stream": true
+  },
+  "format": "SHIFT.P1B.Manager374MaterializedDirectCallSetterProbe/1",
+  "limits": [
+    "Covers exact lea addr,[receiver+0x374], GPR MOV copies, ECX/EDX or PUSH argument forwarding at the first CALL, and one bounded direct callee span.",
+    "Direct callee stack arguments are normalized across push/pop, immediate add/sub ESP, LEA ESP,[ESP+/-imm], and MOV EBP,ESP; unsupported stack mutations fail closed.",
+    "Nested calls, branches, indirect callees, helper-returned target addresses, non-stack memory aliases, cross-CFG carry, runtime patching and external process mutation remain outside this subset.",
+    "Only an explicit write/RMW mnemonic allowlist counts as a write through the recovered exact target-address alias.",
+    "Recovered receiver registers and target-address aliases are syntactic provenance only; they do not establish Participants Manager identity."
+  ],
+  "next_step": "Run on authoritative PC retail 1.02 SHIFT.exe; classify any direct-callee write-through candidate by receiver identity, then extend only surviving indirect/helper-returned materialized-address classes.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "direct_call_argument_boundaries": [
+      {
+        "callee_scan": {
+          "read_count": 0,
+          "reads": [],
+          "stack_argument_reload_count": 0,
+          "stack_argument_reloads": [],
+          "termination": "control-boundary",
+          "unsupported_stack_adjustment": false,
+          "write_count": 0,
+          "writes": []
+        },
+        "callsite": "0x005292e4",
+        "register_argument_channels": [
+          "ecx"
+        ],
+        "stack_argument_channels": [],
+        "target": "0x00531f80"
+      },
+      {
+        "callee_scan": {
+          "read_count": 0,
+          "reads": [],
+          "stack_argument_reload_count": 0,
+          "stack_argument_reloads": [],
+          "termination": "nested-call",
+          "unsupported_stack_adjustment": false,
+          "write_count": 0,
+          "writes": []
+        },
+        "callsite": "0x0052aaca",
+        "register_argument_channels": [],
+        "stack_argument_channels": [
+          "stack+0x8"
+        ],
+        "target": "0x0051b370"
+      },
+      {
+        "callee_scan": {
+          "read_count": 0,
+          "reads": [],
+          "stack_argument_reload_count": 0,
+          "stack_argument_reloads": [],
+          "termination": "control-boundary",
+          "unsupported_stack_adjustment": false,
+          "write_count": 0,
+          "writes": []
+        },
+        "callsite": "0x005f4e98",
+        "register_argument_channels": [
+          "edx"
+        ],
+        "stack_argument_channels": [
+          "stack+0x8"
+        ],
+        "target": "0x0060d580"
+      },
+      {
+        "callee_scan": {
+          "read_count": 0,
+          "reads": [],
+          "stack_argument_reload_count": 0,
+          "stack_argument_reloads": [],
+          "termination": "control-boundary",
+          "unsupported_stack_adjustment": false,
+          "write_count": 0,
+          "writes": []
+        },
+        "callsite": "0x005f5496",
+        "register_argument_channels": [],
+        "stack_argument_channels": [
+          "stack+0x8"
+        ],
+        "target": "0x0060d580"
+      },
+      {
+        "callee_scan": {
+          "read_count": 0,
+          "reads": [],
+          "stack_argument_reload_count": 0,
+          "stack_argument_reloads": [],
+          "termination": "control-boundary",
+          "unsupported_stack_adjustment": false,
+          "write_count": 0,
+          "writes": []
+        },
+        "callsite": "0x005f56aa",
+        "register_argument_channels": [],
+        "stack_argument_channels": [
+          "stack+0xc"
+        ],
+        "target": "0x0060d9c0"
+      },
+      {
+        "callee_scan": {
+          "read_count": 0,
+          "reads": [],
+          "stack_argument_reload_count": 0,
+          "stack_argument_reloads": [],
+          "termination": "control-boundary",
+          "unsupported_stack_adjustment": false,
+          "write_count": 0,
+          "writes": []
+        },
+        "callsite": "0x005f5a5f",
+        "register_argument_channels": [
+          "ecx"
+        ],
+        "stack_argument_channels": [
+          "stack+0xc"
+        ],
+        "target": "0x0060d9c0"
+      },
+      {
+        "callee_scan": {
+          "read_count": 0,
+          "reads": [],
+          "stack_argument_reload_count": 0,
+          "stack_argument_reloads": [],
+          "termination": "control-boundary",
+          "unsupported_stack_adjustment": false,
+          "write_count": 0,
+          "writes": []
+        },
+        "callsite": "0x005f5d12",
+        "register_argument_channels": [
+          "ecx"
+        ],
+        "stack_argument_channels": [
+          "stack+0x8"
+        ],
+        "target": "0x0060d580"
+      },
+      {
+        "callee_scan": {
+          "read_count": 0,
+          "reads": [],
+          "stack_argument_reload_count": 0,
+          "stack_argument_reloads": [],
+          "termination": "control-boundary",
+          "unsupported_stack_adjustment": false,
+          "write_count": 0,
+          "writes": []
+        },
+        "callsite": "0x005f5ec3",
+        "register_argument_channels": [],
+        "stack_argument_channels": [
+          "stack+0x8"
+        ],
+        "target": "0x0060d580"
+      },
+      {
+        "callee_scan": {
+          "read_count": 0,
+          "reads": [],
+          "stack_argument_reload_count": 0,
+          "stack_argument_reloads": [],
+          "termination": "control-boundary",
+          "unsupported_stack_adjustment": false,
+          "write_count": 0,
+          "writes": []
+        },
+        "callsite": "0x005f61d0",
+        "register_argument_channels": [
+          "edx"
+        ],
+        "stack_argument_channels": [
+          "stack+0x8"
+        ],
+        "target": "0x0060d580"
+      },
+      {
+        "callee_scan": {
+          "read_count": 0,
+          "reads": [],
+          "stack_argument_reload_count": 0,
+          "stack_argument_reloads": [],
+          "termination": "control-boundary",
+          "unsupported_stack_adjustment": false,
+          "write_count": 0,
+          "writes": []
+        },
+        "callsite": "0x005f65ae",
+        "register_argument_channels": [],
+        "stack_argument_channels": [
+          "stack+0x18"
+        ],
+        "target": "0x008f3df0"
+      },
+      {
+        "callee_scan": {
+          "read_count": 0,
+          "reads": [],
+          "stack_argument_reload_count": 0,
+          "stack_argument_reloads": [],
+          "termination": "control-boundary",
+          "unsupported_stack_adjustment": false,
+          "write_count": 0,
+          "writes": []
+        },
+        "callsite": "0x0070f637",
+        "register_argument_channels": [
+          "ecx"
+        ],
+        "stack_argument_channels": [],
+        "target": "0x006310c0"
+      },
+      {
+        "callee_scan": {
+          "read_count": 0,
+          "reads": [],
+          "stack_argument_reload_count": 0,
+          "stack_argument_reloads": [],
+          "termination": "control-boundary",
+          "unsupported_stack_adjustment": false,
+          "write_count": 1,
+          "writes": [
+            {
+              "address_register": "eax",
+              "argument_channel": "ecx",
+              "callee_instruction_index": 1,
+              "materializer_site": "0x0070fb45",
+              "mnemonic": "mov",
+              "operands": "dword ptr [EAX],0x0",
+              "receiver_register": "esi",
+              "site": "0x00533e72"
+            }
+          ]
+        },
+        "callsite": "0x0070fb4f",
+        "register_argument_channels": [
+          "ecx"
+        ],
+        "stack_argument_channels": [],
+        "target": "0x00533e70"
+      },
+      {
+        "callee_scan": {
+          "read_count": 0,
+          "reads": [],
+          "stack_argument_reload_count": 0,
+          "stack_argument_reloads": [],
+          "termination": "control-boundary",
+          "unsupported_stack_adjustment": false,
+          "write_count": 0,
+          "writes": []
+        },
+        "callsite": "0x0070fdf1",
+        "register_argument_channels": [
+          "ecx"
+        ],
+        "stack_argument_channels": [],
+        "target": "0x006329e0"
+      },
+      {
+        "callee_scan": {
+          "read_count": 0,
+          "reads": [],
+          "stack_argument_reload_count": 0,
+          "stack_argument_reloads": [],
+          "termination": "nested-call",
+          "unsupported_stack_adjustment": false,
+          "write_count": 0,
+          "writes": []
+        },
+        "callsite": "0x00750714",
+        "register_argument_channels": [
+          "edx"
+        ],
+        "stack_argument_channels": [],
+        "target": "0x00632c10"
+      },
+      {
+        "callee_scan": {
+          "read_count": 0,
+          "reads": [],
+          "stack_argument_reload_count": 0,
+          "stack_argument_reloads": [],
+          "termination": "nested-call",
+          "unsupported_stack_adjustment": false,
+          "write_count": 0,
+          "writes": []
+        },
+        "callsite": "0x00750976",
+        "register_argument_channels": [
+          "edx"
+        ],
+        "stack_argument_channels": [],
+        "target": "0x00632c10"
+      }
+    ],
+    "direct_call_argument_boundary_count": 15,
+    "direct_callee_write_through_candidate_count": 1,
+    "direct_callee_write_through_candidates": [
+      {
+        "address_register": "eax",
+        "argument_channel": "ecx",
+        "callee_instruction_index": 1,
+        "callsite": "0x0070fb4f",
+        "materializer_site": "0x0070fb45",
+        "mnemonic": "mov",
+        "operands": "dword ptr [EAX],0x0",
+        "receiver_register": "esi",
+        "site": "0x00533e72",
+        "target": "0x00533e70"
+      }
+    ],
+    "indirect_call_argument_boundaries": [],
+    "indirect_call_argument_boundary_count": 0,
+    "materialized_plus_374_seed_count": 19,
+    "materialized_plus_374_seeds": [
+      {
+        "address_register": "eax",
+        "operands": "EAX,[ECX + 0x374]",
+        "receiver_register": "ecx",
+        "site": "0x0052902b"
+      },
+      {
+        "address_register": "edi",
+        "operands": "EDI,[ESI + 0x374]",
+        "receiver_register": "esi",
+        "site": "0x005292db"
+      },
+      {
+        "address_register": "eax",
+        "operands": "EAX,[ESI + 0x374]",
+        "receiver_register": "esi",
+        "site": "0x0052aac0"
+      },
+      {
+        "address_register": "edx",
+        "operands": "EDX,[ECX + 0x374]",
+        "receiver_register": "ecx",
+        "site": "0x005f4e86"
+      },
+      {
+        "address_register": "eax",
+        "operands": "EAX,[ESI + 0x374]",
+        "receiver_register": "esi",
+        "site": "0x005f4ffa"
+      },
+      {
+        "address_register": "eax",
+        "operands": "EAX,[ESI + 0x374]",
+        "receiver_register": "esi",
+        "site": "0x005f548e"
+      },
+      {
+        "address_register": "eax",
+        "operands": "EAX,[ESI + 0x374]",
+        "receiver_register": "esi",
+        "site": "0x005f569b"
+      },
+      {
+        "address_register": "ecx",
+        "operands": "ECX,[ESI + 0x374]",
+        "receiver_register": "esi",
+        "site": "0x005f5a3e"
+      },
+      {
+        "address_register": "ecx",
+        "operands": "ECX,[ESI + 0x374]",
+        "receiver_register": "esi",
+        "site": "0x005f5d0a"
+      },
+      {
+        "address_register": "eax",
+        "operands": "EAX,[ESI + 0x374]",
+        "receiver_register": "esi",
+        "site": "0x005f5ebb"
+      },
+      {
+        "address_register": "edx",
+        "operands": "EDX,[ESI + 0x374]",
+        "receiver_register": "esi",
+        "site": "0x005f61c8"
+      },
+      {
+        "address_register": "edi",
+        "operands": "EDI,[ESI + 0x374]",
+        "receiver_register": "esi",
+        "site": "0x005f6593"
+      },
+      {
+        "address_register": "ecx",
+        "operands": "ECX,[EDI + 0x374]",
+        "receiver_register": "edi",
+        "site": "0x005f6eda"
+      },
+      {
+        "address_register": "ecx",
+        "operands": "ECX,[ESI + 0x374]",
+        "receiver_register": "esi",
+        "site": "0x0070f62d"
+      },
+      {
+        "address_register": "ecx",
+        "operands": "ECX,[ESI + 0x374]",
+        "receiver_register": "esi",
+        "site": "0x0070fb45"
+      },
+      {
+        "address_register": "ecx",
+        "operands": "ECX,[ESI + 0x374]",
+        "receiver_register": "esi",
+        "site": "0x0070fdeb"
+      },
+      {
+        "address_register": "edx",
+        "operands": "EDX,[EAX + 0x374]",
+        "receiver_register": "eax",
+        "site": "0x0075070b"
+      },
+      {
+        "address_register": "edx",
+        "operands": "EDX,[EAX + 0x374]",
+        "receiver_register": "eax",
+        "site": "0x0075096d"
+      },
+      {
+        "address_register": "eax",
+        "operands": "EAX,[ESI + 0x374]",
+        "receiver_register": "esi",
+        "site": "0x009857b7"
+      }
+    ],
+    "unresolved_direct_target_count": 0
+  },
+  "version": 1
+}

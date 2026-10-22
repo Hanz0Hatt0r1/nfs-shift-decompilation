@@ -1,0 +1,55 @@
+{
+  "adjudication": {
+    "direct_helper_returned_plus_374_target_subset_scanned": true,
+    "external_or_unknown_origin_outer_alias_surface_complete": false,
+    "external_provider_count": 7,
+    "global_helper_non_vtable_indirect_setter_surface_complete": false,
+    "global_manager_root_origin_surface_complete": false,
+    "helper_returned_materialized_address_surface_complete": false,
+    "helper_returned_plus_374_write_candidates_classified": false,
+    "independent_unnamed_opaque_or_external_runtime_root_synthesis_complete": false,
+    "last_literal_0x004b86cf_rejected": false,
+    "manager_374_join_to_hdvehicle_4330_complete": false,
+    "p1_3_control_producer_complete": false,
+    "unrecognized_runtime_transform_root_origin_surface_complete": false
+  },
+  "authority": {
+    "acquisition_source": "SHIFT.GhidraCompactInstructionStream/1",
+    "canonical_instruction_stream_sha256": "92618e32680f2f137028019136318fa6926b2e5b2b276254b136c0ce222642ff",
+    "decoded_instruction_count": 2204481,
+    "ghidra_executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "ghidra_image_base": "0x00400000",
+    "ghidra_language_id": "x86:LE:32:default",
+    "ghidra_pointer_size": 4,
+    "ghidra_program": "SHIFT.exe",
+    "known_retail_sha256_cross_pin": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "platform": "PC retail 1.02",
+    "raw_executable_sha256_verified_in_this_run": false,
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "single_shared_instruction_stream": true
+  },
+  "format": "SHIFT.P1B.Manager374HelperReturnedMaterializedTargetProbe/1",
+  "limits": [
+    "Qualifies only direct local helpers whose first bounded straight-line return leaves EAX equal to entry ECX, entry EDX, or a positive stack argument plus exactly 0x374.",
+    "Helper analysis stops on nested calls, branches/traps, unsupported stack mutations, or the 96-instruction bound; no path merge is inferred.",
+    "Caller analysis follows only EAX and exact GPR MOV copies for 32 instructions and stops at the next call/control boundary; stack persistence and memory persistence of the returned target are outside scope.",
+    "Only explicit zero-displacement write/RMW through the recovered returned-target alias counts as a candidate; read-only dereferences remain separate.",
+    "Indirect calls, external helpers, helper-returned targets synthesized from unrelated opaque inputs, runtime patching/generated code, and external process mutation remain open.",
+    "A helper argument channel is syntactic ABI provenance only and does not establish Participants Manager receiver identity."
+  ],
+  "next_step": "Run on authoritative PC retail 1.02 SHIFT.exe and classify every post-return write candidate by callsite receiver provenance; then extend only surviving indirect/external helper-return or persisted-return carrier classes before final identity adjudication.",
+  "owner": "Process 1B / P1.3B",
+  "ready": true,
+  "surface": {
+    "direct_local_helper_target_count": 25839,
+    "indirect_call_count": 23304,
+    "post_return_write_through_candidate_count": 0,
+    "post_return_write_through_candidates": [],
+    "qualified_helper_callsite_count": 0,
+    "qualified_helper_callsites": [],
+    "qualified_helper_return_target_count": 0,
+    "qualified_helper_return_targets": [],
+    "unresolved_direct_target_count": 1
+  },
+  "version": 1
+}
