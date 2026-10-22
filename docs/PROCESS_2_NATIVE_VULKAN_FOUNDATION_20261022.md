@@ -18,14 +18,20 @@ so it cannot replace the ReXGlue Xenos GPU plugin yet.
 - Linux native Vulkan CMake build: all targets built.
 - Android NDK 28.2, `arm64-v8a`, API 29 native-activity target: built.
 - Headless clear and SPIR-V triangle smoke paths submitted on a GTX 950.
+- On-device Android `ANativeWindow` surface probe ran on a Redmi Note 8 Pro
+  (`begonia`, MT6785, Android 13/API 33, `arm64-v8a`):
+  `ANativeWindow Vulkan surface probe status=0`. In this probe, zero means
+  Vulkan 1.1 instance creation, Android surface creation, and a Vulkan 1.1
+  physical device with a graphics+present queue all succeeded. This validates
+  device/WSI availability only; it does not submit a frame or exercise SHIFT.
 - Synthetic bundle smoke with `VK_LAYER_KHRONOS_validation`: enabled, zero
   validation errors; three warnings report unused vertex attributes. This is
   renderer/API plumbing evidence only, not a retail frame or parity claim.
 - The broad `pytest -k vulkan` collection is not green in this environment:
   four unrelated RevEngInstr test modules fail collection because `jsonschema`
   is not installed. The targeted Vulkan test selection passes.
-- ADB currently lists a Redmi Note 8 Pro, not the target Redmi Note 14 Pro+ 5G;
-  no target-device runtime or driver-feature result is claimed.
+- The Redmi Note 14 Pro+ 5G remains untested. No game draw, swapchain frame,
+  shader support matrix, or retail parity result is claimed for the Note 8 Pro.
 
 ## Xenos renderer boundary
 
