@@ -32,7 +32,7 @@ Complete original thunk in Appendix A:
 
 ## 3. Full function 0x004F5E60: incoming registers, internal call ABI and cleanup
 
-The 38-instruction original retail block is reproduced in Appendix B.
+The complete 32-instruction original retail block is reproduced in Appendix B.
 
 **Entry contract inferred from explicit usage, not a C++ type declaration:**
 - **`ECX=C`** → `0x004F5E61: MOV ESI,ECX` preserves the container base in ESI.
@@ -78,7 +78,7 @@ Minimal descriptive pseudocode (structural notation only):
 
 ~~~c
 if (*(uint32_t *)(C + 0x00) == 0) {
-    helper_004F5E10(C, /*EDX=*/*(uint32_t *)(C+4),
+    helper_004F5E10(C, /* EDX */ *(uint32_t *)(C+4),
                     *(uint32_t *)(C+8), 0x1F, *(uint32_t *)(C+0x18));
 }
 uint8_t *N = (uint8_t *)node_provider_00427320(C);
