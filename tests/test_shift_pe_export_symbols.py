@@ -24,7 +24,7 @@ def fixture(path: Path) -> str:
     struct.pack_into("<I", b, 0x3c, 0x80)
     b[0x80:0x84] = b"PE\0\0"
     struct.pack_into("<HH", b, 0x84, 0x14c, 2)
-    struct.pack_into("<H", b, 0x80 + 20 + 4, 0xe0)
+    struct.pack_into("<H", b, 0x80 + 20, 0xe0)
     op = 0x80 + 24
     struct.pack_into("<H", b, op, 0x10b)
     struct.pack_into("<I", b, op + 28, 0x00400000)
