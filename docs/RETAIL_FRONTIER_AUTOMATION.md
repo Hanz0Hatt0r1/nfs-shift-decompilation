@@ -943,3 +943,16 @@ with all-zero `CreateEventW` arguments, then waited on that handle with
 `WaitForSingleObjectEx(..., INFINITE, TRUE)`. No `SetEvent(0x60018)` appeared
 in the bounded run. This identifies the observed wait object, not the intended
 signal producer or proof of a scheduler defect. See the [v805 event evidence](../evidence/retail_frontier_20261022/process1_worker_event_creation_v805.md).
+
+v806 extended the same original-PE run to 600 frames with the same runtime,
+module manifest, and selected synchronization imports. It reached 2,420,968
+P-code dispatches across 4,738 unique functions, rendered 600 host frames,
+reported zero Vulkan validation errors, and ended with two waiting workers;
+the main-thread snapshot was in `0x005093A0`. Worker 65538 still had no return
+from `WaitForSingleObjectEx(0x60018, INFINITE, TRUE)`, and none of the 19
+selected `SetEvent` calls targeted `0x60018`. This is stronger evidence that
+the wait persisted through this 600-frame interval, but it still does not
+prove a permanent hang or an incorrect scheduler/event implementation. The
+runtime's clear/present submissions and diagnostic `guest_draw_translation`
+field do not prove retail rendering or game readiness. See the [v806 wait
+evidence](../evidence/retail_frontier_20261022/process1_worker_wait_v806.md).
