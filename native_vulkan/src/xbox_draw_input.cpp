@@ -1,5 +1,6 @@
 #include "shift_xbox_draw_input.hpp"
 
+#include <limits>
 #include <utility>
 
 namespace shift::xbox {
@@ -115,6 +116,57 @@ bool decode_captured_vertex_fetch(
         endian_mode,
         size_words,
         size_words * 4,
+    };
+    if (error) {
+        error->clear();
+    }
+    return true;
+}
+
+bool decode_captured_texture_fetch(
+    const uint32_t descriptor_words[6],
+    CapturedTextureFetch* output,
+    std::string* error) {
+    if (!descriptor_words || !output) {
+        return fail("invalid captured texture-fetch descriptor", error);
+    }
+
+    const uint32_t fetch_type = descriptor_words[0] & 0x3u;
+    const uint32_t tiled = descriptor_words[0] >> 31;
+    const uint32_t format = descriptor_words[1] & 0x3Fu;
+    const uint32_t endian_mode = (descriptor_words[1] >> 6) & 0x3u;
+    const uint32_t stacked = (descriptor_words[1] >> 10) & 0x1u;
+    const uint32_t width = (descriptor_words[2] & 0x1FFFu) + 1;
+    const uint32_t height = ((descriptor_words[2] >> 13) & 0x1FFFu) + 1;
+    const uint32_t stack_depth = descriptor_words[2] >> 26;
+    const uint32_t mip_min = (descriptor_words[4] >> 2) & 0xFu;
+    const uint32_t mip_max = (descriptor_words[4] >> 6) & 0xFu;
+    const uint32_t dimension = (descriptor_words[5] >> 9) & 0x3u;
+
+    if (fetch_type != 2 || format != 6 || endian_mode != 2 || !tiled || stacked ||
+        stack_depth != 0 || dimension != 1 || mip_min != 0 || mip_max != 0) {
+        return fail("unsupported captured texture-fetch descriptor", error);
+    }
+
+    const uint64_t byte_length = static_cast<uint64_t>(width) * height * 4;
+    if (!width || !height || byte_length > std::numeric_limits<uint32_t>::max()) {
+        return fail("captured texture dimensions are out of range", error);
+    }
+
+    *output = CapturedTextureFetch{
+        ((descriptor_words[1] >> 12) & 0xFFFFFu) << 12,
+        format,
+        endian_mode,
+        width,
+        height,
+        static_cast<uint32_t>(byte_length),
+        dimension,
+        (descriptor_words[3] >> 1) & 0xFFFu,
+        (descriptor_words[3] >> 19) & 0x3u,
+        (descriptor_words[3] >> 21) & 0x3u,
+        (descriptor_words[3] >> 23) & 0x3u,
+        (descriptor_words[3] >> 25) & 0x7u,
+        tiled != 0,
     };
     if (error) {
         error->clear();

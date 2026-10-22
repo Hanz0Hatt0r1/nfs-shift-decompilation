@@ -27,6 +27,22 @@ struct CapturedVertexFetch {
     uint32_t byte_length;
 };
 
+struct CapturedTextureFetch {
+    uint32_t guest_address;
+    uint32_t format;
+    uint32_t endian_mode;
+    uint32_t width;
+    uint32_t height;
+    uint32_t byte_length;
+    uint32_t dimension;
+    uint32_t swizzle;
+    uint32_t mag_filter;
+    uint32_t min_filter;
+    uint32_t mip_filter;
+    uint32_t aniso_filter;
+    bool tiled;
+};
+
 // Translates only the captured PM4_DRAW_INDX form. This decodes the guest
 // command into renderer inputs; it does not execute or emulate Xenos state.
 bool decode_captured_draw_indx(
@@ -40,6 +56,12 @@ bool decode_captured_draw_indx(
 bool decode_captured_vertex_fetch(
     const uint32_t descriptor_words[2],
     CapturedVertexFetch* output,
+    std::string* error);
+
+// Decodes only the captured format-6 tiled 2D texture descriptor.
+bool decode_captured_texture_fetch(
+    const uint32_t descriptor_words[6],
+    CapturedTextureFetch* output,
     std::string* error);
 
 // Converts only the two guest byte orders observed on this captured draw:
