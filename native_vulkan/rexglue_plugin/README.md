@@ -169,6 +169,17 @@ Android, but visible retail output and scene parity are not verified. The
 `xenos` loader alias can be removed when the host preserves an explicit
 `gpu_plugin=shift-native` setting.
 
+A one-time Android debug diagnostic forced the fragment shader to magenta while
+leaving the captured retail vertex shader, geometry, draw, and Copy/Convert
+path intact. On the Redmi Note 8 Pro it produced 518,400 non-black pixels in
+the Vulkan guest-output readback (FNV-1a `DA74DA070BC0D725`) and a visible
+magenta region in the [device screenshot](../../evidence/process2_redmi_note8pro_android_vulkan_magenta_diagnostic_20261023.png).
+This confirms that the Android Vulkan presenter displays the submitted retail
+rectangle geometry. The magenta output is synthetic diagnostic color, not
+retail pixel evidence or scene parity. The original APK was restored and is
+running; with the captured retail pixel shader, its startup readback remains
+fully black. The temporary override was removed from the working tree.
+
 The optional `SHIFT_NATIVE_VULKAN_READBACK_PATH` captures the first successful
 presenter image as `VK_FORMAT_A2B10G10R10_UNORM_PACK32`. With the opt-in
 `SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR=magenta` override, the live retail

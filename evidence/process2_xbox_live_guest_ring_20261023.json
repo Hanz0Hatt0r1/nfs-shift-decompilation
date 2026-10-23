@@ -858,5 +858,41 @@
       "scope": "Validates the bounded Vulkan pass and channel conversion only; it does not establish retail image output or parity."
     },
     "result": "The Android Vulkan path now submits the captured source-0/sample-0 Copy/Convert operation, but the current early-startup retail readback is still completely black. The Vulkan renderer is not ready for visible retail output; no later PM4 draw batch was observed after the two startup swaps."
+  },
+  "android_presenter_magenta_diagnostic_20261023": {
+    "date": "2026-10-23",
+    "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, Mali-G76 MC4, Vulkan 1.1.131)",
+    "diagnostic_apk_sha256": "38d465046d44192bc03a09e35a7293fe6e250493af184817cd6d1c95e785a6b3",
+    "diagnostic_plugin_entries": {
+      "lib/arm64-v8a/librexgpu-shift-natived.so": "5d8828a3a149f9596768942b8dbaa0449e01182b136c5cbb0c25605e7a604d5a",
+      "lib/arm64-v8a/librexgpu-xenosd.so": "5d8828a3a149f9596768942b8dbaa0449e01182b136c5cbb0c25605e7a604d5a",
+      "interpretation": "Temporary Android debug-only fragment override; not committed and not retail output."
+    },
+    "runtime_log": "files/nfs_shift/user/logs/nfs_shift_027.log",
+    "submitted_draws": 1,
+    "copy_convert_destination": "0x0975e000, 1280x720, format 6, sample 0, R/B swap",
+    "readback": {
+      "extent": "1280x720",
+      "non_black_pixels": 518400,
+      "fnv1a64": "DA74DA070BC0D725"
+    },
+    "screen": {
+      "screenshot": "process2_redmi_note8pro_android_vulkan_magenta_diagnostic_20261023.png",
+      "sha256": "ff3670d2ba0c0d27cdbb2b52ab121de00cff74e0ab31f84b848d66ce3a0b30f1",
+      "extent": "2340x1080",
+      "magenta_pixels": 1164151,
+      "black_pixels": 1358549
+    },
+    "interpretation": "The Android Vulkan presenter displayed the submitted captured retail rectangle geometry and the sample-zero Copy/Convert output. The synthetic magenta shader is diagnostic only and is not retail pixel evidence or scene parity.",
+    "restored_original_build": {
+      "apk_sha256": "ff5c30af24013b315280e161cd383c4cd50874a1e096f0d0383364f004a311c6",
+      "plugin_sha256": "7a62b62eddb5dabea9d7f78728ce45a4d59910f1642dcd7da32e6aec93a760f3",
+      "running_process": 30809,
+      "runtime_log": "files/nfs_shift/user/logs/nfs_shift_028.log",
+      "readback_non_black_pixels": 0,
+      "readback_fnv1a64": "B161DE6EEC272325",
+      "screen_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+      "result": "Original build restored and running; its retail startup frame remains black."
+    }
   }
 }
