@@ -94,8 +94,8 @@ std::vector<uint8_t> make_vertex_shader() {
   write_shader_triplet(&shader, 1, 0x00001003u, 0x00002000u, 0);
   // vfetch_full: descriptor 95, float3, stride 3 dwords, offset 0.
   write_shader_triplet(&shader, 2, 0x05F00000u, 0x00390E42u, 3u);
-  // A simple export ALU instruction writes the fetched position to the output.
-  write_shader_triplet(&shader, 3, 0xC80F8000u, 0, 0xA1000000u);
+  // Export the fetched xyz and supply the position's homogeneous w as one.
+  write_shader_triplet(&shader, 3, 0xC88F8000u, 0, 0xA1000000u);
   return shader;
 }
 
@@ -138,8 +138,8 @@ std::vector<uint8_t> make_pm4_stream() {
   for (const auto& [index, value] : raster_registers)
     append_type0(&stream, index, value);
 
-  // Captured shader controls and fetch descriptors. The synthetic VS multiplies
-  // positions by c0, so use ones instead of collapsing the test geometry to 0.
+  // Captured shader controls and fetch descriptors. The synthetic VS swizzles
+  // input z/x/y to position x/y/z, then multiplies by c0.
   append_type0(&stream, 0x2307u, 0x000FF000u);
   append_type0(&stream, 0x2308u, 0x000FF100u);
   append_type0(&stream, 0x4904u, 0x00000001u);
@@ -268,8 +268,8 @@ int main(int argc, char** argv) {
   };
   std::memcpy(index_bytes, captured_indices, sizeof(captured_indices));
   constexpr float normalized_vertices[] = {
-      -1.0f, -1.0f, 0.0f, 1.0f, -1.0f, 0.0f,
-      -1.0f, 1.0f,  0.0f, 1.0f, 1.0f,  0.0f,
+      -1.0f, 0.0f, -1.0f, -1.0f, 0.0f, 1.0f,
+      1.0f,  0.0f, -1.0f, 1.0f,  0.0f, 1.0f,
   };
   std::array<uint8_t, sizeof(normalized_vertices)> normalized_vertex_bytes{};
   std::memcpy(normalized_vertex_bytes.data(), normalized_vertices,
@@ -324,12 +324,32 @@ int main(int argc, char** argv) {
   const std::string diagnostics = log_output.str();
   const char* debug_fragment_color =
       std::getenv("SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR");
+  const char* readback_path =
+      std::getenv("SHIFT_NATIVE_VULKAN_READBACK_PATH");
   if (debug_fragment_color &&
       std::string(debug_fragment_color) == "magenta" &&
       diagnostics.find("diagnostic fragment override is active") ==
           std::string::npos) {
     std::cerr << diagnostics << '\n';
     return fail("debug fragment override was not activated");
+  }
+  if (debug_fragment_color &&
+      std::string(debug_fragment_color) == "magenta" && readback_path) {
+    const size_t non_black = diagnostics.find("non-black pixels ");
+    if (diagnostics.find("saved Vulkan guest output") == std::string::npos ||
+        non_black == std::string::npos) {
+      std::cerr << diagnostics << '\n';
+      return fail("magenta live-ring diagnostic did not read back the image");
+    }
+    std::istringstream pixel_count_stream(diagnostics.substr(
+        non_black + sizeof("non-black pixels ") - 1u));
+    size_t non_black_pixels = 0;
+    if (!(pixel_count_stream >> non_black_pixels) || non_black_pixels == 0) {
+      std::cerr << diagnostics << '\n';
+      return fail("magenta live-ring diagnostic produced no visible pixels");
+    }
+    std::cout << "synthetic live-ring magenta readback: " << non_black_pixels
+              << " non-black pixels\n";
   }
   if (!consumed) {
     std::cerr << diagnostics << '\n';

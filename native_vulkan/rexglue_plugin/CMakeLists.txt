@@ -107,4 +107,11 @@ if(SHIFT_REXGLUE_NATIVE_BUILD_TESTS)
   add_test(NAME rexgpu_shift_native_live_ring_check
     COMMAND rexgpu_shift_native_live_ring_check $<TARGET_FILE:rexgpu-shift-native>
   )
+  add_test(NAME rexgpu_shift_native_live_ring_readback_check
+    COMMAND rexgpu_shift_native_live_ring_check $<TARGET_FILE:rexgpu-shift-native>
+  )
+  set_tests_properties(rexgpu_shift_native_live_ring_readback_check PROPERTIES
+    ENVIRONMENT
+      "SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR=magenta;SHIFT_NATIVE_VULKAN_READBACK_PATH=${CMAKE_CURRENT_BINARY_DIR}/live-ring-diagnostic.a2b10g10r10"
+  )
 endif()

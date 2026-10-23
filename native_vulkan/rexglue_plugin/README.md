@@ -54,6 +54,20 @@ submit successfully. This is an end-to-end plugin/presenter regression, not a
 live retail run or retail image-parity evidence. The DMA draw, shader pairing,
 and resource payloads in the fixture are not a new raw retail capture.
 
+The separate `rexgpu_shift_native_live_ring_readback_check` CTest uses the
+same synthetic ring with the opt-in magenta pixel shader and output readback.
+It requires the presenter image to contain non-black pixels, so it exercises
+vertex positioning, rasterization, fragment output, and the presenter readback
+path together. On the NVIDIA GeForce GTX 950 host, the 1280x720 readback was
+uniform packed magenta (`0xFFF003FF`) across all 921,600 pixels (SHA-256
+`bac5569a33a5dbff11ac418a9c89bd18824c1bc0c862420c8da1d7598fc328f2`). This
+confirms the synthetic fixture now covers the target; it does not change the
+separately captured black retail output or prove retail scene parity.
+The readback regression also passed with
+`VK_LAYER_KHRONOS_validation` forced through `VK_INSTANCE_LAYERS`; the loader
+confirmed the layer was enabled and the run emitted no validation error or
+VUID diagnostics.
+
 The platform-independent Vulkan core also has a synthetic offscreen AutoIndex
 point-draw smoke with no vertex attributes or vertex buffer.
 It passed with Vulkan validation on NVIDIA GeForce GTX 950, and on Redmi Note 8
@@ -114,8 +128,8 @@ vertex shader, input buffers, raster state, and draw submission. Use it with
 the readback path above: a colored result points to pixel-shader/resource
 translation; a black result points to the vertex/geometry, raster-state, or
 target-output path. The plugin smoke asserts that this opt-in mode was
-activated; neither the mode nor its synthetic fixture is retail image
-evidence.
+activated and that its synthetic fixture produces colored pixels. The mode
+and fixture are diagnostic evidence only, not retail image evidence.
 
 An earlier Gamescope headless retry used info-level logging and recorded no
 draw submission; the later debug run above supersedes that result.
@@ -149,8 +163,9 @@ callback has a guest thread context. The callback is issued after the current
 ring batch is consumed and its read pointer is published; exact ordering at
 each interrupt packet inside a batch is not verified. The decoder regression
 and Android API 33 guest-ring smoke passed on Redmi Note 8 Pro (Mali-G76 MC4),
-and the Linux plugin suite passed 2/2 with a separate Vulkan validation-layer
-run passing 1/1. These are parser/plugin checks, not a full Android game test.
+and the Linux plugin suite passed 3/3 with the readback regression also passing
+under Vulkan validation. These are parser/plugin checks, not a full Android
+game test.
 The current-source Linux rerun described above also consumed the captured
 interrupts and dispatched callbacks. See the
 `gpu_interrupt_routing_update` and `post_scalar_destination_live_rerun` entries
