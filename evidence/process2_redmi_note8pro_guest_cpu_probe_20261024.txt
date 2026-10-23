@@ -21,3 +21,18 @@ Two samples, approximately two seconds apart:
 The app screenshot stayed SHA-256 `2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839` and its runtime log stayed SHA-256 `397a2ddeb9d536b109d3af9d95003aa79fc3b02042d3aa49673f5a464b784e21`; the log still contains only the two startup swaps and no later PM4 batches.
 
 Interpretation: the main/SDL execution threads are consuming CPU while the Vulkan ring worker is idle and receives no new draw work. This is consistent with a guest/runtime progress loop outside the renderer, but the CPU sample does not identify the guest function or prove the cause. Guest scheduling and execution remain Process 1 ownership; no Process 1 files were changed.
+
+## Follow-up sample — 2026-10-24 02:13:12 Europe/Moscow
+
+The same Android package remained foreground as PID `10753` on the Redmi Note 8 Pro. A fresh `adb shell top -H -b -d 2 -n 2 -p 10753` sample reported:
+
+| Thread | TID | Sample 1 CPU | Sample 2 CPU |
+| --- | ---: | ---: | ---: |
+| `Core 0/0: Main` | 10828 | 85.2% | 102% |
+| `SDLThread` | 10790 | 70.5% | 85.0% |
+| `SHIFT Native GP` | 10825 | 0.0% | 0.0% |
+| `SHIFT Native VS` | 10826 | 5.8% | 3.5% |
+
+The runtime log remained SHA-256 `d01b32745d55a57ae043952632b6cd6d799d9af916f6a83dfceaa3c14d62403d` and still ends at RPTR `0x49` after two guest swaps and two Vulkan frame submissions. The fresh screenshot remains fully black, SHA-256 `2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839`. The unfiltered 133-line top output is archived as [`process2_redmi_note8pro_guest_cpu_probe_20261024_later.txt`](process2_redmi_note8pro_guest_cpu_probe_20261024_later.txt), SHA-256 `005ef2bf6c31523d0302555b3598c60ebe7b9e006c163403bcd165906394362b`.
+
+This repeats the earlier observation that the main/SDL threads consume CPU while the guest PM4 worker is idle. It is evidence of a persistent runtime-side stall pattern, not a diagnosis of the responsible guest function or proof of causality; Process 1 owns that investigation. The app was left running, and no Process 1 files were changed.

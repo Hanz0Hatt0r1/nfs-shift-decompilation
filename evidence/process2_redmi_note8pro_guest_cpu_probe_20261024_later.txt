@@ -1,0 +1,133 @@
+Threads: 60 total,   5 running,  55 sleeping,   0 stopped,   0 zombie
+  Mem:  5771204K total,  5644724K used,   126480K free,    75776K buffers
+ Swap:  3173276K total,  2449632K used,   723644K free,  1656460K cached
+800%cpu 226%user   0%nice  82%sys 491%idle   0%iow   0%irq   0%sirq   0%host
+  TID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ THREAD          PROCESS
+10828 u0_a642      16  -4  13G 837M 624M R 85.2  14.8  22:29.44 Core 0/0: Main  com.hanz0hatt0r.nfsshift
+10790 u0_a642      16  -4  13G 838M 624M R 70.5  14.8  18:39.90 SDLThread       com.hanz0hatt0r.nfsshift
+10806 u0_a642      10 -10  13G 838M 624M R 35.2  14.8   7:50.52 RenderThread    com.hanz0hatt0r.nfsshift
+10775 u0_a642      10 -10  13G 838M 624M S 26.4  14.8   5:26.12 SDLActivity     com.hanz0hatt0r.nfsshift
+10824 u0_a642      16  -4  13G 837M 624M R 17.6  14.8  11:13.15 Audio Worker (F com.hanz0hatt0r.nfsshift
+10832 u0_a642      16  -4  13G 837M 624M S  5.8  14.8   0:45.80 Core 0/1: SGQue com.hanz0hatt0r.nfsshift
+10826 u0_a642      16  -4  13G 837M 624M S  5.8  14.8   0:48.16 SHIFT Native VS com.hanz0hatt0r.nfsshift
+10835 u0_a642      16  -4  13G 837M 624M S  2.9  14.8   0:46.38 Core 1/1: Damag com.hanz0hatt0r.nfsshift
+10836 u0_a642      16  -4  13G 837M 624M S  2.9  14.8   0:46.78 Core 0/1: CRend com.hanz0hatt0r.nfsshift
+10833 u0_a642      16  -4  13G 837M 624M S  2.9  14.8   0:45.59 Core 1/1: SGQue com.hanz0hatt0r.nfsshift
+10831 u0_a642      16  -4  13G 837M 624M S  2.9  14.8   0:47.24 Core 1/1: Base  com.hanz0hatt0r.nfsshift
+10830 u0_a642      16  -4  13G 837M 624M S  2.9  14.8   0:46.08 Core 0/1: Base  com.hanz0hatt0r.nfsshift
+10804 u0_a642      16  -4  13G 837M 624M S  2.9  14.8   1:12.11 mali-cmar-backe com.hanz0hatt0r.nfsshift
+10768 u0_a642      20   0  13G 838M 624M S  2.9  14.8   0:07.09 binder:10753_2  com.hanz0hatt0r.nfsshift
+10767 u0_a642      20   0  13G 838M 624M S  2.9  14.8   0:07.19 binder:10753_1  com.hanz0hatt0r.nfsshift
+10753 u0_a642      10 -10  13G 837M 624M S  2.9  14.8   0:22.95 SDLActivity     com.hanz0hatt0r.nfsshift
+10837 u0_a642      16  -4  13G 837M 624M S  0.0  14.8   0:06.78 XThreadBB01FCB0 com.hanz0hatt0r.nfsshift
+10838 u0_a642      16  -4  13G 837M 624M S  0.0  14.8   0:00.00 XThreadB9019CB0 com.hanz0hatt0r.nfsshift
+10834 u0_a642      16  -4  13G 837M 624M R  0.0  14.8   0:45.92 Core 1/0: SGQue com.hanz0hatt0r.nfsshift
+10829 u0_a642      16  -4  13G 837M 624M S  0.0  14.8   0:00.00 SDLThread       com.hanz0hatt0r.nfsshift
+10827 u0_a642      16  -4  13G 837M 624M S  0.0  14.8   0:00.00 Kernel Dispatch com.hanz0hatt0r.nfsshift
+10825 u0_a642      16  -4  13G 837M 624M S  0.0  14.8   0:01.19 SHIFT Native GP com.hanz0hatt0r.nfsshift
+10823 u0_a642      16  -4  13G 837M 624M S  0.0  14.8   0:00.00 XMA Decoder (F8 com.hanz0hatt0r.nfsshift
+10822 u0_a642      20   0  13G 837M 624M S  0.0  14.8   0:03.39 binder:10753_4  com.hanz0hatt0r.nfsshift
+10821 u0_a642      20   0  13G 837M 624M S  0.0  14.8   0:00.04 InsetsAnimation com.hanz0hatt0r.nfsshift
+10797 u0_a642      16  -4  13G 838M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10799 u0_a642      16  -4  13G 838M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10803 u0_a642      16  -4  13G 837M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10802 u0_a642      16  -4  13G 837M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10801 u0_a642      16  -4  13G 838M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10800 u0_a642      16  -4  13G 838M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10795 u0_a642      16  -4  13G 838M 624M S  0.0  14.8   0:00.59 mali-mem-purge  com.hanz0hatt0r.nfsshift
+10796 u0_a642      16  -4  13G 838M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10798 u0_a642      16  -4  13G 838M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10792 u0_a642      18  -2  13G 838M 624M S  0.0  14.8   0:00.00 hwuiTask1       com.hanz0hatt0r.nfsshift
+10791 u0_a642      18  -2  13G 838M 624M S  0.0  14.8   0:00.00 hwuiTask0       com.hanz0hatt0r.nfsshift
+10788 u0_a642      10 -10  13G 838M 624M S  0.0  14.8   0:03.42 mali-hist-dump  com.hanz0hatt0r.nfsshift
+10789 u0_a642      10 -10  13G 838M 624M S  0.0  14.8   0:00.00 ged-swd         com.hanz0hatt0r.nfsshift
+10787 u0_a642      10 -10  13G 838M 624M S  0.0  14.8   0:00.00 mali-cmar-backe com.hanz0hatt0r.nfsshift
+10786 u0_a642      10 -10  13G 838M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10785 u0_a642      10 -10  13G 838M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10784 u0_a642      10 -10  13G 838M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10783 u0_a642      10 -10  13G 838M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10782 u0_a642      10 -10  13G 838M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10781 u0_a642      10 -10  13G 838M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10780 u0_a642      10 -10  13G 838M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10779 u0_a642      10 -10  13G 838M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10778 u0_a642      10 -10  13G 838M 624M S  0.0  14.8   0:00.00 mali-mem-purge  com.hanz0hatt0r.nfsshift
+10772 u0_a642      10 -10  13G 838M 624M S  0.0  14.8   0:00.09 RenderThread    com.hanz0hatt0r.nfsshift
+10771 u0_a642      29   9  13G 838M 624M S  0.0  14.8   0:00.02 Profile Saver   com.hanz0hatt0r.nfsshift
+10770 u0_a642      20   0  13G 838M 624M S  0.0  14.8   0:08.79 binder:10753_4  com.hanz0hatt0r.nfsshift
+10769 u0_a642      20   0  13G 838M 624M S  0.0  14.8   0:07.38 binder:10753_3  com.hanz0hatt0r.nfsshift
+10766 u0_a642      24   4  13G 838M 624M S  0.0  14.8   0:00.00 FinalizerWatchd com.hanz0hatt0r.nfsshift
+10765 u0_a642      24   4  13G 838M 624M S  0.0  14.8   0:00.00 FinalizerDaemon com.hanz0hatt0r.nfsshift
+10764 u0_a642      24   4  13G 838M 624M S  0.0  14.8   0:00.00 ReferenceQueueD com.hanz0hatt0r.nfsshift
+10763 u0_a642      24   4  13G 838M 624M S  0.0  14.8   0:00.01 HeapTaskDaemon  com.hanz0hatt0r.nfsshift
+10762 u0_a642      29   9  13G 838M 624M S  0.0  14.8   0:00.05 Jit thread pool com.hanz0hatt0r.nfsshift
+10761 u0_a642       0 -20  13G 838M 624M S  0.0  14.8   0:00.00 ADB-JDWP Connec com.hanz0hatt0r.nfsshift
+10760 u0_a642       0 -20  13G 838M 624M S  0.0  14.8   0:00.00 perfetto_hprof_ com.hanz0hatt0r.nfsshift
+10759 u0_a642       0 -20  13G 838M 624M S  0.0  14.8   0:00.00 Signal Catcher  com.hanz0hatt0r.nfsshift
+
+
+
+Threads: 60 total,   4 running,  56 sleeping,   0 stopped,   0 zombie
+  Mem:  5771204K total,  5643544K used,   127660K free,    75776K buffers
+ Swap:  3173276K total,  2449632K used,   723644K free,  1656460K cached
+800%cpu 305%user   0%nice  81%sys 415%idle   0%iow   0%irq   0%sirq   0%host
+  TID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ THREAD          PROCESS
+10828 u0_a642      16  -4  13G 834M 624M R  102  14.8  22:29.73 Core 0/0: Main  com.hanz0hatt0r.nfsshift
+10790 u0_a642      16  -4  13G 835M 624M R 85.0  14.8  18:40.14 SDLThread       com.hanz0hatt0r.nfsshift
+10824 u0_a642      16  -4  13G 834M 624M S 50.0  14.8  11:13.21 Audio Worker (F com.hanz0hatt0r.nfsshift
+10806 u0_a642      10 -10  13G 834M 624M S 36.0  14.8   7:50.64 RenderThread    com.hanz0hatt0r.nfsshift
+10775 u0_a642      10 -10  13G 835M 624M S 24.0  14.8   5:26.21 SDLActivity     com.hanz0hatt0r.nfsshift
+10804 u0_a642      16  -4  13G 834M 624M R  6.0  14.8   1:12.12 mali-cmar-backe com.hanz0hatt0r.nfsshift
+10836 u0_a642      16  -4  13G 835M 624M S  4.0  14.8   0:46.79 Core 0/1: CRend com.hanz0hatt0r.nfsshift
+10834 u0_a642      16  -4  13G 835M 624M S  3.5  14.8   0:45.92 Core 1/0: SGQue com.hanz0hatt0r.nfsshift
+10833 u0_a642      16  -4  13G 835M 624M R  3.5  14.8   0:45.60 Core 1/1: SGQue com.hanz0hatt0r.nfsshift
+10831 u0_a642      16  -4  13G 835M 624M S  3.5  14.8   0:47.25 Core 1/1: Base  com.hanz0hatt0r.nfsshift
+10832 u0_a642      16  -4  13G 835M 624M S  3.5  14.8   0:45.82 Core 0/1: SGQue com.hanz0hatt0r.nfsshift
+10826 u0_a642      16  -4  13G 834M 624M S  3.5  14.8   0:48.18 SHIFT Native VS com.hanz0hatt0r.nfsshift
+10835 u0_a642      16  -4  13G 835M 624M S  3.0  14.8   0:46.39 Core 1/1: Damag com.hanz0hatt0r.nfsshift
+10830 u0_a642      16  -4  13G 835M 624M S  3.0  14.8   0:46.09 Core 0/1: Base  com.hanz0hatt0r.nfsshift
+10767 u0_a642      20   0  13G 835M 624M S  1.5  14.8   0:07.20 binder:10753_1  com.hanz0hatt0r.nfsshift
+10753 u0_a642      10 -10  13G 834M 624M S  1.5  14.8   0:22.96 SDLActivity     com.hanz0hatt0r.nfsshift
+10837 u0_a642      16  -4  13G 835M 624M S  0.5  14.8   0:06.78 XThreadBB01FCB0 com.hanz0hatt0r.nfsshift
+10795 u0_a642      16  -4  13G 835M 624M S  0.5  14.8   0:00.59 mali-mem-purge  com.hanz0hatt0r.nfsshift
+10838 u0_a642      16  -4  13G 835M 624M S  0.0  14.8   0:00.00 XThreadB9019CB0 com.hanz0hatt0r.nfsshift
+10829 u0_a642      16  -4  13G 834M 624M S  0.0  14.8   0:00.00 SDLThread       com.hanz0hatt0r.nfsshift
+10827 u0_a642      16  -4  13G 834M 624M S  0.0  14.8   0:00.00 Kernel Dispatch com.hanz0hatt0r.nfsshift
+10825 u0_a642      16  -4  13G 834M 624M S  0.0  14.8   0:01.19 SHIFT Native GP com.hanz0hatt0r.nfsshift
+10823 u0_a642      16  -4  13G 834M 624M S  0.0  14.8   0:00.00 XMA Decoder (F8 com.hanz0hatt0r.nfsshift
+10822 u0_a642      20   0  13G 834M 624M S  0.0  14.8   0:03.39 binder:10753_4  com.hanz0hatt0r.nfsshift
+10821 u0_a642      20   0  13G 834M 624M S  0.0  14.8   0:00.04 InsetsAnimation com.hanz0hatt0r.nfsshift
+10796 u0_a642      16  -4  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10798 u0_a642      16  -4  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10803 u0_a642      16  -4  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10802 u0_a642      16  -4  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10801 u0_a642      16  -4  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10800 u0_a642      16  -4  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10799 u0_a642      16  -4  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10797 u0_a642      16  -4  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10792 u0_a642      18  -2  13G 835M 624M S  0.0  14.8   0:00.00 hwuiTask1       com.hanz0hatt0r.nfsshift
+10791 u0_a642      18  -2  13G 835M 624M S  0.0  14.8   0:00.00 hwuiTask0       com.hanz0hatt0r.nfsshift
+10788 u0_a642      10 -10  13G 835M 624M S  0.0  14.8   0:03.42 mali-hist-dump  com.hanz0hatt0r.nfsshift
+10789 u0_a642      10 -10  13G 835M 624M S  0.0  14.8   0:00.00 ged-swd         com.hanz0hatt0r.nfsshift
+10787 u0_a642      10 -10  13G 835M 624M S  0.0  14.8   0:00.00 mali-cmar-backe com.hanz0hatt0r.nfsshift
+10786 u0_a642      10 -10  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10785 u0_a642      10 -10  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10784 u0_a642      10 -10  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10783 u0_a642      10 -10  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10782 u0_a642      10 -10  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10781 u0_a642      10 -10  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10780 u0_a642      10 -10  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10779 u0_a642      10 -10  13G 835M 624M S  0.0  14.8   0:00.00 mali-utility-wo com.hanz0hatt0r.nfsshift
+10778 u0_a642      10 -10  13G 835M 624M S  0.0  14.8   0:00.00 mali-mem-purge  com.hanz0hatt0r.nfsshift
+10772 u0_a642      10 -10  13G 835M 624M S  0.0  14.8   0:00.09 RenderThread    com.hanz0hatt0r.nfsshift
+10771 u0_a642      29   9  13G 835M 624M S  0.0  14.8   0:00.02 Profile Saver   com.hanz0hatt0r.nfsshift
+10770 u0_a642      20   0  13G 835M 624M S  0.0  14.8   0:08.79 binder:10753_4  com.hanz0hatt0r.nfsshift
+10769 u0_a642      20   0  13G 835M 624M S  0.0  14.8   0:07.38 binder:10753_3  com.hanz0hatt0r.nfsshift
+10768 u0_a642      20   0  13G 835M 624M S  0.0  14.8   0:07.10 binder:10753_2  com.hanz0hatt0r.nfsshift
+10766 u0_a642      24   4  13G 835M 624M S  0.0  14.8   0:00.00 FinalizerWatchd com.hanz0hatt0r.nfsshift
+10765 u0_a642      24   4  13G 835M 624M S  0.0  14.8   0:00.00 FinalizerDaemon com.hanz0hatt0r.nfsshift
+10764 u0_a642      24   4  13G 835M 624M S  0.0  14.8   0:00.00 ReferenceQueueD com.hanz0hatt0r.nfsshift
+10763 u0_a642      24   4  13G 835M 624M S  0.0  14.8   0:00.01 HeapTaskDaemon  com.hanz0hatt0r.nfsshift
+10762 u0_a642      29   9  13G 835M 624M S  0.0  14.8   0:00.05 Jit thread pool com.hanz0hatt0r.nfsshift
+10761 u0_a642       0 -20  13G 835M 624M S  0.0  14.8   0:00.00 ADB-JDWP Connec com.hanz0hatt0r.nfsshift
+10760 u0_a642       0 -20  13G 835M 624M S  0.0  14.8   0:00.00 perfetto_hprof_ com.hanz0hatt0r.nfsshift
+10759 u0_a642       0 -20  13G 835M 624M S  0.0  14.8   0:00.00 Signal Catcher  com.hanz0hatt0r.nfsshift
