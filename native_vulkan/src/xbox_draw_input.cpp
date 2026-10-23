@@ -1298,6 +1298,58 @@ bool decode_captured_raster_state(
     return true;
 }
 
+bool decode_captured_copy_state(
+    const CapturedRasterRegisters& registers,
+    CapturedCopyState* output,
+    std::string* error) {
+    constexpr uint32_t kCopyValidMask = 0xFu;
+    constexpr uint32_t kCopyControlFields = 0x00300377u;
+    constexpr uint32_t kCopyDestPitchFields = 0x3FFF3FFFu;
+    constexpr uint32_t kCopyDestInfoFields = 0x01FFFFFFu;
+    if (!output || registers.copy_valid_mask != kCopyValidMask) {
+        return fail("captured Xenos copy register set is incomplete", error);
+    }
+
+    const uint32_t source_select = registers.copy_control & 0x7u;
+    const uint32_t sample_select = (registers.copy_control >> 4) & 0x7u;
+    const uint32_t clear_flags = (registers.copy_control >> 8) & 0x3u;
+    const uint32_t command = (registers.copy_control >> 20) & 0x3u;
+    const uint32_t destination_pitch = registers.copy_dest_pitch & 0x3FFFu;
+    const uint32_t destination_height = (registers.copy_dest_pitch >> 16) & 0x3FFFu;
+    const uint32_t destination_format = (registers.copy_dest_info >> 7) & 0x3Fu;
+    const uint32_t destination_number = (registers.copy_dest_info >> 13) & 0x7u;
+    const uint32_t destination_exp_bias = (registers.copy_dest_info >> 16) & 0x3Fu;
+    if ((registers.copy_control & ~kCopyControlFields) != 0 ||
+        source_select != 0 || sample_select != 0 || clear_flags != 0 ||
+        command != static_cast<uint32_t>(CapturedCopyCommand::Convert) ||
+        registers.copy_dest_base == 0 || (registers.copy_dest_base & 0xFFFu) != 0 ||
+        (registers.copy_dest_pitch & ~kCopyDestPitchFields) != 0 ||
+        destination_pitch != 1280 || destination_height != 720 ||
+        (destination_pitch & 7u) != 0 || (destination_height & 7u) != 0 ||
+        (registers.copy_dest_info & ~kCopyDestInfoFields) != 0 ||
+        (registers.copy_dest_info & 0x7Fu) != 0 ||
+        ((registers.copy_dest_info >> 4) & 0x7u) != 0 ||
+        destination_format != 6 || destination_number != 0 ||
+        destination_exp_bias != 0 ||
+        ((registers.copy_dest_info >> 22) & 0x3u) != 0 ||
+        ((registers.copy_dest_info >> 25) & 0x7Fu) != 0) {
+        return fail("unsupported captured Xenos color Copy/Convert state", error);
+    }
+
+    *output = CapturedCopyState{
+        source_select,
+        sample_select,
+        CapturedCopyCommand::Convert,
+        registers.copy_dest_base,
+        destination_pitch,
+        destination_height,
+        destination_format,
+        ((registers.copy_dest_info >> 24) & 1u) != 0,
+    };
+    if (error) error->clear();
+    return true;
+}
+
 bool captured_draw_has_no_framebuffer_effects(
     const CapturedRasterState& raster) noexcept {
     return !raster.scissor_has_area ||

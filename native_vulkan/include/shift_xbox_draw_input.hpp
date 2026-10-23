@@ -293,6 +293,21 @@ enum class CapturedColorTargetFormat : uint8_t {
     Rgba8Gamma,
 };
 
+enum class CapturedCopyCommand : uint8_t {
+    Convert = 1,
+};
+
+struct CapturedCopyState {
+    uint32_t source_select;
+    uint32_t sample_select;
+    CapturedCopyCommand command;
+    uint32_t destination_base;
+    uint32_t destination_pitch;
+    uint32_t destination_height;
+    uint32_t destination_format;
+    bool destination_swap_red_blue;
+};
+
 enum class CapturedDepthTargetFormat : uint8_t {
     D24S8,
 };
@@ -558,6 +573,13 @@ bool decode_captured_texture_sampling(
 bool decode_captured_raster_state(
     const CapturedRasterRegisters& registers,
     CapturedRasterState* output,
+    std::string* error);
+
+// Decodes the live 1280x720 color Copy/Convert register form. This describes
+// the resolve request only; callers still need a Vulkan EDRAM source image.
+bool decode_captured_copy_state(
+    const CapturedRasterRegisters& registers,
+    CapturedCopyState* output,
     std::string* error);
 
 // Resolves the stage-relative 256-register VS/PS float windows and the packed

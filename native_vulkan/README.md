@@ -24,7 +24,12 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   unresolved alpha, so the backend does not guess a Vulkan border color. The
   captured color/depth target, viewport, and screen/window scissor are also
   decoded into a bounded neutral state contract. This does not map Xenos EDRAM
-  tiles to Vulkan images or create a pipeline. The constants decoder resolves
+  tiles to Vulkan images or create a pipeline. A separate strict decoder now
+  recognizes the live 1280x720 color Copy/Convert register tuple
+  (`copy_control=0x00100000`, destination `0x0975e000`, format 6 with R/B swap).
+  This is metadata only: the live mode-6 draw is still not submitted, and Xenos
+  EDRAM accumulation/frontbuffer resolve remain unimplemented. The constants
+  decoder resolves
   each stage's 256-register float window and the observed PS branch bools,
   including the VS a0-indexed c0-c3 window.
   A bounded decoder parses the captured VS/PS control-flow slots and their

@@ -144,8 +144,12 @@ Vulkan frontend loaded and consumed the guest PM4 ring. The first build batched
 disabled depth/stencil writes. Process 2 now identifies and elides their
 framebuffer effects; the rebuilt APK submits one framebuffer-writing retail
 rectangle at each guest swap without the target mismatch. The mode-6 EDRAM
-Copy/Convert rectangle is still rejected, and an active linear color target
-still fails closed until its Vulkan format mapping is implemented. The
+Copy/Convert register tuple is now decoded for the exact phone capture
+(`copy_control=0x00100000`, destination `0x0975e000`, pitch/height 1280x720,
+format 6, R/B swap); host and ARM64 parser regressions pass. The mode-6 draw is
+still rejected because the Vulkan path has no EDRAM source image or guest
+frontbuffer resolve. An active linear color target still fails closed until
+its Vulkan format mapping is implemented. The
 captured retail pixel shader/readback remains fully black
 (FNV-1a `B161DE6EEC272325`); the [device screenshot](../../evidence/process2_redmi_note8pro_native_vulkan_black_frame_20261023.png)
 shows the current app output. The game package and renderer are integrated on

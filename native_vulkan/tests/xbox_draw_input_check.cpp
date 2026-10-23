@@ -750,6 +750,44 @@ int main() {
                 tracked_raster_registers.copy_dest_pitch == 0x02D00500u &&
                 tracked_raster_registers.copy_dest_info == 0x00000306u,
             "captured Xenos EDRAM copy registers changed");
+    shift::xbox::CapturedRasterRegisters phone_copy_registers{};
+    phone_copy_registers.copy_valid_mask = 0xFu;
+    phone_copy_registers.copy_control = 0x00100000u;
+    phone_copy_registers.copy_dest_base = 0x0975E000u;
+    phone_copy_registers.copy_dest_pitch = 0x02D00500u;
+    phone_copy_registers.copy_dest_info = 0x01000300u;
+    shift::xbox::CapturedCopyState phone_copy_state{};
+    require(shift::xbox::decode_captured_copy_state(
+                phone_copy_registers, &phone_copy_state, &error) &&
+                phone_copy_state.source_select == 0 &&
+                phone_copy_state.sample_select == 0 &&
+                phone_copy_state.command == shift::xbox::CapturedCopyCommand::Convert &&
+                phone_copy_state.destination_base == 0x0975E000u &&
+                phone_copy_state.destination_pitch == 1280 &&
+                phone_copy_state.destination_height == 720 &&
+                phone_copy_state.destination_format == 6 &&
+                phone_copy_state.destination_swap_red_blue,
+            "live Redmi 1280x720 color Copy/Convert state was rejected");
+    auto unsupported_copy_registers = phone_copy_registers;
+    unsupported_copy_registers.copy_valid_mask = 0x7u;
+    require(!shift::xbox::decode_captured_copy_state(
+                unsupported_copy_registers, &phone_copy_state, &error),
+            "incomplete Xenos copy registers were accepted");
+    unsupported_copy_registers = phone_copy_registers;
+    unsupported_copy_registers.copy_control |= 1u << 10;
+    require(!shift::xbox::decode_captured_copy_state(
+                unsupported_copy_registers, &phone_copy_state, &error),
+            "reserved Xenos copy control bits were accepted");
+    unsupported_copy_registers = phone_copy_registers;
+    unsupported_copy_registers.copy_dest_info |= 1u << 25;
+    require(!shift::xbox::decode_captured_copy_state(
+                unsupported_copy_registers, &phone_copy_state, &error),
+            "reserved Xenos copy destination bits were accepted");
+    unsupported_copy_registers = phone_copy_registers;
+    unsupported_copy_registers.copy_control = 0x00100004u;
+    require(!shift::xbox::decode_captured_copy_state(
+                unsupported_copy_registers, &phone_copy_state, &error),
+            "uncaptured depth-source Copy/Convert state was accepted");
     shift::xbox::CapturedRasterState tracked_raster_state{};
     require(shift::xbox::decode_captured_raster_state(
                 tracked_raster_registers, &tracked_raster_state, &error) &&
