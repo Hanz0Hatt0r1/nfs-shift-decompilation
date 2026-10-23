@@ -54,17 +54,16 @@ def test_v5_is_retired_and_v6_is_canonical() -> None:
     assert "Status: **canonical parallel prompts**" in prompts
 
 
-def test_root_instructions_route_to_canonical_execution_and_explicit_lanes() -> None:
+def test_root_instructions_route_to_xbox_gates_and_workstreams() -> None:
     process = PROCESS.read_text(encoding="utf-8")
 
-    assert "PLAYABLE_SLICE_THREE_PROCESS_INSTRUCTIONS_V6.md" in process
-    assert "PLAYABLE_SLICE_THREE_PROCESS_PROMPTS_V6.md" in process
-    assert "playable_slice_three_process_execution.json" in process
-    assert "coordination/PLAYABLE_SLICE_STATUS.md" in process
-    assert "coordination/lane_ownership.json" in process
-    assert "P1A-contact" in process
-    assert "P1B-control" in process
-    assert "P1D-camera" in process
-    assert "P2-runtime" in process
-    assert "P3-integration" in process
-    assert "NEXT_OWNER:" in process
+    assert "Xbox 360 retail is the primary executable being ported" in process
+    assert "docs/XBOX360_REXGLUE_MIGRATION.md" in process
+    assert "coordination/xbox360_rexglue_status.json" in process
+    assert "`X360-input`" in process
+    assert "`X360-recompiler`" in process
+    assert "`X360-runtime`" in process
+    assert "`X360-render`" in process
+    assert "`X360-platform`" in process
+    assert "X0–X6" in process
+    assert "PLAYABLE_SLICE_THREE_PROCESS_INSTRUCTIONS_V6.md" not in process
