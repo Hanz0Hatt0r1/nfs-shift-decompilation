@@ -144,15 +144,27 @@ Vulkan frontend loaded and consumed the guest PM4 ring. The first build batched
 disabled depth/stencil writes. Process 2 now identifies and elides their
 framebuffer effects; the rebuilt APK submits one framebuffer-writing retail
 rectangle at each guest swap without the target mismatch. The mode-6 EDRAM
-Copy/Convert register tuple is now decoded for the exact phone capture
+Copy/Convert tuple is decoded for the exact phone capture
 (`copy_control=0x00100000`, destination `0x0975e000`, pitch/height 1280x720,
-format 6, R/B swap); host and ARM64 parser regressions pass. The mode-6 draw is
-still rejected because the Vulkan path has no EDRAM source image or guest
-frontbuffer resolve. An active linear color target still fails closed until
-its Vulkan format mapping is implemented. The
-captured retail pixel shader/readback remains fully black
-(FNV-1a `B161DE6EEC272325`); the [device screenshot](../../evidence/process2_redmi_note8pro_native_vulkan_black_frame_20261023.png)
-shows the current app output. The game package and renderer are integrated on
+format 6, R/B swap). Process 2 now submits the supported source-0/sample-0
+Copy/Convert form as a Vulkan sample-zero pass from its multisample color
+attachment into the presenter image. Host and Android offscreen regressions
+exercise this conversion, including the captured channel swap. This is a
+narrow Vulkan path for the observed tuple; it does not model Xenos EDRAM
+accumulation or resolve every guest surface.
+
+The latest Android debug APK
+(`ff5c30af24013b315280e161cd383c4cd50874a1e096f0d0383364f004a311c6`) was
+installed on the Redmi Note 8 Pro. Log `nfs_shift_026.log` confirms one retail
+draw submitted at each of two guest swaps and the 1280x720 Copy/Convert
+destination matching the swap address. The first Vulkan presenter readback is
+still all black (zero non-black pixels, FNV-1a `B161DE6EEC272325`), and the
+device screenshot remains black. No later PM4 draw batch was observed after
+startup. This means visible retail output is not ready or verified; the
+successful synthetic Vulkan regression only validates the sample-zero
+conversion path. See
+[`process2_xbox_live_guest_ring_20261023.json`](../../evidence/process2_xbox_live_guest_ring_20261023.json)
+for build and device evidence. The game package and plugin are integrated on
 Android, but visible retail output and scene parity are not verified. The
 `xenos` loader alias can be removed when the host preserves an explicit
 `gpu_plugin=shift-native` setting.
@@ -176,9 +188,9 @@ That is consistent with the black early-startup image, but does not prove later
 gameplay output or explain every skipped draw. The current retail window also
 remained black apart from the host cursor. These runs confirm live Vulkan draw
 submission and rectangle expansion; they do not demonstrate visible retail
-content or scene parity. Xenos EDRAM accumulation,
-frontbuffer resolution, other raster/resource states, and Vulkan validation
-for a live retail frame remain unverified.
+content or scene parity. Full Xenos EDRAM accumulation, other copy and
+raster/resource states, later gameplay output, and Vulkan validation for a live
+retail frame remain unverified.
 
 The first 73-packet startup batch contains 24 point draws before the captured
 vertex-shader control register is available, so those draws are skipped. Later
@@ -197,8 +209,10 @@ passed the original renderer smoke on this phone. For the readback update, we
 rebuilt the test locally for Android arm64 and ran it on the connected Redmi
 Note 8 Pro (Android API 33, Mali-G76 MC4):
 `synthetic offscreen Vulkan 1.1 AutoIndex point draw and output readback passed
-on Mali-G76 MC4`. This device test uses synthetic shaders and ran without the
-validation layer; it does not show a retail frame. Temporary device files were
+on Mali-G76 MC4`. The updated conversion regression reports that the captured
+sample-zero Copy/Convert path passed on Mali-G76 MC4. These device tests use
+synthetic draws and ran without the
+validation layer; they do not show a retail frame. Temporary device files were
 removed. The parser, guest-ring, shader-translation, and renderer checks were
 also rebuilt for API 33 and rerun on the device.
 

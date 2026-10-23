@@ -46,17 +46,19 @@ struct FrameResources {
     VkQueue queue = VK_NULL_HANDLE;
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
+    VkRenderPass copy_render_pass = VK_NULL_HANDLE;
+    VkFramebuffer copy_framebuffer = VK_NULL_HANDLE;
     ImageResource multisample_color;
     ImageResource depth;
     BufferResource output_readback;
     VkCommandPool command_pool = VK_NULL_HANDLE;
     std::vector<DrawResources> draws;
+    DrawResources copy_draw;
     bool submitted = false;
 
     ~FrameResources() {
         if (submitted) vkQueueWaitIdle(queue);
-        for (auto it = draws.rbegin(); it != draws.rend(); ++it) {
-            DrawResources& draw = *it;
+        const auto destroy_draw = [this](DrawResources& draw) {
             if (draw.pipeline) vkDestroyPipeline(device, draw.pipeline, nullptr);
             if (draw.pipeline_layout) vkDestroyPipelineLayout(device, draw.pipeline_layout, nullptr);
             if (draw.descriptor_pool) vkDestroyDescriptorPool(device, draw.descriptor_pool, nullptr);
@@ -73,11 +75,15 @@ struct FrameResources {
             destroy_buffer(draw.vertex_constants);
             destroy_buffer(draw.indices);
             destroy_buffer(draw.vertices);
-        }
+        };
+        destroy_draw(copy_draw);
+        for (auto it = draws.rbegin(); it != draws.rend(); ++it) destroy_draw(*it);
+        if (copy_framebuffer) vkDestroyFramebuffer(device, copy_framebuffer, nullptr);
         if (framebuffer) vkDestroyFramebuffer(device, framebuffer, nullptr);
         destroy_image(multisample_color);
         destroy_image(depth);
         destroy_buffer(output_readback);
+        if (copy_render_pass) vkDestroyRenderPass(device, copy_render_pass, nullptr);
         if (render_pass) vkDestroyRenderPass(device, render_pass, nullptr);
         if (command_pool) vkDestroyCommandPool(device, command_pool, nullptr);
     }
@@ -680,7 +686,8 @@ bool submit_captured_vulkan_frame(
     const std::vector<CapturedVulkanDraw>& draws,
     std::string* error,
     std::vector<uint32_t>* output_readback,
-    bool geometry_shader_enabled) {
+    bool geometry_shader_enabled,
+    const CapturedVulkanCopy* copy) {
     if (output_readback) output_readback->clear();
     if (!physical_device || !device || !queue || !output_image || !output_view ||
         !output_width || !output_height || draws.empty() || queue_family_index == UINT32_MAX) {
@@ -700,6 +707,18 @@ bool submit_captured_vulkan_frame(
     const VkSampleCountFlagBits raster_samples = sample_count_flag(samples);
     if (raster_samples == VkSampleCountFlagBits{}) {
         return fail("captured sample count is outside the Vulkan 1.1 subset", error);
+    }
+    if (copy &&
+        (samples != 4 || copy->state.source_select != 0 ||
+         copy->state.sample_select != 0 ||
+         copy->state.command != CapturedCopyCommand::Convert ||
+         copy->state.destination_pitch != output_width ||
+         copy->state.destination_height != output_height ||
+         copy->state.destination_format != 6 ||
+         !copy->state.destination_swap_red_blue ||
+         copy->vertex_shader_spirv.empty() || copy->pixel_shader_spirv.empty())) {
+        return fail("captured Copy/Convert is outside the source-0 sample-0 RGBA8 subset",
+                    error);
     }
     const bool needs_depth = std::any_of(
         draws.begin(), draws.end(), [](const CapturedVulkanDraw& draw) {
@@ -726,7 +745,9 @@ bool submit_captured_vulkan_frame(
         !create_render_attachment(
             memory_properties, device, output_width, output_height,
             VK_FORMAT_A2B10G10R10_UNORM_PACK32,
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                (copy ? VK_IMAGE_USAGE_SAMPLED_BIT : 0),
+            VK_IMAGE_ASPECT_COLOR_BIT,
             raster_samples, &resources.multisample_color, error)) {
         return false;
     }
@@ -760,8 +781,8 @@ bool submit_captured_vulkan_frame(
     color_attachment.format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
     color_attachment.samples = raster_samples;
     color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    color_attachment.storeOp = samples == 1 ? VK_ATTACHMENT_STORE_OP_STORE
-                                             : VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.storeOp = samples == 1 || copy ? VK_ATTACHMENT_STORE_OP_STORE
+                                                     : VK_ATTACHMENT_STORE_OP_DONT_CARE;
     color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     color_attachment.initialLayout = samples == 1
@@ -788,7 +809,7 @@ bool submit_captured_vulkan_frame(
     }
 
     VkAttachmentReference resolve_reference{};
-    if (samples > 1) {
+    if (samples > 1 && !copy) {
         resolve_reference.attachment = static_cast<uint32_t>(attachments.size());
         resolve_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         VkAttachmentDescription resolve_attachment{};
@@ -808,7 +829,7 @@ bool submit_captured_vulkan_frame(
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_reference;
     subpass.pDepthStencilAttachment = needs_depth ? &depth_reference : nullptr;
-    subpass.pResolveAttachments = samples > 1 ? &resolve_reference : nullptr;
+    subpass.pResolveAttachments = samples > 1 && !copy ? &resolve_reference : nullptr;
     VkRenderPassCreateInfo render_pass_info{};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     render_pass_info.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -825,7 +846,7 @@ bool submit_captured_vulkan_frame(
     std::vector<VkImageView> framebuffer_views;
     framebuffer_views.push_back(samples > 1 ? resources.multisample_color.view : output_view);
     if (needs_depth) framebuffer_views.push_back(resources.depth.view);
-    if (samples > 1) framebuffer_views.push_back(output_view);
+    if (samples > 1 && !copy) framebuffer_views.push_back(output_view);
     framebuffer_info.attachmentCount = static_cast<uint32_t>(framebuffer_views.size());
     framebuffer_info.pAttachments = framebuffer_views.data();
     framebuffer_info.width = output_width;
@@ -833,6 +854,88 @@ bool submit_captured_vulkan_frame(
     framebuffer_info.layers = 1;
     result = vkCreateFramebuffer(device, &framebuffer_info, nullptr, &resources.framebuffer);
     if (result != VK_SUCCESS) return vk_fail("vkCreateFramebuffer", result, error);
+
+    if (copy) {
+        VkAttachmentDescription copy_attachment{};
+        copy_attachment.format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+        copy_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        copy_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        copy_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        copy_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        copy_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        copy_attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        copy_attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        VkAttachmentReference copy_color_reference{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+        VkSubpassDescription copy_subpass{};
+        copy_subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        copy_subpass.colorAttachmentCount = 1;
+        copy_subpass.pColorAttachments = &copy_color_reference;
+        VkRenderPassCreateInfo copy_pass_info{};
+        copy_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        copy_pass_info.attachmentCount = 1;
+        copy_pass_info.pAttachments = &copy_attachment;
+        copy_pass_info.subpassCount = 1;
+        copy_pass_info.pSubpasses = &copy_subpass;
+        result = vkCreateRenderPass(device, &copy_pass_info, nullptr,
+                                    &resources.copy_render_pass);
+        if (result != VK_SUCCESS) return vk_fail("vkCreateRenderPass(copy)", result, error);
+
+        VkFramebufferCreateInfo copy_framebuffer_info{};
+        copy_framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        copy_framebuffer_info.renderPass = resources.copy_render_pass;
+        copy_framebuffer_info.attachmentCount = 1;
+        copy_framebuffer_info.pAttachments = &output_view;
+        copy_framebuffer_info.width = output_width;
+        copy_framebuffer_info.height = output_height;
+        copy_framebuffer_info.layers = 1;
+        result = vkCreateFramebuffer(device, &copy_framebuffer_info, nullptr,
+                                     &resources.copy_framebuffer);
+        if (result != VK_SUCCESS) return vk_fail("vkCreateFramebuffer(copy)", result, error);
+
+        CapturedVulkanDraw copy_draw{};
+        copy_draw.vertex_shader_spirv = copy->vertex_shader_spirv;
+        copy_draw.pixel_shader_spirv = copy->pixel_shader_spirv;
+        copy_draw.auto_index = true;
+        copy_draw.index_count = 3;
+        copy_draw.texture_width = 1;
+        copy_draw.texture_height = 1;
+        copy_draw.texture_rgba8 = {0, 0, 0, 255};
+        copy_draw.raster.width = output_width;
+        copy_draw.raster.height = output_height;
+        copy_draw.raster.sample_count = 1;
+        copy_draw.raster.color_write_mask = 0xFu;
+        copy_draw.raster.scissor_x1 = output_width;
+        copy_draw.raster.scissor_y1 = output_height;
+        copy_draw.raster.scissor_has_area = true;
+        copy_draw.raster.blend_control_0 = 0x00010001u;
+        copy_draw.texture_sampling.clamps = {TextureClamp::ClampToEdge,
+                                             TextureClamp::ClampToEdge,
+                                             TextureClamp::ClampToEdge};
+        copy_draw.texture_sampling.mag_filter = TextureFilter::Point;
+        copy_draw.texture_sampling.min_filter = TextureFilter::Point;
+        copy_draw.texture_sampling.mip_filter = TextureFilter::Point;
+        copy_draw.texture_sampling.anisotropy = TextureAnisotropy::Disabled;
+        copy_draw.texture_sampling.border_color = TextureBorderColor::AbgrBlack;
+        copy_draw.texture_sampling.border_alpha_known = true;
+        if (!create_draw_resources(copy_draw, memory_properties, device,
+                                   resources.copy_render_pass, false,
+                                   &resources.copy_draw, error)) {
+            return false;
+        }
+        VkDescriptorImageInfo copy_image_info{
+            resources.copy_draw.sampler, resources.multisample_color.view,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+        VkWriteDescriptorSet copy_image_write{};
+        copy_image_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        copy_image_write.dstSet = resources.copy_draw.descriptor_sets[1];
+        copy_image_write.dstBinding = 0;
+        copy_image_write.descriptorCount = 1;
+        copy_image_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        copy_image_write.pImageInfo = &copy_image_info;
+        vkUpdateDescriptorSets(device, 1, &copy_image_write, 0, nullptr);
+        resources.destroy_image(resources.copy_draw.texture);
+        resources.destroy_buffer(resources.copy_draw.texture_upload);
+    }
 
     // Pipelines need the render pass compatibility key, so create them after
     // the pass exists. Resource upload and descriptor creation are independent.
@@ -1023,6 +1126,43 @@ bool submit_captured_vulkan_frame(
         }
     }
     vkCmdEndRenderPass(command);
+
+    if (copy) {
+        VkImageMemoryBarrier multisample_to_sample{};
+        multisample_to_sample.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        multisample_to_sample.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        multisample_to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        multisample_to_sample.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        multisample_to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        multisample_to_sample.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        multisample_to_sample.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        multisample_to_sample.image = resources.multisample_color.image;
+        multisample_to_sample.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        multisample_to_sample.subresourceRange.levelCount = 1;
+        multisample_to_sample.subresourceRange.layerCount = 1;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                             0, nullptr, 0, nullptr, 1, &multisample_to_sample);
+
+        VkRenderPassBeginInfo copy_begin{};
+        copy_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        copy_begin.renderPass = resources.copy_render_pass;
+        copy_begin.framebuffer = resources.copy_framebuffer;
+        copy_begin.renderArea.extent = {output_width, output_height};
+        vkCmdBeginRenderPass(command, &copy_begin, VK_SUBPASS_CONTENTS_INLINE);
+        VkViewport copy_viewport{0.0f, 0.0f, static_cast<float>(output_width),
+                                 static_cast<float>(output_height), 0.0f, 1.0f};
+        VkRect2D copy_scissor{{0, 0}, {output_width, output_height}};
+        vkCmdSetViewport(command, 0, 1, &copy_viewport);
+        vkCmdSetScissor(command, 0, 1, &copy_scissor);
+        vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          resources.copy_draw.pipeline);
+        vkCmdBindDescriptorSets(command, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                resources.copy_draw.pipeline_layout, 0, 2,
+                                resources.copy_draw.descriptor_sets, 0, nullptr);
+        vkCmdDraw(command, 3, 1, 0, 0);
+        vkCmdEndRenderPass(command);
+    }
 
     VkImageMemoryBarrier output_to_sample{};
     output_to_sample.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;

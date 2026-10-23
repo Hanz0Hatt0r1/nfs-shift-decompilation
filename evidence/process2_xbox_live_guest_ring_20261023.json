@@ -761,50 +761,101 @@
           "rexgpu_shift_native_live_ring_readback_check"
         ],
         "result": "3/3 passed sequentially with VK_LAYER_KHRONOS_validation enabled",
-      "scope": "synthetic ABI/ring/presenter regressions; not a live retail validation-layer run"
+        "scope": "synthetic ABI/ring/presenter regressions; not a live retail validation-layer run"
+      }
+    },
+    "android_copy_register_decoder_20261023": {
+      "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, Mali-G76 MC4)",
+      "source": "files/nfs_shift/user/logs/nfs_shift_024.log",
+      "captured_registers": {
+        "copy_valid_mask": "0x0f",
+        "copy_control": "0x00100000",
+        "copy_dest_base": "0x0975e000",
+        "copy_dest_pitch": "0x02d00500",
+        "copy_dest_info": "0x01000300",
+        "swap_frontbuffer": "0x0975e000"
+      },
+      "decoded_contract": {
+        "source_select": 0,
+        "sample_select": 0,
+        "command": "Convert",
+        "destination": "1280x720",
+        "destination_format": 6,
+        "destination_swap_red_blue": true
+      },
+      "parser_regression": {
+        "host_target": "shift_xbox_draw_input_check",
+        "host_ctest": "passed",
+        "host_binary_sha256": "e3112ffaf65a06defeb48e20aa088cce699d1061ee0c63f6cf9abbd425fcda05",
+        "android_arm64_target": "shift_xbox_draw_input_check",
+        "android_device_result": "passed on Redmi Note 8 Pro",
+        "android_binary_sha256": "d2bbc87d8461508b38b99a8a134409eea82b92de9654a13301bee453ae0ebce5",
+        "negative_cases": [
+          "incomplete copy register set",
+          "reserved copy-control bit",
+          "reserved destination-info bit",
+          "uncaptured depth-source request"
+        ]
+      },
+      "live_output_check": {
+        "installed_game_process": 20380,
+        "screenshot_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+        "vulkan_readback_sha256": "cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5",
+        "non_black_pixels": 0,
+        "result": "still black; the decoder is not connected to a Vulkan EDRAM source or Copy/Convert submission"
+      },
+      "status": "register contract recognized and ARM64-tested; no visible-output or retail-parity claim"
     }
   },
-  "android_copy_register_decoder_20261023": {
-    "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, Mali-G76 MC4)",
-    "source": "files/nfs_shift/user/logs/nfs_shift_024.log",
-    "captured_registers": {
-      "copy_valid_mask": "0x0f",
-      "copy_control": "0x00100000",
-      "copy_dest_base": "0x0975e000",
-      "copy_dest_pitch": "0x02d00500",
-      "copy_dest_info": "0x01000300",
-      "swap_frontbuffer": "0x0975e000"
+  "android_vulkan_sample0_copy_20261023": {
+    "date": "2026-10-23",
+    "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, arm64-v8a, Mali-G76 MC4, Vulkan 1.1.131)",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "installed_process": 28531,
+    "apk_sha256": "ff5c30af24013b315280e161cd383c4cd50874a1e096f0d0383364f004a311c6",
+    "plugin_entries": {
+      "lib/arm64-v8a/librexgpu-shift-natived.so": "7a62b62eddb5dabea9d7f78728ce45a4d59910f1642dcd7da32e6aec93a760f3",
+      "lib/arm64-v8a/librexgpu-xenosd.so": "7a62b62eddb5dabea9d7f78728ce45a4d59910f1642dcd7da32e6aec93a760f3",
+      "identical": true,
+      "interpretation": "The xenos-named Android loader alias contains the Process 2 Vulkan plugin, not the Xenos GPU renderer."
     },
-    "decoded_contract": {
-      "source_select": 0,
-      "sample_select": 0,
-      "command": "Convert",
-      "destination": "1280x720",
-      "destination_format": 6,
-      "destination_swap_red_blue": true
+    "runtime_log": "files/nfs_shift/user/logs/nfs_shift_026.log",
+    "observed_frame": {
+      "pm4_packets_in_live_batch": 153,
+      "captured_indexed_draws": 26,
+      "supported_raster_state_draws": 25,
+      "framebuffer_noops_elided": 24,
+      "retail_draws_translated_and_resource_resolved": 1,
+      "vulkan_draws_submitted_per_swap": 1,
+      "guest_swaps": 2,
+      "copy_convert": {
+        "source_select": 0,
+        "sample_select": 0,
+        "command": "Convert",
+        "destination": "0x0975e000",
+        "extent": "1280x720",
+        "format": 6,
+        "swap_red_blue": true,
+        "matches_guest_swap": true,
+        "vulkan_sample_zero_pass_submitted": true
+      },
+      "later_pm4_batches_after_startup_swaps": 0
     },
-    "parser_regression": {
-      "host_target": "shift_xbox_draw_input_check",
-      "host_ctest": "passed",
-      "host_binary_sha256": "e3112ffaf65a06defeb48e20aa088cce699d1061ee0c63f6cf9abbd425fcda05",
-      "android_arm64_target": "shift_xbox_draw_input_check",
-      "android_device_result": "passed on Redmi Note 8 Pro",
-      "android_binary_sha256": "d2bbc87d8461508b38b99a8a134409eea82b92de9654a13301bee453ae0ebce5",
-      "negative_cases": [
-        "incomplete copy register set",
-        "reserved copy-control bit",
-        "reserved destination-info bit",
-        "uncaptured depth-source request"
-      ]
-    },
-    "live_output_check": {
-      "installed_game_process": 20380,
-      "screenshot_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
-      "vulkan_readback_sha256": "cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5",
+    "output": {
+      "extent": "1280x720",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
       "non_black_pixels": 0,
-      "result": "still black; the decoder is not connected to a Vulkan EDRAM source or Copy/Convert submission"
+      "fnv1a64": "B161DE6EEC272325",
+      "screenshot_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+      "visible_retail_output_confirmed": false,
+      "full_scene_parity_verified": false
     },
-    "status": "register contract recognized and ARM64-tested; no visible-output or retail-parity claim"
+    "offscreen_renderer_regression": {
+      "host_vulkan_ctest": "4/4 passed; validation layer enabled on host",
+      "android_arm64": "synthetic Vulkan 1.1 sample-zero Copy/Convert and captured R/B swap passed on Mali-G76 MC4",
+      "android_live_validation_layer": false,
+      "scope": "Validates the bounded Vulkan pass and channel conversion only; it does not establish retail image output or parity."
+    },
+    "result": "The Android Vulkan path now submits the captured source-0/sample-0 Copy/Convert operation, but the current early-startup retail readback is still completely black. The Vulkan renderer is not ready for visible retail output; no later PM4 draw batch was observed after the two startup swaps."
   }
-}
 }

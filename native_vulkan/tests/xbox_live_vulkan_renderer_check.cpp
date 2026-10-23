@@ -82,8 +82,9 @@ bool read_spirv(const char* path, std::vector<uint32_t>* output) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 4) {
-        std::cerr << "usage: xbox_live_vulkan_renderer_check vertex.spv fragment.spv geometry.spv\n";
+    if (argc != 6) {
+        std::cerr << "usage: xbox_live_vulkan_renderer_check vertex.spv fragment.spv "
+                     "geometry.spv copy-vertex.spv copy-fragment.spv\n";
         return 2;
     }
 
@@ -100,7 +101,7 @@ int main(int argc, char** argv) {
     const char* extension_name = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
     VkApplicationInfo app{};
     app.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    app.pApplicationName = "SHIFT synthetic Vulkan point-draw smoke";
+    app.pApplicationName = "SHIFT synthetic Vulkan Copy/Convert smoke";
     app.apiVersion = VK_API_VERSION_1_1;
     VkInstanceCreateInfo instance_info{};
     instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -201,7 +202,7 @@ int main(int argc, char** argv) {
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_info.imageType = VK_IMAGE_TYPE_2D;
     image_info.format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
-    image_info.extent = {64, 64, 1};
+    image_info.extent = {1280, 720, 1};
     image_info.mipLevels = 1;
     image_info.arrayLayers = 1;
     image_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -252,6 +253,14 @@ int main(int argc, char** argv) {
     if (enabled_features.geometryShader &&
         !read_spirv(argv[3], &rectangle_geometry_spirv)) {
         std::cerr << "could not read valid Vulkan 1.1 rectangle-list geometry SPIR-V\n";
+        return 1;
+    }
+    shift::xbox::CapturedVulkanCopy copy{};
+    copy.state = {0, 0, shift::xbox::CapturedCopyCommand::Convert,
+                  0x0975E000u, 1280, 720, 6, true};
+    if (!read_spirv(argv[4], &copy.vertex_shader_spirv) ||
+        !read_spirv(argv[5], &copy.pixel_shader_spirv)) {
+        std::cerr << "could not read valid Vulkan 1.1 sample-zero Copy/Convert shaders\n";
         return 1;
     }
     draw.texture_rgba8 = {255, 0, 0, 255};
@@ -306,19 +315,22 @@ int main(int argc, char** argv) {
     std::vector<uint32_t> output_readback;
     const bool submitted = shift::xbox::submit_captured_vulkan_frame(
         physical_device, device, queue, queue_family, output_image, output_view, false,
-        64, 64, draws, &error, &output_readback, enabled_features.geometryShader);
+        1280, 720, draws, &error, &output_readback,
+        enabled_features.geometryShader, &copy);
     if (!submitted) {
         std::cerr << "captured Vulkan draw submission failed: " << error << '\n';
         return 1;
     }
 
     bool has_color = false;
+    bool has_swapped_blue = false;
     size_t colored_pixels = 0;
     for (const uint32_t pixel : output_readback) {
         if (pixel & 0x3FFFFFFFu) {
             has_color = true;
             ++colored_pixels;
         }
+        if (pixel & 0x3FF00000u) has_swapped_blue = true;
     }
     vkDestroyImageView(device, output_view, nullptr);
     vkDestroyImage(device, output_image, nullptr);
@@ -332,7 +344,11 @@ int main(int argc, char** argv) {
     vkDestroyInstance(instance, nullptr);
 
     if (!has_color) {
-        std::cerr << "Vulkan draw submission produced no non-black pixels\n";
+        std::cerr << "Vulkan sample-zero Copy/Convert produced no non-black pixels\n";
+        return 1;
+    }
+    if (!has_swapped_blue) {
+        std::cerr << "Vulkan Copy/Convert did not apply captured R/B destination swap\n";
         return 1;
     }
     if (enabled_features.geometryShader && colored_pixels < 100) {
@@ -344,13 +360,13 @@ int main(int argc, char** argv) {
         std::cerr << validation_errors << " Vulkan validation errors\n";
         return 1;
     }
-    if (output_readback.size() != 64u * 64u) {
+    if (output_readback.size() != 1280u * 720u) {
         std::cerr << "Vulkan output readback has the wrong pixel count\n";
         return 1;
     }
     std::cout << "synthetic offscreen Vulkan 1.1 AutoIndex point"
               << (enabled_features.geometryShader ? " and rectangle-list" : "")
-              << " draw and output readback passed on "
+              << " draw plus captured sample-zero Copy/Convert passed on "
               << device_properties.deviceName
               << (use_validation ? " with validation enabled\n" : "\n");
     return 0;

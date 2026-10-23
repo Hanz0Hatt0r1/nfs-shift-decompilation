@@ -83,6 +83,24 @@ if(GLSLANG_VALIDATOR)
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/live_draw_rectlist.geom
     VERBATIM
   )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.vert.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_sample0.vert
+            -o ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.vert.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_sample0.vert
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V --target-env vulkan1.1
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_sample0.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/xenos_copy_sample0.frag
+    VERBATIM
+  )
   add_executable(xbox_live_vulkan_renderer_check tests/xbox_live_vulkan_renderer_check.cpp)
   add_dependencies(xbox_live_vulkan_renderer_check shift_xbox_live_vulkan_renderer)
   target_link_libraries(xbox_live_vulkan_renderer_check PRIVATE shift_xbox_live_vulkan_renderer)
@@ -91,6 +109,8 @@ if(GLSLANG_VALIDATOR)
       ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.vert.spv
       ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.frag.spv
       ${SHIFT_VULKAN_SHADER_DIR}/live_draw_rectlist.geom.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.vert.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.frag.spv
   )
   add_dependencies(xbox_live_vulkan_renderer_check shift_xbox_live_vulkan_renderer_smoke_shaders)
   add_test(
@@ -99,6 +119,8 @@ if(GLSLANG_VALIDATOR)
             ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.vert.spv
             ${SHIFT_VULKAN_SHADER_DIR}/live_draw_smoke.frag.spv
             ${SHIFT_VULKAN_SHADER_DIR}/live_draw_rectlist.geom.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.vert.spv
+            ${SHIFT_VULKAN_SHADER_DIR}/xenos_copy_sample0.frag.spv
   )
   set_tests_properties(xbox_live_vulkan_renderer_check PROPERTIES SKIP_RETURN_CODE 77)
 

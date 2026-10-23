@@ -30,6 +30,12 @@ struct CapturedVulkanDraw {
     uint32_t texture_height = 0;
 };
 
+struct CapturedVulkanCopy {
+    CapturedCopyState state{};
+    std::vector<uint32_t> vertex_shader_spirv;
+    std::vector<uint32_t> pixel_shader_spirv;
+};
+
 // Records and submits the captured game draws into the ReXGlue presenter image.
 // The caller must externally synchronize the supplied graphics queue. The
 // renderer uses only Vulkan 1.1 and has no window-system dependency.
@@ -46,6 +52,7 @@ bool submit_captured_vulkan_frame(
     const std::vector<CapturedVulkanDraw>& draws,
     std::string* error,
     std::vector<uint32_t>* output_readback = nullptr,
-    bool geometry_shader_enabled = false);
+    bool geometry_shader_enabled = false,
+    const CapturedVulkanCopy* copy = nullptr);
 
 }  // namespace shift::xbox

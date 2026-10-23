@@ -82,6 +82,22 @@ const std::string kRectangleListGeometryShader =
     "  EmitVertex();\n"
     "  EndPrimitive();\n"
     "}\n";
+const std::string kCopyResolveVertexShader =
+    "#version 450\n"
+    "void main() {\n"
+    "  const vec2 p[3] = vec2[3](vec2(-1.0, -1.0), vec2(3.0, -1.0),\n"
+    "                           vec2(-1.0, 3.0));\n"
+    "  gl_Position = vec4(p[gl_VertexIndex], 0.0, 1.0);\n"
+    "}\n";
+const std::string kCopyResolvePixelShader =
+    "#version 450\n"
+    "layout(set=1,binding=0) uniform sampler2DMS source_image;\n"
+    "layout(location=0) out vec4 shift_color0;\n"
+    "void main() {\n"
+    "  vec4 c = texelFetch(source_image, ivec2(gl_FragCoord.xy), 0);\n"
+    "  c = floor(clamp(c, 0.0, 1.0) * 255.0 + 0.5) / 255.0;\n"
+    "  shift_color0 = c.bgra;\n"
+    "}\n";
 
 bool DebugFragmentColorEnabled() {
   static const bool enabled = [] {
@@ -150,6 +166,18 @@ bool CompileVulkanShader(
   *spirv = std::move(compiled);
   if (error) error->clear();
   return true;
+}
+
+bool CompileCapturedCopyResolveShaders(
+    shift::xbox::CapturedVulkanCopy* copy,
+    std::string* error) {
+  return copy &&
+         CompileVulkanShader("copy-resolve-vertex", EShLangVertex,
+                             kCopyResolveVertexShader,
+                             &copy->vertex_shader_spirv, error) &&
+         CompileVulkanShader("copy-resolve-pixel", EShLangFragment,
+                             kCopyResolvePixelShader,
+                             &copy->pixel_shader_spirv, error);
 }
 
 class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
@@ -676,6 +704,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     std::vector<uint8_t> vertex_shader_program;
     std::vector<uint8_t> pixel_shader_program;
     std::vector<shift::xbox::CapturedVulkanDraw> frame_draws;
+    shift::xbox::CapturedVulkanCopy frame_copy{};
+    bool frame_copy_ready = false;
     uint64_t observed_ring_generation = 0;
     for (;;) {
       uint32_t read_pointer = 0;
@@ -702,6 +732,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         vertex_shader_program.clear();
         pixel_shader_program.clear();
         frame_draws.clear();
+        frame_copy = {};
+        frame_copy_ready = false;
         observed_ring_generation = ring_generation;
       }
 
@@ -1062,6 +1094,30 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     continue;
                   }
                 }
+                if (!raster_state_ready && raster_registers_ready &&
+                    draw.topology == shift::xbox::PrimitiveTopology::RectangleList) {
+                  shift::xbox::CapturedCopyState copy_state{};
+                  if (shift::xbox::decode_captured_copy_state(
+                          raster_registers, &copy_state, &error)) {
+                    shift::xbox::CapturedVulkanCopy prepared_copy{};
+                    prepared_copy.state = copy_state;
+                    if (CompileCapturedCopyResolveShaders(&prepared_copy, &error)) {
+                      frame_copy = std::move(prepared_copy);
+                      frame_copy_ready = true;
+                      REXLOG_INFO(
+                          "shift-native: accepted captured source-0/sample-0 "
+                          "Copy/Convert destination {:08X} {}x{} format {} R/B swap {}",
+                          copy_state.destination_base, copy_state.destination_pitch,
+                          copy_state.destination_height, copy_state.destination_format,
+                          copy_state.destination_swap_red_blue);
+                    } else {
+                      frame_copy_ready = false;
+                      REXLOG_WARN("shift-native: could not compile captured Copy/Convert "
+                                  "resolve shaders: {}", error);
+                    }
+                    continue;
+                  }
+                }
                 if (!vertex_shader_program.empty() && !pixel_shader_program.empty()) {
                   ++draws_with_both_shader_programs;
                 }
@@ -1135,22 +1191,43 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                       packet_bytes, packet.byte_length, &swap, &error)) {
                 ++unsupported_draws;
                 frame_draws.clear();
+                frame_copy = {};
+                frame_copy_ready = false;
                 continue;
               }
               ++decoded_swaps;
+              const bool copy_matches_swap = frame_copy_ready &&
+                  frame_copy.state.destination_base == swap.frontbuffer_guest_address &&
+                  frame_copy.state.destination_pitch == swap.width &&
+                  frame_copy.state.destination_height == swap.height;
+              const shift::xbox::CapturedVulkanCopy* copy_for_swap =
+                  copy_matches_swap ? &frame_copy : nullptr;
+              if (frame_copy_ready && !copy_matches_swap) {
+                REXLOG_WARN("shift-native: ignored captured Copy/Convert destination "
+                            "{:08X} {}x{} for guest swap {:08X} {}x{}",
+                            frame_copy.state.destination_base,
+                            frame_copy.state.destination_pitch,
+                            frame_copy.state.destination_height,
+                            swap.frontbuffer_guest_address, swap.width, swap.height);
+              }
               if (!frame_draws.empty() && presenter_ && provider_ &&
                   provider_->vulkan_device()) {
                 const uint32_t draw_count = static_cast<uint32_t>(frame_draws.size());
                 const char* readback_path = std::getenv("SHIFT_NATIVE_VULKAN_READBACK_PATH");
-                const bool capture_output = readback_path && *readback_path &&
-                                            !readback_saved_;
+#if defined(__ANDROID__) && !defined(NDEBUG)
+                constexpr bool kAndroidDebugReadback = true;
+#else
+                constexpr bool kAndroidDebugReadback = false;
+#endif
+                const bool capture_output = !readback_saved_ &&
+                    (kAndroidDebugReadback || (readback_path && *readback_path));
                 std::vector<uint32_t> output_readback;
                 std::string render_error;
                 bool refresh_callback_called = false;
                 const bool refreshed = presenter_->RefreshGuestOutput(
                     swap.width, swap.height, swap.width, swap.height,
                     [this, &frame_draws, &render_error, &refresh_callback_called,
-                     width = swap.width,
+                     copy_for_swap, width = swap.width,
                      height = swap.height, capture_output, &output_readback](
                         rex::ui::Presenter::GuestOutputRefreshContext& base) {
                       refresh_callback_called = true;
@@ -1173,7 +1250,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                           context->image_ever_written_previously(),
                           width, height, frame_draws, &render_error,
                           capture_output ? &output_readback : nullptr,
-                          device->properties().geometryShader);
+                          device->properties().geometryShader, copy_for_swap);
                     });
                 if (refreshed) {
                   ++submitted_frames;
@@ -1184,9 +1261,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   if (capture_output) {
                     const size_t expected_pixels =
                         static_cast<size_t>(swap.width) * swap.height;
-                    std::ofstream output_file;
-                    bool output_written = false;
-                    if (output_readback.size() == expected_pixels) {
+                    bool output_written = output_readback.size() == expected_pixels;
+                    if (output_written && readback_path && *readback_path) {
+                      std::ofstream output_file;
                       output_file.open(readback_path,
                                        std::ios::binary | std::ios::trunc);
                       output_file.write(
@@ -1207,14 +1284,18 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                         }
                       }
                       readback_saved_ = true;
-                      REXLOG_INFO("shift-native: saved Vulkan guest output {}x{} as "
-                                  "VK_FORMAT_A2B10G10R10_UNORM_PACK32 to {}; "
+                      REXLOG_INFO("shift-native: {} Vulkan guest output {}x{} as "
+                                  "VK_FORMAT_A2B10G10R10_UNORM_PACK32{}{}; "
                                   "non-black pixels {}, FNV-1a {:016X}",
-                                  swap.width, swap.height, readback_path,
+                                  readback_path && *readback_path ? "saved" : "read back",
+                                  swap.width, swap.height,
+                                  readback_path && *readback_path ? " to file " : " (Android debug only)",
+                                  readback_path && *readback_path ? readback_path : "",
                                   non_black_pixels, checksum);
                     } else {
-                      REXLOG_WARN("shift-native: could not write Vulkan guest output to {}",
-                                  readback_path);
+                      REXLOG_WARN("shift-native: could not read/write Vulkan guest output{}{}",
+                                  readback_path && *readback_path ? " at " : "",
+                                  readback_path && *readback_path ? readback_path : "");
                     }
                   }
                 } else {
@@ -1229,6 +1310,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 }
               }
               frame_draws.clear();
+              frame_copy = {};
+              frame_copy_ready = false;
             } else if (packet.type == shift::xbox::PacketType::Type3 &&
                        packet.opcode == 0x54u) {
               uint32_t cpu_mask = 0;
