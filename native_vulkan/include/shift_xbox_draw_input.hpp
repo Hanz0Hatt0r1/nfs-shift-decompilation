@@ -505,6 +505,14 @@ bool decode_captured_draw_indx(
     DecodedIndexedDraw* output,
     std::string* error);
 
+// Decodes the captured PM4_INTERRUPT CPU-mask payload. This reports the
+// requested CPU bits only; the ReXGlue frontend owns callback dispatch.
+bool decode_captured_gpu_interrupt(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    uint32_t* cpu_mask,
+    std::string* error);
+
 // Decodes the four-payload-word ReXGlue PM4_XE_SWAP marker written by
 // VdSwap. This exposes the guest frontbuffer address and dimensions; it does
 // not read or emulate the Xenos frontbuffer.

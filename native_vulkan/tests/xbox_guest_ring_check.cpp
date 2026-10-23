@@ -26,6 +26,9 @@ constexpr std::array<uint8_t, 12> kCapturedIndirectBufferPacket = {
     0xC0, 0x01, 0x3F, 0x00, 0x09, 0x75, 0xB6, 0x60,
     0x00, 0x00, 0x00, 0x4A,
 };
+constexpr std::array<uint8_t, 8> kCapturedInterruptPacket = {
+    0xC0, 0x00, 0x54, 0x00, 0x00, 0x00, 0x00, 0x24,
+};
 
 struct GuestMemoryFixture {
     uint32_t guest_address = 0;
@@ -98,6 +101,16 @@ int main() {
                 batch.packets[0].byte_length, &draw, &error) &&
                 draw.index_count == 6,
             "wrapped captured DRAW_INDX did not reach the bounded decoder");
+
+    uint32_t interrupt_cpu_mask = 0;
+    require(shift::xbox::decode_captured_gpu_interrupt(
+                kCapturedInterruptPacket.data(), kCapturedInterruptPacket.size(),
+                &interrupt_cpu_mask, &error) && interrupt_cpu_mask == 0x24u,
+            "captured PM4_INTERRUPT CPU mask was not decoded in guest byte order");
+    require(!shift::xbox::decode_captured_gpu_interrupt(
+                kCapturedInterruptPacket.data(), kCapturedInterruptPacket.size() - 4u,
+                &interrupt_cpu_mask, &error),
+            "truncated PM4_INTERRUPT packet was accepted");
 
     shift::xbox::GuestRingBatch empty{};
     require(shift::xbox::snapshot_guest_ring_batch(

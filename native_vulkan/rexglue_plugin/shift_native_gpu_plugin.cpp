@@ -27,6 +27,7 @@
 #include <rex/system/gpu_plugin.h>
 #include <rex/system/interfaces/graphics.h>
 #include <rex/system/mmio_handler.h>
+#include <rex/system/xthread.h>
 #include <rex/system/xtypes.h>
 #include <rex/ui/presenter.h>
 #include <rex/ui/vulkan/presenter.h>
@@ -149,8 +150,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   }
 
   X_STATUS SetupGuestGpu(rex::runtime::FunctionDispatcher* function_dispatcher,
-                         rex::system::KernelState*) override {
+                         rex::system::KernelState* kernel_state) override {
     if (!function_dispatcher) return X_STATUS_UNSUCCESSFUL;
+    function_dispatcher_ = function_dispatcher;
+    kernel_state_ = kernel_state;
     memory_ = function_dispatcher->memory();
     if (!memory_) return X_STATUS_UNSUCCESSFUL;
     if (!provider_) {
@@ -165,7 +168,22 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       return X_STATUS_UNSUCCESSFUL;
     }
     try {
-      ring_worker_ = std::thread([this] { RingWorkerLoop(); });
+      if (kernel_state_) {
+        ring_host_worker_ = rex::system::object_ref<rex::system::XHostThread>(
+            new rex::system::XHostThread(kernel_state_, 128 * 1024, 0, [this] {
+              RingWorkerLoop();
+              return 0;
+            }));
+        ring_host_worker_->set_name("SHIFT Native GPU");
+        if (XFAILED(ring_host_worker_->Create())) {
+          ring_host_worker_.reset();
+          return X_STATUS_UNSUCCESSFUL;
+        }
+      } else {
+        // The isolated presenter smoke has no KernelState or guest interrupt
+        // callback; keep that ABI-only path independent of the guest scheduler.
+        ring_worker_ = std::thread([this] { RingWorkerLoop(); });
+      }
     } catch (const std::exception& e) {
       REXLOG_ERROR("shift-native: unable to start PM4 input worker: {}", e.what());
       return X_STATUS_UNSUCCESSFUL;
@@ -178,8 +196,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   rex::ui::GraphicsProvider* provider() const override { return provider_.get(); }
   rex::ui::Presenter* presenter() const override { return presenter_.get(); }
 
-  void SetInterruptCallback(uint32_t callback, uint32_t) override {
-    if (callback) REXLOG_WARN("shift-native: guest GPU interrupts are not implemented");
+  void SetInterruptCallback(uint32_t callback, uint32_t user_data) override {
+    std::lock_guard<std::mutex> lock(interrupt_mutex_);
+    interrupt_callback_ = callback;
+    interrupt_callback_data_ = user_data;
+    REXLOG_INFO("shift-native: guest GPU interrupt callback set to {:08X}", callback);
   }
 
   void InitializeRingBuffer(uint32_t guest_address, uint32_t size_log2) override {
@@ -215,6 +236,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       ring_worker_shutdown_ = true;
     }
     ring_changed_.notify_all();
+    if (ring_host_worker_) {
+      ring_host_worker_->Wait(0, 0, 0, nullptr);
+      ring_host_worker_.reset();
+    }
     if (ring_worker_.joinable()) ring_worker_.join();
     if (presenter_ && app_context_) {
       app_context_->CallInUIThreadSynchronous([this]() { presenter_.reset(); });
@@ -224,6 +249,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     provider_.reset();
     app_context_ = nullptr;
     memory_ = nullptr;
+    function_dispatcher_ = nullptr;
+    kernel_state_ = nullptr;
   }
 
  private:
@@ -556,6 +583,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         observed_ring_generation = ring_generation;
       }
 
+      uint32_t interrupt_packets = 0;
+      uint32_t dispatched_interrupt_callbacks = 0;
+      std::vector<uint32_t> pending_interrupt_masks;
       try {
         std::atomic_thread_fence(std::memory_order_acquire);
         const uint8_t* ring_bytes =
@@ -990,6 +1020,17 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 }
               }
               frame_draws.clear();
+            } else if (packet.type == shift::xbox::PacketType::Type3 &&
+                       packet.opcode == 0x54u) {
+              uint32_t cpu_mask = 0;
+              if (!shift::xbox::decode_captured_gpu_interrupt(
+                      packet_bytes, packet.byte_length, &cpu_mask, &error)) {
+                ++unsupported_draws;
+                REXLOG_WARN("shift-native: rejected PM4_INTERRUPT packet: {}", error);
+                continue;
+              }
+              pending_interrupt_masks.push_back(cpu_mask);
+              ++interrupt_packets;
             }
           }
           std::ostringstream type3_opcode_summary;
@@ -1068,6 +1109,44 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         rex::memory::store_and_swap<uint32_t>(
             memory_->TranslatePhysical<uint32_t*>(writeback_address), write_pointer);
       }
+      try {
+        for (const uint32_t cpu_mask : pending_interrupt_masks) {
+          uint32_t callback = 0;
+          uint32_t callback_data = 0;
+          {
+            std::lock_guard<std::mutex> lock(interrupt_mutex_);
+            callback = interrupt_callback_;
+            callback_data = interrupt_callback_data_;
+          }
+          if (!callback) continue;
+          if (!function_dispatcher_ || !ring_host_worker_) {
+            REXLOG_WARN("shift-native: cannot dispatch guest GPU interrupt without "
+                        "the ReXGlue host-thread context");
+            break;
+          }
+          for (uint32_t cpu = 0; cpu < 6u; ++cpu) {
+            if ((cpu_mask & (1u << cpu)) == 0) continue;
+            auto* thread = rex::system::XThread::GetCurrentThread();
+            if (thread != ring_host_worker_.get()) {
+              REXLOG_ERROR("shift-native: GPU interrupt left its ReXGlue host thread");
+              break;
+            }
+            thread->SetActiveCpu(static_cast<uint8_t>(cpu));
+            uint64_t args[] = {1u, callback_data};
+            function_dispatcher_->ExecuteInterrupt(thread->thread_state(), callback, args, 2);
+            ++dispatched_interrupt_callbacks;
+          }
+        }
+      } catch (const std::exception& e) {
+        REXLOG_ERROR("shift-native: guest GPU interrupt callback failed: {}", e.what());
+      } catch (...) {
+        REXLOG_ERROR("shift-native: guest GPU interrupt callback failed");
+      }
+      if (interrupt_packets) {
+        REXLOG_DEBUG("shift-native: consumed {} PM4_INTERRUPT packets and dispatched "
+                     "{} guest callbacks",
+                     interrupt_packets, dispatched_interrupt_callbacks);
+      }
     }
   }
 
@@ -1075,9 +1154,15 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   std::unique_ptr<rex::ui::Presenter> presenter_;
   rex::ui::WindowedAppContext* app_context_ = nullptr;
   rex::memory::Memory* memory_ = nullptr;
+  rex::runtime::FunctionDispatcher* function_dispatcher_ = nullptr;
+  rex::system::KernelState* kernel_state_ = nullptr;
   std::mutex ring_mutex_;
   std::condition_variable ring_changed_;
   std::thread ring_worker_;
+  rex::system::object_ref<rex::system::XHostThread> ring_host_worker_;
+  std::mutex interrupt_mutex_;
+  uint32_t interrupt_callback_ = 0;
+  uint32_t interrupt_callback_data_ = 0;
   uint32_t ring_guest_address_ = 0;
   size_t ring_byte_length_ = 0;
   uint32_t ring_read_pointer_ = 0;

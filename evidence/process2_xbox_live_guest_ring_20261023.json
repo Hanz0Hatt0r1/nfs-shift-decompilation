@@ -313,6 +313,27 @@
     "full_scene_parity_verified": false,
     "vulkan_validation_layer_enabled": false
   },
+  "gpu_interrupt_routing_update": {
+    "date": "2026-10-23",
+    "plugin_source": "native_vulkan/rexglue_plugin/shift_native_gpu_plugin.cpp",
+    "plugin_sha256": "3a3111b7d1d2487555ac453648d36e2a1b5b6eef1ffb1c9cacf46acd17d6cd92",
+    "behavior": "decodes captured PM4_INTERRUPT CPU masks and dispatches registered guest GPU callbacks on a ReXGlue XHostThread after the current ring batch read-pointer writeback",
+    "ordering_limit": "callback dispatch is deferred until the batch is consumed; exact ordering at each interrupt packet within a batch is not verified",
+    "linux_checks": {
+      "plugin_ctest": "2/2 passed",
+      "vulkan_validation_layer_live_ring_smoke": "1/1 passed",
+      "captured_interrupt_decoder_regression": "passed"
+    },
+    "android_device_check": {
+      "device": "Redmi Note 8 Pro (begonia, Android API 33, arm64-v8a, Mali-G76 MC4)",
+      "test": "shift_xbox_guest_ring_check",
+      "result": "passed",
+      "scope": "Android parser and guest-ring regression only; not a Vulkan retail game or full game build",
+      "temporary_device_binary_removed": true
+    },
+    "retail_rerun_after_update": false,
+    "visible_retail_output_verified": false
+  },
   "remaining_blockers": [
     "All 100 observed DRAW_INDX_2 packets are AutoIndex (96 one-point draws and four three-index rectangle-list draws); no DMA-indexed draw packet was observed. The first live retail frame therefore covers the observed point-list path only.",
     "AutoIndex rectangle-list expansion remains unsupported, and the retail full/mini-fetch shader's rectangle draws are still skipped. Xenos EDRAM accumulation and the guest frontbuffer resolve path are not implemented.",

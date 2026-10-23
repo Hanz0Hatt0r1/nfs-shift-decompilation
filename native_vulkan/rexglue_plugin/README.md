@@ -97,3 +97,16 @@ The device test
 used synthetic shaders and ran without the validation layer; it does not show
 a retail frame. The parser, guest-ring, shader-translation, and renderer
 checks were also rebuilt for API 33 and rerun on the device.
+
+The guest-ring path now decodes the captured `PM4_INTERRUPT` CPU mask and
+dispatches the registered GPU callback through a ReXGlue `XHostThread`, so the
+callback has a guest thread context. The callback is issued after the current
+ring batch is consumed and its read pointer is published; exact ordering at
+each interrupt packet inside a batch is not verified. The decoder regression
+and Android API 33 guest-ring smoke passed on Redmi Note 8 Pro (Mali-G76 MC4),
+and the Linux plugin suite passed 2/2 with a separate Vulkan validation-layer
+run passing 1/1. These are parser/plugin checks, not a full Android game test.
+No retail Linux run has yet been repeated with this interrupt-routing update,
+so its effect on guest game progress and visible output is unknown. See the
+`gpu_interrupt_routing_update` entry in the evidence JSON for the build and
+test details.

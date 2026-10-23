@@ -15,6 +15,7 @@ constexpr uint32_t kPacketCountMask = 0x3FFF0000u;
 constexpr uint32_t kPacketOpcodeMask = 0x0000FF00u;
 constexpr uint32_t kDrawIndxOpcode = 0x22u;
 constexpr uint32_t kDrawIndx2Opcode = 0x36u;
+constexpr uint32_t kInterruptOpcode = 0x54u;
 constexpr uint32_t kImLoadOpcode = 0x27u;
 constexpr uint32_t kImLoadImmediateOpcode = 0x2Bu;
 constexpr uint32_t kLoadAluConstantOpcode = 0x2Fu;
@@ -765,6 +766,27 @@ bool decode_captured_draw_indx(
     if (error) {
         error->clear();
     }
+    return true;
+}
+
+bool decode_captured_gpu_interrupt(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    uint32_t* cpu_mask,
+    std::string* error) {
+    if (!packet_bytes || !cpu_mask || byte_length < 8u) {
+        return fail("invalid PM4_INTERRUPT packet input", error);
+    }
+    const uint32_t header = read_be32(packet_bytes);
+    const size_t expected_bytes =
+        (static_cast<size_t>((header >> 16) & 0x3FFFu) + 2u) * sizeof(uint32_t);
+    if ((header >> 30) != 3u ||
+        ((header & kPacketOpcodeMask) >> 8) != kInterruptOpcode ||
+        byte_length != expected_bytes) {
+        return fail("unsupported PM4_INTERRUPT packet form", error);
+    }
+    *cpu_mask = read_be32(packet_bytes + sizeof(uint32_t));
+    if (error) error->clear();
     return true;
 }
 
