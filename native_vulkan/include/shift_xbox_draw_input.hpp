@@ -21,6 +21,12 @@ struct DecodedIndexedDraw {
     uint32_t index_byte_length;
 };
 
+struct DecodedGuestSwap {
+    uint32_t frontbuffer_guest_address;
+    uint32_t width;
+    uint32_t height;
+};
+
 enum class PacketType : uint8_t {
     Type0,
     Type1,
@@ -52,6 +58,23 @@ struct CapturedShaderProgramLoad {
     GuestShaderStage stage;
     uint32_t guest_address;
     uint32_t dword_count;
+    uint32_t byte_length;
+};
+
+enum class CapturedConstantBank : uint8_t {
+    Alu,
+    Fetch,
+    Boolean,
+    Loop,
+    Registers,
+};
+
+struct CapturedConstantLoad {
+    CapturedConstantBank bank;
+    uint32_t guest_address;
+    uint32_t start_index;
+    uint32_t dword_count;
+    uint32_t destination_register;
     uint32_t byte_length;
 };
 
@@ -276,6 +299,7 @@ struct CapturedRasterRegisters {
     uint32_t window_offset;
     uint32_t window_scissor_tl;
     uint32_t window_scissor_br;
+    uint32_t blend_control_0;
 };
 
 // Retains only the raster registers used by the captured Xbox draw contract.
@@ -287,7 +311,7 @@ struct GuestRasterRegisterState {
 
 private:
     CapturedRasterRegisters registers_{};
-    uint16_t valid_mask_ = 0;
+    uint32_t valid_mask_ = 0;
 };
 
 struct CapturedRasterState {
@@ -308,6 +332,7 @@ struct CapturedRasterState {
     uint32_t scissor_x1;
     uint32_t scissor_y1;
     bool scissor_has_area;
+    uint32_t blend_control_0;
 };
 
 struct CapturedShaderConstants {
@@ -315,6 +340,30 @@ struct CapturedShaderConstants {
     std::array<std::array<uint32_t, 4>, 256> pixel_float_constants;
     bool pixel_b128;
     bool pixel_b129;
+};
+
+// Tracks only the constants and fetch descriptors referenced by the captured
+// VS/PS pair. This is a bounded draw-input snapshot, not a Xenos register file.
+struct CapturedXboxShaderRegisterState {
+    void reset() noexcept;
+    void apply(const GuestRegisterWrite& write) noexcept;
+    bool snapshot(
+        CapturedShaderConstants* constants,
+        std::array<uint32_t, 2>* vertex_descriptor,
+        std::array<uint32_t, 6>* texture_descriptor,
+        std::string* error) const;
+
+private:
+    std::array<uint32_t, 2048> float_words_{};
+    std::array<bool, 2048> float_valid_{};
+    std::array<uint32_t, 256> fetch_words_{};
+    std::array<bool, 256> fetch_valid_{};
+    std::array<uint32_t, 8> bool_words_{};
+    std::array<bool, 8> bool_valid_{};
+    uint32_t vertex_control_ = 0;
+    uint32_t pixel_control_ = 0;
+    bool vertex_control_valid_ = false;
+    bool pixel_control_valid_ = false;
 };
 
 // Scans big-endian packet framing only. It does not interpret register writes
@@ -339,6 +388,22 @@ bool decode_captured_shader_program_load(
     const uint8_t* packet_bytes,
     size_t byte_length,
     CapturedShaderProgramLoad* output,
+    std::string* error);
+
+// Decodes the captured PM4_LOAD_ALU_CONSTANT memory-copy form and its bounded
+// target bank. Loading the returned span is a caller-owned guest-memory action.
+bool decode_captured_constant_load(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedConstantLoad* output,
+    std::string* error);
+
+// Converts a validated captured constant-load source span to host-order writes.
+bool decode_captured_constant_load_data(
+    const CapturedConstantLoad& load,
+    const uint8_t* source_bytes,
+    size_t byte_length,
+    std::vector<GuestRegisterWrite>* output,
     std::string* error);
 
 // Decodes the captured three-dword PM4_INDIRECT_BUFFER form. It reports the
@@ -388,6 +453,15 @@ bool decode_captured_draw_indx(
     const uint8_t* packet_bytes,
     size_t byte_length,
     DecodedIndexedDraw* output,
+    std::string* error);
+
+// Decodes the four-payload-word ReXGlue PM4_XE_SWAP marker written by
+// VdSwap. This exposes the guest frontbuffer address and dimensions; it does
+// not read or emulate the Xenos frontbuffer.
+bool decode_guest_swap(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    DecodedGuestSwap* output,
     std::string* error);
 
 // Decodes the captured two-dword vertex-fetch descriptor. The dwords are
@@ -448,6 +522,25 @@ bool normalize_captured_buffer_bytes(
     const uint8_t* guest_bytes,
     size_t byte_length,
     std::vector<uint8_t>* vulkan_bytes,
+    std::string* error);
+
+// Reads the captured 8-in-16 index form into Vulkan-ready bytes and returns
+// the highest referenced vertex index.
+bool decode_captured_index_data(
+    const DecodedIndexedDraw& draw,
+    const uint8_t* guest_bytes,
+    size_t byte_length,
+    std::vector<uint8_t>* vulkan_bytes,
+    uint32_t* maximum_vertex_index,
+    std::string* error);
+
+// Computes the smallest guest vertex span covering one captured attribute.
+bool captured_vertex_required_bytes(
+    uint32_t maximum_vertex_index,
+    uint32_t stride_bytes,
+    uint32_t attribute_offset_bytes,
+    uint32_t attribute_size_bytes,
+    uint32_t* required_bytes,
     std::string* error);
 
 }  // namespace shift::xbox

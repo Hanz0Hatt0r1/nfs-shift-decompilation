@@ -15,7 +15,10 @@ constexpr uint32_t kPacketCountMask = 0x3FFF0000u;
 constexpr uint32_t kPacketOpcodeMask = 0x0000FF00u;
 constexpr uint32_t kDrawIndxOpcode = 0x22u;
 constexpr uint32_t kImLoadOpcode = 0x27u;
+constexpr uint32_t kLoadAluConstantOpcode = 0x2Fu;
 constexpr uint32_t kIndirectBufferOpcode = 0x3Fu;
+constexpr uint32_t kXeSwapOpcode = 0x64u;
+constexpr uint32_t kXeSwapSignature = 0x53574150u;  // Big-endian "SWAP".
 constexpr uint32_t kTriangleList = 4u;
 constexpr uint32_t kIndexCountMask = 0x00FFFFFFu;
 constexpr uint32_t kDmaSwapModeMask = 0xC0000000u;
@@ -197,6 +200,96 @@ bool decode_captured_shader_program_load(
         dword_count,
         dword_count * static_cast<uint32_t>(sizeof(uint32_t)),
     };
+    if (error) error->clear();
+    return true;
+}
+
+bool decode_captured_constant_load(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    CapturedConstantLoad* output,
+    std::string* error) {
+    constexpr uint32_t kAllowedOffsetTypeBits = 0x00FF07FFu;
+    constexpr uint32_t kSizeMask = 0x00000FFFu;
+    if (!packet_bytes || !output || byte_length != 4u * sizeof(uint32_t)) {
+        return fail("invalid captured PM4_LOAD_ALU_CONSTANT packet", error);
+    }
+    const uint32_t header = read_be32(packet_bytes);
+    if ((header & kPacketTypeMask) != kType3Header ||
+        ((header & kPacketOpcodeMask) >> 8) != kLoadAluConstantOpcode ||
+        ((header & kPacketCountMask) >> 16) != 2u) {
+        return fail("unsupported captured PM4_LOAD_ALU_CONSTANT form", error);
+    }
+
+    const uint32_t guest_address = read_be32(packet_bytes + 4) & 0x3FFFFFFFu;
+    const uint32_t offset_type = read_be32(packet_bytes + 8);
+    const uint32_t size = read_be32(packet_bytes + 12);
+    const uint32_t bank_type = (offset_type >> 16) & 0xFFu;
+    const uint32_t start_index = offset_type & 0x7FFu;
+    const uint32_t dword_count = size & kSizeMask;
+    if ((offset_type & ~kAllowedOffsetTypeBits) != 0 ||
+        (size & ~kSizeMask) != 0 || (guest_address & 3u) != 0 ||
+        dword_count == 0) {
+        return fail("invalid captured constant-load address or range", error);
+    }
+
+    CapturedConstantBank bank{};
+    uint32_t register_base = 0;
+    uint32_t bank_dword_limit = 0;
+    switch (bank_type) {
+        case 0: bank = CapturedConstantBank::Alu; register_base = 0x4000; bank_dword_limit = 0x800; break;
+        case 1: bank = CapturedConstantBank::Fetch; register_base = 0x4800; bank_dword_limit = 0x100; break;
+        case 2: bank = CapturedConstantBank::Boolean; register_base = 0x4900; bank_dword_limit = 8; break;
+        case 3: bank = CapturedConstantBank::Loop; register_base = 0x4908; bank_dword_limit = 0x20; break;
+        case 4: bank = CapturedConstantBank::Registers; register_base = 0x2000; bank_dword_limit = 0x800; break;
+        default: return fail("unsupported captured constant-load bank", error);
+    }
+    if (static_cast<uint64_t>(start_index) + dword_count > bank_dword_limit) {
+        return fail("captured constant-load range exceeds its bank", error);
+    }
+
+    *output = CapturedConstantLoad{
+        bank,
+        guest_address,
+        start_index,
+        dword_count,
+        register_base + start_index,
+        dword_count * static_cast<uint32_t>(sizeof(uint32_t)),
+    };
+    if (error) error->clear();
+    return true;
+}
+
+bool decode_captured_constant_load_data(
+    const CapturedConstantLoad& load,
+    const uint8_t* source_bytes,
+    size_t byte_length,
+    std::vector<GuestRegisterWrite>* output,
+    std::string* error) {
+    uint32_t register_base = 0;
+    uint32_t bank_limit = 0;
+    switch (load.bank) {
+        case CapturedConstantBank::Alu: register_base = 0x4000; bank_limit = 0x800; break;
+        case CapturedConstantBank::Fetch: register_base = 0x4800; bank_limit = 0x100; break;
+        case CapturedConstantBank::Boolean: register_base = 0x4900; bank_limit = 8; break;
+        case CapturedConstantBank::Loop: register_base = 0x4908; bank_limit = 0x20; break;
+        case CapturedConstantBank::Registers: register_base = 0x2000; bank_limit = 0x800; break;
+        default: return fail("invalid captured constant-load bank", error);
+    }
+    if (!source_bytes || !output || load.dword_count == 0 ||
+        static_cast<uint64_t>(load.start_index) + load.dword_count > bank_limit ||
+        load.destination_register != register_base + load.start_index ||
+        load.byte_length != load.dword_count * sizeof(uint32_t) ||
+        load.byte_length > 0x2000u || byte_length != load.byte_length) {
+        return fail("invalid captured constant-load source span", error);
+    }
+    std::vector<GuestRegisterWrite> writes;
+    writes.reserve(load.dword_count);
+    for (uint32_t i = 0; i < load.dword_count; ++i) {
+        writes.push_back({load.destination_register + i,
+                          read_be32(source_bytes + static_cast<size_t>(i) * 4)});
+    }
+    *output = std::move(writes);
     if (error) error->clear();
     return true;
 }
@@ -572,6 +665,38 @@ bool decode_captured_draw_indx(
     return true;
 }
 
+bool decode_guest_swap(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    DecodedGuestSwap* output,
+    std::string* error) {
+    constexpr size_t kPacketBytes = 5u * sizeof(uint32_t);
+    constexpr uint32_t kPhysicalAddressMask = 0x1FFFFFFFu;
+    if (!packet_bytes || !output || byte_length != kPacketBytes) {
+        return fail("invalid PM4_XE_SWAP packet size", error);
+    }
+    const uint32_t header = read_be32(packet_bytes);
+    const uint32_t payload_count = ((header & kPacketCountMask) >> 16) + 1u;
+    if ((header & kPacketTypeMask) != kType3Header ||
+        ((header & kPacketOpcodeMask) >> 8) != kXeSwapOpcode || payload_count != 4u ||
+        read_be32(packet_bytes + 4u) != kXeSwapSignature) {
+        return fail("unsupported PM4_XE_SWAP signature or packet form", error);
+    }
+
+    const uint32_t address = read_be32(packet_bytes + 8u);
+    const uint32_t width = read_be32(packet_bytes + 12u);
+    const uint32_t height = read_be32(packet_bytes + 16u);
+    if ((address & ~kPhysicalAddressMask) != 0u || (address & 0xFFFu) != 0u ||
+        width == 0u || height == 0u || width > 16384u || height > 16384u ||
+        static_cast<uint64_t>(width) * height > (uint64_t{1} << 27)) {
+        return fail("invalid PM4_XE_SWAP frontbuffer span", error);
+    }
+
+    *output = DecodedGuestSwap{address, width, height};
+    if (error) error->clear();
+    return true;
+}
+
 bool decode_captured_vertex_fetch(
     const uint32_t descriptor_words[2],
     CapturedVertexFetch* output,
@@ -743,7 +868,7 @@ void GuestRasterRegisterState::reset() noexcept {
 }
 
 void GuestRasterRegisterState::apply(const GuestRegisterWrite& write) noexcept {
-    uint16_t bit = 0;
+    uint32_t bit = 0;
     uint32_t* destination = nullptr;
     switch (write.register_index) {
         case 0x2000: bit = 1u << 0; destination = &registers_.surface_info; break;
@@ -761,6 +886,7 @@ void GuestRasterRegisterState::apply(const GuestRegisterWrite& write) noexcept {
         case 0x2080: bit = 1u << 12; destination = &registers_.window_offset; break;
         case 0x2081: bit = 1u << 13; destination = &registers_.window_scissor_tl; break;
         case 0x2082: bit = 1u << 14; destination = &registers_.window_scissor_br; break;
+        case 0x2201: bit = 1u << 15; destination = &registers_.blend_control_0; break;
         default: return;
     }
     *destination = write.value;
@@ -770,11 +896,94 @@ void GuestRasterRegisterState::apply(const GuestRegisterWrite& write) noexcept {
 bool GuestRasterRegisterState::snapshot(
     CapturedRasterRegisters* output,
     std::string* error) const {
-    constexpr uint16_t kAllRasterRegistersValid = (1u << 15) - 1u;
+    constexpr uint32_t kAllRasterRegistersValid = (1u << 16) - 1u;
     if (!output || valid_mask_ != kAllRasterRegistersValid) {
         return fail("incomplete captured raster register state", error);
     }
     *output = registers_;
+    if (error) error->clear();
+    return true;
+}
+
+void CapturedXboxShaderRegisterState::reset() noexcept {
+    *this = CapturedXboxShaderRegisterState{};
+}
+
+void CapturedXboxShaderRegisterState::apply(const GuestRegisterWrite& write) noexcept {
+    const uint32_t index = write.register_index;
+    if (index >= 0x4000u && index < 0x4800u) {
+        const size_t slot = index - 0x4000u;
+        float_words_[slot] = write.value;
+        float_valid_[slot] = true;
+    } else if (index >= 0x4800u && index < 0x4900u) {
+        const size_t slot = index - 0x4800u;
+        fetch_words_[slot] = write.value;
+        fetch_valid_[slot] = true;
+    } else if (index >= 0x4900u && index < 0x4908u) {
+        const size_t slot = index - 0x4900u;
+        bool_words_[slot] = write.value;
+        bool_valid_[slot] = true;
+    } else if (index == 0x2307u) {
+        vertex_control_ = write.value;
+        vertex_control_valid_ = true;
+    } else if (index == 0x2308u) {
+        pixel_control_ = write.value;
+        pixel_control_valid_ = true;
+    }
+}
+
+bool CapturedXboxShaderRegisterState::snapshot(
+    CapturedShaderConstants* constants,
+    std::array<uint32_t, 2>* vertex_descriptor,
+    std::array<uint32_t, 6>* texture_descriptor,
+    std::string* error) const {
+    if (!constants || !vertex_descriptor || !texture_descriptor ||
+        !vertex_control_valid_ || !pixel_control_valid_ ||
+        vertex_control_ != 0x000FF000u || pixel_control_ != 0x000FF100u ||
+        !bool_valid_[4]) {
+        return fail("captured shader controls or boolean constants are incomplete", error);
+    }
+    for (size_t i = 0; i < 6; ++i) {
+        if (!fetch_valid_[i]) {
+            return fail("captured texture fetch descriptor is incomplete", error);
+        }
+    }
+    for (size_t i = 190; i < 192; ++i) {
+        if (!fetch_valid_[i]) {
+            return fail("captured vertex fetch descriptor is incomplete", error);
+        }
+    }
+    const auto float4_valid = [this](uint32_t index) {
+        const size_t first = static_cast<size_t>(index) * 4;
+        return float_valid_[first] && float_valid_[first + 1] &&
+               float_valid_[first + 2] && float_valid_[first + 3];
+    };
+    for (uint32_t i = 64; i <= 69; ++i) {
+        if (!float4_valid(i)) {
+            return fail("captured vertex float constants are incomplete", error);
+        }
+    }
+    for (uint32_t i = 254; i <= 255; ++i) {
+        if (!float4_valid(i)) {
+            return fail("captured edge float constants are incomplete", error);
+        }
+    }
+    if (!float4_valid(256u) || !float4_valid(511u)) {
+        return fail("captured pixel constants are incomplete", error);
+    }
+
+    CapturedShaderConstants decoded{};
+    if (!decode_captured_shader_constants(
+            float_words_.data(), float_words_.size(), bool_words_.data(),
+            bool_words_.size(), vertex_control_, pixel_control_, &decoded, error)) {
+        return false;
+    }
+    std::array<uint32_t, 2> vertex_words{fetch_words_[190], fetch_words_[191]};
+    std::array<uint32_t, 6> texture_words{};
+    std::copy_n(fetch_words_.begin(), texture_words.size(), texture_words.begin());
+    *constants = decoded;
+    *vertex_descriptor = vertex_words;
+    *texture_descriptor = texture_words;
     if (error) error->clear();
     return true;
 }
@@ -795,7 +1004,8 @@ bool decode_captured_raster_state(
         color_format != 1 || depth_format != 0 ||
         (registers.color_info & ~0x000F0FFFu) != 0 ||
         (registers.depth_info & ~0x00010FFFu) != 0 ||
-        (registers.color_mask & ~0xFu) != 0 || registers.window_offset != 0) {
+        (registers.color_mask & ~0xFu) != 0 || registers.window_offset != 0 ||
+        registers.blend_control_0 != 0x07010706u) {
         return fail("unsupported captured target or raster state", error);
     }
 
@@ -854,6 +1064,7 @@ bool decode_captured_raster_state(
         x1,
         y1,
         x1 > x0 && y1 > y0,
+        registers.blend_control_0,
     };
     if (error) {
         error->clear();
@@ -983,6 +1194,63 @@ bool normalize_captured_buffer_bytes(
     if (error) {
         error->clear();
     }
+    return true;
+}
+
+bool decode_captured_index_data(
+    const DecodedIndexedDraw& draw,
+    const uint8_t* guest_bytes,
+    size_t byte_length,
+    std::vector<uint8_t>* vulkan_bytes,
+    uint32_t* maximum_vertex_index,
+    std::string* error) {
+    constexpr uint32_t kMaximumCapturedIndexCount = 1u << 20;
+    if (!guest_bytes || !vulkan_bytes || !maximum_vertex_index ||
+        draw.index_type_bits != 16 || draw.index_endian_mode != 1 ||
+        draw.index_count == 0 || draw.index_count > kMaximumCapturedIndexCount ||
+        draw.index_byte_length != draw.index_count * 2u ||
+        byte_length != draw.index_byte_length) {
+        return fail("invalid captured 16-bit index span", error);
+    }
+
+    std::vector<uint8_t> normalized;
+    if (!normalize_captured_buffer_bytes(draw.index_endian_mode, guest_bytes,
+                                         byte_length, &normalized, error)) {
+        return false;
+    }
+    uint32_t maximum = 0;
+    for (uint32_t i = 0; i < draw.index_count; ++i) {
+        const size_t offset = static_cast<size_t>(i) * 2;
+        const uint32_t index = static_cast<uint32_t>(normalized[offset]) |
+                               (static_cast<uint32_t>(normalized[offset + 1]) << 8);
+        maximum = std::max(maximum, index);
+    }
+    *vulkan_bytes = std::move(normalized);
+    *maximum_vertex_index = maximum;
+    if (error) error->clear();
+    return true;
+}
+
+bool captured_vertex_required_bytes(
+    uint32_t maximum_vertex_index,
+    uint32_t stride_bytes,
+    uint32_t attribute_offset_bytes,
+    uint32_t attribute_size_bytes,
+    uint32_t* required_bytes,
+    std::string* error) {
+    if (!required_bytes || stride_bytes == 0 || attribute_size_bytes == 0 ||
+        attribute_offset_bytes >= stride_bytes ||
+        static_cast<uint64_t>(attribute_offset_bytes) + attribute_size_bytes >
+            stride_bytes) {
+        return fail("invalid captured vertex attribute span", error);
+    }
+    const uint64_t length = static_cast<uint64_t>(maximum_vertex_index) * stride_bytes +
+                            attribute_offset_bytes + attribute_size_bytes;
+    if (length > std::numeric_limits<uint32_t>::max()) {
+        return fail("captured vertex span exceeds the supported address range", error);
+    }
+    *required_bytes = static_cast<uint32_t>(length);
+    if (error) error->clear();
     return true;
 }
 

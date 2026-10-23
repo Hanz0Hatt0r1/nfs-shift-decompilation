@@ -1,15 +1,24 @@
 #include "shift_xbox_draw_input.hpp"
 #include "shift_xbox_guest_ring.hpp"
+#include "shift_xbox_shader_translate.hpp"
 
+#include <algorithm>
+#include <array>
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
 #include <exception>
+#include <limits>
 #include <mutex>
 #include <string>
 #include <thread>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
+#include <SPIRV/GlslangToSpv.h>
+#include <StandAlone/ResourceLimits.h>
+#include <glslang/Public/ShaderLang.h>
 #include <rex/logging.h>
 #include <rex/memory.h>
 #include <rex/system/function_dispatcher.h>
@@ -22,6 +31,8 @@
 #include <rex/ui/vulkan/provider.h>
 #include <rex/ui/windowed_app_context.h>
 
+#include "shift_xbox_live_vulkan_renderer.hpp"
+
 namespace {
 
 using rex::X_STATUS;
@@ -32,6 +43,64 @@ constexpr uint32_t kGpuMmioSize = 0x0000FFFFu;
 constexpr uint32_t kRingWritePointerRegister = 0x01C5u;
 constexpr uint32_t kRingReadPointerRegister = 0x01C4u;
 constexpr uint32_t kPhysicalAddressMask = 0x1FFFFFFFu;
+
+bool CompileCapturedShader(
+    shift::xbox::CapturedShaderStage stage,
+    const std::string& source,
+    std::vector<uint32_t>* spirv,
+    std::string* error) {
+  if (!spirv || source.empty()) return false;
+  static std::once_flag initialize_once;
+  static std::mutex cache_mutex;
+  static std::unordered_map<std::string, std::vector<uint32_t>> cache;
+  const char* stage_name = stage == shift::xbox::CapturedShaderStage::Vertex ? "vertex" : "pixel";
+  const std::string key = std::string(stage_name) + '\0' + source;
+  std::lock_guard<std::mutex> lock(cache_mutex);
+  if (const auto it = cache.find(key); it != cache.end()) {
+    *spirv = it->second;
+    return true;
+  }
+  std::call_once(initialize_once, [] { glslang::InitializeProcess(); });
+
+  const EShLanguage language = stage == shift::xbox::CapturedShaderStage::Vertex
+                                   ? EShLangVertex
+                                   : EShLangFragment;
+  const char* source_ptr = source.data();
+  const int source_length = static_cast<int>(source.size());
+  glslang::TShader shader(language);
+  shader.setStringsWithLengths(&source_ptr, &source_length, 1);
+  shader.setEnvInput(glslang::EShSourceGlsl, language, glslang::EShClientVulkan, 450);
+  shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_1);
+  shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_3);
+  constexpr EShMessages messages = EShMessages(EShMsgSpvRules | EShMsgVulkanRules);
+  if (!shader.parse(&glslang::DefaultTBuiltInResource, 450, false, messages)) {
+    if (error) *error = std::string("glslang parse failed: ") + shader.getInfoLog();
+    return false;
+  }
+  glslang::TProgram program;
+  program.addShader(&shader);
+  if (!program.link(messages)) {
+    if (error) *error = std::string("glslang link failed: ") + program.getInfoLog();
+    return false;
+  }
+  const glslang::TIntermediate* intermediate = program.getIntermediate(language);
+  if (!intermediate) {
+    if (error) *error = "glslang produced no captured shader intermediate";
+    return false;
+  }
+  std::vector<uint32_t> compiled;
+  glslang::SpvOptions options{};
+  options.disableOptimizer = true;
+  glslang::GlslangToSpv(*intermediate, compiled, &options);
+  if (compiled.empty()) {
+    if (error) *error = "glslang produced empty captured SPIR-V";
+    return false;
+  }
+  cache.emplace(key, compiled);
+  *spirv = std::move(compiled);
+  if (error) error->clear();
+  return true;
+}
 
 class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
  public:
@@ -182,6 +251,179 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     return *bytes != nullptr;
   }
 
+  bool PrepareCapturedDrawResources(
+      const shift::xbox::DecodedIndexedDraw& draw,
+      const shift::xbox::CapturedRasterState& raster_state,
+      const shift::xbox::CapturedXboxShaderRegisterState& shader_state,
+      const std::vector<uint8_t>& vertex_program,
+      const std::vector<uint8_t>& pixel_program,
+      shift::xbox::CapturedVulkanDraw* prepared_draw,
+      bool* inputs_ready,
+      bool* shaders_translated,
+      std::string* error) {
+    if (!prepared_draw || !inputs_ready || !shaders_translated) return false;
+    *inputs_ready = false;
+    *shaders_translated = false;
+
+    shift::xbox::CapturedShaderConstants constants{};
+    std::array<uint32_t, 2> vertex_descriptor{};
+    std::array<uint32_t, 6> texture_descriptor{};
+    shift::xbox::CapturedVertexFetch vertex_fetch{};
+    shift::xbox::CapturedTextureFetch texture_fetch{};
+    shift::xbox::CapturedTextureSampling texture_sampling{};
+    if (vertex_program.empty() || pixel_program.empty() ||
+        !shader_state.snapshot(&constants, &vertex_descriptor, &texture_descriptor, error) ||
+        !shift::xbox::decode_captured_vertex_fetch(
+            vertex_descriptor.data(), &vertex_fetch, error) ||
+        !shift::xbox::decode_captured_texture_fetch(
+            texture_descriptor.data(), &texture_fetch, error) ||
+        !shift::xbox::decode_captured_texture_sampling(
+            texture_fetch, &texture_sampling, error)) {
+      return false;
+    }
+    *inputs_ready = true;
+
+    shift::xbox::CapturedShaderTranslationOptions options{};
+    options.pixel_b128 = constants.pixel_b128;
+    options.pixel_b129 = constants.pixel_b129;
+    for (size_t i = 0; i < options.texture_swizzle.size(); ++i) {
+      options.texture_swizzle[i] = static_cast<uint32_t>(texture_sampling.swizzle[i]);
+    }
+    shift::xbox::CapturedShaderTranslation vertex_translation{};
+    shift::xbox::CapturedShaderTranslation pixel_translation{};
+    if (!shift::xbox::translate_captured_shader_glsl(
+            shift::xbox::CapturedShaderStage::Vertex, vertex_program.data(),
+            vertex_program.size(), options, &vertex_translation, error) ||
+        !shift::xbox::translate_captured_shader_glsl(
+            shift::xbox::CapturedShaderStage::Pixel, pixel_program.data(),
+            pixel_program.size(), options, &pixel_translation, error)) {
+      return false;
+    }
+    *shaders_translated = true;
+
+    shift::xbox::CapturedVulkanDraw prepared{};
+    prepared.raster = raster_state;
+    prepared.constants = constants;
+    prepared.texture_sampling = texture_sampling;
+    prepared.index_count = draw.index_count;
+    prepared.texture_width = texture_fetch.width;
+    prepared.texture_height = texture_fetch.height;
+    if (!CompileCapturedShader(shift::xbox::CapturedShaderStage::Vertex,
+                               vertex_translation.glsl, &prepared.vertex_shader_spirv, error) ||
+        !CompileCapturedShader(shift::xbox::CapturedShaderStage::Pixel,
+                               pixel_translation.glsl, &prepared.pixel_shader_spirv, error)) {
+      return false;
+    }
+
+    std::vector<shift::xbox::CapturedShaderControlFlow> control_flow;
+    std::vector<shift::xbox::CapturedShaderInstructionSchedule> schedule;
+    if (!shift::xbox::decode_captured_shader_control_flow(
+            vertex_program.data(), vertex_program.size(), &control_flow, error) ||
+        !shift::xbox::schedule_captured_shader_instructions(
+            control_flow, vertex_program.size(), &schedule, error)) {
+      return false;
+    }
+    std::vector<shift::xbox::CapturedShaderControlFlow> pixel_control_flow;
+    std::vector<shift::xbox::CapturedShaderInstructionSchedule> pixel_schedule;
+    if (!shift::xbox::decode_captured_shader_control_flow(
+            pixel_program.data(), pixel_program.size(), &pixel_control_flow, error) ||
+        !shift::xbox::schedule_captured_shader_instructions(
+            pixel_control_flow, pixel_program.size(), &pixel_schedule, error)) {
+      return false;
+    }
+
+    uint32_t vertex_stride_bytes = 0;
+    uint32_t vertex_offset_bytes = 0;
+    bool has_vertex_fetch = false;
+    for (const auto& instruction : schedule) {
+      if (instruction.kind != shift::xbox::ShaderScheduledInstructionKind::Fetch ||
+          std::find(vertex_translation.executed_instruction_addresses.begin(),
+                    vertex_translation.executed_instruction_addresses.end(),
+                    instruction.address) ==
+              vertex_translation.executed_instruction_addresses.end()) {
+        continue;
+      }
+      const size_t offset = static_cast<size_t>(instruction.address) * 12;
+      shift::xbox::CapturedShaderFetchInstruction fetch{};
+      if (offset + 12 > vertex_program.size() ||
+          !shift::xbox::decode_captured_shader_fetch_instruction(
+              vertex_program.data() + offset, 12, &fetch, error)) {
+        return false;
+      }
+      if (fetch.kind != shift::xbox::CapturedShaderFetchKind::VertexFull) continue;
+
+      const uint32_t stride = fetch.vertex_stride * 4;
+      const uint32_t attribute_offset = fetch.vertex_offset < 0
+                                            ? std::numeric_limits<uint32_t>::max()
+                                            : static_cast<uint32_t>(fetch.vertex_offset);
+      if (fetch.fetch_constant_index != 95 || fetch.vertex_format != 57 || stride != 12 ||
+          attribute_offset != 0 || fetch.source_relative || fetch.destination_relative ||
+          fetch.predicated ||
+          (has_vertex_fetch &&
+           (stride != vertex_stride_bytes || attribute_offset != vertex_offset_bytes))) {
+        return false;
+      }
+      vertex_stride_bytes = stride;
+      vertex_offset_bytes = attribute_offset;
+      has_vertex_fetch = true;
+    }
+    for (const auto& instruction : pixel_schedule) {
+      if (instruction.kind != shift::xbox::ShaderScheduledInstructionKind::Fetch ||
+          std::find(pixel_translation.executed_instruction_addresses.begin(),
+                    pixel_translation.executed_instruction_addresses.end(),
+                    instruction.address) ==
+              pixel_translation.executed_instruction_addresses.end()) {
+        continue;
+      }
+      const size_t offset = static_cast<size_t>(instruction.address) * 12;
+      shift::xbox::CapturedShaderFetchInstruction fetch{};
+      if (offset + 12 > pixel_program.size() ||
+          !shift::xbox::decode_captured_shader_fetch_instruction(
+              pixel_program.data() + offset, 12, &fetch, error) ||
+          fetch.kind != shift::xbox::CapturedShaderFetchKind::Texture2D ||
+          fetch.fetch_constant_index != 0) {
+        return false;
+      }
+    }
+
+    constexpr uint32_t kMaxLiveIndexBytes = 2u * 1024u * 1024u;
+    constexpr uint32_t kMaxLiveVertexBytes = 4u * 1024u * 1024u;
+    constexpr uint32_t kMaxLiveTextureBytes = 16u * 1024u * 1024u;
+    const uint8_t* guest_bytes = nullptr;
+    size_t guest_byte_length = 0;
+    uint32_t maximum_vertex_index = 0;
+    uint32_t required_vertex_bytes = 0;
+    if (!has_vertex_fetch || draw.index_byte_length > kMaxLiveIndexBytes ||
+        texture_fetch.byte_length > kMaxLiveTextureBytes ||
+        !ReadGuestMemory(this, draw.index_guest_address, draw.index_byte_length,
+                         &guest_bytes, &guest_byte_length) ||
+        guest_byte_length < draw.index_byte_length ||
+        !shift::xbox::decode_captured_index_data(
+            draw, guest_bytes, draw.index_byte_length, &prepared.indices,
+            &maximum_vertex_index, error) ||
+        !shift::xbox::captured_vertex_required_bytes(
+            maximum_vertex_index, vertex_stride_bytes, vertex_offset_bytes, 12,
+            &required_vertex_bytes, error) ||
+        required_vertex_bytes > kMaxLiveVertexBytes ||
+        required_vertex_bytes > vertex_fetch.byte_length ||
+        !ReadGuestMemory(this, vertex_fetch.guest_address, required_vertex_bytes,
+                         &guest_bytes, &guest_byte_length) ||
+        guest_byte_length < required_vertex_bytes ||
+        !shift::xbox::normalize_captured_buffer_bytes(
+            vertex_fetch.endian_mode, guest_bytes, required_vertex_bytes,
+            &prepared.vertices, error) ||
+        !ReadGuestMemory(this, texture_fetch.guest_address, texture_fetch.byte_length,
+                         &guest_bytes, &guest_byte_length) ||
+        guest_byte_length < texture_fetch.byte_length ||
+        !shift::xbox::untile_captured_texture_2d(
+            texture_fetch, guest_bytes, texture_fetch.byte_length,
+            &prepared.texture_rgba8, error)) {
+      return false;
+    }
+    *prepared_draw = std::move(prepared);
+    return true;
+  }
+
   uint32_t ReadRegister(uint32_t address) {
     const uint32_t index = (address & 0xFFFFu) / sizeof(uint32_t);
     std::lock_guard<std::mutex> lock(ring_mutex_);
@@ -209,8 +451,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 
   void RingWorkerLoop() {
     shift::xbox::GuestRasterRegisterState raster_register_state;
+    shift::xbox::CapturedXboxShaderRegisterState shader_register_state;
     std::vector<uint8_t> vertex_shader_program;
     std::vector<uint8_t> pixel_shader_program;
+    std::vector<shift::xbox::CapturedVulkanDraw> frame_draws;
     uint64_t observed_ring_generation = 0;
     for (;;) {
       uint32_t read_pointer = 0;
@@ -233,8 +477,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       }
       if (ring_generation != observed_ring_generation) {
         raster_register_state.reset();
+        shader_register_state.reset();
         vertex_shader_program.clear();
         pixel_shader_program.clear();
+        frame_draws.clear();
         observed_ring_generation = ring_generation;
       }
 
@@ -253,9 +499,17 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         uint32_t decoded_draws = 0;
         uint32_t draws_with_raster_state = 0;
         uint32_t draws_with_both_shader_programs = 0;
+        uint32_t draws_with_captured_shader_inputs = 0;
+        uint32_t draws_with_project_shader_translation = 0;
+        uint32_t draws_with_resolved_resource_payloads = 0;
+        uint32_t draws_with_unresolved_resource_payloads = 0;
         uint32_t loaded_shader_programs = 0;
         uint32_t unresolved_shader_programs = 0;
+        uint32_t loaded_constant_spans = 0;
+        uint32_t unresolved_constant_spans = 0;
         uint32_t unsupported_draws = 0;
+        uint32_t decoded_swaps = 0;
+        uint32_t submitted_frames = 0;
         uint32_t raw_register_writes = 0;
         if (expanded_ok) {
           for (const shift::xbox::ResolvedGuestPacket& resolved : expanded.packets) {
@@ -284,7 +538,29 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 raw_register_writes += static_cast<uint32_t>(writes.size());
                 for (const shift::xbox::GuestRegisterWrite& write : writes) {
                   raster_register_state.apply(write);
+                  shader_register_state.apply(write);
                 }
+              }
+            } else if (packet.type == shift::xbox::PacketType::Type3 &&
+                       packet.opcode == 0x2Fu) {
+              shift::xbox::CapturedConstantLoad load{};
+              const uint8_t* source_bytes = nullptr;
+              size_t source_byte_length = 0;
+              std::vector<shift::xbox::GuestRegisterWrite> writes;
+              if (shift::xbox::decode_captured_constant_load(
+                      packet_bytes, packet.byte_length, &load, &error) &&
+                  ReadGuestMemory(this, load.guest_address, load.byte_length,
+                                  &source_bytes, &source_byte_length) &&
+                  source_byte_length >= load.byte_length &&
+                  shift::xbox::decode_captured_constant_load_data(
+                      load, source_bytes, load.byte_length, &writes, &error)) {
+                for (const shift::xbox::GuestRegisterWrite& write : writes) {
+                  raster_register_state.apply(write);
+                  shader_register_state.apply(write);
+                }
+                ++loaded_constant_spans;
+              } else {
+                ++unresolved_constant_spans;
               }
             } else if (packet.type == shift::xbox::PacketType::Type3 &&
                        packet.opcode == 0x27u) {
@@ -315,30 +591,106 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 ++decoded_draws;
                 shift::xbox::CapturedRasterRegisters raster_registers{};
                 shift::xbox::CapturedRasterState raster_state{};
-                if (raster_register_state.snapshot(&raster_registers, &error) &&
+                const bool raster_state_ready =
+                    raster_register_state.snapshot(&raster_registers, &error) &&
                     shift::xbox::decode_captured_raster_state(
-                        raster_registers, &raster_state, &error)) {
+                        raster_registers, &raster_state, &error);
+                if (raster_state_ready) {
                   ++draws_with_raster_state;
                 }
                 if (!vertex_shader_program.empty() && !pixel_shader_program.empty()) {
                   ++draws_with_both_shader_programs;
                 }
+                bool shader_inputs_ready = false;
+                bool shaders_translated = false;
+                shift::xbox::CapturedVulkanDraw prepared_draw{};
+                const bool resources_resolved =
+                    raster_state_ready && raster_state.scissor_has_area &&
+                    PrepareCapturedDrawResources(draw, raster_state, shader_register_state,
+                                                 vertex_shader_program, pixel_shader_program,
+                                                 &prepared_draw, &shader_inputs_ready,
+                                                 &shaders_translated, &error);
+                if (shader_inputs_ready) {
+                  ++draws_with_captured_shader_inputs;
+                }
+                if (shaders_translated) {
+                  ++draws_with_project_shader_translation;
+                  if (resources_resolved) {
+                    ++draws_with_resolved_resource_payloads;
+                    frame_draws.push_back(std::move(prepared_draw));
+                  } else {
+                    ++draws_with_unresolved_resource_payloads;
+                  }
+                }
               } else {
                 ++unsupported_draws;
               }
+            } else if (packet.type == shift::xbox::PacketType::Type3 &&
+                       packet.opcode == 0x64u) {
+              shift::xbox::DecodedGuestSwap swap{};
+              if (!shift::xbox::decode_guest_swap(
+                      packet_bytes, packet.byte_length, &swap, &error)) {
+                ++unsupported_draws;
+                frame_draws.clear();
+                continue;
+              }
+              ++decoded_swaps;
+              if (!frame_draws.empty() && presenter_ && provider_ &&
+                  provider_->vulkan_device()) {
+                const uint32_t draw_count = static_cast<uint32_t>(frame_draws.size());
+                std::string render_error;
+                const bool refreshed = presenter_->RefreshGuestOutput(
+                    swap.width, swap.height, swap.width, swap.height,
+                    [this, &frame_draws, &render_error, width = swap.width,
+                     height = swap.height](
+                        rex::ui::Presenter::GuestOutputRefreshContext& base) {
+                      auto* context = dynamic_cast<
+                          rex::ui::vulkan::VulkanPresenter::VulkanGuestOutputRefreshContext*>(
+                          &base);
+                      auto* device = provider_->vulkan_device();
+                      if (!context || !device) return false;
+                      const uint32_t family = device->queue_family_graphics_compute();
+                      const auto queue = device->AcquireQueue(family, 0);
+                      return shift::xbox::submit_captured_vulkan_frame(
+                          device->physical_device(), device->device(), queue.queue(), family,
+                          context->image(), context->image_view(),
+                          context->image_ever_written_previously(),
+                          width, height, frame_draws, &render_error);
+                    });
+                if (refreshed) {
+                  ++submitted_frames;
+                  REXLOG_INFO("shift-native: submitted {} captured DRAW_INDX packets to "
+                              "the Vulkan presenter at {}x{} (frontbuffer {:08X})",
+                              draw_count, swap.width, swap.height,
+                              swap.frontbuffer_guest_address);
+                } else {
+                  REXLOG_WARN("shift-native: Vulkan frame refresh failed for {}x{} "
+                              "with {} captured draws: {}",
+                              swap.width, swap.height, draw_count, render_error);
+                }
+              }
+              frame_draws.clear();
             } else if (packet.type == shift::xbox::PacketType::Type3 &&
                        packet.opcode == 0x36u) {
               ++unsupported_draws;
             }
           }
           REXLOG_DEBUG("shift-native: framed {} PM4 packets, {} raw register writes, "
+                       "{} constant spans loaded ({} unresolved), "
                        "{} pointer-loaded shader programs ({} unresolved), "
                        "{} captured DRAW_INDX packets ({} with supported raster state, "
-                       "{} with both shader programs), {} unsupported draw forms; "
-                       "Vulkan draw submission is not wired",
+                       "{} with both shader programs, {} with complete captured shader inputs, "
+                       "{} translated to project GLSL, {} with resolved resource bytes "
+                       "({} unresolved)), "
+                       "{} guest swaps, {} Vulkan frames submitted, "
+                       "{} unsupported packet/draw forms",
                        expanded.packets.size(), raw_register_writes,
+                       loaded_constant_spans, unresolved_constant_spans,
                        loaded_shader_programs, unresolved_shader_programs, decoded_draws,
                        draws_with_raster_state, draws_with_both_shader_programs,
+                       draws_with_captured_shader_inputs, draws_with_project_shader_translation,
+                       draws_with_resolved_resource_payloads,
+                       draws_with_unresolved_resource_payloads, decoded_swaps, submitted_frames,
                        unsupported_draws);
         } else {
           REXLOG_WARN("shift-native: dropped malformed PM4 batch at WPTR {:08X}: {}",

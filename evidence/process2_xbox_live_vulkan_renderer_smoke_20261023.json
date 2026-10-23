@@ -1,0 +1,61 @@
+{
+  "format": "SHIFT.XboxLiveVulkanRendererSmoke/1",
+  "status": "renderer_submission_path_built_and_validated; live_retail_frame_not_yet_observed",
+  "project_path": {
+    "guest_packets": ["PM4_DRAW_INDX", "PM4_XE_SWAP"],
+    "shader_path": "captured microcode -> project GLSL translator -> glslang -> Vulkan 1.1 SPIR-V",
+    "resource_path": [
+      "guest indices normalized to uint16",
+      "captured FLOAT3 vertex bytes normalized",
+      "captured tiled texture untiled to RGBA8"
+    ],
+    "submission": "captured indexed draws are batched to XE_SWAP and rendered into the ReXGlue presenter output image",
+    "gpu_emulation_plugin_dependency": false,
+    "renderer_window_system_dependency": false
+  },
+  "smoke_test": {
+    "kind": "synthetic offscreen indexed triangle; pipeline/resource smoke only",
+    "vulkan_api": "1.1",
+    "target_format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+    "linux": {
+      "device": "NVIDIA GeForce GTX 950",
+      "validation_layer_enabled": true,
+      "validation_errors": 0,
+      "result": "passed"
+    },
+    "android_arm64": {
+      "device": "Redmi Note 8 Pro",
+      "gpu": "Mali-G76 MC4",
+      "validation_layer_enabled": false,
+      "result": "passed"
+    }
+  },
+  "plugin_build": {
+    "target": "rexgpu-shift-native",
+    "factory_smoke": "passed",
+    "live_ring_abi_smoke": "passed on Linux: captured PM4_DRAW_INDX published through ReXGlue CP_RB_WPTR and guest read-pointer writeback",
+    "links_rexgpu_xenos": false,
+    "sdk_requirement": "separate rexui-vulkan target"
+  },
+  "android_full_game_attempt": {
+    "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, arm64-v8a)",
+    "renderer_regressions": "draw input, guest ring, shader translation, and Vulkan 1.1 offscreen indexed draw all passed on-device; the renderer test binary was built for Android API 24",
+    "rexglue_plugin_ndk_build": "blocked before plugin link at Process 1-owned guest fiber backend",
+    "renderer_test_build_configuration": "Android NDK r28.2, arm64-v8a, API 24",
+    "plugin_build_configuration": "Android NDK r28.2, arm64-v8a, API 33",
+    "sdk_platform_detection": "android-arm64",
+    "sdk_android_compile_progress": "rexui-vulkan backend passed; Android SDL surface/window source objects passed; float parsing, chrono, and timer-thread compatibility sources compiled",
+    "plugin_source_object": "shift_native_gpu_plugin.cpp compiled for Android arm64; final shared-library link not reached",
+    "first_blocking_error": "src/core/fiber_posix.cpp cannot compile against Android Bionic because getcontext, makecontext, and swapcontext are unavailable; guest fiber/scheduler is Process 1 owned",
+    "game_project_android_entrypoint": "not present: current game CMake target is add_executable(nfs_shift ...) with no Android Activity, manifest, or APK packaging target",
+    "full_game_runtime": "not built or installed; Android renderer checks remain offscreen and do not exercise the game runtime",
+    "retail_frame_observed": false
+  },
+  "limits": [
+    "The live SHIFT guest has not yet been run through this plugin, so no first retail frame is confirmed.",
+    "Each guest swap currently clears to black and composes only supported draws collected since that swap; Xenos EDRAM accumulation is not implemented.",
+    "The captured output uses a gamma target while the presenter image is A2B10G10R10_UNORM; target gamma parity remains unverified.",
+    "The captured black texture border alpha is unresolved; the live sampler uses transparent black provisionally.",
+    "The smoke triangle is synthetic and does not establish retail frame parity."
+  ]
+}

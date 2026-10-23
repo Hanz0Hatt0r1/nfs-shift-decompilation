@@ -39,19 +39,30 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   project-owned `snapshot_guest_ring_batch` copies a committed dword-indexed
   ring interval, including wraparound, then frames its packets. The adjacent
   size helper bounds ReXGlue's `1 << (size_log2 + 3)` ring capacity before use.
-  The PM4 type-0/type-1 decoder exposes raw register-write pairs without
-  applying GPU state. The captured three-dword `PM4_INDIRECT_BUFFER` form is
+  The PM4 type-0/type-1 decoder exposes raw register-write pairs. The live
+  plugin applies the observed target/viewport/scissor registers and tracks the
+  shader controls, required captured float constants, bools, and fetch
+  descriptors. It also resolves captured `PM4_LOAD_ALU_CONSTANT` spans from
+  guest memory. The captured three-dword `PM4_INDIRECT_BUFFER` form is
   decoded to a bounded guest address and dword length. The ring frontend can
   expand that form through a caller-supplied guest-memory reader, retaining
   packet source and nesting depth while rejecting short spans, cycles, and
   over-limit streams. The Linux ReXGlue plugin in
   `native_vulkan/rexglue_plugin` consumes the live ring and indirect buffers
-  from `InitializeRingBuffer` / `CP_RB_WPTR` on an asynchronous worker. It
-  frames type-0/type-1 register writes and decodes observed `DRAW_INDX` packets,
-  but does not apply state or submit those draws. Regressions cover ring
-  wraparound, captured draws, indirect-buffer framing, and the plugin factory
-  ABI. The live frontend remains an input tap until state/resource tracking
-  feeds the project Vulkan draw path.
+  from `InitializeRingBuffer` / `CP_RB_WPTR` on an asynchronous worker. At each
+  supported `DRAW_INDX`, it checks the captured raster state, shader programs,
+  constants, and descriptors; translates the bounded shader pair to
+  project-owned GLSL; compiles Vulkan 1.1 SPIR-V; and resolves normalized
+  index/vertex payloads plus the untiled texture. At `PM4_XE_SWAP`, the plugin
+  batches those draws and submits them into the ReXGlue presenter's output
+  image through `shift_xbox_live_vulkan_renderer`. That renderer core has no
+  XCB/Wayland dependency. The frame currently starts with a black clear and
+  does not reconstruct prior Xenos EDRAM or import the guest frontbuffer as a
+  completed image. Regressions cover PM4 draw/swap framing, ring wraparound,
+  indirect buffers, and the plugin ABI. A separate offscreen indexed-draw
+  smoke passed Vulkan validation on Linux and executed on Redmi Note 8 Pro;
+  those smoke shaders are synthetic. The plugin build and factory check pass,
+  but the live SHIFT guest has not yet been run through this frontend.
   The private 19,784-byte capture scans as 247 packets with four bounded
   `DRAW_INDX` packets. The capture decoders reject unsupported forms. The untile
   path rejects other pitches, formats, dimensions, and layouts. Its address
@@ -75,17 +86,22 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   Android validation layers were unavailable; its output differed from the
   GTX 950 host output by at most 2/255 per RGB channel, so this is a device
   execution check rather than pixel-identical or retail-frame parity;
-- limitations for this isolated draw: the prior EDRAM contents were not
-  captured, so the standalone bundle begins with an explicit black clear; the
-  captured black texture-border alpha is unresolved, so the test bundle uses
-  Vulkan transparent-black border behavior provisionally. The plugin has no
-  dependency on the runtime-loaded `rexgpu-xenos` renderer; ReXGlue's common
-  runtime still includes generic Xenos format utilities. Its SDK `rexui-vulkan`
-  presenter currently requires Vulkan 1.3, SDL, and Linux X11/Wayland. This is
-  separate from the project's Vulkan 1.1 renderer core and Android surface path.
-  Live state/resource ingestion and draw submission remain future work.
-  The product path must use a project-owned ReXGlue graphics frontend and must
-  not load `rexgpu-xenos` or another GPU emulator;
+- Android full-game status: the renderer and ReXGlue Vulkan presenter/surface
+  source compile for arm64-v8a with NDK r28.2 / API 33. The complete plugin
+  build stops in ReXGlue's POSIX fiber backend because Bionic lacks
+  `getcontext`, `makecontext`, and `swapcontext`; that scheduler code belongs
+  to Process 1. The game project currently has no Android Activity, manifest,
+  or APK target, so no full game build has been installed or tested on the
+  phone;
+- limitations: the standalone capture bundle starts from black because prior
+  EDRAM contents were not captured; the black texture-border alpha remains
+  unresolved, and the live frontend currently selects transparent-black
+  provisionally. The plugin has no dependency on the runtime-loaded
+  `rexgpu-xenos` renderer; ReXGlue's common runtime still includes generic
+  Xenos format utilities. The Android verification exercises the platform
+  independent renderer only, not ReXGlue window presentation. No live retail
+  frame or full-scene parity is claimed. The product path must not load
+  `rexgpu-xenos` or another GPU renderer emulator;
 - Linux CI coverage for native smoke paths.
 
 ## Rules

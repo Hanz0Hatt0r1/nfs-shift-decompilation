@@ -21,6 +21,7 @@ add_subdirectory(
 if(NOT TARGET rexui-vulkan OR NOT TARGET rexruntime)
   message(FATAL_ERROR "ReXGlue checkout must define rexui-vulkan and rexruntime")
 endif()
+find_package(Vulkan REQUIRED)
 get_target_property(SHIFT_REXGLUE_OUTPUT_DIRECTORY rexruntime LIBRARY_OUTPUT_DIRECTORY)
 
 add_library(shift_guest_ring STATIC
@@ -30,16 +31,39 @@ add_library(shift_guest_ring STATIC
 target_include_directories(shift_guest_ring PUBLIC ../include)
 target_compile_features(shift_guest_ring PUBLIC cxx_std_17)
 
+add_library(shift_xbox_shader_translate STATIC ../src/xbox_shader_translate.cpp)
+target_include_directories(shift_xbox_shader_translate PUBLIC ../include)
+target_compile_features(shift_xbox_shader_translate PUBLIC cxx_std_17)
+target_link_libraries(shift_xbox_shader_translate PUBLIC shift_guest_ring)
+
+add_library(shift_xbox_live_vulkan_renderer STATIC ../src/xbox_live_vulkan_renderer.cpp)
+target_include_directories(shift_xbox_live_vulkan_renderer PUBLIC ../include)
+target_compile_features(shift_xbox_live_vulkan_renderer PUBLIC cxx_std_17)
+target_link_libraries(shift_xbox_live_vulkan_renderer PUBLIC Vulkan::Vulkan)
+
 add_library(rexgpu-shift-native SHARED shift_native_gpu_plugin.cpp)
+target_sources(rexgpu-shift-native PRIVATE
+  "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/glslang/StandAlone/ResourceLimits.cpp"
+)
 target_include_directories(rexgpu-shift-native PRIVATE
   "${SHIFT_REXGLUE_SDK_ROOT}/include"
   "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/renderdoc"
+  "${SHIFT_REXGLUE_SDK_ROOT}/thirdparty/glslang"
 )
 target_compile_features(rexgpu-shift-native PRIVATE cxx_std_23)
 target_link_libraries(rexgpu-shift-native PRIVATE
   rexruntime
   rexui-vulkan
   shift_guest_ring
+  shift_xbox_shader_translate
+  shift_xbox_live_vulkan_renderer
+  Vulkan::Vulkan
+  glslang::SPIRV
+  glslang
+  MachineIndependent
+  GenericCodeGen
+  OSDependent
+  OGLCompiler
 )
 set_target_properties(rexgpu-shift-native PROPERTIES
   OUTPUT_NAME "rexgpu-shift-native"
@@ -68,5 +92,19 @@ if(SHIFT_REXGLUE_NATIVE_BUILD_TESTS)
   target_link_libraries(rexgpu_shift_native_factory_check PRIVATE ${CMAKE_DL_LIBS})
   add_test(NAME rexgpu_shift_native_factory_check
     COMMAND rexgpu_shift_native_factory_check $<TARGET_FILE:rexgpu-shift-native>
+  )
+
+  add_executable(rexgpu_shift_native_live_ring_check live_ring_smoke.cpp)
+  add_dependencies(rexgpu_shift_native_live_ring_check rexgpu-shift-native)
+  target_include_directories(rexgpu_shift_native_live_ring_check PRIVATE
+    "${SHIFT_REXGLUE_SDK_ROOT}/include"
+  )
+  target_compile_features(rexgpu_shift_native_live_ring_check PRIVATE cxx_std_23)
+  target_link_libraries(rexgpu_shift_native_live_ring_check PRIVATE
+    rexruntime
+    ${CMAKE_DL_LIBS}
+  )
+  add_test(NAME rexgpu_shift_native_live_ring_check
+    COMMAND rexgpu_shift_native_live_ring_check $<TARGET_FILE:rexgpu-shift-native>
   )
 endif()

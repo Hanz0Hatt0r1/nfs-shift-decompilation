@@ -1,26 +1,31 @@
-# ReXGlue native SHIFT GPU input plugin
+# ReXGlue native SHIFT GPU plugin
 
 `rexgpu-shift-native` implements ReXGlue's `IGraphicsSystem` ABI and consumes
 the guest PM4 ring without loading the `rexgpu-xenos` renderer. It creates the
-SDK's Vulkan presentation provider with GPU emulation disabled and reads the
-ring through `InitializeRingBuffer` and `CP_RB_WPTR`.
+SDK's Vulkan presenter with GPU emulation disabled and receives ring updates
+through `InitializeRingBuffer` and `CP_RB_WPTR`.
 
-The write-pointer callback only queues work. A worker snapshots bounded ring
-intervals, resolves the captured indirect-buffer packet form, frames PM4, and
-decodes recognized register writes and `DRAW_INDX` packets. It does not apply
-the full register file. It retains the 15 captured target, viewport, and
-scissor registers across batches and copies raw program spans from the captured
-pointer-based `IM_LOAD` packets. It checks that raster state and both shader
-programs are present at supported indexed draws. It does not translate the
-microcode to SPIR-V, bind guest vertex/index/texture resources, or submit a
-draw. A live game window therefore does not yet display game frames; the
-captured bundle runner remains the only path that submits the observed SHIFT
-logo draw. Guest GPU interrupts are not implemented, and reads from MMIO
-registers other than the ring read/write pointers currently return zero.
+The worker keeps the bounded captured register/shader contract, resolves the
+captured index, vertex, and tiled texture bytes, translates the observed shader
+pair to project GLSL, and compiles that GLSL to Vulkan 1.1 SPIR-V. It batches
+supported indexed draws until `PM4_XE_SWAP`, then submits them through the
+project-owned Vulkan renderer to the presenter's output image. The renderer
+has no XCB or Wayland dependency; only the ReXGlue presenter attaches that
+image to a host window.
 
-## Build and smoke check
+The supported path is deliberately narrow: triangle-list `DRAW_INDX`, the
+captured FLOAT3 vertex fetch and format-6 texture, the observed shader pair,
+the captured raster register set, and the captured blend control. Unsupported
+draw state is rejected. The frame path clears the presenter image and renders
+the collected draws; it does not reconstruct Xenos EDRAM contents or read the
+guest frontbuffer as a finished image. The captured black texture border has
+unknown alpha, so transparent-black is still provisional. Target gamma
+conversion and the complete retail scene are not yet verified.
 
-Configure against a ReXGlue SDK checkout that provides `rexui-vulkan`:
+## Build and checks
+
+Configure against a ReXGlue SDK checkout that provides the separate
+`rexui-vulkan` target:
 
 ```sh
 cmake -S native_vulkan/rexglue_plugin -B build/rexgpu-shift-native \
@@ -31,13 +36,22 @@ cmake --build build/rexgpu-shift-native --target rexgpu_shift_native_factory_che
 ctest --test-dir build/rexgpu-shift-native --output-on-failure
 ```
 
-The smoke test loads the shared object, checks its exported ABI and factory,
-constructs/destroys the frontend, and checks rejection of an unsupported
-backend, undersized create info, and ABI mismatch.
+The factory check loads the plugin and verifies ABI and factory rejection
+cases. The platform-independent Vulkan core also has an offscreen indexed-draw
+smoke. It passed with Vulkan validation on NVIDIA GeForce GTX 950, and on
+Redmi Note 8 Pro (Mali-G76 MC4) using Vulkan 1.1. Those smoke shaders are
+synthetic and verify pipeline/resource/layout operations only; they are not
+retail output evidence.
 
-The frontend is currently a Linux ReXGlue integration target. The SDK presenter
-uses Vulkan 1.3 and SDL with X11/Wayland. The project-owned native renderer core
-remains Vulkan 1.1 and is separately exercised on Android ARM64; this plugin
-does not establish Android presentation support. ReXGlue's common runtime also
-contains generic Xenos format utilities, but this plugin does not link the
-`rexgpu-xenos` GPU renderer or command processor.
+The Linux plugin factory and live-ring ABI checks pass, but the plugin has not
+yet been run with the live SHIFT guest. Thus a first retail game frame through
+this plugin is not yet confirmed. The earlier one-draw capture bundle remains
+separate evidence for the project renderer, not proof of a complete scene.
+
+On Android NDK r28.2 / API 33, `rexui-vulkan` and the Android surface/window
+sources compile for arm64. Building the full plugin then stops in ReXGlue's
+POSIX fiber backend because Android Bionic does not provide
+`getcontext`/`makecontext`/`swapcontext`. That scheduler code belongs to
+Process 1. The game project also has no Android Activity or APK target yet, so
+the Redmi Note 8 Pro checks cover the offscreen Vulkan renderer only, not a
+full game build.

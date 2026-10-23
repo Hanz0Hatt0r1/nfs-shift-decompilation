@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -368,6 +369,43 @@ int main() {
                 shader_load.guest_address == unchanged_shader_load.guest_address &&
                 shader_load.byte_length == unchanged_shader_load.byte_length,
             "unsupported shader stage changed decoded output");
+    const uint8_t captured_constant_load_packet[] = {
+        0xC0, 0x02, 0x2F, 0x00, 0x09, 0xD5, 0x68, 0xA0,
+        0x00, 0x00, 0x03, 0xF0, 0x00, 0x00, 0x00, 0x10,
+    };
+    shift::xbox::CapturedConstantLoad constant_load{};
+    require(shift::xbox::decode_captured_constant_load(
+                captured_constant_load_packet, sizeof(captured_constant_load_packet),
+                &constant_load, &error) &&
+                constant_load.bank == shift::xbox::CapturedConstantBank::Alu &&
+                constant_load.guest_address == 0x09D568A0u &&
+                constant_load.start_index == 0x3F0u &&
+                constant_load.dword_count == 16u &&
+                constant_load.destination_register == 0x43F0u &&
+                constant_load.byte_length == 64u,
+            "captured PM4_LOAD_ALU_CONSTANT span decoded incorrectly");
+    uint8_t constant_load_data[64]{};
+    for (uint32_t i = 0; i < 16; ++i) write_be32(constant_load_data + i * 4, 0xA0u + i);
+    std::vector<shift::xbox::GuestRegisterWrite> loaded_constants;
+    require(shift::xbox::decode_captured_constant_load_data(
+                constant_load, constant_load_data, sizeof(constant_load_data),
+                &loaded_constants, &error) && loaded_constants.size() == 16u &&
+                loaded_constants.front().register_index == 0x43F0u &&
+                loaded_constants.front().value == 0xA0u &&
+                loaded_constants.back().register_index == 0x43FFu &&
+                loaded_constants.back().value == 0xAFu,
+            "captured constant-load bytes were not mapped as big-endian register values");
+    auto invalid_constant_load = std::vector<uint8_t>(
+        captured_constant_load_packet,
+        captured_constant_load_packet + sizeof(captured_constant_load_packet));
+    invalid_constant_load[9] = 0x05;
+    const auto unchanged_constant_load = constant_load;
+    require(!shift::xbox::decode_captured_constant_load(
+                invalid_constant_load.data(), invalid_constant_load.size(),
+                &constant_load, &error) &&
+                constant_load.guest_address == unchanged_constant_load.guest_address &&
+                constant_load.destination_register == unchanged_constant_load.destination_register,
+            "unsupported constant-load bank changed decoded output");
     shift::xbox::DecodedIndexedDraw framed_draw{};
     require(shift::xbox::decode_captured_draw_indx(
                 framed_stream + packet_spans[4].byte_offset,
@@ -468,7 +506,7 @@ int main() {
         0x14000500u, 0x00010000u, 0x000002D0u, 0x00000004u,
         0x00700770u, 0x0000000Fu, 0x44200000u, 0x44200000u,
         0xC3B40000u, 0x43B40000u, 0x00000000u, 0x20002000u,
-        0x00000000u, 0x00000000u, 0x02D00500u,
+        0x00000000u, 0x00000000u, 0x02D00500u, 0x07010706u,
     };
     shift::xbox::CapturedRasterState raster_state{};
     require(shift::xbox::decode_captured_raster_state(
@@ -484,7 +522,8 @@ int main() {
             "captured Xbox render target interpretation changed");
     require(raster_state.color_write_mask == 0xFu && raster_state.viewport_y_flipped &&
                 !raster_state.depth_test_enabled && !raster_state.depth_write_enabled &&
-                !raster_state.stencil_test_enabled,
+                !raster_state.stencil_test_enabled &&
+                raster_state.blend_control_0 == 0x07010706u,
             "captured Xbox depth or color write state changed");
     require(raster_state.scissor_x0 == 0 && raster_state.scissor_y0 == 0 &&
                 raster_state.scissor_x1 == 1280 && raster_state.scissor_y1 == 720 &&
@@ -495,7 +534,7 @@ int main() {
     shift::xbox::CapturedRasterRegisters tracked_raster_registers{};
     require(!raster_register_state.snapshot(&tracked_raster_registers, &error),
             "incomplete raster register state was accepted");
-    const std::array<shift::xbox::GuestRegisterWrite, 15> raster_writes{{
+    const std::array<shift::xbox::GuestRegisterWrite, 16> raster_writes{{
         {0x2000, captured_raster_registers.surface_info},
         {0x2001, captured_raster_registers.color_info},
         {0x2002, captured_raster_registers.depth_info},
@@ -511,6 +550,7 @@ int main() {
         {0x2080, captured_raster_registers.window_offset},
         {0x2081, captured_raster_registers.window_scissor_tl},
         {0x2082, captured_raster_registers.window_scissor_br},
+        {0x2201, captured_raster_registers.blend_control_0},
     }};
     for (const auto& write : raster_writes) raster_register_state.apply(write);
     raster_register_state.apply({0x3000, 0xFFFFFFFFu});
@@ -578,6 +618,51 @@ int main() {
                 std::array<uint32_t, 4>{0x3F800000u, 0, 0, 0} &&
                 shader_constants.pixel_b128 && !shader_constants.pixel_b129,
             "captured Xbox pixel constants or conditional path changed");
+    shift::xbox::CapturedXboxShaderRegisterState shader_register_state;
+    shift::xbox::CapturedShaderConstants tracked_shader_constants{};
+    std::array<uint32_t, 2> tracked_vertex_descriptor{};
+    std::array<uint32_t, 6> tracked_texture_descriptor{};
+    require(!shader_register_state.snapshot(
+                &tracked_shader_constants, &tracked_vertex_descriptor,
+                &tracked_texture_descriptor, &error),
+            "incomplete captured shader register state was accepted");
+    shader_register_state.apply({0x2307u, 0x000FF000u});
+    shader_register_state.apply({0x2308u, 0x000FF100u});
+    shader_register_state.apply({0x4904u, captured_bool_constants[4]});
+    const std::array<uint32_t, 10> required_shader_constants{
+        64u, 65u, 66u, 67u, 68u, 69u, 254u, 255u, 256u, 511u,
+    };
+    for (uint32_t c : required_shader_constants) {
+        for (uint32_t component = 0; component < 4; ++component) {
+            shader_register_state.apply({
+                0x4000u + c * 4u + component,
+                captured_float_constants[c * 4u + component],
+            });
+        }
+    }
+    for (uint32_t i = 0; i < 6; ++i) {
+        shader_register_state.apply({0x4800u + i, captured_texture_descriptor[i]});
+    }
+    for (uint32_t i = 0; i < 2; ++i) {
+        shader_register_state.apply({0x4800u + 190u + i, captured_vertex_descriptor[i]});
+    }
+    require(shader_register_state.snapshot(
+                &tracked_shader_constants, &tracked_vertex_descriptor,
+                &tracked_texture_descriptor, &error) &&
+                tracked_shader_constants.vertex_float_constants[64][0] == 0x3F47FFFFu &&
+                tracked_shader_constants.pixel_float_constants[255][0] == 0x3F800000u &&
+                tracked_shader_constants.pixel_b128 &&
+                tracked_vertex_descriptor ==
+                    std::array<uint32_t, 2>{0x0975DFD3u, 0x10000032u} &&
+                tracked_texture_descriptor ==
+                    std::array<uint32_t, 6>{0x8800D8FEu, 0x09D57086u, 0x001FE3FFu,
+                                            0x01280C14u, 0x00000003u, 0x00000A10u},
+            "captured shader register bank snapshot diverged from its draw inputs");
+    shader_register_state.reset();
+    require(!shader_register_state.snapshot(
+                &tracked_shader_constants, &tracked_vertex_descriptor,
+                &tracked_texture_descriptor, &error),
+            "shader register reset retained captured draw state");
     require(!shift::xbox::decode_captured_shader_constants(
                 captured_float_constants.data(), captured_float_constants.size() - 1,
                 captured_bool_constants.data(), captured_bool_constants.size(),
@@ -673,6 +758,21 @@ int main() {
             "captured 8-in-16 index bytes were rejected");
     require(normalized == expected_vk_indices,
             "captured index bytes did not normalize to Vulkan UInt16 values");
+    uint32_t maximum_vertex_index = 0;
+    require(shift::xbox::decode_captured_index_data(
+                input, captured_indices, sizeof(captured_indices), &normalized,
+                &maximum_vertex_index, &error) &&
+                normalized == expected_vk_indices && maximum_vertex_index == 3,
+            "captured index data did not resolve the highest referenced vertex");
+    uint32_t vertex_span_bytes = 0;
+    require(shift::xbox::captured_vertex_required_bytes(
+                maximum_vertex_index, 12, 0, 12, &vertex_span_bytes, &error) &&
+                vertex_span_bytes == 48,
+            "captured FLOAT3 vertex span did not cover four 12-byte vertices");
+    require(!shift::xbox::captured_vertex_required_bytes(
+                std::numeric_limits<uint32_t>::max(), 12, 0, 12,
+                &vertex_span_bytes, &error),
+            "overflowing captured vertex span was accepted");
 
     const uint8_t captured_vertex_words[] = {
         0xBF, 0x80, 0x00, 0x00, 0xBF, 0x80, 0x00, 0x00,
@@ -763,6 +863,30 @@ int main() {
     require(!shift::xbox::decode_captured_draw_indx(
                 kCapturedPacket, sizeof(kCapturedPacket) - 4, &input, &error),
             "truncated packet was accepted");
+
+    const uint8_t captured_swap[] = {
+        0xC0, 0x03, 0x64, 0x00,  // PM4_XE_SWAP, four payload dwords
+        0x53, 0x57, 0x41, 0x50,  // "SWAP"
+        0x09, 0x75, 0xD0, 0x00,  // 4 KiB-aligned physical frontbuffer
+        0x00, 0x00, 0x05, 0x00,  // 1280
+        0x00, 0x00, 0x02, 0xD0,  // 720
+    };
+    shift::xbox::DecodedGuestSwap swap{};
+    require(shift::xbox::decode_guest_swap(
+                captured_swap, sizeof(captured_swap), &swap, &error),
+            "captured PM4_XE_SWAP packet was rejected");
+    require(swap.frontbuffer_guest_address == 0x0975D000u &&
+                swap.width == 1280u && swap.height == 720u,
+            "PM4_XE_SWAP fields were decoded incorrectly");
+    uint8_t bad_swap[sizeof(captured_swap)];
+    std::copy(std::begin(captured_swap), std::end(captured_swap), std::begin(bad_swap));
+    bad_swap[4] = 0;
+    require(!shift::xbox::decode_guest_swap(
+                bad_swap, sizeof(bad_swap), &swap, &error),
+            "PM4_XE_SWAP with an invalid signature was accepted");
+    require(!shift::xbox::decode_guest_swap(
+                captured_swap, sizeof(captured_swap) - 4, &swap, &error),
+            "truncated PM4_XE_SWAP packet was accepted");
 
     std::cout << "captured PM4_DRAW_INDX input check passed\n";
     return 0;
