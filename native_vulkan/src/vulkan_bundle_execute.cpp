@@ -1384,6 +1384,11 @@ PipelineState load_pipeline_state(
     return out;
 }
 
+[[maybe_unused]] VkCullModeFlags load_pipeline_cull_mode(
+    const std::filesystem::path& root) {
+    return load_pipeline_state(root).cull_mode;
+}
+
 uint32_t readback_bytes_per_pixel(VkFormat format) {
     switch (format) {
     case VK_FORMAT_R32_SFLOAT:
