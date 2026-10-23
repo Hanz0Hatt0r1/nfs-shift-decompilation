@@ -28,13 +28,17 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   each stage's 256-register float window and the observed PS branch bools,
   including the VS a0-indexed c0-c3 window.
   A bounded decoder parses the captured VS/PS control-flow slots and their
-  `vfetch_full` and `tfetch2D` instructions, plus scheduled ALU operands,
+  `vfetch_full`, `vfetch_mini`, and `tfetch2D` instructions, plus scheduled ALU operands,
   temporary-register addressing flags, scalar source selectors, and
   component-relative swizzles. The project-owned translator now emits Vulkan
   GLSL for the observed VS/PS pair, including its `b128`/`b129` branch path,
   vertex fetch, captured ALU subset, texture fetch/swizzle, and exports. It
   rejects unsupported control flow and operations. The actual captured pair
   compiled to Vulkan 1.1-compatible SPIR-V and passed `spirv-val`.
+  `vfetch_mini` parsing is covered by a synthetic decoder regression. The live
+  retail VS uses a full fetch from constant 0 with format 57 and a seven-dword
+  stride followed by a mini fetch; translation still needs to resolve the
+  mini's inherited address and produce the captured vertex layout.
   The packet scanner frames contiguous big-endian type 0/1/2/3 PM4 packets and
   reports type-3 opcodes without applying state or executing commands. The
   project-owned `snapshot_guest_ring_batch` copies a committed dword-indexed
@@ -74,12 +78,14 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   Redmi Note 8 Pro / Android 13 / Mali-G76 MC4. Android validation layers were
   unavailable. A live Linux retail run also loaded the
   emulator-free plugin, initialized the guest ring, and consumed 1,828 PM4
-  packets including two swaps. A later opcode audit counted 100
-  `DRAW_INDX_2` and 14 `IM_LOAD_IMMEDIATE` packets, but no `DRAW_INDX`, pointer
-  `IM_LOAD`, or `LOAD_ALU_CONSTANT`. It saved opcode counts, not raw packet
-  words, so it does not establish whether those `DRAW_INDX_2` packets use DMA
-  indices or AutoIndex. Neither retail run submitted a Vulkan frame, so a first
-  retail draw is not yet confirmed. See
+  packets including two swaps. A later debug run recorded 100 `DRAW_INDX_2`
+  packets, all AutoIndex (96 point draws and four rectangle-list draws), and
+  decoded the inline VS/PS programs. Its 108-byte VS uses the full-fetch / mini-
+  fetch form described above. The current parser recognizes the mini encoding,
+  but live inherited-fetch resource resolution and shader translation remain
+  unsupported. The run submitted zero Vulkan frames; a first retail draw is
+  not yet confirmed. No DMA indexed draw, pointer `IM_LOAD`, or
+  `LOAD_ALU_CONSTANT` was observed. See
   [`process2_xbox_live_guest_ring_20261023.json`](../evidence/process2_xbox_live_guest_ring_20261023.json).
   The private 19,784-byte capture scans as 247 packets with four bounded
   `DRAW_INDX` packets. The capture decoders reject unsupported forms. The untile

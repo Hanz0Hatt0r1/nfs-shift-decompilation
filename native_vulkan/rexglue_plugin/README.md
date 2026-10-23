@@ -61,14 +61,15 @@ On 2026-10-23, the retail Linux executable was run with `--gpu_plugin=shift-nati
 The runtime mapped this plugin without mapping `rexgpu-xenos`, initialized the
 guest ring at `0x09752580`, and the worker consumed four live batches (1,828
 PM4 packets) containing two `XE_SWAP` packets. This verifies the plugin is
-connected to the retail guest's PM4 path. A later opcode-only audit counted
-100 `DRAW_INDX_2` and 14 `IM_LOAD_IMMEDIATE` packets, but did not retain their
-raw words; it cannot establish that the draws use DMA indices or that the
-inline shader payloads are valid. That retail run submitted zero Vulkan
-frames, so a retail draw through the plugin is still unconfirmed. The current
-debug worker logs the first 12 dwords of the first `0x2b` and `0x36` packets in
-each batch, plus the first indexed-draw decode rejection reason per batch. No
-live batch has yet been captured with these diagnostics. See
+connected to the retail guest's PM4 path. A later debug run saved raw `0x2b`
+and `0x36` samples and draw-state diagnostics. It found 100 AutoIndex draws
+(96 points and four rectangle lists), not DMA-indexed draws. One inline VS was
+108 bytes and scheduled a full vertex fetch from constant 0 (format 57, stride
+7 dwords) followed by a mini fetch. The live binary at the time rejected the
+mini form and then reported the fixed constant-95 vertex descriptor incomplete.
+The project parser now recognizes the mini encoding, with a synthetic unit
+regression; live inherited-fetch resolution and Vulkan submission remain
+unverified. See
 [`process2_xbox_live_guest_ring_20261023.json`](../../evidence/process2_xbox_live_guest_ring_20261023.json).
 
 A separate Gamescope headless retry with the current plugin created its

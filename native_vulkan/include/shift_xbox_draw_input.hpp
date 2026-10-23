@@ -128,11 +128,14 @@ struct CapturedShaderInstructionSchedule {
 
 enum class CapturedShaderFetchKind : uint8_t {
     VertexFull,
+    VertexMini,
     Texture2D,
 };
 
 struct CapturedShaderFetchInstruction {
     CapturedShaderFetchKind kind;
+    // For VertexMini, these are raw instruction bits rather than the effective
+    // values inherited from its preceding VertexFull instruction.
     uint32_t source_register;
     uint32_t destination_register;
     uint32_t source_swizzle;
@@ -347,6 +350,9 @@ struct CapturedShaderConstants {
     std::array<std::array<uint32_t, 4>, 256> pixel_float_constants;
     bool pixel_b128;
     bool pixel_b129;
+    // False when the guest did not load the bank containing b128/b129. A
+    // caller may proceed only if the captured pixel shader does not read them.
+    bool pixel_boolean_constants_valid;
 };
 
 // Tracks only the constants and fetch descriptors referenced by the captured
@@ -436,7 +442,9 @@ bool decode_captured_shader_control_flow(
     std::vector<CapturedShaderControlFlow>* output,
     std::string* error);
 
-// Decodes only the captured vfetch_full and tfetch2D 96-bit instruction forms.
+// Decodes captured vfetch_full, vfetch_mini, and tfetch2D 96-bit forms. A mini
+// fetch's addressing fields are inherited from the preceding full fetch by the
+// shader translator; this parser reports only the fields encoded in the mini.
 // It reads instruction bytes but does not perform a fetch or translate them.
 bool decode_captured_shader_fetch_instruction(
     const uint8_t* instruction_bytes,

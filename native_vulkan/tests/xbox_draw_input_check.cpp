@@ -151,6 +151,21 @@ int main() {
                 fetch.vertex_stride == 5 && fetch.vertex_offset == -2 &&
                 fetch.source_relative && fetch.destination_relative,
             "vfetch_full fields changed");
+    uint8_t vertex_shader_mini_fetch_bytes[12];
+    write_be32(vertex_shader_mini_fetch_bytes, 0x82343840u);
+    write_be32(vertex_shader_mini_fetch_bytes + 4, 0x40070123u);
+    write_be32(vertex_shader_mini_fetch_bytes + 8, 0x7FFFFF05u);
+    require(shift::xbox::decode_captured_shader_fetch_instruction(
+                vertex_shader_mini_fetch_bytes,
+                sizeof(vertex_shader_mini_fetch_bytes), &fetch, &error),
+            "captured vfetch_mini instruction was rejected");
+    require(fetch.kind == shift::xbox::CapturedShaderFetchKind::VertexMini &&
+                fetch.fetch_constant_index == 10 && fetch.source_register == 2 &&
+                fetch.destination_register == 3 && fetch.source_swizzle == 2 &&
+                fetch.destination_swizzle == 0x123 && fetch.vertex_format == 7 &&
+                fetch.vertex_stride == 5 && fetch.vertex_offset == -1 &&
+                fetch.source_relative && fetch.destination_relative,
+            "vfetch_mini fields changed");
     require(shift::xbox::decode_captured_shader_fetch_instruction(
                 texture_shader_fetch_bytes, sizeof(texture_shader_fetch_bytes), &fetch, &error),
             "captured tfetch2D instruction was rejected");
@@ -720,7 +735,8 @@ int main() {
                                         0x3F800000u, 0x3F800000u} &&
                 shader_constants.pixel_float_constants[255] ==
                 std::array<uint32_t, 4>{0x3F800000u, 0, 0, 0} &&
-                shader_constants.pixel_b128 && !shader_constants.pixel_b129,
+                shader_constants.pixel_b128 && !shader_constants.pixel_b129 &&
+                shader_constants.pixel_boolean_constants_valid,
             "captured Xbox pixel constants or conditional path changed");
     shift::xbox::CapturedXboxShaderRegisterState shader_register_state;
     shift::xbox::CapturedShaderConstants tracked_shader_constants{};
@@ -728,11 +744,11 @@ int main() {
     std::array<uint32_t, 6> tracked_texture_descriptor{};
     require(!shader_register_state.snapshot(
                 &tracked_shader_constants, &tracked_vertex_descriptor,
-                &tracked_texture_descriptor, &error),
+                &tracked_texture_descriptor, &error) &&
+                error == "missing vertex shader control register 0x2307",
             "incomplete captured shader register state was accepted");
     shader_register_state.apply({0x2307u, 0x000FF000u});
     shader_register_state.apply({0x2308u, 0x000FF100u});
-    shader_register_state.apply({0x4904u, captured_bool_constants[4]});
     const std::array<uint32_t, 10> required_shader_constants{
         64u, 65u, 66u, 67u, 68u, 69u, 254u, 255u, 256u, 511u,
     };
@@ -750,6 +766,14 @@ int main() {
     for (uint32_t i = 0; i < 2; ++i) {
         shader_register_state.apply({0x4800u + 190u + i, captured_vertex_descriptor[i]});
     }
+    require(shader_register_state.snapshot(
+                &tracked_shader_constants, &tracked_vertex_descriptor,
+                &tracked_texture_descriptor, &error) &&
+                !tracked_shader_constants.pixel_boolean_constants_valid &&
+                !tracked_shader_constants.pixel_b128 &&
+                !tracked_shader_constants.pixel_b129,
+            "unloaded pixel boolean constants were not marked as unknown");
+    shader_register_state.apply({0x4904u, captured_bool_constants[4]});
     require(shader_register_state.snapshot(
                 &tracked_shader_constants, &tracked_vertex_descriptor,
                 &tracked_texture_descriptor, &error) &&

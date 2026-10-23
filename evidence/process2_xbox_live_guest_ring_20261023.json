@@ -142,9 +142,39 @@
     "vulkan_frames_submitted": 0,
     "limitation": "The run proves live packet capture and form classification only. No retail draw reached Vulkan submission, and the AutoIndex samples do not prove a DMA DrawIndexedPrimitive call."
   },
+  "follow_up_fetch_contract_diagnostic": {
+    "source_log": "/tmp/process2-live-nfs/headless-20261023/run-fetch-contract/logs/p2-autoindex-fetchcontract.log",
+    "captured_vertex_shader_bytes": 108,
+    "scheduled_vertex_fetches": [
+      {
+        "kind": "vfetch_full",
+        "fetch_constant_index": 0,
+        "format_id": 57,
+        "stride_dwords": 7,
+        "offset_dwords": 0
+      },
+      {
+        "kind": "vfetch_mini",
+        "live_binary_result": "decoder rejected mini form before the current parser update"
+      }
+    ],
+    "resource_snapshot_result": "fixed constant-95 descriptor was incomplete",
+    "frames_submitted": 0,
+    "parser_update": {
+      "result": "vfetch_mini is now identified and its encoded fields are decoded",
+      "unit_fixture": "synthetic 96-bit instruction",
+      "live_rerun_after_update": false,
+      "limit": "does not prove inherited address resolution, resource fetch, or Vulkan submission"
+    },
+    "validation_after_parser_update": {
+      "plugin_live_ring_ctest": "1/1 passed",
+      "xbox_draw_input_check": "1/1 passed",
+      "xbox_shader_translate_check": "1/1 passed"
+    }
+  },
   "remaining_blockers": [
     "All 100 live DRAW_INDX_2 packets are AutoIndex (96 one-point draws and 4 three-index rectangle-list draws); no DMA indexed draw/DrawIndexedPrimitive packet has been verified or submitted.",
-    "No pointer IM_LOAD or LOAD_ALU_CONSTANT packets were observed; 14 IM_LOAD_IMMEDIATE packets were counted but their shader payloads were not validated from raw bytes.",
+    "No pointer IM_LOAD or LOAD_ALU_CONSTANT packets were observed. Inline IM_LOAD_IMMEDIATE programs were captured and their control-flow prefixes were decoded, but the mini-fetch resource contract is still unsupported.",
     "No frame reached submit_captured_vulkan_frame; the two observed XE_SWAP packets had no supported draw to submit.",
     "Process 1 owns the original guest startup and scheduling path needed to reach the game's render-producing state."
   ]

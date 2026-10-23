@@ -291,6 +291,29 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     }
     *inputs_ready = true;
 
+    if (!constants.pixel_boolean_constants_valid) {
+      std::vector<shift::xbox::CapturedShaderControlFlow> pixel_control_flow;
+      if (!shift::xbox::decode_captured_shader_control_flow(
+              pixel_program.data(), pixel_program.size(), &pixel_control_flow,
+              error)) {
+        return false;
+      }
+      const bool reads_missing_boolean = std::any_of(
+          pixel_control_flow.begin(), pixel_control_flow.end(),
+          [](const shift::xbox::CapturedShaderControlFlow &entry) {
+            return entry.opcode ==
+                       shift::xbox::ShaderControlFlowOpcode::ConditionalJump &&
+                   (entry.bool_constant == 128u || entry.bool_constant == 129u);
+          });
+      if (reads_missing_boolean) {
+        if (error) {
+          *error = "captured pixel shader reads unloaded boolean constants "
+                   "b128/b129";
+        }
+        return false;
+      }
+    }
+
     shift::xbox::CapturedShaderTranslationOptions options{};
     options.pixel_b128 = constants.pixel_b128;
     options.pixel_b129 = constants.pixel_b129;
@@ -531,6 +554,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         std::map<uint32_t, uint32_t> draw_index_count_counts;
         std::array<bool, 2> type3_packet_sample_logged{};
         bool logged_draw_decode_failure = false;
+        bool logged_autoindex_state = false;
         if (expanded_ok) {
           for (const shift::xbox::ResolvedGuestPacket& resolved : expanded.packets) {
             const shift::xbox::PacketSpan& packet = resolved.packet;
@@ -563,6 +587,158 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 ++draw_source_primitive_counts[source_select * 64u +
                                                primitive_type];
                 ++draw_index_count_counts[index_count];
+                if (source_select == 2u && !logged_autoindex_state) {
+                  logged_autoindex_state = true;
+                  shift::xbox::CapturedShaderConstants constants{};
+                  std::array<uint32_t, 2> vertex_descriptor{};
+                  std::array<uint32_t, 6> texture_descriptor{};
+                  shift::xbox::CapturedVertexFetch vertex_fetch{};
+                  shift::xbox::CapturedTextureFetch texture_fetch{};
+                  shift::xbox::CapturedTextureSampling texture_sampling{};
+                  shift::xbox::CapturedRasterRegisters raster_registers{};
+                  shift::xbox::CapturedRasterState raster_state{};
+                  std::string state_error;
+                  std::string vertex_error;
+                  std::string texture_error;
+                  std::string sampling_error;
+                  std::string raster_error;
+                  const bool shader_state_ready =
+                      shader_register_state.snapshot(
+                          &constants, &vertex_descriptor, &texture_descriptor,
+                          &state_error);
+                  const bool vertex_fetch_ready =
+                      shader_state_ready &&
+                      shift::xbox::decode_captured_vertex_fetch(
+                          vertex_descriptor.data(), &vertex_fetch,
+                          &vertex_error);
+                  const bool texture_fetch_ready =
+                      shader_state_ready &&
+                      shift::xbox::decode_captured_texture_fetch(
+                          texture_descriptor.data(), &texture_fetch,
+                          &texture_error);
+                  const bool texture_sampling_ready =
+                      texture_fetch_ready &&
+                      shift::xbox::decode_captured_texture_sampling(
+                          texture_fetch, &texture_sampling, &sampling_error);
+                  const bool raster_state_ready =
+                      raster_register_state.snapshot(&raster_registers,
+                                                     &raster_error) &&
+                      shift::xbox::decode_captured_raster_state(
+                          raster_registers, &raster_state, &raster_error);
+                  std::vector<shift::xbox::CapturedShaderControlFlow>
+                      pixel_control_flow;
+                  std::string pixel_control_flow_error;
+                  const bool pixel_control_flow_ready =
+                      !pixel_shader_program.empty() &&
+                      shift::xbox::decode_captured_shader_control_flow(
+                          pixel_shader_program.data(),
+                          pixel_shader_program.size(), &pixel_control_flow,
+                          &pixel_control_flow_error);
+                  const auto uses_pixel_bool = [&pixel_control_flow](
+                                                   uint32_t index) {
+                    return std::any_of(
+                        pixel_control_flow.begin(), pixel_control_flow.end(),
+                        [index](const auto &entry) {
+                          return entry.opcode ==
+                                     shift::xbox::ShaderControlFlowOpcode::
+                                         ConditionalJump &&
+                                 entry.bool_constant == index;
+                        });
+                  };
+                  std::vector<shift::xbox::CapturedShaderControlFlow>
+                      vertex_control_flow;
+                  std::vector<shift::xbox::CapturedShaderInstructionSchedule>
+                      vertex_schedule;
+                  std::string vertex_schedule_error;
+                  const bool vertex_schedule_ready =
+                      !vertex_shader_program.empty() &&
+                      shift::xbox::decode_captured_shader_control_flow(
+                          vertex_shader_program.data(),
+                          vertex_shader_program.size(), &vertex_control_flow,
+                          &vertex_schedule_error) &&
+                      shift::xbox::schedule_captured_shader_instructions(
+                          vertex_control_flow, vertex_shader_program.size(),
+                          &vertex_schedule, &vertex_schedule_error);
+                  std::ostringstream vertex_fetch_summary;
+                  bool first_vertex_fetch = true;
+                  if (vertex_schedule_ready) {
+                    for (const auto &scheduled : vertex_schedule) {
+                      if (scheduled.kind !=
+                          shift::xbox::ShaderScheduledInstructionKind::Fetch) {
+                        continue;
+                      }
+                      const size_t offset =
+                          static_cast<size_t>(scheduled.address) * 12u;
+                      shift::xbox::CapturedShaderFetchInstruction fetch{};
+                      if (offset + 12u > vertex_shader_program.size() ||
+                          !shift::xbox::
+                              decode_captured_shader_fetch_instruction(
+                                  vertex_shader_program.data() + offset, 12u,
+                                  &fetch, &vertex_schedule_error)) {
+                        vertex_fetch_summary << "invalid-fetch";
+                        break;
+                      }
+                      if (fetch.kind !=
+                              shift::xbox::CapturedShaderFetchKind::VertexFull &&
+                          fetch.kind !=
+                              shift::xbox::CapturedShaderFetchKind::VertexMini) {
+                        continue;
+                      }
+                      if (!first_vertex_fetch)
+                        vertex_fetch_summary << ',';
+                      vertex_fetch_summary << (fetch.kind ==
+                                                       shift::xbox::CapturedShaderFetchKind::VertexMini
+                                                   ? "mini"
+                                                   : "full")
+                                            << "(constant=" << fetch.fetch_constant_index
+                                            << "/format=" << fetch.vertex_format
+                                            << "/stride=" << fetch.vertex_stride
+                                            << "/offset=" << fetch.vertex_offset
+                                            << "/src=" << fetch.source_register
+                                            << "/dst=" << fetch.destination_register
+                                            << "/swiz=" << fetch.destination_swizzle
+                                            << ')';
+                      first_vertex_fetch = false;
+                    }
+                  }
+                  const char *first_error =
+                      !shader_state_ready       ? state_error.c_str()
+                      : !vertex_fetch_ready     ? vertex_error.c_str()
+                      : !texture_fetch_ready    ? texture_error.c_str()
+                      : !texture_sampling_ready ? sampling_error.c_str()
+                      : !raster_state_ready     ? raster_error.c_str()
+                                                : "none";
+                  REXLOG_DEBUG("shift-native: AutoIndex state snapshot: "
+                               "shader-registers={}, "
+                               "vertex-fetch={} ({} bytes), texture-fetch={} "
+                               "({}x{}, {} bytes), "
+                               "texture-sampling={}, raster-state={} ({}x{}), "
+                               "vertex-shader-bytes={}, pixel-shader-bytes={}, "
+                               "first-error={}",
+                               shader_state_ready, vertex_fetch_ready,
+                               vertex_fetch.byte_length, texture_fetch_ready,
+                               texture_fetch.width, texture_fetch.height,
+                               texture_fetch.byte_length,
+                               texture_sampling_ready, raster_state_ready,
+                               raster_state.width, raster_state.height,
+                               vertex_shader_program.size(),
+                               pixel_shader_program.size(), first_error);
+                  REXLOG_DEBUG(
+                      "shift-native: AutoIndex pixel control flow: decoded={}, "
+                      "uses-b128={}, uses-b129={}, error={}",
+                      pixel_control_flow_ready, uses_pixel_bool(128u),
+                      uses_pixel_bool(129u),
+                      pixel_control_flow_error.empty()
+                          ? "none"
+                          : pixel_control_flow_error);
+                  REXLOG_DEBUG(
+                      "shift-native: AutoIndex vertex fetch contracts: "
+                      "scheduled={}, "
+                      "fetches=[{}], error={}",
+                      vertex_schedule_ready, vertex_fetch_summary.str(),
+                      vertex_schedule_error.empty() ? "none"
+                                                    : vertex_schedule_error);
+                }
               }
               const size_t sample_index = packet.opcode == 0x2Bu ? 0u : 1u;
               if (!type3_packet_sample_logged[sample_index]) {

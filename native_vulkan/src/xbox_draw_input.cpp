@@ -502,10 +502,9 @@ bool decode_captured_shader_fetch_instruction(
     decoded.predicate_condition = ((word2 >> 31) & 1u) != 0;
 
     if (opcode == 0) {
-        if (((word1 >> 30) & 1u) != 0) {
-            return fail("captured mini vertex fetch is unsupported", error);
-        }
-        decoded.kind = CapturedShaderFetchKind::VertexFull;
+        const bool mini_fetch = ((word1 >> 30) & 1u) != 0;
+        decoded.kind = mini_fetch ? CapturedShaderFetchKind::VertexMini
+                                  : CapturedShaderFetchKind::VertexFull;
         decoded.fetch_constant_index =
             ((word0 >> 20) & 0x1Fu) * 3 + ((word0 >> 25) & 0x3u);
         decoded.source_swizzle = (word0 >> 30) & 0x3u;
@@ -999,11 +998,20 @@ bool CapturedXboxShaderRegisterState::snapshot(
     std::array<uint32_t, 2>* vertex_descriptor,
     std::array<uint32_t, 6>* texture_descriptor,
     std::string* error) const {
-    if (!constants || !vertex_descriptor || !texture_descriptor ||
-        !vertex_control_valid_ || !pixel_control_valid_ ||
-        vertex_control_ != 0x000FF000u || pixel_control_ != 0x000FF100u ||
-        !bool_valid_[4]) {
-        return fail("captured shader controls or boolean constants are incomplete", error);
+    if (!constants || !vertex_descriptor || !texture_descriptor) {
+        return fail("invalid captured shader register snapshot output", error);
+    }
+    if (!vertex_control_valid_) {
+        return fail("missing vertex shader control register 0x2307", error);
+    }
+    if (!pixel_control_valid_) {
+        return fail("missing pixel shader control register 0x2308", error);
+    }
+    if (vertex_control_ != 0x000FF000u) {
+        return fail("unsupported vertex shader control value", error);
+    }
+    if (pixel_control_ != 0x000FF100u) {
+        return fail("unsupported pixel shader control value", error);
     }
     for (size_t i = 0; i < 6; ++i) {
         if (!fetch_valid_[i]) {
@@ -1040,6 +1048,7 @@ bool CapturedXboxShaderRegisterState::snapshot(
             bool_words_.size(), vertex_control_, pixel_control_, &decoded, error)) {
         return false;
     }
+    decoded.pixel_boolean_constants_valid = bool_valid_[4];
     std::array<uint32_t, 2> vertex_words{fetch_words_[190], fetch_words_[191]};
     std::array<uint32_t, 6> texture_words{};
     std::copy_n(fetch_words_.begin(), texture_words.size(), texture_words.begin());
@@ -1177,6 +1186,7 @@ bool decode_captured_shader_constants(
     }
     decoded.pixel_b128 = (bool_bank_words[128 / 32] & (1u << (128 % 32))) != 0;
     decoded.pixel_b129 = (bool_bank_words[129 / 32] & (1u << (129 % 32))) != 0;
+    decoded.pixel_boolean_constants_valid = true;
     *output = decoded;
     if (error) {
         error->clear();
