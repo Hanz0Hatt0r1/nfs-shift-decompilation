@@ -1,32 +1,32 @@
 LANE:
-<!-- New: X360-input | X360-recompiler | X360-runtime | X360-render | X360-platform | PC-reference. Existing legacy P1/P2/P3 labels remain valid for already-scoped PC work. -->
+<!-- P1A-contact | P1B-control | P1D-camera | P2-runtime | P3-integration -->
 
 BLOCKER:
-<!-- Exact Xbox gate X0–X6 (or identified PC-reference issue) and the observed blocker. -->
+<!-- Exact playable-slice blocker / queue id. -->
 
 INPUT:
-<!-- Original game identity/hash + pinned SDK revision or reproducible PC reference, not proprietary data. -->
+<!-- Merged contracts, retail hashes, captures, resource identities, or other exact prerequisites. -->
 
 OUTPUT:
-<!-- Concrete change and exactly observed capability; do not claim an untested XEX/game path. -->
+<!-- Exact new proof/runtime capability. -->
 
 CONSUMER:
-<!-- Next component/workstream that uses this output. -->
+<!-- Next queue item/process that can consume this result. -->
 
 GATES_CHANGED:
-<!-- State only evidence-backed gates; no inferred gameplay from host frames or fixture successes. -->
+<!-- Only gates actually changed by this PR. Keep unresolved gates explicitly false. -->
 
 LIMITS:
-<!-- Unverified paths, Vulkan 1.1 capability uncertainty, architecture and input caveats. -->
+<!-- What this PR deliberately does not prove. -->
 
 TESTS:
-<!-- Commands, environment, observed results, CI and required platform checks. -->
+<!-- Focused tests and required CI. -->
 
 SUPERSEDES:
-<!-- Existing PR(s), or NONE. Preserve unique evidence before closing. -->
+<!-- PR number(s) superseded, or NONE. Preserve unique evidence before closing old PRs. -->
 
 NEXT_OWNER:
-<!-- Owner workstream. -->
+<!-- Lane/process that owns the next step. -->
 
 NEXT_STEP:
-<!-- One bounded, testable follow-up. -->
+<!-- One exact next frontier. -->

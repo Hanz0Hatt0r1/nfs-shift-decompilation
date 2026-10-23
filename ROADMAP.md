@@ -1,45 +1,1052 @@
-# Need for Speed: SHIFT — Xbox 360 / ReXGlue-first roadmap
+# Need for Speed: SHIFT — Android Port Roadmap
 
-**Adopted 2026-10-22.** The default development lane is now Xbox 360 retail → ReXGlue PowerPC AOT → Linux → Android ARM64. The existing PC 1.02 recompilation is retained for reference, verification and targeted maintenance, not deleted or represented as Xbox progress.
+This roadmap defines the path to a **native Android/ARM64 port of the original PC retail 1.02 game**.
 
-The immediate goal is to **prove feasibility**, not claim the port has begun executing. Status: **no verified SHIFT Xbox 360 input, recompiled executable or gameplay**.
+Linux/Vulkan is the project's **bring-up, debugging and validation platform**, not the final product target. The runtime, recovered game code, graphics backend and platform abstractions must therefore be designed so that successful Linux bring-up transfers to Android instead of creating a Linux-only implementation.
 
-## Decision gates
+The retired Silverstone/BMW vertical slice is not an active milestone. Its code, captures and evidence remain useful research material only.
 
-| Gate | Acceptance evidence | Current status |
-| --- | --- | --- |
-| X0 — retail input identity | User-owned `default.xex`, SHA-256, title/build identification, external asset inventory | Blocked: no verified XEX input |
-| X1 — ReXGlue feasibility | Pinned SDK revision; recorded XEX parse, PPC function/codegen coverage, imports and unresolved exceptions | Not started |
-| X2 — Linux link/boot | Recompiled executable links for Linux x86-64, reaches original guest entrypoint with deterministic logs | Not started |
-| X3 — real GPU work | Original Xenos commands reach Vulkan; first measured non-synthetic retail frame | Not started |
-| X4 — playable Linux | Original frontend, selectable offline race, input, audio and sustained game loop, with evidence | Not started |
-| X5 — portability | Linux ARM64 build/runtime validated; Android ARM64 packaging, input, audio, lifecycle validated | Not started |
-| X6 — Vulkan 1.1 | Explicit capability inventory and successful native execution on a Vulkan 1.1 device without assuming 1.2/1.3 | Not started |
+## Final target
 
-The gate machine record is [coordination/xbox360_rexglue_status.json](coordination/xbox360_rexglue_status.json). Mark a gate verified only with an independently checkable evidence path, revision and observed result. SDK compilation alone does not prove SHIFT launches.
+```text
+original PC retail SHIFT.exe / recovered x86 game code
++
+complete portable lowered-code execution
++
+SHIFT-required Win32 compatibility
++
+original retail initialization and game systems
++
+SHIFT-specific D3D9 -> Vulkan backend
++
+platform-neutral runtime core
++
+ARM64 host support
++
+Android Vulkan / input / audio / storage / lifecycle
++
+frontend -> offline race -> continuous gameplay
+=
+native Android port of Need for Speed: SHIFT
+```
 
-## Planned delivery order
+The intended architecture is:
 
-1. **Input intake:** establish hashes, build/region/title identification, XEX imports, asset container list and lawful local extraction. Keep proprietary bytes out of Git.
-2. **SDK pin + compiler preflight:** select and freeze a ReXGlue version, analyze XEX and generate a function-coverage/import summary. No hand-written fake stubs to advance a gate.
-3. **First Linux runtime:** minimal Xbox 360 kernel/bootstrap adapter and original execution trace on x86-64. Classify missing services against XEX callsites.
-4. **Xenos/Vulkan:** use ReXGlue's existing renderer as the starting point; verify shader translation, texture formats, render targets, synchronization and the Vulkan 1.1 extension/feature budget. Do not transplant PC D3D9 state as if it were Xenos.
-5. **Gameplay proof:** frontend → user input → offline race → continuous simulation/renderer and audio. Compare against original Xbox execution when possible; use the PC path as corroboration only where versions demonstrably agree.
-6. **Portable release path:** prove Linux ARM64 and Android ARM64 separately; document graphics-driver constraints, asset loading, input, audio, lifecycle and performance.
-7. **Stabilization:** repeatable asset provenance, regression captures, portability tests, saved games, packaging and third-party license review.
+```text
+                 original SHIFT game logic
+                           |
+                           v
+                lowered portable game code
+                           |
+                           v
+          guest x86 state + Win32 compatibility
+                           |
+          +----------------+----------------+
+          |                                 |
+          v                                 v
+ original renderer logic             other game systems
+          |
+          v
+ SHIFT D3D9-facing compatibility/backend
+          |
+          v
+ portable Vulkan renderer core
+          |
+     +----+----------------------+
+     |                           |
+     v                           v
+Linux platform layer       Android platform layer
+XCB/Wayland + Vulkan       ANativeWindow + Vulkan
+dev/debug/validation       shipping target
+```
 
-## Stop / reconsider conditions
+The renderer logic above the D3D9 boundary should remain original wherever possible. The **D3D9 backend itself must be replaced by a native Vulkan implementation of the subset actually used by SHIFT**.
 
-Reassess this strategy if ReXGlue cannot reliably process this exact XEX, the available Xbox 360 asset formats are incompatible with reasonable effort, or its Vulkan renderer cannot be made to work under the project's **Vulkan 1.1** requirement without unacceptable changes. Record a decision with evidence; do not silently increase the GPU requirement or declare the PC fallback deleted.
+---
 
-## Existing work preservation
+## Current position — 2026-10-20
 
-- PC code: `native_runtime/`, `native_vulkan/`, `src/`, `tools/`, `tests/`, `evidence/`, plus importer tooling, remains intact.
-- PC status and research are [indexed here](docs/PC_RECOMPILATION_STATUS.md).
-- Historical full plans are [archived roadmap](docs/PC_RECOMPILATION_ROADMAP_20261022.md) and [archived README](docs/PC_RECOMPILATION_README_20261022.md).
-- The retired standalone playable slice and its generated status remain **historical**, not the Xbox program tracker.
-- Active legacy PRs may finish or be deferred on their own merits; do not mass-close them, reset CI evidence or force changes onto contributors.
+| Area | Current state |
+| --- | --- |
+| Frozen PC function corpus | **41,538 functions identified** |
+| P-code lowering | **41,538 / 41,538 lowerable** |
+| Machine instructions covered | **2,088,152 / 2,088,152** |
+| P-code operations covered | **9,600,713** |
+| Linux lowered module | **Full corpus links as native ELF exports** |
+| Original PE32 image loading | **Implemented** |
+| Original PE32 execution | **The pinned v215 replay reaches the host frame loop after 96,082 guest dispatches / 1,559 unique functions; the main thread remains active at `0x006472d0`, with four workers waiting. Separate v284–v310 effect/decoder/initializer probes have no current frame-loop proof. v296 captured 310 successful calls to decoder `0x0066f680`; the native XMem decoder matches all sampled outputs byte-for-byte. v297–v310 cold starts time out before frames; v299 identifies the zero-count allocator call, and the v303–v310 mismatch now points to incomplete frozen function coverage for initializer `0x0050f010` (188 instructions, no RET), not a proven generic runtime defect.** |
+| Import/IAT dispatch | **Implemented with fail-closed API boundary** |
+| Guest threads | **Cooperative multi-thread scheduling implemented** |
+| Vulkan runtime shell | **Operational on Linux** |
+| D3D9 startup compatibility | **The observed 1024×4096 render-target texture and 128 KiB vertex buffer allocate Vulkan resources. Clear now drives a Vulkan color/depth/stencil clear, and the observed null-argument Present queues a Vulkan swapchain frame. The captured D3DX9 effect binary parses and is wrapped by a partial `ID3DXEffect` COM object; shader creation/binding and effect technique application remain unavailable. Guest draw calls are not translated.** |
+| D3D9 capture tooling | **The 2026-10-18 windows recorded 13,069 indexed draws and 813 target draws; a 2026-10-19 bounded follow-up added 119 draws and 1,806 stream-1 payload events for a separate 128 KiB generation, with 109/119 spatial input ranges covered. The adjacent game-owned replay cache records 16 participants across five vehicle IDs, but does not identify a model per draw. The older generation's payload, original retail resource paths, and per-bind immutable texture identity remain unproven** |
+| Complete D3D9 -> Vulkan game backend | **Not implemented** |
+| Host-architecture-neutral runtime | **Not yet proven** |
+| ARM64 lowered-runtime execution | **Generic P-code fixture passes; full corpus/runtime not yet proven** |
+| Android platform layer | **Not implemented** |
+| Retail main loop | **v114's 1,800-frame, v191–v194's 120-frame, and pinned v215's 120-frame host probes leave the PE entry point active at `0x006472d0` with four workers waiting. Later pinned effect/decoder/initializer probes, through v310, stop before yielding a frame-loop snapshot. Entry-point return is not the completion target.** |
+| Frontend and retail rendering | **Not demonstrated by the Linux runtime; guest Clear reaches Vulkan, but no retail D3D9 draw has reached Vulkan** |
+| Retail frontend | **Not reached** |
+| Recompiled Linux offline race | **Not reached; original retail SHIFT was manually brought to a race under PortProton** |
+| Android gameplay | **Not reached** |
 
-## Work ownership
+The cooperative guest-thread scheduler has been exercised by the real retail entry point together with a freshly rebuilt complete lowered P-code ELF. Probe v114 used the 41,538-export module regenerated from the hash-pinned corpus and pinned `revenginstr` lowerer, plus 32 startup supplements. It ran 342,703 guest dispatches across 1,417 unique functions and rendered all 1,800 requested host Vulkan frames with `VK_LAYER_KHRONOS_validation` enabled and zero errors. The bounded 64-entry main-thread function history is identical to v113: it passes through `0x00637840`, `0x00508ea0`, `0x0054be00`, `0x0082db70`, `0x00894b60`, `0x00833670` and the `0x00807030` helper sequence before ending at `0x006472d0`. The saved stack is `0x0090488a -> 0x009046aa -> 0x00a69160 -> 0x0040ba50 -> 0x006492d0 -> 0x00647500 -> 0x006472d0`, with four worker threads waiting. The longer run added no unique function or history entry and does not establish frontend progress, input, or a retail D3D9 frame. Static Ghidra output identifies `FUN_0040ba50` as an exit-controlled app loop that calls `FUN_006492d0` each iteration; its active entry point is expected during normal play, so a return from PE entry is not the completion target. Static Revenginstr evidence maps the two inspected callers through `0x00545d90()+0x108` and the gate check to singleton offset `+0x13c`. The v115 120-frame runtime trace (80,626 guest dispatches, zero Vulkan validation errors) recorded 121 false returns from `0x0054be00`: the `+0x13c` word and helper byte `+0x0c` were zero, the callback object at gate offset `+0x48` was null, and the caller branched to `0x0054bec8`. The v117 follow-up captured the last writer for all 121 gate calls: `0x0062fde0` entered with ECX `0x00be2510` and wrote zero to `0x00be2534`; Revenginstr High P-code confirms a zero store to `this + 0x24`, matching the gate receiver `+0x34`. The v119 caller-chain trace locates that store in `FUN_004eb550`'s constructor path; `FUN_00545ca0` passes the member at `this + 0x108`, matching the gate receiver. This resolves that field's initialization path, but not the causal link to frontend progress. See the [UI state-gate evidence](docs/REVENGINSTR_UI_STATE_GATE_EVIDENCE_20261019.md), the [v115 trace record](evidence/retail_frontier_20261019/entrypoint_probe_v115_ui_gate_trace.json), the [v117 trace](evidence/retail_frontier_20261019/entrypoint_probe_v117_ui_gate_field_writer_ecx.json), the [v119 trace](evidence/revenginstr_ui_gate_writer_call_chain_20261019/entrypoint_probe_v119_ui_state_writer_call_chain.json), and [caller-chain P-code manifest](evidence/revenginstr_ui_gate_writer_call_chain_20261019/manifest.json). The Vulkan geometry remains the four-vertex converted MGEO smoke mesh. Generated code, object shards, the full ELF and supplements stay in the external artifact cache. See the [full-module rebuild evidence](evidence/pcode_full_linux_rebuild_20261018.json), [v114 probe record](evidence/retail_frontier_20261019/entrypoint_probe_v114.json), and [v114 probe log](evidence/retail_frontier_20261019/shift-probe-v114-function-history-1800-validation.log).
 
-Use `X360-input`, `X360-recompiler`, `X360-runtime`, `X360-render` and `X360-platform` as workstream names in PRs and issue descriptions; PC reference tasks are `PC-reference`. Follow [PROCESS_INSTRUCTIONS.md](PROCESS_INSTRUCTIONS.md). The first merged Xbox change after this transition should establish **X0 input identity**; all subsequent success claims must cite its lock.
+The v143–v162 bounded retail startup sequence now reaches the D3D9 creation path: the game requests a 1280×720 fullscreen device, and the Linux Vulkan-backed adapter accepts that request. Compatibility queries then pass through shader/texture state, backbuffer, surface description, and clear setup. These calls currently model guest-visible object/state contracts; `Clear` does not yet submit a Vulkan clear and no retail D3D9 draw has reached Vulkan. Two missing guest functions, `0x008329d0` and `0x00835050`, were recovered in Ghidra and each lowered 1/1 with zero rejections by `revenginstr` revision `e15b05437a56f0401e7676866d07deecbe384043`. With both supplements, v161 and the confirmatory v162 run reach 48,532 dispatches across 1,221 functions, then fault on a null resource pointer in `0x00838410`. Ghidra shows `0x00853790` creates resource arrays and calls `0x00838410`; the latter dereferences the resource wrapper and invokes its vtable slot `+0x48`. The upstream factory semantics and the cause of its null result remain unresolved. The frontend and offline race are not reached. See the [D3D9 startup frontier note](docs/SHIFT_RETAIL_D3D9_STARTUP_FRONTIER_20261019.md), the [v162 machine record](evidence/retail_frontier_20261019/entrypoint_probe_v162_d3d9_resource_null.json), and the [v143–v162 probe logs](evidence/retail_frontier_20261019/).
+
+Follow-up v163–v170 probes moved past the earlier `0x00838410` stop after resource-memory tracing, Vulkan-backed format/depth queries, and D3D9 query handling. In v167, the 2-instruction `0x005e5b00` getter exported and lowered 1/1 with zero rejections by `revenginstr`; the probe advanced 64 dispatches and nine unique functions before reaching `GetGammaRamp`. After identity-ramp handling, v168 advanced to 48,602 dispatches / 1,234 functions and exposed the missing `0x0082ddc0` P-code export. That 15-instruction wrapper then lowered 1/1 with zero rejections, and v169 advanced to 48,964 / 1,247 before `GetDeviceCaps`. With adapter-capability serialization implemented for the device method, v170 reached 49,064 / 1,249 and stopped at `d3dx9_41.dll!D3DXCreateTexture` from `0x008391b0`. Its arguments request a 1024×4096, one-level, `D3DUSAGE_RENDERTARGET`, `D3DFMT_A8R8G8B8`, `D3DPOOL_DEFAULT` texture. At v170, the first argument (`0x2001b3f4`) had not yet been matched against the runtime device map; v173 resolves it as the game-owned forwarding wrapper described below. No texture object or Vulkan image was created. These advances quantify `revenginstr`'s value at recovering and executing guest functions; they do not establish D3DX or texture semantics. No retail draw reached Vulkan and the requested 120-frame interval did not complete. See [v170 frontier evidence](evidence/retail_frontier_20261019/entrypoint_probe_v170_d3dx_texture_import.json), the [v167–v170 logs](evidence/retail_frontier_20261019/), and the [supplement exports and build reports](evidence/revenginstr_pcode_supplements_20261019/).
+
+The v172/v173 call-site probes identify `0x00839b4e` as the retail call into `D3DXCreateTexture`. The device argument `0x2001b3f4` is a game-owned D3D9 forwarding wrapper: its vtable is `0x00b1bba8`, and word `+8` points to the runtime device `0x10474790`. Static disassembly of the wrapper's vtable slot 23 (`0x0084f680`) shows its `CreateTexture` method loading that underlying device and forwarding through device-vtable offset `0x5c`. This resolves the apparent pointer mismatch and establishes the object boundary for the next implementation step; it does not imply D3DX has created a texture. v173 still stops at the same import after 49,065 dispatches / 1,249 functions, with no Vulkan image and no retail draw. See [v173 device-contract evidence](evidence/retail_frontier_20261019/entrypoint_probe_v173_d3dx_device_contract.json) and the [v172/v173 logs](evidence/retail_frontier_20261019/).
+
+Follow-up v174–v194 probes implement the observed texture and vertex-buffer object paths and move through D3D9 render/depth-target state, render state, Begin/EndScene, viewport, and Present. The requested 1024×4096 A8R8G8B8 texture and 128 KiB vertex buffer allocate Vulkan resources. Generic `revenginstr` PRs [#151](https://github.com/Hanz0Hatt0r1/revenginstr/pull/151) and [#152](https://github.com/Hanz0Hatt0r1/revenginstr/pull/152) fixed x87 unnormal binary80 classification and stale FPREM C2 status; three further Ghidra exports each lowered 1/1 with zero rejections. v194 reaches the host frame loop with 96,082 dispatches / 1,559 unique functions; across 120 host frames, 122 guest Clear requests yield 120 Vulkan clear submissions, and 120 of 121 null-argument Present requests are submitted through Vulkan, with zero validation errors. One Present remains pending because the probe is bounded to 120 host frames. Guest frames suppress the synthetic MGEO draw; no guest D3D9 draw reaches Vulkan and retail rendering is not proven. The v192 gate trace remains zero with a null callback object on all 121 gate evaluations, and the main thread remains in `0x006472d0` with four workers waiting. See the [v191–v194 frontier note](docs/SHIFT_RETAIL_D3D9_VULKAN_FRONTIER_20261019.md), [v191 evidence](evidence/retail_frontier_20261019/entrypoint_probe_v191_d3d9_frontier.json), [v192 UI-gate evidence](evidence/retail_frontier_20261019/entrypoint_probe_v192_d3d9_frontier.json), [v193 automation evidence](evidence/retail_frontier_20261019/entrypoint_probe_v193_automation.json), and [v194 automation evidence](evidence/retail_frontier_20261019/entrypoint_probe_v194_automation.json).
+
+The v210–v215 cumulative supplement replay independently reproduces the same bounded host-frame-loop result. After v210 stopped at `0x0090a007`, the v215 run used two x87 overrides and the accumulated startup supplements to advance through `0x0082e980`, `0x00853170`, `0x00852e00`, and `0x0082db40`. It then reached 120 host frames with 96,082 dispatches / 1,559 unique functions and zero Vulkan validation errors. This confirms the P-code supplement chain and probe setup; it adds no gameplay milestone: guest draw translation remains false, and the frontend and offline race remain unproven. The full path/hash manifest and bounded reports are in [v215 replay evidence](evidence/retail_frontier_20261019/entrypoint_probe_v215_supplement_replay.json).
+
+The v281–v296 effect/decoder investigation is a separate cold-start replay and does not supersede the v215 host-loop checkpoint. v296 captured at least 310 completed calls to `0x0066f680` from `0x0066cec0` through dispatch 346,879. For each captured input, the existing `shift_xmem_decompress_auto` implementation produced exactly the retail output bytes; only hashes, sizes, and frame counts are committed. The runtime now has a bounded native XMem override at that address, with a synthetic guest-call fixture covering output bytes and cdecl return state. v296 was intentionally stopped after capture and does not establish a frame-loop result. The next step is a cold-start replay with the new adapter loaded from `native_runtime/build`, followed by examination of its first new blocker or frame-loop state. See the [v290–v296 decoder analysis](docs/RETAIL_FRONTIER_AUTOMATION.md), the [v291 report](evidence/retail_frontier_20261019/entrypoint_probe_v291_decode_call_trace.json), the [v292 live-stack report](evidence/retail_frontier_20261019/entrypoint_probe_v292_decoder_live_stack.json), and the [v296 equivalence record](evidence/retail_frontier_20261020/entrypoint_probe_v296_decoder_equivalence.json).
+
+The v217/v218 follow-up reproduces the same frame-loop checkpoint while tracing the UI helper byte. All 121 gate calls still come from `0x0054be00`; the gate word and callback object remain zero, as does helper byte `0x00be250c`. Its last writer in every event is constructor `0x0050c820`; the v218 targeted call trace records no calls from `0x0049eb30`, the static caller of the positive setter `0x0050cba0`. The v219 exact-byte trace confirms this result on the final instrumentation build and guards against attributing a neighboring-byte store to the flag. This identifies the setter path that would enable the helper but does not explain why the UI activation route is not entered. First retail draw, frontend readiness, and offline race remain unproven. See [v217/v218 trace evidence](evidence/retail_frontier_20261019/entrypoint_probe_v217_v218_ui_helper_flag_writer.json), [v219 exact-byte evidence](evidence/retail_frontier_20261019/entrypoint_probe_v219_ui_helper_exact_writer.json), and the [UI state-gate analysis](docs/REVENGINSTR_UI_STATE_GATE_EVIDENCE_20261019.md).
+
+The v223–v239 follow-up identifies the immediate UI activation blocker without changing guest state. The `0x0054bb20` progress loop calls `0x00508ea0` and `0x00508e90` 121 times each; both return zero, and the short-circuit never calls `0x00508ec0`. Static analysis maps `0x00508e90` to helper-object byte `+0x2d`, which remains zero. The updater `0x005093a0` leaves a child in state 7; its readiness method `0x00508af0` returns false while the child has `+0x218 == 2` and `+0x340 == 1`. Exact-byte provenance traces `+0x218` to request initializer `0x0066bb50`. The v237 target-wide call trace sees that initializer called from `0x0066cc00`, but no call to cleanup routine `0x0066b8d0`. Caller trace v239 shows owner `+0xb8` transitioning from zero to one during setup; it does not identify a later consumer/worker completion. First setup skips the old-request cleanup guard because the byte was zero at entry. The cause of the missing readiness transition remains unresolved. The frame-loop checkpoint is unchanged; no guest draw reaches Vulkan, and the frontend and offline race remain unproven. See the [activation-frontier analysis](docs/SHIFT_RETAIL_UI_ACTIVATION_FRONTIER_20261019.md) and [machine-readable evidence](evidence/retail_frontier_20261019/entrypoint_probe_v229_v239_async_request_calls.json).
+
+The installed PortProton retail run has a separate D3D9 capture at frame range 0–4309 (308,332 ms; 1,718,778 valid JSON objects). It contains 1,581 draws matching the Silverstone-era target shader inventory, including 537 hits for the crowd-generation shader whose SHA-256 is `d7859cca…00d351a`. The audited report also maps that shader to the proxy trigger signature `ps:b83e3c4ec719e80f`. The capture contains draw-local shader/state evidence, but no vertex/index-buffer payloads, texture snapshots, or exact resource path/SHA pairs, so none of those hits can yet be admitted as a retail mesh in Vulkan. The raw 474 MB capture remains in the external PortProton game directory; its SHA-256 and audit commands are recorded in [the capture audit note](docs/SHIFT_D3D9_CAPTURE_AUDIT_20261018.md). The report records 2,912 duplicate-key lines but zero conflicting duplicate values; duplicate keys still remain a capture-format defect.
+
+A later isolated-copy probe exercised the new lossless DXT DDS path. Its 30,984 JSON events include 495 texture snapshot events, 610 VB/IB payload events and seven trigger windows. All 11 unique DDS paths referenced by those events passed header and mip-payload-size validation. The audit found no match against the 51 supplied Silverstone renderer shader hashes and no `resource_path`/`resource_sha256` identity. The process still had `Movies/Attract.bik` open during the last trigger window, so this is texture-capture evidence rather than race-render evidence. The capture and all texture payloads remain outside Git; see the [DXT snapshot probe note](docs/SHIFT_D3D9_DXT_SNAPSHOT_PROBE_20261018.md) and [machine-readable probe record](evidence/retail_frontier_20261018/d3d9_dxt_snapshot_probe.json).
+
+Two manual-trigger captures followed the user's confirmation that the retail race had loaded. Their windows covered frames 5865–5869 and 6983–6987; the second added 7,348 indexed draws, 440 draws matching nine inventory hashes, 84 VB/IB payload events, and 33 texture files. Together, the raw log has 202,870 valid JSON events, 13,069 indexed draws, 8,252 buffer payload events, 541 texture files (531 validated DDS plus 10 PPM), and 813 draws matching 10 hashes in the supplied 51-hash Silverstone-era inventory. The target sampler report resolves 3,055 bindings across those draws; all 813 draws have complete capture-local state and explicit sampler-state writes. It directly links 945 bindings across 331 draws to 85 snapshots, and hashes all 541 snapshot files with none missing. Another 1,353 bindings have a snapshot on the same texture generation, but contents between binds are not proven stable; 27 are ambiguous and 730 have no same-generation candidate. Snapshot hashes identify the current stored capture files, not original retail resource paths. This remains evidence from original retail SHIFT under PortProton, not evidence that the recompiled Linux runtime reaches a race. The capture still has no original `resource_path`/`resource_sha256` pairs, so no draw is admitted to Vulkan. Raw data totaling 253,861,323 bytes remains outside Git. The texture-dump proxy change is merged in [PR #2085](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2085); trigger-mode texture files are deferred until a manual trigger. See the [race-window capture note](docs/SHIFT_D3D9_RACE_WINDOW_CAPTURE_20261018.md), [texture snapshot identity analysis](docs/SHIFT_D3D9_RACE_TEXTURE_SNAPSHOT_IDENTITIES_20261018.md), and [machine-readable audit](evidence/retail_frontier_20261018/d3d9_race_window_capture.json).
+
+A separate bounded stream-1 follow-up ran on 2026-10-19 at trigger frame 3968 (window 3966–3970). It recorded 119 draws for the `crowdgeninstanced` signature and 1,806 payload events for a 131,072-byte stream-1 generation; the spatial union of captured ranges covers 109 target input intervals. The sample adds 92 target offsets and 282 payload offsets relative to the earlier manual window in that capture, but cannot identify individual cars. Ten intervals remain incomplete, the older capture's buffer generation is still distinct, and no retail resource identity was recorded. Raw JSONL and buffer bytes remain outside Git. See the [stream-1 follow-up note](docs/SHIFT_D3D9_STREAM1_FOLLOWUP_20261019.md) and [machine-readable evidence](evidence/retail_frontier_20261019/stream1_race_followup_f3968.json).
+
+The game-owned `replaycache.rep` was written 22 seconds after the capture log's last write. It contains 16 participant snapshots with five model IDs (RX-7 ×5, Scirocco ×4, Evo X ×3, Megane ×2, Infiniti G35 ×2). This confirms a varied participant roster in the adjacent game setup/replay snapshot, not which model produced a particular draw. The file is replay/setup data rather than a compiled shader cache; no separate game-owned compiled shader cache was found in the searched install/profile paths. Its raw bytes remain outside Git; see the [roster evidence](evidence/retail_frontier_20261019/game_owned_replaycache_roster_20261019.json).
+
+The earlier v65-v67 allocator evidence remains useful history, but the v66 `Base System` fatal is not reproduced by the later v114 run and is not the current observed blocker. Static disassembly confirms that `0x006472d0` calls the retail `SwitchToThread` import before updating timer fields; `FUN_0040ba50` repeatedly calls this timer update from an exit-controlled app loop. The v114 trace matches that active loop after 1,800 frames; it neither proves a hang nor demonstrates frontend progress. The native recompiled path still needs to advance into the frontend and connect actual D3D9 draw resources to the Vulkan backend. The native Vulkan smoke still uses converted MGEO geometry. A PortProton race is reachable with the original retail executable, but the recompiled Linux path has not demonstrated its frontend, offline race, or playable session. See the [entrypoint frontier follow-up](docs/SHIFT_RETAIL_ENTRYPOINT_FRONTIER_20261019.md).
+
+The generic `revenginstr` binary80 lowering now executes a synthetic P-code
+fixture on ARM64 CI (22 passed, one x86-only `FWAIT` test skipped). This covers
+the codec and representative operations only; it does not validate the full
+SHIFT corpus, guest x87-state mapping, exact wide-host rounding, or retail
+startup. See the [cross-host fixture evidence](evidence/pcode_native_lowering_arm64_binary80_20261018.json).
+
+The current immediate execution frontier is:
+
+> **The entry point runs through D3D9 `Clear` and repeated `Present` calls but remains in the app/UI loop at `0x006472d0`. Vulkan receives the bounded clear and present submissions, while guest draw translation remains disabled. The activation route is blocked by an outstanding async phase/resource state: `0x0066bb50` set the pending bit read by `0x00508af0`, and the helper object's `+0x2d` byte read by `0x00508e90` remains zero. Setup sets owner `+0xb8` to one, but the consumer/worker transition that updates readiness is still unknown. Trace that path without forcing the gate; `0x0066b8d0` is observed as cleanup, not proven completion. Then translate the first guest draw with its stream/index data, shader bindings, and render target. The current probe proves neither retail rendering nor frontend readiness or a race.**
+
+At the same time, new infrastructure must avoid introducing additional x86-64/Linux-only assumptions.
+
+Primary evidence:
+
+- [`docs/PROCESS_0_PCODE_NATIVE_LOWERING.md`](docs/PROCESS_0_PCODE_NATIVE_LOWERING.md)
+- [`docs/RECOMPILED_PCODE_VULKAN_PE32_LOADER.md`](docs/RECOMPILED_PCODE_VULKAN_PE32_LOADER.md)
+- [`evidence/pcode_native_lowering_coverage_full_20261018.json`](evidence/pcode_native_lowering_coverage_full_20261018.json)
+- [`evidence/recompiled_pcode_vulkan_frontier_20261018.json`](evidence/recompiled_pcode_vulkan_frontier_20261018.json)
+- [`evidence/recompiled_pcode_guest_cooperative_scheduler_20261018.json`](evidence/recompiled_pcode_guest_cooperative_scheduler_20261018.json)
+- [`evidence/retail_frontier_20261018/entrypoint_probe_v111.json`](evidence/retail_frontier_20261018/entrypoint_probe_v111.json)
+- [`evidence/retail_frontier_20261019/entrypoint_probe_v114.json`](evidence/retail_frontier_20261019/entrypoint_probe_v114.json)
+- [`evidence/retail_frontier_20261019/entrypoint_probe_v115_ui_gate_trace.json`](evidence/retail_frontier_20261019/entrypoint_probe_v115_ui_gate_trace.json)
+- [`evidence/retail_frontier_20261019/shift-probe-v115-ui-state-gate-trace-120-validation.log`](evidence/retail_frontier_20261019/shift-probe-v115-ui-state-gate-trace-120-validation.log)
+- [`evidence/retail_frontier_20261019/entrypoint_probe_v117_ui_gate_field_writer_ecx.json`](evidence/retail_frontier_20261019/entrypoint_probe_v117_ui_gate_field_writer_ecx.json)
+- [`evidence/retail_frontier_20261019/entrypoint_probe_v170_d3dx_texture_import.json`](evidence/retail_frontier_20261019/entrypoint_probe_v170_d3dx_texture_import.json)
+- [`evidence/retail_frontier_20261019/entrypoint_probe_v173_d3dx_device_contract.json`](evidence/retail_frontier_20261019/entrypoint_probe_v173_d3dx_device_contract.json)
+- [`docs/SHIFT_RETAIL_D3D9_VULKAN_FRONTIER_20261019.md`](docs/SHIFT_RETAIL_D3D9_VULKAN_FRONTIER_20261019.md)
+- [`evidence/retail_frontier_20261019/entrypoint_probe_v191_d3d9_frontier.json`](evidence/retail_frontier_20261019/entrypoint_probe_v191_d3d9_frontier.json)
+- [`evidence/retail_frontier_20261019/entrypoint_probe_v192_d3d9_frontier.json`](evidence/retail_frontier_20261019/entrypoint_probe_v192_d3d9_frontier.json)
+- [`evidence/retail_frontier_20261019/entrypoint_probe_v193_automation.json`](evidence/retail_frontier_20261019/entrypoint_probe_v193_automation.json)
+- [`evidence/retail_frontier_20261019/entrypoint_probe_v194_automation.json`](evidence/retail_frontier_20261019/entrypoint_probe_v194_automation.json)
+- [`evidence/revenginstr_pcode_supplements_20261019/function_00853170_build_report.json`](evidence/revenginstr_pcode_supplements_20261019/function_00853170_build_report.json)
+- [`evidence/revenginstr_pcode_supplements_20261019/function_00852e00_build_report.json`](evidence/revenginstr_pcode_supplements_20261019/function_00852e00_build_report.json)
+- [`evidence/revenginstr_pcode_supplements_20261019/function_0082db40_build_report.json`](evidence/revenginstr_pcode_supplements_20261019/function_0082db40_build_report.json)
+- [`evidence/revenginstr_pcode_supplements_20261019/function_005e5b00_build_report.json`](evidence/revenginstr_pcode_supplements_20261019/function_005e5b00_build_report.json)
+- [`evidence/revenginstr_pcode_supplements_20261019/function_0082ddc0_build_report.json`](evidence/revenginstr_pcode_supplements_20261019/function_0082ddc0_build_report.json)
+- [`evidence/retail_frontier_20261019/shift-probe-v117-ui-state-field-writer-ecx-120-validation.log`](evidence/retail_frontier_20261019/shift-probe-v117-ui-state-field-writer-ecx-120-validation.log)
+- [`evidence/revenginstr_ui_gate_writer_pcode_20261019/manifest.json`](evidence/revenginstr_ui_gate_writer_pcode_20261019/manifest.json)
+- [`evidence/revenginstr_ui_gate_writer_call_chain_20261019/entrypoint_probe_v119_ui_state_writer_call_chain.json`](evidence/revenginstr_ui_gate_writer_call_chain_20261019/entrypoint_probe_v119_ui_state_writer_call_chain.json)
+- [`evidence/revenginstr_ui_gate_writer_call_chain_20261019/shift-probe-v119-ui-state-writer-call-chain-120-validation.log`](evidence/revenginstr_ui_gate_writer_call_chain_20261019/shift-probe-v119-ui-state-writer-call-chain-120-validation.log)
+- [`evidence/revenginstr_ui_gate_writer_call_chain_20261019/manifest.json`](evidence/revenginstr_ui_gate_writer_call_chain_20261019/manifest.json)
+- [`evidence/retail_frontier_20261019/ui-gate-caller-0054be00-branch.txt`](evidence/retail_frontier_20261019/ui-gate-caller-0054be00-branch.txt)
+- [`evidence/retail_frontier_20261019/entrypoint_probe_v113.json`](evidence/retail_frontier_20261019/entrypoint_probe_v113.json)
+- [`evidence/retail_frontier_20261018/entrypoint_probe_v112.json`](evidence/retail_frontier_20261018/entrypoint_probe_v112.json)
+- [`evidence/pcode_full_linux_rebuild_20261018.json`](evidence/pcode_full_linux_rebuild_20261018.json)
+- [`docs/SHIFT_D3D9_CAPTURE_AUDIT_20261018.md`](docs/SHIFT_D3D9_CAPTURE_AUDIT_20261018.md)
+- [`docs/SHIFT_D3D9_RACE_WINDOW_CAPTURE_20261018.md`](docs/SHIFT_D3D9_RACE_WINDOW_CAPTURE_20261018.md)
+- [`docs/SHIFT_D3D9_RACE_TEXTURE_SNAPSHOT_IDENTITIES_20261018.md`](docs/SHIFT_D3D9_RACE_TEXTURE_SNAPSHOT_IDENTITIES_20261018.md)
+- [`docs/REVENGINSTR_UI_STATE_GATE_EVIDENCE_20261019.md`](docs/REVENGINSTR_UI_STATE_GATE_EVIDENCE_20261019.md)
+- [`evidence/retail_frontier_20261018/d3d9_race_window_capture.json`](evidence/retail_frontier_20261018/d3d9_race_window_capture.json)
+- [`evidence/retail_frontier_20261018/d3d9_race_target_texture_sampler_20261018.json.gz`](evidence/retail_frontier_20261018/d3d9_race_target_texture_sampler_20261018.json.gz)
+- [`evidence/shift_d3d9_capture_audit_20261018.json`](evidence/shift_d3d9_capture_audit_20261018.json)
+- [`evidence/shift_d3d9_capture_provenance_20261018.json`](evidence/shift_d3d9_capture_provenance_20261018.json)
+- [`evidence/shift_silverstone_target_draw_local_summary_20261018.json`](evidence/shift_silverstone_target_draw_local_summary_20261018.json)
+- [full draw-local evidence (gzip)](evidence/shift_silverstone_target_draw_local_20261018.json.gz)
+
+---
+
+## Stage 0 — Reproducible complete lowered artifact
+
+### Objective
+
+Make the complete recovered game-code artifact reproducibly buildable/loadable without relying on one developer machine.
+
+### Required work
+
+- Keep the restored full module containing all **41,538** lowered exports and its required startup supplements reproducible from pinned inputs.
+- Pin corpus revision, lowerer revision, generated-source hashes, compiler inputs and resulting module hash.
+- Keep large generated artifacts outside Git while keeping deterministic manifests and hashes in Git.
+- Make base, supplement and override loading deterministic.
+- Document a clean-machine path from authoritative research inputs to a runnable retail probe.
+- Keep generated lowered code free of host-ISA assumptions unless explicitly isolated behind a portability layer.
+
+### Exit criteria
+
+- Complete export count is verified.
+- Retail `SHIFT.exe` and the complete lowered module can be launched from a documented command.
+- The startup probe can be reproduced without hidden local artifacts.
+- The same generated source corpus is suitable for both x86-64 and ARM64 host compilation.
+
+---
+
+## Stage 1 — Make the execution core host-architecture neutral
+
+### Objective
+
+Ensure that the recovered x86 game is represented as **guest semantics**, not as accidental x86-64 host semantics.
+
+The final Android target is ARM64. Any host-x86 shortcut that leaks into game behavior is technical debt that can invalidate the Android port.
+
+### Required work
+
+Audit and isolate:
+
+- host pointer width assumptions;
+- endianness assumptions;
+- unaligned memory behavior;
+- x86-specific inline assembly/intrinsics;
+- host `CPUID`;
+- x87/binary80 dependencies;
+- host floating-point environment assumptions;
+- atomics and memory-order assumptions;
+- `ucontext` or other platform-specific coroutine implementation details;
+- page size and virtual-memory assumptions;
+- executable/shared-library loading assumptions;
+- ELF loader/runtime symbol behavior.
+
+Guest x86 behavior must remain explicit in the runtime:
+
+- x86 register state;
+- TEB/TLS;
+- x87/SSE semantics where required;
+- 32-bit guest pointers;
+- Win32 ABI;
+- guest atomics/synchronization behavior.
+
+### ARM64 policy
+
+ARM64 portability must not be postponed until the Linux game is fully playable.
+
+As soon as the runtime core can be built independently:
+
+- add an ARM64 compile gate;
+- run fixture tests on ARM64 Linux hardware or an equivalent validated environment;
+- verify the lowered corpus builds for AArch64;
+- add architecture-independent regression fixtures for guest memory, calls, floating-point operations and scheduling.
+
+### Exit criteria
+
+- Core runtime builds on x86-64 and ARM64.
+- Lowered game code builds on x86-64 and ARM64.
+- Fixture behavior is equivalent across both hosts.
+- Known host-specific implementations are isolated behind explicit interfaces.
+- No new subsystem may depend directly on x86-64 behavior without a portability plan.
+
+---
+
+## Stage 2 — Complete retail startup on Linux/Vulkan
+
+### Objective
+
+Use Linux as the fastest observable environment to drive the real retail executable through startup and into persistent game execution.
+
+Linux is the reference bring-up target because it provides strong native debugging, sanitizers, Vulkan validation and fast iteration. Success here is a **portability gate**, not the final project goal.
+
+### Blocker loop
+
+```text
+run real SHIFT.exe
+      |
+      v
+first deterministic blocker
+      |
+      v
+capture guest PC / call stack / state / input
+      |
+      v
+classify blocker
+      |
+      v
+implement minimum evidence-backed behavior
+      |
+      v
+regression + machine-readable evidence
+      |
+      v
+rerun from original startup path
+```
+
+### Blocker classes
+
+- missing/recovered P-code function;
+- lowering defect;
+- Win32 import;
+- process/thread state;
+- synchronization;
+- exception/SEH behavior;
+- file-system/resource access;
+- timing;
+- window/input;
+- audio;
+- graphics/D3D9;
+- game-state logic.
+
+Do not implement speculative Windows APIs in bulk.
+
+### Scheduler work
+
+Extend the cooperative scheduler only when retail execution proves a requirement:
+
+- event waits;
+- mutex/critical-section ownership;
+- thread waits;
+- alertable waits/APC if reached;
+- fiber creation/switching if reached;
+- timeout behavior;
+- TLS/TEB restoration;
+- deadlock/starvation diagnostics.
+
+Host parallelism and instruction-level preemption are not goals by themselves. Add them only if retail behavior cannot be represented correctly without them.
+
+### Exit criteria
+
+- Original PE32 entry point completes.
+- Required startup workers make forward progress.
+- Game initialization continues into the persistent main loop.
+- Startup is reproducible from the original retail path.
+- No test-only state injection is required.
+
+---
+
+## Stage 3 — Complete SHIFT-required Win32/platform compatibility
+
+### Objective
+
+Implement the Windows behavior actually required by SHIFT while keeping the implementation portable to Linux and Android.
+
+This project is **not** building a general Wine replacement.
+
+### Required compatibility areas
+
+As reached by retail execution:
+
+- process/module state;
+- threads/TLS/TEB;
+- synchronization;
+- heap and virtual memory;
+- files/directories;
+- configuration/registry equivalents;
+- timing/performance counters;
+- locale/CRT helpers;
+- exceptions;
+- window/message-facing behavior;
+- input APIs;
+- audio APIs;
+- Direct3D9-facing interfaces.
+
+### Portability rule
+
+Windows-compatible semantics belong in the shared runtime core. Native host operations belong behind platform interfaces.
+
+For example:
+
+```text
+guest CreateFileA
+      ->
+portable SHIFT file compatibility layer
+      ->
+Linux filesystem backend
+or
+Android storage backend
+```
+
+The same separation applies to timing, threads, input, audio and graphics presentation.
+
+### Exit criteria
+
+- Core game managers initialize through original code.
+- Main loop remains alive.
+- Retail resources begin loading through original control flow.
+- Platform-specific host code is isolated from guest/Win32 semantics.
+
+---
+
+## Stage 4 — Original retail resources and filesystem model
+
+### Objective
+
+Make original game code consume the real retail assets and packages on both development and Android targets.
+
+### Required work
+
+- reproduce the file-system namespace expected by SHIFT;
+- support required open/read/seek/map/enumeration behavior;
+- recover configuration and working-directory assumptions;
+- validate BFF/package discovery through original code;
+- validate known retail resource hashes;
+- use existing resource tooling for diagnosis, not as a replacement game loader;
+- separate logical game paths from physical host paths.
+
+### Android considerations
+
+Do not bake desktop filesystem paths into game logic.
+
+Provide an Android-compatible storage model for user-provided/licensed retail data, including:
+
+- app-accessible game-data root;
+- persistent writable data/config/save root;
+- efficient large-asset reads;
+- no dependency on arbitrary Windows drive letters;
+- no assumption that APK assets behave like seekable desktop files.
+
+### Exit criteria
+
+- Original package/resource managers initialize.
+- Retail assets are resolved by original game logic.
+- The logical resource layout is identical across Linux and Android even when physical storage differs.
+
+---
+
+## Stage 5 — Replace the D3D9 backend with portable Vulkan
+
+### Objective
+
+Preserve the original SHIFT renderer logic while replacing its low-level D3D9 execution backend with a **native Vulkan backend designed for both desktop Linux and Android Vulkan drivers**.
+
+This is a mandatory core porting stage.
+
+### What stays original
+
+Where practical, retain original game code for:
+
+- visibility/culling;
+- render queues;
+- materials;
+- animation;
+- LOD decisions;
+- lighting/game render state;
+- world/UI submission;
+- shader/material selection;
+- frame sequencing.
+
+### What must be replaced
+
+Implement the subset of D3D9 semantics actually used by SHIFT:
+
+- Direct3D/device creation;
+- adapter/capability queries needed by the game;
+- swap chains and presentation;
+- device/reset lifecycle;
+- render targets;
+- depth/stencil surfaces;
+- vertex/index buffers;
+- dynamic buffers and locking/update behavior;
+- textures, mipmaps and formats;
+- vertex declarations/FVF;
+- vertex shaders;
+- pixel shaders;
+- shader constants;
+- render states;
+- sampler states;
+- texture-stage state where used;
+- viewport/scissor;
+- clears;
+- draw calls;
+- queries/synchronization if used;
+- resource lifetime/reference behavior.
+
+### D3D9 capture as specification evidence
+
+Use the existing retail D3D9 capture path to determine what SHIFT actually does:
+
+```text
+retail Windows SHIFT
+      ->
+D3D9 capture
+      ->
+used API/state/resource/shader corpus
+      ->
+portable Vulkan backend requirements
+```
+
+Do not implement unused D3D9 surface area merely for API completeness.
+
+### Vulkan architecture
+
+The Vulkan renderer core must not depend on XCB or Android directly.
+
+Use a boundary similar to:
+
+```text
+SHIFT D3D9 semantics
+        |
+        v
+portable Vulkan renderer
+        |
+        +----------------------+
+        |                      |
+        v                      v
+Linux Vulkan surface     Android Vulkan surface
+```
+
+Platform-independent code should own:
+
+- Vulkan device/resource abstractions;
+- buffer/image management;
+- descriptor management;
+- pipeline/state translation;
+- shader handling;
+- synchronization strategy;
+- render passes/dynamic rendering strategy;
+- D3D9 state cache;
+- draw translation.
+
+Platform layer should own only what genuinely differs:
+
+- surface creation;
+- window/lifecycle events;
+- presentation integration;
+- platform capabilities and extension selection.
+
+### Shader path
+
+Build a defined retail shader pipeline:
+
+- capture/recover D3D9 shader bytecode;
+- translate to SPIR-V or provide equivalent generated Vulkan shaders;
+- preserve D3D register/constant semantics;
+- map sampler and texture behavior;
+- handle precision explicitly;
+- test on Android-class Vulkan implementations, not only desktop GPUs.
+
+### Android-first constraints
+
+Do not make desktop-only Vulkan features a requirement unless an Android fallback exists.
+
+Track:
+
+- Vulkan feature/extension requirements;
+- texture format support;
+- shader precision;
+- descriptor limits;
+- memory budgets;
+- pipeline cache behavior;
+- synchronization cost;
+- tile-based GPU behavior;
+- render-target transitions;
+- device-loss/lifecycle recreation.
+
+### Exit criteria
+
+- Original game code successfully creates its graphics-facing device.
+- Original SHIFT rendering calls are translated to Vulkan.
+- A retail-generated frame is visible on Linux.
+- The same renderer core builds for Android.
+- No XCB/Linux object is referenced by the portable graphics core.
+- Synthetic vertical-slice rendering is no longer required to prove game rendering.
+
+---
+
+## Stage 6 — Full Linux reference bring-up
+
+### Objective
+
+Reach stable original-game execution on Linux using the same portable core intended for Android.
+
+Linux completion is a **reference milestone**, not project completion.
+
+### Required work
+
+- interactive frontend;
+- keyboard/gamepad input;
+- audio;
+- profile/save support required for offline play;
+- original frontend rendering;
+- frontend -> race transition;
+- world streaming;
+- physics;
+- camera;
+- HUD;
+- AI/opponents;
+- pause/restart;
+- repeated race loading.
+
+### Exit criteria
+
+- Original frontend is interactive.
+- An offline race can be selected and loaded through original game flow.
+- Original renderer feeds the Vulkan backend.
+- Gameplay runs continuously.
+- Return-to-menu/restart works.
+- No Linux-only shortcut is required by game/runtime semantics.
+
+At this point Linux acts as the behavioral reference for Android work.
+
+---
+
+## Stage 7 — ARM64 parity
+
+### Objective
+
+Run the complete portable runtime/game-code stack on an ARM64 host before Android platform complexity is introduced.
+
+Prefer ARM64 Linux for this milestone because it separates **CPU architecture problems** from **Android platform problems**.
+
+### Required work
+
+Validate:
+
+- complete lowered corpus;
+- PE32 guest execution;
+- scheduler;
+- Win32 compatibility core;
+- resources;
+- floating point;
+- atomics;
+- Vulkan renderer;
+- shaders;
+- game main loop.
+
+Replace or emulate host-specific behavior still blocking AArch64, including any remaining:
+
+- CPUID shortcuts;
+- x87 host dependencies;
+- binary80 assumptions;
+- x86-specific atomics;
+- ABI assumptions;
+- shared-object loader assumptions.
+
+### Exit criteria
+
+- Same retail startup path runs on ARM64.
+- Main loop and renderer operate on ARM64.
+- Representative Linux ARM64 gameplay matches x86-64 Linux behavior within defined tolerances.
+- Cross-architecture regressions are part of CI/test evidence.
+
+This is the mandatory gate before declaring the runtime Android-ready.
+
+---
+
+## Stage 8 — Android platform layer
+
+### Objective
+
+Attach the portable runtime/game/Vulkan core to Android without forking game semantics.
+
+### Required work
+
+Implement Android-native adapters for:
+
+#### Application lifecycle
+
+- process/activity startup;
+- pause/resume;
+- surface loss/recreation;
+- background/foreground transitions;
+- suspend-safe runtime state;
+- graceful shutdown.
+
+#### Vulkan presentation
+
+- `ANativeWindow` surface;
+- swapchain creation/recreation;
+- orientation/size changes;
+- Android Vulkan capability selection;
+- GPU/driver diagnostics.
+
+#### Input
+
+- gamepads/controllers;
+- keyboard where present;
+- touch input;
+- optional touch-to-game-control mapping;
+- Android back/navigation behavior where appropriate.
+
+#### Audio
+
+- portable game-facing audio interface;
+- Android low-latency output backend;
+- focus/interruption handling;
+- lifecycle-safe stream recreation.
+
+#### Storage
+
+- retail game-data location;
+- saves/profile/config;
+- cache;
+- scoped-storage-compatible path resolution;
+- efficient large-resource access.
+
+#### Timing/threads
+
+- Android-safe clocks;
+- thread priorities only where appropriate;
+- no dependence on desktop process APIs.
+
+### Exit criteria
+
+- Android app starts the same portable runtime core.
+- Retail data is discovered.
+- Vulkan device/surface initializes.
+- Original game startup executes on ARM64 Android.
+- Lifecycle transitions do not corrupt runtime state.
+
+---
+
+## Stage 9 — First playable Android race
+
+### Objective
+
+Reach the first end-to-end playable race on Android through original SHIFT flow.
+
+### Required work
+
+- frontend rendering;
+- frontend input;
+- track/vehicle selection;
+- loading/streaming;
+- race initialization;
+- physics;
+- controls;
+- camera;
+- HUD;
+- audio;
+- pause/resume;
+- Android lifecycle handling during gameplay.
+
+### Exit criteria
+
+- App launches on supported ARM64 Android hardware.
+- Retail frontend is visible and interactive.
+- User can start an offline race without debug injection.
+- Race renders through Vulkan.
+- Vehicle can be controlled.
+- Physics/camera/HUD/audio continue advancing.
+- Pause/resume survives normal Android lifecycle events.
+
+This is the first **actual Android port milestone**.
+
+---
+
+## Stage 10 — Android performance and device hardening
+
+### Objective
+
+Turn a technically running port into a practical mobile build.
+
+### Required work
+
+Profile and optimize:
+
+- CPU time in lowered game code;
+- guest call/dispatch overhead;
+- scheduler overhead;
+- Vulkan pipeline/state churn;
+- descriptor updates;
+- shader compilation;
+- draw-call overhead;
+- asset streaming;
+- decompression;
+- RAM use;
+- Vulkan memory use;
+- transient render targets;
+- texture residency;
+- thermal behavior;
+- battery load;
+- frame pacing.
+
+### Mobile-specific adaptation
+
+Where required without changing game semantics:
+
+- memory-budget-aware caching;
+- configurable resolution;
+- render scale;
+- texture-quality controls;
+- MSAA/AA alternatives;
+- shadow/effects quality;
+- frame-rate caps;
+- shader/pipeline caches;
+- touch-control UI;
+- controller remapping.
+
+Performance work must not silently replace original gameplay behavior.
+
+### Exit criteria
+
+- Stable gameplay on the defined minimum Android device class.
+- Memory use remains within target budgets.
+- No sustained thermal/performance failure under representative races.
+- Frame pacing is acceptable.
+- Multiple tracks and vehicles load repeatedly.
+- Save/profile persistence survives app restarts.
+
+---
+
+## Stage 11 — Behavioral parity and release hardening
+
+### Objective
+
+Bound remaining differences from PC retail and make the Android port reproducible.
+
+### Required work
+
+- compare important runtime state against PC retail captures;
+- validate physics;
+- validate timing;
+- validate renderer state;
+- validate shaders/materials;
+- validate camera/input;
+- validate resource identities;
+- validate audio behavior;
+- remove temporary frontier overrides once generic fixes exist;
+- document intentionally unsupported online/platform functionality;
+- add deterministic crash diagnostics;
+- define supported Android/Vulkan capability floor;
+- verify clean Android builds.
+
+### Exit criteria
+
+- Core offline behavior is reproducible.
+- Known PC-vs-Android differences are explicit.
+- Critical startup/frontend/race smoke paths are automated where possible.
+- Runtime failures provide actionable guest state.
+- Build instructions and required retail-input hashes are documented.
+
+---
+
+## Parallel workstreams
+
+Not every stage must execute strictly serially.
+
+Three workstreams should proceed in parallel where dependencies allow:
+
+### A — Retail execution frontier
+
+```text
+full lowered artifact
+-> startup blockers
+-> main loop
+-> resources
+-> frontend/race behavior
+```
+
+### B — Graphics backend
+
+```text
+D3D9 capture
+-> used-state inventory
+-> D3D9 compatibility objects
+-> shader translation
+-> Vulkan draw/state translation
+-> retail rendering
+```
+
+The graphics backend does **not** need to wait until startup first calls `Direct3DCreate9` before foundational work begins. Retail D3D9 capture already provides useful evidence for designing the backend.
+
+The 2026-10-18 post-load race capture now provides hashed stream-0 and index
+payload snapshots for all 813 target draws. One shared 128 KiB dynamic stream-1
+vertex buffer has no payload event, so complete vertex-input evidence still
+needs a short, trigger-based partial-lock capture in a later race session if
+that stream is required by the Vulkan translation. See
+[`docs/SHIFT_D3D9_RACE_BUFFER_PAYLOAD_IDENTITIES_20261018.md`](docs/SHIFT_D3D9_RACE_BUFFER_PAYLOAD_IDENTITIES_20261018.md)
+and its compressed report under `evidence/retail_frontier_20261018/`.
+
+### C — Portability
+
+```text
+host-neutral runtime
+-> ARM64 compile
+-> ARM64 fixtures
+-> ARM64 Linux runtime
+-> Android platform layer
+```
+
+Every new subsystem must be reviewed against the portability workstream.
+
+---
+
+## Work-selection rule
+
+Before substantial work, answer:
+
+> **Какой конкретный blocker Android-порта снимает эта работа?**
+
+Valid answers normally advance at least one of these paths:
+
+```text
+retail execution
+graphics D3D9 -> Vulkan
+host portability / ARM64
+Android platform integration
+Android gameplay
+performance/parity
+```
+
+A task that only improves the retired vertical slice, or makes the Linux-only implementation more elaborate without helping Android, should normally be deferred.
+
+---
+
+## Readiness metrics
+
+Historical phase numbers and vertical-slice provider counts are no longer project readiness metrics.
+
+Track:
+
+| Metric | Meaning |
+| --- | --- |
+| Full P-code coverage | Is the recovered corpus executable by the portable runtime? |
+| x86-64 host green | Does the reference runtime work on desktop x86-64? |
+| ARM64 host green | Does the same core execute correctly on AArch64? |
+| Retail entry point complete | Does original startup complete? |
+| Main loop reached | Is persistent original game execution active? |
+| Retail resources initialized | Does original code load required retail packages? |
+| D3D9 usage inventory | Is the SHIFT-specific graphics surface bounded by captures? |
+| Vulkan backend coverage | How much of the used D3D9 surface is translated correctly? |
+| First retail Vulkan frame | Has original game rendering reached Vulkan? |
+| Linux frontend/race | Is the reference build functionally playable? |
+| Android runtime startup | Does the retail path execute on Android ARM64? |
+| Android frontend | Is original frontend interactive on-device? |
+| Android race | Can an offline race start and run? |
+| Device coverage | Which Android/Vulkan capability classes are validated? |
+| Performance | Are CPU/GPU/RAM/frame-pacing targets met? |
+| Retail parity | Are important deviations known and bounded? |
+
+These should migrate toward generated machine-readable status rather than hand-maintained prose.
+
+---
+
+## CI and validation strategy
+
+Stable capability families should evolve toward:
+
+```text
+corpus/lowering
+portable runtime
+x86-64 fixtures
+ARM64 compile
+ARM64 fixtures
+PE32 loader
+Win32 compatibility
+guest scheduler
+retail startup probe
+resource initialization
+D3D9 capture contracts
+Vulkan backend
+shader translation
+Linux Vulkan validation
+Linux frontend/race smoke
+Android build
+Android Vulkan startup
+Android frontend/race smoke
+performance regression
+```
+
+Rules:
+
+- every fixed blocker gets a focused regression;
+- keep unsupported behavior fail closed;
+- preserve deterministic synthetic fixtures for infrastructure;
+- do not confuse fixture success with retail success;
+- run Vulkan validation on desktop where available;
+- test the portable renderer against Android-class feature limits;
+- prevent new Linux/x86-64-only dependencies from entering shared core code;
+- do not weaken evidence checks merely to advance startup.
+
+---
+
+## Evidence policy
+
+PC retail 1.02 remains the semantic authority for original game behavior.
+
+- 100% lowering is not a working game.
+- Linux success is not Android success.
+- x86-64 host success is not ARM64 correctness.
+- Synthetic Vulkan rendering is not retail rendering.
+- A D3D9 API stub is not a correct Vulkan translation.
+- A visible menu is not gameplay completeness.
+- One working phone is not supported-device coverage.
+- Host shortcuts must not silently redefine guest semantics.
+- Unsupported behavior should fail closed with enough state to identify the next blocker.
+
+Xbox 360 and other builds may assist navigation/corroboration but do not override PC retail evidence.
+
+Research-input hashes and identities remain centralized in:
+
+- [`coordination/research_inputs.lock.json`](coordination/research_inputs.lock.json)
+
+---
+
+## Historical vertical-slice material
+
+The old native playable-slice effort is retired as an active project milestone.
+
+The following remain only as historical/supporting evidence:
+
+- `coordination/PLAYABLE_SLICE_STATUS.md`;
+- `evidence/playable_slice_three_process_execution.json`;
+- P1/P2/P3 coordination contracts;
+- Silverstone/BMW vertical-slice documents and evidence;
+- the standalone scene renderer where it provides reusable Vulkan/resource infrastructure.
+
+They must not determine current priority or readiness.
+
+Reusable implementation may be extracted into the portable renderer/runtime when it fits the Android architecture.
+
+---
+
+## Immediate queue
+
+The complete P-code module has been restored and the cooperative scheduler has been exercised on the retail entry point. The current cold-start replay no longer reproduces the saved v215 frame-loop checkpoint: v297–v310 time out before frames. Resolve that startup discrepancy before treating later rendering results as current. The immediate priorities are:
+
+1. **Repair the frozen instruction record for CRT initializer `0x0050f010`.** The record used by the current frontier module contains 188 instructions and ends at NOP `0x0050f3f3`; it omits the pinned PE return block at `0x0050f478`–`0x0050f481`. Recover and verify the complete Ghidra function body/CFG, rebuild its P-code export, then confirm ESI/EBP/ESP restoration and that `__cinit` reaches `0x00a8d940` to initialize receiver `0x00c288cc`. Do not change generic runtime behavior until the complete instruction body is present. See [the initializer trace](docs/RETAIL_FRONTIER_AUTOMATION.md) and [machine record](evidence/retail_frontier_20261020/entrypoint_probe_v303_v310_cinit_esi_stack.json).
+2. **Re-establish the saved v215 host-frame-loop checkpoint from the current native runtime and pinned module set.** Keep the XMem equivalence result separate from boot/rendering evidence.
+3. **Resolve the null D3D resource path through `0x00835050` → `0x00853790` → `0x00838410`, using the retail call sequence and static interface evidence.**
+4. **Keep the compact manifest for the full module, supplements, runtime APIs, retail PE identity, game-data root and probe frontier current; keep generated binaries outside Git.**
+5. **Continue the blocker loop through resource initialization and the frontend transition without treating D3D9 bookkeeping as a renderer.**
+6. **Audit the shared runtime for x86-64/Linux-only assumptions and establish an ARM64 compile/test gate.**
+7. **Turn existing D3D9 capture data into an explicit inventory of the D3D9 objects, states, formats, shaders and draw paths actually used by SHIFT.**
+8. **Refactor Vulkan infrastructure so renderer core and platform surface/window code are cleanly separated.**
+9. **Build the SHIFT-specific D3D9 -> Vulkan backend against that captured usage surface.**
+10. **Keep Linux as the reference execution/debugging target while continuously checking that shared code remains ARM64/Android-compatible.**
+11. **Bring up the same original startup path on Android/ARM64 after the shared execution core and renderer boundaries support it.**
+
+The priority is not “finish Linux and then start Android.” The priority is:
+
+> **Use Linux to solve game/runtime semantics while continuously building the same codebase toward Android/ARM64.**
+
+---
+
+## Definition of success
+
+The project is functionally complete when:
+
+```text
+original SHIFT game code
+-> runs through the portable recovered-code runtime
+-> initializes original retail systems/resources
+-> renders through the native Vulkan backend
+-> runs correctly on ARM64
+-> starts inside an Android application
+-> presents the original frontend
+-> loads an offline race through original game flow
+-> accepts Android/controller input
+-> runs physics/camera/HUD/audio continuously
+-> survives Android lifecycle transitions
+-> provides stable repeated gameplay on supported devices
+```
+
+Linux remains the reference/debug build after that point, but **Android/ARM64 gameplay is the project completion target**.

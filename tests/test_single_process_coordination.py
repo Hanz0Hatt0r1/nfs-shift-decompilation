@@ -115,7 +115,7 @@ def test_provider_frontier_targets_first_real_boundary_reduction() -> None:
     assert len(frontier["boundaries"]) == 7
 
 
-def test_pc_v6_docs_remain_archived_while_root_routes_xbox_status() -> None:
+def test_v6_docs_remain_historical_background_while_root_routes_live_status() -> None:
     canonical = V6.read_text(encoding="utf-8")
     prompts = PROMPTS.read_text(encoding="utf-8")
     process = PROCESS.read_text(encoding="utf-8")
@@ -134,12 +134,17 @@ def test_pc_v6_docs_remain_archived_while_root_routes_xbox_status() -> None:
     assert "PROCESS 2 — native physics / runtime" in prompts
     assert "PROCESS 3 — resources / scene / render / playable bootstrap" in prompts
 
-    assert "Xbox 360 retail is the primary executable being ported" in process
-    assert "coordination/xbox360_rexglue_status.json" in process
-    assert "`X360-runtime`" in process
-    assert "X0–X6" in process
-    assert "PLAYABLE_SLICE_THREE_PROCESS_INSTRUCTIONS_V6.md" not in process
-    assert "playable_slice_three_process_execution.json" not in process
+    assert "PLAYABLE_SLICE_THREE_PROCESS_INSTRUCTIONS_V6.md" in process
+    assert "playable_slice_three_process_execution.json" in process
+    assert "coordination/PLAYABLE_SLICE_STATUS.md" in process
+    assert "coordination/lane_ownership.json" in process
+    assert "P1A-contact" in process
+    assert "P1B-control" in process
+    assert "P1D-camera" in process
+    assert "P2-runtime" in process
+    assert "P3-integration" in process
+    assert "Current merged main frontier: **Phase 749**" not in process
+    assert "NEXT_OWNER:" in process
 
 
 def test_v5_single_process_coordination_is_retired() -> None:

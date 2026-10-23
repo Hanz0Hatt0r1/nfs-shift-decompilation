@@ -25,15 +25,3 @@ single_frame.trace
 captures/
 capture/
 artifacts/
-
-# Xbox 360 retail and generated game output — DO NOT COMMIT
-*.xex
-*.iso
-*.000
-*.stfs
-xbox360/game/
-xbox360/retail/
-xbox360/dumps/
-xbox360/generated/
-xbox360/out/
-xbox360/sdk-build/
