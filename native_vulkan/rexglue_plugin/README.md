@@ -80,6 +80,30 @@ Pro (Mali-G76 MC4) using Vulkan 1.1. Those smoke shaders are synthetic and
 verify pipeline/resource/layout operations only; they are not retail output
 evidence.
 
+### Existing Android app target
+
+The plugin CMake can be added after an Android host has already added ReXGlue:
+
+```cmake
+set(SHIFT_REXGLUE_NATIVE_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+add_subdirectory("${SHIFT_NATIVE_PLUGIN_DIR}" shift-native-plugin)
+rexglue_setup_target(main GPU_PLUGINS shift-native)
+```
+
+Pass `SHIFT_NATIVE_PLUGIN_DIR` from the Android Gradle CMake arguments. The
+existing ReXGlue 0.10.0 Android build has a monolithic `rexui` target, so the
+plugin uses its exported Vulkan provider through `rexruntime`; with that older
+provider API it does not request geometryShader and rejects rectangle-list
+draws, while point-list draws remain available. With the split `rexui-vulkan`
+target, the plugin requests geometryShader independently and can submit the
+captured rectangle-list form when the device supports it. Debug builds stage
+`librexgpu-shift-natived.so`, matching the host plugin loader's debug suffix.
+
+The host app must select the `shift-native` plugin through its existing
+`gpu_plugin` setting. An Android activity argument alone is insufficient if
+the app's `OnPreSetup` hook overwrites that setting. This integration does not
+change the app-owned startup hook.
+
 The renderer regression matches the captured retail point-raster profile:
 4x MSAA, D24S8 with depth/stencil `ALWAYS`, a Y-flipped viewport, full 1280x720
 scissor, and blending disabled. It checks the point path and, when geometry

@@ -3,23 +3,37 @@ project(shift_rexglue_native_gpu LANGUAGES CXX)
 option(SHIFT_REXGLUE_NATIVE_BUILD_TESTS "Build the native GPU plugin smoke test" ON)
 
 set(SHIFT_REXGLUE_SDK_ROOT "" CACHE PATH "Path to the ReXGlue SDK checkout")
+if(NOT SHIFT_REXGLUE_SDK_ROOT AND DEFINED REXSDK_DIR)
+  set(SHIFT_REXGLUE_SDK_ROOT "${REXSDK_DIR}")
+endif()
 if(NOT SHIFT_REXGLUE_SDK_ROOT OR
    NOT EXISTS "${SHIFT_REXGLUE_SDK_ROOT}/CMakeLists.txt")
   message(FATAL_ERROR
     "Set SHIFT_REXGLUE_SDK_ROOT to a ReXGlue SDK checkout with rexui-vulkan")
 endif()
 
-set(REXGLUE_USE_VULKAN ON CACHE BOOL "Enable the ReXGlue Vulkan provider")
-set(REXGLUE_USE_D3D12 OFF CACHE BOOL "Disable the ReXGlue D3D12 provider")
-set(REXGLUE_BUILD_TESTS OFF CACHE BOOL "Disable ReXGlue SDK tests")
+if(NOT TARGET rexruntime)
+  set(REXGLUE_USE_VULKAN ON CACHE BOOL "Enable the ReXGlue Vulkan provider")
+  set(REXGLUE_USE_D3D12 OFF CACHE BOOL "Disable the ReXGlue D3D12 provider")
+  set(REXGLUE_BUILD_TESTS OFF CACHE BOOL "Disable ReXGlue SDK tests")
 
-add_subdirectory(
-  "${SHIFT_REXGLUE_SDK_ROOT}"
-  "${CMAKE_BINARY_DIR}/rexglue-sdk"
-  EXCLUDE_FROM_ALL
-)
-if(NOT TARGET rexui-vulkan OR NOT TARGET rexruntime)
-  message(FATAL_ERROR "ReXGlue checkout must define rexui-vulkan and rexruntime")
+  add_subdirectory(
+    "${SHIFT_REXGLUE_SDK_ROOT}"
+    "${CMAKE_BINARY_DIR}/rexglue-sdk"
+    EXCLUDE_FROM_ALL
+  )
+endif()
+if(NOT TARGET rexruntime)
+  message(FATAL_ERROR "ReXGlue SDK was not added and has no rexruntime target")
+elseif(TARGET rexui-vulkan)
+  set(SHIFT_REXGLUE_VULKAN_PROVIDER_TARGET rexui-vulkan)
+elseif(TARGET rexui AND ANDROID)
+  # ReXGlue 0.10.0 keeps the Vulkan provider in rexruntime. Its older factory
+  # cannot request geometryShader independently, so the plugin fails closed on
+  # rectangle-list draws while keeping the native point-draw path available.
+  set(SHIFT_REXGLUE_LEGACY_VULKAN_PROVIDER ON)
+else()
+  message(FATAL_ERROR "ReXGlue checkout must define rexui-vulkan")
 endif()
 find_package(Vulkan REQUIRED)
 get_target_property(SHIFT_REXGLUE_OUTPUT_DIRECTORY rexruntime LIBRARY_OUTPUT_DIRECTORY)
@@ -53,7 +67,7 @@ target_include_directories(rexgpu-shift-native PRIVATE
 target_compile_features(rexgpu-shift-native PRIVATE cxx_std_23)
 target_link_libraries(rexgpu-shift-native PRIVATE
   rexruntime
-  rexui-vulkan
+  ${SHIFT_REXGLUE_VULKAN_PROVIDER_TARGET}
   shift_guest_ring
   shift_xbox_shader_translate
   shift_xbox_live_vulkan_renderer
@@ -65,8 +79,15 @@ target_link_libraries(rexgpu-shift-native PRIVATE
   OSDependent
   OGLCompiler
 )
+if(SHIFT_REXGLUE_LEGACY_VULKAN_PROVIDER)
+  target_compile_definitions(rexgpu-shift-native PRIVATE
+    SHIFT_REXGLUE_LEGACY_VULKAN_PROVIDER=1
+  )
+endif()
 set_target_properties(rexgpu-shift-native PROPERTIES
   OUTPUT_NAME "rexgpu-shift-native"
+  DEBUG_POSTFIX "d"
+  RELWITHDEBINFO_POSTFIX "rd"
   CXX_VISIBILITY_PRESET hidden
   VISIBILITY_INLINES_HIDDEN ON
 )
@@ -77,10 +98,6 @@ if(SHIFT_REXGLUE_OUTPUT_DIRECTORY AND
     RUNTIME_OUTPUT_DIRECTORY "${SHIFT_REXGLUE_OUTPUT_DIRECTORY}"
   )
 endif()
-if(COMMAND rex_config_postfix)
-  rex_config_postfix(rexgpu-shift-native)
-endif()
-
 if(SHIFT_REXGLUE_NATIVE_BUILD_TESTS)
   enable_testing()
   add_executable(rexgpu_shift_native_factory_check factory_smoke.cpp)

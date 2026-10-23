@@ -160,7 +160,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     if (presenter_) return X_STATUS_SUCCESS;
     if (!provider_) {
       // Native project renderer: do not enable ReXGlue's Xenos GPU features.
+#if defined(SHIFT_REXGLUE_LEGACY_VULKAN_PROVIDER)
+      provider_ = rex::ui::vulkan::VulkanProvider::Create(false, true);
+#else
       provider_ = rex::ui::vulkan::VulkanProvider::Create(false, true, true);
+#endif
     }
     if (!provider_) {
       REXLOG_ERROR("shift-native: unable to create the Vulkan presentation provider");
