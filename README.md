@@ -231,6 +231,10 @@ The recompilation path and the native vertical-slice path are complementary:
 
 Neither path is currently a complete playable game.
 
+### Xbox retail PM4 to Vulkan frontend (Process 2)
+
+The separate `shift-native` ReXGlue plugin consumes the Xbox guest PM4 ring and submits supported captured draws to the project-owned Vulkan 1.1 renderer. It is built without mapping `rexgpu-xenos`; the renderer core remains free of XCB/Wayland surface calls. The 2026-10-23 live run verified the ring and two guest swaps, and captured 100 `DRAW_INDX_2` packets: 96 one-index AutoIndex point-list draws and 4 three-index AutoIndex rectangle-list draws. The decoder identifies these forms precisely, but neither has been translated/submitted yet: **zero retail Vulkan frames were submitted**, so this is not evidence of a game-rendered frame or parity. See the [live ring evidence](evidence/process2_xbox_live_guest_ring_20261023.json) for packet words, validation results and remaining work.
+
 ## Validation
 
 The repository records reproducible evidence instead of treating local success as proof.

@@ -500,14 +500,34 @@ int main() {
                 draw_indx_2.index_guest_address == input.index_guest_address &&
                 draw_indx_2.index_byte_length == input.index_byte_length,
             "captured PM4_DRAW_INDX_2 DMA form decoded differently from DRAW_INDX");
+    const uint8_t live_autoindex_point[] = {
+        0xC0, 0x00, 0x36, 0x00, 0x00, 0x01, 0x00, 0x81,
+    };
+    require(!shift::xbox::decode_captured_draw_indx(
+                live_autoindex_point, sizeof(live_autoindex_point),
+                &draw_indx_2, &error) &&
+                error == "unsupported AutoIndex DRAW_INDX_2 form",
+            "live AutoIndex point packet was not classified as an unsupported "
+            "draw form");
+    const uint8_t live_autoindex_rectangle_list[] = {
+        0xC0, 0x00, 0x36, 0x01, 0x00, 0x03, 0x00, 0x88,
+    };
+    require(!shift::xbox::decode_captured_draw_indx(
+                live_autoindex_rectangle_list,
+                sizeof(live_autoindex_rectangle_list), &draw_indx_2, &error) &&
+                error == "unsupported AutoIndex DRAW_INDX_2 form",
+            "live AutoIndex rectangle-list packet was not classified as an "
+            "unsupported draw form");
     auto captured_auto_index_draw = std::vector<uint8_t>(
         captured_draw_indx_2,
         captured_draw_indx_2 + sizeof(captured_draw_indx_2));
     captured_auto_index_draw[7] = 0x84;
     require(!shift::xbox::decode_captured_draw_indx(
-                captured_auto_index_draw.data(), captured_auto_index_draw.size(),
-                &draw_indx_2, &error),
-            "non-indexed DRAW_INDX_2 auto-index form was accepted as an indexed draw");
+                captured_auto_index_draw.data(),
+                captured_auto_index_draw.size(), &draw_indx_2, &error) &&
+                error == "unsupported AutoIndex DRAW_INDX_2 form",
+            "non-indexed DRAW_INDX_2 auto-index form was accepted as an "
+            "indexed draw");
     require(!shift::xbox::decode_captured_draw_indx(
                 captured_draw_indx_2, sizeof(captured_draw_indx_2) - 4u,
                 &draw_indx_2, &error),

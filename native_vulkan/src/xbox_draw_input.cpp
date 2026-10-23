@@ -24,7 +24,7 @@ constexpr uint32_t kXeSwapSignature = 0x53574150u;  // Big-endian "SWAP".
 constexpr uint32_t kTriangleList = 4u;
 constexpr uint32_t kIndexCountMask = 0x00FFFFFFu;
 constexpr uint32_t kDmaSwapModeMask = 0xC0000000u;
-constexpr size_t kMinimumIndexedDrawPacketBytes = 16;
+constexpr size_t kMinimumDrawPacketBytes = 4;
 
 uint64_t tiled_2d_offset_32bpp(uint32_t x, uint32_t y, uint32_t pitch_pixels) {
     const uint64_t outer_blocks =
@@ -648,8 +648,8 @@ bool decode_captured_draw_indx(
     size_t byte_length,
     DecodedIndexedDraw* output,
     std::string* error) {
-    if (!packet_bytes || !output || byte_length < kMinimumIndexedDrawPacketBytes) {
-        return fail("truncated indexed draw PM4 packet", error);
+    if (!packet_bytes || !output || byte_length < kMinimumDrawPacketBytes) {
+        return fail("truncated draw PM4 packet", error);
     }
 
     const uint32_t header = read_be32(packet_bytes);
@@ -661,17 +661,35 @@ bool decode_captured_draw_indx(
     }
 
     const uint32_t payload_count = ((header & kPacketCountMask) >> 16) + 1;
-    const uint32_t expected_payload_count = has_viz_query ? 4u : 3u;
-    const size_t expected_byte_length =
-        (expected_payload_count + 1u) * sizeof(uint32_t);
-    if (payload_count != expected_payload_count || byte_length != expected_byte_length) {
-        return fail("unsupported indexed draw PM4 payload length", error);
+    const size_t packet_byte_length = (payload_count + 1u) * sizeof(uint32_t);
+    if (byte_length != packet_byte_length) {
+        return fail("draw PM4 packet length disagrees with its header", error);
     }
 
     const size_t initiator_offset = has_viz_query ? 8u : 4u;
+    if (payload_count < (has_viz_query ? 2u : 1u)) {
+        return fail("draw PM4 packet has no complete initiator", error);
+    }
     const uint32_t draw_initiator = read_be32(packet_bytes + initiator_offset);
-    const uint32_t primitive_type = draw_initiator & 0x3Fu;
     const uint32_t source_select = (draw_initiator >> 6) & 0x3u;
+    if (source_select == 1u) {
+      return fail("unsupported immediate-index draw source", error);
+    }
+    if (source_select == 2u) {
+        return fail(has_viz_query ? "unsupported AutoIndex DRAW_INDX form"
+                                  : "unsupported AutoIndex DRAW_INDX_2 form",
+                    error);
+    }
+    if (source_select != 0u) {
+        return fail("unsupported captured draw source", error);
+    }
+
+    const uint32_t expected_payload_count = has_viz_query ? 4u : 3u;
+    if (payload_count != expected_payload_count) {
+      return fail("unsupported indexed draw PM4 payload length", error);
+    }
+
+    const uint32_t primitive_type = draw_initiator & 0x3Fu;
     const uint32_t major_mode = (draw_initiator >> 8) & 0x3u;
     const uint32_t index_size = (draw_initiator >> 11) & 0x1u;
     const uint32_t initiator_index_count = draw_initiator >> 16;
@@ -683,8 +701,8 @@ bool decode_captured_draw_indx(
     if (primitive_type != kTriangleList) {
         return fail("unsupported captured primitive type", error);
     }
-    if (source_select != 0 || major_mode != 0) {
-        return fail("unsupported captured draw source or major mode", error);
+    if (major_mode != 0) {
+        return fail("unsupported captured draw major mode", error);
     }
     if (index_size != 0 || dma_endian_mode != 1) {
         return fail("unsupported captured index format or endian mode", error);

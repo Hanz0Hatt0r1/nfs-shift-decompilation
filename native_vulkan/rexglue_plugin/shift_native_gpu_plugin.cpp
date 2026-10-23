@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <exception>
 #include <limits>
+#include <map>
 #include <mutex>
 #include <sstream>
 #include <string>
@@ -526,7 +527,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         uint32_t submitted_frames = 0;
         uint32_t raw_register_writes = 0;
         std::array<uint32_t, 256> type3_opcode_counts{};
-        std::array<std::string, 2> type3_packet_samples{};
+        std::array<uint32_t, 256> draw_source_primitive_counts{};
+        std::map<uint32_t, uint32_t> draw_index_count_counts;
+        std::array<bool, 2> type3_packet_sample_logged{};
         bool logged_draw_decode_failure = false;
         if (expanded_ok) {
           for (const shift::xbox::ResolvedGuestPacket& resolved : expanded.packets) {
@@ -552,8 +555,18 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 
             if (packet.type == shift::xbox::PacketType::Type3 &&
                 (packet.opcode == 0x2Bu || packet.opcode == 0x36u)) {
+              if (packet.opcode == 0x36u && packet.byte_length >= 8u) {
+                const uint32_t initiator = ReadGuestDword(packet_bytes + 4u);
+                const uint32_t primitive_type = initiator & 0x3Fu;
+                const uint32_t source_select = (initiator >> 6) & 0x3u;
+                const uint32_t index_count = initiator >> 16;
+                ++draw_source_primitive_counts[source_select * 64u +
+                                               primitive_type];
+                ++draw_index_count_counts[index_count];
+              }
               const size_t sample_index = packet.opcode == 0x2Bu ? 0u : 1u;
-              if (type3_packet_samples[sample_index].empty()) {
+              if (!type3_packet_sample_logged[sample_index]) {
+                type3_packet_sample_logged[sample_index] = true;
                 std::ostringstream sample;
                 sample << std::hex << packet.opcode << std::dec << '/'
                        << packet.byte_length << ':';
@@ -562,7 +575,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   sample << (word ? "," : "") << std::hex
                          << ReadGuestDword(packet_bytes + word * 4u) << std::dec;
                 }
-                type3_packet_samples[sample_index] = sample.str();
+                REXLOG_DEBUG("shift-native: raw type3 packet sample {}",
+                             sample.str());
               }
             }
 
@@ -684,7 +698,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               } else {
                 ++unsupported_draws;
                 if (!logged_draw_decode_failure) {
-                  REXLOG_DEBUG("shift-native: rejected indexed draw opcode {} "
+                  REXLOG_DEBUG("shift-native: rejected draw packet opcode {} "
                                "({} bytes): {}",
                                packet.opcode, packet.byte_length,
                                error.empty() ? "unsupported draw packet form"
@@ -748,9 +762,32 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                                  << type3_opcode_counts[opcode];
             first_type3_opcode = false;
           }
-          for (const std::string& sample : type3_packet_samples) {
-            if (!sample.empty()) type3_opcode_summary << "; sample=" << sample;
+          type3_opcode_summary << "; DRAW_INDX_2 source/primitive [";
+          bool first_draw_form = true;
+          for (uint32_t source = 0; source < 4u; ++source) {
+            for (uint32_t primitive = 0; primitive < 64u; ++primitive) {
+              const uint32_t count =
+                  draw_source_primitive_counts[source * 64u + primitive];
+              if (!count)
+                continue;
+              if (!first_draw_form)
+                type3_opcode_summary << ',';
+              type3_opcode_summary << "source=" << source
+                                   << "/primitive=" << primitive << ':'
+                                   << count;
+              first_draw_form = false;
+            }
           }
+          type3_opcode_summary << ']';
+          type3_opcode_summary << "; DRAW_INDX_2 index-count [";
+          bool first_draw_count = true;
+          for (const auto &[index_count, count] : draw_index_count_counts) {
+            if (!first_draw_count)
+              type3_opcode_summary << ',';
+            type3_opcode_summary << index_count << ':' << count;
+            first_draw_count = false;
+          }
+          type3_opcode_summary << ']';
           REXLOG_DEBUG("shift-native: framed {} PM4 packets, {} raw register writes, "
                        "{} constant spans loaded ({} unresolved), "
                        "{} pointer-loaded shader programs ({} unresolved), "

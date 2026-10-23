@@ -97,8 +97,53 @@
     "controller_input": "A and Start were sent after initialization; no additional guest draw batch followed",
     "result": "proves the retail runtime loaded the emulator-free plugin and its live PM4 ring consumer handled guest batches and swaps; does not prove retail draw routing or frame parity"
   },
+  "follow_up_raw_packet_run": {
+    "date": "2026-10-23",
+    "log": "/tmp/process2-live-nfs/headless-20261023/retail-live/logs/p2-autoindex-counts-20261023.log",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin_sha256": "7c62549c061c96c7b0335fafcd26e47088554e7ea7ad1fcd146b2fad45ab30c5",
+    "runtime_sha256": "d9e090c0b455972f9e70f9f54c1686f72e12938069b827b5d6a1c3f7d39d98ac",
+    "guest_ring_batches": [
+      {"pm4_packets": 73, "draw_indx_2_packets": 24, "guest_swaps": 0, "vulkan_frames_submitted": 0},
+      {"pm4_packets": 4, "draw_indx_2_packets": 0, "guest_swaps": 0, "vulkan_frames_submitted": 0},
+      {"pm4_packets": 149, "draw_indx_2_packets": 26, "guest_swaps": 0, "vulkan_frames_submitted": 0},
+      {"pm4_packets": 280, "draw_indx_2_packets": 0, "guest_swaps": 1, "vulkan_frames_submitted": 0},
+      {"pm4_packets": 528, "draw_indx_2_packets": 0, "guest_swaps": 0, "vulkan_frames_submitted": 0},
+      {"pm4_packets": 794, "draw_indx_2_packets": 50, "guest_swaps": 1, "vulkan_frames_submitted": 0}
+    ],
+    "total_pm4_packets": 1828,
+    "total_draw_indx_2_packets": 100,
+    "source_primitive_histogram": {
+      "AutoIndex point list": 96,
+      "AutoIndex rectangle list": 4
+    },
+    "initiator_index_count_histogram": {"1": 96, "3": 4},
+    "raw_packet_samples": [
+      {
+        "packet_bytes_hex": "c000360000010081",
+        "header_dword": "0xc0003600",
+        "initiator_dword": "0x00010081",
+        "source_select": "AutoIndex (2)",
+        "primitive_type": "point list (1)",
+        "index_count": 1,
+        "packet_length_bytes": 8
+      },
+      {
+        "packet_bytes_hex": "c000360100030088",
+        "header_dword": "0xc0003601",
+        "initiator_dword": "0x00030088",
+        "source_select": "AutoIndex (2)",
+        "primitive_type": "rectangle list (8)",
+        "index_count": 3,
+        "packet_length_bytes": 8
+      }
+    ],
+    "decoder_result": "all 100 DRAW_INDX_2 packets were counted as source_select=AutoIndex; the captured point-list and rectangle-list forms are explicitly rejected as unsupported, rather than misreported as truncated indexed packets",
+    "vulkan_frames_submitted": 0,
+    "limitation": "The run proves live packet capture and form classification only. No retail draw reached Vulkan submission, and the AutoIndex samples do not prove a DMA DrawIndexedPrimitive call."
+  },
   "remaining_blockers": [
-    "The opcode audit counted 100 DRAW_INDX_2 packets, but their raw dwords were not saved, so no DrawIndexedPrimitive form has been verified.",
+    "All 100 live DRAW_INDX_2 packets are AutoIndex (96 one-point draws and 4 three-index rectangle-list draws); no DMA indexed draw/DrawIndexedPrimitive packet has been verified or submitted.",
     "No pointer IM_LOAD or LOAD_ALU_CONSTANT packets were observed; 14 IM_LOAD_IMMEDIATE packets were counted but their shader payloads were not validated from raw bytes.",
     "No frame reached submit_captured_vulkan_frame; the two observed XE_SWAP packets had no supported draw to submit.",
     "Process 1 owns the original guest startup and scheduling path needed to reach the game's render-producing state."
