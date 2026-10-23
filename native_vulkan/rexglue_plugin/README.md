@@ -130,6 +130,12 @@ draws were rejected, one per swap: their captured target state has
 contract does not accept. This is fail-closed behavior, not a guessed state
 mapping. See
 [`process2_xbox_live_guest_ring_20261023.json`](../../evidence/process2_xbox_live_guest_ring_20261023.json).
+That headless run predates the current copy-state path. The later Android log
+records the `mode_control=0x00000006` rectangle as an accepted source-0/sample-0
+Copy/Convert to `0x0975e000` at 1280x720. Xenia's Xenos register reference
+identifies mode 6 as EDRAM copy, so this packet is a resolve operation rather
+than a missing color draw. The phone log and plugin-path evidence are in
+[`process2_redmi_note8pro_current_black_output_20261024.txt`](../../evidence/process2_redmi_note8pro_current_black_output_20261024.txt).
 
 On 2026-10-23, the complete Android NFS Shift debug APK was built with
 `SHIFT_NATIVE_PLUGIN_DIR` pointing at this plugin and installed on a Redmi Note
@@ -300,7 +306,12 @@ was fully black. Its latest runtime log records one captured retail draw
 translated and submitted to the Vulkan presenter, but the
 `VK_FORMAT_A2B10G10R10_UNORM_PACK32` readback has zero non-black pixels
 (`B161DE6EEC272325`). This confirms the guest draw reaches Vulkan while visible
-retail output remains unready. The magenta path and other synthetic readbacks
-are diagnostics only. See
+retail output remains unverified. A separate live Linux diagnostic of this
+captured shader pair recorded vertex input location 1 as `(0,0,0,0)`; the
+vertex shader forwards it to the pixel shader, which forwards it to color.
+That explains the black result for this early captured draw, but does not prove
+later shaders or frames. The mode-6 rectangle is accepted through the
+source-0/sample-0 Copy/Convert path. The magenta path and other synthetic
+readbacks are diagnostics only. See
 [`process2_redmi_note8pro_current_black_output_20261024.txt`](../../evidence/process2_redmi_note8pro_current_black_output_20261024.txt)
 for device identity, screenshot/log hashes, and batch details.

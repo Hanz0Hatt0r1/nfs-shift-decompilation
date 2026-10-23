@@ -22,10 +22,22 @@ Observed output
   (FNV-1a B161DE6EEC272325). A later draw submission is also logged, without a
   subsequent non-black retail readback.
 - The same log records one consumed PM4_INTERRUPT and one guest callback.
+- The mode-6 rectangle was accepted as a source-0/sample-0 Copy/Convert to
+  destination 0x0975E000 at 1280x720. Xenos EDRAM mode 6 is documented as
+  copy/resolve in the [Xenia Xenos register reference](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h).
+- A separate live Linux diagnostic of the same captured 108-byte vertex and
+  36-byte pixel shader pair recorded vertex input location 1 as `(0,0,0,0)`;
+  the vertex shader forwards it through location 0, and the pixel shader
+  forwards that interpolator to color. This explains the black output for this
+  early captured draw, but does not prove later retail shaders or frames.
 
 Conclusion
 The Android app loads the Process 2 plugin and submits at least one captured
 retail draw through Vulkan, but the retail shader/output path still produces
-black. Therefore the Vulkan renderer is not ready for visible game frames.
+black in this startup state. The mode-6 rectangle is handled as a copy/resolve,
+not as a color draw. The current captured color draw's zero interpolator is
+consistent with the black result; the Android run still lacks later guest draw
+batches with visible retail content. Therefore visible game output remains
+unverified.
 Synthetic magenta readback and renderer smoke tests remain diagnostic only and
 do not count as retail output.
