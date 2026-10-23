@@ -65,6 +65,9 @@ jobs:
           echo "ANDROID_NDK_ROOT=$NDK" >> "$GITHUB_ENV"
           echo "Using Android NDK: $NDK"
 
+      - name: Install host shader compiler
+        run: sudo apt-get update && sudo apt-get install -y glslang-tools
+
       - name: Configure arm64 NativeActivity proof
         run: >-
           cmake -S native_vulkan/android -B out/android-vulkan-arm64
@@ -78,6 +81,7 @@ jobs:
           cmake --build out/android-vulkan-arm64 --config Release --parallel
           --target shift_vulkan_android_native_activity
           shift_xbox_guest_ring_check shift_xbox_draw_input_check
+          xbox_live_vulkan_renderer_check
 
       - name: Verify Android shared-library contract
         shell: bash
@@ -107,3 +111,27 @@ jobs:
             echo "Guest-ring test unexpectedly depends on GPU emulation" >&2
             exit 1
           fi
+
+      - name: Verify Android Vulkan draw smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHECK="out/android-vulkan-arm64/xbox_live_vulkan_renderer_check"
+          test -f "$CHECK"
+          test -f out/android-vulkan-arm64/shaders/live_draw_smoke.vert.spv
+          test -f out/android-vulkan-arm64/shaders/live_draw_smoke.frag.spv
+          file "$CHECK" | grep -q 'ARM aarch64'
+          if readelf -d "$CHECK" | grep -Eqi 'rexgpu-xenos|xenia'; then
+            echo "Vulkan draw smoke unexpectedly depends on GPU emulation" >&2
+            exit 1
+          fi
+
+      - name: Upload arm64 Vulkan device smoke
+        uses: actions/upload-artifact@v4
+        with:
+          name: shift-android-vulkan-smoke-arm64
+          path: |
+            out/android-vulkan-arm64/xbox_live_vulkan_renderer_check
+            out/android-vulkan-arm64/shaders/live_draw_smoke.vert.spv
+            out/android-vulkan-arm64/shaders/live_draw_smoke.frag.spv
+          if-no-files-found: error
