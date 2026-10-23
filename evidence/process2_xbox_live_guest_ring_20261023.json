@@ -338,6 +338,6 @@
     "All 100 observed DRAW_INDX_2 packets are AutoIndex (96 one-point draws and four three-index rectangle-list draws); no DMA-indexed draw packet was observed. The first live retail frame therefore covers the observed point-list path only.",
     "AutoIndex rectangle-list expansion remains unsupported, and the retail full/mini-fetch shader's rectangle draws are still skipped. Xenos EDRAM accumulation and the guest frontbuffer resolve path are not implemented.",
     "The captured game window remained black after submission (apart from the cursor); the point-list pass is not yet producing visible retail content. The cause is not isolated, and no scene parity is established.",
-    "The full Android game is not buildable yet: the Android ReXGlue link is blocked by the Process 1-owned POSIX fiber backend and the game has no Android Activity/APK target."
+    "The full Android game is not buildable yet: the Android NativeActivity target is only a Vulkan surface-lifecycle proof without game or ReXGlue integration, there is no game manifest/APK target, and the full plugin link is blocked by the Process 1-owned POSIX fiber backend."
   ]
 }

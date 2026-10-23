@@ -127,9 +127,10 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   source compile for arm64-v8a with NDK r28.2 / API 33. The complete plugin
   build stops in ReXGlue's POSIX fiber backend because Bionic lacks
   `getcontext`, `makecontext`, and `swapcontext`; that scheduler code belongs
-  to Process 1. The game project currently has no Android Activity, manifest,
-  or APK target, so no full game build has been installed or tested on the
-  phone;
+  to Process 1. The repository has a minimal NativeActivity surface-probe
+  library, but it does not integrate the game or ReXGlue runtime and there is
+  no game manifest/APK target. No full game build has been installed or tested
+  on the phone;
 - limitations: the standalone capture bundle starts from black because prior
   EDRAM contents were not captured; the black texture-border alpha remains
   unresolved, and the live frontend currently selects transparent-black

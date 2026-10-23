@@ -86,9 +86,11 @@ On Android NDK r28.2 / API 33, `rexui-vulkan` and the Android surface/window
 sources compile for arm64. Building the full plugin then stops in ReXGlue's
 POSIX fiber backend because Android Bionic does not provide
 `getcontext`/`makecontext`/`swapcontext`. That scheduler code belongs to
-Process 1. The game project also has no Android Activity or APK target yet, so
-the Redmi Note 8 Pro checks cover the offscreen Vulkan renderer only, not a
-full game build. The Android arm64 CI now builds the project Vulkan renderer
+Process 1. The repository also builds a minimal Android NativeActivity surface
+probe, but it does not integrate the game or ReXGlue runtime and has no game
+manifest/APK target. The Redmi Note 8 Pro checks cover the offscreen Vulkan
+renderer and parser only, not a full game build. The Android arm64 CI now
+builds the project Vulkan renderer
 smoke and publishes its executable plus Vulkan 1.1 SPIR-V inputs. On 2026-10-23
 the artifact from [CI run 39938067570](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/actions/runs/39938067570)
 ran on the connected Redmi Note 8 Pro (Android API 33, Mali-G76 MC4):
