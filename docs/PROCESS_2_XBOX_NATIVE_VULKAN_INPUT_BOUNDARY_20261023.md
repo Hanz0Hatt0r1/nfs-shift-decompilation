@@ -13,9 +13,10 @@ neutral render contract. The production path must not load or depend on
 
 The evidence below now contains one correlated XEX-originated `PM4_DRAW_INDX`
 packet, its resources, shaders, and a register-file snapshot. The project-owned
-frontend decodes only those captured packet, descriptor, texture-layout,
-sampler, and target/scissor forms. It still does not translate the captured
-shaders, allocate a native target, or submit this draw.
+path now translates the captured VS/PS subset and submits that captured draw
+from an isolated bundle through Vulkan 1.1. It does not yet consume the live
+ReXGlue guest ring or render the complete title. The production path must remain
+emulator-free.
 
 ## Source and branch baseline
 
@@ -263,12 +264,12 @@ decoder maps the captured single-sample 1280x720 gamma RGBA8/D24S8 target,
 centered viewport, write/depth enables, and intersected scissor. A shader
 constant decoder applies the captured VS/PS constant bases and resolves the
 constants read by this shader pair, including its pixel-shader branch values.
-It does not map Xenos EDRAM tile storage to a Vulkan image, create a pipeline,
-translate microcode, or emit SPIR-V. Border code 0 has unresolved alpha, so the
-Vulkan border color is not guessed. Regressions cover
+This bounded input decoder does not map Xenos EDRAM tile storage to a Vulkan
+image, create a pipeline, translate microcode, or emit SPIR-V. Border code 0
+has unresolved alpha, so the Vulkan border color is not guessed. Regressions cover
 the captured packet and descriptors, layout boundaries, byte order, sampling
-semantics, and unsupported or truncated inputs. The code does not interpret a
-general Xenos register stream, translate shaders, or issue Vulkan commands.
+semantics, and unsupported or truncated inputs. It does not interpret a
+general Xenos register stream or issue Vulkan commands.
 
 The contiguous 19,784-byte ring snapshot was then scanned with project-owned
 packet framing. It consumes all 247 packets (162 type 0, zero type 1, 21 type 2,
@@ -285,13 +286,23 @@ cross-checked against public Xenia
 for documentation only; no Xenia runtime code is used. Evidence is recorded in
 `evidence/process2_xbox_pm4_stream_20261023.json`.
 
-This is the first confirmed XEX-originated indexed draw input. Its fetch
-metadata indicates a textured resource, but the draw is not identified as a
-vehicle draw. The shader, resource and state were observed while the external
-Xenos plugin interpreted the ring. That plugin was used only as a diagnostic
-oracle and is not part of the product architecture. There is still no
-project-owned Vulkan submission of this draw, phone result, or retail parity
-claim.
+This is the first XEX-originated indexed draw submitted through the
+project-owned Vulkan path. Its fetch metadata indicates a textured resource,
+but the draw is not identified as a vehicle draw. The original packet, shader,
+resource, and state were observed during an Xenos diagnostic run; the native
+submission uses the captured inputs, project-owned shader translation, and
+project-owned Vulkan code. Neither the diagnostic renderer nor its SPIR-V is
+linked, invoked, or reused by this path. The raw capture and shader-module
+hashes are recorded in
+[`process2_xbox_first_native_draw_20261023.json`](../evidence/process2_xbox_first_native_draw_20261023.json).
+
+On the host, `shift_vulkan_bundle_execute` submitted six indices to a
+1280x720 sRGB target on a GTX 950 with `VK_LAYER_KHRONOS_validation` enabled
+and zero validation errors. The same offscreen bundle also ran on Android API
+33 / arm64-v8a on a Redmi Note 8 Pro with Mali-G76 MC4. That device output was
+within 2/255 for each RGB channel of the host output, but not byte-identical;
+the Android run had no validation layer. This proves an ARM64 driver execution
+for the isolated draw, not Android game integration or retail-frame parity.
 
 ## Local checks
 
@@ -300,33 +311,37 @@ claim.
   branch values, bounded shader control-flow, instruction schedule, fetch, and
   raw ALU-field decode, unsupported opcode/layout/sampling values, non-zero
   window offsets, and truncated input.
-- The new CF decoder passed on the exact private VS/PS byte captures; observed
-  CF/fetch/ALU fields match their diagnostic disassembly. This validates parsing
-  only; no shader-body translation was tested.
-- The input decoder, shader control-flow parser, captured fetch-instruction
-  parser, and raw ALU-field parser passed as an arm64-v8a binary on the connected
-  Redmi Note 8 Pro (Android API 33; binary built with API 29 minimum).
+- `shift_xbox_shader_translate_check`: passed; selects the captured `b128` /
+  `b129` path and confirms unsupported control flow is rejected. The VS/PS GLSL
+  compiled with `glslangValidator -V --target-env vulkan1.1`, and both modules
+  passed `spirv-val --target-env vulkan1.1`.
+- Linux CMake build and CTest passed. The captured bundle executed on a GTX 950
+  with Vulkan validation enabled and zero errors; the logo pixels come from the
+  XEX-originated draw, not synthetic geometry.
+- The same captured bundle executed through the offscreen Android arm64-v8a
+  `shift_vulkan_bundle_execute` target from `native_vulkan/android/CMakeLists.txt`
+  on Redmi Note 8 Pro (Android API 33, Mali-G76 MC4); the Android shader
+  translation regression also passed there. Validation was not enabled on that
+  device. The user's Redmi Note 14 Pro+ was not reachable at the ADB endpoints
+  available in this run and is not claimed as tested.
 - `tools/run_linux_vulkan_smoke.py ... --validation`: the neutral synthetic BMW
   bundle ran on a GeForce GTX 950 with Vulkan 1.1 validation enabled and zero
-  validation errors. It is not the captured Xbox draw and is not retail parity.
+  validation errors. That separate smoke test remains API coverage, not Xbox
+  parity.
 
 ## Next native-renderer work
 
-Next, translate the captured shader's ALU operations into project-owned SPIR-V, then
-connect the existing ReXGlue guest graphics-service boundary to a project-owned
-ring consumer and add evidence-backed register/resource state tracking for the
-scanned span. A diagnostic run with `gpu_plugin` unset ignores
-guest ring setup services, so this project path still needs an adapter that
-loads in ReXGlue and consumes guest ring memory. The adapter must call the
-project's packet scanner and native Vulkan frontend directly; it must not route
-the product through `rexgpu-xenos` or another GPU emulator. After ring progress
-and draw state are consumed natively, resolve the captured texture's Vulkan
-view/sampler conversion and EDRAM target mapping, translate the exact guest
-shader pair to project-owned Vulkan 1.1-compatible SPIR-V, and submit the draw.
-Unsupported packet forms, resource formats, state, and shader instructions
-must fail closed. Keep XCB/Wayland/Android surface integration outside the
-shared core. Vulkan validation proves API correctness; image and runtime
-comparisons must separately establish retail behavior.
+Next, connect the ReXGlue guest graphics-service boundary to a project-owned
+ring consumer and add evidence-backed register/resource tracking for live ring
+updates. The current execution uses an isolated bundle built from captured
+inputs; it is not yet the running game's renderer. The frontend must load in
+ReXGlue without `rexgpu-xenos`, consume guest ring memory, and call the
+project-owned parser and Vulkan frontend directly. Extend the bounded shader,
+texture/sampler, and render-target coverage only for packet forms observed in
+the captured title. Unsupported packet forms, resources, state, and shader
+instructions must fail closed. Keep XCB/Wayland/Android surface integration
+outside the shared core. Vulkan validation proves API correctness; image and
+runtime comparisons must separately establish retail behavior.
 
 ## Portability and ownership
 
@@ -339,9 +354,10 @@ Ghidra, or guest-scheduler source was changed for this report.
 
 ## Limits
 
-This report records a confirmed XEX-originated indexed draw and diagnostic
-input evidence. It adds bounded packet framing and draw-input decoders, not a
-live ring consumer or a complete production Xbox frontend, and makes no claim
-of a native Vulkan submission for this draw, phone rendering, or retail-image
-parity. The existing native backend remains a D3D9/neutral-contract renderer
-until the captured resources and shaders are translated by project-owned code.
+This report records one XEX-originated indexed draw submitted through the
+project-owned Vulkan backend from an isolated captured bundle. It does not yet
+route the live game's complete guest graphics stream into Vulkan, so not all
+recompiled guest graphics calls are redirected. It makes no claim of a complete
+scene, phone game-runtime integration, or retail-image parity. The Xenos
+emulator remains excluded from the intended product path; the diagnostic run
+is only the source of captured inputs used to specify this bounded translation.

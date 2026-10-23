@@ -136,7 +136,7 @@ struct RenderTargetState {
     uint32_t viewport_height = kDefaultRenderHeight;
     float min_depth = 0.0f;
     float max_depth = 1.0f;
-    bool d3d9_y_down = false;
+    bool viewport_y_flipped = false;
     bool captured = false;
     uint32_t clear_color_argb = 0;
     float clear_depth = 1.0f;
@@ -1109,8 +1109,13 @@ void require_native_submission_gate(const std::filesystem::path& root) {
         (std::istreambuf_iterator<char>(gate)),
         std::istreambuf_iterator<char>());
 
-    if (contents.find("\"format\": \"SHIFT.NativeSubmissionGate/1\"") ==
-            std::string::npos ||
+    const bool neutral_gate =
+        contents.find("\"format\": \"SHIFT.NativeSubmissionGate/1\"") !=
+        std::string::npos;
+    const bool xbox_gate =
+        contents.find("\"format\": \"SHIFT.NativeXboxSubmissionGate/1\"") !=
+        std::string::npos;
+    if ((!neutral_gate && !xbox_gate) ||
         contents.find("\"ready\": true") == std::string::npos ||
         contents.find("\"blocking_reasons\": []") == std::string::npos) {
         throw std::runtime_error(
@@ -1175,10 +1180,18 @@ RenderTargetState load_render_target(
     const std::string contents(
         (std::istreambuf_iterator<char>(input)),
         std::istreambuf_iterator<char>());
-    if (contents.find("\"format\": \"SHIFT.D3D9CaptureRenderTarget/1\"") ==
-            std::string::npos ||
+    const bool d3d9_capture =
+        contents.find("\"format\": \"SHIFT.D3D9CaptureRenderTarget/1\"") !=
+        std::string::npos;
+    const bool xbox_capture =
+        contents.find("\"format\": \"SHIFT.XboxNativeRenderTarget/1\"") !=
+        std::string::npos;
+    const bool y_flipped = d3d9_capture
+        ? contents.find("\"d3d9_y_down\": true") != std::string::npos
+        : contents.find("\"viewport_y_flipped\": true") != std::string::npos;
+    if ((!d3d9_capture && !xbox_capture) ||
         contents.find("\"ready\": true") == std::string::npos ||
-        contents.find("\"d3d9_y_down\": true") == std::string::npos) {
+        !y_flipped) {
         throw std::runtime_error("capture render target state is invalid");
     }
     out.width = json_u32(contents, "target_width");
@@ -1188,28 +1201,34 @@ RenderTargetState load_render_target(
     out.viewport_width = json_u32(contents, "viewport_width");
     out.viewport_height = json_u32(contents, "viewport_height");
     out.d3d_color_format = json_u32(contents, "surface_format");
-    if (out.d3d_color_format == 21u) {
+    if (d3d9_capture && out.d3d_color_format == 21u) {
         out.color_format = VK_FORMAT_B8G8R8A8_UNORM;
-    } else if (out.d3d_color_format == 113u) {
+    } else if (d3d9_capture && out.d3d_color_format == 113u) {
         out.color_format = VK_FORMAT_R16G16B16A16_SFLOAT;
-    } else if (out.d3d_color_format == 114u) {
+    } else if (d3d9_capture && out.d3d_color_format == 114u) {
         out.color_format = VK_FORMAT_R32_SFLOAT;
+    } else if (xbox_capture && out.d3d_color_format == 1u) {
+        out.color_format = VK_FORMAT_R8G8B8A8_SRGB;
     } else {
         throw std::runtime_error(
-            "unsupported captured D3D9 render-target format: " +
+            "unsupported captured render-target format: " +
             std::to_string(out.d3d_color_format));
     }
     out.d3d_depth_format = json_u32(contents, "depth_surface_format");
-    if (out.d3d_depth_format == 75u) {
+    if (d3d9_capture && out.d3d_depth_format == 75u) {
         out.depth_format = VK_FORMAT_D24_UNORM_S8_UINT;
         out.depth_aspect =
             VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    } else if (out.d3d_depth_format == 80u) {
+    } else if (d3d9_capture && out.d3d_depth_format == 80u) {
         out.depth_format = VK_FORMAT_D16_UNORM;
         out.depth_aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
+    } else if (xbox_capture && out.d3d_depth_format == 0u) {
+        out.depth_format = VK_FORMAT_D24_UNORM_S8_UINT;
+        out.depth_aspect =
+            VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     } else if (out.d3d_depth_format != 0u) {
         throw std::runtime_error(
-            "unsupported captured D3D9 depth format: " +
+            "unsupported captured depth format: " +
             std::to_string(out.d3d_depth_format));
     }
     if (out.d3d_depth_format != 0u &&
@@ -1220,7 +1239,7 @@ RenderTargetState load_render_target(
     }
     out.min_depth = static_cast<float>(json_number(contents, "min_depth"));
     out.max_depth = static_cast<float>(json_number(contents, "max_depth"));
-    out.d3d9_y_down = true;
+    out.viewport_y_flipped = true;
     out.captured = true;
     out.clear_color_argb = json_u32(contents, "clear_color_argb");
     out.clear_depth = static_cast<float>(json_number(contents, "clear_depth"));
@@ -1365,15 +1384,11 @@ PipelineState load_pipeline_state(
     return out;
 }
 
-VkCullModeFlags load_pipeline_cull_mode(
-    const std::filesystem::path& root) {
-    return load_pipeline_state(root).cull_mode;
-}
-
 uint32_t readback_bytes_per_pixel(VkFormat format) {
     switch (format) {
     case VK_FORMAT_R32_SFLOAT:
     case VK_FORMAT_R8G8B8A8_UNORM:
+    case VK_FORMAT_R8G8B8A8_SRGB:
     case VK_FORMAT_B8G8R8A8_UNORM:
         return 4;
     case VK_FORMAT_R16G16B16A16_SFLOAT:
@@ -1387,6 +1402,7 @@ const char* render_target_format_name(VkFormat format) {
     switch (format) {
     case VK_FORMAT_R32_SFLOAT: return "VK_FORMAT_R32_SFLOAT";
     case VK_FORMAT_R8G8B8A8_UNORM: return "VK_FORMAT_R8G8B8A8_UNORM";
+    case VK_FORMAT_R8G8B8A8_SRGB: return "VK_FORMAT_R8G8B8A8_SRGB";
     case VK_FORMAT_B8G8R8A8_UNORM: return "VK_FORMAT_B8G8R8A8_UNORM";
     case VK_FORMAT_R16G16B16A16_SFLOAT:
         return "VK_FORMAT_R16G16B16A16_SFLOAT";
@@ -1998,11 +2014,11 @@ int main(int argc, char** argv) {
         viewport.x = static_cast<float>(render_target.viewport_x);
         viewport.y = static_cast<float>(
             render_target.viewport_y +
-            (render_target.d3d9_y_down
+            (render_target.viewport_y_flipped
                  ? static_cast<int32_t>(render_target.viewport_height)
                  : 0));
         viewport.width = static_cast<float>(render_target.viewport_width);
-        viewport.height = static_cast<float>(render_target.d3d9_y_down
+        viewport.height = static_cast<float>(render_target.viewport_y_flipped
             ? -static_cast<int32_t>(render_target.viewport_height)
             : static_cast<int32_t>(render_target.viewport_height));
         viewport.minDepth = render_target.min_depth;

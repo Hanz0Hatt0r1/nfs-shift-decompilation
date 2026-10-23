@@ -26,13 +26,14 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   tiles to Vulkan images or create a pipeline. The constants decoder resolves
   each stage's 256-register float window and the observed PS branch bools,
   including the VS a0-indexed c0-c3 window.
-  A bounded decoder now parses
-  the captured VS/PS control-flow slots and their first `vfetch_full` and
-  `tfetch2D` instructions, plus scheduled ALU operands, temporary-register
-  addressing flags, scalar source selectors, and component-relative swizzles.
-  It expands `exec` clauses and retains fetch/ALU and serialization bits without
-  evaluating branch paths. It does not interpret ALU operations or emit SPIR-V.
-  The
+  A bounded decoder parses the captured VS/PS control-flow slots and their
+  `vfetch_full` and `tfetch2D` instructions, plus scheduled ALU operands,
+  temporary-register addressing flags, scalar source selectors, and
+  component-relative swizzles. The project-owned translator now emits Vulkan
+  GLSL for the observed VS/PS pair, including its `b128`/`b129` branch path,
+  vertex fetch, captured ALU subset, texture fetch/swizzle, and exports. It
+  rejects unsupported control flow and operations. The actual captured pair
+  compiled to Vulkan 1.1-compatible SPIR-V and passed `spirv-val`.
   packet scanner frames contiguous big-endian type 0/1/2/3 PM4 packets and
   reports type-3 opcodes without applying state or executing commands. It
   consumed the private 19,784-byte capture as 247 packets and identified four
@@ -44,11 +45,29 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   [Xenos register definitions](https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/xenos.h).
   These are documentation cross-checks only: this project has no Xenia runtime
   dependency and does not emulate a Xenos GPU;
-- the Xbox packet and resource inputs are not yet wired to Vulkan draw
-  submission. Vulkan texture view/sampler creation, Xbox shader translation,
-  and retail parity remain unimplemented. The product path must use a
-  project-owned ReXGlue graphics frontend and must not load `rexgpu-xenos` or
-  another GPU emulator;
+- the first captured Xbox `DRAW_INDX` (six 16-bit indices, four captured
+  `FLOAT3` vertices, the captured 1024x256 texture, constants, and translated
+  shaders) has been submitted by `shift_vulkan_bundle_execute` to the
+  project-owned Vulkan backend. That path uses Vulkan 1.1, an sRGB color target,
+  captured viewport/blend/cull state, and a project-owned Xbox target/gate
+  contract. The native run enabled `VK_LAYER_KHRONOS_validation` and reported
+  zero validation errors. The output shows the captured SHIFT logo draw; it is
+  evidence of one submitted draw, not full-frame retail parity. The source
+  capture was obtained with an Xenos diagnostic run, but neither its renderer
+  nor its SPIR-V is used by the project-owned Vulkan path. The same offscreen
+  bundle also submitted on Android arm64-v8a / Redmi Note 8 Pro (Mali-G76 MC4).
+  Android validation layers were unavailable; its output differed from the
+  GTX 950 host output by at most 2/255 per RGB channel, so this is a device
+  execution check rather than pixel-identical or retail-frame parity;
+- limitations for this isolated draw: the prior EDRAM contents were not
+  captured, so the standalone bundle begins with an explicit black clear; the
+  captured black texture-border alpha is unresolved, so the test bundle uses
+  Vulkan transparent-black border behavior provisionally. The PM4 scanner is
+  still not a live guest-ring consumer, and the ReXGlue plugin/runtime is not
+  yet integrated with this renderer. Project-owned ring/resource ingestion and
+  broader shader coverage remain future integration work. The product path must
+  use a project-owned ReXGlue graphics frontend and must not load `rexgpu-xenos`
+  or another GPU emulator;
 - Linux CI coverage for native smoke paths.
 
 ## Rules
@@ -61,7 +80,10 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
 
 ## Current limitation
 
-The backend is not yet a complete production renderer. Full BMW shader/material execution and full RenderCommand submission remain bounded by shader/reference coverage and runtime evidence.
+The backend is not yet a complete production renderer. Full BMW
+shader/material execution and full RenderCommand submission remain bounded by
+shader/reference coverage and runtime evidence. The Xbox work currently covers
+one captured draw and a small, fail-closed microcode subset.
 
 ## Commands
 
