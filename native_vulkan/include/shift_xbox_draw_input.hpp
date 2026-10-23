@@ -266,6 +266,18 @@ struct CapturedRasterRegisters {
     uint32_t window_scissor_br;
 };
 
+// Retains only the raster registers used by the captured Xbox draw contract.
+// Call apply() for each decoded PM4 register write and snapshot() at a draw.
+struct GuestRasterRegisterState {
+    void reset() noexcept;
+    void apply(const GuestRegisterWrite& write) noexcept;
+    bool snapshot(CapturedRasterRegisters* output, std::string* error) const;
+
+private:
+    CapturedRasterRegisters registers_{};
+    uint16_t valid_mask_ = 0;
+};
+
 struct CapturedRasterState {
     uint32_t width;
     uint32_t height;

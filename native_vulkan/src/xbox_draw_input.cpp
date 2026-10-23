@@ -703,6 +703,48 @@ bool decode_captured_texture_sampling(
     return true;
 }
 
+void GuestRasterRegisterState::reset() noexcept {
+    registers_ = {};
+    valid_mask_ = 0;
+}
+
+void GuestRasterRegisterState::apply(const GuestRegisterWrite& write) noexcept {
+    uint16_t bit = 0;
+    uint32_t* destination = nullptr;
+    switch (write.register_index) {
+        case 0x2000: bit = 1u << 0; destination = &registers_.surface_info; break;
+        case 0x2001: bit = 1u << 1; destination = &registers_.color_info; break;
+        case 0x2002: bit = 1u << 2; destination = &registers_.depth_info; break;
+        case 0x2208: bit = 1u << 3; destination = &registers_.mode_control; break;
+        case 0x2200: bit = 1u << 4; destination = &registers_.depth_control; break;
+        case 0x2104: bit = 1u << 5; destination = &registers_.color_mask; break;
+        case 0x210F: bit = 1u << 6; destination = &registers_.viewport_x_scale; break;
+        case 0x2110: bit = 1u << 7; destination = &registers_.viewport_x_offset; break;
+        case 0x2111: bit = 1u << 8; destination = &registers_.viewport_y_scale; break;
+        case 0x2112: bit = 1u << 9; destination = &registers_.viewport_y_offset; break;
+        case 0x200E: bit = 1u << 10; destination = &registers_.screen_scissor_tl; break;
+        case 0x200F: bit = 1u << 11; destination = &registers_.screen_scissor_br; break;
+        case 0x2080: bit = 1u << 12; destination = &registers_.window_offset; break;
+        case 0x2081: bit = 1u << 13; destination = &registers_.window_scissor_tl; break;
+        case 0x2082: bit = 1u << 14; destination = &registers_.window_scissor_br; break;
+        default: return;
+    }
+    *destination = write.value;
+    valid_mask_ |= bit;
+}
+
+bool GuestRasterRegisterState::snapshot(
+    CapturedRasterRegisters* output,
+    std::string* error) const {
+    constexpr uint16_t kAllRasterRegistersValid = (1u << 15) - 1u;
+    if (!output || valid_mask_ != kAllRasterRegistersValid) {
+        return fail("incomplete captured raster register state", error);
+    }
+    *output = registers_;
+    if (error) error->clear();
+    return true;
+}
+
 bool decode_captured_raster_state(
     const CapturedRasterRegisters& registers,
     CapturedRasterState* output,

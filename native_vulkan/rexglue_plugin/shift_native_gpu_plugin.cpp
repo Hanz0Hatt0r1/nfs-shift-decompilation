@@ -120,6 +120,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     ring_read_pointer_ = 0;
     ring_write_pointer_ = 0;
     ring_initialized_ = true;
+    ++ring_generation_;
     REXLOG_INFO("shift-native: guest PM4 ring at {:08X}, {} bytes", guest_address,
                 byte_length);
     ring_changed_.notify_one();
@@ -207,11 +208,14 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   }
 
   void RingWorkerLoop() {
+    shift::xbox::GuestRasterRegisterState raster_register_state;
+    uint64_t observed_ring_generation = 0;
     for (;;) {
       uint32_t read_pointer = 0;
       uint32_t write_pointer = 0;
       uint32_t ring_guest_address = 0;
       size_t ring_byte_length = 0;
+      uint64_t ring_generation = 0;
       {
         std::unique_lock<std::mutex> lock(ring_mutex_);
         ring_changed_.wait(lock, [this] {
@@ -223,6 +227,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         write_pointer = ring_write_pointer_;
         ring_guest_address = ring_guest_address_;
         ring_byte_length = ring_byte_length_;
+        ring_generation = ring_generation_;
+      }
+      if (ring_generation != observed_ring_generation) {
+        raster_register_state.reset();
+        observed_ring_generation = ring_generation;
       }
 
       try {
@@ -238,6 +247,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
             batch, ReadGuestMemory, this, &expanded, &error);
 
         uint32_t decoded_draws = 0;
+        uint32_t draws_with_raster_state = 0;
         uint32_t unsupported_draws = 0;
         uint32_t raw_register_writes = 0;
         if (expanded_ok) {
@@ -265,6 +275,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               if (shift::xbox::decode_guest_register_writes(
                       packet_bytes, packet.byte_length, &writes, &error)) {
                 raw_register_writes += static_cast<uint32_t>(writes.size());
+                for (const shift::xbox::GuestRegisterWrite& write : writes) {
+                  raster_register_state.apply(write);
+                }
               }
             } else if (packet.type == shift::xbox::PacketType::Type3 &&
                        packet.opcode == 0x22u) {
@@ -272,6 +285,13 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               if (shift::xbox::decode_captured_draw_indx(
                       packet_bytes, packet.byte_length, &draw, &error)) {
                 ++decoded_draws;
+                shift::xbox::CapturedRasterRegisters raster_registers{};
+                shift::xbox::CapturedRasterState raster_state{};
+                if (raster_register_state.snapshot(&raster_registers, &error) &&
+                    shift::xbox::decode_captured_raster_state(
+                        raster_registers, &raster_state, &error)) {
+                  ++draws_with_raster_state;
+                }
               } else {
                 ++unsupported_draws;
               }
@@ -281,9 +301,10 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
             }
           }
           REXLOG_DEBUG("shift-native: framed {} PM4 packets, {} raw register writes, "
-                       "{} captured DRAW_INDX packets, {} unsupported draw forms",
+                       "{} captured DRAW_INDX packets ({} with supported raster state), "
+                       "{} unsupported draw forms; Vulkan draw submission is not wired",
                        expanded.packets.size(), raw_register_writes, decoded_draws,
-                       unsupported_draws);
+                       draws_with_raster_state, unsupported_draws);
         } else {
           REXLOG_WARN("shift-native: dropped malformed PM4 batch at WPTR {:08X}: {}",
                       write_pointer, error);
@@ -320,6 +341,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   uint32_t ring_read_pointer_ = 0;
   uint32_t ring_write_pointer_ = 0;
   uint32_t read_pointer_writeback_address_ = 0;
+  uint64_t ring_generation_ = 0;
   bool ring_initialized_ = false;
   bool ring_worker_shutdown_ = false;
 };

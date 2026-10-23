@@ -459,6 +459,43 @@ int main() {
                 raster_state.scissor_has_area,
             "captured Xbox scissor bounds changed");
 
+    shift::xbox::GuestRasterRegisterState raster_register_state;
+    shift::xbox::CapturedRasterRegisters tracked_raster_registers{};
+    require(!raster_register_state.snapshot(&tracked_raster_registers, &error),
+            "incomplete raster register state was accepted");
+    const std::array<shift::xbox::GuestRegisterWrite, 15> raster_writes{{
+        {0x2000, captured_raster_registers.surface_info},
+        {0x2001, captured_raster_registers.color_info},
+        {0x2002, captured_raster_registers.depth_info},
+        {0x2208, captured_raster_registers.mode_control},
+        {0x2200, captured_raster_registers.depth_control},
+        {0x2104, captured_raster_registers.color_mask},
+        {0x210F, captured_raster_registers.viewport_x_scale},
+        {0x2110, captured_raster_registers.viewport_x_offset},
+        {0x2111, captured_raster_registers.viewport_y_scale},
+        {0x2112, captured_raster_registers.viewport_y_offset},
+        {0x200E, captured_raster_registers.screen_scissor_tl},
+        {0x200F, captured_raster_registers.screen_scissor_br},
+        {0x2080, captured_raster_registers.window_offset},
+        {0x2081, captured_raster_registers.window_scissor_tl},
+        {0x2082, captured_raster_registers.window_scissor_br},
+    }};
+    for (const auto& write : raster_writes) raster_register_state.apply(write);
+    raster_register_state.apply({0x3000, 0xFFFFFFFFu});
+    require(raster_register_state.snapshot(&tracked_raster_registers, &error),
+            "captured PM4 raster register writes did not produce complete state");
+    shift::xbox::CapturedRasterState tracked_raster_state{};
+    require(shift::xbox::decode_captured_raster_state(
+                tracked_raster_registers, &tracked_raster_state, &error) &&
+                tracked_raster_state.width == raster_state.width &&
+                tracked_raster_state.height == raster_state.height &&
+                tracked_raster_state.scissor_x1 == raster_state.scissor_x1 &&
+                tracked_raster_state.depth_format == raster_state.depth_format,
+            "tracked PM4 raster state diverged from the captured draw contract");
+    raster_register_state.reset();
+    require(!raster_register_state.snapshot(&tracked_raster_registers, &error),
+            "reset raster register state retained stale draw state");
+
     shift::xbox::CapturedRasterRegisters unsupported_raster = captured_raster_registers;
     unsupported_raster.window_offset = 1;
     require(!shift::xbox::decode_captured_raster_state(

@@ -16,8 +16,9 @@ packet, its resources, shaders, and a register-file snapshot. The project-owned
 path now translates the captured VS/PS subset and submits that captured draw
 from an isolated bundle through Vulkan 1.1. A project-owned ReXGlue plugin now
 receives the live ring and frames/decodes the bounded PM4 subset on a worker
-thread. It does not apply guest state or submit a live draw, and it does not
-render the complete title. The production path must remain emulator-free.
+thread. It tracks only the 15 captured target, viewport, and scissor registers;
+resource binding and Vulkan draw submission remain unimplemented, and it does
+not render the complete title. The production path must remain emulator-free.
 
 ## Source and branch baseline
 
@@ -77,9 +78,10 @@ presenter currently requests Vulkan 1.3 and Linux SDL/X11/Wayland, so it is a
 desktop integration step and not the Android Vulkan 1.1 route.
 
 The project plugin implements that ABI and routes `CP_RB_WPTR` updates to a
-worker that snapshots the ring, expands captured indirect-buffer packets, and
-records packet counts plus recognized `DRAW_INDX` commands. The current worker
-does not apply register/resource state, create Vulkan guest resources, or issue
+worker that snapshots the ring, expands indirect buffers, and records packet
+counts plus recognized `DRAW_INDX` commands. It tracks the captured raster
+register subset across batches and validates it at each supported indexed draw.
+It does not resolve guest resources, create Vulkan draw resources, or issue
 draw calls. The separate target split is in SDK PR #528; the plugin and ring
 bridge are in NFS Process 2 PR #2161. No P-code, Ghidra, or guest-scheduler API
 changes were needed, and no Process 1 files were modified.
@@ -346,16 +348,19 @@ address and nesting depth while rejecting short mappings, cycles, malformed
 packets, and over-limit streams. Its regression uses the captured first span
 (`0x0975b660`, 74 dwords) with a constructed 74-dword NOP payload; that payload
 tests span resolution only and is not represented as capture data. The private
-capture does not include bytes for the indirect spans, and the expander is not
-connected to the live ReXGlue guest address space.
+capture does not include bytes for the indirect spans. The plugin now resolves
+live guest mappings with this bounded expander; resource, shader, and
+render-target contents are not yet interpreted for Vulkan submission.
 
 The platform-independent `snapshot_guest_ring_batch` helper now accepts a ring
 memory span and committed read/write dword indexes, copies the unread interval
 across wraparound, and frames the copied PM4 packets. Its test places the exact
 captured `DRAW_INDX` across the ring end and sends it through the bounded draw
-decoder. This is a ring-consumption primitive only: it is not connected to the
-runtime write-pointer callback, does not advance guest memory, and does not
-interpret PM4 state or submit a Vulkan draw.
+decoder. The plugin connects it to `InitializeRingBuffer` and `CP_RB_WPTR`,
+reads and expands live PM4 batches, then advances the guest read pointer. It
+tracks the 15 captured raster registers across batches and validates them at
+recognized `DRAW_INDX` packets. Other register state, shader/resource
+resolution, and Vulkan submission are not implemented.
 
 The paired `guest_ring_byte_length_from_size_log2` helper implements the
 ReXGlue `1 << (size_log2 + 3)` capacity rule with the same 64 MiB ceiling and
@@ -367,9 +372,10 @@ byte diagnostic capture after its exact bytes were copied into a zero-filled
 `DRAW_INDX` commands with index counts 6, 6, 6, and 60. The ring capacity and
 head/tail values in that check are synthetic harness values, so this is not
 live ReXGlue ring evidence. The type-0 decoder also accepted all 162 observed
-type-0 packets and extracted 4,436 raw `(register, value)` pairs; it does not
-apply or emulate those writes. Type-1 decoding is covered by a compact unit
-case. Details are in
+type-0 packets and extracted 4,436 raw `(register, value)` pairs. In the live
+plugin, only the 15 captured raster registers are retained for a draw-state
+check; this is not general Xenos register emulation. Type-1 decoding is covered
+by a compact unit case. Details are in
 `evidence/process2_xbox_guest_ring_snapshot_20261023.json`.
 
 This is the first XEX-originated indexed draw submitted through the
@@ -395,8 +401,8 @@ for the isolated draw, not Android game integration or retail-frame parity.
 - `shift_xbox_draw_input_check`: passed; covers the captured packet, mismatched
   binding, target format/viewport/scissor state, shader constant addressing and
   branch values, bounded shader control-flow, instruction schedule, fetch, and
-  raw ALU-field decode, unsupported opcode/layout/sampling values, non-zero
-  window offsets, and truncated input.
+  raw ALU-field decode, PM4 raster-register tracking, unsupported
+  opcode/layout/sampling values, non-zero window offsets, and truncated input.
 - `shift_xbox_shader_translate_check`: passed; selects the captured `b128` /
   `b129` path and confirms unsupported control flow is rejected. The VS/PS GLSL
   compiled with `glslangValidator -V --target-env vulkan1.1`, and both modules
