@@ -1,0 +1,96 @@
+{
+  "schema": "shift.xbox360.rexglue.software-queue-pristine-probe.v1",
+  "captured_on": "2026-10-24",
+  "input": {
+    "xex_sha256": "8c86a34f369f9d064126342daccb2cfe4646cfe735df6a032812a40a9c0a2c58",
+    "title_id": "454108B4",
+    "media_id": "60DAC9C5",
+    "build": "0.0.0.3"
+  },
+  "linux_run": {
+    "host": "linux-amd64",
+    "runtime_version": "ReXGlue 0.10.0",
+    "runtime_sha256": "ff31b096a4a0bbb212e4e145f029239e1093776145070a232267182ce2642b32",
+    "generated_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin": {
+      "name": "shift-native",
+      "sha256": "dbbacc40d993cac1a0b3519ab1ae7392b6fcb26457ebe5d8cb4faf3249dff05b"
+    },
+    "arguments": [
+      "--game_data_root=/tmp/nfs_shift_xbox_game_root_20261023",
+      "--gpu_plugin=shift-native",
+      "--no-async_shader_compilation"
+    ],
+    "xex_to_executable_lineage": "This run uses the same generated executable as the ring writeback probe. Its GDB source locations match the generated/default code tree associated with the locked manifest input, but the evidence does not independently bind the executable hash to a recorded build invocation."
+  },
+  "probe": {
+    "mode": "unmodified retail guest memory; debugger hardware watchpoints only",
+    "guest_memory_mutated": false,
+    "gdb_log": "/tmp/p1-software-queue-probe-20261024/logs/gdb-software-queue-watch-pristine.log",
+    "gdb_log_sha256": "ca1dc4e361b7198bd099609be5405eb8f409086dcc0070b7c58eefb413d7281a",
+    "watchpoints": [
+      {
+        "guest_address": "0x30026070",
+        "meaning": "current main X_KTHREAD+0x58"
+      },
+      {
+        "guest_address": "0xB7369378",
+        "meaning": "queue object+13432"
+      },
+      {
+        "guest_address": "0xB7AF4000",
+        "meaning": "ring descriptor+0"
+      }
+    ],
+    "additional_breakpoint": {
+      "guest_function": "0x823B33A0",
+      "purpose": "observe the retail helper that sets object predicate bit 0x02 after its queue path",
+      "result": "not hit during at least 15 seconds after breakpoint installation"
+    },
+    "observed_no_write_lower_bound_seconds": 60
+  },
+  "final_guest_state": {
+    "main_thread": {
+      "name": "Core 2/1: Main",
+      "guest_thread_id": 5,
+      "call_stack": [
+        "0x823A0310",
+        "0x823B34A0",
+        "0x823A4E48",
+        "0x823A5610",
+        "0x8264F868",
+        "0x8301DB18"
+      ]
+    },
+    "queue_object": "0xB7365F00",
+    "ring_descriptor": "0xB7AF4000",
+    "kthread_0x58": {
+      "guest_address": "0x30026070",
+      "guest_big_endian_value": 0
+    },
+    "queue_object_plus_13432": {
+      "guest_address": "0xB7369378",
+      "guest_big_endian_value": 0
+    },
+    "descriptor_plus_0": {
+      "guest_big_endian_value": 1,
+      "raw_host_word": "0x01000000"
+    },
+    "predicate": {
+      "guest_address": "0xB73689BD",
+      "byte": "0x14",
+      "tested_mask": "0x02",
+      "tested_bit_set": false
+    }
+  },
+  "static_cross_checks": {
+    "0x823A0310": "Reads the current KTHREAD value at +0x58, compares it to the wait record's previous value, and calls 0x823BA9C8 after a delta of at least 5000; it returns still-waiting while object+0x2ABD mask 0x02 remains clear.",
+    "0x823BA9C8": "If object+13432 is null, prints diagnostics and executes twi 31,r0,22 before returning. The earlier synthetic +0x58 injection that forced this branch is excluded from this clean run and does not justify fabricating a timeout or filling the field.",
+    "false_writer_candidate": "The sole generated static store using displacement 13432 writes to global address 0x831B3478 in function 0x82378C88; it does not write queue_object+13432 at 0xB7369378."
+  },
+  "interpretation": {
+    "supported": "The clean run remained in the original retail wait path. Hardware watchpoints recorded no stores to the software ring head at descriptor+0, the current thread's +0x58 field, or queue_object+13432. The tested completion bit stayed clear, and 0x823B33A0 did not execute during the short interval after it was watched.",
+    "not_proven": "This does not identify the worker or callback that should advance descriptor+0 or set predicate bit 0x02, establish that the scheduler is defective, or prove menu, frame, or race progress. It does not establish the meaning of X_KTHREAD+0x58 outside this exact retail use.",
+    "next_p1_frontier": "Trace the original guest producer and callback/thread entry path that reaches 0x823B33A0 and updates the software queue or predicate. Do not patch the wait, invent a clock value, or modify Process 2's renderer."
+  }
+}
