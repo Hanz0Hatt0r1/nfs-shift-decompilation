@@ -319,3 +319,17 @@ source-0/sample-0 Copy/Convert path. The magenta path and other synthetic
 readbacks are diagnostics only. See
 [`process2_redmi_note8pro_current_black_output_20261024.txt`](../../evidence/process2_redmi_note8pro_current_black_output_20261024.txt)
 for device identity, screenshot/log hashes, and batch details.
+
+The 2026-10-24 follow-up added the missing periodic guest source-0/VBlank
+callback (60 Hz on a ReXGlue host thread) and reports MMIO interrupt-status
+register `0x1951` bit 0 as asserted. A rebuilt full Android APK loaded this
+path on the Redmi Note 8 Pro: its log records three VBlank callbacks, two
+source-1 PM4 callbacks, RPTR progress through 25/31/73, two guest swaps, and
+two Vulkan frame submissions. The guest still produced no later PM4
+batches during the next 2m50s; screenshot and readback stayed black (zero
+non-black pixels, FNV-1a `B161DE6EEC272325`). Thus VBlank delivery and Vulkan
+submission are verified, but visible retail output is not. The current-source
+host live-ring executable and synthetic magenta readback both passed directly;
+the latter loaded `VK_LAYER_KHRONOS_validation` and emitted no VUID. See
+[`process2_redmi_note8pro_vblank_probe_20261024.json`](../../evidence/process2_redmi_note8pro_vblank_probe_20261024.json)
+for APK hashes and the bounded runtime evidence.

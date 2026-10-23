@@ -1,0 +1,70 @@
+{
+  "format": "SHIFT.Process2RedmiNote8ProVblankProbe/1",
+  "observed_at": "2026-10-24T01:53:34+03:00",
+  "build": {
+    "app": "com.hanz0hatt0r.nfsshift debug APK",
+    "gradle_task": "./gradlew --offline :app:assembleDebug",
+    "android_target": "arm64-v8a",
+    "plugin_target": "rexgpu-shift-native",
+    "renderer_library_sha256": "d774565a8dff76c15f34561fe75db2d2f7cb8884059476460f5152192a96633d",
+    "apk_sha256": "d65d23621b03f967142a696c1fa9a537123cd9658e70e8ff0ce03136a8413616",
+    "apk_size_bytes": 193259431,
+    "packaged_plugin_entries": [
+      "lib/arm64-v8a/librexgpu-shift-natived.so",
+      "lib/arm64-v8a/librexgpu-xenosd.so"
+    ],
+    "packaged_plugin_entries_identical": true,
+    "packaged_plugin_entry_sha256": "830000d6d0912daa540f118e9e77a5e5d4ec3ecd166a9a74a7ff3c042718b183",
+    "renderer_selection": "The host-required xenos loader alias contains the Process 2 Vulkan plugin; the Xenos renderer is not selected or used."
+  },
+  "checks": {
+    "android_full_apk_build": "passed",
+    "host_current_source_live_ring_smoke": "Recompiled smoke executable exited 0; it asserted MMIO 0x1951 bit 0 and submitted the fixture through the plugin.",
+    "host_current_source_validation_readback": "Recompiled smoke executable exited 0 with VK_LAYER_KHRONOS_validation; synthetic magenta readback reported 921600 non-black pixels.",
+    "host_validation_layer": "The Vulkan loader confirmed VK_LAYER_KHRONOS_validation was inserted; no validation error or VUID was emitted.",
+    "android_runtime": "APK installed and launched on the connected Redmi Note 8 Pro"
+  },
+  "device": {
+    "model": "Redmi Note 8 Pro",
+    "codename": "begonia",
+    "android_api": 33,
+    "gpu": "Mali-G76 MC4",
+    "vulkan_api": "1.1.131",
+    "adb_endpoint": "192.168.1.32:33153",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "pid_at_followup": 10753,
+    "activity": "com.hanz0hatt0r.nfsshift/org.libsdl.app.NfsShiftActivity"
+  },
+  "source_change": {
+    "guest_vblank_worker": "Dispatches interrupt source 0 on ReXGlue XHostThread using guest video refresh rate and guest ticks.",
+    "mmio_register": "0x1951 bit 0 returns asserted, matching ReXGlue's vblank status contract."
+  },
+  "runtime": {
+    "log_path_on_device": "files/nfs_shift/user/logs/nfs_shift_033.log",
+    "log_sha256": "d01b32745d55a57ae043952632b6cd6d799d9af916f6a83dfceaa3c14d62403d",
+    "screenshot_sha256": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+    "logged_vblank_callbacks": 3,
+    "logged_vblank_rate_hz": 60,
+    "pm4_interrupt_callbacks": 2,
+    "rptr_writeback_guest_values": [25, 31, 73],
+    "guest_swaps": 2,
+    "vulkan_frames_submitted": 2,
+    "first_vulkan_readback": {
+      "extent": "1280x720",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "non_black_pixels": 0,
+      "fnv1a": "B161DE6EEC272325"
+    },
+    "follow_up_interval_seconds": 170,
+    "pm4_batches_after_second_swap": 0,
+    "foreground_process_remained_running": true,
+    "result": "The source-0 callback and Vulkan submission paths are exercised, but the Android screenshot and readback remain black."
+  },
+  "limits": [
+    "This verifies VBlank delivery and two startup Vulkan submissions only; it does not prove the VBlank addition alone unblocks the retail runtime.",
+    "The first visible retail pixels and full-scene parity remain unverified.",
+    "The early captured color draw's vertex shader input/interpolator is zero in a separate Linux diagnostic, consistent with black output for that draw.",
+    "After the two startup swaps the app remained active but produced no more PM4 batches in the observed interval; further guest progress is Process 1 runtime ownership.",
+    "Synthetic magenta readback is a host pipeline regression and is not retail output evidence."
+  ]
+}

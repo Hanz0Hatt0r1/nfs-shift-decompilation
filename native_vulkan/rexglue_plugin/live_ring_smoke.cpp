@@ -26,6 +26,7 @@ constexpr uint32_t kWritebackAddress = 0x00012000u;
 constexpr uint32_t kRingSizeLog2 = 9u;
 constexpr uint32_t kWritePointerRegister = 0x7FC80714u;
 constexpr uint32_t kReadPointerRegister = 0x7FC80710u;
+constexpr uint32_t kVblankStatusAddress = 0x7FC86544u;
 constexpr uint32_t kIndexAddress = 0x0975D7B0u;
 constexpr uint32_t kVertexAddress = 0x0975DFD0u;
 constexpr uint32_t kPixelShaderAddress = 0x09D50460u;
@@ -300,8 +301,16 @@ int main(int argc, char** argv) {
   graphics->EnableReadPointerWriteBack(kWritebackAddress, 0);
   graphics->InitializeRingBuffer(kRingAddress, kRingSizeLog2);
   auto* mmio = rex::runtime::MMIOHandler::global_handler();
+  uint32_t vblank_status = 0;
+  if (!mmio || !mmio->CheckLoad(kVblankStatusAddress, &vblank_status) ||
+      (vblank_status & 1u) == 0) {
+    graphics->Shutdown();
+    graphics.reset();
+    dlclose(library);
+    return fail("guest GPU vblank interrupt-status bit was not asserted");
+  }
   const uint32_t stream_dwords = static_cast<uint32_t>(pm4_stream.size() / 4u);
-  if (!mmio || !mmio->CheckStore(kWritePointerRegister, stream_dwords)) {
+  if (!mmio->CheckStore(kWritePointerRegister, stream_dwords)) {
     graphics->Shutdown();
     graphics.reset();
     dlclose(library);

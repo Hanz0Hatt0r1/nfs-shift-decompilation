@@ -6,6 +6,7 @@
 #include <array>
 #include <atomic>
 #include <bit>
+#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <cstdlib>
@@ -25,6 +26,8 @@
 #include <StandAlone/ResourceLimits.h>
 #include <glslang/Public/ShaderLang.h>
 #include <rex/logging.h>
+#include <rex/chrono/clock.h>
+#include <rex/kernel/xboxkrnl/video.h>
 #include <rex/memory.h>
 #include <rex/system/function_dispatcher.h>
 #include <rex/system/gpu_plugin.h>
@@ -48,6 +51,7 @@ constexpr uint32_t kGpuMmioMask = 0xFFFF0000u;
 constexpr uint32_t kGpuMmioSize = 0x0000FFFFu;
 constexpr uint32_t kRingWritePointerRegister = 0x01C5u;
 constexpr uint32_t kRingReadPointerRegister = 0x01C4u;
+constexpr uint32_t kVblankStatusRegister = 0x1951u;
 constexpr uint32_t kPhysicalAddressMask = 0x1FFFFFFFu;
 const std::string kDebugFragmentColorShader =
     "#version 450\n"
@@ -262,6 +266,22 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         // callback; keep that ABI-only path independent of the guest scheduler.
         ring_worker_ = std::thread([this] { RingWorkerLoop(); });
       }
+      if (kernel_state_) {
+        vblank_worker_running_.store(true, std::memory_order_release);
+        vblank_host_worker_ = rex::system::object_ref<rex::system::XHostThread>(
+            new rex::system::XHostThread(kernel_state_, 128 * 1024, 0, [this] {
+              VblankWorkerLoop();
+              return 0;
+            }));
+        vblank_host_worker_->set_name("SHIFT Native VSync");
+        if (XFAILED(vblank_host_worker_->Create())) {
+          vblank_worker_running_.store(false, std::memory_order_release);
+          vblank_host_worker_.reset();
+          REXLOG_ERROR("shift-native: unable to start guest vblank worker");
+          return X_STATUS_UNSUCCESSFUL;
+        }
+        REXLOG_INFO("shift-native: guest vblank worker started");
+      }
     } catch (const std::exception& e) {
       REXLOG_ERROR("shift-native: unable to start PM4 input worker: {}", e.what());
       return X_STATUS_UNSUCCESSFUL;
@@ -320,6 +340,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   }
 
   void Shutdown() override {
+    vblank_worker_running_.store(false, std::memory_order_release);
+    if (vblank_host_worker_) {
+      vblank_host_worker_->Wait(0, 0, 0, nullptr);
+      vblank_host_worker_.reset();
+    }
     {
       std::lock_guard<std::mutex> lock(ring_mutex_);
       ring_initialized_ = false;
@@ -687,10 +712,65 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
 
   uint32_t ReadRegister(uint32_t address) {
     const uint32_t index = (address & 0xFFFFu) / sizeof(uint32_t);
+    if (index == kVblankStatusRegister) return 1u;
     std::lock_guard<std::mutex> lock(ring_mutex_);
     if (index == kRingReadPointerRegister) return ring_read_pointer_;
     if (index == kRingWritePointerRegister) return ring_write_pointer_;
     return 0;
+  }
+
+  bool DispatchGuestInterrupt(uint32_t source, uint32_t cpu,
+                              rex::system::XHostThread* expected_thread) {
+    uint32_t callback = 0;
+    uint32_t callback_data = 0;
+    {
+      std::lock_guard<std::mutex> lock(interrupt_mutex_);
+      callback = interrupt_callback_;
+      callback_data = interrupt_callback_data_;
+    }
+    if (!callback) return false;
+    if (!function_dispatcher_ || !expected_thread) {
+      REXLOG_WARN("shift-native: cannot dispatch guest GPU interrupt without "
+                  "the ReXGlue host-thread context");
+      return false;
+    }
+    auto* thread = rex::system::XThread::GetCurrentThread();
+    if (thread != expected_thread) {
+      REXLOG_ERROR("shift-native: GPU interrupt left its ReXGlue host thread");
+      return false;
+    }
+    thread->SetActiveCpu(static_cast<uint8_t>(cpu));
+    uint64_t args[] = {source, callback_data};
+    function_dispatcher_->ExecuteInterrupt(thread->thread_state(), callback, args, 2);
+    return true;
+  }
+
+  void VblankWorkerLoop() {
+    rex::system::X_VIDEO_MODE video_mode{};
+    rex::kernel::xboxkrnl::VdQueryVideoMode(&video_mode);
+    const double refresh_rate_hz =
+        std::max(1.0, double(float(video_mode.refresh_rate)));
+    const uint64_t guest_tick_frequency =
+        rex::chrono::Clock::guest_tick_frequency();
+    const uint64_t vblank_interval_ticks = std::max(
+        uint64_t{1}, uint64_t(double(guest_tick_frequency) / refresh_rate_hz));
+    uint64_t last_vblank_tick = rex::chrono::Clock::QueryGuestTickCount();
+    uint32_t dispatched_vblanks = 0;
+    while (vblank_worker_running_.load(std::memory_order_acquire)) {
+      const uint64_t current_tick = rex::chrono::Clock::QueryGuestTickCount();
+      while (vblank_worker_running_.load(std::memory_order_acquire) &&
+             current_tick - last_vblank_tick >= vblank_interval_ticks) {
+        last_vblank_tick += vblank_interval_ticks;
+        if (DispatchGuestInterrupt(0u, 2u, vblank_host_worker_.get()) &&
+            dispatched_vblanks < 3u) {
+          ++dispatched_vblanks;
+          REXLOG_INFO("shift-native: dispatched guest vblank callback {} "
+                      "at {:.3f} Hz",
+                      dispatched_vblanks, refresh_rate_hz);
+        }
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
   }
 
   void NotifyWritePointer(uint32_t address, uint32_t value) {
@@ -1485,6 +1565,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   std::condition_variable ring_changed_;
   std::thread ring_worker_;
   rex::system::object_ref<rex::system::XHostThread> ring_host_worker_;
+  std::atomic<bool> vblank_worker_running_{false};
+  rex::system::object_ref<rex::system::XHostThread> vblank_host_worker_;
   std::mutex interrupt_mutex_;
   uint32_t interrupt_callback_ = 0;
   uint32_t interrupt_callback_data_ = 0;
