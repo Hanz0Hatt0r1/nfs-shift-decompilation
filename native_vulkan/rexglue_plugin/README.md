@@ -337,3 +337,17 @@ host live-ring executable and synthetic magenta readback both passed directly;
 the latter loaded `VK_LAYER_KHRONOS_validation` and emitted no VUID. See
 [`process2_redmi_note8pro_vblank_probe_20261024.json`](../../evidence/process2_redmi_note8pro_vblank_probe_20261024.json)
 for APK hashes and the bounded runtime evidence.
+
+The 2026-10-24 Linux ring-worker follow-up writes the same fixture as three
+separate CP_RB_WPTR MMIO updates, waiting for RPTR after each one. All three
+batches were consumed and each produced a Vulkan presenter submission, both
+with and without `VK_LAYER_KHRONOS_validation`; validation reported no VUIDs.
+This rules out a worker that permanently stops after its first batch when the
+guest provides more work. It does not explain why the retail guest stops
+writing WPTR after its startup work. The fixture uses synthetic geometry and
+resources, and the Redmi Note 8 Pro still has a black screenshot and readback,
+so this regression is transport evidence only, not retail-output evidence.
+The callback ABI review also confirms that the plugin forwards the registered
+guest `user_data` unchanged. See
+[`process2_ring_worker_three_batch_regression_20261024.json`](../../evidence/process2_ring_worker_three_batch_regression_20261024.json)
+and its validation log for hashes and details.

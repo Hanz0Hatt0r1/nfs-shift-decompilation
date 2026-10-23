@@ -310,23 +310,43 @@ int main(int argc, char** argv) {
     return fail("guest GPU vblank interrupt-status bit was not asserted");
   }
   const uint32_t stream_dwords = static_cast<uint32_t>(pm4_stream.size() / 4u);
-  if (!mmio->CheckStore(kWritePointerRegister, stream_dwords)) {
+  constexpr uint32_t kSubmittedBatches = 3u;
+  constexpr uint32_t kRingBytes = 1u << (kRingSizeLog2 + 3u);
+  if (pm4_stream.size() * kSubmittedBatches > kRingBytes) {
     graphics->Shutdown();
     graphics.reset();
     dlclose(library);
-    return fail("guest CP_RB_WPTR MMIO write was not handled");
+    return fail("successive PM4 fixture batches exceed the guest ring");
   }
-
-  const auto deadline =
-      std::chrono::steady_clock::now() + std::chrono::seconds(20);
-  while (std::chrono::steady_clock::now() < deadline &&
-         read_be32(writeback_bytes) != stream_dwords) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  bool consumed_all_batches = true;
+  for (uint32_t batch = 1; batch <= kSubmittedBatches; ++batch) {
+    const uint32_t batch_end = stream_dwords * batch;
+    if (batch > 1u) {
+      std::memcpy(
+          ring_bytes + static_cast<size_t>(batch - 1u) * pm4_stream.size(),
+          pm4_stream.data(), pm4_stream.size());
+    }
+    if (!mmio->CheckStore(kWritePointerRegister, batch_end)) {
+      consumed_all_batches = false;
+      break;
+    }
+    const auto deadline =
+        std::chrono::steady_clock::now() + std::chrono::seconds(20);
+    while (std::chrono::steady_clock::now() < deadline &&
+           read_be32(writeback_bytes) != batch_end) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    if (read_be32(writeback_bytes) != batch_end) {
+      consumed_all_batches = false;
+      break;
+    }
   }
   uint32_t read_pointer = 0;
-  const bool consumed = read_be32(writeback_bytes) == stream_dwords &&
+  const bool consumed = consumed_all_batches &&
+                        read_be32(writeback_bytes) ==
+                            stream_dwords * kSubmittedBatches &&
                         mmio->CheckLoad(kReadPointerRegister, &read_pointer) &&
-                        read_pointer == stream_dwords;
+                        read_pointer == stream_dwords * kSubmittedBatches;
 
   graphics->Shutdown();
   graphics.reset();
@@ -366,7 +386,17 @@ int main(int argc, char** argv) {
     std::cerr << diagnostics << '\n';
     return fail("PM4 stream was not consumed through live MMIO");
   }
-  if (diagnostics.find("2 pointer-loaded shader programs (0 unresolved)") ==
+  const char* const submission_marker =
+      "submitted 3 captured indexed draw packets to the Vulkan presenter";
+  size_t submission_count = 0;
+  for (size_t offset = 0;
+       (offset = diagnostics.find(submission_marker, offset)) !=
+       std::string::npos;
+       offset += std::strlen(submission_marker)) {
+    ++submission_count;
+  }
+  if (submission_count != kSubmittedBatches ||
+      diagnostics.find("2 pointer-loaded shader programs (0 unresolved)") ==
           std::string::npos ||
       diagnostics.find(
           "3 captured indexed draw packets (3 with supported raster state") ==
@@ -374,14 +404,12 @@ int main(int argc, char** argv) {
       diagnostics.find("3 with resolved resource bytes (0 unresolved)") ==
           std::string::npos ||
       diagnostics.find("1 Vulkan frames submitted") == std::string::npos ||
-      diagnostics.find("source=2/primitive=8:1") == std::string::npos ||
-      diagnostics.find("submitted 3 captured indexed draw packets to the "
-                       "Vulkan presenter") == std::string::npos) {
+      diagnostics.find("source=2/primitive=8:1") == std::string::npos) {
     std::cerr << diagnostics << '\n';
     return fail("live PM4 fixture did not reach Vulkan presenter submission");
   }
-  std::cout << "live ReXGlue PM4 ring submitted DMA triangle and AutoIndex "
-               "rectangle-list draws through Vulkan 1.1; fixture uses synthetic "
-               "vertex/resource inputs\n";
+  std::cout << "live ReXGlue PM4 ring consumed three successive MMIO batches "
+               "and submitted each fixture through Vulkan 1.1; fixture uses "
+               "synthetic vertex/resource inputs\n";
   return 0;
 }

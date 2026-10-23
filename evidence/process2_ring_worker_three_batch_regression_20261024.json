@@ -1,0 +1,50 @@
+{
+  "format": "SHIFT.Process2RingWorkerThreeBatchRegression/1",
+  "observed_at": "2026-10-24",
+  "source": {
+    "branch": "work/process2-xbox-live-ring-20261023",
+    "baseline_commit": "cf6d90e5",
+    "file": "native_vulkan/rexglue_plugin/live_ring_smoke.cpp",
+    "file_sha256": "9270b309139fd29bfb56620a1ea70e171a08553661061a554c102ede6aa2c8b2"
+  },
+  "host_build": {
+    "platform": "linux-amd64",
+    "device": "NVIDIA GeForce GTX 950",
+    "vulkan_api": "1.1",
+    "plugin_sha256": "dda6fe78f9ee9e581133f5afdd607e20d15ecfb6f3856f2d32c11eae0e3ff369",
+    "test_executable_sha256": "0a1c7d88ec68a9f26b18a0a7ce268d349e2a7541068f553e44935217e553e465",
+    "test_exit_code": 0
+  },
+  "ring_rearm_regression": {
+    "batches": 3,
+    "input": "The same PM4 fixture is written as three separate CP_RB_WPTR MMIO updates.",
+    "synchronization": "The test waits for the guest read-pointer writeback after each update before writing the next batch.",
+    "expected_final_read_pointer_dwords": "3 * fixture_dword_count",
+    "observed": "All three read-pointer milestones were reached and all three batches produced a Vulkan presenter submission.",
+    "result": "pass"
+  },
+  "vulkan_validation": {
+    "layer": "VK_LAYER_KHRONOS_validation",
+    "device_layer_inserted": true,
+    "validation_errors_or_vuids_in_log": 0,
+    "log": "evidence/process2_ring_worker_three_batch_validation_20261024.log",
+    "log_sha256": "81229a9b8df89c4f4b2e454cafac9b530624882701dc7be7aa498282fc810f00"
+  },
+  "diagnostic_readback": {
+    "fragment_override": "magenta",
+    "non_black_pixels": 921600,
+    "raw_sha256": "bac5569a33a5dbff11ac418a9c89bd18824c1bc0c862420c8da1d7598fc328f2",
+    "scope": "Synthetic renderer diagnostic only; not retail output or parity evidence."
+  },
+  "interrupt_abi_review": {
+    "sdk_entry": "VdSetGraphicsInterruptCallback_entry converts mapped user_data with guest_address() before SetInterruptCallback.",
+    "sdk_dispatch": "The SDK dispatches {source, stored_user_data} to ExecuteInterrupt.",
+    "process2_dispatch": "The plugin stores that guest user_data unchanged and dispatches {source, stored_callback_data}.",
+    "conclusion": "The Process 2 wrapper preserves the r4 user_data value; this code path does not explain a null nested guest field at object+10900."
+  },
+  "limits": [
+    "The smoke proves the ring worker can re-arm after each consumed batch when a new guest WPTR is written; it does not prove why the retail guest stops writing WPTR after its startup batches.",
+    "The fixture uses synthetic vertex and resource inputs and makes no claim about retail pixels.",
+    "The Redmi Note 8 Pro retail application remains black with no later PM4 batch in its current runtime log; guest-side progress remains under Process 1 investigation."
+  ]
+}
