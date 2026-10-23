@@ -2,7 +2,11 @@
   "format": "SHIFT.XboxLiveVulkanRendererSmoke/1",
   "status": "plugin_fixture_and_live_retail_point_draws_reached_vulkan_submit; visual_parity_unverified",
   "project_path": {
-    "guest_packets": ["PM4_DRAW_INDX", "PM4_DRAW_INDX_2 (DMA form)", "PM4_XE_SWAP"],
+    "guest_packets": [
+      "PM4_DRAW_INDX",
+      "PM4_DRAW_INDX_2 (DMA form)",
+      "PM4_XE_SWAP"
+    ],
     "shader_path": "captured microcode -> project GLSL translator -> glslang -> Vulkan 1.1 SPIR-V",
     "resource_path": [
       "guest indices normalized to uint16",
@@ -58,14 +62,21 @@
       "vulkan_api": "1.1 renderer path",
       "host_device": "NVIDIA GeForce GTX 950",
       "draws_submitted": 2,
-      "draw_forms": ["captured PM4_DRAW_INDX packet", "fixture PM4_DRAW_INDX_2 DMA form"],
+      "draw_forms": [
+        "captured PM4_DRAW_INDX packet",
+        "fixture PM4_DRAW_INDX_2 DMA form"
+      ],
       "captured_inputs": [
         "exact 20-byte PM4_DRAW_INDX packet at captured ring offset 0x2C64",
         "captured raster register words and fetch descriptor words",
         "captured 108-byte pixel-shader instruction slice",
         "captured normalized index values [0,1,2,2,1,3]"
       ],
-      "synthetic_inputs": ["vertex shader", "constant values", "white texture payload"],
+      "synthetic_inputs": [
+        "vertex shader",
+        "constant values",
+        "white texture payload"
+      ],
       "read_pointer_writeback": "passed",
       "vulkan_validation_layer": "enabled with VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation; plugin/presenter smoke passed without validation diagnostics",
       "retail_frame_parity": false
@@ -137,11 +148,12 @@
       "autoindex_rectangle_list_count_3": 4,
       "dma_indexed_draws_observed": 0
     },
-    "result": "The project translator compiled and resolved 24 retail point-list draws at each of two guest swaps; the ReXGlue Vulkan presenter accepted both frame submissions. Rectangle-list draws remain unresolved, and the captured game window stayed black. This verifies submission, not retail image parity.",
+    "result": "Historical point-only run. The later current-plugin run submitted one captured rectangle-list draw alongside 24 points at each guest swap; see the linked latest evidence. Visible retail output remains unverified.",
     "retail_vulkan_submission_confirmed": true,
     "game_window_capture_confirmed": true,
     "visible_retail_content_confirmed": false,
-    "retail_output_pixels_verified": false
+    "retail_output_pixels_verified": false,
+    "superseded_by": "process2_xbox_live_guest_ring_20261023.json#latest_live_rectangle_submission"
   },
   "android_full_game_attempt": {
     "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, arm64-v8a)",
@@ -158,9 +170,9 @@
     "retail_frame_observed": false
   },
   "limits": [
-    "The presenter accepted both retail point-list frames, but the captured game window stayed black apart from the cursor; visible retail content is not working yet.",
-    "AutoIndex rectangle-list draws are still unsupported; each observed guest swap has one unresolved draw alongside the 24 submitted points.",
-    "Each guest swap currently clears to black and composes only supported draws collected since that swap; Xenos EDRAM accumulation is not implemented.",
+    "The captured game window remained black apart from the cursor; visible retail content remains unverified.",
+    "Of four observed rectangle-list draws, two reached Vulkan (one per swap); two variants were rejected because captured mode_control=0x00000006 and color_info=0 are outside the raster contract.",
+    "Each guest swap clears to black and composes only supported draws collected since that swap; Xenos EDRAM accumulation is not implemented.",
     "The captured output uses a gamma target while the presenter image is A2B10G10R10_UNORM; target gamma parity remains unverified.",
     "The captured black texture border alpha is unresolved; the live sampler uses transparent black provisionally.",
     "The synthetic smoke draw does not establish retail frame parity."

@@ -1,6 +1,6 @@
 {
   "format": "SHIFT.Process2LiveGuestRingVulkanEvidence/1",
-  "status": "live_retail_point_draws_submitted_to_vulkan; output_readback_black; scene_parity_unverified",
+  "status": "live_retail_autoindex_point_and_rectangle_draws_submitted_to_project_vulkan; native_shader_readback_black; visible_output_unverified",
   "run": {
     "date": "2026-10-23",
     "title_id": "0x454108B4",
@@ -74,7 +74,13 @@
     "source_log": "/tmp/process2-live-nfs/opcode-run2/logs/shift-native-opcode.log",
     "plugin_state": "histogram-only build before DRAW_INDX_2 and IM_LOAD_IMMEDIATE decoding",
     "total_packets": 1828,
-    "batch_packet_counts": [73, 153, 808, 9, 785],
+    "batch_packet_counts": [
+      73,
+      153,
+      808,
+      9,
+      785
+    ],
     "type3_opcode_counts": {
       "0x22_DRAW_INDX": 0,
       "0x27_IM_LOAD": 0,
@@ -104,12 +110,42 @@
     "gpu_plugin_sha256": "7c62549c061c96c7b0335fafcd26e47088554e7ea7ad1fcd146b2fad45ab30c5",
     "runtime_sha256": "d9e090c0b455972f9e70f9f54c1686f72e12938069b827b5d6a1c3f7d39d98ac",
     "guest_ring_batches": [
-      {"pm4_packets": 73, "draw_indx_2_packets": 24, "guest_swaps": 0, "vulkan_frames_submitted": 0},
-      {"pm4_packets": 4, "draw_indx_2_packets": 0, "guest_swaps": 0, "vulkan_frames_submitted": 0},
-      {"pm4_packets": 149, "draw_indx_2_packets": 26, "guest_swaps": 0, "vulkan_frames_submitted": 0},
-      {"pm4_packets": 280, "draw_indx_2_packets": 0, "guest_swaps": 1, "vulkan_frames_submitted": 0},
-      {"pm4_packets": 528, "draw_indx_2_packets": 0, "guest_swaps": 0, "vulkan_frames_submitted": 0},
-      {"pm4_packets": 794, "draw_indx_2_packets": 50, "guest_swaps": 1, "vulkan_frames_submitted": 0}
+      {
+        "pm4_packets": 73,
+        "draw_indx_2_packets": 24,
+        "guest_swaps": 0,
+        "vulkan_frames_submitted": 0
+      },
+      {
+        "pm4_packets": 4,
+        "draw_indx_2_packets": 0,
+        "guest_swaps": 0,
+        "vulkan_frames_submitted": 0
+      },
+      {
+        "pm4_packets": 149,
+        "draw_indx_2_packets": 26,
+        "guest_swaps": 0,
+        "vulkan_frames_submitted": 0
+      },
+      {
+        "pm4_packets": 280,
+        "draw_indx_2_packets": 0,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 0
+      },
+      {
+        "pm4_packets": 528,
+        "draw_indx_2_packets": 0,
+        "guest_swaps": 0,
+        "vulkan_frames_submitted": 0
+      },
+      {
+        "pm4_packets": 794,
+        "draw_indx_2_packets": 50,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 0
+      }
     ],
     "total_pm4_packets": 1828,
     "total_draw_indx_2_packets": 100,
@@ -117,7 +153,10 @@
       "AutoIndex point list": 96,
       "AutoIndex rectangle list": 4
     },
-    "initiator_index_count_histogram": {"1": 96, "3": 4},
+    "initiator_index_count_histogram": {
+      "1": 96,
+      "3": 4
+    },
     "raw_packet_samples": [
       {
         "packet_bytes_hex": "c000360000010081",
@@ -208,7 +247,14 @@
     "gpu_plugin_selection": "shift-native only; rexgpu-xenos was not requested",
     "guest_ring_address": "0x09752580",
     "guest_ring_capacity_bytes": 32768,
-    "pm4_batch_sizes": [73, 153, 808, 9, 194, 591],
+    "pm4_batch_sizes": [
+      73,
+      153,
+      808,
+      9,
+      194,
+      591
+    ],
     "draw_indx_2_packets": 100,
     "draw_indx_2_forms": {
       "autoindex_point_list_count_1": 96,
@@ -311,7 +357,8 @@
     "game_window_capture_confirmed": true,
     "visible_retail_content_confirmed": false,
     "full_scene_parity_verified": false,
-    "vulkan_validation_layer_enabled": false
+    "vulkan_validation_layer_enabled": false,
+    "superseded_by": "latest_live_rectangle_submission"
   },
   "gpu_interrupt_routing_update": {
     "date": "2026-10-23",
@@ -435,7 +482,9 @@
       "raw_sha256": "62c155688f9b3f1217fd1573f24612584ab4df2175bb9281749e3372c886f1a1",
       "decoded_pixel_count": 921600,
       "unique_packed_words": 1,
-      "packed_word_histogram": {"0xC0000000": 921600},
+      "packed_word_histogram": {
+        "0xC0000000": 921600
+      },
       "non_black_pixel_count": 0,
       "decoded_png": "process2_xbox_live_vulkan_output_readback_black_20261023.png",
       "decoded_png_sha256": "16e6b2954c683e157639ef50e980d4cb96ae160cf82328eba859924630437e8f"
@@ -545,11 +594,14 @@
       "raw_sha256": "62c155688f9b3f1217fd1573f24612584ab4df2175bb9281749e3372c886f1a1",
       "decoded_pixel_count": 921600,
       "unique_packed_words": 1,
-      "packed_word_histogram": {"0xC0000000": 921600},
+      "packed_word_histogram": {
+        "0xC0000000": 921600
+      },
       "non_black_pixel_count": 0,
       "fnv1a64_from_plugin_log": "68D8B1C5D0E72325"
     },
-    "interpretation": "The active constant magenta pixel shader still produced no visible pixels for the submitted retail point draws. A separate renderer regression using the logged center-position vertex shape and captured retail point-raster profile does produce color on GTX 950 and Mali-G76 MC4. The remaining difference is at the live draw construction or presenter-target boundary; this does not identify the cause or establish game-level frame parity."
+    "interpretation": "The active constant magenta pixel shader still produced no visible pixels for the submitted retail point draws. A separate renderer regression using the logged center-position vertex shape and captured retail point-raster profile does produce color on GTX 950 and Mali-G76 MC4. The remaining difference is at the live draw construction or presenter-target boundary; this does not identify the cause or establish game-level frame parity.",
+    "superseded_by": "latest_live_rectangle_submission"
   },
   "retail_vs_kinds_followup_run": {
     "date": "2026-10-23",
@@ -575,7 +627,9 @@
       "bytes": 3686400,
       "sha256": "62c155688f9b3f1217fd1573f24612584ab4df2175bb9281749e3372c886f1a1",
       "pixels": 921600,
-      "packed_word_histogram": {"0xC0000000": 921600},
+      "packed_word_histogram": {
+        "0xC0000000": 921600
+      },
       "non_black_pixels": 0
     },
     "interpretation": "The live app path submits the captured point packets but writes no pixels, while a standalone renderer regression using the same center-position shader shape and retail raster profile writes color on host and Mali. This isolates the unresolved issue to a live plugin draw/target input difference; it does not prove which difference is responsible or establish game-level frame parity."
@@ -614,9 +668,83 @@
     "limit": "This validates the standalone project renderer with synthetic shaders and does not exercise the ReXGlue presenter target or claim retail output."
   },
   "remaining_blockers": [
-    "All 100 observed DRAW_INDX_2 packets are AutoIndex (96 one-point draws and four three-index rectangle-list draws); no DMA-indexed draw packet was observed. The first live retail frame therefore covers the observed point-list path only.",
-    "AutoIndex rectangle-list expansion remains unsupported, and the retail full/mini-fetch shader's rectangle draws are still skipped. Xenos EDRAM accumulation and the guest frontbuffer resolve path are not implemented.",
-    "The readback-enabled current-source run captured the presenter output after two Vulkan submissions; all 921,600 pixels were opaque black (0xC0000000). Visible retail content is therefore still unverified, and no scene parity is established.",
+    "The live ring has 96 one-index AutoIndex point draws and four three-index AutoIndex rectangle-list draws; no DMA-indexed draw packet was observed, so DMA indexed-draw behavior remains unverified.",
+    "Two rectangle-list draws reached Vulkan, one per guest swap; two other rectangle variants were rejected because captured mode_control=0x00000006 and color_info=0 are outside the decoded raster contract. Xenos EDRAM accumulation and guest-frontbuffer resolution remain unimplemented.",
+    "The native captured-shader presenter readback was black in the tested early-startup state. The magenta override produces non-black pixels, but visible original retail content and scene parity are not established.",
     "The full Android game is not buildable yet: the Android NativeActivity target is only a Vulkan surface-lifecycle proof without game or ReXGlue integration, there is no game manifest/APK target, and the full plugin link is blocked by the Process 1-owned POSIX fiber backend."
-  ]
+  ],
+  "latest_live_rectangle_submission": {
+    "date": "2026-10-23",
+    "source_checkout_head": "38c6e890e6e7225a03f00dbc22ac59aca3b87e69",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin_sha256": "dbbacc40d993cac1a0b3519ab1ae7392b6fcb26457ebe5d8cb4faf3249dff05b",
+    "gpu_plugin_selection": "shift-native; rexgpu-xenos was not requested or mapped",
+    "host_vulkan_device": "NVIDIA GeForce GTX 950",
+    "surface": "Gamescope headless + Xwayland",
+    "guest_ring_address": "0x09752580",
+    "guest_ring_capacity_bytes": 32768,
+    "live_capture": {
+      "total_pm4_packets": 1828,
+      "guest_swaps": 2,
+      "draw_indx_2_packets": 100,
+      "forms": {
+        "autoindex_point_list_count_1": 96,
+        "autoindex_rectangle_list_count_3": 4,
+        "dma_indexed_draws_observed": 0
+      },
+      "vulkan_frames_submitted": 2,
+      "extent": "1280x720",
+      "submitted_per_frame": {
+        "autoindex_point_list": 24,
+        "autoindex_rectangle_list": 1
+      },
+      "rectangle_lists_rejected": 2,
+      "rejected_rectangle_state": {
+        "mode_control": "0x00000006",
+        "color_info": "0x00000000",
+        "reason": "unsupported captured target or raster state"
+      },
+      "readback_log": "/tmp/process2-live-nfs/headless-20261023/retail-rectlist-clean-20261023/logs/retail.log"
+    },
+    "fragment_override_readback": {
+      "mode": "SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR=magenta",
+      "raw_file": "/tmp/process2-live-nfs/headless-20261023/retail-rectlist-clean-20261023/readback.a2b10g10r10",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "extent": "1280x720",
+      "raw_bytes": 3686400,
+      "raw_sha256": "21d2868e9e0b91638d96e30dfe446a4748ef217efaa09e10ed179697e95e35e8",
+      "non_black_pixels": 518400,
+      "fnv1a64_from_plugin_log": "DA74DA070BC0D725",
+      "interpretation": "Live captured geometry rasterized into the Vulkan presenter. The fragment shader is synthetic magenta, so this is not retail pixel output.",
+      "decoded_png": "process2_xbox_live_vulkan_magenta_raster_diagnostic_20261023.png",
+      "decoded_png_sha256": "4a78c2e091bca86119b8cdd2f2ca7bb848681dbad46aa84755953b835e8cf82d"
+    },
+    "captured_pixel_shader_readback": {
+      "raw_file": "/tmp/process2-live-nfs/headless-20261023/retail-rectlist-native-shader-20261023/readback.a2b10g10r10",
+      "format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "extent": "1280x720",
+      "raw_bytes": 3686400,
+      "raw_sha256": "cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5",
+      "non_black_pixels": 0,
+      "fnv1a64_from_plugin_log": "B161DE6EEC272325",
+      "captured_pixel_shader_bytes": 36,
+      "interpretation": "The translated retail shader output is black for this early-startup capture. A later diagnostic recorded a zero location-1 vertex input; this is consistent with the capture but does not establish gameplay output."
+    },
+    "visible_retail_output_confirmed": false,
+    "full_scene_parity_verified": false,
+    "live_vulkan_validation_layer_enabled": false,
+    "result": "The project-owned Vulkan renderer accepted captured AutoIndex point-list and rectangle-list retail draws in two frames. One additional rectangle state variant per frame remains fail-closed. Magenta readback demonstrates live rasterization; the unmodified captured pixel shader readback remains black. This is live draw routing, not visible-output or parity evidence.",
+    "linux_verification_after_docs_and_diagnostic_cleanup": {
+      "plugin_rebuild": "rexgpu-shift-native target built successfully",
+      "ctest": {
+        "tests": [
+          "rexgpu_shift_native_factory_check",
+          "rexgpu_shift_native_live_ring_check",
+          "rexgpu_shift_native_live_ring_readback_check"
+        ],
+        "result": "3/3 passed sequentially with VK_LAYER_KHRONOS_validation enabled",
+        "scope": "synthetic ABI/ring/presenter regressions; not a live retail validation-layer run"
+      }
+    }
+  }
 }

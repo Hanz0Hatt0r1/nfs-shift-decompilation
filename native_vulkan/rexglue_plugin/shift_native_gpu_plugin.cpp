@@ -733,6 +733,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         std::array<bool, 2> type3_packet_sample_logged{};
         bool logged_draw_decode_failure = false;
         bool logged_autoindex_state = false;
+        uint32_t rectangle_raster_diagnostics = 0;
         if (expanded_ok) {
           for (const shift::xbox::ResolvedGuestPacket& resolved : expanded.packets) {
             const shift::xbox::PacketSpan& packet = resolved.packet;
@@ -1037,8 +1038,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                 ++decoded_draws;
                 shift::xbox::CapturedRasterRegisters raster_registers{};
                 shift::xbox::CapturedRasterState raster_state{};
-                const bool raster_state_ready =
-                    raster_register_state.snapshot(&raster_registers, &error) &&
+                const bool raster_registers_ready =
+                    raster_register_state.snapshot(&raster_registers, &error);
+                const bool raster_state_ready = raster_registers_ready &&
                     shift::xbox::decode_captured_raster_state(
                         raster_registers, &raster_state, &error);
                 if (raster_state_ready) {
@@ -1075,6 +1077,23 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                       static_cast<uint32_t>(draw.topology), draw.auto_index,
                       draw.index_count, shader_inputs_ready, shaders_translated,
                       error.empty() ? "unsupported shader or resource form" : error);
+                  if (draw.topology == shift::xbox::PrimitiveTopology::RectangleList &&
+                      rectangle_raster_diagnostics < 8) {
+                    ++rectangle_raster_diagnostics;
+                    REXLOG_DEBUG(
+                        "shift-native: rejected rectangle raster snapshot={} "
+                        "decoded={} error={} surface={:08x} color={:08x} "
+                        "depth={:08x} mode={:08x} mask={:08x} screen=[{:08x},{:08x}] "
+                        "window=[{:08x},{:08x}] blend={:08x}",
+                        raster_registers_ready, raster_state_ready, error,
+                        raster_registers.surface_info, raster_registers.color_info,
+                        raster_registers.depth_info, raster_registers.mode_control,
+                        raster_registers.color_mask, raster_registers.screen_scissor_tl,
+                        raster_registers.screen_scissor_br,
+                        raster_registers.window_scissor_tl,
+                        raster_registers.window_scissor_br,
+                        raster_registers.blend_control_0);
+                  }
                 }
               } else {
                 ++unsupported_draws;

@@ -61,14 +61,16 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   over-limit streams. The Linux ReXGlue plugin in
   `native_vulkan/rexglue_plugin` consumes the live ring and indirect buffers
   from `InitializeRingBuffer` / `CP_RB_WPTR` on an asynchronous worker. At each
-  supported DMA-source `DRAW_INDX`/`DRAW_INDX_2` or AutoIndex `DRAW_INDX_2`, it checks the captured
+  supported DMA-source `DRAW_INDX`/`DRAW_INDX_2` or AutoIndex `DRAW_INDX_2`,
+  it checks the captured
   raster state, shader programs (including bounded inline `IM_LOAD_IMMEDIATE`
   code), constants, and descriptors; translates the bounded shader pair to
   project-owned GLSL; compiles Vulkan 1.1 SPIR-V; and resolves normalized
   index/vertex payloads plus the untiled texture. AutoIndex point lists with
-  no vertex fetch are supported; rectangle lists remain fail-closed. At
-  `PM4_XE_SWAP`, the plugin
-  batches those draws and submits them into the ReXGlue presenter's output
+  no vertex fetch and the captured AutoIndex rectangle-list form are supported
+  when their raster state and Vulkan geometry-shader feature are available;
+  unsupported captured target states still fail closed. At `PM4_XE_SWAP`, the
+  plugin batches those draws and submits them into the ReXGlue presenter's output
   image through `shift_xbox_live_vulkan_renderer`. That renderer core has no
   XCB/Wayland dependency. The frame currently starts with a black clear and
   does not reconstruct prior Xenos EDRAM or import the guest frontbuffer as a
@@ -87,24 +89,20 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   Redmi Note 8 Pro / Android 13 / Mali-G76 MC4. Android validation layers were
   unavailable. A live Linux retail run also loaded the
   emulator-free plugin, initialized the guest ring, and consumed 1,828 PM4
-  packets including two swaps. A later debug run recorded 100 `DRAW_INDX_2`
-  packets, all AutoIndex (96 point draws and four rectangle-list draws), and
-  decoded the inline VS/PS programs. The updated plugin then translated and
-  resolved 24 captured point-list draws at each of two guest swaps and
-  submitted both 1280x720 frames to the Vulkan presenter. It also translated
-  the retail full/mini-fetch shader, while rectangle-list draws remain
-  unsupported. This confirms live retail Vulkan submission, not visible image
-  parity or complete scene rendering. A capture of the game window after both
-  submissions was black apart from the cursor, so no retail content was visible
-  ([captured window](../evidence/process2_xbox_live_retail_window_black_20261023.png)).
-  A later opt-in Vulkan image readback confirmed the presenter's complete
-  1280x720 output was opaque black (`0xC0000000` in all 921,600 packed pixels)
-  immediately after those live point-draw submissions. The decoded image and
-  raw-image hash are recorded in the evidence JSON; the readback does not prove
-  why the draws produced no color.
-  No DMA-indexed draw, pointer `IM_LOAD`, or
-  `LOAD_ALU_CONSTANT` was observed. See
+  packets including two swaps. A later live run recorded 100 `DRAW_INDX_2` packets, all AutoIndex (96 point
+  draws and four rectangle-list draws). The updated plugin submitted 24 point
+  draws and one rectangle draw at each of two 1280x720 guest swaps. It rejected
+  the other rectangle variant per swap because captured `mode_control=6` and
+  `color_info=0` are outside the decoded raster contract. The live readback
+  with the diagnostic magenta fragment override contained 518,400 non-black
+  pixels; the [decoded diagnostic image](../evidence/process2_xbox_live_vulkan_magenta_raster_diagnostic_20261023.png)
+  shows the captured geometry reaching the Vulkan target. With the captured
+  retail pixel shader restored, the readback contained no non-black pixels.
+  The game window remained black apart from the cursor, so this confirms live
+  Vulkan submission and rasterization only, not visible retail output or scene
+  parity. The full evidence and hashes are in
   [`process2_xbox_live_guest_ring_20261023.json`](../evidence/process2_xbox_live_guest_ring_20261023.json).
+  No DMA-indexed draw, pointer `IM_LOAD`, or `LOAD_ALU_CONSTANT` was observed.
   The private 19,784-byte capture scans as 247 packets with four bounded
   `DRAW_INDX` packets. The capture decoders reject unsupported forms. The untile
   path rejects other pitches, formats, dimensions, and layouts. Its address
@@ -162,9 +160,9 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
 The backend is not yet a complete production renderer. Full BMW
 shader/material execution and full RenderCommand submission remain bounded by
 shader/reference coverage and runtime evidence. The Xbox work currently covers
-one standalone captured draw, live AutoIndex point-list frames, and a small,
-fail-closed microcode subset. Retail rectangle-list draws and Xenos EDRAM
-accumulation remain unsupported.
+one standalone captured draw, live AutoIndex point and rectangle-list draws,
+and a small, fail-closed microcode subset. One captured rectangle target state
+remains unsupported, and Xenos EDRAM accumulation remains unimplemented.
 
 ## Commands
 

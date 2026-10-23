@@ -90,82 +90,44 @@ and raster operations; they do not establish live game output or scene parity.
 
 On 2026-10-23, a headless retail Linux run with `--gpu_plugin=shift-native`
 mapped this plugin without mapping `rexgpu-xenos`, initialized the guest ring
-at `0x09752580`, and consumed 1,828 PM4 packets with two `XE_SWAP` packets.
-The retail stream contained 100 AutoIndex draws (96 points and four rectangle
-lists), with no DMA-indexed draw observed. A later run with the updated plugin
-translated and resolved 24 point-list draws at each of two swaps, then
-submitted both 1280x720 frames to the Vulkan presenter. The same ring contained
-the 108-byte full/mini-fetch VS; the plugin translated it, but that run did not
-submit its rectangle-list draws. This is the first confirmed live retail
-Vulkan submission. A capture of the Gamescope Xwayland game window after the
-two submissions was black apart from the cursor, so no retail content was
-visible ([captured window](../../evidence/process2_xbox_live_retail_window_black_20261023.png)).
-
-A subsequent headless run with geometry-shader support enabled initialized the
-Vulkan provider and mapped `shift-native`, but the game process exited during
-guest startup before the PM4 ring reached the plugin. It produced no frame
-readback. The rectangle-list path is therefore verified by the synthetic PM4
-fixture and offscreen renderer checks only; current retail rectangle submission
-and visible game output remain unverified.
-Scene parity, EDRAM accumulation, and Vulkan validation-layer behavior
-for the retail frame remain unverified.
-See
+at `0x09752580`, and consumed 1,828 PM4 packets containing two `XE_SWAP`s. The
+ring contained 100 `DRAW_INDX_2` packets: 96 AutoIndex point-list draws and
+four three-index AutoIndex rectangle-list draws. No DMA-indexed packet was
+observed. The updated plugin submitted two 1280x720 Vulkan frames, each with
+24 point-list draws and one rectangle-list draw. Two additional rectangle
+draws were rejected, one per swap: their captured target state has
+`mode_control=0x00000006` and `color_info=0`, which the supported raster
+contract does not accept. This is fail-closed behavior, not a guessed state
+mapping. See
 [`process2_xbox_live_guest_ring_20261023.json`](../../evidence/process2_xbox_live_guest_ring_20261023.json).
 
-A repeat run with the current checkout and rebuilt plugin (`ad6f329c…`) on
-2026-10-23 confirmed the current source path after adding the captured
-no-loop scalar-destination-relative case. It translated 25 retail draws in
-each of two swap batches, resolved 24 draw resource sets per batch, submitted
-24 AutoIndex point draws per frame, and dispatched one guest interrupt callback
-per batch. The run used Gamescope headless + Xwayland on the NVIDIA GeForce GTX
-950; its live log is `/tmp/process2-live-nfs/headless-20261023/retail-current-source/logs/retail.log`.
-This confirms routing through the current plugin and Vulkan presenter; that
-earlier headless rerun did not capture the presented image,
-and the earlier window capture remained black. The process was stopped after
-the two swap submissions; the four rectangle-list draws and scene parity remain
-unverified.
+The optional `SHIFT_NATIVE_VULKAN_READBACK_PATH` captures the first successful
+presenter image as `VK_FORMAT_A2B10G10R10_UNORM_PACK32`. With the opt-in
+`SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR=magenta` override, the live retail
+draws produced 518,400 non-black pixels in the 1280x720 readback (FNV-1a
+`DA74DA070BC0D725`, raw SHA-256
+`21d2868e9e0b91638d96e30dfe446a4748ef217efaa09e10ed179697e95e35e8`). This
+confirms the captured live geometry reached rasterization and the Vulkan
+presenter; the replacement pixel shader makes this diagnostic output
+synthetic. The [decoded readback](../../evidence/process2_xbox_live_vulkan_magenta_raster_diagnostic_20261023.png)
+shows the magenta rasterized region over the black clear. With the captured
+retail pixel shader restored, the readback had
+zero non-black pixels (FNV-1a `B161DE6EEC272325`, raw SHA-256
+`cd6226f8bf299d3ab51cfc10af0b585167106d7caa356e8604bfe48ad9a49de5`). A
+shader/input diagnostic recorded a 36-byte pixel shader that forwards its
+interpolator and a sample vertex whose location-1 value was `(0, 0, 0, 0)`.
+That is consistent with the black early-startup image, but does not prove later
+gameplay output or explain every skipped draw. The current retail window also
+remained black apart from the host cursor. These runs confirm live Vulkan draw
+submission and rectangle expansion; they do not demonstrate visible retail
+content, Android game integration, or scene parity. Xenos EDRAM accumulation,
+frontbuffer resolution, other raster/resource states, and Vulkan validation
+for a live retail frame remain unverified.
 
-The renderer now accepts an optional packed-pixel readback vector. The plugin
-leaves it disabled by default; setting
-`SHIFT_NATIVE_VULKAN_READBACK_PATH=/path/to/output.a2b10g10r10` writes the first
-successful presenter image only. The copy uses the ReXGlue guest-image
-transfer-source contract and restores `VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL`
-before returning to the presenter. With this enabled, a 2026-10-23 retail run
-submitted 24 point draws at each of two swaps and captured the first 1280x720
-output image. All 921,600 packed pixels were `0xC0000000` (RGB black, opaque),
-with zero non-black pixels; the raw image SHA-256 is
-`62c155688f9b3f1217fd1573f24612584ab4df2175bb9281749e3372c886f1a1`. The
-[decoded Vulkan image](../../evidence/process2_xbox_live_vulkan_output_readback_black_20261023.png)
-and exact binary hashes are recorded in the evidence JSON. This proves the
-presenter image itself is black after the current draw submission; it does not
-identify whether the remaining cause is vertex positioning, shader output, or
-missing EDRAM/frontbuffer behavior.
-
-For that diagnosis, setting
-`SHIFT_NATIVE_VULKAN_DEBUG_FRAGMENT_COLOR=magenta` replaces the translated
-pixel shader with a constant magenta output while preserving the captured
-vertex shader, input buffers, raster state, and draw submission. Use it with
-the readback path above: a colored result points to pixel-shader/resource
-translation; a black result points to the vertex/geometry, raster-state, or
-target-output path. The plugin smoke asserts that this opt-in mode was
-activated and that its synthetic fixture produces colored pixels. The mode
-and fixture are diagnostic evidence only, not retail image evidence.
-
-On 2026-10-23, the current-source retail run repeated the two-swap capture with
-this magenta override active. It submitted 24 captured point draws per frame,
-but the 1280x720 readback still contained only `0xC0000000` (921,600 black
-pixels; SHA-256 `62c155688f9b3f1217fd1573f24612584ab4df2175bb9281749e3372c886f1a1`).
-The logged 96-byte no-input vertex shader writes the clip-space center with
-point size 1. A standalone renderer check with that shader shape and the
-captured raster profile produces color on both GTX 950 and Mali-G76 MC4, so
-those core settings alone do not explain the black live image. The remaining
-difference is in live draw construction or target integration; its cause is
-still unverified. The first 73-packet batch was also skipped because register
-`0x2307` was absent; following swap batches supplied enough state to submit 24
-point draws. No retail parity is established.
-
-An earlier Gamescope headless retry used info-level logging and recorded no
-draw submission; the later debug run above supersedes that result.
+The first 73-packet startup batch contains 24 point draws before the captured
+vertex-shader control register is available, so those draws are skipped. Later
+ring batches provide the required state and submit the supported draws. This
+ordering is preserved in the logs rather than hidden by synthesized defaults.
 
 The earlier one-draw capture bundle remains separate evidence for the project
 renderer, not proof of a complete scene.
