@@ -1,0 +1,58 @@
+{
+  "format": "SHIFT.Process2XboxShaderAluOperandEvidence/1",
+  "inputs": {
+    "vertex_shader_sha256": "d448760823568068b6f70d903fde9a1faca73c6cfaca7cab59fe73713f1712bc",
+    "pixel_shader_sha256": "5fda214bf53b3f88909fa90c014b9c42de0a3278138df24049af918344489f28",
+    "stored_in_repository": false
+  },
+  "decoder": {
+    "implementation": "native_vulkan/src/xbox_draw_input.cpp::decode_captured_shader_alu_instruction",
+    "format_reference": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/ucode.h",
+    "scope": [
+      "temporary register number, relative-address and absolute-value bits",
+      "co-issued scalar temporary register and component selectors",
+      "component-relative vector swizzles"
+    ],
+    "semantic_reference_use": "format cross-check only; no Xenia runtime or code is linked"
+  },
+  "captured_examples": {
+    "vertex_mul_address_10": {
+      "vector_opcode": 1,
+      "source_0": "c[3+a0].zwxy",
+      "source_1": "c64.wwww",
+      "decoded_relative_constant_address": true,
+      "decoded_a0_relative_mode": true
+    },
+    "vertex_mulsc0_address_8": {
+      "scalar_opcode": 42,
+      "constant": "c254.w",
+      "temporary": "r0.x",
+      "decoded_scalar_temp_register": 0,
+      "decoded_scalar_temp_component": 0,
+      "decoded_scalar_constant_component": 3
+    },
+    "vertex_dp2add_address_32": {
+      "vector_opcode": 17,
+      "source_0_relative_swizzle": "zyyy",
+      "source_1_relative_swizzle": "yxxx",
+      "source_2_relative_swizzle": "wwww"
+    },
+    "pixel_output_address_8": {
+      "vector_opcode": 1,
+      "source_0": "r0",
+      "source_1": "c0"
+    }
+  },
+  "checks": {
+    "host_cmake_build": "passed",
+    "host_ctest": "passed: component-relative swizzles and source addressing fields",
+    "private_capture_harness": "passed: decoded selected instructions from both private captured shaders and checked their operands against the diagnostic disassembly",
+    "android_arm64_device": "passed on Redmi Note 8 Pro (API 33); binary built for arm64-v8a with Android API 29 minimum"
+  },
+  "limits": [
+    "ALU opcode arithmetic is not translated or executed.",
+    "Control-flow branches remain unevaluated by the shader scheduler.",
+    "No project-owned SPIR-V is emitted and no captured draw is submitted.",
+    "The diagnostic disassembly is a field cross-check only, not a product dependency."
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "format": "SHIFT.Process2XboxPM4StreamEvidence/1",
+  "capture": {
+    "resource": "ring.bin",
+    "byte_length": 19784,
+    "sha256": "8797c590bda56ab0cd76837832c1eea6519a161a60c54f6a0f2f32396cba7379",
+    "storage": "private diagnostic capture under /tmp/process2-xbox-resource-capture; raw stream is not committed"
+  },
+  "implementation": {
+    "scanner": "native_vulkan/src/xbox_draw_input.cpp:scan_captured_packet_stream",
+    "contract": "big-endian dword framing for PM4 types 0, 1, 2, and 3 plus zero-dword NOP; reports packet spans and type-3 opcode only",
+    "framing_crosscheck": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/command_processor.cc",
+    "xenos_register_interpretation": false,
+    "xenos_rendering_emulation": false,
+    "vulkan_submission": false
+  },
+  "scan": {
+    "complete_stream_consumed": true,
+    "final_byte_offset": "0x4d48",
+    "packet_count": 247,
+    "packet_type_counts": {
+      "type0": 162,
+      "type1": 0,
+      "type2": 21,
+      "type3": 64
+    },
+    "draw_indx_count": 4,
+    "draw_indx_packets": [
+      {"offset": "0x2c64", "index_count": 6, "index_guest_address": "0x0975d7b0", "bounded_decoder": "passed"},
+      {"offset": "0x3614", "index_count": 6, "index_guest_address": "0x0975d7b0", "bounded_decoder": "passed"},
+      {"offset": "0x3fec", "index_count": 6, "index_guest_address": "0x0975d7b0", "bounded_decoder": "passed"},
+      {"offset": "0x49ec", "index_count": 60, "index_guest_address": "0x09d55170", "bounded_decoder": "passed"}
+    ]
+  },
+  "regression": {
+    "unit_test": "shift_xbox_draw_input_check passed",
+    "cases": [
+      "type-0, type-1, type-2, type-3, and zero-dword NOP framing",
+      "captured type-3 DRAW_INDX span handed to the bounded draw decoder",
+      "unaligned stream rejection",
+      "truncated type-3 payload rejection without partial output mutation"
+    ],
+    "private_capture_check": "host C++ scanner consumed all 19,784 bytes and decoded four DRAW_INDX spans at the listed offsets"
+  },
+  "limitations": [
+    "This is contiguous packet framing, not a live Xbox ring consumer; guest head/tail, wraparound, synchronization, and read-pointer writeback are not implemented.",
+    "Register and shader state tracking are not implemented by this scanner.",
+    "No project-owned Xenos microcode translation, Vulkan resource binding, EDRAM mapping, draw submission, phone rendering, or retail parity is claimed.",
+    "The raw capture remains outside the repository; the committed regression tests use a compact constructed framing stream."
+  ]
+}

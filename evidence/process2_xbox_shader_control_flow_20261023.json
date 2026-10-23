@@ -1,0 +1,63 @@
+{
+  "format": "SHIFT.Process2XboxShaderControlFlowEvidence/1",
+  "source": {
+    "kind": "private raw XEX-originated shader captures",
+    "stored_in_repository": false,
+    "decoder_reference": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/ucode.h",
+    "reference_scope": "format cross-check only; no Xenia source or runtime is used by the product path"
+  },
+  "decoder": {
+    "implementation": "native_vulkan/src/xbox_draw_input.cpp::decode_captured_shader_control_flow",
+    "format": "two 64-bit control-flow records packed in each 96-bit big-endian triplet",
+    "prefix_bound": "first exec-family instruction address, matching the documented heuristic",
+    "execution_or_translation": false
+  },
+  "vertex_shader": {
+    "capture": "vs-0034.bin",
+    "bytes": 420,
+    "dwords": 105,
+    "sha256": "d448760823568068b6f70d903fde9a1faca73c6cfaca7cab59fe73713f1712bc",
+    "control_flow_triplets": 5,
+    "slots": [
+      {"index": 0, "opcode": "exec", "address": 5, "count": 1, "sequence": 1},
+      {"index": 1, "opcode": "alloc", "size": 0, "type": 1},
+      {"index": 2, "opcode": "exec", "address": 6, "count": 6, "sequence": 0},
+      {"index": 3, "opcode": "exec", "address": 12, "count": 6, "sequence": 0},
+      {"index": 4, "opcode": "exec", "address": 18, "count": 6, "sequence": 0},
+      {"index": 5, "opcode": "exec", "address": 24, "count": 6, "sequence": 0},
+      {"index": 6, "opcode": "exec", "address": 30, "count": 1, "sequence": 0},
+      {"index": 7, "opcode": "alloc", "size": 0, "type": 2},
+      {"index": 8, "opcode": "exece", "address": 31, "count": 3, "sequence": 0},
+      {"index": 9, "opcode": "nop"}
+    ]
+  },
+  "pixel_shader": {
+    "capture": "ps-0033.bin",
+    "bytes": 120,
+    "dwords": 30,
+    "sha256": "5fda214bf53b3f88909fa90c014b9c42de0a3278138df24049af918344489f28",
+    "control_flow_triplets": 4,
+    "slots": [
+      {"index": 0, "opcode": "cjmp", "address": 5, "bool_constant": 128, "condition": false, "unconditional": false, "predicated": false, "direction": false},
+      {"index": 1, "opcode": "exec", "address": 4, "count": 2, "sequence": 9},
+      {"index": 2, "opcode": "cjmp", "address": 4, "bool_constant": 129, "condition": false, "unconditional": false, "predicated": false, "direction": false},
+      {"index": 3, "opcode": "exec", "address": 6, "count": 1, "sequence": 0},
+      {"index": 4, "opcode": "cjmp", "address": 6, "bool_constant": 0, "condition": false, "unconditional": true, "predicated": false, "direction": false},
+      {"index": 5, "opcode": "exec", "address": 7, "count": 1, "sequence": 0},
+      {"index": 6, "opcode": "alloc", "size": 0, "type": 2},
+      {"index": 7, "opcode": "exece", "address": 8, "count": 1, "sequence": 0}
+    ]
+  },
+  "checks": {
+    "host_ctest": "passed: shift_xbox_draw_input_check",
+    "private_capture_harness": "passed: both shader captures decoded; opcodes and records match the retained diagnostic disassembly",
+    "android_arm64": "passed on Redmi Note 8 Pro (API 33); binary built for arm64-v8a with Android API 29 minimum",
+    "vulkan_shader_validation": "not applicable; no project shader module was emitted"
+  },
+  "limits": [
+    "Only control-flow records are decoded; ALU and fetch instruction bodies are untouched.",
+    "No SPIR-V is emitted, no GPU work is executed, and no Vulkan draw is submitted.",
+    "The external Xenos plugin's disassembly is diagnostic evidence only; no emulated rendering is in the product path.",
+    "No retail image or phone rendering parity is claimed."
+  ]
+}

@@ -55,7 +55,7 @@ def test_native_vulkan_bundle_executor_contract():
     assert "render_target.clear_stencil" in source
     assert "CaptureGeometryMetadata" in source
     assert "app.apiVersion = VK_API_VERSION_1_1" in source
-    assert "viewport.height = static_cast<float>(render_target.d3d9_y_down" in source
+    assert "viewport.height = static_cast<float>(render_target.viewport_y_flipped" in source
     assert "legacy.location == 0u ? 200u : 0u" in source
     assert "attribute.property_id != 200u" in source
 

@@ -1,0 +1,71 @@
+{
+  "format": "SHIFT.Process2XboxShaderConstantEvidence/1",
+  "capture": {
+    "register_file": "register-file.bin",
+    "sha256": "a0718a1b2044da9698c3f715c4ff319ae7a8d785fb8809c46f090beff9a19225",
+    "float_bank_register_base": "0x4000",
+    "bool_bank_register_base": "0x4900",
+    "constant_bank_mapping_reference": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/command_processor.cc",
+    "conditional_jump_field_reference": "https://github.com/xenia-project/xenia/blob/master/src/xenia/gpu/ucode.h",
+    "SQ_VS_CONST": "0x000ff000",
+    "SQ_PS_CONST": "0x000ff100",
+    "float_constants_raw_dwords": {
+      "vs_c0": ["0x43b14000", "0x00000000", "0x00000000", "0x44200000"],
+      "vs_c1": ["0x00000000", "0x42b00000", "0x00000000", "0x43b3c000"],
+      "vs_c2": ["0x00000000", "0x00000000", "0x3f800000", "0x00000000"],
+      "vs_c3": ["0x00000000", "0x00000000", "0x00000000", "0x3f800000"],
+      "vs_c64": ["0x3f47ffff", "0x00000000", "0x00000000", "0xc3f9ffff"],
+      "vs_c65": ["0x00000000", "0x3fb1c71c", "0x00000000", "0xc3f9ffff"],
+      "vs_c66": ["0x00000000", "0x00000000", "0x3f8020c5", "0xbf8020c5"],
+      "vs_c67": ["0x00000000", "0x00000000", "0x3f800000", "0x00000000"],
+      "vs_c68": ["0x3eb14000", "0x00000000", "0x00000000", "0x3eb14000"],
+      "vs_c69": ["0x00000000", "0x3eb00000", "0x00000000", "0x3eb00000"],
+      "vs_c254": ["0x00000000", "0x3f800000", "0xbf800000", "0x40800000"],
+      "vs_c255": ["0x43fa0000", "0x00000000", "0x00000000", "0x00000000"],
+      "ps_c0_physical_c256": ["0x3f800000", "0x3f800000", "0x3f800000", "0x3f800000"],
+      "ps_c255_physical_c511": ["0x3f800000", "0x00000000", "0x00000000", "0x00000000"]
+    },
+    "bool_constants_raw_dwords": [
+      "0x00000000",
+      "0x00000000",
+      "0x00000000",
+      "0x00000000",
+      "0x00000001",
+      "0x00000000",
+      "0x00000000",
+      "0x00000000"
+    ]
+  },
+  "decoded": {
+    "implementation": "native_vulkan/src/xbox_draw_input.cpp:decode_captured_shader_constants",
+    "vertex_constant_base": 0,
+    "pixel_constant_base": 256,
+    "output": "complete stage-relative 256-float4 VS and PS windows plus captured PS b128/b129",
+    "vertex_a0_indexed_window": "c0-c3; first vfetch_full maps input z into r0.x, captured geometry has z=0, so this draw selects a0=0",
+    "pixel_b128": true,
+    "pixel_b129": false,
+    "captured_pixel_shader_branch_path": [
+      "cjmp !b128 is not taken; execute tfetch2D",
+      "cjmp !b129 is taken; select label L4 path"
+    ],
+    "spirv_emitted": false,
+    "xenos_emulation": false
+  },
+  "regression": {
+    "fixture": "raw float/bool constant words and SQ_VS_CONST/SQ_PS_CONST from captured register snapshot",
+    "checks": [
+      "complete VS/PS stage-relative constant windows, including vertex c0-c3 (a0-indexed), c64-c69, c254, and c255",
+      "pixel constant base 256 maps c0 to physical bank c256 and c255 to c511",
+      "packed bool bit addressing resolves b128=true and b129=false",
+      "truncated bank and undersized constant range rejection"
+    ],
+    "full_native_vulkan_cmake_build": "passed",
+    "host_build": "passed",
+    "host_ctest": "passed (1/1)",
+    "android_arm64_device": "passed on Redmi Note 8 Pro; temporary executable removed"
+  },
+  "limitations": [
+    "This resolves input values for the exact captured shader pair; it does not translate shader microcode or emit SPIR-V.",
+    "The register map and control-field semantics were cross-checked against public Xenia documentation only; no Xenia code or runtime is linked into the project."
+  ]
+}

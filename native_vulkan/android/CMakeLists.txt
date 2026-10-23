@@ -13,6 +13,46 @@ find_library(SHIFT_ANDROID_LIB android REQUIRED)
 find_library(SHIFT_LOG_LIB log REQUIRED)
 find_library(SHIFT_VULKAN_LIB vulkan REQUIRED)
 
+add_library(shift_xbox_draw_input STATIC ../src/xbox_draw_input.cpp)
+add_library(shift_xbox_shader_translate STATIC ../src/xbox_shader_translate.cpp)
+target_include_directories(shift_xbox_draw_input PUBLIC ../include)
+target_include_directories(shift_xbox_shader_translate PUBLIC ../include)
+target_link_libraries(shift_xbox_shader_translate PUBLIC shift_xbox_draw_input)
+
+add_executable(
+  shift_xbox_shader_translate_check
+  ../tests/xbox_shader_translate_check.cpp
+)
+target_link_libraries(
+  shift_xbox_shader_translate_check
+  PRIVATE
+  shift_xbox_shader_translate
+)
+
+# Offscreen command-line runner used to exercise the same captured Vulkan
+# bundle on Android GPUs without coupling the renderer to a window system.
+add_executable(
+  shift_vulkan_bundle_execute
+  ../src/vulkan_bundle_execute.cpp
+)
+target_include_directories(
+  shift_vulkan_bundle_execute
+  PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/../include
+)
+target_compile_options(
+  shift_vulkan_bundle_execute
+  PRIVATE
+  -Wall
+  -Wextra
+  -Wpedantic
+)
+target_link_libraries(
+  shift_vulkan_bundle_execute
+  PRIVATE
+  ${SHIFT_VULKAN_LIB}
+)
+
 add_library(
   shift_vulkan_android_native_activity
   SHARED
@@ -44,6 +84,7 @@ target_compile_options(
 target_link_libraries(
   shift_vulkan_android_native_activity
   PRIVATE
+  shift_xbox_shader_translate
   ${SHIFT_ANDROID_LIB}
   ${SHIFT_LOG_LIB}
   ${SHIFT_VULKAN_LIB}
