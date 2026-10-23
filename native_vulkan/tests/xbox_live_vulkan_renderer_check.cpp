@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
     const char* extension_name = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
     VkApplicationInfo app{};
     app.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    app.pApplicationName = "SHIFT captured live Vulkan draw smoke";
+    app.pApplicationName = "SHIFT synthetic Vulkan point-draw smoke";
     app.apiVersion = VK_API_VERSION_1_1;
     VkInstanceCreateInfo instance_info{};
     instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -243,24 +243,25 @@ int main(int argc, char** argv) {
         std::cerr << "could not read valid Vulkan 1.1 SPIR-V smoke shaders\n";
         return 1;
     }
-    const float vertices[] = {-1.0f, -1.0f, 0.0f, 3.0f, -1.0f, 0.0f,
-                              -1.0f, 3.0f, 0.0f};
-    const uint16_t indices[] = {0, 1, 2};
-    draw.vertices.resize(sizeof(vertices));
-    draw.indices.resize(sizeof(indices));
-    std::memcpy(draw.vertices.data(), vertices, sizeof(vertices));
-    std::memcpy(draw.indices.data(), indices, sizeof(indices));
     draw.texture_rgba8 = {255, 0, 0, 255};
+    draw.vertex_stride_bytes = 0;
     draw.index_count = 3;
+    draw.auto_index = true;
+    draw.topology = shift::xbox::PrimitiveTopology::PointList;
     draw.texture_width = 1;
     draw.texture_height = 1;
-    draw.raster.width = 64;
-    draw.raster.height = 64;
+    draw.raster.width = 32;
+    draw.raster.height = 32;
+    draw.raster.sample_count = 4;
     draw.raster.color_write_mask = 0xFu;
+    draw.raster.depth_test_enabled = true;
+    draw.raster.depth_write_enabled = true;
+    draw.raster.stencil_test_enabled = true;
+    draw.raster.depth_control = (7u << 4) | (7u << 8);
     draw.raster.scissor_x0 = 0;
     draw.raster.scissor_y0 = 0;
-    draw.raster.scissor_x1 = 64;
-    draw.raster.scissor_y1 = 64;
+    draw.raster.scissor_x1 = 32;
+    draw.raster.scissor_y1 = 32;
     draw.raster.scissor_has_area = true;
     draw.raster.blend_control_0 = 0x07010706u;
     draw.texture_sampling.swizzle = {shift::xbox::TextureComponent::X,
@@ -393,7 +394,7 @@ int main(int argc, char** argv) {
         std::cerr << validation_errors << " Vulkan validation errors\n";
         return 1;
     }
-    std::cout << "offscreen Vulkan 1.1 indexed draw passed on "
+    std::cout << "synthetic offscreen Vulkan 1.1 AutoIndex point draw passed on "
               << device_properties.deviceName
               << (use_validation ? " with validation enabled\n" : "\n");
     return 0;

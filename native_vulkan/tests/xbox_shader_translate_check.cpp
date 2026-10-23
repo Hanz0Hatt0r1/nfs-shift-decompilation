@@ -127,10 +127,26 @@ int main() {
                 std::vector<uint32_t>{4, 5, 8},
             "captured pixel branch selected the wrong instruction addresses");
     require(translated.glsl.find("shift_sampler_0") != std::string::npos &&
+                translated.glsl.find("layout(set=1,binding=0)") != std::string::npos &&
                 translated.glsl.find("sampled_0.z, sampled_0.y, sampled_0.x, sampled_0.w") !=
                     std::string::npos &&
                 translated.glsl.find("shift_color0") != std::string::npos,
             "captured sampler swizzle or color export was lost");
+
+    std::vector<uint8_t> export_constants = shader;
+    const uint32_t export_masks = (12u << 26) | (1u << 14) | (1u << 15) |
+                                  (5u << 16) | (6u << 20);
+    write_be32(export_constants.data() + 8 * 12, export_masks);
+    require(shift::xbox::translate_captured_shader_glsl(
+                shift::xbox::CapturedShaderStage::Pixel,
+                export_constants.data(), export_constants.size(), options,
+                &translated, &error),
+            "captured relative scalar export masks did not translate");
+    require(translated.glsl.find("shift_color0.x = alu_8.x") != std::string::npos &&
+                translated.glsl.find("shift_color0.y = trunc(") != std::string::npos &&
+                translated.glsl.find("shift_color0.z = 1.0") != std::string::npos &&
+                translated.glsl.find("shift_color0.w = 0.0") != std::string::npos,
+            "captured export overlap/constant masks were not preserved");
 
     options.pixel_b129 = true;
     require(!shift::xbox::translate_captured_shader_glsl(

@@ -37,6 +37,8 @@ struct CapturedShaderTranslation {
     uint32_t vertex_fetch_constant_index = 0;
     bool uses_texture = false;
     uint32_t texture_fetch_constant_index = 0;
+    std::vector<uint32_t> float_constant_registers;
+    bool uses_relative_float_constant_index = false;
 };
 
 // Emits project-owned Vulkan GLSL for the captured shader subset. It is a

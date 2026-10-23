@@ -142,6 +142,7 @@ std::vector<uint8_t> make_pm4_stream() {
   append_type0(&stream, 0x2307u, 0x000FF000u);
   append_type0(&stream, 0x2308u, 0x000FF100u);
   append_type0(&stream, 0x4904u, 0x00000001u);
+  append_type0(&stream, 0x4000u, {0u, 0u, 0u, 0u});
   append_type0(&stream, 0x4800u,
                {0x8800D8FEu, 0x09D57086u, 0x001FE3FFu, 0x01280C14u, 0x00000003u,
                 0x00000A10u});

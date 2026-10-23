@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shift_xbox_draw_input.hpp"
+#include "shift_xbox_shader_translate.hpp"
 
 #include <vulkan/vulkan.h>
 
@@ -19,6 +20,10 @@ struct CapturedVulkanDraw {
     std::vector<uint8_t> vertices;
     std::vector<uint8_t> indices;
     std::vector<uint8_t> texture_rgba8;
+    std::vector<CapturedVertexInputAttribute> vertex_input_attributes;
+    uint32_t vertex_stride_bytes = 12;
+    PrimitiveTopology topology = PrimitiveTopology::TriangleList;
+    bool auto_index = false;
     uint32_t index_count = 0;
     uint32_t texture_width = 0;
     uint32_t texture_height = 0;

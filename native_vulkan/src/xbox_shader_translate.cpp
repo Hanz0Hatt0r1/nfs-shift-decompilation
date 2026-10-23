@@ -212,18 +212,33 @@ bool emit_alu(std::ostringstream& glsl,
               const CapturedShaderAluInstruction& instruction,
               uint32_t allocation_type,
               std::string* error) {
-    if (instruction.vector_destination_relative || instruction.scalar_destination_relative ||
-        instruction.absolute_constants || instruction.predicated) {
-        return fail("captured ALU uses an unsupported relative, absolute, or predicated form", error);
+    const auto fail_at_slot = [address, error](const char* reason) {
+        if (error) {
+            *error = std::string(reason) + " at instruction " +
+                     std::to_string(address);
+        }
+        return false;
+    };
+    if (instruction.vector_destination_relative) {
+        return fail_at_slot("captured ALU uses a relative vector destination");
+    }
+    if (instruction.scalar_destination_relative && !instruction.export_data) {
+        return fail_at_slot("captured ALU uses a relative scalar destination");
+    }
+    if (instruction.absolute_constants) {
+        return fail_at_slot("captured ALU uses absolute constants");
+    }
+    if (instruction.predicated) {
+        return fail_at_slot("captured ALU is predicated");
     }
     for (uint32_t source = 0; source < 3; ++source) {
         if (instruction.source_temporary_relative[source]) {
-            return fail("captured ALU uses relative temporary addressing", error);
+            return fail_at_slot("captured ALU uses relative temporary addressing");
         }
         if (!instruction.source_is_temporary[source] &&
             constant_relative(instruction, source) &&
             !instruction.const_address_register_relative) {
-            return fail("captured ALU constant-relative source has no a0 selector", error);
+            return fail_at_slot("captured ALU constant-relative source has no a0 selector");
         }
     }
 
@@ -231,7 +246,33 @@ bool emit_alu(std::ostringstream& glsl,
     const std::string b = swizzled_vector(instruction, 1, stage);
     const std::string c = swizzled_vector(instruction, 2, stage);
     const std::string result = "alu_" + std::to_string(address);
-    if (instruction.vector_write_mask != 0) {
+    const uint32_t vector_result_mask = instruction.export_data ?
+        instruction.vector_write_mask & ~instruction.scalar_write_mask :
+        instruction.vector_write_mask;
+    const uint32_t scalar_result_mask = instruction.export_data ?
+        instruction.scalar_write_mask & ~instruction.vector_write_mask :
+        instruction.scalar_write_mask;
+    const uint32_t constant_one_mask = instruction.export_data ?
+        instruction.vector_write_mask & instruction.scalar_write_mask : 0;
+    const uint32_t constant_zero_mask =
+        instruction.export_data && instruction.scalar_destination_relative ?
+        0xFu & ~(instruction.vector_write_mask | instruction.scalar_write_mask) : 0;
+
+    std::string export_target;
+    if (instruction.export_data) {
+        if (stage == CapturedShaderStage::Pixel) {
+            if (allocation_type != 2) return fail("pixel export precedes color allocation", error);
+            export_target = "shift_color0";
+        } else if (allocation_type == 1) {
+            export_target = "gl_Position";
+        } else if (allocation_type == 2) {
+            export_target = "shift_interpolator0";
+        } else {
+            return fail("vertex export has no supported output allocation", error);
+        }
+    }
+
+    if (vector_result_mask != 0) {
         std::string operation;
         switch (instruction.vector_opcode) {
             case 1: operation = "(" + a + " * " + b + ")"; break;
@@ -250,19 +291,9 @@ bool emit_alu(std::ostringstream& glsl,
             glsl << "  " << result << " = clamp(" << result
                  << ", vec4(0.0), vec4(1.0));\n";
         }
-        const bool output = instruction.export_data;
         std::string target;
-        if (output) {
-            if (stage == CapturedShaderStage::Pixel) {
-                if (allocation_type != 2) return fail("pixel export precedes color allocation", error);
-                target = "shift_color0";
-            } else if (allocation_type == 1) {
-                target = "gl_Position";
-            } else if (allocation_type == 2) {
-                target = "shift_interpolator0";
-            } else {
-                return fail("vertex export has no supported output allocation", error);
-            }
+        if (instruction.export_data) {
+            target = export_target;
         } else {
             if (instruction.vector_destination >= 64) {
                 return fail("captured vector destination is outside temporary register file", error);
@@ -270,14 +301,14 @@ bool emit_alu(std::ostringstream& glsl,
             target = "r[" + std::to_string(instruction.vector_destination) + "]";
         }
         for (uint32_t lane = 0; lane < 4; ++lane) {
-            if (instruction.vector_write_mask & (1u << lane)) {
+            if (vector_result_mask & (1u << lane)) {
                 glsl << "  " << target << "." << component_name(lane) << " = "
                      << result << "." << component_name(lane) << ";\n";
             }
         }
     }
 
-    if (instruction.scalar_write_mask != 0) {
+    if (scalar_result_mask != 0) {
         std::string scalar;
         switch (instruction.scalar_opcode) {
             case 12:
@@ -298,16 +329,7 @@ bool emit_alu(std::ostringstream& glsl,
         if (instruction.scalar_clamp) scalar = "clamp(" + scalar + ", 0.0, 1.0)";
         std::string target;
         if (instruction.export_data) {
-            if (stage == CapturedShaderStage::Pixel) {
-                if (allocation_type != 2) return fail("pixel scalar export precedes color allocation", error);
-                target = "shift_color0";
-            } else if (allocation_type == 1) {
-                target = "gl_Position";
-            } else if (allocation_type == 2) {
-                target = "shift_interpolator0";
-            } else {
-                return fail("vertex scalar export has no supported output allocation", error);
-            }
+            target = export_target;
         } else {
             if (instruction.scalar_destination >= 64) {
                 return fail("captured scalar destination is outside temporary register file", error);
@@ -315,7 +337,7 @@ bool emit_alu(std::ostringstream& glsl,
             target = "r[" + std::to_string(instruction.scalar_destination) + "]";
         }
         for (uint32_t lane = 0; lane < 4; ++lane) {
-            if (instruction.scalar_write_mask & (1u << lane)) {
+            if (scalar_result_mask & (1u << lane)) {
                 glsl << "  " << target << "." << component_name(lane)
                      << " = " << scalar << ";\n";
             }
@@ -324,8 +346,16 @@ bool emit_alu(std::ostringstream& glsl,
         const std::string address_value = scalar_source(instruction, stage);
         glsl << "  a0 = clamp(int(floor(" << address_value
              << " + 0.5)), -256, 255);\n";
-    } else if (instruction.scalar_opcode != 50 && instruction.scalar_opcode != 5) {
+    } else if (!(instruction.export_data && instruction.scalar_write_mask != 0) &&
+               instruction.scalar_opcode != 50 && instruction.scalar_opcode != 5) {
         return fail("captured ALU scalar opcode is unsupported", error);
+    }
+    for (uint32_t lane = 0; lane < 4; ++lane) {
+        if (constant_one_mask & (1u << lane)) {
+            glsl << "  " << export_target << "." << component_name(lane) << " = 1.0;\n";
+        } else if (constant_zero_mask & (1u << lane)) {
+            glsl << "  " << export_target << "." << component_name(lane) << " = 0.0;\n";
+        }
     }
     return true;
 }
@@ -474,8 +504,8 @@ bool translate_captured_shader_glsl(
              << "layout(location=0) out vec4 shift_color0;\n"
              << "layout(set=0,binding=15,std140) uniform ShiftPixelConstants { vec4 c[256]; } shift_pixel_constants;\n";
         if (has_texture) {
-            glsl << "layout(set=1,binding=" << sampler_register
-                 << ") uniform sampler2D shift_sampler_" << sampler_register << ";\n";
+            glsl << "layout(set=1,binding=0) uniform sampler2D shift_sampler_"
+                 << sampler_register << ";\n";
         }
     }
     glsl << "void main() {\n  vec4 r[64];\n"
@@ -483,6 +513,7 @@ bool translate_captured_shader_glsl(
          << "  int a0=0;\n";
     if (stage == CapturedShaderStage::Vertex) {
         glsl << "  r[0].x=float(gl_VertexIndex);\n  gl_Position=vec4(0.0);\n"
+             << "  gl_PointSize=1.0;\n"
              << "  shift_interpolator0=vec4(0.0);\n";
     } else {
         glsl << "  r[0]=shift_interpolator0;\n  shift_color0=vec4(0.0);\n";
@@ -490,6 +521,34 @@ bool translate_captured_shader_glsl(
 
     uint32_t allocation_type = 0;
     size_t fetch_index = 0;
+    std::vector<uint32_t> float_constant_registers;
+    bool uses_relative_float_constant_index = false;
+    const auto record_constant_source =
+        [&float_constant_registers, &uses_relative_float_constant_index](
+            const CapturedShaderAluInstruction& alu, uint32_t source,
+            std::string* record_error) {
+            if (alu.source_is_temporary[source]) return true;
+            if (constant_relative(alu, source)) {
+                uses_relative_float_constant_index = true;
+                if (!alu.const_address_register_relative) {
+                    if (record_error) {
+                        *record_error =
+                            "captured shader constant-relative source has no a0 selector";
+                    }
+                    return false;
+                }
+                return true;
+            }
+            const uint32_t index = alu.source_registers[source];
+            if (index >= 256) {
+                if (record_error) {
+                    *record_error = "captured shader float constant index is out of range";
+                }
+                return false;
+            }
+            float_constant_registers.push_back(index);
+            return true;
+        };
     for (uint32_t slot : path) {
         const auto& clause = control_flow[slot];
         if (clause.opcode == ShaderControlFlowOpcode::Allocate) {
@@ -520,8 +579,27 @@ bool translate_captured_shader_glsl(
             } else {
                 CapturedShaderAluInstruction alu{};
                 if (!decode_captured_shader_alu_instruction(
-                        shader_bytes + instruction.address * 12, 12, &alu, error) ||
-                    !emit_alu(glsl, stage, instruction.address, alu,
+                        shader_bytes + instruction.address * 12, 12, &alu, error)) {
+                    return false;
+                }
+                const uint32_t vector_result_mask = alu.export_data ?
+                    alu.vector_write_mask & ~alu.scalar_write_mask :
+                    alu.vector_write_mask;
+                const uint32_t scalar_result_mask = alu.export_data ?
+                    alu.scalar_write_mask & ~alu.vector_write_mask :
+                    alu.scalar_write_mask;
+                if (vector_result_mask != 0) {
+                    const uint32_t sources[] = {0, 1, 2};
+                    const size_t source_count =
+                        alu.vector_opcode == 11 || alu.vector_opcode == 12 ? 3 : 2;
+                    for (size_t i = 0; i < source_count; ++i) {
+                        if (!record_constant_source(alu, sources[i], error)) return false;
+                    }
+                }
+                if (scalar_result_mask != 0 || alu.scalar_opcode == 23) {
+                    if (!record_constant_source(alu, 2, error)) return false;
+                }
+                if (!emit_alu(glsl, stage, instruction.address, alu,
                               allocation_type, error)) return false;
             }
         }
@@ -535,6 +613,14 @@ bool translate_captured_shader_glsl(
     translated.vertex_fetch_constant_index = vertex_fetch_constant_index;
     translated.uses_texture = has_texture;
     translated.texture_fetch_constant_index = sampler_register;
+    std::sort(float_constant_registers.begin(), float_constant_registers.end());
+    float_constant_registers.erase(
+        std::unique(float_constant_registers.begin(),
+                    float_constant_registers.end()),
+        float_constant_registers.end());
+    translated.float_constant_registers = std::move(float_constant_registers);
+    translated.uses_relative_float_constant_index =
+        uses_relative_float_constant_index;
     translated.executed_instruction_addresses.reserve(executed.size());
     for (const auto& instruction : executed) {
         translated.executed_instruction_addresses.push_back(instruction.address);

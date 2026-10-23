@@ -538,21 +538,23 @@ int main() {
     const uint8_t live_autoindex_point[] = {
         0xC0, 0x00, 0x36, 0x00, 0x00, 0x01, 0x00, 0x81,
     };
-    require(!shift::xbox::decode_captured_draw_indx(
+    require(shift::xbox::decode_captured_draw_indx(
                 live_autoindex_point, sizeof(live_autoindex_point),
-                &draw_indx_2, &error) &&
-                error == "unsupported AutoIndex DRAW_INDX_2 form",
-            "live AutoIndex point packet was not classified as an unsupported "
-            "draw form");
+                &draw_indx_2, &error) && draw_indx_2.auto_index &&
+                draw_indx_2.topology == shift::xbox::PrimitiveTopology::PointList &&
+                draw_indx_2.index_count == 1,
+            "live AutoIndex point packet was not decoded");
     const uint8_t live_autoindex_rectangle_list[] = {
         0xC0, 0x00, 0x36, 0x01, 0x00, 0x03, 0x00, 0x88,
     };
-    require(!shift::xbox::decode_captured_draw_indx(
+    require(shift::xbox::decode_captured_draw_indx(
                 live_autoindex_rectangle_list,
                 sizeof(live_autoindex_rectangle_list), &draw_indx_2, &error) &&
-                error == "unsupported AutoIndex DRAW_INDX_2 form",
-            "live AutoIndex rectangle-list packet was not classified as an "
-            "unsupported draw form");
+                draw_indx_2.auto_index &&
+                draw_indx_2.topology ==
+                    shift::xbox::PrimitiveTopology::RectangleList &&
+                draw_indx_2.index_count == 3,
+            "live AutoIndex rectangle-list packet was not decoded");
     auto captured_auto_index_draw = std::vector<uint8_t>(
         captured_draw_indx_2,
         captured_draw_indx_2 + sizeof(captured_draw_indx_2));
@@ -652,6 +654,7 @@ int main() {
                 captured_raster_registers, &raster_state, &error),
             "captured Xbox target and raster state was rejected");
     require(raster_state.width == 1280 && raster_state.height == 720 &&
+                raster_state.surface_pitch == 1280 &&
                 raster_state.sample_count == 1 && raster_state.color_base_tiles == 0 &&
                 raster_state.color_format ==
                     shift::xbox::CapturedColorTargetFormat::Rgba8Gamma &&
@@ -668,6 +671,26 @@ int main() {
                 raster_state.scissor_x1 == 1280 && raster_state.scissor_y1 == 720 &&
                 raster_state.scissor_has_area,
             "captured Xbox scissor bounds changed");
+
+    shift::xbox::CapturedRasterRegisters live_raster_registers{
+        0x0A020280u, 0x00010000u, 0x000002D0u, 0x00000004u,
+        0x00008777u, 0x0000FFFFu, 0x44200000u, 0x44200000u,
+        0xC3B40000u, 0x43B40000u, 0x00000000u, 0x20002000u,
+        0x00000000u, 0x00000000u, 0x20002000u, 0x00010001u,
+    };
+    shift::xbox::CapturedRasterState live_raster_state{};
+    require(shift::xbox::decode_captured_raster_state(
+                live_raster_registers, &live_raster_state, &error) &&
+                live_raster_state.width == 1280 &&
+                live_raster_state.height == 720 &&
+                live_raster_state.surface_pitch == 640 &&
+                live_raster_state.sample_count == 4 &&
+                live_raster_state.color_write_mask == 0xFu &&
+                live_raster_state.depth_test_enabled &&
+                live_raster_state.depth_write_enabled &&
+                live_raster_state.stencil_test_enabled &&
+                live_raster_state.blend_control_0 == 0x00010001u,
+            "live 4x-MSAA raster contract was rejected");
 
     shift::xbox::GuestRasterRegisterState raster_register_state;
     shift::xbox::CapturedRasterRegisters tracked_raster_registers{};
@@ -811,6 +834,35 @@ int main() {
                 &tracked_shader_constants, &tracked_vertex_descriptor,
                 &tracked_texture_descriptor, &error),
             "shader register reset retained captured draw state");
+    shift::xbox::CapturedXboxShaderRegisterState dynamic_fetch_state;
+    dynamic_fetch_state.apply({0x4800u, captured_vertex_descriptor[0]});
+    dynamic_fetch_state.apply({0x4801u, captured_vertex_descriptor[1]});
+    std::array<uint32_t, 2> descriptor_zero{};
+    require(dynamic_fetch_state.snapshot_vertex_fetch_descriptor(
+                0, &descriptor_zero, &error) &&
+                descriptor_zero == std::array<uint32_t, 2>{
+                    captured_vertex_descriptor[0], captured_vertex_descriptor[1]},
+            "shader fetch descriptor zero was not dynamically addressable");
+    require(!dynamic_fetch_state.snapshot_vertex_fetch_descriptor(
+                96, &descriptor_zero, &error),
+            "out-of-range vertex fetch descriptor index was accepted");
+    shift::xbox::CapturedXboxShaderRegisterState sparse_constants;
+    sparse_constants.apply({0x2307u, 0x000FF000u});
+    sparse_constants.apply({0x2308u, 0x000FF100u});
+    shift::xbox::CapturedShaderConstants sparse_snapshot{};
+    require(sparse_constants.snapshot_constants(&sparse_snapshot, &error) &&
+                !sparse_constants.validate_float_constants(
+                    shift::xbox::GuestShaderStage::Vertex,
+                    std::vector<uint32_t>{0}, false, &error) &&
+                error == "captured vertex float constant 0 is incomplete",
+            "shader constant snapshot still requires unused fixed registers");
+    for (uint32_t component = 0; component < 4; ++component) {
+        sparse_constants.apply({0x4000u + component, 0x3F800000u});
+    }
+    require(sparse_constants.validate_float_constants(
+                shift::xbox::GuestShaderStage::Vertex,
+                std::vector<uint32_t>{0}, false, &error),
+            "captured shader read-set constant validation rejected a loaded register");
     require(!shift::xbox::decode_captured_shader_constants(
                 captured_float_constants.data(), captured_float_constants.size() - 1,
                 captured_bool_constants.data(), captured_bool_constants.size(),

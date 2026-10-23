@@ -10,6 +10,8 @@ namespace shift::xbox {
 
 enum class PrimitiveTopology : uint8_t {
     TriangleList,
+    PointList,
+    RectangleList,
 };
 
 struct DecodedIndexedDraw {
@@ -19,6 +21,7 @@ struct DecodedIndexedDraw {
     uint32_t index_type_bits;
     uint32_t index_endian_mode;
     uint32_t index_byte_length;
+    bool auto_index = false;
 };
 
 struct DecodedGuestSwap {
@@ -310,6 +313,7 @@ struct CapturedRasterRegisters {
     uint32_t window_scissor_tl;
     uint32_t window_scissor_br;
     uint32_t blend_control_0;
+    uint32_t stencil_refmask = 0;
 };
 
 // Retains only the raster registers used by the captured Xbox draw contract.
@@ -327,7 +331,8 @@ private:
 struct CapturedRasterState {
     uint32_t width;
     uint32_t height;
-    uint32_t sample_count;
+    uint32_t surface_pitch;
+    uint32_t sample_count = 1;
     uint32_t color_base_tiles;
     CapturedColorTargetFormat color_format;
     uint32_t depth_base_tiles;
@@ -343,6 +348,8 @@ struct CapturedRasterState {
     uint32_t scissor_y1;
     bool scissor_has_area;
     uint32_t blend_control_0;
+    uint32_t depth_control = 0;
+    uint32_t stencil_refmask = 0;
 };
 
 struct CapturedShaderConstants {
@@ -360,6 +367,17 @@ struct CapturedShaderConstants {
 struct CapturedXboxShaderRegisterState {
     void reset() noexcept;
     void apply(const GuestRegisterWrite& write) noexcept;
+    bool snapshot_constants(CapturedShaderConstants* constants,
+                           std::string* error) const;
+    bool validate_float_constants(
+        GuestShaderStage stage, const std::vector<uint32_t>& registers,
+        bool relative_indexing, std::string* error) const;
+    bool snapshot_vertex_fetch_descriptor(
+        uint32_t index, std::array<uint32_t, 2>* descriptor,
+        std::string* error) const;
+    bool snapshot_texture_fetch_descriptor(
+        uint32_t index, std::array<uint32_t, 6>* descriptor,
+        std::string* error) const;
     bool snapshot(
         CapturedShaderConstants* constants,
         std::array<uint32_t, 2>* vertex_descriptor,
@@ -478,8 +496,9 @@ bool schedule_captured_shader_instructions(
     std::vector<CapturedShaderInstructionSchedule>* output,
     std::string* error);
 
-// Decodes the supported captured PM4_DRAW_INDX and DMA-source DRAW_INDX_2
-// forms into renderer inputs; it does not execute or emulate Xenos state.
+// Decodes the captured PM4_DRAW_INDX, DMA-source DRAW_INDX_2, and observed
+// AutoIndex DRAW_INDX_2 forms into renderer inputs; it does not execute or
+// emulate Xenos state.
 bool decode_captured_draw_indx(
     const uint8_t* packet_bytes,
     size_t byte_length,

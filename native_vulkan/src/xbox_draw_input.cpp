@@ -700,13 +700,30 @@ bool decode_captured_draw_indx(
     }
     const uint32_t draw_initiator = read_be32(packet_bytes + initiator_offset);
     const uint32_t source_select = (draw_initiator >> 6) & 0x3u;
+    const uint32_t primitive_type = draw_initiator & 0x3Fu;
+    const uint32_t major_mode = (draw_initiator >> 8) & 0x3u;
+    const uint32_t index_size = (draw_initiator >> 11) & 0x1u;
+    const uint32_t initiator_index_count = draw_initiator >> 16;
     if (source_select == 1u) {
       return fail("unsupported immediate-index draw source", error);
     }
     if (source_select == 2u) {
-        return fail(has_viz_query ? "unsupported AutoIndex DRAW_INDX form"
-                                  : "unsupported AutoIndex DRAW_INDX_2 form",
-                    error);
+      if (has_viz_query || payload_count != 1u || major_mode != 0u ||
+          index_size != 0u || initiator_index_count == 0u) {
+        return fail("unsupported AutoIndex DRAW_INDX_2 form", error);
+      }
+      PrimitiveTopology topology{};
+      if (primitive_type == 1u) {
+        topology = PrimitiveTopology::PointList;
+      } else if (primitive_type == 8u && initiator_index_count % 3u == 0u) {
+        topology = PrimitiveTopology::RectangleList;
+      } else {
+        return fail("unsupported AutoIndex primitive type or count", error);
+      }
+      *output = DecodedIndexedDraw{
+          topology, initiator_index_count, 0, 0, 0, 0, true};
+      if (error) error->clear();
+      return true;
     }
     if (source_select != 0u) {
         return fail("unsupported captured draw source", error);
@@ -717,10 +734,6 @@ bool decode_captured_draw_indx(
       return fail("unsupported indexed draw PM4 payload length", error);
     }
 
-    const uint32_t primitive_type = draw_initiator & 0x3Fu;
-    const uint32_t major_mode = (draw_initiator >> 8) & 0x3u;
-    const uint32_t index_size = (draw_initiator >> 11) & 0x1u;
-    const uint32_t initiator_index_count = draw_initiator >> 16;
     const uint32_t index_guest_address = read_be32(packet_bytes + initiator_offset + 4u);
     const uint32_t dma_size = read_be32(packet_bytes + initiator_offset + 8u);
     const uint32_t dma_index_count = dma_size & kIndexCountMask;
@@ -958,6 +971,10 @@ void GuestRasterRegisterState::reset() noexcept {
 }
 
 void GuestRasterRegisterState::apply(const GuestRegisterWrite& write) noexcept {
+    if (write.register_index == 0x210Du) {
+        registers_.stencil_refmask = write.value;
+        return;
+    }
     uint32_t bit = 0;
     uint32_t* destination = nullptr;
     switch (write.register_index) {
@@ -1030,6 +1047,21 @@ bool CapturedXboxShaderRegisterState::snapshot(
     if (!constants || !vertex_descriptor || !texture_descriptor) {
         return fail("invalid captured shader register snapshot output", error);
     }
+    if (!snapshot_constants(constants, error) ||
+        !snapshot_vertex_fetch_descriptor(95, vertex_descriptor, error) ||
+        !snapshot_texture_fetch_descriptor(0, texture_descriptor, error)) {
+        return false;
+    }
+    if (error) error->clear();
+    return true;
+}
+
+bool CapturedXboxShaderRegisterState::snapshot_constants(
+    CapturedShaderConstants* constants,
+    std::string* error) const {
+    if (!constants) {
+        return fail("invalid captured shader constants snapshot output", error);
+    }
     if (!vertex_control_valid_) {
         return fail("missing vertex shader control register 0x2307", error);
     }
@@ -1042,35 +1074,6 @@ bool CapturedXboxShaderRegisterState::snapshot(
     if (pixel_control_ != 0x000FF100u) {
         return fail("unsupported pixel shader control value", error);
     }
-    for (size_t i = 0; i < 6; ++i) {
-        if (!fetch_valid_[i]) {
-            return fail("captured texture fetch descriptor is incomplete", error);
-        }
-    }
-    for (size_t i = 190; i < 192; ++i) {
-        if (!fetch_valid_[i]) {
-            return fail("captured vertex fetch descriptor is incomplete", error);
-        }
-    }
-    const auto float4_valid = [this](uint32_t index) {
-        const size_t first = static_cast<size_t>(index) * 4;
-        return float_valid_[first] && float_valid_[first + 1] &&
-               float_valid_[first + 2] && float_valid_[first + 3];
-    };
-    for (uint32_t i = 64; i <= 69; ++i) {
-        if (!float4_valid(i)) {
-            return fail("captured vertex float constants are incomplete", error);
-        }
-    }
-    for (uint32_t i = 254; i <= 255; ++i) {
-        if (!float4_valid(i)) {
-            return fail("captured edge float constants are incomplete", error);
-        }
-    }
-    if (!float4_valid(256u) || !float4_valid(511u)) {
-        return fail("captured pixel constants are incomplete", error);
-    }
-
     CapturedShaderConstants decoded{};
     if (!decode_captured_shader_constants(
             float_words_.data(), float_words_.size(), bool_words_.data(),
@@ -1078,12 +1081,88 @@ bool CapturedXboxShaderRegisterState::snapshot(
         return false;
     }
     decoded.pixel_boolean_constants_valid = bool_valid_[4];
-    std::array<uint32_t, 2> vertex_words{fetch_words_[190], fetch_words_[191]};
-    std::array<uint32_t, 6> texture_words{};
-    std::copy_n(fetch_words_.begin(), texture_words.size(), texture_words.begin());
     *constants = decoded;
-    *vertex_descriptor = vertex_words;
-    *texture_descriptor = texture_words;
+    if (error) error->clear();
+    return true;
+}
+
+bool CapturedXboxShaderRegisterState::validate_float_constants(
+    GuestShaderStage stage,
+    const std::vector<uint32_t>& registers,
+    bool relative_indexing,
+    std::string* error) const {
+    constexpr uint32_t kFloatRegistersPerStage = 256;
+    const uint32_t first_register =
+        stage == GuestShaderStage::Pixel ? kFloatRegistersPerStage : 0;
+    const auto is_valid = [this, first_register](uint32_t index) {
+        const size_t first = static_cast<size_t>(first_register + index) * 4;
+        return float_valid_[first] && float_valid_[first + 1] &&
+               float_valid_[first + 2] && float_valid_[first + 3];
+    };
+    if (relative_indexing) {
+        for (uint32_t index = 0; index < kFloatRegistersPerStage; ++index) {
+            if (!is_valid(index)) {
+                if (error) {
+                    *error = stage == GuestShaderStage::Vertex
+                                 ? "captured vertex shader uses relative float constants "
+                                   "with an incomplete constant window"
+                                 : "captured pixel shader uses relative float constants "
+                                   "with an incomplete constant window";
+                }
+                return false;
+            }
+        }
+    }
+    for (uint32_t index : registers) {
+        if (index >= kFloatRegistersPerStage || !is_valid(index)) {
+            if (error) {
+                *error = stage == GuestShaderStage::Vertex
+                             ? "captured vertex float constant " +
+                                   std::to_string(index) + " is incomplete"
+                             : "captured pixel float constant " +
+                                   std::to_string(index) + " is incomplete";
+            }
+            return false;
+        }
+    }
+    if (error) error->clear();
+    return true;
+}
+
+bool CapturedXboxShaderRegisterState::snapshot_vertex_fetch_descriptor(
+    uint32_t index,
+    std::array<uint32_t, 2>* descriptor,
+    std::string* error) const {
+    constexpr uint32_t kMaxVertexFetchConstants = 96;
+    const size_t first = static_cast<size_t>(index) * 2;
+    if (!descriptor || index >= kMaxVertexFetchConstants ||
+        first + 2 > fetch_words_.size()) {
+        return fail("captured vertex fetch descriptor index is out of range", error);
+    }
+    if (!fetch_valid_[first] || !fetch_valid_[first + 1]) {
+        return fail("captured vertex fetch descriptor is incomplete", error);
+    }
+    *descriptor = {fetch_words_[first], fetch_words_[first + 1]};
+    if (error) error->clear();
+    return true;
+}
+
+bool CapturedXboxShaderRegisterState::snapshot_texture_fetch_descriptor(
+    uint32_t index,
+    std::array<uint32_t, 6>* descriptor,
+    std::string* error) const {
+    constexpr uint32_t kMaxTextureFetchConstants = 32;
+    const size_t first = static_cast<size_t>(index) * 6;
+    if (!descriptor || index >= kMaxTextureFetchConstants ||
+        first + 6 > fetch_words_.size()) {
+        return fail("captured texture fetch descriptor index is out of range", error);
+    }
+    for (size_t word = 0; word < 6; ++word) {
+        if (!fetch_valid_[first + word]) {
+            return fail("captured texture fetch descriptor is incomplete", error);
+        }
+    }
+    std::copy_n(fetch_words_.begin() + first, 6, descriptor->begin());
     if (error) error->clear();
     return true;
 }
@@ -1100,12 +1179,13 @@ bool decode_captured_raster_state(
     const uint32_t msaa_samples = (registers.surface_info >> 16) & 0x3u;
     const uint32_t color_format = (registers.color_info >> 16) & 0xFu;
     const uint32_t depth_format = (registers.depth_info >> 16) & 0x1u;
-    if (registers.mode_control != 4 || msaa_samples != 0 ||
+    if (registers.mode_control != 4 || msaa_samples > 2 ||
         color_format != 1 || depth_format != 0 ||
         (registers.color_info & ~0x000F0FFFu) != 0 ||
         (registers.depth_info & ~0x00010FFFu) != 0 ||
-        (registers.color_mask & ~0xFu) != 0 || registers.window_offset != 0 ||
-        registers.blend_control_0 != 0x07010706u) {
+        (registers.color_mask & ~0xFFFFu) != 0 || registers.window_offset != 0 ||
+        (registers.blend_control_0 != 0x07010706u &&
+         registers.blend_control_0 != 0x00010001u)) {
         return fail("unsupported captured target or raster state", error);
     }
 
@@ -1116,7 +1196,7 @@ bool decode_captured_raster_state(
     uint32_t width = 0;
     uint32_t height = 0;
     if (!viewport_dimension(x_scale, &width) || !viewport_dimension(-y_scale, &height) ||
-        x_offset != x_scale || y_offset != -y_scale || surface_pitch != width) {
+        x_offset != x_scale || y_offset != -y_scale) {
         return fail("unsupported captured viewport or surface pitch", error);
     }
 
@@ -1149,7 +1229,8 @@ bool decode_captured_raster_state(
     *output = CapturedRasterState{
         width,
         height,
-        1,
+        surface_pitch,
+        msaa_samples == 0 ? 1u : msaa_samples == 1 ? 2u : 4u,
         registers.color_info & 0xFFFu,
         CapturedColorTargetFormat::Rgba8Gamma,
         registers.depth_info & 0xFFFu,
@@ -1165,6 +1246,8 @@ bool decode_captured_raster_state(
         y1,
         x1 > x0 && y1 > y0,
         registers.blend_control_0,
+        registers.depth_control,
+        registers.stencil_refmask,
     };
     if (error) {
         error->clear();

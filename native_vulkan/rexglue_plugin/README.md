@@ -13,11 +13,12 @@ project-owned Vulkan renderer to the presenter's output image. The renderer
 has no XCB or Wayland dependency; only the ReXGlue presenter attaches that
 image to a host window.
 
-The supported path is deliberately narrow: triangle-list DMA-indexed
-`DRAW_INDX` and `DRAW_INDX_2`, the captured FLOAT3 vertex fetch and format-6
-texture, the captured shader pair (pointer-loaded or inline
-`IM_LOAD_IMMEDIATE`), the captured raster register set, and the captured blend
-control. Unsupported draw state is rejected. The frame path clears the
+The supported path is deliberately narrow: captured DMA-indexed triangle-list
+draws and AutoIndex point-list `DRAW_INDX_2` draws, including the observed
+vertex shader with no fetch inputs. It translates the captured shader pair
+(including inline `IM_LOAD_IMMEDIATE`), validates required constants, and
+resolves supported vertex and texture resources. Rectangle-list AutoIndex
+draws and unsupported raster/resource forms are rejected. The frame path clears the
 presenter image and renders the collected draws; it does not reconstruct Xenos
 EDRAM contents or read the guest frontbuffer as a finished image. The captured
 black texture border has unknown alpha, so transparent-black is still
@@ -51,35 +52,29 @@ submit successfully. This is an end-to-end plugin/presenter regression, not a
 live retail run or retail image-parity evidence. The DMA draw, shader pairing,
 and resource payloads in the fixture are not a new raw retail capture.
 
-The platform-independent Vulkan core also has an offscreen indexed-draw smoke.
+The platform-independent Vulkan core also has a synthetic offscreen AutoIndex
+point-draw smoke with no vertex attributes or vertex buffer.
 It passed with Vulkan validation on NVIDIA GeForce GTX 950, and on Redmi Note 8
 Pro (Mali-G76 MC4) using Vulkan 1.1. Those smoke shaders are synthetic and
 verify pipeline/resource/layout operations only; they are not retail output
 evidence.
 
-On 2026-10-23, the retail Linux executable was run with `--gpu_plugin=shift-native`.
-The runtime mapped this plugin without mapping `rexgpu-xenos`, initialized the
-guest ring at `0x09752580`, and the worker consumed four live batches (1,828
-PM4 packets) containing two `XE_SWAP` packets. This verifies the plugin is
-connected to the retail guest's PM4 path. A later debug run saved raw `0x2b`
-and `0x36` samples and draw-state diagnostics. It found 100 AutoIndex draws
-(96 points and four rectangle lists), not DMA-indexed draws. One inline VS was
-108 bytes and scheduled a full vertex fetch from constant 0 (format 57, stride
-7 dwords) followed by a mini fetch. The live binary at the time rejected the
-mini form and then reported the fixed constant-95 vertex descriptor incomplete.
-The project parser now recognizes the mini encoding; a post-update retail run
-confirmed format 38 at dword offset 3, with stride inherited from the full
-fetch. A targeted shader regression now applies the inherited full-fetch fields
-and emits the observed float3/float4 layout. The live resource path still selects
-descriptor 95 and only submits DMA-indexed draws, while retail currently emits
-AutoIndex draws. This run still submitted zero Vulkan frames; dynamic descriptor
-0 selection and AutoIndex draw submission remain to be implemented. See
+On 2026-10-23, a headless retail Linux run with `--gpu_plugin=shift-native`
+mapped this plugin without mapping `rexgpu-xenos`, initialized the guest ring
+at `0x09752580`, and consumed 1,828 PM4 packets with two `XE_SWAP` packets.
+The retail stream contained 100 AutoIndex draws (96 points and four rectangle
+lists), with no DMA-indexed draw observed. A later run with the updated plugin
+translated and resolved 24 point-list draws at each of two swaps, then
+submitted both 1280x720 frames to the Vulkan presenter. The same ring contained
+the 108-byte full/mini-fetch VS; the plugin translated it, but the rectangle
+list that uses it remains unsupported. This is the first confirmed live retail
+Vulkan submission. It does not verify visible output pixels, scene parity,
+EDRAM accumulation, or Vulkan validation-layer behavior for the retail frame.
+See
 [`process2_xbox_live_guest_ring_20261023.json`](../../evidence/process2_xbox_live_guest_ring_20261023.json).
 
-A separate Gamescope headless retry with the current plugin created its
-1280x720 presenter and initialized the guest ring, but logged no indexed-draw
-submission before the 70-second timeout. That run used info-level logging, so
-it did not retain per-batch PM4 counts or packet samples.
+An earlier Gamescope headless retry used info-level logging and recorded no
+draw submission; the later debug run above supersedes that result.
 
 The earlier one-draw capture bundle remains separate evidence for the project
 renderer, not proof of a complete scene.
@@ -94,7 +89,8 @@ full game build. The Android arm64 CI now builds the project Vulkan renderer
 smoke and publishes its executable plus Vulkan 1.1 SPIR-V inputs. On 2026-10-23
 the artifact from [CI run 39938067570](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/actions/runs/39938067570)
 ran on the connected Redmi Note 8 Pro (Android API 33, Mali-G76 MC4):
-`offscreen Vulkan 1.1 indexed draw passed on Mali-G76 MC4`. The device test
+`synthetic offscreen Vulkan 1.1 AutoIndex point draw passed on Mali-G76 MC4`.
+The device test
 used synthetic shaders and ran without the validation layer; it does not show
 a retail frame. The parser, guest-ring, shader-translation, and renderer
 checks were also rebuilt for API 33 and rerun on the device.

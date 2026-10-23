@@ -280,16 +280,9 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     shift::xbox::CapturedTextureFetch texture_fetch{};
     shift::xbox::CapturedTextureSampling texture_sampling{};
     if (vertex_program.empty() || pixel_program.empty() ||
-        !shader_state.snapshot(&constants, &vertex_descriptor, &texture_descriptor, error) ||
-        !shift::xbox::decode_captured_vertex_fetch(
-            vertex_descriptor.data(), &vertex_fetch, error) ||
-        !shift::xbox::decode_captured_texture_fetch(
-            texture_descriptor.data(), &texture_fetch, error) ||
-        !shift::xbox::decode_captured_texture_sampling(
-            texture_fetch, &texture_sampling, error)) {
+        !shader_state.snapshot_constants(&constants, error)) {
       return false;
     }
-    *inputs_ready = true;
 
     if (!constants.pixel_boolean_constants_valid) {
       std::vector<shift::xbox::CapturedShaderControlFlow> pixel_control_flow;
@@ -317,9 +310,6 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     shift::xbox::CapturedShaderTranslationOptions options{};
     options.pixel_b128 = constants.pixel_b128;
     options.pixel_b129 = constants.pixel_b129;
-    for (size_t i = 0; i < options.texture_swizzle.size(); ++i) {
-      options.texture_swizzle[i] = static_cast<uint32_t>(texture_sampling.swizzle[i]);
-    }
     shift::xbox::CapturedShaderTranslation vertex_translation{};
     shift::xbox::CapturedShaderTranslation pixel_translation{};
     if (!shift::xbox::translate_captured_shader_glsl(
@@ -334,6 +324,76 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
       if (error) *error = "captured pixel shader: " + *error;
       return false;
     }
+    if (!shader_state.validate_float_constants(
+            shift::xbox::GuestShaderStage::Vertex,
+            vertex_translation.float_constant_registers,
+            vertex_translation.uses_relative_float_constant_index, error) ||
+        !shader_state.validate_float_constants(
+            shift::xbox::GuestShaderStage::Pixel,
+            pixel_translation.float_constant_registers,
+            pixel_translation.uses_relative_float_constant_index, error)) {
+      return false;
+    }
+
+    if (vertex_translation.has_vertex_fetch_constant) {
+      if (vertex_translation.vertex_input_attributes.empty() ||
+          !shader_state.snapshot_vertex_fetch_descriptor(
+              vertex_translation.vertex_fetch_constant_index,
+              &vertex_descriptor, error) ||
+          !shift::xbox::decode_captured_vertex_fetch(
+              vertex_descriptor.data(), &vertex_fetch, error)) {
+        return false;
+      }
+    } else if (!vertex_translation.vertex_input_attributes.empty()) {
+      if (error) *error = "captured vertex shader has inputs without a fetch constant";
+      return false;
+    }
+
+    if (pixel_translation.uses_texture) {
+      if (!shader_state.snapshot_texture_fetch_descriptor(
+              pixel_translation.texture_fetch_constant_index,
+              &texture_descriptor, error) ||
+          !shift::xbox::decode_captured_texture_fetch(
+              texture_descriptor.data(), &texture_fetch, error) ||
+          !shift::xbox::decode_captured_texture_sampling(
+              texture_fetch, &texture_sampling, error)) {
+        return false;
+      }
+      for (size_t i = 0; i < options.texture_swizzle.size(); ++i) {
+        options.texture_swizzle[i] =
+            static_cast<uint32_t>(texture_sampling.swizzle[i]);
+      }
+      if (!shift::xbox::translate_captured_shader_glsl(
+              shift::xbox::CapturedShaderStage::Pixel, pixel_program.data(),
+              pixel_program.size(), options, &pixel_translation, error)) {
+        if (error) *error = "captured pixel shader: " + *error;
+        return false;
+      }
+      if (!pixel_translation.uses_texture ||
+          pixel_translation.texture_fetch_constant_index >= 32) {
+        if (error) *error = "captured pixel texture fetch index changed during translation";
+        return false;
+      }
+    } else {
+      texture_sampling = shift::xbox::CapturedTextureSampling{
+          {shift::xbox::TextureComponent::X, shift::xbox::TextureComponent::Y,
+           shift::xbox::TextureComponent::Z, shift::xbox::TextureComponent::W},
+          {shift::xbox::TextureSign::Unsigned, shift::xbox::TextureSign::Unsigned,
+           shift::xbox::TextureSign::Unsigned, shift::xbox::TextureSign::Unsigned},
+          {shift::xbox::TextureClamp::ClampToEdge,
+           shift::xbox::TextureClamp::ClampToEdge,
+           shift::xbox::TextureClamp::ClampToEdge},
+          shift::xbox::TextureFilter::Linear,
+          shift::xbox::TextureFilter::Linear,
+          shift::xbox::TextureFilter::Point,
+          shift::xbox::TextureAnisotropy::Disabled,
+          shift::xbox::TextureBorderColor::AbgrBlack,
+          true};
+      texture_fetch.width = 1;
+      texture_fetch.height = 1;
+      texture_fetch.byte_length = 4;
+    }
+    *inputs_ready = true;
     *shaders_translated = true;
 
     shift::xbox::CapturedVulkanDraw prepared{};
@@ -341,84 +401,16 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     prepared.constants = constants;
     prepared.texture_sampling = texture_sampling;
     prepared.index_count = draw.index_count;
+    prepared.topology = draw.topology;
+    prepared.auto_index = draw.auto_index;
     prepared.texture_width = texture_fetch.width;
     prepared.texture_height = texture_fetch.height;
+    prepared.vertex_input_attributes = vertex_translation.vertex_input_attributes;
     if (!CompileCapturedShader(shift::xbox::CapturedShaderStage::Vertex,
                                vertex_translation.glsl, &prepared.vertex_shader_spirv, error) ||
         !CompileCapturedShader(shift::xbox::CapturedShaderStage::Pixel,
                                pixel_translation.glsl, &prepared.pixel_shader_spirv, error)) {
       return false;
-    }
-
-    std::vector<shift::xbox::CapturedShaderControlFlow> control_flow;
-    std::vector<shift::xbox::CapturedShaderInstructionSchedule> schedule;
-    if (!shift::xbox::decode_captured_shader_control_flow(
-            vertex_program.data(), vertex_program.size(), &control_flow, error) ||
-        !shift::xbox::schedule_captured_shader_instructions(
-            control_flow, vertex_program.size(), &schedule, error)) {
-      return false;
-    }
-    std::vector<shift::xbox::CapturedShaderControlFlow> pixel_control_flow;
-    std::vector<shift::xbox::CapturedShaderInstructionSchedule> pixel_schedule;
-    if (!shift::xbox::decode_captured_shader_control_flow(
-            pixel_program.data(), pixel_program.size(), &pixel_control_flow, error) ||
-        !shift::xbox::schedule_captured_shader_instructions(
-            pixel_control_flow, pixel_program.size(), &pixel_schedule, error)) {
-      return false;
-    }
-
-    uint32_t vertex_stride_bytes = 0;
-    uint32_t vertex_offset_bytes = 0;
-    bool has_vertex_fetch = false;
-    for (const auto& instruction : schedule) {
-      if (instruction.kind != shift::xbox::ShaderScheduledInstructionKind::Fetch ||
-          std::find(vertex_translation.executed_instruction_addresses.begin(),
-                    vertex_translation.executed_instruction_addresses.end(),
-                    instruction.address) ==
-              vertex_translation.executed_instruction_addresses.end()) {
-        continue;
-      }
-      const size_t offset = static_cast<size_t>(instruction.address) * 12;
-      shift::xbox::CapturedShaderFetchInstruction fetch{};
-      if (offset + 12 > vertex_program.size() ||
-          !shift::xbox::decode_captured_shader_fetch_instruction(
-              vertex_program.data() + offset, 12, &fetch, error)) {
-        return false;
-      }
-      if (fetch.kind != shift::xbox::CapturedShaderFetchKind::VertexFull) continue;
-
-      const uint32_t stride = fetch.vertex_stride * 4;
-      const uint32_t attribute_offset = fetch.vertex_offset < 0
-                                            ? std::numeric_limits<uint32_t>::max()
-                                            : static_cast<uint32_t>(fetch.vertex_offset);
-      if (fetch.fetch_constant_index != 95 || fetch.vertex_format != 57 || stride != 12 ||
-          attribute_offset != 0 || fetch.source_relative || fetch.destination_relative ||
-          fetch.predicated ||
-          (has_vertex_fetch &&
-           (stride != vertex_stride_bytes || attribute_offset != vertex_offset_bytes))) {
-        return false;
-      }
-      vertex_stride_bytes = stride;
-      vertex_offset_bytes = attribute_offset;
-      has_vertex_fetch = true;
-    }
-    for (const auto& instruction : pixel_schedule) {
-      if (instruction.kind != shift::xbox::ShaderScheduledInstructionKind::Fetch ||
-          std::find(pixel_translation.executed_instruction_addresses.begin(),
-                    pixel_translation.executed_instruction_addresses.end(),
-                    instruction.address) ==
-              pixel_translation.executed_instruction_addresses.end()) {
-        continue;
-      }
-      const size_t offset = static_cast<size_t>(instruction.address) * 12;
-      shift::xbox::CapturedShaderFetchInstruction fetch{};
-      if (offset + 12 > pixel_program.size() ||
-          !shift::xbox::decode_captured_shader_fetch_instruction(
-              pixel_program.data() + offset, 12, &fetch, error) ||
-          fetch.kind != shift::xbox::CapturedShaderFetchKind::Texture2D ||
-          fetch.fetch_constant_index != 0) {
-        return false;
-      }
     }
 
     constexpr uint32_t kMaxLiveIndexBytes = 2u * 1024u * 1024u;
@@ -427,33 +419,78 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     const uint8_t* guest_bytes = nullptr;
     size_t guest_byte_length = 0;
     uint32_t maximum_vertex_index = 0;
-    uint32_t required_vertex_bytes = 0;
-    if (!has_vertex_fetch || draw.index_byte_length > kMaxLiveIndexBytes ||
-        texture_fetch.byte_length > kMaxLiveTextureBytes ||
-        !ReadGuestMemory(this, draw.index_guest_address, draw.index_byte_length,
-                         &guest_bytes, &guest_byte_length) ||
-        guest_byte_length < draw.index_byte_length ||
-        !shift::xbox::decode_captured_index_data(
-            draw, guest_bytes, draw.index_byte_length, &prepared.indices,
-            &maximum_vertex_index, error) ||
-        !shift::xbox::captured_vertex_required_bytes(
-            maximum_vertex_index, vertex_stride_bytes, vertex_offset_bytes, 12,
-            &required_vertex_bytes, error) ||
-        required_vertex_bytes > kMaxLiveVertexBytes ||
-        required_vertex_bytes > vertex_fetch.byte_length ||
-        !ReadGuestMemory(this, vertex_fetch.guest_address, required_vertex_bytes,
-                         &guest_bytes, &guest_byte_length) ||
-        guest_byte_length < required_vertex_bytes ||
-        !shift::xbox::normalize_captured_buffer_bytes(
-            vertex_fetch.endian_mode, guest_bytes, required_vertex_bytes,
-            &prepared.vertices, error) ||
-        !ReadGuestMemory(this, texture_fetch.guest_address, texture_fetch.byte_length,
-                         &guest_bytes, &guest_byte_length) ||
-        guest_byte_length < texture_fetch.byte_length ||
-        !shift::xbox::untile_captured_texture_2d(
-            texture_fetch, guest_bytes, texture_fetch.byte_length,
-            &prepared.texture_rgba8, error)) {
-      return false;
+    if (draw.auto_index) {
+      if (draw.topology != shift::xbox::PrimitiveTopology::PointList) {
+        if (error) *error = "captured AutoIndex primitive expansion is unsupported";
+        return false;
+      }
+      maximum_vertex_index = draw.index_count - 1;
+    } else {
+      if (draw.index_byte_length > kMaxLiveIndexBytes ||
+          !ReadGuestMemory(this, draw.index_guest_address,
+                           draw.index_byte_length, &guest_bytes,
+                           &guest_byte_length) ||
+          guest_byte_length < draw.index_byte_length ||
+          !shift::xbox::decode_captured_index_data(
+              draw, guest_bytes, draw.index_byte_length, &prepared.indices,
+              &maximum_vertex_index, error)) {
+        return false;
+      }
+    }
+    uint32_t vertex_stride_bytes = 0;
+    if (!vertex_translation.vertex_input_attributes.empty()) {
+      uint32_t maximum_attribute_end = 0;
+      for (const auto& attribute : vertex_translation.vertex_input_attributes) {
+        const uint32_t attribute_size = attribute.vertex_format == 57 ? 12u
+                                        : attribute.vertex_format == 38 ? 16u
+                                                                        : 0u;
+        if (attribute_size == 0 || attribute.stride_dwords == 0 ||
+            attribute.offset_dwords < 0) {
+          if (error) *error = "captured vertex input layout is unsupported";
+          return false;
+        }
+        const uint64_t stride_bytes = uint64_t{attribute.stride_dwords} * 4u;
+        const uint64_t offset_bytes =
+            static_cast<uint64_t>(attribute.offset_dwords) * 4u;
+        if (stride_bytes > UINT32_MAX || offset_bytes + attribute_size > stride_bytes ||
+            (vertex_stride_bytes != 0 && vertex_stride_bytes != stride_bytes)) {
+          if (error) *error = "captured vertex input attributes disagree on stride";
+          return false;
+        }
+        vertex_stride_bytes = static_cast<uint32_t>(stride_bytes);
+        maximum_attribute_end = std::max(
+            maximum_attribute_end,
+            static_cast<uint32_t>(offset_bytes + attribute_size));
+      }
+      uint32_t required_vertex_bytes = 0;
+      if (!shift::xbox::captured_vertex_required_bytes(
+              maximum_vertex_index, vertex_stride_bytes, 0, maximum_attribute_end,
+              &required_vertex_bytes, error) ||
+          required_vertex_bytes > kMaxLiveVertexBytes ||
+          required_vertex_bytes > vertex_fetch.byte_length ||
+          !ReadGuestMemory(this, vertex_fetch.guest_address, required_vertex_bytes,
+                           &guest_bytes, &guest_byte_length) ||
+          guest_byte_length < required_vertex_bytes ||
+          !shift::xbox::normalize_captured_buffer_bytes(
+              vertex_fetch.endian_mode, guest_bytes, required_vertex_bytes,
+              &prepared.vertices, error)) {
+        return false;
+      }
+    }
+    prepared.vertex_stride_bytes = vertex_stride_bytes;
+    if (pixel_translation.uses_texture) {
+      if (texture_fetch.byte_length > kMaxLiveTextureBytes ||
+          !ReadGuestMemory(this, texture_fetch.guest_address,
+                           texture_fetch.byte_length, &guest_bytes,
+                           &guest_byte_length) ||
+          guest_byte_length < texture_fetch.byte_length ||
+          !shift::xbox::untile_captured_texture_2d(
+              texture_fetch, guest_bytes, texture_fetch.byte_length,
+              &prepared.texture_rgba8, error)) {
+        return false;
+      }
+    } else {
+      prepared.texture_rgba8 = {255, 255, 255, 255};
     }
     *prepared_draw = std::move(prepared);
     return true;
@@ -545,7 +582,6 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         uint32_t loaded_constant_spans = 0;
         uint32_t unresolved_constant_spans = 0;
         uint32_t unsupported_draws = 0;
-        bool logged_draw_preparation_failure = false;
         uint32_t decoded_swaps = 0;
         uint32_t submitted_frames = 0;
         uint32_t raw_register_writes = 0;
@@ -723,6 +759,30 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                                raster_state.width, raster_state.height,
                                vertex_shader_program.size(),
                                pixel_shader_program.size(), first_error);
+                  if (raster_register_state.snapshot(&raster_registers,
+                                                     &raster_error)) {
+                    REXLOG_DEBUG(
+                        "shift-native: captured raster registers: "
+                        "surface={:08x}, color={:08x}, depth={:08x}, mode={:08x}, "
+                        "mask={:08x}, viewport=[{:08x},{:08x},{:08x},{:08x}], "
+                        "screen-scissor=[{:08x},{:08x}], "
+                        "window-scissor=[{:08x},{:08x}], window-offset={:08x}, "
+                        "blend={:08x}, depth-control={:08x}",
+                        raster_registers.surface_info,
+                        raster_registers.color_info, raster_registers.depth_info,
+                        raster_registers.mode_control, raster_registers.color_mask,
+                        raster_registers.viewport_x_scale,
+                        raster_registers.viewport_x_offset,
+                        raster_registers.viewport_y_scale,
+                        raster_registers.viewport_y_offset,
+                        raster_registers.screen_scissor_tl,
+                        raster_registers.screen_scissor_br,
+                        raster_registers.window_scissor_tl,
+                        raster_registers.window_scissor_br,
+                        raster_registers.window_offset,
+                        raster_registers.blend_control_0,
+                        raster_registers.depth_control);
+                  }
                   REXLOG_DEBUG(
                       "shift-native: AutoIndex pixel control flow: decoded={}, "
                       "uses-b128={}, uses-b129={}, error={}",
@@ -866,10 +926,13 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                     ++draws_with_unresolved_resource_payloads;
                   }
                 }
-                if (!resources_resolved && !logged_draw_preparation_failure) {
-                  REXLOG_DEBUG("shift-native: skipped captured indexed draw: {}",
-                               error.empty() ? "unsupported shader or resource form" : error);
-                  logged_draw_preparation_failure = true;
+                if (!resources_resolved) {
+                  REXLOG_DEBUG(
+                      "shift-native: skipped draw topology={} autoindex={} "
+                      "count={} inputs={} translated={}: {}",
+                      static_cast<uint32_t>(draw.topology), draw.auto_index,
+                      draw.index_count, shader_inputs_ready, shaders_translated,
+                      error.empty() ? "unsupported shader or resource form" : error);
                 }
               } else {
                 ++unsupported_draws;

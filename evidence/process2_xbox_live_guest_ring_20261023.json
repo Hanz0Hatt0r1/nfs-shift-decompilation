@@ -1,6 +1,6 @@
 {
   "format": "SHIFT.Process2LiveGuestRingVulkanEvidence/1",
-  "status": "live_pm4_consumption_verified; retail_draw_not_reached",
+  "status": "live_retail_point_draws_submitted_to_vulkan; scene_parity_unverified",
   "run": {
     "date": "2026-10-23",
     "title_id": "0x454108B4",
@@ -240,10 +240,72 @@
     "vulkan_frames_submitted": 0,
     "result": "live parser decoded vfetch_mini fields; no retail draw reached Vulkan submission"
   },
+  "latest_live_vulkan_submission": {
+    "date": "2026-10-23",
+    "log": "/tmp/process2-live-nfs/headless-20261023/retail-live-v6/shift-native-debug.log",
+    "game_executable_sha256": "38b1d3fd5ff21714deeda8044be7bc415cab922e7747af29db61faa5a9c9f38f",
+    "gpu_plugin_sha256": "81e44d3a43dec9dfa28434a173b8097d2a68a97caee2cc86e26d41e2efd7c3ba",
+    "gpu_plugin_selection": "shift-native; rexgpu-xenos was not requested",
+    "host_vulkan_device": "NVIDIA GeForce GTX 950",
+    "surface": "Gamescope headless + Xwayland",
+    "guest_ring_address": "0x09752580",
+    "guest_ring_capacity_bytes": 32768,
+    "batches": [
+      {
+        "pm4_packets": 73,
+        "draw_indx_2_packets": 24,
+        "supported_raster_draws": 0,
+        "vulkan_frames_submitted": 0
+      },
+      {
+        "pm4_packets": 970,
+        "draw_indx_2_packets": 26,
+        "source_primitive_histogram": {
+          "AutoIndex point list": 24,
+          "AutoIndex rectangle list": 2
+        },
+        "draws_with_supported_raster_state": 25,
+        "shader_pairs_translated": 25,
+        "resource_sets_resolved": 24,
+        "guest_swaps": 1,
+        "submitted_point_draws": 24,
+        "vulkan_frames_submitted": 1,
+        "presenter_extent": "1280x720"
+      },
+      {
+        "pm4_packets": 785,
+        "draw_indx_2_packets": 50,
+        "source_primitive_histogram": {
+          "AutoIndex point list": 48,
+          "AutoIndex rectangle list": 2
+        },
+        "draws_with_supported_raster_state": 25,
+        "shader_pairs_translated": 25,
+        "resource_sets_resolved": 24,
+        "guest_swaps": 1,
+        "submitted_point_draws": 24,
+        "vulkan_frames_submitted": 1,
+        "presenter_extent": "1280x720"
+      }
+    ],
+    "totals": {
+      "pm4_packets": 1828,
+      "draw_indx_2_packets": 100,
+      "autoindex_point_draws_submitted": 48,
+      "guest_swaps": 2,
+      "vulkan_frames_submitted": 2,
+      "dma_indexed_draws_observed": 0
+    },
+    "result": "The project-owned translator compiled and resolved 24 real retail point-list draws at each of two guest swaps. The ReXGlue Vulkan presenter accepted both frame submissions. The retail full/mini-fetch VS also translated, but its rectangle-list draws remain unsupported.",
+    "retail_vulkan_submission_confirmed": true,
+    "visible_output_pixels_verified": false,
+    "full_scene_parity_verified": false,
+    "vulkan_validation_layer_enabled": false
+  },
   "remaining_blockers": [
-    "All 100 live DRAW_INDX_2 packets are AutoIndex (96 one-point draws and 4 three-index rectangle-list draws); no DMA indexed draw/DrawIndexedPrimitive packet has been verified or submitted.",
-    "No pointer IM_LOAD or LOAD_ALU_CONSTANT packets were observed. Inline IM_LOAD_IMMEDIATE programs were captured and their control-flow prefixes were decoded. Mini-fetch GLSL translation now has a targeted regression, but dynamic descriptor lookup and live resource resolution are still pending.",
-    "No frame reached submit_captured_vulkan_frame; the two observed XE_SWAP packets had no supported draw to submit.",
-    "Process 1 owns the original guest startup and scheduling path needed to reach the game's render-producing state."
+    "All 100 observed DRAW_INDX_2 packets are AutoIndex (96 one-point draws and four three-index rectangle-list draws); no DMA-indexed draw packet was observed. The first live retail frame therefore covers the observed point-list path only.",
+    "AutoIndex rectangle-list expansion remains unsupported, and the retail full/mini-fetch shader's rectangle draws are still skipped. Xenos EDRAM accumulation and the guest frontbuffer resolve path are not implemented.",
+    "The retail frame was submitted into the presenter image, but no screenshot/readback or output-pixel comparison confirms visible pixels or retail parity.",
+    "The full Android game is not buildable yet: the Android ReXGlue link is blocked by the Process 1-owned POSIX fiber backend and the game has no Android Activity/APK target."
   ]
 }

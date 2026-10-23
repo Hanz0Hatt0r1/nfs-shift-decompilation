@@ -4,6 +4,7 @@
 #include <array>
 #include <cstring>
 #include <initializer_list>
+#include <limits>
 #include <sstream>
 #include <utility>
 
@@ -43,6 +44,8 @@ struct FrameResources {
     VkQueue queue = VK_NULL_HANDLE;
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
+    ImageResource multisample_color;
+    ImageResource depth;
     VkCommandPool command_pool = VK_NULL_HANDLE;
     std::vector<DrawResources> draws;
     bool submitted = false;
@@ -68,6 +71,8 @@ struct FrameResources {
             destroy_buffer(draw.vertices);
         }
         if (framebuffer) vkDestroyFramebuffer(device, framebuffer, nullptr);
+        destroy_image(multisample_color);
+        destroy_image(depth);
         if (render_pass) vkDestroyRenderPass(device, render_pass, nullptr);
         if (command_pool) vkDestroyCommandPool(device, command_pool, nullptr);
     }
@@ -218,6 +223,62 @@ bool create_texture_image(
     return true;
 }
 
+bool create_render_attachment(
+    const VkPhysicalDeviceMemoryProperties& memory_properties,
+    VkDevice device,
+    uint32_t width,
+    uint32_t height,
+    VkFormat format,
+    VkImageUsageFlags usage,
+    VkImageAspectFlags aspect,
+    VkSampleCountFlagBits samples,
+    ImageResource* output,
+    std::string* error) {
+    VkImageCreateInfo image_info{};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.format = format;
+    image_info.extent = {width, height, 1};
+    image_info.mipLevels = 1;
+    image_info.arrayLayers = 1;
+    image_info.samples = samples;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = usage;
+    image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkResult result = vkCreateImage(device, &image_info, nullptr, &output->image);
+    if (result != VK_SUCCESS) return vk_fail("vkCreateImage(render attachment)", result, error);
+
+    VkMemoryRequirements requirements{};
+    vkGetImageMemoryRequirements(device, output->image, &requirements);
+    const uint32_t memory_type = find_memory_type(
+        memory_properties, requirements.memoryTypeBits, 0,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    if (memory_type == UINT32_MAX) {
+        return fail("no compatible Vulkan render attachment memory type", error);
+    }
+    VkMemoryAllocateInfo allocate_info{};
+    allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocate_info.allocationSize = requirements.size;
+    allocate_info.memoryTypeIndex = memory_type;
+    result = vkAllocateMemory(device, &allocate_info, nullptr, &output->memory);
+    if (result != VK_SUCCESS) return vk_fail("vkAllocateMemory(render attachment)", result, error);
+    result = vkBindImageMemory(device, output->image, output->memory, 0);
+    if (result != VK_SUCCESS) return vk_fail("vkBindImageMemory(render attachment)", result, error);
+
+    VkImageViewCreateInfo view_info{};
+    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    view_info.image = output->image;
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.format = format;
+    view_info.subresourceRange.aspectMask = aspect;
+    view_info.subresourceRange.levelCount = 1;
+    view_info.subresourceRange.layerCount = 1;
+    result = vkCreateImageView(device, &view_info, nullptr, &output->view);
+    if (result != VK_SUCCESS) return vk_fail("vkCreateImageView(render attachment)", result, error);
+    return true;
+}
+
 VkSamplerAddressMode sampler_address_mode(TextureClamp clamp, bool* supported) {
     switch (clamp) {
         case TextureClamp::Repeat: return VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -239,6 +300,35 @@ VkFilter sampler_filter(TextureFilter filter, bool* supported) {
     return VK_FILTER_NEAREST;
 }
 
+VkCompareOp compare_op(uint32_t value) {
+    static constexpr VkCompareOp kCompareOps[] = {
+        VK_COMPARE_OP_NEVER, VK_COMPARE_OP_LESS, VK_COMPARE_OP_EQUAL,
+        VK_COMPARE_OP_LESS_OR_EQUAL, VK_COMPARE_OP_GREATER,
+        VK_COMPARE_OP_NOT_EQUAL, VK_COMPARE_OP_GREATER_OR_EQUAL,
+        VK_COMPARE_OP_ALWAYS,
+    };
+    return kCompareOps[value & 7u];
+}
+
+VkStencilOp stencil_op(uint32_t value) {
+    static constexpr VkStencilOp kStencilOps[] = {
+        VK_STENCIL_OP_KEEP, VK_STENCIL_OP_ZERO, VK_STENCIL_OP_REPLACE,
+        VK_STENCIL_OP_INCREMENT_AND_CLAMP, VK_STENCIL_OP_DECREMENT_AND_CLAMP,
+        VK_STENCIL_OP_INVERT, VK_STENCIL_OP_INCREMENT_AND_WRAP,
+        VK_STENCIL_OP_DECREMENT_AND_WRAP,
+    };
+    return kStencilOps[value & 7u];
+}
+
+VkSampleCountFlagBits sample_count_flag(uint32_t samples) {
+    switch (samples) {
+        case 1: return VK_SAMPLE_COUNT_1_BIT;
+        case 2: return VK_SAMPLE_COUNT_2_BIT;
+        case 4: return VK_SAMPLE_COUNT_4_BIT;
+        default: return VkSampleCountFlagBits{};
+    }
+}
+
 bool create_draw_resources(
     const CapturedVulkanDraw& source,
     const VkPhysicalDeviceMemoryProperties& memory_properties,
@@ -248,24 +338,37 @@ bool create_draw_resources(
     std::string* error) {
     const uint32_t vertex_constants_size = sizeof(source.constants.vertex_float_constants);
     const uint32_t pixel_constants_size = sizeof(source.constants.pixel_float_constants);
+    const bool has_vertex_inputs = !source.vertex_input_attributes.empty();
     const uint64_t texture_size = static_cast<uint64_t>(source.texture_width) *
                                   source.texture_height * 4u;
-    if (source.vertices.empty() || source.indices.empty() || source.index_count == 0 ||
+    if ((has_vertex_inputs && source.vertices.empty()) ||
+        (!has_vertex_inputs && !source.vertices.empty()) ||
+        source.index_count == 0 ||
+        (source.auto_index ? !source.indices.empty() : source.indices.empty()) ||
         source.vertex_shader_spirv.empty() || source.pixel_shader_spirv.empty() ||
+        (has_vertex_inputs && source.vertex_stride_bytes == 0) ||
         source.texture_width == 0 || source.texture_height == 0 ||
         texture_size != source.texture_rgba8.size() || texture_size > (uint64_t{1} << 26)) {
         return fail("captured Vulkan draw resources are incomplete or oversized", error);
     }
-    if (source.raster.blend_control_0 != 0x07010706u) {
+    if (source.raster.blend_control_0 != 0x07010706u &&
+        source.raster.blend_control_0 != 0x00010001u) {
         return fail("captured blend control is outside the supported retail draw", error);
     }
+    const VkSampleCountFlagBits raster_samples =
+        sample_count_flag(source.raster.sample_count);
+    if (raster_samples == VkSampleCountFlagBits{}) {
+        return fail("captured sample count is outside the Vulkan 1.1 subset", error);
+    }
 
-    if (!create_buffer(memory_properties, device, source.vertices.size(),
-                       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, source.vertices.data(),
-                       &output->vertices, error) ||
-        !create_buffer(memory_properties, device, source.indices.size(),
-                       VK_BUFFER_USAGE_INDEX_BUFFER_BIT, source.indices.data(),
-                       &output->indices, error) ||
+    if ((has_vertex_inputs &&
+         !create_buffer(memory_properties, device, source.vertices.size(),
+                        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, source.vertices.data(),
+                        &output->vertices, error)) ||
+        (!source.auto_index &&
+         !create_buffer(memory_properties, device, source.indices.size(),
+                        VK_BUFFER_USAGE_INDEX_BUFFER_BIT, source.indices.data(),
+                        &output->indices, error)) ||
         !create_buffer(memory_properties, device, vertex_constants_size,
                        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                        source.constants.vertex_float_constants.data(),
@@ -399,18 +502,47 @@ bool create_draw_resources(
     stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     stages[1].module = output->pixel_shader;
     stages[1].pName = "main";
-    const VkVertexInputBindingDescription vertex_binding{0, 12, VK_VERTEX_INPUT_RATE_VERTEX};
-    const VkVertexInputAttributeDescription vertex_attribute{
-        0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+    const VkVertexInputBindingDescription vertex_binding{
+        0, source.vertex_stride_bytes, VK_VERTEX_INPUT_RATE_VERTEX};
+    std::vector<VkVertexInputAttributeDescription> vertex_attributes;
+    if (has_vertex_inputs) {
+        vertex_attributes.reserve(source.vertex_input_attributes.size());
+        for (const CapturedVertexInputAttribute& input :
+             source.vertex_input_attributes) {
+            VkFormat format = VK_FORMAT_UNDEFINED;
+            if (input.vertex_format == 57) {
+                format = VK_FORMAT_R32G32B32_SFLOAT;
+            } else if (input.vertex_format == 38) {
+                format = VK_FORMAT_R32G32B32A32_SFLOAT;
+            } else {
+                return fail("captured Vulkan vertex format is unsupported", error);
+            }
+            if (input.offset_dwords < 0 ||
+                static_cast<uint64_t>(input.stride_dwords) * 4u !=
+                    source.vertex_stride_bytes) {
+                return fail("captured Vulkan vertex layout is inconsistent", error);
+            }
+            vertex_attributes.push_back({
+                input.location, 0, format,
+                static_cast<uint32_t>(input.offset_dwords) * 4u});
+        }
+    }
     VkPipelineVertexInputStateCreateInfo vertex_input{};
     vertex_input.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input.vertexBindingDescriptionCount = 1;
-    vertex_input.pVertexBindingDescriptions = &vertex_binding;
-    vertex_input.vertexAttributeDescriptionCount = 1;
-    vertex_input.pVertexAttributeDescriptions = &vertex_attribute;
+    vertex_input.vertexBindingDescriptionCount = has_vertex_inputs ? 1u : 0u;
+    vertex_input.pVertexBindingDescriptions = has_vertex_inputs ? &vertex_binding : nullptr;
+    vertex_input.vertexAttributeDescriptionCount =
+        static_cast<uint32_t>(vertex_attributes.size());
+    vertex_input.pVertexAttributeDescriptions = vertex_attributes.data();
     VkPipelineInputAssemblyStateCreateInfo assembly{};
     assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    if (source.topology == PrimitiveTopology::TriangleList) {
+        assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    } else if (source.topology == PrimitiveTopology::PointList) {
+        assembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    } else {
+        return fail("captured Vulkan primitive topology is unsupported", error);
+    }
     VkPipelineViewportStateCreateInfo viewport_state{};
     viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewport_state.viewportCount = 1;
@@ -423,16 +555,48 @@ bool create_draw_resources(
     raster.lineWidth = 1.0f;
     VkPipelineMultisampleStateCreateInfo multisample{};
     multisample.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisample.rasterizationSamples = raster_samples;
     VkPipelineDepthStencilStateCreateInfo depth{};
     depth.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depth.depthTestEnable = source.raster.depth_test_enabled;
+    depth.depthWriteEnable = source.raster.depth_write_enabled;
+    depth.depthCompareOp = compare_op((source.raster.depth_control >> 4) & 7u);
+    depth.stencilTestEnable = source.raster.stencil_test_enabled;
+    const uint32_t stencil_reference = source.raster.stencil_refmask & 0xFFu;
+    const uint32_t stencil_compare_mask =
+        (source.raster.stencil_refmask >> 8) & 0xFFu;
+    const uint32_t stencil_write_mask =
+        (source.raster.stencil_refmask >> 16) & 0xFFu;
+    const VkStencilOpState front_stencil{
+        stencil_op((source.raster.depth_control >> 11) & 7u),
+        stencil_op((source.raster.depth_control >> 14) & 7u),
+        stencil_op((source.raster.depth_control >> 17) & 7u),
+        compare_op((source.raster.depth_control >> 8) & 7u),
+        stencil_compare_mask, stencil_write_mask, stencil_reference};
+    VkStencilOpState back_stencil = front_stencil;
+    if ((source.raster.depth_control & (1u << 7)) != 0) {
+        back_stencil.failOp = stencil_op((source.raster.depth_control >> 23) & 7u);
+        back_stencil.passOp = stencil_op((source.raster.depth_control >> 26) & 7u);
+        back_stencil.depthFailOp = stencil_op((source.raster.depth_control >> 29) & 7u);
+        back_stencil.compareOp = compare_op((source.raster.depth_control >> 20) & 7u);
+    }
+    depth.front = front_stencil;
+    depth.back = back_stencil;
     VkPipelineColorBlendAttachmentState blend_attachment{};
-    blend_attachment.blendEnable = VK_TRUE;
-    blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    blend_attachment.blendEnable =
+        source.raster.blend_control_0 == 0x07010706u ? VK_TRUE : VK_FALSE;
+    if (source.raster.blend_control_0 == 0x07010706u) {
+        blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    } else {
+        blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+        blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+        blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    }
     blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
-    blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
     blend_attachment.colorWriteMask = 0;
     if (source.raster.color_write_mask & 1u) blend_attachment.colorWriteMask |= VK_COLOR_COMPONENT_R_BIT;
@@ -487,40 +651,113 @@ bool submit_captured_vulkan_frame(
         !output_width || !output_height || draws.empty() || queue_family_index == UINT32_MAX) {
         return fail("invalid captured Vulkan frame target or draw list", error);
     }
+    if (output_width > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()) ||
+        output_height > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())) {
+        return fail("Vulkan presenter extent exceeds signed scissor bounds", error);
+    }
     VkPhysicalDeviceMemoryProperties memory_properties{};
     vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
     FrameResources resources{};
     resources.device = device;
     resources.queue = queue;
     resources.draws.resize(draws.size());
+    const uint32_t samples = draws.front().raster.sample_count;
+    const VkSampleCountFlagBits raster_samples = sample_count_flag(samples);
+    if (raster_samples == VkSampleCountFlagBits{}) {
+        return fail("captured sample count is outside the Vulkan 1.1 subset", error);
+    }
+    const bool needs_depth = std::any_of(
+        draws.begin(), draws.end(), [](const CapturedVulkanDraw& draw) {
+            return draw.raster.depth_test_enabled ||
+                   draw.raster.depth_write_enabled ||
+                   draw.raster.stencil_test_enabled;
+        });
 
     for (const CapturedVulkanDraw& draw : draws) {
         const CapturedRasterState& raster = draw.raster;
-        if (raster.width != output_width || raster.height != output_height ||
-            raster.scissor_x1 > output_width || raster.scissor_y1 > output_height ||
+        if (raster.sample_count != samples || raster.width == 0 || raster.height == 0 ||
+            raster.scissor_x1 > raster.width || raster.scissor_y1 > raster.height ||
             raster.scissor_x0 > raster.scissor_x1 || raster.scissor_y0 > raster.scissor_y1) {
             return fail("captured draw target or scissor differs from PM4_XE_SWAP", error);
         }
     }
 
-    VkAttachmentDescription attachment{};
-    attachment.format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
-    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    if (samples > 1 &&
+        !create_render_attachment(
+            memory_properties, device, output_width, output_height,
+            VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT,
+            raster_samples, &resources.multisample_color, error)) {
+        return false;
+    }
+    if (needs_depth &&
+        !create_render_attachment(
+            memory_properties, device, output_width, output_height,
+            VK_FORMAT_D24_UNORM_S8_UINT,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+            VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+            raster_samples, &resources.depth, error)) {
+        return false;
+    }
+
+    std::vector<VkAttachmentDescription> attachments;
+    VkAttachmentDescription color_attachment{};
+    color_attachment.format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+    color_attachment.samples = raster_samples;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = samples == 1 ? VK_ATTACHMENT_STORE_OP_STORE
+                                             : VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.initialLayout = samples == 1
+                                         ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+                                         : VK_IMAGE_LAYOUT_UNDEFINED;
+    color_attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachments.push_back(color_attachment);
     VkAttachmentReference color_reference{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+
+    VkAttachmentReference depth_reference{};
+    if (needs_depth) {
+        depth_reference.attachment = static_cast<uint32_t>(attachments.size());
+        depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        VkAttachmentDescription depth_attachment{};
+        depth_attachment.format = VK_FORMAT_D24_UNORM_S8_UINT;
+        depth_attachment.samples = raster_samples;
+        depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        attachments.push_back(depth_attachment);
+    }
+
+    VkAttachmentReference resolve_reference{};
+    if (samples > 1) {
+        resolve_reference.attachment = static_cast<uint32_t>(attachments.size());
+        resolve_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        VkAttachmentDescription resolve_attachment{};
+        resolve_attachment.format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+        resolve_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        resolve_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        resolve_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        resolve_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        resolve_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        resolve_attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        resolve_attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        attachments.push_back(resolve_attachment);
+    }
+
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_reference;
+    subpass.pDepthStencilAttachment = needs_depth ? &depth_reference : nullptr;
+    subpass.pResolveAttachments = samples > 1 ? &resolve_reference : nullptr;
     VkRenderPassCreateInfo render_pass_info{};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    render_pass_info.attachmentCount = 1;
-    render_pass_info.pAttachments = &attachment;
+    render_pass_info.attachmentCount = static_cast<uint32_t>(attachments.size());
+    render_pass_info.pAttachments = attachments.data();
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &subpass;
     VkResult result = vkCreateRenderPass(device, &render_pass_info, nullptr,
@@ -530,8 +767,12 @@ bool submit_captured_vulkan_frame(
     VkFramebufferCreateInfo framebuffer_info{};
     framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     framebuffer_info.renderPass = resources.render_pass;
-    framebuffer_info.attachmentCount = 1;
-    framebuffer_info.pAttachments = &output_view;
+    std::vector<VkImageView> framebuffer_views;
+    framebuffer_views.push_back(samples > 1 ? resources.multisample_color.view : output_view);
+    if (needs_depth) framebuffer_views.push_back(resources.depth.view);
+    if (samples > 1) framebuffer_views.push_back(output_view);
+    framebuffer_info.attachmentCount = static_cast<uint32_t>(framebuffer_views.size());
+    framebuffer_info.pAttachments = framebuffer_views.data();
     framebuffer_info.width = output_width;
     framebuffer_info.height = output_height;
     framebuffer_info.layers = 1;
@@ -580,6 +821,7 @@ bool submit_captured_vulkan_frame(
             {&draw.texture_upload, VK_ACCESS_TRANSFER_READ_BIT},
         }};
         for (const auto& [buffer, destination_access] : buffers) {
+            if (!buffer->buffer) continue;
             VkBufferMemoryBarrier barrier{};
             barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
             barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
@@ -659,13 +901,20 @@ bool submit_captured_vulkan_frame(
 
     VkClearValue clear{};
     clear.color.float32[3] = 1.0f;
+    std::vector<VkClearValue> clear_values(attachments.size());
+    clear_values[0] = clear;
+    if (needs_depth) {
+        const size_t depth_index = depth_reference.attachment;
+        clear_values[depth_index].depthStencil.depth = 1.0f;
+        clear_values[depth_index].depthStencil.stencil = 0;
+    }
     VkRenderPassBeginInfo pass_begin{};
     pass_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     pass_begin.renderPass = resources.render_pass;
     pass_begin.framebuffer = resources.framebuffer;
     pass_begin.renderArea.extent = {output_width, output_height};
-    pass_begin.clearValueCount = 1;
-    pass_begin.pClearValues = &clear;
+    pass_begin.clearValueCount = static_cast<uint32_t>(clear_values.size());
+    pass_begin.pClearValues = clear_values.data();
     vkCmdBeginRenderPass(command, &pass_begin, VK_SUBPASS_CONTENTS_INLINE);
 
     for (size_t i = 0; i < draws.size(); ++i) {
@@ -674,29 +923,49 @@ bool submit_captured_vulkan_frame(
         VkViewport viewport{};
         viewport.x = 0.0f;
         viewport.y = source.raster.viewport_y_flipped
-                         ? static_cast<float>(source.raster.height)
+                         ? static_cast<float>(output_height)
                          : 0.0f;
-        viewport.width = static_cast<float>(source.raster.width);
+        viewport.width = static_cast<float>(output_width);
         viewport.height = source.raster.viewport_y_flipped
-                              ? -static_cast<float>(source.raster.height)
-                              : static_cast<float>(source.raster.height);
+                              ? -static_cast<float>(output_height)
+                              : static_cast<float>(output_height);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
+        const auto scaled_edge = [](uint32_t edge, uint32_t source_extent,
+                                    uint32_t output_extent, bool round_up) {
+            const uint64_t numerator = static_cast<uint64_t>(edge) * output_extent;
+            const uint64_t quotient = numerator / source_extent;
+            return static_cast<uint32_t>(quotient +
+                (round_up && numerator % source_extent != 0 ? 1u : 0u));
+        };
+        const uint32_t scissor_x0 = scaled_edge(source.raster.scissor_x0,
+                                                source.raster.width, output_width, false);
+        const uint32_t scissor_y0 = scaled_edge(source.raster.scissor_y0,
+                                                source.raster.height, output_height, false);
+        const uint32_t scissor_x1 = scaled_edge(source.raster.scissor_x1,
+                                                source.raster.width, output_width, true);
+        const uint32_t scissor_y1 = scaled_edge(source.raster.scissor_y1,
+                                                source.raster.height, output_height, true);
         VkRect2D scissor{};
-        scissor.offset = {static_cast<int32_t>(source.raster.scissor_x0),
-                          static_cast<int32_t>(source.raster.scissor_y0)};
-        scissor.extent = {source.raster.scissor_x1 - source.raster.scissor_x0,
-                          source.raster.scissor_y1 - source.raster.scissor_y0};
+        scissor.offset = {static_cast<int32_t>(scissor_x0),
+                          static_cast<int32_t>(scissor_y0)};
+        scissor.extent = {scissor_x1 - scissor_x0, scissor_y1 - scissor_y0};
         const VkDeviceSize vertex_offset = 0;
         vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS, draw.pipeline);
         vkCmdSetViewport(command, 0, 1, &viewport);
         vkCmdSetScissor(command, 0, 1, &scissor);
-        vkCmdBindVertexBuffers(command, 0, 1, &draw.vertices.buffer, &vertex_offset);
-        vkCmdBindIndexBuffer(command, draw.indices.buffer, 0, VK_INDEX_TYPE_UINT16);
+        if (draw.vertices.buffer != VK_NULL_HANDLE) {
+            vkCmdBindVertexBuffers(command, 0, 1, &draw.vertices.buffer, &vertex_offset);
+        }
         vkCmdBindDescriptorSets(command, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 draw.pipeline_layout, 0, 2,
                                 draw.descriptor_sets, 0, nullptr);
-        vkCmdDrawIndexed(command, source.index_count, 1, 0, 0, 0);
+        if (source.auto_index) {
+            vkCmdDraw(command, source.index_count, 1, 0, 0);
+        } else {
+            vkCmdBindIndexBuffer(command, draw.indices.buffer, 0, VK_INDEX_TYPE_UINT16);
+            vkCmdDrawIndexed(command, source.index_count, 1, 0, 0, 0);
+        }
     }
     vkCmdEndRenderPass(command);
 

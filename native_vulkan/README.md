@@ -41,10 +41,10 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   dword offset 3. The project translator now applies the full fetch's inherited
   address, constant, and stride while retaining the mini's own format,
   destination, and offset. Its regression emits float3 and float4 inputs at
-  byte offsets 0 and 12 with the observed 28-byte stride. This verifies the
-  captured instruction contract translates; dynamic constant-0 descriptor
-  lookup and vertex-buffer resource resolution are still pending, and no live
-  retail shader has yet reached Vulkan submission.
+  byte offsets 0 and 12 with the observed 28-byte stride. Dynamic lookup now
+  selects the captured fetch descriptor. The live point-list vertex shader
+  also exercises the no-fetch path, which renders from `gl_VertexIndex` without
+  a synthetic vertex buffer.
   The packet scanner frames contiguous big-endian type 0/1/2/3 PM4 packets and
   reports type-3 opcodes without applying state or executing commands. The
   project-owned `snapshot_guest_ring_batch` copies a committed dword-indexed
@@ -61,11 +61,13 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   over-limit streams. The Linux ReXGlue plugin in
   `native_vulkan/rexglue_plugin` consumes the live ring and indirect buffers
   from `InitializeRingBuffer` / `CP_RB_WPTR` on an asynchronous worker. At each
-  supported DMA-source `DRAW_INDX` or `DRAW_INDX_2`, it checks the captured
+  supported DMA-source `DRAW_INDX`/`DRAW_INDX_2` or AutoIndex `DRAW_INDX_2`, it checks the captured
   raster state, shader programs (including bounded inline `IM_LOAD_IMMEDIATE`
   code), constants, and descriptors; translates the bounded shader pair to
   project-owned GLSL; compiles Vulkan 1.1 SPIR-V; and resolves normalized
-  index/vertex payloads plus the untiled texture. At `PM4_XE_SWAP`, the plugin
+  index/vertex payloads plus the untiled texture. AutoIndex point lists with
+  no vertex fetch are supported; rectangle lists remain fail-closed. At
+  `PM4_XE_SWAP`, the plugin
   batches those draws and submits them into the ReXGlue presenter's output
   image through `shift_xbox_live_vulkan_renderer`. That renderer core has no
   XCB/Wayland dependency. The frame currently starts with a black clear and
@@ -77,8 +79,9 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   `DRAW_INDX`, captured raster/fetch words, captured PS slice, and captured
   index values, with a synthetic VS, constants, and texture payload. This is
   plugin integration evidence, not a live retail frame or parity result. A
-  separate offscreen indexed-draw smoke passed Vulkan validation on Linux and
-  executed on Redmi Note 8 Pro; those smoke shaders are synthetic. On
+  separate synthetic offscreen AutoIndex point-draw smoke passed Vulkan
+  validation on Linux and executed on Redmi Note 8 Pro; its vertex shader uses
+  `gl_VertexIndex` without a vertex buffer. On
   2026-10-23, Wi-Fi ADB also ran the
   draw-input, guest-ring, shader-translation, and Vulkan 1.1 renderer checks on
   Redmi Note 8 Pro / Android 13 / Mali-G76 MC4. Android validation layers were
@@ -86,12 +89,12 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   emulator-free plugin, initialized the guest ring, and consumed 1,828 PM4
   packets including two swaps. A later debug run recorded 100 `DRAW_INDX_2`
   packets, all AutoIndex (96 point draws and four rectangle-list draws), and
-  decoded the inline VS/PS programs. Its 108-byte VS uses the full-fetch / mini-
-  fetch form described above. The shader translator now resolves the mini
-  fields in a targeted synthetic regression, but the live resource path still
-  selects descriptor 95 and only accepts the old float3/12-byte layout. The
-  run submitted zero Vulkan frames; a first retail draw is not yet confirmed.
-  No DMA indexed draw, pointer `IM_LOAD`, or
+  decoded the inline VS/PS programs. The updated plugin then translated and
+  resolved 24 captured point-list draws at each of two guest swaps and
+  submitted both 1280x720 frames to the Vulkan presenter. It also translated
+  the retail full/mini-fetch shader, while rectangle-list draws remain
+  unsupported. This confirms live retail Vulkan submission, not visible image
+  parity or complete scene rendering. No DMA-indexed draw, pointer `IM_LOAD`, or
   `LOAD_ALU_CONSTANT` was observed. See
   [`process2_xbox_live_guest_ring_20261023.json`](../evidence/process2_xbox_live_guest_ring_20261023.json).
   The private 19,784-byte capture scans as 247 packets with four bounded
@@ -130,8 +133,9 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   provisionally. The plugin has no dependency on the runtime-loaded
   `rexgpu-xenos` renderer; ReXGlue's common runtime still includes generic
   Xenos format utilities. The Android verification exercises the platform
-  independent renderer only, not ReXGlue window presentation. No live retail
-  frame or full-scene parity is claimed. The product path must not load
+  independent renderer only, not ReXGlue window presentation. Live retail
+  submission is confirmed, but no screenshot or output-pixel comparison
+  verifies its appearance. Full-scene parity is not claimed. The product path must not load
   `rexgpu-xenos` or another GPU renderer emulator;
 - Linux CI coverage for native smoke paths.
 
@@ -148,7 +152,9 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
 The backend is not yet a complete production renderer. Full BMW
 shader/material execution and full RenderCommand submission remain bounded by
 shader/reference coverage and runtime evidence. The Xbox work currently covers
-one captured draw and a small, fail-closed microcode subset.
+one standalone captured draw, live AutoIndex point-list frames, and a small,
+fail-closed microcode subset. Retail rectangle-list draws and Xenos EDRAM
+accumulation remain unsupported.
 
 ## Commands
 
