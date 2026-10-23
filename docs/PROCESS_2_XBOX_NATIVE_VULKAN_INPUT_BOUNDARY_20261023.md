@@ -339,7 +339,10 @@ byte diagnostic capture after its exact bytes were copied into a zero-filled
 32 KiB test ring. It framed all 247 packets and decoded the four captured
 `DRAW_INDX` commands with index counts 6, 6, 6, and 60. The ring capacity and
 head/tail values in that check are synthetic harness values, so this is not
-live ReXGlue ring evidence. Details are in
+live ReXGlue ring evidence. The type-0 decoder also accepted all 162 observed
+type-0 packets and extracted 4,436 raw `(register, value)` pairs; it does not
+apply or emulate those writes. Type-1 decoding is covered by a compact unit
+case. Details are in
 `evidence/process2_xbox_guest_ring_snapshot_20261023.json`.
 
 This is the first XEX-originated indexed draw submitted through the

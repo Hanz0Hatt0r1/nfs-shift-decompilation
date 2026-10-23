@@ -16,6 +16,8 @@
   "result": {
     "copied_bytes": 19784,
     "framed_packets": 247,
+    "register_write_packets": 162,
+    "decoded_register_writes": 4436,
     "draw_indx_count": 4,
     "draw_index_counts": [6, 6, 6, 60],
     "next_read_pointer_dwords": 4946,
@@ -26,6 +28,7 @@
     "assertions": [
       "snapshot_guest_ring_batch accepted the full capture as one committed ring span",
       "all 247 packets were framed",
+      "all 162 type-0 register-write packets decoded to 4,436 raw writes without applying state",
       "all four DRAW_INDX packets reached the bounded decoder with index counts 6, 6, 6, and 60",
       "the read pointer advanced to the supplied write pointer"
     ]

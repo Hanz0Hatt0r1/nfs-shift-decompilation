@@ -119,6 +119,53 @@ bool scan_captured_packet_stream(
     return true;
 }
 
+bool decode_guest_register_writes(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    std::vector<GuestRegisterWrite>* output,
+    std::string* error) {
+    if (!packet_bytes || !output || byte_length < 4u || (byte_length & 3u) != 0u) {
+        return fail("invalid PM4 register-write packet input", error);
+    }
+
+    const uint32_t header = read_be32(packet_bytes);
+    const uint32_t packet_type = header >> 30;
+    std::vector<GuestRegisterWrite> writes;
+    if (packet_type == 0u) {
+        const uint32_t value_count = ((header >> 16) & 0x3FFFu) + 1u;
+        if (byte_length != (static_cast<size_t>(value_count) + 1u) * 4u) {
+            return fail("type-0 PM4 packet size mismatch", error);
+        }
+        const uint32_t base_index = header & 0x7FFFu;
+        const bool write_one_register = ((header >> 15) & 1u) != 0u;
+        writes.reserve(value_count);
+        for (uint32_t index = 0; index < value_count; ++index) {
+            writes.push_back(GuestRegisterWrite{
+                write_one_register ? base_index : base_index + index,
+                read_be32(packet_bytes + 4u + static_cast<size_t>(index) * 4u),
+            });
+        }
+    } else if (packet_type == 1u) {
+        if (byte_length != 12u) {
+            return fail("type-1 PM4 packet size mismatch", error);
+        }
+        writes.push_back(GuestRegisterWrite{
+            header & 0x7FFu,
+            read_be32(packet_bytes + 4u),
+        });
+        writes.push_back(GuestRegisterWrite{
+            (header >> 11) & 0x7FFu,
+            read_be32(packet_bytes + 8u),
+        });
+    } else {
+        return fail("PM4 packet does not contain register writes", error);
+    }
+
+    *output = std::move(writes);
+    if (error) error->clear();
+    return true;
+}
+
 bool decode_captured_shader_control_flow(
     const uint8_t* shader_bytes,
     size_t byte_length,

@@ -37,6 +37,11 @@ struct PacketSpan {
     uint32_t opcode;
 };
 
+struct GuestRegisterWrite {
+    uint32_t register_index;
+    uint32_t value;
+};
+
 enum class ShaderControlFlowOpcode : uint8_t {
     Nop = 0,
     Exec = 1,
@@ -288,6 +293,14 @@ bool scan_captured_packet_stream(
     const uint8_t* stream_bytes,
     size_t byte_length,
     std::vector<PacketSpan>* output,
+    std::string* error);
+
+// Decodes the register writes in one PM4 type-0 or type-1 packet. It exposes
+// raw guest writes only; it does not update a GPU register file or apply state.
+bool decode_guest_register_writes(
+    const uint8_t* packet_bytes,
+    size_t byte_length,
+    std::vector<GuestRegisterWrite>* output,
     std::string* error);
 
 // Decodes the bounded control-flow prefix of the captured Xbox shader format.

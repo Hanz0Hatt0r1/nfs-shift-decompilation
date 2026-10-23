@@ -39,6 +39,8 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   project-owned `snapshot_guest_ring_batch` copies a committed dword-indexed
   ring interval, including wraparound, then frames its packets. The adjacent
   size helper bounds ReXGlue's `1 << (size_log2 + 3)` ring capacity before use.
+  The PM4 type-0/type-1 decoder exposes raw register-write pairs without
+  applying GPU state.
   A regression carries the captured `DRAW_INDX` across the ring boundary. It
   is not yet wired to ReXGlue's live write-pointer service and does not apply
   register state.

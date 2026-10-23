@@ -239,8 +239,9 @@ int main() {
             "unsupported shader decode partially replaced its output");
 
     const uint8_t framed_stream[] = {
-        0x00, 0x00, 0x00, 0x01, 0xAA, 0xBB, 0xCC, 0xDD, // type 0
-        0x40, 0x00, 0x00, 0x00, 0x11, 0x22, 0x33, 0x44, // type 1
+        0x00, 0x01, 0x12, 0x34, 0xAA, 0xBB, 0xCC, 0xDD, // type 0, base 0x1234
+        0x01, 0x02, 0x03, 0x04,
+        0x40, 0x1A, 0xA8, 0x21, 0x11, 0x22, 0x33, 0x44, // type 1, regs 0x21/0x355
         0x55, 0x66, 0x77, 0x88,
         0x80, 0x00, 0x00, 0x00,                         // type 2
         0x00, 0x00, 0x00, 0x00,                         // single-dword zero NOP
@@ -254,21 +255,65 @@ int main() {
             "well-formed PM4 packet stream was rejected");
     require(packet_spans.size() == 5, "PM4 packet scanner returned the wrong packet count");
     require(packet_spans[0].type == shift::xbox::PacketType::Type0 &&
-                packet_spans[0].byte_offset == 0 && packet_spans[0].byte_length == 8,
+                packet_spans[0].byte_offset == 0 && packet_spans[0].byte_length == 12,
             "type-0 framing changed");
     require(packet_spans[1].type == shift::xbox::PacketType::Type1 &&
-                packet_spans[1].byte_offset == 8 && packet_spans[1].byte_length == 12,
+                packet_spans[1].byte_offset == 12 && packet_spans[1].byte_length == 12,
             "type-1 framing changed");
     require(packet_spans[2].type == shift::xbox::PacketType::Type2 &&
-                packet_spans[2].byte_offset == 20 && packet_spans[2].byte_length == 4,
+                packet_spans[2].byte_offset == 24 && packet_spans[2].byte_length == 4,
             "type-2 framing changed");
     require(packet_spans[3].type == shift::xbox::PacketType::ZeroNop &&
-                packet_spans[3].byte_offset == 24 && packet_spans[3].byte_length == 4,
+                packet_spans[3].byte_offset == 28 && packet_spans[3].byte_length == 4,
             "zero-dword NOP framing changed");
     require(packet_spans[4].type == shift::xbox::PacketType::Type3 &&
-                packet_spans[4].byte_offset == 28 && packet_spans[4].byte_length == 20 &&
+                packet_spans[4].byte_offset == 32 && packet_spans[4].byte_length == 20 &&
                 packet_spans[4].opcode == 0x22,
             "type-3 DRAW_INDX framing changed");
+    std::vector<shift::xbox::GuestRegisterWrite> register_writes;
+    require(shift::xbox::decode_guest_register_writes(
+                framed_stream + packet_spans[0].byte_offset,
+                packet_spans[0].byte_length, &register_writes, &error) &&
+                register_writes.size() == 2 &&
+                register_writes[0].register_index == 0x1234u &&
+                register_writes[0].value == 0xAABBCCDDu &&
+                register_writes[1].register_index == 0x1235u &&
+                register_writes[1].value == 0x01020304u,
+            "type-0 PM4 register writes decoded incorrectly");
+    require(shift::xbox::decode_guest_register_writes(
+                framed_stream + packet_spans[1].byte_offset,
+                packet_spans[1].byte_length, &register_writes, &error) &&
+                register_writes.size() == 2 &&
+                register_writes[0].register_index == 0x21u &&
+                register_writes[0].value == 0x11223344u &&
+                register_writes[1].register_index == 0x355u &&
+                register_writes[1].value == 0x55667788u,
+            "type-1 PM4 register writes decoded incorrectly");
+    const uint8_t repeated_register_packet[] = {
+        0x00, 0x01, 0x80, 0x12, 0x11, 0x11, 0x11, 0x11,
+        0x22, 0x22, 0x22, 0x22,
+    };
+    require(shift::xbox::decode_guest_register_writes(
+                repeated_register_packet, sizeof(repeated_register_packet),
+                &register_writes, &error) && register_writes.size() == 2 &&
+                register_writes[0].register_index == 0x12u &&
+                register_writes[1].register_index == 0x12u,
+            "type-0 write-one-register mode decoded incorrectly");
+    const auto unchanged_writes = register_writes;
+    require(!shift::xbox::decode_guest_register_writes(
+                framed_stream + packet_spans[2].byte_offset,
+                packet_spans[2].byte_length, &register_writes, &error) &&
+                register_writes.size() == unchanged_writes.size() &&
+                register_writes[0].register_index == unchanged_writes[0].register_index &&
+                register_writes[0].value == unchanged_writes[0].value &&
+                register_writes[1].register_index == unchanged_writes[1].register_index &&
+                register_writes[1].value == unchanged_writes[1].value,
+            "unsupported PM4 packet changed register-write output");
+    require(!shift::xbox::decode_guest_register_writes(
+                framed_stream + packet_spans[0].byte_offset, 8u,
+                &register_writes, &error) &&
+                register_writes.size() == unchanged_writes.size(),
+            "truncated type-0 PM4 packet changed register-write output");
     shift::xbox::DecodedIndexedDraw framed_draw{};
     require(shift::xbox::decode_captured_draw_indx(
                 framed_stream + packet_spans[4].byte_offset,

@@ -25,6 +25,9 @@ target_link_libraries(shift_xbox_shader_translate PUBLIC shift_xbox_draw_input)
 add_executable(shift_xbox_guest_ring_check ../tests/xbox_guest_ring_check.cpp)
 target_link_libraries(shift_xbox_guest_ring_check PRIVATE shift_xbox_guest_ring)
 
+add_executable(shift_xbox_draw_input_check ../tests/xbox_draw_input_check.cpp)
+target_link_libraries(shift_xbox_draw_input_check PRIVATE shift_xbox_draw_input)
+
 add_executable(
   shift_xbox_shader_translate_check
   ../tests/xbox_shader_translate_check.cpp

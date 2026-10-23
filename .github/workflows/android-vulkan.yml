@@ -8,12 +8,15 @@ on:
       - 'native_vulkan/include/shift_android_native_activity.h'
       - 'native_vulkan/include/shift_android_surface_probe.h'
       - 'native_vulkan/include/shift_vulkan_surface_backend.h'
+      - 'native_vulkan/include/shift_xbox_draw_input.hpp'
       - 'native_vulkan/include/shift_xbox_guest_ring.hpp'
       - 'native_vulkan/src/android_native_activity.cpp'
       - 'native_vulkan/src/android_vulkan_surface_probe.cpp'
       - 'native_vulkan/src/vulkan_surface_backend.cpp'
+      - 'native_vulkan/src/xbox_draw_input.cpp'
       - 'native_vulkan/src/xbox_guest_ring.cpp'
       - 'native_vulkan/tests/xbox_guest_ring_check.cpp'
+      - 'native_vulkan/tests/xbox_draw_input_check.cpp'
       - 'tests/test_android_native_activity_contract.py'
       - '.github/workflows/android-vulkan.yml'
   pull_request:
@@ -23,12 +26,15 @@ on:
       - 'native_vulkan/include/shift_android_native_activity.h'
       - 'native_vulkan/include/shift_android_surface_probe.h'
       - 'native_vulkan/include/shift_vulkan_surface_backend.h'
+      - 'native_vulkan/include/shift_xbox_draw_input.hpp'
       - 'native_vulkan/include/shift_xbox_guest_ring.hpp'
       - 'native_vulkan/src/android_native_activity.cpp'
       - 'native_vulkan/src/android_vulkan_surface_probe.cpp'
       - 'native_vulkan/src/vulkan_surface_backend.cpp'
+      - 'native_vulkan/src/xbox_draw_input.cpp'
       - 'native_vulkan/src/xbox_guest_ring.cpp'
       - 'native_vulkan/tests/xbox_guest_ring_check.cpp'
+      - 'native_vulkan/tests/xbox_draw_input_check.cpp'
       - 'tests/test_android_native_activity_contract.py'
       - '.github/workflows/android-vulkan.yml'
   workflow_dispatch:
@@ -70,7 +76,8 @@ jobs:
       - name: Build arm64 NativeActivity proof
         run: >-
           cmake --build out/android-vulkan-arm64 --config Release --parallel
-          --target shift_vulkan_android_native_activity shift_xbox_guest_ring_check
+          --target shift_vulkan_android_native_activity
+          shift_xbox_guest_ring_check shift_xbox_draw_input_check
 
       - name: Verify Android shared-library contract
         shell: bash
@@ -91,9 +98,12 @@ jobs:
         run: |
           set -euo pipefail
           CHECK="out/android-vulkan-arm64/shift_xbox_guest_ring_check"
+          DRAW_CHECK="out/android-vulkan-arm64/shift_xbox_draw_input_check"
           test -f "$CHECK"
+          test -f "$DRAW_CHECK"
           file "$CHECK" | grep -q 'ARM aarch64'
-          if readelf -d "$CHECK" | grep -Eqi 'rexgpu-xenos|xenia'; then
+          file "$DRAW_CHECK" | grep -q 'ARM aarch64'
+          if readelf -d "$CHECK" "$DRAW_CHECK" | grep -Eqi 'rexgpu-xenos|xenia'; then
             echo "Guest-ring test unexpectedly depends on GPU emulation" >&2
             exit 1
           fi
