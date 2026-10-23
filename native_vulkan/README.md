@@ -61,11 +61,15 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   XCB/Wayland dependency. The frame currently starts with a black clear and
   does not reconstruct prior Xenos EDRAM or import the guest frontbuffer as a
   completed image. Regressions cover PM4 draw/swap framing, ring wraparound,
-  indirect buffers, and the plugin ABI; the plugin ring smoke checks its
-  decoded inline-shader and both indexed-draw counters. A separate offscreen
-  indexed-draw smoke passed Vulkan validation on Linux and executed on
-  Redmi Note 8 Pro;
-  those smoke shaders are synthetic. On 2026-10-23, Wi-Fi ADB also ran the
+  indirect buffers, and the plugin ABI. The Linux plugin/presenter smoke
+  publishes a fixture ring through MMIO and verifies two prepared indexed
+  draws reach Vulkan submission at `XE_SWAP`. It uses the exact captured
+  `DRAW_INDX`, captured raster/fetch words, captured PS slice, and captured
+  index values, with a synthetic VS, constants, and texture payload. This is
+  plugin integration evidence, not a live retail frame or parity result. A
+  separate offscreen indexed-draw smoke passed Vulkan validation on Linux and
+  executed on Redmi Note 8 Pro; those smoke shaders are synthetic. On
+  2026-10-23, Wi-Fi ADB also ran the
   draw-input, guest-ring, shader-translation, and Vulkan 1.1 renderer checks on
   Redmi Note 8 Pro / Android 13 / Mali-G76 MC4. Android validation layers were
   unavailable. A live Linux retail run also loaded the
@@ -74,7 +78,7 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   `DRAW_INDX_2` and 14 `IM_LOAD_IMMEDIATE` packets, but no `DRAW_INDX`, pointer
   `IM_LOAD`, or `LOAD_ALU_CONSTANT`. It saved opcode counts, not raw packet
   words, so it does not establish whether those `DRAW_INDX_2` packets use DMA
-  indices or AutoIndex. No Vulkan frame was submitted in either run, so a first
+  indices or AutoIndex. Neither retail run submitted a Vulkan frame, so a first
   retail draw is not yet confirmed. See
   [`process2_xbox_live_guest_ring_20261023.json`](../evidence/process2_xbox_live_guest_ring_20261023.json).
   The private 19,784-byte capture scans as 247 packets with four bounded

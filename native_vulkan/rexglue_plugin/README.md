@@ -39,15 +39,23 @@ ctest --test-dir build/rexgpu-shift-native --output-on-failure
 ```
 
 The factory check loads the plugin and verifies ABI and factory rejection
-cases. The live-ring smoke publishes a fixture stream with two
-`IM_LOAD_IMMEDIATE` packets, `DRAW_INDX`, and DMA `DRAW_INDX_2`, then asserts
-the worker's decoded counters and read-pointer writeback. These packet bytes
-are regression fixtures, not an additional raw retail capture. The
-platform-independent Vulkan core also has an offscreen indexed-draw
-smoke. It passed with Vulkan validation on NVIDIA GeForce GTX 950, and on
-Redmi Note 8 Pro (Mali-G76 MC4) using Vulkan 1.1. Those smoke shaders are
-synthetic and verify pipeline/resource/layout operations only; they are not
-retail output evidence.
+cases. The live-ring smoke creates the SDK presenter, writes a bounded guest
+memory fixture, publishes it through `CP_RB_WPTR`, and verifies read-pointer
+writeback. It includes the exact captured `DRAW_INDX` packet, captured raster
+registers and fetch descriptors, the captured 108-byte PS instruction slice,
+and index values from the captured draw. It also includes a synthetic VS,
+zeroed constants, and a generated white texture. The worker translates both
+shader stages, resolves resources, processes the fixture `DRAW_INDX_2` and
+`XE_SWAP`, and asserts that two indexed draws reach the Vulkan presenter and
+submit successfully. This is an end-to-end plugin/presenter regression, not a
+live retail run or retail image-parity evidence. The DMA draw, shader pairing,
+and resource payloads in the fixture are not a new raw retail capture.
+
+The platform-independent Vulkan core also has an offscreen indexed-draw smoke.
+It passed with Vulkan validation on NVIDIA GeForce GTX 950, and on Redmi Note 8
+Pro (Mali-G76 MC4) using Vulkan 1.1. Those smoke shaders are synthetic and
+verify pipeline/resource/layout operations only; they are not retail output
+evidence.
 
 On 2026-10-23, the retail Linux executable was run with `--gpu_plugin=shift-native`.
 The runtime mapped this plugin without mapping `rexgpu-xenos`, initialized the
@@ -56,10 +64,15 @@ PM4 packets) containing two `XE_SWAP` packets. This verifies the plugin is
 connected to the retail guest's PM4 path. A later opcode-only audit counted
 100 `DRAW_INDX_2` and 14 `IM_LOAD_IMMEDIATE` packets, but did not retain their
 raw words; it cannot establish that the draws use DMA indices or that the
-inline shader payloads are valid. That run submitted zero Vulkan frames, so a
-retail draw through the plugin is still unconfirmed. The current worker logs
-one bounded raw packet sample for each opcode on its next live run. See
+inline shader payloads are valid. That retail run submitted zero Vulkan
+frames, so a retail draw through the plugin is still unconfirmed. The current
+worker logs one bounded raw packet sample for each opcode on its next live run. See
 [`process2_xbox_live_guest_ring_20261023.json`](../../evidence/process2_xbox_live_guest_ring_20261023.json).
+
+A separate Gamescope headless retry with the current plugin created its
+1280x720 presenter and initialized the guest ring, but logged no indexed-draw
+submission before the 70-second timeout. That run used info-level logging, so
+it did not retain per-batch PM4 counts or packet samples.
 
 The earlier one-draw capture bundle remains separate evidence for the project
 renderer, not proof of a complete scene.

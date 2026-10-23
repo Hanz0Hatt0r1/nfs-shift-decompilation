@@ -113,10 +113,14 @@ offscreen coverage, not a full-game test.
 ### Verification
 
 - The ReXGlue plugin built with Clang 22.1.8; its factory and live-ring ABI
-  CTests pass. The live-ring smoke loads the plugin, writes a captured
-  `PM4_DRAW_INDX` into ReXGlue guest memory, publishes `CP_RB_WPTR`, and verifies
-  read-pointer writeback. It validates ring/MMIO consumption, not Vulkan
-  submission from a retail game.
+  CTests pass. The live-ring smoke now creates the Vulkan presenter, writes a
+  bounded fixture into ReXGlue guest memory, publishes `CP_RB_WPTR`, and checks
+  read-pointer writeback. It includes the exact captured `PM4_DRAW_INDX`
+  packet, captured raster/fetch words, a captured 108-byte PS instruction
+  slice, and captured index values; it uses a synthetic VS, constants, and
+  white texture. Both draw forms are prepared and submitted at fixture
+  `XE_SWAP` through the Vulkan presenter. This validates the plugin-to-renderer
+  wiring, not a live retail stream or retail output parity.
 - `ldd` on `librexgpu-shift-native.so` resolves `librexruntime.so` and the SDK's
   X11/Wayland libraries, with no `librexgpu-xenos` dependency. The common SDK
   runtime still compiles generic Xenos format helpers; it does not include the
@@ -128,10 +132,16 @@ offscreen coverage, not a full-game test.
 - The separate captured XEX draw bundle also ran on the phone, within 2/255
   maximum RGB delta of the GTX 950 output. It starts from a black clear and is
   not a full scene or a live plugin run.
-- No retail game has yet been run through `rexgpu-shift-native`. The
-  `rexui-vulkan` backend and Android surface sources cross-compile, but the
-  complete ReXGlue runtime build is blocked by missing Bionic ucontext switching
-  primitives. The game project also has no Android Activity/APK target.
+- No retail draw has been observed through `rexgpu-shift-native`. Prior Linux
+  runs loaded the plugin and consumed live PM4 batches, but submitted zero
+  Vulkan frames. The `rexui-vulkan` backend and Android surface sources
+  cross-compile, but the complete ReXGlue runtime build is blocked by missing
+  Bionic ucontext switching primitives. The game project also has no Android
+  Activity/APK target.
+- A separate Gamescope headless run with the current plugin created a presenter
+  and initialized the guest ring, but logged no indexed-draw submission before
+  its 70-second timeout. It ran at info log level and did not retain per-batch
+  packet counts; live retail draw submission remains unverified.
 
 ## What the existing renderer and captures prove
 
@@ -388,8 +398,9 @@ captured `DRAW_INDX` across the ring end and sends it through the bounded draw
 decoder. The plugin connects it to `InitializeRingBuffer` and `CP_RB_WPTR`,
 reads and expands live PM4 batches, applies the captured raster/shader input
 subset, resolves the observed draw resources, and submits supported draws at
-`XE_SWAP`. This code path is built and its components are tested; running a
-retail guest through the plugin remains the live integration gate.
+`XE_SWAP`. The Linux presenter smoke exercises that route with mixed captured
+and synthetic inputs. Running a retail guest through the plugin remains the
+live integration gate.
 
 The paired `guest_ring_byte_length_from_size_log2` helper implements the
 ReXGlue `1 << (size_log2 + 3)` capacity rule with the same 64 MiB ceiling and

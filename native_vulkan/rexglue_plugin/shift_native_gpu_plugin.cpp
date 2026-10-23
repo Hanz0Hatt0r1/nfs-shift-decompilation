@@ -300,10 +300,14 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
     shift::xbox::CapturedShaderTranslation pixel_translation{};
     if (!shift::xbox::translate_captured_shader_glsl(
             shift::xbox::CapturedShaderStage::Vertex, vertex_program.data(),
-            vertex_program.size(), options, &vertex_translation, error) ||
-        !shift::xbox::translate_captured_shader_glsl(
+            vertex_program.size(), options, &vertex_translation, error)) {
+      if (error) *error = "captured vertex shader: " + *error;
+      return false;
+    }
+    if (!shift::xbox::translate_captured_shader_glsl(
             shift::xbox::CapturedShaderStage::Pixel, pixel_program.data(),
             pixel_program.size(), options, &pixel_translation, error)) {
+      if (error) *error = "captured pixel shader: " + *error;
       return false;
     }
     *shaders_translated = true;
@@ -517,6 +521,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
         uint32_t loaded_constant_spans = 0;
         uint32_t unresolved_constant_spans = 0;
         uint32_t unsupported_draws = 0;
+        bool logged_draw_preparation_failure = false;
         uint32_t decoded_swaps = 0;
         uint32_t submitted_frames = 0;
         uint32_t raw_register_writes = 0;
@@ -669,6 +674,11 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                   } else {
                     ++draws_with_unresolved_resource_payloads;
                   }
+                }
+                if (!resources_resolved && !logged_draw_preparation_failure) {
+                  REXLOG_DEBUG("shift-native: skipped captured indexed draw: {}",
+                               error.empty() ? "unsupported shader or resource form" : error);
+                  logged_draw_preparation_failure = true;
                 }
               } else {
                 ++unsupported_draws;

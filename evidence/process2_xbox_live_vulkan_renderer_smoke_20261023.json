@@ -1,6 +1,6 @@
 {
   "format": "SHIFT.XboxLiveVulkanRendererSmoke/1",
-  "status": "renderer_submission_path_built_and_validated; live_retail_frame_not_yet_observed",
+  "status": "plugin_fixture_reached_vulkan_submit; live_retail_frame_not_yet_observed",
   "project_path": {
     "guest_packets": ["PM4_DRAW_INDX", "PM4_DRAW_INDX_2 (DMA form)", "PM4_XE_SWAP"],
     "shader_path": "captured microcode -> project GLSL translator -> glslang -> Vulkan 1.1 SPIR-V",
@@ -46,9 +46,40 @@
   "plugin_build": {
     "target": "rexgpu-shift-native",
     "factory_smoke": "passed",
-    "live_ring_abi_smoke": "passed on Linux: fixture stream with two IM_LOAD_IMMEDIATE packets, PM4_DRAW_INDX, and DMA PM4_DRAW_INDX_2 reached worker decoder; decoded counters and guest read-pointer writeback verified",
+    "live_ring_abi_smoke": "passed on Linux: fixture PM4 stream published through ReXGlue guest memory and CP_RB_WPTR; two indexed draws were prepared, XE_SWAP refreshed the presenter image, Vulkan submission returned success, and read-pointer writeback was verified",
+    "presenter_submit_fixture": {
+      "kind": "synthetic plugin integration; not a live retail stream",
+      "vulkan_api": "1.1 renderer path",
+      "host_device": "NVIDIA GeForce GTX 950",
+      "draws_submitted": 2,
+      "draw_forms": ["captured PM4_DRAW_INDX packet", "fixture PM4_DRAW_INDX_2 DMA form"],
+      "captured_inputs": [
+        "exact 20-byte PM4_DRAW_INDX packet at captured ring offset 0x2C64",
+        "captured raster register words and fetch descriptor words",
+        "captured 108-byte pixel-shader instruction slice",
+        "captured normalized index values [0,1,2,2,1,3]"
+      ],
+      "synthetic_inputs": ["vertex shader", "constant values", "white texture payload"],
+      "read_pointer_writeback": "passed",
+      "vulkan_validation_layer": "enabled with VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation; plugin/presenter smoke passed without validation diagnostics",
+      "retail_frame_parity": false
+    },
     "links_rexgpu_xenos": false,
     "sdk_requirement": "separate rexui-vulkan target"
+  },
+  "latest_retail_headless_recheck": {
+    "host_device": "NVIDIA GeForce GTX 950",
+    "surface": "Gamescope headless + Xwayland, 1280x720; no visible game window",
+    "plugin_loaded": true,
+    "presenter_created": true,
+    "guest_ring_initialized": true,
+    "guest_ring_address": "0x09752580",
+    "timeout_seconds": 70,
+    "kill_grace_seconds": 5,
+    "timeout_exit_status": 137,
+    "logging": "info; per-batch debug counters were not enabled",
+    "result": "No indexed-draw submission or Vulkan-frame success event was logged before timeout; exact PM4 batch/draw counts were not retained.",
+    "retail_frame_observed": false
   },
   "android_full_game_attempt": {
     "device": "Redmi Note 8 Pro (begonia, Android 13/API 33, arm64-v8a)",
@@ -65,7 +96,7 @@
     "retail_frame_observed": false
   },
   "limits": [
-    "The live SHIFT guest has not yet been run through this plugin, so no first retail frame is confirmed.",
+    "The live SHIFT guest has not yet been run through this plugin; the presenter smoke uses synthetic shader/resource inputs, so no first retail frame is confirmed.",
     "Each guest swap currently clears to black and composes only supported draws collected since that swap; Xenos EDRAM accumulation is not implemented.",
     "The captured output uses a gamma target while the presenter image is A2B10G10R10_UNORM; target gamma parity remains unverified.",
     "The captured black texture border alpha is unresolved; the live sampler uses transparent black provisionally.",
