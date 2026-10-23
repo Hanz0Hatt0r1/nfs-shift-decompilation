@@ -61,8 +61,12 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   completed image. Regressions cover PM4 draw/swap framing, ring wraparound,
   indirect buffers, and the plugin ABI. A separate offscreen indexed-draw
   smoke passed Vulkan validation on Linux and executed on Redmi Note 8 Pro;
-  those smoke shaders are synthetic. The plugin build and factory check pass,
-  but the live SHIFT guest has not yet been run through this frontend.
+  those smoke shaders are synthetic. A live Linux retail run also loaded the
+  emulator-free plugin, initialized the guest ring, and consumed 1,828 PM4
+  packets including two swaps. That startup traffic contained no indexed draw
+  or shader loads, so the plugin submitted no Vulkan frame; a first retail
+  draw is not yet confirmed. See
+  [`process2_xbox_live_guest_ring_20261023.json`](../evidence/process2_xbox_live_guest_ring_20261023.json).
   The private 19,784-byte capture scans as 247 packets with four bounded
   `DRAW_INDX` packets. The capture decoders reject unsupported forms. The untile
   path rejects other pitches, formats, dimensions, and layouts. Its address

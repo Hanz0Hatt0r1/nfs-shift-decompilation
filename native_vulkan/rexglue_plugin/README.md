@@ -43,10 +43,18 @@ Redmi Note 8 Pro (Mali-G76 MC4) using Vulkan 1.1. Those smoke shaders are
 synthetic and verify pipeline/resource/layout operations only; they are not
 retail output evidence.
 
-The Linux plugin factory and live-ring ABI checks pass, but the plugin has not
-yet been run with the live SHIFT guest. Thus a first retail game frame through
-this plugin is not yet confirmed. The earlier one-draw capture bundle remains
-separate evidence for the project renderer, not proof of a complete scene.
+On 2026-10-23, the retail Linux executable was run with `--gpu_plugin=shift-native`.
+The runtime mapped this plugin without mapping `rexgpu-xenos`, initialized the
+guest ring at `0x09752580`, and the worker consumed four live batches (1,828
+PM4 packets) containing two `XE_SWAP` packets. This verifies the plugin is
+connected to the retail guest's PM4 path. That startup traffic contained no
+`DRAW_INDX`, shader program loads, or constant spans, so it submitted zero
+Vulkan frames and the window remained black. A retail draw through the plugin
+is still unconfirmed. See
+[`process2_xbox_live_guest_ring_20261023.json`](../../evidence/process2_xbox_live_guest_ring_20261023.json).
+
+The earlier one-draw capture bundle remains separate evidence for the project
+renderer, not proof of a complete scene.
 
 On Android NDK r28.2 / API 33, `rexui-vulkan` and the Android surface/window
 sources compile for arm64. Building the full plugin then stops in ReXGlue's

@@ -1,0 +1,90 @@
+{
+  "format": "SHIFT.Process2LiveGuestRingVulkanEvidence/1",
+  "status": "live_pm4_consumption_verified; retail_draw_not_reached",
+  "run": {
+    "date": "2026-10-23",
+    "title_id": "0x454108B4",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin": {
+      "path": "librexgpu-shift-native.so",
+      "sha256": "f4491af23723e3f4c2d591a3d3263a9c2cc3ecfa5200c835df6645a29f0c4e2b",
+      "mapped_in_process": true,
+      "rexgpu_xenos_mapped": false
+    },
+    "rexglue_runtime_sha256": "48c5c315c528c0ffeba189594c32392ae2e87cbaa4ff88f1f30470e51eba2463",
+    "host_vulkan_device": "NVIDIA GeForce GTX 950",
+    "presenter_swapchain": "1920x1080",
+    "logging": "debug",
+    "game_data_root": "/tmp/nfs_shift_xbox_game_root_20261023",
+    "private_log": "/tmp/process2-live-nfs/logs/shift-native-debug.log"
+  },
+  "live_guest_ring": {
+    "initialized": true,
+    "guest_address": "0x09752580",
+    "capacity_bytes": 32768,
+    "batch_count": 4,
+    "batches": [
+      {
+        "pm4_packets": 73,
+        "raw_register_writes": 58,
+        "constant_spans_loaded": 0,
+        "shader_programs_loaded": 0,
+        "draw_indx_packets": 0,
+        "guest_swaps": 0,
+        "vulkan_frames_submitted": 0,
+        "unsupported_forms": 24
+      },
+      {
+        "pm4_packets": 153,
+        "raw_register_writes": 281,
+        "constant_spans_loaded": 0,
+        "shader_programs_loaded": 0,
+        "draw_indx_packets": 0,
+        "guest_swaps": 0,
+        "vulkan_frames_submitted": 0,
+        "unsupported_forms": 26
+      },
+      {
+        "pm4_packets": 808,
+        "raw_register_writes": 289,
+        "constant_spans_loaded": 0,
+        "shader_programs_loaded": 0,
+        "draw_indx_packets": 0,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 0,
+        "unsupported_forms": 0
+      },
+      {
+        "pm4_packets": 794,
+        "raw_register_writes": 590,
+        "constant_spans_loaded": 0,
+        "shader_programs_loaded": 0,
+        "draw_indx_packets": 0,
+        "guest_swaps": 1,
+        "vulkan_frames_submitted": 0,
+        "unsupported_forms": 50
+      }
+    ],
+    "total_packets": 1828,
+    "total_draw_indx_packets": 0,
+    "total_guest_swaps": 2,
+    "total_vulkan_frames_submitted": 0
+  },
+  "visual": {
+    "screenshot": "/tmp/shift_native_live_20261023.png",
+    "sha256": "c1161e09bb43363d2777bdb410b3e59e98b33eae3b374322b5e86079ab089a12",
+    "result": "black presenter output; no retail draw was submitted"
+  },
+  "validation": {
+    "linux_plugin_ctest": "2/2 passed",
+    "linux_renderer_ctest": "4/4 passed",
+    "log_evidence": "four per-batch shift-native summaries followed live CP_RB_WPTR notifications; no DRAW_INDX or shader loads appeared",
+    "controller_input": "A and Start were sent after initialization; no additional guest draw batch followed",
+    "result": "proves the retail runtime loaded the emulator-free plugin and its live PM4 ring consumer handled guest batches and swaps; does not prove retail draw routing or frame parity"
+  },
+  "remaining_blockers": [
+    "The guest did not publish a captured DRAW_INDX or load the captured shader pair during this run.",
+    "No frame reached submit_captured_vulkan_frame; the two observed XE_SWAP packets had no supported draw to submit.",
+    "Process 1 owns the original guest startup and scheduling path needed to reach the game's render-producing state."
+  ]
+}
