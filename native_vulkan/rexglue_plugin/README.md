@@ -83,6 +83,11 @@ POSIX fiber backend because Android Bionic does not provide
 `getcontext`/`makecontext`/`swapcontext`. That scheduler code belongs to
 Process 1. The game project also has no Android Activity or APK target yet, so
 the Redmi Note 8 Pro checks cover the offscreen Vulkan renderer only, not a
-full game build. The parser, guest-ring, shader-translation, and renderer
-checks were rebuilt for API 33 and rerun on the device; the renderer test uses
-synthetic shaders and does not show a retail frame.
+full game build. The Android arm64 CI now builds the project Vulkan renderer
+smoke and publishes its executable plus Vulkan 1.1 SPIR-V inputs. On 2026-10-23
+the artifact from [CI run 39938067570](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/actions/runs/39938067570)
+ran on the connected Redmi Note 8 Pro (Android API 33, Mali-G76 MC4):
+`offscreen Vulkan 1.1 indexed draw passed on Mali-G76 MC4`. The device test
+used synthetic shaders and ran without the validation layer; it does not show
+a retail frame. The parser, guest-ring, shader-translation, and renderer
+checks were also rebuilt for API 33 and rerun on the device.
