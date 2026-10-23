@@ -1,6 +1,6 @@
 {
   "format": "SHIFT.Process2LiveGuestRingVulkanEvidence/1",
-  "status": "live_retail_point_draws_submitted_to_vulkan; scene_parity_unverified",
+  "status": "live_retail_point_draws_submitted_to_vulkan; output_readback_black; scene_parity_unverified",
   "run": {
     "date": "2026-10-23",
     "title_id": "0x454108B4",
@@ -413,10 +413,58 @@
     "vulkan_validation_layer_enabled": false,
     "result": "The current-source emulator-free plugin translated and submitted the captured retail point-list subset to Vulkan and dispatched the observed guest callbacks. This does not establish visible retail content or scene parity."
   },
+  "post_submission_output_readback": {
+    "date": "2026-10-23",
+    "source_checkout_head": "283b5c5f + optional output-readback working-tree change",
+    "game_executable_sha256": "6a3ac7224c139dced55fe76bd110b3d66a8c1609a1afdfad9514485daf62702b",
+    "gpu_plugin_sha256": "0e271c55e0588b23dc471488ce0feccb66d26a54b27f82d8af0514510e2f5eb1",
+    "rexglue_runtime_sha256": "3249616d110308968b1224bce9c85fbea655f8255ac64f296a2edb73282ead63",
+    "gpu_plugin_selection": "shift-native; rexgpu-xenos was not requested",
+    "host_vulkan_device": "NVIDIA GeForce GTX 950",
+    "surface": "Gamescope headless + Xwayland",
+    "game_data_root": "/home/pes/work/process2-retail-isolated-irq-20261023/game-data",
+    "log": "/tmp/process2-live-nfs/logs/nfs_shift_010.log",
+    "readback_opt_in": "SHIFT_NATIVE_VULKAN_READBACK_PATH",
+    "swaps_submitted": 2,
+    "submitted_point_draws": 48,
+    "readback": {
+      "extent": "1280x720",
+      "vk_format": "VK_FORMAT_A2B10G10R10_UNORM_PACK32",
+      "raw_file": "/tmp/process2-live-nfs/headless-20261023/retail-vulkan-readback/vulkan-output.a2b10g10r10",
+      "raw_bytes": 3686400,
+      "raw_sha256": "62c155688f9b3f1217fd1573f24612584ab4df2175bb9281749e3372c886f1a1",
+      "decoded_pixel_count": 921600,
+      "unique_packed_words": 1,
+      "packed_word_histogram": {"0xC0000000": 921600},
+      "non_black_pixel_count": 0,
+      "decoded_png": "process2_xbox_live_vulkan_output_readback_black_20261023.png",
+      "decoded_png_sha256": "16e6b2954c683e157639ef50e980d4cb96ae160cf82328eba859924630437e8f"
+    },
+    "checks": {
+      "linux_native_renderer_ctest": "4/4 passed",
+      "linux_plugin_ctest": "2/2 passed",
+      "linux_renderer_validation": "synthetic Vulkan 1.1 draw plus readback passed with VK_LAYER_KHRONOS_validation on NVIDIA GeForce GTX 950",
+      "linux_plugin_readback_integration_smoke": {
+        "ctest": "rexgpu_shift_native_live_ring_check passed 1/1 with SHIFT_NATIVE_VULKAN_READBACK_PATH set",
+        "output_bytes": 3686400,
+        "scope": "synthetic live-ring fixture verifies plugin-to-renderer readback wiring; its zeroed captured constants do not represent retail visual output"
+      },
+      "android_arm64_readback_smoke": {
+        "device": "Redmi Note 8 Pro (begonia, Android API 33, arm64-v8a, Mali-G76 MC4)",
+        "build": "NDK r28.2, android-33, local current-source renderer check",
+        "result": "synthetic offscreen Vulkan 1.1 AutoIndex point draw and output readback passed",
+        "validation_layer": false,
+        "full_game_test": false,
+        "temporary_device_files_removed": true
+      }
+    },
+    "vulkan_validation_layer_enabled": false,
+    "result": "The readback confirms the project Vulkan presenter image stayed at its opaque black clear value across all pixels after live retail point-draw submission. This does not establish why those submitted draws produced no color or prove visible retail output/scene parity."
+  },
   "remaining_blockers": [
     "All 100 observed DRAW_INDX_2 packets are AutoIndex (96 one-point draws and four three-index rectangle-list draws); no DMA-indexed draw packet was observed. The first live retail frame therefore covers the observed point-list path only.",
     "AutoIndex rectangle-list expansion remains unsupported, and the retail full/mini-fetch shader's rectangle draws are still skipped. Xenos EDRAM accumulation and the guest frontbuffer resolve path are not implemented.",
-    "A previous captured game window was black after submission. The current-source rerun did not capture the presented image, so visible retail content remains unverified and no scene parity is established.",
+    "The readback-enabled current-source run captured the presenter output after two Vulkan submissions; all 921,600 pixels were opaque black (0xC0000000). Visible retail content is therefore still unverified, and no scene parity is established.",
     "The full Android game is not buildable yet: the Android NativeActivity target is only a Vulkan surface-lifecycle proof without game or ReXGlue integration, there is no game manifest/APK target, and the full plugin link is blocked by the Process 1-owned POSIX fiber backend."
   ]
 }

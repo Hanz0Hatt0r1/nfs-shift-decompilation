@@ -97,6 +97,11 @@ The native Vulkan backend consumes the neutral render contracts used by the desk
   parity or complete scene rendering. A capture of the game window after both
   submissions was black apart from the cursor, so no retail content was visible
   ([captured window](../evidence/process2_xbox_live_retail_window_black_20261023.png)).
+  A later opt-in Vulkan image readback confirmed the presenter's complete
+  1280x720 output was opaque black (`0xC0000000` in all 921,600 packed pixels)
+  immediately after those live point-draw submissions. The decoded image and
+  raw-image hash are recorded in the evidence JSON; the readback does not prove
+  why the draws produced no color.
   No DMA-indexed draw, pointer `IM_LOAD`, or
   `LOAD_ALU_CONSTANT` was observed. See
   [`process2_xbox_live_guest_ring_20261023.json`](../evidence/process2_xbox_live_guest_ring_20261023.json).

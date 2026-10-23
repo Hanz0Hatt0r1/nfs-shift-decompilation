@@ -14,6 +14,7 @@ namespace {
 struct BufferResource {
     VkBuffer buffer = VK_NULL_HANDLE;
     VkDeviceMemory memory = VK_NULL_HANDLE;
+    VkMemoryPropertyFlags memory_flags = 0;
 };
 
 struct ImageResource {
@@ -46,6 +47,7 @@ struct FrameResources {
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
     ImageResource multisample_color;
     ImageResource depth;
+    BufferResource output_readback;
     VkCommandPool command_pool = VK_NULL_HANDLE;
     std::vector<DrawResources> draws;
     bool submitted = false;
@@ -73,6 +75,7 @@ struct FrameResources {
         if (framebuffer) vkDestroyFramebuffer(device, framebuffer, nullptr);
         destroy_image(multisample_color);
         destroy_image(depth);
+        destroy_buffer(output_readback);
         if (render_pass) vkDestroyRenderPass(device, render_pass, nullptr);
         if (command_pool) vkDestroyCommandPool(device, command_pool, nullptr);
     }
@@ -151,6 +154,7 @@ bool create_buffer(
     allocate_info.memoryTypeIndex = memory_type;
     result = vkAllocateMemory(device, &allocate_info, nullptr, &output->memory);
     if (result != VK_SUCCESS) return vk_fail("vkAllocateMemory(buffer)", result, error);
+    output->memory_flags = memory_properties.memoryTypes[memory_type].propertyFlags;
     result = vkBindBufferMemory(device, output->buffer, output->memory, 0);
     if (result != VK_SUCCESS) return vk_fail("vkBindBufferMemory", result, error);
 
@@ -646,7 +650,9 @@ bool submit_captured_vulkan_frame(
     uint32_t output_width,
     uint32_t output_height,
     const std::vector<CapturedVulkanDraw>& draws,
-    std::string* error) {
+    std::string* error,
+    std::vector<uint32_t>* output_readback) {
+    if (output_readback) output_readback->clear();
     if (!physical_device || !device || !queue || !output_image || !output_view ||
         !output_width || !output_height || draws.empty() || queue_family_index == UINT32_MAX) {
         return fail("invalid captured Vulkan frame target or draw list", error);
@@ -689,6 +695,21 @@ bool submit_captured_vulkan_frame(
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT,
             raster_samples, &resources.multisample_color, error)) {
         return false;
+    }
+
+    VkDeviceSize output_readback_size = 0;
+    if (output_readback) {
+        const uint64_t pixel_count = static_cast<uint64_t>(output_width) * output_height;
+        if (pixel_count > std::numeric_limits<size_t>::max() / sizeof(uint32_t) ||
+            pixel_count > std::numeric_limits<VkDeviceSize>::max() / sizeof(uint32_t)) {
+            return fail("captured output extent is too large for Vulkan readback", error);
+        }
+        output_readback_size = static_cast<VkDeviceSize>(pixel_count * sizeof(uint32_t));
+        if (!create_buffer(memory_properties, device, output_readback_size,
+                           VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr,
+                           &resources.output_readback, error)) {
+            return false;
+        }
     }
     if (needs_depth &&
         !create_render_attachment(
@@ -972,16 +993,53 @@ bool submit_captured_vulkan_frame(
     VkImageMemoryBarrier output_to_sample{};
     output_to_sample.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     output_to_sample.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    output_to_sample.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    output_to_sample.dstAccessMask = output_readback ? VK_ACCESS_TRANSFER_READ_BIT
+                                                     : VK_ACCESS_SHADER_READ_BIT;
     output_to_sample.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    output_to_sample.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    output_to_sample.newLayout = output_readback ? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+                                                 : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     output_to_sample.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     output_to_sample.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     output_to_sample.image = output_image;
     output_to_sample.subresourceRange = output_to_color.subresourceRange;
     vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                         output_readback ? VK_PIPELINE_STAGE_TRANSFER_BIT
+                                         : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
                          0, nullptr, 0, nullptr, 1, &output_to_sample);
+    if (output_readback) {
+        VkBufferImageCopy readback_copy{};
+        readback_copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        readback_copy.imageSubresource.layerCount = 1;
+        readback_copy.imageExtent = {output_width, output_height, 1};
+        vkCmdCopyImageToBuffer(command, output_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                               resources.output_readback.buffer, 1, &readback_copy);
+
+        VkBufferMemoryBarrier readback_to_host{};
+        readback_to_host.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        readback_to_host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        readback_to_host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+        readback_to_host.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        readback_to_host.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        readback_to_host.buffer = resources.output_readback.buffer;
+        readback_to_host.size = output_readback_size;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_HOST_BIT, 0,
+                             0, nullptr, 1, &readback_to_host, 0, nullptr);
+
+        VkImageMemoryBarrier output_to_presenter{};
+        output_to_presenter.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        output_to_presenter.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        output_to_presenter.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        output_to_presenter.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        output_to_presenter.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        output_to_presenter.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        output_to_presenter.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        output_to_presenter.image = output_image;
+        output_to_presenter.subresourceRange = output_to_color.subresourceRange;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                             0, nullptr, 0, nullptr, 1, &output_to_presenter);
+    }
     result = vkEndCommandBuffer(command);
     if (result != VK_SUCCESS) return vk_fail("vkEndCommandBuffer", result, error);
     VkSubmitInfo submit{};
@@ -994,6 +1052,30 @@ bool submit_captured_vulkan_frame(
     result = vkQueueWaitIdle(queue);
     if (result != VK_SUCCESS) return vk_fail("vkQueueWaitIdle(captured frame)", result, error);
     resources.submitted = false;
+    if (output_readback) {
+        void* mapped = nullptr;
+        result = vkMapMemory(device, resources.output_readback.memory, 0,
+                             VK_WHOLE_SIZE, 0, &mapped);
+        if (result != VK_SUCCESS) return vk_fail("vkMapMemory(output readback)", result, error);
+        if ((resources.output_readback.memory_flags &
+             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+            VkMappedMemoryRange range{};
+            range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+            range.memory = resources.output_readback.memory;
+            range.offset = 0;
+            range.size = VK_WHOLE_SIZE;
+            result = vkInvalidateMappedMemoryRanges(device, 1, &range);
+            if (result != VK_SUCCESS) {
+                vkUnmapMemory(device, resources.output_readback.memory);
+                return vk_fail("vkInvalidateMappedMemoryRanges(output readback)", result, error);
+            }
+        }
+        const size_t pixel_count = static_cast<size_t>(output_width) * output_height;
+        output_readback->resize(pixel_count);
+        std::memcpy(output_readback->data(), mapped,
+                    static_cast<size_t>(output_readback_size));
+        vkUnmapMemory(device, resources.output_readback.memory);
+    }
     if (error) error->clear();
     return true;
 }

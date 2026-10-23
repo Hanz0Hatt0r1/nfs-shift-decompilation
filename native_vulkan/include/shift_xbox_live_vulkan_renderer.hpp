@@ -43,6 +43,7 @@ bool submit_captured_vulkan_frame(
     uint32_t output_width,
     uint32_t output_height,
     const std::vector<CapturedVulkanDraw>& draws,
-    std::string* error);
+    std::string* error,
+    std::vector<uint32_t>* output_readback = nullptr);
 
 }  // namespace shift::xbox

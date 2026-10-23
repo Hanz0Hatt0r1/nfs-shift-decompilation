@@ -7,7 +7,9 @@
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
+#include <cstdlib>
 #include <exception>
+#include <fstream>
 #include <limits>
 #include <map>
 #include <mutex>
@@ -988,11 +990,15 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
               if (!frame_draws.empty() && presenter_ && provider_ &&
                   provider_->vulkan_device()) {
                 const uint32_t draw_count = static_cast<uint32_t>(frame_draws.size());
+                const char* readback_path = std::getenv("SHIFT_NATIVE_VULKAN_READBACK_PATH");
+                const bool capture_output = readback_path && *readback_path &&
+                                            !readback_saved_;
+                std::vector<uint32_t> output_readback;
                 std::string render_error;
                 const bool refreshed = presenter_->RefreshGuestOutput(
                     swap.width, swap.height, swap.width, swap.height,
                     [this, &frame_draws, &render_error, width = swap.width,
-                     height = swap.height](
+                     height = swap.height, capture_output, &output_readback](
                         rex::ui::Presenter::GuestOutputRefreshContext& base) {
                       auto* context = dynamic_cast<
                           rex::ui::vulkan::VulkanPresenter::VulkanGuestOutputRefreshContext*>(
@@ -1005,7 +1011,8 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                           device->physical_device(), device->device(), queue.queue(), family,
                           context->image(), context->image_view(),
                           context->image_ever_written_previously(),
-                          width, height, frame_draws, &render_error);
+                          width, height, frame_draws, &render_error,
+                          capture_output ? &output_readback : nullptr);
                     });
                 if (refreshed) {
                   ++submitted_frames;
@@ -1013,6 +1020,42 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
                               "the Vulkan presenter at {}x{} (frontbuffer {:08X})",
                               draw_count, swap.width, swap.height,
                               swap.frontbuffer_guest_address);
+                  if (capture_output) {
+                    const size_t expected_pixels =
+                        static_cast<size_t>(swap.width) * swap.height;
+                    std::ofstream output_file;
+                    bool output_written = false;
+                    if (output_readback.size() == expected_pixels) {
+                      output_file.open(readback_path,
+                                       std::ios::binary | std::ios::trunc);
+                      output_file.write(
+                          reinterpret_cast<const char*>(output_readback.data()),
+                          static_cast<std::streamsize>(output_readback.size() *
+                                                       sizeof(uint32_t)));
+                      output_file.close();
+                      output_written = static_cast<bool>(output_file);
+                    }
+                    if (output_written) {
+                      size_t non_black_pixels = 0;
+                      uint64_t checksum = 14695981039346656037ull;
+                      for (const uint32_t pixel : output_readback) {
+                        if (pixel & 0x3FFFFFFFu) ++non_black_pixels;
+                        for (unsigned byte = 0; byte < sizeof(pixel); ++byte) {
+                          checksum ^= (pixel >> (byte * 8)) & 0xFFu;
+                          checksum *= 1099511628211ull;
+                        }
+                      }
+                      readback_saved_ = true;
+                      REXLOG_INFO("shift-native: saved Vulkan guest output {}x{} as "
+                                  "VK_FORMAT_A2B10G10R10_UNORM_PACK32 to {}; "
+                                  "non-black pixels {}, FNV-1a {:016X}",
+                                  swap.width, swap.height, readback_path,
+                                  non_black_pixels, checksum);
+                    } else {
+                      REXLOG_WARN("shift-native: could not write Vulkan guest output to {}",
+                                  readback_path);
+                    }
+                  }
                 } else {
                   REXLOG_WARN("shift-native: Vulkan frame refresh failed for {}x{} "
                               "with {} captured draws: {}",
@@ -1171,6 +1214,7 @@ class ShiftNativeGraphicsSystem final : public rex::system::IGraphicsSystem {
   uint64_t ring_generation_ = 0;
   bool ring_initialized_ = false;
   bool ring_worker_shutdown_ = false;
+  bool readback_saved_ = false;
 };
 
 }  // namespace

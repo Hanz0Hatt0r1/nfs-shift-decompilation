@@ -85,11 +85,27 @@ each of two swap batches, resolved 24 draw resource sets per batch, submitted
 24 AutoIndex point draws per frame, and dispatched one guest interrupt callback
 per batch. The run used Gamescope headless + Xwayland on the NVIDIA GeForce GTX
 950; its live log is `/tmp/process2-live-nfs/headless-20261023/retail-current-source/logs/retail.log`.
-This confirms routing through the current plugin and Vulkan presenter, not
-visible game output: the headless rerun did not capture the presented image,
+This confirms routing through the current plugin and Vulkan presenter; that
+earlier headless rerun did not capture the presented image,
 and the earlier window capture remained black. The process was stopped after
 the two swap submissions; the four rectangle-list draws and scene parity remain
 unverified.
+
+The renderer now accepts an optional packed-pixel readback vector. The plugin
+leaves it disabled by default; setting
+`SHIFT_NATIVE_VULKAN_READBACK_PATH=/path/to/output.a2b10g10r10` writes the first
+successful presenter image only. The copy uses the ReXGlue guest-image
+transfer-source contract and restores `VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL`
+before returning to the presenter. With this enabled, a 2026-10-23 retail run
+submitted 24 point draws at each of two swaps and captured the first 1280x720
+output image. All 921,600 packed pixels were `0xC0000000` (RGB black, opaque),
+with zero non-black pixels; the raw image SHA-256 is
+`62c155688f9b3f1217fd1573f24612584ab4df2175bb9281749e3372c886f1a1`. The
+[decoded Vulkan image](../../evidence/process2_xbox_live_vulkan_output_readback_black_20261023.png)
+and exact binary hashes are recorded in the evidence JSON. This proves the
+presenter image itself is black after the current draw submission; it does not
+identify whether the remaining cause is vertex positioning, shader output, or
+missing EDRAM/frontbuffer behavior.
 
 An earlier Gamescope headless retry used info-level logging and recorded no
 draw submission; the later debug run above supersedes that result.
@@ -104,16 +120,18 @@ POSIX fiber backend because Android Bionic does not provide
 Process 1. The repository also builds a minimal Android NativeActivity surface
 probe, but it does not integrate the game or ReXGlue runtime and has no game
 manifest/APK target. The Redmi Note 8 Pro checks cover the offscreen Vulkan
-renderer and parser only, not a full game build. The Android arm64 CI now
-builds the project Vulkan renderer
-smoke and publishes its executable plus Vulkan 1.1 SPIR-V inputs. On 2026-10-23
-the artifact from [CI run 39938067570](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/actions/runs/39938067570)
-ran on the connected Redmi Note 8 Pro (Android API 33, Mali-G76 MC4):
-`synthetic offscreen Vulkan 1.1 AutoIndex point draw passed on Mali-G76 MC4`.
-The device test
-used synthetic shaders and ran without the validation layer; it does not show
-a retail frame. The parser, guest-ring, shader-translation, and renderer
-checks were also rebuilt for API 33 and rerun on the device.
+renderer and parser only, not a full game build. The Android arm64 CI builds
+the project Vulkan renderer smoke and publishes its executable plus Vulkan 1.1
+SPIR-V inputs. The earlier artifact from
+[CI run 39938067570](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/actions/runs/39938067570)
+passed the original renderer smoke on this phone. For the readback update, we
+rebuilt the test locally for Android arm64 and ran it on the connected Redmi
+Note 8 Pro (Android API 33, Mali-G76 MC4):
+`synthetic offscreen Vulkan 1.1 AutoIndex point draw and output readback passed
+on Mali-G76 MC4`. This device test uses synthetic shaders and ran without the
+validation layer; it does not show a retail frame. Temporary device files were
+removed. The parser, guest-ring, shader-translation, and renderer checks were
+also rebuilt for API 33 and rerun on the device.
 
 The guest-ring path now decodes the captured `PM4_INTERRUPT` CPU mask and
 dispatches the registered GPU callback through a ReXGlue `XHostThread`, so the

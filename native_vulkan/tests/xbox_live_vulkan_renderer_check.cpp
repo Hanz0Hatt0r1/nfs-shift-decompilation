@@ -278,103 +278,23 @@ int main(int argc, char** argv) {
     draw.texture_sampling.border_color = shift::xbox::TextureBorderColor::AbgrBlack;
 
     std::string error;
+    std::vector<uint32_t> output_readback;
     const bool submitted = shift::xbox::submit_captured_vulkan_frame(
         physical_device, device, queue, queue_family, output_image, output_view, false,
-        64, 64, std::vector<shift::xbox::CapturedVulkanDraw>{std::move(draw)}, &error);
+        64, 64, std::vector<shift::xbox::CapturedVulkanDraw>{std::move(draw)}, &error,
+        &output_readback);
     if (!submitted) {
         std::cerr << "captured Vulkan draw submission failed: " << error << '\n';
         return 1;
     }
 
-    VkBuffer readback = VK_NULL_HANDLE;
-    VkDeviceMemory readback_memory = VK_NULL_HANDLE;
-    VkBufferCreateInfo buffer_info{};
-    buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    buffer_info.size = 64u * 64u * sizeof(uint32_t);
-    buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    result = vkCreateBuffer(device, &buffer_info, nullptr, &readback);
-    if (result != VK_SUCCESS) {
-        std::cerr << "readback buffer creation failed\n";
-        return 1;
-    }
-    VkMemoryRequirements buffer_requirements{};
-    vkGetBufferMemoryRequirements(device, readback, &buffer_requirements);
-    const uint32_t readback_type = find_memory_type(
-        memory_properties, buffer_requirements.memoryTypeBits,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    VkMemoryAllocateInfo buffer_allocate{};
-    buffer_allocate.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    buffer_allocate.allocationSize = buffer_requirements.size;
-    buffer_allocate.memoryTypeIndex = readback_type;
-    if (readback_type == UINT32_MAX ||
-        vkAllocateMemory(device, &buffer_allocate, nullptr, &readback_memory) != VK_SUCCESS ||
-        vkBindBufferMemory(device, readback, readback_memory, 0) != VK_SUCCESS) {
-        std::cerr << "readback memory allocation failed\n";
-        return 1;
-    }
-    VkCommandPool pool = VK_NULL_HANDLE;
-    VkCommandPoolCreateInfo pool_info{};
-    pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    pool_info.queueFamilyIndex = queue_family;
-    if (vkCreateCommandPool(device, &pool_info, nullptr, &pool) != VK_SUCCESS) {
-        std::cerr << "readback command pool creation failed\n";
-        return 1;
-    }
-    VkCommandBuffer command = VK_NULL_HANDLE;
-    VkCommandBufferAllocateInfo command_allocate{};
-    command_allocate.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    command_allocate.commandPool = pool;
-    command_allocate.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    command_allocate.commandBufferCount = 1;
-    vkAllocateCommandBuffers(device, &command_allocate, &command);
-    VkCommandBufferBeginInfo command_begin{};
-    command_begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    command_begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    vkBeginCommandBuffer(command, &command_begin);
-    VkImageMemoryBarrier image_barrier{};
-    image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    image_barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-    image_barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.image = output_image;
-    image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_barrier.subresourceRange.levelCount = 1;
-    image_barrier.subresourceRange.layerCount = 1;
-    vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                         VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-                         0, nullptr, 0, nullptr, 1, &image_barrier);
-    VkBufferImageCopy copy{};
-    copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy.imageSubresource.layerCount = 1;
-    copy.imageExtent = {64, 64, 1};
-    vkCmdCopyImageToBuffer(command, output_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                            readback, 1, &copy);
-    vkEndCommandBuffer(command);
-    VkSubmitInfo submit{};
-    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &command;
-    vkQueueSubmit(queue, 1, &submit, VK_NULL_HANDLE);
-    vkQueueWaitIdle(queue);
-    void* mapped = nullptr;
-    vkMapMemory(device, readback_memory, 0, VK_WHOLE_SIZE, 0, &mapped);
     bool has_color = false;
-    const auto* pixels = static_cast<const uint32_t*>(mapped);
-    for (size_t i = 0; i < 64u * 64u; ++i) {
-        if (pixels[i] & 0x3FFFFFFFu) {
+    for (const uint32_t pixel : output_readback) {
+        if (pixel & 0x3FFFFFFFu) {
             has_color = true;
             break;
         }
     }
-    vkUnmapMemory(device, readback_memory);
-
-    vkDestroyCommandPool(device, pool, nullptr);
-    vkDestroyBuffer(device, readback, nullptr);
-    vkFreeMemory(device, readback_memory, nullptr);
     vkDestroyImageView(device, output_view, nullptr);
     vkDestroyImage(device, output_image, nullptr);
     vkFreeMemory(device, output_memory, nullptr);
@@ -394,7 +314,12 @@ int main(int argc, char** argv) {
         std::cerr << validation_errors << " Vulkan validation errors\n";
         return 1;
     }
-    std::cout << "synthetic offscreen Vulkan 1.1 AutoIndex point draw passed on "
+    if (output_readback.size() != 64u * 64u) {
+        std::cerr << "Vulkan output readback has the wrong pixel count\n";
+        return 1;
+    }
+    std::cout << "synthetic offscreen Vulkan 1.1 AutoIndex point draw and output readback "
+              << "passed on "
               << device_properties.deviceName
               << (use_validation ? " with validation enabled\n" : "\n");
     return 0;
