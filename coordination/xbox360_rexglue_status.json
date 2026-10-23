@@ -78,9 +78,10 @@
         "evidence/xbox360_function_823270d0.json",
         "evidence/xbox360_frontier_82341198.json",
         "evidence/xbox360_runtime_queue_probe_20261023.json",
-        "evidence/xbox360_guest_ring_wait_semantics_20261023.json"
+        "evidence/xbox360_guest_ring_wait_semantics_20261023.json",
+        "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/5cae789f/evidence/process2_xbox_live_guest_ring_20261023.json"
       ],
-      "note": "Exact-XEX bytes verify that the apparent stall is the original guest ring/cursor wait: 0x823B34A0 repeatedly calls 0x823A0310, whose completion predicate reads object+0x2ABD bit 0x02. In the controlled run the bit stayed clear and head/tail stayed 1/21 while the log showed the three Vd ring/interrupt setup calls ignored because gpu_plugin was unset. This makes an unserviced Xenos completion path the leading cause; it does not support patching guest wait or scheduler semantics. Repeat after Process 2 plugin integration."
+      "note": "Exact-XEX bytes verify that the earlier no-plugin wait was the original guest ring/cursor loop: 0x823B34A0 calls 0x823A0310, which tests object+0x2ABD bit 0x02. That controlled no-plugin run kept the bit clear and head/tail at 1/21 while three Vd setup calls were ignored. Process 2 now reports a Linux plugin-enabled run for Title ID 454108B4: 1,828 PM4 packets and two guest swaps were consumed. Its evidence does not record this P1 predicate byte or next guest PC, and the generated executable is not yet explicitly correlated here to the pinned XEX SHA-256. Keep guest wait/scheduler semantics unchanged; repeat a P1-focused PC/flag probe with correlated input/runtime/plugin hashes."
     },
     "X3": {
       "key": "xenos_vulkan_retail_frame",
@@ -88,9 +89,10 @@
       "evidence": [
         "evidence/xbox360_rexglue_preflight_20261022.md#linux-runtime-evidence",
         "evidence/xbox360_runtime_queue_probe_20261023.json",
-        "evidence/xbox360_guest_ring_wait_semantics_20261023.json"
+        "evidence/xbox360_guest_ring_wait_semantics_20261023.json",
+        "https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/5cae789f/evidence/process2_xbox_live_guest_ring_20261023.json"
       ],
-      "note": "The latest Linux AMD64 run used ReXGlue 0.10.0 without gpu_plugin; its three XEX Vd graphics/ring calls were ignored. Exact-XEX disassembly confirms the guest loops in a ring/cursor wait and polls predicate 0x823A0310; the observed 1/21 cursors and clear completion bit align with an unserviced queue. A plugin-enabled run must still demonstrate guest progress and a retail draw/present."
+      "note": "Process 2's Linux live evidence reports two Vulkan frame submissions from the retail ring under shift-native, with 1,828 PM4 packets and two guest swaps. A synthetic magenta readback rasterized the captured geometry, but the unmodified retail shader readback had zero non-black pixels; the window remained black, two mode-6 rectangles were rejected, and visible retail output/parity remain unverified. The P1 guest wait predicate and exact input-to-generated-executable correlation are still open; no playable frame or scene is claimed."
     },
     "X4": {
       "key": "linux_frontend_offline_race",
