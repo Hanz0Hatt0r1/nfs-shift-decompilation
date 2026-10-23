@@ -4,23 +4,31 @@ on:
   push:
     paths:
       - 'native_vulkan/android/**'
+      - 'native_vulkan/CMakeLists.txt'
       - 'native_vulkan/include/shift_android_native_activity.h'
       - 'native_vulkan/include/shift_android_surface_probe.h'
       - 'native_vulkan/include/shift_vulkan_surface_backend.h'
+      - 'native_vulkan/include/shift_xbox_guest_ring.hpp'
       - 'native_vulkan/src/android_native_activity.cpp'
       - 'native_vulkan/src/android_vulkan_surface_probe.cpp'
       - 'native_vulkan/src/vulkan_surface_backend.cpp'
+      - 'native_vulkan/src/xbox_guest_ring.cpp'
+      - 'native_vulkan/tests/xbox_guest_ring_check.cpp'
       - 'tests/test_android_native_activity_contract.py'
       - '.github/workflows/android-vulkan.yml'
   pull_request:
     paths:
       - 'native_vulkan/android/**'
+      - 'native_vulkan/CMakeLists.txt'
       - 'native_vulkan/include/shift_android_native_activity.h'
       - 'native_vulkan/include/shift_android_surface_probe.h'
       - 'native_vulkan/include/shift_vulkan_surface_backend.h'
+      - 'native_vulkan/include/shift_xbox_guest_ring.hpp'
       - 'native_vulkan/src/android_native_activity.cpp'
       - 'native_vulkan/src/android_vulkan_surface_probe.cpp'
       - 'native_vulkan/src/vulkan_surface_backend.cpp'
+      - 'native_vulkan/src/xbox_guest_ring.cpp'
+      - 'native_vulkan/tests/xbox_guest_ring_check.cpp'
       - 'tests/test_android_native_activity_contract.py'
       - '.github/workflows/android-vulkan.yml'
   workflow_dispatch:
@@ -62,7 +70,7 @@ jobs:
       - name: Build arm64 NativeActivity proof
         run: >-
           cmake --build out/android-vulkan-arm64 --config Release --parallel
-          --target shift_vulkan_android_native_activity
+          --target shift_vulkan_android_native_activity shift_xbox_guest_ring_check
 
       - name: Verify Android shared-library contract
         shell: bash
@@ -75,5 +83,17 @@ jobs:
           readelf -Ws "$LIB" | grep -q 'shift_android_activity_last_surface_probe_status'
           if readelf -d "$LIB" | grep -qi 'xcb'; then
             echo "Android proof unexpectedly depends on XCB" >&2
+            exit 1
+          fi
+
+      - name: Verify Android guest-ring test contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHECK="out/android-vulkan-arm64/shift_xbox_guest_ring_check"
+          test -f "$CHECK"
+          file "$CHECK" | grep -q 'ARM aarch64'
+          if readelf -d "$CHECK" | grep -Eqi 'rexgpu-xenos|xenia'; then
+            echo "Guest-ring test unexpectedly depends on GPU emulation" >&2
             exit 1
           fi
