@@ -965,5 +965,18 @@
     "final_guest_stack": "The final debugger snapshot included sub_823A0310, the guest queue-polling frame identified by Process 1.",
     "debugger_state_at_capture": "GDB stopped the game thread at hardware watchpoints while reading the writeback target, then killed the inferior after capturing the final snapshot. The OS not-responding dialog during the probe is consistent with debugger suspension, not proof of an independent guest-runtime deadlock.",
     "interpretation": "Linux and Android use the same VdEnableRingBufferRPtrWriteBack guest argument and translated host address. The prior 0xB7AF4000 comparison was a ring-base/writeback-destination mix-up. This verifies pointer routing only; the final stack snapshot does not establish that the guest advanced to visible gameplay, and retail pixels remain unverified."
+  },
+  "android_xbox_key_input_check_20261024": {
+    "observed_at_utc": "2026-10-24",
+    "device": "Redmi Note 8 Pro (Android 13/API 33, Mali-G76 MC4, Vulkan 1.1.131)",
+    "package": "com.hanz0hatt0r.nfsshift",
+    "foreground_pid_before_and_after": 32421,
+    "input": "One ADB keyevent sequence: KEYCODE_BUTTON_A, KEYCODE_BUTTON_START",
+    "observation_delay_seconds": 5,
+    "runtime_log_sha256_before_and_after": "397a2ddeb9d536b109d3af9d95003aa79fc3b02042d3aa49673f5a464b784e21",
+    "screen_sha256_before_and_after": "2f7c5a4966a5d8fe95be1f9e18c4735565e3c5a82657b50bda971758efdaf839",
+    "logged_guest_swaps": 2,
+    "new_pm4_batches_or_swaps": 0,
+    "result": "The app remained foreground and the black screen did not change. This input attempt did not advance the observed startup instance; it does not establish that every Android or gamepad input route is ineffective."
   }
 }
